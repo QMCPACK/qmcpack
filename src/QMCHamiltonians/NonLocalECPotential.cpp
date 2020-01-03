@@ -113,78 +113,36 @@ void NonLocalECPotential::delete_particle_quantities()
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluate(ParticleSet& P)
 {
-  evaluate(P, false);
+  evaluateImpl(P, false);
   return Value;
 }
 
-NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
-                                                                         ParticleSet& ions,
-                                                                         TrialWaveFunction& psi,
-                                                                         ParticleSet::ParticlePos_t& hf_terms,
-                                                                         ParticleSet::ParticlePos_t& pulay_terms)
+void NonLocalECPotential::mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
 {
-  //We're going to ignore psi and use the internal Psi.
-  //
-  //Dummy vector for now.  Tmoves not implemented
-  std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
-  bool Tmove = false;
-
-  forces    = 0;
-  PulayTerm = 0;
-
-  Value = 0.0;
-
-  for (int ipp = 0; ipp < PPset.size(); ipp++)
-    if (PPset[ipp])
-      PPset[ipp]->randomize_grid(*myRNG);
-  //loop over all the ions
-  const auto& myTable = P.getDistTable(myTableIndex);
-  // clear all the electron and ion neighbor lists
-  for (int iat = 0; iat < NumIons; iat++)
-    IonNeighborElecs.getNeighborList(iat).clear();
-  for (int jel = 0; jel < P.getTotalNum(); jel++)
-    ElecNeighborIons.getNeighborList(jel).clear();
-
-  if (myTable.DTType == DT_SOA)
-  {
-    for (int jel = 0; jel < P.getTotalNum(); jel++)
-    {
-      const auto& dist               = myTable.getDistRow(jel);
-      const auto& displ              = myTable.getDisplRow(jel);
-      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-      for (int iat = 0; iat < NumIons; iat++)
-        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-        {
-          Value += PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat],
-                                                  forces[iat], PulayTerm, Tmove, Txy);
-          NeighborIons.push_back(iat);
-          IonNeighborElecs.getNeighborList(iat).push_back(jel);
-        }
-    }
-  }
-  else
-  {
-    APP_ABORT("NonLocalECPotential::evaluate():  Forces not imlpemented for AoS build\n");
-  }
-  hf_terms    -= forces;
-  pulay_terms -= PulayTerm;
-  return Value;
+  mw_evaluateImpl(O_list, P_list, false);
 }
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(ParticleSet& P)
 {
   if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
-  {
-    nonLocalOps.reset();
-    evaluate(P, true);
-  }
+    evaluateImpl(P, true);
   else
-    evaluate(P, false);
+    evaluateImpl(P, false);
   return Value;
 }
 
-void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
+void NonLocalECPotential::mw_evaluateWithToperator(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
 {
+  if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
+    mw_evaluateImpl(O_list, P_list, true);
+  else
+    mw_evaluateImpl(O_list, P_list, false);
+}
+
+void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
+{
+  if (Tmove)
+    nonLocalOps.reset();
   std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
   Value = 0.0;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -304,6 +262,111 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
     }
   }
 #endif
+}
+
+void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list, bool Tmove)
+{
+  if (Tmove)
+    nonLocalOps.reset();
+
+  auto& P = P_list[0].get();
+  std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
+
+  Value = 0.0;
+  for (int ipp = 0; ipp < PPset.size(); ipp++)
+    if (PPset[ipp])
+      PPset[ipp]->randomize_grid(*myRNG);
+
+  //loop over all the ions
+  const auto& myTable = P.getDistTable(myTableIndex);
+  // clear all the electron and ion neighbor lists
+  for (int iat = 0; iat < NumIons; iat++)
+    IonNeighborElecs.getNeighborList(iat).clear();
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
+    ElecNeighborIons.getNeighborList(jel).clear();
+
+  if (ComputeForces)
+  {
+    APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): Forces not imlpemented\n");
+  }
+  else
+  {
+    if (myTable.DTType == DT_SOA)
+    {
+      for (int jel = 0; jel < P.getTotalNum(); jel++)
+      {
+        const auto& dist               = myTable.getDistRow(jel);
+        const auto& displ              = myTable.getDisplRow(jel);
+        std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+        for (int iat = 0; iat < NumIons; iat++)
+          if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+          {
+            RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], Tmove, Txy);
+            Value += pairpot;
+            NeighborIons.push_back(iat);
+            IonNeighborElecs.getNeighborList(iat).push_back(jel);
+          }
+      }
+    }
+    else
+    {
+      APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): not imlpemented for AoS builds\n");
+    }
+  }
+}
+
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
+                                                                         ParticleSet& ions,
+                                                                         TrialWaveFunction& psi,
+                                                                         ParticleSet::ParticlePos_t& hf_terms,
+                                                                         ParticleSet::ParticlePos_t& pulay_terms)
+{
+  //We're going to ignore psi and use the internal Psi.
+  //
+  //Dummy vector for now.  Tmoves not implemented
+  std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
+  bool Tmove = false;
+
+  forces    = 0;
+  PulayTerm = 0;
+
+  Value = 0.0;
+
+  for (int ipp = 0; ipp < PPset.size(); ipp++)
+    if (PPset[ipp])
+      PPset[ipp]->randomize_grid(*myRNG);
+  //loop over all the ions
+  const auto& myTable = P.getDistTable(myTableIndex);
+  // clear all the electron and ion neighbor lists
+  for (int iat = 0; iat < NumIons; iat++)
+    IonNeighborElecs.getNeighborList(iat).clear();
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
+    ElecNeighborIons.getNeighborList(jel).clear();
+
+  if (myTable.DTType == DT_SOA)
+  {
+    for (int jel = 0; jel < P.getTotalNum(); jel++)
+    {
+      const auto& dist               = myTable.getDistRow(jel);
+      const auto& displ              = myTable.getDisplRow(jel);
+      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+      for (int iat = 0; iat < NumIons; iat++)
+        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        {
+          Value += PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat],
+                                                  forces[iat], PulayTerm, Tmove, Txy);
+          NeighborIons.push_back(iat);
+          IonNeighborElecs.getNeighborList(iat).push_back(jel);
+        }
+    }
+  }
+  else
+  {
+    APP_ABORT("NonLocalECPotential::evaluate():  Forces not imlpemented for AoS build\n");
+  }
+  hf_terms    -= forces;
+  pulay_terms -= PulayTerm;
+  return Value;
 }
 
 void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)
