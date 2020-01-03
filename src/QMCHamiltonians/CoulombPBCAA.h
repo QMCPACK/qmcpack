@@ -36,9 +36,6 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
   typedef LRHandlerType::mRealType mRealType;
 
-  using DistRowType  = DistanceTableData::DistRowType;
-  using DisplRowType = DistanceTableData::DisplRowType;
-
   // energy-optimized
   LRHandlerType* AA;
   GridType* myGrid;

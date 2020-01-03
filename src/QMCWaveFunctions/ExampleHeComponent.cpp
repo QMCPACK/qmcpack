@@ -113,7 +113,7 @@ ExampleHeComponent::PsiValueType ExampleHeComponent::ratio(ParticleSet& P, int i
 {
   const auto& ee_table  = P.getDistTable(my_table_ee_idx_);
   const auto& ee_dists  = ee_table.getDistances();
-  const auto& ee_temp_r = ee_table.getTemporalDists();
+  const auto& ee_temp_r = ee_table.getTempDists();
 
   // only the lower triangle of e-e Distances and Displacements can be used.
   double r12_old = ee_dists[1][0];
@@ -121,7 +121,7 @@ ExampleHeComponent::PsiValueType ExampleHeComponent::ratio(ParticleSet& P, int i
 
   const auto& ei_table  = P.getDistTable(my_table_ei_idx_);
   const auto& ei_dists  = ei_table.getDistances();
-  const auto& ei_temp_r = ei_table.getTemporalDists();
+  const auto& ei_temp_r = ei_table.getTempDists();
 
   double r_old = ei_dists[iat][0];
   double r_new = ei_temp_r[0];
@@ -162,8 +162,8 @@ ExampleHeComponent::PsiValueType ExampleHeComponent::ratioGrad(ParticleSet& P, i
   const auto& ee_table   = P.getDistTable(my_table_ee_idx_);
   const auto& ee_dists   = ee_table.getDistances();
   const auto& ee_displs  = ee_table.getDisplacements();
-  const auto& ee_temp_r  = ee_table.getTemporalDists();
-  const auto& ee_temp_dr = ee_table.getTemporalDispls();
+  const auto& ee_temp_r  = ee_table.getTempDists();
+  const auto& ee_temp_dr = ee_table.getTempDispls();
 
   const int jat = (iat == 0 ? 1 : 0);
   // only the lower triangle of e-e Distances and Displacements can be used.
@@ -175,8 +175,8 @@ ExampleHeComponent::PsiValueType ExampleHeComponent::ratioGrad(ParticleSet& P, i
   const auto& ei_table   = P.getDistTable(my_table_ei_idx_);
   const auto& ei_dists   = ei_table.getDistances();
   const auto& ei_displs  = ei_table.getDisplacements();
-  const auto& ei_temp_r  = ei_table.getTemporalDists();
-  const auto& ei_temp_dr = ei_table.getTemporalDispls();
+  const auto& ei_temp_r  = ei_table.getTempDists();
+  const auto& ei_temp_dr = ei_table.getTempDispls();
 
   double r_old = ei_dists[iat][0];
   double r_new = ei_temp_r[0];
@@ -232,8 +232,8 @@ void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
   const auto& ee_table   = P.getDistTable(my_table_ee_idx_);
   const auto& ee_dists   = ee_table.getDistances();
   const auto& ee_displs  = ee_table.getDisplacements();
-  const auto& ee_temp_r  = ee_table.getTemporalDists();
-  const auto& ee_temp_dr = ee_table.getTemporalDispls();
+  const auto& ee_temp_r  = ee_table.getTempDists();
+  const auto& ee_temp_dr = ee_table.getTempDispls();
 
   double r12  = ee_dists[1][0];
   auto rhat12 = ee_displs[1][0] / r12;
@@ -241,8 +241,8 @@ void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
   const auto& ei_table   = P.getDistTable(my_table_ei_idx_);
   const auto& ei_dists   = ei_table.getDistances();
   const auto& ei_displs  = ei_table.getDisplacements();
-  const auto& ei_temp_r  = ei_table.getTemporalDists();
-  const auto& ei_temp_dr = ei_table.getTemporalDispls();
+  const auto& ei_temp_r  = ei_table.getTempDists();
+  const auto& ei_temp_dr = ei_table.getTempDispls();
 
   double r1 = ei_dists[0][0];
   double r2 = ei_dists[1][0];
