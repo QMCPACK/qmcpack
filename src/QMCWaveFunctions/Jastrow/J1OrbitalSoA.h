@@ -135,7 +135,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
     for (int iel = 0; iel < Nelec; ++iel)
     {
-      const auto& dist   = d_ie.getDistRow(iel);
+      const auto& dist  = d_ie.getDistRow(iel);
       const auto& displ = d_ie.getDisplRow(iel);
       for (int iat = 0; iat < Nions; iat++)
       {
@@ -192,7 +192,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
   {
     const auto& dist = P.getDistTable(myTableID).getTempDists();
-    curAt                     = valT(0);
+    curAt            = valT(0);
     if (NumGroups > 0)
     {
       for (int jg = 0; jg < NumGroups; ++jg)
@@ -233,10 +233,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   /** compute gradient and lap
    * @return lap
    */
-  inline valT accumulateGL(const valT* restrict du,
-                           const valT* restrict d2u,
-                           const DisplRow& displ,
-                           posT& grad) const
+  inline valT accumulateGL(const valT* restrict du, const valT* restrict d2u, const DisplRow& displ, posT& grad) const
   {
     valT lap(0);
     constexpr valT lapfac = OHMMS_DIM - RealType(1);
@@ -442,12 +439,12 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     const DistanceTableData& d_ie(P.getDistTable(myTableID));
     for (int iat = 0; iat < Nelec; ++iat)
     {
-      const auto& dist   = d_ie.getDistRow(iat);
+      const auto& dist  = d_ie.getDistRow(iat);
       const auto& displ = d_ie.getDisplRow(iat);
-      int gid                   = Ions.GroupID[isrc];
-      RealType r                = dist[isrc];
-      RealType rinv             = 1.0 / r;
-      PosType dr                = displ[isrc];
+      int gid           = Ions.GroupID[isrc];
+      RealType r        = dist[isrc];
+      RealType rinv     = 1.0 / r;
+      PosType dr        = displ[isrc];
 
       if (F[gid] != nullptr)
       {
@@ -468,12 +465,12 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     const DistanceTableData& d_ie(P.getDistTable(myTableID));
     for (int iat = 0; iat < Nelec; ++iat)
     {
-      const auto& dist   = d_ie.getDistRow(iat);
+      const auto& dist  = d_ie.getDistRow(iat);
       const auto& displ = d_ie.getDisplRow(iat);
-      int gid                   = Ions.GroupID[isrc];
-      RealType r                = dist[isrc];
-      RealType rinv             = 1.0 / r;
-      PosType dr                = displ[isrc];
+      int gid           = Ions.GroupID[isrc];
+      RealType r        = dist[isrc];
+      RealType rinv     = 1.0 / r;
+      PosType dr        = displ[isrc];
 
       if (F[gid] != nullptr)
       {

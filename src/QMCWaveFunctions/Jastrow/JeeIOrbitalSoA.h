@@ -386,7 +386,7 @@ public:
 
   void build_compact_list(ParticleSet& P)
   {
-    const auto& eI_dists = P.getDistTable(ei_Table_ID_).getDistances();
+    const auto& eI_dists  = P.getDistTable(ei_Table_ID_).getDistances();
     const auto& eI_displs = P.getDistTable(ei_Table_ID_).getDisplacements();
 
     for (int iat = 0; iat < Nion; ++iat)
@@ -437,7 +437,7 @@ public:
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
   {
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
-    const auto& eI_dists = eI_table.getDistances();
+    const auto& eI_dists              = eI_table.getDistances();
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
 
     for (int jg = 0; jg < eGroups; ++jg)
@@ -471,8 +471,8 @@ public:
 
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
-    computeU3(P, iat, eI_table.getTempDists(), eI_table.getTempDispls(), ee_table.getTempDists(), ee_table.getTempDispls(), cur_Uat,
-              cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
+    computeU3(P, iat, eI_table.getTempDists(), eI_table.getTempDispls(), ee_table.getTempDists(),
+              ee_table.getTempDispls(), cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
     grad_iat += cur_dUat;
     return std::exp(static_cast<PsiValueType>(DiffVal));
@@ -489,8 +489,8 @@ public:
               ee_table.getOldDispls(), Uat[iat], dUat_temp, d2Uat[iat], oldUk, olddUk, oldd2Uk, ions_nearby_old);
     if (UpdateMode == ORB_PBYP_RATIO)
     { //ratio-only during the move; need to compute derivatives
-      computeU3(P, iat, eI_table.getTempDists(), eI_table.getTempDispls(), ee_table.getTempDists(), ee_table.getTempDispls(), cur_Uat,
-                cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
+      computeU3(P, iat, eI_table.getTempDists(), eI_table.getTempDispls(), ee_table.getTempDists(),
+                ee_table.getTempDispls(), cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
     }
 
 #pragma omp simd
@@ -876,8 +876,8 @@ public:
       constexpr valT lapfac = OHMMS_DIM - cone;
 
       const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
-      const auto& ee_dists = ee_table.getDistances();
-      const auto& ee_displs = ee_table.getDisplacements();
+      const auto& ee_dists              = ee_table.getDistances();
+      const auto& ee_displs             = ee_table.getDisplacements();
 
       build_compact_list(P);
 

@@ -132,7 +132,7 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   REQUIRE(displ1[1] == Approx(0.0));
   REQUIRE(displ1[2] == Approx(-0.2));
 #else
-  TinyVector<double, 3> displ1 = dtable.displacement(0,0);
+  TinyVector<double, 3> displ1 = dtable.displacement(0, 0);
   REQUIRE(displ1[0] == Approx(0.0));
   REQUIRE(displ1[1] == Approx(0.0));
   REQUIRE(displ1[2] == Approx(0.2));
@@ -144,7 +144,7 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   REQUIRE(displ2[1] == Approx(0.0));
   REQUIRE(displ2[2] == Approx(0.3));
 #else
-  TinyVector<double, 3> displ2 = dtable.displacement(1,0);
+  TinyVector<double, 3> displ2 = dtable.displacement(1, 0);
   REQUIRE(displ2[0] == Approx(0.0));
   REQUIRE(displ2[1] == Approx(0.0));
   REQUIRE(displ2[2] == Approx(-0.3));
@@ -355,7 +355,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
       if (species_name != "u")
         continue;
 
-      // calculate distance from lattice site iat
+        // calculate distance from lattice site iat
 #ifdef ENABLE_SOA
       double dist = dtable.getDistRow(jat)[iat];
 #else
@@ -456,7 +456,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   tmat(2, 2) = 1;
 
   // enforce global Lattice on ions and electrons
-  ions.Lattice = SimulationCell;
+  ions.Lattice      = SimulationCell;
   electrons.Lattice = SimulationCell;
 
   XMLParticleParser parse_electrons(electrons, tmat);

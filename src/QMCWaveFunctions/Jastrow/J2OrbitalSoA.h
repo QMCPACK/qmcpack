@@ -119,8 +119,8 @@ public:
   ///element position type
   using posT = TinyVector<valT, OHMMS_DIM>;
   ///use the same container
-  using DistRow     = DistanceTableData::DistRow;
-  using DisplRow    = DistanceTableData::DisplRow;
+  using DistRow         = DistanceTableData::DistRow;
+  using DisplRow        = DistanceTableData::DisplRow;
   using gContainer_type = VectorSoaContainer<valT, OHMMS_DIM>;
 
   // Ye: leaving this public is bad but currently used by unit tests.
@@ -610,11 +610,11 @@ void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
       Uat[iat] = simd::accumulate_n(cur_u.data(), iat, valT());
       posT grad;
       valT lap(0);
-      const valT* restrict u    = cur_u.data();
-      const valT* restrict du   = cur_du.data();
-      const valT* restrict d2u  = cur_d2u.data();
-      const auto& displ = d_table.getDisplRow(iat);
-      constexpr valT lapfac     = OHMMS_DIM - RealType(1);
+      const valT* restrict u   = cur_u.data();
+      const valT* restrict du  = cur_du.data();
+      const valT* restrict d2u = cur_d2u.data();
+      const auto& displ        = d_table.getDisplRow(iat);
+      constexpr valT lapfac    = OHMMS_DIM - RealType(1);
 #pragma omp simd reduction(+ : lap) aligned(du, d2u)
       for (int jat = 0; jat < iat; ++jat)
         lap += d2u[jat] + lapfac * du[jat];
@@ -689,10 +689,10 @@ void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_p
 
   for (int i = 1; i < N; ++i)
   {
-    const auto& dist          = d_ee.getDistRow(i);
+    const auto& dist  = d_ee.getDistRow(i);
     const auto& displ = d_ee.getDisplRow(i);
-    auto ig                   = P.GroupID[i];
-    const int igt             = ig * NumGroups;
+    auto ig           = P.GroupID[i];
+    const int igt     = ig * NumGroups;
     for (int j = 0; j < i; ++j)
     {
       auto r    = dist[j];

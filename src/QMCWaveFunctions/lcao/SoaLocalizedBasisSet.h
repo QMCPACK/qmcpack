@@ -176,7 +176,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   inline void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)
   {
     const auto& IonID(ions_.GroupID);
-    const auto& coordR = P.activeR(iat);
+    const auto& coordR  = P.activeR(iat);
     const auto& d_table = P.getDistTable(myTableIndex);
     const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
     const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
@@ -244,7 +244,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   inline void evaluateV(const ParticleSet& P, int iat, ORBT* restrict vals)
   {
     const auto& IonID(ions_.GroupID);
-    const auto& coordR = P.activeR(iat);
+    const auto& coordR  = P.activeR(iat);
     const auto& d_table = P.getDistTable(myTableIndex);
     const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
     const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
