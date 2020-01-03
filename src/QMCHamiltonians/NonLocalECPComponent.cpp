@@ -65,6 +65,7 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
   psiratio.resize(n);
   gradpsiratio.resize(n);
   deltaV.resize(n);
+  VPos.resize(n);
   cosgrad.resize(n);
   wfngrad.resize(n);
   vrad.resize(m);
@@ -120,35 +121,31 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
   constexpr RealType czero(0);
   constexpr RealType cone(1);
 
+  buildQuadraturePositions(W.R[iel], r, dr);
+
   if (VP)
   {
     // Compute ratios with VP
-    ParticleSet::ParticlePos_t VPos(nknot);
-    for (int j = 0; j < nknot; j++)
-    {
-      deltaV[j] = r * rrotsgrid_m[j] - dr;
-      VPos[j]   = deltaV[j] + W.R[iel];
-    }
     VP->makeMoves(iel, VPos, true, iat);
     psi.evaluateRatios(*VP, psiratio);
-    for (int j = 0; j < nknot; j++)
-      psiratio[j] *= sgridweight_m[j];
   }
   else
   {
     // Compute ratio of wave functions
     for (int j = 0; j < nknot; j++)
     {
-      deltaV[j] = r * rrotsgrid_m[j] - dr;
       W.makeMove(iel, deltaV[j], false);
       if(use_DLA)
-        psiratio[j] = psi.calcRatio(W, iel, TrialWaveFunction::ComputeType::FERMIONIC) * sgridweight_m[j];
+        psiratio[j] = psi.calcRatio(W, iel, TrialWaveFunction::ComputeType::FERMIONIC);
       else
-        psiratio[j] = psi.calcRatio(W, iel) * sgridweight_m[j];
+        psiratio[j] = psi.calcRatio(W, iel);
       W.rejectMove(iel);
       psi.resetPhaseDiff();
     }
   }
+
+  for (int j = 0; j < nknot; j++)
+    psiratio[j] *= sgridweight_m[j];
 
   // Compute radial potential, multiplied by (2l+1) factor.
   for (int ip = 0; ip < nchannel; ip++)
@@ -205,6 +202,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   constexpr RealType czero(0);
   constexpr RealType cone(1);
 
+  buildQuadraturePositions(W.R[iel], r, dr);
+
   GradType gradtmp_(0);
   PosType realgradtmp_(0);
 
@@ -220,30 +219,20 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
     // Compute ratios with VP
-    ParticleSet::ParticlePos_t VPos(nknot);
-    for (int j = 0; j < nknot; j++)
-    {
-      deltaV[j] = r * rrotsgrid_m[j] - dr;
-      VPos[j]   = deltaV[j] + W.R[iel];
-    }
     VP->makeMoves(iel, VPos, true, iat);
     psi.evaluateRatios(*VP, psiratio);
-    for (int j = 0; j < nknot; j++)
-      psiratio[j] *= sgridweight_m[j];
   }
   else
   {
     // Compute ratio of wave functions
     for (int j = 0; j < nknot; j++)
     {
-      deltaV[j] = r * rrotsgrid_m[j] - dr;
       W.makeMove(iel, deltaV[j], false);
-      ValueType ratio = psi.calcRatioGrad(W, iel, gradtmp_);
-      psiratio[j] = ratio * sgridweight_m[j];
+      psiratio[j] = psi.calcRatioGrad(W, iel, gradtmp_);
       //QMCPACK spits out $\nabla\Psi(q)/\Psi(q)$.
       //Multiply times $\Psi(q)/\Psi(r)$ to get
       // $\nabla\Psi(q)/\Psi(r)
-      gradtmp_ *= ratio;
+      gradtmp_ *= psiratio[j];
 #if defined(QMC_COMPLEX)
       //And now we take the real part and save it.
       convert(gradtmp_, gradpsiratio[j]);
@@ -257,6 +246,9 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       //psi.rejectMove(iel);
     }
   }
+
+  for (int j = 0; j < nknot; j++)
+    psiratio[j] *= sgridweight_m[j];
 
   // This is just a temporary variable to dump d2/dr2 into for spline evaluation.
   RealType secondderiv(0);
@@ -351,6 +343,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   constexpr RealType czero(0);
   constexpr RealType cone(1);
 
+  buildQuadraturePositions(W.R[iel], r, dr);
+
   GradType gradtmp_(0);
   PosType realgradtmp_(0);
 
@@ -381,30 +375,20 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
     // Compute ratios with VP
-    ParticleSet::ParticlePos_t VPos(nknot);
-    for (int j = 0; j < nknot; j++)
-    {
-      deltaV[j] = r * rrotsgrid_m[j] - dr;
-      VPos[j]   = deltaV[j] + W.R[iel];
-    }
     VP->makeMoves(iel, VPos, true, iat);
     psi.evaluateRatios(*VP, psiratio);
-    for (int j = 0; j < nknot; j++)
-      psiratio[j] *= sgridweight_m[j];
   }
   else
   {
     // Compute ratio of wave functions
     for (int j = 0; j < nknot; j++)
     {
-      deltaV[j] = r * rrotsgrid_m[j] - dr;
       W.makeMove(iel, deltaV[j], false);
-      ValueType ratio = psi.calcRatioGrad(W, iel, gradtmp_);
-      psiratio[j] = ratio * sgridweight_m[j];
+      psiratio[j] = psi.calcRatioGrad(W, iel, gradtmp_);
       //QMCPACK spits out $\nabla\Psi(q)/\Psi(q)$.
       //Multiply times $\Psi(q)/\Psi(r)$ to get
       // $\nabla\Psi(q)/\Psi(r)
-      gradtmp_ *= ratio;
+      gradtmp_ *= psiratio[j];
 #if defined(QMC_COMPLEX)
       //And now we take the real part and save it.
       convert(gradtmp_, gradpsiratio[j]);
@@ -418,6 +402,9 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       //psi.rejectMove(iel);
     }
   }
+
+  for (int j = 0; j < nknot; j++)
+    psiratio[j] *= sgridweight_m[j];
 
   // This is just a temporary variable to dump d2/dr2 into for spline evaluation.
   RealType secondderiv(0);
@@ -536,6 +523,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 #endif
   return pairpot;
 }
+
 ///Randomly rotate sgrid_m
 void NonLocalECPComponent::randomize_grid(RandomGenerator_t& myRNG)
 {
@@ -569,6 +557,15 @@ void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerato
   for (int i = 0; i < rrotsgrid_m.size(); i++)
     for (int j = 0; j < OHMMS_DIM; j++)
       sphere[OHMMS_DIM * i + j] = rrotsgrid_m[i][j];
+}
+
+void NonLocalECPComponent::buildQuadraturePositions(const PosType& ref_elec_pos, RealType r, const PosType& dr)
+{
+  for (int j = 0; j < nknot; j++)
+  {
+    deltaV[j] = r * rrotsgrid_m[j] - dr;
+    VPos[j]   = deltaV[j] + ref_elec_pos;
+  }
 }
 
 /// \relates NonLocalEcpComponent

@@ -64,6 +64,8 @@ private:
 
   //Position delta for virtual moves.
   std::vector<PosType> deltaV;
+  //Quadratpure point electron positions
+  ParticleSet::ParticlePos_t VPos;
   //Array for P_l[cos(theta)].
   std::vector<RealType> lpol;
   //Array for P'_l[cos(theta)]
@@ -134,6 +136,8 @@ public:
   void randomize_grid(RandomGenerator_t& myRNG);
   template<typename T>
   void randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG);
+
+  void buildQuadraturePositions(const PosType& ref_elec_pos, RealType r, const PosType& dr);
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
    * to total energy from ion "iat" and electron "iel".
