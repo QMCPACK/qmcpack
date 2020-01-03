@@ -38,18 +38,18 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
     // initialize memory containers and views
     const int Nsources_padded = getAlignedSize<T>(N_sources);
-    Distances.resize(N_targets);
-    Displacements.resize(N_targets);
+    distances_.resize(N_targets);
+    displacements_.resize(N_targets);
     for (int i = 0; i < N_targets; ++i)
     {
-      Distances[i].resize(Nsources_padded);
-      Displacements[i].resize(Nsources_padded);
+      distances_[i].resize(Nsources_padded);
+      displacements_[i].resize(Nsources_padded);
     }
 
-    // The padding of Temp_r and Temp_dr is necessary for the memory copy in the update function
-    // Temp_r is padded explicitly while Temp_dr is padded internally
-    Temp_r.resize(Nsources_padded);
-    Temp_dr.resize(N_sources);
+    // The padding of temp_r_ and temp_dr_ is necessary for the memory copy in the update function
+    // temp_r_ is padded explicitly while temp_dr_ is padded internally
+    temp_r_.resize(Nsources_padded);
+    temp_dr_.resize(N_sources);
   }
 
   SoaDistanceTableBA()                          = delete;
@@ -66,7 +66,7 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
       //be aware of the sign of Displacement
       for (int iat = 0; iat < N_targets; ++iat)
-        DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat].data(), Displacements[iat], first,
+        DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, distances_[iat].data(), displacements_[iat], first,
                                                last);
     }
   }
@@ -74,20 +74,20 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
-    DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->RSoA, Temp_r.data(), Temp_dr, 0, N_sources);
+    DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->RSoA, temp_r_.data(), temp_dr_, 0, N_sources);
     // If the full table is not ready all the time, overwrite the current value.
     // If this step is missing, DT values can be undefined in case a move is rejected.
     if (!need_full_table_)
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat].data(), Displacements[iat], 0,
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA, distances_[iat].data(), displacements_[iat], 0,
                                              N_sources);
   }
 
   ///update the stripe for jat-th particle
   inline void update(IndexType iat, bool partial_update)
   {
-    std::copy_n(Temp_r.data(), N_sources, Distances[iat].data());
+    std::copy_n(temp_r_.data(), N_sources, distances_[iat].data());
     for (int idim = 0; idim < D; ++idim)
-      std::copy_n(Temp_dr.data(idim), N_sources, Displacements[iat].data(idim));
+      std::copy_n(temp_dr_.data(idim), N_sources, displacements_[iat].data(idim));
   }
 
   size_t get_neighbors(int iat,
@@ -100,12 +100,12 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     size_t nn = 0;
     for (int jat = 0; jat < N_targets; ++jat)
     {
-      const RealType rij = Distances[jat][iat];
+      const RealType rij = distances_[jat][iat];
       if (rij < rcut)
       { //make the compact list
         jid[nn]   = jat;
         dist[nn]  = rij;
-        displ[nn] = cminus * Displacements[jat][iat];
+        displ[nn] = cminus * displacements_[jat][iat];
         nn++;
       }
     }
@@ -119,29 +119,29 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     if (newpos)
     {
       for (int jat = 0; jat < N_sources; ++jat)
-        if (Temp_r[jat] < min_dist)
+        if (temp_r_[jat] < min_dist)
         {
-          min_dist = Temp_r[jat];
+          min_dist = temp_r_[jat];
           index    = jat;
         }
       if (index >= 0)
       {
         r  = min_dist;
-        dr = Temp_dr[index];
+        dr = temp_dr_[index];
       }
     }
     else
     {
       for (int jat = 0; jat < N_sources; ++jat)
-        if (Distances[iat][jat] < min_dist)
+        if (distances_[iat][jat] < min_dist)
         {
-          min_dist = Distances[iat][jat];
+          min_dist = distances_[iat][jat];
           index    = jat;
         }
       if (index >= 0)
       {
         r  = min_dist;
-        dr = Displacements[iat][index];
+        dr = displacements_[iat][index];
       }
     }
     return index;
@@ -152,7 +152,7 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     size_t nn = 0;
     for (int jat = 0; jat < N_targets; ++jat)
     {
-      const RealType rij = Distances[jat][iat];
+      const RealType rij = distances_[jat][iat];
       if (rij < rcut)
       { //make the compact list
         dist[nn] = rij;

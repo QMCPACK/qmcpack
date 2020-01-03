@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 #ifndef ENABLE_SOA
-/** @defgroup nnlist Distance-table group
+/** @defgroup nnlist distance-table group
  * @brief class to manage a set of data for distance relations between ParticleSet objects.
  */
 template<class T, unsigned N>
@@ -136,30 +136,28 @@ struct DistanceTableData
 protected:
   /**defgroup SoA data */
   /*@{*/
-  /** Distances[i][j] , [N_targets][N_sources]
+  /** distances_[i][j] , [N_targets][N_sources]
    *  Note: Derived classes decide if it is a memory view or the actual storage
-   *        For derived AA, only the lower triangle (j<i) is up-to-date after pbyp move
+   *        For derived AA, only the lower triangle (j<i) is defined and up-to-date after pbyp move.
    *          The upper triangle is symmetric to the lower one only when the full table is evaluated from scratch.
    *          Avoid using the upper triangle because we may change the code to only allocate the lower triangle part.
    *        For derived BA, the full table is up-to-date after pbyp move
    */
-  std::vector<DistRow> Distances;
+  std::vector<DistRow> distances_;
 
-  /** Displacements[N_targets]x[3][N_sources]
+  /** displacements_[N_targets]x[3][N_sources]
    *  Note: Derived classes decide if it is a memory view or the actual storage
-   *        Displacements[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
-   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is allocated in memoryPool_displs_
-   *          For this reason, Displacements[i] and Displacements[i+1] overlap in memory
-   *          and they must be updated in order during PbyP move.
+   *        displacements_[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
+   *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined.
    *        For derived BA, A1=A, A2=B, the full table is allocated.
    */
-  std::vector<DisplRow> Displacements;
+  std::vector<DisplRow> displacements_;
 
   /** temp_r */
-  DistRow Temp_r;
+  DistRow temp_r_;
 
   /** temp_dr */
-  DisplRow Temp_dr;
+  DisplRow temp_dr_;
   /*@}*/
 
   /** whether full table needs to be ready at anytime or not
@@ -272,26 +270,26 @@ public:
 
   /** return full table distances
    */
-  const std::vector<DistRow>& getDistances() const { return Distances; }
+  const std::vector<DistRow>& getDistances() const { return distances_; }
 
   /** return full table displacements
    */
-  const std::vector<DisplRow>& getDisplacements() const { return Displacements; }
+  const std::vector<DisplRow>& getDisplacements() const { return displacements_; }
 
   /** return a row of distances for a given target particle
    */
-  const DistRow& getDistRow(int iel) const { return Distances[iel]; }
+  const DistRow& getDistRow(int iel) const { return distances_[iel]; }
 
   /** return a row of displacements for a given target particle
    */
-  const DisplRow& getDisplRow(int iel) const { return Displacements[iel]; }
+  const DisplRow& getDisplRow(int iel) const { return displacements_[iel]; }
 
   /** return old distances set up by move() for optimized distance table consumers
    */
   virtual const DistRow& getOldDists() const
   {
     APP_ABORT("DistanceTableData::getOldDists is used incorrectly! Contact developers on github.");
-    return Temp_r; // dummy return to avoid compiler warning.
+    return temp_r_; // dummy return to avoid compiler warning.
   }
 
   /** return old displacements set up by move() for optimized distance table consumers
@@ -299,16 +297,16 @@ public:
   virtual const DisplRow& getOldDispls() const
   {
     APP_ABORT("DistanceTableData::getOldDispls is used incorrectly! Contact developers on github.");
-    return Temp_dr; // dummy return to avoid compiler warning.
+    return temp_dr_; // dummy return to avoid compiler warning.
   }
 
   /** return the temporary distances when a move is proposed
    */
-  const DistRow& getTempDists() const { return Temp_r; }
+  const DistRow& getTempDists() const { return temp_r_; }
 
   /** return the temporary displacements when a move is proposed
    */
-  const DisplRow& getTempDispls() const { return Temp_dr; }
+  const DisplRow& getTempDispls() const { return temp_dr_; }
 
   /** evaluate the full Distance Table
    * @param P the target particle set
@@ -353,8 +351,8 @@ public:
    * @param iat source particle id
    * @param r distance
    * @param dr displacement
-   * @param newpos if true, use the data in Temp_r and Temp_dr for the proposed move.
-   *        if false, use the data in Distance[iat] and Displacements[iat]
+   * @param newpos if true, use the data in temp_r_ and temp_dr_ for the proposed move.
+   *        if false, use the data in distance_[iat] and displacements_[iat]
    * @return the id of the nearest particle, -1 not found
    */
   virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
