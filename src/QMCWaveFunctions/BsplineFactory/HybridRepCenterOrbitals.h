@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -10,12 +10,12 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////
 
-/** @file HybridAdoptorBase.h
+/** @file HybridRepCenterOrbitals.h
  *
- * Hybrid adoptor base class
+ * Hybrid representation atomic centered orbitals
  */
-#ifndef QMCPLUSPLUS_HYBRID_ADOPTOR_BASE_H
-#define QMCPLUSPLUS_HYBRID_ADOPTOR_BASE_H
+#ifndef QMCPLUSPLUS_HYBRIDREP_CENTER_ORBITALS_H
+#define QMCPLUSPLUS_HYBRIDREP_CENTER_ORBITALS_H
 
 #include <Particle/DistanceTableData.h>
 #include <QMCWaveFunctions/lcao/SoaSphericalTensor.h>
@@ -25,8 +25,9 @@
 namespace qmcplusplus
 {
 template<typename ST>
-struct AtomicOrbitalSoA
+class AtomicOrbitals
 {
+public:
   static const int D           = 3;
   using AtomicSplineType       = typename bspline_traits<ST, 1>::SplineType;
   using AtomicBCType           = typename bspline_traits<ST, 1>::BCType;
@@ -36,6 +37,7 @@ struct AtomicOrbitalSoA
 
   using vContainer_type = aligned_vector<ST>;
 
+private:
   // near core cutoff
   ST rmin;
   // far from core cutoff, rmin_sqrt>=rmin
@@ -43,7 +45,7 @@ struct AtomicOrbitalSoA
   ST cutoff, cutoff_buffer, spline_radius, non_overlapping_radius;
   int spline_npoints, BaseN;
   int NumBands, Npad;
-  PointType pos;
+  PointType center_pos;
   const int lmax, lm_tot;
   SoaSphericalTensor<ST> Ylm;
   vContainer_type l_vals;
@@ -53,8 +55,8 @@ struct AtomicOrbitalSoA
 
   vContainer_type localV, localG, localL;
 
-  AtomicOrbitalSoA(int Lmax)
-      : lmax(Lmax), lm_tot((Lmax + 1) * (Lmax + 1)), Ylm(Lmax)
+public:
+  AtomicOrbitals(int Lmax) : lmax(Lmax), lm_tot((Lmax + 1) * (Lmax + 1)), Ylm(Lmax)
   {
     r_power_minus_l.resize(lm_tot);
     l_vals.resize(lm_tot);
@@ -65,6 +67,15 @@ struct AtomicOrbitalSoA
     rmin      = std::max(rmin, std::numeric_limits<ST>::epsilon());
     rmin_sqrt = std::max(rmin, std::sqrt(std::numeric_limits<ST>::epsilon()));
   }
+
+  // accessing functions, const only
+  ST getCutoff() const { return cutoff; }
+  ST getCutoffBuffer() const { return cutoff_buffer; }
+  ST getSplineRadius() const { return spline_radius; }
+  ST getNonOverlappingRadius() const { return non_overlapping_radius; }
+  int getSplineNpoints() const { return spline_npoints; }
+  int getLmax() const { return lmax; }
+  const PointType& getCenterPos() const { return center_pos; }
 
   inline void resizeStorage(size_t Nb)
   {
@@ -78,7 +89,10 @@ struct AtomicOrbitalSoA
 
   void bcast_tables(Communicate* comm) { chunked_bcast(comm, SplineInst->getSplinePtr()); }
 
-  void gather_tables(Communicate* comm, std::vector<int>& offset) { gatherv(comm, SplineInst->getSplinePtr(), Npad, offset); }
+  void gather_tables(Communicate* comm, std::vector<int>& offset)
+  {
+    gatherv(comm, SplineInst->getSplinePtr(), Npad, offset);
+  }
 
   template<typename PT, typename VT>
   inline void set_info(const PT& R,
@@ -88,9 +102,9 @@ struct AtomicOrbitalSoA
                        const VT& non_overlapping_radius_in,
                        const int spline_npoints_in)
   {
-    pos[0]                 = R[0];
-    pos[1]                 = R[1];
-    pos[2]                 = R[2];
+    center_pos[0]          = R[0];
+    center_pos[1]          = R[1];
+    center_pos[2]          = R[2];
     cutoff                 = cutoff_in;
     cutoff_buffer          = cutoff_buffer_in;
     spline_radius          = spline_radius_in;
@@ -111,6 +125,8 @@ struct AtomicOrbitalSoA
     SplineInst = std::make_shared<MultiBspline1D<ST>>();
     SplineInst->create(grid, bc, lm_tot * Npad);
   }
+
+  inline size_t getSplineSizeInBytes() const { return SplineInst->sizeInByte(); }
 
   inline void flush_zero() { SplineInst->flush_zero(); }
 
@@ -143,7 +159,7 @@ struct AtomicOrbitalSoA
     success      = success && h5f.writeEntry(spline_radius, "spline_radius");
     success      = success && h5f.writeEntry(spline_npoints, "spline_npoints");
     success      = success && h5f.writeEntry(lmax, "l_max");
-    success      = success && h5f.writeEntry(pos, "position");
+    success      = success && h5f.writeEntry(center_pos, "position");
     einspline_engine<AtomicSplineType> bigtable(SplineInst->getSplinePtr());
     success = success && h5f.writeEntry(bigtable, "radial_spline");
     return success;
@@ -212,7 +228,7 @@ struct AtomicOrbitalSoA
     ST drx, dry, drz, rhatx, rhaty, rhatz, rinv;
     if (r > rmin)
     {
-      rinv  = 1.0 / r;
+      rinv = 1.0 / r;
     }
     else
     {
@@ -379,35 +395,39 @@ struct AtomicOrbitalSoA
   void evaluate_vgh(const ST& r, const PointType& dr, VV& myV, GV& myG, HT& myH)
   {
     //Needed to do tensor product here
-    APP_ABORT("AtomicOrbitalSoA::evaluate_vgh");
+    APP_ABORT("AtomicOrbitals::evaluate_vgh");
   }
-
 };
 
-/** adoptor class to match
- *
- */
 template<typename ST>
-struct HybridAdoptorBase
+class HybridRepCenterOrbitals
 {
+public:
   static const int D = 3;
-  using PointType    = typename AtomicOrbitalSoA<ST>::PointType;
+  using PointType    = typename AtomicOrbitals<ST>::PointType;
   using RealType     = typename DistanceTableData::RealType;
+  using PosType      = typename DistanceTableData::PosType;
 
-  // atomic centers
-  std::vector<AtomicOrbitalSoA<ST>> AtomicCenters;
+private:
+  ///atomic centers
+  std::vector<AtomicOrbitals<ST>> AtomicCenters;
   ///table index
   int myTableID;
-  //mapping supercell to primitive cell
+  ///mapping supercell to primitive cell
   std::vector<int> Super2Prim;
-  // r, dr for distance table
+  ///r from distance table
   RealType dist_r;
-  DistanceTableData::PosType dist_dr;
-  // for APBC
+  ///dr from distance table
+  PosType dist_dr;
+  ///for APBC
   PointType r_image;
-  // smooth function derivatives
-  RealType f, df_dr, d2f_dr2;
-  /// smoothing schemes
+  ///smooth function value
+  RealType f;
+  ///smooth function first derivative
+  RealType df_dr;
+  ///smooth function second derivative
+  RealType d2f_dr2;
+  ///smoothing schemes
   enum class smoothing_schemes
   {
     CONSISTENT = 0,
@@ -417,7 +437,8 @@ struct HybridAdoptorBase
   /// smoothing function
   smoothing_functions smooth_func_id;
 
-  HybridAdoptorBase() {}
+public:
+  HybridRepCenterOrbitals() {}
 
   void set_info(const ParticleSet& ions, ParticleSet& els, const std::vector<int>& mapping)
   {
@@ -432,7 +453,7 @@ struct HybridAdoptorBase
     for (int ic = 0; ic < AtomicCenters.size(); ic++)
     {
       AtomicCenters[ic].resizeStorage(Nb);
-      SplineCoefsBytes += AtomicCenters[ic].SplineInst->sizeInByte();
+      SplineCoefsBytes += AtomicCenters[ic].getSplineSizeInBytes();
     }
 
     app_log() << "MEMORY " << SplineCoefsBytes / (1 << 20) << " MB allocated "
@@ -524,12 +545,12 @@ struct HybridAdoptorBase
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.cutoff)
+    if (dist_r < myCenter.getCutoff())
     {
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
-      r_image = myCenter.pos + dr;
+      r_image = myCenter.getCenterPos() + dr;
       myCenter.evaluate_v(dist_r, dr, myV);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
     }
     return RealType(-1);
   }
@@ -547,7 +568,7 @@ struct HybridAdoptorBase
   {
     const int center_idx = VP.refSourcePtcl;
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    return VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx] < myCenter.non_overlapping_radius;
+    return VP.refPS.getDistTable(myTableID).getDistRow(VP.refPtcl)[center_idx] < myCenter.getNonOverlappingRadius();
   }
 
   // C2C, C2R cases
@@ -555,12 +576,12 @@ struct HybridAdoptorBase
   inline RealType evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx];
+    dist_r               = VP.refPS.getDistTable(myTableID).getDistRow(VP.refPtcl)[center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.cutoff)
+    if (dist_r < myCenter.getCutoff())
     {
-      myCenter.evaluateValues(VP.getDistTable(myTableID).Displacements, center_idx, dist_r, multi_myV);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      myCenter.evaluateValues(VP.getDistTable(myTableID).getDisplacements(), center_idx, dist_r, multi_myV);
+      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
     }
     return RealType(-1);
   }
@@ -574,19 +595,19 @@ struct HybridAdoptorBase
                                     SV& bc_signs)
   {
     const int center_idx = VP.refSourcePtcl;
-    dist_r               = VP.refPS.getDistTable(myTableID).Distances[VP.refPtcl][center_idx];
+    dist_r               = VP.refPS.getDistTable(myTableID).getDistRow(VP.refPtcl)[center_idx];
     auto& myCenter       = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.cutoff)
+    if (dist_r < myCenter.getCutoff())
     {
-      const auto& displ = VP.getDistTable(myTableID).Displacements;
+      const auto& displ = VP.getDistTable(myTableID).getDisplacements();
       for (int ivp = 0; ivp < VP.getTotalNum(); ivp++)
       {
-        r_image       = myCenter.pos - displ[ivp][center_idx];
+        r_image       = myCenter.getCenterPos() - displ[ivp][center_idx];
         bc_signs[ivp] = get_bc_sign(VP.R[ivp], PrimLattice, HalfG);
         ;
       }
       myCenter.evaluateValues(displ, center_idx, dist_r, multi_myV);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
     }
     return RealType(-1);
   }
@@ -600,12 +621,12 @@ struct HybridAdoptorBase
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.cutoff)
+    if (dist_r < myCenter.getCutoff())
     {
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
-      r_image = myCenter.pos + dr;
+      r_image = myCenter.getCenterPos() + dr;
       myCenter.evaluate_vgl(dist_r, dr, myV, myG, myL);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
     }
     return RealType(-1);
   }
@@ -619,12 +640,12 @@ struct HybridAdoptorBase
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
-    if (dist_r < myCenter.cutoff)
+    if (dist_r < myCenter.getCutoff())
     {
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
-      r_image = myCenter.pos + dr;
+      r_image = myCenter.getCenterPos() + dr;
       myCenter.evaluate_vgh(dist_r, dr, myV, myG, myH);
-      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+      return smooth_function(myCenter.getCutoffBuffer(), myCenter.getCutoff(), dist_r);
     }
     return RealType(-1);
   }
@@ -640,34 +661,36 @@ struct HybridAdoptorBase
 
   // interpolate buffer region, value, gradients and laplacian
   template<typename VV, typename GV>
-  inline void interpolate_buffer_vgl(VV& psi, GV& dpsi, VV& d2psi, const VV& psi_AO, const GV& dpsi_AO, const VV& d2psi_AO) const
+  inline void interpolate_buffer_vgl(VV& psi,
+                                     GV& dpsi,
+                                     VV& d2psi,
+                                     const VV& psi_AO,
+                                     const GV& dpsi_AO,
+                                     const VV& d2psi_AO) const
   {
     const RealType cone(1), ctwo(2);
     const RealType rinv(1.0 / dist_r);
-    if(smooth_scheme == smoothing_schemes::CONSISTENT)
+    if (smooth_scheme == smoothing_schemes::CONSISTENT)
       for (size_t i = 0; i < psi.size(); i++)
       { // psi, dpsi, d2psi are all consistent
-        d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f) +
-            df_dr * rinv * ctwo * dot(dpsi[i] - dpsi_AO[i], dist_dr) +
+        d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f) + df_dr * rinv * ctwo * dot(dpsi[i] - dpsi_AO[i], dist_dr) +
             (psi_AO[i] - psi[i]) * (d2f_dr2 + ctwo * rinv * df_dr);
-        dpsi[i] = dpsi_AO[i] * f + dpsi[i] * (cone - f) +
-            df_dr * rinv * dist_dr * (psi[i] - psi_AO[i]);
-        psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
+        dpsi[i] = dpsi_AO[i] * f + dpsi[i] * (cone - f) + df_dr * rinv * dist_dr * (psi[i] - psi_AO[i]);
+        psi[i]  = psi_AO[i] * f + psi[i] * (cone - f);
       }
-    else if(smooth_scheme == smoothing_schemes::SMOOTHALL)
+    else if (smooth_scheme == smoothing_schemes::SMOOTHALL)
       for (size_t i = 0; i < psi.size(); i++)
       {
         d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f);
-        dpsi[i] = dpsi_AO[i] * f + dpsi[i] * (cone - f);
-        psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
+        dpsi[i]  = dpsi_AO[i] * f + dpsi[i] * (cone - f);
+        psi[i]   = psi_AO[i] * f + psi[i] * (cone - f);
       }
-    else if(smooth_scheme == smoothing_schemes::SMOOTHPARTIAL)
+    else if (smooth_scheme == smoothing_schemes::SMOOTHPARTIAL)
       for (size_t i = 0; i < psi.size(); i++)
       { // dpsi, d2psi are consistent but psi is not.
-        d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f) +
-            df_dr * rinv * ctwo * dot(dpsi[i] - dpsi_AO[i], dist_dr);
-        dpsi[i] = dpsi_AO[i] * f + dpsi[i] * (cone - f);
-        psi[i] = psi_AO[i] * f + psi[i] * (cone - f);
+        d2psi[i] = d2psi_AO[i] * f + d2psi[i] * (cone - f) + df_dr * rinv * ctwo * dot(dpsi[i] - dpsi_AO[i], dist_dr);
+        dpsi[i]  = dpsi_AO[i] * f + dpsi[i] * (cone - f);
+        psi[i]   = psi_AO[i] * f + psi[i] * (cone - f);
       }
     else
       throw std::runtime_error("Unknown smooth scheme!");
@@ -678,13 +701,16 @@ struct HybridAdoptorBase
     const RealType cone(1);
     if (r < cutoff_buffer)
       return cone;
-    const RealType scale  = cone / (cutoff - cutoff_buffer);
-    const RealType x      = (r - cutoff_buffer) * scale;
-    f = smoothing(smooth_func_id, x, df_dr, d2f_dr2);
-    df_dr   *= scale;
-    d2f_dr2 *= scale*scale;
+    const RealType scale = cone / (cutoff - cutoff_buffer);
+    const RealType x     = (r - cutoff_buffer) * scale;
+    f                    = smoothing(smooth_func_id, x, df_dr, d2f_dr2);
+    df_dr *= scale;
+    d2f_dr2 *= scale * scale;
     return f;
   }
+
+  template<class BSPLINESPO>
+  friend class HybridRepSetReader;
 };
 
 } // namespace qmcplusplus

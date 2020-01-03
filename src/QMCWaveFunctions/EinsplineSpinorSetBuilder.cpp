@@ -24,7 +24,6 @@
 #include "Utilities/Timer.h"
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
 
 namespace qmcplusplus

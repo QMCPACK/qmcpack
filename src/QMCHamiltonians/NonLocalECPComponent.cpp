@@ -140,7 +140,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     for (int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMove(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j], false);
       if(use_DLA)
         psiratio[j] = psi.calcRatio(W, iel, TrialWaveFunction::ComputeType::FERMIONIC) * sgridweight_m[j];
       else
@@ -237,7 +237,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMove(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j], false);
       ValueType ratio = psi.calcRatioGrad(W, iel, gradtmp_);
       psiratio[j] = ratio * sgridweight_m[j];
       //QMCPACK spits out $\nabla\Psi(q)/\Psi(q)$.
@@ -400,7 +400,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      W.makeMove(iel, deltaV[j]);
+      W.makeMove(iel, deltaV[j], false);
       ValueType ratio = psi.calcRatioGrad(W, iel, gradtmp_);
       psiratiofull_[j] = ratio;
       psiratio[j] = ratio * sgridweight_m[j];
@@ -447,12 +447,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       //This sequence is necessary to update the distance tables and make the 
       //inverse matrix available for force computation.  Move the particle to 
       //quadrature point...
-      W.setActive(iel); // initialize distances for iel
       W.makeMove(iel, deltaV[j]);
       psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);
       W.acceptMove(iel); // it only updates the jel-th row of e-e table
-      W.update(true); // need this to update the full e-e table.
       //Done with the move.  Ready for force computation.  
     
       iongradtmp_ = psi.evalGradSource(W, ions, jat);
@@ -465,12 +463,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       deltaV[j] = dr - r * rrotsgrid_m[j];
 
       // mirror the above in reverse order
-      W.setActive(iel);
       W.makeMove(iel, deltaV[j]);
       psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);
       W.acceptMove(iel);
-      W.update(true);
     }
   }
 

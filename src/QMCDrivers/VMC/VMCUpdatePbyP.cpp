@@ -61,7 +61,6 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
       RealType sqrttau     = std::sqrt(tauovermass);
       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
-        W.setActive(iat);
         PosType dr;
         if (UseDrift)
         {
@@ -97,7 +96,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           moved = true;
           ++nAccept;
           Psi.acceptMove(W, iat);
-          W.acceptMove(iat);
+          W.acceptMove(iat, true);
         }
         else
         {
