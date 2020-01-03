@@ -155,7 +155,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
       for (int iat = 0; iat < NumIons; iat++)
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
-          Value += PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat],
+          Value += PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat],
                                                   forces[iat], PulayTerm, Tmove, Txy);
           NeighborIons.push_back(iat);
           IonNeighborElecs.getNeighborList(iat).push_back(jel);
@@ -222,7 +222,7 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
         for (int iat = 0; iat < NumIons; iat++)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], forces[iat],
+            RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat],
                                                     Tmove, Txy);
             Value += pairpot;
             NeighborIons.push_back(iat);
@@ -247,7 +247,7 @@ void NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
         for (int iat = 0; iat < NumIons; iat++)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], RealType(-1) * displ[iat], Tmove, Txy);
+            RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], Tmove, Txy);
             Value += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
@@ -320,7 +320,7 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
     for (int atom_index = 0; atom_index < NeighborIons.size(); atom_index++)
     {
       const int iat = NeighborIons[atom_index];
-      PP[iat]->evaluateOne(P, iat, Psi, ref_elec, dist[iat], RealType(-1) * displ[iat], true, Txy);
+      PP[iat]->evaluateOne(P, iat, Psi, ref_elec, dist[iat], -displ[iat], true, Txy);
     }
   }
   else
