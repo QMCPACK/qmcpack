@@ -139,7 +139,7 @@ public:
   template<typename T>
   void randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG);
 
-  void buildQuadraturePositions(const PosType& ref_elec_pos, RealType r, const PosType& dr);
+  void buildQuadraturePositions(const PosType& ref_elec_pos, RealType r, const PosType& dr, std::vector<PosType>& deltaV, ParticleSet::ParticlePos_t& VPos) const;
 
   /** contribute local non-local move data
    * @param iel reference electron id.

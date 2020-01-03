@@ -120,7 +120,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
   constexpr RealType czero(0);
   constexpr RealType cone(1);
 
-  buildQuadraturePositions(W.R[iel], r, dr);
+  buildQuadraturePositions(W.R[iel], r, dr, deltaV, VPos);
 
   if (VP)
   {
@@ -197,7 +197,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   constexpr RealType czero(0);
   constexpr RealType cone(1);
 
-  buildQuadraturePositions(W.R[iel], r, dr);
+  buildQuadraturePositions(W.R[iel], r, dr, deltaV, VPos);
 
   GradType gradtmp_(0);
   PosType realgradtmp_(0);
@@ -334,7 +334,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   constexpr RealType czero(0);
   constexpr RealType cone(1);
 
-  buildQuadraturePositions(W.R[iel], r, dr);
+  buildQuadraturePositions(W.R[iel], r, dr, deltaV, VPos);
 
   GradType gradtmp_(0);
   PosType realgradtmp_(0);
@@ -359,7 +359,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   //resize everything.
   pulay_ref.resize(ions.getTotalNum());
   pulaytmp_.resize(ions.getTotalNum());
-  for (unsigned int j = 0; j < nknot; j++)
+  for (size_t j = 0; j < nknot; j++)
     pulay_quad[j].resize(ions.getTotalNum());
 
   if (VP)
@@ -412,11 +412,11 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 
   //Now to construct the 3N dimensional ionic wfn derivatives for pulay terms.
   //This is going to be slow an painful for now.
-  for (unsigned int jat = 0; jat < ions.getTotalNum(); jat++)
+  for (size_t jat = 0; jat < ions.getTotalNum(); jat++)
   {
     pulay_ref[jat] = psi.evalGradSource(W, ions, jat);
     gradpotterm_   = 0;
-    for (unsigned int j = 0; j < nknot; j++)
+    for (size_t j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
       //This sequence is necessary to update the distance tables and make the 
@@ -549,7 +549,7 @@ void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerato
       sphere[OHMMS_DIM * i + j] = rrotsgrid_m[i][j];
 }
 
-void NonLocalECPComponent::buildQuadraturePositions(const PosType& ref_elec_pos, RealType r, const PosType& dr)
+void NonLocalECPComponent::buildQuadraturePositions(const PosType& ref_elec_pos, RealType r, const PosType& dr, std::vector<PosType>& deltaV, ParticleSet::ParticlePos_t& VPos) const
 {
   for (int j = 0; j < nknot; j++)
   {
