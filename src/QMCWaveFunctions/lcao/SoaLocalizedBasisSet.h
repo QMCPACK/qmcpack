@@ -171,15 +171,15 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    * @param P quantum particleset
    * @param iat active particle
    * @param vgl Matrix(5,BasisSetSize)
-   * @param trialMove if true, use getTemporalDists()/getTemporalDispls()
+   * @param trialMove if true, use getTempDists()/getTempDispls()
    */
   inline void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)
   {
     const auto& IonID(ions_.GroupID);
     const auto& coordR = P.activeR(iat);
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.getDistRow(iat);
-    const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.getDisplRow(iat);
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+    const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
     PosType Tv;
     for (int c = 0; c < NumCenters; c++)
@@ -196,14 +196,14 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    * @param P quantum particleset
    * @param iat active particle
    * @param vgl Matrix(10,BasisSetSize)
-   * @param trialMove if true, use getTemporalDists()/getTemporalDispls()
+   * @param trialMove if true, use getTempDists()/getTempDispls()
    */
   inline void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)
   {
     const auto& IonID(ions_.GroupID);
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.getDistRow(iat);
-    const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.getDisplRow(iat);
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+    const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
     for (int c = 0; c < NumCenters; c++)
     {
       LOBasisSet[IonID[c]]->evaluateVGH(P.Lattice, dist[c], displ[c], BasisOffset[c], vgh);
@@ -214,7 +214,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    * @param P quantum particleset
    * @param iat active particle
    * @param vghgh Matrix(20,BasisSetSize)
-   * @param trialMove if true, use getTemporalDists()/getTemporalDispls()
+   * @param trialMove if true, use getTempDists()/getTempDispls()
    */
   inline void evaluateVGHGH(const ParticleSet& P, int iat, vghgh_type& vghgh)
   {
@@ -222,8 +222,8 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 
     const auto& IonID(ions_.GroupID);
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.getDistRow(iat);
-    const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.getDisplRow(iat);
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+    const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
     for (int c = 0; c < NumCenters; c++)
     {
       LOBasisSet[IonID[c]]->evaluateVGHGH(P.Lattice, dist[c], displ[c], BasisOffset[c], vghgh);
@@ -232,7 +232,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 
   /** compute values for the iat-paricle move
    *
-   * Always uses getTemporalDists() and getTemporalDispls()
+   * Always uses getTempDists() and getTempDispls()
    * Tv is a translation vector; In PBC, in order to reduce the number
    * of images that need to be summed over when generating the AO the 
    * nearest image displacement, dr, is used. Tv corresponds to the 
@@ -246,8 +246,8 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     const auto& IonID(ions_.GroupID);
     const auto& coordR = P.activeR(iat);
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.getDistRow(iat);
-    const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.getDisplRow(iat);
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+    const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
     PosType Tv;
     for (int c = 0; c < NumCenters; c++)
@@ -275,8 +275,8 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 
     const auto& IonID(ions_.GroupID);
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.getDistRow(iat);
-    const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.getDisplRow(iat);
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+    const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
 
     PosType Tv;
@@ -340,8 +340,8 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 
     const auto& IonID(ions_.GroupID);
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.getDistRow(iat);
-    const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.getDisplRow(iat);
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+    const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
     //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
     //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron

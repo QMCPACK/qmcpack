@@ -304,11 +304,11 @@ public:
 
   /** return the temporary distances when a move is proposed
    */
-  const DistRow& getTemporalDists() const { return Temp_r; }
+  const DistRow& getTempDists() const { return Temp_r; }
 
   /** return the temporary displacements when a move is proposed
    */
-  const DisplRow& getTemporalDispls() const { return Temp_dr; }
+  const DisplRow& getTempDispls() const { return Temp_dr; }
 
   /** evaluate the full Distance Table
    * @param P the target particle set
