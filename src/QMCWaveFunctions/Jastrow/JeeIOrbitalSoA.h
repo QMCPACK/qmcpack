@@ -39,8 +39,8 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   ///element position type
   using posT = TinyVector<valT, OHMMS_DIM>;
   ///use the same container
-  using DistRowType  = DistanceTableData::DistRowType;
-  using DisplRowType = DistanceTableData::DisplRowType;
+  using DistRow  = DistanceTableData::DistRow;
+  using DisplRow = DistanceTableData::DisplRow;
   ///table index for el-el
   const int ee_Table_ID_;
   ///table index for i-el
@@ -587,8 +587,8 @@ public:
   inline valT computeU(const ParticleSet& P,
                        int jel,
                        int jg,
-                       const DistRowType& distjI,
-                       const DistRowType& distjk,
+                       const DistRow& distjI,
+                       const DistRow& distjk,
                        std::vector<int>& ions_nearby)
   {
     ions_nearby.clear();
@@ -725,10 +725,10 @@ public:
 
   inline void computeU3(const ParticleSet& P,
                         int jel,
-                        const DistRowType& distjI,
-                        const DisplRowType& displjI,
-                        const DistRowType& distjk,
-                        const DisplRowType& displjk,
+                        const DistRow& distjI,
+                        const DisplRow& displjI,
+                        const DistRow& distjk,
+                        const DisplRow& displjk,
                         valT& Uj,
                         posT& dUj,
                         valT& d2Uj,

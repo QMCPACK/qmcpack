@@ -792,8 +792,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSRwithForces(ParticleSet& P)
   {
     for (size_t b = 0; b < NptclB; ++b)
     {
-      const DistRowType& dist = d_ab.getDistRow(b);
-      const DisplRowType& dr     = d_ab.getDisplRow(b);
+      const auto& dist = d_ab.getDistRow(b);
+      const auto& dr     = d_ab.getDisplRow(b);
       mRealType esum                = czero;
       for (size_t a = 0; a < NptclA; ++a)
       {

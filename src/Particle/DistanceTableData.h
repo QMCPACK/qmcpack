@@ -79,8 +79,8 @@ struct DistanceTableData
   using IndexType    = QMCTraits::IndexType;
   using RealType     = QMCTraits::RealType;
   using PosType      = QMCTraits::PosType;
-  using DistRowType  = Vector<RealType, aligned_allocator<RealType>>;
-  using DisplRowType = VectorSoaContainer<RealType, DIM>;
+  using DistRow  = Vector<RealType, aligned_allocator<RealType>>;
+  using DisplRow = VectorSoaContainer<RealType, DIM>;
 #ifndef ENABLE_SOA
   using IndexVectorType = aligned_vector<IndexType>;
   using TempDistType    = TempDisplacement<RealType, DIM>;
@@ -137,29 +137,29 @@ protected:
   /**defgroup SoA data */
   /*@{*/
   /** Distances[i][j] , [N_targets][N_sources]
-   *  Note: Derived classes decide if it is a memory view or the actaully storage
+   *  Note: Derived classes decide if it is a memory view or the actual storage
    *        For derived AA, only the lower triangle (j<i) is up-to-date after pbyp move
    *          The upper triangle is symmetric to the lower one only when the full table is evaluated from scratch.
    *          Avoid using the upper triangle because we may change the code to only allocate the lower triangle part.
    *        For derived BA, the full table is up-to-date after pbyp move
    */
-  std::vector<DistRowType> Distances;
+  std::vector<DistRow> Distances;
 
   /** Displacements[N_targets]x[3][N_sources]
-   *  Note: Derived classes decide if it is a memory view or the actaully storage
+   *  Note: Derived classes decide if it is a memory view or the actual storage
    *        Displacements[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
    *        For derived AA, A1=A2=A, only the lower triangle (j<i) is allocated in memoryPool_displs_
    *          For this reason, Displacements[i] and Displacements[i+1] overlap in memory
    *          and they must be updated in order during PbyP move.
    *        For derived BA, A1=A, A2=B, the full table is allocated.
    */
-  std::vector<DisplRowType> Displacements;
+  std::vector<DisplRow> Displacements;
 
   /** temp_r */
-  DistRowType Temp_r;
+  DistRow Temp_r;
 
   /** temp_dr */
-  DisplRowType Temp_dr;
+  DisplRow Temp_dr;
   /*@}*/
 
   /** whether full table needs to be ready at anytime or not
@@ -272,23 +272,23 @@ public:
 
   /** return full table distances
    */
-  const std::vector<DistRowType>& getDistances() const { return Distances; }
+  const std::vector<DistRow>& getDistances() const { return Distances; }
 
   /** return full table displacements
    */
-  const std::vector<DisplRowType>& getDisplacements() const { return Displacements; }
+  const std::vector<DisplRow>& getDisplacements() const { return Displacements; }
 
   /** return a row of distances for a given target particle
    */
-  const DistRowType& getDistRow(int iel) const { return Distances[iel]; }
+  const DistRow& getDistRow(int iel) const { return Distances[iel]; }
 
   /** return a row of displacements for a given target particle
    */
-  const DisplRowType& getDisplRow(int iel) const { return Displacements[iel]; }
+  const DisplRow& getDisplRow(int iel) const { return Displacements[iel]; }
 
   /** return old distances set up by move() for optimized distance table consumers
    */
-  virtual const DistRowType& getOldDists() const
+  virtual const DistRow& getOldDists() const
   {
     APP_ABORT("DistanceTableData::getOldDists is used incorrectly! Contact developers on github.");
     return Temp_r; // dummy return to avoid compiler warning.
@@ -296,7 +296,7 @@ public:
 
   /** return old displacements set up by move() for optimized distance table consumers
    */
-  virtual const DisplRowType& getOldDispls() const
+  virtual const DisplRow& getOldDispls() const
   {
     APP_ABORT("DistanceTableData::getOldDispls is used incorrectly! Contact developers on github.");
     return Temp_dr; // dummy return to avoid compiler warning.
@@ -304,11 +304,11 @@ public:
 
   /** return the temporary distances when a move is proposed
    */
-  const DistRowType& getTemporalDists() const { return Temp_r; }
+  const DistRow& getTemporalDists() const { return Temp_r; }
 
   /** return the temporary displacements when a move is proposed
    */
-  const DisplRowType& getTemporalDispls() const { return Temp_dr; }
+  const DisplRow& getTemporalDispls() const { return Temp_dr; }
 
   /** evaluate the full Distance Table
    * @param P the target particle set
@@ -319,10 +319,10 @@ public:
    * @param P the target particle set
    * @param rnew proposed new position
    * @param iat the particle to be moved
-   * @param prepare_old if true, prepare old distances and displacements for using getOldDists and getOldDispls functions later.
+   * @param prepare_old if true, prepare (temporary) old distances and displacements for using getOldDists and getOldDispls functions in acceptMove.
    *
    * Note: some distance table consumers (WaveFunctionComponent) have optimized code paths which require prepare_old = true for accepting a move.
-   * Drivers/Hamiltonians know whether moves will be accepted or not and manager this flag when calling ParticleSet::makeMoveXXX functions.
+   * Drivers/Hamiltonians know whether moves will be accepted or not and manage this flag when calling ParticleSet::makeMoveXXX functions.
    */
   virtual void move(const ParticleSet& P, const PosType& rnew, const IndexType iat = 0, bool prepare_old = true) = 0;
 

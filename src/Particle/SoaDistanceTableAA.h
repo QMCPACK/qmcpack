@@ -29,10 +29,10 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   aligned_vector<RealType> memoryPool_displs_;
 
   /// old distances
-  DistRowType old_r_;
+  DistRow old_r_;
 
   /// old displacements
-  DisplRowType old_dr_;
+  DisplRow old_dr_;
 
   SoaDistanceTableAA(ParticleSet& target) : DTD_BConds<T, D, SC>(target.Lattice), DistanceTableData(target, target)
   {
@@ -74,8 +74,8 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     Temp_dr.resize(N_targets);
   }
 
-  const DistRowType& getOldDists() const { return old_r_; }
-  const DisplRowType& getOldDispls() const { return old_dr_; }
+  const DistRow& getOldDists() const { return old_r_; }
+  const DisplRow& getOldDispls() const { return old_dr_; }
 
   inline void evaluate(ParticleSet& P)
   {
