@@ -664,7 +664,7 @@ public:
       if ( this->_le_der.rows() != this->_der_rat.rows() && this->_le_der.cols() != this->_der_rat.cols())
         throw formic::Exception("the input derivative vector matrices are of different size!");
 
-      // if the approximate flag is set to be ture, then throw out an exception 
+      // if the approximate flag is set to be true, then throw out an exception 
       if ( approximate )
         throw formic::Exception("Davidson solver's matrix-vector multiplication routine doesn't support approximate matrix!");
 
@@ -777,7 +777,7 @@ public:
       if ( this->_le_der.rows() != this->_der_rat.rows() && this->_le_der.cols() != this->_der_rat.cols() )
         throw formic::Exception("input derivative vectors are of different size");
 
-      // if the approximate flag is set to be ture, then throw out an exception 
+      // if the approximate flag is set to be true, then throw out an exception 
       if ( approximate )
         throw formic::Exception("Davidson solver's matrix-vector multiplication routine doesn't support approximate matrix!");
 
