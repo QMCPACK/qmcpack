@@ -416,7 +416,7 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
 
 #pragma omp parallel for reduction(+ : ve)
     for(size_t n=0; n<Npairs; ++n)
-      ve += qq[n]*ewaldSum(rr[n],a,tol/qq[n]);
+      ve += qq[n]*ewaldSum(rr[n],a,tol/qq[n]/Npairs);
   }
 
   return ve;
