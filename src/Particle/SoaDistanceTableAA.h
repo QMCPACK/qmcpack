@@ -26,7 +26,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   int Ntargets_padded;
 
   ///actual memory for Displacements
-  aligned_vector<RealType> memoryPool_displs_;
+  aligned_vector<RealType> memory_pool_displs_;
 
   /// old distances
   DistRow old_r_;
@@ -57,13 +57,13 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     // initialize memory containers and views
     Ntargets_padded         = getAlignedSize<T>(n);
     const size_t total_size = compute_size(N_targets);
-    memoryPool_displs_.resize(total_size * D);
+    memory_pool_displs_.resize(total_size * D);
     Distances.resize(N_targets);
     Displacements.resize(N_targets);
     for (int i = 0; i < N_targets; ++i)
     {
       Distances[i].resize(Ntargets_padded);
-      Displacements[i].attachReference(i, total_size, memoryPool_displs_.data() + compute_size(i));
+      Displacements[i].attachReference(i, total_size, memory_pool_displs_.data() + compute_size(i));
     }
 
     old_r_.resize(N_targets);
