@@ -50,7 +50,8 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
   else
   {
 #ifdef ENABLE_SOA
-    APP_ABORT("createDistanceTable (AB). Using array-of-structure (AoS) data layout is no longer supported in builds with ENABLE_SOA=1.");
+    APP_ABORT("createDistanceTable (AB). Using array-of-structure (AoS) data layout is no longer supported in builds "
+              "with ENABLE_SOA=1.");
 #else
     o << "    Using array-of-structure (AoS) data layout (less efficient than SoA)" << std::endl;
 #endif
@@ -184,10 +185,10 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
   }
 
   //set dt properties
-  dt->DTType   = (useSoA) ? DT_SOA : DT_AOS;
+  dt->DTType = (useSoA) ? DT_SOA : DT_AOS;
   std::ostringstream p;
   p << s.getName() << "_" << t.getName();
-  dt->Name = p.str(); //assign the table name
+  dt->setName(p.str()); //assign the table name
 
   description << o.str() << std::endl;
 
