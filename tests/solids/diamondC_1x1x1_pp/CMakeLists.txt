@@ -849,6 +849,30 @@ ENDIF()
                     3 DET_DIAMOND_DMC_MWALKERS2_SCALARS # DMC cycle 2
                     )
 
+
+  # traces tests
+  set(traces_python_reqs numpy;h5py)
+  CHECK_PYTHON_REQS(traces_python_reqs diamond-traces add_traces_tests)
+  if (add_traces_tests)
+    # traces with only scalars on
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars.in.xml
+      1 1
+      check_traces.py -p qmc_trace_scalars -s '0,1' -m 'vmc,dmc' --dmc_steps_exclude=1
+      )
+
+    # traces with only selective scalars
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars_sel
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars_selective.in.xml
+      1 1
+      check_traces.py -p qmc_trace_scalars_selective -s '0,1' -m 'vmc,dmc' -q 'Kinetic,ElecElec' --dmc_steps_exclude=1
+      )
+  endif()
+
 # CUDA references
 ELSE()
  IF(QMC_MIXED_PRECISION)

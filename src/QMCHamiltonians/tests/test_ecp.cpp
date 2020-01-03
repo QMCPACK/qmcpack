@@ -316,6 +316,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
   double logpsi = psi.evaluateLog(elec);
+  REQUIRE(logpsi == Approx(5.1497823982));
 
   double Value1(0.0);
 #ifdef ENABLE_SOA
@@ -332,8 +333,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   for (int jel = 0; jel < elec.getTotalNum(); jel++)
   {
-    const auto& dist  = myTable.Distances[jel];
-    const auto& displ = myTable.Displacements[jel];
+    const auto& dist  = myTable.getDistRow(jel);
+    const auto& displ = myTable.getDisplRow(jel);
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
       if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
       {

@@ -135,7 +135,6 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
     for (int j = 0; j < nknot; j++)
     {
       PosType pos_now = W.R[iel];
-      W.setActive(iel);
       W.makeMove(iel, deltarV[j]);
       psiratio[j] = psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);
@@ -149,7 +148,6 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
         dratio(v, j) = dlogpsi_t[v];
 
       PosType md = -1.0 * deltarV[j];
-      W.setActive(iel);
       W.makeMove(iel, md);
       psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);

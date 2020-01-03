@@ -192,10 +192,8 @@ int main(int argc, char** argv)
       int naccepted=0;
       for(int iel=0; iel<nels; ++iel)
       {
-        els.setActive(iel);
         PosType grad_soa=J.evalGrad(els,iel);
 
-        els_aos.setActive(iel);
         PosType grad_aos=J_aos.evalGrad(els_aos,iel)-grad_soa;
 
         g_eval+=sqrt(dot(grad_aos,grad_aos));
@@ -273,7 +271,7 @@ int main(int argc, char** argv)
       int nsphere=0;
       for(int jel=0; jel<nels; ++jel)
       {
-        const auto* restrict dist = d_ie.Distances[jel];
+        const auto& dist = d_ie.getDistRow(jel);
         for(int iat=0; iat<nions; ++iat)
           if(dist[iat]<Rmax)
           {

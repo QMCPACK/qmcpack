@@ -227,6 +227,10 @@ private:
   PsiValueType ratioGrad_compute(int iat, GradType& grad_iat);
 };
 
+extern template class DiracDeterminant<>;
+#if defined(ENABLE_CUDA)
+extern template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#endif
 
 } // namespace qmcplusplus
 #endif

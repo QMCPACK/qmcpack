@@ -104,6 +104,8 @@ public:
    */
   inline int size() const { return OrbitalSetSize; }
 
+  inline const std::string& getClassName() const { return className; }
+
   /** print basic SPOSet information
    */
   void basic_report(const std::string& pad = "");

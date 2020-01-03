@@ -165,13 +165,16 @@ BareForce::Return_t BareForce::evaluate(ParticleSet& P)
   const ParticleSet::Scalar_t* restrict Qat = P.Z.first_address();
   //Loop over distinct eln-ion pairs
 #ifdef ENABLE_SOA
-  for (int iat = 0; iat < d_ab.sources(); iat++)
+  for (int jat = 0; jat < d_ab.targets(); jat++)
   {
-      for (int jat = 0; jat < d_ab.targets(); jat++) {
-        real_type rinv = 1.0/d_ab.Distances(jat,iat);
-        real_type r3zz = Qat[jat] * Zat[iat] * rinv * rinv * rinv;
-        forces[iat] += r3zz * d_ab.Displacements[jat][iat];
-      }
+    const auto& ab_dist  = d_ab.getDistRow(jat);
+    const auto& ab_displ = d_ab.getDisplRow(jat);
+    for (int iat = 0; iat < d_ab.sources(); iat++)
+    {
+      real_type rinv = 1.0/ab_dist[iat];
+      real_type r3zz = Qat[jat] * Zat[iat] * rinv * rinv * rinv;
+      forces[iat] += r3zz * ab_displ[iat];
+    }
   }
 #else
   for (int iat = 0; iat < Nnuc; iat++)

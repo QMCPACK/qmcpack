@@ -104,7 +104,7 @@ struct Walker
   typedef PooledMemory<FullPrecRealType> WFBuffer_t;
   typedef PooledData<RealType> Buffer_t;
   /** }@ */
-  
+
   ///id reserved for forward walking
   long ID;
   ///id reserved for forward walking
@@ -130,7 +130,7 @@ struct Walker
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
   ParticlePos_t R;
-  
+
   //Dynamical spin variable.
   ParticleScalar_t spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
@@ -294,7 +294,7 @@ struct Walker
     ReleasedNodeAge    = a.ReleasedNodeAge;
     if (R.size() != a.R.size())
       resize(a.R.size());
-    R = a.R;
+    R     = a.R;
     spins = a.spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
     G = a.G;

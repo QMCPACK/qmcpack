@@ -95,10 +95,20 @@ def load_from_pyscf_chk(chkfile,hcore=None,orthoAO=False):
 
     if singleK:
         assert(nkpts==1)
-        assert len(fock.shape) == 2
-        assert fock.shape[0] == nao
-        fock = fock.reshape((1,1)+fock.shape)
-        mo_energy = mo_energy.reshape((1,-1))
+        if isUHF:
+            assert len(fock.shape) == 3
+            assert fock.shape[0] == 2
+            assert fock.shape[1] == nao
+            fock = fock.reshape((2,1,fock.shape[1],fock.shape[2]))
+            assert len(Xocc.shape) == 2
+            Xocc = Xocc.reshape((2,1,Xocc.shape[1]))
+            assert len(mo_energy.shape) == 2
+            mo_energy = mo_energy.reshape((2,1,mo_energy.shape[1]))
+        else:
+            assert len(fock.shape) == 2
+            assert fock.shape[0] == nao
+            fock = fock.reshape((1,1)+fock.shape)
+            mo_energy = mo_energy.reshape((1,-1))
     if len(fock.shape) == 3:
         fock = fock.reshape((1,)+fock.shape)
     scf_data = {'cell': cell, 'kpts': kpts,
@@ -124,10 +134,14 @@ def load_from_pyscf_chk_mol(chkfile, base='scf'):
         except KeyError:
             s1e = mol.intor('int1e_ovlp_sph')
             X = get_ortho_ao_mol(s1e)
+        try:
+            df_ints = fh5['j3c'][:]
+        except KeyError:
+            df_ints = None
     mo_occ = numpy.array(lib.chkfile.load(chkfile, base+'/mo_occ'))
     mo_coeff = numpy.array(lib.chkfile.load(chkfile, base+'/mo_coeff'))
     uhf = len(mo_coeff.shape) == 3
     scf_data = {'mol': mol, 'mo_occ': mo_occ, 'hcore': hcore,
                 'X': X, 'mo_coeff': mo_coeff,
-                'isUHF': uhf}
+                'isUHF': uhf, 'df_ints': df_ints}
     return scf_data
