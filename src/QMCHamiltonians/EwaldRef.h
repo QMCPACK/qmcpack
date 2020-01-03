@@ -280,7 +280,7 @@ real_t madelungSum(const RealMat& a, real_t tol = 1e-10)
   real_t kconst  = -1. / (4 * std::pow(kconv, 2));
   real_t kfactor = 4 * M_PI / volume;
 
-  // Create real-/k-space fuctors for terms within the sums in formula 7
+  // Create real-/k-space functors for terms within the sums in formula 7
   RspaceMadelungTerm rfunc(a, rconst);
   KspaceMadelungTerm kfunc(b, kconst, kfactor);
 
@@ -340,7 +340,7 @@ real_t ewaldSum(const RealVec& r, const RealMat& a, real_t tol = 1e-10)
   real_t kconst  = -std::pow(kconv, 2) / 2;
   real_t kfactor = 4 * M_PI / volume;
 
-  // Create real-/k-space fuctors for terms within the sums in formula 6
+  // Create real-/k-space functors for terms within the sums in formula 6
   RspaceEwaldTerm rfunc(r, a, rconst);
   KspaceEwaldTerm kfunc(r, b, kconst, kfactor);
 

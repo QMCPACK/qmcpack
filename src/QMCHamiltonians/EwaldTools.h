@@ -263,7 +263,7 @@ public:
     // Set Madelung tolerance
     real_t tol_madelung = tol * 2. / QQmax;
 
-    // Create real-/k-space fuctors for terms within the Madelung sums
+    // Create real-/k-space functors for terms within the Madelung sums
     RspaceMadelungTerm rfunc(A, rconst_madelung);
     KspaceMadelungTerm kfunc(B, kconst_madelung, kfactor_madelung);
     IntVec nmax;
@@ -311,7 +311,7 @@ public:
 
   real_t ewaldPairPotential(const RealVec& r, real_t tol_ewald)
   {
-    // Create real-/k-space fuctors for terms within the Ewald pair potential sums
+    // Create real-/k-space functors for terms within the Ewald pair potential sums
     RspaceEwaldTerm rfunc(r, A, rconst_ewald);
     KspaceEwaldTerm kfunc(r, B, kconst_ewald, kfactor_ewald);
     IntVec nmax;
