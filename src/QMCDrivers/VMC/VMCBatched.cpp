@@ -123,7 +123,6 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       int end_index        = step_context.getPtclGroupEnd(ig);
       for (int iat = start_index; iat < end_index; ++iat)
       {
-        ParticleSet::flex_setActive(crowd.get_walker_elecs(), iat);
         // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes
         // fastest in walkers then particles
         auto delta_r_start = step_context.deltaRsBegin() + iat * num_walkers;
@@ -194,7 +193,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         TrialWaveFunction::flex_acceptMove(twf_accept_list, elec_accept_list, iat);
         TrialWaveFunction::flex_rejectMove(twf_reject_list, iat);
 
-        ParticleSet::flex_acceptMove(elec_accept_list, iat);
+        ParticleSet::flex_acceptMove(elec_accept_list, iat, true);
         ParticleSet::flex_rejectMove(elec_reject_list, iat);
       }
     }
