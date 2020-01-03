@@ -192,9 +192,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
                                                                            int iel,
                                                                            RealType r,
                                                                            const PosType& dr,
-                                                                           PosType& force_iat,
-                                                                           bool Tmove,
-                                                                           std::vector<NonLocalData>& Txy)
+                                                                           PosType& force_iat)
 {
   constexpr RealType czero(0);
   constexpr RealType cone(1);
@@ -309,8 +307,6 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       gradwfnterm_   += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
     }
     knot_pots[j] = std::real(lsum * psiratio[j]);
-    if (Tmove)
-      Txy.push_back(NonLocalData(iel, knot_pots[j], deltaV[j]));
     pairpot += knot_pots[j];
     force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
   }
@@ -333,9 +329,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
                                                                            RealType r,
                                                                            const PosType& dr,
                                                                            PosType& force_iat,
-                                                                           ParticleSet::ParticlePos_t& pulay_terms,
-                                                                           bool Tmove,
-                                                                           std::vector<NonLocalData>& Txy)
+                                                                           ParticleSet::ParticlePos_t& pulay_terms)
 {
   constexpr RealType czero(0);
   constexpr RealType cone(1);
@@ -505,8 +499,6 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     }
     knot_pots[j] = std::real(lsum * psiratio[j]);
     pulaytmp_ += knot_pots[j] * pulay_ref;
-    if (Tmove)
-      Txy.push_back(NonLocalData(iel, knot_pots[j], deltaV[j]));
     pairpot += knot_pots[j];
     force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
     pulay_terms += pulaytmp_;

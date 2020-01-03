@@ -180,8 +180,8 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
         for (int iat = 0; iat < NumIons; iat++)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat],
-                                                    Tmove, Txy);
+            RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat]);
+            if (Tmove) PP[iat]->contributeTxy(jel, Txy);
             Value += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
@@ -357,7 +357,8 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
           Value += PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat],
-                                                  forces[iat], PulayTerm, Tmove, Txy);
+                                                  forces[iat], PulayTerm);
+          if (Tmove) PP[iat]->contributeTxy(jel, Txy);
           NeighborIons.push_back(iat);
           IonNeighborElecs.getNeighborList(iat).push_back(jel);
         }

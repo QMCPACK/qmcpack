@@ -141,6 +141,10 @@ public:
 
   void buildQuadraturePositions(const PosType& ref_elec_pos, RealType r, const PosType& dr);
 
+  /** contribute local non-local move data
+   * @param iel reference electron id.
+   * @param Txy nonlocal move data.
+   */
   void contributeTxy(int iel, std::vector<NonLocalData>& Txy) const;
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
@@ -152,8 +156,6 @@ public:
    * @param iel index of electron
    * @param r the distance between ion iat and electron iel.
    * @param dr displacement from ion iat to electron iel.
-   * @param Tmove flag to compute tmove contributions.
-   * @param Txy nonlocal move data.
    *
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
@@ -173,9 +175,7 @@ public:
    * @param iel index of electron
    * @param r the distance between ion iat and electron iel.
    * @param dr displacement from ion iat to electron iel.
-   * @param Tmove flag to compute tmove contributions.
    * @param force_iat 3d vector for Hellman-Feynman contribution.  This gets modified.
-   * @param Txy nonlocal move data.
    *
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
@@ -185,9 +185,7 @@ public:
                                  int iel,
                                  RealType r,
                                  const PosType& dr,
-                                 PosType& force_iat,
-                                 bool Tmove,
-                                 std::vector<NonLocalData>& Txy);
+                                 PosType& force_iat);
 
   /** @brief Evaluate the nonlocal pp energy, Hellman-Feynman force, and "Pulay" force contribution
    * via randomized quadrature grid from ion "iat" and electron "iel".
@@ -201,8 +199,6 @@ public:
    * @param dr displacement from ion iat to electron iel.
    * @param force_iat 3d vector for Hellman-Feynman contribution.  This gets modified.
    * @param pulay_terms Nion x 3 object, holding a contribution for each ionic gradient from \Psi_T.
-   * @param Tmove flag to compute tmove contributions.
-   * @param Txy nonlocal move data.
    *
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
@@ -214,9 +210,7 @@ public:
                                  RealType r,
                                  const PosType& dr,
                                  PosType& force_iat,
-                                 ParticleSet::ParticlePos_t& pulay_terms,
-                                 bool Tmove,
-                                 std::vector<NonLocalData>& Txy);
+                                 ParticleSet::ParticlePos_t& pulay_terms);
 
   // This function needs to be updated to SoA. myTableIndex is introduced temporarily.
   RealType evaluateValueAndDerivatives(ParticleSet& P,
