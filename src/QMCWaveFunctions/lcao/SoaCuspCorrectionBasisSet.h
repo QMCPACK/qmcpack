@@ -169,15 +169,15 @@ struct SoaCuspCorrection
    * @param P quantum particleset
    * @param iat active particle
    * @param vgl Matrix(5,BasisSetSize)
-   * @param trialMove if true, use getTemporalDists()/getTemporalDispls()
+   * @param trialMove if true, use getTempDists()/getTempDispls()
    */
   inline void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
   {
     myVGL = 0.0;
 
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.getDistRow(iat);
-    const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.getDisplRow(iat);
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+    const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
     for (int c = 0; c < NumCenters; c++)
     {
       if (LOBasisSet[c])
@@ -213,8 +213,8 @@ struct SoaCuspCorrection
     myVGL = 0.0;
 
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.getDistRow(iat);
-    const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.getDisplRow(iat);
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+    const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
     for (int c = 0; c < NumCenters; c++)
     {
       if (LOBasisSet[c])
@@ -248,8 +248,8 @@ struct SoaCuspCorrection
     myVGL = 0.0;
 
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.getDistRow(iat);
-    const auto& displ   = (P.activePtcl == iat) ? d_table.getTemporalDispls() : d_table.getDisplRow(iat);
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+    const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
     for (int c = 0; c < NumCenters; c++)
     {
       if (LOBasisSet[c])
@@ -275,7 +275,7 @@ struct SoaCuspCorrection
 
   /** compute values for the iat-paricle move
    *
-   * Always uses getTemporalDists() and getTemporalDispls()
+   * Always uses getTempDists() and getTempDispls()
    */
   inline void evaluateV(const ParticleSet& P, int iat, ValueType* restrict vals)
   {
@@ -284,7 +284,7 @@ struct SoaCuspCorrection
     std::fill_n(tmp_vals, myVGL.size(), 0.0);
 
     const auto& d_table = P.getDistTable(myTableIndex);
-    const auto& dist    = (P.activePtcl == iat) ? d_table.getTemporalDists() : d_table.getDistRow(iat);
+    const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
 
     //THIS IS SERIAL, only way to avoid this is to use myVGL
     for (int c = 0; c < NumCenters; c++)

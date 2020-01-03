@@ -108,7 +108,7 @@ PsiValueType LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
   if (icent == -1)
     return 1.0;
 #ifdef ENABLE_SOA
-  RealType newdist = d_table.getTemporalDists()[icent];
+  RealType newdist = d_table.getTempDists()[icent];
 #else
   RealType newdist = d_table.Temp[icent].r1;
 #endif
@@ -125,7 +125,7 @@ GradType LatticeGaussianProduct::evalGrad(ParticleSet& P, int iat)
     return GradType();
   RealType a = ParticleAlpha[iat];
 #ifdef ENABLE_SOA
-  PosType newdisp = -1.0 * d_table.getTemporalDispls()[icent];
+  PosType newdisp = -1.0 * d_table.getTempDispls()[icent];
 #else
   PosType newdisp  = d_table.Temp[icent].dr1;
 #endif
@@ -150,8 +150,8 @@ PsiValueType LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType
     return 1.0;
   RealType a = ParticleAlpha[iat];
 #ifdef ENABLE_SOA
-  RealType newdist = d_table.getTemporalDists()[icent];
-  PosType newdisp  = -1.0 * d_table.getTemporalDispls()[icent];
+  RealType newdist = d_table.getTempDists()[icent];
+  PosType newdisp  = -1.0 * d_table.getTempDispls()[icent];
 #else
   RealType newdist = d_table.Temp[icent].r1;
   PosType newdisp  = d_table.Temp[icent].dr1;

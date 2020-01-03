@@ -618,19 +618,18 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
 }
 
 /** update the particle attribute by the proposed move
- *@param iat the particle index
  *
- *When the activePtcl is equal to iat, overwrite the position and update the
- *content of the distance tables.
+ * When the activePtcl is equal to iat, overwrite the position and update the
+ * content of the distance tables.
  */
-void ParticleSet::acceptMove(Index_t iat, bool forward)
+void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
 {
   ScopedTimer update_scope(myTimers[PS_accept]);
   if (iat == activePtcl)
   {
     //Update position + distance-table
     for (int i = 0, n = DistTables.size(); i < n; i++)
-      DistTables[i]->update(iat, forward);
+      DistTables[i]->update(iat, partial_table_update);
 
     //Do not change SK: 2007-05-18
     if (SK && SK->DoUpdate)

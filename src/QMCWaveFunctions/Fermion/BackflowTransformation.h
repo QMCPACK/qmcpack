@@ -151,11 +151,13 @@ public:
   opt_variables_type myVars;
 
   BackflowTransformation(ParticleSet& els)
-    : QP(els), cutOff(0.0), targetPtcl(els),
+      : QP(els),
+        cutOff(0.0),
+        targetPtcl(els),
 #ifdef ENABLE_SOA
-      myTableIndex_(els.addTable(els, DT_SOA))
+        myTableIndex_(els.addTable(els, DT_SOA))
 #else
-      myTableIndex_(els.addTable(els, DT_AOS))
+        myTableIndex_(els.addTable(els, DT_AOS))
 #endif
   {
     NumTargets = els.getTotalNum();
@@ -262,10 +264,7 @@ public:
 
   /** reset the distance table with a new target P
    */
-  void resetTargetParticleSet(ParticleSet& P)
-  {
-    targetPtcl = P;
-  }
+  void resetTargetParticleSet(ParticleSet& P) { targetPtcl = P; }
 
 
   void resetParameters(const opt_variables_type& active)
@@ -354,7 +353,7 @@ public:
       oldQP[i] = newQP[i] = QP.R[i];
     const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
-    newQP[iat] -= myTable.getTemporalDispls()[iat];
+    newQP[iat] -= myTable.getTempDispls()[iat];
 #else
     newQP[iat] += myTable.Temp[iat].dr1;
 #endif
@@ -405,7 +404,7 @@ public:
       oldQP[i] = newQP[i] = QP.R[i];
     const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
-    newQP[iat] -= myTable.getTemporalDispls()[iat];
+    newQP[iat] -= myTable.getTempDispls()[iat];
 #else
     newQP[iat] += myTable.Temp[iat].dr1;
 #endif

@@ -189,10 +189,10 @@ struct TinyVector
 
   TinyVector operator-() const
   {
-    TinyVector opposite;
+    TinyVector inverse;
     for (size_t d = 0; d < D; ++d)
-      opposite[d] = -X[d];
-    return opposite;
+      inverse[d] = -X[d];
+    return inverse;
   }
 
   /** Elementwise comparison
