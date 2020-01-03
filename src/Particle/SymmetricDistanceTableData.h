@@ -142,7 +142,7 @@ struct SymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
   }
 
   ///update the stripe for jat-th particle
-  inline void update(IndexType jat, bool forward)
+  inline void update(IndexType jat, bool partial_update)
   {
     int nn = jat;
     for (int iat = 0; iat < jat; iat++, nn += N_sources)

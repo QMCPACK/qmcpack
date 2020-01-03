@@ -372,24 +372,25 @@ public:
                                      const ParticlePos_t& drift,
                                      const ParticlePos_t& deltaR,
                                      const std::vector<RealType>& dt);
-  /** accept the move
+
+  /** accept the move and update the particle attribute by the proposed move
    *@param iat the index of the particle whose position and other attributes to be updated
    *@param forward if true, moves of particles are proposed and accepted in order.
    *
-   * forward = true case is an optimization by skipping the update to >iat rows.
+   * partial_table_update = true case is an optimization by skipping the DT update to >iat rows.
    * It works only if the move of each particle is proposed once and in order.
    * Once the particle sweep is done, all the distance tables are up-to-date.
    * This can be used during p-by-p moves.
    *
-   * forward = false case is the safe route. Uppon accept a move, all the distance tables are up-to-date.
+   * partial_table_update = false case is the safe route. Uppon accept a move, all the distance tables are up-to-date.
    * This can be used on moves proposed on randomly selected electrons.
    */
-  void acceptMove(Index_t iat, bool forward = false);
+  void acceptMove(Index_t iat, bool partial_table_update = false);
   /// batched version of acceptMove
-  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool forward = false)
+  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool partial_table_update = false)
   {
     for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().acceptMove(iat, forward);
+      P_list[iw].get().acceptMove(iat, partial_table_update);
   }
 
   /** reject the move

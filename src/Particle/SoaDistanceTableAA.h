@@ -147,7 +147,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
    * only the [0,iat-1) columns need to save the new values.
    * The memory copy goes up to the padded size only for better performance.
    */
-  inline void update(IndexType iat, bool forward)
+  inline void update(IndexType iat, bool partial_update)
   {
     //update by a cache line
     const int nupdate = getAlignedSize<T>(iat);
@@ -156,7 +156,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(Temp_dr.data(idim), nupdate, Displacements[iat].data(idim));
     // This is an optimization to reduce update >iat rows during p-by-p forward move when no consumer needs full table.
-    if (need_full_table_ || !forward)
+    if (need_full_table_ || !partial_update)
     {
       //copy column
       for (size_t i = iat + 1; i < N_targets; ++i)

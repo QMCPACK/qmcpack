@@ -328,9 +328,9 @@ public:
 
   /** update the distance table by the pair relations if a move is accepted
    * @param iat the particle with an accepted move
-   * @param forward If true, rows after iat will not be updated. If false, upon accept a move, the full table should be up-to-date
+   * @param partial_update If true, rows after iat will not be updated. If false, upon accept a move, the full table should be up-to-date
    */
-  virtual void update(IndexType jat, bool forward = false) = 0;
+  virtual void update(IndexType jat, bool partial_update = false) = 0;
 
   /** build a compact list of a neighbor for the iat source
    * @param iat source particle id
