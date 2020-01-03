@@ -122,12 +122,10 @@ real_t anisotropicGridSum(T& function, IntVec& nmax, bool zero = true, real_t to
     last_surface = nx_added==1 && ny_added==1 && nz_added==1;
   }
 
+  // Return dimensions of the converged anisotropic grid
   nmax[0] = im;
   nmax[1] = jm;
   nmax[2] = km;
-
-  //real_t vref = gridSum(function,zero,tol);
-  //std::cout<<v<<" "<<vref<<" "<<v-vref<<std::endl;
 
   return v;
 }
