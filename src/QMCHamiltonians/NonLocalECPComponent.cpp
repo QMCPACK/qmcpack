@@ -363,8 +363,6 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   PosType gradwfnterm_(0);
 
   //Now for the Pulay specific stuff...
-  //Full (potentiall complex) $\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
-  std::vector<ValueType> psiratiofull_(nknot);
   // $\nabla_I \Psi(...r...)/\Psi(...r...)$
   ParticleSet::ParticlePos_t pulay_ref;
   ParticleSet::ParticlePos_t pulaytmp_;
@@ -402,7 +400,6 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       deltaV[j] = r * rrotsgrid_m[j] - dr;
       W.makeMove(iel, deltaV[j], false);
       ValueType ratio = psi.calcRatioGrad(W, iel, gradtmp_);
-      psiratiofull_[j] = ratio;
       psiratio[j] = ratio * sgridweight_m[j];
       //QMCPACK spits out $\nabla\Psi(q)/\Psi(q)$.
       //Multiply times $\Psi(q)/\Psi(r)$ to get
@@ -454,7 +451,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
       //Done with the move.  Ready for force computation.  
     
       iongradtmp_ = psi.evalGradSource(W, ions, jat);
-      iongradtmp_ *= psiratiofull_[j] * sgridweight_m[j];
+      iongradtmp_ *= psiratio[j];
 #ifdef QMC_COMPLEX
       convert(iongradtmp_, pulay_quad[j][jat]);
 #endif
