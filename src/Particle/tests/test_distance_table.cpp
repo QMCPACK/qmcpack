@@ -355,7 +355,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
       if (species_name != "u")
         continue;
 
-        // calculate distance from lattice site iat
+      // calculate distance from lattice site iat
 #ifdef ENABLE_SOA
       double dist = dtable.getDistRow(jat)[iat];
 #else
