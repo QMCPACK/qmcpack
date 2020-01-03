@@ -68,6 +68,7 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
   VPos.resize(n);
   cosgrad.resize(n);
   wfngrad.resize(n);
+  knot_pots.resize(n);
   vrad.resize(m);
   dvrad.resize(m);
   vgrad.resize(m);
@@ -114,9 +115,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
                                                                  TrialWaveFunction& psi,
                                                                  int iel,
                                                                  RealType r,
-                                                                 const PosType& dr,
-                                                                 bool Tmove,
-                                                                 std::vector<NonLocalData>& Txy)
+                                                                 const PosType& dr)
 {
   constexpr RealType czero(0);
   constexpr RealType cone(1);
@@ -173,10 +172,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     ValueType lsum = 0.0;
     for (int l = 0; l < nchannel; l++)
       lsum += vrad[l] * lpol[angpp_m[l]];
-    lsum *= psiratio[j];
-    if (Tmove)
-      Txy.push_back(NonLocalData(iel, std::real(lsum), deltaV[j]));
-    pairpot += std::real(lsum);
+    knot_pots[j] = std::real(lsum * psiratio[j]);
+    pairpot += knot_pots[j];
   }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -306,15 +303,15 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 
     for (int l = 0; l < nchannel; l++)
     {
-      lsum           += std::real(vrad[l]) * lpol[angpp_m[l]] * std::real(psiratio[j]);
+      lsum           += std::real(vrad[l]) * lpol[angpp_m[l]];
       gradpotterm_   += vgrad[l] * lpol[angpp_m[l]] * std::real(psiratio[j]);
       gradlpolyterm_ += std::real(vrad[l]) * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
       gradwfnterm_   += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
     }
-
+    knot_pots[j] = std::real(lsum * psiratio[j]);
     if (Tmove)
-      Txy.push_back(NonLocalData(iel, lsum, deltaV[j]));
-    pairpot += lsum;
+      Txy.push_back(NonLocalData(iel, knot_pots[j], deltaV[j]));
+    pairpot += knot_pots[j];
     force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
   }
 
@@ -500,16 +497,17 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     {
       //Note.  Because we are computing "forces", there's a -1 difference between this and
       //direct finite difference calculations.
-      lsum           += std::real(vrad[l]) * lpol[angpp_m[l]] * std::real(psiratio[j]);
+      lsum           += std::real(vrad[l]) * lpol[angpp_m[l]];
       gradpotterm_   += vgrad[l] * lpol[angpp_m[l]] * std::real(psiratio[j]);
       gradlpolyterm_ += std::real(vrad[l]) * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
       gradwfnterm_   += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
       pulaytmp_ -= std::real(vrad[l]) * lpol[angpp_m[l]] * pulay_quad[j];
     }
-    pulaytmp_ += lsum * pulay_ref;
+    knot_pots[j] = std::real(lsum * psiratio[j]);
+    pulaytmp_ += knot_pots[j] * pulay_ref;
     if (Tmove)
-      Txy.push_back(NonLocalData(iel, lsum, deltaV[j]));
-    pairpot += lsum;
+      Txy.push_back(NonLocalData(iel, knot_pots[j], deltaV[j]));
+    pairpot += knot_pots[j];
     force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
     pulay_terms += pulaytmp_;
   }
@@ -566,6 +564,12 @@ void NonLocalECPComponent::buildQuadraturePositions(const PosType& ref_elec_pos,
     deltaV[j] = r * rrotsgrid_m[j] - dr;
     VPos[j]   = deltaV[j] + ref_elec_pos;
   }
+}
+
+void NonLocalECPComponent::contributeTxy(int iel, std::vector<NonLocalData>& Txy) const
+{
+  for (int j = 0; j < nknot; j++)
+    Txy.push_back(NonLocalData(iel, knot_pots[j], deltaV[j]));
 }
 
 /// \relates NonLocalEcpComponent

@@ -317,7 +317,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     const auto& displ = myTable.getDisplRow(jel);
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
       if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
-        Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], 0, Txy);
+        Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat]);
   }
 #else
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
@@ -329,7 +329,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
       const RealType r(myTable.r(nn));
       if (r > nlpp->getRmax())
         continue;
-      Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn), 0, Txy);
+      Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn));
     }
   }
 #endif

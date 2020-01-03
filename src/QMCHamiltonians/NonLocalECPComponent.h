@@ -85,6 +85,8 @@ private:
   std::vector<PosType> cosgrad;
   //This stores grad psi/psi - dot(u,grad psi)
   std::vector<PosType> wfngrad;
+  //This stores potential contribution per knot:
+  std::vector<RealType> knot_pots;
 
   /// scratch spaces used by evaluateValueAndDerivatives
   Matrix<ValueType> dratio;
@@ -139,6 +141,8 @@ public:
 
   void buildQuadraturePositions(const PosType& ref_elec_pos, RealType r, const PosType& dr);
 
+  void contributeTxy(int iel, std::vector<NonLocalData>& Txy) const;
+
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
    * to total energy from ion "iat" and electron "iel".
    *
@@ -158,9 +162,7 @@ public:
                        TrialWaveFunction& Psi,
                        int iel,
                        RealType r,
-                       const PosType& dr,
-                       bool Tmove,
-                       std::vector<NonLocalData>& Txy);
+                       const PosType& dr);
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
    * to total energy from ion "iat" and electron "iel".
