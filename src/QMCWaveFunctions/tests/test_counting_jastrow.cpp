@@ -290,7 +290,6 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   // test ratio, ratioGrad, acceptMove
   for(int iat = 0; iat < num_els; ++iat)
   {
-    elec.setActive(iat);
     elec.makeMoveAndCheck(iat,dr[iat]);
   
     RealType ratioval = std::real( cj->ratio(elec, iat) );

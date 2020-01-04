@@ -35,9 +35,6 @@ struct LocalECPotential : public OperatorBase
   typedef OneDimGridBase<RealType> GridType;
   typedef OneDimCubicSpline<RealType> RadialPotentialType;
 
-
-  typedef DistanceTableData::RowContainer RowContainerType;
-
   ///reference to the ionic configuration
   const ParticleSet& IonConfig;
   ///the number of ioncs

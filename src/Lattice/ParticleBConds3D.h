@@ -159,14 +159,7 @@ struct DTD_BConds<T, 3, PPPS>
 template<class T>
 struct DTD_BConds<T, 3, PPPG>
 {
-#ifdef BGQPX
-  vector4double g0, g1, g2;
-  vector4double rb0, rb1, rb2;
-  vector4double corner_x1_vec, corner_y1_vec, corner_z1_vec;
-  vector4double corner_x2_vec, corner_y2_vec, corner_z2_vec;
-#else
   T g00, g10, g20, g01, g11, g21, g02, g12, g22;
-#endif
   TinyVector<TinyVector<T, 3>, 3> rb;
   std::vector<TinyVector<T, 3>> corners;
 
@@ -192,54 +185,6 @@ struct DTD_BConds<T, 3, PPPG>
     corners[6] = minusone * (rb[1] + rb[2]);
     corners[7] = minusone * (rb[0] + rb[1] + rb[2]);
 
-#ifdef BGQPX
-    g0[0] = g(0);
-    g0[1] = g(1);
-    g0[2] = g(2);
-    g0[3] = 0.0;
-    g1[0] = g(3);
-    g1[1] = g(4);
-    g1[2] = g(5);
-    g1[3] = 0.0;
-    g2[0] = g(6);
-    g2[1] = g(7);
-    g2[2] = g(8);
-    g2[3] = 0.0;
-
-    for (int i = 0; i < 3; i++)
-    {
-      rb0[i] = rb[0][i];
-      rb1[i] = rb[1][i];
-      rb2[i] = rb[2][i];
-    }
-
-    // corners 0~3
-    corner_x1_vec[0] = 0.0;
-    corner_x1_vec[1] = -rb[0][0];
-    corner_x1_vec[2] = -rb[1][0];
-    corner_x1_vec[3] = -rb[2][0];
-    corner_y1_vec[0] = 0.0;
-    corner_y1_vec[1] = -rb[0][1];
-    corner_y1_vec[2] = -rb[1][1];
-    corner_y1_vec[3] = -rb[2][1];
-    corner_z1_vec[0] = 0.0;
-    corner_z1_vec[1] = -rb[0][2];
-    corner_z1_vec[2] = -rb[1][2];
-    corner_z1_vec[3] = -rb[2][2];
-    // corners 4~7
-    corner_x2_vec[0] = -(rb[0][0] + rb[1][0]);
-    corner_x2_vec[1] = -(rb[0][0] + rb[2][0]);
-    corner_x2_vec[2] = -(rb[1][0] + rb[2][0]);
-    corner_x2_vec[3] = -(rb[0][0] + rb[1][0] + rb[2][0]);
-    corner_y2_vec[0] = -(rb[0][1] + rb[1][1]);
-    corner_y2_vec[1] = -(rb[0][1] + rb[2][1]);
-    corner_y2_vec[2] = -(rb[1][1] + rb[2][1]);
-    corner_y2_vec[3] = -(rb[0][1] + rb[1][1] + rb[2][1]);
-    corner_z2_vec[0] = -(rb[0][2] + rb[1][2]);
-    corner_z2_vec[1] = -(rb[0][2] + rb[2][2]);
-    corner_z2_vec[2] = -(rb[1][2] + rb[2][2]);
-    corner_z2_vec[3] = -(rb[0][2] + rb[1][2] + rb[2][2]);
-#else
     g00 = g(0);
     g10 = g(3);
     g20 = g(6);
@@ -249,7 +194,6 @@ struct DTD_BConds<T, 3, PPPG>
     g02 = g(2);
     g12 = g(5);
     g22 = g(8);
-#endif
   }
 
   /** apply BC to a displacement vector a and return the minimum-image distance
@@ -257,78 +201,6 @@ struct DTD_BConds<T, 3, PPPG>
    * @param a displacement vector
    * @return the minimum-image distance
    */
-#ifdef BGQPX
-  inline T apply_bc(TinyVector<T, 3>& displ) const
-  {
-    vector4double disp0_vec = vec_splats(displ[0]);
-    vector4double disp1_vec = vec_splats(displ[1]);
-    vector4double disp2_vec = vec_splats(displ[2]);
-    vector4double ar_vec;
-
-    ar_vec = vec_mul(disp0_vec, g0);
-    ar_vec = vec_madd(disp1_vec, g1, ar_vec);
-    ar_vec = vec_madd(disp2_vec, g2, ar_vec);
-    ar_vec = -vec_floor(ar_vec);
-
-    vector4double ar0_vec = vec_splats(ar_vec[0]);
-    vector4double ar1_vec = vec_splats(ar_vec[1]);
-    vector4double ar2_vec = vec_splats(ar_vec[2]);
-
-    vector4double displ_vec = {displ[0], displ[1], displ[2], 0.0};
-
-    displ_vec = vec_madd(ar0_vec, rb0, displ_vec);
-    displ_vec = vec_madd(ar1_vec, rb1, displ_vec);
-    displ_vec = vec_madd(ar2_vec, rb2, displ_vec);
-
-    displ[0] = displ_vec[0];
-    displ[1] = displ_vec[1];
-    displ[2] = displ_vec[2];
-
-    vector4double r2_03_vec, r2_47_vec;
-
-    vector4double x1_vec = vec_splats(displ_vec[0]);
-    vector4double x2_vec = vec_splats(displ_vec[0]);
-    vector4double y1_vec = vec_splats(displ_vec[1]);
-    vector4double y2_vec = vec_splats(displ_vec[1]);
-    vector4double z1_vec = vec_splats(displ_vec[2]);
-    vector4double z2_vec = vec_splats(displ_vec[2]);
-
-    x1_vec    = vec_add(x1_vec, corner_x1_vec);
-    y1_vec    = vec_add(y1_vec, corner_y1_vec);
-    z1_vec    = vec_add(z1_vec, corner_z1_vec);
-    r2_03_vec = vec_mul(x1_vec, x1_vec);
-    r2_03_vec = vec_madd(y1_vec, y1_vec, r2_03_vec);
-    r2_03_vec = vec_madd(z1_vec, z1_vec, r2_03_vec);
-
-    x2_vec    = vec_add(x2_vec, corner_x2_vec);
-    y2_vec    = vec_add(y2_vec, corner_y2_vec);
-    z2_vec    = vec_add(z2_vec, corner_z2_vec);
-    r2_47_vec = vec_mul(x2_vec, x2_vec);
-    r2_47_vec = vec_madd(y2_vec, y2_vec, r2_47_vec);
-    r2_47_vec = vec_madd(z2_vec, z2_vec, r2_47_vec);
-
-    T rmin2  = r2_03_vec[0];
-    int imin = 0;
-    for (int i = 1; i < 4; ++i)
-    {
-      if (r2_03_vec[i] < rmin2)
-      {
-        rmin2 = r2_03_vec[i];
-        imin  = i;
-      }
-    }
-    for (int i = 0; i < 4; ++i)
-    {
-      if (r2_47_vec[i] < rmin2)
-      {
-        rmin2 = r2_47_vec[i];
-        imin  = i + 4;
-      }
-    }
-    displ += corners[imin];
-    return rmin2;
-  }
-#else
   inline T apply_bc(TinyVector<T, 3>& displ) const
   {
     //cart2unit
@@ -355,7 +227,6 @@ struct DTD_BConds<T, 3, PPPG>
       displ += corners[imin];
     return rmin2;
   }
-#endif
 
   inline void apply_bc(std::vector<TinyVector<T, 3>>& dr, std::vector<T>& r, std::vector<T>& rinv) const
   {
