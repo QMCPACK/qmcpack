@@ -683,22 +683,22 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 
     // Create Trial wavefunction.
     int nd = (walker_type==COLLINEAR?2*ndets_to_read:ndets_to_read);
+    int ndread = nd;
+     if( walker_type==COLLINEAR and input_wtype==CLOSED) ndread = ndets_to_read; 
     std::vector<PsiT_Matrix> PsiT;
     PsiT.reserve(nd);
     using Alloc = shared_allocator<ComplexType>;
-    for(int i=0; i<nd; ++i) {
+    for(int i=0; i<ndread; ++i) {
       if(!dump.push(std::string("PsiT_")+std::to_string(i),false)) {
         app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";
         APP_ABORT("");
       }
       PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix,Alloc>(dump,TGwfn.Node())); //,Alloc(TGwfn.Node())));
       dump.pop();
-    }
-    if( walker_type==COLLINEAR and input_wtype==CLOSED) {
-      if(NAEA!=NAEB)
-        APP_ABORT(" Error: NAEA!=NAEB when initializing collinear wfn from closed shell file.\n"); 
-      // read them again
-      for(int i=0; i<nd; ++i) {
+      if( walker_type==COLLINEAR and input_wtype==CLOSED) {
+        if(NAEA!=NAEB)
+          APP_ABORT(" Error: NAEA!=NAEB when initializing collinear wfn from closed shell file.\n"); 
+        // read them again
         if(!dump.push(std::string("PsiT_")+std::to_string(i),false)) {
           app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";
           APP_ABORT("");
