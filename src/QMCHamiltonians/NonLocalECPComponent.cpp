@@ -22,9 +22,6 @@ namespace qmcplusplus
 NonLocalECPComponent::NonLocalECPComponent()
     : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr), use_DLA(false)
 {
-#if !defined(REMOVE_TRACEMANAGER)
-  streaming_particles = false;
-#endif
 }
 
 NonLocalECPComponent::~NonLocalECPComponent()
@@ -176,13 +173,6 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     pairpot += knot_pots[j];
   }
 
-#if !defined(REMOVE_TRACEMANAGER)
-  if (streaming_particles)
-  {
-    (*Vi_sample)(iat) += .5 * pairpot;
-    (*Ve_sample)(iel) += .5 * pairpot;
-  }
-#endif
   return pairpot;
 }
 
@@ -311,13 +301,6 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
   }
 
-#if !defined(REMOVE_TRACEMANAGER)
-  if (streaming_particles)
-  {
-    (*Vi_sample)(iat) += .5 * pairpot;
-    (*Ve_sample)(iel) += .5 * pairpot;
-  }
-#endif
   return pairpot;
 }
 
@@ -504,13 +487,6 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     pulay_terms += pulaytmp_;
   }
 
-#if !defined(REMOVE_TRACEMANAGER)
-  if (streaming_particles)
-  {
-    (*Vi_sample)(iat) += .5 * pairpot;
-    (*Ve_sample)(iel) += .5 * pairpot;
-  }
-#endif
   return pairpot;
 }
 
