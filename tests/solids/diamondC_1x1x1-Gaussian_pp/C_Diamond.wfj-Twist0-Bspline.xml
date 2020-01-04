@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <determinantset check_orb_norm="no" href="C_Diamond-Bspline.h5" meshfactor="1.0" source="ion0" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" type="einspline">
+      <basisset/>
+      <slaterdeterminant>
+        <determinant id="updet" size="4" ref="updet">
+          <occupation mode="ground" spindataset="0">
+          </occupation>
+        </determinant>
+        <determinant id="downdet" size="4" ref="downdet">
+          <occupation mode="ground" spindataset="0">
+          </occupation>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation speciesA="u" speciesB="u" size="10">
+        <coefficients id="uu" type="Array"> 0.2973414394 0.2515391585 0.2049468888 0.1637081076 0.1273571895 0.09530477288 0.06757811521 0.04471795175 0.02540825537 0.01282776615</coefficients>
+      </correlation>
+      <correlation speciesA="u" speciesB="d" size="10">
+        <coefficients id="ud" type="Array"> 0.4906787172 0.3904938293 0.3075636116 0.2373520533 0.1783679807 0.1295325445 0.08927294254 0.057814876 0.03219986882 0.01569674003</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow function="Bspline" name="J1" print="yes" source="ion0" type="One-Body">
+      <correlation elementType="C" cusp="0.0" size="10">
+        <coefficients id="C" type="Array"> -0.2193394295 -0.2084008386 -0.1947150993 -0.1828781701 -0.1583299052 -0.1291712212 -0.09656454743 -0.06506132901 -0.03780544616 -0.01876884725</coefficients>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+</qmcsystem>

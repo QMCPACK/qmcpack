@@ -488,7 +488,6 @@ bool MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& ot
                                          int np,
                                          int nBlock)
 {
-#if !(defined(__bgp__) || (__bgq__))
   MCWalkerConfiguration wtemp;
   wtemp.resize(0, TotalNum);
   wtemp.loadEnsemble(others, false);
@@ -501,7 +500,6 @@ bool MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& ot
   wtemp.setGlobalNumWalkers(nwoff[np]);
   wtemp.setWalkerOffsets(nwoff);
   out->dump(wtemp, nBlock);
-#endif
   return true;
 }
 

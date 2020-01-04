@@ -9,9 +9,7 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef __bgq__
-#include </bgsys/drivers/ppcfloor/spi/include/kernel/location.h>
-#elif __linux__
+#ifdef __linux__
 #include <sched.h>
 #endif
 #include <omp.h>
@@ -27,10 +25,7 @@
 /*=======================================*/
 int get_core()
 {
-#ifdef __bgq__
-  int core = Kernel_ProcessorCoreID();
-  return core;
-#elif __linux__
+#ifdef __linux__
   int cpuid = sched_getcpu();
   return cpuid;
 #else
@@ -43,12 +38,7 @@ int get_core()
 /*=======================================*/
 int get_hwthread()
 {
-#ifdef __bgq__
-  int hwthread = Kernel_ProcessorThreadID();
-  return hwthread;
-#else
   return -1;
-#endif
 }
 
 int main()
