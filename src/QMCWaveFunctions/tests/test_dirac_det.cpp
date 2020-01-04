@@ -246,8 +246,7 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
   PsiValueType det_ratio1 = 0.178276269185;
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
-  ddb.acceptMove(elec, 0, true);
-  ddb.completeUpdates();
+  ddb.acceptMove(elec, 0);
 
   b(0, 0) = 3.455170657;
   b(0, 1) = -1.35124809;
@@ -343,7 +342,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
-  ddb.acceptMove(elec, 0, true);
+  ddb.acceptMove(elec, 0);
 
   PsiValueType det_ratio2 = ddb.ratioGrad(elec, 1, grad);
   LogValueType det_update2;
@@ -359,7 +358,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   //double det_ratio2_val = 0.178276269185;
   REQUIRE(det_ratio2 == ValueApprox(det_ratio2_val));
 
-  ddb.acceptMove(elec, 1, true);
+  ddb.acceptMove(elec, 1);
 
   PsiValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
   LogValueType det_update3;
@@ -375,8 +374,7 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   REQUIRE(det_ratio3 == ValueApprox(det_ratio3_val));
   //check_value(det_ratio3, det_ratio3_val);
 
-  ddb.acceptMove(elec, 2, true);
-  ddb.completeUpdates();
+  ddb.acceptMove(elec, 2);
 
   simd::transpose(orig_a.data(), orig_a.rows(), orig_a.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
   dm.invert_transpose(scratchT, orig_a, det_update3);
@@ -476,6 +474,8 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   ddc.acceptMove(elec, 0, true);
   // force update Ainv in ddc using SM-1 code path
   ddc.completeUpdates();
+
+  check_matrix(a_update1, ddc.psiM);
 
   grad                    = ddc.evalGrad(elec, 1);
   PsiValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
