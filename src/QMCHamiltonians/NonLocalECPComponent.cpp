@@ -62,7 +62,6 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
   psiratio.resize(n);
   gradpsiratio.resize(n);
   deltaV.resize(n);
-  VPos.resize(n);
   cosgrad.resize(n);
   wfngrad.resize(n);
   knot_pots.resize(n);
@@ -117,12 +116,13 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
   constexpr RealType czero(0);
   constexpr RealType cone(1);
 
-  buildQuadraturePositions(W.R[iel], r, dr, deltaV, VPos);
+  for (int j = 0; j < nknot; j++)
+    deltaV[j] = r * rrotsgrid_m[j] - dr;
 
   if (VP)
   {
     // Compute ratios with VP
-    VP->makeMoves(iel, VPos, true, iat);
+    VP->makeMoves(iel, W.R[iel], deltaV, true, iat);
     psi.evaluateRatios(*VP, psiratio);
   }
   else
@@ -187,7 +187,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   constexpr RealType czero(0);
   constexpr RealType cone(1);
 
-  buildQuadraturePositions(W.R[iel], r, dr, deltaV, VPos);
+  for (int j = 0; j < nknot; j++)
+    deltaV[j] = r * rrotsgrid_m[j] - dr;
 
   GradType gradtmp_(0);
   PosType realgradtmp_(0);
@@ -204,7 +205,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
     // Compute ratios with VP
-    VP->makeMoves(iel, VPos, true, iat);
+    VP->makeMoves(iel, W.R[iel], deltaV, true, iat);
     psi.evaluateRatios(*VP, psiratio);
   }
   else
@@ -317,7 +318,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   constexpr RealType czero(0);
   constexpr RealType cone(1);
 
-  buildQuadraturePositions(W.R[iel], r, dr, deltaV, VPos);
+  for (int j = 0; j < nknot; j++)
+    deltaV[j] = r * rrotsgrid_m[j] - dr;
 
   GradType gradtmp_(0);
   PosType realgradtmp_(0);
@@ -349,7 +351,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
     // Compute ratios with VP
-    VP->makeMoves(iel, VPos, true, iat);
+    VP->makeMoves(iel, W.R[iel], deltaV, true, iat);
     psi.evaluateRatios(*VP, psiratio);
   }
   else
@@ -523,15 +525,6 @@ void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerato
   for (int i = 0; i < rrotsgrid_m.size(); i++)
     for (int j = 0; j < OHMMS_DIM; j++)
       sphere[OHMMS_DIM * i + j] = rrotsgrid_m[i][j];
-}
-
-void NonLocalECPComponent::buildQuadraturePositions(const PosType& ref_elec_pos, RealType r, const PosType& dr, std::vector<PosType>& deltaV, ParticleSet::ParticlePos_t& VPos) const
-{
-  for (int j = 0; j < nknot; j++)
-  {
-    deltaV[j] = r * rrotsgrid_m[j] - dr;
-    VPos[j]   = deltaV[j] + ref_elec_pos;
-  }
 }
 
 void NonLocalECPComponent::contributeTxy(int iel, std::vector<NonLocalData>& Txy) const
