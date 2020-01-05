@@ -335,9 +335,8 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int ia
     if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
         (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
     {
-      myTimers[ii]->start();
+      ScopedTimer local_timer(myTimers[ii]);
       r *= Z[i]->ratio(P, iat);
-      myTimers[ii]->stop();
     }
   return static_cast<ValueType>(r);
 }
@@ -640,19 +639,19 @@ void TrialWaveFunction::completeUpdates()
   }
 }
 
-void TrialWaveFunction::flex_completeUpdates(const std::vector<TrialWaveFunction*>& WF_list) const
+void TrialWaveFunction::flex_completeUpdates(const std::vector<TrialWaveFunction*>& wf_list) const
 {
-  if (WF_list.size() > 1)
+  if (wf_list.size() > 1)
   {
     for (int i = 0, ii = ACCEPT_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
     {
       ScopedTimer local_timer(myTimers[ii]);
-      std::vector<WaveFunctionComponent*> WFC_list(extractWFCPtrList(WF_list, i));
-      Z[i]->mw_completeUpdates(WFC_list);
+      std::vector<WaveFunctionComponent*> wfc_list(extractWFCPtrList(wf_list, i));
+      Z[i]->mw_completeUpdates(wfc_list);
     }
   }
-  else if (WF_list.size() == 1)
-    WF_list[0]->completeUpdates();
+  else if (wf_list.size() == 1)
+    wf_list[0]->completeUpdates();
 }
 
 void TrialWaveFunction::checkInVariables(opt_variables_type& active)
@@ -876,12 +875,31 @@ void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<Value
     if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
         (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
     {
-      myTimers[ii]->start();
+      ScopedTimer local_timer(myTimers[ii]);
       Z[i]->evaluateRatios(VP, t);
       for (int j = 0; j < ratios.size(); ++j)
         ratios[j] *= t[j];
-      myTimers[ii]->stop();
     }
+}
+
+void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& wf_list, const RefVector<VirtualParticleSet>& vp_list, std::vector<std::vector<ValueType>>& ratios, ComputeType ct)
+{
+  if (wf_list.size() > 1)
+  {
+    auto& wavefunction_components = wf_list[0].get().Z;
+
+    for (int i = 0, ii = NL_TIMER; i < wavefunction_components.size(); i++, ii += TIMER_SKIP)
+      if (ct == ComputeType::ALL || (wavefunction_components[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
+        (!wavefunction_components[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+      {
+        ScopedTimer local_timer(wf_list[0].get().get_timers()[ii]);
+        const auto wfc_list(extractWFCRefList(wf_list, i));
+        wavefunction_components[i]->mw_evaluateRatios(wfc_list, vp_list, ratios);
+      }
+  }
+  else if (wf_list.size() == 1)
+    wf_list[0].get().evaluateRatios(vp_list[0], ratios[0], ct);
+
 }
 
 void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP,
