@@ -208,7 +208,10 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVector<NonLocalECPComponent>&
     {
       // Compute ratios with VP
       VP->makeMoves(iel, W.R[iel], component.deltaV, true, iat);
-      psi.evaluateRatios(*VP, component.psiratio);
+      if (use_DLA)
+        psi.evaluateRatios(*VP, component.psiratio, TrialWaveFunction::ComputeType::FERMIONIC);
+      else
+        psi.evaluateRatios(*VP, component.psiratio);
     }
     else
     {

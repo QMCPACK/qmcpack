@@ -887,6 +887,13 @@ void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& 
   if (wf_list.size() > 1)
   {
     auto& wavefunction_components = wf_list[0].get().Z;
+    std::vector<std::vector<ValueType>> t(ratios.size());
+    for (int iw = 0; iw < wf_list.size(); iw++)
+    {
+      assert(vp_list[iw].get().getTotalNum() == ratios[iw].size());
+      std::fill(ratios[iw].begin(), ratios[iw].end(), 1.0);
+      t[iw].resize(ratios[iw].size());
+    }
 
     for (int i = 0, ii = NL_TIMER; i < wavefunction_components.size(); i++, ii += TIMER_SKIP)
       if (ct == ComputeType::ALL || (wavefunction_components[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
@@ -894,7 +901,10 @@ void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& 
       {
         ScopedTimer local_timer(wf_list[0].get().get_timers()[ii]);
         const auto wfc_list(extractWFCRefList(wf_list, i));
-        wavefunction_components[i]->mw_evaluateRatios(wfc_list, vp_list, ratios);
+        wavefunction_components[i]->mw_evaluateRatios(wfc_list, vp_list, t);
+        for (int iw = 0; iw < wf_list.size(); iw++)
+          for (int j = 0; j < ratios.size(); ++j)
+            ratios[iw][j] *= t[iw][j];
       }
   }
   else if (wf_list.size() == 1)
