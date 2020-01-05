@@ -183,7 +183,9 @@ public:
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
-  void evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios);
+  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct = ComputeType::ALL);
+  static void flex_evaluateRatios(const RefVector<TrialWaveFunction>& WF_list, const RefVector<VirtualParticleSet>& VP_list, std::vector<std::vector<ValueType>>& ratios, ComputeType ct = ComputeType::ALL);
+
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P,
                            const opt_variables_type& optvars,

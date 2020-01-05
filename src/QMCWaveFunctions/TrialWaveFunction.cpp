@@ -332,13 +332,13 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int ia
 {
   PsiValueType r(1.0);
   for (int i = 0, ii = V_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
-  {
-    myTimers[ii]->start();
     if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
         (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+    {
+      myTimers[ii]->start();
       r *= Z[i]->ratio(P, iat);
-    myTimers[ii]->stop();
-  }
+      myTimers[ii]->stop();
+    }
   return static_cast<ValueType>(r);
 }
 
@@ -867,19 +867,21 @@ void TrialWaveFunction::flex_copyFromBuffer(const RefVector<TrialWaveFunction>& 
     bufGetTwfLog(buf_list[iw], wf_list[iw]);
 }
 
-void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct)
 {
   assert(VP.getTotalNum() == ratios.size());
   std::vector<ValueType> t(ratios.size());
   std::fill(ratios.begin(), ratios.end(), 1.0);
   for (int i = 0, ii = NL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    Z[i]->evaluateRatios(VP, t);
-    for (int j = 0; j < ratios.size(); ++j)
-      ratios[j] *= t[j];
-    myTimers[ii]->stop();
-  }
+    if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
+        (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+    {
+      myTimers[ii]->start();
+      Z[i]->evaluateRatios(VP, t);
+      for (int j = 0; j < ratios.size(); ++j)
+        ratios[j] *= t[j];
+      myTimers[ii]->stop();
+    }
 }
 
 void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP,

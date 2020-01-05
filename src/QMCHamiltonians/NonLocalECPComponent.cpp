@@ -117,7 +117,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
   {
     // Compute ratios with VP
     VP->makeMoves(iel, W.R[iel], deltaV, true, iat);
-    psi.evaluateRatios(*VP, psiratio);
+    if (use_DLA)
+      psi.evaluateRatios(*VP, psiratio, TrialWaveFunction::ComputeType::FERMIONIC);
+    else
+      psi.evaluateRatios(*VP, psiratio);
   }
   else
   {
