@@ -259,7 +259,7 @@ public:
     return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
   }
 
-  inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+  inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     std::vector<RealType> myr(ratios.size(), U[VP.refPtcl]);
     const auto& d_table = VP.getDistTable(myTableIndex);

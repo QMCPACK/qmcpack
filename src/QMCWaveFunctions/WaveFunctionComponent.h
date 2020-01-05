@@ -613,7 +613,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param VP VirtualParticleSet
    * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
    */
-  virtual void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
+  virtual void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios);
 
   /** evaluate ratios to evaluate the non-local PP multiple walkers
    * @param wfc_list the list of WaveFunctionComponent references of the same component in a walker batch
@@ -621,7 +621,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param ratios of all the virtual moves of all the walkers
    */
   virtual void mw_evaluateRatios(const RefVector<WaveFunctionComponent>& wfc_list,
-                                 const RefVector<VirtualParticleSet>& vp_list,
+                                 const RefVector<const VirtualParticleSet>& vp_list,
                                  std::vector<std::vector<ValueType>>& ratios)
   {
 #pragma omp parallel for

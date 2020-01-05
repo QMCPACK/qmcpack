@@ -96,7 +96,7 @@ public:
 
   /** compute multiple ratios for a particle move
    */
-  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
+  void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 

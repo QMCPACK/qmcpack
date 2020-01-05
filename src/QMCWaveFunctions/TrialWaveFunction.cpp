@@ -866,7 +866,7 @@ void TrialWaveFunction::flex_copyFromBuffer(const RefVector<TrialWaveFunction>& 
     bufGetTwfLog(buf_list[iw], wf_list[iw]);
 }
 
-void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct)
+void TrialWaveFunction::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct)
 {
   assert(VP.getTotalNum() == ratios.size());
   std::vector<ValueType> t(ratios.size());
@@ -882,7 +882,7 @@ void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<Value
     }
 }
 
-void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& wf_list, const RefVector<VirtualParticleSet>& vp_list, std::vector<std::vector<ValueType>>& ratios, ComputeType ct)
+void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& wf_list, const RefVector<const VirtualParticleSet>& vp_list, std::vector<std::vector<ValueType>>& ratios, ComputeType ct)
 {
   if (wf_list.size() > 1)
   {
