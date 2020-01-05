@@ -181,55 +181,95 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
   return pairpot;
 }
 
-void NonLocalECPComponent::mw_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
-                                          const RefVector<ParticleSet>& p_list,
-                                          const std::vector<int>& iat_list,
-                                          const RefVector<TrialWaveFunction>& psi_list,
-                                          const std::vector<int>& iel_list,
-                                          const std::vector<RealType>& r_list,
-                                          const std::vector<PosType>& dr_list,
-                                          std::vector<RealType>& pairpots,
-                                          bool use_DLA)
+void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
+                                            const RefVector<ParticleSet>& p_list,
+                                            const std::vector<int>& iat_list,
+                                            const RefVector<TrialWaveFunction>& psi_list,
+                                            const std::vector<int>& iel_list,
+                                            const std::vector<RealType>& r_list,
+                                            const std::vector<PosType>& dr_list,
+                                            std::vector<RealType>& pairpots,
+                                            bool use_DLA)
 {
-  for (size_t i = 0; i < p_list.size(); i++)
+  if (ecp_component_list.size() > 1)
   {
-    NonLocalECPComponent& component(ecp_component_list[i]);
-    auto* VP = component.VP;
-    ParticleSet& W(p_list[i]);
-    int iat(iat_list[i]);
-    TrialWaveFunction& psi(psi_list[i]);
-    int iel(iel_list[i]);
-    auto r   = r_list[i];
-    auto& dr = dr_list[i];
-
-    component.buildQuadraturePointDeltaPositions(r, dr, component.deltaV);
-
-    if (VP)
+    if (ecp_component_list[0].get().VP)
     {
       // Compute ratios with VP
-      VP->makeMoves(iel, W.R[iel], component.deltaV, true, iat);
+#pragma omp parallel for
+      for (size_t i = 0; i < ecp_component_list.size(); i++)
+      {
+        NonLocalECPComponent& component(ecp_component_list[i]);
+        ParticleSet& W(p_list[i]);
+        int iat(iat_list[i]);
+        int iel(iel_list[i]);
+        auto r   = r_list[i];
+        auto& dr = dr_list[i];
+
+        component.buildQuadraturePointDeltaPositions(r, dr, component.deltaV);
+
+        component.VP->makeMoves(iel, W.R[iel], component.deltaV, true, iat);
+      }
+
+      RefVector<const VirtualParticleSet> vp_list;
+      RefVector<std::vector<ValueType>> psiratios_list;
+      vp_list.reserve(ecp_component_list.size());
+      psiratios_list.reserve(ecp_component_list.size());
+
+      for (size_t i = 0; i < ecp_component_list.size(); i++)
+      {
+        NonLocalECPComponent& component(ecp_component_list[i]);
+        vp_list.push_back(*component.VP);
+        psiratios_list.push_back(component.psiratio);
+      }
+
       if (use_DLA)
-        psi.evaluateRatios(*VP, component.psiratio, TrialWaveFunction::ComputeType::FERMIONIC);
+        TrialWaveFunction::flex_evaluateRatios(psi_list, vp_list, psiratios_list,
+                                               TrialWaveFunction::ComputeType::FERMIONIC);
       else
-        psi.evaluateRatios(*VP, component.psiratio);
+        TrialWaveFunction::flex_evaluateRatios(psi_list, vp_list, psiratios_list);
     }
     else
     {
-      // Compute ratio of wave functions
-      for (int j = 0; j < component.getNknot(); j++)
+#pragma omp parallel for
+      for (size_t i = 0; i < p_list.size(); i++)
       {
-        W.makeMove(iel, component.deltaV[j], false);
-        if (use_DLA)
-          component.psiratio[j] = psi.calcRatio(W, iel, TrialWaveFunction::ComputeType::FERMIONIC);
-        else
-          component.psiratio[j] = psi.calcRatio(W, iel);
-        W.rejectMove(iel);
-        psi.resetPhaseDiff();
+        NonLocalECPComponent& component(ecp_component_list[i]);
+        auto* VP = component.VP;
+        ParticleSet& W(p_list[i]);
+        int iat(iat_list[i]);
+        TrialWaveFunction& psi(psi_list[i]);
+        int iel(iel_list[i]);
+        auto r   = r_list[i];
+        auto& dr = dr_list[i];
+
+        component.buildQuadraturePointDeltaPositions(r, dr, component.deltaV);
+
+        // Compute ratio of wave functions
+        for (int j = 0; j < component.getNknot(); j++)
+        {
+          W.makeMove(iel, component.deltaV[j], false);
+          if (use_DLA)
+            component.psiratio[j] = psi.calcRatio(W, iel, TrialWaveFunction::ComputeType::FERMIONIC);
+          else
+            component.psiratio[j] = psi.calcRatio(W, iel);
+          W.rejectMove(iel);
+          psi.resetPhaseDiff();
+        }
       }
     }
 
-    pairpots[i] = component.calculateProjector(r, dr);
+    for (size_t i = 0; i < p_list.size(); i++)
+    {
+      NonLocalECPComponent& component(ecp_component_list[i]);
+      auto r      = r_list[i];
+      auto& dr    = dr_list[i];
+      pairpots[i] = component.calculateProjector(r, dr);
+    }
   }
+  else if (ecp_component_list.size() == 1)
+    ecp_component_list[0].get().evaluateOne(p_list[0], iat_list[0], psi_list[0], iel_list[0], r_list[0], dr_list[0],
+                                            use_DLA);
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W,

@@ -882,17 +882,18 @@ void TrialWaveFunction::evaluateRatios(const VirtualParticleSet& VP, std::vector
     }
 }
 
-void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& wf_list, const RefVector<const VirtualParticleSet>& vp_list, std::vector<std::vector<ValueType>>& ratios, ComputeType ct)
+void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& wf_list, const RefVector<const VirtualParticleSet>& vp_list, const RefVector<std::vector<ValueType>>& ratios_list, ComputeType ct)
 {
   if (wf_list.size() > 1)
   {
     auto& wavefunction_components = wf_list[0].get().Z;
-    std::vector<std::vector<ValueType>> t(ratios.size());
+    std::vector<std::vector<ValueType>> t(ratios_list.size());
     for (int iw = 0; iw < wf_list.size(); iw++)
     {
-      assert(vp_list[iw].get().getTotalNum() == ratios[iw].size());
-      std::fill(ratios[iw].begin(), ratios[iw].end(), 1.0);
-      t[iw].resize(ratios[iw].size());
+      std::vector<ValueType>& ratios = ratios_list[iw];
+      assert(vp_list[iw].get().getTotalNum() == ratios.size());
+      std::fill(ratios.begin(), ratios.end(), 1.0);
+      t[iw].resize(ratios.size());
     }
 
     for (int i = 0, ii = NL_TIMER; i < wavefunction_components.size(); i++, ii += TIMER_SKIP)
@@ -903,12 +904,15 @@ void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& 
         const auto wfc_list(extractWFCRefList(wf_list, i));
         wavefunction_components[i]->mw_evaluateRatios(wfc_list, vp_list, t);
         for (int iw = 0; iw < wf_list.size(); iw++)
-          for (int j = 0; j < ratios.size(); ++j)
-            ratios[iw][j] *= t[iw][j];
+        {
+          std::vector<ValueType>& ratios = ratios_list[iw];
+          for (int j = 0; j < ratios_list.size(); ++j)
+            ratios[j] *= t[iw][j];
+        }
       }
   }
   else if (wf_list.size() == 1)
-    wf_list[0].get().evaluateRatios(vp_list[0], ratios[0], ct);
+    wf_list[0].get().evaluateRatios(vp_list[0], ratios_list[0], ct);
 
 }
 

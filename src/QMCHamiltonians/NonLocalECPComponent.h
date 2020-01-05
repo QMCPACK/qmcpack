@@ -156,7 +156,7 @@ public:
                        const PosType& dr,
                        bool use_DLA);
 
-  static void mw_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
+  static void flex_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
                              const RefVector<ParticleSet>& p_list,
                              const std::vector<int>& iat_list,
                              const RefVector<TrialWaveFunction>& psi_list,
