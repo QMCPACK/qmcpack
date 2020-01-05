@@ -78,12 +78,12 @@ int NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_
                                                          const double alpha,
                                                          const double gamma)
 {
-  Tau = tau;
-  Alpha = alpha;
-  Gamma = gamma;
-  plusFactor   = Tau * Gamma;
-  minusFactor  = -Tau * (1.0 - Alpha * (1.0 + Gamma));
-  int v_tmove  = TMOVE_OFF;
+  Tau         = tau;
+  Alpha       = alpha;
+  Gamma       = gamma;
+  plusFactor  = Tau * Gamma;
+  minusFactor = -Tau * (1.0 - Alpha * (1.0 + Gamma));
+  int v_tmove = TMOVE_OFF;
   std::ostringstream o;
 
   if (non_local_move_option == "no")
@@ -111,7 +111,7 @@ int NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_
     APP_ABORT("NonLocalTOperator::put unknown nonlocalmove option " + non_local_move_option);
   }
   app_log() << o.str() << std::endl;
-  return v_tmove;  
+  return v_tmove;
 }
 void NonLocalTOperator::reset() { Txy.clear(); }
 

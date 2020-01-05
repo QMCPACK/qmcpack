@@ -22,7 +22,6 @@
 
 namespace qmcplusplus
 {
-
 class NonLocalECPComponent;
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials
@@ -30,11 +29,7 @@ class NonLocalECPComponent;
 class NonLocalECPotential : public OperatorBase, public ForceBase
 {
 public:
-  NonLocalECPotential(ParticleSet& ions,
-                      ParticleSet& els,
-                      TrialWaveFunction& psi,
-                      bool computeForces = false,
-                      bool useVP         = false);
+  NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
 
   ~NonLocalECPotential();
 
@@ -66,14 +61,11 @@ public:
   void setNonLocalMoves(xmlNodePtr cur) { UseTMove = nonLocalOps.put(cur); }
 
   void setNonLocalMoves(const std::string& non_local_move_option,
-                                        const double tau,
-                                        const double alpha,
-                                        const double gamma)
+                        const double tau,
+                        const double alpha,
+                        const double gamma)
   {
-    UseTMove = nonLocalOps.thingsThatShouldBeInMyConstructor(non_local_move_option,
-                                        tau,
-                                        alpha,
-                                        gamma);
+    UseTMove = nonLocalOps.thingsThatShouldBeInMyConstructor(non_local_move_option, tau, alpha, gamma);
   }
   /** make non local moves with particle-by-particle moves
    * @param P particle set
@@ -143,6 +135,8 @@ private:
   NonLocalTOperator nonLocalOps;
   ///true if we should compute forces
   bool ComputeForces;
+  ///true, determinant localization approximation(DLA) is enabled
+  bool use_DLA;
   ///Pulay force vector
   ParticleSet::ParticlePos_t PulayTerm;
 #if !defined(REMOVE_TRACEMANAGER)

@@ -33,7 +33,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
                                          ParticleSet& els,
                                          TrialWaveFunction& psi,
                                          bool computeForces,
-                                         bool useVP)
+                                         bool enable_DLA)
     : ForceBase(ions, els),
       myRNG(nullptr),
       IonConfig(ions),
@@ -43,7 +43,8 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
       IonNeighborElecs(ions),
       UseTMove(TMOVE_OFF),
       nonLocalOps(els.getTotalNum()),
-      ComputeForces(computeForces)
+      ComputeForces(computeForces),
+      use_DLA(enable_DLA)
 {
   set_energy_domain(potential);
   two_body_quantum_domain(ions, els);
@@ -111,7 +112,8 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(Particl
   return Value;
 }
 
-void NonLocalECPotential::mw_evaluateWithToperator(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
+void NonLocalECPotential::mw_evaluateWithToperator(const RefVector<OperatorBase>& O_list,
+                                                   const RefVector<ParticleSet>& P_list)
 {
   if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
     mw_evaluateImpl(O_list, P_list, true);
@@ -159,7 +161,8 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
             RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat]);
-            if (Tmove) PP[iat]->contributeTxy(jel, Txy);
+            if (Tmove)
+              PP[iat]->contributeTxy(jel, Txy);
             Value += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
@@ -183,15 +186,16 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
         for (int iat = 0; iat < NumIons; iat++)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat]);
-            if (Tmove) PP[iat]->contributeTxy(jel, Txy);
+            RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], use_DLA);
+            if (Tmove)
+              PP[iat]->contributeTxy(jel, Txy);
             Value += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
             if (streaming_particles)
             {
-              Ve_samp(jel) = 0.5*pairpot;
-              Vi_samp(iat) = 0.5*pairpot;
+              Ve_samp(jel) = 0.5 * pairpot;
+              Vi_samp(iat) = 0.5 * pairpot;
             }
           }
       }
@@ -209,15 +213,16 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
           const RealType r(myTable.r(nn));
           if (r > PP[iat]->getRmax())
             continue;
-          RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, iel, r, myTable.dr(nn));
-          if (Tmove) PP[iat]->contributeTxy(iel, Txy);
+          RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, iel, r, myTable.dr(nn), use_DLA);
+          if (Tmove)
+            PP[iat]->contributeTxy(iel, Txy);
           Value += pairpot;
           NeighborElecs.push_back(iel);
           ElecNeighborIons.getNeighborList(iel).push_back(iat);
           if (streaming_particles)
           {
-            Ve_samp(iel) = 0.5*pairpot;
-            Vi_samp(iat) = 0.5*pairpot;
+            Ve_samp(iel) = 0.5 * pairpot;
+            Vi_samp(iat) = 0.5 * pairpot;
           }
         }
       }
@@ -250,7 +255,9 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
 #endif
 }
 
-void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list, bool Tmove)
+void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
+                                          const RefVector<ParticleSet>& P_list,
+                                          bool Tmove)
 {
   if (Tmove)
     nonLocalOps.reset();
@@ -287,8 +294,9 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
         for (int iat = 0; iat < NumIons; iat++)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat]);
-            if (Tmove) PP[iat]->contributeTxy(jel, Txy);
+            RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], use_DLA);
+            if (Tmove)
+              PP[iat]->contributeTxy(jel, Txy);
             Value += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
@@ -340,9 +348,10 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
       for (int iat = 0; iat < NumIons; iat++)
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
-          Value += PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat],
-                                                  forces[iat], PulayTerm);
-          if (Tmove) PP[iat]->contributeTxy(jel, Txy);
+          Value +=
+              PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces[iat], PulayTerm);
+          if (Tmove)
+            PP[iat]->contributeTxy(jel, Txy);
           NeighborIons.push_back(iat);
           IonNeighborElecs.getNeighborList(iat).push_back(jel);
         }
@@ -352,7 +361,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
   {
     APP_ABORT("NonLocalECPotential::evaluate():  Forces not imlpemented for AoS build\n");
   }
-  hf_terms    -= forces;
+  hf_terms -= forces;
   pulay_terms -= PulayTerm;
   return Value;
 }
@@ -371,7 +380,7 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
     for (int atom_index = 0; atom_index < NeighborIons.size(); atom_index++)
     {
       const int iat = NeighborIons[atom_index];
-      PP[iat]->evaluateOne(P, iat, Psi, ref_elec, dist[iat], -displ[iat]);
+      PP[iat]->evaluateOne(P, iat, Psi, ref_elec, dist[iat], -displ[iat], use_DLA);
       PP[iat]->contributeTxy(ref_elec, Txy);
     }
   }
@@ -382,7 +391,7 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
     {
       const int iat = NeighborIons[atom_index];
       int nn        = myTable.M[iat] + ref_elec;
-      PP[iat]->evaluateOne(P, iat, Psi, ref_elec, myTable.r(nn), myTable.dr(nn));
+      PP[iat]->evaluateOne(P, iat, Psi, ref_elec, myTable.r(nn), myTable.dr(nn), use_DLA);
       PP[iat]->contributeTxy(ref_elec, Txy);
     }
 #endif
@@ -533,7 +542,7 @@ void NonLocalECPotential::addComponent(int groupID, NonLocalECPComponent* ppot)
 
 OperatorBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  NonLocalECPotential* myclone = new NonLocalECPotential(IonConfig, qp, psi, ComputeForces);
+  NonLocalECPotential* myclone = new NonLocalECPotential(IonConfig, qp, psi, ComputeForces, use_DLA);
   for (int ig = 0; ig < PPset.size(); ++ig)
   {
     if (PPset[ig])

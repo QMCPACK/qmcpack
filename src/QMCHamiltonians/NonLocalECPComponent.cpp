@@ -19,10 +19,7 @@
 
 namespace qmcplusplus
 {
-NonLocalECPComponent::NonLocalECPComponent()
-    : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr), use_DLA(false)
-{
-}
+NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr) {}
 
 NonLocalECPComponent::~NonLocalECPComponent()
 {
@@ -111,13 +108,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
                                                                  TrialWaveFunction& psi,
                                                                  int iel,
                                                                  RealType r,
-                                                                 const PosType& dr)
+                                                                 const PosType& dr,
+                                                                 bool use_DLA)
 {
-  constexpr RealType czero(0);
-  constexpr RealType cone(1);
-
-  for (int j = 0; j < nknot; j++)
-    deltaV[j] = r * rrotsgrid_m[j] - dr;
+  buildQuadraturePointDeltaPositions(r, dr, deltaV);
 
   if (VP)
   {
@@ -131,7 +125,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     for (int j = 0; j < nknot; j++)
     {
       W.makeMove(iel, deltaV[j], false);
-      if(use_DLA)
+      if (use_DLA)
         psiratio[j] = psi.calcRatio(W, iel, TrialWaveFunction::ComputeType::FERMIONIC);
       else
         psiratio[j] = psi.calcRatio(W, iel);
@@ -140,6 +134,11 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
     }
   }
 
+  return calculateProjector(r, dr);
+}
+
+NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType r, const PosType& dr)
+{
   for (int j = 0; j < nknot; j++)
     psiratio[j] *= sgridweight_m[j];
 
@@ -147,8 +146,11 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
   for (int ip = 0; ip < nchannel; ip++)
     vrad[ip] = nlpp_m[ip]->splint(r) * wgt_angpp_m[ip];
 
+  constexpr RealType czero(0);
+  constexpr RealType cone(1);
+
   const RealType rinv = cone / r;
-  RealType pairpot    = 0;
+  RealType pairpot    = czero;
   // Compute spherical harmonics on grid
   for (int j = 0; j < nknot; j++)
   {
@@ -174,6 +176,54 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
   }
 
   return pairpot;
+}
+
+void NonLocalECPComponent::mw_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
+                                          const RefVector<ParticleSet>& p_list,
+                                          const std::vector<int>& iat_list,
+                                          const RefVector<TrialWaveFunction>& psi_list,
+                                          const std::vector<int>& iel_list,
+                                          const std::vector<RealType>& r_list,
+                                          const std::vector<PosType>& dr_list,
+                                          std::vector<RealType>& pairpots,
+                                          bool use_DLA)
+{
+  for (size_t i = 0; i < p_list.size(); i++)
+  {
+    NonLocalECPComponent& component(ecp_component_list[i]);
+    auto* VP = component.VP;
+    ParticleSet& W(p_list[i]);
+    int iat(iat_list[i]);
+    TrialWaveFunction& psi(psi_list[i]);
+    int iel(iel_list[i]);
+    auto r   = r_list[i];
+    auto& dr = dr_list[i];
+
+    component.buildQuadraturePointDeltaPositions(r, dr, component.deltaV);
+
+    if (VP)
+    {
+      // Compute ratios with VP
+      VP->makeMoves(iel, W.R[iel], component.deltaV, true, iat);
+      psi.evaluateRatios(*VP, component.psiratio);
+    }
+    else
+    {
+      // Compute ratio of wave functions
+      for (int j = 0; j < component.getNknot(); j++)
+      {
+        W.makeMove(iel, component.deltaV[j], false);
+        if (use_DLA)
+          component.psiratio[j] = psi.calcRatio(W, iel, TrialWaveFunction::ComputeType::FERMIONIC);
+        else
+          component.psiratio[j] = psi.calcRatio(W, iel);
+        W.rejectMove(iel);
+        psi.resetPhaseDiff();
+      }
+    }
+
+    pairpots[i] = component.calculateProjector(r, dr);
+  }
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W,
@@ -292,10 +342,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 
     for (int l = 0; l < nchannel; l++)
     {
-      lsum           += std::real(vrad[l]) * lpol[angpp_m[l]];
-      gradpotterm_   += vgrad[l] * lpol[angpp_m[l]] * std::real(psiratio[j]);
+      lsum += std::real(vrad[l]) * lpol[angpp_m[l]];
+      gradpotterm_ += vgrad[l] * lpol[angpp_m[l]] * std::real(psiratio[j]);
       gradlpolyterm_ += std::real(vrad[l]) * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
-      gradwfnterm_   += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
+      gradwfnterm_ += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
     }
     knot_pots[j] = std::real(lsum * psiratio[j]);
     pairpot += knot_pots[j];
@@ -404,15 +454,15 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (size_t j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;
-      //This sequence is necessary to update the distance tables and make the 
-      //inverse matrix available for force computation.  Move the particle to 
+      //This sequence is necessary to update the distance tables and make the
+      //inverse matrix available for force computation.  Move the particle to
       //quadrature point...
       W.makeMove(iel, deltaV[j]);
       psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);
       W.acceptMove(iel); // it only updates the jel-th row of e-e table
-      //Done with the move.  Ready for force computation.  
-    
+      //Done with the move.  Ready for force computation.
+
       iongradtmp_ = psi.evalGradSource(W, ions, jat);
       iongradtmp_ *= psiratio[j];
 #ifdef QMC_COMPLEX
@@ -476,10 +526,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     {
       //Note.  Because we are computing "forces", there's a -1 difference between this and
       //direct finite difference calculations.
-      lsum           += std::real(vrad[l]) * lpol[angpp_m[l]];
-      gradpotterm_   += vgrad[l] * lpol[angpp_m[l]] * std::real(psiratio[j]);
+      lsum += std::real(vrad[l]) * lpol[angpp_m[l]];
+      gradpotterm_ += vgrad[l] * lpol[angpp_m[l]] * std::real(psiratio[j]);
       gradlpolyterm_ += std::real(vrad[l]) * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
-      gradwfnterm_   += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
+      gradwfnterm_ += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
       pulaytmp_ -= std::real(vrad[l]) * lpol[angpp_m[l]] * pulay_quad[j];
     }
     knot_pots[j] = std::real(lsum * psiratio[j]);
@@ -525,6 +575,14 @@ void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerato
   for (int i = 0; i < rrotsgrid_m.size(); i++)
     for (int j = 0; j < OHMMS_DIM; j++)
       sphere[OHMMS_DIM * i + j] = rrotsgrid_m[i][j];
+}
+
+void NonLocalECPComponent::buildQuadraturePointDeltaPositions(RealType r,
+                                                              const PosType& dr,
+                                                              std::vector<PosType>& deltaV) const
+{
+  for (int j = 0; j < nknot; j++)
+    deltaV[j] = r * rrotsgrid_m[j] - dr;
 }
 
 void NonLocalECPComponent::contributeTxy(int iel, std::vector<NonLocalData>& Txy) const

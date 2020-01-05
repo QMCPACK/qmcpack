@@ -101,8 +101,6 @@ private:
 
   ///virtual particle set: delayed initialization
   VirtualParticleSet* VP;
-  ///true, determinant localization approximation(DLA) is enabled
-  bool use_DLA;
 
 public:
   NonLocalECPComponent();
@@ -122,13 +120,15 @@ public:
     sgridweight_m.push_back(weight);
   }
 
-  inline void enableDLA() { use_DLA = true; }
-
   void resize_warrays(int n, int m, int l);
 
   void randomize_grid(RandomGenerator_t& myRNG);
   template<typename T>
   void randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG);
+
+  void buildQuadraturePointDeltaPositions(RealType r, const PosType& dr, std::vector<PosType>& deltaV) const;
+
+  RealType calculateProjector(RealType r, const PosType& dr);
 
   /** contribute local non-local move data
    * @param iel reference electron id.
@@ -153,7 +153,18 @@ public:
                        TrialWaveFunction& Psi,
                        int iel,
                        RealType r,
-                       const PosType& dr);
+                       const PosType& dr,
+                       bool use_DLA);
+
+  static void mw_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
+                             const RefVector<ParticleSet>& p_list,
+                             const std::vector<int>& iat_list,
+                             const RefVector<TrialWaveFunction>& psi_list,
+                             const std::vector<int>& iel_list,
+                             const std::vector<RealType>& r_list,
+                             const std::vector<PosType>& dr_list,
+                             std::vector<RealType>& pairpots,
+                             bool use_DLA);
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
    * to total energy from ion "iat" and electron "iel".
