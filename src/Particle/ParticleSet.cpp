@@ -741,12 +741,14 @@ void ParticleSet::initPropertyList()
   PropertyList.add("AltEnergy");
   PropertyList.add("LocalEnergy");
   PropertyList.add("LocalPotential");
-  if (PropertyList.size() != NUMPROPERTIES)
-  {
-    app_error() << "The number of default properties for walkers  is not consistent." << std::endl;
-    app_error() << "NUMPROPERTIES " << NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << std::endl;
-    APP_ABORT("ParticleSet::initPropertyList");
-  }
+  
+  // There is no point in checking this, its quickly not consistent as other objects update property list.
+  // if (PropertyList.size() != NUMPROPERTIES)
+  // {
+  //   app_error() << "The number of default properties for walkers  is not consistent." << std::endl;
+  //   app_error() << "NUMPROPERTIES " << NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << std::endl;
+  //   APP_ABORT("ParticleSet::initPropertyList");
+  // }
 }
 
 void ParticleSet::clearDistanceTables()
