@@ -11,6 +11,7 @@ if [ -d /scratch/packages/modulefiles ]; then
   module use /scratch/packages/modulefiles
 fi
 
+module load cmake
 module load intel-mkl intel/18.4
 module load openmpi/4.0.2-intel
 module load cuda/10.1

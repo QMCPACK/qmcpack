@@ -273,7 +273,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   elec_.R[1][1] = 1.0;
   elec_.R[1][2] = 0.0;
 
-  // diamondC_1x1x1
+  // diamondC_2x1x1
   elec_.Lattice.R(0, 0) = 6.7463223;
   elec_.Lattice.R(0, 1) = 6.7463223;
   elec_.Lattice.R(0, 2) = 0.0;

@@ -20,11 +20,13 @@
 #include <tuple>
 #include<mutex>
 
+#include "OhmmsApp/RandomNumberControl.h"
 #include "Utilities/Timer.h"
 #include "Utilities/FairDivide.h" 
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/Numerics/tensor_operations.hpp"
+#include "AFQMC/Walkers/WalkerSet.hpp"
 
 //#include "AFQMC/Wavefunctions/NOMSD.h"
 
@@ -2016,6 +2018,124 @@ namespace afqmc
     //       Set it to zero.
     for(int i=0; i<v.num_elements(); i++)
       v[i] = ComplexType(real(v[i]),0.0); 
+  }
+
+  inline void NOMSD::recompute_ci()
+  {
+    double LogOverlapFactor(0.0);
+    int ndets = ci.size(); 
+    int nspin(1);
+    if(walker_type==COLLINEAR) nspin=2;
+    if(ndets == 1) {
+      ci[0] = ComplexType(1.0,0.0);
+      return;   
+    }
+
+    if(TG.getNGroupsPerTG() > 1) {
+      APP_ABORT(" Error: rediag not implemented with distributed wavefunction.\n");
+    } else {
+
+      size_t nt = (1+dm_size(false)+NMO*NAEA);
+      if(shmbuff_for_E.num_elements() < nt)
+        shmbuff_for_E.reextent(iextensions<1u>{nt});
+
+      boost::multi::array<ComplexType,2,shared_allocator<ComplexType>> H({ndets,ndets},TG.Node());
+      boost::multi::array<ComplexType,2,shared_allocator<ComplexType>> S({ndets,ndets},TG.Node());
+      boost::multi::array<ComplexType,1> energy(iextensions<1u>{2});
+      CMatrix Psia({0,0});
+      CMatrix Psib({0,0});
+      if(TG.TG_local().root()) {
+        // only TG_local().root() calculates G for now
+        Psia.reextent({NMO,NAEA});
+        if(walker_type == COLLINEAR)
+          Psib.reextent({NMO,NAEB});
+      }  
+      using std::fill_n;
+      fill_n(H.origin(),H.num_elements(),ComplexType(0.0));
+      fill_n(S.origin(),S.num_elements(),ComplexType(0.0));
+      fill_n(energy.origin(),energy.num_elements(),ComplexType(0.0));
+    
+      ComplexType zero(0.0);
+      auto Gsize = dm_size(false);
+      int nr=Gsize,nc=1;
+      if(transposed_G_for_E_) std::swap(nr,nc);
+      CVector_ref ov_(make_device_ptr(shmbuff_for_E.origin()),iextensions<1u>{1});
+      CMatrix_ref G(ov_.origin()+1,{nr,nc});
+      eloc2.reextent({1,3});
+    
+      for(int jdet=0, ji=0; jdet<ndets; jdet++) {
+        ComplexType cjdet = ci[jdet];
+        for(int idet=jdet;  idet<ndets; idet++, ji++) {
+          if(ji%TG.getNumberOfTGs() == TG.getTGNumber()) {
+            ComplexType cidet = ci[idet];
+            if(TG.TG_local().root()) {
+              CMatrix_ref Ga(G.origin(),{NAEA,NMO});
+              csr::CSR2MA('H',OrbMats[nspin*jdet],Psia);
+              ov_[0] = SDetOp.MixedDensityMatrix( OrbMats[nspin*idet], Psia, Ga,
+                                           LogOverlapFactor,true);
+              if(walker_type == COLLINEAR) { 
+                CMatrix_ref Gb(Ga.origin()+Ga.num_elements(),{NAEB,NMO});
+                csr::CSR2MA('H',OrbMats[nspin*jdet+1],Psib);
+                ov_[0] *= SDetOp.MixedDensityMatrix( OrbMats[nspin*idet+1], Psib, Gb,
+                                           LogOverlapFactor,true);
+              } else if(walker_type==CLOSED) {
+                ov_[0] *= ov_[0];
+              }
+            }
+            TG.local_barrier();
+            HamOp.energy(eloc2,G,idet,TG.TG_local().root());
+            if(TG.TG_local().size() > 1)
+              TG.TG_local().all_reduce_in_place_n(to_address(eloc2.origin()),3,std::plus<>());
+            if(TG.TG_local().root()) {
+              if(idet != jdet) {
+                H[idet][jdet] = ov_[0]*(eloc2[0][0]+eloc2[0][1]+eloc2[0][2]);
+                S[idet][jdet] = ov_[0];
+                H[jdet][idet] = ma::conj(H[idet][jdet]);   
+                S[jdet][idet] = ma::conj(ov_[0]);   
+                energy[0] += ma::conj(cidet)*cjdet*H[idet][jdet] +
+                             ma::conj(cjdet)*cidet*H[jdet][idet];
+                energy[1] += ma::conj(cidet)*cjdet*S[idet][jdet] +
+                             ma::conj(cjdet)*cidet*S[jdet][idet];
+              } else { 
+                H[idet][idet] = ComplexType(real(ov_[0])*real(eloc2[0][0]+eloc2[0][1]+eloc2[0][2]),0.0);
+                S[idet][idet] = ComplexType(real(ov_[0]),0.0);
+                energy[0] += ma::conj(cidet)*cjdet*H[idet][jdet]; 
+                energy[1] += ma::conj(cidet)*cjdet*S[idet][jdet]; 
+              } 
+            }
+            TG.local_barrier();
+          }
+        }
+      }
+      TG.Global().barrier();
+      if(TG.Node().root())
+        TG.Cores().all_reduce_in_place_n(to_address(H.origin()),H.num_elements(),std::plus<>());
+      if(TG.Node().root())
+        TG.Cores().all_reduce_in_place_n(to_address(S.origin()),S.num_elements(),std::plus<>());
+      TG.Global().all_reduce_in_place_n(energy.origin(),2,std::plus<>());
+
+      app_log() << " - Variational energy of trial wavefunction: " << std::setprecision(16) << energy[0] / energy[1] << "\n";
+      app_log() << " - Diagonalizing CI matrix.\n";
+      using RVector = boost::multi::array<RealType,1>;
+      using CMatrix = boost::multi::array<ComplexType,2>;
+      // Want a "unique" solution for all cores/nodes.
+      if(TG.Global().rank() == 0) {
+        boost::multi::array_ref<ComplexType,2> H_(to_address(H.origin()),{ndets,ndets});
+        boost::multi::array_ref<ComplexType,2> S_(to_address(S.origin()),{ndets,ndets});
+        std::pair<RVector,CMatrix> Sol = ma::genEigSelect<RVector,CMatrix>(H_,S_,1);
+        app_log() << " - Updating CI coefficients. \n";
+        app_log() << " - Recomputed coefficient of first determinant: " << Sol.second[0][0] << "\n";
+        for(int idet=0; idet < ndets; idet++) {
+          ComplexType ci_ = Sol.second[0][idet];
+          // Do we want this much output?
+          app_log() << idet << " old: " << ci[idet] << " new: " << ci_ << "\n";
+          ci[idet] = ci_;
+        } 
+        app_log() << " - Recomputed variational energy of trial wavefunction: " << Sol.first[0] << "\n";
+      } 
+      if(TG.Global().size() > 1) 
+        TG.Global().broadcast_n(to_address(ci.data()), ci.size(), 0);
+    }
   }
 
 }

@@ -277,18 +277,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(ParticleSet& P, int 
     for (size_t i = 0; i < NumPtcls; i++)
     {
       psiV_temp[i] = psiV[*it];
-#ifdef __bgq__
-      /* This is a workaround for BGQ and BGClang.
-         * The following lines correct the wrong summation in ratioGradRef.
-         * To reproduce the issue:
-         * Remove the Jastrow factor in the C2_pp-msdj_vmc test.
-         * The VMC energy is significantly lower than it should be.
-         */
-      for (int idim = 0; idim < OHMMS_DIM; idim++)
-        ratioGradRef[idim] += psiMinv_temp(i, WorkingIndex) * dpsiV[*it][idim];
-#else
       ratioGradRef += psiMinv_temp(i, WorkingIndex) * dpsiV[*it];
-#endif
       it++;
     }
     ValueType ratioRef                            = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);

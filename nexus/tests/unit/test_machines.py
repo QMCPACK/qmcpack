@@ -1129,6 +1129,12 @@ def test_job_run_command():
         ('redsky'         , 'n2_t2'         ) : 'srun test.x',
         ('redsky'         , 'n2_t2_e'       ) : 'srun test.x',
         ('redsky'         , 'n2_t2_p2'      ) : 'srun test.x',
+        ('rhea'           , 'n1'            ) : 'srun -N 1 -n 16 test.x',
+        ('rhea'           , 'n1_p1'         ) : 'srun -N 1 -n 1 test.x',
+        ('rhea'           , 'n2'            ) : 'srun -N 2 -n 32 test.x',
+        ('rhea'           , 'n2_t2'         ) : 'srun -N 2 -n 16 -c 2 --cpu-bind=cores test.x',
+        ('rhea'           , 'n2_t2_e'       ) : 'srun -N 2 -n 16 -c 2 --cpu-bind=cores test.x',
+        ('rhea'           , 'n2_t2_p2'      ) : 'srun -N 2 -n 4 -c 2 --cpu-bind=cores test.x',
         ('serrano'        , 'n1'            ) : 'srun test.x',
         ('serrano'        , 'n1_p1'         ) : 'srun test.x',
         ('serrano'        , 'n2'            ) : 'srun test.x',
@@ -1611,6 +1617,24 @@ module add mvapich2-intel-psm/1.7
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 srun test.x''',
+        rhea = '''#!/bin/bash
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+
+cd $SLURM_SUBMIT_DIR
+
+echo JobID : $SLURM_JOBID 
+echo Number of nodes requested: $SLURM_JOB_NUM_NODES 
+echo List of nodes assigned to the job: $SLURM_NODELIST 
+
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+srun -N 2 -n 32 test.x''',
         serrano = '''#!/bin/bash
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
