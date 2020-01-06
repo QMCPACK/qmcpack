@@ -259,7 +259,10 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
                                           const RefVector<ParticleSet>& P_list,
                                           bool Tmove)
 {
-  for (size_t iw  = 0; iw < O_list.size(); iw++)
+  size_t max_num_jobs = 0;
+  const size_t nw = O_list.size();
+
+  for (size_t iw  = 0; iw < nw; iw++)
   {
     NonLocalECPotential& O(static_cast<NonLocalECPotential&>(O_list[iw].get()));
     ParticleSet& P(P_list[iw]);
@@ -284,7 +287,10 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
     if (myTable.DTType != DT_SOA)
       APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): not imlpemented for AoS builds\n");
 
-    O.Value = 0.0;
+    O.nlpp_jobs.clear();
+    // this should be enough in most calculations. Every electron is in two pseudo regions.
+    O.nlpp_jobs.reserve(2*P.getTotalNum());
+
     for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
       const auto& dist               = myTable.getDistRow(jel);
@@ -293,13 +299,74 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
       for (int iat = 0; iat < O.NumIons; iat++)
         if (O.PP[iat] != nullptr && dist[iat] < O.PP[iat]->getRmax())
         {
-          RealType pairpot = O.PP[iat]->evaluateOne(P, iat, O.Psi, jel, dist[iat], -displ[iat], use_DLA);
-          if (Tmove)
-            O.PP[iat]->contributeTxy(jel, O.nonLocalOps.Txy);
-          O.Value += pairpot;
           NeighborIons.push_back(iat);
           O.IonNeighborElecs.getNeighborList(iat).push_back(jel);
+          O.nlpp_jobs.push_back(NLPPJob(iat, jel, P.R[jel], dist[iat], -displ[iat]));
         }
+    }
+
+    // find the max number of jobs of all the walkers
+    max_num_jobs = std::max(max_num_jobs, O.nlpp_jobs.size());
+
+    O.Value = 0.0;
+  }
+
+  RefVector<NonLocalECPotential> ecp_potential_list;
+  RefVector<NonLocalECPComponent> ecp_component_list;
+  RefVector<ParticleSet> p_list;
+  std::vector<int> iat_list;
+  RefVector<TrialWaveFunction> psi_list;
+  std::vector<int> jel_list;
+  std::vector<RealType> r_list;
+  std::vector<PosType> dr_list;
+  std::vector<RealType> pairpots(nw);
+
+  ecp_potential_list.reserve(nw);
+  ecp_component_list.reserve(nw);
+  p_list.reserve(nw);
+  iat_list.reserve(nw);
+  psi_list.reserve(nw);
+  jel_list.reserve(nw);
+  r_list.reserve(nw);
+  dr_list.reserve(nw);
+
+  for (size_t jobid  = 0; jobid < max_num_jobs; jobid++)
+  {
+    ecp_potential_list.clear();
+    ecp_component_list.clear();
+    p_list.clear();
+    iat_list.clear();
+    psi_list.clear();
+    jel_list.clear();
+    r_list.clear();
+    dr_list.clear();
+    for (size_t iw  = 0; iw < nw; iw++)
+    {
+      NonLocalECPotential& O(static_cast<NonLocalECPotential&>(O_list[iw].get()));
+      ParticleSet& P(P_list[iw]);
+      if (jobid < O.nlpp_jobs.size())
+      {
+        const auto& job = O.nlpp_jobs[jobid];
+        ecp_potential_list.push_back(O);
+        ecp_component_list.push_back(*O.PP[std::get<0>(job)]);
+        p_list.push_back(P);
+        iat_list.push_back(std::get<0>(job));
+        psi_list.push_back(O.Psi);
+        jel_list.push_back(std::get<1>(job));
+        r_list.push_back(std::get<3>(job));
+        dr_list.push_back(std::get<4>(job));
+        //O.Value += O.PP[std::get<0>(job)]->evaluateOne(P, std::get<0>(job), O.Psi, std::get<1>(job), std::get<3>(job), std::get<4>(job), use_DLA);
+      }
+    }
+
+    //NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, iat_list, psi_list, jel_list, r_list, dr_list, pairpots, use_DLA);
+
+    for (size_t j = 0; j < ecp_potential_list.size(); j++)
+    {
+      ecp_potential_list[j].get().Value += ecp_potential_list[j].get().PP[iat_list[j]]->evaluateOne(p_list[j].get(), iat_list[j], psi_list[j].get(), jel_list[j], r_list[j], dr_list[j], use_DLA);
+      //ecp_potential_list[j].get().Value += pairpots[j];
+      if (Tmove)
+        ecp_component_list[j].get().contributeTxy(jel_list[j], ecp_potential_list[j].get().nonLocalOps.Txy);
     }
   }
 }
