@@ -41,14 +41,45 @@ public:
   //ProtectedMatrix(const Matrix<T, Alloc>&) { throw std::runtime_error("PProtected Matrix may not be resized"); }
   void resize(SizeType n, SizeType m) { throw std::runtime_error("resize called, Protected Matrix may not be resized"); }
   void add(SizeType n) { throw std::runtime_error("add called, Protected Matrix may not be resized"); }
-  void copy(const Matrix<T, Alloc>& rhs) { throw std::runtime_error("copy from Matrix called, Protected Matrix may not be resized"); }
-  void copy(const ProtectedMatrix& rhs) { throw std::runtime_error("copy from Protected Matrix called, Protected Matrix may not be resized"); }
-  ProtectedMatrix& operator=(const ProtectedMatrix& rhs) { throw std::runtime_error("operator= called, Protected Matrix may not be resized"); }
 
+  /**@{*/
+  /** These all handle assignment of an identically sized (Protected)Matrix<T, Alloc>
+   *
+   *  They all are cast to use Matrix's PETE assign,
+   *  this is important since ProtectedMatrix's PETE stuff is suspect
+   *  but PETE is a needless complication for a list of values that is meaningless as a vector.
+   */
+  void copy(const Matrix<T, Alloc>& rhs)
+  {
+    if (this->size() != rhs.size())
+      throw std::runtime_error("copy from Matrix called, Protected Matrix may not be resized");
+    assign(static_cast<Matrix<T, Alloc>&>(*this), rhs);
+  }
+  void copy(const ProtectedMatrix& rhs)
+  {
+    if (this->size() != rhs.size())
+      throw std::runtime_error("copy from Protected Matrix called, Protected Matrix may not be resized");
+    assign(static_cast<Matrix<T, Alloc>&>(*this), rhs);
+  }
+  ProtectedMatrix& operator=(const ProtectedMatrix& rhs)
+  {
+    if (this->size() != rhs.size())
+      throw std::runtime_error("operator= called, Protected Matrix may not be resized");
+    return static_cast<ProtectedMatrix&>(assign(static_cast<Matrix<T, Alloc>&>(*this), rhs));
+  }
   template<class RHS, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
-  ProtectedMatrix& operator=(const RHS& rhs) { throw std::runtime_error("templated operator= called, Protected Matrix may not be resized"); }
+  // This probably should get some sort of SFINAE protection
+  ProtectedMatrix& operator=(const RHS& rhs) {
+    if (this->size() != rhs.size())
+      throw std::runtime_error("templated operator= called, Protected Matrix may not be resized");
+    return static_cast<ProtectedMatrix&>(assign(static_cast<RHS&>(*this), rhs));
+  }
+  /**}@*/
 };
 
+/**@{*/
+/**these just insure compilation, unlikely to be Correct
+ */
 template<class T, typename Alloc>
 struct CreateLeaf<ProtectedMatrix<T, Alloc>>
 {
@@ -69,7 +100,7 @@ struct LeafFunctor<ProtectedMatrix<T, Alloc>, SizeLeaf2>
   typedef bool Type_t;
   inline static bool apply(const ProtectedMatrix<T, Alloc>& v, const SizeLeaf2& s) { return s(v.rows(), v.cols()); }
 };
-
+/**}@*/
 }
 
 
