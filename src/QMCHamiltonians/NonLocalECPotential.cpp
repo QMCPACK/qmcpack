@@ -363,6 +363,14 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
 
     for (size_t j = 0; j < ecp_potential_list.size(); j++)
     {
+      if (false)
+      { // code usefully for debugging
+        RealType check_value = ecp_component_list[j].get().evaluateOne(p_list[j], iat_list[j], psi_list[j], jel_list[j],
+                                                                       r_list[j], dr_list[j], use_DLA);
+        if (std::abs(check_value - pairpots[j]) > 1e-5)
+          std::cout << "check " << check_value << " wrong " << pairpots[j] << " diff "
+                    << std::abs(check_value - pairpots[j]) << std::endl;
+      }
       ecp_potential_list[j].get().Value += pairpots[j];
       if (Tmove)
         ecp_component_list[j].get().contributeTxy(jel_list[j], ecp_potential_list[j].get().nonLocalOps.Txy);

@@ -269,8 +269,8 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent
     }
   }
   else if (ecp_component_list.size() == 1)
-    ecp_component_list[0].get().evaluateOne(p_list[0], iat_list[0], psi_list[0], iel_list[0], r_list[0], dr_list[0],
-                                            use_DLA);
+    pairpots[0] = ecp_component_list[0].get().evaluateOne(p_list[0], iat_list[0], psi_list[0], iel_list[0], r_list[0],
+                                                          dr_list[0], use_DLA);
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W,
