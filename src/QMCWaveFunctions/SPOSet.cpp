@@ -73,15 +73,15 @@ void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
   }
 }
 
-void SPOSet::mw_evaluateDetRatios(const std::vector<SPOSet*>& spo_list,
-                                    const std::vector<const VirtualParticleSet*> VP_list,
-                                    const std::vector<ValueVector_t*> psi_list,
-                                    const std::vector<const ValueVector_t*> psiinv_list,
-                                    const std::vector<std::vector<ValueType>*> ratios_list)
+void SPOSet::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
+                                  const RefVector<const VirtualParticleSet>& vp_list,
+                                  const RefVector<ValueVector_t>& psi_list,
+                                  const RefVector<const ValueVector_t>& psiinv_list,
+                                  std::vector<std::vector<ValueType>>& ratios_list)
 {
 #pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
-    spo_list[iw]->evaluateDetRatios(*VP_list[iw], *psi_list[iw], *psiinv_list[iw], *ratios_list[iw]);
+    spo_list[iw].get().evaluateDetRatios(vp_list[iw], psi_list[iw], psiinv_list[iw], ratios_list[iw]);
 
 }
 
