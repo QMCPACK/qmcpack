@@ -399,6 +399,21 @@ void SplineC2ROMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   }
 }
 
+template<typename ST>
+void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
+                                            const RefVector<const VirtualParticleSet>& vp_list,
+                                            const RefVector<ValueVector_t>& psi_list,
+                                            const RefVector<const ValueVector_t>& psiinv_list,
+                                            std::vector<std::vector<ValueType>>& ratios_list)
+{
+  const size_t nw = spo_list.size();
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    auto& spo = static_cast<SplineC2ROMP<ST>&>(spo_list[iw].get());
+    spo.evaluateDetRatios(vp_list[iw].get(), psi_list[iw].get(), psiinv_list[iw].get(), ratios_list[iw]);
+  }
+}
+
 /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
 template<typename ST>

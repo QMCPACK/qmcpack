@@ -238,6 +238,12 @@ public:
                                  const ValueVector_t& psiinv,
                                  std::vector<ValueType>& ratios) override;
 
+  virtual void mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
+                                    const RefVector<const VirtualParticleSet>& vp_list,
+                                    const RefVector<ValueVector_t>& psi_list,
+                                    const RefVector<const ValueVector_t>& psiinv_list,
+                                    std::vector<std::vector<ValueType>>& ratios_list) override;
+
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
   void assign_vgl_from_l(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);

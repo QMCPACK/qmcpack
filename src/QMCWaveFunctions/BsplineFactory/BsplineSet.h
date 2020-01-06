@@ -99,6 +99,7 @@ public:
 
   // propagate SPOSet virtual functions
   using SPOSet::evaluateDetRatios;
+  using SPOSet::mw_evaluateDetRatios;
   using SPOSet::evaluateValue;
   using SPOSet::evaluateVGH;
   using SPOSet::evaluateVGHGH;
