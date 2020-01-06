@@ -617,21 +617,21 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
     {
       //recv_requests[im].start();
       recv_requests[im].wait();
-      if (done_with_message[im] != 1)
-      {
-        if (recv_requests[im].completed())
-        {
+      // if (done_with_message[im] != 1)
+      // {
+        // if (recv_requests[im].completed())
+        // {
           recv_messages_reduced[im].walker[0].get().copyFromBuffer();
-          for (int iw = 1; iw < recv_messages_reduced[im].multiplicity; ++iw)
-          {
-            std::memcpy(recv_messages_reduced[im].walker[iw].get().DataSet.data(),
-                        recv_messages_reduced[im].walker[0].get().DataSet.data(),
-                        recv_messages_reduced[im].walker[0].get().DataSet.byteSize());
-            recv_messages_reduced[im].walker[iw].get().copyFromBuffer();
-          }
-          done_with_message[im] = 1;
-        }
-      }
+          // for (int iw = 1; iw < recv_messages_reduced[im].multiplicity; ++iw)
+          // {
+            // std::memcpy(recv_messages_reduced[im].walker[0].get().DataSet.data(),
+            //             recv_messages_reduced[im].walker[0].get().DataSet.data(),
+            //             recv_messages_reduced[im].walker[0].get().DataSet.byteSize());
+            //recv_messages_reduced[im].walker[iw].get().copyFromBuffer();
+      //     }
+      //     done_with_message[im] = 1;
+      //   }
+      // }
     }
   }
 
