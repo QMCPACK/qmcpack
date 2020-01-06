@@ -262,6 +262,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
   size_t max_num_jobs = 0;
   const size_t nw     = O_list.size();
 
+#pragma omp parallel for
   for (size_t iw = 0; iw < nw; iw++)
   {
     NonLocalECPotential& O(static_cast<NonLocalECPotential&>(O_list[iw].get()));
