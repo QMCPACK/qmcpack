@@ -223,12 +223,14 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionCompo
 /** move was accepted, update the real container
 */
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat)
+void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   const int WorkingIndex = iat - FirstIndex;
   LogValue += convertValueToLog(curRatio);
   UpdateTimer.start();
   updateEng.acceptRow(psiM, WorkingIndex, psiV);
+  if (!safe_to_delay)
+    updateEng.updateInvMat(psiM);
   // invRow becomes invalid after accepting a move
   invRow_id = -1;
   if (UpdateMode == ORB_PBYP_PARTIAL)

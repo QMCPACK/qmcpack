@@ -354,7 +354,7 @@ void AGPDeterminant::ratioDown(ParticleSet& P, int iat)
 
 /** move was accepted, update the real container
  */
-void AGPDeterminant::acceptMove(ParticleSet& P, int iat)
+void AGPDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   LogValue += convertValueToLog(curRatio);
   //CurrentDet *= curRatio;

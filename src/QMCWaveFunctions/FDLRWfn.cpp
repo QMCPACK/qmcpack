@@ -662,10 +662,10 @@ FDLRWfn::PsiValueType FDLRWfn::ratio(ParticleSet& P, int iat)
 /// \param[in]     iat      the id number of the moved particle
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////
-void FDLRWfn::acceptMove(ParticleSet& P, int iat)
+void FDLRWfn::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
-  m_wfn_xpd->acceptMove(P, iat);
-  m_wfn_xmd->acceptMove(P, iat);
+  m_wfn_xpd->acceptMove(P, iat, safe_to_delay);
+  m_wfn_xmd->acceptMove(P, iat, safe_to_delay);
 
   LogValue += convertValueToLog(curRatio);
 

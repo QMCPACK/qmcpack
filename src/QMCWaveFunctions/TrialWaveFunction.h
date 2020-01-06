@@ -259,11 +259,11 @@ public:
   /* flexible batched version of rejectMove */
   static void flex_rejectMove(const RefVector<TrialWaveFunction>& wf_list, int iat);
 
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
   /* flexible batched version of acceptMove */
   static void flex_acceptMove(const RefVector<TrialWaveFunction>& wf_list,
                               const RefVector<ParticleSet>& p_list,
-                              int iat);
+                              int iat, bool safe_to_delay = false);
   void completeUpdates();
   /* flexible batched version of completeUpdates.  */
   void flex_completeUpdates(const std::vector<TrialWaveFunction*>& WF_list) const;

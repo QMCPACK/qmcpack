@@ -39,7 +39,7 @@ public:
     return 0.0;
   }
 
-  virtual void acceptMove(ParticleSet& P, int iat) override {}
+  virtual void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override {}
 
   virtual void restore(int iat) override {}
 
