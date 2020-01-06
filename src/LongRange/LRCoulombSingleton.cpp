@@ -119,10 +119,10 @@ LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::getHandler(ParticleSet& r
     }
     else //if(ref.LRBox.SuperCellEnum == SUPERCELL_BULK)
     {
-      app_log() << "\n  Creating CoulombHandler with the optimal breakup. " << std::endl;
-      CoulombHandler = new LRHandlerTemp<CoulombFunctor<mRealType>, LPQHIBasis>(ref);
-      //  app_log() << "\n  Creating CoulombHandler with the Ewald3D breakup. " << std::endl;
-      //  CoulombHandler= new EwaldHandler3D(ref);
+      //app_log() << "\n  Creating CoulombHandler with the optimal breakup. " << std::endl;
+      //CoulombHandler = new LRHandlerTemp<CoulombFunctor<mRealType>, LPQHIBasis>(ref);
+        app_log() << "\n  Creating CoulombHandler with the Ewald3D breakup. " << std::endl;
+        CoulombHandler= new EwaldHandler3D(ref);
       //  CoulombHandler = new LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>(ref);
     }
 //        else if(ref.LRBox.SuperCellEnum == SUPERCELL_SLAB)

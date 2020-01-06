@@ -19,7 +19,6 @@ namespace qmcplusplus
 {
 namespace ewaldtools
 {
-
   using ewaldref::int_t;
   using ewaldref::real_t;
   using ewaldref::IntVec;
@@ -27,10 +26,8 @@ namespace ewaldtools
   using ewaldref::RealMat;
   using ewaldref::ChargeArray;
   using ewaldref::PosArray;
-
   using ewaldref::getKappaMadelung;
   using ewaldref::getKappaEwald;
-
   using ewaldref::RspaceMadelungTerm;
   using ewaldref::KspaceMadelungTerm;
   using ewaldref::RspaceEwaldTerm;
@@ -349,6 +346,13 @@ public:
   }
 
 
+  /// Set the maximum anisotropic grid dimensions
+  void setNmax(const IntVec& nmax)
+  {
+    nmax_anisotropic = nmax;
+  }
+
+
   /// Pair interaction
   real_t ewaldPairPotential(const RealVec& r, real_t tol_ewald)
   {
@@ -374,7 +378,8 @@ public:
 
 
   /// Total energy for all pairs using adaptive anisotropic grids
-  real_t ewaldEnergy(const PosArray& R)
+  template<typename PA>
+  real_t ewaldEnergy(const PA& R)
   {
     real_t ee = madelung_energy;
     size_t Npairs = (N*(N-1))/2;
@@ -386,7 +391,8 @@ public:
 
 
   /// Total energy for all pairs using fixed anisotropic grid
-  real_t fixedGridEwaldEnergy(const PosArray& R, const IntVec& nmax)
+  template<typename PA>
+  real_t fixedGridEwaldEnergy(const PA& R, const IntVec& nmax)
   {
     real_t ee = madelung_energy;
     for (size_t i = 0; i < N; ++i)
@@ -414,11 +420,225 @@ public:
   }
 
 
+  /// Total energy for all pairs using fixed anisotropic grid
+  template<typename PA>
+  real_t fixedGridEwaldEnergyOpt(const PA& R, const IntVec& nmax)
+  {
+    real_t ee = madelung_energy;
+    for (size_t i = 0; i < N; ++i)
+      for (size_t j = 0; j < i; ++j)
+      {
+        RealVec r = R[i]-R[j];
+
+        // Create real-/k-space fuctors for terms within the Ewald pair potential sums
+        RspaceEwaldTerm rfunc(r, A, rconst_ewald);
+        KspaceEwaldTerm kfunc(r, B, kconst_ewald, kfactor_ewald);
+    
+        // Compute the constant term
+        real_t cval = -2 * M_PI * std::pow(kappa_ewald, 2) / volume;
+        // Compute the real-space sum (includes zero)
+
+
+        //real_t R  = std::sqrt(dot(r, r));
+        //real_t rm = std::erfc(rconst_ewald * R) / R;
+        //real_t rm = std::exp(rconst_ewald * R) / R;
+        //real_t rval = rm;
+
+        //real_t rval = fixedGridSum(rfunc, nmax, true);
+
+        // Compute the k-space sum (excludes zero)
+        real_t kval = fixedGridSum(kfunc, nmax, false);
+
+        // Sum all contributions to get the Ewald pair interaction
+        //real_t epp = cval + rval + kval;
+        real_t epp = cval+kval;
+
+        ee += Q[i]*Q[j]*epp;
+      }
+    return ee;
+  }
+
+
   /// Total energy for all pairs using fixed maximum anisotropic grid
-  real_t fixedGridEwaldEnergy(const PosArray& R)
+  template<typename PA>
+  real_t fixedGridEwaldEnergy(const PA& R)
   {
     return fixedGridEwaldEnergy(R, nmax_anisotropic);
   }
+
+
+  real_t ewaldEnergyConst()
+  {
+    real_t ee = madelung_energy;
+    real_t cval = -2 * M_PI * std::pow(kappa_ewald, 2) / volume;
+    for (size_t i = 0; i < N; ++i)
+      for (size_t j = 0; j < i; ++j)
+        ee += Q[i]*Q[j]*cval;
+
+    std::cout<<"\nconstant breakdown:"<<std::endl;
+    std::cout<<"  madelung energy: "<<madelung_energy<<std::endl;
+    std::cout<<"  other constants: "<<ee-madelung_energy<<std::endl;
+    std::cout<<std::endl;
+
+    return ee;
+  }
+
+
+  template<typename PA>
+  real_t ewaldEnergySR(const PA& R)
+  {
+    real_t ee = 0.0;
+    size_t Npairs = (N*(N-1))/2;
+    IntVec nmax;
+    for (size_t i = 0; i < N; ++i)
+      for (size_t j = 0; j < i; ++j)
+      {
+        real_t tol_ewald = tol/(Q[i]*Q[j])/Npairs;
+        RspaceEwaldTerm rfunc(R[i]-R[j], A, rconst_ewald);
+        real_t rval = anisotropicGridSum(rfunc, nmax, true, tol_ewald);
+        ee += Q[i]*Q[j]*rval;
+      }
+    return ee;
+  }
+
+
+  template<typename PA>
+  real_t ewaldEnergyLR(const PA& R)
+  {
+    real_t ee = 0.0;
+    size_t Npairs = (N*(N-1))/2;
+    IntVec nmax;
+    for (size_t i = 0; i < N; ++i)
+      for (size_t j = 0; j < i; ++j)
+      {
+        real_t tol_ewald = tol/(Q[i]*Q[j])/Npairs;
+        KspaceEwaldTerm kfunc(R[i]-R[j], B, kconst_ewald, kfactor_ewald);
+        real_t kval = anisotropicGridSum(kfunc, nmax, false, tol_ewald);
+        ee += Q[i]*Q[j]*kval;
+      }
+    return ee;
+  }
+
+
+  template<typename PA>
+  real_t ewaldEnergySR0(const PA& R)
+  {
+    real_t ee = 0.0;
+    size_t Npairs = (N*(N-1))/2;
+    IntVec nmax;
+    for (size_t i = 0; i < N; ++i)
+      for (size_t j = 0; j < i; ++j)
+      {
+        real_t tol_ewald = tol/(Q[i]*Q[j])/Npairs;
+        RspaceEwaldTerm rfunc(R[i]-R[j], A, rconst_ewald);
+        IntVec iv = 0;
+        real_t rval = rfunc(iv);
+        ee += Q[i]*Q[j]*rval;
+      }
+    return ee;
+  }
+
+
+  template<typename DT>
+  real_t ewaldEnergySRDT(const DT& dt)
+  {
+    real_t ee = 0.0;
+    size_t Npairs = (N*(N-1))/2;
+    IntVec nmax;
+    for (size_t i = 0; i < N; ++i)
+      for (size_t j = 0; j < i; ++j)
+      {
+        real_t tol_ewald = tol/(Q[i]*Q[j])/Npairs;
+        RspaceEwaldTerm rfunc(dt.Displacements[i][j], A, rconst_ewald);
+        real_t rval = anisotropicGridSum(rfunc, nmax, true, tol_ewald);
+        ee += Q[i]*Q[j]*rval;
+      }
+    return ee;
+  }
+
+
+
+  template<typename DT>
+  real_t ewaldEnergyLRDT(const DT& dt)
+  {
+    real_t ee = 0.0;
+    size_t Npairs = (N*(N-1))/2;
+    IntVec nmax;
+    for (size_t i = 0; i < N; ++i)
+      for (size_t j = 0; j < i; ++j)
+      {
+        real_t tol_ewald = tol/(Q[i]*Q[j])/Npairs;
+        KspaceEwaldTerm kfunc(dt.Displacements[i][j], B, kconst_ewald, kfactor_ewald);
+        real_t kval = anisotropicGridSum(kfunc, nmax, false, tol_ewald);
+        ee += Q[i]*Q[j]*kval;
+      }
+    return ee;
+  }
+
+
+
+  template<typename DT>
+  real_t ewaldEnergySR0DT(const DT& dt)
+  {
+    real_t ee = 0.0;
+    size_t Npairs = (N*(N-1))/2;
+    IntVec nmax;
+    for (size_t i = 0; i < N; ++i)
+      for (size_t j = 0; j < i; ++j)
+      {
+        real_t tol_ewald = tol/(Q[i]*Q[j])/Npairs;
+        RspaceEwaldTerm rfunc(dt.Displacements[i][j], A, rconst_ewald);
+        IntVec iv = 0;
+        real_t rval = rfunc(iv);
+        ee += Q[i]*Q[j]*rval;
+      }
+    return ee;
+  }
+
+
+
+
+  /// Calculate the Madelung constant
+  real_t madelungConstant0() const
+  {
+    // Set Madelung tolerance
+    real_t tol_madelung = tol * 2. / QQmax;
+
+    // Create real-/k-space functors for terms within the Madelung sums
+    RspaceMadelungTerm rfunc(A, rconst_madelung);
+    KspaceMadelungTerm kfunc(B, kconst_madelung, kfactor_madelung);
+    IntVec nmax;
+
+    // Compute the constant term
+    real_t cval = -M_PI / (std::pow(kappa_madelung, 2) * volume) - 2 * kappa_madelung / std::sqrt(M_PI);
+    // Compute the real-space sum (excludes zero)
+    real_t rval = 0.0;
+    // Compute the k-space sum (excludes zero)
+    real_t kval = anisotropicGridSum(kfunc, nmax, false, tol_madelung);
+
+    // Sum all contributions to get the Madelung constant
+    real_t vm = cval + rval + kval;
+
+    return vm;
+  }
+
+
+  /// Calculate and store the Madelung energy
+  real_t madelungEnergy0()
+  {
+    // Madelung energy for a single particle with charge 1
+    madelung_constant = madelungConstant0();
+    
+    // Sum the Madelung self interaction for each particle
+    real_t me = 0.0;
+    for (size_t i = 0; i < N; ++i)
+      me += Q[i] * Q[i] * madelung_constant / 2;
+
+    return me;
+  }
+
+
+
 };
 
 

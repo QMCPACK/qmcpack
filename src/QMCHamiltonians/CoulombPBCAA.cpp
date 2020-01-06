@@ -53,27 +53,76 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
 
   // Setup anistropic ewald
   ewaldref::RealMat A;
-  ewaldref::PosArray R;
   ewaldref::ChargeArray Q;
 
   A = Ps.Lattice.R;
 
-  R.resize(NumCenters);
   Q.resize(NumCenters);
   for(int i=0;i<NumCenters;++i)
-  {
-    R[i] = Ps.R[i];
     Q[i] = Zat[i];
-  }
 
-  //ewaldtools::AnisotropicEwald ewald;
-  //ewald.initialize(A,Q);
 
+  ewald.initialize(A,Q);
+
+  //RealType qmcpack_kappa = AA->LR_kc;
+  RealType qmcpack_sigma = 0.4914267483;
+  RealType qmcpack_kappa = 1./(std::sqrt(2.0)*qmcpack_sigma);
+  ewaldtools::AnisotropicEwald ewald_qp(A,Q,1e-10,qmcpack_kappa);
+
+  //ewaldref::IntVec nmax = 0;
+  //ewald.setNmax(nmax);
 
   if (!is_active)
   {
     update_source(ref);
 
+    ewaldref::PosArray R;
+    R.resize(NumCenters);
+    for(int i=0;i<NumCenters;++i)
+      R[i] = Ps.R[i];
+    
+    RealType eE   = ewald.ewaldEnergy(R);
+    RealType eEf  = ewald.fixedGridEwaldEnergy(R);
+    RealType eEt  = ewald.ewaldEnergy(Ps.R);
+    RealType eEft = ewald.fixedGridEwaldEnergy(Ps.R);
+
+    RealType c  = ewald.ewaldEnergyConst();
+    RealType sr = ewald.ewaldEnergySR(Ps.R);
+    RealType lr = ewald.ewaldEnergyLR(Ps.R);
+
+    const DistanceTableData& dt(Ps.getDistTable(d_aa_ID));
+    RealType srdt = ewald.ewaldEnergySRDT(dt);
+    RealType lrdt = ewald.ewaldEnergyLRDT(dt);
+
+
+    //ewald_qp.madelungEnergy0();
+    RealType c_qp   = ewald_qp.ewaldEnergyConst();
+    RealType sr_qp  = ewald_qp.ewaldEnergySRDT(dt);
+    RealType lr_qp  = ewald_qp.ewaldEnergyLRDT(dt);
+    RealType sr0_qp = ewald_qp.ewaldEnergySR0DT(dt);
+
+    app_log()<<std::setprecision(14);
+    app_log()<<std::endl;
+    app_log()<<"   adaptive aniso ewald energy: "<<eE<<std::endl;
+    app_log()<<"   fixed aniso ewald energy   : "<<eEf<<std::endl;
+    app_log()<<"   adaptive aniso ewald energy: "<<eEt<<std::endl;
+    app_log()<<"   fixed aniso ewald energy   : "<<eEft<<std::endl;
+    app_log()<<"   ewald energy c+sr+lr       : "<<c+sr+lr<<std::endl;
+    app_log()<<"   ewald energy c+sr+lr dt    : "<<c+srdt+lrdt<<std::endl;
+    app_log()<<"   aniso ewald nmax           : "<<ewald.getNmax()<<std::endl;
+    app_log()<<std::setprecision(14);
+    app_log()<<std::endl;
+    app_log()<<"   qmcpack constant : "<<myConst<<std::endl;
+    app_log()<<"   ewald   constant : "<<c_qp<<std::endl;
+    app_log()<<"   qmcpack SR  : "<<evalSR(Ps)<<std::endl;
+    app_log()<<"   ewald   SR  : "<<sr_qp<<std::endl;
+    app_log()<<"   ewald   SR0 : "<<sr0_qp<<std::endl;
+    app_log()<<"   qmcpack LR  : "<<evalLR(Ps)<<std::endl;
+    app_log()<<"   ewald   LR  : "<<lr_qp<<std::endl;
+    app_log()<<"   qmcpack tot : "<<myConst+evalSR(Ps)+evalLR(Ps)<<std::endl;
+    app_log()<<"   ewald   tot : "<< c_qp+sr_qp+lr_qp <<std::endl;
+    app_log()<<"   ewald   tot0: "<< c_qp+sr0_qp+lr_qp <<std::endl;
+    app_log()<<std::endl;
 
     RealType Vii_ref = ewaldref::ewaldEnergy(A,R,Q);
     RealType Vdiff_per_atom = std::abs(Value-Vii_ref)/NumCenters;
@@ -103,6 +152,9 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     {
       app_log()<<"  Check passed."<<std::endl;
     }
+
+    APP_ABORT("explore")
+
   }
   prefix = "F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
@@ -171,14 +223,31 @@ void CoulombPBCAA::delete_particle_quantities()
 
 CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
 {
+  ScopedTimer evaltimer(TimerManager.createTimer("CoulombPBCAA_eval_total"));
+
   if (is_active)
   {
+    {
+    ScopedTimer evaltimer(TimerManager.createTimer("QMCPACK eval"));
+
 #if !defined(REMOVE_TRACEMANAGER)
     if (streaming_particles)
       Value = evaluate_sp(P);
     else
 #endif
       Value = evalLR(P) + evalSR(P) + myConst;
+    }
+
+    RealType eval;
+    {
+      ScopedTimer evaltimer(TimerManager.createTimer("Aniso eval"));
+      eval = ewald.fixedGridEwaldEnergy(P.R);
+    }
+
+    app_log()<<std::endl;
+    app_log()<<"  QMCPACK value: "<<Value<<std::endl;
+    app_log()<<"  Aniso   value: "<<eval<<std::endl;
+    app_log()<<std::endl;
   }
   return Value;
 }
