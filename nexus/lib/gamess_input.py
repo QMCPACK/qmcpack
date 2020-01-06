@@ -53,7 +53,7 @@ class GIbase(DevBase):
 
 class GIarray(GIbase):
     def __init__(self,d):
-        for n,v in d.iteritems():
+        for n,v in d.items():
             if not isinstance(n,int):
                 self.error("keys must be integers\nattempted to initialize array from input provided: {0}\nnote that dict's are used only for arrays".format(d))
             #end if
@@ -365,7 +365,7 @@ class KeywordSpecGroup(KeywordGroup):
 
     def is_valid(self):
         valid = self.is_consistent()
-        for name,val in self.iteritems():
+        for name,val in self.items():
             if name in self.allowed_values:
                 if isinstance(val,str):
                     val = val.lower()
@@ -889,7 +889,7 @@ class GamessInput(SimulationInput,GIbase):
             #end if
         #end for
 
-        for group_name,group_text in groups.iteritems():
+        for group_name,group_text in groups.items():
             failed = False
             if group_name in self.keyspec_groups:
                 self[group_name] = self.keyspec_groups[group_name](group_text)
@@ -1203,8 +1203,8 @@ def check_keyspec_groups():
             arrays   = g.arrays
             )
         overlaps = obj()
-        for tname1,tset1 in go.iteritems():
-            for tname2,tset2 in go.iteritems():
+        for tname1,tset1 in go.items():
+            for tname2,tset2 in go.items():
                 if tname1!=tname2:
                     overlap = tset1 & tset2
                     if len(overlap)>0:

@@ -191,21 +191,21 @@ def test_intrinsics():
     for v in o:
         l.append(v)
     #end for
-    l = sorted(l)
-    l2 = ['b', (1, 1, 1), (5, 6, 7)]
+    l = set(l)
+    l2 = {'b', (1, 1, 1), (5, 6, 7)}
     assert(l2==l)
 
     # test dict-like iterability
     d = dict()
-    for k,v in o.iteritems():
+    for k,v in o.items():
         d[k] = v
     #end for
     o2 = obj()
     o2.__dict__ = d
     assert(object_eq(o,o2))
-    assert(sorted(o.keys())==sorted(d.keys()))
-    assert(sorted(o.values())==sorted(d.values()))
-    assert(sorted(o.items())==sorted(d.items()))
+    assert(set(o.keys())==set(d.keys()))
+    assert(set(o.values())==set(d.values()))
+    assert(set(o.items())==set(d.items()))
 
     # test repr
     ro = '''
@@ -577,7 +577,7 @@ def test_extensions():
     o4 = obj()
     o4.set(o1,o2,o3)
     for on in (o1,o2,o3):
-        for k,v in on.iteritems():
+        for k,v in on.items():
             assert(o4[k]==v)
         #end for
     #end for
@@ -596,7 +596,7 @@ def test_extensions():
     o4 = obj()
     o4.set_optional(o1,o2,o3)
     for on in (o1,o2,o3):
-        for k,v in on.iteritems():
+        for k,v in on.items():
             assert(o4[k]==v)
         #end for
     #end for
@@ -985,8 +985,8 @@ def test_extensions():
 
     # test inverse
     oi = do.inverse()
-    assert(sorted(oi.keys())==sorted(do.values()))
-    assert(sorted(oi.values())==sorted(do.keys()))
+    assert(set(oi.keys())==set(do.values()))
+    assert(set(oi.values())==set(do.keys()))
 
     assert(oi[1]=='a')
     assert(oi.b=='b')
@@ -1117,7 +1117,7 @@ def test_extensions():
         'c/c3/c31/c311/c3110/c31100/c311000/c3110000/c3110000':7,
         })
 
-    for k,v in oref.iteritems():
+    for k,v in oref.items():
         assert(o.get_path(k)==v)
     #end for
     o2 = o.serial()

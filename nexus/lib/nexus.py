@@ -224,7 +224,7 @@ class Settings(NexusCore):
         self.process_noncore_settings(kw)
 
         # transfer select core data to the global namespace
-        nexus_core_noncore.transfer_from(nexus_core,nexus_core_noncore.keys())
+        nexus_core_noncore.transfer_from(nexus_core,list(nexus_core_noncore.keys()))
         nexus_noncore.set(**nexus_core_noncore.copy()) # prevent write to core namespace
 
         # copy final core and noncore settings
@@ -348,7 +348,7 @@ class Settings(NexusCore):
         #end for
 
         # override script settings with command line settings
-        for name,value in opt.iteritems():
+        for name,value in opt.items():
             bool_name = name in boolean_options
             if (bool_name and value) or (not bool_name and value!='none'):
                 script_settings[name] = value
@@ -365,7 +365,7 @@ class Settings(NexusCore):
         if 'machine_info' in mset:
             machine_info = mset.machine_info
             if isinstance(machine_info,dict) or isinstance(machine_info,obj):
-                for machine_name,minfo in machine_info.iteritems():
+                for machine_name,minfo in machine_info.items():
                     mname = machine_name.lower()
                     if Machine.exists(mname):
                         machine = Machine.get(mname)
