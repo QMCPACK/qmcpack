@@ -49,6 +49,16 @@ IF(BUILD_AFQMC)
   ENDIF()
 ENDIF()
 
+IF(ENABLE_SOA AND NOT QMC_COMPLEX)
+  INCLUDE("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
+  SET(pyscf_python_reqs numpy;h5py;pyscf;PyscfToQmcpack;PyscfToQmcpack_Spline)
+  CHECK_PYTHON_REQS(pyscf_python_reqs pyscf_workflow add_tests)
+
+  IF(add_tests)
+    message("Adding tests for Pyscf workflow")
+    SUBDIRS("pyscf")
+  ENDIF()
+ENDIF()
 #
 #
 if(NOT ${QMCAPP_ERR} STREQUAL "")

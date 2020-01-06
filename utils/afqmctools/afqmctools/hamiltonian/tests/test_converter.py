@@ -8,7 +8,7 @@ from afqmctools.hamiltonian.converter import (
         write_fcidump
         )
 from afqmctools.utils.linalg import modified_cholesky_direct
-from afqmctools.hamiltonian.mol import write_qmcpack_cholesky
+from afqmctools.hamiltonian.io import write_qmcpack_sparse
 from afqmctools.utils.testing import generate_hamiltonian
 
 numpy.random.seed(7)
@@ -19,8 +19,8 @@ class TestConverter(unittest.TestCase):
         nmo = 17
         nelec = (3,3)
         h1e, chol, enuc, eri = generate_hamiltonian(nmo, nelec, cplx=False, sym=8)
-        chols = scipy.sparse.csr_matrix(chol.reshape((-1,nmo*nmo)).T.copy())
-        write_qmcpack_cholesky(h1e, chols,  nelec, nmo, e0=enuc, real_chol=True)
+        write_qmcpack_sparse(h1e, chol.reshape((-1,nmo*nmo)).T.copy(),
+                             nelec, nmo, e0=enuc, real_chol=True)
         hamil = read_qmcpack_hamiltonian('hamiltonian.h5')
         write_fcidump('FCIDUMP', hamil['hcore'], hamil['chol'], hamil['enuc'],
                       hamil['nmo'], hamil['nelec'], sym=8, cplx=False)
@@ -54,8 +54,8 @@ class TestConverter(unittest.TestCase):
         nmo = 17
         nelec = (3,3)
         h1e, chol, enuc, eri = generate_hamiltonian(nmo, nelec, cplx=True, sym=4)
-        chols = scipy.sparse.csr_matrix(chol.reshape((-1,nmo*nmo)).T.copy())
-        write_qmcpack_cholesky(h1e, chols,  nelec, nmo, e0=enuc, real_chol=False)
+        write_qmcpack_sparse(h1e, chol.reshape((-1,nmo*nmo)).T.copy(),
+                             nelec, nmo, e0=enuc, real_chol=False)
         hamil = read_qmcpack_hamiltonian('hamiltonian.h5')
         write_fcidump('FCIDUMP', hamil['hcore'], hamil['chol'], hamil['enuc'],
                       hamil['nmo'], hamil['nelec'], sym=4, cplx=True)

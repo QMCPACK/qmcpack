@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # import nexus functions
 from nexus import settings,job,run_project

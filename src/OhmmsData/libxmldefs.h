@@ -42,7 +42,7 @@ inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)
 /*!\brief assign a value from a node. Use specialization for classes.
  *\param a reference to a value to be assigned
  *\param cur current node
- *\return ture if successful
+ *\return true if successful
  *
  *If operator >> is implemented for a class, no specialization is required.
  *For instance, no specialization is necessary for intrinsic data types.
@@ -86,7 +86,7 @@ bool putContent(IT first, IT last, xmlNodePtr cur)
  *\brief write a value to a node.
  *\param a reference to a value to be copied to a node
  *\param cur current node to which a content is copied
- *\return ture if successful
+ *\return true if successful
  *
  *Use specialization for classes. If operator << is implemented for a
  *class, no specialization is required. For instance, no
@@ -109,7 +109,7 @@ bool getContent(const T& a, xmlNodePtr cur)
 /** assign std::vector<T> from a node. Create a temporary vector and make assignment.
  *\param a reference std::vector<T>
  *\param cur current node to which a content is copied
- *\return ture if successful
+ *\return true if successful
  *
  *Specialization for std::vector<T> with data types T with operator >>,
  *e.g., std::vector<double>
@@ -140,7 +140,7 @@ inline bool putContent(std::vector<T>& a, const xmlNodePtr cur)
 /** write std::vector<T> to node. Each element is separated by a space.
  *\param a reference std::vector<T>
  *\param cur current node to which a content is copied
- *\return ture if successful
+ *\return true if successful
  *
  *Specialization for std::vector<T> with data types T with operator <<.
  *This function is only for testing/debugging and will not perform

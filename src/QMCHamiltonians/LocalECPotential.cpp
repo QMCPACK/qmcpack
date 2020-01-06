@@ -108,7 +108,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
       const size_t Nelec = P.getTotalNum();
       for (size_t iel = 0; iel < Nelec; ++iel)
       {
-        const RealType* restrict dist = d_table.Distances[iel];
+        const auto& dist = d_table.getDistRow(iel);
         Return_t esum(0);
         for (size_t iat = 0; iat < NumIons; ++iat)
           if (PP[iat] != nullptr)
@@ -150,8 +150,8 @@ LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& 
     const size_t Nelec = P.getTotalNum();
     for (size_t iel = 0; iel < Nelec; ++iel)
     {
-      const RealType* restrict dist = d_table.Distances[iel];
-      const RowContainerType dr     = d_table.Displacements[iel];
+      const auto& dist = d_table.getDistRow(iel);
+      const auto& dr   = d_table.getDisplRow(iel);
       Return_t esum(0);
       //value, radial derivative, and 2nd derivative of spline r*V.
       RealType v(0.0), dv(0.0), d2v(0.0);
@@ -194,7 +194,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
     const size_t Nelec = P.getTotalNum();
     for (size_t iel = 0; iel < Nelec; ++iel)
     {
-      const RealType* restrict dist = d_table.Distances[iel];
+      const auto& dist = d_table.getDistRow(iel);
       Return_t esum(0), pairpot;
       for (size_t iat = 0; iat < NumIons; ++iat)
         if (PP[iat] != nullptr)

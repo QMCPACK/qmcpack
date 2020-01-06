@@ -122,15 +122,15 @@ void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
   {
     for (size_t jat = 0; jat < NptclB; ++jat)
     {
-      const RealType* restrict dist = d_ab.Distances[jat];
-
+      const auto& dist  = d_ab.getDistRow(jat);
+      const auto& displ = d_ab.getDisplRow(jat);
       for (size_t iat = 0; iat < NptclA; ++iat)
       {
         const RealType r    = dist[iat];
         const RealType rinv = RealType(1) / r;
         RealType g_f        = g_filter(r);
         RealType V          = -dAB->srDf(r, rinv);
-        PosType drhat       = rinv * d_ab.Displacements[jat][iat];
+        PosType drhat       = rinv * displ[iat];
         forces[iat] += g_f * Zat[iat] * Qat[jat] * V * drhat;
       }
     }
@@ -160,11 +160,12 @@ void ForceChiesaPBCAA::evaluateSR_AA()
   {
     for (size_t ipart = 1; ipart < NptclA; ipart++)
     {
-      const RealType* restrict dist = d_aa.Distances[ipart];
+      const auto& dist  = d_aa.getDistRow(ipart);
+      const auto& displ = d_aa.getDisplRow(ipart);
       for (size_t jpart = 0; jpart < ipart; ++jpart)
       {
         RealType V   = -dAB->srDf(dist[jpart], RealType(1) / dist[jpart]);
-        PosType grad = -Zat[jpart] * Zat[ipart] * V / dist[jpart] * d_aa.Displacements[ipart][jpart];
+        PosType grad = -Zat[jpart] * Zat[ipart] * V / dist[jpart] * displ[jpart];
         forces_IonIon[ipart] += grad;
         forces_IonIon[jpart] -= grad;
       }

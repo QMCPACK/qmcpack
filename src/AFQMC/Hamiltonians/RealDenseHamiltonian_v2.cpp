@@ -65,9 +65,18 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
   if(nspins == 2) ndown = PsiT[1].size(0); 
   int NEL = nup+ndown; 
 
+  // distribute work over equivalent nodes in TGprop.TG() accross TG.Global()  
+  auto Qcomm(TG.Global().split(TGprop.getLocalGroupNumber(),TG.Global().rank()));
+#ifdef ENABLE_CUDA
+  auto distNode(TG.Node().split(TGprop.getLocalGroupNumber(),TG.Node().rank()));
+#else
+  auto distNode(TG.Node().split(0,TG.Node().rank()));
+#endif
+  auto Qcomm_roots(Qcomm.split(distNode.rank(),Qcomm.rank()));
+
   hdf_archive dump(TG.Global());
   // right now only Node.root() reads
-  if( TG.Node().root() ) {
+  if( distNode.root() ) {
     if(!dump.open(fileName,H5F_ACC_RDONLY)) {
       app_error()<<" Error opening integral file in THCHamiltonian. \n";
       APP_ABORT("");
@@ -104,12 +113,12 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
   int global_ncvecs = Idata[7]; 
   int nc0, ncN;
   int node_number = TGprop.getLocalGroupNumber();
-  int nnodes_prt_TG = TGprop.getNGroupsPerTG();
-  std::tie(nc0,ncN) = FairDivideBoundary(node_number,global_ncvecs,nnodes_prt_TG);
+  int nnodes_per_TG = TGprop.getNGroupsPerTG();
+  std::tie(nc0,ncN) = FairDivideBoundary(node_number,global_ncvecs,nnodes_per_TG);
   int local_ncv = ncN-nc0;
 
   shmRMatrix H1({NMO,NMO},shared_allocator<RealType>{TG.Node()});
-  shmSpRMatrix Likn({NMO*NMO,local_ncv}, shared_allocator<SPRealType>{TG.Node()});
+  shmSpRMatrix Likn({NMO*NMO,local_ncv}, shared_allocator<SPRealType>{distNode});
 
   if( TG.Node().root() ) {
     // now read H1, use ref to avoid issues with shared pointers!
@@ -119,13 +128,15 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
                <<" Problems reading /Hamiltonian/hcore. \n";
       APP_ABORT("");
     }
+  }
+  if( distNode.root() ) {
     // read L
     if(!dump.push("DenseFactorized",false)) {
       app_error()<<" Error in RealDenseHamiltonian_v2::getHamiltonianOperations():"
                  <<" Group DenseFactorized not found. \n";
       APP_ABORT("");
     }
-    SpRMatrix_ref L(to_address(Likn.origin()),Likn.extensions()); 
+    SpRMatrix_ref L(to_address(Likn.origin()),Likn.extensions());
     hyperslab_proxy<SpRMatrix_ref,2> hslab(L,std::array<int,2>{NMO*NMO,global_ncvecs},
                                              std::array<int,2>{NMO*NMO,local_ncv},
                                              std::array<int,2>{0,nc0});
@@ -144,12 +155,12 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
   }
   TG.Node().barrier();
 
-  shmCMatrix vn0({NMO,NMO},shared_allocator<ComplexType>{TG.Node()});
+  shmCMatrix vn0({NMO,NMO},shared_allocator<ComplexType>{distNode});
   shmCMatrix haj({ndet,NEL*NMO},shared_allocator<ComplexType>{TG.Node()});
   std::vector<shmSp3Tensor> Lnak;
   Lnak.reserve(PsiT.size()); 
   for(int nd=0; nd<PsiT.size(); nd++) 
-    Lnak.emplace_back(shmSp3Tensor({local_ncv,PsiT[nd].size(0),NMO},shared_allocator<SPComplexType>{TG.Node()}));
+    Lnak.emplace_back(shmSp3Tensor({local_ncv,PsiT[nd].size(0),NMO},shared_allocator<SPComplexType>{distNode}));
   int nrow = NEL;
   if(ndet > 1) nrow = 0;  // not used if ndet>1
   TG.Node().barrier();
@@ -173,9 +184,6 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
     }
   }
   // Generate Lnak 
-  // distribute work over equivalent nodes in TGprop.TG() accross TG.Global()  
-  auto Qcomm(TG.Global().split(TGprop.getLocalGroupNumber(),TG.Global().rank()));
-  auto Qcomm_roots(Qcomm.split(TGprop.Node().rank(),Qcomm.rank()));
   {
     CMatrix lik({NMO,NMO});
     CMatrix lak({nup,NMO});
@@ -196,7 +204,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
     }
   }
   TG.Global().barrier();
-  if(TG.Node().root()) {
+  if(distNode.root()) {
     for(auto& v:Lnak) 
       Qcomm_roots.all_reduce_in_place_n(to_address(v.origin()),v.num_elements(),std::plus<>());
     std::fill_n(to_address(vn0.origin()),vn0.num_elements(),ComplexType(0.0));
@@ -216,7 +224,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
   }
   TG.Node().barrier();
 
-  if( TG.Node().root() ) {
+  if( distNode.root() ) {
     Qcomm_roots.all_reduce_in_place_n(to_address(vn0.origin()),
                                        vn0.num_elements(),std::plus<>());
     dump.pop();

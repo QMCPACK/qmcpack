@@ -819,7 +819,7 @@ def test_init():
         input                = SimulationInput(),
         )
 
-    assert(object_eq(se.obj(se_ref.keys()),se_ref))
+    assert(object_eq(se.obj(list(se_ref.keys())),se_ref))
     assert(isinstance(se.simid,int))
     assert(se.simid>=0)
     assert(se.simid<Simulation.sim_count)
@@ -839,7 +839,7 @@ def test_init():
 
     sm_ref = se_ref.copy()
     del sm_ref.job
-    assert(object_eq(sm.obj(sm_ref.keys()),sm_ref))
+    assert(object_eq(sm.obj(list(sm_ref.keys())),sm_ref))
     assert(isinstance(se.simid,int))
     assert(se.simid>=0)
     assert(se.simid<Simulation.sim_count)
@@ -1102,7 +1102,7 @@ def check_dependency_objects(*sims,**kwargs):
             assert(sim.wait_ids==set())
         else:
             # check dependencies object
-            for simid,dep in sim.dependencies.iteritems():
+            for simid,dep in sim.dependencies.items():
                 assert(isinstance(simid,int))
                 assert(isinstance(dep,obj))
                 assert('result_names' in dep)
@@ -2815,7 +2815,7 @@ def test_generate_simulation():
 
 
 
-if versions.matplotlib_available:
+if versions.matplotlib_available and versions.pydot_available:
     def test_graph_sims():
         from simulation import Simulation,graph_sims
 
