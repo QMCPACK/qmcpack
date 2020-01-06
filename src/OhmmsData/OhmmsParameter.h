@@ -66,6 +66,8 @@ public:
     tolower(unit_);
   }
 
+  ~OhmmsParameter() final {};
+  
   ///print to an std::ostream
   inline bool get(std::ostream& os) const
   {
