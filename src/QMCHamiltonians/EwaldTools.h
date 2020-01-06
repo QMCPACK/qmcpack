@@ -19,7 +19,22 @@ namespace qmcplusplus
 {
 namespace ewaldtools
 {
-  using namespace ewaldref;
+
+  using ewaldref::int_t;
+  using ewaldref::real_t;
+  using ewaldref::IntVec;
+  using ewaldref::RealVec;
+  using ewaldref::RealMat;
+  using ewaldref::ChargeArray;
+  using ewaldref::PosArray;
+
+  using ewaldref::getKappaMadelung;
+  using ewaldref::getKappaEwald;
+
+  using ewaldref::RspaceMadelungTerm;
+  using ewaldref::KspaceMadelungTerm;
+  using ewaldref::RspaceEwaldTerm;
+  using ewaldref::KspaceEwaldTerm;
 
 
 /// Similar to ewaldref::gridSum but for adaptive anisotropic grids
@@ -226,10 +241,23 @@ private:
 
 public:
 
+  AnisotropicEwald() : nmax_anisotropic(0) { }
+
   /// Setup constant data, including Madelung sums
   AnisotropicEwald(const RealMat& A_in, const ChargeArray& Q_in, real_t tol_in = 1e-10,real_t kappa_in=-1.0)
     : A(A_in), Q(Q_in), tol(tol_in), nmax_anisotropic(0)
   {
+
+    initialize(A_in,Q_in,tol_in,kappa_in);
+  }
+
+
+  void initialize(const RealMat& A_in, const ChargeArray& Q_in, real_t tol_in = 1e-10,real_t kappa_in=-1.0)
+  {
+  
+    A = A_in;
+    Q = Q_in;
+    tol = tol_in;
 
     // Reciprocal lattice vectors
     B = 2 * M_PI * transpose(inverse(A));

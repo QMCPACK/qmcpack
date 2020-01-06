@@ -20,6 +20,7 @@
 #include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "Particle/DistanceTableData.h"
+#include "QMCHamiltonians/EwaldRef.h"
 
 namespace qmcplusplus
 {
@@ -37,6 +38,8 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   typedef LRHandlerType::mRealType mRealType;
 
   typedef DistanceTableData::RowContainer RowContainerType;
+
+  //ewaldtools::AnisotropicEwald ewald;
 
   // energy-optimized
   LRHandlerType* AA;

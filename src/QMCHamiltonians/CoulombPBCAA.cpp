@@ -14,7 +14,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "EwaldRef.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -22,6 +21,8 @@
 
 namespace qmcplusplus
 {
+
+
 CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     : ForceBase(ref, ref),
       AA(0),
@@ -48,23 +49,31 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     ref.turnOnPerParticleSK();
     update_source(ref);
   }
+
+
+  // Setup anistropic ewald
+  ewaldref::RealMat A;
+  ewaldref::PosArray R;
+  ewaldref::ChargeArray Q;
+
+  A = Ps.Lattice.R;
+
+  R.resize(NumCenters);
+  Q.resize(NumCenters);
+  for(int i=0;i<NumCenters;++i)
+  {
+    R[i] = Ps.R[i];
+    Q[i] = Zat[i];
+  }
+
+  //ewaldtools::AnisotropicEwald ewald;
+  //ewald.initialize(A,Q);
+
+
   if (!is_active)
   {
     update_source(ref);
 
-    ewaldref::RealMat A;
-    ewaldref::PosArray R;
-    ewaldref::ChargeArray Q;
-
-    A = Ps.Lattice.R;
-
-    R.resize(NumCenters);
-    Q.resize(NumCenters);
-    for(int i=0;i<NumCenters;++i)
-    {
-      R[i] = Ps.R[i];
-      Q[i] = Zat[i];
-    }
 
     RealType Vii_ref = ewaldref::ewaldEnergy(A,R,Q);
     RealType Vdiff_per_atom = std::abs(Value-Vii_ref)/NumCenters;
