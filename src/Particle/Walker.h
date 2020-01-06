@@ -50,6 +50,8 @@ enum
   ALTERNATEENERGY, /*!< alternatelocal energy, the sum of all the components */
   LOCALENERGY,     /*!< local energy, the sum of all the components */
   LOCALPOTENTIAL,  /*!< local potential energy = local energy - kinetic energy */
+  PARTICLE_1,      // Walker properties get particle properties assigned eventuall and they are bigger
+  PARTICLE_2,      // ditto since apparently hamiltonians insert these this enum is a terrible idea
   NUMPROPERTIES    /*!< the number of properties */
 };
 
