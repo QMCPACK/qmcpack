@@ -172,7 +172,7 @@ class object_interface(object):
         s=''
         normal = []
         qable  = []
-        for k,v in self._iteritems():
+        for k,v in self._items():
             if not isinstance(k,str) or k[0]!='_':
                 if isinstance(v,object_interface):
                     qable.append(k)
@@ -239,7 +239,7 @@ class object_interface(object):
         s=''
         normal = []
         qable  = []
-        for k,v in self._iteritems():
+        for k,v in self._items():
             if not isinstance(k,str) or k[0]!='_':
                 if isinstance(v,object_interface):
                     qable.append(k)
@@ -354,7 +354,7 @@ class object_interface(object):
         fobj.close()
         d = self.__dict__
         d.clear()
-        for k,v in tmp.__dict__.iteritems():
+        for k,v in tmp.__dict__.items():
             d[k] = v
         #end for
         del fobj
@@ -441,7 +441,7 @@ class object_interface(object):
 
     @classmethod
     def class_set(cls,**kwargs):
-        for k,v in kwargs.iteritems():
+        for k,v in kwargs.items():
             setattr(cls,k,v)
         #end for
     #end def class_set
@@ -453,7 +453,7 @@ class object_interface(object):
 
     @classmethod
     def class_set_optional(cls,**kwargs):
-        for k,v in kwargs.iteritems():
+        for k,v in kwargs.items():
             if not hasattr(cls,k):
                 setattr(cls,k,v)
             #end if
@@ -507,14 +507,14 @@ class obj(object_interface):
     def __init__(self,*vars,**kwargs):
         for var in vars:
             if isinstance(var,(dict,object_interface)):
-                for k,v in var.iteritems():
+                for k,v in var.items():
                     self[k] = v
                 #end for
             else:
                 self[var] = None
             #end if
         #end for
-        for k,v in kwargs.iteritems():
+        for k,v in kwargs.items():
             self[k] = v
         #end for
     #end def __init__
@@ -579,7 +579,7 @@ class obj(object_interface):
 
     def to_dict(self):
         d = dict()
-        for k,v in self._iteritems():
+        for k,v in self._items():
             if isinstance(v,obj):
                 d[k] = v._to_dict()
             else:
@@ -630,12 +630,12 @@ class obj(object_interface):
 
 
     def set(self,*objs,**kwargs):
-        for key,value in kwargs.iteritems():
+        for key,value in kwargs.items():
             self[key]=value
         #end for
         if len(objs)>0:
             for o in objs:
-                for k,v in o.iteritems():
+                for k,v in o.items():
                     self[k] = v
                 #end for
             #end for
@@ -644,14 +644,14 @@ class obj(object_interface):
     #end def set
 
     def set_optional(self,*objs,**kwargs):
-        for key,value in kwargs.iteritems():
+        for key,value in kwargs.items():
             if key not in self:
                 self[key]=value
             #end if
         #end for
         if len(objs)>0:
             for o in objs:
-                for k,v in o.iteritems():
+                for k,v in o.items():
                     if k not in self:
                         self[k] = v
                     #end if
@@ -816,7 +816,7 @@ class obj(object_interface):
 
     def shallow_copy(self):
         new = self.__class__()
-        for k,v in self._iteritems():
+        for k,v in self._items():
             new[k] = v
         #end for
         return new
@@ -824,7 +824,7 @@ class obj(object_interface):
 
     def inverse(self):
         new = self.__class__()
-        for k,v in self._iteritems():
+        for k,v in self._items():
             new[v] = k
         #end for
         return new
@@ -884,7 +884,7 @@ class obj(object_interface):
             s = obj()
             path = ''
         #end if
-        for k,v in self._iteritems():
+        for k,v in self._items():
             p = path+str(k)
             if isinstance(v,obj):
                 if len(v)==0:
@@ -1096,13 +1096,13 @@ class HDFgroup(DevBase):
         s=''
         if len(self._datasets)>0:
             s+='  datasets:\n'
-            for k,v in self._datasets.iteritems():
+            for k,v in self._datasets.items():
                 s+= '    '+k+'\n'
             #end for
         #end if
         if len(self._groups)>0:
             s+= '  groups:\n'
-            for k,v in self._groups.iteritems():
+            for k,v in self._groups.items():
                 s+= '    '+k+'\n'
             #end for
         #end if
@@ -1135,7 +1135,7 @@ class HDFgroup(DevBase):
             del self._parent
         #end if
         if deep:
-            for name,value in self.iteritems():
+            for name,value in self.items():
                 if isinstance(value,HDFgroup):
                     value._remove_hidden()
                 #end if
@@ -1153,7 +1153,7 @@ class HDFgroup(DevBase):
     #   useful for converting a single group read in view form to full arrays
     def read_arrays(self):
         self._remove_hidden()
-        for k,v in self.iteritems():
+        for k,v in self.items():
             if isinstance(v,HDFgroup):
                 v.read_arrays()
             else:
@@ -1213,7 +1213,7 @@ class HDFreader(DevBase):
         if self._success:
             cur   = self.cur[self.ilevel]
             hcur  = self.hcur[self.ilevel]
-            for kr,v in hcur.iteritems():
+            for kr,v in hcur.items():
                 k=cur._escape_name(kr)
                 if valid_variable_name(k):
                     vtype = str(type(v))
@@ -1275,7 +1275,7 @@ class HDFreader(DevBase):
 
         cur   = self.cur[self.ilevel]
         hcur  = self.hcur[self.ilevel]
-        for kr,v in hcur.iteritems():
+        for kr,v in hcur.items():
             k=cur._escape_name(kr)
             if valid_variable_name(k):
                 vtype = str(type(v))
@@ -1988,7 +1988,7 @@ def process_stat_file(options):
         vlog('search paths:\n{0}'.format(str(qpaths).rstrip()),n=2)
         qdata = obj()
         dfull = None
-        for dname,dpath in qpaths.iteritems():
+        for dname,dpath in qpaths.items():
             packed = isinstance(dpath,tuple)
             if packed:
                 dpath,dindex,dcount = dpath
@@ -2017,7 +2017,7 @@ def process_stat_file(options):
 
         # process the data, taking full and partial sums
         vlog('processing {0} data'.format(options.quantity),n=1)
-        for dname,d in qdata.iteritems():
+        for dname,d in qdata.items():
             vlog('processing {0} data'.format(dname),n=2)
             if d.shape[1]%options.npartial_sums!=0:
                 exit_fail('cannot make partial sums\nnumber of requested partial sums does not divide evenly into the number of values available\nrequested partial sums: {0}\nnumber of values present: {1}\nnvalue/npartial_sums: {2}'.format(options.npartial_sums,d.shape[1],float(d.shape[1])/options.npartial_sums))
@@ -2055,7 +2055,7 @@ def process_stat_file(options):
         # plot quantity traces, if requested
         if options.plot_trace:
             vlog('creating trace plots of full and partial sums',n=1)
-            for dname,dvalues in values.iteritems():
+            for dname,dvalues in values.items():
                 label = options.quantity
                 if len(values)>1:
                     label+=' '+dname
