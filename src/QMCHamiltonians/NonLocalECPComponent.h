@@ -173,7 +173,8 @@ public:
    * @param pairpots a list of contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    * @param use_DLA if ture, use determinant localization approximation (DLA).
    *
-   * Note that ecp_component_list allows including different NLPP component for different walkers.
+   * Note: ecp_component_list allows including different NLPP component for different walkers.
+   * electrons in iel_list must be of the same group (spin)
    */
   static void flex_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
                                const RefVector<ParticleSet>& p_list,

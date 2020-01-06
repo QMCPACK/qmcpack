@@ -56,6 +56,12 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum(), 0);
   PulayTerm.resize(NumIons);
   UpdateMode.set(NONLOCAL, 1);
+  nlpp_jobs.resize(els.groups());
+  for (size_t ig = 0; ig < els.groups(); ig++)
+  {
+    // this should be enough in most calculations assuming that every electron cannot be in more than two pseudo regions.
+    nlpp_jobs[ig].reserve(2 * els.groupsize(ig));
+  }
 }
 
 ///destructor
@@ -259,8 +265,10 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
                                           const RefVector<ParticleSet>& P_list,
                                           bool Tmove)
 {
-  size_t max_num_jobs = 0;
-  const size_t nw     = O_list.size();
+  const size_t ngroups = P_list[0].get().groups();
+  const size_t nw      = O_list.size();
+  /// maximal number of jobs per spin
+  std::vector<size_t> max_num_jobs(ngroups, 0);
 
 #pragma omp parallel for
   for (size_t iw = 0; iw < nw; iw++)
@@ -288,26 +296,27 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
     if (myTable.DTType != DT_SOA)
       APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): not imlpemented for AoS builds\n");
 
-    O.nlpp_jobs.clear();
-    // this should be enough in most calculations assuming that every electron cannot be in more than two pseudo regions.
-    O.nlpp_jobs.reserve(2 * P.getTotalNum());
-
-    for (int jel = 0; jel < P.getTotalNum(); jel++)
+    for (int ig = 0; ig < P.groups(); ++ig) //loop over species
     {
-      const auto& dist               = myTable.getDistRow(jel);
-      const auto& displ              = myTable.getDisplRow(jel);
-      std::vector<int>& NeighborIons = O.ElecNeighborIons.getNeighborList(jel);
-      for (int iat = 0; iat < O.NumIons; iat++)
-        if (O.PP[iat] != nullptr && dist[iat] < O.PP[iat]->getRmax())
-        {
-          NeighborIons.push_back(iat);
-          O.IonNeighborElecs.getNeighborList(iat).push_back(jel);
-          O.nlpp_jobs.push_back(NLPPJob(iat, jel, P.R[jel], dist[iat], -displ[iat]));
-        }
-    }
+      auto& joblist = O.nlpp_jobs[ig];
+      joblist.clear();
 
-    // find the max number of jobs of all the walkers
-    max_num_jobs = std::max(max_num_jobs, O.nlpp_jobs.size());
+      for (int jel = P.first(ig); jel < P.last(ig); ++jel)
+      {
+        const auto& dist               = myTable.getDistRow(jel);
+        const auto& displ              = myTable.getDisplRow(jel);
+        std::vector<int>& NeighborIons = O.ElecNeighborIons.getNeighborList(jel);
+        for (int iat = 0; iat < O.NumIons; iat++)
+          if (O.PP[iat] != nullptr && dist[iat] < O.PP[iat]->getRmax())
+          {
+            NeighborIons.push_back(iat);
+            O.IonNeighborElecs.getNeighborList(iat).push_back(jel);
+            joblist.push_back(NLPPJob(iat, jel, P.R[jel], dist[iat], -displ[iat]));
+          }
+      }
+      // find the max number of jobs of all the walkers
+      max_num_jobs[ig] = std::max(max_num_jobs[ig], joblist.size());
+    }
 
     O.Value = 0.0;
   }
@@ -331,7 +340,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
   r_list.reserve(nw);
   dr_list.reserve(nw);
 
-  for (size_t jobid = 0; jobid < max_num_jobs; jobid++)
+  for (int ig = 0; ig < ngroups; ++ig) //loop over species
+  for (size_t jobid = 0; jobid < max_num_jobs[ig]; jobid++)
   {
     ecp_potential_list.clear();
     ecp_component_list.clear();
@@ -345,9 +355,9 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
     {
       NonLocalECPotential& O(static_cast<NonLocalECPotential&>(O_list[iw].get()));
       ParticleSet& P(P_list[iw]);
-      if (jobid < O.nlpp_jobs.size())
+      if (jobid < O.nlpp_jobs[ig].size())
       {
-        const auto& job = O.nlpp_jobs[jobid];
+        const auto& job = O.nlpp_jobs[ig][jobid];
         ecp_potential_list.push_back(O);
         ecp_component_list.push_back(*O.PP[std::get<0>(job)]);
         p_list.push_back(P);

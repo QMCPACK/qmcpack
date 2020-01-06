@@ -150,8 +150,8 @@ private:
   Array<TraceReal, 1>* Ve_sample;
   Array<TraceReal, 1>* Vi_sample;
 #endif
-  /// NLPP job list of ion-electron pairs
-  std::vector<NLPPJob> nlpp_jobs;
+  ///NLPP job list of ion-electron pairs by spin group
+  std::vector<std::vector<NLPPJob>> nlpp_jobs;
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set
