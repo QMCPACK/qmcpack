@@ -355,16 +355,14 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
         jel_list.push_back(std::get<1>(job));
         r_list.push_back(std::get<3>(job));
         dr_list.push_back(std::get<4>(job));
-        //O.Value += O.PP[std::get<0>(job)]->evaluateOne(P, std::get<0>(job), O.Psi, std::get<1>(job), std::get<3>(job), std::get<4>(job), use_DLA);
       }
     }
 
-    //NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, iat_list, psi_list, jel_list, r_list, dr_list, pairpots, use_DLA);
+    NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, iat_list, psi_list, jel_list, r_list, dr_list, pairpots, use_DLA);
 
     for (size_t j = 0; j < ecp_potential_list.size(); j++)
     {
-      ecp_potential_list[j].get().Value += ecp_potential_list[j].get().PP[iat_list[j]]->evaluateOne(p_list[j].get(), iat_list[j], psi_list[j].get(), jel_list[j], r_list[j], dr_list[j], use_DLA);
-      //ecp_potential_list[j].get().Value += pairpots[j];
+      ecp_potential_list[j].get().Value += pairpots[j];
       if (Tmove)
         ecp_component_list[j].get().contributeTxy(jel_list[j], ecp_potential_list[j].get().nonLocalOps.Txy);
     }

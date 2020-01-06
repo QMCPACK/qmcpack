@@ -906,7 +906,7 @@ void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& 
         for (int iw = 0; iw < wf_list.size(); iw++)
         {
           std::vector<ValueType>& ratios = ratios_list[iw];
-          for (int j = 0; j < ratios_list.size(); ++j)
+          for (int j = 0; j < ratios.size(); ++j)
             ratios[j] *= t[iw][j];
         }
       }
