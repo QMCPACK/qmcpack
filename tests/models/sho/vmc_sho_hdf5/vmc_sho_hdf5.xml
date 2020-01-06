@@ -1,6 +1,5 @@
 <simulation>
   <project id="sho" series="0"/>
-  <random seed="13" />
   <qmcsystem>
     <simulationcell>
       <parameter name="lattice" units="bohr">
