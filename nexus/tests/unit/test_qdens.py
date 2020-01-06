@@ -30,7 +30,7 @@ dmc.out     dmc.s001.scalar.dat  dmc.s002.stat.h5
 
     command = '{0} -v -e 4 -f xsf -i {1}/dmc.in.xml {1}/*stat.h5'.format(exe,dmc_path)
 
-    execute(command)
+    out,err,rc = execute(command)
 
     files_aft = '''
         dmc.err                           dmc.s001.stat.h5

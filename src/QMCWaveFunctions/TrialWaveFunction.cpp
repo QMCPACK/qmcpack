@@ -16,7 +16,6 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <strstream>
 #include <stdexcept>
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -391,6 +390,19 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
   return grad_iat;
 }
 
+TrialWaveFunction::GradType TrialWaveFunction::evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad)
+{
+  GradType grad_iat;
+  spingrad = 0;
+  for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    grad_iat += Z[i]->evalGradWithSpin(P, iat, spingrad);
+    myTimers[ii]->stop();
+  }
+  return grad_iat;
+}
+
 void TrialWaveFunction::flex_evalGrad(const std::vector<std::reference_wrapper<TrialWaveFunction>>& wf_list,
                                       const std::vector<std::reference_wrapper<ParticleSet>>& p_list,
                                       int iat,
@@ -459,6 +471,25 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
   {
     myTimers[ii]->start();
     r *= Z[i]->ratioGrad(P, iat, grad_iat);
+    myTimers[ii]->stop();
+  }
+
+  LogValueType logratio = convertValueToLog(r);
+  PhaseDiff             = std::imag(logratio);
+  return static_cast<ValueType>(r);
+}
+
+TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSet& P,
+                                                                      int iat,
+                                                                      GradType& grad_iat,
+                                                                      LogValueType& spingrad_iat)
+{
+  spingrad_iat = 0.0;
+  PsiValueType r(1.0);
+  for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+  {
+    myTimers[ii]->start();
+    r *= Z[i]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
     myTimers[ii]->stop();
   }
 
@@ -718,7 +749,7 @@ void TrialWaveFunction::debugOnlyCheckBuffer(WFBufferType& buffer)
 #ifndef NDEBUG
   if (buffer.size() < buffer.current() + buffer.current_scalar() * sizeof(FullPrecRealType))
   {
-    std::strstream assert_message;
+    std::ostringstream assert_message;
     assert_message << "On thread:" << Concurrency::getThreadId<>() << "  buf_list[iw].get().size():" << buffer.size()
                    << " < buf_list[iw].get().current():" << buffer.current()
                    << " + buf.current_scalar():" << buffer.current_scalar()

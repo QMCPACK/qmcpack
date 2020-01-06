@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 from nexus import settings,job,run_project,obj
 from nexus import generate_physical_system

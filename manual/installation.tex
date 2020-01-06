@@ -307,7 +307,8 @@ LIBXML2_LIBRARY       Libxml2 library
 \item HDF5 related
 %
 \begin{shade}
-ENABLE_PHDF5    1(default)/0, enables/disable parallel collective IO.
+HDF5_PREFER_PARALLEL 1(default for MPI build)/0, enables/disable parallel HDF5 library searching.
+ENABLE_PHDF5         1(default for parallel HDF5 library)/0, enables/disable parallel collective I/O.
 \end{shade}
 
 \item FFTW related
@@ -708,24 +709,6 @@ make -j 12
 ctest -R short -LE unstable
 \end{shade}
 \end{enumerate}
-
-\subsection{Installing on ANL ALCF Mira/Cetus IBM Blue Gene/Q}
-\label{sec:buildbgq}
-Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argonne Leadership Computing Facility (ANL ALCF).
-Mira has 49,152 compute nodes, and each node has a 16-core PowerPC A2 processor with 16 GB DDR3 memory.
-Because the login nodes and the compute nodes have different processors with distinct instruction sets,
-cross compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}.
-On Mira, compilers are loaded via softenv, and users need to add +mpiwrapper-bgclang-mpi3 and +cmake-3.8.1 in \$HOME/.soft.
-To build QMCPACK, a toolchain file is provided for setting up CMake.
-\textbf{BGClang is required for C++ 14 support. IBM XL C/C++ compiler should not be used.}
-
-%
-\begin{shade}
-cd build
-cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_Clang_ToolChain.cmake ..
-make -j 16
-ls -l bin/qmcpack
-\end{shade}
 
 \subsection{Installing on ALCF Theta, Cray XC40}
 Theta is a 9.65 petaflops system manufactured by Cray with 3,624 compute nodes.

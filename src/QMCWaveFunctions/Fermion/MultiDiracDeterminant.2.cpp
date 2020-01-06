@@ -194,7 +194,7 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(ParticleSet& P, int iat)
   UpdateMode = ORB_PBYP_RATIO;
   RatioTimer.start();
   evalOrbTimer.start();
-  Phi->evaluate(P, iat, psiV);
+  Phi->evaluateValue(P, iat, psiV);
   evalOrbTimer.stop();
   WorkingIndex = iat - FirstIndex;
   if (NumPtcls == 1)
@@ -249,7 +249,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(ParticleSet& P, int 
 {
   UpdateMode = ORB_PBYP_PARTIAL;
   evalOrb1Timer.start();
-  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+  Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
   evalOrb1Timer.stop();
   WorkingIndex = iat - FirstIndex;
   if (NumPtcls == 1)
@@ -277,18 +277,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(ParticleSet& P, int 
     for (size_t i = 0; i < NumPtcls; i++)
     {
       psiV_temp[i] = psiV[*it];
-#ifdef __bgq__
-      /* This is a workaround for BGQ and BGClang.
-         * The following lines correct the wrong summation in ratioGradRef.
-         * To reproduce the issue:
-         * Remove the Jastrow factor in the C2_pp-msdj_vmc test.
-         * The VMC energy is significantly lower than it should be.
-         */
-      for (int idim = 0; idim < OHMMS_DIM; idim++)
-        ratioGradRef[idim] += psiMinv_temp(i, WorkingIndex) * dpsiV[*it][idim];
-#else
       ratioGradRef += psiMinv_temp(i, WorkingIndex) * dpsiV[*it];
-#endif
       it++;
     }
     ValueType ratioRef                            = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
@@ -392,7 +381,7 @@ void MultiDiracDeterminant::evaluateGrads(ParticleSet& P, int iat)
 void MultiDiracDeterminant::evaluateAllForPtclMove(ParticleSet& P, int iat)
 {
   UpdateMode = ORB_PBYP_ALL;
-  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+  Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
   WorkingIndex = iat - FirstIndex;
   if (NumPtcls == 1)
   {

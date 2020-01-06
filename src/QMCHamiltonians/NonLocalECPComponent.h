@@ -84,6 +84,9 @@ private:
   //This stores grad psi/psi - dot(u,grad psi)
   std::vector<PosType> wfngrad;
 
+  /// scratch spaces used by evaluateValueAndDerivatives
+  Matrix<ValueType> dratio;
+  std::vector<ValueType> dlogpsi_vp;
 
   // For Pulay correction to the force
   std::vector<RealType> WarpNorm;
@@ -213,10 +216,12 @@ public:
   RealType evaluateValueAndDerivatives(ParticleSet& P,
                                        int iat,
                                        TrialWaveFunction& psi,
+                                       int iel,
+                                       RealType r,
+                                       const PosType& dr,
                                        const opt_variables_type& optvars,
                                        const std::vector<ValueType>& dlogpsi,
-                                       std::vector<ValueType>& dhpsioverpsi,
-                                       const int myTableIndex);
+                                       std::vector<ValueType>& dhpsioverpsi);
 
   void print(std::ostream& os);
 

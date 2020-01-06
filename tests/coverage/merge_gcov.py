@@ -1,16 +1,18 @@
+from __future__ import print_function
 
 import read_gcov
 import argparse
 from collections import OrderedDict
 import os.path
 import sys
+from functools import reduce
 
 def merge_gcov_files(fnames, output_fname, src_prefix_to_add=None):
   gcovs = [read_gcov.read_gcov(f) for f in fnames]
   source_names = [g.tags['Source'] for g in gcovs]
   for source in source_names[1:]:
     if source_names[0] != source:
-      print 'Source file names do not match',source_names[0],source
+      print('Source file names do not match',source_names[0],source)
       return
 
   gcov_out = merge_gcovs(gcovs)
@@ -30,7 +32,7 @@ def merge_gcov_files(fnames, output_fname, src_prefix_to_add=None):
 def merge_gcovs(gcovs):
   output_line_info = OrderedDict()
 
-  for line in gcovs[0].line_info.iterkeys():
+  for line in gcovs[0].line_info.keys():
       lines = [g.line_info[line] for g in gcovs]
 
       Uncov_norm= '#####'
@@ -69,9 +71,9 @@ def merge_gcovs(gcovs):
       #  output_count = Nocode
 
       if output_count is None:
-        print 'Unhandled situation:'
+        print('Unhandled situation:')
         for idx,line in enumerate(lines):
-          print '  line %d: '%idx,line
+          print('  line %d: '%idx,line)
 
       output_line_info[line] = read_gcov.LineInfo(str(output_count), line, lines[0].src)
 
@@ -89,7 +91,7 @@ def merge_two_gcov_files(fname1, fname2, output_fname):
   source_file1 = gcov1.tags['Source']
   source_file2 = gcov2.tags['Source']
   if source_file1 != source_file2:
-    print 'Source files do not match',source_file1,source_file2
+    print('Source files do not match',source_file1,source_file2)
     return
 
   gcov_out = merge_two_gcovs(gcov1, gcov2)
@@ -103,7 +105,7 @@ def merge_two_gcov_files(fname1, fname2, output_fname):
 def merge_two_gcovs(gcov1, gcov2):
   output_line_info = OrderedDict()
 
-  for line in gcov1.line_info.iterkeys():
+  for line in gcov1.line_info.keys():
       line1 = gcov1.line_info[line]
       line2 = gcov2.line_info[line]
 
@@ -132,9 +134,9 @@ def merge_two_gcovs(gcov1, gcov2):
         output_count = Nocode
 
       if output_count is None:
-        print 'Unhandled situation:'
-        print '  line1: ',line1
-        print '  line2: ',line2
+        print('Unhandled situation:')
+        print('  line1: ',line1)
+        print('  line2: ',line2)
 
       output_line_info[line] = read_gcov.LineInfo(str(output_count), line, line1.src)
 

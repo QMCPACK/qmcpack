@@ -274,7 +274,7 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
   h5name.append(hdf::config_ext);
   std::vector<int> woffsets;
   int woffsets_size = 0;
-  bool success = false;
+  bool success      = false;
 
   { // handle small dataset with master rank
     hdf_archive hin(myComm, false);

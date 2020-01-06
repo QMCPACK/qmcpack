@@ -309,15 +309,15 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   for(int nd=0; nd<ndet; nd++) {
     for(int Q=0; Q<nkpts; Q++) 
       if(Qmap[Q]>=0)
-        LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
+        LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<SPComplexType>{TG.Node()}));
       else
-        LQKank.emplace_back(shmSpMatrix({1,1},shared_allocator<ComplexType>{TG.Node()}));
+        LQKank.emplace_back(shmSpMatrix({1,1},shared_allocator<SPComplexType>{TG.Node()}));
     if(type==COLLINEAR) {
       for(int Q=0; Q<nkpts; Q++) 
         if(Qmap[Q]>=0)
-          LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
+          LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<SPComplexType>{TG.Node()}));
         else
-          LQKank.emplace_back(shmSpMatrix({1,1},shared_allocator<ComplexType>{TG.Node()}));
+          LQKank.emplace_back(shmSpMatrix({1,1},shared_allocator<SPComplexType>{TG.Node()}));
     }
   }
   for(int nd=0, nt=0, nq0=0; nd<ndet; nd++, nq0+=nkpts*nspins) {
@@ -339,10 +339,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   LQKbnl.reserve(ndet*nspins*number_of_symmetric_Q);  // storing 2 components for Q=0, since it is not assumed symmetric
   for(int nd=0; nd<ndet; nd++) {
     for(int Q=0; Q<number_of_symmetric_Q; Q++) 
-      LQKbnl.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
+      LQKbnl.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<SPComplexType>{TG.Node()}));
     if(type==COLLINEAR) {
       for(int Q=0; Q<number_of_symmetric_Q; Q++) 
-        LQKbnl.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{TG.Node()}));
+        LQKbnl.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<SPComplexType>{TG.Node()}));
     }
   }
   for(int nd=0, nt=0, nq0=0; nd<ndet; nd++, nq0+=number_of_symmetric_Q*nspins) {
@@ -881,7 +881,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     }
   }
   if( distNode.root() ) {
-    for( auto& v: LQKikn ) fill_n(v.origin(),v.num_elements(),SPComplexType(0.0));
+    for( auto& v: LQKikn ) std::fill_n(to_address(v.origin()),v.num_elements(),SPComplexType(0.0));
     // read LQ
     if(!dump.push("KPFactorized",false)) {
       app_error()<<" Error in KPFactorizedHamiltonian::getHamiltonianOperations():"
@@ -963,72 +963,69 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   LQKank.reserve(ndet*nspins*nkpts);  // storing 2 components for Q=0, since it is not assumed symmetric
   shmCMatrix haj({ndet*nkpts,(type==COLLINEAR?2:1)*nocc_max*nmo_max},
                                                 shared_allocator<ComplexType>{TG.Node()});
-  if(TG.Node().root()) std::fill_n(haj.origin(),haj.num_elements(),ComplexType(0.0));
+  if(TG.Node().root()) std::fill_n(to_address(haj.origin()),haj.num_elements(),ComplexType(0.0));
   int ank_max = nocc_max*nchol_max*nmo_max;
   for(int nd=0; nd<ndet; nd++) {
     for(int Q=0; Q<nkpts; Q++)
       if(Qmap[Q]>=0)
-        LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{distNode}));
+        LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<SPComplexType>{distNode}));
       else
-        LQKank.emplace_back(shmSpMatrix({1,1},shared_allocator<ComplexType>{distNode}));
+        LQKank.emplace_back(shmSpMatrix({1,1},shared_allocator<SPComplexType>{distNode}));
     if(type==COLLINEAR) {
       for(int Q=0; Q<nkpts; Q++)
         if(Qmap[Q]>=0)
-          LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{distNode}));
+          LQKank.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<SPComplexType>{distNode}));
         else
-          LQKank.emplace_back(shmSpMatrix({1,1},shared_allocator<ComplexType>{distNode}));
+          LQKank.emplace_back(shmSpMatrix({1,1},shared_allocator<SPComplexType>{distNode}));
     }
   }
-  if(distNode.root()) for( auto& v: LQKank ) fill_n(v.origin(),v.num_elements(),SPComplexType(0.0));
+  if(distNode.root()) for( auto& v: LQKank ) std::fill_n(to_address(v.origin()),v.num_elements(),SPComplexType(0.0));
 
   std::vector<shmSpMatrix> LQKakn;
   LQKakn.reserve(ndet*nspins*nkpts);  
   for(int nd=0; nd<ndet; nd++) {
     for(int Q=0; Q<nkpts; Q++) {
       if(Qmap[Q]>=0)
-        LQKakn.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{distNode}));
+        LQKakn.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<SPComplexType>{distNode}));
       else  
-        LQKakn.emplace_back(shmSpMatrix({1,1},shared_allocator<ComplexType>{distNode}));
+        LQKakn.emplace_back(shmSpMatrix({1,1},shared_allocator<SPComplexType>{distNode}));
     }
     if(type==COLLINEAR) {
       for(int Q=0; Q<nkpts; Q++) {
         if(Qmap[Q]>=0)
-          LQKakn.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{distNode}));
+          LQKakn.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<SPComplexType>{distNode}));
         else
-          LQKakn.emplace_back(shmSpMatrix({1,1},shared_allocator<ComplexType>{distNode}));
+          LQKakn.emplace_back(shmSpMatrix({1,1},shared_allocator<SPComplexType>{distNode}));
       }
     }
   }
-  if(distNode.root()) for( auto& v: LQKakn ) fill_n(v.origin(),v.num_elements(),SPComplexType(0.0));
-
+  if(distNode.root()) for( auto& v: LQKakn ) std::fill_n(to_address(v.origin()),v.num_elements(),SPComplexType(0.0));
   // NOTE: LQKbnl and LQKbln are indexed by the K index of 'b', L[Q][Kb]
   std::vector<shmSpMatrix> LQKbnl;
   LQKbnl.reserve(ndet*nspins*number_of_symmetric_Q);  // storing 2 components for Q=0, since it is not assumed symmetric
   for(int nd=0; nd<ndet; nd++) {
-    for(int Q=0; Q<number_of_symmetric_Q; Q++) {
-      LQKbnl.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{distNode}));
-    }
+    for(int Q=0; Q<number_of_symmetric_Q; Q++) 
+      LQKbnl.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<SPComplexType>{distNode}));
     if(type==COLLINEAR) {
-      for(int Q=0; Q<number_of_symmetric_Q; Q++) {
-        LQKbnl.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{distNode}));
-      }
+      for(int Q=0; Q<number_of_symmetric_Q; Q++) 
+        LQKbnl.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<SPComplexType>{distNode}));
     }
   }
-  if(distNode.root()) for( auto& v: LQKbnl ) fill_n(v.origin(),v.num_elements(),SPComplexType(0.0));
+  if(distNode.root()) for( auto& v: LQKbnl ) std::fill_n(to_address(v.origin()),v.num_elements(),SPComplexType(0.0));
 
   std::vector<shmSpMatrix> LQKbln;
   LQKbln.reserve(ndet*nspins*number_of_symmetric_Q);  // storing 2 components for Q=0, since it is not assumed symmetric
   for(int nd=0; nd<ndet; nd++) {
     for(int Q=0; Q<number_of_symmetric_Q; Q++) {
-      LQKbln.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{distNode}));
+      LQKbln.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<SPComplexType>{distNode}));
     } 
     if(type==COLLINEAR) {
       for(int Q=0; Q<number_of_symmetric_Q; Q++) {
-        LQKbln.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<ComplexType>{distNode}));
+        LQKbln.emplace_back(shmSpMatrix({nkpts,ank_max},shared_allocator<SPComplexType>{distNode}));
       }
     }
   }
-  if(distNode.root()) for( auto& v: LQKbln ) fill_n(v.origin(),v.num_elements(),SPComplexType(0.0));
+  if(distNode.root()) for( auto& v: LQKbln ) std::fill_n(to_address(v.origin()),v.num_elements(),SPComplexType(0.0));
 
   int Q0=-1;  // if K=(0,0,0) exists, store index here
   for(int Q=0; Q<nkpts; Q++) {

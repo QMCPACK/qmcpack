@@ -21,8 +21,6 @@
 #include "QMCWaveFunctions/Jastrow/CountingJastrow.h"
 #include "QMCWaveFunctions/Jastrow/CountingJastrowBuilder.h"
 
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-
 #include <stdio.h>
 
 namespace qmcplusplus
@@ -292,7 +290,6 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   // test ratio, ratioGrad, acceptMove
   for(int iat = 0; iat < num_els; ++iat)
   {
-    elec.setActive(iat);
     elec.makeMoveAndCheck(iat,dr[iat]);
   
     RealType ratioval = std::real( cj->ratio(elec, iat) );
