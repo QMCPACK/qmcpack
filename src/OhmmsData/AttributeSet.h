@@ -23,16 +23,13 @@
  */
 struct OhmmsAttributeSet
 {
-  typedef std::map<std::string, OhmmsElementBase*> Container_t;
-  typedef Container_t::iterator iterator;
-  typedef Container_t::const_iterator const_iterator;
-
-  Container_t m_param;
+  std::map<std::string, OhmmsElementBase*> m_param;
 
   ~OhmmsAttributeSet()
   {
-    iterator it(m_param.begin());
-    iterator it_end(m_param.end());
+    
+    decltype(m_param)::iterator it(m_param.begin());
+    decltype(m_param)::iterator it_end(m_param.end());
     while (it != it_end)
     {
       delete (*it).second;
@@ -42,8 +39,8 @@ struct OhmmsAttributeSet
 
   bool get(std::ostream& os) const
   {
-    const_iterator it(m_param.begin());
-    const_iterator it_end(m_param.end());
+    decltype(m_param)::const_iterator it(m_param.begin());
+    decltype(m_param)::const_iterator it_end(m_param.end());
     while (it != it_end)
     {
       (*it).second->get(os);
@@ -59,7 +56,7 @@ struct OhmmsAttributeSet
   template<class PDT>
   void add(PDT& aparam, const std::string& aname)
   {
-    iterator it(m_param.find(aname));
+    decltype(m_param)::iterator it(m_param.find(aname));
     if (it == m_param.end())
     {
       m_param[aname] = new OhmmsParameter<PDT>(aparam, aname.c_str(), "none");
@@ -76,7 +73,7 @@ struct OhmmsAttributeSet
     while (att != NULL)
     {
       std::string aname((const char*)(att->name));
-      iterator it = m_param.find(aname);
+      decltype(m_param)::iterator it = m_param.find(aname);
       if (it != m_param.end())
       {
         std::istringstream stream((const char*)(att->children->content));
