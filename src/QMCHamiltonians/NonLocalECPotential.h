@@ -22,13 +22,20 @@
 
 namespace qmcplusplus
 {
+
 class NonLocalECPComponent;
+
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials
  */
 class NonLocalECPotential : public OperatorBase, public ForceBase
 {
 public:
+  /** tuple type for NLPP calculation of a pair of ion and electron
+   * ion id, electron id, electron position, ion electron distance, ion to electron displacement
+   */
+  using NLPPJob =  std::tuple<int, int, PosType, RealType, PosType>;
+
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
 
   ~NonLocalECPotential();
@@ -144,6 +151,8 @@ private:
   Array<TraceReal, 1>* Ve_sample;
   Array<TraceReal, 1>* Vi_sample;
 #endif
+  /// NLPP job list of ion-electron pairs
+  std::vector<NLPPJob> nlpp_jobs;
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set

@@ -259,53 +259,47 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
                                           const RefVector<ParticleSet>& P_list,
                                           bool Tmove)
 {
-  if (Tmove)
-    nonLocalOps.reset();
-
-  auto& P = P_list[0].get();
-  std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
-
-  Value = 0.0;
-  for (int ipp = 0; ipp < PPset.size(); ipp++)
-    if (PPset[ipp])
-      PPset[ipp]->randomize_grid(*myRNG);
-
-  //loop over all the ions
-  const auto& myTable = P.getDistTable(myTableIndex);
-  // clear all the electron and ion neighbor lists
-  for (int iat = 0; iat < NumIons; iat++)
-    IonNeighborElecs.getNeighborList(iat).clear();
-  for (int jel = 0; jel < P.getTotalNum(); jel++)
-    ElecNeighborIons.getNeighborList(jel).clear();
-
-  if (ComputeForces)
+  for (size_t iw  = 0; iw < O_list.size(); iw++)
   {
-    APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): Forces not imlpemented\n");
-  }
-  else
-  {
-    if (myTable.DTType == DT_SOA)
-    {
-      for (int jel = 0; jel < P.getTotalNum(); jel++)
-      {
-        const auto& dist               = myTable.getDistRow(jel);
-        const auto& displ              = myTable.getDisplRow(jel);
-        std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-        for (int iat = 0; iat < NumIons; iat++)
-          if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-          {
-            RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], use_DLA);
-            if (Tmove)
-              PP[iat]->contributeTxy(jel, Txy);
-            Value += pairpot;
-            NeighborIons.push_back(iat);
-            IonNeighborElecs.getNeighborList(iat).push_back(jel);
-          }
-      }
-    }
-    else
-    {
+    NonLocalECPotential& O(static_cast<NonLocalECPotential&>(O_list[iw].get()));
+    ParticleSet& P(P_list[iw]);
+
+    if (Tmove)
+      O.nonLocalOps.reset();
+
+    for (int ipp = 0; ipp < O.PPset.size(); ipp++)
+      if (O.PPset[ipp])
+        O.PPset[ipp]->randomize_grid(*O.myRNG);
+
+    //loop over all the ions
+    const auto& myTable = P.getDistTable(myTableIndex);
+    // clear all the electron and ion neighbor lists
+    for (int iat = 0; iat < NumIons; iat++)
+      O.IonNeighborElecs.getNeighborList(iat).clear();
+    for (int jel = 0; jel < P.getTotalNum(); jel++)
+      O.ElecNeighborIons.getNeighborList(jel).clear();
+
+    if (ComputeForces)
+      APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): Forces not imlpemented\n");
+    if (myTable.DTType != DT_SOA)
       APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): not imlpemented for AoS builds\n");
+
+    O.Value = 0.0;
+    for (int jel = 0; jel < P.getTotalNum(); jel++)
+    {
+      const auto& dist               = myTable.getDistRow(jel);
+      const auto& displ              = myTable.getDisplRow(jel);
+      std::vector<int>& NeighborIons = O.ElecNeighborIons.getNeighborList(jel);
+      for (int iat = 0; iat < O.NumIons; iat++)
+        if (O.PP[iat] != nullptr && dist[iat] < O.PP[iat]->getRmax())
+        {
+          RealType pairpot = O.PP[iat]->evaluateOne(P, iat, O.Psi, jel, dist[iat], -displ[iat], use_DLA);
+          if (Tmove)
+            O.PP[iat]->contributeTxy(jel, O.nonLocalOps.Txy);
+          O.Value += pairpot;
+          NeighborIons.push_back(iat);
+          O.IonNeighborElecs.getNeighborList(iat).push_back(jel);
+        }
     }
   }
 }
