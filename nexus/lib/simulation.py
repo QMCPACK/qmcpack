@@ -846,7 +846,7 @@ class Simulation(NexusCore):
             if not self.got_dependencies:
                 for dep in self.ordered_dependencies:
                     sim = dep.sim
-                    for result_name,result in dep.results.iteritems():
+                    for result_name,result in dep.results.items():
                         if result_name!='other':
                             if self.has_generic_input():
                                 self.error('a simulation result cannot be incorporated into generic formatted or template input\nplease use {0} instead of {1}\nsim id: {2}\ndirectory: {3}\nresult: {4}'.format(cls.input_type.__class__.__name__,self.input.__class__.__name__,self.id,self.locdir,result_name))
@@ -1749,7 +1749,7 @@ def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True,display
         graph.add_node(node.node)
     #end for
     for node in nodes:
-        for simid,dep in node.sim.dependencies.iteritems():
+        for simid,dep in node.sim.dependencies.items():
             other = nodes[simid].node
             if quants:
                 for quantity in dep.result_names:

@@ -1657,8 +1657,8 @@ class GaussianProcessOptimizer(DevBase):
         self.vlog('writing parameters to {0}'.format(filepath),n=3)
         nsamples,nparams = Pset.shape
         s = ''
-        for i in xrange(nsamples):
-            for j in xrange(nparams):
+        for i in range(nsamples):
+            for j in range(nparams):
                 s += ' {0: 16.12f}'.format(Pset[i,j])
             #end for
             s += '\n'

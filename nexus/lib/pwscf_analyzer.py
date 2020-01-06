@@ -18,6 +18,7 @@
 
 
 import os
+import numpy as np
 from numpy import array,fromstring,sqrt,dot,max,equal,zeros,min,where
 from generic import obj
 from unit_converter import convert
@@ -240,7 +241,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             read_kpoints  = False
             read_2pi_alat = False
             read_rel      = False
-            for i in xrange(len(lines)):
+            for i in range(len(lines)):
                 l = lines[i]
                 if 'End of self-consistent calculation' in l:
                     # Initialize each time in case a hybrid functional was used
@@ -264,7 +265,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     try:
                         num_kpoints      = int(l.strip().split()[4])
                     except:
-                        print "Number of k-points {0} is not an integer".format(num_kpoints)
+                        print("Number of k-points {0} is not an integer".format(num_kpoints))
+                    #end try
 
                     kpoints_2pi_alat = lines[i+2:i+2+num_kpoints]
                     kpoints_rel      = lines[i+4+num_kpoints:i+4+2*num_kpoints]
@@ -478,19 +480,18 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 if l.find('total   stress')!=-1:
                     for j in range(3):
                         i+=1
-                        tokens = lines[i].split()
-                        stress.append(map(float,tokens))
-                    # end for j
-                # end found
+                        stress.append(list(np.array(lines[i].split(),dtype=float)))
+                    #end for
+                #end if
                 i += 1
-            # end while
+            #end while
             self.stress=stress
         except:
             nx+=1
             if self.info.warn:
                 self.warn('stress read failed')
             #end if
-        #end
+        #end try
         #end added by Yubo "Paul" Yang
 
         try:
@@ -650,13 +651,13 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 data = read_qexml(data_file)
                 kpdata = data.root.eigenvalues.k_point
                 kpoints = obj()
-                for ki,kpd in kpdata.iteritems():
+                for ki,kpd in kpdata.items():
                     kp = obj(
                         kpoint = kpd.k_point_coords,
                         weight = kpd.weight
                         )
                     kpoints[ki]=kp
-                    for si,dfile in kpd.datafile.iteritems():
+                    for si,dfile in kpd.datafile.items():
                         efilepath = os.path.join(datadir,dfile.iotk_link)
                         if os.path.exists(efilepath):
                             edata = read_qexml(efilepath)
@@ -689,7 +690,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     data    = data,
                     kpoints = kpoints
                     )
-            except Exception,e:
+            except Exception as e:
                 if self.info.warn:
                     self.warn('encountered an exception during xml read, this data will not be available\nexception encountered: '+str(e))
                 #end if
@@ -718,7 +719,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         tot = obj(up=0,down=0)
         for kp in kpoints:
             w = kp.weight
-            for s,sl in spins.iteritems():
+            for s,sl in spins.items():
                 tot[s] += w*kp[sl].occupations.sum()
             #end for
         #end for
@@ -734,7 +735,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         for ik in sorted(kpoints.keys()):
             kp = kpoints[ik]
             kpt = obj()
-            for s,sl in spins.iteritems():
+            for s,sl in spins.items():
                 kpt[s] = w*kp[sl].occupations.sum()*mult
             #end for
             #text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}    {5}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up,kpt.down,kp.kpoint[0])

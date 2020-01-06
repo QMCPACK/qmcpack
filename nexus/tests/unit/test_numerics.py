@@ -293,7 +293,7 @@ if scipy_available:
 
         hull = convex_hull(points)
 
-        assert(hull==range(8))
+        assert(hull==list(range(8)))
     #end def test_convex_hull
 #end if
 

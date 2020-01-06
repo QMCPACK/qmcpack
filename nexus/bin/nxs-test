@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import os
 import sys
@@ -87,42 +87,6 @@ def import_from_unit_test_module(module_name,test_name):
 
 # import core testing functions (shared between nxs-test and unit tests)
 from testing import *
-
-
-# tests
-#   versions code
-#   checks of dependency versions
-#   generic logging
-#   generic intrinsics
-#   generic extensions
-#   structure class
-#   physical system class
-#   simulation input base class
-#   simulation analyzer base class
-#   simulation base class
-#   job class
-#   machine base class
-#   workstation class
-#   supercomputer base class
-#   generic simulation
-#   
-#   settings operations
-#   job write correctness
-#   simulation input correctness
-#   simulation workflow generate only
-#   structure read/write, operations
-#   physical system functions
-#   simulation bundling
-#   project manager
-#   machines
-#   basisset operations
-#   pseudopotential operations
-#   fileio operations
-#   xmlreader
-#   hdfreader
-#   numerical operations (select)
-#   periodic table integrity
-#   simulation analyzers
 
 
 
@@ -438,7 +402,7 @@ class NexusTest(NexusTestBase):
         )
 
     status_map = dict()
-    for k,v in status_options.iteritems():
+    for k,v in status_options.items():
         status_map[v] = k
     #end for
 
@@ -1851,8 +1815,8 @@ def user_examples(label):
                 # then it is not a failure
                 check_pbc = False
                 if len(dgen)==1 and len(dref)==1:
-                    kgen = dgen.keys()[0].rsplit('/',1)[1]
-                    kref = dref.keys()[0].rsplit('/',1)[1]
+                    kgen = list(dgen.keys())[0].rsplit('/',1)[1]
+                    kref = list(dref.keys())[0].rsplit('/',1)[1]
                     check_pbc |= code=='qmcpack' and kgen==kref=='position'
                     check_pbc |= code=='pwscf'   and kgen==kref=='positions'
                 #end if
@@ -1907,10 +1871,10 @@ NexusTest( nexus_imports                   )
 NexusTest( testing                         )
 NexusTest( execute                         )
 NexusTest( memory                          )
-NexusTest( plotting                        )
 NexusTest( superstring                     )
 NexusTest( generic_operation               , 'generic' )
 NexusTest( developer                       )
+NexusTest( plotting                        )
 NexusTest( unit_converter                  )
 NexusTest( periodic_table                  )
 NexusTest( numerics                        )
@@ -2006,7 +1970,7 @@ NexusTest( qdens                           )
 #NexusTest( quantum_package_simulation      )
 #NexusTest( required_dependencies           )
 #NexusTest( settings_operation              , 'settings' )
-#NexusTest( simulation                      )
+#NexusTest( simulation                      , 'simulation_module' )
 #NexusTest( structure                       )
 #NexusTest( superstring                     )
 #NexusTest( testing                         )
@@ -2094,7 +2058,7 @@ def regenerate_reference(update=False):
     #end if
 
     # execute all example scripts in generate_only mode
-    for label,einfo in example_information.iteritems():
+    for label,einfo in example_information.items():
         example_path = einfo['path']
         for script in einfo['scripts']:
             nlog('generating reference data for '+script,n=1)
@@ -2143,7 +2107,7 @@ def regenerate_reference(update=False):
         failed_examples = []
         all_examples = []
         ref_example_dir = os.path.join(reference_dir,exdir)
-        for label,einfo in example_information.iteritems():
+        for label,einfo in example_information.items():
             example_path = einfo['path']
             for code,filetype,filepath in einfo['files']:
                 ref_filepath = os.path.join(ref_example_dir,example_path,filepath)
