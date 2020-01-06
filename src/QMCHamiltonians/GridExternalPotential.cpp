@@ -118,10 +118,7 @@ GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
       P.Lattice.applyMinimumImage(r);
       double val = 0.0;
       eval_UBspline_3d_d(spline_data, r[0], r[1], r[2], &val);
-      // app_log() << "Coordinates: " << r[0] << " " << r[1] << " " << r[2] << " " << val << std::endl;
 
-      // app_log() << "Value: " << val << std::endl;
-      // app_log() << "Should be: " << 0.5 * dot(r, r) << std::endl;
       Value += val;
     }
 #if !defined(REMOVE_TRACEMANAGER)
