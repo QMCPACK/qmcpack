@@ -260,9 +260,9 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
                                           bool Tmove)
 {
   size_t max_num_jobs = 0;
-  const size_t nw = O_list.size();
+  const size_t nw     = O_list.size();
 
-  for (size_t iw  = 0; iw < nw; iw++)
+  for (size_t iw = 0; iw < nw; iw++)
   {
     NonLocalECPotential& O(static_cast<NonLocalECPotential&>(O_list[iw].get()));
     ParticleSet& P(P_list[iw]);
@@ -288,8 +288,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
       APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): not imlpemented for AoS builds\n");
 
     O.nlpp_jobs.clear();
-    // this should be enough in most calculations. Every electron is in two pseudo regions.
-    O.nlpp_jobs.reserve(2*P.getTotalNum());
+    // this should be enough in most calculations assuming that every electron cannot be in more than two pseudo regions.
+    O.nlpp_jobs.reserve(2 * P.getTotalNum());
 
     for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
@@ -330,7 +330,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
   r_list.reserve(nw);
   dr_list.reserve(nw);
 
-  for (size_t jobid  = 0; jobid < max_num_jobs; jobid++)
+  for (size_t jobid = 0; jobid < max_num_jobs; jobid++)
   {
     ecp_potential_list.clear();
     ecp_component_list.clear();
@@ -340,7 +340,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
     jel_list.clear();
     r_list.clear();
     dr_list.clear();
-    for (size_t iw  = 0; iw < nw; iw++)
+    for (size_t iw = 0; iw < nw; iw++)
     {
       NonLocalECPotential& O(static_cast<NonLocalECPotential&>(O_list[iw].get()));
       ParticleSet& P(P_list[iw]);
@@ -358,7 +358,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
       }
     }
 
-    NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, iat_list, psi_list, jel_list, r_list, dr_list, pairpots, use_DLA);
+    NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, iat_list, psi_list, jel_list, r_list, dr_list,
+                                           pairpots, use_DLA);
 
     for (size_t j = 0; j < ecp_potential_list.size(); j++)
     {

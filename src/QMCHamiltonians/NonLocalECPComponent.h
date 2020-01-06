@@ -102,6 +102,13 @@ private:
   ///virtual particle set: delayed initialization
   VirtualParticleSet* VP;
 
+  /// build QP position deltas from the reference electron using internally stored random grid points
+  void buildQuadraturePointDeltaPositions(RealType r, const PosType& dr, std::vector<PosType>& deltaV) const;
+
+  /** finalize the calculation of $\frac{V\Psi_T}{\Psi_T}$
+   */
+  RealType calculateProjector(RealType r, const PosType& dr);
+
 public:
   NonLocalECPComponent();
 
@@ -126,10 +133,6 @@ public:
   template<typename T>
   void randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG);
 
-  void buildQuadraturePointDeltaPositions(RealType r, const PosType& dr, std::vector<PosType>& deltaV) const;
-
-  RealType calculateProjector(RealType r, const PosType& dr);
-
   /** contribute local non-local move data
    * @param iel reference electron id.
    * @param Txy nonlocal move data.
@@ -145,6 +148,7 @@ public:
    * @param iel index of electron
    * @param r the distance between ion iat and electron iel.
    * @param dr displacement from ion iat to electron iel.
+   * @param use_DLA if ture, use determinant localization approximation (DLA).
    *
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
@@ -156,15 +160,30 @@ public:
                        const PosType& dr,
                        bool use_DLA);
 
+  /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
+   * to total energy from ion "iat" and electron "iel" for a batch of walkers.
+   *
+   * @param ecp_component_list a list of ECP components
+   * @param p_list a list of electron particle set.
+   * @param iat_list a list of ion indices.
+   * @param psi_list a list of trial wave function object
+   * @param iel_list a list of electron indices
+   * @param r_list a list of the distances between ion iat and electron iel.
+   * @param dr_list a list of displacements from ion iat to electron iel.
+   * @param pairpots a list of contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
+   * @param use_DLA if ture, use determinant localization approximation (DLA).
+   *
+   * Note that ecp_component_list allows including different NLPP component for different walkers.
+   */
   static void flex_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
-                             const RefVector<ParticleSet>& p_list,
-                             const std::vector<int>& iat_list,
-                             const RefVector<TrialWaveFunction>& psi_list,
-                             const std::vector<int>& iel_list,
-                             const std::vector<RealType>& r_list,
-                             const std::vector<PosType>& dr_list,
-                             std::vector<RealType>& pairpots,
-                             bool use_DLA);
+                               const RefVector<ParticleSet>& p_list,
+                               const std::vector<int>& iat_list,
+                               const RefVector<TrialWaveFunction>& psi_list,
+                               const std::vector<int>& iel_list,
+                               const std::vector<RealType>& r_list,
+                               const std::vector<PosType>& dr_list,
+                               std::vector<RealType>& pairpots,
+                               bool use_DLA);
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
    * to total energy from ion "iat" and electron "iel".

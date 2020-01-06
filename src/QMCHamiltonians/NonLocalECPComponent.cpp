@@ -231,6 +231,7 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent
     }
     else
     {
+      // Compute ratios without VP. This is working but very slow code path.
 #pragma omp parallel for
       for (size_t i = 0; i < p_list.size(); i++)
       {

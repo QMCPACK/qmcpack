@@ -22,7 +22,6 @@
 
 namespace qmcplusplus
 {
-
 class NonLocalECPComponent;
 
 /** @ingroup hamiltonian
@@ -34,7 +33,7 @@ public:
   /** tuple type for NLPP calculation of a pair of ion and electron
    * ion id, electron id, electron position, ion electron distance, ion to electron displacement
    */
-  using NLPPJob =  std::tuple<int, int, PosType, RealType, PosType>;
+  using NLPPJob = std::tuple<int, int, PosType, RealType, PosType>;
 
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
 
@@ -160,6 +159,11 @@ private:
    */
   void evaluateImpl(ParticleSet& P, bool Tmove);
 
+  /** the actual implementation for batched walkers, used by mw_evaluate and mw_evaluateWithToperator
+   * @param O_list the list of NonLocalECPotential in a walker batch
+   * @param P_list the list of ParticleSet in a walker batch
+   * @param Tmove whether Txy for Tmove is updated
+   */
   void mw_evaluateImpl(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list, bool Tmove);
 
   /** compute the T move transition probability for a given electron
@@ -169,9 +173,10 @@ private:
    */
   void computeOneElectronTxy(ParticleSet& P, const int ref_elec);
 
-  /** mark all the electrons affected by Tmoves
+  /** mark all the electrons affected by Tmoves and update ElecNeighborIons and IonNeighborElecs
    * @param myTable electron ion distance table
    * @param iel reference electron
+   * Note this funtion should be called before acceptMove for a Tmove
    */
   void markAffectedElecs(const DistanceTableData& myTable, int iel);
 };
