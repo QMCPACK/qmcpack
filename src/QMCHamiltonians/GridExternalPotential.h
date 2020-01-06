@@ -24,7 +24,7 @@ struct GridExternalPotential : public QMCHamiltonianBase
 {
   const ParticleSet& Ps;
 
-  UBspline_3d_d *spline_data;
+  std::shared_ptr<UBspline_3d_d> spline_data;
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace sample array
