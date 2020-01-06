@@ -17,11 +17,12 @@
 
 namespace qmcplusplus
 {
-
+namespace ewaldtools
+{
   using namespace ewaldref;
 
 
-
+/// Similar to ewaldref::gridSum but for adaptive anisotropic grids
 template<typename T>
 real_t anisotropicGridSum(T& function, IntVec& nmax, bool zero = true, real_t tol = 1e-11)
 {
@@ -131,6 +132,7 @@ real_t anisotropicGridSum(T& function, IntVec& nmax, bool zero = true, real_t to
 }
 
 
+/// Similar to ewaldref::gridSum, but for non-adaptive, fixed size grids
 template<typename T>
 real_t fixedGridSum(T& function, IntVec nmax, bool zero=true)
 {
@@ -189,6 +191,7 @@ real_t fixedGridSum(T& function, IntVec nmax, bool zero=true)
 
 
 
+/// General class to perform Ewald sums
 class AnisotropicEwald
 {
 private:
@@ -202,23 +205,28 @@ private:
   real_t volume;
   real_t QQmax;
 
+  // constants used in Madelung sums
   real_t kappa_madelung;
   real_t rconst_madelung;
   real_t kconst_madelung;
   real_t kfactor_madelung;
 
+  // constants used in Ewald sums
   real_t kappa_ewald;
   real_t rconst_ewald;
   real_t kconst_ewald;
   real_t kfactor_ewald;
 
+  // internally stored values
   real_t madelung_constant;
   real_t madelung_energy;
 
+  // maximum anisotropic grid found across all evaluations
   IntVec nmax_anisotropic;
 
 public:
 
+  /// Setup constant data, including Madelung sums
   AnisotropicEwald(const RealMat& A_in, const ChargeArray& Q_in, real_t tol_in = 1e-10,real_t kappa_in=-1.0)
     : A(A_in), Q(Q_in), tol(tol_in), nmax_anisotropic(0)
   {
@@ -258,7 +266,8 @@ public:
   }
 
 
-  real_t madelungConstant()
+  /// Calculate the Madelung constant
+  real_t madelungConstant() const
   {
     // Set Madelung tolerance
     real_t tol_madelung = tol * 2. / QQmax;
@@ -282,6 +291,7 @@ public:
   }
 
 
+  /// Calculate and store the Madelung energy
   real_t madelungEnergy()
   {
     // Madelung energy for a single particle with charge 1
@@ -296,6 +306,7 @@ public:
   }
 
 
+  /// Update the current maximum anisotropic grid dimensions
   void updateNmax(const IntVec& nmax)
   {
     for(size_t d: {0,1,2})
@@ -303,12 +314,14 @@ public:
   }
 
 
+  /// Return the current maximum anisotropic grid dimensions
   IntVec getNmax()
   {
     return nmax_anisotropic;
   }
 
 
+  /// Pair interaction
   real_t ewaldPairPotential(const RealVec& r, real_t tol_ewald)
   {
     // Create real-/k-space functors for terms within the Ewald pair potential sums
@@ -332,6 +345,7 @@ public:
   }
 
 
+  /// Total energy for all pairs using adaptive anisotropic grids
   real_t ewaldEnergy(const PosArray& R)
   {
     real_t ee = madelung_energy;
@@ -343,6 +357,7 @@ public:
   }
 
 
+  /// Total energy for all pairs using fixed anisotropic grid
   real_t fixedGridEwaldEnergy(const PosArray& R, const IntVec& nmax)
   {
     real_t ee = madelung_energy;
@@ -371,6 +386,7 @@ public:
   }
 
 
+  /// Total energy for all pairs using fixed maximum anisotropic grid
   real_t fixedGridEwaldEnergy(const PosArray& R)
   {
     return fixedGridEwaldEnergy(R, nmax_anisotropic);
@@ -378,5 +394,6 @@ public:
 };
 
 
+} // namespace ewaldtools
 } // namespace qmcplusplus
 #endif
