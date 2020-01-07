@@ -8,6 +8,12 @@
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+//
+//
+// Info: This class allows one to read in an arbitrary external potential in qmcpack. 
+//       This can be done by reading in data from an HDF5 format file. 
+//
+//
 //////////////////////////////////////////////////////////////////////////////////////
 
 
