@@ -699,7 +699,15 @@ def test_supercomputer_scheduling():
 export OMP_NUM_THREADS=8
 aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     wj = sc.write_job(j)
-    assert(wj.strip()==ref_wj)
+    for flag in refro:
+        assert(flag in wj)
+    #end for
+    assert('aprun ' in wj)
+    assert(' echo run' in wj)
+    def scomp(s):
+        return s.strip().rsplit('\n',1)[0].strip()
+    #end if
+    assert(scomp(wj)==scomp(ref_wj))
 
 
     # test add_job()
@@ -721,7 +729,13 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
 
     subfile_path = os.path.join(tpath,j.subfile)
     assert(os.path.exists(subfile_path))
-    assert(open(subfile_path,'r').read().strip()==ref_wj)
+    wj = open(subfile_path,'r').read().strip()
+    assert('aprun ' in wj)
+    assert(' echo run' in wj)
+    def scomp(s):
+        return s.strip().rsplit('\n',1)[0].strip()
+    #end if
+    assert(scomp(wj)==scomp(ref_wj))
 
 
     # test sub_command()
@@ -903,6 +917,30 @@ def test_process_job():
         machine_idempotent = True
         for job_input in job_inputs:
             job = Job(machine=machine.name,**job_input)
+            assert(isinstance(job.processes,int))
+            assert(isinstance(job.nodes,int))
+            if job.processes_per_node is not None:
+                assert(job.processes==job.nodes*job.processes_per_node)
+            #end if
+            if not job.serial:
+                nodes_input = 'nodes' in job_input
+                cores_input = 'cores' in job_input
+                if job.processes%job.nodes==0:
+                    assert(job.processes_per_node is not None)
+                    assert(job.processes==job.nodes*job.processes_per_node)
+                #end if
+                if nodes_input:
+                    assert(job.nodes==job_input.nodes)
+                #end if
+                if nodes_input and cores_input:
+                    assert(job.cores<=job_input.cores)
+                elif nodes_input:
+                    assert(job.cores%machine.cores_per_node==0)
+                    assert(job.cores==job.nodes*machine.cores_per_node)
+                elif cores_input:
+                    assert(job.cores==job_input.cores)
+                #end if
+            #end if
             job2 = obj.copy(job)
             machine.process_job(job2)
             job_idempotent = object_eq(job,job2)
@@ -943,7 +981,8 @@ def test_job_run_command():
     Machine.allow_warnings = False
 
     def parse_job_command(command):
-        tokens = command.replace(':',' ').split()
+        tokens = command.split()
+        #tokens = command.replace(':',' ').split()
         launcher = tokens[0]
         exe = tokens[-1]
         args = []
@@ -954,8 +993,14 @@ def test_job_run_command():
                 options[t] = None
                 last_option = t
             elif last_option is not None:
-                options[last_option] = t
-                last_option = None
+                if options[last_option] is None:
+                    options[last_option] = {t}
+                else:
+                    options[last_option].add(t)
+                #end if
+                if last_option!='--envs':
+                    last_option = None
+                #end if
             else:
                 args.append(t)
             #end if
@@ -1084,6 +1129,12 @@ def test_job_run_command():
         ('redsky'         , 'n2_t2'         ) : 'srun test.x',
         ('redsky'         , 'n2_t2_e'       ) : 'srun test.x',
         ('redsky'         , 'n2_t2_p2'      ) : 'srun test.x',
+        ('rhea'           , 'n1'            ) : 'srun -N 1 -n 16 test.x',
+        ('rhea'           , 'n1_p1'         ) : 'srun -N 1 -n 1 test.x',
+        ('rhea'           , 'n2'            ) : 'srun -N 2 -n 32 test.x',
+        ('rhea'           , 'n2_t2'         ) : 'srun -N 2 -n 16 -c 2 --cpu-bind=cores test.x',
+        ('rhea'           , 'n2_t2_e'       ) : 'srun -N 2 -n 16 -c 2 --cpu-bind=cores test.x',
+        ('rhea'           , 'n2_t2_p2'      ) : 'srun -N 2 -n 4 -c 2 --cpu-bind=cores test.x',
         ('serrano'        , 'n1'            ) : 'srun test.x',
         ('serrano'        , 'n1_p1'         ) : 'srun test.x',
         ('serrano'        , 'n2'            ) : 'srun test.x',
@@ -1215,7 +1266,7 @@ def test_job_run_command():
             #end if
             ref_command = job_run_ref[name,jtype]
             if not job_commands_equal(command,ref_command):
-                failed('Job.run_command for machine "{0}" does not match the reference\njob inputs: {1}\nreference command: {2}\nincorrect command: {3}'.format(name,job_inputs[jtype],ref_command,command))
+                failed('Job.run_command for machine "{0}" does not match the reference\njob inputs:\n{1}\nreference command: {2}\nincorrect command: {3}'.format(name,job_inputs[jtype],ref_command,command))
             #end for
         #end for
     #end for
@@ -1257,12 +1308,17 @@ def test_job_run_command():
         assert(ns2 in rc2)
         # verify that text on either side of node count 
         # agrees for original and split commands
-        rcl ,rcr  = rc.split(ns,1)
-        rc1l,rc1r = rc1.split(ns1,1)
-        rc2l,rc2r = rc2.split(ns2,1)
-        rcf  = rcl+' '+rcr
-        rc1f = rc1l+' '+rc1r
-        rc2f = rc2l+' '+rc2r
+        assert(len(rc1)==len(rc))
+        assert(len(rc2)==len(rc))
+
+        loc = rc.find(ns)+1
+        assert(rc[loc]=='4')
+        assert(rc1[loc]=='1')
+        assert(rc2[loc]=='3')
+        rcf  = rc[:loc]+' '+rc[loc+1:]
+        rc1f = rc1[:loc]+' '+rc1[loc+1:]
+        rc2f = rc2[:loc]+' '+rc2[loc+1:]
+
         assert(job_commands_equal(rcf,rc1f))
         assert(job_commands_equal(rcf,rc2f))
     #end for
@@ -1561,6 +1617,24 @@ module add mvapich2-intel-psm/1.7
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 srun test.x''',
+        rhea = '''#!/bin/bash
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+
+cd $SLURM_SUBMIT_DIR
+
+echo JobID : $SLURM_JOBID 
+echo Number of nodes requested: $SLURM_JOB_NUM_NODES 
+echo List of nodes assigned to the job: $SLURM_NODELIST 
+
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+srun -N 2 -n 32 test.x''',
         serrano = '''#!/bin/bash
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
@@ -1772,6 +1846,34 @@ echo "Cobalt location args: $LOCARGS" >&2
 runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 : test.x''',
         )
 
+    def process_job_file(jf):
+        jf = jf.strip()
+        lines = []
+        tokens = []
+        for line in jf.splitlines():
+            if len(line.strip())==0:
+                continue
+            #end if
+            if line.startswith('export'):
+                tokens.append(line)
+            else:
+                lines.append(line)
+            #end if
+        #end for
+        tokens.extend(lines.pop().split())
+        jo = obj(
+            lines  = lines,
+            tokens = set(tokens),
+            )
+        return jo
+    #end def process_job_file
+
+    def job_files_same(jf1,jf2):
+        jf1 = process_job_file(jf1)
+        jf2 = process_job_file(jf2)
+        return object_eq(jf1,jf2)
+    #end def job_files_same
+
     if testing.global_data['job_ref_table']:
         print('\n\n')
     #end if
@@ -1808,7 +1910,7 @@ runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 
             continue
         #end if
         ref_wj = job_write_ref[name]
-        assert(wj.strip()==ref_wj)
+        assert(job_files_same(wj,ref_wj))
     #end for
 
     Machine.allow_warnings = allow_warn

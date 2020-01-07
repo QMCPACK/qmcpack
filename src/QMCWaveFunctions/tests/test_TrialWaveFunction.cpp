@@ -170,7 +170,6 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   using ValueType = QMCTraits::ValueType;
   PosType delta(0.1, 0.1, 0.2);
 
-  elec_.setActive(moved_elec_id);
   elec_.makeMove(moved_elec_id, delta);
 
   ValueType r_all_val = psi.calcRatio(elec_, moved_elec_id);
@@ -228,8 +227,6 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == LogComplexApprox(std::complex<RealType>(-1.471840358291562, 3.141592653589793)));
 #endif
 
-  P_list[0]->setActive(moved_elec_id);
-  P_list[1]->setActive(moved_elec_id);
 
   std::vector<GradType> grad_old(2);
 

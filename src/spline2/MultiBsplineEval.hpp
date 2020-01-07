@@ -30,18 +30,8 @@
 
 // select evaluation functions based on the architecture.
 ///include evaluate_v_impl
-#ifdef BGQPX
-#include <spline2/MultiBsplineValue_BGQ.hpp>
-#else
 #include <spline2/MultiBsplineValue.hpp>
-#endif
-
-///include evaluate_vgl/vgh_impl
-#ifdef BGQPX
-#include <spline2/MultiBsplineVGLH_BGQ.hpp>
-#else
 #include <spline2/MultiBsplineVGLH.hpp>
-#endif
 
 ///include evaluate_vghgh_impl
 #include <spline2/MultiBsplineVGHGH.hpp>

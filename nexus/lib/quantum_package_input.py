@@ -229,7 +229,7 @@ def extract_input_specification(*ezfio_paths):
     log('\nextracting Quantum Package input specification from ezfio directories')
     typedict = {bool:'bool',int:'int',float:'float',str:'str'}
     new_input_spec = obj()
-    for vpath,vtype in input_specification.iteritems():
+    for vpath,vtype in input_specification.items():
         new_input_spec[vpath] = typedict[vtype]
     #end for
     for epath in ezfio_paths:
@@ -353,7 +353,7 @@ class QuantumPackageInput(SimulationInput):
 
 
     def set(self,**kwargs):
-        for name,value in kwargs.iteritems():
+        for name,value in kwargs.items():
             if name not in known_variables:
                 self.error('cannot set variable\nattempted to set unknown variable "{0}"\nwith value: {1}\nvalid options are: {2}'.format(name,value,sorted(known_variables)))
             #end if
@@ -479,12 +479,12 @@ class QuantumPackageInput(SimulationInput):
 
         # write inputs into the ezfio directory/file tree
         extra = self.extract_added_keys()
-        for secname,sec in self.iteritems():
+        for secname,sec in self.items():
             secpath = os.path.join(epath,secname)
             if not os.path.exists(secpath):
                 self.error('cannot write input\ninput section path does not exist\nsection path: {0}\nplease ensure that all variables were created previously for this ezfio directory\n(to create all variables, run "qp_edit -c {1}")'.format(secpath,edir))
             #end if
-            for varname,val in sec.iteritems():
+            for varname,val in sec.items():
                 vpath = os.path.join(secpath,varname)
                 write_qp_value(vpath,val)
             #end for
@@ -528,7 +528,7 @@ class QuantumPackageInput(SimulationInput):
 
         valid_types = {float:(int,float)}
         if sections:
-            for secname,sec in self.iteritems():
+            for secname,sec in self.items():
                 if secname not in known_sections:
                     msg = 'input is invalid\nunknown section encountered\nunknown section provided: {0}\nvalid options are: {1}'.format(secname,sorted(known_sections))
                 elif not isinstance(sec,Section):
@@ -538,7 +538,7 @@ class QuantumPackageInput(SimulationInput):
                     break
                 #end if
                 if variables:
-                    for varname,var in sec.iteritems():
+                    for varname,var in sec.items():
                         if varname not in known_variables:
                             msg = 'input is invalid\nunknown variable encountered in section "{0}"\nunknown variable: {1}\nvalid options are: {2}'.format(secname,varname,sorted(section_variables[secname]))
                         elif types:
@@ -703,7 +703,7 @@ def generate_quantum_package_input(**kwargs):
     # partition inputs into sections and variables
     sections = obj()
     variables = obj()
-    for name,value in kw.iteritems():
+    for name,value in kw.items():
         is_sec = name in known_sections
         is_var = name in known_variables
         if is_sec and is_var:
@@ -722,7 +722,7 @@ def generate_quantum_package_input(**kwargs):
     #end for
 
     # assign sections
-    for secname,sec in sections.iteritems():
+    for secname,sec in sections.items():
         if isinstance(sec,(obj,dict)):
             sec = Section(sec) # defer checking to check_valid
         #end if
@@ -730,7 +730,7 @@ def generate_quantum_package_input(**kwargs):
     #end for
 
     # assign variables to sections
-    for varname,var in variables.iteritems():
+    for varname,var in variables.items():
         if varname not in variable_section:
             QuantumPackageInput.class_error('cannot generate input\nsection cannot be fond for variable provided\nunrecognized variable: {0}'.format(varname))
         #end if

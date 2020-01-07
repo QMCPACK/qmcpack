@@ -186,7 +186,7 @@ def write_array(arr,same=equality,render=str,max_repeat=3):
         if count>max_repeat:
             s += '{0}*{1} '.format(count,render(value))
         else:
-            for i in xrange(count):
+            for i in range(count):
                 s += render(value)+' '
             #end for
         #end if
@@ -257,7 +257,7 @@ def assign_bool_array(a):
 def vasp_to_nexus_elem(elem,elem_count):
     syselem=[]
     for x,count in zip(elem,elem_count):
-        syselem+=[x for i in xrange(0,count)]
+        syselem+=[x for i in range(0,count)]
     #end for
     return array(syselem)
 #end def vasp_to_nexus_elem
@@ -505,7 +505,7 @@ class VKeywordFile(VFile):
             value = self[name]
             try:
                 svalue = self.write_value[name](value)
-            except Exception,e:
+            except Exception as e:
                 self.error('write failed for file {0} keyword {1}\nkeyword type: {2}\nvalue: {3}\nexception:\n{4}'.format(filepath,name,self.type[name],value,e))
             #end try
             text += valfmt.format(name.upper(),svalue)
@@ -515,10 +515,10 @@ class VKeywordFile(VFile):
 
 
     def assign(self,**values):
-        for name,value in values.iteritems():
+        for name,value in values.items():
             try:
                 self[name] = self.assign_value[name](value)
-            except Exception,e:
+            except Exception as e:
                 self.error('assign failed for keyword {0}\nkeyword type: {1}\nvalue: {2}\nexception:\n{3}'.format(name,self.type[name],value,e))
             #end try
         #end for
@@ -543,7 +543,7 @@ class VFormattedFile(VFile):
 
     def join(self,lines,first_line,last_line):
         joined = ''
-        for iline in xrange(first_line,last_line):
+        for iline in range(first_line,last_line):
             joined += lines[iline]+' '
         #end for
         joined += lines[last_line]
@@ -797,7 +797,7 @@ class Kpoints(VFormattedFile):
                     tokens = lines[tetline+1].split()
                     ntets      = int(tokens[0])
                     tet_volume = float(tokens[1])
-                    for n in xrange(ntets):
+                    for n in range(ntets):
                         tokens = lines[tetline+2+n].split()
                         self.tetrahedra.append(
                             obj(volume     = tet_volume,
@@ -842,7 +842,7 @@ class Kpoints(VFormattedFile):
             text+='bandstructure\n {0}\nline-mode\n'.format(self.kinsert)
             text+='{0}\n'.format(self.coord)
             npoints = len(self.kendpoints)
-            for n in xrange(npoints):
+            for n in range(npoints):
                 text+=' {0:18.14f} {1:18.14f} {2:18.14f}   1\n'.format(*self.kendpoints[n])
                 if n!=npoints-1 and n%2==1:
                     text+='\n'
@@ -851,7 +851,7 @@ class Kpoints(VFormattedFile):
         elif self.mode=='explicit':
             text+='explicit kpoints\n {0}\n'.format(len(self.kpoints))
             text+='{0}\n'.format(self.coord)
-            for n in xrange(len(self.kpoints)):
+            for n in range(len(self.kpoints)):
                 kp = self.kpoints[n]
                 kw = self.kweights[n]
                 text+=' {0:18.14f} {1:18.14f} {2:18.14f} {3:12.8f}\n'.format(kp[0],kp[1],kp[2],kw)
@@ -861,7 +861,7 @@ class Kpoints(VFormattedFile):
                 tets = self.tetrahedra
                 text+='tetrahedra\n'
                 text+=' {0} {1}'.format(ntets,tets[0].volume)
-                for n in xrange(ntets):
+                for n in range(ntets):
                     t = tets[n]
                     d = t.degeneracy
                     c = t.corners
@@ -1075,7 +1075,7 @@ class Poscar(VFormattedFile):
             #end for
         else:
             bm = self.bool_map
-            for i in xrange(len(self.pos)):
+            for i in range(len(self.pos)):
                 p = self.pos[i]
                 d = self.dynamic[i]
                 text += ' {0:18.14f} {1:18.14f} {2:18.14f}  {3}  {4}  {5}\n'.format(p[0],p[1],p[2],bm[d[0]],bm[d[1]],bm[d[2]])
@@ -1138,7 +1138,7 @@ class NebPoscars(Vobj):
 
     def write(self,filepath):
         path = self.get_path(filepath)
-        for n in xrange(len(self)):
+        for n in range(len(self)):
             neb_path = os.path.join(path,str(n).zfill(2))
             if not os.path.exists(neb_path):
                 os.mkdir(neb_path)
@@ -1326,7 +1326,7 @@ class VaspInput(SimulationInput,Vobj):
 
     def write(self,filepath,prefix='',postfix=''):
         path = self.get_path(filepath)
-        for name,vfile in self.iteritems():
+        for name,vfile in self.items():
             filepath = os.path.join(path,prefix+name.upper()+postfix)
             vfile.write(filepath)
         #end for
@@ -1523,7 +1523,7 @@ class VaspInput(SimulationInput,Vobj):
         
         # create a poscar for each structure and include in input file
         neb_poscars = NebPoscars()
-        for n in xrange(len(neb_structures)):
+        for n in range(len(neb_structures)):
             neb_poscars[n] = generate_poscar(neb_structures[n])
         #end for
         self.poscar = neb_poscars
@@ -1610,7 +1610,7 @@ def generate_any_vasp_input(**kwargs):
 
     # remove keywords associated with kpoints, poscar, and any other formatted files
     vf = obj()
-    for name,default in generate_any_defaults.iteritems():
+    for name,default in generate_any_defaults.items():
         if name in kwargs:
             vf[name] = kwargs[name]
             del kwargs[name]
@@ -1625,7 +1625,7 @@ def generate_any_vasp_input(**kwargs):
 
     # assign values to incar and any other keyword files
     keywords = set(kwargs.keys())
-    for name,keyword_file in VaspInput.keyword_files.iteritems():
+    for name,keyword_file in VaspInput.keyword_files.items():
         keys = keywords & keyword_file.keywords
         if len(keys)>0:
             kw = obj()
