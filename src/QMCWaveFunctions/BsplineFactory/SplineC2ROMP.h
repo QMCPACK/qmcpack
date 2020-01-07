@@ -88,8 +88,12 @@ private:
   Vector<TT, OffloadPinnedAllocator<TT>> results_scratch;
   ///psiinv and position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<TT, OffloadPinnedAllocator<TT>> psiinv_pos_copy;
+  ///psiinv and position scratch space of multiple walkers, used to avoid allocation on the fly and faster transfer
+  Vector<TT, OffloadPinnedAllocator<TT>> mw_psiinv_pos_copy;
   ///position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<ST, OffloadPinnedAllocator<ST>> mw_pos_copy;
+  ///reference particle id of all the quadrature points
+  Vector<int, OffloadPinnedAllocator<int>> mw_ref_id;
 
 protected:
   /// intermediate result vectors
