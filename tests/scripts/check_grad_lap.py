@@ -23,7 +23,7 @@ Laplacian     = -93.12287222
    bool: success
   """
 
-  idx = mm.find(header)
+  idx = mm.find(header.encode())
   if idx == -1:
     raise RuntimeError('failed to find %s'%header)
   # end if
@@ -34,9 +34,9 @@ Laplacian     = -93.12287222
   success = True # determine success with the following checks
 
   # 1. gradient error
-  idx = mm.find('Gradient')
+  idx = mm.find('Gradient'.encode())
   mm.seek(idx)
-  grad_line = mm.readline()
+  grad_line = mm.readline().decode()
   grad_xyz  = grad_line.split('=')[-1]
   try: # real values
     grad_val = map(float,grad_xyz.split())
@@ -46,9 +46,9 @@ Laplacian     = -93.12287222
     grad_imag = map(float,xyzl[2::3])
     grad_val  = [grad_real[i] + 1j*grad_imag[i] for i in range(3)]
   # end try
-  idx = mm.find('Relative Error')
+  idx = mm.find('Relative Error'.encode())
   mm.seek(idx)
-  grad_line = mm.readline()
+  grad_line = mm.readline().decode()
   grad_re   = map(float,grad_line.split()[-3:]) # relative error
   if (sum(grad_re)>rel_tot): # check if error is significant
     if (abs(sum(grad_val))>val_thr): # ignore small absolute errors
@@ -57,16 +57,16 @@ Laplacian     = -93.12287222
   # end if
 
   # 2. laplacian error
-  idx = mm.find('Laplacian')
+  idx = mm.find('Laplacian'.encode())
   mm.seek(idx)
-  lap_valt= mm.readline().split('=')[-1]
+  lap_valt= mm.readline().decode().split('=')[-1]
   try: # real
     lap_val = float(lap_valt)
   except: # complex
     lapl = re.split(r'[(,)]',lap_valt.strip('\n'))
     lap_val = float(lapl[1]) + 1j*float(lapl[2])
   # end try
-  idx = mm.find('Relative Error')
+  idx = mm.find('Relative Error'.encode())
   mm.seek(idx)
   lap_line = mm.readline()
   tokens   = lap_line.split()
@@ -85,7 +85,7 @@ def all_lines_with_tag(mm,tag,nline_max):
     mm.seek(0) # rewind file
     all_idx = []
     for iline in range(nline_max):
-        idx = mm.find(tag)
+        idx = mm.find(tag.encode())
         if idx == -1:
             break
         # end if

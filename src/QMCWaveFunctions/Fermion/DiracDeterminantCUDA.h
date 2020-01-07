@@ -157,7 +157,7 @@ public:
     APP_ABORT("Calling DiracDeterminantCUDA::evaluateLog is illegal!");
   }
 
-  void acceptMove(ParticleSet& P, int iat) { APP_ABORT("Calling DiracDeterminantCUDA::acceptMove is illegal!"); }
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) { APP_ABORT("Calling DiracDeterminantCUDA::acceptMove is illegal!"); }
 
   void restore(int iat) { APP_ABORT("Calling DiracDeterminantCUDA::restore is illegal!"); }
 

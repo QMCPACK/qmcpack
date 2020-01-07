@@ -11,7 +11,7 @@
 #    GamessAnalyzer                                                  #
 #      Analyzer class for the GAMESS code.                           #
 #      Reads numerical data from GAMESS output logs.                 #
-#                                                                    #                                        
+#                                                                    #
 #====================================================================#
 
 
@@ -45,7 +45,7 @@ class GamessAnalyzer(SimulationAnalyzer):
         )
 
     lxyz_reverse = obj()
-    for l,xyzs in lxyz.iteritems():
+    for l,xyzs in lxyz.items():
         for xyz in xyzs:
             lxyz_reverse[xyz] = l
         #end for
@@ -79,7 +79,7 @@ class GamessAnalyzer(SimulationAnalyzer):
             #end if
             info.prefix = prefix
             files = info.files
-            for file,unit in GamessInput.file_units.iteritems():
+            for file,unit in GamessInput.file_units.items():
                 files[file.lower()] = '{0}.F{1}'.format(prefix,str(unit).zfill(2))
             #end for
             files.input  = infilename
@@ -201,7 +201,7 @@ class GamessAnalyzer(SimulationAnalyzer):
 
     def read_energy_components(self,log,energy):
         if log!=None and log.seek('ENERGY COMPONENTS',0)!=-1:
-            for n in xrange(18):
+            for n in range(18):
                 line = log.readline()
                 if '=' in line and 'ENERGY' in line:
                     nameline,value = line.split('=')
@@ -264,43 +264,39 @@ class GamessAnalyzer(SimulationAnalyzer):
                 #end if
                 eigenvalue.extend(log.readtokens())
                 symmetry.extend(log.readtokens())
-                # skip large coefficient data
-                for icao in xrange(cao_tot):
-                    log.readline()
+                coeff = []
+                for icao in range(cao_tot):
+                    tokens = log.readtokens()
+                    if not have_basis:
+                        e = tokens[1]
+                        element.append(e[0].upper()+e[1:].lower())
+                        spec_index.append(tokens[2])
+                        angular.append(tokens[3])
+                    #end if
+                    coeff.append(tokens[4:])
                 #end for
-                #coeff = []
-                #for icao in xrange(cao_tot):
-                #    tokens = log.readtokens()
-                #    if not have_basis:
-                #        e = tokens[1]
-                #        element.append(e[0].upper()+e[1:].lower())
-                #        spec_index.append(tokens[2])
-                #        angular.append(tokens[3])
-                #    #end if
-                #    coeff.append(tokens[4:])
-                ##end for
-                #coefficients.extend(array(coeff,dtype=float).T)
-                #if not have_basis:
-                #    stype = []
-                #    ptype = []
-                #    dtype = []
-                #    ftype = []
-                #    for ia in xrange(len(angular)):
-                #        a = angular[ia].lower()
-                #        if a in GamessAnalyzer.stypes:
-                #            stype.append(ia)
-                #        elif a in GamessAnalyzer.ptypes:
-                #            ptype.append(ia)
-                #        elif a in GamessAnalyzer.dtypes:
-                #            dtype.append(ia)
-                #        elif a in GamessAnalyzer.ftypes:
-                #            ftype.append(ia)
-                #        elif self.info.exit:
-                #            self.error('unrecognized angular type: {0}'.format(angular[ia]))
-                #        #end if
-                #    #end for
-                ##end if
-                #have_basis = True
+                coefficients.extend(array(coeff,dtype=float).T)
+                if not have_basis:
+                    stype = []
+                    ptype = []
+                    dtype = []
+                    ftype = []
+                    for ia in range(len(angular)):
+                        a = angular[ia].lower()
+                        if a in GamessAnalyzer.stypes:
+                            stype.append(ia)
+                        elif a in GamessAnalyzer.ptypes:
+                            ptype.append(ia)
+                        elif a in GamessAnalyzer.dtypes:
+                            dtype.append(ia)
+                        elif a in GamessAnalyzer.ftypes:
+                            ftype.append(ia)
+                        elif self.info.exit:
+                            self.error('unrecognized angular type: {0}'.format(angular[ia]))
+                        #end if
+                    #end for
+                #end if
+                have_basis = True
                 mos_found = len(eigenvalue)
                 i+=1
             #end while
@@ -347,7 +343,7 @@ class GamessAnalyzer(SimulationAnalyzer):
             for l in GamessAnalyzer.lset_full:
                 linds[l]=[]
             #end for
-            for icao in xrange(cao_tot):
+            for icao in range(cao_tot):
                 tokens = log.readtokens()
                 e = tokens[1]
                 element.append(e[0].upper()+e[1:].lower())
@@ -363,7 +359,7 @@ class GamessAnalyzer(SimulationAnalyzer):
                     lowdin.append(tokens[4])
                 #end if
             #end for
-            for ia in xrange(len(angular)):
+            for ia in range(len(angular)):
                 a = angular[ia].lower()
                 if a in GamessAnalyzer.lxyz_reverse:
                     l = GamessAnalyzer.lxyz_reverse[a]
@@ -374,7 +370,7 @@ class GamessAnalyzer(SimulationAnalyzer):
             #end for
             mulliken = array(mulliken,dtype=float)
             lowdin   = array(lowdin  ,dtype=float)
-            for l,lind in linds.iteritems():
+            for l,lind in linds.items():
                 linds[l] = array(lind,dtype=int)
             #end for
 
@@ -386,7 +382,7 @@ class GamessAnalyzer(SimulationAnalyzer):
                 if l in GamessAnalyzer.lxyz:
                     lind = linds[l]
                     nxyz = len(GamessAnalyzer.lxyz[l])
-                    nshell = len(lind)/nxyz
+                    nshell = len(lind)//nxyz
                     shellinds = []
                     for ns in range(nshell):
                         inds = lind[ns*nxyz:(ns+1)*nxyz]
@@ -402,7 +398,7 @@ class GamessAnalyzer(SimulationAnalyzer):
             lowdin_shell   = array(lowdin_shell)
             mulliken_angular = obj()
             lowdin_angular   = obj()
-            for l,shellinds in shell.iteritems():
+            for l,shellinds in shell.items():
                 mulliken_angular[l] = mulliken_shell[shellinds].sum()
                 lowdin_angular[l]   = lowdin_shell[shellinds].sum()
             #end for
@@ -475,13 +471,13 @@ class GamessAnalyzer(SimulationAnalyzer):
                     #end for
                     all_double = True
                     norbs = 0
-                    for ind,cnt in ind_counts.iteritems():
-                        count = cnt/nln
+                    for ind,cnt in ind_counts.items():
+                        count = cnt//nln
                         norbs+=count
                         all_double = all_double and count%2==0
                     #end for
                     if all_double:
-                        norbs/=2
+                        norbs = norbs//2
                     #end if
                     punch.norbitals = norbs
                 #end if

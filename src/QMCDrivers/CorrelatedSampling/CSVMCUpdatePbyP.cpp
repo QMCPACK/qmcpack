@@ -73,7 +73,7 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
             stucked = false;
             ++nAccept;
             for (int ipsi = 0; ipsi < nPsi; ipsi++)
-              Psi1[ipsi]->acceptMove(W, iat);
+              Psi1[ipsi]->acceptMove(W, iat, true);
 
             W.acceptMove(iat, true);
             //Now we update ratioIJ.

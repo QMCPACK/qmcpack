@@ -119,7 +119,7 @@ public:
     return GradType();
   }
 
-  inline void acceptMove(ParticleSet& P, int iat)
+  inline void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false)
   {
     BFTrans->acceptMove(P, iat);
     for (int i = 0; i < Dets.size(); i++)

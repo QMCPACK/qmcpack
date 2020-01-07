@@ -1,6 +1,6 @@
 
 import testing
-from testing import text_eq
+from testing import execute,text_eq
 
 
 test_info = dict()
@@ -10,7 +10,6 @@ directories = dict()
 def get_test_info():
     if len(test_info)==0:
         import os
-        from execute import execute
 
         tpath = testing.setup_unit_test_output_directory('qmca','test_qmca')
         
@@ -73,8 +72,6 @@ def leave():
 
 
 def test_help():
-    from execute import execute
-
     exe = get_exe()
 
     help_text = 'Usage: qmca'
@@ -91,8 +88,6 @@ def test_help():
 
 
 def test_examples():
-    from execute import execute
-
     exe = get_exe()
 
     example_text = 'QMCA examples'
@@ -105,8 +100,6 @@ def test_examples():
 
 
 def test_unit_conversion():
-    from execute import execute
-
     exe = get_exe()
 
     enter('vmc')
@@ -126,8 +119,6 @@ def test_unit_conversion():
 
 
 def test_selected_quantities():
-    from execute import execute
-
     exe = get_exe()
 
     enter('vmc')
@@ -150,8 +141,6 @@ def test_selected_quantities():
 
 
 def test_all_quantities():
-    from execute import execute
-
     exe = get_exe()
 
     enter('vmc')
@@ -189,8 +178,6 @@ def test_all_quantities():
 
 
 def test_energy_variance():
-    from execute import execute
-
     exe = get_exe()
 
     enter('opt')
@@ -216,8 +203,6 @@ opt series 5 -10.46086055 +/- 0.00375811  0.39354343 +/- 0.00913372  0.0376
 
 
 def test_multiple_equilibration():
-    from execute import execute
-
     exe = get_exe()
 
     enter('dmc')
@@ -241,8 +226,6 @@ dmc series 3 -10.52807733 +/- 0.00122687  0.38565052 +/- 0.00196074  0.0366
 
 
 def test_join():
-    from execute import execute
-
     exe = get_exe()
 
     enter('dmc')
@@ -264,8 +247,6 @@ dmc  series 1 -10.53022752 +/- 0.00073527  0.38410495 +/- 0.00082972  0.0365
 
 
 def test_multiple_directories():
-    from execute import execute
-
     exe = get_exe()
 
     enter('multi')
@@ -298,8 +279,6 @@ vmc/vmc series 0 -10.45972798 +/- 0.00380164  0.39708591 +/- 0.00971200  0.0380
 
 
 def test_twist_average():
-    from execute import execute
-
     exe = get_exe()
 
     enter('vmc_twist')
@@ -320,8 +299,6 @@ avg series 0 -11.34367335 +/- 0.00257603  0.57340688 +/- 0.00442552  0.0505
 
 
 def test_weighted_twist_average():
-    from execute import execute
-
     exe = get_exe()
 
     enter('vmc_twist')
@@ -331,7 +308,7 @@ def test_weighted_twist_average():
 
     out_ref = '''
               LocalEnergy                 Variance                   ratio 
-avg series 0 -11.24358831 +/- 0.00369603  0.67781391 +/- 0.00570751  0.0603 
+avg series 0 -11.44375840 +/- 0.00292164  0.44863011 +/- 0.00502859  0.0392 
         '''
 
     assert(text_eq(out,out_ref))

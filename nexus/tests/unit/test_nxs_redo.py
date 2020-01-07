@@ -1,11 +1,10 @@
 
 import testing
-from testing import create_file,create_path
+from testing import create_file,create_path,execute
 
 
 def test_redo():
     import os
-    from execute import execute
 
     tpath = testing.setup_unit_test_output_directory('nxs_redo','test_redo')
     
