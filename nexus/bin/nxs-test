@@ -2314,6 +2314,12 @@ if __name__=='__main__':
         os.environ['PYTHONPATH']=options.pythonpath
     #end if
 
+    # guard against missing numpy (required)
+    if len(tests)>0 and not numpy_available:
+        print('\nNumPy is required to run the tests.\nPlease install NumPy and try again.\n')
+        exit(1)
+    #end if
+
     # run each test and print the test outcome
     if not ctest:
         print('')

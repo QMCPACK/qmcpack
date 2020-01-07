@@ -1,5 +1,10 @@
 
-import numpy as np
+try:
+    import numpy as np
+    numpy_available = True
+except:
+    numpy_available = False
+#end try
 
 
 def_atol =  0.0
