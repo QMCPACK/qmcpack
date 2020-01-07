@@ -29,6 +29,8 @@ struct Mallocator
   typedef T* pointer;
   typedef const T* const_pointer;
 
+  static constexpr size_t alignment = ALIGN;
+
   Mallocator() = default;
   template<class U>
   Mallocator(const Mallocator<U, ALIGN>&)
