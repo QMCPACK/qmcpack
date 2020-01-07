@@ -2,12 +2,13 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//		      Kevin Ryczko, kryczko@uottawa.ca, University of Ottawa
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -124,7 +125,11 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   // Read atom orbital info from xml //
   /////////////////////////////////////
   // construct Super2Prim mapping.
-  if (Super2Prim.size() == 0)
+  if (IonPos.size()==0)
+  {
+    app_warning() << "Ion positions are missing in h5. Bypassing supercell to primitive cell electron position mapping check!" << std::endl;
+  }
+  else if (Super2Prim.size() == 0 && SourcePtcl->R.size() > 0)
   {
     //SourcePtcl->convert2Cart(SourcePtcl->R);
     Super2Prim.resize(SourcePtcl->R.size(), -1);
@@ -157,11 +162,11 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
       if (Super2Prim[i] < 0)
       {
         app_error() << "Supercell ion " << i << " not found in the primitive cell" << std::endl;
-        // abort();
+        abort();
       }
       else
       {
-        //app_log() << "Supercell ion " << i << " mapped to primitive cell ion " << Super2Prim[i] << std::endl;
+        app_log() << "Supercell ion " << i << " mapped to primitive cell ion " << Super2Prim[i] << std::endl;
       }
     }
     const int tiling_size = std::abs(det(TileMatrix));

@@ -34,7 +34,7 @@
     </wavefunction>
 
     <hamiltonian name="h0" type="generic" target="e">
-      <extpot type="HarmonicExt" mass="1.0" energy="1.0"/>
+      <extpot type="HarmonicExt" mass="5.0" energy="0.3"/>
       <estimator name="skinetic" type="specieskinetic"/>
       <estimator type="latticedeviation" name="latdev" hdf5="no" per_xyz="no" target="e" tgroup="m5" source="trap_center" sgroup="center"/>
     </hamiltonian>

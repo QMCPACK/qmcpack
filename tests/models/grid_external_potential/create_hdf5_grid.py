@@ -9,6 +9,10 @@ f = h5py.File('sho.h5','w')
 start = -5.0
 end = 5.0
 num = 128
+E = 0.3
+m = 5.0
+l = 1. / np.sqrt(m * E)
+k = E / (l**2)
 data = np.zeros( (num, num, num) )
 
 delta = (end-start)/(num-1)
@@ -20,7 +24,7 @@ for ix in range(num):
       y = delta*iy + start
       z = delta*iz + start
       r2 = x*x + y*y + z*z
-      val = 0.5 * r2
+      val = 0.5 * k * r2  
       # print x,y,z,r2,val
       data[ix,iy,iz] = val
 
