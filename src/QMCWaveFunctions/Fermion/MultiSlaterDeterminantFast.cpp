@@ -377,7 +377,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSe
   return curRatio;
 }
 
-void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat)
+void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   // this should depend on the type of update, ratio / ratioGrad
   // for now is incorrect fot ratio(P,iat,dG,dL) updates
@@ -390,7 +390,7 @@ void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat)
   psiCurrent *= curRatio;
   curRatio = 1.0;
 
-  Dets[iat >= nels_up]->acceptMove(P, iat);
+  Dets[iat >= nels_up]->acceptMove(P, iat, safe_to_delay);
   //Dets[DetID[iat]]->acceptMove(P,iat);
 
   AccRejTimer.stop();

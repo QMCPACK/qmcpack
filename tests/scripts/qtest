@@ -76,7 +76,7 @@ build_types = obj(
     )
 
 build_type_map = obj()
-for k,vlist in build_types.iteritems():
+for k,vlist in build_types.items():
     for v in vlist:
         build_type_map[v] = k
     #end for
@@ -303,7 +303,7 @@ reference_code_tests = obj(
         '''.split(),
     )
 
-for k,v in reference_code_tests.iteritems():
+for k,v in reference_code_tests.items():
     if isinstance(v,str):
         reference_code_tests[k] = v.split()
     #end if
@@ -311,7 +311,7 @@ for k,v in reference_code_tests.iteritems():
 
 
 reference_code_by_test = obj()
-for code,test_list in reference_code_tests.iteritems():
+for code,test_list in reference_code_tests.items():
     for test_name in test_list:
         reference_code_by_test[test_name] = code
     #end for
@@ -1002,7 +1002,7 @@ def join_test_sets(short_tests):
 
         # ensure that all testsets have the same set of scalar files
         can_join = True
-        for key,filepaths in scalar_files.iteritems():
+        for key,filepaths in scalar_files.items():
             series = scalar_series[key]
             if len(filepaths)!=nsets:
                 can_join = False
@@ -1468,7 +1468,7 @@ for n1,n2 in check_scalars_to_qmcpack_ordered:
 
 # quantity mapping from ctest to qmcpack
 ctest_to_qmcpack = obj()
-for a,c in check_scalars_to_ctest.iteritems():
+for a,c in check_scalars_to_ctest.items():
     if a in check_scalars_to_qmcpack:
         ctest_to_qmcpack[c] = check_scalars_to_qmcpack[a]
     #end if
@@ -1599,7 +1599,7 @@ def analyze_tests(short_tests):
             if len(st.blocks_steps)==0:
                 data_status = 'unknown'
             #end if
-            for series,(blocks,steps) in st.blocks_steps.iteritems():
+            for series,(blocks,steps) in st.blocks_steps.items():
                 blocks_expected = blocks
                 if options.njoined>1 and str(series) in st.refdata:
                     blocks_expected -= nequil_blocks

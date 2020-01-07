@@ -393,7 +393,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminant::ratio(ParticleSet& P
   }
 }
 
-void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat)
+void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   // this should depend on the type of update, ratio / ratioGrad
   // for now is incorrect fot ratio(P,iat,dG,dL) updates

@@ -247,7 +247,6 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
   ddb.acceptMove(elec, 0);
-  ddb.completeUpdates();
 
   b(0, 0) = 3.455170657;
   b(0, 1) = -1.35124809;
@@ -345,7 +344,6 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 
   ddb.acceptMove(elec, 0);
 
-
   PsiValueType det_ratio2 = ddb.ratioGrad(elec, 1, grad);
   LogValueType det_update2;
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
@@ -377,7 +375,6 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
   //check_value(det_ratio3, det_ratio3_val);
 
   ddb.acceptMove(elec, 2);
-  ddb.completeUpdates();
 
   simd::transpose(orig_a.data(), orig_a.rows(), orig_a.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
   dm.invert_transpose(scratchT, orig_a, det_update3);
@@ -474,9 +471,11 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
   // update of Ainv in ddc is delayed
-  ddc.acceptMove(elec, 0);
+  ddc.acceptMove(elec, 0, true);
   // force update Ainv in ddc using SM-1 code path
   ddc.completeUpdates();
+
+  check_matrix(a_update1, ddc.psiM);
 
   grad                    = ddc.evalGrad(elec, 1);
   PsiValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
@@ -495,7 +494,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   REQUIRE(det_ratio2 == ValueApprox(det_ratio2_val));
 
   // update of Ainv in ddc is delayed
-  ddc.acceptMove(elec, 1);
+  ddc.acceptMove(elec, 1, true);
 
   grad                    = ddc.evalGrad(elec, 2);
   PsiValueType det_ratio3 = ddc.ratioGrad(elec, 2, grad);
@@ -514,7 +513,7 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   //check_value(det_ratio3, det_ratio3_val);
 
   // maximal delay reached and Ainv is updated fully
-  ddc.acceptMove(elec, 2);
+  ddc.acceptMove(elec, 2, true);
   ddc.completeUpdates();
 
   // fresh invert orig_a

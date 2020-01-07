@@ -380,7 +380,7 @@ public:
     return std::exp(static_cast<PsiValueType>(Jval_t - Jval));
   }
 
-  void acceptMove(ParticleSet& P, int iat)
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false)
   {
     C->acceptMove(P, iat);
     // update values for C, FC to those at proposed position
