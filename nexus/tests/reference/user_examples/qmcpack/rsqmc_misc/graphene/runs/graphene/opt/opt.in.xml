@@ -96,6 +96,8 @@
          <parameter name="minwalkers"          >    0.1                </parameter>
          <parameter name="alloweddifference"   >    0.0001             </parameter>
          <parameter name="bigchange"           >    15.0               </parameter>
+         <parameter name="nonlocalpp"          >    yes                </parameter>
+         <parameter name="use_nonlocalpp_deriv">    yes                </parameter>
       </qmc>
    </loop>
 </simulation>
