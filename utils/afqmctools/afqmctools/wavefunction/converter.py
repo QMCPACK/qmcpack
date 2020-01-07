@@ -95,8 +95,8 @@ def read_nomsd(f, nmo, na, nb, nci, uhf, fullmo, cmajor):
         nob = nmo*nb
         shapea = (nmo,na)
         shapeb = (nmo,nb)
-    assert len(data)==nvals*nci
-    nspin = 2 if uhf else 1 
+    assert len(data) == nvals*nci
+    nspin = 2 if uhf else 1
     order = 'F' if cmajor else 'C'
     for i in range(nci):
         orbs = data[nspin*i*noa:(nspin*i+1)*noa]
