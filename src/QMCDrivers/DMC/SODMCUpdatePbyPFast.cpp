@@ -177,10 +177,6 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
   if (NonLocalMoveAcceptedTemp > 0)
   {
     RealType logpsi = Psi.updateBuffer(W, w_buffer, false);
-    // debugging lines
-    //W.update(true);
-    //RealType logpsi2 = Psi.evaluateLog(W);
-    //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logps2i " << logpsi2 << " diff " << logpsi2-logpsi << std::endl;
     W.saveWalker(thisWalker);
     NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
   }

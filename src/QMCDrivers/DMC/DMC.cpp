@@ -121,6 +121,11 @@ void DMC::resetUpdateEngines()
       Rng[ip] = new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);
 #endif
+      tolower(SpinMoves);
+      if (SpinMoves != "yes" && SpinMoves != "no")
+      {
+        APP_ABORT("SpinMoves must be yes/no\n");
+      }
       if (SpinMoves == "yes")
       {
         if (qmc_driver_mode[QMC_UPDATE_MODE])
