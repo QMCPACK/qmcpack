@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from __future__ import print_function
+from __future__ import print_function, division
 
 # Statical error checking code for use by testing framework (stat.h5 files)
 # Jaron Krogel/ORNL
@@ -18,7 +18,7 @@ from __future__ import print_function
 import sys
 import traceback
 from copy import deepcopy
-import cPickle
+import pickle
 from random import randint
 
 
@@ -172,7 +172,7 @@ class object_interface(object):
         s=''
         normal = []
         qable  = []
-        for k,v in self._iteritems():
+        for k,v in self._items():
             if not isinstance(k,str) or k[0]!='_':
                 if isinstance(v,object_interface):
                     qable.append(k)
@@ -239,7 +239,7 @@ class object_interface(object):
         s=''
         normal = []
         qable  = []
-        for k,v in self._iteritems():
+        for k,v in self._items():
             if not isinstance(k,str) or k[0]!='_':
                 if isinstance(v,object_interface):
                     qable.append(k)
@@ -310,18 +310,6 @@ class object_interface(object):
         return self.__dict__.items()
     #end def items
 
-    def iterkeys(self):
-        return self.__dict__.iterkeys()
-    #end def iterkeys
-
-    def itervalues(self):
-        return self.__dict__.itervalues()
-    #end def itervalues
-
-    def iteritems(self):
-        return self.__dict__.iteritems()
-    #end def iteritems
-
     def copy(self):
         return deepcopy(self)
     #end def copy
@@ -337,8 +325,8 @@ class object_interface(object):
             fpath='./'+self.__class__.__name__+'.p'
         #end if
         fobj = open(fpath,'w')
-        binary = cPickle.HIGHEST_PROTOCOL
-        cPickle.dump(self,fobj,binary)
+        binary = pickle.HIGHEST_PROTOCOL
+        pickle.dump(self,fobj,binary)
         fobj.close()
         del fobj
         del binary
@@ -350,11 +338,11 @@ class object_interface(object):
             fpath='./'+self.__class__.__name__+'.p'
         #end if
         fobj = open(fpath,'r')
-        tmp = cPickle.load(fobj)
+        tmp = pickle.load(fobj)
         fobj.close()
         d = self.__dict__
         d.clear()
-        for k,v in tmp.__dict__.iteritems():
+        for k,v in tmp.__dict__.items():
             d[k] = v
         #end for
         del fobj
@@ -430,18 +418,13 @@ class object_interface(object):
     #end def class_keys
 
     @classmethod
-    def class_iteritems(cls):
-        return cls.__dict__.iteritems()
-    #end def class_iteritems
-
-    @classmethod
     def class_get(cls,k):
         return getattr(cls,k)
     #end def class_set
 
     @classmethod
     def class_set(cls,**kwargs):
-        for k,v in kwargs.iteritems():
+        for k,v in kwargs.items():
             setattr(cls,k,v)
         #end for
     #end def class_set
@@ -453,7 +436,7 @@ class object_interface(object):
 
     @classmethod
     def class_set_optional(cls,**kwargs):
-        for k,v in kwargs.iteritems():
+        for k,v in kwargs.items():
             if not hasattr(cls,k):
                 setattr(cls,k,v)
             #end if
@@ -469,12 +452,6 @@ class object_interface(object):
         object_interface.values(self,*args,**kwargs)
     def _items(self,*args,**kwargs):         
         return object_interface.items(self,*args,**kwargs)         
-    def _iterkeys(self,*args,**kwargs):
-        return object_interface.iterkeys(self,*args,**kwargs)
-    def _itervalues(self,*args,**kwargs):
-        object_interface.itervalues(self,*args,**kwargs)
-    def _iteritems(self,*args,**kwargs):         
-        return object_interface.iteritems(self,*args,**kwargs)         
     def _copy(self,*args,**kwargs):              
         return object_interface.copy(self,*args,**kwargs)
     def _clear(self,*args,**kwargs):
@@ -507,14 +484,14 @@ class obj(object_interface):
     def __init__(self,*vars,**kwargs):
         for var in vars:
             if isinstance(var,(dict,object_interface)):
-                for k,v in var.iteritems():
+                for k,v in var.items():
                     self[k] = v
                 #end for
             else:
                 self[var] = None
             #end if
         #end for
-        for k,v in kwargs.iteritems():
+        for k,v in kwargs.items():
             self[k] = v
         #end for
     #end def __init__
@@ -579,7 +556,7 @@ class obj(object_interface):
 
     def to_dict(self):
         d = dict()
-        for k,v in self._iteritems():
+        for k,v in self._items():
             if isinstance(v,obj):
                 d[k] = v._to_dict()
             else:
@@ -630,12 +607,12 @@ class obj(object_interface):
 
 
     def set(self,*objs,**kwargs):
-        for key,value in kwargs.iteritems():
+        for key,value in kwargs.items():
             self[key]=value
         #end for
         if len(objs)>0:
             for o in objs:
-                for k,v in o.iteritems():
+                for k,v in o.items():
                     self[k] = v
                 #end for
             #end for
@@ -644,14 +621,14 @@ class obj(object_interface):
     #end def set
 
     def set_optional(self,*objs,**kwargs):
-        for key,value in kwargs.iteritems():
+        for key,value in kwargs.items():
             if key not in self:
                 self[key]=value
             #end if
         #end for
         if len(objs)>0:
             for o in objs:
-                for k,v in o.iteritems():
+                for k,v in o.items():
                     if k not in self:
                         self[k] = v
                     #end if
@@ -816,7 +793,7 @@ class obj(object_interface):
 
     def shallow_copy(self):
         new = self.__class__()
-        for k,v in self._iteritems():
+        for k,v in self._items():
             new[k] = v
         #end for
         return new
@@ -824,7 +801,7 @@ class obj(object_interface):
 
     def inverse(self):
         new = self.__class__()
-        for k,v in self._iteritems():
+        for k,v in self._items():
             new[v] = k
         #end for
         return new
@@ -884,7 +861,7 @@ class obj(object_interface):
             s = obj()
             path = ''
         #end if
-        for k,v in self._iteritems():
+        for k,v in self._items():
             p = path+str(k)
             if isinstance(v,obj):
                 if len(v)==0:
@@ -1096,13 +1073,13 @@ class HDFgroup(DevBase):
         s=''
         if len(self._datasets)>0:
             s+='  datasets:\n'
-            for k,v in self._datasets.iteritems():
+            for k,v in self._datasets.items():
                 s+= '    '+k+'\n'
             #end for
         #end if
         if len(self._groups)>0:
             s+= '  groups:\n'
-            for k,v in self._groups.iteritems():
+            for k,v in self._groups.items():
                 s+= '    '+k+'\n'
             #end for
         #end if
@@ -1135,7 +1112,7 @@ class HDFgroup(DevBase):
             del self._parent
         #end if
         if deep:
-            for name,value in self.iteritems():
+            for name,value in self.items():
                 if isinstance(value,HDFgroup):
                     value._remove_hidden()
                 #end if
@@ -1153,7 +1130,7 @@ class HDFgroup(DevBase):
     #   useful for converting a single group read in view form to full arrays
     def read_arrays(self):
         self._remove_hidden()
-        for k,v in self.iteritems():
+        for k,v in self.items():
             if isinstance(v,HDFgroup):
                 v.read_arrays()
             else:
@@ -1213,7 +1190,7 @@ class HDFreader(DevBase):
         if self._success:
             cur   = self.cur[self.ilevel]
             hcur  = self.hcur[self.ilevel]
-            for kr,v in hcur.iteritems():
+            for kr,v in hcur.items():
                 k=cur._escape_name(kr)
                 if valid_variable_name(k):
                     vtype = str(type(v))
@@ -1275,7 +1252,7 @@ class HDFreader(DevBase):
 
         cur   = self.cur[self.ilevel]
         hcur  = self.hcur[self.ilevel]
-        for kr,v in hcur.iteritems():
+        for kr,v in hcur.items():
             k=cur._escape_name(kr)
             if valid_variable_name(k):
                 vtype = str(type(v))
@@ -1627,11 +1604,11 @@ def simstats(x,dim=None,exclude=None):
     reshape = ndim>2
     nblocks = shape[dim]
     if permute:
-        r = range(ndim)
+        r = list(range(ndim))
         r.pop(dim)
         r.append(dim)
         permutation = tuple(r)
-        r = range(ndim)
+        r = list(range(ndim))
         r.pop(ndim-1)
         r.insert(dim,ndim-1)
         invperm     = tuple(r)
@@ -1680,7 +1657,7 @@ def simstats(x,dim=None,exclude=None):
     else:
         error = zeros(mean.shape)
         kappa = zeros(mean.shape)
-        for v in xrange(nvars):
+        for v in range(nvars):
             i=0          
             tempC=0.5
             kap=0.0
@@ -1988,7 +1965,7 @@ def process_stat_file(options):
         vlog('search paths:\n{0}'.format(str(qpaths).rstrip()),n=2)
         qdata = obj()
         dfull = None
-        for dname,dpath in qpaths.iteritems():
+        for dname,dpath in qpaths.items():
             packed = isinstance(dpath,tuple)
             if packed:
                 dpath,dindex,dcount = dpath
@@ -2001,7 +1978,7 @@ def process_stat_file(options):
             else:
                 if dfull is None:
                     dfull = array(qstat.get_path(dpath),dtype=float)
-                    dfull.shape = dfull.shape[0],dfull.shape[1]/dcount,dcount
+                    dfull.shape = dfull.shape[0],dfull.shape[1]//dcount,dcount
                 #end if
                 d = dfull[:,:,dindex]
                 d.shape = dfull.shape[0],dfull.shape[1]
@@ -2009,7 +1986,7 @@ def process_stat_file(options):
             qdata[dname] = d
             vlog('{0} data found with shape {1}'.format(dname,d.shape),n=2)
             if len(d.shape)>2:
-                d.shape = d.shape[0],d.size/d.shape[0]
+                d.shape = d.shape[0],d.size//d.shape[0]
                 vlog('reshaped {0} data to {1}'.format(dname,d.shape),n=2)
             #end if
             options.nblocks = d.shape[0]
@@ -2017,7 +1994,7 @@ def process_stat_file(options):
 
         # process the data, taking full and partial sums
         vlog('processing {0} data'.format(options.quantity),n=1)
-        for dname,d in qdata.iteritems():
+        for dname,d in qdata.items():
             vlog('processing {0} data'.format(dname),n=2)
             if d.shape[1]%options.npartial_sums!=0:
                 exit_fail('cannot make partial sums\nnumber of requested partial sums does not divide evenly into the number of values available\nrequested partial sums: {0}\nnumber of values present: {1}\nnvalue/npartial_sums: {2}'.format(options.npartial_sums,d.shape[1],float(d.shape[1])/options.npartial_sums))
@@ -2026,7 +2003,7 @@ def process_stat_file(options):
             data.full_sum = d.sum(1)
             vlog('full sum data shape: {0}'.format(data.full_sum.shape),n=3)
             data.partial_sums = zeros((d.shape[0],options.npartial_sums))
-            psize = d.shape[1]/options.npartial_sums
+            psize = d.shape[1]//options.npartial_sums
             for p in range(options.npartial_sums):
                 data.partial_sums[:,p] = d[:,p*psize:(p+1)*psize].sum(1)
             #end for
@@ -2055,7 +2032,7 @@ def process_stat_file(options):
         # plot quantity traces, if requested
         if options.plot_trace:
             vlog('creating trace plots of full and partial sums',n=1)
-            for dname,dvalues in values.iteritems():
+            for dname,dvalues in values.items():
                 label = options.quantity
                 if len(values)>1:
                     label+=' '+dname
@@ -2137,7 +2114,7 @@ def make_reference_files(options,values):
     #end for
     f.write(line+'\n')
     # write full and partial sum data per block
-    for b in xrange(options.nblocks):
+    for b in range(options.nblocks):
         line = ' {0:>6}'.format(b)
         for dname in sorted(values.keys()):
             dvalues = values[dname].data
@@ -2194,7 +2171,7 @@ def check_values(options,values):
             #end if
         #end if
         ref = array(f.read().split(),dtype=float)
-        ref.shape = len(ref)/(2*len(dnames)),2*len(dnames)
+        ref.shape = len(ref)//(2*len(dnames)),2*len(dnames)
         full    = ref[0,:].ravel()
         partial = ref[1:,:].T
         if len(ref)-1!=options.npartial_sums:
@@ -2284,8 +2261,8 @@ def check_values(options,values):
                 sc_vals = scalars.data[comparisons[k]]
                 if scalars.file_type=='dmc':
                     if len(sc_vals)%len(ed_vals)==0 and len(sc_vals)>len(ed_vals):
-                        steps = len(sc_vals)/len(ed_vals)
-                        sc_vals.shape = len(sc_vals)/steps,steps
+                        steps = len(sc_vals)//len(ed_vals)
+                        sc_vals.shape = len(sc_vals)//steps,steps
                         sc_vals = sc_vals.mean(1)
                     #end if
                 #end if
@@ -2364,7 +2341,7 @@ def check_values(options,values):
             success &= qsuccess
             # check partial sums
             vlog('checking partial sum means for "{0}"'.format(dname),n=2)
-            for p in xrange(len(ref_vals.partial_mean)):
+            for p in range(len(ref_vals.partial_mean)):
                 qsuccess,qmsg = check_mean(
                     label      = '{0} partial sum {1}'.format(dname,p),
                     mean_comp  = vals.partial_mean[p],
