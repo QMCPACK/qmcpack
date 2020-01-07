@@ -30,7 +30,7 @@ using std::string;
 
 namespace qmcplusplus
 {
-#if !defined(QMC_CUDA)
+#if !defined(QMC_CUDA) && !defined(ENABLE_OFFLOAD)
 TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   Communicate* c;
