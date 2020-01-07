@@ -60,6 +60,11 @@ public:
   using hContainer_type  = VectorSoaContainer<ST, 6>;
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
+  template<typename DT>
+  using OffloadVector = Vector<DT, OffloadAllocator<DT>>;
+  template<typename DT>
+  using OffloadPosVector = VectorSoaContainer<DT, 3, OffloadAllocator<DT>>;
+
 private:
   ///primitive cell
   CrystalLattice<ST, 3> PrimLattice;
@@ -70,8 +75,10 @@ private:
   ///multi bspline set
   std::shared_ptr<MultiBspline<ST, OffloadAllocator<ST>>> SplineInst;
 
-  vContainer_type mKK;
-  VectorSoaContainer<ST, 3> myKcart;
+  std::shared_ptr<OffloadVector<ST>> mKK;
+  std::shared_ptr<OffloadPosVector<ST>> myKcart;
+  std::shared_ptr<OffloadVector<ST>> GGt_offload;
+  std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
@@ -83,17 +90,6 @@ private:
   Vector<TT, OffloadPinnedAllocator<TT>> psiinv_pos_copy;
   ///position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<ST, OffloadPinnedAllocator<ST>> mw_pos_copy;
-  ///the following pointers are used for keep and access the data on device
-  ///cloned objects copy the pointer by value without the need of mapping to the device
-  ///Thus master_PrimLattice_G_ptr is different from PrimLattice.G.data() in cloned objects
-  ///mKK data pointer
-  const ST* master_mKK_ptr;
-  ///myKcart data pointer
-  const ST* master_myKcart_ptr;
-  ///PrimLattice.G data pointer
-  const ST* master_PrimLattice_G_ptr;
-  ///GGt data pointer
-  const ST* master_GGt_ptr;
 
 protected:
   /// intermediate result vectors
@@ -104,7 +100,7 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2ROMP() : nComplexBands(0)
+  SplineC2ROMP() : nComplexBands(0), GGt_offload(std::make_shared<OffloadVector<ST>>(9)), PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
   {
     is_complex = true;
     className  = "SplineC2ROMP";
@@ -118,10 +114,6 @@ public:
       // clean up mapping by the last owner
       const auto* MultiSpline = SplineInst->getSplinePtr();
       PRAGMA_OFFLOAD("omp target exit data map(delete:MultiSpline[0:1])")
-      PRAGMA_OFFLOAD("omp target exit data map(delete:master_mKK_ptr[0:mKK.size()])")
-      PRAGMA_OFFLOAD("omp target exit data map(delete:master_myKcart_ptr[0:myKcart.capacity()*3])")
-      PRAGMA_OFFLOAD("omp target exit data map(delete:master_PrimLattice_G_ptr[0:9])")
-      PRAGMA_OFFLOAD("omp target exit data map(delete:master_GGt_ptr[0:9])")
     }
   }
 
@@ -179,28 +171,19 @@ public:
     }
 
     // transfer static data to GPU
-    master_mKK_ptr = mKK.data();
-    PRAGMA_OFFLOAD("omp target enter data map(alloc:master_mKK_ptr[0:mKK.size()])")
-    PRAGMA_OFFLOAD("omp target update to(master_mKK_ptr[0:mKK.size()])")
-    master_myKcart_ptr = myKcart.data();
-    PRAGMA_OFFLOAD("omp target enter data map(alloc:master_myKcart_ptr[0:myKcart.capacity()*3])")
-    PRAGMA_OFFLOAD("omp target update to(master_myKcart_ptr[0:myKcart.capacity()*3])")
-    master_PrimLattice_G_ptr = PrimLattice.G.data();
-    PRAGMA_OFFLOAD("omp target enter data map(alloc:master_PrimLattice_G_ptr[0:9])")
-    PRAGMA_OFFLOAD("omp target update to(master_PrimLattice_G_ptr[0:9])")
-    master_GGt_ptr = GGt.data();
-    PRAGMA_OFFLOAD("omp target enter data map(alloc:master_GGt_ptr[0:9])")
-    PRAGMA_OFFLOAD("omp target update to(master_GGt_ptr[0:9])")
-    /* debug pointers
-    std::cout << "Ye debug mapping" << std::endl;
-    std::cout << "SplineInst = " << SplineInst << std::endl;
-    std::cout << "MultiSpline = " << MultiSpline << std::endl;
-    std::cout << "master_mKK_ptr = " << master_mKK_ptr << std::endl;
-    std::cout << "master_myKcart_ptr = " << master_myKcart_ptr << std::endl;
-    std::cout << "master_PrimLattice_G_ptr = " << master_PrimLattice_G_ptr << std::endl;
-    std::cout << "master_GGt_ptr = " << master_GGt_ptr << std::endl;
-    std::cout << "this = " << this << std::endl;
-    */
+    auto* mKK_ptr = mKK->data();
+    PRAGMA_OFFLOAD("omp target update to(mKK_ptr[0:mKK->size()])")
+    auto* myKcart_ptr = myKcart->data();
+    PRAGMA_OFFLOAD("omp target update to(myKcart_ptr[0:myKcart->capacity()*3])")
+    for (size_t i = 0; i < 9; i++)
+    {
+      (*GGt_offload)[i] = GGt[i];
+      (*PrimLattice_G_offload)[i] = PrimLattice.G[i];
+    }
+    auto* PrimLattice_G_ptr = PrimLattice_G_offload->data();
+    PRAGMA_OFFLOAD("omp target update to(PrimLattice_G_ptr[0:9])")
+    auto* GGt_ptr = GGt_offload->data();
+    PRAGMA_OFFLOAD("omp target update to(GGt_ptr[0:9])")
   }
 
   inline void flush_zero() { SplineInst->flush_zero(); }
@@ -213,12 +196,12 @@ public:
     nComplexBands = this->remap_kpoints();
 #endif
     int nk = kPoints.size();
-    mKK.resize(nk);
-    myKcart.resize(nk);
+    mKK     = std::make_shared<OffloadVector<ST>>(nk);
+    myKcart = std::make_shared<OffloadPosVector<ST>>(nk);
     for (size_t i = 0; i < nk; ++i)
     {
-      mKK[i]     = -dot(kPoints[i], kPoints[i]);
-      myKcart(i) = kPoints[i];
+      (*mKK)[i]     = -dot(kPoints[i], kPoints[i]);
+      (*myKcart)(i) = kPoints[i];
     }
   }
 

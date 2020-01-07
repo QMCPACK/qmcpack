@@ -215,9 +215,9 @@ inline void SplineC2ROMP<ST>::assign_v(const PointType& r,
   last = last > kPoints.size() ? kPoints.size() : last;
 
   const ST x = r[0], y = r[1], z = r[2];
-  const ST* restrict kx = myKcart.data(0);
-  const ST* restrict ky = myKcart.data(1);
-  const ST* restrict kz = myKcart.data(2);
+  const ST* restrict kx = myKcart->data(0);
+  const ST* restrict ky = myKcart->data(1);
+  const ST* restrict kz = myKcart->data(2);
 
   TT* restrict psi_s = psi.data() + first_spo;
 #pragma omp simd
@@ -278,8 +278,8 @@ void SplineC2ROMP<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueV
     auto* psi_ptr             = psi.data();
     const auto x = r[0], y = r[1], z = r[2];
     const auto rux = ru[0], ruy = ru[1], ruz = ru[2];
-    const auto myKcart_padded_size = myKcart.capacity();
-    auto* myKcart_ptr              = master_myKcart_ptr;
+    const auto myKcart_padded_size = myKcart->capacity();
+    auto* myKcart_ptr              = myKcart->data();
     const size_t first_spo_local   = first_spo;
     const int nComplexBands_local  = nComplexBands;
 
@@ -346,8 +346,8 @@ void SplineC2ROMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   const auto* spline_ptr         = SplineInst->getSplinePtr();
   auto* offload_scratch_ptr      = offload_scratch.data();
   auto* results_scratch_ptr      = results_scratch.data();
-  const auto myKcart_padded_size = myKcart.capacity();
-  auto* myKcart_ptr              = master_myKcart_ptr;
+  const auto myKcart_padded_size = myKcart->capacity();
+  auto* myKcart_ptr              = myKcart->data();
   auto* psiinv_ptr               = psiinv_pos_copy.data();
   auto* ratios_private_ptr       = ratios_private.data();
   const size_t first_spo_local   = first_spo;
@@ -425,11 +425,11 @@ inline void SplineC2ROMP<ST>::assign_vgl_from_l(const PointType& r,
   constexpr ST two(2);
   const ST x = r[0], y = r[1], z = r[2];
 
-  const ST* restrict k0 = myKcart.data(0);
+  const ST* restrict k0 = myKcart->data(0);
   ASSUME_ALIGNED(k0);
-  const ST* restrict k1 = myKcart.data(1);
+  const ST* restrict k1 = myKcart->data(1);
   ASSUME_ALIGNED(k1);
-  const ST* restrict k2 = myKcart.data(2);
+  const ST* restrict k2 = myKcart->data(2);
   ASSUME_ALIGNED(k2);
 
   const ST* restrict g0 = myG.data(0);
@@ -474,8 +474,8 @@ inline void SplineC2ROMP<ST>::assign_vgl_from_l(const PointType& r,
     const ST gY_i = dY_i - val_r * kY;
     const ST gZ_i = dZ_i - val_r * kZ;
 
-    const ST lap_r = myL[jr] + mKK[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
-    const ST lap_i = myL[ji] + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
+    const ST lap_r = myL[jr] + (*mKK)[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
+    const ST lap_i = myL[ji] + (*mKK)[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
     //this will be fixed later
     const size_t psiIndex = first_spo + jr;
@@ -531,8 +531,8 @@ inline void SplineC2ROMP<ST>::assign_vgl_from_l(const PointType& r,
     dpsi[psiIndex][1] = c * gY_r - s * gY_i;
     dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
 
-    const ST lap_r  = myL[jr] + mKK[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
-    const ST lap_i  = myL[ji] + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
+    const ST lap_r  = myL[jr] + (*mKK)[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
+    const ST lap_i  = myL[ji] + (*mKK)[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
     d2psi[psiIndex] = c * lap_r - s * lap_i;
   }
 }
@@ -563,11 +563,11 @@ void SplineC2ROMP<ST>::evaluateVGL(const ParticleSet& P,
   auto* results_scratch_ptr = results_scratch.data();
   const auto x = r[0], y = r[1], z = r[2];
   const auto rux = ru[0], ruy = ru[1], ruz = ru[2];
-  const auto myKcart_padded_size = myKcart.capacity();
-  auto* mKK_ptr                  = master_mKK_ptr;
-  auto* GGt_ptr                  = master_GGt_ptr;
-  auto* PrimLattice_G_ptr        = master_PrimLattice_G_ptr;
-  auto* myKcart_ptr              = master_myKcart_ptr;
+  const auto myKcart_padded_size = myKcart->capacity();
+  auto* mKK_ptr                  = mKK->data();
+  auto* GGt_ptr                  = GGt_offload->data();
+  auto* PrimLattice_G_ptr        = PrimLattice_G_offload->data();
+  auto* myKcart_ptr              = myKcart->data();
   const size_t first_spo_local   = first_spo;
   const int nComplexBands_local  = nComplexBands;
 
@@ -647,11 +647,11 @@ void SplineC2ROMP<ST>::mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
   auto* pos_copy_ptr             = mw_pos_copy.data();
   auto* offload_scratch_ptr      = offload_scratch.data();
   auto* results_scratch_ptr      = results_scratch.data();
-  const auto myKcart_padded_size = myKcart.capacity();
-  auto* mKK_ptr                  = master_mKK_ptr;
-  auto* GGt_ptr                  = master_GGt_ptr;
-  auto* PrimLattice_G_ptr        = master_PrimLattice_G_ptr;
-  auto* myKcart_ptr              = master_myKcart_ptr;
+  const auto myKcart_padded_size = myKcart->capacity();
+  auto* mKK_ptr                  = mKK->data();
+  auto* GGt_ptr                  = GGt_offload->data();
+  auto* PrimLattice_G_ptr        = PrimLattice_G_offload->data();
+  auto* myKcart_ptr              = myKcart->data();
   const size_t first_spo_local   = first_spo;
   const int nComplexBands_local  = nComplexBands;
 
@@ -728,9 +728,9 @@ void SplineC2ROMP<ST>::assign_vgh(const PointType& r,
            g22 = PrimLattice.G(8);
   const ST x = r[0], y = r[1], z = r[2];
 
-  const ST* restrict k0 = myKcart.data(0);
-  const ST* restrict k1 = myKcart.data(1);
-  const ST* restrict k2 = myKcart.data(2);
+  const ST* restrict k0 = myKcart->data(0);
+  const ST* restrict k1 = myKcart->data(1);
+  const ST* restrict k2 = myKcart->data(2);
 
   const ST* restrict g0  = myG.data(0);
   const ST* restrict g1  = myG.data(1);
@@ -972,9 +972,9 @@ void SplineC2ROMP<ST>::assign_vghgh(const PointType& r,
            g22 = PrimLattice.G(8);
   const ST x = r[0], y = r[1], z = r[2];
 
-  const ST* restrict k0 = myKcart.data(0);
-  const ST* restrict k1 = myKcart.data(1);
-  const ST* restrict k2 = myKcart.data(2);
+  const ST* restrict k0 = myKcart->data(0);
+  const ST* restrict k1 = myKcart->data(1);
+  const ST* restrict k2 = myKcart->data(2);
 
   const ST* restrict g0  = myG.data(0);
   const ST* restrict g1  = myG.data(1);
