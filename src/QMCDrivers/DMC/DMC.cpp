@@ -88,6 +88,13 @@ void DMC::resetUpdateEngines()
     estimatorClones.resize(NumThreads, 0);
     traceClones.resize(NumThreads, 0);
     FairDivideLow(W.getActiveWalkers(), NumThreads, wPerNode);
+
+    tolower(SpinMoves);
+    if (SpinMoves != "yes" && SpinMoves != "no")
+    {
+      APP_ABORT("SpinMoves must be yes/no\n");
+    }
+
     {
       //log file
       std::ostringstream o;
@@ -121,11 +128,6 @@ void DMC::resetUpdateEngines()
       Rng[ip] = new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);
 #endif
-      tolower(SpinMoves);
-      if (SpinMoves != "yes" && SpinMoves != "no")
-      {
-        APP_ABORT("SpinMoves must be yes/no\n");
-      }
       if (SpinMoves == "yes")
       {
         if (qmc_driver_mode[QMC_UPDATE_MODE])
