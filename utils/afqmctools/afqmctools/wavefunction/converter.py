@@ -63,7 +63,8 @@ def read_nomsd(f, nmo, na, nb, nci, uhf, fullmo, cmajor):
         elif 'Determinant' in line[0]:
             break
         else:
-            coeffs.append(convert_string(line[0]))
+            coeffs += [convert_string(s) for s in line]
+    assert nci == len(coeffs)
     data = []
     while True:
         line = f.readline().split()
