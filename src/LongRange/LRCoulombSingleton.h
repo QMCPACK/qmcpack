@@ -37,6 +37,8 @@ struct LRCoulombSingleton
   typedef LinearGrid<pRealType> GridType;
   typedef OneDimCubicSpline<pRealType> RadFunctorType;
 
+  enum lr_type {ESLER=0, EWALD, NATOLI};
+  static lr_type this_lr_type;
   ///Stores the energ optimized LR handler.
   static LRHandlerType* CoulombHandler;
   ///Stores the force/stress optimized LR handler.
@@ -44,7 +46,7 @@ struct LRCoulombSingleton
   ///This returns an energy optimized LR handler.  If non existent, it creates one.
   static LRHandlerType* getHandler(ParticleSet& ref);
   ///This returns a force/stress optimized LR handler.  If non existent, it creates one.
-  static LRHandlerType* getDerivHandler(ParticleSet& ref, std::string method="ewald");
+  static LRHandlerType* getDerivHandler(ParticleSet& ref);
 
   //The following two helper functions are provided to spline the short-range component
   //of the coulomb potential and its derivative.  This is much faster than evaluating
