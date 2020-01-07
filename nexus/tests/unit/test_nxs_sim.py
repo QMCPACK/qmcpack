@@ -1,13 +1,12 @@
 
 import testing
 from testing import divert_nexus,restore_nexus,clear_all_sims
-from testing import text_eq
+from testing import execute,text_eq
 
 
 
 def test_sim():
     import os
-    from execute import execute
     from nexus_base import nexus_core
     from test_simulation_module import get_sim
 

@@ -1,14 +1,13 @@
 
 import versions
 import testing
-from testing import text_eq
+from testing import execute,text_eq
 
 
 
 if versions.scipy_available:
     def test_fit():
         import os
-        from execute import execute
 
         tpath = testing.setup_unit_test_output_directory('qmc_fit','test_fit')
 
