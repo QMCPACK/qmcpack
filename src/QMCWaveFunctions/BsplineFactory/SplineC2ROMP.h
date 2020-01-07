@@ -73,7 +73,7 @@ private:
   ///number of complex bands
   int nComplexBands;
   ///multi bspline set
-  std::shared_ptr<MultiBspline<ST, OffloadAllocator<ST>>> SplineInst;
+  std::shared_ptr<MultiBspline<ST, OffloadAllocator<ST>, OffloadAllocator<SplineType>>> SplineInst;
 
   std::shared_ptr<OffloadVector<ST>> mKK;
   std::shared_ptr<OffloadPosVector<ST>> myKcart;
@@ -105,16 +105,6 @@ public:
     is_complex = true;
     className  = "SplineC2ROMP";
     KeyWord    = "SplineC2R";
-  }
-
-  ~SplineC2ROMP()
-  {
-    if (SplineInst.use_count() == 1)
-    {
-      // clean up mapping by the last owner
-      const auto* MultiSpline = SplineInst->getSplinePtr();
-      PRAGMA_OFFLOAD("omp target exit data map(delete:MultiSpline[0:1])")
-    }
   }
 
   virtual SPOSet* makeClone() const override { return new SplineC2ROMP(*this); }
@@ -150,7 +140,7 @@ public:
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
     resize_kpoints();
-    SplineInst = std::make_shared<MultiBspline<ST, OffloadAllocator<ST>>>();
+    SplineInst = std::make_shared<MultiBspline<ST, OffloadAllocator<ST>, OffloadAllocator<SplineType>>>();
     SplineInst->create(xyz_g, xyz_bc, myV.size());
 
     app_log() << "MEMORY " << SplineInst->sizeInByte() / (1 << 20) << " MB allocated "
@@ -162,7 +152,6 @@ public:
   {
     // map the SplineInst->getSplinePtr() structure to GPU
     auto* MultiSpline = SplineInst->getSplinePtr();
-    PRAGMA_OFFLOAD("omp target enter data map(alloc:MultiSpline[0:1])")
     auto* restrict coefs = MultiSpline->coefs;
     // attach pointers on the device to achieve deep copy
     PRAGMA_OFFLOAD("omp target map(always, to: MultiSpline[0:1], coefs[0:MultiSpline->coefs_size])")
