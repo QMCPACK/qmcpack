@@ -1,12 +1,11 @@
 
 import testing
-from testing import text_eq
+from testing import execute,text_eq
 
 
 
 def test_density():
     import os
-    from execute import execute
 
     tpath = testing.setup_unit_test_output_directory('qdens','test_density')
 
