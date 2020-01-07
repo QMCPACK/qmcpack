@@ -8,7 +8,7 @@ f = h5py.File('sho.h5','w')
 
 start = -5.0
 end = 5.0
-num = 128
+num = 22
 E = 0.3
 m = 5.0
 l = 1. / np.sqrt(m * E)
