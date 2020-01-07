@@ -43,7 +43,7 @@ bool LatticeParser::put(xmlNodePtr cur)
   bool bconds_defined  = false;
   int boxsum           = 0;
 
-  std::string handler_type("");
+  std::string handler_type("opt_breakup");
 
   app_log() << " Lattice" << std::endl;
   app_log() << " -------" << std::endl;

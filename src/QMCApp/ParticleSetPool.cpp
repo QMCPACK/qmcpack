@@ -263,7 +263,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
   std::string source("i");
   std::string bc("p p p");
   std::string spotype("0");
-  std::string lr_handler("esler");
+  std::string lr_handler("opt_breakup");
   OhmmsAttributeSet attribs;
   attribs.add(h5name, "href");
   attribs.add(eshdf_tilematrix, "tilematrix");
