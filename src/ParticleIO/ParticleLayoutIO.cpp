@@ -113,9 +113,9 @@ bool LatticeParser::put(xmlNodePtr cur)
         tolower(handler_type);
         if(handler_type=="ewald")
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::EWALD;
-        else if (handler_type=="esler")
+        else if (handler_type=="opt_breakup")
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
-        else if (handler_type=="natoli")
+        else if (handler_type=="opt_breakup_original")
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::NATOLI;
         else
           APP_ABORT("\n  Long range breakup handler not recognized.\n");

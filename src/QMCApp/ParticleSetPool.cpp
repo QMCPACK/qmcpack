@@ -299,11 +299,11 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
     {
       LRCoulombSingleton::this_lr_type = LRCoulombSingleton::EWALD;
     }
-    else if ( lr_handler == "esler")
+    else if ( lr_handler == "opt_breakup")
     {
       LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
     }
-    else if ( lr_handler == "natoli")
+    else if ( lr_handler == "opt_breakup_original")
     {
       LRCoulombSingleton::this_lr_type = LRCoulombSingleton::NATOLI;
     }
