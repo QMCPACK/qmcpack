@@ -2,7 +2,36 @@
 
 import os
 from optparse import OptionParser
-from generic import obj
+
+
+def find_nexus_modules():
+    import sys
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    assert(os.path.exists(nexus_lib))
+    sys.path.append(nexus_lib)
+#end def find_nexus_modules
+
+
+def import_nexus_module(module_name):
+    import inspect
+    import importlib
+    return importlib.import_module(module_name)
+#end def import_nexus_module
+
+
+# Load Nexus modules
+try:
+    # Attempt specialized path-based imports.
+    #  (The executable should still work even if Nexus is not installed)
+    find_nexus_modules()
+
+    generic = import_nexus_module('generic')
+    obj   = generic.obj
+    del generic
+except:
+    # Failing path-based imports, import installed Nexus modules.
+    from generic import obj
+#end try
 
 
 
