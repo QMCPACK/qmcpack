@@ -33,8 +33,8 @@ bool GridExternalPotential::put(xmlNodePtr cur)
 
   Ugrid grid;
   grid.start = -2.0;
-  grid.end = 2.0;
-  grid.num = 11;
+  grid.end   = 2.0;
+  grid.num   = 11;
   BCtype_d BC;
   BC.lCode = NATURAL;
   BC.rCode = NATURAL;
@@ -50,41 +50,41 @@ bool GridExternalPotential::put(xmlNodePtr cur)
   attrib.add(pbc, "pbc");
   attrib.put(cur);
 
-  double delta = (grid.end - grid.start) / (grid.num-1);
+  double delta = (grid.end - grid.start) / (grid.num - 1);
 
 
-  if (pbc) {
+  if (pbc)
+  {
     BC.lCode = PERIODIC;
     BC.rCode = PERIODIC;
-    delta = (grid.end - grid.start) / (grid.num);
-
+    delta    = (grid.end - grid.start) / (grid.num);
   }
 
   Array<double, 3> data(grid.num, grid.num, grid.num);
 
   hdf_archive hin;
   bool read_okay = hin.open(file_name, H5F_ACC_RDONLY);
-  if (!read_okay) {
+  if (!read_okay)
+  {
     app_log() << "Failed to open HDF5 file: " << file_name << "." << std::endl;
-  } else {
-      app_log() << "    ==============================\n" 
-                << "    Information of grid:\n" 
-                << "    Grid start: " << grid.start << std::endl
-                << "    Grid end: " << grid.end << std::endl
-                << "    Grid num: " << grid.num << std::endl
-                << "    Grid delta: " << delta << std::endl
-                << "    Grid file_name: " << file_name << std::endl
-                << "    Grid dataset_name: " << dataset_name << std::endl
-                << "    Periodic: " << pbc << std::endl
-                << "    ==============================\n";
-
-
+  }
+  else
+  {
+    app_log() << "    ==============================\n"
+              << "    Information of grid:\n"
+              << "    Grid start: " << grid.start << std::endl
+              << "    Grid end: " << grid.end << std::endl
+              << "    Grid num: " << grid.num << std::endl
+              << "    Grid delta: " << delta << std::endl
+              << "    Grid file_name: " << file_name << std::endl
+              << "    Grid dataset_name: " << dataset_name << std::endl
+              << "    Periodic: " << pbc << std::endl
+              << "    ==============================\n";
   }
 
   hin.read(data, dataset_name);
-  
-  spline_data.reset(create_UBspline_3d_d(grid, grid, grid, 
-                                     BC, BC, BC, data.data()));
+
+  spline_data.reset(create_UBspline_3d_d(grid, grid, grid, BC, BC, BC, data.data()));
 
   return true;
 }
@@ -111,7 +111,7 @@ GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
   else
   {
 #endif
-    Value              = 0.0;
+    Value = 0.0;
     for (int i = 0; i < P.getTotalNum(); ++i)
     {
       PosType r = P.R[i];
