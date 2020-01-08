@@ -715,42 +715,24 @@ void SplineC2ROMP<ST>::evaluateVGL(const ParticleSet& P,
 }
 
 template<typename ST>
-void SplineC2ROMP<ST>::mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
-                                      const std::vector<ParticleSet*>& P_list,
-                                      int iat,
-                                      const RefVector<ValueVector_t>& psi_v_list,
-                                      const RefVector<GradVector_t>& dpsi_v_list,
-                                      const RefVector<ValueVector_t>& d2psi_v_list)
+void SplineC2ROMP<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos,
+                                           const RefVector<ValueVector_t>& psi_v_list,
+                                           const RefVector<GradVector_t>& dpsi_v_list,
+                                           const RefVector<ValueVector_t>& d2psi_v_list)
 {
-  const int nwalkers = sa_list.size();
-  if (mw_pos_copy.size() < nwalkers * 6)
-    mw_pos_copy.resize(nwalkers * 6);
-
-  // pack particle positions
-  for (int iw = 0; iw < nwalkers; ++iw)
-  {
-    const PointType& r = P_list[iw]->activeR(iat);
-    PointType ru(PrimLattice.toUnit_floor(r));
-    mw_pos_copy[iw * 6]     = r[0];
-    mw_pos_copy[iw * 6 + 1] = r[1];
-    mw_pos_copy[iw * 6 + 2] = r[2];
-    mw_pos_copy[iw * 6 + 3] = ru[0];
-    mw_pos_copy[iw * 6 + 4] = ru[1];
-    mw_pos_copy[iw * 6 + 5] = ru[2];
-  }
-
+  const size_t num_pos = multi_pos.size();
   const int ChunkSizePerTeam = 128;
   const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   const auto padded_size     = myV.size();
-  if (offload_scratch.size() < padded_size * nwalkers * 10)
-    offload_scratch.resize(padded_size * nwalkers * 10);
+  if (offload_scratch.size() < padded_size * num_pos * 10)
+    offload_scratch.resize(padded_size * num_pos * 10);
   const auto orb_size = psi_v_list[0].get().size();
-  if (results_scratch.size() < orb_size * nwalkers * 5)
-    results_scratch.resize(orb_size * nwalkers * 5);
+  if (results_scratch.size() < orb_size * num_pos * 5)
+    results_scratch.resize(orb_size * num_pos * 5);
 
   // Ye: need to extract sizes and pointers before entering target region
   const auto* spline_ptr         = SplineInst->getSplinePtr();
-  auto* pos_copy_ptr             = mw_pos_copy.data();
+  auto* pos_copy_ptr             = multi_pos.data();
   auto* offload_scratch_ptr      = offload_scratch.data();
   auto* results_scratch_ptr      = results_scratch.data();
   const auto myKcart_padded_size = myKcart->capacity();
@@ -761,10 +743,10 @@ void SplineC2ROMP<ST>::mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
   const size_t first_spo_local   = first_spo;
   const int nComplexBands_local  = nComplexBands;
 
-  PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nwalkers) thread_limit(ChunkSizePerTeam) \
-                    map(always, to: pos_copy_ptr[0:nwalkers*6]) \
-                    map(always, from: results_scratch_ptr[0:orb_size*nwalkers*5])")
-  for (int iw = 0; iw < nwalkers; iw++)
+  PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) thread_limit(ChunkSizePerTeam) \
+                    map(always, to: pos_copy_ptr[0:num_pos*6]) \
+                    map(always, from: results_scratch_ptr[0:orb_size*num_pos*5])")
+  for (int iw = 0; iw < num_pos; iw++)
     for (int team_id = 0; team_id < NumTeams; team_id++)
     {
       const int first      = ChunkSizePerTeam * team_id;
@@ -801,7 +783,7 @@ void SplineC2ROMP<ST>::mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
     }
 
   // do the reduction manually
-  for (int iw = 0; iw < nwalkers; ++iw)
+  for (int iw = 0; iw < num_pos; ++iw)
   {
     auto* restrict results_iw_ptr = results_scratch_ptr + orb_size * iw * 5;
     ValueVector_t& psi_v(psi_v_list[iw]);
@@ -816,6 +798,33 @@ void SplineC2ROMP<ST>::mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
       d2psi_v[i]   = results_iw_ptr[orb_size * 4 + i];
     }
   }
+}
+
+template<typename ST>
+void SplineC2ROMP<ST>::mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
+                                      const std::vector<ParticleSet*>& P_list,
+                                      int iat,
+                                      const RefVector<ValueVector_t>& psi_v_list,
+                                      const RefVector<GradVector_t>& dpsi_v_list,
+                                      const RefVector<ValueVector_t>& d2psi_v_list)
+{
+  const int nwalkers = sa_list.size();
+  multi_pos_copy.resize(nwalkers * 6);
+
+  // pack particle positions
+  for (int iw = 0; iw < nwalkers; ++iw)
+  {
+    const PointType& r = P_list[iw]->activeR(iat);
+    PointType ru(PrimLattice.toUnit_floor(r));
+    multi_pos_copy[iw * 6]     = r[0];
+    multi_pos_copy[iw * 6 + 1] = r[1];
+    multi_pos_copy[iw * 6 + 2] = r[2];
+    multi_pos_copy[iw * 6 + 3] = ru[0];
+    multi_pos_copy[iw * 6 + 4] = ru[1];
+    multi_pos_copy[iw * 6 + 5] = ru[2];
+  }
+
+  evaluateVGLMultiPos(multi_pos_copy, psi_v_list, dpsi_v_list, d2psi_v_list);
 }
 
 template<typename ST>

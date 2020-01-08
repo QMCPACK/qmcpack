@@ -91,9 +91,14 @@ private:
   ///psiinv and position scratch space of multiple walkers, used to avoid allocation on the fly and faster transfer
   Vector<TT, OffloadPinnedAllocator<TT>> mw_psiinv_pos_copy;
   ///position scratch space, used to avoid allocation on the fly and faster transfer
-  Vector<ST, OffloadPinnedAllocator<ST>> mw_pos_copy;
+  Vector<ST, OffloadPinnedAllocator<ST>> multi_pos_copy;
   ///reference particle id of all the quadrature points
   Vector<int, OffloadPinnedAllocator<int>> mw_ref_id;
+
+  void evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos_copy,
+                           const RefVector<ValueVector_t>& psi_v_list,
+                           const RefVector<GradVector_t>& dpsi_v_list,
+                           const RefVector<ValueVector_t>& d2psi_v_list);
 
 protected:
   /// intermediate result vectors
