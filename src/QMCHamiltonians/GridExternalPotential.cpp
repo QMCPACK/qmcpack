@@ -97,7 +97,7 @@ bool GridExternalPotential::get(std::ostream& os) const
 }
 
 
-QMCHamiltonianBase* GridExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+OperatorBase* GridExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction& psi)
 {
   return new GridExternalPotential(*this);
 }

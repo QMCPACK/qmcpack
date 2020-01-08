@@ -20,13 +20,13 @@
 #ifndef QMCPLUSPLUS_GRID_EXTERNAL_POTENTIAL_H
 #define QMCPLUSPLUS_GRID_EXTERNAL_POTENTIAL_H
 
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <einspline/bspline.h>
 
 
 namespace qmcplusplus
 {
-struct GridExternalPotential : public QMCHamiltonianBase
+struct GridExternalPotential : public OperatorBase
 {
   const ParticleSet& Ps;
 
@@ -52,7 +52,7 @@ struct GridExternalPotential : public QMCHamiltonianBase
   //standard interface functions
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
 
   //functions for physical (hamiltonian component) estimator
   Return_t evaluate(ParticleSet& P);
