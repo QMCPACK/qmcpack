@@ -720,7 +720,7 @@ void SplineC2ROMP<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocat
                                            const RefVector<GradVector_t>& dpsi_v_list,
                                            const RefVector<ValueVector_t>& d2psi_v_list)
 {
-  const size_t num_pos = multi_pos.size();
+  const size_t num_pos = psi_v_list.size();
   const int ChunkSizePerTeam = 128;
   const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   const auto padded_size     = myV.size();
