@@ -237,7 +237,7 @@ class PyscfInput(SimulationInputTemplateDev):
             #end if
             klen = 0
             has_array = False
-            for k,v in sys_inputs.iteritems():
+            for k,v in sys_inputs.items():
                 if not isinstance(v,PyscfInput.allowed_types):
                     tlist = ''
                     for t in PyscfInput.allowed_types:

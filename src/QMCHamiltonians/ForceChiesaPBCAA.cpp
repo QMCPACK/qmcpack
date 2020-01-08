@@ -22,8 +22,8 @@
 
 namespace qmcplusplus
 {
-ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime, std::string lrmethod_in)
-    : ForceBase(ions, elns), PtclA(ions), first_time(firsttime), d_aa_ID(ions.addTable(ions, DT_SOA_PREFERRED)), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED)), lrmethod(lrmethod_in)
+ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime)
+    : ForceBase(ions, elns), PtclA(ions), first_time(firsttime), d_aa_ID(ions.addTable(ions, DT_SOA_PREFERRED)), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED))
 {
   ReportEngine PRE("ForceChiesaPBCAA", "ForceChiesaPBCAA");
   myName = "Chiesa_Force_Base_PBCAB";
@@ -97,7 +97,7 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
     totQ += Zat[iat] = Zspec[PtclA.GroupID[iat]];
   for (int iat = 0; iat < NptclB; iat++)
     totQ += Qat[iat] = Qspec[P.GroupID[iat]];
-  dAB = LRCoulombSingleton::getDerivHandler(P, lrmethod);
+  dAB = LRCoulombSingleton::getDerivHandler(P);
 }
 
 void ForceChiesaPBCAA::evaluateLR(ParticleSet& P)
@@ -122,15 +122,15 @@ void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
   {
     for (size_t jat = 0; jat < NptclB; ++jat)
     {
-      const RealType* restrict dist = d_ab.Distances[jat];
-
+      const auto& dist  = d_ab.getDistRow(jat);
+      const auto& displ = d_ab.getDisplRow(jat);
       for (size_t iat = 0; iat < NptclA; ++iat)
       {
         const RealType r    = dist[iat];
         const RealType rinv = RealType(1) / r;
         RealType g_f        = g_filter(r);
         RealType V          = -dAB->srDf(r, rinv);
-        PosType drhat       = rinv * d_ab.Displacements[jat][iat];
+        PosType drhat       = rinv * displ[iat];
         forces[iat] += g_f * Zat[iat] * Qat[jat] * V * drhat;
       }
     }
@@ -160,11 +160,12 @@ void ForceChiesaPBCAA::evaluateSR_AA()
   {
     for (size_t ipart = 1; ipart < NptclA; ipart++)
     {
-      const RealType* restrict dist = d_aa.Distances[ipart];
+      const auto& dist  = d_aa.getDistRow(ipart);
+      const auto& displ = d_aa.getDisplRow(ipart);
       for (size_t jpart = 0; jpart < ipart; ++jpart)
       {
         RealType V   = -dAB->srDf(dist[jpart], RealType(1) / dist[jpart]);
-        PosType grad = -Zat[jpart] * Zat[ipart] * V / dist[jpart] * d_aa.Displacements[ipart][jpart];
+        PosType grad = -Zat[jpart] * Zat[ipart] * V / dist[jpart] * displ[jpart];
         forces_IonIon[ipart] += grad;
         forces_IonIon[jpart] -= grad;
       }
@@ -243,7 +244,6 @@ bool ForceChiesaPBCAA::put(xmlNodePtr cur)
   addionion = (ionionforce == "yes") || (ionionforce == "true");
   app_log() << "ionionforce = " << ionionforce << std::endl;
   app_log() << "addionion=" << addionion << std::endl;
-  app_log() << "lrmethod= " << lrmethod << std::endl;
   ParameterSet fcep_param_set;
   fcep_param_set.add(Rcut, "rcut", "real");
   fcep_param_set.add(N_basis, "nbasis", "int");

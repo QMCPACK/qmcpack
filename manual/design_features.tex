@@ -1860,9 +1860,9 @@ units of the lattice constant, are given by
 \newcommand{\yv}{\hat{\mathbf{y}}}
 \newcommand{\zv}{\hat{\mathbf{z}}}
 \begin{eqnarray}
-\vs_1 & = & \frac{1}{2}\xv + \frac{1}{2}\yv +      \ \   \zv\:, \\
-\vs_2 & = & \frac{1}{2}\xv +      \ \   \yv + \frac{1}{2}\zv\:, \\
-\vs_3 & = &   \ \      \xv + \frac{1}{2}\yv + \frac{1}{2}\zv\:. 
+\vp_1 & = & \frac{1}{2}\xv + \frac{1}{2}\yv +      \ \   \zv\:, \\
+\vp_2 & = & \frac{1}{2}\xv +      \ \   \yv + \frac{1}{2}\zv\:, \\
+\vp_3 & = &   \ \      \xv + \frac{1}{2}\yv + \frac{1}{2}\zv\:. 
 \end{eqnarray}
 This primitive cell contains two iron atoms and two oxygen atoms. It
 is a very elongated cell with acute angles and, thus, has a short
@@ -1877,7 +1877,7 @@ constructed with the matrix
    3 & -1 & -1 
   \end{array}\right]\:.
 \end{equation}
-This cell has $2\det(\Smat) = 32$ iron atoms and 32 oxygen atoms.  In
+This cell has $2|\det(\Smat)| = 32$ iron atoms and 32 oxygen atoms.  In
 this example, we may perform the simulation in the 32-iron supercell,
 while storing the orbitals only in the 2-iron primitive cell, for a
 savings of a factor of 16.  
@@ -1932,7 +1932,7 @@ reciprocals.  Then we have
 \begin{eqnarray}
 \Amat_s & = & \Smat \Amat_p\:, \\
 \Bmat_s & = & 2\pi\left[(\Smat \Amat_p)^{-1}\right]^\dagger\:, \\
-        & = & 2\pi\left[\Amat_p^{-1} \Smat{-1}\right]^\dagger\:, \\
+        & = & 2\pi\left[\Amat_p^{-1} \Smat^{-1}\right]^\dagger\:, \\
         & = & 2\pi(\Smat^{-1})^\dagger (\Amat_p^{-1})^\dagger\:, \\
         & = & (\Smat^{-1})^\dagger \Bmat_p\:.
 \end{eqnarray}  

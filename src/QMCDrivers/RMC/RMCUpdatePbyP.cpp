@@ -145,7 +145,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
     RealType sqrttau     = std::sqrt(tauovermass);
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
     {
-      W.setActive(iat);
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
       PosType dr;
@@ -180,8 +179,8 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
         if (RandomGen() < prob)
         {
           ++nAcceptTemp;
-          Psi.acceptMove(W, iat);
-          W.acceptMove(iat);
+          Psi.acceptMove(W, iat, true);
+          W.acceptMove(iat, true);
           rr_accepted += rr;
           gf_acc *= prob; //accumulate the ratio
         }
@@ -276,7 +275,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
     RealType sqrttau     = std::sqrt(tauovermass);
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
     {
-      W.setActive(iat);
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
       PosType dr;
@@ -312,8 +310,8 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
         if (RandomGen() < prob)
         {
           ++nAcceptTemp;
-          Psi.acceptMove(W, iat);
-          W.acceptMove(iat);
+          Psi.acceptMove(W, iat, true);
+          W.acceptMove(iat, true);
           rr_accepted += rr;
           gf_acc *= prob; //accumulate the ratio
         }

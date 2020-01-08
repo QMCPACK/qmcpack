@@ -46,9 +46,9 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
   {
     if (n1 != N_sources || n2 != N_targets || nactive != N_walkers)
     {
-      N_sources  = n1;
+      N_sources = n1;
       N_targets = n2;
-      int m           = n1 * n2;
+      int m     = n1 * n2;
       if (m)
       {
         M.resize(n1 + 1);
@@ -178,16 +178,8 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
     DTD_BConds<T, D, SC>::apply_bc(dr_m, r_m, rinv_m);
   }
 
-  inline void evaluate(ParticleSet& P, int jat)
-  {
-    APP_ABORT("  No need to call AsymmetricDTD::evaluate(ParticleSet& P, int jat)");
-    //based on full evaluation. Only compute it if jat==0
-    if (jat == 0)
-      evaluate(P);
-  }
-
   ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew)
+  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
     for (int iat = 0; iat < N_sources; iat++)
     {
@@ -200,7 +192,7 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
     }
   }
 
-  inline void update(IndexType jat)
+  inline void update(IndexType jat, bool partial_update)
   {
     for (int iat = 0, loc = jat; iat < N_sources; iat++, loc += N_targets)
     {

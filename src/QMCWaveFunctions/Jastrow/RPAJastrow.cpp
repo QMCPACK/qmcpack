@@ -280,10 +280,10 @@ RPAJastrow::PsiValueType RPAJastrow::ratioGrad(ParticleSet& P, int iat, GradType
 }
 
 
-void RPAJastrow::acceptMove(ParticleSet& P, int iat)
+void RPAJastrow::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   for (int i = 0; i < Psi.size(); i++)
-    Psi[i]->acceptMove(P, iat);
+    Psi[i]->acceptMove(P, iat, safe_to_delay);
 }
 
 void RPAJastrow::restore(int iat)

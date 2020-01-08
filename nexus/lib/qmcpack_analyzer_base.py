@@ -201,7 +201,7 @@ class Checks(DevBase):
 
     def valid(self):
         valid = True
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if not (isinstance(name,str) and name.startswith('_')):
                 if not value in self._exclusions:
                     valid = valid and value
@@ -222,7 +222,7 @@ class Checks(DevBase):
             self.log(pad+self._label+' is valid')
         else:
             self.log(pad+self._label+' is invalid')
-            for name,value in self.iteritems():
+            for name,value in self.items():
                 if not (isinstance(name,str) and name.startswith('_')):
                     if value in self._exclusions:
                         self.log(pad2+name+' could not be checked')
@@ -255,7 +255,7 @@ class QAdata(QAobject):
     #end def zero
 
     def minsize(self,other):
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if name in other:
                 self[name] = resize(value,minimum(value.shape,other[name].shape))
             else:
@@ -266,7 +266,7 @@ class QAdata(QAobject):
     #end def minsize
 
     def accumulate(self,other):
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if name in other:
                 value += other[name][0:len(value)]
             else:
@@ -289,7 +289,7 @@ class QAdata(QAobject):
         for value in self:
             s+=value.sum()
         #end for
-        print '                sum = {0}'.format(s)
+        print('                sum = {0}'.format(s))
     #end def sum
 #end class QAdata
 
@@ -297,7 +297,7 @@ class QAdata(QAobject):
 
 class QAHDFdata(QAdata):
     def zero(self):
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,HDFgroup):
                 value.zero('value','value_squared')
             #end if
@@ -305,7 +305,7 @@ class QAHDFdata(QAdata):
     #end def zero
 
     def minsize(self,other):
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,HDFgroup):
                 if name in other and isinstance(other[name],HDFgroup):
                     value.minsize(other[name],'value','value_squared')
@@ -317,7 +317,7 @@ class QAHDFdata(QAdata):
     #end def minsize
 
     def accumulate(self,other):
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,HDFgroup):
                 if name in other and isinstance(other[name],HDFgroup):
                     value.accumulate(other[name],'value','value_squared')
@@ -418,11 +418,11 @@ class QAanalyzer(QAobject):
     #        cls.__dict__[func_name](self,**kwargs)
     #    #end if
     #    if block_name is None or not self.info[block_name]: 
-    #        for name,value in self.iteritems():
+    #        for name,value in self.items():
     #            if isinstance(value,QAanalyzer):
     #                value.traverse(value,func_name,block_name,callpost,**kwargs)
     #            elif isinstance(value,QAanalyzerCollection):
-    #                for n,v in value.iteritems():
+    #                for n,v in value.items():
     #                    if isinstance(v,QAanalyzer):
     #                        v.traverse(v,func_name,block_name,callpost,**kwargs)
     #                    #end if
@@ -440,11 +440,11 @@ class QAanalyzer(QAobject):
 
     def propagate_indicators(self,**kwargs):
         self.reset_indicators(**kwargs)
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,QAanalyzer):
                 value.propagate_indicators(**kwargs)
             elif isinstance(value,QAanalyzerCollection):
-                for n,v in value.iteritems():
+                for n,v in value.items():
                     if isinstance(v,QAanalyzer):
                         v.propagate_indicators(**kwargs)
                     #end if
@@ -459,11 +459,11 @@ class QAanalyzer(QAobject):
             self.load_data_local()
             self.info.data_loaded = True
         #end if
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,QAanalyzer):
                 value.load_data()
             elif isinstance(value,QAanalyzerCollection):
-                for n,v in value.iteritems():
+                for n,v in value.items():
                     if isinstance(v,QAanalyzer):
                         v.load_data()
                     #end if
@@ -478,11 +478,11 @@ class QAanalyzer(QAobject):
             self.load_data_local()
             self.info.data_loaded = True
         #end if
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,QAanalyzer):
                 value.analyze(force)
             elif isinstance(value,QAanalyzerCollection):
-                for n,v in value.iteritems():
+                for n,v in value.items():
                     if isinstance(v,QAanalyzer):
                         v.analyze(force)
                     #end if
@@ -506,11 +506,11 @@ class QAanalyzer(QAobject):
                 del self[name]
             #end if
         #end for                
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,QAanalyzer):
                 value.remove_data()
             elif isinstance(value,QAanalyzerCollection):
-                for n,v in value.iteritems():
+                for n,v in value.items():
                     if isinstance(v,QAanalyzer):
                         v.remove_data()
                     #end if
@@ -527,11 +527,11 @@ class QAanalyzer(QAobject):
                 value.zero()
             #end if
         #end if
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,QAanalyzer):
                 value.zero_data()
             elif isinstance(value,QAanalyzerCollection):
-                for n,v in value.iteritems():
+                for n,v in value.items():
                     if isinstance(v,QAanalyzer):
                         v.zero_data()
                     #end if
@@ -543,7 +543,7 @@ class QAanalyzer(QAobject):
 
     def minsize_data(self,other):
         self.vlog('minsizing '+self.__class__.__name__+' data',n=1)
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,QAdata):
                 if name in other and isinstance(other[name],value.__class__):
                     value.minsize(other[name])
@@ -552,7 +552,7 @@ class QAanalyzer(QAobject):
                 #end if
             #end if
         #end if
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,QAanalyzer):
                 if name in other and isinstance(other[name],value.__class__):
                     ovalue = other[name]
@@ -566,7 +566,7 @@ class QAanalyzer(QAobject):
                 else:
                     self.error('collection '+name+' not found in minsize_data partner')
                 #end if
-                for n,v in value.iteritems():
+                for n,v in value.items():
                     if isinstance(v,QAanalyzer):
                         if n in ovalue and isinstance(ovalue[n],v.__class__):
                             ov = ovalue[n]
@@ -583,7 +583,7 @@ class QAanalyzer(QAobject):
 
     def accumulate_data(self,other):
         self.vlog('accumulating '+self.__class__.__name__+' data',n=1)
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,QAdata):
                 if name in other and isinstance(other[name],value.__class__):
                     value.accumulate(other[name])
@@ -592,7 +592,7 @@ class QAanalyzer(QAobject):
                 #end if
             #end if
         #end if
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,QAanalyzer):
                 if name in other and isinstance(other[name],value.__class__):
                     ovalue = other[name]
@@ -606,7 +606,7 @@ class QAanalyzer(QAobject):
                 else:
                     self.error('collection '+name+' not found in accumulate_data partner')
                 #end if
-                for n,v in value.iteritems():
+                for n,v in value.items():
                     if isinstance(v,QAanalyzer):
                         if n in ovalue and isinstance(ovalue[n],v.__class__):
                             ov = ovalue[n]
@@ -628,11 +628,11 @@ class QAanalyzer(QAobject):
                 value.normalize(normalization)
             #end if
         #end if
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,QAanalyzer):
                 value.normalize_data(normalization)
             elif isinstance(value,QAanalyzerCollection):
-                for n,v in value.iteritems():
+                for n,v in value.items():
                     if isinstance(v,QAanalyzer):
                         v.normalize_data(normalization)
                     #end if

@@ -80,8 +80,8 @@ LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(Particl
     if (a > 0.0)
     {
 #ifdef ENABLE_SOA
-      dist = d_table.Distances[iat][icent];
-      disp = -1.0 * d_table.Displacements[iat][icent];
+      dist = d_table.getDistRow(iat)[icent];
+      disp = -1.0 * d_table.getDisplRow(iat)[icent];
 #else
       int index = d_table.M[icent] + iat;
       dist      = d_table.r(index);
@@ -108,7 +108,7 @@ PsiValueType LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
   if (icent == -1)
     return 1.0;
 #ifdef ENABLE_SOA
-  RealType newdist = d_table.Temp_r[icent];
+  RealType newdist = d_table.getTempDists()[icent];
 #else
   RealType newdist = d_table.Temp[icent].r1;
 #endif
@@ -125,7 +125,7 @@ GradType LatticeGaussianProduct::evalGrad(ParticleSet& P, int iat)
     return GradType();
   RealType a = ParticleAlpha[iat];
 #ifdef ENABLE_SOA
-  PosType newdisp = -1.0 * d_table.Temp_dr[icent];
+  PosType newdisp = -1.0 * d_table.getTempDispls()[icent];
 #else
   PosType newdisp  = d_table.Temp[icent].dr1;
 #endif
@@ -150,8 +150,8 @@ PsiValueType LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType
     return 1.0;
   RealType a = ParticleAlpha[iat];
 #ifdef ENABLE_SOA
-  RealType newdist = d_table.Temp_r[icent];
-  PosType newdisp  = -1.0 * d_table.Temp_dr[icent];
+  RealType newdist = d_table.getTempDists()[icent];
+  PosType newdisp  = -1.0 * d_table.getTempDispls()[icent];
 #else
   RealType newdist = d_table.Temp[icent].r1;
   PosType newdisp  = d_table.Temp[icent].dr1;
@@ -164,7 +164,7 @@ PsiValueType LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType
 
 void LatticeGaussianProduct::restore(int iat) {}
 
-void LatticeGaussianProduct::acceptMove(ParticleSet& P, int iat)
+void LatticeGaussianProduct::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   U[iat]   = curVal;
   dU[iat]  = curGrad;
@@ -189,8 +189,8 @@ void LatticeGaussianProduct::evaluateLogAndStore(ParticleSet& P,
     if (a > 0.0)
     {
 #ifdef ENABLE_SOA
-      dist = d_table.Distances[iat][icent];
-      disp = -1.0 * d_table.Displacements[iat][icent];
+      dist = d_table.getDistRow(iat)[icent];
+      disp = -1.0 * d_table.getDisplRow(iat)[icent];
 #else
       int index = d_table.M[icent] + iat;
       dist      = d_table.r(index);

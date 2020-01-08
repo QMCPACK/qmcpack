@@ -39,7 +39,8 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   ///element position type
   using posT = TinyVector<valT, OHMMS_DIM>;
   ///use the same container
-  using RowContainer = DistanceTableData::RowContainer;
+  using DistRow  = DistanceTableData::DistRow;
+  using DisplRow = DistanceTableData::DisplRow;
   ///table index for el-el
   const int ee_Table_ID_;
   ///table index for i-el
@@ -385,7 +386,8 @@ public:
 
   void build_compact_list(ParticleSet& P)
   {
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
+    const auto& eI_dists  = P.getDistTable(ei_Table_ID_).getDistances();
+    const auto& eI_displs = P.getDistTable(ei_Table_ID_).getDisplacements();
 
     for (int iat = 0; iat < Nion; ++iat)
       for (int jg = 0; jg < eGroups; ++jg)
@@ -398,11 +400,11 @@ public:
     for (int jg = 0; jg < eGroups; ++jg)
       for (int jel = P.first(jg); jel < P.last(jg); jel++)
         for (int iat = 0; iat < Nion; ++iat)
-          if (eI_table.Distances[jel][iat] < Ion_cutoff[iat])
+          if (eI_dists[jel][iat] < Ion_cutoff[iat])
           {
             elecs_inside(jg, iat).push_back(jel);
-            elecs_inside_dist(jg, iat).push_back(eI_table.Distances[jel][iat]);
-            elecs_inside_displ(jg, iat).push_back(eI_table.Displacements[jel][iat]);
+            elecs_inside_dist(jg, iat).push_back(eI_dists[jel][iat]);
+            elecs_inside_displ(jg, iat).push_back(eI_displs[jel][iat]);
           }
   }
 
@@ -418,7 +420,7 @@ public:
 
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
-    cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.Temp_r.data(), ee_table.Temp_r.data(), ions_nearby_new);
+    cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.getTempDists(), ee_table.getTempDists(), ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
     return std::exp(static_cast<PsiValueType>(DiffVal));
   }
@@ -428,18 +430,19 @@ public:
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(Uat[VP.refPtcl] -
                            computeU(VP.refPS, VP.refPtcl, VP.refPS.GroupID[VP.refPtcl],
-                                    VP.getDistTable(ei_Table_ID_).Distances[k],
-                                    VP.getDistTable(ee_Table_ID_).Distances[k], ions_nearby_old));
+                                    VP.getDistTable(ei_Table_ID_).getDistRow(k),
+                                    VP.getDistTable(ee_Table_ID_).getDistRow(k), ions_nearby_old));
   }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
   {
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
+    const auto& eI_dists              = eI_table.getDistances();
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
 
     for (int jg = 0; jg < eGroups; ++jg)
     {
-      const valT sumU = computeU(P, -1, jg, eI_table.Temp_r.data(), ee_table.Temp_r.data(), ions_nearby_new);
+      const valT sumU = computeU(P, -1, jg, eI_table.getTempDists(), ee_table.getTempDists(), ions_nearby_new);
 
       for (int j = P.first(jg); j < P.last(jg); ++j)
       {
@@ -447,12 +450,12 @@ public:
         valT Uself(0);
         for (int iat = 0; iat < Nion; ++iat)
         {
-          const valT& r_Ij = eI_table.Temp_r[iat];
-          const valT& r_Ik = eI_table.Distances[j][iat];
+          const valT& r_Ij = eI_table.getTempDists()[iat];
+          const valT& r_Ik = eI_dists[j][iat];
           if (r_Ij < Ion_cutoff[iat] && r_Ik < Ion_cutoff[iat])
           {
             const int ig = Ions.GroupID[iat];
-            Uself += F(ig, jg, jg)->evaluate(ee_table.Temp_r[j], r_Ij, r_Ik);
+            Uself += F(ig, jg, jg)->evaluate(ee_table.getTempDists()[j], r_Ij, r_Ik);
           }
         }
         ratios[j] = std::exp(Uat[j] + Uself - sumU);
@@ -468,8 +471,8 @@ public:
 
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
-    computeU3(P, iat, eI_table.Temp_r.data(), eI_table.Temp_dr, ee_table.Temp_r.data(), ee_table.Temp_dr, cur_Uat,
-              cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
+    computeU3(P, iat, eI_table.getTempDists(), eI_table.getTempDispls(), ee_table.getTempDists(),
+              ee_table.getTempDispls(), cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
     grad_iat += cur_dUat;
     return std::exp(static_cast<PsiValueType>(DiffVal));
@@ -477,17 +480,17 @@ public:
 
   inline void restore(int iat) {}
 
-  void acceptMove(ParticleSet& P, int iat)
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false)
   {
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
     // get the old value, grad, lapl
-    computeU3(P, iat, eI_table.Distances[iat], eI_table.Displacements[iat], ee_table.Distances[iat],
-              ee_table.Displacements[iat], Uat[iat], dUat_temp, d2Uat[iat], oldUk, olddUk, oldd2Uk, ions_nearby_old);
+    computeU3(P, iat, eI_table.getDistRow(iat), eI_table.getDisplRow(iat), ee_table.getOldDists(),
+              ee_table.getOldDispls(), Uat[iat], dUat_temp, d2Uat[iat], oldUk, olddUk, oldd2Uk, ions_nearby_old);
     if (UpdateMode == ORB_PBYP_RATIO)
     { //ratio-only during the move; need to compute derivatives
-      computeU3(P, iat, eI_table.Temp_r.data(), eI_table.Temp_dr, ee_table.Temp_r.data(), ee_table.Temp_dr, cur_Uat,
-                cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
+      computeU3(P, iat, eI_table.getTempDists(), eI_table.getTempDispls(), ee_table.getTempDists(),
+                ee_table.getTempDispls(), cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
     }
 
 #pragma omp simd
@@ -520,10 +523,10 @@ public:
       auto iter       = std::find(elecs_inside(ig, jat).begin(), elecs_inside(ig, jat).end(), iat);
       auto iter_dist  = elecs_inside_dist(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
       auto iter_displ = elecs_inside_displ(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
-      if (eI_table.Temp_r[jat] < Ion_cutoff[jat]) // the new position is still inside
+      if (eI_table.getTempDists()[jat] < Ion_cutoff[jat]) // the new position is still inside
       {
-        *iter_dist                                                      = eI_table.Temp_r[jat];
-        *iter_displ                                                     = eI_table.Temp_dr[jat];
+        *iter_dist                                                      = eI_table.getTempDists()[jat];
+        *iter_displ                                                     = eI_table.getTempDispls()[jat];
         *std::find(ions_nearby_new.begin(), ions_nearby_new.end(), jat) = -1;
       }
       else
@@ -544,8 +547,8 @@ public:
       if (jat >= 0)
       {
         elecs_inside(ig, jat).push_back(iat);
-        elecs_inside_dist(ig, jat).push_back(eI_table.Temp_r[jat]);
-        elecs_inside_displ(ig, jat).push_back(eI_table.Temp_dr[jat]);
+        elecs_inside_dist(ig, jat).push_back(eI_table.getTempDists()[jat]);
+        elecs_inside_displ(ig, jat).push_back(eI_table.getTempDispls()[jat]);
       }
     }
   }
@@ -559,8 +562,8 @@ public:
 
     for (int jel = 0; jel < Nelec; ++jel)
     {
-      computeU3(P, jel, eI_table.Distances[jel], eI_table.Displacements[jel], ee_table.Distances[jel],
-                ee_table.Displacements[jel], Uat[jel], dUat_temp, d2Uat[jel], newUk, newdUk, newd2Uk, ions_nearby_new,
+      computeU3(P, jel, eI_table.getDistRow(jel), eI_table.getDisplRow(jel), ee_table.getDistRow(jel),
+                ee_table.getDisplRow(jel), Uat[jel], dUat_temp, d2Uat[jel], newUk, newdUk, newd2Uk, ions_nearby_new,
                 true);
       dUat(jel) = dUat_temp;
 // add the contribution from the upper triangle
@@ -584,8 +587,8 @@ public:
   inline valT computeU(const ParticleSet& P,
                        int jel,
                        int jg,
-                       const RealType* distjI,
-                       const RealType* distjk,
+                       const DistRow& distjI,
+                       const DistRow& distjk,
                        std::vector<int>& ions_nearby)
   {
     ions_nearby.clear();
@@ -722,10 +725,10 @@ public:
 
   inline void computeU3(const ParticleSet& P,
                         int jel,
-                        const RealType* distjI,
-                        const RowContainer& displjI,
-                        const RealType* distjk,
-                        const RowContainer& displjk,
+                        const DistRow& distjI,
+                        const DisplRow& displjI,
+                        const DistRow& distjk,
+                        const DisplRow& displjk,
                         valT& Uj,
                         posT& dUj,
                         valT& d2Uj,
@@ -873,6 +876,8 @@ public:
       constexpr valT lapfac = OHMMS_DIM - cone;
 
       const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
+      const auto& ee_dists              = ee_table.getDistances();
+      const auto& ee_displs             = ee_table.getDisplacements();
 
       build_compact_list(P);
 
@@ -901,8 +906,8 @@ public:
                   const posT disp_Ik  = cminus * elecs_inside_displ(kg, iat)[kind];
                   const valT r_Ik_inv = cone / r_Ik;
 
-                  const valT r_jk     = ee_table.Distances[jel][kel];
-                  const posT disp_jk  = ee_table.Displacements[jel][kel];
+                  const valT r_jk     = ee_dists[jel][kel];
+                  const posT disp_jk  = ee_displs[jel][kel];
                   const valT r_jk_inv = cone / r_jk;
 
                   FT& func = *F(ig, jg, kg);

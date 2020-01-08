@@ -334,7 +334,7 @@ class QuantumPackage(Simulation):
 
         # perform master-slave job splitting if necessary
         slave = self.get_slave()
-        split_nodes  = job.nodes>1 and job.full_command is None
+        split_nodes  = job.nodes is not None and job.nodes>1 and job.full_command is None
         split_nodes &= slave is not None
         if split_nodes:
             slave_command = self.app_name+' -slave {0} {1}'.format(slave,self.infile)

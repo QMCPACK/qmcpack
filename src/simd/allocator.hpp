@@ -22,11 +22,7 @@
 namespace qmcplusplus
 {
 template<class T>
-#if defined(__bgq__)
-using aligned_allocator = std::allocator<T>;
-#else
 using aligned_allocator = Mallocator<T, QMC_CLINE>;
-#endif
 template<class T>
 using aligned_vector = std::vector<T, aligned_allocator<T>>;
 
