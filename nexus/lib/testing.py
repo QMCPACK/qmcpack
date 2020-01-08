@@ -1,5 +1,10 @@
 
-import numpy as np
+try:
+    import numpy as np
+    numpy_available = True
+except:
+    numpy_available = False
+#end try
 
 
 def_atol =  0.0
@@ -657,3 +662,33 @@ def create_path(path,basepath=None):
     #end if
     assert(os.path.isdir(path))
 #end def create_path
+
+
+
+def execute(command):
+    from execute import execute as nexus_execute
+    out,err,rc = nexus_execute(command)
+    if rc!=0:
+        msg = '''Executed system command failed.
+
+Command:
+========
+{}
+
+stdout:
+=======
+{}
+
+stderr:
+=======
+{}
+
+Return code:
+============
+{}
+
+'''.format(command,out,err,rc)
+        failed(msg)
+    #end if
+    return out,err,rc
+#end def execute

@@ -87,7 +87,7 @@ def import_from_unit_test_module(module_name,test_name):
 
 # import core testing functions (shared between nxs-test and unit tests)
 from testing import *
-
+import testing as nexus_testing
 
 
 
@@ -1772,10 +1772,7 @@ def user_examples(label):
     for script in einfo['scripts']:
         # run the example script
         command = './'+script+' --generate_only --sleep=0.01'
-        out,err,rc = execute(command)
-        if rc>0:
-            nfail('example script failed to run\nattempted command: {0}\nlocation: {1}\nscript out:\n{2}\nscript err:\n{3}'.format(command,tpath,'  '+out.replace('\n','\n  '),'  '+err.replace('\n','\n  ')))
-        #end if
+        out,err,rc = nexus_testing.execute(command)
     #end for
     os.chdir(cwd)
 
@@ -2312,6 +2309,12 @@ if __name__=='__main__':
     #end if
     if options.pythonpath!='none':
         os.environ['PYTHONPATH']=options.pythonpath
+    #end if
+
+    # guard against missing numpy (required)
+    if len(tests)>0 and not numpy_available:
+        print('\nNumPy is required to run the tests.\nPlease install NumPy and try again.\n')
+        exit(1)
     #end if
 
     # run each test and print the test outcome

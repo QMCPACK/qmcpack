@@ -22,8 +22,8 @@
 
 namespace qmcplusplus
 {
-ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime, std::string lrmethod_in)
-    : ForceBase(ions, elns), PtclA(ions), first_time(firsttime), d_aa_ID(ions.addTable(ions, DT_SOA_PREFERRED)), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED)), lrmethod(lrmethod_in)
+ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime)
+    : ForceBase(ions, elns), PtclA(ions), first_time(firsttime), d_aa_ID(ions.addTable(ions, DT_SOA_PREFERRED)), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED))
 {
   ReportEngine PRE("ForceChiesaPBCAA", "ForceChiesaPBCAA");
   myName = "Chiesa_Force_Base_PBCAB";
@@ -97,7 +97,7 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
     totQ += Zat[iat] = Zspec[PtclA.GroupID[iat]];
   for (int iat = 0; iat < NptclB; iat++)
     totQ += Qat[iat] = Qspec[P.GroupID[iat]];
-  dAB = LRCoulombSingleton::getDerivHandler(P, lrmethod);
+  dAB = LRCoulombSingleton::getDerivHandler(P);
 }
 
 void ForceChiesaPBCAA::evaluateLR(ParticleSet& P)
@@ -244,7 +244,6 @@ bool ForceChiesaPBCAA::put(xmlNodePtr cur)
   addionion = (ionionforce == "yes") || (ionionforce == "true");
   app_log() << "ionionforce = " << ionionforce << std::endl;
   app_log() << "addionion=" << addionion << std::endl;
-  app_log() << "lrmethod= " << lrmethod << std::endl;
   ParameterSet fcep_param_set;
   fcep_param_set.add(Rcut, "rcut", "real");
   fcep_param_set.add(N_basis, "nbasis", "int");
