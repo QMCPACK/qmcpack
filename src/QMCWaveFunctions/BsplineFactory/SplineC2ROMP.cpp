@@ -718,9 +718,9 @@ template<typename ST>
 void SplineC2ROMP<ST>::mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
                                       const std::vector<ParticleSet*>& P_list,
                                       int iat,
-                                      const std::vector<ValueVector_t*>& psi_v_list,
-                                      const std::vector<GradVector_t*>& dpsi_v_list,
-                                      const std::vector<ValueVector_t*>& d2psi_v_list)
+                                      const RefVector<ValueVector_t>& psi_v_list,
+                                      const RefVector<GradVector_t>& dpsi_v_list,
+                                      const RefVector<ValueVector_t>& d2psi_v_list)
 {
   const int nwalkers = sa_list.size();
   if (mw_pos_copy.size() < nwalkers * 6)
@@ -744,7 +744,7 @@ void SplineC2ROMP<ST>::mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
   const auto padded_size     = myV.size();
   if (offload_scratch.size() < padded_size * nwalkers * 10)
     offload_scratch.resize(padded_size * nwalkers * 10);
-  const auto orb_size = psi_v_list[0]->size();
+  const auto orb_size = psi_v_list[0].get().size();
   if (results_scratch.size() < orb_size * nwalkers * 5)
     results_scratch.resize(orb_size * nwalkers * 5);
 
@@ -804,9 +804,9 @@ void SplineC2ROMP<ST>::mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
   for (int iw = 0; iw < nwalkers; ++iw)
   {
     auto* restrict results_iw_ptr = results_scratch_ptr + orb_size * iw * 5;
-    auto& psi_v(*psi_v_list[iw]);
-    auto& dpsi_v(*dpsi_v_list[iw]);
-    auto& d2psi_v(*d2psi_v_list[iw]);
+    ValueVector_t& psi_v(psi_v_list[iw]);
+    GradVector_t& dpsi_v(dpsi_v_list[iw]);
+    ValueVector_t& d2psi_v(d2psi_v_list[iw]);
     for (size_t i = 0; i < orb_size; i++)
     {
       psi_v[i]     = results_iw_ptr[i];

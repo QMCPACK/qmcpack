@@ -233,7 +233,7 @@ public:
   virtual void mw_evaluateValue(const std::vector<SPOSet*>& spo_list,
                                 const std::vector<ParticleSet*>& P_list,
                                 int iat,
-                                const std::vector<ValueVector_t*>& psi_v_list);
+                                const RefVector<ValueVector_t>& psi_v_list);
 
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
@@ -283,9 +283,9 @@ public:
   virtual void mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
                               const std::vector<ParticleSet*>& P_list,
                               int iat,
-                              const std::vector<ValueVector_t*>& psi_v_list,
-                              const std::vector<GradVector_t*>& dpsi_v_list,
-                              const std::vector<ValueVector_t*>& d2psi_v_list);
+                              const RefVector<ValueVector_t>& psi_v_list,
+                              const RefVector<GradVector_t>& dpsi_v_list,
+                              const RefVector<ValueVector_t>& d2psi_v_list);
 
   /** evaluate the values, gradients and hessians of this single-particle orbital set
    * @param P current ParticleSet

@@ -232,9 +232,9 @@ public:
   virtual void mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
                               const std::vector<ParticleSet*>& P_list,
                               int iat,
-                              const std::vector<ValueVector_t*>& psi_v_list,
-                              const std::vector<GradVector_t*>& dpsi_v_list,
-                              const std::vector<ValueVector_t*>& d2psi_v_list) override;
+                              const RefVector<ValueVector_t>& psi_v_list,
+                              const RefVector<GradVector_t>& dpsi_v_list,
+                              const RefVector<ValueVector_t>& d2psi_v_list) override;
 
   void assign_vgh(const PointType& r,
                   ValueVector_t& psi,

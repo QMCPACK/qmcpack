@@ -196,20 +196,20 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionCompo
   SPOVGLTimer.start();
   std::vector<SPOSet*> phi_list;
   phi_list.reserve(WFC_list.size());
-  std::vector<ValueVector_t*> psi_v_list;
+  RefVector<ValueVector_t> psi_v_list;
   psi_v_list.reserve(WFC_list.size());
-  std::vector<GradVector_t*> dpsi_v_list;
+  RefVector<GradVector_t> dpsi_v_list;
   dpsi_v_list.reserve(WFC_list.size());
-  std::vector<ValueVector_t*> d2psi_v_list;
+  RefVector<ValueVector_t> d2psi_v_list;
   d2psi_v_list.reserve(WFC_list.size());
 
   for (auto wfc : WFC_list)
   {
     auto det = static_cast<DiracDeterminant<DU_TYPE>*>(wfc);
     phi_list.push_back(det->Phi);
-    psi_v_list.push_back(&(det->psiV));
-    dpsi_v_list.push_back(&(det->dpsiV));
-    d2psi_v_list.push_back(&(det->d2psiV));
+    psi_v_list.push_back(det->psiV);
+    dpsi_v_list.push_back(det->dpsiV);
+    d2psi_v_list.push_back(det->d2psiV);
   }
 
   Phi->mw_evaluateVGL(phi_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
