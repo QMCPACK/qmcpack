@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 import re
 
 def check_next_particle_grad_lap(mm,rel_tot,val_thr=1e-2,header='For particle'):

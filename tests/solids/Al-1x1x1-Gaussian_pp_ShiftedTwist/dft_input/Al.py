@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
   
 '''
 Gamma point post-HF calculation needs only real integrals.

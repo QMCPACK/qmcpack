@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 import numpy
 import h5py
 from pyscf.pbc import gto, scf, dft, df
