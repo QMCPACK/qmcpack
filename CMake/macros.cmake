@@ -152,13 +152,13 @@ ENDFUNCTION()
 SET( QMC_DISABLE_SLOW_TESTS FALSE CACHE BOOL "Disable the slow cmake system test additions")
 
 IF (QMC_DISABLE_SLOW_TESTS)
-  FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SHOULD_SUCCEED)
+  FUNCTION(QMC_RUN_AND_CHECK)
     MESSAGE("system level test dropped")
   ENDFUNCTION()
-  function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_script)
+  function(SIMPLE_RUN_AND_CHECK)
     MESSAGE("system level test dropped")
   ENDFUNCTION()
-ELSE ()
+ELSE (QMC_DISABLE_SLOW_TESTS)
 
 
 # Add a test run and associated scalar checks
@@ -301,7 +301,7 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
 
 endfunction()
 
-ENDIF()
+ENDIF(QMC_DISABLE_SLOW_TESTS)
 
 FUNCTION( COVERAGE_RUN TESTNAME SRC_DIR PROCS THREADS ${ARGN} )
     SET( FULLNAME "coverage-${TESTNAME}")
