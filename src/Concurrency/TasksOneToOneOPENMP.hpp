@@ -41,6 +41,9 @@ void TasksOneToOne<Threading::OPENMP>::operator()(F&& f, Args&&... args)
       throw std::runtime_error(nesting_error);
   int nested_throw_count = 0;
   int throw_count = 0;
+  // Nor should nested threading be used when a task block is active
+  int outside_nested = omp_get_nested();
+  omp_set_nested(0);
 #pragma omp parallel num_threads(num_threads_) reduction(+ : nested_throw_count, throw_count)
   {
     try
@@ -62,6 +65,7 @@ void TasksOneToOne<Threading::OPENMP>::operator()(F&& f, Args&&... args)
       ++throw_count;
     }
   }
+  omp_set_nested(outside_nested);
   if (throw_count > 0)
     throw std::runtime_error("Unexpected exception thrown in threaded section");
   else if (nested_throw_count > 0)
