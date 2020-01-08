@@ -16,11 +16,11 @@
 #ifndef AFQMC_WALKERIO_HPP 
 #define AFQMC_WALKERIO_HPP 
 
-#include<cassert>
-#include<cstdlib>
-#include<vector>
-#include<type_traits>
-#include "type_traits/container_proxy_multi.h"
+#include <cassert>
+#include <cstdlib>
+#include <vector>
+#include <type_traits>
+#include "type_traits/container_traits_multi.h"
 
 #include "Configuration.h"
 #include "AFQMC/config.h"
@@ -200,7 +200,6 @@ bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, std::string hdf_read_restar
 
   int nWtot = Idata[0];
   int wlk_nterms = Idata[2];
-  int wlk_sz = Idata[3];
   int NMO = Idata[4];
   int NAEA = Idata[5];
   int NAEB = Idata[6];
@@ -252,9 +251,9 @@ bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, std::string hdf_read_restar
         int nw_ = std::min(ni+wlk_per_blk[bi],nWN) - std::max(ni,nW0);
         Data.reextent({nw_,wlk_nterms});
         hyperslab_proxy<boost::multi::array_ref<ComplexType,2>,2> hslab(Data,
-                                  std::array<int,2>{wlk_per_blk[bi],wlk_nterms},
-                                  std::array<int,2>{nw_,wlk_nterms},
-                                  std::array<int,2>{w0,0});
+                                  std::array<int, 2>{wlk_per_blk[bi], wlk_nterms},
+                                  std::array<int, 2>{nw_,wlk_nterms},
+                                  std::array<int, 2>{w0,0});
         read.read(hslab,std::string("walkers_")+std::to_string(bi));
         for(int n=0; n<nw_; n++, nread++)
           wset.copyFromIO(Data[n],nread);
@@ -401,7 +400,6 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
         for(int p=0, nt=0; p<TG.TG_heads().size(); p++) {
 
           int n_ = 0;
-          int nn = nt + nW;
           if( ndone+nwlk_tot > nt && ndone < nt+nW ) {
             if(ndone <= nt)
               n_ = std::min(nW,(ndone+nwlk_tot)-nt);

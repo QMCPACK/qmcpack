@@ -44,11 +44,11 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
    */
   inline void reset(int n1, int n2, int nactive)
   {
-    if (n1 != N[SourceIndex] || n2 != N[VisitorIndex] || nactive != N[WalkerIndex])
+    if (n1 != N_sources || n2 != N_targets || nactive != N_walkers)
     {
-      N[SourceIndex]  = n1;
-      N[VisitorIndex] = n2;
-      int m           = n1 * n2;
+      N_sources = n1;
+      N_targets = n2;
+      int m     = n1 * n2;
       if (m)
       {
         M.resize(n1 + 1);
@@ -77,8 +77,8 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
     {
       for (int n = 0; n < ri.size(); ++n)
         ri[n].first = std::numeric_limits<RealType>::max();
-      const int m  = N[SourceIndex];
-      const int nv = N[VisitorIndex];
+      const int m  = N_sources;
+      const int nv = N_targets;
       int shift    = 0;
       for (int i = 0; i < m; ++i, shift += nv)
         for (int n = 0; n < ri.size(); ++n)
@@ -94,7 +94,7 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
     }
     else
     {
-      const int m = N[VisitorIndex];
+      const int m = N_targets;
       for (int n = 0; n < ri.size(); ++n)
       {
         const int shift = M[n];
@@ -117,8 +117,8 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
   {
     if (transposed)
     {
-      const int m  = N[SourceIndex];
-      const int nv = N[VisitorIndex];
+      const int m  = N_sources;
+      const int nv = N_targets;
       int shift    = 0;
       for (int i = 0; i < m; ++i, shift += nv)
       {
@@ -128,7 +128,7 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
     }
     else
     {
-      const int m     = N[VisitorIndex];
+      const int m     = N_sources;
       const int shift = M[n];
       for (int i = 0; i < m; ++i)
       {
@@ -147,7 +147,7 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
   {
     if (transposed)
     {
-      const int nv = N[VisitorIndex];
+      const int nv = N_targets;
       int shift    = spec_start * nv;
       for (int i = 0; i < ri.size(); ++i, shift += nv)
       {
@@ -170,26 +170,18 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
   ///not so useful inline but who knows
   inline void evaluate(ParticleSet& P)
   {
-    const int ns = N[SourceIndex];
-    const int nt = N[VisitorIndex];
+    const int ns = N_sources;
+    const int nt = N_targets;
     for (int i = 0; i < ns; i++)
       for (int j = 0; j < nt; j++)
         dr_m[i * nt + j] = P.R[j] - Origin->R[i];
     DTD_BConds<T, D, SC>::apply_bc(dr_m, r_m, rinv_m);
   }
 
-  inline void evaluate(ParticleSet& P, int jat)
-  {
-    APP_ABORT("  No need to call AsymmetricDTD::evaluate(ParticleSet& P, int jat)");
-    //based on full evaluation. Only compute it if jat==0
-    if (jat == 0)
-      evaluate(P);
-  }
-
   ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew)
+  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
-    for (int iat = 0; iat < N[SourceIndex]; iat++)
+    for (int iat = 0; iat < N_sources; iat++)
     {
       PosType drij(rnew - Origin->R[iat]);
       //RealType sep2(BC::apply(Origin.Lattice,drij));
@@ -200,9 +192,9 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
     }
   }
 
-  inline void update(IndexType jat)
+  inline void update(IndexType jat, bool partial_update)
   {
-    for (int iat = 0, loc = jat; iat < N[SourceIndex]; iat++, loc += N[VisitorIndex])
+    for (int iat = 0, loc = jat; iat < N_sources; iat++, loc += N_targets)
     {
       r_m[loc]    = Temp[iat].r1;
       rinv_m[loc] = 1 / Temp[iat].r1;
@@ -218,7 +210,7 @@ struct AsymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
                        PosType* restrict displ) const
   {
     size_t nn    = 0;
-    const int nt = N[VisitorIndex];
+    const int nt = N_targets;
     for (int jat = 0, loc = iat * nt; jat < nt; ++jat, ++loc)
     {
       RealType rij = r_m[loc];

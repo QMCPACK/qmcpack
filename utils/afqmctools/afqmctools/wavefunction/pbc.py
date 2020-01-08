@@ -8,7 +8,7 @@ import scipy.linalg
 from afqmctools.wavefunction.mol import write_qmcpack_wfn, write_nomsd_wfn
 
 def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True,
-                  verbose=False, ndet_max=None):
+                  verbose=False, ndet_max=1, low=0.1, high=0.95):
     """Generate QMCPACK trial wavefunction for PBC simulation.
 
     Parameters
@@ -56,7 +56,8 @@ def write_wfn_pbc(scf_data, ortho_ao, filename, rediag=True,
     (eigs, orbs, ks, bands) = generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
                                                 mo_energy, uhf, verbose=verbose)
     re_occ, trial, ndeg, srt, isrt = reoccupy(mo_occ, eigs, uhf, verbose,
-                                              ndet_max=ndet_max)
+                                              ndet_max=ndet_max, low=low,
+                                              high=high)
     # mo_occs from pyscf is a list of numpy arrays of potentially different
     # length so can't just use numpy.sum.
     nalpha = int(round(sum(sum(occ) for occ in re_occ[0])))
@@ -87,11 +88,12 @@ def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
     bands = []
     full_mo_a = []
     full_mo_b = []
-    for k in range(fock.shape[1]):
+    nk = len(X)
+    for k in range(nk):
         if verbose:
             print(" # Generating trial wavefunction for kpoint: "
                   "{:d}".format(k))
-        if rediag and ortho_ao:
+        if ortho_ao:
             start = time.time()
             ea, orb_a = rediag_fock(fock[0,k], X[k][:,:nmo_pk[k]])
             full_mo_a.append(orb_a)
@@ -105,7 +107,7 @@ def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
             if verbose:
                 print(" # Time to rediagonalise fock: "
                       "  {:13.8e} s".format(time.time()-start))
-        elif not rediag and not ortho_ao:
+        else:
             if uhf:
                 print("WARNING: UHF wavefunction with ortho_ao = False not "
                       "allowed.")
@@ -116,9 +118,8 @@ def generate_orbitals(fock, X, nmo_pk, rediag, ortho_ao,
             full_mo_a.append(orb_a)
             ks.append([k]*len(ea))
             bands.append([i for i in range(len(ea))])
-        elif ortho_ao and not rediag:
-            print("WARNING: ortho_ao = True and rediag = False not implemented.")
-            sys.exit()
+            eigs_b = eigs_a
+            foll_mo_b = full_mo_b
     return ((eigs_a,eigs_b), (full_mo_a,full_mo_b), ks, bands)
 
 def create_wavefunction(orbs, occs, nmo_pk, nelec, uhf, verbose):
@@ -211,7 +212,7 @@ def rediag_fock(fock, X):
     return e, c
 
 def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
-             high=0.95, ndet_max=None):
+             high=0.95, ndet_max=1):
     if uhf:
         if verbose:
             print(" # Determining occupancies for alpha electrons.")
@@ -219,7 +220,8 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
                 determine_occupancies(mo_occ[0],
                                       mo_energy[0],
                                       False,
-                                      verbose=verbose>=1)
+                                      verbose=verbose>=1,
+                                      low=low, high=high)
                 )
         if verbose:
             print(" # Determining occupancies for beta electrons.")
@@ -227,33 +229,40 @@ def reoccupy(mo_occ, mo_energy, uhf, verbose, low=0.25,
                 determine_occupancies(mo_occ[1],
                                       mo_energy[1],
                                       False,
-                                      verbose=verbose>=1)
+                                      verbose=verbose>=1,
+                                      low=low, high=high)
                 )
         ndeg = max(ndeg_a,ndeg_b)
         nalpha = int(round(numpy.sum(re_occ_a)))
         nbeta = int(round(numpy.sum(re_occ_b)))
         re_occ = [re_occ_a, re_occ_b]
-        occs_a, occs_b = zip(*itertools.product(msd_a,msd_b))
-        pdets = numpy.outer(p_a,p_b).ravel()
-        srt_det = pdets.argsort()
         srt = (srt_a,srt_b)
         isrt = (isrt_a,isrt_b)
-        msd_coeff = (pdets/sum(pdets))**0.5
-        if ndet_max is not None:
+        if msd_a is not None and msd_b is not None:
             if verbose:
-                print(" # Truncating MSD expansion at {}"
-                      " determinants.".format(ndet_max))
-            nd = min(len(occs_a),ndet_max)
-            sd = srt_det[:nd]
-            trial = (msd_coeff[sd], numpy.array(occs_a)[sd], numpy.array(occs_b)[sd])
+                print(" # Maximum number of determinants: "
+                      " {}".format(len(msd_a)*len(msd_b)))
+            if ndet_max == 1:
+                trial = (1.0, msd_a[0], msd_b[0])
+            else:
+                occs_a, occs_b = zip(*itertools.product(msd_a,msd_b))
+                pdets = numpy.outer(p_a,p_b).ravel()
+                srt_det = pdets.argsort()
+                msd_coeff = (pdets/sum(pdets))**0.5
+                nd = min(len(occs_a),ndet_max)
+                sd = srt_det[:nd]
+                trial = (msd_coeff[sd],
+                         numpy.array(occs_a)[sd],
+                         numpy.array(occs_b)[sd])
         else:
-            trial = (msd_coeff, occs_a, occs_b)
+            trial = None
     else:
         re_occ, ndeg, msd, srt, isrt, p = (
                 determine_occupancies(mo_occ,
                                       mo_energy[0],
                                       True,
-                                      verbose=verbose>=1)
+                                      verbose=verbose>=1,
+                                      low=low, high=high)
                 )
         trial = None
         re_occ = [re_occ/2.0, re_occ/2.0]
@@ -292,13 +301,25 @@ def determine_occupancies(mo_occ, mo_energy, rhf, low=0.1,
         deg = (mo_order < high) & (mo_order > low)
         poccs = mo_order[deg]
         ndeg = sum(deg)
+        if ndeg == 0:
+            print(" # Warning: trying to occupy {} electrons in {} orbitals.".format(nleft, ndeg))
+            low = 0.5*mo_order[(mo_order<low)&(mo_order>1e-10)][0]
+            print(" # Decreasing low parameter to {:13.8e}".format(low))
+            deg = (mo_order < high) & (mo_order > low)
+            poccs = mo_order[deg]
+            ndeg = sum(deg)
+            if ndeg == 0:
+                print(" # Error: trying to occupy {} electrons in {} orbitals.".format(nleft, ndeg))
+                print(" # MO occupancies > 0: ")
+                for i, o in enumerate(mo_order[(mo_order<low)&(mo_order>1e-10)]):
+                    print(" # {:4d} {:13.8e}".format(i, o))
+                sys.exit()
         # Supercell indexed.
         deg_orb = numpy.where(deg)[0]
         combs = [c for c in itertools.combinations(deg_orb, int(nleft))]
         pcomb = numpy.array([numpy.prod(poccs[numpy.array(c)-nocc]) for c in combs])
         if verbose:
             print(" # Distributing {} electrons in {} orbitals.".format(nleft,ndeg))
-            print(" # Number of determinants: {}.".format(len(combs)))
         core = list(numpy.where(mo_order > high)[0])
         core = [c for c in core]
         msd = [core + list(d) for d in combs]

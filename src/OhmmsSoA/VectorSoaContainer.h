@@ -20,44 +20,29 @@
 #include <type_traits>
 #include "simd/allocator.hpp"
 #include "simd/algorithm.hpp"
+#include "OhmmsSoA/PosTransformer.h"
 #include "ParticleBase/ParticleAttrib.h"
 
 namespace qmcplusplus
 {
 /** SoA adaptor class for ParticleAttrib<TinyVector<T,D> >
-   * @tparm T data type, float, double, complex<float>, complex<double>
-   * @tparm Alloc memory allocator
-   */
+ * @tparm T data type, float, double, complex<float>, complex<double>
+ * @tparm Alloc memory allocator
+ */
 template<typename T, unsigned D, size_t ALIGN = QMC_CLINE, typename Alloc = Mallocator<T, ALIGN>>
 struct VectorSoaContainer
 {
-  using Type_t    = TinyVector<T, D>;
-  using Element_t = T;
-  /////alias to ParticleAttrib<T1,D>
-  //template <class T1> using PosArray = ParticleAttrib<TinyVector<T1,D> >;
-  ///number of elements
-  size_t nLocal;
-  ///number of elements + padded
-  size_t nGhosts;
-  ///number of elements allocated by myAlloc
-  size_t nAllocated;
-  ///pointer: what type????
-  T* myData;
-  ///allocator
-  Alloc myAlloc;
+  using AoSElement_t = TinyVector<T, D>;
+  using Element_t    = T;
+
   ///default constructor
-  VectorSoaContainer() { setDefaults(); }
+  VectorSoaContainer() : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr) {}
   ///destructor
-  ~VectorSoaContainer()
-  {
-    if (nAllocated > 0)
-      myAlloc.deallocate(myData, nAllocated);
-  }
+  ~VectorSoaContainer() { free(); }
 
   ///default copy constructor
-  VectorSoaContainer(const VectorSoaContainer& in)
+  VectorSoaContainer(const VectorSoaContainer& in) : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr)
   {
-    setDefaults();
     resize(in.nLocal);
     std::copy_n(in.myData, nGhosts * D, myData);
   }
@@ -74,28 +59,23 @@ struct VectorSoaContainer
   }
 
   ///move constructor
-  VectorSoaContainer(VectorSoaContainer&& in) : nLocal(in.nLocal), nGhosts(in.nGhosts)
+  VectorSoaContainer(VectorSoaContainer&& in)
+      : nLocal(in.nLocal), nGhosts(in.nGhosts), nAllocated(in.nAllocated), myData(std::move(in.myData))
   {
-    nAllocated    = in.nAllocated;
-    myData        = in.myData;
-    myAlloc       = std::move(in.myAlloc);
     in.myData     = nullptr;
     in.nAllocated = 0;
+    in.nLocal     = 0;
+    in.nGhosts    = 0;
   }
 
-  /** constructor with size n  without initialization
-       */
-  explicit VectorSoaContainer(size_t n)
-  {
-    setDefaults();
-    resize(n);
-  }
+  /// constructor with size n without initialization
+  explicit VectorSoaContainer(size_t n) : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr) { resize(n); }
 
   /** constructor with ParticleAttrib<T1,D> */
   template<typename T1>
   VectorSoaContainer(const ParticleAttrib<TinyVector<T1, D>>& in)
+      : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr)
   {
-    setDefaults();
     resize(in.size());
     copyIn(in);
   }
@@ -103,8 +83,7 @@ struct VectorSoaContainer
   template<typename T1>
   VectorSoaContainer& operator=(const ParticleAttrib<TinyVector<T1, D>>& in)
   {
-    if (nLocal != in.size())
-      resize(in.size());
+    resize(in.size());
     copyIn(in);
     return *this;
   }
@@ -118,33 +97,44 @@ struct VectorSoaContainer
     return *this;
   }
 
-  ///initialize the data members
-  __forceinline void setDefaults()
-  {
-    nLocal     = 0;
-    nGhosts    = 0;
-    nAllocated = 0;
-    myData     = nullptr;
-  }
-
   /** resize myData
-       * @param n nLocal
-       *
-       * nAllocated is used to ensure no memory leak
-       */
+   * @param n nLocal
+   *
+   * nAllocated is used to ensure no memory leak
+   */
   __forceinline void resize(size_t n)
   {
-    static_assert(std::is_same<Element_t, typename Alloc::value_type>::value, "VectorSoaContainer and Alloc data types must agree!");
-    if (nAllocated)
-      myAlloc.deallocate(myData, nAllocated);
-    nLocal     = n;
-    nGhosts    = getAlignedSize<T, ALIGN>(n);
-    nAllocated = nGhosts * D;
-    myData     = myAlloc.allocate(nAllocated);
+    static_assert(std::is_same<Element_t, typename Alloc::value_type>::value,
+                  "VectorSoaContainer and Alloc data types must agree!");
+    if (isRefAttached())
+      throw std::runtime_error("Resize not allowed on VectorSoaContainer constructed by initialized memory.");
+
+    size_t n_padded = getAlignedSize<T, ALIGN>(n);
+
+    if (n_padded * D > nAllocated)
+    {
+      if (nAllocated)
+        myAlloc.deallocate(myData, nAllocated);
+      nLocal     = n;
+      nGhosts    = n_padded;
+      nAllocated = nGhosts * D;
+      myData     = myAlloc.allocate(nAllocated);
+    }
+    else
+    {
+      nLocal  = n;
+      nGhosts = n_padded;
+    }
   }
 
-  /** free myData
-       */
+  ///clear
+  inline void clear()
+  {
+    nLocal  = 0;
+    nGhosts = 0;
+  }
+
+  /// free allocated memory and clear status variables
   __forceinline void free()
   {
     if (nAllocated)
@@ -156,20 +146,19 @@ struct VectorSoaContainer
   }
 
   /** attach to pre-allocated data
-       * @param n new nLocal 
-       * @param n_padded new nGhosts
-       * @param ptr new myData
-       *
-       * Free existing memory and reset the internal variables
-       */
+   * @param n new nLocal
+   * @param n_padded new nGhosts
+   * @param ptr new myData
+   *
+   * To attach to existing memory, currently owned memory must be freed before calling attachReference
+   */
   __forceinline void attachReference(size_t n, size_t n_padded, T* ptr)
   {
     if (nAllocated)
       throw std::runtime_error("Pointer attaching is not allowed on VectorSoaContainer with allocated memory.");
-    nAllocated = 0;
-    nLocal     = n;
-    nGhosts    = n_padded;
-    myData     = ptr;
+    nLocal  = n;
+    nGhosts = n_padded;
+    myData  = ptr;
   }
 
   ///return the physical size
@@ -200,13 +189,13 @@ struct VectorSoaContainer
 
   /** return TinyVector<T,D>
        */
-  __forceinline const Type_t operator[](size_t i) const { return Type_t(myData + i, nGhosts); }
+  __forceinline const AoSElement_t operator[](size_t i) const { return AoSElement_t(myData + i, nGhosts); }
 
   ///helper class for operator ()(size_t i) to assign a value
   struct Accessor
   {
-    size_t M;
     T* _base;
+    size_t M;
     __forceinline Accessor(T* a, size_t ng) : _base(a), M(ng) {}
     template<typename T1>
     __forceinline Accessor& operator=(const TinyVector<T1, D>& rhs)
@@ -246,6 +235,20 @@ struct VectorSoaContainer
   ///return the end
   __forceinline const T* end() const { return myData + D * nGhosts; }
 
+private:
+  /// number of elements
+  size_t nLocal;
+  /// number of elements + padded
+  size_t nGhosts;
+  /// number of elements allocated by myAlloc
+  size_t nAllocated;
+  /// pointer: what type????
+  T* myData;
+  /// allocator
+  Alloc myAlloc;
+
+  /// return true if memory is not owned by the container but from outside.
+  inline bool isRefAttached() const { return nGhosts * D > nAllocated; }
 };
 
 } // namespace qmcplusplus

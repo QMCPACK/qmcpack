@@ -31,7 +31,8 @@
 #====================================================================#
 
 
-from generic import obj,object_interface,log,error,warn
+from utilities import to_str
+from generic import obj,object_interface,log,error,warn,message
 from debug import ci,interact
 
 
@@ -42,39 +43,8 @@ class DevBase(obj):
 #end class DevBase
 
 
-class enum(object_interface):
-    def __init__(self,*keys):
-        if len(keys)==1 and isinstance(keys[0],(list,tuple)):
-            keys = keys[0]
-        #end if
-        n=0
-        for key in keys:
-            self[key] = n
-            n+=1
-        #end for
-    #end def __init__
-        
-    # override some object interface methods
-    # specifically forbid modification
-    def __setitem__(self,name,value):
-        self._error('attempted to modify immutable enum object')
-    #end def __setitem__
 
-    def __delitem__(self,name):
-        self._error('attempted to modify immutable enum object')
-    #end def __delitem__
-
-    def clear(self):
-        self._error('attempted to modify immutable enum object')
-    #end def clear
-
-    def _clear(self):
-        enum.clear(self)
-    #end def _clear
-#end class enum
-
-
-class Void:
+class Void(object):
     void_items = dict()
 
     @classmethod
@@ -129,8 +99,8 @@ class Void:
     
 
     #member methods
-    def __new__(self,*args,**kwargs):
-        Void._unavailable(self)
+    #def __new__(self,*args,**kwargs):
+    #    Void._unavailable(self)
     def __eq__(self,*args,**kwargs):
         Void._unavailable(self)
     def __ne__(self,*args,**kwargs):
@@ -227,8 +197,6 @@ class Void:
         Void._unavailable(self)
     def __int__(self,*args,**kwargs):
         Void._unavailable(self)
-    def __long__(self,*args,**kwargs):
-        Void._unavailable(self)
     def __float__(self,*args,**kwargs):
         Void._unavailable(self)
     def __oct__(self,*args,**kwargs):
@@ -251,8 +219,8 @@ class Void:
         Void._unavailable(self)
     def __dict__(self,*args,**kwargs):
         Void._unavailable(self)
-    def __slots__(self,*args,**kwargs):
-        Void._unavailable(self)
+    #def __slots__(self,*args,**kwargs):
+    #    Void._unavailable(self)
     def __class__(self,*args,**kwargs):
         Void._unavailable(self)
     def __bases__(self,*args,**kwargs):

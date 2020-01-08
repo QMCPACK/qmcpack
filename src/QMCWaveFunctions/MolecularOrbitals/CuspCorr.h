@@ -104,7 +104,7 @@ public:
   {
     Psi1     = Phi;
     Psi2     = Eta;
-    int norb = Psi1->OrbitalSetSize;
+    int norb = Psi1->getOrbitalSetSize();
 
     val1.resize(norb);
     grad1.resize(norb);
@@ -159,7 +159,7 @@ public:
   {
     targetPtcl->R[0] = sourcePtcl->R[curCenter];
     targetPtcl->makeMove(0, r);
-    Psi->evaluate(*targetPtcl, 0, val, grad, lapl);
+    Psi->evaluateVGL(*targetPtcl, 0, val, grad, lapl);
   }
 
   RealType phi(RealType r)

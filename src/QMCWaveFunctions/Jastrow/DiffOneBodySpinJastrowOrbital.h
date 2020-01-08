@@ -182,6 +182,7 @@ public:
     int varoffset                    = myVars.Index[0];
     for (int ig = 0; ig < F.rows(); ++ig) //species
     {
+#ifndef ENABLE_SOA
       for (int iat = s_offset[ig]; iat < s_offset[ig + 1]; ++iat) //
       {
         int nn = d_table.M[iat]; //starting nn for the iat-th source
@@ -214,6 +215,7 @@ public:
           }
         } //j groups
       }   //iat in the ig-th group
+#endif
     }     //ig
     for (int k = 0; k < myVars.size(); ++k)
     {

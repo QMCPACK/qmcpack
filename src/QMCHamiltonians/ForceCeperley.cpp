@@ -72,14 +72,16 @@ ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
   {
     for (int jat = 0; jat < Nel; jat++)
     {
+      const auto& dist  = d_ab.getDistRow(jat);
+      const auto& displ = d_ab.getDisplRow(jat);
       for (int iat = 0; iat < Nnuc; iat++)
       {
         // electron contribution (special treatment if distance is inside cutoff!)
-        RealType r       = d_ab.Distances[jat][iat];
+        RealType r       = dist[iat];
         RealType zoverr3 = Qat[jat] * Zat[iat] / (r * r * r);
         if (r >= Rcut)
         {
-          forces[iat] += zoverr3 * d_ab.Displacements[jat][iat];
+          forces[iat] += zoverr3 * displ[iat];
         }
         else
         {
@@ -90,14 +92,15 @@ ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
           }
           g_q *= zoverr3;
           // negative sign accounts for definition of target as electrons
-          forces[iat]            += g_q * d_ab.Displacements[jat][iat];
-          forces_ShortRange[iat] += g_q * d_ab.Displacements[jat][iat];
+          forces[iat]            += g_q * displ[iat];
+          forces_ShortRange[iat] += g_q * displ[iat];
         }
       }
     }
   }
   else
   {
+#ifndef ENABLE_SOA
     for (int iat = 0; iat < Nnuc; iat++)
     {
       // electron contribution (special treatment if distance is inside cutoff!)
@@ -123,6 +126,7 @@ ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
         }
       }
     }
+#endif
   }
   return 0.0;
 }
@@ -151,7 +155,7 @@ bool ForceCeperley::put(xmlNodePtr cur)
   return true;
 }
 
-QMCHamiltonianBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   return new ForceCeperley(*this);
 }

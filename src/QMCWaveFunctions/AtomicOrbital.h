@@ -92,7 +92,7 @@ private:
   SplineType* RadialSpline;
   // The first index is n in r^n, the second is lm = l*(l+1)+m
   Array<StorageType, 3> PolyCoefs;
-  NewTimer YlmTimer, SplineTimer, SumTimer;
+  NewTimer &YlmTimer, &SplineTimer, &SumTimer;
   RealType rmagLast;
   std::vector<PosType> TwistAngles;
 
@@ -125,9 +125,6 @@ public:
   {
     YlmTimer.reset();
     SplineTimer.reset();
-    TimerManager.addTimer(&YlmTimer);
-    TimerManager.addTimer(&SplineTimer);
-    TimerManager.addTimer(&SumTimer);
   }
 
   void allocate();
@@ -156,9 +153,9 @@ public:
 
   AtomicOrbital()
       : RadialSpline(NULL),
-        YlmTimer("AtomicOrbital::CalcYlm"),
-        SplineTimer("AtomicOrbital::1D spline"),
-        SumTimer("AtomicOrbital::Summation"),
+        YlmTimer(*TimerManager.createTimer("AtomicOrbital::CalcYlm")),
+        SplineTimer(*TimerManager.createTimer("AtomicOrbital::1D spline")),
+        SumTimer(*TimerManager.createTimer("AtomicOrbital::Summation")),
         rmagLast(std::numeric_limits<RealType>::max())
   {
     // Nothing else for now

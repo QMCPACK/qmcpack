@@ -56,10 +56,15 @@ class EstimatorHandler: public AFQMCInfo
         bool defaultEnergyEstim=false,
         bool impsamp=true):
             AFQMCInfo(info),
-            hdf_output(false),
-            project_title(title)
+            project_title(title),
+            hdf_output(false)
   {
     estimators.reserve(10);
+
+    app_log()<<"\n****************************************************\n"
+           <<"               Initializing Estimators \n"
+           <<"****************************************************\n"
+           <<std::endl;
 
     std::string overwrite_default_energy("no");
     xmlNodePtr curRoot = cur;
@@ -157,7 +162,7 @@ class EstimatorHandler: public AFQMCInfo
       //out.open(filename.c_str(),std::ios_base::app | std::ios_base::out);
       std::string filename = project_title+".scalar.dat";
       if(hdf_output) {
-        hdf_file = project_title+".scalar.h5";
+        hdf_file = project_title+".stat.h5";
         if(!dump.create(hdf_file)) {
           app_log()<<"Problems opening estimator hdf5 output file: " << hdf_file <<std::endl;
           APP_ABORT("Problems opening estimator hdf5 output file.\n");
@@ -228,7 +233,8 @@ class EstimatorHandler: public AFQMCInfo
     dump.write(NMO, "NMO");
     dump.write(NAEA, "NAEA");
     dump.write(NAEB, "NAEB");
-    dump.write(wlk, "WalkerType");
+    int wlk_t_copy = wlk; // the actual data type of enum is implementation-defined. convert to int for file
+    dump.write(wlk_t_copy, "WalkerType");
     dump.write(free_projection, "FreeProjection");
     dump.write(dt, "Timestep");
     dump.pop();

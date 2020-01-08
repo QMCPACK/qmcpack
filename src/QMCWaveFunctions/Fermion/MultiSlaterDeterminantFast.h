@@ -53,8 +53,8 @@ class MultiSlaterDeterminantFast : public WaveFunctionComponent
 {
 public:
   void registerTimers();
-  NewTimer RatioTimer, RatioGradTimer, RatioAllTimer, UpdateTimer, EvaluateTimer;
-  NewTimer Ratio1Timer, Ratio1GradTimer, Ratio1AllTimer, AccRejTimer;
+  NewTimer &RatioTimer, &RatioGradTimer, &RatioAllTimer, &UpdateTimer, &EvaluateTimer;
+  NewTimer &Ratio1Timer, &Ratio1GradTimer, &Ratio1AllTimer, &AccRejTimer;
 
   typedef SPOSet* SPOSetPtr;
   typedef SPOSetProxyForMSD* SPOSetProxyPtr;
@@ -76,12 +76,12 @@ public:
   ///destructor
   ~MultiSlaterDeterminantFast();
 
-  void checkInVariables(opt_variables_type& active);
-  void checkOutVariables(const opt_variables_type& active);
-  void resetParameters(const opt_variables_type& active);
-  void reportStatus(std::ostream& os);
+  void checkInVariables(opt_variables_type& active) override;
+  void checkOutVariables(const opt_variables_type& active) override;
+  void resetParameters(const opt_variables_type& active) override;
+  void reportStatus(std::ostream& os) override;
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
@@ -95,42 +95,45 @@ public:
     Dets[1]->setBF(bf);
   }
 
-  ValueType evaluate_vgl_impl(ParticleSet& P,
-                              ParticleSet::ParticleGradient_t& g_tmp,
-                              ParticleSet::ParticleLaplacian_t& l_tmp);
+  PsiValueType evaluate_vgl_impl(ParticleSet& P,
+                                 ParticleSet::ParticleGradient_t& g_tmp,
+                                 ParticleSet::ParticleLaplacian_t& l_tmp);
 
-  ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  PsiValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  RealType evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
-                       ,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
-  GradType evalGrad(ParticleSet& P, int iat);
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  ValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  GradType evalGrad(ParticleSet& P, int iat) override;
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
 
-  ValueType ratio(ParticleSet& P, int iat);
-  ValueType ratio_impl(ParticleSet& P, int iat);
-  void evaluateRatiosAlltoOne(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat) override;
+  PsiValueType ratio_impl(ParticleSet& P, int iat);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
     // the base class routine may probably work, just never tested.
     // it can also be highly optimized with a specialized implementation.
     APP_ABORT(" Need to implement MultiSlaterDeterminantFast::evaluateRatiosAlltoOne. \n");
   }
 
-  void acceptMove(ParticleSet& P, int iat);
-  void restore(int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
+  void restore(int iat) override;
 
-  void registerData(ParticleSet& P, WFBufferType& buf);
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi);
+                           std::vector<ValueType>& dhpsioverpsi) override;
+
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             std::vector<ValueType>& dlogpsi) override;
 
   void resize(int, int);
   void initialize();
@@ -146,8 +149,8 @@ public:
   size_t ActiveSpin;
   bool usingCSF;
   bool IsCloned;
-  ValueType curRatio;
-  ValueType psiCurrent;
+  PsiValueType curRatio;
+  PsiValueType psiCurrent;
 
   // assume Dets[0]: up, Dets[1]:down
   std::vector<MultiDiracDeterminant*> Dets;

@@ -27,9 +27,9 @@ namespace qmcplusplus
  * @brief Base base class for derivatives of WaveFunctionComponent
  *
  * Derived classes implement the differentiate function which evaluates
- * - \f$\fraction{\partial \log\Psi}{\partial \alpha}\$
- * - \f$\nabla \fraction{\partial \log\Psi}{\partial \alpha}\$
- * - \f$\nabla^2 \fraction{\partial \log\Psi}{\partial \alpha}\$
+ * - \f$\fraction{\partial \log\Psi}{\partial \alpha}\f$
+ * - \f$\nabla \fraction{\partial \log\Psi}{\partial \alpha}\f$
+ * - \f$\nabla^2 \fraction{\partial \log\Psi}{\partial \alpha}\f$
  * Each object handles one or more parameters during the optimiation.
  * The data type of refOrbital, std::vector<WaveFunctionComponent*> is intended for the cases
  * when a common variable is used by several WaveFunctionComponent class, e.g.,
@@ -38,19 +38,16 @@ namespace qmcplusplus
  */
 struct DiffWaveFunctionComponent
 {
-  enum
-  {
-    SourceIndex  = WaveFunctionComponent::SourceIndex,
-    VisitorIndex = WaveFunctionComponent::VisitorIndex,
-    WalkerIndex  = WaveFunctionComponent::WalkerIndex
-  };
-
   //@{typedefs inherited from WaveFunctionComponent
   typedef WaveFunctionComponent::RealType RealType;
   typedef WaveFunctionComponent::ValueType ValueType;
   typedef WaveFunctionComponent::PosType PosType;
   typedef ParticleSet::ParticleGradient_t GradVectorType;
   typedef ParticleSet::ParticleLaplacian_t ValueVectorType;
+  // the value type for \f$ log(\psi) \f$
+  using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
+  // the value type for \f$ \psi(r')/\psi(r) \f$
+  using PsiValueType = QMCTraits::QTFull::ValueType;
   //@}
   /** list of reference orbitals which contribute to the derivatives
    */
@@ -77,31 +74,38 @@ struct DiffWaveFunctionComponent
 
   /** evaluate derivatives at \f$\{R\}\f$
    * @param P current configuration
-   * @param ke0 current kinetic energy
+   * @param optvars optimizable variables
+   * @param dlogpsi derivative of the log of the wavefunction
+   * @param dhpsioverpsi derivative of the local kinetic energy
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& dlogpsi,
                                    std::vector<ValueType>& dhpsioverpsi)=0;
 
+  /** evaluate derivatives at \f$\{R\}\f$
+   * @param P current configuration
+   * @param optvars optimizable variables
+   * @param dlogpsi derivative of the log of the wavefunction
+   */
+  virtual void evaluateDerivativesWF(ParticleSet& P,
+                                     const opt_variables_type& optvars,
+                                     std::vector<ValueType>& dlogpsi) 
+  { 
+    app_error() << "Need specialization of DiffOrbitalBase::evaluateDerivativesWF.\n";
+    abort();
+  }
+
   virtual void evaluateDerivRatios(ParticleSet& VP, const opt_variables_type& optvars, Matrix<ValueType>& dratios);
 
   virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {
     for (int i = 0; i < refOrbital.size(); ++i)
-    {
-      #ifdef QMC_COMPLEX
-      std::complex<RealType> eit(std::cos(refOrbital[i]->PhaseValue), std::sin(refOrbital[i]->PhaseValue));
-      ValueType myrat = std::exp(refOrbital[i]->LogValue) * eit;
-      #else
-      RealType myrat = std::exp(refOrbital[i]->LogValue) * std::cos(refOrbital[i]->PhaseValue);
-      #endif
       for(int j=0; j<refOrbital[i]->myVars.size(); j++)
       {
         int loc = refOrbital[j]->myVars.where(j);
-        dlogpsi[loc] *= myrat;
+        dlogpsi[loc] *= refOrbital[i]->getValue();
       }
-    }
   };
 
   /** check out optimizable variables
@@ -134,9 +138,9 @@ struct NumericalDiffOrbital : public DiffWaveFunctionComponent
   void checkOutVariables(const opt_variables_type& optvars);
   void resetParameters(const opt_variables_type& optvars);
 
-  ///\f$\nabla \partial_{\alpha} log\Psi\f$
+  /// \f$\nabla \partial_{\alpha} log\Psi\f$
   GradVectorType gradLogPsi, dg_p, dg_m;
-  ///\f$\nabla^2 \partial_{\alpha} log\Psi\f$
+  /// \f$\nabla^2 \partial_{\alpha} log\Psi\f$
   ValueVectorType lapLogPsi, dl_p, dl_m;
 };
 
@@ -154,11 +158,11 @@ struct AnalyticDiffOrbital : public DiffWaveFunctionComponent
   void checkOutVariables(const opt_variables_type& optvars);
   void resetParameters(const opt_variables_type& optvars);
 
-  ///\f$\nabla \partial_{\alpha} log\Psi\f$
+  /// \f$\nabla \partial_{\alpha} log\Psi\f$
   GradVectorType gradLogPsi;
-  ///\f$\nabla^2 \partial_{\alpha} log\Psi\f$
+  /// \f$\nabla^2 \partial_{\alpha} log\Psi\f$
   ValueVectorType lapLogPsi;
-  ///get the index in the variable list
+  /// get the index in the variable list
   int MyIndex;
 };
 } // namespace qmcplusplus

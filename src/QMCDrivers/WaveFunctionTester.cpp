@@ -41,10 +41,10 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        WaveFunctionPool& ppool,
                                        Communicate* comm)
     : QMCDriver(w, psi, h, ppool, comm),
+      PtclPool(ptclPool),
       checkRatio("no"),
       checkClone("no"),
       checkHamPbyP("no"),
-      PtclPool(ptclPool),
       wftricks("no"),
       checkEloc("no"),
       checkBasic("yes"),
@@ -776,7 +776,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
 
 
-    RealType logpsi1 = orb->evaluateLog(W, G, L);
+    LogValueType logpsi1 = orb->evaluateLog(W, G, L);
 
     fail_log << "WaveFunctionComponent " << iorb << " " << orb->ClassName << " log psi = " << logpsi1 << std::endl;
 
@@ -790,12 +790,11 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       ParticleSet::SingleParticlePos_t zeroR;
       W.makeMove(it->index, zeroR);
 
-      RealType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
+      LogValueType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
 #if defined(QMC_COMPLEX)
-      RealType phase0  = orb->PhaseValue;
-      ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0, phase0);
+      ValueType logpsi(logpsi0.real(), logpsi0.imag());
 #else
-      ValueType logpsi = logpsi0;
+      ValueType logpsi = std::real(logpsi0);
 #endif
       logpsi_vals.push_back(logpsi);
       W.rejectMove(it->index);
@@ -823,12 +822,12 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
         ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
         ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
         DiracDeterminantBase* det = sd->Dets[isd];
-        RealType logpsi2          = det->evaluateLog(W, G, L); // this won't work with backflow
+        LogValueType logpsi2          = det->evaluateLog(W, G, L); // this won't work with backflow
         fail_log << "  Slater Determiant " << isd << " (for particles " << det->getFirstIndex() << " to "
                  << det->getLastIndex() << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
         // For now, just ignore values that too small.
-        if (logpsi2 < -40.0)
+        if (std::real(logpsi2) < -40.0)
         {
           ignore = true;
         }
@@ -840,12 +839,11 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           W.R[it->index] = it->r;
           W.update();
 
-          RealType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
+          LogValueType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
 #if defined(QMC_COMPLEX)
-          RealType phase0  = det->PhaseValue;
-          ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0, phase0);
+          ValueType logpsi(logpsi0.real(), logpsi0.imag());
 #else
-          ValueType logpsi = logpsi0;
+          ValueType logpsi = std::real(logpsi0);
 #endif
           logpsi_vals.push_back(logpsi);
 
@@ -1024,7 +1022,7 @@ void WaveFunctionTester::runBasicTest()
     RealType phase_p = Psi.getPhase();
     W.makeMove(iat, deltaR[iat]);
     //W.update();
-    RealType aratio    = Psi.ratio(W, iat);
+    ValueType aratio   = Psi.calcRatio(W, iat);
     RealType phaseDiff = Psi.getPhaseDiff();
     W.rejectMove(iat);
     Psi.rejectMove(iat);
@@ -1047,10 +1045,8 @@ void WaveFunctionTester::runBasicTest()
       dphase -= 2.0 * M_PI;
     ValueType ratDiff = std::complex<OHMMS_PRECISION>(ratioMag * std::cos(dphase), ratioMag * std::sin(dphase));
     // TODO - test complex ratio against a tolerance
-    fout << iat << " " << aratio * std::complex<OHMMS_PRECISION>(std::cos(phaseDiff), std::sin(phaseDiff)) / ratDiff
-         << " " << ratDiff << " " << aratio * std::complex<OHMMS_PRECISION>(std::cos(phaseDiff), std::sin(phaseDiff))
-         << std::endl;
-    fout << "     ratioMag " << aratio / ratioMag << " " << ratioMag << std::endl;
+    fout << iat << " " << aratio / ratDiff << " " << ratDiff << " " << aratio << std::endl;
+    fout << "     ratioMag " << std::abs(aratio) / ratioMag << " " << ratioMag << std::endl;
     fout << "     PhaseDiff " << phaseDiff / dphase << " " << phaseDiff << " " << dphase << std::endl;
 #else
     RealType ratDiff = std::exp(psi_m - psi_p) * std::cos(phase_m - phase_p);
@@ -1317,11 +1313,11 @@ void WaveFunctionTester::runRatioTest2()
           fout << realGrad[iat][sds] - grad_now[sds] << " ";
         PosType dr(Tau * deltaR[iat]);
         W.makeMove(iat, dr);
-        RealType ratio2 = Psi.ratioGrad(W, iat, grad_new);
+        ValueType ratio2 = Psi.calcRatioGrad(W, iat, grad_new);
         W.rejectMove(iat);
         Psi.rejectMove(iat);
         W.makeMove(iat, dr);
-        RealType ratio1 = Psi.ratio(W, iat);
+        ValueType ratio1 = Psi.calcRatio(W, iat);
         //Psi.rejectMove(iat);
         W.rejectMove(iat);
         fout << "  ratio1 = " << ratio1 << " ration2 = " << ratio2 << std::endl;
@@ -1381,7 +1377,7 @@ void WaveFunctionTester::runRatioV()
     {
       for(int nn=dt_ie->M[iat],iel=0; nn<dt_ie->M[iat+1]; nn++,iel++)
       {
-        register RealType r(dt_ie->r(nn));
+        RealType r(dt_ie->r(nn));
         if(r>Rmax) continue;
         randomize(sphere,(RealType)0.5);
         
@@ -1839,8 +1835,6 @@ void WaveFunctionTester::runDerivNLPPTest()
   int Nvars = wfVars.size();
   std::vector<ValueType> Dsaved(Nvars);
   std::vector<ValueType> HDsaved(Nvars);
-  std::vector<RealType> rDsaved(Nvars);
-  std::vector<RealType> rHDsaved(Nvars);
   std::vector<RealType> PGradient(Nvars);
   std::vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);
@@ -1853,12 +1847,7 @@ void WaveFunctionTester::runDerivNLPPTest()
   std::vector<RealType> ene(4), ene_p(4), ene_m(4);
   Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
 
-  for (int i = 0; i < Nvars; i++)
-  {
-    rDsaved[i]  = std::real(Dsaved[i]);
-    rHDsaved[i] = std::real(HDsaved[i]);
-  }
-  ene[0] = H.evaluateValueAndDerivatives(W, wfVars, rDsaved, rHDsaved, true);
+  ene[0] = H.evaluateValueAndDerivatives(W, wfVars, Dsaved, HDsaved, true);
   app_log() << "Check the energy " << eloc << " " << H.getLocalEnergy() << " " << ene[0] << std::endl;
 
   RealType FiniteDiff    = 1e-6;
@@ -1897,10 +1886,10 @@ void WaveFunctionTester::runDerivNLPPTest()
 
   nlout << std::endl << "Deriv  Numeric Analytic" << std::endl;
   for (int i = 0; i < Nvars; i++)
-    nlout << i << "  " << PGradient[i] << "  " << rDsaved[i] << "  " << (PGradient[i] - rDsaved[i]) << std::endl;
+    nlout << i << "  " << PGradient[i] << "  " << Dsaved[i] << "  " << (PGradient[i] - Dsaved[i]) << std::endl;
   nlout << std::endl << "Hderiv  Numeric Analytic" << std::endl;
   for (int i = 0; i < Nvars; i++)
-    nlout << i << "  " << HGradient[i] << "  " << rHDsaved[i] << "  " << (HGradient[i] - rHDsaved[i]) << std::endl;
+    nlout << i << "  " << HGradient[i] << "  " << HDsaved[i] << "  " << (HGradient[i] - HDsaved[i]) << std::endl;
 }
 
 
@@ -2073,9 +2062,9 @@ void WaveFunctionTester::runwftricks()
     kids = kids->next;
   }
   ParticleSet::ParticlePos_t R_cart(1);
-  R_cart.setUnit(PosUnit::CartesianUnit);
+  R_cart.setUnit(PosUnit::Cartesian);
   ParticleSet::ParticlePos_t R_unit(1);
-  R_unit.setUnit(PosUnit::LatticeUnit);
+  R_unit.setUnit(PosUnit::Lattice);
   //       app_log()<<" My crystals basis set is:"<< std::endl;
   //       std::vector<std::vector<RealType> > BasisMatrix(3, std::vector<RealType>(3,0.0));
   //
@@ -2284,9 +2273,9 @@ void WaveFunctionTester::runNodePlot()
     kids = kids->next;
   }
   ParticleSet::ParticlePos_t R_cart(1);
-  R_cart.setUnit(PosUnit::CartesianUnit);
+  R_cart.setUnit(PosUnit::Cartesian);
   ParticleSet::ParticlePos_t R_unit(1);
-  R_unit.setUnit(PosUnit::LatticeUnit);
+  R_unit.setUnit(PosUnit::Lattice);
   Walker_t& thisWalker(**(W.begin()));
   W.loadWalker(thisWalker, true);
   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
@@ -2340,7 +2329,7 @@ void WaveFunctionTester::runNodePlot()
         W.convert2Cart(R_unit, R_cart);
         PosType dr(R_cart[0] - W.R[iat]);
         W.makeMove(iat, dr);
-        RealType aratio = Psi.ratio(W, iat);
+        ValueType aratio = Psi.calcRatio(W, iat);
         W.rejectMove(iat);
         Psi.rejectMove(iat);
         plot_out << aratio << ", ";

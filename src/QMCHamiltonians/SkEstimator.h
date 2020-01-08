@@ -18,14 +18,14 @@
  */
 #ifndef QMCPLUSPLUS_SK_ESTIMATOR_H
 #define QMCPLUSPLUS_SK_ESTIMATOR_H
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 namespace qmcplusplus
 {
 /** SkEstimator evaluate the structure factor of the target particleset
  *
  * <estimator name="sk" type="sk" debug="no"/>
  */
-class SkEstimator : public QMCHamiltonianBase
+class SkEstimator : public OperatorBase
 {
 public:
   SkEstimator(ParticleSet& elns);
@@ -41,7 +41,7 @@ public:
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
 protected:
   ParticleSet* sourcePtcl;

@@ -307,7 +307,8 @@ LIBXML2_LIBRARY       Libxml2 library
 \item HDF5 related
 %
 \begin{shade}
-ENABLE_PHDF5    1(default)/0, enables/disable parallel collective IO.
+HDF5_PREFER_PARALLEL 1(default for MPI build)/0, enables/disable parallel HDF5 library searching.
+ENABLE_PHDF5         1(default for parallel HDF5 library)/0, enables/disable parallel collective I/O.
 \end{shade}
 
 \item FFTW related
@@ -323,6 +324,7 @@ FFTW_LIBRARY_DIRS   Specify library directories for FFTW
 MPIEXEC                Specify the mpi wrapper, e.g. srun, aprun, mpirun, etc.
 MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag,
                        e.g. "-n", "-np", etc.
+MPIEXEC_PREFLAGS     Flags to pass to MPIEXEC directly before the executable to run.   
 \end{shade}
 
 \item LLVM/Clang Developer Options\\
@@ -708,24 +710,6 @@ ctest -R short -LE unstable
 \end{shade}
 \end{enumerate}
 
-\subsection{Installing on ANL ALCF Mira/Cetus IBM Blue Gene/Q}
-\label{sec:buildbgq}
-Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argonne Leadership Computing Facility (ANL ALCF).
-Mira has 49,152 compute nodes, and each node has a 16-core PowerPC A2 processor with 16 GB DDR3 memory.
-Because the login nodes and the compute nodes have different processors with distinct instruction sets,
-cross compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}.
-On Mira, compilers are loaded via softenv, and users need to add +mpiwrapper-bgclang-mpi3 and +cmake-3.8.1 in \$HOME/.soft.
-To build QMCPACK, a toolchain file is provided for setting up CMake.
-\textbf{BGClang is required for C++ 14 support. IBM XL C/C++ compiler should not be used.}
-
-%
-\begin{shade}
-cd build
-cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_Clang_ToolChain.cmake ..
-make -j 16
-ls -l bin/qmcpack
-\end{shade}
-
 \subsection{Installing on ALCF Theta, Cray XC40}
 Theta is a 9.65 petaflops system manufactured by Cray with 3,624 compute nodes.
 Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB DDR4 RAM.
@@ -916,7 +900,7 @@ Open a bash shell and follow the install directions for Ubuntu in Section~\ref{s
 
 \section{Installing via Spack}
 Spack is a package manager for scientific software.
-One of the primary goals of Spack is to reduce the barrier for the users to install scientific
+One of the primary goals of Spack is to reduce the barrier for users to install scientific
 software. Spack is intended to work on everything from laptop
 computers to high-end supercomputers. More information about Spack can
 be found at \url{https://spack.readthedocs.io/en/latest}. The major
@@ -929,25 +913,25 @@ a single Spack command.
 
 \subsection{Known Limitations}
 The QMCPACK Spack package inherits the limitations of the underlying
-Spack infrastructure and its dependencies. The main limitation is that installation typically fails when building a
+Spack infrastructure and its dependencies. The main limitation is that installation can fail when building a
 dependency such as HDF5, MPICH, etc. For
 \ishell{spack install qmcpack} to succeed, it is very important to
-leverge preinstalled packages on your computer or supercomputer. The
+leverage preinstalled packages on your computer or supercomputer. The
 other frequently encountered challenge is that the compiler configuration
 is nonintuitive.  This is especially the case with the Intel
-compiler.
+compiler. If you encounter any difficulties, we recommend verifying that one of the less complex packages from spack installs
+correctly on your system.
 
 Here are some additional limitations of the QMCPACK Spack package that
 will be resolved in future releases:
 \begin{itemize}
-\item Because of a conflict in the QE 6.3 package, the QE variant cannot build
+\item Due to limitation in QE's autoconf, the QE variant will fail to build
   in serial. In other words, \verb|qmcpack install qmcpack~mpi| will issue
-  a conflict.  This will not be a problem with the next release of QE.
+  a conflict. To install QE, you will need to disable the QE variant
+  for the serial binary, \verb|qmcpack install qmcpack~mpi~qe|. 
 
 \item Robust CUDA support in Spack is a work-in-progress.  It will
   catch only some compiler-CUDA conflicts.
-\item CUDA support is not leveraging the Spack CUDA infrastructure;
-  thus, compiler conflicts will not be caught until a build is attempted.
 \item AFQMC is not part of the Spack package at this time.
 \item The Spack package will install Nexus as part of the
   installation, but actual use of Nexus from within the Spack
@@ -1039,20 +1023,24 @@ options and different versions of the application. A full list can be displayed 
 
 \begin{lstlisting}[style=SHELL]
 your laptop> spack info qmcpack
+CMakePackage:   qmcpack
+
 Description:
     QMCPACK, is a modern high-performance open-source Quantum Monte Carlo
     (QMC) simulation code.
 
 Homepage: http://www.qmcpack.org/
 
-Tags:
-    None
+Tags: 
+    ecp  ecp-apps
 
-Preferred version:
-    3.6.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.6.0
+Preferred version:  
+    3.8.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.8.0
 
-Safe versions:
-    develop  [git] https://github.com/QMCPACK/qmcpack.git
+Safe versions:  
+    develop    [git] https://github.com/QMCPACK/qmcpack.git
+    3.8.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.8.0
+    3.7.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.7.0
     3.6.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.6.0
     3.5.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.5.0
     3.4.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.4.0
@@ -1062,49 +1050,49 @@ Safe versions:
     3.1.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.1.0
 
 Variants:
-    Name [Default]                 Allowed values          Description
+    Name [Default]          Allowed values          Description
 
 
-    build_type [RelWithDebInfo]    Debug, Release,         CMake build type
-                                   RelWithDebInfo,
-                                   MinSizeRel
-    complex [off]                  True, False             Build the complex (general
-                                                           twist/k-point) version
-    cuda [off]                     True, False             Enable CUDA and GPU
-                                                           acceleration
-    da [off]                       True, False             Install with support for basic
-                                                           data analysis tools
-    debug [off]                    True, False             Build debug version
-    gui [off]                      True, False             Install with Matplotlib (long
-                                                           installation time)
-    mixed [off]                    True, False             Build the mixed precision
-                                                           (mixture of single and double
-                                                           precision) version for gpu and
-                                                           cpu
-    mpi [on]                       True, False             Build with MPI support
-    phdf5 [on]                     True, False             Build with parallel collective
-                                                           I/O
-    qe [on]                        True, False             Install with patched Quantum
-                                                           Espresso 6.3.0
-    soa [off]                      True, False             Build with Structure-of-Array
-                                                           instead of Array-of-Structure
-                                                           code. Only for CPU codeand
-                                                           only in mixed precision
-    timers [off]                   True, False             Build with support for timers
+    build_type [Release]    Debug, Release,         The build type to build
+                            RelWithDebInfo          
+    complex [off]           True, False             Build the complex (general
+                                                    twist/k-point) version
+    cuda [off]              True, False             Build with CUDA
+    cuda_arch [none]        none, 53, 20, 62,       CUDA architecture
+                            60, 61, 50, 75, 70,     
+                            72, 32, 52, 30, 35      
+    da [off]                True, False             Install with support for basic
+                                                    data analysis tools
+    gui [off]               True, False             Install with Matplotlib (long
+                                                    installation time)
+    mixed [off]             True, False             Build the mixed precision
+                                                    (mixture of single and double
+                                                    precision) version for gpu and
+                                                    cpu
+    mpi [on]                True, False             Build with MPI support
+    phdf5 [on]              True, False             Build with parallel collective
+                                                    I/O
+    qe [on]                 True, False             Install with patched Quantum
+                                                    Espresso 6.4.0
+    soa [on]                True, False             Build with Structure-of-Array
+                                                    instead of Array-of-Structure
+                                                    code. Only for CPU codeand
+                                                    only in mixed precision
+    timers [off]            True, False             Build with support for timers
 
 Installation Phases:
     cmake    build    install
 
 Build Dependencies:
-    blas  boost  cmake  cuda  espresso  fftw-api  hdf5  lapack  libxml2  mpi
+    blas  boost  cmake  cuda  fftw-api  hdf5  lapack  libxml2  mpi
 
 Link Dependencies:
-    blas  boost  cuda  espresso  fftw  hdf5  lapack  libxml2  mpi
+    blas  boost  cuda  fftw-api  hdf5  lapack  libxml2  mpi
 
 Run Dependencies:
-    py-matplotlib  py-numpy
+    py-matplotlib  py-numpy  quantum-espresso
 
-Virtual Packages:
+Virtual Packages: 
     None
 \end{lstlisting}
 
@@ -1123,7 +1111,9 @@ specifies the compiler version to be used and
 \begin{shade}
 ^intel-mkl
 \end{shade}
-specifies that the Intel MKL should be used as the BLAS and LAPACK provider.
+specifies that the Intel MKL should be used as the BLAS and LAPACK
+provider. The \ishell{^} symbol indicates the the package to the right of the
+symbol should be used to fulfill the dependency needed by the installation.
 
 It is also possible to run the QMCPACK regression tests as part of the
 installation process, for example:
@@ -1150,36 +1140,33 @@ your-laptop> spack install qmcpack+cuda%intel@18.0.3 cuda_arch=61 ^cuda@10.0.130
 \end{shade}
 
 \subsection{Loading QMCPACK into your environment}
-Spack does not set up an environment to automatically find its packages. A few additional steps are needed. First, install the
-modules package by executing:
+If you already have modules set-up in your enviroment, the Spack
+modules will be detected automatically. Otherwise, Spack will not
+automatically find the additional packages. A few additional steps are
+needed.  Please see the main Spack documentation for additional details:
+\url{https://spack.readthedocs.io/en/latest/module_file_support.html}
 
+\subsection{Dependencies that need to be compiled with GCC}
+Failing to compile a QMCPACK dependency is the most common reason that
+a Spack build fails. We recommend that you compile the following
+dependencies with GCC:
+
+For MPI, using MPICH as the provider, try:
 \begin{shade}
-your-laptop> spack install environment-modules
+
+your-laptop> spack install qmcpack%intel@18.0.3 ^boost%gcc ^pkgconf%gcc ^perl%gcc ^libpciaccess%gcc ^cmake%gcc ^findutils%gcc ^m4%gcc
 \end{shade}
 
-Then modify your \ishell{\~/.cshrc} file with something like
-
+For serial,
 \begin{shade}
-source ${HOME}/spack/opt/spack/darwin-sierra-x86_64/\\
-          clang-7.3.0-apple/environment-modules-3.2.10-kenvhysdws4zw26tvbrjl37fdyn7inhb/\
-          Modules/init/csh
-\end{shade}
 
-You should then be able to load the qmcpack binary into your path by
-invoking
+your-laptop> spack install qmcpack~mpi%intel@18.0.3 ^boost%gcc ^pkgconf%gcc ^perl%gcc ^cmake%gcc
 
-\begin{shade}
-your-laptop> spack load qmcpack+mixed+complex%gcc@7.2.0
-\end{shade}
-or more generally
-
-\begin{shade}
-your-laptop> spack load qmcpack+<spec>
 \end{shade}
 
 \subsection{Installing QMCPACK with Spack on Linux}
 Spack works robustly on the standard flavors of Linux (Ubuntu, CentOS,
-Ubuntu, etc.) using GCC or Intel compilers.
+Ubuntu, etc.) using GCC, Clang, PGI, and Intel compilers.
 
 \subsection{Installing QMCPACK with Spack on Mac OS X}
 Spack works on Mac OS X but requires installation of a few packages
@@ -1486,35 +1473,9 @@ This significantly increases testing time. If you are authorized to change the d
 The QMCPACK developers run automatic tests of QMCPACK on several
 different computer systems,  many on a continuous basis. See the reports at
 \url{https://cdash.qmcpack.org/CDash/index.php?project=QMCPACK}.
-We currently test
-the following combinations nightly (workstations) and weekly (supercomputers):
-
-\begin{itemize}
-\item On a Linux Intel Xeon workstation, combinations of:
-  \begin{itemize}
-  \item GCC 8.2.0, Intel2019, Clang6, Clang7, PGI2018
-  \item No MPI, Intel MPI, and OpenMPI
-  \item CPU and GPU builds using CUDA 10.0
-  \end{itemize}
-\item On a Linux Intel Knight's Landing workstation:
-  \begin{itemize}
-  \item Intel 2017 with Intel MPI and MKL
-  \item GCC 6.3.1 with Intel MPI and MKL
-  \end{itemize}
-\item On Eos, a Cray XC30 Intel machine:
-  \begin{itemize}
-\item The default Intel programming environment and compiler with Cray MPI and Intel MKL
-  \end{itemize}
-\item On Titan, a Cray XK7 CPU+GPU machine:
-  \begin{itemize}
-  \item The GCC programming environment and compiler with Cray MPI and CUDA
-  \item The GCC programming environment and compiler with Cray MPI
-  \end{itemize}
-\item On Cetus, an IBM Blue Gene Q machine:
-\begin{itemize}
-\item Blue Gene Clang
-\end{itemize}
-\end{itemize}
+The combinations that are currently tested can be seen on CDash and are also listed in
+\url{https://github.com/QMCPACK/qmcpack/blob/develop/README.md}. They include GCC, Clang, Intel, and PGI compilers in combinations
+with various library versions and different MPI implementations. NVIDIA GPUs are also tested.
 
 \begin{figure}
   \centering

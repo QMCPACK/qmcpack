@@ -24,9 +24,15 @@ SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.p
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 MAYBE_SYMLINK(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
 
-
 ADD_EXECUTABLE(${UTEST_EXE} test_project_data.cpp test_rng_control.cpp test_particle_pool.cpp
-                            test_wavefunction_pool.cpp test_hamiltonian_pool.cpp test_QMCDriverFactory.cpp)
+  test_wavefunction_pool.cpp test_hamiltonian_pool.cpp)
+
+IF(QMC_CUDA)
+  target_sources(${UTEST_EXE} PRIVATE test_QMCDriverFactory_CUDA.cpp)
+ELSE(QMC_CUDA)
+  target_sources(${UTEST_EXE} PRIVATE test_QMCDriverFactory.cpp)
+ENDIF(QMC_CUDA)
+
 #USE_FAKE_RNG(${UTEST_EXE})
 #TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcdriver_unit qmcham qmcwfs qmcbase qmcutil qmcfakerng ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcdriver_unit qmcham_unit qmcwfs qmcbase qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})

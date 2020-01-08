@@ -404,7 +404,6 @@ namespace afqmc
     else
       assert(G.size(1) == wset.size() && G.size(0) == size_t(dm_size(not compact)));
     const int nw = wset.size(); 
-    const int ndet = abij.number_of_configurations(); 
     auto refc = abij.reference_configuration();
     double LogOverlapFactor(wset.getLogOverlapFactor());
     assert(Ov.size() >= nw);  
@@ -871,7 +870,6 @@ namespace afqmc
   void PHMSD::Overlap(const WlkSet& wset, TVec&& Ov)
   {
     const int nw = wset.size(); 
-    const int ndet = abij.number_of_configurations();
     assert(Ov.size() >= nw);  
     std::fill(Ov.begin(),Ov.begin()+nw,0);
     auto refc = abij.reference_configuration();

@@ -1,5 +1,5 @@
 
-\chapter{Contributing to the Manual}
+\chapter{Contributing to the manual}
 \label{chap:contrib}
 
 This section briefly describes how to contribute to the manual and is primarily ``by developers, for developers.''   This section should iterate until a consistent view on style/contents is reached.
@@ -23,7 +23,7 @@ This section briefly describes how to contribute to the manual and is primarily 
 \item Be cautious of WYSIWYG word processors; cutting and pasting can pickup characters promoted to unicode by the program.
 \item Take a look at your text multibyte expanded; that is open it in (emacs and `esc-x toggle-enable-multibyte-characters')---see any unicode you did not intend?
 \end{itemize}
-\item{Place unformatted text targeted at developers working on the LatTeX in comments.  Include generously.}
+\item{Place unformatted text targeted at developers working on the LaTeX in comments.  Include generously.}
 \item{Encapsulate formatted text aimed at developers (like this entire chapter), in \ilatex{\\dev\{\}}.  Text encapsulated in this way will be removed from the user version of the manual by editing the definition of \ilatex{\\dev\{\}} in \ishell{qmcpack_manual.tex}.  Existing but deprecated or partially functioning features fall in this category.}
 \item Newly added entries to a Bib file should be as complete as possible. Use a tool such as JabRef or Zotero that can automate creation of these entries from just a DOI.
 \end{itemize}

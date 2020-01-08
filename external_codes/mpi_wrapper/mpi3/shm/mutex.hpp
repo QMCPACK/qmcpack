@@ -15,14 +15,14 @@ class mutex{
 	mpi3::shm::allocator<std::atomic_flag> alloc_;//(node);
 	mpi3::shm::pointer<std::atomic_flag> f_;
 	public:
-	mutex(mpi3::shared_communicator& scomm) : scomm_(scomm), alloc_(scomm_), f_(alloc_.allocate(1)){
+	mutex(mpi3::shared_communicator& scomm) : scomm_(scomm), alloc_(std::addressof(scomm_)), f_(alloc_.allocate(1)){
 		if(scomm_.root()) alloc_.construct(&*f_, false);
 		scomm_.barrier();
 	}
 	mutex(mutex const&) = delete;
 	mutex(mutex&&) = delete;
-	void lock(){while(f_->test_and_set(std::memory_order_acquire));}
-	void unlock(){f_->clear(std::memory_order_release);}
+	void lock(){while((*f_).test_and_set(std::memory_order_acquire));}
+	void unlock(){(*f_).clear(std::memory_order_release);}
 	~mutex(){
 		if(scomm_.root()) alloc_.destroy(&*f_);
 		scomm_.barrier();

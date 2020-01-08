@@ -45,6 +45,7 @@ import string
 #/////////////////////////////////////////////////
 
 
+# test needed
 def next_visible_character(string,start,end):
     i = start
     character_visible = False
@@ -66,12 +67,14 @@ def next_visible_character(string,start,end):
 #end def next_visible_character
 
 
+# test needed
 def remove_whitespace(s):
     sr = s.replace('\n','').replace('\t','').replace(' ','')
     return
 #end def remove_whitespace
 
 
+# test needed
 def shrink_whitespace(si):
     sw = si.strip().replace('\n','')
     lst = sw.split(' ')
@@ -85,6 +88,7 @@ def shrink_whitespace(si):
 #end def shrink_whitespace
 
 
+# test needed
 def var2string(v):
 
     vt = type(v)
@@ -109,8 +113,8 @@ def var2string(v):
     elif(vt in simple_set):
         s = str(v)
     else:
-        print 'ERROR: in var2string'
-        print '   type '+str(vt)+' not implemented'
+        print('ERROR: in var2string')
+        print('   type '+str(vt)+' not implemented')
         sys.exit()
     #end if
 
@@ -184,6 +188,7 @@ def string2val(s,delim=None):
 
 
 
+# test needed
 def string2array(string):
     ilst = string.strip().split(' ')
     lst = []
@@ -200,6 +205,7 @@ def is_string(var):
 #end def is_string
 
 
+# test needed
 def stringmap(s):
     smap=[]
     quotes=set(['"',"'"])
@@ -229,6 +235,7 @@ def stringmap(s):
 #end def stringmap
 
 
+# test needed
 def stringbreak(s,delimiter):
     strings=[]
     blocks=''
@@ -275,6 +282,7 @@ def stringbreak(s,delimiter):
 #end def stringbreak
 
 
+# test needed
 def find_matching_brace(string,start,end):
     brace_dict = dict( [ ('(',')'), ('[',']'), ('{','}'), ('<','>') ] )
     left_brace  = string[start]
@@ -360,15 +368,16 @@ def remove_pair_sections(s,pair):
 #end def
 
 
+# test needed
 def remove_comment_lines(comment_char,s_in):
-        lines = s_in.splitlines()
-        s_out=''
-        for l in lines:
-            if not l.strip().startswith(comment_char):
-                s_out=s_out+l+'\n'
-            #end if
+    lines = s_in.splitlines()
+    s_out=''
+    for l in lines:
+        if not l.strip().startswith(comment_char):
+            s_out=s_out+l+'\n'
         #end if
-        return s_out
+    #end if
+    return s_out
 #def remove_comment_lines
 
 
@@ -416,6 +425,8 @@ def split_delims(s,delims=['.','-','_']):
 #/////////////////////////////////////////////////
 #///////             C/C++                 ///////
 #/////////////////////////////////////////////////
+
+# test needed
 def find_preprocessor_end(string,start,end):
     newline_loc = string.find('\n',start,end)
     prep_end = newline_loc
@@ -431,6 +442,7 @@ def find_preprocessor_end(string,start,end):
 #end def find_preprocessor_end
 
 
+# test needed
 def find_comment_block_end(string,start,end):
     loc = string.find('*/',start,end)
     if loc!=-1:
@@ -441,6 +453,7 @@ def find_comment_block_end(string,start,end):
 #end def find_comment_block_end
 
 
+# test needed
 def find_matching_cbrace(string,start,end,verbose=True):
 
     brace_dict = dict( [ ('(',')'), ('[',']'), ('{','}'), ('<','>') ] )
@@ -469,8 +482,8 @@ def find_matching_cbrace(string,start,end,verbose=True):
                 i = preprocessor_end
             else:
                 if verbose:
-                    print 'ERROR: in find_matching_brace'
-                    print '       end of preprocessor statement not found'
+                    print('ERROR: in find_matching_brace')
+                    print('       end of preprocessor statement not found')
                 #end if
                 brace_loc = -1
             #end if
@@ -488,12 +501,9 @@ def find_matching_cbrace(string,start,end,verbose=True):
                 i = comment_end
             else:
                 if verbose:
-                    print 'ERROR: in find_matching_brace'
-                    print '       comment mis-processed'
+                    print('ERROR: in find_matching_brace')
+                    print('       comment mis-processed')
                 #end if
-
-                print string[i:end]
-                print string[end+325]
                 
                 brace_loc = -1
             #end if

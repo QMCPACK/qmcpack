@@ -12,7 +12,7 @@
 
 #ifndef QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
@@ -23,10 +23,10 @@
 namespace qmcplusplus
 {
 /** class SOECPComponent
- **  brief Computes the nonlocal spin-orbit interaction $\Delta V_SO(r) |ljm_j><ljm_j|$.
+ **  brief Computes the nonlocal spin-orbit interaction \f$\Delta V_SO(r) |ljm_j><ljm_j|\f$.
  **  details This computes the nonlocal spin-orbit interaction between a single ion species and 
  **           a given electron.  
- **           Currently, this class does nothing other than generate and store $\Delta V_SO(r)$
+ **           Currently, this class does nothing other than generate and store \f$\Delta V_SO(r)\f$
  **           for different orbital angular momenta.  Implementation coming soon!  
  **/
 class SOECPComponent : public QMCTraits
@@ -47,12 +47,12 @@ private:
   std::vector<RadialPotentialType*> sopp_m;
 
 public:
-  SOECPComponent(){};
 
-  ///destructor
-  ~SOECPComponent(){};
-
-  SOECPComponent* makeClone(const ParticleSet& qp){};
+  SOECPComponent* makeClone(const ParticleSet& qp)
+  {
+    APP_ABORT("SOECPComponent::makeClone not yet implemented");
+    return nullptr;
+  };
 
   ///add a new Spin-Orbit component
   void add(int l, RadialPotentialType* pp);

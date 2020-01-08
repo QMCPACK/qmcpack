@@ -288,8 +288,8 @@ protected:
   ////////////
   // Timers //
   ////////////
-  NewTimer ValueTimer, VGLTimer, VGLMatTimer;
-  NewTimer EinsplineTimer;
+  NewTimer &ValueTimer, &VGLTimer, &VGLMatTimer;
+  NewTimer &EinsplineTimer;
 
 #ifdef QMC_CUDA
   // Cuda equivalents of the above
@@ -355,12 +355,12 @@ public:
   }
 
   // Real return values
-  void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi);
-  void evaluate(const ParticleSet& P,
-                int iat,
-                RealValueVector_t& psi,
-                RealGradVector_t& dpsi,
-                RealValueVector_t& d2psi);
+  void evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi);
+  void evaluateVGL(const ParticleSet& P,
+                   int iat,
+                   RealValueVector_t& psi,
+                   RealGradVector_t& dpsi,
+                   RealValueVector_t& d2psi);
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
@@ -408,17 +408,17 @@ public:
                           ComplexGradMatrix_t& gradphi);
 #endif
   // Complex return values
-  void evaluate(const ParticleSet& P, int iat, ComplexValueVector_t& psi);
-  void evaluate(const ParticleSet& P,
-                int iat,
-                ComplexValueVector_t& psi,
-                ComplexGradVector_t& dpsi,
-                ComplexValueVector_t& d2psi);
-  void evaluate(const ParticleSet& P,
-                int iat,
-                ComplexValueVector_t& psi,
-                ComplexGradVector_t& dpsi,
-                ComplexHessVector_t& grad_grad_psi);
+  void evaluateValue(const ParticleSet& P, int iat, ComplexValueVector_t& psi);
+  void evaluateVGL(const ParticleSet& P,
+                   int iat,
+                   ComplexValueVector_t& psi,
+                   ComplexGradVector_t& dpsi,
+                   ComplexValueVector_t& d2psi);
+  void evaluateVGH(const ParticleSet& P,
+                   int iat,
+                   ComplexValueVector_t& psi,
+                   ComplexGradVector_t& dpsi,
+                   ComplexHessVector_t& grad_grad_psi);
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
@@ -497,11 +497,11 @@ public:
   SPOSet* makeClone() const;
 
   EinsplineSetExtended()
-      : ValueTimer("EinsplineSetExtended::ValueOnly"),
-        VGLTimer("EinsplineSetExtended::VGL"),
-        VGLMatTimer("EinsplineSetExtended::VGLMatrix"),
-        EinsplineTimer("libeinspline"),
-        MultiSpline(NULL)
+      : MultiSpline(NULL),
+        ValueTimer(*TimerManager.createTimer("EinsplineSetExtended::ValueOnly")),
+        VGLTimer(*TimerManager.createTimer("EinsplineSetExtended::VGL")),
+        VGLMatTimer(*TimerManager.createTimer("EinsplineSetExtended::VGLMatrix")),
+        EinsplineTimer(*TimerManager.createTimer("libeinspline"))
 #ifdef QMC_CUDA
         ,
         CudaMultiSpline(NULL),
@@ -522,10 +522,6 @@ public:
 #endif
   {
     className = "EinsplineSetExtended";
-    TimerManager.addTimer(&ValueTimer);
-    TimerManager.addTimer(&VGLTimer);
-    TimerManager.addTimer(&VGLMatTimer);
-    TimerManager.addTimer(&EinsplineTimer);
     for (int i = 0; i < OHMMS_DIM; i++)
       HalfG[i] = 0;
   }

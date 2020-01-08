@@ -22,12 +22,7 @@
 #include "QMCDrivers/QMCCostFunctionBase.h"
 #include "QMCDrivers/QMCCostFunction.h"
 #include "QMCDrivers/VMC/VMC.h"
-#if defined(ENABLE_OPENMP)
-#include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/QMCCostFunction.h"
-#endif
-//#include "QMCDrivers/VMC/VMCSingle.h"
-//#include "QMCDrivers/QMCCostFunctionSingle.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Numerics/Blasf.h"
 #include "Numerics/MatrixOperators.h"
@@ -63,41 +58,41 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       vdeps(1, std::vector<double>()),
 #endif
       Max_iterations(1),
-      exp0(-16),
       nstabilizers(3),
       stabilizerScale(2.0),
       bigChange(50),
-      w_beta(0.0),
-      MinMethod("OneShiftOnly"),
+      exp0(-16),
+      stepsize(0.25),
       GEVtype("mixed"),
       StabilizerMethod("best"),
       GEVSplit("no"),
-      stepsize(0.25),
-      doAdaptiveThreeShift(false),
-      targetExcitedStr("no"),
-      targetExcited(false),
-      block_lmStr("no"),
-      block_lm(false),
       bestShift_i(-1.0),
       bestShift_s(-1.0),
       shift_i_input(0.01),
       shift_s_input(1.00),
-      doOneShiftOnly(false),
-      shift_s_base(4.0),
       accept_history(3),
+      shift_s_base(4.0),
       num_shifts(3),
+      max_relative_cost_change(10.0),
+      max_param_change(0.3),
       cost_increase_tol(0.0),
       target_shift_i(-1.0),
+      targetExcitedStr("no"),
+      targetExcited(false),
+      block_lmStr("no"),
+      block_lm(false),
       nblocks(1),
       nolds(1),
       nkept(1),
       nsamp_comp(0),
       omega_shift(0.0),
-      max_param_change(0.3),
-      max_relative_cost_change(10.0),
       block_first(true),
       block_second(false),
-      block_third(false)
+      block_third(false),
+      MinMethod("OneShiftOnly"),
+      previous_optimizer_type_(OptimizerType::NONE),
+      current_optimizer_type_(OptimizerType::NONE)
+
 {
   IsQMCDriver = false;
   //set the optimization flag
@@ -127,15 +122,16 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   m_param.add(cost_increase_tol, "cost_increase_tol", "double");
   m_param.add(target_shift_i, "target_shift_i", "double");
 
+
 #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
   std::vector<double> shift_scales(3, 1.0);
-  EngineObj = new cqmc::engine::LMYEngine(&vdeps,
+  EngineObj = new cqmc::engine::LMYEngine<ValueType>(&vdeps,
                                           false, // exact sampling
                                           true,  // ground state?
                                           false, // variance correct,
                                           true,
-                                          false, // print matrices,
+                                          true,  // print matrices,
                                           true,  // build matrices
                                           false, // spam
                                           false, // use var deps?
@@ -165,6 +161,8 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
                                           0.3,  // max parameter change
                                           shift_scales, app_log());
 #endif
+
+
   //   stale parameters
   //   m_param.add(eigCG,"eigcg","int");
   //   m_param.add(TotalCGSteps,"cgsteps","int");
@@ -201,19 +199,30 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
 
 bool QMCFixedSampleLinearOptimize::run()
 {
-  // if requested, perform the update via the adaptive three-shift or single-shift method
 #ifdef HAVE_LMY_ENGINE
-  if (doAdaptiveThreeShift)
+  if (doHybrid)
+  {
+    app_log() << "Doing hybrid run" << std::endl;
+    return hybrid_run();
+  }
+
+  // if requested, perform the update via the adaptive three-shift or single-shift method
+  if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
     return adaptive_three_shift_run();
+
+  if (current_optimizer_type_ == OptimizerType::DESCENT)
+    return descent_run();
+
 #endif
-  if (doOneShiftOnly)
+
+  if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
     return one_shift_run();
 
   start();
   bool Valid(true);
   int Total_iterations(0);
   //size of matrix
-  numParams = optTarget->NumParams();
+  numParams = optTarget->getNumParams();
   N         = numParams + 1;
   //   where we are and where we are pointing
   std::vector<RealType> currentParameterDirections(N, 0);
@@ -236,9 +245,9 @@ bool QMCFixedSampleLinearOptimize::run()
     //     reset params if necessary
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currentParameters[i];
-    myTimers[4]->start();
+    cost_function_timer_.start();
     RealType lastCost(optTarget->Cost(true));
-    myTimers[4]->stop();
+    cost_function_timer_.stop();
     //     if cost function is currently invalid continue
     Valid = optTarget->IsValid;
     if (!ValidCostFunction(Valid))
@@ -292,10 +301,10 @@ bool QMCFixedSampleLinearOptimize::run()
         Right(i, i) += std::exp(XS);
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
       RealType lowestEV(0);
-      myTimers[2]->start();
+      eigenvalue_timer_.start();
       lowestEV = getLowestEigenvector(Right, currentParameterDirections);
       Lambda   = getNonLinearRescale(currentParameterDirections, S);
-      myTimers[2]->stop();
+      eigenvalue_timer_.stop();
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
       for (int i = 0; i < numParams; i++)
@@ -331,7 +340,7 @@ bool QMCFixedSampleLinearOptimize::run()
         AbsFuncTol       = true;
         largeQuarticStep = bigChange / bigVec;
         LambdaMax        = 0.5 * Lambda;
-        myTimers[3]->start();
+        line_min_timer_.start();
         if (MinMethod == "quartic")
         {
           int npts(7);
@@ -341,7 +350,7 @@ bool QMCFixedSampleLinearOptimize::run()
         }
         else
           Valid = lineoptimization2();
-        myTimers[3]->stop();
+        line_min_timer_.stop();
         RealType biggestParameterChange = bigVec * std::abs(Lambda);
         if (biggestParameterChange > bigChange)
         {
@@ -420,7 +429,7 @@ bool QMCFixedSampleLinearOptimize::run()
     }
     else
     {
-      app_log() << "Revertting to old Parameters" << std::endl;
+      app_log() << "Reverting to old Parameters" << std::endl;
       for (int i = 0; i < numParams; i++)
         optTarget->Params(i) = currentParameters[i];
     }
@@ -432,7 +441,8 @@ bool QMCFixedSampleLinearOptimize::run()
   return (optTarget->getReportCounter() > 0);
 }
 
-/** Parses the xml input file for parameter definitions for the wavefunction optimization.
+/** Parses the xml input file for parameter definitions for the wavefunction
+* optimization.
 * @param q current xmlNode
 * @return true if successful
 */
@@ -449,24 +459,46 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   oAttrib.put(q);
   m_param.put(q);
 
+  doHybrid = false;
+
+  if (MinMethod == "hybrid")
+  {
+    doHybrid = true;
+    if (!hybridEngineObj)
+      hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
+
+    return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
+  }
+  else
+    return processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
+}
+
+bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5, bool useGPU)
+{
+  m_param.put(opt_xml);
   tolower(targetExcitedStr);
   targetExcited = (targetExcitedStr == "yes");
 
   tolower(block_lmStr);
   block_lm = (block_lmStr == "yes");
 
-  // get whether to use the adaptive three-shift version of the update
-  doAdaptiveThreeShift = (MinMethod == "adaptive");
-  doOneShiftOnly       = (MinMethod == "OneShiftOnly");
+  auto iter = OptimizerNames.find(MinMethod);
+  if (iter == OptimizerNames.end())
+    throw std::runtime_error("Unknown MinMethod!\n");
+  previous_optimizer_type_ = current_optimizer_type_;
+  current_optimizer_type_  = OptimizerNames.at(MinMethod);
+
+  if (current_optimizer_type_ == OptimizerType::DESCENT && !descentEngineObj)
+    descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
 
   // sanity check
-  if (targetExcited && !doAdaptiveThreeShift)
-    APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive\"");
+  if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE)
+    APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive");
 
 #ifdef ENABLE_OPENMP
-  if (doAdaptiveThreeShift && (omp_get_max_threads() > 1))
+  if (current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
   {
-    //throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer.  Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
+    // throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer. Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
     app_log() << "test version of OpenMP threading with AdaptiveThreeShift optimizer" << std::endl;
   }
 #endif
@@ -490,14 +522,14 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     throw std::runtime_error("cost_increase_tol must be non-negative in QMCFixedSampleLinearOptimize::put");
 
   // if this is the first time this function has been called, set the initial shifts
-  if (bestShift_i < 0.0 && doAdaptiveThreeShift)
+  if (bestShift_i < 0.0 && (current_optimizer_type_ == OptimizerType::ADAPTIVE || doHybrid))
     bestShift_i = shift_i_input;
-  if (doOneShiftOnly)
+  if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
     bestShift_i = shift_i_input;
   if (bestShift_s < 0.0)
     bestShift_s = shift_s_input;
 
-  xmlNodePtr qsave = q;
+  xmlNodePtr qsave = opt_xml;
   xmlNodePtr cur   = qsave->children;
   int pid          = OHMMS::Controller->rank();
   while (cur != NULL)
@@ -509,41 +541,41 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     }
     cur = cur->next;
   }
-  //no walkers exist, add 10
+  // no walkers exist, add 10
   if (W.getActiveWalkers() == 0)
     addWalkers(omp_get_max_threads());
   NumOfVMCWalkers = W.getActiveWalkers();
-  //create VMC engine
-  if (vmcEngine == 0)
-  {
+
+
+  // create VMC engine
+  // if (vmcEngine == 0)
+  // {
 #if defined(QMC_CUDA)
-    if (useGPU == "yes")
-      vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
-    else
+  if (useGPU)
+    vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
+  else
 #endif
-      vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
-    vmcEngine->setUpdateMode(vmcMove[0] == 'p');
-  }
+    vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
+  vmcEngine->setUpdateMode(vmcMove[0] == 'p');
+  // }
+
 
   vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);
   vmcEngine->process(qsave);
 
   bool success = true;
-  if (optTarget == 0)
-  {
+  //allways reset optTarget
 #if defined(QMC_CUDA)
-    if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W, Psi, H, myComm);
-    else
+  if (useGPU)
+    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
+  else
 #endif
-      optTarget = new QMCCostFunction(W, Psi, H, myComm);
-    optTarget->setStream(&app_log());
-    if (ReportToH5 == "yes")
-      optTarget->reportH5 = true;
-    success = optTarget->put(q);
-  }
-  if (ReportToH5 == "yes")
+    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget->setStream(&app_log());
+  if (reportH5)
     optTarget->reportH5 = true;
+  success = optTarget->put(qsave);
+
   return success;
 }
 
@@ -741,7 +773,7 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
   const int nshifts = shifts_i.size();
 
   // get number of optimizable parameters
-  numParams = optTarget->NumParams();
+  numParams = optTarget->getNumParams();
 
   // get dimension of the linear method matrices
   N = numParams + 1;
@@ -850,7 +882,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   const int central_index = num_shifts / 2;
 
   // get number of optimizable parameters
-  numParams = optTarget->NumParams();
+  numParams = optTarget->getNumParams();
 
   // prepare the shifts that we will try
   const std::vector<double> shifts_i = prepare_shifts(bestShift_i);
@@ -900,7 +932,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   EngineObj->reset();
 
   // generate samples and compute weights, local energies, and derivative vectors
-  engine_start(EngineObj);
+  engine_start(EngineObj, *descentEngineObj, MinMethod);
 
   // get dimension of the linear method matrices
   N = numParams + 1;
@@ -928,7 +960,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   {
     optTarget->setneedGrads(true);
 
-    int numOptParams = optTarget->NumParams();
+    int numOptParams = optTarget->getNumParams();
 
     // reset the engine object
     EngineObj->reset();
@@ -937,7 +969,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
     finish();
 
     // take sample
-    engine_start(EngineObj);
+    engine_start(EngineObj, *descentEngineObj, MinMethod);
   }
 
   // say what we are doing
@@ -948,19 +980,15 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
             << std::endl;
 
   // for each set of shifts, solve the linear method equations for the parameter update direction
-  std::vector<std::vector<RealType>> parameterDirections;
+  std::vector<std::vector<ValueType>> parameterDirections;
 #ifdef HAVE_LMY_ENGINE
   // call the engine to perform update
   EngineObj->wfn_update_compute();
-//std::cout << "optimization here 0.5" << std::endl;
 #else
   solveShiftsWithoutLMYEngine(shifts_i, shifts_s, parameterDirections);
 #endif
 
   // size update direction vector correctly
-  //for (int i = 0; i < EngineObj->good_solve().size(); i++)
-  //  app_log() << EngineObj->good_solve().at(i) << "  ";
-  //app_log() << endl;
   parameterDirections.resize(shifts_i.size());
   for (int i = 0; i < shifts_i.size(); i++)
   {
@@ -978,11 +1006,11 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   optTarget->setneedGrads(false);
 
   // prepare vectors to hold the initial and current parameters
-  std::vector<RealType> currParams(numParams, 0.0);
+  std::vector<ValueType> currParams(numParams, 0.0);
 
   // initialize the initial and current parameter vectors
   for (int i = 0; i < numParams; i++)
-    currParams.at(i) = std::real(optTarget->Params(i));
+    currParams.at(i) = optTarget->Params(i);
 
   // create a vector telling which updates are within our constraints
   std::vector<bool> good_update(parameterDirections.size(), true);
@@ -1011,11 +1039,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   // generate the new sample on which we will compare the different shifts
 
   finish();
-  // reset the number of samples
-  //this->optTarget->setNumSamples(nsamp_comp);
-  //nTargetSamples = nsamp_comp;
-  //app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
-  //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
   app_log() << std::endl
             << "*************************************************************" << std::endl
             << "Generating a new sample based on the updated guiding function" << std::endl
@@ -1026,7 +1049,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   vmcEngine->getCommunicator()->setName(old_name + ".middleShift");
   start();
   vmcEngine->getCommunicator()->setName(old_name);
-  //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
 
   // say what we are doing
   app_log() << std::endl
@@ -1037,7 +1059,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   // update the current parameters to those of the new guiding function
   for (int i = 0; i < numParams; i++)
-    currParams.at(i) = std::real(optTarget->Params(i));
+    currParams.at(i) = optTarget->Params(i);
 
   // compute cost function for the initial parameters (by subtracting the middle shift's update back off)
   for (int i = 0; i < numParams; i++)
@@ -1051,8 +1073,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
     for (int j = 0; j < parameterDirections.size(); j++)
     {
       if (j != central_index)
-        parameterDirections.at(j).at(i + 1) -= parameterDirections.at(1).at(i + 1);
-      //parameterDirections.at(2).at(i+1) -= parameterDirections.at(1).at(i+1);
+        parameterDirections.at(j).at(i + 1) -= parameterDirections.at(central_index).at(i + 1);
     }
   }
 
@@ -1063,23 +1084,17 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   for (int k = 0; k < parameterDirections.size(); k++)
   {
     for (int i = 0; i < numParams; i++)
-      optTarget->Params(i) = currParams.at(i) + (k == num_shifts ? 0.0 : parameterDirections.at(k).at(i + 1));
+      optTarget->Params(i) = currParams.at(i) + (k == central_index ? 0.0 : parameterDirections.at(k).at(i + 1));
     optTarget->IsValid = true;
     costValues.at(k)   = optTarget->LMYEngineCost(false, EngineObj);
     good_update.at(k) =
         (good_update.at(k) && std::abs((initCost - costValues.at(k)) / initCost) < max_relative_cost_change);
-    //app_log() << std::abs( (starting_cost - costValues.at(k)) / starting_cost ) << "  ";
     if (!good_update.at(k))
       costValues.at(k) = std::abs(1.5 * initCost) + 1.0;
   }
-  //app_log() << endl;
-
-  //for (int i = 0; i < good_update.size(); i++)
-  //  app_log() << good_update.at(i) << "  ";
-  //app_log() << endl;
 
   // find the best shift and the corresponding update direction
-  const std::vector<RealType>* bestDirection = 0;
+  const std::vector<ValueType>* bestDirection = 0;
   int best_shift                             = -1;
   for (int k = 0; k < costValues.size() && std::abs((initCost - initCost) / initCost) < max_relative_cost_change; k++)
     if (is_best_cost(k, costValues, shifts_i, initCost) && good_update.at(k))
@@ -1130,9 +1145,10 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   if (block_lm && bestDirection)
   {
     // save the difference between the updated and old variables
-    formic::ColVec<double> update_dirs(numParams, 0.0);
+    formic::ColVec<RealType> update_dirs(numParams, 0.0);
     for (int i = 0; i < numParams; i++)
-      update_dirs.at(i) = bestDirection->at(i + 1) + parameterDirections.at(central_index).at(i + 1);
+      // take the real part since blocked LM currently does not support complex parameter optimization
+      update_dirs.at(i) = std::real( bestDirection->at(i + 1) + parameterDirections.at(central_index).at(i + 1) ); 
     previous_update.insert(previous_update.begin(), update_dirs);
 
     // eliminate the oldest saved update if necessary
@@ -1165,7 +1181,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   start();
 
   // get number of optimizable parameters
-  numParams = optTarget->NumParams();
+  numParams = optTarget->getNumParams();
 
   // get dimension of the linear method matrices
   N = numParams + 1;
@@ -1252,7 +1268,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
     optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i + 1);
 
   RealType largestChange(0);
-  int max_element;
+  int max_element = 0;
   for (int i = 0; i < numParams; i++)
     if (std::abs(parameterDirections.at(i + 1)) > largestChange)
     {
@@ -1311,5 +1327,81 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   // return whether the cost function's report counter is positive
   return (optTarget->getReportCounter() > 0);
 }
+
+#ifdef HAVE_LMY_ENGINE
+//Function for optimizing using gradient descent
+bool QMCFixedSampleLinearOptimize::descent_run()
+{
+  start();
+
+  //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
+  engine_start(EngineObj, *descentEngineObj, MinMethod);
+
+  int descent_num = descentEngineObj->getDescentNum();
+
+  if (descent_num == 0)
+    descentEngineObj->setupUpdate(optTarget->getOptVariables());
+
+  //Store the derivatives and then compute parameter updates
+  descentEngineObj->storeDerivRecord();
+
+  descentEngineObj->updateParameters();
+
+  std::vector<ValueType> results = descentEngineObj->retrieveNewParams();
+
+
+  for (int i = 0; i < results.size(); i++)
+  {
+    optTarget->Params(i) = results[i];
+  }
+
+  //If descent is being run as part of a hybrid optimization, need to check if a vector of
+  //parameter differences should be stored.
+  if (doHybrid)
+  {
+    int store_num = descentEngineObj->retrieveStoreFrequency();
+    bool store    = hybridEngineObj->queryStore(store_num, OptimizerType::DESCENT);
+    if (store)
+    {
+      descentEngineObj->storeVectors(results);
+    }
+  }
+
+  finish();
+  return (optTarget->getReportCounter() > 0);
+}
+#endif
+
+
+//Function for controlling the alternation between sections of descent optimization and BLM optimization.
+#ifdef HAVE_LMY_ENGINE
+bool QMCFixedSampleLinearOptimize::hybrid_run()
+{
+  app_log() << "This is methodName: " << MinMethod << std::endl;
+
+  //Either the adaptive BLM or descent optimization is run
+
+  if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
+  {
+    //If the optimization just switched to using the BLM, need to transfer a set
+    //of vectors to the BLM engine.
+    if (previous_optimizer_type_ == OptimizerType::DESCENT)
+    {
+      std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
+#if !defined(QMC_COMPLEX)
+      //FIXME once complex is fixed in BLM engine
+      EngineObj->setHybridBLM_Input(hybridBLM_Input);
+#endif
+    }
+    adaptive_three_shift_run();
+  }
+
+  if (current_optimizer_type_ == OptimizerType::DESCENT)
+    descent_run();
+
+  app_log() << "Finished a hybrid step" << std::endl;
+  return (optTarget->getReportCounter() > 0);
+}
+#endif
 
 } // namespace qmcplusplus

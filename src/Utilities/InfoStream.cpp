@@ -13,25 +13,12 @@
 #include <Utilities/InfoStream.h>
 #include <fstream>
 
-InfoStream::~InfoStream()
-{
-  if (currStream != nullStream)
-  {
-    delete nullStream;
-  }
-
-  if (ownStream && currStream)
-  {
-    delete (currStream);
-  }
-}
-
 void InfoStream::pause()
 {
-  if (currStream != nullStream)
+  if (currStream != &nullStream)
   {
     prevStream = currStream;
-    currStream = nullStream;
+    currStream = &nullStream;
   }
 }
 
@@ -40,24 +27,24 @@ void InfoStream::resume()
   if (prevStream)
   {
     currStream = prevStream;
-    prevStream = NULL;
+    prevStream = nullptr;
   }
 }
 
 void InfoStream::shutOff()
 {
-  prevStream = NULL;
-  currStream = nullStream;
+  prevStream = nullptr;
+  currStream = &nullStream;
 }
 
 void InfoStream::redirectToFile(const std::string& fname)
 {
-  currStream = new std::ofstream(fname);
-  ownStream  = true;
+  fileStream = std::unique_ptr<std::ofstream>(new std::ofstream(fname));
+  currStream = fileStream.get();
 }
 
 void InfoStream::redirectToSameStream(InfoStream& info)
 {
   currStream = &info.getStream();
-  ownStream  = false;
+  fileStream.reset();
 }

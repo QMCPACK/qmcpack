@@ -30,9 +30,8 @@ TimerManagerClass TimerManager;
 
 bool timer_max_level_exceeded = false;
 
-void TimerManagerClass::addTimer(NewTimer* t)
+void TimerManagerClass::initializeTimer(NewTimer* t)
 {
-#pragma omp critical
   {
     if (t->get_name().find(TIMER_STACK_SEPARATOR) != std::string::npos)
     {
@@ -63,14 +62,18 @@ void TimerManagerClass::addTimer(NewTimer* t)
     }
     t->set_manager(this);
     t->set_active_by_timer_threshold(timer_threshold);
-    TimerList.push_back(t);
   }
 }
 
 NewTimer* TimerManagerClass::createTimer(const std::string& myname, timer_levels mytimer)
 {
-  NewTimer* t = new NewTimer(myname, mytimer);
-  addTimer(t);
+  NewTimer *t = nullptr;
+  #pragma omp critical
+  {
+    TimerList.push_back(std::make_unique<NewTimer>(myname, mytimer));
+    t = TimerList.back().get();
+    initializeTimer(t);
+  }
   return t;
 }
 
@@ -232,7 +235,7 @@ void TimerManagerClass::collate_stack_profile(Communicate* comm, StackProfileDat
 
 void TimerManagerClass::print(Communicate* comm)
 {
-#if ENABLE_TIMERS
+#ifdef ENABLE_TIMERS
 #ifdef USE_STACK_TIMERS
   if (comm == NULL || comm->rank() == 0)
   {
@@ -251,7 +254,7 @@ void TimerManagerClass::print(Communicate* comm)
 
 void TimerManagerClass::print_flat(Communicate* comm)
 {
-#if ENABLE_TIMERS
+#ifdef ENABLE_TIMERS
   FlatProfileData p;
 
   collate_flat_profile(comm, p);
@@ -290,7 +293,7 @@ void pad_string(const std::string& in, std::string& out, int field_len)
 
 void TimerManagerClass::print_stack(Communicate* comm)
 {
-#if ENABLE_TIMERS
+#ifdef ENABLE_TIMERS
   StackProfileData p;
 
   collate_stack_profile(comm, p);
@@ -344,7 +347,7 @@ void TimerManagerClass::print_stack(Communicate* comm)
 
 void TimerManagerClass::output_timing(Communicate* comm, Libxml2Document& doc, xmlNodePtr root)
 {
-#if ENABLE_TIMERS
+#ifdef ENABLE_TIMERS
 #ifdef USE_STACK_TIMERS
   StackProfileData p;
 

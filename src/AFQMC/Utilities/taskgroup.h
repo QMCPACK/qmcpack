@@ -129,10 +129,12 @@ class TaskGroup_
 #ifdef ENABLE_CUDA
         local_tg_(node_.split(node_.rank(),node_.rank())),
         tgrp_(),
+        tgrp_cores_(),
         tg_heads_(global_.split(0,global_.rank()))     
 #else
         local_tg_(node_.split(node_.rank()/((nc<1)?(1):(std::min(nc,node_.size()))),node_.rank())),
         tgrp_(),
+        tgrp_cores_(),
         tg_heads_(global_.split(node_.rank()%((nc<1)?(1):(std::min(nc,node_.size()))),global_.rank()))     
 #endif
   {
@@ -151,10 +153,12 @@ class TaskGroup_
 #ifdef ENABLE_CUDA
         local_tg_(node_.split(node_.rank(),node_.rank())),
         tgrp_(),
+        tgrp_cores_(),
         tg_heads_(global_.split(0,global_.rank()))     
 #else
         local_tg_(node_.split(node_.rank()/((nc<1)?(1):(std::min(nc,node_.size()))),node_.rank())),
         tgrp_(),
+        tgrp_cores_(),
         tg_heads_(global_.split(node_.rank()%((nc<1)?(1):(std::min(nc,node_.size()))),global_.rank()))     
 #endif
   {
@@ -174,7 +178,7 @@ class TaskGroup_
         global_(other.global_),node_(other.node_),core_(other.core_),
         local_tg_(other.node_.split(0,other.node_.rank())),  // inefficient, but needed to get around lack of 
                                           // default constructor in shared_communicator
-        tgrp_(),tg_heads_()
+        tgrp_(),tgrp_cores_(),tg_heads_()
   {
     *this = std::move(other);
   }
@@ -191,7 +195,14 @@ class TaskGroup_
       prev_core_circular_node_pattern=other.prev_core_circular_node_pattern;
       local_tg_=std::move(other.local_tg_);  
       tgrp_=std::move(other.tgrp_);
+      tgrp_cores_=std::move(other.tgrp_cores_);
       tg_heads_=std::move(other.tg_heads_); 
+#ifdef ENABLE_CUDA
+#ifdef BUILD_AFQMC_WITH_NCCL
+      nccl_TGcomm_ = std::move(other.nccl_TGcomm_);
+      nccl_Stream_ = std::move(other.nccl_Stream_);
+#endif
+#endif
 
     }
     return *this;
@@ -255,6 +266,13 @@ class TaskGroup_
   shared_communicator& TG_local() { return local_tg_; }
   communicator& TG_heads() { return tg_heads_; }
   communicator& TG() { return tgrp_; }
+  communicator& TG_Cores() { return tgrp_cores_; }
+#ifdef ENABLE_CUDA
+#ifdef BUILD_AFQMC_WITH_NCCL
+  cudaStream_t& ncclStream() { return nccl_Stream_; }
+  ncclComm_t& ncclTG() { return nccl_TGcomm_; }
+#endif
+#endif
 
   int next_core() const { return next_core_circular_node_pattern;}
   int prev_core() const { return prev_core_circular_node_pattern;}
@@ -277,7 +295,14 @@ class TaskGroup_
   // communicators (for this TG)
   shared_communicator local_tg_;  // all the cores in a node in the same TG
   communicator tgrp_; 
+  communicator tgrp_cores_;
   communicator tg_heads_;
+#ifdef ENABLE_CUDA
+#ifdef BUILD_AFQMC_WITH_NCCL
+  cudaStream_t nccl_Stream_;
+  ncclComm_t nccl_TGcomm_;
+#endif
+#endif
 
   void setup(int nn, int nc)
   {
@@ -370,6 +395,21 @@ app_log()<<nn <<" " <<nc <<std::endl;
       else
         prev_core_circular_node_pattern = tgrp_.rank()-1; 
     }
+
+#ifdef ENABLE_CUDA
+#ifdef BUILD_AFQMC_WITH_NCCL
+    qmc_cuda::cuda_check(cudaStreamCreate(&nccl_Stream_),"cudaStreamCreate(&s)");
+    {
+      ncclUniqueId id;
+      if (tgrp_.rank() == 0) ncclGetUniqueId(&id);
+      MPI_Bcast((void *)&id, sizeof(id), MPI_BYTE, 0, &tgrp_);
+      NCCLCHECK(ncclCommInitRank(&nccl_TGcomm_, tgrp_.size(), id, tgrp_.rank()));
+    }
+#endif
+#endif
+
+    // split communicator
+    tgrp_cores_ = tgrp_.split(getLocalTGRank(),getLocalGroupNumber());
   }
 
 };
@@ -406,9 +446,9 @@ class TaskGroupHandler {
 
   private: 
 
-  int ncores;
-
   afqmc::GlobalTaskGroup& gTG_;
+
+  int ncores;
 
   std::map<int,afqmc::TaskGroup_> TGMap;  
 

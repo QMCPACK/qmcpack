@@ -32,34 +32,34 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w,
                                          QMCHamiltonian& h,
                                          Communicate* comm)
     : MPIObjectBase(comm),
+      reportH5(false),
+      CI_Opt(false),
       W(w),
-      H(h),
       Psi(psi),
+      H(h),
       Write2OneXml(true),
       PowerE(2),
       NumCostCalls(0),
       NumSamples(0),
-      MaxWeight(1e6),
       w_en(0.9),
       w_var(0.1),
       w_abs(0.0),
       w_w(0.0),
+      MaxWeight(1e6),
+      SmallWeight(0),
       w_beta(0.0),
       GEVType("mixed"),
-      CorrelationFactor(0.0),
-      m_wfPtr(NULL),
-      m_doc_out(NULL),
-      msg_stream(0),
-      debug_stream(0),
-      SmallWeight(0),
-      includeNonlocalH("no"),
-      needGrads(true),
       vmc_or_dmc(2.0),
+      needGrads(true),
       targetExcitedStr("no"),
       targetExcited(false),
       omega_shift(0.0),
-      reportH5(false),
-      CI_Opt(false)
+      CorrelationFactor(0.0),
+      msg_stream(0),
+      m_wfPtr(NULL),
+      m_doc_out(NULL),
+      includeNonlocalH("no"),
+      debug_stream(0)
 {
   GEVType = "mixed";
   //paramList.resize(10);
@@ -416,7 +416,8 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   Psi.checkInVariables(OptVariablesForPsi);
   OptVariablesForPsi.resetIndex();
   //synchronize OptVariables and OptVariablesForPsi
-  OptVariables = OptVariablesForPsi;
+  OptVariables  = OptVariablesForPsi;
+  InitVariables = OptVariablesForPsi;
   //first disable <exclude>.... </exclude> from the big list used by a TrialWaveFunction
   OptVariablesForPsi.disable(excluded.begin(), excluded.end(), false);
   //now, set up the real variable list for optimization
@@ -619,6 +620,7 @@ void QMCCostFunctionBase::updateXmlNodes()
 
     addCoefficients(acontext, "//coefficient");
     addCoefficients(acontext, "//coefficients");
+    addCJParams(acontext, "//jastrow");
     xmlXPathFreeContext(acontext);
   }
   //     Psi.reportStatus(app_log());
@@ -671,6 +673,11 @@ void QMCCostFunctionBase::updateXmlNodes()
       if (xmlNodeIsText(contentPtr->children))
         contentPtr = contentPtr->children;
       getContent(c, contentPtr);
+    }
+    // counting jastrow variables
+    else if (rname.find("cj_") == 0)
+    {
+      printCJParams(cit->second, rname);
     }
     else
     {
@@ -752,6 +759,294 @@ void QMCCostFunctionBase::addCoefficients(xmlXPathContextPtr acontext, const cha
     }
   }
   xmlXPathFreeObject(result);
+}
+
+void QMCCostFunctionBase::addCJParams(xmlXPathContextPtr acontext, const char* cname)
+{
+  xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)cname, acontext);
+  for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
+  {
+    // check that we're in a counting jastrow tag space
+    xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
+    OhmmsAttributeSet cAttrib;
+    std::string aname("none");
+    std::string atype("none");
+    cAttrib.add(aname, "name");
+    cAttrib.add(atype, "type");
+    cAttrib.put(cur);
+    if (atype == "Counting")
+    {
+      // iterate through children
+      xmlNodePtr cur2 = cur->xmlChildrenNode;
+      int Fnum        = 0;
+      bool Ftag_found = false;
+      // find the <var name="F" /> tag, save the location
+      while (cur2 != NULL)
+      {
+        std::string tname2((const char*)cur2->name);
+        OhmmsAttributeSet cAttrib2;
+        std::string aname2("none");
+        std::string aopt2("yes");
+        std::string ref_id("g0");
+        cAttrib2.add(aname2, "name");
+        cAttrib2.add(aopt2, "opt");
+        cAttrib2.add(ref_id, "reference_id");
+        cAttrib2.put(cur2);
+        // find the <var name="F" /> tags and register the tag location first
+        if (tname2 == "var" && aname2 == "F" && (aopt2 == "yes" || aopt2 == "true"))
+        {
+          coeffNodes["cj_F"] = cur2;
+          Ftag_found         = true;
+        }
+        cur2 = cur2->next;
+      }
+
+      // count the total number of registered F matrix variables
+      opt_variables_type::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
+      for (; oit != oit_end; ++oit)
+      {
+        const std::string& oname((*oit).first);
+        if (oname.find("F_") == 0)
+          ++Fnum;
+      }
+      ++Fnum;
+
+      // F variable tag isn't found; build the tag.
+      if (!Ftag_found)
+      {
+        xmlNodeAddContent(cur, (const xmlChar*)"\n      ");
+        xmlNodePtr F_tag = xmlNewChild(cur, NULL, (const xmlChar*)"var", NULL);
+        xmlSetProp(F_tag, (const xmlChar*)"name", (const xmlChar*)"F");
+        xmlSetProp(F_tag, (const xmlChar*)"opt", (const xmlChar*)"true");
+        xmlNodeSetContent(F_tag, (const xmlChar*)" ");
+        coeffNodes["cj_F"] = F_tag;
+        xmlNodeAddContent(cur, (const xmlChar*)"\n    ");
+      }
+
+      cur2 = cur->xmlChildrenNode;
+      while (cur2 != NULL)
+      {
+        std::string tname2((const char*)cur2->name);
+        OhmmsAttributeSet cAttrib2;
+        std::string aname2("none");
+        std::string atype2("normalized_gaussian");
+        std::string aopt2("yes");
+        std::string ref_id("g0");
+        cAttrib2.add(aname2, "name");
+        cAttrib2.add(atype2, "type");
+        cAttrib2.add(aopt2, "opt");
+        cAttrib2.add(ref_id, "reference_id");
+        cAttrib2.put(cur2);
+        // find <region /> tag
+        if (tname2 == "region" && (aopt2 == "true" || aopt2 == "yes") && Fnum != 0)
+        {
+          // if type is voronoi, reconstruct the tag structure
+          if (atype2 == "voronoi")
+          {
+            // set property to normalized_gaussian, add reference, remove source
+            xmlUnsetProp(cur, (const xmlChar*)"source");
+            xmlSetProp(cur2, (const xmlChar*)"type", (const xmlChar*)"normalized_gaussian");
+            xmlSetProp(cur2, (const xmlChar*)"reference_id", (const xmlChar*)ref_id.c_str());
+            // remove existing children
+            xmlNodePtr child = cur2->xmlChildrenNode;
+            while (child != NULL)
+            {
+              xmlUnlinkNode(child);
+              child = cur2->xmlChildrenNode;
+            }
+            // get Fdim
+            int Fdim = (std::sqrt(1 + 8 * Fnum) - 1) / 2;
+            for (int i = 0; i < Fdim; ++i)
+            {
+              std::ostringstream os;
+              os << "g" << i;
+              std::string gid = os.str();
+              std::string opt = (gid != ref_id) ? "true" : "false";
+
+              // create function tag, set id
+              xmlNodeAddContent(cur2, (const xmlChar*)"\n        ");
+              xmlNodePtr function_tag = xmlNewChild(cur2, NULL, (const xmlChar*)"function", NULL);
+              xmlNewProp(function_tag, (const xmlChar*)"id", (const xmlChar*)gid.c_str());
+              xmlNodeAddContent(function_tag, (const xmlChar*)"\n          ");
+              // create A tag
+              xmlNodePtr A_tag = xmlNewChild(function_tag, NULL, (const xmlChar*)"var", NULL);
+              xmlNodeAddContent(function_tag, (const xmlChar*)"\n          ");
+              xmlNewProp(A_tag, (const xmlChar*)"name", (const xmlChar*)"A");
+              xmlNewProp(A_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
+              os.str("");
+              if (gid == ref_id)
+              {
+                os << std::setprecision(6) << std::scientific;
+                os << InitVariables.find(gid + "_A_xx")->second << " " << InitVariables.find(gid + "_A_xy")->second
+                   << " " << InitVariables.find(gid + "_A_xz")->second << " "
+                   << InitVariables.find(gid + "_A_yy")->second << " " << InitVariables.find(gid + "_A_yz")->second
+                   << " " << InitVariables.find(gid + "_A_zz")->second;
+              }
+              else
+                os << " ";
+              xmlNodeSetContent(A_tag, (const xmlChar*)(os.str().c_str()));
+
+              // create B tag
+              xmlNodePtr B_tag = xmlNewChild(function_tag, NULL, (const xmlChar*)"var", NULL);
+              xmlNodeAddContent(function_tag, (const xmlChar*)"\n          ");
+              xmlNewProp(B_tag, (const xmlChar*)"name", (const xmlChar*)"B");
+              xmlNewProp(B_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
+              os.str("");
+              if (gid == ref_id)
+              {
+                os << std::setprecision(6) << std::scientific;
+                os << InitVariables.find(gid + "_B_x")->second << " " << InitVariables.find(gid + "_B_y")->second << " "
+                   << InitVariables.find(gid + "_B_z")->second;
+              }
+              else
+                os << " ";
+              xmlNodeSetContent(B_tag, (const xmlChar*)(os.str().c_str()));
+
+              // create C tag
+              xmlNodePtr C_tag = xmlNewChild(function_tag, NULL, (const xmlChar*)"var", NULL);
+              xmlNodeAddContent(function_tag, (const xmlChar*)"\n        ");
+              xmlNewProp(C_tag, (const xmlChar*)"name", (const xmlChar*)"C");
+              xmlNewProp(C_tag, (const xmlChar*)"opt", (const xmlChar*)opt.c_str());
+              os.str("");
+              if (gid == ref_id)
+              {
+                os << std::setprecision(6) << std::scientific;
+                os << InitVariables.find(gid + "_C")->second;
+              }
+              else
+                os << " ";
+              xmlNodeSetContent(C_tag, (const xmlChar*)(os.str().c_str()));
+            }
+            xmlNodeAddContent(cur2, (const xmlChar*)"\n      ");
+          }
+
+          // register the optimizable variables for each function
+          // find <function /> tags
+          xmlNodePtr cur3 = cur2->xmlChildrenNode;
+          while (cur3 != NULL)
+          {
+            std::string tname3((const char*)cur3->name);
+            OhmmsAttributeSet cAttrib3;
+            std::string fid("none");
+            cAttrib3.add(fid, "id");
+            cAttrib3.put(cur3);
+            // for each function tag, register coeffNodes[gid_A/B/C] as each variable location
+            if (tname3 == "function")
+            {
+              // find <var name="A/B/C" /> tags
+              xmlNodePtr cur4 = cur3->xmlChildrenNode;
+              while (cur4 != NULL)
+              {
+                std::string tname4((const char*)cur4->name);
+                OhmmsAttributeSet cAttrib4;
+                std::string aname4("none");
+                std::string aopt4("false");
+                cAttrib4.add(aname4, "name");
+                cAttrib4.add(aopt4, "opt");
+                cAttrib4.put(cur4);
+                if (tname4 == "var" && (aopt4 == "true" || aopt4 == "yes"))
+                {
+                  std::string varname = "cj_" + fid + "_" + aname4;
+                  bool notlisted      = true;
+                  opt_variables_type::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
+                  while (notlisted && oit != oit_end)
+                  {
+                    const std::string& oname((*oit).first);
+                    notlisted = (oname.find(varname.substr(3)) >= oname.size());
+                    ++oit;
+                  }
+                  if (!notlisted)
+                  {
+                    coeffNodes[varname] = cur4;
+                  }
+                }
+                cur4 = cur4->next;
+              }
+            }
+            cur3 = cur3->next;
+          }
+        }
+        cur2 = cur2->next;
+      }
+    }
+  }
+  xmlXPathFreeObject(result);
+}
+
+
+void QMCCostFunctionBase::printCJParams(xmlNodePtr cur, std::string& rname)
+{
+  opt_variables_type::iterator vit(OptVariables.begin());
+  // F matrix variables
+  if (rname.find("cj_F") < rname.size())
+  {
+    // get a vector of pairs with f matrix names, values
+    std::vector<Return_rt> f_vals;
+    for (auto vit = OptVariables.begin(); vit != OptVariables.end(); ++vit)
+    {
+      if ((*vit).first.find("F_") == 0)
+      {
+        Return_rt fval = std::real(vit->second);
+        f_vals.push_back(fval);
+      }
+    }
+    // manually add final element = 0
+    f_vals.push_back(0);
+    // get the dimensions of the f matrix
+    int Fdim = (std::sqrt(1 + 8 * f_vals.size()) - 1) / 2;
+    std::ostringstream os;
+    std::string pad_str = std::string(14, ' ');
+    os << std::endl;
+    os << std::setprecision(6) << std::scientific;
+    // print out the values with the proper indentation
+    auto fit = f_vals.begin();
+    for (int i = 0; i < Fdim; ++i)
+    {
+      os << pad_str;
+      for (int j = 0; j < Fdim; ++j)
+      {
+        if (j < i)
+          os << pad_str; //print blank
+        else             // print value
+        {
+          os << "  " << (*fit);
+          ++fit;
+        }
+      }
+      // line break
+      if (i < Fdim - 1)
+        os << std::endl;
+    }
+    // assign to tag
+    xmlNodePtr cur2 = cur->children;
+    xmlNodeSetContent(cur2, (const xmlChar*)(os.str().c_str()));
+    xmlNodeAddContent(cur2, (const xmlChar*)"\n      ");
+  }
+  // gaussian function parameters A, B, C
+  else
+  {
+    std::string var_prefix = rname.substr(3);
+    std::vector<Return_rt> vals;
+
+    for (auto vit = OptVariablesForPsi.begin(); vit != OptVariablesForPsi.end(); ++vit)
+    {
+      if (vit->first.find(var_prefix) == 0)
+      {
+        Return_rt val = std::real(vit->second);
+        vals.push_back(val);
+      }
+    }
+    std::ostringstream os;
+    os << std::setprecision(6) << std::scientific;
+    for (int i = 0; i < vals.size(); ++i)
+    {
+      os << vals[i];
+      if (i < vals.size() - 1)
+        os << " ";
+    }
+    xmlNodePtr cur2 = cur->children;
+    xmlNodeSetContent(cur2, (const xmlChar*)(os.str().c_str()));
+  }
 }
 
 bool QMCCostFunctionBase::lineoptimization(const std::vector<Return_rt>& x0,
@@ -843,7 +1138,7 @@ bool QMCCostFunctionBase::lineoptimization(const std::vector<Return_rt>& x0,
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_LMY_ENGINE
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::LMYEngineCost(const bool needDeriv,
-                                                                  cqmc::engine::LMYEngine* EngineObj)
+                                                                  cqmc::engine::LMYEngine<Return_t>* EngineObj)
 {
   // prepare local energies, weights, and possibly derivative vectors, and compute standard cost
   const Return_rt standardCost = this->Cost(needDeriv);

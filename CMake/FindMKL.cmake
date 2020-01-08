@@ -2,13 +2,26 @@
 # This needs a lot of work to make it robust
 INCLUDE( CheckCXXSourceCompiles )
 
+MESSAGE(STATUS "Looking for Intel MKL libraries")
+
 # Extremely Basic Support of common mkl module environment variables
 # or -DMKLROOT/-DMKL_HOME instead of preferred -DMKL_ROOT
+# Some Linux distributions (Ubuntu >= 18.10) provide MKL
+# headers in /usr/include/mkl, define MKL_ROOT but not used for library searching.
 if (NOT MKL_ROOT)
-  find_path(MKL_ROOT "mkl.h"
+  # Finding and setting the MKL_INCLUDE_DIRECTORIES
+  find_path(MKL_INCLUDE_DIRECTORIES "mkl.h"
     HINTS ${MKLROOT} ${MKL_HOME} $ENV{MKLROOT} $ENV{MKL_ROOT} $ENV{MKL_HOME}
-    PATH_SUFFIXES include)
-  string(REPLACE "/include" "" MKL_ROOT ${MKL_ROOT})
+    PATH_SUFFIXES include mkl)
+  string(REPLACE "/include" "" MKL_ROOT ${MKL_INCLUDE_DIRECTORIES})
+else (NOT MKL_ROOT)
+  # Finding and setting the MKL_INCLUDE_DIRECTORIES
+  set(SUFFIXES include)
+  find_path(MKL_INCLUDE_DIRECTORIES "mkl.h" HINTS ${MKL_ROOT}
+    PATH_SUFFIXES ${SUFFIXES})
+  if (NOT MKL_INCLUDE_DIRECTORIES)
+    message(FATAL_ERROR "MKL_INCLUDE_DIRECTORIES not set. \"mkl.h\" not found in MKL_ROOT/(${SUFFIXES})")
+  endif ()
 endif (NOT MKL_ROOT)
 
 if (NOT MKL_ROOT)
@@ -21,13 +34,6 @@ if (NOT MKL_ROOT)
   endif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
 endif (NOT MKL_ROOT)
 
-# Finding and setting the MKL_INCLUDE_DIRECTORIES
-set(SUFFIXES include)
-find_path(MKL_INCLUDE_DIRECTORIES name "mkl.h" HINTS ${MKL_ROOT}
-  PATH_SUFFIXES ${SUFFIXES})
-if (MKL_INCLUDE_DIRECTORIES-NOTFOUND)
-  message(FATAL_ERROR "MKL_INCLUDE_DIRECTORIES not set. \"mkl.h\" not found in MKL_ROOT/(${SUFFIXES})")
-endif (MKL_INCLUDE_DIRECTORIES-NOTFOUND)
 message("MKL_INCLUDE_DIRECTORIES: ${MKL_INCLUDE_DIRECTORIES}")
 
 if ( NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
@@ -36,12 +42,13 @@ if ( NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
   # these suffixes are not exhaustive
   set(MKL_FIND_LIB "libmkl_intel_lp64${CMAKE_SHARED_LIBRARY_SUFFIX}")
   set(SUFFIXES lib lib/intel64)
-  find_path(MKL_LINK_DIRECTORIES name "${MKL_FIND_LIB}" HINTS ${MKL_ROOT}
+  find_library(MKL_LINK_DIRECTORIES "${MKL_FIND_LIB}" HINTS ${MKL_ROOT}
     PATH_SUFFIXES ${SUFFIXES})
-  if (MKL_LINK_DIRECTORIES-NOTFOUND)
+  if (NOT MKL_LINK_DIRECTORIES)
     message(FATAL_ERROR "MKL_LINK_DIRECTORIES not set. ${MKL_FIND_LIB} "
       "not found in MKL_ROOT/(${SUFFIXES})")
-  endif (MKL_LINK_DIRECTORIES-NOTFOUND)
+  endif ()
+  string(REPLACE "/${MKL_FIND_LIB}" "" MKL_LINK_DIRECTORIES ${MKL_LINK_DIRECTORIES})
   message("MKL_LINK_DIRECTORIES: ${MKL_LINK_DIRECTORIES}")
   set(MKL_LINKER_FLAGS "-L${MKL_LINK_DIRECTORIES} -Wl,-rpath,${MKL_LINK_DIRECTORIES}")
   set(MKL_LIBRARIES "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl")

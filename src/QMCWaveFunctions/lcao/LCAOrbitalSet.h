@@ -40,17 +40,11 @@ public:
   IndexType BasisSetSize;
   /// pointer to matrix containing the coefficients
   std::shared_ptr<ValueMatrix_t> C;
-  /// Scratch space for the initial coefficents before the rotation is applied
-  ValueMatrix_t m_init_B;
-  /// true if SPO parameters (orbital rotation parameters) have been supplied by input
-  bool params_supplied;
-  /// list of supplied orbital rotation parameters
-  std::vector<RealType> params;
+  /// a copy of the original C before orbital rotation is applied;
+  ValueMatrix_t C_copy;
 
   ///true if C is an identity matrix
   bool Identity;
-  ///if true, do not clean up
-  bool IsCloned;
   ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
   vgl_type Temp;
   ///Tempv(OrbitalSetSize) Tempv=C*Temp
@@ -70,92 +64,44 @@ public:
   //Nbasis x [1(value)+3(gradient)+6(hessian)+10(grad_hessian)]
   vghgh_type Tempghv;
 
-  //vector that contains active orbital rotation parameter indices
-  std::vector<std::pair<int, int>> m_act_rot_inds;
   /** constructor
      * @param bs pointer to the BasisSet
      */
-  LCAOrbitalSet(basis_type* bs = nullptr);
+  LCAOrbitalSet(basis_type* bs, bool optimize);
 
   LCAOrbitalSet(const LCAOrbitalSet& in) = default;
 
-  SPOSet* makeClone() const;
+  SPOSet* makeClone() const override;
 
-  /// create optimizable orbital rotation parameters
-  void buildOptVariables(const std::vector<std::pair<int, int>>& rotations);
+  void storeParamsBeforeRotation() override { C_copy = *C; }
 
-  void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi,
-                           const ValueType& psiCurrent,
-                           const std::vector<ValueType>& Coeff,
-                           const std::vector<size_t>& C2node_up,
-                           const std::vector<size_t>& C2node_dn,
-                           const ValueVector_t& detValues_up,
-                           const ValueVector_t& detValues_dn,
-                           const GradMatrix_t& grads_up,
-                           const GradMatrix_t& grads_dn,
-                           const ValueMatrix_t& lapls_up,
-                           const ValueMatrix_t& lapls_dn,
-                           const ValueMatrix_t& M_up,
-                           const ValueMatrix_t& M_dn,
-                           const ValueMatrix_t& Minv_up,
-                           const ValueMatrix_t& Minv_dn,
-                           const GradMatrix_t& B_grad,
-                           const ValueMatrix_t& B_lapl,
-                           const std::vector<int>& detData_up,
-                           const size_t N1,
-                           const size_t N2,
-                           const size_t NP1,
-                           const size_t NP2,
-                           const std::vector<std::vector<int>>& lookup_tbl);
+  void applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy) override;
 
-
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(opt_variables_type& active) override
   {
-    if (Optimizable && !IsCloned)
-    {
-      if (myVars.size())
-        active.insertFrom(myVars);
-      else
-        Optimizable = false;
-    }
+    APP_ABORT("LCAOrbitalSet should not call checkInVariables");
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const opt_variables_type& active) override
   {
-    if (Optimizable && !IsCloned)
-      myVars.getIndex(active);
+    APP_ABORT("LCAOrbitalSet should not call checkOutVariables");
   }
-
 
   ///reset
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
-#if !defined(QMC_COMPLEX)
-    if (Optimizable)
-    {
-      std::vector<RealType> param(m_act_rot_inds.size());
-      for (int i = 0; i < m_act_rot_inds.size(); i++)
-      {
-        int loc  = myVars.where(i);
-        param[i] = myVars[i] = active[loc];
-      }
-      apply_rotation(param);
-    }
-#endif
+    APP_ABORT("LCAOrbitalSet should not call resetParameters");
   }
 
   ///reset the target particleset
-  void resetTargetParticleSet(ParticleSet& P)
+  void resetTargetParticleSet(ParticleSet& P) override
   {
     //myBasisSet->resetTargetParticleSet(P);
   }
 
   /** set the OrbitalSetSize
     */
-  virtual void setOrbitalSetSize(int norbs)
+  virtual void setOrbitalSetSize(int norbs) override
   {
     OrbitalSetSize = norbs;
     Tempv.resize(OrbitalSetSize);
@@ -169,47 +115,47 @@ public:
 
   /** return the size of the basis set
     */
-  int getBasisSetSize() const { return (myBasisSet == nullptr) ? 0 : myBasisSet->getBasisSetSize(); }
+  int getBasisSetSize() const override { return (myBasisSet == nullptr) ? 0 : myBasisSet->getBasisSetSize(); }
 
   bool setIdentity(bool useIdentity);
 
-  void checkObject() const
+  void checkObject() const override
   {
     if (!(OrbitalSetSize == C->rows() && BasisSetSize == C->cols()))
       APP_ABORT("   LCAOrbitalSet::checkObject Linear coeffient for LCAOrbitalSet is not consistent with the input.");
   }
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override;
 
   void evaluateDetRatios(const VirtualParticleSet& VP,
                          ValueVector_t& psi,
                          const ValueVector_t& psiinv,
-                         std::vector<ValueType>& ratios);
+                         std::vector<ValueType>& ratios) override;
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi);
+  void evaluateVGH(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi) override;
 
-  void evaluate(const ParticleSet& P, 
-               int iat, 
-               ValueVector_t& psi, 
-               GradVector_t& dpsi, 
-               HessVector_t& grad_grad_psi,
-               GGGVector_t& grad_grad_grad_psi);
-
-  void evaluate_notranspose(const ParticleSet& P,
-                            int first,
-                            int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet);
+  void evaluateVGHGH(const ParticleSet& P, 
+                     int iat, 
+                     ValueVector_t& psi, 
+                     GradVector_t& dpsi, 
+                     HessVector_t& grad_grad_psi,
+                     GGGVector_t& grad_grad_grad_psi) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            HessMatrix_t& grad_grad_logdet);
+                            ValueMatrix_t& d2logdet) override;
+
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            HessMatrix_t& grad_grad_logdet) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
@@ -217,7 +163,7 @@ public:
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
                             HessMatrix_t& grad_grad_logdet,
-                            GGGMatrix_t& grad_grad_grad_logdet);
+                            GGGMatrix_t& grad_grad_grad_logdet) override;
 
  //NOTE:  The data types get complicated here, so here's an overview of the 
  //       data types associated with ionic derivatives, and how to get their data.
@@ -261,7 +207,7 @@ public:
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          GradMatrix_t& grad_phi);
+                          GradMatrix_t& grad_phi) override;
 
  /**
  * \brief Calculate ion derivatives of SPO's, their gradients, and their laplacians.
@@ -282,9 +228,9 @@ public:
                           int iat_src,
                           GradMatrix_t& grad_phi,
                           HessMatrix_t& grad_grad_phi,
-                          GradMatrix_t& grad_lapl_phi);
+                          GradMatrix_t& grad_lapl_phi) override;
 
-  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet);
+  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet) override;
 
 private:
   //helper functions to handl Identity
@@ -335,44 +281,6 @@ private:
                          GradMatrix_t& dllogdet) const;
   
 
-#if !defined(QMC_COMPLEX)
-  //function to perform orbital rotations
-  void apply_rotation(const std::vector<RealType>& param);
-
-  //helper function to apply_rotation
-  void exponentiate_antisym_matrix(ValueMatrix_t& mat);
-
-
-  //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
-  void table_method_eval(std::vector<ValueType>& dlogpsi,
-                         std::vector<ValueType>& dhpsioverpsi,
-                         const ParticleSet::ParticleLaplacian_t& myL_J,
-                         const ParticleSet::ParticleGradient_t& myG_J,
-                         const size_t nel,
-                         const size_t nmo,
-                         const ValueType& psiCurrent,
-                         const std::vector<RealType>& Coeff,
-                         const std::vector<size_t>& C2node_up,
-                         const std::vector<size_t>& C2node_dn,
-                         const ValueVector_t& detValues_up,
-                         const ValueVector_t& detValues_dn,
-                         const GradMatrix_t& grads_up,
-                         const GradMatrix_t& grads_dn,
-                         const ValueMatrix_t& lapls_up,
-                         const ValueMatrix_t& lapls_dn,
-                         const ValueMatrix_t& M_up,
-                         const ValueMatrix_t& M_dn,
-                         const ValueMatrix_t& Minv_up,
-                         const ValueMatrix_t& Minv_dn,
-                         const GradMatrix_t& B_grad,
-                         const ValueMatrix_t& B_lapl,
-                         const std::vector<int>& detData_up,
-                         const size_t N1,
-                         const size_t N2,
-                         const size_t NP1,
-                         const size_t NP2,
-                         const std::vector<std::vector<int>>& lookup_tbl);
-#endif
 };
 } // namespace qmcplusplus
 #endif

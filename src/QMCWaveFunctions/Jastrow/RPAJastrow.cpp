@@ -18,7 +18,6 @@
 
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
@@ -158,22 +157,20 @@ void RPAJastrow::makeLongRange()
   // create two-body kSpaceJastrow
   kSpaceJastrow::SymmetryType oneBodySymm, twoBodySymm;
   bool oneBodySpin, twoBodySpin;
-  oneBodySymm = kSpaceJastrow::ISOTROPIC;
-  twoBodySymm = kSpaceJastrow::ISOTROPIC;
-  oneBodySpin = false;
-  twoBodySpin = false;
-  LongRangeRPA = new kSpaceJastrow(targetPtcl, targetPtcl,
-    oneBodySymm, -1, "cG1", oneBodySpin,  // no one-body part
-    twoBodySymm, Kc, "cG2", twoBodySpin
-  );
+  oneBodySymm  = kSpaceJastrow::ISOTROPIC;
+  twoBodySymm  = kSpaceJastrow::ISOTROPIC;
+  oneBodySpin  = false;
+  twoBodySpin  = false;
+  LongRangeRPA = new kSpaceJastrow(targetPtcl, targetPtcl, oneBodySymm, -1, "cG1", oneBodySpin, // no one-body part
+                                   twoBodySymm, Kc, "cG2", twoBodySpin);
   // fill in CG2 coefficients
   std::vector<RealType> oneBodyCoefs, twoBodyCoefs;
   twoBodyCoefs.resize(myHandler->MaxKshell);
   //  need to cancel prefactor in kSpaceJastrow
   RealType prefactorInv = -targetPtcl.Lattice.Volume;
-  for (size_t is=0; is<myHandler->MaxKshell; is++)
+  for (size_t is = 0; is < myHandler->MaxKshell; is++)
   {
-    twoBodyCoefs[is] = prefactorInv*myHandler->Fk_symm[is];
+    twoBodyCoefs[is] = prefactorInv * myHandler->Fk_symm[is];
   }
   LongRangeRPA->setCoefficients(oneBodyCoefs, twoBodyCoefs);
   Psi.push_back(LongRangeRPA);
@@ -188,20 +185,20 @@ void RPAJastrow::makeShortRange()
   app_log() << "  Adding Short Range part of RPA function" << std::endl;
   //short-range uses realHandler
   RealType tiny = 1e-6;
-  Rcut = myHandler->get_rc() - tiny;
+  Rcut          = myHandler->get_rc() - tiny;
   //create numerical functor of type BsplineFunctor<RealType>.
   nfunc = new FuncType;
   SRA   = new ShortRangePartAdapter<RealType>(myHandler);
   SRA->setRmax(Rcut);
 #ifdef ENABLE_SOA
-  J2OrbitalSoA<BsplineFunctor<RealType> > *j2 = new J2OrbitalSoA<BsplineFunctor<RealType> >(targetPtcl,IsManager);
+  J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>(targetPtcl, IsManager);
 #else
   TwoBodyJastrowOrbital<BsplineFunctor<RealType>>* j2 =
       new TwoBodyJastrowOrbital<BsplineFunctor<RealType>>(targetPtcl, IsManager);
 #endif
-  size_t nparam  = 12; // number of Bspline parameters
+  size_t nparam  = 12;  // number of Bspline parameters
   size_t npts    = 100; // number of 1D grid points for basis functions
-  RealType cusp = SRA->df(0);
+  RealType cusp  = SRA->df(0);
   RealType delta = Rcut / static_cast<double>(npts);
   std::vector<RealType> X(npts + 1), Y(npts + 1);
   for (size_t i = 0; i < npts; ++i)
@@ -213,7 +210,7 @@ void RPAJastrow::makeShortRange()
   Y[npts]              = 0.0;
   std::string functype = "rpa";
   std::string useit    = "no";
-  nfunc->initialize(nparam, X, Y, cusp, Rcut+tiny, functype, useit);
+  nfunc->initialize(nparam, X, Y, cusp, Rcut + tiny, functype, useit);
   for (size_t i = 0; i < npts; ++i)
   {
     X[i] = i * delta;
@@ -246,9 +243,9 @@ void RPAJastrow::resetTargetParticleSet(ParticleSet& P)
     Psi[i]->resetTargetParticleSet(P);
 }
 
-RPAJastrow::RealType RPAJastrow::evaluateLog(ParticleSet& P,
-                                             ParticleSet::ParticleGradient_t& G,
-                                             ParticleSet::ParticleLaplacian_t& L)
+RPAJastrow::LogValueType RPAJastrow::evaluateLog(ParticleSet& P,
+                                                 ParticleSet::ParticleGradient_t& G,
+                                                 ParticleSet::ParticleLaplacian_t& L)
 {
   LogValue = 0.0;
   for (int i = 0; i < Psi.size(); i++)
@@ -256,12 +253,12 @@ RPAJastrow::RealType RPAJastrow::evaluateLog(ParticleSet& P,
   return LogValue;
 }
 
-RPAJastrow::ValueType RPAJastrow::ratio(ParticleSet& P, int iat)
+RPAJastrow::PsiValueType RPAJastrow::ratio(ParticleSet& P, int iat)
 {
   ValueType r(1.0);
   for (int i = 0; i < Psi.size(); i++)
     r *= Psi[i]->ratio(P, iat);
-  return r;
+  return static_cast<PsiValueType>(r);
 }
 
 RPAJastrow::GradType RPAJastrow::evalGrad(ParticleSet& P, int iat)
@@ -272,21 +269,21 @@ RPAJastrow::GradType RPAJastrow::evalGrad(ParticleSet& P, int iat)
   return grad;
 }
 
-RPAJastrow::ValueType RPAJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+RPAJastrow::PsiValueType RPAJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   ValueType r(1);
   for (int i = 0; i < Psi.size(); i++)
   {
     r *= Psi[i]->ratioGrad(P, iat, grad_iat);
   }
-  return r;
+  return static_cast<PsiValueType>(r);
 }
 
 
-void RPAJastrow::acceptMove(ParticleSet& P, int iat)
+void RPAJastrow::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   for (int i = 0; i < Psi.size(); i++)
-    Psi[i]->acceptMove(P, iat);
+    Psi[i]->acceptMove(P, iat, safe_to_delay);
 }
 
 void RPAJastrow::restore(int iat)
@@ -301,7 +298,7 @@ void RPAJastrow::registerData(ParticleSet& P, WFBufferType& buf)
     Psi[i]->registerData(P, buf);
 }
 
-RPAJastrow::RealType RPAJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+RPAJastrow::LogValueType RPAJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   LogValue = 0.0;
   for (int i = 0; i < Psi.size(); i++)
@@ -315,9 +312,11 @@ void RPAJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
     Psi[i]->copyFromBuffer(P, buf);
 }
 
+/** this is a great deal of logic for make clone I'm wondering what is going on
+ */
 WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
 {
-  HandlerType* tempHandler;
+  HandlerType* tempHandler = nullptr;
   if (rpafunc == "yukawa" || rpafunc == "breakup")
   {
     tempHandler = new LRHandlerTemp<YukawaBreakup<RealType>,
@@ -351,8 +350,8 @@ WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
   }
 
   RPAJastrow* myClone = new RPAJastrow(tpq, IsManager);
-  myClone->Rcut = Rcut;
-  myClone->Kc = Kc;
+  myClone->Rcut       = Rcut;
+  myClone->Kc         = Kc;
   myClone->setHandler(tempHandler);
   if (!DropLongRange)
     myClone->makeLongRange();
@@ -360,4 +359,5 @@ WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
     myClone->makeShortRange();
   return myClone;
 }
+
 }; // namespace qmcplusplus

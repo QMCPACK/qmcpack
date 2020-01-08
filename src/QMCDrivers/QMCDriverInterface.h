@@ -12,13 +12,17 @@
 #ifndef QMCPLUSPLUS_QMCDRIVERINTERFACE_H
 #define QMCPLUSPLUS_QMCDRIVERINTERFACE_H
 
+#include <string>
+#include <vector>
 #include <libxml/parser.h>
+#include "QMCDrivers/DriverTraits.h"
+#include "Utilities/RandomGenerator.h"
 
 namespace qmcplusplus
 {
 class QMCHamiltonian;
 class TrialWaveFunction;
-class SimpleFixedNodeBranch;
+struct SimpleFixedNodeBranch;
 
 /** Creates a common base class pointer for QMCDriver and QMCDriverNew
  *  to share.
@@ -35,7 +39,7 @@ public:
   virtual void recordBlock(int block) = 0;
 
   ///return the random generators
-  virtual std::vector<RandomGenerator_t*>& getRng() = 0;
+  //virtual std::vector<RandomGenerator_t*>& getRng() = 0;
 
   ///return the i-th random generator
   virtual RandomGenerator_t& getRng(int i) = 0;
@@ -49,6 +53,7 @@ public:
   virtual void requestTraces(bool allow_traces)                         = 0;
   virtual void process(xmlNodePtr cur)                                  = 0;
   virtual QMCRunType getRunType()                                       = 0;
+  virtual const std::string& get_root_name() const                      = 0;
   virtual void setBranchEngine(BranchEngineType* be)                    = 0;
   virtual BranchEngineType* getBranchEngine()                           = 0;
   virtual std::string getEngineName()                                   = 0;

@@ -79,17 +79,17 @@ public:
     }
   }
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     BFTrans->evaluatePbyPWithGrad(P, iat);
     //BFTrans->evaluate(P);
-    ValueType psi = 1.0;
+    PsiValueType psi = 1.0;
     for (int i = 0; i < Dets.size(); ++i)
       psi *= Dets[i]->ratioGrad(P, iat, grad_iat);
     return psi;
@@ -119,7 +119,7 @@ public:
     return GradType();
   }
 
-  inline void acceptMove(ParticleSet& P, int iat)
+  inline void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false)
   {
     BFTrans->acceptMove(P, iat);
     for (int i = 0; i < Dets.size(); i++)
@@ -134,11 +134,11 @@ public:
   }
 
 
-  inline ValueType ratio(ParticleSet& P, int iat)
+  inline PsiValueType ratio(ParticleSet& P, int iat)
   {
     BFTrans->evaluatePbyP(P, iat);
     //BFTrans->evaluate(P);
-    ValueType ratio = 1.0;
+    PsiValueType ratio = 1.0;
     for (int i = 0; i < Dets.size(); ++i)
       ratio *= Dets[i]->ratio(P, iat);
     return ratio;

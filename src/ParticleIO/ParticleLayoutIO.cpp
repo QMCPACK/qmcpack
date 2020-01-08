@@ -23,6 +23,7 @@
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
+#include "LongRange/LRCoulombSingleton.h"
 
 namespace qmcplusplus
 {
@@ -42,6 +43,8 @@ bool LatticeParser::put(xmlNodePtr cur)
   bool bconds_defined  = false;
   int boxsum           = 0;
 
+  std::string handler_type("opt_breakup");
+
   app_log() << " Lattice" << std::endl;
   app_log() << " -------" << std::endl;
   cur = cur->xmlChildrenNode;
@@ -50,15 +53,15 @@ bool LatticeParser::put(xmlNodePtr cur)
     std::string cname((const char*)cur->name);
     if (cname == "parameter")
     {
-      std::string aname((const char*)(xmlGetProp(cur, (const xmlChar*)"name")));
+      const XMLAttrString aname(cur, "name");
       if (aname == "scale")
       {
         putContent(a0, cur);
       }
       else if (aname == "lattice")
       {
-        const char* units_prop = (const char*)(xmlGetProp(cur, (const xmlChar*)"units"));
-        if (units_prop && std::string(units_prop) != "bohr")
+        const XMLAttrString units_prop(cur, "units");
+        if (!units_prop.empty() && units_prop != "bohr")
         {
           APP_ABORT("LatticeParser::put. Only atomic units (bohr) supported for lattice units. Input file uses: "
                     << std::string(units_prop));
@@ -103,6 +106,24 @@ bool LatticeParser::put(xmlNodePtr cur)
       else if (aname == "LR_dim_cutoff")
       {
         putContent(ref_.LR_dim_cutoff, cur);
+      }
+      else if ( aname == "LR_handler" )
+      {
+        putContent(handler_type, cur);
+        tolower(handler_type);
+        if(handler_type=="ewald")
+          LRCoulombSingleton::this_lr_type = LRCoulombSingleton::EWALD;
+        else if (handler_type=="opt_breakup")
+          LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
+        else if (handler_type=="opt_breakup_original")
+          LRCoulombSingleton::this_lr_type = LRCoulombSingleton::NATOLI;
+        else
+          APP_ABORT("\n  Long range breakup handler not recognized.\n");
+         
+      }
+      else if (aname == "LR_tol")
+      {
+        putContent(ref_.LR_tol, cur);
       }
       else if (aname == "rs")
       {

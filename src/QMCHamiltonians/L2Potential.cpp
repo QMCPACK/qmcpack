@@ -73,12 +73,12 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
     const size_t Nelec = P.getTotalNum();
     for (size_t iel = 0; iel < Nelec; ++iel)
     {
-      const auto Le                 = P.L[iel];
-      const auto& ge                = P.G[iel];
-      const auto& D2e               = D2[iel];
-      const RealType* restrict dist = d_table.Distances[iel];
-      const auto& disp              = d_table.Displacements[iel];
-      Return_t esum                 = 0.0;
+      const auto Le    = P.L[iel];
+      const auto& ge   = P.G[iel];
+      const auto& D2e  = D2[iel];
+      const auto& dist = d_table.getDistRow(iel);
+      const auto& disp = d_table.getDisplRow(iel);
+      Return_t esum    = 0.0;
       for (size_t iat = 0; iat < NumIons; ++iat)
       {
         RealType r = dist[iat];
@@ -99,6 +99,7 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
   }
   else
   {
+#ifndef ENABLE_SOA
     for (int iat = 0; iat < NumIons; iat++)
     {
       L2RadialPotential* ppot = PP[iat];
@@ -125,12 +126,13 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
       }
       Value += esum;
     }
+#endif
   }
   return Value;
 }
 
 
-QMCHamiltonianBase* L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   L2Potential* myclone = new L2Potential(IonConfig, qp, psi);
   for (int ig = 0; ig < PPset.size(); ++ig)

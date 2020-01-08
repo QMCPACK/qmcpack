@@ -90,7 +90,7 @@ bool ESHDFIonsParser::put(xmlNodePtr cur)
   pbuffer.add(ref_.GroupID.begin(), ref_.GroupID.end());
   pbuffer.add(ref_.ID.begin(), ref_.ID.end());
   myComm->bcast(pbuffer);
-  ref_.R.InUnit = PosUnit::CartesianUnit;
+  ref_.R.InUnit = PosUnit::Cartesian;
   if (myComm->rank())
   {
     pbuffer.rewind();
@@ -156,7 +156,7 @@ void ESHDFIonsParser::readESHDF()
     HDFAttribIO<int> a(natoms);
     a.read(hfile_id, "atoms/number_of_atoms");
     ref_.create(natoms);
-    ref_.R.InUnit = PosUnit::CartesianUnit;
+    ref_.R.InUnit = PosUnit::Cartesian;
     typedef ParticleAttrib<TinyVector<double, OHMMS_DIM>> ParticlePos_t;
     ParticlePos_t R_temp(natoms);
     HDFAttribIO<ParticlePos_t> b(R_temp);

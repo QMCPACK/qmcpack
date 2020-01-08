@@ -33,10 +33,6 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
     C = scf_data['mo_coeff']
     X = scf_data['X']
     uhf = scf_data['isUHF']
-    if uhf:
-        walker_type = 'uhf'
-    else:
-        walker_type = 'rhf'
     # For RHF only nalpha entries will be filled.
     if uhf:
         norb = C[0].shape[0]
@@ -61,7 +57,7 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
             if uhf:
                 print(" # Warning: UHF trial wavefunction can only be used of "
                       "working in ortho AO basis.")
-    write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), walker_type,
+    write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), uhf,
                       nelec, norb, verbose=verbose)
     return nelec
 
@@ -131,6 +127,7 @@ def write_nomsd(fh5, wfn, uhf, nelec, thresh=1e-8, init=None):
         Threshold for writing wavefunction elements.
     """
     nalpha, nbeta = nelec
+    nmo = wfn.shape[1]
     wfn[abs(wfn) < thresh] = 0.0
     if init is not None:
         add_dataset(fh5, 'Psi0_alpha', to_qmcpack_complex(init[0]))
@@ -191,7 +188,7 @@ def write_phmsd(fh5, occa, occb, nelec, norb, init=None, orbmat=None):
         add_dataset(fh5, 'Psi0_alpha',
                     to_qmcpack_complex(init[:,occa[0]].copy()))
         add_dataset(fh5, 'Psi0_beta',
-                    to_qmcpack_complex(init[:,occb[0]-norb].copy()))
+                    to_qmcpack_complex(init[:,occb[0]].copy()))
     if orbmat is not None:
         fh5['type'] = 1
         # Expects conjugate transpose.

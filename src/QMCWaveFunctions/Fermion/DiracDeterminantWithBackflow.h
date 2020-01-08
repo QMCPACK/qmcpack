@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/**@file DiracDeterminantWithBackflowBase.h
+/**@file
  * @brief Declaration of DiracDeterminantWithBackflow with a S(ingle)P(article)O(rbital)Set
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBACKFLOW_H
@@ -64,10 +64,10 @@ public:
    *@param nel number of particles in the determinant
    *@param delay dummy argument
    */
-  void set(int first, int nel, int delay=1) final
+  void set(int first, int nel, int delay = 1) final
   {
     FirstIndex = first;
-    resize(nel,nel);
+    resize(nel, nel);
   }
 
   ///set BF pointers
@@ -99,7 +99,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
@@ -107,11 +107,11 @@ public:
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   GradType evalGrad(ParticleSet& P, int iat);
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat);
 
@@ -123,13 +123,13 @@ public:
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   /** move was rejected. copy the real container to the temporary to move on
    */
   void restore(int iat);
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   /** cloning function
    * @param tqp target particleset
@@ -188,7 +188,7 @@ public:
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
 
-  ValueType curRatio;
+  PsiValueType curRatio;
   ParticleSet::SingleParticleValue_t* FirstAddressOfG;
   ParticleSet::SingleParticleValue_t* LastAddressOfG;
   ValueType* FirstAddressOfdV;

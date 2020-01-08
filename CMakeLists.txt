@@ -1,45 +1,58 @@
+######################################################################
+# CMake version and policies
+######################################################################
+CMAKE_MINIMUM_REQUIRED(VERSION 3.6.0)
+
+cmake_policy(SET CMP0003 NEW)
+IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+  cmake_policy(SET CMP0056 NEW)
+  # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
+  # are used in try_compile test cmake projects.
+  # CHECK_CXX_SOURCE_COMPILES and others depend on try_compile
+endif(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+IF(CMAKE_GENERATOR MATCHES "Ninja")
+  cmake_policy(SET CMP0058 NEW)
+ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
+# CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
+# and environment variable in search path.
+# various Find<Package>.cmake modules may not follow this policy
+# CMP0075: check_include_file_cxx and other follow CMAKE_REQUIRED_LIBRARIES
+# when doing link check
+IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+  cmake_policy(SET CMP0074 NEW)
+  cmake_policy(SET CMP0075 NEW)
+ENDIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+
+######################################################################
+# QMCPACK
+######################################################################
 PROJECT(qmcpack)
 
-
-#####################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 3.6.0)
-IF(COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
-  IF (COMPILING_ON_BGQ)
-    # On BG/Q, the HDF libraries variable includes some supporting shared libraries
-    # such as libm.so.  With the old behavior of CMP0060, these were converted
-    # to -lm for the linker, which then correctly selects the static version.
-    # With the new behavior of CMP0060, the form of the libraries are left alone
-    # on the link line (eg. /usr/lib64/libm.so), and this causes a linker error
-    # because shared libraries are not allowed with static linking.
-    cmake_policy(SET CMP0060 OLD)
-  ENDIF()
-  IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
-    cmake_policy(SET CMP0056 NEW)
-    # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
-    # are used in try_compile test cmake projects.
-    # CHECK_CXX_SOURCE_COMPILES and others depend on try_compile
-  endif(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
-  IF(CMAKE_GENERATOR MATCHES "Ninja")
-    cmake_policy(SET CMP0058 NEW)
-  ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
-  # CMake find_package will use <PackageName>_ROOT CMake variable
-  # and environment variable in search path.
-  # various Find<Package>.cmake modules may not follow this policy
-  IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0") 
-    cmake_policy(SET CMP0074 NEW)
-  ENDIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0") 
-ENDIF(COMMAND cmake_policy)
-
-
-######################################################################
-# Version
-######################################################################
 SET(QMCPACK_VERSION_MAJOR 3)
 SET(QMCPACK_VERSION_MINOR 8)
 SET(QMCPACK_VERSION_PATCH 9)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
+######################################################
+# Directory where customize cmake files reside
+######################################################
+SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
+
+SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
+
+
+IF (COMPILING_ON_BGQ)
+  # YL: Put this after PROJECT(qmcpack) because COMPILING_ON_BGQ is defined
+  # in BGQ toolchain file which is loaded by PROJECT().
+  # The following issue probably affect all static linking machines.
+  # MD: On BG/Q, the HDF libraries variable includes some supporting shared libraries
+  # such as libm.so.  With the old behavior of CMP0060, these were converted
+  # to -lm for the linker, which then correctly selects the static version.
+  # With the new behavior of CMP0060, the form of the libraries are left alone
+  # on the link line (eg. /usr/lib64/libm.so), and this causes a linker error
+  # because shared libraries are not allowed with static linking.
+  cmake_policy(SET CMP0060 OLD)
+ENDIF()
 
 ######################################################################
 # Verify QE executables present if QE_BIN specified
@@ -47,6 +60,17 @@ SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK
 IF ( DEFINED QE_BIN )
   INCLUDE(CMake/run_qe.cmake)
   VERIFY_QE_PRESENT( ${QE_BIN} )
+ENDIF()
+
+######################################################################
+# Verify PYSCF package is present
+######################################################################
+IF ( DEFINED PYSCF_BIN )
+  INCLUDE(CMake/python.cmake)
+  TEST_PYTHON_MODULE(pyscf HAVE_PYSCF)
+  IF (NOT HAVE_PYSCF)
+    MESSAGE( FATAL_ERROR "PYSCF_BIN was specified but could not import pyscf." )
+  ENDIF()
 ENDIF()
 
 ######################################################################
@@ -182,11 +206,12 @@ SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 # add macros to compile einspline if necessary
 ######################################################################
 INCLUDE(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
+INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSymbolExists.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
-INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSourceCompiles.cmake)
 
-CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
+INCLUDE(${PROJECT_CMAKE}/CheckSincos.cmake)
+
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
 
 CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
@@ -203,7 +228,6 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # BUILD_QMCTOOLS   build utility programs
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
-SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
 SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
 SET(BUILD_LMYENGINE_INTERFACE 1 CACHE BOOL "Build LMY engine")
 IF (QMC_CUDA AND BUILD_LMYENGINE_INTERFACE)
@@ -215,12 +239,10 @@ IF(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
   SET(BUILD_LMYENGINE_INTERFACE 0)
 ENDIF()
 SET(BUILD_AFQMC 0 CACHE BOOL "Build with AFQMC")
+SET(BUILD_AFQMC_WITH_NCCL 0 CACHE BOOL "Build AFQMC with NCCL library.")
 # AFQMC requires MPI.
 If (BUILD_AFQMC AND NOT QMC_MPI)
   MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
-ENDIF()
-If (BUILD_AFQMC AND ENABLE_CUDA AND NOT QMC_COMPLEX)
-  MESSAGE(FATAL_ERROR "AFQMC only works on GPUs if QMC_COMPLEX=1.")
 ENDIF()
 SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
@@ -240,43 +262,13 @@ SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
 #list of options to determine libraries. First, try to use libraries available
 #FindXYZ.cmake will set the values if successful
 ######################################################################
-SET(ENABLE_PHDF5 1 CACHE BOOL "Enable phdf5 for output")
 SET(HAVE_LIBXML2 1)
 SET(HAVE_LIBFFTW 0)
 SET(HAVE_LIBXMLPP 0)
-SET(HAVE_LIBHDF5 0)
 SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 SET(MAC_VECLIB 0)
-
-######################################################
-# Directory where customize cmake files reside
-######################################################
-SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
-
-######################################################
-# set ADIOS flags
-######################################################
-IF(QMC_ADIOS)
-  IF(NOT HAVE_ADIOS)
-    SET (ADIOS_FOUND 0)
-    INCLUDE(${PROJECT_CMAKE}/FindADIOS.cmake)
-    IF (${ADIOS_FOUND} EQUAL 1)
-      INCLUDE_DIRECTORIES(${ADIOS_INCLUDES})
-      MESSAGE(STATUS "Found ADIOS")
-      LINK_LIBRARIES(${ADIOS_LIBRARIES})
-      ADD_DEFINITIONS(-DHAVE_ADIOS)
-    ELSE()
-      MESSAGE(STATUS "Couldn't find required library ADIOS")
-      MESSAGE(FATAL_ERROR "ADIOS_HOME: export ADIOS_HOME=/path/to/adios")
-    ENDIF()
-  ELSE()
-    ADD_DEFINITIONS(-DHAVE_ADIOS)
-  ENDIF()
-ENDIF(QMC_ADIOS)
-
-SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 
 ######################################################
 # Git information (see src/CMakeLists.txt for the
@@ -497,12 +489,8 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ELSE()
     # Search for Blas/Lapack
     find_package(LAPACK)
-    # When cmake finds and sets up the MKL libraries with a non-Intel compiler, set the flag
-    # This should be tidied up when FindMKL.cmake supports non-Intel compilers.
     IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
-      MESSAGE(STATUS "MKL found via LAPACK/BLAS")
-      SET( MKL_FOUND 1 )
-      SET( HAVE_MKL 1 )
+      MESSAGE(FATAL_ERROR "MKL found via LAPACK/BLAS. Please pass -DENABLE_MKL=1 to cmake for full Intel MKL utilization. -DMKL_ROOT may also be needed for the include files to be found.")
     ENDIF()
   ENDIF()
   IF(LAPACK_FOUND)
@@ -543,6 +531,10 @@ IF ( HAVE_MPI )
     SET( MPIEXEC_NUMPROC_FLAG "-np" )
   ENDIF()
 
+  IF ( NOT DEFINED MPIEXEC_PREFLAGS )
+    SET( MPIEXEC_PREFLAGS "" )
+  ENDIF()
+
   IF ( NOT TEST_MAX_PROCS )
     SET( TEST_MAX_PROCS 100 )
   ENDIF()
@@ -561,6 +553,14 @@ INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 # list of libraries to be linked with the main applications using I/O
 
 SET(QMC_UTIL_LIBS ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
+
+# This needs a better place to live. as does all the IF( HAVE_MKL ) stuff
+IF(HAVE_MASS)
+  SET(CMAKE_CXX_FLAGS ${MASS_FLAGS} ${CMAKE_CXX_FLAGS})
+  SET(CMAKE_C_FLAGS ${MASS_FLAGS} ${CMAKE_C_FLAGS})
+  SET(MASS_LIBRARY "${MASS_LINKER_FLAGS} ${MASS_LIBRARIES}")
+  SET(QMC_UTIL_LIBS ${MASS_LIBRARY} ${QMC_UTIL_LIBS})
+ENDIF(HAVE_MASS)
 
 SET( FFTW_FOUND 0 )
 IF ( HAVE_MKL )
@@ -594,18 +594,58 @@ ELSE()
   MESSAGE(FATAL_ERROR "Could not find required library Libxml2")
 ENDIF(LIBXML2_FOUND)
 
-set(HDF5_USE_STATIC_LIBRARIES off)
+####################################################################
+# set up HDF5 library
+####################################################################
+IF(HAVE_MPI)
+  SET(HDF5_PREFER_PARALLEL 1 CACHE BOOL "Request parallel/serial HDF5 library")
+ELSE(HAVE_MPI)
+  SET(HDF5_PREFER_PARALLEL 0 CACHE BOOL "Request parallel/serial HDF5 library")
+  IF(HDF5_PREFER_PARALLEL)
+    MESSAGE(FATAL_ERROR "Parallel HDF5 library cannot be selected with QMCPACK non-MPI build. "
+                        "Please set HDF5_PREFER_PARALLEL=0.")
+  ENDIF(HDF5_PREFER_PARALLEL)
+ENDIF(HAVE_MPI)
+
 if(QMC_BUILD_STATIC)
+  MESSAGE(STATUS "Linking static HDF5 library")
   set(HDF5_USE_STATIC_LIBRARIES on)
+else()
+  MESSAGE(STATUS "Linking dynamic HDF5 library")
+  set(HDF5_USE_STATIC_LIBRARIES off)
 endif()
 
-SET(HDF5_PREFER_PARALLEL 0)
-IF(HAVE_MPI)
- SET(HDF5_PREFER_PARALLEL 1)
-ENDIF()
 find_package(HDF5 COMPONENTS C)
+
 IF(HDF5_FOUND)
   SET(HAVE_LIBHDF5 1)
+
+  IF(HDF5_IS_PARALLEL)
+    MESSAGE(STATUS "Parallel HDF5 library found")
+    SET(ENABLE_PHDF5 1 CACHE BOOL "Enable code paths using parallel HDF5")
+  ELSE(HDF5_IS_PARALLEL)
+    MESSAGE(STATUS "Serial HDF5 library found")
+    SET(ENABLE_PHDF5 0 CACHE BOOL "Enable code paths using parallel HDF5")
+    IF(ENABLE_PHDF5)
+      IF(HAVE_MPI)
+        MESSAGE(FATAL_ERROR "Parallel HDF5 code paths requested but serial HDF5 library found! "
+                            "Please either provide parallel HDF5 library or set ENABLE_PHDF5=0.")
+      ELSE(HAVE_MPI)
+        MESSAGE(FATAL_ERROR "Parallel HDF5 code paths cannot be enabled on non-MPI builds! Please set ENABLE_PHDF5=0.")
+      ENDIF(HAVE_MPI)
+    ENDIF(ENABLE_PHDF5)
+  ENDIF(HDF5_IS_PARALLEL)
+
+  IF(ENABLE_PHDF5)
+    MESSAGE(STATUS "Using HDF5 parallel collective I/O code paths")
+  ELSE(ENABLE_PHDF5)
+    MESSAGE(STATUS "Using HDF5 non-scalable serial I/O code paths")
+  ENDIF(ENABLE_PHDF5)
+
+  IF(HAVE_MPI AND NOT ENABLE_PHDF5)
+    MESSAGE(WARNING "MPI builds may have potential performance loss not using parallel HDF5!")
+  ENDIF()
+
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
   IF ( CMAKE_BUILD_TYPE AND HDF5_LIBRARIES_DEBUG )
     IF ( CMAKE_BUILD_TYPE MATCHES DEBUG )
@@ -615,28 +655,8 @@ IF(HDF5_FOUND)
     ENDIF()
   ENDIF()
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${HDF5_LIBRARIES})
-  if(ZLIB_LIBRARY)
-    SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${ZLIB_LIBRARY})
-  endif(ZLIB_LIBRARY)
-  #IF(SZLIB_FOUND)
-  #  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${SZLIB_LIBRARIES})
-  #ENDIF(SZLIB_FOUND)
-  IF(HDF5_IS_PARALLEL)
-    IF(ENABLE_PHDF5)
-      MESSAGE(STATUS "Using HDF5 parallel collective I/O")
-    ELSE(ENABLE_PHDF5)
-      MESSAGE(STATUS "Using HDF5 non-scalable serial I/O")
-    ENDIF(ENABLE_PHDF5)
-  ELSE(HDF5_IS_PARALLEL)
-    IF(ENABLE_PHDF5)
-      MESSAGE(STATUS "Using HDF5 non-scalable serial I/O due to the lack of library support for parallel")
-      SET(ENABLE_PHDF5 0)
-    ELSE(ENABLE_PHDF5)
-      MESSAGE(STATUS "Using HDF5 non-scalable serial I/O")
-    ENDIF(ENABLE_PHDF5)
-  ENDIF(HDF5_IS_PARALLEL)
 ELSE(HDF5_FOUND)
-  MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_ROOT")
+  MESSAGE(FATAL_ERROR "Require HDF5 1.6.4 or higher. Set HDF5_ROOT")
 ENDIF(HDF5_FOUND)
 
 #make sure we can find boost if it's not in /usr
@@ -761,6 +781,16 @@ IF (USE_VTUNE_API)
   LINK_LIBRARIES("${VTUNE_ITTNOTIFY_LIBRARY}")
 ENDIF()
 
+SET(QMC_EXP_THREADING FALSE CACHE BOOL "Experimental non openmp threading models")
+MARK_AS_ADVANCED(QMC_EXP_THREADING)
+IF(QMC_EXP_THREADING)
+  include(CheckAtomic)
+  IF(HAVE_LIBATOMIC)
+    LINK_LIBRARIES("${HAVE_LIBATOMIC}")
+  ENDIF(HAVE_LIBATOMIC)
+  ADD_DEFINITIONS(-DQMC_EXP_THREADING)
+ENDIF(QMC_EXP_THREADING)
+
 #include(ExternalProject)
 #  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")
 #  set(einspline_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/einspline")
@@ -856,16 +886,6 @@ INSTALL(FILES ${qmcpack_BINARY_DIR}/bin/qmcpack.settings DESTINATION bin)
 IF(INSTALL_NEXUS)
   INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths ${CMAKE_INSTALL_PREFIX}/bin)")
 ENDIF()
-
-#########################
-# add definitions for adios profile
-# add definitions for adios verification
-########################
-IF(QMC_ADIOS)
-  #ADD_DEFINITIONS(-DIO_PROFILE)
-  #ADD_DEFINITIONS(-DADIOS_VERIFY)
-  ADD_DEFINITIONS(-DWRITE_GLOBAL)
-ENDIF(QMC_ADIOS)
 
 SUBDIRS(src)
 

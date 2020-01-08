@@ -92,6 +92,7 @@ class PHMSD: public AFQMCInfo
   using stdCMatrix = boost::multi::array<ComplexType,2>;
   using stdCTensor = boost::multi::array<ComplexType,3>;
   using mpi3CVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;
+  using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
 
   public:
 
@@ -104,7 +105,6 @@ class PHMSD: public AFQMCInfo
           WALKER_TYPES wlk, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
                 SDetOp( SlaterDetOperations_shared<ComplexType>(
-                //SDetOp( 
                         ((wlk!=NONCOLLINEAR)?(NMO):(2*NMO)),
                         ((wlk!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) )),
                 HamOp(std::move(hop_)),
@@ -112,22 +112,20 @@ class PHMSD: public AFQMCInfo
                 actb2mo(std::move(actb2mo_)),
                 abij(std::move(abij_)),
                 OrbMats(std::move(orbs_)),
-                walker_type(wlk),NuclearCoulombEnergy(nce),
+                RefOrbMats({0,0},shared_allocator<ComplexType>{TG.Node()}),
+                number_of_references(-1),
                 shmbuff_for_E(nullptr),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
+                walker_type(wlk),NuclearCoulombEnergy(nce),
                 last_number_extra_tasks(-1),last_task_index(-1),
                 local_group_comm(),
                 shmbuff_for_G(nullptr),
-                req_Gsend(MPI_REQUEST_NULL),
-                req_Grecv(MPI_REQUEST_NULL),
-                req_SMsend(MPI_REQUEST_NULL),
-                req_SMrecv(MPI_REQUEST_NULL),
-                maxnactive(std::max(OrbMats[0].size(0),OrbMats.back().size(0))),
-                max_exct_n(std::max(abij.maximum_excitation_number()[0],
-                                    abij.maximum_excitation_number()[1])),
                 maxn_unique_confg(    
                     std::max(abij.number_of_unique_excitations()[0],
                              abij.number_of_unique_excitations()[1])),
+                maxnactive(std::max(OrbMats[0].size(0),OrbMats.back().size(0))),
+                max_exct_n(std::max(abij.maximum_excitation_number()[0],
+                                    abij.maximum_excitation_number()[1])),
                 unique_overlaps({2,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 unique_Etot({2,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 QQ0inv0({1,1},shared_allocator<ComplexType>{TG.TG_local()}),
@@ -149,7 +147,11 @@ class PHMSD: public AFQMCInfo
                 KEright({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 KEleft({1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
                 det_couplings{std::move(beta_coupled_to_unique_alpha__),
-                              std::move(alpha_coupled_to_unique_beta__)}
+                              std::move(alpha_coupled_to_unique_beta__)},
+                req_Gsend(MPI_REQUEST_NULL),
+                req_Grecv(MPI_REQUEST_NULL),
+                req_SMsend(MPI_REQUEST_NULL),
+                req_SMrecv(MPI_REQUEST_NULL)
     {
       /* To me, PHMSD is not compatible with walker_type=CLOSED unless
        * the MSD expansion is symmetric with respect to spin. For this, 
@@ -169,6 +171,8 @@ class PHMSD: public AFQMCInfo
       std::string excited_file("");  
       int i_=-1,a_=-1;  
       ParameterSet m_param;
+      m_param.add(number_of_references,"number_of_references","int");
+      m_param.add(number_of_references,"nrefs","int");
       m_param.add(excited_file,"excited","std::string");
       // generalize this to multi-particle excitations, how do I read a list of integers???
       m_param.add(i_,"i","int");
@@ -438,17 +442,75 @@ class PHMSD: public AFQMCInfo
      * Returns the number of reference Slater Matrices needed for back propagation.  
      */
     int number_of_references_for_back_propagation() const {
-      return 0; 
+      if(number_of_references>0)
+        return number_of_references;
+      else
+        return abij.number_of_configurations(); 
     }
 
-    ComplexType getReferenceWeight(int i) {return ComplexType(0.0,0.0);}
+    ComplexType getReferenceWeight(int i) const {
+      return std::get<2>(*abij.configuration(i));
+    }
 
     /*
      * Returns the reference Slater Matrices needed for back propagation.  
      */
-    template<class Mat>
+    template<class Mat, class Ptr=ComplexType*>
     void getReferencesForBackPropagation(Mat&& A) {
-      APP_ABORT(" Error: getReferencesForBackPropagation not implemented with PHMSD wavefunctions.\n"); 
+      static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
+      int ndet = number_of_references_for_back_propagation();
+      assert(A.size(0) == ndet);
+      if(RefOrbMats.size(0) == 0) {
+        TG.Node().barrier(); // for safety
+        int nrow(NMO*((walker_type==NONCOLLINEAR)?2:1));
+        int ncol(NAEA+NAEB);//careful here, spins are stored contiguously
+        RefOrbMats.reextent({ndet,nrow*ncol});
+        TG.Node().barrier(); // for safety
+        if(TG.Node().root()) {
+          boost::multi::array<ComplexType,2> OA_({OrbMats[0].size(1),OrbMats[0].size(0)});
+          boost::multi::array<ComplexType,2> OB_({0,0});
+          if(OrbMats.size() > 1)
+            OB_.reextent({OrbMats[1].size(1),OrbMats[1].size(0)});
+          csr::CSR2MAREF('H',OrbMats[0],OA_);
+          if(OrbMats.size() > 1)
+            csr::CSR2MAREF('H',OrbMats[1],OB_);
+          std::vector<int> Ac(NAEA);
+          std::vector<int> Bc(NAEB);
+          for(int i=0; i<ndet; ++i) {
+            auto c(abij.configuration(i));
+            abij.get_configuration(0,std::get<0>(*c),Ac);
+            abij.get_configuration(1,std::get<1>(*c),Bc);
+            boost::multi::array_ref<ComplexType,2> A_(to_address(RefOrbMats[i].origin()),
+                                                      {NMO,NAEA});
+            boost::multi::array_ref<ComplexType,2> B_(A_.origin()+A_.num_elements(),
+                                                      {NMO,NAEB});
+            for(int i=0, ia=0; i<NMO; ++i) 
+              for(int a=0; a<NAEA; ++a, ia++) 
+                A_[i][a] = OA_[i][Ac[a]]; 
+            if(OrbMats.size() > 1) { 
+              for(int i=0, ia=0; i<NMO; ++i) 
+                for(int a=0; a<NAEB; ++a, ia++) 
+                  B_[i][a] = OB_[i][Bc[a]]; 
+            } else {
+              for(int i=0, ia=0; i<NMO; ++i) 
+                for(int a=0; a<NAEB; ++a, ia++) 
+                  B_[i][a] = OA_[i][Bc[a]]; 
+            }
+          }
+        } // TG.Node().root()
+        TG.Node().barrier(); // for safety
+      }
+      assert(RefOrbMats.size(0) == ndet);
+      assert(RefOrbMats.size(1) == A.size(1));
+      auto&& RefOrbMats_(boost::multi::static_array_cast<ComplexType, ComplexType*>(RefOrbMats));
+      auto&& A_(boost::multi::static_array_cast<ComplexType, Ptr>(A));
+      using std::copy_n;
+      int n0,n1;
+      std::tie(n0,n1) = FairDivideBoundary(TG.getLocalTGRank(),int(A.size(1)),TG.getNCoresPerTG());
+      for(int i=0; i<ndet; i++)
+        copy_n(RefOrbMats_[i].origin()+n0,n1-n0,A_[i].origin()+n0);
+      TG.TG_local().barrier();
+
     }
 
   protected: 
@@ -467,6 +529,8 @@ class PHMSD: public AFQMCInfo
 
     // eventually switched from CMatrix to SMHSparseMatrix(node)
     std::vector<PsiT_Matrix> OrbMats;
+    mpi3CMatrix RefOrbMats;
+    int number_of_references;
 
     std::unique_ptr<shmCVector> shmbuff_for_E;
 

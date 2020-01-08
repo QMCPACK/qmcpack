@@ -17,6 +17,7 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/L2Potential.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OneDimNumGridFunctor.h"
@@ -63,19 +64,23 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 #ifdef ENABLE_OFFLOAD
   NLPP_algo = "batched"; // set "batched" as the default
 #endif
+  std::string use_DLA("no");
   std::string pbc("yes");
   std::string forces("no");
+
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat, "format");
   pAttrib.add(NLPP_algo, "algorithm");
+  pAttrib.add(use_DLA, "DLA");
   pAttrib.add(pbc, "pbc");
   pAttrib.add(forces, "forces");
   pAttrib.put(cur);
+
   bool doForces = (forces == "yes") || (forces == "true");
-  //const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"format");
-  //if(t != NULL) {
-  //  ecpFormat= (const char*)t;
-  //}
+  if (use_DLA == "yes")
+    app_log() << "    Using determinant localization approximation (DLA)" << std::endl;
+  if (NLPP_algo == "batched" && use_DLA == "yes")
+    myComm->barrier_and_abort("Batched pseudopotential evaluation has not been made available to DLA!");
   if (ecpFormat == "xml")
   {
     useXmlFormat(cur);
@@ -136,6 +141,8 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
         nknot_max = std::max(nknot_max, nonLocalPot[i]->getNknot());
         if (NLPP_algo == "batched")
           nonLocalPot[i]->initVirtualParticle(targetPtcl);
+        if (use_DLA == "yes")
+          nonLocalPot[i]->enableDLA();
         apot->addComponent(i, nonLocalPot[i]);
       }
     }

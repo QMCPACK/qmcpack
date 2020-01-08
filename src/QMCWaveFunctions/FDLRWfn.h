@@ -119,7 +119,7 @@ private:
   std::vector<RealType> dlogpsi_fdlr_d;
   std::vector<RealType> dhpsioverpsi_fdlr_d;
 
-  ValueType curRatio;
+  PsiValueType curRatio;
 
   // gradients of FDLR wavefunction
   ParticleSet::ParticleGradient_t G_FDLR;
@@ -174,33 +174,33 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  RealType evaluateLogFDLR(ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L,
-                           const RealType& logpsi_plus,
-                           const RealType logpsi_minus,
-                           const RealType& phasevalue_plus,
-                           const RealType phasevalue_minus,
-                           const ParticleSet::ParticleGradient_t& G_plus,
-                           const ParticleSet::ParticleGradient_t& G_minus,
-                           const ParticleSet::ParticleLaplacian_t& L_plus,
-                           const ParticleSet::ParticleLaplacian_t& L_minus);
+  LogValueType evaluateLogFDLR(ParticleSet& P,
+                               ParticleSet::ParticleGradient_t& G,
+                               ParticleSet::ParticleLaplacian_t& L,
+                               const RealType& logpsi_plus,
+                               const RealType logpsi_minus,
+                               const RealType& phasevalue_plus,
+                               const RealType phasevalue_minus,
+                               const ParticleSet::ParticleGradient_t& G_plus,
+                               const ParticleSet::ParticleGradient_t& G_minus,
+                               const ParticleSet::ParticleLaplacian_t& L_plus,
+                               const ParticleSet::ParticleLaplacian_t& L_minus);
 
   GradType evalGrad(ParticleSet& P, int iat);
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
 
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   void restore(int iat);
 

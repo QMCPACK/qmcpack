@@ -17,10 +17,9 @@
 #ifndef INFOSTREAM_H
 #define INFOSTREAM_H
 
-#include <string>
+#include <fstream>
+#include <memory>
 #include <iostream>
-#include <iomanip>
-#include <sstream>
 
 /**
  *  Interface to output streams.  Can redirect output to stdout/stderr, a file, or a null stream.
@@ -29,17 +28,11 @@
 class InfoStream
 {
 public:
-  InfoStream(std::ostream* output_stream) : prevStream(NULL), nullStream(new std::ostream(NULL)), ownStream(false)
-  {
-    currStream = output_stream;
-  }
+  InfoStream(std::ostream* output_stream) : currStream(output_stream), prevStream(nullptr), nullStream(nullptr)
+  { }
 
-  InfoStream(InfoStream& in) : prevStream(NULL), nullStream(new std::ostream(NULL)), ownStream(false)
-  {
-    redirectToSameStream(in);
-  }
-
-  ~InfoStream();
+  InfoStream(InfoStream& in) : currStream(&in.getStream()), prevStream(nullptr), nullStream(nullptr)
+  { }
 
   std::ostream& getStream(const std::string& tag = "") { return *currStream; }
 
@@ -64,16 +57,17 @@ public:
   void shutOff();
 
 private:
-  // Keep track of whether we should delete the stream or not
-  bool ownStream;
+  // ofstream pointer allocated when file output is used
+  std::unique_ptr<std::ofstream> fileStream;
 
+  // current stream that InfoStream represents
   std::ostream* currStream;
 
   // save stream during pause
   std::ostream* prevStream;
 
   // Created at construction. Used during pause
-  std::ostream* nullStream;
+  std::ostream nullStream;
 };
 
 template<class T>

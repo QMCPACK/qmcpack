@@ -123,31 +123,47 @@ def read_orbitals():
 
 def get_occupied(det, nel, nmo):
     nset = 0
-    pos = 0
+    pos = numpy.int64(0)
     occs = []
-    while pos < nmo:
-        if det & (1<<pos):
-            nset += 1
-            occs.append(pos)
-        if nset == nel:
+    shift = 0
+    all_found = False
+    for d in det:
+        while pos < min(nmo,64):
+            if d & (1<<pos):
+                nset += 1
+                occs.append(pos+shift)
+            if nset == nel:
+                all_found = True
+                break
+            pos += 1
+        # Assuming 64 bit integers
+        pos = 0
+        if all_found:
             break
-        pos += 1
+        shift += 64
     return occs
 
-def read_qmcpack_ci_wavefunction(input_file, ndets=None):
+def read_qmcpack_ci_wavefunction(input_file, nelec, nmo, ndets=None):
     if ndets is None:
         ndets = -1
+    na, nb = nelec
     with h5py.File(input_file) as fh5:
-        nmo = fh5['parameters/numMO'][:][0]
-        na = fh5['parameters/NbAlpha'][:][0]
-        nb = fh5['parameters/NbBeta'][:][0]
+        try:
+            nmo = fh5['parameters/numMO'][:][0]
+            na = fh5['parameters/NbAlpha'][:][0]
+            nb = fh5['parameters/NbBeta'][:][0]
+        except KeyError:
+            pass
         ci_a = fh5['MultiDet/CI_Alpha'][:]
         ci_b = fh5['MultiDet/CI_Beta'][:]
+        nbs = fh5['MultiDet/Nbits'][()]
         coeffs = fh5['MultiDet/Coeff'][:][:ndets]
+        coeffs_imag = fh5['MultiDet/Coeff_imag'][:][:ndets]
+        coeffs = coeffs + 1j*coeffs_imag
         occa = []
         occb = []
-        for ca, cb in zip(ci_a[:ndets], ci_b[:ndets]):
-            occa.append(get_occupied(ca[0], na, nmo))
-            occb.append(get_occupied(cb[0], nb, nmo))
+        for i, (ca, cb) in enumerate(zip(ci_a[:ndets], ci_b[:ndets])):
+            occa.append(get_occupied(ca, na, nmo))
+            occb.append(get_occupied(cb, nb, nmo))
     wfn = (coeffs, numpy.array(occa), numpy.array(occb))
     return wfn, True, nmo, (na,nb)

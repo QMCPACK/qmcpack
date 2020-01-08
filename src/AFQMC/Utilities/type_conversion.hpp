@@ -97,6 +97,15 @@ std::vector<Q> move_vector(std::vector<T> && other)
   return res;
 }
 
+template<class Q, class T, class Aux>
+std::vector<Q> move_vector(std::vector<T> && other, Aux param)
+{
+  std::vector<Q> res;
+  res.reserve(other.size());
+  for(auto& v:other) res.emplace_back(std::move(v),param);
+  return res;
+}
+
 }
 
 }

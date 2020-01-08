@@ -51,5 +51,6 @@ TEST_CASE("transform2gridfunctor", "[numerics]")
   REQUIRE(output.splint(0.15) == Approx(0.0225));
   REQUIRE(output.splint(7.0) == Approx(49.0));
   REQUIRE(output.splint(10) == Approx(100.0));
+  delete agrid;
 }
 } // namespace qmcplusplus

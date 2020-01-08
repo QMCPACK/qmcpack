@@ -71,8 +71,7 @@ public:
   ///container for the Jastrow functions
   std::vector<FT*> F;
 
-  TwoBodyJastrowOrbital(ParticleSet& p, int tid)
-    : TaskID(tid), KEcorr(0.0), my_table_ID_(p.addTable(p, DT_AOS))
+  TwoBodyJastrowOrbital(ParticleSet& p, int tid) : TaskID(tid), KEcorr(0.0), my_table_ID_(p.addTable(p, DT_AOS))
   {
     PtclRef = &p;
     init(p);
@@ -249,49 +248,15 @@ public:
    *@note The DistanceTableData contains only distinct pairs of the
    *particles belonging to one set, e.g., SymmetricDTD.
    */
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
-    if (FirstTime)
-    {
-      FirstTime = false;
-      ChiesaKEcorrection();
-    }
-    LogValue                         = 0.0;
-    const auto& d_table = P.getDistTable(my_table_ID_);
-    RealType dudr, d2udr2;
-    PosType gr;
-    for (int i = 0; i < d_table.size(SourceIndex); i++)
-    {
-      for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; nn++)
-      {
-        int j = d_table.J[nn];
-        //LogValue -= F[d_table.PairID[nn]]->evaluate(d_table.r(nn), dudr, d2udr2);
-        RealType uij = F[d_table.PairID[nn]]->evaluate(d_table.r(nn), dudr, d2udr2);
-        LogValue -= uij;
-        U[i * N + j] = uij;
-        U[j * N + i] = uij; //save for the ratio
-        //multiply 1/r
-        dudr *= d_table.rinv(nn);
-        gr = dudr * d_table.dr(nn);
-        //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)
-        RealType lap(d2udr2 + (OHMMS_DIM - 1.0) * dudr);
-        //multiply -1
-        G[i] += gr;
-        G[j] -= gr;
-        L[i] -= lap;
-        L[j] -= lap;
-      }
-    }
-
-    //for(int i=0,nat=0; i<N; ++i,nat+=N)
-    //  Uptcl[i]=std::accumulate(&(U[nat]),&(U[nat+N]),0.0);
-
+    evaluateLogAndStore(P, G, L);
     return LogValue;
   }
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   {
-    LogValue                         = 0.0;
+    LogValue            = 0.0;
     const auto& d_table = P.getDistTable(my_table_ID_);
     RealType dudr, d2udr2;
     PosType gr;
@@ -300,7 +265,7 @@ public:
     grad_grad_psi = 0.0;
     ident.diagonal(1.0);
 
-    for (int i = 0; i < d_table.size(SourceIndex); i++)
+    for (int i = 0; i < d_table.sources(); i++)
     {
       for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; nn++)
       {
@@ -324,10 +289,10 @@ public:
     }
   }
 
-  ValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat)
   {
     const auto& d_table = P.getDistTable(my_table_ID_);
-    DiffVal                          = 0.0;
+    DiffVal             = 0.0;
     const int* pairid(PairID[iat]);
     for (int jat = 0, ij = iat * N; jat < N; jat++, ij++)
     {
@@ -342,7 +307,7 @@ public:
         //DiffVal += U[ij]-F[pairid[jat]]->evaluate(d_table.Temp[jat].r1);
       }
     }
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
@@ -356,7 +321,7 @@ public:
 
     const auto& d_table = VP.getDistTable(my_table_ID_);
     const int* pairid(PairID[iat]);
-    for (int i = 0; i < d_table.size(SourceIndex); ++i)
+    for (int i = 0; i < d_table.sources(); ++i)
     {
       if (i != iat)
       {
@@ -375,11 +340,10 @@ public:
     GradType gr;
     for (int jat = 0, ij = iat * N; jat < N; ++jat, ++ij)
       gr += dU[ij];
-    //       gr -= dU[iat*N+iat];
     return gr;
   }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     const auto& d_table = P.getDistTable(my_table_ID_);
     RealType dudr, d2udr2;
@@ -406,12 +370,12 @@ public:
     grad_iat += gr;
     //curGrad0-=curGrad;
     //cout << "RATIOGRAD " << curGrad0 << std::endl;
-    return std::exp(DiffVal);
+    return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
   inline void restore(int iat) {}
 
-  void acceptMove(ParticleSet& P, int iat)
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false)
   {
     DiffValSum += DiffVal;
     for (int jat = 0, ij = iat * N, ji = iat; jat < N; jat++, ij++, ji += N)
@@ -448,7 +412,7 @@ public:
     RealType dudr, d2udr2, u;
     LogValue = 0.0;
     GradType gr;
-    for (int i = 0; i < d_table.size(SourceIndex); i++)
+    for (int i = 0; i < d_table.sources(); i++)
     {
       for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; nn++)
       {
@@ -488,12 +452,12 @@ public:
     DEBUG_PSIBUFFER(" TwoBodyJastrow::registerData ", buf.current());
   }
 
-  inline void evaluateGL(ParticleSet& P) { RealType t = evaluateLog(P, P.G, P.L); }
+  inline void evaluateGL(ParticleSet& P) { LogValueType t = evaluateLog(P, P.G, P.L); }
 
-  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     evaluateLogAndStore(P, P.G, P.L);
-    U[NN] = LogValue;
+    U[NN] = std::real(LogValue);
     DEBUG_PSIBUFFER(" TwoBodyJastrow::updateBuffer ", buf.current());
     buf.put(U.begin(), U.end());
     buf.put(d2U.begin(), d2U.end());
@@ -578,7 +542,7 @@ public:
               RealType u = ufunc.evaluate(r);
 #if (OHMMS_DIM == 3)
               aparam += (1.0 / 4.0) * k * k * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr;
-              uk     += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
+              uk += 0.5 * 4.0 * M_PI * r * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);
 #endif
 #if (OHMMS_DIM == 2)
               uk += 0.5 * 2.0 * M_PI * std::sin(k * r) / k * u * dr * (RealType)Nj / (RealType)(Ni + Nj);

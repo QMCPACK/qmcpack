@@ -93,7 +93,7 @@ void GamesXmlParser::parse(const std::string& fname)
         if (cname1 == "SYSTEM_STATE")
         {
           //Unit needs to be generalized!!
-          std::string unitL((const char*)xmlGetProp(cur1, (const xmlChar*)"UNITS"));
+          const XMLAttrString unitL(cur1, "UNITS");
           if (unitL == "ANGS")
             BohrUnit = false;
           xmlNodePtr cur2 = cur1->children;

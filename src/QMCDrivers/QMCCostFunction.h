@@ -39,8 +39,12 @@ public:
   void getConfigurations(const std::string& aroot);
   void checkConfigurations();
 #ifdef HAVE_LMY_ENGINE
-  void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj);
+  void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
+                                  DescentEngine& descentEngineObj,
+                                  const std::string& MinMethod);
 #endif
+
+
   void resetPsi(bool final_reset = false);
   void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_rt FiniteDiff = 0);
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);
@@ -59,7 +63,7 @@ protected:
 
 #ifdef HAVE_LMY_ENGINE
   int total_samples();
-  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj);
+  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj);
 #endif
 };
 } // namespace qmcplusplus

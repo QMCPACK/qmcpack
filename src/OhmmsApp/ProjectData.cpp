@@ -177,12 +177,10 @@ bool ProjectData::PreviousRoot(std::string& oldroot) const
 bool ProjectData::put(xmlNodePtr cur)
 {
   m_cur                  = cur;
-  m_title                = (const char*)(xmlGetProp(cur, (const xmlChar*)"id"));
-  const char* series_str = (const char*)(xmlGetProp(cur, (const xmlChar*)"series"));
-  if (series_str)
-  {
-    m_series = atoi(series_str);
-  }
+  m_title = XMLAttrString(cur, "id");
+  const XMLAttrString series_str(cur, "series");
+  if (!series_str.empty()) m_series = std::stoi(series_str);
+
   ///first, overwrite the existing xml nodes
   cur = cur->xmlChildrenNode;
   while (cur != NULL)
@@ -195,12 +193,14 @@ bool ProjectData::put(xmlNodePtr cur)
     if (cname == "host")
     {
       m_host = getHostName();
-      xmlNodeSetContent(cur, (const xmlChar*)(m_host.c_str()));
+      const XMLNodeString node_string(m_host);
+      node_string.setXMLNodeContent(cur);
     }
     if (cname == "date")
     {
       m_date = getDateAndTime();
-      xmlNodeSetContent(cur, (const xmlChar*)(m_date.c_str()));
+      const XMLNodeString node_string(m_date);
+      node_string.setXMLNodeContent(cur);
     }
     cur = cur->next;
   }

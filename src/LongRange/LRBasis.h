@@ -47,7 +47,7 @@ struct LRBasis
 
 public:
   //Constructor: copy lattice and init rc
-  LRBasis(ParticleLayout_t& ref) : Lattice(ref), m_rc(0.0)
+  LRBasis(ParticleLayout_t& ref) : m_rc(0.0), Lattice(ref)
   { /*Do nothing*/
   }
 

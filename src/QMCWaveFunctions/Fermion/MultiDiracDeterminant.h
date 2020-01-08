@@ -35,9 +35,9 @@ class MultiDiracDeterminant : public WaveFunctionComponent
 public:
   bool Optimizable;
   void registerTimers();
-  NewTimer UpdateTimer, RatioTimer, InverseTimer, buildTableTimer, readMatTimer, evalWTimer, evalOrbTimer,
-      evalOrb1Timer;
-  NewTimer readMatGradTimer, buildTableGradTimer, ExtraStuffTimer;
+  NewTimer &UpdateTimer, &RatioTimer, &InverseTimer, &buildTableTimer, &readMatTimer, &evalWTimer, &evalOrbTimer,
+      &evalOrb1Timer;
+  NewTimer &readMatGradTimer, &buildTableGradTimer, &ExtraStuffTimer;
   // Optimizable parameters
   opt_variables_type myVars;
 
@@ -135,32 +135,9 @@ public:
     const size_t NP1 = NumPtcls;
     const size_t NP2 = pseudo_dn.NumPtcls;
 
-    Phi->evaluateDerivatives(P,
-                             optvars,
-                             dlogpsi,
-                             dhpsioverpsi,
-                             psiCurrent,
-                             Coeff,
-                             C2node_up,
-                             C2node_dn,
-                             detValues_up,
-                             detValues_dn,
-                             grads_up,
-                             grads_dn,
-                             lapls_up,
-                             lapls_dn,
-                             M_up,
-                             M_dn,
-                             Minv_up,
-                             Minv_dn,
-                             B_grad,
-                             B_lapl,
-                             *detData,
-                             N1,
-                             N2,
-                             NP1,
-                             NP2,
-                             lookup_tbl);
+    Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up,
+                             detValues_dn, grads_up, grads_dn, lapls_up, lapls_dn, M_up, M_dn, Minv_up, Minv_dn, B_grad,
+                             B_lapl, *detData, N1, N2, NP1, NP2, lookup_tbl);
   }
 
 
@@ -172,13 +149,13 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   /** move was rejected. copy the real container to the temporary to move on
    */
@@ -190,10 +167,10 @@ public:
    * These functions should not be called.
    ***************************************************************************/
 
-  ValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return ValueType();
+    return PsiValueType();
   }
 
   GradType evalGrad(ParticleSet& P, int iat)
@@ -202,13 +179,13 @@ public:
     return GradType();
   }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return ValueType();
+    return PsiValueType();
   }
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;
@@ -241,34 +218,25 @@ public:
       return 1.0;
     case 1:
       return dotProducts(*it, *(it + 1));
-    case 2:
-    {
+    case 2: {
       const int i = *it;
       const int j = *(it + 1);
       const int a = *(it + 2);
       const int b = *(it + 3);
       return dotProducts(i, a) * dotProducts(j, b) - dotProducts(i, b) * dotProducts(j, a);
     }
-    case 3:
-    {
+    case 3: {
       const int i1 = *it;
       const int i2 = *(it + 1);
       const int i3 = *(it + 2);
       const int a1 = *(it + 3);
       const int a2 = *(it + 4);
       const int a3 = *(it + 5);
-      return DetCalculator.evaluate(dotProducts(i1, a1),
-                                    dotProducts(i1, a2),
-                                    dotProducts(i1, a3),
-                                    dotProducts(i2, a1),
-                                    dotProducts(i2, a2),
-                                    dotProducts(i2, a3),
-                                    dotProducts(i3, a1),
-                                    dotProducts(i3, a2),
+      return DetCalculator.evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i2, a1),
+                                    dotProducts(i2, a2), dotProducts(i2, a3), dotProducts(i3, a1), dotProducts(i3, a2),
                                     dotProducts(i3, a3));
     }
-    case 4:
-    {
+    case 4: {
       const int i1 = *it;
       const int i2 = *(it + 1);
       const int i3 = *(it + 2);
@@ -277,25 +245,12 @@ public:
       const int a2 = *(it + 5);
       const int a3 = *(it + 6);
       const int a4 = *(it + 7);
-      return DetCalculator.evaluate(dotProducts(i1, a1),
-                                    dotProducts(i1, a2),
-                                    dotProducts(i1, a3),
-                                    dotProducts(i1, a4),
-                                    dotProducts(i2, a1),
-                                    dotProducts(i2, a2),
-                                    dotProducts(i2, a3),
-                                    dotProducts(i2, a4),
-                                    dotProducts(i3, a1),
-                                    dotProducts(i3, a2),
-                                    dotProducts(i3, a3),
-                                    dotProducts(i3, a4),
-                                    dotProducts(i4, a1),
-                                    dotProducts(i4, a2),
-                                    dotProducts(i4, a3),
-                                    dotProducts(i4, a4));
+      return DetCalculator.evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
+                                    dotProducts(i2, a1), dotProducts(i2, a2), dotProducts(i2, a3), dotProducts(i2, a4),
+                                    dotProducts(i3, a1), dotProducts(i3, a2), dotProducts(i3, a3), dotProducts(i3, a4),
+                                    dotProducts(i4, a1), dotProducts(i4, a2), dotProducts(i4, a3), dotProducts(i4, a4));
     }
-    case 5:
-    {
+    case 5: {
       const int i1 = *it;
       const int i2 = *(it + 1);
       const int i3 = *(it + 2);
@@ -306,30 +261,12 @@ public:
       const int a3 = *(it + 7);
       const int a4 = *(it + 8);
       const int a5 = *(it + 9);
-      return DetCalculator.evaluate(dotProducts(i1, a1),
-                                    dotProducts(i1, a2),
-                                    dotProducts(i1, a3),
-                                    dotProducts(i1, a4),
-                                    dotProducts(i1, a5),
-                                    dotProducts(i2, a1),
-                                    dotProducts(i2, a2),
-                                    dotProducts(i2, a3),
-                                    dotProducts(i2, a4),
-                                    dotProducts(i2, a5),
-                                    dotProducts(i3, a1),
-                                    dotProducts(i3, a2),
-                                    dotProducts(i3, a3),
-                                    dotProducts(i3, a4),
-                                    dotProducts(i3, a5),
-                                    dotProducts(i4, a1),
-                                    dotProducts(i4, a2),
-                                    dotProducts(i4, a3),
-                                    dotProducts(i4, a4),
-                                    dotProducts(i4, a5),
-                                    dotProducts(i5, a1),
-                                    dotProducts(i5, a2),
-                                    dotProducts(i5, a3),
-                                    dotProducts(i5, a4),
+      return DetCalculator.evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
+                                    dotProducts(i1, a5), dotProducts(i2, a1), dotProducts(i2, a2), dotProducts(i2, a3),
+                                    dotProducts(i2, a4), dotProducts(i2, a5), dotProducts(i3, a1), dotProducts(i3, a2),
+                                    dotProducts(i3, a3), dotProducts(i3, a4), dotProducts(i3, a5), dotProducts(i4, a1),
+                                    dotProducts(i4, a2), dotProducts(i4, a3), dotProducts(i4, a4), dotProducts(i4, a5),
+                                    dotProducts(i5, a1), dotProducts(i5, a2), dotProducts(i5, a3), dotProducts(i5, a4),
                                     dotProducts(i5, a5));
     }
     default:

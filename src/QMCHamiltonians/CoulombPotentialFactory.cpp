@@ -78,7 +78,7 @@ void HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
 
 void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
 {
-  typedef QMCHamiltonian::Return_t Return_t;
+  typedef QMCHamiltonian::FullPrecRealType Return_t;
   std::string targetInp(targetPtcl->getName());
   std::string sourceInp(targetPtcl->getName());
   std::string title("ElecElec"), pbc("yes");
@@ -125,14 +125,14 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
       if (quantum)
         targetH->addOperator(new CoulombPotentialAA_CUDA(*ptclA, true), title, physical);
       else
-        targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum), title, physical);
+        targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum, doForces), title, physical);
     }
 #else
     if (applyPBC)
       targetH->addOperator(new CoulombPBCAA(*ptclA, quantum, doForces), title, physical);
     else
     {
-      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum), title, physical);
+      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum, doForces), title, physical);
     }
 #endif
   }
@@ -222,7 +222,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   {
     if (applyPBC == true)
     {
-      ForceChiesaPBCAA* force_chi = new ForceChiesaPBCAA(*source, *target);
+      ForceChiesaPBCAA* force_chi = new ForceChiesaPBCAA(*source, *target, true);
       force_chi->put(cur);
       targetH->addOperator(force_chi, title, false);
     }
@@ -377,7 +377,7 @@ void HamiltonianFactory::addCorePolPotential(xmlNodePtr cur)
     return;
   }
   ParticleSet* ion        = (*pit).second;
-  QMCHamiltonianBase* cpp = (new LocalCorePolPotential(*ion, *targetPtcl));
+  OperatorBase* cpp = (new LocalCorePolPotential(*ion, *targetPtcl));
   cpp->put(cur);
   targetH->addOperator(cpp, title);
 #else

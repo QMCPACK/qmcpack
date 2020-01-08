@@ -21,7 +21,6 @@ import os
 from numpy import array
 from generic import obj
 from physical_system import PhysicalSystem
-from qmcpack_converters import Pw2qmcpack
 from simulation import Simulation
 from pwscf_input import PwscfInput,generate_pwscf_input
 from pwscf_analyzer import PwscfAnalyzer
@@ -86,7 +85,7 @@ class Pwscf(Simulation):
     generic_identifier = 'pwscf'
     application = 'pw.x'
     application_properties = set(['serial','mpi'])
-    application_results    = set(['charge_density','orbitals','structure'])
+    application_results    = set(['charge_density','orbitals','structure','restart'])
 
     supports_restarts = True # supports restartable, but not force restart yet
 
@@ -154,7 +153,7 @@ class Pwscf(Simulation):
     def check_result(self,result_name,sim):
         input = self.input
         control = input.control
-        if result_name=='charge_density':
+        if result_name=='charge_density' or result_name=='restart':
             calculating_result = True
         elif result_name=='orbitals':
             calculating_result = 'calculation' not in control or 'scf' in control.calculation.lower()
@@ -182,7 +181,7 @@ class Pwscf(Simulation):
         if outdir.startswith('./'):
             outdir = outdir[2:]
         #end if
-        if result_name=='charge_density':
+        if result_name=='charge_density' or result_name=='restart':
             result.locdir   = self.locdir
             result.outdir   = os.path.join(self.locdir,outdir)
             result.location = os.path.join(self.locdir,outdir,prefix+'.save','charge-density.dat')
@@ -195,7 +194,11 @@ class Pwscf(Simulation):
             struct  = structs[len(structs)-1]
             pos   = struct.positions
             atoms = struct.atoms
-            scale = self.input.system['celldm(1)']
+            if 'celldm(1)' in self.input.system:
+                scale = self.input.system['celldm(1)']
+            else:
+                scale = 1.0
+            #end if
             pos   = scale*array(pos)
             
             structure = self.system.structure.copy()
@@ -206,12 +209,6 @@ class Pwscf(Simulation):
                 structure.axes = struct.axes.copy()
             #end if
             result.structure = structure
-
-            #atoms = array(atoms)
-            #result.structure = obj(
-            #    positions = pos,
-            #    atoms     = atoms
-            #    )
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if
@@ -260,13 +257,6 @@ class Pwscf(Simulation):
             self.system.structure = relstruct
             self.system.remove_folded()
 
-            #structure = self.system.structure
-            #structure.change_units('B')
-            #structure.set(
-            #    pos   = relstruct.positions,
-            #    atoms = relstruct.atoms
-            #    )
-
             input = self.input
             preserve_kp = 'k_points' in input and 'specifier' in input.k_points and (input.k_points.specifier=='automatic' or input.k_points.specifier=='gamma')
             if preserve_kp:
@@ -275,6 +265,33 @@ class Pwscf(Simulation):
             input.incorporate_system(self.system)
             if preserve_kp:
                 input.k_points = kp
+            #end if
+        elif result_name=='restart':
+            c = self.input.control
+            if('startingwfc' in self.input.electrons and self.input.electrons.startingwfc != 'file'):
+                self.error('Exiting. User has specified startingwfc=\''+self.input.electrons.startingwfc+'\'.\nThis value will be overwritten when incorporating result \'restart\'.\nPlease fix conflict.')
+            #end if
+            if('startingpot' in self.input.electrons and self.input.electrons.startingpot != 'file'):
+                self.error('Exiting. User has specified startingpot=\''+self.input.electrons.startingpot+'\'.\nThis value will be overwritten when incorporating result \'restart\'.\nPlease fix conflict.')
+            #end if
+            c.restart_mode='restart'
+            res_path = os.path.abspath(result.locdir)
+            loc_path = os.path.abspath(self.locdir)
+            if res_path==loc_path:
+                None # don't need to do anything if in same directory
+            else: # rsync output into new scf dir
+                outdir = os.path.join(self.locdir,c.outdir)
+                command = 'rsync -av {0}/* {1}/'.format(result.outdir,outdir)
+                if not os.path.exists(outdir):
+                    os.makedirs(outdir)
+                #end if
+                sync_record = os.path.join(outdir,'nexus_sync_record')
+                if not os.path.exists(sync_record):
+                    execute(command)
+                    f = open(sync_record,'w')
+                    f.write('\n')
+                    f.close()
+                #end if
             #end if
         else:
             self.error('ability to incorporate result '+result_name+' has not been implemented')
@@ -324,8 +341,7 @@ def generate_pwscf(**kwargs):
     sim_args,inp_args = Pwscf.separate_inputs(kwargs)
 
     if not 'input' in sim_args:
-        input_type = inp_args.input_type
-        del inp_args.input_type
+        input_type = inp_args.delete_optional('input_type','generic')
         sim_args.input = generate_pwscf_input(input_type,**inp_args)
     #end if
     pwscf = Pwscf(**sim_args)

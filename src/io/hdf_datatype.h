@@ -13,7 +13,6 @@
 #ifndef QMCPLUSPLUS_H5DATATYPE_DEFINE_H
 #define QMCPLUSPLUS_H5DATATYPE_DEFINE_H
 
-#include <type_traits/scalar_traits.h>
 #if defined(HAVE_LIBHDF5)
 #include <hdf5.h>
 #endif
@@ -21,11 +20,11 @@
 namespace qmcplusplus
 {
 #if defined(HAVE_LIBHDF5)
-template<typename T>
-inline hid_t get_h5_datatype(const T&)
-{
-  return H5T_NATIVE_CHAR;
-}
+/** map C types to hdf5 native types
+ * bool is explicit removed due to the fact that it is implementation-dependant
+ */
+template<typename T, typename ENABLE = std::enable_if_t<!std::is_same<bool, T>::value>>
+inline hid_t get_h5_datatype(const T&);
 
 #define BOOSTSUB_H5_DATATYPE(CppType, H5DTYPE)          \
   template<>                                            \
@@ -37,6 +36,7 @@ inline hid_t get_h5_datatype(const T&)
 BOOSTSUB_H5_DATATYPE(short, H5T_NATIVE_SHORT);
 BOOSTSUB_H5_DATATYPE(int, H5T_NATIVE_INT);
 BOOSTSUB_H5_DATATYPE(long, H5T_NATIVE_LONG);
+BOOSTSUB_H5_DATATYPE(char, H5T_NATIVE_CHAR);
 BOOSTSUB_H5_DATATYPE(unsigned char, H5T_NATIVE_UCHAR);
 BOOSTSUB_H5_DATATYPE(unsigned int, H5T_NATIVE_UINT);
 BOOSTSUB_H5_DATATYPE(unsigned long, H5T_NATIVE_ULONG);
@@ -44,8 +44,6 @@ BOOSTSUB_H5_DATATYPE(unsigned long, H5T_NATIVE_ULONG);
 //BOOSTSUB_H5_DATATYPE(uint64_t, H5T_NATIVE_UINT64);
 BOOSTSUB_H5_DATATYPE(float, H5T_NATIVE_FLOAT);
 BOOSTSUB_H5_DATATYPE(double, H5T_NATIVE_DOUBLE);
-BOOSTSUB_H5_DATATYPE(std::complex<double>, H5T_NATIVE_DOUBLE);
-BOOSTSUB_H5_DATATYPE(std::complex<float>, H5T_NATIVE_FLOAT);
 
 #else
 typedef int hid_t;

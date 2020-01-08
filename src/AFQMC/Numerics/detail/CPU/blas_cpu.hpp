@@ -283,7 +283,7 @@ namespace ma
       dgemm('N','T',2,n,m,alpha,reinterpret_cast<double const*>(x),2*incx,amat,lda,
                           beta,reinterpret_cast<double*>(y),2*incy);      
     else if(trans_in == 't' || trans_in == 'T')
-      dgemm('N','N',2,n,m,alpha,reinterpret_cast<double const*>(x),2*incx,amat,lda,
+      dgemm('N','N',2,m,n,alpha,reinterpret_cast<double const*>(x),2*incx,amat,lda,
                           beta,reinterpret_cast<double*>(y),2*incy);      
     else {
       print_stacktrace
@@ -304,7 +304,7 @@ namespace ma
       sgemm('N','T',2,n,m,alpha,reinterpret_cast<float const*>(x),2*incx,amat,lda,
                           beta,reinterpret_cast<float*>(y),2*incy);
     else if(trans_in == 't' || trans_in == 'T')
-      sgemm('N','N',2,n,m,alpha,reinterpret_cast<float const*>(x),2*incx,amat,lda,
+      sgemm('N','N',2,m,n,alpha,reinterpret_cast<float const*>(x),2*incx,amat,lda,
                           beta,reinterpret_cast<float*>(y),2*incy);
     else {
       print_stacktrace
@@ -625,17 +625,17 @@ namespace ma
         assert(ldb >= m);
         for(int j=0; j<n; j++)
           for(int i=0; i<m; i++)
-            C[ i + j*ldc ] = alpha*C[ i + j*lda ] + beta*B[ i + j*ldb ];
+            C[ i + j*ldc ] = alpha*C[ i + j*ldc ] + beta*B[ i + j*ldb ];
       } else if(Btrans == 'T' || Btrans == 't') {
         assert(ldb >= n);
         for(int j=0; j<n; j++)
           for(int i=0; i<m; i++)
-            C[ i + j*ldc ] = alpha*C[ i + j*lda ] + beta*B[ j + i*ldb ];
+            C[ i + j*ldc ] = alpha*C[ i + j*ldc ] + beta*B[ j + i*ldb ];
       } else if(Btrans == 'C' || Btrans == 'c') {
         assert(ldb >= n);
         for(int j=0; j<n; j++)
           for(int i=0; i<m; i++)
-            C[ i + j*ldc ] = alpha*C[ i + j*lda ] + beta*ma::conj(B[ j + i*ldb ]);
+            C[ i + j*ldc ] = alpha*C[ i + j*ldc ] + beta*ma::conj(B[ j + i*ldb ]);
       } else {
         throw std::runtime_error("Error: Invalid Btrans in geam.");
       }
@@ -657,17 +657,17 @@ namespace ma
         assert(lda >= m);
         for(int j=0; j<n; j++)
           for(int i=0; i<m; i++)
-            C[ i + j*ldc ] = beta*C[ i + j*lda ] + alpha*A[ i + j*lda ];
+            C[ i + j*ldc ] = beta*C[ i + j*ldc ] + alpha*A[ i + j*lda ];
       } else if(Atrans == 'T' || Atrans == 't') {
         assert(lda >= n);
         for(int j=0; j<n; j++)
           for(int i=0; i<m; i++)
-            C[ i + j*ldc ] = beta*C[ i + j*lda ] + alpha*A[ j + i*lda ];
+            C[ i + j*ldc ] = beta*C[ i + j*ldc ] + alpha*A[ j + i*lda ];
       } else if(Atrans == 'C' || Atrans == 'c') {
         assert(lda >= n);
         for(int j=0; j<n; j++)
           for(int i=0; i<m; i++)
-            C[ i + j*ldc ] = beta*C[ i + j*lda ] + alpha*ma::conj(A[ j + i*lda ]);
+            C[ i + j*ldc ] = beta*C[ i + j*ldc ] + alpha*ma::conj(A[ j + i*lda ]);
       } else {
         throw std::runtime_error("Error: Invalid Atrans in geam.");
       }

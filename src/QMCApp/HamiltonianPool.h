@@ -104,7 +104,7 @@ private:
 
   /** pointer to WaveFunctionPool
    *
-   * For those QMCHamiltonianBase that depends on TrialWaveFunction,
+   * For those OperatorBase that depends on TrialWaveFunction,
    * e.g., NonLocalPPotential.
    */
   WaveFunctionPool* psiPool;

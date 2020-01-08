@@ -166,6 +166,39 @@ public:
   {
     if (myVars.size() == 0)
       return;
+    evaluateDerivativesWF(P, active, dlogpsi);
+    bool recalculate(false);
+    std::vector<bool> rcsingles(myVars.size(), false);
+    for (int k = 0; k < myVars.size(); ++k)
+    {
+      int kk = myVars.where(k);
+      if (kk < 0)
+        continue;
+      if (active.recompute(kk))
+        recalculate = true;
+      rcsingles[k] = true;
+    }
+    if (recalculate)
+    {
+      for (int k = 0; k < myVars.size(); ++k)
+      {
+        int kk = myVars.where(k);
+        if (kk < 0)
+          continue;
+        if (rcsingles[k])
+        {
+          dhpsioverpsi[kk] = - RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
+        }
+      }
+    }
+  }
+
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& active,
+                             std::vector<ValueType>& dlogpsi)
+  {
+    if (myVars.size() == 0)
+      return;
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);
     for (int k = 0; k < myVars.size(); ++k)
@@ -208,13 +241,13 @@ public:
       {
         constexpr RealType cone(1);
         constexpr RealType lapfac(OHMMS_DIM - cone);
-        const size_t n  = d_table.size(SourceIndex);
+        const size_t n  = d_table.sources();
         const size_t ng = P.groups();
         for (size_t i = 1; i < n; ++i)
         {
           const size_t ig      = P.GroupID[i] * ng;
-          const RealType* dist = d_table.Distances[i];
-          const auto& displ    = d_table.Displacements[i];
+          const auto& dist = d_table.getDistRow(i);
+          const auto& displ    = d_table.getDisplRow(i);
           for (size_t j = 0; j < i; ++j)
           {
             const size_t ptype = ig + P.GroupID[j];
@@ -243,8 +276,9 @@ public:
       }
       else
       {
-        for (int i = 0; i < d_table.size(SourceIndex); ++i)
+        for (int i = 0; i < d_table.sources(); ++i)
         {
+#ifndef ENABLE_SOA
           for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; ++nn)
           {
             int ptype = d_table.PairID[nn];
@@ -269,6 +303,7 @@ public:
               }
             }
           }
+#endif
         }
       }
       for (int k = 0; k < myVars.size(); ++k)
@@ -279,7 +314,6 @@ public:
         if (rcsingles[k])
         {
           dlogpsi[kk]      = dLogPsi[k];
-          dhpsioverpsi[kk] = - RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
         }
         //optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
       }

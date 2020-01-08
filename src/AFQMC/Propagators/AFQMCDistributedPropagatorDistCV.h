@@ -60,14 +60,26 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
             req_Grecv(MPI_REQUEST_NULL),
             req_vsend(MPI_REQUEST_NULL),
             req_vrecv(MPI_REQUEST_NULL),
-            req_X2send(MPI_REQUEST_NULL),
-            req_X2recv(MPI_REQUEST_NULL),
             req_Xsend(MPI_REQUEST_NULL),
             req_Xrecv(MPI_REQUEST_NULL),
+            req_X2send(MPI_REQUEST_NULL),
+            req_X2recv(MPI_REQUEST_NULL),
             req_bpvsend(MPI_REQUEST_NULL),
             req_bpvrecv(MPI_REQUEST_NULL)
     {
       assert(TG.getNGroupsPerTG() > 1);
+
+      std::string str("no");
+      ParameterSet m_param;
+      m_param.add(str,"low_memory","double");
+      m_param.put(cur);
+
+      std::transform(str.begin(),str.end(),str.begin(),(int (*)(int)) tolower);
+      if(str == "yes" || str == "true") low_memory_step = true;
+
+      if(low_memory_step)
+        app_log()<<" Using low memory distributed propagation. \n";
+
     }
 
     ~AFQMCDistributedPropagatorDistCV() {
@@ -103,10 +115,17 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
                    RealType dt, int fix_bias=1) {
       int nblk = steps/fix_bias;
       int nextra = steps%fix_bias;
-      for(int i=0; i<nblk; i++)
-        step(fix_bias,wset,E1,dt);
-      if(nextra>0)
-        step(nextra,wset,E1,dt);
+      if(low_memory_step) {
+        for(int i=0; i<nblk; i++)
+          step_collective(fix_bias,wset,E1,dt);
+        if(nextra>0)
+          step_collective(nextra,wset,E1,dt);
+      } else {
+        for(int i=0; i<nblk; i++)
+          step(fix_bias,wset,E1,dt);
+        if(nextra>0)
+          step(nextra,wset,E1,dt);
+      }
       TG.local_barrier();
     }
 
@@ -117,6 +136,7 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
 
     bool buffer_reallocated=false;
     bool buffer_reallocated_bp=false;
+    bool low_memory_step=false;
 
     MPI_Request req_Gsend, req_Grecv;
     MPI_Request req_vsend, req_vrecv;
@@ -125,10 +145,14 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
     MPI_Request req_X2send, req_X2recv;
     MPI_Request req_bpvsend, req_bpvrecv;
 
+    std::vector<int> bpx_counts, bpx_displ;
     mpi3CVector bpX;
 
     template<class WlkSet>
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);
+
+    template<class WlkSet>
+    void step_collective(int steps, WlkSet& wset, RealType E1, RealType dt);
 
 };
 

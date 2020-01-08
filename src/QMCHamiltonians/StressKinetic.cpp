@@ -59,7 +59,7 @@ StressKinetic::Return_t StressKinetic::evaluate(ParticleSet& P)
   return 0.0;
 }
 
-QMCHamiltonianBase* StressKinetic::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* StressKinetic::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   return new StressKinetic(*this);
 }

@@ -56,7 +56,7 @@ void CoulombPBCAA_CUDA::initBreakup(ParticleSet& P, bool cloning)
 #endif
 }
 
-QMCHamiltonianBase* CoulombPBCAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* CoulombPBCAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   CoulombPBCAA_CUDA* myclone;
   if (is_active)

@@ -41,10 +41,10 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
       myWarmupSteps(0),
       Mover(0),
       NLop(w.getTotalNum()),
-      ResizeTimer("DMCcuda::resize"),
-      DriftDiffuseTimer("DMCcuda::Drift_Diffuse"),
-      BranchTimer("DMCcuda::Branch"),
-      HTimer("DMCcuda::Hamiltonian")
+      ResizeTimer(*TimerManager.createTimer("DMCcuda::resize")),
+      DriftDiffuseTimer(*TimerManager.createTimer("DMCcuda::Drift_Diffuse")),
+      BranchTimer(*TimerManager.createTimer("DMCcuda::Branch")),
+      HTimer(*TimerManager.createTimer("DMCcuda::Hamiltonian"))
 {
   RootName = "dmc";
   QMCType  = "DMCcuda";
@@ -53,10 +53,8 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
   //m_param.add(myWarmupSteps,"warmupSteps","int");
   //m_param.add(nTargetSamples,"targetWalkers","int");
   m_param.add(ScaleWeight, "scaleweight", "string");
-  TimerManager.addTimer(&ResizeTimer);
-  TimerManager.addTimer(&DriftDiffuseTimer);
-  TimerManager.addTimer(&BranchTimer);
-  TimerManager.addTimer(&HTimer);
+
+  H.setRandomGenerator(&Random);
 }
 
 bool DMCcuda::checkBounds(const PosType& newpos)

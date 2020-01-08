@@ -147,6 +147,19 @@ def create_label_sets():
         'short-LiH_dimer_pp-vmc_hf_sdj_xml',
         'short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj',
         'short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj',
+        'short-diamondC_1x1x1_pp-vmc_sdj_kspace-1-16',
+        'short-diamondC_2x1x1_pp-dmc_sdj-1-16',
+        'short-diamondC_2x1x1_hybridrep_pp-vmc_sdj',
+        'short-bccH_1x1x1_ae-dmc_sdj',
+        'short-NiO_a4_e48_pp-dmc-TMv1v3_sdj',
+        'long-heg_14_gamma-sj-1-16',            
+        'short-chn_ae_cuspCorrection-vmc',
+        'short-li2_sto-sj_dmc',
+        'short-LiH_dimer_ae_qp-vmc_hf_noj',
+        'short-LiH_dimer_ae_pyscf-vmc_hf_noj',
+        'short-LiH_ae-vmc_msdj-1-16',
+        'short-LiH_ae-vmc_msdj_noj-1-16',        
+        'vmc_short_C2_pp_msdj-H5',    
         ])
 
     poor_test |= set([
@@ -536,6 +549,15 @@ except:
 try:
     if test.startswith('deterministic'):
         labels.append('deterministic')
+    #end if
+except:
+    error()
+#end try
+
+
+try:
+    if test.startswith('qe-'):
+        labels.append('converter')
     #end if
 except:
     error()

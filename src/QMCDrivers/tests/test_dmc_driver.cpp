@@ -19,7 +19,6 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCApp/HamiltonianPool.h"
@@ -70,13 +69,10 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
-  int downIdx                  = tspecies.addSpecies("d");
   int chargeIdx                = tspecies.addAttribute("charge");
   int massIdx                  = tspecies.addAttribute("mass");
   tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(chargeIdx, downIdx) = -1;
   tspecies(massIdx, upIdx)     = 1.0;
-  tspecies(massIdx, downIdx)   = 1.0;
 
 #ifdef ENABLE_SOA
   elec.addTable(ions, DT_SOA);
@@ -87,7 +83,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   CloneManager::clear_for_unit_tests();
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
   ConstantOrbital* orb  = new ConstantOrbital;
   psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
@@ -96,7 +92,8 @@ TEST_CASE("DMC", "[drivers][dmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(new BareKineticEnergy<double>(elec), "Kinetic");
+  BareKineticEnergy<double>* p_bke = new BareKineticEnergy<double>(elec);
+  h.addOperator(p_bke, "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -140,5 +137,8 @@ TEST_CASE("DMC", "[drivers][dmc]")
   REQUIRE(elec.R[1][0] == Approx(0.0));
   REQUIRE(elec.R[1][1] == Approx(-0.372329741105903));
   REQUIRE(elec.R[1][2] == Approx(1.0));
+
+  delete doc;
+  delete p_bke;
 }
 } // namespace qmcplusplus

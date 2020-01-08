@@ -24,7 +24,7 @@
 
 namespace qmcplusplus
 {
-struct ForceCeperley : public QMCHamiltonianBase, public ForceBase
+struct ForceCeperley : public OperatorBase, public ForceBase
 {
 private:
   const int d_ei_ID;
@@ -58,7 +58,7 @@ public:
   void resetTargetParticleSet(ParticleSet& P) {}
 
   void setParticlePropertyList(PropertySetType& plist, int offset) { setParticleSetF(plist, offset); }
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   bool put(xmlNodePtr cur);
 

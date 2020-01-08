@@ -124,6 +124,28 @@ struct VariableSet
     return -1;
   }
 
+  /* return the NameAndValue index for the named parameter
+   * @ param vname name of the variable
+   *
+   * Differs from getIndex by not relying on the indices cached in Index
+   * myVars[i] will always return the value of the parameter if it is stored
+   * regardless of whether or not the Index array has been correctly reset
+   *
+   * if vname is not found, return -1
+   *
+   */
+  inline int getLoc(const std::string& vname) const
+  {
+    int loc = 0;
+    while (loc != NameAndValue.size())
+    {
+      if (NameAndValue[loc].first == vname)
+        return loc;
+      ++loc;
+    }
+    return -1;
+  }
+
   inline void insert(const std::string& vname, value_type v, bool enable = true, int type = OTHER_P)
   {
     iterator loc = find(vname);
@@ -195,7 +217,7 @@ struct VariableSet
   /** get the i-th parameter's type
   * @param i index
   */
-  inline int getType(int i) { return ParameterType[i].second; }
+  inline int getType(int i) const { return ParameterType[i].second; }
 
   inline bool recompute(int i) const { return (Recompute[i].second == 1); }
 

@@ -47,9 +47,6 @@ private:
   ///flag to indicate that a qmc is the first QMC
   bool FirstQMC;
 
-  ///previous configuration file for next qmc node
-  std::string PrevConfigFile;
-
   std::unique_ptr<QMCDriverInterface> last_driver;
 
   ///xml mcwalkerset elements for output
@@ -62,8 +59,13 @@ private:
   std::vector<std::pair<xmlNodePtr, bool>> m_qmcaction;
   ///pointer to the last node of the main inputfile
   xmlNodePtr lastInputNode;
-  ///execute <qmc/> element
-  bool runQMC(xmlNodePtr cur);
+  /** execute <qmc/> element
+   * @param cur qmc xml node
+   * @param reuse if true, reuse the driver built from the last QMC section. This should be used by loop only.
+   *
+   * Ye: I think this can be merged with executeQMCSection
+   */
+  bool runQMC(xmlNodePtr cur, bool reuse);
 
   ///add <mcwalkerset/> elements to continue a run
   bool setMCWalkers(xmlXPathContextPtr cur);
@@ -78,10 +80,10 @@ private:
   void executeLoop(xmlNodePtr cur);
   /** execute qmc
    * @param cur qmc xml node
-   * @param noloop if true, this qmc section is not in a loop.
+   * @param reuse if true, reuse the driver built from the last QMC section. This should be used by loop only.
    * @return true, if a section is successfully executed.
    */
-  bool executeQMCSection(xmlNodePtr cur, bool noloop = true);
+  bool executeQMCSection(xmlNodePtr cur, bool reuse = false);
   ///execute <cmc/> element
   bool executeCMCSection(xmlNodePtr cur);
   ///execute <debug/> element

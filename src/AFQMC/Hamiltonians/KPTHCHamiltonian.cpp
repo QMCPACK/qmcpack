@@ -153,7 +153,7 @@ HamiltonianOperations KPTHCHamiltonian::getHamiltonianOperations(bool pureSD,
       }
     }
 #endif
-    std::vector<ValueType> E_(2);
+    std::vector<RealType> E_(2);
     if(!dump.readEntry(E_,"Energies")) {
       app_error()<<" Error in KPTHCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Energies. \n";

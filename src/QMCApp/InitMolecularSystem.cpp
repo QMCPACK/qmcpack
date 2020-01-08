@@ -111,8 +111,10 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   ParticleSet::ParticlePos_t chi(els->getTotalNum());
   //makeGaussRandom(chi);
   makeSphereRandom(chi);
-  int numUp   = els->last(0);
-  int numDown = els->last(1) - els->first(0);
+  // the upper limit of the electron index with spin up
+  const int numUp   = els->last(0);
+  // the upper limit of the electron index with spin down. Pay attention to the no spin down electron case.
+  const int numDown = els->last(els->groups()>1?1:0) - els->first(0);
   int item    = 0;
   int nup_tot = 0, ndown_tot = numUp;
   std::vector<LoneElectron> loneQ;
@@ -124,7 +126,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
     for (size_t iat = 0; iat < Centers; iat++)
     {
       cm += ions->R[iat];
-      const RealType* restrict dist = d_ii.Distances[iat];
+      const auto& dist = d_ii.getDistRow(iat);
       for (size_t jat = iat + 1; jat < Centers; ++jat)
       {
         rmin = std::min(rmin, dist[jat]);
@@ -138,6 +140,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
       }
       for (int k = 0; k < v2; k++)
       {
+        // initialize electron positions in pairs
         if (nup_tot < numUp)
           els->R[nup_tot++] = ions->R[iat] + sep * chi[item++];
         if (ndown_tot < numDown)
@@ -147,6 +150,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   }
   else
   {
+#ifndef ENABLE_SOA
     for (int iat = 0; iat < Centers; iat++)
     {
       cm += ions->R[iat];
@@ -169,6 +173,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
           els->R[ndown_tot++] = ions->R[iat] + sep * chi[item++];
       }
     }
+#endif
   }
 
   // mmorales: changed order of spin assignment to help with spin
@@ -224,7 +229,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   //put all the electrons in a unit box
   if (els->Lattice.SuperCellEnum != SUPERCELL_OPEN)
   {
-    els->R.setUnit(PosUnit::CartesianUnit);
+    els->R.setUnit(PosUnit::Cartesian);
     els->applyBC(els->R);
     els->update(0);
   }
@@ -250,7 +255,7 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
   TinyVector<RealType, OHMMS_DIM> end(0.0);
 
   ParticleSet::ParticlePos_t Ru(ions->getTotalNum());
-  Ru.setUnit(PosUnit::LatticeUnit);
+  Ru.setUnit(PosUnit::Lattice);
   ions->applyBC(ions->R, Ru);
 
   for (int iat = 0; iat < Ru.size(); iat++)
@@ -298,7 +303,7 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
   makeUniformRandom(Ru);
   for (int iat = 0; iat < Ru.size(); ++iat)
     els->R[iat] = slattice.toCart(Ru[iat]) + shift;
-  els->R.setUnit(PosUnit::CartesianUnit);
+  els->R.setUnit(PosUnit::Cartesian);
 }
 
 bool InitMolecularSystem::put(std::istream& is) { return true; }

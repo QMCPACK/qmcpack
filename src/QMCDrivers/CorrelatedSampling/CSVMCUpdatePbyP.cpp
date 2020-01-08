@@ -47,7 +47,6 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 
   //Now we compute sumratio and more importantly, ratioij.
   computeSumRatio(logpsi, avgNorm, RatioIJ, sumratio);
-  RealType r(1.0); //a temporary variable for storing ratio^2.
                    // myTimers[1]->start();
   for (int iter = 0; iter < nSubSteps; ++iter)
   {
@@ -58,16 +57,12 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
       RealType sqrttau = std::sqrt(Tau * MassInvS[ig]);
       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
-        W.setActive(iat);
         PosType dr = sqrttau * deltaR[iat];
         //The move proposal for particle iat.
         if (W.makeMoveAndCheck(iat, dr))
         {
           for (int ipsi = 0; ipsi < nPsi; ipsi++)
-          {
-            r           = Psi1[ipsi]->ratio(W, iat);
-            ratio[ipsi] = r * r;
-          }
+            ratio[ipsi] = std::norm(Psi1[ipsi]->calcRatio(W, iat));
           //Compute the ratio and acceptance probability.
           RealType prob = 0;
           for (int ipsi = 0; ipsi < nPsi; ipsi++)
@@ -78,9 +73,9 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
             stucked = false;
             ++nAccept;
             for (int ipsi = 0; ipsi < nPsi; ipsi++)
-              Psi1[ipsi]->acceptMove(W, iat);
+              Psi1[ipsi]->acceptMove(W, iat, true);
 
-            W.acceptMove(iat);
+            W.acceptMove(iat, true);
             //Now we update ratioIJ.
             updateRatioMatrix(ratio, RatioIJ);
             computeSumRatio(RatioIJ, sumratio);

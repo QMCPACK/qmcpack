@@ -42,6 +42,9 @@ public:
 class WaveFunctionTester : public QMCDriver
 {
 public:
+  /// type definition
+  using LogValueType = WaveFunctionComponent::LogValueType;
+
   /// Constructor.
   WaveFunctionTester(MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,

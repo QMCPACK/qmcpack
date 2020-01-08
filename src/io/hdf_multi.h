@@ -11,9 +11,11 @@
 
 #ifndef QMCPLUSPLUS_HDF_MULTI_INTERFACE_H
 #define QMCPLUSPLUS_HDF_MULTI_INTERFACE_H
-#include <io/hdf_dataproxy.h>
-#include "multi/array.hpp"
-#include "multi/array_ref.hpp"
+
+#include <multi/array.hpp>
+#include <multi/array_ref.hpp>
+#include "io/hdf_dataproxy.h"
+#include "io/hdf_hyperslab.h"
 
 #ifdef BUILD_AFQMC
 #ifdef ENABLE_CUDA
@@ -30,9 +32,10 @@ namespace qmcplusplus
 template<typename T, class Alloc>
 struct h5data_proxy<boost::multi::array<T, 1, Alloc>> : public h5_space_type<T, 1>
 {
-  using h5_space_type<T, 1>::dims;
-  using h5_space_type<T, 1>::get_address;
-  typedef boost::multi::array<T, 1, Alloc> data_type;
+  using FileSpace = h5_space_type<T, 1>;
+  using FileSpace::dims;
+  using FileSpace::get_address;
+  using data_type = boost::multi::array<T, 1, Alloc>;
   data_type& ref_;
 
   inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = ref_.num_elements(); }
@@ -40,24 +43,26 @@ struct h5data_proxy<boost::multi::array<T, 1, Alloc>> : public h5_space_type<T, 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     using iextensions = typename boost::multi::iextensions<1u>;
-    if (!get_space(grp, aname, this->size(), dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref_.reextent(iextensions{dims[0]});
     return h5d_read(grp, aname, get_address(std::addressof(*ref_.origin())), xfer_plist);
   }
 
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(std::addressof(*ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref_.origin())), xfer_plist);
   }
 };
 
 template<typename T, class Alloc>
 struct h5data_proxy<boost::multi::array<T, 2, Alloc>> : public h5_space_type<T, 2>
 {
-  using h5_space_type<T, 2>::dims;
-  using h5_space_type<T, 2>::get_address;
-  typedef boost::multi::array<T, 2, Alloc> data_type;
+  using FileSpace = h5_space_type<T, 2>;
+  using FileSpace::dims;
+  using FileSpace::get_address;
+  using data_type = boost::multi::array<T, 2, Alloc>;
   data_type& ref_;
+
   inline h5data_proxy(data_type& a) : ref_(a)
   {
     dims[0] = ref_.size(0);
@@ -65,29 +70,30 @@ struct h5data_proxy<boost::multi::array<T, 2, Alloc>> : public h5_space_type<T, 
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, this->size(), dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref_.reextent({dims[0], dims[1]});
     return h5d_read(grp, aname, get_address(std::addressof(*ref_.origin())), xfer_plist);
   }
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(std::addressof(*ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref_.origin())), xfer_plist);
   }
 };
 
 template<typename T, class Ptr>
 struct h5data_proxy<boost::multi::array_ref<T, 1, Ptr>> : public h5_space_type<T, 1>
 {
-  using h5_space_type<T, 1>::dims;
-  using h5_space_type<T, 1>::get_address;
-  typedef boost::multi::array_ref<T, 1, Ptr> data_type;
+  using FileSpace = h5_space_type<T, 1>;
+  using FileSpace::dims;
+  using FileSpace::get_address;
+  using data_type = boost::multi::array_ref<T, 1, Ptr>;
   data_type& ref_;
 
   inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = ref_.num_elements(); }
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, this->size(), dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] > 0)
       {
@@ -101,17 +107,19 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, Ptr>> : public h5_space_type<T
 
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(std::addressof(*ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref_.origin())), xfer_plist);
   }
 };
 
 template<typename T, class Ptr>
 struct h5data_proxy<boost::multi::array_ref<T, 2, Ptr>> : public h5_space_type<T, 2>
 {
-  using h5_space_type<T, 2>::dims;
-  using h5_space_type<T, 2>::get_address;
-  typedef boost::multi::array_ref<T, 2, Ptr> data_type;
+  using FileSpace = h5_space_type<T, 2>;
+  using FileSpace::dims;
+  using FileSpace::get_address;
+  using data_type = boost::multi::array_ref<T, 2, Ptr>;
   data_type& ref_;
+
   inline h5data_proxy(data_type& a) : ref_(a)
   {
     dims[0] = ref_.size(0);
@@ -119,7 +127,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, Ptr>> : public h5_space_type<T
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, this->size(), dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] * dims[1] > 0)
       {
@@ -132,7 +140,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, Ptr>> : public h5_space_type<T
   }
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(std::addressof(*ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref_.origin())), xfer_plist);
   }
 };
 
@@ -144,16 +152,17 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, Ptr>> : public h5_space_type<T
 template<typename T>
 struct h5data_proxy<boost::multi::array<T, 1, qmc_cuda::cuda_gpu_allocator<T>>> : public h5_space_type<T, 1>
 {
-  using h5_space_type<T, 1>::dims;
-  using h5_space_type<T, 1>::get_address;
-  typedef boost::multi::array<T, 1, qmc_cuda::cuda_gpu_allocator<T>> data_type;
+  using FileSpace = h5_space_type<T, 1>;
+  using FileSpace::dims;
+  using FileSpace::get_address;
+  using data_type = boost::multi::array<T, 1, qmc_cuda::cuda_gpu_allocator<T>>;
   data_type& ref_;
 
   inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = ref_.num_elements(); }
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, this->size(), dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref_.reextent({dims[0]});
     std::size_t sz    = ref_.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
@@ -166,17 +175,19 @@ struct h5data_proxy<boost::multi::array<T, 1, qmc_cuda::cuda_gpu_allocator<T>>> 
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     throw std::runtime_error(" write from gpu not implemented yet.");
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(to_address(ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref_.origin())), xfer_plist);
   }
 };
 
 template<typename T>
 struct h5data_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>> : public h5_space_type<T, 2>
 {
-  using h5_space_type<T, 2>::dims;
-  using h5_space_type<T, 2>::get_address;
-  typedef boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>> data_type;
+  using FileSpace = h5_space_type<T, 2>;
+  using FileSpace::dims;
+  using FileSpace::get_address;
+  using data_type = boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>;
   data_type& ref_;
+
   inline h5data_proxy(data_type& a) : ref_(a)
   {
     dims[0] = ref_.size(0);
@@ -184,7 +195,7 @@ struct h5data_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>> 
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, this->size(), dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref_.reextent({dims[0], dims[1]});
     std::size_t sz    = ref_.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
@@ -196,23 +207,24 @@ struct h5data_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>> 
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     throw std::runtime_error(" write from gpu not implemented yet.");
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(to_address(ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref_.origin())), xfer_plist);
   }
 };
 
 template<typename T>
 struct h5data_proxy<boost::multi::array_ref<T, 1, qmc_cuda::cuda_gpu_ptr<T>>> : public h5_space_type<T, 1>
 {
-  using h5_space_type<T, 1>::dims;
-  using h5_space_type<T, 1>::get_address;
-  typedef boost::multi::array_ref<T, 1, qmc_cuda::cuda_gpu_ptr<T>> data_type;
+  using FileSpace = h5_space_type<T, 1>;
+  using FileSpace::dims;
+  using FileSpace::get_address;
+  using data_type = boost::multi::array_ref<T, 1, qmc_cuda::cuda_gpu_ptr<T>>;
   data_type& ref_;
 
   inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = ref_.num_elements(); }
 
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, this->size(), dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] > 0)
       {
@@ -232,17 +244,19 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, qmc_cuda::cuda_gpu_ptr<T>>> : 
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     throw std::runtime_error(" write from gpu not implemented yet.");
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(to_address(ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref_.origin())), xfer_plist);
   }
 };
 
 template<typename T>
 struct h5data_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>> : public h5_space_type<T, 2>
 {
-  using h5_space_type<T, 2>::dims;
-  using h5_space_type<T, 2>::get_address;
-  typedef boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>> data_type;
+  using FileSpace = h5_space_type<T, 2>;
+  using FileSpace::dims;
+  using FileSpace::get_address;
+  using data_type = boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>;
   data_type& ref_;
+
   inline h5data_proxy(data_type& a) : ref_(a)
   {
     dims[0] = ref_.size(0);
@@ -250,7 +264,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>> : 
   }
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (!get_space(grp, aname, this->size(), dims))
+    if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] * dims[1] > 0)
       {
@@ -269,10 +283,81 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>> : 
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     throw std::runtime_error(" write from gpu not implemented yet.");
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(to_address(ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref_.origin())), xfer_plist);
   }
 };
 
+template<typename T, unsigned RANK>
+struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>, RANK>>
+{
+  typedef boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>> CT;
+  hyperslab_proxy<CT, RANK>& ref_;
+  h5data_proxy(hyperslab_proxy<CT, RANK>& a) : ref_(a) {}
+  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  {
+    if (ref_.use_slab)
+    {
+      // later on specialize h5d_read for fancy pointers
+      std::size_t sz = ref_.ref.num_elements();
+      boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
+      auto ret = h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
+                          ref_.slab_offset.data(), buf.origin(), xfer_plist);
+      qmc_cuda::copy_n(buf.data(), sz, ref_.ref.origin());
+      return ret;
+    }
+    else
+    {
+      int rank = ref_.slab_rank;
+      if (!checkShapeConsistency<T>(grp, aname, rank, ref_.slab_dims.data(), true))
+      {
+        std::cerr << " Disabled hyperslab resize with boost::multi::array<gpu_allocator>.\n";
+        return false;
+      }
+      return h5d_read(grp, aname, ref_.data(), xfer_plist);
+    }
+  }
+  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  {
+    std::cerr << " Disabled hyperslab write with boost::multi::array<gpu_allocator>.\n";
+    return false;
+  }
+};
+
+template<typename T, unsigned RANK>
+struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>, RANK>>
+{
+  typedef boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>> CT;
+  hyperslab_proxy<CT, RANK>& ref_;
+  h5data_proxy(hyperslab_proxy<CT, RANK>& a) : ref_(a) {}
+  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  {
+    if (ref_.use_slab)
+    {
+      // later on specialize h5d_read for fancy pointers
+      std::size_t sz = ref_.ref.num_elements();
+      boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
+      auto ret = h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
+                          ref_.slab_offset.data(), buf.origin(), xfer_plist);
+      qmc_cuda::copy_n(buf.data(), sz, ref_.ref.origin());
+      return ret;
+    }
+    else
+    {
+      int rank = ref_.slab_rank;
+      if (!checkShapeConsistency<T>(grp, aname, rank, ref_.slab_dims.data(), true))
+      {
+        std::cerr << " Disabled hyperslab resize with boost::multi::array_ref<gpu_ptr>.\n";
+        return false;
+      }
+      return h5d_read(grp, aname, ref_.data(), xfer_plist);
+    }
+  }
+  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  {
+    std::cerr << " Disabled hyperslab write with boost::multi::array_ref<gpu_ptr>.\n";
+    return false;
+  }
+};
 
 #endif
 #endif

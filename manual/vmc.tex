@@ -13,7 +13,7 @@
    &   \texttt{steps               } &  integer  & $\ge 0$ & 1   & Number of steps per block   \\
    &   \texttt{warmupsteps         } &  integer  & $\ge 0$ & 0   & Number of steps for warming up\\
    &   \texttt{substeps            } &  integer  & $\ge 0$ & 1   & Number of substeps per step \\
-   &   \texttt{usedrift            } &  text     & yes, no & no  & Use the algorithm with drift\\
+   &   \texttt{usedrift            } &  text     & yes, no & yes  & Use the algorithm with drift\\
    &   \texttt{timestep            } &  real     & $> 0$   & 0.1 & Time step for each electron move \\
    &   \texttt{samples             } &  integer  & $\ge 0$ & 0   & Number of walker samples for DMC/optimization\\
    &   \texttt{stepsbetweensamples } &  integer  & $> 0$   & 1   & Period of sample accumulation\\
@@ -26,7 +26,7 @@
 
 Additional information:
 \begin{itemize}
-\item \ixml{walkers}: The initial default number of \ixml{walkers} is one per OpenMP thread or per MPI task if threading is disabled, with a minimum of one per thread. One walker per thread is created in the event fewer \ixml{walkers} than threads are requested. 
+\item \ixml{walkers}: The number of walkers per MPI task. The initial default number of \ixml{walkers} is one per OpenMP thread or per MPI task if threading is disabled. The number is rounded down to a multiple of the number of threads with a minimum of one per thread to ensure perfect load balancing. One walker per thread is created in the event fewer \ixml{walkers} than threads are requested. 
 
 \item \ixml{blocks}: This parameter is universal for all the QMC
   methods. The MC processes are divided into a number of

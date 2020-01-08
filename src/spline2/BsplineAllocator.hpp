@@ -111,13 +111,14 @@ typename BsplineAllocator<T, ALIGN, ALLOC>::SplineType* BsplineAllocator<T, ALIG
     int num_splines)
 {
   // Create new spline
-  SplineType* restrict spline = new SplineType;
-  spline->spcode              = bspline_traits<T, 3>::spcode;
-  spline->tcode               = bspline_traits<T, 3>::tcode;
-  spline->xBC                 = xBC;
-  spline->yBC                 = yBC;
-  spline->zBC                 = zBC;
-  spline->num_splines         = num_splines;
+  SplineType* spline = new SplineType;
+
+  spline->spcode      = bspline_traits<T, 3>::spcode;
+  spline->tcode       = bspline_traits<T, 3>::tcode;
+  spline->xBC         = xBC;
+  spline->yBC         = yBC;
+  spline->zBC         = zBC;
+  spline->num_splines = num_splines;
 
   // Setup internal variables
   int Mx = x_grid.num;
@@ -172,12 +173,12 @@ typename BsplineAllocator<T, ALIGN, ALLOC>::SingleSplineType* BsplineAllocator<T
     T* data)
 {
   // Create new spline
-  SingleSplineType* restrict spline = new SingleSplineType;
-  spline->spcode                    = bspline_traits<T, 3>::single_spcode;
-  spline->tcode                     = bspline_traits<T, 3>::tcode;
-  spline->xBC                       = xBC;
-  spline->yBC                       = yBC;
-  spline->zBC                       = zBC;
+  SingleSplineType* spline = new SingleSplineType;
+  spline->spcode           = bspline_traits<T, 3>::single_spcode;
+  spline->tcode            = bspline_traits<T, 3>::tcode;
+  spline->xBC              = xBC;
+  spline->yBC              = yBC;
+  spline->zBC              = zBC;
 
   // Setup internal variables
   int Mx = x_grid.num;

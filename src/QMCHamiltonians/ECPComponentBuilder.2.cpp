@@ -14,6 +14,7 @@
 
 
 #include "QMCHamiltonians/ECPComponentBuilder.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "Numerics/OneDimCubicSpline.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/SimpleParser.h"
@@ -286,13 +287,7 @@ bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   aAttrib.add(Lmax, "lmax");
   aAttrib.add(Nrule, "nrule");
   aAttrib.put(cur);
-  //const xmlChar* rptr=xmlGetProp(cur,(const xmlChar*)"cutoff");
-  //if(rptr != NULL) rmax = atof((const char*)rptr);
-  //app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
-  //const RealType d=5e-4;
-  //LinearGrid<RealType>* agrid = new LinearGrid<RealType>;
-  //int ng=static_cast<int>(rmax/d)+1;
-  //agrid->set(0,rmax,ng);
+
   std::ifstream fin(fname.c_str(), std::ios_base::in);
   if (!fin)
   {
