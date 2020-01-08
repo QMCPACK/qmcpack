@@ -203,6 +203,24 @@ real_t fixedGridSum(T& function, IntVec nmax, bool zero=true)
 
 
 
+/// Functor for short range part of e-e pair potential
+class RspaceEwaldPairPotential
+{
+private:
+  /// The constant 1/(\sqrt{2}\kappa) in Drummond 2008 formula 6
+  const real_t rexponent;
+
+public:
+  RspaceEwaldPairPotential(real_t rexponent_in) : rexponent(rexponent_in) {}
+
+  real_t operator()(const RealVec& r) const
+  {
+    real_t R  = std::sqrt(dot(r, r));
+    return std::erfc(rexponent * R) / R;
+  }
+};
+
+
 /// Functor for Fourier transform of long range part of e-e pair potential
 class KspaceEwaldPairPotential
 {
@@ -553,8 +571,31 @@ public:
     setupOpt(nmax_anisotropic);
   }
 
+
+  template<typename PA, typename DT>
+  real_t ewaldEnergyOpt(const PA& R, const DT& dt)
+  {
+    real_t Vc  = ewaldEnergyConst();
+    real_t Vsr = ewaldEnergySROpt(dt);
+    real_t Vlr = ewaldEnergyLROpt(R);
+    return Vc + Vsr + Vlr;
+  }
+
+
+  template<typename DT>
+  real_t ewaldEnergySROpt(const DT& dt)
+  {
+    const auto& dr = dt.getDisplacements();
+    real_t ee = 0.0;
+    RspaceEwaldPairPotential vsr(rexponent_ewald);
+    for (size_t i = 0; i < N; ++i)
+      for (size_t j = 0; j < i; ++j)
+        ee += Q[i]*Q[j]*vsr(dr[i][j]);
+    return ee;
+  }
+
   
- /// LR (k-space) part of total energy computed optimally
+  /// LR (k-space) part of total energy computed optimally
   template<typename PA>
   real_t ewaldEnergyLROpt(const PA& R)
   {
@@ -606,25 +647,21 @@ public:
 
 
 
-
-
-  template<typename PA>
-  real_t ewaldEnergySR0(const PA& R)
+  template<typename DT>
+  real_t ewaldEnergySR0(const DT& dt)
   {
+    const auto& dr = dt.getDisplacements();
     real_t ee = 0.0;
-    size_t Npairs = (N*(N-1))/2;
-    IntVec nmax;
+    RspaceEwaldPairPotential vsr(rexponent_ewald);
     for (size_t i = 0; i < N; ++i)
       for (size_t j = 0; j < i; ++j)
-      {
-        real_t tol_ewald = tol/(Q[i]*Q[j])/Npairs;
-        RspaceEwaldTerm rfunc(R[i]-R[j], A, rexponent_ewald);
-        IntVec iv = 0;
-        real_t rval = rfunc(iv);
-        ee += Q[i]*Q[j]*rval;
-      }
+        ee += Q[i]*Q[j]*vsr(dr[i][j]);
     return ee;
   }
+
+
+
+
 
 
   template<typename DT>
@@ -661,27 +698,6 @@ public:
         KspaceEwaldTerm kfunc(dr[i][j], B, kexponent_ewald, kprefactor_ewald);
         real_t kval = anisotropicGridSum(kfunc, nmax, false, tol_ewald);
         ee += Q[i]*Q[j]*kval;
-      }
-    return ee;
-  }
-
-
-
-  template<typename DT>
-  real_t ewaldEnergySR0DT(const DT& dt)
-  {
-    auto& dr = dt.getDisplacements();
-    real_t ee = 0.0;
-    size_t Npairs = (N*(N-1))/2;
-    IntVec nmax;
-    for (size_t i = 0; i < N; ++i)
-      for (size_t j = 0; j < i; ++j)
-      {
-        real_t tol_ewald = tol/(Q[i]*Q[j])/Npairs;
-        RspaceEwaldTerm rfunc(dr[i][j], A, rexponent_ewald);
-        IntVec iv = 0;
-        real_t rval = rfunc(iv);
-        ee += Q[i]*Q[j]*rval;
       }
     return ee;
   }

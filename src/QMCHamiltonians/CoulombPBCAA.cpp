@@ -62,15 +62,18 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     Q[i] = Zat[i];
 
 
-  ewald.initialize(A,Q);
 
   //RealType qmcpack_kappa = AA->LR_kc;
   RealType qmcpack_sigma = std::sqrt(AA->LR_kc / (2.0 * AA->LR_rc));
   RealType qmcpack_kappa = 1./(std::sqrt(2.0)*qmcpack_sigma);
   ewaldtools::AnisotropicEwald ewald_qp(A,Q,1e-10,qmcpack_kappa);
 
-  //ewaldref::IntVec nmax = 0;
-  //ewald.setNmax(nmax);
+  //ewald.initialize(A,Q);
+  ewald.initialize(A,Q,1e-10,qmcpack_kappa);
+
+
+  ewaldref::IntVec nmax = 20;
+  ewald.setNmax(nmax);
 
   if (!is_active)
   {
@@ -102,9 +105,11 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     //RealType lr_qp  = ewald_qp.ewaldEnergyLRDT(dt);
     //RealType sr0_qp = ewald_qp.ewaldEnergySR0DT(dt);
 
-    //RealType c_qmc = myConst;
-    //RealType sr_qmc = evalSR(Ps);
-    //RealType lr_qmc = evalLR(Ps);
+    RealType c_qmc = myConst;
+    RealType sr_qmc = evalSR(Ps);
+    RealType lr_qmc = evalLR(Ps);
+    RealType E_qmc  = c_qmc + sr_qmc + lr_qmc;
+
 
     app_log()<<std::setprecision(14);
     app_log()<<std::endl;
@@ -135,12 +140,29 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     app_log()<<"   aniso ewald nmax           : "<<ewald_qp.getNmax()<<std::endl;
     app_log()<<std::setprecision(14);
 
+    
     //ewaldtools::IntVec nmax = 20;
     //ewald.setupOpt(nmax);
-    ewald.setupOpt();
-    RealType lr_opt = ewald.ewaldEnergyLROpt(Ps.R);
-    app_log()<<"   ewald     LR  : "<<lr<<std::endl;
+
+    //auto& ewald_opt = ewald_qp;
+    auto& ewald_opt = ewald;
+
+    RealType c_ref  = ewald_opt.ewaldEnergyConst();
+    RealType sr_ref = ewald_opt.ewaldEnergySR(Ps.R);
+    RealType lr_ref = ewald_opt.ewaldEnergyLR(Ps.R);
+    //ewald_opt.setupOpt();
+    ewald_opt.setupOpt(nmax);
+    RealType c_opt  = ewald_opt.ewaldEnergyConst();
+    RealType sr_opt = ewald_opt.ewaldEnergySROpt(dt);
+    RealType lr_opt = ewald_opt.ewaldEnergyLROpt(Ps.R);
+    app_log()<<"   ewald opt energy           : "<<c_opt+sr_opt+lr_opt<<std::endl;
+    app_log()<<"   ewald opt energy2          : "<<ewald.ewaldEnergyOpt(Ps.R,dt)<<std::endl;
+    app_log()<<"   qmcpack   energy           : "<<E_qmc<<std::endl;
+    app_log()<<"   ewald     LR  : "<<lr_ref<<std::endl;
     app_log()<<"   ewald opt LR  : "<<lr_opt<<std::endl;
+    app_log()<<"   ewald     SR  : "<<sr_ref<<std::endl;
+    app_log()<<"   ewald opt SR  : "<<sr_opt<<std::endl;
+    app_log()<<"   qmcpack   SR  : "<<sr_qmc<<std::endl;
 
     app_log()<<std::endl;
     app_log()<<std::endl;
@@ -175,7 +197,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
       app_log() << "  Check passed." << std::endl;
     }
 
-    APP_ABORT("explore")
+    //APP_ABORT("explore")
 
   }
   prefix = "F_AA";
@@ -247,6 +269,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
 {
   ScopedTimer evaltimer(TimerManager.createTimer("CoulombPBCAA_eval_total"));
 
+  const DistanceTableData& dt(P.getDistTable(d_aa_ID));
+
   if (is_active)
   {
     {
@@ -263,12 +287,17 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
     RealType eval;
     {
       ScopedTimer evaltimer(TimerManager.createTimer("Aniso eval"));
-      eval = ewald.fixedGridEwaldEnergy(P.R);
+      //eval = ewald.fixedGridEwaldEnergy(P.R);
+      eval = ewald.ewaldEnergyOpt(P.R,dt);
     }
 
     app_log()<<std::endl;
     app_log()<<"  QMCPACK value: "<<Value<<std::endl;
     app_log()<<"  Aniso   value: "<<eval<<std::endl;
+    app_log()<<"  QMCPACK    SR: "<<evalSR(P)<<std::endl;
+    app_log()<<"  Aniso      SR: "<<ewald.ewaldEnergySROpt(dt)<<std::endl;
+    app_log()<<"  QMCPACK    LR: "<<evalLR(P)+myConst<<std::endl;
+    app_log()<<"  Aniso      LR: "<<ewald.ewaldEnergyLROpt(P.R)<<std::endl;
     app_log()<<std::endl;
   }
   return Value;
