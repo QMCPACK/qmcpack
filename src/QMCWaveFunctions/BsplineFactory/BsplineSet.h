@@ -140,9 +140,6 @@ public:
                                     GradMatrix_t& dlogdet,
                                     HessMatrix_t& grad_grad_logdet) override
   {
-    typedef ValueMatrix_t::value_type value_type;
-    typedef GradMatrix_t::value_type grad_type;
-    typedef HessMatrix_t::value_type hess_type;
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
       ValueVector_t v(logdet[i], OrbitalSetSize);
@@ -160,10 +157,6 @@ public:
                                     HessMatrix_t& grad_grad_logdet,
                                     GGGMatrix_t& grad_grad_grad_logdet) override
   {
-    typedef ValueMatrix_t::value_type value_type;
-    typedef GradMatrix_t::value_type grad_type;
-    typedef HessMatrix_t::value_type hess_type;
-    typedef GGGMatrix_t::value_type ghess_type;
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
       ValueVector_t v(logdet[i], OrbitalSetSize);

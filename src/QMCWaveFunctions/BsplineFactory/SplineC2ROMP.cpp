@@ -1558,6 +1558,68 @@ void SplineC2ROMP<ST>::evaluateVGHGH(const ParticleSet& P,
   }
 }
 
+template<typename ST>
+void SplineC2ROMP<ST>::evaluate_notranspose(const ParticleSet& P,
+                                            int first,
+                                            int last,
+                                            ValueMatrix_t& logdet,
+                                            GradMatrix_t& dlogdet,
+                                            ValueMatrix_t& d2logdet)
+{
+  // chunk the [first, last) loop into blocks to save temporary memory usage
+  const int block_size = 16;
+
+  // reference vectors refer to the rows of matrices
+  std::vector<ValueVector_t> multi_psi_v;
+  std::vector<GradVector_t> multi_dpsi_v;
+  std::vector<ValueVector_t> multi_d2psi_v;
+  RefVector<ValueVector_t> psi_v_list;
+  RefVector<GradVector_t> dpsi_v_list;
+  RefVector<ValueVector_t> d2psi_v_list;
+
+  multi_psi_v.reserve(block_size);
+  multi_dpsi_v.reserve(block_size);
+  multi_d2psi_v.reserve(block_size);
+  psi_v_list.reserve(block_size);
+  dpsi_v_list.reserve(block_size);
+  d2psi_v_list.reserve(block_size);
+
+  for (int iat = first, i = 0; iat < last; iat += block_size, i += block_size)
+  {
+    const int actual_block_size = std::min(last - iat, block_size);
+    multi_pos_copy.resize(actual_block_size * 6);
+    multi_psi_v.clear();
+    multi_dpsi_v.clear();
+    multi_d2psi_v.clear();
+    psi_v_list.clear();
+    dpsi_v_list.clear();
+    d2psi_v_list.clear();
+
+    for (int ipos = 0; ipos < actual_block_size; ++ipos)
+    {
+      // pack particle positions
+      const PointType& r = P.activeR(iat + ipos);
+      PointType ru(PrimLattice.toUnit_floor(r));
+      multi_pos_copy[ipos * 6]     = r[0];
+      multi_pos_copy[ipos * 6 + 1] = r[1];
+      multi_pos_copy[ipos * 6 + 2] = r[2];
+      multi_pos_copy[ipos * 6 + 3] = ru[0];
+      multi_pos_copy[ipos * 6 + 4] = ru[1];
+      multi_pos_copy[ipos * 6 + 5] = ru[2];
+
+      multi_psi_v.emplace_back(logdet[i + ipos], OrbitalSetSize);
+      multi_dpsi_v.emplace_back(dlogdet[i + ipos], OrbitalSetSize);
+      multi_d2psi_v.emplace_back(d2logdet[i + ipos], OrbitalSetSize);
+
+      psi_v_list.push_back(multi_psi_v[ipos]);
+      dpsi_v_list.push_back(multi_dpsi_v[ipos]);
+      d2psi_v_list.push_back(multi_d2psi_v[ipos]);
+    }
+
+    evaluateVGLMultiPos(multi_pos_copy, psi_v_list, dpsi_v_list, d2psi_v_list);
+  }
+}
+
 template class SplineC2ROMP<float>;
 template class SplineC2ROMP<double>;
 

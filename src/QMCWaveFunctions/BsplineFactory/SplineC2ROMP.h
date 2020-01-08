@@ -269,6 +269,13 @@ public:
                              HessVector_t& grad_grad_psi,
                              GGGVector_t& grad_grad_grad_psi) override;
 
+  virtual void evaluate_notranspose(const ParticleSet& P,
+                                    int first,
+                                    int last,
+                                    ValueMatrix_t& logdet,
+                                    GradMatrix_t& dlogdet,
+                                    ValueMatrix_t& d2logdet) override;
+
   template<class BSPLINESPO>
   friend class SplineSetReader;
   friend class BsplineReaderBase;
