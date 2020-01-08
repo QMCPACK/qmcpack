@@ -83,8 +83,8 @@ bool GridExternalPotential::put(xmlNodePtr cur)
 
   hin.read(data, dataset_name);
   
-  spline_data = create_UBspline_3d_d(grid, grid, grid, 
-                                     BC, BC, BC, data.data());
+  spline_data.reset(create_UBspline_3d_d(grid, grid, grid, 
+                                     BC, BC, BC, data.data()));
 
   return true;
 }
@@ -117,7 +117,7 @@ GridExternalPotential::Return_t GridExternalPotential::evaluate(ParticleSet& P)
       PosType r = P.R[i];
       P.Lattice.applyMinimumImage(r);
       double val = 0.0;
-      eval_UBspline_3d_d(spline_data, r[0], r[1], r[2], &val);
+      eval_UBspline_3d_d(spline_data.get(), r[0], r[1], r[2], &val);
 
       Value += val;
     }

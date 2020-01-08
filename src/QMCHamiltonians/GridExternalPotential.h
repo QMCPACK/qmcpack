@@ -8,29 +8,26 @@
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
-//
-//
-// Info: This class allows one to read in an arbitrary external potential in qmcpack. 
-//       This can be done by reading in data from an HDF5 format file. 
-//
-//
 //////////////////////////////////////////////////////////////////////////////////////
 
 
 #ifndef QMCPLUSPLUS_GRID_EXTERNAL_POTENTIAL_H
 #define QMCPLUSPLUS_GRID_EXTERNAL_POTENTIAL_H
 
+#include <memory>
 #include <QMCHamiltonians/OperatorBase.h>
 #include <einspline/bspline.h>
 
 
 namespace qmcplusplus
 {
+/** This class allows one to read in an arbitrary external potential
+  */
 struct GridExternalPotential : public OperatorBase
 {
   const ParticleSet& Ps;
 
-  UBspline_3d_d* spline_data;
+  std::shared_ptr<UBspline_3d_d> spline_data;
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace sample array
