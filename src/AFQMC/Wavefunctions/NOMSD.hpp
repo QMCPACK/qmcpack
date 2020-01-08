@@ -119,6 +119,7 @@ class NOMSD: public AFQMCInfo
       transposed_vHS_ = HamOp.transposed_vHS();  
 
       excitedState = false;  
+      std::string rediag("");  
       std::string excited_file("");  
       std::string svd_Gf("no");
       std::string svd_O("no");
@@ -135,6 +136,7 @@ class NOMSD: public AFQMCInfo
       // generalize this to multi-particle excitations, how do I read a list of integers???
       m_param.add(i_,"i","int");
       m_param.add(a_,"a","int");
+      m_param.add(rediag,"rediag","std::string");
       m_param.add(svd_Gf,"svd_with_Gfull","std::string");
       m_param.add(svd_Gm,"svd_with_Gmix","std::string");
       m_param.add(svd_O,"svd_with_Ovlp","std::string");
@@ -180,6 +182,10 @@ class NOMSD: public AFQMCInfo
         readWfn(excited_file,excitedOrbMat_,NMO,maxOccupExtendedMat.first,maxOccupExtendedMat.second);
         excitedOrbMat = excitedOrbMat_;
       }    
+
+      std::transform(rediag.begin(),rediag.end(),rediag.begin(),(int (*)(int)) tolower);
+      if(rediag == "yes" || rediag == "true") 
+         recompute_ci();
     }
 
     ~NOMSD() {
@@ -218,8 +224,8 @@ class NOMSD: public AFQMCInfo
     template<class Vec>
     void vMF(Vec&& v);
 
-    stdCMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, stdCVector const& vMF)
-    { return HamOp.getOneBodyPropagatorMatrix(TG,vMF); }
+    stdCMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG_, stdCVector const& vMF)
+    { return HamOp.getOneBodyPropagatorMatrix(TG_,vMF); }
 
     SlaterDetOperations* getSlaterDetOperations() {return std::addressof(SDetOp);} 
 
@@ -576,6 +582,8 @@ class NOMSD: public AFQMCInfo
 
     MPI_Request req_Gsend, req_Grecv;
     MPI_Request req_SMsend, req_SMrecv;
+
+    void recompute_ci();
 
     /* 
      * Computes the density matrix with respect to a given reference. 

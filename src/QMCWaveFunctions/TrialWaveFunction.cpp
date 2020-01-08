@@ -582,12 +582,12 @@ void TrialWaveFunction::flex_rejectMove(const RefVector<TrialWaveFunction>& wf_l
  * The proposed move of the iath particle is accepted.
  * All the temporary data should be incorporated so that the next move is valid.
  */
-void TrialWaveFunction::acceptMove(ParticleSet& P, int iat)
+void TrialWaveFunction::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   for (int i = 0, ii = ACCEPT_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
     myTimers[ii]->start();
-    Z[i]->acceptMove(P, iat);
+    Z[i]->acceptMove(P, iat, safe_to_delay);
     myTimers[ii]->stop();
   }
   PhaseValue += PhaseDiff;
@@ -599,7 +599,7 @@ void TrialWaveFunction::acceptMove(ParticleSet& P, int iat)
 
 void TrialWaveFunction::flex_acceptMove(const RefVector<TrialWaveFunction>& wf_list,
                                         const RefVector<ParticleSet>& p_list,
-                                        int iat)
+                                        int iat, bool safe_to_delay)
 {
   if (wf_list.size() > 1)
   {
@@ -617,7 +617,7 @@ void TrialWaveFunction::flex_acceptMove(const RefVector<TrialWaveFunction>& wf_l
       ScopedTimer localtimer(wf_list[0].get().get_timers()[ii]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
       wavefunction_components[i]->mw_acceptMove(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list),
-                                                iat);
+                                                iat, safe_to_delay);
       for (int iw = 0; iw < wf_list.size(); iw++)
       {
         wf_list[iw].get().LogValue += std::real(wfc_list[iw].get().LogValue);
@@ -626,7 +626,7 @@ void TrialWaveFunction::flex_acceptMove(const RefVector<TrialWaveFunction>& wf_l
     }
   }
   else if (wf_list.size() == 1)
-    wf_list[0].get().acceptMove(p_list[0], iat);
+    wf_list[0].get().acceptMove(p_list[0], iat, safe_to_delay);
 }
 
 void TrialWaveFunction::completeUpdates()

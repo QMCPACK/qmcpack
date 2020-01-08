@@ -15,7 +15,7 @@ def grab_stat_entries(stat_file_name,name):
             continue
         # end if
         entry = {"name":estimator}
-        for key,value in stat_file[estimator].iteritems():
+        for key,value in stat_file[estimator].items():
             entry[key] = value[:]
             if entry[key].shape == (1,):
                 entry[key] = entry[key][0]

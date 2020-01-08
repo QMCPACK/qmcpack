@@ -155,7 +155,7 @@ public:
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   /** move was rejected. copy the real container to the temporary to move on
    */

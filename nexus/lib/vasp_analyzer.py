@@ -257,7 +257,7 @@ class VXML(DevBase):
             #end if
         #end for
         self.dims   = dims
-        for findex,field in fields.iteritems():
+        for findex,field in fields.items():
             lst = []
             for field_vals in field_list:
                 lst.append(field_vals[findex])
@@ -305,7 +305,7 @@ class VXMLcoll(VXML):
 
     def _reorder(self):
         n=0
-        for key in sorted(self.keys()):
+        for key in self.sorted_keys():
             value = self[key]
             if isinstance(value,VXML):
                 del self[key]
@@ -557,8 +557,8 @@ def read_outcar_bands(vlines,odata):
         #end for
         vlines.advance(n)
     #end if
-    for ns,spin in bands.iteritems():
-        for nk,kpoint in spin.iteritems():
+    for ns,spin in bands.items():
+        for nk,kpoint in spin.items():
             kpoint.energies    = array(kpoint.energies,dtype=float)
             kpoint.occupations = array(kpoint.occupations,dtype=float)
         #end for
@@ -589,7 +589,7 @@ def read_outcar_charge_mag(vlines,odata,token):
             ion.tot.append(vals[3])
         #end if
     #end for
-    for channel,vals in ion.iteritems():
+    for channel,vals in ion.items():
         ion[channel] = array(vals,dtype=float)
     #end for
     vlines.advance(n)
@@ -880,12 +880,12 @@ class VaspAnalyzer(SimulationAnalyzer):
         del n
         # read data from each iteration
         if len(ion_steps)>0:
-            imax = array(ion_steps.keys(),dtype=int).max()
-            for inum,ion_step in ion_steps.iteritems():
+            imax = array(list(ion_steps.keys()),dtype=int).max()
+            for inum,ion_step in ion_steps.items():
                 ilast = inum==imax
                 if len(ion_step)>0:
-                    emax = array(ion_step.keys(),dtype=int).max()
-                    for enum,elec_step in ion_step.iteritems():
+                    emax = array(list(ion_step.keys()),dtype=int).max()
+                    for enum,elec_step in ion_step.items():
                         elast = enum==emax
                         elec_step.read(ilast,elast,all=False)
                         if ilast and elast:

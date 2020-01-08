@@ -262,7 +262,7 @@ public:
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
   inline void restore(int iat) {}
 
   /** compute G and L after the sweep
@@ -548,7 +548,7 @@ typename J2OrbitalSoA<FT>::PsiValueType J2OrbitalSoA<FT>::ratioGrad(ParticleSet&
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
+void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   // get the old u, du, d2u
   const auto& d_table = P.getDistTable(my_table_ID_);

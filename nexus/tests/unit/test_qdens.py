@@ -1,12 +1,11 @@
 
 import testing
-from testing import text_eq
+from testing import execute,text_eq
 
 
 
 def test_density():
     import os
-    from execute import execute
 
     tpath = testing.setup_unit_test_output_directory('qdens','test_density')
 
@@ -30,7 +29,7 @@ dmc.out     dmc.s001.scalar.dat  dmc.s002.stat.h5
 
     command = '{0} -v -e 4 -f xsf -i {1}/dmc.in.xml {1}/*stat.h5'.format(exe,dmc_path)
 
-    execute(command)
+    out,err,rc = execute(command)
 
     files_aft = '''
         dmc.err                           dmc.s001.stat.h5

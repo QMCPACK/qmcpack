@@ -316,7 +316,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
         # compute auxiliary jackknife quantities, if desired (e.g. morse_freq, etc)
         if calc_aux:
             psamples = jcapture.jsamples
-            for auxname,auxfunc in auxfuncs.iteritems():
+            for auxname,auxfunc in auxfuncs.items():
                 auxcap = None
                 if capture_results:
                     auxcap = obj()
@@ -503,7 +503,7 @@ def jackknife(data,function,args=None,kwargs=None,position=None,capture=None):
     jnorm   = 1./(nb-1.)
     data_sum = data.sum(axis=0)
     array_return = False
-    for b in xrange(nblocks):
+    for b in range(nblocks):
         jdata = jnorm*(data_sum-data[b])
         if argpos:
             args[position] = jdata
@@ -532,7 +532,7 @@ def jackknife(data,function,args=None,kwargs=None,position=None,capture=None):
                 jsum  += jsample
                 jsum2 += jsample**2
             else:
-                for c in xrange(len(jsample)):
+                for c in range(len(jsample)):
                     jsum[c]  += jsample[c]
                     jsum2[c] += jsample[c]**2
                 #end for
@@ -550,7 +550,7 @@ def jackknife(data,function,args=None,kwargs=None,position=None,capture=None):
     else:
         jmean  = []
         jerror = []
-        for c in xrange(len(jsum)):
+        for c in range(len(jsum)):
             jval  = jsum[c]
             jval2 = jsum2[c]
             jm = jval/nb
@@ -608,7 +608,7 @@ def jackknife_aux(jsamples,auxfunc,args=None,kwargs=None,position=None,capture=N
 
     nblocks = len(jsamples)
     nb      = float(nblocks)
-    for b in xrange(nblocks):
+    for b in range(nblocks):
         jdata = jsamples[b]
         if argpos:
             args[position] = jdata
@@ -797,11 +797,11 @@ def simstats(x,dim=None):
     reshape = ndim>2
     nblocks = shape[dim]
     if permute:
-        r = range(ndim)
+        r = list(range(ndim))
         r.pop(dim)
         r.append(dim)
         permutation = tuple(r)
-        r = range(ndim)
+        r = list(range(ndim))
         r.pop(ndim-1)
         r.insert(dim,ndim-1)
         invperm     = tuple(r)
@@ -850,7 +850,7 @@ def simstats(x,dim=None):
     else:
         error = zeros(mean.shape,dtype=mean.dtype)
         kappa = zeros(mean.shape,dtype=mean.dtype)
-        for v in xrange(nvars):
+        for v in range(nvars):
             i=0          
             tempC=0.5
             kap=0.0
@@ -894,14 +894,19 @@ def simstats(x,dim=None):
 
 
 
-def simplestats(x,dim=None):
+def simplestats(x,dim=None,full=False):
     if dim is None:
         dim=len(x.shape)-1
     #end if
     osqrtN = 1.0/sqrt(1.0*x.shape[dim])
     mean   = x.mean(dim)
-    error  = x.std(dim)*osqrtN
-    return (mean,error)
+    var    = x.var(dim)
+    error  = sqrt(var)*osqrtN
+    if not full:
+        return (mean,error)
+    else:
+        return (mean,var,error,1.0)
+    #end if
 #end def simplestats
 
 
@@ -1002,8 +1007,8 @@ def surface_normals(x,y,z):
     dr[1] = y[0,0]-y[1,0]
     dr[2] = z[0,0]-z[1,0]
     drtol = 1e-4
-    for i in xrange(nu):
-        for j in xrange(nv):
+    for i in range(nu):
+        for j in range(nv):
             iedge = i==0 or i==mi
             jedge = j==0 or j==mj
             if iedge:
@@ -1070,23 +1075,23 @@ def simple_surface(origin,axes,grid):
         #end if
     #end for
     if not matched:
-        print 'Error in simple_surface: invalid coordinate system provided'
-        print '  provided coordinates:',gk
-        print '  permitted coordinates:'
+        print('Error in simple_surface: invalid coordinate system provided')
+        print('  provided coordinates:',gk)
+        print('  permitted coordinates:')
         for c in range(3):
-            print '               ',simple_surface_coords[c]
+            print('               ',simple_surface_coords[c])
         #end for
         sys.exit()
     #end if
-    for k,v in grid.iteritems():
+    for k,v in grid.items():
         if min(v)<simple_surface_min[k]:
-            print 'Error in simple surface: '+k+' cannot be less than '+str(simple_surface_min[k])
-            print '   actual minimum: '+str(min(v))
+            print('Error in simple surface: '+k+' cannot be less than '+str(simple_surface_min[k]))
+            print('   actual minimum: '+str(min(v)))
             sys.exit()
         #end if
         if max(v)>1.00000000001:
-            print 'Error in simple surface: '+k+' cannot be more than 1'
-            print '   actual maximum: '+str(max(v))
+            print('Error in simple surface: '+k+' cannot be more than 1')
+            print('   actual maximum: '+str(max(v)))
             sys.exit()
         #end if
     #end if
@@ -1100,9 +1105,9 @@ def simple_surface(origin,axes,grid):
         npoints = prod(dim)
         points = empty((npoints,3))
         n=0
-        for i in xrange(dim[0]):
-            for j in xrange(dim[1]):
-                for k in xrange(dim[2]):
+        for i in range(dim[0]):
+            for j in range(dim[1]):
+                for k in range(dim[2]):
                     r[0] = xl[i]
                     r[1] = yl[j]
                     r[2] = zl[k]
@@ -1119,9 +1124,9 @@ def simple_surface(origin,axes,grid):
         npoints = prod(dim)
         points = empty((npoints,3))
         n=0
-        for i in xrange(dim[0]):
-            for j in xrange(dim[1]):
-                for k in xrange(dim[2]):
+        for i in range(dim[0]):
+            for j in range(dim[1]):
+                for k in range(dim[2]):
                     u[0] = rl[i]
                     u[1] = phil[j]
                     u[2] = zl[k]
@@ -1147,9 +1152,9 @@ def simple_surface(origin,axes,grid):
         npoints = prod(dim)
         points = empty((npoints,3))
         n=0
-        for i in xrange(dim[0]):
-            for j in xrange(dim[1]):
-                for k in xrange(dim[2]):
+        for i in range(dim[0]):
+            for j in range(dim[1]):
+                for k in range(dim[2]):
                     u[0] = rl[i]
                     u[1] = phil[j]
                     u[2] = thetal[k]
@@ -1164,8 +1169,8 @@ def simple_surface(origin,axes,grid):
     #end if
 
     if min(dim)!=1:
-        print 'Error in simple_surface: minimum dimension must be 1'
-        print '   actual minimum dimension:',str(min(dim))
+        print('Error in simple_surface: minimum dimension must be 1')
+        print('   actual minimum dimension:',str(min(dim)))
         sys.exit()
     #end if
 
@@ -1208,8 +1213,8 @@ def distance_table(p1,p2,ordering=0):
         p2=array(p2,dtype=float)
     #end if
     dt = zeros((n1,n2),dtype=float)
-    for i1 in xrange(n1):
-        for i2 in xrange(n2):
+    for i1 in range(n1):
+        for i2 in range(n2):
             dt[i1,i2] = norm(p1[i1]-p2[i2])
         #end for
     #end for
@@ -1225,7 +1230,7 @@ def distance_table(p1,p2,ordering=0):
             error('ordering must be 1 or 2,\nyou provided '+str(ordering),'distance_table')
         #end if
         order = empty(dt.shape,dtype=int)
-        for i in xrange(n):
+        for i in range(n):
             o = dt[i].argsort()
             order[i] = o
             dt[i,:]  = dt[i,o]
@@ -1301,7 +1306,7 @@ def convex_hull(points,dimension=None,tol=None):
             inds[i] = False
             v = tri.vertices[ni]
             if have_tol:
-                iv = range(d1)
+                iv = list(range(d1))
                 iv.pop(i)
                 c = points[v[iv[1]]]
                 a = points[v[i]]-c
