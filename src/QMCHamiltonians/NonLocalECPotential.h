@@ -22,39 +22,44 @@
 
 namespace qmcplusplus
 {
-
 class NonLocalECPComponent;
+
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials
  */
 class NonLocalECPotential : public OperatorBase, public ForceBase
 {
 public:
-  NonLocalECPotential(ParticleSet& ions,
-                      ParticleSet& els,
-                      TrialWaveFunction& psi,
-                      bool computeForces = false,
-                      bool useVP         = false);
+  /** tuple type for NLPP calculation of a pair of ion and electron
+   * ion id, electron id, electron position, ion electron distance, ion to electron displacement
+   */
+  using NLPPJob = std::tuple<int, int, PosType, RealType, PosType>;
+
+  NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
 
   ~NonLocalECPotential();
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities();
-  virtual void checkout_particle_quantities(TraceManager& tm);
-  virtual void delete_particle_quantities();
+  virtual void contribute_particle_quantities() override;
+  virtual void checkout_particle_quantities(TraceManager& tm) override;
+  virtual void delete_particle_quantities() override;
 #endif
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
+
+  void mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) override;
+
+  Return_t evaluateWithToperator(ParticleSet& P) override;
+
+  void mw_evaluateWithToperator(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) override;
 
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
                                  ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms);
-
-  Return_t evaluateWithToperator(ParticleSet& P);
+                                 ParticleSet::ParticlePos_t& pulay_terms) override;
 
   /** set non local moves options
    * @param cur the xml input
@@ -62,14 +67,11 @@ public:
   void setNonLocalMoves(xmlNodePtr cur) { UseTMove = nonLocalOps.put(cur); }
 
   void setNonLocalMoves(const std::string& non_local_move_option,
-                                        const double tau,
-                                        const double alpha,
-                                        const double gamma)
+                        const double tau,
+                        const double alpha,
+                        const double gamma)
   {
-    UseTMove = nonLocalOps.thingsThatShouldBeInMyConstructor(non_local_move_option,
-                                        tau,
-                                        alpha,
-                                        gamma);
+    UseTMove = nonLocalOps.thingsThatShouldBeInMyConstructor(non_local_move_option, tau, alpha, gamma);
   }
   /** make non local moves with particle-by-particle moves
    * @param P particle set
@@ -80,33 +82,33 @@ public:
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                        const opt_variables_type& optvars,
                                        const std::vector<ValueType>& dlogpsi,
-                                       std::vector<ValueType>& dhpsioverpsi);
+                                       std::vector<ValueType>& dhpsioverpsi) override;
 
   /** Do nothing */
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "NonLocalECPotential: " << IonConfig.getName();
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   void addComponent(int groupID, NonLocalECPComponent* pp);
 
   /** set the internal RNG pointer as the given pointer
    * @param rng input RNG pointer
    */
-  void setRandomGenerator(RandomGenerator_t* rng) { myRNG = rng; }
+  void setRandomGenerator(RandomGenerator_t* rng) override { myRNG = rng; }
 
-  void addObservables(PropertySetType& plist, BufferType& collectables);
+  void addObservables(PropertySetType& plist, BufferType& collectables) override;
 
-  void setObservables(PropertySetType& plist);
+  void setObservables(PropertySetType& plist) override;
 
-  void setParticlePropertyList(PropertySetType& plist, int offset);
+  void setParticlePropertyList(PropertySetType& plist, int offset) override;
 
-  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const;
+  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const override;
 
 protected:
   ///random number generator
@@ -139,22 +141,30 @@ private:
   NonLocalTOperator nonLocalOps;
   ///true if we should compute forces
   bool ComputeForces;
+  ///true, determinant localization approximation(DLA) is enabled
+  bool use_DLA;
   ///Pulay force vector
   ParticleSet::ParticlePos_t PulayTerm;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
-  Array<TraceReal, 1> Ve_samp_tmp;
-  Array<TraceReal, 1> Vi_samp_tmp;
   Array<TraceReal, 1>* Ve_sample;
   Array<TraceReal, 1>* Vi_sample;
 #endif
+  ///NLPP job list of ion-electron pairs by spin group
+  std::vector<std::vector<NLPPJob>> nlpp_jobs;
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set
    * @param Tmove whether Txy for Tmove is updated
    */
-  void evaluate(ParticleSet& P, bool Tmove);
+  void evaluateImpl(ParticleSet& P, bool Tmove);
 
+  /** the actual implementation for batched walkers, used by mw_evaluate and mw_evaluateWithToperator
+   * @param O_list the list of NonLocalECPotential in a walker batch
+   * @param P_list the list of ParticleSet in a walker batch
+   * @param Tmove whether Txy for Tmove is updated
+   */
+  void mw_evaluateImpl(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list, bool Tmove);
 
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
@@ -163,9 +173,10 @@ private:
    */
   void computeOneElectronTxy(ParticleSet& P, const int ref_elec);
 
-  /** mark all the electrons affected by Tmoves
+  /** mark all the electrons affected by Tmoves and update ElecNeighborIons and IonNeighborElecs
    * @param myTable electron ion distance table
    * @param iel reference electron
+   * Note this funtion should be called before acceptMove for a Tmove
    */
   void markAffectedElecs(const DistanceTableData& myTable, int iel);
 };

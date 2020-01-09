@@ -244,10 +244,11 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   REQUIRE(std::real(ratio_0) == Approx(0.9522052017));
 
   VirtualParticleSet VP(elec_, 2);
-  ParticleSet::ParticlePos_t newpos2(2);
-  newpos2[0] = newpos;
-  newpos2[1] = PosType(0.2, 0.5, 0.3);
-  VP.makeMoves(1, newpos2);
+  std::vector<PosType> newpos2(2);
+  std::vector<ValueType> ratios2(2);
+  newpos2[0] = newpos - elec_.R[1];
+  newpos2[1] = PosType(0.2, 0.5, 0.3) - elec_.R[1];
+  VP.makeMoves(1, elec_.R[1], newpos2);
   j2->evaluateRatios(VP, ratios);
 
   REQUIRE(std::real(ratios[0]) == Approx(0.9871985577));

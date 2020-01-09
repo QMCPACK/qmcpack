@@ -310,7 +310,7 @@ public:
     return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
-  inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+  inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     const int iat = VP.refPtcl;
 
