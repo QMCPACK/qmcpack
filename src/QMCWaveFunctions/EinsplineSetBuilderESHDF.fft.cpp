@@ -8,7 +8,6 @@
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//		      Kevin Ryczko, kryczko@uottawa.ca, University of Ottawa
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
