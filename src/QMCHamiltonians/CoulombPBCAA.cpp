@@ -73,7 +73,6 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
 
 
   ewaldref::IntVec nmax = 7;
-  //ewald.setNmax(nmax);
   ewald.setupOpt(nmax);
 
   if (!is_active)
@@ -327,8 +326,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
     E_opt = lr_opt + sr_opt + c_opt;
 
 
-    RealType sr_opt_orig = ewald.ewaldEnergySROpt_orig(dt);
-    RealType lr_opt_orig = ewald.ewaldEnergyLROpt_orig(P.R);
+    RealType sr_opt_orig = ewald.ewaldEnergySROpt_ref(dt);
+    RealType lr_opt_orig = ewald.ewaldEnergyLROpt_ref(P.R);
     RealType lr_opt_qmc  = ewald.ewaldEnergyLROpt_qmcpack(P.R);
 
     RealType E_opt2 = c_opt + sr_opt_orig + lr_opt_orig;

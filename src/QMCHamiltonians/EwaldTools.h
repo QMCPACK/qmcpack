@@ -591,11 +591,11 @@ public:
           if(i==0 && j==0 && k==0)
             continue;
           IntVec iv(i,j,k);
-          RealVec kp = dot(iv,B);
-          kpoints[n] = kp;
+          RealVec kp    = dot(iv,B);
+          kpoints[n]    = kp;
           real_t vk_val = vkf(kp);
-          vk[n]      = vk_val;
-          vk_sum    += 0.5*QQsum*vk_val;
+          vk[n]         = vk_val;
+          vk_sum       += 0.5*QQsum*vk_val;
           n++;
         }
 
@@ -610,7 +610,7 @@ public:
     real_t rexponent = 1./(std::sqrt(2.)*kappa);
     RspaceEwaldTerm vsr(wigner_point,A,rexponent);
     IntVec nmax;
-    real_t error_bound =0.0;//= ansitropicGridSum(vsr,nmax,false,errtol);
+    real_t error_bound = anisotropicGridSum(vsr,nmax,false,errtol);
     return error_bound;
   }
 
@@ -695,7 +695,7 @@ public:
   }
 
   
-  /// LR (k-space) part of total energy computed optimally
+  /// LR (k-space) part of total energy computed like qmcpack
   template<typename PA>
   real_t ewaldEnergyLROpt_qmcpack(const PA& R)
   {
@@ -728,9 +728,9 @@ public:
   }
 
 
-  /// SR (r-space) part of total energy computed optimally
+  /// Reference function for ewaldEnergySROpt
   template<typename DT>
-  real_t ewaldEnergySROpt_orig(const DT& dt)
+  real_t ewaldEnergySROpt_ref(const DT& dt)
   {
     const auto& dr = dt.getDisplacements();
     real_t ee = 0.0;
@@ -742,9 +742,9 @@ public:
   }
 
   
-  /// LR (k-space) part of total energy computed optimally
+  /// Reference function for ewaldEnergyLROpt
   template<typename PA>
-  real_t ewaldEnergyLROpt_orig(const PA& R)
+  real_t ewaldEnergyLROpt_ref(const PA& R)
   {
     real_t ee = ewald_constant_lr_energy;
 
