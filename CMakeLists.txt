@@ -58,7 +58,9 @@ ENDIF()
 # Verify Python3 available
 ######################################################################
 find_package(Python3)
-
+IF ( NOT Python3_FOUND )
+  MESSAGE( FATAL_ERROR "Could not find required python3" )
+ENDIF ( NOT Python3_FOUND )
 ######################################################################
 # Verify QE executables present if QE_BIN specified
 ######################################################################
