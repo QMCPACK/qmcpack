@@ -1,6 +1,6 @@
 Discarded 6 diffused primitive functions, 0 contracted functions
 #INFO: **** input file is /home/abenali/Work/Development/QMCPACK-Benali/qmcpack/tests/solids/diamondC_1x1x1-Gaussian_pp/dft-inputs/diamondC_1x1x1_pp.py ****
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 '''
 Gamma point post-HF calculation needs only real integrals.

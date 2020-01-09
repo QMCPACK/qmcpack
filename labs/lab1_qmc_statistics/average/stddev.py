@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 stddev = (1./(5.*(5.-1.)) * ( 
 (-0.45298911858-(-0.464736835668))**2 + 

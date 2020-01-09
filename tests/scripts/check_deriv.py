@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 def real_or_comp(str_rep):
   """ convert the string representation of a real or complex number into float or complex

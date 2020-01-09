@@ -18,7 +18,7 @@ calculation is used for this example.  The contents of this script
 
 .. code-block:: python
 
-    #! /usr/bin/env python
+    #! /usr/bin/env python3
     
     from pyscf import scf
     
@@ -37,7 +37,7 @@ The Nexus script, ``h2o_ae_hf.py``, is shown below:
 
 .. code-block:: python
 
-    #! /usr/bin/env python
+    #! /usr/bin/env python3
     
     from nexus import settings,job,run_project,obj
     from nexus import generate_physical_system
@@ -118,7 +118,7 @@ Next, let's look at the PySCF script produced by Nexus (see
 
 .. code-block:: python
 
-    #! /usr/bin/env python
+    #! /usr/bin/env python3
     
     from pyscf import scf
     

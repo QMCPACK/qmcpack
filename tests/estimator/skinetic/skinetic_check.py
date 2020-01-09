@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 from sys import exit
 import numpy as np
 import h5py
