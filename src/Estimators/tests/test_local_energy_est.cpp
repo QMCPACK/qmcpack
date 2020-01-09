@@ -18,13 +18,15 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
-
+#include "QMCDrivers/WalkerProperties.h"
 
 #include <stdio.h>
 #include <sstream>
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 TEST_CASE("LocalEnergyOnly", "[estimators]")
 {
   OHMMS::Controller->initialize(0, NULL);
@@ -36,7 +38,7 @@ TEST_CASE("LocalEnergyOnly", "[estimators]")
   W.create(1);
   W.createWalkers(1);
 
-  (*W.begin())->Properties(LOCALENERGY) = 1.1;
+  (*W.begin())->Properties(WP::LOCALENERGY) = 1.1;
 
   le_est.accumulate(W, W.begin(), W.end(), 1.0);
 
@@ -59,8 +61,8 @@ TEST_CASE("LocalEnergy", "[estimators]")
   W.create(1);
   W.createWalkers(1);
 
-  (*W.begin())->Properties(LOCALENERGY)    = 1.1;
-  (*W.begin())->Properties(LOCALPOTENTIAL) = 1.2;
+  (*W.begin())->Properties(WP::LOCALENERGY)    = 1.1;
+  (*W.begin())->Properties(WP::LOCALPOTENTIAL) = 1.2;
 
   le_est.accumulate(W, W.begin(), W.end(), 1.0);
 
@@ -85,8 +87,8 @@ TEST_CASE("LocalEnergy with hdf5", "[estimators]")
   W.create(1);
   W.createWalkers(1);
 
-  (*W.begin())->Properties(LOCALENERGY)    = 1.1;
-  (*W.begin())->Properties(LOCALPOTENTIAL) = 1.2;
+  (*W.begin())->Properties(WP::LOCALENERGY)    = 1.1;
+  (*W.begin())->Properties(WP::LOCALPOTENTIAL) = 1.2;
 
   std::vector<observable_helper*> h5desc;
 

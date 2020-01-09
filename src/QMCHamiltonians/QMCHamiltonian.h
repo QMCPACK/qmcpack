@@ -148,8 +148,14 @@ public:
   }
   ///return the name of the i-th observable
   inline std::string getObservableName(int i) const { return Observables.Names[i]; }
-  ///save the values of Hamiltonian elements to the Properties
-  template<class IT>
+  /** save the values of Hamiltonian elements to the Properties
+   *
+   *  This creates a hard dependence on Walker using WalkerProperties to index its Properties.
+   *  It also assumes no one else is sticking things into Walker's Properties and that
+   *  It can access into it as if it were a raw FullPrecRealType array.
+   *  
+   */
+  template<class IT, typename = std::enable_if_t<std::is_same<std::add_pointer<FullPrecRealType>::type, IT>::value>>
   inline void saveProperty(IT first)
   {
     first[LOCALPOTENTIAL] = LocalEnergy - KineticEnergy;
@@ -157,10 +163,10 @@ public:
   }
   /*@}*/
 
-  template<class IT>
+  template<class IT, typename = std::enable_if_t<std::is_same<std::add_pointer<FullPrecRealType>::type, IT>::value>>
   inline void setProperty(IT first)
   {
-    //       LocalEnergy=first[LOCALENERGY];
+    //       LocalEnergy=first[WP::LOCALENERGY];
     //       KineticEnergy=LocalEnergy-first[LOCALPOTENTIAL];
     copy(first + myIndex, first + myIndex + Observables.size(), Observables.begin());
   }

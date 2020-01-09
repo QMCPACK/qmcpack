@@ -22,6 +22,7 @@
 #define QMCPLUSPLUS_WALKER_H
 
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "MinimalContainers/ConstantSizeMatrix.hpp"
 #include "Utilities/PooledData.h"
 #include "Utilities/PooledMemory.h"
 #ifdef QMC_CUDA
@@ -68,6 +69,7 @@ enum
 template<typename t_traits, typename p_traits>
 struct Walker
 {
+  using WP = WalkerProperties::Indexes;
   enum
   {
     DIM = t_traits::DIM
@@ -95,7 +97,7 @@ struct Walker
   typedef typename p_traits::SingleParticleValue_t SingleParticleValue_t;
 
   ///typedef for the property container, fixed size
-  typedef Matrix<FullPrecRealType> PropertyContainer_t;
+  using PropertyContainer_t = ConstantSizeMatrix<FullPrecRealType, std::allocator<FullPrecRealType>>;
 
   /** @{
    * Not really "buffers", "walker message" also used to serialize walker, rename
@@ -183,7 +185,7 @@ struct Walker
 #endif
 
   ///create a walker for n-particles
-  inline explicit Walker(int nptcl = 0)
+  inline explicit Walker(int nptcl = 0) : Properties(1, WP::LOCALPOTENTIAL, 1, WP::NUMPROPERTIES)
 #ifdef QMC_CUDA
       : cuda_DataSet("Walker::walker_buffer"),
         R_GPU("Walker::R_GPU"),
@@ -316,16 +318,16 @@ struct Walker
   }
 
   //return the address of the values of Hamiltonian terms
-  inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }
+  inline FullPrecRealType* getPropertyBase() { return Properties.data(); }
 
   //return the address of the values of Hamiltonian terms
-  inline const FullPrecRealType* restrict getPropertyBase() const { return Properties.data(); }
+  inline const FullPrecRealType* getPropertyBase() const { return Properties.data(); }
 
   ///return the address of the i-th properties
-  inline FullPrecRealType* restrict getPropertyBase(int i) { return Properties[i]; }
+  inline FullPrecRealType* getPropertyBase(int i) { return Properties[i]; }
 
   ///return the address of the i-th properties
-  inline const FullPrecRealType* restrict getPropertyBase(int i) const { return Properties[i]; }
+  inline const FullPrecRealType* getPropertyBase(int i) const { return Properties[i]; }
 
 
   /** reset the property of a walker
@@ -439,7 +441,12 @@ struct Walker
     DataSet.add(G.first_address(), G.last_address());
     DataSet.add(L.first_address(), L.last_address());
 #endif
-    DataSet.add(Properties.first_address(), Properties.last_address());
+    //Don't add the nLocal but the actual allocated size.  We want to register once for the life of a
+    //walker so we leave space for additional properties.
+    DataSet.add(Properties.data(), Properties.data() + Properties.sizeofElement() * Properties.capacity());
+    //DataSet.add(Properties.first_address(), Properties.last_address());
+
+    // \todo likely to be broken if the Properties change above is needed.
     for (int iat = 0; iat < PropertyHistory.size(); iat++)
       DataSet.add(PropertyHistory[iat].data(), PropertyHistory[iat].data() + PropertyHistory[iat].size());
     DataSet.add(PHindex.data(), PHindex.data() + PHindex.size());
@@ -469,7 +476,7 @@ struct Walker
     DataSet.get(G.first_address(), G.last_address());
     DataSet.get(L.first_address(), L.last_address());
 #endif
-    DataSet.get(Properties.first_address(), Properties.last_address());
+    DataSet.get(Properties.data(), Properties.data() + Properties.sizeofElement() * Properties.capacity());
     for (int iat = 0; iat < PropertyHistory.size(); iat++)
       DataSet.get(PropertyHistory[iat].data(), PropertyHistory[iat].data() + PropertyHistory[iat].size());
     DataSet.get(PHindex.data(), PHindex.data() + PHindex.size());
@@ -518,7 +525,7 @@ struct Walker
     DataSet.put(G.first_address(), G.last_address());
     DataSet.put(L.first_address(), L.last_address());
 #endif
-    DataSet.put(Properties.first_address(), Properties.last_address());
+    DataSet.put(Properties.data(), Properties.data() + Properties.sizeofElement() * Properties.capacity());
     for (int iat = 0; iat < PropertyHistory.size(); iat++)
       DataSet.put(PropertyHistory[iat].data(), PropertyHistory[iat].data() + PropertyHistory[iat].size());
     DataSet.put(PHindex.data(), PHindex.data() + PHindex.size());

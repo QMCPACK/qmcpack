@@ -31,6 +31,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 //using namespace particle_info;
 
 #ifdef QMC_CUDA
@@ -52,7 +54,8 @@ ParticleSet::ParticleSet()
       SK(0),
       myTwist(0.0),
       ParentName("0"),
-      TotalNum(0)
+      TotalNum(0),
+      Properties(0, 0, 1, WP::NUMPROPERTIES)
 {
   initPropertyList();
   setup_timers(myTimers, PSTimerNames, timer_level_fine);
@@ -66,7 +69,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       mySpecies(p.getSpeciesSet()),
       SK(0),
       myTwist(0.0),
-      ParentName(p.parentName())
+      ParentName(p.parentName()),
+      Properties(p.Properties)
 {
   set_quantum_domain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable

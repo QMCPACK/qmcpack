@@ -428,10 +428,11 @@ void MCWalkerConfiguration::loadSample(ParticleSet::ParticlePos_t& Pos, size_t i
  */
 void MCWalkerConfiguration::loadEnsemble()
 {
+  using WP = WalkerProperties::Indexes;
   int nsamples = std::min(MaxSamples, CurSampleCount);
   if (SampleStack.empty() || nsamples == 0)
     return;
-  Walker_t::PropertyContainer_t prop(1, PropertyList.size());
+  Walker_t::PropertyContainer_t prop(1, PropertyList.size(), 1, WP::NUMPROPERTIES);
   delete_iter(WalkerList.begin(), WalkerList.end());
   WalkerList.resize(nsamples);
   for (int i = 0; i < nsamples; ++i)
@@ -505,6 +506,7 @@ bool MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& ot
 
 void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean)
 {
+  using WP = WalkerProperties::Indexes;
   std::vector<int> off(others.size() + 1, 0);
   for (int i = 0; i < others.size(); ++i)
   {
@@ -513,7 +515,7 @@ void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& ot
   int nw_tot = off.back();
   if (nw_tot)
   {
-    Walker_t::PropertyContainer_t prop(1, PropertyList.size());
+    Walker_t::PropertyContainer_t prop(1, PropertyList.size(), 1, WP::NUMPROPERTIES);
     while (WalkerList.size())
       pop_back();
     WalkerList.resize(nw_tot);

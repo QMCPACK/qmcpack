@@ -260,12 +260,12 @@ void QMCCostFunctionCUDA::checkConfigurations()
     Walker_t& w(**it);
     RealType* prop            = w.getPropertyBase();
     Return_rt* restrict saved = &(Records(iw, 0));
-    saved[ENERGY_TOT] = saved[ENERGY_NEW] = prop[LOCALENERGY];
+    saved[ENERGY_TOT] = saved[ENERGY_NEW] = prop[WP::LOCALENERGY];
     saved[ENERGY_FIXED]                   = prop[LOCALPOTENTIAL];
     saved[LOGPSI_FIXED]                   = prop[LOGPSI] - logPsi_free[iw];
     saved[LOGPSI_FREE]                    = logPsi_free[iw];
-    e0 += prop[LOCALENERGY];
-    e2 += prop[LOCALENERGY] * prop[LOCALENERGY];
+    e0 += prop[WP::LOCALENERGY];
+    e2 += prop[WP::LOCALENERGY] * prop[WP::LOCALENERGY];
     if (needGrads)
       for (int ip = 0; ip < OptVariables.size(); ip++)
       {

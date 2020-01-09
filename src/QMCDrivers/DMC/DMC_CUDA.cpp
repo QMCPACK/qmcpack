@@ -310,7 +310,7 @@ bool DMCcuda::run()
       nw = W.getActiveWalkers();
       LocalEnergyOld.resize(nw);
       for (int iw = 0; iw < nw; iw++)
-        LocalEnergyOld[iw] = W[iw]->getPropertyBase()[LOCALENERGY];
+        LocalEnergyOld[iw] = W[iw]->getPropertyBase()[WP::LOCALENERGY];
       BranchTimer.stop();
     } while (step < nSteps);
     if (nBlocksBetweenRecompute && (1 + block) % nBlocksBetweenRecompute == 0)

@@ -31,6 +31,8 @@ typedef int TraceManager;
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 /// Constructor.
 VMCLinearOpt::VMCLinearOpt(MCWalkerConfiguration& w,
                            TrialWaveFunction& psi,
@@ -409,7 +411,7 @@ bool VMCLinearOpt::run()
 //
 //     for (int ip=0; ip<NumThreads; ip++)
 //     {
-//       e_i[ip]    = (W[ip])->getPropertyBase()[LOCALENERGY];
+//       e_i[ip]    = (W[ip])->getPropertyBase()[WP::LOCALENERGY];
 //       psi2_i[ip] = expl(2.0*(W[ip])->getPropertyBase()[LOGPSI] + w_i[ip] - logpsi2_0_0);
 //       psi2       += psi2_i[ip];
 //     }
@@ -897,7 +899,7 @@ VMCLinearOpt::RealType VMCLinearOpt::fillComponentMatrices()
   std::vector<RealType> g_stats(5, 0);
   for (int ip = 0; ip < NumThreads; ip++)
   {
-    RealType E_L  = W[ip]->getPropertyBase()[LOCALENERGY];
+    RealType E_L  = W[ip]->getPropertyBase()[WP::LOCALENERGY];
     RealType E_L2 = E_L * E_L;
     RealType wW   = W[ip]->Weight;
     if (std::isnan(wW) || std::isinf(wW))

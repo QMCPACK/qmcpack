@@ -17,14 +17,18 @@
 #include "ParticleBase/ParticleAttribOps.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
+#include "QMCDrivers/WalkerProperties.h"
 #include <cstdlib>
 #include <set>
 #include <string>
 
 namespace qmcplusplus
 {
+
 bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& P)
 {
+  using WP = WalkerProperties::Indexes;
+
   FirstHamiltonian = h.startIndex();
   nObservables     = 0;
   nValues          = 0;
@@ -51,18 +55,18 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
       {
         //Single Observable case
         int numProps = P.PropertyList.Names.size();
-        Hindex       = h.getObservable(tagName) + NUMPROPERTIES;
+        Hindex       = h.getObservable(tagName) + WP::NUMPROPERTIES;
         if (tagName == "LocalPotential")
         {
-          Hindex  = LOCALPOTENTIAL;
+          Hindex  = WP::LOCALPOTENTIAL;
           tagName = "LocPot";
         }
         else if (tagName == "LocalEnergy")
         {
-          Hindex  = LOCALENERGY;
+          Hindex  = WP::LOCALENERGY;
           tagName = "LocEn";
         }
-        else if (Hindex == (NUMPROPERTIES - 1))
+        else if (Hindex == (WP::NUMPROPERTIES - 1))
         {
           app_log() << "Not a valid H element(" << Hindex << ") Valid names are:";
           for (int jk = 0; jk < h.sizeOfObservables(); jk++)
@@ -108,7 +112,7 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
             FOUNDH = true;
             app_log() << " Hamiltonian Element " << Hname << " was found at " << j << std::endl;
             Names.push_back(Hname);
-            Hindex = j + NUMPROPERTIES;
+            Hindex = j + WP::NUMPROPERTIES;
             Hindices.push_back(Hindex);
             int numT = blockSeries / blockFreq;
             nObservables += 1;
