@@ -13,7 +13,8 @@
 
 
 
-# Niggli cell reduction code from pniggli 0.1.3 below
+# Niggli cell reduction code from pniggli 0.1.3 below.
+#   See https://github.com/unkcpz/pniggli
 
 
 # Contents of pniggli LICENSE file (MIT)
