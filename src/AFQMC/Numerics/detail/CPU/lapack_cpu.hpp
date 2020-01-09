@@ -210,6 +210,78 @@ namespace ma
   }
 
   inline static
+  void gvx (int ITYPE, char &JOBZ, char &RANGE, char &UPLO, int &N, float *A, int &LDA,
+             float *B, int &LDB,
+             float &VL, float &VU,int &IL, int &IU, float &ABSTOL, int &M, float *W,
+             float* Z, int &LDZ, float *WORK,
+             int &LWORK, float* RWORK, int* IWORK, int *IFAIL, int &INFO)
+  {
+    bool query = (LWORK==-1);
+    if(query) {
+      LWORK=-1;
+    }
+    ssygvx (ITYPE,JOBZ,RANGE,UPLO,N,A,LDA,B,LDB,VL,VU,IL,IU,ABSTOL,M,W,Z,LDZ,
+            WORK,LWORK,IWORK,IFAIL,INFO);
+    if(query) {
+      LWORK = int(WORK[0]);
+    }
+  }
+
+  inline static
+  void gvx (int ITYPE, char &JOBZ, char &RANGE, char &UPLO, int &N, double *A, int &LDA,
+             double *B, int &LDB,
+             double &VL, double &VU,int &IL, int &IU, double &ABSTOL, int &M, double *W,
+             double* Z, int &LDZ, double *WORK,
+             int &LWORK, double* RWORK, int* IWORK, int *IFAIL, int &INFO)
+  { 
+    bool query = (LWORK==-1);
+    if(query) {
+      LWORK=-1;
+    }
+    dsygvx (ITYPE,JOBZ,RANGE,UPLO,N,A,LDA,B,LDB,VL,VU,IL,IU,ABSTOL,M,W,Z,LDZ,
+            WORK,LWORK,IWORK,IFAIL,INFO);
+    if(query) {
+      LWORK = int(WORK[0]);
+    }
+  }
+
+  inline static
+  void gvx (int ITYPE, char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<float> *A, int &LDA,
+             std::complex<float> *B, int &LDB,
+             float &VL, float &VU,int &IL, int &IU, float &ABSTOL, int &M, float *W,
+             std::complex<float>* Z, int &LDZ, std::complex<float> *WORK,
+             int &LWORK, float* RWORK, int* IWORK, int *IFAIL, int &INFO)
+  { 
+    bool query = (LWORK==-1);
+    if(query) {
+      LWORK=-1;
+    }
+    chegvx (ITYPE,JOBZ,RANGE,UPLO,N,A,LDA,B,LDB,VL,VU,IL,IU,ABSTOL,M,W,Z,LDZ,
+            WORK,LWORK,RWORK,IWORK,IFAIL,INFO);
+    if(query) { 
+      LWORK = int(real(WORK[0]));
+    }
+  }
+
+  inline static
+  void gvx (int ITYPE, char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<double> *A, int &LDA,
+             std::complex<double> *B, int &LDB,
+             double &VL, double &VU,int &IL, int &IU, double &ABSTOL, int &M, double *W,
+             std::complex<double>* Z, int &LDZ, std::complex<double> *WORK,
+             int &LWORK, double* RWORK, int* IWORK, int *IFAIL, int &INFO)
+  {
+    bool query = (LWORK==-1);
+    if(query) {
+      LWORK=-1;
+    }
+    zhegvx (ITYPE,JOBZ,RANGE,UPLO,N,A,LDA,B,LDB,VL,VU,IL,IU,ABSTOL,M,W,Z,LDZ,
+            WORK,LWORK,RWORK,IWORK,IFAIL,INFO);
+    if(query) {
+      LWORK = int(real(WORK[0]));
+    }
+  }
+
+  inline static
   void getrf_bufferSize (const int n, const int m, float* a, const int lda, int &lwork) { lwork = 0; } 
   inline static
   void getrf_bufferSize (const int n, const int m, double* a, const int lda, int &lwork) { lwork = 0; } 

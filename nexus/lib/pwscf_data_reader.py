@@ -54,7 +54,7 @@ class QEXML(DevBase):
                     if len(a)==1:
                         a = a[0]
                     elif 'columns' in v and v.size%v.columns==0:
-                        a.shape = v.size/v.columns,v.columns
+                        a.shape = v.size//v.columns,v.columns
                     #end if
                     self[k] = a
                 else:
@@ -62,7 +62,7 @@ class QEXML(DevBase):
                 #end if
             #end if
         #end for
-        for k,v in enums.iteritems():
+        for k,v in enums.items():
             self[k] = v
             v.finalize()
         #end for
@@ -129,8 +129,8 @@ def read_qexml(inp):
     elif isinstance(inp,str):# and os.path.exists(inp):
         rawlines = open(inp,'r').read().splitlines()
     else:
-        print 'read_qexml error: input can only be filename or list of lines'
-        print '  input received: ',inp
+        print('read_qexml error: input can only be filename or list of lines')
+        print('  input received: ',inp)
         return None
     #end if
 

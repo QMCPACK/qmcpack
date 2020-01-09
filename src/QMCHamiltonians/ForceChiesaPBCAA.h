@@ -59,7 +59,7 @@ struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
 
   bool first_time;
 
-  ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime = true, std::string lrmethod="ewald");
+  ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime = true);
 
   Return_t evaluate(ParticleSet& P);
 
@@ -114,8 +114,6 @@ private:
   // AA table ID
   const int d_aa_ID;
   const int d_ei_ID;
-  // long-range breakup method ("ewald" or "srcoul")
-  std::string lrmethod;
 };
 
 } // namespace qmcplusplus

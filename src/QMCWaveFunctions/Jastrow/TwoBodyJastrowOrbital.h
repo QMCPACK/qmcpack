@@ -375,7 +375,7 @@ public:
 
   inline void restore(int iat) {}
 
-  void acceptMove(ParticleSet& P, int iat)
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false)
   {
     DiffValSum += DiffVal;
     for (int jat = 0, ij = iat * N, ji = iat; jat < N; jat++, ij++, ji += N)

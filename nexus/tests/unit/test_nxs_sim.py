@@ -1,15 +1,14 @@
 
 import testing
 from testing import divert_nexus,restore_nexus,clear_all_sims
-from testing import text_eq
+from testing import execute,text_eq
 
 
 
 def test_sim():
     import os
-    from execute import execute
     from nexus_base import nexus_core
-    from test_simulation import get_sim
+    from test_simulation_module import get_sim
 
     tpath = testing.setup_unit_test_output_directory('nxs_sim','test_sim',divert=True)
 

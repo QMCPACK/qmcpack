@@ -90,7 +90,10 @@
 #define zheevr zheevr_
 #define ssyevr ssyevr_
 #define cheevr cheevr_
+#define ssygvx ssygvx_
+#define dsygvx dsygvx_
 #define zhegvx zhegvx_
+#define chegvx chegvx_
 #define zgeqrf zgeqrf_
 #define zungqr zungqr_
 
@@ -429,6 +432,21 @@ void zheevr(char &JOBZ, char &RANGE, char &UPLO, int &N,
             int &IU, double &ABSTOL, int &M, double *W, std::complex<double> *Z,
             int &LDZ, int *ISUPPZ, std::complex<double> *WORK, int &LWORK,
             double *RWORK, int &LRWORK, int *IWORK, int &LIWORK, int &INFO);
+
+void ssygvx (int&, char &JOBZ, char &RANGE, char &UPLO, int &N, float *A, int &LDA, float*, int&, float &VL, float &VU, int &IL,
+             int &IU, float &ABSTOL, int &M, float *W, float* Z, int &LDZ, float *WORK,
+             int &LWORK, int* IWORK, int *IFAIL, int &INFO);
+
+void chegvx (int&, char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<float> *A, int &LDA, 
+             std::complex<float> *, int &, float &VL, float &VU,
+             int &IL, int &IU, float &ABSTOL, int &M, float *W, std::complex<float>* Z, int &LDZ, 
+             std::complex<float> *WORK,  int &LWORK, float* RWORK, int* IWORK, int *IFAIL, int &INFO);
+
+void dsygvx(int&, char &JOBZ, char &RANGE, char &UPLO, int &N, double *A, int &LDA,
+            double *, int &,
+            double &VL, double &VU, int &IL, int &IU, double &ABSTOL, int &M,
+            double *W, double *Z, int &LDZ, double *WORK,
+            int &LWORK, int *IWORK, int *IFAIL, int &INFO);
 
 void zhegvx(int &, char &JOBZ, char &RANGE, char &UPLO, int &N,
             std::complex<double> *A, int &LDA, std::complex<double> *B,

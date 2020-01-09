@@ -4,40 +4,50 @@
 //
 // Copyright (c) 2020 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_SOVMC_PARTICLEBYPARTICLE_UPDATE_H
-#define QMCPLUSPLUS_SOVMC_PARTICLEBYPARTICLE_UPDATE_H
+#ifndef QMCPLUSPLUS_SODMC_UPDATE_PARTICLEBYPARTCLE_H
+#define QMCPLUSPLUS_SODMC_UPDATE_PARTICLEBYPARTCLE_H
 #include "QMCDrivers/QMCUpdateBase.h"
-
+#include "Utilities/NewTimer.h"
 namespace qmcplusplus
 {
-/** @ingroup QMCDrivers  ParticleByParticle
- *@brief Implements the VMC algorithm using particle-by-particle move, including spin-moves
- */
-class SOVMCUpdatePbyP : public QMCUpdateBase
+class SODMCUpdatePbyPWithRejectionFast : public QMCUpdateBase
 {
 public:
   /// Constructor.
-  SOVMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
-
-  ~SOVMCUpdatePbyP();
+  SODMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
+                                   TrialWaveFunction& psi,
+                                   QMCHamiltonian& h,
+                                   RandomGenerator_t& rg);
+  ///destructor
+  ~SODMCUpdatePbyPWithRejectionFast();
 
   void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
-  NewTimer& buffer_timer_;
-  NewTimer& movepbyp_timer_;
-  NewTimer& hamiltonian_timer_;
-  NewTimer& collectables_timer_;
+  TimerList_t myTimers;
 };
+
+
+enum SODMCTimers
+{
+  SODMC_buffer,
+  SODMC_movePbyP,
+  SODMC_hamiltonian,
+  SODMC_collectables,
+  SODMC_tmoves
+};
+
+extern TimerNameList_t<SODMCTimers> SODMCTimerNames;
+
 
 } // namespace qmcplusplus
 

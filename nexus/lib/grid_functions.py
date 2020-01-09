@@ -3817,7 +3817,7 @@ if __name__=='__main__':
         if not g.initialized:
             continue
         #end if
-        print ' {:<16}  {} {}  {}  {}  {}'.format(label,g.grid_dim,g.space_dim,len(g.axes),g.bconds,g.shape)
+        print(' {:<16}  {} {}  {}  {}  {}'.format(label,g.grid_dim,g.space_dim,len(g.axes),g.bconds,g.shape))
     #end for
 
     if demos.plot_grids:
@@ -3830,7 +3830,7 @@ if __name__=='__main__':
         unit = False
 
         for name in grids_plot:
-            print name
+            print(name)
             grid = grids[name]
             if not unit:
                 grid.plot_points(show=0)
@@ -3924,7 +3924,7 @@ if __name__=='__main__':
         grids_check = 'c12 c13 c23'.split()
         for name in grids_check:
             g = grids[name]
-            print name,g.volume(),g.cell_volumes().sum()
+            print(name,g.volume(),g.cell_volumes().sum())
         #end for
     #end if
 

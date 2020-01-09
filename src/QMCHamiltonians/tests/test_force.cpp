@@ -158,7 +158,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   Lattice.R.diagonal(5.0);
   Lattice.LR_dim_cutoff = 25;
   Lattice.reset();
-
+  LRCoulombSingleton::this_lr_type=LRCoulombSingleton::EWALD;
 
   ParticleSet ions;
   ParticleSet elec;

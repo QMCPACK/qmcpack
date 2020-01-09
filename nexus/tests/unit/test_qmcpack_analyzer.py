@@ -29,7 +29,7 @@ def test_empty_init():
             savefilepath    = './',
             request = obj(
                 calculations    = set([]),
-                data_sources    = set(['opt', 'stat', 'dmc', 'storeconfig', 'traces', 'scalar']),
+                #data_sources    = set(['opt', 'stat', 'dmc', 'storeconfig', 'traces', 'scalar']),
                 destination     = '.',
                 dm_settings     = None,
                 equilibration   = None,
@@ -50,6 +50,14 @@ def test_empty_init():
                 ),
             )
         )
+
+    data_sources_ref = set(['opt', 'stat', 'dmc', 'storeconfig', 'traces', 'scalar'])
+
+    req = qa.info.request
+    data_sources = req.data_sources
+    del req.data_sources
+
+    assert(len(data_sources-data_sources_ref)==0)
 
     assert(object_eq(qa.to_obj(),qa_ref))
 #end def test_empty_init    
@@ -332,6 +340,9 @@ def test_optimization_analysis():
    </jastrow>
 </wavefunction>
 '''
+
+    opt_wf_text_ref = opt_wf_text_ref.replace('"',' " ')
+    opt_wf_text     = opt_wf_text.replace('"',' " ')
 
     assert(text_eq(opt_wf_text,opt_wf_text_ref))
 

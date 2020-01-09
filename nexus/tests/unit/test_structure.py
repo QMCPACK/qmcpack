@@ -216,7 +216,7 @@ def get_generated_structures():
     if len(generated_structures)==0:
         ref_in = get_reference_inputs()
         gen = generated_structures
-        for name,inputs in ref_in.iteritems():
+        for name,inputs in ref_in.items():
             gen[name] = generate_structure(**inputs)
         #end for
     #end if
@@ -229,7 +229,7 @@ def get_crystal_structures():
     from structure import Crystal,generate_structure
     if len(crystal_structures)==0:
         crys = crystal_structures
-        for (latt,cell),inputs in Crystal.known_crystals.iteritems():
+        for (latt,cell),inputs in Crystal.known_crystals.items():
             s = generate_structure(structure=latt,cell=cell)
             crys[latt+'_'+cell] = s
         #end for

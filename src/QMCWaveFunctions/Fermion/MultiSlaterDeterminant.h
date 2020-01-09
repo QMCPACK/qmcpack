@@ -95,7 +95,7 @@ public:
   virtual GradType evalGrad(ParticleSet& P, int iat);
   virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   virtual PsiValueType ratio(ParticleSet& P, int iat);
-  virtual void acceptMove(ParticleSet& P, int iat);
+  virtual void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
   virtual void restore(int iat);
 
   virtual void registerData(ParticleSet& P, WFBufferType& buf);

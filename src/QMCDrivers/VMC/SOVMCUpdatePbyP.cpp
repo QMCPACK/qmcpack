@@ -111,7 +111,7 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         {
           moved = true;
           ++nAccept;
-          Psi.acceptMove(W, iat);
+          Psi.acceptMove(W, iat, true);
           W.acceptMove(iat, true);
         }
         else

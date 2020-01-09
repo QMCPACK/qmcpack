@@ -161,9 +161,9 @@ class TemplateSimulationInput(SimulationInput):
         #  translate the internal representation of input into a string
         # for the above example, this might look like:
         #   text = ''
-        #   for secname,sec in self.iteritems():
+        #   for secname,sec in self.items():
         #       text += secname+'\n'
-        #       for val,val in sec.iteritems():
+        #       for val,val in sec.items():
         #          text += '  '+var+' = '+val2str(val)
         #       #end for
         #   #end for
