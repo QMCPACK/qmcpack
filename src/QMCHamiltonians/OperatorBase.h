@@ -258,10 +258,7 @@ struct OperatorBase : public QMCTraits
   /** Evaluate the contribution of this component of multiple walkers */
   virtual void mw_evaluateWithToperator(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
   {
-    for(int iw = 0; iw < O_list.size(); ++iw)
-    {
-      O_list[iw].get().evaluateWithToperator(P_list[iw]);
-    }
+    mw_evaluate(O_list, P_list);
   }
 
   /** evaluate value and derivatives wrt the optimizables

@@ -49,11 +49,16 @@ public:
 
   /** move virtual particles to new postions and update distance tables
      * @param jel reference particle that all the VP moves from
-     * @param vitualPos new positions
+     * @param ref_pos reference particle position
+     * @param deltaV Position delta for virtual moves.
      * @param sphere set true if VP are on a sphere around the reference source particle
      * @param iat reference source particle
      */
-  void makeMoves(int jel, const ParticlePos_t& vitualPos, bool sphere = false, int iat = -1);
+  void makeMoves(int jel,
+                 const PosType& ref_pos,
+                 const std::vector<PosType>& deltaV,
+                 bool sphere = false,
+                 int iat     = -1);
 };
 } // namespace qmcplusplus
 #endif

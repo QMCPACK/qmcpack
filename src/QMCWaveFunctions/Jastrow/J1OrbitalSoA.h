@@ -160,7 +160,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     return std::exp(static_cast<PsiValueType>(Vat[iat] - curAt));
   }
 
-  inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+  inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(Vat[VP.refPtcl] - computeU(VP.getDistTable(myTableID).getDistRow(k)));
