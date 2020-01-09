@@ -30,10 +30,28 @@ class NonLocalECPComponent;
 class NonLocalECPotential : public OperatorBase, public ForceBase
 {
 public:
-  /** tuple type for NLPP calculation of a pair of ion and electron
-   * ion id, electron id, electron position, ion electron distance, ion to electron displacement
+  /** meta data for NLPP calculation of a pair of ion and electron
    */
-  using NLPPJob = std::tuple<int, int, PosType, RealType, PosType>;
+  struct NLPPJob
+  {
+    const int ion_id;
+    const int electron_id;
+    const PosType elec_pos;
+    const RealType ion_elec_dist;
+    const PosType ion_elec_displ;
+
+    NLPPJob(const int ion_id_in,
+            const int electron_id_in,
+            const PosType& elec_pos_in,
+            const RealType ion_elec_dist_in,
+            const PosType& ion_elec_displ_in)
+        : ion_id(ion_id_in),
+          electron_id(electron_id_in),
+          elec_pos(elec_pos_in),
+          ion_elec_dist(ion_elec_dist_in),
+          ion_elec_displ(ion_elec_displ_in)
+    {}
+  };
 
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
 

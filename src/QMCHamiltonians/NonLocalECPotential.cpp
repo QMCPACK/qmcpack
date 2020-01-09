@@ -311,7 +311,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
           {
             NeighborIons.push_back(iat);
             O.IonNeighborElecs.getNeighborList(iat).push_back(jel);
-            joblist.push_back(NLPPJob(iat, jel, P.R[jel], dist[iat], -displ[iat]));
+            joblist.emplace_back(iat, jel, P.R[jel], dist[iat], -displ[iat]);
           }
       }
       // find the max number of jobs of all the walkers
@@ -359,13 +359,13 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
       {
         const auto& job = O.nlpp_jobs[ig][jobid];
         ecp_potential_list.push_back(O);
-        ecp_component_list.push_back(*O.PP[std::get<0>(job)]);
+        ecp_component_list.push_back(*O.PP[job.ion_id]);
         p_list.push_back(P);
-        iat_list.push_back(std::get<0>(job));
+        iat_list.push_back(job.ion_id);
         psi_list.push_back(O.Psi);
-        jel_list.push_back(std::get<1>(job));
-        r_list.push_back(std::get<3>(job));
-        dr_list.push_back(std::get<4>(job));
+        jel_list.push_back(job.electron_id);
+        r_list.push_back(job.ion_elec_dist);
+        dr_list.push_back(job.ion_elec_displ);
       }
     }
 
