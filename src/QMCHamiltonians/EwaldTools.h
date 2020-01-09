@@ -244,12 +244,56 @@ public:
 
 
 
+template<typename M>
+RealVec wignerPoint(const M& A, size_t nc=5)
+{
+  RealVec rwig = 0.0;
+  real_t rmin = 1e90;
+  for(int_t k=-nc; k<nc+1; k++)
+    for(int_t j=-nc; j<nc+1; j++)
+      for(int_t i=-nc; i<nc+1; i++)
+        if(i!=0 || j!=0 || k!=0)
+        {
+          IntVec n(i,j,k);
+          RealVec rv = dot(n,A);
+          real_t rm = 0.5*std::sqrt(dot(rv,rv));
+          if(rm<rmin)
+          {
+            rwig = rv;
+            rmin = rm;
+          }
+        }
+  return rwig;
+}
+
+
+template<typename M>
+real_t wignerRadius(const M& A, size_t nc=5)
+{
+  const auto& rwig = wignerPoint(A,nc);
+  return std::sqrt(dot(rwig,rwig));
+}
+
+
+template<typename V>
+V ivmax(const V& v1, const V& v2)
+{
+  V vm;
+  for(size_t d: {0,1,2})
+    vm[d] = std::max(v1[d],v2[d]);
+  return vm;
+}
+
+
 
 /// General class to perform Ewald sums
 class AnisotropicEwald
 {
-private:
+public:
+  IntVec nrmax; // Max aniso r-space grid dims found across all adaptive evals
+  IntVec nkmax; // Max aniso k-space grid dims found across all adaptive evals
 
+private:
   RealMat A;      // Real-space cell axes
   RealMat B;      // K-space cell axes
   ChargeArray Q;  // List of charges for all particles
@@ -257,7 +301,6 @@ private:
 
   size_t N;       // Number of particles
   real_t volume;  // Volume of real-space cell, \Omega in Drummond 2008
-  real_t QQmax;   // Maximum charge product (used for setting tolerances)
 
   // Constants used in Madelung sums (see Drummond 2008 formula 7)
   real_t kappa_madelung;      // kappa for Madelung sums
@@ -284,75 +327,82 @@ private:
   std::vector<RealVec> kpoints;    // Converged k-point grid
   std::vector<real_t> vk;          // Fourier transform of Ewald pair potential
   real_t vk_sum;                   // Constant sum term in rho_k breakup
-  //std::rhok2                       // Charge structure factor
+  std::vector<real_t> rhok_r;      // Charge structure factor
+  std::vector<real_t> rhok_i;      // Charge structure factor
 
 public:
 
   /// Empty constructor
-  AnisotropicEwald() : nmax_anisotropic(0) { }
+  AnisotropicEwald() { }
 
   /// State-initializing constructor
   AnisotropicEwald(const RealMat& A_in, const ChargeArray& Q_in, real_t tol_in = 1e-10,real_t kappa_in=-1.0)
-    : A(A_in), Q(Q_in), tol(tol_in), nmax_anisotropic(0)
   {
-
     initialize(A_in,Q_in,tol_in,kappa_in);
   }
 
   /// Initialize constant data, including Madelung sums
   void initialize(const RealMat& A_in, const ChargeArray& Q_in, real_t tol_in = 1e-10,real_t kappa_in=-1.0)
   {
-  
-    A = A_in;
-    Q = Q_in;
+    // Zero out observed grid dimensions
+    nrmax = 0;
+    nkmax = 0;
+
+    // Store input data
+    A   = A_in;
+    Q   = Q_in;
     tol = tol_in;
 
-    // Reciprocal lattice vectors
-    B = 2 * M_PI * transpose(inverse(A));
+    // Setup cell data
+    N      = Q.size();                         // Number of particles
+    volume = std::abs(det(A));                 // Volume
+    B      = 2 * M_PI * transpose(inverse(A)); // Reciprocal lattice vectors
 
     // Set Ewald sum constants
-    volume = std::abs(det(A));
     // Madelung constants
-    if(kappa_in<0.0)
-      kappa_madelung = getKappaMadelung(volume);
-    else
-      kappa_madelung = kappa_in;
+    kappa_madelung      = getKappaMadelung(volume);
     rexponent_madelung  = kappa_madelung;
     kexponent_madelung  = -1. / (4 * std::pow(kappa_madelung, 2));
     kprefactor_madelung = 4 * M_PI / volume;
     // Ewald constants
-    if(kappa_in<0.0)
+    setKappaEwald(kappa_in);
+
+    // Calculate and store Madelung energy
+    madelung_energy = madelungEnergy();
+  }
+
+
+  void setKappaEwald(real_t kappa=-1.0)
+  {
+    if(kappa<0.0)
       kappa_ewald = getKappaEwald(volume);
     else
-      kappa_ewald = kappa_in;
+      kappa_ewald = kappa;
     rexponent_ewald  = 1. / (std::sqrt(2.) * kappa_ewald);
     kexponent_ewald  = -std::pow(kappa_ewald, 2) / 2;
     kprefactor_ewald = 4 * M_PI / volume;
     kconstant_ewald  = -2 * M_PI * std::pow(kappa_ewald, 2) / volume;
 
-    // Number of particles
-    N = Q.size();
-
-    // Find maximum self-interaction charge product
-    QQmax = 0.0;
-    for (size_t i = 0; i < N; ++i)
-      QQmax = std::max(std::abs(Q[i] * Q[i]), QQmax);
-
-    // Calculate and store Madelung energy
-    madelung_energy = madelungEnergy();
-
     // Calculate and store constant energy term for LR interaction
-    real_t lrc = 0.0;
-    for (size_t i = 0; i < N; ++i)
-      for (size_t j = 0; j < i; ++j)
-        lrc += Q[i]*Q[j]*kconstant_ewald;
-    ewald_constant_lr_energy = lrc;
+    real_t qsum  = 0.0;
+    real_t qsum2 = 0.0;
+    for(auto q: Q)
+    {
+      qsum  += q;
+      qsum2 += q*q;
+    }
+    ewald_constant_lr_energy = 0.5*(qsum*qsum - qsum2)*kconstant_ewald;
   }
 
 
   /// Calculate the Madelung constant
   real_t madelungConstant() const
   {
+    // Find maximum self-interaction charge product
+    real_t QQmax = 0.0;
+    for (auto q: Q)
+      QQmax = std::max(q*q, QQmax);
+
     // Set Madelung tolerance
     real_t tol_madelung = tol * 2. / QQmax;
 
@@ -390,27 +440,6 @@ public:
   }
 
 
-  /// Update the current maximum anisotropic grid dimensions
-  void updateNmax(const IntVec& nmax)
-  {
-    for(size_t d: {0,1,2})
-      nmax_anisotropic[d] = std::max(nmax[d],nmax_anisotropic[d]);
-  }
-
-
-  /// Return the current maximum anisotropic grid dimensions
-  IntVec getNmax()
-  {
-    return nmax_anisotropic;
-  }
-
-
-  /// Set the maximum anisotropic grid dimensions
-  void setNmax(const IntVec& nmax)
-  {
-    nmax_anisotropic = nmax;
-  }
-
 
   /// Pair interaction computed via sum over adaptive anisotropic grid
   real_t ewaldPairPotential(const RealVec& r, real_t tol_ewald)
@@ -424,10 +453,10 @@ public:
     real_t cval = kconstant_ewald;
     // Compute the real-space sum (includes zero)
     real_t rval = anisotropicGridSum(rfunc, nmax, true, tol_ewald);
-    updateNmax(nmax);
+    nrmax = ivmax(nmax,nrmax);
     // Compute the k-space sum (excludes zero)
     real_t kval = anisotropicGridSum(kfunc, nmax, false, tol_ewald);
-    updateNmax(nmax);
+    nkmax = ivmax(nmax,nkmax);
 
     // Sum all contributions to get the Ewald pair interaction
     real_t epp = cval + rval + kval;
@@ -440,6 +469,8 @@ public:
   template<typename PA>
   real_t ewaldEnergy(const PA& R)
   {
+    nrmax = 0;
+    nkmax = 0;
     real_t ee = madelung_energy;
     size_t Npairs = (N*(N-1))/2;
     for (size_t i = 0; i < N; ++i)
@@ -498,6 +529,7 @@ public:
   template<typename PA>
   real_t ewaldEnergySR(const PA& R)
   {
+    nrmax = 0;
     real_t ee = 0.0;
     size_t Npairs = (N*(N-1))/2;
     IntVec nmax;
@@ -507,6 +539,7 @@ public:
         real_t tol_ewald = tol/(Q[i]*Q[j])/Npairs;
         RspaceEwaldTerm rfunc(R[i]-R[j], A, rexponent_ewald);
         real_t rval = anisotropicGridSum(rfunc, nmax, true, tol_ewald);
+        nrmax = ivmax(nmax,nrmax);
         ee += Q[i]*Q[j]*rval;
       }
     return ee;
@@ -517,6 +550,7 @@ public:
   template<typename PA>
   real_t ewaldEnergyLR(const PA& R)
   {
+    nkmax = 0;
     real_t ee = ewald_constant_lr_energy;
     size_t Npairs = (N*(N-1))/2;
     IntVec nmax;
@@ -526,6 +560,7 @@ public:
         real_t tol_ewald = tol/(Q[i]*Q[j])/Npairs;
         KspaceEwaldTerm kfunc(R[i]-R[j], B, kexponent_ewald, kprefactor_ewald);
         real_t kval = anisotropicGridSum(kfunc, nmax, false, tol_ewald);
+        nkmax = ivmax(nmax,nkmax);
         ee += Q[i]*Q[j]*kval;
       }
     return ee;
@@ -563,12 +598,45 @@ public:
           vk_sum    += 0.5*QQsum*vk_val;
           n++;
         }
+
+    rhok_r.resize(nkpoints);
+    rhok_i.resize(nkpoints);
   }
 
 
-  void setupOpt()
+  // Computes error bound for excluding all images of SR sum for single e-e interaction
+  real_t SROptErrorBound(RealVec wigner_point,real_t kappa,real_t errtol=1e-10)
   {
-    setupOpt(nmax_anisotropic);
+    real_t rexponent = 1./(std::sqrt(2.)*kappa);
+    RspaceEwaldTerm vsr(wigner_point,A,rexponent);
+    IntVec nmax;
+    real_t error_bound =0.0;//= ansitropicGridSum(vsr,nmax,false,errtol);
+    return error_bound;
+  }
+
+
+  // Find kappa to use in optmized computation based on error tolerance of SR part
+  real_t findOptKappa(real_t errtol)
+  {
+    real_t qsum  = 0.0;
+    real_t qsum2 = 0.0;
+    for(auto q: Q)
+    {
+      qsum  += std::abs(q);
+      qsum2 += q*q;
+    }
+    real_t QQbound = 0.5*(qsum*qsum - qsum2);
+    RealVec wigner_point = wignerPoint(A);
+    real_t wigner_radius = std::sqrt(dot(wigner_point,wigner_point));
+    real_t err_bound_tol = errtol/QQbound/1e2;
+    real_t error = 1e90;
+    real_t kappa = wigner_radius;
+    int_t n = 0;
+    while(error>errtol && kappa>0)
+    {
+      kappa = (1.0-0.1*n)*wigner_radius;
+      error = QQbound*SROptErrorBound(wigner_point,kappa);
+    }
   }
 
 
@@ -582,6 +650,7 @@ public:
   }
 
 
+  /// SR (r-space) part of total energy computed optimally
   template<typename DT>
   real_t ewaldEnergySROpt(const DT& dt)
   {
@@ -598,6 +667,84 @@ public:
   /// LR (k-space) part of total energy computed optimally
   template<typename PA>
   real_t ewaldEnergyLROpt(const PA& R)
+  {
+    real_t ee = ewald_constant_lr_energy;
+
+    real_t ve = 0.0;
+//#pragma omp parallel for reduction(+ : ve)
+    for(size_t n=0; n<kpoints.size(); n++)
+    {
+      const auto& k = kpoints[n];
+      real_t coskr = 0.0;
+      real_t sinkr = 0.0;
+//#pragma omp simd
+      for(size_t i=0; i<N; i++)
+      {
+        real_t c,s;
+        real_t q = Q[i];
+        sincos(dot(k,R[i]),&s,&c);
+        coskr += q*c;
+        sinkr += q*s;
+      }
+      ve += (coskr*coskr + sinkr*sinkr)*vk[n];
+    }
+
+    ee += 0.5*ve - vk_sum;
+
+    return ee;
+  }
+
+  
+  /// LR (k-space) part of total energy computed optimally
+  template<typename PA>
+  real_t ewaldEnergyLROpt_qmcpack(const PA& R)
+  {
+    real_t ee = ewald_constant_lr_energy;
+
+    std::fill(rhok_r.begin(),rhok_r.end(),0.0);
+    std::fill(rhok_i.begin(),rhok_i.end(),0.0);
+    for(size_t i=0; i<N; i++)
+    {
+      real_t q = Q[i];
+      const auto& r = R[i];
+      for(size_t n=0; n<kpoints.size(); n++)
+      {
+        real_t c,s;
+        sincos(dot(kpoints[n],r),&s,&c);
+        rhok_r[n] += q*c;
+        rhok_i[n] += q*s;
+      }
+    }
+
+    real_t ve = 0.0;
+    for(size_t n=0; n<kpoints.size(); n++)
+    {
+      ve += (rhok_r[n]*rhok_r[n]+rhok_i[n]*rhok_i[n])*vk[n];
+    }
+
+    ee += 0.5*ve - vk_sum;
+
+    return ee;
+  }
+
+
+  /// SR (r-space) part of total energy computed optimally
+  template<typename DT>
+  real_t ewaldEnergySROpt_orig(const DT& dt)
+  {
+    const auto& dr = dt.getDisplacements();
+    real_t ee = 0.0;
+    RspaceEwaldPairPotential vsr(rexponent_ewald);
+    for (size_t i = 0; i < N; ++i)
+      for (size_t j = 0; j < i; ++j)
+        ee += Q[i]*Q[j]*vsr(dr[i][j]);
+    return ee;
+  }
+
+  
+  /// LR (k-space) part of total energy computed optimally
+  template<typename PA>
+  real_t ewaldEnergyLROpt_orig(const PA& R)
   {
     real_t ee = ewald_constant_lr_energy;
 

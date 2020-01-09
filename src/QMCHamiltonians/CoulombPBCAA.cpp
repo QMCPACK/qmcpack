@@ -72,8 +72,9 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   ewald.initialize(A,Q,1e-10,qmcpack_kappa);
 
 
-  ewaldref::IntVec nmax = 20;
-  ewald.setNmax(nmax);
+  ewaldref::IntVec nmax = 7;
+  //ewald.setNmax(nmax);
+  ewald.setupOpt(nmax);
 
   if (!is_active)
   {
@@ -84,88 +85,88 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     for(int i=0;i<NumCenters;++i)
       R[i] = Ps.R[i];
     
-    RealType eE   = ewald.ewaldEnergy(R);
-    RealType eEf  = ewald.fixedGridEwaldEnergy(R);
-    //RealType eEt  = ewald.ewaldEnergy(Ps.R);
-    //RealType eEft = ewald.fixedGridEwaldEnergy(Ps.R);
-
-    RealType c  = ewald.ewaldEnergyConst();
-    RealType sr = ewald.ewaldEnergySR(Ps.R);
-    RealType lr = ewald.ewaldEnergyLR(Ps.R);
-
-    const DistanceTableData& dt(Ps.getDistTable(d_aa_ID));
-    //RealType srdt = ewald.ewaldEnergySRDT(dt);
-    //RealType lrdt = ewald.ewaldEnergyLRDT(dt);
-
-
-    //ewald_qp.madelungEnergy0();
-    RealType eE_qp = ewald_qp.ewaldEnergy(Ps.R);
-    //RealType c_qp   = ewald_qp.ewaldEnergyConst();
-    //RealType sr_qp  = ewald_qp.ewaldEnergySRDT(dt);
-    //RealType lr_qp  = ewald_qp.ewaldEnergyLRDT(dt);
-    //RealType sr0_qp = ewald_qp.ewaldEnergySR0DT(dt);
-
-    RealType c_qmc = myConst;
-    RealType sr_qmc = evalSR(Ps);
-    RealType lr_qmc = evalLR(Ps);
-    RealType E_qmc  = c_qmc + sr_qmc + lr_qmc;
-
-
-    app_log()<<std::setprecision(14);
-    app_log()<<std::endl;
-    app_log()<<"   adaptive aniso ewald energy: "<<eE<<std::endl;
-    app_log()<<"   fixed aniso ewald energy   : "<<eEf<<std::endl;
-
-    //app_log()<<"   adaptive aniso ewald energy: "<<eEt<<std::endl;
-    //app_log()<<"   fixed aniso ewald energy   : "<<eEft<<std::endl;
-    app_log()<<"   ewald energy c+sr+lr       : "<<c+sr+lr<<std::endl;
-    //app_log()<<"   ewald energy c+sr+lr dt    : "<<c+srdt+lrdt<<std::endl;
-    app_log()<<"   aniso ewald nmax           : "<<ewald.getNmax()<<std::endl;
-    app_log()<<std::setprecision(14);
-    //app_log()<<"   qmcpack constant : "<<c_qmc<<std::endl;
-    //app_log()<<"   ewald   constant : "<<c_qp<<std::endl;
-    //app_log()<<"   qmcpack SR  : "<<sr_qmc<<std::endl;
-    //app_log()<<"   ewald   SR  : "<<sr_qp<<std::endl;
-    //app_log()<<"   ewald   SR0 : "<<sr0_qp<<std::endl;
-    //app_log()<<"   qmcpack LR  : "<<lr_qmc<<std::endl;
-    //app_log()<<"   ewald   LR  : "<<lr_qp<<std::endl;
-    //app_log()<<"   qmcpack tot : "<<c_qmc+sr_qmc+lr_qmc<<std::endl;
-    //app_log()<<"   ewald   tot : "<< c_qp+sr_qp+lr_qp <<std::endl;
-    //app_log()<<"   ewald   tot0: "<< c_qp+sr0_qp+lr_qp <<std::endl;
+    //RealType eE   = ewald.ewaldEnergy(R);
+    //RealType eEf  = ewald.fixedGridEwaldEnergy(R);
+    ////RealType eEt  = ewald.ewaldEnergy(Ps.R);
+    ////RealType eEft = ewald.fixedGridEwaldEnergy(Ps.R);
+    //
+    //RealType c  = ewald.ewaldEnergyConst();
+    //RealType sr = ewald.ewaldEnergySR(Ps.R);
+    //RealType lr = ewald.ewaldEnergyLR(Ps.R);
+    //
+    //const DistanceTableData& dt(Ps.getDistTable(d_aa_ID));
+    ////RealType srdt = ewald.ewaldEnergySRDT(dt);
+    ////RealType lrdt = ewald.ewaldEnergyLRDT(dt);
+    //
+    //
+    ////ewald_qp.madelungEnergy0();
+    //RealType eE_qp = ewald_qp.ewaldEnergy(Ps.R);
+    ////RealType c_qp   = ewald_qp.ewaldEnergyConst();
+    ////RealType sr_qp  = ewald_qp.ewaldEnergySRDT(dt);
+    ////RealType lr_qp  = ewald_qp.ewaldEnergyLRDT(dt);
+    ////RealType sr0_qp = ewald_qp.ewaldEnergySR0DT(dt);
+    //
+    //RealType c_qmc = myConst;
+    //RealType sr_qmc = evalSR(Ps);
+    //RealType lr_qmc = evalLR(Ps);
+    //RealType E_qmc  = c_qmc + sr_qmc + lr_qmc;
+    //
+    //
+    //app_log()<<std::setprecision(14);
     //app_log()<<std::endl;
-    //app_log()<<"   SR error    : "<<sr_qmc-sr_qp<<std::endl;
-    //app_log()<<"   tot error   : "<<c_qmc+sr_qmc+lr_qmc-c_qp-sr_qp-lr_qp<<std::endl;
+    //app_log()<<"   adaptive aniso ewald energy: "<<eE<<std::endl;
+    //app_log()<<"   fixed aniso ewald energy   : "<<eEf<<std::endl;
+    //
+    ////app_log()<<"   adaptive aniso ewald energy: "<<eEt<<std::endl;
+    ////app_log()<<"   fixed aniso ewald energy   : "<<eEft<<std::endl;
+    //app_log()<<"   ewald energy c+sr+lr       : "<<c+sr+lr<<std::endl;
+    ////app_log()<<"   ewald energy c+sr+lr dt    : "<<c+srdt+lrdt<<std::endl;
+    //app_log()<<"   aniso ewald nmax           : "<<ewald.getNmax()<<std::endl;
+    //app_log()<<std::setprecision(14);
+    ////app_log()<<"   qmcpack constant : "<<c_qmc<<std::endl;
+    ////app_log()<<"   ewald   constant : "<<c_qp<<std::endl;
+    ////app_log()<<"   qmcpack SR  : "<<sr_qmc<<std::endl;
+    ////app_log()<<"   ewald   SR  : "<<sr_qp<<std::endl;
+    ////app_log()<<"   ewald   SR0 : "<<sr0_qp<<std::endl;
+    ////app_log()<<"   qmcpack LR  : "<<lr_qmc<<std::endl;
+    ////app_log()<<"   ewald   LR  : "<<lr_qp<<std::endl;
+    ////app_log()<<"   qmcpack tot : "<<c_qmc+sr_qmc+lr_qmc<<std::endl;
+    ////app_log()<<"   ewald   tot : "<< c_qp+sr_qp+lr_qp <<std::endl;
+    ////app_log()<<"   ewald   tot0: "<< c_qp+sr0_qp+lr_qp <<std::endl;
+    ////app_log()<<std::endl;
+    ////app_log()<<"   SR error    : "<<sr_qmc-sr_qp<<std::endl;
+    ////app_log()<<"   tot error   : "<<c_qmc+sr_qmc+lr_qmc-c_qp-sr_qp-lr_qp<<std::endl;
+    ////app_log()<<std::endl;
+    //app_log()<<"   ewald_qp aniso energy      : "<<eE<<std::endl;
+    //app_log()<<"   aniso ewald nmax           : "<<ewald_qp.getNmax()<<std::endl;
+    //app_log()<<std::setprecision(14);
+    //
+    //
+    ////ewaldtools::IntVec nmax = 20;
+    ////ewald.setupOpt(nmax);
+    //
+    ////auto& ewald_opt = ewald_qp;
+    //auto& ewald_opt = ewald;
+    //
+    //RealType c_ref  = ewald_opt.ewaldEnergyConst();
+    //RealType sr_ref = ewald_opt.ewaldEnergySR(Ps.R);
+    //RealType lr_ref = ewald_opt.ewaldEnergyLR(Ps.R);
+    ////ewald_opt.setupOpt();
+    //ewald_opt.setupOpt(nmax);
+    //RealType c_opt  = ewald_opt.ewaldEnergyConst();
+    //RealType sr_opt = ewald_opt.ewaldEnergySROpt(dt);
+    //RealType lr_opt = ewald_opt.ewaldEnergyLROpt(Ps.R);
+    //app_log()<<"   ewald opt energy           : "<<c_opt+sr_opt+lr_opt<<std::endl;
+    //app_log()<<"   ewald opt energy2          : "<<ewald.ewaldEnergyOpt(Ps.R,dt)<<std::endl;
+    //app_log()<<"   qmcpack   energy           : "<<E_qmc<<std::endl;
+    //app_log()<<"   ewald     LR  : "<<lr_ref<<std::endl;
+    //app_log()<<"   ewald opt LR  : "<<lr_opt<<std::endl;
+    //app_log()<<"   ewald     SR  : "<<sr_ref<<std::endl;
+    //app_log()<<"   ewald opt SR  : "<<sr_opt<<std::endl;
+    //app_log()<<"   qmcpack   SR  : "<<sr_qmc<<std::endl;
+    //
     //app_log()<<std::endl;
-    app_log()<<"   ewald_qp aniso energy      : "<<eE<<std::endl;
-    app_log()<<"   aniso ewald nmax           : "<<ewald_qp.getNmax()<<std::endl;
-    app_log()<<std::setprecision(14);
-
-    
-    //ewaldtools::IntVec nmax = 20;
-    //ewald.setupOpt(nmax);
-
-    //auto& ewald_opt = ewald_qp;
-    auto& ewald_opt = ewald;
-
-    RealType c_ref  = ewald_opt.ewaldEnergyConst();
-    RealType sr_ref = ewald_opt.ewaldEnergySR(Ps.R);
-    RealType lr_ref = ewald_opt.ewaldEnergyLR(Ps.R);
-    //ewald_opt.setupOpt();
-    ewald_opt.setupOpt(nmax);
-    RealType c_opt  = ewald_opt.ewaldEnergyConst();
-    RealType sr_opt = ewald_opt.ewaldEnergySROpt(dt);
-    RealType lr_opt = ewald_opt.ewaldEnergyLROpt(Ps.R);
-    app_log()<<"   ewald opt energy           : "<<c_opt+sr_opt+lr_opt<<std::endl;
-    app_log()<<"   ewald opt energy2          : "<<ewald.ewaldEnergyOpt(Ps.R,dt)<<std::endl;
-    app_log()<<"   qmcpack   energy           : "<<E_qmc<<std::endl;
-    app_log()<<"   ewald     LR  : "<<lr_ref<<std::endl;
-    app_log()<<"   ewald opt LR  : "<<lr_opt<<std::endl;
-    app_log()<<"   ewald     SR  : "<<sr_ref<<std::endl;
-    app_log()<<"   ewald opt SR  : "<<sr_opt<<std::endl;
-    app_log()<<"   qmcpack   SR  : "<<sr_qmc<<std::endl;
-
-    app_log()<<std::endl;
-    app_log()<<std::endl;
+    //app_log()<<std::endl;
 
     RealType Vii_ref        = ewaldref::ewaldEnergy(A, R, Q);
     RealType Vdiff_per_atom = std::abs(Value - Vii_ref) / NumCenters;
@@ -273,32 +274,90 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate(ParticleSet& P)
 
   if (is_active)
   {
-    {
-    ScopedTimer evaltimer(TimerManager.createTimer("QMCPACK eval"));
+//    {
+//    ScopedTimer evaltimer(TimerManager.createTimer("QMCPACK eval"));
+//
+//#if !defined(REMOVE_TRACEMANAGER)
+//    if (streaming_particles)
+//      Value = evaluate_sp(P);
+//    else
+//#endif
+//      Value = evalLR(P) + evalSR(P) + myConst;
+//    }
+//
+//    RealType eval;
+//    {
+//      ScopedTimer evaltimer(TimerManager.createTimer("Aniso eval"));
+//      //eval = ewald.fixedGridEwaldEnergy(P.R);
+//      eval = ewald.ewaldEnergyOpt(P.R,dt);
+//    }
 
-#if !defined(REMOVE_TRACEMANAGER)
-    if (streaming_particles)
-      Value = evaluate_sp(P);
-    else
-#endif
-      Value = evalLR(P) + evalSR(P) + myConst;
+
+    {
+      ScopedTimer evaltimer(TimerManager.createTimer("QMCPACK eval"));
+      RealType sr_qmc;
+      RealType lr_qmc;
+      {
+        ScopedTimer evaltimer(TimerManager.createTimer("SR qmc"));
+        sr_qmc = evalSR(P);
+      }
+      {
+        ScopedTimer evaltimer(TimerManager.createTimer("LR qmc"));
+        lr_qmc = evalLR(P);
+      }
+      Value = lr_qmc + sr_qmc + myConst;
     }
 
-    RealType eval;
+    RealType E_opt;
+    RealType c_opt;
+    RealType sr_opt;
+    RealType lr_opt;
     {
       ScopedTimer evaltimer(TimerManager.createTimer("Aniso eval"));
-      //eval = ewald.fixedGridEwaldEnergy(P.R);
-      eval = ewald.ewaldEnergyOpt(P.R,dt);
+      c_opt = ewald.ewaldEnergyConst();
+      {
+        ScopedTimer evaltimer(TimerManager.createTimer("SR opt"));
+        sr_opt = ewald.ewaldEnergySROpt(dt);
+      }
+      {
+        ScopedTimer evaltimer(TimerManager.createTimer("LR opt"));
+        lr_opt = ewald.ewaldEnergyLROpt(P.R);
+      }
     }
+    E_opt = lr_opt + sr_opt + c_opt;
+
+
+    RealType sr_opt_orig = ewald.ewaldEnergySROpt_orig(dt);
+    RealType lr_opt_orig = ewald.ewaldEnergyLROpt_orig(P.R);
+    RealType lr_opt_qmc  = ewald.ewaldEnergyLROpt_qmcpack(P.R);
+
+    RealType E_opt2 = c_opt + sr_opt_orig + lr_opt_orig;
+    RealType E_opt3 = c_opt + sr_opt_orig + lr_opt_qmc;
+
+    //RealType E_ref  = ewald.ewaldEnergy(P.R);
+
+    //RealType c_ref  = ewald.ewaldEnergyConst();
+    //RealType sr_ref = ewald.ewaldEnergySR(P.R);
+    //RealType lr_ref = ewald.ewaldEnergyLR(P.R);
+    //
+    //RealType sr_opt = ewald.ewaldEnergySROpt(dt);
+    //RealType lr_opt = ewald.ewaldEnergyLROpt(P.R);
 
     app_log()<<std::endl;
-    app_log()<<"  QMCPACK value: "<<Value<<std::endl;
-    app_log()<<"  Aniso   value: "<<eval<<std::endl;
-    app_log()<<"  QMCPACK    SR: "<<evalSR(P)<<std::endl;
-    app_log()<<"  Aniso      SR: "<<ewald.ewaldEnergySROpt(dt)<<std::endl;
-    app_log()<<"  QMCPACK    LR: "<<evalLR(P)+myConst<<std::endl;
-    app_log()<<"  Aniso      LR: "<<ewald.ewaldEnergyLROpt(P.R)<<std::endl;
+    app_log()<<"  QMCPACK    value: "<<Value<<std::endl;
+    //app_log()<<"  Aniso ref  value: "<<E_ref<<std::endl;
+    //app_log()<<"  Aniso ref  value: "<<c_ref+sr_ref+lr_ref<<std::endl;
+    app_log()<<"  Aniso opt  value: "<<E_opt<<std::endl;
+    app_log()<<"  Aniso opt2 value: "<<E_opt2<<std::endl;
+    app_log()<<"  Aniso opt3 value: "<<E_opt3<<std::endl;
+    //app_log()<<"  QMCPACK       SR: "<<evalSR(P)<<std::endl;
+    //app_log()<<"  Aniso     ref SR: "<<sr_ref<<std::endl;
+    //app_log()<<"  Aniso     opt SR: "<<sr_opt<<std::endl;
+    //app_log()<<"  QMCPACK       LR: "<<evalLR(P)+myConst<<std::endl;
+    //app_log()<<"  Aniso     ref LR: "<<lr_ref+c_ref<<std::endl;
+    //app_log()<<"  Aniso     opt LR: "<<lr_opt+c_ref<<std::endl;
     app_log()<<std::endl;
+
   }
   return Value;
 }

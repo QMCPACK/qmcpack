@@ -76,6 +76,8 @@ void StructFact::UpdateAllPart(ParticleSet& P) { FillRhok(P); }
  */
 void StructFact::FillRhok(ParticleSet& P)
 {
+  ScopedTimer rhoktimer(TimerManager.createTimer("StructFact::FillRhok"));
+
   int npart = P.getTotalNum();
 #if defined(USE_REAL_STRUCT_FACTOR)
   rhok_r = 0.0;
