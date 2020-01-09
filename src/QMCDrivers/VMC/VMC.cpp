@@ -182,7 +182,12 @@ void VMC::resetRun()
       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
 #endif
       hClones[ip]->setRandomGenerator(Rng[ip]);
-
+      
+      tolower(SpinMoves);
+      if (SpinMoves != "yes" && SpinMoves != "no") 
+      {
+        APP_ABORT("SpinMoves must be yes/no\n");
+      }
       if (SpinMoves == "yes") 
       {
         if (qmc_driver_mode[QMC_UPDATE_MODE]) 

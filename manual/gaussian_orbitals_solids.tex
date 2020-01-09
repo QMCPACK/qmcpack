@@ -115,7 +115,7 @@ can be generated according to the following example for a $2 \times 1 \times 1$ 
 %requiring complex coefficients will be supported in future releases.
 
 \begin{lstlisting}[style=Python,caption=Example PySCF input for single k-point calculation for a $2 \times 1 \times 1$ carbon supercell.]
-#!/usr/bin/env python
+#! /usr/bin/env python3
 import numpy
 import h5py
 from pyscf.pbc import gto, scf, dft, df
@@ -192,7 +192,7 @@ export PYTHONPATH=QMCPACK_PATH/src/QMCTools:$PYTHONPATH
 %The following example corresponds to the same carbon system ($2 \times 1 \times 1$); however, in this case, we use a primitive simulation cell and a $2 \times 1 \times 1$ k-point mesh.   
 
 %\begin{lstlisting}[style=Python,caption=Example PySCF input for single k-point calculation for a $2 \times 1 \times 1$ carbon supercell.]
-%#!/usr/bin/env python
+%#! /usr/bin/env python3
 
 %import numpy
 %from pyscf.pbc import gto, scf, dft,df

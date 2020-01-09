@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-from __future__ import print_function
+#! /usr/bin/env python3
+
 import numpy as np
 import pandas as pd
 import h5py

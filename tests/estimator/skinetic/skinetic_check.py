@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-from __future__ import print_function
+#! /usr/bin/env python3
 
 from sys import exit
 import numpy as np

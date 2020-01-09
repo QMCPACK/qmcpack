@@ -83,7 +83,7 @@ void WaveFunctionComponent::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<V
     ratios[i] = ratio(P, i);
 }
 
-void WaveFunctionComponent::evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios)
+void WaveFunctionComponent::evaluateRatios(const VirtualParticleSet& P, std::vector<ValueType>& ratios)
 {
   std::ostringstream o;
   o << "WaveFunctionComponent::evaluateRatios is not implemented by " << ClassName;
