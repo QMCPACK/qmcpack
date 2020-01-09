@@ -1,5 +1,5 @@
 <simulation>
-  <project id="sho" series="0"/>
+  <project id="grid_ext_pot" series="0"/>
   <qmcsystem>
     <simulationcell>
       <parameter name="lattice" units="bohr">

@@ -9,6 +9,16 @@ ENDIF()
   LIST(APPEND SHO_SCALARS "potential" "0.225 0.0028")
   LIST(APPEND SHO_SCALARS "latdev"    "1.0   0.013")
 
+# The errors on the total energy are numerical noise, not statistical errors
+IF(QMC_MIXED_PRECISION)
+  LIST(APPEND GEP_SCALARS "totenergy" "0.45  0.00000004")
+ELSE()
+  LIST(APPEND GEP_SCALARS "totenergy" "0.45  4.0e-14")
+ENDIF()
+  LIST(APPEND GEP_SCALARS "kinetic"   "0.225 0.0028")
+  LIST(APPEND GEP_SCALARS "potential" "0.225 0.0028")
+  LIST(APPEND GEP_SCALARS "latdev"    "1.0   0.013")
+
 IF(NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(short-sho-vmc
     "${CMAKE_SOURCE_DIR}/tests/models/sho"
@@ -25,6 +35,16 @@ IF(NOT QMC_CUDA)
     1 1
     check_grad_lap.py
   )
-ELSE()
-  MESSAGE("Skipping SHO model potential tests because they are not supported by CUDA build (QMC_CUDA=1)")
+
+  QMC_RUN_AND_CHECK(short-grid_ext_pot-vmc
+    "${CMAKE_SOURCE_DIR}/tests/models/grid_external_potential"
+    grid_ext_pot
+    vmc_grid_ext_pot.xml
+    1 16
+    TRUE
+    0 GEP_SCALARS # VMC
+  )
+
+ ELSE()
+  MESSAGE("Skipping SHO model potential and grid external potential tests because they are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()

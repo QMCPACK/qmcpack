@@ -125,11 +125,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   // Read atom orbital info from xml //
   /////////////////////////////////////
   // construct Super2Prim mapping.
-  if (IonPos.size()==0)
-  {
-    app_warning() << "Ion positions are missing in h5. Bypassing supercell to primitive cell electron position mapping check!" << std::endl;
-  }
-  else if (Super2Prim.size() == 0 && SourcePtcl->R.size() > 0)
+  if (Super2Prim.size() == 0)
   {
     //SourcePtcl->convert2Cart(SourcePtcl->R);
     Super2Prim.resize(SourcePtcl->R.size(), -1);
@@ -166,7 +162,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
       }
       else
       {
-        app_log() << "Supercell ion " << i << " mapped to primitive cell ion " << Super2Prim[i] << std::endl;
+        //app_log() << "Supercell ion " << i << " mapped to primitive cell ion " << Super2Prim[i] << std::endl;
       }
     }
     const int tiling_size = std::abs(det(TileMatrix));
