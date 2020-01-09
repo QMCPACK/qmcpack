@@ -13,6 +13,7 @@
  * BOOST, peer-reviewed portable C++ source libraries, http://www.boost.org
  * FFTW, FFT library, http://www.fftw.org/
  * MPI, parallel library. Optional, but a near requirement for production calculations.
+ * Python3. Older versions are not supported as of January 2020.
 
 We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions over
 two years old may work but is discouraged and untested. Proprietary compilers (Intel, PGI) are generally supported over the same
