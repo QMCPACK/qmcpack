@@ -1,6 +1,7 @@
 import ast
 import h5py
 import numpy
+import struct
 
 def read_qmcpack_ascii_wavefunction(filename, nmo, nelec):
     na, nb = nelec
@@ -169,3 +170,66 @@ def read_qmcpack_ci_wavefunction(input_file, nelec, nmo, ndets=None):
             occb.append(get_occupied(cb, nb, nmo))
     wfn = (coeffs, numpy.array(occa), numpy.array(occb))
     return wfn, True, nmo, (na,nb)
+
+def write_phf_rhf(fname, cf):
+    assert cf.dtype == numpy.dtype(float) or cf.dtype == numpy.dtype(complex)
+    assert len(cf.shape) == 2
+    nb, no = cf.shape
+
+    ia = numpy.array([1,nb,no,1], dtype=int)
+    i1_ = struct.pack('i',4*4)
+    i2_ = struct.pack('i',16*nb*no)
+    ia_ = struct.pack('i'*4,*ia)
+
+    cfx = numpy.ascontiguousarray(numpy.zeros((2*nb*no,),
+                                              dtype=float,
+                                              order='C'))
+    if numpy.iscomplexobj(cf):
+        cfx[0::2] = cf.real.reshape((nb*no,), order='F')[:]
+        cfx[1::2] = cf.imag.reshape((nb*no,), order='F')[:]
+    else:
+        cfx[0::2] = cf.reshape((nb*no,), order='F')[:]
+    cf_ = struct.pack('d'*(nb*no*2), *cfx)
+
+    with open(fname, 'wb') as f
+        f.write(i1_)
+        f.write(ia_)
+        f.write(i1_)
+        f.write(i2_)
+        f.write(cf_)
+        f.write(i2_)
+
+def write_phf_uhf(fname, cf):
+    assert len(cf.shape) == 3
+    assert cf[0].dtype == numpy.dtype(float) or cf[0].dtype == numpy.dtype(complex)
+    assert cf[1].dtype == numpy.dtype(float) or cf[1].dtype == numpy.dtype(complex)
+    assert cf[0].shape == cf[1].shape
+    nb, no = cf[0].shape
+
+    ia = numpy.array([2,nb,no,1], dtype=int)
+    i1_ = struct.pack('i',4*4)
+    i2_ = struct.pack('i',32*nb*no)
+    ia_ = struct.pack('i'*4,*ia)
+
+    cfx = numpy.ascontiguousarray(numpy.zeros((4*nb*no,),
+                                              dtype=float,
+                                              order='C'))
+    if numpy.iscomplexobj(cf[0]):
+        cfx[0:2*nb*no:2] = cf[0].real.reshape((nb*no,), order='F')[:]
+        cfx[1:2*nb*no:2] = cf[0].imag.reshape((nb*no,), order='F')[:]
+    else:
+        cfx[0:2*nb*no:2] = cf[0].reshape((nb*no,), order='F')[:]
+    if numpy.iscomplexobj(cf[1]):
+        cfx[2*nb*no+0::2] = cf[1].real.reshape((nb*no,), order='F')[:]
+        cfx[2*nb*no+1::2] = cf[1].imag.reshape((nb*no,), order='F')[:]
+    else:
+        cfx[2*nb*no+0::2] = cf[1].reshape((nb*no,), order='F')[:]
+    cf_ = struct.pack('d'*(nb*no*4), *cfx)
+
+    with open(fname, 'wb') as f
+        f.write(i1_)
+        f.write(ia_)
+        f.write(i1_)
+        f.write(i2_)
+        f.write(cf_)
+        f.write(i2_)
