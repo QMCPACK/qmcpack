@@ -1,5 +1,5 @@
 #INFO: **** input file is /p/lustre2/malone14/afqmc_test_data/unit/scf.py ****
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 import numpy
 from pyscf.pbc import gto, scf

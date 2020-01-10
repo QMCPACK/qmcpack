@@ -11,7 +11,7 @@ H  0.000000  0.757160 -0.586260
 '''
 
 
-scf_template = '''#! /usr/bin/env python
+scf_template = '''#! /usr/bin/env python3
 
 from pyscf import scf
 
@@ -223,7 +223,7 @@ def test_write():
     text = open(write_path,'r').read()
 
     ref_text = '''
-        #! /usr/bin/env python
+        #! /usr/bin/env python3
         
         from pyscf import scf
         
@@ -297,7 +297,7 @@ def test_write():
     text = open(write_path,'r').read()
 
     ref_text = '''
-        #! /usr/bin/env python
+        #! /usr/bin/env python3
         
         from pyscf import scf
         
