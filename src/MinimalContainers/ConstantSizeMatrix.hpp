@@ -9,7 +9,7 @@ class ConstantSizeMatrix
 {
 public:
   ConstantSizeMatrix(size_t m, size_t n, size_t m_max, size_t n_max, T val = T())
-      : m_max_(m_max), n_max_(n_max), data_(n_max * m_max, val)
+      : m_(m), n_(n), m_max_(m_max), n_max_(n_max), data_(n_max * m_max, val)
   {
     if (n_max <= 0 || n > n_max || m_max <= 0 || m > m_max)
       throw std::runtime_error("Cannot construct ConstantSizeMatrix with an invalid size");
@@ -117,7 +117,7 @@ public:
 
   size_t size() const { return n_ * m_; }
   
-  void resize(size_t n, size_t m)
+  void resize(size_t m, size_t n)
   {
     if (n > n_max_ || m > m_max_)
       throw std::runtime_error("You cannot resize a constant size matrix beyond its initial max dimensions");
