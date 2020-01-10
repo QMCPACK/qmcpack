@@ -42,7 +42,7 @@ if [[ $? -ne 0 ]] ; then
   exit 1
 fi
 
-ctest -L unit --output-on-failure
+ctest -L unit --output-on-failure --timeout 120
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
   exit_code=${ret}
@@ -74,7 +74,7 @@ if [[ $? -ne 0 ]] ; then
   exit 1
 fi
 
-ctest -L unit --output-on-failure
+ctest -L unit --output-on-failure --timeout 120
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
   exit_code=${ret}
@@ -106,7 +106,7 @@ if [[ $? -ne 0 ]] ; then
   exit 1
 fi
 
-ctest -L unit --output-on-failure
+ctest -L unit --output-on-failure --timeout 120
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
   exit_code=${ret}
@@ -138,7 +138,7 @@ if [[ $? -ne 0 ]] ; then
   exit 1
 fi
 
-ctest -L unit --output-on-failure
+ctest -L unit --output-on-failure --timeout 120
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
   exit_code=${ret}
