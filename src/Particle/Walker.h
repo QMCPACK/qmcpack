@@ -25,6 +25,7 @@
 #include "MinimalContainers/ConstantSizeMatrix.hpp"
 #include "Utilities/PooledData.h"
 #include "Utilities/PooledMemory.h"
+#include "QMCDrivers/WalkerProperties.h"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #include "Utilities/PointerPool.h"
@@ -34,24 +35,6 @@
 #include <deque>
 namespace qmcplusplus
 {
-/** an enum denoting index of physical properties
- *
- * LOCALPOTENTIAL should be always the last enumeation
- * When a new enum is needed, modify ParticleSet::initPropertyList to match the list
- */
-enum
-{
-  LOGPSI = 0,      /*!< log(std::abs(psi)) instead of square of the many-body wavefunction \f$|\Psi|^2\f$ */
-  SIGN,            /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */
-  UMBRELLAWEIGHT,  /*!< sum of wavefunction ratios for multiple H and Psi */
-  R2ACCEPTED,      /*!< r^2 for accepted moves */
-  R2PROPOSED,      /*!< r^2 for proposed moves */
-  DRIFTSCALE,      /*!< scaling value for the drift */
-  ALTERNATEENERGY, /*!< alternatelocal energy, the sum of all the components */
-  LOCALENERGY,     /*!< local energy, the sum of all the components */
-  LOCALPOTENTIAL,  /*!< local potential energy = local energy - kinetic energy */
-  NUMPROPERTIES    /*!< the number of properties */
-};
 
 /** A container class to represent a walker.
  *
@@ -63,8 +46,11 @@ enum
  * - Age : generation after a move is accepted.
  * - Weight : weight to take the ensemble averages
  * - Multiplicity : multiplicity for branching. Probably can be removed.
- * - Properties  : 2D container. RealTypehe first index corresponds to the H/Psi index and second index >=NUMPROPERTIES.
- * - DataSet : anonymous container.
+ * - Properties  : 2D container. RealType first index corresponds to the H/Psi index and second index >=NUMPROPERTIES.
+ * - DataSet : a contiguous buffer providing a state snapshot of most/all walker data. 
+     Much complicated state management arises in keeping this up to date, 
+     or purposefully out of sync with actual datamembers. Here and in TWF, HAMs and PARTICLE sets
+     associated with the walker.
  */
 template<typename t_traits, typename p_traits>
 struct Walker
@@ -202,10 +188,10 @@ struct Walker
     Multiplicity       = 1.0;
     ReleasedNodeWeight = 1.0;
     ReleasedNodeAge    = 0;
-    Properties.resize(1, NUMPROPERTIES);
+
     if (nptcl > 0)
       resize(nptcl);
-    Properties = 0.0;
+    //static_cast<Matrix<FullPrecRealType>>(Properties) = 0.0;
   }
 
   inline int addPropertyHistory(int leng)
@@ -342,23 +328,23 @@ struct Walker
   {
     Age = 0;
     //Weight=1.0;
-    Properties(LOGPSI)      = logpsi;
-    Properties(SIGN)        = sigN;
-    Properties(LOCALENERGY) = ene;
+    Properties(WP::LOGPSI)      = logpsi;
+    Properties(WP::SIGN)        = sigN;
+    Properties(WP::LOCALENERGY) = ene;
   }
 
   inline void resetReleasedNodeProperty(FullPrecRealType localenergy,
                                         FullPrecRealType alternateEnergy,
                                         FullPrecRealType altR)
   {
-    Properties(ALTERNATEENERGY) = alternateEnergy;
-    Properties(LOCALENERGY)     = localenergy;
-    Properties(SIGN)            = altR;
+    Properties(WP::ALTERNATEENERGY) = alternateEnergy;
+    Properties(WP::LOCALENERGY)     = localenergy;
+    Properties(WP::SIGN)            = altR;
   }
   inline void resetReleasedNodeProperty(FullPrecRealType localenergy, FullPrecRealType alternateEnergy)
   {
-    Properties(ALTERNATEENERGY) = alternateEnergy;
-    Properties(LOCALENERGY)     = localenergy;
+    Properties(WP::ALTERNATEENERGY) = alternateEnergy;
+    Properties(WP::LOCALENERGY)     = localenergy;
   }
   /** reset the property of a walker
    * @param logpsi \f$\log |\Psi|\f$
@@ -379,12 +365,12 @@ struct Walker
                             FullPrecRealType vq)
   {
     Age                     = 0;
-    Properties(LOGPSI)      = logpsi;
-    Properties(SIGN)        = sigN;
-    Properties(LOCALENERGY) = ene;
-    Properties(R2ACCEPTED)  = r2a;
-    Properties(R2PROPOSED)  = r2p;
-    Properties(DRIFTSCALE)  = vq;
+    Properties(WP::LOGPSI)      = logpsi;
+    Properties(WP::SIGN)        = sigN;
+    Properties(WP::LOCALENERGY) = ene;
+    Properties(WP::R2ACCEPTED)  = r2a;
+    Properties(WP::R2PROPOSED)  = r2p;
+    Properties(WP::DRIFTSCALE)  = vq;
   }
 
   /** marked to die

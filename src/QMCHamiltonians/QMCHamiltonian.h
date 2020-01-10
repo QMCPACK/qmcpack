@@ -20,6 +20,7 @@
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
 #include "Configuration.h"
+#include "QMCDrivers/WalkerProperties.h"
 #include <QMCHamiltonians/OperatorBase.h>
 #if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
@@ -47,7 +48,7 @@ public:
   typedef OperatorBase::PropertySetType PropertySetType;
   typedef OperatorBase::BufferType BufferType;
   typedef OperatorBase::Walker_t Walker_t;
-
+  using WP = WalkerProperties::Indexes;
   enum
   {
     DIM = OHMMS_DIM
@@ -103,7 +104,7 @@ public:
   /**
    * \defgroup Functions to get/put observables
    */
-  /*@{*/
+  /**@{*/
   /** add each term to the PropertyList for averages
    * @param plist a set of properties to which this Hamiltonian add the observables
    */
@@ -148,6 +149,7 @@ public:
   }
   ///return the name of the i-th observable
   inline std::string getObservableName(int i) const { return Observables.Names[i]; }
+
   /** save the values of Hamiltonian elements to the Properties
    *
    *  This creates a hard dependence on Walker using WalkerProperties to index its Properties.
@@ -158,10 +160,10 @@ public:
   template<class IT, typename = std::enable_if_t<std::is_same<std::add_pointer<FullPrecRealType>::type, IT>::value>>
   inline void saveProperty(IT first)
   {
-    first[LOCALPOTENTIAL] = LocalEnergy - KineticEnergy;
+    first[WP::LOCALPOTENTIAL] = LocalEnergy - KineticEnergy;
     copy(Observables.begin(), Observables.end(), first + myIndex);
   }
-  /*@}*/
+  /**@}*/
 
   template<class IT, typename = std::enable_if_t<std::is_same<std::add_pointer<FullPrecRealType>::type, IT>::value>>
   inline void setProperty(IT first)

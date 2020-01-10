@@ -40,6 +40,7 @@ namespace qmcplusplus
  */
 struct MCSample
 {
+  using WP = WalkerProperties::Indexes;
   typedef ParticleSet::Walker_t Walker_t;
 
   ParticleSet::ParticlePos_t R;
@@ -49,10 +50,10 @@ struct MCSample
 
   inline MCSample(const Walker_t& w) : R(w.R), G(w.G), L(w.L)
   {
-    LogPsi = w.Properties(LOGPSI);
-    Sign   = w.Properties(SIGN);
-    PE     = w.Properties(LOCALPOTENTIAL);
-    KE     = w.Properties(LOCALENERGY) - PE;
+    LogPsi = w.Properties(WP::LOGPSI);
+    Sign   = w.Properties(WP::SIGN);
+    PE     = w.Properties(WP::LOCALPOTENTIAL);
+    KE     = w.Properties(WP::LOCALENERGY) - PE;
   }
 
   inline MCSample(int n)
@@ -67,10 +68,10 @@ struct MCSample
     R      = w.R;
     G      = w.G;
     L      = w.L;
-    LogPsi = w.Properties(LOGPSI);
-    Sign   = w.Properties(SIGN);
-    PE     = w.Properties(LOCALPOTENTIAL);
-    KE     = w.Properties(LOCALENERGY) - PE;
+    LogPsi = w.Properties(WP::LOGPSI);
+    Sign   = w.Properties(WP::SIGN);
+    PE     = w.Properties(WP::LOCALPOTENTIAL);
+    KE     = w.Properties(WP::LOCALENERGY) - PE;
   }
 
   inline void get(Walker_t& w) const
@@ -78,10 +79,10 @@ struct MCSample
     w.R                          = R;
     w.G                          = G;
     w.L                          = L;
-    w.Properties(LOGPSI)         = LogPsi;
-    w.Properties(SIGN)           = Sign;
-    w.Properties(LOCALPOTENTIAL) = PE;
-    w.Properties(LOCALENERGY)    = PE + KE;
+    w.Properties(WP::LOGPSI)         = LogPsi;
+    w.Properties(WP::SIGN)           = Sign;
+    w.Properties(WP::LOCALPOTENTIAL) = PE;
+    w.Properties(WP::LOCALENERGY)    = PE + KE;
   }
 };
 
