@@ -20,7 +20,7 @@ Important parts of the Nexus script, ``o2_selci_vmc_dmc.py``, that differ
 from Example 2 are shown below:
 
 .. code-block:: python
-    #! /usr/bin/env python
+    #! /usr/bin/env python3
     
     ...
     from nexus import generate_convert4qmc

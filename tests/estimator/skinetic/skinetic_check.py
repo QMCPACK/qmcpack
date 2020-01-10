@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
+
 from sys import exit
 import numpy as np
 import h5py
@@ -31,18 +32,18 @@ def grab_stat_entries(stat_file_name,name):
 
 def print_fail(a1_name, a1, a2_name, a2):
   close = np.isclose(a1, a2)
-  print '  Index  %s  %s   Difference'%(a1_name, a2_name)
+  print('  Index  %s  %s   Difference'%(a1_name, a2_name))
   for i in range(len(close)):
    if not close[i]:
-     print ' ',i,a1[i],a2[i],abs(a1[i]-a2[i])
+     print(' ',i,a1[i],a2[i],abs(a1[i]-a2[i]))
 
 def print_fail_2d(a1_name, a1, a2_name, a2):
   close = np.isclose(a1, a2)
-  print '  Index  %s  %s   Difference'%(a1_name, a2_name)
+  print('  Index  %s  %s   Difference'%(a1_name, a2_name))
   for i in range(close.shape[0]):
     for j in range(close.shape[1]):
       if not close[i,j]:
-        print ' ',i,j,a1[i,j],a2[i,j],abs(a1[i,j]-a2[i,j])
+        print(' ',i,j,a1[i,j],a2[i,j],abs(a1[i,j]-a2[i,j]))
 
 if __name__ == '__main__':
 
@@ -80,7 +81,7 @@ if __name__ == '__main__':
     
     # test h5 entries against scalar.dat entries
     if not np.allclose(h5_data,data[:,skinetic_idx]):
-        print "Species kinetic energy estimator failed - the values in the HDF file do not match the values in the .scalar.dat file"
+        print("Species kinetic energy estimator failed - the values in the HDF file do not match the values in the .scalar.dat file")
         print_fail_2d("h5_data",h5_data,"scalar.dat",data[:,skinetic_idx])
         passed = False
         #import matplotlib.pyplot as plt
@@ -91,7 +92,7 @@ if __name__ == '__main__':
 
     # test scalar.dat entries against Kinetic column (from BareKinetic)
     if not np.allclose(ktot,ktot_ref):
-        print "Species kinetic energy estimator failed - the sum of kinetic energies of all species does not agree with total kinetic energy"
+        print("Species kinetic energy estimator failed - the sum of kinetic energies of all species does not agree with total kinetic energy")
         print_fail("ktot",ktot,"ktot_ref",ktot_ref)
         passed = False
         #import matplotlib.pyplot as plt

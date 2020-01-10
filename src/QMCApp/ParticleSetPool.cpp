@@ -28,6 +28,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCApp/InitMolecularSystem.h"
+#include "LongRange/LRCoulombSingleton.h"
 
 namespace qmcplusplus
 {
@@ -262,12 +263,14 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
   std::string source("i");
   std::string bc("p p p");
   std::string spotype("0");
+  std::string lr_handler("opt_breakup");
   OhmmsAttributeSet attribs;
   attribs.add(h5name, "href");
   attribs.add(eshdf_tilematrix, "tilematrix");
   attribs.add(source, "source");
   attribs.add(bc, "bconds");
   attribs.add(lr_cut, "LR_dim_cutoff");
+  attribs.add(lr_handler, "LR_handler");
   attribs.add(spotype, "type");
   attribs.put(cur);
 
@@ -290,6 +293,25 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
       if (is >> c)
         ions->Lattice.BoxBConds[idim++] = (c == 'p');
     }
+
+    tolower(lr_handler);
+    if( lr_handler == "ewald")
+    {
+      LRCoulombSingleton::this_lr_type = LRCoulombSingleton::EWALD;
+    }
+    else if ( lr_handler == "opt_breakup")
+    {
+      LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
+    }
+    else if ( lr_handler == "opt_breakup_original")
+    {
+      LRCoulombSingleton::this_lr_type = LRCoulombSingleton::NATOLI;
+    }
+    else
+    {
+      APP_ABORT("Long range breakup handler not recognized\n");
+    }
+
     //initialize ions from hdf5
     hid_t h5 = -1;
     if (myComm->rank() == 0)
