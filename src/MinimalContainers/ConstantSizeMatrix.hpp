@@ -3,9 +3,20 @@
 
 #include <vector>
 
+#include "OhmmsPETE/OhmmsMatrix.h"
 #include "MinimalContainers/ConstantSizeVector.hpp"
 namespace qmcplusplus
 {
+/** Drop in replacement for OhmmsMatrix as a storage object
+ *  backed by PooledMemory, does not support PETE.
+ *  rows are contiguous i.e. it's row major like OhmmsMatrix
+ *  Constant size removes worry about synchronizing DataSet in Walker.
+ *
+ *  Reproduces some *creative* operator semantics from OhmmsMatrix,
+ *  be careful.
+ *
+ *  This is intended as a host object, Not for use on accelerators.
+ */
 template<class T, typename ALLOC = std::allocator<T>>
 class ConstantSizeMatrix
 {
@@ -18,13 +29,13 @@ public:
   }
 
   ConstantSizeMatrix(const ConstantSizeMatrix& csm)
-      : n_(csm.n_), m_(csm.m_), m_max_(csm.m_max_), n_max_(csm.n_max_), data_(csm.n_max_ * csm.m_max_)
+      : m_(csm.m_), n_(csm.n_), m_max_(csm.m_max_), n_max_(csm.n_max_), data_(csm.n_max_ * csm.m_max_)
   {
     //I don't just do an = here because of the posible semantics of allocator propagation.
     data_.assign(csm.begin(), csm.end());
   }
 
-    /**@{*/
+  /**@{*/
   /** Methods for assignment or copy of identically sized or smaller
    *  ConstantSizeMatrix<T, ALLOC>.
    *
@@ -44,29 +55,14 @@ public:
       throw std::runtime_error("ConstantSizeMatrix.copy(ConstantSizeMatrix& rhs) &rhs == this");
     data_.assign(rhs.data_.begin(), rhs.data_.end());
   }
-  
+
   ConstantSizeMatrix& operator=(const ConstantSizeMatrix& rhs)
   {
     if (this->data_.capacity() < rhs.size())
       throw std::runtime_error("ConstantSizeMatrix cannot take assignment of larger than max size");
     if (&rhs != this)
     {
-      if(rhs.n_max_ == n_max_)
-        data_.assign(rhs.data_.begin(), rhs.data_.end());
-      else
-        throw std::runtime_error("ConstnatSizedMatrix assignment for mismatched n_max not yet supported.");
-    }
-    return *this;
-  }
-  
-  template<class TP, class ALLOCP, template<typename TPP = TP, class ALLOCPP=ALLOCP> class RHS, typename std::enable_if<std::is_same<TP, T>::value>, typename = IsHostSafe<ALLOC>>
-  ConstantSizeMatrix<T, ALLOC>& operator=(const RHS<TP, ALLOCP>& rhs) {
-//    static_assert(IsHostSafe<ALLOC>);
-    if (this->data_.capacity() < rhs.size())
-      throw std::runtime_error("ConstantSizeMatrix cannot take assignment of larger than max size");
-    if (&rhs != this)
-    {
-      if(rhs.n_max_ == n_max_)
+      if (rhs.n_max_ == n_max_)
         data_.assign(rhs.data_.begin(), rhs.data_.end());
       else
         throw std::runtime_error("ConstnatSizedMatrix assignment for mismatched n_max not yet supported.");
@@ -74,12 +70,34 @@ public:
     return *this;
   }
 
-  template<class RHS, typename = std::enable_if_t<!std::is_same<RHS, ConstantSizeMatrix<T, ALLOC>>::value>>
-  ConstantSizeMatrix<T, ALLOC>& operator=(const RHS& rhs) {
-//    static_assert(IsHostSafe<ALLOC>);
+  template<template<typename, class>
+           class RHS,
+           typename TP,
+           class ALLOCP,
+           typename = IsHostSafe<ALLOC>,
+           typename = IsHostSafe<ALLOCP>>
+  ConstantSizeMatrix<T, ALLOC>& operator=(const RHS<TP, ALLOCP>& rhs)
+  {
     if (this->data_.capacity() < rhs.size())
       throw std::runtime_error("ConstantSizeMatrix cannot take assignment of larger than max size");
     data_.assign(rhs.begin(), rhs.end());
+    return *this;
+  }
+
+  template<class TP,
+           class ALLOCP,
+           typename = IsHostSafe<ALLOC>,
+           typename = IsHostSafe<ALLOCP>>
+  ConstantSizeMatrix<T, ALLOC>& operator=(const Matrix<TP, ALLOCP>& rhs)
+  {
+    if (this->data_.capacity() < rhs.size())
+      throw std::runtime_error("ConstantSizeMatrix cannot take assignment of larger than max size");
+    if (this->n_max_ < rhs.cols())
+      throw std::runtime_error("ConstantSizeMatrix cannot take assignment OhmmsMatrix with col dimension larger than n_max");
+    n_ = rhs.cols();
+    m_ = rhs.rows();
+    for(size_t row = 0; row < rhs.rows(); ++row)
+      std::copy(rhs[row],rhs[row]+n_,(*this)[row]);
     return *this;
   }
   /**}@*/
@@ -89,17 +107,23 @@ public:
 
   // returns a pointer of i-th row
   T* operator[](size_t i) { return data_.data() + i * n_max_; }
-  
+
+  // returns reference to i-th value in the first row
   template<typename Allocator = ALLOC, typename = IsHostSafe<Allocator>>
   T& operator()(size_t i)
   {
+    // As far as I know no code does this and none should
+    if(n_ <= i)
+      throw std::runtime_error("ConstantSizeMatrix doesn't support access to second row values through operator()");
     return data_[i];
   }
 
-  // returns the i-th value in n_max_*m_max_ vector
   template<typename Allocator = ALLOC, typename = IsHostSafe<Allocator>>
   T operator()(size_t i) const
   {
+    // As far as I know no code does this and none should
+    if(n_ <= i)
+      throw std::runtime_error("ConstantSizeMatrix doesn't support access to second row values through operator()");
     return data_[i];
   }
 
@@ -126,7 +150,7 @@ public:
   size_t n_capacity() { return n_max_; }
 
   size_t size() const { return n_ * m_; }
-  
+
   void resize(size_t m, size_t n)
   {
     if (n > n_max_ || m > m_max_)
@@ -139,11 +163,12 @@ public:
   auto end() { return data_.end(); }
   auto begin() const { return data_.begin(); }
   auto end() const { return data_.end(); }
+
 private:
-  size_t n_;
   size_t m_;
-  size_t n_max_;
+  size_t n_;
   size_t m_max_;
+  size_t n_max_;
   std::vector<T, ALLOC> data_;
 };
 
