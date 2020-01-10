@@ -38,7 +38,6 @@ template<typename ST>
 class SplineC2ROMP : public BsplineSet
 {
 public:
-  static const int ALIGN = QMC_CLINE;
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
   template<typename DT>
@@ -69,7 +68,7 @@ private:
   ///number of complex bands
   int nComplexBands;
   ///multi bspline set
-  std::shared_ptr<MultiBspline<ST, ALIGN, OffloadAllocator<ST>>> SplineInst;
+  std::shared_ptr<MultiBspline<ST, OffloadAllocator<ST>>> SplineInst;
 
   vContainer_type mKK;
   VectorSoaContainer<ST, 3> myKcart;
@@ -159,7 +158,7 @@ public:
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
     resize_kpoints();
-    SplineInst = std::make_shared<MultiBspline<ST, ALIGN, OffloadAllocator<ST>>>();
+    SplineInst = std::make_shared<MultiBspline<ST, OffloadAllocator<ST>>>();
     SplineInst->create(xyz_g, xyz_bc, myV.size());
 
     app_log() << "MEMORY " << SplineInst->sizeInByte() / (1 << 20) << " MB allocated "
