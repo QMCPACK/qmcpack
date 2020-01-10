@@ -97,6 +97,19 @@ ELSE()
 ENDIF()
 MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_MSG}")
 
+# The following option disables the extremely slow setup of full system run tests
+# This is a developer option
+# It offers a more reasonable compile debug loop if CMakeLists.txt files are being changed
+# These constom commands execution time far exceeds even the feature and compiler checks for time consumed
+# when rerunning cmake.
+#
+# On leconte: rerun of cmake with
+# slow custom commands 27 secs
+# without 8 secs
+SET( QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS FALSE CACHE BOOL "Disable the slow cmake custom commands for integration tests.")
+MARK_AS_ADVANCED(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+
+
 ######################################################################
 # Build level
 ######################################################################

@@ -140,25 +140,12 @@ FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED TEST_LABELS ${AR
     SET( ${TEST_LABELS} ${TEST_LABELS_TEMP} PARENT_SCOPE )
 ENDFUNCTION()
 
-
-# this disables the extremely slow setup of full system run tests
-# these prevent a reasonable compile debug loop if CMakeLists.txt files are touched since they
-# far exceed even the feature and compiler checks for time consumed when rerunning cmake.
-#
-# On leconte with rerun of cmake with
-# slow tests 27 secs to run cmake
-# with them disable 8 secs
-
-SET( QMC_DISABLE_SLOW_TESTS FALSE CACHE BOOL "Disable the slow cmake system test additions")
-
-IF (QMC_DISABLE_SLOW_TESTS)
+IF (QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
   FUNCTION(QMC_RUN_AND_CHECK)
-    MESSAGE("system level test dropped")
   ENDFUNCTION()
-  function(SIMPLE_RUN_AND_CHECK)
-    MESSAGE("system level test dropped")
+  FUNCTION(SIMPLE_RUN_AND_CHECK)
   ENDFUNCTION()
-ELSE (QMC_DISABLE_SLOW_TESTS)
+ELSE (QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
 
 # Add a test run and associated scalar checks
@@ -301,7 +288,7 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
 
 endfunction()
 
-ENDIF(QMC_DISABLE_SLOW_TESTS)
+ENDIF(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
 FUNCTION( COVERAGE_RUN TESTNAME SRC_DIR PROCS THREADS ${ARGN} )
     SET( FULLNAME "coverage-${TESTNAME}")
