@@ -52,6 +52,7 @@ from numpy import array,mod,floor,ceil,round,log,empty
 from generic import obj
 from developer import DevBase,to_str
 from nexus_base import NexusCore,nexus_core
+from execute import execute
 from debug import *
 from imp import load_source
 
@@ -1529,7 +1530,7 @@ class Supercomputer(Machine):
         #end if
         if self.queue_querier=='qstat':
             if out is None:
-                out,err = Popen('qstat -a',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+                out,err,rc = execute('qstat -a')
             #end if
             lines = out.splitlines()
             for line in lines:
@@ -1553,7 +1554,7 @@ class Supercomputer(Machine):
             #end for
         elif self.queue_querier=='qstata':
             if out is None:
-                out,err = Popen('qstat',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+                out,err,rc = execute('qstat')
             #end if
             lines = out.splitlines()
             for line in lines:
@@ -1577,7 +1578,7 @@ class Supercomputer(Machine):
                 if self.query_with_username:
                     extra = ' -u {}'.format(self.user)
                 #end if
-                out,err = Popen('squeue'+extra,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+                out,err,rc = execute('squeue'+extra)
             #end if
             lines = out.splitlines()
             for line in lines:
@@ -1604,7 +1605,7 @@ class Supercomputer(Machine):
             #end for
         elif self.queue_querier=='sacct': # contributed by Ryan McAvoy
             if out is None:
-                out,err = Popen('sacct',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+                out,err,rc = execute('sacct')
             #end if
             lines = out.splitlines()
             for line in lines:
@@ -1640,7 +1641,7 @@ class Supercomputer(Machine):
             #end for
         elif self.queue_querier=='llq':
             if out is None:
-                out,err = Popen('sacct',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+                out,err,rc = execute('sacct')
             #end if
             lines = out.splitlines()
             for line in lines:
@@ -1668,7 +1669,7 @@ class Supercomputer(Machine):
             #end for
         elif self.queue_querier=='bjobs':
             if out is None:
-                out,err = Popen('bjobs',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+                out,err,rc = execute('bjobs')
             #end if
             lines = out.splitlines()
             for line in lines:
@@ -1753,8 +1754,8 @@ class Supercomputer(Machine):
             job.status = job.states.running
             process = obj()
             process.job = job
-            out,err = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
-            output=to_str(out)+'\n'+to_str(err)
+            out,err,rc = execute(command)
+            output=out+'\n'+err
             pid = self.read_process_id(output)
             if pid is None:
                 self.error('process id could not be determined from submission output\n  output:\n'+output)
