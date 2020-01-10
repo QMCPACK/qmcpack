@@ -540,40 +540,45 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   REQUIRE(ee_dtable.getName() == "e_e");
   electrons.update();
 
+  // shift electron 0 a bit to avoid box edges.
+  ParticleSet::SingleParticlePos_t shift(0.1, 0.2, -0.1);
+  electrons.makeMove(0, shift);
+  electrons.acceptMove(0);
+
   disp[0] = 0.2;
   disp[1] = 0.1;
   disp[2] = 0.3;
 
   electrons.makeMove(0, disp, false);
-  REQUIRE(ee_dtable.getTempDists()[1] == Approx(2.8178005607));
-  REQUIRE(ee_dtable.getTempDispls()[1][0] == Approx(2.8));
-  REQUIRE(ee_dtable.getTempDispls()[1][1] == Approx(-0.1));
-  REQUIRE(ee_dtable.getTempDispls()[1][2] == Approx(-0.3));
-  REQUIRE(ee_dtable.getDistRow(1)[0] == Approx(3.0));
-  REQUIRE(ee_dtable.getDisplRow(1)[0][0] == Approx(3.0));
-  REQUIRE(ee_dtable.getDisplRow(1)[0][1] == Approx(0.0));
-  REQUIRE(ee_dtable.getDisplRow(1)[0][2] == Approx(0.0));
+  REQUIRE(ee_dtable.getTempDists()[1] == Approx(2.7239676944));
+  REQUIRE(ee_dtable.getTempDispls()[1][0] == Approx(2.7));
+  REQUIRE(ee_dtable.getTempDispls()[1][1] == Approx(-0.3));
+  REQUIRE(ee_dtable.getTempDispls()[1][2] == Approx(-0.2));
+  REQUIRE(ee_dtable.getDistRow(1)[0] == Approx(2.908607914));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.9));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][1] == Approx(0.2));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][2] == Approx(-0.1));
   electrons.rejectMove(0);
 
   electrons.makeMove(0, disp);
-  REQUIRE(ee_dtable.getTempDists()[1] == Approx(2.8178005607));
-  REQUIRE(ee_dtable.getTempDispls()[1][0] == Approx(2.8));
-  REQUIRE(ee_dtable.getTempDispls()[1][1] == Approx(-0.1));
-  REQUIRE(ee_dtable.getTempDispls()[1][2] == Approx(-0.3));
-  REQUIRE(ee_dtable.getOldDists()[1] == Approx(3.0));
-  REQUIRE(ee_dtable.getOldDispls()[1][0] == Approx(-3.0));
-  REQUIRE(ee_dtable.getOldDispls()[1][1] == Approx(0.0));
-  REQUIRE(ee_dtable.getOldDispls()[1][2] == Approx(0.0));
-  REQUIRE(ee_dtable.getDistRow(1)[0] == Approx(3.0));
-  REQUIRE(ee_dtable.getDisplRow(1)[0][0] == Approx(3.0));
-  REQUIRE(ee_dtable.getDisplRow(1)[0][1] == Approx(0.0));
-  REQUIRE(ee_dtable.getDisplRow(1)[0][2] == Approx(0.0));
+  REQUIRE(ee_dtable.getTempDists()[1] == Approx(2.7239676944));
+  REQUIRE(ee_dtable.getTempDispls()[1][0] == Approx(2.7));
+  REQUIRE(ee_dtable.getTempDispls()[1][1] == Approx(-0.3));
+  REQUIRE(ee_dtable.getTempDispls()[1][2] == Approx(-0.2));
+  REQUIRE(ee_dtable.getOldDists()[1] == Approx(2.908607914));
+  REQUIRE(ee_dtable.getOldDispls()[1][0] == Approx(2.9));
+  REQUIRE(ee_dtable.getOldDispls()[1][1] == Approx(-0.2));
+  REQUIRE(ee_dtable.getOldDispls()[1][2] == Approx(0.1));
+  REQUIRE(ee_dtable.getDistRow(1)[0] == Approx(2.908607914));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.9));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][1] == Approx(0.2));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][2] == Approx(-0.1));
   electrons.acceptMove(0);
 
-  REQUIRE(ee_dtable.getDistRow(1)[0] == Approx(2.8178005607));
-  REQUIRE(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.8));
-  REQUIRE(ee_dtable.getDisplRow(1)[0][1] == Approx(0.1));
-  REQUIRE(ee_dtable.getDisplRow(1)[0][2] == Approx(0.3));
+  REQUIRE(ee_dtable.getDistRow(1)[0] == Approx(2.7239676944));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.7));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][1] == Approx(0.3));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][2] == Approx(0.2));
 #endif
 } // TEST_CASE distance_pbc_z
 
