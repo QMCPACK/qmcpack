@@ -433,7 +433,7 @@ void MCWalkerConfiguration::loadEnsemble()
   int nsamples = std::min(MaxSamples, CurSampleCount);
   if (SampleStack.empty() || nsamples == 0)
     return;
-  Walker_t::PropertyContainer_t prop(1, PropertyList.size(), 1, WP::NUMPROPERTIES);
+  Walker_t::PropertyContainer_t prop(1, PropertyList.size(), 1, WP::MAXPROPERTIES);
   delete_iter(WalkerList.begin(), WalkerList.end());
   WalkerList.resize(nsamples);
   for (int i = 0; i < nsamples; ++i)
@@ -516,7 +516,7 @@ void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& ot
   int nw_tot = off.back();
   if (nw_tot)
   {
-    Walker_t::PropertyContainer_t prop(1, PropertyList.size(), 1, WP::NUMPROPERTIES);
+    Walker_t::PropertyContainer_t prop(1, PropertyList.size(), 1, WP::MAXPROPERTIES);
     while (WalkerList.size())
       pop_back();
     WalkerList.resize(nw_tot);

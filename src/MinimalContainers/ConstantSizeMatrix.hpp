@@ -1,6 +1,8 @@
 #ifndef CONSTANTSIZEMATRIX_H
 #define CONSTANTSIZEMATRIX_H
 
+#include <vector>
+
 #include "MinimalContainers/ConstantSizeVector.hpp"
 namespace qmcplusplus
 {
@@ -47,9 +49,13 @@ public:
   {
     if (this->data_.capacity() < rhs.size())
       throw std::runtime_error("ConstantSizeMatrix cannot take assignment of larger than max size");
-    if (&rhs == this)
-      throw std::runtime_error("ConstantSizeMatrix operator=(ConstantSizeMatrix& rhs) &rhs == this");
-    data_.assign(rhs.data_.begin(), rhs.data_.end());
+    if (&rhs != this)
+    {
+      if(rhs.n_max_ == n_max_)
+        data_.assign(rhs.data_.begin(), rhs.data_.end());
+      else
+        throw std::runtime_error("ConstnatSizedMatrix assignment for mismatched n_max not yet supported.");
+    }
     return *this;
   }
   
@@ -58,9 +64,13 @@ public:
 //    static_assert(IsHostSafe<ALLOC>);
     if (this->data_.capacity() < rhs.size())
       throw std::runtime_error("ConstantSizeMatrix cannot take assignment of larger than max size");
-    if (&rhs == this)
-      throw std::runtime_error("ConstantSizeMatrix operator=(ConstantSizeMatrix& rhs) &rhs == this");
-    data_.assign(rhs.begin(), rhs.end());
+    if (&rhs != this)
+    {
+      if(rhs.n_max_ == n_max_)
+        data_.assign(rhs.data_.begin(), rhs.data_.end());
+      else
+        throw std::runtime_error("ConstnatSizedMatrix assignment for mismatched n_max not yet supported.");
+    }
     return *this;
   }
 
@@ -136,6 +146,8 @@ private:
   size_t m_max_;
   std::vector<T, ALLOC> data_;
 };
+
+extern template class ConstantSizeMatrix<double>;
 
 } // namespace qmcplusplus
 

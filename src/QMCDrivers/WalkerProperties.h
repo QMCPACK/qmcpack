@@ -44,7 +44,7 @@ enum Indexes : int16_t
   // PARTICLE_3,      // ditto since apparently hamiltonians insert these this enum is a terrible idea
   // PARTICLE_4,      // ditto since apparently hamiltonians insert these this enum is a terrible idea
   // PARTICLE_5,      // ditto since apparently hamiltonians insert these this enum is a terrible idea
-  NUMPROPERTIES = 64    /*!< the number of properties */
+  MAXPROPERTIES = 64    /*!< the number of properties */
   };
 };
 }

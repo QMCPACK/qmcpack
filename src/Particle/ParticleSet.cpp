@@ -55,7 +55,7 @@ ParticleSet::ParticleSet()
       myTwist(0.0),
       ParentName("0"),
       TotalNum(0),
-      Properties(0, 0, 1, WP::NUMPROPERTIES)
+      Properties(0, 0, 1, WP::MAXPROPERTIES)
 {
   initPropertyList();
   setup_timers(myTimers, PSTimerNames, timer_level_fine);

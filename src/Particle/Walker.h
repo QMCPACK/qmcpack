@@ -171,7 +171,7 @@ struct Walker
 #endif
 
   ///create a walker for n-particles
-  inline explicit Walker(int nptcl = 0) : Properties(1, WP::LOCALPOTENTIAL, 1, WP::NUMPROPERTIES)
+  inline explicit Walker(int nptcl = 0) : Properties(1, WP::LOCALPOTENTIAL, 1, WP::MAXPROPERTIES)
 #ifdef QMC_CUDA
       : cuda_DataSet("Walker::walker_buffer"),
         R_GPU("Walker::R_GPU"),
