@@ -17,6 +17,7 @@
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #include "QMCHamiltonians/OperatorBase.h"
+#include "QMCHamiltonians/NLPPJob.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
@@ -178,11 +179,8 @@ public:
    */
   static void flex_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
                                const RefVector<ParticleSet>& p_list,
-                               const std::vector<int>& iat_list,
                                const RefVector<TrialWaveFunction>& psi_list,
-                               const std::vector<int>& iel_list,
-                               const std::vector<RealType>& r_list,
-                               const std::vector<PosType>& dr_list,
+                               const RefVector<const NLPPJob<RealType>>& joblist,
                                std::vector<RealType>& pairpots,
                                bool use_DLA);
 

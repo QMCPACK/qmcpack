@@ -183,11 +183,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
 
 void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
                                             const RefVector<ParticleSet>& p_list,
-                                            const std::vector<int>& iat_list,
                                             const RefVector<TrialWaveFunction>& psi_list,
-                                            const std::vector<int>& iel_list,
-                                            const std::vector<RealType>& r_list,
-                                            const std::vector<PosType>& dr_list,
+                                            const RefVector<const NLPPJob<RealType>>& joblist,
                                             std::vector<RealType>& pairpots,
                                             bool use_DLA)
 {
@@ -201,14 +198,10 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent
       {
         NonLocalECPComponent& component(ecp_component_list[i]);
         ParticleSet& W(p_list[i]);
-        int iat(iat_list[i]);
-        int iel(iel_list[i]);
-        auto r   = r_list[i];
-        auto& dr = dr_list[i];
+        const NLPPJob<RealType>& job = joblist[i];
 
-        component.buildQuadraturePointDeltaPositions(r, dr, component.deltaV);
-
-        component.VP->makeMoves(iel, W.R[iel], component.deltaV, true, iat);
+        component.buildQuadraturePointDeltaPositions(job.ion_elec_dist, job.ion_elec_displ, component.deltaV);
+        component.VP->makeMoves(job.electron_id, job.elec_pos, component.deltaV, true, job.ion_id);
       }
 
       RefVector<const VirtualParticleSet> vp_list;
@@ -238,23 +231,20 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent
         NonLocalECPComponent& component(ecp_component_list[i]);
         auto* VP = component.VP;
         ParticleSet& W(p_list[i]);
-        int iat(iat_list[i]);
         TrialWaveFunction& psi(psi_list[i]);
-        int iel(iel_list[i]);
-        auto r   = r_list[i];
-        auto& dr = dr_list[i];
+        const NLPPJob<RealType>& job = joblist[i];
 
-        component.buildQuadraturePointDeltaPositions(r, dr, component.deltaV);
+        component.buildQuadraturePointDeltaPositions(job.ion_elec_dist, job.ion_elec_displ, component.deltaV);
 
         // Compute ratio of wave functions
         for (int j = 0; j < component.getNknot(); j++)
         {
-          W.makeMove(iel, component.deltaV[j], false);
+          W.makeMove(job.electron_id, component.deltaV[j], false);
           if (use_DLA)
-            component.psiratio[j] = psi.calcRatio(W, iel, TrialWaveFunction::ComputeType::FERMIONIC);
+            component.psiratio[j] = psi.calcRatio(W, job.electron_id, TrialWaveFunction::ComputeType::FERMIONIC);
           else
-            component.psiratio[j] = psi.calcRatio(W, iel);
-          W.rejectMove(iel);
+            component.psiratio[j] = psi.calcRatio(W, job.electron_id);
+          W.rejectMove(job.electron_id);
           psi.resetPhaseDiff();
         }
       }
@@ -263,14 +253,14 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent
     for (size_t i = 0; i < p_list.size(); i++)
     {
       NonLocalECPComponent& component(ecp_component_list[i]);
-      auto r      = r_list[i];
-      auto& dr    = dr_list[i];
-      pairpots[i] = component.calculateProjector(r, dr);
+      const NLPPJob<RealType>& job = joblist[i];
+      pairpots[i]                  = component.calculateProjector(job.ion_elec_dist, job.ion_elec_displ);
     }
   }
   else if (ecp_component_list.size() == 1)
-    pairpots[0] = ecp_component_list[0].get().evaluateOne(p_list[0], iat_list[0], psi_list[0], iel_list[0], r_list[0],
-                                                          dr_list[0], use_DLA);
+    pairpots[0] = ecp_component_list[0].get().evaluateOne(p_list[0], joblist[0].get().ion_id, psi_list[0],
+                                                          joblist[0].get().electron_id, joblist[0].get().ion_elec_dist,
+                                                          joblist[0].get().ion_elec_displ, use_DLA);
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W,
