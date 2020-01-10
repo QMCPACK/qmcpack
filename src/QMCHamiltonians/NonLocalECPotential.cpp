@@ -324,69 +324,59 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
   RefVector<NonLocalECPotential> ecp_potential_list;
   RefVector<NonLocalECPComponent> ecp_component_list;
   RefVector<ParticleSet> p_list;
-  std::vector<int> iat_list;
   RefVector<TrialWaveFunction> psi_list;
-  std::vector<int> jel_list;
-  std::vector<RealType> r_list;
-  std::vector<PosType> dr_list;
+  RefVector<const NLPPJob<RealType>> batch_list;
   std::vector<RealType> pairpots(nw);
 
   ecp_potential_list.reserve(nw);
   ecp_component_list.reserve(nw);
   p_list.reserve(nw);
-  iat_list.reserve(nw);
   psi_list.reserve(nw);
-  jel_list.reserve(nw);
-  r_list.reserve(nw);
-  dr_list.reserve(nw);
+  batch_list.reserve(nw);
 
   for (int ig = 0; ig < ngroups; ++ig) //loop over species
-  for (size_t jobid = 0; jobid < max_num_jobs[ig]; jobid++)
-  {
-    ecp_potential_list.clear();
-    ecp_component_list.clear();
-    p_list.clear();
-    iat_list.clear();
-    psi_list.clear();
-    jel_list.clear();
-    r_list.clear();
-    dr_list.clear();
-    for (size_t iw = 0; iw < nw; iw++)
+    for (size_t jobid = 0; jobid < max_num_jobs[ig]; jobid++)
     {
-      NonLocalECPotential& O(static_cast<NonLocalECPotential&>(O_list[iw].get()));
-      ParticleSet& P(P_list[iw]);
-      if (jobid < O.nlpp_jobs[ig].size())
+      ecp_potential_list.clear();
+      ecp_component_list.clear();
+      p_list.clear();
+      psi_list.clear();
+      batch_list.clear();
+      for (size_t iw = 0; iw < nw; iw++)
       {
-        const auto& job = O.nlpp_jobs[ig][jobid];
-        ecp_potential_list.push_back(O);
-        ecp_component_list.push_back(*O.PP[job.ion_id]);
-        p_list.push_back(P);
-        iat_list.push_back(job.ion_id);
-        psi_list.push_back(O.Psi);
-        jel_list.push_back(job.electron_id);
-        r_list.push_back(job.ion_elec_dist);
-        dr_list.push_back(job.ion_elec_displ);
+        NonLocalECPotential& O(static_cast<NonLocalECPotential&>(O_list[iw].get()));
+        ParticleSet& P(P_list[iw]);
+        if (jobid < O.nlpp_jobs[ig].size())
+        {
+          const auto& job = O.nlpp_jobs[ig][jobid];
+          ecp_potential_list.push_back(O);
+          ecp_component_list.push_back(*O.PP[job.ion_id]);
+          p_list.push_back(P);
+          psi_list.push_back(O.Psi);
+          batch_list.push_back(job);
+        }
+      }
+
+      NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, psi_list, batch_list, pairpots, use_DLA);
+
+      for (size_t j = 0; j < ecp_potential_list.size(); j++)
+      {
+        if (false)
+        { // code usefully for debugging
+          RealType check_value = ecp_component_list[j].get().evaluateOne(p_list[j], batch_list[j].get().ion_id,
+                                                                         psi_list[j], batch_list[j].get().electron_id,
+                                                                         batch_list[j].get().ion_elec_dist,
+                                                                         batch_list[j].get().ion_elec_displ, use_DLA);
+          if (std::abs(check_value - pairpots[j]) > 1e-5)
+            std::cout << "check " << check_value << " wrong " << pairpots[j] << " diff "
+                      << std::abs(check_value - pairpots[j]) << std::endl;
+        }
+        ecp_potential_list[j].get().Value += pairpots[j];
+        if (Tmove)
+          ecp_component_list[j].get().contributeTxy(batch_list[j].get().electron_id,
+                                                    ecp_potential_list[j].get().nonLocalOps.Txy);
       }
     }
-
-    NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, iat_list, psi_list, jel_list, r_list, dr_list,
-                                           pairpots, use_DLA);
-
-    for (size_t j = 0; j < ecp_potential_list.size(); j++)
-    {
-      if (false)
-      { // code usefully for debugging
-        RealType check_value = ecp_component_list[j].get().evaluateOne(p_list[j], iat_list[j], psi_list[j], jel_list[j],
-                                                                       r_list[j], dr_list[j], use_DLA);
-        if (std::abs(check_value - pairpots[j]) > 1e-5)
-          std::cout << "check " << check_value << " wrong " << pairpots[j] << " diff "
-                    << std::abs(check_value - pairpots[j]) << std::endl;
-      }
-      ecp_potential_list[j].get().Value += pairpots[j];
-      if (Tmove)
-        ecp_component_list[j].get().contributeTxy(jel_list[j], ecp_potential_list[j].get().nonLocalOps.Txy);
-    }
-  }
 }
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,

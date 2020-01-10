@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCHamiltonians/ForceBase.h"
+#include "QMCHamiltonians/NLPPJob.h"
 #include "Particle/NeighborLists.h"
 
 namespace qmcplusplus
@@ -30,29 +31,6 @@ class NonLocalECPComponent;
 class NonLocalECPotential : public OperatorBase, public ForceBase
 {
 public:
-  /** meta data for NLPP calculation of a pair of ion and electron
-   */
-  struct NLPPJob
-  {
-    const int ion_id;
-    const int electron_id;
-    const PosType elec_pos;
-    const RealType ion_elec_dist;
-    const PosType ion_elec_displ;
-
-    NLPPJob(const int ion_id_in,
-            const int electron_id_in,
-            const PosType& elec_pos_in,
-            const RealType ion_elec_dist_in,
-            const PosType& ion_elec_displ_in)
-        : ion_id(ion_id_in),
-          electron_id(electron_id_in),
-          elec_pos(elec_pos_in),
-          ion_elec_dist(ion_elec_dist_in),
-          ion_elec_displ(ion_elec_displ_in)
-    {}
-  };
-
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
 
   ~NonLocalECPotential();
@@ -169,7 +147,7 @@ private:
   Array<TraceReal, 1>* Vi_sample;
 #endif
   ///NLPP job list of ion-electron pairs by spin group
-  std::vector<std::vector<NLPPJob>> nlpp_jobs;
+  std::vector<std::vector<NLPPJob<RealType>>> nlpp_jobs;
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set
