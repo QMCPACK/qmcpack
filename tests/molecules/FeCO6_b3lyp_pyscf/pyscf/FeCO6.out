@@ -1,5 +1,5 @@
 #INFO: **** input file is /gpfs/mira-fs1/projects/catalyst/abenali/test/Spherical/FeCO6.py ****
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 '''
 Gamma point Hartree-Fock/DFT

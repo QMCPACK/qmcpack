@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 from pyscf import gto, scf, cc
 from pyscf.cc import ccsd_t

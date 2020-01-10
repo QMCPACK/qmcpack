@@ -386,7 +386,7 @@ public:
 
   inline void restore(int iat) {}
 
-  void acceptMove(ParticleSet& P, int iat)
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false)
   {
     LogValue += U[iat] - curVal;
     U[iat]   = curVal;

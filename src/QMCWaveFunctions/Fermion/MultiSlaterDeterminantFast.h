@@ -118,7 +118,7 @@ public:
     APP_ABORT(" Need to implement MultiSlaterDeterminantFast::evaluateRatiosAlltoOne. \n");
   }
 
-  void acceptMove(ParticleSet& P, int iat) override;
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
   void restore(int iat) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;

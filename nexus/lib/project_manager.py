@@ -169,7 +169,7 @@ class ProjectManager(NexusCore):
         self.traverse_cascades(set_entry_order,entry_order)        
         any_collisions = False
         collpath = ''
-        for path,simlist in entry_order.iteritems():
+        for path,simlist in entry_order.items():
             if len(simlist)>1:
                 #raise an error if any in/out/err files will collide
                 filespace = dict()
@@ -185,7 +185,7 @@ class ProjectManager(NexusCore):
                         #end for
                     #end if
                 #end for
-                for f,sims in filespace.iteritems():
+                for f,sims in filespace.items():
                     if len(sims)>1 and f!=None:
                         any_collisions = True
                         msg = 'collision: file '+f+' is overwritten by '
@@ -221,7 +221,7 @@ class ProjectManager(NexusCore):
     def load_cascades(self):
         cascades = obj()
         progressing_cascades = obj()
-        for cid,cascade in self.cascades.iteritems():
+        for cid,cascade in self.cascades.items():
             rc = cascade.reconstruct_cascade()
             cascades[rc.simid] = rc 
             progressing_cascades[rc.simid] = rc
@@ -326,10 +326,10 @@ class ProjectManager(NexusCore):
         NexusCore.gc.collect()
         finished = []
         progressing_cascades = self.progressing_cascades
-        for cid,cascade in progressing_cascades.iteritems():
+        for cid,cascade in progressing_cascades.items():
             cascade.reset_wait_ids()
         #end for
-        for cid,cascade in progressing_cascades.iteritems():
+        for cid,cascade in progressing_cascades.items():
             if not cascade.bundled or cascade.bundler.finished:
                 cascade.progress()
             #end if

@@ -126,14 +126,14 @@ public:
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat) override;
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
   void mw_acceptMove(const std::vector<WaveFunctionComponent*>& WFC_list,
                      const std::vector<ParticleSet*>& P_list,
-                     int iat) override
+                     int iat, bool safe_to_delay = false) override
   {
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->acceptMove(*P_list[iw], iat);
+      WFC_list[iw]->acceptMove(*P_list[iw], iat, safe_to_delay);
   }
 
   void completeUpdates() override;

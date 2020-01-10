@@ -21,7 +21,7 @@
 
 
 from generic import obj
-from developer import DevBase
+from developer import DevBase,error
 
 
 class Unit(DevBase):
@@ -175,9 +175,7 @@ class UnitConverter(DevBase):
         uo = UnitConverter.unit_dict[target_unit]
 
         if(ui.type != uo.type):
-            print 'ERROR: in UnitConverter.convert()'
-            print '   type conversion attempted between'
-            print '   '+ui.type+' and '+uo.type
+            error('in UnitConverter.convert()\ntype conversion attempted between '+ui.type+' and '+uo.type)
         else:
             value_out = (value-ui.shift)*ui.value/uo.value+uo.shift
         #end if
@@ -192,7 +190,7 @@ class UnitConverter(DevBase):
         value = dict()
         value['orig'] = value_orig
 
-        for k,u in UnitConverter.unit_dict.iteritems():
+        for k,u in UnitConverter.unit_dict.items():
             if(u.type == unit_type and u.value!=UnitConverter.unassigned):
                 (value[k],utmp) = UnitConverter.convert(value['orig'],units,k)
             #end if

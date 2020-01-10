@@ -9,11 +9,11 @@
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //
-// File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/DMC/DMCUpdatePbyP.h"
+#include "QMCDrivers/DMC/SODMCUpdatePbyP.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -29,35 +29,36 @@ typedef int TraceManager;
 
 namespace qmcplusplus
 {
-TimerNameList_t<DMCTimers> DMCTimerNames = {{DMC_buffer, "DMCUpdatePbyP::Buffer"},
-                                            {DMC_movePbyP, "DMCUpdatePbyP::movePbyP"},
-                                            {DMC_hamiltonian, "DMCUpdatePbyP::Hamiltonian"},
-                                            {DMC_collectables, "DMCUpdatePbyP::Collectables"},
-                                            {DMC_tmoves, "DMCUpdatePbyP::Tmoves"}};
+TimerNameList_t<SODMCTimers> SODMCTimerNames = {{SODMC_buffer, "SODMCUpdatePbyP::Buffer"},
+                                                {SODMC_movePbyP, "SODMCUpdatePbyP::movePbyP"},
+                                                {SODMC_hamiltonian, "SODMCUpdatePbyP::Hamiltonian"},
+                                                {SODMC_collectables, "SODMCUpdatePbyP::Collectables"},
+                                                {SODMC_tmoves, "SODMCUpdatePbyP::Tmoves"}};
 
 
 /// Constructor.
-DMCUpdatePbyPWithRejectionFast::DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
-                                                               TrialWaveFunction& psi,
-                                                               QMCHamiltonian& h,
-                                                               RandomGenerator_t& rg)
+SODMCUpdatePbyPWithRejectionFast::SODMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
+                                                                   TrialWaveFunction& psi,
+                                                                   QMCHamiltonian& h,
+                                                                   RandomGenerator_t& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
-  setup_timers(myTimers, DMCTimerNames, timer_level_medium);
+  setup_timers(myTimers, SODMCTimerNames, timer_level_medium);
 }
 
 /// destructor
-DMCUpdatePbyPWithRejectionFast::~DMCUpdatePbyPWithRejectionFast() {}
+SODMCUpdatePbyPWithRejectionFast::~SODMCUpdatePbyPWithRejectionFast() {}
 
-void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool recompute)
+void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
-  myTimers[DMC_buffer]->start();
+  myTimers[SODMC_buffer]->start();
   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
   W.loadWalker(thisWalker, true);
   Psi.copyFromBuffer(W, w_buffer);
-  myTimers[DMC_buffer]->stop();
+  myTimers[SODMC_buffer]->stop();
   //create a 3N-Dimensional Gaussian with variance=1
   makeGaussRandomWithEngine(deltaR, RandomGen);
+  makeGaussRandomWithEngine(deltaS, RandomGen);
   int nAcceptTemp(0);
   int nRejectTemp(0);
   //copy the old energy and scale factor of drift
@@ -66,7 +67,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
   RealType gf_acc      = 1.0;
-  myTimers[DMC_movePbyP]->start();
+  myTimers[SODMC_movePbyP]->start();
   for (int ig = 0; ig < W.groups(); ++ig) //loop over species
   {
     RealType tauovermass = Tau * MassInvS[ig];
@@ -75,10 +76,14 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
     {
       //get the displacement
-      GradType grad_iat = Psi.evalGrad(W, iat);
+      TrialWaveFunction::LogValueType spingrad_iat;
+      GradType grad_iat = Psi.evalGradWithSpin(W, iat, spingrad_iat);
       PosType dr;
+      ParticleSet::Scalar_t ds;
       DriftModifier->getDrift(tauovermass, grad_iat, dr);
+      ds = tauovermass/spinMass*std::real(spingrad_iat); //using raw spin grad, no UNR modifier
       dr += sqrttau * deltaR[iat];
+      ds += std::sqrt(tauovermass/spinMass)*deltaS[iat];
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
       if (rr > m_r2max)
@@ -86,9 +91,9 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         ++nRejectTemp;
         continue;
       }
-      if (!W.makeMoveAndCheck(iat, dr))
+      if (!W.makeMoveAndCheckWithSpin(iat, dr, ds))
         continue;
-      ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
+      ValueType ratio = Psi.calcRatioGradWithSpin(W, iat, grad_iat, spingrad_iat);
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
@@ -100,10 +105,14 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       else
       {
         FullPrecRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
+        logGf += -0.5*deltaS[iat]*deltaS[iat];
         //Use the force of the particle iat
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
+        ds = tauovermass/spinMass*std::real(spingrad_iat);
         dr                     = W.R[iat] - W.activePos - dr;
+        ds                     = W.spins[iat] - W.activeSpinVal - ds;
         FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
+        logGb                 += -spinMass*oneover2tau*ds*ds;
         RealType prob          = std::norm(ratio) * std::exp(logGb - logGf);
         if (RandomGen() < prob)
         {
@@ -124,25 +133,25 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   }
   Psi.completeUpdates();
   W.donePbyP();
-  myTimers[DMC_movePbyP]->stop();
+  myTimers[SODMC_movePbyP]->stop();
 
   if (nAcceptTemp > 0)
   {
     //need to overwrite the walker properties
-    myTimers[DMC_buffer]->start();
+    myTimers[SODMC_buffer]->start();
     thisWalker.Age  = 0;
     RealType logpsi = Psi.updateBuffer(W, w_buffer, recompute);
     W.saveWalker(thisWalker);
-    myTimers[DMC_buffer]->stop();
-    myTimers[DMC_hamiltonian]->start();
+    myTimers[SODMC_buffer]->stop();
+    myTimers[SODMC_hamiltonian]->start();
     enew = H.evaluateWithToperator(W);
-    myTimers[DMC_hamiltonian]->stop();
+    myTimers[SODMC_hamiltonian]->stop();
     thisWalker.resetProperty(logpsi, Psi.getPhase(), enew, rr_accepted, rr_proposed, 1.0);
     thisWalker.Weight *= branchEngine->branchWeight(enew, eold);
-    myTimers[DMC_collectables]->start();
+    myTimers[SODMC_collectables]->start();
     H.auxHevaluate(W, thisWalker);
     H.saveProperty(thisWalker.getPropertyBase());
-    myTimers[DMC_collectables]->stop();
+    myTimers[SODMC_collectables]->stop();
   }
   else
   {
@@ -163,19 +172,15 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->buffer_sample(W.current_step);
 #endif
-  myTimers[DMC_tmoves]->start();
+  myTimers[SODMC_tmoves]->start();
   const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
   if (NonLocalMoveAcceptedTemp > 0)
   {
     RealType logpsi = Psi.updateBuffer(W, w_buffer, false);
-    // debugging lines
-    //W.update(true);
-    //RealType logpsi2 = Psi.evaluateLog(W);
-    //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logps2i " << logpsi2 << " diff " << logpsi2-logpsi << std::endl;
     W.saveWalker(thisWalker);
     NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
   }
-  myTimers[DMC_tmoves]->stop();
+  myTimers[SODMC_tmoves]->stop();
   nAccept += nAcceptTemp;
   nReject += nRejectTemp;
 

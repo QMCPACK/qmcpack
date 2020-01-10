@@ -1,6 +1,6 @@
 Discarded 6 diffused primitive functions, 0 contracted functions
 #INFO: **** input file is /home/abenali/Work/Development/QMCPACK-Benali/qmcpack/tests/solids/diamondC_1x1x1-Gaussian_pp_ShiftedTwist/kpts-0.3-0.3-0.3/dft-inputs/Carbon1x1x1-tw1.py ****
-#!/usr/bin/env python
+#! /usr/bin/env python3
 import numpy
 import h5py
 from pyscf.pbc import gto, scf, dft, df

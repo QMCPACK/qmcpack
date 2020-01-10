@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Performs consistency checks between traces.h5 and scalar.dat/stat.h5/dmc.dat files
 # Jaron Krogel/ORNL

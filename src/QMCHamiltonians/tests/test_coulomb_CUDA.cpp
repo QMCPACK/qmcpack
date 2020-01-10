@@ -36,6 +36,7 @@ namespace qmcplusplus
 TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
+  LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
 
   Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
@@ -105,7 +106,7 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
 TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
-
+  LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
   Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
@@ -196,6 +197,7 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
 TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
+  LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
 
   Communicate* c;
   OHMMS::Controller->initialize(0, NULL);

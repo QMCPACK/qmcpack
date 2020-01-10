@@ -363,22 +363,24 @@ struct WaveFunctionComponent : public QMCTraits
   /** a move for iat-th particle is accepted. Update the current content.
    * @param P target ParticleSet
    * @param iat index of the particle whose new position was proposed
+   * @param safe_to_delay if true, delayed accept is safe.
    */
-  virtual void acceptMove(ParticleSet& P, int iat) = 0;
+  virtual void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) = 0;
 
   /** moves of the iat-th particle on some walkers in a batch is accepted. Update the current content.
    *  Note that all the lists only include accepted walkers.
    * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch
    * @param P_list the list of ParticleSet pointers in a walker batch
    * @param iat particle index
+   * @param safe_to_delay if true, delayed accept is safe.
    */
   virtual void mw_acceptMove(const std::vector<WaveFunctionComponent*>& WFC_list,
                              const std::vector<ParticleSet*>& P_list,
-                             int iat)
+                             int iat, bool safe_to_delay = false)
   {
 #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->acceptMove(*P_list[iw], iat);
+      WFC_list[iw]->acceptMove(*P_list[iw], iat, safe_to_delay);
   }
 
   /** complete all the delayed updates, must be called after each substep or step during pbyp move

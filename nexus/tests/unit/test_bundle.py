@@ -17,7 +17,7 @@ def test_bundle():
     from bundle import bundle
     from bundle import SimulationBundle
 
-    from test_simulation import get_test_workflow
+    from test_simulation_module import get_test_workflow
 
     # empty init
     try:

@@ -68,7 +68,7 @@ public:
 
   PsiValueType ratio(ParticleSet& P, int iat);
 
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   void restore(int iat);
 

@@ -171,9 +171,9 @@ public:
     Dets[det_id]->mw_restore(extract_Det_list(wfc_list, det_id), iat);
   }
 
-  virtual inline void acceptMove(ParticleSet& P, int iat) override
+  virtual inline void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override
   {
-    Dets[getDetID(iat)]->acceptMove(P, iat);
+    Dets[getDetID(iat)]->acceptMove(P, iat, safe_to_delay);
 
     LogValue = 0.0;
     for (int i = 0; i < Dets.size(); ++i)
@@ -182,7 +182,7 @@ public:
 
   virtual void mw_acceptMove(const std::vector<WaveFunctionComponent*>& wfc_list,
                              const std::vector<ParticleSet*>& P_list,
-                             int iat) override
+                             int iat, bool safe_to_delay = false) override
   {
     constexpr RealType czero(0);
 
@@ -194,7 +194,7 @@ public:
       const std::vector<WaveFunctionComponent*> Det_list(extract_Det_list(wfc_list, i));
 
       if (i == getDetID(iat))
-        Dets[i]->mw_acceptMove(Det_list, P_list, iat);
+        Dets[i]->mw_acceptMove(Det_list, P_list, iat, safe_to_delay);
 
       for (int iw = 0; iw < wfc_list.size(); iw++)
         wfc_list[iw]->LogValue += Det_list[iw]->LogValue;

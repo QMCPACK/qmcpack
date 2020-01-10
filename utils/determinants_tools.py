@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 '''
 Provide information about a multideterminant wavefunction stored in HDF5 format.

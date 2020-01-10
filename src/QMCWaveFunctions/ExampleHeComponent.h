@@ -48,7 +48,7 @@ public:
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 
-  void acceptMove(ParticleSet& P, int iat) override {}
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override {}
 
   void restore(int iat) override {}
 
