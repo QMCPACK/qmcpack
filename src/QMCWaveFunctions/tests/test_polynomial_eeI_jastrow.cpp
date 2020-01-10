@@ -190,11 +190,11 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   REQUIRE(std::real(dhpsioverpsi[43]) == Approx(-2.3246270644e+05));
 
   VirtualParticleSet VP(elec_, 2);
-  ParticleSet::ParticlePos_t newpos2(2);
+  std::vector<PosType> newpos2(2);
   std::vector<ValueType> ratios2(2);
-  newpos2[0] = newpos;
-  newpos2[1] = PosType(0.2, 0.5, 0.3);
-  VP.makeMoves(1, newpos2);
+  newpos2[0] = newpos - elec_.R[1];
+  newpos2[1] = PosType(0.2, 0.5, 0.3) - elec_.R[1];
+  VP.makeMoves(1, elec_.R[1], newpos2);
   j3->evaluateRatios(VP, ratios2);
 
   REQUIRE(std::real(ratios2[0]) == Approx(1.0357541137));

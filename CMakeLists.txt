@@ -55,6 +55,18 @@ IF (COMPILING_ON_BGQ)
 ENDIF()
 
 ######################################################################
+# Verify Python3 available
+######################################################################
+INCLUDE(CMake/python.cmake)
+IF(${CMAKE_VERSION} VERSION_LESS "3.12.0")
+  TEST_PYTHON_MODULE( "os"  Python3_FOUND )
+ELSE()
+  find_package(Python3)
+ENDIF()
+IF ( NOT Python3_FOUND )
+  MESSAGE( FATAL_ERROR "Could not find required python3" )
+ENDIF ( NOT Python3_FOUND )
+######################################################################
 # Verify QE executables present if QE_BIN specified
 ######################################################################
 IF ( DEFINED QE_BIN )
@@ -66,7 +78,6 @@ ENDIF()
 # Verify PYSCF package is present
 ######################################################################
 IF ( DEFINED PYSCF_BIN )
-  INCLUDE(CMake/python.cmake)
   TEST_PYTHON_MODULE(pyscf HAVE_PYSCF)
   IF (NOT HAVE_PYSCF)
     MESSAGE( FATAL_ERROR "PYSCF_BIN was specified but could not import pyscf." )

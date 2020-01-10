@@ -31,7 +31,7 @@ namespace qmcplusplus
  * The scalar part works as PooledData, all the values are static_cast to T_scalar.
  */
 #define DEFAULT_PAGE_SIZE 4096
-template<typename T_scalar = OHMMS_PRECISION_FULL, typename Alloc = Mallocator<char, DEFAULT_PAGE_SIZE>>
+template<typename T_scalar = OHMMS_PRECISION_FULL, typename Alloc = aligned_allocator<char, DEFAULT_PAGE_SIZE>>
 struct PooledMemory
 {
   typedef char T;

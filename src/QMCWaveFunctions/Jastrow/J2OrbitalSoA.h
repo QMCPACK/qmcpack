@@ -250,7 +250,7 @@ public:
   void recompute(ParticleSet& P);
 
   PsiValueType ratio(ParticleSet& P, int iat);
-  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+  void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] =

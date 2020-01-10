@@ -15,8 +15,6 @@
 #ifndef QMCPLUSPLUS_SOA_FAST_PARTICLE_OPERATORS_H
 #define QMCPLUSPLUS_SOA_FAST_PARTICLE_OPERATORS_H
 
-#include <simd/blas1.hpp>
-
 namespace qmcplusplus
 {
 //Need to reorg
