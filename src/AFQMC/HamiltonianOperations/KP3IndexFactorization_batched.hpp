@@ -98,6 +98,9 @@ class KP3IndexFactorization_batched
 
   public:
 
+    static const HamiltonianTypes HamOpType = KPFactorized;
+    HamiltonianTypes getHamType() const { return HamOpType; }
+
 // NOTE: careful with nocc_max, not consistently defined!!!
 
     // since arrays can be in host, can't assume that types are consistent

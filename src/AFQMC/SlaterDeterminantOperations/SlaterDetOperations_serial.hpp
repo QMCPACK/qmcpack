@@ -163,12 +163,12 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 
     // C[nwalk, M, N]
     template<class MatA, class MatB, class MatC, class TVec>
-    void BatchedMixedDensityMatrix(const MatA& hermA, std::vector<MatB> &Bi, MatC&& C, T LogOverlapFactor, TVec&& ovlp, bool compact=false, bool herm=true) {
+    void BatchedMixedDensityMatrix( std::vector<MatA*>& hermA, std::vector<MatB> &Bi, MatC&& C, T LogOverlapFactor, TVec&& ovlp, bool compact=false, bool herm=true) {
       if(Bi.size()==0) return;
       static_assert(std::decay<MatC>::type::dimensionality == 3, "Wrong dimensionality");
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-      int NMO = (herm?hermA.size(1):hermA.size(0));
-      int NAEA = (herm?hermA.size(0):hermA.size(1));
+      int NMO = (herm?hermA[0]->size(1):hermA[0]->size(0));
+      int NAEA = (herm?hermA[0]->size(0):hermA[0]->size(1));
       int nbatch = Bi.size();
       assert(C.size(0) == nbatch);
       assert(ovlp.size() == nbatch);
@@ -217,11 +217,12 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     }
 
     template<class MatA, class MatB, class TVec>
-    void BatchedOverlap(const MatA& hermA, std::vector<MatB> &Bi, T LogOverlapFactor, TVec&& ovlp, bool herm=true) {
+    void BatchedOverlap( std::vector<MatA*>& hermA, std::vector<MatB> &Bi, T LogOverlapFactor, TVec&& ovlp, bool herm=true) {
       if(Bi.size()==0) return;
+      assert(hermA.size() > 0);
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-      int NMO = (herm?hermA.size(1):hermA.size(0));
-      int NAEA = (herm?hermA.size(0):hermA.size(1));
+      int NMO = (herm?hermA[0]->size(1):hermA[0]->size(0));
+      int NAEA = (herm?hermA[0]->size(0):hermA[0]->size(1));
       int nbatch = Bi.size();
       assert(ovlp.size() == nbatch);
       set_buffer(nbatch*NAEA*NAEA);

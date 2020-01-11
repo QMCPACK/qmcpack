@@ -178,10 +178,10 @@ namespace afqmc
                                 ma::sparse::is_root>;
   using PsiT_Matrix = PsiT_Matrix_t<ComplexType>;
 #ifdef ENABLE_CUDA
-  using devPsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
+  using devcsr_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
                                 device_allocator<ComplexType>>; 
 #else
-  using devPsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
+  using devcsr_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
                                 shared_allocator<ComplexType>,
                                 ma::sparse::is_root>;
 #endif

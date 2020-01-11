@@ -69,6 +69,9 @@ class KP3IndexFactorization
 
   public:
 
+    static const HamiltonianTypes HamOpType = KPFactorized;
+    HamiltonianTypes getHamType() const { return HamOpType; }
+
     KP3IndexFactorization(communicator& c_,
                  WALKER_TYPES type,
                  IVector&& nopk_,

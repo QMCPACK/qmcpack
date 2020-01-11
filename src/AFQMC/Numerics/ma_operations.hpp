@@ -286,6 +286,132 @@ MultiArray2DC product(MultiArray2DA const& A, MultiArray2DB const& B, MultiArray
         return product(Type(1.), A, B, Type(0.), std::forward<MultiArray2DC>(C));
 }
 
+template<class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
+        typename = typename std::enable_if<
+                (MultiArray2DA::dimensionality == 2) and
+                (MultiArray2DB::dimensionality == 2) and
+                std::decay<MultiArray2DC>::type::dimensionality == 2
+        >::type,
+        typename = void,
+        typename = void
+>
+void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, std::vector<MultiArray2DB>& B,
+                                      T beta, std::vector<MultiArray2DC> C){
+        int nbatch = C.size();
+        assert(A.size() >= nbatch);
+        assert(B.size() >= nbatch);
+
+        using pointer = typename MultiArray2DC::element_ptr;
+        using element = typename MultiArray2DC::element;
+
+        int M = C[0].size(1);
+        int N = C[0].size(0);
+        int K;
+        if( TB == 'N' ) K = B[0].size(0);
+        else K = B[0].size(1);
+        int lda = A[0]->stride(0);
+        int ldb = B[0].stride(0);
+        int ldc = C[0].stride(0);
+        std::vector<pointer> Ai;
+        std::vector<pointer> Bi;
+        std::vector<pointer> Ci;
+        Ai.reserve(nbatch);
+        Bi.reserve(nbatch);
+        Ci.reserve(nbatch);
+        for(int i=0; i<nbatch; i++) {
+          assert(lda == A[i]->stride(0));
+          assert(ldb == B[i].stride(0));
+          assert(ldc == C[i].stride(0));
+          assert(M == C[i].size(1));
+          assert(N == C[i].size(0));
+          if(TB == 'N' ) {
+            assert(K == B[i].size(0));
+            assert(M == B[i].size(1));
+          } else {
+            assert(K == B[i].size(1));
+            assert(M == B[i].size(0));
+          }
+          if(TA == 'N') {
+            assert(K == A[i]->size(1));
+            assert(N == A[i]->size(0));
+          } else {
+            assert(K == A[i]->size(0));
+            assert(N == A[i]->size(1));
+          }
+          Ai.emplace_back(A[i]->origin());
+          Bi.emplace_back(B[i].origin());
+          Ci.emplace_back(C[i].origin());
+        }
+
+        using ma::gemmBatched;
+        gemmBatched(TB,TA,M,N,K,element(alpha),
+                     Bi.data(),ldb,
+                     Ai.data(),lda, element(beta),
+                     Ci.data(),ldc,nbatch);
+
+}
+
+// no batched sparse product yet, serialize call
+template<class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
+        typename = typename std::enable_if<
+                (MultiArray2DA::dimensionality == -2) and
+                (MultiArray2DB::dimensionality == 2) and
+                std::decay<MultiArray2DC>::type::dimensionality == 2
+        >::type,
+        typename = void
+>
+void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, std::vector<MultiArray2DB>& B, 
+                                      T beta, std::vector<MultiArray2DC> C){
+        int nbatch = C.size();
+        assert(A.size() >= nbatch);
+        assert(B.size() >= nbatch);
+
+        using elementA = std::remove_cv_t<typename MultiArray2DA::element>;
+        using elementB = std::remove_cv_t<typename MultiArray2DB::element>;
+        using elementC = typename std::decay<MultiArray2DC>::type::element;
+        assert(TA == 'N' || TA == 'T' || TA == 'C' || TA == 'H');
+        assert(TB == 'N');
+/*
+        if(op_tag<SparseMatrixA>::value == 'N') {
+            assert(arg(A).size(0) == std::forward<MultiArray2DC>(C).size(0));
+            assert(arg(A).size(1) == arg(B).size(0));
+            assert(arg(B).size(1) == std::forward<MultiArray2DC>(C).size(1));
+        } else {
+            assert(arg(A).size(0) == arg(B).size(0));
+            assert(arg(A).size(1) == std::forward<MultiArray2DC>(C).size(0));
+            assert(arg(B).size(1) == std::forward<MultiArray2DC>(C).size(1));
+        }
+*/
+
+        for(int i=0; i<nbatch; i++) { 
+          csrmm( TA, 
+            A[i]->size(0), B[i].size(1), A[i]->size(1),
+            elementA(alpha), "GxxCxx",
+            pointer_dispatch(A[i]->non_zero_values_data()),
+            pointer_dispatch(A[i]->non_zero_indices2_data()),
+            pointer_dispatch(A[i]->pointers_begin()),
+            pointer_dispatch(A[i]->pointers_end()),
+            pointer_dispatch(B[i].origin()), B[i].stride(0),
+            elementA(beta),
+            pointer_dispatch(C[i].origin()),
+            C[i].stride(0));
+        }
+}
+
+template<class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
+        typename = typename std::enable_if<
+                (MultiArray2DA::dimensionality == 2 or MultiArray2DA::dimensionality == -2) and
+                (MultiArray2DB::dimensionality == 2) and
+                std::decay<MultiArray2DC>::type::dimensionality == 2
+        >::type
+>
+void BatchedProduct(char TA, char TB, std::vector<MultiArray2DA*>& A, std::vector<MultiArray2DB>& B, 
+                                      std::vector<MultiArray2DC> C){
+        using Type = typename std::decay<MultiArray2DA>::type::element;
+        return BatchedProduct(TA,TB,Type(1.), A, B, Type(0.), C);
+}
+
+
 template<class MultiArray2D>
 struct normal_tag{
 	MultiArray2D arg1;

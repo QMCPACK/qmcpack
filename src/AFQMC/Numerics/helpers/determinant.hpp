@@ -58,6 +58,13 @@ namespace ma
   }
 
   template<class T>
+  inline void strided_determinant_from_getrf(int n, T** M, int lda, int Mstride, int** pivot, int pstride, T LogOverlapFactor, T* res, int nbatch)
+  {
+    for(int b=0; b<nbatch; b++) 
+      determinant_from_getrf(n,M+b*Mstride,lda,pivot+b*pstride,LogOverlapFactor,res+b);
+  }
+
+  template<class T>
   T determinant_from_geqrf(int n, T* M, int lda, T* buff, T LogOverlapFactor)
   {
     T res(0.0); 
@@ -128,6 +135,12 @@ namespace qmc_cuda{
   inline void determinant_from_getrf(int n, cuda_gpu_ptr<T> A, int lda, cuda_gpu_ptr<int> piv, T LogOverlapFactor, T* res)
   {
     kernels::determinant_from_getrf_gpu(n,to_address(A),lda,to_address(piv),LogOverlapFactor,res);
+  }
+ 
+  template<class T>
+  inline void strided_determinant_from_getrf(int n, cuda_gpu_ptr<T> A, int lda, int Mstride, cuda_gpu_ptr<int> piv, int pstride, T LogOverlapFactor, T* res, int nbatch)
+  {
+    kernels::strided_determinant_from_getrf_gpu(n,to_address(A),lda,Mstride,to_address(piv),pstride,LogOverlapFactor,res,nbatch);
   }
 
   template<class T>
