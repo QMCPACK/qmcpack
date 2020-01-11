@@ -657,9 +657,11 @@ void SplineC2ROMP<ST>::evaluateVGL(const ParticleSet& P,
   const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
   const auto padded_size = myV.size();
+  // for V(1)G(3)H(6) intermediate result
   if (offload_scratch.size() < padded_size * 10)
     offload_scratch.resize(padded_size * 10);
   const auto orb_size = psi.size();
+  // for V(1)G(3)L(1) final result
   if (results_scratch.size() < orb_size * 5)
     results_scratch.resize(orb_size * 5);
 
@@ -724,9 +726,11 @@ void SplineC2ROMP<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocat
   const int ChunkSizePerTeam = 128;
   const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   const auto padded_size     = myV.size();
+  // for V(1)G(3)H(6) intermediate result
   if (offload_scratch.size() < padded_size * num_pos * 10)
     offload_scratch.resize(padded_size * num_pos * 10);
   const auto orb_size = psi_v_list[0].get().size();
+  // for V(1)G(3)L(1) final result
   if (results_scratch.size() < orb_size * num_pos * 5)
     results_scratch.resize(orb_size * num_pos * 5);
 
