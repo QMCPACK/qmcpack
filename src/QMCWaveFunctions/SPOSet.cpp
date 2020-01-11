@@ -53,11 +53,11 @@ void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
 void SPOSet::mw_evaluateValue(const std::vector<SPOSet*>& spo_list,
                               const std::vector<ParticleSet*>& P_list,
                               int iat,
-                              const std::vector<ValueVector_t*>& psi_v_list)
+                              const RefVector<ValueVector_t>& psi_v_list)
 {
 #pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
-    spo_list[iw]->evaluateValue(*P_list[iw], iat, *psi_v_list[iw]);
+    spo_list[iw]->evaluateValue(*P_list[iw], iat, psi_v_list[iw]);
 }
 
 void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
@@ -73,28 +73,28 @@ void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
   }
 }
 
-void SPOSet::mw_evaluateDetRatios(const std::vector<SPOSet*>& spo_list,
-                                    const std::vector<const VirtualParticleSet*> VP_list,
-                                    const std::vector<ValueVector_t*> psi_list,
-                                    const std::vector<const ValueVector_t*> psiinv_list,
-                                    const std::vector<std::vector<ValueType>*> ratios_list)
+void SPOSet::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
+                                  const RefVector<const VirtualParticleSet>& vp_list,
+                                  const RefVector<ValueVector_t>& psi_list,
+                                  const RefVector<const ValueVector_t>& psiinv_list,
+                                  std::vector<std::vector<ValueType>>& ratios_list)
 {
 #pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
-    spo_list[iw]->evaluateDetRatios(*VP_list[iw], *psi_list[iw], *psiinv_list[iw], *ratios_list[iw]);
+    spo_list[iw].get().evaluateDetRatios(vp_list[iw], psi_list[iw], psiinv_list[iw], ratios_list[iw]);
 
 }
 
 void SPOSet::mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
                             const std::vector<ParticleSet*>& P_list,
                             int iat,
-                            const std::vector<ValueVector_t*>& psi_v_list,
-                            const std::vector<GradVector_t*>& dpsi_v_list,
-                            const std::vector<ValueVector_t*>& d2psi_v_list)
+                            const RefVector<ValueVector_t>& psi_v_list,
+                            const RefVector<GradVector_t>& dpsi_v_list,
+                            const RefVector<ValueVector_t>& d2psi_v_list)
 {
 #pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
-    spo_list[iw]->evaluateVGL(*P_list[iw], iat, *psi_v_list[iw], *dpsi_v_list[iw], *d2psi_v_list[iw]);
+    spo_list[iw]->evaluateVGL(*P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
 }
 
 void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)

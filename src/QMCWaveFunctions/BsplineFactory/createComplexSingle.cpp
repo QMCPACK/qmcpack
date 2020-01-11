@@ -44,7 +44,12 @@ BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybri
 #if defined(ENABLE_OFFLOAD)
   if (useGPU == "yes")
   {
-    aReader = new SplineSetReader<SplineC2ROMP<float>>(e);
+    if (hybrid_rep)
+    {
+      APP_ABORT("OpenMP offload has not been enabled with hybrid orbital representation!");
+    }
+    else
+      aReader = new SplineSetReader<SplineC2ROMP<float>>(e);
   }
   else
 #endif
