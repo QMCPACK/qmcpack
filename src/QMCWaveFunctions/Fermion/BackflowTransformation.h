@@ -94,9 +94,6 @@ public:
   // pos of first optimizable variable in global array
   int numVarBefore;
 
-  ParticleSet& targetPtcl;
-  //    PtclPoolType& ptclPool;
-
   /// Distance Table
   const int myTableIndex_;
 
@@ -153,7 +150,6 @@ public:
   BackflowTransformation(ParticleSet& els)
       : QP(els),
         cutOff(0.0),
-        targetPtcl(els),
 #ifdef ENABLE_SOA
         myTableIndex_(els.addTable(els, DT_SOA))
 #else
@@ -172,14 +168,14 @@ public:
     numVarBefore = 0;
   }
 
-  void copyFrom(BackflowTransformation& tr)
+  void copyFrom(const BackflowTransformation& tr, ParticleSet& targetPtcl)
   {
     cutOff       = tr.cutOff;
     numParams    = tr.numParams;
     numVarBefore = tr.numVarBefore;
     optIndexMap  = tr.optIndexMap;
-    bfFuns.resize((tr.bfFuns).size());
-    std::vector<BackflowFunctionBase*>::iterator it((tr.bfFuns).begin());
+    bfFuns.resize(tr.bfFuns.size());
+    auto it(tr.bfFuns.begin());
     for (int i = 0; i < (tr.bfFuns).size(); i++, it++)
       bfFuns[i] = (*it)->makeClone(targetPtcl);
   }
@@ -188,7 +184,7 @@ public:
   BackflowTransformation* makeClone(ParticleSet& tqp)
   {
     BackflowTransformation* clone = new BackflowTransformation(tqp);
-    clone->copyFrom(*this);
+    clone->copyFrom(*this, tqp);
     //       std::vector<BackflowFunctionBase*>::iterator it((bfFuns).begin());
     //       for(int i=0; i<(bfFuns).size() ; i++,it++)
     //       {
@@ -261,11 +257,6 @@ public:
         return true;
     return false;
   }
-
-  /** reset the distance table with a new target P
-   */
-  void resetTargetParticleSet(ParticleSet& P) { targetPtcl = P; }
-
 
   void resetParameters(const opt_variables_type& active)
   {

@@ -52,7 +52,7 @@ public:
 
   ~Backflow_eI(){};
 
-  BackflowFunctionBase* makeClone(ParticleSet& tqp)
+  BackflowFunctionBase* makeClone(ParticleSet& tqp) const
   {
     Backflow_eI<FT>* clone = new Backflow_eI<FT>(CenterSys, tqp);
     clone->resize(NumTargets, NumCenters);
