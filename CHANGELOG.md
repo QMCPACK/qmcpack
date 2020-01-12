@@ -6,7 +6,7 @@ Notable changes to QMCPACK are documented in this file.
 
 ### Notes
 
-Work is ongoing to support dynamical spin variables and implement spin-orbit. Prototype universal VMC and DMC drivers are available that
+Work is ongoing to support dynamical spin variables and implement spin-orbit. Prototype limited functionality universal VMC and DMC drivers are available that
 support GPU execution with OpenMP offload.
 
 - All uses of Python updated to Python 3, which is now required. Python 2 was retired at the end of 2019, and many packages
