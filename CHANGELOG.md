@@ -2,7 +2,7 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## Unreleased 
+## [Unreleased] 
 
 ### Notes
 
