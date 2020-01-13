@@ -10,8 +10,8 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_DTDIMPL_BA_H
-#define QMCPLUSPLUS_DTDIMPL_BA_H
+#ifndef QMCPLUSPLUS_DTDIMPL_AB_H
+#define QMCPLUSPLUS_DTDIMPL_AB_H
 
 #include "Utilities/FairDivide.h"
 
@@ -21,9 +21,9 @@ namespace qmcplusplus
  * @brief A derived classe from DistacneTableData, specialized for AB using a transposed form
  */
 template<typename T, unsigned D, int SC>
-struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableData
+struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableData
 {
-  SoaDistanceTableBA(const ParticleSet& source, ParticleSet& target)
+  SoaDistanceTableAB(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.Lattice), DistanceTableData(source, target)
   {
     resize(source.getTotalNum(), target.getTotalNum());
@@ -52,9 +52,9 @@ struct SoaDistanceTableBA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     temp_dr_.resize(N_sources);
   }
 
-  SoaDistanceTableBA()                          = delete;
-  SoaDistanceTableBA(const SoaDistanceTableBA&) = delete;
-  ~SoaDistanceTableBA() {}
+  SoaDistanceTableAB()                          = delete;
+  SoaDistanceTableAB(const SoaDistanceTableAB&) = delete;
+  ~SoaDistanceTableAB() {}
 
   /** evaluate the full table */
   inline void evaluate(ParticleSet& P)

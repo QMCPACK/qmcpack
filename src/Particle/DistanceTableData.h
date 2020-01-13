@@ -141,7 +141,7 @@ protected:
    *        For derived AA, only the lower triangle (j<i) is defined and up-to-date after pbyp move.
    *          The upper triangle is symmetric to the lower one only when the full table is evaluated from scratch.
    *          Avoid using the upper triangle because we may change the code to only allocate the lower triangle part.
-   *        For derived BA, the full table is up-to-date after pbyp move
+   *        For derived AB, the full table is up-to-date after pbyp move
    */
   std::vector<DistRow> distances_;
 
@@ -149,7 +149,7 @@ protected:
    *  Note: Derived classes decide if it is a memory view or the actual storage
    *        displacements_[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
    *        For derived AA, A1=A2=A, only the lower triangle (j<i) is defined.
-   *        For derived BA, A1=A, A2=B, the full table is allocated.
+   *        For derived AB, A1=A, A2=B, the full table is allocated.
    */
   std::vector<DisplRow> displacements_;
 
