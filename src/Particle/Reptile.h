@@ -65,7 +65,6 @@ public:
         headindex(0),
         prophead(0) //, r2prop(0.0), r2accept(0.0),tau(0.0)
   {
-    w = W;
     Action.resize(3);
     Action[0] = w.addProperty("ActionBackward");
     Action[1] = w.addProperty("ActionForward");

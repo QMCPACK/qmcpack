@@ -129,7 +129,7 @@ void ParticleSet::createSK()
   for (int iat = 0; iat < GroupID.size(); iat++)
     Mass[iat] = mySpecies(massind, GroupID[iat]);
 
-  RSoA = R;
+  RSoA->setAllParticlePos(R);
 }
 
 void ParticleSet::turnOnPerParticleSK()

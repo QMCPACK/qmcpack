@@ -49,7 +49,7 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   ions_.R[1][2] = 0.0;
   SpeciesSet& source_species(ions_.getSpeciesSet());
   source_species.addSpecies("O");
-  ions_.RSoA = ions_.R;
+  ions_.RSoA->setAllParticlePos(ions_.R);
   //ions_.resetGroups();
 
   elec_.setName("elec");

@@ -30,7 +30,7 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : refPS(
   Lattice  = p.Lattice;
   TotalNum = nptcl;
   R.resize(nptcl);
-  RSoA.resize(nptcl);
+  RSoA->resize(nptcl);
 
   //create distancetables
   for (int i = 0; i < refPS.getNumDistTables(); ++i)

@@ -86,9 +86,9 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
   source.R[1][2] = 3.2;
 
   source.update();
-  /// make sure RSoA is updated no matter SoA or AoS.
-  REQUIRE(source.RSoA[0][1] == Approx(1.0));
-  REQUIRE(source.RSoA[1][2] == Approx(3.2));
+  /// make sure RSoA->getAllParticlePos() is updated no matter SoA or AoS.
+  REQUIRE(source.RSoA->getAllParticlePos()[0][1] == Approx(1.0));
+  REQUIRE(source.RSoA->getAllParticlePos()[1][2] == Approx(3.2));
 
   const int TableID = source.addTable(source, DT_SOA);
   source.update();

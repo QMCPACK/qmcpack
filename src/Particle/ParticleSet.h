@@ -21,6 +21,7 @@
 
 #include <Configuration.h>
 #include <ParticleTags.h>
+#include <Particle/QuantumVariables.h>
 #include <Particle/Walker.h>
 #include <Utilities/SpeciesSet.h>
 #include <Utilities/PooledData.h>
@@ -109,7 +110,7 @@ public:
   ///Position
   ParticlePos_t R;
   ///SoA copy of R
-  VectorSoaContainer<RealType, DIM> RSoA;
+  std::unique_ptr<QuantumVariables> RSoA;
   ///internal spin variables for dynamical spin calculations
   ParticleScalar_t spins;
   ///gradients of the particles
@@ -539,7 +540,7 @@ public:
     Z.resize(numPtcl);
     IndirectID.resize(numPtcl);
 
-    RSoA.resize(numPtcl);
+    RSoA->resize(numPtcl);
   }
 
   inline void clear()
@@ -559,7 +560,7 @@ public:
     Z.clear();
     IndirectID.clear();
 
-    RSoA.resize(0);
+    RSoA->resize(0);
   }
 
   inline void assign(const ParticleSet& ptclin)

@@ -27,7 +27,13 @@ namespace testing
 class SetupDMCTest : public SetupPools
 {
 public:
-  SetupDMCTest(int nranks = 4) : num_ranks(nranks), qmcdrv_input(3)
+  SetupDMCTest(int nranks = 4)
+      : population(nranks,
+                   particle_pool->getParticleSet("e"),
+                   wavefunction_pool->getPrimary(),
+                   hamiltonian_pool->getPrimary()),
+        num_ranks(nranks),
+        qmcdrv_input(3)
   {
     if (Concurrency::maxThreads<>() < 8)
       num_crowds = Concurrency::maxThreads<>();
@@ -43,9 +49,6 @@ public:
 
     qmcdrv_input.readXML(node);
     dmcdrv_input.readXML(node);
-
-    population = MCPopulation(num_ranks, particle_pool->getParticleSet("e"), wavefunction_pool->getPrimary(),
-                              hamiltonian_pool->getPrimary());
 
     QMCDriverInput qmc_input_copy(qmcdrv_input);
     DMCDriverInput dmc_input_copy(dmcdrv_input);
@@ -69,7 +72,6 @@ public:
 
   QMCDriverInput qmcdrv_input;
   DMCDriverInput dmcdrv_input;
-
 };
 } // namespace testing
 } // namespace qmcplusplus
