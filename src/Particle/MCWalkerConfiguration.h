@@ -126,7 +126,7 @@ public:
 #endif
 
   ///default constructor
-  MCWalkerConfiguration();
+  MCWalkerConfiguration(const QuantumVariableKind kind = QuantumVariableKind::QV_POS);
 
   ///default constructor: copy only ParticleSet
   MCWalkerConfiguration(const MCWalkerConfiguration& mcw);

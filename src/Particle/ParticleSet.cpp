@@ -44,9 +44,9 @@ const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_ne
                                                                           {PS_accept, "ParticleSet::acceptMove"},
                                                                           {PS_update, "ParticleSet::update"}};
 
-ParticleSet::ParticleSet()
+ParticleSet::ParticleSet(const QuantumVariableKind kind)
     : quantum_domain(classical),
-      RSoA(std::move(createQuantumVariables())),
+      RSoA(std::move(createQuantumVariables(kind))),
       IsGrouped(true),
       SameMass(true),
       ThreadID(0),

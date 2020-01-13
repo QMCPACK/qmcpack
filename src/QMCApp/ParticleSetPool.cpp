@@ -143,6 +143,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   std::string role("none");
   std::string randomR("no");
   std::string randomsrc;
+  std::string useGPU("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id, "id");
   pAttrib.add(id, "name");
@@ -150,6 +151,9 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   pAttrib.add(randomR, "random");
   pAttrib.add(randomsrc, "randomsrc");
   pAttrib.add(randomsrc, "random_source");
+#if defined(ENABLE_OFFLOAD)
+  pAttrib.add(useGPU, "gpu");
+#endif
   pAttrib.put(cur);
   //backward compatibility
   if (id == "e" && role == "none")
@@ -161,7 +165,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     app_summary() << " ------------" << std::endl;
     app_summary() << "  Name: " << id << std::endl;
 
-    pTemp = new MCWalkerConfiguration;
+    pTemp = new MCWalkerConfiguration(useGPU == "yes"?QuantumVariableKind::QV_POS_OFFLOAD:QuantumVariableKind::QV_POS);
     //if(role == "MC")
     //  pTemp = new MCWalkerConfiguration;
     //else

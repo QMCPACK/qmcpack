@@ -41,7 +41,7 @@ DistanceTableData* createDistanceTableABOMP(const ParticleSet& s, ParticleSet& t
   o << "    source: " << s.getName() << "  target: " << t.getName() << std::endl;
   if (useSoA)
   {
-    o << "    Using structure-of-arrays (SoA) data layout" << std::endl;
+    o << "    Using structure-of-arrays (SoA) data layout and OpenMP offload" << std::endl;
   }
   else
   {

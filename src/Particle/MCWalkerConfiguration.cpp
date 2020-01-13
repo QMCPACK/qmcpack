@@ -85,8 +85,9 @@ struct MCSample
   }
 };
 
-MCWalkerConfiguration::MCWalkerConfiguration()
-    : OwnWalkers(true),
+MCWalkerConfiguration::MCWalkerConfiguration(const QuantumVariableKind kind)
+    : ParticleSet(kind),
+      OwnWalkers(true),
       ReadyForPbyP(false),
       GlobalNumWalkers(0),
       UpdateMode(Update_Walker),

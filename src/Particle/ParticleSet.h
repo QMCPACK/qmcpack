@@ -205,7 +205,7 @@ public:
   int current_step;
 
   ///default constructor
-  ParticleSet();
+  ParticleSet(const QuantumVariableKind kind = QuantumVariableKind::QV_POS);
 
   ///copy constructor
   ParticleSet(const ParticleSet& p);
