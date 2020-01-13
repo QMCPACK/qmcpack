@@ -21,12 +21,13 @@ namespace qmcplusplus
  * @brief A derived classe from DistacneTableData, specialized for AB using a transposed form
  */
 template<typename T, unsigned D, int SC>
-struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableData
+struct SoaDistanceTableABOMP : public DTD_BConds<T, D, SC>, public DistanceTableData
 {
-  SoaDistanceTableAB(const ParticleSet& source, ParticleSet& target)
+  SoaDistanceTableABOMP(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.Lattice), DistanceTableData(source, target)
   {
     resize(source.getTotalNum(), target.getTotalNum());
+    #pragma omp target enter data map(to:this[:1])
   }
 
   void resize(int ns, int nt)
@@ -52,8 +53,13 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
     temp_dr_.resize(N_sources);
   }
 
-  SoaDistanceTableAB()                          = delete;
-  SoaDistanceTableAB(const SoaDistanceTableAB&) = delete;
+  SoaDistanceTableABOMP()                             = delete;
+  SoaDistanceTableABOMP(const SoaDistanceTableABOMP&) = delete;
+
+  ~SoaDistanceTableBAOMP()
+  {
+    #pragma omp target exit data map(delete:this[:1])
+  }
 
   /** evaluate the full table */
   inline void evaluate(ParticleSet& P)

@@ -176,7 +176,7 @@ public:
   {}
 
   ///virutal destructor
-  virtual ~DistanceTableData() {}
+  virtual ~DistanceTableData() = default;
 
   ///get need_full_table_
   inline bool getFullTableNeeds() const { return need_full_table_; }

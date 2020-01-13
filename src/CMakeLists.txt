@@ -206,6 +206,7 @@ ENDIF()
     Particle/MCWalkerConfiguration.cpp
     Particle/createDistanceTableAA.cpp
     Particle/createDistanceTableAB.cpp
+    Particle/createDistanceTableABOMP.cpp
     Particle/HDFWalkerInputManager.cpp
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
