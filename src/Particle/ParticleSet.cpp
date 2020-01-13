@@ -383,6 +383,29 @@ void ParticleSet::update(bool skipSK)
   activePtcl = -1;
 }
 
+void ParticleSet::flex_update(const RefVector<ParticleSet>& p_list, bool skipSK)
+{
+  if (p_list.size() > 1)
+  {
+    ScopedTimer update_scope(p_list[0].get().myTimers[PS_update]);
+    auto& dts = p_list[0].get().DistTables;
+    for (int i = 0; i < dts.size(); ++i)
+    {
+      const auto dt_list(extractDTRefList(p_list, i));
+      dts[i]->mw_evaluate(dt_list, p_list);
+    }
+
+    if (!skipSK && p_list[0].get().SK)
+    {
+#pragma omp parallel for
+      for (int iw = 0; iw < p_list.size(); iw++)
+        p_list[iw].get().SK->UpdateAllPart(p_list[iw]);
+    }
+  }
+  else if (p_list.size() == 1)
+    p_list[0].get().update(skipSK);
+}
+
 void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ, bool maybe_accept)
 {
   activePtcl = iat;
@@ -462,7 +485,7 @@ void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& 
                                                   bool maybe_accept)
 {
   ScopedTimer compute_newpos_scope(P_list[0].get().myTimers[PS_newpos]);
-  int dist_tables_size = P_list[0].get().DistTables.size();
+  const int dist_tables_size = P_list[0].get().DistTables.size();
 #pragma omp parallel
   {
     for (int i = 0; i < dist_tables_size; ++i)
@@ -796,5 +819,16 @@ int ParticleSet::addPropertyHistory(int leng)
 // //       PropertyHistory[dindex].pop_back();
 //       }
 //     }
+
+RefVector<DistanceTableData> ParticleSet::extractDTRefList(
+    const RefVector<ParticleSet>& p_list,
+    int id)
+{
+  RefVector<DistanceTableData> dt_list;
+  dt_list.reserve(p_list.size());
+  for (ParticleSet& p : p_list)
+    dt_list.push_back(*p.DistTables[id]);
+  return dt_list;
+}
 
 } // namespace qmcplusplus

@@ -271,6 +271,9 @@ public:
    */
   void update(bool skipSK = false);
 
+  /// batched version of update
+  static void flex_update(const RefVector<ParticleSet>& P_list, bool skipSK = false);
+
   /** create Structure Factor with PBCs
    */
   void createSK();
@@ -642,6 +645,8 @@ public:
   }
 
   inline int getNumDistTables() const { return DistTables.size(); }
+
+  static RefVector<DistanceTableData> extractDTRefList(const RefVector<ParticleSet>& p_list, int id);
 
 protected:
   /** map to handle distance tables

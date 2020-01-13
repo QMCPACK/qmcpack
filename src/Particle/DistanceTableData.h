@@ -312,6 +312,12 @@ public:
    * @param P the target particle set
    */
   virtual void evaluate(ParticleSet& P) = 0;
+  virtual void mw_evaluate(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
+  {
+    #pragma omp parallel for
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      dt_list[iw].get().evaluate(p_list[iw]);
+  }
 
   /** evaluate the temporary pair relations when a move is proposed
    * @param P the target particle set
