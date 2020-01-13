@@ -149,7 +149,9 @@ public:
   size_t n_capacity() { return n_max_; }
 
   size_t size() const { return n_ * m_; }
-
+  size_t cols() const { return n_; }
+  size_t rows() const { return m_; }
+  
   void resize(size_t m, size_t n)
   {
     if (n > n_max_ || m > m_max_)
