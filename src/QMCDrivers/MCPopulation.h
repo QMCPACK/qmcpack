@@ -105,7 +105,6 @@ public:
 
   MCPopulation(MCPopulation&)  = default;
   MCPopulation(MCPopulation&&) = default;
-  MCPopulation& operator=(MCPopulation&&) = default;
 
   /** @ingroup PopulationControl
    *

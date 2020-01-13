@@ -20,7 +20,7 @@
 #include <numeric>
 #include <iomanip>
 #include "Particle/ParticleSet.h"
-#include "Particle/RealSpacePositions.h"
+#include "Particle/QuantumVariablesBuilder.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/createDistanceTable.h"
 #include "LongRange/StructFact.h"
@@ -46,7 +46,7 @@ const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_ne
 
 ParticleSet::ParticleSet()
     : quantum_domain(classical),
-      RSoA(std::move(std::make_unique<RealSpacePositions>())),
+      RSoA(std::move(createQuantumVariables())),
       IsGrouped(true),
       SameMass(true),
       ThreadID(0),

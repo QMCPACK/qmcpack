@@ -202,6 +202,7 @@ ENDIF()
     Particle/ParticleSet.cpp
     Particle/VirtualParticleSet.cpp
     Particle/ParticleSet.BC.cpp
+    Particle/QuantumVariablesBuilder.cpp
     Particle/MCWalkerConfiguration.cpp
     Particle/createDistanceTableAA.cpp
     Particle/createDistanceTableAB.cpp
