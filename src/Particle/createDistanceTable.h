@@ -46,10 +46,13 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream
 DistanceTableData* createDistanceTableAB(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description);
 DistanceTableData* createDistanceTableABOMP(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description);
 
-inline DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description, bool omp_offload = false)
+inline DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description)
 {
+  // during P-by-P move, the cost of single particle evaluation of distance tables
+  // is determined by the number of source particles.
+  // Thus the implementation selection is determined by the source particle set.
 #if defined(ENABLE_OFFLOAD)
-  if (omp_offload)
+  if (s.RSoA->getKind() == QuantumVariableKind::QV_POS_OFFLOAD)
     return createDistanceTableABOMP(s, t, dt_type, description);
   else
 #endif
