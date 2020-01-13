@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "MinimalContainers/ConstantSizeVector.hpp"
 namespace qmcplusplus
 {
 /** Drop in replacement for OhmmsMatrix as a storage object

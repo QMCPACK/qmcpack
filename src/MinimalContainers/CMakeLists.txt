@@ -1,5 +1,5 @@
 
-SET(MINCONT_SRC ConstantSizeVector.cpp ConstantSizeMatrix.cpp)
+SET(MINCONT_SRC ConstantSizeMatrix.cpp)
 
 ADD_LIBRARY(qmcminimalcontainers ${MINCONT_SRC} )
 
