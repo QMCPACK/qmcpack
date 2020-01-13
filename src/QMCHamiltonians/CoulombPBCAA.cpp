@@ -131,19 +131,31 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     //ewald.findOptKGrid(R);
 
 
-    ewald.setupOpt(R,dt);
 
-    app_log()<<"   sr ref : "<< ewald.ewaldEnergySR(R) <<std::endl;
-    app_log()<<"   sr opt : "<< ewald.ewaldEnergySROpt(dt) <<"  "<<ewald.getKappa() <<std::endl;
+
+    //auto g = 2*ewald.nkmax+1;
+    //size_t nkpoints_ref = g[0]*g[1]*g[2];
+
+    //ewald.setupOpt(R,dt);
+    //
+    //app_log()<<"   sr ref : "<< sr_ref <<std::endl;
+    //app_log()<<"   sr opt : "<< ewald.ewaldEnergySROpt(dt) <<"  "<<ewald.getKappa() <<std::endl;
+    //
+    //
+    //app_log()<<std::endl;
+    //app_log()<<std::endl;
+    //
+    //app_log()<<"   lr ref : "<< lr_ref<<" "<< nkpoints_ref <<std::endl;
+    //app_log()<<"   lr opt : "<< ewald.ewaldEnergyLROpt(R) <<"  "<< ewald.getNkpoints() <<std::endl;
+    //
+    //app_log()<<"   ewald optimized energy: "<<ewald.ewaldEnergyOpt(R,dt)<<std::endl;
+
 
 
     app_log()<<std::endl;
     app_log()<<std::endl;
 
-    RealType lr_ref =  ewald.ewaldEnergyLR(R);
-    auto g = 2*ewald.nkmax+1;
-    app_log()<<"   lr ref : "<< lr_ref<<" "<< g[0]*g[1]*g[2] <<std::endl;
-    app_log()<<"   lr opt : "<< ewald.ewaldEnergyLROpt(R) <<"  "<< ewald.getNkpoints() <<std::endl;
+    ewald.printErrorAndTimeVSTolerance(R,dt);
 
 
 

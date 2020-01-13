@@ -14,6 +14,8 @@
 #define EWALD_TOOLS_H
 
 #include "QMCHamiltonians/EwaldRef.h"
+#include "Utilities/Clock.h"
+
 
 namespace qmcplusplus
 {
@@ -810,6 +812,27 @@ public:
     }
   }
 
+  template<typename PA, typename DT>
+  void printErrorAndTimeVSTolerance(const PA& R, const DT& dt)
+  {
+    std::cout << std::scientific;
+    real_t ref_errtol = 1e-20;
+    real_t t1,t2,t3;
+    for(int n=0;n<16;n++)
+    {
+      real_t errtol = 1.0*std::pow(10.0,-n);
+      setupOpt(R,dt,errtol);
+      real_t sr_ref = ewaldEnergySR(R,ref_errtol);
+      real_t lr_ref = ewaldEnergyLR(R,ref_errtol);
+      t1 = cpu_clock();
+      real_t sr     = ewaldEnergySROpt(dt);
+      t2 = cpu_clock();      
+      real_t lr     = ewaldEnergyLROpt(R);
+      t3 = cpu_clock();
+      std::cout<<n<<" "<<errtol<<" "<<sr-sr_ref<<" "<<lr-lr_ref<<" "<<t2-t1<<" "<<t3-t2<<" "<<getNkpoints()<<std::endl;
+    }
+
+  }
 
 
   /// SR (real-space) part of total energy computed adaptively 
