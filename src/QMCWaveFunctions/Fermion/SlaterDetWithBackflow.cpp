@@ -39,7 +39,6 @@ void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<V
 
 void SlaterDetWithBackflow::resetTargetParticleSet(ParticleSet& P)
 {
-  BFTrans->resetTargetParticleSet(P);
   for (int i = 0; i < Dets.size(); i++)
     Dets[i]->resetTargetParticleSet(BFTrans->QP);
   std::map<std::string, SPOSetPtr>::iterator sit(mySPOSet.begin());
