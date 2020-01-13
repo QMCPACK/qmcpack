@@ -243,6 +243,31 @@ public:
 };
 
 
+/// Functor for bound on term within the k-space sum in Drummond 2008 formula 6
+class KspaceEwaldBoundTerm
+{
+private:
+  /// The k-space cell axes
+  const RealMat B;
+  /// The constant -\kappa^2/2 in Drummond 2008 formula 6
+  const real_t kexponent;
+  /// The constant 4\pi/\Omega in Drummond 2008 formula 6
+  const real_t kprefactor;
+
+public:
+  KspaceEwaldBoundTerm(const RealMat& B_in, real_t kexponent_in, real_t kprefactor_in)
+      : B(B_in), kexponent(kexponent_in), kprefactor(kprefactor_in)
+  {}
+
+  real_t operator()(const IntVec& i) const
+  {
+    RealVec Kv = dot(i, B);
+    real_t K2  = dot(Kv, Kv);
+    real_t km  = kprefactor * std::exp(kexponent * K2) / K2;
+    return km;
+  }
+};
+
 
 template<typename M>
 RealVec wignerPoint(const M& A, int_t nc=5)
@@ -323,6 +348,7 @@ private:
   IntVec nmax_anisotropic;
 
   // Internally stored values for optimized computation
+  real_t k_cutoff;
   real_t ewald_constant_lr_energy; // Constant portion of LR (k-space) total energy
   std::vector<RealVec> kpoints;    // Converged k-point grid
   std::vector<real_t> vk;          // Fourier transform of Ewald pair potential
@@ -398,6 +424,12 @@ public:
   real_t getKappa()
   {
     return kappa_ewald;
+  }
+
+
+  size_t getNkpoints()
+  {
+    return kpoints.size();
   }
 
 
@@ -579,9 +611,29 @@ public:
   }
 
 
+  /// Setup data structure for optimized computation based on error tolerances
+  template<typename PA, typename DT>
+  void setupOpt(const PA& R, const DT& dt,real_t errtol=-1.0)
+  {
+    if(errtol<0.0)
+      errtol = tol;
+
+    real_t sr_tol = errtol/2;
+    real_t lr_tol = errtol/2;
+
+    // Find kappa consistent w/ error bound on SR sum
+    real_t kappa_sr = findKappaViaSRErrorBound(R,dt,sr_tol);
+
+    // Set kappa
+    setKappa(kappa_sr);
+
+    // Find k-space cutoff consistent w/ error bound on LR sum
+    setupLRKpointsViaErrorBound(lr_tol);
+  }
+
   
   /// Setup data structures for optimized computation on a fixed anisotropic k-grid
-  void setupOpt(IntVec nmax)
+  void setupLRKpoints(IntVec nmax)
   {
     // Calculate charge product sum
     real_t QQsum = 0.0;
@@ -627,10 +679,12 @@ public:
   }
 
 
-  // Find kappa to use in optmized computation based on error tolerance of SR part
+  // Find kappa to use in optimized computation based on error tolerance of SR part
   template<typename PA, typename DT>
-  real_t findOptKappa(const PA& R, const DT& dt)
+  real_t findKappaViaSRErrorBound(const PA& R, const DT& dt,real_t errtol=-1.0,real_t reltol=1e-2,int_t itermax=100,real_t nwig_left=1e-2,real_t nwig_right=1.0)
   {
+    if(errtol<0.0)
+      errtol = tol;
     real_t qsum  = 0.0;
     real_t qsum2 = 0.0;
     for(auto q: Q)
@@ -641,23 +695,104 @@ public:
     real_t QQbound = 0.5*(qsum*qsum - qsum2);
     RealVec wigner_point = wignerPoint(A);
     real_t wigner_radius = std::sqrt(dot(wigner_point,wigner_point));
-    //real_t err_bound_tol = errtol/QQbound/1e2;
-    real_t error_bound = 1e90;
-    real_t kappa = wigner_radius;
-    int_t n = 0;
+
+    real_t err_bound_tol = errtol/QQbound;
+
+    // Bisection search to hit target error bound
+    int_t n;
+    real_t kappa_left  = nwig_left*wigner_radius;
+    real_t kappa_right = nwig_right*wigner_radius;
+    real_t error_left  = SROptErrorBound(wigner_point,kappa_left);
+    real_t error_right = SROptErrorBound(wigner_point,kappa_right);
+    real_t f_left  = error_left-err_bound_tol;
+    real_t f_right = error_right-err_bound_tol;
+    if(f_left*f_right>0.0)
+    {
+      APP_ABORT("Bisection search for Ewald kappa based on SR energy tolerance failed.  Poor search interval.")
+    }
+    real_t kappa;
+    real_t error;
+    if(error_left<error_right)
+    {
+      kappa = kappa_left;
+      error = error_left;
+    }
+    else
+    {
+      kappa = kappa_right;
+      error = error_right;
+    }
+    for(n=0;n<itermax;++n)
+    {
+      real_t kappa_mid = (kappa_left+kappa_right)/2;
+      real_t error_mid = SROptErrorBound(wigner_point,kappa_mid);
+      real_t f_mid = error_mid-err_bound_tol;
+      if(f_left*f_mid < 0.0)
+      {
+        kappa_right = kappa_mid;
+        error_right = error_mid;
+        f_right     = f_mid;
+      }
+      else if(f_right*f_mid < 0.0)
+      {
+        kappa_left = kappa_mid;
+        error_left = error_mid;
+        f_left     = f_mid;
+      }
+
+      real_t kappa_prev = kappa;
+      real_t error_prev = error;
+      if(error_left<error_right)
+      {
+        kappa = kappa_left;
+        error = error_left;
+      }
+      else
+      {
+        kappa = kappa_right;
+        error = error_right;
+      }
+
+      //std::cout<<"  "<<n<<" "<<kappa<<" "<<QQbound*error<<" "<<errtol<<std::endl;
+
+      bool error_converged = std::abs(error)<err_bound_tol;
+      bool kappa_same      = std::abs((kappa-kappa_prev)/kappa_prev)<reltol;
+      bool error_near_target = std::abs((error-err_bound_tol)/err_bound_tol)<reltol;
+      if(error_converged && kappa_same && error_near_target)
+        break;
+    }
+    if(n>=itermax)
+      APP_ABORT("Bisection search for Ewald kappa based on SR energy tolerance failed.  Maximum iterations reached.");
+
+    return kappa;
+  }
+
+
+  template<typename PA, typename DT>
+  void printSRErrorTable(const PA& R, const DT& dt)
+  {    
+    real_t qsum  = 0.0;
+    real_t qsum2 = 0.0;
+    for(auto q: Q)
+    {
+      qsum  += std::abs(q);
+      qsum2 += q*q;
+    }
+    real_t QQbound = 0.5*(qsum*qsum - qsum2);
+    RealVec wigner_point = wignerPoint(A);
+    real_t wigner_radius = std::sqrt(dot(wigner_point,wigner_point));
 
     std::cout << "\nwigner radius: "<<wigner_radius<<std::endl;
-
     std::cout << std::scientific;
-
-    //while(error>errtol && kappa>0)
+    real_t kappa = wigner_radius;
+    int_t n=0;
     while(kappa>0)
     {
       kappa = (1.0-0.01*n)*wigner_radius;
       if(kappa<0.0)
         break;
 
-      error_bound = QQbound*SROptErrorBound(wigner_point,kappa);
+      real_t error_bound = QQbound*SROptErrorBound(wigner_point,kappa);
 
       setKappa(kappa);
 
@@ -674,6 +809,7 @@ public:
       n++;
     }
   }
+
 
 
   /// SR (real-space) part of total energy computed adaptively 
@@ -700,9 +836,103 @@ public:
 
 
 
-  /// LR energy computed on a fixed grid + population
+  void setupLRKpointsViaErrorBound(real_t errtol=-1.0,real_t reftol=1e-20)
+  {
+    using std::get;
+    using std::sort;
+    using std::greater;
+    using std::vector;
+    using std::tuple;
+    using std::make_tuple;
+    using row_t = tuple<real_t, real_t, real_t, real_t, real_t>;
+
+    if(errtol<0.0)
+       errtol = tol;
+    real_t qsum  = 0.0;
+    real_t qsum2 = 0.0;
+    for(auto q: Q)
+    {
+      qsum  += std::abs(q);
+      qsum2 += q*q;
+    }
+    real_t QQbound = 0.5*(qsum*qsum - qsum2);
+    real_t err_bound_tol = errtol/QQbound;
+    
+    reftol = std::min(reftol,err_bound_tol*1e-8);
+
+    // Find minimal anisotropic grid
+    KspaceEwaldBoundTerm vlr_bterm(B,kexponent_ewald,kprefactor_ewald);
+    IntVec nmax;
+    real_t vlr_full = anisotropicGridSum(vlr_bterm,nmax,false,reftol);
+
+    // Setup kpoints and vk
+    IntVec grid = 2*nmax+1;
+    size_t nkpoints_full = grid[0]*grid[1]*grid[2]-1;
+    vector<row_t> vk_data;
+    KspaceEwaldPairPotential vkf(kexponent_ewald,kprefactor_ewald);
+    size_t n=0;
+    real_t kmag_max = std::numeric_limits<real_t>::min();
+    for(int_t i = -nmax[0]; i < nmax[0] + 1; ++i)
+      for(int_t j = -nmax[1]; j < nmax[1] + 1; ++j)
+        for(int_t k = -nmax[2]; k < nmax[2] + 1; ++k)
+        {
+          if(i==0 && j==0 && k==0)
+            continue;
+          IntVec iv(i,j,k);
+          RealVec kp    = dot(iv,B);
+          real_t  kmag  = std::sqrt(dot(kp,kp));
+          real_t  vkval = vkf(kp);
+          vk_data.push_back(make_tuple(kmag,kp[0],kp[1],kp[2],vkval));
+          kmag_max = std::max(kmag,kmag_max);
+          n++;
+        }
+
+    // Sort data from smallest to largest k-point magnitude
+    sort(vk_data.begin(),vk_data.end(),greater<row_t>());
+
+    // Sum the error bound from largest to smallest k-point.
+    // The k-space cutoff is marked by the point when the error 
+    //  bound has crossed the target error.
+    real_t kmag_prev = kmag_max;
+    real_t vlr_bound = 0.0;
+    for(const auto& vd: vk_data)
+    {
+      real_t kmag   = get<0>(vd);
+      real_t vk_val = get<4>(vd);
+      vlr_bound += vk_val;
+      if(std::abs(vlr_bound) > err_bound_tol)
+      {
+        k_cutoff = kmag_prev;
+        break;
+      }
+      kmag_prev = kmag;
+    }
+
+    // Store k-points and long range potential values falling 
+    // within the k-space cutoff.  These will be used later 
+    // in computationally optimized sums.
+    kpoints.resize(0);
+    vk.resize(0);
+    vk_sum = 0.0;
+    for(const auto& vd: vk_data)
+    {
+      real_t kmag = get<0>(vd);
+      if(kmag < k_cutoff)
+      {
+        RealVec k(get<1>(vd),get<2>(vd),get<3>(vd));
+        real_t vk_val = get<4>(vd);
+        kpoints.push_back(k);
+        vk.push_back(vk_val);
+        vk_sum += 0.5*qsum2*vk_val;
+      }
+    }
+
+  }
+
+
+
   template<typename PA>
-  void findOptKGrid(const PA& R, real_t errtol_full=1e-20)
+  void printLRErrorTable(const PA& R, real_t errtol_full=1e-20)
   {
     using std::get;
     using std::sort;

@@ -92,7 +92,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
 
 
     //app_log()<<std::setprecision(14);
-    app_log()<<std::setprecision(12);
+    app_log()<<std::setprecision(16);
     app_log()<<std::endl;
     app_log()<<std::endl;
     app_log()<<"   ewald ref i-i   energy: "<<Vii_ref<<std::endl;
@@ -123,12 +123,28 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     app_log()<<std::endl;
 
     // make print out of SR accuracy vs kappa
-    //ewald.findOptKappa(R,dt);
+    //ewald.printSRErrorTable(R,dt);
     
     // LR accuracy vs cutoff
-    app_log()<<"   lr ref : "<< lr <<std::endl;
+    //app_log()<<"   lr ref : "<< lr <<std::endl;
 
-    ewald.findOptKGrid(R);
+    //ewald.findOptKGrid(R);
+
+
+    ewald.setupOpt(R,dt);
+
+    app_log()<<"   sr ref : "<< ewald.ewaldEnergySR(R) <<std::endl;
+    app_log()<<"   sr opt : "<< ewald.ewaldEnergySROpt(dt) <<"  "<<ewald.getKappa() <<std::endl;
+
+
+    app_log()<<std::endl;
+    app_log()<<std::endl;
+
+    RealType lr_ref =  ewald.ewaldEnergyLR(R);
+    auto g = 2*ewald.nkmax+1;
+    app_log()<<"   lr ref : "<< lr_ref<<" "<< g[0]*g[1]*g[2] <<std::endl;
+    app_log()<<"   lr opt : "<< ewald.ewaldEnergyLROpt(R) <<"  "<< ewald.getNkpoints() <<std::endl;
+
 
 
     //RealType eE   = ewald.ewaldEnergy(R);
