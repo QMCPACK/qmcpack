@@ -72,18 +72,65 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   ewald.initialize(A,Q,1e-10,qmcpack_kappa);
 
 
-  ewaldref::IntVec nmax = 7;
-  ewald.setupOpt(nmax);
+  //ewaldref::IntVec nmax = 7;
+  //ewald.setupOpt(nmax);
 
   if (!is_active)
   {
     update_source(ref);
+    
 
     ewaldref::PosArray R;
     R.resize(NumCenters);
     for(int i=0;i<NumCenters;++i)
       R[i] = Ps.R[i];
+
+    RealType Vii_ref        = ewaldref::ewaldEnergy(A, R, Q);
+    RealType Vdiff_per_atom = std::abs(Value - Vii_ref) / NumCenters;
+
+
+
+
+    //app_log()<<std::setprecision(14);
+    app_log()<<std::setprecision(12);
+    app_log()<<std::endl;
+    app_log()<<std::endl;
+    app_log()<<"   ewald ref i-i   energy: "<<Vii_ref<<std::endl;
+    app_log()<<"   qmcpack   i-i   energy: "<<Value<<std::endl;
+    app_log()<<std::endl;
+    app_log()<<std::endl;
+
+    const DistanceTableData& dt(Ps.getDistTable(d_aa_ID));
+
+    //RealType E_ref = ewald.ewaldEnergy(R);
+    //RealType E_fix = ewald.fixedGridEwaldEnergy(R);
+    RealType c     = ewald.ewaldEnergyConst();
+    RealType sr    = ewald.ewaldEnergySR(Ps.R);
+    RealType lr    = ewald.ewaldEnergyLR(Ps.R);
+
+
+    //app_log()<<"   ewald adaptive  energy: "<<E_ref<<std::endl;
+    //app_log()<<"   ewald fixed     energy: "<<E_fix<<std::endl;
+    app_log()<<"   ewald component energy: "<<sr+lr+c<<std::endl;
+
+    app_log()<<std::endl;
+    app_log()<<std::endl;
+
+    app_log()<<"   sr ref : "<< sr <<std::endl;
+    app_log()<<"   sr opt : "<< ewald.ewaldEnergySROpt(dt) <<"  "<<ewald.getKappa() <<std::endl;
+
+    app_log()<<std::endl;
+    app_log()<<std::endl;
+
+    // make print out of SR accuracy vs kappa
+    //ewald.findOptKappa(R,dt);
     
+    // LR accuracy vs cutoff
+    app_log()<<"   lr ref : "<< lr <<std::endl;
+
+    ewald.findOptKGrid(R);
+
+
     //RealType eE   = ewald.ewaldEnergy(R);
     //RealType eEf  = ewald.fixedGridEwaldEnergy(R);
     ////RealType eEt  = ewald.ewaldEnergy(Ps.R);
@@ -167,8 +214,10 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     //app_log()<<std::endl;
     //app_log()<<std::endl;
 
-    RealType Vii_ref        = ewaldref::ewaldEnergy(A, R, Q);
-    RealType Vdiff_per_atom = std::abs(Value - Vii_ref) / NumCenters;
+
+    APP_ABORT("explore")
+
+
     app_log() << "Checking ion-ion Ewald energy against reference..." << std::endl;
     if (Vdiff_per_atom > Ps.Lattice.LR_tol)
     {
@@ -196,8 +245,6 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     {
       app_log() << "  Check passed." << std::endl;
     }
-
-    //APP_ABORT("explore")
 
   }
   prefix = "F_AA";

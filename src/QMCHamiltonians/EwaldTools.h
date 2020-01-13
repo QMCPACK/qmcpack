@@ -245,10 +245,10 @@ public:
 
 
 template<typename M>
-RealVec wignerPoint(const M& A, size_t nc=5)
+RealVec wignerPoint(const M& A, int_t nc=5)
 {
   RealVec rwig = 0.0;
-  real_t rmin = 1e90;
+  real_t rmin = std::numeric_limits<real_t>::max();
   for(int_t k=-nc; k<nc+1; k++)
     for(int_t j=-nc; j<nc+1; j++)
       for(int_t i=-nc; i<nc+1; i++)
@@ -259,7 +259,7 @@ RealVec wignerPoint(const M& A, size_t nc=5)
           real_t rm = 0.5*std::sqrt(dot(rv,rv));
           if(rm<rmin)
           {
-            rwig = rv;
+            rwig = rv/2;
             rmin = rm;
           }
         }
@@ -365,14 +365,14 @@ public:
     kexponent_madelung  = -1. / (4 * std::pow(kappa_madelung, 2));
     kprefactor_madelung = 4 * M_PI / volume;
     // Ewald constants
-    setKappaEwald(kappa_in);
+    setKappa(kappa_in);
 
     // Calculate and store Madelung energy
     madelung_energy = madelungEnergy();
   }
 
 
-  void setKappaEwald(real_t kappa=-1.0)
+  void setKappa(real_t kappa=-1.0)
   {
     if(kappa<0.0)
       kappa_ewald = getKappaEwald(volume);
@@ -392,6 +392,12 @@ public:
       qsum2 += q*q;
     }
     ewald_constant_lr_energy = 0.5*(qsum*qsum - qsum2)*kconstant_ewald;
+  }
+
+
+  real_t getKappa()
+  {
+    return kappa_ewald;
   }
 
 
@@ -467,22 +473,24 @@ public:
 
   /// Total energy for all pairs using adaptive anisotropic grids
   template<typename PA>
-  real_t ewaldEnergy(const PA& R)
+  real_t ewaldEnergy(const PA& R,real_t errtol=-1.0)
   {
+    if(errtol<0.0)
+      errtol = tol;
     nrmax = 0;
     nkmax = 0;
     real_t ee = madelung_energy;
     size_t Npairs = (N*(N-1))/2;
     for (size_t i = 0; i < N; ++i)
       for (size_t j = 0; j < i; ++j)
-        ee += Q[i]*Q[j]*ewaldPairPotential(R[i]-R[j],tol/(Q[i]*Q[j])/Npairs);
+        ee += Q[i]*Q[j]*ewaldPairPotential(R[i]-R[j],errtol/(Q[i]*Q[j])/Npairs);
     return ee;
   }
 
 
   /// Total energy for all pairs using fixed anisotropic grid
   template<typename PA>
-  real_t fixedGridEwaldEnergy(const PA& R, const IntVec& nmax)
+  real_t fixedGridEwaldEnergy(const PA& R, const IntVec& nrmax, const IntVec& nkmax)
   {
     real_t ee = madelung_energy;
     for (size_t i = 0; i < N; ++i)
@@ -497,9 +505,9 @@ public:
         // Compute the constant term
         real_t cval = kconstant_ewald;
         // Compute the real-space sum (includes zero)
-        real_t rval = fixedGridSum(rfunc, nmax, true);
+        real_t rval = fixedGridSum(rfunc, nrmax, true);
         // Compute the k-space sum (excludes zero)
-        real_t kval = fixedGridSum(kfunc, nmax, false);
+        real_t kval = fixedGridSum(kfunc, nkmax, false);
 
         // Sum all contributions to get the Ewald pair interaction
         real_t epp = cval + rval + kval;
@@ -514,7 +522,7 @@ public:
   template<typename PA>
   real_t fixedGridEwaldEnergy(const PA& R)
   {
-    return fixedGridEwaldEnergy(R, nmax_anisotropic);
+    return fixedGridEwaldEnergy(R, nrmax, nkmax);
   }
 
 
@@ -527,8 +535,10 @@ public:
 
   /// SR (real-space) part of total energy computed adaptively 
   template<typename PA>
-  real_t ewaldEnergySR(const PA& R)
+  real_t ewaldEnergySR(const PA& R, real_t errtol=-1.0)
   {
+    if(errtol<0.0)
+      errtol = tol;
     nrmax = 0;
     real_t ee = 0.0;
     size_t Npairs = (N*(N-1))/2;
@@ -536,7 +546,7 @@ public:
     for (size_t i = 0; i < N; ++i)
       for (size_t j = 0; j < i; ++j)
       {
-        real_t tol_ewald = tol/(Q[i]*Q[j])/Npairs;
+        real_t tol_ewald = errtol/(Q[i]*Q[j])/Npairs;
         RspaceEwaldTerm rfunc(R[i]-R[j], A, rexponent_ewald);
         real_t rval = anisotropicGridSum(rfunc, nmax, true, tol_ewald);
         nrmax = ivmax(nmax,nrmax);
@@ -548,8 +558,10 @@ public:
 
   /// LR (k-space) part of total energy computed adaptively 
   template<typename PA>
-  real_t ewaldEnergyLR(const PA& R)
+  real_t ewaldEnergyLR(const PA& R, real_t errtol=-1.0)
   {
+    if(errtol<0.0)
+      errtol = tol;
     nkmax = 0;
     real_t ee = ewald_constant_lr_energy;
     size_t Npairs = (N*(N-1))/2;
@@ -557,7 +569,7 @@ public:
     for (size_t i = 0; i < N; ++i)
       for (size_t j = 0; j < i; ++j)
       {
-        real_t tol_ewald = tol/(Q[i]*Q[j])/Npairs;
+        real_t tol_ewald = errtol/(Q[i]*Q[j])/Npairs;
         KspaceEwaldTerm kfunc(R[i]-R[j], B, kexponent_ewald, kprefactor_ewald);
         real_t kval = anisotropicGridSum(kfunc, nmax, false, tol_ewald);
         nkmax = ivmax(nmax,nkmax);
@@ -605,7 +617,7 @@ public:
 
 
   // Computes error bound for excluding all images of SR sum for single e-e interaction
-  real_t SROptErrorBound(RealVec wigner_point,real_t kappa,real_t errtol=1e-10)
+  real_t SROptErrorBound(RealVec wigner_point,real_t kappa,real_t errtol=1e-20)
   {
     real_t rexponent = 1./(std::sqrt(2.)*kappa);
     RspaceEwaldTerm vsr(wigner_point,A,rexponent);
@@ -616,7 +628,8 @@ public:
 
 
   // Find kappa to use in optmized computation based on error tolerance of SR part
-  real_t findOptKappa(real_t errtol)
+  template<typename PA, typename DT>
+  real_t findOptKappa(const PA& R, const DT& dt)
   {
     real_t qsum  = 0.0;
     real_t qsum2 = 0.0;
@@ -628,16 +641,153 @@ public:
     real_t QQbound = 0.5*(qsum*qsum - qsum2);
     RealVec wigner_point = wignerPoint(A);
     real_t wigner_radius = std::sqrt(dot(wigner_point,wigner_point));
-    real_t err_bound_tol = errtol/QQbound/1e2;
-    real_t error = 1e90;
+    //real_t err_bound_tol = errtol/QQbound/1e2;
+    real_t error_bound = 1e90;
     real_t kappa = wigner_radius;
     int_t n = 0;
-    while(error>errtol && kappa>0)
+
+    std::cout << "\nwigner radius: "<<wigner_radius<<std::endl;
+
+    std::cout << std::scientific;
+
+    //while(error>errtol && kappa>0)
+    while(kappa>0)
     {
-      kappa = (1.0-0.1*n)*wigner_radius;
-      error = QQbound*SROptErrorBound(wigner_point,kappa);
+      kappa = (1.0-0.01*n)*wigner_radius;
+      if(kappa<0.0)
+        break;
+
+      error_bound = QQbound*SROptErrorBound(wigner_point,kappa);
+
+      setKappa(kappa);
+
+      tol = 1e-16;
+
+      real_t sr_opt = ewaldEnergySROpt(dt);
+      real_t sr_ref = ewaldEnergySR(R);
+
+      real_t error_diff = sr_opt-sr_ref;
+      real_t error_sum  = ewaldEnergySROptError(dt);
+
+      std::cout<<kappa/wigner_radius<<" "<<sr_opt<<" "<<sr_ref<<" "<<error_diff<<" "<<error_sum<<" "<<error_bound<<std::endl;
+
+      n++;
     }
   }
+
+
+  /// SR (real-space) part of total energy computed adaptively 
+  template<typename DT>
+  real_t ewaldEnergySROptError(const DT& dt,real_t errtol=1e-30)
+  {
+    const auto& dr = dt.getDisplacements();
+    real_t QQmax = 0.0;
+    for (auto q: Q)
+      QQmax = std::max(q*q, QQmax);
+    real_t ee = 0.0;
+    size_t Npairs = (N*(N-1))/2;
+    IntVec nmax;
+    for (size_t i = 0; i < N; ++i)
+      for (size_t j = 0; j < i; ++j)
+      {
+        real_t tol_ewald = errtol/(Q[i]*Q[j])/Npairs;
+        RspaceEwaldTerm rfunc(dr[i][j], A, rexponent_ewald);
+        real_t rval = anisotropicGridSum(rfunc, nmax, false, tol_ewald);
+        ee += Q[i]*Q[j]*rval;
+      }
+    return ee;
+  }
+
+
+
+  /// LR energy computed on a fixed grid + population
+  template<typename PA>
+  void findOptKGrid(const PA& R, real_t errtol_full=1e-20)
+  {
+    using std::get;
+    using std::sort;
+    using std::greater;
+    using std::vector;
+    using std::tuple;
+    using std::make_tuple;
+    using row_t = tuple<real_t, real_t, real_t, real_t, real_t>;
+
+    // Find minimal anisotropic grid
+    real_t vlr_full = ewaldEnergyLR(R,errtol_full);
+    IntVec nmax = nkmax;
+
+    app_log()<<"   lr opt : "<< vlr_full <<std::endl;
+
+    // Calculate charge product sum
+    real_t qsum  = 0.0;
+    real_t qsum2 = 0.0;
+    for(auto q: Q)
+    {
+      qsum  += std::abs(q);
+      qsum2 += q*q;
+    }
+    real_t QQbound = 0.5*(qsum*qsum - qsum2);
+
+    // Setup kpoints and vk
+    IntVec grid = 2*nmax+1;
+    size_t nkpoints_full = grid[0]*grid[1]*grid[2]-1;
+    vector<row_t> vk_data;
+    KspaceEwaldPairPotential vkf(kexponent_ewald,kprefactor_ewald);
+    size_t n=0;
+    for(int_t i = -nmax[0]; i < nmax[0] + 1; ++i)
+      for(int_t j = -nmax[1]; j < nmax[1] + 1; ++j)
+        for(int_t k = -nmax[2]; k < nmax[2] + 1; ++k)
+        {
+          if(i==0 && j==0 && k==0)
+            continue;
+          IntVec iv(i,j,k);
+          RealVec kp    = dot(iv,B);
+          real_t  kmag  = std::sqrt(dot(kp,kp));
+          real_t  vkval = vkf(kp);
+          vk_data.push_back(make_tuple(kmag,kp[0],kp[1],kp[2],vkval));
+          n++;
+        }
+
+    // Sort data from smallest to largest k-point magnitude
+    sort(vk_data.begin(),vk_data.end(),greater<row_t>());
+
+    std::ofstream file("vlr_sum.dat");
+    real_t vlr_sum = 0.0;
+    real_t vlr_bound = 0.0;
+    for(const auto& vd: vk_data)
+    {
+      real_t kmag   = get<0>(vd);
+      RealVec k(get<1>(vd),get<2>(vd),get<3>(vd));
+      real_t vk_val = get<4>(vd);
+
+      real_t coskr = 0.0;
+      real_t sinkr = 0.0;
+      for(size_t i=0; i<N; i++)
+      {
+        real_t c,s;
+        real_t q = Q[i];
+        sincos(dot(k,R[i]),&s,&c);
+        coskr += q*c;
+        sinkr += q*s;
+      }
+      real_t vk_term = 0.5*(coskr*coskr + sinkr*sinkr - qsum2)*vk_val;
+      vlr_sum += vk_term;
+
+      vlr_bound += QQbound*vk_val;
+
+      file << kmag <<" "<< vk_val << " " << vk_term <<" "<<vlr_sum << " " << vlr_bound <<  std::endl;
+    }
+    vlr_sum += ewald_constant_lr_energy;
+
+    app_log()<<"   lr sum : "<< vlr_sum <<std::endl;
+
+    std::cout<<std::endl;
+    std::cout<<nkpoints_full<<" "<<n<<std::endl;
+
+  }
+
+
+
 
 
   template<typename PA, typename DT>
