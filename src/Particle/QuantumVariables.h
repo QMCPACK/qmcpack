@@ -43,6 +43,8 @@ public:
 
   QuantumVariableKind getKindvariable() const { return variable_kind_; }
 
+  virtual ~QuantumVariables() = default;
+
   virtual std::unique_ptr<QuantumVariables> makeClone() = 0;
 
   virtual void resize(size_t n) = 0;

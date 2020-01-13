@@ -15,34 +15,39 @@
 #ifndef QMCPLUSPLUS_REALSPACE_POSITIONS_H
 #define QMCPLUSPLUS_REALSPACE_POSITIONS_H
 
-#include <Configuration.h>
-#include <OhmmsSoA/Container.h>
+#include "Particle/QuantumVariables.h"
+#include "OhmmsSoA/Container.h"
 
 namespace qmcplusplus
 {
 /** Introduced to handle virtual moves and ratio computations, e.g. for non-local PP evaluations.
    */
-class RealSpacePositions: public QuantumVariables
+class RealSpacePositions : public QuantumVariables
 {
 public:
   using ParticlePos_t = PtclOnLatticeTraits::ParticlePos_t;
-  using RealType = QMCTraits::PosType;
-  using PosType = QMCTraits::PosType;
+  using RealType      = QMCTraits::RealType;
+  using PosType       = QMCTraits::PosType;
 
   RealSpacePositions() : QuantumVariables(QuantumVariableKind::QV_POS) {}
 
   std::unique_ptr<QuantumVariables> makeClone() override { return std::make_unique<RealSpacePositions>(*this); }
 
-  void resize(size_t n) override { RSoA.resize(n);}
+  void resize(size_t n) override { RSoA.resize(n); }
   size_t size() override { return RSoA.size(); }
 
-  void setAllParticlePos(const ParticlePos_t& R) override { resize(R.size()); RSoA.copyIn(R);}
-  void setOneParticlePos(const PosType& pos, size_t iat) override {RSoA(iat) = pos;}
+  void setAllParticlePos(const ParticlePos_t& R) override
+  {
+    resize(R.size());
+    RSoA.copyIn(R);
+  }
+  void setOneParticlePos(const PosType& pos, size_t iat) override { RSoA(iat) = pos; }
 
   const PosVectorSoa& getAllParticlePos() override { return RSoA; }
   PosType getOneParticlePos(size_t iat) const override { return RSoA[iat]; }
 
 private:
+  ///particle positions in SoA layout
   PosVectorSoa RSoA;
 };
 } // namespace qmcplusplus

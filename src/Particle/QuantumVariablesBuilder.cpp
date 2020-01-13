@@ -12,6 +12,7 @@
 
 #include "QuantumVariablesBuilder.h"
 #include "Particle/RealSpacePositions.h"
+#include "Particle/RealSpacePositionsOffload.h"
 
 namespace qmcplusplus
 {
@@ -21,6 +22,10 @@ std::unique_ptr<QuantumVariables> createQuantumVariables(const QuantumVariableKi
 {
   if (kind == QuantumVariableKind::QV_POS)
     return std::make_unique<RealSpacePositions>();
+#if defined(ENABLE_OFFLOAD)
+  else if(kind==QuantumVariableKind::QV_POS_OFFLOAD)
+    return std::make_unique<RealSpacePositionsOffload>();
+#endif
   else
     APP_ABORT("QuantumVariablesBuilder::createQuantumVariables unknown QuantumVariableKind");
   // dummy return
