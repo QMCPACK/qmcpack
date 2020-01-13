@@ -28,6 +28,12 @@ class RealSpacePositionsOffload : public QuantumVariables
 {
 public:
   RealSpacePositionsOffload() : QuantumVariables(QuantumVariableKind::QV_POS_OFFLOAD) {}
+  RealSpacePositionsOffload(const RealSpacePositionsOffload& in)
+    : QuantumVariables(QuantumVariableKind::QV_POS_OFFLOAD), RSoA(in.RSoA)
+  {
+    RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
+    updateH2D();
+  }
 
   std::unique_ptr<QuantumVariables> makeClone() override { return std::make_unique<RealSpacePositionsOffload>(*this); }
 
@@ -43,8 +49,7 @@ public:
   {
     resize(R.size());
     RSoA_hostview.copyIn(R);
-    RealType* data = RSoA.data();
-    PRAGMA_OFFLOAD("omp target update to(data[0:RSoA.capacity()*QMCTraits::DIM])")
+    updateH2D();
   }
 
   void setOneParticlePos(const PosType& pos, size_t iat) override
@@ -74,6 +79,12 @@ private:
 
   ///host view of RSoA
   PosVectorSoa RSoA_hostview;
+
+  void updateH2D()
+  {
+    RealType* data = RSoA.data();
+    PRAGMA_OFFLOAD("omp target update to(data[0:RSoA.capacity()*QMCTraits::DIM])")
+  }
 };
 } // namespace qmcplusplus
 #endif
