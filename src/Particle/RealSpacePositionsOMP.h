@@ -24,18 +24,18 @@ namespace qmcplusplus
 {
 /** Introduced to handle virtual moves and ratio computations, e.g. for non-local PP evaluations.
    */
-class RealSpacePositionsOffload : public QuantumVariables
+class RealSpacePositionsOMP : public QuantumVariables
 {
 public:
-  RealSpacePositionsOffload() : QuantumVariables(QuantumVariableKind::QV_POS_OFFLOAD) {}
-  RealSpacePositionsOffload(const RealSpacePositionsOffload& in)
+  RealSpacePositionsOMP() : QuantumVariables(QuantumVariableKind::QV_POS_OFFLOAD) {}
+  RealSpacePositionsOMP(const RealSpacePositionsOMP& in)
     : QuantumVariables(QuantumVariableKind::QV_POS_OFFLOAD), RSoA(in.RSoA)
   {
     RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
     updateH2D();
   }
 
-  std::unique_ptr<QuantumVariables> makeClone() override { return std::make_unique<RealSpacePositionsOffload>(*this); }
+  std::unique_ptr<QuantumVariables> makeClone() override { return std::make_unique<RealSpacePositionsOMP>(*this); }
 
   void resize(size_t n) override
   {
