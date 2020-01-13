@@ -31,6 +31,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 /// Constructor.
 DMCcuda::DMCcuda(MCWalkerConfiguration& w,
                  TrialWaveFunction& psi,
@@ -290,8 +292,8 @@ bool DMCcuda::run()
 #endif
         }
         RealType scNew                       = std::sqrt(v2bar / (v2 * m_tauovermass * m_tauovermass));
-        RealType scOld                       = (CurrentStep == 1) ? scNew : W[iw]->getPropertyBase()[DRIFTSCALE];
-        W[iw]->getPropertyBase()[DRIFTSCALE] = scNew;
+        RealType scOld                       = (CurrentStep == 1) ? scNew : W[iw]->getPropertyBase()[WP::DRIFTSCALE];
+        W[iw]->getPropertyBase()[WP::DRIFTSCALE] = scNew;
         // fprintf (stderr, "iw = %d  scNew = %1.8f  scOld = %1.8f\n", iw, scNew, scOld);
         RealType tauRatio = R2acc[iw] / R2prop[iw];
         //allow large time steps during warmup
@@ -302,8 +304,8 @@ bool DMCcuda::run()
           W[iw]->Weight *= branchEngine->branchWeightTau(LocalEnergy[iw], LocalEnergyOld[iw], scNew, scOld, taueff);
         else
           W[iw]->Weight *= branchEngine->branchWeight(LocalEnergy[iw], LocalEnergyOld[iw]);
-        W[iw]->getPropertyBase()[R2ACCEPTED] = R2acc[iw];
-        W[iw]->getPropertyBase()[R2PROPOSED] = R2prop[iw];
+        W[iw]->getPropertyBase()[WP::R2ACCEPTED] = R2acc[iw];
+        W[iw]->getPropertyBase()[WP::R2PROPOSED] = R2prop[iw];
       }
       Mover->setMultiplicity(W.begin(), W.end());
       branchEngine->branch(CurrentStep, W);

@@ -18,9 +18,12 @@
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/NLPP.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "QMCDrivers/WalkerProperties.h"
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 NonLocalECPotential_CUDA::NonLocalECPotential_CUDA(ParticleSet& ions,
                                                    ParticleSet& els,
                                                    TrialWaveFunction& psi,
@@ -317,7 +320,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<R
   {
     // if (std::isnan(esum[iw]))
     // 	app_log() << "NAN in esum.\n";
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = esum[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = esum[iw];
     LocalEnergy[iw] += esum[iw];
   }
 }
@@ -428,7 +431,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W,
     }
   for (int iw = 0; iw < walkers.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = esum[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = esum[iw];
     LocalEnergy[iw] += esum[iw];
   }
 }

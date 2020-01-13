@@ -45,7 +45,7 @@ TEST_CASE("walker assumptions", "[particle]")
 {
   using WP = WalkerProperties::Indexes;
   Walker_t w1(1);
-  REQUIRE(w1.Properties.cols() == WP::LOCALPOTENTIAL + 1);
+  REQUIRE(w1.Properties.cols() == WP::NUMPROPERTIES);
 }
 
 TEST_CASE("walker HDF read and write", "[particle]")

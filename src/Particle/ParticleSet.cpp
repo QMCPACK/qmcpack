@@ -53,9 +53,9 @@ ParticleSet::ParticleSet()
       activePtcl(-1),
       SK(0),
       myTwist(0.0),
+      Properties(0, 0, 1, WP::MAXPROPERTIES),
       ParentName("0"),
-      TotalNum(0),
-      Properties(0, 0, 1, WP::MAXPROPERTIES)
+      TotalNum(0)
 {
   initPropertyList();
   setup_timers(myTimers, PSTimerNames, timer_level_fine);
@@ -69,8 +69,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       mySpecies(p.getSpeciesSet()),
       SK(0),
       myTwist(0.0),
-      ParentName(p.parentName()),
-      Properties(p.Properties)
+      Properties(p.Properties),
+      ParentName(p.parentName())
 {
   set_quantum_domain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable
@@ -741,10 +741,10 @@ void ParticleSet::initPropertyList()
   PropertyList.add("LocalPotential");
   
   // There is no point in checking this, its quickly not consistent as other objects update property list.
-  // if (PropertyList.size() != NUMPROPERTIES)
+  // if (PropertyList.size() != WP::NUMPROPERTIES)
   // {
   //   app_error() << "The number of default properties for walkers  is not consistent." << std::endl;
-  //   app_error() << "NUMPROPERTIES " << NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << std::endl;
+  //   app_error() << "NUMPROPERTIES " << WP::NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << std::endl;
   //   APP_ABORT("ParticleSet::initPropertyList");
   // }
 }

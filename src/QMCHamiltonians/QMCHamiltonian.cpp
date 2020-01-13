@@ -876,12 +876,12 @@ void QMCHamiltonian::evaluate(MCWalkerConfiguration& W, std::vector<RealType>& e
   for (int iw = 0; iw < walkers.size(); iw++)
   {
     walkers[iw]->getPropertyBase()[WP::LOCALENERGY] = LocalEnergyVector[iw];
-    walkers[iw]->getPropertyBase()[LOCALPOTENTIAL] =
-        LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[NUMPROPERTIES];
+    walkers[iw]->getPropertyBase()[WP::LOCALPOTENTIAL] =
+        LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES];
   }
   energyVector = LocalEnergyVector;
-  // P.PropertyList[WP::LOCALENERGY]=LocalEnergy;
-  // P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
+  // P.PropertyList[WP::WP::LOCALENERGY]=LocalEnergy;
+  // P.PropertyList[WP::LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
   for (int i = 0; i < auxH.size(); ++i)
   {
     auxH[i]->addEnergy(W, AuxEnergyVector);
@@ -917,8 +917,8 @@ void QMCHamiltonian::evaluate(MCWalkerConfiguration& W,
   for (int iw = 0; iw < walkers.size(); iw++)
   {
     walkers[iw]->getPropertyBase()[WP::LOCALENERGY] = LocalEnergyVector[iw];
-    walkers[iw]->getPropertyBase()[LOCALPOTENTIAL] =
-        LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[NUMPROPERTIES];
+    walkers[iw]->getPropertyBase()[WP::LOCALPOTENTIAL] =
+        LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES];
   }
   energyVector = LocalEnergyVector;
 

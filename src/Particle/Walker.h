@@ -35,7 +35,6 @@
 #include <deque>
 namespace qmcplusplus
 {
-
 /** A container class to represent a walker.
  *
  * A walker stores the particle configurations {R}  and a property container.
@@ -46,7 +45,7 @@ namespace qmcplusplus
  * - Age : generation after a move is accepted.
  * - Weight : weight to take the ensemble averages
  * - Multiplicity : multiplicity for branching. Probably can be removed.
- * - Properties  : 2D container. RealType first index corresponds to the H/Psi index and second index >=NUMPROPERTIES.
+ * - Properties  : 2D container. RealType first index corresponds to the H/Psi index and second index >=WP::NUMPROPERTIES.
  * - DataSet : a contiguous buffer providing a state snapshot of most/all walker data. 
      Much complicated state management arises in keeping this up to date, 
      or purposefully out of sync with actual datamembers. Here and in TWF, HAMs and PARTICLE sets
@@ -171,9 +170,11 @@ struct Walker
 #endif
 
   ///create a walker for n-particles
-  inline explicit Walker(int nptcl = 0) : Properties(1, WP::LOCALPOTENTIAL + 1, 1, WP::MAXPROPERTIES)
+  inline explicit Walker(int nptcl = 0)
+      : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES)
 #ifdef QMC_CUDA
-      : cuda_DataSet("Walker::walker_buffer"),
+        ,
+        cuda_DataSet("Walker::walker_buffer"),
         R_GPU("Walker::R_GPU"),
         Grad_GPU("Walker::Grad_GPU"),
         Lap_GPU("Walker::Lap_GPU"),
@@ -364,7 +365,7 @@ struct Walker
                             FullPrecRealType r2p,
                             FullPrecRealType vq)
   {
-    Age                     = 0;
+    Age                         = 0;
     Properties(WP::LOGPSI)      = logpsi;
     Properties(WP::SIGN)        = sigN;
     Properties(WP::LOCALENERGY) = ene;

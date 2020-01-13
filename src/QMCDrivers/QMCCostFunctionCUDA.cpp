@@ -19,9 +19,12 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
+#include "QMCDrivers/WalkerProperties.h"
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 QMCCostFunctionCUDA::QMCCostFunctionCUDA(MCWalkerConfiguration& w,
                                          TrialWaveFunction& psi,
                                          QMCHamiltonian& h,
@@ -227,7 +230,8 @@ void QMCCostFunctionCUDA::checkConfigurations()
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
   int numWalkers  = W.getActiveWalkers();
-  Records.resize(numWalkers, NUMPROPERTIES);
+  // Does the CUDA really ignore all the other "Properties"?
+  Records.resize(numWalkers, WP::NUMPROPERTIES);
   int nptcl = W.getTotalNum();
   dlogPsi_opt.resize(numWalkers, nptcl);
   d2logPsi_opt.resize(numWalkers, nptcl);
@@ -261,8 +265,8 @@ void QMCCostFunctionCUDA::checkConfigurations()
     RealType* prop            = w.getPropertyBase();
     Return_rt* restrict saved = &(Records(iw, 0));
     saved[ENERGY_TOT] = saved[ENERGY_NEW] = prop[WP::LOCALENERGY];
-    saved[ENERGY_FIXED]                   = prop[LOCALPOTENTIAL];
-    saved[LOGPSI_FIXED]                   = prop[LOGPSI] - logPsi_free[iw];
+    saved[ENERGY_FIXED]                   = prop[WP::LOCALPOTENTIAL];
+    saved[LOGPSI_FIXED]                   = prop[WP::LOGPSI] - logPsi_free[iw];
     saved[LOGPSI_FREE]                    = logPsi_free[iw];
     e0 += prop[WP::LOCALENERGY];
     e2 += prop[WP::LOCALENERGY] * prop[WP::LOCALENERGY];

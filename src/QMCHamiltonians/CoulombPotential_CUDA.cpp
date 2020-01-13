@@ -15,9 +15,11 @@
 
 #include "QMCHamiltonians/CoulombPotential_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
-
+#include "QMCDrivers/WalkerProperties.h"
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 CoulombPotentialAA_CUDA::CoulombPotentialAA_CUDA(ParticleSet& s, bool quantum)
     : CoulombPotential<OHMMS_PRECISION>(s, quantum, false), SumGPU("CoulombPotentialAA_CUDA::SumGPU")
 {
@@ -35,7 +37,7 @@ void CoulombPotentialAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Re
   SumHost = SumGPU;
   for (int iw = 0; iw < walkers.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = SumHost[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = SumHost[iw];
     LocalEnergy[iw] += SumHost[iw];
   }
 }
@@ -88,7 +90,7 @@ void CoulombPotentialAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Re
   SumHost = SumGPU;
   for (int iw = 0; iw < walkers.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = SumHost[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = SumHost[iw];
     LocalEnergy[iw] += SumHost[iw];
   }
 }

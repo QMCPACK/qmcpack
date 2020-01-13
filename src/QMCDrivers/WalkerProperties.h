@@ -40,11 +40,7 @@ struct WalkerProperties
     ALTERNATEENERGY, /*!< alternatelocal energy, the sum of all the components */
     LOCALENERGY,     /*!< local energy, the sum of all the components */
     LOCALPOTENTIAL,  /*!< local potential energy = local energy - kinetic energy */
-    // PARTICLE_1,      // Walker properties get particle properties assigned eventuall and they are bigger
-    // PARTICLE_2,      // ditto since apparently hamiltonians insert these this enum is a terrible idea
-    // PARTICLE_3,      // ditto since apparently hamiltonians insert these this enum is a terrible idea
-    // PARTICLE_4,      // ditto since apparently hamiltonians insert these this enum is a terrible idea
-    // PARTICLE_5,      // ditto since apparently hamiltonians insert these this enum is a terrible idea
+    NUMPROPERTIES,
     MAXPROPERTIES = WALKER_MAX_PROPERTIES /*!< the number of properties */
   };
 };

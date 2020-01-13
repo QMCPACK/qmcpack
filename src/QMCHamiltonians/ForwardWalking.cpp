@@ -55,7 +55,7 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
       {
         //Single Observable case
         int numProps = P.PropertyList.Names.size();
-        Hindex       = h.getObservable(tagName) + WP::MAXPROPERTIES;
+        Hindex       = h.getObservable(tagName) + WP::NUMPROPERTIES;
         if (tagName == "LocalPotential")
         {
           Hindex  = WP::LOCALPOTENTIAL;
@@ -66,7 +66,7 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
           Hindex  = WP::LOCALENERGY;
           tagName = "LocEn";
         }
-        else if (Hindex == (WP::MAXPROPERTIES - 1))
+        else if (Hindex == (WP::NUMPROPERTIES - 1))
         {
           app_log() << "Not a valid H element(" << Hindex << ") Valid names are:";
           for (int jk = 0; jk < h.sizeOfObservables(); jk++)
@@ -112,7 +112,7 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
             FOUNDH = true;
             app_log() << " Hamiltonian Element " << Hname << " was found at " << j << std::endl;
             Names.push_back(Hname);
-            Hindex = j + WP::MAXPROPERTIES;
+            Hindex = j + WP::NUMPROPERTIES;
             Hindices.push_back(Hindex);
             int numT = blockSeries / blockFreq;
             nObservables += 1;
