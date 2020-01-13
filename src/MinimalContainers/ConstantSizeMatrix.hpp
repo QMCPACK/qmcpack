@@ -173,6 +173,7 @@ private:
   std::vector<T, ALLOC> data_;
 };
 
+extern template class ConstantSizeMatrix<float>;
 extern template class ConstantSizeMatrix<double>;
 
 } // namespace qmcplusplus
