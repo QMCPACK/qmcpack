@@ -56,6 +56,7 @@ public:
   virtual const PosVectorSoa& getAllParticlePos() = 0;
   virtual PosType getOneParticlePos(size_t iat) const = 0;
 
+  virtual void donePbyP() { }
 protected:
   const QuantumVariableKind variable_kind_;
 };

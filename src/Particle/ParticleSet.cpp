@@ -659,6 +659,7 @@ void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)
 void ParticleSet::donePbyP()
 {
   ScopedTimer donePbyP_scope(myTimers[PS_donePbyP]);
+  RSoA->donePbyP();
   if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
   activePtcl = -1;

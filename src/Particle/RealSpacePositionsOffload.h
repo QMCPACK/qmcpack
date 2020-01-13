@@ -55,7 +55,7 @@ public:
   void setOneParticlePos(const PosType& pos, size_t iat) override
   {
     RSoA_hostview(iat) = pos;
-
+    /* This was too slow due to overhead.
     RealType x     = pos[0];
     RealType y     = pos[1];
     RealType z     = pos[2];
@@ -68,10 +68,13 @@ public:
       data[iat + offset]     = y;
       data[iat + offset * 2] = z;
     }
+    */
   }
 
   const PosVectorSoa& getAllParticlePos() override { return RSoA_hostview; }
   PosType getOneParticlePos(size_t iat) const override { return RSoA_hostview[iat]; }
+
+  void donePbyP() override { updateH2D(); }
 
 private:
   ///particle positions in SoA layout
