@@ -1,26 +1,36 @@
 #!/bin/bash
-#COBALT -q default
-#COBALT -A PSFMat
-#COBALT -n 128
+#COBALT -q debug-cache-quad
+#COBALT -A CSC249ADSE09
+#COBALT -n 1
 #COBALT -t 60
-#COBALT -O validation
+#COBALT -O nightly
+#COBALT --attrs mcdram=cache:numa=quad
 
 #
-# Setup for cetus.alcf.anl.gov
-#
-# Run the "short" nightlies, requeue if an executable is built
+# Setup for theta.alcf.anl.gov
 # 
 
-export TEST_SITE_NAME=cetus.alcf.anl.gov
-export N_PROCS_BUILD=24
+module unload cray-libsci
+module load cray-hdf5-parallel
+module load gcc
+module load cmake/3.14.5
+module load miniconda-3/latest
+
+export TEST_SITE_NAME=theta.alcf.anl.gov
+export N_PROCS=16
+export N_PROCS_BUILD=16
 export N_CONCURRENT_TESTS=1
 
+#QE_BIN=/scratch/opt/qe-stable/qe-6.4.1/bin
+QMC_DATA=/projects/catalyst/yeluo/benchmark/h5data
+
 #Must be an absolute path
-place=/projects/PSFMat/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
+place=/projects/CSC249ADSE09/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
 #define and load compiler
-#compiler=XL
-compiler=Clang
+compiler=Intel19.0.5
+CC=cc
+CXX=CC
 
 if [ ! -e $place ]; then
 mkdir $place
@@ -50,10 +60,10 @@ cd $entry
 
 git checkout $branch
 
-for sys in Real-SoA Real-Mixed-SoA Complex-SoA Complex-Mixed-SoA
+for sys in Real-SoA Complex-SoA # Real-Mixed-SoA Complex-Mixed-SoA Real Real-Mixed Complex Complex-Mixed
 do
 
-folder=build_BGQ_$sys
+folder=build_$compiler_$sys
 
 if [ -e $folder ]; then
 rm -r $folder
@@ -70,7 +80,8 @@ then
   mkdir -p $place/log/$entry/$mydate
 fi
 
-CTEST_FLAGS="-DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake"
+CTEST_FLAGS="-D CMAKE_C_COMPILER=$CC -D CMAKE_CXX_COMPILER=$CXX -D QMC_DATA=$QMC_DATA -D ENABLE_TIMERS=1
+             -DQMC_OPTIONS='-DMPIEXEC=sh;-DMPIEXEC_NUMPROC_FLAG=$place/$entry/tests/scripts/aprunhelper.sh'"
 
 if [[ $sys == *"Complex"* ]]; then
   CTEST_FLAGS="$CTEST_FLAGS -D QMC_COMPLEX=1"
@@ -78,6 +89,8 @@ fi
 
 if [[ $sys == *"-SoA"* ]]; then
   CTEST_FLAGS="$CTEST_FLAGS -D ENABLE_SOA=1"
+else
+  CTEST_FLAGS="$CTEST_FLAGS -D ENABLE_SOA=0"
 fi
 
 if [[ $sys == *"-Mixed"* ]]; then
@@ -86,7 +99,10 @@ fi
 
 export QMCPACK_TEST_SUBMIT_NAME=${compiler}-${sys}-Release
 
-ctest $CTEST_FLAGS -S $PWD/../CMake/ctest_script.cmake,release --stop-time `date --date=now+55mins +%H:%M:%S` -R "deterministic" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
+ctest $CTEST_FLAGS -S $PWD/../CMake/ctest_script.cmake,release \
+      -VV --stop-time $(date --date=now+28mins +%H:%M:%S) \
+      -R 'deterministic|performance-NiO-cpu-a128-e1536' \
+      --timeout 400 &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
 
 cd ..
 echo --- Finished $sys `date`
