@@ -19,7 +19,8 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
-#include "QMCHamiltonians/NonLocalECPComponent.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCHamiltonians/NonLocalECPotential.h"
 #include "Utilities/NewTimer.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
@@ -781,6 +782,33 @@ void QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
   if(nlpp_ptr)
     nlpp_ptr->setRandomGenerator(rng);
 }
+
+  void QMCHamiltonian::setNonLocalMoves(xmlNodePtr cur)
+  {
+    if (nlpp_ptr != nullptr)
+      nlpp_ptr->setNonLocalMoves(cur);
+  }
+
+  void QMCHamiltonian::setNonLocalMoves(const std::string& non_local_move_option,
+                                        const double tau,
+                                        const double alpha,
+                                        const double gamma)
+  {
+    if (nlpp_ptr != nullptr)
+      nlpp_ptr->setNonLocalMoves(non_local_move_option,
+                                        tau,
+                                        alpha,
+                                        gamma);
+  }
+
+  int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P)
+  {
+    if (nlpp_ptr == nullptr)
+      return 0;
+    else
+      return nlpp_ptr->makeNonLocalMovesPbyP(P);
+  }
+
 
 std::vector<int> QMCHamiltonian::flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list,
                                                         RefVector<ParticleSet>& p_list)

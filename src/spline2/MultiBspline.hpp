@@ -28,12 +28,14 @@ namespace qmcplusplus
 {
 /** container class to hold a 3D multi spline pointer and BsplineAllocator
  * @tparam T the precision of splines
- * @tparam ALIGN the alignment of the orbital dimension
  * @tparam ALLOC memory allocator
  *
  * This class contains a pointer to a C object, copy and assign of this class is forbidden.
  */
-template<typename T, size_t ALIGN = QMC_CLINE, typename ALLOC = Mallocator<T, ALIGN>>
+template<typename T,
+         typename COEFS_ALLOC         = aligned_allocator<T>,
+         typename MULTI_SPLINE_ALLOC  = aligned_allocator<typename bspline_traits<T, 3>::SplineType>,
+         typename SINGLE_SPLINE_ALLOC = aligned_allocator<typename bspline_traits<T, 3>::SingleSplineType>>
 class MultiBspline
 {
 private:
@@ -44,7 +46,7 @@ private:
   ///actual einspline multi-bspline object
   SplineType* spline_m;
   ///use allocator
-  BsplineAllocator<T, ALIGN, ALLOC> myAllocator;
+  BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLOC> myAllocator;
 
 public:
   MultiBspline() : spline_m(nullptr) {}
@@ -69,8 +71,8 @@ public:
   template<typename GT, typename BCT>
   void create(GT& grid, BCT& bc, int num_splines)
   {
-    static_assert(std::is_same<T, typename ALLOC::value_type>::value, "MultiBspline and ALLOC data types must agree!");
-    if (getAlignedSize<T, ALIGN>(num_splines) != num_splines)
+    static_assert(std::is_same<T, typename COEFS_ALLOC::value_type>::value, "MultiBspline and ALLOC data types must agree!");
+    if (getAlignedSize<T, COEFS_ALLOC::alignment>(num_splines) != num_splines)
       throw std::runtime_error("When creating the data space of MultiBspline, num_splines must be padded!\n");
     if (spline_m == nullptr)
     {

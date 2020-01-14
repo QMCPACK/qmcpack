@@ -96,7 +96,11 @@ public:
 
   /** compute multiple ratios for a particle move
    */
-  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
+  void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
+
+  void mw_evaluateRatios(const RefVector<WaveFunctionComponent>& wfc_list,
+                         const RefVector<const VirtualParticleSet>& vp_list,
+                         std::vector<std::vector<ValueType>>& ratios) override;
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
@@ -225,6 +229,13 @@ private:
 
   /// internal function computing ratio and gradients after computing the SPOs, used by ratioGrad.
   PsiValueType ratioGrad_compute(int iat, GradType& grad_iat);
+
+  /// prepare invRow
+  void prepare_invRow(int WorkingIndex)
+  {
+    invRow_id = WorkingIndex;
+    updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  }
 };
 
 extern template class DiracDeterminant<>;

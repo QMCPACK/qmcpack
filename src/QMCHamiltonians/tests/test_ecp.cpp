@@ -291,11 +291,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //quadrature Lattice instead...
   copyGridUnrotatedForTest(*nlpp);
 
-
-  //Not testing nonlocal moves here, but the PP functions take this as an argument
-  NonLocalTOperator nonLocalOps(elec.getTotalNum());
-  std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
-
   const int myTableIndex = elec.addTable(ions, DT_SOA_PREFERRED);
 
   const auto& myTable = elec.getDistTable(myTableIndex);
@@ -317,7 +312,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     const auto& displ = myTable.getDisplRow(jel);
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
       if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
-        Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], 0, Txy);
+        Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], false);
   }
 #else
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
@@ -329,7 +324,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
       const RealType r(myTable.r(nn));
       if (r > nlpp->getRmax())
         continue;
-      Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn), 0, Txy);
+      Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn), false);
     }
   }
 #endif
@@ -413,9 +408,9 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
       if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
       {
-        Value2 += nlpp->evaluateOneWithForces(elec, iat, psi, jel, dist[iat], -displ[iat], HFTerm[iat], 0, Txy);
+        Value2 += nlpp->evaluateOneWithForces(elec, iat, psi, jel, dist[iat], -displ[iat], HFTerm[iat]);
         Value3 += nlpp->evaluateOneWithForces(elec, ions, iat, psi, jel, dist[iat], -displ[iat], HFTerm2[iat],
-                                              PulayTerm, 0, Txy);
+                                              PulayTerm);
       }
   }
   //These values are validated against print statements.

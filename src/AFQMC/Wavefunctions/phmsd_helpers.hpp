@@ -26,6 +26,10 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+// for GPU implementation, dispatch Kernels from here!
+// it is probably easier to have 2 types of kernels, one that loads the 
+// appropriate terms in the matrices and a second one that just computes determinants
+
 // using simple round-robin scheme for parallelization within TG_local
 // assumes that reference determinant is already on [0]
 template<class Array1D, 

@@ -21,8 +21,8 @@
 
 namespace qmcplusplus
 {
-template<class T>
-using aligned_allocator = Mallocator<T, QMC_CLINE>;
+template<class T, size_t ALIGN = QMC_CLINE>
+using aligned_allocator = Mallocator<T, ALIGN>;
 template<class T>
 using aligned_vector = std::vector<T, aligned_allocator<T>>;
 

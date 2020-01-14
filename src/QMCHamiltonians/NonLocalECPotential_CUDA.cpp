@@ -26,7 +26,7 @@ NonLocalECPotential_CUDA::NonLocalECPotential_CUDA(ParticleSet& ions,
                                                    TrialWaveFunction& psi,
                                                    bool usePBC,
                                                    bool doForces)
-    : NonLocalECPotential(ions, els, psi, doForces),
+    : NonLocalECPotential(ions, els, psi, doForces, false),
       UsePBC(usePBC),
       CurrentNumWalkers(0),
       Ions_GPU("NonLocalECPotential_CUDA::Ions_GPU"),

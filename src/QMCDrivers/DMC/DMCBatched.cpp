@@ -272,7 +272,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   std::for_each(crowd.get_walker_twfs().begin(), crowd.get_walker_twfs().end(),
-                [](auto& twf) { twf.get().completeUpdates(); });
+                [](TrialWaveFunction& twf) { twf.completeUpdates(); });
 
   ParticleSet::flex_donePbyP(crowd.get_walker_elecs());
   //dmc_timers.dmc_movePbyP.stop();

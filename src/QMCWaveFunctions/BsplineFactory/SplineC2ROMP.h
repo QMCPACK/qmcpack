@@ -38,7 +38,6 @@ template<typename ST>
 class SplineC2ROMP : public BsplineSet
 {
 public:
-  static const int ALIGN = QMC_CLINE;
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
   template<typename DT>
@@ -61,6 +60,11 @@ public:
   using hContainer_type  = VectorSoaContainer<ST, 6>;
   using ghContainer_type = VectorSoaContainer<ST, 10>;
 
+  template<typename DT>
+  using OffloadVector = Vector<DT, OffloadAllocator<DT>>;
+  template<typename DT>
+  using OffloadPosVector = VectorSoaContainer<DT, 3, OffloadAllocator<DT>>;
+
 private:
   ///primitive cell
   CrystalLattice<ST, 3> PrimLattice;
@@ -69,10 +73,12 @@ private:
   ///number of complex bands
   int nComplexBands;
   ///multi bspline set
-  std::shared_ptr<MultiBspline<ST, ALIGN, OffloadAllocator<ST>>> SplineInst;
+  std::shared_ptr<MultiBspline<ST, OffloadAllocator<ST>, OffloadAllocator<SplineType>>> SplineInst;
 
-  vContainer_type mKK;
-  VectorSoaContainer<ST, 3> myKcart;
+  std::shared_ptr<OffloadVector<ST>> mKK;
+  std::shared_ptr<OffloadPosVector<ST>> myKcart;
+  std::shared_ptr<OffloadVector<ST>> GGt_offload;
+  std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
@@ -82,19 +88,17 @@ private:
   Vector<TT, OffloadPinnedAllocator<TT>> results_scratch;
   ///psiinv and position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<TT, OffloadPinnedAllocator<TT>> psiinv_pos_copy;
+  ///psiinv and position scratch space of multiple walkers, used to avoid allocation on the fly and faster transfer
+  Vector<TT, OffloadPinnedAllocator<TT>> mw_psiinv_pos_copy;
   ///position scratch space, used to avoid allocation on the fly and faster transfer
-  Vector<ST, OffloadPinnedAllocator<ST>> mw_pos_copy;
-  ///the following pointers are used for keep and access the data on device
-  ///cloned objects copy the pointer by value without the need of mapping to the device
-  ///Thus master_PrimLattice_G_ptr is different from PrimLattice.G.data() in cloned objects
-  ///mKK data pointer
-  const ST* master_mKK_ptr;
-  ///myKcart data pointer
-  const ST* master_myKcart_ptr;
-  ///PrimLattice.G data pointer
-  const ST* master_PrimLattice_G_ptr;
-  ///GGt data pointer
-  const ST* master_GGt_ptr;
+  Vector<ST, OffloadPinnedAllocator<ST>> multi_pos_copy;
+  ///reference particle id of all the quadrature points
+  Vector<int, OffloadPinnedAllocator<int>> mw_ref_id;
+
+  void evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos_copy,
+                           const RefVector<ValueVector_t>& psi_v_list,
+                           const RefVector<GradVector_t>& dpsi_v_list,
+                           const RefVector<ValueVector_t>& d2psi_v_list);
 
 protected:
   /// intermediate result vectors
@@ -105,25 +109,11 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2ROMP() : nComplexBands(0)
+  SplineC2ROMP() : nComplexBands(0), GGt_offload(std::make_shared<OffloadVector<ST>>(9)), PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
   {
     is_complex = true;
     className  = "SplineC2ROMP";
     KeyWord    = "SplineC2R";
-  }
-
-  ~SplineC2ROMP()
-  {
-    if (SplineInst.use_count() == 1)
-    {
-      // clean up mapping by the last owner
-      const auto* MultiSpline = SplineInst->getSplinePtr();
-      PRAGMA_OFFLOAD("omp target exit data map(delete:MultiSpline[0:1])")
-      PRAGMA_OFFLOAD("omp target exit data map(delete:master_mKK_ptr[0:mKK.size()])")
-      PRAGMA_OFFLOAD("omp target exit data map(delete:master_myKcart_ptr[0:myKcart.capacity()*3])")
-      PRAGMA_OFFLOAD("omp target exit data map(delete:master_PrimLattice_G_ptr[0:9])")
-      PRAGMA_OFFLOAD("omp target exit data map(delete:master_GGt_ptr[0:9])")
-    }
   }
 
   virtual SPOSet* makeClone() const override { return new SplineC2ROMP(*this); }
@@ -159,7 +149,7 @@ public:
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
     resize_kpoints();
-    SplineInst = std::make_shared<MultiBspline<ST, ALIGN, OffloadAllocator<ST>>>();
+    SplineInst = std::make_shared<MultiBspline<ST, OffloadAllocator<ST>, OffloadAllocator<SplineType>>>();
     SplineInst->create(xyz_g, xyz_bc, myV.size());
 
     app_log() << "MEMORY " << SplineInst->sizeInByte() / (1 << 20) << " MB allocated "
@@ -171,7 +161,6 @@ public:
   {
     // map the SplineInst->getSplinePtr() structure to GPU
     auto* MultiSpline = SplineInst->getSplinePtr();
-    PRAGMA_OFFLOAD("omp target enter data map(alloc:MultiSpline[0:1])")
     auto* restrict coefs = MultiSpline->coefs;
     // attach pointers on the device to achieve deep copy
     PRAGMA_OFFLOAD("omp target map(always, to: MultiSpline[0:1], coefs[0:MultiSpline->coefs_size])")
@@ -180,28 +169,19 @@ public:
     }
 
     // transfer static data to GPU
-    master_mKK_ptr = mKK.data();
-    PRAGMA_OFFLOAD("omp target enter data map(alloc:master_mKK_ptr[0:mKK.size()])")
-    PRAGMA_OFFLOAD("omp target update to(master_mKK_ptr[0:mKK.size()])")
-    master_myKcart_ptr = myKcart.data();
-    PRAGMA_OFFLOAD("omp target enter data map(alloc:master_myKcart_ptr[0:myKcart.capacity()*3])")
-    PRAGMA_OFFLOAD("omp target update to(master_myKcart_ptr[0:myKcart.capacity()*3])")
-    master_PrimLattice_G_ptr = PrimLattice.G.data();
-    PRAGMA_OFFLOAD("omp target enter data map(alloc:master_PrimLattice_G_ptr[0:9])")
-    PRAGMA_OFFLOAD("omp target update to(master_PrimLattice_G_ptr[0:9])")
-    master_GGt_ptr = GGt.data();
-    PRAGMA_OFFLOAD("omp target enter data map(alloc:master_GGt_ptr[0:9])")
-    PRAGMA_OFFLOAD("omp target update to(master_GGt_ptr[0:9])")
-    /* debug pointers
-    std::cout << "Ye debug mapping" << std::endl;
-    std::cout << "SplineInst = " << SplineInst << std::endl;
-    std::cout << "MultiSpline = " << MultiSpline << std::endl;
-    std::cout << "master_mKK_ptr = " << master_mKK_ptr << std::endl;
-    std::cout << "master_myKcart_ptr = " << master_myKcart_ptr << std::endl;
-    std::cout << "master_PrimLattice_G_ptr = " << master_PrimLattice_G_ptr << std::endl;
-    std::cout << "master_GGt_ptr = " << master_GGt_ptr << std::endl;
-    std::cout << "this = " << this << std::endl;
-    */
+    auto* mKK_ptr = mKK->data();
+    PRAGMA_OFFLOAD("omp target update to(mKK_ptr[0:mKK->size()])")
+    auto* myKcart_ptr = myKcart->data();
+    PRAGMA_OFFLOAD("omp target update to(myKcart_ptr[0:myKcart->capacity()*3])")
+    for (size_t i = 0; i < 9; i++)
+    {
+      (*GGt_offload)[i] = GGt[i];
+      (*PrimLattice_G_offload)[i] = PrimLattice.G[i];
+    }
+    auto* PrimLattice_G_ptr = PrimLattice_G_offload->data();
+    PRAGMA_OFFLOAD("omp target update to(PrimLattice_G_ptr[0:9])")
+    auto* GGt_ptr = GGt_offload->data();
+    PRAGMA_OFFLOAD("omp target update to(GGt_ptr[0:9])")
   }
 
   inline void flush_zero() { SplineInst->flush_zero(); }
@@ -214,12 +194,12 @@ public:
     nComplexBands = this->remap_kpoints();
 #endif
     int nk = kPoints.size();
-    mKK.resize(nk);
-    myKcart.resize(nk);
+    mKK     = std::make_shared<OffloadVector<ST>>(nk);
+    myKcart = std::make_shared<OffloadPosVector<ST>>(nk);
     for (size_t i = 0; i < nk; ++i)
     {
-      mKK[i]     = -dot(kPoints[i], kPoints[i]);
-      myKcart(i) = kPoints[i];
+      (*mKK)[i]     = -dot(kPoints[i], kPoints[i]);
+      (*myKcart)(i) = kPoints[i];
     }
   }
 
@@ -238,6 +218,12 @@ public:
                                  const ValueVector_t& psiinv,
                                  std::vector<ValueType>& ratios) override;
 
+  virtual void mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
+                                    const RefVector<const VirtualParticleSet>& vp_list,
+                                    const RefVector<ValueVector_t>& psi_list,
+                                    const RefVector<const ValueVector_t>& psiinv_list,
+                                    std::vector<std::vector<ValueType>>& ratios_list) override;
+
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
   void assign_vgl_from_l(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
@@ -251,9 +237,9 @@ public:
   virtual void mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
                               const std::vector<ParticleSet*>& P_list,
                               int iat,
-                              const std::vector<ValueVector_t*>& psi_v_list,
-                              const std::vector<GradVector_t*>& dpsi_v_list,
-                              const std::vector<ValueVector_t*>& d2psi_v_list) override;
+                              const RefVector<ValueVector_t>& psi_v_list,
+                              const RefVector<GradVector_t>& dpsi_v_list,
+                              const RefVector<ValueVector_t>& d2psi_v_list) override;
 
   void assign_vgh(const PointType& r,
                   ValueVector_t& psi,
@@ -282,6 +268,13 @@ public:
                              GradVector_t& dpsi,
                              HessVector_t& grad_grad_psi,
                              GGGVector_t& grad_grad_grad_psi) override;
+
+  virtual void evaluate_notranspose(const ParticleSet& P,
+                                    int first,
+                                    int last,
+                                    ValueMatrix_t& logdet,
+                                    GradMatrix_t& dlogdet,
+                                    ValueMatrix_t& d2logdet) override;
 
   template<class BSPLINESPO>
   friend class SplineSetReader;

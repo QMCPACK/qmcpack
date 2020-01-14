@@ -88,8 +88,8 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad(ParticleSet& P, int iat)
 {
-  const int WorkingIndex = iat - FirstIndex;
   RatioTimer.start();
+  const int WorkingIndex = iat - FirstIndex;
   invRow_id = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
@@ -103,8 +103,8 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
                                                                                          LogValueType& spingrad)
 {
   Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
-  const int WorkingIndex = iat - FirstIndex;
   RatioTimer.start();
+  const int WorkingIndex = iat - FirstIndex;
   invRow_id = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g          = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
@@ -196,20 +196,20 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionCompo
   SPOVGLTimer.start();
   std::vector<SPOSet*> phi_list;
   phi_list.reserve(WFC_list.size());
-  std::vector<ValueVector_t*> psi_v_list;
+  RefVector<ValueVector_t> psi_v_list;
   psi_v_list.reserve(WFC_list.size());
-  std::vector<GradVector_t*> dpsi_v_list;
+  RefVector<GradVector_t> dpsi_v_list;
   dpsi_v_list.reserve(WFC_list.size());
-  std::vector<ValueVector_t*> d2psi_v_list;
+  RefVector<ValueVector_t> d2psi_v_list;
   d2psi_v_list.reserve(WFC_list.size());
 
   for (auto wfc : WFC_list)
   {
     auto det = static_cast<DiracDeterminant<DU_TYPE>*>(wfc);
     phi_list.push_back(det->Phi);
-    psi_v_list.push_back(&(det->psiV));
-    dpsi_v_list.push_back(&(det->dpsiV));
-    d2psi_v_list.push_back(&(det->d2psiV));
+    psi_v_list.push_back(det->psiV);
+    dpsi_v_list.push_back(det->dpsiV);
+    d2psi_v_list.push_back(det->d2psiV);
   }
 
   Phi->mw_evaluateVGL(phi_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
@@ -375,13 +375,49 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
-  SPOVTimer.start();
+  RatioTimer.start();
   const int WorkingIndex = VP.refPtcl - FirstIndex;
   invRow_id              = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  RatioTimer.stop();
+  SPOVTimer.start();
   Phi->evaluateDetRatios(VP, psiV, invRow, ratios);
+  SPOVTimer.stop();
+}
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionComponent>& wfc_list,
+                                                  const RefVector<const VirtualParticleSet>& vp_list,
+                                                  std::vector<std::vector<ValueType>>& ratios)
+{
+  RatioTimer.start();
+  const size_t nw = wfc_list.size();
+
+  RefVector<SPOSet> phi_list;
+  RefVector<ValueVector_t> psiV_list;
+  RefVector<const ValueVector_t> invRow_list;
+  phi_list.reserve(nw);
+  psiV_list.reserve(nw);
+  invRow_list.reserve(nw);
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc_list[iw].get());
+    const VirtualParticleSet& vp(vp_list[iw]);
+    const int WorkingIndex = vp.refPtcl - FirstIndex;
+    det.prepare_invRow(WorkingIndex);
+    // build lists
+    phi_list.push_back(*det.Phi);
+    psiV_list.push_back(det.psiV);
+    invRow_list.push_back(det.invRow);
+    //det.Phi->evaluateDetRatios(vp, det.psiV, det.invRow, ratios[iw]);
+  }
+  RatioTimer.stop();
+
+  SPOVTimer.start();
+  Phi->mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_list, ratios);
   SPOVTimer.stop();
 }
 

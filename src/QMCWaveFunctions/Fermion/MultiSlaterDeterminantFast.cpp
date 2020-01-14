@@ -129,7 +129,6 @@ void MultiSlaterDeterminantFast::resetTargetParticleSet(ParticleSet& P)
 {
   if (usingBF)
   {
-    BFTrans->resetTargetParticleSet(P);
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->resetTargetParticleSet(BFTrans->QP);
   }

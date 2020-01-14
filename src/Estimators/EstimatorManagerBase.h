@@ -34,7 +34,7 @@
 
 namespace qmcplusplus
 {
-class MCWalkerConifugration;
+class MCWalkerConfiguration;
 class QMCHamiltonian;
 class CollectablesEstimator;
 
