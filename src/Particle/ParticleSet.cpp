@@ -388,6 +388,10 @@ void ParticleSet::flex_update(const RefVector<ParticleSet>& p_list, bool skipSK)
   if (p_list.size() > 1)
   {
     ScopedTimer update_scope(p_list[0].get().myTimers[PS_update]);
+
+    for (ParticleSet& pset : p_list)
+      pset.RSoA->setAllParticlePos(pset.R);
+
     auto& dts = p_list[0].get().DistTables;
     for (int i = 0; i < dts.size(); ++i)
     {
