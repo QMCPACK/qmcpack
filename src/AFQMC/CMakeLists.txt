@@ -67,7 +67,6 @@ IF(ENABLE_CUDA)
   target_link_libraries( afqmc ${CUDA_curand_LIBRARY} )
 ELSE(ENABLE_CUDA)
   ADD_LIBRARY(afqmc ${AFQMC_SRCS})
-  TARGET_LINK_LIBRARIES(afqmc libgfortran.a)
 ENDIF(ENABLE_CUDA)
 
 
