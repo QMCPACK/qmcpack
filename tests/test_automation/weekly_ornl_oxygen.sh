@@ -25,7 +25,7 @@ test_dir=${test_path}/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 export QMC_DATA=/data/pk7/QMC_DATA # Route to directory containing performance test files
 
 # CUDA 10 setup
-export CUDAVER=10.1
+export CUDAVER=10.2
 export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda-${CUDAVER}/bin/:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export LD_LIBRARY_PATH=/usr/local/cuda-${CUDAVER}/lib64
 
