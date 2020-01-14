@@ -87,7 +87,7 @@ public:
   std::vector<int> WalkerOffsets;
 
   MCDataType<FullPrecRealType> EnsembleProperty;
-  
+
   // Data for GPU-acceleration via CUDA
   // These hold a list of pointers to the positions, gradients, and
   // laplacians for each walker.  These vectors .data() is often

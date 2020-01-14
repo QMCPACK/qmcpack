@@ -12,7 +12,7 @@ shown below:
 
 .. code-block:: python
 
-    #!/usr/bin/env python
+    #! /usr/bin/env python3
     
     from pyscf.pbc import df, scf
     
@@ -33,7 +33,7 @@ The Nexus script, ``diamond_pp_hf_gamma.py``, is shown below:
 
 .. code-block:: python
 
-    #! /usr/bin/env python
+    #! /usr/bin/env python3
     
     from nexus import settings,job,run_project,obj
     from nexus import generate_physical_system
@@ -117,7 +117,7 @@ Next, let's look at the PySCF script produced by Nexus (see
 
 .. code-block:: python
 
-    #!/usr/bin/env python
+    #! /usr/bin/env python3
     
     from pyscf.pbc import df, scf
     

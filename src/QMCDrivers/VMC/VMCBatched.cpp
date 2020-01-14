@@ -123,7 +123,6 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       int end_index        = step_context.getPtclGroupEnd(ig);
       for (int iat = start_index; iat < end_index; ++iat)
       {
-        ParticleSet::flex_setActive(crowd.get_walker_elecs(), iat);
         // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes
         // fastest in walkers then particles
         auto delta_r_start = step_context.deltaRsBegin() + iat * num_walkers;
@@ -150,7 +149,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         // This is inelegant
         if (use_drift)
         {
-          TrialWaveFunction::flex_ratioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios, grads_new);
+          TrialWaveFunction::flex_calcRatioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios, grads_new);
           std::transform(delta_r_start, delta_r_end, log_gf.begin(),
                          [mhalf](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
 
@@ -191,10 +190,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
             elec_reject_list.push_back(crowd.get_walker_elecs()[i_accept]);
           }
 
-        TrialWaveFunction::flex_acceptMove(twf_accept_list, elec_accept_list, iat);
+        TrialWaveFunction::flex_acceptMove(twf_accept_list, elec_accept_list, iat, true);
         TrialWaveFunction::flex_rejectMove(twf_reject_list, iat);
 
-        ParticleSet::flex_acceptMove(elec_accept_list, iat);
+        ParticleSet::flex_acceptMove(elec_accept_list, iat, true);
         ParticleSet::flex_rejectMove(elec_reject_list, iat);
       }
     }

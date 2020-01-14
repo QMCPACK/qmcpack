@@ -39,7 +39,9 @@ public:
     coeff[2] = 3.0;
   }
 
-  virtual LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  virtual LogValueType evaluateLog(ParticleSet& P,
+                                   ParticleSet::ParticleGradient_t& G,
+                                   ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("LinearOrbital. evaluateLog");
     ValueType v = 0.0;
@@ -56,15 +58,15 @@ public:
     return LogValue;
   }
 
-  virtual void acceptMove(ParticleSet& P, int iat) {}
+  virtual void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) {}
 
   virtual void restore(int iat) {}
 
-  virtual ValueType ratio(ParticleSet& P, int iat) { return 1.0; }
+  virtual PsiValueType ratio(ParticleSet& P, int iat) { return 1.0; }
 
   virtual GradType evalGrad(ParticleSet& P, int iat) { return GradType(coeff); }
 
-  virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) { return 1.0; }
+  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) { return 1.0; }
 
   virtual void registerData(ParticleSet& P, WFBufferType& buf) {}
 

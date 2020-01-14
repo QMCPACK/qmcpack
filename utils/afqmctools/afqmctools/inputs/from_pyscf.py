@@ -21,7 +21,7 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
                   ortho_ao=False, gdf=False, kpoint=False, verbose=False,
                   cas=None, qmc_input=None, wfn_file=None,
                   write_hamil=True, ndet_max=None, real_chol=False,
-                  phdf=False, low=0.1, high=0.95):
+                  phdf=False, low=0.1, high=0.95, dense=False):
     """Dispatching routine dependent on options.
     """
     try:
@@ -49,7 +49,7 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
                                   ndet_max=ndet_max, low=low, high=high)
     else:
         if comm.rank == 0 and verbose:
-            print(" # Generating Hamiltonian and wavefunction from pysc mol"
+            print(" # Generating Hamiltonian and wavefunction from pyscf mol"
                   " object.")
         if comm.size > 1:
             if comm.rank == 0:
@@ -60,7 +60,8 @@ def write_qmcpack(comm, chkfile, hamil_file, threshold,
         if write_hamil:
             write_hamil_mol(scf_data, hamil_file, threshold,
                             verbose=verbose, cas=cas,
-                            ortho_ao=ortho_ao, real_chol=real_chol)
+                            ortho_ao=ortho_ao, real_chol=real_chol,
+                            dense=dense)
         write_wfn_mol(scf_data, ortho_ao, wfn_file)
 
     if comm.rank == 0 and qmc_input is not None:

@@ -1,8 +1,37 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import os
 from optparse import OptionParser
-from generic import obj
+
+
+def find_nexus_modules():
+    import sys
+    nexus_lib = os.path.abspath(os.path.join(__file__,'..','..','lib'))
+    assert(os.path.exists(nexus_lib))
+    sys.path.append(nexus_lib)
+#end def find_nexus_modules
+
+
+def import_nexus_module(module_name):
+    import inspect
+    import importlib
+    return importlib.import_module(module_name)
+#end def import_nexus_module
+
+
+# Load Nexus modules
+try:
+    # Attempt specialized path-based imports.
+    #  (The executable should still work even if Nexus is not installed)
+    find_nexus_modules()
+
+    generic = import_nexus_module('generic')
+    obj   = generic.obj
+    del generic
+except:
+    # Failing path-based imports, import installed Nexus modules.
+    from generic import obj
+#end try
 
 
 
@@ -35,18 +64,18 @@ class SimTool(obj):
         #end if
         forbidden = set(fields)-set(self.fields)
         if len(forbidden)>0:
-            print 'unrecognized fields encountered:'
+            print('unrecognized fields encountered:')
             for f in forbidden:
-                print '  ',f
+                print('  ',f)
             #end for
             exit()
         #end if
         for i in range(len(self.paths)):
             path = self.paths[i]
             sim  = self.sims[i]
-            print path
+            print(path)
             for f in fields:
-                print '   {0:<12} {1}'.format(f,int(sim[f]))
+                print('   {0:<12} {1}'.format(f,int(sim[f])))
             #end for
         #end for
     #end def write_state
@@ -58,17 +87,17 @@ class SimTool(obj):
         #end if
         forbidden = set(fields)-set(self.fields)
         if len(forbidden)>0:
-            print 'unrecognized fields encountered:'
+            print('unrecognized fields encountered:')
             for f in forbidden:
-                print '  ',f
+                print('  ',f)
             #end for
             exit()
         #end if
         for i in range(len(self.paths)):
             path = self.paths[i]
             sim  = self.sims[i]
-            print path
-            print sim
+            print(path)
+            print(sim)
         #end for
     #end def write_state_all
 
@@ -93,15 +122,15 @@ class SimTool(obj):
 
     def set_indicators(self,inds,val=1):
         if len(inds)==0:
-            print 'no indicators specified'
-            print '  options are: '+self.indicators
+            print('no indicators specified')
+            print('  options are: '+self.indicators)
             exit()
         #end if
         forbidden = set(inds)-set(self.indicators)
         if len(forbidden)>0:
-            print 'unrecognized indicators encountered:'
+            print('unrecognized indicators encountered:')
             for f in forbidden:
-                print '  ',f
+                print('  ',f)
             #end for
             exit()
         #end if
@@ -127,10 +156,10 @@ if __name__=='__main__':
 
     allowed_commands = ['show','showall','complete','reset','set','unset','backup','restore']
     if len(inargs)==0:
-        print 'simtool usage:'
-        print '  allowed commands are'
+        print('simtool usage:')
+        print('  allowed commands are')
         for comm in allowed_commands:
-            print '   ',comm
+            print('   ',comm)
         #end for
         exit()
     #end if
@@ -152,7 +181,7 @@ if __name__=='__main__':
 
 
     if not command in allowed_commands:
-        print 'command '+command+' not recognized'
+        print('command '+command+' not recognized')
         exit()
     #end if
 
@@ -160,7 +189,7 @@ if __name__=='__main__':
         if os.path.exists('./sim.p'):
             paths = ['./sim.p']
         else:
-            print 'no simulation images found'
+            print('no simulation images found')
             exit()
         #end if
     #end if

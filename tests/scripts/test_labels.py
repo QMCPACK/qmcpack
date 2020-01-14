@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import sys
 import traceback
@@ -549,6 +549,15 @@ except:
 try:
     if test.startswith('deterministic'):
         labels.append('deterministic')
+    #end if
+except:
+    error()
+#end try
+
+
+try:
+    if test.startswith('qe-'):
+        labels.append('converter')
     #end if
 except:
     error()

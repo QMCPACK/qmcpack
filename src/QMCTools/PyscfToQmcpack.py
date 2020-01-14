@@ -517,7 +517,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
     GroupCell.create_dataset("LatticeVectors",(3,3),dtype="f8",data=loc_cell.lattice_vectors())
 
     def get_mo(mo_coeff, cart):
-        return order_mo_coef(mo_coeff) if cart else zip(*mo_coeff)
+        return order_mo_coef(mo_coeff) if cart else list(zip(*mo_coeff))
 
     #Supertwist Coordinate
     GroupDet.create_dataset("Coord",(1,3),dtype="f8",data=sp_twist)

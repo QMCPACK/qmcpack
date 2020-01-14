@@ -23,6 +23,7 @@
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
+#include "LongRange/LRCoulombSingleton.h"
 
 namespace qmcplusplus
 {
@@ -41,6 +42,8 @@ bool LatticeParser::put(xmlNodePtr cur)
   bool lattice_defined = false;
   bool bconds_defined  = false;
   int boxsum           = 0;
+
+  std::string handler_type("opt_breakup");
 
   app_log() << " Lattice" << std::endl;
   app_log() << " -------" << std::endl;
@@ -103,6 +106,24 @@ bool LatticeParser::put(xmlNodePtr cur)
       else if (aname == "LR_dim_cutoff")
       {
         putContent(ref_.LR_dim_cutoff, cur);
+      }
+      else if ( aname == "LR_handler" )
+      {
+        putContent(handler_type, cur);
+        tolower(handler_type);
+        if(handler_type=="ewald")
+          LRCoulombSingleton::this_lr_type = LRCoulombSingleton::EWALD;
+        else if (handler_type=="opt_breakup")
+          LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
+        else if (handler_type=="opt_breakup_original")
+          LRCoulombSingleton::this_lr_type = LRCoulombSingleton::NATOLI;
+        else
+          APP_ABORT("\n  Long range breakup handler not recognized.\n");
+         
+      }
+      else if (aname == "LR_tol")
+      {
+        putContent(ref_.LR_tol, cur);
       }
       else if (aname == "rs")
       {

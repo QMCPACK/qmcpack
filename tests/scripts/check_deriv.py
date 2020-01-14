@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 def real_or_comp(str_rep):
   """ convert the string representation of a real or complex number into float or complex
@@ -34,7 +34,7 @@ def parse_deriv_block(mm,header,nmax_deriv=1024):
     dict: derivative data in dictionary having keys ('iparam','numeric','analytic','diff')
   """
 
-  idx = mm.find(header)
+  idx = mm.find(header.encode())
   if idx == -1:
     raise RuntimeError('failed to find %s'%header)
   mm.seek(idx)
@@ -43,7 +43,7 @@ def parse_deriv_block(mm,header,nmax_deriv=1024):
   cols = ['iparam','numeric','analytic','diff'] # define order of keys
   data = {'iparam':[],'numeric':[],'analytic':[],'diff':[]}
   for ider in range(nmax_deriv):
-    tokens = mm.readline().split()
+    tokens = mm.readline().decode().split()
     if len(tokens) < 4:
       break # reached the end of data block
     if ider >= nmax_deriv:

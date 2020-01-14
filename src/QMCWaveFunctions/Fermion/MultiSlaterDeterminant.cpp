@@ -214,8 +214,8 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
 }
 
 WaveFunctionComponent::LogValueType MultiSlaterDeterminant::evaluateLog(ParticleSet& P,
-                                                                    ParticleSet::ParticleGradient_t& G,
-                                                                    ParticleSet::ParticleLaplacian_t& L)
+                                                                        ParticleSet::ParticleGradient_t& G,
+                                                                        ParticleSet::ParticleLaplacian_t& L)
 {
   return LogValue = convertValueToLog(evaluate(P, G, L));
 }
@@ -265,7 +265,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P,
   }
 }
 
-WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
   if (DetID[iat] == 0)
@@ -334,7 +334,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratioGrad(ParticleSet& 
 
 
 // use ci_node for this routine only
-WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
 {
   UpdateMode = ORB_PBYP_RATIO;
   if (DetID[iat] == 0)
@@ -393,7 +393,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, i
   }
 }
 
-void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat)
+void MultiSlaterDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   // this should depend on the type of update, ratio / ratioGrad
   // for now is incorrect fot ratio(P,iat,dG,dL) updates
@@ -526,8 +526,8 @@ void MultiSlaterDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 
 // FIX FIX FIX
 WaveFunctionComponent::LogValueType MultiSlaterDeterminant::updateBuffer(ParticleSet& P,
-                                                                     WFBufferType& buf,
-                                                                     bool fromscratch)
+                                                                         WFBufferType& buf,
+                                                                         bool fromscratch)
 {
   UpdateTimer.start();
   if (fromscratch || UpdateMode == ORB_PBYP_RATIO)
@@ -543,10 +543,10 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminant::updateBuffer(Particl
     P.G = 0.0;
     P.L = 0.0;
     spo_up->prepareFor(i);
-    logpsi = dets_up[i]->updateBuffer(P, buf, fromscratch);
+    logpsi          = dets_up[i]->updateBuffer(P, buf, fromscratch);
     detValues_up[i] = dets_up[i]->getValue();
-    grads_up[i] = P.G;
-    lapls_up[i] = P.L;
+    grads_up[i]     = P.G;
+    lapls_up[i]     = P.L;
     for (int k = FirstIndex_up; k < LastIndex_up; k++)
       lapls_up[i][k] += dot(grads_up[i][k], grads_up[i][k]);
   }
@@ -555,10 +555,10 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminant::updateBuffer(Particl
     P.G = 0.0;
     P.L = 0.0;
     spo_dn->prepareFor(i);
-    logpsi = dets_dn[i]->updateBuffer(P, buf, fromscratch);
+    logpsi          = dets_dn[i]->updateBuffer(P, buf, fromscratch);
     detValues_dn[i] = dets_dn[i]->getValue();
-    grads_dn[i] = P.G;
-    lapls_dn[i] = P.L;
+    grads_dn[i]     = P.G;
+    lapls_dn[i]     = P.L;
     for (int k = FirstIndex_dn; k < LastIndex_dn; k++)
       lapls_dn[i][k] += dot(grads_dn[i][k], grads_dn[i][k]);
   }
@@ -716,7 +716,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
   {
     if (usingCSF)
     {
-      int n = P.getTotalNum();
+      int n            = P.getTotalNum();
       ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
 
       ValueType lapl_sum = 0.0;
@@ -780,7 +780,7 @@ void MultiSlaterDeterminant::evaluateDerivatives(ParticleSet& P,
     }
     else
     {
-      int n = P.getTotalNum();
+      int n            = P.getTotalNum();
       ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
 
       ValueType lapl_sum = 0.0;

@@ -113,8 +113,8 @@ def var2string(v):
     elif(vt in simple_set):
         s = str(v)
     else:
-        print 'ERROR: in var2string'
-        print '   type '+str(vt)+' not implemented'
+        print('ERROR: in var2string')
+        print('   type '+str(vt)+' not implemented')
         sys.exit()
     #end if
 
@@ -482,8 +482,8 @@ def find_matching_cbrace(string,start,end,verbose=True):
                 i = preprocessor_end
             else:
                 if verbose:
-                    print 'ERROR: in find_matching_brace'
-                    print '       end of preprocessor statement not found'
+                    print('ERROR: in find_matching_brace')
+                    print('       end of preprocessor statement not found')
                 #end if
                 brace_loc = -1
             #end if
@@ -501,12 +501,9 @@ def find_matching_cbrace(string,start,end,verbose=True):
                 i = comment_end
             else:
                 if verbose:
-                    print 'ERROR: in find_matching_brace'
-                    print '       comment mis-processed'
+                    print('ERROR: in find_matching_brace')
+                    print('       comment mis-processed')
                 #end if
-
-                print string[i:end]
-                print string[end+325]
                 
                 brace_loc = -1
             #end if

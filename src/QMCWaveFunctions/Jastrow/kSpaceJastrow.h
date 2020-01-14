@@ -165,13 +165,13 @@ public:
 
   LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
 
   GradType evalGrad(ParticleSet& P, int iat);
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   void restore(int iat);
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   // Allocate per-walker data in the PooledData buffer
   void registerData(ParticleSet& P, WFBufferType& buf);
@@ -194,7 +194,7 @@ public:
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   WaveFunctionComponentPtr makeThrScope(PtclGrpIndexes& pgi) const;
-  
+
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,

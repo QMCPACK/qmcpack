@@ -1,19 +1,17 @@
 
 import versions
 import testing
-from testing import text_eq
+from testing import execute,text_eq
 
 
 
 if versions.scipy_available:
     def test_fit():
         import os
-        from execute import execute
 
         tpath = testing.setup_unit_test_output_directory('qmc_fit','test_fit')
 
         exe = testing.executable_path('qmc-fit')
-
         
         qa_files_path = testing.unit_test_file_path('qmcpack_analyzer','diamond_gamma/dmc')
         command = 'rsync -a {} {}'.format(qa_files_path,tpath)
@@ -23,7 +21,7 @@ if versions.scipy_available:
         dmc_infile = os.path.join(dmc_path,'dmc.in.xml')
         assert(os.path.exists(dmc_infile))
 
-        command = "qmc-fit ts --noplot -e 10 -s 1 -t '0.02 0.01 0.005' {}/*scalar*".format(dmc_path)
+        command = "{} ts --noplot -e 10 -s 1 -t '0.02 0.01 0.005' {}/*scalar*".format(exe,dmc_path)
 
         out,err,rc = execute(command)
 

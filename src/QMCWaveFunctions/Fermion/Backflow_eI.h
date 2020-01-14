@@ -35,14 +35,14 @@ public:
   std::vector<int> offsetPrms;
 
   Backflow_eI(ParticleSet& ions, ParticleSet& els)
-    : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions, DT_SOA_PREFERRED))
+      : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions, DT_SOA_PREFERRED))
   {
     resize(NumTargets, NumCenters);
   }
 
   //  build RadFun manually from builder class
   Backflow_eI(ParticleSet& ions, ParticleSet& els, FT* RF)
-    : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions, DT_SOA_PREFERRED))
+      : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions, DT_SOA_PREFERRED))
   {
     // same radial function for all centers by default
     uniqueRadFun.push_back(RF);
@@ -52,7 +52,7 @@ public:
 
   ~Backflow_eI(){};
 
-  BackflowFunctionBase* makeClone(ParticleSet& tqp)
+  BackflowFunctionBase* makeClone(ParticleSet& tqp) const
   {
     Backflow_eI<FT>* clone = new Backflow_eI<FT>(CenterSys, tqp);
     clone->resize(NumTargets, NumCenters);
@@ -250,8 +250,8 @@ public:
     //     APP_ABORT("Backflow_eI.h::evaluate(P,QP,Bmat_full,Amat) not implemented for SoA\n");
     for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
-      const auto& dist  = myTable.Distances[jel];
-      const auto& displ = myTable.Displacements[jel];
+      const auto& dist  = myTable.getDistRow(jel);
+      const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < NumCenters; iat++)
       {
         if (dist[iat] > 0)
@@ -305,8 +305,8 @@ public:
 #else
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    int maxI = myTable.sources();
-    int iat  = index[0];
+    int maxI            = myTable.sources();
+    int iat             = index[0];
     for (int j = 0; j < maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable.Temp[j].r1, du, d2u);
@@ -328,8 +328,8 @@ public:
     int maxI = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
-      RealType uij = RadFun[j]->evaluate(myTable.Temp_r[j], du, d2u);
-      PosType u    = (UIJ_temp[j] = -uij * myTable.Temp_dr[j]) - UIJ(iat, j);
+      RealType uij = RadFun[j]->evaluate(myTable.getTempDists()[j], du, d2u);
+      PosType u    = (UIJ_temp[j] = -uij * myTable.getTempDispls()[j]) - UIJ(iat, j);
       newQP[iat] += u;
     }
 #else
@@ -353,8 +353,8 @@ public:
 #else
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    int maxI = myTable.sources();
-    int iat  = index[0];
+    int maxI            = myTable.sources();
+    int iat             = index[0];
     for (int j = 0; j < maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable.Temp[j].r1, du, d2u);
@@ -380,13 +380,13 @@ public:
     int maxI = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
-      if (myTable.Temp_r[j] > 0)
+      if (myTable.getTempDists()[j] > 0)
       {
-        RealType uij = RadFun[j]->evaluate(myTable.Temp_r[j], du, d2u);
-        PosType u    = (UIJ_temp[j] = -uij * myTable.Temp_dr[j]) - UIJ(iat, j);
+        RealType uij = RadFun[j]->evaluate(myTable.getTempDists()[j], du, d2u);
+        PosType u    = (UIJ_temp[j] = -uij * myTable.getTempDispls()[j]) - UIJ(iat, j);
         newQP[iat] += u;
         HessType& hess = AIJ_temp[j];
-        hess           = (du / myTable.Temp_r[j]) * outerProduct(myTable.Temp_dr[j], myTable.Temp_dr[j]);
+        hess = (du / myTable.getTempDists()[j]) * outerProduct(myTable.getTempDispls()[j], myTable.getTempDispls()[j]);
         hess[0] += uij;
         hess[4] += uij;
         hess[8] += uij;
@@ -423,8 +423,8 @@ public:
 #else
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    int maxI = myTable.sources();
-    int iat  = index[0];
+    int maxI            = myTable.sources();
+    int iat             = index[0];
     for (int j = 0; j < maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable.Temp[j].r1, du, d2u);
@@ -454,7 +454,7 @@ public:
 #else
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    int maxI = myTable.sources();
+    int maxI            = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable.Temp[j].r1, du, d2u);
@@ -511,8 +511,8 @@ public:
     const auto& myTable = P.getDistTable(myTableIndex_);
     for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
-      const auto& dist  = myTable.Distances[jel];
-      const auto& displ = myTable.Displacements[jel];
+      const auto& dist  = myTable.getDistRow(jel);
+      const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < NumCenters; iat++)
       {
         if (dist[iat] > 0)

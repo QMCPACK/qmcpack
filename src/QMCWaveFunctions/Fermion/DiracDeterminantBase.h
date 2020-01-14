@@ -123,6 +123,7 @@ public:
   using WaveFunctionComponent::evalGradSource;
   using WaveFunctionComponent::evaluateHessian;
   using WaveFunctionComponent::evaluateRatios;
+  using WaveFunctionComponent::mw_evaluateRatios;
   using WaveFunctionComponent::evaluateRatiosAlltoOne;
 
   // used by DiracDeterminantWithBackflow
@@ -143,6 +144,16 @@ public:
     return 0;
   }
 
+  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad) override
+  {
+    APP_ABORT("  DiracDeterminantBase::ratioGradWithSpins():  Implementation required\n");
+    return 0.0;
+  } 
+  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) override
+  {
+    APP_ABORT("  DiracDeterminantBase::evalGradWithSpins():  Implementation required\n");
+    return GradType();
+  }
   /** cloning function
    * @param tqp target particleset
    * @param spo spo set

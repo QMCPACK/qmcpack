@@ -56,6 +56,13 @@ TEST_CASE("QMCUpdate", "[drivers]")
   elec.create(1);
   elec.createWalkers(1);
 
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  int massIdx                  = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx)   = -1;
+  tspecies(massIdx, upIdx)     = 1.0;
+
   FakeRandom rg;
 
   QMCHamiltonian h;

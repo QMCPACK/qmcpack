@@ -39,7 +39,7 @@ public:
   bool first;
 
   Backflow_ee(ParticleSet& ions, ParticleSet& els)
-    : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(els, DT_SOA_PREFERRED)), first(true)
+      : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(els, DT_SOA_PREFERRED)), first(true)
   {
     resize(NumTargets, NumTargets);
     NumGroups = els.groups();
@@ -53,7 +53,7 @@ public:
 
   ~Backflow_ee(){};
 
-  BackflowFunctionBase* makeClone(ParticleSet& tqp)
+  BackflowFunctionBase* makeClone(ParticleSet& tqp) const
   {
     Backflow_ee<FT>* clone = new Backflow_ee<FT>(tqp, tqp);
     clone->first           = false;
@@ -307,8 +307,8 @@ public:
     {
       for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
       {
-        const auto& dist  = myTable.Distances[iat];
-        const auto& displ = myTable.Displacements[iat];
+        const auto& dist  = myTable.getDistRow(iat);
+        const auto& displ = myTable.getDisplRow(iat);
         for (int jat = 0; jat < iat; ++jat)
         {
           if (dist[jat] > 0)
@@ -395,11 +395,11 @@ public:
 #else
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    int maxI = index.size();
-    int iat  = index[0];
+    int maxI            = index.size();
+    int iat             = index[0];
     for (int i = 1; i < maxI; i++)
     {
-      int j = index[i];
+      int j        = index[i];
       RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable.Temp[j].r1, du, d2u);
       PosType u    = (UIJ_temp[j] = uij * myTable.Temp[j].dr1) - UIJ(iat, j);
       newQP[iat] += u;
@@ -418,16 +418,16 @@ public:
     for (int i = 0; i < iat; i++)
     {
       // Temp[j].dr1 = (ri - rj)
-      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable.Temp_r[i], du, d2u);
-      PosType u    = (UIJ_temp[i] = -uij * myTable.Temp_dr[i]) - UIJ(iat, i);
+      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable.getTempDists()[i], du, d2u);
+      PosType u    = (UIJ_temp[i] = -uij * myTable.getTempDispls()[i]) - UIJ(iat, i);
       newQP[iat] += u;
       newQP[i] -= u;
     }
     for (int i = iat + 1; i < NumTargets; i++)
     {
       // Temp[j].dr1 = (ri - rj)
-      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable.Temp_r[i], du, d2u);
-      PosType u    = (UIJ_temp[i] = -uij * myTable.Temp_dr[i]) - UIJ(iat, i);
+      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable.getTempDists()[i], du, d2u);
+      PosType u    = (UIJ_temp[i] = -uij * myTable.getTempDispls()[i]) - UIJ(iat, i);
       newQP[iat] += u;
       newQP[i] -= u;
     }
@@ -465,8 +465,8 @@ public:
 #else
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    int maxI = index.size();
-    int iat  = index[0];
+    int maxI            = index.size();
+    int iat             = index[0];
     for (int i = 1; i < maxI; i++)
     {
       int j        = index[i];
@@ -502,14 +502,14 @@ public:
 #ifdef ENABLE_SOA
     for (int j = 0; j < iat; j++)
     {
-      if (myTable.Temp_r[j] > 0)
+      if (myTable.getTempDists()[j] > 0)
       {
-        RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable.Temp_r[j], du, d2u);
-        PosType u    = (UIJ_temp[j] = -uij * myTable.Temp_dr[j]) - UIJ(iat, j);
+        RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable.getTempDists()[j], du, d2u);
+        PosType u    = (UIJ_temp[j] = -uij * myTable.getTempDispls()[j]) - UIJ(iat, j);
         newQP[iat] += u;
         newQP[j] -= u;
         HessType& hess = AIJ_temp[j];
-        hess           = (du / myTable.Temp_r[j]) * outerProduct(myTable.Temp_dr[j], myTable.Temp_dr[j]);
+        hess = (du / myTable.getTempDists()[j]) * outerProduct(myTable.getTempDispls()[j], myTable.getTempDispls()[j]);
 #if OHMMS_DIM == 3
         hess[0] += uij;
         hess[4] += uij;
@@ -527,14 +527,14 @@ public:
     }
     for (int j = iat + 1; j < NumTargets; j++)
     {
-      if (myTable.Temp_r[j] > 0)
+      if (myTable.getTempDists()[j] > 0)
       {
-        RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable.Temp_r[j], du, d2u);
-        PosType u    = (UIJ_temp[j] = -uij * myTable.Temp_dr[j]) - UIJ(iat, j);
+        RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable.getTempDists()[j], du, d2u);
+        PosType u    = (UIJ_temp[j] = -uij * myTable.getTempDispls()[j]) - UIJ(iat, j);
         newQP[iat] += u;
         newQP[j] -= u;
         HessType& hess = AIJ_temp[j];
-        hess           = (du / myTable.Temp_r[j]) * outerProduct(myTable.Temp_dr[j], myTable.Temp_dr[j]);
+        hess = (du / myTable.getTempDists()[j]) * outerProduct(myTable.getTempDispls()[j], myTable.getTempDispls()[j]);
 #if OHMMS_DIM == 3
         hess[0] += uij;
         hess[4] += uij;
@@ -610,7 +610,7 @@ public:
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
 #else
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable                                     = P.getDistTable(myTableIndex_);
     int maxI                                                = index.size();
     int iat                                                 = index[0];
     const std::vector<DistanceTableData::TempDistType>& TMP = myTable.Temp;
@@ -660,7 +660,7 @@ public:
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
 #else
     RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
+    const auto& myTable                                     = P.getDistTable(myTableIndex_);
     const std::vector<DistanceTableData::TempDistType>& TMP = myTable.Temp;
     for (int j = 0; j < iat; j++)
     {
@@ -769,8 +769,8 @@ public:
     {
       for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
       {
-        const auto& dist  = myTable.Distances[iat];
-        const auto& displ = myTable.Displacements[iat];
+        const auto& dist  = myTable.getDistRow(iat);
+        const auto& displ = myTable.getDisplRow(iat);
         for (int jat = 0; jat < iat; ++jat)
         {
           if (dist[jat] > 0)

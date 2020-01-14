@@ -200,6 +200,7 @@ protected:
 	}
 public:
 	communicator(communicator const& o, group const& g);
+	communicator(group const& g, int tag);
 	communicator(group const& g);
 
 	explicit operator group() const;
@@ -2934,6 +2935,10 @@ friend communicator& operator<<(communicator& comm, T const& t){
 };
 
 inline void barrier(communicator const& self){self.barrier();}
+
+inline communicator::communicator(group const& g, int tag){
+        MPI3_CALL(MPI_Comm_create_group)(MPI_COMM_WORLD, &g, tag, &impl_);
+}
 
 inline communicator::communicator(group const& g){
 	auto e = static_cast<enum error>(MPI_Comm_create(MPI_COMM_WORLD, &g, &impl_));

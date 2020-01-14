@@ -139,7 +139,7 @@ import keyword
 from numpy import fromstring,empty,array,float64,\
     loadtxt,ndarray,dtype,sqrt,pi,arange,exp,eye,\
     ceil,mod,dot,abs,identity,floor,linalg,where,isclose
-from StringIO import StringIO
+from io import StringIO
 from superstring import string2val
 from generic import obj,hidden
 from xmlreader import XMLreader,XMLelement
@@ -519,20 +519,20 @@ class Names(QIobj):
     #end def condense_names
 
     def condensed_name_report(self):
-        print
-        print 'Condensed Name Report:'
-        print '----------------------'
-        keylist = array(self.condensed_names.keys())
-        order = array(self.condensed_names.values()).argsort()
+        print()
+        print('Condensed Name Report:')
+        print('----------------------')
+        keylist = array(list(self.condensed_names.keys()))
+        order = array(list(self.condensed_names.values())).argsort()
         keylist = keylist[order]
         for expanded in keylist: 
             condensed = self.condensed_names[expanded]
             if expanded!=condensed:
-                print "    {0:15} = '{1}'".format(condensed,expanded)
+                print("    {0:15} = '{1}'".format(condensed,expanded))
             #end if
         #end for
-        print
-        print
+        print()
+        print()
     #end def condensed_name_report
 #end class Names
 
@@ -542,15 +542,15 @@ class Names(QIobj):
 class QIxml(Names):
 
     def init_from_args(self,args):
-        print
-        print 'In init from args (not implemented).'
-        print 'Possible reasons for incorrect entry:  '
-        print '  Is xml element {0} meant to be plural?'.format(self.__class__.__name__)
-        print '    If so, add it to the plurals object.'
-        print
-        print 'Arguments received:'
-        print args
-        print
+        print()
+        print('In init from args (not implemented).')
+        print('Possible reasons for incorrect entry:  ')
+        print('  Is xml element {0} meant to be plural?'.format(self.__class__.__name__))
+        print('    If so, add it to the plurals object.')
+        print()
+        print('Arguments received:')
+        print(args)
+        print()
         self.not_implemented()
     #end def init_from_args
 
@@ -737,7 +737,7 @@ class QIxml(Names):
         attr = xa & sa
         junk = xa-attr
         junk_elem = []
-        for e,ecap in el.iteritems():
+        for e,ecap in el.items():
             value = xml._elements[ecap]
             if (isinstance(value,list) or isinstance(value,tuple)) and e in self.plurals_inv.keys():
                 if e not in types:
@@ -819,7 +819,7 @@ class QIxml(Names):
     def init_from_kwargs(self,kwargs):
         ks=[]
         kmap = dict()
-        for key,val in kwargs.iteritems():
+        for key,val in kwargs.items():
             ckey = self.condense_name(key)
             ks.append(ckey)
             kmap[ckey] = val
@@ -884,7 +884,7 @@ class QIxml(Names):
 
 
     def incorporate_defaults(self,elements=False,overwrite=False,propagate=True):
-        for name,value in self.defaults.iteritems():
+        for name,value in self.defaults.items():
             defval=None
             if isinstance(value,classcollection):
                 if elements:
@@ -912,7 +912,7 @@ class QIxml(Names):
             #end if
         #end for
         if propagate:
-            for name,value in self.iteritems():
+            for name,value in self.items():
                 if isinstance(value,QIxml):
                     value.incorporate_defaults(elements,overwrite)
                 elif isinstance(value,collection):
@@ -937,7 +937,7 @@ class QIxml(Names):
             attr = ks & set(self.attributes)
             elem = ks & set(self.elements)
             plur = ks & set(self.plurals.keys())
-            if self.text!=None:
+            if self.text is not None:
                 text = ks & set([self.text])
             else:
                 text = set()
@@ -956,6 +956,9 @@ class QIxml(Names):
             #if QmcpackInput.profile_collection is None:
             #    self.error(msg,'QmcpackInput',exit=exit,trace=exit)
             ##end if
+
+            print(obj(dict(self.__class__.__dict__)))
+
             self.error(msg,'QmcpackInput',exit=exit,trace=exit)
         #end if
     #end def check_junk
@@ -965,7 +968,7 @@ class QIxml(Names):
         attributes = obj(**al)
         parameters = obj()
         elements   = obj()
-        for e,ecap in el.iteritems():
+        for e,ecap in el.items():
             if e=='parameter':
                 parameters[e]=ecap
             else:
@@ -989,7 +992,7 @@ class QIxml(Names):
         #xml._name = xname
 
         if len(profile.junk)>0:
-            print '  '+xname+' (found '+str(junk)+')'
+            print('  '+xname+' (found '+str(junk)+')')
             for sector in 'attributes elements'.split():
                 missing = []
                 for n in profile.junk:
@@ -1002,7 +1005,7 @@ class QIxml(Names):
                     for m in missing:
                         ms+=' '+m
                     #end for
-                    print ms
+                    print(ms)
                 #end if
             #end for
             if 'parameter' in profile.xml:
@@ -1021,7 +1024,7 @@ class QIxml(Names):
                     for m in missing:
                         ms+=' '+m
                     #end for
-                    print ms
+                    print(ms)
                 #end if
             #end if
             if junk!=set(['analysis']) and junk!=set(['ratio']) and junk!=set(['randmo']) and junk!=set(['printeloc', 'source']) and junk!=set(['warmup_steps']) and junk!=set(['sposet_collection']) and junk!=set(['eigensolve', 'atom']) and junk!=set(['maxweight', 'reweightedvariance', 'unreweightedvariance', 'energy', 'exp0', 'stabilizerscale', 'minmethod', 'alloweddifference', 'stepsize', 'beta', 'minwalkers', 'nstabilizers', 'bigchange', 'usebuffer']) and junk!=set(['loop2']) and junk!=set(['random']) and junk!=set(['max_steps']):
@@ -1086,11 +1089,11 @@ class QIxml(Names):
                 #end if
             #end if
         #end for
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,QIxml):
                 value.get(names,namedict,host,root=False)
             elif isinstance(value,collection):
-                for n,v in value.iteritems():
+                for n,v in value.items():
                     name_absent = not n in namedict 
                     not_element = False
                     if not name_absent:
@@ -1152,7 +1155,7 @@ class QIxml(Names):
         for name in remove:
             del self[name]
         #end for
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,QIxml):
                 value.remove(*names)
             elif isinstance(value,collection):
@@ -1167,7 +1170,7 @@ class QIxml(Names):
 
 
     def assign(self,**kwargs):
-        for var,vnew in kwargs.iteritems():
+        for var,vnew in kwargs.items():
             if var in self:
                 val = self[var]
                 not_coll = not isinstance(val,collection)
@@ -1178,7 +1181,7 @@ class QIxml(Names):
                 #end if
             #end if
         #end for
-        for vname,val in self.iteritems():
+        for vname,val in self.items():
             if isinstance(val,QIxml):
                 val.assign(**kwargs)
             elif isinstance(val,collection):
@@ -1199,7 +1202,7 @@ class QIxml(Names):
         #end for
         for valpair in args:
             vold,vnew = valpair
-            for var,val in self.iteritems():
+            for var,val in self.items():
                 not_coll = not isinstance(val,collection)
                 not_xml  = not isinstance(val,QIxml)
                 not_arr  = not isinstance(val,ndarray)
@@ -1208,7 +1211,7 @@ class QIxml(Names):
                 #end if
             #end for
         #end for
-        for var,valpair in kwargs.iteritems():
+        for var,valpair in kwargs.items():
             vold,vnew = valpair
             if var in self:
                 val = self[var]
@@ -1224,7 +1227,7 @@ class QIxml(Names):
                 #end if
             #end if
         #end for
-        for vname,val in self.iteritems():
+        for vname,val in self.items():
             if isinstance(val,QIxml):
                 val.replace(*args,**kwargs)
             elif isinstance(val,collection):
@@ -1240,7 +1243,7 @@ class QIxml(Names):
 
     def combine(self,other):
         #elemental combine only
-        for name,element in other.iteritems():
+        for name,element in other.items():
             plural = isinstance(element,collection)
             single = isinstance(element,QIxml)
             if single or plural:
@@ -1278,9 +1281,9 @@ class QIxml(Names):
 
                     
     def move(self,**elemdests):        
-        names = elemdests.keys()
+        names = list(elemdests.keys())
         hosts = self.get_host(names)
-        dests = self.get(elemdests.values())
+        dests = self.get(list(elemdests.values()))
         if len(names)==1:
             hosts = [hosts]
             dests = [dests]
@@ -1303,7 +1306,7 @@ class QIxml(Names):
 
     def pluralize(self):
         make_plural = []
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,QIxml):
                 if name in plurals_inv:
                     make_plural.append(name)
@@ -1648,7 +1651,7 @@ class Param(Names):
                 #end if
                 other=''
                 if name in self.metadata:
-                    for a,v in self.metadata[name].iteritems():
+                    for a,v in self.metadata[name].items():
                         other +=' '+self.expand_name(a)+'="'+self.write_val(v)+'"'
                     #end for
                 #end if
@@ -1695,7 +1698,7 @@ class Param(Names):
                     else:
                         vfmt = ''
                     #end if
-                    for nc in xrange(ncols):
+                    for nc in range(ncols):
                         fmt+='{'+str(nc)+vfmt+'}  '
                     #end for
                     fmt = fmt[:-2]+'\n'
@@ -1993,7 +1996,7 @@ class jastrow1(QIxml):
     attributes = ['type','name','function','source','print','spin','transform']
     elements   = ['correlation','distancetable','grid']
     identifier = 'name'
-    write_types = obj(print_=yesno,spin=yesno,transform=yesno)
+    write_types = obj(print=yesno,spin=yesno,transform=yesno)
 #end class jastrow1
 
 class jastrow2(QIxml):
@@ -2002,7 +2005,7 @@ class jastrow2(QIxml):
     elements   = ['correlation','distancetable','basisset','grid','basisgroup']
     parameters = ['b','longrange']
     identifier = 'name'
-    write_types = obj(print_=yesno,transform=yesno,optimize=yesno)
+    write_types = obj(print=yesno,transform=yesno,optimize=yesno)
 #end class jastrow2
 
 class jastrow3(QIxml):
@@ -2010,7 +2013,7 @@ class jastrow3(QIxml):
     attributes = ['type','name','function','print','source']
     elements   = ['correlation']
     identifier = 'name'
-    write_types = obj(print_=yesno)
+    write_types = obj(print=yesno)
 #end class jastrow3
 
 class kspace_jastrow(QIxml):
@@ -2455,12 +2458,12 @@ class linear(QIxml):
     elements   = ['estimator']
     parameters = ['walkers','warmupsteps','blocks','steps','substeps','timestep',
                   'usedrift','stepsbetweensamples','samples','minmethod',
-                  'minwalkers','maxweight','nonlocalpp','usebuffer',
-                  'alloweddifference','gevmethod','beta','exp0','bigchange',
-                  'stepsize','stabilizerscale','nstabilizers','max_its',
-                  'cgsteps','eigcg','stabilizermethod','rnwarmupsteps',
-                  'walkersperthread','minke','gradtol','alpha','tries',
-                  'min_walkers','samplesperthread','use_nonlocalpp_deriv',
+                  'minwalkers','maxweight','nonlocalpp','use_nonlocalpp_deriv',
+                  'usebuffer','alloweddifference','gevmethod','beta','exp0',
+                  'bigchange','stepsize','stabilizerscale','nstabilizers',
+                  'max_its','cgsteps','eigcg','stabilizermethod',
+                  'rnwarmupsteps','walkersperthread','minke','gradtol','alpha',
+                  'tries','min_walkers','samplesperthread',
                   'shift_i','shift_s','max_relative_change','max_param_change',
                   'chase_lowest','chase_closest','block_lm','nblocks','nolds',
                   'nkept',
@@ -2480,9 +2483,9 @@ class cslinear(QIxml):
                   'alloweddifference','gevmethod','beta','exp0','bigchange',
                   'stepsize','stabilizerscale','nstabilizers','max_its',
                   'stabilizermethod','cswarmupsteps','alpha_error','gevsplit',
-                  'beta_error']
+                  'beta_error','use_nonlocalpp_deriv']
     costs      = ['energy','unreweightedvariance','reweightedvariance']
-    write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno)
+    write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,use_nonlocalpp_deriv=yesno,usebuffer=yesno)
 #end class cslinear
 
 class vmc(QIxml):
@@ -2736,15 +2739,15 @@ wavefunction.defaults.set(
 #    mode='ground',spindataset=0
 #    )
 jastrow1.defaults.set(
-    name='J1',type='one-body',function='bspline',print_=True,source='ion0',
+    name='J1',type='one-body',function='bspline',print=True,source='ion0',
     correlation=correlation
     )
 jastrow2.defaults.set(
-    name='J2',type='two-body',function='bspline',print_=True,
+    name='J2',type='two-body',function='bspline',print=True,
     correlation=correlation
     )
 jastrow3.defaults.set(
-    name='J3',type='eeI',function='polynomial',print_=True,source='ion0',
+    name='J3',type='eeI',function='polynomial',print=True,source='ion0',
     correlation=correlation
     )
 correlation.defaults.set(
@@ -3044,7 +3047,7 @@ class QmcpackInput(SimulationInput,Names):
                 elements = []
                 keys = []
                 error = False
-                for key,value in xml.iteritems():
+                for key,value in xml.items():
                     if isinstance(key,str) and key[0]!='_':
                         if key in types:
                             elements.append(types[key](value))
@@ -3227,7 +3230,7 @@ class QmcpackInput(SimulationInput,Names):
     def include_xml(self,xmlfile,replace=True,exists=True):
         xml = self.read_xml(xmlfile)
         Param.metadata = self._metadata
-        for name,exml in xml.iteritems():
+        for name,exml in xml.items():
             if not name.startswith('_'):
                 qxml = types[name](exml)
                 qname = qxml.tag
@@ -3355,7 +3358,7 @@ class QmcpackInput(SimulationInput,Names):
                         del qs[name]
                     #end if
                 #end for
-                residue = qs.keys()
+                residue = list(qs.keys())
                 if len(residue)>0:
                     self.error('extra keys found in qmcsystem: {0}'.format(sorted(residue)))
                 #end if
@@ -3534,7 +3537,7 @@ class QmcpackInput(SimulationInput,Names):
         uuc = .5/(wp*r)*(1.-exp(-r*sqrt(wp/2)))*exp(-(2*r/rcut)**2)
         udc = .5/(wp*r)*(1.-exp(-r*sqrt(wp)))*exp(-(2*r/rcut)**2)
         jastrows.J2 = jastrow2(
-            name = 'J2',type='Two-Body',function=j2func,print_='yes',
+            name = 'J2',type='Two-Body',function=j2func,print='yes',
             correlations = collection(
                 uu = correlation(speciesA='u',speciesB='u',size=size,
                                  coefficients=section(id='uu',type='Array',coeff=uuc)),
@@ -3580,7 +3583,7 @@ class QmcpackInput(SimulationInput,Names):
                     type='One-Body',
                     function=j1func,
                     source=ion,
-                    print_='yes',
+                    print='yes',
                     correlations = corr
                     )
                 j1.append(j)
@@ -3640,8 +3643,8 @@ class QmcpackInput(SimulationInput,Names):
             if isinstance(ps,particleset):
                 ps = make_collection([ps])
             #end if
-            for pname,pset in ps.iteritems():
-                g0name = pset.groups.keys()[0]
+            for pname,pset in ps.items():
+                g0name = list(pset.groups.keys())[0]
                 g0 = pset.groups[g0name]
                 if abs(-1-g0.charge)<1e-2:
                     old_eps_name = pname
@@ -3796,7 +3799,7 @@ class QmcpackInput(SimulationInput,Names):
         ions = None
         elns = None
         ion_list = []
-        for name,p in ps.iteritems():
+        for name,p in ps.items():
             if 'ionid' in p:
                 ion_list.append(p)
             elif name.startswith('e'):
@@ -3804,7 +3807,7 @@ class QmcpackInput(SimulationInput,Names):
             #end if
         #end for
         if len(ion_list)==0: #try to identify ions by positive charged groups
-            for name,p in ps.iteritems():
+            for name,p in ps.items():
                 if 'groups' in p:
                     for g in p.groups:
                         if 'charge' in g and g.charge>0:
@@ -3839,7 +3842,7 @@ class QmcpackInput(SimulationInput,Names):
         #compute spin and electron charge
         net_spin   = 0
         eln_charge = 0
-        for spin,eln in elns.groups.iteritems():
+        for spin,eln in elns.groups.items():
             if spin[0]=='u':
                 net_spin+=eln.size
             elif spin[0]=='d':
@@ -3904,7 +3907,7 @@ class QmcpackInput(SimulationInput,Names):
 
             structure = Structure(axes=axes,elem=elem,pos=pos,center=center,units='B')
 
-            for name,element in ions.groups.iteritems():
+            for name,element in ions.groups.items():
                 if 'charge' in element:
                     valence = element.charge
                 elif 'valence' in element:
@@ -3939,7 +3942,7 @@ class QmcpackInput(SimulationInput,Names):
         ions = obj()
         ps = self.get('particlesets')
         #try to identify ions by positive charged groups
-        for name,p in ps.iteritems():
+        for name,p in ps.items():
             if name.startswith('ion') or name.startswith('atom'):
                 ions[name] = p
             elif 'groups' in p:
@@ -4062,7 +4065,7 @@ class BundledQmcpackInput(SimulationInput):
     def get_output_info(self,*requests):
         outfiles = []
 
-        for index,input in self.inputs.iteritems():
+        for index,input in self.inputs.items():
             outfs = input.get_output_info('outfiles')
             infile = self.filenames[index]
             outfile= infile.rsplit('.',1)[0]+'.g'+str(index).zfill(3)+'.qmc'
@@ -4349,17 +4352,8 @@ def generate_particlesets(electrons   = 'e',
                 size         = len(gpos)
                 )
             if hybridrep:
-                rcut = hybrid_rcut[ion_spec]
-                lmax = hybrid_lmax[ion_spec]
-                # this code should be in qmcpack 
-                # it should not be required of the user
-                dr = 0.02
-                rspline = rcut + 2*dr
-                nspline = int(floor(rspline/dr)) + 1
-                g.lmax           = lmax
-                g.cutoff_radius  = rcut
-                g.spline_radius  = rspline
-                g.spline_npoints = nspline
+                g.lmax           = hybrid_lmax[ion_spec]
+                g.cutoff_radius  = hybrid_rcut[ion_spec]
             #end if
             groups.append(g)
         #end for
@@ -4722,7 +4716,7 @@ def generate_determinantset_old(type           = 'bspline',
             det = dset.get('downdet')
         #end if
         occ = det.occupation
-	occ.pairs    = 1
+        occ.pairs    = 1
         occ.mode     = 'excited'
         occ.contents = '\n'+excitation+'\n'
         # add new input format
@@ -4976,7 +4970,7 @@ def generate_hamiltonian(name         = 'h0',
                         spo.index_min = rspo.size
                         spo.index_max = size
                         maxed = rspo.size>=size
-                    except Exception,e:
+                    except Exception as e:
                         msg = 'cannot generate estimator dm1b\n  '
                         if wf is None:
                             QmcpackInput.class_error(msg+'wavefunction {0} not found'.format(wfname))
@@ -5333,7 +5327,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
         type         = 'One-Body',
         function     = function,
         source       = iname,
-        print_       = True,
+        print       = True,
         correlations = corrs
         )
     return j1
@@ -5412,7 +5406,7 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
         #end for
     #end if
     j2 = jastrow2(
-        name = 'J2',type='Two-Body',function='bspline',print_=True,
+        name = 'J2',type='Two-Body',function='bspline',print=True,
         correlations = corrs
         )
     return j2
@@ -5524,7 +5518,7 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
             )
     #end for
     jastrow = jastrow3(
-        name = 'J3',type='eeI',function=function,print_=True,source=iname,
+        name = 'J3',type='eeI',function=function,print=True,source=iname,
         correlations = corrs
         )
     return jastrow
@@ -5857,14 +5851,15 @@ opt_defaults = obj(
     )
 
 shared_opt_defaults = obj(
-    samples     = 204800,
-    nonlocalpp  = True,
-    warmupsteps = 300,                
-    blocks      = 100,                
-    steps       = 1,                  
-    substeps    = 10,                 
-    timestep    = 0.3,
-    usedrift    = False,  
+    samples              = 204800,
+    nonlocalpp           = True,
+    use_nonlocalpp_deriv = True,
+    warmupsteps          = 300,                
+    blocks               = 100,                
+    steps                = 1,                  
+    substeps             = 10,                 
+    timestep             = 0.3,
+    usedrift             = False,  
     )
 
 linear_quartic_defaults = obj(
@@ -6532,6 +6527,16 @@ def generate_basic_input(**kwargs):
         qi.remove_physical_system()
     #end if
 
+    for calc in sim.calculations:
+        if isinstance(calc,loop):
+            calc = calc.qmc
+        #end if
+        if isinstance(calc,(linear,cslinear)) and 'nonlocalpp' not in calc:
+            calc.nonlocalpp           = True
+            calc.use_nonlocalpp_deriv = True
+        #end if
+    #end for
+
     return qi
 #end def generate_basic_input
 
@@ -6863,7 +6868,7 @@ if __name__=='__main__':
         
         rsys = gi.return_system()
 
-        print rsys
+        print(rsys)
 
     #end if
 
@@ -6881,9 +6886,9 @@ if __name__=='__main__':
 
         gi = generate_qmcpack_input('basic',system=system)
         
-        print gi
+        print(gi)
 
-        print gi.write()
+        print(gi.write())
     #end if
 
 
@@ -6900,18 +6905,18 @@ if __name__=='__main__':
 
 
     if test_moves:
-        print 50*'='
+        print(50*'=')
         sim = qi.simulation
-        print repr(sim)
-        print repr(sim.qmcsystem)
-        print 50*'='
+        print(repr(sim))
+        print(repr(sim.qmcsystem))
+        print(50*'=')
         qi.move(particleset='simulation')
-        print repr(sim)
-        print repr(sim.qmcsystem)
-        print 50*'='
+        print(repr(sim))
+        print(repr(sim.qmcsystem))
+        print(50*'=')
         qi.standard_placements()
-        print repr(sim)
-        print repr(sim.qmcsystem)
+        print(repr(sim))
+        print(repr(sim.qmcsystem))
 
         qi.pluralize()
     #end if
@@ -6938,7 +6943,7 @@ if __name__=='__main__':
 
         q.incorporate_defaults(elements=True)
 
-        print q
+        print(q)
     #end if
 
 
@@ -7155,7 +7160,7 @@ if __name__=='__main__':
                                 type='two-body',
                                 name='J2',
                                 function='bspline',
-                                print_='yes',
+                                print='yes',
                                 correlations = [
                                     correlation(
                                         speciesA='u',
@@ -7186,7 +7191,7 @@ if __name__=='__main__':
                                 name='J1',
                                 function='bspline',
                                 source='ion0',
-                                print_='yes',
+                                print='yes',
                                 correlations = [
                                     correlation(
                                         elementtype='C',
@@ -7385,7 +7390,7 @@ if __name__=='__main__':
                             ),
                         jastrows = collection(
                             J2=jastrow2(
-                                function='bspline',print_='yes',
+                                function='bspline',print='yes',
                                 correlations = collection(
                                     uu=correlation(
                                         speciesA='u',speciesB='u',size=6,rcut=3.9,
@@ -7398,7 +7403,7 @@ if __name__=='__main__':
                                     )
                                 ),
                             J1=jastrow1(
-                                function='bspline',source='ion0',print_='yes',
+                                function='bspline',source='ion0',print='yes',
                                 correlations = collection(
                                     C=correlation(
                                         size=6,rcut=3.9,
@@ -7465,7 +7470,7 @@ if __name__=='__main__':
 
         est = qs.simulation.qmcsystem.hamiltonian.estimators
         sg = est.edcell.spacegrid
-        print repr(est)
+        print(repr(est))
 
         exit()
 

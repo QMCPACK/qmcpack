@@ -36,9 +36,6 @@
 #                                                                    #
 #====================================================================#
 
-
-#! /usr/bin/env python
-
 import os
 from subprocess import Popen
 from execute import execute
@@ -281,7 +278,7 @@ class PPset(DevBase):
         #end if
         pseudos = obj()
         self.pseudos[label]=pseudos
-        for code,pps in code_pps.iteritems():
+        for code,pps in code_pps.items():
             clow = code.lower()
             if clow not in self.known_codes:
                 self.error('incorrect use of ppset\ninvalid simulation code "{0}" provided with set labeled "{1}"\nknown simulation codes are: {2}'.format(code,label,sorted(self.known_codes)))
@@ -552,7 +549,7 @@ class SemilocalPP(Pseudopotential):
 
     def get_nonlocal(self,l=None):
         vnl = obj()
-        for lc,vc in self.components.iteritems():
+        for lc,vc in self.components.items():
             if lc!=self.local and lc!='L2':
                 vnl[lc] = vc
             #end if
@@ -647,7 +644,7 @@ class SemilocalPP(Pseudopotential):
         vloc = vcs[self.local]
         # get the l channels
         vls = obj()
-        for l,vc in self.components.iteritems():
+        for l,vc in self.components.items():
             if l==self.local:
                 vls[l] = vloc
             else:
@@ -657,7 +654,7 @@ class SemilocalPP(Pseudopotential):
         # from l channels, reconstruct nonlocal components
         vcs.clear()
         vloc = vls[local]
-        for l,vl in vls.iteritems():
+        for l,vl in vls.items():
             if l==local:
                 vcs[l] = vloc
             else:
@@ -726,7 +723,7 @@ class SemilocalPP(Pseudopotential):
             self.remove_L2()
         #end if
         self.components[self.local] = vps[self.local]
-        for l,v in vps.iteritems():
+        for l,v in vps.items():
             if l!=self.local:
                 self.set_channel(l,v)
             #end if
@@ -939,7 +936,7 @@ class SemilocalPP(Pseudopotential):
         r    = None
         vmin = None
         vmax = None
-        for l,(rc,vc) in rv.iteritems():
+        for l,(rc,vc) in rv.items():
             if r is None:
                 r = rc
                 vmin = array(vc)
@@ -954,7 +951,7 @@ class SemilocalPP(Pseudopotential):
         vspread = vmax-vmin
         rcut = r[-1]
         nr = len(r)
-        for i in xrange(nr):
+        for i in range(nr):
             n = nr-1-i
             if vspread[n]>tol:
                 rcut = r[n]
@@ -1771,10 +1768,10 @@ class GaussianPP(SemilocalPP):
         #end if
         tmpfile = 'tmp.gamess'
         self.write(tmpfile,'gamess')
-	if extra is not None:
-	    command = 'ppconvert --gamess_pot {0} --s_ref "{1}" --p_ref "{1}" --d_ref "{1}" {2} {3} {4}'.format(tmpfile,ref,extra,opts,outfile)
-	else:
-	    command = 'ppconvert --gamess_pot {0} --s_ref "{1}" --p_ref "{1}" --d_ref "{1}" {2} {3}'.format(tmpfile,ref,opts,outfile)
+        if extra is not None:
+            command = 'ppconvert --gamess_pot {0} --s_ref "{1}" --p_ref "{1}" --d_ref "{1}" {2} {3} {4}'.format(tmpfile,ref,extra,opts,outfile)
+        else:
+            command = 'ppconvert --gamess_pot {0} --s_ref "{1}" --p_ref "{1}" --d_ref "{1}" {2} {3}'.format(tmpfile,ref,opts,outfile)
         execute(command,verbose=True)
         os.system('rm '+tmpfile)
     #end def ppconvert
@@ -1906,7 +1903,7 @@ class CasinoPP(SemilocalPP):
         file.seek('R(i)',1)
         file.readline()
         r = empty((ngrid,),dtype=float)
-        for ir in xrange(ngrid):
+        for ir in range(ngrid):
             r[ir] = float(file.readline())
         #end for
         # read each channel, convert to hartree units
@@ -1923,7 +1920,7 @@ class CasinoPP(SemilocalPP):
             l = self.l_channels[int(potline[eqloc+1])] # get the l value
             lvals.append(l)
             v = empty((ngrid,),dtype=float)
-            for ir in xrange(ngrid):
+            for ir in range(ngrid):
                 v[ir] = float(file.readline())
             #end for
             lpots.append(convert(v,self.unitmap[units],'Ha'))

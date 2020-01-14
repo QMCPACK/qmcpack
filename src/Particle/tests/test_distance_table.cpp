@@ -118,7 +118,7 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
       // const auto& dtable = target_pset.getDistTable(tid);
       // dtable.loc(source_ptcl_idx,target_ptcl_idx) !! source first target second !?
 #ifdef ENABLE_SOA
-      double dist = dtable.Distances(jat, iat);
+      double dist = dtable.getDistRow(jat)[iat];
 #else
       double dist = dtable.r(dtable.loc(iat, jat));
 #endif
@@ -127,24 +127,24 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   }
 
 #ifdef ENABLE_SOA
-  TinyVector<double, 3> displ1 = dtable.Displacements[0][0];
+  TinyVector<double, 3> displ1 = dtable.getDisplacements()[0][0];
   REQUIRE(displ1[0] == Approx(0.0));
   REQUIRE(displ1[1] == Approx(0.0));
   REQUIRE(displ1[2] == Approx(-0.2));
 #else
-  TinyVector<double, 3> displ1 = dtable.displacement(0,0);
+  TinyVector<double, 3> displ1 = dtable.displacement(0, 0);
   REQUIRE(displ1[0] == Approx(0.0));
   REQUIRE(displ1[1] == Approx(0.0));
   REQUIRE(displ1[2] == Approx(0.2));
 #endif
 
 #ifdef ENABLE_SOA
-  TinyVector<double, 3> displ2 = dtable.Displacements[0][1];
+  TinyVector<double, 3> displ2 = dtable.getDisplacements()[0][1];
   REQUIRE(displ2[0] == Approx(0.0));
   REQUIRE(displ2[1] == Approx(0.0));
   REQUIRE(displ2[2] == Approx(0.3));
 #else
-  TinyVector<double, 3> displ2 = dtable.displacement(1,0);
+  TinyVector<double, 3> displ2 = dtable.displacement(1, 0);
   REQUIRE(displ2[0] == Approx(0.0));
   REQUIRE(displ2[1] == Approx(0.0));
   REQUIRE(displ2[2] == Approx(-0.3));
@@ -246,7 +246,7 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
     for (int jat = 0; jat < dtable.targets(); jat++, idx++)
     {
 #ifdef ENABLE_SOA
-      double dist = dtable.Distances(jat, iat);
+      double dist = dtable.getDistRow(jat)[iat];
 #else
       double dist = dtable.r(dtable.loc(iat, jat));
 #endif
@@ -357,7 +357,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
 
       // calculate distance from lattice site iat
 #ifdef ENABLE_SOA
-      double dist = dtable.Distances(jat, iat);
+      double dist = dtable.getDistRow(jat)[iat];
 #else
       double dist = dtable.r(dtable.loc(iat, jat));
 #endif
@@ -456,7 +456,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   tmat(2, 2) = 1;
 
   // enforce global Lattice on ions and electrons
-  ions.Lattice = SimulationCell;
+  ions.Lattice      = SimulationCell;
   electrons.Lattice = SimulationCell;
 
   XMLParticleParser parse_electrons(electrons, tmat);
@@ -472,19 +472,19 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
 
   // calculate particle distances
 #ifdef ENABLE_SOA
-  const int tid = electrons.addTable(ions, DT_SOA);
+  const int ei_tid = electrons.addTable(ions, DT_SOA);
 #else
-  const int tid = electrons.addTable(ions, DT_AOS);
+  const int ei_tid = electrons.addTable(ions, DT_AOS);
 #endif
   electrons.update();
   ions.update();
 
   // get target particle set's distance table data
-  const auto& dtable = electrons.getDistTable(tid);
-  REQUIRE(dtable.getName() == "ion0_e");
+  const auto& ei_dtable = electrons.getDistTable(ei_tid);
+  REQUIRE(ei_dtable.getName() == "ion0_e");
 
-  REQUIRE(dtable.sources() == ions.getTotalNum());
-  REQUIRE(dtable.targets() == electrons.getTotalNum());
+  REQUIRE(ei_dtable.sources() == ions.getTotalNum());
+  REQUIRE(ei_dtable.targets() == electrons.getTotalNum());
 
   int num_src = ions.getTotalNum();
   int num_tar = electrons.getTotalNum();
@@ -496,9 +496,9 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
     for (int jat = 0; jat < num_tar; jat++, idx++)
     {
 #ifdef ENABLE_SOA
-      double dist = dtable.Distances(jat, iat);
+      double dist = ei_dtable.getDistRow(jat)[iat];
 #else
-      double dist = dtable.r(dtable.loc(iat, jat));
+      double dist = ei_dtable.r(ei_dtable.loc(iat, jat));
 #endif
       expect[idx] = dist;
     }
@@ -525,14 +525,61 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
     for (int jat = 0; jat < num_tar; jat++, idx++)
     {
 #ifdef ENABLE_SOA
-      double dist = dtable.Distances(jat, iat);
+      double dist = ei_dtable.getDistRow(jat)[iat];
 #else
-      double dist = dtable.r(dtable.loc(iat, jat));
+      double dist = ei_dtable.r(ei_dtable.loc(iat, jat));
 #endif
       REQUIRE(expect[idx] == Approx(dist));
     }
   }
 
+#ifdef ENABLE_SOA
+  const int ee_tid = electrons.addTable(electrons, DT_SOA);
+  // get target particle set's distance table data
+  const auto& ee_dtable = electrons.getDistTable(ee_tid);
+  REQUIRE(ee_dtable.getName() == "e_e");
+  electrons.update();
+
+  // shift electron 0 a bit to avoid box edges.
+  ParticleSet::SingleParticlePos_t shift(0.1, 0.2, -0.1);
+  electrons.makeMove(0, shift);
+  electrons.acceptMove(0);
+
+  disp[0] = 0.2;
+  disp[1] = 0.1;
+  disp[2] = 0.3;
+
+  electrons.makeMove(0, disp, false);
+  REQUIRE(ee_dtable.getTempDists()[1] == Approx(2.7239676944));
+  REQUIRE(ee_dtable.getTempDispls()[1][0] == Approx(2.7));
+  REQUIRE(ee_dtable.getTempDispls()[1][1] == Approx(-0.3));
+  REQUIRE(ee_dtable.getTempDispls()[1][2] == Approx(-0.2));
+  REQUIRE(ee_dtable.getDistRow(1)[0] == Approx(2.908607914));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.9));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][1] == Approx(0.2));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][2] == Approx(-0.1));
+  electrons.rejectMove(0);
+
+  electrons.makeMove(0, disp);
+  REQUIRE(ee_dtable.getTempDists()[1] == Approx(2.7239676944));
+  REQUIRE(ee_dtable.getTempDispls()[1][0] == Approx(2.7));
+  REQUIRE(ee_dtable.getTempDispls()[1][1] == Approx(-0.3));
+  REQUIRE(ee_dtable.getTempDispls()[1][2] == Approx(-0.2));
+  REQUIRE(ee_dtable.getOldDists()[1] == Approx(2.908607914));
+  REQUIRE(ee_dtable.getOldDispls()[1][0] == Approx(2.9));
+  REQUIRE(ee_dtable.getOldDispls()[1][1] == Approx(-0.2));
+  REQUIRE(ee_dtable.getOldDispls()[1][2] == Approx(0.1));
+  REQUIRE(ee_dtable.getDistRow(1)[0] == Approx(2.908607914));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.9));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][1] == Approx(0.2));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][2] == Approx(-0.1));
+  electrons.acceptMove(0);
+
+  REQUIRE(ee_dtable.getDistRow(1)[0] == Approx(2.7239676944));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.7));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][1] == Approx(0.3));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][2] == Approx(0.2));
+#endif
 } // TEST_CASE distance_pbc_z
 
 } // namespace qmcplusplus

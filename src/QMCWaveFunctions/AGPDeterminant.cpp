@@ -101,8 +101,8 @@ void AGPDeterminant::resetTargetParticleSet(ParticleSet& P) { GeminalBasis->rese
  *for local energy calculations.
  */
 AGPDeterminant::LogValueType AGPDeterminant::evaluateLog(ParticleSet& P,
-                                                      ParticleSet::ParticleGradient_t& G,
-                                                      ParticleSet::ParticleLaplacian_t& L)
+                                                         ParticleSet::ParticleGradient_t& G,
+                                                         ParticleSet::ParticleLaplacian_t& L)
 {
   evaluateLogAndStore(P);
   G += myG;
@@ -244,7 +244,7 @@ void AGPDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
  * @param P current configuration
  * @param iat the particle thas is being moved
  */
-AGPDeterminant::ValueType AGPDeterminant::ratio(ParticleSet& P, int iat)
+AGPDeterminant::PsiValueType AGPDeterminant::ratio(ParticleSet& P, int iat)
 {
   UpdateMode = ORB_PBYP_RATIO;
   //GeminalBasis->evaluate(P,iat);
@@ -354,7 +354,7 @@ void AGPDeterminant::ratioDown(ParticleSet& P, int iat)
 
 /** move was accepted, update the real container
  */
-void AGPDeterminant::acceptMove(ParticleSet& P, int iat)
+void AGPDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   LogValue += convertValueToLog(curRatio);
   //CurrentDet *= curRatio;

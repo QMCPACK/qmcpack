@@ -145,7 +145,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
     RealType sqrttau     = std::sqrt(tauovermass);
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
     {
-      W.setActive(iat);
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
       PosType dr;
@@ -160,7 +159,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       }
       if (!W.makeMoveAndCheck(iat, dr))
         continue;
-      RealType ratio = Psi.ratioGrad(W, iat, grad_iat);
+      ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
@@ -176,12 +175,12 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
         dr             = W.R[iat] - W.activePos - dr;
         RealType logGb = -oneover2tau * dot(dr, dr);
-        RealType prob  = ratio * ratio * std::exp(logGb - logGf);
+        RealType prob  = std::norm(ratio) * std::exp(logGb - logGf);
         if (RandomGen() < prob)
         {
           ++nAcceptTemp;
-          Psi.acceptMove(W, iat);
-          W.acceptMove(iat);
+          Psi.acceptMove(W, iat, true);
+          W.acceptMove(iat, true);
           rr_accepted += rr;
           gf_acc *= prob; //accumulate the ratio
         }
@@ -276,7 +275,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
     RealType sqrttau     = std::sqrt(tauovermass);
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
     {
-      W.setActive(iat);
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
       PosType dr;
@@ -292,7 +290,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       }
       if (!W.makeMoveAndCheck(iat, dr))
         continue;
-      RealType ratio = Psi.ratioGrad(W, iat, grad_iat);
+      ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
@@ -308,12 +306,12 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
         dr             = W.R[iat] - W.activePos - dr;
         RealType logGb = -oneover2tau * dot(dr, dr);
-        RealType prob  = ratio * ratio * std::exp(logGb - logGf);
+        RealType prob  = std::norm(ratio) * std::exp(logGb - logGf);
         if (RandomGen() < prob)
         {
           ++nAcceptTemp;
-          Psi.acceptMove(W, iat);
-          W.acceptMove(iat);
+          Psi.acceptMove(W, iat, true);
+          W.acceptMove(iat, true);
           rr_accepted += rr;
           gf_acc *= prob; //accumulate the ratio
         }

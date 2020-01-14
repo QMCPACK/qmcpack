@@ -27,15 +27,15 @@
 namespace qmcplusplus
 {
 SPOSet::SPOSet(bool ion_deriv, bool optimizable)
-    : ionDerivs(ion_deriv),
-      Optimizable(optimizable),
-      OrbitalSetSize(0)
+    :
 #if !defined(ENABLE_SOA)
-      ,
       Identity(false),
       BasisSetSize(0),
-      C(nullptr)
+      C(nullptr),
 #endif
+      ionDerivs(ion_deriv),
+      Optimizable(optimizable),
+      OrbitalSetSize(0)
 {
   className = "invalid";
 #if !defined(ENABLE_SOA)
@@ -50,6 +50,16 @@ void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
   APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
 }
 
+void SPOSet::mw_evaluateValue(const std::vector<SPOSet*>& spo_list,
+                              const std::vector<ParticleSet*>& P_list,
+                              int iat,
+                              const RefVector<ValueVector_t>& psi_v_list)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < spo_list.size(); iw++)
+    spo_list[iw]->evaluateValue(*P_list[iw], iat, psi_v_list[iw]);
+}
+
 void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
                                ValueVector_t& psi,
                                const ValueVector_t& psiinv,
@@ -58,9 +68,33 @@ void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
   assert(psi.size() == psiinv.size());
   for (int iat = 0; iat < VP.getTotalNum(); ++iat)
   {
-    evaluate(VP, iat, psi);
+    evaluateValue(VP, iat, psi);
     ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
   }
+}
+
+void SPOSet::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
+                                  const RefVector<const VirtualParticleSet>& vp_list,
+                                  const RefVector<ValueVector_t>& psi_list,
+                                  const RefVector<const ValueVector_t>& psiinv_list,
+                                  std::vector<std::vector<ValueType>>& ratios_list)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < spo_list.size(); iw++)
+    spo_list[iw].get().evaluateDetRatios(vp_list[iw], psi_list[iw], psiinv_list[iw], ratios_list[iw]);
+
+}
+
+void SPOSet::mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
+                            const std::vector<ParticleSet*>& P_list,
+                            int iat,
+                            const RefVector<ValueVector_t>& psi_v_list,
+                            const RefVector<GradVector_t>& dpsi_v_list,
+                            const RefVector<ValueVector_t>& d2psi_v_list)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < spo_list.size(); iw++)
+    spo_list[iw]->evaluateVGL(*P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
 }
 
 void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)
@@ -158,7 +192,7 @@ bool SPOSet::put(xmlNodePtr cur)
   //initialize the number of orbital by the basis set size
   int norb = BasisSetSize;
   std::string debugc("no");
-  bool PBC                     = false;
+  bool PBC = false;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norb, "orbitals");
   aAttrib.add(norb, "size");
@@ -379,21 +413,21 @@ void SPOSet::basic_report(const std::string& pad)
   app_log().flush();
 }
 
-void SPOSet::evaluate(const ParticleSet& P,
-                      int iat,
-                      ValueVector_t& psi,
-                      GradVector_t& dpsi,
-                      HessVector_t& grad_grad_psi)
+void SPOSet::evaluateVGH(const ParticleSet& P,
+                         int iat,
+                         ValueVector_t& psi,
+                         GradVector_t& dpsi,
+                         HessVector_t& grad_grad_psi)
 {
   APP_ABORT("Need specialization of " + className + "::evaluate(P,iat,psi,dpsi,dhpsi) (vector quantities)\n");
 }
 
-void SPOSet::evaluate(const ParticleSet& P,
-                      int iat,
-                      ValueVector_t& psi,
-                      GradVector_t& dpsi,
-                      HessVector_t& grad_grad_psi,
-                      GGGVector_t& grad_grad_grad_psi)
+void SPOSet::evaluateVGHGH(const ParticleSet& P,
+                           int iat,
+                           ValueVector_t& psi,
+                           GradVector_t& dpsi,
+                           HessVector_t& grad_grad_psi,
+                           GGGVector_t& grad_grad_grad_psi)
 {
   APP_ABORT("Need specialization of " + className + "::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) (vector quantities)\n");
 }
@@ -418,6 +452,11 @@ void SPOSet::evaluateGradSource(const ParticleSet& P,
                                 GradMatrix_t& grad_lapl_phi)
 {
   APP_ABORT("SPOSetBase::evalGradSource is not implemented");
+}
+
+void SPOSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, ValueVector_t& dpsi)
+{
+  APP_ABORT("Need specialization of " + className + "::evaluate_spin(P,iat,psi,dpsi) (vector quantities)\n");
 }
 
 #ifdef QMC_CUDA
@@ -477,5 +516,6 @@ void SPOSet::evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::Complex
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
+
 #endif
 } // namespace qmcplusplus

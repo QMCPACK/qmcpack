@@ -32,7 +32,7 @@ def test_add_simulations():
     from simulation import Simulation
     from project_manager import ProjectManager
 
-    from test_simulation import get_test_workflow
+    from test_simulation_module import get_test_workflow
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
@@ -72,7 +72,7 @@ def test_traverse_cascades():
     from simulation import Simulation
     from project_manager import ProjectManager
 
-    from test_simulation import get_test_workflow,n_test_workflows
+    from test_simulation_module import get_test_workflow,n_test_workflows
 
     sims = []
     for n in range(n_test_workflows):
@@ -113,7 +113,7 @@ def test_screen_fake_sims():
     from simulation import Simulation
     from project_manager import ProjectManager
 
-    from test_simulation import get_test_workflow,n_test_workflows
+    from test_simulation_module import get_test_workflow,n_test_workflows
 
     sims = []
     for n in range(n_test_workflows):
@@ -149,7 +149,7 @@ def test_resolve_file_collisions():
     from simulation import Simulation
     from project_manager import ProjectManager
 
-    from test_simulation import get_test_workflow,n_test_workflows
+    from test_simulation_module import get_test_workflow,n_test_workflows
 
     divert_nexus_log()
 
@@ -192,7 +192,7 @@ def test_propagate_blockages():
     from simulation import Simulation
     from project_manager import ProjectManager
 
-    from test_simulation import get_test_workflow,n_test_workflows
+    from test_simulation_module import get_test_workflow,n_test_workflows
 
     sims = []
     for n in range(n_test_workflows):
@@ -237,7 +237,7 @@ def test_load_cascades():
     from simulation import Simulation
     from project_manager import ProjectManager
 
-    from test_simulation import get_test_workflow
+    from test_simulation_module import get_test_workflow
 
     sims = get_test_workflow(1)
 
@@ -266,7 +266,7 @@ def test_check_dependencies():
     from simulation import Simulation
     from project_manager import ProjectManager
 
-    from test_simulation import get_test_workflow
+    from test_simulation_module import get_test_workflow
 
     divert_nexus_log()
 
@@ -293,7 +293,7 @@ def test_write_simulation_status():
     from simulation import Simulation
     from project_manager import ProjectManager
 
-    from test_simulation import get_test_workflow
+    from test_simulation_module import get_test_workflow
 
     divert_nexus()
 
@@ -368,7 +368,7 @@ def test_run_project():
     from simulation import Simulation,input_template
     from project_manager import ProjectManager
 
-    from test_simulation import get_test_workflow,n_test_workflows
+    from test_simulation_module import get_test_workflow,n_test_workflows
 
     tpath = testing.setup_unit_test_output_directory('project_manager','test_run_project',divert=True)
 

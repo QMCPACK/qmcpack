@@ -18,7 +18,7 @@ Important parts of the Nexus script, ``h2o_ae_hf_qmc.py``, that differ from
 Example 1 are shown below:
 
 .. code-block:: python
-    #! /usr/bin/env python
+    #! /usr/bin/env python3
     
     ...
     from nexus import generate_convert4qmc

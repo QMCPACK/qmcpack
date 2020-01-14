@@ -19,6 +19,7 @@
 #include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
+#include "QMCDrivers/VMC/SOVMCUpdatePbyP.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
@@ -40,7 +41,7 @@ VMC::VMC(MCWalkerConfiguration& w,
          QMCHamiltonian& h,
          WaveFunctionPool& ppool,
          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm), UseDrift("yes")
+    : QMCDriver(w, psi, h, ppool, comm), UseDrift("yes"), SpinMoves("no"), SpinMass(1.0)
 {
   RootName = "vmc";
   QMCType  = "VMC";
@@ -49,6 +50,8 @@ VMC::VMC(MCWalkerConfiguration& w,
   m_param.add(UseDrift, "useDrift", "string");
   m_param.add(UseDrift, "usedrift", "string");
   m_param.add(UseDrift, "use_drift", "string");
+  m_param.add(SpinMoves, "SpinMoves", "string");
+  m_param.add(SpinMass, "SpinMass", "double");
 
   prevSteps               = nSteps;
   prevStepsBetweenSamples = nStepsBetweenSamples;
@@ -179,14 +182,33 @@ void VMC::resetRun()
       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
 #endif
       hClones[ip]->setRandomGenerator(Rng[ip]);
-
-      if (qmc_driver_mode[QMC_UPDATE_MODE])
+      
+      tolower(SpinMoves);
+      if (SpinMoves != "yes" && SpinMoves != "no") 
       {
-        Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+        APP_ABORT("SpinMoves must be yes/no\n");
+      }
+      if (SpinMoves == "yes") 
+      {
+        if (qmc_driver_mode[QMC_UPDATE_MODE]) 
+        {
+          Movers[ip] = new SOVMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip], *Rng[ip]);
+        }
+        else 
+        {
+          APP_ABORT("Spin moves only implemented with PbyP moves\n");
+        }
       }
       else
       {
-        Movers[ip] = new VMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+        if (qmc_driver_mode[QMC_UPDATE_MODE])
+        {
+          Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+        }
+        else
+        {
+          Movers[ip] = new VMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+        }
       }
       Movers[ip]->nSubSteps = nSubSteps;
       if (ip == 0)
@@ -224,6 +246,14 @@ void VMC::resetRun()
     for (int i = 0; i < Movers.size(); i++)
       Movers[i]->UseDrift = false;
   }
+
+  if (SpinMoves == "yes")
+  {
+    app_log() << "  Spins treated as dynamic variable with SpinMass: " << SpinMass << std::endl;
+    for (int i=0; i < Movers.size(); i++)
+      Movers[i]->setSpinMass(SpinMass);
+  }
+
   app_log() << "  Total Sample Size   =" << nTargetSamples << std::endl;
   app_log() << "  Walker distribution on root = ";
   copy(wPerNode.begin(), wPerNode.end(), std::ostream_iterator<int>(app_log(), " "));
@@ -370,6 +400,7 @@ bool VMC::put(xmlNodePtr q)
   app_log() << "  target samples = " << nTargetPopulation << std::endl;
   app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
   app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << std::endl;
+  app_log() << "  SpinMoves      = " << SpinMoves << std::endl;
 
   m_param.get(app_log());
 

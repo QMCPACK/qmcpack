@@ -66,7 +66,7 @@ public:
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
 
   void ratioUp(ParticleSet& P, int iat);
 
@@ -74,7 +74,7 @@ public:
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   /** move was rejected. copy the real container to the temporary to move on
    */
@@ -153,7 +153,7 @@ public:
   IndexVector_t Pivot;
 
   ///current ratio
-  RealType curRatio;
+  PsiValueType curRatio;
   ///cummulate ratio for particle-by-particle update
   RealType cumRatio;
   ///address of  dpsiU[0][0]

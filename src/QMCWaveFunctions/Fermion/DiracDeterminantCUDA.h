@@ -157,13 +157,13 @@ public:
     APP_ABORT("Calling DiracDeterminantCUDA::evaluateLog is illegal!");
   }
 
-  void acceptMove(ParticleSet& P, int iat) { APP_ABORT("Calling DiracDeterminantCUDA::acceptMove is illegal!"); }
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) { APP_ABORT("Calling DiracDeterminantCUDA::acceptMove is illegal!"); }
 
   void restore(int iat) { APP_ABORT("Calling DiracDeterminantCUDA::restore is illegal!"); }
 
-  ValueType ratio(ParticleSet& P, int iat) { APP_ABORT("Calling DiracDeterminantCUDA::ratio is illegal!"); }
+  PsiValueType ratio(ParticleSet& P, int iat) { APP_ABORT("Calling DiracDeterminantCUDA::ratio is illegal!"); }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     APP_ABORT("Calling DiracDeterminantCUDA::ratioGrad is illegal!");
   }

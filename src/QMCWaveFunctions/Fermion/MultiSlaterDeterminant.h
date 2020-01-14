@@ -88,14 +88,14 @@ public:
   virtual ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   virtual LogValueType evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
-                               ,
-                               ParticleSet::ParticleGradient_t& G,
-                               ParticleSet::ParticleLaplacian_t& L);
+                                   ,
+                                   ParticleSet::ParticleGradient_t& G,
+                                   ParticleSet::ParticleLaplacian_t& L);
 
   virtual GradType evalGrad(ParticleSet& P, int iat);
-  virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  virtual ValueType ratio(ParticleSet& P, int iat);
-  virtual void acceptMove(ParticleSet& P, int iat);
+  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  virtual PsiValueType ratio(ParticleSet& P, int iat);
+  virtual void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
   virtual void restore(int iat);
 
   virtual void registerData(ParticleSet& P, WFBufferType& buf);
@@ -156,7 +156,7 @@ public:
   // lap(#uniqueDet,part#)
   std::vector<ParticleSet::ParticleLaplacian_t> templapl;
 
-  ValueType curRatio;
+  PsiValueType curRatio;
   ValueType psiCurrent;
   ValueVector_t detsRatios;
   ValueVector_t tempstorage_up;
