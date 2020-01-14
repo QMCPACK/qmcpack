@@ -9,11 +9,11 @@ ENDIF()
   LIST(APPEND SHO_SCALARS "potential" "0.225 0.0028")
   LIST(APPEND SHO_SCALARS "latdev"    "1.0   0.013")
 
-# The errors on the total energy are numerical noise, not statistical errors
+# The errors on the total energy are statistical errors
 IF(QMC_MIXED_PRECISION)
-  LIST(APPEND GEP_SCALARS "totenergy" "0.45  0.00000004")
+  LIST(APPEND GEP_SCALARS "totenergy" "0.45  1e-6")
 ELSE()
-  LIST(APPEND GEP_SCALARS "totenergy" "0.45  4.0e-14")
+  LIST(APPEND GEP_SCALARS "totenergy" "0.45  1e-6")
 ENDIF()
   LIST(APPEND GEP_SCALARS "kinetic"   "0.225 0.0028")
   LIST(APPEND GEP_SCALARS "potential" "0.225 0.0028")
