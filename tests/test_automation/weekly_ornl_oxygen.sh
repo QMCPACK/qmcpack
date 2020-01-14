@@ -8,13 +8,14 @@ if [[ $localonly == "yes" ]]; then
 echo --- Local CMake/Make/CTest only. No cdash drop.
 fi
 
-export GLOBALTCFG="--timeout 3600 -VV"
+# Weekly settings:
+export GLOBALTCFG="--timeout 4800 -VV"
 export LIMITEDTESTS=""
 export LESSLIMITEDTESTS=""
-#export GLOBALTCFG="--timeout 1800 -VV"
-#export LIMITEDTESTS="-R deterministic -LE unstable -E long"
-#export LESSLIMITEDTESTS="-E long -LE unstable"
-#export LESSLIMITEDTESTS="-R 'deterministic|converter|short.*diamondC_.x1x1_pp-.mc_.*'"
+# Nightly settings:
+#export GLOBALTCFG="--timeout 360 -VV"
+#export LIMITEDTESTS="-R deterministic -LE unstable -E long-"
+#export LESSLIMITEDTESTS="-E long- -LE unstable"
 
 # Directory in which to run tests. Should be an absolute path and fastest usable filesystem
 test_path=/scratch/${USER}   # RAID FLASH on oxygen
@@ -37,12 +38,10 @@ export MANPATH=$MANPATH:$PGI/linux86-64/2019/man
 export LM_LICENSE_FILE=$PGI/license.dat
 export PATH=$PGI/linux86-64/2019/bin:$PATH
 
-# MKL setup used by many builds for BLAS, LAPACK etc.
-source /opt/intel2018/mkl/bin/mklvars.sh intel64
-
 # Intel2019.1 MPI configure setting to avoid MPI crash
 # via https://software.intel.com/en-us/forums/intel-clusters-and-hpc-technology/topic/799716
-export FI_PROVIDER=sockets
+#export FI_PROVIDER=sockets
+export I_MPI_FABRICS=shm
 
 module() { eval `/usr/bin/modulecmd bash $*`; }
 
@@ -89,7 +88,7 @@ echo --- PYTHONPATH=$PYTHONPATH
 #
 
 export QE_VERSION=6.4.1
-sys=build_intel2018
+sys=build_intel2020
 # QE version 6.x unpacks to qe-; Older versions 5.x uses espresso-
 export QE_PREFIX=qe-
 export QE_BIN=${test_dir}/${sys}_QE/${QE_PREFIX}${QE_VERSION}/bin
@@ -107,7 +106,7 @@ if [ ! -e ${QE_BIN}/pw.x ]; then
     cd ${QE_PREFIX}${QE_VERSION}
 
 (
-   source /opt/intel2018/bin/compilervars.sh intel64
+   source /opt/intel2020/bin/compilervars.sh intel64
     ./configure CC=mpiicc MPIF90=mpiifort F77=mpiifort --with-scalapack=intel --with-hdf5=/home/pk7/apps/hdf5-1.10.1-intel-mpi
     make pwall # No parallel build due to sometimes broken dependencies in QE build system
 )
@@ -121,9 +120,8 @@ fi
 
 echo --- Starting test builds and tests
 
-#for sys in build_intel2018 build_gccnew_mkl build_intel2019 build_clangnew_mkl build_pgi2019_nompi_mkl build_gccnew_mkl_complex build_gccnew_mkl_aos build_gccnew_mkl_complex_aos  build_intel2019_complex build_intel2018_complex build_intel2018_aos build_intel2018_complex_aos build_intel2018_nompi  build_intel2018_mixed build_clangnew_mkl_complex build_clangnew_mkl_nompi build_gccnew_mkl_nompi build_clangcuda build_clangcuda_complex build_clangcuda_full build_gccold_mkl build_clangold_mkl build_gccold_mkl_complex build_gccold_mkl_aos build_gccold_mkl_complex_aos build_clangold_mkl_complex build_clangold_mkl_nompi build_gccold_mkl_nompi
-#for sys in build_intel2019 build_intel2019_complex build_gccnew_mkl build_clangnew_mkl
-for sys in build_intel2019 build_intel2019_complex
+#for sys in build_intel2020 build_clangnew_mkl build_gccnew_mkl build_gcccuda build_clangnew_mkl_nompi build_pgi2019_nompi_mkl build_clangnew_mkl_complex build_gcccuda_complex build_gcccuda_full build_gccnew_mkl_aos build_gccnew_mkl_complex build_gccnew_mkl_complex_aos build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_intel2020_nompi build_intel2019 build_intel2019_complex build_clangold_mkl build_gccold_mkl build_gccold_mkl_complex
+for sys in build_intel2020 build_intel2020_complex
 do
 
 echo --- START $sys `date`
@@ -143,6 +141,9 @@ ourenv=gccnewbuild
 fi
 if [[ $sys == *"gccold"* ]]; then
 ourenv=gccoldbuild
+fi
+if [[ $sys == *"gcccuda"* ]]; then
+ourenv=gcccudabuild
 fi
 if [[ $sys == *"clangnew"* ]]; then
 ourenv=clangnewbuild
@@ -183,16 +184,18 @@ fi
 # GCC
 # Dates at https://gcc.gnu.org/releases.html
 gcc_vnew=9.2.0 # 2019-08-12
-gcc_vold=7.2.0 # 2017-08-14 
+gcc_vold=7.3.0 # 2018-01-25
+#gcc_vold=7.2.0 # 2017-08-14
 
 #For Intel:
-#Intel 2019.5
-#Intel 2018.5 
 gcc_vintel=7.4.0 # 2018-12-06
 
 #PGI 19.4
 # makelocalrc configured with 8.3.0 currently
 gcc_vpgi=8.3.0 # 2019-02-22
+
+# For CUDA toolkit compatibility
+gcc_vcuda=8.3.0 #  2019-02-22
 
 # LLVM 
 # Dates at http://releases.llvm.org/
@@ -207,12 +210,12 @@ hdf5_vold=1.8.19 # Released 2017-06-16
 
 # CMake 
 # Dates at https://cmake.org/files/
-cmake_vnew=3.15.4 # Released 2019-05-15
-cmake_vold=3.8.2 # Released 2017-05-31
+cmake_vnew=3.16.2 # Released 2019-12-19
+cmake_vold=3.10.2 # Released 2018-01-18
 
 # OpenMPI
 # Dates at https://www.open-mpi.org/software/ompi/v4.0/
-ompi_vnew=4.0.1 # Released 2019-03-26
+ompi_vnew=4.0.2 # Released 2019-10-07
 ompi_vold=2.1.2 # Released 2017-09-20
 
 libxml2_vnew=2.9.9 # Released 2019-01-03 See http://xmlsoft.org/sources/
@@ -230,14 +233,15 @@ boost_vold=1.65.1 # Released 2016-05-13
 
 spack load git
 
-spack load python@2.7.16%gcc@9.2.0 # Has numpy, h5py, pandas "activated" and available for import
+# Python version determined by numpy install in setup script
+spack load python@3.7.4%gcc@9.2.0 # Has numpy, scipy, h5py, pandas "activated" and available for import
 
 case "$ourenv" in
 gccnewbuild) echo $ourenv
 	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
-	spack load cmake@$cmake_vnew
+	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
 	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
@@ -253,11 +257,20 @@ gccoldbuild) echo $ourenv
 ;;
 gccintelbuild) echo $ourenv
 	spack load boost@$boost_vnew%gcc@$gcc_vnew
-	spack load gcc@$gcc_vintel # Old enough C++ library for Intel compiler
+	spack load gcc@$gcc_vintel # Provides old enough C++ library for Intel compiler
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
-	spack load cmake@$cmake_vnew
+	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
 # Use Intel MPI with Intel builds
 #	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew 
+	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
+	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
+;;
+gcccudabuild) echo $ourenv
+	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load gcc@$gcc_vcuda
+	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
+	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
 ;;
@@ -266,7 +279,7 @@ clangnewbuild) echo $ourenv
 	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
-	spack load cmake@$cmake_vnew
+	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
 	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
@@ -286,7 +299,7 @@ clangcudabuild) echo $ourenv
 	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
-	spack load cmake@$cmake_vnew
+	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
 	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
@@ -297,9 +310,13 @@ clangcudabuild) echo $ourenv
 esac
 module list
 
-# Use subshell to allow Intel compiler setup to contaminate the environment
+# Use subshell to allow Intel MKL or Intel compiler setup to contaminate the environment
+# No "unload" capability is provided
 (
 
+if [[ $sys == *"intel2020"* ]]; then
+source /opt/intel2020/bin/compilervars.sh intel64
+fi
 if [[ $sys == *"intel2019"* ]]; then
 source /opt/intel2019/bin/compilervars.sh intel64
 fi
@@ -338,7 +355,16 @@ fi
 
 # Intel
 if [[ $sys == *"intel"* ]]; then
-compilerversion=`icc -dumpversion|sed -e 's/\..*//g'`
+# Assumie the Intel dumpversion string has format AA.B.C.DDD
+# AA is historically major year and a good enough unique identifier,
+# but Intel 2020 packages currently (12/2019) come with the 19.1 compiler.
+# Use 19.1 for this compiler only to avoid breaking test histories.
+if [[ $sys == *"intel2020"* ]]; then
+compilerversion=`icc -dumpversion|sed -e 's/\([0-9][0-9]\)\.\([0-9]\)\..*/\1.\2/g'` # AA.B
+else
+compilerversion=`icc -dumpversion|sed -e 's/\..*//g'` # AA year only
+fi
+
 if [[ $sys == *"nompi"* ]]; then
 QMCPACK_TEST_SUBMIT_NAME=Intel20${compilerversion}-NoMPI
 CTCFG="-DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DQMC_MPI=0"
@@ -374,7 +400,9 @@ fi
 # MKLROOT set in sourced Intel compilervars.sh 
 if [[ $sys == *"mkl"* ]]; then
 QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-MKL
-CTCFG="$CTCFG -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib"
+# MKL setup used by many builds for BLAS, LAPACK etc.
+source /opt/intel2020/mkl/bin/mklvars.sh intel64
+CTCFG="$CTCFG -DENABLE_MKL=1 -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib"
 fi
 
 # Complex
@@ -407,7 +435,7 @@ CTCFG="$CTCFG -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1"
 # Selectively enable AFQMC due to more stringent compiler requirements
 if [[ $sys == *"complex"* ]]; then
 case "$sys" in
-*gccnew*|*clangnew*|*clangcuda*|*intel*) echo "AFQMC is enabled for this complex build"
+*gccnew*|*clangnew*|*cuda*|*intel*) echo "AFQMC is enabled for this complex build"
 CTCFG="$CTCFG -DBUILD_AFQMC=1"
 ;;
 *) echo "AFQMC is disabled for this complex build (either unsupported or unchecked)"
@@ -417,10 +445,8 @@ esac
 fi
 
 # Adjust which tests are run to control overall runtime
-#build_intel2018|build_intel2018_complex|build_gccnew_mkl|build_gccnew_mkl_complex|build_llvmnew_mkl_complex) echo "Running full test set for $sys"
 case "$sys" in
-*gccnew_mkl|*gccnew_mkl_complex|*intel2019|*intel2019_complex|*clangnew_mkl|*clangcuda) echo "Running full ("less limited") test set for $sys"
-#*gccnew_mkl|*gccnew_mkl_complex|*intel2018|*intel2018_complex|*intel2019|*intel2019_complex|*clangnew_mkl*|*pgi2019_nompi_mkl|*clangcuda) echo "Running full ("less limited") test set for $sys"
+*gccnew_mkl|*gccnew_mkl_complex|*gccnew_mkl_aos|*gccnew_mkl_complex_aos|*intel2020|*intel2020_complex|*clangnew_mkl|*clangnew_mkl_complex|*gcccuda|*gcccuda_complex|*gcccuda_full) echo "Running full ("less limited") test set for $sys"
 THETESTS=$LESSLIMITEDTESTS
 ;;
 *) echo "Running limited test set for $sys"
@@ -445,7 +471,7 @@ echo --- END ctest `date`
 else
 echo --- START ctest `date` 
 echo ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
-nice ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
+ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
 echo --- END ctest `date`
 fi
 
