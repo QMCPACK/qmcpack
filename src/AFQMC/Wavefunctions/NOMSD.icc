@@ -996,7 +996,7 @@ namespace afqmc
       assert(G.size(1) == wset.size() && G.size(0) == size_t(dm_size(not compact)));
     const int nw = wset.size(); 
     const int ndet = ci.size();
-    int nbatch__ = std::min(nw,(nbatch<0?ndet*nw:nbatch));
+    int nbatch__ = std::min(nw*ndet,(nbatch<0?ndet*nw:nbatch));
     // do batches of determinants to simplify code
     double LogOverlapFactor(wset.getLogOverlapFactor());
     assert(Ov.size() >= nw);  
@@ -1008,6 +1008,8 @@ namespace afqmc
       APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n"); 
     fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
     stdCVector hvec(iextensions<1u>{2*nbatch__});
+    stdCVector Ovl(iextensions<1u>{nw});
+    fill_n(Ovl.origin(),nw,ComplexType(0.0));
     TG.local_barrier();
     auto Gsize = size_t(dm_size(not compact));
     if(localGbuff.size() < nbatch__*Gsize+1)
@@ -1022,6 +1024,10 @@ namespace afqmc
       auto GAdims = dm_dims(not compact,Alpha); 
       CTensor_ref G3D_(localGbuff.origin(),{nbatch__,GAdims.first,GAdims.second});
       CMatrix_ref G2D_(G3D_.origin(),iextensions<2u>{nbatch__,GAdims.first*GAdims.second});
+      std::vector<pointer> Gx;
+      std::vector<pointer> Gy;
+      Gx.reserve(nbatch__);
+      Gy.reserve(nbatch__);
 
       // b = idet*nw + iw
       // iw = (b0+ni)%nw
@@ -1037,19 +1043,25 @@ namespace afqmc
         SDetOp.BatchedMixedDensityMatrix(Oi,Ai,
               G3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(0,nb),compact);
         copy_n(ovlp2.origin(),nb,hvec.origin());
+        Gx.clear();
+        Gy.clear();
         for(int ib=0; ib<nb; ++ib) {
-          int idet = (b0+ib)/nw; 
-          int iw = (b0+ib)%nw; 
-          ComplexType ov(hvec[ib]);
-          if(walker_type==CLOSED) ov *= ov;
-          ov *= ma::conj(ci[idet]);
-          if(transpose) {
-            ma::axpy(ov,G2D_[ib],G[iw]);
-          } else {
-            ma::axpy(ov,G2D_[ib],G(G.extension(0),iw));
-          }
-          Ov[iw] += ov;
-        } 
+          int idet = (b0+ib)/nw;
+          int iw = (b0+ib)%nw;
+          if(walker_type==CLOSED) hvec[ib] *= hvec[ib];
+          hvec[ib] *= ma::conj(ci[idet]);
+          Gx.emplace_back(G2D_[ib].origin());
+          if(transpose) 
+            Gy.emplace_back(G[iw].origin());
+          else 
+            Gy.emplace_back(G.origin()+iw);
+          Ovl[iw] += hvec[ib];
+        }
+        using ma::sumGwBatched;
+        if(transpose) 
+          sumGwBatched(GAdims.first*GAdims.second,hvec.data(),Gx.data(),1,Gy.data(),1,b0,nw,nb);
+        else 
+          sumGwBatched(GAdims.first*GAdims.second,hvec.data(),Gx.data(),1,Gy.data(),nw,b0,nw,nb);
       }  
 
     } else {
@@ -1060,6 +1072,14 @@ namespace afqmc
       CMatrix_ref GA2D_(GA3D_.origin(),iextensions<2u>{nbatch__,GAdims.first*GAdims.second});
       CTensor_ref GB3D_(GA3D_.origin()+GA3D_.num_elements(),{nbatch__,GBdims.first,GBdims.second});
       CMatrix_ref GB2D_(GB3D_.origin(),iextensions<2u>{nbatch__,GBdims.first*GBdims.second});
+      std::vector<pointer> Gxa;
+      std::vector<pointer> Gya;
+      std::vector<pointer> Gxb;
+      std::vector<pointer> Gyb;
+      Gxa.reserve(nbatch__);
+      Gya.reserve(nbatch__);
+      Gxb.reserve(nbatch__);
+      Gyb.reserve(nbatch__);
 
       // b = idet*nw + iw
       // iw = (b0+ni)%nw
@@ -1083,21 +1103,36 @@ namespace afqmc
         SDetOp.BatchedMixedDensityMatrix(Oi,Ai,
               GB3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(nb,2*nb),compact);
         copy_n(ovlp2.origin(),2*nb,hvec.origin());
+        Gxa.clear();
+        Gya.clear();
+        Gxb.clear();
+        Gyb.clear();
         for(int ib=0; ib<nb; ++ib) {
           int idet = (b0+ib)/nw;
-          int iw = (b0+ib)%nw;  
-          ComplexType ov = hvec[ib]*hvec[nb+ib]*ma::conj(ci[idet]);
+          int iw = (b0+ib)%nw;
+          hvec[ib] *= hvec[nb+ib]*ma::conj(ci[idet]);
+          Gxa.emplace_back(GA2D_[ib].origin()); 
+          Gxb.emplace_back(GB2D_[ib].origin()); 
           if(transpose) {
-            ma::axpy(ov,GA2D_[ib],G[iw].sliced(0,GAdims.first*GAdims.second));
-            ma::axpy(ov,GB2D_[ib],G[iw].sliced(GAdims.first*GAdims.second,G.size(1)));
+            Gya.emplace_back(G[iw].origin());
+            Gyb.emplace_back(G[iw].origin()+GAdims.first*GAdims.second);
           } else {
-            ma::axpy(ov,GA2D_[ib],G({0,GAdims.first*GAdims.second},iw));
-            ma::axpy(ov,GB2D_[ib],G({GAdims.first*GAdims.second,G.size(0)},iw));
+            Gya.emplace_back(G.origin()+iw);
+            Gyb.emplace_back(G[GAdims.first*GAdims.second].origin()+iw);
           }
-          Ov[iw] += ov;
-        }  
+          Ovl[iw] += hvec[ib];
+        }
+        using ma::sumGwBatched;
+        if(transpose) {
+          sumGwBatched(GAdims.first*GAdims.second,hvec.data(),Gxa.data(),1,Gya.data(),1,b0,nw,nb);
+          sumGwBatched(GBdims.first*GBdims.second,hvec.data(),Gxb.data(),1,Gyb.data(),1,b0,nw,nb);
+        } else {
+          sumGwBatched(GAdims.first*GAdims.second,hvec.data(),Gxa.data(),1,Gya.data(),nw,b0,nw,nb);
+          sumGwBatched(GBdims.first*GBdims.second,hvec.data(),Gxb.data(),1,Gyb.data(),nw,b0,nw,nb);
+        }
       }
     }
+    copy_n(Ovl.origin(),nw,Ov.origin());
     // normalize G
     if(transpose) {
       for(size_t iw=0; iw<G.size(0); ++iw) { 

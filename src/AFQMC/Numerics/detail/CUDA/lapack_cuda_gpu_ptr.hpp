@@ -111,29 +111,51 @@ namespace qmc_cuda
 
   // getriBatched
   template<typename T, typename I>
-  inline static void getriBatched (int n, cuda_gpu_ptr<T> * a, int lda, cuda_gpu_ptr<I> piv, cuda_gpu_ptr<T> * c, int lwork, cuda_gpu_ptr<I> info, int batchSize)
+  inline static void getriBatched (int n, cuda_gpu_ptr<T> * a, int lda, cuda_gpu_ptr<I> piv, cuda_gpu_ptr<T> * ainv, int ldc, cuda_gpu_ptr<I> info, int batchSize)
   {
     assert(lda == n);
-    assert(lwork >= n*n);
     T **A_d, **C_d;
     T **A_h, **C_h;
     A_h = new T*[batchSize];
     C_h = new T*[batchSize];
     for(int i=0; i<batchSize; i++) {
       A_h[i] = to_address(a[i]);
-      C_h[i] = to_address(c[i]);
+      C_h[i] = to_address(ainv[i]);
     }
     cudaMalloc((void **)&A_d,  batchSize*sizeof(*A_h));
     cudaMalloc((void **)&C_d,  batchSize*sizeof(*C_h));
     cudaMemcpy(A_d, A_h, batchSize*sizeof(*A_h), cudaMemcpyHostToDevice);
     cudaMemcpy(C_d, C_h, batchSize*sizeof(*C_h), cudaMemcpyHostToDevice);
     cublasStatus_t status = cublas::cublas_getriBatched(*(a[0]).handles.cublas_handle, n, A_d, lda,
-                                                        to_address(piv), C_d, n, to_address(info), batchSize);
+                                                        to_address(piv), C_d, ldc, to_address(info), batchSize);
     if(CUBLAS_STATUS_SUCCESS != status)
       throw std::runtime_error("Error: cublas_getri returned error code.");
+    cudaFree(A_d);
+    cudaFree(C_d);
+    delete [] A_h;
+    delete [] C_h;
+  }
+
+  // matinveBatched
+  template<typename T1, typename T2, typename I>
+  inline static void matinvBatched (int n, cuda_gpu_ptr<T1> * a, int lda, cuda_gpu_ptr<T2> * ainv, int lda_inv, cuda_gpu_ptr<I> info, int batchSize)
+  {
+    T1 **A_d, **A_h;
+    T2 **C_d, **C_h;
+    A_h = new T1*[batchSize];
+    C_h = new T2*[batchSize];
     for(int i=0; i<batchSize; i++) {
-      cudaMemcpy(A_h[i], C_h[i], n*n*sizeof(T), cudaMemcpyHostToDevice);
+      A_h[i] = to_address(a[i]);
+      C_h[i] = to_address(ainv[i]);
     }
+    cudaMalloc((void **)&A_d,  batchSize*sizeof(*A_h));
+    cudaMalloc((void **)&C_d,  batchSize*sizeof(*C_h));
+    cudaMemcpy(A_d, A_h, batchSize*sizeof(*A_h), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, C_h, batchSize*sizeof(*C_h), cudaMemcpyHostToDevice);
+    cublasStatus_t status = cublas::cublas_matinvBatched(*(a[0]).handles.cublas_handle, n, 
+                    A_d, lda, C_d, lda_inv, to_address(info), batchSize);
+    if(CUBLAS_STATUS_SUCCESS != status)
+      throw std::runtime_error("Error: cublas_matinv returned error code.");
     cudaFree(A_d);
     cudaFree(C_d);
     delete [] A_h;

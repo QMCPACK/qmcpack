@@ -296,7 +296,7 @@ template<class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
         typename = void
 >
 void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, std::vector<MultiArray2DB>& B,
-                                      T beta, std::vector<MultiArray2DC> C){
+                                      T beta, std::vector<MultiArray2DC>& C){
         int nbatch = C.size();
         assert(A.size() >= nbatch);
         assert(B.size() >= nbatch);
@@ -361,7 +361,7 @@ template<class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
         typename = void
 >
 void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, std::vector<MultiArray2DB>& B, 
-                                      T beta, std::vector<MultiArray2DC> C){
+                                      T beta, std::vector<MultiArray2DC>& C){
         int nbatch = C.size();
         assert(A.size() >= nbatch);
         assert(B.size() >= nbatch);
@@ -406,7 +406,7 @@ template<class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
         >::type
 >
 void BatchedProduct(char TA, char TB, std::vector<MultiArray2DA*>& A, std::vector<MultiArray2DB>& B, 
-                                      std::vector<MultiArray2DC> C){
+                                      std::vector<MultiArray2DC>& C){
         using Type = typename std::decay<MultiArray2DA>::type::element;
         return BatchedProduct(TA,TB,Type(1.), A, B, Type(0.), C);
 }

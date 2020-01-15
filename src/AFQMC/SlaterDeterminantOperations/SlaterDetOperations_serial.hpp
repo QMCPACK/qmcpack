@@ -179,13 +179,10 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       set_buffer(nbatch*NAEA*NAEA + n1*n2*n3);
       TTensor_ref TNN3D(TBuff.origin(), {nbatch,NAEA,NAEA});
       TTensor_ref TNM3D(TBuff.origin()+TNN3D.num_elements(), {n1,n2,n3});
-      int sz = ma::invert_optimal_workspace_size(TNN3D[0]);
-      if(WORK.num_elements() < nbatch*sz)
-        WORK.reextent(iextensions<1u>{nbatch*sz});
       if(IWORK.num_elements() < nbatch*(NMO+1))
         IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
       SlaterDeterminantOperations::batched::MixedDensityMatrix(hermA,Bi,
-                std::forward<MatC>(C),LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,WORK,compact,herm);
+                std::forward<MatC>(C),LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,compact,herm);
     }
 
     template<class MatA, class MatB, class MatC, class TVec>
@@ -207,13 +204,10 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       set_buffer(nbatch*NAEA*NAEA + n1*n2*n3);
       TTensor_ref TNN3D(TBuff.origin(), {nbatch,NAEA,NAEA});
       TTensor_ref TNM3D(TBuff.origin()+TNN3D.num_elements(), {n1,n2,n3});
-      int sz = ma::invert_optimal_workspace_size(TNN3D[0]);
-      if(WORK.num_elements() < nbatch*sz)
-        WORK.reextent(iextensions<1u>{nbatch*sz});
       if(IWORK.num_elements() < nbatch*(NMO+1))
         IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
       SlaterDeterminantOperations::batched::DensityMatrices(Left,Right,G,
-                LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,WORK,compact,herm);
+                LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,compact,herm);
     }
 
     template<class MatA, class MatB, class TVec>
