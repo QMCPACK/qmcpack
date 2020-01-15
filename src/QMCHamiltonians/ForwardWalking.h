@@ -18,7 +18,6 @@
 #ifndef QMCPLUSPLUS_FORWARDWALKING_H
 #define QMCPLUSPLUS_FORWARDWALKING_H
 #include "QMCHamiltonians/OperatorBase.h"
-
 namespace qmcplusplus
 {
 class QMCHamiltonian;
