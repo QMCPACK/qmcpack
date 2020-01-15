@@ -28,8 +28,13 @@ private:
   template<typename DT>
   using OffloadPinnedVector = Vector<DT, OMPallocator<DT, PinnedAlignedAllocator<DT>>>;
 
-  OffloadPinnedVector<RealType> memoryPool;
-  OffloadPinnedVector<RealType*> src_tgt_dt_ptrs;
+  ///accelerator output array for multiple walkers, N_targets x N_sources_padded x (D+1) (distances, displacements)
+  OffloadPinnedVector<RealType> offload_output;
+  ///accelerator input array for a list of target particle positions, N_targets x D
+  OffloadPinnedVector<RealType> target_pos;
+  ///accelerator input array for a list of source particle position pointers
+  OffloadPinnedVector<RealType*> source_ptrs;
+  ///accelerator input array. The walker id, target particle id and number of target particles within a walker
   OffloadPinnedVector<int> ref_id_ntgt_list;
 
 public:
@@ -49,18 +54,12 @@ public:
 
     // initialize memory containers and views
     const int N_sources_padded = getAlignedSize<T>(N_sources);
-    // for both distances and displacements
-    memoryPool.resize(N_targets * N_sources_padded * (D + 1));
-    // first part is for distances
-    const size_t head_offset = N_targets * N_sources_padded;
-
     distances_.resize(N_targets);
     displacements_.resize(N_targets);
     for (int i = 0; i < N_targets; ++i)
     {
-      distances_[i].attachReference(memoryPool.data() + i * N_sources_padded, N_sources);
-      displacements_[i].attachReference(N_sources, N_sources_padded,
-                                        memoryPool.data() + head_offset + i * N_sources_padded * D);
+      distances_[i].resize(N_sources_padded);
+      displacements_[i].resize(N_sources_padded);
     }
 
     // The padding of temp_r_ and temp_dr_ is necessary for the memory copy in the update function
@@ -82,20 +81,27 @@ public:
   {
     // be aware of the sign of Displacement
     const int N_targets_local  = N_targets;
-    const int N_targets_padded = getAlignedSize<T>(N_targets);
     const int N_sources_local  = N_sources;
     const int N_sources_padded = getAlignedSize<T>(N_sources);
 
-    auto* target_pos_ptr = P.RSoA->getAllParticlePos().data();
+    target_pos.resize(N_targets * D);
+    for (size_t iat = 0; iat < N_targets; iat++)
+      for (size_t idim = 0; idim < D; idim++)
+        target_pos[iat * D + idim] = P.R[iat][idim];
+
+    offload_output.resize(N_targets * N_sources_padded * (D + 1));
+
+    auto* target_pos_ptr = target_pos.data();
     auto* source_pos_ptr = Origin->RSoA->getAllParticlePos().data();
-    auto* r_dr_ptr       = memoryPool.data();
+    auto* r_dr_ptr       = offload_output.data();
 
     const int ChunkSizePerTeam = 256;
     const int NumTeams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     #pragma omp target teams distribute collapse(2) num_teams(N_targets*NumTeams) \
-      map(to: source_pos_ptr[:N_sources_padded*D], target_pos_ptr[:N_targets_padded*D]) \
-      map(always, from: r_dr_ptr[:memoryPool.size()])
+      map(to: source_pos_ptr[:N_sources_padded*D]) \
+      map(always, to: target_pos_ptr[:N_targets*D]) \
+      map(always, from: r_dr_ptr[:offload_output.size()])
     for (int iat = 0; iat < N_targets_local; ++iat)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
@@ -104,7 +110,7 @@ public:
 
         T pos[D];
         for (int idim = 0; idim < D; idim++)
-          pos[idim] = target_pos_ptr[idim * N_targets_padded + iat];
+          pos[idim] = target_pos_ptr[iat * D + idim];
 
         auto* r_iat_ptr  = r_dr_ptr + N_sources_padded * iat;
         auto* dr_iat_ptr = r_dr_ptr + N_sources_padded * N_targets_local + N_sources_padded * D * iat;
@@ -112,6 +118,13 @@ public:
         DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
                                                       first, last);
       }
+
+    for (size_t iat = 0; iat < N_targets; iat++)
+    {
+      assert(N_sources_padded == displacements_[iat].capacity());
+      std::copy_n(offload_output.data() + N_sources_padded * iat, N_sources_padded, distances_[iat].data());
+      std::copy_n(offload_output.data() + N_sources_padded * N_targets + N_sources_padded * D * iat, N_sources_padded * D, displacements_[iat].data());
+    }
   }
 
 /*

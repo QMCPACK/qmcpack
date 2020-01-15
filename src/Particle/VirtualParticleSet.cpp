@@ -24,7 +24,7 @@
 
 namespace qmcplusplus
 {
-VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : ParticleSet(p.RSoA->getKind()), refPS(p)
+VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : refPS(p)
 {
   setName("virtual");
 
