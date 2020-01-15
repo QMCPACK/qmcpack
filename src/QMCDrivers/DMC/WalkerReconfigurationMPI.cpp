@@ -18,7 +18,11 @@
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/FairDivide.h"
 #include "Utilities/RandomGenerator.h"
-using namespace qmcplusplus;
+
+namespace qmcplusplus
+{
+using WP = WalkerProperties::Indexes;
+
 
 /** default constructor
  *
@@ -74,15 +78,15 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   DeltaStep = UnitZeta * nwInv;
   //std::fill(wSum.begin(),wSum.end(),0.0);
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
-  int iw        = 0;
+  int iw                = 0;
   FullPrecRealType esum = 0.0, e2sum = 0.0, wtot = 0.0, ecum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
   while (it != it_end)
   {
-    r2_accepted += (*it)->Properties(R2ACCEPTED);
-    r2_proposed += (*it)->Properties(R2PROPOSED);
+    r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
+    r2_proposed += (*it)->Properties(WP::R2PROPOSED);
     FullPrecRealType wgt((*it)->Weight);
-    FullPrecRealType e((*it)->Properties(LOCALENERGY));
+    FullPrecRealType e((*it)->Properties(WP::LOCALENERGY));
     esum += wgt * e;
     e2sum += wgt * e * e;
     wtot += wgt;
@@ -112,7 +116,8 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
     wOffset[ip + 1] = wOffset[ip] + curData[jp];
   wtot = wOffset[num_contexts_]; //wtot is the total weight
   //find the lower and upper bound of index
-  int minIndex = static_cast<int>((wOffset[MyContext] / wtot - DeltaStep) * static_cast<FullPrecRealType>(TotalWalkers)) - 1;
+  int minIndex =
+      static_cast<int>((wOffset[MyContext] / wtot - DeltaStep) * static_cast<FullPrecRealType>(TotalWalkers)) - 1;
   int maxIndex =
       static_cast<int>((wOffset[MyContext + 1] / wtot - DeltaStep) * static_cast<FullPrecRealType>(TotalWalkers)) + 1;
   int nb = maxIndex - minIndex + 1;
@@ -122,7 +127,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
     Zeta[ii] = wtot * (DeltaStep + static_cast<FullPrecRealType>(i) * nwInv);
   }
   FullPrecRealType wCur = wOffset[MyContext];
-  int ind       = 0;
+  int ind               = 0;
   while (Zeta[ind] < wCur)
   {
     ind++;
@@ -132,7 +137,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   for (iw = 0; iw < nw; iw++)
   {
     FullPrecRealType tryp = wCur + std::abs(wConf[iw]);
-    int ni        = 0;
+    int ni                = 0;
     while (Zeta[ind] < tryp && Zeta[ind] >= wCur)
     {
       ind++;
@@ -275,3 +280,4 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W, const std::
     ++ic;
   }
 }
+} // namespace qmcplusplus

@@ -247,6 +247,7 @@ ENDIF()
 
   ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO})
 
+  TARGET_LINK_LIBRARIES(qmcbase qmcminimalcontainers)
   #IF(QMC_BUILD_STATIC)
   #  ADD_LIBRARY(qmcbase STATIC ${PARTICLE}  ${PARTICLEIO})
   #ELSE(QMC_BUILD_STATIC)
@@ -279,6 +280,8 @@ ENDIF()
   SUBDIRS(QMCTools)
   #ENDIF(BUILD_QMCTOOLS)
 
+  SUBDIRS(MinimalContainers)
+  
   if (BUILD_UNIT_TESTS) #{
     #Unit test directories
     INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)

@@ -225,6 +225,9 @@
   #endif
 #endif
 
+/* Fixed Size Walker Properties */
+#cmakedefine WALKER_MAX_PROPERTIES @WALKER_MAX_PROPERTIES@
+
 /* Internal timers */
 #cmakedefine ENABLE_TIMERS @ENABLE_TIMERS@
 

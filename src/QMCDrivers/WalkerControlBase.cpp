@@ -18,12 +18,15 @@
 #include <numeric>
 
 #include "QMCDrivers/WalkerControlBase.h"
+#include "QMCDrivers/WalkerProperties.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
     : MPIObjectBase(c),
       n_min_(1),
@@ -182,10 +185,10 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
         nfn += 1;
         ngoodfn += nc;
       }
-      r2_accepted += (*it)->Properties(R2ACCEPTED);
-      r2_proposed += (*it)->Properties(R2PROPOSED);
-      FullPrecRealType e((*it)->Properties(LOCALENERGY));
-      FullPrecRealType bfe((*it)->Properties(ALTERNATEENERGY));
+      r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
+      r2_proposed += (*it)->Properties(WP::R2PROPOSED);
+      FullPrecRealType e((*it)->Properties(WP::LOCALENERGY));
+      FullPrecRealType bfe((*it)->Properties(WP::ALTERNATEENERGY));
       FullPrecRealType wgt   = ((*it)->Weight);
       FullPrecRealType rnwgt = ((*it)->ReleasedNodeWeight);
       esum += wgt * rnwgt * e;
@@ -202,9 +205,9 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
         nfn++;
       else
         ncr++;
-      r2_accepted += (*it)->Properties(R2ACCEPTED);
-      r2_proposed += (*it)->Properties(R2PROPOSED);
-      FullPrecRealType e((*it)->Properties(LOCALENERGY));
+      r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
+      r2_proposed += (*it)->Properties(WP::R2PROPOSED);
+      FullPrecRealType e((*it)->Properties(WP::LOCALENERGY));
       // This is a trick to estimate the number of walkers
       // after the first iterration branching.
       //RealType wgt=((*it)->Weight);
@@ -258,10 +261,10 @@ int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
         nfn += 1;
         ngoodfn += nc;
       }
-      r2_accepted += walker.Properties(R2ACCEPTED);
-      r2_proposed += walker.Properties(R2PROPOSED);
-      FullPrecRealType e(walker.Properties(LOCALENERGY));
-      FullPrecRealType bfe(walker.Properties(ALTERNATEENERGY));
+      r2_accepted += walker.Properties(WP::R2ACCEPTED);
+      r2_proposed += walker.Properties(WP::R2PROPOSED);
+      FullPrecRealType e(walker.Properties(WP::LOCALENERGY));
+      FullPrecRealType bfe(walker.Properties(WP::ALTERNATEENERGY));
       FullPrecRealType wgt   = (walker.Weight);
       FullPrecRealType rnwgt = (walker.ReleasedNodeWeight);
       esum += wgt * rnwgt * e;
@@ -278,9 +281,9 @@ int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
         nfn++;
       else
         ncr++;
-      r2_accepted += walker.Properties(R2ACCEPTED);
-      r2_proposed += walker.Properties(R2PROPOSED);
-      FullPrecRealType e(walker.Properties(LOCALENERGY));
+      r2_accepted += walker.Properties(WP::R2ACCEPTED);
+      r2_proposed += walker.Properties(WP::R2PROPOSED);
+      FullPrecRealType e(walker.Properties(WP::LOCALENERGY));
       // This is a trick to estimate the number of walkers
       // after the first iterration branching.
       //RealType wgt=(walker.Weight);
@@ -417,7 +420,7 @@ void WalkerControlBase::Write2XYZ(MCWalkerConfiguration& W)
   int nptcls(W.getTotalNum());
   while (it != it_end)
   {
-    fout << nptcls << std::endl << "# E = " << (*it)->Properties(LOCALENERGY) << " Wgt= " << (*it)->Weight << std::endl;
+    fout << nptcls << std::endl << "# E = " << (*it)->Properties(WP::LOCALENERGY) << " Wgt= " << (*it)->Weight << std::endl;
     for (int i = 0; i < nptcls; i++)
       fout << "H " << (*it)->R[i] << std::endl;
     ++it;
@@ -454,10 +457,10 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
         nfn += 1;
         ngoodfn += nc;
       }
-      r2_accepted += (*it)->Properties(R2ACCEPTED);
-      r2_proposed += (*it)->Properties(R2PROPOSED);
-      FullPrecRealType local_energy((*it)->Properties(LOCALENERGY));
-      FullPrecRealType alternate_energy((*it)->Properties(ALTERNATEENERGY));
+      r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
+      r2_proposed += (*it)->Properties(WP::R2PROPOSED);
+      FullPrecRealType local_energy((*it)->Properties(WP::LOCALENERGY));
+      FullPrecRealType alternate_energy((*it)->Properties(WP::ALTERNATEENERGY));
       FullPrecRealType wgt   = ((*it)->Weight);
       FullPrecRealType rnwgt = ((*it)->ReleasedNodeWeight);
       esum += wgt * rnwgt * local_energy;
@@ -474,9 +477,9 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
         nfn++;
       else
         ncr++;
-      r2_accepted += (*it)->Properties(R2ACCEPTED);
-      r2_proposed += (*it)->Properties(R2PROPOSED);
-      FullPrecRealType e((*it)->Properties(LOCALENERGY));
+      r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
+      r2_proposed += (*it)->Properties(WP::R2PROPOSED);
+      FullPrecRealType e((*it)->Properties(WP::LOCALENERGY));
       FullPrecRealType wgt = ((*it)->Weight);
       esum += wgt * e;
       e2sum += wgt * e * e;
@@ -578,10 +581,10 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
         nfn += 1;
         ngoodfn += nc;
       }
-      r2_accepted += walker.Properties(R2ACCEPTED);
-      r2_proposed += walker.Properties(R2PROPOSED);
-      FullPrecRealType local_energy(walker.Properties(LOCALENERGY));
-      FullPrecRealType alternate_energy(walker.Properties(ALTERNATEENERGY));
+      r2_accepted += walker.Properties(WP::R2ACCEPTED);
+      r2_proposed += walker.Properties(WP::R2PROPOSED);
+      FullPrecRealType local_energy(walker.Properties(WP::LOCALENERGY));
+      FullPrecRealType alternate_energy(walker.Properties(WP::ALTERNATEENERGY));
       FullPrecRealType wgt   = walker.Weight;
       FullPrecRealType rnwgt = walker.ReleasedNodeWeight;
       esum += wgt * rnwgt * local_energy;
@@ -598,9 +601,9 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
         nfn++;
       else
         ncr++;
-      r2_accepted += walker.Properties(R2ACCEPTED);
-      r2_proposed += walker.Properties(R2PROPOSED);
-      FullPrecRealType local_energy(walker.Properties(LOCALENERGY));
+      r2_accepted += walker.Properties(WP::R2ACCEPTED);
+      r2_proposed += walker.Properties(WP::R2PROPOSED);
+      FullPrecRealType local_energy(walker.Properties(WP::LOCALENERGY));
       FullPrecRealType wgt = walker.Weight;
       esum += wgt * local_energy;
       e2sum += wgt * local_energy * local_energy;

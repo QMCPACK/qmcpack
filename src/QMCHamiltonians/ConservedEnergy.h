@@ -26,6 +26,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+  
 /** A fake Hamiltonian to check the sampling of the trial function.
  *
  * Integrating the expression
@@ -120,7 +122,7 @@ struct ConservedEnergy : public OperatorBase
 #else
       flux = lap + 2 * gradsq;
 #endif
-      w.getPropertyBase()[NUMPROPERTIES + myIndex] = flux;
+      w.getPropertyBase()[WP::NUMPROPERTIES + myIndex] = flux;
     }
   }
 #endif

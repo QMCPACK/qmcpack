@@ -14,10 +14,10 @@
 
 
 #include "QMCDrivers/DMC/SODMCUpdatePbyP.h"
-#include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "QMCDrivers/WalkerProperties.h"
 #include "QMCDrivers/DriftOperators.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
@@ -29,6 +29,8 @@ typedef int TraceManager;
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 TimerNameList_t<SODMCTimers> SODMCTimerNames = {{SODMC_buffer, "SODMCUpdatePbyP::Buffer"},
                                                 {SODMC_movePbyP, "SODMCUpdatePbyP::movePbyP"},
                                                 {SODMC_hamiltonian, "SODMCUpdatePbyP::Hamiltonian"},
@@ -62,7 +64,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
   int nAcceptTemp(0);
   int nRejectTemp(0);
   //copy the old energy and scale factor of drift
-  FullPrecRealType eold(thisWalker.Properties(LOCALENERGY));
+  FullPrecRealType eold(thisWalker.Properties(WP::LOCALENERGY));
   FullPrecRealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
@@ -157,7 +159,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
   {
     //all moves are rejected: does not happen normally with reasonable wavefunctions
     thisWalker.Age++;
-    thisWalker.Properties(R2ACCEPTED) = 0.0;
+    thisWalker.Properties(WP::R2ACCEPTED) = 0.0;
     //weight is set to 0 for traces
     // consistent w/ no evaluate/auxHevaluate
     RealType wtmp     = thisWalker.Weight;

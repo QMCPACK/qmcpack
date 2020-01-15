@@ -22,6 +22,7 @@
 namespace qmcplusplus
 {
 using std::placeholders::_1;
+using WP = WalkerProperties::Indexes;
 
 // clang-format off
 /** Constructor maintains proper ownership of input parameters
@@ -148,7 +149,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   //copy the old energy
   std::vector<FullPrecRealType> old_walker_energies(num_walkers);
   auto setOldEnergies = [](MCPWalker& walker, FullPrecRealType& old_walker_energy) {
-    old_walker_energy = walker.Properties(LOCALENERGY);
+    old_walker_energy = walker.Properties(WP::LOCALENERGY);
   };
   for (int iw = 0; iw < num_walkers; ++iw)
     setOldEnergies(walkers[iw], old_walker_energies[iw]);
@@ -433,7 +434,7 @@ void DMCBatched::handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForT
   {
     MCPWalker& stalled_walker = stalled.walkers[iw];
     stalled_walker.Age++;
-    stalled_walker.Properties(R2ACCEPTED) = 0.0;
+    stalled_walker.Properties(WP::R2ACCEPTED) = 0.0;
     RealType wtmp                         = stalled_walker.Weight;
     // TODO: fix this walker.Weight twiddle for rejectedMove
     stalled_walker.Weight                      = 0.0;

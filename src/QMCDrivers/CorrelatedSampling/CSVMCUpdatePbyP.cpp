@@ -14,6 +14,7 @@
 
 
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdatePbyP.h"
+#include "QMCDrivers/WalkerProperties.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -23,6 +24,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 /// Constructor.
 CSVMCUpdatePbyP::CSVMCUpdatePbyP(MCWalkerConfiguration& w,
                                  std::vector<TrialWaveFunction*>& psi,
@@ -42,7 +45,7 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   for (int ipsi = 0; ipsi < nPsi; ipsi++)
   {
     Psi1[ipsi]->copyFromBuffer(W, thisWalker.DataSet);
-    logpsi[ipsi] = thisWalker.Properties(ipsi, LOGPSI);
+    logpsi[ipsi] = thisWalker.Properties(ipsi, WP::LOGPSI);
   }
 
   //Now we compute sumratio and more importantly, ratioij.
@@ -132,10 +135,10 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
     thisWalker.L                                = *L1[ipsi];
     W.L                                         = thisWalker.L;
     W.G                                         = thisWalker.G;
-    thisWalker.Properties(ipsi, LOCALENERGY)    = H1[ipsi]->evaluate(W);
-    thisWalker.Properties(ipsi, LOGPSI)         = logpsi[ipsi];
-    thisWalker.Properties(ipsi, SIGN)           = Psi1[ipsi]->getPhase();
-    thisWalker.Properties(ipsi, UMBRELLAWEIGHT) = 1.0 / sumratio[ipsi];
+    thisWalker.Properties(ipsi, WP::LOCALENERGY)    = H1[ipsi]->evaluate(W);
+    thisWalker.Properties(ipsi, WP::LOGPSI)         = logpsi[ipsi];
+    thisWalker.Properties(ipsi, WP::SIGN)           = Psi1[ipsi]->getPhase();
+    thisWalker.Properties(ipsi, WP::UMBRELLAWEIGHT) = 1.0 / sumratio[ipsi];
     //Use Multiplicity as a temporary container for sumratio.
     thisWalker.Multiplicity = sumratio[0];
     H1[ipsi]->auxHevaluate(W, thisWalker);
