@@ -130,7 +130,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     Super2Prim.resize(SourcePtcl->R.size(), -1);
     std::vector<int> prim_atom_counts;
     prim_atom_counts.resize(IonPos.size(), 0);
-    for (int i = 0; i < SourcePtcl->R.size(); i++)
+    for (int i = 0; i < IonPos.size(); i++)
     {
       PosType ref = PrimCell.toUnit_floor(SourcePtcl->R[i]);
       for (int j = 0; j < IonPos.size(); j++)
