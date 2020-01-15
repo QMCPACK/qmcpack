@@ -33,9 +33,11 @@ private:
   ///accelerator input array for a list of target particle positions, N_targets x D
   OffloadPinnedVector<RealType> target_pos;
   ///accelerator input array for a list of source particle position pointers
-  OffloadPinnedVector<RealType*> source_ptrs;
-  ///accelerator input array. The walker id, target particle id and number of target particles within a walker
-  OffloadPinnedVector<int> ref_id_ntgt_list;
+  OffloadPinnedVector<const RealType*> source_ptrs;
+  ///accelerator input array. The walker id
+  OffloadPinnedVector<int> walker_id;
+  ///target particle id
+  OffloadPinnedVector<int> particle_id;
 
 public:
   SoaDistanceTableABOMP(const ParticleSet& source, ParticleSet& target)
@@ -127,78 +129,73 @@ public:
     }
   }
 
-/*
   inline void mw_evaluate(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
   {
     const size_t nw = dt_list.size();
+    source_ptrs.resize(nw);
+
     size_t count_targets = 0;
     for (ParticleSet& p: p_list)
       count_targets += p.getTotalNum();
     const size_t total_targets = count_targets;
+    target_pos.resize(total_targets * D);
 
-    const size_t n_targets_list_offset = total_targets*2;
-    ref_id_ntgt_list.resize(n_targets_list_offset+nw);
-    src_tgt_dt_ptrs.resize(nw*3);
+    walker_id.resize(total_targets);
+    particle_id.resize(total_targets);
+
+    const int N_sources_padded = getAlignedSize<T>(N_sources);
+    offload_output.resize(total_targets * N_sources_padded * (D + 1));
 
     count_targets = 0;
     for (size_t iw = 0; iw < nw; iw++)
     {
       auto& dt = static_cast<SoaDistanceTableABOMP&>(dt_list[iw].get());
       ParticleSet& pset(p_list[iw]);
-      auto* target_pos_ptr = pset.RSoA->getAllParticlePos().data();
       auto* source_pos_ptr = dt.Origin->RSoA->getAllParticlePos().data();
-      auto* r_dr_ptr       = dt.memoryPool.data();
 
       assert(N_sources == dt.N_sources);
-      const int N_sources_padded = getAlignedSize<T>(N_sources);
-      const int N_targets_padded = getAlignedSize<T>(dt.N_targets);
-      #pragma omp target enter data map(to: source_pos_ptr[:N_sources_padded*D], target_pos_ptr[:N_targets_padded*D])
-      #pragma omp target data use_device_ptr(target_pos_ptr, source_pos_ptr, r_dr_ptr)
+      #pragma omp target enter data map(to: source_pos_ptr[:N_sources_padded*D])
+      #pragma omp target data use_device_ptr(source_pos_ptr)
       {
-        src_tgt_dt_ptrs[iw * 3]     = const_cast<RealType*>(source_pos_ptr);
-        src_tgt_dt_ptrs[iw * 3 + 1] = const_cast<RealType*>(target_pos_ptr);
-        src_tgt_dt_ptrs[iw * 3 + 2] = r_dr_ptr;
+        source_ptrs[iw] = source_pos_ptr;
       }
 
       for (size_t iat = 0; iat < pset.getTotalNum(); ++iat, ++count_targets)
       {
-        ref_id_ntgt_list[count_targets * 2]     = iw;
-        ref_id_ntgt_list[count_targets * 2 + 1] = iat;
-      }
+        for (size_t idim = 0; idim < D; idim++)
+          target_pos[count_targets * D + idim] = pset.R[iat][idim];
 
-      ref_id_ntgt_list[n_targets_list_offset + iw] = dt.N_targets;
+        walker_id[count_targets]   = iw;
+        particle_id[count_targets] = iat;
+      }
     }
 
     const int N_sources_local  = N_sources;
-    const int N_sources_padded = getAlignedSize<T>(N_sources);
     const int ChunkSizePerTeam = 256;
     const int NumTeams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
-    auto* src_tgt_dt_data = src_tgt_dt_ptrs.data();
-    auto* ref_id_ntgt     = ref_id_ntgt_list.data();
+    auto* target_pos_ptr = target_pos.data();
+    auto* sources_data   = source_ptrs.data();
+    auto* r_dr_ptr       = offload_output.data();
+    auto* wid_ptr        = walker_id.data();
 
     #pragma omp target teams distribute collapse(2) num_teams(total_targets*NumTeams) \
-      map(always, to: src_tgt_dt_data[:src_tgt_dt_ptrs.size()], ref_id_ntgt[:ref_id_ntgt_list.size()])
+      map(always, to: target_pos_ptr[:target_pos.size()], sources_data[:source_ptrs.size()], wid_ptr[:total_targets]) \
+      map(always, from: r_dr_ptr[offload_output.size()])
     for (int iat = 0; iat < total_targets; ++iat)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int walker_id = ref_id_ntgt[iat * 2];
-        const int particle_id = ref_id_ntgt[iat * 2 + 1];
-        const auto* source_pos_ptr = src_tgt_dt_data[walker_id * 3];
-        const auto* target_pos_ptr = src_tgt_dt_data[walker_id * 3 + 1];
-        auto* r_dr_ptr             = src_tgt_dt_data[walker_id * 3 + 2];
-        const int N_targets_local  = ref_id_ntgt[n_targets_list_offset + walker_id];
-        const int N_targets_padded = getAlignedSize<T>(N_targets_local);
+        const int walker_id = wid_ptr[iat];
+        const auto* source_pos_ptr = sources_data[walker_id];
+        auto* r_iat_ptr            = r_dr_ptr + iat * N_sources_padded * (D + 1);
+        auto* dr_iat_ptr           = r_dr_ptr + iat * N_sources_padded * (D + 1) + N_sources_padded;
 
         const int first = ChunkSizePerTeam * team_id;
         const int last  = (first + ChunkSizePerTeam) > N_sources_local ? N_sources_local : first + ChunkSizePerTeam;
 
         T pos[D];
         for (int idim = 0; idim < D; idim++)
-          pos[idim] = target_pos_ptr[idim * N_targets_padded + particle_id];
-
-        auto* r_iat_ptr  = r_dr_ptr + N_sources_padded * particle_id;
-        auto* dr_iat_ptr = r_dr_ptr + N_sources_padded * N_targets_local + N_sources_padded * D * particle_id;
+          pos[idim] = target_pos_ptr[iat * D + idim];
 
         DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
                                                       first, last);
@@ -207,17 +204,20 @@ public:
     for (size_t iw = 0; iw < nw; iw++)
     {
       auto& dt = static_cast<SoaDistanceTableABOMP&>(dt_list[iw].get());
-      ParticleSet& pset(p_list[iw]);
-      const int N_sources_padded = getAlignedSize<T>(N_sources);
-      const int N_targets_padded = getAlignedSize<T>(pset.getTotalNum());
-      auto* target_pos_ptr = pset.RSoA->getAllParticlePos().data();
       auto* source_pos_ptr = dt.Origin->RSoA->getAllParticlePos().data();
-      auto* r_dr_ptr       = dt.memoryPool.data();
-      #pragma omp target exit data map(release: source_pos_ptr[:N_sources_padded*D], target_pos_ptr[:N_targets_padded*D])
-      #pragma omp target update from(r_dr_ptr[:dt.memoryPool.size()])
+      #pragma omp target exit data map(release: source_pos_ptr[:N_sources_padded*D])
+    }
+
+    for (size_t iat = 0; iat < total_targets; iat++)
+    {
+      const int wid = walker_id[iat];
+      const int pid = particle_id[iat];
+      auto& dt = static_cast<SoaDistanceTableABOMP&>(dt_list[wid].get());
+      assert(N_sources_padded == dt.displacements_[pid].capacity());
+      std::copy_n(offload_output.data() + iat * N_sources_padded * (D + 1), N_sources_padded, dt.distances_[pid].data());
+      std::copy_n(offload_output.data() + iat * N_sources_padded * (D + 1) + N_sources_padded, N_sources_padded * D, dt.displacements_[pid].data());
     }
   }
-*/
 
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
