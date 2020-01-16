@@ -114,8 +114,8 @@ public:
         for (int idim = 0; idim < D; idim++)
           pos[idim] = target_pos_ptr[iat * D + idim];
 
-        auto* r_iat_ptr  = r_dr_ptr + N_sources_padded * iat * (D + 1);
-        auto* dr_iat_ptr = r_dr_ptr + N_sources_padded * iat * (D + 1) + N_sources_padded;
+        auto* r_iat_ptr  = r_dr_ptr + iat * N_sources_padded * (D + 1);
+        auto* dr_iat_ptr = r_dr_ptr + iat * N_sources_padded * (D + 1) + N_sources_padded;
 
         DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
                                                       first, last);
@@ -124,8 +124,9 @@ public:
     for (size_t iat = 0; iat < N_targets; iat++)
     {
       assert(N_sources_padded == displacements_[iat].capacity());
-      std::copy_n(offload_output.data() + N_sources_padded * iat * (D + 1), N_sources_padded, distances_[iat].data());
-      std::copy_n(offload_output.data() + N_sources_padded * iat * (D + 1) + N_sources_padded, N_sources_padded * D, displacements_[iat].data());
+      auto offset = offload_output.data() + iat * N_sources_padded * (D + 1);
+      std::copy_n(offset, N_sources_padded, distances_[iat].data());
+      std::copy_n(offset + N_sources_padded, N_sources_padded * D, displacements_[iat].data());
     }
   }
 
@@ -181,14 +182,14 @@ public:
 
     #pragma omp target teams distribute collapse(2) num_teams(total_targets*NumTeams) \
       map(always, to: target_pos_ptr[:target_pos.size()], sources_data[:source_ptrs.size()], wid_ptr[:total_targets]) \
-      map(always, from: r_dr_ptr[offload_output.size()])
+      map(always, from: r_dr_ptr[:offload_output.size()])
     for (int iat = 0; iat < total_targets; ++iat)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int walker_id = wid_ptr[iat];
-        const auto* source_pos_ptr = sources_data[walker_id];
-        auto* r_iat_ptr            = r_dr_ptr + iat * N_sources_padded * (D + 1);
-        auto* dr_iat_ptr           = r_dr_ptr + iat * N_sources_padded * (D + 1) + N_sources_padded;
+        const int walker_id  = wid_ptr[iat];
+        auto* source_pos_ptr = sources_data[walker_id];
+        auto* r_iat_ptr      = r_dr_ptr + iat * N_sources_padded * (D + 1);
+        auto* dr_iat_ptr     = r_dr_ptr + iat * N_sources_padded * (D + 1) + N_sources_padded;
 
         const int first = ChunkSizePerTeam * team_id;
         const int last  = (first + ChunkSizePerTeam) > N_sources_local ? N_sources_local : first + ChunkSizePerTeam;
@@ -214,8 +215,9 @@ public:
       const int pid = particle_id[iat];
       auto& dt = static_cast<SoaDistanceTableABOMP&>(dt_list[wid].get());
       assert(N_sources_padded == dt.displacements_[pid].capacity());
-      std::copy_n(offload_output.data() + iat * N_sources_padded * (D + 1), N_sources_padded, dt.distances_[pid].data());
-      std::copy_n(offload_output.data() + iat * N_sources_padded * (D + 1) + N_sources_padded, N_sources_padded * D, dt.displacements_[pid].data());
+      auto offset = offload_output.data() + iat * N_sources_padded * (D + 1);
+      std::copy_n(offset, N_sources_padded, dt.distances_[pid].data());
+      std::copy_n(offset + N_sources_padded, N_sources_padded * D, dt.displacements_[pid].data());
     }
   }
 
