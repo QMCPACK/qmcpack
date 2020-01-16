@@ -471,9 +471,9 @@ class PHMSD: public AFQMCInfo
           boost::multi::array<ComplexType,2> OB_({0,0});
           if(OrbMats.size() > 1)
             OB_.reextent({OrbMats[1].size(1),OrbMats[1].size(0)});
-          csr::CSR2MAREF('H',OrbMats[0],OA_);
+          ma::Matrix2MAREF('H',OrbMats[0],OA_);
           if(OrbMats.size() > 1)
-            csr::CSR2MAREF('H',OrbMats[1],OB_);
+            ma::Matrix2MAREF('H',OrbMats[1],OB_);
           std::vector<int> Ac(NAEA);
           std::vector<int> Bc(NAEB);
           for(int i=0; i<ndet; ++i) {

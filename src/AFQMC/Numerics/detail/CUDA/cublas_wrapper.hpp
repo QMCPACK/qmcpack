@@ -626,6 +626,71 @@ namespace cublas {
     return sucess;
   }
 
+  inline cublasStatus_t cublas_matinvBatched(cublasHandle_t handle,
+                                   int n,
+                                   float **Aarray,
+                                   int lda,
+                                   float **Carray,
+                                   int ldc,
+                                   int *infoArray,
+                                   int batchSize)
+  {
+    cublasStatus_t sucess =
+              cublasSmatinvBatched(handle,n,Aarray,lda,Carray,ldc,infoArray,batchSize);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cublasStatus_t cublas_matinvBatched(cublasHandle_t handle,
+                                   int n,
+                                   double **Aarray,
+                                   int lda,
+                                   double **Carray,
+                                   int ldc,
+                                   int *infoArray,
+                                   int batchSize)
+  {
+    cublasStatus_t sucess =
+              cublasDmatinvBatched(handle,n,Aarray,lda,Carray,ldc,infoArray,batchSize);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cublasStatus_t cublas_matinvBatched(cublasHandle_t handle,
+                                   int n,
+                                   std::complex<float> **Aarray,
+                                   int lda,
+                                   std::complex<float> **Carray,
+                                   int ldc,
+                                   int *infoArray,
+                                   int batchSize)
+  {
+    cublasStatus_t sucess =
+              cublasCmatinvBatched(handle,n,
+                        reinterpret_cast<const cuComplex * const*>(Aarray),lda,
+                        reinterpret_cast<cuComplex **>(Carray),ldc,
+                        infoArray,batchSize);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cublasStatus_t cublas_matinvBatched(cublasHandle_t handle,
+                                   int n,
+                                   std::complex<double> **Aarray,
+                                   int lda,
+                                   std::complex<double> **Carray,
+                                   int ldc,
+                                   int *infoArray,
+                                   int batchSize)
+  {
+    cublasStatus_t sucess =
+              cublasZmatinvBatched(handle,n,
+                        reinterpret_cast<const cuDoubleComplex *const*>(Aarray),lda,
+                        reinterpret_cast<cuDoubleComplex **>(Carray),ldc,
+                        infoArray,batchSize);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
 
   inline cublasStatus_t cublas_geam(cublasHandle_t handle, char Atrans, char Btrans, int M, int N,
                          float const alpha,

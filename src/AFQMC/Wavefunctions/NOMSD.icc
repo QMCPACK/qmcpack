@@ -35,13 +35,13 @@ namespace qmcplusplus
 
 namespace afqmc
 {
-
   /*
    * Calculates the local energy and overlaps of all the walkers in the set and 
    * returns them in the appropriate data structures
   */
+  template<class devPsiT>  
   template<class WlkSet, class Mat, class TVec>
-  void NOMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
+  void NOMSD<devPsiT>::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   {
     size_t nt = wset.size()*(1+dm_size(false));
     if(shmbuff_for_E.num_elements() < nt)
@@ -95,8 +95,9 @@ namespace afqmc
    * Calculates the local energy and overlaps of all the walkers in the set and 
    * returns them in the appropriate data structures
    */
+  template<class devPsiT>  
   template<class WlkSet, class Mat, class TVec>
-  void NOMSD::Energy_distributed_singleDet(const WlkSet& wset, Mat&& E, TVec&& Ov)
+  void NOMSD<devPsiT>::Energy_distributed_singleDet(const WlkSet& wset, Mat&& E, TVec&& Ov)
   {
     //1. Calculate G and overlaps
     //2. Loop over nodes in TG
@@ -204,8 +205,9 @@ namespace afqmc
    * Depending on the number of determinants and the number of nodes in TG, it may be better
    * to keep entire determinants on nodes and distribute just the excess ones.
    */
+  template<class devPsiT>  
   template<class WlkSet, class Mat, class TVec>
-  void NOMSD::Energy_distributed_multiDet(const WlkSet& wset, Mat&& E, TVec&& Ov)
+  void NOMSD<devPsiT>::Energy_distributed_multiDet(const WlkSet& wset, Mat&& E, TVec&& Ov)
   {
     //1. Copies SM from wset to shm buffer. 
     //2. Loop over nodes in TG
@@ -337,8 +339,9 @@ namespace afqmc
    * G and Ov are expected to be in shared memory.
    * Simple round-robin is used. 
    */
+  template<class devPsiT>  
   template<class MatSM, class MatG, class TVec>
-  void NOMSD::MixedDensityMatrix_for_E_from_SM(const MatSM& SM, MatG&& G, TVec&& Ov, int nd, double LogOverlapFactor) 
+  void NOMSD<devPsiT>::MixedDensityMatrix_for_E_from_SM(const MatSM& SM, MatG&& G, TVec&& Ov, int nd, double LogOverlapFactor) 
   {
     using std::fill_n;
     using std::copy_n;
@@ -430,8 +433,9 @@ namespace afqmc
    * G and Ov are expected to be in shared memory.
    * Simple round-robin is used. 
    */
+  template<class devPsiT>  
   template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
-  void NOMSD::DensityMatrix_shared(const WlkSet& wset, MatA&& RefA, MatB&& RefB,
+  void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset, MatA&& RefA, MatB&& RefB,
                             MatG&& G, TVec&& Ov, bool herm, bool compact, bool transposed) 
   {
     assert(G.stride(1)==1);
@@ -529,8 +533,9 @@ namespace afqmc
     TG.local_barrier();
   }
 
+  template<class devPsiT>  
   template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
-  void NOMSD::DensityMatrix_batched(const WlkSet& wset, MatA&& RefA, MatB&& RefB, 
+  void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset, MatA&& RefA, MatB&& RefB, 
                             MatG&& G, TVec&& Ov, bool herm, bool compact, bool transposed) 
   {
     if(TG.TG_local().size() > 1)
@@ -569,6 +574,10 @@ namespace afqmc
       localGbuff.reextent(iextensions<1u>{nbatch__*Gsize+1});
     std::vector<CMatrix_ref> Ai;
     Ai.reserve(nbatch__);
+    std::vector<decltype(std::addressof(RefA))> Oia;
+    Oia.reserve(nw);
+    std::vector<decltype(std::addressof(RefA))> Oib;
+    Oib.reserve(nw);
       
     if(walker_type != COLLINEAR) {
 
@@ -586,7 +595,9 @@ namespace afqmc
         int nb = std::min(nbatch__,nw-iw);
         Ai.clear();
         for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
-        SDetOp.BatchedMixedDensityMatrix(RefA,Ai,
+        Oia.clear();
+        for(int ni=0; ni<nb; ni++) Oia.emplace_back(std::addressof(RefA));
+        SDetOp.BatchedMixedDensityMatrix(Oia,Ai,
               G3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(0,nb),compact,herm);
         copy_n(ovlp2.origin(),nb,hvec.origin());
         for(int ib=0; ib<nb; ++ib) {
@@ -626,7 +637,9 @@ namespace afqmc
         int nb = std::min(nbatch__,nw-iw);
         Ai.clear();
         for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
-        SDetOp.BatchedMixedDensityMatrix(RefA,Ai,
+        Oia.clear();
+        for(int ni=0; ni<nb; ni++) Oia.emplace_back(std::addressof(RefA));
+        SDetOp.BatchedMixedDensityMatrix(Oia,Ai,
                           GA3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(0,nb),compact,herm);
         for(int ib=0; ib<nb; ++ib) {
           if(transposed) {
@@ -639,7 +652,9 @@ namespace afqmc
 
         Ai.clear();
         for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
-        SDetOp.BatchedMixedDensityMatrix(RefB,Ai,
+        Oib.clear();
+        for(int ni=0; ni<nb; ni++) Oib.emplace_back(std::addressof(RefB));
+        SDetOp.BatchedMixedDensityMatrix(Oib,Ai,
                           GB3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(0,nb),compact,herm);
         for(int ib=0; ib<nb; ++ib) {
           if(transposed) {
@@ -654,8 +669,9 @@ namespace afqmc
     TG.local_barrier();
   }
 
+  template<class devPsiT>  
   template<class MatA, class MatB, class MatG, class TVec>
-  void NOMSD::DensityMatrix_shared(std::vector<MatA>& Left, std::vector<MatB>& Right, 
+  void NOMSD<devPsiT>::DensityMatrix_shared(std::vector<MatA>& Left, std::vector<MatB>& Right, 
                             std::vector<MatG>& G, TVec&& Ov, double LogOverlapFactor, 
                             bool herm, bool compact)
   {
@@ -673,8 +689,9 @@ namespace afqmc
     TG.local_barrier();
   }
 
+  template<class devPsiT>  
   template<class MatA, class MatB, class MatG, class TVec>
-  void NOMSD::DensityMatrix_batched(std::vector<MatA>& Left, std::vector<MatB>& Right, 
+  void NOMSD<devPsiT>::DensityMatrix_batched(std::vector<MatA>& Left, std::vector<MatB>& Right, 
                             std::vector<MatG>& G, TVec&& Ov, double LogOverlapFactor, 
                             bool herm, bool compact)
   {
@@ -727,8 +744,9 @@ namespace afqmc
    * 3. 
    * Ov is assumed to be local to the core
    */ 
+  template<class devPsiT>  
   template<class WlkSet, class MatG, class TVec>
-  void NOMSD::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact, bool transpose)
+  void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact, bool transpose)
   {
     using std::fill_n;
     using std::copy_n;
@@ -814,7 +832,7 @@ namespace afqmc
                                                 shared_allocator<ComplexType>{local_group_comm}));
         } 
         if(last_task_index < 0 || last_task_index > nextra) 
-          APP_ABORT("Error: Problems in NOMSD::Overlap(WSet,Ov)");
+          APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
         {
           boost::multi::array_ref<ComplexType,2> G2D_2(to_address(shmbuff_for_G->origin()),
                                                  {Gdims.first,Gdims.second});
@@ -900,7 +918,7 @@ namespace afqmc
                                                 shared_allocator<ComplexType>{local_group_comm}));
         }
         if(last_task_index < 0 || last_task_index > nextra)
-          APP_ABORT("Error: Problems in NOMSD::Overlap(WSet,Ov)");
+          APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
         {
           boost::multi::array_ref<ComplexType,2> GA2D_2(to_address(shmbuff_for_G->origin()),
                                {GAdims.first,GAdims.second});
@@ -956,8 +974,9 @@ namespace afqmc
   } 
 
   // Batched version of MixedDensityMatrix
+  template<class devPsiT>  
   template<class WlkSet, class MatG, class TVec>
-  void NOMSD::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact, bool transpose)
+  void NOMSD<devPsiT>::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact, bool transpose)
   {
     if(TG.TG_local().size() > 1) 
       APP_ABORT(" Error: Batched routine called with TG.TG_local().size() > 1 \n");
@@ -976,8 +995,9 @@ namespace afqmc
     else
       assert(G.size(1) == wset.size() && G.size(0) == size_t(dm_size(not compact)));
     const int nw = wset.size(); 
-    int nbatch__ = std::min(nw,(nbatch<0?nw:nbatch));
     const int ndet = ci.size();
+    int nbatch__ = std::min(nw*ndet,(nbatch<0?ndet*nw:nbatch));
+    // do batches of determinants to simplify code
     double LogOverlapFactor(wset.getLogOverlapFactor());
     assert(Ov.size() >= nw);  
     fill_n(Ov.origin(),nw,0);
@@ -988,41 +1008,61 @@ namespace afqmc
       APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n"); 
     fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
     stdCVector hvec(iextensions<1u>{2*nbatch__});
+    stdCVector Ovl(iextensions<1u>{nw});
+    fill_n(Ovl.origin(),nw,ComplexType(0.0));
     TG.local_barrier();
     auto Gsize = size_t(dm_size(not compact));
     if(localGbuff.size() < nbatch__*Gsize+1)
       localGbuff.reextent(iextensions<1u>{nbatch__*Gsize+1});
     std::vector<CMatrix_ref> Ai;
     Ai.reserve(nbatch__);
+    std::vector<devPsiT*> Oi;
+    Oi.reserve(nbatch__);
 
     if(walker_type != COLLINEAR) {
 
       auto GAdims = dm_dims(not compact,Alpha); 
       CTensor_ref G3D_(localGbuff.origin(),{nbatch__,GAdims.first,GAdims.second});
       CMatrix_ref G2D_(G3D_.origin(),iextensions<2u>{nbatch__,GAdims.first*GAdims.second});
+      std::vector<pointer> Gx;
+      std::vector<pointer> Gy;
+      Gx.reserve(nbatch__);
+      Gy.reserve(nbatch__);
 
-      for(int idet=0; idet<ndet; ++idet) {
-        for(int iw=0; iw<nw; iw+=nbatch__) {
-          int nb = std::min(nbatch__,nw-iw);
-          Ai.clear();
-          for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
-          SDetOp.BatchedMixedDensityMatrix(OrbMats[idet],Ai,
-                G3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(0,nb),compact);
-          copy_n(ovlp2.origin(),nb,hvec.origin());
-// this could be batched, which would be faster and would avoid data movement to cpu
-          for(int ib=0; ib<nb; ++ib) {
-            ComplexType ov(hvec[ib]);
-            if(walker_type==CLOSED) ov *= ov;
-            ov *= ma::conj(ci[idet]);
-            if(transpose) {
-              ma::axpy(ov,G2D_[ib],G[iw+ib]);   
-            } else {
-              ma::axpy(ov,G2D_[ib],G(G.extension(0),iw+ib));   
-            } 
-            Ov[iw+ib] += ov;
-          }
+      // b = idet*nw + iw
+      // iw = (b0+ni)%nw
+      // idet = (b0+ni)/nw
+      for(int b0=0; b0<ndet*nw; b0+=nbatch__) {
+        int nb = std::min(nbatch__,nw*ndet-b0);
+        Ai.clear();
+        Oi.clear();
+        for(int ni=0; ni<nb; ni++) 
+          Ai.emplace_back(wset[(b0+ni)%nw].SlaterMatrix(Alpha));
+        for(int ni=0; ni<nb; ni++) 
+          Oi.emplace_back(std::addressof(OrbMats[(b0+ni)/nw]));
+        SDetOp.BatchedMixedDensityMatrix(Oi,Ai,
+              G3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(0,nb),compact);
+        copy_n(ovlp2.origin(),nb,hvec.origin());
+        Gx.clear();
+        Gy.clear();
+        for(int ib=0; ib<nb; ++ib) {
+          int idet = (b0+ib)/nw;
+          int iw = (b0+ib)%nw;
+          if(walker_type==CLOSED) hvec[ib] *= hvec[ib];
+          hvec[ib] *= ma::conj(ci[idet]);
+          Gx.emplace_back(G2D_[ib].origin());
+          if(transpose) 
+            Gy.emplace_back(G[iw].origin());
+          else 
+            Gy.emplace_back(G.origin()+iw);
+          Ovl[iw] += hvec[ib];
         }
-      }
+        using ma::sumGwBatched;
+        if(transpose) 
+          sumGwBatched(GAdims.first*GAdims.second,hvec.data(),Gx.data(),1,Gy.data(),1,b0,nw,nb);
+        else 
+          sumGwBatched(GAdims.first*GAdims.second,hvec.data(),Gx.data(),1,Gy.data(),nw,b0,nw,nb);
+      }  
 
     } else {
 
@@ -1032,34 +1072,67 @@ namespace afqmc
       CMatrix_ref GA2D_(GA3D_.origin(),iextensions<2u>{nbatch__,GAdims.first*GAdims.second});
       CTensor_ref GB3D_(GA3D_.origin()+GA3D_.num_elements(),{nbatch__,GBdims.first,GBdims.second});
       CMatrix_ref GB2D_(GB3D_.origin(),iextensions<2u>{nbatch__,GBdims.first*GBdims.second});
+      std::vector<pointer> Gxa;
+      std::vector<pointer> Gya;
+      std::vector<pointer> Gxb;
+      std::vector<pointer> Gyb;
+      Gxa.reserve(nbatch__);
+      Gya.reserve(nbatch__);
+      Gxb.reserve(nbatch__);
+      Gyb.reserve(nbatch__);
 
-      for(int idet=0; idet<ndet; ++idet) {
-        for(int iw=0; iw<nw; iw+=nbatch__) {
-          int nb = std::min(nbatch__,nw-iw);
-          Ai.clear();
-          for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
-          SDetOp.BatchedMixedDensityMatrix(OrbMats[2*idet],Ai,
-                                GA3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(0,nb),compact);
-          Ai.clear();
-          for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
-          SDetOp.BatchedMixedDensityMatrix(OrbMats[2*idet+1],Ai,
-                                GB3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(nb,2*nb),compact);
-// this could be batched, which would be faster and would avoid data movement to cpu
-          copy_n(ovlp2.origin(),2*nb,hvec.origin());
-          for(int ib=0; ib<nb; ++ib) {
-            ComplexType ov = hvec[ib]*hvec[nb+ib]*ma::conj(ci[idet]);
-            if(transpose) {
-              ma::axpy(ov,GA2D_[ib],G[iw+ib].sliced(0,GAdims.first*GAdims.second));
-              ma::axpy(ov,GB2D_[ib],G[iw+ib].sliced(GAdims.first*GAdims.second,G.size(1)));
-            } else {
-              ma::axpy(ov,GA2D_[ib],G({0,GAdims.first*GAdims.second},iw+ib));
-              ma::axpy(ov,GB2D_[ib],G({GAdims.first*GAdims.second,G.size(0)},iw+ib));
-            }
-            Ov[iw+ib] += ov;
+      // b = idet*nw + iw
+      // iw = (b0+ni)%nw
+      // idet = (b0+ni)/nw
+      for(int b0=0; b0<ndet*nw; b0+=nbatch__) {
+        int nb = std::min(nbatch__,nw*ndet-b0);
+        Ai.clear();
+        Oi.clear();
+        for(int ni=0; ni<nb; ni++)
+          Ai.emplace_back(wset[(b0+ni)%nw].SlaterMatrix(Alpha));
+        for(int ni=0; ni<nb; ni++)
+          Oi.emplace_back(std::addressof(OrbMats[2*((b0+ni)/nw)]));
+        SDetOp.BatchedMixedDensityMatrix(Oi,Ai,
+              GA3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(0,nb),compact);
+        Ai.clear();
+        Oi.clear();
+        for(int ni=0; ni<nb; ni++)
+          Ai.emplace_back(wset[(b0+ni)%nw].SlaterMatrix(Beta));
+        for(int ni=0; ni<nb; ni++)
+          Oi.emplace_back(std::addressof(OrbMats[2*((b0+ni)/nw)+1]));
+        SDetOp.BatchedMixedDensityMatrix(Oi,Ai,
+              GB3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(nb,2*nb),compact);
+        copy_n(ovlp2.origin(),2*nb,hvec.origin());
+        Gxa.clear();
+        Gya.clear();
+        Gxb.clear();
+        Gyb.clear();
+        for(int ib=0; ib<nb; ++ib) {
+          int idet = (b0+ib)/nw;
+          int iw = (b0+ib)%nw;
+          hvec[ib] *= hvec[nb+ib]*ma::conj(ci[idet]);
+          Gxa.emplace_back(GA2D_[ib].origin()); 
+          Gxb.emplace_back(GB2D_[ib].origin()); 
+          if(transpose) {
+            Gya.emplace_back(G[iw].origin());
+            Gyb.emplace_back(G[iw].origin()+GAdims.first*GAdims.second);
+          } else {
+            Gya.emplace_back(G.origin()+iw);
+            Gyb.emplace_back(G[GAdims.first*GAdims.second].origin()+iw);
           }
+          Ovl[iw] += hvec[ib];
+        }
+        using ma::sumGwBatched;
+        if(transpose) {
+          sumGwBatched(GAdims.first*GAdims.second,hvec.data(),Gxa.data(),1,Gya.data(),1,b0,nw,nb);
+          sumGwBatched(GBdims.first*GBdims.second,hvec.data(),Gxb.data(),1,Gyb.data(),1,b0,nw,nb);
+        } else {
+          sumGwBatched(GAdims.first*GAdims.second,hvec.data(),Gxa.data(),1,Gya.data(),nw,b0,nw,nb);
+          sumGwBatched(GBdims.first*GBdims.second,hvec.data(),Gxb.data(),1,Gyb.data(),nw,b0,nw,nb);
         }
       }
     }
+    copy_n(Ovl.origin(),nw,Ov.origin());
     // normalize G
     if(transpose) {
       for(size_t iw=0; iw<G.size(0); ++iw) { 
@@ -1076,8 +1149,9 @@ namespace afqmc
   } 
 
   // Batched version of Overlap
+  template<class devPsiT>  
   template<class WlkSet, class TVec>
-  void NOMSD::Overlap_batched(const WlkSet& wset, TVec&& Ov)
+  void NOMSD<devPsiT>::Overlap_batched(const WlkSet& wset, TVec&& Ov)
   {
     if(TG.TG_local().size() > 1) 
       APP_ABORT(" Error: Batched routine called with TG.TG_local().size() > 1 \n");
@@ -1095,49 +1169,62 @@ namespace afqmc
     double LogOverlapFactor(wset.getLogOverlapFactor());
     assert(Ov.size() >= nw);  
     fill_n(Ov.origin(),nw,0);
-    if(ovlp2.size(0) < 3*nw) ovlp2.reextent(iextensions<1u>{3*nw});
+    if(ovlp2.size(0) < 2*ndet*nw) ovlp2.reextent(iextensions<1u>{2*ndet*nw});
     fill_n(ovlp2.origin(),ovlp2.num_elements(),ComplexType(0.0));
-    stdCVector hvec(iextensions<1u>{3*nw});
+    stdCVector hvec(iextensions<1u>{(2*ndet+1)*nw});
     fill_n(hvec.origin(),hvec.num_elements(),ComplexType(0.0));
+    int i0(2*nw*ndet);  
     TG.local_barrier();
     std::vector<CMatrix_ref> Ai;
-    Ai.reserve(nw);
+    std::vector<devPsiT*> Oi;
+    Ai.reserve(2*ndet*nw);
+    Oi.reserve(2*ndet*nw);
 
     if(walker_type != COLLINEAR) {
+      Ai.clear();
+      Oi.clear();
       for(int idet=0; idet<ndet; ++idet) {
-        Ai.clear();
         for(int ni=0; ni<nw; ni++) Ai.emplace_back(wset[ni].SlaterMatrix(Alpha));
-        SDetOp.BatchedOverlap(OrbMats[idet],Ai,LogOverlapFactor,ovlp2.sliced(0,nw));
-        copy_n(ovlp2.origin(),nw,hvec.origin());
-// this could be batched, which would be faster and would avoid data movement to cpu
-        for(int ib=0; ib<nw; ++ib) 
-            hvec[nw+ib] += ma::conj(ci[idet])*hvec[ib]*
-                             ((walker_type==CLOSED)?(hvec[ib]):(ComplexType(1.0,0.0)));
+        for(int ni=0; ni<nw; ni++) Oi.emplace_back(std::addressof(OrbMats[idet]));
+      }  
+      SDetOp.BatchedOverlap(Oi,Ai,LogOverlapFactor,ovlp2.sliced(0,ndet*nw));
+      copy_n(ovlp2.origin(),nw*ndet,hvec.origin());
+      for(int idet=0, idb=0; idet<ndet; ++idet) {
+        for(int ib=0; ib<nw; ++ib, ++idb) 
+            hvec[i0+ib] += ma::conj(ci[idet])*hvec[idb]*
+                             ((walker_type==CLOSED)?(hvec[idb]):(ComplexType(1.0,0.0)));
       }
-      copy_n(hvec.origin()+nw,nw,Ov.origin());
     } else {
+      Ai.clear();
+      Oi.clear();
       for(int idet=0; idet<ndet; ++idet) {
-        Ai.clear();
         for(int ni=0; ni<nw; ni++) Ai.emplace_back(wset[ni].SlaterMatrix(Alpha));
-        SDetOp.BatchedOverlap(OrbMats[2*idet],Ai,LogOverlapFactor,ovlp2.sliced(0,nw));
-        Ai.clear();
-        for(int ni=0; ni<nw; ni++) Ai.emplace_back(wset[ni].SlaterMatrix(Beta));
-        SDetOp.BatchedOverlap(OrbMats[2*idet+1],Ai,LogOverlapFactor,ovlp2.sliced(nw,2*nw));
-// this could be batched, which would be faster and would avoid data movement to cpu
-        copy_n(ovlp2.origin(),2*nw,hvec.origin());
-        for(int ib=0; ib<nw; ++ib) 
-            hvec[2*nw+ib] += ma::conj(ci[idet])*hvec[ib]*hvec[nw+ib];
+        for(int ni=0; ni<nw; ni++) Oi.emplace_back(std::addressof(OrbMats[2*idet]));
       }
-      copy_n(hvec.origin()+2*nw,nw,Ov.origin());
+      SDetOp.BatchedOverlap(Oi,Ai,LogOverlapFactor,ovlp2.sliced(0,ndet*nw));
+      Ai.clear();
+      Oi.clear();
+      for(int idet=0; idet<ndet; ++idet) {
+        for(int ni=0; ni<nw; ni++) Ai.emplace_back(wset[ni].SlaterMatrix(Beta));
+        for(int ni=0; ni<nw; ni++) Oi.emplace_back(std::addressof(OrbMats[2*idet+1]));
+      }
+      SDetOp.BatchedOverlap(Oi,Ai,LogOverlapFactor,ovlp2.sliced(ndet*nw,2*ndet*nw));
+      copy_n(ovlp2.origin(),2*nw*ndet,hvec.origin());
+      for(int idet=0, idb=0, idb2=nw*ndet; idet<ndet; ++idet) {
+        for(int ib=0; ib<nw; ++ib, ++idb, ++idb2)
+            hvec[i0+ib] += ma::conj(ci[idet])*hvec[idb]*hvec[idb2];
+      }
     }
+    copy_n(hvec.origin()+i0,nw,Ov.origin());
   } 
 
   /*
    * Calculates the overlaps of all walkers in the set. Returns values in arrays. 
    * Ov is assumed to be local to the core
    */
+  template<class devPsiT>  
   template<class WlkSet, class TVec>
-  void NOMSD::Overlap_shared(const WlkSet& wset, TVec&& Ov)
+  void NOMSD<devPsiT>::Overlap_shared(const WlkSet& wset, TVec&& Ov)
   {
     using std::fill_n;
     using std::copy_n;
@@ -1190,7 +1277,7 @@ namespace afqmc
                                                 shared_allocator<ComplexType>{local_group_comm}));
         } 
         if(last_task_index < 0 || last_task_index > nextra) 
-          APP_ABORT("Error: Problems in NOMSD::Overlap(WSet,Ov)");
+          APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
         {
           int iw = (last_task_index+ntasks_total_serial)/ndet;
           int nd = (last_task_index+ntasks_total_serial)%ndet;
@@ -1239,7 +1326,7 @@ namespace afqmc
                                                 shared_allocator<ComplexType>{local_group_comm}));
         }
         if(last_task_index < 0 || last_task_index > nextra)
-          APP_ABORT("Error: Problems in NOMSD::Overlap(WSet,Ov)");
+          APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
         {
           int task = (last_task_index+ntasks_total_serial);
           int iw = task/ndet;
@@ -1261,8 +1348,9 @@ namespace afqmc
   // potentially multiplied by various factors if doing
   // back propagation or free projection.
   // if Refs != nullptr, we assume that back propagation is being performed
+  template<class devPsiT>  
   template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
-  void NOMSD::WalkerAveragedDensityMatrix_shared(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR) 
+  void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR) 
   {
     using std::fill_n;
     using std::copy_n;
@@ -1419,8 +1507,9 @@ namespace afqmc
   }
 
   // this version is customized for single determinant runs and doesn't have underflow problem
+  template<class devPsiT>  
   template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
-  void NOMSD::WalkerAveragedDensityMatrix_shared_single_det(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR) 
+  void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared_single_det(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR) 
   {
     using std::fill_n;
     using std::copy_n;
@@ -1595,8 +1684,9 @@ namespace afqmc
   // potentially multiplied by various factors if doing
   // back propagation or free projection.
   // if Refs != nullptr, we assume that back propagation is being performed
+  template<class devPsiT>  
   template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
-  void NOMSD::WalkerAveragedDensityMatrix_batched(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR) 
+  void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_batched(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR) 
   {
 /*
     if(TG.TG_local().size() > 1) 
@@ -1711,8 +1801,9 @@ namespace afqmc
    *         This means that the determinant of the R matrix in the QR decomposition is ignored.
    *         If false, add the determinant of R to the weight of the walker. 
    */
+  template<class devPsiT>  
   template<class WlkSet>
-  void NOMSD::Orthogonalize_shared(WlkSet& wset, bool impSamp) {
+  void NOMSD<devPsiT>::Orthogonalize_shared(WlkSet& wset, bool impSamp) {
     if(localGbuff.size() < 1)
       localGbuff.reextent(iextensions<1u>{1});
     double LogOverlapFactor(wset.getLogOverlapFactor());
@@ -1773,8 +1864,9 @@ namespace afqmc
    *         This means that the determinant of the R matrix in the QR decomposition is ignored.
    *         If false, add the determinant of R to the weight of the walker. 
    */
+  template<class devPsiT>  
   template<class WlkSet>
-  void NOMSD::Orthogonalize_batched(WlkSet& wset, bool impSamp) {
+  void NOMSD<devPsiT>::Orthogonalize_batched(WlkSet& wset, bool impSamp) {
     if(TG.TG_local().size() > 1)
       APP_ABORT(" Error: Batched routine called with TG.TG_local().size() > 1 \n");
     using std::fill_n;
@@ -1846,8 +1938,9 @@ namespace afqmc
    * Orthogonalize extended Slater Matrix for excited states calculation
    * Ret 
    */
+  template<class devPsiT>  
   template<class Mat>
-  void NOMSD::OrthogonalizeExcited(Mat&& A, SpinTypes spin, double LogOverlapFactor)
+  void NOMSD<devPsiT>::OrthogonalizeExcited(Mat&& A, SpinTypes spin, double LogOverlapFactor)
   {
     if(localGbuff.size() < 1)
       localGbuff.reextent(iextensions<1u>{1});
@@ -1893,8 +1986,9 @@ namespace afqmc
   /*
    * Calculate mean field expectation value of Cholesky potentials
    */
+  template<class devPsiT>  
   template<class Vec>
-  void NOMSD::vMF(Vec&& v) {
+  void NOMSD<devPsiT>::vMF(Vec&& v) {
     using std::fill_n;
     using std::copy_n;
     // temporary runtime check for incompatible memory spaces
@@ -1918,14 +2012,14 @@ namespace afqmc
       if(walker_type != COLLINEAR) {
         auto Gdims = dm_dims(false,Alpha);
         G.reextent({Gdims.first,Gdims.second});
-        csr::CSR2MA('H',OrbMats[0],PsiT); 
+        ma::Matrix2MA('H',OrbMats[0],PsiT); 
         SDetOp.MixedDensityMatrix(OrbMats[0],PsiT,G,0.0,true);
       } else {
         G.reextent({NAEA+NAEB,NMO});
-        csr::CSR2MA('H',OrbMats[0],PsiT);
+        ma::Matrix2MA('H',OrbMats[0],PsiT);
         SDetOp.MixedDensityMatrix(OrbMats[0],PsiT,
                                        G.sliced(0,NAEA),0.0,true);
-        csr::CSR2MA('H',OrbMats[1],PsiT);
+        ma::Matrix2MA('H',OrbMats[1],PsiT);
         SDetOp.MixedDensityMatrix(OrbMats[1],PsiT,
                                        G.sliced(NAEA,NAEA+NAEB),0.0,true);
       }    
@@ -1950,7 +2044,7 @@ namespace afqmc
             if(pq >= n1) break;
             if(last_p != p) {
               last_p=p;
-              csr::CSR2MA('H',OrbMats[p],PsiT);
+              ma::Matrix2MA('H',OrbMats[p],PsiT);
             }
             ComplexType ov1 = SDetOp.MixedDensityMatrix(OrbMats[q],PsiT,G_,0.0,false);
             if(walker_type==CLOSED) ov1 *= ov1;
@@ -1973,8 +2067,8 @@ namespace afqmc
             if(pq >= n1) break;
             if(last_p != p) {
               last_p=p;
-              csr::CSR2MA('H',OrbMats[2*p],PsiT);
-              csr::CSR2MA('H',OrbMats[2*p+1],PsiTB);
+              ma::Matrix2MA('H',OrbMats[2*p],PsiT);
+              ma::Matrix2MA('H',OrbMats[2*p+1],PsiTB);
             }
             ComplexType ov1 = SDetOp.MixedDensityMatrix(OrbMats[2*q],PsiT,
                                 G_.sliced(0,NMO),0.0,false);
@@ -2020,7 +2114,8 @@ namespace afqmc
       v[i] = ComplexType(real(v[i]),0.0); 
   }
 
-  inline void NOMSD::recompute_ci()
+  template< class devPsiT>
+  inline void NOMSD<devPsiT>::recompute_ci()
   {
     double LogOverlapFactor(0.0);
     int ndets = ci.size(); 
@@ -2070,12 +2165,12 @@ namespace afqmc
             ComplexType cidet = ci[idet];
             if(TG.TG_local().root()) {
               CMatrix_ref Ga(G.origin(),{NAEA,NMO});
-              csr::CSR2MA('H',OrbMats[nspin*jdet],Psia);
+              ma::Matrix2MA('H',OrbMats[nspin*jdet],Psia);
               ov_[0] = SDetOp.MixedDensityMatrix( OrbMats[nspin*idet], Psia, Ga,
                                            LogOverlapFactor,true);
               if(walker_type == COLLINEAR) { 
                 CMatrix_ref Gb(Ga.origin()+Ga.num_elements(),{NAEB,NMO});
-                csr::CSR2MA('H',OrbMats[nspin*jdet+1],Psib);
+                ma::Matrix2MA('H',OrbMats[nspin*jdet+1],Psib);
                 ov_[0] *= SDetOp.MixedDensityMatrix( OrbMats[nspin*idet+1], Psib, Gb,
                                            LogOverlapFactor,true);
               } else if(walker_type==CLOSED) {

@@ -195,6 +195,289 @@ MultiArray2D fill(MultiArray2D&& m, T const& value){
         return std::forward<MultiArray2D>(m);
 }
 
+template<class CSR,
+         class MultiArray2D,
+         typename = typename std::enable_if_t<(std::decay<CSR>::type::dimensionality == -2)>,
+         typename = typename std::enable_if_t<(MultiArray2D::dimensionality==2)>
+        >
+void Matrix2MA(char TA, CSR const& A, MultiArray2D& M)
+{
+  using Type = typename MultiArray2D::element;
+  using int_type = typename CSR::int_type;
+  assert(TA=='N' || TA=='H' || TA=='T' || TA=='Z');
+  if(TA=='N' || TA=='Z') {
+    if(M.size(0) != A.size(0) or M.size(1) != A.size(1)) 
+      M.reextent({A.size(0),A.size(1)});
+  } else if(TA=='T' || TA=='H') {
+    if(M.size(0) != A.size(1) or M.size(1) != A.size(0))
+      M.reextent({A.size(1),A.size(0)});
+  } else {
+    throw std::runtime_error(" Error: Unknown operation in Matrix2MA.\n");
+  }
+  using std::fill_n;
+  fill_n(M.origin(),M.num_elements(),Type(0));
+  auto pbegin = A.pointers_begin();
+  auto pend = A.pointers_end();
+  int_type p0(pbegin[0]);
+  auto v0 = A.non_zero_values_data();
+  auto c0 = A.non_zero_indices2_data();
+//#ifdef ENABLE_CUDA
+//qmcplusplus::app_log()<<" /**********************************\n";
+//qmcplusplus::app_log()<<" Warning: write kernel in Matrix2MA. \n";
+//qmcplusplus::app_log()<<" /**********************************\n";
+//#endif
+  if(TA=='N') {
+    for(int i=0; i<A.size(0); i++)
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[i][c0[ip-p0]] = Type(v0[ip-p0]);
+  } else if(TA=='Z') {
+    for(int i=0; i<A.size(0); i++)
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[i][c0[ip-p0]] = ma::conj(Type(v0[ip-p0]));
+  } else if(TA=='T') {
+    for(int i=0; i<A.size(0); i++)
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[c0[ip-p0]][i] = Type(v0[ip-p0]);
+  } else if(TA=='H') {
+    for(int i=0; i<A.size(0); i++)
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[c0[ip-p0]][i] = ma::conj(Type(v0[ip-p0]));
+  }
+}
+
+template<class CSR,
+         class MultiArray2D,
+         typename = typename std::enable_if_t<(std::decay<CSR>::type::dimensionality == -2)>,
+         typename = typename std::enable_if_t<(MultiArray2D::dimensionality==2)>
+        >
+void Matrix2MAREF(char TA, CSR const& A, MultiArray2D& M)
+{
+  using Type = typename MultiArray2D::element;
+  using int_type = typename CSR::int_type;
+  assert(TA=='N' || TA=='H' || TA=='T' || TA=='Z');
+  if( (TA=='N' || TA=='Z') && ( (M.size(0)!=A.size(0)) || (M.size(1)!=A.size(1)) ) )
+    throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n");
+  else if( (TA=='T' || TA=='H') && ( (M.size(0)!=A.size(1)) || (M.size(1)!=A.size(0)) ) )
+    throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n");
+  using std::fill_n;
+  fill_n(M.origin(),M.num_elements(),Type(0));
+  auto pbegin = A.pointers_begin();
+  auto pend = A.pointers_end();
+  int_type p0(pbegin[0]);
+  auto v0 = A.non_zero_values_data();
+  auto c0 = A.non_zero_indices2_data();
+//#ifdef ENABLE_CUDA
+//qmcplusplus::app_log()<<" /**********************************\n";
+//qmcplusplus::app_log()<<" Warning: write kernel in Matrix2MAREF. \n";
+//qmcplusplus::app_log()<<" /**********************************\n";
+//#endif
+  if(TA=='N') {
+    for(int i=0; i<A.size(0); i++)
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[i][c0[ip-p0]] = Type(v0[ip-p0]);
+  } else if(TA=='Z') {
+    for(int i=0; i<A.size(0); i++)
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[i][c0[ip-p0]] = ma::conj(Type(v0[ip-p0]));
+  } else if(TA=='T') {
+    for(int i=0; i<A.size(0); i++)
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[c0[ip-p0]][i] = Type(v0[ip-p0]);
+  } else if(TA=='H') {
+    for(int i=0; i<A.size(0); i++)
+      for(int_type ip=pbegin[i], ipend=pend[i]; ip<ipend; ip++)
+        M[c0[ip-p0]][i] = ma::conj(Type(v0[ip-p0]));
+  }
+}
+
+/* Chooses rows of A based on occups vector and performs CSF2MA on subset of rows */
+template<class CSR,
+         class MultiArray2D,
+         class Vector,
+         typename = typename std::enable_if_t<(std::decay<CSR>::type::dimensionality == -2)>,
+         typename = typename std::enable_if_t<(MultiArray2D::dimensionality==2)>
+        >
+void Matrix2MA(char TA, CSR const& A, MultiArray2D& M, Vector const& occups)
+{
+  using Type = typename MultiArray2D::element;
+  if(occups.size()==0) throw std::runtime_error(" Error: Empty occupation array in Matrix2MA.\n");
+  assert(occups.size() <= A.size(0));
+  int nrows = occups.size();
+  assert(TA=='N' || TA=='H' || TA=='T' || TA=='Z');
+  if(TA=='N' || TA=='Z') {
+    if(M.size(0) != nrows || M.size(1) != A.size(1))
+      M.reextent({nrows,A.size(1)});
+  } else if(TA=='T' || TA=='H') {
+    if(M.size(1) != nrows || M.size(0) != A.size(1))
+      M.reextent({A.size(1),nrows});
+  } else
+    throw std::runtime_error(" Error: Unknown operation in Matrix2MA.\n");
+  std::fill_n(M.origin(),M.num_elements(),Type(0));
+  auto pbegin = A.pointers_begin();
+  auto pend = A.pointers_end();
+  auto p0 = pbegin[0];
+  auto v0 = A.non_zero_values_data();
+  auto c0 = A.non_zero_indices2_data();
+  if(TA=='N') {
+    for(int i=0; i<nrows; i++) {
+      assert(occups[i] >= 0 && occups[i] < A.size(0));
+      int ik = occups[i];
+      for(int ip=pbegin[ik]; ip<pend[ik]; ip++)
+        M[i][c0[ip-p0]] = static_cast<Type>(v0[ip-p0]);
+    }
+  } else if(TA=='Z') {
+    for(int i=0; i<nrows; i++) {
+      assert(occups[i] >= 0 && occups[i] < A.size(0));
+      int ik = occups[i];
+      for(int ip=pbegin[ik]; ip<pend[ik]; ip++)
+        M[i][c0[ip-p0]] = static_cast<Type>(ma::conj(v0[ip-p0]));
+    }
+  } else if(TA=='T') {
+    for(int i=0; i<nrows; i++) {
+      assert(occups[i] >= 0 && occups[i] < A.size(0));
+      int ik = occups[i];
+      for(int ip=pbegin[ik]; ip<pend[ik]; ip++)
+        M[c0[ip-p0]][i] = static_cast<Type>(v0[ip-p0]);
+    }
+  } else if(TA=='H') {
+    for(int i=0; i<nrows; i++) {
+      assert(occups[i] >= 0 && occups[i] < A.size(0));
+      int ik = occups[i];
+      for(int ip=pbegin[ik]; ip<pend[ik]; ip++)
+        M[c0[ip-p0]][i] = static_cast<Type>(ma::conj(v0[ip-p0]));
+    }
+  }
+}
+
+template<class MA,
+         class MultiArray2D,
+         typename = typename std::enable_if_t<(std::decay<MA>::type::dimensionality == 2)>,
+         typename = typename std::enable_if_t<(MultiArray2D::dimensionality==2)>,
+         typename = void
+        >
+void Matrix2MA(char TA, MA const& A, MultiArray2D& M)
+{
+  using Type1 = typename std::decay<MA>::type::element;
+  using Type2 = typename MultiArray2D::element;
+  assert(TA=='N' || TA=='H' || TA=='T' || TA=='Z');
+  if(TA=='N' || TA=='Z') {
+    if(M.size(0) != A.size(0) or M.size(1) != A.size(1)) 
+      M.reextent({A.size(0),A.size(1)});
+  } else if(TA=='T' || TA=='H') {
+    if(M.size(0) != A.size(1) or M.size(1) != A.size(0)) 
+      M.reextent({A.size(1),A.size(0)});
+  } else {
+    throw std::runtime_error(" Error: Unknown operation in Matrix2MA.\n");
+  }
+
+  if(TA == 'H') TA = 'C';   
+  if(TA=='N' or TA=='T' or TA=='C') {
+    geam(   TA, TA, M.size(1), M.size(0),
+          Type2(1.0), pointer_dispatch(A.origin()), A.stride(0),
+          Type2(0.0), pointer_dispatch(A.origin()), A.stride(0),
+          pointer_dispatch(M.origin()), M.stride(0)
+    );
+  } else if(TA=='Z') {
+    // bad i gpu's
+    for(int i=0; i<M.size(0); i++)
+      for(int j=0; j<M.size(1); j++)
+        M[i][j] = ma::conj(A[i][j]);
+  }
+}
+
+template<class MA,
+         class MultiArray2D,
+         typename = typename std::enable_if_t<(std::decay<MA>::type::dimensionality == 2)>,
+         typename = typename std::enable_if_t<(MultiArray2D::dimensionality==2)>,
+         typename = void
+        >
+void Matrix2MAREF(char TA, MA const& A, MultiArray2D& M)
+{
+  using Type1 = typename std::decay<MA>::type::element;
+  using Type2 = typename MultiArray2D::element;
+  assert(TA=='N' || TA=='H' || TA=='T' || TA=='Z');
+  if(TA=='N' || TA=='Z') {
+    if(M.size(0) != A.size(0) or M.size(1) != A.size(1))
+      throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n"); 
+  } else if(TA=='T' || TA=='H') {
+    if(M.size(0) != A.size(1) or M.size(1) != A.size(0))
+      throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n");
+  } else {
+    throw std::runtime_error(" Error: Unknown operation in Matrix2MA.\n");
+  }
+
+  if(TA == 'H') TA = 'C';
+  if(TA=='N' or TA=='T' or TA=='C') {
+    geam(   TA, TA, M.size(1), M.size(0),
+          Type2(1.0), pointer_dispatch(A.origin()), A.stride(0),
+          Type2(0.0), pointer_dispatch(A.origin()), A.stride(0),
+          pointer_dispatch(M.origin()), M.stride(0)
+    );
+  } else if(TA=='Z') {
+    // bad i gpu's
+    for(int i=0; i<M.size(0); i++)
+      for(int j=0; j<M.size(1); j++)
+        M[i][j] = ma::conj(A[i][j]);
+  }
+}
+
+template<class MA,
+         class MultiArray2D,
+         class Vector,
+         typename = typename std::enable_if_t<(std::decay<MA>::type::dimensionality == 2)>,
+         typename = typename std::enable_if_t<(MultiArray2D::dimensionality==2)>,
+         typename = void
+        >
+void Matrix2MA(char TA, MA const& A, MultiArray2D& M, Vector const& occups)
+{
+  using Type1 = typename std::decay<MA>::type::element;
+  using Type2 = typename MultiArray2D::element;
+  assert(TA=='N' || TA=='H' || TA=='T' || TA=='Z');
+  if(occups.size()==0) throw std::runtime_error(" Error: Empty occupation array in Matrix2MA.\n");
+  assert(occups.size() <= A.size(0));
+  int nrows = occups.size();
+  assert(TA=='N' || TA=='H' || TA=='T' || TA=='Z');
+  if(TA=='N' || TA=='Z') {
+    if(M.size(0) != nrows || M.size(1) != A.size(1))
+      M.reextent({nrows,A.size(1)});
+  } else if(TA=='T' || TA=='H') {
+    if(M.size(1) != nrows || M.size(0) != A.size(1))
+      M.reextent({A.size(1),nrows});
+  } else
+    throw std::runtime_error(" Error: Unknown operation in Matrix2MA.\n");
+  if(TA == 'H') TA = 'C';
+  // bad i gpu's
+  if(TA=='N') {
+    for(int i=0; i<nrows; i++) {
+      assert(occups[i] >= 0 && occups[i] < A.size(0));
+      int ik = occups[i];
+      for(int j=0; j<M.size(1); j++)
+        M[i][j] = static_cast<Type2>(A[ik][j]);
+    }
+  } else if(TA=='T') {
+    for(int i=0; i<nrows; i++) {
+      assert(occups[i] >= 0 && occups[i] < A.size(0));
+      int ik = occups[i];
+      for(int j=0; j<M.size(1); j++)
+        M[j][i] = static_cast<Type2>(A[ik][j]);
+    }
+  } else if(TA=='C') {
+    for(int i=0; i<nrows; i++) {
+      assert(occups[i] >= 0 && occups[i] < A.size(0));
+      int ik = occups[i];
+      for(int j=0; j<M.size(1); j++)
+        M[j][i] = static_cast<Type2>(ma::conj(A[ik][j]));
+    }
+  } else if(TA=='Z') {
+    for(int i=0; i<nrows; i++) {
+      assert(occups[i] >= 0 && occups[i] < A.size(0));
+      int ik = occups[i];
+      for(int j=0; j<M.size(1); j++)
+        M[i][j] = static_cast<Type2>(ma::conj(A[ik][j]));
+    }
+  }
+}
+
 }
 
 #endif

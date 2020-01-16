@@ -64,12 +64,13 @@ class diagonal2rdm: public AFQMCInfo
 
   diagonal2rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, 
            int nave_=1, int bsize=1):
-                AFQMCInfo(info),TG(tg_),walker_type(wlk),writer(false),
+                AFQMCInfo(info),
                 block_size(bsize),nave(nave_),counter(0),
+                TG(tg_),walker_type(wlk),writer(false),
                 hdf_walker_output(""),
-                denom(iextensions<1u>{0},shared_allocator<ComplexType>{TG.TG_local()}),
+                DMAverage({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                 DMWork({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
-                DMAverage({0,0},shared_allocator<ComplexType>{TG.TG_local()})
+                denom(iextensions<1u>{0},shared_allocator<ComplexType>{TG.TG_local()})
   {
 
     app_log()<<"  --  Adding Back Propagated Diagonal 2RDM (Diag2RDM) estimator. -- \n";
@@ -294,16 +295,6 @@ class diagonal2rdm: public AFQMCInfo
   mpi3CMatrix DMWork;
 
   mpi3CVector denom; 
-
-  // buffer space
-  CVector Buff;
-
-  void set_buffer(size_t N) {
-    if(Buff.num_elements() < N)
-      Buff = std::move(CVector(iextensions<1u>{N}));
-    using std::fill_n;
-    fill_n(Buff.origin(),N,ComplexType(0.0));
-  }
 
 };
 

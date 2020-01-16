@@ -148,6 +148,8 @@ class dummy_HOps
     return boost::multi::array<ComplexType,2>{};
   }
 
+  HamiltonianTypes getHamType() const { return UNKNOWN; }
+
 };
 
 }
@@ -346,6 +348,13 @@ class HamiltonianOperations:
     bool fast_ph_energy() const {
         return boost::apply_visitor(
             [&](auto&& a){return a.fast_ph_energy();},
+            *this
+        );
+    }
+ 
+    HamiltonianTypes getHamType() const {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.getHamType();},
             *this
         );
     }
