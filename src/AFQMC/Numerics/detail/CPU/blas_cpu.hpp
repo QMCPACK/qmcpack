@@ -1003,14 +1003,14 @@ namespace ma
   }
 
   template<typename T>
-  inline static void axpyBatched(int n, T* x, const T** a, int inca, T** b, int incb, int batchSize) 
+  inline static void axpyBatched(int n, T* x, T *const* a, int inca, T** b, int incb, int batchSize) 
   {
     for(int i=0; i<batchSize; i++)
         axpy(n,x[i],a[i],inca,b[i],incb);
   }
 
   template<typename T>
-  inline static void sumGwBatched(int n, T* x, const T** a, int inca, T** b, int incb, int b0, int nw, int batchSize)
+  inline static void sumGwBatched(int n, T* x, T *const* a, int inca, T** b, int incb, int b0, int nw, int batchSize)
   {
     // since this is not parallel, no need to coordinate over iw
     for(int i=0; i<batchSize; i++)

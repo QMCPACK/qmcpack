@@ -58,7 +58,7 @@ namespace ma
   }
 
   template<class T>
-  inline void strided_determinant_from_getrf(int n, T** M, int lda, int Mstride, int** pivot, int pstride, T LogOverlapFactor, T* res, int nbatch)
+  inline void strided_determinant_from_getrf(int n, T* M, int lda, int Mstride, int* pivot, int pstride, T LogOverlapFactor, T* res, int nbatch)
   {
     for(int b=0; b<nbatch; b++) 
       determinant_from_getrf(n,M+b*Mstride,lda,pivot+b*pstride,LogOverlapFactor,res+b);

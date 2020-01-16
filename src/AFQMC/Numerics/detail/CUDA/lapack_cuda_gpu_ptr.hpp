@@ -113,7 +113,6 @@ namespace qmc_cuda
   template<typename T, typename I>
   inline static void getriBatched (int n, cuda_gpu_ptr<T> * a, int lda, cuda_gpu_ptr<I> piv, cuda_gpu_ptr<T> * ainv, int ldc, cuda_gpu_ptr<I> info, int batchSize)
   {
-    assert(lda == n);
     T **A_d, **C_d;
     T **A_h, **C_h;
     A_h = new T*[batchSize];

@@ -1011,6 +1011,7 @@ void MixedDensityMatrix( std::vector<MatA*>& hermA, std::vector<MatB> &Bi, MatC&
   getrfBatched(NEL,Carray.data(),ldC,ma::pointer_dispatch(IWORK.origin())
         ,ma::pointer_dispatch(IWORK.origin())+nbatch*NEL,nbatch);
 
+  using ma::strided_determinant_from_getrf;
   strided_determinant_from_getrf(NEL, ma::pointer_dispatch(Carray[0]), ldC, C.stride(0),
                                  ma::pointer_dispatch(IWORK.origin()),NEL,LogOverlapFactor,
                                  to_address(ovlp.origin()), nbatch);
@@ -1169,6 +1170,7 @@ void DensityMatrices(std::vector<MatA> const& Left, std::vector<MatB> const& Rig
                  ma::pointer_dispatch(IWORK.origin()), 
                  ma::pointer_dispatch(IWORK.origin())+nbatch*NEL, nbatch);
 
+  using ma::strided_determinant_from_getrf;
   strided_determinant_from_getrf(NEL, ma::pointer_dispatch(Garray[0]), ldC, G[0].stride(0),
                                    IWORK.origin(),NEL,LogOverlapFactor,
                                    to_address(ovlp.origin()), nbatch);
@@ -1281,6 +1283,7 @@ void Overlap( std::vector<MatA*>& hermA, std::vector<MatB> &Bi, Tp LogOverlapFac
   // Invert
   getrfBatched(NEL,NNarray.data(),ldN, IWORK.origin(), IWORK.origin()+nbatch*NEL, nbatch);
 
+  using ma::strided_determinant_from_getrf;
   strided_determinant_from_getrf(NEL, NNarray[0], ldN, TNN3D.stride(0), 
                                    IWORK.origin(),NEL,LogOverlapFactor,
                                    to_address(ovlp.origin()), nbatch);
