@@ -124,13 +124,29 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   // Read atom orbital info from xml //
   /////////////////////////////////////
   // construct Super2Prim mapping.
+  // Check the number of ions in the XML and 
+  // HDF5. Skip the checks in some situations but 
+  // not others. See Issue #2224.
+
+  if (h_IonPos.size() > 0 && IonPos.size() > 0) {
+    skipChecks = false;
+  } else if (h_IonPos.size() == 0 && IonPos.size() > 0) {
+    skipChecks = false;
+  } else if (h_IonPos.size() > 0 && IonPos.size() == 0) {
+    skipChecks = true;
+  } else if (h_IonPos.size() == 0 && IonPos.size() == 0) {
+    skipChecks = true;
+  } else {
+    ;
+  }
+
   if (Super2Prim.size() == 0)
   {
     //SourcePtcl->convert2Cart(SourcePtcl->R);
     Super2Prim.resize(SourcePtcl->R.size(), -1);
     std::vector<int> prim_atom_counts;
     prim_atom_counts.resize(IonPos.size(), 0);
-    for (int i = 0; i < IonPos.size(); i++)
+    for (int i = 0; i < SourcePtcl->R.size(); i++)
     {
       PosType ref = PrimCell.toUnit_floor(SourcePtcl->R[i]);
       for (int j = 0; j < IonPos.size(); j++)
