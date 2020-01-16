@@ -34,6 +34,7 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
 
 /// Constructor.
 RMCUpdatePbyPWithDrift::RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w,
@@ -131,8 +132,8 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
   int nAcceptTemp(0);
   int nRejectTemp(0);
   //copy the old energy and scale factor of drift
-  RealType eold(prophead.Properties(LOCALENERGY));
-  RealType vqold(prophead.Properties(DRIFTSCALE));
+  RealType eold(prophead.Properties(WP::LOCALENERGY));
+  RealType vqold(prophead.Properties(WP::DRIFTSCALE));
   RealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
@@ -221,7 +222,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
   {
     //all moves are rejected: does not happen normally with reasonable wavefunctions
     curhead.Age++;
-    curhead.Properties(R2ACCEPTED) = 0.0;
+    curhead.Properties(WP::R2ACCEPTED) = 0.0;
     //weight is set to 0 for traces
     // consistent w/ no evaluate/auxHevaluate
     RealType wtmp  = prophead.Weight;
@@ -262,8 +263,8 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
   int nAcceptTemp(0);
   int nRejectTemp(0);
   //copy the old energy and scale factor of drift
-  RealType eold(prophead.Properties(LOCALENERGY));
-  RealType vqold(prophead.Properties(DRIFTSCALE));
+  RealType eold(prophead.Properties(WP::LOCALENERGY));
+  RealType vqold(prophead.Properties(WP::DRIFTSCALE));
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
   RealType gf_acc      = 1.0;
@@ -340,8 +341,8 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
   W.saveWalker(prophead);
   Walker_t &lastbead(W.reptile->getTail()), nextlastbead(W.reptile->getNext());
   RealType eloc = H.evaluate(W);
-  RealType dS   = branchEngine->DMCLinkAction(eloc, curhead.Properties(LOCALENERGY)) -
-      branchEngine->DMCLinkAction(lastbead.Properties(LOCALENERGY), nextlastbead.Properties(LOCALENERGY));
+  RealType dS   = branchEngine->DMCLinkAction(eloc, curhead.Properties(WP::LOCALENERGY)) -
+      branchEngine->DMCLinkAction(lastbead.Properties(WP::LOCALENERGY), nextlastbead.Properties(WP::LOCALENERGY));
   RealType acceptProb = std::min((RealType)1.0, std::exp(-dS));
   if ((RandomGen() <= acceptProb) || (prophead.Age >= MaxAge || lastbead.Age >= MaxAge))
   {
@@ -349,9 +350,9 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
     if (curhead.Age >= MaxAge || lastbead.Age >= MaxAge)
       app_log() << "\tForce Acceptance...\n";
 
-    prophead.Properties(LOCALENERGY) = eloc;
-    prophead.Properties(R2ACCEPTED)  = rr_accepted;
-    prophead.Properties(R2PROPOSED)  = rr_proposed;
+    prophead.Properties(WP::LOCALENERGY) = eloc;
+    prophead.Properties(WP::R2ACCEPTED)  = rr_accepted;
+    prophead.Properties(WP::R2PROPOSED)  = rr_proposed;
     H.auxHevaluate(W, prophead, true, false); //evaluate properties? true.  collectables?  false.
     H.saveProperty(prophead.getPropertyBase());
     prophead.Age    = 0;
@@ -362,8 +363,8 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
   {
     ++nReject;
     H.rejectedMove(W, prophead);
-    curhead.Properties(R2ACCEPTED) = 0;
-    curhead.Properties(R2PROPOSED) = rr_proposed;
+    curhead.Properties(WP::R2ACCEPTED) = 0;
+    curhead.Properties(WP::R2PROPOSED) = rr_proposed;
     curhead.Age += 1;
     W.reptile->flip();
     // return;

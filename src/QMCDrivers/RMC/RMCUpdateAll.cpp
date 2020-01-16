@@ -34,6 +34,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 /// Constructor.
 RMCUpdateAllWithDrift::RMCUpdateAllWithDrift(MCWalkerConfiguration& w,
                                              TrialWaveFunction& psi,
@@ -156,7 +158,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   Walker_t &lastbead(W.reptile->getTail()), nextlastbead(W.reptile->getNext());
   //Implementing the fixed-node approximation.  If phase difference is not a multiple of 2pi, bounce away from node.
   RealType newphase  = Psi.getPhase();
-  RealType phasediff = newphase - curhead.Properties(SIGN);
+  RealType phasediff = newphase - curhead.Properties(WP::SIGN);
   //Reject & bounce if node crossed.
   if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
   {
@@ -175,7 +177,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   ////////////////////////////////////////////////////////////////////////
   //      RealType eest = W.reptile->eest;
 
-  //      RealType fbet = std::max(eest - curhead.Properties(LOCALENERGY), eest - eloc);
+  //      RealType fbet = std::max(eest - curhead.Properties(WP::LOCALENERGY), eest - eloc);
   //   app_log()<<"eval = "<<eest<<" estdev="<<stddev<< std::endl;
   //      RealType rawcutoff=100*std::sqrt(W.reptile->evar);
   //      RealType cutoffmax = 1.5*rawcutoff;
@@ -190,14 +192,14 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   RealType acceptProb = 1;
   if (actionType == SYM_ACTION)
   {
-    RealType oldhead_logpsi = curhead.Properties(LOGPSI);
-    RealType oldtail_logpsi = lastbead.Properties(LOGPSI);
-    RealType newtail_logpsi = nextlastbead.Properties(LOGPSI);
+    RealType oldhead_logpsi = curhead.Properties(WP::LOGPSI);
+    RealType oldtail_logpsi = lastbead.Properties(WP::LOGPSI);
+    RealType newtail_logpsi = nextlastbead.Properties(WP::LOGPSI);
 
-    RealType oldhead_e = curhead.Properties(LOCALENERGY);
-    RealType oldtail_e = lastbead.Properties(LOCALENERGY);
-    RealType newhead_e = W.Properties(LOCALENERGY);
-    RealType newtail_e = nextlastbead.Properties(LOCALENERGY);
+    RealType oldhead_e = curhead.Properties(WP::LOCALENERGY);
+    RealType oldtail_e = lastbead.Properties(WP::LOCALENERGY);
+    RealType newhead_e = W.Properties(WP::LOCALENERGY);
+    RealType newtail_e = nextlastbead.Properties(WP::LOCALENERGY);
 
     RealType head_forward  = W.reptile->getTransProb(curhead, +1);
     RealType head_backward = W.reptile->getTransProb(W, -1);
@@ -221,14 +223,14 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
   {
     // dS = curhead.Properties(W.reptile->Action[2]) + W.Properties(W.reptile->Action[2])
     //- (lastbead.Properties(W.reptile->Action[2]) + nextlastbead.Properties(W.reptile->Action[2]));
-    RealType dS_head = branchEngine->DMCLinkAction(eloc, curhead.Properties(LOCALENERGY));
+    RealType dS_head = branchEngine->DMCLinkAction(eloc, curhead.Properties(WP::LOCALENERGY));
     RealType dS_tail =
-        branchEngine->DMCLinkAction(lastbead.Properties(LOCALENERGY), nextlastbead.Properties(LOCALENERGY));
+        branchEngine->DMCLinkAction(lastbead.Properties(WP::LOCALENERGY), nextlastbead.Properties(WP::LOCALENERGY));
     //dS=branchEngine->DMCLinkAction(eloc,curhead.Properties(LOCALENERGY)) - branchEngine->DMCLinkAction(lastbead.Properties(LOCALENERGY),nextlastbead.Properties(LOCALENERGY));
     //  dS=dS_head - dS_tail;
     //  acceptProb=std::min(1.0,std::exp(-dS ));
   }
-  acceptProb = std::exp(logGb - logGf + 2.0 * (logpsi - curhead.Properties(LOGPSI)));
+  acceptProb = std::exp(logGb - logGf + 2.0 * (logpsi - curhead.Properties(WP::LOGPSI)));
 
 
   /*      RealType dS = curhead.Properties(W.reptile->Action[2]) + W.Properties(W.reptile->Action[2])
@@ -242,7 +244,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
     MCWalkerConfiguration::Walker_t& overwriteWalker(W.reptile->getNewHead());
 
     W.saveWalker(overwriteWalker);
-    overwriteWalker.Properties(LOCALENERGY)                    = eloc;
+    overwriteWalker.Properties(WP::LOCALENERGY)                    = eloc;
     overwriteWalker.Properties(W.reptile->Action[forward])     = 0;
     overwriteWalker.Properties(W.reptile->Action[backward])    = W.Properties(W.reptile->Action[backward]);
     overwriteWalker.Properties(W.reptile->Action[2])           = W.Properties(W.reptile->Action[2]);
@@ -381,7 +383,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
   Walker_t &lastbead(W.reptile->getTail()), nextlastbead(W.reptile->getNext());
   //Implementing the fixed-node approximation.  If phase difference is not a multiple of 2pi, bounce away from node.
   RealType newphase  = Psi.getPhase();
-  RealType phasediff = newphase - curhead.Properties(SIGN);
+  RealType phasediff = newphase - curhead.Properties(WP::SIGN);
   //Reject & bounce if node crossed.
   if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
   {
@@ -393,7 +395,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
     return;
   }
   RealType eloc             = H.evaluate(W);
-  W.Properties(LOCALENERGY) = eloc;
+  W.Properties(WP::LOCALENERGY) = eloc;
   //new_headProp[Action[2]]= 0.5*Tau*eloc;
   ////////////////////////////////////////////////////////////////////////
   ///  Like DMC, this filters the local energy to ignore divergences near pathological points in phase space.
@@ -416,14 +418,14 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
 
   if (actionType == SYM_ACTION)
   {
-    RealType oldhead_logpsi = curhead.Properties(LOGPSI);
-    RealType oldtail_logpsi = lastbead.Properties(LOGPSI);
-    RealType newtail_logpsi = nextlastbead.Properties(LOGPSI);
+    RealType oldhead_logpsi = curhead.Properties(WP::LOGPSI);
+    RealType oldtail_logpsi = lastbead.Properties(WP::LOGPSI);
+    RealType newtail_logpsi = nextlastbead.Properties(WP::LOGPSI);
 
-    RealType oldhead_e = curhead.Properties(LOCALENERGY);
-    RealType oldtail_e = lastbead.Properties(LOCALENERGY);
-    RealType newhead_e = W.Properties(LOCALENERGY);
-    RealType newtail_e = nextlastbead.Properties(LOCALENERGY);
+    RealType oldhead_e = curhead.Properties(WP::LOCALENERGY);
+    RealType oldtail_e = lastbead.Properties(WP::LOCALENERGY);
+    RealType newhead_e = W.Properties(WP::LOCALENERGY);
+    RealType newtail_e = nextlastbead.Properties(WP::LOCALENERGY);
 
     RealType head_forward  = W.reptile->getTransProb(curhead, +1);
     RealType head_backward = W.reptile->getTransProb(W, -1);
@@ -443,7 +445,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
 
 
     RealType dS_0 = dS_head - dS_tail +
-        (curhead.Properties(LOGPSI) + lastbead.Properties(LOGPSI) - logpsi - nextlastbead.Properties(LOGPSI));
+        (curhead.Properties(WP::LOGPSI) + lastbead.Properties(WP::LOGPSI) - logpsi - nextlastbead.Properties(WP::LOGPSI));
 
     /// RealType dS_old = +(curhead.Properties(LOGPSI) + lastbead.Properties(LOGPSI) - logpsi - nextlastbead.Properties(LOGPSI))
     ///      + curhead.Properties(W.reptile->Action[2]) + W.Properties(W.reptile->Action[2])
@@ -458,7 +460,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
     //  app_log()<<"dS_head="<<dS_head<< std::endl;
     //  app_log()<<"dS_tail="<<dS_tail<< std::endl;
     //  app_log()<<"dS' = "<<dS_0<< std::endl;
-    //        app_log()<<"W.Properties(LOCALENERGY)="<<W.Properties(LOCALENERGY)<< std::endl;
+    //        app_log()<<"W.Properties(WP::LOCALENERGY)="<<W.Properties(WP::LOCALENERGY)<< std::endl;
 
     //  app_log()<<"---------------\n";
     acceptProb = std::exp(-dS_0 +
@@ -470,10 +472,10 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
   {
     // dS = curhead.Properties(W.reptile->Action[2]) + W.Properties(W.reptile->Action[2])
     //- (lastbead.Properties(W.reptile->Action[2]) + nextlastbead.Properties(W.reptile->Action[2]));
-    RealType dS_head = branchEngine->DMCLinkAction(eloc, curhead.Properties(LOCALENERGY));
+    RealType dS_head = branchEngine->DMCLinkAction(eloc, curhead.Properties(WP::LOCALENERGY));
     RealType dS_tail =
-        branchEngine->DMCLinkAction(lastbead.Properties(LOCALENERGY), nextlastbead.Properties(LOCALENERGY));
-    //dS=branchEngine->DMCLinkAction(eloc,curhead.Properties(LOCALENERGY)) - branchEngine->DMCLinkAction(lastbead.Properties(LOCALENERGY),nextlastbead.Properties(LOCALENERGY));
+        branchEngine->DMCLinkAction(lastbead.Properties(WP::LOCALENERGY), nextlastbead.Properties(WP::LOCALENERGY));
+    //dS=branchEngine->DMCLinkAction(eloc,curhead.Properties(WP::LOCALENERGY)) - branchEngine->DMCLinkAction(lastbead.Properties(WP::LOCALENERGY),nextlastbead.Properties(WP::LOCALENERGY));
     dS         = dS_head - dS_tail;
     acceptProb = std::min((RealType)1.0, std::exp(-dS));
   }
@@ -491,7 +493,7 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
       equilToDoSteps = equilSteps;
     }
     W.saveWalker(overwriteWalker);
-    overwriteWalker.Properties(LOCALENERGY)                 = eloc;
+    overwriteWalker.Properties(WP::LOCALENERGY)                 = eloc;
     overwriteWalker.Properties(W.reptile->Action[forward])  = 0;
     overwriteWalker.Properties(W.reptile->Action[backward]) = W.Properties(W.reptile->Action[backward]);
     overwriteWalker.Properties(W.reptile->Action[2])        = W.Properties(W.reptile->Action[2]);
@@ -500,8 +502,8 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
     W.reptile->saveTransProb(overwriteWalker, -1, logGb);
     // overwriteWalker.Properties(W.reptile->TransProb[backward])=W.Properties(W.reptile->TransProb[backward]);
     overwriteWalker.resetProperty(logpsi, Psi.getPhase(), eloc);
-    overwriteWalker.Properties(R2ACCEPTED) = r2accept;
-    overwriteWalker.Properties(R2PROPOSED) = r2proposed;
+    overwriteWalker.Properties(WP::R2ACCEPTED) = r2accept;
+    overwriteWalker.Properties(WP::R2PROPOSED) = r2proposed;
 
     // lastbead.Properties(R2PROPOSED)=lastbead.Properties(R2ACCEPTED)=nextlastbead.Properties(R2PROPOSED);
     H.auxHevaluate(W, overwriteWalker, true, false); //evaluate properties but not collectables.
@@ -513,9 +515,9 @@ void RMCUpdateAllWithDrift::advanceWalkersRMC()
   else
   {
     //  app_log()<<"Reject\n";
-    curhead.Properties(R2ACCEPTED)  = 0;
-    curhead.Properties(R2PROPOSED)  = r2proposed;
-    lastbead.Properties(R2ACCEPTED) = 0;
+    curhead.Properties(WP::R2ACCEPTED)  = 0;
+    curhead.Properties(WP::R2PROPOSED)  = r2proposed;
+    lastbead.Properties(WP::R2ACCEPTED) = 0;
     //lastbead.Properties(R2PROPOSED)=nextlastbead.Properties(R2PROPOSED);
     //curhead.Properties(R2
     ++nReject;

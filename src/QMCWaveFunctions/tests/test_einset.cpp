@@ -377,16 +377,16 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   SPOSet::GradVector_t dpsi_2(spo->getOrbitalSetSize());
   SPOSet::ValueVector_t d2psi_2(spo->getOrbitalSetSize());
 
-  std::vector<SPOSet::ValueVector_t*> psi_v_list;
-  std::vector<SPOSet::GradVector_t*> dpsi_v_list;
-  std::vector<SPOSet::ValueVector_t*> d2psi_v_list;
+  RefVector<SPOSet::ValueVector_t> psi_v_list;
+  RefVector<SPOSet::GradVector_t> dpsi_v_list;
+  RefVector<SPOSet::ValueVector_t> d2psi_v_list;
 
-  psi_v_list.push_back(&psi);
-  psi_v_list.push_back(&psi_2);
-  dpsi_v_list.push_back(&dpsi);
-  dpsi_v_list.push_back(&dpsi_2);
-  d2psi_v_list.push_back(&d2psi);
-  d2psi_v_list.push_back(&d2psi_2);
+  psi_v_list.push_back(psi);
+  psi_v_list.push_back(psi_2);
+  dpsi_v_list.push_back(dpsi);
+  dpsi_v_list.push_back(dpsi_2);
+  d2psi_v_list.push_back(d2psi);
+  d2psi_v_list.push_back(d2psi_2);
 
   spo->mw_evaluateValue(spo_list, P_list, 1, psi_v_list);
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
@@ -394,15 +394,15 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
   // value
-  REQUIRE(std::real((*psi_v_list[0])[0]) == Approx(0.9008999467));
-  REQUIRE(std::real((*psi_v_list[0])[1]) == Approx(1.2383049726));
+  REQUIRE(std::real(psi_v_list[0].get()[0]) == Approx(0.9008999467));
+  REQUIRE(std::real(psi_v_list[0].get()[1]) == Approx(1.2383049726));
 #endif
 
 #if defined(QMC_COMPLEX)
   // imaginary part
   // value
-  REQUIRE(std::imag((*psi_v_list[0])[0]) == Approx(0.9008999467));
-  REQUIRE(std::imag((*psi_v_list[0])[1]) == Approx(1.2383049726));
+  REQUIRE(std::imag(psi_v_list[0].get()[0]) == Approx(0.9008999467));
+  REQUIRE(std::imag(psi_v_list[0].get()[1]) == Approx(1.2383049726));
 #endif
 
   spo->mw_evaluateVGL(spo_list, P_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
@@ -411,35 +411,35 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
   // value
-  REQUIRE(std::real((*psi_v_list[1])[0]) == Approx(0.9008999467));
-  REQUIRE(std::real((*psi_v_list[1])[1]) == Approx(1.2383049726));
+  REQUIRE(std::real(psi_v_list[1].get()[0]) == Approx(0.9008999467));
+  REQUIRE(std::real(psi_v_list[1].get()[1]) == Approx(1.2383049726));
   // grad
-  REQUIRE(std::real((*dpsi_v_list[1])[0][0]) == Approx(0.0025820041));
-  REQUIRE(std::real((*dpsi_v_list[1])[0][1]) == Approx(-0.1880052537));
-  REQUIRE(std::real((*dpsi_v_list[1])[0][2]) == Approx(-0.0025404284));
-  REQUIRE(std::real((*dpsi_v_list[1])[1][0]) == Approx(0.1069662273));
-  REQUIRE(std::real((*dpsi_v_list[1])[1][1]) == Approx(-0.4364597797));
-  REQUIRE(std::real((*dpsi_v_list[1])[1][2]) == Approx(-0.106951952));
+  REQUIRE(std::real(dpsi_v_list[1].get()[0][0]) == Approx(0.0025820041));
+  REQUIRE(std::real(dpsi_v_list[1].get()[0][1]) == Approx(-0.1880052537));
+  REQUIRE(std::real(dpsi_v_list[1].get()[0][2]) == Approx(-0.0025404284));
+  REQUIRE(std::real(dpsi_v_list[1].get()[1][0]) == Approx(0.1069662273));
+  REQUIRE(std::real(dpsi_v_list[1].get()[1][1]) == Approx(-0.4364597797));
+  REQUIRE(std::real(dpsi_v_list[1].get()[1][2]) == Approx(-0.106951952));
   // lapl
-  REQUIRE(std::real((*d2psi_v_list[1])[0]) == Approx(-1.3757134676));
-  REQUIRE(std::real((*d2psi_v_list[1])[1]) == Approx(-2.4803137779));
+  REQUIRE(std::real(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
+  REQUIRE(std::real(d2psi_v_list[1].get()[1]) == Approx(-2.4803137779));
 #endif
 
 #if defined(QMC_COMPLEX)
   // imaginary part
   // value
-  REQUIRE(std::imag((*psi_v_list[1])[0]) == Approx(0.9008999467));
-  REQUIRE(std::imag((*psi_v_list[1])[1]) == Approx(1.2383049726));
+  REQUIRE(std::imag(psi_v_list[1].get()[0]) == Approx(0.9008999467));
+  REQUIRE(std::imag(psi_v_list[1].get()[1]) == Approx(1.2383049726));
   // grad
-  REQUIRE(std::imag((*dpsi_v_list[1])[0][0]) == Approx(0.0025820041));
-  REQUIRE(std::imag((*dpsi_v_list[1])[0][1]) == Approx(-0.1880052537));
-  REQUIRE(std::imag((*dpsi_v_list[1])[0][2]) == Approx(-0.0025404284));
-  REQUIRE(std::imag((*dpsi_v_list[1])[1][0]) == Approx(0.1069453433));
-  REQUIRE(std::imag((*dpsi_v_list[1])[1][1]) == Approx(-0.43649593));
-  REQUIRE(std::imag((*dpsi_v_list[1])[1][2]) == Approx(-0.1069145575));
+  REQUIRE(std::imag(dpsi_v_list[1].get()[0][0]) == Approx(0.0025820041));
+  REQUIRE(std::imag(dpsi_v_list[1].get()[0][1]) == Approx(-0.1880052537));
+  REQUIRE(std::imag(dpsi_v_list[1].get()[0][2]) == Approx(-0.0025404284));
+  REQUIRE(std::imag(dpsi_v_list[1].get()[1][0]) == Approx(0.1069453433));
+  REQUIRE(std::imag(dpsi_v_list[1].get()[1][1]) == Approx(-0.43649593));
+  REQUIRE(std::imag(dpsi_v_list[1].get()[1][2]) == Approx(-0.1069145575));
   // lapl
-  REQUIRE(std::imag((*d2psi_v_list[1])[0]) == Approx(-1.3757134676));
-  REQUIRE(std::imag((*d2psi_v_list[1])[1]) == Approx(-2.4919104576));
+  REQUIRE(std::imag(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
+  REQUIRE(std::imag(d2psi_v_list[1].get()[1]) == Approx(-2.4919104576));
 #endif
 
 }

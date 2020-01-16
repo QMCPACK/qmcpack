@@ -21,6 +21,8 @@ namespace qmcplusplus
  */
 struct LocalEnergyOnlyEstimator : public ScalarEstimatorBase
 {
+  using WP = WalkerProperties::Indexes;
+
   inline LocalEnergyOnlyEstimator()
   {
     scalars.resize(2);
@@ -31,8 +33,8 @@ struct LocalEnergyOnlyEstimator : public ScalarEstimatorBase
   {
     for (; first != last; ++first)
     {
-      scalars[0]((*first)->Properties(LOCALENERGY), wgt);
-      scalars[1]((*first)->Properties(LOCALPOTENTIAL), wgt);
+      scalars[0]((*first)->Properties(WP::LOCALENERGY), wgt);
+      scalars[1]((*first)->Properties(WP::LOCALPOTENTIAL), wgt);
     }
   }
 
@@ -40,8 +42,8 @@ struct LocalEnergyOnlyEstimator : public ScalarEstimatorBase
   {
     for (MCPWalker& walker: walkers)
     {
-      scalars[0](walker.Properties(LOCALENERGY), wgt);
-      scalars[1](walker.Properties(LOCALPOTENTIAL), wgt);
+      scalars[0](walker.Properties(WP::LOCALENERGY), wgt);
+      scalars[1](walker.Properties(WP::LOCALPOTENTIAL), wgt);
     }
   }
 

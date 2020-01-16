@@ -29,6 +29,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 ///enum to yes/no options saved in sParam
 enum
 {
@@ -567,7 +569,7 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
   //Update the current energy and accumulate.
   MCWalkerConfiguration::Walker_t& head = W.reptile->getHead();
   MCWalkerConfiguration::Walker_t& tail = W.reptile->getTail();
-  vParam[SBVP::ENOW]                        = 0.5 * (head.Properties(LOCALENERGY) + tail.Properties(LOCALENERGY));
+  vParam[SBVP::ENOW]                        = 0.5 * (head.Properties(WP::LOCALENERGY) + tail.Properties(WP::LOCALENERGY));
   // app_log()<<"IN SimpleFixedNodeBranch::collect\n";
   // app_log()<<"\tvParam[SBVP::ENOW]="<<vParam[SBVP::ENOW]<< std::endl;
   EnergyHist(vParam[SBVP::ENOW]);
@@ -575,8 +577,8 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
   // app_log()<<"\tvParam[SBVP::EREF]="<<vParam[SBVP::EREF]<< std::endl;
   //Update the energy variance and R2 for effective timestep and filtering.
   VarianceHist(std::pow(vParam[SBVP::ENOW] - vParam[SBVP::EREF], 2));
-  R2Accepted(head.Properties(R2ACCEPTED));
-  R2Proposed(head.Properties(R2PROPOSED));
+  R2Accepted(head.Properties(WP::R2ACCEPTED));
+  R2Proposed(head.Properties(WP::R2PROPOSED));
   // app_log()<<"\thead.Properties(R2ACCEPTED)="<<head.Properties(R2ACCEPTED)<< std::endl;
   // app_log()<<"\thead.Properties(R2PROPOSED)="<<head.Properties(R2PROPOSED)<< std::endl;
   //  app_log()<<"\tR2Accepted="<<R2Accepted.result()<< std::endl;

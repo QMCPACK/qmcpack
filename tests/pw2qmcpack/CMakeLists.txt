@@ -35,7 +35,8 @@ else()
   LIST(APPEND LIH_GAMMA_SCALARS "samples" "1600000 0.0")
 #  LIST(APPEND LIH_GAMMA_SCALARS "flux" "0.0 0.05")
 
-  QMC_RUN_AND_CHECK(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+  SET(THIS_TEST_NAME "${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj")
+  QMC_RUN_AND_CHECK(${THIS_TEST_NAME}
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_LiH-gamma
                     hf_vmc_LiH-gamma.xml
@@ -43,9 +44,11 @@ else()
                     TRUE
                     0 LIH_GAMMA_SCALARS # VMC
                     )
-
-  SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 
-                        PROPERTIES DEPENDS ${LAST_TEST_NAME} )
+                  
+  IF(${THIS_TEST_NAME})                    
+    SET_TESTS_PROPERTIES( ${THIS_TEST_NAME}-1-16
+      PROPERTIES DEPENDS ${LAST_TEST_NAME} )
+  ENDIF()
 
   SOFTLINK_H5( ${QE_TEST_NAME} LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME )
 

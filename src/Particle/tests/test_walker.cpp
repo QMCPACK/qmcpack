@@ -15,7 +15,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/HDFWalkerInput_0_4.h"
-
+#include "QMCDrivers/WalkerProperties.h"
 
 #include <stdio.h>
 #include <string>
@@ -37,6 +37,16 @@ TEST_CASE("walker", "[particle]")
   REQUIRE(w.R[0][0] == Approx(1.0));
 }
 
+/** Currently significant amounts of code assumes that the Walker by default 
+ *  has "Properties" ending with the LOCALPOTENTIAL element. This opens the door to off by 1
+ *  when considering the default size.
+ */
+TEST_CASE("walker assumptions", "[particle]")
+{
+  using WP = WalkerProperties::Indexes;
+  Walker_t w1(1);
+  REQUIRE(w1.Properties.cols() == WP::NUMPROPERTIES);
+}
 
 TEST_CASE("walker HDF read and write", "[particle]")
 {

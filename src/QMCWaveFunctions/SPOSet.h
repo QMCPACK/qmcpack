@@ -233,7 +233,7 @@ public:
   virtual void mw_evaluateValue(const std::vector<SPOSet*>& spo_list,
                                 const std::vector<ParticleSet*>& P_list,
                                 int iat,
-                                const std::vector<ValueVector_t*>& psi_v_list);
+                                const RefVector<ValueVector_t>& psi_v_list);
 
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
@@ -248,16 +248,16 @@ public:
 
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP, of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
-   * @param VP_list a list of virtual particle sets in a walker batch
+   * @param vp_list a list of virtual particle sets in a walker batch
    * @param psi_list a list of values of the SPO, used as a scratch space if needed
    * @param psiinv_list a list of the row of inverse slater matrix corresponding to the particle moved virtually
    * @param ratios_list a list of returning determinant ratios
    */
-  virtual void mw_evaluateDetRatios(const std::vector<SPOSet*>& spo_list,
-                                    const std::vector<const VirtualParticleSet*> VP_list,
-                                    const std::vector<ValueVector_t*> psi_list,
-                                    const std::vector<const ValueVector_t*> psiinv_list,
-                                    const std::vector<std::vector<ValueType>*> ratios_list);
+  virtual void mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
+                                    const RefVector<const VirtualParticleSet>& vp_list,
+                                    const RefVector<ValueVector_t>& psi_list,
+                                    const RefVector<const ValueVector_t>& psiinv_list,
+                                    std::vector<std::vector<ValueType>>& ratios_list);
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
@@ -283,9 +283,9 @@ public:
   virtual void mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
                               const std::vector<ParticleSet*>& P_list,
                               int iat,
-                              const std::vector<ValueVector_t*>& psi_v_list,
-                              const std::vector<GradVector_t*>& dpsi_v_list,
-                              const std::vector<ValueVector_t*>& d2psi_v_list);
+                              const RefVector<ValueVector_t>& psi_v_list,
+                              const RefVector<GradVector_t>& dpsi_v_list,
+                              const RefVector<ValueVector_t>& d2psi_v_list);
 
   /** evaluate the values, gradients and hessians of this single-particle orbital set
    * @param P current ParticleSet

@@ -53,7 +53,7 @@ public:
 
   ~Backflow_ee(){};
 
-  BackflowFunctionBase* makeClone(ParticleSet& tqp)
+  BackflowFunctionBase* makeClone(ParticleSet& tqp) const
   {
     Backflow_ee<FT>* clone = new Backflow_ee<FT>(tqp, tqp);
     clone->first           = false;

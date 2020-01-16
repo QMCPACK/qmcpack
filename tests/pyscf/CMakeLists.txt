@@ -20,8 +20,9 @@
   LIST(APPEND DIAMOND_SCALARS "localecp" "-7.2011 0.090")
   LIST(APPEND DIAMOND_SCALARS "nonlocalecp" "0.65437 0.024")
   LIST(APPEND DIAMOND_SCALARS "samples" "16000 0.0")
- 
-  QMC_RUN_AND_CHECK(${PYSCF_TEST_NAME}-diamondC_1x1x1_pp-vmc_gaussian_sdj
+
+  SET(THIS_TEST_NAME "${PYSCF_TEST_NAME}-diamondC_1x1x1_pp-vmc_gaussian_sdj")
+  QMC_RUN_AND_CHECK(${THIS_TEST_NAME}
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
                     qmc_short
                     qmc_short.in.xml
@@ -30,17 +31,20 @@
                     0 DIAMOND_SCALARS # VMC
                     )
 
-  SET_TESTS_PROPERTIES( ${PYSCF_TEST_NAME}-diamondC_1x1x1_pp-vmc_gaussian_sdj-1-16
+  IF(${THIS_TEST_NAME})
+    SET_TESTS_PROPERTIES( ${THIS_TEST_NAME}-1-16
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
-  SET_PROPERTY( TEST ${PYSCF_TEST_NAME}-diamondC_1x1x1_pp-vmc_gaussian_sdj-1-16
+    SET_PROPERTY( TEST ${THIS_TEST_NAME}-1-16
                 APPEND PROPERTY LABELS "converter" )
-
+  ENDIF()
+            
   RUN_PYSCF_TEST(pyscf-diamond_1x1x1_pp_Bspline ${CMAKE_SOURCE_DIR}/examples/solids/pyscf-inputs
                  diamondC_1x1x1_pp_Bspline PYSCF_TEST_NAME )
 
   SOFTLINK_H5( ${PYSCF_TEST_NAME} diamondC_1x1x1_pp-vmc_gaussian-bspline_sdj-1-16 C_Diamond C_Diamond-Bspline.h5 LAST_TEST_NAME )
 
-  QMC_RUN_AND_CHECK(${PYSCF_TEST_NAME}-diamondC_1x1x1_pp-vmc_gaussian-bspline_sdj
+  SET(THIS_TEST_NAME "${PYSCF_TEST_NAME}-diamondC_1x1x1_pp-vmc_gaussian-bspline_sdj")
+  QMC_RUN_AND_CHECK(${THIS_TEST_NAME}
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
                     qmc_short-bspline
                     qmc_short-bspline.in.xml
@@ -49,7 +53,9 @@
                     0 DIAMOND_SCALARS # VMC
                     )
 
-  SET_TESTS_PROPERTIES( ${PYSCF_TEST_NAME}-diamondC_1x1x1_pp-vmc_gaussian-bspline_sdj-1-16
+  IF(${THIS_TEST_NAME})                  
+    SET_TESTS_PROPERTIES( ${THIS_TEST_NAME}-1-16
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
-  SET_PROPERTY( TEST ${PYSCF_TEST_NAME}-diamondC_1x1x1_pp-vmc_gaussian-bspline_sdj-1-16
+    SET_PROPERTY( TEST ${THIS_TEST_NAME}-1-16
                 APPEND PROPERTY LABELS "converter" )
+  ENDIF()
