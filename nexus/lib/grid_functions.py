@@ -865,6 +865,26 @@ class GBase(PlotHandler):
         """
         self.not_implemented()
     #end def local_validity_checks
+
+
+    def ensure_array(self,dtype=None,**arrays_in):
+        arrays = obj()
+        for k,ai in arrays_in.items():
+            if isinstance(ai,(tuple,list)):
+                if dtype is None:
+                    a = np.array(ai)
+                else:
+                    a = np.array(ai,dtype=dtype)
+                #end if
+            elif isinstance(ai,np.ndarray):
+                a = ai
+            else:
+                self.error('Cannot ensure array value.\nReceived data with type: {}\nOnly tuple, list, and ndarray are supported.'.format(ai.__class__.__name__))
+            #end if
+            arrays[k] = a
+        #end for
+        return arrays
+    #end def ensure_array
 #end class GBase
 
 
@@ -1399,6 +1419,27 @@ class StructuredGrid(Grid):
         """
         self.r.shape = self.flat_points_shape
     #end def reshape_flat
+
+
+    def flat_indices(self,full_indices):
+        if not isinstance(full_indices,np.ndarray):
+            full_indices = np.array(full_indices,dtype=int)
+        #end if
+        if len(full_indices.shape)!=2:
+            self.error('full_indices must have shape (# points)x(# dimensions)\nShape received: {}'.format(full_indices.shape))
+        elif full_indices.shape[-1]!=self.grid_dim:
+            self.error('full_indices must have same dimension as the grid.\nfull_indices dimension: {}\nGrid dimension: {}'.format(full_indices.shape[-1],self.grid_dim))
+        #end if
+        grid_shape = self.grid_shape
+        D = len(grid_shape)
+        grid_shape_prod = np.empty((D,),dtype=int)
+        grid_shape_prod[-1] = 1
+        for d in range(D-1):
+            grid_shape_prod[D-d-2] = grid_shape[D-d-1]*grid_shape_prod[D-d-1]
+        #end for
+        flat_indices = np.dot(full_indices,grid_shape_prod)
+        return flat_indices
+    #end def flat_indices
 
 
     def unit_points(self,points=None,project=False):
@@ -3548,6 +3589,140 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         Datatype of the function values.
     """
     grid_class = ParallelotopeGrid
+
+
+    def read_from_points(self,points,values,axes,tol=1e-6):
+        # check data types and shapes
+        d = self.ensure_array(
+            points = points,
+            values = values,
+            axes   = axes,
+            dtype  = float,
+            )
+        points = d.points
+        values = d.values
+        axes   = d.axes.copy()
+        del d
+        if len(points)!=len(values):
+            self.error('"points" and "values" must have the same length.\nNumber of points: {}\nNumber of values: {}'.format(len(points),len(values)))
+        elif len(points.shape)!=2:
+            self.error('Shape of "points" array must be (# points) x (# dimensions).\nShape provided: {}'.format(points.shape))
+        #end if
+        N,D = points.shape
+        if axes.shape!=(D,D):
+            self.error('"axes" must have shape {}\nShape provided: {} '.format((D,D),axes.shape))
+        #end if
+
+        # reshape values (for now GridFunction does not support more structured values)
+        values.shape = len(values),values.size//len(values)
+
+        # normalize the axes
+        for d in range(D):
+            axes[d] /= np.linalg.norm(axes[d])
+        #end for
+
+        # make the points rectilinear
+        rpoints = np.dot(points,np.linalg.inv(axes))
+
+        # search for layers in each dimension
+        def xlayers(xpoints,tol):
+            xmin = xpoints.min()
+            xmax = xpoints.max()
+            nbins = np.uint64(np.round(np.ceil((xmax-xmin+tol)/tol)))
+            dx = (xmax-xmin+tol)/nbins
+            layers = obj()
+            for x in xpoints:
+                n = np.uint64(x/dx)
+                if n not in layers:
+                    layers[n] = obj(xsum=x,nsum=1)
+                else:
+                    l = layers[n]
+                    l.xsum += x
+                    l.nsum += 1
+                #end if
+            #end for
+            for l in layers:
+                l.xmean = l.xsum/l.nsum
+            #end for
+            lprev = None
+            for n in sorted(layers.keys()):
+                l = layers[n]
+                if lprev is not None and np.abs(l.xmean-lprev.xmean)<tol:
+                    lprev.xsum += l.xsum
+                    lprev.nsum += l.nsum
+                    lprev.xmean = lprev.xsum/lprev.nsum
+                    del layers[n]
+                else:
+                    lprev = l
+                #end if
+            #end for
+            xlayers = np.empty((len(layers),),dtype=float)
+            i = 0
+            for n in sorted(layers.keys()):
+                l = layers[n]
+                xlayers[i] = l.xmean
+                i += 1
+            #end for
+            order  = xlayers.argsort()
+            xlayers = xlayers[order]
+            return xlayers,xmin,xmax
+        #end def xlayers
+        def index_by_layer(xpoints,tol):
+            xlayer,xmin,xmax = xlayers(xpoints,tol)
+            dxlayer = xlayer[1:]-xlayer[:-1]
+            dxmin   = dxlayer.min()
+            dxmax   = dxlayer.max()
+            if np.abs(dxmax-dxmin)>2*tol:
+                error('Could not determine layer separation.\nLayers are not evenly spaced.\nMin layer spacing: {}\nMax layer spacing: {}\nSpread   : {}\nTolerance: {}'.format(dxmin,dxmax,dxmax-dxmin,2*tol),'read_from_points')
+            #end if
+            dx = dxlayer.mean()
+            ipoints = np.array(np.around((xpoints-xmin)/dx),dtype=int)
+            return ipoints,xmin,xmax
+        #end def index_by_layer
+
+        # create a grid consistent with the detected layer separations
+        grid_shape  = np.empty((D, ),dtype=int  )
+        grid_axes   = np.zeros((D,D),dtype=float)
+        grid_corner = np.empty((D, ),dtype=float)
+        ipoints     = np.empty((N,D),dtype=int)
+        for d in range(D):
+            ixpoints,xmin,xmax = index_by_layer(rpoints[:,d],tol)
+            grid_shape[d]  = ixpoints.max()+1
+            grid_axes[d,d] = xmax-xmin
+            grid_corner[d] = xmin
+            ipoints[:,d]   = ixpoints
+        #end for
+        grid_axes   = np.dot(grid_axes,axes)
+        grid_corner = np.dot(grid_corner,axes)
+        grid_bconds = D*('o',) # assumed for now
+
+        grid = self.grid_class(
+            shape    = grid_shape,
+            axes     = grid_axes,
+            corner   = grid_corner,
+            bconds   = grid_bconds,
+            centered = False,
+            )
+        
+        # check that the generated grid contains the inputted points
+        ipflat = grid.flat_indices(ipoints)
+        dmax = np.linalg.norm(points-grid.points[ipflat],axis=1).max()
+        if dmax>tol:
+            self.error('Generated grid points do not match those read in.\nMaximum deviation: {}\nTolerance        : {}'.format(dmax,tol))
+        #end if
+
+        # map the inputted values onto the generated grid
+        grid_values = np.zeros((grid.npoints,values.shape[1]),dtype=float)
+        grid_values[ipflat] = values
+
+        # initialize the GridFunction object
+        self.reset()
+        self.initialize(
+            grid   = grid,
+            values = grid_values,
+            )
+    #end def read_from_points
+
 #end class ParallelotopeGridFunction
 
 
@@ -3703,6 +3878,49 @@ class SpheroidSurfaceGridFunction(StructuredGridFunctionWithAxes):
     """
     grid_class = SpheroidSurfaceGrid
 #end class SpheroidSurfaceGridFunction
+
+
+
+def parallelotope_grid_function(
+    loc = 'parallelotope_grid_function',
+    **kwargs
+    ):
+    if 'points' not in kwargs:
+        gf = ParallelotopeGridFunction(**kwargs)
+    else:
+        required = set(('points','values','axes'))
+        optional = set(('tol'))
+        present  = set(kwargs.keys())
+        if len(required-present)>0:
+            error('Grid function cannot be created.\nWhen "points" is provided, "axes" and "values" must also be given.\nInputs provided: {}'.format(sorted(present)),loc)
+        elif len(present-required-optional)>0:
+            error('Grid function cannot be created.\nUnrecognized inputs provided.\nUnrecognized inputs: {}\nValid options are: {}'.format(sorted(present-required-optional),sorted(required+optional)))
+        #end if
+        gf = ParallelotopeGridFunction()
+        gf.read_from_points(**kwargs)
+    #end if
+    return gf
+#end def parallelotope_grid_function
+
+
+
+def grid_function(
+    type = 'parallelotope',
+    loc  = 'grid_function',
+    **kwargs
+    ):
+    gf = None
+    if type=='parallelotope':
+        gf = parallelotope_grid_function(loc=loc,**kwargs)
+    elif type=='spheroid':
+        gf = SpheroidGridFunction(**kwargs)
+    elif type=='spheroid_surface':
+        gf = SpheroidSurfaceGridFunction(**kwargs)
+    else:
+        error('Grid function type "{}" is not recognized.\nValid options are: parallelotope, spheroid, or spheroid_surface'.format(type),loc)
+    #end if
+    return gf
+#end def grid_function
 
 
 
