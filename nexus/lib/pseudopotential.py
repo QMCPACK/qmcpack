@@ -1121,7 +1121,7 @@ class SemilocalPP(Pseudopotential):
                     if self.name!=None:
                         lab = self.name+' '+lab
                     #end if
-                    v = self.evaluate_channel(r,c,rpow,rmin-1e-12,with_local,with_L2)
+                    v = self.evaluate_channel(r,c,rpow,rmin-1e-12,False,with_local,with_L2)
                     rng = r>rmin-1e-12
                     r = r[rng]
                     if metric=='r2':
@@ -1202,7 +1202,10 @@ class SemilocalPP(Pseudopotential):
     #end def plot_positive_definite
 
                 
-    def plot_L2(self,show=True,fig=True,r=None,rmin=0.01,rmax=5.0,linestyle='-',title=None):
+    def plot_L2(self,show=True,fig=True,r=None,rmin=0.01,rmax=5.0,linestyle='-',title=None,color=None):
+        if fig:
+            figure(tight_layout=True)
+        #end if
         if r is None and self.numeric:
             r = self.r
         elif r is None:
@@ -1211,7 +1214,9 @@ class SemilocalPP(Pseudopotential):
         vs = self.evaluate_channel(r,'s',with_local=True,rmin=rmin-1e-12)
         for c in self.l_channels[1:]:
             if c in self.components:
-                color = self.channel_colors[c]
+                if color is None:
+                    color = self.channel_colors[c]
+                #end if
                 v = self.evaluate_channel(r,c,with_L2=False,rmin=rmin-1e-12)
                 rng = r>rmin-1e-12
                 r = r[rng]
