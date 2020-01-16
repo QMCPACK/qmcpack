@@ -99,6 +99,11 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   //////////////////////////////////
   // Read ion types and locations //
   //////////////////////////////////
+  // Number of atoms in HDF5 file
+  int num_atoms;
+  HDFAttribIO<int> h_num_atoms(num_atoms);
+  h_num_atoms.read(H5FileID, "/atoms/number_of_atoms");
+
   Vector<int> species_ids;
   HDFAttribIO<Vector<int>> h_species_ids(species_ids);
   h_species_ids.read(H5FileID, "/atoms/species_ids");
@@ -127,14 +132,14 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   // Check the number of ions in the XML and 
   // HDF5. Skip the checks in some situations but 
   // not others. See Issue #2224.
-
-  if (h_IonPos.size() > 0 && IonPos.size() > 0) {
+  
+  if (h_num_atoms > 0 && IonPos.size() > 0) {
     skipChecks = false;
-  } else if (h_IonPos.size() == 0 && IonPos.size() > 0) {
+  } else if (h_num_atoms == 0 && IonPos.size() > 0) {
     skipChecks = false;
-  } else if (h_IonPos.size() > 0 && IonPos.size() == 0) {
+  } else if (h_num_atoms > 0 && IonPos.size() == 0) {
     skipChecks = true;
-  } else if (h_IonPos.size() == 0 && IonPos.size() == 0) {
+  } else if (h_num_atoms == 0 && IonPos.size() == 0) {
     skipChecks = true;
   } else {
     ;
