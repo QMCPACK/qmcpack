@@ -75,15 +75,17 @@ class full1rdm: public AFQMCInfo
 
   full1rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, 
            int nave_=1, int bsize=1):
-                AFQMCInfo(info),TG(tg_),walker_type(wlk),writer(false),
+                AFQMCInfo(info),
+                TG(tg_),walker_type(wlk),writer(false),
                 block_size(bsize),nave(nave_),counter(0),
                 hdf_walker_output(""),nskip_walker_output(0),ncnt_walker_output(0),
-                apply_rotation(false),print_from_list(false),
+                apply_rotation(false),
                 XRot({0,0},make_node_allocator<ComplexType>(TG)),
+                print_from_list(false),
                 index_list({0,0},shared_allocator<int>{TG.Node()}),
                 denom(iextensions<1u>{0},shared_allocator<ComplexType>{TG.TG_local()}),
-                DMWork({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
-                DMAverage({0,0},shared_allocator<ComplexType>{TG.TG_local()})
+                DMAverage({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
+                DMWork({0,0},shared_allocator<ComplexType>{TG.TG_local()})
   {
     using std::copy_n;
     using std::fill_n;

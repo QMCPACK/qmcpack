@@ -93,8 +93,9 @@ class KP3IndexFactorization
                  int gncv):
         comm(std::addressof(c_)),
         walker_type(type),
-        global_nCV(gncv),
         global_origin(cv0),
+        global_nCV(gncv),
+        local_nCV(0),
         E0(e0_),
         H1(std::move(hij_)),
         haj(std::move(h1)),
@@ -108,16 +109,17 @@ class KP3IndexFactorization
         LQKbnl(std::move(vbl)),
         Qmap(std::move(qqm_)),
         Q2vbias(Qmap.size()),
+        number_of_symmetric_Q(0),
         vn0(std::move(vn0_)),
+        nsampleQ(nsampleQ_),
         gQ(std::move(gQ_)),
         Qwn({1,1},shared_allocator<SPComplexType>{*comm}),
         generator(),
         distribution(gQ.begin(),gQ.end()),
-        nsampleQ(nsampleQ_),
         SM_TMats({1,1},shared_allocator<SPComplexType>{*comm}),
         TMats({1,1}),
-        EQ(nopk.size()+2),
-        mutex(0)
+        mutex(0),
+        EQ(nopk.size()+2)
     {
       mutex.reserve(ncholpQ.size());
       for(int nQ=0; nQ<ncholpQ.size(); nQ++)
@@ -271,7 +273,7 @@ class KP3IndexFactorization
       set_shm_buffer(mem_needs);
 
       // messy
-      SPComplexType *Krptr, *Klptr;
+      SPComplexType *Krptr(nullptr), *Klptr(nullptr);
       long Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
@@ -593,7 +595,7 @@ class KP3IndexFactorization
       set_shm_buffer(mem_needs);
 
       // messy
-      SPComplexType *Krptr, *Klptr;
+      SPComplexType *Krptr(nullptr), *Klptr(nullptr);
       long Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
