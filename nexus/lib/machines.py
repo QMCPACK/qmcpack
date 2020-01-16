@@ -1575,7 +1575,7 @@ class Supercomputer(Machine):
         elif self.queue_querier=='squeue': # contributed by Ryan McAvoy
             if out is None:
                 extra = ''
-                if self.query_with_username:
+                if self.user is not None:
                     extra = ' -u {}'.format(self.user)
                 #end if
                 out,err,rc = execute('squeue'+extra)
