@@ -37,7 +37,7 @@ private:
   ///accelerator input array. The walker id
   OffloadPinnedVector<int> walker_id;
   ///target particle id
-  OffloadPinnedVector<int> particle_id;
+  std::vector<int> particle_id;
 
 public:
   SoaDistanceTableABOMP(const ParticleSet& source, ParticleSet& target)
@@ -114,8 +114,8 @@ public:
         for (int idim = 0; idim < D; idim++)
           pos[idim] = target_pos_ptr[iat * D + idim];
 
-        auto* r_iat_ptr  = r_dr_ptr + N_sources_padded * iat;
-        auto* dr_iat_ptr = r_dr_ptr + N_sources_padded * N_targets_local + N_sources_padded * D * iat;
+        auto* r_iat_ptr  = r_dr_ptr + N_sources_padded * iat * (D + 1);
+        auto* dr_iat_ptr = r_dr_ptr + N_sources_padded * iat * (D + 1) + N_sources_padded;
 
         DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
                                                       first, last);
@@ -124,8 +124,8 @@ public:
     for (size_t iat = 0; iat < N_targets; iat++)
     {
       assert(N_sources_padded == displacements_[iat].capacity());
-      std::copy_n(offload_output.data() + N_sources_padded * iat, N_sources_padded, distances_[iat].data());
-      std::copy_n(offload_output.data() + N_sources_padded * N_targets + N_sources_padded * D * iat, N_sources_padded * D, displacements_[iat].data());
+      std::copy_n(offload_output.data() + N_sources_padded * iat * (D + 1), N_sources_padded, distances_[iat].data());
+      std::copy_n(offload_output.data() + N_sources_padded * iat * (D + 1) + N_sources_padded, N_sources_padded * D, displacements_[iat].data());
     }
   }
 
