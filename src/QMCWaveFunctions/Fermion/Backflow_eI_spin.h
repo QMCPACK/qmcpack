@@ -99,7 +99,7 @@ public:
     }
   }
 
-  BackflowFunctionBase* makeClone(ParticleSet& tqp)
+  BackflowFunctionBase* makeClone(ParticleSet& tqp) const
   {
     Backflow_eI_spin<FT>* clone = new Backflow_eI_spin<FT>(CenterSys, tqp);
     clone->resize(NumTargets, NumCenters);

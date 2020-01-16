@@ -46,13 +46,11 @@ public:
   Vector<ComplexType> Rhok;
 
   Matrix<int> PairID;
-  bool first;
   ///set of variables to be optimized
   opt_variables_type myVars;
 
   Backflow_ee_kSpace(ParticleSet& ions, ParticleSet& els) : BackflowFunctionBase(ions, els)
   {
-    first     = true;
     Optimize  = false;
     numParams = 0;
     resize(NumTargets);
@@ -78,10 +76,9 @@ public:
 
   ~Backflow_ee_kSpace(){};
 
-  BackflowFunctionBase* makeClone(ParticleSet& tqp)
+  BackflowFunctionBase* makeClone(ParticleSet& tqp) const
   {
     Backflow_ee_kSpace* clone = new Backflow_ee_kSpace(CenterSys, tqp);
-    first                     = true;
     clone->resize(NumTargets);
     //       clone->uniqueRadFun.resize(uniqueRadFun.size());
     //       clone->RadFun.resize(RadFun.size());
