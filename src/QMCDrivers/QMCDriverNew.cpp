@@ -65,6 +65,14 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
     num_crowds_ = input.get_num_crowds();
  
   rotation = 0;
+
+  // This needs to be done here to keep dependency on CrystalLattice out of the QMCDriverInput.
+  max_disp_sq_ = input.get_max_disp_sq();
+  if(max_disp_sq_ < 0)
+  {
+    const CrystalLattice<OHMMS_PRECISION, OHMMS_DIM>& lattice = population.get_golden_electrons()->Lattice;
+    max_disp_sq_ = lattice.LR_rc * lattice.LR_rc;
+  }
 }
 
 int QMCDriverNew::addObservable(const std::string& aname)

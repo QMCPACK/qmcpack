@@ -310,6 +310,12 @@ int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
   curData[B_ENERGY_INDEX]   = besum;
   curData[B_WGT_INDEX]      = bwgtsum;
 
+  // SENTWALKERS and LEMAX should never be other than 0 here
+  // because in the unified driver we never reuse a WalkerControl
+  assert( curData[SENTWALKERS_INDEX] == 0.0 );
+  for (int i = LE_MAX; i < LE_MAX + num_contexts_; ++i)
+    assert( curData[i] == 0.0 );
+  
   myComm->allreduce(curData);
   measureProperties(iter);
   trialEnergy = ensemble_property_.Energy;
@@ -352,17 +358,8 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
   return nw_tot;
 }
 
-int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trigger)
+void WalkerControlBase::onRankSpawnKill(MCPopulation& pop, PopulationAdjustment&& adjust)
 {
-  // For measuring properties sortWalkers had important sideeffects
-  PopulationAdjustment adjust(calcPopulationAdjustment(pop));
-  measureProperties(iter);
-  pop.set_ensemble_property(ensemble_property_);
-
-  // Warning adjustPopulation has many side effects
-  adjustPopulation(pop, adjust);
-  // We have not yet updated the local number of walkers
-  // This happens as a side effect of killing or spawning walkers
   while (!adjust.bad_walkers.empty())
   {
     pop.killWalker(adjust.bad_walkers.back());
@@ -372,20 +369,36 @@ int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trig
   {
     for (int i_copies = 0; i_copies < adjust.copies_to_make[iw]; ++i_copies)
     {
-      auto& walker = pop.spawnWalker();
-      walker       = adjust.good_walkers[iw];
+      MCPWalker* walker = pop.spawnWalker();
+      *walker       = adjust.good_walkers[iw];
       // IF these are really unique ID's they should be UUID's or something
       // old algorithm seems to reuse them in a way that I'm not sure avoids
       // duplicates even at a particular time.
-      walker.ID           = pop.get_num_local_walkers() * num_contexts_ + MyContext;
-      walker.ParentID     = adjust.good_walkers[iw].get().ParentID;
+      walker->ID           = pop.get_num_local_walkers() * pop.get_num_ranks() + pop.get_rank();
+      walker->ParentID     = adjust.good_walkers[iw].get().ParentID;
     }
   }
+}
 
-  std::for_each(pop.get_walkers().begin(), pop.get_walkers().end(), [](auto& walker) {
+int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trigger)
+{
+  // For measuring properties sortWalkers had important side effects
+  PopulationAdjustment adjust(calcPopulationAdjustment(pop));
+  measureProperties(iter);
+  pop.set_ensemble_property(ensemble_property_);
+
+  // Warning adjustPopulation has many side effects
+  adjustPopulation(pop, adjust);
+  // We have not yet updated the local number of walkers
+  // This happens as a side effect of killing or spawning walkers
+
+  WalkerControlBase::onRankSpawnKill(pop, std::move(adjust));
+
+  for (UPtr<MCPWalker>& walker : pop.get_walkers())
+  {
     walker->Weight       = 1.0;
     walker->Multiplicity = 1.0;
-  });
+  }
 
   pop.syncWalkersPerNode(getCommunicator());
 
@@ -635,9 +648,9 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
       adjustment.bad_walkers.push_back(walker);
     }
   }
-  //temp is an array to perform reduction operations
-  std::fill(curData.begin(), curData.end(), 0);
-  //update curData
+
+  //update curData -- this is every field except for SENTWALKERS and LE_MAX (which is the beginning of the hack storing
+  // number_per_node entries
   curData[ENERGY_INDEX]     = esum;
   curData[ENERGY_SQ_INDEX]  = e2sum;
   curData[WALKERSIZE_INDEX] = pop.get_walkers().size();
@@ -905,6 +918,8 @@ int WalkerControlBase::adjustPopulation(MCPopulation& pop, PopulationAdjustment&
 
   // check current population
   current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
+
+  adjust.num_walkers = std::accumulate(adjust.copies_to_make.begin(), adjust.copies_to_make.end(), 0) + adjust.copies_to_make.size();
 
   // at least one walker after load-balancing
   if (current_population / num_contexts_ == 0)

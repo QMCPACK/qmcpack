@@ -19,7 +19,7 @@
 namespace qmcplusplus
 {
 
-MCPopulation::MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr) {}
+MCPopulation::MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr), num_ranks_(1), rank_(0) {}
  
 MCPopulation::MCPopulation(int num_ranks,
                            MCWalkerConfiguration& mcwc,
@@ -27,7 +27,7 @@ MCPopulation::MCPopulation(int num_ranks,
                            TrialWaveFunction* trial_wf,
                            QMCHamiltonian* hamiltonian,
                            int this_rank)
-    : num_ranks_(num_ranks), num_local_walkers_per_node_(num_ranks, 0), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), rank_(this_rank)
+    : num_local_walkers_per_node_(num_ranks, 0), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), num_ranks_(num_ranks), rank_(this_rank)
 {
   walker_offsets_     = mcwc.WalkerOffsets;
   num_global_walkers_ = mcwc.GlobalNumWalkers;
@@ -57,10 +57,10 @@ MCPopulation::MCPopulation(int num_ranks,
 }
 
 MCPopulation::MCPopulation(int num_ranks,
-             ParticleSet* elecs,
-             TrialWaveFunction* trial_wf,
-             QMCHamiltonian* hamiltonian,
-             int this_rank)
+                           ParticleSet* elecs,
+                           TrialWaveFunction* trial_wf,
+                           QMCHamiltonian* hamiltonian,
+                           int this_rank)
     : num_ranks_(num_ranks),
       num_particles_(elecs->R.size()),
       num_local_walkers_per_node_(num_ranks, 0),
@@ -75,15 +75,6 @@ MCPopulation::MCPopulation(int num_ranks,
  */
 void MCPopulation::createWalkers() { createWalkers(num_local_walkers_); }
 
-void MCPopulation::createWalkerInplace(UPtr<MCPWalker>& walker_ptr)
-{
-  //SO this would be where the walker reuse hack would go
-  walker_ptr    = std::make_unique<MCPWalker>(num_particles_);
-  walker_ptr->R = elec_particle_set_->R;
-  walker_ptr->registerData();
-  walker_ptr->Properties = elec_particle_set_->Properties;
-}
-
 /** we could also search for walker_ptr
  */
 void MCPopulation::allocateWalkerStuffInplace(int walker_index)
@@ -93,24 +84,28 @@ void MCPopulation::allocateWalkerStuffInplace(int walker_index)
   walkers_[walker_index]->DataSet.allocate();
 }
 
-/** Creates walkers with starting positions pos and a clone of the electron particle set and trial wavefunction
- *  
- *  Needed
- *  in: DataSet.size()
- *  in.
- */
 void MCPopulation::createWalkers(IndexType num_walkers)
 {
   num_local_walkers_ = num_walkers;
   // Ye: need to resize walker_t and ParticleSet Properties
+  // Really MCPopulation does not own this elec_particle_set_  seems like it should be immutable
   elec_particle_set_->Properties.resize(1, elec_particle_set_->PropertyList.size());
 
+  // This pattern is begging for a micro benchmark, is this really better
+  // than the simpler walkers_.pushback;
   walkers_.resize(num_walkers);
-
+  auto createWalker = [this](UPtr<MCPWalker>& walker_ptr) {
+    walker_ptr    = std::make_unique<MCPWalker>(num_particles_);
+    walker_ptr->R = elec_particle_set_->R;
+    // Side effect of this changes size of walker_ptr->Properties if done after registerData() you end up with
+    // a bad buffer.
+    walker_ptr->Properties = elec_particle_set_->Properties;
+    walker_ptr->registerData();
+        
+  };
+  
   for (auto& walker_ptr : walkers_)
-  {
-    createWalkerInplace(walker_ptr);
-  }
+    createWalker(walker_ptr);
 
   int num_walkers_created = 0;
   for (auto& walker_ptr : walkers_)
@@ -168,7 +163,7 @@ void MCPopulation::createWalkers(IndexType num_walkers)
  *  It would be better if this could be done just by
  *  reusing memory.
  */
-MCPopulation::MCPWalker& MCPopulation::spawnWalker()
+MCPopulation::MCPWalker* MCPopulation::spawnWalker()
 {
   ++num_local_walkers_;
   outputManager.pause();
@@ -187,20 +182,26 @@ MCPopulation::MCPWalker& MCPopulation::spawnWalker()
   {
     walkers_.push_back(std::move(dead_walkers_.back()));
     dead_walkers_.pop_back();
+    //This will only work if there has been no change in the data structuring of Walker since createWalkers
+    walkers_.back()->DataSet.clear();
+    walkers_.back()->registerData();
     makeDependentObjects();
+    //Here we assume no allocate is necessary since there should have been no changes in the other walker
+    //elements since createWalkers
   }
   else
   {
     walkers_.push_back(std::make_unique<MCPWalker>(num_particles_));
     walkers_.back()->R = elec_particle_set_->R;
-    walkers_.back()->registerData();
     walkers_.back()->Properties = elec_particle_set_->Properties;
+    walkers_.back()->DataSet.clear();
+    walkers_.back()->registerData();
     makeDependentObjects();
     walkers_.back()->DataSet.allocate();
   }
   outputManager.resume();
 
-  return *(walkers_.back());
+  return walkers_.back().get();
 }
 
 /** Kill last walker

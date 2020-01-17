@@ -28,6 +28,13 @@
 
 namespace qmcplusplus
 {
+
+namespace testing
+{
+class UnifiedDriverWalkerControlMPITest;
+}
+
+
 /** Base class to control the walkers for DMC simulations.
  *
  * The virtual functions are implemented for a serial execution with a usual birth/death
@@ -189,6 +196,13 @@ public:
   void set_method(IndexType method) { method_ = method; }
 
 protected:
+  /** makes adjustments to local population based on adjust
+   *
+   * \param[inout] pop the local population
+   * \param[in]    the population adjustment, it is not updated to reflect local state and is now invalid.
+   */
+  static void onRankSpawnKill(MCPopulation& pop, PopulationAdjustment&& adjust);
+  
   ///id for the method
   IndexType method_;
   ///minimum number of walkers
@@ -224,7 +238,7 @@ protected:
   IndexType SwapMode;
   ///any accumulated data over a block
   std::vector<FullPrecRealType> accumData;
-  ///any temporary data includes many ridiculous conversions of intergrals to and from fp
+  ///any temporary data includes many ridiculous conversions of integral types to and from fp
   std::vector<FullPrecRealType> curData;
   ///temporary storage for good and bad walkers
   std::vector<Walker_t*> good_w, bad_w;
@@ -238,6 +252,7 @@ protected:
   ///ensemble properties
   MCDataType<FullPrecRealType> ensemble_property_;
 
+  friend class qmcplusplus::testing::UnifiedDriverWalkerControlMPITest;
 };
 
 } // namespace qmcplusplus
