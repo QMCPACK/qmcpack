@@ -144,8 +144,8 @@ inline void accumulate(const Walker_t& awalker, RealType wgt)
   // expect ePtr to be W.Properties; expect wgt = 1/GlobalNumberOfWalkers
   const RealType* restrict ePtr = awalker.getPropertyBase();
   RealType wwght= wgt* awalker.Weight;
-  scalars[0](ePtr[LOCALENERGY],wwght);
-  scalars[1](ePtr[LOCALENERGY]*ePtr[LOCALENERGY],wwght);
+  scalars[0](ePtr[WP::LOCALENERGY],wwght);
+  scalars[1](ePtr[WP::LOCALENERGY]*ePtr[WP::LOCALENERGY],wwght);
   scalars[2](ePtr[LOCALPOTENTIAL],wwght);
   for(int target=3, source=FirstHamiltonian; target<scalars.size(); ++target, ++source)
     scalars[target](ePtr[source],wwght);
@@ -203,7 +203,7 @@ QMCHamiltonian::evaluate(ParticleSet& P)
     H[i]->setParticlePropertyList(P.PropertyList,myIndex);
   }
   KineticEnergy=H[0]->Value;
-  P.PropertyList[LOCALENERGY]=LocalEnergy;
+  P.PropertyList[WP::LOCALENERGY]=LocalEnergy;
   P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
   // auxHevaluate(P);
   return LocalEnergy;

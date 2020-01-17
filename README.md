@@ -13,6 +13,7 @@
  * BOOST, peer-reviewed portable C++ source libraries, http://www.boost.org
  * FFTW, FFT library, http://www.fftw.org/
  * MPI, parallel library. Optional, but a near requirement for production calculations.
+ * Python3. Older versions are not supported as of January 2020.
 
 We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions over
 two years old may work but is discouraged and untested. Proprietary compilers (Intel, PGI) are generally supported over the same
@@ -176,7 +177,8 @@ make -j 8
 
 * HDF5 related
 ```
-     ENABLE_PHDF5        1(default)/0, enables/disable parallel collective IO.
+     HDF5_PREFER_PARALLEL 1(default for MPI build)/0, enables/disable parallel HDF5 library searching.
+     ENABLE_PHDF5         1(default for parallel HDF5 library)/0, enables/disable parallel collective I/O.
 
 ```
 

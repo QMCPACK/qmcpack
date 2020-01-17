@@ -120,7 +120,6 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
   m_param.add(hdf_write_restart,"hdf_write_file","std::string");
   m_param.put(cur);
 
-
   // write all the choices here ...
 
   fix_bias = std::min(fix_bias,nSubstep);

@@ -22,10 +22,11 @@
 
 import os
 import mmap
+import numpy as np
 from numpy import array,zeros,ndarray,around,arange,dot,savetxt,empty,reshape
 from numpy.linalg import det,norm
 from generic import obj
-from developer import DevBase,error
+from developer import DevBase,error,to_str
 from periodic_table import pt as ptable,is_element
 from unit_converter import convert
 from debug import *
@@ -81,7 +82,7 @@ class TextFile(DevBase):
             self.seek(s)
         #end if
         self.mm.readline()
-        line = self.mm.readline()
+        line = to_str(self.mm.readline())
         stokens = line.split()
         all_same = False
         if len(formats)==1 and len(stokens)>1:
@@ -96,8 +97,8 @@ class TextFile(DevBase):
                 tokens.append(format(stoken))
             #end for
         else:
-            for i in xrange(len(formats)):
-                tokens.append(formats[i](stokens[i]))
+            for format,stoken in zip(formats,stokens):
+                tokens.append(format(stoken))
             #end for
         #end if
         if len(tokens)==1:
@@ -116,6 +117,7 @@ class TextFile(DevBase):
 
     def seek(self,pos,whence=0,start=None,end=None):
         if isinstance(pos,str):
+            pos = pos.encode('ASCII')
             if whence!=2 and start is None:
                 if whence==0:
                     start = 0
@@ -152,21 +154,29 @@ class TextFile(DevBase):
         if s!=None:
             self.seek(s)
         #end if
-        return self.mm.readline()
+        return to_str(self.mm.readline())
     #end def readline
 
     def read(self,num=None):
         if num is None:
-            return self.mm[:]
+            return to_str(self.mm[:])
         else:
-            return self.mm.read(num)
+            return to_str(self.mm.read(num))
         #end if
     #end def read
 
 
     # unchanged mmap interface below
     def find(self,*a,**kw):
-        return self.mm.find(*a,**kw)
+        args = []
+        for v in a:
+            if isinstance(v,str):
+                args.append(v.encode('ASCII'))
+            else:
+                args.append(a)
+            #end if
+        #end for
+        return self.mm.find(*args,**kw)
     #end def find
 
     def flush(self,*a,**kw):
@@ -186,7 +196,15 @@ class TextFile(DevBase):
     #end def resize
 
     def rfind(self,*a,**kw):
-        return self.mm.rfind(*a,**kw)
+        args = []
+        for v in a:
+            if isinstance(v,str):
+                args.append(v.encode('ASCII'))
+            else:
+                args.append(a)
+            #end if
+        #end for
+        return self.mm.rfind(*args,**kw)
     #end def rfind
 
     def size(self):
@@ -528,7 +546,7 @@ class XsfFile(StandardFile):
                                 i+=1
                                 line = lines[i].strip().lower()
                             #end while
-                            for bi,bv in bands.iteritems():
+                            for bi,bv in bands.items():
                                 bands[bi] = array(bv,dtype=float)
                                 bands[bi].shape = tuple(grid)
                             #end for
@@ -915,7 +933,7 @@ class XsfFile(StandardFile):
         ndim = 3
         permute = dim!=0
         if permute:
-            r = range(0,ndim)
+            r = list(range(0,ndim))
             r.pop(dim)
             permutation = tuple([dim]+r)
             data = data.transpose(permutation)
@@ -930,7 +948,7 @@ class XsfFile(StandardFile):
 
     def line_plot(self,dim,filepath):
         r,d = self.line_data(dim)
-        savetxt(filepath,array(zip(r,d)))
+        savetxt(filepath,array(list(zip(r,d))))
     #end def line_plot
 #end class XsfFile
 
@@ -992,7 +1010,7 @@ class PoscarFile(StandardFile):
             msgs.append('elem_count must be an array')
         elif len(self.elem_count)==0:
             msgs.append('elem_count array must contain at least one entry')
-        elif not isinstance(self.elem_count[0],int):
+        elif not isinstance(self.elem_count[0],(int,np.int_)):
             msgs.append('elem_count must be an array of integers')
         else:
             if (self.elem_count<1).sum()>0:
@@ -1097,7 +1115,7 @@ class PoscarFile(StandardFile):
             #end for
         else:
             bm = self.bool_map
-            for i in xrange(len(self.pos)):
+            for i in range(len(self.pos)):
                 p = self.pos[i]
                 d = self.dynamic[i]
                 text += ' {0:20.14f} {1:20.14f} {2:20.14f}  {3}  {4}  {5}\n'.format(p[0],p[1],p[2],bm[d[0]],bm[d[1]],bm[d[2]])
@@ -1128,7 +1146,7 @@ class PoscarFile(StandardFile):
         elem_indices   = []
 
         spec_set = set()
-        for i in xrange(len(elem)):
+        for i in range(len(elem)):
             e = elem[i]
             if not e in spec_set:
                 spec_set.add(e)
@@ -1195,7 +1213,7 @@ class ChgcarFile(StandardFile):
             msgs.append('grid must be an array')
         elif len(self.grid)!=3 or self.grid.size!=3:
             msgs.append('grid must have 3 entries')
-        elif not isinstance(self.grid[0],int):
+        elif not isinstance(self.grid[0],(int,np.int_)):
             msgs.append('grid must be an array of integers')
         elif (self.grid<1).sum()>0:
             msgs.append('all grid entries must be greater than zero')
@@ -1444,7 +1462,7 @@ def read_poscar_chgcar(host,text):
             if density.size%ng!=0:
                 host.error('number of density data entries is not a multiple of the grid\ngrid shape: {0}\ngrid size: {1}\ndensity size: {2}'.format(grid,ng,density.size))
             #end if
-            ndens = density.size/ng
+            ndens = density.size//ng
             if ndens==1:
                 charge_density = density
                 spin_density   = None

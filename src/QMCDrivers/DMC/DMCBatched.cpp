@@ -22,6 +22,7 @@
 namespace qmcplusplus
 {
 using std::placeholders::_1;
+using WP = WalkerProperties::Indexes;
 
 // clang-format off
 /** Constructor maintains proper ownership of input parameters
@@ -148,7 +149,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   //copy the old energy
   std::vector<FullPrecRealType> old_walker_energies(num_walkers);
   auto setOldEnergies = [](MCPWalker& walker, FullPrecRealType& old_walker_energy) {
-    old_walker_energy = walker.Properties(LOCALENERGY);
+    old_walker_energy = walker.Properties(WP::LOCALENERGY);
   };
   for (int iw = 0; iw < num_walkers; ++iw)
     setOldEnergies(walkers[iw], old_walker_energies[iw]);
@@ -171,7 +172,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     int end_index        = step_context.getPtclGroupEnd(ig);
     for (int iat = start_index; iat < end_index; ++iat)
     {
-      ParticleSet::flex_setActive(crowd.get_walker_elecs(), iat);
       auto delta_r_start = it_delta_r + iat * num_walkers;
       auto delta_r_end   = delta_r_start + num_walkers;
 
@@ -197,7 +197,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       auto elecs = crowd.get_walker_elecs();
       ParticleSet::flex_makeMove(crowd.get_walker_elecs(), iat, drifts);
 
-      TrialWaveFunction::flex_ratioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios, grads_new);
+      TrialWaveFunction::flex_calcRatioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios, grads_new);
 
       // This lambda is not nested thread safe due to the nreject, nnode_crossing updates
       auto checkPhaseChanged = [&sft, &iat, &crowd, &nnode_crossing](TrialWaveFunction& twf, ParticleSet& elec,
@@ -264,16 +264,16 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         }
       }
 
-      TrialWaveFunction::flex_acceptMove(twf_accept_list, elec_accept_list, iat);
+      TrialWaveFunction::flex_acceptMove(twf_accept_list, elec_accept_list, iat, true);
       TrialWaveFunction::flex_rejectMove(twf_reject_list, iat);
 
-      ParticleSet::flex_acceptMove(elec_accept_list, iat);
+      ParticleSet::flex_acceptMove(elec_accept_list, iat, true);
       ParticleSet::flex_rejectMove(elec_reject_list, iat);
     }
   }
 
   std::for_each(crowd.get_walker_twfs().begin(), crowd.get_walker_twfs().end(),
-                [](auto& twf) { twf.get().completeUpdates(); });
+                [](TrialWaveFunction& twf) { twf.completeUpdates(); });
 
   ParticleSet::flex_donePbyP(crowd.get_walker_elecs());
   //dmc_timers.dmc_movePbyP.stop();
@@ -434,7 +434,7 @@ void DMCBatched::handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForT
   {
     MCPWalker& stalled_walker = stalled.walkers[iw];
     stalled_walker.Age++;
-    stalled_walker.Properties(R2ACCEPTED) = 0.0;
+    stalled_walker.Properties(WP::R2ACCEPTED) = 0.0;
     RealType wtmp                         = stalled_walker.Weight;
     // TODO: fix this walker.Weight twiddle for rejectedMove
     stalled_walker.Weight                      = 0.0;

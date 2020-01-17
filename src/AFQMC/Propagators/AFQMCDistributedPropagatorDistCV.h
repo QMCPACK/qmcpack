@@ -134,6 +134,9 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
 
   protected: 
 
+    mpi3CVector bpX;
+    std::vector<int> bpx_counts, bpx_displ;
+
     bool buffer_reallocated=false;
     bool buffer_reallocated_bp=false;
     bool low_memory_step=false;
@@ -144,9 +147,6 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
     MPI_Request req_Xsend, req_Xrecv;
     MPI_Request req_X2send, req_X2recv;
     MPI_Request req_bpvsend, req_bpvrecv;
-
-    std::vector<int> bpx_counts, bpx_displ;
-    mpi3CVector bpX;
 
     template<class WlkSet>
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);

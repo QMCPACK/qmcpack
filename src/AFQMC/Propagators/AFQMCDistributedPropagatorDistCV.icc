@@ -444,13 +444,16 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
   int vak0,vakN;
   int Gak0,GakN;
 
+// NOTE: keep vHS, vbias and G as single precision numbers
+// in mixe precision case, no need to keep them here in double precision.
+// cast it using inplace_cast to/from double precision when needed.
   size_t displ=0;
   // HS potential for communication
   CMatrix_ref vrecv(mem_pool.origin(), {vhs_nr,vhs_nc});
   displ+=vrecv.num_elements();
   // second view of vHS matrix for use in propagation step
   // notice that the final vHS matrix will be in vrecv, received in the last step
-  C3Tensor_ref vHS3D(mem_pool.origin()+displ,{vhs3d_n1,vhs3d_n2,vhs3d_n3});
+  C3Tensor_ref vHS3D(vrecv.origin(),{vhs3d_n1,vhs3d_n2,vhs3d_n3});
 
   // scope controlling lifetime of temporary arrays
   {
@@ -540,25 +543,16 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       // 2. bcast G 
       AFQMCTimers[vHS_comm_overhead_timer]->start();
 #ifdef BUILD_AFQMC_WITH_NCCL
-      if(k == TG.getLocalTGRank()) {
+      if(k == TG.getLocalTGRank()) 
         copy_n(Gstore.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
-        NCCLCHECK(ncclBcast(to_address(Gwork.origin())+Gak0,GakN-Gak0,ncclDouble,k,
-                            TG.ncclTG(),TG.ncclStream()));
-        qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
-        //TG.TG_Cores().broadcast_n(to_address(Gwork.origin())+Gak0,GakN-Gak0,k);
-      } else {
-        NCCLCHECK(ncclBcast(to_address(Gwork.origin())+Gak0,GakN-Gak0,ncclDouble,k,
-                            TG.ncclTG(),TG.ncclStream()));
-        qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
-        //TG.TG_Cores().broadcast_n(to_address(Gwork.origin())+Gak0,GakN-Gak0,k);
-      }
+      NCCLCHECK(ncclBcast(to_address(Gwork.origin()+Gak0),2*(GakN-Gak0),ncclDouble,k,
+                          TG.ncclTG(),TG.ncclStream()));
+      qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
+      //TG.TG_Cores().broadcast_n(to_address(Gwork.origin())+Gak0,GakN-Gak0,k);
 #else
-      if(k == TG.getLocalTGRank()) {
+      if(k == TG.getLocalTGRank()) 
         copy_n(Gstore.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
-        TG.TG_Cores().broadcast_n(to_address(Gwork.origin())+Gak0,GakN-Gak0,k);
-      } else {
-        TG.TG_Cores().broadcast_n(to_address(Gwork.origin())+Gak0,GakN-Gak0,k);
-      }
+      TG.TG_Cores().broadcast_n(to_address(Gwork.origin())+Gak0,GakN-Gak0,k);
 #endif
       TG.local_barrier();
       AFQMCTimers[vHS_comm_overhead_timer]->stop();
@@ -598,11 +592,9 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       AFQMCTimers[vHS_comm_overhead_timer]->start();
       // 4. Reduce vHS
 #ifdef BUILD_AFQMC_WITH_NCCL
-// If BUILD_AFQMC_WITH_NCCL, ENABLE_CUDA must be set, which guarantees ncores==1
-//      APP_ABORT("FINISH \n\n\n");
-      NCCLCHECK(ncclAllReduce((const void*)to_address(MFfactor.origin()),
-                    (void*)to_address(MFfactor.origin()), 2*MFfactor.num_elements(),
-                     ncclDouble, ncclSum,TG.ncclTG(),TG.ncclStream()));
+      NCCLCHECK(ncclReduce((const void*)to_address(vHS.origin()+vak0),
+                    (void*)to_address(vrecv.origin()+vak0), 2*(vakN-vak0),
+                     ncclDouble, ncclSum,k,TG.ncclTG(),TG.ncclStream()));
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
 #else
       TG.TG_Cores().reduce_n(to_address(vHS.origin())+vak0,vakN-vak0,

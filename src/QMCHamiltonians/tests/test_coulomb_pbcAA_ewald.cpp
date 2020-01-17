@@ -150,13 +150,12 @@ TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
 
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
-  int downIdx                  = tspecies.addSpecies("d");
   int chargeIdx                = tspecies.addAttribute("charge");
   int massIdx                  = tspecies.addAttribute("mass");
+  int pMembersizeIdx           = tspecies.addAttribute("membersize");
+  tspecies(pMembersizeIdx, upIdx)   = 1;
   tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(chargeIdx, downIdx) = -1;
   tspecies(massIdx, upIdx)     = 1.0;
-  tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
   elec.update();
@@ -168,10 +167,10 @@ TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
 
   // Self-energy correction, no background charge for e-e interaction
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-3.090194));
+  REQUIRE(consts == Approx(-3.142553));
 
   double val = caa.evaluate(elec);
-  REQUIRE(val == Approx(-1.366567)); // not validated
+  REQUIRE(val == Approx(-1.418927)); // not validated
 
   delete LRCoulombSingleton::CoulombHandler;
   LRCoulombSingleton::CoulombHandler = 0;

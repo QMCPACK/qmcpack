@@ -20,8 +20,8 @@
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
 #include "Configuration.h"
+#include "QMCDrivers/WalkerProperties.h"
 #include <QMCHamiltonians/OperatorBase.h>
-#include "QMCHamiltonians/NonLocalECPotential.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
 #endif
@@ -31,6 +31,7 @@ namespace qmcplusplus
 class MCWalkerConfiguration;
 class NewTimer;
 class HamiltonianFactory;
+class NonLocalECPotential;
 
 /**  Collection of Local Energy Operators
  *
@@ -47,7 +48,7 @@ public:
   typedef OperatorBase::PropertySetType PropertySetType;
   typedef OperatorBase::BufferType BufferType;
   typedef OperatorBase::Walker_t Walker_t;
-
+  using WP = WalkerProperties::Indexes;
   enum
   {
     DIM = OHMMS_DIM
@@ -103,7 +104,7 @@ public:
   /**
    * \defgroup Functions to get/put observables
    */
-  /*@{*/
+  /**@{*/
   /** add each term to the PropertyList for averages
    * @param plist a set of properties to which this Hamiltonian add the observables
    */
@@ -148,19 +149,26 @@ public:
   }
   ///return the name of the i-th observable
   inline std::string getObservableName(int i) const { return Observables.Names[i]; }
-  ///save the values of Hamiltonian elements to the Properties
-  template<class IT>
+
+  /** save the values of Hamiltonian elements to the Properties
+   *
+   *  This creates a hard dependence on Walker using WalkerProperties to index its Properties.
+   *  It also assumes no one else is sticking things into Walker's Properties and that
+   *  It can access into it as if it were a raw FullPrecRealType array.
+   *  
+   */
+  template<class IT, typename = std::enable_if_t<std::is_same<std::add_pointer<FullPrecRealType>::type, IT>::value>>
   inline void saveProperty(IT first)
   {
-    first[LOCALPOTENTIAL] = LocalEnergy - KineticEnergy;
+    first[WP::LOCALPOTENTIAL] = LocalEnergy - KineticEnergy;
     copy(Observables.begin(), Observables.end(), first + myIndex);
   }
-  /*@}*/
+  /**@}*/
 
-  template<class IT>
+  template<class IT, typename = std::enable_if_t<std::is_same<std::add_pointer<FullPrecRealType>::type, IT>::value>>
   inline void setProperty(IT first)
   {
-    //       LocalEnergy=first[LOCALENERGY];
+    //       LocalEnergy=first[WP::LOCALENERGY];
     //       KineticEnergy=LocalEnergy-first[LOCALPOTENTIAL];
     copy(first + myIndex, first + myIndex + Observables.size(), Observables.begin());
   }
@@ -270,34 +278,18 @@ public:
   /** set non local moves options
    * @param cur the xml input
    */
-  void setNonLocalMoves(xmlNodePtr cur)
-  {
-    if (nlpp_ptr != nullptr)
-      nlpp_ptr->setNonLocalMoves(cur);
-  }
+  void setNonLocalMoves(xmlNodePtr cur);
 
   void setNonLocalMoves(const std::string& non_local_move_option,
                                         const double tau,
                                         const double alpha,
-                                        const double gamma)
-  {
-    if (nlpp_ptr != nullptr)
-      nlpp_ptr->setNonLocalMoves(non_local_move_option,
-                                        tau,
-                                        alpha,
-                                        gamma);
-  }
+                                        const double gamma);
+
   /** make non local moves
    * @param P particle set
    * @return the number of accepted moves
    */
-  int makeNonLocalMoves(ParticleSet& P)
-  {
-    if (nlpp_ptr == nullptr)
-      return 0;
-    else
-      return nlpp_ptr->makeNonLocalMovesPbyP(P);
-  }
+  int makeNonLocalMoves(ParticleSet& P);
 
   static std::vector<int> flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list, RefVector<ParticleSet>& p_list);
   /** evaluate energy 

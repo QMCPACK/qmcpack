@@ -37,7 +37,7 @@ Important differences from the prior example are bolded.
 
 .. parsed-literal:: 
 
-    #! /usr/bin/env python
+    #! /usr/bin/env python3
     
     from nexus import settings,job,run_project
     from nexus import generate_physical_system

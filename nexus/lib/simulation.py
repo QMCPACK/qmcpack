@@ -284,14 +284,19 @@ class Simulation(NexusCore):
 
     # test needed
     @classmethod
-    def separate_inputs(cls,kwargs,overlapping_kw=-1,copy_pseudos=True):
+    def separate_inputs(cls,kwargs,overlapping_kw=-1,copy_pseudos=True,sim_kw=None):
         if overlapping_kw==-1:
             overlapping_kw = set(['system'])
         elif overlapping_kw is None:
             overlapping_kw = set()
         #end if
+        if sim_kw is None:
+            sim_kw = set()
+        else:
+            sim_kw = set(sim_kw)
+        #end if
         kw       = set(kwargs.keys())
-        sim_kw   = kw & Simulation.allowed_inputs
+        sim_kw   = kw & (Simulation.allowed_inputs | sim_kw)
         inp_kw   = (kw - sim_kw) | (kw & overlapping_kw)    
         sim_args = obj()
         inp_args = obj()
@@ -841,7 +846,7 @@ class Simulation(NexusCore):
             if not self.got_dependencies:
                 for dep in self.ordered_dependencies:
                     sim = dep.sim
-                    for result_name,result in dep.results.iteritems():
+                    for result_name,result in dep.results.items():
                         if result_name!='other':
                             if self.has_generic_input():
                                 self.error('a simulation result cannot be incorporated into generic formatted or template input\nplease use {0} instead of {1}\nsim id: {2}\ndirectory: {3}\nresult: {4}'.format(cls.input_type.__class__.__name__,self.input.__class__.__name__,self.id,self.locdir,result_name))
@@ -1744,7 +1749,7 @@ def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True,display
         graph.add_node(node.node)
     #end for
     for node in nodes:
-        for simid,dep in node.sim.dependencies.iteritems():
+        for simid,dep in node.sim.dependencies.items():
             other = nodes[simid].node
             if quants:
                 for quantity in dep.result_names:

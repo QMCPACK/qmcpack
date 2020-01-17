@@ -61,16 +61,11 @@ TEST_CASE("Bare Force", "[hamiltonian]")
 
   SpeciesSet& tspecies = elec.getSpeciesSet();
   int upIdx            = tspecies.addSpecies("u");
-  int downIdx          = tspecies.addSpecies("d");
   //int chargeIdx = tspecies.addAttribute("charge");
   int massIdx                   = tspecies.addAttribute("mass");
   int eChargeIdx                = tspecies.addAttribute("charge");
   tspecies(eChargeIdx, upIdx)   = -1.0;
-  tspecies(eChargeIdx, downIdx) = -1.0;
-  //tspecies(chargeIdx, upIdx) = -1;
-  //tspecies(chargeIdx, downIdx) = -1;
   tspecies(massIdx, upIdx)   = 1.0;
-  tspecies(massIdx, downIdx) = 1.0;
 
 
   // The call to resetGroups is needed transfer the SpeciesSet
@@ -163,7 +158,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   Lattice.R.diagonal(5.0);
   Lattice.LR_dim_cutoff = 25;
   Lattice.reset();
-
+  LRCoulombSingleton::this_lr_type=LRCoulombSingleton::EWALD;
 
   ParticleSet ions;
   ParticleSet elec;
@@ -188,16 +183,10 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
 
   SpeciesSet& tspecies = elec.getSpeciesSet();
   int upIdx            = tspecies.addSpecies("u");
-  int downIdx          = tspecies.addSpecies("d");
-  //int chargeIdx = tspecies.addAttribute("charge");
   int massIdx                   = tspecies.addAttribute("mass");
   int eChargeIdx                = tspecies.addAttribute("charge");
   tspecies(eChargeIdx, upIdx)   = -1.0;
-  tspecies(eChargeIdx, downIdx) = -1.0;
-  //tspecies(chargeIdx, upIdx) = -1;
-  //tspecies(chargeIdx, downIdx) = -1;
   tspecies(massIdx, upIdx)   = 1.0;
-  tspecies(massIdx, downIdx) = 1.0;
 
   elec.Lattice = Lattice;
   elec.createSK();
@@ -289,16 +278,10 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
 
   SpeciesSet& tspecies = elec.getSpeciesSet();
   int upIdx            = tspecies.addSpecies("u");
-  int downIdx          = tspecies.addSpecies("d");
-  //int chargeIdx = tspecies.addAttribute("charge");
   int massIdx                   = tspecies.addAttribute("mass");
   int eChargeIdx                = tspecies.addAttribute("charge");
   tspecies(eChargeIdx, upIdx)   = -1.0;
-  tspecies(eChargeIdx, downIdx) = -1.0;
-  //tspecies(chargeIdx, upIdx) = -1;
-  //tspecies(chargeIdx, downIdx) = -1;
   tspecies(massIdx, upIdx)   = 1.0;
-  tspecies(massIdx, downIdx) = 1.0;
 
 
   //elec.Lattice = Lattice;
@@ -394,15 +377,11 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
 
   SpeciesSet& elecSpecies              = elec.getSpeciesSet();
   int upIdx                            = elecSpecies.addSpecies("u");
-  int downIdx                          = elecSpecies.addSpecies("d");
   int massIdx                          = elecSpecies.addAttribute("mass");
   int eChargeIdx                       = elecSpecies.addAttribute("charge");
   int uMembersizeIdx                   = elecSpecies.addAttribute("membersize");
-  int dMembersizeIdx                   = elecSpecies.addAttribute("membersize");
   elecSpecies(eChargeIdx, upIdx)       = -1.0;
-  elecSpecies(eChargeIdx, downIdx)     = -1.0;
   elecSpecies(massIdx, upIdx)          = 1.0;
-  elecSpecies(massIdx, downIdx)        = 1.0;
   elecSpecies(uMembersizeIdx, upIdx)   = 2;
   elec.resetGroups();
 

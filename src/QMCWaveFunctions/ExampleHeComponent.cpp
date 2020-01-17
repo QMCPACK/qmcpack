@@ -62,22 +62,26 @@ bool ExampleHeComponent::put(xmlNodePtr cur)
 }
 
 ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(ParticleSet& P,
-                                                             ParticleSet::ParticleGradient_t& G,
-                                                             ParticleSet::ParticleLaplacian_t& L)
+                                                                 ParticleSet::ParticleGradient_t& G,
+                                                                 ParticleSet::ParticleLaplacian_t& L)
 {
-  const auto& ee_table = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_table  = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_dists  = ee_table.getDistances();
+  const auto& ee_displs = ee_table.getDisplacements();
   // Only the lower triangle is up-to-date after particle-by-particle moves
-  double r12  = ee_table.Distances[1][0];
-  auto rhat12 = ee_table.Displacements[1][0] / r12;
+  double r12  = ee_dists[1][0];
+  auto rhat12 = ee_displs[1][0] / r12;
 
-  const auto& ei_table = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_table  = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_dists  = ei_table.getDistances();
+  const auto& ei_displs = ei_table.getDisplacements();
 
   // First index is electron, second index is ion
-  double r1 = ei_table.Distances[0][0];
-  double r2 = ei_table.Distances[1][0];
+  double r1 = ei_dists[0][0];
+  double r2 = ei_dists[1][0];
 
-  auto rhat1 = ei_table.Displacements[0][0] / r1;
-  auto rhat2 = ei_table.Displacements[1][0] / r2;
+  auto rhat1 = ei_displs[0][0] / r1;
+  auto rhat2 = ei_displs[1][0] / r2;
 
   // Normalization for STO is not strictly necessary in this example, but it
   // makes the values directly comparable to existing code
@@ -105,21 +109,22 @@ ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(ParticleSet& P,
   return -Z * (r1 + r2) + std::log(norm * norm) - u;
 }
 
-ExampleHeComponent::ValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
+ExampleHeComponent::PsiValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
 {
-  const int jat = (iat == 0 ? 1 : 0);
+  const auto& ee_table  = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_dists  = ee_table.getDistances();
+  const auto& ee_temp_r = ee_table.getTempDists();
 
-  const auto& ee_table = P.getDistTable(my_table_ee_idx_);
+  // only the lower triangle of e-e Distances and Displacements can be used.
+  double r12_old = ee_dists[1][0];
+  double r12_new = ee_temp_r[iat == 0 ? 1 : 0];
 
-  // during p-by-p move iat-th row of Distances and Displacements[iat] are up-to-date
-  // because setActive is called before ratio
-  double r12_old = ee_table.Distances[iat][jat];
-  double r12_new = ee_table.Temp_r[jat];
+  const auto& ei_table  = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_dists  = ei_table.getDistances();
+  const auto& ei_temp_r = ei_table.getTempDists();
 
-  const auto& ei_table = P.getDistTable(my_table_ei_idx_);
-
-  double r_old = ei_table.Distances[iat][0];
-  double r_new = ei_table.Temp_r[0];
+  double r_old = ei_dists[iat][0];
+  double r_new = ei_temp_r[0];
 
   double u_old = A * r12_old / (B * r12_old + 1);
   double u_new = A * r12_new / (B * r12_new + 1);
@@ -127,49 +132,56 @@ ExampleHeComponent::ValueType ExampleHeComponent::ratio(ParticleSet& P, int iat)
   double log_v_old = -Z * (r_old)-u_old;
   double log_v_new = -Z * (r_new)-u_new;
 
-  return std::exp((log_v_new - log_v_old));
+  return std::exp(static_cast<PsiValueType>(log_v_new - log_v_old));
 }
 
 ExampleHeComponent::GradType ExampleHeComponent::evalGrad(ParticleSet& P, int iat)
 {
-  const auto& ei_table = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_table  = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_dists  = ei_table.getDistances();
+  const auto& ei_displs = ei_table.getDisplacements();
 
-  double r  = ei_table.Distances[iat][0];
-  auto rhat = ei_table.Displacements[iat][0] / r;
+  double r  = ei_dists[iat][0];
+  auto rhat = ei_displs[iat][0] / r;
 
-  const auto& ee_table = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_table  = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_dists  = ee_table.getDistances();
+  const auto& ee_displs = ee_table.getDisplacements();
 
-  const int jat = (iat == 0 ? 1 : 0);
-
-  // during p-by-p move iat-th row of Distances and Displacements[iat] are up-to-date
-  // because setActive is called before evalGrad
-  double r12  = ee_table.Distances[iat][jat];
-  auto rhat12 = ee_table.Displacements[iat][jat] / r12;
+  // only the lower triangle of e-e Distances and Displacements can be used.
+  double r12  = ee_dists[1][0];
+  auto rhat12 = (iat == 0 ? -ee_displs[1][0] : ee_displs[1][0]) / r12;
 
   double du = A / ((B * r12 + 1) * (B * r12 + 1));
 
   return Z * rhat + rhat12 * du;
 }
 
-ExampleHeComponent::ValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+ExampleHeComponent::PsiValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
-  const auto& ee_table = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_table   = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_dists   = ee_table.getDistances();
+  const auto& ee_displs  = ee_table.getDisplacements();
+  const auto& ee_temp_r  = ee_table.getTempDists();
+  const auto& ee_temp_dr = ee_table.getTempDispls();
 
   const int jat = (iat == 0 ? 1 : 0);
+  // only the lower triangle of e-e Distances and Displacements can be used.
+  double r12_old = ee_dists[1][0];
+  double r12_new = ee_temp_r[jat];
 
-  // during p-by-p move iat-th row of Distances and Displacements[iat] are up-to-date
-  // because setActive is called before ratioGrad
-  double r12_old = ee_table.Distances[iat][jat];
-  double r12_new = ee_table.Temp_r[jat];
+  auto rhat12 = ee_temp_dr[jat] / r12_new;
 
-  auto rhat12 = ee_table.Temp_dr[jat] / r12_new;
+  const auto& ei_table   = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_dists   = ei_table.getDistances();
+  const auto& ei_displs  = ei_table.getDisplacements();
+  const auto& ei_temp_r  = ei_table.getTempDists();
+  const auto& ei_temp_dr = ei_table.getTempDispls();
 
-  const auto& ei_table = P.getDistTable(my_table_ei_idx_);
+  double r_old = ei_dists[iat][0];
+  double r_new = ei_temp_r[0];
 
-  double r_old = ei_table.Distances[iat][0];
-  double r_new = ei_table.Temp_r[0];
-
-  auto rhat = ei_table.Temp_dr[0] / r_new;
+  auto rhat = ei_temp_dr[0] / r_new;
 
   double du = A / ((B * r12_new + 1) * (B * r12_new + 1));
   double df = -Z;
@@ -181,7 +193,7 @@ ExampleHeComponent::ValueType ExampleHeComponent::ratioGrad(ParticleSet& P, int 
   double log_v_old = -Z * (r_old)-u_old;
   double log_v_new = -Z * (r_new)-u_new;
 
-  return std::exp((log_v_new - log_v_old));
+  return std::exp(static_cast<PsiValueType>(log_v_new - log_v_old));
 }
 
 
@@ -215,20 +227,28 @@ void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
 {
   typedef TinyVector<RealType, 3> RealGradType;
 
-
   double tmpB = std::real(optvars[0]);
 
-  const auto& ee_table = P.getDistTable(my_table_ee_idx_);
-  double r12           = ee_table.Distances[1][0];
-  auto rhat12          = ee_table.Displacements[1][0] / r12;
+  const auto& ee_table   = P.getDistTable(my_table_ee_idx_);
+  const auto& ee_dists   = ee_table.getDistances();
+  const auto& ee_displs  = ee_table.getDisplacements();
+  const auto& ee_temp_r  = ee_table.getTempDists();
+  const auto& ee_temp_dr = ee_table.getTempDispls();
 
-  const auto& ei_table = P.getDistTable(my_table_ei_idx_);
+  double r12  = ee_dists[1][0];
+  auto rhat12 = ee_displs[1][0] / r12;
 
-  double r1 = ei_table.Distances[0][0];
-  double r2 = ei_table.Distances[1][0];
+  const auto& ei_table   = P.getDistTable(my_table_ei_idx_);
+  const auto& ei_dists   = ei_table.getDistances();
+  const auto& ei_displs  = ei_table.getDisplacements();
+  const auto& ei_temp_r  = ei_table.getTempDists();
+  const auto& ei_temp_dr = ei_table.getTempDispls();
 
-  auto rhat1 = ei_table.Displacements[0][0] / r1;
-  auto rhat2 = ei_table.Displacements[1][0] / r2;
+  double r1 = ei_dists[0][0];
+  double r2 = ei_dists[1][0];
+
+  auto rhat1 = ei_displs[0][0] / r1;
+  auto rhat2 = ei_displs[1][0] / r2;
 
   dlogpsi[0] = A * r12 * r12 / ((tmpB * r12 + 1) * (tmpB * r12 + 1)) - A / (tmpB * tmpB);
 

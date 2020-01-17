@@ -64,10 +64,10 @@ public:
    *@param nel number of particles in the determinant
    *@param delay dummy argument
    */
-  void set(int first, int nel, int delay=1) final
+  void set(int first, int nel, int delay = 1) final
   {
     FirstIndex = first;
-    resize(nel,nel);
+    resize(nel, nel);
   }
 
   ///set BF pointers
@@ -107,11 +107,11 @@ public:
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   GradType evalGrad(ParticleSet& P, int iat);
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat);
 
@@ -123,7 +123,7 @@ public:
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   /** move was rejected. copy the real container to the temporary to move on
    */
@@ -188,7 +188,7 @@ public:
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
 
-  ValueType curRatio;
+  PsiValueType curRatio;
   ParticleSet::SingleParticleValue_t* FirstAddressOfG;
   ParticleSet::SingleParticleValue_t* LastAddressOfG;
   ValueType* FirstAddressOfdV;

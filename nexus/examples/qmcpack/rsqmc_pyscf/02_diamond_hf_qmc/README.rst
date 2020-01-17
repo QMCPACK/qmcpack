@@ -12,7 +12,7 @@ The most important changes relative to Example 2 are shown below:
  
 .. code-block:: python
 
-    #! /usr/bin/env python
+    #! /usr/bin/env python3
     
     ...
     from nexus import generate_convert4qmc

@@ -55,6 +55,18 @@ IF (COMPILING_ON_BGQ)
 ENDIF()
 
 ######################################################################
+# Verify Python3 available
+######################################################################
+INCLUDE(CMake/python.cmake)
+IF(${CMAKE_VERSION} VERSION_LESS "3.12.0")
+  TEST_PYTHON_MODULE( "os"  Python3_FOUND )
+ELSE()
+  find_package(Python3)
+ENDIF()
+IF ( NOT Python3_FOUND )
+  MESSAGE( FATAL_ERROR "Could not find required python3" )
+ENDIF ( NOT Python3_FOUND )
+######################################################################
 # Verify QE executables present if QE_BIN specified
 ######################################################################
 IF ( DEFINED QE_BIN )
@@ -66,7 +78,6 @@ ENDIF()
 # Verify PYSCF package is present
 ######################################################################
 IF ( DEFINED PYSCF_BIN )
-  INCLUDE(CMake/python.cmake)
   TEST_PYTHON_MODULE(pyscf HAVE_PYSCF)
   IF (NOT HAVE_PYSCF)
     MESSAGE( FATAL_ERROR "PYSCF_BIN was specified but could not import pyscf." )
@@ -96,6 +107,19 @@ ELSE()
   SET(SYMLINK_MSG "Copying large test files uses more disk space than using symbolic links.")
 ENDIF()
 MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_MSG}")
+
+# The following option disables the extremely slow setup of full system run tests
+# This is a developer option
+# It offers a more reasonable compile debug loop if CMakeLists.txt files are being changed
+# These constom commands execution time far exceeds even the feature and compiler checks for time consumed
+# when rerunning cmake.
+#
+# On leconte: rerun of cmake with
+# slow custom commands 27 secs
+# without 8 secs
+SET( QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS FALSE CACHE BOOL "Disable the slow cmake custom commands for integration tests.")
+MARK_AS_ADVANCED(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+
 
 ######################################################################
 # Build level
@@ -139,6 +163,8 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 # QMC_MPI =  enable MPI
 # QMC_OMP = enable OMP
 ######################################################################
+SET(WALKER_MAX_PROPERTIES 32 CACHE int "Maximum number of properties tracked by walkers")
+MARK_AS_ADVANCED(WALKER_MAX_PROPERTIES)
 SET(OHMMS_DIM 3 CACHE STRING "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 MESSAGE(STATUS "defining the float point precision")
@@ -244,9 +270,6 @@ SET(BUILD_AFQMC_WITH_NCCL 0 CACHE BOOL "Build AFQMC with NCCL library.")
 If (BUILD_AFQMC AND NOT QMC_MPI)
   MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
 ENDIF()
-If (BUILD_AFQMC AND ENABLE_CUDA AND NOT QMC_COMPLEX)
-  MESSAGE(FATAL_ERROR "AFQMC only works on GPUs if QMC_COMPLEX=1.")
-ENDIF()
 SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
 #SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
@@ -265,11 +288,9 @@ SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
 #list of options to determine libraries. First, try to use libraries available
 #FindXYZ.cmake will set the values if successful
 ######################################################################
-SET(ENABLE_PHDF5 1 CACHE BOOL "Enable phdf5 for output")
 SET(HAVE_LIBXML2 1)
 SET(HAVE_LIBFFTW 0)
 SET(HAVE_LIBXMLPP 0)
-SET(HAVE_LIBHDF5 0)
 SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
@@ -327,13 +348,16 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     SET(CMAKE_SKIP_RPATH TRUE)
 
     # Flags for ctest
-    SET(USE_EXT_MPI_FOR_SERIAL_TESTS 1)
-    FIND_PROGRAM(MPIEXEC aprun)
-    IF(NOT MPIEXEC)
-    # For slurm use srun
-      FIND_PROGRAM(MPIEXEC srun)
-    ENDIF(NOT MPIEXEC)
-    SET(MPIEXEC_NUMPROC_FLAG "-n")
+    IF(NOT DEFINED MPIEXEC)
+      FIND_PROGRAM(MPIEXEC aprun)
+      IF(NOT MPIEXEC)
+      # For slurm use srun
+        FIND_PROGRAM(MPIEXEC srun)
+      ENDIF(NOT MPIEXEC)
+    ENDIF()
+    IF(NOT DEFINED MPIEXEC_NUMPROC_FLAG)
+      SET(MPIEXEC_NUMPROC_FLAG "-n")
+    ENDIF()
 
     IF(QMC_CUDA)
       IF(QMC_BUILD_STATIC)
@@ -495,7 +519,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     # Search for Blas/Lapack
     find_package(LAPACK)
     IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
-      MESSAGE(FATAL_ERROR "MKL found via LAPACK/BLAS. Please use -DENABLE_MKL=1 when invoking cmake for full Intel MKL utilization. -DMKL_ROOT may also be needed for the include files to be found.")
+      MESSAGE(FATAL_ERROR "MKL found via LAPACK/BLAS. Please pass -DENABLE_MKL=1 to cmake for full Intel MKL utilization. -DMKL_ROOT may also be needed for the include files to be found.")
     ENDIF()
   ENDIF()
   IF(LAPACK_FOUND)
@@ -528,7 +552,7 @@ ENDIF()
 # setup ctest variables
 IF ( HAVE_MPI )
   SET( USE_MPI 1 )
-  IF ( NOT MPIEXEC )
+  IF ( NOT DEFINED MPIEXEC )
     SET( MPIEXEC "mpirun" )
   ENDIF()
 
@@ -536,11 +560,16 @@ IF ( HAVE_MPI )
     SET( MPIEXEC_NUMPROC_FLAG "-np" )
   ENDIF()
 
+  IF ( NOT DEFINED MPIEXEC_PREFLAGS )
+    SET( MPIEXEC_PREFLAGS "" )
+  ENDIF()
+
   IF ( NOT TEST_MAX_PROCS )
     SET( TEST_MAX_PROCS 100 )
   ENDIF()
 
   MESSAGE(STATUS "MPI runner is ${MPIEXEC}")
+  MESSAGE(STATUS "MPIEXEC_NUMPROC_FLAG is ${MPIEXEC_NUMPROC_FLAG}")
 ENDIF(HAVE_MPI)
 
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
@@ -595,18 +624,58 @@ ELSE()
   MESSAGE(FATAL_ERROR "Could not find required library Libxml2")
 ENDIF(LIBXML2_FOUND)
 
-set(HDF5_USE_STATIC_LIBRARIES off)
+####################################################################
+# set up HDF5 library
+####################################################################
+IF(HAVE_MPI)
+  SET(HDF5_PREFER_PARALLEL 1 CACHE BOOL "Request parallel/serial HDF5 library")
+ELSE(HAVE_MPI)
+  SET(HDF5_PREFER_PARALLEL 0 CACHE BOOL "Request parallel/serial HDF5 library")
+  IF(HDF5_PREFER_PARALLEL)
+    MESSAGE(FATAL_ERROR "Parallel HDF5 library cannot be selected with QMCPACK non-MPI build. "
+                        "Please set HDF5_PREFER_PARALLEL=0.")
+  ENDIF(HDF5_PREFER_PARALLEL)
+ENDIF(HAVE_MPI)
+
 if(QMC_BUILD_STATIC)
+  MESSAGE(STATUS "Linking static HDF5 library")
   set(HDF5_USE_STATIC_LIBRARIES on)
+else()
+  MESSAGE(STATUS "Linking dynamic HDF5 library")
+  set(HDF5_USE_STATIC_LIBRARIES off)
 endif()
 
-SET(HDF5_PREFER_PARALLEL 0)
-IF(HAVE_MPI)
- SET(HDF5_PREFER_PARALLEL 1)
-ENDIF()
 find_package(HDF5 COMPONENTS C)
+
 IF(HDF5_FOUND)
   SET(HAVE_LIBHDF5 1)
+
+  IF(HDF5_IS_PARALLEL)
+    MESSAGE(STATUS "Parallel HDF5 library found")
+    SET(ENABLE_PHDF5 1 CACHE BOOL "Enable code paths using parallel HDF5")
+  ELSE(HDF5_IS_PARALLEL)
+    MESSAGE(STATUS "Serial HDF5 library found")
+    SET(ENABLE_PHDF5 0 CACHE BOOL "Enable code paths using parallel HDF5")
+    IF(ENABLE_PHDF5)
+      IF(HAVE_MPI)
+        MESSAGE(FATAL_ERROR "Parallel HDF5 code paths requested but serial HDF5 library found! "
+                            "Please either provide parallel HDF5 library or set ENABLE_PHDF5=0.")
+      ELSE(HAVE_MPI)
+        MESSAGE(FATAL_ERROR "Parallel HDF5 code paths cannot be enabled on non-MPI builds! Please set ENABLE_PHDF5=0.")
+      ENDIF(HAVE_MPI)
+    ENDIF(ENABLE_PHDF5)
+  ENDIF(HDF5_IS_PARALLEL)
+
+  IF(ENABLE_PHDF5)
+    MESSAGE(STATUS "Using HDF5 parallel collective I/O code paths")
+  ELSE(ENABLE_PHDF5)
+    MESSAGE(STATUS "Using HDF5 non-scalable serial I/O code paths")
+  ENDIF(ENABLE_PHDF5)
+
+  IF(HAVE_MPI AND NOT ENABLE_PHDF5)
+    MESSAGE(WARNING "MPI builds may have potential performance loss not using parallel HDF5!")
+  ENDIF()
+
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
   IF ( CMAKE_BUILD_TYPE AND HDF5_LIBRARIES_DEBUG )
     IF ( CMAKE_BUILD_TYPE MATCHES DEBUG )
@@ -616,22 +685,8 @@ IF(HDF5_FOUND)
     ENDIF()
   ENDIF()
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${HDF5_LIBRARIES})
-  IF(HDF5_IS_PARALLEL)
-    IF(ENABLE_PHDF5)
-      MESSAGE(STATUS "Using HDF5 parallel collective I/O")
-    ELSE(ENABLE_PHDF5)
-      MESSAGE(STATUS "Using HDF5 non-scalable serial I/O")
-    ENDIF(ENABLE_PHDF5)
-  ELSE(HDF5_IS_PARALLEL)
-    IF(ENABLE_PHDF5)
-      MESSAGE(STATUS "Using HDF5 non-scalable serial I/O due to the lack of library support for parallel")
-      SET(ENABLE_PHDF5 0)
-    ELSE(ENABLE_PHDF5)
-      MESSAGE(STATUS "Using HDF5 non-scalable serial I/O")
-    ENDIF(ENABLE_PHDF5)
-  ENDIF(HDF5_IS_PARALLEL)
 ELSE(HDF5_FOUND)
-  MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_ROOT")
+  MESSAGE(FATAL_ERROR "Require HDF5 1.6.4 or higher. Set HDF5_ROOT")
 ENDIF(HDF5_FOUND)
 
 #make sure we can find boost if it's not in /usr
@@ -865,9 +920,11 @@ ENDIF()
 SUBDIRS(src)
 
 IF(NOT QMC_BUILD_SANDBOX_ONLY)
-  SUBDIRS(tests)
-  SUBDIRS(examples)
-  IF(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/nexus")
+  IF( NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS )
+    SUBDIRS(tests)
+    SUBDIRS(examples)
+  ENDIF()
+  IF(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/nexus" AND INSTALL_NEXUS)
     SUBDIRS(nexus/tests)
   ENDIF()
 ENDIF()

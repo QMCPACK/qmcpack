@@ -283,7 +283,7 @@ namespace ma
       dgemm('N','T',2,n,m,alpha,reinterpret_cast<double const*>(x),2*incx,amat,lda,
                           beta,reinterpret_cast<double*>(y),2*incy);      
     else if(trans_in == 't' || trans_in == 'T')
-      dgemm('N','N',2,n,m,alpha,reinterpret_cast<double const*>(x),2*incx,amat,lda,
+      dgemm('N','N',2,m,n,alpha,reinterpret_cast<double const*>(x),2*incx,amat,lda,
                           beta,reinterpret_cast<double*>(y),2*incy);      
     else {
       print_stacktrace
@@ -304,7 +304,7 @@ namespace ma
       sgemm('N','T',2,n,m,alpha,reinterpret_cast<float const*>(x),2*incx,amat,lda,
                           beta,reinterpret_cast<float*>(y),2*incy);
     else if(trans_in == 't' || trans_in == 'T')
-      sgemm('N','N',2,n,m,alpha,reinterpret_cast<float const*>(x),2*incx,amat,lda,
+      sgemm('N','N',2,m,n,alpha,reinterpret_cast<float const*>(x),2*incx,amat,lda,
                           beta,reinterpret_cast<float*>(y),2*incy);
     else {
       print_stacktrace
@@ -1000,6 +1000,21 @@ namespace ma
     for(int i=0; i<batchSize; i++)
         gemm(Atrans,Btrans,M,N,K,alpha,A[i],lda,B[i],ldb,beta,C[i],ldc);
 #endif
+  }
+
+  template<typename T>
+  inline static void axpyBatched(int n, T* x, T *const* a, int inca, T** b, int incb, int batchSize) 
+  {
+    for(int i=0; i<batchSize; i++)
+        axpy(n,x[i],a[i],inca,b[i],incb);
+  }
+
+  template<typename T>
+  inline static void sumGwBatched(int n, T* x, T *const* a, int inca, T** b, int incb, int b0, int nw, int batchSize)
+  {
+    // since this is not parallel, no need to coordinate over iw
+    for(int i=0; i<batchSize; i++)
+        axpy(n,x[i],a[i],inca,b[i],incb);
   }
 
 }

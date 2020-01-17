@@ -24,16 +24,15 @@ MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleS
                                                                        BackflowTransformation* BF)
     : MultiSlaterDeterminant(targetPtcl, upspo, dnspo), BFTrans(BF)
 {
-  Optimizable = false;
+  Optimizable  = false;
   is_fermionic = true;
-  ClassName   = "MultiSlaterDeterminantWithBackflow";
+  ClassName    = "MultiSlaterDeterminantWithBackflow";
 }
 
 WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 {
   // mmorales: the proxy classes read from the particle set inside BFTrans
   BackflowTransformation* tr = BFTrans->makeClone(tqp);
-  tr->resetTargetParticleSet(tqp);
   SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(), FirstIndex_up, LastIndex_up);
   SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(), FirstIndex_dn, LastIndex_dn);
   spo_up_C->occup             = spo_up->occup;
@@ -174,8 +173,8 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::evaluate(Pa
 }
 
 WaveFunctionComponent::LogValueType MultiSlaterDeterminantWithBackflow::evaluateLog(ParticleSet& P,
-                                                                                ParticleSet::ParticleGradient_t& G,
-                                                                                ParticleSet::ParticleLaplacian_t& L)
+                                                                                    ParticleSet::ParticleGradient_t& G,
+                                                                                    ParticleSet::ParticleLaplacian_t& L)
 {
   return LogValue = convertValueToLog(evaluate(P, G, L));
 }
@@ -224,9 +223,9 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantWithBackflow::evalGrad(Par
   }
 }
 
-WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet& P,
-                                                                               int iat,
-                                                                               GradType& grad_iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet& P,
+                                                                                  int iat,
+                                                                                  GradType& grad_iat)
 {
   APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
   UpdateMode = ORB_PBYP_PARTIAL;
@@ -295,7 +294,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(P
 }
 
 // use ci_node for this routine only
-WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
 {
   APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
   UpdateMode = ORB_PBYP_RATIO;
@@ -355,7 +354,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratio(Parti
   }
 }
 
-void MultiSlaterDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat)
+void MultiSlaterDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   // this should depend on the type of update, ratio / ratioGrad
   // for now is incorrect fot ratio(P,iat,dG,dL) updates
@@ -507,8 +506,8 @@ void MultiSlaterDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferTy
 
 // FIX FIX FIX
 WaveFunctionComponent::LogValueType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleSet& P,
-                                                                                 WFBufferType& buf,
-                                                                                 bool fromscratch)
+                                                                                     WFBufferType& buf,
+                                                                                     bool fromscratch)
 {
   UpdateTimer.start();
   if (fromscratch || UpdateMode == ORB_PBYP_RATIO)
@@ -525,10 +524,10 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantWithBackflow::updateBu
     BFTrans->QP.G = 0.0;
     BFTrans->QP.L = 0.0;
     spo_up->prepareFor(i);
-    logpsi = dets_up[i]->updateBuffer(BFTrans->QP, buf, fromscratch);
+    logpsi          = dets_up[i]->updateBuffer(BFTrans->QP, buf, fromscratch);
     detValues_up[i] = LogToValue<PsiValueType>::convert(logpsi);
-    grads_up[i] = BFTrans->QP.G;
-    lapls_up[i] = BFTrans->QP.L;
+    grads_up[i]     = BFTrans->QP.G;
+    lapls_up[i]     = BFTrans->QP.L;
     for (int k = FirstIndex_up; k < LastIndex_up; k++)
       lapls_up[i][k] += dot(grads_up[i][k], grads_up[i][k]);
   }
@@ -537,10 +536,10 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantWithBackflow::updateBu
     BFTrans->QP.G = 0.0;
     BFTrans->QP.L = 0.0;
     spo_dn->prepareFor(i);
-    logpsi = dets_dn[i]->updateBuffer(BFTrans->QP, buf, fromscratch);
+    logpsi          = dets_dn[i]->updateBuffer(BFTrans->QP, buf, fromscratch);
     detValues_dn[i] = LogToValue<PsiValueType>::convert(logpsi);
-    grads_dn[i] = BFTrans->QP.G;
-    lapls_dn[i] = BFTrans->QP.L;
+    grads_dn[i]     = BFTrans->QP.G;
+    lapls_dn[i]     = BFTrans->QP.L;
     for (int k = FirstIndex_dn; k < LastIndex_dn; k++)
       lapls_dn[i][k] += dot(grads_dn[i][k], grads_dn[i][k]);
   }
@@ -701,7 +700,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   {
     if (usingCSF)
     {
-      int n = P.getTotalNum();
+      int n            = P.getTotalNum();
       ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
 
       ValueType lapl_sum = 0.0;
@@ -751,8 +750,8 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
           v1 += tmp * static_cast<ValueType>(Dot(gmP, grads_up[upC]) + Dot(gmP, grads_dn[dnC]));
           cnt++;
         }
-        dlogpsi[kk] = cdet;
-        ValueType dhpsi = (RealType)-0.5 * (q0 - cdet * lapl_sum) - cdet * gg + v1;
+        dlogpsi[kk]      = cdet;
+        ValueType dhpsi  = (RealType)-0.5 * (q0 - cdet * lapl_sum) - cdet * gg + v1;
         dhpsioverpsi[kk] = dhpsi;
       }
       if (optmBF)
@@ -763,7 +762,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     }
     else
     {
-      int n = P.getTotalNum();
+      int n            = P.getTotalNum();
       ValueType psiinv = ValueType(1) / LogToValue<ValueType>::convert(LogValue);
 
       ValueType lapl_sum = 0.0;
@@ -797,10 +796,10 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
           int kk = myVars.where(i);
           if (kk < 0)
             continue;
-          int upC        = C2node_up[ip];
-          int dnC        = C2node_dn[ip];
-          ValueType cdet = detValues_up[upC] * detValues_dn[dnC] * psiinv;
-          dlogpsi[kk] = cdet;
+          int upC         = C2node_up[ip];
+          int dnC         = C2node_dn[ip];
+          ValueType cdet  = detValues_up[upC] * detValues_dn[dnC] * psiinv;
+          dlogpsi[kk]     = cdet;
           ValueType dhpsi = ((RealType)-0.5 * cdet) *
               (tempstorage_up[upC] + tempstorage_dn[dnC] - lapl_sum +
                static_cast<ValueType>(2.0 * Dot(grads_up[upC], grads_dn[dnC])) +
@@ -855,20 +854,19 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
             ValueType dpsi2                         = dpsia_dn(dnC, pa);
             ParticleSet::ParticleGradient_t& g1     = grads_up[upC];
             ParticleSet::ParticleGradient_t& g2     = grads_dn[dnC];
-#if (__INTEL_COMPILER == 1900 && !defined(QMC_COMPLEX))
-#pragma omp simd reduction(+ : dot1)
-#endif
             for (int k = 0; k < n; k++)
-              dot1 += dot((g2[k] - gmP[k]), dGa_up(upC, pa, k)) + dot((g1[k] - gmP[k]), dGa_dn(dnC, pa, k)) -
-                  static_cast<ParticleSet::SingleParticleValue_t>(dpsi1) * (dot(gmP[k], g2[k])) -
-                  static_cast<ParticleSet::SingleParticleValue_t>(dpsi2) * (dot(gmP[k], g1[k]));
+            {
+              dot1 -= static_cast<ParticleSet::SingleParticleValue_t>(dpsi1) * dot(gmP[k], g2[k]) +
+                  static_cast<ParticleSet::SingleParticleValue_t>(dpsi2) * dot(gmP[k], g1[k]);
+              dot1 += dot((g2[k] - gmP[k]), dGa_up(upC, pa, k)) + dot((g1[k] - gmP[k]), dGa_dn(dnC, pa, k));
+            }
             dlog += cdet * (dpsi1 + dpsi2);
             dhpsi += cdet *
                 (dLa_up(upC, pa) + dLa_dn(dnC, pa) + dpsi2 * tempstorage_up[upC] + dpsi1 * tempstorage_dn[dnC] +
                  static_cast<ValueType>(2.0 * dot1));
           } // i
-          dhpsi = (RealType)-0.5 * (dhpsi + dlog * ((RealType)2.0 * ggP - lapl_sum));
-          dlogpsi[kk] = dlog;
+          dhpsi            = (RealType)-0.5 * (dhpsi + dlog * ((RealType)2.0 * ggP - lapl_sum));
+          dlogpsi[kk]      = dlog;
           dhpsioverpsi[kk] = dhpsi;
         } // pa
       }

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 from pyscf import gto
 from pyscf import scf, dft, df

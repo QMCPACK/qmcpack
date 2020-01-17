@@ -33,9 +33,9 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet& ptcl,
                                                            int first)
     : DiracDeterminantBase(spos, first)
 {
-  Optimizable = true;
+  Optimizable  = true;
   is_fermionic = true;
-  ClassName   = "DiracDeterminantWithBackflow";
+  ClassName    = "DiracDeterminantWithBackflow";
   registerTimers();
   BFTrans      = BF;
   NumParticles = ptcl.getTotalNum();
@@ -98,12 +98,7 @@ void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet,
                                                 HessMatrix_t& grad_grad_logdet,
                                                 GGGMatrix_t& grad_grad_grad_logdet)
 {
-  Phi->evaluate_notranspose(BFTrans->QP,
-                            FirstIndex,
-                            LastIndex,
-                            psiM_temp,
-                            dlogdet,
-                            grad_grad_logdet,
+  Phi->evaluate_notranspose(BFTrans->QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet,
                             grad_grad_grad_logdet);
   simd::transpose(psiM_temp.data(), NumOrbitals, psiM_temp.cols(), logdet.data(), NumOrbitals, logdet.cols());
 }
@@ -152,8 +147,8 @@ void DiracDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& bu
 }
 
 DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::updateBuffer(ParticleSet& P,
-                                                                                  WFBufferType& buf,
-                                                                                  bool fromscratch)
+                                                                                      WFBufferType& buf,
+                                                                                      bool fromscratch)
 {
   // for now, always recalculate from scratch
   // enable from_scratch = true later
@@ -200,7 +195,7 @@ void DiracDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& 
  * @param P current configuration
  * @param iat the particle thas is being moved
  */
-DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
+DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
 {
   // FIX FIX FIX : code Woodbury formula
   psiM_temp = psiM;
@@ -218,7 +213,7 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(Part
     int jat    = *it - FirstIndex;
     PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
     BFTrans->QP.makeMove(*it, dr);
-    Phi->evaluate(BFTrans->QP, *it, psiV);
+    Phi->evaluateValue(BFTrans->QP, *it, psiV);
     for (int orb = 0; orb < psiV.size(); orb++)
       psiM_temp(orb, jat) = psiV[orb];
     BFTrans->QP.rejectMove(*it);
@@ -269,9 +264,9 @@ DiracDeterminantWithBackflow::GradType DiracDeterminantWithBackflow::evalGradSou
   return GradType();
 }
 
-DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratioGrad(ParticleSet& P,
-                                                                                int iat,
-                                                                                GradType& grad_iat)
+DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratioGrad(ParticleSet& P,
+                                                                                   int iat,
+                                                                                   GradType& grad_iat)
 {
   // FIX FIX FIX : code Woodbury formula
   psiM_temp                         = psiM;
@@ -290,7 +285,7 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratioGrad(
     int jat    = *it - FirstIndex;
     PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
     BFTrans->QP.makeMove(*it, dr);
-    Phi->evaluate(BFTrans->QP, *it, psiV, dpsiV, d2psiV);
+    Phi->evaluateVGL(BFTrans->QP, *it, psiV, dpsiV, d2psiV);
     for (int orb = 0; orb < psiV.size(); orb++)
       psiM_temp(orb, jat) = psiV[orb];
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM_temp.begin(jat));
@@ -490,9 +485,10 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
-                                                                                 ParticleSet::ParticleGradient_t& G,
-                                                                                 ParticleSet::ParticleLaplacian_t& L)
+DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(
+    ParticleSet& P,
+    ParticleSet::ParticleGradient_t& G,
+    ParticleSet::ParticleLaplacian_t& L)
 {
   //testGG(P);
   //testL(P);
@@ -571,7 +567,7 @@ DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluat
 
 /** move was accepted, update the real container
 */
-void DiracDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat)
+void DiracDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   LogValue += convertValueToLog(curRatio);
   UpdateTimer.start();

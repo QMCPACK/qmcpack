@@ -159,7 +159,7 @@ private:
     //create vectors and matrices used in svd routine
     formic::Matrix<S> u, v, vt;
     formic::ColVec<S> sin_vals;
-    int truncate_index;
+    int truncate_index = 0;
 
     // make sure the subspace matrix is not empty
     if ( _subS.rows() == 0 || _subH.rows() == 0 ) 
@@ -664,7 +664,7 @@ public:
       if ( this->_le_der.rows() != this->_der_rat.rows() && this->_le_der.cols() != this->_der_rat.cols())
         throw formic::Exception("the input derivative vector matrices are of different size!");
 
-      // if the approximate flag is set to be ture, then throw out an exception 
+      // if the approximate flag is set to be true, then throw out an exception 
       if ( approximate )
         throw formic::Exception("Davidson solver's matrix-vector multiplication routine doesn't support approximate matrix!");
 
@@ -777,7 +777,7 @@ public:
       if ( this->_le_der.rows() != this->_der_rat.rows() && this->_le_der.cols() != this->_der_rat.cols() )
         throw formic::Exception("input derivative vectors are of different size");
 
-      // if the approximate flag is set to be ture, then throw out an exception 
+      // if the approximate flag is set to be true, then throw out an exception 
       if ( approximate )
         throw formic::Exception("Davidson solver's matrix-vector multiplication routine doesn't support approximate matrix!");
 

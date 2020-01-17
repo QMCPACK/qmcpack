@@ -19,7 +19,6 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 
@@ -91,8 +90,6 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   elec.resetGroups();
   elec.update();
 
-
-  TrialWaveFunction psi(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -125,9 +122,6 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 
   PWOrbitalBuilder pw_builder(c, elec, ptcl.getPool());
   WaveFunctionComponent* orb = pw_builder.buildComponent(pw1);
-  psi.addComponent(orb, "PW_SD");
-
-  REQUIRE(psi.getOrbitals().size() == 1);
   SlaterDet* sd = dynamic_cast<SlaterDet*>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
@@ -139,7 +133,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   int orbSize = spo->getOrbitalSetSize();
   elec.update();
   SPOSet::ValueVector_t orbs(orbSize);
-  spo->evaluate(elec, 0, orbs);
+  spo->evaluateValue(elec, 0, orbs);
 
   REQUIRE(std::real(orbs[0]) == Approx(-1.2473558998));
 
@@ -162,7 +156,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
         elec.R[0][2] = z;
         elec.update();
         SPOSet::ValueVector_t orbs(orbSize);
-        spo->evaluate(elec, 0, orbs);
+        spo->evaluateValue(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
 #ifdef QMC_COMPLEX
@@ -246,8 +240,6 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   elec.resetGroups();
   elec.update();
 
-
-  TrialWaveFunction psi(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -280,9 +272,6 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 
   PWOrbitalBuilder pw_builder(c, elec, ptcl.getPool());
   WaveFunctionComponent* orb = pw_builder.buildComponent(pw1);
-  psi.addComponent(orb, "PW_SD");
-
-  REQUIRE(psi.getOrbitals().size() == 1);
   SlaterDet* sd = dynamic_cast<SlaterDet*>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
@@ -294,7 +283,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   int orbSize = spo->getOrbitalSetSize();
   elec.update();
   SPOSet::ValueVector_t orbs(orbSize);
-  spo->evaluate(elec, 0, orbs);
+  spo->evaluateValue(elec, 0, orbs);
 
   REQUIRE(std::real(orbs[0]) == Approx(-14.3744302974));
 
@@ -317,7 +306,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
         elec.R[0][2] = z;
         elec.update();
         SPOSet::ValueVector_t orbs(orbSize);
-        spo->evaluate(elec, 0, orbs);
+        spo->evaluateValue(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
 #ifdef QMC_COMPLEX

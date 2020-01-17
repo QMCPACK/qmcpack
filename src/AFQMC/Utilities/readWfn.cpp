@@ -605,7 +605,10 @@ void read_ph_wavefunction_hdf(hdf_archive& dump, std::vector<ComplexType>& ci_co
    *          NOTE: Does not mean perfect pairing, means excitations from a single reference
    *   - 1: excitations out of a UHF reference
    */
-  getCommonInput(dump, NMO, NAEA, NAEB, ndets, ci_coeff, walker_type, comm.root());
+  WALKER_TYPES wtype;  
+  getCommonInput(dump, NMO, NAEA, NAEB, ndets, ci_coeff, wtype, comm.root());
+  if(walker_type != wtype && NAEA != NAEB) 
+    APP_ABORT(" Error: When Different walker_type between hdf5 and xml inputs when NAEA!=NAEB (not allowed). \n");
   if(walker_type != COLLINEAR)
     APP_ABORT(" Error: walker_type!=COLLINEAR not yet implemented in read_ph_wavefunction.\n");
 
@@ -632,10 +635,17 @@ void read_ph_wavefunction_hdf(hdf_archive& dump, std::vector<ComplexType>& ci_co
     PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix,Alloc>(dump,comm));
     dump.pop();
     if(wfn_type == 1) {
-      if(!dump.push(std::string("PsiT_")+std::to_string(1),false)) {
-        app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";
-        APP_ABORT("");
-      }
+      if(wtype == CLOSED) {
+        if(!dump.push(std::string("PsiT_")+std::to_string(0),false)) {
+          app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";
+          APP_ABORT("");
+        }
+      } else if(wtype == COLLINEAR) {
+        if(!dump.push(std::string("PsiT_")+std::to_string(1),false)) {
+          app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";
+          APP_ABORT("");
+        }
+      } 
       PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix,Alloc>(dump,comm));
       dump.pop();
     }
@@ -768,7 +778,7 @@ ph_excitations<int,ComplexType> build_ph_struct(std::vector<ComplexType> ci_coef
  * Read trial wavefunction information from file.
 */
 void getCommonInput(hdf_archive& dump, int NMO, int NAEA, int NAEB, int& ndets_to_read,
-                                         std::vector<ComplexType>& ci, WALKER_TYPES walker_type, bool root)
+                                         std::vector<ComplexType>& ci, WALKER_TYPES& walker_type, bool root)
 {
   // check for consistency in parameters
   std::vector<int> dims(5);
@@ -788,10 +798,12 @@ void getCommonInput(hdf_archive& dump, int NMO, int NAEA, int NAEB, int& ndets_t
     app_error()<<" Error in getCommonInput(): Inconsistent  NAEB. \n";
     APP_ABORT("");
   }
-  if(walker_type != dims[3]) {
-    app_error()<<" Error in getCommonInput(): Inconsistent  walker_type. \n";
-    APP_ABORT("");
-  }
+  walker_type = afqmc::initWALKER_TYPES(dims[3]);
+  // just read walker_type, to allow flexibility
+  //if(walker_type != dims[3]) {
+  //  app_error()<<" Error in getCommonInput(): Inconsistent  walker_type. \n";
+  //  APP_ABORT("");
+  //}
   if(ndets_to_read < 1) ndets_to_read = dims[4];
   app_log() << " - Number of determinants in trial wavefunction: " << ndets_to_read << "\n";
   if(ndets_to_read > dims[4]) {

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 from nexus import settings,job,run_project
 from nexus import read_structure
@@ -159,8 +159,8 @@ if performed_runs:
     # get the local energy from dmc.dat
     le = qa.dmc[1].dmc.LocalEnergy  # dmc series 1, dmc.dat, local energy
     #  print the total energy for the 20 atom system
-    print 'The DMC ground state energy for C20 is:'
-    print '    {0} +/- {1} Ha'.format(le.mean,le.error)
+    print('The DMC ground state energy for C20 is:')
+    print('    {0} +/- {1} Ha'.format(le.mean,le.error))
 #end if
 
 

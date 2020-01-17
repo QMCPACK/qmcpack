@@ -49,6 +49,7 @@ SET(QMCDRIVERS
   VMC/VMCFactory.cpp
   VMC/VMCFactoryNew.cpp
   VMC/VMCDriverInput.cpp
+  VMC/SOVMCUpdatePbyP.cpp
   DMC/DMC.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyPFast.cpp
@@ -58,6 +59,7 @@ SET(QMCDRIVERS
   DMC/DMCDriverInput.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
+  DMC/SODMCUpdatePbyPFast.cpp
   RMC/RMC.cpp
   RMC/RMCUpdatePbyP.cpp
   RMC/RMCUpdateAll.cpp
