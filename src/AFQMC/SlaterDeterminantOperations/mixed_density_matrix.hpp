@@ -1077,6 +1077,7 @@ void MixedDensityMatrix( std::vector<MatA*>& hermA, std::vector<MatB> &Bi, MatC&
   }
 }
 
+// only takes dense arrays now
 template< class MatA,
           class MatB,
           class MatC,
@@ -1122,60 +1123,47 @@ void DensityMatrices(std::vector<MatA> const& Left, std::vector<MatB> const& Rig
 
   using pointer = typename std::decay<MatC>::type::element_ptr;
 
-  int ldw = Right[0].stride(0);
+  int ldR = Right[0].stride(0);
+  int ldL = Left[0].stride(0);
   int ldN = TNN3D.stride(1);
   int ldG = G[0].stride(0);
   std::vector<pointer> Garray;
-  std::vector<pointer> Warray;
+  std::vector<pointer> Rarray;
+  std::vector<pointer> Larray;
   std::vector<pointer> NNarray;
   Garray.reserve(nbatch);
-  Warray.reserve(nbatch);
+  Rarray.reserve(nbatch);
+  Larray.reserve(nbatch);
   NNarray.reserve(nbatch);
   for(int i=0; i<nbatch; i++) {
+    assert( Right[i].stride(0) == ldR);
+    assert( Left[i].stride(0) == ldL);
     NNarray.emplace_back(TNN3D[i].origin());
     Garray.emplace_back(G[i].origin());
-    Warray.emplace_back(Right[i].origin());
-  }
-
-  // using C for temporary storage, since getriBatched is out-of-place
-  int ldC = NEL;
-  using Mat_Gt = ComplexMatrix_ref<pointer>; 
-  std::vector<Mat_Gt> Gt;
-//  std::vector<MatA const*> Left_;
-//  Left_.reserve(nbatch);
-  Gt.reserve(nbatch);
-  for(int i=0; i<nbatch; i++) {
-    assert(ldC == G[i].stride(1));
-    Gt.emplace_back(Mat_Gt(G[i].origin(),{NEL,NEL}));
-//    Left_.emplace_back(std::addressof(Left[i]));
+    Rarray.emplace_back(Right[i].origin());
+    Larray.emplace_back(Left[i].origin());
   }
 
   // T(conj(A))*B 
   if(herm)
-    for(int b=0; b<nbatch; ++b)
-      ma::product(Left[b],Right[b],Gt[b]);
+    gemmBatched('N','N',NEL,NEL,NMO,ComplexType(1.0),Rarray.data(),ldR,
+                  Larray.data(),ldL,ComplexType(0.0),Garray.data(),NEL,nbatch);
   else
-    for(int b=0; b<nbatch; ++b)
-      ma::product(H(Left[b]),Right[b],Gt[b]);
-/*
-  if(herm)
-    ma::BatchedProduct('N','N',Left_,Right,Gt);
-  else
-    ma::BatchedProduct('C','N',Left_,Right,Gt);
-*/
+    gemmBatched('N','C',NEL,NEL,NMO,ComplexType(1.0),Rarray.data(),ldR,
+                  Larray.data(),ldL,ComplexType(0.0),Garray.data(),NEL,nbatch);
 
   // T1 = T1^(-1)
   // Invert
-  getrfBatched(NEL,Garray.data(),ldC, 
+  getrfBatched(NEL,Garray.data(),NEL, 
                  ma::pointer_dispatch(IWORK.origin()), 
                  ma::pointer_dispatch(IWORK.origin())+nbatch*NEL, nbatch);
 
   using ma::strided_determinant_from_getrf;
-  strided_determinant_from_getrf(NEL, ma::pointer_dispatch(Garray[0]), ldC, G[0].stride(0),
+  strided_determinant_from_getrf(NEL, ma::pointer_dispatch(Garray[0]), NEL, G[0].stride(0),
                                    IWORK.origin(),NEL,LogOverlapFactor,
                                    to_address(ovlp.origin()), nbatch);
 
-  getriBatched(NEL,Garray.data(),ldC, 
+  getriBatched(NEL,Garray.data(),NEL, 
                  ma::pointer_dispatch(IWORK.origin()), ma::pointer_dispatch(NNarray.data()), 
                  ldN, ma::pointer_dispatch(IWORK.origin())+nbatch*NEL, nbatch);
 
@@ -1183,42 +1171,47 @@ void DensityMatrices(std::vector<MatA> const& Left, std::vector<MatB> const& Rig
 
       // C = T(T1) * T(B)
       // careful with fortan ordering
-      gemmBatched('T','T',NMO,NEL,NEL,ComplexType(1.0),Warray.data(),ldw,
+      gemmBatched('T','T',NMO,NEL,NEL,ComplexType(1.0),Rarray.data(),ldR,
                   NNarray.data(),ldN,ComplexType(0.0),Garray.data(),ldG,nbatch);
 
     } else {
 
-      if(herm) {
-        int ldM = TNM3D.stride(1);
-        std::vector<pointer> NMarray;
-        NMarray.reserve(nbatch);
-        for(int i=0; i<nbatch; i++) 
-          NMarray.emplace_back(TNM3D[i].origin());
+      int ldM = TNM3D.stride(1);
+      std::vector<pointer> NMarray;
+      NMarray.reserve(nbatch);
+      for(int i=0; i<nbatch; i++) 
+        NMarray.emplace_back(TNM3D[i].origin());
 
+      if(herm) {
         // T2 = T(T1) * T(B)
-        gemmBatched('T','T',NMO,NEL,NEL,ComplexType(1.0),Warray.data(),ldw,
+        gemmBatched('T','T',NMO,NEL,NEL,ComplexType(1.0),Rarray.data(),ldR,
                     NNarray.data(),ldN,ComplexType(0.0),NMarray.data(),ldM,nbatch);
 
         // C = conj(A) * T2
+        gemmBatched('N','T',NMO,NMO,NEL,ComplexType(1.0),NMarray.data(),ldM,
+                    Larray.data(),ldL,ComplexType(0.0),Garray.data(),ldG,nbatch);
+
+/*
+        // C = conj(A) * T2
         for(int b=0; b<nbatch; ++b)
           ma::product(T(Left[b]),TNM3D[b],G[b]);
+*/
 
       } else {
 
+/*
         // T2 = T1 * H(A) 
         for(int b=0; b<nbatch; ++b)
           ma::product(TNN3D[b],H(Left[b]),TNM3D[b]);
+*/
 
-
-        int ldM = TNM3D.stride(1);
-        std::vector<pointer> NMarray;
-        NMarray.reserve(nbatch);
-        for(int i=0; i<nbatch; i++)
-          NMarray.emplace_back(TNM3D[i].origin());
+        // T2 = T1 * H(A) 
+        gemmBatched('C','N',NMO,NEL,NEL,ComplexType(1.0),Larray.data(),ldL,
+                    NNarray.data(),ldN,ComplexType(0.0),NMarray.data(),ldM,nbatch);
 
         // T2 = T(T1) * T(B)
         // C = T( B * T2) = T(T2) * T(B)
-        gemmBatched('T','T',NMO,NMO,NEL,ComplexType(1.0),Warray.data(),ldw,
+        gemmBatched('T','T',NMO,NMO,NEL,ComplexType(1.0),Rarray.data(),ldR,
                     NMarray.data(),ldM,ComplexType(0.0),Garray.data(),ldG,nbatch);
 
       }
