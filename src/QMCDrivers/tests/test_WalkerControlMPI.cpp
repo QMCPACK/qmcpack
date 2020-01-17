@@ -142,7 +142,8 @@ TEST_CASE("WalkerControlMPI::determineNewWalkerPopulation", "[drivers][walker_co
     std::vector<int> plus;
     WalkerControlMPI::determineNewWalkerPopulation(cur_pop, num_contexts, i, num_per_node, fair_offset, minus, plus);
 
-    CHECK(minus.size() == plus.size());
+    CHECK(minus.size() == 2);
+    CHECK(plus.size() == 2);
   }
 }
 
