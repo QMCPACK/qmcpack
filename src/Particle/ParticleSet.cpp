@@ -679,8 +679,14 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
 
 void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)
 {
-  for (int iw = 0; iw < P_list.size(); iw++)
-    P_list[iw].get().donePbyP();
+  if (P_list.size() > 1)
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < P_list.size(); iw++)
+      P_list[iw].get().donePbyP();
+  }
+  else if (P_list.size() == 1)
+    P_list[0].get().donePbyP();
 }
 
 void ParticleSet::donePbyP()
