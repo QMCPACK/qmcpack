@@ -99,10 +99,6 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   //////////////////////////////////
   // Read ion types and locations //
   //////////////////////////////////
-  // Number of atoms in HDF5 file
-  int num_atoms_hdf5;
-  HDFAttribIO<int> h_num_atoms(num_atoms_hdf5);
-  h_num_atoms.read(H5FileID, "/atoms/number_of_atoms");
 
   Vector<int> species_ids;
   HDFAttribIO<Vector<int>> h_species_ids(species_ids);
@@ -132,115 +128,106 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   // Check the number of ions in the XML and 
   // HDF5. Skip the checks in some situations but 
   // not others. See Issue #2224.
-  std::cout << "Number of ions found in HDF5: " << num_atoms_hdf5 << std::endl;
-  std::cout << "Number of ions found in XML:  " << SourcePtcl->R.size() - NumElectrons << std::endl;
-  if (num_atoms_hdf5 + NumElectrons != SourcePtcl->R.size()) {
-    app_error() << "The number of ions differ between the XML and HDF5 file, exiting..." << std::endl;
-    abort();
-  } else if (num_atoms_hdf5 == 0 && num_atoms_hdf5 + NumElectrons == SourcePtcl->R.size())
-    app_log() << "There were no ions found in both the XML and HDF5 file. No further checks to be done." << std::endl;
-  else {
-    if (Super2Prim.size() == 0)
+  if (Super2Prim.size() == 0)
+  {
+    //SourcePtcl->convert2Cart(SourcePtcl->R);
+    Super2Prim.resize(SourcePtcl->R.size(), -1);
+    std::vector<int> prim_atom_counts;
+    prim_atom_counts.resize(IonPos.size(), 0);
+    for (int i = 0; i < SourcePtcl->R.size(); i++)
     {
-      //SourcePtcl->convert2Cart(SourcePtcl->R);
-      Super2Prim.resize(SourcePtcl->R.size(), -1);
-      std::vector<int> prim_atom_counts;
-      prim_atom_counts.resize(IonPos.size(), 0);
-      for (int i = 0; i < SourcePtcl->R.size(); i++)
+      PosType ref = PrimCell.toUnit_floor(SourcePtcl->R[i]);
+      for (int j = 0; j < IonPos.size(); j++)
       {
-        PosType ref = PrimCell.toUnit_floor(SourcePtcl->R[i]);
-        for (int j = 0; j < IonPos.size(); j++)
+        PosType dr = PrimCell.toUnit_floor(IonPos[j]) - ref;
+        for (int k = 0; k < OHMMS_DIM; k++)
+          dr[k] -= round(dr[k]);
+        if (dot(dr, dr) < MatchingTol)
         {
-          PosType dr = PrimCell.toUnit_floor(IonPos[j]) - ref;
-          for (int k = 0; k < OHMMS_DIM; k++)
-            dr[k] -= round(dr[k]);
-          if (dot(dr, dr) < MatchingTol)
+          if (Super2Prim[i] < 0)
           {
-            if (Super2Prim[i] < 0)
-            {
-              Super2Prim[i] = j;
-              prim_atom_counts[j]++;
-            }
-            else
-            {
-              app_error() << "Supercell ion " << i << " at " << SourcePtcl->R[j]
-                          << " was found twice in the primitive cell as ion " << Super2Prim[i] << " and " << j
-                          << std::endl;
-              if(!skipChecks) abort();
-            }
+            Super2Prim[i] = j;
+            prim_atom_counts[j]++;
+          }
+          else
+          {
+            app_error() << "Supercell ion " << i << " at " << SourcePtcl->R[j]
+                        << " was found twice in the primitive cell as ion " << Super2Prim[i] << " and " << j
+                        << std::endl;
+            if(!skipChecks) abort();
           }
         }
-        if (Super2Prim[i] < 0)
-        {
-          app_error() << "Supercell ion " << i << " not found in the primitive cell" << std::endl;
-          if(!skipChecks) abort();
-        }
-        else
-        {
-          //app_log() << "Supercell ion " << i << " mapped to primitive cell ion " << Super2Prim[i] << std::endl;
-        }
       }
-      const int tiling_size = std::abs(det(TileMatrix));
-      for (int i = 0; i < IonPos.size(); i++)
-        if (prim_atom_counts[i] != tiling_size)
-        {
-          app_error() << "Primitive cell ion " << i << " was found only " << prim_atom_counts[i]
-                      << " times in the supercell rather than " << tiling_size << std::endl;
-          if(!skipChecks) abort();
-        }
-      // construct AtomicCentersInfo
-      AtomicCentersInfo.resize(IonPos.size());
-      for (int i = 0; i < IonPos.size(); i++)
-        AtomicCentersInfo.ion_pos[i] = IonPos[i];
-      int Zind = SourcePtcl->mySpecies.findAttribute("atomicnumber");
-      const int table_id = SourcePtcl->addTable(*SourcePtcl, DT_SOA);
-      const auto& ii_table = SourcePtcl->getDistTable(table_id);
-      SourcePtcl->update(true);
-      for (int i = 0; i < IonPos.size(); i++)
-        for (int j = 0; j < Super2Prim.size(); j++)
-          if (Super2Prim[j] == i)
-          {
-            // set GroupID for each ion in primitive cell
-            if ((Zind < 0) || (SourcePtcl->mySpecies(Zind, SourcePtcl->GroupID[j]) == IonTypes[i]))
-              AtomicCentersInfo.GroupID[i] = SourcePtcl->GroupID[j];
-            else
-            {
-              app_error() << "Primitive cell ion " << i << " vs supercell ion " << j
-                          << " atomic number not matching: " << IonTypes[i] << " vs "
-                          << SourcePtcl->mySpecies(Zind, SourcePtcl->GroupID[j]) << std::endl;
-              if(!skipChecks) abort();
-            }
-            // set non_overlapping_radius for each ion in primitive cell
-            RealType r(0);
-            PosType dr;
-            ii_table.get_first_neighbor(j, r, dr, false);
-            if (r < 1e-3)
-              APP_ABORT("EinsplineSetBuilder::ReadOrbitalInfo_ESHDF too close ions <1e-3 bohr!");
-            AtomicCentersInfo.non_overlapping_radius[i] = 0.5 * r;
-            break;
-          }
-
-      // load cutoff_radius, spline_radius, spline_npoints, lmax if exists.
-      const int inner_cutoff_ind   = SourcePtcl->mySpecies.findAttribute("inner_cutoff");
-      const int cutoff_radius_ind  = SourcePtcl->mySpecies.findAttribute("cutoff_radius");
-      const int spline_radius_ind  = SourcePtcl->mySpecies.findAttribute("spline_radius");
-      const int spline_npoints_ind = SourcePtcl->mySpecies.findAttribute("spline_npoints");
-      const int lmax_ind           = SourcePtcl->mySpecies.findAttribute("lmax");
-
-      for (int center_idx = 0; center_idx < AtomicCentersInfo.Ncenters; center_idx++)
+      if (Super2Prim[i] < 0)
       {
-        const int my_GroupID = AtomicCentersInfo.GroupID[center_idx];
-        if (inner_cutoff_ind >= 0)
-          AtomicCentersInfo.inner_cutoff[center_idx] = SourcePtcl->mySpecies(inner_cutoff_ind, my_GroupID);
-        if (cutoff_radius_ind >= 0)
-          AtomicCentersInfo.cutoff[center_idx] = SourcePtcl->mySpecies(cutoff_radius_ind, my_GroupID);
-        if (spline_radius_ind >= 0)
-          AtomicCentersInfo.spline_radius[center_idx] = SourcePtcl->mySpecies(spline_radius_ind, my_GroupID);
-        if (spline_npoints_ind >= 0)
-          AtomicCentersInfo.spline_npoints[center_idx] = SourcePtcl->mySpecies(spline_npoints_ind, my_GroupID);
-        if (lmax_ind >= 0)
-          AtomicCentersInfo.lmax[center_idx] = SourcePtcl->mySpecies(lmax_ind, my_GroupID);
+        app_error() << "Supercell ion " << i << " not found in the primitive cell" << std::endl;
+        if(!skipChecks) abort();
       }
+      else
+      {
+        //app_log() << "Supercell ion " << i << " mapped to primitive cell ion " << Super2Prim[i] << std::endl;
+      }
+    }
+    const int tiling_size = std::abs(det(TileMatrix));
+    for (int i = 0; i < IonPos.size(); i++)
+      if (prim_atom_counts[i] != tiling_size)
+      {
+        app_error() << "Primitive cell ion " << i << " was found only " << prim_atom_counts[i]
+                    << " times in the supercell rather than " << tiling_size << std::endl;
+        if(!skipChecks) abort();
+      }
+    // construct AtomicCentersInfo
+    AtomicCentersInfo.resize(IonPos.size());
+    for (int i = 0; i < IonPos.size(); i++)
+      AtomicCentersInfo.ion_pos[i] = IonPos[i];
+    int Zind = SourcePtcl->mySpecies.findAttribute("atomicnumber");
+    const int table_id = SourcePtcl->addTable(*SourcePtcl, DT_SOA);
+    const auto& ii_table = SourcePtcl->getDistTable(table_id);
+    SourcePtcl->update(true);
+    for (int i = 0; i < IonPos.size(); i++)
+      for (int j = 0; j < Super2Prim.size(); j++)
+        if (Super2Prim[j] == i)
+        {
+          // set GroupID for each ion in primitive cell
+          if ((Zind < 0) || (SourcePtcl->mySpecies(Zind, SourcePtcl->GroupID[j]) == IonTypes[i]))
+            AtomicCentersInfo.GroupID[i] = SourcePtcl->GroupID[j];
+          else
+          {
+            app_error() << "Primitive cell ion " << i << " vs supercell ion " << j
+                        << " atomic number not matching: " << IonTypes[i] << " vs "
+                        << SourcePtcl->mySpecies(Zind, SourcePtcl->GroupID[j]) << std::endl;
+            if(!skipChecks) abort();
+          }
+          // set non_overlapping_radius for each ion in primitive cell
+          RealType r(0);
+          PosType dr;
+          ii_table.get_first_neighbor(j, r, dr, false);
+          if (r < 1e-3)
+            APP_ABORT("EinsplineSetBuilder::ReadOrbitalInfo_ESHDF too close ions <1e-3 bohr!");
+          AtomicCentersInfo.non_overlapping_radius[i] = 0.5 * r;
+          break;
+        }
+
+    // load cutoff_radius, spline_radius, spline_npoints, lmax if exists.
+    const int inner_cutoff_ind   = SourcePtcl->mySpecies.findAttribute("inner_cutoff");
+    const int cutoff_radius_ind  = SourcePtcl->mySpecies.findAttribute("cutoff_radius");
+    const int spline_radius_ind  = SourcePtcl->mySpecies.findAttribute("spline_radius");
+    const int spline_npoints_ind = SourcePtcl->mySpecies.findAttribute("spline_npoints");
+    const int lmax_ind           = SourcePtcl->mySpecies.findAttribute("lmax");
+
+    for (int center_idx = 0; center_idx < AtomicCentersInfo.Ncenters; center_idx++)
+    {
+      const int my_GroupID = AtomicCentersInfo.GroupID[center_idx];
+      if (inner_cutoff_ind >= 0)
+        AtomicCentersInfo.inner_cutoff[center_idx] = SourcePtcl->mySpecies(inner_cutoff_ind, my_GroupID);
+      if (cutoff_radius_ind >= 0)
+        AtomicCentersInfo.cutoff[center_idx] = SourcePtcl->mySpecies(cutoff_radius_ind, my_GroupID);
+      if (spline_radius_ind >= 0)
+        AtomicCentersInfo.spline_radius[center_idx] = SourcePtcl->mySpecies(spline_radius_ind, my_GroupID);
+      if (spline_npoints_ind >= 0)
+        AtomicCentersInfo.spline_npoints[center_idx] = SourcePtcl->mySpecies(spline_npoints_ind, my_GroupID);
+      if (lmax_ind >= 0)
+        AtomicCentersInfo.lmax[center_idx] = SourcePtcl->mySpecies(lmax_ind, my_GroupID);
     }
   }
   /////////////////////////////////////
