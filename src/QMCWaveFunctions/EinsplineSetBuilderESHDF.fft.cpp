@@ -132,11 +132,12 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   // Check the number of ions in the XML and 
   // HDF5. Skip the checks in some situations but 
   // not others. See Issue #2224.
-
-  if (num_atoms_hdf5 != SourcePtcl->R.size()) {
+  std::cout << "Number of ions found in HDF5: " << num_atoms_hdf5 << std::endl;
+  std::cout << "Number of ions found in XML:  " << SourcePtcl->R.size() - NumElectrons << std::endl;
+  if (num_atoms_hdf5 + NumElectrons != SourcePtcl->R.size()) {
     app_error() << "The number of ions differ between the XML and HDF5 file, exiting..." << std::endl;
     abort();
-  } else if (num_atoms_hdf5 == 0 && num_atoms_hdf5 == SourcePtcl->R.size())
+  } else if (num_atoms_hdf5 == 0 && num_atoms_hdf5 + NumElectrons == SourcePtcl->R.size())
     app_log() << "There were no ions found in both the XML and HDF5 file. No further checks to be done." << std::endl;
   else {
     if (Super2Prim.size() == 0)
