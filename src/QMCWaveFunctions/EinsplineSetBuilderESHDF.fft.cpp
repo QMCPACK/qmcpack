@@ -131,7 +131,9 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   // not others. See Issue #2224.
 
   if (SourcePtcl->R.size() != IonPos.size()) {
-    app_error() << "The ion sizes differ between the XML and HDF5.\n";
+    app_error() << "The ion sizes differ between the XML and HDF5.\n" 
+                << "Number of ions in XML : " << SourcePtcl->R.size() << std::endl;
+                << "Number of ions in HDF5: " << IonPos.size() << std::endl;
     abort();
   }
 
