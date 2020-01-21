@@ -32,10 +32,8 @@ private:
   OffloadPinnedVector<RealType> offload_output;
   ///accelerator input array for a list of target particle positions, N_targets x D
   OffloadPinnedVector<RealType> target_pos;
-  ///accelerator input array for a list of source particle position pointers
-  OffloadPinnedVector<const RealType*> source_ptrs;
-  ///accelerator input array. The walker id
-  OffloadPinnedVector<int> walker_id;
+  ///accelerator input buffer for multiple data set
+  OffloadPinnedVector<char> offload_input;
   ///target particle id
   std::vector<int> particle_id;
 
@@ -133,15 +131,20 @@ public:
   inline void mw_evaluate(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
   {
     const size_t nw = dt_list.size();
-    source_ptrs.resize(nw);
 
     size_t count_targets = 0;
     for (ParticleSet& p: p_list)
       count_targets += p.getTotalNum();
     const size_t total_targets = count_targets;
-    target_pos.resize(total_targets * D);
 
-    walker_id.resize(total_targets);
+    const size_t realtype_size = sizeof(RealType);
+    const size_t int_size = sizeof(int);
+    const size_t ptr_size = sizeof(RealType*);
+    offload_input.resize(total_targets * D * realtype_size + total_targets * int_size + nw * ptr_size);
+    auto target_positions = reinterpret_cast<RealType*>(offload_input.data());
+    auto walker_id_ptr = reinterpret_cast<int*>(offload_input.data() + total_targets * D * realtype_size);
+    auto source_ptrs = reinterpret_cast<RealType**>(offload_input.data() + total_targets * D * realtype_size + total_targets * int_size);
+
     particle_id.resize(total_targets);
 
     const int N_sources_padded = getAlignedSize<T>(N_sources);
@@ -158,15 +161,15 @@ public:
       #pragma omp target enter data map(to: source_pos_ptr[:N_sources_padded*D])
       #pragma omp target data use_device_ptr(source_pos_ptr)
       {
-        source_ptrs[iw] = source_pos_ptr;
+        source_ptrs[iw] = const_cast<RealType*>(source_pos_ptr);
       }
 
       for (size_t iat = 0; iat < pset.getTotalNum(); ++iat, ++count_targets)
       {
         for (size_t idim = 0; idim < D; idim++)
-          target_pos[count_targets * D + idim] = pset.R[iat][idim];
+          target_positions[count_targets * D + idim] = pset.R[iat][idim];
 
-        walker_id[count_targets]   = iw;
+        walker_id_ptr[count_targets]   = iw;
         particle_id[count_targets] = iat;
       }
     }
@@ -175,19 +178,18 @@ public:
     const int ChunkSizePerTeam = 256;
     const int NumTeams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
-    auto* target_pos_ptr = target_pos.data();
-    auto* sources_data   = source_ptrs.data();
-    auto* r_dr_ptr       = offload_output.data();
-    auto* wid_ptr        = walker_id.data();
+    auto* r_dr_ptr  = offload_output.data();
+    auto* input_ptr = offload_input.data();
 
     #pragma omp target teams distribute collapse(2) num_teams(total_targets*NumTeams) \
-      map(always, to: target_pos_ptr[:target_pos.size()], sources_data[:source_ptrs.size()], wid_ptr[:total_targets]) \
+      map(always, to: input_ptr[:offload_input.size()]) \
       map(always, from: r_dr_ptr[:offload_output.size()])
     for (int iat = 0; iat < total_targets; ++iat)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int walker_id  = wid_ptr[iat];
-        auto* source_pos_ptr = sources_data[walker_id];
+        auto* target_pos_ptr = reinterpret_cast<RealType*>(input_ptr);
+        const int walker_id  = reinterpret_cast<int*>(input_ptr + total_targets * D * realtype_size)[iat];
+        auto* source_pos_ptr = reinterpret_cast<RealType**>(input_ptr + total_targets * D * realtype_size + total_targets * int_size)[walker_id];
         auto* r_iat_ptr      = r_dr_ptr + iat * N_sources_padded * (D + 1);
         auto* dr_iat_ptr     = r_dr_ptr + iat * N_sources_padded * (D + 1) + N_sources_padded;
 
@@ -211,7 +213,7 @@ public:
 
     for (size_t iat = 0; iat < total_targets; iat++)
     {
-      const int wid = walker_id[iat];
+      const int wid = walker_id_ptr[iat];
       const int pid = particle_id[iat];
       auto& dt = static_cast<SoaDistanceTableABOMP&>(dt_list[wid].get());
       assert(N_sources_padded == dt.displacements_[pid].capacity());
