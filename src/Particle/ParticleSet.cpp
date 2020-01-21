@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
@@ -12,6 +12,7 @@
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//                    Kevin Ryczko, kryczko@uottawa.ca, University of Ottawa
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -152,7 +153,7 @@ void ParticleSet::resetGroups()
   if (nspecies == 0)
   {
     // APP_ABORT("ParticleSet::resetGroups() Failed. No species exists");
-    app_log() << " There are no particles in this particle set." << std::endl;
+    app_warning() << "ParticleSet::resetGroups(): There are no particles in this particle set." << std::endl;
   } else {
     int natt = mySpecies.numAttributes();
     int qind = mySpecies.addAttribute("charge");
