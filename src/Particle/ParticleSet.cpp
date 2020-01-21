@@ -152,7 +152,6 @@ void ParticleSet::resetGroups()
   int nspecies = mySpecies.getTotalNum();
   if (nspecies == 0)
   {
-    // APP_ABORT("ParticleSet::resetGroups() Failed. No species exists");
     app_warning() << "ParticleSet::resetGroups(): There are no particles in this particle set." << std::endl;
   } else {
     int natt = mySpecies.numAttributes();
