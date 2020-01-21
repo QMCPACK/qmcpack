@@ -187,7 +187,8 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
     walkers_.back()->registerData();
     makeDependentObjects();
     //Here we assume no allocate is necessary since there should have been no changes in the other walker
-    //elements since createWalkers
+    //elements since createWalkers, yet it must be called
+    walkers_.back()->DataSet.allocate();
   }
   else
   {

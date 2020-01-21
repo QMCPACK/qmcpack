@@ -583,7 +583,7 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
   {
     bool inFN = (walker.ReleasedNodeAge == 0);
     // Written as a lambda for emphasis, implicit conversion is identical to that of static_cast<int>(...)
-    auto calcNumberWalkerCopies = [this](int multiplicity) -> int { return std::min(multiplicity, MaxCopy); };
+    auto calcNumberWalkerCopies = [this](int multiplicity) -> int { return std::min(static_cast<int>(multiplicity), MaxCopy); };
     int nc                      = calcNumberWalkerCopies(walker.Multiplicity);
     if (write_release_nodes_)
     {
@@ -804,10 +804,11 @@ std::vector<WalkerControlBase::IndexType> WalkerControlBase::syncFutureWalkersPe
  */
 int WalkerControlBase::adjustPopulation(MCPopulation& pop, PopulationAdjustment& adjust)
 {
-  // In the unified driver design each ranks MCPopulation knows this and it is not stored a bunch of other places, i.e. NumPerNode shouldn't be how we know.
+  // In the unified driver design each ranks MCPopulation knows this and it is not
+  // stored a bunch of other places, i.e. NumPerNode shouldn't be how we know.
   // Nothing should have touched the walker counts since we synced them at the top of branch
-
-  // What we care about here are the populations we'll have after the adjusts are applied on each rank.
+  // What we care about here are the populations we'll have after the adjusts are
+  // applied on each rank.
   // This differs from the legacy implementation which had partially updated state at this point.
   auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), adjust.num_walkers);
   IndexType current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
@@ -817,7 +818,7 @@ int WalkerControlBase::adjustPopulation(MCPopulation& pop, PopulationAdjustment&
   // We assume the difference in number of walkers is no greater than 1
   // our algorithm currently insures this.
   int current_max = (current_population + num_contexts_ - 1) / num_contexts_;
-
+  
   if (current_max > n_max_)
   {
     app_warning() << "Exceeding Max Walkers per MPI rank : " << n_max_ << ". Ceiling is applied" << std::endl;
@@ -880,9 +881,10 @@ int WalkerControlBase::adjustPopulation(MCPopulation& pop, PopulationAdjustment&
   // limit Nmin
   if (current_population / num_contexts_ < n_min_)
   {
-    app_warning() << "The number of walkers is running lower than Min Walkers per MPI rank : " << n_min_
-                  << ". Floor is applied" << std::endl;
     int nadd = n_min_ * num_contexts_ - current_population;
+    app_warning() << "The number of walkers " << (current_population / num_contexts_)
+       << " is running lower than Min Walkers per MPI rank : " << n_min_
+       << ". Floor is applied, adding " << nadd << " walkers." << '\n';
     for (int inode = 0; inode < num_contexts_; inode++)
     {
       if (num_per_node[inode] > 0 && num_per_node[inode] < n_min_)
@@ -911,9 +913,24 @@ int WalkerControlBase::adjustPopulation(MCPopulation& pop, PopulationAdjustment&
           break;
       }
     }
+    while (nadd)
+    {
+      for (int inode = 0; inode < num_contexts_; inode++)
+      {
+        if (num_per_node[inode] < n_max_)
+        {
+          if (inode == MyContext)
+            for(int iw = 0; iw < adjust.copies_to_make.size(); iw++)
+            {
+              adjust.copies_to_make[iw] += 1;
+            }
+          --nadd;
+        }
+      }
+    }
     if (nadd)
       // Why is this a warning when the opposition situation is an abort?
-      app_warning() << "WalkerControlBase::applyNmaxNmin not able to add sufficient walkers overall!" << std::endl;
+      app_warning() << "WalkerControlBase::adjustPopulation not able to add sufficient walkers overall!" << std::endl;
   }
 
   // check current population
@@ -926,7 +943,7 @@ int WalkerControlBase::adjustPopulation(MCPopulation& pop, PopulationAdjustment&
   {
     app_error() << "Some MPI ranks have no walkers after load balancing. This should not happen."
                 << "Improve the trial wavefunction or adjust the simulation parameters." << std::endl;
-    APP_ABORT("WalkerControlBase::sortWalkers");
+    APP_ABORT("WalkerControlBase::adjustPopulation");
   }
 
   return current_population;

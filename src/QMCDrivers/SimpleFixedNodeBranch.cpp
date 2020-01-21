@@ -268,12 +268,13 @@ int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, bool f
   //assign current Eref and a large number for variance
   WalkerController->setTrialEnergy(vParam[SBVP::ETRIAL]);
   this->reset();
+  int allow_flux = 50; // std::min(static_cast<int>(population.get_num_global_walkers() * 0.10), 50);
   if (fromscratch)
   {
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
     // Was check MCWC's particle set for number of R which I take to mean number of particles
     // will this assumption change if various spin freedoms also are added to ParticleSet?
-    setBranchCutoff(vParam[SBVP::SIGMA2], WalkerController->get_target_sigma(), 50, population.get_num_particles());
+    setBranchCutoff(vParam[SBVP::SIGMA2], WalkerController->get_target_sigma(), allow_flux, population.get_num_particles());
     vParam[SBVP::TAUEFF] = tau * R2Accepted.result() / R2Proposed.result();
   }
   //reset controller

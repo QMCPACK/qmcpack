@@ -32,12 +32,11 @@ class UnifiedDriverWalkerControlMPITest;
 struct WalkerMessage
 {
   // To deal with duplicate send optimization
-  RefVector<WalkerControlBase::MCPWalker> walker;
+  WalkerControlBase::MCPWalker& walker;
   // i.e. MPI rank
   const int source_rank;
   const int target_rank;
-  int multiplicity = 1;
-  WalkerMessage(WalkerControlBase::MCPWalker& walk, const int source, const int target) : source_rank(source), target_rank(target){ walker.push_back(walk); };
+  WalkerMessage(WalkerControlBase::MCPWalker& walk, const int source, const int target) : walker(walk), source_rank(source), target_rank(target) {}
 };
 
 inline bool operator==(const WalkerMessage& A, const WalkerMessage& B)
