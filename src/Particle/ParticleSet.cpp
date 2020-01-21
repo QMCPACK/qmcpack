@@ -151,71 +151,73 @@ void ParticleSet::resetGroups()
   int nspecies = mySpecies.getTotalNum();
   if (nspecies == 0)
   {
-    APP_ABORT("ParticleSet::resetGroups() Failed. No species exisits");
-  }
-  int natt = mySpecies.numAttributes();
-  int qind = mySpecies.addAttribute("charge");
-  if (natt == qind)
-  {
-    app_log() << " Missing charge attribute of the SpeciesSet " << myName << " particleset" << std::endl;
-    app_log() << " Assume neutral particles Z=0.0 " << std::endl;
-    for (int ig = 0; ig < nspecies; ig++)
-      mySpecies(qind, ig) = 0.0;
-  }
-  for (int iat = 0; iat < Z.size(); iat++)
-    Z[iat] = mySpecies(qind, GroupID[iat]);
-  natt        = mySpecies.numAttributes();
-  int massind = mySpecies.addAttribute("mass");
-  if (massind == natt)
-  {
-    for (int ig = 0; ig < nspecies; ig++)
-      mySpecies(massind, ig) = 1.0;
-  }
-  SameMass  = true;
-  double m0 = mySpecies(massind, 0);
-  for (int ig = 1; ig < nspecies; ig++)
-    SameMass &= (mySpecies(massind, ig) == m0);
-  if (SameMass)
-    app_log() << "  All the species have the same mass " << m0 << std::endl;
-  else
-    app_log() << "  Distinctive masses for each species " << std::endl;
-  for (int iat = 0; iat < Mass.size(); iat++)
-    Mass[iat] = mySpecies(massind, GroupID[iat]);
-  std::vector<int> ng(nspecies, 0);
-  for (int iat = 0; iat < GroupID.size(); iat++)
-  {
-    if (GroupID[iat] < nspecies)
-      ng[GroupID[iat]]++;
-    else
-      APP_ABORT("ParticleSet::resetGroups() Failed. GroupID is out of bound.");
-  }
-  // safety check if any group of particles has size 0, instruct users to fix the input.
-  for (int group_id = 0; group_id < nspecies; group_id++)
-    if (ng[group_id] == 0)
+    // APP_ABORT("ParticleSet::resetGroups() Failed. No species exists");
+    app_log() << " There are no particles in this particle set." << std::endl;
+  } else {
+    int natt = mySpecies.numAttributes();
+    int qind = mySpecies.addAttribute("charge");
+    if (natt == qind)
     {
-      std::ostringstream err_msg;
-      err_msg << "ParticleSet::resetGroups() Failed. ParticleSet '" << myName << "' "
-              << "has group '" << mySpecies.speciesName[group_id] << "' containing 0 particles. "
-              << "Remove this group from input!" << std::endl;
-      APP_ABORT(err_msg.str());
+      app_log() << " Missing charge attribute of the SpeciesSet " << myName << " particleset" << std::endl;
+      app_log() << " Assume neutral particles Z=0.0 " << std::endl;
+      for (int ig = 0; ig < nspecies; ig++)
+        mySpecies(qind, ig) = 0.0;
     }
-  SubPtcl.resize(nspecies + 1);
-  SubPtcl[0] = 0;
-  for (int i = 0; i < nspecies; ++i)
-    SubPtcl[i + 1] = SubPtcl[i] + ng[i];
-  int membersize = mySpecies.addAttribute("membersize");
-  for (int ig = 0; ig < nspecies; ++ig)
-    mySpecies(membersize, ig) = ng[ig];
-  //orgID=ID;
-  //orgGroupID=GroupID;
-  int new_id = 0;
-  for (int i = 0; i < nspecies; ++i)
-    for (int iat = 0; iat < GroupID.size(); ++iat)
-      if (GroupID[iat] == i)
-        IndirectID[new_id++] = ID[iat];
-  IsGrouped = true;
-  for (int iat = 0; iat < ID.size(); ++iat)
-    IsGrouped &= (IndirectID[iat] == ID[iat]);
+    for (int iat = 0; iat < Z.size(); iat++)
+      Z[iat] = mySpecies(qind, GroupID[iat]);
+    natt        = mySpecies.numAttributes();
+    int massind = mySpecies.addAttribute("mass");
+    if (massind == natt)
+    {
+      for (int ig = 0; ig < nspecies; ig++)
+        mySpecies(massind, ig) = 1.0;
+    }
+    SameMass  = true;
+    double m0 = mySpecies(massind, 0);
+    for (int ig = 1; ig < nspecies; ig++)
+      SameMass &= (mySpecies(massind, ig) == m0);
+    if (SameMass)
+      app_log() << "  All the species have the same mass " << m0 << std::endl;
+    else
+      app_log() << "  Distinctive masses for each species " << std::endl;
+    for (int iat = 0; iat < Mass.size(); iat++)
+      Mass[iat] = mySpecies(massind, GroupID[iat]);
+    std::vector<int> ng(nspecies, 0);
+    for (int iat = 0; iat < GroupID.size(); iat++)
+    {
+      if (GroupID[iat] < nspecies)
+        ng[GroupID[iat]]++;
+      else
+        APP_ABORT("ParticleSet::resetGroups() Failed. GroupID is out of bound.");
+    }
+    // safety check if any group of particles has size 0, instruct users to fix the input.
+    for (int group_id = 0; group_id < nspecies; group_id++)
+      if (ng[group_id] == 0)
+      {
+        std::ostringstream err_msg;
+        err_msg << "ParticleSet::resetGroups() Failed. ParticleSet '" << myName << "' "
+                << "has group '" << mySpecies.speciesName[group_id] << "' containing 0 particles. "
+                << "Remove this group from input!" << std::endl;
+        APP_ABORT(err_msg.str());
+      }
+    SubPtcl.resize(nspecies + 1);
+    SubPtcl[0] = 0;
+    for (int i = 0; i < nspecies; ++i)
+      SubPtcl[i + 1] = SubPtcl[i] + ng[i];
+    int membersize = mySpecies.addAttribute("membersize");
+    for (int ig = 0; ig < nspecies; ++ig)
+      mySpecies(membersize, ig) = ng[ig];
+    //orgID=ID;
+    //orgGroupID=GroupID;
+    int new_id = 0;
+    for (int i = 0; i < nspecies; ++i)
+      for (int iat = 0; iat < GroupID.size(); ++iat)
+        if (GroupID[iat] == i)
+          IndirectID[new_id++] = ID[iat];
+    IsGrouped = true;
+    for (int iat = 0; iat < ID.size(); ++iat)
+      IsGrouped &= (IndirectID[iat] == ID[iat]);
+  }
 }
 
 void ParticleSet::randomizeFromSource(ParticleSet& src)
