@@ -33,7 +33,7 @@ public:
   {
     RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
     auto* pos_ptr = RSoA.data();
-    PRAGMA_OFFLOAD("#pragma omp target data use_device_ptr(pos_ptr)")
+    PRAGMA_OFFLOAD("omp target data use_device_ptr(pos_ptr)")
     {
       RSoA_device_ptr = pos_ptr;
     }
@@ -49,7 +49,7 @@ public:
       RSoA.resize(n);
       RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
       auto* pos_ptr = RSoA.data();
-      PRAGMA_OFFLOAD("#pragma omp target data use_device_ptr(pos_ptr)")
+      PRAGMA_OFFLOAD("omp target data use_device_ptr(pos_ptr)")
       {
         RSoA_device_ptr = pos_ptr;
       }

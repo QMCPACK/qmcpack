@@ -41,6 +41,9 @@ public:
 
   QuantumVariables(const QuantumVariableKind kind_in) : variable_kind_(kind_in) {}
 
+  QuantumVariables(const QuantumVariables&) = default;
+  QuantumVariables& operator=(const QuantumVariables&) = delete;
+
   QuantumVariableKind getKind() const { return variable_kind_; }
 
   virtual ~QuantumVariables() = default;

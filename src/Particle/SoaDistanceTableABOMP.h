@@ -161,7 +161,7 @@ public:
 
       assert(N_sources == dt.N_sources);
 
-      auto RSoA_OMP = static_cast<RealSpacePositionsOMP&>(*dt.Origin->RSoA);
+      auto& RSoA_OMP = static_cast<RealSpacePositionsOMP&>(*dt.Origin->RSoA);
       source_ptrs[iw] = const_cast<RealType*>(RSoA_OMP.getDevicePtr());
 
       for (size_t iat = 0; iat < pset.getTotalNum(); ++iat, ++count_targets)
