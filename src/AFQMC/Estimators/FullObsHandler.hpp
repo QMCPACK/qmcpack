@@ -119,6 +119,9 @@ class FullObsHandler: public AFQMCInfo
                   TG,info,cur,walker_type,true,shared_allocator<ComplexType>{TG.TG_local()},
                   shared_allocator<ComplexType>{TG.Node()},nave,block_size)))); 
         }
+      } else if(cname =="offdiag2rdm") {
+        properties.emplace_back(Observable(std::move(offdiag_realspace_2rdm(
+                TG,info,cur,walker_type,nave,block_size))));
       }
       cur = cur->next;
     }
