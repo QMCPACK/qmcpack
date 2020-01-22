@@ -15,6 +15,14 @@ MAP = {
         'on_top_pdm': {
             'group': 'N2R', 
             'numer': 'n2r'
+        },
+        'cc_correlation': {
+            'group': 'OD2RDM/CC',
+            'numer': 'od2rdm_CC'
+        },
+        'ss_correlation': {
+            'group': 'OD2RDM/SS',
+            'numer': 'od2rdm_SS'
         }
     }
 

@@ -72,7 +72,7 @@ class offdiag_realspace_2rdm: public AFQMCInfo
 
   offdiag_realspace_2rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, 
                 int nave_=1, int bsize=1):
-                AFQMCInfo(info),alloc(make_localTG_allocator<ComplexType>(TG)),
+                AFQMCInfo(info),alloc(make_localTG_allocator<ComplexType>(tg_)),
                 block_size(bsize),nave(nave_),counter(0),TG(tg_),
                 walker_type(wlk),dm_size(0),writer(false),
                 Orbitals({0,0},alloc),
@@ -247,7 +247,7 @@ class offdiag_realspace_2rdm: public AFQMCInfo
       CMatrix_ref T(make_device_ptr(Buff.origin()), {nw*nsp*NMO,npts});
       CTensor_ref T3D(T.origin(), {nw,nsp,NMO*npts});
       CMatrix_ref Gr(T.origin()+T.num_elements(), {nsp*nw,npts*npts});
-      CTensor_ref Gr3D(Gr.origin(), {nsp,nw,npts*npts});
+      CTensor_ref Gr3D(Gr.origin(), {nw,nsp,npts*npts});
       CMatrix_ref G2D( make_device_ptr(G.origin()), {nw*nsp*NMO, NMO});
 
       // T1[iw][ispin][i][r] = sum_j G[iw][ispin][i][j] * Psi(j,r)
@@ -379,6 +379,7 @@ class offdiag_realspace_2rdm: public AFQMCInfo
             dump.write(Wsum[i], "denominator_"+padded_iblock);
             dump.pop();
           }
+          dump.pop();
         }
         dump.pop();
       } 
