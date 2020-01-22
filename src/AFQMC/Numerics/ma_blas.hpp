@@ -80,6 +80,20 @@ MultiArray2D scal(T a, MultiArray2D&& x){
         return std::forward<MultiArray2D>(x);
 }
 
+template<class T,
+        class MultiArray3D,
+        typename = typename std::enable_if<std::decay<MultiArray3D>::type::dimensionality == 3>::type,
+        typename = void, // TODO change to use dispatch 
+        typename = void // TODO change to use dispatch 
+    >
+MultiArray3D scal(T a, MultiArray3D&& x){
+        assert( x.stride(0) == x.size(1)*x.size(2) ); // only on contiguous arrays 
+        assert( x.stride(1) == x.size(2) ); // only on contiguous arrays 
+        assert( x.stride(2) == 1 );            // only on contiguous arrays 
+        scal(x.num_elements(), a, pointer_dispatch(x.origin()), 1);
+        return std::forward<MultiArray3D>(x);
+}
+
 template<class T, class MultiArray1D>
 auto operator*=(MultiArray1D&& x, T a) -> decltype(scal(a, std::forward<MultiArray1D>(x))){
 	return scal(a, std::forward<MultiArray1D>(x));
