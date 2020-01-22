@@ -54,6 +54,7 @@ namespace qmcplusplus
 
 using namespace afqmc;
 
+
 template<class Alloc>
 void ham_ops_basic_serial(boost::mpi3::communicator & world)
 {
@@ -199,6 +200,24 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     } else {
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
+    // Test Generalised Fock matrix.
+    int dm_size;
+    if(WTYPE==COLLINEAR) {
+      dm_size = 2*NMO*NMO;
+      CMatrix G2({2*NMO,NMO},alloc_);
+    } else if(WTYPE==CLOSED) {
+      dm_size = NMO*NMO;
+      CMatrix G2({NMO,NMO},alloc_);
+    } else {
+      APP_ABORT("NON COLLINEAR Wavefunction not implemented.");
+    }
+    Ovlp = SDet.MixedDensityMatrix(devPsiT[0],devOrbMat[0], G2,0.0,false);
+    if(WTYPE==COLLINEAR) {
+      Ovlp *= SDet.MixedDensityMatrix(devPsiT[1],devOrbMat[1](devOrbMat.extension(1),{0,NAEB}), G.sliced(),0.0,false);
+    }
+    boost::multi::array_ref<ComplexType,2,pointer> Gw2(make_device_ptr(G2.origin()),{1,dm_size});
+    CMatrix GFock({2,1,dm_size},alloc_);
+    HOps.generalizedFockMatrix(Gw2,GFock[0],GFock[1]);
   }
 }
 
