@@ -15,6 +15,7 @@
 
 #include "OpenMP/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
+#include "Particle/RealSpacePositionsOMP.h"
 
 namespace qmcplusplus
 {
@@ -41,6 +42,8 @@ public:
   SoaDistanceTableABOMP(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.Lattice), DistanceTableData(source, target)
   {
+    auto* coordinates_soa = dynamic_cast<RealSpacePositionsOMP*>(source.RSoA.get());
+    if (!coordinates_soa) throw std::runtime_error("Source particle set doesn't have OpenMP offload. Contact developers!");
     resize(source.getTotalNum(), target.getTotalNum());
     #pragma omp target enter data map(to:this[:1])
   }
@@ -155,14 +158,11 @@ public:
     {
       auto& dt = static_cast<SoaDistanceTableABOMP&>(dt_list[iw].get());
       ParticleSet& pset(p_list[iw]);
-      auto* source_pos_ptr = dt.Origin->RSoA->getAllParticlePos().data();
 
       assert(N_sources == dt.N_sources);
-      #pragma omp target enter data map(to: source_pos_ptr[:N_sources_padded*D])
-      #pragma omp target data use_device_ptr(source_pos_ptr)
-      {
-        source_ptrs[iw] = const_cast<RealType*>(source_pos_ptr);
-      }
+
+      auto RSoA_OMP = static_cast<RealSpacePositionsOMP&>(*dt.Origin->RSoA);
+      source_ptrs[iw] = const_cast<RealType*>(RSoA_OMP.getDevicePtr());
 
       for (size_t iat = 0; iat < pset.getTotalNum(); ++iat, ++count_targets)
       {
@@ -203,13 +203,6 @@ public:
         DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
                                                       first, last);
       }
-
-    for (size_t iw = 0; iw < nw; iw++)
-    {
-      auto& dt = static_cast<SoaDistanceTableABOMP&>(dt_list[iw].get());
-      auto* source_pos_ptr = dt.Origin->RSoA->getAllParticlePos().data();
-      #pragma omp target exit data map(release: source_pos_ptr[:N_sources_padded*D])
-    }
 
     for (size_t iat = 0; iat < total_targets; iat++)
     {

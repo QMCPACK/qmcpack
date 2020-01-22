@@ -27,11 +27,16 @@ namespace qmcplusplus
 class RealSpacePositionsOMP : public QuantumVariables
 {
 public:
-  RealSpacePositionsOMP() : QuantumVariables(QuantumVariableKind::QV_POS_OFFLOAD) {}
+  RealSpacePositionsOMP() : QuantumVariables(QuantumVariableKind::QV_POS_OFFLOAD), RSoA_device_ptr(nullptr) {}
   RealSpacePositionsOMP(const RealSpacePositionsOMP& in)
     : QuantumVariables(QuantumVariableKind::QV_POS_OFFLOAD), RSoA(in.RSoA)
   {
     RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
+    auto* pos_ptr = RSoA.data();
+    PRAGMA_OFFLOAD("#pragma omp target data use_device_ptr(pos_ptr)")
+    {
+      RSoA_device_ptr = pos_ptr;
+    }
     updateH2D();
   }
 
@@ -39,8 +44,16 @@ public:
 
   void resize(size_t n) override
   {
-    RSoA.resize(n);
-    RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
+    if (RSoA.size() != n)
+    {
+      RSoA.resize(n);
+      RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
+      auto* pos_ptr = RSoA.data();
+      PRAGMA_OFFLOAD("#pragma omp target data use_device_ptr(pos_ptr)")
+      {
+        RSoA_device_ptr = pos_ptr;
+      }
+    }
   }
 
   size_t size() override { return RSoA_hostview.size(); }
@@ -76,9 +89,13 @@ public:
 
   void donePbyP() override { updateH2D(); }
 
+  RealType* getDevicePtr() const { return RSoA_device_ptr; }
 private:
   ///particle positions in SoA layout
   VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> RSoA;
+
+  /// the pointer of RSoA memory on the device
+  RealType* RSoA_device_ptr;
 
   ///host view of RSoA
   PosVectorSoa RSoA_hostview;
