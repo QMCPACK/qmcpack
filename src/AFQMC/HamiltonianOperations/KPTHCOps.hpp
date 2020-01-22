@@ -68,6 +68,9 @@ class KPTHCOps
 
   public:
 
+    static const HamiltonianTypes HamOpType = KPTHC;
+    HamiltonianTypes getHamType() const { return HamOpType; }
+
     /*
      * NAOA/NAOB stands for number of active orbitals alpha/beta (instead of active electrons)
      */

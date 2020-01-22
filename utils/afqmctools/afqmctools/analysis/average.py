@@ -41,7 +41,7 @@ def average_one_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, ix=No
         Error bars for 1RDM elements.
     """
     md = get_metadata(filename)
-    mean, err, ns = average_observable(filename, 'one_rdm', eqlb=eqlb, skip=skip,
+    mean, err = average_observable(filename, 'one_rdm', eqlb=eqlb, skip=skip,
                                    estimator=estimator, ix=ix)
     nbasis = md['NMO']
     wt = md['WalkerType']
@@ -53,7 +53,7 @@ def average_one_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, ix=No
     if walker == 'closed':
         return 2*mean.reshape(1,nbasis,nbasis), err.reshape(1,nbasis, nbasis)
     elif walker == 'collinear':
-        return mean.reshape((2,nbasis,nbasis)), err.reshape((2, nbasis, nbasis)), ns
+        return mean.reshape((2,nbasis,nbasis)), err.reshape((2, nbasis, nbasis))
     elif walker == 'non_collinear':
         return mean.reshape((1,2*nbasis,2*nbasis)), err.reshape((1,2*nbasis, 2*nbasis))
     else:
@@ -205,7 +205,7 @@ def average_observable(filename, name, eqlb=1, estimator='back_propagated',
         data = extract_observable(filename, name=name, estimator=estimator, ix=ix)
         mean = numpy.mean(data[eqlb:len(data):skip], axis=0)
         err = scipy.stats.sem(data[eqlb:len(data):skip].real, axis=0)
-    return mean, err, len(data[eqlb:len(data):skip])
+    return mean, err
 
 def get_noons(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
               nsamp=20, screen_factor=1):
