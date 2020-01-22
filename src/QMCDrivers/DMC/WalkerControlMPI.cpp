@@ -157,7 +157,7 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
   curData[SENTWALKERS_INDEX] = NumWalkersSent;
 
   //This should not be used by the new driver code
-  curData[LE_MAX + MyContext] = -1;
+  curData[LE_MAX + MyContext] = -1000;
   myTimers[DMC_MPI_allreduce]->start();
   // You might think we are just reducing LE and sent walkers but
   // see calcPopulationAdjustments massive side effects.
@@ -176,6 +176,8 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
   swapWalkersSimple(pop, adjust, num_per_node);
   myTimers[DMC_MPI_loadbalance]->stop();
 
+  onRankSpawnKill(pop, adjust);
+  
   for (UPtr<MCPWalker>& walker : pop.get_walkers())
   {
     walker->Weight       = 1.0;
@@ -189,6 +191,7 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
   pop.syncWalkersPerNode(getCommunicator());
 
   myTimers[DMC_MPI_branch]->stop();
+
   return pop.get_num_global_walkers();
 }
 
@@ -506,9 +509,9 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   }
 
   // sort good walkers by the number of copies
-  std::vector<std::pair<int, MCPWalker&>> sorted_good_walkers;
+  std::vector<std::pair<int&, MCPWalker&>> sorted_good_walkers;
   for (int iw = 0; iw < adjust.copies_to_make.size(); iw++)
-    sorted_good_walkers.push_back(std::make_pair(adjust.copies_to_make[iw], adjust.good_walkers[iw]));
+    sorted_good_walkers.push_back(std::make_pair(std::ref(adjust.copies_to_make[iw]), adjust.good_walkers[iw]));
 
   // Sort only on the number of copies
   std::sort(sorted_good_walkers.begin(), sorted_good_walkers.end(), [](auto& a, auto& b) { return a.first > b.first; });
@@ -636,9 +639,7 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
 
   std::for_each(zombies.begin(), zombies.end(), [&pop](MCPWalker& zombie) { pop.killWalker(zombie); });
 
-  adjust.num_walkers = 0;
-  for (int i = 0; i < adjust.copies_to_make.size(); ++i)
-    adjust.num_walkers += adjust.copies_to_make[i] + 1;
+  adjust.num_walkers = pop.get_num_local_walkers();
 
   NumWalkersSent = local_sends;
 }

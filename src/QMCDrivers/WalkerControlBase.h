@@ -201,7 +201,7 @@ protected:
    * \param[inout] pop the local population
    * \param[in]    the population adjustment, it is not updated to reflect local state and is now invalid.
    */
-  static void onRankSpawnKill(MCPopulation& pop, PopulationAdjustment&& adjust);
+  static void onRankSpawnKill(MCPopulation& pop, PopulationAdjustment& adjust);
   
   ///id for the method
   IndexType method_;

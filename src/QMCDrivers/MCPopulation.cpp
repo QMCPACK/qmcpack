@@ -189,6 +189,8 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
     //Here we assume no allocate is necessary since there should have been no changes in the other walker
     //elements since createWalkers, yet it must be called
     walkers_.back()->DataSet.allocate();
+    walkers_.back()->Multiplicity = 1.0;
+    walkers_.back()->Weight = 1.0;
   }
   else
   {
@@ -199,6 +201,8 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
     walkers_.back()->registerData();
     makeDependentObjects();
     walkers_.back()->DataSet.allocate();
+    walkers_.back()->Multiplicity = 1.0;
+    walkers_.back()->Weight = 1.0;
   }
   outputManager.resume();
 
@@ -221,7 +225,6 @@ void MCPopulation::killLastWalker()
  */
 void MCPopulation::killWalker(MCPWalker& walker)
 {
-  --num_local_walkers_;
   // find the walker and null its pointer in the walker vector
   auto it_walkers = walkers_.begin();
   auto it_psets   = walker_elec_particle_sets_.begin();
@@ -237,6 +240,7 @@ void MCPopulation::killWalker(MCPWalker& walker)
       walker_elec_particle_sets_.erase(it_psets);
       walker_trial_wavefunctions_.erase(it_twfs);
       walker_hamiltonians_.erase(it_hams);
+      --num_local_walkers_;
       return;
     }
     ++it_walkers;

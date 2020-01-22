@@ -477,6 +477,7 @@ void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopul
 
   //population for trial energy modification should not include any released node walkers.
   MCDataType<FullPrecRealType>& wc_ensemble_prop = WalkerController->get_ensemble_property();
+  std::cout << "RNSamples: " << wc_ensemble_prop.RNSamples << '\n';
   pop_now -= wc_ensemble_prop.RNSamples;
   //current energy
   vParam[SBVP::ENOW] = wc_ensemble_prop.Energy;
@@ -487,10 +488,12 @@ void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopul
   vParam[SBVP::EREF] = EnergyHist.mean(); //current mean
   if (BranchMode[B_USETAUEFF])
     vParam[SBVP::TAUEFF] = vParam[SBVP::TAU] * R2Accepted.result() / R2Proposed.result();
+
   if (BranchMode[B_KILLNODES])
     EnergyHist(vParam[SBVP::ENOW] - std::log(wc_ensemble_prop.LivingFraction) / vParam[SBVP::TAUEFF]);
   else
     EnergyHist(vParam[SBVP::ENOW]);
+
   if (BranchMode[B_DMCSTAGE]) // main stage
   {
     if (BranchMode[B_POPCONTROL])

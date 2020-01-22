@@ -228,8 +228,8 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
   curData[EREF_INDEX]       = ecum;
   curData[R2ACCEPTED_INDEX] = r2_accepted;
   curData[R2PROPOSED_INDEX] = r2_proposed;
-  curData[FNSIZE_INDEX]     = static_cast<FullPrecRealType>(nfn);
-  curData[RNONESIZE_INDEX]  = static_cast<FullPrecRealType>(ncr);
+  curData[FNSIZE_INDEX]     = nfn;
+  curData[RNONESIZE_INDEX]  = ncr;
   curData[RNSIZE_INDEX]     = nrn;
   curData[B_ENERGY_INDEX]   = besum;
   curData[B_WGT_INDEX]      = bwgtsum;
@@ -304,8 +304,8 @@ int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
   curData[EREF_INDEX]       = ecum;
   curData[R2ACCEPTED_INDEX] = r2_accepted;
   curData[R2PROPOSED_INDEX] = r2_proposed;
-  curData[FNSIZE_INDEX]     = static_cast<FullPrecRealType>(nfn);
-  curData[RNONESIZE_INDEX]  = static_cast<FullPrecRealType>(ncr);
+  curData[FNSIZE_INDEX]     = nfn;
+  curData[RNONESIZE_INDEX]  = ncr;
   curData[RNSIZE_INDEX]     = nrn;
   curData[B_ENERGY_INDEX]   = besum;
   curData[B_WGT_INDEX]      = bwgtsum;
@@ -358,11 +358,11 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
   return nw_tot;
 }
 
-void WalkerControlBase::onRankSpawnKill(MCPopulation& pop, PopulationAdjustment&& adjust)
+void WalkerControlBase::onRankSpawnKill(MCPopulation& pop, PopulationAdjustment& adjust)
 {
   while (!adjust.bad_walkers.empty())
   {
-    pop.killWalker(adjust.bad_walkers.back());
+    //pop.killWalker(adjust.bad_walkers.back());
     adjust.bad_walkers.pop_back();
   }
   for (int iw = 0; iw < adjust.good_walkers.size(); ++iw)
@@ -392,7 +392,7 @@ int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trig
   // We have not yet updated the local number of walkers
   // This happens as a side effect of killing or spawning walkers
 
-  WalkerControlBase::onRankSpawnKill(pop, std::move(adjust));
+  WalkerControlBase::onRankSpawnKill(pop, adjust);
 
   for (UPtr<MCPWalker>& walker : pop.get_walkers())
   {
@@ -568,38 +568,39 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
  */
 WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustment(MCPopulation& pop)
 {
-  RefVector<MCPWalker> walkers(convertUPtrToRefVector(pop.get_walkers()));
+  UPtrVector<MCPWalker>& walkers = pop.get_walkers();
   // these are equivalent to the good_rn and ncopy_rn in the legacy code
-  RefVector<MCPWalker> good_walkers;
-  std::vector<int> copies_to_make_good_walkers;
-
   PopulationAdjustment adjustment;
+
+  RefVector<MCPWalker> good_walkers_rn;
+  std::vector<int> copies_to_make_rn;
+
   adjustment.num_walkers = 0;
   // So many sums and counters
   FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, w2sum = 0.0, besum = 0.0, bwgtsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
   int nfn(0), nrn(0), ngoodfn(0), ncr(0);
-  for (MCPWalker& walker : walkers)
+  for (UPtr<MCPWalker>& walker : walkers)
   {
-    bool inFN = (walker.ReleasedNodeAge == 0);
+    bool inFN = (walker->ReleasedNodeAge == 0);
     // Written as a lambda for emphasis, implicit conversion is identical to that of static_cast<int>(...)
     auto calcNumberWalkerCopies = [this](int multiplicity) -> int { return std::min(static_cast<int>(multiplicity), MaxCopy); };
-    int nc                      = calcNumberWalkerCopies(walker.Multiplicity);
+    int nc                      = calcNumberWalkerCopies(walker->Multiplicity);
     if (write_release_nodes_)
     {
-      if (walker.ReleasedNodeAge == 1)
+      if (walker->ReleasedNodeAge == 1)
         ncr += 1;
-      else if (walker.ReleasedNodeAge == 0)
+      else if (walker->ReleasedNodeAge == 0)
       {
         nfn += 1;
         ngoodfn += nc;
       }
-      r2_accepted += walker.Properties(WP::R2ACCEPTED);
-      r2_proposed += walker.Properties(WP::R2PROPOSED);
-      FullPrecRealType local_energy(walker.Properties(WP::LOCALENERGY));
-      FullPrecRealType alternate_energy(walker.Properties(WP::ALTERNATEENERGY));
-      FullPrecRealType wgt   = walker.Weight;
-      FullPrecRealType rnwgt = walker.ReleasedNodeWeight;
+      r2_accepted += walker->Properties(WP::R2ACCEPTED);
+      r2_proposed += walker->Properties(WP::R2PROPOSED);
+      FullPrecRealType local_energy(walker->Properties(WP::LOCALENERGY));
+      FullPrecRealType alternate_energy(walker->Properties(WP::ALTERNATEENERGY));
+      FullPrecRealType wgt   = walker->Weight;
+      FullPrecRealType rnwgt = walker->ReleasedNodeWeight;
       esum += wgt * rnwgt * local_energy;
       e2sum += wgt * rnwgt * local_energy * local_energy;
       wsum += rnwgt * wgt;
@@ -614,10 +615,10 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
         nfn++;
       else
         ncr++;
-      r2_accepted += walker.Properties(WP::R2ACCEPTED);
-      r2_proposed += walker.Properties(WP::R2PROPOSED);
-      FullPrecRealType local_energy(walker.Properties(WP::LOCALENERGY));
-      FullPrecRealType wgt = walker.Weight;
+      r2_accepted += walker->Properties(WP::R2ACCEPTED);
+      r2_proposed += walker->Properties(WP::R2PROPOSED);
+      FullPrecRealType local_energy(walker->Properties(WP::LOCALENERGY));
+      FullPrecRealType wgt = walker->Weight;
       esum += wgt * local_energy;
       e2sum += wgt * local_energy * local_energy;
       wsum += wgt;
@@ -628,7 +629,7 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
     if ((nc) && (inFN))
     {
       adjustment.num_walkers += nc;
-      adjustment.good_walkers.push_back(walker);
+      adjustment.good_walkers.push_back(*walker);
       adjustment.copies_to_make.push_back(nc - 1);
     }
     else if (nc)
@@ -637,15 +638,15 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
       // num_new_walkers != sum(copies_to_make)
       // qmcpack style would be to use this as an ersatz flag somewhere
       adjustment.num_walkers += nc;
-      nrn += nc;
       // Nothing is every done with this except put its size in
-      // curData[FNSIZE_INDEX]
-      good_walkers.push_back(walker);
-      copies_to_make_good_walkers.push_back(nc - 1);
+      // curData[FNSIZE_INDEX] which is later used
+      nrn += nc;
+      good_walkers_rn.push_back(*walker);
+      copies_to_make_rn.push_back(nc - 1);
     }
     else
     {
-      adjustment.bad_walkers.push_back(walker);
+      adjustment.bad_walkers.push_back(*walker);
     }
   }
 
@@ -673,8 +674,8 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
       adjustment.good_walkers.push_back(walker);
       adjustment.copies_to_make.push_back(copies);
     };
-    for (int iw = 0; iw < good_walkers.size(); ++iw)
-      addWalkersWithReleaseNodeAge(good_walkers[iw], copies_to_make_good_walkers[iw]);
+    for (int iw = 0; iw < good_walkers_rn.size(); ++iw)
+      addWalkersWithReleaseNodeAge(good_walkers_rn[iw], copies_to_make_rn[iw]);
   }
   return adjustment;
 }
