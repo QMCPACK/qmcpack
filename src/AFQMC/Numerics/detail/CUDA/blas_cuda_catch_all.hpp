@@ -63,7 +63,7 @@ namespace qmc_cuda
                           T beta,
                           ptrC y, int incy)
   {
-    std::cout<<" types: "
+    std::cout<<" types: (gemv) "
              <<"  T: " <<typeid(alpha).name() <<"\n"
              <<"  ptrA: " <<typeid(A).name() <<"\n"
              <<"  ptrB: " <<typeid(x).name() <<"\n"
@@ -80,7 +80,7 @@ namespace qmc_cuda
                           T beta,
                           ptrC C, int ldc)
   {
-    std::cout<<" types: "
+    std::cout<<" types: (gemm)"
              <<"  T: " <<typeid(alpha).name() <<"\n"
              <<"  ptrA: " <<typeid(A).name() <<"\n"
              <<"  ptrB: " <<typeid(B).name() <<"\n"
@@ -100,7 +100,7 @@ namespace qmc_cuda
                          ptrB B, int ldb,
                          ptrC C, int ldc)
   {
-    std::cout<<" types: "
+    std::cout<<" types: (geam)"
              <<"  T: " <<typeid(alpha).name() <<"\n"
              <<"  ptrA: " <<typeid(A).name() <<"\n"
              <<"  ptrB: " <<typeid(B).name() <<"\n"
@@ -113,7 +113,7 @@ namespace qmc_cuda
   template<typename T, typename Q, class ptrA, class ptrB, class ptrC>
   inline static void adotpby(int const n, T const alpha, ptrA x, int const incx, ptrB y, int const incy, Q const beta, ptrC result)
   {
-    std::cout<<" types: "
+    std::cout<<" types: (adotpby)"
              <<"  T: " <<typeid(alpha).name() <<"\n"
              <<"  Q: " <<typeid(beta).name() <<"\n"
              <<"  ptrA: " <<typeid(x).name() <<"\n"
@@ -130,7 +130,7 @@ namespace qmc_cuda
                          ptrA const x, int incx,
                          ptrB y, int incy)
   {
-    std::cout<<" types: "
+    std::cout<<" types: (axty)"
              <<"  T: " <<typeid(alpha).name() <<"\n"
              <<"  ptrA: " <<typeid(x).name() <<"\n"
              <<"  ptrB: " <<typeid(y).name() <<std::endl;
@@ -147,7 +147,7 @@ namespace qmc_cuda
                              T const beta,
                              ptrB B, int ldb)
   {
-    std::cout<<" types: "
+    std::cout<<" types: (acAxpbB)"
              <<"  T: " <<typeid(alpha).name() <<"\n"
              <<"  ptrA: " <<typeid(A).name() <<"\n"
              <<"  ptrx: " <<typeid(x).name() <<"\n"
@@ -182,7 +182,7 @@ namespace qmc_cuda
                           ptrB const B, int ldb, int strideB, T beta,
                           ptrC C, int ldc, int strideC, int batchSize)
   {
-    std::cout<<" types: "
+    std::cout<<" types: (gemmStridedBatched)"
              <<"  T: " <<typeid(alpha).name() <<"\n"
              <<"  ptrA: " <<typeid(A).name() <<"\n"
              <<"  ptrB: " <<typeid(B).name() <<"\n"
@@ -200,7 +200,7 @@ namespace qmc_cuda
                           ptrB const* B, int ldb, T beta,
                           ptrC * C, int ldc, int batchSize)
   {
-    std::cout<<" types: "
+    std::cout<<" types: (gemmBatched) "
              <<"  T: " <<typeid(alpha).name() <<"\n"
              <<"  ptrA: " <<typeid(A).name() <<"\n"
              <<"  ptrB: " <<typeid(B).name() <<"\n"
