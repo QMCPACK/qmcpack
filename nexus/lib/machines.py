@@ -3116,8 +3116,8 @@ class Stampede2(Supercomputer):
 
 
 
-class Cades(Supercomputer):
-    name = 'cades'
+class CadesMoab(Supercomputer):
+    name = 'cades_moab'
     requires_account = True
     batch_capable    = True
 
@@ -3155,7 +3155,40 @@ cd $PBS_O_WORKDIR
 '''
         return c
     #end def write_job_header
-#end class Cades
+#end class CadesMoab
+
+
+
+class CadesSlurm(Supercomputer):
+    name = 'cades'
+    requires_account = True
+    batch_capable    = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'skylake'
+        #end if
+
+        c  = '#!/bin/bash\n'
+        c += '#SBATCH -A {}\n'.format(job.account)
+        c += '#SBATCH -p {}\n'.format(job.queue)
+        c += '#SBATCH -J {}\n'.format(job.name)
+        c += '#SBATCH -t {}\n'.format(job.sbatch_walltime())
+        c += '#SBATCH -N {}\n'.format(job.nodes)
+        c += '#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c += '#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c += '#SBATCH --mem=1G\n' # required on Cades
+        c += '#SBATCH -o '+job.outfile+'\n'
+        c += '#SBATCH -e '+job.errfile+'\n'
+        if job.user_env:
+            c += '#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c += '#SBATCH --export=NONE\n'
+        #end if
+
+        return c
+    #end def write_job_header
+#end class CadesSlurm
 
 
 
@@ -3387,7 +3420,8 @@ Redsky(       2302,   2,     8,   12, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Solo(          187,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
-Cades(         156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
+CadesMoab(     156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
+CadesSlurm(    156,   2,    18,  128,  100, 'mpirun',   'sbatch',  'squeue', 'scancel')
 Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
 Rhea(          512,   2,     8,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
