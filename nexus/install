@@ -52,6 +52,8 @@ parser.add_option('-l','--leave_paths',dest='leave_paths',
                   action='store_true',default=False,
                   help='Do not add paths to Linux configuration files, e.g. .bashrc (default=%default).'
                   )
+parser.add_option('-c','--config_file',dest='config_file',default='none',
+                  help='Name of config file for install.  Default is to search for one based on the local shell.')
 options,args = parser.parse_args()
 
 if options.help:
@@ -129,7 +131,11 @@ else:
     #end if
 
     # find config (rc) file for shell
-    rc_files = shell_rc_files[shell]
+    if options.config_file=='none':
+        rc_files = shell_rc_files[shell]
+    else:
+        rc_files = [options.config_file]
+    #end if
     home = os.path.expanduser('~') # this is cross-platform
     rc_file = None
     search_paths = []

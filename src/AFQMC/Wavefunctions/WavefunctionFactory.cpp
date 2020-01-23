@@ -288,7 +288,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
       SlaterDetOperations SDetOp( SlaterDetOperations_shared<ComplexType>(
                         ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
                         ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
-      return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+      return Wavefunction(NOMSD<devcsr_Matrix>(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
                         std::move(ci),std::move(PsiT),
                         walker_type,NCE,targetNW));
     } else
@@ -296,7 +296,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
       SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
                         ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
                         ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
-      return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+      return Wavefunction(NOMSD<devcsr_Matrix>(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
                         std::move(ci),std::move(PsiT),
                         walker_type,NCE,targetNW));
     }
@@ -610,12 +610,14 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   std::string filename("");
   std::string restart_file("");
   std::string rediag("");
+  std::string dense_trial("");
   ParameterSet m_param;
   m_param.add(filename,"filename","std::string");
   m_param.add(restart_file,"restart_file","std::string");
   m_param.add(cutv2,"cutoff","double");
   m_param.add(rediag,"rediag","std::string");
   m_param.add(ndets_to_read,"ndet","int");
+  m_param.add(dense_trial,"dense_trial","std::string");
   m_param.put(cur);
   bool recompute_ci = false;
   std::transform(rediag.begin(),rediag.end(),rediag.begin(),(int (*)(int)) tolower);
@@ -715,21 +717,57 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     bool read_ham_op = restart.is_group("HamiltonianOperations");
     auto HOps(getHamOps(read_ham_op,restart,walker_type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2,ndets_to_read,h));
 
+    // if not set, get default based on HamTYpe
+    // use sparse trial only on KP runs
+    if(dense_trial == "") {
+      dense_trial = std::string("yes");  
+      if(HOps.getHamType() == KPFactorized || HOps.getHamType() == KPTHC) 
+        dense_trial = std::string("no");  
+    }
+
     if(TGwfn.TG_local().size() > 1) {
       SlaterDetOperations SDetOp( SlaterDetOperations_shared<ComplexType>(
                         ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
                         ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
-      return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+      if(dense_trial == "yes") {
+        using MType = ComplexMatrix<node_allocator<ComplexType>>;
+        std::vector<MType> PsiT_;
+        PsiT_.reserve(PsiT.size());
+        auto alloc_shared_(make_node_allocator<ComplexType>(TGwfn));
+        for(auto& v: PsiT) {
+          PsiT_.emplace_back(MType({v.size(0),v.size(1)},alloc_shared_));
+          ma::Matrix2MAREF('N',v,PsiT_.back());
+        }
+        return Wavefunction(NOMSD<MType>(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+                        std::move(ci),std::move(PsiT_),
+                        walker_type,NCE,targetNW));
+      } else {
+        return Wavefunction(NOMSD<devcsr_Matrix>(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
                         std::move(ci),std::move(PsiT),
                         walker_type,NCE,targetNW));
+      }  
     } else
     {
       SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
                         ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
                         ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
-      return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+      if(dense_trial == "yes") {
+        using MType = ComplexMatrix<node_allocator<ComplexType>>;
+        std::vector<MType> PsiT_;
+        PsiT_.reserve(PsiT.size());
+        auto alloc_shared_(make_node_allocator<ComplexType>(TGwfn));
+        for(auto& v: PsiT) {
+          PsiT_.emplace_back(MType({v.size(0),v.size(1)},alloc_shared_));
+          ma::Matrix2MAREF('N',v,PsiT_.back());
+        }
+        return Wavefunction(NOMSD<MType>(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
+                        std::move(ci),std::move(PsiT_),
+                        walker_type,NCE,targetNW));
+      } else {
+        return Wavefunction(NOMSD<devcsr_Matrix>(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
                         std::move(ci),std::move(PsiT),
                         walker_type,NCE,targetNW));
+      }
     }
 
   } else if(type == "phmsd") {

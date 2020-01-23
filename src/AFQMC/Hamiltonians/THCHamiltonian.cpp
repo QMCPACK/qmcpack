@@ -287,13 +287,13 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
       boost::multi::array<ComplexType,2> B({NMO,naeb_});
       for(int i=0; i<ndet; i++) {
         // cPua = H(Piu) * ma::conj(A)
-        csr::CSR2MA('T',PsiT[2*i],A);
+        ma::Matrix2MA('T',PsiT[2*i],A);
         ma::product(H(Piu.get()),A,
                     cPua[i].get()({0,long(nmu)},{0,long(naea_)}));
         if(not test_Luv)
           ma::product(H(rotPiu.get()),A,
                       rotcPua[i].get()({0,long(grotnmu)},{0,long(naea_)}));
-        csr::CSR2MA('T',PsiT[2*i+1],B);
+        ma::Matrix2MA('T',PsiT[2*i+1],B);
         ma::product(H(Piu.get()),B,
                     cPua[i].get()({0,long(nmu)},{naea_,long(nel_)}));
         if(not test_Luv)
@@ -303,7 +303,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     } else {
       boost::multi::array<ComplexType,2> A({PsiT[0].size(1),PsiT[0].size(0)});
       for(int i=0; i<ndet; i++) {
-        csr::CSR2MA('T',PsiT[i],A);
+        ma::Matrix2MA('T',PsiT[i],A);
         // cPua = H(Piu) * ma::conj(A)
         ma::product(H(Piu.get()),A,cPua[i].get());
         if(not test_Luv)

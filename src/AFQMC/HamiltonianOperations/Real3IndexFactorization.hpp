@@ -83,6 +83,9 @@ class Real3IndexFactorization
 
   public:
 
+    static const HamiltonianTypes HamOpType = RealDenseFactorized;
+    HamiltonianTypes getHamType() const { return HamOpType; }
+
     Real3IndexFactorization(afqmc::TaskGroup_& tg_,
                  WALKER_TYPES type,
                  shmRMatrix&& hij_,

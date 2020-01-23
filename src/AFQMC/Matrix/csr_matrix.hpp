@@ -71,6 +71,7 @@ class csr_matrix_ref {
 	public:
         using value_type = decltype(*std::declval<ValTypePtr>());
         using element = decltype(*std::declval<ValTypePtr>());
+        using element_ptr = ValTypePtr; 
         using index_type = decltype(*std::declval<IndxTypePtr>());
         using int_type = decltype(*std::declval<IntTypePtr>());
         protected:
@@ -241,6 +242,7 @@ class csr_matrix_view:
         public:
         using value_type = typename std::decay<decltype(*std::declval<ValTypePtr>())>::type;
         using element = typename std::decay<decltype(*std::declval<ValTypePtr>())>::type;
+        using element_ptr = ValTypePtr; 
         using index_type = typename std::decay<decltype(*std::declval<IndxTypePtr>())>::type;
         using int_type =  typename std::decay<decltype(*std::declval<IntTypePtr>())>::type;
         protected:
@@ -322,6 +324,7 @@ class ucsr_matrix:
 	public:
 	using value_type = ValType;
 	using element = ValType;
+        using element_ptr = typename ValType_alloc::pointer; 
 	using index_type = IndxType;
 	using int_type = IntType;
         using alloc_type = ValType_alloc;
@@ -678,6 +681,7 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
 	using base = ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRoot,IndxType_alloc,IntType_alloc>;
 	using value_type = ValType;
 	using element = ValType;
+        using element_ptr = typename ValType_alloc::pointer;
 	using index_type = IndxType;
 	using int_type = IntType;
         using alloc_type = ValType_alloc;
