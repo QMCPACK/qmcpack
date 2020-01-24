@@ -338,7 +338,9 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
       gzzz[ib] = 0;
     }
 
-    const auto& IonID(ions_.GroupID);
+    // Since jion is indexed on the source ions not the ions_ the distinction between
+    // ions_ and ions is extremely important.
+    const auto& IonID(ions.GroupID);
     const auto& d_table = P.getDistTable(myTableIndex);
     const auto& dist    = (P.activePtcl == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
     const auto& displ   = (P.activePtcl == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
@@ -346,6 +348,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
     //Since LCAO's are written only in terms of (r-R), ionic derivatives only exist for the atomic center
     //that we wish to take derivatives of.  Moreover, we can obtain an ion derivative by multiplying an electron
     //derivative by -1.0.  Handling this sign is left to LCAOrbitalSet.  For now, just note this is the electron VGL function.
+    
     LOBasisSet[IonID[jion]]->evaluateVGHGH(P.Lattice, dist[jion], displ[jion], BasisOffset[jion], vghgh);
   }
   /** add a new set of Centered Atomic Orbitals
