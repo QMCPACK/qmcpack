@@ -165,7 +165,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
 #endif
 
     boost::multi::array<ComplexType,3,Alloc> devOrbMat(OrbMat, alloc_);
-    std::vector<devPsiT_Matrix> devPsiT(move_vector<devPsiT_Matrix>(std::move(PsiT)));
+    std::vector<devcsr_Matrix> devPsiT(move_vector<devcsr_Matrix>(std::move(PsiT)));
     std::cout << "Move" << std::endl;
 
     CMatrix G({NEL,NMO},alloc_);
