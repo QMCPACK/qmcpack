@@ -293,6 +293,15 @@ void MCWalkerConfiguration::copyWalkerRefs(Walker_t* head, Walker_t* tail)
   WalkerList[1] = tail;
 }
 
+void MCWalkerConfiguration::fakeWalkerList(Walker_t* first, Walker_t* second)
+{
+  if (WalkerList.size() != 0)
+    throw std::runtime_error("This should only be called in tests and only with a fresh MCWC!");
+  OwnWalkers = false;
+  WalkerList.push_back(first);
+  WalkerList.push_back(second);
+}
+
 /** Make Metropolis move to the walkers and save in a temporary array.
  * @param it the iterator of the first walker to work on
  * @param tauinv  inverse of the time step

@@ -52,8 +52,8 @@ ParticleSet::ParticleSet()
       ThreadID(0),
       activePtcl(-1),
       SK(0),
-      myTwist(0.0),
       Properties(0, 0, 1, WP::MAXPROPERTIES),
+      myTwist(0.0),
       ParentName("0"),
       TotalNum(0)
 {
@@ -68,8 +68,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       activePtcl(-1),
       mySpecies(p.getSpeciesSet()),
       SK(0),
-      myTwist(0.0),
       Properties(p.Properties),
+      myTwist(0.0),
       ParentName(p.parentName())
 {
   set_quantum_domain(p.quantum_domain);

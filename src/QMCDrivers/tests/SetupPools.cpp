@@ -20,7 +20,6 @@ namespace testing
 {
 SetupPools::SetupPools()
 {
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   std::cout << "SetupPools::SetupPools()\n";

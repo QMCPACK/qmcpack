@@ -26,19 +26,17 @@ struct WalkerControlMPITest;
 
 namespace testing
 {
-struct UnifiedDriverWalkerControlMPITest;
+class UnifiedDriverWalkerControlMPITest;
 }
 
 struct WalkerMessage
 {
   // To deal with duplicate send optimization
-  RefVector<WalkerControlBase::MCPWalker> walker;
+  WalkerControlBase::MCPWalker& walker;
   // i.e. MPI rank
   const int source_rank;
   const int target_rank;
-  int multiplicity = 1;
-  size_t byteSize = 0;
-  WalkerMessage(WalkerControlBase::MCPWalker& walk, const int source, const int target) : source_rank(source), target_rank(target){ walker.push_back(walk); };
+  WalkerMessage(WalkerControlBase::MCPWalker& walk, const int source, const int target) : walker(walk), source_rank(source), target_rank(target) {}
 };
 
 inline bool operator==(const WalkerMessage& A, const WalkerMessage& B)
@@ -60,18 +58,30 @@ struct WalkerControlMPI : public WalkerControlBase
   int Cur_min;
   TimerList_t myTimers;
   ///Number of walkers sent during the exchange
+  // Is this persistent state for any reason other than we keep zeroing curData
+  // defensively?
   IndexType NumWalkersSent;
 
   /** default constructor
    *
    * Set the SwapMode to zero so that instantiation can be done
+   * comm can not be null it is not checked.
    */
-  WalkerControlMPI(Communicate* c = 0);
+  WalkerControlMPI(Communicate* comm);
 
   /** creates the distribution plan
    *
-   *  the minus and plus vectors contain 1 copy of a partition index for each adjustment
-   *  in population to the context.
+   *  populates the minus and plus vectors they contain 1 copy of a partition index 
+   *  for each adjustment in population to the context.
+   *  \todo fix this word snalad
+   *
+   *  \param[in] Cur_pop population taking multiplicity into account
+   *  \param[in] NumContexts number of MPI processes
+   *  \param[in] MyContext my MPI rank
+   *  \param[in] NumPerNode as if all walkers were copied out to multiplicity
+   *  \param[out] FairOffSet running population count at each partition boundary
+   *  \param[out] minus list of partition indexes one occurance for each walker removed
+   *  \param[out] plus list of partition indexes one occurance for each walker added
    */
   static void determineNewWalkerPopulation(int Cur_pop,
                                            int NumContexts,
@@ -90,7 +100,13 @@ struct WalkerControlMPI : public WalkerControlBase
   //current implementations
   void swapWalkersSimple(MCWalkerConfiguration& W);
 
-  void swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust);
+  /** Unified Driver Implementation
+   *
+   * \param[inout] local population
+   * \param[inout] adjust population adjustment, it's updated for so on node adjustments can occur
+   * \param[in]    number of walkers per node if expanded by multiplicity.
+   */
+  void swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust, std::vector<IndexType> num_per_node);
 
   // Testing wrappers
   friend WalkerControlMPITest;

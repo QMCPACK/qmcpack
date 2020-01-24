@@ -41,15 +41,8 @@ void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& 
 
 void Crowd::loadWalkers()
 {
-  auto it_walker       = mcp_walkers_.begin();
-  auto it_walker_elecs = walker_elecs_.begin();
-  //flex walkers here
-  while (it_walker != mcp_walkers_.end())
-  {
-    (*it_walker_elecs).get().loadWalker(*it_walker, true);
-    ++it_walker;
-    ++it_walker_elecs;
-  }
+  for(int i = 0; i < mcp_walkers_.size(); ++i)
+    walker_elecs_[i].get().loadWalker(mcp_walkers_[i], true);
 }
 
 void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)

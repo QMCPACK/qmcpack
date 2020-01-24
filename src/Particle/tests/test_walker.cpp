@@ -2,15 +2,18 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by:  Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+//                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "catch.hpp"
 
+#include <cstring>
+#include "QMCDrivers/WalkerProperties.h"
 #include "Configuration.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerOutput.h"
@@ -24,13 +27,15 @@ using std::string;
 
 namespace qmcplusplus
 {
-typedef Walker<QMCTraits, PtclOnLatticeTraits> Walker_t;
+
+using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+using WP = WalkerProperties::Indexes;
 
 TEST_CASE("walker", "[particle]")
 {
   OHMMS::Controller->initialize(0, NULL);
 
-  Walker_t w(1);
+  MCPWalker w(1);
   REQUIRE(w.R.size() == 1);
   w.R[0] = 1.0;
 
@@ -44,7 +49,7 @@ TEST_CASE("walker", "[particle]")
 TEST_CASE("walker assumptions", "[particle]")
 {
   using WP = WalkerProperties::Indexes;
-  Walker_t w1(1);
+  MCPWalker w1(1);
   REQUIRE(w1.Properties.cols() == WP::NUMPROPERTIES);
 }
 
@@ -53,10 +58,10 @@ TEST_CASE("walker HDF read and write", "[particle]")
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
-  Walker_t w1(1);
+  MCPWalker w1(1);
   w1.R[0] = 1.0;
 
-  Walker_t w2(1);
+  MCPWalker w2(1);
   w2.R[0] = 0.5;
 
   MCWalkerConfiguration W;
@@ -108,6 +113,30 @@ TEST_CASE("walker HDF read and write", "[particle]")
     REQUIRE(W2[0]->R[0][i] == w1.R[0][i]);
     REQUIRE(W2[1]->R[0][i] == w2.R[0][i]);
   }
+}
+
+TEST_CASE("walker buffer add, update, restore", "[particle]")
+{
+  int num_particles = 4;
+  
+  UPtrVector<MCPWalker> walkers(2);
+  auto createWalker = [num_particles](UPtr<MCPWalker>& walker_ptr) {
+    walker_ptr    = std::make_unique<MCPWalker>(num_particles);
+    walker_ptr->registerData();
+    walker_ptr->DataSet.allocate();
+  };
+  std::for_each(walkers.begin(), walkers.end(), createWalker);
+  
+  walkers[0]->Properties(WP::LOGPSI) = 1.2;
+  walkers[0]->Properties(WP::SIGN) = 1.3;
+  walkers[0]->Properties(WP::UMBRELLAWEIGHT) = 1.4;
+  walkers[0]->Properties(WP::LOCALPOTENTIAL) = 1.6;
+  walkers[0]->updateBuffer();
+
+  std::memcpy(walkers[1]->DataSet.data(), walkers[0]->DataSet.data(), walkers[0]->DataSet.size());
+  walkers[1]->copyFromBuffer();
+  CHECK(walkers[1]->Properties(WP::LOGPSI) == Approx(1.2));
+  CHECK(walkers[1]->Properties(WP::LOCALPOTENTIAL) == Approx(1.6));
 }
 
 } // namespace qmcplusplus
