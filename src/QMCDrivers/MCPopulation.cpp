@@ -61,12 +61,12 @@ MCPopulation::MCPopulation(int num_ranks,
                            TrialWaveFunction* trial_wf,
                            QMCHamiltonian* hamiltonian,
                            int this_rank)
-    : num_ranks_(num_ranks),
-      num_particles_(elecs->R.size()),
+    : num_particles_(elecs->R.size()),
       num_local_walkers_per_node_(num_ranks, 0),
       trial_wf_(trial_wf),
       elec_particle_set_(elecs),
       hamiltonian_(hamiltonian),
+      num_ranks_(num_ranks),
       rank_(this_rank)
 {}
 
