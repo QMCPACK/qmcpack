@@ -69,7 +69,7 @@
 
 import os
 import re
-from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones,identity
+from numpy import array,zeros,dot,loadtxt,ceil,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones,identity
 try:
     from scipy.linalg import eig,LinAlgError
 except Exception:
@@ -1914,7 +1914,16 @@ class SpinDensityAnalyzer(DensityAnalyzerBase):
         else:
             self.info.should_remove = True
         #end if
-        g = self.info.xml.grid
+
+        if 'grid' in self.info.xml:
+            g = self.info.xml.grid
+        else:
+            dr = self.info.xml.dr
+            g = array((ceil(sqrt(self.info.structure.axes[0].dot(self.info.structure.axes[0]))/dr[0]),
+                       ceil(sqrt(self.info.structure.axes[1].dot(self.info.structure.axes[1]))/dr[1]),
+                       ceil(sqrt(self.info.structure.axes[2].dot(self.info.structure.axes[2]))/dr[2])),dtype=int)
+        #end if
+
         for d in self.data:
             b = len(d.value)
             d.value.shape = (b,g[0],g[1],g[2])
