@@ -457,14 +457,12 @@ void DMCBatched::setMultiplicities(const DMCDriverInput& dmcdriver_input,
   auto setMultiplicity = [&dmcdriver_input, &rng](MCPWalker& walker) {
     constexpr RealType onehalf(0.5);
     constexpr RealType cone(1);
-    RealType M;
+    walker.Multiplicity = walker.Weight;
     if (walker.Age > dmcdriver_input.get_max_age())
-      M = std::min(onehalf, M);
+      walker.Multiplicity = std::min(onehalf, walker.Weight);
     else if (walker.Age > 0)
-      M = std::min(cone, M);
-    else
-      M = walker.Weight;
-    walker.Multiplicity = M + rng();
+      walker.Multiplicity = std::min(cone, walker.Weight);
+    walker.Multiplicity += rng();
   };
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
