@@ -24,7 +24,7 @@ hdf_archive::~hdf_archive()
     H5Pclose(access_id);
 #endif
   close();
-  H5Eset_auto(err_func, client_data);
+  H5Eset_auto2(H5E_DEFAULT, err_func, client_data);
 }
 
 void hdf_archive::close()
