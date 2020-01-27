@@ -32,6 +32,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 //using namespace particle_info;
 
 #ifdef QMC_CUDA
@@ -52,6 +54,7 @@ ParticleSet::ParticleSet()
       ThreadID(0),
       activePtcl(-1),
       SK(0),
+      Properties(0, 0, 1, WP::MAXPROPERTIES),
       myTwist(0.0),
       ParentName("0"),
       TotalNum(0)
@@ -68,6 +71,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       activePtcl(-1),
       mySpecies(p.getSpeciesSet()),
       SK(0),
+      Properties(p.Properties),
       myTwist(0.0),
       ParentName(p.parentName())
 {
@@ -738,12 +742,14 @@ void ParticleSet::initPropertyList()
   PropertyList.add("AltEnergy");
   PropertyList.add("LocalEnergy");
   PropertyList.add("LocalPotential");
-  if (PropertyList.size() != NUMPROPERTIES)
-  {
-    app_error() << "The number of default properties for walkers  is not consistent." << std::endl;
-    app_error() << "NUMPROPERTIES " << NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << std::endl;
-    APP_ABORT("ParticleSet::initPropertyList");
-  }
+  
+  // There is no point in checking this, its quickly not consistent as other objects update property list.
+  // if (PropertyList.size() != WP::NUMPROPERTIES)
+  // {
+  //   app_error() << "The number of default properties for walkers  is not consistent." << std::endl;
+  //   app_error() << "NUMPROPERTIES " << WP::NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << std::endl;
+  //   APP_ABORT("ParticleSet::initPropertyList");
+  // }
 }
 
 void ParticleSet::clearDistanceTables()

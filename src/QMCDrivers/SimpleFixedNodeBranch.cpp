@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////////
+ //////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
@@ -26,9 +26,12 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
+#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 ///enum to yes/no options saved in sParam
 enum
 {
@@ -147,6 +150,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       walkers.setWalkerOffsets(nwoff);
       iParam[B_TARGETWALKERS] = nwoff[ncontexts];
     }
+    // \todo reparsing XML nodes is an antipattern, remove.
     WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
     if (!BranchMode[B_RESTART])
     {
@@ -161,6 +165,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       {
         app_log() << "Warmup DMC is done with a fixed population " << iParam[B_TARGETWALKERS] << std::endl;
         BackupWalkerController = std::move(WalkerController); //save the main controller
+        // \todo: Not likely to be ok to call reset on a moved from WalkerController!
         WalkerController.reset(
             createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode, true));
         BranchMode.set(B_POPCONTROL, 0);
@@ -263,12 +268,13 @@ int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, bool f
   //assign current Eref and a large number for variance
   WalkerController->setTrialEnergy(vParam[SBVP::ETRIAL]);
   this->reset();
+  int allow_flux = 50; // std::min(static_cast<int>(population.get_num_global_walkers() * 0.10), 50);
   if (fromscratch)
   {
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
     // Was check MCWC's particle set for number of R which I take to mean number of particles
     // will this assumption change if various spin freedoms also are added to ParticleSet?
-    setBranchCutoff(vParam[SBVP::SIGMA2], WalkerController->get_target_sigma(), 50, population.get_num_particles());
+    setBranchCutoff(vParam[SBVP::SIGMA2], WalkerController->get_target_sigma(), allow_flux, population.get_num_particles());
     vParam[SBVP::TAUEFF] = tau * R2Accepted.result() / R2Proposed.result();
   }
   //reset controller
@@ -481,10 +487,12 @@ void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopul
   vParam[SBVP::EREF] = EnergyHist.mean(); //current mean
   if (BranchMode[B_USETAUEFF])
     vParam[SBVP::TAUEFF] = vParam[SBVP::TAU] * R2Accepted.result() / R2Proposed.result();
+
   if (BranchMode[B_KILLNODES])
     EnergyHist(vParam[SBVP::ENOW] - std::log(wc_ensemble_prop.LivingFraction) / vParam[SBVP::TAUEFF]);
   else
     EnergyHist(vParam[SBVP::ENOW]);
+
   if (BranchMode[B_DMCSTAGE]) // main stage
   {
     if (BranchMode[B_POPCONTROL])
@@ -567,7 +575,7 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
   //Update the current energy and accumulate.
   MCWalkerConfiguration::Walker_t& head = W.reptile->getHead();
   MCWalkerConfiguration::Walker_t& tail = W.reptile->getTail();
-  vParam[SBVP::ENOW]                        = 0.5 * (head.Properties(LOCALENERGY) + tail.Properties(LOCALENERGY));
+  vParam[SBVP::ENOW]                        = 0.5 * (head.Properties(WP::LOCALENERGY) + tail.Properties(WP::LOCALENERGY));
   // app_log()<<"IN SimpleFixedNodeBranch::collect\n";
   // app_log()<<"\tvParam[SBVP::ENOW]="<<vParam[SBVP::ENOW]<< std::endl;
   EnergyHist(vParam[SBVP::ENOW]);
@@ -575,8 +583,8 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
   // app_log()<<"\tvParam[SBVP::EREF]="<<vParam[SBVP::EREF]<< std::endl;
   //Update the energy variance and R2 for effective timestep and filtering.
   VarianceHist(std::pow(vParam[SBVP::ENOW] - vParam[SBVP::EREF], 2));
-  R2Accepted(head.Properties(R2ACCEPTED));
-  R2Proposed(head.Properties(R2PROPOSED));
+  R2Accepted(head.Properties(WP::R2ACCEPTED));
+  R2Proposed(head.Properties(WP::R2PROPOSED));
   // app_log()<<"\thead.Properties(R2ACCEPTED)="<<head.Properties(R2ACCEPTED)<< std::endl;
   // app_log()<<"\thead.Properties(R2PROPOSED)="<<head.Properties(R2PROPOSED)<< std::endl;
   //  app_log()<<"\tR2Accepted="<<R2Accepted.result()<< std::endl;

@@ -74,6 +74,9 @@ class SparseTensor
 
   public:
 
+    static const HamiltonianTypes HamOpType = Factorized;
+    HamiltonianTypes getHamType() const { return HamOpType; }
+
     SparseTensor(communicator& c_, 
                  WALKER_TYPES type,
                  CMatrix&& hij_,
@@ -419,7 +422,7 @@ class SparseTensor
     {
       int nchol = global_number_of_cholesky_vectors();
       boost::multi::array<ComplexType,2> HSPot({nchol,nchol});
-      csr::CSR2MA('T',Spvn,HSPot);
+      ma::Matrix2MA('T',Spvn,HSPot);
       return HSPot;
     }
 

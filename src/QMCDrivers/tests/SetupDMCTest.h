@@ -28,10 +28,11 @@ class SetupDMCTest : public SetupPools
 {
 public:
   SetupDMCTest(int nranks = 4)
-      : population(nranks,
+      : population(comm->size(),
                    particle_pool->getParticleSet("e"),
                    wavefunction_pool->getPrimary(),
-                   hamiltonian_pool->getPrimary()),
+                   hamiltonian_pool->getPrimary(),
+                   comm->rank()),
         num_ranks(nranks),
         qmcdrv_input(3)
   {
@@ -41,8 +42,6 @@ public:
 
   DMCBatched operator()()
   {
-    int num_ranks = comm->size();
-
     Libxml2Document doc;
     doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
     node = doc.getRoot();

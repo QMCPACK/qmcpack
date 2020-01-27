@@ -21,6 +21,7 @@
 #include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCDrivers/WalkerProperties.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
@@ -28,6 +29,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 /** compute real(laplacian)
  */
 template<typename T, unsigned D>
@@ -472,7 +475,7 @@ struct BareKineticEnergy : public OperatorBase
     {
       Walker_t& w                                  = *(walkers[iw]);
       RealType KE                                  = -OneOver2M * (Dot(w.G, w.G) + Sum(w.L));
-      w.getPropertyBase()[NUMPROPERTIES + myIndex] = KE;
+      w.getPropertyBase()[WP::NUMPROPERTIES + myIndex] = KE;
       LocalEnergy[iw] += KE;
     }
   }

@@ -29,6 +29,7 @@
 #include "AFQMC/Numerics/detail/CUDA/Kernels/adiagApy.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/acAxpbB.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/zero_complex_part.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/axpyBatched.cuh"
 
 // Currently available:
 // Lvl-1: dot, axpy, scal
@@ -287,6 +288,37 @@ namespace qmc_cuda
     delete [] A_h;
     delete [] B_h;
     delete [] C_h;
+  }
+
+  template<typename T1, typename T2, typename T3>
+  inline static void axpyBatched(int n, T1* x, cuda_gpu_ptr<T2>* a, int inca, 
+                                               cuda_gpu_ptr<T3>* b, int incb, int batchSize)
+  {
+    T2 const** a_ = new T2 const*[batchSize];
+    T3** b_ = new T3*[batchSize];
+    for(int i=0; i<batchSize; i++) {
+      a_[i] = to_address(a[i]);
+      b_[i] = to_address(b[i]);
+    }
+    kernels::axpy_batched_gpu(n,x,a_,inca,b_,incb,batchSize);
+    delete [] a_;
+    delete [] b_;
+  }
+
+  template<typename T1, typename T2, typename T3>
+  inline static void sumGwBatched(int n, T1* x, cuda_gpu_ptr<T2>* a, int inca,
+                                               cuda_gpu_ptr<T3>* b, int incb, 
+                                               int b0, int nw, int batchSize)
+  {
+    T2 const** a_ = new T2 const*[batchSize];
+    T3** b_ = new T3*[batchSize];
+    for(int i=0; i<batchSize; i++) {
+      a_[i] = to_address(a[i]);
+      b_[i] = to_address(b[i]);
+    }
+    kernels::sumGw_batched_gpu(n,x,a_,inca,b_,incb,b0,nw,batchSize);
+    delete [] a_;
+    delete [] b_;
   }
 
 }

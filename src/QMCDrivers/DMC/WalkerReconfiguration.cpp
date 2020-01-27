@@ -12,13 +12,16 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
+#include "QMCDrivers/WalkerProperties.h"
 #include "QMCDrivers/DMC/WalkerReconfiguration.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/FairDivide.h"
 #include "Utilities/RandomGenerator.h"
-using namespace qmcplusplus;
 
+namespace qmcplusplus
+{
+
+using WP = WalkerProperties::Indexes;
 /** default constructor
  *
  * set SwapMode
@@ -44,10 +47,10 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
   for (int iw = 0; iw < nw; iw++)
   {
-    r2_accepted += (*it)->Properties(R2ACCEPTED);
-    r2_proposed += (*it)->Properties(R2PROPOSED);
+    r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
+    r2_proposed += (*it)->Properties(WP::R2PROPOSED);
     FullPrecRealType wgt((*it)->Weight);
-    FullPrecRealType e((*it)->Properties(LOCALENERGY));
+    FullPrecRealType e((*it)->Properties(WP::LOCALENERGY));
     esum += wgt * e;
     e2sum += wgt * e * e;
     ecum += e;
@@ -61,9 +64,9 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   curData[EREF_INDEX]       = ecum;
   curData[R2ACCEPTED_INDEX] = r2_accepted;
   curData[R2PROPOSED_INDEX] = r2_proposed;
-  FullPrecRealType nwInv            = 1.0 / static_cast<FullPrecRealType>(nw);
+  FullPrecRealType nwInv    = 1.0 / static_cast<FullPrecRealType>(nw);
   UnitZeta                  = Random();
-  FullPrecRealType dstep            = UnitZeta * nwInv;
+  FullPrecRealType dstep    = UnitZeta * nwInv;
   for (int iw = 0; iw < nw; iw++)
   {
     Zeta[iw] = wtot * (dstep + static_cast<FullPrecRealType>(iw) * nwInv);
@@ -74,7 +77,7 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   //}
   //assign negative
   //std::fill(IndexCopy.begin(),IndexCopy.end(),-1);
-  int ind       = 0;
+  int ind               = 0;
   FullPrecRealType wCur = 0.0;
   //surviving walkers
   int icdiff = 0;
@@ -83,7 +86,7 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   for (int iw = 0; iw < nw; iw++)
   {
     FullPrecRealType tryp = wCur + std::abs(wConf[iw]);
-    int ni        = 0;
+    int ni                = 0;
     while (Zeta[ind] < tryp && Zeta[ind] >= wCur)
     {
       //IndexCopy[ind]=iw;
@@ -183,3 +186,4 @@ int WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, FullPrecRe
   //curData[WALKERSIZE_INDEX]=nwkept;
   return nwkept;
 }
+} // namespace qmcplusplus

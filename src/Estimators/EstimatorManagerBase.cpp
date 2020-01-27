@@ -28,6 +28,7 @@
 #include "Estimators/RMCLocalEnergyEstimator.h"
 #include "Estimators/CollectablesEstimator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "QMCDrivers/WalkerProperties.h"
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"

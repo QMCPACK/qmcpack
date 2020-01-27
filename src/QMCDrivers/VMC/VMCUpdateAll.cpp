@@ -19,6 +19,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 VMCUpdateAll::VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
@@ -43,7 +45,7 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
   W.loadWalker(
       thisWalker,
       false); // W.R,G,L = thisWalker.R,G,L; false indicates W.DistTables & SK are not updated in this call. W.DistTables,SK are now stale.
-  RealType logpsi_old = thisWalker.Properties(LOGPSI);
+  RealType logpsi_old = thisWalker.Properties(WP::LOGPSI);
   for (int iter = 0; iter < nSubSteps; ++iter)
   { // make a few Monte-Carlo steps to decorrelate samples without calculating observables
     makeGaussRandomWithEngine(deltaR, RandomGen); // fill deltaR
@@ -104,7 +106,7 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
   RealType eloc = H.evaluate(
       W); // calculate local energy; W.SK must be up-to-date if Coulomb interaction is used with periodic boundary. W.SK is used to calculate the long-range part of the Coulomb potential.
   W.saveWalker(thisWalker);
-  thisWalker.resetProperty(logpsi_old, Psi.getPhase(), eloc); // update thisWalker::Properties[LOGPSI,SIGN,LOCALENERGY]
+  thisWalker.resetProperty(logpsi_old, Psi.getPhase(), eloc); // update thisWalker::Properties[WP::LOGPSI,WP::SIGN,WP::LOCALENERGY]
   H.auxHevaluate(W, thisWalker);                              // update auxiliary observables, i.e. fill H::Observables
   H.saveProperty(thisWalker.getPropertyBase());               // copy H::Observables to thisWalker::Properties
 }

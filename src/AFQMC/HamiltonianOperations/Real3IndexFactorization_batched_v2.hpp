@@ -75,6 +75,9 @@ class Real3IndexFactorization_batched_v2
 
   public:
 
+    static const HamiltonianTypes HamOpType = RealDenseFactorized;
+    HamiltonianTypes getHamType() const { return HamOpType; }
+
     template<class shmCMatrix_, class shmSpRMatrix_, class shmSpC3Tensor_>
     Real3IndexFactorization_batched_v2(WALKER_TYPES type,
                  mpi3RMatrix&& hij_,

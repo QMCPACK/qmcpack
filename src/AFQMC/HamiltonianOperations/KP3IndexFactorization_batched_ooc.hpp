@@ -103,6 +103,9 @@ class KP3IndexFactorization_batched_ooc
 
   public:
 
+    static const HamiltonianTypes HamOpType = KPFactorized;
+    HamiltonianTypes getHamType() const { return HamOpType; }
+
 // NOTE: careful with nocc_max, not consistently defined!!!
 
     // since arrays can be in host, can't assume that types are consistent
@@ -152,11 +155,11 @@ class KP3IndexFactorization_batched_ooc
         Qmap(std::move(qqm_)),
         Q2vbias(Qmap.size()), 
         vn0(std::move(vn0_)),
+        nsampleQ(nsampleQ_),
         gQ(std::move(gQ_)),
         Qwn({1,1}),
         generator(),
         distribution(gQ.begin(),gQ.end()), 
-        nsampleQ(nsampleQ_),
         BTMats(iextensions<1u>{1},sp_allocator_),
         TMats(iextensions<1u>{1},sp_allocator_),
         IMats(iextensions<1u>{1},IAllocator{allocator_}),
@@ -165,8 +168,8 @@ class KP3IndexFactorization_batched_ooc
         dev_i0pk( typename IVector::extensions_type{nopk.size()}, IAllocator{allocator_}),
         dev_kminus(kminus),
         dev_ncholpQ(ncholpQ),
-        dev_Qmap(Qmap),
         dev_Q2vbias( typename IVector::extensions_type{nopk.size()}, IAllocator{allocator_}),
+        dev_Qmap(Qmap),
         dev_nelpk(nelpk),
         dev_a0pk( typename IMatrix::extensions_type{nelpk.size(0),nelpk.size(1)}, 
                                                                     IAllocator{allocator_}),
@@ -718,7 +721,7 @@ class KP3IndexFactorization_batched_ooc
       set_buffer(mem_needs);
 
       // messy
-      sp_pointer Krptr, Klptr;
+      sp_pointer Krptr(nullptr), Klptr(nullptr);
       long Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
