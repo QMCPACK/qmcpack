@@ -285,7 +285,7 @@ void SplineC2ROMP<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueV
 
     {
       ScopedTimer offload(&offload_timer_);
-      PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
+      PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) \
                   map(always, from: psi_ptr[0:orb_size])")
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
@@ -358,7 +358,7 @@ void SplineC2ROMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 
   {
     ScopedTimer offload(&offload_timer_);
-    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nVP) thread_limit(ChunkSizePerTeam) \
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nVP) \
                 map(always, to: psiinv_ptr[0:psiinv_pos_copy.size()]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*nVP])")
     for (int iat = 0; iat < nVP; iat++)
@@ -476,7 +476,7 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
 
   {
     ScopedTimer offload(&offload_timer_);
-    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) thread_limit(ChunkSizePerTeam) \
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
                 map(always, to: mw_psiinv_ptr[0:mw_psiinv_pos_copy.size()], ref_id_ptr[0:mw_nVP]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
     for (int iat = 0; iat < mw_nVP; iat++)
@@ -689,7 +689,7 @@ void SplineC2ROMP<ST>::evaluateVGL(const ParticleSet& P,
 
   {
     ScopedTimer offload(&offload_timer_);
-    PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
+    PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) \
                 map(always, from: results_scratch_ptr[0:orb_size*5])")
     for (int team_id = 0; team_id < NumTeams; team_id++)
     {
@@ -760,7 +760,7 @@ void SplineC2ROMP<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocat
 
   {
     ScopedTimer offload(&offload_timer_);
-    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) thread_limit(ChunkSizePerTeam) \
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
                     map(always, to: pos_copy_ptr[0:num_pos*6]) \
                     map(always, from: results_scratch_ptr[0:orb_size*num_pos*5])")
     for (int iw = 0; iw < num_pos; iw++)
