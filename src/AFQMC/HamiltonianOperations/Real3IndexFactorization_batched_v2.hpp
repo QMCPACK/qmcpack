@@ -434,7 +434,7 @@ class Real3IndexFactorization_batched_v2
             copy_n_cast(make_device_ptr(v.origin()),v.num_elements(),vsp.origin());
           for(int ispin=0, is0=0; ispin<2; ispin++) {
             assert( Lnak[ispin].size(0) == v.size(0) );
-            assert( Lnak[ispin].size(1) == G.size(0) );
+            assert( Lnak[ispin].size(1)*Lnak[ispin].size(2) == G.size(0) );
             SpCMatrix_ref Ln(make_device_ptr(Lnak[ispin].origin()), {local_nCV,nel[ispin]*NMO});
 #if MIXED_PRECISION
             SpCVector_ref Gsp(vsp.origin()+vsp.num_elements(), {nel[ispin]*NMO});
@@ -449,8 +449,7 @@ class Real3IndexFactorization_batched_v2
           copy_n_cast(vsp.origin(),vsp.num_elements(),make_device_ptr(v.origin()));
 #endif
         } else {
-          assert( G.size(0) == v.size(1) );
-          assert( Lnak[0].size(1) == G.size(1) );
+          assert( Lnak[0].size(1)*Lnak[0].size(2) == G.size(0) );
           assert( Lnak[0].size(0) == v.size(0) );
           SpCMatrix_ref Ln(make_device_ptr(Lnak[0].origin()), {local_nCV,Lnak[0].size(1)*Lnak[0].size(2)});
 #if MIXED_PRECISION
