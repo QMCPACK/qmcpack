@@ -43,6 +43,9 @@ void DMCDriverInput::readXML(xmlNodePtr node)
     throw std::runtime_error("Illegal input for MaxAge in DMC input section");
   if(branch_interval_ < 0)
     throw std::runtime_error("Illegal input for branchInterval or substeps in DMC input section");
+
+  if(reconfig_str == "yes")
+    APP_ABORT("Reconfiguration is currently broken.  Please try again without reconfiguration.")
 }
 
 std::ostream& operator<<(std::ostream& o_stream, const DMCDriverInput& dmci) { return o_stream; }

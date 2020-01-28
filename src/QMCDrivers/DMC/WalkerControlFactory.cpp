@@ -41,6 +41,8 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   //if(nmin<0) nmin=nideal/2;
   WalkerControlBase* wc = 0;
   int ncontexts         = comm->size();
+  if(reconfigopt == "yes" || reconfigopt == "pure")
+    APP_ABORT("Reconfiguration is currently broken.  Please try again without reconfiguration.")
   bool fixw             = (reconfig || reconfigopt == "yes" || reconfigopt == "pure");
   if (fixw)
   {

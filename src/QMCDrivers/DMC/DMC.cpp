@@ -70,6 +70,8 @@ void DMC::resetUpdateEngines()
 {
   ReportEngine PRE("DMC", "resetUpdateEngines");
   bool fixW = (Reconfiguration == "yes");
+  if(Reconfiguration == "yes")
+    APP_ABORT("Reconfiguration is currently broken.  Please try again without reconfiguration.")
   makeClones(W, Psi, H);
   Timer init_timer;
   if (Movers.empty())

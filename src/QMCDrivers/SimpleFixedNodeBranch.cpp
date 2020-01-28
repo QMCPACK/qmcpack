@@ -745,9 +745,16 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
     if (WalkerController->get_method())
       reconfig = "yes";
     std::string reconfig_prev(reconfig);
+    std::string reconfig_read = "no";
     ParameterSet p;
-    p.add(reconfig, "reconfiguration", "string");
+    p.add(reconfig_read, "reconfiguration", "string");
     p.put(cur);
+    if(reconfig_read != "no")
+    {
+      reconfig = reconfig_read;
+      // remove this once bug is fixed
+      APP_ABORT("Reconfiguration is currently broken.  Please try again without reconfiguration.")
+    }
     same_wc = (reconfig == reconfig_prev);
   }
 
