@@ -210,7 +210,7 @@ def attribute_to_value(attr):
 
 #local write types
 def yesno(var):
-    render_bool(var,'yes','no')
+    return render_bool(var,'yes','no')
 #end def yesno
 
 def yesnostr(var):
@@ -222,11 +222,11 @@ def yesnostr(var):
 #end def yesnostr
 
 def onezero(var):
-    render_bool(var,'1','0')
+    return render_bool(var,'1','0')
 #end def onezero
 
 def truefalse(var):
-    render_bool(var,'true','false')
+    return render_bool(var,'true','false')
 #end def onezero
 
 def render_bool(var,T,F):
