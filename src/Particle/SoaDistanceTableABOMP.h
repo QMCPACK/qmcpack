@@ -39,6 +39,8 @@ private:
   std::vector<int> particle_id;
   /// timer for offload portion
   NewTimer& offload_timer_;
+  /// timer for copy portion
+  NewTimer& copy_timer_;
   /// timer for offload portion
   NewTimer& eval_timer_;
 
@@ -47,6 +49,7 @@ public:
       : DTD_BConds<T, D, SC>(source.Lattice),
         DistanceTableData(source, target),
         offload_timer_(*TimerManager.createTimer(std::string("SoaDistanceTableABOMP::offload_") + target.getName() + "_" + source.getName(), timer_level_fine)),
+        copy_timer_(*TimerManager.createTimer(std::string("SoaDistanceTableABOMP::copy_") + target.getName() + "_" + source.getName(), timer_level_fine)),
         eval_timer_(*TimerManager.createTimer(std::string("SoaDistanceTableABOMP::evaluate_") + target.getName() + "_" + source.getName(), timer_level_fine))
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMP*>(&source.getCoordinates());
@@ -133,12 +136,15 @@ public:
         }
     }
 
-    for (size_t iat = 0; iat < N_targets; iat++)
     {
-      assert(N_sources_padded == displacements_[iat].capacity());
-      auto offset = offload_output.data() + iat * N_sources_padded * (D + 1);
-      std::copy_n(offset, N_sources_padded, distances_[iat].data());
-      std::copy_n(offset + N_sources_padded, N_sources_padded * D, displacements_[iat].data());
+      ScopedTimer copy(&copy_timer_);
+      for (size_t iat = 0; iat < N_targets; iat++)
+      {
+        assert(N_sources_padded == displacements_[iat].capacity());
+        auto offset = offload_output.data() + iat * N_sources_padded * (D + 1);
+        std::copy_n(offset, N_sources_padded, distances_[iat].data());
+        std::copy_n(offset + N_sources_padded, N_sources_padded * D, displacements_[iat].data());
+      }
     }
   }
 
@@ -219,15 +225,18 @@ public:
         }
     }
 
-    for (size_t iat = 0; iat < total_targets; iat++)
     {
-      const int wid = walker_id_ptr[iat];
-      const int pid = particle_id[iat];
-      auto& dt = static_cast<SoaDistanceTableABOMP&>(dt_list[wid].get());
-      assert(N_sources_padded == dt.displacements_[pid].capacity());
-      auto offset = offload_output.data() + iat * N_sources_padded * (D + 1);
-      std::copy_n(offset, N_sources_padded, dt.distances_[pid].data());
-      std::copy_n(offset + N_sources_padded, N_sources_padded * D, dt.displacements_[pid].data());
+      ScopedTimer copy(&copy_timer_);
+      for (size_t iat = 0; iat < total_targets; iat++)
+      {
+        const int wid = walker_id_ptr[iat];
+        const int pid = particle_id[iat];
+        auto& dt = static_cast<SoaDistanceTableABOMP&>(dt_list[wid].get());
+        assert(N_sources_padded == dt.displacements_[pid].capacity());
+        auto offset = offload_output.data() + iat * N_sources_padded * (D + 1);
+        std::copy_n(offset, N_sources_padded, dt.distances_[pid].data());
+        std::copy_n(offset + N_sources_padded, N_sources_padded * D, dt.displacements_[pid].data());
+      }
     }
   }
 
