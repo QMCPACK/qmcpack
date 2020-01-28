@@ -35,6 +35,8 @@ private:
   OffloadPinnedVector<RealType> target_pos;
   ///accelerator input buffer for multiple data set
   OffloadPinnedVector<char> offload_input;
+  ///accelerator output buffer for r and dr
+  OffloadPinnedVector<RealType> r_dr_memorypool_;
   ///target particle id
   std::vector<int> particle_id;
   /// timer for offload portion
@@ -67,12 +69,14 @@ public:
 
     // initialize memory containers and views
     const int N_sources_padded = getAlignedSize<T>(N_sources);
+    const int stride_size = N_sources_padded * (D + 1);
+    r_dr_memorypool_.resize(stride_size * N_targets);
     distances_.resize(N_targets);
     displacements_.resize(N_targets);
     for (int i = 0; i < N_targets; ++i)
     {
-      distances_[i].resize(N_sources_padded);
-      displacements_[i].resize(N_sources_padded);
+      distances_[i].attachReference(r_dr_memorypool_.data() + i * stride_size, N_sources);
+      displacements_[i].attachReference(N_sources, N_sources_padded, r_dr_memorypool_.data() + i * stride_size + N_sources_padded);
     }
 
     // The padding of temp_r_ and temp_dr_ is necessary for the memory copy in the update function
@@ -103,11 +107,9 @@ public:
       for (size_t idim = 0; idim < D; idim++)
         target_pos[iat * D + idim] = P.R[iat][idim];
 
-    offload_output.resize(N_targets * N_sources_padded * (D + 1));
-
     auto* target_pos_ptr = target_pos.data();
     auto* source_pos_ptr = Origin->getCoordinates().getAllParticlePos().data();
-    auto* r_dr_ptr       = offload_output.data();
+    auto* r_dr_ptr       = r_dr_memorypool_.data();
 
     const int ChunkSizePerTeam = 256;
     const int NumTeams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
@@ -117,7 +119,7 @@ public:
       #pragma omp target teams distribute collapse(2) num_teams(N_targets*NumTeams) \
         map(to: source_pos_ptr[:N_sources_padded*D]) \
         map(always, to: target_pos_ptr[:N_targets*D]) \
-        map(always, from: r_dr_ptr[:offload_output.size()])
+        map(always, from: r_dr_ptr[:r_dr_memorypool_.size()])
       for (int iat = 0; iat < N_targets_local; ++iat)
         for (int team_id = 0; team_id < NumTeams; team_id++)
         {
@@ -128,23 +130,13 @@ public:
           for (int idim = 0; idim < D; idim++)
             pos[idim] = target_pos_ptr[iat * D + idim];
 
-          auto* r_iat_ptr  = r_dr_ptr + iat * N_sources_padded * (D + 1);
-          auto* dr_iat_ptr = r_dr_ptr + iat * N_sources_padded * (D + 1) + N_sources_padded;
+          const size_t stride_size = N_sources_padded * (D + 1);
+          auto* r_iat_ptr  = r_dr_ptr + iat * stride_size;
+          auto* dr_iat_ptr = r_iat_ptr + N_sources_padded;
 
           DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
-                                                      first, last);
+                                                        first, last);
         }
-    }
-
-    {
-      ScopedTimer copy(&copy_timer_);
-      for (size_t iat = 0; iat < N_targets; iat++)
-      {
-        assert(N_sources_padded == displacements_[iat].capacity());
-        auto offset = offload_output.data() + iat * N_sources_padded * (D + 1);
-        std::copy_n(offset, N_sources_padded, distances_[iat].data());
-        std::copy_n(offset + N_sources_padded, N_sources_padded * D, displacements_[iat].data());
-      }
     }
   }
 
