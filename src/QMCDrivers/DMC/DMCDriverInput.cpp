@@ -20,7 +20,7 @@ void DMCDriverInput::readXML(xmlNodePtr node)
   ParameterSet parameter_set_;
   std::string reconfig_str;
   parameter_set_.add(reconfig_str, "reconfiguration", "string");
-  reconfiguration_ = (reconfig_str == "yes");
+  reconfiguration_ = (reconfig_str == "runwhileincorrect");
   parameter_set_.add(NonLocalMove, "nonlocalmove", "string");
   parameter_set_.add(NonLocalMove, "nonlocalmoves", "string");
   parameter_set_.add(max_age_, "MaxAge", "double");
@@ -44,7 +44,7 @@ void DMCDriverInput::readXML(xmlNodePtr node)
   if(branch_interval_ < 0)
     throw std::runtime_error("Illegal input for branchInterval or substeps in DMC input section");
 
-  if(reconfig_str == "yes")
+  if(reconfig_str != "no" && reconfig_str != "runwhileincorrect")
     APP_ABORT("Reconfiguration is currently broken.  Please try again without reconfiguration.")
 }
 

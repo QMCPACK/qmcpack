@@ -41,9 +41,10 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   //if(nmin<0) nmin=nideal/2;
   WalkerControlBase* wc = 0;
   int ncontexts         = comm->size();
-  if(reconfigopt == "yes" || reconfigopt == "pure")
+  if((reconfig_str != "no" && reconfig_str != "runwhileincorrect")
     APP_ABORT("Reconfiguration is currently broken.  Please try again without reconfiguration.")
-  bool fixw             = (reconfig || reconfigopt == "yes" || reconfigopt == "pure");
+  //bool fixw             = (reconfig || reconfigopt == "yes" || reconfigopt == "pure");
+  bool fixw = (reconfig || reconfigopt == "runwhileincorrect");
   if (fixw)
   {
     int nwloc = std::max(omp_get_max_threads(), nwtot / ncontexts);

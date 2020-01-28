@@ -69,8 +69,8 @@ DMC::DMC(MCWalkerConfiguration& w,
 void DMC::resetUpdateEngines()
 {
   ReportEngine PRE("DMC", "resetUpdateEngines");
-  bool fixW = (Reconfiguration == "yes");
-  if(Reconfiguration == "yes")
+  bool fixW = (Reconfiguration == "runwhileincorrect");
+  if(Reconfiguration != "no" && Reconfiguration != "runwhileincorrect")
     APP_ABORT("Reconfiguration is currently broken.  Please try again without reconfiguration.")
   makeClones(W, Psi, H);
   Timer init_timer;
