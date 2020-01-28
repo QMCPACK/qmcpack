@@ -53,7 +53,7 @@ namespace qmcplusplus
       aligned_vector<hContainer_type*> hess;
 
       ///default constructor
-      einspline_spo():nBlocks(0),nSplines(0),firstBlock(0),lastBlock(0), Owner(false){}
+      einspline_spo(): nBlocks(0), firstBlock(0), lastBlock(0), nSplines(0), Owner(false){}
       ///disable copy constructor 
       einspline_spo(const einspline_spo& in)=delete;
       ///disable copy operator
