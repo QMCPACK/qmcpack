@@ -157,7 +157,7 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
   curData[SENTWALKERS_INDEX] = NumWalkersSent;
 
   //This should not be used by the new driver code
-  curData[LE_MAX + MyContext] = -1000;
+  //curData[LE_MAX + MyContext] = -1000;
   myTimers[DMC_MPI_allreduce]->start();
   // You might think we are just reducing LE and sent walkers but
   // see calcPopulationAdjustments massive side effects.
@@ -167,14 +167,14 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
   pop.set_ensemble_property(ensemble_property_);
 
   //All of this should really just accomplish what onRankSpawnKill does for a nonmpi job.
-  adjustPopulation(pop, adjust);
-
   auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), adjust.num_walkers);
 
   myTimers[DMC_MPI_prebalance]->stop();
   myTimers[DMC_MPI_loadbalance]->start();
   swapWalkersSimple(pop, adjust, num_per_node);
   myTimers[DMC_MPI_loadbalance]->stop();
+
+  adjustPopulation(pop, adjust);
 
   onRankSpawnKill(pop, adjust);
   
@@ -509,12 +509,12 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   }
 
   // sort good walkers by the number of copies
-  std::vector<std::pair<int&, MCPWalker&>> sorted_good_walkers;
+  std::vector<std::pair<int, MCPWalker&>> sorted_good_walkers;
   for (int iw = 0; iw < adjust.copies_to_make.size(); iw++)
-    sorted_good_walkers.push_back(std::make_pair(std::ref(adjust.copies_to_make[iw]), adjust.good_walkers[iw]));
+    sorted_good_walkers.push_back(std::make_pair(adjust.copies_to_make[iw], adjust.good_walkers[iw]));
 
   // Sort only on the number of copies
-  std::sort(sorted_good_walkers.begin(), sorted_good_walkers.end(), [](auto& a, auto& b) { return a.first > b.first; });
+  std::sort(sorted_good_walkers.begin(), sorted_good_walkers.end(), [](auto& a, auto& b) { return a.first < b.first; });
 
   //useful counts
   int nswap       = plus.size();
@@ -605,6 +605,7 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   std::cout << "rank: " << MyContext << " recv_message_list.size(): " << recv_message_list.size()
             << "   send_message_list.size(): " << send_message_list.size() << '\n';
 
+  RefVector<MCPWalker> recv_walkers;
   if (local_recvs > 0)
   {
     for (int im = 0; im < recv_requests.size(); ++im)
@@ -612,11 +613,15 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
       recv_requests[im].wait();
       MCPWalker& walker_to_check = recv_message_list[im].walker;
       recv_message_list[im].walker.copyFromBuffer();
-      for (auto property : walker_to_check.Properties)
-      {
-        if (std::isnan(property))
-          throw std::runtime_error("received property is nan!");
-      }
+      // for (auto property : walker_to_check.Properties)
+      // {
+      //   if (std::isnan(property))
+      //     throw std::runtime_error("received property is nan!");
+      // }
+      assert( walker_to_check.Multiplicity > 0 );
+      assert( walker_to_check.Weight > 0 );
+      
+      recv_walkers.push_back(walker_to_check);
     }
   }
 
@@ -639,7 +644,19 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
 
   std::for_each(zombies.begin(), zombies.end(), [&pop](MCPWalker& zombie) { pop.killWalker(zombie); });
 
-  adjust.num_walkers = pop.get_num_local_walkers();
+  adjust.good_walkers.clear();
+  adjust.copies_to_make.clear();
+  for(int iw = 0; iw < sorted_good_walkers.size(); ++iw)
+  {
+    adjust.good_walkers.push_back(sorted_good_walkers[iw].second);
+    adjust.copies_to_make.push_back(sorted_good_walkers[iw].first);
+  }
+  for(int iw = 0; iw < recv_walkers.size(); ++iw)
+  {
+    adjust.good_walkers.push_back(recv_walkers[iw]);
+    adjust.copies_to_make.push_back(0);
+  }
+  adjust.num_walkers = std::accumulate(adjust.copies_to_make.begin(),adjust.copies_to_make.end(),adjust.copies_to_make.size());
 
   NumWalkersSent = local_sends;
 }
