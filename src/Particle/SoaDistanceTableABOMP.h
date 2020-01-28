@@ -37,10 +37,17 @@ private:
   OffloadPinnedVector<char> offload_input;
   ///target particle id
   std::vector<int> particle_id;
+  /// timer for offload portion
+  NewTimer& offload_timer_;
+  /// timer for offload portion
+  NewTimer& eval_timer_;
 
 public:
   SoaDistanceTableABOMP(const ParticleSet& source, ParticleSet& target)
-      : DTD_BConds<T, D, SC>(source.Lattice), DistanceTableData(source, target)
+      : DTD_BConds<T, D, SC>(source.Lattice),
+        DistanceTableData(source, target),
+        offload_timer_(*TimerManager.createTimer(std::string("SoaDistanceTableABOMP::offload_") + target.getName() + "_" + source.getName(), timer_level_fine)),
+        eval_timer_(*TimerManager.createTimer(std::string("SoaDistanceTableABOMP::evaluate_") + target.getName() + "_" + source.getName(), timer_level_fine))
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMP*>(&source.getCoordinates());
     if (!coordinates_soa) throw std::runtime_error("Source particle set doesn't have OpenMP offload. Contact developers!");
@@ -82,6 +89,7 @@ public:
   /** evaluate the full table */
   inline void evaluate(ParticleSet& P)
   {
+    ScopedTimer eval(&eval_timer_);
     // be aware of the sign of Displacement
     const int N_targets_local  = N_targets;
     const int N_sources_local  = N_sources;
@@ -101,26 +109,29 @@ public:
     const int ChunkSizePerTeam = 256;
     const int NumTeams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
-    #pragma omp target teams distribute collapse(2) num_teams(N_targets*NumTeams) \
-      map(to: source_pos_ptr[:N_sources_padded*D]) \
-      map(always, to: target_pos_ptr[:N_targets*D]) \
-      map(always, from: r_dr_ptr[:offload_output.size()])
-    for (int iat = 0; iat < N_targets_local; ++iat)
-      for (int team_id = 0; team_id < NumTeams; team_id++)
-      {
-        const int first = ChunkSizePerTeam * team_id;
-        const int last  = (first + ChunkSizePerTeam) > N_sources_local ? N_sources_local : first + ChunkSizePerTeam;
+    {
+      ScopedTimer offload(&offload_timer_);
+      #pragma omp target teams distribute collapse(2) num_teams(N_targets*NumTeams) \
+        map(to: source_pos_ptr[:N_sources_padded*D]) \
+        map(always, to: target_pos_ptr[:N_targets*D]) \
+        map(always, from: r_dr_ptr[:offload_output.size()])
+      for (int iat = 0; iat < N_targets_local; ++iat)
+        for (int team_id = 0; team_id < NumTeams; team_id++)
+        {
+          const int first = ChunkSizePerTeam * team_id;
+          const int last  = (first + ChunkSizePerTeam) > N_sources_local ? N_sources_local : first + ChunkSizePerTeam;
 
-        T pos[D];
-        for (int idim = 0; idim < D; idim++)
-          pos[idim] = target_pos_ptr[iat * D + idim];
+          T pos[D];
+          for (int idim = 0; idim < D; idim++)
+            pos[idim] = target_pos_ptr[iat * D + idim];
 
-        auto* r_iat_ptr  = r_dr_ptr + iat * N_sources_padded * (D + 1);
-        auto* dr_iat_ptr = r_dr_ptr + iat * N_sources_padded * (D + 1) + N_sources_padded;
+          auto* r_iat_ptr  = r_dr_ptr + iat * N_sources_padded * (D + 1);
+          auto* dr_iat_ptr = r_dr_ptr + iat * N_sources_padded * (D + 1) + N_sources_padded;
 
-        DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
+          DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
                                                       first, last);
-      }
+        }
+    }
 
     for (size_t iat = 0; iat < N_targets; iat++)
     {
@@ -133,8 +144,9 @@ public:
 
   inline void mw_evaluate(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
   {
-    const size_t nw = dt_list.size();
+    ScopedTimer eval(&eval_timer_);
 
+    const size_t nw = dt_list.size();
     size_t count_targets = 0;
     for (ParticleSet& p: p_list)
       count_targets += p.getTotalNum();
@@ -181,28 +193,31 @@ public:
     auto* r_dr_ptr  = offload_output.data();
     auto* input_ptr = offload_input.data();
 
-    #pragma omp target teams distribute collapse(2) num_teams(total_targets*NumTeams) \
-      map(always, to: input_ptr[:offload_input.size()]) \
-      map(always, from: r_dr_ptr[:offload_output.size()])
-    for (int iat = 0; iat < total_targets; ++iat)
-      for (int team_id = 0; team_id < NumTeams; team_id++)
-      {
-        auto* target_pos_ptr = reinterpret_cast<RealType*>(input_ptr);
-        const int walker_id  = reinterpret_cast<int*>(input_ptr + total_targets * D * realtype_size)[iat];
-        auto* source_pos_ptr = reinterpret_cast<RealType**>(input_ptr + total_targets * D * realtype_size + total_targets * int_size)[walker_id];
-        auto* r_iat_ptr      = r_dr_ptr + iat * N_sources_padded * (D + 1);
-        auto* dr_iat_ptr     = r_dr_ptr + iat * N_sources_padded * (D + 1) + N_sources_padded;
+    {
+      ScopedTimer offload(&offload_timer_);
+      #pragma omp target teams distribute collapse(2) num_teams(total_targets*NumTeams) \
+        map(always, to: input_ptr[:offload_input.size()]) \
+        map(always, from: r_dr_ptr[:offload_output.size()])
+      for (int iat = 0; iat < total_targets; ++iat)
+        for (int team_id = 0; team_id < NumTeams; team_id++)
+        {
+          auto* target_pos_ptr = reinterpret_cast<RealType*>(input_ptr);
+          const int walker_id  = reinterpret_cast<int*>(input_ptr + total_targets * D * realtype_size)[iat];
+          auto* source_pos_ptr = reinterpret_cast<RealType**>(input_ptr + total_targets * D * realtype_size + total_targets * int_size)[walker_id];
+          auto* r_iat_ptr      = r_dr_ptr + iat * N_sources_padded * (D + 1);
+          auto* dr_iat_ptr     = r_dr_ptr + iat * N_sources_padded * (D + 1) + N_sources_padded;
 
-        const int first = ChunkSizePerTeam * team_id;
-        const int last  = (first + ChunkSizePerTeam) > N_sources_local ? N_sources_local : first + ChunkSizePerTeam;
+          const int first = ChunkSizePerTeam * team_id;
+          const int last  = (first + ChunkSizePerTeam) > N_sources_local ? N_sources_local : first + ChunkSizePerTeam;
 
-        T pos[D];
-        for (int idim = 0; idim < D; idim++)
-          pos[idim] = target_pos_ptr[iat * D + idim];
+          T pos[D];
+          for (int idim = 0; idim < D; idim++)
+            pos[idim] = target_pos_ptr[iat * D + idim];
 
-        DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
+          DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
                                                       first, last);
-      }
+        }
+    }
 
     for (size_t iat = 0; iat < total_targets; iat++)
     {
