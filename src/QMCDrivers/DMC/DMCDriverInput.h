@@ -56,7 +56,7 @@ private:
   ///input std::string to use fast gradient
   std::string UseFastGrad;
   ///input to control maximum age allowed for walkers.
-  IndexType max_age_ = 0;
+  IndexType max_age_ = 10;
   double alpha_ = 0.0;
   double gamma_ = 0.0;
 public:

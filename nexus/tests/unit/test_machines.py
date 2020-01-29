@@ -1042,15 +1042,21 @@ def test_job_run_command():
         ('cades'          , 'n1'            ) : 'mpirun -np 36 test.x',
         ('cades'          , 'n1_p1'         ) : 'mpirun -np 1 test.x',
         ('cades'          , 'n2'            ) : 'mpirun -np 72 test.x',
-        ('cades'          , 'n2_t2'         ) : 'mpirun -np 36 --npersocket 9 test.x',
-        ('cades'          , 'n2_t2_e'       ) : 'mpirun -np 36 --npersocket 9 test.x',
-        ('cades'          , 'n2_t2_p2'      ) : 'mpirun -np 4 --npersocket 1 test.x',
-        ('cetus'          , 'n1'            ) : 'runjob --np 16 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('cetus'          , 'n1_p1'         ) : 'runjob --np 1 -p 1 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('cetus'          , 'n2'            ) : 'runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('cetus'          , 'n2_t2'         ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        ('cetus'          , 'n2_t2_e'       ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 ENV_VAR=1 : test.x',
-        ('cetus'          , 'n2_t2_p2'      ) : 'runjob --np 4 -p 2 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
+        ('cades'          , 'n2_t2'         ) : 'mpirun -np 36 test.x',
+        ('cades'          , 'n2_t2_e'       ) : 'mpirun -np 36 test.x',
+        ('cades'          , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
+        ('cades_moab'     , 'n1'            ) : 'mpirun -np 36 test.x',
+        ('cades_moab'     , 'n1_p1'         ) : 'mpirun -np 1 test.x',
+        ('cades_moab'     , 'n2'            ) : 'mpirun -np 72 test.x',
+        ('cades_moab'     , 'n2_t2'         ) : 'mpirun --npersocket 9 -np 36 test.x',
+        ('cades_moab'     , 'n2_t2_e'       ) : 'mpirun --npersocket 9 -np 36 test.x',
+        ('cades_moab'     , 'n2_t2_p2'      ) : 'mpirun --npersocket 1 -np 4 test.x',
+        ('cetus'          , 'n1'            ) : 'runjob --envs OMP_NUM_THREADS=1 --np 16 -p 16 --verbose=INFO $LOCARGS : test.x',
+        ('cetus'          , 'n1_p1'         ) : 'runjob --envs OMP_NUM_THREADS=1 --np 1 -p 1 --verbose=INFO $LOCARGS : test.x',
+        ('cetus'          , 'n2'            ) : 'runjob --envs OMP_NUM_THREADS=1 --np 32 -p 16 --verbose=INFO $LOCARGS : test.x',
+        ('cetus'          , 'n2_t2'         ) : 'runjob --envs OMP_NUM_THREADS=2 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
+        ('cetus'          , 'n2_t2_e'       ) : 'runjob --envs OMP_NUM_THREADS=2 ENV_VAR=1 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
+        ('cetus'          , 'n2_t2_p2'      ) : 'runjob --envs OMP_NUM_THREADS=2 --np 4 -p 2 --verbose=INFO $LOCARGS : test.x',
         ('chama'          , 'n1'            ) : 'srun test.x',
         ('chama'          , 'n1_p1'         ) : 'srun test.x',
         ('chama'          , 'n2'            ) : 'srun test.x',
@@ -1111,12 +1117,12 @@ def test_job_run_command():
         ('matisse'        , 'n2_t2'         ) : 'mpirun -np 16 test.x',
         ('matisse'        , 'n2_t2_e'       ) : 'mpirun -np 16 test.x',
         ('matisse'        , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('mira'           , 'n1'            ) : 'runjob --np 16 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('mira'           , 'n1_p1'         ) : 'runjob --np 1 -p 1 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('mira'           , 'n2'            ) : 'runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('mira'           , 'n2_t2'         ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        ('mira'           , 'n2_t2_e'       ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 ENV_VAR=1 : test.x',
-        ('mira'           , 'n2_t2_p2'      ) : 'runjob --np 4 -p 2 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
+        ('mira'           , 'n1'            ) : 'runjob --envs OMP_NUM_THREADS=1 --np 16 -p 16 --verbose=INFO $LOCARGS : test.x',
+        ('mira'           , 'n1_p1'         ) : 'runjob --envs OMP_NUM_THREADS=1 --np 1 -p 1 --verbose=INFO $LOCARGS : test.x',
+        ('mira'           , 'n2'            ) : 'runjob --envs OMP_NUM_THREADS=1 --np 32 -p 16 --verbose=INFO $LOCARGS : test.x',
+        ('mira'           , 'n2_t2'         ) : 'runjob --envs OMP_NUM_THREADS=2 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
+        ('mira'           , 'n2_t2_e'       ) : 'runjob --envs OMP_NUM_THREADS=2 ENV_VAR=1 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
+        ('mira'           , 'n2_t2_p2'      ) : 'runjob --envs OMP_NUM_THREADS=2 --np 4 -p 2 --verbose=INFO $LOCARGS : test.x',
         ('oic5'           , 'n1'            ) : 'mpirun -np 32 test.x',
         ('oic5'           , 'n1_p1'         ) : 'mpirun -np 1 test.x',
         ('oic5'           , 'n2'            ) : 'mpirun -np 64 test.x',
@@ -1209,12 +1215,12 @@ def test_job_run_command():
         ('uno'            , 'n2_t2'         ) : 'srun test.x',
         ('uno'            , 'n2_t2_e'       ) : 'srun test.x',
         ('uno'            , 'n2_t2_p2'      ) : 'srun test.x',
-        ('vesta'          , 'n1'            ) : 'runjob --np 16 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('vesta'          , 'n1_p1'         ) : 'runjob --np 1 -p 1 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('vesta'          , 'n2'            ) : 'runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 : test.x',
-        ('vesta'          , 'n2_t2'         ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
-        ('vesta'          , 'n2_t2_e'       ) : 'runjob --np 16 -p 8 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 ENV_VAR=1 : test.x',
-        ('vesta'          , 'n2_t2_p2'      ) : 'runjob --np 4 -p 2 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=2 : test.x',
+        ('vesta'          , 'n1'            ) : 'runjob --envs OMP_NUM_THREADS=1 --np 16 -p 16 --verbose=INFO $LOCARGS : test.x',
+        ('vesta'          , 'n1_p1'         ) : 'runjob --envs OMP_NUM_THREADS=1 --np 1 -p 1 --verbose=INFO $LOCARGS : test.x',
+        ('vesta'          , 'n2'            ) : 'runjob --envs OMP_NUM_THREADS=1 --np 32 -p 16 --verbose=INFO $LOCARGS : test.x',
+        ('vesta'          , 'n2_t2'         ) : 'runjob --envs OMP_NUM_THREADS=2 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
+        ('vesta'          , 'n2_t2_e'       ) : 'runjob --envs OMP_NUM_THREADS=2 ENV_VAR=1 --np 16 -p 8 --verbose=INFO $LOCARGS : test.x',
+        ('vesta'          , 'n2_t2_p2'      ) : 'runjob --envs OMP_NUM_THREADS=2 --np 4 -p 2 --verbose=INFO $LOCARGS : test.x',
         })
 
     if testing.global_data['job_ref_table']:
@@ -1381,6 +1387,22 @@ export OMP_NUM_THREADS=1
 export ENV_VAR=1
 aprun -n 32 test.x''',
         cades = '''#!/bin/bash
+#SBATCH -A ABC123
+#SBATCH -p skylake
+#SBATCH -J jobname
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=36
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=1G
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --export=ALL
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+mpirun -np 72 test.x''',
+        cades_moab = '''#!/bin/bash
 #PBS -A ABC123
 #PBS -W group_list=cades-ABC123
 #PBS -q skylake
@@ -1394,8 +1416,8 @@ aprun -n 32 test.x''',
 echo $PBS_O_WORKDIR
 cd $PBS_O_WORKDIR
 
-export OMP_NUM_THREADS=1
 export ENV_VAR=1
+export OMP_NUM_THREADS=1
 mpirun -np 72 test.x''',
         cetus = '''#!/bin/bash
 #COBALT -q default

@@ -5,15 +5,15 @@ from afqmctools.utils.io import from_qmcpack_cplx
 # Map user names to QMCPACK names.
 MAP = {
         'one_rdm': {
-            'group': 'FullOneRDM', 
+            'group': 'FullOneRDM',
             'numer': 'one_rdm'
         },
         'diag_two_rdm': {
-            'group': 'DiagTwoRDM', 
+            'group': 'DiagTwoRDM',
             'numer': 'diag_two_rdm'
         },
         'on_top_pdm': {
-            'group': 'N2R', 
+            'group': 'N2R',
             'numer': 'n2r'
         },
         'cc_realspace_correlation': {
