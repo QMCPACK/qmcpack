@@ -4989,9 +4989,9 @@ class Structure(Sobj):
     def get_atomic_numbers(self):
         an = []
         for e in self.elem:
-            if e[1:].isdigit():
+            if e[1:].isdigit(): # Index concatenated to one-character atomic symbol (e.g., C1)
                 an.append(ptable[e[0:1]].atomic_number)
-            elif e[2:].isdigit():
+            elif e[2:].isdigit(): # Index concatenated to two-character atomic symbol (e.g., Ne1)
                 an.append(ptable[e[0:2]].atomic_number)
             else:
                 an.append(ptable[e].atomic_number)
