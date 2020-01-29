@@ -751,7 +751,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
     if(reconfig != "no" && reconfig != "runwhileincorrect")
     {
       // remove this once bug is fixed
-      APP_ABORT("Reconfiguration is currently broken and gives physically incorrect results.  If you want a physically meaningful energy, please try again without reconfiguration.\n\nThis feature has a legitimate use for performance testing.  If this is your use case, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to enable performance testing runs.")
+      APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
     }
     same_wc = (reconfig == reconfig_prev);
   }
