@@ -435,7 +435,7 @@ void DMCBatched::handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForT
     MCPWalker& stalled_walker = stalled.walkers[iw];
     stalled_walker.Age++;
     stalled_walker.Properties(WP::R2ACCEPTED) = 0.0;
-    RealType wtmp                         = stalled_walker.Weight;
+    FullPrecRealType wtmp                         = stalled_walker.Weight;
     // TODO: fix this walker.Weight twiddle for rejectedMove
     stalled_walker.Weight                      = 0.0;
     QMCHamiltonian& stalled_walker_hamiltonian = stalled.walker_hamiltonians[iw];
