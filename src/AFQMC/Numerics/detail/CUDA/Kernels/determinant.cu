@@ -159,7 +159,7 @@ __global__ void kernel_strided_determinant_from_getrf(int N, thrust::complex<T> 
 }
 
 template<class T>
-__global__ void kernel_batched_determinant_from_getrf(int N, T const** m, int lda, int const* piv, int pstride, T LogOverlapFactor, T *det, int nbatch) {
+__global__ void kernel_batched_determinant_from_getrf(int N, T *const* m, int lda, int const* piv, int pstride, T LogOverlapFactor, T *det, int nbatch) {
 
    __shared__ T tmp[64];
    __shared__ T sg[64];
@@ -197,7 +197,7 @@ __global__ void kernel_batched_determinant_from_getrf(int N, T const** m, int ld
 }
 
 template<class T>
-__global__ void kernel_batched_determinant_from_getrf(int N, thrust::complex<T> const** m, int lda, int const* piv, int pstride, thrust::complex<T> LogOverlapFactor, thrust::complex<T> *det, int nbatch)
+__global__ void kernel_batched_determinant_from_getrf(int N, thrust::complex<T> *const* m, int lda, int const* piv, int pstride, thrust::complex<T> LogOverlapFactor, thrust::complex<T> *det, int nbatch)
 {
 
    __shared__ thrust::complex<T> tmp[64];
@@ -352,19 +352,17 @@ void strided_determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda,
 
 void batched_determinant_from_getrf_gpu(int N, double **m, int lda, int *piv, int pstride, double LogOverlapFactor, double* res, int nbatch)
 {
-//  kernel_batched_determinant_from_getrf<<<nbatch,64>>>(N,m,lda,piv,pstride,LogOverlapFactor,res,nbatch);
+  kernel_batched_determinant_from_getrf<<<nbatch,64>>>(N,m,lda,piv,pstride,LogOverlapFactor,res,nbatch);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
 void batched_determinant_from_getrf_gpu(int N, std::complex<double> **m, int lda, int *piv, int pstride, std::complex<double> LogOverlapFactor, std::complex<double>* res, int nbatch)
 {
-/*
   kernel_batched_determinant_from_getrf<<<nbatch,64>>>(N,
                                     reinterpret_cast<thrust::complex<double> **>(m),lda,piv,pstride,
                                     static_cast<thrust::complex<double>>(LogOverlapFactor),
                                     reinterpret_cast<thrust::complex<double> *>(res) , nbatch);
-*/
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
