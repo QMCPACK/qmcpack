@@ -1159,9 +1159,11 @@ void DensityMatrices(std::vector<MatA> const& Left, std::vector<MatB> const& Rig
                  ma::pointer_dispatch(IWORK.origin())+nbatch*NEL, nbatch);
 
   using ma::strided_determinant_from_getrf;
-  strided_determinant_from_getrf(NEL, ma::pointer_dispatch(Garray[0]), NEL, G[0].stride(0),
-                                   IWORK.origin(),NEL,LogOverlapFactor,
-                                   to_address(ovlp.origin()), nbatch);
+  //std::cout << "STRIDE: " << G[0].stride(0) << " " << nbatch << " " << NEL << std::endl;
+  for(int i=0; i < nbatch; i++)
+    determinant_from_getrf(NEL, ma::pointer_dispatch(Garray[i]), NEL,
+                           IWORK.origin()+i*NEL,LogOverlapFactor,
+                           to_address(ovlp.origin()+i));
 
   getriBatched(NEL,Garray.data(),NEL, 
                  ma::pointer_dispatch(IWORK.origin()), ma::pointer_dispatch(NNarray.data()), 
