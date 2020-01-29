@@ -464,6 +464,7 @@ void DMCBatched::setMultiplicities(const DMCDriverInput& dmcdriver_input,
       walker.Multiplicity = std::min(cone, walker.Weight);
     walker.Multiplicity += rng();
   };
+
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
     setMultiplicity(walkers[iw]);

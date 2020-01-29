@@ -582,7 +582,6 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   {
     std::for_each(send_message_list.begin(), send_message_list.end(), [&send_requests, this](WalkerMessage& message) {
       MCPWalker& this_walker = message.walker;
-      std::cout << "send buffer size: " << message.walker.DataSet.size() << '\n';
       send_requests.emplace_back(myComm->comm.isend_n(message.walker.DataSet.data(),
                                                       message.walker.DataSet.size(), message.target_rank));
     });
@@ -594,16 +593,11 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   {
     std::for_each(recv_message_list.begin(), recv_message_list.end(), [&recv_requests, this](WalkerMessage& message) {
       MCPWalker& walker = message.walker;
-      std::cout << "recv buffer size: " << message.walker.DataSet.size() << '\n';
       recv_requests.emplace_back(myComm->comm.ireceive_n(message.walker.DataSet.data(),
                                                          message.walker.DataSet.size(),
                                                          message.source_rank));
     });
   }
-
-  std::cout << "rank: " << MyContext << " local_recv: " << local_recvs << "   local_sends: " << local_sends << '\n';
-  std::cout << "rank: " << MyContext << " recv_message_list.size(): " << recv_message_list.size()
-            << "   send_message_list.size(): " << send_message_list.size() << '\n';
 
   RefVector<MCPWalker> recv_walkers;
   if (local_recvs > 0)

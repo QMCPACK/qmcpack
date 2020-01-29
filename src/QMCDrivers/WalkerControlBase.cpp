@@ -299,7 +299,7 @@ int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
   std::fill(curData.begin(), curData.end(), 0);
   curData[ENERGY_INDEX]     = esum;
   curData[ENERGY_SQ_INDEX]  = e2sum;
-  curData[WALKERSIZE_INDEX] = pop.get_num_global_walkers();
+  curData[WALKERSIZE_INDEX] = pop.get_num_local_walkers();
   curData[WEIGHT_INDEX]     = wsum;
   curData[EREF_INDEX]       = ecum;
   curData[R2ACCEPTED_INDEX] = r2_accepted;

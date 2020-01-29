@@ -257,6 +257,8 @@ void MCPopulation::syncWalkersPerNode(Communicate* comm)
   
   std::vector<int> nwoff(ncontexts + 1, 0);
 
+  // \todo better would be for this not to be state.
+  std::fill(num_local_walkers_per_node_.begin(), num_local_walkers_per_node_.end(), 0);
   num_local_walkers_per_node_[comm->rank()] = num_local_walkers_;
   comm->allreduce(num_local_walkers_per_node_);
 
