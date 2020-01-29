@@ -202,6 +202,7 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   //Make the down spin set.  
   OccupyBands(spinSet2, sortBands, numOrbs, skipChecks);
+  HasCoreOrbs        = bcastSortBands(spinSet2, NumDistinctOrbitals, myComm->rank() == 0);
   std::shared_ptr<SPOSet> bspline_zd_d(MixedSplineReader->create_spline_set(spinSet2, spo_cur));
  
   //register with spin set and we're off to the races.
