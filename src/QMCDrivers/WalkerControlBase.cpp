@@ -848,7 +848,7 @@ int WalkerControlBase::adjustPopulation(PopulationAdjustment& adjust)
   // This differs from the legacy implementation which had partially updated state at this point.
   auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), adjust.num_walkers);
   IndexType current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
-  std::cout << current_population << '\n';
+
   // limit Nmax
   // TODO:  this seems to be the wrong pace to do this.
   // We assume the difference in number of walkers is no greater than 1

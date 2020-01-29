@@ -112,7 +112,6 @@ public:
   MCPopulation& operator=(MCPopulation&&) = default;
 
   ~MCPopulation() {
-    std::cout << "MCPopulation::~MCPopulation\n";
   }
   /** @ingroup PopulationControl
    *
