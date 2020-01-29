@@ -567,281 +567,281 @@ class Real3IndexFactorization_batched_v2
     template<class Mat, class MatB>
     void generalizedFockMatrix(Mat&& G, MatB&& Fp, MatB&& Fm)
     {
-      int nwalk = G.size(0);
-      int nspin = (walker_type==COLLINEAR?2:1);
-      int NMO = hij.size(0);
-      int nel[2];
-      assert(Fp.size(0)==nwalk);
-      assert(Fm.size(0)==nwalk);
-      assert(G[0].num_elements() == nspin*NMO*NMO);
-      assert(Fp[0].num_elements() == nspin*NMO*NMO);
-      assert(Fm[0].num_elements() == nspin*NMO*NMO);
+      //int nwalk = G.size(0);
+      //int nspin = (walker_type==COLLINEAR?2:1);
+      //int NMO = hij.size(0);
+      //int nel[2];
+      //assert(Fp.size(0)==nwalk);
+      //assert(Fm.size(0)==nwalk);
+      //assert(G[0].num_elements() == nspin*NMO*NMO);
+      //assert(Fp[0].num_elements() == nspin*NMO*NMO);
+      //assert(Fm[0].num_elements() == nspin*NMO*NMO);
 
-      // Rwn[nwalk][nCV]: 1+nspin copies  
-      // Twpqn[nwalk][NMO][NMO][nCV]: 1+nspin copies
-      // extra copies 
+      //// Rwn[nwalk][nCV]: 1+nspin copies  
+      //// Twpqn[nwalk][NMO][NMO][nCV]: 1+nspin copies
+      //// extra copies 
 
-      long LBytes = std::max(max_memory_MB*1024L*1024L/long(sizeof(SPComplexType)),TBuff.num_elements());
-#if MIXED_PRECISION
-      LBytes -= long((3*nspin+1)*nwalk*NMO*NMO);   // G, Fp, Fm and Gt
-#else
-      LBytes -= long((1+nspin)*nwalk*NMO*NMO);  //  G and Gt
-#endif
-      LBytes *= long(sizeof(SPComplexType));  
-      int Bytes = int(LBytes / long(2*(NMO*NMO+1)*local_nCV*sizeof(SPComplexType)));
-      int nwmax = std::min( std::max(1, Bytes), nwalk);
-      assert(nwmax >= 1 && nwmax <= nwmax);
-#if MIXED_PRECISION
-      size_t mem_needs = size_t(nwmax*2*(NMO*NMO+1)*local_nCV + (3*nspin+1)*nwalk*NMO*NMO);
-#else
-      size_t mem_needs = size_t(nwmax*2*(NMO*NMO+1)*local_nCV + (nspin+1)*nwalk*NMO*NMO);
-#endif
-      size_t cnt(0);
-      set_buffer(mem_needs);
+      //long LBytes = std::max(max_memory_MB*1024L*1024L/long(sizeof(SPComplexType)),TBuff.num_elements());
+//#if MIXED_PRECISION
+      //LBytes -= long((3*nspin+1)*nwalk*NMO*NMO);   // G, Fp, Fm and Gt
+//#else
+      //LBytes -= long((1+nspin)*nwalk*NMO*NMO);  //  G and Gt
+//#endif
+      //LBytes *= long(sizeof(SPComplexType));  
+      //int Bytes = int(LBytes / long(2*(NMO*NMO+1)*local_nCV*sizeof(SPComplexType)));
+      //int nwmax = std::min( std::max(1, Bytes), nwalk);
+      //assert(nwmax >= 1 && nwmax <= nwmax);
+//#if MIXED_PRECISION
+      //size_t mem_needs = size_t(nwmax*2*(NMO*NMO+1)*local_nCV + (3*nspin+1)*nwalk*NMO*NMO);
+//#else
+      //size_t mem_needs = size_t(nwmax*2*(NMO*NMO+1)*local_nCV + (nspin+1)*nwalk*NMO*NMO);
+//#endif
+      //size_t cnt(0);
+      //set_buffer(mem_needs);
 
-#if MIXED_PRECISION
-      SpCMatrix_ref Fp_(TBuff.origin(),{nwalk,nspin*NMO*NMO});
-      cnt += Fp_.num_elements();
-      SpCMatrix_ref Fm_(TBuff.origin(),{nwalk,nspin*NMO*NMO});
-      cnt += Fm_.num_elements();
-      fill_n(TBuff.origin(),cnt,SPComplexType(0.0));
-#else
-      SpCMatrix_ref Fp_(make_device_ptr(Fp.origin()),{nwalk,nspin*NMO*NMO});
-      SpCMatrix_ref Fm_(make_device_ptr(Fm.origin()),{nwalk,nspin*NMO*NMO});
-      fill_n(make_device_ptr(Fp.origin()),Fp.num_elements(),ComplexType(0.0));
-      fill_n(make_device_ptr(Fm.origin()),Fp.num_elements(),ComplexType(0.0));
-#endif
+//#if MIXED_PRECISION
+      //SpCMatrix_ref Fp_(TBuff.origin(),{nwalk,nspin*NMO*NMO});
+      //cnt += Fp_.num_elements();
+      //SpCMatrix_ref Fm_(TBuff.origin(),{nwalk,nspin*NMO*NMO});
+      //cnt += Fm_.num_elements();
+      //fill_n(TBuff.origin(),cnt,SPComplexType(0.0));
+//#else
+      //SpCMatrix_ref Fp_(make_device_ptr(Fp.origin()),{nwalk,nspin*NMO*NMO});
+      //SpCMatrix_ref Fm_(make_device_ptr(Fm.origin()),{nwalk,nspin*NMO*NMO});
+      //fill_n(make_device_ptr(Fp.origin()),Fp.num_elements(),ComplexType(0.0));
+      //fill_n(make_device_ptr(Fm.origin()),Fp.num_elements(),ComplexType(0.0));
+//#endif
 
-      SPComplexType scl = (walker_type==CLOSED?2.0:1.0);
-      std::vector<sp_pointer> Aarray;
-      std::vector<sp_pointer> Barray;
-      std::vector<sp_pointer> Carray;
-      Aarray.reserve(nwalk);
-      Barray.reserve(nwalk);
-      Carray.reserve(nwalk);
+      //SPComplexType scl = (walker_type==CLOSED?2.0:1.0);
+      //std::vector<sp_pointer> Aarray;
+      //std::vector<sp_pointer> Barray;
+      //std::vector<sp_pointer> Carray;
+      //Aarray.reserve(nwalk);
+      //Barray.reserve(nwalk);
+      //Carray.reserve(nwalk);
 
-      int nw0(0);
-      while(nw0 < nwalk) {
+      //int nw0(0);
+      //while(nw0 < nwalk) {
 
-        int nw = std::min(nwalk-nw0,nwmax);
-        size_t cnt_(cnt);
+        //int nw = std::min(nwalk-nw0,nwmax);
+        //size_t cnt_(cnt);
 
-        sp_pointer ptr(nullptr);
-        // transpose/cast G
-#if MIXED_PRECISION
-        ptr = TBuff.origin()+cnt_;
-        cnt_ += nspin*nw*NMO*NMO;
-        for(int ispin=0, is0=0, ip=0; ispin<nspin; ispin++, is0+=NMO*NMO) 
-          for(int n=0; n<nw; ++n, ip+=NMO*NMO) 
-            copy_n_cast(make_device_ptr(G[nw0+n].origin())+is0,NMO*NMO,ptr+ip);
-#else
-        if(nspin==1) {
-          ptr = make_device_ptr(G[nw0].origin());
-        } else {
-          ptr = TBuff.origin()+cnt_;
-          cnt_ += nspin*nw*NMO*NMO;
-          using std::copy_n;
-          for(int ispin=0, is0=0, ip=0; ispin<nspin; ispin++, is0+=NMO*NMO) 
-            for(int n=0; n<nw; ++n, ip+=NMO*NMO) 
-              copy_n(make_device_ptr(G[nw0+n].origin())+is0,NMO*NMO,ptr+ip);
-        }
-#endif
-        SpCTensor_ref GF(ptr,{nspin,nw*NMO,NMO});   // now contains G in the correct structure [spin][w][i][j]
-        SpCMatrix_ref Gt(TBuff.origin()+cnt_,{NMO*NMO,nw});  // reserved space for G transposed
-        cnt_ += Gt.num_elements();
-        fill_n(Gt.origin(),Gt.num_elements(),SPComplexType(0.0));
+        //sp_pointer ptr(nullptr);
+        //// transpose/cast G
+//#if MIXED_PRECISION
+        //ptr = TBuff.origin()+cnt_;
+        //cnt_ += nspin*nw*NMO*NMO;
+        //for(int ispin=0, is0=0, ip=0; ispin<nspin; ispin++, is0+=NMO*NMO) 
+          //for(int n=0; n<nw; ++n, ip+=NMO*NMO) 
+            //copy_n_cast(make_device_ptr(G[nw0+n].origin())+is0,NMO*NMO,ptr+ip);
+//#else
+        //if(nspin==1) {
+          //ptr = make_device_ptr(G[nw0].origin());
+        //} else {
+          //ptr = TBuff.origin()+cnt_;
+          //cnt_ += nspin*nw*NMO*NMO;
+          //using std::copy_n;
+          //for(int ispin=0, is0=0, ip=0; ispin<nspin; ispin++, is0+=NMO*NMO) 
+            //for(int n=0; n<nw; ++n, ip+=NMO*NMO) 
+              //copy_n(make_device_ptr(G[nw0+n].origin())+is0,NMO*NMO,ptr+ip);
+        //}
+//#endif
+        //SpCTensor_ref GF(ptr,{nspin,nw*NMO,NMO});   // now contains G in the correct structure [spin][w][i][j]
+        //SpCMatrix_ref Gt(TBuff.origin()+cnt_,{NMO*NMO,nw});  // reserved space for G transposed
+        //cnt_ += Gt.num_elements();
+        //fill_n(Gt.origin(),Gt.num_elements(),SPComplexType(0.0));
 
-        SpCMatrix_ref Rnw(TBuff.origin()+cnt_,{local_nCV,nw});
-        cnt_ += Rnw.num_elements(); 
-        // calculate Rwn
-        for(int ispin=0; ispin<nspin; ispin++) {
-          SpCMatrix_ref G_(GF[ispin].origin(),{nw,NMO*NMO});
-          ma::add(SPComplexType(1.0),Gt,SPComplexType(1.0),ma::T(G_),Gt);
-        }
-        // R[n,w] = \sum_ik L[n,ik] G[ik,w]
-        ma::product(SPValueType(1.0),ma::T(Likn),Gt,SPValueType(0.0),Rnw);
-        SpCMatrix_ref Rwn(TBuff.origin()+cnt_,{nw,local_nCV});
-        cnt_ += Rwn.num_elements();
-        ma::transpose(Rnw,Rwn);
+        //SpCMatrix_ref Rnw(TBuff.origin()+cnt_,{local_nCV,nw});
+        //cnt_ += Rnw.num_elements(); 
+        //// calculate Rwn
+        //for(int ispin=0; ispin<nspin; ispin++) {
+          //SpCMatrix_ref G_(GF[ispin].origin(),{nw,NMO*NMO});
+          //ma::add(SPComplexType(1.0),Gt,SPComplexType(1.0),ma::T(G_),Gt);
+        //}
+        //// R[n,w] = \sum_ik L[n,ik] G[ik,w]
+        //ma::product(SPValueType(1.0),ma::T(Likn),Gt,SPValueType(0.0),Rnw);
+        //SpCMatrix_ref Rwn(TBuff.origin()+cnt_,{nw,local_nCV});
+        //cnt_ += Rwn.num_elements();
+        //ma::transpose(Rnw,Rwn);
 
-        // add coulomb contribution of <pr||qs>Grs term to Fp, reuse Gt for temporary storage
-        // Fp[p,t] = \sum_{jl} L[p,t,n] L[j,l,n] P[j,l]
-        // Fp[pt,w] = \sum_n L[pt,n] R[n,w]
-        ma::product(SPValueType(1.0),Likn,Rnw,SPValueType(0.0),Gt);
-        for(int ispin=0; ispin<nspin; ispin++) {
-          ma::add(SPComplexType(1.0),Fp_({nw0,nw0+nw},{ispin*NMO*NMO,(ispin+1)*NMO*NMO}),
-                  SPComplexType(scl),ma::T(Gt),Fp_({nw0,nw0+nw},{ispin*NMO*NMO,(ispin+1)*NMO*NMO}));
-        }
+        //// add coulomb contribution of <pr||qs>Grs term to Fp, reuse Gt for temporary storage
+        //// Fp[p,t] = \sum_{jl} L[p,t,n] L[j,l,n] P[j,l]
+        //// Fp[pt,w] = \sum_n L[pt,n] R[n,w]
+        //ma::product(SPValueType(1.0),Likn,Rnw,SPValueType(0.0),Gt);
+        //for(int ispin=0; ispin<nspin; ispin++) {
+          //ma::add(SPComplexType(1.0),Fp_({nw0,nw0+nw},{ispin*NMO*NMO,(ispin+1)*NMO*NMO}),
+                  //SPComplexType(scl),ma::T(Gt),Fp_({nw0,nw0+nw},{ispin*NMO*NMO,(ispin+1)*NMO*NMO}));
+        //}
 
-        // L[i,kn]
-        SpRMatrix_ref Ln(make_device_ptr(Likn.origin()),{NMO,NMO*local_nCV});
-        // T[w,p,t,n] = \sum_{l} L[l,t,n] P[w,l,p]
-        SpCMatrix_ref Twptn(TBuff.origin()+cnt_,{nw*NMO,NMO*local_nCV});
-        cnt_ += Twptn.num_elements();
-        // transpose for faster contraction
-        SpCMatrix_ref Taux(TBuff.origin()+cnt_,{nw*NMO,NMO*local_nCV});
-        cnt_ += Taux.num_elements();
-        SpCTensor_ref Twptn3D(Twptn.origin(),{nw,NMO,NMO*local_nCV});
-        SpCMatrix_ref Ttnwp(Taux.origin(),{NMO*local_nCV,nw*NMO});
-        SpCMatrix_ref Gt_(Gt.origin(),{NMO,nw*NMO});
+        //// L[i,kn]
+        //SpRMatrix_ref Ln(make_device_ptr(Likn.origin()),{NMO,NMO*local_nCV});
+        //// T[w,p,t,n] = \sum_{l} L[l,t,n] P[w,l,p]
+        //SpCMatrix_ref Twptn(TBuff.origin()+cnt_,{nw*NMO,NMO*local_nCV});
+        //cnt_ += Twptn.num_elements();
+        //// transpose for faster contraction
+        //SpCMatrix_ref Taux(TBuff.origin()+cnt_,{nw*NMO,NMO*local_nCV});
+        //cnt_ += Taux.num_elements();
+        //SpCTensor_ref Twptn3D(Twptn.origin(),{nw,NMO,NMO*local_nCV});
+        //SpCMatrix_ref Ttnwp(Taux.origin(),{NMO*local_nCV,nw*NMO});
+        //SpCMatrix_ref Gt_(Gt.origin(),{NMO,nw*NMO});
 
-        for(int ispin=0, is0=0; ispin<nspin; ispin++, is0+=NMO*NMO) {
+        //for(int ispin=0, is0=0; ispin<nspin; ispin++, is0+=NMO*NMO) {
 
-          SpCMatrix_ref G_(GF[ispin].origin(),{nw*NMO,NMO});
-          ma::transpose(G_,Gt_);
+          //SpCMatrix_ref G_(GF[ispin].origin(),{nw*NMO,NMO});
+          //ma::transpose(G_,Gt_);
 
-          // J = \sum_{iklr} L[i,k,n] L[q,l,n] P[s,p,l] P[r,i,k]
-          // R[n] = \sum_{ik} L[i,k,n] P[r,i,k]
-          // Here T[tn,wp] = \sum_{l} L[tn,l] P[l,wp]
-          ma::product(SPValueType(1.0),ma::T(Ln),Gt_,SPValueType(0.0),Ttnwp);
-          // T[wp,tn]
-          ma::transpose(Ttnwp,Twptn);
+          //// J = \sum_{iklr} L[i,k,n] L[q,l,n] P[s,p,l] P[r,i,k]
+          //// R[n] = \sum_{ik} L[i,k,n] P[r,i,k]
+          //// Here T[tn,wp] = \sum_{l} L[tn,l] P[l,wp]
+          //ma::product(SPValueType(1.0),ma::T(Ln),Gt_,SPValueType(0.0),Ttnwp);
+          //// T[wp,tn]
+          //ma::transpose(Ttnwp,Twptn);
 
-          // transpose Twptn -> Twtpn=Taux
-          using ma::transpose_wabn_to_wban;
-          // T[wt,pn]
-          transpose_wabn_to_wban(nw,NMO,NMO,local_nCV,Twptn.origin(),Taux.origin());
+          //// transpose Twptn -> Twtpn=Taux
+          //using ma::transpose_wabn_to_wban;
+          //// T[wt,pn]
+          //transpose_wabn_to_wban(nw,NMO,NMO,local_nCV,Twptn.origin(),Taux.origin());
 
-          // add exchange component to Fm_
-          Aarray.clear();
-          Barray.clear();
-          Carray.clear();
-          for(int w=0; w<nw; w++) {
-            Aarray.push_back(Taux[w].origin());
-            Barray.push_back(Twptn3D[w].origin());
-            Carray.push_back(Fm_[w].origin()+is0);
-          }
-          using ma::gemmBatched;
-          // careful with expected Fortran ordering here!!!
-          // K[p,q] = \sum_{ln} T[n,l,p] T[n,q,l]
-          //          \sum_{ln} T[nl,p] T[nl,q]
-          gemmBatched('T','N',NMO,NMO,NMO*local_nCV,
-                      SPComplexType(1.0),Aarray.data(),NMO*local_nCV,
-                      Barray.data(),NMO*local_nCV,
-                      SPComplexType(1.0),Carray.data(),NMO,nw);
+          //// add exchange component to Fm_
+          //Aarray.clear();
+          //Barray.clear();
+          //Carray.clear();
+          //for(int w=0; w<nw; w++) {
+            //Aarray.push_back(Taux[w].origin());
+            //Barray.push_back(Twptn3D[w].origin());
+            //Carray.push_back(Fm_[w].origin()+is0);
+          //}
+          //using ma::gemmBatched;
+          //// careful with expected Fortran ordering here!!!
+          //// K[p,q] = \sum_{ln} T[n,l,p] T[n,q,l]
+          ////          \sum_{ln} T[nl,p] T[nl,q]
+          //gemmBatched('T','N',NMO,NMO,NMO*local_nCV,
+                      //SPComplexType(1.0),Aarray.data(),NMO*local_nCV,
+                      //Barray.data(),NMO*local_nCV,
+                      //SPComplexType(1.0),Carray.data(),NMO,nw);
 
-          // add coulomb component to Fm_
-          Aarray.clear();
-          Barray.clear();
-          Carray.clear();
-          for(int w=0; w<nw; w++) {
-            Aarray.push_back(Twptn3D[w].origin());
-            Barray.push_back(Rwn[w].origin());
-            Carray.push_back(Fm_[w].origin()+is0);
-          }
-          using ma::gemmBatched;
-          // careful with expected Fortran ordering here!!!
-          // J[w][pq] = \sum_{n} T[w][pq,n] R[w][n]
-          gemmBatched('T','N',NMO*NMO,1,local_nCV,
-                      SPComplexType(-1.0)*scl,Aarray.data(),local_nCV,
-                      Barray.data(),local_nCV,
-                      SPComplexType(1.0),Carray.data(),NMO*NMO,nw);
+          //// add coulomb component to Fm_
+          //Aarray.clear();
+          //Barray.clear();
+          //Carray.clear();
+          //for(int w=0; w<nw; w++) {
+            //Aarray.push_back(Twptn3D[w].origin());
+            //Barray.push_back(Rwn[w].origin());
+            //Carray.push_back(Fm_[w].origin()+is0);
+          //}
+          //using ma::gemmBatched;
+          //// careful with expected Fortran ordering here!!!
+          //// J[w][pq] = \sum_{n} T[w][pq,n] R[w][n]
+          //gemmBatched('T','N',NMO*NMO,1,local_nCV,
+                      //SPComplexType(-1.0)*scl,Aarray.data(),local_nCV,
+                      //Barray.data(),local_nCV,
+                      //SPComplexType(1.0),Carray.data(),NMO*NMO,nw);
 
-          // Fp
-          // add coulomb component to Fp_, same as Fm_ above
-          Aarray.clear();
-          Barray.clear();
-          Carray.clear();
-          for(int w=0; w<nw; w++) {
-            Aarray.push_back(Twptn3D[w].origin());
-            Barray.push_back(Rwn[w].origin());
-            Carray.push_back(Fp_[w].origin()+is0);
-          }
-          using ma::gemmBatched;
-          // careful with expected Fortran ordering here!!!
-          // Coulomb component
-          gemmBatched('T','N',NMO*NMO,1,local_nCV,
-                      SPComplexType(-1.0)*scl,Aarray.data(),local_nCV,
-                      Barray.data(),local_nCV,
-                      SPComplexType(1.0),Carray.data(),NMO*NMO,nw);
+          //// Fp
+          //// add coulomb component to Fp_, same as Fm_ above
+          //Aarray.clear();
+          //Barray.clear();
+          //Carray.clear();
+          //for(int w=0; w<nw; w++) {
+            //Aarray.push_back(Twptn3D[w].origin());
+            //Barray.push_back(Rwn[w].origin());
+            //Carray.push_back(Fp_[w].origin()+is0);
+          //}
+          //using ma::gemmBatched;
+          //// careful with expected Fortran ordering here!!!
+          //// Coulomb component
+          //gemmBatched('T','N',NMO*NMO,1,local_nCV,
+                      //SPComplexType(-1.0)*scl,Aarray.data(),local_nCV,
+                      //Barray.data(),local_nCV,
+                      //SPComplexType(1.0),Carray.data(),NMO*NMO,nw);
 
-          // add exchange component of Fp_
-          Aarray.clear();
-          Barray.clear();
-          Carray.clear();
-          for(int w=0; w<nw; w++) {
-            Aarray.push_back(Taux[w].origin());
-            Barray.push_back(Twptn3D[w].origin());
-            Carray.push_back(Fp_[w].origin()+is0);
+          //// add exchange component of Fp_
+          //Aarray.clear();
+          //Barray.clear();
+          //Carray.clear();
+          //for(int w=0; w<nw; w++) {
+            //Aarray.push_back(Taux[w].origin());
+            //Barray.push_back(Twptn3D[w].origin());
+            //Carray.push_back(Fp_[w].origin()+is0);
 
-            // add exchange contribution of <pr||qs>Grs term by adding Lptn to Twptn
-            // dispatch directly from here to be able to add to the real part only
-            // K1B[p,q] = -\sum_{jl} L[jt,n] L[pl,n] P[jl]
-            using ma::axpy;
-            axpy(Likn.num_elements(), SPRealType(-1.0),
-                    ma::pointer_dispatch(Likn.origin()), 1,
-                    pointer_cast<SPRealType>(ma::pointer_dispatch(Twptn[w].origin())), 2);
-          }
-          using ma::gemmBatched;
-          // careful with expected Fortran ordering here!!!
-          gemmBatched('T','N',NMO,NMO,NMO*local_nCV,
-                      SPComplexType(1.0),Aarray.data(),NMO*local_nCV,
-                      Barray.data(),NMO*local_nCV,
-                      SPComplexType(1.0),Carray.data(),NMO,nw);
+            //// add exchange contribution of <pr||qs>Grs term by adding Lptn to Twptn
+            //// dispatch directly from here to be able to add to the real part only
+            //// K1B[p,q] = -\sum_{jl} L[jt,n] L[pl,n] P[jl]
+            //using ma::axpy;
+            //axpy(Likn.num_elements(), SPRealType(-1.0),
+                    //ma::pointer_dispatch(Likn.origin()), 1,
+                    //pointer_cast<SPRealType>(ma::pointer_dispatch(Twptn[w].origin())), 2);
+          //}
+          //using ma::gemmBatched;
+          //// careful with expected Fortran ordering here!!!
+          //gemmBatched('T','N',NMO,NMO,NMO*local_nCV,
+                      //SPComplexType(1.0),Aarray.data(),NMO*local_nCV,
+                      //Barray.data(),NMO*local_nCV,
+                      //SPComplexType(1.0),Carray.data(),NMO,nw);
 
-        } // ispin
+        //} // ispin
 
-        nw0 += nw;
-      }
+        //nw0 += nw;
+      //}
 
-#if MIXED_PRECISION
-      copy_n_cast(Fp_.origin(),Fp_.num_elements(),make_device_ptr(Fp.origin()));
-      copy_n_cast(Fm_.origin(),Fm_.num_elements(),make_device_ptr(Fm.origin()));
-#endif
+//#if MIXED_PRECISION
+      //copy_n_cast(Fp_.origin(),Fp_.num_elements(),make_device_ptr(Fp.origin()));
+      //copy_n_cast(Fm_.origin(),Fm_.num_elements(),make_device_ptr(Fm.origin()));
+//#endif
 
-      // add one body terms now
-      {
+      //// add one body terms now
+      //{
 
-        std::vector<pointer> Aarr;
-        std::vector<pointer> Barr;
-        std::vector<pointer> Carr;
-        Aarr.reserve(nspin*nwalk);
-        Barr.reserve(nspin*nwalk);
-        Carr.reserve(nspin*nwalk);
-        // Fm -= G[w][p][r] * h[q][r]
-        Aarr.clear();
-        Barr.clear();
-        Carr.clear();
-        for(int ispin=0, is0=0; ispin<nspin; ispin++, is0+=NMO*NMO) {
-          for(int w=0; w<nwalk; w++) {
-            Aarr.push_back(hij_dev.origin());
-            Barr.push_back(G[w].origin()+is0);
-            Carr.push_back(Fm[w].origin()+is0);
-          }
-        }
-        using ma::gemmBatched;
-        // careful with expected Fortran ordering here!!!
-        gemmBatched('T','N',NMO,NMO,NMO,
-                    ComplexType(-1.0),Aarr.data(),NMO,
-                    Barr.data(),NMO,
-                    ComplexType(1.0),Carr.data(),NMO,Aarr.size());
+        //std::vector<pointer> Aarr;
+        //std::vector<pointer> Barr;
+        //std::vector<pointer> Carr;
+        //Aarr.reserve(nspin*nwalk);
+        //Barr.reserve(nspin*nwalk);
+        //Carr.reserve(nspin*nwalk);
+        //// Fm -= G[w][p][r] * h[q][r]
+        //Aarr.clear();
+        //Barr.clear();
+        //Carr.clear();
+        //for(int ispin=0, is0=0; ispin<nspin; ispin++, is0+=NMO*NMO) {
+          //for(int w=0; w<nwalk; w++) {
+            //Aarr.push_back(hij_dev.origin());
+            //Barr.push_back(G[w].origin()+is0);
+            //Carr.push_back(Fm[w].origin()+is0);
+          //}
+        //}
+        //using ma::gemmBatched;
+        //// careful with expected Fortran ordering here!!!
+        //gemmBatched('T','N',NMO,NMO,NMO,
+                    //ComplexType(-1.0),Aarr.data(),NMO,
+                    //Barr.data(),NMO,
+                    //ComplexType(1.0),Carr.data(),NMO,Aarr.size());
 
 
-        // Fp -= G[w][r][p] * h[q][r]
-        Aarr.clear();
-        Barr.clear();
-        Carr.clear();
-        C4Tensor_ref Fp4D(make_device_ptr(Fp.origin()),{nwalk,nspin,NMO,NMO});
-        for(int ispin=0, is0=0; ispin<nspin; ispin++, is0+=NMO*NMO) {
-          for(int w=0; w<nwalk; w++) {
-            Aarr.push_back(hij_dev.origin());
-            Barr.push_back(G[w].origin()+is0);
-            Carr.push_back(Fp[w].origin()+is0);
+        //// Fp -= G[w][r][p] * h[q][r]
+        //Aarr.clear();
+        //Barr.clear();
+        //Carr.clear();
+        //C4Tensor_ref Fp4D(make_device_ptr(Fp.origin()),{nwalk,nspin,NMO,NMO});
+        //for(int ispin=0, is0=0; ispin<nspin; ispin++, is0+=NMO*NMO) {
+          //for(int w=0; w<nwalk; w++) {
+            //Aarr.push_back(hij_dev.origin());
+            //Barr.push_back(G[w].origin()+is0);
+            //Carr.push_back(Fp[w].origin()+is0);
 
-            // add diagonal contribution to Fp
-            ma::add(ComplexType(1.0),Fp4D[w][ispin],
-                    ComplexType(1.0),ma::T(hij_dev),
-                    Fp4D[w][ispin]);
-          }
-        }
-        using ma::gemmBatched;
-        // careful with expected Fortran ordering here!!!
-        gemmBatched('T','T',NMO,NMO,NMO,
-                    ComplexType(-1.0),Aarr.data(),NMO,
-                    Barr.data(),NMO,
-                    ComplexType(1.0),Carr.data(),NMO,Aarr.size());
+            //// add diagonal contribution to Fp
+            //ma::add(ComplexType(1.0),Fp4D[w][ispin],
+                    //ComplexType(1.0),ma::T(hij_dev),
+                    //Fp4D[w][ispin]);
+          //}
+        //}
+        //using ma::gemmBatched;
+        //// careful with expected Fortran ordering here!!!
+        //gemmBatched('T','T',NMO,NMO,NMO,
+                    //ComplexType(-1.0),Aarr.data(),NMO,
+                    //Barr.data(),NMO,
+                    //ComplexType(1.0),Carr.data(),NMO,Aarr.size());
 
-      }
+      //}
 
     }
 
