@@ -71,7 +71,7 @@ void DMC::resetUpdateEngines()
   ReportEngine PRE("DMC", "resetUpdateEngines");
   bool fixW = (Reconfiguration == "runwhileincorrect");
   if(Reconfiguration != "no" && Reconfiguration != "runwhileincorrect")
-    APP_ABORT("Reconfiguration is currently broken.  Please try again without reconfiguration.")
+    APP_ABORT("Reconfiguration is currently broken and gives physically incorrect results.  If you want a physically meaningful energy, please try again without reconfiguration.\n\nThis feature has a legitimate use for performance testing.  If this is your use case, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to enable performance testing runs.")
   makeClones(W, Psi, H);
   Timer init_timer;
   if (Movers.empty())

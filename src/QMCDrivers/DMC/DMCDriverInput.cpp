@@ -45,7 +45,7 @@ void DMCDriverInput::readXML(xmlNodePtr node)
     throw std::runtime_error("Illegal input for branchInterval or substeps in DMC input section");
 
   if(reconfig_str != "no" && reconfig_str != "runwhileincorrect")
-    APP_ABORT("Reconfiguration is currently broken.  Please try again without reconfiguration.")
+    APP_ABORT("Reconfiguration is currently broken and gives physically incorrect results.  If you want a physically meaningful energy, please try again without reconfiguration.\n\nThis feature has a legitimate use for performance testing.  If this is your use case, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to enable performance testing runs.")
 }
 
 std::ostream& operator<<(std::ostream& o_stream, const DMCDriverInput& dmci) { return o_stream; }
