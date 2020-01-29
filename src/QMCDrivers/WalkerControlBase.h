@@ -177,7 +177,7 @@ public:
    *  unfortunately right now this requires knowledge of the global context, seems unecessary
    *  but this is why MCPopulation is handed in.
    */
-  int adjustPopulation(MCPopulation& pop, PopulationAdjustment& adjust);
+  int adjustPopulation(PopulationAdjustment& adjust);
 
   /** apply per node limit Nmax and Nmin
    */

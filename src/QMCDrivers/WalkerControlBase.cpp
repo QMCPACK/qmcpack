@@ -312,6 +312,7 @@ int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
 
   // SENTWALKERS and LEMAX should never be other than 0 here
   // because in the unified driver we never reuse a WalkerControl
+  // \todo Once legacy drivers are removed all signs of this LE_MAX hack must be purged
   assert(curData[SENTWALKERS_INDEX] == 0.0);
   for (int i = LE_MAX; i < LE_MAX + num_contexts_; ++i)
     assert(curData[i] == 0.0);
@@ -389,7 +390,7 @@ int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trig
   pop.set_ensemble_property(ensemble_property_);
 
   // Warning adjustPopulation has many side effects
-  adjustPopulation(pop, adjust);
+  adjustPopulation(adjust);
   // We have not yet updated the local number of walkers
   // This happens as a side effect of killing or spawning walkers
 
@@ -638,8 +639,7 @@ auto WalkerControlBase::addReleaseNodeWalkers(PopulationAdjustment& adjustment,
 void WalkerControlBase::updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data, WalkerAdjustmentCriteria wac, PopulationAdjustment& adjustment, MCPopulation& pop)
 {
   std::fill(data.begin(), data.end(), 0);
-  //update curData -- this is every field except for SENTWALKERS and LE_MAX (which is the beginning of the hack storing
-  // number_per_node entries
+  //update curData -- this is every field except for SENTWALKERS
   data[ENERGY_INDEX]     = wac.esum;
   data[ENERGY_SQ_INDEX]  = wac.e2sum;
   data[WALKERSIZE_INDEX] = pop.get_num_local_walkers();
@@ -836,11 +836,9 @@ std::vector<WalkerControlBase::IndexType> WalkerControlBase::syncFutureWalkersPe
   return future_walkers;
 }
 
-/**  Not really sorting so its been renamed something more sensible.
- *
- *   Not actually finished.  needs to use adjust's walker vectors
+/** Here minimum and maximums per rank is enforced.
  */
-int WalkerControlBase::adjustPopulation(MCPopulation& pop, PopulationAdjustment& adjust)
+int WalkerControlBase::adjustPopulation(PopulationAdjustment& adjust)
 {
   // In the unified driver design each ranks MCPopulation knows this and it is not
   // stored a bunch of other places, i.e. NumPerNode shouldn't be how we know.

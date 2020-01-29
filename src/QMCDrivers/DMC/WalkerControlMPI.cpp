@@ -174,7 +174,7 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
   swapWalkersSimple(pop, adjust, num_per_node);
   myTimers[DMC_MPI_loadbalance]->stop();
 
-  adjustPopulation(pop, adjust);
+  adjustPopulation(adjust);
 
   onRankSpawnKill(pop, adjust);
   
@@ -606,15 +606,7 @@ void WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
     {
       recv_requests[im].wait();
       MCPWalker& walker_to_check = recv_message_list[im].walker;
-      recv_message_list[im].walker.copyFromBuffer();
-      // for (auto property : walker_to_check.Properties)
-      // {
-      //   if (std::isnan(property))
-      //     throw std::runtime_error("received property is nan!");
-      // }
-      assert( walker_to_check.Multiplicity > 0 );
-      assert( walker_to_check.Weight > 0 );
-      
+      recv_message_list[im].walker.copyFromBuffer();      
       recv_walkers.push_back(walker_to_check);
     }
   }
