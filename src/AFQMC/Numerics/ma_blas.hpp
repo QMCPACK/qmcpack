@@ -62,6 +62,22 @@ dot(MultiArray1Dx&& x, MultiArray1Dy&& y){
         return dot(x.size(), pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()), y.stride(0));
 }
 
+template<class MultiArray2Dx,
+         class MultiArray2Dy,
+         typename = typename std::enable_if<std::decay<MultiArray2Dx>::type::dimensionality == 2>::type,
+         typename = typename std::enable_if<std::decay<MultiArray2Dy>::type::dimensionality == 2>::type,
+         typename = void
+>
+typename std::decay<MultiArray2Dx>::type::element
+dot(MultiArray2Dx&& x, MultiArray2Dy&& y){
+        assert( x.stride(0) == x.size(1) ); // only on contiguous arrays 
+        assert( x.stride(1) == 1 );            // only on contiguous arrays 
+        assert( y.stride(0) == y.size(1) ); // only on contiguous arrays 
+        assert( y.stride(1) == 1 );            // only on contiguous arrays 
+        assert( x.num_elements() == y.num_elements());
+        return dot(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
+}
+
 template<class T, class MultiArray1D, typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type >
 MultiArray1D scal(T a, MultiArray1D&& x){
 	scal(x.size(), a, pointer_dispatch(x.origin()), x.stride(0));

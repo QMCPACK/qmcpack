@@ -1,6 +1,7 @@
 """Simple extraction of afqmc rdms."""
 import h5py
 import numpy
+from math import sqrt
 import scipy.stats
 from afqmctools.analysis.extraction import (
         get_metadata,
@@ -166,7 +167,7 @@ def average_on_top_pdm(filename, estimator='back_propagated', eqlb=1, skip=1, ix
     # TODO: Update appropriately.
     return mean, err
 
-def average_correlation_functions(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None):
+def average_realspace_correlations(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None):
     """Average on-top pair density matrix.
 
     Returns <C(r1)C(r2)> and <S(r1)S(r2)> for a given set of points in real space.
@@ -200,12 +201,69 @@ def average_correlation_functions(filename, estimator='back_propagated', eqlb=1,
         Error bars for spin-spin correlation function.  
     """
     md = get_metadata(filename)
-    cc_mean, cc_err = average_observable(filename, 'cc_correlation', eqlb=eqlb, skip=skip,
+    cc_mean, cc_err = average_observable(filename, 'cc_realspace_correlation', eqlb=eqlb, skip=skip,
                                    estimator=estimator, ix=ix)
-    ss_mean, ss_err = average_observable(filename, 'ss_correlation', eqlb=eqlb, skip=skip,
+    ss_mean, ss_err = average_observable(filename, 'ss_realspace_correlation', eqlb=eqlb, skip=skip,
                                    estimator=estimator, ix=ix)
-    # TODO: Update appropriately.
-    return cc_mean, cc_err, ss_mean, ss_err
+    # TODO: get npts from metadata local to cc_correlation
+    npts = int(sqrt(cc_mean.shape[0]))
+    return cc_mean.reshape((npts,-1)), cc_err.reshape((npts,-1)), \
+                ss_mean.reshape((npts,-1)), ss_err.reshape((npts,-1))
+
+def average_atom_correlations(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None):
+    """Average atom centered correlations.
+
+    Returns <C(I)>, <S(I)>, <C(I)C(J)> and <S(I)S(J)> for a given set of atomic sites.
+    C = (nup + ndown), S = (nup - ndown)
+
+    Parameters
+    ----------
+    filename : string
+        QMCPACK output containing density matrix (*.h5 file).
+    estimator : string
+        Estimator type to analyse. Options: back_propagated or mixed.
+        Default: back_propagated.
+    eqlb : int
+        Number of blocks for equilibration. Default 1.
+    skip : int
+        Number of blocks to skip in between measurements equilibration.
+        Default 1 (use all data).
+    ix : int
+        Back propagation path length to average. Optional.
+        Default: None (chooses longest path).
+
+    Returns
+    -------
+    c_mean : :class:`numpy.ndarray`
+        Averaged charge. 
+    c_err : :class:`numpy.ndarray`
+        Error bars for charge. 
+    s_mean : :class:`numpy.ndarray`
+        Averaged spin. 
+    s_err : :class:`numpy.ndarray`
+        Error bars for spin.  
+    cc_mean : :class:`numpy.ndarray`
+        Averaged charge-charge correlation function. 
+    cc_err : :class:`numpy.ndarray`
+        Error bars for charge-charge correlation function. 
+    ss_mean : :class:`numpy.ndarray`
+        Averaged spin-spin correlation function. 
+    ss_err : :class:`numpy.ndarray`
+        Error bars for spin-spin correlation function.  
+    """
+    md = get_metadata(filename)
+    c_mean, c_err = average_observable(filename, 'c_atom_correlation', eqlb=eqlb, skip=skip,
+                                   estimator=estimator, ix=ix)
+    s_mean, s_err = average_observable(filename, 's_atom_correlation', eqlb=eqlb, skip=skip,
+                                   estimator=estimator, ix=ix)
+    cc_mean, cc_err = average_observable(filename, 'cc_atom_correlation', eqlb=eqlb, skip=skip,
+                                   estimator=estimator, ix=ix)
+    ss_mean, ss_err = average_observable(filename, 'ss_atom_correlation', eqlb=eqlb, skip=skip,
+                                   estimator=estimator, ix=ix)
+    # TODO: get npts from metadata local to cc_correlation
+    npts = int(sqrt(cc_mean.shape[0]))
+    return c_mean, c_err, s_mean, s_err, cc_mean.reshape((npts,-1)), cc_err.reshape((npts,-1)), \
+                ss_mean.reshape((npts,-1)), ss_err.reshape((npts,-1))
 
 def average_observable(filename, name, eqlb=1, estimator='back_propagated',
                        ix=None, skip=1):

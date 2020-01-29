@@ -13,8 +13,8 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_AFQMC_OFFDIAG_REALSPACE_2RDM_HPP
-#define QMCPLUSPLUS_AFQMC_OFFDIAG_REALSPACE_2RDM_HPP
+#ifndef QMCPLUSPLUS_AFQMC_REALSPACE_CORRELATORS_HPP
+#define QMCPLUSPLUS_AFQMC_REALSPACE_CORRELATORS_HPP
 
 #include "AFQMC/config.h"
 #include <vector>
@@ -43,7 +43,7 @@ namespace afqmc
  * Alloc defines the allocator type used to store the orbital and temporary tensors.
  * In a device compilation, this would need out-of-card gemm available.
  */
-class offdiag_realspace_2rdm: public AFQMCInfo
+class realspace_correlators: public AFQMCInfo
 {
 
   // allocators
@@ -70,7 +70,7 @@ class offdiag_realspace_2rdm: public AFQMCInfo
 
   public:
 
-  offdiag_realspace_2rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, 
+  realspace_correlators(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, 
                 int nave_=1, int bsize=1):
                 AFQMCInfo(info),alloc(make_localTG_allocator<ComplexType>(tg_)),
                 block_size(bsize),nave(nave_),counter(0),TG(tg_),
@@ -80,10 +80,11 @@ class offdiag_realspace_2rdm: public AFQMCInfo
                 DMWork({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                 denom(iextensions<1u>{0},shared_allocator<ComplexType>{TG.TG_local()}),
                 Buff(iextensions<1u>{0},alloc),
-                Gr_host({0,0,0,0},shared_allocator<ComplexType>{TG.TG_local()})
+                Gr_host({0,0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
+                Orrp({0,0},shared_allocator<ComplexType>{TG.TG_local()})
   {
 
-    app_log()<<"  --  Adding Back Propagated real-space off diagonal 2RDM (offdiag_realspace_2rdm). -- \n ";
+    app_log()<<"  --  Adding Back Propagated real-space off diagonal 2RDM (realspace_correlators). -- \n ";
     std::string orb_file("");
     std::string str("false");
     
@@ -106,60 +107,68 @@ class offdiag_realspace_2rdm: public AFQMCInfo
     hdf_archive dump;
     if( TG.Node().root() ) {
       if(!dump.open(orb_file,H5F_ACC_RDONLY)) {
-        app_error()<<" Error opening orbitals file for offdiag_realspace_2rdm estimator. \n";
+        app_error()<<" Error opening orbitals file for realspace_correlators estimator. \n";
         APP_ABORT("");
       }
       if(!dump.push("OrbsR",false)) {
-        app_error()<<" Error in offdiag_realspace_2rdm: Group OrbsR not found." <<std::endl;
+        app_error()<<" Error in realspace_correlators: Group OrbsR not found." <<std::endl;
         APP_ABORT("");
       }        
       // read one orbital to check size and later corroborate all orbitals have same size
       stdCVector orb(iextensions<1u>{1});
       if(!dump.readEntry(orb,"kp0_b0")) {
-        app_error()<<" Error in offdiag_realspace_2rdm: Problems reading orbital: 0  0" <<std::endl;
+        app_error()<<" Error in realspace_correlators: Problems reading orbital: 0  0" <<std::endl;
         APP_ABORT("");
       }
       npoints = orb.size(0);
       if(npoints < 1) {
-        app_error()<<" Error in offdiag_realspace_2rdm: npoints < 1. " <<std::endl; 
+        app_error()<<" Error in realspace_correlators: npoints < 1. " <<std::endl; 
         APP_ABORT("");
       }
       TG.Node().broadcast_n(&npoints,1,0);  
       if(!dump.readEntry(norbs,"number_of_orbitals")) {
-        app_error()<<" Error in offdiag_realspace_2rdm: Problems reading number_of_orbitals. " <<std::endl;
+        app_error()<<" Error in realspace_correlators: Problems reading number_of_orbitals. " <<std::endl;
         APP_ABORT("");
       }
       int M=0, nk=norbs.size();  
       for(int i=0; i<nk; i++) M += norbs[i];     
       if(M != NMO) {
-        app_error()<<" Error in offdiag_realspace_2rdm: Inconsistent number of orbitals in file: " 
+        app_error()<<" Error in realspace_correlators: Inconsistent number of orbitals in file: " 
                    <<M <<" expected:" <<NMO <<std::endl; 
         APP_ABORT("");
       }  
       TG.Node().broadcast_n(&npoints,1,0);
       Orbitals = std::move(CMatrix({NMO,npoints},alloc));
+      // host copy to calculate Orrp  
+      stdCMatrix host_orb({NMO,npoints});
+      Orrp = std::move(mpi3CMatrix({npoints,npoints},shared_allocator<ComplexType>{TG.TG_local()}));
       for(int k=0, kn=0; k<nk; k++) {
         for(int i=0; i<norbs[k]; i++, kn++) {
           if(!dump.readEntry(orb,"kp"+std::to_string(k)+"_b"+std::to_string(i))) {
-            app_error()<<" Error in offdiag_realspace_2rdm: Problems reading orbital: " <<k <<" " <<i <<std::endl;
+            app_error()<<" Error in realspace_correlators: Problems reading orbital: " <<k <<" " <<i <<std::endl;
             APP_ABORT("");
           }  
           if(orb.size(0) != npoints)
           {
-            app_error()<<" Error in offdiag_realspace_2rdm: Inconsistent orbital size: " <<k <<" " <<i <<std::endl;
+            app_error()<<" Error in realspace_correlators: Inconsistent orbital size: " <<k <<" " <<i <<std::endl;
             APP_ABORT("");
           } 
           using std::copy_n;
           copy_n(orb.origin(),npoints,ma::pointer_dispatch(Orbitals[kn].origin()));
+          copy_n(orb.origin(),npoints,host_orb[kn].origin());
         }
       }    
       dump.pop();
       dump.close();
 
+      // Or(r,r') = sum_j conj(psi(j,r)) * psi(j,r')   
+      ma::product(ma::H(host_orb),host_orb,Orrp);
+
       app_log()<<" Number of grid points: " <<npoints <<std::endl;
     } else {
       TG.Node().broadcast_n(&npoints,1,0);  
       Orbitals = std::move(CMatrix({NMO,npoints},alloc));
+      Orrp = std::move(mpi3CMatrix({npoints,npoints},shared_allocator<ComplexType>{TG.TG_local()}));
     }
     dm_size = npoints*npoints;
     TG.Node().barrier();
@@ -296,8 +305,9 @@ class offdiag_realspace_2rdm: public AFQMCInfo
           for(int j=0; j<npts; j++) {
             auto g1(Gur[i][i]*Gur[j][j]);
             auto g2(Gur[i][j]*Gur[j][i]);
-            DMcc[i][j] += X_*( 2.0*g1 - g2 ); 
-            DMss[i][j] -= X_*( g2 ); 
+            auto o1(Gur[i][j]*Orrp[j][i]);
+            DMcc[i][j] += X_*( 2.0*g1 - g2 + o1 ); 
+            DMss[i][j] += X_*( -g2 + o1 ); 
             // no cs in RHF
           }
       } else if(walker_type == COLLINEAR) {
@@ -309,8 +319,8 @@ class offdiag_realspace_2rdm: public AFQMCInfo
         auto X_(Xw[iw]);
         for(int i=0; i<npts; i++)
           for(int j=0; j<npts; j++) {
-            auto guu(Gur[i][i]*Gur[j][j] - Gur[i][j]*Gur[j][i]);
-            auto gdd(Gdr[i][i]*Gdr[j][j] - Gdr[i][j]*Gdr[j][i]);
+            auto guu(Gur[i][i]*Gur[j][j] - Gur[i][j]*Gur[j][i] + Gur[i][j]*Orrp[j][i]);
+            auto gdd(Gdr[i][i]*Gdr[j][j] - Gdr[i][j]*Gdr[j][i] + Gdr[i][j]*Orrp[j][i]);
             auto gud(Gur[i][i]*Gdr[j][j]);
             auto gdu(Gdr[i][i]*Gur[j][j]);
             DMcc[i][j] += X_*( guu + gud + gdu + gdd );
@@ -318,6 +328,7 @@ class offdiag_realspace_2rdm: public AFQMCInfo
             DMcs[i][j] += X_*( guu - gud + gdu - gdd );
           }
       } else if(walker_type == NONCOLLINEAR) {
+        APP_ABORT(" Noncollinear not implemented \n\n\n");
         auto&& Gur(Gr_host[iw][0]);
         auto&& Gdr(Gr_host[iw][1]);
         stdCMatrix_ref DMcc( to_address(DMWork[iw][0].origin()), {npts,npts} );
@@ -425,6 +436,7 @@ class offdiag_realspace_2rdm: public AFQMCInfo
   CVector Buff;
 
   mpi3C4Tensor Gr_host;
+  mpi3CMatrix Orrp;
 
   void set_buffer(size_t N) {
     if(Buff.num_elements() < N)

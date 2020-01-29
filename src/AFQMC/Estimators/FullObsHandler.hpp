@@ -119,8 +119,11 @@ class FullObsHandler: public AFQMCInfo
                   TG,info,cur,walker_type,true,shared_allocator<ComplexType>{TG.TG_local()},
                   shared_allocator<ComplexType>{TG.Node()},nave,block_size)))); 
         }
-      } else if(cname =="offdiag2rdm") {
-        properties.emplace_back(Observable(std::move(offdiag_realspace_2rdm(
+      } else if(cname =="realspace_correlators") {
+        properties.emplace_back(Observable(std::move(realspace_correlators(
+                TG,info,cur,walker_type,nave,block_size))));
+      } else if(cname =="correlators") {
+        properties.emplace_back(Observable(std::move(atomcentered_correlators(
                 TG,info,cur,walker_type,nave,block_size))));
       }
       cur = cur->next;

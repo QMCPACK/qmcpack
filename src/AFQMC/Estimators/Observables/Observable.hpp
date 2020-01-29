@@ -22,7 +22,8 @@
 #include "AFQMC/Estimators/Observables/full1rdm.hpp"
 #include "AFQMC/Estimators/Observables/diagonal2rdm.hpp"
 #include "AFQMC/Estimators/Observables/n2r.hpp"
-#include "AFQMC/Estimators/Observables/offdiag_realspace_2rdm.hpp"
+#include "AFQMC/Estimators/Observables/realspace_correlators.hpp"
+#include "AFQMC/Estimators/Observables/atomcentered_correlators.hpp"
 
 namespace qmcplusplus
 {
@@ -62,7 +63,8 @@ class dummy_obs
  * Defines a common interface for all observable classes.
  */
 class Observable: public boost::variant<dummy::dummy_obs,full1rdm,diagonal2rdm,
-                                        offdiag_realspace_2rdm,
+                                        realspace_correlators,
+                                        atomcentered_correlators,
                                         n2r<shared_allocator<ComplexType>> 
 #if defined(ENABLE_CUDA)
                                         ,n2r<device_allocator<ComplexType>> 
@@ -83,8 +85,11 @@ class Observable: public boost::variant<dummy::dummy_obs,full1rdm,diagonal2rdm,
     explicit Observable(diagonal2rdm && other) : variant(std::move(other)) {}
     explicit Observable(diagonal2rdm const& other) = delete;
 
-    explicit Observable(offdiag_realspace_2rdm && other) : variant(std::move(other)) {}
-    explicit Observable(offdiag_realspace_2rdm const& other) = delete;
+    explicit Observable(realspace_correlators && other) : variant(std::move(other)) {}
+    explicit Observable(realspace_correlators const& other) = delete;
+
+    explicit Observable(atomcentered_correlators && other) : variant(std::move(other)) {}
+    explicit Observable(atomcentered_correlators const& other) = delete;
 
     explicit Observable(n2r<shared_allocator<ComplexType>> && other) : variant(std::move(other)) {}
     explicit Observable(n2r<shared_allocator<ComplexType>> const& other) = delete;
