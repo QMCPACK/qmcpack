@@ -531,6 +531,24 @@ void SDetOps_complex_serial(Allocator alloc)
   ov_=SDet.Overlap_noHerm(Q,Q,0.0);
   myREQUIRE( ov_, std::complex<double>(1.,0.));
 
+  // Batched
+  boost::multi::array<Type,3,Allocator> Gw({3,NMO,NMO},alloc);
+  std::vector<array_ref> RA, RB, Gwv;
+  boost::multi::array<Type,1,Allocator> ovlp(iextensions<1u>{3});
+  for(int i = 0; i < 3; i++) {
+    RA.emplace_back(Aref);
+    RB.emplace_back(Bref);
+    Gwv.emplace_back(array_ref(Gw[i].origin(), {NMO,NMO}));
+  }
+  Type log_ovlp;
+  Type ov_ref = -7.623325999999989+22.20453200000001i;
+
+  SDet.BatchedDensityMatrices(RA,RB,Gwv,log_ovlp,ovlp,false);
+  for(int i = 0; i < 3; i++) {
+    check(Gwv[i],g_ref);
+    myREQUIRE(ovlp[i], ov_ref);
+  }
+
 }
 
 TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
