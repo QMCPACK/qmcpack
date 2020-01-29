@@ -60,7 +60,7 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   std::unique_ptr<QMCDriverInterface> qmc_driver;
 
   MCPopulation population(comm->size(), particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
-                            hamiltonian_pool.getPrimary());
+                          hamiltonian_pool.getPrimary(), comm->rank());
 
   qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), 0, node, das, *qmc_system, particle_pool,
                                            wavefunction_pool, hamiltonian_pool, population, comm);
@@ -96,7 +96,7 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
   std::unique_ptr<QMCDriverInterface> last_driver;
   std::unique_ptr<QMCDriverInterface> qmc_driver;
   MCPopulation population(comm->size(), particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
-                            hamiltonian_pool.getPrimary());
+                          hamiltonian_pool.getPrimary(), comm->rank());
 
   qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), 0, node, das, *qmc_system, particle_pool,
                                            wavefunction_pool, hamiltonian_pool, population, comm);
@@ -132,7 +132,7 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
   std::unique_ptr<QMCDriverInterface> last_driver;
   std::unique_ptr<QMCDriverInterface> qmc_driver;
   MCPopulation population(comm->size(), particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
-                            hamiltonian_pool.getPrimary());
+                          hamiltonian_pool.getPrimary(),comm->rank());
 
   qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), 0, node, das, *qmc_system, particle_pool,
                                            wavefunction_pool, hamiltonian_pool, population, comm);
@@ -168,7 +168,7 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
   std::unique_ptr<QMCDriverInterface> last_driver;
   std::unique_ptr<QMCDriverInterface> qmc_driver;
   MCPopulation population(comm->size(), particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
-                            hamiltonian_pool.getPrimary());
+                          hamiltonian_pool.getPrimary(),comm->rank());
 
   qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), 0, node, das, *qmc_system, particle_pool,
                                            wavefunction_pool, hamiltonian_pool, population, comm);

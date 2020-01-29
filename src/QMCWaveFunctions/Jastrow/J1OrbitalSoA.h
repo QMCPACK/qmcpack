@@ -441,7 +441,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     {
       const auto& dist  = d_ie.getDistRow(iat);
       const auto& displ = d_ie.getDisplRow(iat);
-      int gid           = Ions.GroupID[isrc];
+      int gid           = source.GroupID[isrc];
       RealType r        = dist[isrc];
       RealType rinv     = 1.0 / r;
       PosType dr        = displ[isrc];
@@ -467,7 +467,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     {
       const auto& dist  = d_ie.getDistRow(iat);
       const auto& displ = d_ie.getDisplRow(iat);
-      int gid           = Ions.GroupID[isrc];
+      int gid           = source.GroupID[isrc];
       RealType r        = dist[isrc];
       RealType rinv     = 1.0 / r;
       PosType dr        = displ[isrc];
