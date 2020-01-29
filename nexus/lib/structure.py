@@ -4989,7 +4989,13 @@ class Structure(Sobj):
     def get_atomic_numbers(self):
         an = []
         for e in self.elem:
-            an.append(ptable[e].atomic_number)
+            if e[1:].isdigit():
+                an.append(ptable[e[0:1]].atomic_number)
+            elif e[2:].isdigit():
+                an.append(ptable[e[0:2]].atomic_number)
+            else:
+                an.append(ptable[e].atomic_number)
+            #end if
         #end for
         return array(an,dtype='intc')
     #end def get_atomic_numbers
