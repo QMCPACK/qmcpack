@@ -179,23 +179,13 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     }
     REQUIRE( real(Ovlp) == Approx(1.0) );
     REQUIRE( imag(Ovlp) == Approx(0.0) );
-    //std::cout << Ovlp << G.shape(0) << " " << G.shape(1) <<  std::endl;
-    for(int i = 0; i < NAEA; i++) { 
-        for(int j = 0; j < NMO; j++) {
-            std::cout << real(G[i][j]) << " ";
-        }
-        std::cout << std::endl;
-    }
-    //std::cout << "Done" << std::endl;
 
     boost::multi::array<ComplexType,2,Alloc> Eloc({1,3},alloc_);
     boost::multi::array_ref<ComplexType,2,pointer> Gw(make_device_ptr(G.origin()),{1,NEL*NMO});
-    std::cout << "ENergy" << std::endl;
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
     Eloc[0][0] = ( TG.Node() += ComplexType(Eloc[0][0]) );
     Eloc[0][1] = ( TG.Node() += ComplexType(Eloc[0][1]) );
     Eloc[0][2] = ( TG.Node() += ComplexType(Eloc[0][2]) );
-    std::cout << "ENergy" << std::endl;
     if(std::abs(file_data.E0+file_data.E1)>1e-8) {
       REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
       REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
@@ -213,7 +203,6 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
 
     double sqrtdt = std::sqrt(0.01);
     auto nCV = HOps.local_number_of_cholesky_vectors();
-    std::cout << "HERE" << std::endl;
 
     CMatrix X({nCV,1},alloc_);
     HOps.vbias(Gw,X,sqrtdt);
@@ -248,7 +237,6 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     } else {
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
-    app_log()<<" Finished: " <<std::endl;
     // Test Generalised Fock matrix.
     int dm_size;
     CMatrix G2({1,1}, alloc_);
@@ -267,15 +255,24 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     }
     boost::multi::array_ref<ComplexType,2,pointer> Gw2(make_device_ptr(G2.origin()),{1,dm_size});
     boost::multi::array<ComplexType,3,Alloc> GFock({2,1,dm_size},alloc_);
+    fill_n(GFock.origin(),2*dm_size,ComplexType(0.0));
     std::cout << Gw2[0][0] << std::endl;
     HOps.generalizedFockMatrix(Gw2,GFock[0],GFock[1]);
     boost::multi::array_ref<ComplexType,2,pointer> GR(make_device_ptr(GFock[0][0].origin()), {NMO,NMO});
-    std::cout << GFock[0][0][0] << " " << GFock[1][0][0] << std::endl;
+    //std::cout << "GFOCK: " << GFock[0][0][0] << " " << GFock[1][0][0] << std::endl;
+    //std::cout << "Fm: " << std::endl;
     //for(int i = 0; i < NMO; i++) {
         //for(int j = 0; j < NMO; j++) {
-            //std::cout << GR[i][j] << " ";
+          //if(std::abs(real(GFock[1][0][i*NMO+j]))>1e-6)
+            //std::cout << i << " " << j << " " << real(GFock[1][0][i*NMO+j]) << " " << std::endl;
         //}
-        //std::cout<<std::endl;
+    //}
+    //std::cout << "Fp: " << std::endl;
+    //for(int i = 0; i < NMO; i++) {
+        //for(int j = 0; j < NMO; j++) {
+          //if(std::abs(real(GFock[0][0][i*NMO+j]))>1e-6)
+            //std::cout << i << " " << j << " " << real(GFock[0][0][i*NMO+j]) << " " << std::endl;
+        //}
     //}
   }
 }
