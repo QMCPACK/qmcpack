@@ -255,6 +255,8 @@ ENDIF()
   #ENDIF(QMC_BUILD_STATIC)
   #SUBDIRS(einspline)
 
+  SUBDIRS(MinimalContainers)
+
   if(QMC_BUILD_SANDBOX_ONLY)
 
     MESSAGE(STATUS "Minimal build: only Sandbox")
@@ -280,8 +282,6 @@ ENDIF()
   SUBDIRS(QMCTools)
   #ENDIF(BUILD_QMCTOOLS)
 
-  SUBDIRS(MinimalContainers)
-  
   if (BUILD_UNIT_TESTS) #{
     #Unit test directories
     INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
@@ -310,6 +310,7 @@ ENDIF()
     SUBDIRS(CUDA/tests)
     SUBDIRS(OpenMP/tests)
     SUBDIRS(Optimize/tests)
+    SUBDIRS(MinimalContainers/tests)
   endif() #}
 
 endif() #}}}

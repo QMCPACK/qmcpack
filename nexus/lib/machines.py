@@ -127,8 +127,8 @@ class Options(DevBase):
 
     def write(self):
         s = ''
-        for o in self:
-            s += ' '+str(o)
+        for k in sorted(self.keys()):
+            s += ' '+str(self[k])
         #end for
         return s
     #end def write
@@ -1492,11 +1492,11 @@ class Supercomputer(Machine):
                 self.error('failed to set env options for runjob')
             #end if
             job.run_options.add(
-                np      = '--np '+str(job.processes),
-                p       = '-p '+str(job.processes_per_node),
-                locargs = '$LOCARGS',
-                verbose = '--verbose=INFO',
-                envs    = envs
+                np       = '--np '+str(job.processes),
+                p        = '-p '+str(job.processes_per_node),
+                xlocargs = '$LOCARGS',
+                verbose  = '--verbose=INFO',
+                envs     = envs
                 )
         elif launcher=='srun':  # Amos contribution from Ryan McAvoy
             None # anything needed here?
