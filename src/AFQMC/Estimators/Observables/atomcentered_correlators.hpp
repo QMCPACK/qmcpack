@@ -143,14 +143,14 @@ class atomcentered_correlators: public AFQMCInfo
         app_error()<<" Error in atomcentered_correlators: orbs[0] != 0. " <<std::endl;
         APP_ABORT("");
       }
-      for(int i=0; i<orbs.size(); i++) 
+      for(int i=0; i<nsites; i++) 
         if( orbs[i] > orbs[i+1]  ) {
           app_error()<<" Error in atomcentered_correlators: orbs[i] > orbs[i+1]. " <<std::endl;
           APP_ABORT("");
         }
       TG.Node().broadcast_n(&nsites,1,0);  
       TG.Node().broadcast_n(orbs.begin(),orbs.size(),0);  
-      NAO = orbs.back()-1;  
+      NAO = orbs.back();  
       S = std::move(CTensor({2,NAO,NMO},make_node_allocator<ComplexType>(TG)));
       XY = std::move(CMatrix({NAO,NAO},make_node_allocator<ComplexType>(TG)));
       CMatrix_ref S_(make_device_ptr(S[0].origin()),{NAO,NMO});
