@@ -548,13 +548,6 @@ void SDetOps_complex_serial(Allocator alloc)
     check(Gwv[i],g_ref);
     myREQUIRE(ovlp[i], ov_ref);
   }
-  for(int i = 0; i < 3; i++)
-    std::cout << std::setprecision(16) << ovlp[i] << std::endl;
-  for(int i = 0; i < NMO; i++) {
-    for(int j = 0; j < NMO; j++) {
-      std::cout << Gwv[0][i][j] << std::endl;
-    }
-  }
 
 }
 
