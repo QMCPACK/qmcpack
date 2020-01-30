@@ -253,6 +253,9 @@ class FullObsHandler: public AFQMCInfo
         for(int iw=0; iw<nw; iw++) 
           Xw[iw] = CIcoeff * Ov[iw] * detR[iw][iref]; 
       } 
+      if(nrefs == 1)
+        for(int iw=0; iw<nw; iw++) 
+          Xw[iw] = ComplexType(1.0); 
 
       // MAM: Since most of the simpler estimators need G4D in host memory, 
       //      I'm providing a copy of the structure there already
