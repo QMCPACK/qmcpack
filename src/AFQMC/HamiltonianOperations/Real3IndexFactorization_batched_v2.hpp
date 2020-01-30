@@ -680,6 +680,7 @@ class Real3IndexFactorization_batched_v2
         cnt_ += Twptn.num_elements();
         // transpose for faster contraction
         SpCMatrix_ref Taux(TBuff.origin()+cnt_,{nw*NMO,NMO*local_nCV});
+        SpCTensor_ref Taux3D(TBuff.origin()+cnt_,{nw,NMO,NMO*local_nCV});
         cnt_ += Taux.num_elements();
         SpCTensor_ref Twptn3D(Twptn.origin(),{nw,NMO,NMO*local_nCV});
         SpCTensor_ref Twptn3D_(Twptn.origin(),{nw,NMO*NMO,local_nCV});
@@ -708,7 +709,7 @@ class Real3IndexFactorization_batched_v2
           Barray.clear();
           Carray.clear();
           for(int w=0; w<nw; w++) {
-            Aarray.push_back(Taux[w].origin());
+            Aarray.push_back(Taux3D[w].origin());
             Barray.push_back(Twptn3D[w].origin());
             Carray.push_back(Fm_[w].origin()+is0);
           }
@@ -761,7 +762,7 @@ class Real3IndexFactorization_batched_v2
           Barray.clear();
           Carray.clear();
           for(int w=0; w<nw; w++) {
-            Aarray.push_back(Taux[w].origin());
+            Aarray.push_back(Taux3D[w].origin());
             Barray.push_back(Twptn3D[w].origin());
             Carray.push_back(Fp_[w].origin()+is0);
 
@@ -771,7 +772,7 @@ class Real3IndexFactorization_batched_v2
             using ma::axpy;
             axpy(Likn.num_elements(), SPRealType(-1.0),
                     ma::pointer_dispatch(Likn.origin()), 1,
-                    pointer_cast<SPRealType>(ma::pointer_dispatch(Twptn[w].origin())), 2);
+                    pointer_cast<SPRealType>(ma::pointer_dispatch(Twptn3D_[w].origin())), 2);
           }
           using ma::gemmBatched;
           // careful with expected Fortran ordering here!!!
