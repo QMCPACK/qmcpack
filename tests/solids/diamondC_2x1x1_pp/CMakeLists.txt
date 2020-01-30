@@ -71,6 +71,18 @@ ENDIF()
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )
 
+  LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc_4r_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short_vmc_dmc_4r
+                    qmc_short_vmc_dmc_4r.in.xml
+                    4 4
+                    TRUE
+                    1 DIAMOND2_DMC_SCALARS # DMC
+                    )
+
+
+  #16 batches of 16 walkers in one rank
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch_dmcbatch_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short_vmcbatch_dmcbatch
@@ -79,7 +91,17 @@ ENDIF()
                     TRUE
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )
-                  
+
+  # 4 batches of 16 walkers over 4 ranks
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch_dmcbatch_4r_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short_vmcbatch_dmcbatch_4r
+                    qmc_short_vmcbatch_dmcbatch_4r.in.xml
+                    4 4
+                    TRUE
+                    1 DIAMOND2_DMC_SCALARS # DMC
+                    )
+
   LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc-reconf_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
