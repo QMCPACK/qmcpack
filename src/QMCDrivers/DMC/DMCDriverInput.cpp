@@ -20,6 +20,8 @@ void DMCDriverInput::readXML(xmlNodePtr node)
   ParameterSet parameter_set_;
   std::string reconfig_str;
   parameter_set_.add(reconfig_str, "reconfiguration", "string");
+  if (!reconfig_str.empty() && reconfig_str != "no" && reconfig_str != "runwhileincorrect")
+    throw std::runtime_error("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.");
   reconfiguration_ = (reconfig_str == "runwhileincorrect");
   parameter_set_.add(NonLocalMove, "nonlocalmove", "string");
   parameter_set_.add(NonLocalMove, "nonlocalmoves", "string");
@@ -43,9 +45,6 @@ void DMCDriverInput::readXML(xmlNodePtr node)
     throw std::runtime_error("Illegal input for MaxAge in DMC input section");
   if(branch_interval_ < 0)
     throw std::runtime_error("Illegal input for branchInterval or substeps in DMC input section");
-
-  if(reconfig_str != "no" && reconfig_str != "runwhileincorrect")
-    APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
 }
 
 std::ostream& operator<<(std::ostream& o_stream, const DMCDriverInput& dmci) { return o_stream; }
