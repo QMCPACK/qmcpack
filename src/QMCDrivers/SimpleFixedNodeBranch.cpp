@@ -743,11 +743,16 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
     std::string reconfig("no");
     // method is actually IndexType so conceivably indicates much more that reconfig="yes" or "no"
     if (WalkerController->get_method())
-      reconfig = "yes";
+      reconfig = "runwhileincorrect"; // forces SR during warmup?
     std::string reconfig_prev(reconfig);
     ParameterSet p;
     p.add(reconfig, "reconfiguration", "string");
     p.put(cur);
+    if(reconfig != "no" && reconfig != "runwhileincorrect")
+    {
+      // remove this once bug is fixed
+      APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
+    }
     same_wc = (reconfig == reconfig_prev);
   }
 
