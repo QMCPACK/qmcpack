@@ -45,6 +45,8 @@ support GPU execution with OpenMP offload.
 
 See [list of open bugs](https://github.com/QMCPACK/qmcpack/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
 
+- Use of reconfiguration in DMC is disabled since it is incorrect. [\#2254](https://github.com/QMCPACK/qmcpack/pull/2254)
+
 ### NEXUS
 
 - NEXUS has been transitioned to Python 3 and now requires it.
