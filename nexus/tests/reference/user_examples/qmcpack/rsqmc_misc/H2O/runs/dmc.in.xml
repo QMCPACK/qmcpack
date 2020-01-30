@@ -81,7 +81,7 @@
       <parameter name="steps"               >    10              </parameter>
       <parameter name="timestep"            >    0.005           </parameter>
       <parameter name="nonlocalmoves"       >    yes             </parameter>
-      <parameter name="reconfiguration"     >    yes             </parameter>
+      <parameter name="reconfiguration"     >    no              </parameter>
       <parameter name="minimumtargetwalkers">    128             </parameter>
    </qmc>
 </simulation>
