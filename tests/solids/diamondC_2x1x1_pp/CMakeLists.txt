@@ -98,7 +98,7 @@ ENDIF()
                     qmc_short_vmcbatch_dmcbatch_4r
                     qmc_short_vmcbatch_dmcbatch_4r.in.xml
                     4 4
-                    TRUE
+                    FALSE
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )
 
