@@ -48,6 +48,12 @@ if [[ ${ret} -ne 0 ]] ; then
   exit_code=${ret}
 fi
 
+ctest -R ntest --output-on-failure --timeout 120
+ret=$?
+if [[ ${ret} -ne 0 ]] ; then
+  exit_code=${ret}
+fi
+
 echo ""
 echo ""
 echo "starting new test for real mixed precision"
