@@ -5006,6 +5006,62 @@ class Structure(Sobj):
         cell = (lattice,positions,numbers)
         return cell
     #end def spglib_cell
+
+
+    def get_symmetry(self,symprec=1e-5):
+        cell = self.spglib_cell()
+        return spglib.get_symmetry(cell,symprec=symprec)
+    #end def get_symmetry
+
+
+    # functions based on direct spglib interface
+    def space_group_operations(self,tol=1e-5,unit=False):
+        ds = self.get_symmetry(symprec=tol)
+        if ds is None:
+            self.error('Symmetry search failed.\nspglib error message:\n{}'.format(spglib.get_error_message()))
+        #end if
+        ds = obj(ds)
+        rotations    = ds.rotations
+        translations = ds.translations
+
+        if not unit:
+            # Transform to Cartesian
+            axes = self.axes
+            axinv = np.linalg.inv(axes)
+            for n,(R,t) in enumerate(zip(rotations,translations)):
+                rotations[n]    = np.dot(axinv,np.dot(R,axes))
+                translations[n] = np.dot(t,axes)
+            #end for
+        #end if
+
+        return rotations,translations
+    #end def space_group_operations
+
+
+    def point_group_operations(self,tol=1e-5,unit=False):
+        rotations,translations = self.space_group_symmetries(tol=tol,unit=unit)
+        no_trans = translations.max(axis=0) < tol
+        return rotations[no_trans]
+    #end def point_group_operations
+
+
+    def check_point_group_operations(self,tol=1e-5,unit=False,ncheck=1):
+        rotations = self.point_group_operations(tol=tol,unit=unit)
+        r = self.pos
+        if ncheck=='all':
+            ncheck = len(r)
+        #end if
+        for n in range(ncheck):
+            rc = r[n]
+            for R in rotations:
+                rp = np.dot(r-rc,R)+rc
+
+                # jtk mark current
+                
+            #end for
+        #end for
+    #end def check_point_group_operations
+
 #end class Structure
 Structure.set_operations()
 
