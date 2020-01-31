@@ -239,7 +239,7 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
   trialEnergy        = ensemble_property_.Energy;
   W.EnsembleProperty = ensemble_property_;
   //return W.getActiveWalkers();
-  return int(curData[WEIGHT_INDEX]);
+  return int(curData[WALKERSIZE_INDEX]);
 }
 
 int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
@@ -322,7 +322,7 @@ int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
   trialEnergy = ensemble_property_.Energy;
   pop.set_ensemble_property(ensemble_property_);
   //return W.getActiveWalkers();
-  return int(curData[WEIGHT_INDEX]);
+  return pop.get_num_global_walkers();
 }
 
 int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger)
@@ -407,26 +407,6 @@ int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trig
   return pop.get_num_global_walkers();
 }
 
-// int nw_tot = copyWalkers(W);
-// //set Weight and Multiplicity to default values
-// MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
-// while (it != it_end)
-// {
-//   (*it)->Weight       = 1.0;
-//   (*it)->Multiplicity = 1.0;
-//   ++it;
-// }
-// //set the global number of walkers
-// W.setGlobalNumWalkers(nw_tot);
-// // Update offsets in non-MPI case, needed to ensure checkpoint outputs the correct
-// // number of configurations.
-// if (W.WalkerOffsets.size() == 2)
-// {
-//   W.WalkerOffsets[1] = nw_tot;
-// }
-// return nw_tot;
-
-
 void WalkerControlBase::Write2XYZ(MCWalkerConfiguration& W)
 {
   std::ofstream fout("bad.xyz");
@@ -442,7 +422,6 @@ void WalkerControlBase::Write2XYZ(MCWalkerConfiguration& W)
     ++it;
   }
 }
-
 
 /** evaluate curData and mark the bad/good walkers.
  *
@@ -826,13 +805,9 @@ std::vector<WalkerControlBase::IndexType> WalkerControlBase::syncFutureWalkersPe
                                                                                       IndexType n_walkers)
 {
   int ncontexts = comm->size();
-
-  std::vector<int> nwoff(ncontexts + 1, 0);
-
   std::vector<IndexType> future_walkers(ncontexts, 0);
   future_walkers[comm->rank()] = n_walkers;
   comm->allreduce(future_walkers);
-
   return future_walkers;
 }
 
