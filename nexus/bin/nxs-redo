@@ -30,6 +30,16 @@ if help:
 #end if
 
 paths = dict()
+if len(paths_in)==1 and os.path.exists(paths_in[0]) and os.path.isfile(paths_in[0]):
+    text = open(paths_in[0],'r').read()
+    paths_in = []
+    for line in text.splitlines():
+        tokens = line.split()
+        if len(tokens)>0:
+            paths_in.append(tokens[-1])
+        #end if
+    #end for
+#end if
 for path in paths_in:
     if os.path.exists(path) and os.path.isdir(path):
         simdir    = False
