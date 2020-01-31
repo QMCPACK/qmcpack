@@ -690,7 +690,7 @@ IF(HDF5_FOUND)
   ENDIF()
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${HDF5_LIBRARIES})
 ELSE(HDF5_FOUND)
-  MESSAGE(FATAL_ERROR "Require HDF5 1.6.4 or higher. Set HDF5_ROOT")
+  MESSAGE(FATAL_ERROR "HDF5 not found. Set HDF5_ROOT")
 ENDIF(HDF5_FOUND)
 
 #make sure we can find boost if it's not in /usr
