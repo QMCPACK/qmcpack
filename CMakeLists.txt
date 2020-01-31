@@ -576,11 +576,14 @@ IF ( HAVE_MPI )
   MESSAGE(STATUS "MPI runner is ${MPIEXEC}")
   MESSAGE(STATUS "MPIEXEC_NUMPROC_FLAG is ${MPIEXEC_NUMPROC_FLAG}")
 
-  IF ( NOT DEFINED MPIEXEC_PREFLAGS )
-    SET( MPIEXEC_PREFLAGS "" )
-  ELSE()
-    MESSAGE(STATUS "MPIEXEC_PREFLAGS are ${MPIEXEC_PREFLAGS}")
-  ENDIF()
+  # I don't get why these are not, MPIEXEC_PREFLAGS should be because multi rank multi thread
+  # tests will be badly broken many places if not. Although I believe HPC computing centers can
+  # modify these default behaviors.
+  # The thing is from openmpi 1.8 onward jobs of one or two ranks our bound to core by default
+  # therefore to have multi threaded mpirun tests not be a joke.  You might not notice this
+  # if your mpi implementation hasn't been built thread aware.
+  SET( MPIEXEC_PREFLAGS "--bind-to;socket" CACHE STRING "openmpi with bind to core by default for 1 and 2 rank tests.")
+  MESSAGE(STATUS "MPIEXEC_PREFLAGS are ${MPIEXEC_PREFLAGS}")
 
   IF ( NOT TEST_MAX_PROCS )
     SET( TEST_MAX_PROCS 100 )
