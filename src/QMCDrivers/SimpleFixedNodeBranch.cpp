@@ -366,12 +366,13 @@ void SimpleFixedNodeBranch::flush(int counter)
 void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
 {
   //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
-  //RealType pop_now= WalkerController->branch(iter,walkers,0.1);
+  
   FullPrecRealType pop_now;
   if (BranchMode[B_DMCSTAGE] || iter)
     pop_now = WalkerController->branch(iter, walkers, 0.1);
   else
     pop_now = WalkerController->doNotBranch(iter, walkers); //do not branch for the first step of a warmup
+
   //population for trial energy modification should not include any released node walkers.
   pop_now -= WalkerController->get_ensemble_property().RNSamples;
   //current energy

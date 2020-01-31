@@ -183,11 +183,8 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
     walker->Weight       = 1.0;
     walker->Multiplicity = 1.0;
   }
-  // //update the global number of walkers and offsets
 
-  myComm->allreduce(curData);
-
-  // Discover the population now
+  // Update to the current population
   pop.syncWalkersPerNode(getCommunicator());
 
   myTimers[DMC_MPI_branch]->stop();
