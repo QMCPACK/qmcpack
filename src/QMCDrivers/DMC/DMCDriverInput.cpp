@@ -20,7 +20,9 @@ void DMCDriverInput::readXML(xmlNodePtr node)
   ParameterSet parameter_set_;
   std::string reconfig_str;
   parameter_set_.add(reconfig_str, "reconfiguration", "string");
-  reconfiguration_ = (reconfig_str == "yes");
+  if (!reconfig_str.empty() && reconfig_str != "no" && reconfig_str != "runwhileincorrect")
+    throw std::runtime_error("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.");
+  reconfiguration_ = (reconfig_str == "runwhileincorrect");
   parameter_set_.add(NonLocalMove, "nonlocalmove", "string");
   parameter_set_.add(NonLocalMove, "nonlocalmoves", "string");
   parameter_set_.add(max_age_, "MaxAge", "double");
