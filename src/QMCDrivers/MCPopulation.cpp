@@ -29,7 +29,6 @@ MCPopulation::MCPopulation(int num_ranks,
                            int this_rank)
     : num_local_walkers_per_node_(num_ranks, 0), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), num_ranks_(num_ranks), rank_(this_rank)
 {
-  walker_offsets_     = mcwc.WalkerOffsets;
   num_global_walkers_ = mcwc.GlobalNumWalkers;
   num_local_walkers_  = mcwc.LocalNumWalkers;
   num_particles_      = mcwc.getParticleNum();
@@ -267,7 +266,6 @@ void MCPopulation::syncWalkersPerNode(Communicate* comm)
     nwoff[ip + 1] = nwoff[ip] + num_local_walkers_per_node_[ip];
   }
   num_global_walkers_ = nwoff[ncontexts];
-  walker_offsets_     = std::move(nwoff);
 }
 
 /** Creates walkers doing their first touch in their crowd (thread) context
