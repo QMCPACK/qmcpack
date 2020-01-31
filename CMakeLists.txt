@@ -576,20 +576,20 @@ IF ( HAVE_MPI )
   MESSAGE(STATUS "MPI runner is ${MPIEXEC}")
   MESSAGE(STATUS "MPIEXEC_NUMPROC_FLAG is ${MPIEXEC_NUMPROC_FLAG}")
 
-  # I don't get why these are not, MPIEXEC_PREFLAGS should be because multi rank multi thread
-  # tests will be badly broken many places if not. Although I believe HPC computing centers can
-  # modify these default behaviors.
-  # The thing is from openmpi 1.8 onward jobs of one or two ranks our bound to core by default
-  # therefore to have multi threaded mpirun tests not be a joke.  You might not notice this
-  # if your mpi implementation hasn't been built thread aware.
+  # From openmpi 1.8 onward jobs of one or two ranks are bound to core by default
+  # therefore if openmpi is thread aware the thread affinity mask for all threads is set to one core.
+  # Although I believe HPC computing centers can modify these default behaviors developers
+  # at least will be frequently testing against or building with default openmpi.
+  # Not sure how spectrum MPI and MPICH bind by default.
+  
+  # MPIEXEC_PREFLAGS should be a cache variable because at least for openmpi a sane value for
+  # binding is required for 1 and 2 rank runs
   SET( MPIEXEC_PREFLAGS "--bind-to;socket" CACHE STRING "openmpi with bind to core by default for 1 and 2 rank tests.")
   MESSAGE(STATUS "MPIEXEC_PREFLAGS are ${MPIEXEC_PREFLAGS}")
 
   IF ( NOT TEST_MAX_PROCS )
     SET( TEST_MAX_PROCS 100 )
-  ENDIF()
-
-  
+  ENDIF()  
 ENDIF(HAVE_MPI)
 
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
