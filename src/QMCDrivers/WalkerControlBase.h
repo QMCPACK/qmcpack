@@ -151,10 +151,15 @@ public:
    */
   inline FullPrecRealType getCurrentValue(int i) { return curData[i]; }
 
-  /** update properties without branching */
+  /** return global population
+   *  update properties without branching 
+   *
+   */
   int doNotBranch(int iter, MCWalkerConfiguration& W);
 
-  /** update properties without branching */
+  /** return global population
+   *  update properties without branching
+   */
   int doNotBranch(int iter, MCPopulation& pop);
 
   /** sort Walkers between good and bad and prepare branching
@@ -192,10 +197,16 @@ public:
   /** reset to accumulate data */
   virtual void reset();
 
-  /** perform branch and swap walkers as required */
+  /** perform branch and swap walkers as required 
+   *
+   *  \return global population
+   */
   virtual int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
 
-  /** perform branch and swap walkers as required */
+  /** perform branch and swap walkers as required 
+   *
+   *  \return global population
+   */
   virtual int branch(int iter, MCPopulation& pop, FullPrecRealType trigger);
 
   virtual FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau)
