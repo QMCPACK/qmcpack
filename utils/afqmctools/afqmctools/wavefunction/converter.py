@@ -191,7 +191,7 @@ def write_phf_rhf(fname, cf):
         cfx[0::2] = cf.reshape((nb*no,), order='F')[:]
     cf_ = struct.pack('d'*(nb*no*2), *cfx)
 
-    with open(fname, 'wb') as f
+    with open(fname, 'wb') as f:
         f.write(i1_)
         f.write(ia_)
         f.write(i1_)
@@ -226,7 +226,7 @@ def write_phf_uhf(fname, cf):
         cfx[2*nb*no+0::2] = cf[1].reshape((nb*no,), order='F')[:]
     cf_ = struct.pack('d'*(nb*no*4), *cfx)
 
-    with open(fname, 'wb') as f
+    with open(fname, 'wb') as f:
         f.write(i1_)
         f.write(ia_)
         f.write(i1_)

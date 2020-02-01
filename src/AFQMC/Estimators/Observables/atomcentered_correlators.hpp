@@ -175,7 +175,7 @@ class atomcentered_correlators: public AFQMCInfo
       TG.Node().broadcast_n(&nsites,1,0);  
       orbs.resize(nsites+1);  
       TG.Node().broadcast_n(orbs.begin(),orbs.size(),0);  
-      NAO = orbs.back()-1;  
+      NAO = orbs.back();  
       S = std::move(CTensor({2,NAO,NMO},make_node_allocator<ComplexType>(TG)));
       XY = std::move(CMatrix({NAO,NAO},make_node_allocator<ComplexType>(TG)));
     }
@@ -188,16 +188,17 @@ class atomcentered_correlators: public AFQMCInfo
     writer = (TG.getGlobalRank()==0);
 
     if(writer) {
-      type_id1D.reserve(2);
+      type_id1D.reserve(3);
       type_id1D.emplace_back("C");
       type_id1D.emplace_back("S");
+      type_id1D.emplace_back("M");
       type_id2D.reserve(3);
       type_id2D.emplace_back("CC");
       type_id2D.emplace_back("SS");
       type_id2D.emplace_back("CS");
     }
 
-    DMAverage1D = std::move(mpi3CTensor({nave,2,nsites},shared_allocator<ComplexType>{TG.TG_local()}));
+    DMAverage1D = std::move(mpi3CTensor({nave,3,nsites},shared_allocator<ComplexType>{TG.TG_local()}));
     fill_n(DMAverage1D.origin(),DMAverage1D.num_elements(),ComplexType(0.0,0.0));
     DMAverage2D = std::move(mpi3CTensor({nave,3,ns2},shared_allocator<ComplexType>{TG.TG_local()}));
     fill_n(DMAverage2D.origin(),DMAverage2D.num_elements(),ComplexType(0.0,0.0));
@@ -232,9 +233,9 @@ class atomcentered_correlators: public AFQMCInfo
                                       shared_allocator<ComplexType>{TG.TG_local()}));
       }   
       if( DMWork1D.size(0) != nw ||
-          DMWork1D.size(1) != 2 || 
+          DMWork1D.size(1) != 3 || 
           DMWork1D.size(2) != nsites ) {
-        DMWork1D = std::move(mpi3CTensor({nw,2,nsites},
+        DMWork1D = std::move(mpi3CTensor({nw,3,nsites},
                                       shared_allocator<ComplexType>{TG.TG_local()}));
       }
       if( DMWork2D.size(0) != nw ||
@@ -264,7 +265,7 @@ class atomcentered_correlators: public AFQMCInfo
     } else {
       if( denom.size(0) != nw ||
           DMWork1D.size(0) != nw ||
-          DMWork1D.size(1) != 2 ||
+          DMWork1D.size(1) != 3 ||
           DMWork1D.size(2) != nsites ||
           DMWork2D.size(0) != nw ||
           DMWork2D.size(1) != 3 ||
@@ -277,7 +278,7 @@ class atomcentered_correlators: public AFQMCInfo
           NwIJ.size(2) != nsites ||  
           NwIJ.size(3) != nsites ||  
           DMAverage1D.size(0) != nave ||  
-          DMAverage1D.size(1) != 2 ||  
+          DMAverage1D.size(1) != 3 ||  
           DMAverage1D.size(2) != nsites  || 
           DMAverage2D.size(0) != nave ||  
           DMAverage2D.size(1) != 3 ||  
@@ -351,6 +352,8 @@ class atomcentered_correlators: public AFQMCInfo
         using ma::batched_diagonal_sum;
         batched_diagonal_sum(shapes.data(),Barray.data(),NAO,ComplexType(1.0),Aarray.data(),int(Aarray.size()));
 
+        fill_n(devNwIJ.origin(),devNwIJ.num_elements(),ComplexType(0.0));
+
         // NwIJ[iw][I][J] = sum_ij MwIJ[iw][Ij][Jj] * XY[Jj][Ii]
         Aarray.clear();
         Barray.clear();
@@ -369,6 +372,10 @@ class atomcentered_correlators: public AFQMCInfo
         batched_ab_ba(shapes.data(), Aarray.data(), NAO, Barray.data(), NAO, 
                       ComplexType(0.0), Carray.data(), int(Aarray.size()));
         TG.TG_local().barrier();
+
+        // testing !!!
+        //fill_n(devNwIJ.origin(),devNwIJ.num_elements(),ComplexType(0.0));
+        //TG.TG_local().barrier();
         
         // NwIJ[iw][I][J] = sum_ij MwIJ[iw][Ij][Jj] * MwJI[iw][Jj][Ii]
         Aarray.clear();
@@ -429,6 +436,7 @@ class atomcentered_correlators: public AFQMCInfo
         for(int i=0; i<nsites; i++) {
           DMWork1D[iw][0][i] += X_*(NwI[0][iw][i] + NwI[1][iw][i]);
           DMWork1D[iw][1][i] += X_*(NwI[0][iw][i] - NwI[1][iw][i]);
+          DMWork1D[iw][2][i] += std::real(ComplexType(X_*(NwI[0][iw][i] - NwI[1][iw][i])));
           for(int j=0; j<nsites; j++) {
             auto uu(NwI[0][iw][i]*NwI[0][iw][j] + NwIJ[0][iw][i][j]);
             auto dd(NwI[1][iw][i]*NwI[1][iw][j] + NwIJ[1][iw][i][j]);
@@ -457,8 +465,8 @@ class atomcentered_correlators: public AFQMCInfo
       for(int iw=0; iw<nw; iw++) 
         denom[iw] = wgt[iw]/denom[iw];
       {  
-        stdCVector_ref DMAv1D(to_address(DMAverage1D[iav].origin()),{2*nsites});
-        stdCMatrix_ref DMWork2D_(to_address(DMWork1D.origin()),{nw,2*nsites});
+        stdCVector_ref DMAv1D(to_address(DMAverage1D[iav].origin()),{3*nsites});
+        stdCMatrix_ref DMWork2D_(to_address(DMWork1D.origin()),{nw,3*nsites});
         // DMAverage[iav][t][ij] += sum_iw DMWork[iw][t][ij] * denom[iw] = T( DMWork ) * denom 
         ma::product( ComplexType(1.0,0.0), ma::T( DMWork2D_ ),  denom, 
                    ComplexType(1.0,0.0), DMAv1D ); 
@@ -500,7 +508,7 @@ class atomcentered_correlators: public AFQMCInfo
           }
           dump.pop();
         }
-        for(int t=0; t<2; ++t) {
+        for(int t=0; t<3; ++t) {
           dump.push(type_id1D[t]);
           for(int i=0; i<nave; ++i) {
             dump.push(std::string("Average_")+std::to_string(i));

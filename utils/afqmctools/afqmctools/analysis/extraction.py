@@ -39,6 +39,10 @@ MAP = {
         's_atom_correlation': {
             'group': 'ATOM_CORRELATORS/S',
             'numer': 'correlator1D_S'
+        },
+        'm_atom_correlation': {
+            'group': 'ATOM_CORRELATORS/M',
+            'numer': 'correlator1D_M'
         }
     }
 

@@ -256,13 +256,15 @@ def average_atom_correlations(filename, estimator='back_propagated', eqlb=1, ski
                                    estimator=estimator, ix=ix)
     s_mean, s_err = average_observable(filename, 's_atom_correlation', eqlb=eqlb, skip=skip,
                                    estimator=estimator, ix=ix)
+    m_mean, m_err = average_observable(filename, 'm_atom_correlation', eqlb=eqlb, skip=skip,
+                                   estimator=estimator, ix=ix)
     cc_mean, cc_err = average_observable(filename, 'cc_atom_correlation', eqlb=eqlb, skip=skip,
                                    estimator=estimator, ix=ix)
     ss_mean, ss_err = average_observable(filename, 'ss_atom_correlation', eqlb=eqlb, skip=skip,
                                    estimator=estimator, ix=ix)
     # TODO: get npts from metadata local to cc_correlation
     npts = int(sqrt(cc_mean.shape[0]))
-    return c_mean, c_err, s_mean, s_err, cc_mean.reshape((npts,-1)), cc_err.reshape((npts,-1)), \
+    return c_mean, c_err, s_mean, s_err, m_mean, m_err, cc_mean.reshape((npts,-1)), cc_err.reshape((npts,-1)), \
                 ss_mean.reshape((npts,-1)), ss_err.reshape((npts,-1))
 
 def average_observable(filename, name, eqlb=1, estimator='back_propagated',

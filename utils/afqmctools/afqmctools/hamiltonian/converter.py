@@ -334,7 +334,7 @@ def write_fcidump(filename, hcore, chol, enuc, nmo, nelec, tol=1e-8,
                             if not cplx:
                                 if abs(eris[i,k,l,j].imag > 1e-12):
                                     print("# Found complex integrals with cplx==False.")
-                                    sys.exit()
+                                    #sys.exit()
                             out = fmt_integral(eris[i,k,l,j], i, k, j, l,
                                                cplx, paren=paren)
                             f.write(out)
@@ -476,7 +476,7 @@ def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
                     if not cplx:
                         if len(numpy.where(numpy.abs(eri.imag) > 1e-12)) > 0:
                             print("# Found complex integrals with cplx==False.")
-                            sys.exit()
+                            #sys.exit()
                     ik = 0
                     for i in range(0, nmo_pk[ki]):
                         kk = qk_k2[iq,ki]
