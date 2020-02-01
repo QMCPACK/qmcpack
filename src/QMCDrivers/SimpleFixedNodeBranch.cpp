@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////////
+ //////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
@@ -26,6 +26,7 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
+#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
@@ -149,6 +150,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       walkers.setWalkerOffsets(nwoff);
       iParam[B_TARGETWALKERS] = nwoff[ncontexts];
     }
+    // \todo reparsing XML nodes is an antipattern, remove.
     WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
     if (!BranchMode[B_RESTART])
     {
@@ -163,6 +165,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       {
         app_log() << "Warmup DMC is done with a fixed population " << iParam[B_TARGETWALKERS] << std::endl;
         BackupWalkerController = std::move(WalkerController); //save the main controller
+        // \todo: Not likely to be ok to call reset on a moved from WalkerController!
         WalkerController.reset(
             createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode, true));
         BranchMode.set(B_POPCONTROL, 0);
@@ -265,12 +268,13 @@ int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, bool f
   //assign current Eref and a large number for variance
   WalkerController->setTrialEnergy(vParam[SBVP::ETRIAL]);
   this->reset();
+  int allow_flux = 50; // std::min(static_cast<int>(population.get_num_global_walkers() * 0.10), 50);
   if (fromscratch)
   {
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
     // Was check MCWC's particle set for number of R which I take to mean number of particles
     // will this assumption change if various spin freedoms also are added to ParticleSet?
-    setBranchCutoff(vParam[SBVP::SIGMA2], WalkerController->get_target_sigma(), 50, population.get_num_particles());
+    setBranchCutoff(vParam[SBVP::SIGMA2], WalkerController->get_target_sigma(), allow_flux, population.get_num_particles());
     vParam[SBVP::TAUEFF] = tau * R2Accepted.result() / R2Proposed.result();
   }
   //reset controller
@@ -483,10 +487,12 @@ void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopul
   vParam[SBVP::EREF] = EnergyHist.mean(); //current mean
   if (BranchMode[B_USETAUEFF])
     vParam[SBVP::TAUEFF] = vParam[SBVP::TAU] * R2Accepted.result() / R2Proposed.result();
+
   if (BranchMode[B_KILLNODES])
     EnergyHist(vParam[SBVP::ENOW] - std::log(wc_ensemble_prop.LivingFraction) / vParam[SBVP::TAUEFF]);
   else
     EnergyHist(vParam[SBVP::ENOW]);
+
   if (BranchMode[B_DMCSTAGE]) // main stage
   {
     if (BranchMode[B_POPCONTROL])
@@ -737,11 +743,16 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
     std::string reconfig("no");
     // method is actually IndexType so conceivably indicates much more that reconfig="yes" or "no"
     if (WalkerController->get_method())
-      reconfig = "yes";
+      reconfig = "runwhileincorrect"; // forces SR during warmup?
     std::string reconfig_prev(reconfig);
     ParameterSet p;
     p.add(reconfig, "reconfiguration", "string");
     p.put(cur);
+    if(reconfig != "no" && reconfig != "runwhileincorrect")
+    {
+      // remove this once bug is fixed
+      APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
+    }
     same_wc = (reconfig == reconfig_prev);
   }
 

@@ -36,7 +36,7 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
 
   TrialWaveFunction twf(comm);
-  MCPopulation population(1, particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary());
+  MCPopulation population(1, particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary(),comm->rank());
 
   population.createWalkers(8);
   REQUIRE(population.get_walkers().size() == 8);
@@ -71,7 +71,7 @@ TEST_CASE("MCPopulation::distributeWalkers", "[particle][population]")
   HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
 
   MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
-                          hamiltonian_pool.getPrimary());
+                          hamiltonian_pool.getPrimary(), comm->rank());
 
   population.createWalkers(24);
   REQUIRE(population.get_walkers().size() == 24);

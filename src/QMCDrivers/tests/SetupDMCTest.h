@@ -45,7 +45,7 @@ public:
     dmcdrv_input.readXML(node);
 
     population = MCPopulation(num_ranks, particle_pool->getParticleSet("e"), wavefunction_pool->getPrimary(),
-                              hamiltonian_pool->getPrimary());
+                              hamiltonian_pool->getPrimary(),comm->rank());
 
     QMCDriverInput qmc_input_copy(qmcdrv_input);
     DMCDriverInput dmc_input_copy(dmcdrv_input);

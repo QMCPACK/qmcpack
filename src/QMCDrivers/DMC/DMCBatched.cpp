@@ -222,7 +222,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         //This is just convenient to do here
         rr_proposed[iw] += rr[iw];
       }
-      
+
       std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](auto& delta_r) {
         constexpr RealType mhalf(-0.5);
         return mhalf * dot(delta_r, delta_r);
@@ -409,8 +409,8 @@ void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThrea
                            moved.rr_proposed[iw]);
       // this might mean new_energies are actually unneeded which would be nice.
       moved.new_energies[iw] = local_energies[iw];
-      moved.walkers[iw].get().Weight *=
-          sft.branch_engine.branchWeightBare(moved.new_energies[iw], moved.old_energies[iw]);
+      FullPrecRealType branch_weight = sft.branch_engine.branchWeight(moved.new_energies[iw], moved.old_energies[iw]);
+      moved.walkers[iw].get().Weight *= branch_weight;
     }
     timers.collectables_timer.start();
     auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker) {
@@ -457,11 +457,13 @@ void DMCBatched::setMultiplicities(const DMCDriverInput& dmcdriver_input,
   auto setMultiplicity = [&dmcdriver_input, &rng](MCPWalker& walker) {
     constexpr RealType onehalf(0.5);
     constexpr RealType cone(1);
-    RealType M = walker.Weight;
+    RealType M;
     if (walker.Age > dmcdriver_input.get_max_age())
       M = std::min(onehalf, M);
     else if (walker.Age > 0)
       M = std::min(cone, M);
+    else
+      M = walker.Weight;
     walker.Multiplicity = M + rng();
   };
   for (int iw = 0; iw < walkers.size(); ++iw)

@@ -548,7 +548,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 
   if(!population_)
   {
-    population_.reset(new MCPopulation(myComm->size(), *qmcSystem, ptclPool->getParticleSet("e"), psiPool->getPrimary(), hamPool->getPrimary()));
+    population_.reset(new MCPopulation(myComm->size(), *qmcSystem, ptclPool->getParticleSet("e"), psiPool->getPrimary(), hamPool->getPrimary(), myComm->rank()));
   }
   if (reuse)
     qmc_driver = std::move(last_driver);

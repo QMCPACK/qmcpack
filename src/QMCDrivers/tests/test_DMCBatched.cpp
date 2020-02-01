@@ -30,7 +30,7 @@ TEST_CASE("DMCBatched::calc_default_local_walkers", "[drivers]")
 
 
   auto testWRTWalkersPerRank = [&dtest](int walkers_per_rank) {
-                                 DMCBatched dmc_batched(std::move(dtest()));
+                                 DMCBatched dmc_batched = dtest();
     dmc_batched.set_walkers_per_rank(walkers_per_rank, "testing");
     if (dtest.num_crowds < 8)
       dmc_batched.set_num_crowds(Concurrency::maxThreads(), "Insufficient threads available to match test input");

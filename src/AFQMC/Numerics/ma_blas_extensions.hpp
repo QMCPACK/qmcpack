@@ -370,18 +370,34 @@ void Matrix2MA(char TA, MA const& A, MultiArray2D& M)
     throw std::runtime_error(" Error: Unknown operation in Matrix2MA.\n");
   }
 
+  using ptrA = std::remove_cv_t<typename MA::element_ptr>;
+  using ptrM = std::remove_cv_t<typename MultiArray2D::element_ptr>;
+
   if(TA == 'H') TA = 'C';   
-  if(TA=='N' or TA=='T' or TA=='C') {
-    geam(   TA, TA, M.size(1), M.size(0),
-          Type2(1.0), pointer_dispatch(A.origin()), A.stride(0),
-          Type2(0.0), pointer_dispatch(A.origin()), A.stride(0),
-          pointer_dispatch(M.origin()), M.stride(0)
-    );
-  } else if(TA=='Z') {
-    // bad i gpu's
+  if(TA=='Z') {
     for(int i=0; i<M.size(0); i++)
       for(int j=0; j<M.size(1); j++)
         M[i][j] = ma::conj(A[i][j]);
+  } else if( not std::is_same<ptrA,ptrM>::value ) {
+    if(TA=='N') {
+      for(int i=0; i<M.size(0); i++)
+        for(int j=0; j<M.size(1); j++)
+          M[i][j] = A[i][j];
+    } else if(TA=='T') {
+      for(int i=0; i<M.size(0); i++)
+        for(int j=0; j<M.size(1); j++)
+          M[i][j] = A[j][i];
+    } else if(TA=='C') {
+      for(int i=0; i<M.size(0); i++)
+        for(int j=0; j<M.size(1); j++)
+          M[i][j] = ma::conj(A[j][i]);
+    }
+  } else {
+    geam(   TA, TA, M.size(1), M.size(0),
+        Type2(1.0), pointer_dispatch(A.origin()), A.stride(0),
+        Type2(0.0), pointer_dispatch(A.origin()), A.stride(0),
+        pointer_dispatch(M.origin()), M.stride(0)
+    );
   }
 }
 
@@ -406,18 +422,35 @@ void Matrix2MAREF(char TA, MA const& A, MultiArray2D& M)
     throw std::runtime_error(" Error: Unknown operation in Matrix2MA.\n");
   }
 
+  using ptrA = std::remove_cv_t<typename MA::element_ptr>;
+  using ptrM = std::remove_cv_t<typename MultiArray2D::element_ptr>;
+
   if(TA == 'H') TA = 'C';
-  if(TA=='N' or TA=='T' or TA=='C') {
+  if(TA=='Z') {
+    // bad i gpu's
+    for(int i=0; i<M.size(0); i++)
+      for(int j=0; j<M.size(1); j++)
+        M[i][j] = ma::conj(A[i][j]);
+  } else if( not std::is_same<ptrA,ptrM>::value ) {
+    if(TA=='N') {
+      for(int i=0; i<M.size(0); i++)
+        for(int j=0; j<M.size(1); j++)
+          M[i][j] = A[i][j];
+    } else if(TA=='T') {
+      for(int i=0; i<M.size(0); i++)
+        for(int j=0; j<M.size(1); j++)
+          M[i][j] = A[j][i];
+    } else if(TA=='C') {
+      for(int i=0; i<M.size(0); i++)
+        for(int j=0; j<M.size(1); j++)
+          M[i][j] = ma::conj(A[j][i]);
+    }
+  } else {
     geam(   TA, TA, M.size(1), M.size(0),
           Type2(1.0), pointer_dispatch(A.origin()), A.stride(0),
           Type2(0.0), pointer_dispatch(A.origin()), A.stride(0),
           pointer_dispatch(M.origin()), M.stride(0)
     );
-  } else if(TA=='Z') {
-    // bad i gpu's
-    for(int i=0; i<M.size(0); i++)
-      for(int j=0; j<M.size(1); j++)
-        M[i][j] = ma::conj(A[i][j]);
   }
 }
 

@@ -101,7 +101,6 @@ class NOMSD: public AFQMCInfo
                 SDetOp( std::move(sdet_) ), 
                 HamOp(std::move(hop_)),ci(std::move(ci_)),
                 OrbMats(move_vector<devPsiT>(std::move(orbs_))),
-                DenseOrbMats(),
                 RefOrbMats({0,0},shared_allocator<ComplexType>{TG.Node()}),
                 shmbuff_for_E(iextensions<1u>{1},alloc_shared_),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
@@ -186,15 +185,6 @@ class NOMSD: public AFQMCInfo
         readWfn(excited_file,excitedOrbMat_,NMO,maxOccupExtendedMat.first,maxOccupExtendedMat.second);
         excitedOrbMat = excitedOrbMat_;
       }    
-
-      int nrow(NMO*((walker_type==NONCOLLINEAR)?2:1));
-      int ncol(NAEA+((walker_type==CLOSED)?0:NAEB));//careful here, spins are stored contiguously
-      int nmats = OrbMats.size();
-      DenseOrbMats.reserve(nmats);
-      for(int i=0; i<OrbMats.size(); i++) 
-        DenseOrbMats.push_back(shmCMatrix({OrbMats[i].size(0),OrbMats[i].size(1)},alloc_shared_));
-      for(int i=0; i<OrbMats.size(); i++) 
-        ma::Matrix2MAREF('N',OrbMats[i],DenseOrbMats[i]);
 
       std::transform(rediag.begin(),rediag.end(),rediag.begin(),(int (*)(int)) tolower);
       if(rediag == "yes" || rediag == "true") 
@@ -544,7 +534,6 @@ class NOMSD: public AFQMCInfo
 
     // eventually switched from CMatrix to SMHSparseMatrix(node)
     std::vector<devPsiT> OrbMats;
-    std::vector<shmCMatrix> DenseOrbMats;
     mpi3CMatrix RefOrbMats;
 
     shmCVector shmbuff_for_E;
