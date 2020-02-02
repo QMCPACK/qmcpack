@@ -498,13 +498,19 @@ ENDIF()
 #-------------------------------------------------------------------
 IF(QMC_MPI)
   #SET(MPI_CXX_SKIP_MPICXX TRUE) # we should enable this but currently cannot due to formic needs.
+  SET(MPI_DETERMINE_LIBRARY_VERSION TRUE)
   FIND_PACKAGE(MPI COMPONENTS CXX)
 
   IF(NOT MPI_FOUND)
     MESSAGE(FATAL_ERROR "MPI support not found! Provide MPI compiler wrappers or build without MPI by passing '-DQMC_MPI=0' to cmake.")
   ENDIF(NOT MPI_FOUND)
 
-  IF(NOT ${CMAKE_CXX_COMPILER} MATCHES ${MPI_CXX_COMPILER})
+  IF(${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "MVAPICH2" AND NOT ${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "disable-registration-cache")
+    MESSAGE(FATAL_ERROR "MVAPICH2 with registration cache enabled breaks QMCPACK. "
+                        "Use a different MPI library or build MVAPICH2 with --disable-registration-cache configure option.")
+  ENDIF()
+
+  IF(NOT ${CMAKE_CXX_COMPILER} STREQUAL ${MPI_CXX_COMPILER})
     SET(MPI_WARNING_LIST
         "Building MPI version without using MPI compiler wrappers.\n"
         "This may not build qmcpack correctly. To ensure the correct version, specify the compiler wrappers to cmake.\n"
