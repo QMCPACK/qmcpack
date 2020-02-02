@@ -40,20 +40,6 @@ SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 
 SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 
-
-IF (COMPILING_ON_BGQ)
-  # YL: Put this after PROJECT(qmcpack) because COMPILING_ON_BGQ is defined
-  # in BGQ toolchain file which is loaded by PROJECT().
-  # The following issue probably affect all static linking machines.
-  # MD: On BG/Q, the HDF libraries variable includes some supporting shared libraries
-  # such as libm.so.  With the old behavior of CMP0060, these were converted
-  # to -lm for the linker, which then correctly selects the static version.
-  # With the new behavior of CMP0060, the form of the libraries are left alone
-  # on the link line (eg. /usr/lib64/libm.so), and this causes a linker error
-  # because shared libraries are not allowed with static linking.
-  cmake_policy(SET CMP0060 OLD)
-ENDIF()
-
 ######################################################################
 # Verify Python3 available
 ######################################################################
@@ -350,16 +336,18 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     MESSAGE(STATUS "Running on a Cray machine.")
     SET(CMAKE_SKIP_RPATH TRUE)
 
-    # Flags for ctest
-    IF(NOT DEFINED MPIEXEC)
-      FIND_PROGRAM(MPIEXEC aprun)
-      IF(NOT MPIEXEC)
-      # For slurm use srun
-        FIND_PROGRAM(MPIEXEC srun)
-      ENDIF(NOT MPIEXEC)
+    IF(NOT $ENV{CRAYPE_LINK_TYPE} STREQUAL "dynamic")
+      MESSAGE(WARNING "Cray Programming Environment uses static linking by default. "
+                      "We prefer dynamic linking which makes library searching easier. "
+                      "Set environment variable CRAYPE_LINK_TYPE to \"dynamic\" enables dynamic linking.\n")
     ENDIF()
-    IF(NOT DEFINED MPIEXEC_NUMPROC_FLAG)
-      SET(MPIEXEC_NUMPROC_FLAG "-n")
+
+    IF ( NOT DEFINED MPIEXEC_EXECUTABLE )
+      FIND_PROGRAM(MPIEXEC_EXECUTABLE aprun)
+      IF(NOT MPIEXEC_EXECUTABLE)
+        # For slurm use srun
+        FIND_PROGRAM(MPIEXEC_EXECUTABLE srun)
+      ENDIF(NOT MPIEXEC_EXECUTABLE)
     ENDIF()
 
     IF(QMC_CUDA)
@@ -528,12 +516,11 @@ IF(QMC_MPI)
   IF ( NOT TEST_MAX_PROCS )
     SET( TEST_MAX_PROCS 100 )
   ENDIF()
-  IF ( NOT DEFINED MPIEXEC )
-    SET( MPIEXEC ${MPIEXEC_EXECUTABLE} )
-  ENDIF()
 
-  MESSAGE(STATUS "MPI runner is ${MPIEXEC}")
-  MESSAGE(STATUS "MPIEXEC_NUMPROC_FLAG is ${MPIEXEC_NUMPROC_FLAG}")
+  MESSAGE(STATUS "MPI runner MPIEXEC_EXECUTABLE : ${MPIEXEC_EXECUTABLE}")
+  MESSAGE(STATUS "MPIEXEC_NUMPROC_FLAG : ${MPIEXEC_NUMPROC_FLAG}")
+  MESSAGE(STATUS "MPIEXEC_PREFLAGS : ${MPIEXEC_PREFLAGS}")
+  MESSAGE(STATUS "Tests run as : ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} NUM_PROCS ${MPIEXEC_PREFLAGS} EXE")
 
   SET(HAVE_MPI 1)
   MESSAGE(STATUS "MPI is enabled")
