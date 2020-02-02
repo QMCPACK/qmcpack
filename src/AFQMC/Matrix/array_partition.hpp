@@ -19,7 +19,7 @@
 #include<utility>
 #include<vector>
 #include<numeric>
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 #include<mpi.h>
 #endif
 

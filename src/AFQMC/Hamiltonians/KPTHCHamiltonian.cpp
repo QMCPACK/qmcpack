@@ -10,7 +10,7 @@
 #include<vector>
 #include<numeric>
 #include <functional>
-#if defined(USE_MPI)
+#if defined(HAVE_MPI)
 #include<mpi.h>
 #endif
 

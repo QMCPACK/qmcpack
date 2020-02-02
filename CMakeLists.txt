@@ -1,7 +1,7 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 3.6.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.9.0)
 
 cmake_policy(SET CMP0003 NEW)
 IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
@@ -332,7 +332,6 @@ IF(CMAKE_TOOLCHAIN_FILE)
 ELSE(CMAKE_TOOLCHAIN_FILE)
   MESSAGE(STATUS "Trying to figure out .....")
   SET(ENABLE_OPENMP 0)
-  SET(HAVE_MPI 0)
   SET(INTEL_COMPILER 0)
   SET(HAVE_MKL 0)
   SET(HAVE_MKL_VML 0)
@@ -447,53 +446,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   include(CMake/TestCxx14Library.cmake)
 
   #-------------------------------------------------------------------
-  #  check MPI installation
-  #-------------------------------------------------------------------
-  IF(QMC_MPI)
-    ## mpi compilers
-    GET_FILENAME_COMPONENT(BASE_CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
-    if(${BASE_CXX_COMPILER_NAME} MATCHES "^mp")
-      SET(HAVE_MPI 1)
-      SET(MPI_FOUND TRUE)
-    elseif($ENV{CRAYPE_VERSION} MATCHES ".")
-      SET(HAVE_MPI 1)
-      SET(MPI_FOUND TRUE)
-    else()
-      include(FindMPI)
-      IF(MPI_FOUND)
-        MESSAGE(STATUS "Found mpi.h and libraries. Check for working mpi compiler ")
-        INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
-        FILE(WRITE ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx
-          "#include <mpi.h>"
-          "int main(int argc, char** argv){MPI_Init(&argc,&argv); MPI_Finalize();return 0;}\n")
-        #TRY_COMPILE(MPI_WORKS ${CMAKE_BINARY_DIR}
-        #${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx
-        #OUTPUT_VARIABLE OUTPUT)
-        set(MPI_WORKS 1)
-        SET(MPI_WARNING_LIST
-            "Building MPI version without using MPI compiler wrappers.\n"
-            "This may not build qmcpack correctly. To ensure the correct version, specify the compiler wrappers to cmake.\n"
-            "For example: cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpic++\n"
-            "To build without MPI, pass '-DQMC_MPI=0' to cmake")
-        MESSAGE(WARNING ${MPI_WARNING_LIST})
-
-        IF(MPI_WORKS)
-          MESSAGE(STATUS "MPI is enabled")
-          SET(HAVE_MPI 1)
-          LINK_LIBRARIES(${MPI_CXX_LIBRARIES})
-        ELSE(MPI_WORKS)
-          MESSAGE(STATUS "MPI is disabled")
-          SET(HAVE_MPI 0)
-          SET(MPI_LIBRARY "")
-        ENDIF(MPI_WORKS)
-      ELSE(MPI_FOUND)
-        MESSAGE(STATUS "MPI not found")
-        SET(MPI_LIBRARY "")
-      ENDIF(MPI_FOUND)
-    ENDIF()
-  ENDIF(QMC_MPI)
-
-  #-------------------------------------------------------------------
   # check lapack/blas
   #-------------------------------------------------------------------
   # Quick search for MKL (this will need to be improved).
@@ -553,28 +505,44 @@ IF (BUILD_AFQMC AND NOT APPLE)
   LINK_LIBRARIES("rt")
 ENDIF()
 
-# setup ctest variables
-IF ( HAVE_MPI )
-  SET( USE_MPI 1 )
-  IF ( NOT DEFINED MPIEXEC )
-    SET( MPIEXEC "mpirun" )
-  ENDIF()
+#-------------------------------------------------------------------
+#  check MPI installation
+#-------------------------------------------------------------------
+IF(QMC_MPI)
+  #SET(MPI_CXX_SKIP_MPICXX TRUE) # we should enable this but currently cannot due to formic needs.
+  FIND_PACKAGE(MPI COMPONENTS CXX)
 
-  IF ( NOT DEFINED MPIEXEC_NUMPROC_FLAG )
-    SET( MPIEXEC_NUMPROC_FLAG "-np" )
-  ENDIF()
+  IF(NOT MPI_FOUND)
+    MESSAGE(FATAL_ERROR "MPI support not found! Provide MPI compiler wrappers or build without MPI by passing '-DQMC_MPI=0' to cmake.")
+  ENDIF(NOT MPI_FOUND)
 
-  IF ( NOT DEFINED MPIEXEC_PREFLAGS )
-    SET( MPIEXEC_PREFLAGS "" )
+  IF(NOT ${CMAKE_CXX_COMPILER} MATCHES ${MPI_CXX_COMPILER})
+    SET(MPI_WARNING_LIST
+        "Building MPI version without using MPI compiler wrappers.\n"
+        "This may not build qmcpack correctly. To ensure the correct version, specify the compiler wrappers to cmake.\n"
+        "For example: cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpic++\n"
+        "To build without MPI, pass '-DQMC_MPI=0' to cmake")
+    MESSAGE(WARNING ${MPI_WARNING_LIST})
   ENDIF()
 
   IF ( NOT TEST_MAX_PROCS )
     SET( TEST_MAX_PROCS 100 )
   ENDIF()
+  IF ( NOT DEFINED MPIEXEC )
+    SET( MPIEXEC ${MPIEXEC_EXECUTABLE} )
+  ENDIF()
 
   MESSAGE(STATUS "MPI runner is ${MPIEXEC}")
   MESSAGE(STATUS "MPIEXEC_NUMPROC_FLAG is ${MPIEXEC_NUMPROC_FLAG}")
-ENDIF(HAVE_MPI)
+
+  SET(HAVE_MPI 1)
+  MESSAGE(STATUS "MPI is enabled")
+  LINK_LIBRARIES(${MPI_CXX_LIBRARIES})
+ELSE(QMC_MPI)
+  SET(HAVE_MPI 0)
+  MESSAGE(STATUS "MPI is disabled")
+ENDIF(QMC_MPI)
+
 
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 

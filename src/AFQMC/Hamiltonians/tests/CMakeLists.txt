@@ -21,7 +21,7 @@ EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 
 ADD_EXECUTABLE(${UTEST_EXE} test_hamiltonian_factory.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc qmcutil
-                      ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+                      ${QMC_UTIL_LIBS})
 
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_chol_uc)
 

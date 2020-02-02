@@ -30,13 +30,13 @@ configure_file(declare.h.in ${FORMIC_BINARY_DIR}/src/formic/utils/declare.h)
 configure_file(mangle.h.in ${FORMIC_BINARY_DIR}/src/formic/utils/mangle.h)
 
 # determine how to comment/uncomment the mpi interface header file
-if(USE_MPI)
+if(HAVE_MPI)
   set(MPI_COMMENT_I "")
   set(MPI_COMMENT_O "//")
-else(USE_MPI)
+else(HAVE_MPI)
   set(MPI_COMMENT_I "//")
   set(MPI_COMMENT_O "")
-endif(USE_MPI)
+endif(HAVE_MPI)
 
 # determine the level of mpi thread support to demand
 if(USE_OPENMP)
@@ -75,6 +75,10 @@ add_library(formic_utils matrix.cpp
                          lmyengine/engine_timing.cpp
                          lmyengine/spam_solver.cpp
                          lmyengine/var_dependencies.cpp)
+
+IF(HAVE_MPI)
+  TARGET_LINK_LIBRARIES(formic_utils PUBLIC MPI::MPI_CXX)
+ENDIF()
 
 #target_link_libraries(formic_utils ${FORMIC_LAPACK_BLAS_LIBS})
 

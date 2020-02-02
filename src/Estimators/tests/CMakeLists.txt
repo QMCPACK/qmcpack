@@ -27,7 +27,7 @@ SET(SRCS test_accumulator.cpp test_local_energy_est.cpp test_manager.cpp test_tr
 
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcham qmcwfs qmcbase qmcutil qmcdriver ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcham qmcwfs qmcbase qmcutil qmcdriver ${QMC_UTIL_LIBS})
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
