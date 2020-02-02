@@ -22,7 +22,7 @@
 #include<iostream>
 #include<vector>
 #include<numeric>
-#if defined(HAVE_MPI)
+#if defined(USE_MPI)
 #include<mpi.h>
 #endif
 

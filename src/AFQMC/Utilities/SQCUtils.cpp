@@ -8,7 +8,7 @@
 #include <bitset>
 #include <sys/time.h>
 #include <ctime>
-#if defined(HAVE_MPI)
+#if defined(USE_MPI)
   #include<mpi.h>
 #endif
 #include"Utilities/SQCUtils.h"
@@ -19,7 +19,7 @@ void SQCAbort(std::string text, int id) {
   std::cerr.flush();
   std::cout.flush();
   if(id==0) id=1;
-#if defined(HAVE_MPI)
+#if defined(USE_MPI)
   MPI_Abort(MPI_COMM_WORLD,id);
 #else
   exit(id);
