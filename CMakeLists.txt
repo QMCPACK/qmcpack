@@ -448,30 +448,24 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
    INCLUDE(CMake/FindMKL.cmake)
   ENDIF(ENABLE_MKL)
   IF ( HAVE_MKL )
-    # We found MKL, add the link library
-    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${MKL_FLAGS}")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_FLAGS}")
-    SET(LAPACK_FOUND 1)
-    SET(LAPACK_LIBRARIES "${MKL_LIBRARIES}")
-    SET(LAPACK_LINKER_FLAGS "${MKL_LINKER_FLAGS}")
+    # Skip adding Math::BLAS_LAPACK target which has been imported by FindMKL.
   ELSEIF ( $ENV{CRAYPE_VERSION} MATCHES "." )
     # Cray specific environment variable indicates we are on a cray. Assume libsci will be linked
     # preferable to attempt a compile/link
-    SET(LAPACK_FOUND 1)
     MESSAGE(STATUS "Assuming Cray libsci or other BLAS/LAPACK will be linked by compiler wrappers")
+    ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
   ELSE()
-    # Search for Blas/Lapack
-    find_package(LAPACK)
+    # The last search for Blas/Lapack
+    find_package(LAPACK REQUIRED)
     IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
       MESSAGE(FATAL_ERROR "MKL found via LAPACK/BLAS. Please pass -DENABLE_MKL=1 to cmake for full Intel MKL utilization. -DMKL_ROOT may also be needed for the include files to be found.")
     ENDIF()
-  ENDIF()
-  IF(LAPACK_FOUND)
     MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
     MESSAGE(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
-    SET(LAPACK_LIBRARY ${LAPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS})
-  ELSE()
-    MESSAGE(FATAL_ERROR "Could not find required libraries LAPACK &/or BLAS")
+    SET(LAPACK_LIBRARY ${LAPACK_LINKER_FLAGS} ${LAPACK_LIBRARIES})
+    # Add Math::BLAS_LAPACK target
+    ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
+    SET_TARGET_PROPERTIES(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES "${LAPACK_LIBRARY}")
   ENDIF()
 
   INCLUDE(CMake/FindVectorMath.cmake)
@@ -524,7 +518,6 @@ IF(QMC_MPI)
 
   SET(HAVE_MPI 1)
   MESSAGE(STATUS "MPI is enabled")
-  LINK_LIBRARIES(${MPI_CXX_LIBRARIES})
 ELSE(QMC_MPI)
   SET(HAVE_MPI 0)
   MESSAGE(STATUS "MPI is disabled")
@@ -540,8 +533,6 @@ INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 # use customized cmake file for boost so that we can deal with multiple
 # installataions
 # list of libraries to be linked with the main applications using I/O
-
-SET(QMC_UTIL_LIBS ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
 
 # This needs a better place to live. as does all the IF( HAVE_MKL ) stuff
 IF(HAVE_MASS)
@@ -562,8 +553,6 @@ IF ( NOT FFTW_FOUND )
 ENDIF()
 IF(FFTW_FOUND)
   SET(HAVE_LIBFFTW 1)
-  INCLUDE_DIRECTORIES(${FFTW_INCLUDE_DIR})
-  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FFTW_LIBRARIES})
   MESSAGE(STATUS "Found FFTW")
 ELSE(FFTW_FOUND)
 #  MESSAGE(STATUS "Disabling FFTW")

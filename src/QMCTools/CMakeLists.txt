@@ -71,7 +71,7 @@ INSTALL(TARGETS qmc-check-affinity
         RUNTIME DESTINATION bin)
 
 ADD_EXECUTABLE(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
-TARGET_LINK_LIBRARIES(convertpw4qmc PRIVATE qmcutil)
+TARGET_LINK_LIBRARIES(convertpw4qmc PRIVATE qmcutil Math::FFTW3)
 FOREACH(l ${QMC_UTIL_LIBS})		       
   TARGET_LINK_LIBRARIES(convertpw4qmc PRIVATE ${l})
 ENDFOREACH(l ${QMC_UTIL_LIBS})
