@@ -37,44 +37,31 @@ SET(QMCAPPDIR
     CoupledMC.cpp
 )
 ADD_LIBRARY(qmc ${QMCAPPDIR})
+TARGET_LINK_LIBRARIES(qmc PUBLIC qmcdriver)
 
 ####################################
-# list of QMC applications
+# QMCPACK application
 ####################################
-SET(QMCSRCS qmcpack)
-
-FOREACH(p ${QMCSRCS})
-
-# QMCPACK historically called qmcapp, and still built from qmcapp.cpp
-# Override source name for executable in this case, otherwise
-# executablename.cpp used for main()
- IF ( ${p} STREQUAL "qmcpack" )
-  ADD_EXECUTABLE(${p} qmcapp.cpp)
-ELSE()
-  ADD_EXECUTABLE(${p} ${p}.cpp)
-ENDIF()
+ADD_EXECUTABLE(qmcpack qmcapp.cpp)
 
 # Clean up git-rev-tmp.h after the build is finished
 ADD_CUSTOM_COMMAND(TARGET qmcpack
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP})
 
-  TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil)
+TARGET_LINK_LIBRARIES(qmcpack qmc)
 
-  IF(BUILD_AFQMC)
-    TARGET_LINK_LIBRARIES(${p} afqmc)
-  ENDIF(BUILD_AFQMC)
+IF(BUILD_AFQMC)
+  TARGET_LINK_LIBRARIES(qmcpack afqmc)
+ENDIF(BUILD_AFQMC)
 
-  IF(BUILD_FCIQMC)
-    TARGET_LINK_LIBRARIES(${p} fciqmc)
-  ENDIF(BUILD_FCIQMC)
+IF(BUILD_FCIQMC)
+  TARGET_LINK_LIBRARIES(qmcpack fciqmc)
+ENDIF(BUILD_FCIQMC)
 
-  FOREACH(l ${QMC_UTIL_LIBS})
-    TARGET_LINK_LIBRARIES(${p} ${l})
-  ENDFOREACH(l ${QMC_UTIL_LIBS})
-
-ENDFOREACH(p ${QMCSRCS})
+FOREACH(l ${QMC_UTIL_LIBS})
+  TARGET_LINK_LIBRARIES(qmcpack ${l})
+ENDFOREACH(l ${QMC_UTIL_LIBS})
 
 INSTALL(TARGETS qmcpack
         RUNTIME DESTINATION bin)
-

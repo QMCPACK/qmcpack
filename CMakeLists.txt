@@ -725,29 +725,7 @@ INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
 # - if not found, build it from the source directory in $EINSPLINE_HOME
 # - if everything fails, do not use it
 ######################################################################
-SET(HAVE_EINSPLINE 1)
-set(build_einspline 1)
-#if(HAVE_EINSPLINE_EXT)
-#  set(HAVE_EINSPLINE 0)
-#  INCLUDE(${PROJECT_CMAKE}/FindEinspline.cmake)
-#  IF(EINSPLINE_FOUND)
-#    INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIR})
-#    SET(QMC_UTIL_LIBS ${EINSPLINE_LIBRARIES} ${QMC_UTIL_LIBS})
-#    set(build_einspline 0)
-#  endif()
-#endif()
-if(build_einspline)
-  SUBDIRS(src/einspline)
-  INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
-  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} einspline)
-endif()
-
-IF(BUILD_LMYENGINE_INTERFACE)
-  ADD_DEFINITIONS(-DHAVE_LMY_ENGINE)
-  SET(FORMIC_BINARY_DIR ${qmcpack_BINARY_DIR})
-  SUBDIRS(src/formic/utils)
-  SET(QMC_UTIL_LIBS formic_utils ${QMC_UTIL_LIBS})
-ENDIF(BUILD_LMYENGINE_INTERFACE)
+SET(HAVE_EINSPLINE 1) # to be removed
 
 IF (USE_VTUNE_TASKS)
   IF (NOT ENABLE_TIMERS)
