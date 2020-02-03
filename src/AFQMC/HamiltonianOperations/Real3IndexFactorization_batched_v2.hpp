@@ -641,8 +641,8 @@ class Real3IndexFactorization_batched_v2
           ptr = TBuff.origin()+cnt_;
           cnt_ += nspin*nw*NMO*NMO;
           using std::copy_n;
-          for(int ispin=0, is0=0, ip=0; ispin<nspin; ispin++, is0+=NMO*NMO) 
-            for(int n=0; n<nw; ++n, ip+=NMO*NMO) 
+          for(int ispin=0, is0=0, ip=0; ispin<nspin; ispin++, is0+=NMO*NMO)
+            for(int n=0; n<nw; ++n, ip+=NMO*NMO)
               copy_n(make_device_ptr(G[nw0+n].origin())+is0,NMO*NMO,ptr+ip);
         }
 #endif
@@ -695,6 +695,7 @@ class Real3IndexFactorization_batched_v2
           // J = \sum_{iklr} L[i,k,n] L[q,l,n] P[s,p,l] P[r,i,k]
           // R[n] = \sum_{ik} L[i,k,n] P[r,i,k]
           // Here T[tn,wp] = \sum_{l} L[tn,l] P[l,wp]
+          // T[ln,p] = T[npl] = L[nkl] P[p,l]
           ma::product(SPValueType(1.0),ma::T(Ln),Gt_,SPValueType(0.0),Ttnwp);
           // T[wp,tn]
           ma::transpose(Ttnwp,Twptn);
@@ -740,6 +741,11 @@ class Real3IndexFactorization_batched_v2
                       SPComplexType(1.0),Carray.data(),NMO*NMO,nw);
 
           // Fp
+          // Need Gt_[i][wj]
+          transpose_wabn_to_wban(1,nw,NMO,NMO,G_.origin(),Gt_.origin());
+          ma::product(SPValueType(1.0),ma::T(Ln),Gt_,SPValueType(0.0),Ttnwp);
+          ma::transpose(Ttnwp,Twptn);
+          transpose_wabn_to_wban(nw,NMO,NMO,local_nCV,Twptn.origin(),Taux.origin());
           // add coulomb component to Fp_, same as Fm_ above
           Aarray.clear();
           Barray.clear();
