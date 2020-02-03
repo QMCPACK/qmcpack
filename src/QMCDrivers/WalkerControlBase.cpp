@@ -228,8 +228,8 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
   curData[EREF_INDEX]       = ecum;
   curData[R2ACCEPTED_INDEX] = r2_accepted;
   curData[R2PROPOSED_INDEX] = r2_proposed;
-  curData[FNSIZE_INDEX]     = static_cast<FullPrecRealType>(nfn);
-  curData[RNONESIZE_INDEX]  = static_cast<FullPrecRealType>(ncr);
+  curData[FNSIZE_INDEX]     = nfn;
+  curData[RNONESIZE_INDEX]  = ncr;
   curData[RNSIZE_INDEX]     = nrn;
   curData[B_ENERGY_INDEX]   = besum;
   curData[B_WGT_INDEX]      = bwgtsum;
