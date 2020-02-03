@@ -28,7 +28,6 @@
 #include "QMCHamiltonians/NonLocalTOperator.h"
 
 //for Hamiltonian manipulations.
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #ifndef ENABLE_SOA

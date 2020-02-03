@@ -13,7 +13,6 @@
 #include "catch.hpp"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Lattice/CrystalLattice.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
