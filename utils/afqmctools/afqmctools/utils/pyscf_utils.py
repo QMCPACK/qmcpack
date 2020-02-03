@@ -141,7 +141,12 @@ def load_from_pyscf_chk_mol(chkfile, base='scf'):
     mo_occ = numpy.array(lib.chkfile.load(chkfile, base+'/mo_occ'))
     mo_coeff = numpy.array(lib.chkfile.load(chkfile, base+'/mo_coeff'))
     uhf = len(mo_coeff.shape) == 3
+    if mol.nelec[0] != mol.nelec[1] and not uhf:
+        rohf = True
+    else:
+        rohf = False
     scf_data = {'mol': mol, 'mo_occ': mo_occ, 'hcore': hcore,
                 'X': X, 'mo_coeff': mo_coeff,
-                'isUHF': uhf, 'df_ints': df_ints}
+                'isUHF': uhf, 'df_ints': df_ints,
+                'rohf': rohf}
     return scf_data

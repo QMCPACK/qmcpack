@@ -32,6 +32,7 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
     nalpha, nbeta = nelec
     C = scf_data['mo_coeff']
     X = scf_data['X']
+    rohf = scf_data.get('rohf', False)
     uhf = scf_data['isUHF']
     # For RHF only nalpha entries will be filled.
     if uhf:
@@ -48,16 +49,21 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
                 # We are assuming C matrix is energy ordered.
                 wfn[0,:,:nalpha] = numpy.dot(Xinv, C[0])[:,:nalpha]
                 wfn[0,:,nalpha:] = numpy.dot(Xinv, C[1])[:,:nbeta]
+            elif rohf:
+                wfn[0,:,:nalpha] = numpy.dot(Xinv, C)[:,:nalpha]
+                wfn[0,:,nalpha:] = numpy.dot(Xinv, C)[:,:nbeta]
             else:
                 wfn[0,:,:nalpha] = numpy.dot(Xinv, C)[:,:nalpha]
         else:
             # Assuming we are working in MO basis, only works for RHF, ROHF trials.
             I = numpy.identity(C.shape[-1], dtype=numpy.float64)
             wfn[0,:,:nalpha] = I[:,:nalpha]
+            if rohf:
+                wfn[0,:,nalpha:] = I[:,:nbeta]
             if uhf:
                 print(" # Warning: UHF trial wavefunction can only be used of "
                       "working in ortho AO basis.")
-    write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), uhf,
+    write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), uhf or rohf,
                       nelec, norb, verbose=verbose)
     return nelec
 
