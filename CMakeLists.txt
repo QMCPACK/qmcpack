@@ -1,7 +1,7 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 3.9.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0)
 
 cmake_policy(SET CMP0003 NEW)
 IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
@@ -225,8 +225,6 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSymbolExists.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
-
-INCLUDE(${PROJECT_CMAKE}/CheckSincos.cmake)
 
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
 
@@ -468,8 +466,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     SET_TARGET_PROPERTIES(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES "${LAPACK_LIBRARY}")
   ENDIF()
 
-  INCLUDE(CMake/FindVectorMath.cmake)
-
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
 IF (ENABLE_GCOV)
@@ -533,6 +529,26 @@ INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 # use customized cmake file for boost so that we can deal with multiple
 # installataions
 # list of libraries to be linked with the main applications using I/O
+
+SET(ENABLE_MASS FALSE CACHE BOOL "ENABLE MASS scalar and vector math libraries for Power architecture")
+
+SET(SINCOS_INCLUDE cmath)
+# This needs to go before HAVE_SINCOS
+IF(ENABLE_MASS)
+  INCLUDE(CMake/FindIBMMASS.cmake)
+  IF(HAVE_MASS)
+    SET(CMAKE_REQUIRED_INCLUDES ${MASS_INCLUDE_DIRECTORIES} ${CMAKE_REQUIRED_INCLUDES})
+    SET(CMAKE_REQUIRED_LINK_OPTIONS ${MASS_LINKER_FLAGS})
+    SET(CMAKE_REQUIRED_LIBRARIES ${MASS_LIBRARIES})
+  ENDIF(HAVE_MASS)
+ENDIF(ENABLE_MASS)
+
+INCLUDE(${PROJECT_CMAKE}/CheckSincos.cmake)
+IF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
+  MESSAGE(STATUS "No usable vector math library detected.")
+  ADD_LIBRARY(Math::scalar_vector_functions INTERFACE IMPORTED)
+ENDIF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
+
 
 # This needs a better place to live. as does all the IF( HAVE_MKL ) stuff
 IF(HAVE_MASS)

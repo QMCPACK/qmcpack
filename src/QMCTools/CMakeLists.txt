@@ -34,9 +34,6 @@ SET(MOSRCS
   GamesFMOParser.cpp
   QPParser.cpp
   LCAOHDFParser.cpp
-  convertpw4qmc.cpp 
-  WriteEshdf.cpp
-  XmlRep.cpp
 )
 
 # create libmocommon 

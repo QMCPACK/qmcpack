@@ -249,9 +249,9 @@ ENDIF()
     set(PARTICLE  ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
   endif()
 
-  ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO})
+  ADD_LIBRARY(qmcbase ${PARTICLE} ${PARTICLEIO})
 
-  TARGET_LINK_LIBRARIES(qmcbase PRIVATE qmcminimalcontainers)
+  TARGET_LINK_LIBRARIES(qmcbase PRIVATE qmcminimalcontainers Math::BLAS_LAPACK Math::scalar_vector_functions)
 
   TARGET_LINK_LIBRARIES(qmcbase PUBLIC qmcutil)
 
