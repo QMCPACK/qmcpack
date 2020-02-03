@@ -76,6 +76,8 @@ add_library(formic_utils matrix.cpp
                          lmyengine/spam_solver.cpp
                          lmyengine/var_dependencies.cpp)
 
+TARGET_COMPILE_DEFINITIONS(formic_utils INTERFACE HAVE_LMY_ENGINE)
+
 IF(HAVE_MPI)
   TARGET_LINK_LIBRARIES(formic_utils PUBLIC MPI::MPI_CXX)
 ENDIF()
