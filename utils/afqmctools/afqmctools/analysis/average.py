@@ -51,7 +51,7 @@ def average_one_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, ix=No
         print('Unknown walker type {}'.format(wt))
 
     if walker == 'closed':
-        return mean.reshape((1,nbasis,nbasis)), err.reshape((1,nbasis, nbasis))
+        return 2*mean.reshape((1,nbasis,nbasis)), err.reshape((1,nbasis, nbasis))
     elif walker == 'collinear':
         return mean.reshape((2,nbasis,nbasis)), err.reshape((2, nbasis, nbasis))
     elif walker == 'non_collinear':
@@ -361,50 +361,36 @@ def analyse_ekt(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
     Fp[numpy.abs(Fp) < screen_factor*Fperr] = 0.0
     # TODO : Not quite sure if this is the correct way to treat spin.
     # Ionisation potential
-    P[0] = 0.5*(P[0]+P[0].conj().T)
-    gamma = P[0]
+    if P.shape[0] == 2:
+        P = P[0] + P[1]
+        Fp = Fp[0] + Fp[1]
+        Fm = Fm[0] + Fm[1]
+    else:
+        P = P[0]
+        Fp = Fp[0]
+        Fm = Fm[0]
+    P = 0.5*(P+P.conj().T)
+    I = numpy.eye(P.shape[-1])
+    gamma = P.real
+    Fm = Fm.real
+    Fp = Fp.real
     # Diagonalise gamma and discard problematic singular values.
     gamma, X = regularised_ortho(gamma, cutoff=cutoff)
+    gamma = gamma
     # Rotate to orthogonal basis wrt gamma
-    FT = numpy.dot(X.conj().T, numpy.dot(Fm[0], X))
+    FT = numpy.dot(X.conj().T, numpy.dot(Fm, X))
     eip, eip_vec = numpy.linalg.eigh(FT)
+    eip = eip
     # Electron affinity.
-    I = numpy.eye(P.shape[-1])
-    gamma = I - P[0].T
+    gamma = 2*I - P.T
     gamma, X = regularised_ortho(gamma, cutoff=cutoff)
-    FT = numpy.dot(X.conj().T, numpy.dot(Fp[0], X))
+    FT = numpy.dot(X.conj().T, numpy.dot(Fp, X))
     eea, eea_vec = numpy.linalg.eigh(FT)
     eip_err, eea_err = (
-            estimate_error_fock(P[0], Perr[0],
-                                Fp[0], Fperr[0],
-                                Fm[0], Fmerr[0],
-                                nsamp, cutoff)
+            estimate_error_fock(P, Perr, Fp, Fperr, Fm, Fmerr, nsamp, cutoff)
             )
-    if P.shape[0] == 2:
-        # Collinear case.
-        # IP
-        P[1] = 0.5*(P[1]+P[1].conj().T)
-        gamma = P[1]
-        gamma, X = regularised_ortho(gamma, cutoff=cutoff)
-        FT = numpy.dot(X.conj().T, numpy.dot(Fm[1], X))
-        eip_b, eip_vec_b = numpy.linalg.eigh(FT)
-        # EA
-        gamma = I - P[1].T
-        gamma, X = regularised_ortho(gamma, cutoff=cutoff)
-        FT = numpy.dot(X.conj().T, numpy.dot(Fp[1], X))
-        eea_b, eea_vec_b = numpy.linalg.eigh(FT)
-        eip_err_b, eea_err_b = (
-                estimate_error_fock(P[0], Perr[0],
-                                    Fp[0], Fperr[0],
-                                    Fm[0], Fmerr[0],
-                                    nsamp, cutoff)
-                )
-        eip = [eip, eip_b]
-        eip_err = [eip_err, eip_err_b]
-        eea = [eea, eea_b]
-        eea_err = [eea_err, eea_err_b]
 
-    return eip, eip_err, eea, eea_err
+    return (eip, eip_err), (eea, eea_err)
 
 def estimate_error_fock(P, Perr, Fm, Fmerr, Fp, Fperr, nsamp, cutoff):
     """Bootstrap estimate of error in eigenvalues."""
