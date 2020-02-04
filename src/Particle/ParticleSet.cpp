@@ -52,8 +52,8 @@ ParticleSet::ParticleSet()
       ThreadID(0),
       activePtcl(-1),
       SK(0),
-      myTwist(0.0),
       Properties(0, 0, 1, WP::MAXPROPERTIES),
+      myTwist(0.0),
       ParentName("0"),
       TotalNum(0)
 {
@@ -68,8 +68,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       activePtcl(-1),
       mySpecies(p.getSpeciesSet()),
       SK(0),
-      myTwist(0.0),
       Properties(p.Properties),
+      myTwist(0.0),
       ParentName(p.parentName())
 {
   set_quantum_domain(p.quantum_domain);
@@ -149,7 +149,10 @@ void ParticleSet::set_quantum_domain(quantum_domains qdomain)
 void ParticleSet::resetGroups()
 {
   int nspecies = mySpecies.getTotalNum();
-  if (nspecies == 0)
+  // Usually an empty ParticleSet indicates an error in the input file,
+  // but in some cases it is useful.  Allow an empty ParticleSet if it
+  // has the special name "empty".
+  if (nspecies == 0 && getName() != "empty")
   {
     APP_ABORT("ParticleSet::resetGroups() Failed. No species exisits");
   }
@@ -191,7 +194,7 @@ void ParticleSet::resetGroups()
   }
   // safety check if any group of particles has size 0, instruct users to fix the input.
   for (int group_id = 0; group_id < nspecies; group_id++)
-    if (ng[group_id] == 0)
+    if (ng[group_id] == 0 && getName() != "empty")
     {
       std::ostringstream err_msg;
       err_msg << "ParticleSet::resetGroups() Failed. ParticleSet '" << myName << "' "

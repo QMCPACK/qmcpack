@@ -4989,7 +4989,12 @@ class Structure(Sobj):
     def get_atomic_numbers(self):
         an = []
         for e in self.elem:
-            an.append(ptable[e].atomic_number)
+            iselem,esymb = is_element(e,symbol=True)
+            if not iselem:
+                self.error('Atomic symbol, {}, not recognized'.format(esymb))
+            else:
+                an.append(ptable[esymb].atomic_number)
+            #end if
         #end for
         return array(an,dtype='intc')
     #end def get_atomic_numbers

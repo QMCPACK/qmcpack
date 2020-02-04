@@ -69,7 +69,9 @@ DMC::DMC(MCWalkerConfiguration& w,
 void DMC::resetUpdateEngines()
 {
   ReportEngine PRE("DMC", "resetUpdateEngines");
-  bool fixW = (Reconfiguration == "yes");
+  bool fixW = (Reconfiguration == "runwhileincorrect");
+  if(Reconfiguration != "no" && Reconfiguration != "runwhileincorrect")
+    APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
   makeClones(W, Psi, H);
   Timer init_timer;
   if (Movers.empty())

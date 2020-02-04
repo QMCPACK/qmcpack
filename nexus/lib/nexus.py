@@ -513,6 +513,13 @@ class Settings(NexusCore):
             #end for
             nexus_core.pseudopotentials = Pseudopotentials(ppfiles)        
         #end if
+
+        # backwards compatibility with prior results_dir default
+        old_results_default = 'results'
+        old_results_dir = os.path.join(nexus_core.local_directory,old_results_default)
+        if 'results' not in kw and os.path.exists(old_results_dir):
+            nexus_core.results = old_results_default
+        #end if
     #end def process_core_settings
 
 

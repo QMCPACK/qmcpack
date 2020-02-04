@@ -359,7 +359,11 @@ class object_interface(object):
             fpath='./'+self.__class__.__name__+'.p'
         #end if
         fobj = open(fpath,'rb')
-        tmp = pickle.load(fobj)
+        try:
+            tmp = pickle.load(fobj)
+        except:
+            tmp = pickle.load(fobj,encoding='latin1')
+        #end try
         fobj.close()
         d = self.__dict__
         d.clear()
@@ -370,7 +374,6 @@ class object_interface(object):
         del tmp
         return
     #end def load
-
 
 
     # log, warning, and error messages

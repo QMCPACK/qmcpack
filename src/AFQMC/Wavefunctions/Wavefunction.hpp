@@ -175,15 +175,21 @@ class dummy_wavefunction
 };
 }
 
-class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
+class Wavefunction: public boost::variant<dummy::dummy_wavefunction,
+                                          NOMSD<devcsr_Matrix>,
+                                          NOMSD<ComplexMatrix<node_allocator<ComplexType>>>,
+                                          PHMSD>
 {
     public: 
 
     Wavefunction() { 
       APP_ABORT(" Error: Reached default constructor of Wavefunction. \n");  
     } 
-    explicit Wavefunction(NOMSD&& other) : variant(std::move(other)) {}
-    explicit Wavefunction(NOMSD const& other) = delete;
+    explicit Wavefunction(NOMSD<devcsr_Matrix>&& other) : variant(std::move(other)) {}
+    explicit Wavefunction(NOMSD<devcsr_Matrix> const& other) = delete;
+
+    explicit Wavefunction(NOMSD<ComplexMatrix<node_allocator<ComplexType>>>&& other) : variant(std::move(other)) {}
+    explicit Wavefunction(NOMSD<ComplexMatrix<node_allocator<ComplexType>>> const& other) = delete;
 
     explicit Wavefunction(PHMSD&& other) : variant(std::move(other)) {} 
     explicit Wavefunction(PHMSD const& other) = delete;

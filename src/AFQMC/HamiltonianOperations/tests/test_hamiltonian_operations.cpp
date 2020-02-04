@@ -131,7 +131,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
 
     Alloc alloc_(make_localTG_allocator<ComplexType>(TG));
     boost::multi::array<ComplexType,3,Alloc> devOrbMat(OrbMat, alloc_);
-    std::vector<devPsiT_Matrix> devPsiT(move_vector<devPsiT_Matrix>(std::move(PsiT)));
+    std::vector<devcsr_Matrix> devPsiT(move_vector<devcsr_Matrix>(std::move(PsiT)));
 
     CMatrix G({NEL,NMO},alloc_);
     ComplexType Ovlp = SDet.MixedDensityMatrix(devPsiT[0],devOrbMat[0],

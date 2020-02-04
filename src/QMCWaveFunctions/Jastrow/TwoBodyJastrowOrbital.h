@@ -71,7 +71,7 @@ public:
   ///container for the Jastrow functions
   std::vector<FT*> F;
 
-  TwoBodyJastrowOrbital(ParticleSet& p, int tid) : TaskID(tid), KEcorr(0.0), my_table_ID_(p.addTable(p, DT_AOS))
+  TwoBodyJastrowOrbital(ParticleSet& p, int tid) : TaskID(tid), my_table_ID_(p.addTable(p, DT_AOS)), KEcorr(0.0)
   {
     PtclRef = &p;
     init(p);

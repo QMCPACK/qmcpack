@@ -545,7 +545,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 #ifdef BUILD_AFQMC_WITH_NCCL
       if(k == TG.getLocalTGRank()) 
         copy_n(Gstore.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
-      NCCLCHECK(ncclBcast(to_address(Gwork.origin())+Gak0,2*(GakN-Gak0),ncclDouble,k,
+      NCCLCHECK(ncclBcast(to_address(Gwork.origin()+Gak0),2*(GakN-Gak0),ncclDouble,k,
                           TG.ncclTG(),TG.ncclStream()));
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
       //TG.TG_Cores().broadcast_n(to_address(Gwork.origin())+Gak0,GakN-Gak0,k);
@@ -592,8 +592,8 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       AFQMCTimers[vHS_comm_overhead_timer]->start();
       // 4. Reduce vHS
 #ifdef BUILD_AFQMC_WITH_NCCL
-      NCCLCHECK(ncclReduce((const void*)to_address(vHS.origin())+vak0,
-                    (void*)to_address(vrecv.origin())+vak0, 2*(vakN-vak0),
+      NCCLCHECK(ncclReduce((const void*)to_address(vHS.origin()+vak0),
+                    (void*)to_address(vrecv.origin()+vak0), 2*(vakN-vak0),
                      ncclDouble, ncclSum,k,TG.ncclTG(),TG.ncclStream()));
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
 #else
