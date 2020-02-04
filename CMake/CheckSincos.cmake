@@ -12,9 +12,3 @@ sincos(input,&outsin, &outcos);
 ")
 
 CHECK_CXX_SOURCE_COMPILES("${SINCOS_TEST_SRC}" HAVE_SINCOS)
-
-IF(HAVE_SINCOS)
-  MESSAGE(STATUS "sincos found")
-ELSE(HAVE_SINCOS)
-  MESSAGE(STATUS "sincos not found")
-ENDIF(HAVE_SINCOS)

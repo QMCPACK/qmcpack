@@ -59,8 +59,8 @@ if ( NOT HAVE_MASS )
 endif ( NOT HAVE_MASS )
 
 IF ( HAVE_MASS )
-  SET( MASS_FOUND 1 )
-  SET( HAVE_MASSV 1 )
+  SET( MASS_FOUND TRUE )
+  SET( HAVE_MASSV TRUE )
   MESSAGE(STATUS "MASS found: HAVE_MASS=${HAVE_MASS}, HAVE_MASSV=${HAVE_MASSV}")
 
   #create scalar_vector_functions target
@@ -70,6 +70,6 @@ IF ( HAVE_MASS )
                                                                  INTERFACE_LINK_LIBRARIES "${MASS_LINKER_FLAGS} ${MASS_LIBRARIES}")
   set( SINCOS_INCLUDE mass.h )
 ELSE( HAVE_MASS )
-  SET( MASS_FOUND 0 )
+  SET( MASS_FOUND FALSE )
   MESSAGE(STATUS "MASS not found")
 ENDIF( HAVE_MASS )
