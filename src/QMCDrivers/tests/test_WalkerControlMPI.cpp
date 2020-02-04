@@ -88,7 +88,7 @@ void UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& ran
                                                      {rank_counts_before[rank] - 1},
                                                      RefVector<MCPWalker>{}};
 
-  wc_.adjustPopulation(*pop_, pop_adjust);
+  wc_.adjustPopulation(pop_adjust);
   WalkerControlBase::onRankSpawnKill(*pop_, pop_adjust);
 
 
