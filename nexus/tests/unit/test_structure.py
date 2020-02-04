@@ -1457,3 +1457,48 @@ def test_interpolate():
     assert(value_eq(Cr_positions,Cr_positions_ref))
 
 #end def test_interpolate
+
+
+
+if versions.spglib_available:
+    def test_point_group_operations():
+        from structure import generate_structure,Crystal
+
+        nrotations = dict(
+            Ca2CuO3    =  8,
+            CaO        = 48,
+            Cl2Ca2CuO2 = 16,
+            CuO        =  2,
+            CuO2_plane = 16,
+            La2CuO4    =  2,
+            NaCl       = 48,
+            ZnO        =  6,
+            calcium    = 48,
+            copper     = 48,
+            diamond    = 24,
+            graphene   = 12,
+            oxygen     =  4,
+            rocksalt   = 48,
+            wurtzite   =  6,
+            )
+
+        for struct,cell in sorted(Crystal.known_crystals.keys()):
+            if cell!='prim':
+                continue
+            #end if
+
+            s = generate_structure(
+                structure = struct,
+                cell      = cell,
+                )
+                
+            rotations = s.point_group_operations()
+            assert(struct in nrotations)
+            assert(len(rotations)==nrotations[struct])
+
+            valid = s.check_point_group_operations(rotations,exit=False)
+            assert(valid)
+        #end for
+
+    #end def test_point_group_operations
+#end if
