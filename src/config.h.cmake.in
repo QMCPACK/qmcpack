@@ -138,12 +138,6 @@
 /* Find acml library */
 #cmakedefine HAVE_ACML @HAVE_ACML@
 
-/* Find MASS library */
-#cmakedefine HAVE_MASS @HAVE_MASS@
-
-/* Find MASSV library */
-#cmakedefine HAVE_MASSV @HAVE_MASSV@
-
 /* Using CUDA for GPU execution */
 #cmakedefine QMC_CUDA @QMC_CUDA@
 

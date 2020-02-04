@@ -516,7 +516,7 @@ IF(QMC_MPI)
   MESSAGE(STATUS "MPI runner MPIEXEC_EXECUTABLE : ${MPIEXEC_EXECUTABLE}")
   MESSAGE(STATUS "MPIEXEC_NUMPROC_FLAG : ${MPIEXEC_NUMPROC_FLAG}")
   MESSAGE(STATUS "MPIEXEC_PREFLAGS : ${MPIEXEC_PREFLAGS}")
-  MESSAGE(STATUS "Tests run as : ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} NUM_PROCS ${MPIEXEC_PREFLAGS} EXE")
+  MESSAGE(STATUS "Tests run as : ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} NUM_PROCS ${MPIEXEC_PREFLAGS} EXECUTABLE")
 
   SET(HAVE_MPI 1)
   MESSAGE(STATUS "MPI is enabled")
@@ -526,8 +526,6 @@ ELSE(QMC_MPI)
 ENDIF(QMC_MPI)
 
 
-INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
-
 ####################################################################
 #First check the required libraries. Abort if these are not found.
 #Changed the fall-back versions to use similar conventions to 2.8.0 and higher
@@ -536,34 +534,31 @@ INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 # installataions
 # list of libraries to be linked with the main applications using I/O
 
+#-------------------------------------------------------------------
+#  set up scalar/vector math libraries
+#-------------------------------------------------------------------
 SET(ENABLE_MASS FALSE CACHE BOOL "ENABLE MASS scalar and vector math libraries for Power architecture")
 
-SET(SINCOS_INCLUDE cmath)
 # This needs to go before HAVE_SINCOS
 IF(ENABLE_MASS)
   INCLUDE(CMake/FindIBMMASS.cmake)
-  IF(HAVE_MASS)
-    SET(CMAKE_REQUIRED_INCLUDES ${MASS_INCLUDE_DIRECTORIES} ${CMAKE_REQUIRED_INCLUDES})
-    SET(CMAKE_REQUIRED_LINK_OPTIONS ${MASS_LINKER_FLAGS})
-    SET(CMAKE_REQUIRED_LIBRARIES ${MASS_LIBRARIES})
-  ENDIF(HAVE_MASS)
 ENDIF(ENABLE_MASS)
 
-INCLUDE(${PROJECT_CMAKE}/CheckSincos.cmake)
 IF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
   MESSAGE(STATUS "No usable vector math library detected.")
   ADD_LIBRARY(Math::scalar_vector_functions INTERFACE IMPORTED)
 ENDIF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
 
+# CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
+IF(NOT SINCOS_INCLUDE)
+  SET(SINCOS_INCLUDE cmath)
+ENDIF(NOT SINCOS_INCLUDE)
+MESSAGE(STATUS "SINCOS_INCLUDE : ${SINCOS_INCLUDE}")
+INCLUDE(${PROJECT_CMAKE}/CheckSincos.cmake)
 
-# This needs a better place to live. as does all the IF( HAVE_MKL ) stuff
-IF(HAVE_MASS)
-  SET(CMAKE_CXX_FLAGS ${MASS_FLAGS} ${CMAKE_CXX_FLAGS})
-  SET(CMAKE_C_FLAGS ${MASS_FLAGS} ${CMAKE_C_FLAGS})
-  SET(MASS_LIBRARY "${MASS_LINKER_FLAGS} ${MASS_LIBRARIES}")
-  SET(QMC_UTIL_LIBS ${MASS_LIBRARY} ${QMC_UTIL_LIBS})
-ENDIF(HAVE_MASS)
-
+#-------------------------------------------------------------------
+#  set up FFTW3 library
+#-------------------------------------------------------------------
 SET( FFTW_FOUND 0 )
 IF ( HAVE_MKL )
   IF ( HAVE_MKL_FFTW3 )
@@ -583,8 +578,10 @@ ENDIF(FFTW_FOUND)
 
 SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FORTRAN_LIBRARIES})
 
+#-------------------------------------------------------------------
+#  set up Libxml2 library
+#-------------------------------------------------------------------
 find_package(ZLIB)
-
 find_package(LibXml2)
 IF(LIBXML2_FOUND)
   IF(${CMAKE_VERSION} VERSION_LESS "3.12.0")
@@ -597,9 +594,9 @@ ELSE()
   MESSAGE(FATAL_ERROR "Could not find required library Libxml2")
 ENDIF(LIBXML2_FOUND)
 
-####################################################################
-# set up HDF5 library
-####################################################################
+#-------------------------------------------------------------------
+#  set up HDF5 library
+#-------------------------------------------------------------------
 IF(HAVE_MPI)
   SET(HDF5_PREFER_PARALLEL 1 CACHE BOOL "Request parallel/serial HDF5 library")
 ELSE(HAVE_MPI)
@@ -668,6 +665,9 @@ ELSE(HDF5_FOUND)
   MESSAGE(FATAL_ERROR "HDF5 not found. Set HDF5_ROOT")
 ENDIF(HDF5_FOUND)
 
+#-------------------------------------------------------------------
+#  set up libboost library, header only
+#-------------------------------------------------------------------
 #make sure we can find boost if it's not in /usr
 set(Boost_NO_BOOST_CMAKE on)
 find_package(Boost 1.61.0 REQUIRED)
@@ -678,6 +678,9 @@ ELSE()
   MESSAGE(FATAL_ERROR "Need boost 1.61.0 or higher.  Set BOOST_ROOT")
 ENDIF()
 
+#-------------------------------------------------------------------
+#  set up CUDA compiler options and libraries
+#-------------------------------------------------------------------
 SET(HAVE_CUDA 0)
 IF(QMC_CUDA OR ENABLE_CUDA)
   IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")

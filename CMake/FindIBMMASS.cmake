@@ -45,6 +45,7 @@ for( int i = 0; i < in_size; ++i)
 vlog10(resultv, inputv, &in_size);
 }
 ")
+
 try_compile(HAVE_MASS ${CMAKE_BINARY_DIR}
   ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mass.cxx
   CMAKE_FLAGS
@@ -59,16 +60,15 @@ endif ( NOT HAVE_MASS )
 
 IF ( HAVE_MASS )
   SET( MASS_FOUND 1 )
-  SET( MASS_FLAGS ${MASS_COMPILE_DEFINITIONS} )
-  include_directories( ${MASS_INCLUDE_DIRECTORIES} )
-  set( HAVE_VECTOR_MATH 1 )
-  set( HAVE_MASSV 1 )
-  set( SINCOS_INCLUDE mass.h )
   MESSAGE(STATUS "MASS found: HAVE_MASS=${HAVE_MASS}, HAVE_MASSV=${HAVE_MASSV}")
+
+  #create scalar_vector_functions target
+  ADD_LIBRARY(Math::scalar_vector_functions INTERFACE IMPORTED)
+  SET_TARGET_PROPERTIES(Math::scalar_vector_functions PROPERTIES INTERFACE_COMPILE_DEFINITIONS "HAVE_MASS;HAVE_MASSV")
+                                                                 INTERFACE_INCLUDE_DIRECTORIES "${MASS_INCLUDE_DIRECTORIES}"
+                                                                 INTERFACE_LINK_LIBRARIES "${MASS_LINKER_FLAGS} ${MASS_LIBRARIES}")
+  set( SINCOS_INCLUDE mass.h )
 ELSE( HAVE_MASS )
   SET( MASS_FOUND 0 )
-  SET( MASS_FLAGS )
-  SET( MASS_LIBRARIES )
-  SET( MASS_LINKER_FLAGS )
-  MESSAGE("MASS not found")
+  MESSAGE(STATUS "MASS not found")
 ENDIF( HAVE_MASS )
