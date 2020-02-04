@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="qmc_short_vmc_dmc" series="0">
+   <project id="qmc_short_vmcbatch_dmcbatch_4r" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <qmcsystem>
@@ -83,9 +83,9 @@
       </hamiltonian>
    </qmcsystem>
 
-   <qmc method="vmc" move="pbyp">
+   <qmc method="vmc_batch" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
-     <parameter name="walkers">    256 </parameter>
+     <parameter name="walkers">    64 </parameter>
      <parameter name="substeps">  1 </parameter>
      <parameter name="warmupSteps">  100 </parameter>
      <parameter name="steps">  1 </parameter>
@@ -93,10 +93,10 @@
      <parameter name="timestep">  1.0 </parameter>
      <parameter name="usedrift">   no </parameter>
    </qmc>
-   <qmc method="dmc" move="pbyp" checkpoint="-1">
+   <qmc method="dmc_batch" move="pbyp" checkpoint="-1">
      <estimator name="LocalEnergy" hdf5="no"/>
-     <parameter name="targetwalkers"> 256 </parameter>
-     <parameter name="reconfiguration">   runwhileincorrect </parameter>
+     <parameter name="walkers"> 64 </parameter>
+     <parameter name="reconfiguration">   no </parameter>
      <parameter name="warmupSteps">  100 </parameter>
      <parameter name="timestep">  0.005 </parameter>
      <parameter name="steps">   100 </parameter>

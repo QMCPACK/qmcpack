@@ -24,11 +24,12 @@
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
 {
 
-class QMCHamiltonian;
+
 
 class MCPopulation
 {
@@ -38,12 +39,12 @@ public:
   using RealType   = QMCTraits::RealType;
   using Properties = MCPWalker::PropertyContainer_t;
   using IndexType  = QMCTraits::IndexType;
-
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+  
 private:
   // Potential thread safety issue
   MCDataType<QMCTraits::FullPrecRealType> ensemble_property_;
 
-  int num_ranks_                = 0;
   IndexType num_global_walkers_ = 0;
   IndexType num_local_walkers_  = 0;
   IndexType num_particles_      = 0;
@@ -53,7 +54,6 @@ private:
   IndexType target_samples_     = 0;
   //Properties properties_;
   ParticleSet ions_;
-  std::vector<IndexType> walker_offsets_;
   std::vector<IndexType> num_local_walkers_per_node_;
   
   // By making this a linked list and creating the crowds at the same time we could get first touch.
@@ -81,8 +81,10 @@ private:
   UPtrVector<ParticleSet> walker_elec_particle_sets_;
   UPtrVector<TrialWaveFunction> walker_trial_wavefunctions_;
   UPtrVector<QMCHamiltonian> walker_hamiltonians_;
-  // This should perhaps just be aquired from comm but currently MCPopulation
-  // is innocent of comm, Every object needing a copy is suboptimal.
+
+  // MCPopulation immutables
+  // would be nice if they were const but we'd lose the default move assignment 
+  int num_ranks_;
   int rank_;
 
 public:
@@ -95,25 +97,28 @@ public:
                ParticleSet* elecs,
                TrialWaveFunction* trial_wf,
                QMCHamiltonian* hamiltonian_,
-               int this_rank = 0);
+               int this_rank);
 
   MCPopulation(int num_ranks,
                ParticleSet* elecs,
                TrialWaveFunction* trial_wf,
                QMCHamiltonian* hamiltonian,
-               int this_rank = 0);
+               int this_rank);
 
-  MCPopulation(MCPopulation&)  = default;
+  MCPopulation(MCPopulation&)  = delete;
+  MCPopulation& operator=(MCPopulation&) = delete;
   MCPopulation(MCPopulation&&) = default;
   MCPopulation& operator=(MCPopulation&&) = default;
 
+  ~MCPopulation() {
+  }
   /** @ingroup PopulationControl
    *
    *  State Requirement:
    *   * createWalkers must have been called
    *  @{
    */
-  MCPWalker& spawnWalker();
+  MCPWalker*  spawnWalker();
   void killWalker(MCPWalker&);
   void killLastWalker();
   void createWalkerInplace(UPtr<MCPWalker>& walker_ptr);
@@ -121,6 +126,8 @@ public:
   /** }@ */
 
   void createWalkers();
+  /** Creates walkers with a clone of the golden electron particle set and golden trial wavefunction
+   */
   void createWalkers(IndexType num_walkers);
   void createWalkers(int num_crowds_,
                      int num_walkers_per_crowd_,
@@ -131,7 +138,7 @@ public:
   /** puts walkers and their "cloned" things into groups in a somewhat general way
    *
    *  Should compile only if ITER is a proper input ITERATOR
-   *  Will crash if ITER does point to a std::unique_ptr<WALKER_CONSUMER>
+   *  Will crash if ITER does point to a std::unqiue_ptr<WALKER_CONSUMER>
    *
    */
   template<typename ITER, typename = RequireInputIterator<ITER>>
@@ -172,6 +179,7 @@ public:
    */
   //IndexType get_active_walkers() const { return walkers_.size(); }
   int get_num_ranks() const { return num_ranks_; }
+  int get_rank() const { return rank_; }
   IndexType get_num_global_walkers() const { return num_global_walkers_; }
   IndexType get_num_local_walkers() const { return num_local_walkers_; }
   IndexType get_num_particles() const { return num_particles_; }
@@ -181,7 +189,7 @@ public:
   //const Properties& get_properties() const { return properties_; }
   const SpeciesSet& get_species_set() const { return species_set_; }
   const ParticleSet& get_ions() const { return ions_; }
-  const std::vector<int>& get_walker_offsets() const { return walker_offsets_; }
+  const ParticleSet* get_golden_electrons() const {return elec_particle_set_; }
   std::vector<IndexType> get_num_local_walkers_per_node() const { return num_local_walkers_per_node_; }
   void syncWalkersPerNode(Communicate* comm);
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
@@ -201,8 +209,6 @@ public:
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
   const std::vector<RealType>& get_ptcl_inv_mass() const { return ptcl_inv_mass_; }
-
-  void set_walker_offsets(std::vector<IndexType> walker_offsets) { walker_offsets_ = walker_offsets; }
 
   // TODO: the fact this is needed is sad remove need for its existence.
   QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }

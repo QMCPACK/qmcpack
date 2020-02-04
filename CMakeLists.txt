@@ -155,6 +155,10 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 
 ######################################################################
 # Set the compiler-time parameters
+# WALKER_MAX_PROPERTIES max number of observables + 12 or so standard
+#   props. Things like forces are per particle so you may need this to
+#   rather large.  Each property increases walker size by
+#   sizeof(FULLPRECREALTYPE)
 # OHMMS_DIM =  dimension of the problem
 # OHMMS_INDEXTYPE = type of index
 # OHMMS_PRECISION  = base precision, float, double etc
@@ -163,7 +167,7 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 # QMC_MPI =  enable MPI
 # QMC_OMP = enable OMP
 ######################################################################
-SET(WALKER_MAX_PROPERTIES 32 CACHE int "Maximum number of properties tracked by walkers")
+SET(WALKER_MAX_PROPERTIES 256 CACHE STRING "Maximum number of properties tracked by walkers")
 MARK_AS_ADVANCED(WALKER_MAX_PROPERTIES)
 SET(OHMMS_DIM 3 CACHE STRING "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
@@ -686,7 +690,7 @@ IF(HDF5_FOUND)
   ENDIF()
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${HDF5_LIBRARIES})
 ELSE(HDF5_FOUND)
-  MESSAGE(FATAL_ERROR "Require HDF5 1.6.4 or higher. Set HDF5_ROOT")
+  MESSAGE(FATAL_ERROR "HDF5 not found. Set HDF5_ROOT")
 ENDIF(HDF5_FOUND)
 
 #make sure we can find boost if it's not in /usr

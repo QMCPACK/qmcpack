@@ -143,8 +143,6 @@ public:
   T* data() { return data_.data(); }
   const T* data() const { return data_.data(); }
 
-  size_t sizeofElement() { return sizeof(T); }
-
   size_t capacity() { return n_max_ * m_max_; }
   size_t n_capacity() { return n_max_; }
 

@@ -27,7 +27,7 @@
 #    Supercomputer                                                   #
 #      Represents a generic supercomputer with a batch queue.        #
 #      Base class for specific supercomputers.                       #
-#      See Jaguar, Kraken, Taub, OIC5, Hopper, Edison, BlueWatersXE, #
+#      See Jaguar, Kraken, Golub, OIC5, Hopper, Edison, BlueWatersXE,#
 #        BlueWatersXK, Titan, EOS, Vesta, Cetus, Mira, Lonestar,     #
 #        Matisse, Komodo, and Amos                                   #
 #                                                                    #
@@ -127,8 +127,8 @@ class Options(DevBase):
 
     def write(self):
         s = ''
-        for o in self:
-            s += ' '+str(o)
+        for k in sorted(self.keys()):
+            s += ' '+str(self[k])
         #end for
         return s
     #end def write
@@ -1492,11 +1492,11 @@ class Supercomputer(Machine):
                 self.error('failed to set env options for runjob')
             #end if
             job.run_options.add(
-                np      = '--np '+str(job.processes),
-                p       = '-p '+str(job.processes_per_node),
-                locargs = '$LOCARGS',
-                verbose = '--verbose=INFO',
-                envs    = envs
+                np       = '--np '+str(job.processes),
+                p        = '-p '+str(job.processes_per_node),
+                xlocargs = '$LOCARGS',
+                verbose  = '--verbose=INFO',
+                envs     = envs
                 )
         elif launcher=='srun':  # Amos contribution from Ryan McAvoy
             None # anything needed here?
@@ -1975,13 +1975,13 @@ export MPI_MSGS_PER_PROC=32768
 
 
 
-class Taub(Supercomputer):
+class Golub(Supercomputer):
 
-    name = 'taub'
+    name = 'golub'
 
     def write_job_header(self,job):
         if job.queue is None:
-            job.queue='cse'
+            job.queue='secondary'
         #end if
         c=''
         c+='#PBS -q '+job.queue+'\n'
@@ -3116,8 +3116,8 @@ class Stampede2(Supercomputer):
 
 
 
-class Cades(Supercomputer):
-    name = 'cades'
+class CadesMoab(Supercomputer):
+    name = 'cades_moab'
     requires_account = True
     batch_capable    = True
 
@@ -3155,7 +3155,40 @@ cd $PBS_O_WORKDIR
 '''
         return c
     #end def write_job_header
-#end class Cades
+#end class CadesMoab
+
+
+
+class CadesSlurm(Supercomputer):
+    name = 'cades'
+    requires_account = True
+    batch_capable    = True
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'skylake'
+        #end if
+
+        c  = '#!/bin/bash\n'
+        c += '#SBATCH -A {}\n'.format(job.account)
+        c += '#SBATCH -p {}\n'.format(job.queue)
+        c += '#SBATCH -J {}\n'.format(job.name)
+        c += '#SBATCH -t {}\n'.format(job.sbatch_walltime())
+        c += '#SBATCH -N {}\n'.format(job.nodes)
+        c += '#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c += '#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c += '#SBATCH --mem=1G\n' # required on Cades
+        c += '#SBATCH -o '+job.outfile+'\n'
+        c += '#SBATCH -e '+job.errfile+'\n'
+        if job.user_env:
+            c += '#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c += '#SBATCH --export=NONE\n'
+        #end if
+
+        return c
+    #end def write_job_header
+#end class CadesSlurm
 
 
 
@@ -3362,7 +3395,7 @@ for cores in range(1,128+1):
 #            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus    qdelete
 Jaguar(      18688,   2,     8,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Kraken(       9408,   2,     6,   16,  100,  'aprun',     'qsub',   'qstat',    'qdel')
-Taub(          400,   2,     6,   24,   50, 'mpirun',     'qsub',   'qstat',    'qdel')
+Golub(          512,  2,     6,   32, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
 OIC5(           28,   2,    16,  128, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
 Edison(        664,   2,    12,   64,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Cori(         9688,   1,    68,   96,  100,   'srun',   'sbatch',  'squeue', 'scancel')
@@ -3387,7 +3420,8 @@ Redsky(       2302,   2,     8,   12, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Solo(          187,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
-Cades(         156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
+CadesMoab(     156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
+CadesSlurm(    156,   2,    18,  128,  100, 'mpirun',   'sbatch',  'squeue', 'scancel')
 Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
 Rhea(          512,   2,     8,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')

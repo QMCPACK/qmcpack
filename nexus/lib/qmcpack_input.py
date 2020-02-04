@@ -210,11 +210,7 @@ def attribute_to_value(attr):
 
 #local write types
 def yesno(var):
-    if var:
-        return 'yes'
-    else:
-        return 'no'
-    #end if
+    return render_bool(var,'yes','no')
 #end def yesno
 
 def yesnostr(var):
@@ -226,20 +222,28 @@ def yesnostr(var):
 #end def yesnostr
 
 def onezero(var):
-    if var:
-        return '1'
-    else:
-        return '0'
-    #end if
+    return render_bool(var,'1','0')
 #end def onezero
 
 def truefalse(var):
-    if var:
-        return 'true'
-    else:
-        return 'false'
-    #end if
+    return render_bool(var,'true','false')
 #end def onezero
+
+def render_bool(var,T,F):
+    if isinstance(var,bool) or var in (1,0):
+        if var:
+            return T
+        else:
+            return F
+        #end if
+    elif var in (T,F):
+        return var
+    else:
+        error('Invalid QMCPACK input encountered.\nUser provided an invalid value of "{}" when yes/no was expected.\nValid options are: "{}", "{}", True, False, 1, 0'.format(var,T,F))
+
+    #end if
+#end def render_bool
+
 
 bool_write_types = set([yesno,onezero,truefalse])
 

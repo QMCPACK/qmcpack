@@ -351,7 +351,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
 {
   std::ostringstream splineTag;
   splineTag << "eigenstates_" << nG[0] << "_" << nG[1] << "_" << nG[2];
-  herr_t status = H5Eset_auto(NULL, NULL);
+  herr_t status = H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
   app_log() << " splineTag " << splineTag.str() << std::endl;
   hid_t es_grp_id;
   status = H5Gget_objinfo(hfileID, splineTag.str().c_str(), 0, NULL);
