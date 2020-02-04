@@ -22,7 +22,7 @@ SetupPools::SetupPools()
 {
   comm = OHMMS::Controller;
 
-  std::cout << "SetupPools::SetupPools()\n";
+  std::cout << "For purposes of multithreaded testing max threads is forced to 8" << '\n';
   Concurrency::OverrideMaxThreads<> override(8);
   
   particle_pool.reset(new ParticleSetPool(mpp(comm)));
