@@ -5747,8 +5747,8 @@ class Crystal(Structure):
         )
 
     lattice_centerings = obj(
-        triclinic = ['P'],
-        monoclinic = ['P','A','B','C'],
+        triclinic    = ['P'],
+        monoclinic   = ['P','A','B','C'],
         orthorhombic = ['P','C','I','F'],
         tetragonal   = ['P','I'],
         hexagonal    = ['P','R'],
