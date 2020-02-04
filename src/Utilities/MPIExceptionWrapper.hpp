@@ -38,7 +38,7 @@ void MPIExceptionWrapper::operator()(F&& f, Args&&... args)
   {
     f(std::forward<Args>(args)...);
   }
-  catch (const std::runtime_error& re)
+  catch (const std::exception& re)
   {
     APP_ABORT(re.what());
   }
