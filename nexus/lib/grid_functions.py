@@ -867,6 +867,7 @@ class GBase(PlotHandler):
     #end def local_validity_checks
 
 
+    # test needed
     def ensure_array(self,dtype=None,**arrays_in):
         arrays = obj()
         for k,ai in arrays_in.items():
@@ -1421,6 +1422,7 @@ class StructuredGrid(Grid):
     #end def reshape_flat
 
 
+    # test needed
     def flat_indices(self,full_indices):
         if not isinstance(full_indices,np.ndarray):
             full_indices = np.array(full_indices,dtype=int)
@@ -3595,6 +3597,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
     grid_class = ParallelotopeGrid
 
 
+    # test needed
     def read_from_points(self,points,values,axes,tol=1e-6):
         # check data types and shapes
         d = self.ensure_array(
@@ -3885,6 +3888,7 @@ class SpheroidSurfaceGridFunction(StructuredGridFunctionWithAxes):
 
 
 
+# test needed
 def parallelotope_grid_function(
     loc = 'parallelotope_grid_function',
     **kwargs
@@ -3908,6 +3912,7 @@ def parallelotope_grid_function(
 
 
 
+# test needed
 def grid_function(
     type = 'parallelotope',
     loc  = 'grid_function',

@@ -5020,6 +5020,8 @@ class Structure(Sobj):
 
 
     # functions based on direct spglib interface
+
+    # test needed
     def space_group_operations(self,tol=1e-5,unit=False):
         ds = self.get_symmetry(symprec=tol)
         if ds is None:
