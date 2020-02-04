@@ -3186,7 +3186,7 @@ class Structure(Sobj):
         if use_self:
             kpoints=self.kpoints
         #end if
-        if kaxes==None:
+        if kaxes is None:
             kaxes=self.kaxes
         #end if
         if len(kpoints)>0:
@@ -5039,27 +5039,37 @@ class Structure(Sobj):
 
 
     def point_group_operations(self,tol=1e-5,unit=False):
-        rotations,translations = self.space_group_symmetries(tol=tol,unit=unit)
-        no_trans = translations.max(axis=0) < tol
+        rotations,translations = self.space_group_operations(tol=tol,unit=unit)
+        no_trans = translations.max(axis=1) < tol
         return rotations[no_trans]
     #end def point_group_operations
 
 
-    def check_point_group_operations(self,tol=1e-5,unit=False,ncheck=1):
-        rotations = self.point_group_operations(tol=tol,unit=unit)
+    def check_point_group_operations(self,rotations=None,tol=1e-5,unit=False,dtol=1e-5,ncheck=1,exit=False):
+        if rotations is None:
+            rotations = self.point_group_operations(tol=tol,unit=unit)
+        #ned if
         r = self.pos
         if ncheck=='all':
             ncheck = len(r)
         #end if
+        all_same = True
         for n in range(ncheck):
             rc = r[n]
             for R in rotations:
                 rp = np.dot(r-rc,R)+rc
-
-                # jtk mark current
-                
+                dt = self.min_image_distances(r,rp)
+                same = True
+                for d in dt:
+                    same &= dt.min()<dtol
+                #end for
+                all_same &= same
             #end for
         #end for
+        if not all_same and exit:
+            self.error('Point group operators are not all symmetries of the structure.')
+        #end if
+        return all_same
     #end def check_point_group_operations
 
 #end class Structure
