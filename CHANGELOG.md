@@ -49,6 +49,7 @@ See [list of open bugs](https://github.com/QMCPACK/qmcpack/issues?q=is%3Aissue+i
 
 ### NEXUS
 
+- NEXUS version is increased to 2.0.0 due to major updates in this release.
 - NEXUS has been transitioned to Python 3 and now requires it.
 - Significantly expanded test system to cover all major functionality.
 - Full support for PySCF to QMCPACK and AFQMC workflows [\#1970](https://github.com/QMCPACK/qmcpack/pull/1970).

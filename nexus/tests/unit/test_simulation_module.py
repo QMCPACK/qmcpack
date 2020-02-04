@@ -791,7 +791,7 @@ def test_init():
         image_dir            = 'sim_sim',
         imlocdir             = './runs/sim_sim',
         imremdir             = './runs/sim_sim',
-        imresdir             = './results/runs/sim_sim',
+        imresdir             = './runs/sim_sim',
         infile               = 'sim.in',
         input_image          = 'input.p',
         locdir               = './runs/',
@@ -804,7 +804,7 @@ def test_init():
         process_id           = None,
         restartable          = False,
         remdir               = './runs/',
-        resdir               = './results/runs/',
+        resdir               = './runs/',
         sent_files           = False,
         setup                = False,
         sim_image            = 'sim.p',
@@ -2106,7 +2106,11 @@ def test_get_output():
     assert(not s.got_output)
     for loc_file,res_file in zip(loc_files,res_files):
         assert(os.path.exists(loc_file))
-        assert(not os.path.exists(res_file))
+        if s.resdir!=s.locdir:
+            assert(not os.path.exists(res_file))
+        else:
+            assert(os.path.exists(res_file))
+        #end if
     #end for
 
     s.get_output()
@@ -2250,8 +2254,13 @@ a    = $a
     assert(not os.path.exists(os.path.join(s.locdir,s.outfile)))
     assert(not os.path.exists(os.path.join(s.locdir,s.errfile)))
     assert(not os.path.exists(os.path.join(s.imlocdir,s.analyzer_image)))
-    assert(not os.path.exists(s.resdir))
-    assert(not os.path.exists(s.imresdir))
+    if s.resdir!=s.locdir:
+        assert(not os.path.exists(s.resdir))
+        assert(not os.path.exists(s.imresdir))
+    else:
+        assert(os.path.exists(s.resdir))
+        assert(os.path.exists(s.imresdir))
+    #end if
     
     # check image
     inds.transfer_from(s,indicators)
@@ -2308,8 +2317,12 @@ a    = $a
     assert(os.path.exists(os.path.join(s.imresdir,s.sim_image)))
     assert(os.path.exists(os.path.join(s.imresdir,s.input_image)))
     assert(os.path.exists(os.path.join(s.imresdir,s.analyzer_image)))
-    assert(not os.path.exists(os.path.join(s.imlocdir,s.analyzer_image)))
-    
+    if s.resdir!=s.locdir:
+        assert(not os.path.exists(os.path.join(s.imlocdir,s.analyzer_image)))
+    else:
+        assert(os.path.exists(os.path.join(s.imlocdir,s.analyzer_image)))
+    #end if
+
     # check image
     inds.transfer_from(s,indicators)
     s.reset_indicators()
