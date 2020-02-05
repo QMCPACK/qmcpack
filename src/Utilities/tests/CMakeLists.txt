@@ -30,7 +30,6 @@ IF(HAVE_MPI)
   #this is dependent on the directory creation and sym linking of earlier driver tests
   SET(MPI_UTILITY_TEST_SRC test_mpi_exception_wrapper.cpp)
   ADD_EXECUTABLE(${UTEST_EXE} ${MPI_UTILITY_TEST_SRC})
-  USE_FAKE_RNG(${UTEST_EXE})
   #Way too many depenedencies make for very slow test linking
   TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
