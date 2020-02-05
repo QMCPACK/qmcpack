@@ -41,7 +41,7 @@ from subprocess import Popen
 from execute import execute
 import numpy as np
 from numpy import linspace,array,zeros,append,mgrid,empty,exp,minimum,maximum,sqrt,arange
-import matplotlib.pyplot as plt
+
 from fileio import TextFile
 from xmlreader import readxml
 from superstring import string2val,split_delims
@@ -54,6 +54,11 @@ from physical_system import PhysicalSystem
 from plotting import *
 from debug import *
 
+try:
+    import matplotlib.pyplot as plt
+except:
+    plt = unavailable('matplotlib','pyplot')
+#end try
 
 
 def pp_elem_label(filename,guard=False):
