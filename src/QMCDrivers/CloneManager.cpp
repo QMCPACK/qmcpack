@@ -191,6 +191,8 @@ void CloneManager::makeClones(TrialWaveFunction& guide)
   infoSummary.resume();
   infoLog.resume();
 }
+
+
 void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide)
 {
   if (guideClones.size())
@@ -218,6 +220,18 @@ void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guid
   }
   infoSummary.resume();
   infoLog.resume();
+}
+
+CloneManager::RealType CloneManager::acceptRatio() const
+{
+  IndexType nAcceptTot = 0;
+  IndexType nRejectTot = 0;
+  for (int ip = 0; ip < NumThreads; ip++)
+  {
+    nAcceptTot += Movers[ip]->nAccept;
+    nRejectTot += Movers[ip]->nReject;
+  }
+  return static_cast<RealType>(nAcceptTot) / static_cast<RealType>(nAcceptTot + nRejectTot);
 }
 
 } // namespace qmcplusplus
