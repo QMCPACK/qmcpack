@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -20,7 +20,9 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/tests/test_WalkerControlMPI.h"
+#include "Utilities/MPIExceptionWrapper.hpp"
 #include "Utilities/OutputManager.h"
+
 
 //#include "Concurrency/Info.hpp"
 //#include "Concurrency/UtilityFunctions.hpp"
@@ -34,14 +36,16 @@ UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpo
   using namespace testing;
 
   int num_ranks = dpools_.comm->size();
-  pop_          = std::make_unique<MCPopulation>(num_ranks, dpools_.particle_pool->getParticleSet("e"),
+  if (num_ranks != 3)
+    throw std::runtime_error("Bad Rank Count, WalkerControlMPI tests can only be run with 3 MPI ranks.");
+
+  pop_ = std::make_unique<MCPopulation>(num_ranks, dpools_.particle_pool->getParticleSet("e"),
                                         dpools_.wavefunction_pool->getPrimary(), dpools_.hamiltonian_pool->getPrimary(),
                                         dpools_.comm->rank());
 
   pop_->createWalkers(1);
 
   wc_.use_nonblocking = true;
-
 
   // Set up Cur_pop
   wc_.Cur_pop = dpools_.comm->size();
@@ -151,29 +155,34 @@ TEST_CASE("WalkerControlMPI::determineNewWalkerPopulation", "[drivers][walker_co
  */
 TEST_CASE("MPI WalkerControl multiplicity swap walkers", "[drivers][walker_control]")
 {
-  outputManager.pause();
-  testing::UnifiedDriverWalkerControlMPITest test;
-  outputManager.resume();
-  SECTION("Simple")
-  {
-    std::vector<int> count_before{1, 1, 1};
-    std::vector<int> count_after{1, 1, 1};
+  auto test_func = []() {
+    outputManager.pause();
+    testing::UnifiedDriverWalkerControlMPITest test;
+    outputManager.resume();
+    SECTION("Simple")
+    {
+      std::vector<int> count_before{1, 1, 1};
+      std::vector<int> count_after{1, 1, 1};
 
-    // One walker on every node, should be no swapping
-    test.testMultiplicity(count_before, count_after);
-  }
+      // One walker on every node, should be no swapping
+      test.testMultiplicity(count_before, count_after);
+    }
 
-  SECTION("LoadBalance")
-  {
-    std::vector<int> count_before{3, 1, 1};
-    std::vector<int> count_after{1, 2, 2};
+    SECTION("LoadBalance")
+    {
+      std::vector<int> count_before{3, 1, 1};
+      std::vector<int> count_after{1, 2, 2};
 
-    test.testMultiplicity(count_before, count_after);
-  }
+      test.testMultiplicity(count_before, count_after);
+    }
+  };
+  MPIExceptionWrapper mew;
+  mew(test_func);
 }
 
 TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control]")
 {
+  auto test_func = []() {
   outputManager.pause();
   testing::UnifiedDriverWalkerControlMPITest test;
   outputManager.resume();
@@ -192,6 +201,10 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
     std::vector<int> count_after{1, 2, 2};
     test.testPopulationDiff(count_before, count_after);
   }
+                   };
+  MPIExceptionWrapper mew;
+  mew(test_func);
 }
+
 
 } // namespace qmcplusplus

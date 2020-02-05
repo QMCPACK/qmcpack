@@ -71,7 +71,6 @@ IF(NOT QMC_CUDA AND ENABLE_SOA)
     #this is dependent on the directory creation and sym linking of earlier driver tests
     SET(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControlMPI.cpp)
     ADD_EXECUTABLE(${UTEST_EXE} ${DRIVER_TEST_SRC})
-    USE_FAKE_RNG(${UTEST_EXE})
     #Way too many depenedencies make for very slow test linking
     TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcdriver_unit qmcham_unit qmcwfs qmcbase qmcutil qmcfakerng ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
     # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
