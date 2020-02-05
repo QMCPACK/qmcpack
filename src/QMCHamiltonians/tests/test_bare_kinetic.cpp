@@ -16,9 +16,6 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#ifndef ENABLE_SOA
-#include "Particle/SymmetricDistanceTableData.h"
-#endif
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 
