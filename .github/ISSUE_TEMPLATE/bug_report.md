@@ -12,10 +12,10 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1. git commit hash being built
+1. release version or git commit hash being built
 2. cmake command
 3. full program/test invocation command
-4. additional steps 
+4. additional steps
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
