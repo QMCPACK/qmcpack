@@ -87,7 +87,17 @@ struct MCSample
 };
 
 MCWalkerConfiguration::MCWalkerConfiguration()
-    : OwnWalkers(true),
+    :
+#ifdef QMC_CUDA
+      RList_GPU("MCWalkerConfiguration::RList_GPU"),
+      GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
+      LapList_GPU("MCWalkerConfiguration::LapList_GPU"),
+      Rnew_GPU("MCWalkerConfiguration::Rnew_GPU"),
+      NLlist_GPU("MCWalkerConfiguration::NLlist_GPU"),
+      iatList_GPU("iatList_GPU"),
+      AcceptList_GPU("MCWalkerConfiguration::AcceptList_GPU"),
+#endif
+      OwnWalkers(true),
       ReadyForPbyP(false),
       GlobalNumWalkers(0),
       UpdateMode(Update_Walker),
@@ -95,16 +105,6 @@ MCWalkerConfiguration::MCWalkerConfiguration()
       Polymer(0),
       MaxSamples(10),
       CurSampleCount(0)
-#ifdef QMC_CUDA
-      ,
-      RList_GPU("MCWalkerConfiguration::RList_GPU"),
-      GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
-      LapList_GPU("MCWalkerConfiguration::LapList_GPU"),
-      Rnew_GPU("MCWalkerConfiguration::Rnew_GPU"),
-      NLlist_GPU("MCWalkerConfiguration::NLlist_GPU"),
-      AcceptList_GPU("MCWalkerConfiguration::AcceptList_GPU"),
-      iatList_GPU("iatList_GPU")
-#endif
 {
   //move to ParticleSet
   //initPropertyList();
@@ -112,6 +112,15 @@ MCWalkerConfiguration::MCWalkerConfiguration()
 
 MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
     : ParticleSet(mcw),
+#ifdef QMC_CUDA
+      RList_GPU("MCWalkerConfiguration::RList_GPU"),
+      GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
+      LapList_GPU("MCWalkerConfiguration::LapList_GPU"),
+      Rnew_GPU("MCWalkerConfiguration::Rnew_GPU"),
+      NLlist_GPU("MCWalkerConfiguration::NLlist_GPU"),
+      iatList_GPU("iatList_GPU"),
+      AcceptList_GPU("MCWalkerConfiguration::AcceptList_GPU"),
+#endif
       OwnWalkers(true),
       ReadyForPbyP(false),
       GlobalNumWalkers(mcw.GlobalNumWalkers),
@@ -119,16 +128,6 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
       Polymer(0),
       MaxSamples(mcw.MaxSamples),
       CurSampleCount(0)
-#ifdef QMC_CUDA
-      ,
-      RList_GPU("MCWalkerConfiguration::RList_GPU"),
-      GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
-      LapList_GPU("MCWalkerConfiguration::LapList_GPU"),
-      Rnew_GPU("MCWalkerConfiguration::Rnew_GPU"),
-      NLlist_GPU("MCWalkerConfiguration::NLlist_GPU"),
-      AcceptList_GPU("MCWalkerConfiguration::AcceptList_GPU"),
-      iatList_GPU("iatList_GPU")
-#endif
 {
   GlobalNumWalkers = mcw.GlobalNumWalkers;
   WalkerOffsets    = mcw.WalkerOffsets;
