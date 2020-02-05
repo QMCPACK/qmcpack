@@ -15,6 +15,7 @@
 #include "QMCApp/tests/MinimalParticlePool.h"
 #include "QMCApp/tests/MinimalWaveFunctionPool.h"
 #include "QMCApp/tests/MinimalHamiltonianPool.h"
+#include "Message/Communicate.h"
 #include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
