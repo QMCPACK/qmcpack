@@ -12,11 +12,13 @@ export CRAYPE_LINK_TYPE=dynamic
 TYPE=Release
 Compiler=Intel
 
+CURRENT_FOLDER=`pwd`
+
 for name in real_AoS_legacy real_MP_AoS_legacy cplx_AoS_legacy cplx_MP_AoS_legacy \
             real real_MP cplx cplx_MP
 do
 
-CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE"
+CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE -D MPIEXEC_EXECUTABLE=/bin/sh -D MPIEXEC_NUMPROC_FLAG=$CURRENT_FOLDER/tests/scripts/aprunhelper.sh"
 
 if [[ $name == *"cplx"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -D QMC_COMPLEX=1"
