@@ -28,12 +28,7 @@
 #include "QMCHamiltonians/NonLocalTOperator.h"
 
 //for Hamiltonian manipulations.
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#ifndef ENABLE_SOA
-#include "Particle/SymmetricDistanceTableData.h"
-#endif
 #include "QMCApp/ParticleSetPool.h"
 #include "LongRange/EwaldHandler3D.h"
 
