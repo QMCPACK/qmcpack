@@ -188,7 +188,7 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
     h5_file_root_ = h5name;
 }
 
-void QMCDriverNew::checkNumCrowdsLTNumThreads()
+void QMCDriverNew::checkNumCrowdsLTNumThreads() const
 {
   int num_threads(Concurrency::maxThreads<>());
   if (num_crowds_ > num_threads)
@@ -462,5 +462,44 @@ std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
 
 void QMCDriverNew::defaultSetNonLocalMoveHandler(QMCHamiltonian& ham)
 {}
+
+
+/** static function
+ *
+ *  
+ */
+QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communicate* comm, IndexType desired_count, IndexType walkers_per_rank, int num_crowds)
+{
+  int ranks = myComm->size();
+  AdjustedWalkerCounts awc;
+  awc.global_walkers = desired_count;
+  awc.walkers_per_rank = walkers_per_rank;
+  if ( awc.global_walkers != 0)
+  {
+    if ( awc.global_walkers % ranks )
+    {
+      awc.walkers_per_rank = awc.global_walkers / ranks + 1;
+      awc.global_walkers = awc.walkers_per_rank * ranks;
+      app_warning() << "TargetWalkers not divisible by number of ranks, TargetWalker increased to "
+         << awc.global_walkers << '\n';
+    }
+    else
+      awc.walkers_per_rank = awc.global_walkers / ranks;
+  }
+
+  // side effect updates Base::walkers_per_crowd_;
+  awc = this->calcDefaultLocalWalkers(awc);
+
+  if ( awc.walkers_per_rank * ranks != awc.global_walkers )
+  {
+    awc.global_walkers = awc.walkers_per_rank * ranks;
+    app_warning() << "Walkers per rank number of crowds, TargetWalker increased to "
+         << awc.global_walkers << '\n';
+  }
+
+  return awc;
+}
+
+
 
 } // namespace qmcplusplus

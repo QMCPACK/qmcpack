@@ -103,13 +103,14 @@ public:
 
   void setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian);
 
+  QMCDriverNew::AdjustedWalkerCounts calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const;
+
 private:
   /** The initial number of walkers per rank
    *
    *  Currently substantially the same as VMCBatch so if it doesn't change
    *  This should be pulled down the QMCDriverNew
    */
-  IndexType calc_default_local_walkers(IndexType walkers_per_rank);
 
 
   DMCDriverInput dmcdriver_input_;

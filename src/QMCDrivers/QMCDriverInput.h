@@ -123,6 +123,7 @@ public:
   IndexType get_starting_step() const { return starting_step_; }
   IndexType get_num_crowds() const { return num_crowds_; }
   IndexType get_walkers_per_rank() const { return walkers_per_rank_; }
+  IndexType get_total_walkers() const { return total_walkers_; }
   IndexType get_requested_samples() const { return requested_samples_; }
   IndexType get_sub_steps() const { return sub_steps_; }
   RealType get_max_disp_sq() const { return max_disp_sq_; }

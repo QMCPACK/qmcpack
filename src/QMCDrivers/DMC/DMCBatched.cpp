@@ -43,23 +43,21 @@ DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
 }
 // clang-format on
 
-QMCTraits::IndexType DMCBatched::calc_default_local_walkers(IndexType walkers_per_rank)
+QMCDriverNew::AdjustedWalkerCounts DMCBatched::calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const
 {
   checkNumCrowdsLTNumThreads();
   int num_threads(Concurrency::maxThreads<>());
-  IndexType rw = walkers_per_rank; //qmcdriver_input_.get_walkers_per_rank();
-  if (num_crowds_ == 0)
-    num_crowds_ = std::min(num_threads, rw);
-  walkers_per_crowd_ = (rw % num_crowds_) ? rw / num_crowds_ + 1 : rw / num_crowds_;
 
-  IndexType local_walkers = walkers_per_crowd_ * num_crowds_;
-  population_.set_num_local_walkers(local_walkers);
-  population_.set_num_global_walkers(local_walkers * population_.get_num_ranks());
-  if (rw != qmcdriver_input_.get_walkers_per_rank())
-    app_warning() << "DMCBatched driver has adjusted walkers per rank to: " << local_walkers << '\n';
+  if (awc.num_crowds == 0)
+    awc.num_crowds = std::min(num_threads, awc.walkers_per_rank);
+  awc.walkers_per_crowd = (awc.walkers_per_rank % awc.num_crowds) ? awc.walkers_per_rank / awc.num_crowds + 1 : awc.walkers_per_rank / awc.num_crowds;
 
-  app_log() << "DMCBatched walkers per crowd " << walkers_per_crowd_ << std::endl;
-  return local_walkers;
+  awc.walkers_per_rank = awc.walkers_per_crowd * awc.num_crowds;
+  if (awc.walkers_per_rank != qmcdriver_input_.get_walkers_per_rank())
+    app_warning() << "DMCBatched driver has adjusted walkers per rank to: " << awc.walkers_per_rank << '\n';
+
+  app_log() << "DMCBatched walkers per crowd " << awc.walkers_per_crowd << std::endl;
+  return awc;
 }
 
 void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
@@ -494,37 +492,14 @@ void DMCBatched::runDMCStep(int crowd_id,
 
 void DMCBatched::process(xmlNodePtr node)
 {
-  int ranks = myComm->size();
-  IndexType walkers_per_rank{0};
-  IndexType target_walkers_ = dmcdriver_input_.get_target_walkers();
-  if ( target_walkers_ != 0)
-  {
-    if ( target_walkers_ % ranks )
-    {
-      walkers_per_rank = target_walkers_ / ranks + 1;
-      target_walkers_ = walkers_per_rank * ranks;
-      app_warning() << "TargetWalkers not divisible by number of ranks, TargetWalker increased to "
-         << target_walkers_ << '\n';
-    }
-    else
-      walkers_per_rank = target_walkers_ / ranks;
-  }
-  else
-  {
-    walkers_per_rank = qmcdriver_input_.get_walkers_per_rank();
-  }
+  QMCDriverNew::AdjustedWalkerCounts awc = adjustGlobalWalkerCount(myComm, dmcdriver_input_.get_target_walkers(), qmcdriver_input_.get_walkers_per_rank(), get_num_crowds());
 
-  // side effect updates Base::walkers_per_crowd_;
-  IndexType local_walkers = calc_default_local_walkers(walkers_per_rank);
-
-  if ( local_walkers * ranks != target_walkers_ )
-  {
-    target_walkers_ = local_walkers * ranks;
-    app_warning() << "Walkers per rank number of crowds, TargetWalker increased to "
-         << target_walkers_ << '\n';
-  }
+  // This code bothers me now, most of the code bases this on what is actually there.
+  population_.set_num_local_walkers(awc.walkers_per_rank);
+  population_.set_num_global_walkers(awc.global_walkers);
+  
   // side effect updates walkers_per_crowd_;
-  makeLocalWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+  makeLocalWalkers(awc.walkers_per_rank, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
   Base::process(node);
 }
 

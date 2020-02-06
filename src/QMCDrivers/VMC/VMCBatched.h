@@ -90,9 +90,13 @@ public:
                          std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
                          std::vector<std::unique_ptr<Crowd>>& crowds);
 
-private:
-  IndexType calc_default_local_walkers(IndexType walkers_per_rank);
+  /** transitional interface on the way to better walker count adjustment handling.
+   *  returns a closure taking walkers per rank and accomplishing what calc_default_local_walkers does.
+   */
+  auto getCDLW();
 
+  QMCDriverNew::AdjustedWalkerCounts calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const;
+private:
   int prevSteps;
   int prevStepsBetweenSamples;
   VMCDriverInput vmcdriver_input_;

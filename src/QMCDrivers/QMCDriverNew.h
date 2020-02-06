@@ -52,6 +52,12 @@ namespace qmcplusplus
 class HDFWalkerOutput;
 class TraceManager;
 
+namespace testing
+{
+class DMCBatchedTest;
+class VMCBatchedTest;
+}
+
 /** @ingroup QMCDrivers
  * @{
  * @brief QMCDriverNew Base class for Unified Drivers
@@ -111,7 +117,7 @@ public:
 
   // Do to a work-around currently in QMCDriverNew::QMCDriverNew this should never be true.
   // I'm leaving this because this is what should happen for vmc.
-  void checkNumCrowdsLTNumThreads();
+  void checkNumCrowdsLTNumThreads() const;
 
   /** Set the status of the QMCDriver
    * @param aname the root file name
@@ -151,6 +157,8 @@ public:
   ///set global offsets of the walkers
   void setWalkerOffsets();
 
+  std::vector<RandomGenerator_t*> RngCompatibility;
+
   inline std::vector<RandomGenerator_t*>& getRng() { return RngCompatibility; }
 
   // ///return the random generators
@@ -187,8 +195,23 @@ public:
   void putTraces(xmlNodePtr txml) {}
   void requestTraces(bool allow_traces) {}
   /** }@ */
-
+    
 protected:
+  struct AdjustedWalkerCounts
+  {
+    IndexType global_walkers;
+    IndexType walkers_per_rank;
+    int num_crowds;
+    int walkers_per_crowd;
+  };
+    
+  /** this is intended to become static
+   *
+   *  it cant be because calc_default_local_walkers is virtual
+   */
+  QMCDriverNew::AdjustedWalkerCounts adjustGlobalWalkerCount(Communicate* comm, IndexType desired_count, IndexType walkers_per_rank, int num_crowds);
+
+  
   /** The timers for the driver.
    *
    * This cleans up the driver constructor, and a reference to this structure 
@@ -216,9 +239,26 @@ protected:
 
   QMCDriverInput qmcdriver_input_;
 
-  std::vector<std::unique_ptr<Crowd>> crowds_;
+    /** @ingroup Driver mutable input values
+   *
+   *  they should be limited to values that can be changed from input
+   *  or are live state.
+   *  @{
+   */
+  int num_crowds_;
+
+  RealType max_disp_sq_;
+  ///the number of saved samples
+  IndexType target_samples_;
+
+  /// the number of blocks between recomptePsi
+  IndexType nBlocksBetweenRecompute;
+
   IndexType walkers_per_rank_;
   IndexType walkers_per_crowd_;
+  /**}@*/
+  
+  std::vector<std::unique_ptr<Crowd>> crowds_;
 
 
   std::string h5_file_root_;
@@ -301,22 +341,8 @@ protected:
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
 
-  ///temporary storage for random displacement
+  ///temporary storage for random displacemenyt
   ParticleSet::ParticlePos_t deltaR;
-
-  /** @ingroup Driver mutable input values
-   *
-   *  they should be limited to values that can be changed from input
-   *  or are live state.
-   *  @{
-   */
-  int num_crowds_;
-  RealType max_disp_sq_;
-  ///the number of saved samples
-  IndexType target_samples_;
-
-  /// the number of blocks between recomptePsi
-  IndexType nBlocksBetweenRecompute;
 
   // ///alternate method of setting QMC run parameters
   // IndexType nStepsBetweenSamples;
@@ -332,7 +358,6 @@ protected:
 
   /** }@ */
 
-  std::vector<RandomGenerator_t*> RngCompatibility;
 
   DriverTimers timers_;
 
@@ -350,6 +375,7 @@ public:
   */
   void makeLocalWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
 
+  virtual AdjustedWalkerCounts calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const = 0;
   int get_num_crowds() { return num_crowds_; }
   void set_num_crowds(int num_crowds, const std::string& reason);
   void set_walkers_per_rank(int walkers_per_rank, const std::string& reason);
@@ -382,8 +408,10 @@ private:
   SetNonLocalMoveHandler setNonLocalMoveHandler_;
 
   static void defaultSetNonLocalMoveHandler(QMCHamiltonian& gold_ham);
+
+  friend class qmcplusplus::testing::VMCBatchedTest;
+  friend class qmcplusplus::testing::DMCBatchedTest;
 };
-/**@}*/
 } // namespace qmcplusplus
 
 #endif

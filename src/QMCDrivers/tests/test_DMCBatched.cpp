@@ -42,28 +42,26 @@ public:
       dmc_batched.set_walkers_per_rank(walkers_per_rank, "testing");
       if (dtest_.num_crowds < 8)
         dmc_batched.set_num_crowds(Concurrency::maxThreads(), "Insufficient threads available to match test input");
-      DMCBatched::IndexType local_walkers       = dmc_batched.calc_default_local_walkers(walkers_per_rank);
-      QMCDriverNew::IndexType walkers_per_crowd = dmc_batched.get_walkers_per_crowd();
+      QMCDriverNew::AdjustedWalkerCounts awc{0,0,0,0};
+      awc.walkers_per_rank = walkers_per_rank;
+      awc.num_crowds = dtest_.num_crowds;
+      // what we're testing is whether the awc is transformed to a valid set of walker counts
+      awc = dmc_batched.calcDefaultLocalWalkers(awc);
 
       if (walkers_per_rank < dtest_.num_crowds)
       {
-        CHECK(walkers_per_crowd == 1);
-        CHECK(local_walkers == dtest_.num_crowds);
-        CHECK(dtest_.population.get_num_local_walkers() == dtest_.num_crowds);
-        CHECK(dtest_.population.get_num_global_walkers() == dtest_.num_crowds * dtest_.num_ranks);
+        CHECK(awc.walkers_per_crowd == 1);
+        CHECK(awc.num_crowds == awc.walkers_per_rank);
+        CHECK(awc.walkers_per_rank == awc.num_crowds);
       }
       else if (walkers_per_rank % dtest_.num_crowds)
       {
-        CHECK(walkers_per_crowd == walkers_per_rank / dtest_.num_crowds + 1);
-        CHECK(local_walkers == walkers_per_crowd * dtest_.num_crowds);
-        CHECK(dtest_.population.get_num_local_walkers() == walkers_per_crowd * dtest_.num_crowds);
-        CHECK(dtest_.population.get_num_global_walkers() == walkers_per_crowd * dtest_.num_crowds * dtest_.num_ranks);
+        CHECK(awc.walkers_per_crowd == walkers_per_rank / dtest_.num_crowds + 1);
+        CHECK(awc.walkers_per_rank == awc.walkers_per_crowd * awc.num_crowds);
       }
       else
       {
-        CHECK(local_walkers == walkers_per_rank);
-        CHECK(dtest_.population.get_num_local_walkers() == walkers_per_rank);
-        CHECK(dtest_.population.get_num_global_walkers() == walkers_per_rank * dtest_.num_ranks);
+        CHECK(awc.walkers_per_rank == awc.walkers_per_crowd * awc.num_crowds);
       }
     };
     testWRTWalkersPerRank(7);

@@ -39,18 +39,20 @@ public:
       local_walkers_fake_ = local_walkers_fake; }
   // Notice that this is a crap method in that we have to fake all the side effects of the
   // calculation in the child class.
-  IndexType calc_default_local_walkers(IndexType walkers_per_rank)
+  QMCDriverNew::AdjustedWalkerCounts calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const
   {
-    walkers_per_crowd_ = walkers_per_crowd_fake_;
-    return local_walkers_fake_;
+    awc.walkers_per_crowd = walkers_per_crowd_fake_;
+    awc.walkers_per_rank = local_walkers_fake_;
+    return awc;
   }
 
   void process(xmlNodePtr node)
   {
-    IndexType local_walkers = calc_default_local_walkers(qmcdriver_input_.get_walkers_per_rank());
-  
-  // side effect updates walkers_per_crowd_;
-    makeLocalWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+    AdjustedWalkerCounts awc = adjustGlobalWalkerCount(myComm, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(), get_num_crowds());
+    
+    // side effect updates walkers_per_crowd_;
+    // I purposely don't update the base class state variables for walkers here since I suspect they are unecessary state.
+    makeLocalWalkers(awc.walkers_per_rank, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 
     Base::process(node);
   }

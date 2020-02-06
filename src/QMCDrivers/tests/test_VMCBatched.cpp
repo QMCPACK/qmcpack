@@ -76,29 +76,45 @@ public:
       vmc_batched.set_walkers_per_rank(walkers_per_rank, "testing");
       if (num_crowds < 8)
         vmc_batched.set_num_crowds(Concurrency::maxThreads(), "Insufficient threads available to match test input");
-      VMCBatched::IndexType local_walkers       = vmc_batched.calc_default_local_walkers(walkers_per_rank);
-      QMCDriverNew::IndexType walkers_per_crowd = vmc_batched.get_walkers_per_crowd();
+      QMCDriverNew::AdjustedWalkerCounts awc{0,0,0,0};
+      awc.num_crowds = num_crowds;
+      awc.walkers_per_rank = walkers_per_rank;
+      awc = vmc_batched.calcDefaultLocalWalkers(awc);
 
       if (walkers_per_rank < num_crowds)
       {
-        REQUIRE(walkers_per_crowd == 1);
-        REQUIRE(local_walkers == num_crowds);
-        REQUIRE(population.get_num_local_walkers() == num_crowds);
-        REQUIRE(population.get_num_global_walkers() == num_crowds * num_ranks);
+        CHECK(awc.walkers_per_crowd == 1);
+        CHECK(awc.walkers_per_rank == awc.num_crowds);
       }
       else if (walkers_per_rank % num_crowds)
       {
-        REQUIRE(walkers_per_crowd == walkers_per_rank / num_crowds + 1);
-        REQUIRE(local_walkers == walkers_per_crowd * num_crowds);
-        REQUIRE(population.get_num_local_walkers() == walkers_per_crowd * num_crowds);
-        REQUIRE(population.get_num_global_walkers() == walkers_per_crowd * num_crowds * num_ranks);
+        CHECK(awc.walkers_per_crowd == walkers_per_rank / num_crowds + 1);
+        CHECK(awc.walkers_per_rank == awc.walkers_per_crowd * awc.num_crowds);
       }
       else
       {
-        REQUIRE(local_walkers == walkers_per_rank);
-        REQUIRE(population.get_num_local_walkers() == walkers_per_rank);
-        REQUIRE(population.get_num_global_walkers() == walkers_per_rank * num_ranks);
+        CHECK(awc.walkers_per_rank == awc.walkers_per_crowd * awc.num_crowds);
       }
+      // if (awc.walkers_per_rank < awc.num_crowds)
+      // {
+      //   REQUIRE(walkers_per_crowd == 1);
+      //   REQUIRE(local_walkers == num_crowds);
+      //   REQUIRE(population.get_num_local_walkers() == num_crowds);
+      //   REQUIRE(population.get_num_global_walkers() == num_crowds * num_ranks);
+      // }
+      // else if (walkers_per_rank % num_crowds)
+      // {
+      //   REQUIRE(walkers_per_crowd == walkers_per_rank / num_crowds + 1);
+      //   REQUIRE(local_walkers == walkers_per_crowd * num_crowds);
+      //   REQUIRE(population.get_num_local_walkers() == walkers_per_crowd * num_crowds);
+      //   REQUIRE(population.get_num_global_walkers() == walkers_per_crowd * num_crowds * num_ranks);
+      // }
+      // else
+      // {
+      //   REQUIRE(local_walkers == walkers_per_rank);
+      //   REQUIRE(population.get_num_local_walkers() == walkers_per_rank);
+      //   REQUIRE(population.get_num_global_walkers() == walkers_per_rank * num_ranks);
+      // }
     };
     testWRTWalkersPerRank(7);
     testWRTWalkersPerRank(31);
