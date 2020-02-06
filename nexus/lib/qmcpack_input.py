@@ -4714,58 +4714,58 @@ def generate_determinantset_old(type           = 'bspline',
        
 # REMOVE LATER
 
-      <determinantset name="LCAOBSet" type="MolecularOrbital" transform="yes" source="ion0">
-        <multideterminant optimize="no" spo_up="spo-up" spo_dn="spo-dn">
-          <detlist size="1" type="CSF" nca="0" ncb="0" nea="4" neb="4" nstates="27" cutoff="0.001">
-            <csf id="CSFcoeff_2" exctLvl="1" coeff="1.0" qchem_coeff="1.0" occ="222100000100000000000000000">
-              <det id="csf_2-0" coeff="0.707107" alpha="111100000000000000000000000" beta="111000000100000000000000000"/>
-              <det id="csf_2-1" coeff="0.707107" alpha="111000000100000000000000000" beta="111100000000000000000000000"/>
-            </csf>
-          </detlist>
-        </multideterminant>
-      </determinantset>
+#     <determinantset name="LCAOBSet" type="MolecularOrbital" transform="yes" source="ion0">
+#       <multideterminant optimize="no" spo_up="spo-up" spo_dn="spo-dn">
+#         <detlist size="1" type="CSF" nca="0" ncb="0" nea="4" neb="4" nstates="27" cutoff="0.001">
+#           <csf id="CSFcoeff_2" exctLvl="1" coeff="1.0" qchem_coeff="1.0" occ="222100000100000000000000000">
+#             <det id="csf_2-0" coeff="0.707107" alpha="111100000000000000000000000" beta="111000000100000000000000000"/>
+#             <det id="csf_2-1" coeff="0.707107" alpha="111000000100000000000000000" beta="111100000000000000000000000"/>
+#           </csf>
+#         </detlist>
+#       </multideterminant>
+#     </determinantset>
 
-      class determinantset(QIxml):
-          attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep','pbcimages']
-          elements   = ['basisset','sposet','slaterdeterminant','multideterminant','spline','backflow','cubicgrid']
-          h5tags     = ['twistindex','twistangle','rcut']
-          write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,cuspcorrection=yesno,usegrid=yesno)
-      #end class determinantset
+#     class determinantset(QIxml):
+#         attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep','pbcimages']
+#         elements   = ['basisset','sposet','slaterdeterminant','multideterminant','spline','backflow','cubicgrid']
+#         h5tags     = ['twistindex','twistangle','rcut']
+#         write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,cuspcorrection=yesno,usegrid=yesno)
+#     #end class determinantset
 
 
-      class slaterdeterminant(QIxml):
-          attributes = ['optimize']
-          elements   = ['determinant']
-          write_types = obj(optimize=yesno)
-      #end class slaterdeterminant
-      
-      class determinant(QIxml):
-          attributes = ['id','group','sposet','size','ref','spin','href','orbitals','spindataset','name','cuspinfo','debug']
-          elements   = ['occupation','coefficient']
-          identifier = 'id'
-          write_types = obj(debug=yesno)
-      #end class determinant
-      
-      class multideterminant(QIxml):
-          attributes = ['optimize','spo_up','spo_dn']
-          elements   = ['detlist']
-      #end class multideterminant
-      
-      class detlist(QIxml):
-          attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff','href']
-          elements   = ['ci','csf']
-      #end class detlist
-      
-      class csf(QIxml):
-          attributes = ['id','exctlvl','coeff','qchem_coeff','occ']
-          elements   = ['det']
-          attr_types = obj(occ=str)
-      #end class csf
-      
-      class det(QIxml):
-          attributes = ['id','coeff','alpha','beta']
-          attr_types = obj(alpha=str,beta=str)
-      #end class det
+#     class slaterdeterminant(QIxml):
+#         attributes = ['optimize']
+#         elements   = ['determinant']
+#         write_types = obj(optimize=yesno)
+#     #end class slaterdeterminant
+#     
+#     class determinant(QIxml):
+#         attributes = ['id','group','sposet','size','ref','spin','href','orbitals','spindataset','name','cuspinfo','debug']
+#         elements   = ['occupation','coefficient']
+#         identifier = 'id'
+#         write_types = obj(debug=yesno)
+#     #end class determinant
+#     
+#     class multideterminant(QIxml):
+#         attributes = ['optimize','spo_up','spo_dn']
+#         elements   = ['detlist']
+#     #end class multideterminant
+#     
+#     class detlist(QIxml):
+#         attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff','href']
+#         elements   = ['ci','csf']
+#     #end class detlist
+#     
+#     class csf(QIxml):
+#         attributes = ['id','exctlvl','coeff','qchem_coeff','occ']
+#         elements   = ['det']
+#         attr_types = obj(occ=str)
+#     #end class csf
+#     
+#     class det(QIxml):
+#         attributes = ['id','coeff','alpha','beta']
+#         attr_types = obj(alpha=str,beta=str)
+#     #end class det
 
 
 # REMOVE LATER
@@ -4788,7 +4788,7 @@ def generate_determinantset_old(type           = 'bspline',
                 source     = source,
                 multideterminant = multideterminant(
                     determinants = collection(
-                        size="1" type="CSF" nca="0" ncb="0" nea="4" neb="4" nstates="27" cutoff="0.001"
+                        #size="1" type="CSF" nca="0" ncb="0" nea="4" neb="4" nstates="27" cutoff="0.001"
                         detlist(
                             size = '1',
                             type = 'CSF',
@@ -4802,6 +4802,7 @@ def generate_determinantset_old(type           = 'bspline',
                         )
                     )
                 )
+            
             if twist!=None:
                 dset.twistnum = system.structure.select_twist(twist)
             elif twistnum!=None:
@@ -4811,6 +4812,9 @@ def generate_determinantset_old(type           = 'bspline',
             else:
                 dset.twistnum = None
             #end if
+
+            return dset
+
         elif spin_channel=='triplet':
             #det = dset.get('downdet')
         #end if
