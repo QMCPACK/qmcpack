@@ -26,12 +26,12 @@ CoulombPBCAA_CUDA::CoulombPBCAA_CUDA(ParticleSet& ref, bool active, bool cloning
     : CoulombPBCAA(ref, active, cloning),
       PtclRef(ref),
       SumGPU("CoulombPBCAATemp::SumGPU"),
+      L("CoulombPBCAATemp::L"),
+      Linv("CoulombPBCAATemp::Linv"),
       kpointsGPU("CoulombPBCAATemp::kpointsGPU"),
       kshellGPU("CoulombPBCAATemp::kshellGPU"),
       FkGPU("CoulombPBCAATemp::FkGPU"),
-      RhokGPU("CoulombPBCAATemp::RhokGPU"),
-      L("CoulombPBCAATemp::L"),
-      Linv("CoulombPBCAATemp::Linv")
+      RhokGPU("CoulombPBCAATemp::RhokGPU")
 {
 #ifdef QMC_CUDA
   gpu::host_vector<CUDA_PRECISION_FULL> LHost(9), LinvHost(9);

@@ -17,10 +17,6 @@
 #include "QMCHamiltonians/MPC_CUDA.h"
 #include "QMCHamiltonians/CudaCoulomb.h"
 #include "Particle/MCWalkerConfiguration.h"
-// #include "Lattice/ParticleBConds.h"
-// #include "OhmmsPETE/OhmmsArray.h"
-// #include "OhmmsData/AttributeSet.h"
-// #include "Particle/DistanceTableData.h"
 #include "QMCDrivers/WalkerProperties.h"
 
 namespace qmcplusplus
