@@ -108,11 +108,20 @@ SET(QMCDRIVERS ${QMCDRIVERS}
 
 
 ####################################
-# create libqmc 
+# create libqmcdriver
 ####################################
 ADD_LIBRARY(qmcdriver ${QMCDRIVERS})
 ADD_LIBRARY(qmcdriver_unit ${QMCDRIVERS})
 USE_FAKE_RNG(qmcdriver_unit)
+
+TARGET_LINK_LIBRARIES(qmcdriver PUBLIC qmcham)
+TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcham_unit)
+
+IF(BUILD_LMYENGINE_INTERFACE)
+  TARGET_LINK_LIBRARIES(qmcdriver PUBLIC formic_utils)
+  TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC formic_utils)
+ENDIF()
+
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcdriver STATIC ${QMCDRIVERS})
 #ELSE(QMC_BUILD_STATIC)

@@ -95,9 +95,6 @@
 /* Define if sincos function exists */
 #cmakedefine HAVE_SINCOS @HAVE_SINCOS@
 
-/* Define if einspline lib exists */
-#cmakedefine HAVE_EINSPLINE @HAVE_EINSPLINE@
-
 /* Define if external einspline is found */
 #cmakedefine HAVE_EINSPLINE_EXT @HAVE_EINSPLINE_EXT@
 

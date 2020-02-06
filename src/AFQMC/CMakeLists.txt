@@ -1,4 +1,3 @@
-
 SET(AFQMC_DEBUG 3)
 
 #-------------------------------------------------------------------
@@ -63,13 +62,14 @@ ENDIF(ENABLE_CUDA)
 IF(ENABLE_CUDA)
   CUDA_ADD_LIBRARY(afqmc ${AFQMC_SRCS})
   CUDA_ADD_CUBLAS_TO_TARGET(afqmc)
-  target_link_libraries( afqmc ${CUDA_cusparse_LIBRARY} )
-  target_link_libraries( afqmc ${CUDA_cusolver_LIBRARY} )
-  target_link_libraries( afqmc ${CUDA_curand_LIBRARY} )
+  TARGET_LINK_LIBRARIES( afqmc PRIVATE ${CUDA_cusparse_LIBRARY} )
+  TARGET_LINK_LIBRARIES( afqmc PRIVATE ${CUDA_cusolver_LIBRARY} )
+  TARGET_LINK_LIBRARIES( afqmc PRIVATE ${CUDA_curand_LIBRARY} )
 ELSE(ENABLE_CUDA)
   ADD_LIBRARY(afqmc ${AFQMC_SRCS})
 ENDIF(ENABLE_CUDA)
 
+TARGET_LINK_LIBRARIES(afqmc PUBLIC qmcutil)
 
 IF (BUILD_UNIT_TESTS)
   INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)

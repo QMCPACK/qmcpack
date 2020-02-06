@@ -70,20 +70,6 @@ FUNCTION(MAYBE_SYMLINK SRC_DIR DST_DIR)
 ENDFUNCTION()
 
 
-# Macro to add the dependencies and libraries to an executable
-MACRO( ADD_QMC_EXE_DEP EXE )
-    # Add the package dependencies
-    TARGET_LINK_LIBRARIES(${EXE} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil)
-    FOREACH(l ${QMC_UTIL_LIBS})
-        TARGET_LINK_LIBRARIES(${EXE} ${l})
-    ENDFOREACH(l ${QMC_UTIL_LIBS})
-    IF(MPI_LIBRARY)
-        TARGET_LINK_LIBRARIES(${EXE} ${MPI_LIBRARY})
-    ENDIF(MPI_LIBRARY)
-ENDMACRO()
-
-
-
 # Macro to create the test name
 MACRO( CREATE_TEST_NAME TEST ${ARGN} )
     SET( TESTNAME "${TEST}" )
