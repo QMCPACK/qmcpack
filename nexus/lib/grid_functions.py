@@ -715,6 +715,24 @@ class GBase(PlotHandler):
         initialized = (bool,False),
         )
 
+    vlogger = None
+
+    @staticmethod
+    def reset_vlog():
+        GBase.vlogger = None
+    #end def reset_vlog
+
+    @staticmethod
+    def set_vlog(vlog):
+        GBase.vlogger = vlog
+    #end def set_vlog
+
+    def vlog(self,*args,**kwargs):
+        if GBase.vlogger is not None:
+            GBase.vlogger(*args,**kwargs)
+        #end if
+    #end def vlog
+
 
     def __init__(self,*args,**kwargs):
         self.reset()
@@ -3598,7 +3616,9 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
 
 
     # test needed
-    def read_from_points(self,points,values,axes,tol=1e-6):
+    def read_from_points(self,points,values,axes,tol=1e-6,average=False):
+        self.vlog('Reading grid function values from scattered data.')
+
         # check data types and shapes
         d = self.ensure_array(
             points = points,
@@ -3629,6 +3649,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         #end for
 
         # make the points rectilinear
+        self.vlog('Transforming points to unit coords',n=1,time=True)
         rpoints = np.dot(points,np.linalg.inv(axes))
 
         # search for layers in each dimension
@@ -3688,11 +3709,13 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         #end def index_by_layer
 
         # create a grid consistent with the detected layer separations
+        self.vlog('Initializing point index array',n=1,time=True)
         grid_shape  = np.empty((D, ),dtype=int  )
         grid_axes   = np.zeros((D,D),dtype=float)
         grid_corner = np.empty((D, ),dtype=float)
         ipoints     = np.empty((N,D),dtype=int)
         for d in range(D):
+            self.vlog('Indexing points along dim {}'.format(d),n=2,time=True)
             ixpoints,xmin,xmax = index_by_layer(rpoints[:,d],tol)
             grid_shape[d]  = ixpoints.max()+1
             grid_axes[d,d] = xmax-xmin
@@ -3703,6 +3726,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         grid_corner = np.dot(grid_corner,axes)
         grid_bconds = D*('o',) # assumed for now
 
+        self.vlog('Constructing regular bounding grid',n=1,time=True)
         grid = self.grid_class(
             shape    = grid_shape,
             axes     = grid_axes,
@@ -3711,23 +3735,48 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
             centered = False,
             )
         
+        self.vlog('Checking grid point mapping',n=1,time=True)
         # check that the generated grid contains the inputted points
         ipflat = grid.flat_indices(ipoints)
         dmax = np.linalg.norm(points-grid.points[ipflat],axis=1).max()
         if dmax>tol:
             self.error('Generated grid points do not match those read in.\nMaximum deviation: {}\nTolerance        : {}'.format(dmax,tol))
         #end if
+        # count number of times each grid point is mapped to
+        point_counts = np.bincount(ipflat,minlength=grid.npoints)
+        # if not averaging, check for one-to-one mapping
+        max_count = point_counts.max()
+        if not average and max_count>1:
+            self.error('Mapping to grid points is not one-to-one.\nMax no. of read points mapped to a grid point: {}'.format(max_count))
+        #end if
 
         # map the inputted values onto the generated grid
+        self.vlog('Mapping data values onto grid',n=1,time=True)
         grid_values = np.zeros((grid.npoints,values.shape[1]),dtype=float)
-        grid_values[ipflat] = values
+        if not average or max_count==1:
+            grid_values[ipflat] = values
+        else:
+            self.vlog('Averaging multi-valued points',n=2,time=True)
+            for i,v in zip(ipflat,values):
+                grid_values[i] += v
+            #end for
+            for i,c in enumerate(point_counts):
+                if c>1:
+                    grid_values[i] /= c
+                #end if
+            #end for
+        #end if
 
         # initialize the GridFunction object
+        self.vlog('Constructing GridFunction object',n=1,time=True)
         self.reset()
         self.initialize(
             grid   = grid,
             values = grid_values,
+            copy   = False,
             )
+
+        self.vlog('Read complete',n=1,time=True)
     #end def read_from_points
 
 #end class ParallelotopeGridFunction
@@ -3897,12 +3946,12 @@ def parallelotope_grid_function(
         gf = ParallelotopeGridFunction(**kwargs)
     else:
         required = set(('points','values','axes'))
-        optional = set(('tol'))
+        optional = set(('tol','average'))
         present  = set(kwargs.keys())
         if len(required-present)>0:
             error('Grid function cannot be created.\nWhen "points" is provided, "axes" and "values" must also be given.\nInputs provided: {}'.format(sorted(present)),loc)
         elif len(present-required-optional)>0:
-            error('Grid function cannot be created.\nUnrecognized inputs provided.\nUnrecognized inputs: {}\nValid options are: {}'.format(sorted(present-required-optional),sorted(required+optional)))
+            error('Grid function cannot be created.\nUnrecognized inputs provided.\nUnrecognized inputs: {}\nValid options are: {}'.format(sorted(present-required-optional),sorted(required|optional)))
         #end if
         gf = ParallelotopeGridFunction()
         gf.read_from_points(**kwargs)

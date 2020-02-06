@@ -4,6 +4,7 @@
 import os
 import inspect
 from time import clock
+from copy import deepcopy
 
 # Non-standard Python imports
 import numpy as np
@@ -11,10 +12,13 @@ import matplotlib.pyplot as plt
 import h5py
 
 # Nexus imports
+import memory
 from unit_converter import convert
 from generic import obj
 from developer import DevBase,log,error,ci
 from numerics import simstats
+from grid_functions import grid_function
+from structure import Structure
 
 
 
@@ -30,18 +34,32 @@ class VLog(DevBase):
     def __init__(self):
         self.tstart    = clock()
         self.tlast     = self.tstart
+        self.mstart    = memory.resident(children=True)
+        self.mlast     = self.mstart
         self.verbosity = self.verbosity_levels.low
         self.indent    = 0
     #end def __init__
 
-    def __call__(self,msg,level='low',n=0,time=False):
+    def __call__(self,msg,level='low',n=0,time=False,mem=False,width=75):
         if self.verbosity==self.verbosity_levels.none:
             return
         elif self.verbosity >= self.verbosity_levels[level]:
-            if time:
-                tnow = clock()
-                msg += '  (elapsed {:8.4f}, total {:8.4f})'.format(tnow-self.tlast,tnow-self.tstart)
-                self.tlast = tnow
+            if mem or time:
+                npad = max(0,width-2*(n+self.indent)-len(msg)-36)
+                if npad>0:
+                    msg += npad*' '
+                #end if
+                if mem:
+                    dm = 1e6 # MB
+                    mnow = memory.resident(children=True)
+                    msg += '  (mem add {:6.2f}, tot {:6.2f})'.format((mnow-self.mlast)/dm,(mnow-self.mstart)/dm)
+                    self.mlast = mnow
+                #end if
+                if time:
+                    tnow = clock()
+                    msg += '  (t elap {:7.3f}, tot {:7.3f})'.format(tnow-self.tlast,tnow-self.tstart)
+                    self.tlast = tnow
+                #end if
             #end if
             log(msg,n=n+self.indent)
         #end if
@@ -84,59 +102,345 @@ def set_verbosity(level):
 #end def set_verbosity
 
 
+class AttributeProperties(DevBase):
+    def __init__(self,**kwargs):
+        self.assigned   = set(kwargs.keys())
+        self.name       = kwargs.pop('name'      , None )
+        self.dest       = kwargs.pop('dest'      , None )
+        self.type       = kwargs.pop('type'      , None )
+        self.default    = kwargs.pop('default'   , None )
+        self.no_default = kwargs.pop('no_default', False)
+        self.deepcopy   = kwargs.pop('deepcopy'  , False)
+        self.required   = kwargs.pop('required'  , False)
+        if len(kwargs)>0:
+            self.error('Invalid init variable attributes received.\nInvalid attributes:\n{}\nThis is a developer error.'.format(obj(kwargs)))
+        #end if
+    #end def __init__
+#end class AttributeProperties
 
-class Observable(DevBase):
 
-    defaults = obj(
-        info = obj,
-        )
 
-    info_defaults = obj()
+class DefinedAttributeBase(DevBase):
+
+    @classmethod
+    def set_unassigned_default(cls,default):
+        cls.unassigned_default = default
+    #end def set_unassigned_default
+
+    @classmethod
+    def define_attributes(cls,*other_cls,**attribute_properties):
+        if len(other_cls)==1 and issubclass(other_cls[0],DefinedAttributeBase):
+            cls.obtain_attributes(other_cls[0])
+        #end if
+        if cls.class_has('attribute_definitions'):
+            attr_defs = cls.attribute_definitions
+        else:
+            attr_defs = obj()
+            cls.class_set(
+                attribute_definitions = attr_defs
+                )
+        #end if
+        for name,attr_props in attribute_properties.items():
+            attr_props = AttributeProperties(**attr_props)
+            attr_props.name = name
+            if name not in attr_defs:
+                attr_defs[name] = attr_props
+            else:
+                p = attr_defs[name]
+                for n in attr_props.assigned:
+                    p[n] = attr_props[n]
+                #end for
+            #end if
+        #end for
+        if cls.class_has('unassigned_default'):
+            for p in attr_defs:
+                if 'default' not in p.assigned:
+                    p.default = cls.unassigned_default
+                #end if
+            #end for
+        #end if
+        required_attributes = set()
+        deepcopy_attributes = set()
+        typed_attributes    = set()
+        toplevel_attributes = set()
+        sublevel_attributes = set()
+        for name,props in attr_defs.items():
+            if props.required:
+                required_attributes.add(name)
+            #end if
+            if props.deepcopy:
+                deepcopy_attributes.add(name)
+            #end if
+            if props.type is not None:
+                typed_attributes.add(name)
+            #end if
+            if props.dest is None:
+                toplevel_attributes.add(name)
+            else:
+                sublevel_attributes.add(name)
+            #end if
+        #end for
+        cls.class_set(
+            required_attributes = required_attributes,
+            deepcopy_attributes = deepcopy_attributes,
+            typed_attributes    = typed_attributes,
+            toplevel_attributes = toplevel_attributes,
+            sublevel_attributes = sublevel_attributes,
+            )
+    #end def define_attributes
+
+
+    @classmethod
+    def obtain_attributes(cls,super_cls):
+        cls.class_set(
+            attribute_definitions = super_cls.attribute_definitions.copy()
+            )
+    #end def obtain_attributes
+
 
     def __init__(self,**values):
-        self.set_defaults()
-        self.set_values(**values)
+        if len(values)>0:
+            self.set_default_attributes()
+            self.set_attributes(**values)
+        #end if
     #end def __init__
 
 
-    def set_defaults(self):
+    def initialize(self,**values):
+        self.set_default_attributes()
+        if len(values)>0:
+            self.set_attributes(**values)
+        #end if
+    #end def initialize
+
+
+    def set_default_attributes(self):
         cls = self.__class__
-        for name,value in cls.defaults.items():
-            if inspect.isclass(value):
-                value = value()
-            #end if
-            self[name] = value
+        props = cls.attribute_definitions
+        for name in cls.toplevel_attributes:
+            self._set_default_attribute(name,props[name])
         #end for
-        info = self.info
-        for name,value in cls.info_defaults.items():
-            if inspect.isclass(value):
-                value = value()
-            #end if
-            info[name] = value
+        for name in cls.sublevel_attributes:
+            self._set_default_attribute(name,props[name])
         #end for
-    #end def set_defaults
+    #end def set_default_attributes
 
 
-    def set_values(self,**values):
+    def set_attributes(self,**values):
         cls = self.__class__
         value_names = set(values.keys())
-        names       = set(cls.defaults.keys()) & value_names
-        info_names  = set(cls.info_defaults.keys()) & value_names
-        invalid     = value_names - names - info_names
+        attr_names  = set(cls.attribute_definitions.keys())
+        invalid     = value_names - attr_names
         if len(invalid)>0:
             v = obj()
             v.transfer_from(values,invalid)
-            self.error('Attempted to set unrecognized values\nUnrecognized values:\n{}'.format(v))
+            self.error('Attempted to set unrecognized attributes\nUnrecognized attributes:\n{}'.format(v))
         #end if
-        for name in names:
-            self[name] = values[name]
+        missing = set(cls.required_attributes) - value_names
+        if len(missing)>0:
+            msg = ''
+            for n in sorted(missing):
+                msg += '\n  '+n
+            #end for
+            self.error('Required attributes are missing.\nPlease provide the following attributes during initialization:{}'.format(msg))
+        #end if
+        props = cls.attribute_definitions
+        toplevel_names = value_names & cls.toplevel_attributes
+        for name in toplevel_names:
+            self._set_attribute(self,name,values[name],props[name])
         #end for
-        info = self.info
-        for name in info_names:
-            info[name] = values[name]
+        sublevel_names = value_names - toplevel_names
+        for name in sublevel_names:
+            p = props[name]
+            if p.dest not in self:
+                self.error('Attribute destination "{}" does not exist at the top level.\nThis is a developer error.'.format(p.dest))
+            #end if
+            self._set_attribute(self[p.dest],name,values[name],p)
         #end for
-    #end def set_values
+    #end def set_attributes
+
+
+    def check_attributes(self,exit=False):
+        msg = ''
+        cls = self.__class__
+        a = obj()
+        for name in cls.toplevel_attributes:
+            if name in self:
+                a[name] = self[name]
+            #end if
+        #end for
+        props = cls.attribute_definitions
+        for name in cls.sublevel_attributes:
+            p = props[name]
+            if p.dest in self:
+                sub = self[p.dest]
+                if name in sub:
+                    a[name] = sub[name]
+                #end if
+            #end if
+        #end for
+        present = set(a.keys())
+        missing = cls.required_attributes - present
+        if len(missing)>0:
+            m = ''
+            for n in sorted(missing):
+                m += '\n  '+n
+            #end for
+            msg += 'Required attributes are missing.\nPlease provide the following attributes during initialization:{}\n'.format(m)
+        #end if
+        for name in cls.typed_attributes:
+            if name in a:
+                p = props[name]
+                v = a[name]
+                if not isinstance(v,p.type):
+                    msg += 'Attribute "{}" has invalid type.\n  Type expected: {}\n  Type present: {}\n'.format(name,p.type.__name__,v.__class__.__name__)
+                #end if
+            #end if
+        #end for
+        valid = len(msg)==0
+        if not valid and exit:
+            self.error(msg)
+        #end if
+        return valid
+    #end def check_attributes
+
+
+    def check_unassigned(self,value):
+        cls = self.__class__
+        unassigned = cls.class_has('unassigned_default') and value==cls.unassigned_default
+        return unassigned
+    #end def check_unassigned
+
+
+    def set_attribute(self,name,value):
+        cls = self.__class__
+        props = cls.attribute_definitions
+        if name not in props:
+            self.error('Cannot set unrecognized attribute "{}".\nValid options are: {}'.format(name,sorted(props.keys())))
+        #end if
+        p = props[name]
+        if p.type is not None and not isinstance(value,p.type):
+            self.error('Cannot set attribute "{}".\nExpected value with type: {}\nReceived value with type: {}'.format(name,p.type.__name__,value.__class__.__name__))
+        #end if
+        if p.deepcopy:
+            value = deepcopy(value)
+        #end if
+        if p.dest is None:
+            self[name] = value
+        elif p.dest not in self:
+            self.error('Cannot set attribute "{}".\nAttribute destination "{}" does not exist.'.format(name,p.dest))
+        else:
+            self[p.dest][name] = value
+        #end if
+    #end def set_attribute
+
+
+    def get_attribute(self,name,present=False,assigned=False):
+        require_present  = present
+        require_assigned = assigned
+        require_present  |= require_assigned
+        cls = self.__class__
+        props = cls.attribute_definitions
+        if name not in props:
+            self.error('Cannot get unrecognized attribute "{}".\nValid options are: {}'.format(name,sorted(props.keys())))
+        #end if
+        p = props[name]
+        present = False
+        value   = None
+        if p.dest is None:
+            if name in self:
+                present = True
+                value   = self[name]
+            #end if
+        elif p.dest in self and name in self[p.dest]:
+            present = True
+            value   = self[p.dest][name]
+        #end if
+        if require_present:
+            unassigned = self.check_unassigned(value)
+            if not present or (unassigned and require_assigned):
+                extra = ''
+                if p.dest is not None:
+                    extra = ' at location "{}"'.format(p.dest)
+                #end if
+                if not present:
+                    msg = 'Cannot get attribute "{}"{}.\nAttribute does not exist.'.format(name,extra)
+                else:
+                    msg = 'Cannot get attribute "{}"{}.\nAttribute has not been assigned.'.format(name,extra)
+                #end if
+                self.error(msg)
+            #end if
+        #end if
+        return value
+    #end def get_attribute
+
+
+    def _set_default_attribute(self,name,props):
+        p = props
+        if p.no_default:
+            return
+        #end if
+        value = p.default
+        if inspect.isclass(value) or inspect.isfunction(value):
+            value = value()
+        #end if
+        if p.dest is None:
+            self[name] = value
+        elif p.dest not in self:
+            self.error('Attribute destination "{}" does not exist at the top level.\nThis is a developer error.'.format(p.dest))
+        else:
+            self[p.dest][name] = value
+        #end if
+    #end def _set_default_attribute
+
+
+    def _set_attribute(self,container,name,value,props):
+        p = props
+        if p.type is not None and not isinstance(value,p.type):
+            self.error('Cannot set attribute "{}".\nExpected value with type: {}\nReceived value with type: {}'.format(name,p.type.__name__,value.__class__.__name__))
+        #end if
+        if p.deepcopy:
+            value = deepcopy(value)
+        #end if
+        container[name] = value
+    #end def _set_attribute
+
+#end class DefinedAttributeBase
+
+
+
+class Observable(DefinedAttributeBase):
+    def __init__(self,**values):
+        self.initialize(**values)
+    #end def __init__
+
+    def initialize(self,**values):
+        DefinedAttributeBase.initialize(self,**values)
+        if len(values)>0:
+            self.info.initialized = True
+        #end if
+    #end def initialize
 #end class Observable
+
+Observable.set_unassigned_default(None)
+
+Observable.define_attributes(
+    info = obj( 
+        type    = obj, 
+        default = obj,
+        ),
+    initialized = obj(
+        dest    = 'info',
+        type    = bool,
+        default = False,
+        ),
+    structure = obj(
+        dest     = 'info',
+        type     = Structure,
+        default  = None,
+        deepcopy = True,
+        ),
+    )
 
 
 
@@ -241,9 +545,132 @@ def read_eshdf_nofk_data(filename,Ef):
 
 class MomentumDistribution(Observable):
     spins = ('u','d')
+    
+    def get_raw_data(self):
+        data = self.get_attribute('raw',assigned=True)
+        if len(data)==0:
+            self.error('Raw n(k) data is not present.')
+        #end if
+        return data
+    #end def get_raw_data
+
+
+    def filter_raw_data(self,filter_tol=1e-5,store=True):
+        vlog('Filtering raw n(k) data with tolerance {:6.4e}'.format(filter_tol))
+        prior_tol = self.get_attribute('raw_filter_tol',present=True)
+        data  = self.get_raw_data()
+        if prior_tol is not None and prior_tol<=filter_tol:
+            vlog('Filtering applied previously with tolerance {:6.4e}, skipping.'.format(prior_tol))
+            return data
+        #end if
+        k     = data.first().k
+        km    = np.linalg.norm(k,axis=1)
+        kmax  = 0.
+        order = km.argsort()
+        for s,sdata in data.items():
+            vlog('Finding kmax for {} data'.format(s),n=1,time=True)
+            nk = sdata.nk
+            for n in reversed(order):
+                if nk[n]>filter_tol:
+                    break
+                #end if
+            #end for
+            kmax = max(km[n],kmax)
+        #end for
+        vlog('Original kmax: {:8.4f}'.format(km.max()),n=2)
+        vlog('Filtered kmax: {:8.4f}'.format(kmax),n=2)
+        vlog('Applying kmax filter to data',n=1,time=True)
+        keep = km<kmax
+        k = k[keep]
+        vlog('size before filter: {}'.format(len(keep)),n=2)
+        vlog('size  after filter: {}'.format(len(k)),n=2)
+        vlog('fraction: {:6.4e}'.format(len(k)/len(keep)),n=2)
+        if store:
+            new_data = data
+            self.set_attribute('raw_filter_tol',filter_tol)
+        else:
+            new_data = obj()
+        #end if
+        for s in data.keys():
+            if s not in new_data:
+                new_data[s] = obj()
+            #end if
+            sdata    = new_data[s]
+            sdata.k  = k
+            sdata.nk = data[s].nk[keep]
+        #end for
+        if store:
+            vlog('Overwriting original raw n(k) with filtered data',n=1)
+        #end if
+        vlog('Filtering complete',n=1,time=True)
+        return new_data
+    #end def filter_raw_data
+
+
+    def map_raw_data_onto_grid(self,unfold=False,filter_tol=1e-5):
+        vlog('\nMapping raw n(k) data onto regular grid')
+        data = self.get_raw_data()
+        structure = self.get_attribute('structure',assigned=unfold)
+        if structure is not None:
+            kaxes = structure.kaxes
+        else:
+            kaxes = self.get_attribute('kaxes',required=True)
+        #end if
+        if filter_tol is not None:
+            vlog.increment()
+            data = self.filter_raw_data(filter_tol,store=False)
+            vlog.decrement()
+        #end if
+        if not unfold:
+            for s,sdata in data.items():
+                vlog('Mapping {} data onto grid'.format(s),n=1,time=True)
+                self[s] = grid_function(
+                    points = k,
+                    values = nk,
+                    axes   = kaxes,
+                    )
+            #end for
+        else:
+            rotations = structure.point_group_operations()
+            for s,sdata in data.items():
+                if s=='d' and 'u' in data and id(sdata)==id(data.u):
+                    continue
+                #end if
+                vlog('Unfolding {} data'.format(s),n=1,time=True)
+                k   = []
+                nk  = []
+                ks  = sdata.k
+                nks = sdata.nk
+                for n,R in enumerate(rotations):
+                    vlog('Processing rotation {:<3}'.format(n),n=2,mem=True)
+                    k.extend(np.dot(ks,R))
+                    nk.extend(nks)
+                #end for
+                k  = np.array(k ,dtype=float)
+                nk = np.array(nk,dtype=float)
+                vlog('Unfolding finished',n=2,time=True)
+
+                vlog('Mapping {} data onto grid'.format(s),n=1,time=True)
+                vlog.increment(2)
+                self[s] = grid_function(
+                    points  = k,
+                    values  = nk,
+                    axes    = kaxes,
+                    average = True,
+                    )
+                vlog.decrement(2)
+            #end for
+        #end if
+        if 'd' not in self and 'u' in self:
+            self.d = self.u
+        #end if
+        vlog('Mapping complete',n=1,time=True)
+        vlog('Current memory: ',n=1,mem=True)
+    #end def map_raw_data_onto_grid
+
 
     def plot_radial_raw(self,quants='all',kmax=None,fmt='b.',fig=True,show=True):
-        data = self.raw
+        data = self.get_raw_data()
         if quants=='all':
             quants = list(data.keys())
         #end if
@@ -281,7 +708,7 @@ class MomentumDistribution(Observable):
 
 
     def plot_directional_raw(self,kdir,quants='all',kmax=None,fmt='b.',fig=True,show=True,reflect=False):
-        data = self.raw
+        data = self.get_raw_data()
         kdir = np.array(kdir,dtype=float)
         kdir /= np.linalg.norm(kdir)
         if quants=='all':
@@ -332,18 +759,45 @@ class MomentumDistribution(Observable):
     #end def plot_directional_raw
 #end class MomentumDistribution
 
+MomentumDistribution.define_attributes(
+    Observable,
+    raw = obj(
+        type       = obj,
+        no_default = True,
+        ),
+    u = obj(
+        type       = obj,
+        no_default = True,
+        ),
+    d = obj(
+        type       = obj,
+        no_default = True,
+        ),
+    tot = obj(
+        type       = obj,
+        no_default = True,
+        ),
+    pol = obj(
+        type       = obj,
+        no_default = True,
+        ),
+    kaxes = obj(
+        dest       = 'info',
+        type       = np.ndarray,
+        no_default = True,
+        ),
+    raw_filter_tol = obj(
+        dest       = 'info',
+        type       = float,
+        default    = None,
+        )
+    )
+
 
 
 class MomentumDistributionDFT(MomentumDistribution):
 
-    info_defaults = obj(
-        E_fermi = None,
-        **MomentumDistribution.defaults
-        )
-
-
-    def read_eshdf(self,filepath,E_fermi=None,savefile=None,grid=True):
-        from grid_functions import grid_function
+    def read_eshdf(self,filepath,E_fermi=None,savefile=None,unfold=False,grid=True):
 
         save = False
         if savefile is not None:
@@ -397,20 +851,12 @@ class MomentumDistributionDFT(MomentumDistribution):
             k  = spin_data.u.k,
             nk = spin_data.u.nk + spin_data.d.nk,
             )
-        self.raw = spin_data
+
+        self.set_attribute('raw'  ,spin_data)
+        self.set_attribute('kaxes',d.kaxes  )
 
         if grid:
-            for s,sdata in spin_data.items():
-                vlog('Mapping spin {} data onto grid'.format(si),n=1,time=True)
-                self[s] = grid_function(
-                    points = sdata.k,
-                    values = sdata.nk,
-                    axes   = d.kaxes,
-                    )
-            #end for
-            if 'd' not in self:
-                self.d = self.u
-            #end if
+            self.map_raw_data_onto_grid(unfold=unfold)
         #end if
 
         if save:
@@ -423,6 +869,14 @@ class MomentumDistributionDFT(MomentumDistribution):
     #end def read_eshdf
 #end class MomentumDistributionDFT
 
+MomentumDistributionDFT.define_attributes(
+    MomentumDistribution,
+    E_fermi = obj(
+        dest    = 'info',
+        type    = float,
+        default = None,
+        )
+    )
 
 
 class MomentumDistributionQMC(MomentumDistribution):
@@ -468,13 +922,14 @@ class MomentumDistributionQMC(MomentumDistribution):
             nke.extend(nk_error)
         #end for
         vlog('Converting concatenated lists to arrays',n=1,time=True)
-        self.raw = obj(
+        data = obj(
             tot = obj(
                 k      = np.array(k),
                 nk     = np.array(nk),
                 nk_err = np.array(nke),
                 )
             )
+        self.set_attribute('raw',data)
 
         if save:
             vlog('Saving to file {}'.format(savefile),n=1)
