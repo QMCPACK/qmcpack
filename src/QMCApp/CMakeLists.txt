@@ -26,13 +26,8 @@ PROJECT(qmcapp)
 # create libqmc
 ####################################
 SET(QMCAPPDIR
-    ParticleSetPool.cpp
-    WaveFunctionPool.cpp
-    HamiltonianPool.cpp
-    InitMolecularSystem.cpp
     QMCAppBase.cpp
     QMCMainState.cpp
-    QMCDriverFactory.cpp
     QMCMain.cpp
     CoupledMC.cpp
 )

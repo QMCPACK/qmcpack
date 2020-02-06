@@ -22,7 +22,7 @@
 #include <memory>
 #include "QMCDrivers/QMCDriver.h"
 #include "Optimize/OptimizeBase.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "Numerics/LinearFit.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
