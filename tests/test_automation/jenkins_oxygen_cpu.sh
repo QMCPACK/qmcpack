@@ -130,7 +130,7 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1/dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
+cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
 if [[ $? -ne 0 ]] ; then
   rm -rf /dev/shm/${BUILD_TAG}-build
   rm -rf /dev/shm/${BUILD_TAG}-src
