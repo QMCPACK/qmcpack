@@ -18,6 +18,7 @@
     
     
 SET(HAMSRCS
+  HamiltonianPool.cpp
   ACForce.cpp
   OperatorBase.cpp
   QMCHamiltonian.cpp

@@ -19,7 +19,7 @@
 #define QMCPLUSPLUS_WAVEFUNCTIONTEST_H
 
 #include "QMCDrivers/QMCDriver.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 namespace qmcplusplus
 {
 /** Information for output of relative error in wavefunction derivatives

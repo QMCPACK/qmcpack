@@ -15,8 +15,8 @@
 
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "QMCApp/ParticleSetPool.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "Particle/ParticleSetPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 
 
 #include <stdio.h>

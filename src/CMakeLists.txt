@@ -199,6 +199,8 @@ ENDIF()
   # create libqmcbase
   ####################################
   SET(PARTICLE ${PARTICLE}
+    Particle/InitMolecularSystem.cpp
+    Particle/ParticleSetPool.cpp
     Particle/ParticleSet.cpp
     Particle/VirtualParticleSet.cpp
     Particle/ParticleSet.BC.cpp

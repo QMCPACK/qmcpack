@@ -14,7 +14,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"

@@ -17,7 +17,7 @@
 
 #include "Platforms/sysutil.h"
 #include "QMCDrivers/CloneManager.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include "Utilities/IteratorUtility.h"

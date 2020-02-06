@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_DMCFACTORYNEW_H
 #define QMCPLUSPLUS_DMCFACTORYNEW_H
 #include "QMCDrivers/QMCDriverInterface.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
