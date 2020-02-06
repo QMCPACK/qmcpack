@@ -140,7 +140,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   const int ee_table_id = elec->addTable(*elec, DT_AOS);
 #endif
 
-  const DistanceTableData& dii(elec->getDistTable(ee_table_id));
+  const auto& dii(elec->getDistTable(ee_table_id));
   elec->update(); // distance table evaluation here
 
   // Make a PairCorrEstimator, call put() to set up internals

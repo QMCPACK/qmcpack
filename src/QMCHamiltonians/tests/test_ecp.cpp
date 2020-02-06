@@ -29,7 +29,6 @@
 
 //for Hamiltonian manipulations.
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "LongRange/EwaldHandler3D.h"
 

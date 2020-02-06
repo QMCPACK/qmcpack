@@ -435,7 +435,7 @@ void DMCBatched::handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForT
     MCPWalker& stalled_walker = stalled.walkers[iw];
     stalled_walker.Age++;
     stalled_walker.Properties(WP::R2ACCEPTED) = 0.0;
-    RealType wtmp                         = stalled_walker.Weight;
+    FullPrecRealType wtmp                         = stalled_walker.Weight;
     // TODO: fix this walker.Weight twiddle for rejectedMove
     stalled_walker.Weight                      = 0.0;
     QMCHamiltonian& stalled_walker_hamiltonian = stalled.walker_hamiltonians[iw];
@@ -455,17 +455,16 @@ void DMCBatched::setMultiplicities(const DMCDriverInput& dmcdriver_input,
                                    RandomGenerator_t& rng)
 {
   auto setMultiplicity = [&dmcdriver_input, &rng](MCPWalker& walker) {
-    constexpr RealType onehalf(0.5);
-    constexpr RealType cone(1);
-    RealType M;
+    constexpr FullPrecRealType onehalf(0.5);
+    constexpr FullPrecRealType cone(1);
+    walker.Multiplicity = walker.Weight;
     if (walker.Age > dmcdriver_input.get_max_age())
-      M = std::min(onehalf, M);
+      walker.Multiplicity = std::min(onehalf, walker.Weight);
     else if (walker.Age > 0)
-      M = std::min(cone, M);
-    else
-      M = walker.Weight;
-    walker.Multiplicity = M + rng();
+      walker.Multiplicity = std::min(cone, walker.Weight);
+    walker.Multiplicity += rng();
   };
+
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
     setMultiplicity(walkers[iw]);

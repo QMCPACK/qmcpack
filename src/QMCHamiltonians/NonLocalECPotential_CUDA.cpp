@@ -31,7 +31,6 @@ NonLocalECPotential_CUDA::NonLocalECPotential_CUDA(ParticleSet& ions,
                                                    bool doForces)
     : NonLocalECPotential(ions, els, psi, doForces, false),
       UsePBC(usePBC),
-      CurrentNumWalkers(0),
       Ions_GPU("NonLocalECPotential_CUDA::Ions_GPU"),
       L("NonLocalECPotential_CUDA::L"),
       Linv("NonLocalECPotential_CUDA::Linv"),
@@ -42,7 +41,8 @@ NonLocalECPotential_CUDA::NonLocalECPotential_CUDA(ParticleSet& ions,
       NumPairs_GPU("NonLocalECPotential_CUDA::NumPairs_GPU"),
       RatioPos_GPU("NonLocalECPotential_CUDA::RatioPos_GPU"),
       CosTheta_GPU("NonLocalECPotential_CUDA::CosTheta_GPU"),
-      RatioPoslist_GPU("NonLocalECPotential_CUDA::RatioPoslist_GPU")
+      RatioPoslist_GPU("NonLocalECPotential_CUDA::RatioPoslist_GPU"),
+      CurrentNumWalkers(0)
 {
   setupCUDA(els);
 }

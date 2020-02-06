@@ -38,9 +38,9 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w,
     : QMCDriver(w, psi, h, ppool, comm),
       UseDrift("yes"),
       myPeriod4WalkerDump(0),
-      GEVtype("mixed"),
-      w_alpha(0.0),
       w_beta(0.0),
+      w_alpha(0.0),
+      GEVtype("mixed"),
       forOpt(false)
 {
   RootName = "vmc";
