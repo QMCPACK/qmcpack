@@ -4692,7 +4692,7 @@ def generate_determinantset_old(type           = 'bspline',
             format_failed = True
         else:
             #There are three types of input:
-            #1. excitation=['up','0 45 3 46'] 
+            #1. excitation=['up','0 45 3 46']
             #2. excitation=['up','-215 216']  
             #3. excitation=['up', 'L vb F cb']
             if len(excitation) == 2: #Type 1 or 2 
@@ -4711,14 +4711,110 @@ def generate_determinantset_old(type           = 'bspline',
             #Should be modified
             QmcpackInput.class_error('excitation must be a tuple or list with with two elements\nthe first element must be either "up" or "down"\nand the second element must be integers separated by spaces, e.g. "-216 +217"\nyou provided: {0}'.format(excitation))
         #end if
-        
+       
+# REMOVE LATER
+
+      <determinantset name="LCAOBSet" type="MolecularOrbital" transform="yes" source="ion0">
+        <multideterminant optimize="no" spo_up="spo-up" spo_dn="spo-dn">
+          <detlist size="1" type="CSF" nca="0" ncb="0" nea="4" neb="4" nstates="27" cutoff="0.001">
+            <csf id="CSFcoeff_2" exctLvl="1" coeff="1.0" qchem_coeff="1.0" occ="222100000100000000000000000">
+              <det id="csf_2-0" coeff="0.707107" alpha="111100000000000000000000000" beta="111000000100000000000000000"/>
+              <det id="csf_2-1" coeff="0.707107" alpha="111000000100000000000000000" beta="111100000000000000000000000"/>
+            </csf>
+          </detlist>
+        </multideterminant>
+      </determinantset>
+
+      class determinantset(QIxml):
+          attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep','pbcimages']
+          elements   = ['basisset','sposet','slaterdeterminant','multideterminant','spline','backflow','cubicgrid']
+          h5tags     = ['twistindex','twistangle','rcut']
+          write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,cuspcorrection=yesno,usegrid=yesno)
+      #end class determinantset
+
+
+      class slaterdeterminant(QIxml):
+          attributes = ['optimize']
+          elements   = ['determinant']
+          write_types = obj(optimize=yesno)
+      #end class slaterdeterminant
+      
+      class determinant(QIxml):
+          attributes = ['id','group','sposet','size','ref','spin','href','orbitals','spindataset','name','cuspinfo','debug']
+          elements   = ['occupation','coefficient']
+          identifier = 'id'
+          write_types = obj(debug=yesno)
+      #end class determinant
+      
+      class multideterminant(QIxml):
+          attributes = ['optimize','spo_up','spo_dn']
+          elements   = ['detlist']
+      #end class multideterminant
+      
+      class detlist(QIxml):
+          attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff','href']
+          elements   = ['ci','csf']
+      #end class detlist
+      
+      class csf(QIxml):
+          attributes = ['id','exctlvl','coeff','qchem_coeff','occ']
+          elements   = ['det']
+          attr_types = obj(occ=str)
+      #end class csf
+      
+      class det(QIxml):
+          attributes = ['id','coeff','alpha','beta']
+          attr_types = obj(alpha=str,beta=str)
+      #end class det
+
+
+# REMOVE LATER
+
         spin_channel,excitation = excitation
         
         if spin_channel=='up':
             det = dset.get('updet')
         elif spin_channel=='down':
             det = dset.get('downdet')
+        elif spin_channel=='singlet':
+            #det = dset.get('downdet')
+
+            dset = determinantset(
+                type       = type,
+                meshfactor = meshfactor,
+                precision  = precision,
+                tilematrix = tilematrix,
+                href       = href,
+                source     = source,
+                multideterminant = multideterminant(
+                    determinants = collection(
+                        size="1" type="CSF" nca="0" ncb="0" nea="4" neb="4" nstates="27" cutoff="0.001"
+                        detlist(
+                            size = '1',
+                            type = 'CSF',
+                            nca  = '0',
+                            ncb  = '0',
+                            nea = elns.up_electron.count,
+                            neb = elns.down_electron.count,
+                            nstates = ,
+                            cutoff = '0.001'
+                            ),
+                        )
+                    )
+                )
+            if twist!=None:
+                dset.twistnum = system.structure.select_twist(twist)
+            elif twistnum!=None:
+                dset.twistnum = twistnum
+            elif len(system.structure.kpoints)==1:
+                dset.twistnum = 0
+            else:
+                dset.twistnum = None
+            #end if
+        elif spin_channel=='triplet':
+            #det = dset.get('downdet')
         #end if
+
         occ = det.occupation
         occ.pairs    = 1
         occ.mode     = 'excited'
