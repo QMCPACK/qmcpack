@@ -78,6 +78,7 @@ protected:
   input::PeriodStride config_dump_period_;
   IndexType starting_step_              = 0;
   IndexType num_crowds_                 = 0;
+  IndexType total_walkers_              = 0;
   IndexType walkers_per_rank_           = 0;
   IndexType requested_samples_          = 0;
   IndexType sub_steps_                  = 1;

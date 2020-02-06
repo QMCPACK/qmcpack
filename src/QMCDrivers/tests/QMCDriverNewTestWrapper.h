@@ -22,6 +22,7 @@ namespace qmcplusplus
 class QMCDriverNewTestWrapper : public QMCDriverNew
 {
 public:
+  using Base = QMCDriverNew;
   QMCDriverNewTestWrapper(QMCDriverInput&& input,
                           MCPopulation& population,
                           TrialWaveFunction& psi,
@@ -43,6 +44,17 @@ public:
     walkers_per_crowd_ = walkers_per_crowd_fake_;
     return local_walkers_fake_;
   }
+
+  void process(xmlNodePtr node)
+  {
+    IndexType local_walkers = calc_default_local_walkers(qmcdriver_input_.get_walkers_per_rank());
+  
+  // side effect updates walkers_per_crowd_;
+    makeLocalWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+
+    Base::process(node);
+  }
+  
   bool run() { return false; }
 private:
   int walkers_per_crowd_fake_ = 4;
