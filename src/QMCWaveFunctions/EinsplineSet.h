@@ -505,12 +505,6 @@ public:
 #ifdef QMC_CUDA
         ,
         CudaMultiSpline(NULL),
-        cudapos("EinsplineSetExtended::cudapos"),
-        NLcudapos("EinsplineSetExtended::NLcudapos"),
-        cudaSign("EinsplineSetExtended::cudaSign"),
-        NLcudaSign("EinsplineSetExtended::NLcudaSign"),
-        Linv_cuda("EinsplineSetExtended::Linv_cuda"),
-        L_cuda("EinsplineSetExtended::L_cuda"),
         CudaValueVector("EinsplineSetExtended::CudaValueVector"),
         CudaGradLaplVector("EinsplineSetExtended::CudaGradLaplVector"),
         CudaValuePointers("EinsplineSetExtended::CudaValuePointers"),
@@ -518,7 +512,13 @@ public:
         CudaMakeTwoCopies("EinsplineSetExtended::CudaMakeTwoCopies"),
         CudaTwoCopiesIndex("EinsplineSetExtended::CudaTwoCopiesIndex"),
         CudakPoints("EinsplineSetExtended::CudakPoints"),
-        CudakPoints_reduced("EinsplineSetExtended::CudakPoints_reduced")
+        CudakPoints_reduced("EinsplineSetExtended::CudakPoints_reduced"),
+        cudapos("EinsplineSetExtended::cudapos"),
+        NLcudapos("EinsplineSetExtended::NLcudapos"),
+        cudaSign("EinsplineSetExtended::cudaSign"),
+        NLcudaSign("EinsplineSetExtended::NLcudaSign"),
+        Linv_cuda("EinsplineSetExtended::Linv_cuda"),
+        L_cuda("EinsplineSetExtended::L_cuda")
 #endif
   {
     className = "EinsplineSetExtended";
