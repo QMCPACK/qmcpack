@@ -23,12 +23,17 @@ namespace qmcplusplus
 
 class DriverModifierBase;
 
+namespace testing
+{
+class DMCBatchedTest;
+}
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a DMC using particle-by-particle threaded and batched moves.
  */
 class DMCBatched : public QMCDriverNew
 {
 public:
+  using Base = QMCDriverNew;
   using FullPrecRealType  = QMCTraits::FullPrecRealType;
   using PosType           = QMCTraits::PosType;
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
@@ -68,12 +73,19 @@ public:
 
   DMCBatched(DMCBatched&&) = default;
 
-  /** The initial number of local walkers
+  /** DMCBatched driver will eventually ignore cur
    *
-   *  Currently substantially the same as VMCBatch so if it doesn't change
-   *  This should be pulled down the QMCDriverNew
+   *  This is the shared entry point
+   *  from QMCMain so cannot be updated yet
+   *  
+   *  Contains logic that sets walkers_per_rank_ 
+   *  TargetWalkers trump walkers, if it is not set
+   *  walkers which is by default per rank for the batched drivers
+   *  from this or the previous section wins.
+   *
+   *  walkers is still badly named.
    */
-  IndexType calc_default_local_walkers(IndexType walkers_per_rank);
+  void process(xmlNodePtr cur);
 
   bool run();
 
@@ -92,6 +104,14 @@ public:
   void setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian);
 
 private:
+  /** The initial number of walkers per rank
+   *
+   *  Currently substantially the same as VMCBatch so if it doesn't change
+   *  This should be pulled down the QMCDriverNew
+   */
+  IndexType calc_default_local_walkers(IndexType walkers_per_rank);
+
+
   DMCDriverInput dmcdriver_input_;
   /// Interval between branching
   IndexType branch_interval_;
@@ -183,6 +203,8 @@ private:
   // };
 
   // DMCTimers dmc_timers_;
+
+  friend class qmcplusplus::testing::DMCBatchedTest;
 };
 
 } // namespace qmcplusplus

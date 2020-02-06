@@ -301,7 +301,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * @param killwalker 
    * @return number of copies to make in case targetwalkers changed
    */
-  int initWalkerController(MCPopulation& pop, bool fixW, bool killwalker);
+  int initWalkerController(MCPopulation& pop, IndexType target_walkers, bool fixW, bool killwalker);
 
   /** initialize reptile stats
    *

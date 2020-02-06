@@ -136,8 +136,6 @@ public:
 
   void createRngsStepContexts();
 
-  void setupWalkers();
-
   void putWalkers(std::vector<xmlNodePtr>& wset);
 
   ///set the BranchEngineType
@@ -145,15 +143,6 @@ public:
 
   ///return BranchEngineType*
   SimpleFixedNodeBranch* getBranchEngine() { return branch_engine_; }
-
-  /** This would be better than the many side effects calc_default_local_walkers has 
-   *
-   * struct WalkerDistribution
-   */
-
-  /** Virtual to deal with VMC and DMC having different default behavior with walker number.
-   */
-  virtual IndexType calc_default_local_walkers(IndexType walkers_per_rank) = 0;
 
   int addObservable(const std::string& aname);
 
@@ -185,7 +174,7 @@ public:
    *  This is the shared entry point
    *  from QMCMain so cannot be updated yet
    */
-  void process(xmlNodePtr cur);
+  virtual void process(xmlNodePtr cur);
 
   static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
 

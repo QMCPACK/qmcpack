@@ -212,7 +212,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   return int(round(double(iParam[B_TARGETWALKERS]) / double(nwtot_now)));
 }
 
-int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, bool fixW, bool killwalker)
+int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, IndexType target_walkers, bool fixW, bool killwalker)
 {
   BranchMode.set(B_DMC, 1);                               //set DMC
   BranchMode.set(B_DMCSTAGE, iParam[B_WARMUPSTEPS] == 0); //use warmup
@@ -231,7 +231,10 @@ int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, bool f
   {
     // has "important" side effect of updating the walker offsets
     population.syncWalkersPerNode(MyEstimator->getCommunicator());
-    iParam[B_TARGETWALKERS] = population.get_num_global_walkers();
+    if (target_walkers == 0)
+      iParam[B_TARGETWALKERS] = population.get_num_global_walkers();
+    else
+      iParam[B_TARGETWALKERS] = target_walkers;
   }
   WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
   if (!BranchMode[B_RESTART])

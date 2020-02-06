@@ -115,8 +115,6 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  */
 void QMCDriverNew::process(xmlNodePtr cur)
 {
-  setupWalkers();
-
   // If you really want to persist the MCPopulation it is not the business of QMCDriver to reset it.
   // It could tell it we are starting a new section but shouldn't be pulling internal strings.
   //int numCopies = (H1.empty()) ? 1 : H1.size();
@@ -306,17 +304,6 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
     RandomNumberControl::write(root_name_, myComm);
 
   return true;
-}
-
-
-/** Elements of putQMCInfo that have nothing to do with input
- */
-void QMCDriverNew::setupWalkers()
-{
-  IndexType local_walkers = calc_default_local_walkers(qmcdriver_input_.get_walkers_per_rank());
-  
-  // side effect updates walkers_per_crowd_;
-  makeLocalWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 }
 
 void QMCDriverNew::makeLocalWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)

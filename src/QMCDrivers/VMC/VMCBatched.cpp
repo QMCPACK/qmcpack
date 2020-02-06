@@ -266,6 +266,16 @@ void VMCBatched::runVMCStep(int crowd_id,
   crowd.accumulate(sft.population.get_num_global_walkers());
 }
 
+void VMCBatched::process(xmlNodePtr node)
+{
+  IndexType local_walkers = calc_default_local_walkers(qmcdriver_input_.get_walkers_per_rank());
+  
+  // side effect updates walkers_per_crowd_;
+  makeLocalWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+
+  Base::process(node);
+}
+
 /** Runs the actual VMC section
  *
  *  Dependent on base class state machine

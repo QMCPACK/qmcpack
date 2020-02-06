@@ -120,6 +120,15 @@ MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_M
 SET( QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS FALSE CACHE BOOL "Disable the slow cmake custom commands for integration tests.")
 MARK_AS_ADVANCED(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
+# Setting this to false fixes the issue with some openmp libraries and ctest processor affinity.
+# This issue is still under investigation but is likely due to a ctest executable and test_executable linked
+# to different openmp libraries.
+#
+# generally should only be needed by developers using several compilers without matching cmake/ctest
+# builds using that compilers openmp library.
+SET( QMC_CTEST_PROC_AFFINITY TRUE CACHE BOOL "Option to set false if you exprience lack of threading on multithreaded test cases")
+
+MARK_AS_ADVANCED(QMC_CTEST_PROC_AFFINITY)
 
 ######################################################################
 # Build level

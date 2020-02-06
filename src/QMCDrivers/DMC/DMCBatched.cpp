@@ -76,7 +76,8 @@ void DMCBatched::resetUpdateEngines()
   // I'd like to do away with this method in DMCBatched.
 
   // false indicates we do not support kill at node crossings.
-  int nw_multi = branch_engine_->initWalkerController(population_, dmcdriver_input_.get_reconfiguration(), false);
+  int nw_multi = branch_engine_->initWalkerController(population_, dmcdriver_input_.get_target_walkers(),
+                                                      dmcdriver_input_.get_reconfiguration(), false);
 
   estimator_manager_->reset();
 
@@ -112,9 +113,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   crowd.loadWalkers();
 
   int nnode_crossing(0);
-  auto& walker_twfs      = crowd.get_walker_twfs();
-  auto& walkers          = crowd.get_walkers();
-  auto& walker_elecs     = crowd.get_walker_elecs();
+  auto& walker_twfs  = crowd.get_walker_twfs();
+  auto& walkers      = crowd.get_walkers();
+  auto& walker_elecs = crowd.get_walker_elecs();
 
   // Note this resets the identities of all the walker TWFs
   auto copyTWFFromBuffer = [](TrialWaveFunction& twf, ParticleSet& pset, MCPWalker& walker) {
@@ -408,7 +409,7 @@ void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThrea
       resetSigNLocalEnergy(moved.walkers[iw], moved.walker_twfs[iw], local_energies[iw], moved.rr_accepted[iw],
                            moved.rr_proposed[iw]);
       // this might mean new_energies are actually unneeded which would be nice.
-      moved.new_energies[iw] = local_energies[iw];
+      moved.new_energies[iw]         = local_energies[iw];
       FullPrecRealType branch_weight = sft.branch_engine.branchWeight(moved.new_energies[iw], moved.old_energies[iw]);
       moved.walkers[iw].get().Weight *= branch_weight;
     }
@@ -435,7 +436,7 @@ void DMCBatched::handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForT
     MCPWalker& stalled_walker = stalled.walkers[iw];
     stalled_walker.Age++;
     stalled_walker.Properties(WP::R2ACCEPTED) = 0.0;
-    FullPrecRealType wtmp                         = stalled_walker.Weight;
+    FullPrecRealType wtmp                     = stalled_walker.Weight;
     // TODO: fix this walker.Weight twiddle for rejectedMove
     stalled_walker.Weight                      = 0.0;
     QMCHamiltonian& stalled_walker_hamiltonian = stalled.walker_hamiltonians[iw];
@@ -489,6 +490,42 @@ void DMCBatched::runDMCStep(int crowd_id,
   IndexType step           = sft.step;
   bool recompute_this_step = (is_recompute_block && (step + 1) == max_steps);
   advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step);
+}
+
+void DMCBatched::process(xmlNodePtr node)
+{
+  int ranks = myComm->size();
+  IndexType walkers_per_rank{0};
+  IndexType target_walkers_ = dmcdriver_input_.get_target_walkers();
+  if ( target_walkers_ != 0)
+  {
+    if ( target_walkers_ % ranks )
+    {
+      walkers_per_rank = target_walkers_ / ranks + 1;
+      target_walkers_ = walkers_per_rank * ranks;
+      app_warning() << "TargetWalkers not divisible by number of ranks, TargetWalker increased to "
+         << target_walkers_ << '\n';
+    }
+    else
+      walkers_per_rank = target_walkers_ / ranks;
+  }
+  else
+  {
+    walkers_per_rank = qmcdriver_input_.get_walkers_per_rank();
+  }
+
+  // side effect updates Base::walkers_per_crowd_;
+  IndexType local_walkers = calc_default_local_walkers(walkers_per_rank);
+
+  if ( local_walkers * ranks != target_walkers_ )
+  {
+    target_walkers_ = local_walkers * ranks;
+    app_warning() << "Walkers per rank number of crowds, TargetWalker increased to "
+         << target_walkers_ << '\n';
+  }
+  // side effect updates walkers_per_crowd_;
+  makeLocalWalkers(local_walkers, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+  Base::process(node);
 }
 
 bool DMCBatched::run()
@@ -569,7 +606,8 @@ bool DMCBatched::run()
     // TODO: should be accept rate for block
     estimator_manager_->stopBlockNew(total_accept_ratio);
   }
-  return false;
+
+  return finalize(num_blocks, true);
 }
 
 } // namespace qmcplusplus

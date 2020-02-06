@@ -662,7 +662,6 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
 
     if (write_release_nodes_)
       wac = rn_walkerCalcAdjust(walker, wac);
-
     else
       wac = walkerCalcAdjust(walker, wac);
 

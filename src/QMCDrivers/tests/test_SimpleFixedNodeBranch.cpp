@@ -102,7 +102,7 @@ public:
 
     createMyNode(sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
 
-    sfnb.initWalkerController(*pop_, false, false);
+    sfnb.initWalkerController(*pop_, 0, false, false);
 
 
     sfnb.checkParameters(pop_->get_num_global_walkers(), walkers);

@@ -38,6 +38,8 @@ void DMCDriverInput::readXML(xmlNodePtr node)
   parameter_set_.add(alpha_, "alpha", "double");
   parameter_set_.add(gamma_, "gamma", "double");
 
+  // DMC target walkers is MPI_world scope
+  parameter_set_.add(target_walkers_, "TargetWalkers", "int");
   parameter_set_.put(node);
 
   // TODO: similar check for alpha and gamma

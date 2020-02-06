@@ -23,12 +23,19 @@
 
 namespace qmcplusplus
 {
+
+namespace testing
+{
+class VMCBatchedTest;
+}
+
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a VMC using particle-by-particle move. Threaded execution.
  */
 class VMCBatched : public QMCDriverNew
 {
 public:
+  using Base = QMCDriverNew;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   using PosType = QMCTraits::PosType;
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
@@ -63,7 +70,9 @@ public:
              QMCHamiltonian& h,
              WaveFunctionPool& ppool,
              Communicate* comm);
- 
+
+  void process(xmlNodePtr node);
+
   bool run();
 
   /** Refactor of VMCUpdatePbyP in crowd context
@@ -81,9 +90,9 @@ public:
                          std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
                          std::vector<std::unique_ptr<Crowd>>& crowds);
 
+private:
   IndexType calc_default_local_walkers(IndexType walkers_per_rank);
 
-private:
   int prevSteps;
   int prevStepsBetweenSamples;
   VMCDriverInput vmcdriver_input_;
@@ -94,6 +103,8 @@ private:
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;
+
+  friend class qmcplusplus::testing::VMCBatchedTest;;
 };
 
 extern std::ostream& operator<<(std::ostream& o_stream, const VMCBatched& vmc_batched);
