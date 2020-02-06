@@ -29,9 +29,10 @@ namespace testing
 class UnifiedDriverWalkerControlMPITest;
 }
 
+/** Datastruct of a WalkerMessage
+ */
 struct WalkerMessage
 {
-  // To deal with duplicate send optimization
   WalkerControlBase::MCPWalker& walker;
   // i.e. MPI rank
   const int source_rank;
@@ -39,13 +40,13 @@ struct WalkerMessage
   WalkerMessage(WalkerControlBase::MCPWalker& walk, const int source, const int target) : walker(walk), source_rank(source), target_rank(target) {}
 };
 
-inline bool operator==(const WalkerMessage& A, const WalkerMessage& B)
+/** needed for repressing duplicate messages, this optimization is currently unimplemented.
+ */
+inline bool isRepeatedMessage(const WalkerMessage& A, const WalkerMessage& B)
 {
   // since all the walker references are to one queue of unique_ptrs in MCPopulation
-  // I think this is ok... If not the DataSet.data()?
   return (&A.walker == &B.walker) && (A.target_rank == B.target_rank);
 }
-
 
 /** Class to handle walker controls with simple global sum
  *
@@ -57,15 +58,14 @@ struct WalkerControlMPI : public WalkerControlBase
   int Cur_max;
   int Cur_min;
   TimerList_t myTimers;
-  ///Number of walkers sent during the exchange
-  // Is this persistent state for any reason other than we keep zeroing curData
+  // Number of walkers sent during the exchange
+  // This semi-persistent state is only here because we keep zeroing curData
   // defensively?
   IndexType NumWalkersSent;
 
   /** default constructor
    *
-   * Set the SwapMode to zero so that instantiation can be done
-   * comm can not be null it is not checked.
+   * \param[in] comm can not be null it is not checked.
    */
   WalkerControlMPI(Communicate* comm);
 
@@ -77,7 +77,7 @@ struct WalkerControlMPI : public WalkerControlBase
    *
    *  \param[in] Cur_pop population taking multiplicity into account
    *  \param[in] NumContexts number of MPI processes
-   *  \param[in] MyContext my MPI rank
+   *  \param[in] MyContext i.e this processes MPI rank
    *  \param[in] NumPerNode as if all walkers were copied out to multiplicity
    *  \param[out] FairOffSet running population count at each partition boundary
    *  \param[out] minus list of partition indexes one occurance for each walker removed
@@ -91,20 +91,22 @@ struct WalkerControlMPI : public WalkerControlBase
                                            std::vector<int>& minus,
                                            std::vector<int>& plus);
 
-  /** perform branch and swap walkers as required */
+  /** legacy: perform branch and swap walkers as required */
   int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
 
-  /** perform branch and swap walkers as required */
+  /** unified driver: perform branch and swap walkers as required */
   int branch(int iter, MCPopulation& pop, FullPrecRealType trigger);
 
-  //current implementations
+  /** legacy: implementation
+   */
   void swapWalkersSimple(MCWalkerConfiguration& W);
 
-  /** Unified Driver Implementation
+  /** unified driver
    *
-   * \param[inout] local population
+   * Walkers are transfered between ranks in order to reach a difference of no more than 1 walker.
+   * \param[inout] pops rankscope population
    * \param[inout] adjust population adjustment, it's updated for so on node adjustments can occur
-   * \param[in]    number of walkers per node if expanded by multiplicity.
+   * \param[in]    num_per_node number of walkers per node expanded by multiplicity.
    */
   void swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust, std::vector<IndexType> num_per_node);
 

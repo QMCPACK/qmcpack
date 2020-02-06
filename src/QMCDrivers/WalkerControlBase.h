@@ -121,10 +121,10 @@ public:
   /** start a block */
   void start();
 
-  /** start controller  and initialize the IDs of walkers*/
+  /** legacy: start controller  and initialize the IDs of walkers*/
   void setWalkerID(MCWalkerConfiguration& walkers);
 
-  /** start controller
+  /** unified driver: start controller
    *
    *  WalkerID's are initialized by MCPopulation, SOC
    */
@@ -151,18 +151,18 @@ public:
    */
   inline FullPrecRealType getCurrentValue(int i) { return curData[i]; }
 
-  /** return global population
+  /** legacy: return global population
    *  update properties without branching 
    *
    */
   int doNotBranch(int iter, MCWalkerConfiguration& W);
 
-  /** return global population
+  /** unified driver: return global population
    *  update properties without branching
    */
   int doNotBranch(int iter, MCPopulation& pop);
 
-  /** sort Walkers between good and bad and prepare branching
+  /** legacy: sort Walkers between good and bad and prepare branching
    *
    *  not a sort changes internal state of walkers to copy and how many of each copy
    */
@@ -170,25 +170,26 @@ public:
 
   static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
 
-  /** create data structure needed to do population adjustment
+  /** unified: create data structure needed to do population adjustment
    *
    *  refactored sortWalkers
    *  This data structure contains what was updated in the state.
    */
   PopulationAdjustment calcPopulationAdjustment(MCPopulation& pop);
 
-  /** do the actual adjustment
+  /** unified: do the actual adjustment
    *
    *  unfortunately right now this requires knowledge of the global context, seems unecessary
    *  but this is why MCPopulation is handed in.
+   *  This does was applyNmaxNmin used to.
    */
   int adjustPopulation(PopulationAdjustment& adjust);
 
-  /** apply per node limit Nmax and Nmin
+  /** legacy: apply per node limit Nmax and Nmin
    */
   int applyNmaxNmin(int current_population);
 
-  /** copy good walkers to W
+  /** legacy: copy good walkers to W
    */
   int copyWalkers(MCWalkerConfiguration& W);
 
@@ -197,13 +198,13 @@ public:
   /** reset to accumulate data */
   virtual void reset();
 
-  /** perform branch and swap walkers as required 
+  /** legacy: perform branch and swap walkers as required 
    *
    *  \return global population
    */
   virtual int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
 
-  /** perform branch and swap walkers as required 
+  /** unified: perform branch and swap walkers as required 
    *
    *  \return global population
    */
@@ -291,7 +292,7 @@ protected:
 
   friend class qmcplusplus::testing::UnifiedDriverWalkerControlMPITest;
 private:
-  /** Refactoring possibly dead releaseNodesCode out
+  /** unified: Refactoring possibly dead releaseNodesCode out
    * @{
    */
   static auto rn_walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustmentCriteria wac);
@@ -301,9 +302,14 @@ private:
                                     RefVector<MCPWalker>& good_walkers_rn,
                                     std::vector<int>& copies_to_make_rn);
   /**}@*/
+
+  /** unified: CalcAdjust segmenting
+   * @{
+   */
   static auto walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustmentCriteria wac);
 
   static void updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data, WalkerAdjustmentCriteria wac, PopulationAdjustment& adjustment, MCPopulation& pop);
+  /**}@*/
 };
 
 } // namespace qmcplusplus

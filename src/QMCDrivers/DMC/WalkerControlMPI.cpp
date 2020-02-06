@@ -50,11 +50,11 @@ TimerNameList_t<DMC_MPI_Timers> DMCMPITimerNames = {{DMC_MPI_branch, "WalkerCont
  *
  * set SwapMode? SwapMode is set to 1 but what does that mean?
  * This object persists inside the SFNB which also persists
- * The zeroing here will not happen in late QMC sections...
+ * The zeroing here will not happen in later QMC sections...
  * This seems problematic in that NumWalkersSent will start at a 
  * value of no concern to the current section.
  *
- * In the new drivers SFNB should throw an except if there is attempted 
+ * In the unified rivers SFNB throws an exception if there is attempted 
  * reuse of WalkerController
  */
 WalkerControlMPI::WalkerControlMPI(Communicate* c) : WalkerControlBase(c)
@@ -133,10 +133,11 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTyp
  *  It takes 5 steps:
  *    1. calcPopulationAdjustment produces a PopulationAdjustment
  *    2. allreduce collects the number of good walkers + copies on every rank.
- *    3. applyNmaxNmin avoids too large or too small global population.
- *    4. swapWalkersSimple makes a decision of load balancing and send/recv walkers.
+ *    3. properties are measured which updates the ensemble properties.
+ *    4. swapWalkersSimple enacts the population adjustment, sending and recieving walkers.
  *       Receiving side recycles bad walkers' memory first.
- *    5. copyWalkers generates copies of good walkers.
+ *    5. adjustPopulation applies nMinNmax if ranks have exceeded min or max limits
+ *    6. onRankspawnkill kill's remaining bad walkers, spawns any walkers needed by being under min limit.
  *  In order to minimize the memory footprint fluctuation
  *  the walker copying is placed as the last step.
  *  In order to reduce the time for allocating walker memory,
@@ -166,15 +167,14 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop, FullPrecRealType trigg
   measureProperties(iter);
   pop.set_ensemble_property(ensemble_property_);
 
-  //All of this should really just accomplish what onRankSpawnKill does for a nonmpi job.
+  adjustPopulation(adjust);
+
   auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), adjust.num_walkers);
 
   myTimers[DMC_MPI_prebalance]->stop();
   myTimers[DMC_MPI_loadbalance]->start();
   swapWalkersSimple(pop, adjust, num_per_node);
   myTimers[DMC_MPI_loadbalance]->stop();
-
-  adjustPopulation(adjust);
 
   onRankSpawnKill(pop, adjust);
   
