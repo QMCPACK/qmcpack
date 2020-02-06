@@ -28,26 +28,7 @@
 
 namespace qmcplusplus
 {
-ParticleSet* createElectronParticleSet()
-{
-  ParticleSet* qp = new ParticleSet;
-  qp->setName("e");
-  qp->create(2);
-  qp->R[0][0] = 1.0;
-  qp->R[0][1] = 2.0;
-  qp->R[0][2] = 3.0;
-  qp->R[1][0] = 0.0;
-  qp->R[1][1] = 1.1;
-  qp->R[1][2] = 2.2;
-
-  SpeciesSet& tspecies     = qp->getSpeciesSet();
-  int upIdx                = tspecies.addSpecies("u");
-  int massIdx              = tspecies.addAttribute("mass");
-  tspecies(massIdx, upIdx) = 1.0;
-
-  return qp;
-}
-
+extern ParticleSet* createElectronParticleSet();
 
 TEST_CASE("HamiltonianPool", "[qmcapp]")
 {
