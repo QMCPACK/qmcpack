@@ -31,6 +31,7 @@ SET(QMCAPPDIR
     CoupledMC.cpp
 )
 ADD_LIBRARY(qmc ${QMCAPPDIR})
+TARGET_LINK_LIBRARIES(qmc PUBLIC qmcdriver)
 
 ####################################
 # QMCPACK application
