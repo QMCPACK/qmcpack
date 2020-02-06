@@ -26,7 +26,7 @@
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <Numerics/OhmmsBlas.h>
 #include <config/stdlib/math.hpp>
-#include <simd/simd.hpp>
+#include "simd/inner_product.hpp"
 #include <Numerics/determinant_operators.h>
 
 namespace qmcplusplus

@@ -51,8 +51,8 @@ OperatorBase* CoulombPotentialAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunct
 CoulombPotentialAB_CUDA::CoulombPotentialAB_CUDA(ParticleSet& s, ParticleSet& t)
     : CoulombPotential<OHMMS_PRECISION>(s, t, true, false),
       SumGPU("CoulombPotentialAB_CUDA::SumGPU"),
-      IGPU("CoulombPotentialAB_CUDA::IGPU"),
-      ZionGPU("CoulombPotentialAB_CUDA::ZionGPOU")
+      ZionGPU("CoulombPotentialAB_CUDA::ZionGPOU"),
+      IGPU("CoulombPotentialAB_CUDA::IGPU")
 {
   SpeciesSet& sSet = s.getSpeciesSet();
   NumIonSpecies    = sSet.getTotalNum();

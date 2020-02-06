@@ -16,7 +16,6 @@
 #define QMCPLUSPLUS_OPTIMIZATIONFUNCION_BASE_H
 
 #include "OhmmsData/OhmmsElementBase.h"
-#include "Optimize/LeastSquaredFit.h"
 #include "Configuration.h"
 
 /** Base class for any cost function
