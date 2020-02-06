@@ -4688,11 +4688,11 @@ def generate_determinantset_old(type           = 'bspline',
         format_failed = False
         if not isinstance(excitation,(tuple,list)):
             QmcpackInput.class_error('excitation must be a tuple or list\nyou provided type: {0}\nwith value: {1}'.format(excitation.__class__.__name__,excitation))
-        elif excitation[0] not in ('up','down') or not isinstance(excitation[1],str):
+        elif excitation[0] not in ('up','down','singlet','triplet') or not isinstance(excitation[1],str):
             format_failed = True
         else:
             #There are three types of input:
-            #1. excitation=['up','0 45 3 46']
+            #1. excitation=['up','0 45 3 46'] 
             #2. excitation=['up','-215 216']  
             #3. excitation=['up', 'L vb F cb']
             if len(excitation) == 2: #Type 1 or 2 
@@ -4711,13 +4711,13 @@ def generate_determinantset_old(type           = 'bspline',
             #Should be modified
             QmcpackInput.class_error('excitation must be a tuple or list with with two elements\nthe first element must be either "up" or "down"\nand the second element must be integers separated by spaces, e.g. "-216 +217"\nyou provided: {0}'.format(excitation))
         #end if
-       
-# REMOVE LATER
 
-#     <determinantset name="LCAOBSet" type="MolecularOrbital" transform="yes" source="ion0">
-#       <multideterminant optimize="no" spo_up="spo-up" spo_dn="spo-dn">
-#         <detlist size="1" type="CSF" nca="0" ncb="0" nea="4" neb="4" nstates="27" cutoff="0.001">
-#           <csf id="CSFcoeff_2" exctLvl="1" coeff="1.0" qchem_coeff="1.0" occ="222100000100000000000000000">
+    # REMOVE LATER
+
+    #     <determinantset name="LCAOBSet" type="MolecularOrbital" transform="yes" source="ion0">
+    #       <multideterminant optimize="no" spo_up="spo-up" spo_dn="spo-dn">
+    #         <detlist size="1" type="CSF" nca="0" ncb="0" nea="4" neb="4" nstates="27" cutoff="0.001">
+    #           <csf id="CSFcoeff_2" exctLvl="1" coeff="1.0" qchem_coeff="1.0" occ="222100000100000000000000000">
 #             <det id="csf_2-0" coeff="0.707107" alpha="111100000000000000000000000" beta="111000000100000000000000000"/>
 #             <det id="csf_2-1" coeff="0.707107" alpha="111000000100000000000000000" beta="111100000000000000000000000"/>
 #           </csf>
@@ -4769,15 +4769,21 @@ def generate_determinantset_old(type           = 'bspline',
 
 
 # REMOVE LATER
-
-        spin_channel,excitation = excitation
         
+        spin_channel,excitation = excitation
         if spin_channel=='up':
-            det = dset.get('updet')
+            sdet = dset.get('updet')
         elif spin_channel=='down':
-            det = dset.get('downdet')
-        elif spin_channel=='singlet':
+            sdet = dset.get('downdet')
+        elif spin_channel=='singlet' or spin_channel=='triplet':
             #det = dset.get('downdet')
+      #element class: detlist
+      #      element tag: detlist
+      #            tags allowed in a collection: ['atomicbasisset', 'axis', 'basisgroup', 'ci', 'constant', 'correlation', 'csf', 'det', 'determinant', 'estimator', 'grid', 'group', 'hamiltonian', 'jastrow', 'mcwalkerset', 'neighbor_trace', 'observable', 'optimize', 'pairpot', 'particleset', 'pseudo', 'qmc', 'radfunc', 'spacegrid', 'sposet', 'sposet_builder', 'transformation', 'var', 'wavefunction']
+
+            coeff_sign = ''
+            if spin_channel=='triplet':
+                coeff_sign = '-'
 
             dset = determinantset(
                 type       = type,
@@ -4787,22 +4793,50 @@ def generate_determinantset_old(type           = 'bspline',
                 href       = href,
                 source     = source,
                 multideterminant = multideterminant(
-                    determinants = collection(
-                        #size="1" type="CSF" nca="0" ncb="0" nea="4" neb="4" nstates="27" cutoff="0.001"
-                        detlist(
-                            size = '1',
-                            type = 'CSF',
-                            nca  = '0',
-                            ncb  = '0',
-                            nea = elns.up_electron.count,
-                            neb = elns.down_electron.count,
-                            nstates = ,
-                            cutoff = '0.001'
-                            ),
-                        )
+                    #size="1" type="CSF" nca="0" ncb="0" nea="4" neb="4" nstates="27" cutoff="0.001"
+                    detlist = detlist(
+                        size = '1',
+                        type = 'CSF',
+                        nca  = '0',
+                        ncb  = '0',
+                        nea = elns.up_electron.count,
+                        neb = elns.down_electron.count,
+                        cutoff = '0.001',
+#           <csf id="CSFcoeff_2" exctLvl="1" coeff="1.0" qchem_coeff="1.0" occ="222100000100000000000000000">
+#             <det id="csf_2-0" coeff="0.707107" alpha="111100000000000000000000000" beta="111000000100000000000000000"/>
+#             <det id="csf_2-1" coeff="0.707107" alpha="111000000100000000000000000" beta="111100000000000000000000000"/>
+#           </csf>
+                        csf = csf(
+                            id          = 'CSF_0',
+                            exctLvl     = '1',
+                            coeff       = '1.0',
+                            qchem_coeff = '1.0',
+                            occ         = '2'*72,
+#             <det id="csf_2-0" coeff="0.707107" alpha="111100000000000000000000000" beta="111000000100000000000000000"/>
+#             <det id="csf_2-1" coeff="0.707107" alpha="111000000100000000000000000" beta="111100000000000000000000000"/>
+                            dets = collection(
+                                det(
+                                    id='csf_00',
+                                    coeff='0.707107',
+                                    ),
+                                det(
+                                    id='csf_01',
+                                    coeff=coeff_sign+'0.707107',
+                                    ),
+                                )
+                            )
+                        ),
                     )
                 )
             
+            dset.multideterminant.detlist.nstates = 72
+
+            dset.multideterminant.detlist.csf.dets[0].alpha = '1'*35+'01'+'0'*(72-37)
+            dset.multideterminant.detlist.csf.dets[0].beta = '1'*36+'0'*(72-36)
+
+            dset.multideterminant.detlist.csf.dets[1].alpha = '1'*36+'0'*(72-36)
+            dset.multideterminant.detlist.csf.dets[1].beta = '1'*35+'01'+'0'*(72-37)
+
             if twist!=None:
                 dset.twistnum = system.structure.select_twist(twist)
             elif twistnum!=None:
@@ -4814,12 +4848,9 @@ def generate_determinantset_old(type           = 'bspline',
             #end if
 
             return dset
-
-        elif spin_channel=='triplet':
-            #det = dset.get('downdet')
+        
         #end if
-
-        occ = det.occupation
+        occ = sdet.occupation
         occ.pairs    = 1
         occ.mode     = 'excited'
         occ.contents = '\n'+excitation+'\n'
@@ -4833,7 +4864,7 @@ def generate_determinantset_old(type           = 'bspline',
                 QmcpackInput.class_error('excitation with vb-cb band format works only with special k-points')
             #end if
             
-            vb = int(det.size / abs(linalg.det(tilematrix))) -1  # Separate for each spin channel
+            vb = int(sdet.size / abs(linalg.sdet(tilematrix))) -1  # Separate for each spin channel
             cb = vb+1
             # Convert band_1, band_2 to band indexes
             bands = [band_1, band_2]
