@@ -499,7 +499,7 @@ ENDIF()
 #  check MPI installation
 #-------------------------------------------------------------------
 IF(QMC_MPI)
-  #SET(MPI_CXX_SKIP_MPICXX TRUE) # we should enable this but currently cannot due to formic needs.
+  SET(MPI_CXX_SKIP_MPICXX TRUE)
   SET(MPI_DETERMINE_LIBRARY_VERSION TRUE)
   FIND_PACKAGE(MPI COMPONENTS CXX)
 
@@ -832,15 +832,9 @@ MESSAGE(STATUS "Ready to build qmcpack")
 ####################################################################
 # add definitions
 #  -DH5_USE_16_API for HDF5
-#  -DMPICH_SKIP_MPICXX : disable C++ binding of MPICH
 ####################################################################
 
 ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DUSE_REAL_STRUCT_FACTOR -DINLINE_ALL=inline -DADD_)
-
-if(HAVE_MPI)
-  ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
-endif()
-#ADD_DEFINITIONS(-DDISABLE_WS_CELL)
 
 EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)

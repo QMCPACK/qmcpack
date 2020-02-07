@@ -1,16 +1,3 @@
-# -std=c++11 is handled at the top level. Ye
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
-REMOVE_DEFINITIONS(-DMPICH_SKIP_MPICXX)
-
-# Really ugly hack to see if we're using MKL - replace it
-#STRING(FIND "${BLAS_LIBRARIES}" "mkl" apos)
-#MESSAGE("BLAS_LIBRARIES FIND = ${apos}")
-#IF (NOT apos EQUAL -1)
-#    MESSAGE("mkl found")
-#    SET(MKL_FOUND 1)
-#ENDIF()
-
 # determine how to declare and how to mangle the blas/lapack functions
 if(MKL_FOUND)
   set(LAPACK_DECLARE_INC formic/utils/declare_mkl.h)
