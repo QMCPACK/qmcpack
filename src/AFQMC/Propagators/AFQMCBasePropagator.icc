@@ -167,6 +167,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
   AFQMCTimers[vHS_timer]->start();
   wfn.vHS(X,vHS,sqrtdt);
   AFQMCTimers[vHS_timer]->stop();
+//std::cout<<" Pg vHS: " <<TG.Global().rank() <<" " <<ma::sum(vHS) <<"\n" <<std::endl;
 //std::cout<<" vHS: " <<ma::dot(vHS[0],vHS[0]) <<"\n\n" <<std::endl;
 
   int nx = 1;
@@ -325,7 +326,7 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
     // optimize for the single reference case
     if(nrefs==1) 
       copy_n(Refs[i][0].origin()+r0,rN-r0,
-             wset[i].SlaterMatrix(Alpha).origin()+r0);
+             make_device_ptr(wset[i].SlaterMatrix(Alpha).origin())+r0);
   }  
   TG.TG_local().barrier();
 
@@ -333,13 +334,13 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
 
     // 1. Get X(nCV,nwalk) from wset
     copy_n(Fields[ni][cv0].origin(),nwalk*(cvN-cv0),X[cv0].origin());
+//std::fill_n(X.origin(),X.num_elements(),ComplexType(0.0));
     TG.TG_local().barrier();    
-//std::cout<<" X0: " <<TG.Global().rank() <<" " <<ma::dot(X(X.extension(0),0),X(X.extension(0),0)) <<"\n\n" <<std::endl;
 
     // 2. Calculate vHS(M*M,nwalk)/vHS(nwalk,M*M) 
     //  X has been scaled by sqrtdt to avoid needing it here 
     wfn.vHS(X,vHS);
-//std::cout<<" vHS: " <<TG.Global().rank() <<" " <<ma::dot(vHS[0],vHS[0]) <<"\n\n" <<std::endl;
+//std::cout<<" BP vHS: " <<TG.Global().rank() <<" " <<ma::sum(vHS) <<"\n" <<std::endl;
 
     for(int nr=0; nr<nrefs; ++nr) {   
       
@@ -347,7 +348,7 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
       if(nrefs>1) 
         for(int i=0; i<nwalk; i++)
           copy_n(Refs[i][nr].origin()+r0,rN-r0,
-                 wset[i].SlaterMatrix(Alpha).origin()+r0);
+                 make_device_ptr(wset[i].SlaterMatrix(Alpha).origin())+r0);
       TG.TG_local().barrier();
 
       // 4. Propagate walkers
@@ -372,11 +373,12 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
             Orthogonalize_shared(wset,detR(detR.extension(0),{2*nr,2*nr+2}));
         }
       }    
+      TG.TG_local().barrier();
 
       // 5. copy reference to back 
       if(nrefs>1) 
         for(int i=0; i<nwalk; i++)
-          copy_n(wset[i].SlaterMatrix(Alpha).origin()+r0,rN-r0,
+          copy_n(make_device_ptr(wset[i].SlaterMatrix(Alpha).origin())+r0,rN-r0,
                  Refs[i][nr].origin()+r0);
       TG.TG_local().barrier();
 
@@ -480,6 +482,7 @@ void AFQMCBasePropagator::apply_propagators(char TA, WSet& wset, int ni, int tk0
       for(int tk=tk0; tk<tkN; ++tk) {
         int nt = ni*nwalk+tk;
         local_vHS = vHS3D(local_vHS.extension(0),local_vHS.extension(1),nt);
+//std::cout<<" pp: " <<tk <<" " <<ma::sum(local_vHS) <<"\n" <<std::endl;
         SDetOp->Propagate(wset[tk].SlaterMatrix(Alpha),P1[0],local_vHS,order,TA);
       }
       if(last_nextra > 0) {

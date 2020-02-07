@@ -52,11 +52,62 @@ def average_one_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, ix=No
         print('Unknown walker type {}'.format(wt))
 
     if walker == 'closed':
-        return 2*mean.reshape(1,nbasis,nbasis), err.reshape(1,nbasis, nbasis)
+        return mean.reshape(1,nbasis,nbasis), err.reshape(1,nbasis, nbasis)
     elif walker == 'collinear':
         return mean.reshape((2,nbasis,nbasis)), err.reshape((2, nbasis, nbasis))
     elif walker == 'non_collinear':
         return mean.reshape((1,2*nbasis,2*nbasis)), err.reshape((1,2*nbasis, 2*nbasis))
+    else:
+        print('Unknown walker type.')
+        return None
+
+def average_two_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None):
+    """Average AFQMC 2RDM.
+
+    Returns a list of 2RDMS, where 
+      2RDM[s1s2,i,k,j,l] = <c_{i}^+ c_{j}^+ c_{l} c_{k}>.
+      For closed shell systems, returns [(a,a,a,a),(a,a,b,b)] 
+      For collinear systems, returns [(a,a,a,a),(a,a,b,b),(b,b,b,b)] 
+
+    Parameters
+    ----------
+    filename : string
+        QMCPACK output containing density matrix (*.h5 file).
+    estimator : string
+        Estimator type to analyse. Options: back_propagated or mixed.
+        Default: back_propagated.
+    eqlb : int
+        Number of blocks for equilibration. Default 1.
+    skip : int
+        Number of blocks to skip in between measurements equilibration.
+        Default 1 (use all data).
+    ix : int
+        Back propagation path length to average. Optional.
+        Default: None (chooses longest path).
+
+    Returns
+    -------
+    two_rdm : :class:`numpy.ndarray`
+        List of averaged 2RDM.
+    two_rdm_err : :class:`numpy.ndarray`
+        List of error bars for 2RDM elements.
+    """
+    md = get_metadata(filename)
+    mean, err = average_observable(filename, 'two_rdm', eqlb=eqlb, skip=skip,
+                                   estimator=estimator, ix=ix)
+    nbasis = md['NMO']
+    wt = md['WalkerType']
+    try:
+        walker = WALKER_TYPE[wt]
+    except IndexError:
+        print('Unknown walker type {}'.format(wt))
+
+    if walker == 'closed':
+        return mean.reshape(2,nbasis,nbasis,nbasis,nbasis), err.reshape(2,nbasis,nbasis,nbasis,nbasis)
+    elif walker == 'collinear':
+        return mean.reshape(3,nbasis,nbasis,nbasis,nbasis), err.reshape(3,nbasis,nbasis,nbasis,nbasis)
+    elif walker == 'non_collinear':
+        return mean.reshape(2*nbasis,2*nbasis,2*nbasis,2*nbasis), err.reshape(2*nbasis,2*nbasis,2*nbasis, 2*nbasis)
     else:
         print('Unknown walker type.')
         return None
@@ -109,11 +160,13 @@ def average_diag_two_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, 
             for j in range(i+1, 2*nbasis):
                 two_rdm[i,j] = mean[ij]
                 two_rdm_err[i,j] = err[ij]
+                two_rdm[j,i] = mean[ij].conj()
+                two_rdm_err[j,i] = err[ij].conj()
                 ij += 1
         two_rdm[nbasis:,nbasis:] = two_rdm[:nbasis,:nbasis].copy()
-        two_rdm_err[nbasis:,nbasis:] = two_rdm_err[:nbasis,:nbasis].copy()
     elif walker == 'collinear':
         dm_size = nbasis*(2*nbasis-1)
+        assert mean.shape == dm_size
         two_rdm = numpy.zeros((2*nbasis, 2*nbasis), dtype=mean.dtype)
         two_rdm_err = numpy.zeros((2*nbasis, 2*nbasis), dtype=mean.dtype)
         ij = 0
@@ -121,6 +174,8 @@ def average_diag_two_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, 
             for j in range(i+1, 2*nbasis):
                 two_rdm[i,j] = mean[ij]
                 two_rdm_err[i,j] = err[ij]
+                two_rdm[j,i] = mean[ij].conj()
+                two_rdm_err[j,i] = err[ij].conj()
                 ij += 1
     elif walker == 'non_collinear':
         print("Non-collinear wavefunction not supported.")
@@ -129,8 +184,6 @@ def average_diag_two_rdm(filename, estimator='back_propagated', eqlb=1, skip=1, 
         print('Unknown walker type.')
         return None
     # Diagonal is zero
-    two_rdm = 0.5 * (two_rdm + two_rdm.conj().T)
-    two_rdm_err = 0.5 * (two_rdm_err + two_rdm_err.T)
     return two_rdm, two_rdm_err
 
 def average_on_top_pdm(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None):

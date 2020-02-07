@@ -8,6 +8,10 @@ MAP = {
             'group': 'FullOneRDM',
             'numer': 'one_rdm'
         },
+        'two_rdm': {
+            'group': 'FullTwoRDM',
+            'numer': 'two_rdm'
+        },
         'diag_two_rdm': {
             'group': 'DiagTwoRDM',
             'numer': 'diag_two_rdm'

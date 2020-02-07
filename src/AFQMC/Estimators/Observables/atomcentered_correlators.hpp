@@ -103,7 +103,7 @@ class atomcentered_correlators: public AFQMCInfo
                 NwI({0,0,0},shared_allocator<ComplexType>{TG.TG_local()})
   {
 
-    app_log()<<"  --  Adding Back Propagated real-space off diagonal 2RDM (atomcentered_correlators). -- \n ";
+    app_log()<<"  --  Adding Back Propagated atom-centered correlation functions (atomcentered_correlators). -- \n ";
     std::string orb_file("");
     std::string str("false");
     
@@ -286,7 +286,6 @@ class atomcentered_correlators: public AFQMCInfo
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
-
     // calculate green functions in atom basis and send to host for processing/accumulation
     // if memory becomes a problem, then batch over walkers
     int N = NAO*(NMO + NAO) + nsites*nsites + nsites; 
@@ -370,12 +369,12 @@ class atomcentered_correlators: public AFQMCInfo
               }
         using ma::batched_ab_ba;
         batched_ab_ba(shapes.data(), Aarray.data(), NAO, Barray.data(), NAO, 
-                      ComplexType(0.0), Carray.data(), int(Aarray.size()));
+                      ComplexType(1.0), Carray.data(), int(Aarray.size()));
         TG.TG_local().barrier();
 
         // testing !!!
-        //fill_n(devNwIJ.origin(),devNwIJ.num_elements(),ComplexType(0.0));
-        //TG.TG_local().barrier();
+//        fill_n(devNwIJ.origin(),devNwIJ.num_elements(),ComplexType(0.0));
+//        TG.TG_local().barrier();
         
         // NwIJ[iw][I][J] = sum_ij MwIJ[iw][Ij][Jj] * MwJI[iw][Jj][Ii]
         Aarray.clear();
@@ -563,7 +562,7 @@ class atomcentered_correlators: public AFQMCInfo
   IVector shapes;
 
   // type:0-cc, 1-ss, 2-cs (c=charge, s=spin)  
-  // np = # of points in real space. 
+  // np = # of atomic sites 
   // DMAverage (nave, type, np*np ) 
   mpi3CTensor DMAverage2D;
   // DMWork (nwalk, type, np*np ) 

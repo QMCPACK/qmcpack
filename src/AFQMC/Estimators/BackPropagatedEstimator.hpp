@@ -65,21 +65,21 @@ class BackPropagatedEstimator: public EstimatorBase
                                       Refs({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                                       observ0(TG,info,name,cur,wlk,wfn), wfn0(wfn), prop0(prop),
                                       max_nback_prop(10),
-                                      nStabalize(10), block_size(1), path_restoration(false),
+                                      nStabilize(10), block_size(1), path_restoration(false),
                                       importanceSampling(impsamp_),first(true)
   {
     int nave(1);
     if(cur != NULL) {
       ParameterSet m_param;
       std::string restore_paths;
-      m_param.add(nStabalize, "ortho", "int");
+      m_param.add(nStabilize, "ortho", "int");
       m_param.add(max_nback_prop, "nsteps", "int");
       m_param.add(nave, "naverages", "int");
       m_param.add(restore_paths, "path_restoration", "std::string");
       m_param.add(block_size, "block_size", "int");
       m_param.add(nblocks_skip, "nskip", "int");
       m_param.put(cur);
-      if(restore_paths == "true") {
+      if(restore_paths == "true" || restore_paths == "yes") {
         path_restoration = true;
       } else {
         path_restoration = false;
@@ -176,7 +176,7 @@ class BackPropagatedEstimator: public EstimatorBase
     TG.TG_local().barrier();
 
     //3. propagate backwards the references
-    prop0.BackPropagate(bp_step,nStabalize,wset,Refs_,detR);
+    prop0.BackPropagate(bp_step,nStabilize,wset,Refs_,detR);
 
     //4. calculate properties 
     // adjust weights here is path restoration
@@ -280,7 +280,7 @@ class BackPropagatedEstimator: public EstimatorBase
   ComplexType one = ComplexType(1.0, 0.0);
 
   // Frequency of reorthogonalisation.
-  int nStabalize;
+  int nStabilize;
   // Block size over which RDM will be averaged.
   int block_size;
   // Whether to restore cosine projection and real local energy apprximation for weights

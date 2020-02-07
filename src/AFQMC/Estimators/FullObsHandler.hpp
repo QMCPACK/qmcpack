@@ -180,6 +180,7 @@ class FullObsHandler: public AFQMCInfo
     }
 
     stdCVector Xw(iextensions<1u>{nw});
+    std::fill_n(Xw.origin(),Xw.num_elements(),ComplexType(1.0,0.0));
     stdCVector Ov(iextensions<1u>{2*nw});
     stdCMatrix detR(DevdetR); 
 
@@ -247,16 +248,17 @@ class FullObsHandler: public AFQMCInfo
 
       //2. calculate and accumulate appropriate weights 
       copy_n( DevOv.origin(), 2*nw, Ov.origin());
-      if(walker_type == CLOSED) { 
-        for(int iw=0; iw<nw; iw++) 
-          Xw[iw] = CIcoeff * Ov[iw] * detR[iw][iref] * detR[iw][iref]; 
-      } else if(walker_type == COLLINEAR) {
-        for(int iw=0; iw<nw; iw++) { 
-          Xw[iw] = CIcoeff * Ov[iw] * Ov[iw+nw] * detR[iw][2*iref] * detR[iw][2*iref+1]; 
-        }
-      } else if(walker_type == NONCOLLINEAR) {
-        for(int iw=0; iw<nw; iw++) 
-          Xw[iw] = CIcoeff * Ov[iw] * detR[iw][iref]; 
+      if(nrefs > 1) {
+        if(walker_type == CLOSED) { 
+          for(int iw=0; iw<nw; iw++) 
+            Xw[iw] = CIcoeff * Ov[iw] * Ov[iw] * detR[iw][iref] * detR[iw][iref]; 
+        } else if(walker_type == COLLINEAR) {
+          for(int iw=0; iw<nw; iw++) 
+            Xw[iw] = CIcoeff * Ov[iw] * Ov[iw+nw] * detR[iw][2*iref] * detR[iw][2*iref+1]; 
+        } else if(walker_type == NONCOLLINEAR) {
+          for(int iw=0; iw<nw; iw++) 
+            Xw[iw] = CIcoeff * Ov[iw] * detR[iw][iref]; 
+        } 
       } 
 
       // MAM: Since most of the simpler estimators need G4D in host memory, 
