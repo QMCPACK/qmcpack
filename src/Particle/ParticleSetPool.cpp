@@ -16,7 +16,7 @@
 /**@file ParticleSetPool.cpp
  * @brief Implements ParticleSetPool operators.
  */
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleLayoutIO.h"
@@ -27,7 +27,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "QMCApp/InitMolecularSystem.h"
+#include "Particle/InitMolecularSystem.h"
 #include "LongRange/LRCoulombSingleton.h"
 
 namespace qmcplusplus

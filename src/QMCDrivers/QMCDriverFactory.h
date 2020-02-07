@@ -23,7 +23,7 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "QMCDrivers/DriverTraits.h"
 #include "QMCDrivers/MCPopulation.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 
 class Communicate;
 

@@ -15,7 +15,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/CoulombPotential.h"

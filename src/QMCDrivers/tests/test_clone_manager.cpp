@@ -22,7 +22,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCDrivers/QMCUpdateBase.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 
 
 #include <stdio.h>
