@@ -38,7 +38,7 @@ ADD_CUSTOM_COMMAND(TARGET qmcpack
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP})
 
-TARGET_LINK_LIBRARIES(qmcpack qmc qmcdriver qmcham qmcwfs qmcbase qmcutil)
+TARGET_LINK_LIBRARIES(qmcpack qmc qmcdriver)
 
 IF(BUILD_AFQMC)
   TARGET_LINK_LIBRARIES(qmcpack afqmc)

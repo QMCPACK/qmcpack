@@ -38,14 +38,13 @@ SET(MOSRCS
 
 # create libmocommon 
 ADD_LIBRARY(mocommon ${MOSRCS})
-#YYYY: to be recoverred
-#TARGET_LINK_LIBRARIES(mocommon PUBLIC qmcbase qmcutil)
+TARGET_LINK_LIBRARIES(mocommon PUBLIC qmcbase)
 
 set(QTOOLS convert4qmc qmc-extract-eshdf-kvectors)
 FOREACH(p ${QTOOLS})
 
   ADD_EXECUTABLE(${p} ${p}.cpp)
-  TARGET_LINK_LIBRARIES(${p} PRIVATE mocommon qmcbase qmcutil)
+  TARGET_LINK_LIBRARIES(${p} PRIVATE mocommon)
 
   INSTALL(TARGETS ${p}
           RUNTIME DESTINATION bin)

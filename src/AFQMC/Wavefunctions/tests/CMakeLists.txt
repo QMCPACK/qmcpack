@@ -37,7 +37,7 @@ ENDFOREACH()
 IF(NOT QMC_COMPLEX)
   SET(UTEST_EXE test_afqmc_phmsd)
   ADD_EXECUTABLE(${UTEST_EXE} test_phmsd.cpp)
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc qmcutil ${QMC_UTIL_LIBS})
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc)
   SET(UTEST_NAME deterministic-unit_test_afqmc_phmsd)
   ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
                 "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5 "

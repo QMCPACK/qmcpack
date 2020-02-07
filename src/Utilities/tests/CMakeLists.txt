@@ -31,7 +31,7 @@ IF(HAVE_MPI)
   SET(MPI_UTILITY_TEST_SRC test_mpi_exception_wrapper.cpp)
   ADD_EXECUTABLE(${UTEST_EXE} ${MPI_UTILITY_TEST_SRC})
   #Way too many depenedencies make for very slow test linking
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil ${QMC_UTIL_LIBS})
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
   ADD_MPI_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}" 3)
 ENDIF(HAVE_MPI)
