@@ -23,6 +23,7 @@
 ####################################
 
 SET(QMCDRIVERS 
+  QMCDriverFactory.cpp
   SimpleFixedNodeBranch.cpp
   BranchIO.cpp
   MCPopulation.cpp

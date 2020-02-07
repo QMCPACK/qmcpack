@@ -23,8 +23,8 @@
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Message/MPIObjectBase.h"
-#include "QMCApp/ParticleSetPool.h"
-#include "QMCApp/QMCDriverFactory.h"
+#include "Particle/ParticleSetPool.h"
+#include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "type_traits/template_types.hpp"
 

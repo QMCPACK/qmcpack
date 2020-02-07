@@ -15,9 +15,9 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/tests/WalkerConsumer.h"
-#include "QMCApp/tests/MinimalParticlePool.h"
-#include "QMCApp/tests/MinimalWaveFunctionPool.h"
-#include "QMCApp/tests/MinimalHamiltonianPool.h"
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 namespace qmcplusplus
 {
 TEST_CASE("MCPopulation::createWalkers", "[particle][population]")

@@ -17,7 +17,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"

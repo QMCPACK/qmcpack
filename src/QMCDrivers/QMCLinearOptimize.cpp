@@ -24,7 +24,7 @@
 //#endif
 //#include "QMCDrivers/VMC/VMCSingle.h"
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 #include "Numerics/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include <cassert>

@@ -20,18 +20,13 @@
 # create libqmc
 ####################################
 SET(QMCAPPDIR
-    ParticleSetPool.cpp
-    WaveFunctionPool.cpp
-    HamiltonianPool.cpp
-    InitMolecularSystem.cpp
     QMCAppBase.cpp
     QMCMainState.cpp
-    QMCDriverFactory.cpp
     QMCMain.cpp
     CoupledMC.cpp
 )
 ADD_LIBRARY(qmc ${QMCAPPDIR})
-TARGET_LINK_LIBRARIES(qmc PUBLIC qmcdriver)
+TARGET_LINK_LIBRARIES(qmc PUBLIC qmcutil)
 
 ####################################
 # QMCPACK application

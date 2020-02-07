@@ -14,7 +14,7 @@
 
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 
 namespace qmcplusplus
 {

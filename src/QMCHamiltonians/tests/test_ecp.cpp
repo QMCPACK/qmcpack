@@ -29,7 +29,7 @@
 
 //for Hamiltonian manipulations.
 #include "Particle/ParticleSet.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "LongRange/EwaldHandler3D.h"
 
 namespace qmcplusplus

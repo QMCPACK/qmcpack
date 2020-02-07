@@ -177,6 +177,8 @@ ENDIF()
     TARGET_LINK_LIBRARIES(qmcutil PRIVATE ${CUDA_LIBRARIES})
   ENDIF(HAVE_CUDA)
 
+  TARGET_LINK_LIBRARIES(qmcutil ${QMC_UTIL_LIBS})
+
   # For unit tests, enable use for the fake RNG
   FUNCTION( USE_FAKE_RNG TARGET )
     TARGET_COMPILE_DEFINITIONS(${TARGET} PRIVATE "USE_FAKE_RNG")
@@ -199,6 +201,8 @@ ENDIF()
   # create libqmcbase
   ####################################
   SET(PARTICLE ${PARTICLE}
+    Particle/InitMolecularSystem.cpp
+    Particle/ParticleSetPool.cpp
     Particle/ParticleSet.cpp
     Particle/VirtualParticleSet.cpp
     Particle/ParticleSet.BC.cpp
