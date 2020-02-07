@@ -395,14 +395,13 @@ int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trig
   // This happens as a side effect of killing or spawning walkers
 
   WalkerControlBase::onRankSpawnKill(pop, adjust);
+  pop.syncWalkersPerNode(getCommunicator());
 
   for (UPtr<MCPWalker>& walker : pop.get_walkers())
   {
     walker->Weight       = 1.0;
     walker->Multiplicity = 1.0;
   }
-
-  pop.syncWalkersPerNode(getCommunicator());
 
   return pop.get_num_global_walkers();
 }
@@ -812,7 +811,7 @@ std::vector<WalkerControlBase::IndexType> WalkerControlBase::syncFutureWalkersPe
 
 /** Here minimum and maximums per rank is enforced.
  */
-int WalkerControlBase::adjustPopulation(PopulationAdjustment& adjust)
+void WalkerControlBase::adjustPopulation(PopulationAdjustment& adjust)
 {
   // In the unified driver design each ranks MCPopulation knows this and it is not
   // stored a bunch of other places, i.e. NumPerNode shouldn't be how we know.
@@ -944,20 +943,16 @@ int WalkerControlBase::adjustPopulation(PopulationAdjustment& adjust)
   }
 
   // check current population
-  current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
-
   adjust.num_walkers =
       std::accumulate(adjust.copies_to_make.begin(), adjust.copies_to_make.end(), 0) + adjust.copies_to_make.size();
 
   // at least one walker after load-balancing
-  if (current_population / num_contexts_ == 0)
+  if (adjust.num_walkers / num_contexts_ == 0)
   {
     app_error() << "Some MPI ranks have no walkers after load balancing. This should not happen."
                 << "Improve the trial wavefunction or adjust the simulation parameters." << std::endl;
     APP_ABORT("WalkerControlBase::adjustPopulation");
   }
-
-  return current_population;
 }
 
 

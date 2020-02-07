@@ -48,12 +48,14 @@ QMCDriverNew::AdjustedWalkerCounts DMCBatched::calcDefaultLocalWalkers(QMCDriver
   checkNumCrowdsLTNumThreads();
   int num_threads(Concurrency::maxThreads<>());
 
+  int orig_walkers_per_rank = awc.walkers_per_rank;
+  
   if (awc.num_crowds == 0)
     awc.num_crowds = std::min(num_threads, awc.walkers_per_rank);
   awc.walkers_per_crowd = (awc.walkers_per_rank % awc.num_crowds) ? awc.walkers_per_rank / awc.num_crowds + 1 : awc.walkers_per_rank / awc.num_crowds;
 
   awc.walkers_per_rank = awc.walkers_per_crowd * awc.num_crowds;
-  if (awc.walkers_per_rank != qmcdriver_input_.get_walkers_per_rank())
+  if (awc.walkers_per_rank != orig_walkers_per_rank)
     app_warning() << "DMCBatched driver has adjusted walkers per rank to: " << awc.walkers_per_rank << '\n';
 
   app_log() << "DMCBatched walkers per crowd " << awc.walkers_per_crowd << std::endl;
@@ -497,7 +499,15 @@ void DMCBatched::process(xmlNodePtr node)
   // This code bothers me now, most of the code bases this on what is actually there.
   population_.set_num_local_walkers(awc.walkers_per_rank);
   population_.set_num_global_walkers(awc.global_walkers);
-  
+
+  walkers_per_rank_ = awc.walkers_per_rank;
+  walkers_per_crowd_ = awc.walkers_per_crowd;
+  num_crowds_ = awc.num_crowds;
+
+  app_log() << "DMCBatched Driver running with target_walkers=" << awc.global_walkers << '\n'
+            << "                               walkers_per_rank=" << walkers_per_rank_ << '\n'
+            << "                               num_crowds=" << num_crowds_ << '\n';
+
   // side effect updates walkers_per_crowd_;
   makeLocalWalkers(awc.walkers_per_rank, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
   Base::process(node);
@@ -549,8 +559,25 @@ bool DMCBatched::run()
 
       for (UPtr<Crowd>& crowd_ptr : crowds_)
         crowd_ptr->clearWalkers();
-      population_.distributeWalkers(crowds_.begin(), crowds_.end(), walkers_per_crowd_);
 
+      #ifndef NDEBUG
+      int org_walkers_per_crowd = walkers_per_crowd_;
+      #endif
+      
+      if (population_.get_num_local_walkers() % crowds_.size())
+      {
+        walkers_per_crowd_ = population_.get_num_local_walkers() / crowds_.size() + 1;
+      }
+      else
+        walkers_per_crowd_ = population_.get_num_local_walkers() / crowds_.size();
+
+      #ifndef NDEBUG
+      if ( org_walkers_per_crowd != walkers_per_crowd_ )
+        std::cout << "walkers_per_crowd changed to " << walkers_per_crowd_ << '\n';
+      #endif
+      
+      population_.distributeWalkers(crowds_.begin(), crowds_.end(), walkers_per_crowd_);
+      
       // Accumulate on the whole population
       // But it is now visible in the algorithm not hidden in the BranchEngine::branch.
       // TODO: optimize as task block?

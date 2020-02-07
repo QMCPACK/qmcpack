@@ -471,7 +471,7 @@ void QMCDriverNew::defaultSetNonLocalMoveHandler(QMCHamiltonian& ham)
 QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communicate* comm, IndexType desired_count, IndexType walkers_per_rank, int num_crowds)
 {
   int ranks = myComm->size();
-  AdjustedWalkerCounts awc;
+  AdjustedWalkerCounts awc{0,0,0,0};;
   awc.global_walkers = desired_count;
   awc.walkers_per_rank = walkers_per_rank;
   if ( awc.global_walkers != 0)

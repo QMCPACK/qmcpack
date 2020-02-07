@@ -38,14 +38,14 @@ QMCDriverNew::AdjustedWalkerCounts VMCBatched::calcDefaultLocalWalkers(QMCDriver
   checkNumCrowdsLTNumThreads();
   int num_threads(Concurrency::maxThreads<>());
   if (awc.num_crowds == 0)
-    awc.num_crowds = std::min(num_threads,awc.walkers_per_rank);
-
+    awc.num_crowds = std::min(num_threads, awc.walkers_per_rank);
+  
   if (awc.walkers_per_rank == awc.num_crowds)
     awc.walkers_per_crowd = 1;
   if (awc.walkers_per_rank < awc.num_crowds)
     awc.walkers_per_rank = awc.num_crowds;
-  awc.walkers_per_crowd =
-      (awc.walkers_per_rank % awc.num_crowds) ? awc.walkers_per_rank / awc.num_crowds + 1 : awc.walkers_per_rank / awc.num_crowds;
+  awc.walkers_per_crowd = (awc.walkers_per_rank % awc.num_crowds) ? awc.walkers_per_rank / awc.num_crowds + 1
+                                                                  : awc.walkers_per_rank / awc.num_crowds;
   awc.walkers_per_rank = awc.walkers_per_crowd * awc.num_crowds;
   if (awc.walkers_per_rank != qmcdriver_input_.get_walkers_per_rank())
     app_warning() << "VMCBatched driver has adjusted walkers per rank to: " << awc.walkers_per_rank << '\n';
@@ -146,7 +146,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         // This is inelegant
         if (use_drift)
         {
-          TrialWaveFunction::flex_calcRatioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios, grads_new);
+          TrialWaveFunction::flex_calcRatioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios,
+                                                grads_new);
           std::transform(delta_r_start, delta_r_end, log_gf.begin(),
                          [mhalf](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
 
@@ -265,19 +266,27 @@ void VMCBatched::runVMCStep(int crowd_id,
 
 void VMCBatched::process(xmlNodePtr node)
 {
-  // \todo This should be coming from VMCDriverInput
-  QMCDriverNew::AdjustedWalkerCounts awc = adjustGlobalWalkerCount(myComm, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(), get_num_crowds());
+  // \todo get total walkers should be coming from VMCDriverInput
+
+  QMCDriverNew::AdjustedWalkerCounts awc =
+      adjustGlobalWalkerCount(myComm, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
+                              get_num_crowds());
 
   // This code bothers me now, most of the code bases this on what is actually there.
   population_.set_num_local_walkers(awc.walkers_per_rank);
   population_.set_num_global_walkers(awc.global_walkers);
 
-  walkers_per_rank_ = awc.walkers_per_rank;
+  walkers_per_rank_  = awc.walkers_per_rank;
   walkers_per_crowd_ = awc.walkers_per_crowd;
-  num_crowds_ = awc.num_crowds;
-  
+  num_crowds_        = awc.num_crowds;
+
+  app_log() << "VMCBatched Driver running with total_walkers=" << awc.global_walkers << '\n'
+            << "                               walkers_per_rank=" << walkers_per_rank_ << '\n'
+            << "                               num_crowds=" << num_crowds_ << '\n';
+
   // side effect updates walkers_per_crowd_;
-  makeLocalWalkers(awc.walkers_per_rank, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+  makeLocalWalkers(awc.walkers_per_rank,
+                   ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 
   Base::process(node);
 }

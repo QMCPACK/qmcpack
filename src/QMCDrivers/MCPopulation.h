@@ -54,7 +54,6 @@ private:
   IndexType target_samples_     = 0;
   //Properties properties_;
   ParticleSet ions_;
-  std::vector<IndexType> num_local_walkers_per_node_;
   
   // By making this a linked list and creating the crowds at the same time we could get first touch.
   UPtrVector<MCPWalker> walkers_;
@@ -188,7 +187,6 @@ public:
   const SpeciesSet& get_species_set() const { return species_set_; }
   const ParticleSet& get_ions() const { return ions_; }
   const ParticleSet* get_golden_electrons() const {return elec_particle_set_; }
-  std::vector<IndexType> get_num_local_walkers_per_node() const { return num_local_walkers_per_node_; }
   void syncWalkersPerNode(Communicate* comm);
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }

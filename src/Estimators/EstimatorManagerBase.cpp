@@ -318,7 +318,6 @@ void EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimat
                                                    const RealType block_weight)
 {
   // One scalar estimator can be accumulating many scalar values
-  int num_est      = estimators.size();
   int num_scalars  = estimators[0].get().size();
   using ScalarType = ScalarEstimatorBase::RealType;
 
@@ -336,6 +335,8 @@ void EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimat
   if (AverageCache.size() != num_scalars)
     throw std::runtime_error(
         "EstimatorManagerBase and Crowd ScalarManagers do not agree on number of scalars being estimated");
+
+  int num_est      = estimators.size();
   for (int i = 0; i < num_est; ++i)
   {
     estimators[i].get().takeBlockAverage(averages_work.begin());

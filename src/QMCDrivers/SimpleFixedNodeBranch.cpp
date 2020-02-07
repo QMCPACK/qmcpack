@@ -271,7 +271,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, IndexT
   //assign current Eref and a large number for variance
   WalkerController->setTrialEnergy(vParam[SBVP::ETRIAL]);
   this->reset();
-  int allow_flux = 50; // std::min(static_cast<int>(population.get_num_global_walkers() * 0.10), 50);
+  int allow_flux = 50;
   if (fromscratch)
   {
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
@@ -297,7 +297,6 @@ int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, IndexT
   app_log() << "  Max and minimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS]
             << std::endl;
   app_log() << "  QMC Status (BranchMode) = " << BranchMode << std::endl;
-
   return int(round(double(iParam[B_TARGETWALKERS]) / double(nwtot_now)));
 }
 
@@ -481,7 +480,9 @@ void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopul
 
   //population for trial energy modification should not include any released node walkers.
   MCDataType<FullPrecRealType>& wc_ensemble_prop = WalkerController->get_ensemble_property();
-  pop_now -= wc_ensemble_prop.RNSamples;
+
+  // \todo is RNSamples worth saving
+  //pop_now -= wc_ensemble_prop.RNSamples;
   //current energy
   vParam[SBVP::ENOW] = wc_ensemble_prop.Energy;
   VarianceHist(wc_ensemble_prop.Variance);
@@ -568,7 +569,7 @@ void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopul
   WalkerController->setTrialEnergy(vParam[SBVP::ETRIAL]);
   //accumulate collectables and energies for scalar.dat
   FullPrecRealType wgt_inv = WalkerController->get_num_contexts() / wc_ensemble_prop.Weight;
-  //walkers.Collectables *= wgt_inv;
+  //MCPopulation.Collectables *= wgt_inv;
 }
 
 /**

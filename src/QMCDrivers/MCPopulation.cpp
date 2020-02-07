@@ -27,7 +27,7 @@ MCPopulation::MCPopulation(int num_ranks,
                            TrialWaveFunction* trial_wf,
                            QMCHamiltonian* hamiltonian,
                            int this_rank)
-    : num_local_walkers_per_node_(num_ranks, 0), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), num_ranks_(num_ranks), rank_(this_rank)
+    : trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), num_ranks_(num_ranks), rank_(this_rank)
 {
   num_global_walkers_ = mcwc.GlobalNumWalkers;
   num_local_walkers_  = mcwc.LocalNumWalkers;
@@ -61,7 +61,6 @@ MCPopulation::MCPopulation(int num_ranks,
                            QMCHamiltonian* hamiltonian,
                            int this_rank)
     : num_particles_(elecs->R.size()),
-      num_local_walkers_per_node_(num_ranks, 0),
       trial_wf_(trial_wf),
       elec_particle_set_(elecs),
       hamiltonian_(hamiltonian),
@@ -253,19 +252,12 @@ void MCPopulation::killWalker(MCPWalker& walker)
 void MCPopulation::syncWalkersPerNode(Communicate* comm)
 {
   int ncontexts = comm->size();
+  std::vector<IndexType> num_local_walkers_per_node(comm->size(), 0.0);;
   
-  std::vector<int> nwoff(ncontexts + 1, 0);
+  num_local_walkers_per_node[comm->rank()] = num_local_walkers_;
+  comm->allreduce(num_local_walkers_per_node);
 
-  // \todo better if this was not state.
-  std::fill(num_local_walkers_per_node_.begin(), num_local_walkers_per_node_.end(), 0);
-  num_local_walkers_per_node_[comm->rank()] = num_local_walkers_;
-  comm->allreduce(num_local_walkers_per_node_);
-
-  for (int ip = 0; ip < ncontexts; ++ip)
-  {
-    nwoff[ip + 1] = nwoff[ip] + num_local_walkers_per_node_[ip];
-  }
-  num_global_walkers_ = nwoff[ncontexts];
+  num_global_walkers_ = std::accumulate(num_local_walkers_per_node.begin(), num_local_walkers_per_node.end(), 0);
 }
 
 /** Creates walkers doing their first touch in their crowd (thread) context
