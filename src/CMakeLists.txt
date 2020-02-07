@@ -177,6 +177,7 @@ ENDIF()
     TARGET_LINK_LIBRARIES(qmcutil PRIVATE ${CUDA_LIBRARIES})
   ENDIF(HAVE_CUDA)
 
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC ${QMC_UTIL_LIBS})
   IF(HAVE_MPI)
     TARGET_LINK_LIBRARIES(qmcutil PUBLIC MPI::MPI_CXX)
   ENDIF()
@@ -203,6 +204,8 @@ ENDIF()
   # create libqmcbase
   ####################################
   SET(PARTICLE ${PARTICLE}
+    Particle/InitMolecularSystem.cpp
+    Particle/ParticleSetPool.cpp
     Particle/ParticleSet.cpp
     Particle/VirtualParticleSet.cpp
     Particle/ParticleSet.BC.cpp

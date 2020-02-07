@@ -20,6 +20,7 @@
     
     
 SET(WFBASE_SRCS
+  WaveFunctionPool.cpp
   WaveFunctionComponent.cpp
   DiffWaveFunctionComponent.cpp
   WaveFunctionComponentBuilder.cpp

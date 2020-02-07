@@ -23,11 +23,11 @@
 #include "Utilities/RandomGenerator.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "QMCApp/QMCDriverFactory.h"
+#include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCDrivers/QMCDriverInterface.h"
-#include "QMCApp/tests/MinimalParticlePool.h"
-#include "QMCApp/tests/MinimalWaveFunctionPool.h"
-#include "QMCApp/tests/MinimalHamiltonianPool.h"
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include <iostream>
 #include <stdio.h>
 #include <string>

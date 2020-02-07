@@ -16,7 +16,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 
 #include <stdio.h>
 #include <string>

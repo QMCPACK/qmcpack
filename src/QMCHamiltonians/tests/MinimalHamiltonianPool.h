@@ -14,8 +14,8 @@
 
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "QMCApp/HamiltonianPool.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
+#include "Particle/ParticleSetPool.h"
 
 namespace qmcplusplus
 {
