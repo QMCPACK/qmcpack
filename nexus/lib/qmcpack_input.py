@@ -1973,7 +1973,7 @@ class ci(QIxml):
 #end class ci
 
 class csf(QIxml):
-    attributes = ['id','exctlvl','coeff','qchem_coeff','occ']
+    attributes = ['id','exctlvl','coeff','coeff_real','coeff_imag','qchem_coeff','occ']
     elements   = ['det']
     attr_types = obj(occ=str)
 #end class csf
@@ -4384,7 +4384,7 @@ def generate_sposets(type           = None,
         QmcpackInput.class_error('cannot generate sposets\n  type of sposet not specified')
     #end if
     if sposets!=None:
-        for spo in spo:
+        for spo in sposets:
             spo.type = type
         #end for
     elif occupation=='slater_ground':
@@ -4712,75 +4712,12 @@ def generate_determinantset_old(type           = 'bspline',
             QmcpackInput.class_error('excitation must be a tuple or list with with two elements\nthe first element must be either "up" or "down"\nand the second element must be integers separated by spaces, e.g. "-216 +217"\nyou provided: {0}'.format(excitation))
         #end if
 
-    # REMOVE LATER
-
-    #     <determinantset name="LCAOBSet" type="MolecularOrbital" transform="yes" source="ion0">
-    #       <multideterminant optimize="no" spo_up="spo-up" spo_dn="spo-dn">
-    #         <detlist size="1" type="CSF" nca="0" ncb="0" nea="4" neb="4" nstates="27" cutoff="0.001">
-    #           <csf id="CSFcoeff_2" exctLvl="1" coeff="1.0" qchem_coeff="1.0" occ="222100000100000000000000000">
-#             <det id="csf_2-0" coeff="0.707107" alpha="111100000000000000000000000" beta="111000000100000000000000000"/>
-#             <det id="csf_2-1" coeff="0.707107" alpha="111000000100000000000000000" beta="111100000000000000000000000"/>
-#           </csf>
-#         </detlist>
-#       </multideterminant>
-#     </determinantset>
-
-#     class determinantset(QIxml):
-#         attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep','pbcimages']
-#         elements   = ['basisset','sposet','slaterdeterminant','multideterminant','spline','backflow','cubicgrid']
-#         h5tags     = ['twistindex','twistangle','rcut']
-#         write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,cuspcorrection=yesno,usegrid=yesno)
-#     #end class determinantset
-
-
-#     class slaterdeterminant(QIxml):
-#         attributes = ['optimize']
-#         elements   = ['determinant']
-#         write_types = obj(optimize=yesno)
-#     #end class slaterdeterminant
-#     
-#     class determinant(QIxml):
-#         attributes = ['id','group','sposet','size','ref','spin','href','orbitals','spindataset','name','cuspinfo','debug']
-#         elements   = ['occupation','coefficient']
-#         identifier = 'id'
-#         write_types = obj(debug=yesno)
-#     #end class determinant
-#     
-#     class multideterminant(QIxml):
-#         attributes = ['optimize','spo_up','spo_dn']
-#         elements   = ['detlist']
-#     #end class multideterminant
-#     
-#     class detlist(QIxml):
-#         attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff','href']
-#         elements   = ['ci','csf']
-#     #end class detlist
-#     
-#     class csf(QIxml):
-#         attributes = ['id','exctlvl','coeff','qchem_coeff','occ']
-#         elements   = ['det']
-#         attr_types = obj(occ=str)
-#     #end class csf
-#     
-#     class det(QIxml):
-#         attributes = ['id','coeff','alpha','beta']
-#         attr_types = obj(alpha=str,beta=str)
-#     #end class det
-
-
-# REMOVE LATER
-        
         spin_channel,excitation = excitation
         if spin_channel=='up':
             sdet = dset.get('updet')
         elif spin_channel=='down':
             sdet = dset.get('downdet')
         elif spin_channel=='singlet' or spin_channel=='triplet':
-            #det = dset.get('downdet')
-      #element class: detlist
-      #      element tag: detlist
-      #            tags allowed in a collection: ['atomicbasisset', 'axis', 'basisgroup', 'ci', 'constant', 'correlation', 'csf', 'det', 'determinant', 'estimator', 'grid', 'group', 'hamiltonian', 'jastrow', 'mcwalkerset', 'neighbor_trace', 'observable', 'optimize', 'pairpot', 'particleset', 'pseudo', 'qmc', 'radfunc', 'spacegrid', 'sposet', 'sposet_builder', 'transformation', 'var', 'wavefunction']
-
             coeff_sign = ''
             if spin_channel=='triplet':
                 coeff_sign = '-'
@@ -4792,8 +4729,20 @@ def generate_determinantset_old(type           = 'bspline',
                 tilematrix = tilematrix,
                 href       = href,
                 source     = source,
+                sposets    = generate_sposets(
+                    type           = type,
+                    occupation     = 'slater_ground',
+                    spin_polarized = spin_polarized,
+                    system         = system,
+                    spo_up         = 'spo_u',
+                    spo_down       = 'spo_d',
+                    sposets        = None,
+                    spindatasets   = True
+                    ),
                 multideterminant = multideterminant(
-                    #size="1" type="CSF" nca="0" ncb="0" nea="4" neb="4" nstates="27" cutoff="0.001"
+                    optimize = 'no',
+                    spo_up='spo_u',
+                    spo_dn='spo_d',
                     detlist = detlist(
                         size = '1',
                         type = 'CSF',
@@ -4802,26 +4751,19 @@ def generate_determinantset_old(type           = 'bspline',
                         nea = elns.up_electron.count,
                         neb = elns.down_electron.count,
                         cutoff = '0.001',
-#           <csf id="CSFcoeff_2" exctLvl="1" coeff="1.0" qchem_coeff="1.0" occ="222100000100000000000000000">
-#             <det id="csf_2-0" coeff="0.707107" alpha="111100000000000000000000000" beta="111000000100000000000000000"/>
-#             <det id="csf_2-1" coeff="0.707107" alpha="111000000100000000000000000" beta="111100000000000000000000000"/>
-#           </csf>
                         csf = csf(
                             id          = 'CSF_0',
                             exctLvl     = '1',
-                            coeff       = '1.0',
+                            coeff_real  = '1.0',
                             qchem_coeff = '1.0',
-                            occ         = '2'*72,
-#             <det id="csf_2-0" coeff="0.707107" alpha="111100000000000000000000000" beta="111000000100000000000000000"/>
-#             <det id="csf_2-1" coeff="0.707107" alpha="111000000100000000000000000" beta="111100000000000000000000000"/>
                             dets = collection(
                                 det(
                                     id='csf_00',
-                                    coeff='0.707107',
+                                    coeff='0.70710678118654752440',
                                     ),
                                 det(
                                     id='csf_01',
-                                    coeff=coeff_sign+'0.707107',
+                                    coeff=coeff_sign+'0.70710678118654752440',
                                     ),
                                 )
                             )
@@ -4829,22 +4771,26 @@ def generate_determinantset_old(type           = 'bspline',
                     )
                 )
             
-            dset.multideterminant.detlist.nstates = 72
+            if '-' in excitation or '+' in excitation: #Type 2
+                # assume excitation of form '-216 +217'
+                exc_orbs = array(excitation.split(),dtype=int)
+                exc_orbs[0] *= -1
+                nel = elns.up_electron.count 
 
-            dset.multideterminant.detlist.csf.dets[0].alpha = '1'*35+'01'+'0'*(72-37)
-            dset.multideterminant.detlist.csf.dets[0].beta = '1'*36+'0'*(72-36)
+                dset.multideterminant.detlist.nstates = exc_orbs[1]
+                dset.multideterminant.detlist.csf.occ = '2'*nel+'0'*(exc_orbs[1]-nel-1)+'2',
 
-            dset.multideterminant.detlist.csf.dets[1].alpha = '1'*36+'0'*(72-36)
-            dset.multideterminant.detlist.csf.dets[1].beta = '1'*35+'01'+'0'*(72-37)
+                dset.multideterminant.detlist.csf.dets[0].alpha = '1'*(exc_orbs[0]-1)+'0'+'1'*(nel-exc_orbs[0])+'0'*(exc_orbs[1]-nel-1)+'1'
+                dset.multideterminant.detlist.csf.dets[0].beta = '1'*nel+'0'*(exc_orbs[1]-nel)
 
-            if twist!=None:
-                dset.twistnum = system.structure.select_twist(twist)
-            elif twistnum!=None:
-                dset.twistnum = twistnum
-            elif len(system.structure.kpoints)==1:
-                dset.twistnum = 0
-            else:
-                dset.twistnum = None
+                dset.multideterminant.detlist.csf.dets[1].alpha = '1'*nel+'0'*(exc_orbs[1]-nel)
+                dset.multideterminant.detlist.csf.dets[1].beta = '1'*(exc_orbs[0]-1)+'0'+'1'*(nel-exc_orbs[0])+'0'*(exc_orbs[1]-nel-1)+'1'
+
+                dset.sposets.spo_u.size = exc_orbs[1]
+                dset.sposets.spo_d.size = exc_orbs[1]
+
+            else: #Type 1 or Type 3
+                QmcpackInput.class_error('{} excitation is not yet available for band format'.format(spin_channel))
             #end if
 
             return dset
