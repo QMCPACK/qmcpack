@@ -49,10 +49,6 @@ FOREACH(p ${QTOOLS})
   INSTALL(TARGETS ${p}
           RUNTIME DESTINATION bin)
 
-  FOREACH(l ${QMC_UTIL_LIBS})
-    TARGET_LINK_LIBRARIES(${p} PRIVATE ${l})
-  ENDFOREACH(l ${QMC_UTIL_LIBS})
-
 ENDFOREACH(p ${QTOOLS})
 
 ADD_EXECUTABLE(qmc-get-supercell getSupercell.cpp)
@@ -69,9 +65,6 @@ INSTALL(TARGETS qmc-check-affinity
 
 ADD_EXECUTABLE(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
 TARGET_LINK_LIBRARIES(convertpw4qmc PRIVATE qmcutil)
-FOREACH(l ${QMC_UTIL_LIBS})		       
-  TARGET_LINK_LIBRARIES(convertpw4qmc PRIVATE ${l})
-ENDFOREACH(l ${QMC_UTIL_LIBS})
 
 INSTALL(TARGETS convertpw4qmc
         RUNTIME DESTINATION bin)

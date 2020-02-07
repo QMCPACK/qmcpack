@@ -69,6 +69,9 @@ IF(HAVE_MPI)
   TARGET_LINK_LIBRARIES(formic_utils PUBLIC MPI::MPI_CXX)
 ENDIF()
 
+# Ye Temporary safe depdency for linear algerbra, will be fixed soon.
+TARGET_LINK_LIBRARIES(formic_utils PUBLIC qmcutil)
+
 #target_link_libraries(formic_utils ${FORMIC_LAPACK_BLAS_LIBS})
 
 #set_property(TARGET formic_utils PROPERTY CXX_STANDARD 11)
