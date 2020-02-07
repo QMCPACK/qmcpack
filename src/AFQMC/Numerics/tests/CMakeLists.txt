@@ -25,7 +25,7 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
   ADD_EXECUTABLE(${UTEST_EXE} test_dense_numerics.cpp test_ma_blas.cpp
 test_sparse_numerics.cpp test_sparse_numerics_native.cpp)
 #ENDIF(ENABLE_CUDA)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc qmcutil ${QMC_UTIL_LIBS})
+TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc)
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

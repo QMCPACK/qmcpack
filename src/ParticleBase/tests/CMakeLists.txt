@@ -19,7 +19,7 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 ADD_EXECUTABLE(${UTEST_EXE} test_particle_attrib.cpp test_random_seq.cpp test_attrib_ops.cpp)
 USE_FAKE_RNG(${UTEST_EXE})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcbase qmcutil qmcfakerng ${QMC_UTIL_LIBS})
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcbase qmcfakerng)
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
