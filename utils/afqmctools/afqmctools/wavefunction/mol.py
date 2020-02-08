@@ -302,14 +302,6 @@ def gen_multi_det_wavefunction(mc, weight_cutoff=0.95, verbose=False,
     return coeffs, [occups,occdns]
 
 
-def read_qmcpack_wfn(filename, nskip=9):
-    with open(filename) as f:
-        content = f.readlines()[nskip:]
-    useable = numpy.array([c.split() for c in content]).flatten()
-    tuples = [ast.literal_eval(u) for u in useable]
-    orbs = [complex(t[0], t[1]) for t in tuples]
-    return numpy.array(orbs)
-
 def write_phmsd_wfn(filename, occs, nmo, ncore=0):
     output = open(filename, 'w')
     namelist = "&FCI\n UHF = 0\n NCI = %d\n TYPE = occ\n&END" % len(occs)
