@@ -35,9 +35,9 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
     uhf = scf_data['isUHF']
     # For RHF only nalpha entries will be filled.
     if uhf:
-        norb = C[0].shape[0]
+        norb = C[0].shape[-1]
     else:
-        norb = C.shape[0]
+        norb = C.shape[-1]
     if wfn is None:
         wfn = numpy.zeros((1,norb,nalpha+nbeta), dtype=numpy.complex128)
         wfn_type = 'NOMSD'
