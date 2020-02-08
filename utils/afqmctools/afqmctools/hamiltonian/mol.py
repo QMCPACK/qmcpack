@@ -55,7 +55,7 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
             print(" # UHF integrals are not allowed. Use ortho AO option (-a/--ao).")
             sys.exit()
         X = scf_data['mo_coeff']
-    df_ints = scf_data['df_ints']
+    df_ints = scf_data.get('df_ints', None)
     C = scf_data['mo_coeff']
     # 3. Pyscf mol object.
     mol = scf_data['mol']
