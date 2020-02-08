@@ -29,6 +29,7 @@ namespace qmcplusplus
  **           Currently, this class does nothing other than generate and store \f$\Delta V_SO(r)\f$
  **           for different orbital angular momenta.  Implementation coming soon!  
  **/
+
 class SOECPComponent : public QMCTraits
 {
 private:
@@ -122,6 +123,7 @@ public:
   inline int getSknot() const { return sknot; }
 
   friend class ECPComponentBuilder;
+  friend void copyGridUnrotatedForTest(SOECPComponent& nlpp);
 }; 
 
 } // namespace qmcplusplus

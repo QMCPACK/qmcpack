@@ -79,18 +79,20 @@ int SOECPComponent::kroneckerDelta(int x, int y)
 SOECPComponent::ComplexType SOECPComponent::lmMatrixElements(int l, int m1, int m2, int dim)
 {
   ComplexType val;
+  RealType onehalf = 0.5;
+  RealType zero = 0.0;
   switch(dim)
   {
   case 0: //x
-    val = 0.5*ComplexType(std::sqrt(l*(l+1)-m2*(m2+1))*kroneckerDelta(m1,m2+1) + std::sqrt(l*(l+1)-m2*(m2-1))*kroneckerDelta(m1,m2-1),0.0);
+    val = onehalf*ComplexType(std::sqrt(l*(l+1)-m2*(m2+1))*kroneckerDelta(m1,m2+1) + std::sqrt(l*(l+1)-m2*(m2-1))*kroneckerDelta(m1,m2-1),zero);
     return val;
     break;
   case 1:
-    val = 0.5*ComplexType(0.0,std::sqrt(l*(l+1)-m2*(m2-1))*kroneckerDelta(m1,m2-1)-std::sqrt(l*(l+1)-m2*(m2+1))*kroneckerDelta(m1,m2+1));
+    val = onehalf*ComplexType(0.0,std::sqrt(l*(l+1)-m2*(m2-1))*kroneckerDelta(m1,m2-1)-std::sqrt(l*(l+1)-m2*(m2+1))*kroneckerDelta(m1,m2+1));
     return val;
     break;
   case 2:
-    val = ComplexType(m2*kroneckerDelta(m1,m2),0.0);
+    val = ComplexType(m2*kroneckerDelta(m1,m2),zero);
     return val;
     break;
   default:
@@ -133,8 +135,9 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
     }
 
     // Compute radial potential, do not multiply by (2*l+1)
-    for (int ip = 0; ip<nchannel; ip++)
+    for (int ip = 0; ip<nchannel; ip++)  {
       vrad[ip] = sopp_m[ip]->splint(r); //*wgt_angpp_m[ip]
+    }
 
     ComplexType angint(0.0);
     for (int j = 0; j < nknot; j++)
@@ -151,7 +154,19 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
             ldots += lmMatrixElements(l,m1,m2,0)*sx;
             ldots += lmMatrixElements(l,m1,m2,1)*sy;
             ldots += lmMatrixElements(l,m1,m2,2)*sz;
-            msums += std::conj(Ylm(l,m1,dr))*Ylm(l,m2,r*rrotsgrid_m[j])*ldots;
+            //Seemingly Numerics/Ylm takes unit vector with order z,x,y...why
+            RealType rmag = std::sqrt(dr[0]*dr[0] + dr[1]*dr[1] + dr[2]*dr[2]);
+            PosType rr = dr/rmag; 
+            PosType tmp; 
+            tmp[0] = rr[2];
+            tmp[1] = rr[0];
+            tmp[2] = rr[1];
+            ComplexType cY = std::conj(Ylm(l,m1,tmp));
+            tmp[0] = rrotsgrid_m[j][2];
+            tmp[1] = rrotsgrid_m[j][0];
+            tmp[2] = rrotsgrid_m[j][1];
+            ComplexType Y = Ylm(l,m2,tmp);
+            msums += cY*Y*ldots;
           }
         }
         lsum += vrad[l]*msums;
@@ -159,7 +174,7 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
       angint += psiratio[j]*lsum;
     }
     if (is==0 || is==sknot) //trapezoidal rule for endpoints
-      sint += dS*0.5*angint;
+      sint += RealType(0.5)*dS*angint;
     else
       sint += dS*angint;
 

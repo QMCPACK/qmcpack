@@ -278,6 +278,7 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
     pp_so->add(angList[l], app); 
   }
   NumSO = angList.size();
+  pp_so->Rmax = rmax;
 
 }
 
