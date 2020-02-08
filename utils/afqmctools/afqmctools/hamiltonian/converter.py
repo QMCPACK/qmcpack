@@ -138,9 +138,9 @@ def read_qmcpack_hamiltonian(filename, get_chol=True):
             'minus_k': minus_k,
             'qk_k2': qkk2
             }
+        return hamil
     except KeyError:
         pass
-
     try:
         hc, chol, enuc, nmo, nelec = read_qmcpack_sparse(filename,
                                                          get_chol=get_chol)
@@ -151,12 +151,13 @@ def read_qmcpack_hamiltonian(filename, get_chol=True):
             'nmo': nmo,
             'nelec': nelec
             }
+        return hamil
     except KeyError:
         pass
-
     try:
         hcore, chol, enuc = read_qmcpack_dense(filename)
         hamil = {'hcore': hcore, 'chol': chol, 'enuc': enuc}
+        return hamil
     except KeyError:
         print("Error reading Hamiltonian file. Unknown format.")
         hamil = None
