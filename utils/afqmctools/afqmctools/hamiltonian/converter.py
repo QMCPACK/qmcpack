@@ -139,19 +139,27 @@ def read_qmcpack_hamiltonian(filename, get_chol=True):
             'qk_k2': qkk2
             }
     except KeyError:
-        try:
-            hc, chol, enuc, nmo, nelec = read_qmcpack_sparse(filename,
-                                                             get_chol=get_chol)
-            hamil = {
-                'hcore': hc,
-                'chol': chol,
-                'enuc': enuc,
-                'nmo': nmo,
-                'nelec': nelec
-                }
-        except KeyError:
-            print("Error reading Hamiltonian file. Hamiltonian not found.")
-            hamil = None
+        pass
+
+    try:
+        hc, chol, enuc, nmo, nelec = read_qmcpack_sparse(filename,
+                                                         get_chol=get_chol)
+        hamil = {
+            'hcore': hc,
+            'chol': chol,
+            'enuc': enuc,
+            'nmo': nmo,
+            'nelec': nelec
+            }
+    except KeyError:
+        pass
+
+    try:
+        hcore, chol, enuc = read_qmcpack_dense(filename)
+        hamil = {'hcore': hcore, 'chol': chol, 'enuc': enuc}
+    except KeyError:
+        print("Error reading Hamiltonian file. Unknown format.")
+        hamil = None
     return hamil
 
 def read_qmcpack_sparse(filename, get_chol=True):
@@ -412,6 +420,31 @@ def get_kpoint_chol(filename, nchol_pk, minus_k, i):
             nchol = nchol_pk[minus_k[i]]
             Lk = Lk.view(numpy.complex128).conj()[:,:,0]
     return Lk
+
+def read_qmcpack_dense(filename):
+    """Read in integrals from qmcpack hdf5 format. kpoint dependent case.
+
+    Parameters
+    ----------
+    filename : string
+        File containing integrals in qmcpack format.
+
+    Returns
+    -------
+    hcore : :class:`numpy.ndarray`
+        One-body part of the Hamiltonian.
+    chol_vecs : :class:`numpy.ndarray`
+        Two-electron integrals. Shape: [nmo*nmo, nchol]
+    ecore : float
+        Core contribution to the total energy.
+    """
+    with h5py.File(filename, 'r') as fh5:
+        enuc = fh5['Hamiltonian/Energies'][:][0]
+        dims = fh5['Hamiltonian/dims'][:]
+        hcore = fh5['Hamiltonian/hcore'][:]
+        chol = fh5['Hamiltonian/DenseFactorized/L'][:]
+
+    return hcore, chol, enuc
 
 
 def fcidump_header(nel, norb, spin):
