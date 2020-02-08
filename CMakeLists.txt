@@ -277,10 +277,7 @@ SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
 #FindXYZ.cmake will set the values if successful
 ######################################################################
 SET(HAVE_EINSPLINE 1) # to be removed
-SET(HAVE_LIBXML2 1)
-SET(HAVE_LIBFFTW 0)
 SET(HAVE_LIBXMLPP 0)
-SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 SET(MAC_VECLIB 0)
@@ -317,10 +314,7 @@ IF(CMAKE_TOOLCHAIN_FILE)
 ELSE(CMAKE_TOOLCHAIN_FILE)
   MESSAGE(STATUS "Trying to figure out .....")
   SET(ENABLE_OPENMP 0)
-  SET(HAVE_MPI 0)
   SET(INTEL_COMPILER 0)
-  SET(HAVE_MKL 0)
-  SET(HAVE_MKL_VML 0)
   SET(HAVE_ACML 0)
 
   ######################################################
@@ -578,13 +572,18 @@ ENDIF(FFTW_FOUND)
 
 SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FORTRAN_LIBRARIES})
 
+#-------------------------------------------------------------------
+#  set up Libxml2 library
+#-------------------------------------------------------------------
 find_package(ZLIB)
 find_package(LibXml2)
-
 IF(LIBXML2_FOUND)
-  INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
-  SET(HAVE_LIBXML2 1)
-  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${LIBXML2_LIBRARIES})
+  IF(${CMAKE_VERSION} VERSION_LESS "3.12.0")
+    ADD_LIBRARY(LibXml2::LibXml2 INTERFACE IMPORTED)
+    SET_TARGET_PROPERTIES(LibXml2::LibXml2 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LIBXML2_INCLUDE_DIR}"
+                                                      INTERFACE_LINK_LIBRARIES "${LIBXML2_LIBRARIES}")
+  ENDIF()
+  SET_PROPERTY(TARGET LibXml2::LibXml2 APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS "HAVE_LIBXML2")
 ELSE()
   MESSAGE(FATAL_ERROR "Could not find required library Libxml2")
 ENDIF(LIBXML2_FOUND)
@@ -641,7 +640,6 @@ IF(HDF5_FOUND)
     MESSAGE(WARNING "MPI builds may have potential performance loss not using parallel HDF5!")
   ENDIF()
 
-  INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
   IF ( CMAKE_BUILD_TYPE AND HDF5_LIBRARIES_DEBUG )
     IF ( CMAKE_BUILD_TYPE MATCHES DEBUG )
       SET( HDF5_LIBRARIES ${HDF5_LIBRARIES_DEBUG} )
@@ -649,28 +647,40 @@ IF(HDF5_FOUND)
       SET( HDF5_LIBRARIES ${HDF5_LIBRARIES_RELEASE} )
     ENDIF()
   ENDIF()
-  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${HDF5_LIBRARIES})
+
+  ADD_LIBRARY(IO::HDF5 INTERFACE IMPORTED)
+  SET_TARGET_PROPERTIES(IO::HDF5 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIR}"
+                                            INTERFACE_COMPILE_DEFINITIONS "HAVE_LIBHDF5;H5_USE_16_API"
+                                            INTERFACE_LINK_LIBRARIES "${HDF5_LIBRARIES}")
+  IF(ENABLE_PHDF5)
+    SET_PROPERTY(TARGET IO::HDF5 APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS "ENABLE_PHDF5")
+  ENDIF(ENABLE_PHDF5)
 ELSE(HDF5_FOUND)
   MESSAGE(FATAL_ERROR "HDF5 not found. Set HDF5_ROOT")
 ENDIF(HDF5_FOUND)
 
+#-------------------------------------------------------------------
+#  set up libboost library, header only
+#-------------------------------------------------------------------
 #make sure we can find boost if it's not in /usr
 set(Boost_NO_BOOST_CMAKE on)
 find_package(Boost 1.61.0 REQUIRED)
 IF(Boost_FOUND)
-  SET(HAVE_LIBBOOST 1)
-  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+  SET_PROPERTY(TARGET Boost::boost APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS "HAVE_LIBBOOST")
   MESSAGE(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
 ELSE()
   MESSAGE(FATAL_ERROR "Need boost 1.61.0 or higher.  Set BOOST_ROOT")
 ENDIF()
 
+#-------------------------------------------------------------------
+#  set up CUDA compiler options and libraries
+#-------------------------------------------------------------------
 SET(HAVE_CUDA 0)
 IF(QMC_CUDA OR ENABLE_CUDA)
   IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(CUDA_PROPAGATE_HOST_FLAGS ON)
+    SET(CUDA_PROPAGATE_HOST_FLAGS ON)
   ELSE(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+    SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
   ENDIF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   FIND_PACKAGE(CUDA REQUIRED)
   SET(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
@@ -696,7 +706,7 @@ IF(QMC_CUDA OR ENABLE_CUDA)
     SET(CUDA_NVCC_FLAGS "-arch=${CUDA_ARCH};${CUDA_NVCC_FLAGS}")
   endif(CUDA_NVCC_FLAGS MATCHES "arch")
   INCLUDE_DIRECTORIES(${CUDA_INCLUDE_DIRS})
-  set(HAVE_CUDA 1)
+  SET(HAVE_CUDA 1)
   MESSAGE("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
 ELSE(QMC_CUDA OR ENABLE_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
@@ -833,10 +843,9 @@ MESSAGE(STATUS "Ready to build qmcpack")
 
 ####################################################################
 # add definitions
-#  -DH5_USE_16_API for HDF5
 ####################################################################
 
-ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DUSE_REAL_STRUCT_FACTOR -DINLINE_ALL=inline -DADD_)
+ADD_DEFINITIONS(-DHAVE_CONFIG_H -DUSE_REAL_STRUCT_FACTOR -DADD_)
 
 EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
