@@ -81,7 +81,7 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
         print (" # Orthogonalising Cholesky vectors.")
     start = time.time()
     # Step 2.a Orthogonalise Cholesky vectors.
-    chol_vecs = ao2mo_chol(chol_vecs, X)
+    chol_trans = ao2mo_chol(chol_vecs, X)
     if verbose:
         print(" # Time to orthogonalise: %f"%(time.time() - start))
     enuc = mol.energy_nuc()
@@ -93,7 +93,7 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
         if ncas == -1:
             ncas = nbasis - nfzc
         nfzv = nbasis - ncas - nfzc
-        h1e, chol_vecs, enuc = freeze_core(h1e, chol_vecs, enuc, nfzc, ncas,
+        h1e, chol_vecs, enuc = freeze_core(h1e, chol_trans, enuc, nfzc, ncas,
                                            verbose)
         h1e = h1e[0]
         nelec = (mol.nelec[0]-nfzc, mol.nelec[1]-nfzc)
@@ -102,7 +102,7 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
         orbs = numpy.identity(h1e.shape[-1])
         orbs = orbs[nfzc:nbasis-nfzv,nfzc:nbasis-nfzv]
         scf_data['mo_coeff'] = C[nfzc:nbasis-nfzv,nfzc:nbasis-nfzv]
-    return h1e, chol_vecs, nelec, enuc, X
+    return h1e, chol_trans, nelec, enuc, X
 
 
 def freeze_core(h1e, chol, ecore, nc, ncas, verbose=True):
