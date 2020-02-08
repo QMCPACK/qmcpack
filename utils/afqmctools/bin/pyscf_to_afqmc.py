@@ -135,8 +135,9 @@ def main(args):
             options.wfn_file = 'wfn.dat'
         else:
             options.wfn_file = options.hamil_file
-    write_qmcpack(comm, options.chk_file, options.hamil_file,
-                  options.thresh, ortho_ao=options.ortho_ao,
+    write_qmcpack(options.chk_file, options.hamil_file, options.thresh,
+                  comm=comm,
+                  ortho_ao=options.ortho_ao,
                   kpoint=options.kpoint_sym, gdf=options.gdf,
                   verbose=options.verbose, cas=options.cas,
                   qmc_input=options.qmc_input,
