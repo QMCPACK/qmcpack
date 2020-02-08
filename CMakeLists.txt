@@ -226,8 +226,6 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSymbolExists.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
 
-INCLUDE(${PROJECT_CMAKE}/CheckSincos.cmake)
-
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
 
 CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
@@ -450,34 +448,25 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
    INCLUDE(CMake/FindMKL.cmake)
   ENDIF(ENABLE_MKL)
   IF ( HAVE_MKL )
-    # We found MKL, add the link library
-    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${MKL_FLAGS}")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_FLAGS}")
-    SET(LAPACK_FOUND 1)
-    SET(LAPACK_LIBRARIES "${MKL_LIBRARIES}")
-    SET(LAPACK_LINKER_FLAGS "${MKL_LINKER_FLAGS}")
+    # Skip adding Math::BLAS_LAPACK target which has been imported by FindMKL.
   ELSEIF ( $ENV{CRAYPE_VERSION} MATCHES "." )
     # Cray specific environment variable indicates we are on a cray. Assume libsci will be linked
     # preferable to attempt a compile/link
-    SET(LAPACK_FOUND 1)
     MESSAGE(STATUS "Assuming Cray libsci or other BLAS/LAPACK will be linked by compiler wrappers")
+    ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
   ELSE()
-    # Search for Blas/Lapack
-    find_package(LAPACK)
+    # The last search for Blas/Lapack
+    find_package(LAPACK REQUIRED)
     IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
       MESSAGE(FATAL_ERROR "MKL found via LAPACK/BLAS. Please pass -DENABLE_MKL=1 to cmake for full Intel MKL utilization. -DMKL_ROOT may also be needed for the include files to be found.")
     ENDIF()
-  ENDIF()
-  IF(LAPACK_FOUND)
     MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
     MESSAGE(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
-    SET(LAPACK_LIBRARY ${LAPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS})
-  ELSE()
-    MESSAGE(FATAL_ERROR "Could not find required libraries LAPACK &/or BLAS")
+    SET(LAPACK_LIBRARY ${LAPACK_LINKER_FLAGS} ${LAPACK_LIBRARIES})
+    # Add Math::BLAS_LAPACK target
+    ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
+    SET_TARGET_PROPERTIES(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES "${LAPACK_LIBRARY}")
   ENDIF()
-
-  INCLUDE(CMake/FindVectorMath.cmake)
-
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
 IF (ENABLE_GCOV)
@@ -545,16 +534,31 @@ ENDIF(QMC_MPI)
 # installataions
 # list of libraries to be linked with the main applications using I/O
 
-SET(QMC_UTIL_LIBS ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
+#-------------------------------------------------------------------
+#  set up scalar/vector math libraries
+#-------------------------------------------------------------------
+SET(ENABLE_MASS FALSE CACHE BOOL "ENABLE MASS scalar and vector math libraries for Power architecture")
 
-# This needs a better place to live. as does all the IF( HAVE_MKL ) stuff
-IF(HAVE_MASS)
-  SET(CMAKE_CXX_FLAGS ${MASS_FLAGS} ${CMAKE_CXX_FLAGS})
-  SET(CMAKE_C_FLAGS ${MASS_FLAGS} ${CMAKE_C_FLAGS})
-  SET(MASS_LIBRARY "${MASS_LINKER_FLAGS} ${MASS_LIBRARIES}")
-  SET(QMC_UTIL_LIBS ${MASS_LIBRARY} ${QMC_UTIL_LIBS})
-ENDIF(HAVE_MASS)
+# This needs to go before HAVE_SINCOS
+IF(ENABLE_MASS)
+  INCLUDE(CMake/FindIBMMASS.cmake)
+ENDIF(ENABLE_MASS)
 
+IF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
+  MESSAGE(STATUS "No usable vector math library detected.")
+  ADD_LIBRARY(Math::scalar_vector_functions INTERFACE IMPORTED)
+ENDIF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
+
+# CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
+IF(NOT SINCOS_INCLUDE)
+  SET(SINCOS_INCLUDE cmath)
+ENDIF(NOT SINCOS_INCLUDE)
+MESSAGE(STATUS "SINCOS_INCLUDE : ${SINCOS_INCLUDE}")
+INCLUDE(${PROJECT_CMAKE}/CheckSincos.cmake)
+
+#-------------------------------------------------------------------
+#  set up FFTW3 library
+#-------------------------------------------------------------------
 SET( FFTW_FOUND 0 )
 IF ( HAVE_MKL )
   IF ( HAVE_MKL_FFTW3 )
@@ -566,8 +570,6 @@ IF ( NOT FFTW_FOUND )
 ENDIF()
 IF(FFTW_FOUND)
   SET(HAVE_LIBFFTW 1)
-  INCLUDE_DIRECTORIES(${FFTW_INCLUDE_DIR})
-  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FFTW_LIBRARIES})
   MESSAGE(STATUS "Found FFTW")
 ELSE(FFTW_FOUND)
 #  MESSAGE(STATUS "Disabling FFTW")

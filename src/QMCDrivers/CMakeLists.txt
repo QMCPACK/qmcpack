@@ -117,10 +117,11 @@ USE_FAKE_RNG(qmcdriver_unit)
 
 TARGET_LINK_LIBRARIES(qmcdriver PUBLIC qmcham)
 TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcham_unit)
-
+TARGET_LINK_LIBRARIES(qmcdriver PRIVATE Math::BLAS_LAPACK)
+TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE Math::BLAS_LAPACK)
 IF(BUILD_LMYENGINE_INTERFACE)
-  TARGET_LINK_LIBRARIES(qmcdriver PUBLIC formic_utils)
-  TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC formic_utils)
+  TARGET_LINK_LIBRARIES(qmcdriver PRIVATE formic_utils)
+  TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE formic_utils)
 ENDIF()
 
 #IF(QMC_BUILD_STATIC)
