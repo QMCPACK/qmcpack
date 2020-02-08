@@ -16,9 +16,8 @@ class TestEnergy(unittest.TestCase):
         self.assertAlmostEqual(energy, -126.60452499805)
         write_qmcpack('scf.chk', 'afqmc.h5', 1e-5, wfn_file='afqmc.h5',
                       dense=True, real_chol=True, verbose=2)
-        assert False
-        # etot, e1b, e2b = calculate_hf_energy('afqmc.h5', 'afqmc.h5')
-        # self.assertAlmostEqual(etot, -126.60452499805)
+        etot, e1b, e2b = calculate_hf_energy('afqmc.h5', 'afqmc.h5')
+        self.assertAlmostEqual(etot, -126.60452499805)
 
     def tearDown(self):
         cwd = os.getcwd()
