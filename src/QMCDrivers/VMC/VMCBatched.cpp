@@ -39,7 +39,7 @@ QMCDriverNew::AdjustedWalkerCounts VMCBatched::calcDefaultLocalWalkers(QMCDriver
   int num_threads(Concurrency::maxThreads<>());
   if (awc.num_crowds == 0)
     awc.num_crowds = std::min(num_threads, awc.walkers_per_rank);
-  
+
   if (awc.walkers_per_rank == awc.num_crowds)
     awc.walkers_per_crowd = 1;
   if (awc.walkers_per_rank < awc.num_crowds)
@@ -362,11 +362,10 @@ bool VMCBatched::run()
       all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
                                    std::make_move_iterator(crowd_sc_est.end()));
       total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
-      total_accept_ratio += crowd->get_accept_ratio();
+      total_accept_ratio += crowd->get_accept_ratio() * crowd->size();;
     }
-    // Should this be adjusted if crowds have different
-    total_accept_ratio /= crowds_.size();
-    estimator_manager_->collectScalarEstimators(all_scalar_estimators, population_.get_num_local_walkers(),
+    total_accept_ratio /= population_.get_num_local_walkers();
+    estimator_manager_->collectScalarEstimators(all_scalar_estimators, population_.get_num_global_walkers(),
                                                 total_block_weight);
     // TODO: should be accept rate for block
     estimator_manager_->stopBlockNew(total_accept_ratio);
