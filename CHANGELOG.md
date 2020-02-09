@@ -2,16 +2,22 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## [Unreleased] 
+## [3.9.0] - 2020-02-11 
 
 ### Notes
 
-Work is ongoing to support dynamical spin variables and implement spin-orbit. Prototype limited functionality universal VMC and DMC drivers are available that
-support GPU execution with OpenMP offload.
+This release includes a large number of refinements to improve or extend the functionality of QMCPACK and NEXUS. Importantly, this
+release supports and requires Python 3. After this release we plan to remove the array-of-structures build configuration and also
+the legacy CUDA implementation for GPUs. If any needed functionality is not supported by the now-default structures-of-arrays
+configuration, users should contact the developers via the QMCPACK Google Groups or via an issue on the QMCPACK GitHub repository.
+Work is ongoing to support dynamical spin variables, implement spin-orbit, and to develop new support for accelerators via a new
+framework that will consistently support CPUs and GPUs from the same codebase. 
 
 - All uses of Python updated to Python 3, which is now required. Python 2 was retired at the end of 2019, and many packages
   already only support Python 3.
-- Greatly expanded selection of effective core potentials is available at [https://pseudopotentiallibrary.org/](https://pseudopotentiallibrary.org/).    
+- A greatly expanded selection of effective core potentials is available at
+  [https://pseudopotentiallibrary.org/](https://pseudopotentiallibrary.org/) in formats suitable for QMCPACK and common DFT and
+  quantum chemistry codes.    
 - All major functionality is now supported by the default structures-of-arrays (SoA) build. This release is the last to support the legacy array-of-structures (AoS)
   build. See [\#861](https://github.com/QMCPACK/qmcpack/issues/861).
 - Major bug identified and fixed in the periodic Coulomb evaluation (Optimized breakup method of Natoli-Ceperley). Many thanks to Jan Brndiar
@@ -39,7 +45,7 @@ support GPU execution with OpenMP offload.
   as the development version. This package can also install and patch
   Quantum Espresso. 
 - Support for Blue Gene removed due to retirement of this architecture.
-- Many minor bugfixes, expanded testing, and small feature improvements.
+- Many minor bug fixes, expanded testing, and small feature improvements.
 
 ### Known bugs
 
