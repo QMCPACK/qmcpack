@@ -35,20 +35,18 @@ def parse_args(args, comm):
                             help='Output file name for QMCPACK hamiltonian.')
         parser.add_argument('-w', '--wavefunction', dest='wfn_file',
                             type=str, default=None,
-                            help='Output file name for QMCPACK hamiltonian.')
+                            help='Output file name for QMCPACK wavefunction. '
+                                 'By default will write to hamil_file.')
         parser.add_argument('-q', '--qmcpack-input', dest='qmc_input',
                             type=str, default=None,
-                            help='Generate skeleton QMCPACK input file.')
+                            help='Generate skeleton QMCPACK input xml file.')
         parser.add_argument('-t', '--cholesky-threshold', dest='thresh',
                             type=float, default=1e-5,
                             help='Cholesky convergence threshold.')
         parser.add_argument('-k', '--kpoint', dest='kpoint_sym',
                             action='store_true', default=False,
                             help='Generate explicit kpoint dependent integrals.')
-        parser.add_argument('-g', '--gdf', dest='gdf',
-                            action='store_true', default=False,
-                            help='Use Gaussian density fitting.')
-        parser.add_argument('-a', '--ao', dest='ortho_ao',
+        parser.add_argument('-a', '--ao', '--ortho-ao', dest='ortho_ao',
                             action='store_true', default=False,
                             help='Transform to ortho AO basis. Default assumes '
                             'we work in MO basis')
@@ -65,7 +63,7 @@ def parse_args(args, comm):
                             'generate.')
         parser.add_argument('-r', '--real-ham', dest='real_chol',
                             action='store_true', default=False,
-                            help='Write integrals as real numbers')
+                            help='Write integrals as real numbers.')
         parser.add_argument('-p', '--phdf', dest='phdf',
                             action='store_true', default=False,
                             help='Use parallel hdf5.')
