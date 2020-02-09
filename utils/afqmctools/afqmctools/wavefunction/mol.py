@@ -43,7 +43,10 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
         wfn_type = 'NOMSD'
         coeffs = numpy.array([1.0+0j])
         if ortho_ao:
-            Xinv = scipy.linalg.inv(X)
+            if X.shape[0] != X.shape[1]:
+                Xinv = scipy.linalg.pinv(X)
+            else:
+                Xinv = scipy.linalg.inv(X)
             if uhf:
                 # We are assuming C matrix is energy ordered.
                 wfn[0,:,:nalpha] = numpy.dot(Xinv, C[0])[:,:nalpha]
