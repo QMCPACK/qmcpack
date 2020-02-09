@@ -111,7 +111,7 @@ class TestKPCholesky(unittest.TestCase):
 
     def tearDown(self):
         cwd = os.getcwd()
-        files = ['ham.h5']
+        files = ['ham.h5', 'test.h5']
         for f in files:
             try:
                 os.remove(cwd+'/'+f)
