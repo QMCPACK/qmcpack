@@ -17,8 +17,10 @@ from unit_converter import convert
 from generic import obj
 from developer import DevBase,log,error,ci
 from numerics import simstats
-from grid_functions import grid_function
-from structure import Structure
+from grid_functions import grid_function,read_grid,StructuredGrid
+from grid_functions import SpheroidGrid
+from structure import Structure,read_structure
+from fileio import XsfFile
 
 
 
@@ -39,6 +41,7 @@ class VLog(DevBase):
         self.verbosity = self.verbosity_levels.low
         self.indent    = 0
     #end def __init__
+
 
     def __call__(self,msg,level='low',n=0,time=False,mem=False,width=75):
         if self.verbosity==self.verbosity_levels.none:
@@ -375,6 +378,11 @@ class DefinedAttributeBase(DevBase):
     #end def get_attribute
 
 
+    def has_attribute(self,name):
+        return not (name not in self or self.check_unassigned(self[name]))
+    #end def has_attribute
+
+
     def _set_default_attribute(self,name,props):
         p = props
         if p.no_default:
@@ -442,6 +450,60 @@ Observable.define_attributes(
         ),
     )
 
+
+
+class ObservableWithComponents(Observable):
+
+    component_names   = None
+    default_component = None
+
+
+    def process_component_name(self,name,allow_all=False):
+        is_all = name=='all'
+        if name is None:
+            name = self.default_component
+        #end if
+        if not allow_all and is_all:
+            self.error('A specific component must be requested.\nReceived request for "all".\nValid options are: {}'.format(self.compnent_names))
+        #end if
+        if not allow_all:
+            return name
+        else:
+            return name,is_all
+        #end if
+    #end def process_component_name
+
+
+    def component(self,name=None):
+        name = self.process_component_name(name)
+        comp = self.get_attribute(name,assigned=True)
+        return comp
+    #end def component
+
+
+    def components(self):
+        comps = obj()
+        for c in self.component_names:
+            if c in self:
+                comps[c] = self[c]
+            #end if
+        #end for
+        return comps
+    #end def components
+
+
+    def operate_over_components(func,*args,**kwargs):
+        retvals = obj()
+        for c in self.component_names:
+            if c in self:
+                kwargs['component'] = c
+                retvals[c] = func(self,*args,**kwargs)
+            #end if
+        #end for
+        return retvals
+    #end def operate_over_components
+
+#end class ObservableWithComponents
 
 
 
@@ -543,9 +605,11 @@ def read_eshdf_nofk_data(filename,Ef):
 
 
 
-class MomentumDistribution(Observable):
-    spins = ('u','d')
+class MomentumDistribution(ObservableWithComponents):
+    component_names = ('tot','pol','u','d')
     
+    default_component = 'tot'
+
     def get_raw_data(self):
         data = self.get_attribute('raw',assigned=True)
         if len(data)==0:
@@ -790,7 +854,7 @@ MomentumDistribution.define_attributes(
         dest       = 'info',
         type       = float,
         default    = None,
-        )
+        ),
     )
 
 
@@ -939,6 +1003,244 @@ class MomentumDistributionQMC(MomentumDistribution):
         vlog('stat.h5 file read finished',n=1,time=True)
     #end def read_stat_h5
 #end class MomentumDistributionQMC
+
+
+
+class Density(ObservableWithComponents):
+    component_names = ('tot','pol','u','d')
+
+    default_component = 'tot'
+
+
+    def read_xsf(self,filepath,component=None):
+        if isinstance(filepath,XsfFile):
+            xsf = filepath
+            copy_values = True
+        else:
+            xsf = XsfFile(filepath)
+            copy_values = False
+        #end if
+
+        # read structure
+        if not self.has_attribute('structure'):
+            s = Structure()
+            s.read_xsf(xsf)
+            self.set_attribute('structure',s)
+        #end if
+
+        # read grid
+        if not self.has_attribute('grid'):
+            g = read_grid(xsf)
+            self.set_attribute('grid',g)
+            self.set_attribute('distance_units','B')
+        #end if
+
+        # read values
+        xsf.remove_ghost()
+        d = xsf.get_density()
+        values = d.values_noghost.ravel()
+        if copy_values:
+            values = values.copy()
+        #end if
+
+        # create grid function for component
+        f = grid_function(
+            type   = 'parallelotope',
+            grid   = self.grid,
+            values = values,
+            copy   = False,
+            )
+
+        component = self.process_component_name(component)
+        self.set_attribute(component,f)
+    #end def read_xsf
+
+    
+    def volume_normalize(self):
+        g = self.get_attribute('grid',assigned=True)
+        dV = g.volume()/g.ncells
+        for c in self.components():
+            c.values /= dV
+        #end for
+    #end def volume_normalize
+
+
+    def change_distance_units(self,units):
+        units_old = self.get_attribute('distance_units',assigned=True)
+        rscale    = 1.0/convert(1.0,units_old,units)
+        dscale    = 1./rscale**3
+        grid      = self.get_attribute('grid',assigned=True)
+        grid.points *= rscale
+        for c in self.components():
+            c.values *= dscale
+        #end for
+    #end def change_distance_units
+
+
+    def change_density_units(self,units):
+        units_old = self.get_attribute('density_units',assigned=True)
+        dscale    = 1.0/convert(1.0,units_old,units)
+        for c in self.components():
+            c.values *= dscale
+        #end for
+    #end def change_density_units
+
+
+    def radial_density(self,dr=0.01,ntheta=100,rmax=None,single=False,component=None,precompute=None):
+        component,is_all = self.process_component_name(component,allow_all=True)
+        pc = precompute
+        s = self.get_attribute('structure',assigned=True)
+        struct = s
+        if rmax is None and pc is None:
+            rmax = s.voronoi_species_radii()
+        #end if
+        if pc is None:
+            equiv_atoms = s.equivalent_atoms()
+            species = None
+            species_rmax = obj()
+            if isinstance(rmax,float):
+                species = list(equiv_atoms.keys())
+                for s in species:
+                    species_rmax[s] = rmax
+                #end for
+            else:
+                species = list(rmax.keys())
+                species_rmax.transfer_from(rmax)
+            #end if
+            species_grids = obj()
+            for s in species:
+                nr = int(np.ceil(species_rmax[s]/dr))
+                species_grids[s] = SpheroidGrid(
+                    axes     = species_rmax[s]*np.eye(3),
+                    cells    = (nr,ntheta,2*ntheta),
+                    centered = True,
+                    )
+            #end for
+            pc = obj(
+                single        = single,
+                equiv_atoms   = equiv_atoms,
+                species_grids = species_grids,
+                rmax          = species_rmax,
+                )
+                         
+        #end if
+        crdf = None
+        if is_all:
+            rdf = self.operate_over_components(self.cumulative_radial_density,precompute=pc)
+        else:
+            rdf = obj()
+            d = self.component(component)
+            for s,sgrid in pc.species_grids.items():
+                rmax = pc.rmax[s]
+                rrad    = sgrid.radii()
+                rsphere = sgrid.r
+                drad    = np.zeros(rrad.shape,dtype=d.dtype)
+                if single:
+                    atom_indices = [pc.equiv_atoms[s][0]]
+                else:
+                    atom_indices = pc.equiv_atoms[s]
+                #end if
+                rcenter = np.zeros((3,),dtype=float)
+                for i in atom_indices:
+                    new_center = struct.pos[i]
+                    dr         = new_center-rcenter
+                    rsphere   += dr
+                    rcenter    = new_center
+                    dsphere    = d.interpolate(rsphere)
+                    dsphere.shape = sgrid.shape
+                    dsphere.shape = len(dsphere),dsphere.size//len(dsphere)
+                    drad += dsphere.mean(axis=1)*4*np.pi*rrad**2
+                #end for
+                drad /= len(atom_indices)
+                rdf[s] = obj(
+                    radius  = rrad,
+                    density = drad,
+                    )
+            #end for
+            d.clear_ghost()
+        #end if
+        return rdf
+    #end def radial_density
+
+
+    def plot_radial_density(self,component=None,show=True,**kwargs):
+        component,is_all = self.process_component_name(component,allow_all=True)
+        rdf = self.radial_density(component=component,**kwargs)
+        if not is_all:
+            rdf_all = obj()
+            rdf_all[component] = rdf
+        else:
+            rdf_all = rdf
+        #end if
+        rdf = rdf_all.first()
+        species = list(rdf.keys())
+
+        for c in self.component_names:
+            if c in rdf_all:
+                rdf = rdf_all[c]
+                for s in sorted(rdf.keys()):
+                    srdf = rdf[s]
+                    plt.figure()
+                    plt.plot(srdf.radius,srdf.density,'b.-')
+                    plt.xlabel('radius')
+                    plt.ylabel('density')
+                    plt.title('{} {} density'.format(s,c))
+                #end for
+            #end if
+        #end for
+        if show:
+            plt.show()
+        #end if
+    #end def plot_radial_density
+#end class Density
+
+Density.define_attributes(
+    Observable,
+    raw = obj(
+        type       = obj,
+        no_default = True,
+        ),
+    u = obj(
+        type       = obj,
+        no_default = True,
+        ),
+    d = obj(
+        type       = obj,
+        no_default = True,
+        ),
+    tot = obj(
+        type       = obj,
+        no_default = True,
+        ),
+    pol = obj(
+        type       = obj,
+        no_default = True,
+        ),
+    grid = obj(
+        type       = StructuredGrid,
+        no_default = True,
+        ),
+    distance_units = obj(
+        dest = 'info',
+        type = str,
+        ),
+    density_units = obj(
+        dest = 'info',
+        type = str,
+        )
+    )
+
+
+
+class ChargeDensity(Density):
+    None
+#end class ChargeDensity
+
+
+class EnergyDensity(Density):
+    None
+#end class EnergyDensity
+
 
 
 

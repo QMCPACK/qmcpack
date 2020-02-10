@@ -2992,6 +2992,52 @@ class Structure(Sobj):
     #end def voronoi_neighbors
 
 
+    def voronoi_vectors(self,indices=None,restrict=None):
+        ni = self.voronoi_neighbors(indices,restrict)
+        vt = self.vector_table()
+        vv = obj()
+        for i,vi in ni.items():
+            vv[i] = vt[i,vi]
+        #end for
+        return vv
+    #end def voronoi_vectors
+
+
+    def voronoi_distances(self,indices=None,restrict=False):
+        vv = self.voronoi_vectors(indices,restrict)
+        vd = obj()
+        for i,vvi in vv.items():
+            vd[i] = np.linalg.norm(vvi,axis=1)
+        #end for
+        return vd
+    #end def voronoi_distances
+
+
+    def voronoi_radii(self,indices=None,restrict=None):
+        vd = self.voronoi_distances(indices,restrict)
+        vr = obj()
+        for i,vdi in vd.items():
+            vr[i] = vdi.min()/2
+        #end for
+        return vr
+    #end def voronoi_radii
+
+
+    def voronoi_species_radii(self):
+        vr = self.voronoi_radii()
+        vsr = obj()
+        for i,r in vr.items():
+            e = self.elem[i]
+            if e not in vsr:
+                vsr[e] = r
+            else:
+                vsr[e] = min(vsr[e],r)
+            #end if
+        #end for
+        return vsr
+    #end def voronoi_species_radii
+
+
     # test needed
     # get nearest neighbors according to constrants (voronoi, max distance, coord. number)
     def nearest_neighbors(self,indices=None,rmax=None,nmax=None,restrict=False,voronoi=False,distances=False,**spec_max):
@@ -4586,7 +4632,9 @@ class Structure(Sobj):
 
 
     def read_xsf(self,filepath):
-        if os.path.exists(filepath):
+        if isinstance(filepath,XsfFile):
+            f = filepath
+        elif os.path.exists(filepath):
             f = XsfFile(filepath)
         else:
             f = XsfFile()
@@ -5019,7 +5067,31 @@ class Structure(Sobj):
     #end def get_symmetry
 
 
+    def get_symmetry_dataset(self,symprec=1e-5, angle_tolerance=-1.0, hall_number=0):
+        cell = self.spglib_cell()
+        ds   = spglib.get_symmetry_dataset(
+            cell,
+            symprec         = symprec,
+            angle_tolerance = angle_tolerance,
+            hall_number     = hall_number,
+            )
+        return ds
+    #end def get_symmetry
+
+
     # functions based on direct spglib interface
+
+    def symmetry_data(self,*args,**kwargs):
+        ds = self.get_symmetry_dataset(*args,**kwargs)
+        ds = obj(ds)
+        for k,v in ds.items():
+            if isinstance(v,dict):
+                ds[k] = obj(v)
+            #end if
+        #end for
+        return ds
+    #end def symmetry_data
+
 
     # test needed
     def space_group_operations(self,tol=1e-5,unit=False):
@@ -5078,6 +5150,63 @@ class Structure(Sobj):
         #end if
         return all_same
     #end def check_point_group_operations
+
+
+    def equivalent_atoms(self):
+        ds = self.symmetry_data()
+
+        # collect sets of species labels
+        species_by_specnum = obj()
+        for e,sn in zip(self.elem,ds.equivalent_atoms):
+            is_elem,es = is_element(e,symbol=True)
+            if sn not in species_by_specnum:
+                species_by_specnum[sn] = set()
+            #end if
+            species_by_specnum[sn].add(es)
+        #end for
+        for sn,sset in species_by_specnum.items():
+            if len(sset)>1:
+                self.error('Cannot find equivalent atoms.\nMultiple atomic species were marked as being equivalent.\nSpecies marked in this way: {}'.format(list(sset)))
+            #end if
+            species_by_specnum[sn] = list(sset)[0]
+        #end for
+
+        # give each unique species a unique label
+        labels_by_specnum = obj()
+        species_list = list(species_by_specnum.values())
+        species_set  = set(species_list)
+        species_counts = obj()
+        for s in species_set:
+            species_counts[s] = species_list.count(s)
+        #end for
+        spec_counts = obj()
+        for sn,s in species_by_specnum.items():
+            if species_counts[s]==1:
+                labels_by_specnum[sn] = s
+            else:
+                if s not in spec_counts:
+                    spec_counts[s] = 1
+                else:
+                    spec_counts[s] += 1
+                #end if
+                labels_by_specnum[sn] = s + str(spec_counts[s])
+            #end if
+        #end for
+
+        # find indices for each unique species
+        equiv_indices = obj()
+        for s in labels_by_specnum.values():
+            equiv_indices[s] = list()
+        #end for
+        for i,sn in enumerate(ds.equivalent_atoms):
+            equiv_indices[labels_by_specnum[sn]].append(i)
+        #end for
+        for s,indices in equiv_indices.items():
+            equiv_indices[s] = np.array(indices,dtype=int)
+        #end for
+
+        return equiv_indices
+    #end def equivalent_atoms
 
 #end class Structure
 Structure.set_operations()
