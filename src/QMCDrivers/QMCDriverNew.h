@@ -72,7 +72,7 @@ class QMCDriverNew : public QMCDriverInterface, public MPIObjectBase
 public:
   using RealType              = QMCTraits::RealType;
   using IndexType             = QMCTraits::IndexType;
-  using FullPrecisionRealType = QMCTraits::FullPrecRealType;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
 
   /** separate but similar to QMCModeEnum
    *  
@@ -197,6 +197,8 @@ public:
   /** }@ */
     
 protected:
+  void endBlock();
+  
   struct AdjustedWalkerCounts
   {
     IndexType global_walkers;

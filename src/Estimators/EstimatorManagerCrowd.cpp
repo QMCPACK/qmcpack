@@ -36,8 +36,16 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerBase& em)
     Collectables = em.Collectables->clone();
 }
 
+void EstimatorManagerCrowd::startBlock(int steps)
+{
+  crowd_estimator_timer_.restart();
+  block_weight_ = 0.0;
+}
+
+
 void EstimatorManagerCrowd::stopBlock()
 {
+  cpu_block_time_ = crowd_estimator_timer_.elapsed();
   //didn't we already normalize by the global number of walkers?
   // the main estimator does it some more inside of here.
 }

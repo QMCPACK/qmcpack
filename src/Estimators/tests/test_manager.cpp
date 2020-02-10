@@ -89,7 +89,7 @@ TEST_CASE("EstimatorManagerBase::collectScalarEstimators", "[estimators]")
   est_list[0].get().scalars.resize(4);
 
 
-  em.collectScalarEstimators(est_list, 3, 5);
+  em.collectScalarEstimators(est_list);
 
   // We have three "walkers" two have one sample each of 1.0
   // one has two samples of 1.0, 2,0

@@ -298,11 +298,12 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
     collectBlockAverages();
 }
 
-void EstimatorManagerBase::stopBlockNew(RealType accept)
+void EstimatorManagerBase::stopBlockNew(RealType accept, RealType block_weight, double cpu_block_time)
 {
+  BlockWeight += block_weight;
   //take block averages and update properties per block
   PropertyCache[weightInd] = BlockWeight;
-  PropertyCache[cpuInd]    = MyTimer.elapsed();
+  PropertyCache[cpuInd]    = cpu_block_time;
   PropertyCache[acceptInd] = accept;
 
   collectBlockAverages();
@@ -313,19 +314,15 @@ void EstimatorManagerBase::stopBlockNew(RealType accept)
 /** Called at end of block in Unified Driver
  *
  */
-void EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimatorBase>& estimators,
-                                                   const int total_walkers,
-                                                   const RealType block_weight)
+void EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimatorBase>& estimators)
 {
   // One scalar estimator can be accumulating many scalar values
   int num_scalars  = estimators[0].get().size();
   using ScalarType = ScalarEstimatorBase::RealType;
-
-  BlockWeight += block_weight;
   
   std::vector<ScalarType> averages_work(num_scalars, 0.0);
   std::vector<ScalarType> averages_sum(num_scalars, 0.0);
-
+  
   auto accumulateVectorsInPlace = [](auto& vec_a, const auto& vec_b) {
     for (int i = 0; i < vec_a.size(); ++i)
       vec_a[i] += vec_b[i];
@@ -346,7 +343,6 @@ void EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimat
   RealType tnorm = 1.0 / num_est;
 
   AverageCache *= tnorm;
-
 }
 
 void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)

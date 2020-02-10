@@ -168,14 +168,15 @@ public:
       Estimators[i]->setNumberOfBlocks(blocks);
   }
 
-  /** stop a block
+  /** unified: stop a block
    * @param accept acceptance rate of this block
-   * 
+   * \param[in] accept_ratio
+   * \param[in] block_weight
+   * \param[in] cpu_block_time Timer returns double so this is not altered by "mixed" precision
    */
-  void stopBlockNew(RealType accept);
+  void stopBlockNew(RealType accept_ratio, RealType block_weight, double cpu_block_time);
 
-  
-  /** stop a block
+  /** legacy: stop a block
    * @param accept acceptance rate of this block
    */
   void stopBlock(RealType accept, bool collectall = true);
@@ -190,7 +191,7 @@ public:
    *  Each is currently accumulates on for crowd of 1 or more walkers
    *  TODO: What is the correct normalization 
    */
-  void collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators, const int total_walkers, const RealType block_weight);
+  void collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
 
   /** accumulate the measurements
    * @param W walkers

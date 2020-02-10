@@ -76,7 +76,7 @@ public:
   /** start  a block
    * @param steps number of steps in a block
    */
-  void startBlock(int steps){ block_weight_ = 0.0;};
+  void startBlock(int steps);
 
   void stopBlock();
 
@@ -99,7 +99,7 @@ public:
 
   RefVector<EstimatorType> get_scalar_estimators() { return convertPtrToRefVector(scalar_estimators_); }
   RealType get_block_weight() const { return block_weight_; }
-
+  double get_cpu_block_time() const { return cpu_block_time_; }
 protected:
   ///use bitset to handle options
   std::bitset<8> Options;
@@ -154,9 +154,11 @@ protected:
   ///estimators of simple scalars
   std::vector<EstimatorType*> scalar_estimators_;
 
-  Timer MyTimer;
-
 private:
+  // This is needed for "efficiency" measure
+  Timer crowd_estimator_timer_;
+  double cpu_block_time_ = 0;
+  
   ///number of maximum data for a scalar.dat
   int max4ascii;
   ///collect data and write
