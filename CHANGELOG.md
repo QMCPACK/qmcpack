@@ -41,6 +41,7 @@ framework that will consistently support CPUs and GPUs from the same codebase.
   [\#2148](https://github.com/QMCPACK/qmcpack/pull/2148).
 * AFQMC estimators now include 1 and 2 body reduced density matrices (1RRM, 2RDM) and on-top pair density.
   [\#2097](https://github.com/QMCPACK/qmcpack/pull/2097).
+* Dense real hamiltonian added for AFQMC allowing for GPU acceleration for chemistry applications. [\#2131](https://github.com/QMCPACK/qmcpack/pull/2131). 
 * [QMCPACK spack package](https://spack.readthedocs.io/en/latest/package_list.html#qmcpack)  supports the latest release as well
   as the development version. This package can also install and patch
   Quantum Espresso. 
