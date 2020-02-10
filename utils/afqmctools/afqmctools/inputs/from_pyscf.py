@@ -19,7 +19,7 @@ from afqmctools.wavefunction.pbc import write_wfn_pbc
 
 
 def write_qmcpack(chkfile, hamil_file, threshold, comm=None,
-                  ortho_ao=False, gdf=False, kpoint=False, verbose=False,
+                  ortho_ao=False, kpoint=False, verbose=False,
                   cas=None, qmc_input=None, wfn_file=None,
                   write_hamil=True, ndet_max=None, real_chol=False,
                   phdf=False, low=0.1, high=0.95, dense=False):
