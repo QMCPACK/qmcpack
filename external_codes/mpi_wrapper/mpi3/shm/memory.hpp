@@ -81,6 +81,23 @@ struct mapped_region{
 
 }}}
 
+
+namespace boost{
+namespace mpi3{
+namespace shm{
+
+template<class Alloc, typename T, typename Size, typename TT>
+	pointer<T> uninitialized_fill_n(Alloc const& a, pointer<T> f, Size n, TT const& val){
+	assert(0);
+	using std::uninitialized_fill_n;
+	if(mpi3::group(*f.wSP_).root()) uninitialized_fill_n(to_address(f), n, val);
+	first.wSP_->fence();
+	first.wSP_->fence();
+	return first + n;
+}
+
+}}}
+
 #ifdef _TEST_BOOST_MPI3_SHM_MEMORY
 
 #include "../../mpi3/main.hpp"

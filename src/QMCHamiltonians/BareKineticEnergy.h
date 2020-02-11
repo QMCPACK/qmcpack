@@ -18,9 +18,10 @@
 #define QMCPLUSPLUS_BAREKINETICENERGY_H
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCDrivers/WalkerProperties.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
@@ -28,6 +29,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 /** compute real(laplacian)
  */
 template<typename T, unsigned D>
@@ -44,14 +47,14 @@ inline T laplacian(const TinyVector<std::complex<T>, D>& g, const std::complex<T
   return l.real() + OTCDot<T, T, D>::apply(g, g);
 }
 
-/** Convenience function to compute  \Re( \nabla^2_i \partial \Psi_T/\Psi_T)
- * @param g OHMMS_DIM dimensional vector for \nabla_i \ln \Psi_T .  
- * @param l A number, representing \nabla^2_i \ln \Psi_T .
- * @param gg OHMMS_DIM dimensional vector containing \nabla_i \partial \ln \Psi_T . 
- * @param gl A number, representing \nabla^2_i \partial \ln \Psi_T
- * @param ideriv A number, representing \partial \ln \Psi_T
+/** Convenience function to compute \f$\Re( \nabla^2_i \partial \Psi_T/\Psi_T)\f$
+ * @param g OHMMS_DIM dimensional vector for \f$\nabla_i \ln \Psi_T\f$ .  
+ * @param l A number, representing \f$\nabla^2_i \ln \Psi_T\f$ .
+ * @param gg OHMMS_DIM dimensional vector containing \f$\nabla_i \partial \ln \Psi_T\f$ . 
+ * @param gl A number, representing \f$\nabla^2_i \partial \ln \Psi_T\f$
+ * @param ideriv A number, representing \f$\partial \ln \Psi_T\f$
  *
- * @return A number corresponding to \Re( \nabla^2_i \partial \Psi_T/\Psi_T)
+ * @return A number corresponding to \f$\Re( \nabla^2_i \partial \Psi_T/\Psi_T)\f$
  */
 
 template<typename T, unsigned D>
@@ -102,7 +105,7 @@ inline std::string int2string(const int& i)
 
 
 template<typename T>
-struct BareKineticEnergy : public QMCHamiltonianBase
+struct BareKineticEnergy : public OperatorBase
 {
   ///true, if all the species have the same mass
   bool SameMass;
@@ -217,8 +220,14 @@ struct BareKineticEnergy : public QMCHamiltonianBase
 #endif
         if (SameMass)
     {
+      //app_log() << "Here" << std::endl;
+      #ifdef QMC_COMPLEX  
+      Value = std::real( CplxDot(P.G, P.G) + CplxSum(P.L) );
+      Value *= -OneOver2M;
+      #else
       Value = Dot(P.G, P.G) + Sum(P.L);
       Value *= -OneOver2M;
+      #endif
     }
     else
     {
@@ -236,7 +245,7 @@ struct BareKineticEnergy : public QMCHamiltonianBase
 
   /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
  *  
- *  This general function represents the QMCHamiltonianBase interface for computing.  For an operator \hat{O}, this
+ *  This general function represents the OperatorBase interface for computing.  For an operator \hat{O}, this
  *  function will return \frac{\hat{O}\Psi_T}{\Psi_T},  \frac{\partial(\hat{O})\Psi_T}{\Psi_T}, and 
  *  \frac{\hat{O}\partial\Psi_T}{\Psi_T} - \frac{\hat{O}\Psi_T}{\Psi_T}\frac{\partial \Psi_T}{\Psi_T}.  These are 
  *  referred to as Value, HF term, and pulay term respectively.
@@ -452,7 +461,7 @@ struct BareKineticEnergy : public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new BareKineticEnergy(*this); }
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new BareKineticEnergy(*this); }
 
 #ifdef QMC_CUDA
   ////////////////////////////////
@@ -466,7 +475,7 @@ struct BareKineticEnergy : public QMCHamiltonianBase
     {
       Walker_t& w                                  = *(walkers[iw]);
       RealType KE                                  = -OneOver2M * (Dot(w.G, w.G) + Sum(w.L));
-      w.getPropertyBase()[NUMPROPERTIES + myIndex] = KE;
+      w.getPropertyBase()[WP::NUMPROPERTIES + myIndex] = KE;
       LocalEnergy[iw] += KE;
     }
   }

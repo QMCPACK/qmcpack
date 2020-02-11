@@ -16,12 +16,12 @@
 #ifndef QMCPLUSPLUS_ZERO_VARIANCE_FORCE_H
 #define QMCPLUSPLUS_ZERO_VARIANCE_FORCE_H
 
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/ForceBase.h"
 
 namespace qmcplusplus
 {
-struct ZeroVarianceForce : public QMCHamiltonianBase, public ForceBase
+struct ZeroVarianceForce : public OperatorBase, public ForceBase
 {
 private:
   const int d_ei_ID;
@@ -45,7 +45,7 @@ public:
 
   bool get(std::ostream& os) const { return true; }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
     ZeroVarianceForce* myClone = new ZeroVarianceForce(Ions, qp, psi);
     myClone->FirstForceIndex   = FirstForceIndex;

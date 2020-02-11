@@ -14,6 +14,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include <cassert>
+#include <iostream>
+#include <fstream>
 #include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
@@ -26,16 +29,13 @@
 #endif
 //#include "QMCDrivers/VMC/VMCSingle.h"
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 #include "Numerics/Blasf.h"
 #include "Numerics/MatrixOperators.h"
-#include <cassert>
 #if defined(QMC_CUDA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #endif
-#include <iostream>
-#include <fstream>
 
 /*#include "Message/Communicate.h"*/
 
@@ -51,17 +51,17 @@ QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalke
                                                                          WaveFunctionPool& ppool,
                                                                          Communicate* comm)
     : QMCLinearOptimize(w, psi, h, hpool, ppool, comm),
-      exp0(-16),
       nstabilizers(3),
       stabilizerScale(2.0),
       bigChange(3),
-      w_beta(0.0),
+      exp0(-16),
       MinMethod("quartic"),
-      GEVtype("mixed")
+      GEVtype("mixed"),
+      w_beta(0.0)
 {
   IsQMCDriver = false;
   //set the optimization flag
-  QMCDriverMode.set(QMC_OPTIMIZE, 1);
+  qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
   QMCType  = "QMCCorrelatedSamplingLinearOptimize";
@@ -99,7 +99,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
 {
   start();
   //size of matrix
-  numParams = optTarget->NumParams();
+  numParams = optTarget->getNumParams();
   N         = numParams + 1;
   //  solve CSFs and other parameters separately then rescale elements accordingly
   int first, last;
@@ -130,9 +130,9 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
   RealType startCost(0);
   //    if ((GEVtype!="H2")||(MinMethod!="rescale"))
   //    {
-  myTimers[4]->start();
+  cost_function_timer_.start();
   startCost = lastCost = optTarget->Cost(false);
-  myTimers[4]->stop();
+  cost_function_timer_.stop();
   //    }
   bool apply_inverse(true);
   if (apply_inverse)
@@ -172,7 +172,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     }
     RealType lowestEV(0);
     RealType bigVec(0);
-    myTimers[2]->start();
+    eigenvalue_timer_.start();
     //                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
     if (GEVtype != "sd")
     {
@@ -190,7 +190,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
         currentParameterDirections[i + 1] = LeftT(i + 1, 0) * rscale;
       Lambda = 1.0;
     }
-    myTimers[2]->stop();
+    eigenvalue_timer_.stop();
     for (int i = 0; i < numParams; i++)
       bigVec = std::max(bigVec, std::abs(currentParameterDirections[i + 1]));
     if (std::abs(Lambda * bigVec) > bigChange)
@@ -210,10 +210,11 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     }
     if (MinMethod == "rescale")
     {
-      for (int i = 0; i < numParams; i++) {
-        //FIXME This std::real should be removed later when the optimizer starts to work with complex parameters 
+      for (int i = 0; i < numParams; i++)
+      {
+        //FIXME This std::real should be removed later when the optimizer starts to work with complex parameters
         optTarget->Params(i) = currentParameters[i] + Lambda * currentParameterDirections[i + 1];
-        bestParameters[i] = std::real(optTarget->Params(i));
+        bestParameters[i]    = std::real(optTarget->Params(i));
       }
       if (GEVtype == "H2")
         acceptedOneMove = true;
@@ -233,7 +234,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
       quadstep         = stepsize / bigVec;
       //                  initial guess for line min bracketing
       LambdaMax = quadstep;
-      myTimers[3]->start();
+      line_min_timer_.start();
       if (MinMethod == "quartic")
       {
         int npts(7);
@@ -243,7 +244,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
       }
       else
         lineoptimization2();
-      myTimers[3]->stop();
+      line_min_timer_.stop();
       RealType biggestParameterChange = bigOptVec * std::abs(Lambda);
       if (biggestParameterChange > bigChange)
       {
@@ -319,23 +320,6 @@ bool QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
     {
       mcwalkerNodePtr.push_back(cur);
     }
-    //         else if (cname == "optimizer")
-    //         {
-    //             xmlChar* att= xmlGetProp(cur,(const xmlChar*)"method");
-    //             if (att)
-    //             {
-    //                 optmethod = (const char*)att;
-    //             }
-    //             optNode=cur;
-    //         }
-    //         else if (cname == "optimize")
-    //         {
-    //             xmlChar* att= xmlGetProp(cur,(const xmlChar*)"method");
-    //             if (att)
-    //             {
-    //                 optmethod = (const char*)att;
-    //             }
-    //         }
     cur = cur->next;
   }
   //no walkers exist, add 10
@@ -346,28 +330,29 @@ bool QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
   if (vmcEngine == 0)
   {
 #if defined(QMC_CUDA)
-    vmcCSEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
+    vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
+    vmcCSEngine = dynamic_cast<VMCcuda*>(vmcEngine.get());
     vmcCSEngine->setOpt(true);
-    vmcEngine = vmcCSEngine;
 #else
-    vmcEngine = vmcCSEngine = new VMCLinearOpt(W, Psi, H, hamPool, psiPool, myComm);
+    vmcEngine = std::make_unique<VMCLinearOpt>(W, Psi, H, hamPool, psiPool, myComm);
+    vmcCSEngine = dynamic_cast<VMCLinearOpt*>(vmcEngine.get());
 #endif
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
   vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);
   vmcEngine->process(qsave);
   bool success = true;
-  if (optTarget == 0)
-  {
+  //allways reset optTarget
 #if defined(QMC_CUDA)
-    optTarget = new QMCCostFunctionCUDA(W, Psi, H, myComm);
-#else
-    optTarget               = new QMCCostFunction(W, Psi, H, myComm);
+  if (useGPU == "yes")
+    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
+  else
 #endif
-    optTarget->setneedGrads(false);
-    optTarget->setStream(&app_log());
-    success = optTarget->put(qsave);
-  }
+    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget->setneedGrads(false);
+  optTarget->setStream(&app_log());
+  success = optTarget->put(q);
+
   return success;
 }
 

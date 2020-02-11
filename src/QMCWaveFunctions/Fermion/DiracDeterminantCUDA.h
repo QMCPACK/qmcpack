@@ -152,18 +152,18 @@ public:
   // safe-guard all CPU interfaces
   DiracDeterminantCUDA* makeCopy(SPOSet* spo) const { APP_ABORT("Calling DiracDeterminantCUDA::makeCopy is illegal!"); }
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("Calling DiracDeterminantCUDA::evaluateLog is illegal!");
   }
 
-  void acceptMove(ParticleSet& P, int iat) { APP_ABORT("Calling DiracDeterminantCUDA::acceptMove is illegal!"); }
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) { APP_ABORT("Calling DiracDeterminantCUDA::acceptMove is illegal!"); }
 
   void restore(int iat) { APP_ABORT("Calling DiracDeterminantCUDA::restore is illegal!"); }
 
-  ValueType ratio(ParticleSet& P, int iat) { APP_ABORT("Calling DiracDeterminantCUDA::ratio is illegal!"); }
+  PsiValueType ratio(ParticleSet& P, int iat) { APP_ABORT("Calling DiracDeterminantCUDA::ratio is illegal!"); }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     APP_ABORT("Calling DiracDeterminantCUDA::ratioGrad is illegal!");
   }
@@ -173,7 +173,7 @@ public:
     APP_ABORT("Calling DiracDeterminantCUDA::registerData is illegal!");
   }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
     APP_ABORT("Calling DiracDeterminantCUDA::updateBuffer is illegal!");
   }

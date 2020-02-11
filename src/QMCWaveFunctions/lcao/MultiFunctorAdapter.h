@@ -101,7 +101,7 @@ struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> :
   RadialOrbital_t* m_multiset;
 
   ///constructor
-  RadialOrbitalSetBuilder(Communicate* comm) : m_multiset(nullptr), Normalized(true), MPIObjectBase(comm) {}
+  RadialOrbitalSetBuilder(Communicate* comm) : MPIObjectBase(comm), Normalized(true), m_multiset(nullptr) {}
 
   ///implement functions used by AOBasisBuilder
   void setOrbitalSet(COT* oset, const std::string& acenter) { m_orbitals = oset; }
@@ -110,12 +110,9 @@ struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> :
   bool openNumericalBasisH5(xmlNodePtr cur) { return true; }
   bool put(xmlNodePtr cur)
   {
-    const xmlChar* a = xmlGetProp(cur, (const xmlChar*)"normalized");
-    if (a)
-    {
-      if (xmlStrEqual(a, (const xmlChar*)"no"))
-        Normalized = false;
-    }
+    const XMLAttrString a(cur, "normalized");
+    if (a == "no")
+      Normalized = false;
     return true;
   }
 

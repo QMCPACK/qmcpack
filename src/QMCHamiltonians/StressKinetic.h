@@ -13,7 +13,7 @@
 
 #ifndef QMCPLUSPLUS_STRESSKINETIC_TEMP_H
 #define QMCPLUSPLUS_STRESSKINETIC_TEMP_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 
@@ -25,7 +25,7 @@ namespace qmcplusplus
  * Functionally identical to StressKinetic but uses a templated version of
  * LRHandler.
  */
-struct StressKinetic : public QMCHamiltonianBase, public ForceBase
+struct StressKinetic : public OperatorBase, public ForceBase
 {
   bool FirstTime;
   int SourceID;
@@ -64,7 +64,7 @@ struct StressKinetic : public QMCHamiltonianBase, public ForceBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   SymTensor<RealType, OHMMS_DIM> evaluateStress() { return stress; }
   void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const

@@ -37,6 +37,8 @@ struct LRCoulombSingleton
   typedef LinearGrid<pRealType> GridType;
   typedef OneDimCubicSpline<pRealType> RadFunctorType;
 
+  enum lr_type {ESLER=0, EWALD, NATOLI};
+  static lr_type this_lr_type;
   ///Stores the energ optimized LR handler.
   static LRHandlerType* CoulombHandler;
   ///Stores the force/stress optimized LR handler.

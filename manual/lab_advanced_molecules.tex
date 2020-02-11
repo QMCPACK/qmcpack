@@ -171,7 +171,7 @@ qmca -q e *scalar.dat -p
 \label{fig:lam_opt_conv}
 \end{figure}
 
-The resulting energy as a function of the optimization step should look qualitatively similar to Figure \ref{fig:lam_opt_conv}.
+The resulting energy as a function of the optimization step should look qualitatively similar to Figure~\ref{fig:lam_opt_conv}.
 The energy should decrease quickly as a function of the number of optimization steps. After 6--8 steps, the energy should be converged to $\sim$2--3 mHa. To improve convergence,
 we would need to increase the number of samples used during optimization (You can
 check this for yourself later.). With optimized wavefunctions, we are in a position
@@ -207,7 +207,7 @@ blocks. Notice that in the current DMC blocks the time step is decreased as the 
 
 When the simulations are finished, use \texttt{qmca} to analyze the output files and plot the
 DMC energy as a function of time step. Results should be qualitatively similar to those
-presented in Figure \ref{fig:lam_dmc_timestep}; in this case we present more time steps with well converged results to
+presented in Figure~\ref{fig:lam_dmc_timestep}; in this case we present more time steps with well converged results to
 better illustrate the time step dependence. In realistic calculations, the time step must be
 chosen small enough so that the resulting error is below the desired accuracy. Alternatively,
 various calculations can be performed and the results extrapolated to the zero time-step
@@ -273,7 +273,7 @@ Repeat the same procedure in the other folders by setting (targetWalkers=240,
 steps=100, timestep=0.01, blocks=200) in NW240 and (targetWalkers=480, 
 steps=100, timestep=0.01, blocks=100) in NW480. When
 the simulations complete, use \texttt{qmca} to analyze and plot the energy as a function of the
-number of walkers in the calculation. As always, Figure \ref{fig:lam_dmc_popcont} 
+number of walkers in the calculation. As always, Figure~\ref{fig:lam_dmc_popcont} 
 shows representative results of the
 energy dependence on the number of walkers for a single water molecule. As shown,
 less than 240 walkers are needed to obtain an accuracy of 0.1 mHa.
@@ -338,7 +338,7 @@ Because these simulations will take several minutes to complete, this is an exce
 to go to Section~\ref{sec:lab_adv_mol_wf_appendix}, ``Appendix E: Wavefunction XML block," and review the wavefunction XML block used by QMCPACK. When the
 simulations are completed, use \texttt{qmca} to analyze the output files. Using your favorite plotting
 program (e.g., gnu plot), plot the energy and variance as a function of the Jastrow form.
-Figure \ref{fig:lam_vmc_jastrow} shows a typical result for this calculation. As can be seen, the VMC energy and
+Figure~\ref{fig:lam_vmc_jastrow} shows a typical result for this calculation. As can be seen, the VMC energy and
 variance depends strongly on the form of the Jastrow. Since the DMC error bar is directly
 related to the variance of the VMC energy, improving the Jastrow will always lead to a
 reduction in the DMC effort. In addition, systematic approximations (time step, number of
@@ -437,7 +437,7 @@ After the wavefunction is generated, we are ready to optimize. Instead of starti
 \end{figure}
 
 When you are done, use \texttt{qmca} to analyze the results. Compare the energies at these two
-coefficient cutoffs with the energies obtained with DFT orbitals. Because of the time limitations of this tutorial, it is not practical to optimize the wavefunctions with a smaller cutoff since this would require more samples and longer runs due to the larger number of optimizable parameters. Figure \ref{fig:lam_dmc_ci_cisd} shows the results of such exercise: the DMC energy as a function of the cutoff in the wavefunction. As can be seen, a large improvement in the energy is obtained as the number of configurations is increased.
+coefficient cutoffs with the energies obtained with DFT orbitals. Because of the time limitations of this tutorial, it is not practical to optimize the wavefunctions with a smaller cutoff since this would require more samples and longer runs due to the larger number of optimizable parameters. Figure~\ref{fig:lam_dmc_ci_cisd} shows the results of such exercise: the DMC energy as a function of the cutoff in the wavefunction. As can be seen, a large improvement in the energy is obtained as the number of configurations is increased.
 
 
 %Since the un-optimized wave-functions were generated in subsection “Generation of a CISD wavefunctions 
@@ -894,15 +894,15 @@ functions) since changes can lead to unexpected results.
 A QMCPACK wavefunction XML block is a combination of a determinantset, which
 contains the antisymmetric part of the wavefunction and one or more Jastrow blocks.
 The syntax of the antisymmetric block depends on whether the wavefunction is a single
-determinant or a multideterminant expansion. Listing \ref{lst:lam_xml_determinantset} 
+determinant or a multideterminant expansion. Listing~\ref{lst:lam_xml_determinantset} 
 shows the general structure of the
 single-determinant case. The determinantset block is composed of a basisset block, which
 defines the atomic orbital basis set, and a slaterdeterminant block, which defines the SPOs and occupation numbers of the Slater determinant.
-% Listing \ref{lst:lam_xml_basisset} 
+% Listing~\ref{lst:lam_xml_basisset} 
 %shows a section
 %of a basisset block for a gold atom. The structure of this block is rigid and should not
 %be modified.
- Listing \ref{lst:lam_xml_slaterdeterminant} shows a (piece of a) sample of a 
+ Listing~\ref{lst:lam_xml_slaterdeterminant} shows a (piece of a) sample of a 
 slaterdeterminant block. The
 slaterdeterminant block consists of two determinant blocks, one for each electron spin. The
 parameter ``size” in the determinant block refers to the number of SPOs
@@ -929,7 +929,7 @@ basis functions per SPO.
  -0.00000000000000e+00 -3.20000000000000e-05  1.60000000000000e-05  1.60000000000000e-05
  -0.00000000000000e+00 -0.00000000000000e+00 -0.00000000000000e+00  7.00000000000000e-06
 \end{lstlisting}
-Listing \ref{lam_xml_multideterminant} shows the general structure of the multideterminant case. 
+Listing~\ref{lam_xml_multideterminant} shows the general structure of the multideterminant case. 
 Similar to the
 single-determinant case, the determinantset must contain a basisset block. This definition is
 identical to the one described previously. In this case, the definition of the SPOs
@@ -993,7 +993,7 @@ with core electrons. These are not explicitly listed on the definition of config
   \item{size (in detlist ): Contains the number of configurations in the list.}
 \end{itemize}
 The remaining part of the determinantset block is the definition of Jastrow factor. Any
-number of these can be defined. Figure \ref{fig:lam_xml_jastrow} shows a sample Jastrow 
+number of these can be defined. Figure~\ref{fig:lam_xml_jastrow} shows a sample Jastrow 
 block including 1-, 2- and 3-body terms. This is the standard block produced by 
 \texttt{convert4qmc} with the option -add3BodyJ (this particular example is for a water molecule). 
 Optimization of individual radial functions can be turned on/off using the “optimize” 

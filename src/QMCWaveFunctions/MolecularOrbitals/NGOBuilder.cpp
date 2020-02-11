@@ -68,7 +68,7 @@ bool NGOBuilder::putCommon(xmlNodePtr cur)
     //current version
     HDFVersion res_version(0, 1);
     HDFVersion in_version(0, 0); //start using major=0 and minor=4
-    herr_t status = H5Eset_auto(NULL, NULL);
+    herr_t status = H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     in_version.read(m_fileid, hdf::version);
     if (in_version < res_version)
     {
@@ -240,10 +240,6 @@ bool NGOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
   aAttrib.add(m_rcut, "rmax");
   aAttrib.add(dsname, "ds");
   aAttrib.put(cur);
-  //const xmlChar *tptr = xmlGetProp(cur,(const xmlChar*)"type");
-  //if(tptr) radtype = (const char*)tptr;
-  //tptr = xmlGetProp(cur,(const xmlChar*)"rmax");
-  //if(tptr) m_rcut = atof((const char*)tptr);
   int lastRnl = m_orbitals->Rnl.size();
   m_nlms      = nlms;
   if (radtype == "Gaussian" || radtype == "GTO")

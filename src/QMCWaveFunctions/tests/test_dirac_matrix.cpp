@@ -27,8 +27,9 @@ using std::string;
 namespace qmcplusplus
 {
 
-typedef QMCTraits::RealType RealType;
-typedef QMCTraits::ValueType ValueType;
+using RealType = QMCTraits::RealType;
+using ValueType = QMCTraits::ValueType;
+using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 
 template<typename T1, typename T2>
 void check_matrix(Matrix<T1>& a, Matrix<T2>& b)
@@ -48,7 +49,7 @@ TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
   DiracMatrix<ValueType> dm;
 
   Matrix<ValueType> m, m_invT;
-  RealType LogValue, PhaseValue;
+  LogValueType LogValue;
   m.resize(3, 3);
   m_invT.resize(3, 3);
 
@@ -56,8 +57,8 @@ TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
   m(1, 1) = 1.0;
   m(2, 2) = 1.0;
 
-  dm.invert_transpose(m, m_invT, LogValue, PhaseValue);
-  REQUIRE(LogValue == ValueApprox(0.0));
+  dm.invert_transpose(m, m_invT, LogValue);
+  REQUIRE(LogValue == LogComplexApprox(0.0));
 
   Matrix<ValueType> eye;
   eye.resize(3, 3);
@@ -73,7 +74,7 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
   DiracMatrix<ValueType> dm;
 
   Matrix<ValueType> a, a_T, a_inv;
-  RealType LogValue, PhaseValue;
+  LogValueType LogValue;
   a.resize(3, 3);
   a_T.resize(3, 3);
   a_inv.resize(3, 3);
@@ -89,8 +90,8 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
   a(2, 2) = 4.9;
 
   simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
-  dm.invert_transpose(a_T, a_inv, LogValue, PhaseValue);
-  REQUIRE(LogValue == ValueApprox(3.78518913425));
+  dm.invert_transpose(a_T, a_inv, LogValue);
+  REQUIRE(LogValue == LogComplexApprox(3.78518913425));
 
   Matrix<ValueType> b;
   b.resize(3, 3);
@@ -116,7 +117,7 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   updateEng.resize(3, 1);
 
   Matrix<ValueType> a, a_T, a_inv;
-  RealType LogValue, PhaseValue;
+  LogValueType LogValue;
   a.resize(3, 3);
   a_T.resize(3, 3);
   a_inv.resize(3, 3);
@@ -132,7 +133,7 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   a(2, 2) = 4.9;
 
   simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
-  dm.invert_transpose(a_T, a_inv, LogValue, PhaseValue);
+  dm.invert_transpose(a_T, a_inv, LogValue);
 
   // new row
   Vector<ValueType> v(3), invRow(3);

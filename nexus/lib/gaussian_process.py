@@ -1459,16 +1459,18 @@ class GaussianProcessOptimizer(DevBase):
 
     Examples
     --------
-    # minimize a 2D parabola over the domain -1 < x,y < 1
-    def x2(x,s):
-        E = (x**2).sum(axis=1,keepdims=1)
-        dE = 0*E
-        return E,dE
-    #end def x2    
-    gpo = GaussianProcessOptimizer(5,[-1,-1],[1,1],x2)
-    P0,E0 = gpo.optimize()
-    print 'optimal parameters:',P0[-1]
-    print 'optimal energy    :',E0[-1]
+    ::
+
+        # minimize a 2D parabola over the domain -1 < x,y < 1
+        def x2(x,s):
+            E = (x**2).sum(axis=1,keepdims=1)
+            dE = 0*E
+            return E,dE
+        #end def x2    
+        gpo = GaussianProcessOptimizer(5,[-1,-1],[1,1],x2)
+        P0,E0 = gpo.optimize()
+        print 'optimal parameters:',P0[-1]
+        print 'optimal energy    :',E0[-1]
     """
 
     allowed_modes = 'stateless stateful'.split()
@@ -1655,8 +1657,8 @@ class GaussianProcessOptimizer(DevBase):
         self.vlog('writing parameters to {0}'.format(filepath),n=3)
         nsamples,nparams = Pset.shape
         s = ''
-        for i in xrange(nsamples):
-            for j in xrange(nparams):
+        for i in range(nsamples):
+            for j in range(nparams):
                 s += ' {0: 16.12f}'.format(Pset[i,j])
             #end for
             s += '\n'

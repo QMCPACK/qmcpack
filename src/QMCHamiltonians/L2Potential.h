@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_L2POTENTIAL_H
 #define QMCPLUSPLUS_L2POTENTIAL_H
 #include "Particle/ParticleSet.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
@@ -54,7 +54,7 @@ struct L2RadialPotential : public QMCTraits
  * \brief Evaluate the L2 potentials around each ion.
  */
 
-struct L2Potential : public QMCHamiltonianBase
+struct L2Potential : public OperatorBase
 {
   ///reference to the ionic configuration
   const ParticleSet& IonConfig;
@@ -85,7 +85,7 @@ struct L2Potential : public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   /** Add a RadialPotentialType of a species
    * @param groupID index of the ion species

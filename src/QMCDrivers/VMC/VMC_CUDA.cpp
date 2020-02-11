@@ -38,21 +38,23 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w,
     : QMCDriver(w, psi, h, ppool, comm),
       UseDrift("yes"),
       myPeriod4WalkerDump(0),
-      GEVtype("mixed"),
-      w_alpha(0.0),
       w_beta(0.0),
+      w_alpha(0.0),
+      GEVtype("mixed"),
       forOpt(false)
 {
   RootName = "vmc";
   QMCType  = "VMCcuda";
-  QMCDriverMode.set(QMC_UPDATE_MODE, 1);
-  QMCDriverMode.set(QMC_WARMUP, 0);
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_WARMUP, 0);
   m_param.add(UseDrift, "useDrift", "string");
   m_param.add(UseDrift, "usedrift", "string");
   m_param.add(nTargetSamples, "targetWalkers", "int");
   m_param.add(w_beta, "beta", "double");
   m_param.add(w_alpha, "alpha", "double");
   m_param.add(GEVtype, "GEVMethod", "string");
+
+  H.setRandomGenerator(&Random);
 }
 
 bool VMCcuda::checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid)
@@ -200,7 +202,7 @@ bool VMCcuda::run()
   IndexType block        = 0;
   IndexType nAcceptTot   = 0;
   IndexType nRejectTot   = 0;
-  IndexType updatePeriod = (QMCDriverMode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
+  IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
   int nat                = W.getTotalNum();
   int nw                 = W.getActiveWalkers();
   std::vector<RealType> LocalEnergy(nw);

@@ -1,5 +1,7 @@
 module unload cray-libsci
 module load cray-hdf5-parallel
+module load gcc
+module load cmake
 
 export CC=cc
 export CXX=CC
@@ -10,7 +12,7 @@ export CRAYPE_LINK_TYPE=dynamic
 TYPE=Release
 Compiler=Intel
 
-for name in real_SoA real_SoA_MP cplx_SoA cplx_SoA_MP \
+for name in real_AoS_legacy real_MP_AoS_legacy cplx_AoS_legacy cplx_MP_AoS_legacy \
             real real_MP cplx cplx_MP
 do
 
@@ -20,9 +22,7 @@ if [[ $name == *"cplx"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -D QMC_COMPLEX=1"
 fi
 
-if [[ $name == *"_SoA"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_SOA=1"
-else
+if [[ $name == *"_AoS_legacy"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_SOA=0"
 fi
 

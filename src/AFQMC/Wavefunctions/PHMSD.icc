@@ -234,8 +234,9 @@ namespace afqmc
             for(; it<ite; ++it) {
               auto ci = ma::conj(get<2>(*(confgs+(*it))));  
               auto Ovmsd_ = Ovmsd[1][get<1>(*(confgs+(*it)))];  
-              for(int iw=0; iw<nwalk; ++iw) 
+              for(int iw=0; iw<nwalk; ++iw) { 
                 wgt[iw] += ci * Ovmsd_[iw];
+              }
             }
             for(int iw=0; iw<nwalk; ++iw) { 
               wgt[iw] *= Ovmsd[0][nd][iw];  
@@ -256,19 +257,19 @@ namespace afqmc
             E[iw][0] += wgt[iw]*Emsd[spin][nd][iw][0]/2.0;
             E[iw][1] += wgt[iw]*Emsd[spin][nd][iw][1]/2.0;
             E[iw][2] += wgt[iw]*Emsd[spin][nd][iw][2]/4.0;
-          }  
+          }
         } //nd%TG.TG_local().size()==TG.TG_local().rank()
       }  //nex
     }  // spin
 
-    // 3. reduce over TG_local 
+    // 3. reduce over TG_local
     TG.TG_local().all_reduce_in_place_n(to_address(opSpinEJ.origin()),nwalk,std::plus<>());
     TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()),nwalk,std::plus<>());
     TG.TG_local().all_reduce_in_place_n(to_address(E.origin()),3*nwalk,std::plus<>());
-    for(int i=0; i<nwalk; ++i) { 
-      E[i][0] /= Ov[i];   
-      E[i][1] /= Ov[i];  
-      E[i][2] = (E[i][2] + opSpinEJ[i])/Ov[i];  
+    for(int i=0; i<nwalk; ++i) {
+      E[i][0] /= Ov[i];
+      E[i][1] /= Ov[i];
+      E[i][2] = (E[i][2] + opSpinEJ[i])/Ov[i];
     }
     TG.local_barrier();
   }
@@ -403,7 +404,6 @@ namespace afqmc
     else
       assert(G.size(1) == wset.size() && G.size(0) == size_t(dm_size(not compact)));
     const int nw = wset.size(); 
-    const int ndet = abij.number_of_configurations(); 
     auto refc = abij.reference_configuration();
     double LogOverlapFactor(wset.getLogOverlapFactor());
     assert(Ov.size() >= nw);  
@@ -870,7 +870,6 @@ namespace afqmc
   void PHMSD::Overlap(const WlkSet& wset, TVec&& Ov)
   {
     const int nw = wset.size(); 
-    const int ndet = abij.number_of_configurations();
     assert(Ov.size() >= nw);  
     std::fill(Ov.begin(),Ov.begin()+nw,0);
     auto refc = abij.reference_configuration();
@@ -1188,7 +1187,7 @@ namespace afqmc
       for(int nd=0; nd<det_couplings[spin].size(); ++nd, ++nc) {
         if( nc%TG.Global().size() == TG.Global().rank() ) {
           abij.get_configuration(spin,nd,confg);
-          csr::CSR2MA('H',OrbMats[orb_spin_indx],SM_,confg);
+          ma::Matrix2MA('H',OrbMats[orb_spin_indx],SM_,confg);
           ovlps[spin][nd] = SDetOp.Overlap(SM_,0.0);
         }
       }
@@ -1200,7 +1199,7 @@ namespace afqmc
     TG.Node().barrier();
 
     ComplexType ov(0.0);
-    for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it) 
+    for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it)
       ov += norm(std::get<2>(*it))*
             ovlps[0][std::get<0>(*it)]*
             ovlps[1][std::get<1>(*it)];
@@ -1225,7 +1224,7 @@ namespace afqmc
       for(int nd=0; nd<det_couplings[spin].size(); ++nd) {
         if( nd%TG.Global().size() == TG.Global().rank() ) {
           abij.get_configuration(spin,nd,confg);
-          csr::CSR2MA('H',OrbMats[orb_spin_indx],SM_,confg);
+          ma::Matrix2MA('H',OrbMats[orb_spin_indx],SM_,confg);
           ComplexType ov_ = SDetOp.MixedDensityMatrix(SM_,G2D_,0.0,true);
           ComplexType wgt(0.0);
           auto it = to_address(det_couplings[spin].values()) +
@@ -1270,7 +1269,7 @@ namespace afqmc
                  * Either calculate it (expensive) or demand orthogonality!!!   
                  */   
                 exct[0] = confg[exct[0]]; 
-                csr::CSR2MA('Z',OrbMats[orb_spin_indx],orbs,exct);
+                ma::Matrix2MA('Z',OrbMats[orb_spin_indx],orbs,exct);
                 ma::axpy(wgt,orbs[0],G[exct[1]]);
                 ma::axpy(ma::conj(wgt),orbs[1],G[exct[0]]);
               }
@@ -1294,7 +1293,8 @@ namespace afqmc
 //    for(int i=0; i<v.num_elements(); i++)
 //      v[i] = ComplexType(real(v[i]),0.0); 
 
-}
+  }
+
 
 }
 }

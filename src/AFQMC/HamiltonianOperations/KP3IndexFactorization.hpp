@@ -69,6 +69,9 @@ class KP3IndexFactorization
 
   public:
 
+    static const HamiltonianTypes HamOpType = KPFactorized;
+    HamiltonianTypes getHamType() const { return HamOpType; }
+
     KP3IndexFactorization(communicator& c_,
                  WALKER_TYPES type,
                  IVector&& nopk_,
@@ -90,8 +93,9 @@ class KP3IndexFactorization
                  int gncv):
         comm(std::addressof(c_)),
         walker_type(type),
-        global_nCV(gncv),
         global_origin(cv0),
+        global_nCV(gncv),
+        local_nCV(0),
         E0(e0_),
         H1(std::move(hij_)),
         haj(std::move(h1)),
@@ -105,16 +109,17 @@ class KP3IndexFactorization
         LQKbnl(std::move(vbl)),
         Qmap(std::move(qqm_)),
         Q2vbias(Qmap.size()),
+        number_of_symmetric_Q(0),
         vn0(std::move(vn0_)),
+        nsampleQ(nsampleQ_),
         gQ(std::move(gQ_)),
         Qwn({1,1},shared_allocator<SPComplexType>{*comm}),
         generator(),
         distribution(gQ.begin(),gQ.end()),
-        nsampleQ(nsampleQ_),
         SM_TMats({1,1},shared_allocator<SPComplexType>{*comm}),
         TMats({1,1}),
-        EQ(nopk.size()+2),
-        mutex(0)
+        mutex(0),
+        EQ(nopk.size()+2)
     {
       mutex.reserve(ncholpQ.size());
       for(int nQ=0; nQ<ncholpQ.size(); nQ++)
@@ -196,7 +201,7 @@ class KP3IndexFactorization
             P1[I][J] += H1[K][i][j] + vn0[K][i][j];
             P1[J][I] += H1[K][j][i] + vn0[K][j][i];
             // This is really cutoff dependent!!!
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
             if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-5 ) {
 #else
             if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-6 ) {
@@ -268,7 +273,7 @@ class KP3IndexFactorization
       set_shm_buffer(mem_needs);
 
       // messy
-      SPComplexType *Krptr, *Klptr;
+      SPComplexType *Krptr(nullptr), *Klptr(nullptr);
       long Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
@@ -323,6 +328,7 @@ class KP3IndexFactorization
       boost::multi::array_cref<ComplexType,3> G3Db(to_address(Gc.origin())+
                                                         G3Da.num_elements()*(nspin-1),
                                                         {noccb_tot,nmo_tot,nwalk} );
+
 
       // with yet another mapping, it is possible to reduce the memory usage here!
       // avoiding for now!
@@ -422,8 +428,8 @@ class KP3IndexFactorization
                 SpMatrix_ref Twabn(Twban.origin()+Twban.num_elements(),{nwalk*na,nb*nchol});
                 Sp4Tensor_ref T4Dwabn(Twban.origin()+Twban.num_elements(),{nwalk,na,nb,nchol});
 
-                ma::product(Gwal,ma::T(Lbnl),Twabn);
-                ma::product(Gwbk,ma::T(Lank),Twban);
+                if(na > 0 && nb > 0) ma::product(Gwal,ma::T(Lbnl),Twabn);
+                if(na > 0 && nb > 0) ma::product(Gwbk,ma::T(Lank),Twban);
 
                 for(int n=0; n<nwalk; ++n) {
                   SPComplexType E_(0.0);
@@ -472,8 +478,8 @@ class KP3IndexFactorization
                   SpMatrix_ref Twabn(Twban.origin()+Twban.num_elements(),{nwalk*na,nb*nchol});
                   Sp4Tensor_ref T4Dwabn(Twban.origin()+Twban.num_elements(),{nwalk,na,nb,nchol});
 
-                  ma::product(Gwal,ma::T(Lbnl),Twabn);
-                  ma::product(Gwbk,ma::T(Lank),Twban);
+                  if(na > 0 && nb > 0) ma::product(Gwal,ma::T(Lbnl),Twabn);
+                  if(na > 0 && nb > 0) ma::product(Gwbk,ma::T(Lank),Twban);
 
                   for(int n=0; n<nwalk; ++n) {
                     SPComplexType E_(0.0);
@@ -589,7 +595,7 @@ class KP3IndexFactorization
       set_shm_buffer(mem_needs);
 
       // messy
-      SPComplexType *Krptr, *Klptr;
+      SPComplexType *Krptr(nullptr), *Klptr(nullptr);
       long Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
@@ -760,8 +766,8 @@ class KP3IndexFactorization
                   SpMatrix_ref Tabn(Tban.origin()+Tban.num_elements(),{na,nb*nchol});
                   Sp3Tensor_ref T3Dabn(Tban.origin()+Tban.num_elements(),{na,nb,nchol});
 
-                  ma::product(Gal,ma::T(Lbnl),Tabn);
-                  ma::product(Gbk,ma::T(Lank),Tban);
+                  if(na > 0 && nb > 0) ma::product(Gal,ma::T(Lbnl),Tabn);
+                  if(na > 0 && nb > 0) ma::product(Gbk,ma::T(Lank),Tban);
 
                   SPComplexType E_(0.0);
                   for(int a=0; a<na; ++a)
@@ -796,8 +802,8 @@ class KP3IndexFactorization
                     SpMatrix_ref Tabn(Tban.origin()+Tban.num_elements(),{na,nb*nchol});
                     Sp3Tensor_ref T3Dabn(Tban.origin()+Tban.num_elements(),{na,nb,nchol});
 
-                    ma::product(Gal,ma::T(Lbnl),Tabn);
-                    ma::product(Gbk,ma::T(Lank),Tban);
+                    if(na > 0 && nb > 0) ma::product(Gal,ma::T(Lbnl),Tabn);
+                    if(na > 0 && nb > 0) ma::product(Gbk,ma::T(Lank),Tban);
 
                     SPComplexType E_(0.0);
                     for(int a=0; a<na; ++a)
@@ -1342,6 +1348,11 @@ class KP3IndexFactorization
     bool transposed_vHS() const{return true;}
 
     bool fast_ph_energy() const { return false; }
+
+    boost::multi::array<ComplexType,2> getHSPotentials()
+    {
+      return boost::multi::array<ComplexType,2>{};
+    }
 
   private:
 

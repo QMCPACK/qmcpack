@@ -139,12 +139,10 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
   double bestScore        = 0.0;
   static const double tol = 0.0000001;
   double detPrim          = getDet(primcell);
-  //  std::cout << "detPrim = " << detPrim << std::endl;
   if (detPrim < 0)
   {
     target *= -1;
   }
-//  target *= -1;
 #pragma omp parallel
   {
     double my_largest = 0.0;
@@ -250,7 +248,7 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
 int main(int argc, char* argv[])
 {
   double prim[9];
-  int target;
+  int target = 0;
   char* pend;
   int verbose  = 0;
   int maxentry = 4;
@@ -282,13 +280,7 @@ int main(int argc, char* argv[])
       }
     }
   }
-  /*
-  std::cout << "The input primitive translation vectors are: \n";
-  std::cout << prim[0] << "   " << prim[1] << "   " << prim[2] << std::endl;
-  std::cout << prim[3] << "   " << prim[4] << "   " << prim[5] << std::endl;
-  std::cout << prim[6] << "   " << prim[7] << "   " << prim[8] << std::endl;
-  std::cout << "The target is " << target << std::endl;
-  */
+
   int besttile[9];
   double super[9];
   double radius;

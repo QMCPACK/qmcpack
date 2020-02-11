@@ -107,8 +107,8 @@ struct H5OrbSet
       return a.FileName < b.FileName;
   }
 
-  H5OrbSet(const H5OrbSet& a) : FileName(a.FileName), SpinSet(a.SpinSet), NumOrbs(a.NumOrbs) {}
-  H5OrbSet(std::string name, int spinSet, int numOrbs) : FileName(name), SpinSet(spinSet), NumOrbs(numOrbs) {}
+  H5OrbSet(const H5OrbSet& a) : SpinSet(a.SpinSet), NumOrbs(a.NumOrbs), FileName(a.FileName) {}
+  H5OrbSet(std::string name, int spinSet, int numOrbs) : SpinSet(spinSet), NumOrbs(numOrbs), FileName(name) {}
   H5OrbSet() {}
 };
 
@@ -129,7 +129,6 @@ public:
 
   /**  Helper vector for sorting bands
    */
-  //std::vector<BandInfo> SortBands;
   std::vector<std::vector<BandInfo>*> FullBands;
 
   /// reader to use BsplineReaderBase
@@ -140,10 +139,6 @@ public:
   ///root XML node with href, sort, tilematrix, twistnum, source, precision,truncate,version
   xmlNodePtr XMLRoot;
 
-  ////static std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> ExtendedMap_d;
-  ////static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
-  ////static std::map<H5OrbSet,EinsplineSetExtended<double>*,H5OrbSet> ExtendedSetMap_d;
-  //static std::map<H5OrbSet,SPOSet*,H5OrbSet> SPOSetMap;
   std::map<H5OrbSet, SPOSet*, H5OrbSet> SPOSetMap;
 
   ///constructor
@@ -160,7 +155,7 @@ public:
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node
    */
-  void set_metadata(int numOrbs, int TwistNum_inp);
+  void set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks=false);
 
   /** initialize with the existing SPOSet */
   SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info);
@@ -181,8 +176,8 @@ public:
   std::string parameterGroup, ionsGroup, eigenstatesGroup;
   std::vector<int> Occ;
   bool HasCoreOrbs;
-  bool ReadOrbitalInfo();
-  bool ReadOrbitalInfo_ESHDF();
+  bool ReadOrbitalInfo(bool skipChecks=false);
+  bool ReadOrbitalInfo_ESHDF(bool skipChecks=false);
   void BroadcastOrbitalInfo();
   bool CheckLattice();
 
@@ -202,7 +197,6 @@ public:
     oset->Tiling       = (TileFactor[0] * TileFactor[1] * TileFactor[2] != 1);
     oset->PrimLattice.set(Lattice);
     oset->SuperLattice.set(SuperLattice);
-    //oset->GGt=dot(transpose(oset->PrimLattice.G), oset->PrimLattice.G);
     oset->GGt = GGt;
     oset->setOrbitalSetSize(numOrbs);
   }
@@ -216,9 +210,6 @@ public:
   RealType MatchingTol;
   TinyVector<int, 3> MeshSize;
   std::vector<std::vector<TinyVector<int, 3>>> Gvecs;
-
-  //fftw_plan FFTplan;
-  //Array<std::complex<double>,3> FFTbox;
 
   Vector<int> IonTypes;
   Vector<TinyVector<double, OHMMS_DIM>> IonPos;
@@ -256,15 +247,8 @@ public:
   //void AnalyzeTwists();
   void AnalyzeTwists2();
   void TileIons();
-  void OccupyBands(int spin, int sortBands, int numOrbs);
+  void OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks=false);
   void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
-
-#if 0
-  void ReadBands      (int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet);
-  void ReadBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet);
-  void ReadBands      (int spin, EinsplineSetExtended<        double  >* orbitalSet);
-  void ReadBands_ESHDF(int spin, EinsplineSetExtended<        double  >* orbitalSet);
-#endif
 
   void CopyBands(int numOrbs);
 
@@ -321,12 +305,6 @@ public:
   std::string occ_format;
   int particle_hole_pairs;
   bool makeRotations;
-#if 0
-  std::vector<RealType> rotationMatrix;
-  std::vector<int> rotatedOrbitals;
-  void RotateBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet);
-  void RotateBands_ESHDF(int spin, EinsplineSetExtended<double>* orbitalSet);
-#endif
 
   /** broadcast SortBands
    * @param N number of state

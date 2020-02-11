@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 from __future__ import print_function
 
 # Statical error checking code for use by testing framework
@@ -193,7 +193,7 @@ def read_command_line():
 #AFQMC quantities
             eloc    = 'Eloc',
             elocest = 'ElocEstim',
-            enum_real = 'EnergyEstim__nume_real',
+            el = 'EnergyEstim__nume_real',
             )
 
         for qshort in sorted(quantities.keys()):

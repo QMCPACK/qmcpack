@@ -53,6 +53,33 @@ inline std::tuple<int,int,int> read_info_from_hdf(std::string fileName)
     return std::make_tuple(Idata[3],Idata[4],Idata[5]);
 }
 
+inline std::tuple<int,int,int> read_info_from_wfn(std::string fileName, std::string type)
+{
+    hdf_archive dump;
+    if(!dump.open(fileName,H5F_ACC_RDONLY)) {
+      std::cerr<<" Error opening wavefunction file in read_info_from_wfn. \n";
+      APP_ABORT("");
+    }
+    if(!dump.push("Wavefunction",false)) {
+      std::cerr<<" Error in read_info_from_wfn(): Group not Wavefunction found. \n";
+      APP_ABORT("");
+    }
+    if(!dump.push(type,false)) {
+      std::cerr<<" Error in read_info_from_wfn(): Group " << type << " not found. \n";
+      APP_ABORT("");
+    }
+
+    std::vector<int> Idata(5);
+    if(!dump.readEntry(Idata,"dims")) {
+      std::cerr<<" Error in read_info_from_wfn: Problems reading dims. \n";
+      APP_ABORT("");
+    }
+
+    dump.pop();
+
+    return std::make_tuple(Idata[0],Idata[1],Idata[2]);
+}
+
 template<typename T>
 TEST_DATA<T>  read_test_results_from_hdf(std::string fileName, std::string wfn_type="")
 {

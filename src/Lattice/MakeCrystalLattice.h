@@ -97,12 +97,12 @@ struct makelattice<CrystalLattice<T, 2>>
   }
 };
 
-/** Specialization of makelattice<CL> for CrystalLattice<T,3>*/
+/** Specialization of makelattice<CL> for CrystalLattice<T,3> */
 template<class T>
 struct makelattice<CrystalLattice<T, 3>>
 {
-  /*! \fn makelattic<CrystalLattice<T,3> >
-   *  ::apply(CrystalLattice<T,3>& lattice, std::vector<std::string>& argv)
+  /** Modify CrystalLattice<T,3>& based on string input
+   *
    *  \param lattice an CrystalLattice to be set
    *  \param argv   input parameters
    *  \note Keywords to set a special 3D primitive cell.

@@ -17,13 +17,13 @@
 #ifndef QMCPLUSPLUS_COSTFUNCTIONBASE_H
 #define QMCPLUSPLUS_COSTFUNCTIONBASE_H
 
+#include <deque>
+#include <set>
 #include "Configuration.h"
 #include "Optimize/OptimizeBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/MPIObjectBase.h"
-#include <deque>
-#include <set>
 
 #ifdef HAVE_LMY_ENGINE
 //#include "Eigen/Dense"
@@ -34,6 +34,7 @@
 namespace qmcplusplus
 {
 class MCWalkerConfiguration;
+class DescentEngine;
 
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
@@ -78,15 +79,15 @@ public:
   bool put(xmlNodePtr cur);
   void resetCostFunction(std::vector<xmlNodePtr>& cset);
   ///Save opt parameters to HDF5
-  bool reportH5;  
-  bool CI_Opt;  
+  bool reportH5;
+  bool CI_Opt;
   ///Path and name of the HDF5 prefix where CI coeffs are saved
   std::string newh5;
   ///assign optimization parameter i
   Return_t& Params(int i) { return OptVariables[i]; }
   ///return optimization parameter i
   Return_t Params(int i) const { return OptVariables[i]; }
-  int getType(int i) { return OptVariables.getType(i); }
+  int getType(int i) const { return OptVariables.getType(i); }
   ///return the cost value for CGMinimization
   Return_rt Cost(bool needGrad = true);
 
@@ -94,11 +95,13 @@ public:
   Return_rt computedCost();
   void printEstimates();
   ///return the gradient of cost value for CGMinimization
-  virtual void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0){};
+  virtual void GradCost(std::vector<Return_rt>& PGradient,
+                        const std::vector<Return_rt>& PM,
+                        Return_rt FiniteDiff = 0){};
   ///return the number of optimizable parameters
-  inline int NumParams() { return OptVariables.size(); }
+  inline int getNumParams() const { return OptVariables.size(); }
   ///return the number of optimizable parameters
-  inline int getNumSamples() { return NumSamples; }
+  inline int getNumSamples() const { return NumSamples; }
   inline void setNumSamples(int newNumSamples) { NumSamples = newNumSamples; }
   ///reset the wavefunction
   virtual void resetPsi(bool final_reset = false) = 0;
@@ -125,6 +128,10 @@ public:
 
   void addCoefficients(xmlXPathContextPtr acontext, const char* cname);
 
+  void printCJParams(xmlNodePtr cur, std::string& rname);
+
+  void addCJParams(xmlXPathContextPtr acontext, const char* cname);
+
   /** implement the virtual function
    * @param x0 current parameters
    * @param gr gradients or conjugate gradients
@@ -144,7 +151,7 @@ public:
   virtual Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) = 0;
 
 #ifdef HAVE_LMY_ENGINE
-  Return_rt LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine* EngineObj);
+  Return_rt LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine<Return_t>* EngineObj);
 #endif
 
   virtual void getConfigurations(const std::string& aroot) = 0;
@@ -152,7 +159,10 @@ public:
   virtual void checkConfigurations() = 0;
 
 #ifdef HAVE_LMY_ENGINE
-  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj) = 0;
+  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
+                                          DescentEngine& descentEngineObj,
+                                          const std::string& MinMethod) = 0;
+
 #endif
 
   void setRng(std::vector<RandomGenerator_t*>& r);
@@ -161,6 +171,10 @@ public:
 
   inline void setneedGrads(bool tf) { needGrads = tf; }
   inline void setDMC() { vmc_or_dmc = 1.0; }
+
+  inline std::string getName(int i) const { return OptVariables.name(i); }
+
+  inline const opt_variables_type& getOptVariables() const { return OptVariables; }
 
 protected:
   ///walker ensemble
@@ -246,6 +260,8 @@ protected:
    * is normally the same as OptVariables.
    */
   opt_variables_type OptVariablesForPsi;
+  // unchanged initial checked-in variables
+  opt_variables_type InitVariables;
   /** index mapping for <equal> constraints
    *
    * - equalVarMap[i][0] : index in OptVariablesForPsi
@@ -313,7 +329,7 @@ protected:
   virtual Return_rt correlatedSampling(bool needGrad = true) = 0;
 
 #ifdef HAVE_LMY_ENGINE
-  virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj)
+  virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj)
   {
     APP_ABORT("NOT IMPLEMENTED");
     return 0;

@@ -19,13 +19,15 @@
 #ifndef QMCPLUSPLUS_QMCLINEAROPTIMIZATION_VMCSINGLE_H
 #define QMCPLUSPLUS_QMCLINEAROPTIMIZATION_VMCSINGLE_H
 
+#include <memory>
 #include "QMCDrivers/QMCDriver.h"
 #include "Optimize/OptimizeBase.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "Numerics/LinearFit.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
+#include "QMCDrivers/Optimizers/DescentEngine.h"
 #endif
 
 
@@ -34,6 +36,7 @@ namespace qmcplusplus
 ///forward declaration of a cost function
 class QMCCostFunctionBase;
 class HamiltonianPool;
+
 
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
@@ -54,13 +57,12 @@ public:
                     Communicate* comm);
 
   ///Destructor
-  virtual ~QMCLinearOptimize();
+  virtual ~QMCLinearOptimize() = default;
 
   ///Run the Optimization algorithm.
   virtual bool run() = 0;
   ///process xml node
   virtual bool put(xmlNodePtr cur);
-  void resetComponents(xmlNodePtr cur);
   ///add a configuration file to the list of files
   void addConfiguration(const std::string& a);
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
@@ -79,11 +81,11 @@ public:
   ///need to know HamiltonianPool to use OMP
   HamiltonianPool& hamPool;
   ///target cost function to optimize
-  QMCCostFunctionBase* optTarget;
+  std::unique_ptr<QMCCostFunctionBase> optTarget;
   ///Dimension of matrix and number of parameters
   int N, numParams;
   ///vmc engine
-  QMCDriver* vmcEngine;
+  std::unique_ptr<QMCDriver> vmcEngine;
   ///xml node to be dumped
   xmlNodePtr wfNode;
   ///xml node for optimizer
@@ -169,7 +171,7 @@ public:
   ///common operation to start optimization, used by the derived classes
   void start();
 #ifdef HAVE_LMY_ENGINE
-  void engine_start(cqmc::engine::LMYEngine* EngineObj);
+  void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj, DescentEngine& descentEngineObj, std::string MinMethod);
 #endif
   ///common operation to finish optimization, used by the derived classes
   void finish();
@@ -177,21 +179,18 @@ public:
   RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, std::vector<RealType>& ev);
   //asymmetric EV
   RealType getLowestEigenvector(Matrix<RealType>& A, std::vector<RealType>& ev);
-  RealType getSplitEigenvectors(int first,
-                                int last,
-                                Matrix<RealType>& FullLeft,
-                                Matrix<RealType>& FullRight,
-                                std::vector<RealType>& FullEV,
-                                std::vector<RealType>& LocalEV,
-                                std::string CSF_Option,
-                                bool& CSF_scaled);
   void getNonLinearRange(int& first, int& last);
   void orthoScale(std::vector<RealType>& dP, Matrix<RealType>& S);
   bool nonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   void generateSamples();
-  void add_timers(std::vector<NewTimer*>& timers);
-  std::vector<NewTimer*> myTimers;
+
+  virtual QMCRunType getRunType() { return QMCRunType::LINEAR_OPTIMIZE; }
+  NewTimer& generate_samples_timer_;
+  NewTimer& initialize_timer_;
+  NewTimer& eigenvalue_timer_;
+  NewTimer& line_min_timer_;
+  NewTimer& cost_function_timer_;
   Timer t1;
 };
 } // namespace qmcplusplus

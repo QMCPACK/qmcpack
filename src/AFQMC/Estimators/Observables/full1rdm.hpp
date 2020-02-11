@@ -47,18 +47,26 @@ class full1rdm: public AFQMCInfo
 
   // allocators
   using Allocator = device_allocator<ComplexType>;
+  using Allocator_shared = node_allocator<ComplexType>;
 
   // type defs
   using pointer = typename Allocator::pointer;
   using const_pointer = typename Allocator::const_pointer;
+  using pointer_shared = typename Allocator_shared::pointer;
+  using const_pointer_shared = typename Allocator_shared::const_pointer;
 
   using CVector_ref = boost::multi::array_ref<ComplexType,1,pointer>;
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;
   using CVector = boost::multi::array<ComplexType,1,Allocator>;
   using CMatrix = boost::multi::array<ComplexType,2,Allocator>;
+  using sharedCMatrix = boost::multi::array<ComplexType,2,Allocator_shared>;
   using stdCVector_ref = boost::multi::array_ref<ComplexType,1>;
   using stdCMatrix_ref = boost::multi::array_ref<ComplexType,2>;
+  using stdCVector = boost::multi::array<ComplexType,1>;
+  using stdCMatrix = boost::multi::array<ComplexType,2>;
+  using stdIMatrix = boost::multi::array<int,2>;
   using mpi3CVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;
+  using mpi3IMatrix = boost::multi::array<int,2,shared_allocator<int>>;
   using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
   using mpi3CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
   using mpi3C4Tensor = boost::multi::array<ComplexType,4,shared_allocator<ComplexType>>;
@@ -67,21 +75,102 @@ class full1rdm: public AFQMCInfo
 
   full1rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, 
            int nave_=1, int bsize=1):
-                AFQMCInfo(info),TG(tg_),walker_type(wlk),writer(false),
+                AFQMCInfo(info),
+                TG(tg_),walker_type(wlk),writer(false),
                 block_size(bsize),nave(nave_),counter(0),
-                hdf_walker_output(""),
+                hdf_walker_output(""),nskip_walker_output(0),ncnt_walker_output(0),
+                apply_rotation(false),
+                XRot({0,0},make_node_allocator<ComplexType>(TG)),
+                print_from_list(false),
+                index_list({0,0},shared_allocator<int>{TG.Node()}),
                 denom(iextensions<1u>{0},shared_allocator<ComplexType>{TG.TG_local()}),
-                DMWork({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
-                DMAverage({0,0},shared_allocator<ComplexType>{TG.TG_local()})
+                DMAverage({0,0},shared_allocator<ComplexType>{TG.TG_local()}),
+                DMWork({0,0},shared_allocator<ComplexType>{TG.TG_local()})
   {
+    using std::copy_n;
+    using std::fill_n;
 
-    app_log()<<"  --  Adding Back Propagated Full 1RDM (OneRDM) estimator. -- \n ";
+    app_log()<<"  --  Adding Back Propagated Full 1RDM (OneRDM) estimator. -- \n";
+
+    std::string rot_file("");
+    std::string path("/");    
+    std::string str("false");    
 
     if(cur != NULL) {
       ParameterSet m_param;
       m_param.add(hdf_walker_output, "walker_output", "std::string");
+      m_param.add(nskip_walker_output, "nskip_output", "int");
+      m_param.add(rot_file, "rotation", "std::string");
+      m_param.add(path, "path", "std::string");
+      m_param.add(str, "with_index_list", "std::string");
       m_param.put(cur);
     }
+
+    if(rot_file != "") {
+      if(not file_exists(rot_file)) {
+        app_error()<<" Error: File with rotation matrix does not exist: " <<rot_file <<std::endl;
+        APP_ABORT("");
+      }    
+      apply_rotation = true;
+      print_from_list = (str == "true" || str == "yes"); 
+      int dim[2]; 
+
+      hdf_archive dump;
+      if( TG.Node().root() ) {      
+        if(!dump.open(rot_file,H5F_ACC_RDONLY)) APP_ABORT("Error opening orbitals file for n2r estimator.\n"); 
+        if(!dump.push(path,false)) APP_ABORT("Error in full1rdm: path not found."); 
+        stdCMatrix R;
+        if(!dump.readEntry(R,"RotationMatrix")) APP_ABORT("Error reading RotationMatrix.\n");
+        if(R.size(1) != NMO) APP_ABORT("Error Wrong dimensions in RotationMatrix.\n");
+        dim[0]= R.size(0);
+        dim[1]=0;
+        // conjugate rotation matrix
+        std::transform(R.origin(),R.origin()+R.num_elements(),R.origin(),[](const auto& c) {return std::conj(c);});
+        stdIMatrix I;
+        if(print_from_list) { 
+          if(!dump.readEntry(I,"Indices")) APP_ABORT("Error reading Indices.\n");
+          if(I.size(1) != 2) APP_ABORT("Error Wrong dimensions in Indices.\n");
+          dim[1]=I.size(0);
+        }
+        TG.Node().broadcast_n(dim,2,0);
+        XRot = std::move(sharedCMatrix({dim[0],NMO},make_node_allocator<ComplexType>(TG)));
+        copy_n(R.origin(),R.num_elements(),make_device_ptr(XRot.origin()));
+        if(TG.Node().root()) TG.Cores().broadcast_n(to_address(XRot.origin()),XRot.num_elements(),0);
+        if(print_from_list) { 
+          index_list = std::move(mpi3IMatrix({dim[1],2},shared_allocator<int>{TG.Node()}));
+          copy_n(I.origin(),I.num_elements(),make_device_ptr(index_list.origin()));
+          if(TG.Node().root()) 
+            TG.Cores().broadcast_n(to_address(index_list.origin()),index_list.num_elements(),0);
+        }
+
+        dump.pop();
+        dump.close();
+      } else {
+        TG.Node().broadcast_n(dim,2,0);
+        XRot = std::move(sharedCMatrix({dim[0],NMO},make_node_allocator<ComplexType>(TG)));
+        if(TG.Node().root()) TG.Cores().broadcast_n(to_address(XRot.origin()),XRot.num_elements(),0);
+        if(print_from_list) {
+          index_list = std::move(mpi3IMatrix({dim[1],2},shared_allocator<int>{TG.Node()}));
+          if(TG.Node().root()) 
+            TG.Cores().broadcast_n(to_address(index_list.origin()),index_list.num_elements(),0);
+        }
+      }
+      TG.Node().barrier();
+
+      if(print_from_list)  
+        dm_size = index_list.size(0);
+      else
+        dm_size = XRot.size(0) * XRot.size(0); 
+
+    } else {
+      // can also add print_from_list option without rotation later on
+      dm_size=NMO*NMO;
+    }    
+
+    if(walker_type == COLLINEAR)
+      dm_size *= 2;
+    else if(walker_type == NONCOLLINEAR)
+      dm_size *= 4;
 
     if(hdf_walker_output != std::string("")) { 
       hdf_walker_output = "G"+std::to_string(TG.TG_heads().rank())+"_"+hdf_walker_output;
@@ -90,12 +179,13 @@ class full1rdm: public AFQMCInfo
         app_log()<<"Problems creating walker output hdf5 file: " << hdf_walker_output <<std::endl;
         APP_ABORT("Problems creating walker output hdf5 file.\n");
       }
-      dump.push("OneRDM");
+      dump.push("FullOneRDM");
       dump.push("Metadata");
       dump.write(NMO, "NMO");
       dump.write(NAEA, "NUP");
       dump.write(NAEB, "NDOWN");
-      dump.write(walker_type, "WalkerType");
+      int wlk_t_copy = walker_type; // the actual data type of enum is implementation-defined. convert to int for file
+      dump.write(wlk_t_copy, "WalkerType");
       dump.pop();
       dump.pop();
       dump.close();
@@ -103,70 +193,55 @@ class full1rdm: public AFQMCInfo
 
     using std::fill_n;
     writer = (TG.getGlobalRank()==0);
-    dm_size=NMO*NMO;
-    if(walker_type == COLLINEAR) 
-      dm_size *= 2; 
-    else if(walker_type == NONCOLLINEAR) 
-      dm_size *= 2; 
 
     DMAverage = std::move(mpi3CMatrix({nave,dm_size},shared_allocator<ComplexType>{TG.TG_local()}));
     fill_n(DMAverage.origin(),DMAverage.num_elements(),ComplexType(0.0,0.0));
-
   }
 
-  template<class MatG, class HostCVec1, class HostCVec2, class HostCVec3>
-  void accumulate_reference(int iav, int iref, MatG&& G, HostCVec1&& wgt, 
+  template<class MatG, class MatG_host, class HostCVec1, class HostCVec2, class HostCVec3>
+  void accumulate_reference(int iav, int iref, MatG&& G, MatG_host&& G_host, HostCVec1&& wgt, 
                                                HostCVec2&& Xw, HostCVec3&& ovlp, bool impsamp)
   {
     static_assert(std::decay<MatG>::type::dimensionality == 4, "Wrong dimensionality");
+    static_assert(std::decay<MatG_host>::type::dimensionality == 4, "Wrong dimensionality");
     using std::fill_n;
-    using std::copy_n;
     // assumes G[nwalk][spin][M][M]
     int nw(G.size(0));
     assert(G.size(0) == wgt.size(0));
-    assert(G[0].num_elements() == dm_size);
     assert(wgt.size(0) == nw);
     assert(Xw.size(0) == nw);
     assert(ovlp.size(0) >= nw);
-    
+    assert(G.num_elements() == G_host.num_elements());
+    assert(G.extensions() == G_host.extensions());
+
     // check structure dimensions
     if(iref == 0) {
       if( denom.size(0) != nw ) {
         denom = std::move(mpi3CVector(iextensions<1u>{nw},
                                       shared_allocator<ComplexType>{TG.TG_local()}));
-      }   
-      if( DMWork.size(0) != 2 ||
-          DMWork.size(1) != nw ||
-          DMWork.size(2) != dm_size ) { 
-        DMWork = std::move(mpi3CTensor({2,nw,dm_size},
+      }
+      if( DMWork.size(0) != nw ||
+          DMWork.size(1) != dm_size ) {
+        DMWork = std::move(mpi3CMatrix({nw,dm_size},
                                       shared_allocator<ComplexType>{TG.TG_local()}));
       }
-      fill_n(denom.origin(),denom.num_elements(),ComplexType(0.0,0.0));  
-      fill_n(DMWork.origin(),DMWork.num_elements(),ComplexType(0.0,0.0));  
+      fill_n(denom.origin(),denom.num_elements(),ComplexType(0.0,0.0));
+      fill_n(DMWork.origin(),DMWork.num_elements(),ComplexType(0.0,0.0));
     } else {
       if( denom.size(0) != nw ||
-          DMWork.size(0) != 2 || 
-          DMWork.size(1) != nw ||
-          DMWork.size(2) != dm_size ||
-          DMAverage.size(0) != nave ||  
-          DMAverage.size(1) != dm_size ) 
+          DMWork.size(0) != nw ||
+          DMWork.size(1) != dm_size ||
+          DMAverage.size(0) != nave ||
+          DMAverage.size(1) != dm_size )
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
-    int i0,iN;
-    std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),int(G.num_elements()),
-                                         TG.TG_local().size());
-    copy_n( make_device_ptr(G.origin())+i0, iN-i0, to_address(DMWork[0].origin())+i0);
-    TG.TG_local().barrier();
+    if(apply_rotation) 
+      acc_with_rotation(G,Xw); 
+    else 
+      acc_no_rotation(G_host,Xw); 
+  }  
 
-    std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),dm_size,TG.TG_local().size());
-    
-    for(int iw=0; iw<nw; iw++) {
-      if(TG.TG_local().root()) denom[iw] += Xw[iw];
-      ma::axpy( Xw[iw], DMWork[0][iw].sliced(i0,iN), DMWork[1][iw].sliced(i0,iN) );
-    }
-
-  }
 
   template<class HostCVec>
   void accumulate_block(int iav, HostCVec&& wgt, bool impsamp) 
@@ -175,10 +250,11 @@ class full1rdm: public AFQMCInfo
     int i0,iN;
     std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),dm_size,TG.TG_local().size());
 
-    if(hdf_walker_output != std::string("")) {
+    if(iav == 0) ncnt_walker_output++; 
+    if(hdf_walker_output != std::string("") && ncnt_walker_output%(nskip_walker_output+1)==0) { 
       const int n_zero = 9;
       for(int iw=0; iw<nw; iw++) 
-        ma::scal(ComplexType(1.0,0.0)/denom[iw], DMWork[1][iw].sliced(i0,iN));
+        ma::scal(ComplexType(1.0,0.0)/denom[iw], DMWork[iw].sliced(i0,iN));
       TG.TG_local().barrier();
 
       if(TG.TG_local().root()) {
@@ -195,7 +271,7 @@ class full1rdm: public AFQMCInfo
         std::string padded_num = std::string(n_zero-std::to_string(counter).length(),'0')+
                                     std::to_string(counter); 
         dump.write(wgt,"weights_"+padded_num);
-        stdCMatrix_ref DM(to_address(DMWork[1].origin()),{nw,dm_size}); 
+        stdCMatrix_ref DM(to_address(DMWork.origin()),{nw,dm_size}); 
         dump.write(DM,"one_rdm_"+padded_num);
         dump.pop();
         dump.pop();
@@ -214,8 +290,8 @@ class full1rdm: public AFQMCInfo
     }
     TG.TG_local().barrier();
 
-    // DMAverage[iav][ij] += sum_iw DMWork[1][iw][ij] * denom[iw] = T( DMWork[1] ) * denom
-    ma::product( ComplexType(1.0,0.0), ma::T( DMWork[1]( {0, nw}, {i0,iN}) ),  denom, 
+    // DMAverage[iav][ij] += sum_iw DMWork[iw][ij] * denom[iw] = T( DMWork ) * denom
+    ma::product( ComplexType(1.0,0.0), ma::T( DMWork( {0, nw}, {i0,iN}) ),  denom, 
                  ComplexType(1.0,0.0), DMAverage[iav].sliced(i0,iN)); 
     TG.TG_local().barrier();
   }
@@ -237,7 +313,7 @@ class full1rdm: public AFQMCInfo
                 std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
           stdCVector_ref DMAverage_( to_address(DMAverage[i].origin()), {dm_size});
           dump.write(DMAverage_, "one_rdm_"+padded_iblock);
-          dump.write(Wsum, "denominator_"+padded_iblock);
+          dump.write(Wsum[i], "denominator_"+padded_iblock);
           dump.pop();
         }
         dump.pop();
@@ -249,30 +325,41 @@ class full1rdm: public AFQMCInfo
 
   private:
 
+  TaskGroup_& TG;
+
+  WALKER_TYPES walker_type;
+
+  bool writer;
+
   int block_size;  
 
   int nave;
 
   int counter;
 
-  TaskGroup_& TG;
-
-  WALKER_TYPES walker_type;
-
   int dm_size;
-
-  bool writer;
 
   std::string hdf_walker_output;  
 
-  // DMAverage (nave, spin*x*NMO*x*NMO), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
-  mpi3CMatrix DMAverage;
-  // DMWork (k, nwalk, spin*x*NMO*x*NMO), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
-  // k:0 communication buffer
-  //   1 accumulate over references 
-  mpi3CTensor DMWork;
+  int nskip_walker_output;
+
+  int ncnt_walker_output;
+
+  bool apply_rotation;
+
+  sharedCMatrix XRot; 
+  stdCVector Grot; 
+
+  bool print_from_list; 
+
+  mpi3IMatrix index_list;
 
   mpi3CVector denom; 
+
+  // DMAverage (nave, spin*x*NMO*x*NMO), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
+  mpi3CMatrix DMAverage;
+  // DMWork (nwalk, spin*x*NMO*x*NMO), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
+  mpi3CMatrix DMWork;
 
   // buffer space
   CVector Buff;
@@ -282,6 +369,86 @@ class full1rdm: public AFQMCInfo
       Buff = std::move(CVector(iextensions<1u>{N}));
     using std::fill_n;
     fill_n(Buff.origin(),N,ComplexType(0.0));
+  }
+
+  // expects host accesible memory
+  template<class MatG, class CVec>
+  void acc_no_rotation(MatG&& G, CVec&& Xw)
+  {
+    int nw(G.size(0));
+    assert(G[0].num_elements() == dm_size);
+
+    int i0, iN;
+    std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),dm_size,TG.TG_local().size());
+
+    stdCMatrix_ref G2D( to_address(G.origin()), {nw, dm_size});
+    
+    for(int iw=0; iw<nw; iw++) {
+      if(TG.TG_local().root()) denom[iw] += Xw[iw];
+      ma::axpy( Xw[iw], G2D[iw].sliced(i0,iN), DMWork[iw].sliced(i0,iN) );
+    }
+    TG.TG_local().barrier();
+  }
+
+  // G should be device accesible memory
+  // Xw is in host 
+  template<class MatG, class CVec>
+  void acc_with_rotation(MatG&& G, CVec&& Xw)
+  {
+    int nw(G.size(0));
+    assert(G.size(2) == G.size(3));
+    assert(G.size(2) == XRot.size(1));
+
+    if(walker_type == NONCOLLINEAR) 
+      APP_ABORT("Error: Not yet implemented: acc_with_rotation && noncollinear.\n");
+
+    int i0, iN;
+    std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),int(XRot.size(0)),TG.TG_local().size());
+
+    // can batch in the future if too slow
+    // Grot = Xc * G * H(Xc)
+    int nX = XRot.size(0);
+    int sz = nX * (NMO + (iN-i0)); 
+    int npts = (iN-i0)*nX;
+    set_buffer(sz);
+    CMatrix_ref T1(Buff.origin(),{(iN-i0),NMO});
+    CMatrix_ref T2(T1.origin()+T1.num_elements(),{(iN-i0),nX});
+    if(Grot.size() != npts) 
+      Grot = std::move(stdCVector(iextensions<1u>(npts)));
+
+    // round-robin for now
+    int cnt=0;
+    for(int iw=0; iw<nw; iw++) {
+      if(i0==iN || i0==XRot.size(0)) break;
+      if(TG.TG_local().root()) denom[iw] += Xw[iw];
+      ma::product(XRot.sliced(i0,iN),G[iw][0],T1);
+      ma::product(T1,ma::H(XRot),T2);
+      copy_n(T2.origin(),T2.num_elements(),Grot.origin());      
+      if(print_from_list) {
+        for(int i=0; i<index_list.size(0); i++) {   
+          if(index_list[i][0] >= i0 && index_list[i][0] < iN) {
+            int ij = (index_list[i][0]-i0)*nX + index_list[i][1];
+            DMWork[iw][i] += Xw[iw]*Grot[ij];
+          }
+        }
+      } else 
+        ma::axpy( Xw[iw], Grot, DMWork[iw].sliced(i0*nX,i0*nX+npts) );
+      if(walker_type == COLLINEAR) {
+        ma::product(XRot.sliced(i0,iN),G[iw][1],T1);
+        ma::product(T1,ma::H(XRot),T2);
+        copy_n(T2.origin(),T2.num_elements(),Grot.origin());
+        if(print_from_list) {
+          for(int i=0, ie=index_list.size(0); i<ie; i++) {
+            if(index_list[i][0] >= i0 && index_list[i][0] < iN) {
+              int ij = (index_list[i][0]-i0)*nX + index_list[i][1];
+              DMWork[iw][i+ie] += Xw[iw]*Grot[ij];
+            }
+          }
+        } else 
+          ma::axpy( Xw[iw], Grot, DMWork[iw].sliced((nX+i0)*nX,(nX+i0)*nX+npts) );
+      }
+    }
+    TG.TG_local().barrier();
   }
 
 };

@@ -12,13 +12,16 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
+#include "QMCDrivers/WalkerProperties.h"
 #include "QMCDrivers/DMC/WalkerReconfiguration.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/FairDivide.h"
 #include "Utilities/RandomGenerator.h"
-using namespace qmcplusplus;
 
+namespace qmcplusplus
+{
+
+using WP = WalkerProperties::Indexes;
 /** default constructor
  *
  * set SwapMode
@@ -39,15 +42,15 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
     wConf.resize(nw);
   }
   //accumulate the energies
-  RealType esum = 0.0, e2sum = 0.0, wtot = 0.0, ecum = 0.0;
+  FullPrecRealType esum = 0.0, e2sum = 0.0, wtot = 0.0, ecum = 0.0;
   MCWalkerConfiguration::iterator it(W.begin());
-  RealType r2_accepted = 0.0, r2_proposed = 0.0;
+  FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
   for (int iw = 0; iw < nw; iw++)
   {
-    r2_accepted += (*it)->Properties(R2ACCEPTED);
-    r2_proposed += (*it)->Properties(R2PROPOSED);
-    RealType wgt((*it)->Weight);
-    RealType e((*it)->Properties(LOCALENERGY));
+    r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
+    r2_proposed += (*it)->Properties(WP::R2PROPOSED);
+    FullPrecRealType wgt((*it)->Weight);
+    FullPrecRealType e((*it)->Properties(WP::LOCALENERGY));
     esum += wgt * e;
     e2sum += wgt * e * e;
     ecum += e;
@@ -61,12 +64,12 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   curData[EREF_INDEX]       = ecum;
   curData[R2ACCEPTED_INDEX] = r2_accepted;
   curData[R2PROPOSED_INDEX] = r2_proposed;
-  RealType nwInv            = 1.0 / static_cast<RealType>(nw);
+  FullPrecRealType nwInv    = 1.0 / static_cast<FullPrecRealType>(nw);
   UnitZeta                  = Random();
-  RealType dstep            = UnitZeta * nwInv;
+  FullPrecRealType dstep    = UnitZeta * nwInv;
   for (int iw = 0; iw < nw; iw++)
   {
-    Zeta[iw] = wtot * (dstep + static_cast<RealType>(iw) * nwInv);
+    Zeta[iw] = wtot * (dstep + static_cast<FullPrecRealType>(iw) * nwInv);
   }
   Zeta[nw] = wtot + 1.0;
   //for(int iw=0; iw<nw; iw++) {
@@ -74,16 +77,16 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   //}
   //assign negative
   //std::fill(IndexCopy.begin(),IndexCopy.end(),-1);
-  int ind       = 0;
-  RealType wCur = 0.0;
+  int ind               = 0;
+  FullPrecRealType wCur = 0.0;
   //surviving walkers
   int icdiff = 0;
   it         = W.begin();
   std::vector<int> ipip(nw, 0);
   for (int iw = 0; iw < nw; iw++)
   {
-    RealType tryp = wCur + std::abs(wConf[iw]);
-    int ni        = 0;
+    FullPrecRealType tryp = wCur + std::abs(wConf[iw]);
+    int ni                = 0;
     while (Zeta[ind] < tryp && Zeta[ind] >= wCur)
     {
       //IndexCopy[ind]=iw;
@@ -115,7 +118,7 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
     int im = minus[i], ip = plus[i];
     W[im]->makeCopy(*(W[ip]));
     W[im]->ParentID = W[ip]->ID;
-    W[im]->ID       = (++NumWalkersCreated) * NumContexts + MyContext;
+    W[im]->ID       = (++NumWalkersCreated) * num_contexts_ + MyContext;
   }
   //int killed = shuffleIndex(nw);
   //fout << "# Total weight " << wtot << " " << killed <<  std::endl;
@@ -158,12 +161,12 @@ int WalkerReconfiguration::shuffleIndex(int nw)
   return indz.size();
 }
 
-int WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
+int WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger)
 {
   int nwkept = getIndexPermutation(W);
   //update EnsembleProperty
   measureProperties(iter);
-  W.EnsembleProperty = EnsembleProperty;
+  W.EnsembleProperty = ensemble_property_;
   //W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
   //W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
   //RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
@@ -183,3 +186,4 @@ int WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType t
   //curData[WALKERSIZE_INDEX]=nwkept;
   return nwkept;
 }
+} // namespace qmcplusplus

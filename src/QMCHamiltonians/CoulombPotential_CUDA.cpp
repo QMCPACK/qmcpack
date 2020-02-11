@@ -15,11 +15,13 @@
 
 #include "QMCHamiltonians/CoulombPotential_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
-
+#include "QMCDrivers/WalkerProperties.h"
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 CoulombPotentialAA_CUDA::CoulombPotentialAA_CUDA(ParticleSet& s, bool quantum)
-    : CoulombPotential<OHMMS_PRECISION>(s, quantum), SumGPU("CoulombPotentialAA_CUDA::SumGPU")
+    : CoulombPotential<OHMMS_PRECISION>(s, quantum, false), SumGPU("CoulombPotentialAA_CUDA::SumGPU")
 {
   NumElecs = s.getTotalNum();
 }
@@ -35,22 +37,22 @@ void CoulombPotentialAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Re
   SumHost = SumGPU;
   for (int iw = 0; iw < walkers.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = SumHost[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = SumHost[iw];
     LocalEnergy[iw] += SumHost[iw];
   }
 }
 
-QMCHamiltonianBase* CoulombPotentialAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* CoulombPotentialAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   return new CoulombPotentialAA_CUDA(qp, true);
 }
 
 
 CoulombPotentialAB_CUDA::CoulombPotentialAB_CUDA(ParticleSet& s, ParticleSet& t)
-    : CoulombPotential<OHMMS_PRECISION>(s, t, true),
+    : CoulombPotential<OHMMS_PRECISION>(s, t, true, false),
       SumGPU("CoulombPotentialAB_CUDA::SumGPU"),
-      IGPU("CoulombPotentialAB_CUDA::IGPU"),
-      ZionGPU("CoulombPotentialAB_CUDA::ZionGPOU")
+      ZionGPU("CoulombPotentialAB_CUDA::ZionGPOU"),
+      IGPU("CoulombPotentialAB_CUDA::IGPU")
 {
   SpeciesSet& sSet = s.getSpeciesSet();
   NumIonSpecies    = sSet.getTotalNum();
@@ -88,12 +90,12 @@ void CoulombPotentialAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Re
   SumHost = SumGPU;
   for (int iw = 0; iw < walkers.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = SumHost[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = SumHost[iw];
     LocalEnergy[iw] += SumHost[iw];
   }
 }
 
-QMCHamiltonianBase* CoulombPotentialAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* CoulombPotentialAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   return new CoulombPotentialAB_CUDA(Pa, qp);
 }

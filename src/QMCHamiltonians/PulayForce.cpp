@@ -19,8 +19,18 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 PulayForce::PulayForce(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& psi)
-    : ForceBase(ions, elns), Ions(ions), Electrons(elns), Psi(psi), d_ei_ID(elns.addTable(ions, DT_AOS))
+    : ForceBase(ions, elns),
+#ifdef ENABLE_SOA
+      d_ei_ID(elns.addTable(ions, DT_SOA)),
+#else
+      d_ei_ID(elns.addTable(ions, DT_AOS)),
+#endif
+      Ions(ions),
+      Electrons(elns),
+      Psi(psi)
 {
   GradLogPsi.resize(Nnuc);
   EGradLogPsi.resize(Nnuc);
@@ -51,7 +61,7 @@ void PulayForce::addObservables(PropertySetType& plist, BufferType& collectables
 
 void PulayForce::registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
 {
-  QMCHamiltonianBase::registerObservables(h5list, gid);
+  OperatorBase::registerObservables(h5list, gid);
   std::vector<int> ndim(2);
   ndim[0]                 = Nnuc;
   ndim[1]                 = OHMMS_DIM;
@@ -67,7 +77,7 @@ void PulayForce::registerObservables(std::vector<observable_helper*>& h5list, hi
 
 void PulayForce::setObservables(QMCTraits::PropertySetType& plist)
 {
-  QMCHamiltonianBase::setObservables(plist);
+  OperatorBase::setObservables(plist);
   int index = FirstForceIndex;
   for (int iat = 0; iat < Nnuc; iat++)
   {
@@ -82,7 +92,7 @@ void PulayForce::setObservables(QMCTraits::PropertySetType& plist)
 
 void PulayForce::setParticlePropertyList(QMCTraits::PropertySetType& plist, int offset)
 {
-  QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+  OperatorBase::setParticlePropertyList(plist, offset);
   int index = FirstForceIndex + offset;
   for (int iat = 0; iat < Nnuc; iat++)
   {
@@ -100,8 +110,8 @@ PulayForce::Return_t PulayForce::evaluate(ParticleSet& P)
   for (int ion = 0; ion < Nnuc; ion++)
   {
     GradLogPsi[ion] = Psi.evalGradSource(P, Ions, ion);
-    //      RealType E = tWalker->Properties(0,LOCALENERGY);
-    RealType E       = P.PropertyList[LOCALENERGY];
+    //      RealType E = tWalker->Properties(0,WP::LOCALENERGY);
+    RealType E       = P.PropertyList[WP::LOCALENERGY];
     EGradLogPsi[ion] = E * GradLogPsi[ion];
   }
   return Value = 0.0;
@@ -109,9 +119,11 @@ PulayForce::Return_t PulayForce::evaluate(ParticleSet& P)
   // Compute normalization of the warp transform for each electron
   for (int elec = 0; elec < Nel; elec++)
     WarpNorm[elec] = 0.0;
+#ifndef ENABLE_SOA
   for (int ion = 0; ion < Nnuc; ion++)
     for (int nn = d_ab.M[ion], elec = 0; nn < d_ab.M[ion + 1]; ++nn, ++elec)
       WarpNorm[elec] += WarpFunction(d_ab.r(nn));
+#endif
   for (int elec = 0; elec < Nel; elec++)
     WarpNorm[elec] = 1.0 / WarpNorm[elec];
   // Now, compute the approximation to the gradient of psi
@@ -119,12 +131,14 @@ PulayForce::Return_t PulayForce::evaluate(ParticleSet& P)
   for (int ion = 0; ion < Nnuc; ion++)
   {
     GradLogPsi[ion] = EGradLogPsi[ion] = PosType();
+#ifndef ENABLE_SOA
     for (int nn = d_ab.M[ion], elec = 0; nn < d_ab.M[ion + 1]; ++nn, ++elec)
       GradLogPsi[ion] -=
           P.G[elec] * static_cast<ParticleSet::SingleParticleValue_t>(WarpNorm[elec] * WarpFunction(d_ab.r(nn)));
+#endif
     //GradLogPsi[ion] -= P.G[elec] * (ParticleSet::Scalar_t)(WarpNorm[elec] * WarpFunction(d_ab.r(nn)));
-    RealType E = tWalker->Properties(0, LOCALENERGY);
-    // EGradLogPsi[ion] = P.getPropertyBase()[LOCALENERGY] * GradLogPsi[ion];
+    RealType E = tWalker->Properties(WP::LOCALENERGY);
+    // EGradLogPsi[ion] = P.getPropertyBase()[WP::LOCALENERGY] * GradLogPsi[ion];
     EGradLogPsi[ion] = E * GradLogPsi[ion];
   }
   //    std::cerr << "Finish PulayForce::evaluate(ParticleSet& P).\n";

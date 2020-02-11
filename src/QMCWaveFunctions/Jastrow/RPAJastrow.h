@@ -20,7 +20,9 @@
 #include "LongRange/LRHandlerBase.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
+#ifndef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#endif
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
 
@@ -72,19 +74,19 @@ struct RPAJastrow : public WaveFunctionComponent
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
   GradType evalGrad(ParticleSet& P, int iat);
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   void restore(int iat);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 

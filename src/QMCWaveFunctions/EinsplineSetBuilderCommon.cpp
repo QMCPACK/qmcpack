@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file common.cpp
+/** @file
  *
  * Instantiates the static data
  * Implements member functions of EinsplineSetBuilder
@@ -36,25 +36,25 @@ namespace qmcplusplus
 
 EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur)
     : SPOSetBuilder(comm),
-      TargetPtcl(p),
       ParticleSets(psets),
+      TargetPtcl(p),
       MixedSplineReader(0),
       XMLRoot(cur),
+      H5FileID(-1),
       Format(QMCPACK),
-      TileFactor(1, 1, 1),
-      TwistNum(0),
-      LastSpinSet(-1),
-      NumOrbitalsRead(-1),
-      NumMuffinTins(0),
-      NumCoreStates(0),
       NumBands(0),
       NumElectrons(0),
       NumSpins(0),
       NumTwists(0),
-      H5FileID(-1),
-      makeRotations(false),
+      NumCoreStates(0),
       MeshFactor(1.0),
-      MeshSize(0, 0, 0)
+      MeshSize(0, 0, 0),
+      TwistNum(0),
+      TileFactor(1, 1, 1),
+      NumMuffinTins(0),
+      LastSpinSet(-1),
+      NumOrbitalsRead(-1),
+      makeRotations(false)
 {
   MatchingTol = 10 * std::numeric_limits<float>::epsilon();
   for (int i = 0; i < 3; i++)
@@ -787,12 +787,12 @@ EinsplineSetBuilder::AnalyzeTwists()
 */
 
 
-void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
+void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks)
 {
   update_token(__FILE__, __LINE__, "OccupyBands");
   if (myComm->rank() != 0)
     return;
-  if (spin >= NumSpins)
+  if (spin >= NumSpins && !skipChecks)
   {
     app_error() << "To developer: User is requesting for orbitals in an invalid spin group " << spin
                 << ". Current h5 file only contains spin groups "

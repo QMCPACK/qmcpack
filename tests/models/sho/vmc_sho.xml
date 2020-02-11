@@ -1,6 +1,5 @@
 <simulation>
   <project id="m5" series="0"/>
-
   <qmcsystem>
     <simulationcell>
       <parameter name="lattice" units="bohr">
@@ -21,8 +20,8 @@
         </attrib>
       </group>
     </particleset>
-    <particleset name="trap_center" size="1">
-      <group name="center">
+    <particleset name="trap_center">
+      <group name="center" size="1">
         <attrib name="position" datatype="posArray" condition="0">
           0 0 0
         </attrib>

@@ -24,12 +24,9 @@ STOBuilder::STOBuilder(xmlNodePtr cur) : Normalized(true), m_orbitals(0)
 
 bool STOBuilder::putCommon(xmlNodePtr cur)
 {
-  const xmlChar* a = xmlGetProp(cur, (const xmlChar*)"normalized");
-  if (a)
-  {
-    if (xmlStrEqual(a, (const xmlChar*)"no"))
-      Normalized = false;
-  }
+  const XMLAttrString a(cur, "normalized");
+  if (a == "no")
+    Normalized = false;
   return true;
 }
 

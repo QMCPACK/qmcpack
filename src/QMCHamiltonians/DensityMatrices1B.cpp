@@ -28,14 +28,14 @@ using MatrixOperators::product_AtB;
 
 
 DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl)
-    : Lattice(P.Lattice), Pq(P), Psi(psi), Pc(Pcl)
+    : Lattice(P.Lattice), Psi(psi), Pq(P), Pc(Pcl)
 {
   reset();
 }
 
 
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
-    : QMCHamiltonianBase(master), Lattice(P.Lattice), Pq(P), Psi(psi), Pc(master.Pc)
+    : OperatorBase(master), Lattice(P.Lattice), Psi(psi), Pq(P), Pc(master.Pc)
 {
   reset();
   set_state(master);
@@ -53,7 +53,7 @@ DensityMatrices1B::~DensityMatrices1B()
 }
 
 
-QMCHamiltonianBase* DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+OperatorBase* DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
 {
   return new DensityMatrices1B(*this, P, psi);
 }
@@ -147,7 +147,7 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      std::string name((const char*)(xmlGetProp(element, (const xmlChar*)"name")));
+      const XMLAttrString name(element, "name");
       if (name == "basis")
         putContent(sposets, element);
       else if (name == "energy_matrix")
@@ -784,7 +784,7 @@ DensityMatrices1B::Return_t DensityMatrices1B::evaluate_check(ParticleSet& P)
         update_basis(rsamp);
         PosType dr = rsamp - P.R[n];
         P.makeMove(n, dr);
-        Value_t ratio = sample_weights[m] * qmcplusplus::conj(Psi.full_ratio(P, n));
+        Value_t ratio = sample_weights[m] * qmcplusplus::conj(Psi.calcRatio(P, n));
         P.rejectMove(n);
         for (int i = 0; i < basis_size; ++i)
         {
@@ -1205,7 +1205,7 @@ inline void DensityMatrices1B::integrate(ParticleSet& P, int n)
     PosType& rsamp = rsamples[s];
     update_basis(rsamp);
     P.makeMove(n, rsamp - P.R[n]);
-    Value_t ratio = sample_weights[s] * qmcplusplus::conj(Psi.full_ratio(P, n));
+    Value_t ratio = sample_weights[s] * qmcplusplus::conj(Psi.calcRatio(P, n));
     P.rejectMove(n);
     for (int i = 0; i < basis_size; ++i)
       integrated_values[i] += ratio * basis_values[i];
@@ -1216,7 +1216,7 @@ inline void DensityMatrices1B::integrate(ParticleSet& P, int n)
 inline void DensityMatrices1B::update_basis(const PosType& r)
 {
   Pq.makeMove(0, r - Pq.R[0]);
-  basis_functions.evaluate(Pq, 0, basis_values);
+  basis_functions.evaluateValue(Pq, 0, basis_values);
   Pq.rejectMove(0);
   for (int i = 0; i < basis_size; ++i)
     basis_values[i] *= basis_norms[i];
@@ -1226,7 +1226,7 @@ inline void DensityMatrices1B::update_basis(const PosType& r)
 inline void DensityMatrices1B::update_basis_d012(const PosType& r)
 {
   Pq.makeMove(0, r - Pq.R[0]);
-  basis_functions.evaluate(Pq, 0, basis_values, basis_gradients, basis_laplacians);
+  basis_functions.evaluateVGL(Pq, 0, basis_values, basis_gradients, basis_laplacians);
   Pq.rejectMove(0);
   for (int i = 0; i < basis_size; ++i)
     basis_values[i] *= basis_norms[i];

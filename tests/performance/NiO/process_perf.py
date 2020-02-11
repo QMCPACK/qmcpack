@@ -42,7 +42,7 @@ def get_performance_info(info_fname):
 # Format found in this email:
 #   https://cmake.org/pipermail/cmake/2010-April/036574.html
 def print_for_cdash(vals):
-  for k, v in vals.iteritems():
+  for k, v in vals.items():
     print('<DartMeasurement name="%s" type="numeric/double">%g</DartMeasurement>' % (k, v))
 
 

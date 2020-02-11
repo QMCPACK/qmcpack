@@ -40,11 +40,11 @@ struct SymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
 
   inline void reset(int m, int nactive)
   {
-    if (m != N[SourceIndex] || nactive != N[WalkerIndex])
+    if (m != N_sources || nactive != N_walkers)
     {
-      N[SourceIndex]  = m;
-      N[VisitorIndex] = m;
-      int nn          = m * (m - 1) / 2;
+      N_sources = m;
+      N_targets = m;
+      int nn    = m * (m - 1) / 2;
       M.resize(m + 1);
       J.resize(nn);
       IJ.resize(m * m);
@@ -74,7 +74,7 @@ struct SymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
 
   inline virtual void nearest_neighbors(int n, int neighbors, std::vector<ripair>& ri, bool transposed = false)
   {
-    int m     = N[VisitorIndex];
+    int m     = N_targets;
     int shift = n * m;
     for (int i = 0; i < n; ++i)
     {
@@ -119,7 +119,7 @@ struct SymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
 
   inline void evaluate(ParticleSet& P)
   {
-    const int n = N[SourceIndex];
+    const int n = N_sources;
     for (int i = 0, ij = 0; i < n; i++)
       for (int j = i + 1; j < n; j++, ij++)
         dr_m[ij] = P.R[j] - P.R[i];
@@ -128,18 +128,10 @@ struct SymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
     DTD_BConds<T, D, SC>::apply_bc(dr_m, r_m, rinv_m);
   }
 
-  inline void evaluate(ParticleSet& P, int jat)
-  {
-    APP_ABORT("  No need to call SymmetricDTD::evaluate(ParticleSet& P, int jat)");
-    //based on full evaluation. Only compute it if jat==0
-    if (jat == 0)
-      evaluate(P);
-  }
-
   ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew)
+  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
-    for (int iat = 0; iat < N[SourceIndex]; ++iat)
+    for (int iat = 0; iat < N_sources; ++iat)
     {
       PosType drij(rnew - P.R[iat]);
       RealType sep    = std::sqrt(DTD_BConds<T, D, SC>::apply_bc(drij));
@@ -150,10 +142,10 @@ struct SymmetricDTD : public DTD_BConds<T, D, SC>, public DistanceTableData
   }
 
   ///update the stripe for jat-th particle
-  inline void update(IndexType jat)
+  inline void update(IndexType jat, bool partial_update)
   {
     int nn = jat;
-    for (int iat = 0; iat < jat; iat++, nn += N[SourceIndex])
+    for (int iat = 0; iat < jat; iat++, nn += N_sources)
     {
       int loc     = IJ[nn];
       r_m[loc]    = Temp[iat].r1;

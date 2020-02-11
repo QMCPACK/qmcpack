@@ -14,8 +14,8 @@
 #//
 #// File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 PROJECT(qmcapp)
 # formic dependencies
 #FIND_PATH(LMYENGINE_INCLUDE_DIR formic/fqmc/engine/var_dependencies.h)
@@ -23,15 +23,11 @@ PROJECT(qmcapp)
 #INCLUDE_DIRECTORIES(${LMYENGINE_INCLUDE_DIR})
 
 ####################################
-# create libqmc 
+# create libqmc
 ####################################
-SET(QMCAPPDIR 
-    ParticleSetPool.cpp
-    WaveFunctionPool.cpp
-    HamiltonianPool.cpp
-    InitMolecularSystem.cpp
+SET(QMCAPPDIR
     QMCAppBase.cpp
-    QMCDriverFactory.cpp
+    QMCMainState.cpp
     QMCMain.cpp
     CoupledMC.cpp
 )
@@ -48,9 +44,9 @@ FOREACH(p ${QMCSRCS})
 # Override source name for executable in this case, otherwise
 # executablename.cpp used for main()
  IF ( ${p} STREQUAL "qmcpack" )
-  ADD_EXECUTABLE(${p} qmcapp.cpp) 
+  ADD_EXECUTABLE(${p} qmcapp.cpp)
 ELSE()
-  ADD_EXECUTABLE(${p} ${p}.cpp) 
+  ADD_EXECUTABLE(${p} ${p}.cpp)
 ENDIF()
 
 # Clean up git-rev-tmp.h after the build is finished
@@ -58,7 +54,7 @@ ADD_CUSTOM_COMMAND(TARGET qmcpack
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP})
 
-  TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil adios_config)
+  TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil)
 
   IF(BUILD_AFQMC)
     TARGET_LINK_LIBRARIES(${p} afqmc)

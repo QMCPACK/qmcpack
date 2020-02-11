@@ -13,7 +13,7 @@
 
 #ifndef QMCPLUSPLUS_LOCAL_MOMENT_HAMILTONIAN_H
 #define QMCPLUSPLUS_LOCAL_MOMENT_HAMILTONIAN_H
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 
 namespace qmcplusplus
@@ -22,7 +22,7 @@ namespace qmcplusplus
  *
  * Compute local moment for up - down spins and all ion types in some particleset
  */
-class LocalMomentEstimator : public QMCHamiltonianBase
+class LocalMomentEstimator : public OperatorBase
 {
 public:
   /** constructor
@@ -67,7 +67,7 @@ public:
   }
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
 private:
   /// maximum distance
@@ -76,9 +76,9 @@ private:
   std::vector<int> ion_id, el_id;
   std::vector<RealType> el_nrm;
   int nag;
+  ParticleSet& ions;
   const int d_table_ID;
   std::vector<std::string> names;
-  ParticleSet& ions;
 };
 
 } // namespace qmcplusplus

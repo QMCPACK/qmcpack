@@ -34,6 +34,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 /// Constructor.
 RMCUpdatePbyPWithDrift::RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w,
                                                TrialWaveFunction& psi,
@@ -41,19 +43,14 @@ RMCUpdatePbyPWithDrift::RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w,
                                                RandomGenerator_t& rg,
                                                std::vector<int> act,
                                                std::vector<int> tp)
-    : QMCUpdateBase(w, psi, h, rg), Action(act), TransProb(tp)
+    : QMCUpdateBase(w, psi, h, rg), Action(act), TransProb(tp),
+      advance_timer_(*TimerManager.createTimer("RMCUpdatePbyP::advance", timer_level_medium)),
+      movepbyp_timer_(*TimerManager.createTimer("RMCUpdatePbyP::movePbyP", timer_level_medium)),
+      update_mbo_timer_(*TimerManager.createTimer("RMCUpdatePbyP::updateMBO", timer_level_medium)),
+      energy_timer_(*TimerManager.createTimer("RMCUpdatePbyP::energy", timer_level_medium))
 {
-  //add_rmc_timers(myTimers);
   scaleDrift = false;
   actionType = SYM_ACTION;
-  myTimers.push_back(new NewTimer("RMCUpdatePbyP::advance"));   //timer for the walker loop
-  myTimers.push_back(new NewTimer("RMCUpdatePbyP::movePbyP"));  //timer for MC, ratio etc
-  myTimers.push_back(new NewTimer("RMCUpdatePbyP::updateMBO")); //timer for measurements
-  myTimers.push_back(new NewTimer("RMCUpdatePbyP::energy"));    //timer for measurements
-  TimerManager.addTimer(myTimers[0]);
-  TimerManager.addTimer(myTimers[1]);
-  TimerManager.addTimer(myTimers[2]);
-  TimerManager.addTimer(myTimers[3]);
 }
 
 RMCUpdatePbyPWithDrift::~RMCUpdatePbyPWithDrift() {}
@@ -124,7 +121,7 @@ bool RMCUpdatePbyPWithDrift::put(xmlNodePtr cur)
 }
 void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
 {
-  myTimers[0]->start();
+  advance_timer_.start();
   Walker_t& curhead = W.reptile->getHead();
   Walker_t prophead(curhead);
   Walker_t::WFBuffer_t& w_buffer(prophead.DataSet);
@@ -135,13 +132,13 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
   int nAcceptTemp(0);
   int nRejectTemp(0);
   //copy the old energy and scale factor of drift
-  RealType eold(prophead.Properties(LOCALENERGY));
-  RealType vqold(prophead.Properties(DRIFTSCALE));
+  RealType eold(prophead.Properties(WP::LOCALENERGY));
+  RealType vqold(prophead.Properties(WP::DRIFTSCALE));
   RealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
   RealType gf_acc      = 1.0;
-  myTimers[1]->start();
+  movepbyp_timer_.start();
   for (int ig = 0; ig < W.groups(); ++ig) //loop over species
   {
     RealType tauovermass = Tau * MassInvS[ig];
@@ -149,7 +146,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
     RealType sqrttau     = std::sqrt(tauovermass);
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
     {
-      W.setActive(iat);
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
       PosType dr;
@@ -164,7 +160,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       }
       if (!W.makeMoveAndCheck(iat, dr))
         continue;
-      RealType ratio = Psi.ratioGrad(W, iat, grad_iat);
+      ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
@@ -180,12 +176,12 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
         dr             = W.R[iat] - W.activePos - dr;
         RealType logGb = -oneover2tau * dot(dr, dr);
-        RealType prob  = ratio * ratio * std::exp(logGb - logGf);
+        RealType prob  = std::norm(ratio) * std::exp(logGb - logGf);
         if (RandomGen() < prob)
         {
           ++nAcceptTemp;
-          Psi.acceptMove(W, iat);
-          W.acceptMove(iat);
+          Psi.acceptMove(W, iat, true);
+          W.acceptMove(iat, true);
           rr_accepted += rr;
           gf_acc *= prob; //accumulate the ratio
         }
@@ -198,7 +194,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       }
     }
   }
-  myTimers[1]->stop();
+  movepbyp_timer_.stop();
   Psi.completeUpdates();
   W.donePbyP();
 
@@ -206,15 +202,15 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
   {
     //need to overwrite the walker properties
     MCWalkerConfiguration::Walker_t& newhead(W.reptile->getNewHead());
-    myTimers[2]->start();
+    update_mbo_timer_.start();
     prophead.Age    = 0;
     prophead.R      = W.R;
     RealType logpsi = Psi.updateBuffer(W, w_buffer, false);
     W.saveWalker(prophead);
-    myTimers[2]->stop();
-    myTimers[3]->start();
+    update_mbo_timer_.stop();
+    energy_timer_.start();
     enew = H.evaluate(W);
-    myTimers[3]->stop();
+    energy_timer_.stop();
     prophead.resetProperty(logpsi, Psi.getPhase(), enew, rr_accepted, rr_proposed, 0.0);
     prophead.Weight = 1.0;
     H.auxHevaluate(W, prophead, true, false); //evaluate properties but not collectables.
@@ -226,7 +222,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
   {
     //all moves are rejected: does not happen normally with reasonable wavefunctions
     curhead.Age++;
-    curhead.Properties(R2ACCEPTED) = 0.0;
+    curhead.Properties(WP::R2ACCEPTED) = 0.0;
     //weight is set to 0 for traces
     // consistent w/ no evaluate/auxHevaluate
     RealType wtmp  = prophead.Weight;
@@ -267,12 +263,12 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
   int nAcceptTemp(0);
   int nRejectTemp(0);
   //copy the old energy and scale factor of drift
-  RealType eold(prophead.Properties(LOCALENERGY));
-  RealType vqold(prophead.Properties(DRIFTSCALE));
+  RealType eold(prophead.Properties(WP::LOCALENERGY));
+  RealType vqold(prophead.Properties(WP::DRIFTSCALE));
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
   RealType gf_acc      = 1.0;
-  myTimers[1]->start();
+  movepbyp_timer_.start();
   for (int ig = 0; ig < W.groups(); ++ig) //loop over species
   {
     RealType tauovermass = Tau * MassInvS[ig];
@@ -280,7 +276,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
     RealType sqrttau     = std::sqrt(tauovermass);
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
     {
-      W.setActive(iat);
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
       PosType dr;
@@ -296,7 +291,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       }
       if (!W.makeMoveAndCheck(iat, dr))
         continue;
-      RealType ratio = Psi.ratioGrad(W, iat, grad_iat);
+      ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
@@ -312,12 +307,12 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
         dr             = W.R[iat] - W.activePos - dr;
         RealType logGb = -oneover2tau * dot(dr, dr);
-        RealType prob  = ratio * ratio * std::exp(logGb - logGf);
+        RealType prob  = std::norm(ratio) * std::exp(logGb - logGf);
         if (RandomGen() < prob)
         {
           ++nAcceptTemp;
-          Psi.acceptMove(W, iat);
-          W.acceptMove(iat);
+          Psi.acceptMove(W, iat, true);
+          W.acceptMove(iat, true);
           rr_accepted += rr;
           gf_acc *= prob; //accumulate the ratio
         }
@@ -330,7 +325,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       }
     }
   }
-  myTimers[1]->stop();
+  movepbyp_timer_.stop();
   Psi.completeUpdates();
   W.donePbyP();
   // In the rare case that all proposed moves fail, we bounce.
@@ -346,8 +341,8 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
   W.saveWalker(prophead);
   Walker_t &lastbead(W.reptile->getTail()), nextlastbead(W.reptile->getNext());
   RealType eloc = H.evaluate(W);
-  RealType dS   = branchEngine->DMCLinkAction(eloc, curhead.Properties(LOCALENERGY)) -
-      branchEngine->DMCLinkAction(lastbead.Properties(LOCALENERGY), nextlastbead.Properties(LOCALENERGY));
+  RealType dS   = branchEngine->DMCLinkAction(eloc, curhead.Properties(WP::LOCALENERGY)) -
+      branchEngine->DMCLinkAction(lastbead.Properties(WP::LOCALENERGY), nextlastbead.Properties(WP::LOCALENERGY));
   RealType acceptProb = std::min((RealType)1.0, std::exp(-dS));
   if ((RandomGen() <= acceptProb) || (prophead.Age >= MaxAge || lastbead.Age >= MaxAge))
   {
@@ -355,9 +350,9 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
     if (curhead.Age >= MaxAge || lastbead.Age >= MaxAge)
       app_log() << "\tForce Acceptance...\n";
 
-    prophead.Properties(LOCALENERGY) = eloc;
-    prophead.Properties(R2ACCEPTED)  = rr_accepted;
-    prophead.Properties(R2PROPOSED)  = rr_proposed;
+    prophead.Properties(WP::LOCALENERGY) = eloc;
+    prophead.Properties(WP::R2ACCEPTED)  = rr_accepted;
+    prophead.Properties(WP::R2PROPOSED)  = rr_proposed;
     H.auxHevaluate(W, prophead, true, false); //evaluate properties? true.  collectables?  false.
     H.saveProperty(prophead.getPropertyBase());
     prophead.Age    = 0;
@@ -368,8 +363,8 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
   {
     ++nReject;
     H.rejectedMove(W, prophead);
-    curhead.Properties(R2ACCEPTED) = 0;
-    curhead.Properties(R2PROPOSED) = rr_proposed;
+    curhead.Properties(WP::R2ACCEPTED) = 0;
+    curhead.Properties(WP::R2PROPOSED) = rr_proposed;
     curhead.Age += 1;
     W.reptile->flip();
     // return;

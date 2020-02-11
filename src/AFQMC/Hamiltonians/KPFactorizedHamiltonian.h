@@ -33,10 +33,10 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
   using CMatrix = boost::multi::array<ComplexType,2>;
 
   KPFactorizedHamiltonian(AFQMCInfo const& info, xmlNodePtr cur,
-                          boost::multi::array<ComplexType,2>&& h,
+                          boost::multi::array<ValueType,2>&& h,
                           TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                                     OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
-                                    TG(tg_),fileName(""),batched("no")
+                                    TG(tg_),fileName(""),batched("no"),ooc("no")
   {
 
     if(number_of_devices() > 0) batched="yes";
@@ -46,6 +46,8 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
     m_param.add(fileName,"filename","std::string");
     if(TG.TG_local().size() == 1)
       m_param.add(batched,"batched","std::string");
+    if(TG.TG_local().size() == 1)
+      m_param.add(ooc,"ooc","std::string");
     m_param.add(nsampleQ,"nsampleQ","int");
     m_param.put(cur);
 
@@ -64,7 +66,7 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
 
   ValueType getNuclearCoulombEnergy() const { return OneBodyHamiltonian::NuclearCoulombEnergy; }
 
-  boost::multi::array<ComplexType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
+  boost::multi::array<ValueType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
 
   HamiltonianOperations getHamiltonianOperations(bool pureSD, bool addCoulomb, WALKER_TYPES type,
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
@@ -87,11 +89,13 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
 
   std::string fileName;
 
+  std::string batched;
+
+  std::string ooc;
+
   double cutoff_cholesky;
 
   int nsampleQ = -1;
-
-  std::string batched;
 
   HamiltonianOperations getHamiltonianOperations_shared(bool pureSD, bool addCoulomb, WALKER_TYPES type,
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,

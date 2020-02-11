@@ -16,28 +16,26 @@
 #include "Configuration.h"
 #include "Numerics/Quadrature.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 
 //for wavefunction
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 //for nonlocal moves
 #include "QMCHamiltonians/NonLocalTOperator.h"
 
 //for Hamiltonian manipulations.
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "LongRange/EwaldHandler3D.h"
 
 namespace qmcplusplus
 {
+QMCTraits::RealType getSplinedSOPot(SOECPComponent* so_comp, int l, double r) { return so_comp->sopp_m[l]->splint(r); }
+
 TEST_CASE("CheckSphericalIntegration", "[hamiltonian]")
 {
   // Use the built-in quadrature rule check
@@ -100,6 +98,43 @@ TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
   // TODO: add more checks that pseudopotential file was read correctly
 }
 
+TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c = OHMMS::Controller;
+
+  ECPComponentBuilder ecp("test_read_sorep", c);
+
+  bool okay = ecp.read_pp_file("Zn.ccECP-SO.xml");
+  REQUIRE(okay);
+
+  REQUIRE(ecp.Zeff == 20);
+
+  double rlist[5] = {0.001, 0.500, 1.000, 2.000, 10.000};
+  double so_p[5]  = {0.0614288376917, 0.10399457248, 4.85269969439e-06, 4.6722444395e-25, 0.000};
+  double so_d[5]  = {0.0850898886265, 0.0029447669325, 6.35734161822e-08, 2.8386702794e-27, 0.000};
+  double so_f[5]  = {-0.284560515732, 0.0071131554209, 6.79818097092e-05, 1.64868282163e-15, 0.000};
+
+  for (int i = 0; i < 5; i++)
+  {
+    double r        = rlist[i];
+    double so_p_ref = so_p[i];
+    double so_d_ref = so_d[i];
+    double so_f_ref = so_f[i];
+
+    double so_p_val = getSplinedSOPot(ecp.pp_so, 0, r);
+    double so_d_val = getSplinedSOPot(ecp.pp_so, 1, r);
+    double so_f_val = getSplinedSOPot(ecp.pp_so, 2, r);
+
+    REQUIRE(so_p_val == Approx(so_p_ref));
+    REQUIRE(so_d_val == Approx(so_d_ref));
+    REQUIRE(so_f_val == Approx(so_f_ref));
+  }
+
+  // TODO: add more checks that pseudopotential file was read correctly
+}
+
+
 TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
 {
   // Initializing with no Communicate pointer under MPI,
@@ -121,10 +156,7 @@ TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
   REQUIRE(buf.length > 14);
 }
 
-void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp)
-{
-  nlpp.rrotsgrid_m = nlpp.sgridxyz_m;
-}
+void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp) { nlpp.rrotsgrid_m = nlpp.sgridxyz_m; }
 
 TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 {
@@ -163,13 +195,14 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 1;
   ion_species(iatnumber, pIdx)  = 11;
-  ions.Lattice = Lattice;
+  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
   elec.Lattice = Lattice;
   elec.setName("e");
-  elec.create(2);
+  std::vector<int> agroup(2, 1);
+  elec.create(agroup);
   elec.R[0][0] = 2.0;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -199,7 +232,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   elec.resetGroups();
 
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
 
   //Add the two body jastrow
   const char* particles = "<tmp> \
@@ -218,9 +251,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   xmlNodePtr jas2 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow(elec, psi);
-  bool build_okay = jastrow.put(jas2);
-  REQUIRE(build_okay);
+  RadialJastrowBuilder jastrow(c, elec);
+  psi.addComponent(jastrow.buildComponent(jas2), "RadialJastrow");
   // Done with two body jastrow.
 
   //Add the one body jastrow.
@@ -239,9 +271,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow1bdy(elec, psi, ions);
-  bool build_okay2 = jastrow1bdy.put(jas1);
-  REQUIRE(build_okay2);
+  RadialJastrowBuilder jastrow1bdy(c, elec, ions);
+  psi.addComponent(jastrow1bdy.buildComponent(jas1), "RadialJastrow");
 
   //Now we set up the nonlocal ECP component.
   ECPComponentBuilder ecp("test_read_ecp", c);
@@ -255,11 +286,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //quadrature Lattice instead...
   copyGridUnrotatedForTest(*nlpp);
 
-
-  //Not testing nonlocal moves here, but the PP functions take this as an argument
-  NonLocalTOperator nonLocalOps(elec.getTotalNum());
-  std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
-
   const int myTableIndex = elec.addTable(ions, DT_SOA_PREFERRED);
 
   const auto& myTable = elec.getDistTable(myTableIndex);
@@ -270,8 +296,94 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
   double logpsi = psi.evaluateLog(elec);
+  REQUIRE(logpsi == Approx(5.1497823982));
 
   double Value1(0.0);
+#ifdef ENABLE_SOA
+  //Using SoA distance tables, hence the guard.
+  for (int jel = 0; jel < elec.getTotalNum(); jel++)
+  {
+    const auto& dist  = myTable.getDistRow(jel);
+    const auto& displ = myTable.getDisplRow(jel);
+    for (int iat = 0; iat < ions.getTotalNum(); iat++)
+      if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
+        Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], false);
+  }
+#else
+  for (int iat = 0; iat < ions.getTotalNum(); iat++)
+  {
+    if (nlpp == nullptr)
+      continue;
+    for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
+    {
+      const RealType r(myTable.r(nn));
+      if (r > nlpp->getRmax())
+        continue;
+      Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn), false);
+    }
+  }
+#endif
+  //These numbers are validated against an alternate code path via wavefunction tester.
+  REQUIRE(Value1 == Approx(6.9015710211e-02));
+
+  opt_variables_type optvars;
+  std::vector<ValueType> dlogpsi;
+  std::vector<ValueType> dhpsioverpsi;
+
+  psi.checkInVariables(optvars);
+  optvars.resetIndex();
+  const int NumOptimizables(optvars.size());
+  psi.checkOutVariables(optvars);
+  dlogpsi.resize(NumOptimizables, ValueType(0));
+  dhpsioverpsi.resize(NumOptimizables, ValueType(0));
+  psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
+  REQUIRE(std::real(dlogpsi[0]) == Approx(-0.2211666667));
+  REQUIRE(std::real(dlogpsi[2]) == Approx(-0.1215));
+  REQUIRE(std::real(dlogpsi[3]) == Approx(0.0));
+  REQUIRE(std::real(dlogpsi[9]) == Approx(-0.0853333333));
+  REQUIRE(std::real(dlogpsi[10]) == Approx(-0.745));
+
+  REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6463306581));
+  REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5689981479));
+  REQUIRE(std::real(dhpsioverpsi[3]) == Approx(0.0));
+  REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
+  REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968828778));
+
+  Value1 = 0.0;
+#ifdef ENABLE_SOA
+  //Using SoA distance tables, hence the guard.
+  for (int jel = 0; jel < elec.getTotalNum(); jel++)
+  {
+    const auto& dist  = myTable.getDistRow(jel);
+    const auto& displ = myTable.getDisplRow(jel);
+    for (int iat = 0; iat < ions.getTotalNum(); iat++)
+      if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
+        Value1 += nlpp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                    dhpsioverpsi);
+  }
+#else
+  for (int iat = 0; iat < ions.getTotalNum(); iat++)
+  {
+    if (nlpp == nullptr)
+      continue;
+    for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
+    {
+      const RealType r(myTable.r(nn));
+      if (r > nlpp->getRmax())
+        continue;
+      Value1 +=
+          nlpp->evaluateValueAndDerivatives(elec, iat, psi, iel, r, myTable.dr(nn), optvars, dlogpsi, dhpsioverpsi);
+    }
+  }
+#endif
+  REQUIRE(Value1 == Approx(6.9015710211e-02));
+
+  REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6379341942));
+  REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5269279991));
+  REQUIRE(std::real(dhpsioverpsi[3]) == Approx(-0.0355730676));
+  REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
+  REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968763604));
+
 #ifdef ENABLE_SOA
   //Forces are only implemented in SOA version, hence the guard.
   double Value2(0.0);
@@ -286,22 +398,16 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   for (int jel = 0; jel < elec.getTotalNum(); jel++)
   {
-    const auto& dist  = myTable.Distances[jel];
-    const auto& displ = myTable.Displacements[jel];
+    const auto& dist  = myTable.getDistRow(jel);
+    const auto& displ = myTable.getDisplRow(jel);
     for (int iat = 0; iat < ions.getTotalNum(); iat++)
       if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
       {
-        Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat], 0, Txy);
-
-        Value2 +=
-            nlpp->evaluateOneWithForces(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat], HFTerm[iat], 0, Txy);
-        Value3 += nlpp->evaluateOneWithForces(elec, ions, iat, psi, jel, dist[iat], RealType(-1) * displ[iat],
-                                              HFTerm2[iat], PulayTerm, 0, Txy);
+        Value2 += nlpp->evaluateOneWithForces(elec, iat, psi, jel, dist[iat], -displ[iat], HFTerm[iat]);
+        Value3 += nlpp->evaluateOneWithForces(elec, ions, iat, psi, jel, dist[iat], -displ[iat], HFTerm2[iat],
+                                              PulayTerm);
       }
   }
-  //These numbers are validated against an alternate code path via wavefunction tester.
-  REQUIRE(Value1 == Approx(6.9015710211e-02));
-
   //These values are validated against print statements.
   //Two-body jastrow-only wave functions agree with finite difference of NLPP to machine precision.
   //  These numbers assume the Hellman Feynmann implementation is correct, and dump the values
@@ -347,24 +453,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //HFTerm[1][0]+PulayTerm[1][0] =  0.002734064
   //HFTerm[1][1]+PulayTerm[1][1] =  0.0
   //HFTerm[1][2]+PulayTerm[1][2] =  0.0
-
-
-#else
-
-  for (int iat = 0; iat < ions.getTotalNum(); iat++)
-  {
-    if (nlpp == nullptr)
-      continue;
-    for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
-    {
-      const RealType r(myTable.r(nn));
-      if (r > nlpp->getRmax())
-        continue;
-      Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn), 0, Txy);
-    }
-  }
-  REQUIRE(Value1 == Approx(6.9015710211e-02));
-
 #endif
 }
 } // namespace qmcplusplus

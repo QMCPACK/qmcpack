@@ -15,7 +15,6 @@
 #include <OhmmsData/AttributeSet.h>
 #include <Utilities/string_utils.h>
 #include <cmath>
-#include <math.h>
 #include <OhmmsPETE/OhmmsArray.h>
 
 #include <Message/OpenMP.h>
@@ -202,7 +201,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
   //loop over spacegrid xml elements
   xmlNodePtr element    = cur->children;
   std::string undefined = "";
-  int iaxis;
+  int iaxis       = 0;
   int naxes       = 0;
   bool has_origin = false;
   origin          = points["zero"];
@@ -514,7 +513,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
     //  app_log()<<"    "<<i<<" "<<interval_centers[d][i]<< std::endl;
   }
   Point du, uc, ubc, rc;
-  RealType vol;
+  RealType vol = 0.0;
   RealType vol_tot = 0.0;
   RealType vscale  = std::abs(det(axes));
   for (int i = 0; i < dimensions[0]; i++)
@@ -892,6 +891,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
       int nd, nn;
       RealType dist;
       for (nd = 0; nd < ndomains; nd++)
+#ifndef ENABLE_SOA
         for (nn = dtab.M[nd], p = 0; nn < dtab.M[nd + 1]; ++nn, ++p)
         {
           dist = dtab.r(nn);
@@ -901,6 +901,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
             nearcell[p].i = nd;
           }
         }
+#endif
       //accumulate values for each dynamic particle
       for (p = 0; p < ndparticles; p++)
       {
@@ -995,6 +996,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
       int nn;
       RealType dist;
       for (nd = 0; nd < ndomains; nd++)
+#ifndef ENABLE_SOA
         for (nn = dtab.M[nd], p = 0; nn < dtab.M[nd + 1]; ++nn, ++p)
         {
           dist = dtab.r(nn);
@@ -1004,6 +1006,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
             nearcell[p].i = nd;
           }
         }
+#endif
       //accumulate values for each dynamic particle
       for (p = 0; p < ndparticles; p++)
       {

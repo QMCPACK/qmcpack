@@ -58,6 +58,9 @@ class THCOps
 
   public:
 
+    static const HamiltonianTypes HamOpType = THC;
+    HamiltonianTypes getHamType() const { return HamOpType; }
+
     /*
      * NAOA/NAOB stands for number of active orbitals alpha/beta (instead of active electrons)
      */
@@ -358,8 +361,6 @@ std::cout<<"\n";
       int nwalk = GrefA.size(0);
       int naoa_ = QQ0A.size(1);
       int naob_ = QQ0B.size(1);
-      int naea_ = QQ0A.size(2);
-      int naeb_ = QQ0B.size(2);
       int nmo_ = rotPiu.size(0);
       int nu = rotMuv.size(0);
       int nu0 = rotMuv.global_offset()[0];
@@ -745,6 +746,11 @@ std::cout<<"\n";
 
     bool fast_ph_energy() const { return true; }
 
+    boost::multi::array<ComplexType,2> getHSPotentials()
+    {
+      return boost::multi::array<ComplexType,2>{};
+    }
+
   protected:
 
     // Guu[nu][nwalk]
@@ -826,7 +832,6 @@ std::cout<<"\n";
       static_assert(std::decay<MatB>::type::dimensionality == 3, "Wrong dimensionality");
       static_assert(std::decay<MatC>::type::dimensionality == 1, "Wrong dimensionality");
       static_assert(std::decay<MatD>::type::dimensionality == 2, "Wrong dimensionality");
-      int nspin = (walker_type==COLLINEAR)?2:1;
       int nmo_ = int(rotPiu.size(0));
       int nu = int(rotMuv.size(0));  // potentially distributed over nodes
       int nv = int(rotMuv.size(1));  // not distributed over nodes

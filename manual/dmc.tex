@@ -1,56 +1,77 @@
-\section{Diffusion Monte Carlo}
-\label{sec:dmc}
-\pagebreak
+\section{Diffusion Monte Carlo}\label{sec:dmc}
+Main input parameters are given in Table \ref{tab:dmcmain}, additional in Table \ref{tab:dmcadditional}.
 \begin{table}[h]
 \begin{center}
+  \caption{Main DMC input parameters}
+  \label{tab:dmcmain}
 \begin{tabularx}{\textwidth}{l l l l l X }
 \hline
 \multicolumn{6}{l}{\texttt{dmc} method} \\
 \hline
 \multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{targetwalkers             } &  integer  & $> 0$ & dep.   & Overall total number of walkers \\
-   &   \texttt{blocks              } &  integer  & $\ge 0$ & 1   & Number of blocks            \\
-   &   \texttt{steps               } &  integer  & $\ge 0$ & 1   & Number of steps per block   \\
+   &   \texttt{targetwalkers       } &  integer  & $> 0$ & dep.   & Overall total number of walkers \\
+   &   \texttt{blocks              } &  integer  & $\ge 0$ & 1   & Number of blocks \\
+   &   \texttt{steps               } &  integer  & $\ge 0$ & 1   & Number of steps per block\\
    &   \texttt{warmupsteps         } &  integer  & $\ge 0$ & 0   & Number of steps for warming up\\
-   &   \texttt{timestep            } &  real     & $> 0$ & 0.1 & Time step for each electron move \\
-  % &   \texttt{samples             } &  real  & $\ge 0$ & 0   & total number of samples \\
+   &   \texttt{timestep            } &  real     & $> 0$   & 0.1 & Time step for each electron move \\
+   &   \texttt{nonlocalmoves       } &  string   & yes,no,v0,v1,v3 & no   & Run with T-moves  \\
+   &   \texttt{branching\_cutoff\_scheme} & string    & classic/DRV/ZSGMA/YL & classic & Branch cutoff scheme \\
+   &   \texttt{maxcpusecs          } &  real     & $\ge 0$ & 3.6e5   & Maximum allowed walltime in seconds \\
+   &   \texttt{blocks\_between\_recompute} &  integer  & $\ge 0$ & dep.  & Wavefunction recompute frequency  \\
+   \hline
+  \end{tabularx}
+  \end{center}
+  \end{table}
+
+  \begin{table}[h]
+    \begin{center}
+      \caption{Additional DMC input parameters}
+      \label{tab:dmcadditional}
+      \begin{tabularx}{\textwidth}{l l l l l X }
+    \hline
+    \multicolumn{6}{l}{\texttt{dmc} method} \\
+    \hline
+    \multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\    
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{energyUpdateInterval} &  integer  & $\ge 0$ & 0   & Trial energy update interval \\
+   &   \texttt{refEnergy           } &  real     & all values & dep.   & Reference energy in atomic units  \\
+   &   \texttt{feedback            } &  double   & $\ge 0$ & 1.0   & Population feedback on the trial energy \\
+   &   \texttt{sigmaBound          } &  double   & $\ge 0$ & 10   & Parameter to cutoff large weights  \\
+   &   \texttt{killnode            } &  string   & yes/other & no   & Kill or reject walkers that cross nodes  \\
+   &   \texttt{warmupByReconfiguration} & option & yes,no  & 0   & Warm up with a fixed population  \\
+   &   \texttt{reconfiguration     } &  string   & yes/pure/other & no   & Fixed population technique  \\
+   &   \texttt{branchInterval      } &  integer  & $\ge 0$ & 1   & Branching interval \\
+   &   \texttt{substeps            } &  integer  & $\ge 0$ & 1   & Branching interval \\
+   &   \texttt{MaxAge              } &  double   & $\ge 0$ & 10   & Kill persistent walkers  \\
+   &   \texttt{MaxCopy             } &  double   & $\ge 0$ & 2   & Limit population growth \\
+   &   \texttt{maxDisplSq          } &  real     & all values & -1   & Maximum particle move  \\
+   &   \texttt{scaleweight         } &  string   & yes/other & yes   & Scale weights (CUDA only)  \\
+   &   \texttt{checkproperties     } &  integer  & $\ge 0$ & 100   & Number of steps between walker updates  \\
+   &   \texttt{fastgrad            } &  text     & yes/other & yes   & Fast gradients  \\
+   &   \texttt{storeconfigs        } &  integer  & all values & 0   & Store configurations  \\
+   &   \texttt{use\_nonblocking    } &  string   & yes/no     & yes   & Using nonblocking send/recv \\
+   \hline
+  \end{tabularx}
+  \end{center}
+  \end{table}
+% Legacy/unused/deprecated input parameters:
+%   &   \texttt{samples             } &  real  & $\ge 0$ & 0   & total number of samples \\
 %   &   \texttt{stepsbetweensamples } &  integer  & $> 0$ & 1   & period of the sample accumulation\\
 %   &   \texttt{samplesperthread    } &  real  & $\ge 0$ & 0   & number of samples per thread  \\
 %   &   \texttt{rewind              } &  integer  & $\ge 0$ & 0   & number of blocks to roll back   \\
 %   &   \texttt{storeconfigs        } &  integer  & $\ge 0$ & 0   & whether to store samples  \\
-   &   \texttt{checkproperties     } &  integer  & $\ge 0$ & 100   & Number of steps between walker updates  \\
 %  &   \texttt{recordwalkers       } &  integer  & $\ge 0$ & 0   & number of steps between saving a sample configuration. (only for VMC)  \\
 %   &   \texttt{recordconfigs       } &  integer  & $\ge 0$ & 0   & number of steps between dumping a configuration to h5  \\
 %   &   \texttt{current             } &  integer  & $\ge 0$ & 0   & current step (only used in optimization runs)  \\
 %   &   \texttt{dmcwalkersperthread } &  real  & $\ge 0$ & 0   & number of samples per thread  \\
-   &   \texttt{maxcpusecs          } &  real  & $\ge 0$ & 3.6e5   & Maximum allowed walltime in seconds \\
-   &   \texttt{energyUpdateInterval} &  integer  & $\ge 0$ & 0   & Trial energy update interval \\
-   &   \texttt{refEnergy           } &  AU  & all values & dep.   & Reference energy  \\
-   &   \texttt{feedback            } &  double  & $\ge 0$ & 1.0   & Population feedback on the trial energy \\
-   &   \texttt{warmupByReconfiguration} &  option  & yes,no & 0   & Warm up with a fixed population  \\
- %  &   \texttt{energyBound         } &  double  & $\ge 0$ & 0   & number of samples per thread  \\
-   &   \texttt{sigmaBound          } &  double  & $\ge 0$  & 10   & Parameter to cutoff large weights  \\
-   &   \texttt{killnode            } &  string  & yes/other & no   & Kill or reject walkers that cross nodes  \\
-  % &   \texttt{benchmark           } &  string  & $\ge 0$ & 0   & number of sample \\
-   &   \texttt{reconfiguration     } &  string  & yes/pure/other & no   & Fixed population technique  \\
-   &   \texttt{branchInterval      } &  integer  & $\ge 0$ & 1   & Branching interval \\
-   &   \texttt{substeps            } &  integer  & $\ge 0$ & 1   & Branching interval \\
-   &   \texttt{nonlocalmoves       } &  string  & yes,no,v0,v1,v3 & no   & Run with T-moves  \\
-   &   \texttt{scaleweight         } &  string  & yes/other & yes   & Scale weights (CUDA only)  \\
-   &   \texttt{MaxAge              } &  double  & $\ge 0$ & 10   & Kill persistent walkers  \\
-    &   \texttt{MaxCopy             } &  double  & $\ge 0$ &2   & Limit population growth \\
-   &   \texttt{fastgrad            } &  text  & yes/other & yes   & Fast gradients  \\
- %  &   \texttt{printderivs         } &  text  & $\ge 0$ & 0   & number of samples per  thread  \\
- %  &   \texttt{wlen                } &  integer  & $\ge 0$ & 0   & number of samples per  thread  \\
-   &   \texttt{maxDisplSq      } &  real  & all values & -1   & Maximum particle move  \\
-   &   \texttt{storeconfigs        } &  integer  & all values & 0   & Store configurations  \\
-   &   \texttt{use\_nonblocking    } &  string  & yes/no & yes   & Using nonblocking send/recv \\
-   &   \texttt{blocks\_between\_recompute} &  integer  & $\ge 0$ & dep.  & Wavefunction recompute frequency  \\
-  \hline
-\end{tabularx}
-\end{center}
-\end{table}
+%  &   \texttt{energyBound         } &  double  & $\ge 0$ & 0   & number of samples per thread  \\
+% &   \texttt{benchmark           } &  string  & $\ge 0$ & 0   & number of sample \\
+%  &   \texttt{printderivs         } &  text  & $\ge 0$ & 0   & number of samples per  thread  \\
+%  &   \texttt{wlen                } &  integer  & $\ge 0$ & 0   & number of samples per  thread  \\
+
+
+
 
 Additional information:
 \begin{itemize}
@@ -103,8 +124,8 @@ where $N$ is the current population.
 \item no(default): Imposes the locality approximation.
 \item yes/v0: Implements the algorithm in the 2006 Casula paper~\cite{Casula2006}
 \item v1: Implements the v1 algorithm in the 2010 Casula paper~\cite{Casula2010}.
-\item v2: Is \textbf{not implemented} and is \textbf{skipped} baususe of the existence of the v2 algorithm in the 2010 Casula paper~\cite{Casula2010}.
-\item v3: (Experimental) Implements an algorithm similar to v1 but that is much faster. v1 computes the transition probability before each single electron T-move selection because of the acceptance of previous T-moves. v3 mostly reuses the transition probability computed during the evaluation of nonlocal pseudopotentials for the local energy, namely before accepting any T-moves, and only recomputes the transition probability of the electrons within the same pseudopotential region of any electrons touched by T-moves. This is an approximation to v1 and results in a slightly different time step error, but it significantly reduces the computational cost. v1 and v3 agree at zero time step. This faster algorithm is the topic of a paper in preparation.
+\item v2: Is \textbf{not implemented} and is \textbf{skipped} to avoid any confusion with the v2 algorithm in the 2010 Casula paper~\cite{Casula2010}.
+\item v3: (Experimental) Implements an algorithm similar to v1 but is much faster. v1 computes the transition probability before each single electron T-move selection because of the acceptance of previous T-moves. v3 mostly reuses the transition probability computed during the evaluation of nonlocal pseudopotentials for the local energy, namely before accepting any T-moves, and only recomputes the transition probability of the electrons within the same pseudopotential region of any electrons touched by T-moves. This is an approximation to v1 and results in a slightly different time step error, but it significantly reduces the computational cost. v1 and v3 agree at zero time step. This faster algorithm is the topic of a paper in preparation.
 \end{itemize}
 The v1 and v3 algorithms are size-consistent and are important advances over the previous v0 non-size-consistent algorithm. We highly recommend investigating the importance of size-consistency.
 
@@ -152,6 +173,20 @@ The v1 and v3 algorithms are size-consistent and are important advances over the
 %\textrm{samplesperthread}=
 %\frac{\textrm{blocks}\cdot\textrm{steps}}{\textrm{stepsbetweensamples}}
 %\]
+
+\item \texttt{branching\_cutoff\_scheme:} Modifies how the branching factor is computed so as to avoid divergences and stability
+problems near nodal surfaces. 
+\begin{itemize}
+  \item classic (default): The implementation found in QMCPACK v3.0.0 and earlier.
+	  $E_{\rm cut}=\mathrm{min}(\mathrm{max}(\sigma^2 \times \mathrm{sigmaBound},\mathrm{maxSigma}),2.5/\sqrt{\tau})$,
+  where $\sigma^2$ is the variance and $\mathrm{maxSigma}$ is set to 50 during warmup (equilibration) and 10 thereafter.
+  \item DRV: Implements the algorithm of DePasquale et al., Eq.~3 in Ref.~\cite{DePasqualeReliable1988} or Eq.~9 of Ref.~\cite{Umrigar1993}.
+  $E_{\rm cut}=2.0/\sqrt{\tau}$.
+  \item ZSGMA: Implements the ``ZSGMA'' algorithm of Ref.~\cite{ZenBoosting2016} with $\alpha=0.2$. The cutoff energy is modified by a factor including the
+  electron count, $E_{\rm cut}=\alpha \sqrt{N/\tau}$, which greatly improves size consistency over Eq.~39 of Ref.~\cite{Umrigar1993}. See Eq.~6 in Ref.~\cite{ZenBoosting2016} and for
+  an application to molecular crystals Ref.~\cite{ZenFast2018}.
+  \item YL: An unpublished algorithm due to Ye Luo. $E_{\rm cut}=\sigma\times\mathrm{min}(\mathrm{sigmaBound},\sqrt{1/\tau})$. This option takes into account both size consistency and wavefunction quality via the term $\sigma$. $\mathrm{sigmaBound}$ is default to 10.
+\end{itemize}
 
 \end{itemize}
 

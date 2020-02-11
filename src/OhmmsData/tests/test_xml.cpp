@@ -54,6 +54,27 @@ TEST_CASE("parseString", "[xml]")
   REQUIRE(root_name == "simulation");
 }
 
+TEST_CASE("XMLParsingString", "[xml]")
+{
+  string s1("<?xml version=\"1.0\"?> \
+<simulation name=\"qmc\"> \
+aa \
+</simulation> ");
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(s1);
+  REQUIRE(okay == true);
+
+  xmlNodePtr root = doc.getRoot();
+  REQUIRE(root != NULL);
+
+  const XMLNodeString node_string(root);
+  REQUIRE(node_string == " aa ");
+
+  const XMLAttrString attr_string(root, "name");
+  REQUIRE(attr_string == "qmc");
+}
+
 TEST_CASE("putContent", "[xml]")
 {
   string s1("<?xml version=\"1.0\"?> \

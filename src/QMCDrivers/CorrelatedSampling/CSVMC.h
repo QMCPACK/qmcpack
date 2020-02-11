@@ -43,6 +43,7 @@ public:
 
   bool run();
   bool put(xmlNodePtr cur);
+  virtual QMCRunType getRunType() { return QMCRunType::CSVMC; }
 
 private:
   std::string UseDrift;

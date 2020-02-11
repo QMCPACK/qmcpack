@@ -14,12 +14,12 @@
 #ifndef QMCPLUSPLUS_HARMONIC_EXTERNAL_POTENTIAL_H
 #define QMCPLUSPLUS_HARMONIC_EXTERNAL_POTENTIAL_H
 
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 
 
 namespace qmcplusplus
 {
-struct HarmonicExternalPotential : public QMCHamiltonianBase
+struct HarmonicExternalPotential : public OperatorBase
 {
   //data members
   RealType mass;
@@ -48,7 +48,7 @@ struct HarmonicExternalPotential : public QMCHamiltonianBase
   //standard interface functions
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
 
   //functions for physical (hamiltonian component) estimator
   Return_t evaluate(ParticleSet& P);

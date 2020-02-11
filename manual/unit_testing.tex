@@ -1,48 +1,49 @@
-\chapter{Unit Testing}
+\chapter{Unit testing}
 \label{chap:unit_testing}
 
-Unit testing is a standard software engineering practice to aid in ensuring a quality product. A good suite of unit tests provides confidence in refactoring and changing code, provides some documentation on how classes and functions are used, and can drive a more decoupled design.
+Unit testing is a standard software engineering practice to aid in ensuring a quality product. A good suite of unit tests provides confidence in refactoring and changing code, furnishes some documentation on how classes and functions are used, and can drive a more decoupled design.
 
 If unit tests do not already exist for a section of code, you are encouraged to add them when modifying that section of code.  New code additions should also include unit tests.
 When possible, fixes for specific bugs should also include a unit test that would have caught the bug.
 
 \section {Unit testing framework} The Catch framework is used for unit testing.
-See the project site for a tutorial and documentation: \url{https://github.com/philsquared/Catch}
+See the project site for a tutorial and documentation: \url{https://github.com/philsquared/Catch}.
 
-Catch consists solely of header files. It is distributed as a single include file about 400KB in size.  In QMCPACK, it is stored in \ishell{external\_codes/catch}.
+Catch consists solely of header files. It is distributed as a single include file about 400 KB in size.  In QMCPACK, it is stored in \ishell{external\_codes/catch}.
 
 \section{Unit test organization}
 
 \begin{sloppypar}
-The source for the unit tests is located in the \ishell{tests} directory under each directory in \ishell{src} (e.g. \ishell{src/QMCWavefunctions/tests}).
+The source for the unit tests is located in the \ishell{tests} directory under each directory in \ishell{src} (e.g., \ishell{src/QMCWavefunctions/tests}).
 All of the tests in each \ishell{tests} directory get compiled into an executable.
 After building the project, the individual unit test executables can be found in \ishell{build/tests/bin}.
 For example, the tests in \ishell{src/QMCWavefunctions/tests} are compiled into \ishell{build/tests/bin/test\_wavefunction}.
 \end{sloppypar}
 
-All the unit test executables are collected under CTest with the \ishell{unit} label.
-When checking the whole code, it's useful to run through CMake (\ishell{cmake -L unit}).
-When working on an individual directory, it's useful to run the individual executable.
+All the unit test executables are collected under ctest with the \ishell{unit} label.
+When checking the whole code, it is useful to run through CMake (\ishell{cmake -L unit}).
+When working on an individual directory, it is useful to run the individual executable.
 
-Some of the tests reference input files. The unit test CMake setup places those input files in particular locations under the \ishell{tests} directory (e.g. \ishell{tests/xml\_test}).  The individual test needs to be run from that directory to find the expected input files.
+Some of the tests reference input files. The unit test CMake setup places those input files in particular locations under the \ishell{tests} directory (e.g., \ishell{tests/xml\_test}).  The individual test needs to be run from that directory to find the expected input files.
 
 Command line options are available on the unit test executables.  Some of the more useful ones are
-\begin{description}
-\item[\ishell{-h}]  List command line options.
-\item [\ishell{--list-tests}] List all the tests in the executable.
-\end{description}
+
+\begin{itemize}
+\item{List command line options.}
+\item{List all the tests in the executable.}
+\end{itemize}
 
 A test name can be given on the command line to execute just that test.  This is useful when iterating
-on a particular test, or when running in the debugger.   Test names often contain spaces, so most command line environments require enclosing the test name in single or double quotes.
+on a particular test or when running in the debugger.   Test names often contain spaces, so most command line environments require enclosing the test name in single or double quotes.
 
 
 
 \section{Example}
 
-The first example is one test from \ishell{src/Numerics/tests/test\_grid\_functor.cpp}
+The first example is one test from \ishell{src/Numerics/tests/test\_grid\_functor.cpp}.
 
 \begin{minipage}{\linewidth}
-\begin{lstlisting}[language=C++,caption={Unit test example using Catch},label=CatchExample,basicstyle=\ttfamily]
+\begin{lstlisting}[language=C++,caption={Unit test example using Catch.},label=CatchExample,basicstyle=\ttfamily]
 TEST_CASE("double_1d_grid_functor", "[numerics]")
 {
   LinearGrid<double> grid;
@@ -57,7 +58,7 @@ TEST_CASE("double_1d_grid_functor", "[numerics]")
   REQUIRE(grid.dr(1) == Approx(0.5));
 }
 \end{lstlisting}
-\end{minipage}
+\end{minipage}\\
 
 The test function declaration is
 \ishell{TEST\_CASE("double\_1d\_grid\_functor","[numerics]")}.
@@ -66,7 +67,7 @@ The second argument is an optional list of tags.  Each tag is a name surrounded 
 
 The \ishell{REQUIRE} macro accepts expressions with C++ comparison operators and records an error if the value of the expression is false.
 
-Floating point numbers may have small differences due to roundoff, etc.   The \ishell{Approx} class adds some tolerance to the comparison.  Place it on either side of the comparison (e.g. \ishell{Approx(a) == 0.3} or \ishell{a = Approx(0.3)}).   To adjust the tolerance, use the \ishell{epsilon} and \ishell{scale} methods to \ishell{Approx} (\ishell{REQUIRE(Approx(a).epsilon(0.001) = 0.3);}.
+Floating point numbers may have small differences due to roundoff, etc.   The \ishell{Approx} class adds some tolerance to the comparison.  Place it on either side of the comparison (e.g., \ishell{Approx(a) == 0.3} or \ishell{a = Approx(0.3)}).   To adjust the tolerance, use the \ishell{epsilon} and \ishell{scale} methods to \ishell{Approx} (\ishell{REQUIRE(Approx(a).epsilon(0.001) = 0.3);}.
 
 \subsection{Expected output}
 
@@ -103,10 +104,10 @@ assertions: 25 | 24 passed | 1 failed
 
 
 \section{Adding tests}
-There are three scenarios covered here: adding a new test in an existing file, adding a new test file, or adding a new \ishell{test} directory.
+Three scenarios are covered here: adding a new test in an existing file, adding a new test file, and adding a new \ishell{test} directory.
 
 \subsection{Adding a test to existing file}
-Copy an existing test, or from the example shown here.  Be sure to change the test name.
+Copy an existing test or from the example shown here.  Be sure to change the test name.
 
 \subsection{Adding a test file}
 When adding a new test file,
@@ -118,7 +119,7 @@ Some of the tests need to shut down MPI properly to avoid extraneous error messa
 
 
 \subsection{Adding a test directory}
-Copy the CMakeLists.txt file from an existing \ishell{tests} directory.
+Copy the \ishell{CMakeLists.txt} file from an existing \ishell{tests} directory.
 Change the \ishell{SRC\_DIR} name and the  files in the \ishell{ADD\_EXECUTABLES} line.  The libraries to link in \ishell{TARGET\_LINK\_LIBRARIES} may need to be updated.
 
 Add the new test directory to \ishell{src/CMakeLists.txt} in the \ishell{BUILD\_UNIT\_TESTS} section near the end.
@@ -129,6 +130,6 @@ Many algorithms and parts of the code depend on random numbers, which makes vali
 One solution is to verify that certain properties hold for any random number.
 This approach is valuable at some levels of testing, but is unsatisfying at the unit test level.
 
-The \ishell{Utilities} directory contains a 'fake' random number generator that can be used for deterministic tests of these parts of the code.
+The \ishell{Utilities} directory contains a ``fake'' random number generator that can be used for deterministic tests of these parts of the code.
 Currently it outputs a single, fixed value every time it is called, but it could be expanded to produce more varied, but still deterministic, sequences.
 See \ishell{src/QMCDrivers/test\_vmc.cpp} for an example of using the fake random number generator.

@@ -56,10 +56,6 @@ bool LocalCorePolPotential::CPP_Param::put(xmlNodePtr cur)
   att.add(alpha, "alpha");
   att.add(r_b, "rb");
   att.put(cur);
-  //const xmlChar* a_ptr = xmlGetProp(cur,(const xmlChar *)"alpha");
-  //const xmlChar* b_ptr = xmlGetProp(cur,(const xmlChar *)"rb");
-  //if(a_ptr) alpha = atof((const char*)a_ptr);
-  //if(b_ptr) r_b = atof((const char*)b_ptr);
   C           = -0.5 * alpha;
   one_over_rr = 1.0 / r_b / r_b;
   app_log() << "\talpha = " << alpha << " rb = " << r_b << std::endl;
@@ -115,6 +111,7 @@ LocalCorePolPotential::Return_t LocalCorePolPotential::evaluate(ParticleSet& P)
     int iz = Species.addAttribute("charge");
     const auto& d_ii = IonConfig.getDistTable(d_ii_ID);
     //calculate the Core-Core Dipole matrix
+#ifndef ENABLE_SOA
     for (int iat = 0; iat < nCenters; iat++)
     {
       for (int nn = d_ii.M[iat]; nn < d_ii.M[iat + 1]; nn++)
@@ -127,6 +124,7 @@ LocalCorePolPotential::Return_t LocalCorePolPotential::evaluate(ParticleSet& P)
         CoreCoreDipole[jat] += dipole * Species(iz, IonConfig.GroupID[iat]);
       }
     }
+#endif
     RealType corecore(0.0);
     for (int iat = 0; iat < nCenters; iat++)
     {
@@ -146,6 +144,7 @@ LocalCorePolPotential::Return_t LocalCorePolPotential::evaluate(ParticleSet& P)
     if (Centers[iat])
     {
       PosType cc(CoreCoreDipole[iat]);
+#ifndef ENABLE_SOA
       for (int nn = d_ie.M[iat]; nn < d_ie.M[iat + 1]; nn++)
       {
         int eid(d_ie.J[nn]);
@@ -154,13 +153,14 @@ LocalCorePolPotential::Return_t LocalCorePolPotential::evaluate(ParticleSet& P)
         //cc +=  dipole*fcpp(d_ie->r(nn)*r_binv);
         cc += dipole * ((*Centers[iat])(d_ie.r(nn)));
       }
+#endif
       e += Centers[iat]->C * dot(cc, cc);
     }
   }
   return Value = e;
 }
 
-QMCHamiltonianBase* LocalCorePolPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* LocalCorePolPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   LocalCorePolPotential* myclone = new LocalCorePolPotential(IonConfig, qp);
   //copy cpp parameters

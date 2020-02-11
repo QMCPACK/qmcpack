@@ -33,8 +33,8 @@ class MixedRDMEstimator: public EstimatorBase
 
   MixedRDMEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
         std::string title, xmlNodePtr cur, WALKER_TYPES wlk, Wavefunction& wfn, bool impsamp_=true) :
-                                            EstimatorBase(info),TG(tg_), wfn0(wfn),
-                                            block_size(1), writer(false), importanceSampling(impsamp_)
+                                            EstimatorBase(info),TG(tg_), writer(false), wfn0(wfn),
+                                            block_size(1), importanceSampling(impsamp_)
   {
 
     if(cur != NULL) {

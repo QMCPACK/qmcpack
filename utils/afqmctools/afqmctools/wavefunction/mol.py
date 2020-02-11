@@ -33,21 +33,20 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
     C = scf_data['mo_coeff']
     X = scf_data['X']
     uhf = scf_data['isUHF']
-    if uhf:
-        walker_type = 'uhf'
-    else:
-        walker_type = 'rhf'
     # For RHF only nalpha entries will be filled.
     if uhf:
-        norb = C[0].shape[0]
+        norb = C[0].shape[-1]
     else:
-        norb = C.shape[0]
+        norb = C.shape[-1]
     if wfn is None:
         wfn = numpy.zeros((1,norb,nalpha+nbeta), dtype=numpy.complex128)
         wfn_type = 'NOMSD'
         coeffs = numpy.array([1.0+0j])
         if ortho_ao:
-            Xinv = scipy.linalg.inv(X)
+            if X.shape[0] != X.shape[1]:
+                Xinv = scipy.linalg.pinv(X)
+            else:
+                Xinv = scipy.linalg.inv(X)
             if uhf:
                 # We are assuming C matrix is energy ordered.
                 wfn[0,:,:nalpha] = numpy.dot(Xinv, C[0])[:,:nalpha]
@@ -61,7 +60,7 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
             if uhf:
                 print(" # Warning: UHF trial wavefunction can only be used of "
                       "working in ortho AO basis.")
-    write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), walker_type,
+    write_qmcpack_wfn(filename, (numpy.array([1.0+0j]),wfn), uhf,
                       nelec, norb, verbose=verbose)
     return nelec
 
@@ -131,6 +130,7 @@ def write_nomsd(fh5, wfn, uhf, nelec, thresh=1e-8, init=None):
         Threshold for writing wavefunction elements.
     """
     nalpha, nbeta = nelec
+    nmo = wfn.shape[1]
     wfn[abs(wfn) < thresh] = 0.0
     if init is not None:
         add_dataset(fh5, 'Psi0_alpha', to_qmcpack_complex(init[0]))
@@ -191,19 +191,19 @@ def write_phmsd(fh5, occa, occb, nelec, norb, init=None, orbmat=None):
         add_dataset(fh5, 'Psi0_alpha',
                     to_qmcpack_complex(init[:,occa[0]].copy()))
         add_dataset(fh5, 'Psi0_beta',
-                    to_qmcpack_complex(init[:,occb[0]-norb].copy()))
+                    to_qmcpack_complex(init[:,occb[0]].copy()))
     if orbmat is not None:
-        fh5['type'] = numpy.string_('mixed')
+        fh5['type'] = 1
         # Expects conjugate transpose.
         oa = scipy.sparse.csr_matrix(orbmat[0].conj().T)
         write_nomsd_single(fh5, oa, 0)
         ob = scipy.sparse.csr_matrix(orbmat[1].conj().T)
         write_nomsd_single(fh5, ob, 1)
     else:
-        fh5['type'] = numpy.string_('occ')
+        fh5['type'] = 0
     occs = numpy.zeros((len(occa), na+nb), dtype=numpy.int32)
     occs[:,:na] = numpy.array(occa)
-    occs[:,na:] = numpy.array(occb)
+    occs[:,na:] = norb+numpy.array(occb)
     # Reading 1D array currently in qmcpack.
     fh5['occs'] = occs.ravel()
 
@@ -304,14 +304,6 @@ def gen_multi_det_wavefunction(mc, weight_cutoff=0.95, verbose=False,
         output.write(coeff+' '+ocore_up+' '+oup+' '+ocore_dn+' '+odown+'\n')
     return coeffs, [occups,occdns]
 
-
-def read_qmcpack_wfn(filename, nskip=9):
-    with open(filename) as f:
-        content = f.readlines()[nskip:]
-    useable = numpy.array([c.split() for c in content]).flatten()
-    tuples = [ast.literal_eval(u) for u in useable]
-    orbs = [complex(t[0], t[1]) for t in tuples]
-    return numpy.array(orbs)
 
 def write_phmsd_wfn(filename, occs, nmo, ncore=0):
     output = open(filename, 'w')

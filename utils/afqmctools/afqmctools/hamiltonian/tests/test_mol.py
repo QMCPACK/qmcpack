@@ -2,7 +2,10 @@ import numpy
 import os
 import unittest
 from pyscf import gto, ao2mo, scf, mcscf
-from afqmctools.hamiltonian import mol
+from afqmctools.hamiltonian.converter import read_qmcpack_sparse
+import afqmctools.hamiltonian.mol as mol
+from afqmctools.utils.linalg import modified_cholesky_direct
+from afqmctools.utils.testing import generate_hamiltonian
 
 class TestMol(unittest.TestCase):
 
@@ -11,7 +14,7 @@ class TestMol(unittest.TestCase):
         eri = atom.intor('int2e', aosym='s1')
         self.assertEqual(eri.shape,(5,5,5,5))
         eri = eri.reshape(25,25)
-        chol = mol.modified_cholesky_direct(eri, 1e-5, cmax=20)
+        chol = modified_cholesky_direct(eri, 1e-5, cmax=20)
         Mrecon = numpy.dot(chol.T, chol)
         self.assertTrue(numpy.allclose(Mrecon, eri, atol=1e-8, rtol=1e-6))
 
@@ -36,6 +39,14 @@ class TestMol(unittest.TestCase):
         chol = mol.chunked_cholesky(atom, max_error=1e-5)
         mol.ao2mo_chol(chol, mf.mo_coeff)
         self.assertAlmostEqual(numpy.linalg.norm(chol), 3.52947146946)
+
+    def test_ao2mo_chol_rect(self):
+        numpy.random.seed(7)
+        h1e, chol, enuc, eri = generate_hamiltonian(17, 4)
+        X = numpy.random.random((17,15))
+        nchol = chol.shape[0]
+        chol_ = mol.ao2mo_chol(chol, X)
+        self.assertEqual(chol_.shape, (nchol, 15*15))
 
     def test_frozen_core(self):
         atom = gto.M(atom='Ne 0 0 0', basis='sto-3g', verbose=0)
@@ -73,9 +84,9 @@ class TestMol(unittest.TestCase):
         C = mf.mo_coeff
         scf_data = {'mo_coeff': C, 'mol': atom, 'hcore': mf.get_hcore(),
                     'isUHF': False}
-        h1e, chol, nelec, enuc = mol.generate_hamiltonian(scf_data)
+        h1e, chol, nelec, enuc, X = mol.generate_hamiltonian(scf_data)
         mol.write_hamil_mol(scf_data, 'ham.h5', 1e-5, verbose=False)
-        h1e_f, chol_f, enuc_f, nmo, ne = mol.from_qmcpack_cholesky('ham.h5')
+        h1e_f, chol_f, enuc_f, nmo, ne = read_qmcpack_sparse('ham.h5')
         self.assertTrue(numpy.allclose(h1e_f, h1e, atol=1e-12, rtol=1e-8))
         chol_f = chol_f.toarray().real.T
         self.assertTrue(numpy.allclose(chol_f, chol, atol=1e-12, rtol=1e-8))

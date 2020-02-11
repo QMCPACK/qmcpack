@@ -41,7 +41,7 @@ protected:
 public:
   MPC_CUDA(ParticleSet& ref, double cutoff);
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 };

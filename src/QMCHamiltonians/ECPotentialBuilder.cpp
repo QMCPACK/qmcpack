@@ -17,6 +17,7 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/L2Potential.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OneDimNumGridFunctor.h"
@@ -63,19 +64,21 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 #ifdef ENABLE_OFFLOAD
   NLPP_algo = "batched"; // set "batched" as the default
 #endif
+  std::string use_DLA("no");
   std::string pbc("yes");
   std::string forces("no");
+
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat, "format");
   pAttrib.add(NLPP_algo, "algorithm");
+  pAttrib.add(use_DLA, "DLA");
   pAttrib.add(pbc, "pbc");
   pAttrib.add(forces, "forces");
   pAttrib.put(cur);
+
   bool doForces = (forces == "yes") || (forces == "true");
-  //const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"format");
-  //if(t != NULL) {
-  //  ecpFormat= (const char*)t;
-  //}
+  if (use_DLA == "yes")
+    app_log() << "    Using determinant localization approximation (DLA)" << std::endl;
   if (ecpFormat == "xml")
   {
     useXmlFormat(cur);
@@ -126,7 +129,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     NonLocalECPotential_CUDA* apot = new NonLocalECPotential_CUDA(IonConfig, targetPtcl, targetPsi, usePBC, doForces);
 #else
     NonLocalECPotential* apot =
-        new NonLocalECPotential(IonConfig, targetPtcl, targetPsi, doForces);
+        new NonLocalECPotential(IonConfig, targetPtcl, targetPsi, doForces, use_DLA == "yes");
 #endif
     int nknot_max = 0;
     for (int i = 0; i < nonLocalPot.size(); i++)

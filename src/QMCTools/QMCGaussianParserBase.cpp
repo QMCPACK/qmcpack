@@ -25,9 +25,10 @@
 #include "io/hdf_archive.h"
 #include <set>
 #include <map>
-#include "QMCApp/InitMolecularSystem.h"
+#include "Particle/InitMolecularSystem.h"
 #include <sstream>
 #include <bitset>
+#include <iomanip>
 
 
 //std::vector<std::string> QMCGaussianParserBase::IonName;
@@ -37,83 +38,83 @@ std::vector<std::string> QMCGaussianParserBase::gShellType;
 std::vector<int> QMCGaussianParserBase::gShellID;
 
 QMCGaussianParserBase::QMCGaussianParserBase()
-    : Title("sample"),
-      basisType("Gaussian"),
-      basisName("generic"),
-      DoCusp(false),
-      debug(false),
-      multidetH5(false),
-      production(false),
-      Normalized("no"),
-      gridPtr(0),
-      multideterminant(false),
-      ci_threshold(1e-20),
-      optDetCoeffs(false),
-      WFS_name("wfj"),
+    : multideterminant(false),
       AllH5(false),
-      NbKpts(0),
-      usingCSF(false),
-      readNO(0),
-      readGuess(0),
-      zeroCI(false),
-      target_state(0),
-      Structure(false),
       PBC(false),
-      CodeName(""),
-      multih5file(""),
+      production(false),
+      zeroCI(false),
       orderByExcitation(false),
       addJastrow(true),
       addJastrow3Body(false),
-      QP(false),
       ECP(false),
+      debug(false),
+      Structure(false),
+      multidetH5(false),
+      target_state(0),
+      readNO(0),
+      readGuess(0),
+      DoCusp(false),
+      QP(false),
+      NbKpts(0),
+      Title("sample"),
+      basisType("Gaussian"),
+      basisName("generic"),
+      Normalized("no"),
+      multih5file(""),
+      WFS_name("wfj"),
+      CodeName(""),
+      gridPtr(0),
       X(0),
       Y(0),
-      Z(0)
+      Z(0),
+      ci_threshold(1e-20),
+      optDetCoeffs(false),
+      usingCSF(false)
 {}
 
 QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
-    : BohrUnit(true),
+    : multideterminant(false),
+      AllH5(false),
+      BohrUnit(true),
       SpinRestricted(false),
+      PBC(false),
+      production(false),
+      zeroCI(false),
+      orderByExcitation(false),
+      addJastrow(true),
+      addJastrow3Body(false),
+      ECP(false),
+      debug(false),
+      Structure(false),
+      multidetH5(false),
       NumberOfAtoms(0),
       NumberOfEls(0),
-      DoCusp(false),
-      debug(false),
-      multidetH5(false),
+      target_state(0),
       SpinMultiplicity(0),
       NumberOfAlpha(0),
       NumberOfBeta(0),
       SizeOfBasisSet(0),
-      WFS_name("wfj"),
-      PBC(false),
-      multih5file(""),
+      numMO(0),
+      readNO(0),
+      readGuess(0),
+      numMO2print(-1),
+      DoCusp(false),
+      QP(false),
+      NbKpts(0),
       Title("sample"),
       basisType("Gaussian"),
       basisName("generic"),
-      numMO(0),
-      numMO2print(-1),
-      production(false),
       Normalized("no"),
-      gridPtr(0),
-      multideterminant(false),
-      ci_threshold(1e-20),
-      optDetCoeffs(false),
-      target_state(0),
-      AllH5(false),
       angular_type("spherical"),
-      usingCSF(false),
-      readNO(0),
-      readGuess(0),
-      zeroCI(false),
-      Structure(false),
-      NbKpts(0),
-      orderByExcitation(false),
-      addJastrow(true),
-      addJastrow3Body(false),
-      QP(false),
-      ECP(false),
+      multih5file(""),
+      WFS_name("wfj"),
+      gridPtr(0),
       X(0),
       Y(0),
-      Z(0)
+      Z(0),
+      ci_threshold(1e-20),
+      optDetCoeffs(false),
+      usingCSF(false)
 {
   IonChargeIndex     = IonSystem.getSpeciesSet().addAttribute("charge");
   ValenceChargeIndex = IonSystem.getSpeciesSet().addAttribute("valence");
@@ -121,9 +122,9 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
   std::cout << "Index of ion charge " << IonChargeIndex << std::endl;
   std::cout << "Index of valence charge " << ValenceChargeIndex << std::endl;
   Image.resize(3);
-  Image[0] = 5;
-  Image[1] = 5;
-  Image[2] = 5;
+  Image[0] = 8;
+  Image[1] = 8;
+  Image[2] = 8;
   createGridNode(argc, argv);
 }
 
@@ -1779,7 +1780,7 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::strin
       xmlNewProp(detPtr, (const xmlChar*)"transform", (const xmlChar*)"yes");
 
       std::stringstream ss;
-      ss << STwist_Coord[0] << "  " <<  STwist_Coord[1] << "  " <<  STwist_Coord[2];
+      ss << std::setprecision(10)<<STwist_Coord[0] << "  " <<std::setprecision(10)<<  STwist_Coord[1] << "  " <<std::setprecision(10)<<  STwist_Coord[2];
       xmlNewProp(detPtr, (const xmlChar*)"twist", (const xmlChar*)(ss.str()).c_str());
 
       if (DoCusp == true)

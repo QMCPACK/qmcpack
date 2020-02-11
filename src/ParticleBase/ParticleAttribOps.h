@@ -49,6 +49,15 @@ struct OTCDot
       res += lhs[d].real() * rhs[d].real() - lhs[d].imag() * rhs[d].imag();
     return res;
   }
+
+  inline static std::complex<Type_t>
+  cplx_apply(const TinyVector<std::complex<T1>,D>& lhs, const TinyVector<std::complex<T2>,D>& rhs)
+  {
+    std::complex<Type_t> res = lhs[0] * rhs[0];
+    for (unsigned d=1; d<D; ++d)
+      res += lhs[d]*rhs[d];
+    return res;
+  }
 };
 
 // Use complex conjugate of the second argument
@@ -73,6 +82,12 @@ struct OTCDot<T1, T2, 3>
   {
     return lhs[0].real() * rhs[0].real() - lhs[0].imag() * rhs[0].imag() + lhs[1].real() * rhs[1].real() -
         lhs[1].imag() * rhs[1].imag() + lhs[2].real() * rhs[2].real() - lhs[2].imag() * rhs[2].imag();
+  }
+
+  inline static std::complex<Type_t> 
+  cplx_apply(const TinyVector<std::complex<T1>,3>& lhs, const TinyVector<std::complex<T2>,3>& rhs)
+  {
+    return lhs[0]*rhs[0] + lhs[1]*rhs[1] + lhs[2]*rhs[2];
   }
 };
 
@@ -100,6 +115,18 @@ inline T Dot(const ParticleAttrib<TinyVector<std::complex<T>, D>>& pa,
   return sum;
 }
 
+template<typename T, unsigned D>
+inline std::complex<T> CplxDot(const ParticleAttrib<TinyVector<std::complex<T>, D> >& pa,
+                               const ParticleAttrib<TinyVector<std::complex<T>, D> >& pb)
+{
+  std::complex<T> sum(0.0, 0.0);
+  for(int i=0; i<pa.size(); i++)
+  {
+    sum += OTCDot<T,T,D>::cplx_apply(pa[i],pb[i]);
+  }
+  return sum;
+}
+
 // Use complex conjugate of the second argument
 template<unsigned D>
 inline double Dot_CC(const ParticleAttrib<TinyVector<std::complex<double>, D>>& pa,
@@ -120,6 +147,17 @@ inline T Sum(const ParticleAttrib<std::complex<T>>& pa)
   for (int i = 0; i < pa.size(); i++)
   {
     sum += pa[i].real();
+  }
+  return sum;
+}
+
+template<typename T>
+inline std::complex<T> CplxSum(const ParticleAttrib<std::complex<T> >& pa)
+{
+  std::complex<T> sum(0.0, 0.0);
+  for (int i=0; i<pa.size(); i++)
+  {
+    sum += pa[i];
   }
   return sum;
 }

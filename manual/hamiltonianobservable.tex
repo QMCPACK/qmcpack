@@ -154,7 +154,7 @@ When periodic boundary conditions are selected, Ewald summation is used automati
 \begin{align}\label{eq:ewald}
   V_c^{pbc} = \sum_{i<j}\frac{q_iq_j}{\abs{r_i-r_j}} + \frac{1}{2}\sum_{L\ne0}\sum_{i,j}\frac{q_iq_j}{\abs{r_i-r_j+L}}\:.
 \end{align}
-The sum indexed by $L$ is over all nonzero simulation cell lattice vectors.  In practice, the Ewald sum is broken into short- and long-range parts in a manner optimized for efficiency (see Ref. \cite{Natoli1995}) for details. 
+The sum indexed by $L$ is over all nonzero simulation cell lattice vectors.  In practice, the Ewald sum is broken into short- and long-range parts in a manner optimized for efficiency (see Ref.~\cite{Natoli1995}) for details. 
 
 For information on how to set the boundary conditions, consult Section~\ref{chap:simulationcell}.
 
@@ -207,15 +207,15 @@ Additional information
 
 \subsection{Pseudopotentials}
 \label{sec:nlpp}
-\qmcpack supports pseudopotentials in semilocal form, which is local in the radial coordinate and nonlocal in angular coordinates.  When all angular momentum channels above a certain threshold ($\ell_{max}$) are well approximated by the same potential ($V_{\bar{\ell}}\equiv V_{loc}$), the pseudpotential separates into a fully local channel and an angularly nonlocal component:
+\qmcpack supports pseudopotentials in semilocal form, which is local in the radial coordinate and nonlocal in angular coordinates.  When all angular momentum channels above a certain threshold ($\ell_{max}$) are well approximated by the same potential ($V_{\bar{\ell}}\equiv V_{loc}$), the pseudopotential separates into a fully local channel and an angularly nonlocal component:
 \begin{align}
   V^{PP} = \sum_{ij}\Big(V_{\bar{\ell}}(\abs{r_i-\tilde{r}_j}) + \sum_{\ell\ne\bar{\ell}}^{\ell_{max}}\sum_{m=-\ell}^\ell \operator{Y_{\ell m}}{\big[V_\ell(\abs{r_i-\tilde{r}_j}) - V_{\bar{\ell}}(\abs{r_i-\tilde{r}_j}) \big]}{Y_{\ell m}} \Big)\:.
 \end{align}  
 Here the electron/ion index is $i/j$, and only one type of ion is shown for simplicity.
 
-Evaluation of the localized pseudopotential energy $\Psi_T^{-1}V^{PP}\Psi_T$ requires additional angular integrals.  These integrals are evaluated on a randomly shifted angular grid.  The size of this grid is determined by $\ell_{max}$.  See Ref. \cite{Mitas1991} for further detail. 
+Evaluation of the localized pseudopotential energy $\Psi_T^{-1}V^{PP}\Psi_T$ requires additional angular integrals.  These integrals are evaluated on a randomly shifted angular grid.  The size of this grid is determined by $\ell_{max}$.  See Ref.~\cite{Mitas1991} for further detail. 
 
-\qmcpack uses the FSAtom pseudopotential file format associated with the ``Free Software Project for Atomic-scale Simulations'' initiated in 2002  (see \url{http://www.tddft.org/fsatom/manifest.php} for general information).  The FSAtom format uses XML for structured data.  Files in this format do not use a specific identifying file extension; instead they are simply suffixed with ``\texttt{.xml}.''  The tabular data format of CASINO is also supported.
+\qmcpack uses the FSAtom pseudopotential file format associated with the ``Free Software Project for Atomic-scale Simulations'' initiated in 2002. See \url{http://www.tddft.org/fsatom/manifest.php} for more information.  The FSAtom format uses XML for structured data.  Files in this format do not use a specific identifying file extension; instead they are simply suffixed with ``\texttt{.xml}.''  The tabular data format of CASINO is also supported.
 
 
 % FSAtom format links
@@ -260,6 +260,7 @@ Evaluation of the localized pseudopotential energy $\Psi_T^{-1}V^{PP}\Psi_T$ req
    &\texttt{wavefunction}$^r$ &  text          & \texttt{wavefunction.name}& invalid    & Identify wavefunction \\
    &   \texttt{format}$^r$    &  text          & xml/table        & table               & Select file format   \\
    & \texttt{algorithm}$^o$   &  text          & batched/default  & default             & Choose NLPP algorithm \\
+   & \texttt{DLA}$^o$   &  text          & yes/no  & no             & Use determinant localization approximation \\
   \hline
 \end{tabularx}
 \end{center}
@@ -272,7 +273,8 @@ Additional information:
   \item{\textbf{name:} Ignored.  Instead, default names will be present in \texttt{*scalar.dat} output files when pseudopotentials are used.  The field \texttt{LocalECP} refers to the local part of the pseudopotential.  If nonlocal channels are present, a \texttt{NonLocalECP} field will be added that contains the nonlocal energy summed over all angular momentum channels.}
   \item{\textbf{pbc:} Ewald summation will not be performed if \texttt{simulationcell.bconds== n n n}, regardless of the value of \texttt{pbc}.  Similarly, the \texttt{pbc} attribute can only be used to turn off Ewald summation if \texttt{simulationcell.bconds!= n n n}.}
   \item{\textbf{format:}  If \texttt{format}==table, QMCPACK looks for \texttt{*.psf} files containing pseudopotential data in a tabular format.  The files must be named after the ionic species provided in \texttt{particleset} (e.g., \texttt{Li.psf} and \texttt{H.psf}). If \texttt{format}==xml, additional \texttt{pseudo} child XML elements must be provided (see the following).  These elements specify individual file names and formats (both the FSAtom XML and CASINO tabular data formats are supported). }
-  \item{\textbf{algorithm} The default algorithm evaluates the ratios of wavefunction components together for each qudarature point and then one point after another. The batched algorithm evaluates the ratios of qudarature points together for each wavefunction component and then one component after another. Internally, it uses \texttt{VirtualParticleSet} for quadrature points. Hybrid orbital representation has an extra optimization enabled when using the batched algorithm.}
+  \item{\textbf{algorithm} The default algorithm evaluates the ratios of wavefunction components together for each quadrature point and then one point after another. The batched algorithm evaluates the ratios of quadrature points together for each wavefunction component and then one component after another. Internally, it uses \texttt{VirtualParticleSet} for quadrature points. Hybrid orbital representation has an extra optimization enabled when using the batched algorithm.}
+  \item{\textbf{DLA} Determinant localization approximation (DLA)~\cite{Zen2019DLA} uses only the fermionic part of the wavefunction when calculating NLPP.}
 \end{itemize}
 
 
@@ -350,7 +352,7 @@ Details of \texttt{<pseudo/>} input elements are shown in the following.  It is 
 
 \subsection{MPC Interaction/correction}
 
-The MPC interaction is an alternative to direct Ewald summation.  The MPC corrects the exchange correlation hole to more closely match its thermodynamic limit.  Because of this, the MPC exhibits smaller finite-size errors than the bare Ewald interaction, though a few alternative and competitive finite-size correction schemes now exist.  The MPC is itself often used just as a finite-size correction in postprocessing (set \texttt{physical=false} in the input).  
+The MPC interaction is an alternative to direct Ewald summation.  The MPC corrects the exchange correlation hole to more closely match its thermodynamic limit.  Because of this, the MPC exhibits smaller finite-size errors than the bare Ewald interaction, though a few alternative and competitive finite-size correction schemes now exist.  The MPC is itself often used just as a finite-size correction in post-processing (set \texttt{physical=false} in the input).  
 
 
 % mpc element
@@ -479,7 +481,7 @@ When an \texttt{<estimator/>} element appears in \texttt{<hamiltonian/>}, it is 
 
 \subsection{Chiesa-Ceperley-Martin-Holzmann kinetic energy correction}
 
-This estimator calculates a finite-size correction to the kinetic energy following the formalism laid out in Ref. \cite{Chiesa2006}.  The total energy can be corrected for finite-size effects by using this estimator in conjunction with the MPC correction.
+This estimator calculates a finite-size correction to the kinetic energy following the formalism laid out in Ref.~\cite{Chiesa2006}.  The total energy can be corrected for finite-size effects by using this estimator in conjunction with the MPC correction.
 
 \FloatBarrier
 \begin{table}[h]
@@ -844,7 +846,7 @@ with each component given by
               + \sum_{i\ell}\frac{\delta(r-r_i)+\delta(r-\tilde{r}_\ell)}{2}\hat{v}^{eI}(r_i,\tilde{r}_\ell) \nonumber\\ 
     &\qquad   + \sum_{\ell< m}\frac{\delta(r-\tilde{r}_\ell)+\delta(r-\tilde{r}_m)}{2}\hat{v}^{II}(\tilde{r}_\ell,\tilde{r}_m)\:.\nonumber
 \end{align}
-Here, $r_i$ and $\tilde{r}_\ell$ represent electron and ion positions, respectively; $\hat{p}_i$ is a single electron momentum operator; and $\hat{v}^{ee}(r_i,r_j)$, $\hat{v}^{eI}(r_i,\tilde{r}_\ell)$, and $\hat{v}^{II}(\tilde{r}_\ell,\tilde{r}_m)$ are the electron-electron, electron-ion, and ion-ion pair potential operators (including nonlocal pseudopotentials, if present).  This form of the energy density is size consistent; that is, the partially integrated energy density operators of well-separated atoms gives the isolated Hamiltonians of the respective atoms.  For periodic systems with twist-averaged boundary conditions, the energy density is formally correct only for either a set of supercell k-points that correspond to real-valued wavefunctions or a k-point set that has inversion symmetry around a k-point having a real-valued wavefunction.  For more information about the energy density, see Ref. \cite{Krogel2013}.
+Here, $r_i$ and $\tilde{r}_\ell$ represent electron and ion positions, respectively; $\hat{p}_i$ is a single electron momentum operator; and $\hat{v}^{ee}(r_i,r_j)$, $\hat{v}^{eI}(r_i,\tilde{r}_\ell)$, and $\hat{v}^{II}(\tilde{r}_\ell,\tilde{r}_m)$ are the electron-electron, electron-ion, and ion-ion pair potential operators (including nonlocal pseudopotentials, if present).  This form of the energy density is size consistent; that is, the partially integrated energy density operators of well-separated atoms gives the isolated Hamiltonians of the respective atoms.  For periodic systems with twist-averaged boundary conditions, the energy density is formally correct only for either a set of supercell k-points that correspond to real-valued wavefunctions or a k-point set that has inversion symmetry around a k-point having a real-valued wavefunction.  For more information about the energy density, see Ref.~\cite{Krogel2013}.
 
 In \qmcpack, the energy density can be accumulated on piecewise uniform 3D grids in generalized Cartesian, cylindrical, or spherical coordinates.  The energy density integrated within Voronoi volumes centered on ion positions is also available.  The total particle number density is also accumulated on the same grids by the energy density estimator for convenience so that related quantities, such as the regional energy per particle, can be computed easily.
 
@@ -1090,11 +1092,11 @@ A more efficient and compact representation of the 1RDM is obtained by expanding
            &= \int dR \Psi_{FN}^*(R)\Psi_{T}(R) \sum_n\int dr'_n \frac{\Psi_T(r_n',R_n)}{\Psi_T(r_n,R_n)}\phi_i(r_n')^* \phi_j(r_n)\:.
 \end{align} 
 
-The integration over $r'$ in Eq. \ref{eq:dm1b_direct} is inefficient when one is also interested in obtaining matrices involving energetic quantities, such as the energy density matrix of Ref. \cite{Krogel2014} or the related (and more well known) generalized Fock matrix.  For this reason, an approximation is introduced as follows:
+The integration over $r'$ in Eq.~\ref{eq:dm1b_direct} is inefficient when one is also interested in obtaining matrices involving energetic quantities, such as the energy density matrix of Ref.~\cite{Krogel2014} or the related (and more well known) generalized Fock matrix.  For this reason, an approximation is introduced as follows:
 \begin{align}
     n_1(i,j) \approx \int dR \Psi_{FN}(R)^*\Psi_T(R)  \sum_n \int dr_n' \frac{\Psi_T(r_n',R_n)^*}{\Psi_T(r_n,R_n)^*}\phi_i(r_n)^* \phi_j(r_n')\:. 
 \end{align}
-For VMC, FN-DMC, FP-DMC, and RN-DMC this formula represents an exact sampling of the 1RDM corresponding to $\hat{\rho}_N^\dagger$ (see appendix A of Ref. \cite{Krogel2014} for more detail).
+For VMC, FN-DMC, FP-DMC, and RN-DMC this formula represents an exact sampling of the 1RDM corresponding to $\hat{\rho}_N^\dagger$ (see appendix A of Ref.~\cite{Krogel2014} for more detail).
 
 
 
@@ -1158,7 +1160,7 @@ Additional information:
   \item{\texttt{rstats:} Print statistical information about the spatial motion of the sampled points to the log for each step.}
   \item{\texttt{normalized:} Declare whether the inputted orbitals are normalized or not.  If \texttt{normalized=no}, direct Riemann integration over a $200 \times 200 \times 200$ grid will be used to compute the normalizations before use.}
   \item{\texttt{volume\_normed:} Declare whether the inputted orbitals are normalized to the cell volume (default) or not (a norm of 1.0 is assumed in this case).  Currently, B-spline orbitals coming from QE and HEG planewave orbitals native to QMCPACK are known to be volume normalized.}
-  \item{\texttt{energy\_matrix:} Accumulate the one body reduced energy density matrix, and write it to \texttt{stat.h5}.  This matrix is not covered in any detail here; the interested reader is referred to Ref. \cite{Krogel2014}.}
+  \item{\texttt{energy\_matrix:} Accumulate the one body reduced energy density matrix, and write it to \texttt{stat.h5}.  This matrix is not covered in any detail here; the interested reader is referred to Ref.~\cite{Krogel2014}.}
 \end{itemize}
 
 
@@ -1383,6 +1385,7 @@ Here, $m$ is the weighting exponent, $f_z(r)$ is the unfiltered radial force den
 \multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
    & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
    &   \texttt{mode}$^o$      &  text              & \textit{See above}        & bare          & Select estimator type\\
+   &   \texttt{lrmethod}$^o$  &  text              & ewald or srcoul           & ewald         & Select long-range potential breakup method\\
    &   \texttt{type}$^r$      &  text              &  Force            &               & Must be ``Force"         \\
    &   \texttt{name}$^o$      &  text              & \textit{anything}         & ForceBase     & Unique name for this estimator\\
 %   &   \texttt{psi}$^o$       &  text              & \texttt{wavefunction.name}& psi0          & Identify wavefunction\\
@@ -1402,12 +1405,17 @@ Here, $m$ is the weighting exponent, $f_z(r)$ is the unfiltered radial force den
 Additional information:
 \begin{itemize}
   \item{\textbf{Naming Convention}:  The unique identifier \texttt{name} is appended with \texttt{name\_X\_Y} in the \texttt{scalar.dat} file, where \texttt{X} is the ion ID number and \texttt{Y} is the component ID (an integer with x=0, y=1, z=2).  All force components for all ions are computed and dumped to the \texttt{scalar.dat} file.}
+  \item{\textbf{Long-range breakup}: With periodic boundary conditions, it is important to converge the lattice sum when calculating Coulomb contribution to the forces. As a quick test, increase the \texttt{LR\_dim\_cutoff} parameter until ion-ion forces are converged. The Ewald method (\texttt{lrmethod}="ewald") converges more slowly than optimized method (\texttt{lrmethod}="srcoul").}
   \item{\textbf{Miscellaneous}: Usually, the default choice of \texttt{weightexp} is sufficient.  Different combinations of \texttt{rcut} and  \texttt{nbasis} should be tested though to minimize variance and bias.  There is, of course, a tradeoff, with larger \texttt{nbasis} and smaller \texttt{rcut} leading to smaller biases and larger variances.  }
 \end{itemize}
 
 The following is an example use case.  
 \begin{lstlisting}[style=QMCPXML]
-<estimator name="myforce" type="Force" mode="cep" addionion="yes">
+<simulationcell>
+  ...
+  <parameter name="LR\_dim\_cutoff">  20  </parameter>
+</simulationcell>
+<estimator name="myforce" type="Force" mode="cep" addionion="yes" lrmethod="srcoul">
     <parameter name="rcut">0.1</parameter>
     <parameter name="nbasis">4</parameter>
     <parameter name="weightexp">2</parameter>

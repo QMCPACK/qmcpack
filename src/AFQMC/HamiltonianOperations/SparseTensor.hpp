@@ -23,6 +23,7 @@
 #include "AFQMC/config.h"
 #include "mpi3/shared_communicator.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
+#include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 
 #include "AFQMC/Utilities/type_conversion.hpp"
@@ -72,6 +73,9 @@ class SparseTensor
   using communicator = boost::mpi3::shared_communicator;
 
   public:
+
+    static const HamiltonianTypes HamOpType = Factorized;
+    HamiltonianTypes getHamType() const { return HamOpType; }
 
     SparseTensor(communicator& c_, 
                  WALKER_TYPES type,
@@ -414,6 +418,14 @@ class SparseTensor
 
     bool fast_ph_energy() const { return false; }
 
+    boost::multi::array<ComplexType,2> getHSPotentials()
+    {
+      int nchol = global_number_of_cholesky_vectors();
+      boost::multi::array<ComplexType,2> HSPot({nchol,nchol});
+      ma::Matrix2MA('T',Spvn,HSPot);
+      return HSPot;
+    }
+
   private:
 
     communicator* comm;
@@ -421,8 +433,6 @@ class SparseTensor
     WALKER_TYPES walker_type;
 
     int global_nCV;
-
-    bool separateEJ;
 
     ValueType E0;
 
@@ -457,6 +467,8 @@ class SparseTensor
     SpVector Gcloc;
 
     shmSpVector SM_TMats;    
+
+    bool separateEJ;
 
     void set_buffer(size_t N) {
       if(SM_TMats.num_elements() < N) {

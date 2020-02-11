@@ -92,4 +92,66 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
   REQUIRE(electrons.R[1][2] == Approx(-0.0128914));
   REQUIRE(electrons.getName() == "e");
 }
+TEST_CASE("read_dynamic_spin_eset_xml", "[particle_io][xml]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+
+  const char* particles = "<tmp> \
+<particleset name=\"e\"> \
+  <group name=\"e\" size=\"3\"> \
+    <parameter name=\"charge\">-1</parameter> \
+    <attrib name=\"position\" datatype=\"posArray\"> \
+      -0.28   0.0225     -2.709 \
+      -1.28   1.0225     -1.709 \
+      -2.28   2.0225     -0.709 \
+    </attrib> \
+    <attrib name=\"spins\" datatype=\"scalarArray\"> \
+      1.0 \
+      0.2 \
+      3.0 \
+    </attrib> \
+  </group> \
+</particleset> \
+</tmp> \
+";
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(particles);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  xmlNodePtr part1 = xmlFirstElementChild(root);
+
+  Tensor<int, 3> tmat; // assuming OHMMSDIM==3
+  tmat(0, 0) = 1;
+  tmat(1, 1) = 1;
+  tmat(2, 2) = 1;
+
+  ParticleSet electrons;
+
+  XMLParticleParser parse_electrons(electrons, tmat);
+  parse_electrons.put(part1);
+
+  REQUIRE(electrons.groups() == 1);
+
+  REQUIRE(electrons.R.size() == 3);
+
+  REQUIRE(electrons.R[0][0] == Approx(-0.28));
+  REQUIRE(electrons.R[0][1] == Approx(0.0225));
+  REQUIRE(electrons.R[0][2] == Approx(-2.709));
+
+  REQUIRE(electrons.R[1][0] == Approx(-1.28));
+  REQUIRE(electrons.R[1][1] == Approx(1.0225));
+  REQUIRE(electrons.R[1][2] == Approx(-1.709));
+
+  REQUIRE(electrons.R[2][0] == Approx(-2.28));
+  REQUIRE(electrons.R[2][1] == Approx(2.0225));
+  REQUIRE(electrons.R[2][2] == Approx(-0.709));
+
+  REQUIRE(electrons.spins[0] == Approx(1.0));
+  REQUIRE(electrons.spins[1] == Approx(0.2));
+  REQUIRE(electrons.spins[2] == Approx(3.0));
+
+  REQUIRE(electrons.getName() == "e");
+}
 } // namespace qmcplusplus

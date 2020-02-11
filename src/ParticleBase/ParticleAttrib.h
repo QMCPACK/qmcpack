@@ -20,9 +20,15 @@
 
 #include <OhmmsPETE/OhmmsVector.h>
 #include "Utilities/OhmmsObject.h"
+#include "Lattice/CrystalLattice.h"
 
 namespace qmcplusplus
 {
+
+/** Attaches a unit to a Vector for IO
+ *
+ *  Makes Vect
+ */
 template<class T, typename Alloc = std::allocator<T>>
 class ParticleAttrib : public Vector<T, Alloc>, public OhmmsObject
 {
@@ -30,13 +36,13 @@ class ParticleAttrib : public Vector<T, Alloc>, public OhmmsObject
 
 public:
   /// The unit type
-  int InUnit;
+  PosUnit InUnit;
 
   /** constructor with size n*/
-  explicit inline ParticleAttrib(size_t n = 0) : __my_base(n), InUnit(0) {}
+  explicit inline ParticleAttrib(size_t n = 0) : __my_base(n), InUnit(PosUnit::Cartesian) {}
 
   /** constructor with an initialized ref */
-  explicit inline ParticleAttrib(T* ref, size_t n) : __my_base(ref, n), InUnit(0) {}
+  explicit inline ParticleAttrib(T* ref, size_t n) : __my_base(ref, n), InUnit(PosUnit::Cartesian) {}
 
   ParticleAttrib(const ParticleAttrib& rhs) = default;
   inline ParticleAttrib& operator=(const ParticleAttrib& rhs) = default;
@@ -50,8 +56,8 @@ public:
   }
 
   //@{set/set the unit
-  inline void setUnit(int i) { InUnit = i; }
-  inline int getUnit() const { return InUnit; }
+  inline void setUnit(PosUnit i) { InUnit = i; }
+  inline PosUnit getUnit() const { return InUnit; }
   //@}
 
   OhmmsObject* makeClone() const { return new ParticleAttrib<T, Alloc>(*this); }

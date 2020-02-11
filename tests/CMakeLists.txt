@@ -40,6 +40,25 @@ ELSE()
   SET(MP_SUCCESS TRUE)
 ENDIF()
 
+IF(BUILD_AFQMC)
+  IF(PYSCF_BIN)
+    MESSAGE("PYSCF path specified as: ${PYSCF_BIN}.")
+    SUBDIRS("afqmc/workflow")
+  ELSE()
+    MESSAGE("PYSCF_BIN is not set. AFQMC workflow tests will not be performed.")
+  ENDIF()
+ENDIF()
+
+IF(ENABLE_SOA AND NOT QMC_COMPLEX)
+  INCLUDE("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
+  SET(pyscf_python_reqs numpy;h5py;pyscf;PyscfToQmcpack;PyscfToQmcpack_Spline)
+  CHECK_PYTHON_REQS(pyscf_python_reqs pyscf_workflow add_tests)
+
+  IF(add_tests)
+    message("Adding tests for Pyscf workflow")
+    SUBDIRS("pyscf")
+  ENDIF()
+ENDIF()
 #
 #
 if(NOT ${QMCAPP_ERR} STREQUAL "")

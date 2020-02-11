@@ -20,6 +20,7 @@
     
     
 SET(WFBASE_SRCS
+  WaveFunctionPool.cpp
   WaveFunctionComponent.cpp
   DiffWaveFunctionComponent.cpp
   WaveFunctionComponentBuilder.cpp
@@ -28,7 +29,6 @@ SET(WFBASE_SRCS
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
   SPOSet.cpp
-  OptimizableSPOSet.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
   HarmonicOscillator/SHOSetBuilder.cpp
@@ -38,11 +38,16 @@ SET(WFBASE_SRCS
 
 IF(NOT QMC_COMPLEX)
   SET(WFBASE_SRCS ${WFBASE_SRCS}
+    RotatedSPOs.cpp
     FDLRWfn.cpp
     )
 ENDIF(NOT QMC_COMPLEX)
 
-
+IF(QMC_COMPLEX)
+  SET(WFBASE_SRCS ${WFBASE_SRCS}
+    SpinorSet.cpp
+  )
+ENDIF(QMC_COMPLEX)
 ########################
 # build jastrows
 ########################
@@ -51,12 +56,11 @@ SET(JASTROW_SRCS
   Jastrow/JastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
   Jastrow/kSpaceJastrowBuilder.cpp
-  Jastrow/RPAJastrow.cpp
   Jastrow/RadialJastrowBuilder.cpp
   Jastrow/CountingJastrowBuilder.cpp
-  IonOrbital.cpp
-  IonOrbitalBuilder.cpp
-  OptimizableSPOBuilder.cpp
+  Jastrow/RPAJastrow.cpp
+  LatticeGaussianProduct.cpp
+  LatticeGaussianProductBuilder.cpp
   Fermion/SPOSetProxy.cpp
   Fermion/SPOSetProxyForMSD.cpp
   )
@@ -150,13 +154,23 @@ IF(OHMMS_DIM MATCHES 3)
       BandInfo.cpp
       BsplineFactory/BsplineReaderBase.cpp
       )
-
+    IF(QMC_COMPLEX)
+      SET(FERMION_SRCS ${FERMION_SRCS}
+        EinsplineSpinorSetBuilder.cpp
+        BsplineFactory/SplineC2C.cpp
+      )
+    ENDIF(QMC_COMPLEX)
     IF(NOT QMC_COMPLEX)
       SET(FERMION_SRCS ${FERMION_SRCS}
         BsplineFactory/createRealSingle.cpp
         BsplineFactory/createRealDouble.cpp
+        BsplineFactory/SplineC2R.cpp
+        BsplineFactory/SplineR2R.cpp
         )
-    ENDIF()
+      IF(ENABLE_OFFLOAD)
+        SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2ROMP.cpp)
+      ENDIF(ENABLE_OFFLOAD)
+    ENDIF(NOT QMC_COMPLEX)
 
   ENDIF(HAVE_EINSPLINE)
 
@@ -204,12 +218,6 @@ SET(FERMION_SRCS ${FERMION_SRCS}
 IF(ENABLE_CUDA)
   SET(FERMION_SRCS ${FERMION_SRCS} Fermion/delayed_update_helper.cu)
 ENDIF(ENABLE_CUDA)
-
-IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
-  SET(FERMION_SRCS ${FERMION_SRCS}
-    Fermion/SlaterDetOpt.cpp
-    )
-ENDIF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
 
 ####################################
 # create libqmcwfs

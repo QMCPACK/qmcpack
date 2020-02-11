@@ -16,6 +16,8 @@ SET (AFQMC_SRCS
   Hamiltonians/HSPotential_Helpers.cpp
   Hamiltonians/FactorizedSparseHamiltonian.cpp
   Hamiltonians/KPFactorizedHamiltonian.cpp
+  Hamiltonians/RealDenseHamiltonian.cpp
+  Hamiltonians/RealDenseHamiltonian_v2.cpp
 #  Hamiltonians/KPTHCHamiltonian.cpp
   Hamiltonians/HamiltonianFactory_Helper.cpp
   Hamiltonians/HamiltonianFactory.cpp
@@ -47,10 +49,13 @@ IF(ENABLE_CUDA)
     Numerics/detail/CUDA/Kernels/KaKjw_to_KKwaj.cu
     Numerics/detail/CUDA/Kernels/batched_dot_wabn_wban.cu
     Numerics/detail/CUDA/Kernels/batched_Tab_to_Klr.cu
+    Numerics/detail/CUDA/Kernels/dot_wabn.cu
+    Numerics/detail/CUDA/Kernels/Tab_to_Kl.cu
     Numerics/detail/CUDA/Kernels/sampleGaussianRNG.cu
     Numerics/detail/CUDA/Kernels/construct_X.cu
     Numerics/detail/CUDA/Kernels/reference_operations.cu
     Numerics/detail/CUDA/Kernels/term_by_term_matrix_vec.cu
+    Numerics/detail/CUDA/Kernels/axpyBatched.cu
 #    Numerics/detail/CUDA/Kernels/myAtomicAdd.cu
   )
 ENDIF(ENABLE_CUDA)

@@ -15,8 +15,11 @@
 
 #ifndef LIBXML2_DOCUMENT_H
 #define LIBXML2_DOCUMENT_H
-#include "OhmmsData/libxmldefs.h"
+
+#include <libxml/xpath.h>
 #include <string>
+#include "OhmmsData/libxmldefs.h"
+
 /** class to handle xmlXPathObject
  */
 struct OhmmsXPathObject

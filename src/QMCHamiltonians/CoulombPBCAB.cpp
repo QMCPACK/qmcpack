@@ -22,18 +22,18 @@
 namespace qmcplusplus
 {
 CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces)
-    : PtclA(ions),
+    : ForceBase(ions, elns),
+      PtclA(ions),
+      myTableIndex(elns.addTable(ions, DT_SOA_PREFERRED)),
       myConst(0.0),
       myGrid(nullptr),
       V0(nullptr),
       fV0(nullptr),
       dfV0(nullptr),
       ComputeForces(computeForces),
-      ForceBase(ions, elns),
       MaxGridPoints(10000),
-      Pion(ions),
       Peln(elns),
-      myTableIndex(elns.addTable(ions, DT_SOA_PREFERRED))
+      Pion(ions)
 {
   ReportEngine PRE("CoulombPBCAB", "CoulombPBCAB");
   set_energy_domain(potential);
@@ -47,7 +47,7 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
   app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
 }
 
-QMCHamiltonianBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   CoulombPBCAB* myclone    = new CoulombPBCAB(PtclA, qp, ComputeForces);
   myclone->FirstForceIndex = FirstForceIndex;
@@ -193,29 +193,49 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   RealType Vsr                = 0.0;
   RealType Vlr                = 0.0;
   mRealType& Vc               = myConst;
-  Array<RealType, 1>& Ve_samp = *Ve_sample;
-  Array<RealType, 1>& Vi_samp = *Vi_sample;
+  Array<RealType, 1>& Ve_samp = Ve_samp_tmp;
+  Array<RealType, 1>& Vi_samp = Vi_samp_tmp;
   Ve_samp                     = 0.0;
   Vi_samp                     = 0.0;
   {
     //SR
     const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
-    RealType pairpot;
     RealType z;
     //Loop over distinct eln-ion pairs
-    for (int iat = 0; iat < NptclA; iat++)
+    if (d_ab.DTType == DT_SOA)
     {
-      z                   = .5 * Zat[iat];
-      RadFunctorType* rVs = Vat[iat];
-      for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
+      for (size_t b = 0; b < NptclB; ++b)
       {
-        pairpot = z * Qat[jat] * d_ab.rinv(nn) * rVs->splint(d_ab.r(nn));
-        Vi_samp(iat) += pairpot;
-        Ve_samp(jat) += pairpot;
-        Vsr          += pairpot;
+        z                = 0.5 * Qat[b];
+        const auto& dist = d_ab.getDistRow(b);
+        for (size_t a = 0; a < NptclA; ++a)
+        {
+          Return_t pairpot = z * Zat[a] * Vat[a]->splint(dist[a]) / dist[a];
+          Vi_samp(a) += pairpot;
+          Ve_samp(b) += pairpot;
+          Vsr += pairpot;
+        }
       }
+      Vsr *= 2.0;
     }
-    Vsr *= 2.0;
+    else
+    {
+#ifndef ENABLE_SOA
+      for (int iat = 0; iat < NptclA; iat++)
+      {
+        z                   = .5 * Zat[iat];
+        RadFunctorType* rVs = Vat[iat];
+        for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
+        {
+          Return_t pairpot = z * Qat[jat] * d_ab.rinv(nn) * rVs->splint(d_ab.r(nn));
+          Vi_samp(iat) += pairpot;
+          Ve_samp(jat) += pairpot;
+          Vsr += pairpot;
+        }
+      }
+      Vsr *= 2.0;
+#endif
+    }
   }
   {
     //LR
@@ -243,7 +263,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
           v1 += Zspec[s] * q * AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[s], RhoKB.eikr[i]);
 #endif
         Ve_samp(i) += v1;
-        Vlr        += v1;
+        Vlr += v1;
       }
       for (int i = 0; i < PtclA.getTotalNum(); ++i)
       {
@@ -257,7 +277,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
           v1 += Qspec[s] * q * AB->evaluate(RhoKB.KLists.kshell, RhoKB.rhok[s], RhoKA.eikr[i]);
 #endif
         Vi_samp(i) += v1;
-        Vlr        += v1;
+        Vlr += v1;
       }
     }
   }
@@ -345,6 +365,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalConsts(bool report)
   int nelns = Peln.getTotalNum();
   int nions = Pion.getTotalNum();
 #if !defined(REMOVE_TRACEMANAGER)
+  Ve_samp_tmp.resize(nelns);
+  Vi_samp_tmp.resize(nions);
   Ve_const.resize(nelns);
   Vi_const.resize(nions);
   Ve_const = 0.0;
@@ -390,8 +412,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSR(ParticleSet& P)
   { //can be optimized but not important enough
     for (size_t b = 0; b < NptclB; ++b)
     {
-      const RealType* restrict dist = d_ab.Distances[b];
-      mRealType esum                = czero;
+      const auto& dist = d_ab.getDistRow(b);
+      mRealType esum   = czero;
       for (size_t a = 0; a < NptclA; ++a)
         esum += Zat[a] * Vat[a]->splint(dist[a]) / dist[a];
       res += esum * Qat[b];
@@ -399,6 +421,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSR(ParticleSet& P)
   }
   else
   {
+#ifndef ENABLE_SOA
     //Loop over distinct eln-ion pairs
     for (int iat = 0; iat < NptclA; iat++)
     {
@@ -413,6 +436,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSR(ParticleSet& P)
       //Accumulate pair sums...species charge for atom i.
       res += Zat[iat] * esum;
     }
+#endif
   }
   return res;
 }
@@ -512,12 +536,14 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSR_old(ParticleSet& P)
   {
     RealType esum       = 0.0;
     RadFunctorType* rVs = Vat[iat];
+#ifndef ENABLE_SOA
     for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
     {
       // if(d_ab.r(nn)>=(myRcut-0.1)) continue;
       esum += Qat[jat] * d_ab.rinv(nn) * rVs->splint(d_ab.r(nn));
       ;
     }
+#endif
     //Accumulate pair sums...species charge for atom i.
     res += Zat[iat] * esum;
   }
@@ -766,9 +792,9 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSRwithForces(ParticleSet& P)
   {
     for (size_t b = 0; b < NptclB; ++b)
     {
-      const RealType* restrict dist = d_ab.Distances[b];
-      const RowContainerType dr     = d_ab.Displacements[b];
-      mRealType esum                = czero;
+      const auto& dist = d_ab.getDistRow(b);
+      const auto& dr   = d_ab.getDisplRow(b);
+      mRealType esum   = czero;
       for (size_t a = 0; a < NptclA; ++a)
       {
         //Low hanging SIMD fruit here.  See J1/J2 grad computation.

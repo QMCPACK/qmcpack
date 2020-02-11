@@ -31,7 +31,7 @@ namespace qmcplusplus
  * The scalar part works as PooledData, all the values are static_cast to T_scalar.
  */
 #define DEFAULT_PAGE_SIZE 4096
-template<typename T_scalar = OHMMS_PRECISION_FULL, typename Alloc = Mallocator<char, DEFAULT_PAGE_SIZE>>
+template<typename T_scalar = OHMMS_PRECISION_FULL, typename Alloc = aligned_allocator<char, DEFAULT_PAGE_SIZE>>
 struct PooledMemory
 {
   typedef char T;
@@ -44,14 +44,14 @@ struct PooledMemory
   Vector<T, Alloc> myData;
 
   ///default constructor
-  inline PooledMemory() : scalar_multiplier(sizeof(T_scalar)), Current(0), Scalar_ptr(nullptr), Current_scalar(0) {}
+  inline PooledMemory() : scalar_multiplier(sizeof(T_scalar)), Current(0), Current_scalar(0), Scalar_ptr(nullptr) {}
 
   ///copy constructor
   PooledMemory(const PooledMemory& in)
       : scalar_multiplier(in.scalar_multiplier),
-        myData(in.myData),
         Current(in.Current),
-        Current_scalar(in.Current_scalar)
+        Current_scalar(in.Current_scalar),
+        myData(in.myData)
   {
     Scalar_ptr = reinterpret_cast<T_scalar*>(myData.data() + in.scalar_offset());
   }

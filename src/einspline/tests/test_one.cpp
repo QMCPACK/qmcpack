@@ -200,13 +200,19 @@ TEST_CASE("multi_cuda_wrapper", "[einspline]")
   pos[0] = 9.99999999;
   // Check the CPU value
   eval_multi_UBspline_1d_s(s, pos[0], cpu_val);
-  REQUIRE(cpu_val[0] == 3.0);
+  //std::cout << std::setprecision(24) << cpu_val[0] << " == " << 3.0000f << '\n';
+  //With power 9/ clang 8  3.0000f is 3 but cpu_val[0] = 3.0000002384185791015625
+  REQUIRE(cpu_val[0] == Approx(3.0000f).epsilon(0.00000025));
 
   // Check the GPU value
   pos[0] = 0.0;
   float vals_output[1];
   test_multi(s, pos, vals_output);
   REQUIRE(vals_output[0] == 2.0);
+
+  pos[0] = 9.99999999;
+  test_multi(s, pos, vals_output);
+  REQUIRE(vals_output[0] == 3.0);
 }
 
 #endif

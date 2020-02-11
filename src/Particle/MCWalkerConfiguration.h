@@ -71,7 +71,7 @@ public:
   typedef Walker_t::PropertyContainer_t PropertyContainer_t;
   ///container type of Walkers
   typedef std::vector<Walker_t*> WalkerList_t;
-  ///iterator of Walker container
+  /// FIX: a type alias of iterator for an object should not be for just one of many objects it holds.
   typedef WalkerList_t::iterator iterator;
   ///const_iterator of Walker container
   typedef WalkerList_t::const_iterator const_iterator;
@@ -85,6 +85,8 @@ public:
    * WalkerOffsets is added to handle parallel I/O with hdf5
    */
   std::vector<int> WalkerOffsets;
+
+  MCDataType<FullPrecRealType> EnsembleProperty;
 
   // Data for GPU-acceleration via CUDA
   // These hold a list of pointers to the positions, gradients, and
@@ -166,12 +168,17 @@ public:
    * @param head pointer to the head walker
    * @param tail pointer to the tail walker
    *
+   * \todo I believe this can/should be deleted
    * Special function introduced to work with Reptation method.
    * Clear the current WalkerList and add two walkers, head and tail.
    * OwnWalkers are set to false.
    */
   void copyWalkerRefs(Walker_t* head, Walker_t* tail);
 
+  /** make fake walker list for testing
+   */
+  void fakeWalkerList(Walker_t* first, Walker_t* second);
+  
   ///clean up the walker list and make a new list
   void resize(int numWalkers, int numPtcls);
 
@@ -181,11 +188,11 @@ public:
   void sample(iterator it, RealType tauinv);
 
   ///return the number of active walkers
-  inline int getActiveWalkers() const { return WalkerList.size(); }
+  inline size_t getActiveWalkers() const { return WalkerList.size(); }
   ///return the total number of active walkers among a MPI group
-  inline int getGlobalNumWalkers() const { return GlobalNumWalkers; }
+  inline size_t getGlobalNumWalkers() const { return GlobalNumWalkers; }
   ///return the total number of active walkers among a MPI group
-  inline void setGlobalNumWalkers(int nw)
+  inline void setGlobalNumWalkers(size_t nw)
   {
     GlobalNumWalkers            = nw;
     EnsembleProperty.NumSamples = nw;
@@ -366,6 +373,7 @@ public:
     for (unsigned int gid = 0; gid < groups(); gid++)
       if (last(gid) > iat)
         return last(gid) - first(gid);
+    return -1;
   }
 
   inline bool update_now(int iat)
@@ -404,7 +412,7 @@ protected:
   ///number of walkers on a node
   int LocalNumWalkers;
   ///number of walkers shared by a MPI group
-  int GlobalNumWalkers;
+  size_t GlobalNumWalkers;
   ///update-mode index
   int UpdateMode;
 #ifdef QMC_CUDA
@@ -432,6 +440,8 @@ public:
   ///a collection of reptiles contained in MCWalkerConfiguration.
   ReptileList_t ReptileList;
   Reptile* reptile;
+
+  friend class MCPopulation;
 
 private:
   MultiChain* Polymer;

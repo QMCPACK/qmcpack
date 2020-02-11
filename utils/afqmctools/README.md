@@ -28,15 +28,16 @@ The tools work with the following:
 * pyscf >= 1.6.0
 * scipy >= 0.18.1
 * numpy >= 1.11.2
-* h5py >= 2.6.0 with parallel hdf5 support for k-point symmetric integral generation.
+* h5py >= 2.6.0 with parallel hdf5 support for k-point symmetric integral generation
+  (optional).
 * mpi4py >= 2.0.0
 
 # Tests
 
-The easiest way to run the tests is to use nosetest. For example you can type
+To run the unit tests do
 
 ```
-python3 -m nose -v
+python -m unittest discover -v
 ```
 
 in the top level of the afqmctools directory. The tests should take less than three

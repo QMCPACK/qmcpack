@@ -24,7 +24,6 @@
 #if defined(HAVE_MKL_VML)
 #include <mkl_vml_functions.h>
 #elif defined(HAVE_MASSV)
-#include <mass.h>
 #include <massv.h>
 #endif
 
@@ -70,24 +69,26 @@ inline void inv(const T* restrict in, T* restrict out, int n)
 }
 
 #if defined(HAVE_MKL_VML)
-inline void sqrt(const double* restrict in, double* restrict out, int n) { vdSqrt(n, in, out); }
+inline void sqrt(const double* in, double* out, int n) { vdSqrt(n, in, out); }
 
-inline void sqrt(const float* restrict in, float* restrict out, int n) { vsSqrt(n, in, out); }
+inline void sqrt(const float* in, float* out, int n) { vsSqrt(n, in, out); }
 
-inline void inv(const double* restrict in, double* restrict out, int n) { vdInv(n, in, out); }
+inline void inv(const double* in, double* out, int n) { vdInv(n, in, out); }
 
-inline void inv(const float* restrict in, float* restrict out, int n) { vsInv(n, in, out); }
+inline void inv(const float* in, float* out, int n) { vsInv(n, in, out); }
 
-inline void inv_sqrt(const double* restrict in, double* restrict out, int n) { vdInvSqrt(n, in, out); }
+inline void inv_sqrt(const double* in, double* out, int n) { vdInvSqrt(n, in, out); }
 
-inline void inv_sqrt(const float* restrict in, float* restrict out, int n) { vsInvSqrt(n, in, out); }
+inline void inv_sqrt(const float* in, float* out, int n) { vsInvSqrt(n, in, out); }
 
 #elif defined(HAVE_MASSV)
-inline void sqrt(double* restrict in, double* restrict out, int n) { vsqrt(out, in, &n); }
-inline void sqrt(float* restrict in, float* restrict out, int n) { vssqrt(out, in, &n); }
-inline void inv_sqrt(double* restrict in, double* restrict out, int n) { vrsqrt(out, in, &n); }
-
-inline void inv_sqrt(float* restrict in, float* restrict out, int n) { vsrsqrt(out, in, &n); }
+// restrict is not a C++ keyword
+inline void sqrt(double* in, double* out, int n) { vsqrt(out, in, &n); }
+inline void sqrt(float* in, float* out, int n) { vssqrt(out, in, &n); }
+inline void inv(double* in, double* out, int n) { vrec(out, in, &n); }
+inline void inv(float* in, float* out, int n) { vsrec(out, in, &n); }
+inline void inv_sqrt(double* in, double* out, int n) { vrsqrt(out, in, &n); }
+inline void inv_sqrt(float* in, float* out, int n) { vsrsqrt(out, in, &n); }
 #endif
 
 template<typename T>

@@ -63,8 +63,6 @@ namespace HamHelper
       APP_ABORT("Error: GHF density matrix only implemented with spinRestricted integrals. \n");
     }
 
-    int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
-    int ncores =  TG.getTotalCores(), coreid = TG.getCoreID();
     long npr = TG.getGlobalSize(), rk = TG.getGlobalRank();
 
     bool distribute_Ham  = TG.getNumberOfTGs() > 1;
@@ -76,10 +74,8 @@ namespace HamHelper
     std::vector<s4D<ValueType> > vs4D;
     vs4D.reserve(24);
 
-    std::size_t cnt2=0;
     long cnter=0;
-    OrbitalType i,j,k,l,j1,k1,l1,j2,k2,l2;
-    ValueType J1,J2,J3,J1a=zero,J2a=zero,J3a=zero,fct;
+    ValueType J1,J2,J3,J1a=zero,J2a=zero,J3a=zero;
 
     boost::multi::array<ValueType,2> DiagHam({NMO,NMO});
     for(IndexType i=0; i<NMO; i++)

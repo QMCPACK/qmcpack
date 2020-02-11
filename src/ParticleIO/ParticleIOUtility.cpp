@@ -51,7 +51,7 @@ void expandSuperCell(ParticleSet& ref_, Tensor<int, 3>& tmat)
   int maxCopies = 10;
   int index     = 0;
   //set the unit to the Cartesian
-  ref_.R.InUnit = PosUnit::CartesianUnit;
+  ref_.R.InUnit = PosUnit::Cartesian;
   app_log() << "  Reduced coord    Cartesion coord    species.\n";
   for (int ns = 0; ns < ref_.getSpeciesSet().getTotalNum(); ++ns)
   {

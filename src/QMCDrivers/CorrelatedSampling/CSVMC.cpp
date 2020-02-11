@@ -25,7 +25,6 @@
 #include "Utilities/FairDivide.h"
 #include <qmc_common.h>
 //#define ENABLE_VMC_OMP_MASTER
-#include "ADIOS/ADIOS_profile.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
@@ -40,7 +39,7 @@ CSVMC::CSVMC(MCWalkerConfiguration& w,
              QMCHamiltonian& h,
              WaveFunctionPool& ppool,
              Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm), multiEstimator(0), Mover(0), UseDrift("yes")
+    : QMCDriver(w, psi, h, ppool, comm), UseDrift("yes"), multiEstimator(0), Mover(0)
 {
   RootName = "csvmc";
   QMCType  = "CSVMC";
@@ -49,7 +48,7 @@ CSVMC::CSVMC(MCWalkerConfiguration& w,
   m_param.add(UseDrift, "use_drift", "string");
   equilBlocks = -1;
   m_param.add(equilBlocks, "equilBlocks", "int");
-  QMCDriverMode.set(QMC_MULTIPLE, 1);
+  qmc_driver_mode.set(QMC_MULTIPLE, 1);
 }
 
 /** allocate internal data here before run() is called
@@ -154,14 +153,12 @@ bool CSVMC::run()
   Traces->startRun(nBlocks, traceClones);
 #endif
   const bool has_collectables = W.Collectables.size();
-  ADIOS_PROFILE::profile_adios_init(nBlocks);
   for (int block = 0; block < nBlocks; ++block)
   {
-    ADIOS_PROFILE::profile_adios_start_comp(block);
 #pragma omp parallel
     {
       int ip                 = omp_get_thread_num();
-      IndexType updatePeriod = (QMCDriverMode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
+      IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
       CSMovers[ip]->startBlock(nSteps);
@@ -185,18 +182,12 @@ bool CSVMC::run()
     } //end-of-parallel for
     CurrentStep += nSteps;
     Estimators->stopBlock(estimatorClones);
-    ADIOS_PROFILE::profile_adios_end_comp(block);
-    ADIOS_PROFILE::profile_adios_start_trace(block);
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
-    ADIOS_PROFILE::profile_adios_end_trace(block);
-    ADIOS_PROFILE::profile_adios_start_checkpoint(block);
     if (storeConfigs)
       recordBlock(block);
-    ADIOS_PROFILE::profile_adios_end_checkpoint(block);
   } //block
-  ADIOS_PROFILE::profile_adios_finalize(myComm, nBlocks);
   Estimators->stop(estimatorClones);
   for (int ip = 0; ip < NumThreads; ++ip)
     CSMovers[ip]->stopRun2();
@@ -257,7 +248,7 @@ void CSVMC::resetRun()
 #endif
       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
 
-      if (QMCDriverMode[QMC_UPDATE_MODE])
+      if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         if (UseDrift == "yes")
         {
@@ -313,7 +304,7 @@ void CSVMC::resetRun()
     //int ip=omp_get_thread_num();
     CSMovers[ip]->put(qmcNode);
     CSMovers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-    if (QMCDriverMode[QMC_UPDATE_MODE])
+    if (qmc_driver_mode[QMC_UPDATE_MODE])
       CSMovers[ip]->initCSWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], nWarmupSteps > 0);
     else
       CSMovers[ip]->initCSWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], nWarmupSteps > 0);

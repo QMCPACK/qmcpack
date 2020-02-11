@@ -19,8 +19,9 @@
 
 #include "QMCDrivers/DMC/DMC.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
+#include "QMCDrivers/DMC/SODMCUpdatePbyP.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Message/OpenMP.h"
@@ -29,7 +30,6 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Utilities/ProgressReportEngine.h"
 #include <qmc_common.h>
-#include "ADIOS/ADIOS_profile.h"
 #include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
@@ -47,82 +47,31 @@ DMC::DMC(MCWalkerConfiguration& w,
          Communicate* comm)
     : QMCDriver(w, psi, h, ppool, comm),
       KillNodeCrossing(0),
-      Reconfiguration("no"),
       BranchInterval(-1),
-      mover_MaxAge(-1)
+      Reconfiguration("no"),
+      mover_MaxAge(-1),
+      SpinMoves("no"),
+      SpinMass(1.0)
 {
   RootName = "dmc";
   QMCType  = "DMC";
-  QMCDriverMode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   m_param.add(KillWalker, "killnode", "string");
   m_param.add(Reconfiguration, "reconfiguration", "string");
   //m_param.add(BranchInterval,"branchInterval","string");
   m_param.add(NonLocalMove, "nonlocalmove", "string");
   m_param.add(NonLocalMove, "nonlocalmoves", "string");
   m_param.add(mover_MaxAge, "MaxAge", "double");
-  //DMC overwrites ConstPopulation
-  ConstPopulation = false;
+  m_param.add(SpinMoves,"SpinMoves","string");
+  m_param.add(SpinMass,"SpinMass","double");
 }
-
-void DMC::resetComponents(xmlNodePtr cur)
-{
-  qmcNode = cur;
-  m_param.put(cur);
-  put(cur);
-  //app_log()<<"DMC::resetComponents"<< std::endl;
-  Estimators->reset();
-  int nw_multi = branchEngine->resetRun(cur);
-  if (nw_multi > 1)
-  {
-    app_log() << " Current population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers() << std::endl;
-    app_log() << " The target population has changed. Multiply walkers by " << nw_multi << std::endl;
-    W.createWalkers((nw_multi - 1) * W.getActiveWalkers());
-    setWalkerOffsets();
-    FairDivideLow(W.getActiveWalkers(), NumThreads, wPerNode);
-    app_log() << " New population " << W.getActiveWalkers() << " per task  total =" << W.getGlobalNumWalkers()
-              << std::endl;
-  }
-  branchEngine->checkParameters(W);
-  //delete Movers[0];
-  for (int ip = 0; ip < NumThreads; ++ip)
-  {
-    delete Movers[ip];
-    delete estimatorClones[ip];
-    estimatorClones[ip] = new EstimatorManagerBase(*Estimators);
-    estimatorClones[ip]->setCollectionMode(false);
-#if !defined(REMOVE_TRACEMANAGER)
-    delete traceClones[ip];
-    traceClones[ip] = Traces->makeClone();
-#endif
-  }
-#pragma omp parallel for
-  for (int ip = 0; ip < NumThreads; ++ip)
-  {
-    if (QMCDriverMode[QMC_UPDATE_MODE])
-    {
-      Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
-      Movers[ip]->put(cur);
-      Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-      Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
-    }
-    else
-    {
-      if (KillNodeCrossing)
-        Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
-      else
-        Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
-      Movers[ip]->put(cur);
-      Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-      Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
-    }
-  }
-}
-
 
 void DMC::resetUpdateEngines()
 {
   ReportEngine PRE("DMC", "resetUpdateEngines");
-  bool fixW = (Reconfiguration == "yes");
+  bool fixW = (Reconfiguration == "runwhileincorrect");
+  if(Reconfiguration != "no" && Reconfiguration != "runwhileincorrect")
+    APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
   makeClones(W, Psi, H);
   Timer init_timer;
   if (Movers.empty())
@@ -135,26 +84,36 @@ void DMC::resetUpdateEngines()
       W.createWalkers((nw_multi - 1) * W.getActiveWalkers());
       setWalkerOffsets();
     }
-    //if(QMCDriverMode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
+    //if(qmc_driver_mode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
     Movers.resize(NumThreads, 0);
     Rng.resize(NumThreads, 0);
     estimatorClones.resize(NumThreads, 0);
     traceClones.resize(NumThreads, 0);
     FairDivideLow(W.getActiveWalkers(), NumThreads, wPerNode);
+
+    tolower(SpinMoves);
+    if (SpinMoves != "yes" && SpinMoves != "no")
+    {
+      APP_ABORT("SpinMoves must be yes/no\n");
+    }
+
     {
       //log file
       std::ostringstream o;
       o << "  Initial partition of walkers on a node: ";
       copy(wPerNode.begin(), wPerNode.end(), std::ostream_iterator<int>(o, " "));
       o << "\n";
-      if (QMCDriverMode[QMC_UPDATE_MODE])
+      if (qmc_driver_mode[QMC_UPDATE_MODE])
         o << "  Updates by particle-by-particle moves";
       else
         o << "  Updates by walker moves";
+      // Appears to be set in constructor reported here and used nowhere
       if (KillNodeCrossing)
         o << "\n  Walkers are killed when a node crossing is detected";
       else
         o << "\n  DMC moves are rejected when a node crossing is detected";
+      if (SpinMoves=="yes")
+        o << "\n  Spins treated as dynamic variable with SpinMass: " << SpinMass;
       app_log() << o.str() << std::endl;
     }
 #pragma omp parallel for
@@ -171,22 +130,40 @@ void DMC::resetUpdateEngines()
       Rng[ip] = new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);
 #endif
-      if (QMCDriverMode[QMC_UPDATE_MODE])
+      if (SpinMoves == "yes")
       {
-        Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
-        Movers[ip]->put(qmcNode);
-        Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-        Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+        if (qmc_driver_mode[QMC_UPDATE_MODE])
+        {
+          Movers[ip] = new SODMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip]->setSpinMass(SpinMass);
+          Movers[ip]->put(qmcNode);
+          Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
+          Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip+1]);
+        }
+        else 
+        {
+          APP_ABORT("SODMC Driver Mode must be PbyP\n");
+        }
       }
-      else
+      else 
       {
-        if (KillNodeCrossing)
-          Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+        if (qmc_driver_mode[QMC_UPDATE_MODE])
+        {
+          Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip]->put(qmcNode);
+          Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
+          Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+        }
         else
-          Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
-        Movers[ip]->put(qmcNode);
-        Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-        Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+        {
+          if (KillNodeCrossing)
+            Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          else
+            Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          Movers[ip]->put(qmcNode);
+          Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
+          Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+        }
       }
     }
   }
@@ -214,7 +191,7 @@ void DMC::resetUpdateEngines()
   {
     if (BranchInterval < 0)
       BranchInterval = 1;
-    int miage = (QMCDriverMode[QMC_UPDATE_MODE]) ? 1 : 5;
+    int miage = (qmc_driver_mode[QMC_UPDATE_MODE]) ? 1 : 5;
     mxage     = (mover_MaxAge < 0) ? miage : mover_MaxAge;
     for (int i = 0; i < NumThreads; ++i)
       Movers[i]->MaxAge = mxage;
@@ -249,7 +226,7 @@ bool DMC::run()
   Traces->startRun(nBlocks, traceClones);
 #endif
   IndexType block        = 0;
-  IndexType updatePeriod = (QMCDriverMode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
+  IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
   int sample             = 0;
 
   RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
@@ -274,7 +251,7 @@ bool DMC::run()
         int ip = omp_get_thread_num();
         Movers[ip]->set_step(sample);
         bool recompute = (step + 1 == nSteps && nBlocksBetweenRecompute && (1 + block) % nBlocksBetweenRecompute == 0 &&
-                          QMCDriverMode[QMC_UPDATE_MODE]);
+                          qmc_driver_mode[QMC_UPDATE_MODE]);
         wClones[ip]->resetCollectables();
         const size_t nw = W.getActiveWalkers();
 #pragma omp for nowait

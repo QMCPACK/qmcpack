@@ -165,46 +165,46 @@ template<class T = void> struct allocator_shm_ptr_with_raw_ptr_dispatch{
 template<typename T, typename Size, typename TT>
 shm_ptr_with_raw_ptr_dispatch<T> uninitialized_fill_n(shm_ptr_with_raw_ptr_dispatch<T> first, Size n, TT const& val){
         first.wSP_->fence();
-        if(mpi3::group(*first.wSP_).root()) std::uninitialized_fill_n(to_address(first), n, val); // change to to_pointer
+        if(first.wSP_->get_group().root()) std::uninitialized_fill_n(to_address(first), n, val); // change to to_pointer
         first.wSP_->fence();
         first.wSP_->fence();
-        (*first.wSP_).comm_->barrier();
+        mpi3::communicator(first.wSP_->get_group(),0).barrier();
         return first + n;
 }
 
 template<class Alloc, typename T, typename Size, typename TT>
 shm_ptr_with_raw_ptr_dispatch<T> uninitialized_fill_n(Alloc &a, shm_ptr_with_raw_ptr_dispatch<T> first, Size n, TT const& val){
         first.wSP_->fence();
-        if(mpi3::group(*first.wSP_).root()) std::uninitialized_fill_n(to_address(first), n, val); // change to to_pointer
+        if(first.wSP_->get_group().root()) std::uninitialized_fill_n(to_address(first), n, val); // change to to_pointer
         first.wSP_->fence();
         first.wSP_->fence();
-        (*first.wSP_).comm_->barrier();
+        mpi3::communicator(first.wSP_->get_group(),0).barrier();
         return first + n;
 }
 
 template<typename T, typename Size>
 shm_ptr_with_raw_ptr_dispatch<T> destroy_n(shm_ptr_with_raw_ptr_dispatch<T> first, Size n){
         first.wSP_->fence();
-        if(mpi3::group(*first.wSP_).root()) { 
+        if(first.wSP_->get_group().root()) {
               auto first_ptr = to_address(first);
               for(; n > 0; (void) ++first_ptr, --n) first->~T();
         }
         first.wSP_->fence();
         first.wSP_->fence();
-        (*first.wSP_).comm_->barrier();
+        mpi3::communicator(first.wSP_->get_group(),0).barrier();
         return first + n;
 }
 
 template<class Alloc, typename T, typename Size>
 shm_ptr_with_raw_ptr_dispatch<T> destroy_n(Alloc &a, shm_ptr_with_raw_ptr_dispatch<T> first, Size n){
         first.wSP_->fence();
-        if(mpi3::group(*first.wSP_).root()) { 
+        if(first.wSP_->get_group().root()) {
               auto first_ptr = to_address(first);
               for(; n > 0; (void) ++first_ptr, --n) first->~T();
         }
         first.wSP_->fence();
         first.wSP_->fence();
-        (*first.wSP_).comm_->barrier();
+        mpi3::communicator(first.wSP_->get_group(),0).barrier();
         return first + n;
 }
 
@@ -212,9 +212,9 @@ template<class It1, typename T, typename Size>
 shm_ptr_with_raw_ptr_dispatch<T> copy_n(It1 first, Size n, shm_ptr_with_raw_ptr_dispatch<T> d_first){
         d_first.wSP_->fence();
         using std::copy_n;
-        if(mpi3::group(*d_first.wSP_).root()) copy_n(first, n, to_address(d_first));
+        if(d_first.wSP_->get_group().root()) copy_n(first, n, to_address(d_first));
         d_first.wSP_->fence();
-        (*d_first.wSP_).comm_->barrier();
+        mpi3::communicator(d_first.wSP_->get_group(),0).barrier();
         return d_first + n;
 }
 
@@ -222,9 +222,9 @@ template<class It1, typename T>
 shm_ptr_with_raw_ptr_dispatch<T> copy(It1 first, It1 last, shm_ptr_with_raw_ptr_dispatch<T> d_first){
         first.wSP_->fence();
         using std::copy;
-        if(mpi3::group(*d_first.wSP_).root()) copy(first, last, to_address(d_first));
+        if(d_first.wSP_->get_group().root()) copy(first, last, to_address(d_first));
         first.wSP_->fence();
-        (*d_first.wSP_).comm_->barrier();
+        mpi3::communicator(d_first.wSP_->get_group(),0).barrier();
         using std::distance;
         return d_first + distance(first, last);
 }
@@ -233,9 +233,9 @@ template<class It1, class Size, typename T>
 shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy_n(It1 f, Size n, shm_ptr_with_raw_ptr_dispatch<T> d){
         f.wSP_->fence();
         using std::uninitialized_copy_n;
-        if(mpi3::group(*d.wSP_).root()) uninitialized_copy_n(f, n, to_address(d));
+        if(d.wSP_->get_group().root()) uninitialized_copy_n(f, n, to_address(d));
         f.wSP_->fence();
-        (*d.wSP_).comm_->barrier();
+        mpi3::communicator(d.wSP_->get_group(),0).barrier();
         return d + n;
 }
 
@@ -243,9 +243,9 @@ template<class Alloc, class It1, class Size, typename T>
 shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy_n(Alloc &a, It1 f, Size n, shm_ptr_with_raw_ptr_dispatch<T> d){
         f.wSP_->fence();
         using std::uninitialized_copy_n;
-        if(mpi3::group(*d.wSP_).root()) uninitialized_copy_n(f, n, to_address(d));
+        if(d.wSP_->get_group().root()) uninitialized_copy_n(f, n, to_address(d));
         f.wSP_->fence();
-        (*d.wSP_).comm_->barrier();
+        mpi3::communicator(d.wSP_->get_group(),0).barrier();
         return d + n;
 }
 
@@ -254,9 +254,9 @@ template<class It1, typename T>
 shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy(It1 f, It1 l, shm_ptr_with_raw_ptr_dispatch<T> d){
         d.wSP_->fence();
         using std::uninitialized_copy;
-        if(mpi3::group(*d.wSP_).root()) uninitialized_copy(f, l, to_address(d));
+        if(d.wSP_->get_group().root()) uninitialized_copy(f, l, to_address(d));
         d.wSP_->fence();
-        (*d.wSP_).comm_->barrier();
+        mpi3::communicator(d.wSP_->get_group(),0).barrier();
         using std::distance;
         return d + distance(f, l);
 }
@@ -264,35 +264,35 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy(It1 f, It1 l, shm_ptr_with_r
 template<class T, class Size>
 shm_ptr_with_raw_ptr_dispatch<T> uninitialized_default_construct_n(shm_ptr_with_raw_ptr_dispatch<T> f, Size n){
         f.wSP_->fence();
-        if(mpi3::group(*f.wSP_).root()) {
+        if(f.wSP_->get_group().root()) {
             T* current(to_address(f));
             try{
                 for(; n > 0; ++current, --n) (::new((void*)current) T()); 
             }catch(...) {throw;} // leak!
         }
         f.wSP_->fence();
-        (*f.wSP_).comm_->barrier();
+        mpi3::communicator(f.wSP_->get_group(),0).barrier();
         return f + n;
 }
 
 template<class T, class Size>
 shm_ptr_with_raw_ptr_dispatch<T> uninitialized_value_construct_n(shm_ptr_with_raw_ptr_dispatch<T> f, Size n){
         f.wSP_->fence();
-        if(mpi3::group(*f.wSP_).root()) {
+        if(f.wSP_->get_group().root()) {
             T* current(to_address(f));
             try{
                 for(; n > 0; ++current, --n) (::new((void*)current) T());
             }catch(...){throw;} // leak !!
         }
         f.wSP_->fence();
-        (*f.wSP_).comm_->barrier();
+        mpi3::communicator(f.wSP_->get_group(),0).barrier();
         return f + n;
 }
 
 template<class Alloc, class T, class Size>
 shm_ptr_with_raw_ptr_dispatch<T> uninitialized_default_construct_n(Alloc &a, shm_ptr_with_raw_ptr_dispatch<T> f, Size n){
         f.wSP_->fence();
-        if(mpi3::group(*f.wSP_).root()) {
+        if(f.wSP_->get_group().root()) {
             using std::addressof;
             auto current(f);
             try{
@@ -300,14 +300,14 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_default_construct_n(Alloc &a, shm
             }catch(...) {throw;} // leak!
         }
         f.wSP_->fence();
-        (*f.wSP_).comm_->barrier();
+        mpi3::communicator(f.wSP_->get_group(),0).barrier();
         return f + n;
 }
 
 template<class Alloc, class T, class Size>
 shm_ptr_with_raw_ptr_dispatch<T> uninitialized_value_construct_n(Alloc &a, shm_ptr_with_raw_ptr_dispatch<T> f, Size n){
         f.wSP_->fence();
-        if(mpi3::group(*f.wSP_).root()) {
+        if(f.wSP_->get_group().root()) {
             using std::addressof;
             auto current(f);
             try{
@@ -315,7 +315,7 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_value_construct_n(Alloc &a, shm_p
             }catch(...){throw;} // leak !!
         }
         f.wSP_->fence();
-        (*f.wSP_).comm_->barrier();
+        mpi3::communicator(f.wSP_->get_group(),0).barrier();
         return f + n;
 }
 
@@ -330,7 +330,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
                     multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first, 
                     Size n, T const& val){
   base(first).wSP_->fence();
-  if(mpi3::group(*first.wSP_).root()) {
+  if(first.wSP_->get_group().root()) {
     auto current = first;
     using std::addressof;
     try{
@@ -340,7 +340,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
   }
   base(first).wSP_->fence();
   base(first).wSP_->fence();
-  (*base(first).wSP_).comm_->barrier();
+  mpi3::communicator(base(first).wSP_->get_group(),0).barrier();
   return first + n;
 }
 
@@ -362,7 +362,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
   base(dest).wSP_->fence();
   base(first).wSP_->fence();
-  if(mpi3::group(*base(dest).wSP_).root()) {
+  if(base(dest).wSP_->get_group().root()) {
     auto f = first;
     auto d = dest;
     using std::addressof;
@@ -371,7 +371,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
   }
   base(dest).wSP_->fence();
   base(dest).wSP_->fence();
-  (*base(dest).wSP_).comm_->barrier();
+  mpi3::communicator(base(dest).wSP_->get_group(),0).barrier();
   return dest + n;
 }
 
@@ -381,7 +381,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
                          Size n,
                          multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest ){
   base(dest).wSP_->fence();
-  if(mpi3::group(*base(dest).wSP_).root()) {
+  if(base(dest).wSP_->get_group().root()) {
     auto f = first;
     auto d = dest;
     using std::addressof;
@@ -390,7 +390,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
   }
   base(dest).wSP_->fence();
   base(dest).wSP_->fence();
-  (*base(dest).wSP_).comm_->barrier();
+  mpi3::communicator(base(dest).wSP_->get_group(),0).barrier();
   return dest + n;
 }
 
@@ -452,7 +452,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
   static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
   base(first).wSP_->fence();
   base(dest).wSP_->fence();
-  if(mpi3::group(*base(dest).wSP_).root()) {
+  if(base(dest).wSP_->get_group().root()) {
     auto f = first;
     auto d = dest;
     using std::addressof;
@@ -463,7 +463,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
   }
   base(dest).wSP_->fence();
   base(dest).wSP_->fence();
-  (*base(dest).wSP_).comm_->barrier();
+  mpi3::communicator(base(dest).wSP_->get_group(),0).barrier();
   return dest + n;
 }
 
@@ -495,7 +495,7 @@ multi::array_iterator<T, 1, T*> uninitialized_copy(
         a.construct(addressof(*d), *first);
     }catch(...){throw;}
   }
-  (*base(first).wSP_).comm_->barrier();
+  mpi3::communicator(base(first).wSP_->get_group(),0).barrier();
   return dest + std::distance(first,last);
 }
 
@@ -505,7 +505,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
                             multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f, 
                             Size n){
   base(f).wSP_->fence();
-  if(mpi3::group(*base(f).wSP_).root()) {
+  if(base(f).wSP_->get_group().root()) {
       auto current(f);
       try{
           for(; n > 0; ++current, --n) a.construct(addressof(*current), T()); 
@@ -522,7 +522,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
                             multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f, 
                             Size n){
   base(f).wSP_->fence();
-  if(mpi3::group(*base(f).wSP_).root()) {
+  if(base(f).wSP_->get_group().root()) {
       auto current(f);
       try{  
           for(; n > 0; ++current, --n) a.construct(addressof(*current), T()); 

@@ -29,6 +29,8 @@ struct Mallocator
   typedef T* pointer;
   typedef const T* const_pointer;
 
+  static constexpr size_t alignment = ALIGN;
+
   Mallocator() = default;
   template<class U>
   Mallocator(const Mallocator<U, ALIGN>&)
@@ -42,6 +44,8 @@ struct Mallocator
 
   T* allocate(std::size_t n)
   {
+    if (n == 0)
+      throw std::runtime_error("Mallocator::allocate does not accept size 0 allocations.");
     void* pt(nullptr);
     std::size_t asize = n * sizeof(T);
     std::size_t amod  = asize % ALIGN;
@@ -67,7 +71,12 @@ struct Mallocator
     return static_cast<T*>(pt);
   }
 
-  void deallocate(T* p, std::size_t) { free(p); }
+  void deallocate(T* p, std::size_t n)
+  {
+    if (n == 0)
+      throw std::runtime_error("Mallocator::deallocate does not accept size 0 allocations.");
+    free(p);
+  }
 };
 
 template<class T1, size_t ALIGN1, class T2, size_t ALIGN2>

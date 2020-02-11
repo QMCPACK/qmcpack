@@ -14,11 +14,8 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#include "Particle/SymmetricDistanceTableData.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 
@@ -56,7 +53,9 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
+  int pMembersizeIdx            = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx) = 1;
+  ion_species(pMembersizeIdx, pIdx) = 1;
   ions.Lattice = Lattice;
   ions.createSK();
 
@@ -70,17 +69,21 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
 
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
-  int downIdx                  = tspecies.addSpecies("d");
   int chargeIdx                = tspecies.addAttribute("charge");
   int massIdx                  = tspecies.addAttribute("mass");
+  int MembersizeIdx            = tspecies.addAttribute("membersize");
+  tspecies(MembersizeIdx, upIdx)   = 1;
   tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(chargeIdx, downIdx) = -1;
   tspecies(massIdx, upIdx)     = 1.0;
-  tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions, DT_SOA);
+#else
   elec.addTable(ions, DT_AOS);
+#endif
+  elec.resetGroups();
   elec.update();
 
 
@@ -91,10 +94,10 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
 
   // Self energy plus Background charge term
   double consts = cab.evalConsts();
-  REQUIRE(consts == Approx(0.0));
+  REQUIRE(consts == Approx(2*0.0506238028)); // not validated
 
   double val_ei = cab.evaluate(elec);
-  REQUIRE(val_ei == Approx(-0.005314032183)); // not validated
+  REQUIRE(val_ei == Approx(-0.005314032183+2*0.0506238028)); // not validated
 
   CoulombPBCAA caa_elec = CoulombPBCAA(elec, false);
   CoulombPBCAA caa_ion  = CoulombPBCAA(ions, false);
@@ -134,7 +137,9 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
   SpeciesSet& ion_species       = ions.getSpeciesSet();
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
+  int pMembersizeIdx            = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx) = 1;
+  ion_species(pMembersizeIdx, pIdx) = 2;
   ions.Lattice = Lattice;
   ions.createSK();
 
@@ -151,17 +156,21 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
 
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
-  int downIdx                  = tspecies.addSpecies("d");
   int chargeIdx                = tspecies.addAttribute("charge");
   int massIdx                  = tspecies.addAttribute("mass");
+  int MembersizeIdx            = tspecies.addAttribute("membersize");
+  tspecies(MembersizeIdx, upIdx)   = 1;
   tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(chargeIdx, downIdx) = -1;
   tspecies(massIdx, upIdx)     = 1.0;
-  tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions, DT_SOA);
+#else
   elec.addTable(ions, DT_AOS);
+#endif
+  elec.resetGroups();
   elec.update();
 
 
@@ -172,11 +181,11 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
 
   // Background charge term
   double consts = cab.evalConsts();
-  REQUIRE(consts == Approx(0.0));
+  REQUIRE(consts == Approx(0.0267892759*4)); // not validated
 
 
   double val_ei = cab.evaluate(elec);
-  REQUIRE(val_ei == Approx(-2.219665062)); // not validated
+  REQUIRE(val_ei == Approx(-2.219665062+0.0267892759*4)); // not validated
 
 
   CoulombPBCAA caa_elec = CoulombPBCAA(elec, false);

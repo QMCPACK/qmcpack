@@ -138,7 +138,7 @@ The full QMCPACK pseudopotential is also included in \ishell{oxygen_atom/referen
 \label{sec:lqb_dft}
 With the pseudopotential in hand, the next step toward a QMC calculation is to obtain the Fermionic part of the wavefunction, in this case a single Slater determinant constructed from DFT-LDA orbitals for a neutral oxygen atom.  If you had trouble with the pseudopotential conversion step, preconverted pseudopotential files are located in the \ishell{oxygen_atom/reference} directory.  
 
-QE input for the DFT-LDA ground state of the neutral oxygen atom can be found in \ishell{O.q0.dft.in} and also in listing \ref{lst:O_q0_dft}.  Setting \ishell{wf_collect=.true.} instructs QE to write the orbitals to disk at the end of the run. Option \ishell{wf_collect=.true.} could be a potential problem in large simulations; therefore, we recommend avoiding it and using the converter pw2qmcpack in parallel (see details in Section~\ref{sec:pw2qmcpack}). Note that the plane-wave energy cutoff has been set to a reasonable value of 300 Ry here (\ishell{ecutwfc=300}).  This value depends on the pseudopotentials used, and, in general, should be selected by running DFT$\rightarrow$(orbital conversion)$\rightarrow$VMC with increasing energy cutoffs until the lowest VMC total energy and variance is reached.
+QE input for the DFT-LDA ground state of the neutral oxygen atom can be found in \ishell{O.q0.dft.in} and also in listing~\ref{lst:O_q0_dft}.  Setting \ishell{wf_collect=.true.} instructs QE to write the orbitals to disk at the end of the run. Option \ishell{wf_collect=.true.} could be a potential problem in large simulations; therefore, we recommend avoiding it and using the converter pw2qmcpack in parallel (see details in Section~\ref{sec:pw2qmcpack}). Note that the plane-wave energy cutoff has been set to a reasonable value of 300 Ry here (\ishell{ecutwfc=300}).  This value depends on the pseudopotentials used, and, in general, should be selected by running DFT$\rightarrow$(orbital conversion)$\rightarrow$VMC with increasing energy cutoffs until the lowest VMC total energy and variance is reached.
 
 \begin{lstlisting}[style=ESPRESSO, language=espresso, caption={QE input file for the neutral oxygen atom (\ishell{O.q0.dft.in})\label{lst:O_q0_dft}}.]
 &CONTROL
@@ -215,7 +215,7 @@ The DFT run should take a few minutes to complete.  If desired, you can track th
 
 
 
-The orbitals have been written in a format native to QE in the \ishell{O.q0.save} directory.  We will convert them into the ESHDF format expected by QMCPACK by using the \ishell{pw2qmcpack.x} tool.  The input for \ishell{pw2qmcpack.x} can be found in the file \ishell{O.q0.p2q.in} and also in listing \ref{lst:O_q0_p2q}. 
+The orbitals have been written in a format native to QE in the \ishell{O.q0.save} directory.  We will convert them into the ESHDF format expected by QMCPACK by using the \ishell{pw2qmcpack.x} tool.  The input for \ishell{pw2qmcpack.x} can be found in the file \ishell{O.q0.p2q.in} and also in listing~\ref{lst:O_q0_p2q}. 
 
 \begin{lstlisting}[caption={\ishell{pw2qmcpack.x} input file for orbital conversion (\ishell{O.q0.p2q.in})\label{lst:O_q0_p2q}}.]
 &inputpp
@@ -292,7 +292,7 @@ the position of the oxygen ion.  The $U_1^{\uparrow/\downarrow}$ term is a
 1D radial function represented with piecewise continuous cubic 
 polynomials (B-splines).  The adjustable parameters to be optimized are the 
 ``knots'' of the B-splines, which are simply the values of the $U_1$ function at 
-uniformly spaced grid points (See Figure \ref{fig:u1_spline} for an example of a $U_1$ 
+uniformly spaced grid points (See Figure~\ref{fig:u1_spline} for an example of a $U_1$ 
 spline function with 8 knots).  
 
 The 2-body Jastrow factor is spin resolved ($r^\uparrow/r^\downarrow$ are up/down electron positions):
@@ -573,7 +573,7 @@ To study time step bias, we will perform a sequence of DMC runs over a range of 
 \end{align}
 Each DMC run will require about twice as much computer time as the one preceding it.  Note that the number of blocks is kept fixed for uniform statistical analysis.  $\texttt{blocks}\times\texttt{steps}\times\texttt{timestep}\sim 60~\mathrm{Ha}^{-1}$ is sufficient for this system.
 
-Choose an initial DMC time step and create a sequence of $N$ time steps according to \ref{eq:timestep_iter}.  Make $N$ copies of the DMC XML block in the input file.
+Choose an initial DMC time step and create a sequence of $N$ time steps according to~\ref{eq:timestep_iter}.  Make $N$ copies of the DMC XML block in the input file.
 \begin{lstlisting}[style=QMCPXML]
    <qmc method="dmc" move="pbyp">
       <parameter name="warmupSteps"         >    DWARMUP         </parameter>
@@ -584,7 +584,7 @@ Choose an initial DMC time step and create a sequence of $N$ time steps accordin
    </qmc>
 \end{lstlisting}
 \noindent
-Fill in \ishell{DWARMUP}, \ishell{DBLOCKS}, \ishell{DSTEPS}, and \ishell{DTIMESTEP} for each DMC run according to \ref{eq:timestep_iter}.  Start the DMC time step extrapolation run by typing:  
+Fill in \ishell{DWARMUP}, \ishell{DBLOCKS}, \ishell{DSTEPS}, and \ishell{DTIMESTEP} for each DMC run according to~\ref{eq:timestep_iter}.  Start the DMC time step extrapolation run by typing:  
 \ifws
 \begin{shade}
 mpirun -np 4 qmcpack O.q0.dmc.in.xml >&O.q0.dmc.out&
@@ -599,7 +599,7 @@ The run should take only a few minutes to complete.
 
 QMCPACK will create files prefixed with \ishell{O.q0.dmc}.  The log file is \labsw{\ishell{O.q0.dmc.out}}{\ishell{O.q0.dmc.output}}.  As before, block-averaged data is written to \ishell{scalar.dat} files.  In addition, DMC runs produce \ishell{dmc.dat} files, which contain energy data averaged only over the walker population (one line per DMC step).  The \ishell{dmc.dat} files also provide a record of the walker population at each step.
 
-Use the \ishell{PlotTstepConv.pl} to obtain a linear fit to the time step data (type ``\ishell{PlotTstepConv.pl O.q0.dmc.in.xml 40}'').  You should see a plot similar to Figure \ref{fig:timestep_conv}.  The tail end of the text output displays the parameters for the linear fit.  The ``\ishell{a}'' parameter is the total energy extrapolated to zero time step in Hartree units. 
+Use the \ishell{PlotTstepConv.pl} to obtain a linear fit to the time step data (type ``\ishell{PlotTstepConv.pl O.q0.dmc.in.xml 40}'').  You should see a plot similar to Figure~\ref{fig:timestep_conv}.  The tail end of the text output displays the parameters for the linear fit.  The ``\ishell{a}'' parameter is the total energy extrapolated to zero time step in Hartree units. 
 
 \begin{shade}
 ...
@@ -720,7 +720,7 @@ Obtaining the time step extrapolated DMC total energy for ionized oxygen should 
     \item{Obtain the DMC total energy extrapolated to zero time step with \ishell{PlotTstepConv.pl}.}
   \end{enumerate}
 \end{enumerate}
-The aforementioned process, which excludes additional steps for orbital generation and conversion, can become tedious to perform by hand in production settings where many calculations are often required.  For this reason, automation tools are introduced for calculations involving the oxygen dimer in Section \ref{sec:dimer_automation} of the lab.  
+The aforementioned process, which excludes additional steps for orbital generation and conversion, can become tedious to perform by hand in production settings where many calculations are often required.  For this reason, automation tools are introduced for calculations involving the oxygen dimer in Section~\ref{sec:dimer_automation} of the lab.  
 
 \vspace{1cm}
 \begin{flushleft}
@@ -752,7 +752,7 @@ Simulation workflows quickly become more complex with increasing costs in terms 
 
 The set of automation tools we will be using is known as Nexus \cite{Krogel2016nexus}, which is distributed with QMCPACK.  Nexus is capable of generating input files, submitting and monitoring compute jobs, passing data between simulations (relaxed structures, orbital files, optimized Jastrow parameters, etc.), and data analysis.  The user interface to Nexus is through a set of functions defined in the Python programming language.  User scripts that execute simple workflows resemble input files and do not require programming experience.  More complex workflows require only basic programming constructs (e.g. for loops and if statements).  Nexus input files/scripts should be easier to navigate than QMCPACK input files and more efficient than submitting all the jobs by hand.
 
-Nexus is driven by simple user-defined scripts that resemble keyword-driven input files.  An example Nexus input file that performs a single VMC calculation (with pregenerated orbitals) follows.  Take a moment to read it over and especially note the comments (prefixed with ``\ishell{\#}'') explaining most of the contents.  If the input syntax is unclear you may want to consult portions of Appendix \ref{app:python_basics}, which gives a condensed summary of Python constructs.  An additional example and details about the inner workings of Nexus can be found in the reference publication \cite{Krogel2016nexus}. 
+Nexus is driven by simple user-defined scripts that resemble keyword-driven input files.  An example Nexus input file that performs a single VMC calculation (with pregenerated orbitals) follows.  Take a moment to read it over and especially note the comments (prefixed with ``\ishell{\#}'') explaining most of the contents.  If the input syntax is unclear you may want to consult portions of Appendix~\ref{app:python_basics}, which gives a condensed summary of Python constructs.  An additional example and details about the inner workings of Nexus can be found in the reference publication \cite{Krogel2016nexus}. 
 
 %For more information about the functionality and effective use of Nexus, consult \ishell{docs/Nexus.pdf}.  
 
@@ -760,7 +760,7 @@ Nexus is driven by simple user-defined scripts that resemble keyword-driven inpu
 
 \ifws
 \begin{lstlisting}[style=Python]
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # import Nexus functions
 from nexus import settings,job,get_machine,run_project 
@@ -821,7 +821,7 @@ run_project(qmc)                       # write input file and submit job
 \else
 
 \begin{lstlisting}[style=Python]
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # import Nexus functions
 from nexus import settings,job,get_machine,run_project 
@@ -1395,11 +1395,11 @@ Now submit the jobs in the dimer workflow.  Reset the state of the simulations b
 \section{(Optional) Running your system with QMCPACK}\label{sec:your_system}
 This section covers a fairly simple route to get started on QMC calculations of an arbitrary system of interest using the Nexus workflow management system to set up input files and optionally perform the runs.  The example provided in this section uses QE (PWSCF) to generate the orbitals forming the Slater determinant part of the trial wavefunction.  PWSCF is a natural choice for solid-state systems, and it can be used for surface/slab and molecular systems as well, albeit at the price of describing additional vacuum space with plane waves.
 
-To start out, you will need PPs for each element in your system in both the UPF (PWSCF) and FSATOM/XML (QMCPACK) formats.  A good place to start is the BFD pseudopotential database \newline (\href{http://www.burkatzki.com/pseudos/index.2.html}{http://www.burkatzki.com/pseudos/index.2.html}), which we have already used in our study of the oxygen atom.  The database does not contain PPs for the fourth and fifth row transition metals or any of the lanthanides or actinides.  If you need a PP that is not in the BFD database, you may need to generate and test one manually (e.g., with OPIUM, \href{http://opium.sourceforge.net/}{http://opium.sourceforge.net/}).  Otherwise, use \ishell{ppconvert} as outlined in Section \ref{sec:lqb_pseudo} to obtain PPs in the formats used by PWSCF and QMCPACK.  Enter the \ishell{your_system} lab directory and place the converted PPs in \ishell{your_system/pseudopotentials}.
+To start out, you will need PPs for each element in your system in both the UPF (PWSCF) and FSATOM/XML (QMCPACK) formats.  A good place to start is the BFD pseudopotential database \newline (\href{http://www.burkatzki.com/pseudos/index.2.html}{http://www.burkatzki.com/pseudos/index.2.html}), which we have already used in our study of the oxygen atom.  The database does not contain PPs for the fourth and fifth row transition metals or any of the lanthanides or actinides.  If you need a PP that is not in the BFD database, you may need to generate and test one manually (e.g., with OPIUM, \href{http://opium.sourceforge.net/}{http://opium.sourceforge.net/}).  Otherwise, use \ishell{ppconvert} as outlined in Section~\ref{sec:lqb_pseudo} to obtain PPs in the formats used by PWSCF and QMCPACK.  Enter the \ishell{your_system} lab directory and place the converted PPs in \ishell{your_system/pseudopotentials}.
 
 Before performing production calculations (more than just the initial setup in this section), be sure to converge the plane-wave energy cutoff in PWSCF as these PPs can be rather hard, sometimes requiring cutoffs in excess of 300 Ry.  Depending on the system under study, the amount of memory required to represent the orbitals (QMCPACK uses 3D B-splines) can become prohibitive, forcing you to search for softer PPs.
 
-Beyond PPs, all that is required to get started are the atomic positions and the dimensions/shape of the simulation cell.  The Nexus file \ishell{example.py} illustrates how to set up PWSCF and QMCPACK input files by providing minimal information regarding the physical system (an 8-atom cubic cell of diamond in the example).  Most of the contents should be familiar from your experience with the automated calculations of the oxygen dimer binding curve in Section \ref{sec:dimer_automation} (if you have skipped ahead you may want to skim that section for relevant information).  The most important change is the expanded description of the physical system:
+Beyond PPs, all that is required to get started are the atomic positions and the dimensions/shape of the simulation cell.  The Nexus file \ishell{example.py} illustrates how to set up PWSCF and QMCPACK input files by providing minimal information regarding the physical system (an 8-atom cubic cell of diamond in the example).  Most of the contents should be familiar from your experience with the automated calculations of the oxygen dimer binding curve in Section~\ref{sec:dimer_automation} (if you have skipped ahead you may want to skim that section for relevant information).  The most important change is the expanded description of the physical system:
 
 \begin{lstlisting}[style=Python]
 # details of your physical system (diamond conventional cell below)
@@ -1559,11 +1559,11 @@ d={'a':5,'b':6}         # dict
 o=obj(a=5,b=6)          # obj
 
                         # printing
-print t                 #  ('A', 42, 56, 123.0)
-print l                 #  ['B', 3.1400000000000001, 196]
-print a                 #  [1 2 3]
-print d                 #  {'a': 5, 'b': 6}
-print o                 #    a               = 5
+print(t)                #  ('A', 42, 56, 123.0)
+print(l)                #  ['B', 3.1400000000000001, 196]
+print(a)                #  [1 2 3]
+print(d)                #  {'a': 5, 'b': 6}
+print(o)                #    a               = 5
                         #    b               = 6
 
 len(t),len(l),len(a),len(d),len(o) #number of elements: (4, 3, 3, 2, 2)
@@ -1609,7 +1609,7 @@ An important feature of Python to be aware of is that assignment is most often b
 >>> 
 >>> p.a=7
 >>> 
->>> print o
+>>> print(o)
   a               = 7
   b               = 6
 
@@ -1617,7 +1617,7 @@ An important feature of Python to be aware of is that assignment is most often b
 >>> 
 >>> q.a=9
 >>> 
->>> print o
+>>> print(o)
   a               = 7
   b               = 6
 \end{shade}
@@ -1629,17 +1629,17 @@ Here \ishell{p} is just another name for \ishell{o}, while \ishell{q} is a fully
 \begin{shade}
 a = 5
 if a is None:
-    print 'a is None'
+    print('a is None')
 elif a==4:
-    print 'a is 4'
+    print('a is 4')
 elif a<=6 and a>2:
-    print 'a is in the range (2,6]'
+    print('a is in the range (2,6]')
 elif a<-1 or a>26:
-    print 'a is not in the range [-1,26]'
+    print('a is not in the range [-1,26]')
 elif a!=10: 
-    print 'a is not 10'
+    print('a is not 10')
 else:
-    print 'a is 10'
+    print('a is 10')
 #end if
 
 \end{shade}
@@ -1656,14 +1656,14 @@ for i in range(len(l)):  # loop over list indices
     s += l[i] + m[i]
 #end for
 
-print s                  # s is 21
+print(s)                 # s is 21
 
 s = 0                    
 for v in l:              # loop over list elements
     s += v
 #end for
 
-print s                  # s is 6
+print(s)                 # s is 6
 
 o = obj(a=5,b=6)
 s = 0
@@ -1671,14 +1671,14 @@ for v in o:              # loop over obj elements
     s += v
 #end for
 
-print s                  # s is 11
+print(s)                 # s is 11
 
 d = {'a':5,'b':4}
-for n,v in o.iteritems():# loop over name/value pairs in obj
+for n,v in o.items():# loop over name/value pairs in obj
     d[n] += v
 #end for
 
-print d                  # d is {'a': 10, 'b': 10}
+print(d)                 # d is {'a': 10, 'b': 10}
 
 \end{shade}
 
@@ -1686,15 +1686,15 @@ print d                  # d is {'a': 10, 'b': 10}
 \subsubsection{Functions: \ishell{def}, argument syntax}
 \begin{shade}
 def f(a,b,c=5):          # basic function, c has a default value
-    print a,b,c
+    print(a,b,c)
 #end def f
 
 f(1,b=2)                 # prints: 1 2 5
 
 
 def f(*args,**kwargs):   # general function, returns nothing
-    print args           #     args: tuple of positional arguments
-    print kwargs         #   kwargs: dict of keyword arguments
+    print(args)          #     args: tuple of positional arguments
+    print(kwargs)        #   kwargs: dict of keyword arguments
 #end def f
 
 f('s',(1,2),a=3,b='t')   # 2 pos., 2 kw. args, prints:
