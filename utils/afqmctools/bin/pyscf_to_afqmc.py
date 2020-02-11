@@ -136,7 +136,7 @@ def main(args):
     write_qmcpack(options.chk_file, options.hamil_file, options.thresh,
                   comm=comm,
                   ortho_ao=options.ortho_ao,
-                  kpoint=options.kpoint_sym, gdf=options.gdf,
+                  kpoint=options.kpoint_sym, 
                   verbose=options.verbose, cas=options.cas,
                   qmc_input=options.qmc_input,
                   wfn_file=options.wfn_file,
