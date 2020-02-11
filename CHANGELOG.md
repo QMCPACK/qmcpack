@@ -2,6 +2,12 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [3.9.1] - 2020-02-11
+
+### Notes
+
+This release is the same as v3.9.0 except that the version number of QMCPACK is reported correctly. See the v3.9.0 part of the CHANGELOG for important changes compared to v3.8.0.
+
 ## [3.9.0] - 2020-02-11 
 
 ### Notes
