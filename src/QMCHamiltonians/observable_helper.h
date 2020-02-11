@@ -25,7 +25,6 @@
 
 namespace qmcplusplus
 {
-const hsize_t h5_observable_type = H5T_NATIVE_DOUBLE;
 
 /** define observable_helper
  *
@@ -104,9 +103,9 @@ struct observable_helper
       hid_t p = H5Pcreate(H5P_DATASET_CREATE);
       H5Pset_chunk(p, rank, &mydims[0]);
       space1_id      = H5Screate_simple(rank, &mydims[0], &maxdims[0]);
-      value1_id      = H5Dcreate(data_id, "value", h5_observable_type, space1_id, p);
+      value1_id      = H5Dcreate(data_id, "value", H5T_NATIVE_DOUBLE, space1_id, p);
       hid_t memspace = H5Screate_simple(rank, &mydims[0], NULL);
-      herr_t ret     = H5Dwrite(value1_id, h5_observable_type, memspace, space1_id, H5P_DEFAULT, &zeros[0]);
+      herr_t ret     = H5Dwrite(value1_id, H5T_NATIVE_DOUBLE, memspace, space1_id, H5P_DEFAULT, &zeros[0]);
       H5Sclose(memspace);
       H5Pclose(p);
     }
@@ -178,7 +177,7 @@ struct observable_helper
       H5Sselect_hyperslab(space1_id, H5S_SELECT_SET, &offsets[0], NULL, &mydims[0], NULL);
       H5Dextend(value1_id, &curdims[0]);
       hid_t memspace = H5Screate_simple(rank, &mydims[0], NULL);
-      herr_t ret     = H5Dwrite(value1_id, h5_observable_type, memspace, space1_id, H5P_DEFAULT, first_v + lower_bound);
+      herr_t ret     = H5Dwrite(value1_id, H5T_NATIVE_DOUBLE, memspace, space1_id, H5P_DEFAULT, first_v + lower_bound);
       H5Sclose(memspace);
       curdims[0]++;
       offsets[0]++;
