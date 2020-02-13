@@ -85,7 +85,7 @@
 
    <qmc method="vmc_batch" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
-     <parameter name="walkers">    64 </parameter>
+     <parameter name="total_walkers"> 256 </parameter>
      <parameter name="substeps">  1 </parameter>
      <parameter name="warmupSteps">  100 </parameter>
      <parameter name="steps">  1 </parameter>
@@ -95,7 +95,7 @@
    </qmc>
    <qmc method="dmc_batch" move="pbyp" checkpoint="-1">
      <estimator name="LocalEnergy" hdf5="no"/>
-     <parameter name="walkers"> 64 </parameter>
+     <parameter name="TargetWalkers"> 256 </parameter>
      <parameter name="reconfiguration">   no </parameter>
      <parameter name="warmupSteps">  100 </parameter>
      <parameter name="timestep">  0.005 </parameter>
