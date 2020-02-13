@@ -108,7 +108,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); sub_step++)
   {
     //This generates an entire steps worth of deltas.
-    step_context.nextDeltaRs();
+    step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
 
     // up and down electrons are "species" within qmpack
     for (int ig = 0; ig < step_context.get_num_groups(); ++ig) //loop over species

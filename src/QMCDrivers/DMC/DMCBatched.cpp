@@ -10,6 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <functional>
+#include <cassert>
+#include <cmath>
 
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
@@ -123,21 +125,22 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     copyTWFFromBuffer(walker_twfs[iw], walker_elecs[iw], walkers[iw]);
+
   timers.buffer_timer.stop();
 
   timers.movepbyp_timer.start();
+  const int num_walkers = crowd.size();
   //This generates an entire steps worth of deltas.
-  step_context.nextDeltaRs();
+  step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
   auto it_delta_r = step_context.deltaRsBegin();
 
-  const int num_walkers = crowd.size();
-  std::vector<TrialWaveFunction::GradType> grads_now(num_walkers);
-  std::vector<TrialWaveFunction::GradType> grads_new(num_walkers);
-  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers);
-  std::vector<PosType> drifts(num_walkers);
-  std::vector<RealType> log_gf(num_walkers);
-  std::vector<RealType> log_gb(num_walkers);
-  std::vector<RealType> prob(num_walkers);
+  std::vector<TrialWaveFunction::GradType> grads_now(num_walkers, 0.0);
+  std::vector<TrialWaveFunction::GradType> grads_new(num_walkers, 0.0);
+  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers, 0.0);
+  std::vector<PosType> drifts(num_walkers, 0.0);
+  std::vector<RealType> log_gf(num_walkers, 0.0);
+  std::vector<RealType> log_gb(num_walkers, 0.0);
+  std::vector<RealType> prob(num_walkers, 0.0);
 
   // local list to handle accept/reject
   std::vector<std::reference_wrapper<ParticleSet>> elec_accept_list, elec_reject_list;
@@ -147,13 +150,13 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   twf_accept_list.reserve(num_walkers);
   twf_reject_list.reserve(num_walkers);
 
-  //copy the old energy
+  //copy the old energies
   std::vector<FullPrecRealType> old_walker_energies(num_walkers);
-  auto setOldEnergies = [](MCPWalker& walker, FullPrecRealType& old_walker_energy) {
+  auto readOldEnergies = [](MCPWalker& walker, FullPrecRealType& old_walker_energy) {
     old_walker_energy = walker.Properties(WP::LOCALENERGY);
-  };
+  };  
   for (int iw = 0; iw < num_walkers; ++iw)
-    setOldEnergies(walkers[iw], old_walker_energies[iw]);
+    readOldEnergies(walkers[iw], old_walker_energies[iw]);
   std::vector<FullPrecRealType> new_walker_energies(old_walker_energies);
 
   std::vector<RealType> gf_acc(num_walkers, 1.0);
@@ -176,6 +179,11 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       auto delta_r_start = it_delta_r + iat * num_walkers;
       auto delta_r_end   = delta_r_start + num_walkers;
 
+      std::vector<int> walkers_who_have_been_on_wire(num_walkers, 0);;
+      for (int iw = 0; iw < walkers.size(); ++iw)
+      {
+        walkers[iw].get().get_has_been_on_wire() ? walkers_who_have_been_on_wire[iw] = 1 : walkers_who_have_been_on_wire[iw] = 0;
+      }
       //get the displacement
       TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, grads_now);
       sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
@@ -185,7 +193,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
       // only DMC does this
       // TODO: rr needs a real name
-      std::vector<RealType> rr(num_walkers);
+      std::vector<RealType> rr(num_walkers, 0.0);
+      assert( rr.size() == delta_r_end - delta_r_start );
       std::transform(delta_r_start, delta_r_end, rr.begin(),
                      [tauovermass](auto& delta_r) { return tauovermass * dot(delta_r, delta_r); });
 
@@ -195,6 +204,10 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       //   ++nRejectTemp;
       //   continue;
       // }
+      #ifndef NDEBUG
+      for(int i = 0; i < rr.size(); ++i)
+        assert(std::isfinite(rr[i]));
+      #endif
       auto elecs = crowd.get_walker_elecs();
       ParticleSet::flex_makeMove(crowd.get_walker_elecs(), iat, drifts);
 
@@ -406,6 +419,7 @@ void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThrea
 
     for (int iw = 0; iw < moved.walkers.size(); ++iw)
     {
+      assert( moved.rr_proposed[iw] > 0 );
       resetSigNLocalEnergy(moved.walkers[iw], moved.walker_twfs[iw], local_energies[iw], moved.rr_accepted[iw],
                            moved.rr_proposed[iw]);
       // this might mean new_energies are actually unneeded which would be nice.
@@ -433,6 +447,7 @@ void DMCBatched::handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForT
 {
   for (int iw = 0; iw < stalled.walkers.size(); ++iw)
   {
+    std::cout << "A walker has stalled.\n"; 
     MCPWalker& stalled_walker = stalled.walkers[iw];
     stalled_walker.Age++;
     stalled_walker.Properties(WP::R2ACCEPTED) = 0.0;
@@ -496,10 +511,6 @@ void DMCBatched::process(xmlNodePtr node)
 {
   QMCDriverNew::AdjustedWalkerCounts awc = adjustGlobalWalkerCount(myComm, dmcdriver_input_.get_target_walkers(), qmcdriver_input_.get_walkers_per_rank(), get_num_crowds());
 
-  // This code bothers me now, most of the code bases this on what is actually there.
-  population_.set_num_local_walkers(awc.walkers_per_rank);
-  population_.set_num_global_walkers(awc.global_walkers);
-
   walkers_per_rank_ = awc.walkers_per_rank;
   walkers_per_crowd_ = awc.walkers_per_crowd;
   num_crowds_ = awc.num_crowds;
@@ -510,6 +521,7 @@ void DMCBatched::process(xmlNodePtr node)
 
   // side effect updates walkers_per_crowd_;
   makeLocalWalkers(awc.walkers_per_rank, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+  population_.syncWalkersPerNode(myComm);
   Base::process(node);
 }
 
@@ -532,7 +544,6 @@ bool DMCBatched::run()
     TasksOneToOne<> section_start_task(num_crowds_);
     section_start_task(initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
-
 
   TasksOneToOne<> crowd_task(num_crowds_);
 
@@ -560,10 +571,6 @@ bool DMCBatched::run()
       for (UPtr<Crowd>& crowd_ptr : crowds_)
         crowd_ptr->clearWalkers();
 
-      #ifndef NDEBUG
-      int org_walkers_per_crowd = walkers_per_crowd_;
-      #endif
-      
       if (population_.get_num_local_walkers() % crowds_.size())
       {
         walkers_per_crowd_ = population_.get_num_local_walkers() / crowds_.size() + 1;
@@ -571,11 +578,6 @@ bool DMCBatched::run()
       else
         walkers_per_crowd_ = population_.get_num_local_walkers() / crowds_.size();
 
-      #ifndef NDEBUG
-      if ( org_walkers_per_crowd != walkers_per_crowd_ )
-        std::cout << "walkers_per_crowd changed to " << walkers_per_crowd_ << '\n';
-      #endif
-      
       population_.distributeWalkers(crowds_.begin(), crowds_.end(), walkers_per_crowd_);
       
       // Accumulate on the whole population
@@ -587,7 +589,6 @@ bool DMCBatched::run()
         crowd_ref.accumulate(population_.get_num_global_walkers());
       }
     }
-
     endBlock();
   }
 

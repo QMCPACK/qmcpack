@@ -51,7 +51,7 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
     nwtot     = nwloc * ncontexts;
   }
 #if defined(HAVE_MPI)
-  if (ncontexts > 1)
+  if ( 1 ) //ncontexts > 1)
   {
     if (fixw)
     {

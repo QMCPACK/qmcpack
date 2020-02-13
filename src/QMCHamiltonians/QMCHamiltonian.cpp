@@ -493,7 +493,8 @@ void QMCHamiltonian::updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, Par
 {
   if (std::isnan(op.Value))
     APP_ABORT("QMCHamiltonian::evaluate component " + op.myName + " returns NaN\n");
-  // The following is a ridiculous breach of encapsulation.
+  // The following is a ridiculous breach of encapsulation, also if any operator fails to
+  // save the result of mw_evaluateWithToperator in Value the local energy will be wrong.
   ham.LocalEnergy += op.Value;
   op.setObservables(ham.Observables);
   op.setParticlePropertyList(pset.PropertyList, ham.myIndex);
@@ -501,6 +502,7 @@ void QMCHamiltonian::updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, Par
 
 void QMCHamiltonian::updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset) {
       ham.KineticEnergy                 = op.Value;
+      // this assumes updateKinetic is call after updateNonKinetic was called.
       pset.PropertyList[WP::LOCALENERGY]    = ham.LocalEnergy;
       pset.PropertyList[WP::LOCALPOTENTIAL] = ham.LocalEnergy - ham.KineticEnergy;
     }
@@ -520,29 +522,10 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluate(cons
       ScopedTimer local_timer(H_list[0].get().myTimers[i_ham_op]);
       const auto HC_list(extract_HC_list(H_list, i_ham_op));
 
-      // // This lambda accomplishes two things
-      // // 1. It makes clear T& and not std::reference_wrapper<T> is desired removing need for gets.
-      // // 2. [] captures nothing insuring that we know these updates only depend on the three object involved.
-      // auto updateNonKinetic = [](OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset) {
-      //   // both hamiltonian and operatorbase should have operator<< overides
-      //   if (std::isnan(op.Value))
-      //     APP_ABORT("QMCHamiltonian::evaluate component " + op.myName + " returns NaN\n");
-
-      //   // The following is a ridiculous breach of encapsulation.
-      //   ham.LocalEnergy += op.Value;
-      //   op.setObservables(ham.Observables);
-      //   op.setParticlePropertyList(pset.PropertyList, ham.myIndex);
-      // };
       HC_list[0].get().mw_evaluate(HC_list, P_list);
       for (int iw = 0; iw < H_list.size(); iw++)
         updateNonKinetic(HC_list[iw], H_list[iw], P_list[iw]);
     }
-
-    // auto updateKinetic = [](OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset) {
-    //   ham.KineticEnergy                 = op.Value;
-    //   pset.PropertyList[WP::LOCALENERGY]    = ham.LocalEnergy;
-    //   pset.PropertyList[LOCALPOTENTIAL] = ham.LocalEnergy - ham.KineticEnergy;
-    // };
 
     for (int iw = 0; iw < H_list.size(); iw++)
     {

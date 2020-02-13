@@ -16,10 +16,11 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <cmath>
+#include <numeric>
 
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/DMC/WalkerControlFactory.h"
-#include <numeric>
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
 #include "QMCDrivers/WalkerControlBase.h"
@@ -54,6 +55,7 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal)
   vParam[SBVP::TAUEFF]      = tau;
   vParam[SBVP::FEEDBACK]    = 1.0;
   vParam[SBVP::FILTERSCALE] = 10;
+  vParam[SBVP::EREF] = 0.0;
   R2Accepted(1.0e-10);
   R2Proposed(1.0e-10);
   //set the default values for integer parameters
@@ -229,10 +231,11 @@ int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, IndexT
 
   if (iParam[B_TARGETWALKERS] == 0)
   {
-    // has "important" side effect of updating the walker offsets
-    population.syncWalkersPerNode(MyEstimator->getCommunicator());
     if (target_walkers == 0)
+    {
+      population.syncWalkersPerNode(MyEstimator->getCommunicator());
       iParam[B_TARGETWALKERS] = population.get_num_global_walkers();
+    }
     else
       iParam[B_TARGETWALKERS] = target_walkers;
   }
@@ -265,7 +268,6 @@ int SimpleFixedNodeBranch::initWalkerController(MCPopulation& population, IndexT
   //{
   //  BranchMode.set(B_DMCSTAGE,0);//always reset warmup
   //}
-
   //update the simulation parameters
   WalkerController->put(myNode);
   //assign current Eref and a large number for variance
@@ -461,6 +463,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
   }
   WalkerController->setTrialEnergy(vParam[SBVP::ETRIAL]);
   //accumulate collectables and energies for scalar.dat
+  // Sometimes this is the actual summed weight and sometimes it is number of walkers
   FullPrecRealType wgt_inv = WalkerController->get_num_contexts() / WalkerController->get_ensemble_property().Weight;
   walkers.Collectables *= wgt_inv;
   MyEstimator->accumulate(walkers);
@@ -474,15 +477,14 @@ void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopul
 
   FullPrecRealType pop_now;
   if (BranchMode[B_DMCSTAGE] || iter)
-    pop_now = WalkerController->branch(iter, population, 0.1);
+    pop_now = WalkerController->branch(iter, population);
   else
     pop_now = WalkerController->doNotBranch(iter, population); //do not branch for the first step of a warmup
 
   //population for trial energy modification should not include any released node walkers.
   MCDataType<FullPrecRealType>& wc_ensemble_prop = WalkerController->get_ensemble_property();
-
   // \todo is RNSamples worth saving
-  //pop_now -= wc_ensemble_prop.RNSamples;
+  pop_now -= wc_ensemble_prop.RNSamples;
   //current energy
   vParam[SBVP::ENOW] = wc_ensemble_prop.Energy;
   VarianceHist(wc_ensemble_prop.Variance);
@@ -515,13 +517,8 @@ void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopul
   }
   else //warmup
   {
-    if (BranchMode[B_USETAUEFF])
-      vParam[SBVP::TAUEFF] = vParam[SBVP::TAU] * R2Accepted.result() / R2Proposed.result();
     if (BranchMode[B_POPCONTROL])
     {
-      //RealType emix=((iParam[B_WARMUPSTEPS]-ToDoSteps)<100)?(0.25*vParam[SBVP::EREF]+0.75*vParam[SBVP::ENOW]):vParam[SBVP::EREF];
-      //vParam[SBVP::ETRIAL]=emix+Feedback*(logN-std::log(pop_now));
-      //vParam[SBVP::ETRIAL]=vParam[SBVP::EREF]+Feedback*(logN-std::log(pop_now));
       if (BranchMode[B_KILLNODES])
         vParam[SBVP::ETRIAL] = (0.00 * vParam[SBVP::EREF] + 1.0 * vParam[SBVP::ENOW]) +
             vParam[SBVP::FEEDBACK] * (logN - std::log(pop_now)) -
@@ -552,6 +549,8 @@ void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopul
       //reset the histogram
       EnergyHist.clear();
       EnergyHist(vParam[SBVP::ENOW]);
+      R2Accepted.clear();
+      R2Proposed.clear();
       if (sParam[MIXDMCOPT] == "yes")
       {
         app_log() << "Switching to DMC with fluctuating populations" << std::endl;
@@ -685,6 +684,7 @@ void SimpleFixedNodeBranch::reset()
     {
       //logN = Feedback*std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));
       logN = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
+      // \todo remove this big of config handling needs to be in input or perhaps constructor
       if (vParam[SBVP::FEEDBACK] == 0.0)
         vParam[SBVP::FEEDBACK] = 1.0;
     }
@@ -864,9 +864,9 @@ void SimpleFixedNodeBranch::checkParameters(const int global_walkers, RefVector<
   std::ostringstream o;
   if (!BranchMode[B_DMCSTAGE])
   {
-    FullPrecRealType e, sigma2;
-    MyEstimator->getCurrentStatistics(global_walkers, walkers, e, sigma2, MyEstimator->getCommunicator());
-    vParam[SBVP::ETRIAL] = vParam[SBVP::EREF] = e;
+    FullPrecRealType energy, sigma2;
+    MyEstimator->getCurrentStatistics(global_walkers, walkers, energy, sigma2, MyEstimator->getCommunicator());
+    vParam[SBVP::ETRIAL] = vParam[SBVP::EREF] = energy;
     vParam[SBVP::SIGMA2]                  = sigma2;
     EnergyHist.clear();
     VarianceHist.clear();
@@ -875,7 +875,7 @@ void SimpleFixedNodeBranch::checkParameters(const int global_walkers, RefVector<
     VarianceHist(vParam[SBVP::SIGMA2]);
     //DMCEnergyHist(vParam[SBVP::EREF]);
     o << "SimpleFixedNodeBranch::checkParameters " << std::endl;
-    o << "  Average Energy of a population  = " << e << std::endl;
+    o << "  Average Energy of a population  = " << energy << std::endl;
     o << "  Energy Variance = " << vParam[SBVP::SIGMA2] << std::endl;
   }
   app_log() << o.str() << std::endl;

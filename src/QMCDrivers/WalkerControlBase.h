@@ -208,7 +208,7 @@ public:
    *
    *  \return global population
    */
-  virtual int branch(int iter, MCPopulation& pop, FullPrecRealType trigger);
+  virtual int branch(int iter, MCPopulation& pop);
 
   virtual FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau)
   {
@@ -236,9 +236,15 @@ protected:
   /** makes adjustments to local population based on adjust
    *
    * \param[inout] pop the local population
+   * \param[inout] the population adjustment 
+   */
+  static void onRankKill(MCPopulation& pop, PopulationAdjustment& adjust);
+  /** makes adjustments to local population based on adjust
+   *
+   * \param[inout] pop the local population
    * \param[in]    the population adjustment, it is not updated to reflect local state and is now invalid.
    */
-  static void onRankSpawnKill(MCPopulation& pop, PopulationAdjustment& adjust);
+  static void onRankSpawn(MCPopulation& pop, PopulationAdjustment& adjust);
 
 
   ///id for the method

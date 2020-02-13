@@ -93,7 +93,8 @@ void UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& ran
                                                      RefVector<MCPWalker>{}};
 
   // this expands the walkers to be copied into real walkers.
-  WalkerControlBase::onRankSpawnKill(*pop_, pop_adjust);
+  WalkerControlBase::onRankKill(*pop_, pop_adjust);
+  WalkerControlBase::onRankSpawn(*pop_, pop_adjust);
 
   wc_.Cur_pop = std::accumulate(rank_counts_before.begin(), rank_counts_before.end(), 0);
 

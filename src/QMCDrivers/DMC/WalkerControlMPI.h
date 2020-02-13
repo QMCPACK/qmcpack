@@ -73,7 +73,7 @@ struct WalkerControlMPI : public WalkerControlBase
    *
    *  populates the minus and plus vectors they contain 1 copy of a partition index 
    *  for each adjustment in population to the context.
-   *  \todo fix this word snalad
+   *  \todo fix this word salad
    *
    *  \param[in] Cur_pop population taking multiplicity into account
    *  \param[in] NumContexts number of MPI processes
@@ -86,7 +86,7 @@ struct WalkerControlMPI : public WalkerControlBase
   static void determineNewWalkerPopulation(int Cur_pop,
                                            int NumContexts,
                                            int MyContext,
-                                           const std::vector<int>& NumPerNode,
+                                           std::vector<int>& num_per_node,
                                            std::vector<int>& FairOffSet,
                                            std::vector<int>& minus,
                                            std::vector<int>& plus);
@@ -95,20 +95,20 @@ struct WalkerControlMPI : public WalkerControlBase
   int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
 
   /** unified driver: perform branch and swap walkers as required */
-  int branch(int iter, MCPopulation& pop, FullPrecRealType trigger);
+  int branch(int iter, MCPopulation& pop);
 
-  /** legacy: implementation
+  /** legacy: swap implementation
    */
   void swapWalkersSimple(MCWalkerConfiguration& W);
 
-  /** unified driver
+  /** unified: swap implementation
    *
    * Walkers are transfered between ranks in order to reach a difference of no more than 1 walker.
    * \param[inout] pops rankscope population
    * \param[inout] adjust population adjustment, it's updated for so on node adjustments can occur
-   * \param[in]    num_per_node number of walkers per node expanded by multiplicity.
+   * \param[inout]    num_per_node number of walkers per node expanded by multiplicity.
    */
-  void swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust, std::vector<IndexType> num_per_node);
+  int swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust, std::vector<IndexType>& num_per_node);
 
   // Testing wrappers
   friend WalkerControlMPITest;

@@ -187,6 +187,10 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
     //Here we assume no allocate is necessary since there should have been no changes in the other walker
     //elements since createWalkers, yet it must be called
     walkers_.back()->DataSet.allocate();
+    walkers_.back()->Generation = 0;
+    walkers_.back()->Age = 0;
+    walkers_.back()->ReleasedNodeWeight = 1.0;
+    walkers_.back()->ReleasedNodeAge = 0;
     walkers_.back()->Multiplicity = 1.0;
     walkers_.back()->Weight = 1.0;
   }

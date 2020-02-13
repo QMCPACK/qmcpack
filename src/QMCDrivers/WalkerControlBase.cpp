@@ -155,7 +155,7 @@ void WalkerControlBase::measureProperties(int iter)
                  << ensemble_property_.R2Accepted / ensemble_property_.R2Proposed;
     //       if (WriteRN) (*dmcStream)
     (*dmcStream) << std::setw(20) << ensemble_property_.LivingFraction;
-    (*dmcStream) << std::endl;
+    (*dmcStream) << '\n'; // this is definitely not a place to put an endl as that is also a signal for a flush.
   }
 }
 
@@ -360,13 +360,17 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
   return nw_tot;
 }
 
-void WalkerControlBase::onRankSpawnKill(MCPopulation& pop, PopulationAdjustment& adjust)
+void WalkerControlBase::onRankKill(MCPopulation& pop, PopulationAdjustment& adjust)
 {
   while (!adjust.bad_walkers.empty())
   {
     pop.killWalker(adjust.bad_walkers.back());
     adjust.bad_walkers.pop_back();
   }
+}
+
+void WalkerControlBase::onRankSpawn(MCPopulation& pop, PopulationAdjustment& adjust)
+{
   for (int iw = 0; iw < adjust.good_walkers.size(); ++iw)
   {
     for (int i_copies = 0; i_copies < adjust.copies_to_make[iw]; ++i_copies)
@@ -375,14 +379,14 @@ void WalkerControlBase::onRankSpawnKill(MCPopulation& pop, PopulationAdjustment&
       *walker           = adjust.good_walkers[iw];
       // IF these are really unique ID's they should be UUID's or something
       // old algorithm seems to reuse them in a way that I'm not sure avoids
-      // duplicates even at a particular time.
-      walker->ID       = pop.get_num_local_walkers() * pop.get_num_ranks() + pop.get_rank();
+      // duplicates even in a particular step
+      walker->ID       = iw * pop.get_num_ranks() + pop.get_rank();
       walker->ParentID = adjust.good_walkers[iw].get().ParentID;
     }
   }
 }
 
-int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trigger)
+int WalkerControlBase::branch(int iter, MCPopulation& pop)
 {
   // For measuring properties sortWalkers had important side effects
   PopulationAdjustment adjust(calcPopulationAdjustment(pop));
@@ -394,7 +398,9 @@ int WalkerControlBase::branch(int iter, MCPopulation& pop, FullPrecRealType trig
   // We have not yet updated the local number of walkers
   // This happens as a side effect of killing or spawning walkers
 
-  WalkerControlBase::onRankSpawnKill(pop, adjust);
+  WalkerControlBase::onRankKill(pop, adjust);
+  WalkerControlBase::onRankSpawn(pop, adjust);
+
   pop.syncWalkersPerNode(getCommunicator());
 
   for (UPtr<MCPWalker>& walker : pop.get_walkers())
@@ -573,7 +579,7 @@ auto WalkerControlBase::walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustme
     wac.ncr++;
   wac.r2_accepted += walker->Properties(WP::R2ACCEPTED);
   wac.r2_proposed += walker->Properties(WP::R2PROPOSED);
-  FullPrecRealType local_energy(walker->Properties(WP::LOCALENERGY));
+  FullPrecRealType local_energy{walker->Properties(WP::LOCALENERGY)};
   FullPrecRealType wgt = walker->Weight;
   wac.esum += wgt * local_energy;
   wac.e2sum += wgt * local_energy * local_energy;
@@ -614,7 +620,10 @@ auto WalkerControlBase::addReleaseNodeWalkers(PopulationAdjustment& adjustment,
   }
 }
 
-void WalkerControlBase::updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data, WalkerAdjustmentCriteria wac, PopulationAdjustment& adjustment, MCPopulation& pop)
+void WalkerControlBase::updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data,
+                                                    WalkerAdjustmentCriteria wac,
+                                                    PopulationAdjustment& adjustment,
+                                                    MCPopulation& pop)
 {
   std::fill(data.begin(), data.end(), 0);
   //update curData -- this is every field except for SENTWALKERS
@@ -655,8 +664,6 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
     bool inFN = (walker->ReleasedNodeAge == 0);
 
     assert(walker->Multiplicity > 0);
-    int mult = walker->Multiplicity;
-    MCPWalker& ref_walker = *walker;
     wac.nc = std::min(static_cast<int>(walker->Multiplicity), MaxCopy);
 
     if (write_release_nodes_)
@@ -664,15 +671,12 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
     else
       wac = walkerCalcAdjust(walker, wac);
 
-    assert(wac.nc >= 0);
-    adjustment.num_walkers += wac.nc;
-
     if ((wac.nc) && (inFN))
     {
       adjustment.good_walkers.push_back(*walker);
       adjustment.copies_to_make.push_back(wac.nc - 1);
     }
-    else if (wac.nc)
+    else if (wac.nc) // this is actually the more specialized path and untested.
     {
       // Nothing is every done with this except put its size in
       // curData[FNSIZE_INDEX] which is later used
@@ -687,9 +691,12 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
   }
 
   updateCurDataWithCalcAdjust(curData, wac, adjustment, pop);
-  
+
   if (write_release_nodes_)
     addReleaseNodeWalkers(adjustment, wac, good_walkers_rn, copies_to_make_rn);
+
+  adjustment.num_walkers = std::accumulate(adjustment.copies_to_make.begin(), adjustment.copies_to_make.end(),
+                                           adjustment.copies_to_make.size());
 
   return adjustment;
 }
@@ -821,7 +828,6 @@ void WalkerControlBase::adjustPopulation(PopulationAdjustment& adjust)
   // This differs from the legacy implementation which had partially updated state at this point.
   auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), adjust.num_walkers);
   IndexType current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
-
   // limit Nmax
   // TODO:  this seems to be the wrong pace to do this.
   // We assume the difference in number of walkers is no greater than 1
@@ -862,6 +868,7 @@ void WalkerControlBase::adjustPopulation(PopulationAdjustment& adjust)
                           << "Removing good walkers." << '\n';
             do
             {
+              assert(adjust.copies_to_make.back() == 0);
               adjust.bad_walkers.push_back(adjust.good_walkers.back());
               adjust.good_walkers.pop_back();
               adjust.copies_to_make.pop_back();
@@ -883,12 +890,10 @@ void WalkerControlBase::adjustPopulation(PopulationAdjustment& adjust)
       }
     }
     if (nsub)
-      throw std::runtime_error("WalkerControlBase::applyNmaxNmin can not remove"
+      throw std::runtime_error("WalkerControlBase::adjustPopulation can not remove"
                                " sufficient walkers overall!");
   }
-
-  // limit Nmin
-  if (current_population / num_contexts_ < n_min_)
+  else if (current_population / num_contexts_ < n_min_)
   {
     int nadd = n_min_ * num_contexts_ - current_population;
     app_warning() << "The number of walkers " << (current_population / num_contexts_)
@@ -942,11 +947,11 @@ void WalkerControlBase::adjustPopulation(PopulationAdjustment& adjust)
       app_warning() << "WalkerControlBase::adjustPopulation not able to add sufficient walkers overall!" << std::endl;
   }
 
-  // check current population
+  // check future current population
   adjust.num_walkers =
-      std::accumulate(adjust.copies_to_make.begin(), adjust.copies_to_make.end(), 0) + adjust.copies_to_make.size();
+      std::accumulate(adjust.copies_to_make.begin(), adjust.copies_to_make.end(), adjust.copies_to_make.size());
 
-  // at least one walker after load-balancing
+  // require at least one walker per rank after load-balancing
   if (adjust.num_walkers / num_contexts_ == 0)
   {
     app_error() << "Some MPI ranks have no walkers after load balancing. This should not happen."

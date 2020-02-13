@@ -408,7 +408,7 @@ void TrialWaveFunction::flex_evalGrad(const std::vector<std::reference_wrapper<T
                                       std::vector<GradType>& grad_now)
 {
   const int num_wf = wf_list.size();
-  grad_now.resize(num_wf);
+  assert( num_wf == grad_now.size() );
   std::fill(grad_now.begin(), grad_now.end(), GradType(0));
 
 
@@ -504,9 +504,11 @@ void TrialWaveFunction::flex_calcRatioGrad(const RefVector<TrialWaveFunction>& w
                                            std::vector<GradType>& grad_new)
 {
   const int num_wf = wf_list.size();
-  grad_new.resize(num_wf);
+  assert ( num_wf == grad_new.size() );
+  //grad_new.resize(num_wf);
   std::fill(grad_new.begin(), grad_new.end(), GradType(0));
-  grad_new.resize(num_wf);
+  assert ( num_wf == ratios.size() );
+  //ratios.resize(num_wf);
   std::fill(ratios.begin(), ratios.end(), PsiValueType(1));
 
   if (wf_list.size() > 1)

@@ -70,6 +70,15 @@ public:
     testWRTWalkersPerRank(33);
   }
 
+
+  void testDependentObjectsValidAfterPopulationChange()
+  {
+    using namespace testing;
+    SetupDMCTest& dtest = get_dtest();
+
+    
+  }
+  
   SetupDMCTest& get_dtest() { return *up_dtest_; }
 private:
   UPtr<SetupDMCTest> up_dtest_;
@@ -89,5 +98,17 @@ TEST_CASE("DMCBatched::calc_default_local_walkers", "[drivers]")
   dbt.testCalcDefaultLocalWalkers();
 }
 
+TEST_CASE("DMCBatched change of walkers_per_crowd", "[drivers]")
+{
+  using namespace testing;
+
+  outputManager.pause();
+  DMCBatchedTest dbt;
+  outputManager.resume();
+
+  Concurrency::OverrideMaxThreads<> override(8);
+  
+  
+}
 
 } // namespace qmcplusplus
