@@ -183,7 +183,7 @@ public:
    *  but this is why MCPopulation is handed in.
    *  This does was applyNmaxNmin used to.
    */
-  void adjustPopulation(PopulationAdjustment& adjust);
+  void limitPopulation(PopulationAdjustment& adjust);
 
   /** legacy: apply per node limit Nmax and Nmin
    */

@@ -314,6 +314,7 @@ void QMCDriverNew::makeLocalWalkers(int nwalkers, const ParticleAttrib<TinyVecto
   }
   else if(population_.get_walkers().size() < nwalkers)
   {
+    throw std::runtime_error("Unexpected walker count resulting in dangerous spawning");
     IndexType num_additional_walkers = nwalkers - population_.get_walkers().size();
     for(int i = 0; i < num_additional_walkers; ++i)
       population_.spawnWalker();
@@ -324,7 +325,13 @@ void QMCDriverNew::makeLocalWalkers(int nwalkers, const ParticleAttrib<TinyVecto
     for(int i = 0; i < num_walkers_to_kill; ++i)
       population_.killLastWalker();
   }
+
+  // \todo: this could be what is breaking spawned walkers
   for(UPtr<QMCHamiltonian>& ham : population_.get_hamiltonians())
+    setNonLocalMoveHandler_(*ham);
+
+  // For the dead ones too. Since this should be on construction but...
+  for(UPtr<QMCHamiltonian>& ham : population_.get_dead_hamiltonians())
     setNonLocalMoveHandler_(*ham);
 
   // setWalkerOffsets();

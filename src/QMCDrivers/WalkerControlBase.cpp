@@ -394,7 +394,7 @@ int WalkerControlBase::branch(int iter, MCPopulation& pop)
   pop.set_ensemble_property(ensemble_property_);
 
   // Warning adjustPopulation has many side effects
-  adjustPopulation(adjust);
+  limitPopulation(adjust);
   // We have not yet updated the local number of walkers
   // This happens as a side effect of killing or spawning walkers
 
@@ -818,7 +818,7 @@ std::vector<WalkerControlBase::IndexType> WalkerControlBase::syncFutureWalkersPe
 
 /** Here minimum and maximums per rank is enforced.
  */
-void WalkerControlBase::adjustPopulation(PopulationAdjustment& adjust)
+void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
 {
   // In the unified driver design each ranks MCPopulation knows this and it is not
   // stored a bunch of other places, i.e. NumPerNode shouldn't be how we know.
@@ -829,7 +829,6 @@ void WalkerControlBase::adjustPopulation(PopulationAdjustment& adjust)
   auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), adjust.num_walkers);
   IndexType current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
   // limit Nmax
-  // TODO:  this seems to be the wrong pace to do this.
   // We assume the difference in number of walkers is no greater than 1
   // our algorithm currently insures this.
   int current_max = (current_population + num_contexts_ - 1) / num_contexts_;
@@ -1006,7 +1005,7 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
   W.clear();
   W.insert(W.begin(), good_w.begin(), good_w.end());
 
-  //remove bad walkers if there is any left
+  //remove bad walkers if there are any left
   for (int i = 0; i < bad_w.size(); i++)
     delete bad_w[i];
 

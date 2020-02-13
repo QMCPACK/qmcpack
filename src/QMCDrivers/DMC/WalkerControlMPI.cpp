@@ -167,18 +167,21 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop)
 
   pop.set_ensemble_property(ensemble_property_);
 
-  adjustPopulation(adjust);
+  limitPopulation(adjust);
 
   auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), adjust.num_walkers);
 
   myTimers[DMC_MPI_prebalance]->stop();
   myTimers[DMC_MPI_loadbalance]->start();
-  //NumWalkersSent = swapWalkersSimple(pop, adjust, num_per_node);
-  NumWalkersSent = 0;
+  NumWalkersSent = swapWalkersSimple(pop, adjust, num_per_node);
+  //NumWalkersSent = 0;
   myTimers[DMC_MPI_loadbalance]->stop();
 
   WalkerControlBase::onRankKill(pop, adjust);
   WalkerControlBase::onRankSpawn(pop, adjust);
+
+  // Update to the current population
+  pop.syncWalkersPerNode(getCommunicator());
 
   for (UPtr<MCPWalker>& walker : pop.get_walkers())
   {
@@ -186,13 +189,9 @@ int WalkerControlMPI::branch(int iter, MCPopulation& pop)
     walker->Multiplicity = 1.0;
   }
 
-  // Update to the current population
-  pop.syncWalkersPerNode(getCommunicator());
-
   myTimers[DMC_MPI_branch]->stop();
 
   assert(pop.get_num_local_walkers() == num_per_node[MyContext]);
-
   return pop.get_num_global_walkers();
 }
 

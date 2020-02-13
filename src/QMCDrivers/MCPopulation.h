@@ -81,6 +81,11 @@ private:
   UPtrVector<TrialWaveFunction> walker_trial_wavefunctions_;
   UPtrVector<QMCHamiltonian> walker_hamiltonians_;
 
+  // In the spirit of the legacy implementation why take advantage of constructors and destructors at all
+  UPtrVector<ParticleSet> dead_walker_elec_particle_sets_;
+  UPtrVector<TrialWaveFunction> dead_walker_trial_wavefunctions_;
+  UPtrVector<QMCHamiltonian> dead_walker_hamiltonians_;
+  
   // MCPopulation immutables
   // would be nice if they were const but we'd lose the default move assignment 
   int num_ranks_;
@@ -201,6 +206,8 @@ public:
 
   UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
   UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
+  UPtrVector<QMCHamiltonian>& get_dead_hamiltonians() { return dead_walker_hamiltonians_; }
+
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
