@@ -34,48 +34,40 @@ SET(MOSRCS
   GamesFMOParser.cpp
   QPParser.cpp
   LCAOHDFParser.cpp
-  convertpw4qmc.cpp 
-  WriteEshdf.cpp
-  XmlRep.cpp
 )
 
 # create libmocommon 
 ADD_LIBRARY(mocommon ${MOSRCS})
+TARGET_LINK_LIBRARIES(mocommon PUBLIC qmcbase)
 
 set(QTOOLS convert4qmc qmc-extract-eshdf-kvectors)
-ADD_EXECUTABLE(qmc-get-supercell getSupercell.cpp)
-INSTALL(TARGETS qmc-get-supercell
-        RUNTIME DESTINATION bin)
-ADD_EXECUTABLE(qmc-check-affinity check-affinity.cpp)
-INSTALL(TARGETS qmc-check-affinity
-        RUNTIME DESTINATION bin)
-
-ADD_EXECUTABLE(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
-FOREACH(l ${QMC_UTIL_LIBS})		       
-  TARGET_LINK_LIBRARIES(convertpw4qmc ${l})
-ENDFOREACH(l ${QMC_UTIL_LIBS})
-
-INSTALL(TARGETS convertpw4qmc
-        RUNTIME DESTINATION bin)
-
-
 FOREACH(p ${QTOOLS})
 
   ADD_EXECUTABLE(${p} ${p}.cpp)
-  TARGET_LINK_LIBRARIES(${p} mocommon qmcbase qmcutil)
+  TARGET_LINK_LIBRARIES(${p} PRIVATE mocommon)
 
   INSTALL(TARGETS ${p}
           RUNTIME DESTINATION bin)
 
-  FOREACH(l ${QMC_UTIL_LIBS})
-    TARGET_LINK_LIBRARIES(${p} ${l})
-  ENDFOREACH(l ${QMC_UTIL_LIBS})
-
-  IF(MPI_LIBRARY)
-    TARGET_LINK_LIBRARIES(${p} ${MPI_LIBRARY})
-  ENDIF(MPI_LIBRARY)
-
 ENDFOREACH(p ${QTOOLS})
+
+ADD_EXECUTABLE(qmc-get-supercell getSupercell.cpp)
+INSTALL(TARGETS qmc-get-supercell
+        RUNTIME DESTINATION bin)
+
+ADD_EXECUTABLE(qmc-check-affinity check-affinity.cpp)
+IF(HAVE_MPI)
+  TARGET_LINK_LIBRARIES(qmc-check-affinity PRIVATE MPI::MPI_CXX)
+ENDIF()
+
+INSTALL(TARGETS qmc-check-affinity
+        RUNTIME DESTINATION bin)
+
+ADD_EXECUTABLE(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
+TARGET_LINK_LIBRARIES(convertpw4qmc PRIVATE qmcutil)
+
+INSTALL(TARGETS convertpw4qmc
+        RUNTIME DESTINATION bin)
 
 #ppconvert
 if( BUILD_PPCONVERT )

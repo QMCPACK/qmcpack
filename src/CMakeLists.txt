@@ -178,6 +178,9 @@ ENDIF()
   ENDIF(HAVE_CUDA)
 
   TARGET_LINK_LIBRARIES(qmcutil PUBLIC ${QMC_UTIL_LIBS})
+  IF(HAVE_MPI)
+    TARGET_LINK_LIBRARIES(qmcutil PUBLIC MPI::MPI_CXX)
+  ENDIF()
 
   # For unit tests, enable use for the fake RNG
   FUNCTION( USE_FAKE_RNG TARGET )
