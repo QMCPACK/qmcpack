@@ -10,17 +10,17 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file QuantumVariablesBuilder.h
+/** @file DynamicCoordinatesBuilder.h
  */
 #ifndef QMCPLUSPLUS_QUANTUM_VARIABLE_BUILDER_H
 #define QMCPLUSPLUS_QUANTUM_VARIABLE_BUILDER_H
 
-#include "Particle/QuantumVariables.h"
+#include "Particle/DynamicCoordinates.h"
 
 namespace qmcplusplus
 {
-/** create QuantumVariables based on kind
+/** create DynamicCoordinates based on kind
  */
-std::unique_ptr<QuantumVariables> createQuantumVariables(const QuantumVariableKind kind = QuantumVariableKind::QV_POS);
+std::unique_ptr<DynamicCoordinates> createDynamicCoordinates(const DynamicCoordinateKind kind = DynamicCoordinateKind::QV_POS);
 } // namespace qmcplusplus
 #endif

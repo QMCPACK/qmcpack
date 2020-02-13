@@ -15,23 +15,23 @@
 #ifndef QMCPLUSPLUS_REALSPACE_POSITIONS_H
 #define QMCPLUSPLUS_REALSPACE_POSITIONS_H
 
-#include "Particle/QuantumVariables.h"
+#include "Particle/DynamicCoordinates.h"
 #include "OhmmsSoA/Container.h"
 
 namespace qmcplusplus
 {
 /** Introduced to handle virtual moves and ratio computations, e.g. for non-local PP evaluations.
    */
-class RealSpacePositions : public QuantumVariables
+class RealSpacePositions : public DynamicCoordinates
 {
 public:
   using ParticlePos_t = PtclOnLatticeTraits::ParticlePos_t;
   using RealType      = QMCTraits::RealType;
   using PosType       = QMCTraits::PosType;
 
-  RealSpacePositions() : QuantumVariables(QuantumVariableKind::QV_POS) {}
+  RealSpacePositions() : DynamicCoordinates(DynamicCoordinateKind::QV_POS) {}
 
-  std::unique_ptr<QuantumVariables> makeClone() override { return std::make_unique<RealSpacePositions>(*this); }
+  std::unique_ptr<DynamicCoordinates> makeClone() override { return std::make_unique<RealSpacePositions>(*this); }
 
   void resize(size_t n) override { RSoA.resize(n); }
   size_t size() override { return RSoA.size(); }

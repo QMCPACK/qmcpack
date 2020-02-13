@@ -10,24 +10,24 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QuantumVariablesBuilder.h"
+#include "DynamicCoordinatesBuilder.h"
 #include "Particle/RealSpacePositions.h"
 #include "Particle/RealSpacePositionsOffload.h"
 
 namespace qmcplusplus
 {
-/** create QuantumVariables based on kind
+/** create DynamicCoordinates based on kind
  */
-std::unique_ptr<QuantumVariables> createQuantumVariables(const QuantumVariableKind kind)
+std::unique_ptr<DynamicCoordinates> createDynamicCoordinates(const DynamicCoordinateKind kind)
 {
-  if (kind == QuantumVariableKind::QV_POS)
+  if (kind == DynamicCoordinateKind::QV_POS)
     return std::make_unique<RealSpacePositions>();
 #if defined(ENABLE_OFFLOAD)
-  else if(kind==QuantumVariableKind::QV_POS_OFFLOAD)
+  else if(kind==DynamicCoordinateKind::QV_POS_OFFLOAD)
     return std::make_unique<RealSpacePositionsOffload>();
 #endif
   else
-    APP_ABORT("QuantumVariablesBuilder::createQuantumVariables unknown QuantumVariableKind");
+    APP_ABORT("DynamicCoordinatesBuilder::createDynamicCoordinates unknown DynamicCoordinateKind");
   // dummy return
   return std::unique_ptr<RealSpacePositions>();
 }

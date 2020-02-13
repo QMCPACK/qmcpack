@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_REALSPACE_POSITIONS_OFFLOAD_H
 #define QMCPLUSPLUS_REALSPACE_POSITIONS_OFFLOAD_H
 
-#include "Particle/QuantumVariables.h"
+#include "Particle/DynamicCoordinates.h"
 #include "OhmmsSoA/Container.h"
 #include "OpenMP/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
@@ -24,18 +24,18 @@ namespace qmcplusplus
 {
 /** Introduced to handle virtual moves and ratio computations, e.g. for non-local PP evaluations.
    */
-class RealSpacePositionsOffload : public QuantumVariables
+class RealSpacePositionsOffload : public DynamicCoordinates
 {
 public:
-  RealSpacePositionsOffload() : QuantumVariables(QuantumVariableKind::QV_POS_OFFLOAD) {}
+  RealSpacePositionsOffload() : DynamicCoordinates(DynamicCoordinateKind::QV_POS_OFFLOAD) {}
   RealSpacePositionsOffload(const RealSpacePositionsOffload& in)
-    : QuantumVariables(QuantumVariableKind::QV_POS_OFFLOAD), RSoA(in.RSoA)
+    : DynamicCoordinates(DynamicCoordinateKind::QV_POS_OFFLOAD), RSoA(in.RSoA)
   {
     RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
     updateH2D();
   }
 
-  std::unique_ptr<QuantumVariables> makeClone() override { return std::make_unique<RealSpacePositionsOffload>(*this); }
+  std::unique_ptr<DynamicCoordinates> makeClone() override { return std::make_unique<RealSpacePositionsOffload>(*this); }
 
   void resize(size_t n) override
   {

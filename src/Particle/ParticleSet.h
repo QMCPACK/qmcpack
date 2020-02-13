@@ -21,7 +21,7 @@
 
 #include <Configuration.h>
 #include <ParticleTags.h>
-#include <Particle/QuantumVariables.h>
+#include <Particle/DynamicCoordinates.h>
 #include <Particle/Walker.h>
 #include <Utilities/SpeciesSet.h>
 #include <Utilities/PooledData.h>
@@ -110,7 +110,7 @@ public:
   ///Position
   ParticlePos_t R;
   ///SoA copy of R
-  std::unique_ptr<QuantumVariables> RSoA;
+  std::unique_ptr<DynamicCoordinates> RSoA;
   ///internal spin variables for dynamical spin calculations
   ParticleScalar_t spins;
   ///gradients of the particles

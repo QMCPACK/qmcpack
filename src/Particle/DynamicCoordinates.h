@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file QuantumVariables.h
+/** @file DynamicCoordinates.h
  */
 #ifndef QMCPLUSPLUS_QUANTUM_VARIABLE_H
 #define QMCPLUSPLUS_QUANTUM_VARIABLE_H
@@ -21,9 +21,9 @@
 
 namespace qmcplusplus
 {
-/** enumerator for QuantumVariables kinds
+/** enumerator for DynamicCoordinates kinds
  */
-enum class QuantumVariableKind
+enum class DynamicCoordinateKind
 {
   QV_POS, // SoA positions
   QV_POS_OFFLOAD, // SoA positions with OpenMP offload
@@ -31,7 +31,7 @@ enum class QuantumVariableKind
 
 /** quantum variables of all the particles
  */
-class QuantumVariables
+class DynamicCoordinates
 {
 public:
   using RealType = QMCTraits::RealType;
@@ -39,13 +39,13 @@ public:
   using ParticlePos_t = PtclOnLatticeTraits::ParticlePos_t;
   using PosVectorSoa = VectorSoaContainer<RealType, QMCTraits::DIM>;
 
-  QuantumVariables(const QuantumVariableKind kind_in) : variable_kind_(kind_in) {}
+  DynamicCoordinates(const DynamicCoordinateKind kind_in) : variable_kind_(kind_in) {}
 
-  QuantumVariableKind getKindvariable() const { return variable_kind_; }
+  DynamicCoordinateKind getKindvariable() const { return variable_kind_; }
 
-  virtual ~QuantumVariables() = default;
+  virtual ~DynamicCoordinates() = default;
 
-  virtual std::unique_ptr<QuantumVariables> makeClone() = 0;
+  virtual std::unique_ptr<DynamicCoordinates> makeClone() = 0;
 
   virtual void resize(size_t n) = 0;
   virtual size_t size() = 0;
@@ -58,7 +58,7 @@ public:
 
   virtual void donePbyP() { }
 protected:
-  const QuantumVariableKind variable_kind_;
+  const DynamicCoordinateKind variable_kind_;
 };
 } // namespace qmcplusplus
 #endif
