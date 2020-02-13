@@ -29,6 +29,8 @@ typedef int TraceManager;
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 TimerNameList_t<DMCTimers> DMCTimerNames = {{DMC_buffer, "DMCUpdatePbyP::Buffer"},
                                             {DMC_movePbyP, "DMCUpdatePbyP::movePbyP"},
                                             {DMC_hamiltonian, "DMCUpdatePbyP::Hamiltonian"},
@@ -61,7 +63,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   int nAcceptTemp(0);
   int nRejectTemp(0);
   //copy the old energy and scale factor of drift
-  FullPrecRealType eold(thisWalker.Properties(LOCALENERGY));
+  FullPrecRealType eold(thisWalker.Properties(WP::LOCALENERGY));
   FullPrecRealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
@@ -148,7 +150,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   {
     //all moves are rejected: does not happen normally with reasonable wavefunctions
     thisWalker.Age++;
-    thisWalker.Properties(R2ACCEPTED) = 0.0;
+    thisWalker.Properties(WP::R2ACCEPTED) = 0.0;
     //weight is set to 0 for traces
     // consistent w/ no evaluate/auxHevaluate
     RealType wtmp     = thisWalker.Weight;

@@ -52,7 +52,7 @@ inline DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet&
   // is determined by the number of source particles.
   // Thus the implementation selection is determined by the source particle set.
 #if defined(ENABLE_OFFLOAD)
-  if (s.RSoA->getKind() == QuantumVariableKind::QV_POS_OFFLOAD)
+  if (s.getCoordinates().getKind() == DynamicCoordinateKind::QV_POS_OFFLOAD)
     return createDistanceTableABOMP(s, t, dt_type, description);
   else
 #endif

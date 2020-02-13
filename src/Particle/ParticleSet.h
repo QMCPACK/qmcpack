@@ -21,7 +21,7 @@
 
 #include <Configuration.h>
 #include <ParticleTags.h>
-#include <Particle/QuantumVariables.h>
+#include <Particle/DynamicCoordinates.h>
 #include <Particle/Walker.h>
 #include <Utilities/SpeciesSet.h>
 #include <Utilities/PooledData.h>
@@ -109,8 +109,6 @@ public:
   ParticleIndex_t GroupID;
   ///Position
   ParticlePos_t R;
-  ///SoA copy of R
-  std::unique_ptr<QuantumVariables> RSoA;
   ///internal spin variables for dynamical spin calculations
   ParticleScalar_t spins;
   ///gradients of the particles
@@ -205,7 +203,7 @@ public:
   int current_step;
 
   ///default constructor
-  ParticleSet(const QuantumVariableKind kind = QuantumVariableKind::QV_POS);
+  ParticleSet(const DynamicCoordinateKind kind = DynamicCoordinateKind::QV_POS);
 
   ///copy constructor
   ParticleSet(const ParticleSet& p);
@@ -297,6 +295,9 @@ public:
       ParentName = aname;
     }
   }
+
+  inline const DynamicCoordinates& getCoordinates() const { return *coordinates_; }
+  inline void setCoordinates(const ParticlePos_t& R) { return coordinates_->setAllParticlePos(R); }
 
   //inline RealType getTotalWeight() const { return EnsembleProperty.Weight; }
 
@@ -543,7 +544,7 @@ public:
     Z.resize(numPtcl);
     IndirectID.resize(numPtcl);
 
-    RSoA->resize(numPtcl);
+    coordinates_->resize(numPtcl);
   }
 
   inline void clear()
@@ -563,7 +564,7 @@ public:
     Z.clear();
     IndirectID.clear();
 
-    RSoA->resize(0);
+    coordinates_->resize(0);
   }
 
   inline void assign(const ParticleSet& ptclin)
@@ -683,6 +684,8 @@ protected:
 
   ///array to handle a group of distinct particles per species
   ParticleIndex_t SubPtcl;
+  ///internal representation of R. It can be an SoA copy of R
+  std::unique_ptr<DynamicCoordinates> coordinates_;
 
   /** compute temporal DistTables and SK for a new particle position
    *

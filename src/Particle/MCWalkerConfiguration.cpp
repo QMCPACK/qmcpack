@@ -40,6 +40,7 @@ namespace qmcplusplus
  */
 struct MCSample
 {
+  using WP = WalkerProperties::Indexes;
   typedef ParticleSet::Walker_t Walker_t;
 
   ParticleSet::ParticlePos_t R;
@@ -49,10 +50,10 @@ struct MCSample
 
   inline MCSample(const Walker_t& w) : R(w.R), G(w.G), L(w.L)
   {
-    LogPsi = w.Properties(LOGPSI);
-    Sign   = w.Properties(SIGN);
-    PE     = w.Properties(LOCALPOTENTIAL);
-    KE     = w.Properties(LOCALENERGY) - PE;
+    LogPsi = w.Properties(WP::LOGPSI);
+    Sign   = w.Properties(WP::SIGN);
+    PE     = w.Properties(WP::LOCALPOTENTIAL);
+    KE     = w.Properties(WP::LOCALENERGY) - PE;
   }
 
   inline MCSample(int n)
@@ -67,10 +68,10 @@ struct MCSample
     R      = w.R;
     G      = w.G;
     L      = w.L;
-    LogPsi = w.Properties(LOGPSI);
-    Sign   = w.Properties(SIGN);
-    PE     = w.Properties(LOCALPOTENTIAL);
-    KE     = w.Properties(LOCALENERGY) - PE;
+    LogPsi = w.Properties(WP::LOGPSI);
+    Sign   = w.Properties(WP::SIGN);
+    PE     = w.Properties(WP::LOCALPOTENTIAL);
+    KE     = w.Properties(WP::LOCALENERGY) - PE;
   }
 
   inline void get(Walker_t& w) const
@@ -78,15 +79,24 @@ struct MCSample
     w.R                          = R;
     w.G                          = G;
     w.L                          = L;
-    w.Properties(LOGPSI)         = LogPsi;
-    w.Properties(SIGN)           = Sign;
-    w.Properties(LOCALPOTENTIAL) = PE;
-    w.Properties(LOCALENERGY)    = PE + KE;
+    w.Properties(WP::LOGPSI)         = LogPsi;
+    w.Properties(WP::SIGN)           = Sign;
+    w.Properties(WP::LOCALPOTENTIAL) = PE;
+    w.Properties(WP::LOCALENERGY)    = PE + KE;
   }
 };
 
-MCWalkerConfiguration::MCWalkerConfiguration(const QuantumVariableKind kind)
+MCWalkerConfiguration::MCWalkerConfiguration(const DynamicCoordinateKind kind)
     : ParticleSet(kind),
+#ifdef QMC_CUDA
+      RList_GPU("MCWalkerConfiguration::RList_GPU"),
+      GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
+      LapList_GPU("MCWalkerConfiguration::LapList_GPU"),
+      Rnew_GPU("MCWalkerConfiguration::Rnew_GPU"),
+      NLlist_GPU("MCWalkerConfiguration::NLlist_GPU"),
+      iatList_GPU("iatList_GPU"),
+      AcceptList_GPU("MCWalkerConfiguration::AcceptList_GPU"),
+#endif
       OwnWalkers(true),
       ReadyForPbyP(false),
       GlobalNumWalkers(0),
@@ -95,16 +105,6 @@ MCWalkerConfiguration::MCWalkerConfiguration(const QuantumVariableKind kind)
       Polymer(0),
       MaxSamples(10),
       CurSampleCount(0)
-#ifdef QMC_CUDA
-      ,
-      RList_GPU("MCWalkerConfiguration::RList_GPU"),
-      GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
-      LapList_GPU("MCWalkerConfiguration::LapList_GPU"),
-      Rnew_GPU("MCWalkerConfiguration::Rnew_GPU"),
-      NLlist_GPU("MCWalkerConfiguration::NLlist_GPU"),
-      AcceptList_GPU("MCWalkerConfiguration::AcceptList_GPU"),
-      iatList_GPU("iatList_GPU")
-#endif
 {
   //move to ParticleSet
   //initPropertyList();
@@ -112,6 +112,15 @@ MCWalkerConfiguration::MCWalkerConfiguration(const QuantumVariableKind kind)
 
 MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
     : ParticleSet(mcw),
+#ifdef QMC_CUDA
+      RList_GPU("MCWalkerConfiguration::RList_GPU"),
+      GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
+      LapList_GPU("MCWalkerConfiguration::LapList_GPU"),
+      Rnew_GPU("MCWalkerConfiguration::Rnew_GPU"),
+      NLlist_GPU("MCWalkerConfiguration::NLlist_GPU"),
+      iatList_GPU("iatList_GPU"),
+      AcceptList_GPU("MCWalkerConfiguration::AcceptList_GPU"),
+#endif
       OwnWalkers(true),
       ReadyForPbyP(false),
       GlobalNumWalkers(mcw.GlobalNumWalkers),
@@ -119,16 +128,6 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
       Polymer(0),
       MaxSamples(mcw.MaxSamples),
       CurSampleCount(0)
-#ifdef QMC_CUDA
-      ,
-      RList_GPU("MCWalkerConfiguration::RList_GPU"),
-      GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
-      LapList_GPU("MCWalkerConfiguration::LapList_GPU"),
-      Rnew_GPU("MCWalkerConfiguration::Rnew_GPU"),
-      NLlist_GPU("MCWalkerConfiguration::NLlist_GPU"),
-      AcceptList_GPU("MCWalkerConfiguration::AcceptList_GPU"),
-      iatList_GPU("iatList_GPU")
-#endif
 {
   GlobalNumWalkers = mcw.GlobalNumWalkers;
   WalkerOffsets    = mcw.WalkerOffsets;
@@ -293,6 +292,15 @@ void MCWalkerConfiguration::copyWalkerRefs(Walker_t* head, Walker_t* tail)
   WalkerList[1] = tail;
 }
 
+void MCWalkerConfiguration::fakeWalkerList(Walker_t* first, Walker_t* second)
+{
+  if (WalkerList.size() != 0)
+    throw std::runtime_error("This should only be called in tests and only with a fresh MCWC!");
+  OwnWalkers = false;
+  WalkerList.push_back(first);
+  WalkerList.push_back(second);
+}
+
 /** Make Metropolis move to the walkers and save in a temporary array.
  * @param it the iterator of the first walker to work on
  * @param tauinv  inverse of the time step
@@ -429,10 +437,11 @@ void MCWalkerConfiguration::loadSample(ParticleSet::ParticlePos_t& Pos, size_t i
  */
 void MCWalkerConfiguration::loadEnsemble()
 {
+  using WP = WalkerProperties::Indexes;
   int nsamples = std::min(MaxSamples, CurSampleCount);
   if (SampleStack.empty() || nsamples == 0)
     return;
-  Walker_t::PropertyContainer_t prop(1, PropertyList.size());
+  Walker_t::PropertyContainer_t prop(1, PropertyList.size(), 1, WP::MAXPROPERTIES);
   delete_iter(WalkerList.begin(), WalkerList.end());
   WalkerList.resize(nsamples);
   for (int i = 0; i < nsamples; ++i)
@@ -506,6 +515,7 @@ bool MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& ot
 
 void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean)
 {
+  using WP = WalkerProperties::Indexes;
   std::vector<int> off(others.size() + 1, 0);
   for (int i = 0; i < others.size(); ++i)
   {
@@ -514,7 +524,7 @@ void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& ot
   int nw_tot = off.back();
   if (nw_tot)
   {
-    Walker_t::PropertyContainer_t prop(1, PropertyList.size());
+    Walker_t::PropertyContainer_t prop(1, PropertyList.size(), 1, WP::MAXPROPERTIES);
     while (WalkerList.size())
       pop_back();
     WalkerList.resize(nw_tot);

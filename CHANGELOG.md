@@ -2,6 +2,74 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [3.9.1] - 2020-02-11
+
+### Notes
+
+This release is the same as v3.9.0 except that the version number of QMCPACK is reported correctly. See the v3.9.0 part of the CHANGELOG for important changes compared to v3.8.0.
+
+## [3.9.0] - 2020-02-11 
+
+### Notes
+
+This release includes a large number of refinements to improve or extend the functionality of QMCPACK and NEXUS. Importantly, this
+release supports and requires Python 3. After this release we plan to remove the array-of-structures build configuration and also
+the legacy CUDA implementation for GPUs. If any needed functionality is not supported by the now-default structures-of-arrays
+configuration, users should contact the developers via the QMCPACK Google Groups or via an issue on the QMCPACK GitHub repository.
+Work is ongoing to support dynamical spin variables, implement spin-orbit, and to develop new support for accelerators via a new
+framework that will consistently support CPUs and GPUs from the same codebase. 
+
+* All uses of Python updated to Python 3, which is now required. Python 2 was retired at the end of 2019, and many packages
+  already only support Python 3.
+* A greatly expanded selection of effective core potentials is available at
+  [https://pseudopotentiallibrary.org/](https://pseudopotentiallibrary.org/) in formats suitable for QMCPACK and common DFT and
+  quantum chemistry codes.    
+* All major functionality is now supported by the default structures-of-arrays (SoA) build. This release is the last to support the legacy array-of-structures (AoS)
+  build. See [\#861](https://github.com/QMCPACK/qmcpack/issues/861).
+* Major bug identified and fixed in the periodic Coulomb evaluation (Optimized breakup method of Natoli-Ceperley). Many thanks to Jan Brndiar
+  and coworkers for reporting this. For large anisotropic supercells such as a graphene layer with substantial vacuum, the ion-ion potential was
+  incorrectly computed. Results in all bulk-like supercells tested so far have been accurate. An independent Ewald check of the ion-ion potential evaluation has been added. See
+  [\#2137](https://github.com/QMCPACK/qmcpack/pull/2137). The Coulomb potential evaluation has also been found to converge very slowly for certain
+  anisotropic supercells, particularly for quasi-2D cells where huge errors can result. The new independent Coulomb check will
+  abort if a tolerance is not reached and provide guidance. Research is ongoing to develop an improved methodology
+  [\#2185](https://github.com/QMCPACK/qmcpack/issues/2185).  
+* Support for periodic gaussian-based trial wavefunctions at complex k-points
+  [\#1988](https://github.com/QMCPACK/qmcpack/issues/1988).
+* Determinant-localization approximation (DLA) of Zen et al. [J. Chem. Phys. 151, 134105
+  (2019)](https://doi.org/10.1063/1.5119729) for DMC non-local pseudopotential evaluation implemented.
+* Improved force implementation [\#1769](https://github.com/QMCPACK/qmcpack/issues/1769), [\#1768](https://github.com/QMCPACK/qmcpack/issues/1768).
+* Non-local pseudopotential derivatives are supported in the SoA build and recommended for all optimizations
+  [\#2083](https://github.com/QMCPACK/qmcpack/issues/2083).
+* Above 192 electrons in a spin determinant, delayed updating with delay 32 is enabled by default for higher performance,
+  [\#2027](https://github.com/QMCPACK/qmcpack/pull/2027). Rank-1 updating is used by default for smaller determinants.
+* Improved configuration and detection of Intel MKL and vector MKL when used with non-Intel compilers.
+* QMCPACK will now run with wavefunctions where only electrons of a single spin are specified.
+  [\#2148](https://github.com/QMCPACK/qmcpack/pull/2148).
+* AFQMC estimators now include 1 and 2 body reduced density matrices (1RRM, 2RDM) and on-top pair density.
+  [\#2097](https://github.com/QMCPACK/qmcpack/pull/2097).
+* Dense real hamiltonian added for AFQMC allowing for GPU acceleration for chemistry applications. [\#2131](https://github.com/QMCPACK/qmcpack/pull/2131). 
+* [QMCPACK spack package](https://spack.readthedocs.io/en/latest/package_list.html#qmcpack)  supports the latest release as well
+  as the development version. This package can also install and patch
+  Quantum Espresso. 
+* Support for Blue Gene removed due to retirement of this architecture.
+* Many minor bug fixes, expanded testing, and small feature improvements.
+
+### Known bugs
+
+See [list of open bugs](https://github.com/QMCPACK/qmcpack/issues?q=is%3Aissue+is%3Aopen+label%3Abug).
+
+* Use of reconfiguration in DMC is disabled since it is incorrect. [\#2254](https://github.com/QMCPACK/qmcpack/pull/2254)
+
+### NEXUS
+
+* NEXUS version is increased to 2.0.0 due to major updates in this release.
+* NEXUS has been transitioned to Python 3 and now requires it.
+* Significantly expanded test system to cover all major functionality.
+* Full support for PySCF to QMCPACK and AFQMC workflows [\#1970](https://github.com/QMCPACK/qmcpack/pull/1970).
+* Support for DLA [\#2061](https://github.com/QMCPACK/qmcpack/pull/2061).
+* VMC optimization performed with NLPP derivatives by default [\#2128](https://github.com/QMCPACK/qmcpack/pull/2128).
+* Many minor bugfixes and feature improvements.
+
 ## [3.8.0] - 2019-07-23
 
 ### Notes

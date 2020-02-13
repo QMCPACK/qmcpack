@@ -20,7 +20,7 @@
 #include <numeric>
 #include <iomanip>
 #include "Particle/ParticleSet.h"
-#include "Particle/QuantumVariablesBuilder.h"
+#include "Particle/DynamicCoordinatesBuilder.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/createDistanceTable.h"
 #include "LongRange/StructFact.h"
@@ -32,6 +32,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 //using namespace particle_info;
 
 #ifdef QMC_CUDA
@@ -44,33 +46,35 @@ const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_ne
                                                                           {PS_accept, "ParticleSet::acceptMove"},
                                                                           {PS_update, "ParticleSet::update"}};
 
-ParticleSet::ParticleSet(const QuantumVariableKind kind)
+ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
     : quantum_domain(classical),
-      RSoA(std::move(createQuantumVariables(kind))),
       IsGrouped(true),
       SameMass(true),
       ThreadID(0),
       activePtcl(-1),
       SK(0),
+      Properties(0, 0, 1, WP::MAXPROPERTIES),
       myTwist(0.0),
       ParentName("0"),
-      TotalNum(0)
+      TotalNum(0),
+      coordinates_(std::move(createDynamicCoordinates(kind)))
 {
   initPropertyList();
   setup_timers(myTimers, PSTimerNames, timer_level_fine);
 }
 
 ParticleSet::ParticleSet(const ParticleSet& p)
-    : RSoA(std::move(p.RSoA->makeClone())),
-      IsGrouped(p.IsGrouped),
+    : IsGrouped(p.IsGrouped),
       SameMass(true),
       ThreadID(0),
       activePtcl(-1),
       mySpecies(p.getSpeciesSet()),
       SK(0),
+      Properties(p.Properties),
       myTwist(0.0),
-      ParentName(p.parentName())
-{
+      ParentName(p.parentName()),
+      coordinates_(std::move(p.coordinates_->makeClone()))
+  {
   set_quantum_domain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable
   //need explicit copy:
@@ -147,7 +151,10 @@ void ParticleSet::set_quantum_domain(quantum_domains qdomain)
 void ParticleSet::resetGroups()
 {
   int nspecies = mySpecies.getTotalNum();
-  if (nspecies == 0)
+  // Usually an empty ParticleSet indicates an error in the input file,
+  // but in some cases it is useful.  Allow an empty ParticleSet if it
+  // has the special name "empty".
+  if (nspecies == 0 && getName() != "empty")
   {
     APP_ABORT("ParticleSet::resetGroups() Failed. No species exisits");
   }
@@ -189,7 +196,7 @@ void ParticleSet::resetGroups()
   }
   // safety check if any group of particles has size 0, instruct users to fix the input.
   for (int group_id = 0; group_id < nspecies; group_id++)
-    if (ng[group_id] == 0)
+    if (ng[group_id] == 0 && getName() != "empty")
     {
       std::ostringstream err_msg;
       err_msg << "ParticleSet::resetGroups() Failed. ParticleSet '" << myName << "' "
@@ -374,7 +381,7 @@ void ParticleSet::update(bool skipSK)
 {
   ScopedTimer update_scope(myTimers[PS_update]);
 
-  RSoA->setAllParticlePos(R);
+  coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (!skipSK && SK)
@@ -390,7 +397,7 @@ void ParticleSet::flex_update(const RefVector<ParticleSet>& p_list, bool skipSK)
     ScopedTimer update_scope(p_list[0].get().myTimers[PS_update]);
 
     for (ParticleSet& pset : p_list)
-      pset.RSoA->setAllParticlePos(pset.R);
+      pset.setCoordinates(pset.R);
 
     auto& dts = p_list[0].get().DistTables;
     for (int i = 0; i < dts.size(); ++i)
@@ -531,7 +538,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePo
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt * deltaR[iat];
   }
-  RSoA->setAllParticlePos(R);
+  coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -563,7 +570,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker,
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt[iat] * deltaR[iat];
   }
-  RSoA->setAllParticlePos(R);
+  coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -603,7 +610,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt * deltaR[iat] + drift[iat];
   }
-  RSoA->setAllParticlePos(R);
+  coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -636,7 +643,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt[iat] * deltaR[iat] + drift[iat];
   }
-  RSoA->setAllParticlePos(R);
+  coordinates_->setAllParticlePos(R);
 
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
@@ -665,7 +672,7 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
       SK->acceptMove(iat, GroupID[iat], R[iat]);
 
     R[iat]     = activePos;
-    RSoA->setOneParticlePos(activePos, iat);
+    coordinates_->setOneParticlePos(activePos, iat);
     spins[iat] = activeSpinVal;
     activePtcl = -1;
   }
@@ -692,7 +699,7 @@ void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)
 void ParticleSet::donePbyP()
 {
   ScopedTimer donePbyP_scope(myTimers[PS_donePbyP]);
-  RSoA->donePbyP();
+  coordinates_->donePbyP();
   if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
   activePtcl = -1;
@@ -709,7 +716,7 @@ void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
 void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 {
   R = awalker.R;
-  RSoA->setAllParticlePos(R);
+  coordinates_->setAllParticlePos(R);
 #if !defined(SOA_MEMORY_OPTIMIZED)
   G = awalker.G;
   L = awalker.L;
@@ -771,12 +778,14 @@ void ParticleSet::initPropertyList()
   PropertyList.add("AltEnergy");
   PropertyList.add("LocalEnergy");
   PropertyList.add("LocalPotential");
-  if (PropertyList.size() != NUMPROPERTIES)
-  {
-    app_error() << "The number of default properties for walkers  is not consistent." << std::endl;
-    app_error() << "NUMPROPERTIES " << NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << std::endl;
-    APP_ABORT("ParticleSet::initPropertyList");
-  }
+  
+  // There is no point in checking this, its quickly not consistent as other objects update property list.
+  // if (PropertyList.size() != WP::NUMPROPERTIES)
+  // {
+  //   app_error() << "The number of default properties for walkers  is not consistent." << std::endl;
+  //   app_error() << "NUMPROPERTIES " << WP::NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << std::endl;
+  //   APP_ABORT("ParticleSet::initPropertyList");
+  // }
 }
 
 void ParticleSet::clearDistanceTables()

@@ -154,7 +154,7 @@ int main(int argc, char** argv)
       els.R.InUnit = PosUnit::Lattice;
       random_th.generate_uniform(&els.R[0][0],nels3);
       els.convert2Cart(els.R); // convert to Cartiesian
-      els.RSoA=els.R;
+      els.setCoordinates(els.R);
     }
 
     if(!ip) elecs[0].createWalkers(nwtot);

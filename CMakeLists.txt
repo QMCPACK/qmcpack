@@ -29,7 +29,7 @@ ENDIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
 PROJECT(qmcpack)
 
 SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 8)
+SET(QMCPACK_VERSION_MINOR 9)
 SET(QMCPACK_VERSION_PATCH 9)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
@@ -39,20 +39,6 @@ SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK
 SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 
 SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
-
-
-IF (COMPILING_ON_BGQ)
-  # YL: Put this after PROJECT(qmcpack) because COMPILING_ON_BGQ is defined
-  # in BGQ toolchain file which is loaded by PROJECT().
-  # The following issue probably affect all static linking machines.
-  # MD: On BG/Q, the HDF libraries variable includes some supporting shared libraries
-  # such as libm.so.  With the old behavior of CMP0060, these were converted
-  # to -lm for the linker, which then correctly selects the static version.
-  # With the new behavior of CMP0060, the form of the libraries are left alone
-  # on the link line (eg. /usr/lib64/libm.so), and this causes a linker error
-  # because shared libraries are not allowed with static linking.
-  cmake_policy(SET CMP0060 OLD)
-ENDIF()
 
 ######################################################################
 # Verify Python3 available
@@ -108,6 +94,19 @@ ELSE()
 ENDIF()
 MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_MSG}")
 
+# The following option disables the extremely slow setup of full system run tests
+# This is a developer option
+# It offers a more reasonable compile debug loop if CMakeLists.txt files are being changed
+# These constom commands execution time far exceeds even the feature and compiler checks for time consumed
+# when rerunning cmake.
+#
+# On leconte: rerun of cmake with
+# slow custom commands 27 secs
+# without 8 secs
+SET( QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS FALSE CACHE BOOL "Disable the slow cmake custom commands for integration tests.")
+MARK_AS_ADVANCED(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+
+
 ######################################################################
 # Build level
 ######################################################################
@@ -142,6 +141,10 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 
 ######################################################################
 # Set the compiler-time parameters
+# WALKER_MAX_PROPERTIES max number of observables + 12 or so standard
+#   props. Things like forces are per particle so you may need this to
+#   rather large.  Each property increases walker size by
+#   sizeof(FULLPRECREALTYPE)
 # OHMMS_DIM =  dimension of the problem
 # OHMMS_INDEXTYPE = type of index
 # OHMMS_PRECISION  = base precision, float, double etc
@@ -150,6 +153,8 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 # QMC_MPI =  enable MPI
 # QMC_OMP = enable OMP
 ######################################################################
+SET(WALKER_MAX_PROPERTIES 256 CACHE STRING "Maximum number of properties tracked by walkers")
+MARK_AS_ADVANCED(WALKER_MAX_PROPERTIES)
 SET(OHMMS_DIM 3 CACHE STRING "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 MESSAGE(STATUS "defining the float point precision")
@@ -273,6 +278,7 @@ SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
 #list of options to determine libraries. First, try to use libraries available
 #FindXYZ.cmake will set the values if successful
 ######################################################################
+SET(HAVE_EINSPLINE 1) # to be removed
 SET(HAVE_LIBXML2 1)
 SET(HAVE_LIBFFTW 0)
 SET(HAVE_LIBXMLPP 0)
@@ -333,13 +339,16 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     SET(CMAKE_SKIP_RPATH TRUE)
 
     # Flags for ctest
-    SET(USE_EXT_MPI_FOR_SERIAL_TESTS 1)
-    FIND_PROGRAM(MPIEXEC aprun)
-    IF(NOT MPIEXEC)
-    # For slurm use srun
-      FIND_PROGRAM(MPIEXEC srun)
-    ENDIF(NOT MPIEXEC)
-    SET(MPIEXEC_NUMPROC_FLAG "-n")
+    IF(NOT DEFINED MPIEXEC)
+      FIND_PROGRAM(MPIEXEC aprun)
+      IF(NOT MPIEXEC)
+      # For slurm use srun
+        FIND_PROGRAM(MPIEXEC srun)
+      ENDIF(NOT MPIEXEC)
+    ENDIF()
+    IF(NOT DEFINED MPIEXEC_NUMPROC_FLAG)
+      SET(MPIEXEC_NUMPROC_FLAG "-n")
+    ENDIF()
 
     IF(QMC_CUDA)
       IF(QMC_BUILD_STATIC)
@@ -534,7 +543,7 @@ ENDIF()
 # setup ctest variables
 IF ( HAVE_MPI )
   SET( USE_MPI 1 )
-  IF ( NOT MPIEXEC )
+  IF ( NOT DEFINED MPIEXEC )
     SET( MPIEXEC "mpirun" )
   ENDIF()
 
@@ -551,6 +560,7 @@ IF ( HAVE_MPI )
   ENDIF()
 
   MESSAGE(STATUS "MPI runner is ${MPIEXEC}")
+  MESSAGE(STATUS "MPIEXEC_NUMPROC_FLAG is ${MPIEXEC_NUMPROC_FLAG}")
 ENDIF(HAVE_MPI)
 
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
@@ -667,7 +677,7 @@ IF(HDF5_FOUND)
   ENDIF()
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${HDF5_LIBRARIES})
 ELSE(HDF5_FOUND)
-  MESSAGE(FATAL_ERROR "Require HDF5 1.6.4 or higher. Set HDF5_ROOT")
+  MESSAGE(FATAL_ERROR "HDF5 not found. Set HDF5_ROOT")
 ENDIF(HDF5_FOUND)
 
 #make sure we can find boost if it's not in /usr
@@ -689,6 +699,7 @@ IF(QMC_CUDA OR ENABLE_CUDA)
     set(CUDA_PROPAGATE_HOST_FLAGS OFF)
   ENDIF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   FIND_PACKAGE(CUDA REQUIRED)
+  SET(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
   #set(CUDA_NVCC_FLAGS
   #  "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
   if(CUDA_NVCC_FLAGS MATCHES "arch")
@@ -738,38 +749,6 @@ ENDIF(USE_NVTX_API)
 
 #include qmcpack/src build/src
 INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
-
-######################################################################
-# Manage Einspline library
-# - toolchain file can set
-# - check if libeinspline can be found in $EINSPLINE_HOME/include and
-# $EINSPLINE_HOME/lib
-# - if not found, build it from the source directory in $EINSPLINE_HOME
-# - if everything fails, do not use it
-######################################################################
-SET(HAVE_EINSPLINE 1)
-set(build_einspline 1)
-#if(HAVE_EINSPLINE_EXT)
-#  set(HAVE_EINSPLINE 0)
-#  INCLUDE(${PROJECT_CMAKE}/FindEinspline.cmake)
-#  IF(EINSPLINE_FOUND)
-#    INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIR})
-#    SET(QMC_UTIL_LIBS ${EINSPLINE_LIBRARIES} ${QMC_UTIL_LIBS})
-#    set(build_einspline 0)
-#  endif()
-#endif()
-if(build_einspline)
-  SUBDIRS(src/einspline)
-  INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
-  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} einspline)
-endif()
-
-IF(BUILD_LMYENGINE_INTERFACE)
-  ADD_DEFINITIONS(-DHAVE_LMY_ENGINE)
-  SET(FORMIC_BINARY_DIR ${qmcpack_BINARY_DIR})
-  SUBDIRS(src/formic/utils)
-  SET(QMC_UTIL_LIBS formic_utils ${QMC_UTIL_LIBS})
-ENDIF(BUILD_LMYENGINE_INTERFACE)
 
 IF (USE_VTUNE_TASKS)
   IF (NOT ENABLE_TIMERS)
@@ -901,9 +880,11 @@ ENDIF()
 SUBDIRS(src)
 
 IF(NOT QMC_BUILD_SANDBOX_ONLY)
-  SUBDIRS(tests)
-  SUBDIRS(examples)
-  IF(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/nexus")
+  IF( NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS )
+    SUBDIRS(tests)
+    SUBDIRS(examples)
+  ENDIF()
+  IF(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/nexus" AND INSTALL_NEXUS)
     SUBDIRS(nexus/tests)
   ENDIF()
 ENDIF()

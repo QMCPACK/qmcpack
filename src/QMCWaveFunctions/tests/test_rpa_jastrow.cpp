@@ -14,9 +14,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "ParticleBase/ParticleAttribOps.h"
@@ -49,7 +47,7 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   ions_.R[1][2] = 0.0;
   SpeciesSet& source_species(ions_.getSpeciesSet());
   source_species.addSpecies("O");
-  ions_.RSoA->setAllParticlePos(ions_.R);
+  ions_.setCoordinates(ions_.R);
   //ions_.resetGroups();
 
   elec_.setName("elec");

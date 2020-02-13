@@ -42,7 +42,7 @@ public:
   SoaDistanceTableABOMP(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.Lattice), DistanceTableData(source, target)
   {
-    auto* coordinates_soa = dynamic_cast<RealSpacePositionsOMP*>(source.RSoA.get());
+    auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMP*>(&source.getCoordinates());
     if (!coordinates_soa) throw std::runtime_error("Source particle set doesn't have OpenMP offload. Contact developers!");
     resize(source.getTotalNum(), target.getTotalNum());
     #pragma omp target enter data map(to:this[:1])
@@ -95,7 +95,7 @@ public:
     offload_output.resize(N_targets * N_sources_padded * (D + 1));
 
     auto* target_pos_ptr = target_pos.data();
-    auto* source_pos_ptr = Origin->RSoA->getAllParticlePos().data();
+    auto* source_pos_ptr = Origin->getCoordinates().getAllParticlePos().data();
     auto* r_dr_ptr       = offload_output.data();
 
     const int ChunkSizePerTeam = 256;
@@ -161,7 +161,7 @@ public:
 
       assert(N_sources == dt.N_sources);
 
-      auto& RSoA_OMP = static_cast<RealSpacePositionsOMP&>(*dt.Origin->RSoA);
+      auto& RSoA_OMP = static_cast<const RealSpacePositionsOMP&>(dt.Origin->getCoordinates());
       source_ptrs[iw] = const_cast<RealType*>(RSoA_OMP.getDevicePtr());
 
       for (size_t iat = 0; iat < pset.getTotalNum(); ++iat, ++count_targets)
@@ -219,12 +219,12 @@ public:
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
-    DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->RSoA->getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
+    DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
                                            N_sources);
     // If the full table is not ready all the time, overwrite the current value.
     // If this step is missing, DT values can be undefined in case a move is rejected.
     if (!need_full_table_)
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->RSoA->getAllParticlePos(), distances_[iat].data(),
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->getCoordinates().getAllParticlePos(), distances_[iat].data(),
                                              displacements_[iat], 0, N_sources);
   }
 

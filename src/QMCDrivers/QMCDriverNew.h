@@ -32,7 +32,7 @@
 #include "Utilities/PooledData.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/MCPopulation.h"
@@ -322,7 +322,7 @@ protected:
    *  @{
    */
   int num_crowds_;
-
+  RealType max_disp_sq_;
   ///the number of saved samples
   IndexType target_samples_;
 

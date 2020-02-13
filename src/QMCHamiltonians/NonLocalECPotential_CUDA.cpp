@@ -18,9 +18,12 @@
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/NLPP.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "QMCDrivers/WalkerProperties.h"
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 NonLocalECPotential_CUDA::NonLocalECPotential_CUDA(ParticleSet& ions,
                                                    ParticleSet& els,
                                                    TrialWaveFunction& psi,
@@ -28,7 +31,6 @@ NonLocalECPotential_CUDA::NonLocalECPotential_CUDA(ParticleSet& ions,
                                                    bool doForces)
     : NonLocalECPotential(ions, els, psi, doForces, false),
       UsePBC(usePBC),
-      CurrentNumWalkers(0),
       Ions_GPU("NonLocalECPotential_CUDA::Ions_GPU"),
       L("NonLocalECPotential_CUDA::L"),
       Linv("NonLocalECPotential_CUDA::Linv"),
@@ -39,7 +41,8 @@ NonLocalECPotential_CUDA::NonLocalECPotential_CUDA(ParticleSet& ions,
       NumPairs_GPU("NonLocalECPotential_CUDA::NumPairs_GPU"),
       RatioPos_GPU("NonLocalECPotential_CUDA::RatioPos_GPU"),
       CosTheta_GPU("NonLocalECPotential_CUDA::CosTheta_GPU"),
-      RatioPoslist_GPU("NonLocalECPotential_CUDA::RatioPoslist_GPU")
+      RatioPoslist_GPU("NonLocalECPotential_CUDA::RatioPoslist_GPU"),
+      CurrentNumWalkers(0)
 {
   setupCUDA(els);
 }
@@ -317,7 +320,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<R
   {
     // if (std::isnan(esum[iw]))
     // 	app_log() << "NAN in esum.\n";
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = esum[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = esum[iw];
     LocalEnergy[iw] += esum[iw];
   }
 }
@@ -428,7 +431,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W,
     }
   for (int iw = 0; iw < walkers.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = esum[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = esum[iw];
     LocalEnergy[iw] += esum[iw];
   }
 }

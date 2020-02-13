@@ -12,9 +12,9 @@
 #ifndef QMCPLUSPLUS_SETUP_DMCTEST_H
 #define QMCPLUSPLUS_SETUP_DMCTEST_H
 
-#include "QMCApp/tests/MinimalParticlePool.h"
-#include "QMCApp/tests/MinimalWaveFunctionPool.h"
-#include "QMCApp/tests/MinimalHamiltonianPool.h"
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
 #include "QMCDrivers/DMC/DMCBatched.h"
@@ -28,10 +28,11 @@ class SetupDMCTest : public SetupPools
 {
 public:
   SetupDMCTest(int nranks = 4)
-      : population(nranks,
+      : population(comm->size(),
                    particle_pool->getParticleSet("e"),
                    wavefunction_pool->getPrimary(),
-                   hamiltonian_pool->getPrimary()),
+                   hamiltonian_pool->getPrimary(),
+                   comm->rank()),
         num_ranks(nranks),
         qmcdrv_input(3)
   {
@@ -41,8 +42,6 @@ public:
 
   DMCBatched operator()()
   {
-    int num_ranks = comm->size();
-
     Libxml2Document doc;
     doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
     node = doc.getRoot();

@@ -399,28 +399,14 @@ namespace ma
 	zgetri(n, a, n0, piv, work, n1, status);
   }
 
-  inline static void getriBatched (int n, float ** a, int lda, int * piv, float ** work, int& lwork, int * info, int batchSize)
+  template<typename T>
+  inline static void getriBatched (int n, T ** a, int lda, int * piv, T ** ainv, int ldc, int * info, int batchSize)
   {
-    for(int i=0; i<batchSize; i++)
-      getri(n,a[i],lda,piv+i*n,work[i],lwork,*(info+i));
-  }
-
-  inline static void getriBatched (int n, double ** a, int lda, int * piv, double ** work, int& lwork, int * info, int batchSize)
-  {
-    for(int i=0; i<batchSize; i++)
-      getri(n,a[i],lda,piv+i*n,work[i],lwork,*(info+i));
-  }
-
-  inline static void getriBatched (int n, std::complex<float> ** a, int lda, int * piv, std::complex<float> ** work, int& lwork, int * info, int batchSize)
-  {
-    for(int i=0; i<batchSize; i++)
-      getri(n,a[i],lda,piv+i*n,work[i],lwork,*(info+i));
-  }
-
-  inline static void getriBatched (int n, std::complex<double> ** a, int lda, int * piv, std::complex<double> ** work, int& lwork, int * info, int batchSize)
-  {
-    for(int i=0; i<batchSize; i++)
-      getri(n,a[i],lda,piv+i*n,work[i],lwork,*(info+i));
+    for(int i=0; i<batchSize; i++) {
+      getri(n,a[i],lda,piv+i*n,ainv[i],n*n,*(info+i));
+      for(int i=0; i<n; i++)
+        std::copy_n(a[i]+i*lda,n,ainv[i]+i*ldc);  
+    }
   }
 
   void static geqrf(int M, int N, std::complex<double> *A, const int LDA, std::complex<double> *TAU, std::complex<double> *WORK, int LWORK, int& INFO)
@@ -620,6 +606,22 @@ WORK[0]=0;
     lwork = -1;
     glq(m,n,k,nullptr,lda,nullptr,&work,lwork, status);
     lwork = int(real(work));
+  }
+
+  template<typename T1, typename T2>
+  inline static void matinvBatched (int n, T1 * const * a, int lda, T2 ** ainv, int lda_inv, int* info, int batchSize)
+  {
+    std::vector<int> piv(n);
+    int lwork(-1);
+    getri_bufferSize (n,ainv[0],lda_inv,lwork);
+    std::vector<T2> work(lwork);
+    for(int i=0; i<batchSize; i++) {
+      for(int p=0; p<n; p++) 
+        for(int q=0; q<n; q++) 
+          ainv[i][p*lda_inv+q] = a[i][p*lda+q]; 
+      getrf(n,n,ainv[i],lda,piv.data(),*(info+i));
+      getri(n,ainv[i],lda,piv.data(),work.data(),lwork,*(info+i));
+    }
   }
 
 }

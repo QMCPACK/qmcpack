@@ -126,7 +126,7 @@ public:
 #endif
 
   ///default constructor
-  MCWalkerConfiguration(const QuantumVariableKind kind = QuantumVariableKind::QV_POS);
+  MCWalkerConfiguration(const DynamicCoordinateKind kind = DynamicCoordinateKind::QV_POS);
 
   ///default constructor: copy only ParticleSet
   MCWalkerConfiguration(const MCWalkerConfiguration& mcw);
@@ -168,12 +168,17 @@ public:
    * @param head pointer to the head walker
    * @param tail pointer to the tail walker
    *
+   * \todo I believe this can/should be deleted
    * Special function introduced to work with Reptation method.
    * Clear the current WalkerList and add two walkers, head and tail.
    * OwnWalkers are set to false.
    */
   void copyWalkerRefs(Walker_t* head, Walker_t* tail);
 
+  /** make fake walker list for testing
+   */
+  void fakeWalkerList(Walker_t* first, Walker_t* second);
+  
   ///clean up the walker list and make a new list
   void resize(int numWalkers, int numPtcls);
 

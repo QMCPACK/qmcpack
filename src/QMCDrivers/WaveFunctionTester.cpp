@@ -34,6 +34,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
@@ -152,7 +154,7 @@ void WaveFunctionTester::runCloneTest()
     QMCHamiltonian* h_clone      = H.makeClone(*w_clone, *psi_clone);
     h_clone->setPrimary(false);
     int nat = W.getTotalNum();
-    MCWalkerConfiguration::PropertyContainer_t Properties;
+    MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);
     //pick the first walker
     MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
     //copy the properties of the working walker
@@ -215,7 +217,7 @@ void WaveFunctionTester::printEloc()
   //    std::cout <<"0: " <<source.R[0] << std::endl;
   //    std::cout <<"1: " <<source.R[1] << std::endl;
   //    std::cout <<"2: " <<source.R[2] << std::endl;
-  MCWalkerConfiguration::PropertyContainer_t Properties;
+  MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
   //copy the properties of the working walker
@@ -1109,7 +1111,7 @@ void WaveFunctionTester::runRatioTest()
       Psi.copyFromBuffer(W,w_buffer);
       H.copyFromBuffer(W,w_buffer);
 //             Psi.evaluateLog(W);
-      RealType eold(thisWalker.Properties(LOCALENERGY));
+      RealType eold(thisWalker.Properties(WP::LOCALENERGY));
       RealType logpsi(thisWalker.Properties(LOGPSI));
       RealType emixed(eold), enew(eold);
       makeGaussRandom(deltaR);
@@ -1192,7 +1194,7 @@ void WaveFunctionTester::runRatioTest()
       Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
       //Psi.updateBuffer(W,w_buffer,true);
       Psi.copyFromBuffer(W,w_buffer);
-      RealType eold(thisWalker.Properties(LOCALENERGY));
+      RealType eold(thisWalker.Properties(WP::LOCALENERGY));
       RealType logpsi(thisWalker.Properties(LOGPSI));
       RealType emixed(eold), enew(eold);
       //mave a move
@@ -1299,8 +1301,8 @@ void WaveFunctionTester::runRatioTest2()
       W.loadWalker(thisWalker, true);
       Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
       Psi.copyFromBuffer(W, w_buffer);
-      RealType eold(thisWalker.Properties(LOCALENERGY));
-      RealType logpsi(thisWalker.Properties(LOGPSI));
+      RealType eold(thisWalker.Properties(WP::LOCALENERGY));
+      RealType logpsi(thisWalker.Properties(WP::LOGPSI));
       Psi.evaluateLog(W);
       ParticleSet::ParticleGradient_t realGrad(W.G);
       makeGaussRandom(deltaR);
@@ -1423,7 +1425,7 @@ void WaveFunctionTester::runGradSourceTest()
   ValueType c2        = 1.0 / delta / delta;
   int nat             = W.getTotalNum();
   ParticleSet::ParticlePos_t deltaR(nat);
-  MCWalkerConfiguration::PropertyContainer_t Properties;
+  MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
   //copy the properties of the working walker
@@ -1571,7 +1573,7 @@ void WaveFunctionTester::runZeroVarianceTest()
   ParticleSet& source = *((*pit).second);
   int nat             = W.getTotalNum();
   ParticleSet::ParticlePos_t deltaR(nat);
-  MCWalkerConfiguration::PropertyContainer_t Properties;
+  MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
   //copy the properties of the working walker
@@ -1678,7 +1680,7 @@ void WaveFunctionTester::runDerivTest()
   app_log() << " ===== runDerivTest =====\n";
   app_log() << " Testing derivatives" << std::endl;
   int nat = W.getTotalNum();
-  MCWalkerConfiguration::PropertyContainer_t Properties;
+  MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
   //copy the properties of the working walker
@@ -1787,7 +1789,7 @@ void WaveFunctionTester::runDerivNLPPTest()
 
   app_log() << " Testing derivatives" << std::endl;
   int nat = W.getTotalNum();
-  MCWalkerConfiguration::PropertyContainer_t Properties;
+  MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
   //copy the properties of the working walker

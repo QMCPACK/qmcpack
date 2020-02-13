@@ -163,12 +163,12 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 
     // C[nwalk, M, N]
     template<class MatA, class MatB, class MatC, class TVec>
-    void BatchedMixedDensityMatrix(const MatA& hermA, std::vector<MatB> &Bi, MatC&& C, T LogOverlapFactor, TVec&& ovlp, bool compact=false, bool herm=true) {
+    void BatchedMixedDensityMatrix( std::vector<MatA*>& hermA, std::vector<MatB> &Bi, MatC&& C, T LogOverlapFactor, TVec&& ovlp, bool compact=false, bool herm=true) {
       if(Bi.size()==0) return;
       static_assert(std::decay<MatC>::type::dimensionality == 3, "Wrong dimensionality");
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-      int NMO = (herm?hermA.size(1):hermA.size(0));
-      int NAEA = (herm?hermA.size(0):hermA.size(1));
+      int NMO = (herm?hermA[0]->size(1):hermA[0]->size(0));
+      int NAEA = (herm?hermA[0]->size(0):hermA[0]->size(1));
       int nbatch = Bi.size();
       assert(C.size(0) == nbatch);
       assert(ovlp.size() == nbatch);
@@ -179,13 +179,10 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       set_buffer(nbatch*NAEA*NAEA + n1*n2*n3);
       TTensor_ref TNN3D(TBuff.origin(), {nbatch,NAEA,NAEA});
       TTensor_ref TNM3D(TBuff.origin()+TNN3D.num_elements(), {n1,n2,n3});
-      int sz = ma::invert_optimal_workspace_size(TNN3D[0]);
-      if(WORK.num_elements() < nbatch*sz)
-        WORK.reextent(iextensions<1u>{nbatch*sz});
       if(IWORK.num_elements() < nbatch*(NMO+1))
         IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
       SlaterDeterminantOperations::batched::MixedDensityMatrix(hermA,Bi,
-                std::forward<MatC>(C),LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,WORK,compact,herm);
+                std::forward<MatC>(C),LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,compact,herm);
     }
 
     template<class MatA, class MatB, class MatC, class TVec>
@@ -207,21 +204,19 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       set_buffer(nbatch*NAEA*NAEA + n1*n2*n3);
       TTensor_ref TNN3D(TBuff.origin(), {nbatch,NAEA,NAEA});
       TTensor_ref TNM3D(TBuff.origin()+TNN3D.num_elements(), {n1,n2,n3});
-      int sz = ma::invert_optimal_workspace_size(TNN3D[0]);
-      if(WORK.num_elements() < nbatch*sz)
-        WORK.reextent(iextensions<1u>{nbatch*sz});
       if(IWORK.num_elements() < nbatch*(NMO+1))
         IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
       SlaterDeterminantOperations::batched::DensityMatrices(Left,Right,G,
-                LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,WORK,compact,herm);
+                LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,compact,herm);
     }
 
     template<class MatA, class MatB, class TVec>
-    void BatchedOverlap(const MatA& hermA, std::vector<MatB> &Bi, T LogOverlapFactor, TVec&& ovlp, bool herm=true) {
+    void BatchedOverlap( std::vector<MatA*>& hermA, std::vector<MatB> &Bi, T LogOverlapFactor, TVec&& ovlp, bool herm=true) {
       if(Bi.size()==0) return;
+      assert(hermA.size() > 0);
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-      int NMO = (herm?hermA.size(1):hermA.size(0));
-      int NAEA = (herm?hermA.size(0):hermA.size(1));
+      int NMO = (herm?hermA[0]->size(1):hermA[0]->size(0));
+      int NAEA = (herm?hermA[0]->size(0):hermA[0]->size(1));
       int nbatch = Bi.size();
       assert(ovlp.size() == nbatch);
       set_buffer(nbatch*NAEA*NAEA);

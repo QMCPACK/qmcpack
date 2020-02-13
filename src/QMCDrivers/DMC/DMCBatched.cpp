@@ -22,6 +22,7 @@
 namespace qmcplusplus
 {
 using std::placeholders::_1;
+using WP = WalkerProperties::Indexes;
 
 // clang-format off
 /** Constructor maintains proper ownership of input parameters
@@ -148,7 +149,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   //copy the old energy
   std::vector<FullPrecRealType> old_walker_energies(num_walkers);
   auto setOldEnergies = [](MCPWalker& walker, FullPrecRealType& old_walker_energy) {
-    old_walker_energy = walker.Properties(LOCALENERGY);
+    old_walker_energy = walker.Properties(WP::LOCALENERGY);
   };
   for (int iw = 0; iw < num_walkers; ++iw)
     setOldEnergies(walkers[iw], old_walker_energies[iw]);
@@ -221,7 +222,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         //This is just convenient to do here
         rr_proposed[iw] += rr[iw];
       }
-      
+
       std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](auto& delta_r) {
         constexpr RealType mhalf(-0.5);
         return mhalf * dot(delta_r, delta_r);
@@ -408,8 +409,8 @@ void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThrea
                            moved.rr_proposed[iw]);
       // this might mean new_energies are actually unneeded which would be nice.
       moved.new_energies[iw] = local_energies[iw];
-      moved.walkers[iw].get().Weight *=
-          sft.branch_engine.branchWeightBare(moved.new_energies[iw], moved.old_energies[iw]);
+      FullPrecRealType branch_weight = sft.branch_engine.branchWeight(moved.new_energies[iw], moved.old_energies[iw]);
+      moved.walkers[iw].get().Weight *= branch_weight;
     }
     timers.collectables_timer.start();
     auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker) {
@@ -433,8 +434,8 @@ void DMCBatched::handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForT
   {
     MCPWalker& stalled_walker = stalled.walkers[iw];
     stalled_walker.Age++;
-    stalled_walker.Properties(R2ACCEPTED) = 0.0;
-    RealType wtmp                         = stalled_walker.Weight;
+    stalled_walker.Properties(WP::R2ACCEPTED) = 0.0;
+    FullPrecRealType wtmp                         = stalled_walker.Weight;
     // TODO: fix this walker.Weight twiddle for rejectedMove
     stalled_walker.Weight                      = 0.0;
     QMCHamiltonian& stalled_walker_hamiltonian = stalled.walker_hamiltonians[iw];
@@ -454,15 +455,16 @@ void DMCBatched::setMultiplicities(const DMCDriverInput& dmcdriver_input,
                                    RandomGenerator_t& rng)
 {
   auto setMultiplicity = [&dmcdriver_input, &rng](MCPWalker& walker) {
-    constexpr RealType onehalf(0.5);
-    constexpr RealType cone(1);
-    RealType M = walker.Weight;
+    constexpr FullPrecRealType onehalf(0.5);
+    constexpr FullPrecRealType cone(1);
+    walker.Multiplicity = walker.Weight;
     if (walker.Age > dmcdriver_input.get_max_age())
-      M = std::min(onehalf, M);
+      walker.Multiplicity = std::min(onehalf, walker.Weight);
     else if (walker.Age > 0)
-      M = std::min(cone, M);
-    walker.Multiplicity = M + rng();
+      walker.Multiplicity = std::min(cone, walker.Weight);
+    walker.Multiplicity += rng();
   };
+
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
     setMultiplicity(walkers[iw]);

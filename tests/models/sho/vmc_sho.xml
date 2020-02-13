@@ -1,6 +1,5 @@
 <simulation>
   <project id="m5" series="0"/>
-
   <qmcsystem>
     <simulationcell>
       <parameter name="lattice" units="bohr">
