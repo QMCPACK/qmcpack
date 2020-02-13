@@ -372,8 +372,8 @@ def analyse_ekt(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
     P = 0.5*(P+P.conj().T)
     I = numpy.eye(P.shape[-1])
     gamma = P.real
-    Fm = Fm.real
-    Fp = Fp.real
+    Fm = Fm
+    Fp = Fp
     # Diagonalise gamma and discard problematic singular values.
     gamma, X = regularised_ortho(gamma, cutoff=cutoff)
     gamma = gamma

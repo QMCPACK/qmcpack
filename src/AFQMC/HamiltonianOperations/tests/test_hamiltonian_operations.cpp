@@ -112,7 +112,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     dump.push("NOMSD", false);
     dump.push(std::string("PsiT_0"));
     //int walker_type = readWfn(std::string(UTEST_WFN),OrbMat,NMO,NAEA,NAEB);
-    int walker_type = 0;
+    int walker_type = 1;
     int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
     WALKER_TYPES WTYPE = CLOSED;
     if(walker_type==1) WTYPE = COLLINEAR;
@@ -125,12 +125,16 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix,shared_allocator<ComplexType> >(dump,gTG.Node()));
     //PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
                                         //OrbMat[0],1e-8,'H',gTG.Node()));
-    if(walker_type>0)
-      PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1](OrbMat.extension(1),{0,NAEB}),
-                                        1e-8,'H',gTG.Node()));
+    if(walker_type>0) {
+      dump.pop();
+      dump.push(std::string("PsiT_1"));
+      PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix,shared_allocator<ComplexType> >(dump,gTG.Node()));
+      //PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
+                                        //OrbMat[1](OrbMat.extension(1),{0,NAEB}),
+                                        //1e-8,'H',gTG.Node()));
+                                        //}
+    }
 
-    std::cout << "HERE " << std::endl;
     dump.pop();
     {
         boost::multi::array<ComplexType,2> Psi0A({NMO,NAEA});
@@ -140,7 +144,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
                 OrbMat[0][i][j] = Psi0A[i][j];
             }
         }
-        if(walker_type==COLLINEAR) {
+        if(walker_type>0) {
             boost::multi::array<ComplexType,2> Psi0B({NMO,NAEA});
             dump.readEntry(Psi0B, "Psi0_beta");
             for(int i = 0; i < NMO; i++) {
@@ -153,7 +157,6 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     dump.close();
     hdf_archive dummy;
     auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
-    std::cout << "Done" << std::endl;
 
     // Calculates Overlap, G
 // NOTE: Make small factory routine!
@@ -166,13 +169,10 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
 
     boost::multi::array<ComplexType,3,Alloc> devOrbMat(OrbMat, alloc_);
     std::vector<devcsr_Matrix> devPsiT(move_vector<devcsr_Matrix>(std::move(PsiT)));
-    std::cout << "Move" << std::endl;
 
     CMatrix G({NEL,NMO},alloc_);
-    //std::cout << devPsiT[0][0][0]
     ComplexType Ovlp = SDet.MixedDensityMatrix(devPsiT[0],devOrbMat[0],
         G.sliced(0,NAEA),0.0,true);
-    std::cout << "Ovlp" << std::endl;
     if(WTYPE==COLLINEAR) {
       Ovlp *= SDet.MixedDensityMatrix(devPsiT[1],devOrbMat[1](devOrbMat.extension(1),{0,NAEB}),
         G.sliced(NAEA,NAEA+NAEB),0.0,true);
@@ -205,75 +205,123 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
     CMatrix X({nCV,1},alloc_);
-    HOps.vbias(Gw,X,sqrtdt);
+    //HOps.vbias(Gw,X,sqrtdt);
     TG.local_barrier();
     ComplexType Xsum=0;
-    for(int i=0; i<X.size(); i++)
-        Xsum += X[i][0];
-    if(std::abs(file_data.Xsum)>1e-8) {
-      REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
-      REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
-    } else {
-      app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
-    }
+    //for(int i=0; i<X.size(); i++)
+        //Xsum += X[i][0];
+    //if(std::abs(file_data.Xsum)>1e-8) {
+      //REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
+      //REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
+    //} else {
+      //app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
+    //}
 
-    int vdim1 = (HOps.transposed_vHS()?1:NMO*NMO);
-    int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
-    CMatrix vHS({vdim1,vdim2},alloc_);
-    TG.local_barrier();
-    HOps.vHS(X,vHS,sqrtdt);
-    TG.local_barrier();
-    ComplexType Vsum=0;
-    if(HOps.transposed_vHS()) {
-      for(int i=0; i<vHS.size(1); i++)
-        Vsum += vHS[0][i];
-    } else {
-      for(int i=0; i<vHS.size(0); i++)
-        Vsum += vHS[i][0];
-    }
-    if(std::abs(file_data.Vsum)>1e-8) {
-      REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
-      REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
-    } else {
-      app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
-    }
+    //int vdim1 = (HOps.transposed_vHS()?1:NMO*NMO);
+    //int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
+    //CMatrix vHS({vdim1,vdim2},alloc_);
+    //TG.local_barrier();
+    //HOps.vHS(X,vHS,sqrtdt);
+    //TG.local_barrier();
+    //ComplexType Vsum=0;
+    //if(HOps.transposed_vHS()) {
+      //for(int i=0; i<vHS.size(1); i++)
+        //Vsum += vHS[0][i];
+    //} else {
+      //for(int i=0; i<vHS.size(0); i++)
+        //Vsum += vHS[i][0];
+    //}
+    //if(std::abs(file_data.Vsum)>1e-8) {
+      //REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
+      //REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
+    //} else {
+      //app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
+    //}
     // Test Generalised Fock matrix.
     int dm_size;
     CMatrix G2({1,1}, alloc_);
-    if(WTYPE==COLLINEAR) {
-      dm_size = 2*NMO*NMO;
-      G2.reextent({2*NMO,NMO});
-    } else if(WTYPE==CLOSED) {
-      dm_size = NMO*NMO;
-      G2.reextent({2*NMO,NMO});
-    } else {
-      APP_ABORT("NON COLLINEAR Wavefunction not implemented.");
+    dm_size = 2*NMO*NMO;
+    G2.reextent({2*NMO,NMO});
+    boost::multi::array<double,2> Mat({NMO,NMO});
+    hdf_archive ref;
+    if(!ref.open("G.h5",H5F_ACC_RDONLY)) {
+        app_error()<<" Error opening HDF wavefunction file.\n";
     }
-    Ovlp = SDet.MixedDensityMatrix(devPsiT[0],devOrbMat[0], G2.sliced(0,NMO),0.0,false);
-    if(WTYPE==COLLINEAR) {
-      Ovlp *= SDet.MixedDensityMatrix(devPsiT[1],devOrbMat[1](devOrbMat.extension(1),{0,NAEB}), G.sliced(NMO,2*NMO),0.0,false);
+    ref.readEntry(Mat, "Ga");
+    for (int i = 0; i < NMO; i++) {
+      for (int j = 0; j < NMO; j++) {
+        G2[i][j] = Mat[i][j];
+      }
     }
-    boost::multi::array_ref<ComplexType,2,pointer> Gw2(make_device_ptr(G2.origin()),{1,dm_size});
-    boost::multi::array<ComplexType,3,Alloc> GFock({2,1,dm_size},alloc_);
-    fill_n(GFock.origin(),2*dm_size,ComplexType(0.0));
-    std::cout << Gw2[0][0] << std::endl;
-    HOps.generalizedFockMatrix(Gw2,GFock[0],GFock[1]);
-    boost::multi::array_ref<ComplexType,2,pointer> GR(make_device_ptr(GFock[0][0].origin()), {NMO,NMO});
+    ref.readEntry(Mat, "Gb");
+    for (int i = 0; i < NMO; i++) {
+      for (int j = 0; j < NMO; j++) {
+        G2[NMO+i][j] = Mat[i][j];
+      }
+    }
+
+    //if(WTYPE==COLLINEAR) {
+      //dm_size = 2*NMO*NMO;
+      //G2.reextent({2*NMO,NMO});
+    //} else if(WTYPE==CLOSED) {
+      //dm_size = NMO*NMO;
+      //G2.reextent({NMO,NMO});
+    //} else {
+      //APP_ABORT("NON COLLINEAR Wavefunction not implemented.");
+    //}
+    //Ovlp = SDet.MixedDensityMatrix(devPsiT[0],devOrbMat[0], G2.sliced(0,NMO),0.0,false);
+    //if(WTYPE==COLLINEAR) {
+      //Ovlp *= SDet.MixedDensityMatrix(devPsiT[1],devOrbMat[1](devOrbMat.extension(1),{0,NAEB}), G.sliced(NMO,2*NMO),0.0,false);
+    //}
+    int nwalk = 1;
+    CMatrix Gw2({nwalk,dm_size}, alloc_);
+    for (int nw = 0; nw < nwalk; nw++) {
+      for (int i = 0; i < NMO; i++) {
+        for (int j = 0; j < NMO; j++) {
+          Gw2[nw][i*NMO+j] = G2[i][j];
+          Gw2[nw][NMO*NMO+i*NMO+j] = G2[i+NMO][j];
+        }
+      }
+    }
+    boost::multi::array_ref<ComplexType,2,pointer> Gw2_(make_device_ptr(Gw2.origin()),{nwalk,dm_size});
+    boost::multi::array<ComplexType,3,Alloc> GFock({2,nwalk,dm_size},alloc_);
+    fill_n(GFock.origin(),GFock.num_elements(),ComplexType(0.0));
+    //for(int i = 0; i < nwalk; i++) {
+      //std::cout << Gw2_[i][0] << std::endl;
+    //}
+    //std::cout << "INIT: " << Gw2_[0][0] << " " << Gw2_[0][NMO*NMO] << std::endl;
+    HOps.generalizedFockMatrix(Gw2_,GFock[0],GFock[1]);
+    //boost::multi::array_ref<ComplexType,2,pointer> GR(make_device_ptr(GFock[0][0].origin()), {NMO,NMO});
+    //for(int i = 0; i < nwalk; i++) {
+      //std::cout << GFock[0][i][0] << std::endl;
+    //}
     //std::cout << "GFOCK: " << GFock[0][0][0] << " " << GFock[1][0][0] << std::endl;
     //std::cout << "Fm: " << std::endl;
-    //for(int i = 0; i < NMO; i++) {
-        //for(int j = 0; j < NMO; j++) {
+    std::fill_n(Mat.origin(),Mat.num_elements(),0.0);
+    ref.readEntry(Mat, "Fha");
+    for(int i = 0; i < NMO; i++) {
+        for(int j = 0; j < NMO; j++) {
+          if (std::abs(Mat[i][j]-real(GFock[1][0][i*NMO+j])) > 1e-5) {
+            std::cout << "DELTAA: " << i << " " << j << " " << Mat[i][j] << " " << real(GFock[1][0][i*NMO+j]) << std::endl;
+          }
           //if(std::abs(real(GFock[1][0][i*NMO+j]))>1e-6)
             //std::cout << i << " " << j << " " << real(GFock[1][0][i*NMO+j]) << " " << std::endl;
-        //}
-    //}
+        }
+    }
     //std::cout << "Fp: " << std::endl;
-    //for(int i = 0; i < NMO; i++) {
-        //for(int j = 0; j < NMO; j++) {
+    std::fill_n(Mat.origin(),Mat.num_elements(),0.0);
+    ref.readEntry(Mat, "Fpa");
+    for(int i = 0; i < NMO; i++) {
+        for(int j = 0; j < NMO; j++) {
+          //std::cout << Mat[i][j] << std::endl;
+          //std::cout << Mat[i][j]-real(GFock[0][0][i*NMO+j]) << std::endl;
+          if (std::abs(Mat[i][j]-real(GFock[0][0][i*NMO+j])) > 1e-5) {
+            std::cout << "DELTAB: " << i << " " << j << " " << Mat[i][j] << " " << real(GFock[0][0][i*NMO+j]) << std::endl;
+          }
           //if(std::abs(real(GFock[0][0][i*NMO+j]))>1e-6)
-            //std::cout << i << " " << j << " " << real(GFock[0][0][i*NMO+j]) << " " << std::endl;
-        //}
-    //}
+            //std::cout << i << " " << j << " " << real(GFock[0][0][i*NMO+j]) << " " << real(GFock[0][1][i*NMO+j]) << " " << real(GFock[0][2][i*NMO+j]) << std::endl;
+        }
+    }
   }
 }
 
