@@ -40,20 +40,6 @@ SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 
 SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 
-
-IF (COMPILING_ON_BGQ)
-  # YL: Put this after PROJECT(qmcpack) because COMPILING_ON_BGQ is defined
-  # in BGQ toolchain file which is loaded by PROJECT().
-  # The following issue probably affect all static linking machines.
-  # MD: On BG/Q, the HDF libraries variable includes some supporting shared libraries
-  # such as libm.so.  With the old behavior of CMP0060, these were converted
-  # to -lm for the linker, which then correctly selects the static version.
-  # With the new behavior of CMP0060, the form of the libraries are left alone
-  # on the link line (eg. /usr/lib64/libm.so), and this causes a linker error
-  # because shared libraries are not allowed with static linking.
-  cmake_policy(SET CMP0060 OLD)
-ENDIF()
-
 ######################################################################
 # Verify Python3 available
 ######################################################################
@@ -292,6 +278,7 @@ SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
 #list of options to determine libraries. First, try to use libraries available
 #FindXYZ.cmake will set the values if successful
 ######################################################################
+SET(HAVE_EINSPLINE 1) # to be removed
 SET(HAVE_LIBXML2 1)
 SET(HAVE_LIBFFTW 0)
 SET(HAVE_LIBXMLPP 0)
@@ -712,6 +699,7 @@ IF(QMC_CUDA OR ENABLE_CUDA)
     set(CUDA_PROPAGATE_HOST_FLAGS OFF)
   ENDIF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   FIND_PACKAGE(CUDA REQUIRED)
+  SET(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
   #set(CUDA_NVCC_FLAGS
   #  "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
   if(CUDA_NVCC_FLAGS MATCHES "arch")
@@ -761,38 +749,6 @@ ENDIF(USE_NVTX_API)
 
 #include qmcpack/src build/src
 INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
-
-######################################################################
-# Manage Einspline library
-# - toolchain file can set
-# - check if libeinspline can be found in $EINSPLINE_HOME/include and
-# $EINSPLINE_HOME/lib
-# - if not found, build it from the source directory in $EINSPLINE_HOME
-# - if everything fails, do not use it
-######################################################################
-SET(HAVE_EINSPLINE 1)
-set(build_einspline 1)
-#if(HAVE_EINSPLINE_EXT)
-#  set(HAVE_EINSPLINE 0)
-#  INCLUDE(${PROJECT_CMAKE}/FindEinspline.cmake)
-#  IF(EINSPLINE_FOUND)
-#    INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIR})
-#    SET(QMC_UTIL_LIBS ${EINSPLINE_LIBRARIES} ${QMC_UTIL_LIBS})
-#    set(build_einspline 0)
-#  endif()
-#endif()
-if(build_einspline)
-  SUBDIRS(src/einspline)
-  INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
-  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} einspline)
-endif()
-
-IF(BUILD_LMYENGINE_INTERFACE)
-  ADD_DEFINITIONS(-DHAVE_LMY_ENGINE)
-  SET(FORMIC_BINARY_DIR ${qmcpack_BINARY_DIR})
-  SUBDIRS(src/formic/utils)
-  SET(QMC_UTIL_LIBS formic_utils ${QMC_UTIL_LIBS})
-ENDIF(BUILD_LMYENGINE_INTERFACE)
 
 IF (USE_VTUNE_TASKS)
   IF (NOT ENABLE_TIMERS)
