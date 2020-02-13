@@ -48,7 +48,6 @@ const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_ne
 
 ParticleSet::ParticleSet()
     : quantum_domain(classical),
-      RSoA(std::move(createDynamicCoordinates())),
       IsGrouped(true),
       SameMass(true),
       ThreadID(0),
@@ -57,15 +56,15 @@ ParticleSet::ParticleSet()
       Properties(0, 0, 1, WP::MAXPROPERTIES),
       myTwist(0.0),
       ParentName("0"),
-      TotalNum(0)
+      TotalNum(0),
+      coordinates_(std::move(createDynamicCoordinates()))
 {
   initPropertyList();
   setup_timers(myTimers, PSTimerNames, timer_level_fine);
 }
 
 ParticleSet::ParticleSet(const ParticleSet& p)
-    : RSoA(std::move(p.RSoA->makeClone())),
-      IsGrouped(p.IsGrouped),
+    : IsGrouped(p.IsGrouped),
       SameMass(true),
       ThreadID(0),
       activePtcl(-1),
@@ -73,8 +72,9 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       SK(0),
       Properties(p.Properties),
       myTwist(0.0),
-      ParentName(p.parentName())
-{
+      ParentName(p.parentName()),
+      coordinates_(std::move(p.coordinates_->makeClone()))
+  {
   set_quantum_domain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable
   //need explicit copy:
@@ -381,7 +381,7 @@ void ParticleSet::update(bool skipSK)
 {
   ScopedTimer update_scope(myTimers[PS_update]);
 
-  RSoA->setAllParticlePos(R);
+  coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (!skipSK && SK)
@@ -511,7 +511,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePo
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt * deltaR[iat];
   }
-  RSoA->setAllParticlePos(R);
+  coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -543,7 +543,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker,
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt[iat] * deltaR[iat];
   }
-  RSoA->setAllParticlePos(R);
+  coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -583,7 +583,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt * deltaR[iat] + drift[iat];
   }
-  RSoA->setAllParticlePos(R);
+  coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -616,7 +616,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt[iat] * deltaR[iat] + drift[iat];
   }
-  RSoA->setAllParticlePos(R);
+  coordinates_->setAllParticlePos(R);
 
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
@@ -645,7 +645,7 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
       SK->acceptMove(iat, GroupID[iat], R[iat]);
 
     R[iat]     = activePos;
-    RSoA->setOneParticlePos(activePos, iat);
+    coordinates_->setOneParticlePos(activePos, iat);
     spins[iat] = activeSpinVal;
     activePtcl = -1;
   }
@@ -666,7 +666,7 @@ void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)
 void ParticleSet::donePbyP()
 {
   ScopedTimer donePbyP_scope(myTimers[PS_donePbyP]);
-  RSoA->donePbyP();
+  coordinates_->donePbyP();
   if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
   activePtcl = -1;
@@ -683,7 +683,7 @@ void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
 void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 {
   R = awalker.R;
-  RSoA->setAllParticlePos(R);
+  coordinates_->setAllParticlePos(R);
 #if !defined(SOA_MEMORY_OPTIMIZED)
   G = awalker.G;
   L = awalker.L;

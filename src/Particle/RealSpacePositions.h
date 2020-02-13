@@ -43,7 +43,7 @@ public:
   }
   void setOneParticlePos(const PosType& pos, size_t iat) override { RSoA(iat) = pos; }
 
-  const PosVectorSoa& getAllParticlePos() override { return RSoA; }
+  const PosVectorSoa& getAllParticlePos() const override { return RSoA; }
   PosType getOneParticlePos(size_t iat) const override { return RSoA[iat]; }
 
 private:

@@ -53,7 +53,7 @@ public:
   virtual void setAllParticlePos(const ParticlePos_t& R) = 0;
   virtual void setOneParticlePos(const PosType& pos, size_t iat) = 0;
 
-  virtual const PosVectorSoa& getAllParticlePos() = 0;
+  virtual const PosVectorSoa& getAllParticlePos() const = 0;
   virtual PosType getOneParticlePos(size_t iat) const = 0;
 
   virtual void donePbyP() { }

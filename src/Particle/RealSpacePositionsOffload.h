@@ -71,7 +71,7 @@ public:
     */
   }
 
-  const PosVectorSoa& getAllParticlePos() override { return RSoA_hostview; }
+  const PosVectorSoa& getAllParticlePos() const override { return RSoA_hostview; }
   PosType getOneParticlePos(size_t iat) const override { return RSoA_hostview[iat]; }
 
   void donePbyP() override { updateH2D(); }
