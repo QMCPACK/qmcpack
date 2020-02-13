@@ -19,8 +19,8 @@
 /**@file InitMolecularSystem.cpp
  * @brief Implements InitMolecuarSystem operators.
  */
-#include "QMCApp/InitMolecularSystem.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/InitMolecularSystem.h"
+#include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/DistanceTableData.h"
 #include "ParticleBase/RandomSeqGenerator.h"

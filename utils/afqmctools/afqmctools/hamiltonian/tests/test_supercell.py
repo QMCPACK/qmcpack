@@ -27,12 +27,12 @@ class TestSupercell(unittest.TestCase):
         cell.atom = (('C',0,0,0),('C',numpy.array([0.25,0.25,0.25])*alat0))
         cell.basis = 'gth-szv'
         cell.pseudo = 'gth-pade'
-        cell.mesh = [25]*3  # 10 grids on postive x direction, => 21^3 grids in total
+        cell.mesh = [12]*3  # 10 grids on postive x direction, => 21^3 grids in total
         cell.verbose = 0
         cell.build()
         self.cell = cell
 
-        nk = [2,2,2]
+        nk = [2,1,1]
         kpts = cell.make_kpts(nk)
 
         mf = dft.KRKS(cell,kpts=kpts)
@@ -51,9 +51,10 @@ class TestSupercell(unittest.TestCase):
                                            self.nmo_pk, False)
         # Original mapping was broken for MO basis.
         # bench = [140, 172, 204, 236, 268, 300, 332, 364]
-        bench = [28, 92, 156, 220, 284, 348, 412, 476]
+        # FDM: Update for faster unit tests. bench = [28, 92, 156, 220, 284, 348, 412, 476]
+        bench = [28, 92]
         self.assertTrue(numpy.allclose(sum(ik2n), bench))
-        self.assertEqual(nmo_tot, 64)
+        self.assertEqual(nmo_tot, 16)
 
     def test_hcore(self):
         mf = self.mf
@@ -69,9 +70,9 @@ class TestSupercell(unittest.TestCase):
 
     def test_grid_shifts(self):
         gmap, Qi, ngs = sc.generate_grid_shifts(self.cell)
-        self.assertEqual(gmap[0,-1], 14973)
-        self.assertTrue(numpy.allclose(Qi[17], [1.84717693,0,0]))
-        self.assertEqual(ngs,15625)
+        self.assertEqual(gmap[0,-1], 1570)
+        self.assertTrue(numpy.allclose(Qi[1], [0,0,-1.8471769]))
+        self.assertEqual(ngs,1728)
 
     def test_gen_partition(self):
         comm = FakeComm(16)
@@ -80,13 +81,13 @@ class TestSupercell(unittest.TestCase):
         part = sc.Partition(comm, maxvecs, nmo_tot,
                             self.nmo_max, self.nkpts)
         self.assertEqual(part.ij0, 0)
-        self.assertEqual(part.ijN, 32)
-        self.assertEqual(part.nij, 32)
-        self.assertEqual(part.nkk, 8)
-        self.assertEqual(part.n2k1[5], 0)
-        self.assertEqual(part.n2k2[3], 3)
+        self.assertEqual(part.ijN, 8)
+        self.assertEqual(part.nij, 8)
+        self.assertEqual(part.nkk, 2)
+        self.assertEqual(part.n2k1[0], 0)
+        self.assertEqual(part.n2k2[1], 1)
         self.assertEqual(part.kk0, 0)
-        self.assertEqual(part.kkN, 8)
+        self.assertEqual(part.kkN, 2)
 
     def test_gen_orbital_products(self):
         cell = self.cell
@@ -101,11 +102,11 @@ class TestSupercell(unittest.TestCase):
         xik, xlj = sc.gen_orbital_products(cell, mydf, X,
                                            self.nmo_pk, ngs, part, self.kpts,
                                            self.nmo_max)
-        self.assertEqual(xik.shape,(8,15625,32))
+        self.assertEqual(xik.shape,(2,1728,8))
         self.assertAlmostEqual(numpy.max(numpy.abs(xik)),
-                               0.001370512034013767, places=8)
+                               0.01239256218954048, places=8)
         self.assertAlmostEqual(numpy.max(numpy.abs(xlj)),
-                               458.73660628806044, places=8)
+                               50.73269574297129, places=8)
 
     @unittest.skipIf(no_mpi, "MPI4PY not found")
     def test_modified_cholesky(self):
@@ -125,14 +126,14 @@ class TestSupercell(unittest.TestCase):
         solver = sc.Cholesky(part, kconserv, 1e-3, verbose=False)
         chol = solver.run(comm, xik, xlj, part, self.kpts,
                           self.nmo_pk, self.nmo_max, Qi, gmap)
-        self.assertEqual(chol.shape, (64,64,250))
+        self.assertEqual(chol.shape, (4,64,53))
         self.assertAlmostEqual(numpy.max(numpy.abs(chol)),
-                               0.807795378238119, places=8)
-        self.assertEqual(len(chol[abs(chol)>1e-10]), 101015)
+                               0.8077979869286759, places=8)
+        self.assertEqual(len(chol[abs(chol)>1e-10]), 6047)
 
     def tearDown(self):
         cwd = os.getcwd()
-        files = ['ham.h5', 'scf.dump']
+        files = ['ham.h5', 'scf.dump', 'hamil.h5', 'test.h5']
         for f in files:
             try:
                 os.remove(cwd+'/'+f)

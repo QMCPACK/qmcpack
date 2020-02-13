@@ -174,8 +174,10 @@ ENDIF()
   ENDIF(QMC_CUDA)
 
   IF(HAVE_CUDA)
-    TARGET_LINK_LIBRARIES(qmcutil ${CUDA_LIBRARIES})
+    TARGET_LINK_LIBRARIES(qmcutil PRIVATE ${CUDA_LIBRARIES})
   ENDIF(HAVE_CUDA)
+
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC ${QMC_UTIL_LIBS})
 
   # For unit tests, enable use for the fake RNG
   FUNCTION( USE_FAKE_RNG TARGET )
@@ -199,6 +201,8 @@ ENDIF()
   # create libqmcbase
   ####################################
   SET(PARTICLE ${PARTICLE}
+    Particle/InitMolecularSystem.cpp
+    Particle/ParticleSetPool.cpp
     Particle/ParticleSet.cpp
     Particle/VirtualParticleSet.cpp
     Particle/ParticleSet.BC.cpp
@@ -245,16 +249,13 @@ ENDIF()
     set(PARTICLE  ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
   endif()
 
-  ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO})
+  ADD_LIBRARY(qmcbase ${PARTICLE} ${PARTICLEIO})
 
-  TARGET_LINK_LIBRARIES(qmcbase qmcminimalcontainers)
-  #IF(QMC_BUILD_STATIC)
-  #  ADD_LIBRARY(qmcbase STATIC ${PARTICLE}  ${PARTICLEIO})
-  #ELSE(QMC_BUILD_STATIC)
-  #  ADD_LIBRARY(qmcbase SHARED ${PARTICLE}  ${PARTICLEIO})
-  #ENDIF(QMC_BUILD_STATIC)
-  #SUBDIRS(einspline)
+  TARGET_LINK_LIBRARIES(qmcbase PRIVATE qmcminimalcontainers)
 
+  TARGET_LINK_LIBRARIES(qmcbase PUBLIC qmcutil)
+
+  SUBDIRS(einspline)
   SUBDIRS(MinimalContainers)
 
   if(QMC_BUILD_SANDBOX_ONLY)
@@ -267,6 +268,11 @@ ENDIF()
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
   SUBDIRS(QMCDrivers)
+
+  IF(BUILD_LMYENGINE_INTERFACE)
+    SET(FORMIC_BINARY_DIR ${qmcpack_BINARY_DIR})
+    SUBDIRS(formic/utils)
+  ENDIF(BUILD_LMYENGINE_INTERFACE)
 
   IF(BUILD_AFQMC)
    SUBDIRS(AFQMC)
