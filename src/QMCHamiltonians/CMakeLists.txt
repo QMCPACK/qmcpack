@@ -18,6 +18,7 @@
     
     
 SET(HAMSRCS
+  HamiltonianPool.cpp
   ACForce.cpp
   OperatorBase.cpp
   QMCHamiltonian.cpp
@@ -85,9 +86,11 @@ IF(OHMMS_DIM MATCHES 3)
   ENDIF(HAVE_LIBFFTW)
 
   IF(QMC_CUDA)
-    SET(HAMSRCS ${HAMSRCS}
+    SET(HAMSRCS_CUDA
       CudaCoulomb.cu 
       NLPP.cu
+    )
+    SET(HAMSRCS ${HAMSRCS}
       CoulombPBCAA_CUDA.cpp
       CoulombPBCAB_CUDA.cpp
       MPC_CUDA.cpp
@@ -100,16 +103,23 @@ IF(OHMMS_DIM MATCHES 3)
 
 ENDIF(OHMMS_DIM MATCHES 3)
 
+ADD_LIBRARY(qmcham ${HAMSRCS})
+ADD_LIBRARY(qmcham_unit ${HAMSRCS})
 IF(QMC_CUDA)
-  CUDA_ADD_LIBRARY(qmcham ${HAMSRCS})
-  CUDA_ADD_LIBRARY(qmcham_unit ${HAMSRCS})
-ELSE(QMC_CUDA)
-  ADD_LIBRARY(qmcham ${HAMSRCS})
-  ADD_LIBRARY(qmcham_unit ${HAMSRCS})
+  CUDA_ADD_LIBRARY(qmcham_cuda ${HAMSRCS_CUDA})
+  TARGET_LINK_LIBRARIES(qmcham PRIVATE qmcham_cuda)
+  TARGET_LINK_LIBRARIES(qmcham_unit PRIVATE qmcham_cuda)
 ENDIF(QMC_CUDA)
 
 USE_FAKE_RNG(qmcham_unit)
-target_link_libraries(qmcham_unit qmcfakerng)
+TARGET_LINK_LIBRARIES(qmcham_unit PUBLIC qmcfakerng)
+
+TARGET_LINK_LIBRARIES(qmcham PUBLIC qmcwfs)
+TARGET_LINK_LIBRARIES(qmcham_unit PUBLIC qmcwfs)
+
+TARGET_LINK_LIBRARIES(qmcham PRIVATE einspline)
+TARGET_LINK_LIBRARIES(qmcham_unit PRIVATE einspline)
+
 #IF(QMC_BUILD_STATIC)
 
 #IF(QMC_BUILD_STATIC)

@@ -16,7 +16,7 @@
 /**@file ParticleSetPool.cpp
  * @brief Implements ParticleSetPool operators.
  */
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleLayoutIO.h"
@@ -27,7 +27,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "QMCApp/InitMolecularSystem.h"
+#include "Particle/InitMolecularSystem.h"
 #include "LongRange/LRCoulombSingleton.h"
 
 namespace qmcplusplus
@@ -321,16 +321,16 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
       //
       //old_func:  function pointer to current function that
       //           displays when H5 encounters error.
-      herr_t (*old_func)(void*);
+      H5E_auto2_t old_func;
       //old_client_data:  null pointer to associated error stream.
       void* old_client_data;
       //Grab the current handler info.
-      H5Eget_auto(&old_func, &old_client_data);
+      H5Eget_auto2(H5E_DEFAULT, &old_func, &old_client_data);
       //Now kill error notifications.
-      H5Eset_auto(NULL, NULL);
+      H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
       h5 = H5Fopen(h5name.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
       //and restore to defaults.
-      H5Eset_auto(old_func, old_client_data);
+      H5Eset_auto2(H5E_DEFAULT, old_func, old_client_data);
       if (h5 < 0)
       {
         app_error() << "Could not open HDF5 file \"" << h5name

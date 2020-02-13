@@ -15,9 +15,9 @@
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
-#include "QMCApp/tests/MinimalParticlePool.h"
-#include "QMCApp/tests/MinimalWaveFunctionPool.h"
-#include "QMCApp/tests/MinimalHamiltonianPool.h"
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
 

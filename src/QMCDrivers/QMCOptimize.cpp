@@ -28,7 +28,7 @@
 #include "QMCDrivers/VMC/VMC_CUDA.h"
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #endif
-#include "QMCApp/HamiltonianPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 
 namespace qmcplusplus
 {

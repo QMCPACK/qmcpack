@@ -27,7 +27,7 @@
 #    Supercomputer                                                   #
 #      Represents a generic supercomputer with a batch queue.        #
 #      Base class for specific supercomputers.                       #
-#      See Jaguar, Kraken, Taub, OIC5, Hopper, Edison, BlueWatersXE, #
+#      See Jaguar, Kraken, Golub, OIC5, Hopper, Edison, BlueWatersXE,#
 #        BlueWatersXK, Titan, EOS, Vesta, Cetus, Mira, Lonestar,     #
 #        Matisse, Komodo, and Amos                                   #
 #                                                                    #
@@ -127,8 +127,8 @@ class Options(DevBase):
 
     def write(self):
         s = ''
-        for o in self:
-            s += ' '+str(o)
+        for k in sorted(self.keys()):
+            s += ' '+str(self[k])
         #end for
         return s
     #end def write
@@ -1492,11 +1492,11 @@ class Supercomputer(Machine):
                 self.error('failed to set env options for runjob')
             #end if
             job.run_options.add(
-                np      = '--np '+str(job.processes),
-                p       = '-p '+str(job.processes_per_node),
-                locargs = '$LOCARGS',
-                verbose = '--verbose=INFO',
-                envs    = envs
+                np       = '--np '+str(job.processes),
+                p        = '-p '+str(job.processes_per_node),
+                xlocargs = '$LOCARGS',
+                verbose  = '--verbose=INFO',
+                envs     = envs
                 )
         elif launcher=='srun':  # Amos contribution from Ryan McAvoy
             None # anything needed here?
@@ -1975,13 +1975,13 @@ export MPI_MSGS_PER_PROC=32768
 
 
 
-class Taub(Supercomputer):
+class Golub(Supercomputer):
 
-    name = 'taub'
+    name = 'golub'
 
     def write_job_header(self,job):
         if job.queue is None:
-            job.queue='cse'
+            job.queue='secondary'
         #end if
         c=''
         c+='#PBS -q '+job.queue+'\n'
@@ -3395,7 +3395,7 @@ for cores in range(1,128+1):
 #            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus    qdelete
 Jaguar(      18688,   2,     8,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Kraken(       9408,   2,     6,   16,  100,  'aprun',     'qsub',   'qstat',    'qdel')
-Taub(          400,   2,     6,   24,   50, 'mpirun',     'qsub',   'qstat',    'qdel')
+Golub(          512,  2,     6,   32, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
 OIC5(           28,   2,    16,  128, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
 Edison(        664,   2,    12,   64,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Cori(         9688,   1,    68,   96,  100,   'srun',   'sbatch',  'squeue', 'scancel')

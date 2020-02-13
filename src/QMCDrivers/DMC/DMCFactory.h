@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_DMC_FACTORY_H
 #define QMCPLUSPLUS_DMC_FACTORY_H
 #include "QMCDrivers/QMCDriver.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 
 namespace qmcplusplus
 {

@@ -54,7 +54,6 @@ private:
   IndexType target_samples_     = 0;
   //Properties properties_;
   ParticleSet ions_;
-  std::vector<IndexType> walker_offsets_;
   std::vector<IndexType> num_local_walkers_per_node_;
   
   // By making this a linked list and creating the crowds at the same time we could get first touch.
@@ -110,9 +109,6 @@ public:
   MCPopulation& operator=(MCPopulation&) = delete;
   MCPopulation(MCPopulation&&) = default;
 
-  ~MCPopulation() {
-    std::cout << "MCPopulation::~MCPopulation\n";
-  }
   /** @ingroup PopulationControl
    *
    *  State Requirement:
@@ -191,7 +187,6 @@ public:
   const SpeciesSet& get_species_set() const { return species_set_; }
   const ParticleSet& get_ions() const { return ions_; }
   const ParticleSet* get_golden_electrons() const {return elec_particle_set_; }
-  const std::vector<int>& get_walker_offsets() const { return walker_offsets_; }
   std::vector<IndexType> get_num_local_walkers_per_node() const { return num_local_walkers_per_node_; }
   void syncWalkersPerNode(Communicate* comm);
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
@@ -211,8 +206,6 @@ public:
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
   const std::vector<RealType>& get_ptcl_inv_mass() const { return ptcl_inv_mass_; }
-
-  void set_walker_offsets(std::vector<IndexType> walker_offsets) { walker_offsets_ = walker_offsets; }
 
   // TODO: the fact this is needed is sad remove need for its existence.
   QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }

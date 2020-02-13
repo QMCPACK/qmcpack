@@ -104,12 +104,12 @@ struct Walker
   ///Weight of the walker
   FullPrecRealType Weight;
   ///Weight of the walker
-  RealType ReleasedNodeWeight;
+  FullPrecRealType ReleasedNodeWeight;
   /** Number of copies for branching
    *
    * When Multiplicity = 0, this walker will be destroyed.
    */
-  RealType Multiplicity;
+  FullPrecRealType Multiplicity;
   /// mark true if this walker is being sent.
   bool SendInProgress;
 

@@ -41,6 +41,7 @@ def load_from_pyscf_chk(chkfile,hcore=None,orthoAO=False):
             # UHF
             isUHF = True
             assert(len(Xocc) == 2)
+            Xocc = numpy.asarray(Xocc)
         else:
             # KRHF
             isUHF = False
