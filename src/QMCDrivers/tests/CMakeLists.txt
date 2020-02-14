@@ -43,7 +43,7 @@ ELSE(QMC_CUDA)
 ENDIF(QMC_CUDA)
 
 USE_FAKE_RNG(${UTEST_EXE})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcdriver_unit qmcham_unit qmcwfs qmcbase qmcutil qmcfakerng ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcdriver_unit qmcfakerng)
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
@@ -63,7 +63,7 @@ IF(NOT QMC_CUDA AND ENABLE_SOA)
   SET(DRIVER_TEST_SRC SetupPools.cpp test_Crowd.cpp test_MCPopulation.cpp test_ContextForSteps.cpp test_QMCDriverInput.cpp test_QMCDriverNew.cpp test_VMCDriverInput.cpp test_VMCFactoryNew.cpp test_VMCBatched.cpp test_DMCBatched.cpp test_SimpleFixedNodeBranch.cpp)
   ADD_EXECUTABLE(${UTEST_EXE} ${DRIVER_TEST_SRC})
   USE_FAKE_RNG(${UTEST_EXE})
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcdriver_unit qmcham_unit qmcwfs qmcbase qmcutil qmcfakerng ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcdriver_unit qmcfakerng)
 
   ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
   SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
@@ -77,8 +77,7 @@ IF(NOT QMC_CUDA AND ENABLE_SOA)
     #this is dependent on the directory creation and sym linking of earlier driver tests
     SET(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControlMPI.cpp)
     ADD_EXECUTABLE(${UTEST_EXE} ${DRIVER_TEST_SRC})
-    #Way too many depenedencies make for very slow test linking
-    TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcdriver_unit qmcham_unit qmcwfs qmcbase qmcutil qmcfakerng ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+    TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcdriver_unit qmcfakerng)
     # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
     ADD_MPI_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}" 3)
     SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})

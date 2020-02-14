@@ -178,6 +178,9 @@ ENDIF()
   ENDIF(HAVE_CUDA)
 
   TARGET_LINK_LIBRARIES(qmcutil PUBLIC ${QMC_UTIL_LIBS})
+  IF(HAVE_MPI)
+    TARGET_LINK_LIBRARIES(qmcutil PUBLIC MPI::MPI_CXX)
+  ENDIF()
 
   # For unit tests, enable use for the fake RNG
   FUNCTION( USE_FAKE_RNG TARGET )
@@ -251,7 +254,7 @@ ENDIF()
 
   ADD_LIBRARY(qmcbase ${PARTICLE} ${PARTICLEIO})
 
-  TARGET_LINK_LIBRARIES(qmcbase PRIVATE qmcminimalcontainers)
+  TARGET_LINK_LIBRARIES(qmcbase PRIVATE qmcminimalcontainers Math::BLAS_LAPACK Math::scalar_vector_functions)
 
   TARGET_LINK_LIBRARIES(qmcbase PUBLIC qmcutil)
 
