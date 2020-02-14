@@ -55,7 +55,7 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
             print(" # UHF integrals are not allowed. Use ortho AO option (-a/--ao).")
             sys.exit()
         X = scf_data['mo_coeff']
-    df_ints = scf_data['df_ints']
+    df_ints = scf_data.get('df_ints', None)
     C = scf_data['mo_coeff']
     # 3. Pyscf mol object.
     mol = scf_data['mol']
@@ -81,9 +81,9 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
         print (" # Orthogonalising Cholesky vectors.")
     start = time.time()
     # Step 2.a Orthogonalise Cholesky vectors.
-    ao2mo_chol(chol_vecs, X)
+    chol_trans = ao2mo_chol(chol_vecs, X)
     if verbose:
-        print (" # Time to orthogonalise: %f"%(time.time() - start))
+        print(" # Time to orthogonalise: %f"%(time.time() - start))
     enuc = mol.energy_nuc()
     # Step 3. (Optionally) freeze core / virtuals.
     nelec = mol.nelec
@@ -93,7 +93,7 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
         if ncas == -1:
             ncas = nbasis - nfzc
         nfzv = nbasis - ncas - nfzc
-        h1e, chol_vecs, enuc = freeze_core(h1e, chol_vecs, enuc, nfzc, ncas,
+        h1e, chol_vecs, enuc = freeze_core(h1e, chol_trans, enuc, nfzc, ncas,
                                            verbose)
         h1e = h1e[0]
         nelec = (mol.nelec[0]-nfzc, mol.nelec[1]-nfzc)
@@ -102,7 +102,7 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
         orbs = numpy.identity(h1e.shape[-1])
         orbs = orbs[nfzc:nbasis-nfzv,nfzc:nbasis-nfzv]
         scf_data['mo_coeff'] = C[nfzc:nbasis-nfzv,nfzc:nbasis-nfzv]
-    return h1e, chol_vecs, nelec, enuc, X
+    return h1e, chol_trans, nelec, enuc, X
 
 
 def freeze_core(h1e, chol, ecore, nc, ncas, verbose=True):
@@ -130,10 +130,17 @@ def freeze_core(h1e, chol, ecore, nc, ncas, verbose=True):
     return h1e, chol, efzc
 
 def ao2mo_chol(eri, C):
-    nb = C.shape[-1]
-    for i, cv in enumerate(eri):
-        half = numpy.dot(cv.reshape(nb,nb), C)
-        eri[i] = numpy.dot(C.T, half).ravel()
+    nao = C.shape[0]
+    nmo = C.shape[1]
+    nik = nmo*nmo
+    nchol = eri.shape[0]
+    eri_ = eri.ravel()
+    for i in range(nchol):
+        cv = eri[i].reshape(nao,nao)
+        half = numpy.dot(cv, C)
+        # if nao < nmo we overwrite the data
+        eri_[i*nik:(i+1)*nik] = numpy.dot(C.T, half).ravel()
+    return eri_[:nchol*nik].reshape((nchol,nik))
 
 def chunked_cholesky(mol, max_error=1e-6, verbose=False, cmax=10):
     """Modified cholesky decomposition from pyscf eris.

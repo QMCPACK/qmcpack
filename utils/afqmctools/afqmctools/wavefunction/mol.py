@@ -35,15 +35,18 @@ def write_wfn_mol(scf_data, ortho_ao, filename, wfn=None,
     uhf = scf_data['isUHF']
     # For RHF only nalpha entries will be filled.
     if uhf:
-        norb = C[0].shape[0]
+        norb = C[0].shape[-1]
     else:
-        norb = C.shape[0]
+        norb = C.shape[-1]
     if wfn is None:
         wfn = numpy.zeros((1,norb,nalpha+nbeta), dtype=numpy.complex128)
         wfn_type = 'NOMSD'
         coeffs = numpy.array([1.0+0j])
         if ortho_ao:
-            Xinv = scipy.linalg.inv(X)
+            if X.shape[0] != X.shape[1]:
+                Xinv = scipy.linalg.pinv(X)
+            else:
+                Xinv = scipy.linalg.inv(X)
             if uhf:
                 # We are assuming C matrix is energy ordered.
                 wfn[0,:,:nalpha] = numpy.dot(Xinv, C[0])[:,:nalpha]
@@ -301,14 +304,6 @@ def gen_multi_det_wavefunction(mc, weight_cutoff=0.95, verbose=False,
         output.write(coeff+' '+ocore_up+' '+oup+' '+ocore_dn+' '+odown+'\n')
     return coeffs, [occups,occdns]
 
-
-def read_qmcpack_wfn(filename, nskip=9):
-    with open(filename) as f:
-        content = f.readlines()[nskip:]
-    useable = numpy.array([c.split() for c in content]).flatten()
-    tuples = [ast.literal_eval(u) for u in useable]
-    orbs = [complex(t[0], t[1]) for t in tuples]
-    return numpy.array(orbs)
 
 def write_phmsd_wfn(filename, occs, nmo, ncore=0):
     output = open(filename, 'w')
