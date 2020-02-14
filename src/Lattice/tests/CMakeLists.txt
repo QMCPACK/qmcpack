@@ -18,7 +18,7 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 
 ADD_EXECUTABLE(${UTEST_EXE} test_ParticleBConds.cpp test_CrystalLattice.cpp test_LRBreakupParameters.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil Math::scalar_vector_functions)
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
