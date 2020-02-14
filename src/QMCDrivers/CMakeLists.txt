@@ -30,13 +30,13 @@ SET(QMCDRIVERS
   QMCDriver.cpp
   QMCDriverInput.cpp
   QMCDriverNew.cpp
-  QMCOptimize.cpp
-  QMCLinearOptimize.cpp
-  QMCCorrelatedSamplingLinearOptimize.cpp
-  QMCFixedSampleLinearOptimize.cpp
+  WFOpt/QMCOptimize.cpp
+  WFOpt/QMCLinearOptimize.cpp
+  WFOpt/QMCCorrelatedSamplingLinearOptimize.cpp
+  WFOpt/QMCFixedSampleLinearOptimize.cpp
   Optimizers/DescentEngine.cpp
   Optimizers/HybridEngine.cpp
-  QMCCostFunctionBase.cpp
+  WFOpt/QMCCostFunctionBase.cpp
   WaveFunctionTester.cpp
   WalkerControlBase.cpp
   CloneManager.cpp
@@ -81,14 +81,14 @@ IF(QMC_CUDA)
    SET(QMCDRIVERS ${QMCDRIVERS}
    VMC/VMC_CUDA.cpp
    DMC/DMC_CUDA.cpp
-   QMCCostFunctionCUDA.cpp)
+   WFOpt/QMCCostFunctionCUDA.cpp)
 ENDIF(QMC_CUDA)
 
 SET(QMCDRIVERS ${QMCDRIVERS} 
     VMC/VMC.cpp
     VMC/VMCBatched.cpp
     VMC/VMCLinearOpt.cpp
-    QMCCostFunction.cpp)
+    WFOpt/QMCCostFunction.cpp)
 
 IF(HAVE_MPI) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
