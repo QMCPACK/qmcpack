@@ -50,8 +50,17 @@ private:
   ///Non-Local part of the pseudo-potential
   std::vector<RadialPotentialType*> sopp_m;
 
+  ComplexType sMatrixElements(RealType s1, RealType s2, int dim);
   ComplexType lmMatrixElements(int l, int m1, int m2,int dim);
   int kroneckerDelta(int x, int y);
+
+  ComplexType getAngularIntegral(RealType sold, 
+                                 RealType snew,
+                                 ParticleSet& W,
+                                 TrialWaveFunction& Psi,
+                                 int iel,
+                                 RealType r,
+                                 const PosType& dr);
 
   std::vector<PosType> deltaV;
   SpherGridType sgridxyz_m;

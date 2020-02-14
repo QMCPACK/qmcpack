@@ -32,7 +32,7 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
       NumNonLocal(0),
       Lmax(0),
       Nrule(4),
-      Srule(4),
+      Srule(8),
       AtomicNumber(0),
       Zeff(0),
       RcutMax(-1),

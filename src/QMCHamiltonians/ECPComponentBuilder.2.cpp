@@ -204,6 +204,9 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     for (int i = 0; i < vnn.rows(); i++)
       for (int j = 0; j < npts; j++)
         vnn[i][j] *= grid_global->r(j);
+    for (int i = 0; i < vnnso.rows(); i++)
+      for (int j = 0; j < npts; j++)
+        vnnso[i][j] *= grid_global->r(j);
   }
   app_log() << "   Number of angular momentum channels " << angList.size() << std::endl;
   app_log() << "   Maximum angular momentum channel " << Lmax << std::endl;
@@ -269,7 +272,7 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
     for (int i = 1; i < ng - 1; i++)
     {
       mRealType r = d * i;
-      newP[i]     = infunc.splint(r);
+      newP[i]     = infunc.splint(r) / r;
     }
     newP[0]                  = newP[1];
     newP[ng - 1]             = 0.0;
