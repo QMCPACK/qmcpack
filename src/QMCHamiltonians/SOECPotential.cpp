@@ -19,55 +19,35 @@
 
 namespace qmcplusplus
 {
-
 /** constructor
  *\param ionic positions
  *\param els electronic poitions
  *\param psi Trial wave function
 */
-SOECPotential::SOECPotential(ParticleSet& ions,
-                             ParticleSet& els,
-                             TrialWaveFunction& psi)
-    : myRNG(&Random),
-      IonConfig(ions),
-      Psi(psi),
-      Peln(els),
-      ElecNeighborIons(els),
-      IonNeighborElecs(ions)
+SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi)
+    : myRNG(&Random), IonConfig(ions), Psi(psi), Peln(els), ElecNeighborIons(els), IonNeighborElecs(ions)
 {
-    //set_energy_domain(potential);
-    //two_body_quantum_domain(ions,els);
-    myTableIndex = els.addTable(ions,DT_SOA_PREFERRED);
-    NumIons = ions.getTotalNum();
-    PP.resize(NumIons,nullptr);
-    PPset.resize(IonConfig.getSpeciesSet().getTotalNum(), 0);
-    //UpdateMode.set(NONLOCAL,1);
+  //set_energy_domain(potential);
+  //two_body_quantum_domain(ions,els);
+  myTableIndex = els.addTable(ions, DT_SOA_PREFERRED);
+  NumIons      = ions.getTotalNum();
+  PP.resize(NumIons, nullptr);
+  PPset.resize(IonConfig.getSpeciesSet().getTotalNum(), 0);
+  //UpdateMode.set(NONLOCAL,1);
 }
 
 //destructor
-SOECPotential::~SOECPotential()
-{
-  delete_iter(PPset.begin(), PPset.end());
-}
+SOECPotential::~SOECPotential() { delete_iter(PPset.begin(), PPset.end()); }
 
-void SOECPotential::resetTargetParticleSet(ParticleSet& P)
-{
+void SOECPotential::resetTargetParticleSet(ParticleSet& P) {}
 
-}
+SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P) { return 0.0; }
 
-SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
-{
-  return 0.0;
-}
-
-OperatorBase* SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
-{
-  return 0;
-}
+OperatorBase* SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return 0; }
 
 void SOECPotential::addComponent(int groupID, SOECPComponent* ppot)
 {
-  for (int iat=0; iat<PP.size(); iat++)
+  for (int iat = 0; iat < PP.size(); iat++)
     if (IonConfig.GroupID[iat] == groupID)
     {
       PP[iat] = ppot;
@@ -76,4 +56,4 @@ void SOECPotential::addComponent(int groupID, SOECPComponent* ppot)
 }
 
 
-}
+} // namespace qmcplusplus

@@ -58,7 +58,8 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
 bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
 {
   const XMLAttrString cutoff_str(cur, "cutoff");
-  if(!cutoff_str.empty()) RcutMax = std::stod(cutoff_str);
+  if (!cutoff_str.empty())
+    RcutMax = std::stod(cutoff_str);
 
   return read_pp_file(fname);
 }
@@ -265,9 +266,9 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
   pp_nonloc->sgridweight_m = myRule.weight_m;
   // Allocate storage for wave function ratios
   pp_nonloc->resize_warrays(myRule.nk, NumNonLocal, Lmax);
-  if (pp_so) 
+  if (pp_so)
   { //added here bc must have nonlocal terms to have SO contributions
-    pp_so->sgridxyz_m = myRule.xyz_m;
+    pp_so->sgridxyz_m    = myRule.xyz_m;
     pp_so->sgridweight_m = myRule.weight_m;
     pp_so->resize_warrays(myRule.nk, NumSO, Srule);
   }

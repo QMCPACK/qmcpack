@@ -119,9 +119,9 @@ TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
   REQUIRE(ecp.Zeff == 13);
 
   double rlist[5] = {0.001, 0.500, 1.000, 2.000, 10.000};
-  double so_p[5]  = {0.999999000005,  0.778800783071,  0.3678794411714,   0.01831563888873418, 0.000};
-  double so_d[5]  = {9.99998000e-01, 6.06530660e-01, 1.35335283e-01, 3.35462628e-04,0.000};
-  double so_f[5]  = {9.99997000e-01, 4.72366553e-01, 4.97870684e-02, 6.14421235e-06,0.000};
+  double so_p[5]  = {0.999999000005, 0.778800783071, 0.3678794411714, 0.01831563888873418, 0.000};
+  double so_d[5]  = {9.99998000e-01, 6.06530660e-01, 1.35335283e-01, 3.35462628e-04, 0.000};
+  double so_f[5]  = {9.99997000e-01, 4.72366553e-01, 4.97870684e-02, 6.14421235e-06, 0.000};
 
   for (int i = 0; i < 5; i++)
   {
@@ -413,8 +413,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
       if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
       {
         Value2 += nlpp->evaluateOneWithForces(elec, iat, psi, jel, dist[iat], -displ[iat], HFTerm[iat]);
-        Value3 += nlpp->evaluateOneWithForces(elec, ions, iat, psi, jel, dist[iat], -displ[iat], HFTerm2[iat],
-                                              PulayTerm);
+        Value3 +=
+            nlpp->evaluateOneWithForces(elec, ions, iat, psi, jel, dist[iat], -displ[iat], HFTerm2[iat], PulayTerm);
       }
   }
   //These values are validated against print statements.
@@ -468,9 +468,9 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 #ifdef QMC_COMPLEX
 TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 {
-  app_log() <<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-  app_log() <<"!!!! Evaluate SOECPComponent !!!!\n";
-  app_log() <<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+  app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+  app_log() << "!!!! Evaluate SOECPComponent !!!!\n";
+  app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
   typedef QMCTraits::RealType RealType;
   typedef QMCTraits::ValueType ValueType;
   typedef QMCTraits::PosType PosType;
@@ -503,24 +503,24 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 0;
   ion_species(iatnumber, pIdx)  = 1;
-  ions.Lattice = Lattice;
+  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
   elec.Lattice = Lattice;
   elec.setName("e");
   elec.create(1);
-  elec.R[0][0] = 0.138;
-  elec.R[0][1] = -0.24;
-  elec.R[0][2] = 0.216;
+  elec.R[0][0]  = 0.138;
+  elec.R[0][1]  = -0.24;
+  elec.R[0][2]  = 0.216;
   elec.spins[0] = 0.0;
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
   elec.createSK();
 
@@ -536,10 +536,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   std::vector<PosType> kup, kdn;
   std::vector<RealType> k2up, k2dn;
   QMCTraits::IndexType nelec = elec.getTotalNum();
-  REQUIRE(nelec==1);
+  REQUIRE(nelec == 1);
 
   kup.resize(nelec);
-  kup[0] = PosType(1,1,1);
+  kup[0] = PosType(1, 1, 1);
 
   k2up.resize(nelec);
   //For some goofy reason, EGOSet needs to be initialized with:
@@ -548,7 +548,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   k2up[0] = -dot(kup[0], kup[0]);
 
   kdn.resize(nelec);
-  kdn[0] = PosType(2,2,2);
+  kdn[0] = PosType(2, 2, 2);
 
   k2dn.resize(nelec);
   k2dn[0] = -dot(kdn[0], kdn[0]);
@@ -559,12 +559,12 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   SpinorSet* spinor_set = new SpinorSet();
   spinor_set->set_spos(spo_up, spo_dn);
 
-  DiracDeterminant<>* dd = new DiracDeterminant<>(spinor_set);
+  DiracDeterminant<>* dd    = new DiracDeterminant<>(spinor_set);
   QMCTraits::IndexType norb = spo_up->size();
-  REQUIRE(norb==1);
+  REQUIRE(norb == 1);
   dd->resize(nelec, norb);
 
-  psi.addComponent(dd,"spinor");
+  psi.addComponent(dd, "spinor");
 
   //Now we set up the SO ECP component.
   ECPComponentBuilder ecp("test_read_soecp", c);
@@ -573,7 +573,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   REQUIRE(okay3);
 
   SOECPComponent* sopp = ecp.pp_so;
-  REQUIRE(sopp!=nullptr);
+  REQUIRE(sopp != nullptr);
   copyGridUnrotatedForTest(*sopp);
 
   const int myTableIndex = elec.addTable(ions, DT_SOA_PREFERRED);
@@ -598,15 +598,14 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
     {
       if (sopp != nullptr && dist[iat] < sopp->getRmax())
       {
-        Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1)*displ[iat]);
+        Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
       }
     }
   }
   REQUIRE(Value1 == Approx(0.1644374207));
 #endif
-
 }
 #endif
 
 
-}
+} // namespace qmcplusplus

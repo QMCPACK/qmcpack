@@ -129,8 +129,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 #ifdef QMC_CUDA
     NonLocalECPotential_CUDA* apot = new NonLocalECPotential_CUDA(IonConfig, targetPtcl, targetPsi, usePBC, doForces);
 #else
-    NonLocalECPotential* apot =
-        new NonLocalECPotential(IonConfig, targetPtcl, targetPsi, doForces, use_DLA == "yes");
+    NonLocalECPotential* apot = new NonLocalECPotential(IonConfig, targetPtcl, targetPsi, doForces, use_DLA == "yes");
 #endif
     int nknot_max = 0;
     for (int i = 0; i < nonLocalPot.size(); i++)
@@ -152,10 +151,10 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
   if (hasSOPot)
   {
-    SOECPotential* apot = new SOECPotential(IonConfig,targetPtcl,targetPsi);
-    int nknot_max = 0;
-    int sknot_max = 0;
-    for (int i=0; i < soPot.size(); i++) 
+    SOECPotential* apot = new SOECPotential(IonConfig, targetPtcl, targetPsi);
+    int nknot_max       = 0;
+    int sknot_max       = 0;
+    for (int i = 0; i < soPot.size(); i++)
     {
       if (soPot[i])
       {
@@ -167,7 +166,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     app_log() << "\n  Using SOECP potential \n"
               << "    Maximum grid on a sphere for SOECPotential: " << nknot_max << std::endl;
     app_log() << "    Maximum grid for Simpson's rule for spin integral: " << sknot_max << std::endl;
-    
+
     targetH.addOperator(apot, "SOECP"); //default is physical operator
   }
   if (hasL2Pot)
@@ -248,7 +247,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
           }
           if (ecp.pp_so)
           {
-            hasSOPot = true;
+            hasSOPot            = true;
             soPot[speciesIndex] = ecp.pp_so;
           }
           if (ecp.pp_L2)

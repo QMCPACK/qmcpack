@@ -41,7 +41,7 @@ private:
   int lmax;
   ///the number of non-local channels
   int nchannel;
-  int nknot; 
+  int nknot;
   int sknot;
   ///Maximum cutoff the non-local pseudopotential
   RealType Rmax;
@@ -51,10 +51,10 @@ private:
   std::vector<RadialPotentialType*> sopp_m;
 
   ComplexType sMatrixElements(RealType s1, RealType s2, int dim);
-  ComplexType lmMatrixElements(int l, int m1, int m2,int dim);
+  ComplexType lmMatrixElements(int l, int m1, int m2, int dim);
   int kroneckerDelta(int x, int y);
 
-  ComplexType getAngularIntegral(RealType sold, 
+  ComplexType getAngularIntegral(RealType sold,
                                  RealType snew,
                                  ParticleSet& W,
                                  TrialWaveFunction& Psi,
@@ -71,7 +71,6 @@ private:
 
 
 public:
-
   SOECPComponent();
   ~SOECPComponent();
 
@@ -79,7 +78,7 @@ public:
 
   ///add a new Spin-Orbit component
   void add(int l, RadialPotentialType* pp);
- 
+
   void resize_warrays(int n, int m, int s);
 
   void randomize_grid(RandomGenerator_t& myRNG);
@@ -100,25 +99,20 @@ public:
    *
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
-  RealType evaluateOne(ParticleSet& W,
-                       int iat,
-                       TrialWaveFunction& Psi,
-                       int iel,
-                       RealType r,
-                       const PosType& dr);
+  RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, int iel, RealType r, const PosType& dr);
 
   // This function needs to be updated to SoA. myTableIndex is introduced temporarily.
   inline RealType evaluateValueAndDerivatives(ParticleSet& P,
-                                       int iat,
-                                       TrialWaveFunction& psi,
-                                       const opt_variables_type& optvars,
-                                       const std::vector<RealType>& dlogpsi,
-                                       std::vector<RealType>& dhpsioverpsi,
-                                       const int myTableIndex)
-                                       {
-                                         APP_ABORT("evaluateValueAndDerivatives not implemented yet\n");
-                                         return 0.0;
-                                       };
+                                              int iat,
+                                              TrialWaveFunction& psi,
+                                              const opt_variables_type& optvars,
+                                              const std::vector<RealType>& dlogpsi,
+                                              std::vector<RealType>& dhpsioverpsi,
+                                              const int myTableIndex)
+  {
+    APP_ABORT("evaluateValueAndDerivatives not implemented yet\n");
+    return 0.0;
+  };
 
   void print(std::ostream& os);
 
@@ -133,7 +127,7 @@ public:
 
   friend class ECPComponentBuilder;
   friend void copyGridUnrotatedForTest(SOECPComponent& nlpp);
-}; 
+};
 
 } // namespace qmcplusplus
 #endif

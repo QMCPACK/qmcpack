@@ -24,10 +24,7 @@ namespace qmcplusplus
 class SOECPotential : public OperatorBase
 {
 public:
-  SOECPotential(ParticleSet& ions,
-                ParticleSet& els,
-                TrialWaveFunction& psi
-                );
+  SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
 
   ~SOECPotential();
 
@@ -65,8 +62,7 @@ private:
   NeighborLists ElecNeighborIons;
   ///neighborlist of ions
   NeighborLists IonNeighborElecs;
-
 };
-}
+} // namespace qmcplusplus
 
 #endif
