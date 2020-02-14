@@ -64,13 +64,10 @@ add_library(formic_utils matrix.cpp
                          lmyengine/var_dependencies.cpp)
 
 TARGET_COMPILE_DEFINITIONS(formic_utils INTERFACE "HAVE_LMY_ENGINE")
-
+TARGET_LINK_LIBRARIES(formic_utils PRIVATE Math::BLAS_LAPACK)
 IF(HAVE_MPI)
   TARGET_LINK_LIBRARIES(formic_utils PUBLIC MPI::MPI_CXX)
 ENDIF()
-
-# Ye Temporary safe depdency for linear algerbra, will be fixed soon.
-TARGET_LINK_LIBRARIES(formic_utils PUBLIC qmcutil)
 
 #target_link_libraries(formic_utils ${FORMIC_LAPACK_BLAS_LIBS})
 
