@@ -1,16 +1,3 @@
-# -std=c++11 is handled at the top level. Ye
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
-REMOVE_DEFINITIONS(-DMPICH_SKIP_MPICXX)
-
-# Really ugly hack to see if we're using MKL - replace it
-#STRING(FIND "${BLAS_LIBRARIES}" "mkl" apos)
-#MESSAGE("BLAS_LIBRARIES FIND = ${apos}")
-#IF (NOT apos EQUAL -1)
-#    MESSAGE("mkl found")
-#    SET(MKL_FOUND 1)
-#ENDIF()
-
 # determine how to declare and how to mangle the blas/lapack functions
 if(MKL_FOUND)
   set(LAPACK_DECLARE_INC formic/utils/declare_mkl.h)
@@ -30,13 +17,13 @@ configure_file(declare.h.in ${FORMIC_BINARY_DIR}/src/formic/utils/declare.h)
 configure_file(mangle.h.in ${FORMIC_BINARY_DIR}/src/formic/utils/mangle.h)
 
 # determine how to comment/uncomment the mpi interface header file
-if(USE_MPI)
+if(HAVE_MPI)
   set(MPI_COMMENT_I "")
   set(MPI_COMMENT_O "//")
-else(USE_MPI)
+else(HAVE_MPI)
   set(MPI_COMMENT_I "//")
   set(MPI_COMMENT_O "")
-endif(USE_MPI)
+endif(HAVE_MPI)
 
 # determine the level of mpi thread support to demand
 if(USE_OPENMP)
@@ -75,6 +62,15 @@ add_library(formic_utils matrix.cpp
                          lmyengine/engine_timing.cpp
                          lmyengine/spam_solver.cpp
                          lmyengine/var_dependencies.cpp)
+
+TARGET_COMPILE_DEFINITIONS(formic_utils INTERFACE "HAVE_LMY_ENGINE")
+
+IF(HAVE_MPI)
+  TARGET_LINK_LIBRARIES(formic_utils PUBLIC MPI::MPI_CXX)
+ENDIF()
+
+# Ye Temporary safe depdency for linear algerbra, will be fixed soon.
+TARGET_LINK_LIBRARIES(formic_utils PUBLIC qmcutil)
 
 #target_link_libraries(formic_utils ${FORMIC_LAPACK_BLAS_LIBS})
 

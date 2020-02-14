@@ -19,7 +19,5 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 
 ADD_EXECUTABLE(${UTEST_EXE} test_vector.cpp test_matrix.cpp test_tinyvector.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} ${QMC_UTIL_LIBS})
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-

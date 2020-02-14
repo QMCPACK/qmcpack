@@ -21,7 +21,7 @@
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/DMC/SODMCUpdatePbyP.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Message/OpenMP.h"

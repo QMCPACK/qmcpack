@@ -81,7 +81,7 @@ then
 fi
 
 CTEST_FLAGS="-D CMAKE_C_COMPILER=$CC -D CMAKE_CXX_COMPILER=$CXX -D QMC_DATA=$QMC_DATA -D ENABLE_TIMERS=1
-             -DQMC_OPTIONS='-DMPIEXEC=sh;-DMPIEXEC_NUMPROC_FLAG=$place/$entry/tests/scripts/aprunhelper.sh'"
+             -DQMC_OPTIONS='-DMPIEXEC_EXECUTABLE=/bin/sh;-DMPIEXEC_NUMPROC_FLAG=$place/$entry/tests/scripts/aprunhelper.sh'"
 
 if [[ $sys == *"Complex"* ]]; then
   CTEST_FLAGS="$CTEST_FLAGS -D QMC_COMPLEX=1"

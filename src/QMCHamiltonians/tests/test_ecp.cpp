@@ -32,13 +32,8 @@
 
 
 //for Hamiltonian manipulations.
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#ifndef ENABLE_SOA
-#include "Particle/SymmetricDistanceTableData.h"
-#endif
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "LongRange/EwaldHandler3D.h"
 
 #ifdef QMC_COMPLEX //This is for the spinor test.

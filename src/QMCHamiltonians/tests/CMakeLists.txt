@@ -24,7 +24,8 @@ MAYBE_SYMLINK(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
 
 
 SET(SRCS test_bare_kinetic.cpp test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
-         test_coulomb_pbcAA_ewald.cpp test_force.cpp test_force_ewald.cpp test_ecp.cpp test_hamiltonian_factory.cpp test_PairCorrEstimator.cpp)
+         test_coulomb_pbcAA_ewald.cpp test_force.cpp test_force_ewald.cpp test_ecp.cpp
+         test_hamiltonian_pool.cpp test_hamiltonian_factory.cpp test_PairCorrEstimator.cpp)
 IF(QMC_CUDA)
   SET(SRCS ${SRCS}
       test_coulomb_CUDA.cpp 
@@ -43,7 +44,7 @@ EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/ps
 
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcham qmcwfs qmcbase qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcham)
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

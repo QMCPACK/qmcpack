@@ -110,8 +110,6 @@ public:
   MCPopulation(MCPopulation&&) = default;
   MCPopulation& operator=(MCPopulation&&) = default;
 
-  ~MCPopulation() {
-  }
   /** @ingroup PopulationControl
    *
    *  State Requirement:
