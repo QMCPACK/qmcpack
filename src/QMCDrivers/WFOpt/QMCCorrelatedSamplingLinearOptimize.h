@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_H
 #define QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_H
 
-#include "QMCDrivers/QMCLinearOptimize.h"
+#include "QMCDrivers/WFOpt/QMCLinearOptimize.h"
 #include "QMCDrivers/VMC/VMCLinearOpt.h"
 #include "Optimize/NRCOptimization.h"
 #if defined(QMC_CUDA)

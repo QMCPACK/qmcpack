@@ -14,13 +14,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/QMCLinearOptimize.h"
+#include "QMCDrivers/WFOpt/QMCLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 //#if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMC.h"
-#include "QMCDrivers/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/QMCCostFunction.h"
 //#endif
 //#include "QMCDrivers/VMC/VMCSingle.h"
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
@@ -30,7 +30,7 @@
 #include <cassert>
 #if defined(QMC_CUDA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"
-#include "QMCDrivers/QMCCostFunctionCUDA.h"
+#include "QMCDrivers/WFOpt/QMCCostFunctionCUDA.h"
 #endif
 #include "Numerics/LinearFit.h"
 #include <iostream>

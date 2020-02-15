@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_COSTFUNCTION_H
 #define QMCPLUSPLUS_COSTFUNCTION_H
 
-#include "QMCDrivers/QMCCostFunctionBase.h"
+#include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 
