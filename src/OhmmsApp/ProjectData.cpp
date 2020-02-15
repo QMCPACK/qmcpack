@@ -172,8 +172,6 @@ bool ProjectData::PreviousRoot(std::string& oldroot) const
   }
 }
 
-#if defined(HAVE_LIBXML2)
-
 bool ProjectData::put(xmlNodePtr cur)
 {
   m_cur                  = cur;
@@ -219,5 +217,4 @@ bool ProjectData::put(xmlNodePtr cur)
   return true;
 }
 
-#endif
 } // namespace qmcplusplus
