@@ -30,13 +30,13 @@ SET(QMCDRIVERS
   QMCDriver.cpp
   QMCDriverInput.cpp
   QMCDriverNew.cpp
-  QMCOptimize.cpp
-  QMCLinearOptimize.cpp
-  QMCCorrelatedSamplingLinearOptimize.cpp
-  QMCFixedSampleLinearOptimize.cpp
+  WFOpt/QMCOptimize.cpp
+  WFOpt/QMCLinearOptimize.cpp
+  WFOpt/QMCCorrelatedSamplingLinearOptimize.cpp
+  WFOpt/QMCFixedSampleLinearOptimize.cpp
   Optimizers/DescentEngine.cpp
   Optimizers/HybridEngine.cpp
-  QMCCostFunctionBase.cpp
+  WFOpt/QMCCostFunctionBase.cpp
   WaveFunctionTester.cpp
   WalkerControlBase.cpp
   CloneManager.cpp
@@ -81,14 +81,14 @@ IF(QMC_CUDA)
    SET(QMCDRIVERS ${QMCDRIVERS}
    VMC/VMC_CUDA.cpp
    DMC/DMC_CUDA.cpp
-   QMCCostFunctionCUDA.cpp)
+   WFOpt/QMCCostFunctionCUDA.cpp)
 ENDIF(QMC_CUDA)
 
 SET(QMCDRIVERS ${QMCDRIVERS} 
     VMC/VMC.cpp
     VMC/VMCBatched.cpp
     VMC/VMCLinearOpt.cpp
-    QMCCostFunction.cpp)
+    WFOpt/QMCCostFunction.cpp)
 
 IF(HAVE_MPI) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
@@ -117,10 +117,11 @@ USE_FAKE_RNG(qmcdriver_unit)
 
 TARGET_LINK_LIBRARIES(qmcdriver PUBLIC qmcham)
 TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcham_unit)
-
+TARGET_LINK_LIBRARIES(qmcdriver PRIVATE Math::BLAS_LAPACK)
+TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE Math::BLAS_LAPACK)
 IF(BUILD_LMYENGINE_INTERFACE)
-  TARGET_LINK_LIBRARIES(qmcdriver PUBLIC formic_utils)
-  TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC formic_utils)
+  TARGET_LINK_LIBRARIES(qmcdriver PRIVATE formic_utils)
+  TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE formic_utils)
 ENDIF()
 
 #IF(QMC_BUILD_STATIC)

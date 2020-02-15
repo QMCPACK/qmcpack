@@ -21,15 +21,7 @@
 #include "config.h"
 #endif
 
-#ifdef HAVE_LIBXML2
 #include "OhmmsData/libxmldefs.h"
-#else /*HAVE_LIBXML2 */
-#ifndef xmlDocPtr
-#define xmlDocPtr void*
-#define xmlNodePtr void*
-#define xmlNsPtr void*
-#endif
-#endif /*HAVE_LIBXML2 */
 
 /**\class OhmmsElementBase
  *\brief Abstract class to provide xml-compatible I/O interfaces for the derived classes.

@@ -226,8 +226,6 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSymbolExists.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
 
-INCLUDE(${PROJECT_CMAKE}/CheckSincos.cmake)
-
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
 
 CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
@@ -279,10 +277,7 @@ SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
 #FindXYZ.cmake will set the values if successful
 ######################################################################
 SET(HAVE_EINSPLINE 1) # to be removed
-SET(HAVE_LIBXML2 1)
-SET(HAVE_LIBFFTW 0)
 SET(HAVE_LIBXMLPP 0)
-SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 SET(MAC_VECLIB 0)
@@ -319,10 +314,7 @@ IF(CMAKE_TOOLCHAIN_FILE)
 ELSE(CMAKE_TOOLCHAIN_FILE)
   MESSAGE(STATUS "Trying to figure out .....")
   SET(ENABLE_OPENMP 0)
-  SET(HAVE_MPI 0)
   SET(INTEL_COMPILER 0)
-  SET(HAVE_MKL 0)
-  SET(HAVE_MKL_VML 0)
   SET(HAVE_ACML 0)
 
   ######################################################
@@ -450,34 +442,25 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
    INCLUDE(CMake/FindMKL.cmake)
   ENDIF(ENABLE_MKL)
   IF ( HAVE_MKL )
-    # We found MKL, add the link library
-    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${MKL_FLAGS}")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_FLAGS}")
-    SET(LAPACK_FOUND 1)
-    SET(LAPACK_LIBRARIES "${MKL_LIBRARIES}")
-    SET(LAPACK_LINKER_FLAGS "${MKL_LINKER_FLAGS}")
+    # Skip adding Math::BLAS_LAPACK target which has been imported by FindMKL.
   ELSEIF ( $ENV{CRAYPE_VERSION} MATCHES "." )
     # Cray specific environment variable indicates we are on a cray. Assume libsci will be linked
     # preferable to attempt a compile/link
-    SET(LAPACK_FOUND 1)
     MESSAGE(STATUS "Assuming Cray libsci or other BLAS/LAPACK will be linked by compiler wrappers")
+    ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
   ELSE()
-    # Search for Blas/Lapack
-    find_package(LAPACK)
+    # The last search for Blas/Lapack
+    find_package(LAPACK REQUIRED)
     IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
       MESSAGE(FATAL_ERROR "MKL found via LAPACK/BLAS. Please pass -DENABLE_MKL=1 to cmake for full Intel MKL utilization. -DMKL_ROOT may also be needed for the include files to be found.")
     ENDIF()
-  ENDIF()
-  IF(LAPACK_FOUND)
     MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
     MESSAGE(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
-    SET(LAPACK_LIBRARY ${LAPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS})
-  ELSE()
-    MESSAGE(FATAL_ERROR "Could not find required libraries LAPACK &/or BLAS")
+    SET(LAPACK_LIBRARY ${LAPACK_LINKER_FLAGS} ${LAPACK_LIBRARIES})
+    # Add Math::BLAS_LAPACK target
+    ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
+    SET_TARGET_PROPERTIES(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES "${LAPACK_LIBRARY}")
   ENDIF()
-
-  INCLUDE(CMake/FindVectorMath.cmake)
-
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
 IF (ENABLE_GCOV)
@@ -550,16 +533,31 @@ ENDIF(QMC_MPI)
 # installataions
 # list of libraries to be linked with the main applications using I/O
 
-SET(QMC_UTIL_LIBS ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
+#-------------------------------------------------------------------
+#  set up scalar/vector math libraries
+#-------------------------------------------------------------------
+SET(ENABLE_MASS FALSE CACHE BOOL "ENABLE MASS scalar and vector math libraries for Power architecture")
 
-# This needs a better place to live. as does all the IF( HAVE_MKL ) stuff
-IF(HAVE_MASS)
-  SET(CMAKE_CXX_FLAGS ${MASS_FLAGS} ${CMAKE_CXX_FLAGS})
-  SET(CMAKE_C_FLAGS ${MASS_FLAGS} ${CMAKE_C_FLAGS})
-  SET(MASS_LIBRARY "${MASS_LINKER_FLAGS} ${MASS_LIBRARIES}")
-  SET(QMC_UTIL_LIBS ${MASS_LIBRARY} ${QMC_UTIL_LIBS})
-ENDIF(HAVE_MASS)
+# This needs to go before HAVE_SINCOS
+IF(ENABLE_MASS)
+  INCLUDE(CMake/FindIBMMASS.cmake)
+ENDIF(ENABLE_MASS)
 
+IF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
+  MESSAGE(STATUS "No usable vector math library detected.")
+  ADD_LIBRARY(Math::scalar_vector_functions INTERFACE IMPORTED)
+ENDIF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
+
+# CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
+IF(NOT SINCOS_INCLUDE)
+  SET(SINCOS_INCLUDE cmath)
+ENDIF(NOT SINCOS_INCLUDE)
+MESSAGE(STATUS "SINCOS_INCLUDE : ${SINCOS_INCLUDE}")
+INCLUDE(${PROJECT_CMAKE}/CheckSincos.cmake)
+
+#-------------------------------------------------------------------
+#  set up FFTW3 library
+#-------------------------------------------------------------------
 SET( FFTW_FOUND 0 )
 IF ( HAVE_MKL )
   IF ( HAVE_MKL_FFTW3 )
@@ -571,8 +569,6 @@ IF ( NOT FFTW_FOUND )
 ENDIF()
 IF(FFTW_FOUND)
   SET(HAVE_LIBFFTW 1)
-  INCLUDE_DIRECTORIES(${FFTW_INCLUDE_DIR})
-  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FFTW_LIBRARIES})
   MESSAGE(STATUS "Found FFTW")
 ELSE(FFTW_FOUND)
 #  MESSAGE(STATUS "Disabling FFTW")
@@ -581,13 +577,17 @@ ENDIF(FFTW_FOUND)
 
 SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FORTRAN_LIBRARIES})
 
+#-------------------------------------------------------------------
+#  set up Libxml2 library
+#-------------------------------------------------------------------
 find_package(ZLIB)
 find_package(LibXml2)
-
 IF(LIBXML2_FOUND)
-  INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
-  SET(HAVE_LIBXML2 1)
-  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${LIBXML2_LIBRARIES})
+  IF(${CMAKE_VERSION} VERSION_LESS "3.12.0")
+    ADD_LIBRARY(LibXml2::LibXml2 INTERFACE IMPORTED)
+    SET_TARGET_PROPERTIES(LibXml2::LibXml2 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LIBXML2_INCLUDE_DIR}"
+                                                      INTERFACE_LINK_LIBRARIES "${LIBXML2_LIBRARIES}")
+  ENDIF()
 ELSE()
   MESSAGE(FATAL_ERROR "Could not find required library Libxml2")
 ENDIF(LIBXML2_FOUND)
@@ -644,7 +644,6 @@ IF(HDF5_FOUND)
     MESSAGE(WARNING "MPI builds may have potential performance loss not using parallel HDF5!")
   ENDIF()
 
-  INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
   IF ( CMAKE_BUILD_TYPE AND HDF5_LIBRARIES_DEBUG )
     IF ( CMAKE_BUILD_TYPE MATCHES DEBUG )
       SET( HDF5_LIBRARIES ${HDF5_LIBRARIES_DEBUG} )
@@ -652,28 +651,40 @@ IF(HDF5_FOUND)
       SET( HDF5_LIBRARIES ${HDF5_LIBRARIES_RELEASE} )
     ENDIF()
   ENDIF()
-  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${HDF5_LIBRARIES})
+
+  ADD_LIBRARY(IO::HDF5 INTERFACE IMPORTED)
+  SET_TARGET_PROPERTIES(IO::HDF5 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIR}"
+                                            INTERFACE_COMPILE_DEFINITIONS "HAVE_LIBHDF5;H5_USE_16_API"
+                                            INTERFACE_LINK_LIBRARIES "${HDF5_LIBRARIES}")
+  IF(ENABLE_PHDF5)
+    SET_PROPERTY(TARGET IO::HDF5 APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS "ENABLE_PHDF5")
+  ENDIF(ENABLE_PHDF5)
 ELSE(HDF5_FOUND)
   MESSAGE(FATAL_ERROR "HDF5 not found. Set HDF5_ROOT")
 ENDIF(HDF5_FOUND)
 
+#-------------------------------------------------------------------
+#  set up libboost library, header only
+#-------------------------------------------------------------------
 #make sure we can find boost if it's not in /usr
 set(Boost_NO_BOOST_CMAKE on)
 find_package(Boost 1.61.0 REQUIRED)
 IF(Boost_FOUND)
-  SET(HAVE_LIBBOOST 1)
-  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+  SET_PROPERTY(TARGET Boost::boost APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS "HAVE_LIBBOOST")
   MESSAGE(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
 ELSE()
   MESSAGE(FATAL_ERROR "Need boost 1.61.0 or higher.  Set BOOST_ROOT")
 ENDIF()
 
+#-------------------------------------------------------------------
+#  set up CUDA compiler options and libraries
+#-------------------------------------------------------------------
 SET(HAVE_CUDA 0)
 IF(QMC_CUDA OR ENABLE_CUDA)
   IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(CUDA_PROPAGATE_HOST_FLAGS ON)
+    SET(CUDA_PROPAGATE_HOST_FLAGS ON)
   ELSE(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+    SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
   ENDIF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   FIND_PACKAGE(CUDA REQUIRED)
   SET(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
@@ -699,7 +710,7 @@ IF(QMC_CUDA OR ENABLE_CUDA)
     SET(CUDA_NVCC_FLAGS "-arch=${CUDA_ARCH};${CUDA_NVCC_FLAGS}")
   endif(CUDA_NVCC_FLAGS MATCHES "arch")
   INCLUDE_DIRECTORIES(${CUDA_INCLUDE_DIRS})
-  set(HAVE_CUDA 1)
+  SET(HAVE_CUDA 1)
   MESSAGE("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
 ELSE(QMC_CUDA OR ENABLE_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
@@ -836,10 +847,9 @@ MESSAGE(STATUS "Ready to build qmcpack")
 
 ####################################################################
 # add definitions
-#  -DH5_USE_16_API for HDF5
 ####################################################################
 
-ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DUSE_REAL_STRUCT_FACTOR -DINLINE_ALL=inline -DADD_)
+ADD_DEFINITIONS(-DHAVE_CONFIG_H -DUSE_REAL_STRUCT_FACTOR -DADD_)
 
 EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)

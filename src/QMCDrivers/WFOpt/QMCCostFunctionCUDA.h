@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_COSTFUNCTION_CUDA_H
 #define QMCPLUSPLUS_COSTFUNCTION_CUDA_H
 
-#include "QMCDrivers/QMCCostFunctionBase.h"
+#include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "type_traits/CUDATypes.h"

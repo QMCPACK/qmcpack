@@ -120,9 +120,7 @@ if (HAVE_MPI)
   INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/mpi_wrapper")
 endif()
 
-if (HAVE_LIBBOOST)
-    INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
-endif()
+INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
 
 
   ####################################
@@ -177,7 +175,7 @@ ENDIF()
     TARGET_LINK_LIBRARIES(qmcutil PRIVATE ${CUDA_LIBRARIES})
   ENDIF(HAVE_CUDA)
 
-  TARGET_LINK_LIBRARIES(qmcutil PUBLIC ${QMC_UTIL_LIBS})
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 IO::HDF5 Boost::boost ${QMC_UTIL_LIBS})
   IF(HAVE_MPI)
     TARGET_LINK_LIBRARIES(qmcutil PUBLIC MPI::MPI_CXX)
   ENDIF()
@@ -232,20 +230,14 @@ ENDIF()
     ParticleIO/ParticleLayoutIO.cpp
     ParticleIO/XMLParticleIO.cpp
     ParticleIO/ParticleIOUtility.cpp
+    Particle/HDFWalkerOutput.cpp
+    Particle/HDFWalkerInput_0_0.cpp
+    Particle/HDFWalkerInput_0_4.cpp
     )
 
-  IF(HAVE_LIBHDF5)
-    SET(PARTICLEIO ${PARTICLEIO}
-      Particle/HDFWalkerOutput.cpp
-      Particle/HDFWalkerInput_0_0.cpp
-      Particle/HDFWalkerInput_0_4.cpp
-      )
-
-    IF(OHMMS_DIM  MATCHES 3)
-      SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
-    ENDIF(OHMMS_DIM  MATCHES 3)
-
-  ENDIF(HAVE_LIBHDF5)
+  IF(OHMMS_DIM  MATCHES 3)
+    SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
+  ENDIF(OHMMS_DIM  MATCHES 3)
 
   #Need to add this if nothing else but miniapps is compiled
   if(QMC_BUILD_SANDBOX_ONLY)
@@ -254,7 +246,7 @@ ENDIF()
 
   ADD_LIBRARY(qmcbase ${PARTICLE} ${PARTICLEIO})
 
-  TARGET_LINK_LIBRARIES(qmcbase PRIVATE qmcminimalcontainers)
+  TARGET_LINK_LIBRARIES(qmcbase PRIVATE qmcminimalcontainers Math::BLAS_LAPACK Math::scalar_vector_functions)
 
   TARGET_LINK_LIBRARIES(qmcbase PUBLIC qmcutil)
 

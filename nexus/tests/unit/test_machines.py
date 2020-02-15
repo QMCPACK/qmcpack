@@ -1394,9 +1394,10 @@ aprun -n 32 test.x''',
 #SBATCH -N 2
 #SBATCH --ntasks-per-node=36
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=1G
+#SBATCH --mem=0
 #SBATCH -o test.out
 #SBATCH -e test.err
+#SBATCH --exclusive
 #SBATCH --export=ALL
 
 export ENV_VAR=1
