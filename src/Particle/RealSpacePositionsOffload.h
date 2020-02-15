@@ -27,9 +27,9 @@ namespace qmcplusplus
 class RealSpacePositionsOffload : public DynamicCoordinates
 {
 public:
-  RealSpacePositionsOffload() : DynamicCoordinates(DynamicCoordinateKind::QV_POS_OFFLOAD) {}
+  RealSpacePositionsOffload() : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD) {}
   RealSpacePositionsOffload(const RealSpacePositionsOffload& in)
-    : DynamicCoordinates(DynamicCoordinateKind::QV_POS_OFFLOAD), RSoA(in.RSoA)
+    : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA(in.RSoA)
   {
     RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
     updateH2D();

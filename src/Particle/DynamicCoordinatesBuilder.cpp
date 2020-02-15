@@ -20,10 +20,10 @@ namespace qmcplusplus
  */
 std::unique_ptr<DynamicCoordinates> createDynamicCoordinates(const DynamicCoordinateKind kind)
 {
-  if (kind == DynamicCoordinateKind::QV_POS)
+  if (kind == DynamicCoordinateKind::DC_POS)
     return std::make_unique<RealSpacePositions>();
 #if defined(ENABLE_OFFLOAD)
-  else if(kind==DynamicCoordinateKind::QV_POS_OFFLOAD)
+  else if(kind==DynamicCoordinateKind::DC_POS_OFFLOAD)
     return std::make_unique<RealSpacePositionsOffload>();
 #endif
   else

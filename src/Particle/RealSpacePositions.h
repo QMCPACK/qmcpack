@@ -29,7 +29,7 @@ public:
   using RealType      = QMCTraits::RealType;
   using PosType       = QMCTraits::PosType;
 
-  RealSpacePositions() : DynamicCoordinates(DynamicCoordinateKind::QV_POS) {}
+  RealSpacePositions() : DynamicCoordinates(DynamicCoordinateKind::DC_POS) {}
 
   std::unique_ptr<DynamicCoordinates> makeClone() override { return std::make_unique<RealSpacePositions>(*this); }
 
