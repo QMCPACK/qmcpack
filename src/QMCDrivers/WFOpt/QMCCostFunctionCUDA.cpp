@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/QMCCostFunctionCUDA.h"
+#include "QMCDrivers/WFOpt/QMCCostFunctionCUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"

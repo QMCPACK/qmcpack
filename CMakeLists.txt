@@ -1,7 +1,7 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 3.6.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0)
 
 cmake_policy(SET CMP0003 NEW)
 IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
@@ -226,8 +226,6 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSymbolExists.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
 
-INCLUDE(${PROJECT_CMAKE}/CheckSincos.cmake)
-
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
 
 CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
@@ -338,16 +336,18 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     MESSAGE(STATUS "Running on a Cray machine.")
     SET(CMAKE_SKIP_RPATH TRUE)
 
-    # Flags for ctest
-    IF(NOT DEFINED MPIEXEC)
-      FIND_PROGRAM(MPIEXEC aprun)
-      IF(NOT MPIEXEC)
-      # For slurm use srun
-        FIND_PROGRAM(MPIEXEC srun)
-      ENDIF(NOT MPIEXEC)
+    IF(NOT $ENV{CRAYPE_LINK_TYPE} STREQUAL "dynamic")
+      MESSAGE(WARNING "Cray Programming Environment uses static linking by default. "
+                      "We prefer dynamic linking which makes library searching easier. "
+                      "Set environment variable CRAYPE_LINK_TYPE to \"dynamic\" enables dynamic linking.\n")
     ENDIF()
-    IF(NOT DEFINED MPIEXEC_NUMPROC_FLAG)
-      SET(MPIEXEC_NUMPROC_FLAG "-n")
+
+    IF ( NOT DEFINED MPIEXEC_EXECUTABLE )
+      FIND_PROGRAM(MPIEXEC_EXECUTABLE aprun)
+      IF(NOT MPIEXEC_EXECUTABLE)
+        # For slurm use srun
+        FIND_PROGRAM(MPIEXEC_EXECUTABLE srun)
+      ENDIF(NOT MPIEXEC_EXECUTABLE)
     ENDIF()
 
     IF(QMC_CUDA)
@@ -434,53 +434,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   include(CMake/TestCxx14Library.cmake)
 
   #-------------------------------------------------------------------
-  #  check MPI installation
-  #-------------------------------------------------------------------
-  IF(QMC_MPI)
-    ## mpi compilers
-    GET_FILENAME_COMPONENT(BASE_CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
-    if(${BASE_CXX_COMPILER_NAME} MATCHES "^mp")
-      SET(HAVE_MPI 1)
-      SET(MPI_FOUND TRUE)
-    elseif($ENV{CRAYPE_VERSION} MATCHES ".")
-      SET(HAVE_MPI 1)
-      SET(MPI_FOUND TRUE)
-    else()
-      include(FindMPI)
-      IF(MPI_FOUND)
-        MESSAGE(STATUS "Found mpi.h and libraries. Check for working mpi compiler ")
-        INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
-        FILE(WRITE ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx
-          "#include <mpi.h>"
-          "int main(int argc, char** argv){MPI_Init(&argc,&argv); MPI_Finalize();return 0;}\n")
-        #TRY_COMPILE(MPI_WORKS ${CMAKE_BINARY_DIR}
-        #${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx
-        #OUTPUT_VARIABLE OUTPUT)
-        set(MPI_WORKS 1)
-        SET(MPI_WARNING_LIST
-            "Building MPI version without using MPI compiler wrappers.\n"
-            "This may not build qmcpack correctly. To ensure the correct version, specify the compiler wrappers to cmake.\n"
-            "For example: cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpic++\n"
-            "To build without MPI, pass '-DQMC_MPI=0' to cmake")
-        MESSAGE(WARNING ${MPI_WARNING_LIST})
-
-        IF(MPI_WORKS)
-          MESSAGE(STATUS "MPI is enabled")
-          SET(HAVE_MPI 1)
-          LINK_LIBRARIES(${MPI_CXX_LIBRARIES})
-        ELSE(MPI_WORKS)
-          MESSAGE(STATUS "MPI is disabled")
-          SET(HAVE_MPI 0)
-          SET(MPI_LIBRARY "")
-        ENDIF(MPI_WORKS)
-      ELSE(MPI_FOUND)
-        MESSAGE(STATUS "MPI not found")
-        SET(MPI_LIBRARY "")
-      ENDIF(MPI_FOUND)
-    ENDIF()
-  ENDIF(QMC_MPI)
-
-  #-------------------------------------------------------------------
   # check lapack/blas
   #-------------------------------------------------------------------
   # Quick search for MKL (this will need to be improved).
@@ -495,34 +448,25 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
    INCLUDE(CMake/FindMKL.cmake)
   ENDIF(ENABLE_MKL)
   IF ( HAVE_MKL )
-    # We found MKL, add the link library
-    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${MKL_FLAGS}")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_FLAGS}")
-    SET(LAPACK_FOUND 1)
-    SET(LAPACK_LIBRARIES "${MKL_LIBRARIES}")
-    SET(LAPACK_LINKER_FLAGS "${MKL_LINKER_FLAGS}")
+    # Skip adding Math::BLAS_LAPACK target which has been imported by FindMKL.
   ELSEIF ( $ENV{CRAYPE_VERSION} MATCHES "." )
     # Cray specific environment variable indicates we are on a cray. Assume libsci will be linked
     # preferable to attempt a compile/link
-    SET(LAPACK_FOUND 1)
     MESSAGE(STATUS "Assuming Cray libsci or other BLAS/LAPACK will be linked by compiler wrappers")
+    ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
   ELSE()
-    # Search for Blas/Lapack
-    find_package(LAPACK)
+    # The last search for Blas/Lapack
+    find_package(LAPACK REQUIRED)
     IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
       MESSAGE(FATAL_ERROR "MKL found via LAPACK/BLAS. Please pass -DENABLE_MKL=1 to cmake for full Intel MKL utilization. -DMKL_ROOT may also be needed for the include files to be found.")
     ENDIF()
-  ENDIF()
-  IF(LAPACK_FOUND)
     MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
     MESSAGE(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
-    SET(LAPACK_LIBRARY ${LAPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS})
-  ELSE()
-    MESSAGE(FATAL_ERROR "Could not find required libraries LAPACK &/or BLAS")
+    SET(LAPACK_LIBRARY ${LAPACK_LINKER_FLAGS} ${LAPACK_LIBRARIES})
+    # Add Math::BLAS_LAPACK target
+    ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
+    SET_TARGET_PROPERTIES(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES "${LAPACK_LIBRARY}")
   ENDIF()
-
-  INCLUDE(CMake/FindVectorMath.cmake)
-
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
 IF (ENABLE_GCOV)
@@ -540,30 +484,52 @@ IF (BUILD_AFQMC AND NOT APPLE)
   LINK_LIBRARIES("rt")
 ENDIF()
 
-# setup ctest variables
-IF ( HAVE_MPI )
-  SET( USE_MPI 1 )
-  IF ( NOT DEFINED MPIEXEC )
-    SET( MPIEXEC "mpirun" )
+#-------------------------------------------------------------------
+#  check MPI installation
+#-------------------------------------------------------------------
+IF(QMC_MPI)
+  # for backward compatibility with MPIEXEC
+  IF(DEFINED MPIEXEC AND NOT DEFINED MPIEXEC_EXECUTABLE)
+    MESSAGE(WARNING "Setting MPIEXEC_EXECUTABLE based on MPIEXEC. MPIEXEC has been deprecated! Use MPIEXEC_EXECUTABLE instead!")
+    SET(MPIEXEC_EXECUTABLE ${MPIEXEC})
+  ENDIF(DEFINED MPIEXEC AND NOT DEFINED MPIEXEC_EXECUTABLE)
+  SET(MPI_CXX_SKIP_MPICXX TRUE)
+  SET(MPI_DETERMINE_LIBRARY_VERSION TRUE)
+  FIND_PACKAGE(MPI COMPONENTS CXX)
+
+  IF(NOT MPI_FOUND)
+    MESSAGE(FATAL_ERROR "MPI support not found! Provide MPI compiler wrappers or build without MPI by passing '-DQMC_MPI=0' to cmake.")
+  ENDIF(NOT MPI_FOUND)
+
+  IF(${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "MVAPICH2" AND NOT ${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "disable-registration-cache")
+    MESSAGE(FATAL_ERROR "MVAPICH2 with registration cache enabled breaks QMCPACK. "
+                        "Use a different MPI library or build MVAPICH2 with --disable-registration-cache configure option.")
   ENDIF()
 
-  IF ( NOT DEFINED MPIEXEC_NUMPROC_FLAG )
-    SET( MPIEXEC_NUMPROC_FLAG "-np" )
-  ENDIF()
-
-  IF ( NOT DEFINED MPIEXEC_PREFLAGS )
-    SET( MPIEXEC_PREFLAGS "" )
+  IF(NOT ${CMAKE_CXX_COMPILER} STREQUAL ${MPI_CXX_COMPILER})
+    SET(MPI_WARNING_LIST
+        "Building MPI version without using MPI compiler wrappers.\n"
+        "This may not build qmcpack correctly. To ensure the correct version, specify the compiler wrappers to cmake.\n"
+        "For example: cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpic++\n"
+        "To build without MPI, pass '-DQMC_MPI=0' to cmake")
+    MESSAGE(WARNING ${MPI_WARNING_LIST})
   ENDIF()
 
   IF ( NOT TEST_MAX_PROCS )
     SET( TEST_MAX_PROCS 100 )
   ENDIF()
 
-  MESSAGE(STATUS "MPI runner is ${MPIEXEC}")
-  MESSAGE(STATUS "MPIEXEC_NUMPROC_FLAG is ${MPIEXEC_NUMPROC_FLAG}")
-ENDIF(HAVE_MPI)
+  MESSAGE(STATUS "MPI runner MPIEXEC_EXECUTABLE : ${MPIEXEC_EXECUTABLE}")
+  MESSAGE(STATUS "MPIEXEC_NUMPROC_FLAG : ${MPIEXEC_NUMPROC_FLAG}")
+  MESSAGE(STATUS "MPIEXEC_PREFLAGS : ${MPIEXEC_PREFLAGS}")
+  MESSAGE(STATUS "Tests run as : ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} NUM_PROCS ${MPIEXEC_PREFLAGS} EXECUTABLE")
 
-INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
+  SET(HAVE_MPI 1)
+  MESSAGE(STATUS "MPI is enabled")
+ELSE(QMC_MPI)
+  SET(HAVE_MPI 0)
+  MESSAGE(STATUS "MPI is disabled")
+ENDIF(QMC_MPI)
 
 ####################################################################
 #First check the required libraries. Abort if these are not found.
@@ -573,16 +539,31 @@ INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 # installataions
 # list of libraries to be linked with the main applications using I/O
 
-SET(QMC_UTIL_LIBS ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
+#-------------------------------------------------------------------
+#  set up scalar/vector math libraries
+#-------------------------------------------------------------------
+SET(ENABLE_MASS FALSE CACHE BOOL "ENABLE MASS scalar and vector math libraries for Power architecture")
 
-# This needs a better place to live. as does all the IF( HAVE_MKL ) stuff
-IF(HAVE_MASS)
-  SET(CMAKE_CXX_FLAGS ${MASS_FLAGS} ${CMAKE_CXX_FLAGS})
-  SET(CMAKE_C_FLAGS ${MASS_FLAGS} ${CMAKE_C_FLAGS})
-  SET(MASS_LIBRARY "${MASS_LINKER_FLAGS} ${MASS_LIBRARIES}")
-  SET(QMC_UTIL_LIBS ${MASS_LIBRARY} ${QMC_UTIL_LIBS})
-ENDIF(HAVE_MASS)
+# This needs to go before HAVE_SINCOS
+IF(ENABLE_MASS)
+  INCLUDE(CMake/FindIBMMASS.cmake)
+ENDIF(ENABLE_MASS)
 
+IF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
+  MESSAGE(STATUS "No usable vector math library detected.")
+  ADD_LIBRARY(Math::scalar_vector_functions INTERFACE IMPORTED)
+ENDIF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
+
+# CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
+IF(NOT SINCOS_INCLUDE)
+  SET(SINCOS_INCLUDE cmath)
+ENDIF(NOT SINCOS_INCLUDE)
+MESSAGE(STATUS "SINCOS_INCLUDE : ${SINCOS_INCLUDE}")
+INCLUDE(${PROJECT_CMAKE}/CheckSincos.cmake)
+
+#-------------------------------------------------------------------
+#  set up FFTW3 library
+#-------------------------------------------------------------------
 SET( FFTW_FOUND 0 )
 IF ( HAVE_MKL )
   IF ( HAVE_MKL_FFTW3 )
@@ -594,8 +575,6 @@ IF ( NOT FFTW_FOUND )
 ENDIF()
 IF(FFTW_FOUND)
   SET(HAVE_LIBFFTW 1)
-  INCLUDE_DIRECTORIES(${FFTW_INCLUDE_DIR})
-  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FFTW_LIBRARIES})
   MESSAGE(STATUS "Found FFTW")
 ELSE(FFTW_FOUND)
 #  MESSAGE(STATUS "Disabling FFTW")
@@ -615,9 +594,9 @@ ELSE()
   MESSAGE(FATAL_ERROR "Could not find required library Libxml2")
 ENDIF(LIBXML2_FOUND)
 
-####################################################################
-# set up HDF5 library
-####################################################################
+#-------------------------------------------------------------------
+#  set up HDF5 library
+#-------------------------------------------------------------------
 IF(HAVE_MPI)
   SET(HDF5_PREFER_PARALLEL 1 CACHE BOOL "Request parallel/serial HDF5 library")
 ELSE(HAVE_MPI)
@@ -860,15 +839,9 @@ MESSAGE(STATUS "Ready to build qmcpack")
 ####################################################################
 # add definitions
 #  -DH5_USE_16_API for HDF5
-#  -DMPICH_SKIP_MPICXX : disable C++ binding of MPICH
 ####################################################################
 
 ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DUSE_REAL_STRUCT_FACTOR -DINLINE_ALL=inline -DADD_)
-
-if(HAVE_MPI)
-  ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
-endif()
-#ADD_DEFINITIONS(-DDISABLE_WS_CELL)
 
 EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
