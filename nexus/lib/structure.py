@@ -4642,7 +4642,11 @@ class Structure(Sobj):
         #end if
         elem = []
         for n in f.elem:
-            elem.append(pt.simple_elements[n].symbol)
+            if isinstance(n,str):
+                elem.append(n)
+            else:
+                elem.append(pt.simple_elements[n].symbol)
+            #end if
         #end for
         self.dim   = 3
         self.units = 'A'

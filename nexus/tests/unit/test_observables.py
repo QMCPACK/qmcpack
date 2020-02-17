@@ -275,8 +275,8 @@ def test_defined_attribute_base():
     assert(da.b==5)
 
     assert(da.get_attribute('b')==5)
-    assert(da.get_attribute('a') is None)
-    assert(da.get_attribute('c') is None)
+    assert(da.get_attribute('a',None) is None)
+    assert(da.get_attribute('c',None) is None)
 
     try:
         da.get_attribute('unknown')
@@ -290,7 +290,7 @@ def test_defined_attribute_base():
     #end try
 
     try:
-        da.get_attribute('a',present=True)
+        da.get_attribute('a')
         raise FailedTest
     except NexusError:
         None
@@ -301,7 +301,7 @@ def test_defined_attribute_base():
     #end try
 
     try:
-        da.get_attribute('c',present=True)
+        da.get_attribute('c')
         raise FailedTest
     except NexusError:
         None
@@ -334,11 +334,11 @@ def test_defined_attribute_base():
     assert('a' not in da)
     assert('c' not in da)
     assert('nest' not in da)
-    assert(da.get_attribute('a') is None)
-    assert(da.get_attribute('c') is None)
+    assert(da.get_attribute('a',None) is None)
+    assert(da.get_attribute('c',None) is None)
 
     try:
-        da.get_attribute('a',present=True)
+        da.get_attribute('a')
         raise FailedTest
     except NexusError:
         None
@@ -349,7 +349,7 @@ def test_defined_attribute_base():
     #end try
 
     try:
-        da.get_attribute('c',present=True)
+        da.get_attribute('c')
         raise FailedTest
     except NexusError:
         None
@@ -374,12 +374,13 @@ def test_defined_attribute_base():
     da.b = None
 
     assert(da.get_attribute('a')==1)
-    assert(da.get_attribute('b') is None)
-    assert(da.get_attribute('c') is None)
-    assert(da.get_attribute('a',assigned=True)==1)
+    assert(da.get_attribute('b',assigned=False) is None)
+    assert(da.get_attribute('c',assigned=False) is None)
+    assert(da.get_attribute('a',2)==1)
+    assert(da.get_attribute('a',assigned=False)==1)
 
     try:
-        da.get_attribute('b',assigned=True)
+        da.get_attribute('b')
         raise FailedTest
     except NexusError:
         None
@@ -390,7 +391,7 @@ def test_defined_attribute_base():
     #end try
 
     try:
-        da.get_attribute('c',assigned=True)
+        da.get_attribute('c')
         raise FailedTest
     except NexusError:
         None

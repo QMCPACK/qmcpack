@@ -105,6 +105,15 @@ def set_verbosity(level):
 #end def set_verbosity
 
 
+class Missing:
+    def __call__(self,value):
+        return isinstance(value,Missing)
+    #end def __call__
+#end class Missing
+missing = Missing()
+
+
+
 class AttributeProperties(DevBase):
     def __init__(self,**kwargs):
         self.assigned   = set(kwargs.keys())
@@ -310,7 +319,7 @@ class DefinedAttributeBase(DevBase):
 
     def check_unassigned(self,value):
         cls = self.__class__
-        unassigned = cls.class_has('unassigned_default') and value==cls.unassigned_default
+        unassigned = cls.class_has('unassigned_default') and value is cls.unassigned_default
         return unassigned
     #end def check_unassigned
 
@@ -338,29 +347,32 @@ class DefinedAttributeBase(DevBase):
     #end def set_attribute
 
 
-    def get_attribute(self,name,present=False,assigned=False):
-        require_present  = present
-        require_assigned = assigned
-        require_present  |= require_assigned
+    def get_attribute(self,name,value=missing,assigned=True):
+        default_value    = value
+        default_provided = not missing(default_value)
+        require_assigned = assigned and not default_provided
         cls = self.__class__
         props = cls.attribute_definitions
         if name not in props:
             self.error('Cannot get unrecognized attribute "{}".\nValid options are: {}'.format(name,sorted(props.keys())))
         #end if
         p = props[name]
-        present = False
-        value   = None
+        value = missing
         if p.dest is None:
             if name in self:
-                present = True
                 value   = self[name]
             #end if
         elif p.dest in self and name in self[p.dest]:
-            present = True
             value   = self[p.dest][name]
         #end if
-        if require_present:
-            unassigned = self.check_unassigned(value)
+        present = not missing(value)
+        if not present and default_provided:
+            return default_value
+        else:
+            unassigned = True
+            if present:
+                unassigned = self.check_unassigned(value)
+            #end if
             if not present or (unassigned and require_assigned):
                 extra = ''
                 if p.dest is not None:
@@ -458,50 +470,53 @@ class ObservableWithComponents(Observable):
     default_component = None
 
 
-    def process_component_name(self,name,allow_all=False):
-        is_all = name=='all'
+    def process_component_name(self,name):
         if name is None:
             name = self.default_component
+        elif name not in self.components:
+            self.error('"{}" is not a known component.\nValid options are: {}'.format(name,self.component_names))
         #end if
-        if not allow_all and is_all:
-            self.error('A specific component must be requested.\nReceived request for "all".\nValid options are: {}'.format(self.compnent_names))
-        #end if
-        if not allow_all:
-            return name
-        else:
-            return name,is_all
-        #end if
+        return name
     #end def process_component_name
 
 
-    def component(self,name=None):
-        name = self.process_component_name(name)
-        comp = self.get_attribute(name,assigned=True)
+    def component(self,name):
+        if name not in self.component_names:
+            self.error('"{}" is not a known component.\nValid options are: {}'.format(name,self.component_names))
+        elif name not in self:
+            self.error('Component "{}" not found.'.format(name))
+        #end if
+        comp = self.get_attribute(name)
         return comp
     #end def component
 
 
-    def components(self):
+    def components(self,names=None):
         comps = obj()
-        for c in self.component_names:
-            if c in self:
-                comps[c] = self[c]
+        if names is None:
+            for c in self.component_names:
+                if c in self:
+                    comps[c] = self[c]
+                #end if
+            #end for
+            if len(comps)==0:
+                self.error('No components found.')
             #end if
-        #end for
+        else:
+            if isinstance(names,str):
+                names = [names]
+            #end if
+            for name in names:
+                if name not in self.component_names:
+                    self.error('"{}" is not a known component.\nValid options are: {}'.format(name,self.component_names))
+                elif name not in self:
+                    self.error('Component "{}" not found.'.format(name))
+                #end if
+                comps[name] = self[name]
+            #end for
+        #end if
         return comps
     #end def components
-
-
-    def operate_over_components(func,*args,**kwargs):
-        retvals = obj()
-        for c in self.component_names:
-            if c in self:
-                kwargs['component'] = c
-                retvals[c] = func(self,*args,**kwargs)
-            #end if
-        #end for
-        return retvals
-    #end def operate_over_components
 
 #end class ObservableWithComponents
 
@@ -611,7 +626,7 @@ class MomentumDistribution(ObservableWithComponents):
     default_component = 'tot'
 
     def get_raw_data(self):
-        data = self.get_attribute('raw',assigned=True)
+        data = self.get_attribute('raw')
         if len(data)==0:
             self.error('Raw n(k) data is not present.')
         #end if
@@ -621,7 +636,7 @@ class MomentumDistribution(ObservableWithComponents):
 
     def filter_raw_data(self,filter_tol=1e-5,store=True):
         vlog('Filtering raw n(k) data with tolerance {:6.4e}'.format(filter_tol))
-        prior_tol = self.get_attribute('raw_filter_tol',present=True)
+        prior_tol = self.get_attribute('raw_filter_tol',assigned=False)
         data  = self.get_raw_data()
         if prior_tol is not None and prior_tol<=filter_tol:
             vlog('Filtering applied previously with tolerance {:6.4e}, skipping.'.format(prior_tol))
@@ -678,7 +693,7 @@ class MomentumDistribution(ObservableWithComponents):
         if structure is not None:
             kaxes = structure.kaxes
         else:
-            kaxes = self.get_attribute('kaxes',required=True)
+            kaxes = self.get_attribute('kaxes')
         #end if
         if filter_tol is not None:
             vlog.increment()
@@ -1013,16 +1028,27 @@ class Density(ObservableWithComponents):
 
 
     def read_xsf(self,filepath,component=None):
+        component = self.process_component_name(component)
+
+        vlog('Reading density data from XSF file for component "{}"'.format(component),time=True)
+
         if isinstance(filepath,XsfFile):
+            vlog('XSF file already loaded, reusing data.')
             xsf = filepath
             copy_values = True
         else:
+            vlog('Loading data from file',n=1,time=True)
+            vlog('file location: {}'.format(filepath),n=2)
+            vlog('memory before: ',n=2,mem=True)
             xsf = XsfFile(filepath)
+            vlog('load complete',n=2,time=True)
+            vlog('memory after: ',n=2,mem=True)
             copy_values = False
         #end if
 
         # read structure
         if not self.has_attribute('structure'):
+            vlog('Reading structure from XSF data',n=1,time=True)
             s = Structure()
             s.read_xsf(xsf)
             self.set_attribute('structure',s)
@@ -1030,6 +1056,7 @@ class Density(ObservableWithComponents):
 
         # read grid
         if not self.has_attribute('grid'):
+            vlog('Reading grid from XSF data',n=1,time=True)
             g = read_grid(xsf)
             self.set_attribute('grid',g)
             self.set_attribute('distance_units','B')
@@ -1044,6 +1071,7 @@ class Density(ObservableWithComponents):
         #end if
 
         # create grid function for component
+        vlog('Constructing grid function from XSF data',n=1,time=True)
         f = grid_function(
             type   = 'parallelotope',
             grid   = self.grid,
@@ -1051,13 +1079,16 @@ class Density(ObservableWithComponents):
             copy   = False,
             )
 
-        component = self.process_component_name(component)
         self.set_attribute(component,f)
+        self.set_attribute('distance_units','A')
+
+        vlog('Read complete',n=1,time=True)
+        vlog('Current memory:',n=1,mem=True)
     #end def read_xsf
 
     
     def volume_normalize(self):
-        g = self.get_attribute('grid',assigned=True)
+        g = self.get_attribute('grid')
         dV = g.volume()/g.ncells
         for c in self.components():
             c.values /= dV
@@ -1065,11 +1096,27 @@ class Density(ObservableWithComponents):
     #end def volume_normalize
 
 
+    def norm(self,component=None):
+        norms = obj()
+        comps = self.components(component)
+        for name,d in comps.items():
+            g = d.grid
+            dV = g.volume()/g.ncells
+            norms[name] = d.values.sum()*dV
+        #end if
+        if isinstance(component,str):
+            return norms[component]
+        else:
+            return norms
+        #end if
+    #end def norm
+
+
     def change_distance_units(self,units):
-        units_old = self.get_attribute('distance_units',assigned=True)
+        units_old = self.get_attribute('distance_units')
         rscale    = 1.0/convert(1.0,units_old,units)
         dscale    = 1./rscale**3
-        grid      = self.get_attribute('grid',assigned=True)
+        grid      = self.get_attribute('grid')
         grid.points *= rscale
         for c in self.components():
             c.values *= dscale
@@ -1078,7 +1125,7 @@ class Density(ObservableWithComponents):
 
 
     def change_density_units(self,units):
-        units_old = self.get_attribute('density_units',assigned=True)
+        units_old = self.get_attribute('density_units')
         dscale    = 1.0/convert(1.0,units_old,units)
         for c in self.components():
             c.values *= dscale
@@ -1086,67 +1133,68 @@ class Density(ObservableWithComponents):
     #end def change_density_units
 
 
-    def radial_density(self,dr=0.01,ntheta=100,rmax=None,single=False,component=None,precompute=None):
-        component,is_all = self.process_component_name(component,allow_all=True)
-        pc = precompute
-        s = self.get_attribute('structure',assigned=True)
+    def radial_density(self,component=None,dr=0.01,ntheta=100,rmax=None,single=False,interp_kwargs=None,comps_return=False):
+        
+        vlog('Computing radial density',time=True)
+        vlog('Current memory:',n=1,mem=True)
+        if interp_kwargs is None:
+            interp_kwargs = obj()
+        #end if
+        s = self.get_attribute('structure')
         struct = s
-        if rmax is None and pc is None:
+        if rmax is None:
             rmax = s.voronoi_species_radii()
         #end if
-        if pc is None:
-            equiv_atoms = s.equivalent_atoms()
-            species = None
-            species_rmax = obj()
-            if isinstance(rmax,float):
-                species = list(equiv_atoms.keys())
-                for s in species:
-                    species_rmax[s] = rmax
-                #end for
-            else:
-                species = list(rmax.keys())
-                species_rmax.transfer_from(rmax)
-            #end if
-            species_grids = obj()
+        vlog('Finding equivalent atomic sites',n=1,time=True)
+        equiv_atoms = s.equivalent_atoms()
+        species = None
+        species_rmax = obj()
+        if isinstance(rmax,float):
+            species = list(equiv_atoms.keys())
             for s in species:
-                nr = int(np.ceil(species_rmax[s]/dr))
-                species_grids[s] = SpheroidGrid(
-                    axes     = species_rmax[s]*np.eye(3),
-                    cells    = (nr,ntheta,2*ntheta),
-                    centered = True,
-                    )
+                species_rmax[s] = rmax
             #end for
-            pc = obj(
-                single        = single,
-                equiv_atoms   = equiv_atoms,
-                species_grids = species_grids,
-                rmax          = species_rmax,
-                )
-                         
-        #end if
-        crdf = None
-        if is_all:
-            rdf = self.operate_over_components(self.cumulative_radial_density,precompute=pc)
         else:
+            species = list(rmax.keys())
+            species_rmax.transfer_from(rmax)
+        #end if
+        vlog('Constructing spherical grid for each species',n=1,time=True)
+        species_grids = obj()
+        for s in species:
+            srmax = species_rmax[s]
+            if srmax<1e-3:
+                self.error('Cannot compute radial density.\n"rmax" must be set to a finite value.\nrmax provided for species "{}": {}'.format(s,srmax))
+            #end if
+            nr = int(np.ceil(srmax/dr))
+            species_grids[s] = SpheroidGrid(
+                axes     = srmax*np.eye(3),
+                cells    = (nr,ntheta,2*ntheta),
+                centered = True,
+                )
+        #end for
+
+        rdfs = obj()
+        for cname,d in self.components(component).items():
+            vlog('Processing radial density for component "{}"'.format(cname),n=1,time=True)
             rdf = obj()
-            d = self.component(component)
-            for s,sgrid in pc.species_grids.items():
-                rmax = pc.rmax[s]
+            rdfs[cname] = rdf
+            for s,sgrid in species_grids.items():
                 rrad    = sgrid.radii()
                 rsphere = sgrid.r
                 drad    = np.zeros(rrad.shape,dtype=d.dtype)
                 if single:
-                    atom_indices = [pc.equiv_atoms[s][0]]
+                    atom_indices = [equiv_atoms[s][0]]
                 else:
-                    atom_indices = pc.equiv_atoms[s]
+                    atom_indices = equiv_atoms[s]
                 #end if
+                vlog('Averaging radial data for species "{}" over {} sites'.format(s,len(atom_indices)),n=2,time=True)
                 rcenter = np.zeros((3,),dtype=float)
                 for i in atom_indices:
                     new_center = struct.pos[i]
                     dr         = new_center-rcenter
                     rsphere   += dr
                     rcenter    = new_center
-                    dsphere    = d.interpolate(rsphere)
+                    dsphere    = d.interpolate(rsphere,**interp_kwargs)
                     dsphere.shape = sgrid.shape
                     dsphere.shape = len(dsphere),dsphere.size//len(dsphere)
                     drad += dsphere.mean(axis=1)*4*np.pi*rrad**2
@@ -1158,33 +1206,69 @@ class Density(ObservableWithComponents):
                     )
             #end for
             d.clear_ghost()
+            vlog('Current memory:',n=2,mem=True)
         #end if
-        return rdf
+        if isinstance(component,str) and not comps_return:
+            return rdfs[component]
+        else:
+            return rdfs
+        #end if
     #end def radial_density
 
 
-    def plot_radial_density(self,component=None,show=True,**kwargs):
-        component,is_all = self.process_component_name(component,allow_all=True)
-        rdf = self.radial_density(component=component,**kwargs)
-        if not is_all:
-            rdf_all = obj()
-            rdf_all[component] = rdf
+    def cumulative_radial_density(self,rdfs=None,comps_return=False,**kwargs):
+        component = kwargs.get('component',None)
+        if rdfs is None:
+            kwargs['comps_return'] = True
+            crdfs = self.radial_density(**kwargs)
         else:
-            rdf_all = rdf
+            crdfs = rdfs.copy()
         #end if
-        rdf = rdf_all.first()
+        for crdf in crdfs:
+            for d in crdf:
+                dr = d.radius[1]-d.radius[0]
+                d.density = d.density.cumsum()*dr
+            #end for
+        #end if
+        if isinstance(component,str) and not comps_return:
+            return crdfs[component]
+        else:
+            return crdfs
+        #end if
+    #end def cumulative_radial_density
+
+
+    def plot_radial_density(self,component=None,show=True,cumulative=False,**kwargs):
+        vlog('Plotting radial density')
+        kwargs['comps_return'] = True
+        if not cumulative:
+            rdfs = self.radial_density(component=component,**kwargs)
+        else:
+            rdfs = self.cumulative_radial_density(component=component,**kwargs)
+        #end if
+        rdf = rdfs.first()
         species = list(rdf.keys())
 
-        for c in self.component_names:
-            if c in rdf_all:
-                rdf = rdf_all[c]
+        dist_units = self.get_attribute('distance_units',None)
+
+        for cname in self.component_names:
+            if cname in rdfs:
+                rdf = rdfs[cname]
                 for s in sorted(rdf.keys()):
                     srdf = rdf[s]
                     plt.figure()
                     plt.plot(srdf.radius,srdf.density,'b.-')
-                    plt.xlabel('radius')
-                    plt.ylabel('density')
-                    plt.title('{} {} density'.format(s,c))
+                    xlabel = 'Radius'
+                    if dist_units is not None:
+                        xlabel += ' ({})'.format(dist_units)
+                    #end if
+                    plt.xlabel(xlabel)
+                    if not cumulative:
+                        plt.ylabel('Radial density')
+                    else:
+                        plt.ylabel('Cumulative radial density')
+                    #end if
+                    plt.title('{} {} density'.format(s,cname))
                 #end for
             #end if
         #end for
@@ -1192,6 +1276,40 @@ class Density(ObservableWithComponents):
             plt.show()
         #end if
     #end def plot_radial_density
+
+
+    def save_radial_density(self,prefix,rdfs=None,**kwargs):
+        path = ''
+        if '/' in prefix:
+            path,prefix = os.path.split(prefix)
+        #end if
+        vlog('Saving radial density with file prefix "{}"'.format(prefix))
+        vlog.increment()
+        kwargs['comps_return'] = True
+        if rdfs is None:
+            rdfs = self.radial_density(**kwargs)
+        #end if
+        crdfs = self.cumulative_radial_density(rdfs)
+        vlog.decrement()
+        groups = obj(
+            rad_dens     = rdfs,
+            rad_dens_cum = crdfs,
+            )
+        for gname,dfs in groups.items():
+            for cname,rdf in dfs.items():
+                for sname,srdf in rdf.items():
+                    filename = '{}.{}.{}_{}.dat'.format(prefix,gname,sname,cname)
+                    filepath = os.path.join(path,filename)
+                    vlog('Saving file '+filepath,n=1)
+                    f = open(filepath,'w')
+                    for r,d in zip(srdf.radius,srdf.density):
+                        f.write('{: 16.8e} {: 16.8e}\n'.format(r,d))
+                    #end for
+                    f.close()
+                #end for
+            #end for
+        #end for
+    #end def save_radial_density
 #end class Density
 
 Density.define_attributes(
