@@ -3177,9 +3177,10 @@ class CadesSlurm(Supercomputer):
         c += '#SBATCH -N {}\n'.format(job.nodes)
         c += '#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
         c += '#SBATCH --cpus-per-task={0}\n'.format(job.threads)
-        c += '#SBATCH --mem=1G\n' # required on Cades
+        c += '#SBATCH --mem=0\n' # required on Cades
         c += '#SBATCH -o '+job.outfile+'\n'
         c += '#SBATCH -e '+job.errfile+'\n'
+        c += '#SBATCH --exclusive\n'
         if job.user_env:
             c += '#SBATCH --export=ALL\n'   # equiv to PBS -V
         else:

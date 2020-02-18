@@ -17,6 +17,7 @@
 #include "Configuration.h"
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCHamiltonians/SOECPotential.h"
 #include "QMCHamiltonians/L2Potential.h"
 namespace qmcplusplus
 {
@@ -30,6 +31,7 @@ struct ECPotentialBuilder : public MPIObjectBase, public QMCTraits
   typedef LocalECPotential::GridType GridType;
   bool hasLocalPot;
   bool hasNonLocalPot;
+  bool hasSOPot;
   bool hasL2Pot;
 
   QMCHamiltonian& targetH;
@@ -40,6 +42,7 @@ struct ECPotentialBuilder : public MPIObjectBase, public QMCTraits
   std::vector<RealType> localZeff;
   std::vector<RadialPotentialType*> localPot;
   std::vector<NonLocalECPComponent*> nonLocalPot;
+  std::vector<SOECPComponent*> soPot;
   std::vector<L2RadialPotential*> L2Pot;
 
   ECPotentialBuilder(QMCHamiltonian& h, ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, Communicate* c);

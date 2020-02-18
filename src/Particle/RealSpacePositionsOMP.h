@@ -27,9 +27,9 @@ namespace qmcplusplus
 class RealSpacePositionsOMP : public DynamicCoordinates
 {
 public:
-  RealSpacePositionsOMP() : DynamicCoordinates(DynamicCoordinateKind::QV_POS_OFFLOAD), RSoA_device_ptr(nullptr) {}
+  RealSpacePositionsOMP() : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA_device_ptr(nullptr) {}
   RealSpacePositionsOMP(const RealSpacePositionsOMP& in)
-    : DynamicCoordinates(DynamicCoordinateKind::QV_POS_OFFLOAD), RSoA(in.RSoA)
+    : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA(in.RSoA)
   {
     RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
     auto* pos_ptr = RSoA.data();

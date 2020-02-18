@@ -165,7 +165,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     app_summary() << " ------------" << std::endl;
     app_summary() << "  Name: " << id << std::endl;
 
-    pTemp = new MCWalkerConfiguration(useGPU == "yes"?DynamicCoordinateKind::QV_POS_OFFLOAD:DynamicCoordinateKind::QV_POS);
+    pTemp = new MCWalkerConfiguration(useGPU == "yes"?DynamicCoordinateKind::DC_POS_OFFLOAD:DynamicCoordinateKind::DC_POS);
     //if(role == "MC")
     //  pTemp = new MCWalkerConfiguration;
     //else

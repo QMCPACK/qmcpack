@@ -203,7 +203,7 @@ public:
   int current_step;
 
   ///default constructor
-  ParticleSet(const DynamicCoordinateKind kind = DynamicCoordinateKind::QV_POS);
+  ParticleSet(const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
   ///copy constructor
   ParticleSet(const ParticleSet& p);
