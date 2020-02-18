@@ -49,7 +49,6 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     : QMCDriver(w, psi, h, ppool, comm),
       PartID(0),
       NumParts(1),
-      WarmupBlocks(10),
       hamPool(hpool),
       wfNode(NULL),
       optNode(NULL),
@@ -172,11 +171,6 @@ void QMCLinearOptimize::finish()
 void QMCLinearOptimize::generateSamples()
 {
   app_log() << "<optimization-report>" << std::endl;
-  //if(WarmupBlocks)
-  //{
-  //  app_log() << "<vmc stage=\"warm-up\" blocks=\"" << WarmupBlocks << "\">" << std::endl;
-  //  //turn off QMC_OPTIMIZE
-  //  vmcEngine->setValue("blocks",WarmupBlocks);
   vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 1);
   //  vmcEngine->run();
   //  vmcEngine->setValue("blocks",nBlocks);
