@@ -251,7 +251,7 @@ def average_gen_fock(filename, fock_type='plus', estimator='back_propagated',
     if walker == 'closed':
         return 2*mean.reshape(1,nbasis,nbasis), err.reshape(1,nbasis, nbasis)
     elif walker == 'collinear':
-        return mean.reshape((2,nbasis,nbasis)), err.reshape((2, nbasis, nbasis)), ns
+        return mean.reshape((2,nbasis,nbasis)), err.reshape((2, nbasis, nbasis))
     elif walker == 'non_collinear':
         return mean.reshape((1,2*nbasis,2*nbasis)), err.reshape((1,2*nbasis, 2*nbasis))
     else:
@@ -402,7 +402,8 @@ def estimate_error_eig(gamma, gamma_err, fock, fock_err, nsamp=20, cutoff=1e-14)
     for s in range(nsamp):
         gamma_p = gen_sample_matrix(gamma, gamma_err)
         fock_p = gen_sample_matrix(fock, fock_err, herm=False)
-        eigs_tot[s], eigv = solve_gen_eig(gamma_p, fock_p)
+        eigs, eigv = solve_gen_eig(gamma_p, fock_p)
+        eigs_tot[s,:len(eigs)] = eigs
     return numpy.std(eigs_tot, axis=0, ddof=1)
 
 def regularised_ortho(S, cutoff=1e-14):
