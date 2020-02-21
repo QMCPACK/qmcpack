@@ -363,52 +363,47 @@ def analyse_ekt(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
     # Ionisation potential
     if P.shape[0] == 2:
         P = P[0] + P[1]
+        Perr = 0.5*Perr[0] + Perr[1]
         Fp = Fp[0] + Fp[1]
         Fm = Fm[0] + Fm[1]
+        Fperr = Fperr[0] + Fperr[1]
+        Fmerr = Fmerr[0] + Fmerr[1]
     else:
         P = P[0]
+        Perr = Perr[0]
         Fp = Fp[0]
         Fm = Fm[0]
+        Fperr = Fperr[0]
+        Fmerr = Fmerr[0]
     P = 0.5*(P+P.conj().T)
     I = numpy.eye(P.shape[-1])
     gamma = P.real
-    Fm = Fm
-    Fp = Fp
+    gamma_ = gamma.copy()
     # Diagonalise gamma and discard problematic singular values.
-    gamma, X = regularised_ortho(gamma, cutoff=cutoff)
-    gamma = gamma
-    # Rotate to orthogonal basis wrt gamma
-    FT = numpy.dot(X.conj().T, numpy.dot(Fm, X))
-    eip, eip_vec = numpy.linalg.eigh(FT)
-    eip = eip
+    eip, eip_vec = solve_gen_eig(gamma, Fm)
+    eip_err = estimate_error_eig(gamma_, Perr, Fm, Fmerr, nsamp=nsamp, cutoff=cutoff)
     # Electron affinity.
     gamma = 2*I - P.T
-    gamma, X = regularised_ortho(gamma, cutoff=cutoff)
-    FT = numpy.dot(X.conj().T, numpy.dot(Fp, X))
-    eea, eea_vec = numpy.linalg.eigh(FT)
-    eip_err, eea_err = (
-            estimate_error_fock(P, Perr, Fp, Fperr, Fm, Fmerr, nsamp, cutoff)
-            )
+    gamma_ = gamma.copy()
+    eea, eaa_vec = solve_gen_eig(gamma, Fp)
+    eea_err = estimate_error_eig(gamma_, Perr, Fp, Fperr, nsamp=nsamp, cutoff=cutoff)
 
     return (eip, eip_err), (eea, eea_err)
 
-def estimate_error_fock(P, Perr, Fm, Fmerr, Fp, Fperr, nsamp, cutoff):
+def solve_gen_eig(gamma, fock, cutoff=1e-14):
+    gamma, X = regularised_ortho(gamma, cutoff=cutoff)
+    fock_trans = numpy.dot(X.conj().T, numpy.dot(fock, X))
+    return numpy.linalg.eigh(fock_trans)
+
+def estimate_error_eig(gamma, gamma_err, fock, fock_err, nsamp=20, cutoff=1e-14):
     """Bootstrap estimate of error in eigenvalues."""
-    eip_tot = numpy.zeros((nsamp, P.shape[-1]))
-    eea_tot = numpy.zeros((nsamp, P.shape[-1]))
+    eigs_tot = numpy.zeros((nsamp, gamma.shape[-1]))
     # TODO FIX THIS
-    # for s in range(nsamp):
-        # Ppert = gen_sample_matrix(P, Perr)
-        # Ppert, X = regularised_ortho(Ppert, cutoff=cutoff)
-        # Fpert = gen_sample_matrix(Fm, Fmerr)
-        # Fpert = numpy.dot(X.conj().T, numpy.dot(Fpert, X))
-        # eip, eip_vec = numpy.linalg.eigh(Fpert)
-        # eips[s,:] = eip
-        # Fpert = gen_sample_matrix(Fp, Fperr)
-        # Fpert = numpy.dot(X.conj().T, numpy.dot(Fpert), X)
-        # eea, eea_vec = numpy.linalg.eigh(Fpert)
-        # eeas[s,:] = eea
-    return numpy.std(eip_tot, axis=0, ddof=1), numpy.std(eea_tot, axis=0, ddof=1)
+    for s in range(nsamp):
+        gamma_p = gen_sample_matrix(gamma, gamma_err)
+        fock_p = gen_sample_matrix(fock, fock_err, herm=False)
+        eigs_tot[s], eigv = solve_gen_eig(gamma_p, fock_p)
+    return numpy.std(eigs_tot, axis=0, ddof=1)
 
 def regularised_ortho(S, cutoff=1e-14):
     """Get orthogonalisation matrix."""
@@ -419,7 +414,7 @@ def regularised_ortho(S, cutoff=1e-14):
     Smod = numpy.dot(Smod, Us[:,sdiag>cutoff].T.conj())
     return Smod, X
 
-def gen_sample_matrix(mat, err):
+def gen_sample_matrix(mat, err, herm=True):
     """Perturb matrix by error bar."""
     a = numpy.zeros_like(mat)
     nbasis = mat.shape[0]
@@ -429,4 +424,7 @@ def gen_sample_matrix(mat, err):
     for i in range(nbasis):
         for j in range(nbasis):
             a[i,j] = numpy.random.normal(loc=mat[i,j], scale=err[i,j], size=1)
-    return 0.5*(a+a.conj().T)
+    if herm:
+        return 0.5*(a+a.conj().T)
+    else:
+        return a
