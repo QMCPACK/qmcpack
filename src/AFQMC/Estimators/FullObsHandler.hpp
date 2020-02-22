@@ -251,13 +251,13 @@ class FullObsHandler: public AFQMCInfo
       if(nrefs > 1) {
         if(walker_type == CLOSED) { 
           for(int iw=0; iw<nw; iw++) 
-            Xw[iw] = CIcoeff * Ov[iw] * Ov[iw] * detR[iw][iref] * detR[iw][iref]; 
+            Xw[iw] = CIcoeff * Ov[iw] * Ov[iw] * std::conj(detR[iw][iref] * detR[iw][iref]); 
         } else if(walker_type == COLLINEAR) {
           for(int iw=0; iw<nw; iw++) 
-            Xw[iw] = CIcoeff * Ov[iw] * Ov[iw+nw] * detR[iw][2*iref] * detR[iw][2*iref+1]; 
+            Xw[iw] = CIcoeff * Ov[iw] * Ov[iw+nw] * std::conj(detR[iw][2*iref] * detR[iw][2*iref+1]); 
         } else if(walker_type == NONCOLLINEAR) {
           for(int iw=0; iw<nw; iw++) 
-            Xw[iw] = CIcoeff * Ov[iw] * detR[iw][iref]; 
+            Xw[iw] = CIcoeff * Ov[iw] * std::conj(detR[iw][iref]); 
         } 
       } 
 

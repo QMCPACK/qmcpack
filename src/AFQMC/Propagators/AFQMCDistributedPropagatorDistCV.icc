@@ -371,6 +371,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
                                    MFfactor[n0+ni],hybrid_weight[n0+ni],work);
       }
       if(wset.getBPPos() >=0 && wset.getBPPos()<wset.NumBackProp()) wset.advanceBPPos();
+      if(wset.getBPPos() >=0) wset.advanceHistoryPos();
     }
     TG.local_barrier();
     AFQMCTimers[extra_timer]->stop();
@@ -702,6 +703,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
                                    MFfactor[n0+ni],hybrid_weight[n0+ni],work);
       }
       if(wset.getBPPos() >=0 && wset.getBPPos()<wset.NumBackProp()) wset.advanceBPPos();
+      if(wset.getBPPos() >=0) wset.advanceHistoryPos();
     }
     TG.local_barrier();
     AFQMCTimers[extra_timer]->stop();

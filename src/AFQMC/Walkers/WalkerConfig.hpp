@@ -5,7 +5,7 @@
 namespace qmcplusplus {
 namespace afqmc {
 
-  // wlk_descriptor: [ nmo, naea, naeb, nback_prop, nCV, nRefs] 
+  // wlk_descriptor: [ nmo, naea, naeb, nback_prop, nCV, nRefs, nHist] 
   using wlk_descriptor = std::array<int,8>;
   using wlk_indices = std::array<int,17>;
   enum walker_data { SM, WEIGHT, PHASE, PSEUDO_ELOC_, E1_, EXX_, EJ_, OVLP, SMN, SM_AUX, FIELDS, WEIGHT_FAC, WEIGHT_HISTORY};

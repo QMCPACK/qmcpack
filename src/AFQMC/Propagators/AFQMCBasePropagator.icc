@@ -224,6 +224,9 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
                                    MFfactor[ni],hybrid_weight[ni],work);
       }
       if(wset.getBPPos() >=0 && wset.getBPPos()<wset.NumBackProp()) wset.advanceBPPos();   
+// MAM: BP will not work if the nsteps*nsubsteps per block is not consistent with 
+//      steps in BP
+      if(wset.getBPPos() >=0) wset.advanceHistoryPos();  
     }
     TG.local_barrier();
     AFQMCTimers[extra_timer]->stop();

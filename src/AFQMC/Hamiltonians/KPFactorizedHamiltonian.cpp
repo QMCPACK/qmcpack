@@ -670,6 +670,44 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
     }
   }
 
+{
+    ComplexType EJ(0.0);
+    ComplexType EJ2(0.0);
+    {
+      int Q=0;
+      int Qm = kminus[Q];
+      int nchol = nchol_per_kp[0];  
+      boost::multi::array<ComplexType,2> v_({2,nchol});  
+      std::fill_n(v_.origin(),2*nchol, ComplexType(0.0));
+      for(int KI=0; KI<nkpts; ++KI) {
+        int ni = nmo_per_kp[KI];
+        int na = nocc_per_kp[0][KI];
+        boost::multi::array_ref<ComplexType,3> Likn(to_address(LQKikn[Q][KI].origin()),
+                                           {ni,ni,nchol});        
+        auto PsiI = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[0],KI);
+        for(int a=0; a<na; ++a)
+          for(int i=0; i<ni; ++i)
+            PsiI[a][i] = ma::conj(PsiI[a][i]);
+        boost::multi::array<ComplexType,2> Gi({ni,ni});  
+        ma::product(ma::H(PsiI),PsiI,Gi);
+        for(int i=0; i<ni; ++i) {
+          for(int k=0; k<ni; ++k) {
+            for(int n=0; n<nchol; ++n) 
+              v_[0][n] += Likn[i][k][n] * Gi[i][k]; 
+            for(int n=0; n<nchol; ++n) 
+              v_[1][n] += ma::conj(Likn[k][i][n]) * Gi[i][k]; 
+          }  
+        }  
+      }
+      for(int n=0; n<nchol; ++n) EJ += v_[0][n]*v_[1][n];     
+      for(int n=0; n<nchol; ++n) EJ2 += v_[0][n]*std::conj(v_[0][n]);     
+    }
+    app_log()<<" EJ: " <<2.0*EJ <<std::endl;
+    app_log()<<" EJ2: " <<2.0*EJ2 <<std::endl;
+}
+
+
+
 //  if(write_hdf)
 //    writeKP3IndexFactorization(hdf_restart,type,NMO,NAEA,NAEB,TGprop,TGwfn,
 //                            nmo_per_kp,nchol_per_kp,kminus,QKtok2,H1,LQKikn,
