@@ -26,7 +26,9 @@ script: 'echo "/data/epd/spack/opt/spack/linux-rhel7-x86_64/gcc-7.3.0/boost-1.69
     }
     stages {
 	stage('CheckOut') {
-	    checkout scm
+	    steps {
+		checkout scm
+	    }
 	}
 	stage('BuildAndTest') {
     matrix {
