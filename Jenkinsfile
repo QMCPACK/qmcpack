@@ -24,6 +24,8 @@ script: 'echo "/data/epd/spack/opt/spack/linux-rhel7-x86_64/gcc-7.3.0/boost-1.69
     options {
 	buildDiscarder(logRotator(numToKeepStr: '10'))
     }
+    stages {
+	stage('BuildAndTest') {
     matrix {
 	axes {
 	    axis {
@@ -58,4 +60,5 @@ script: 'echo "/data/epd/spack/opt/spack/linux-rhel7-x86_64/gcc-7.3.0/boost-1.69
 	}
     }
 }
-
+    }
+}
