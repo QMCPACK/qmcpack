@@ -3314,7 +3314,7 @@ SuperMUC(      512,   1,    28,  256,    8,'mpiexec', 'llsubmit',     'llq','llc
 Stampede2(    4200,   1,    68,   96,   50,  'ibrun',   'sbatch',  'squeue', 'scancel')
 Cades(         156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    'qdel')
 Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
-Tomcat(          8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
+Tomcat(          8,   1,   256,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
 
 
