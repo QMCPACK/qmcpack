@@ -1,9 +1,9 @@
 pipeline {
     agent {
-	    node {
-		label 'oxygen CI'
-		customWorkspace '/dev/shm/jenkins'
-	]
+	node {
+	    label 'oxygen CI'
+	    customWorkspace '/dev/shm/jenkins'
+	}
     }
     environment {
 	LD_LIBRARY_PATH="""${sh(
