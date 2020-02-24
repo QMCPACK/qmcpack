@@ -1,7 +1,7 @@
 pipeline {
     agent {
 	node {
-	    label 'oxygen CI'
+	    label 'master'
 	    customWorkspace '/dev/shm/jenkins'
 	}
     }
