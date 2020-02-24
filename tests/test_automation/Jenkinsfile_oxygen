@@ -1,0 +1,59 @@
+pipeline {
+  agent {
+    node {
+      label 'master'
+      customWorkspace '/dev/shm/jenkins/cpu'
+    }
+  }
+  environment {
+    JNK_THREADS=4
+    SPACK_ROOT='/scratch/jenkins_spack'
+    SPACK_ENV_FILE='../tests/test_automation/spack_env_cpu.sh'
+  }
+  options {
+    buildDiscarder(logRotator(numToKeepStr: '10'))
+  }
+  stages {
+    stage('CheckOut') {
+      steps {
+	checkout scm
+      }
+    }
+    stage('BuildAndTest') {
+      failFast true
+      matrix {
+	axes {
+	    axis {
+		name 'NSPACE'
+		values 'real', 'complex'
+	    }
+	    axis {
+		name 'PRECISION'
+		values 'full', 'mixed'
+	    }
+	}
+	stages {
+          stage('Build') {
+            steps {
+	      echo "building ${NSPACE} ${PRECISION} precision ..."
+	      dir ('./build')
+	      {
+		sh "../tests/test_automation/jenkins_build_cpu.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}"
+	      }
+            }
+          }
+          stage('Test') {
+            steps {
+              echo "testing ${NSPACE} ${PRECISION} precision ..."
+	      dir('./build')
+	      {
+		sh '../tests/test_automation/jenkins_test.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}'
+	      }
+            }
+	  }
+	}
+      }
+    }
+  }
+}
+ 
