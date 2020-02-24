@@ -1,10 +1,19 @@
 pipeline {
-    agent any
+    agent {
+	master {
+	    node {
+		customWorkspace '/dev/shm/jenkins'
+	    }
+	}
+    }
     environment {
 	LD_LIBRARY_PATH="""${sh(
 returnStdout: true,
 script: 'echo "/usr/local/lib:${LD_LIBRARY_PATH}"'
 )}"""
+    }
+    options {
+	buildDiscarder(logRotator(numToKeepStr: '10'))
     }
     stages {
         stage('Build') {
