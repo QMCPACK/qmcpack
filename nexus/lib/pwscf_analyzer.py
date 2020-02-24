@@ -158,7 +158,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 U=float(f.readtokens()[-2])
             except:
                 U=0.0 
-            f.seek('P=',1)
+            f.seek(' P=',1)
             P = float(f.readtokens()[-1])/10. #convert to GPa
             # stress matrix S, note S00 is S11 in normal terms!
             S11, S12, S13 = f.readtokens()[-3:]
@@ -903,7 +903,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         plt.suptitle(filename)
         plt.axis([None, None, -.1, .1])
         plt.subplot(5,1,1)
-        plt.ylim(-0.4,0.4)
+#        plt.ylim(-0.4,0.4)
         e=equil
         dt=md.timeps[1]-md.timeps[0]
         if(startfromone):
