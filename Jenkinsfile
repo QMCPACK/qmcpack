@@ -1,3 +1,5 @@
+import java.util.regex.Pattern
+
 pipeline {
     agent {
 	node {
@@ -22,6 +24,17 @@ script: 'echo "/data/epd/spack/opt/spack/linux-rhel7-x86_64/gcc-7.3.0/boost-1.69
     options {
 	buildDiscarder(logRotator(numToKeepStr: '10'))
     }
+    matrix {
+	axes {
+	    axis {
+		name 'NSPACE'
+		values 'real', 'complex'
+	    }
+	    axis {
+		name 'PRECISION'
+		values 'full', 'mixed'
+	    }
+	}
     stages {
         stage('Build') {
             steps {
@@ -29,8 +42,7 @@ script: 'echo "/data/epd/spack/opt/spack/linux-rhel7-x86_64/gcc-7.3.0/boost-1.69
 		checkout scm
 		dir ('./build')
 		{
-		    sh 'cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 .. 2>&1 | tee cmake.out'
-		    sh 'make -j12'
+		    sh "../../tests/test_automation/jenkins_build_cpu.sh ${NSPACE} ${PRECISION}"
 		}
             }
         }
@@ -39,9 +51,10 @@ script: 'echo "/data/epd/spack/opt/spack/linux-rhel7-x86_64/gcc-7.3.0/boost-1.69
                 echo 'Testing..'
 		dir('./build')
 		{
-		    sh 'ctest -L unit --output-on-failure --timeout 120'
+		    sh '../../test/test_automation/jenkins_test.sh ${NSPACE} ${PRECISION}'
 		}
             }
+	}
 	}
     }
 }
