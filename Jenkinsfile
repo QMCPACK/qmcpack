@@ -48,7 +48,7 @@ script: 'echo "/data/epd/spack/opt/spack/linux-rhel7-x86_64/gcc-7.3.0/boost-1.69
 		echo 'building...'
 		dir ('./build')
 		{
-		    sh "../../tests/test_automation/jenkins_build_cpu.sh ${NSPACE} ${PRECISION}"
+		    sh "../tests/test_automation/jenkins_build_cpu.sh ${NSPACE} ${PRECISION}"
 		}
             }
         }
@@ -57,7 +57,7 @@ script: 'echo "/data/epd/spack/opt/spack/linux-rhel7-x86_64/gcc-7.3.0/boost-1.69
                 echo 'Testing..'
 		dir('./build')
 		{
-		    sh '../../test/test_automation/jenkins_test.sh ${NSPACE} ${PRECISION}'
+		    sh '../test/test_automation/jenkins_test.sh ${NSPACE} ${PRECISION}'
 		}
             }
 	}
