@@ -1,6 +1,6 @@
 pipeline {
     agent {
-	master {
+	any {
 	    node {
 		customWorkspace '/dev/shm/jenkins'
 	    }
