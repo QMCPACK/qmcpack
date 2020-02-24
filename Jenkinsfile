@@ -2,6 +2,7 @@ pipeline {
     agent {
 	any {
 	    node {
+		label 'oxygen CI'
 		customWorkspace '/dev/shm/jenkins'
 	    }
 	}
@@ -20,15 +21,20 @@ script: 'echo "/usr/local/lib:${LD_LIBRARY_PATH}"'
             steps {
 		echo 'building...'
 		checkout scm
-		sh 'cd qmcpack'
-		sh 'cd build'
-		sh 'cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 .. 2>&1 | tee cmake.out'
+		dir './build'
+		{
+		    sh 'cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DBUILD_AFQMC=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 .. 2>&1 | tee cmake.out'
+		    sh 'make -j12'
+		}
             }
         }
         stage('Test') {
             steps {
                 echo 'Testing..'
-		sh 'ctest -L unit --output-on-failure --timeout 120'
+		dir './build'
+		{
+		    sh 'ctest -L unit --output-on-failure --timeout 120'
+		}
             }
         }
     }
