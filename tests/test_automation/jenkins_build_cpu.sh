@@ -30,6 +30,8 @@ echo "at $(date)"
 echo ""
 echo ""
 
+THREADS=$3
+
 mkdir build_${1}_${2}
 cd build_${1}_${2}
 
@@ -39,7 +41,7 @@ if [[ $? -ne 0 ]] ; then
   exit 1
 fi
 
-make -j 16
+make -j ${THREADS}
 if [[ $? -ne 0 ]] ; then
   exit 1
 fi
