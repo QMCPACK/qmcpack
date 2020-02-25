@@ -46,7 +46,7 @@ script: 'echo "/data/epd/spack/opt/spack/linux-rhel7-x86_64/gcc-7.3.0/boost-1.69
     stages {
         stage('Build') {
             steps {
-		echo 'building...'
+		echo "building ${NSPACE} ${PRECISION} precision ..."
 		dir ('./build')
 		{
 		    sh "../tests/test_automation/jenkins_build_cpu.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}"
@@ -55,7 +55,7 @@ script: 'echo "/data/epd/spack/opt/spack/linux-rhel7-x86_64/gcc-7.3.0/boost-1.69
         }
         stage('Test') {
             steps {
-                echo 'Testing..'
+                echo "testing ${NSPACE} ${PRECISION} precision ..."
 		dir('./build')
 		{
 		    sh '../tests/test_automation/jenkins_test.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}'
