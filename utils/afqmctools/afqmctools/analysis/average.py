@@ -1,7 +1,9 @@
 """Simple extraction of afqmc rdms."""
 import h5py
+import math
 import numpy
 import scipy.stats
+import scipy.integrate
 from afqmctools.analysis.extraction import (
         get_metadata,
         extract_observable
@@ -316,7 +318,7 @@ def get_noons(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
     return e[::-1], numpy.std(noons, axis=0, ddof=1)
 
 def analyse_ekt(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
-                nsamp=20, screen_factor=1, cutoff=1e-14):
+                nsamp=20, screen_factor=1, cutoff=1e-14, to_file=None):
     """Perform EKT analysis.
 
     Parameters
@@ -384,16 +386,27 @@ def analyse_ekt(filename, estimator='back_propagated', eqlb=1, skip=1, ix=None,
     eip_err = estimate_error_eig(gamma_, Perr, Fm, Fmerr, nsamp=nsamp, cutoff=cutoff)
     # Electron affinity.
     gamma = 2*I - P.T
-    gamma_ = gamma.copy()
-    eea, eaa_vec = solve_gen_eig(gamma, Fp)
+    gamma = gamma.copy()
+    eea, eea_vec = solve_gen_eig(gamma, Fp)
     eea_err = estimate_error_eig(gamma_, Perr, Fp, Fperr, nsamp=nsamp, cutoff=cutoff)
+    if to_file is not None:
+        with h5py.File(to_file, 'w') as fh5:
+            fh5['eip'] = eip
+            fh5['eip_err'] = eip_err
+            fh5['eip_vec'] = eip_vec
+            fh5['eea'] = eea
+            fh5['eea_err'] = eea_err
+            fh5['eea_vec'] = eea_vec
+            fh5['one_rdm'] = P
 
     return (eip, eip_err), (eea, eea_err)
 
 def solve_gen_eig(gamma, fock, cutoff=1e-14):
     gamma, X = regularised_ortho(gamma, cutoff=cutoff)
     fock_trans = numpy.dot(X.conj().T, numpy.dot(fock, X))
-    return numpy.linalg.eigh(fock_trans)
+    eig, C = numpy.linalg.eigh(fock_trans)
+    # Rotate eigenvectors back to original basis
+    return eig, numpy.dot(X, C)
 
 def estimate_error_eig(gamma, gamma_err, fock, fock_err, nsamp=20, cutoff=1e-14):
     """Bootstrap estimate of error in eigenvalues."""
@@ -429,3 +442,45 @@ def gen_sample_matrix(mat, err, herm=True):
         return 0.5*(a+a.conj().T)
     else:
         return a
+
+def spectral_function(eig_p, eig_m, eigv_p, eigv_m, rdm, i, j, window,
+                      num_omega, mu=0.0, eta=0.05):
+    """
+    """
+    om_min, om_max = window
+
+    def a_omega(omega, rdm_i, eigs, eigv, diag=False):
+        spec = 0.0
+        norm = 0.0
+        for nu in range(len(eigs)):
+            nume = numpy.dot(eigv[:,nu].conj(), rdm_i)
+            denom = (omega + mu - eigs[nu])**2.0 + eta**2.0
+            if diag:
+                nume = abs(nume)**2
+            spec += eta/numpy.pi * nume / denom
+        return spec
+
+    Ah = numpy.zeros(num_omega)
+    Ap = numpy.zeros(num_omega)
+    num_eig = len(eig_p)
+    I = numpy.eye(rdm.shape[0])
+    omegas = numpy.linspace(om_min, om_max, num_omega)
+    # print(rdm.trace())
+    rdm = rdm / rdm.trace()
+    if i == j:
+        gh = rdm[:,i]
+        gp = (2.0*I - rdm)[i,:]
+        # norm_h = numpy.sum(numpy.abs(numpy.dot(eigv_m.T, gh))**2.0, axis=0)
+        # norm_p = numpy.sum(numpy.abs(numpy.dot(eigv_p.T, gp))**2.0, axis=0)
+        # print(eigv_m[:,0])
+        # print(numpy.dot(eigv_m.T, gh))
+        # print(numpy.dot(eigv_p.T, gp))
+        # norm = norm_h + norm_p
+        for io, om in enumerate(omegas):
+            Ah[io] = a_omega(om, gh, -eig_m, eigv_m, diag=True)
+            Ap[io] = a_omega(om, gp, eig_p, eigv_p, diag=True)
+
+    # Normalise.
+    # norm = scipy.integrate.trapz(Ap+Ah, omegas)
+    # norm = 1.0
+    return omegas, Ah, Ap
