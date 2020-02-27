@@ -1,0 +1,64 @@
+pipeline {
+    agent {
+	node {
+	    label 'master'
+	    customWorkspace '/dev/shm/jenkins/ci_cuda'
+	}
+    }
+    environment {
+	JNK_THREADS='8'
+	SPACK_ROOT='/home/pk7/apps/spack'
+	SPACK_ENV_VARS="""${sh(
+returnStdout: true,
+script: './spack_env_gpu.sh'
+)}"""
+        def split_spack_env = SPACK_ENV.split(/\n/)
+        LD_LIBRARY_PATH = split_spack_env[0]
+	PATH = split_spack_env[1]
+	CMAKE_PREFIX_PATH = split_spack_env[2]
+    }
+    options {
+	buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+    stages {
+	stage('CheckOut') {
+	    steps {
+		checkout scm
+	    }
+	}
+	stage('BuildAndTest') {
+    matrix {
+	axes {
+	    axis {
+		name 'NSPACE'
+		values 'real', 'complex'
+	    }
+	    axis {
+		name 'PRECISION'
+		values 'full', 'mixed'
+	    }
+	}
+    stages {
+        stage('Build') {
+            steps {
+		echo "building ${NSPACE} ${PRECISION} precision ..."
+		dir ('./build')
+		{
+		    sh "../tests/test_automation/jenkins_build_gpu.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}"
+		}
+            }
+        }
+        stage('Test') {
+            steps {
+                echo "testing ${NSPACE} ${PRECISION} precision ..."
+		dir('./build')
+		{
+		    sh '../tests/test_automation/jenkins_test.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}'
+		}
+            }
+	}
+	}
+    }
+}
+    }
+}
