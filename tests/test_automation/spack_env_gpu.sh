@@ -58,6 +58,3 @@ spack load cmake@$cmake_vnew%gcc@$gcc_vnew
 spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 spack load fftw@$fftw_vnew%gcc@$gcc_vnew
-echo ${LD_LIBRARY_PATH}
-echo ${PATH}
-echo ${CMAKE_PREFIX_PATH}

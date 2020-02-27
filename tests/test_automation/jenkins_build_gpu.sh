@@ -1,6 +1,11 @@
 #!/bin/bash -x
 
+#this is will be general move cpu build soon
+
 export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
+
+#this depends on SPACK_ROOT being set in Jenkinsfile_xxx
+. ${SPACK_ENV_FILE}
 
 exit_code=0
 

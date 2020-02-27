@@ -8,14 +8,7 @@ pipeline {
     environment {
 	JNK_THREADS='8'
 	SPACK_ROOT='/home/pk7/apps/spack'
-	SPACK_ENV_VARS="""${sh(
-returnStdout: true,
-script: './spack_env_gpu.sh'
-)}"""
-        def split_spack_env = SPACK_ENV.split(/\n/)
-        LD_LIBRARY_PATH=qmcpack_get_path(split_spack_env,0)
-	PATH=qmcpack_get_path(split_spack_env,1)
-	CMAKE_PREFIX_PATH=qmcpack_get_path(split_spack_env,2)
+	SPACK_ENV_FILE='../tests/test_automation/spack_env_gpu.sh'
     }
     options {
 	buildDiscarder(logRotator(numToKeepStr: '10'))
@@ -60,12 +53,6 @@ script: './spack_env_gpu.sh'
 	}
     }
 }
-    }
-}
-
-def qmcpack_get_path(spack_env, index) {
-    node('master') {
-        return spack_env.split(/\n/)[index]
     }
 }
  
