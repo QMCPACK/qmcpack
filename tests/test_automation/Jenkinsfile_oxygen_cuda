@@ -19,6 +19,7 @@ pipeline {
       }
     }
     stage('BuildAndTest') {
+      failFast true
       matrix {
 	axes {
 	    axis {
@@ -30,7 +31,6 @@ pipeline {
 		values 'full', 'mixed'
 	    }
 		}
-		failFast true
 	stages {
           stage('Build') {
             steps {
