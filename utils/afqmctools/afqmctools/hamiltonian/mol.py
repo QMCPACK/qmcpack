@@ -18,8 +18,9 @@ from afqmctools.hamiltonian.io import (
 
 
 def write_hamil_mol(scf_data, hamil_file, chol_cut,
-                    verbose=True, cas=None, ortho_ao=False, nelec=None,
-                    real_chol=False,
+                    verbose=True, cas=None,
+                    ortho_ao=False, nelec=None,
+                    real_chol=False, df=False,
                     dense=False):
     """Write QMCPACK hamiltonian from pyscf scf calculation on mol object.
     """
@@ -28,7 +29,8 @@ def write_hamil_mol(scf_data, hamil_file, chol_cut,
                                                             chol_cut=chol_cut,
                                                             cas=cas,
                                                             ortho_ao=ortho_ao,
-                                                            nelec=nelec)
+                                                            nelec=nelec,
+                                                            df=df)
     # Want L_{(ik),n}
     chol_vecs = chol_vecs.T
     nbasis = hcore.shape[-1]
@@ -43,7 +45,7 @@ def write_hamil_mol(scf_data, hamil_file, chol_cut,
                              verbose=verbose, ortho=X)
 
 def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
-                         ortho_ao=False, nelec=None):
+                         ortho_ao=False, nelec=None, df=False):
     # Unpack SCF data.
     # 1. core (1-body) Hamiltonian.
     hcore = scf_data['hcore']
@@ -67,8 +69,10 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
             print(" # Transforming hcore and eri to MO basis.")
     h1e = numpy.dot(X.T, numpy.dot(hcore, X))
     nbasis = h1e.shape[-1]
+    if verbose:
+        print(" # Number of basis functions: {}.".format(nbasis))
     # Step 2. Genrate Cholesky decomposed ERIs in non-orthogonal AO basis.
-    if df_ints is not None:
+    if df_ints is not None and df:
         chol_vecs = df_ints
         if verbose:
             print(" # Using DF integrals from checkpoint file.")
