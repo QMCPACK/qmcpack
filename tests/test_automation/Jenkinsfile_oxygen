@@ -38,7 +38,7 @@ pipeline {
 	      echo "building ${NSPACE} ${PRECISION} precision ..."
 	      dir ('./build')
 	      {
-		sh "../tests/test_automation/jenkins_build_gpu.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}"
+		sh "../tests/test_automation/jenkins_build_cpu.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}"
 	      }
             }
           }
