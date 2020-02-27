@@ -132,13 +132,16 @@ class KP3IndexFactorization_batched_ooc
                  ValueType e0_,
                  Allocator const& alloc_,
                  int cv0,
-                 int gncv): 
+                 int gncv,
+                 int bf_size = 4096): 
         TG(tg_),
         allocator_(alloc_),
         sp_allocator_(alloc_),
         walker_type(type),
         global_nCV(gncv),
         global_origin(cv0),
+        default_buffer_size_in_MB(bf_size),
+        last_nw(-1),
         E0(e0_),
         H1(std::move(hij_)),
         haj(std::move(h1)),
@@ -395,10 +398,10 @@ class KP3IndexFactorization_batched_ooc
       }
 
       // take from BufferManager.
-      long default_buffer_size_in_MB(4L*1024L);
-      long batch_size;
+//      long default_buffer_size_in_MB(4L*1024L);
+      long batch_size(0);
       if(addEXX) {
-        long Bytes = default_buffer_size_in_MB*1024L*1024L;
+        long Bytes = long(default_buffer_size_in_MB)*1024L*1024L;
         Bytes /= size_t(nwalk*nocc_max*nocc_max*nchol_max*sizeof(SPComplexType));
         long bz0 = std::max(2L, Bytes);
         // batch_size includes the factor of 2 from Q/Qm pair
@@ -1377,6 +1380,9 @@ class KP3IndexFactorization_batched_ooc
     int global_nCV;
     int local_nCV;
     int global_origin;
+
+    int default_buffer_size_in_MB;
+    int last_nw;
 
     ValueType E0;
 

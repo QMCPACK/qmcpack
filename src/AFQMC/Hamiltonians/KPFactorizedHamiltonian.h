@@ -36,7 +36,7 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
                           boost::multi::array<ValueType,2>&& h,
                           TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                                     OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
-                                    TG(tg_),fileName(""),batched("no"),ooc("no")
+                                    TG(tg_),fileName(""),batched("no"),ooc("no"),memory(4096)
   {
 
     if(number_of_devices() > 0) batched="yes";
@@ -44,6 +44,7 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
     ParameterSet m_param;
     m_param.add(cutoff_cholesky,"cutoff_cholesky","double");
     m_param.add(fileName,"filename","std::string");
+    m_param.add(memory,"memory","int");
     if(TG.TG_local().size() == 1)
       m_param.add(batched,"batched","std::string");
     if(TG.TG_local().size() == 1)
@@ -92,6 +93,8 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
   std::string batched;
 
   std::string ooc;
+
+  int memory;
 
   double cutoff_cholesky;
 
