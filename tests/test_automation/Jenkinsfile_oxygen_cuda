@@ -1,26 +1,25 @@
 pipeline {
-    agent {
-	node {
-	    label 'master'
-	    customWorkspace '/dev/shm/jenkins/ci_cuda'
-	}
+  agent {
+    node {
+      label 'master'
+      customWorkspace '/dev/shm/jenkins/cuda'
     }
-    environment {
-	JNK_THREADS='8'
-	SPACK_ROOT='/scratch/jenkins_spack'
-	SPACK_ENV_FILE='../tests/test_automation/spack_env_gpu.sh'
+  }
+  environment {
+    SPACK_ROOT='/scratch/jenkins_spack'
+    SPACK_ENV_FILE='../tests/test_automation/spack_env_gpu.sh'
+  }
+  options {
+    buildDiscarder(logRotator(numToKeepStr: '10'))
+  }
+  stages {
+    stage('CheckOut') {
+      steps {
+	checkout scm
+      }
     }
-    options {
-	buildDiscarder(logRotator(numToKeepStr: '10'))
-    }
-    stages {
-	stage('CheckOut') {
-	    steps {
-		checkout scm
-	    }
-	}
-	stage('BuildAndTest') {
-    matrix {
+    stage('BuildAndTest') {
+      matrix {
 	axes {
 	    axis {
 		name 'NSPACE'
@@ -30,29 +29,30 @@ pipeline {
 		name 'PRECISION'
 		values 'full', 'mixed'
 	    }
-	}
-    stages {
-        stage('Build') {
-            steps {
-		echo "building ${NSPACE} ${PRECISION} precision ..."
-		dir ('./build')
-		{
-		    sh "../tests/test_automation/jenkins_build_gpu.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}"
 		}
-            }
-        }
-        stage('Test') {
+		failfast true
+	stages {
+          stage('Build') {
             steps {
-                echo "testing ${NSPACE} ${PRECISION} precision ..."
-		dir('./build')
-		{
-		    sh '../tests/test_automation/jenkins_test.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}'
-		}
+	      echo "building ${NSPACE} ${PRECISION} precision ..."
+	      dir ('./build')
+	      {
+		sh "../tests/test_automation/jenkins_build_gpu.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}"
+	      }
             }
+          }
+          stage('Test') {
+            steps {
+              echo "testing ${NSPACE} ${PRECISION} precision ..."
+	      dir('./build')
+	      {
+		sh '../tests/test_automation/jenkins_test.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}'
+	      }
+            }
+	  }
 	}
-	}
+      }
     }
-}
-    }
+  }
 }
  
