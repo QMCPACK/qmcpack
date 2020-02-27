@@ -7,7 +7,7 @@ pipeline {
     }
     environment {
 	JNK_THREADS='8'
-	SPACK_ROOT='/data/jenkins_spack'
+	SPACK_ROOT='/scratch/jenkins_spack'
 	SPACK_ENV_FILE='../tests/test_automation/spack_env_gpu.sh'
     }
     options {
