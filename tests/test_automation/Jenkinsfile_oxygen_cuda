@@ -14,7 +14,7 @@ script: './spack_env_gpu.sh'
 )}"""
         def split_spack_env = SPACK_ENV.split(/\n/)
 	echo "${split_spack_env}"
-        LD_LIBRARY_PATH=split_spack_env[0]
+        LD_LIBRARY_PATH=get_first(split_spack_env)
 	PATH=split_spack_env[1]
 	CMAKE_PREFIX_PATH=split_spack_env[2]
     }
@@ -63,3 +63,11 @@ script: './spack_env_gpu.sh'
 }
     }
 }
+
+def get_first(spack_env) {
+    node('master') {
+	echo "${spack_env}"
+        return spack_env.split(/\n/)[0]
+    }
+}
+ 
