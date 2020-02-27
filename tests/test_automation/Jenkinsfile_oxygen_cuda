@@ -13,9 +13,10 @@ returnStdout: true,
 script: './spack_env_gpu.sh'
 )}"""
         def split_spack_env = SPACK_ENV.split(/\n/)
-        LD_LIBRARY_PATH = split_spack_env[0]
-	PATH = split_spack_env[1]
-	CMAKE_PREFIX_PATH = split_spack_env[2]
+	echo "${split_spack_env}"
+        LD_LIBRARY_PATH=split_spack_env[0]
+	PATH=split_spack_env[1]
+	CMAKE_PREFIX_PATH=split_spack_env[2]
     }
     options {
 	buildDiscarder(logRotator(numToKeepStr: '10'))
