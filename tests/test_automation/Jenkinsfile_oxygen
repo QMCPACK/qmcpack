@@ -6,6 +6,7 @@ pipeline {
     }
   }
   environment {
+    JNK_THREADS=4
     SPACK_ROOT='/scratch/jenkins_spack'
     SPACK_ENV_FILE='../tests/test_automation/spack_env_cpu.sh'
   }
