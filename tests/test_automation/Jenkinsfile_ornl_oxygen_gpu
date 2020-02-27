@@ -8,7 +8,7 @@ pipeline {
   environment {
     JNK_THREADS=4
     SPACK_ROOT='/scratch/jenkins_spack'
-    SPACK_ENV_FILE='../tests/test_automation/spack_env_gpu.sh'
+    SPACK_ENV_FILE='../tests/test_automation/ornl_oxygen_spack_env_gpu.sh'
   }
   options {
     buildDiscarder(logRotator(numToKeepStr: '10'))
@@ -38,7 +38,7 @@ pipeline {
 	      echo "building ${NSPACE} ${PRECISION} precision ..."
 	      dir ('./build')
 	      {
-		sh "../tests/test_automation/jenkins_build_gpu.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}"
+		sh "../tests/test_automation/jenkins_ornl_oxygen_gpu.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}"
 	      }
             }
           }
@@ -47,7 +47,7 @@ pipeline {
               echo "testing ${NSPACE} ${PRECISION} precision ..."
 	      dir('./build')
 	      {
-		sh '../tests/test_automation/jenkins_test.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}'
+		sh '../tests/test_automation/jenkins_ornl_test.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}'
 	      }
             }
 	  }
