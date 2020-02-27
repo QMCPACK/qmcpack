@@ -53,8 +53,8 @@ boost_vold=1.65.1 # Released 2016-05-13
 
 spack load boost@$boost_vnew%gcc@$gcc_vnew
 spack load gcc@$gcc_vcuda
-spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
+spack load hdf5@$hdf5_vnew%gcc@$gcc_vcuda~mpi
 spack load cmake@$cmake_vnew%gcc@$gcc_vnew
-spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+spack load openmpi@$ompi_vnew%gcc@$gcc_vcuda
 spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 spack load fftw@$fftw_vnew%gcc@$gcc_vnew
