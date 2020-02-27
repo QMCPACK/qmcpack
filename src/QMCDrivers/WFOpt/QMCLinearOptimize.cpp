@@ -14,13 +14,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/QMCLinearOptimize.h"
+#include "QMCDrivers/WFOpt/QMCLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 //#if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMC.h"
-#include "QMCDrivers/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/QMCCostFunction.h"
 //#endif
 //#include "QMCDrivers/VMC/VMCSingle.h"
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
@@ -30,7 +30,7 @@
 #include <cassert>
 #if defined(QMC_CUDA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"
-#include "QMCDrivers/QMCCostFunctionCUDA.h"
+#include "QMCDrivers/WFOpt/QMCCostFunctionCUDA.h"
 #endif
 #include "Numerics/LinearFit.h"
 #include <iostream>
@@ -49,7 +49,6 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
     : QMCDriver(w, psi, h, ppool, comm),
       PartID(0),
       NumParts(1),
-      WarmupBlocks(10),
       hamPool(hpool),
       wfNode(NULL),
       optNode(NULL),
@@ -172,11 +171,6 @@ void QMCLinearOptimize::finish()
 void QMCLinearOptimize::generateSamples()
 {
   app_log() << "<optimization-report>" << std::endl;
-  //if(WarmupBlocks)
-  //{
-  //  app_log() << "<vmc stage=\"warm-up\" blocks=\"" << WarmupBlocks << "\">" << std::endl;
-  //  //turn off QMC_OPTIMIZE
-  //  vmcEngine->setValue("blocks",WarmupBlocks);
   vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 1);
   //  vmcEngine->run();
   //  vmcEngine->setValue("blocks",nBlocks);

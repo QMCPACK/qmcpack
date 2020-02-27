@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/QMCOptimize.h"
+#include "QMCDrivers/WFOpt/QMCOptimize.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
@@ -23,10 +23,10 @@
 #include "Optimize/DampedDynamics.h"
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
 #include "QMCDrivers/VMC/VMC.h"
-#include "QMCDrivers/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #if defined(QMC_CUDA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"
-#include "QMCDrivers/QMCCostFunctionCUDA.h"
+#include "QMCDrivers/WFOpt/QMCCostFunctionCUDA.h"
 #endif
 #include "QMCHamiltonians/HamiltonianPool.h"
 
@@ -41,8 +41,6 @@ QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
     : QMCDriver(w, psi, h, ppool, comm),
       PartID(0),
       NumParts(1),
-      WarmupBlocks(10),
-      SkipSampleGeneration("no"),
       hamPool(hpool),
       optSolver(0),
       vmcEngine(0),
@@ -57,8 +55,6 @@ QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
   QMCType  = "QMCOptimize";
   //default method is cg
   optmethod = "cg";
-  m_param.add(WarmupBlocks, "warmupBlocks", "int");
-  m_param.add(SkipSampleGeneration, "skipVMC", "string");
 }
 
 /** Clean up the vector */

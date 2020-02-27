@@ -15,21 +15,21 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/QMCFixedSampleLinearOptimize.h"
+#include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-#include "QMCDrivers/QMCCostFunctionBase.h"
-#include "QMCDrivers/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
+#include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCDrivers/VMC/VMC.h"
-#include "QMCDrivers/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "Numerics/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include <cassert>
 #if defined(QMC_CUDA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"
-#include "QMCDrivers/QMCCostFunctionCUDA.h"
+#include "QMCDrivers/WFOpt/QMCCostFunctionCUDA.h"
 #endif
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
@@ -100,7 +100,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   //read to use vmc output (just in case)
   RootName = "pot";
   QMCType  = "QMCFixedSampleLinearOptimize";
-  m_param.add(WarmupBlocks, "warmupBlocks", "int");
   m_param.add(Max_iterations, "max_its", "int");
   m_param.add(nstabilizers, "nstabilizers", "int");
   m_param.add(stabilizerScale, "stabilizerscale", "double");

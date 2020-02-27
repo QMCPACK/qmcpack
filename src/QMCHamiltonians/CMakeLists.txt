@@ -63,6 +63,7 @@ IF(OHMMS_DIM MATCHES 3)
     NonLocalECPotential.cpp
     L2Potential.cpp
     SOECPComponent.cpp
+    SOECPotential.cpp
     ECPotentialBuilder.cpp
     ECPComponentBuilder.cpp
     ECPComponentBuilder.1.cpp
@@ -107,12 +108,19 @@ ADD_LIBRARY(qmcham ${HAMSRCS})
 ADD_LIBRARY(qmcham_unit ${HAMSRCS})
 IF(QMC_CUDA)
   CUDA_ADD_LIBRARY(qmcham_cuda ${HAMSRCS_CUDA})
-  TARGET_LINK_LIBRARIES(qmcham qmcham_cuda)
-  TARGET_LINK_LIBRARIES(qmcham_unit qmcham_cuda)
+  TARGET_LINK_LIBRARIES(qmcham PRIVATE qmcham_cuda)
+  TARGET_LINK_LIBRARIES(qmcham_unit PRIVATE qmcham_cuda)
 ENDIF(QMC_CUDA)
 
 USE_FAKE_RNG(qmcham_unit)
-TARGET_LINK_LIBRARIES(qmcham_unit qmcfakerng)
+TARGET_LINK_LIBRARIES(qmcham_unit PUBLIC qmcfakerng)
+
+TARGET_LINK_LIBRARIES(qmcham PUBLIC qmcwfs)
+TARGET_LINK_LIBRARIES(qmcham_unit PUBLIC qmcwfs)
+
+TARGET_LINK_LIBRARIES(qmcham PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3)
+TARGET_LINK_LIBRARIES(qmcham_unit PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3)
+
 #IF(QMC_BUILD_STATIC)
 
 #IF(QMC_BUILD_STATIC)

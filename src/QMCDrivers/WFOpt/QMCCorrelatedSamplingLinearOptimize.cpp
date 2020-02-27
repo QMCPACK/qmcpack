@@ -17,15 +17,15 @@
 #include <cassert>
 #include <iostream>
 #include <fstream>
-#include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
+#include "QMCDrivers/WFOpt/QMCCorrelatedSamplingLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-#include "QMCDrivers/QMCCostFunctionBase.h"
-#include "QMCDrivers/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
+#include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMC.h"
-#include "QMCDrivers/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #endif
 //#include "QMCDrivers/VMC/VMCSingle.h"
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
@@ -34,7 +34,7 @@
 #include "Numerics/MatrixOperators.h"
 #if defined(QMC_CUDA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"
-#include "QMCDrivers/QMCCostFunctionCUDA.h"
+#include "QMCDrivers/WFOpt/QMCCostFunctionCUDA.h"
 #endif
 
 /*#include "Message/Communicate.h"*/
@@ -65,7 +65,6 @@ QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalke
   //read to use vmc output (just in case)
   RootName = "pot";
   QMCType  = "QMCCorrelatedSamplingLinearOptimize";
-  m_param.add(WarmupBlocks, "warmupBlocks", "int");
   m_param.add(stabilizerScale, "stabilizerscale", "double");
   m_param.add(bigChange, "bigchange", "double");
   m_param.add(w_beta, "beta", "double");

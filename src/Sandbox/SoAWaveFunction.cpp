@@ -19,8 +19,8 @@ namespace qmcplusplus
   {
     FirstTime=true;
 
-    ions.RSoA=ions.R;
-    els.RSoA=els.R;
+    ions.setCoordinates(ions.R);
+    els.setCoordinates(els.R);
 
     double r2_cut=std::min(6.4,double(els.Lattice.WignerSeitzRadius));
 
