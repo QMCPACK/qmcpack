@@ -61,7 +61,7 @@ pipeline {
 	       attachLog: true, subject: '${DEFAULT_SUBJECT}',
                to: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
                                        [$class: 'RequesterRecipientProvider'],
-				       '${DEFAULT_RECIPIENTS}'
+				       '${DEFAULT_RECIPIENT_LIST}'
 	]))
     }
     aborted {
