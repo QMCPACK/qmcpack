@@ -34,13 +34,17 @@ SET(MOSRCS
   GamesFMOParser.cpp
   QPParser.cpp
   LCAOHDFParser.cpp
+  QMCFiniteSize/QMCFiniteSize.cpp
+  QMCFiniteSize/SkParserBase.cpp
+  QMCFiniteSize/SkParserASCII.cpp
+  QMCFiniteSize/SkParserScalarDat.cpp
 )
 
 # create libmocommon 
 ADD_LIBRARY(mocommon ${MOSRCS})
 TARGET_LINK_LIBRARIES(mocommon PUBLIC qmcbase)
 
-set(QTOOLS convert4qmc qmc-extract-eshdf-kvectors)
+set(QTOOLS convert4qmc qmc-extract-eshdf-kvectors qmcfinitesize)
 FOREACH(p ${QTOOLS})
 
   ADD_EXECUTABLE(${p} ${p}.cpp)
