@@ -54,6 +54,13 @@ pipeline {
 	}
       }
     }
+    stage('Email')
+    {
+      steps {
+	step([$class: 'Mailer', recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
+								[$class: 'RequesterRecipientProvider']])])
+      }	
+    }
   }
 }
  
