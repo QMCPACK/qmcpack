@@ -40,8 +40,6 @@ pipeline {
 	      {
 		sh "../tests/test_automation/jenkins_ornl_oxygen_cpu.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}"
 	      }
-	      step([$class: 'Mailer', recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
-								[$class: 'RequesterRecipientProvider']])])
             }
           }
           stage('Test') {
@@ -51,12 +49,24 @@ pipeline {
 	      {
 		sh '../tests/test_automation/jenkins_ornl_test.sh ${NSPACE} ${PRECISION} ${JNK_THREADS}'
 	      }
-	      step([$class: 'Mailer', recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
-								[$class: 'RequesterRecipientProvider']])])
             }
 	  }
 	}
       }
+    }
+  }
+  post {
+    failure {
+      emailext(body: '${DEFAULT_CONTENT}', mimeType: 'text/html',
+	       attachLog: true, subject: '${DEFAULT_SUBJECT}',
+               to: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
+                                       [$class: 'RequesterRecipientProvider']]))
+    }
+    aborted {
+      emailext(body: '${DEFAULT_CONTENT}', mimeType: 'text/html',
+	       replyTo: '$DEFAULT_REPLYTO', subject: '${DEFAULT_SUBJECT}',
+               to: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
+                                       [$class: 'RequesterRecipientProvider']]))
     }
   }
 }

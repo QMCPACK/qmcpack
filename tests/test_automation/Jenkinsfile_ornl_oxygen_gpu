@@ -57,13 +57,16 @@ pipeline {
   }
   post {
     failure {
-	step([$class: 'Mailer', recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
-								[$class: 'RequesterRecipientProvider']])])
+      emailext(body: '${DEFAULT_CONTENT}', mimeType: 'text/html',
+	       attachLog: true, subject: '${DEFAULT_SUBJECT}',
+               to: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
+                                       [$class: 'RequesterRecipientProvider']]))
     }
     aborted {
-	step([$class: 'Mailer', recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
-								[$class: 'RequesterRecipientProvider']])])
+      emailext(body: '${DEFAULT_CONTENT}', mimeType: 'text/html',
+	       subject: '${DEFAULT_SUBJECT}',
+               to: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
+                                       [$class: 'RequesterRecipientProvider']]))
     }
   }
 }
- 
