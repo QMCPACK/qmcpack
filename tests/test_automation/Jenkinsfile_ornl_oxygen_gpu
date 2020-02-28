@@ -54,8 +54,15 @@ pipeline {
 	}
       }
     }
-    stage('Email')
-    {
+  }
+  post {
+    failure {
+      steps {
+	step([$class: 'Mailer', recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
+								[$class: 'RequesterRecipientProvider']])])
+      }	
+    }
+    aborted {
       steps {
 	step([$class: 'Mailer', recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
 								[$class: 'RequesterRecipientProvider']])])
