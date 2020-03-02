@@ -161,7 +161,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     else if (physicalSO == "no")
       app_log() << "    Spin-Orbit potential is not included in local energy" << std::endl;
     else
-      APP_ABORT("physicalSO must be set to yes/no. Unknown option give\n");
+      APP_ABORT("physicalSO must be set to yes/no. Unknown option given\n");
 
     SOECPotential* apot = new SOECPotential(IonConfig, targetPtcl, targetPsi);
     int nknot_max       = 0;
