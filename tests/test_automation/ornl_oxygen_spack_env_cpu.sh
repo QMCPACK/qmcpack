@@ -4,7 +4,7 @@
 
 . ../tests/test_automation/spack_supported_package_versions.sh
 
-QMCINVARIANT_FLAGS="-DBUILD_AFQMC=1"
+QMC_IMMUTABLE_FLAGS="-DBUILD_AFQMC=1"
 
 spack load llvm@$llvm_vnew
 spack load boost@$boost_vnew%gcc@$gcc_vnew

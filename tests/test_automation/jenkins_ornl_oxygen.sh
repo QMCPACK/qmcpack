@@ -4,8 +4,9 @@
 
 export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
 
-#this depends on SPACK_ROOT being set in Jenkinsfile_xxx
-#it also supplies QMCINVARIANT_FLAGS which may be suboptimal
+# this depends on SPACK_ROOT being set in Jenkinsfile_xxx
+# it also supplies QMC_IMMUTABLE_FLAGS which makes it a bit more than the
+# environment from the set of loaded spack packages.
 . ${SPACK_ENV_FILE}
 
 exit_code=0
@@ -40,7 +41,7 @@ echo ""
 mkdir build_${1}_${2}
 cd build_${1}_${2}
 
-cmake ${QMCNSPACE_FLAG} ${QMCPRECISION_FLAG} -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" ${QMCINVARIANT_FLAGS} -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 ../.. 2>&1 | tee cmake.out
+cmake ${QMCNSPACE_FLAG} ${QMCPRECISION_FLAG} -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" ${QMC_IMMUTABLE_FLAGS} -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 ../.. 2>&1 | tee cmake.out
 
 if [[ $? -ne 0 ]] ; then
   exit 1
