@@ -870,6 +870,7 @@ IF(NOT QMC_BUILD_SANDBOX_ONLY)
   ENDIF()
 ENDIF()
 
+ENDIF()
 #ADD_CUSTOM_TARGET(print_settings ALL
 #      ${CMAKE_COMMAND} -E echo "Print build settings"
 #          VERBATIM)

@@ -47,7 +47,7 @@ class OhmmsParameter : public OhmmsElementBase
 {
   //@{
   ///reference to a value of type T
-  T& ref_
+  T& ref_;
   ///the unit of this object
   std::string unit_;
   ///pointer to the corresponding xmlNode
