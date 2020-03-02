@@ -152,6 +152,9 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
   if (hasSOPot)
   {
+#ifndef QMC_COMPLEX
+    APP_ABORT("SOECPotential evaluations require complex build. Rebuild with -D QMC_COMPLEX=1\n");
+#endif
     if (physicalSO == "yes")
       app_log() << "    Spin-Orbit potential included in local energy" << std::endl;
     else if (physicalSO == "no")

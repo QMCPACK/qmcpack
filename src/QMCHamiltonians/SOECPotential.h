@@ -32,7 +32,7 @@ public:
 
   Return_t evaluate(ParticleSet& P);
 
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
   bool get(std::ostream& os) const
   {
@@ -43,6 +43,8 @@ public:
   OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void addComponent(int groupID, SOECPComponent* pp);
+
+  void setRandomGenerator(RandomGenerator_t* rng) override { myRNG = rng; }
 
 protected:
   RandomGenerator_t* myRNG;
