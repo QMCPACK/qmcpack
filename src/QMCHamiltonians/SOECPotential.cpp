@@ -25,15 +25,10 @@ namespace qmcplusplus
  *\param psi Trial wave function
 */
 SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi)
-    : myRNG(nullptr), 
-      IonConfig(ions), 
-      Psi(psi), 
-      Peln(els), 
-      ElecNeighborIons(els), 
-      IonNeighborElecs(ions)
+    : myRNG(nullptr), IonConfig(ions), Psi(psi), Peln(els), ElecNeighborIons(els), IonNeighborElecs(ions)
 {
   set_energy_domain(potential);
-  two_body_quantum_domain(ions,els);
+  two_body_quantum_domain(ions, els);
   myTableIndex = els.addTable(ions, DT_SOA_PREFERRED);
   NumIons      = ions.getTotalNum();
   PP.resize(NumIons, nullptr);
@@ -45,11 +40,11 @@ SOECPotential::~SOECPotential() { delete_iter(PPset.begin(), PPset.end()); }
 
 void SOECPotential::resetTargetParticleSet(ParticleSet& P) {}
 
-SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P) 
+SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
 {
   Value = 0.0;
-  for (int ipp=0; ipp < PPset.size(); ipp++)
-    if(PPset[ipp])
+  for (int ipp = 0; ipp < PPset.size(); ipp++)
+    if (PPset[ipp])
       PPset[ipp]->randomize_grid(*myRNG);
   const auto& myTable = P.getDistTable(myTableIndex);
   for (int iat = 0; iat < NumIons; iat++)
@@ -78,9 +73,9 @@ SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
   {
     APP_ABORT("SOECPotential::evaluate(): AOS is deprecated. Distance tables must be SOA\n");
   }
-} 
+}
 
-OperatorBase* SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi) 
+OperatorBase* SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   SOECPotential* myclone = new SOECPotential(IonConfig, qp, psi);
   for (int ig = 0; ig < PPset.size(); ++ig)
@@ -88,7 +83,7 @@ OperatorBase* SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
     if (PPset[ig])
     {
       SOECPComponent* ppot = PPset[ig]->makeClone(qp);
-      myclone->addComponent(ig,ppot);
+      myclone->addComponent(ig, ppot);
     }
   }
   return myclone;
