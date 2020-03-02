@@ -1,3 +1,5 @@
+library 'qmcpack_shared_jenkins'
+
 pipeline {
   agent {
     node {
@@ -72,4 +74,4 @@ pipeline {
     }
   }
 }
- 
+
