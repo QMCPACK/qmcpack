@@ -1,3 +1,5 @@
+library 'qmcpack_shared_jenkins'
+
 pipeline {
   agent {
     node {
@@ -60,9 +62,7 @@ pipeline {
       emailext(body: '${DEFAULT_CONTENT}', mimeType: 'text/html',
 	       attachLog: true, subject: '${DEFAULT_SUBJECT}',
                to: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
-					 [$class: 'RequesterRecipientProvider']]) +
-				       '${DEFAULT_RECIPIENT_LIST}'
-      )
+				       [$class: 'RequesterRecipientProvider']]) + ",${qmcJglobals.maintainer_emails}")
     }
     aborted {
       emailext(body: '${DEFAULT_CONTENT}', mimeType: 'text/html',

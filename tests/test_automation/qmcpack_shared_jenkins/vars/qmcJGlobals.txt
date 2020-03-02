@@ -1,0 +1,1 @@
+Maintainers of the the QMCPACK project that receive email on failed CI run.
