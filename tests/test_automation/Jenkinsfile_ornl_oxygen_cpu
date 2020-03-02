@@ -62,8 +62,9 @@ pipeline {
       echo("What bindings are there?: ${binding.variables}")
       emailext(body: '${DEFAULT_CONTENT}', mimeType: 'text/html',
 	       attachLog: true, subject: '${DEFAULT_SUBJECT}',
-               to: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
-				       [$class: 'RequesterRecipientProvider']]) + ",${qmcJGlobals.maintainer_emails.toString()}")
+               to: "${qmcJGlobals.maintainer_emails}",
+	       recipientProviders: [[$class: 'CulpritsRecipientProvider'],
+				  [$class: 'RequesterRecipientProvider']])
     }
     aborted {
       emailext(body: '${DEFAULT_CONTENT}', mimeType: 'text/html',
