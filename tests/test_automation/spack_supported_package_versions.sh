@@ -1,6 +1,4 @@
-#/bin/bash
-
-. $SPACK_ROOT/share/spack/setup-env.sh
+#!/bin/bash
 
 # GCC
 # Dates at https://gcc.gnu.org/releases.html
@@ -50,13 +48,3 @@ fftw_vold=3.3.4 # Released 2014-03-16
 # Dates at https://www.boost.org/users/history/
 boost_vnew=1.70.0 # Released 2019-04-12
 boost_vold=1.65.1 # Released 2016-05-13
-
-QMCINVARIANT_FLAGS="-DQMC_CUDA=1"
-
-spack load boost@$boost_vnew%gcc@$gcc_vnew
-spack load gcc@$gcc_vcuda
-spack load hdf5@$hdf5_vnew%gcc@$gcc_vcuda~mpi
-spack load cmake@$cmake_vnew%gcc@$gcc_vnew
-spack load openmpi@$ompi_vnew%gcc@$gcc_vcuda
-spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
-spack load fftw@$fftw_vnew%gcc@$gcc_vnew

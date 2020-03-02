@@ -13,6 +13,7 @@ exit_code=0
 BUILD_DIR=$(pwd)
 echo $BUILD_DIR
 
+#translate from jenkins matrix options to cmake options
 QMCNSPACE_FLAG=''
 if [[ $1 == 'real' ]]
 then
@@ -36,18 +37,16 @@ echo "at $(date)"
 echo ""
 echo ""
 
-THREADS=$3
-
 mkdir build_${1}_${2}
 cd build_${1}_${2}
 
-cmake ${QMCNSPACE_FLAG} ${QMCPRECISION_FLAG} -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" ${QMCINVARIANT_FLAGS}-DQMC_CUDA=1 -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 ../.. 2>&1 | tee cmake.out
+cmake ${QMCNSPACE_FLAG} ${QMCPRECISION_FLAG} -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" ${QMCINVARIANT_FLAGS} -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 ../.. 2>&1 | tee cmake.out
 
 if [[ $? -ne 0 ]] ; then
   exit 1
 fi
 
-make -j ${THREADS}
+make -j ${JNK_THREADS}
 if [[ $? -ne 0 ]] ; then
   exit 1
 fi
