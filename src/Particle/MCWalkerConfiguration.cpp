@@ -102,9 +102,7 @@ MCWalkerConfiguration::MCWalkerConfiguration()
       GlobalNumWalkers(0),
       UpdateMode(Update_Walker),
       reptile(0),
-      Polymer(0),
-      MaxSamples(10),
-      CurSampleCount(0)
+      Polymer(0)
 {
   //move to ParticleSet
   //initPropertyList();
@@ -125,10 +123,9 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
       ReadyForPbyP(false),
       GlobalNumWalkers(mcw.GlobalNumWalkers),
       UpdateMode(Update_Walker),
-      Polymer(0),
-      MaxSamples(mcw.MaxSamples),
-      CurSampleCount(0)
+      Polymer(0)
 {
+  samples.setMaxSamples(mcw.getMaxSamples());
   GlobalNumWalkers = mcw.GlobalNumWalkers;
   WalkerOffsets    = mcw.WalkerOffsets;
   Properties       = mcw.Properties;
@@ -393,53 +390,29 @@ void MCWalkerConfiguration::resizeWalkerHistories()
 /** allocate the SampleStack
  * @param n number of samples per thread
  */
-void MCWalkerConfiguration::setNumSamples(int n)
-{
-  clearEnsemble();
-  MaxSamples = n;
-  //do not add anything
-  if (n == 0)
-    return;
-  //SampleStack.resize(n,0);
-  SampleStack.reserve(n);
-  int nadd = n - SampleStack.size();
-  while (nadd > 0)
-  {
-    SampleStack.push_back(new MCSample(TotalNum));
-    --nadd;
-  }
-}
+void MCWalkerConfiguration::setNumSamples(int n) { samples.setNumSamples(n); }
 
 /** save the current walkers to SampleStack
  */
-void MCWalkerConfiguration::saveEnsemble() { saveEnsemble(WalkerList.begin(), WalkerList.end()); }
+void MCWalkerConfiguration::saveEnsemble() { samples.saveEnsemble(WalkerList.begin(), WalkerList.end()); }
 
 /** save the [first,last) walkers to SampleStack
  */
-void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
-{
-  //safety check
-  if (MaxSamples == 0)
-    return;
-  while ((first != last) && (CurSampleCount < MaxSamples))
-  {
-    SampleStack[CurSampleCount]->put(**first);
-    ++first;
-    ++CurSampleCount;
-  }
-}
-
+void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last) { samples.saveEnsemble(first, last); }
 /** load a single sample from SampleStack
  */
-void MCWalkerConfiguration::loadSample(ParticleSet::ParticlePos_t& Pos, size_t iw) const { Pos = SampleStack[iw]->R; }
+void MCWalkerConfiguration::loadSample(ParticleSet::ParticlePos_t& Pos, size_t iw) const
+{
+  samples.loadSample(Pos, iw);
+}
 
 /** load SampleStack to WalkerList
  */
 void MCWalkerConfiguration::loadEnsemble()
 {
   using WP = WalkerProperties::Indexes;
-  int nsamples = std::min(MaxSamples, CurSampleCount);
-  if (SampleStack.empty() || nsamples == 0)
+  int nsamples = std::min(samples.getMaxSamples(), samples.getNumSamples());
+  if (samples.empty() || nsamples == 0)
     return;
   Walker_t::PropertyContainer_t prop(1, PropertyList.size(), 1, WP::MAXPROPERTIES);
   delete_iter(WalkerList.begin(), WalkerList.end());
@@ -448,11 +421,11 @@ void MCWalkerConfiguration::loadEnsemble()
   {
     Walker_t* awalker = new Walker_t(TotalNum);
     awalker->Properties.copy(prop);
-    SampleStack[i]->get(*awalker);
+    samples.getSample(i, *awalker);
     WalkerList[i] = awalker;
   }
   resizeWalkerHistories();
-  clearEnsemble();
+  samples.clearEnsemble();
 }
 
 ///** load SampleStack to WalkerList
@@ -498,20 +471,10 @@ bool MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& ot
                                          int np,
                                          int nBlock)
 {
-  MCWalkerConfiguration wtemp;
-  wtemp.resize(0, TotalNum);
-  wtemp.loadEnsemble(others, false);
-  int w = wtemp.getActiveWalkers();
-  if (w == 0)
-    return false;
-  std::vector<int> nwoff(np + 1, 0);
-  for (int ip = 0; ip < np; ++ip)
-    nwoff[ip + 1] = nwoff[ip] + w;
-  wtemp.setGlobalNumWalkers(nwoff[np]);
-  wtemp.setWalkerOffsets(nwoff);
-  out->dump(wtemp, nBlock);
-  return true;
+  return samples.dumpEnsemble(others, out, np, nBlock);
 }
+
+int MCWalkerConfiguration::getMaxSamples() const { return samples.getMaxSamples(); }
 
 void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean)
 {
@@ -519,7 +482,7 @@ void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& ot
   std::vector<int> off(others.size() + 1, 0);
   for (int i = 0; i < others.size(); ++i)
   {
-    off[i + 1] = off[i] + std::min(others[i]->MaxSamples, others[i]->CurSampleCount);
+    off[i + 1] = off[i] + std::min(others[i]->getMaxSamples(), others[i]->numSamples());
   }
   int nw_tot = off.back();
   if (nw_tot)
@@ -530,12 +493,12 @@ void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& ot
     WalkerList.resize(nw_tot);
     for (int i = 0; i < others.size(); ++i)
     {
-      std::vector<MCSample*>& astack(others[i]->SampleStack);
+      SampleStack& astack(others[i]->getSampleStack());
       for (int j = 0, iw = off[i]; iw < off[i + 1]; ++j, ++iw)
       {
         Walker_t* awalker = new Walker_t(TotalNum);
         awalker->Properties.copy(prop);
-        astack[j]->get(*awalker);
+        astack.getSample(j, *awalker);
         WalkerList[iw] = awalker;
       }
       if (doclean)
@@ -546,17 +509,7 @@ void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& ot
     resizeWalkerHistories();
 }
 
-void MCWalkerConfiguration::clearEnsemble()
-{
-  //delete_iter(SampleStack.begin(),SampleStack.end());
-  for (int i = 0; i < SampleStack.size(); ++i)
-    if (SampleStack[i])
-      delete SampleStack[i];
-  SampleStack.clear();
-  MaxSamples     = 0;
-  CurSampleCount = 0;
-}
-
+void MCWalkerConfiguration::clearEnsemble() { samples.clearEnsemble(); }
 
 #ifdef QMC_CUDA
 void MCWalkerConfiguration::updateLists_GPU()
