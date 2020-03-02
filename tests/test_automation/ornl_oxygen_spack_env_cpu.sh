@@ -2,7 +2,7 @@
 
 . $SPACK_ROOT/share/spack/setup-env.sh
 
-. spack_supported_package_versions.sh
+. ../tests/test_automation/spack_supported_package_versions.sh
 
 QMCINVARIANT_FLAGS="-DBUILD_AFQMC=1"
 
