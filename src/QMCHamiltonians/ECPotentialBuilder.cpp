@@ -76,6 +76,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   pAttrib.add(use_DLA, "DLA");
   pAttrib.add(pbc, "pbc");
   pAttrib.add(forces, "forces");
+  pAttrib.add(physicalSO, "physicalSO");
   pAttrib.put(cur);
 
   bool doForces = (forces == "yes") || (forces == "true");
