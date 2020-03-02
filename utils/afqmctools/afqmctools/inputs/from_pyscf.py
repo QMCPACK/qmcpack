@@ -19,7 +19,7 @@ from afqmctools.wavefunction.pbc import write_wfn_pbc
 
 
 def write_qmcpack(chkfile, hamil_file, threshold, comm=None,
-                  ortho_ao=False, kpoint=False, verbose=False,
+                  ortho_ao=False, df=False, kpoint=False, verbose=False,
                   cas=None, qmc_input=None, wfn_file=None,
                   write_hamil=True, ndet_max=None, real_chol=False,
                   phdf=False, low=0.1, high=0.95, dense=False):
@@ -61,7 +61,8 @@ def write_qmcpack(chkfile, hamil_file, threshold, comm=None,
             write_hamil_mol(scf_data, hamil_file, threshold,
                             verbose=verbose, cas=cas,
                             ortho_ao=ortho_ao, real_chol=real_chol,
-                            dense=dense)
+                            dense=dense,
+                            df=df)
         write_wfn_mol(scf_data, ortho_ao, wfn_file)
         if verbose > 1:
             print(" # Recomputing single-determinant Hartree--Fock energy.")
