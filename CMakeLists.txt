@@ -189,7 +189,7 @@ SET(GCOV_SUPPORTED FALSE)
 SET(ENABLE_GCOV FALSE CACHE BOOL "Enable code coverage")
 
 ######################################################################
-# enable MPI and OPNEMP  if possible
+# enable MPI and OPENMP  if possible
 ######################################################################
 SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
@@ -503,6 +503,7 @@ IF(QMC_MPI)
   IF(${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "Open MPI")
     IF(NOT MPIEXEC_PREFLAGS)
       SET(MPIEXEC_PREFLAGS "--bind-to;none")
+      MESSAGE(STATUS "Detected Open MPI. Setting bind-to options for thread affinity in MPIEXEC_PREFLAGS.")
     ELSE(NOT MPIEXEC_PREFLAGS)
       IF(NOT "${MPIEXEC_PREFLAGS}" MATCHES "--bind-to")
         MESSAGE(WARNING "Default Open MPI thread affinity policy may bind all the threads to a single core and "
