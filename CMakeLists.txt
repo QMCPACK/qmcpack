@@ -505,8 +505,8 @@ IF(QMC_MPI)
       SET(MPIEXEC_PREFLAGS "--bind-to;none")
     ELSE(NOT MPIEXEC_PREFLAGS)
       IF(NOT "${MPIEXEC_PREFLAGS}" MATCHES "--bind-to")
-        MESSAGE(WARNING "Default Open MPI thread affinity may be bad for QMCPACK. "
-                        "Add proper --bind-to options via MPIEXEC_PREFLAGS. "
+        MESSAGE(WARNING "Default Open MPI thread affinity policy may bind all the threads to a single core and "
+                        "significantly slow down testing. Add proper --bind-to options via MPIEXEC_PREFLAGS. "
                         "If you don't know exactly what affinity to add, "
                         "add '--bind-to;none' to your current MPIEXEC_PREFLAGS to stop this warning.")
       ENDIF()
