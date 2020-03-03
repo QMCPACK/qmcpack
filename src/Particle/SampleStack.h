@@ -9,6 +9,11 @@
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
+/** @file SampleStack.h
+ * @brief Stores particle configurations for later use in DMC and wavefunction optimization
+ *
+ * Stores less temporary data than the buffer object.
+ */
 
 #ifndef QMCPLUSPLUS_SAMPLE_STACK_H
 #define QMCPLUSPLUS_SAMPLE_STACK_H
