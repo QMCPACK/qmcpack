@@ -1,0 +1,3 @@
+library 'qmcpack_shared_jenkins'
+
+common_pipeline(name: "enable_cuda")

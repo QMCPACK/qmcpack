@@ -1,4 +1,7 @@
-Scripts used to run tests of QMCPACK on various machines
+Two things reside in this directory:
+
+# scheduled nightly and weekly test builds
+These run tests of QMCPACK on various machines
 automatically. Users should run ctest directly, as described in the
 manual.
 
@@ -13,3 +16,9 @@ go awry e.g. if a filesystem is full or unavailable.
 Note that if you are copying/reusing these files, they might not
 correspond to exactly those used in production, since these are
 sometimes tweaked for runtime, minor software version updates etc.
+
+# CI configuration
+Most of these files begin with jenkins. Scrutinize any updates to them
+carefully there is basically no reason they should be touched except by maintainers.
+They depend on a common jenkins pipeline library pulled from QMCPACK/qmcpack_shared_jenkins.
+Updates to that library don't seem to propagate faster than ~10 minutes.
