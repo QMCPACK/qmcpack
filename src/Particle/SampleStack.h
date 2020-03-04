@@ -31,10 +31,10 @@ class MCSample;
 class SampleStack
 {
 public:
-  typedef ParticleSet::Walker_t Walker_t;
-  typedef std::vector<Walker_t*> WalkerList_t;
-  typedef WalkerList_t::iterator walker_iterator;
-  typedef QMCTraits::PropertySetType PropertySetType;
+  using Walker_t        = ParticleSet::Walker_t;
+  using WalkerList_t    = std::vector<Walker_t*>;
+  using walker_iterator = WalkerList_t::iterator;
+  using PropertySetType = QMCTraits::PropertySetType;
 
   SampleStack();
 

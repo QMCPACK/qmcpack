@@ -20,8 +20,8 @@ namespace qmcplusplus
  */
 struct MCSample
 {
-  using WP = WalkerProperties::Indexes;
-  typedef ParticleSet::Walker_t Walker_t;
+  using WP       = WalkerProperties::Indexes;
+  using Walker_t = ParticleSet::Walker_t;
 
   ParticleSet::ParticlePos_t R;
   ParticleSet::ParticleGradient_t G;
