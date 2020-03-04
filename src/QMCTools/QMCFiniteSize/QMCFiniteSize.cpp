@@ -531,24 +531,27 @@ bool QMCFiniteSize::execute()
   RealType rho     = RealType(Ne)/P->Lattice.Volume;
   RealType rs      = std::pow(3.0/(4*M_PI)*P->Lattice.Volume/RealType(Ne),1.0/3.0);
   RealType vlo     = 2*M_PI*rho*b/RealType(Ne);
-  RealType vfscorr = intnorm*integratedval - V;
+  RealType vint    = intnorm*integratedval;
+  RealType vfscorr = vint - V;
   RealType tlo     = 1.0/RealType(Ne*b*8);
 
   app_log() << "\n=========================================================\n";
-  app_log() << " Finite Size Correction:  2-body Potential \n";
+  app_log() << " Finite Size Corrections:\n";
   app_log() << "=========================================================\n";
-  app_log() << "System summary:\n";
+  app_log() << " System summary:\n";
   app_log() << fixed;
-  app_log() << " Nelec = " << setw(12) << Ne << "\n";
-  app_log() << "   Vol = " << setw(12) << setprecision(8) << P->Lattice.Volume << " [a0^3]\n";
-  app_log() << "  Ne/V = " << setw(12) << setprecision(8) << rho << " [1/a0^3]\n";
-  app_log() << " rs/a0 = " << setw(12) << setprecision(8) << rs << "\n";
-
-  app_log() << "Finite Size Corrections:\n";
-  app_log() << "  V_LO = " << setw(12) << setprecision(8) << vlo << " [Ha/electron]\n";
-  app_log() << " V_Int = " << setw(12) << setprecision(8) << vfscorr <<" [Ha/electron]\n";
-  app_log() << "  T_LO = " << setw(12) << setprecision(8) << tlo <<" [Ha/electron]\n";
-  app_log() << " NB: This is a crude estimate of the kinetic energy correction!\n";
+  app_log() << "  Nelec = " << setw(12) << Ne << "\n";
+  app_log() << "  Vol   = " << setw(12) << setprecision(8) << P->Lattice.Volume << " [a0^3]\n";
+  app_log() << "  Ne/V  = " << setw(12) << setprecision(8) << rho << " [1/a0^3]\n";
+  app_log() << "  rs/a0 = " << setw(12) << setprecision(8) << rs << "\n";
+  app_log() << "\n";
+  app_log() << " Leading Order Corrections:\n";
+  app_log() << "  V_LO = " << setw(12) << setprecision(8) << vlo << " [Ha/electron], " << vlo*Ne << " [Ha]\n";
+  app_log() << "  T_LO = " << setw(12) << setprecision(8) << tlo << " [Ha/electron], " << tlo*Ne << " [Ha]\n";
+  app_log() << "  NB: This is a crude estimate of the kinetic energy correction!\n";
+  app_log() << "\n";
+  app_log() << " Beyond Leading Order (Integrated corrections):\n";
+  app_log() << "  V_Int = " << setw(12) << setprecision(8) << vfscorr <<" [Ha/electron], " << vfscorr*Ne << " [Ha]\n";
 }
 
 }
