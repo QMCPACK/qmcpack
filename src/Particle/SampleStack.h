@@ -44,7 +44,7 @@ public:
 
   void setMaxSamples(int max_samples) { max_samples_ = max_samples; }
 
-  bool empty() const { return sample_stack_.empty(); }
+  bool empty() const { return sample_vector_.empty(); }
 
   void putSample(unsigned int i, const Walker_t& w);
 
@@ -83,7 +83,7 @@ private:
   int max_samples_;
   int current_sample_count_;
 
-  std::vector<MCSample*> sample_stack_;
+  std::vector<MCSample*> sample_vector_;
 };
 
 

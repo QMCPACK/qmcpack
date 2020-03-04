@@ -79,11 +79,11 @@ void SampleStack::setNumSamples(int n)
   //do not add anything
   if (n == 0)
     return;
-  sample_stack_.reserve(n);
-  int nadd = n - sample_stack_.size();
+  sample_vector_.reserve(n);
+  int nadd = n - sample_vector_.size();
   while (nadd > 0)
   {
-    sample_stack_.push_back(new MCSample(total_num_));
+    sample_vector_.push_back(new MCSample(total_num_));
     --nadd;
   }
 }
@@ -97,7 +97,7 @@ void SampleStack::saveEnsemble(walker_iterator first, walker_iterator last)
     return;
   while ((first != last) && (current_sample_count_ < max_samples_))
   {
-    sample_stack_[current_sample_count_]->put(**first);
+    sample_vector_[current_sample_count_]->put(**first);
     ++first;
     ++current_sample_count_;
   }
@@ -106,11 +106,11 @@ void SampleStack::saveEnsemble(walker_iterator first, walker_iterator last)
 
 /** load a single sample from SampleStack
  */
-void SampleStack::loadSample(ParticleSet::ParticlePos_t& Pos, size_t iw) const { Pos = sample_stack_[iw]->R; }
+void SampleStack::loadSample(ParticleSet::ParticlePos_t& Pos, size_t iw) const { Pos = sample_vector_[iw]->R; }
 
-void SampleStack::getSample(unsigned int i, Walker_t& w) const { sample_stack_[i]->get(w); }
+void SampleStack::getSample(unsigned int i, Walker_t& w) const { sample_vector_[i]->get(w); }
 
-void SampleStack::putSample(unsigned int i, const Walker_t& w) { sample_stack_[i]->put(w); }
+void SampleStack::putSample(unsigned int i, const Walker_t& w) { sample_vector_[i]->put(w); }
 
 bool SampleStack::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock)
 {
@@ -132,10 +132,10 @@ bool SampleStack::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFW
 void SampleStack::clearEnsemble()
 {
   //delete_iter(SampleStack.begin(),SampleStack.end());
-  for (int i = 0; i < sample_stack_.size(); ++i)
-    if (sample_stack_[i])
-      delete sample_stack_[i];
-  sample_stack_.clear();
+  for (int i = 0; i < sample_vector_.size(); ++i)
+    if (sample_vector_[i])
+      delete sample_vector_[i];
+  sample_vector_.clear();
   max_samples_     = 0;
   current_sample_count_ = 0;
 }
