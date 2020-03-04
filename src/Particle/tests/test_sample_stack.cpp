@@ -31,14 +31,10 @@ TEST_CASE("SampleStack", "[particle]")
   const int total_num = 2; // number of particles
   samples.setTotalNum(total_num);
 
+  // reserve storage
   samples.setMaxSamples(8);
   REQUIRE(samples.getMaxSamples() == 8);
   REQUIRE(samples.getNumSamples() == 0);
-
-  // reserve storage
-  samples.setNumSamples(7);
-  REQUIRE(samples.getNumSamples() == 0);
-  REQUIRE(samples.getMaxSamples() == 7);
 
   SampleStack::WalkerList_t walker_list;
 

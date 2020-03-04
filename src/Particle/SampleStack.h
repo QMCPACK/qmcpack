@@ -42,8 +42,6 @@ public:
 
   int getMaxSamples() const { return max_samples_; }
 
-  void setMaxSamples(int max_samples) { max_samples_ = max_samples; }
-
   bool empty() const { return sample_vector_.empty(); }
 
   void putSample(unsigned int i, const Walker_t& w);
@@ -53,7 +51,7 @@ public:
   //@{save/load/clear function for optimization
   inline int getNumSamples() const { return current_sample_count_; }
   ///set the number of max samples
-  void setNumSamples(int n);
+  void setMaxSamples(int n);
   ///save the position of current walkers to SampleStack
   //void saveEnsemble();
   ///save the position of current walkers

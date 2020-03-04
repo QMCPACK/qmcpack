@@ -72,7 +72,7 @@ SampleStack::SampleStack() : total_num_(0), max_samples_(10), current_sample_cou
 /** allocate the SampleStack
  * @param n number of samples per thread
  */
-void SampleStack::setNumSamples(int n)
+void SampleStack::setMaxSamples(int n)
 {
   clearEnsemble();
   max_samples_ = n;
