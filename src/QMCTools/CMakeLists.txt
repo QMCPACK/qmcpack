@@ -23,7 +23,6 @@ PROJECT(qmctools)
 
 SET(MOSRCS
   ../Particle/InitMolecularSystem.cpp
-  ../Particle/ParticleSetPool.cpp
   QMCGaussianParserBase.cpp
   GaussianFCHKParser.cpp
   GamesXmlParser.cpp
@@ -44,7 +43,7 @@ SET(MOSRCS
 ADD_LIBRARY(mocommon ${MOSRCS})
 TARGET_LINK_LIBRARIES(mocommon PUBLIC qmcbase)
 
-set(QTOOLS convert4qmc qmc-extract-eshdf-kvectors qmcfinitesize)
+set(QTOOLS convert4qmc qmc-extract-eshdf-kvectors)
 FOREACH(p ${QTOOLS})
 
   ADD_EXECUTABLE(${p} ${p}.cpp)
@@ -71,6 +70,12 @@ ADD_EXECUTABLE(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
 TARGET_LINK_LIBRARIES(convertpw4qmc PRIVATE qmcutil Math::FFTW3)
 
 INSTALL(TARGETS convertpw4qmc
+        RUNTIME DESTINATION bin)
+
+ADD_EXECUTABLE(qmcfinitesize qmcfinitesize.cpp)
+TARGET_LINK_LIBRARIES(qmcfinitesize PRIVATE mocommon qmc qmcwfs)
+
+INSTALL(TARGETS qmcfinitesize
         RUNTIME DESTINATION bin)
 
 #ppconvert

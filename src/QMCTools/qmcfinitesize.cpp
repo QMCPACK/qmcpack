@@ -16,11 +16,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 #include "OhmmsData/FileUtility.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 
 #include "QMCApp/QMCAppBase.h"
 #include "QMCTools/QMCFiniteSize/QMCFiniteSize.h"
@@ -52,7 +50,6 @@ typedef SkParserBase::Grid_t Grid_t;
 int main(int argc, char **argv)
 {
   OHMMS::Controller->initialize(argc,argv);
-  OhmmsInfo Welcome("qmcfinitesize",OHMMS::Controller->rank());
   Random.init(0,1,-1);
   std::cout.setf(std::ios::scientific, std::ios::floatfield);
   std::cout.setf(std::ios::right,std::ios::adjustfield);
@@ -77,13 +74,13 @@ int main(int argc, char **argv)
       skparser->parse(anxt);
     }
     else if (a == "--help")
-      {
-        std::cout << "Usage:  qmcfinitesize [main.xml] --[skformat] [SK_FILE]\n";
-        std::cout << "  [skformat]\n";
-        std::cout << "    --ascii:      S(k) given in kx ky kz sk sk_err format.  Header necessary.\n";
-        std::cout << "    --scalardat:  File containing skall elements with energy.pl output format.\n";
-        return 0;
-      }
+    {
+      std::cout << "Usage:  qmcfinitesize [main.xml] --[skformat] [SK_FILE]\n";
+      std::cout << "  [skformat]\n";
+      std::cout << "    --ascii:      S(k) given in kx ky kz sk sk_err format.  Header necessary.\n";
+      std::cout << "    --scalardat:  File containing skall elements with energy.pl output format.\n";
+      return 0;
+    }
     iargc++;
   }
 

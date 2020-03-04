@@ -89,6 +89,20 @@ struct LRHandlerBase
     return vk;
   }
 
+  inline mRealType evaluate_w_sk(const std::vector<int>& kshell
+                           , const pRealType* restrict sk)
+  {
+    mRealType vk=0.0;
+    for(int ks=0,ki=0; ks<MaxKshell; ks++)
+    {
+      mRealType u=0;
+      for(; ki<kshell[ks+1]; ki++)
+        u += (*sk++);
+      vk += Fk_symm[ks]*u;
+    }
+    return vk;
+  }
+
   inline mRealType evaluate(const std::vector<int>& kshell,
                             const pRealType* restrict rk1_r,
                             const pRealType* restrict rk1_i,

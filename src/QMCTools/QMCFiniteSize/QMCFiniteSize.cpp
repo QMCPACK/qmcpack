@@ -1,6 +1,6 @@
 #include "QMCTools/QMCFiniteSize/QMCFiniteSize.h"
 #include "OhmmsData/AttributeSet.h"
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include <iostream>
 #include <cmath>
 #include "Configuration.h"
@@ -94,7 +94,7 @@ bool QMCFiniteSize::wfnPut(xmlNodePtr cur)
     while(tcur != NULL)
     { //check <determinantset/> or <sposet_builder/> to extract the ionic and electronic structure
       std::string cname((const char*)tcur->name);
-      if(cname == OrbitalBuilderBase::detset_tag || cname =="sposet_builder")
+      if(cname == WaveFunctionComponentBuilder::detset_tag || cname =="sposet_builder")
       {
         qp=ptclPool.createESParticleSet(tcur,target,qp);
       }
@@ -108,7 +108,7 @@ bool QMCFiniteSize::wfnPut(xmlNodePtr cur)
 void QMCFiniteSize::getSkInfo(UBspline_3d_d* spline, vector<RealType>& symmatelem)
 {
   symmatelem.resize(6);
-  RealType sx(0), sy(0),sz(0), sxy(0),sxz(0),syz(0);
+  FullPrecRealType sx(0), sy(0),sz(0), sxy(0),sxz(0),syz(0);
   RealType h2=h*h;
 
   PosType disp;
@@ -138,20 +138,20 @@ void QMCFiniteSize::getSkInfo(UBspline_3d_d* spline, vector<RealType>& symmatele
   disp_lat=P->Lattice.k_unit(disp);
   eval_UBspline_3d_d(spline,disp_lat[0],disp_lat[1],disp_lat[2],&syz);
 
-  symmatelem[0]=sx/h2;
-  symmatelem[1]=sy/h2;
-  symmatelem[2]=sz/h2;
-  symmatelem[3]=0.5*(sxy-sx-sy)/h2;
-  symmatelem[4]=0.5*(sxz-sx-sz)/h2;
-  symmatelem[5]=0.5*(syz-sy-sz)/h2;
+  symmatelem[0]=RealType(sx)/h2;
+  symmatelem[1]=RealType(sy)/h2;
+  symmatelem[2]=RealType(sz)/h2;
+  symmatelem[3]=0.5*RealType(sxy-sx-sy)/h2;
+  symmatelem[4]=0.5*RealType(sxz-sx-sz)/h2;
+  symmatelem[5]=0.5*RealType(syz-sy-sz)/h2;
 
 }
 
 
-RealType QMCFiniteSize::sphericalAvgSk(UBspline_3d_d* spline, RealType k)
+QMCFiniteSize::RealType QMCFiniteSize::sphericalAvgSk(UBspline_3d_d* spline, RealType k)
 {
   RealType sum=0.0;
-  RealType val=0.0;
+  FullPrecRealType val=0.0;
   PosType kvec(0);
   IndexType ngrid=sphericalgrid.size();
   for(IndexType i=0; i<ngrid; i++)
@@ -159,7 +159,7 @@ RealType QMCFiniteSize::sphericalAvgSk(UBspline_3d_d* spline, RealType k)
 
     kvec=k*sphericalgrid[i];
     eval_UBspline_3d_d(spline,kvec[0],kvec[1],kvec[2],&val);
-    sum+=val;
+    sum+=RealType(val);
   }
 
   return sum/RealType(ngrid);
@@ -289,9 +289,11 @@ UBspline_3d_d* QMCFiniteSize::getSkSpline(RealType limit)
   bcz.lVal=1.0;
   bcz.rVal=1.0;
 
+  //hack for QMC_MIXED_PRECISION to interface to UBspline_3d_d
+  vector<FullPrecRealType> sk_fp(sk.begin(),sk.end());
   UBspline_3d_d * spline = create_UBspline_3d_d(esgridx,esgridy,esgridz,
                                                 bcx, bcy, bcz,
-                                                sk.data());
+                                                sk_fp.data());
 
   return spline;
 
@@ -335,7 +337,9 @@ void QMCFiniteSize::build_spherical_grid(IndexType mtheta, IndexType mphi)
 
 NUBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid, vector<RealType>& vals, RealType lVal, RealType rVal)
 {
-  NUgrid* grid1d = create_general_grid(grid.data(),grid.size());
+  //hack to interface to NUgrid stuff in double prec for MIXED build
+  vector<FullPrecRealType> grid_fp(grid.begin(), grid.end());
+  NUgrid* grid1d = create_general_grid(grid_fp.data(),grid_fp.size());
 
   BCtype_d xBC;
   xBC.lVal=lVal;
@@ -343,7 +347,9 @@ NUBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid, vector<Rea
   xBC.lCode=DERIV1;
   xBC.rCode=DERIV1;
 
-  return create_NUBspline_1d_d(grid1d,xBC,vals.data());
+  //hack to interface to NUgrid stuff in double prec for MIXED build
+  vector<FullPrecRealType> vals_fp(vals.begin(), vals.end());
+  return create_NUBspline_1d_d(grid1d,xBC,vals_fp.data());
 }
 
 
@@ -351,7 +357,7 @@ NUBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid, vector<Rea
 //provided your delta is smaller than the smallest bspline mesh spacing.
 // JPT 13/03/2018 - Fixed an intermittant segfault that occurred b/c
 //                  eval_NUB_spline_1d_d sometimes went out of bounds.
-RealType QMCFiniteSize::integrate_spline(NUBspline_1d_d* spline, RealType a, RealType b, IndexType N)
+QMCFiniteSize::RealType QMCFiniteSize::integrate_spline(NUBspline_1d_d* spline, RealType a, RealType b, IndexType N)
 {
   if ( N % 2 != 0 )  // if N odd, warn that destruction is imminent
     {
@@ -361,13 +367,13 @@ RealType QMCFiniteSize::integrate_spline(NUBspline_1d_d* spline, RealType a, Rea
 
   RealType eps = (b-a)/RealType(N);
   RealType sum = 0.0;
-  RealType tmp = 0.0;
+  FullPrecRealType tmp = 0.0; //hack to interface to NUBspline_1d_d
   RealType  xi = 0.0;
   for (int i=1; i<N/2; i++)
     {
       xi = a + (2*i-2)*eps;
       eval_NUBspline_1d_d(spline, xi, &tmp);
-      sum += tmp;
+      sum += RealType(tmp);
 
       xi = a + (2*i-1)*eps;
       eval_NUBspline_1d_d(spline, xi, &tmp);

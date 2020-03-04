@@ -11,8 +11,6 @@
 namespace qmcplusplus
 {
 
-typedef QMCTraits::RealType RealType;
-typedef QMCTraits::RealType PosType;
 //class SkParserBase
 class QMCFiniteSize: public QMCAppBase,QMCTraits
 {
@@ -22,6 +20,9 @@ class QMCFiniteSize: public QMCAppBase,QMCTraits
     typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
     typedef LRHandlerType::mRealType           mRealType;
     typedef SkParserBase::Grid_t               Grid_t;
+    typedef QMCTraits::RealType                RealType;
+    typedef QMCTraits::FullPrecRealType        FullPrecRealType;
+    typedef QMCTraits::PosType                 PosType;
     QMCFiniteSize();
     QMCFiniteSize(SkParserBase* skparser_i);
     ~QMCFiniteSize(){};
