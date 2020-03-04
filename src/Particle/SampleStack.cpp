@@ -67,7 +67,7 @@ struct MCSample
 };
 
 
-SampleStack::SampleStack() : TotalNum(0), MaxSamples(10), CurSampleCount(0) {}
+SampleStack::SampleStack() : total_num_(0), max_samples_(10), current_sample_count_(0) {}
 
 /** allocate the SampleStack
  * @param n number of samples per thread
@@ -75,7 +75,7 @@ SampleStack::SampleStack() : TotalNum(0), MaxSamples(10), CurSampleCount(0) {}
 void SampleStack::setNumSamples(int n)
 {
   clearEnsemble();
-  MaxSamples = n;
+  max_samples_ = n;
   //do not add anything
   if (n == 0)
     return;
@@ -83,7 +83,7 @@ void SampleStack::setNumSamples(int n)
   int nadd = n - sample_stack_.size();
   while (nadd > 0)
   {
-    sample_stack_.push_back(new MCSample(TotalNum));
+    sample_stack_.push_back(new MCSample(total_num_));
     --nadd;
   }
 }
@@ -93,13 +93,13 @@ void SampleStack::setNumSamples(int n)
 void SampleStack::saveEnsemble(walker_iterator first, walker_iterator last)
 {
   //safety check
-  if (MaxSamples == 0)
+  if (max_samples_ == 0)
     return;
-  while ((first != last) && (CurSampleCount < MaxSamples))
+  while ((first != last) && (current_sample_count_ < max_samples_))
   {
-    sample_stack_[CurSampleCount]->put(**first);
+    sample_stack_[current_sample_count_]->put(**first);
     ++first;
-    ++CurSampleCount;
+    ++current_sample_count_;
   }
 }
 
@@ -115,7 +115,7 @@ void SampleStack::putSample(unsigned int i, const Walker_t& w) { sample_stack_[i
 bool SampleStack::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock)
 {
   MCWalkerConfiguration wtemp;
-  wtemp.resize(0, TotalNum);
+  wtemp.resize(0, total_num_);
   wtemp.loadEnsemble(others, false);
   int w = wtemp.getActiveWalkers();
   if (w == 0)
@@ -136,8 +136,8 @@ void SampleStack::clearEnsemble()
     if (sample_stack_[i])
       delete sample_stack_[i];
   sample_stack_.clear();
-  MaxSamples     = 0;
-  CurSampleCount = 0;
+  max_samples_     = 0;
+  current_sample_count_ = 0;
 }
 
 

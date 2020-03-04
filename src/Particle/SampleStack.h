@@ -38,11 +38,11 @@ public:
 
   SampleStack();
 
-  int setTotalNum(int total_num) { TotalNum = total_num; }
+  int setTotalNum(int total_num) { total_num_ = total_num; }
 
-  int getMaxSamples() const { return MaxSamples; }
+  int getMaxSamples() const { return max_samples_; }
 
-  void setMaxSamples(int max_samples) { MaxSamples = max_samples; }
+  void setMaxSamples(int max_samples) { max_samples_ = max_samples; }
 
   bool empty() const { return sample_stack_.empty(); }
 
@@ -51,7 +51,7 @@ public:
   void getSample(unsigned int i, Walker_t& w) const;
 
   //@{save/load/clear function for optimization
-  inline int getNumSamples() const { return CurSampleCount; }
+  inline int getNumSamples() const { return current_sample_count_; }
   ///set the number of max samples
   void setNumSamples(int n);
   ///save the position of current walkers to SampleStack
@@ -79,9 +79,9 @@ public:
   //@}
 
 private:
-  int TotalNum;
-  int MaxSamples;
-  int CurSampleCount;
+  int total_num_;
+  int max_samples_;
+  int current_sample_count_;
 
   std::vector<MCSample*> sample_stack_;
 };
