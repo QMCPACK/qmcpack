@@ -186,12 +186,6 @@ protected:
   ///Hamiltonian
   QMCHamiltonian& H;
 
-  /////boolean to turn on/off the psi^2/psi^2_old for correlated sampling
-  //bool UseWeight;
-  ///bollean to turn on/off the use of anonymous buffer
-  bool needBuffering;
-  ///bollean to turn on/off the use of anonymous buffer for the ratio
-  bool hamiltonianNeedRatio;
   ///if true, do not write the *.opt.#.xml
   bool Write2OneXml;
   ///if true, use analytic derivatives for the non-local potential component
@@ -233,8 +227,7 @@ protected:
   Return_rt curVar_w;
   ///current variance of SUM_ABSE_WGT/SUM_WGT
   Return_rt curVar_abs;
-  ///threshold to remove configurations from sample with |Psi_old| < SmallWeight
-  Return_rt SmallWeight;
+
   Return_rt w_beta;
   std::string GEVType;
   Return_rt vmc_or_dmc;
@@ -245,11 +238,7 @@ protected:
   bool targetExcited;
   ///the shift to use when targeting an excited state
   double omega_shift;
-  /** Rescaling factor to correct the target energy Etarget=(1+CorrelationFactor)*Etarget
-   *
-   * default CorrelationFactor=0.0;
-   */
-  Return_rt CorrelationFactor;
+
   ///list of optimizables
   opt_variables_type OptVariables;
   /** full list of optimizables
