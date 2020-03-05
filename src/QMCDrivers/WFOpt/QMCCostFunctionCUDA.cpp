@@ -411,7 +411,7 @@ void QMCCostFunctionCUDA::GradCost(std::vector<Return_rt>& PGradient,
     std::vector<Return_rt> URV(NumOptimizables, 0.0);
     std::vector<Return_rt> HD_avg(NumOptimizables, 0.0);
     Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
-    Return_rt delE_bar;
+    Return_rt delE_bar(0.0);
     int nw = W.getActiveWalkers();
     for (int iw = 0; iw < nw; iw++)
     {
