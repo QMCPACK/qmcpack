@@ -38,7 +38,7 @@ public:
 
   SampleStack();
 
-  int setTotalNum(int total_num) { total_num_ = total_num; }
+  void setTotalNum(int total_num) { total_num_ = total_num; }
 
   int getMaxSamples() const { return max_samples_; }
 
