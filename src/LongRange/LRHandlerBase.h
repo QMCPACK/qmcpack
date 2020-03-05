@@ -89,16 +89,15 @@ struct LRHandlerBase
     return vk;
   }
 
-  inline mRealType evaluate_w_sk(const std::vector<int>& kshell
-                           , const pRealType* restrict sk)
+  inline mRealType evaluate_w_sk(const std::vector<int>& kshell, const pRealType* restrict sk)
   {
-    mRealType vk=0.0;
-    for(int ks=0,ki=0; ks<MaxKshell; ks++)
+    mRealType vk = 0.0;
+    for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
     {
-      mRealType u=0;
-      for(; ki<kshell[ks+1]; ki++)
+      mRealType u = 0;
+      for (; ki < kshell[ks + 1]; ki++)
         u += (*sk++);
-      vk += Fk_symm[ks]*u;
+      vk += Fk_symm[ks] * u;
     }
     return vk;
   }
@@ -317,7 +316,7 @@ struct DummyLRHandler : public LRHandlerBase
     Fk.resize(KList.kpts_cart.size());
     for (ksh = 0, ik = 0; ksh < MaxKshell; ksh++, ik++)
     {
-      mRealType v = norm * myFunc(kk[KList.kshell[ksh]]); //rpa=u0/kk[ik];
+      mRealType v  = norm * myFunc(kk[KList.kshell[ksh]]); //rpa=u0/kk[ik];
       Fk_symm[ksh] = v;
       for (; ik < KList.kshell[ksh + 1]; ik++)
         Fk[ik] = v;
@@ -328,8 +327,8 @@ struct DummyLRHandler : public LRHandlerBase
   mRealType evaluateLR(mRealType r) { return 0.0; }
   mRealType srDf(mRealType r, mRealType rinv) { return 0.0; }
   void Breakup(ParticleSet& ref, mRealType rs_in) {}
-  void resetTargetParticleSet(ParticleSet& ref)   {}
-  virtual LRHandlerBase* makeClone(ParticleSet& ref){return new DummyLRHandler<Func>(LR_kc);}
+  void resetTargetParticleSet(ParticleSet& ref) {}
+  virtual LRHandlerBase* makeClone(ParticleSet& ref) { return new DummyLRHandler<Func>(LR_kc); }
 };
 
 } // namespace qmcplusplus

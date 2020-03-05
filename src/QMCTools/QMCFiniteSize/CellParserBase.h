@@ -19,12 +19,12 @@ using namespace qmcplusplus;
 
 class CellParserBase
 {
-  public:
-    CellParserBase();
-    ~CellParserBase();
-    
-    virtual bool put(char* fname);
-    
-  private:
+public:
+  CellParserBase();
+  ~CellParserBase();
+
+  virtual bool put(char* fname);
+
+private:
 };
-#endif 
+#endif

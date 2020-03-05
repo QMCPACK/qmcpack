@@ -13,21 +13,26 @@
 //
 namespace qmcplusplus
 {
-
-class SkParserScalarDat: public SkParserBase
+class SkParserScalarDat : public SkParserBase
 {
-  public:
-    SkParserScalarDat(){};
-    ~SkParserScalarDat(){};
-    
-    enum data_layout { KX, KY, KZ, SK, SKERR};
-    
-    bool parse(const string & fname);
-    
-  private:
-    void read_sk_file(const string& fname);
+public:
+  SkParserScalarDat(){};
+  ~SkParserScalarDat(){};
 
+  enum data_layout
+  {
+    KX,
+    KY,
+    KZ,
+    SK,
+    SKERR
+  };
+
+  bool parse(const string& fname);
+
+private:
+  void read_sk_file(const string& fname);
 };
 
-}
+} // namespace qmcplusplus
 #endif
