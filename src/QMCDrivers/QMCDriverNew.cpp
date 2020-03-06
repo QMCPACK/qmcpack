@@ -386,6 +386,18 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds,
   for (ParticleSet& pset : walker_elecs)
     pset.update();
 
+  // Added to match legacy.
+  auto cleanDataSet = [](MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& twf) {
+                        if (walker.DataSet.size())
+                          walker.DataSet.clear();
+                        walker.DataSet.rewind();
+                        walker.registerData();
+                        twf.registerData(pset, walker.DataSet);
+                        walker.DataSet.allocate();
+                      };
+  for (int iw = 0; iw < crowd.size(); ++iw)
+    cleanDataSet(walkers[iw], walker_elecs[iw], walker_twfs[iw]);
+
   auto copyFrom = [](TrialWaveFunction& twf, ParticleSet& pset, WFBuffer& wfb){
                       twf.copyFromBuffer(pset,wfb);
                     };
@@ -516,18 +528,20 @@ void QMCDriverNew::endBlock()
   double cpu_block_time = 0.0;
   for (const UPtr<Crowd>& crowd : crowds_)
   {
+    crowd->stopBlock();
     auto crowd_sc_est = crowd->get_estimator_manager_crowd().get_scalar_estimators();
     all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
                                  std::make_move_iterator(crowd_sc_est.end()));
     total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
-    total_accept_ratio += crowd->get_accept_ratio() * crowd->size();
+    total_accept_ratio += crowd->get_accept_ratio() * crowd->get_estimator_manager_crowd().get_block_weight();
     cpu_block_time += crowd->get_estimator_manager_crowd().get_cpu_block_time();
   }
   // Note: that this is already averaged in crowds and then summed weighted by the walkers 
   // in each crowd (which can be different) and then as a result the average is over
   // local walkers
-  total_accept_ratio /= population_.get_num_local_walkers();
+  total_accept_ratio /= total_block_weight; //population_.get_num_local_walkers();
   estimator_manager_->collectScalarEstimators(all_scalar_estimators);
+  cpu_block_time /= crowds_.size();
 
   // TODO: should be accept rate for block
   estimator_manager_->stopBlockNew(total_accept_ratio, total_block_weight, cpu_block_time);

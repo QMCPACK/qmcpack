@@ -95,7 +95,7 @@ struct WalkerControlMPI : public WalkerControlBase
   int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
 
   /** unified driver: perform branch and swap walkers as required */
-  int branch(int iter, MCPopulation& pop);
+  FullPrecRealType branch(int iter, MCPopulation& pop);
 
   /** legacy: swap implementation
    */

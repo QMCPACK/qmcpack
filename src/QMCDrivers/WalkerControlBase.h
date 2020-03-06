@@ -160,7 +160,7 @@ public:
   /** unified driver: return global population
    *  update properties without branching
    */
-  int doNotBranch(int iter, MCPopulation& pop);
+  FullPrecRealType doNotBranch(int iter, MCPopulation& pop);
 
   /** legacy: sort Walkers between good and bad and prepare branching
    *
@@ -208,7 +208,7 @@ public:
    *
    *  \return global population
    */
-  virtual int branch(int iter, MCPopulation& pop);
+  virtual FullPrecRealType branch(int iter, MCPopulation& pop);
 
   virtual FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau)
   {

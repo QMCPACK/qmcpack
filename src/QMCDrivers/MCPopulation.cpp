@@ -156,7 +156,10 @@ void MCPopulation::createWalkers(IndexType num_walkers)
 
   TrialWaveFunction::flex_registerData(walker_trial_wavefunctions_, walker_elec_particle_sets_, mcp_wfbuffers);
 
-  std::for_each(walkers_.begin(), walkers_.end(), [](auto& walker) { (*walker).DataSet.allocate(); });
+  std::for_each(walkers_.begin(), walkers_.end(), [](auto& walker) {
+                                                    MCPWalker& this_walker = *walker;
+                                                    this_walker.DataSet.allocate();
+                                                  });
 
   // Now we kill the extra walkers and elements that we made.
   num_walkers /= 2;
@@ -180,17 +183,14 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
   {
     walkers_.push_back(std::move(dead_walkers_.back()));
     dead_walkers_.pop_back();
-
     walker_elec_particle_sets_.push_back(std::move(dead_walker_elec_particle_sets_.back()));
     dead_walker_elec_particle_sets_.pop_back();
     walker_trial_wavefunctions_.push_back(std::move(dead_walker_trial_wavefunctions_.back()));
     dead_walker_trial_wavefunctions_.pop_back();
     walker_hamiltonians_.push_back(std::move(dead_walker_hamiltonians_.back()));
     dead_walker_hamiltonians_.pop_back();
-
-    //Here we assume no allocate is necessary since there should have been no changes in the other walker
-    //elements since createWalkers, yet it must be called
-    //walkers_.back()->DataSet.allocate();
+    // Emulating the legacy implementation valid walker elements were created with the initial walker and DataSet
+    // registration and allocation were done then so are not necessary when resurrecting walkers and elements
     walkers_.back()->Generation = 0;
     walkers_.back()->Age = 0;
     walkers_.back()->ReleasedNodeWeight = 1.0;
@@ -200,31 +200,30 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
   }
   else
   {
-    throw std::runtime_error( "This should never be reached" );
+    app_warning() << "Spawning walker outside of reserves, this ideally should never happend." << std::endl;
     walkers_.push_back(std::make_unique<MCPWalker>(num_particles_));
     walkers_.back()->R = elec_particle_set_->R;
     walkers_.back()->Properties = elec_particle_set_->Properties;
-    walkers_.back()->DataSet.clear();
     walkers_.back()->registerData();
 
-    walker_elec_particle_sets_.push_back(std::make_unique<ParticleSet>(*elec_particle_set_));
+    walker_elec_particle_sets_.emplace_back(new ParticleSet(*elec_particle_set_));
     walker_trial_wavefunctions_.push_back(UPtr<TrialWaveFunction>{});
     walker_trial_wavefunctions_.back().reset(trial_wf_->makeClone(*(walker_elec_particle_sets_.back())));
     walker_hamiltonians_.push_back(UPtr<QMCHamiltonian>{});
     walker_hamiltonians_.back().reset(
         hamiltonian_->makeClone(*(walker_elec_particle_sets_.back()), *(walker_trial_wavefunctions_.back())));
     walker_trial_wavefunctions_.back()->registerData(*(walker_elec_particle_sets_.back()), walkers_.back()->DataSet);
-
     walkers_.back()->DataSet.allocate();
     walkers_.back()->Multiplicity = 1.0;
     walkers_.back()->Weight = 1.0;
   }
-  outputManager.resume();
 
+  outputManager.resume();
+  assert( walkers_.back().get()->DataSet.size() == 9440 );
   return walkers_.back().get();
 }
 
-/** Kill last walker
+/** Kill last walker (just barely)
  *
  *  By kill we mean put it and all its elements in a "dead" list.
  *  For laughs we are going to ignore the object lifetimes like in legacy and
@@ -233,8 +232,7 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
 void MCPopulation::killLastWalker()
 {
   --num_local_walkers_;
-  // Logical but legacy doesn't
-  // walkers_.back()->DataSet.clear();
+  // kill the walker but just barely we need all its setup and connections to remain
   dead_walkers_.push_back(std::move(walkers_.back()));
   walkers_.pop_back();
   dead_walker_elec_particle_sets_.push_back(std::move(walker_elec_particle_sets_.back()));
@@ -244,7 +242,7 @@ void MCPopulation::killLastWalker()
   dead_walker_hamiltonians_.push_back(std::move(walker_hamiltonians_.back()));
   walker_hamiltonians_.pop_back();
 }
-/** Kill a walker
+/** Kill a walker (just barely)
  *
  *  By kill we mean put it and all its elements in a "dead" list.
  *  For laughs we are going to ignore the object lifetimes like in legacy and
@@ -261,14 +259,14 @@ void MCPopulation::killWalker(MCPWalker& walker)
   {
     if (&walker == (*it_walkers).get())
     {
-      (*it_walkers)->DataSet.clear();
+      //(*it_walkers)->DataSet.clear();
       dead_walkers_.push_back(std::move(*it_walkers));
       walkers_.erase(it_walkers);
       dead_walker_elec_particle_sets_.push_back(std::move(*it_psets));
-      dead_walker_trial_wavefunctions_.push_back(std::move(*it_twfs));
-      dead_walker_hamiltonians_.push_back(std::move(*it_hams));
       walker_elec_particle_sets_.erase(it_psets);
+      dead_walker_trial_wavefunctions_.push_back(std::move(*it_twfs));
       walker_trial_wavefunctions_.erase(it_twfs);
+      dead_walker_hamiltonians_.push_back(std::move(*it_hams));
       walker_hamiltonians_.erase(it_hams);
       --num_local_walkers_;
       return;
@@ -283,8 +281,7 @@ void MCPopulation::killWalker(MCPWalker& walker)
 
 void MCPopulation::syncWalkersPerNode(Communicate* comm)
 {
-  int ncontexts = comm->size();
-  std::vector<IndexType> num_local_walkers_per_node(comm->size(), 0.0);;
+  std::vector<IndexType> num_local_walkers_per_node(comm->size(), 0);;
   
   num_local_walkers_per_node[comm->rank()] = num_local_walkers_;
   comm->allreduce(num_local_walkers_per_node);

@@ -46,7 +46,11 @@ inline void initialize(){
 	std::set_terminate(&finalize);
 }
 inline void initialize(int& argc, char**& argv){
-	int s = MPI_Init(&argc, &argv);
+  int s = 0;
+  if (argc > 0)
+        s = MPI_Init(&argc, &argv);
+  else
+    s = MPI_Init(nullptr, nullptr);
 	if(s != MPI_SUCCESS) throw std::runtime_error{"cannot initialize"};
 	std::set_terminate(&finalize);
 //	std::set_terminate(myterminate);

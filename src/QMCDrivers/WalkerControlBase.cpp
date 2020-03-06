@@ -51,7 +51,11 @@ WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
 WalkerControlBase::~WalkerControlBase()
 {
   if (dmcStream)
+  {
+    // without this its possible to end up without all data flushed to dmc.dat.
+    (*dmcStream) << std::endl;
     delete dmcStream;
+  }
 }
 
 //disable it: everything is done by a constructor
@@ -242,7 +246,7 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
   return int(curData[WEIGHT_INDEX]);
 }
 
-int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
+QMCTraits::FullPrecRealType WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
 {
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(pop.get_walkers()));
   FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, w2sum = 0.0, besum = 0.0, bwgtsum = 0.0;
@@ -322,7 +326,7 @@ int WalkerControlBase::doNotBranch(int iter, MCPopulation& pop)
   trialEnergy = ensemble_property_.Energy;
   pop.set_ensemble_property(ensemble_property_);
   //return W.getActiveWalkers();
-  return pop.get_num_global_walkers();
+  return curData[WEIGHT_INDEX];
 }
 
 int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger)
@@ -386,7 +390,7 @@ void WalkerControlBase::onRankSpawn(MCPopulation& pop, PopulationAdjustment& adj
   }
 }
 
-int WalkerControlBase::branch(int iter, MCPopulation& pop)
+QMCTraits::FullPrecRealType WalkerControlBase::branch(int iter, MCPopulation& pop)
 {
   // For measuring properties sortWalkers had important side effects
   PopulationAdjustment adjust(calcPopulationAdjustment(pop));
@@ -401,7 +405,7 @@ int WalkerControlBase::branch(int iter, MCPopulation& pop)
   WalkerControlBase::onRankKill(pop, adjust);
   WalkerControlBase::onRankSpawn(pop, adjust);
 
-  pop.syncWalkersPerNode(getCommunicator());
+  pop.syncWalkersPerNode(myComm);
 
   for (UPtr<MCPWalker>& walker : pop.get_walkers())
   {
@@ -409,6 +413,7 @@ int WalkerControlBase::branch(int iter, MCPopulation& pop)
     walker->Multiplicity = 1.0;
   }
 
+  // At this point Weight == global_walkers
   return pop.get_num_global_walkers();
 }
 
@@ -826,7 +831,7 @@ void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
   // What we care about here are the populations we'll have after the adjusts are
   // applied on each rank.
   // This differs from the legacy implementation which had partially updated state at this point.
-  auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), adjust.num_walkers);
+  auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(myComm, adjust.num_walkers);
   IndexType current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
   // limit Nmax
   // We assume the difference in number of walkers is no greater than 1

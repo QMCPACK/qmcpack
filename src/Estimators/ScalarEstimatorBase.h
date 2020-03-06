@@ -107,6 +107,23 @@ struct ScalarEstimatorBase
     }
   }
 
+  template<typename IT>
+  inline RealType takeBlockSumsGetWeight(IT first, IT first_sq)
+  {
+    first += FirstIndex;
+    first_sq += FirstIndex;
+    RealType weight = scalars[0].count();
+    for (int i = 0; i < scalars.size(); i++)
+    {
+      *first++         = scalars[i].result();
+      *first_sq++      = scalars[i].result2();
+      scalars_saved[i] = scalars[i]; //save current block
+      scalars[i].clear();
+    }
+    return weight;
+  }
+  
+  
   /** a virtual function to accumulate observables or collectables
    * @param W const MCWalkerConfiguration
    * @param first const_iterator for the first walker

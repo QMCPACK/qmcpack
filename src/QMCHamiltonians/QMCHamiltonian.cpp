@@ -796,8 +796,13 @@ void QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
 std::vector<int> QMCHamiltonian::flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list,
                                                         RefVector<ParticleSet>& p_list)
 {
-  QMCHamiltonian& db_hamiltonian = h_list[0].get();
+  //std::cout << "h_list size: " << h_list.size() << '\n';
+  if (h_list.size() < 1)
+    std::cout << "too small h_list\n";
 
+  QMCHamiltonian& db_hamiltonian = h_list.at(0).get();
+
+  
   std::vector<int> num_accepts(h_list.size(), 0);
   if(h_list[0].get().nlpp_ptr)
   {

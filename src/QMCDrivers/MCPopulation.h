@@ -29,8 +29,6 @@
 namespace qmcplusplus
 {
 
-
-
 class MCPopulation
 {
 public:
@@ -142,20 +140,45 @@ public:
    *  Should compile only if ITER is a proper input ITERATOR
    *  Will crash if ITER does point to a std::unqiue_ptr<WALKER_CONSUMER>
    *
+   *  The logic here to minimize moves of walkers from one crowd to another
+   *  When num_walkers % walkers_per_crowd is true then at the end the extra
+   *  walkers are distributed one by one to crowds.
+   *
    */
   template<typename ITER, typename = RequireInputIterator<ITER>>
-  void distributeWalkers(ITER it_group, ITER group_end, int walkers_per_group)
+  void distributeWalkers(ITER it_group_start, ITER group_end, int walkers_per_group)
   {
+    auto it_group = it_group_start;
     auto it_walkers             = walkers_.begin();
     auto it_walker_elecs        = walker_elec_particle_sets_.begin();
     auto it_walker_twfs         = walker_trial_wavefunctions_.begin();
     auto it_walker_hamiltonians = walker_hamiltonians_.begin();
 
-    while (it_group != group_end)
+    assert( ( group_end - it_group < walkers_.size()) || walkers_per_group ==  1);
+
+    // while (it_group != group_end)
+    // {
+    //   for (int i = 0; i < walkers_per_group; ++i)
+    //   {
+    //     // possible that walkers_all < walkers_per_group * group_size
+    //     if (it_walkers == walkers_.end())
+    //       break;
+    //     (**it_group).addWalker(**it_walkers, **it_walker_elecs, **it_walker_twfs, **it_walker_hamiltonians);
+    //     ++it_walkers;
+    //     ++it_walker_elecs;
+    //     ++it_walker_twfs;
+    //     ++it_walker_hamiltonians;
+    //   }
+    //   ++it_group;
+    // }
+
+    // For now ignore the requesting walkers_per_group
+    
+    while (it_walkers != walkers_.end())
     {
-      for (int i = 0; i < walkers_per_group; ++i)
+      it_group = it_group_start;
+      while (it_group != group_end)
       {
-        // possible that walkers_all < walkers_per_group * group_size
         if (it_walkers == walkers_.end())
           break;
         (**it_group).addWalker(**it_walkers, **it_walker_elecs, **it_walker_twfs, **it_walker_hamiltonians);
@@ -163,8 +186,8 @@ public:
         ++it_walker_elecs;
         ++it_walker_twfs;
         ++it_walker_hamiltonians;
+        ++it_group;
       }
-      ++it_group;
     }
   }
   /**@ingroup Accessors
@@ -217,7 +240,6 @@ public:
   QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }
   /** }@ */
 };
-
 
 } // namespace qmcplusplus
 

@@ -43,6 +43,8 @@ class EstimatorManagerBase : public EstimatorManagerInterface
 {
 public:
   typedef QMCTraits::FullPrecRealType RealType;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+
   typedef ScalarEstimatorBase EstimatorType;
   typedef std::vector<RealType> BufferType;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
@@ -189,9 +191,9 @@ public:
   /** At end of block collect the scalar estimators for the entire rank
    *   
    *  Each is currently accumulates on for crowd of 1 or more walkers
-   *  TODO: What is the correct normalization 
+   *  returns the total weight across all crowds. 
    */
-  void collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
+  RealType collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
 
   /** accumulate the measurements
    * @param W walkers
@@ -306,8 +308,12 @@ private:
   int max4ascii;
   //Data for communication
   std::vector<BufferType*> RemoteData;
-  ///collect data and write
+  /// legacy: collect data and write
   void collectBlockAverages();
+
+  /// unified: collect data and write
+  void makeBlockAverages();
+
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;

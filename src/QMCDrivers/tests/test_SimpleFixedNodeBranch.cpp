@@ -107,11 +107,7 @@ public:
 
     sfnb.checkParameters(pop_->get_num_global_walkers(), walkers);
 
-    UPtrVector<Crowd> crowds;
-    crowds.emplace_back(std::make_unique<Crowd>(*emb_));
-    crowds.emplace_back(std::make_unique<Crowd>(*emb_));
-    
-    sfnb.branch(0, crowds, *pop_);
+    sfnb.branch(0, *pop_);
 
     return sfnb;
   }

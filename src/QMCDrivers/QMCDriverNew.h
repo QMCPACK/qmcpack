@@ -217,7 +217,7 @@ protected:
   /** The timers for the driver.
    *
    * This cleans up the driver constructor, and a reference to this structure 
-   * Takes the timers into thread scope.
+   * Takes the timers into thread scope. We assume the timers are threadsafe.
    */
   struct DriverTimers
   {

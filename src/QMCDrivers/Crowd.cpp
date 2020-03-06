@@ -53,11 +53,20 @@ void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
 
 void Crowd::startBlock(int num_steps)
 {
+  if (this->size() == 0)
+    return;
   n_accept_ = 0;
   n_reject_ = 0;
   // VMCBatched does no nonlocal moves
   n_nonlocal_accept_ = 0;
   estimator_manager_crowd_.startBlock(num_steps);
+}
+
+void Crowd::stopBlock()
+{
+  if (this->size() == 0)
+    return;
+  estimator_manager_crowd_.stopBlock();
 }
 
 } // namespace qmcplusplus

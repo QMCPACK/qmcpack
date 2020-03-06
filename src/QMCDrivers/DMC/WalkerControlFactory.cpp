@@ -24,7 +24,6 @@
 
 namespace qmcplusplus
 {
-
 WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur, bool reconfig)
 {
   app_log() << "  Creating WalkerController: target  number of walkers = " << nwtot << std::endl;
@@ -41,8 +40,10 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   //if(nmin<0) nmin=nideal/2;
   WalkerControlBase* wc = 0;
   int ncontexts         = comm->size();
-  if(reconfigopt != "no" && reconfigopt != "runwhileincorrect")
-    APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
+  if (reconfigopt != "no" && reconfigopt != "runwhileincorrect")
+    APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove "
+              "the reconfiguration option from the DMC input section. To run performance tests, please set "
+              "reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
   //bool fixw             = (reconfig || reconfigopt == "yes" || reconfigopt == "pure");
   bool fixw = (reconfig || reconfigopt == "runwhileincorrect");
   if (fixw)
@@ -51,7 +52,7 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
     nwtot     = nwloc * ncontexts;
   }
 #if defined(HAVE_MPI)
-  if ( 1 ) //ncontexts > 1)
+  if (ncontexts > 1)
   {
     if (fixw)
     {

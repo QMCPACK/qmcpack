@@ -51,6 +51,7 @@ public:
   void reserve(int crowd_size);
   void startRun() {}
   void startBlock(int steps);
+  void stopBlock();
 
   EstimatorManagerCrowd& get_estimator_manager_crowd() { return estimator_manager_crowd_; }
   void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian);
@@ -125,5 +126,6 @@ private:
   unsigned long n_nonlocal_accept_ = 0;
   /** @} */
 };
+
 } // namespace qmcplusplus
 #endif
