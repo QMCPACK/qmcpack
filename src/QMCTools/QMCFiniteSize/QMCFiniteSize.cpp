@@ -453,17 +453,6 @@ bool QMCFiniteSize::execute()
 
   UBspline_3d_d* sk3d_spline = getSkSpline(vsk_1d[Klist.kshell.size() - 2]);
 
-  RealType xstart(-4.0), xend(4.0);
-  RealType ystart(-4.0), yend(4.0);
-  RealType zstart(-4.0), zend(4.0);
-
-  RealType dx, dy, dz;
-  RealType nx(16), ny(16), nz(16);
-
-  dx = (xend - xstart) / RealType(nx);
-  dy = (yend - ystart) / RealType(ny);
-  dz = (zend - zstart) / RealType(nz);
-
   build_spherical_grid(mtheta, mphi);
   vector<RealType> Amat;
   getSkInfo(sk3d_spline, Amat);
