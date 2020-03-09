@@ -100,7 +100,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   //read to use vmc output (just in case)
   RootName = "pot";
   QMCType  = "QMCFixedSampleLinearOptimize";
-  m_param.add(WarmupBlocks, "warmupBlocks", "int");
   m_param.add(Max_iterations, "max_its", "int");
   m_param.add(nstabilizers, "nstabilizers", "int");
   m_param.add(stabilizerScale, "stabilizerscale", "double");

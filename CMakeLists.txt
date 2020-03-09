@@ -189,7 +189,7 @@ SET(GCOV_SUPPORTED FALSE)
 SET(ENABLE_GCOV FALSE CACHE BOOL "Enable code coverage")
 
 ######################################################################
-# enable MPI and OPNEMP  if possible
+# enable MPI and OPENMP  if possible
 ######################################################################
 SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
@@ -500,6 +500,20 @@ IF(QMC_MPI)
                         "Use a different MPI library or build MVAPICH2 with --disable-registration-cache configure option.")
   ENDIF()
 
+  IF(${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "Open MPI")
+    IF(NOT MPIEXEC_PREFLAGS)
+      SET(MPIEXEC_PREFLAGS "--bind-to;none")
+      MESSAGE(STATUS "Detected Open MPI. Setting bind-to options for thread affinity in MPIEXEC_PREFLAGS.")
+    ELSE(NOT MPIEXEC_PREFLAGS)
+      IF(NOT "${MPIEXEC_PREFLAGS}" MATCHES "--bind-to")
+        MESSAGE(WARNING "Default Open MPI thread affinity policy may bind all the threads to a single core and "
+                        "significantly slow down testing. Add proper --bind-to options via MPIEXEC_PREFLAGS. "
+                        "If you don't know exactly what affinity to add, "
+                        "add '--bind-to;none' to your current MPIEXEC_PREFLAGS to stop this warning.")
+      ENDIF()
+    ENDIF(NOT MPIEXEC_PREFLAGS)
+  ENDIF()
+
   IF(NOT ${CMAKE_CXX_COMPILER} STREQUAL ${MPI_CXX_COMPILER})
     SET(MPI_WARNING_LIST
         "Building MPI version without using MPI compiler wrappers.\n"
@@ -516,7 +530,8 @@ IF(QMC_MPI)
   MESSAGE(STATUS "MPI runner MPIEXEC_EXECUTABLE : ${MPIEXEC_EXECUTABLE}")
   MESSAGE(STATUS "MPIEXEC_NUMPROC_FLAG : ${MPIEXEC_NUMPROC_FLAG}")
   MESSAGE(STATUS "MPIEXEC_PREFLAGS : ${MPIEXEC_PREFLAGS}")
-  MESSAGE(STATUS "Tests run as : ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} NUM_PROCS ${MPIEXEC_PREFLAGS} EXECUTABLE")
+  STRING(REPLACE ";" " " MPIEXEC_PREFLAGS_PRINT "${MPIEXEC_PREFLAGS}")
+  MESSAGE(STATUS "Tests run as : ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} NUM_PROCS ${MPIEXEC_PREFLAGS_PRINT} EXECUTABLE")
 
   SET(HAVE_MPI 1)
   MESSAGE(STATUS "MPI is enabled")

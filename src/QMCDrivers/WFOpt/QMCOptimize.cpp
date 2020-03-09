@@ -41,8 +41,6 @@ QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
     : QMCDriver(w, psi, h, ppool, comm),
       PartID(0),
       NumParts(1),
-      WarmupBlocks(10),
-      SkipSampleGeneration("no"),
       hamPool(hpool),
       optSolver(0),
       vmcEngine(0),
@@ -57,8 +55,6 @@ QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
   QMCType  = "QMCOptimize";
   //default method is cg
   optmethod = "cg";
-  m_param.add(WarmupBlocks, "warmupBlocks", "int");
-  m_param.add(SkipSampleGeneration, "skipVMC", "string");
 }
 
 /** Clean up the vector */

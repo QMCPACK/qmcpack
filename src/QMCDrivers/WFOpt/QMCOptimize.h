@@ -64,12 +64,8 @@ private:
   int PartID;
   ///total number of partitions that will share a set of configuratons
   int NumParts;
-  ///total number of Warmup Blocks
-  int WarmupBlocks;
-  ///total number of Warmup Blocks
+  ///total number of VMC walkers
   int NumOfVMCWalkers;
-  ///yes/no applicable only first time
-  std::string SkipSampleGeneration;
   ///need to know HamiltonianPool to use OMP
   HamiltonianPool& hamPool;
   ///target cost function to optimize

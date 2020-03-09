@@ -72,9 +72,7 @@ public:
   int PartID;
   ///total number of partitions that will share a set of configuratons
   int NumParts;
-  ///total number of Warmup Blocks
-  int WarmupBlocks;
-  ///total number of Warmup Blocks
+  ///total number of VMC walkers
   int NumOfVMCWalkers;
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;

@@ -46,6 +46,10 @@ def parse_args(args, comm):
         parser.add_argument('-k', '--kpoint', dest='kpoint_sym',
                             action='store_true', default=False,
                             help='Generate explicit kpoint dependent integrals.')
+        parser.add_argument('--density-fit', dest='df',
+                            action='store_true', default=False,
+                            help='Use density fitting integrals stored in '
+                            'input pyscf chkpoint file.')
         parser.add_argument('-a', '--ao', '--ortho-ao', dest='ortho_ao',
                             action='store_true', default=False,
                             help='Transform to ortho AO basis. Default assumes '
@@ -136,7 +140,7 @@ def main(args):
     write_qmcpack(options.chk_file, options.hamil_file, options.thresh,
                   comm=comm,
                   ortho_ao=options.ortho_ao,
-                  kpoint=options.kpoint_sym, 
+                  kpoint=options.kpoint_sym, df=options.df,
                   verbose=options.verbose, cas=options.cas,
                   qmc_input=options.qmc_input,
                   wfn_file=options.wfn_file,
