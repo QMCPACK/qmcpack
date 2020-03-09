@@ -16,7 +16,7 @@ SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 
-ADD_EXECUTABLE(${UTEST_EXE} test_particle.cpp test_distance_table.cpp test_walker.cpp test_particle_pool.cpp)
+ADD_EXECUTABLE(${UTEST_EXE} test_particle.cpp test_distance_table.cpp test_walker.cpp test_particle_pool.cpp test_sample_stack.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcbase Math::scalar_vector_functions)
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
