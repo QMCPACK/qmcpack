@@ -11,6 +11,8 @@ echo "starting spack using ${SPACK_ENV_FILE}"
 # environment from the set of loaded spack packages.
 . ${SPACK_ENV_FILE}
 
+module list
+
 exit_code=0
 
 BUILD_DIR=$(pwd)
