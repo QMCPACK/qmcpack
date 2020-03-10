@@ -1,4 +1,4 @@
-#!/bin/bash --login
+#!/bin/bash
 
 . $SPACK_ROOT/share/spack/setup-env.sh
 
@@ -13,3 +13,5 @@ spack load cmake@$cmake_vnew%gcc@$gcc_vnew
 spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 spack load fftw@$fftw_vnew%gcc@$gcc_vnew
+
+echo ${PATH}
