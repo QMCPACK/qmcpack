@@ -6,7 +6,7 @@
 
 QMC_IMMUTABLE_FLAGS="-DBUILD_AFQMC=1"
 
-spack load gcc@$gcc_vnew
+spack load gcc@$gcc_vnew%gcc@$gcc_vold
 spack load boost@$boost_vnew%gcc@$gcc_vnew
 spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
 spack load cmake@$cmake_vnew%gcc@$gcc_vnew
