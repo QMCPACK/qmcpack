@@ -33,10 +33,6 @@ SET(MOSRCS
   GamesFMOParser.cpp
   QPParser.cpp
   LCAOHDFParser.cpp
-  QMCFiniteSize/QMCFiniteSize.cpp
-  QMCFiniteSize/SkParserBase.cpp
-  QMCFiniteSize/SkParserASCII.cpp
-  QMCFiniteSize/SkParserScalarDat.cpp
 )
 
 # create libmocommon 
@@ -72,8 +68,18 @@ TARGET_LINK_LIBRARIES(convertpw4qmc PRIVATE qmcutil Math::FFTW3)
 INSTALL(TARGETS convertpw4qmc
         RUNTIME DESTINATION bin)
 
+SET(FSSRCS
+  QMCFiniteSize/QMCFiniteSize.cpp
+  QMCFiniteSize/SkParserBase.cpp
+  QMCFiniteSize/SkParserASCII.cpp
+  QMCFiniteSize/SkParserScalarDat.cpp
+)
+
+ADD_LIBRARY(fstool ${FSSRCS})
+TARGET_LINK_LIBRARIES(fstool PUBLIC qmc qmcbase qmcwfs)
+
 ADD_EXECUTABLE(qmcfinitesize qmcfinitesize.cpp)
-TARGET_LINK_LIBRARIES(qmcfinitesize PRIVATE mocommon qmc qmcwfs)
+TARGET_LINK_LIBRARIES(qmcfinitesize PRIVATE fstool)
 
 INSTALL(TARGETS qmcfinitesize
         RUNTIME DESTINATION bin)
