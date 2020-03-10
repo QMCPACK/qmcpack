@@ -4,6 +4,8 @@
 
 export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
 
+echo "starting spack using ${SPACK_ENV_FILE}"
+
 # this depends on SPACK_ROOT being set in Jenkinsfile_xxx
 # it also supplies QMC_IMMUTABLE_FLAGS which makes it a bit more than the
 # environment from the set of loaded spack packages.
