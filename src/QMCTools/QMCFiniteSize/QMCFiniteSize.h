@@ -10,7 +10,6 @@
 
 namespace qmcplusplus
 {
-//class SkParserBase
 class QMCFiniteSize : public QMCAppBase, QMCTraits
 {
 public:

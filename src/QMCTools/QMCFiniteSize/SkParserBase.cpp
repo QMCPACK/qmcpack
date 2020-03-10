@@ -43,6 +43,8 @@ void SkParserBase::compute_grid()
 
 void SkParserBase::set_grid(const vector<TinyVector<IndexType, OHMMS_DIM>>& kgridraw1)
 {
+  if (skraw.size() != kgridraw1.size())
+    APP_ABORT("SkParserBase::set_grid:  S(k) and k-grid don't match");
   kgridraw.resize(kgridraw1.size());
   for (IndexType i = 0; i < kgridraw.size(); i++)
     for (IndexType j = 0; j < OHMMS_DIM; j++)
@@ -116,9 +118,9 @@ void SkParserBase::compute_sk()
     skerr[newindex] = skerr_raw[i];
   }
 
-
   isSkComputed = true;
 }
+
 void SkParserBase::get_sk(vector<RealType>& sk_i, vector<RealType>& skerr_i)
 {
   //  cout<<"In get_sk(..)\n";

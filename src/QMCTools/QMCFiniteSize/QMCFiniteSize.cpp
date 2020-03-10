@@ -161,7 +161,25 @@ QMCFiniteSize::RealType QMCFiniteSize::sphericalAvgSk(UBspline_3d_d* spline, Rea
   IndexType ngrid = sphericalgrid.size();
   for (IndexType i = 0; i < ngrid; i++)
   {
-    kvec = k * sphericalgrid[i];
+    kvec =k * sphericalgrid[i];
+    if (kvec[0] <= gridx.lower_bound || kvec[0] >= gridx.upper_bound )
+    {
+      //cout << "skipping x: " << kvec << " " << k << endl;
+      sum += 1;
+      continue;
+    }
+    if (kvec[1] <= gridy.lower_bound || kvec[1] >= gridy.upper_bound )
+    {
+      //cout << "skipping y: " << kvec << " " << k << endl;
+      sum += 1;
+      continue;
+    }
+    if (kvec[2] <= gridz.lower_bound || kvec[2] >= gridz.upper_bound )
+    {
+      //cout << "skipping z: " << kvec << " " << k << endl;
+      sum += 1;
+      continue;
+    }
     eval_UBspline_3d_d(spline, kvec[0], kvec[1], kvec[2], &val);
     sum += RealType(val);
   }
@@ -303,33 +321,59 @@ UBspline_3d_d* QMCFiniteSize::getSkSpline(RealType limit)
 
 void QMCFiniteSize::build_spherical_grid(IndexType mtheta, IndexType mphi)
 {
-  sphericalgrid.resize(mtheta * mphi);
-  RealType dphi      = 2 * M_PI / RealType(mphi - 1);
-  RealType dcostheta = 2.0 / RealType(mtheta - 1);
+  //sphericalgrid.resize(mtheta * mphi);
+  //RealType dphi      = 2 * M_PI / RealType(mphi - 1);
+  //RealType dcostheta = 2.0 / RealType(mtheta - 1);
 
-  PosType tmp;
+  //PosType tmp;
 
 
-  for (IndexType i = 0; i < mtheta; i++)
-    for (IndexType j = 0; j < mphi; j++)
+  //cout << "SPHERICAL_GRID: " << mtheta*mphi << endl;
+  //for (IndexType i = 0; i < mtheta; i++)
+  //  for (IndexType j = 0; j < mphi; j++)
+  //  {
+  //    IndexType gindex = i * mtheta + j;
+
+  //    RealType costheta = -1.0 + dcostheta * i;
+  //    RealType theta    = std::acos(costheta);
+  //    RealType sintheta = std::sin(theta);
+
+  //    RealType phi    = dphi * j;
+  //    RealType sinphi = std::sin(phi);
+  //    RealType cosphi = std::cos(phi);
+  //    tmp[0]          = sintheta * cosphi;
+  //    tmp[1]          = sintheta * sinphi;
+  //    tmp[2]          = costheta;
+
+  //    //we do this last transformation because S(k) is splined in the lattice
+  //    //kvector units, and not the cartesian ones.
+  //    sphericalgrid[gindex] = P->Lattice.k_unit(tmp);
+  //  }
+  
+
+  //Spherical grid from https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf
+  RealType alpha = 4.0 * M_PI / (mtheta * mphi);
+  RealType d = std::sqrt(alpha);
+  RealType Mt = int(std::round(M_PI / d));
+  RealType Dt = M_PI / Mt;
+  RealType Dp = alpha / Dt;
+  int count = 0; 
+  for (int m = 0; m < Mt; m++)
+  {
+    RealType theta = M_PI * (m + 0.5) / Mt;
+    RealType Mp = int(std::round(2 * M_PI * std::sin(theta) / Dp));
+    for (int n = 0; n < Mp; n++)
     {
-      IndexType gindex = i * mtheta + j;
-
-      RealType costheta = -1.0 + dcostheta * i;
-      RealType theta    = std::acos(costheta);
-      RealType sintheta = std::sin(theta);
-
-      RealType phi    = dphi * j;
-      RealType sinphi = std::sin(phi);
-      RealType cosphi = std::cos(phi);
-      tmp[0]          = sintheta * cosphi;
-      tmp[1]          = sintheta * sinphi;
-      tmp[2]          = costheta;
-
-      //we do this last transformation because S(k) is splined in the lattice
-      //kvector units, and not the cartesian ones.
-      sphericalgrid[gindex] = P->Lattice.k_unit(tmp);
+      IndexType gindex = m * mtheta + n;
+      RealType phi = 2 * M_PI * n / Mp;
+      PosType tmp;
+      tmp[0] = std::sin(theta)*std::cos(phi);
+      tmp[1] = std::sin(theta)*std::sin(phi);
+      tmp[2] = std::cos(theta);
+      sphericalgrid.push_back(P->Lattice.k_unit(tmp));
     }
+  }
+
 }
 
 
@@ -347,7 +391,6 @@ NUBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid,
   xBC.rVal  = rVal;
   xBC.lCode = DERIV1;
   xBC.rCode = DERIV1;
-
   //hack to interface to NUgrid stuff in double prec for MIXED build
   vector<FullPrecRealType> vals_fp(vals.begin(), vals.end());
   return create_NUBspline_1d_d(grid1d, xBC, vals_fp.data());
@@ -398,7 +441,6 @@ bool QMCFiniteSize::execute()
                                                         //Easier to spline, but will have to convert
                                                         //for real space integration.
 
-  IndexType Ne = P->getTotalNum();
   vector<RealType> sk(kpts.size()), skerr(kpts.size());
 
   if (!skparser->has_grid())
@@ -409,6 +451,7 @@ bool QMCFiniteSize::execute()
   sk    = skparser->get_sk_raw();
   skerr = skparser->get_skerr_raw();
 
+  IndexType Ne = P->getTotalNum();
   if (skparser->is_normalized() == false)
   {
     for (int i = 0; i < sk.size(); i++)
@@ -451,9 +494,10 @@ bool QMCFiniteSize::execute()
               << vsk_1d[ks] << setw(12) << setprecision(8) << AA->Fk_symm[ks] << "\n";
   }
 
-  UBspline_3d_d* sk3d_spline = getSkSpline(vsk_1d[Klist.kshell.size() - 2]);
+  UBspline_3d_d* sk3d_spline = getSkSpline();
 
   build_spherical_grid(mtheta, mphi);
+
   vector<RealType> Amat;
   getSkInfo(sk3d_spline, Amat);
 

@@ -44,6 +44,7 @@ vector<PosType> SkParserASCII::get_grid_from_data(vector<vector<RealType>>& file
     kgrid[i][1] = filedata[i][KY];
     kgrid[i][2] = filedata[i][KZ];
   }
+
   return kgrid;
 }
 
