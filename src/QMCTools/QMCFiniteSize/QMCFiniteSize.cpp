@@ -162,26 +162,21 @@ QMCFiniteSize::RealType QMCFiniteSize::sphericalAvgSk(UBspline_3d_d* spline, Rea
   for (IndexType i = 0; i < ngrid; i++)
   {
     kvec =k * sphericalgrid[i];
+    bool inx = true;
+    bool iny = true;
+    bool inz = true;
     if (kvec[0] <= gridx.lower_bound || kvec[0] >= gridx.upper_bound )
-    {
-      //cout << "skipping x: " << kvec << " " << k << endl;
-      sum += 1;
-      continue;
-    }
+      inx = false;
     if (kvec[1] <= gridy.lower_bound || kvec[1] >= gridy.upper_bound )
-    {
-      //cout << "skipping y: " << kvec << " " << k << endl;
-      sum += 1;
-      continue;
-    }
+      iny = false;
     if (kvec[2] <= gridz.lower_bound || kvec[2] >= gridz.upper_bound )
+      inz = false;
+    if ( !(inx & iny & inz) ) sum += 1;
+    else
     {
-      //cout << "skipping z: " << kvec << " " << k << endl;
-      sum += 1;
-      continue;
+      eval_UBspline_3d_d(spline, kvec[0], kvec[1], kvec[2], &val);
+      sum += RealType(val);
     }
-    eval_UBspline_3d_d(spline, kvec[0], kvec[1], kvec[2], &val);
-    sum += RealType(val);
   }
 
   return sum / RealType(ngrid);
