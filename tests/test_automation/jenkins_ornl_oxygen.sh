@@ -1,4 +1,4 @@
-#!/bin/bash -x --login
+#!/bin/bash --login
 
 #this is will be general move cpu build soon
 
