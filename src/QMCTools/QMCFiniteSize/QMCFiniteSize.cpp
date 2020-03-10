@@ -494,6 +494,15 @@ bool QMCFiniteSize::execute()
               << vsk_1d[ks] << setw(12) << setprecision(8) << AA->Fk_symm[ks] << "\n";
   }
 
+  if (vsk_1d[Klist.kshell.size()-2] < 0.99)
+  {
+    app_log() << "####################################################################\n";
+    app_log() << "WARNING: The S(k) in the largest kshell is less than 0.99\n";
+    app_log() << "         This code assumes the S(k) is converged to 1.0 at large k\n";
+    app_log() << "         You may need to rerun with a larger LR_dim_cutoff\n";
+    app_log() << "####################################################################\n";
+  }
+
   UBspline_3d_d* sk3d_spline = getSkSpline();
 
   build_spherical_grid(mtheta, mphi);
