@@ -38,6 +38,7 @@ echo "at $(date)"
 echo ""
 echo ""
 
+rm -rf build_${1}_${2}
 mkdir build_${1}_${2}
 cd build_${1}_${2}
 
