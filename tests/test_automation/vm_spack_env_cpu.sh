@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash --login
 
 . $SPACK_ROOT/share/spack/setup-env.sh
 
