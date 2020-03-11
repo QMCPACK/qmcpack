@@ -505,7 +505,7 @@ void QMCFiniteSize::calcPotentialCorrection()
     vector<RealType> newSK_raw(SK_raw.size());
     for (int j = 0; j < SK_raw.size(); j++)
     {
-      RealType chi;
+      FullPrecRealType chi;
       rng.generate_normal(&chi, 1);
       newSK_raw[j] = SK_raw[j] + SKerr_raw[j] * chi;
     }
@@ -514,7 +514,7 @@ void QMCFiniteSize::calcPotentialCorrection()
     vector<RealType> newSK(SK.size());
     for (int j = 0; j < SK.size(); j++)
     {
-      RealType chi;
+      FullPrecRealType chi;
       rng.generate_normal(&chi, 1);
       newSK[j] = SK[j] + SKerr[j] * chi;
     }
@@ -542,7 +542,7 @@ void QMCFiniteSize::calcLeadingOrderCorrections()
     vector<RealType> newSK(SK.size());
     for (int j = 0; j < SK.size(); j++)
     {
-      RealType chi;
+      FullPrecRealType chi;
       rng.generate_normal(&chi, 1);
       newSK[j] = SK[j] + SKerr[j] * chi;
     }
