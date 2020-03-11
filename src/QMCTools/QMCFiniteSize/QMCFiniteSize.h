@@ -32,7 +32,7 @@ public:
 
   void build_spherical_grid(IndexType mtheta, IndexType mphi);
   void getSkInfo(UBspline_3d_d* spline, vector<RealType>& symmatelem);
-  UBspline_3d_d* getSkSpline(RealType limit = 1.0);
+  UBspline_3d_d* getSkSpline(vector<RealType> sk, RealType limit = 1.0);
   RealType sphericalAvgSk(UBspline_3d_d* spline, RealType k);
 
   RealType integrate_spline(NUBspline_1d_d* spline, RealType a, RealType b, IndexType N);
@@ -59,6 +59,19 @@ private:
   Grid_t gridx;
   Grid_t gridy;
   Grid_t gridz;
+
+  void printSkRawSphAvg(const vector<RealType>& sk);
+  void printSkSplineSphAvg(UBspline_3d_d* spline);
+  KContainer Klist;
+  vector<TinyVector<int,OHMMS_DIM>> kpts;
+
+  RealType calcPotentialDiscrete(vector<RealType> sk);
+  RealType calcPotentialInt(vector<RealType> sk);
+
+  vector<RealType> SK_raw;
+  vector<RealType> SKerr_raw;
+  vector<RealType> SK;
+  vector<RealType> SKerr;
 
   IndexType mtheta;
   IndexType mphi;

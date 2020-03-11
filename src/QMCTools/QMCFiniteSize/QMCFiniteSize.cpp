@@ -29,6 +29,33 @@ QMCFiniteSize::QMCFiniteSize(SkParserBase* skparser_i)
   build_spherical_grid(mtheta,mphi);
 }
 
+void QMCFiniteSize::build_spherical_grid(IndexType mtheta, IndexType mphi)
+{
+  //Spherical grid from https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf
+  RealType alpha = 4.0 * M_PI / (mtheta * mphi);
+  RealType d = std::sqrt(alpha);
+  RealType Mt = int(std::round(M_PI / d));
+  RealType Dt = M_PI / Mt;
+  RealType Dp = alpha / Dt;
+  int count = 0; 
+  for (int m = 0; m < Mt; m++)
+  {
+    RealType theta = M_PI * (m + 0.5) / Mt;
+    RealType Mp = int(std::round(2 * M_PI * std::sin(theta) / Dp));
+    for (int n = 0; n < Mp; n++)
+    {
+      IndexType gindex = m * mtheta + n;
+      RealType phi = 2 * M_PI * n / Mp;
+      PosType tmp;
+      tmp[0] = std::sin(theta)*std::cos(phi);
+      tmp[1] = std::sin(theta)*std::sin(phi);
+      tmp[2] = std::cos(theta);
+      sphericalgrid.push_back(tmp);
+    }
+  }
+
+}
+
 bool QMCFiniteSize::validateXML()
 {
   xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
@@ -99,6 +126,109 @@ bool QMCFiniteSize::wfnPut(xmlNodePtr cur)
   }
 }
 
+bool QMCFiniteSize::processPWH(xmlNodePtr cur)
+{
+  //return true and will be ignored
+  if (cur == NULL)
+    return true;
+  bool inputnode = true;
+  //save the root to grep @tilematrix
+  xmlNodePtr cur_root = cur;
+  cur                 = cur->children;
+  while (cur != NULL)
+  {
+    std::string cname((const char*)cur->name);
+    if (cname == "simulationcell")
+    {
+      ptclPool.putLattice(cur);
+    }
+    else if (cname == "particleset")
+    {
+      ptclPool.putTileMatrix(cur_root);
+      ptclPool.put(cur);
+    }
+    else if (cname == "wavefunction")
+    {
+      wfnPut(cur);
+    }
+    else
+    {}
+    cur = cur->next;
+  }
+  return inputnode;
+}
+
+void QMCFiniteSize::initBreakup()
+{
+  app_log() << "=========================================================\n";
+  app_log() << " Initializing Long Range Breakup (Esler) \n";
+  app_log() << "=========================================================\n";
+  P      = ptclPool.getParticleSet("e");
+  AA     = LRCoulombSingleton::getHandler(*P);
+  myRcut = AA->get_rc();
+  if (rVs == 0)
+  {
+    rVs = LRCoulombSingleton::createSpline4RbyVs(AA, myRcut, myGrid);
+  }
+}
+
+UBspline_3d_d* QMCFiniteSize::getSkSpline(vector<RealType> sk, RealType limit)
+{
+
+  //get the einspline grids.
+  Ugrid esgridx = gridx.einspline_grid();
+  Ugrid esgridy = gridy.einspline_grid();
+  Ugrid esgridz = gridz.einspline_grid();
+
+  //setup the einspline boundary conditions.
+  BCtype_d bcx;
+  BCtype_d bcy;
+  BCtype_d bcz;
+
+  //This piece iterates through S(k) and sets
+  //pieces beyond the k-cutoff equal to 1.
+  //A violent approximation if S(k) is not converged, but
+  //better than S(k)=0.
+  double kc     = AA->get_kc();
+  double kcutsq = kc * kc;
+
+  for (int i = int(gridx.lower_bound), skindex = 0; i <= int(gridx.upper_bound); i++)
+    for (int j = int(gridy.lower_bound); j <= int(gridy.upper_bound); j++)
+      for (int k = int(gridz.lower_bound); k <= int(gridz.upper_bound); k++)
+      {
+        PosType v;
+        v[0]         = i;
+        v[1]         = j;
+        v[2]         = k;
+        RealType ksq = P->Lattice.ksq(v);
+
+        if (ksq > kcutsq)
+          sk[skindex] = limit;
+        skindex++;
+      }
+  //No particular BC's on the edge of S(k).
+
+  bcx.lCode = NATURAL;
+  bcx.rCode = NATURAL;
+  bcx.lVal  = 1.0;
+  bcx.rVal  = 1.0;
+
+  bcy.lCode = NATURAL;
+  bcy.rCode = NATURAL;
+  bcy.lVal  = 1.0;
+  bcy.rVal  = 1.0;
+
+  bcz.lCode = NATURAL;
+  bcz.rCode = NATURAL;
+  bcz.lVal  = 1.0;
+  bcz.rVal  = 1.0;
+
+  //hack for QMC_MIXED_PRECISION to interface to UBspline_3d_d
+  vector<FullPrecRealType> sk_fp(sk.begin(), sk.end());
+  UBspline_3d_d* spline = create_UBspline_3d_d(esgridx, esgridy, esgridz, bcx, bcy, bcz, sk_fp.data());
+
+  return spline;
+}
 
 void QMCFiniteSize::getSkInfo(UBspline_3d_d* spline, vector<RealType>& symmatelem)
 {
@@ -153,7 +283,6 @@ void QMCFiniteSize::getSkInfo(UBspline_3d_d* spline, vector<RealType>& symmatele
   symmatelem[5] = 0.5 * RealType(syz - sy - sz) / h2;
 }
 
-
 QMCFiniteSize::RealType QMCFiniteSize::sphericalAvgSk(UBspline_3d_d* spline, RealType k)
 {
   RealType sum         = 0.0;
@@ -183,166 +312,6 @@ QMCFiniteSize::RealType QMCFiniteSize::sphericalAvgSk(UBspline_3d_d* spline, Rea
   return sum / RealType(ngrid);
 }
 
-
-bool QMCFiniteSize::processPWH(xmlNodePtr cur)
-{
-  //return true and will be ignored
-  if (cur == NULL)
-    return true;
-  bool inputnode = true;
-  //save the root to grep @tilematrix
-  xmlNodePtr cur_root = cur;
-  cur                 = cur->children;
-  while (cur != NULL)
-  {
-    std::string cname((const char*)cur->name);
-    if (cname == "simulationcell")
-    {
-      ptclPool.putLattice(cur);
-    }
-    else if (cname == "particleset")
-    {
-      ptclPool.putTileMatrix(cur_root);
-      ptclPool.put(cur);
-    }
-    else if (cname == "wavefunction")
-    {
-      wfnPut(cur);
-    }
-    else
-    {}
-    cur = cur->next;
-  }
-  return inputnode;
-}
-
-
-void QMCFiniteSize::initBreakup()
-{
-  app_log() << "=========================================================\n";
-  app_log() << " Initializing Long Range Breakup (Esler) \n";
-  app_log() << "=========================================================\n";
-  P      = ptclPool.getParticleSet("e");
-  AA     = LRCoulombSingleton::getHandler(*P);
-  myRcut = AA->get_rc();
-  if (rVs == 0)
-  {
-    rVs = LRCoulombSingleton::createSpline4RbyVs(AA, myRcut, myGrid);
-  }
-}
-
-
-UBspline_3d_d* QMCFiniteSize::getSkSpline(RealType limit)
-{
-  KContainer Klist = P->SK->KLists;
-
-  vector<TinyVector<int, OHMMS_DIM>> kpts = Klist.kpts;
-
-  vector<RealType> sk(kpts.size()), skerr(kpts.size());
-
-  skparser->get_sk(sk, skerr);
-  if (skparser->is_normalized() == false)
-  {
-    IndexType Ne = P->getTotalNum();
-    for (IndexType i = 0; i < sk.size(); i++)
-    {
-      sk[i] /= RealType(Ne);
-      skerr[i] /= RealType(Ne);
-    }
-  }
-
-  skparser->get_grid(gridx, gridy, gridz);
-
-  Ugrid esgridx;
-  Ugrid esgridy;
-  Ugrid esgridz;
-
-
-  //get the einspline grids.
-  esgridx = gridx.einspline_grid();
-  esgridy = gridy.einspline_grid();
-  esgridz = gridz.einspline_grid();
-
-  //setup the einspline boundary conditions.
-  BCtype_d bcx;
-  BCtype_d bcy;
-  BCtype_d bcz;
-
-
-  //This piece iterates through S(k) and sets
-  //pieces beyond the k-cutoff equal to 1.
-  //A violent approximation if S(k) is not converged, but
-  //better than S(k)=0.
-  double kc     = AA->get_kc();
-  double kcutsq = kc * kc;
-
-  for (int i = int(gridx.lower_bound), skindex = 0; i <= int(gridx.upper_bound); i++)
-    for (int j = int(gridy.lower_bound); j <= int(gridy.upper_bound); j++)
-      for (int k = int(gridz.lower_bound); k <= int(gridz.upper_bound); k++)
-      {
-        PosType v;
-        v[0]         = i;
-        v[1]         = j;
-        v[2]         = k;
-        RealType ksq = P->Lattice.ksq(v);
-
-        if (ksq > kcutsq)
-          sk[skindex] = limit;
-        skindex++;
-      }
-  //No particular BC's on the edge of S(k).
-
-  bcx.lCode = NATURAL;
-  bcx.rCode = NATURAL;
-  bcx.lVal  = 1.0;
-  bcx.rVal  = 1.0;
-
-  bcy.lCode = NATURAL;
-  bcy.rCode = NATURAL;
-  bcy.lVal  = 1.0;
-  bcy.rVal  = 1.0;
-
-  bcz.lCode = NATURAL;
-  bcz.rCode = NATURAL;
-  bcz.lVal  = 1.0;
-  bcz.rVal  = 1.0;
-
-  //hack for QMC_MIXED_PRECISION to interface to UBspline_3d_d
-  vector<FullPrecRealType> sk_fp(sk.begin(), sk.end());
-  UBspline_3d_d* spline = create_UBspline_3d_d(esgridx, esgridy, esgridz, bcx, bcy, bcz, sk_fp.data());
-
-  return spline;
-}
-
-
-void QMCFiniteSize::build_spherical_grid(IndexType mtheta, IndexType mphi)
-{
-  //Spherical grid from https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf
-  RealType alpha = 4.0 * M_PI / (mtheta * mphi);
-  RealType d = std::sqrt(alpha);
-  RealType Mt = int(std::round(M_PI / d));
-  RealType Dt = M_PI / Mt;
-  RealType Dp = alpha / Dt;
-  int count = 0; 
-  for (int m = 0; m < Mt; m++)
-  {
-    RealType theta = M_PI * (m + 0.5) / Mt;
-    RealType Mp = int(std::round(2 * M_PI * std::sin(theta) / Dp));
-    for (int n = 0; n < Mp; n++)
-    {
-      IndexType gindex = m * mtheta + n;
-      RealType phi = 2 * M_PI * n / Mp;
-      PosType tmp;
-      tmp[0] = std::sin(theta)*std::cos(phi);
-      tmp[1] = std::sin(theta)*std::sin(phi);
-      tmp[2] = std::cos(theta);
-      sphericalgrid.push_back(tmp);
-    }
-  }
-
-}
-
-
 NUBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid,
                                               vector<RealType>& vals,
                                               RealType lVal,
@@ -361,7 +330,6 @@ NUBspline_1d_d* QMCFiniteSize::spline_clamped(vector<RealType>& grid,
   vector<FullPrecRealType> vals_fp(vals.begin(), vals.end());
   return create_NUBspline_1d_d(grid1d, xBC, vals_fp.data());
 }
-
 
 //Integrate the spline using Simpson's 5/8 rule.  For Bsplines, this should be exact
 //provided your delta is smaller than the smallest bspline mesh spacing.
@@ -397,37 +365,8 @@ QMCFiniteSize::RealType QMCFiniteSize::integrate_spline(NUBspline_1d_d* spline, 
   return (eps / 3.0) * sum;
 }
 
-
-bool QMCFiniteSize::execute()
+void QMCFiniteSize::printSkRawSphAvg(const vector<RealType>& sk)
 {
-  //Initialize the long range breakup.  For now, do the Esler method.
-  initBreakup();
-  KContainer Klist                        = P->SK->KLists;
-  vector<TinyVector<int, OHMMS_DIM>> kpts = Klist.kpts; //These are in reduced coordinates.
-                                                        //Easier to spline, but will have to convert
-                                                        //for real space integration.
-
-  vector<RealType> sk(kpts.size()), skerr(kpts.size());
-
-  if (!skparser->has_grid())
-    skparser->set_grid(kpts);
-
-  cout << "Grid computed.\n";
-
-  sk    = skparser->get_sk_raw();
-  skerr = skparser->get_skerr_raw();
-
-  IndexType Ne = P->getTotalNum();
-  if (skparser->is_normalized() == false)
-  {
-    for (int i = 0; i < sk.size(); i++)
-    {
-      sk[i] /= RealType(Ne);
-      skerr[i] /= RealType(Ne);
-    }
-  }
-  //This is the \frac{1}{Omega} \sum_{\mathbf{k}} \frac{v_k}{2} S(\mathbf{k}) term.
-  RealType V = 0.5 * AA->evaluate_w_sk(Klist.kshell, sk.data());
   vector<RealType> vsk_1d(Klist.kshell.size());
 
   // Average within each shell
@@ -469,10 +408,12 @@ bool QMCFiniteSize::execute()
     app_log() << "####################################################################\n";
   }
 
-  UBspline_3d_d* sk3d_spline = getSkSpline();
+}
 
+void QMCFiniteSize::printSkSplineSphAvg(UBspline_3d_d* spline)
+{
   vector<RealType> Amat;
-  getSkInfo(sk3d_spline, Amat);
+  getSkInfo(spline, Amat);
 
   app_log() << "\n=========================================================\n";
   app_log() << " S(k) Info \n";
@@ -504,10 +445,22 @@ bool QMCFiniteSize::execute()
   for (int k = 0; k < nk; k++)
   {
     RealType kval = kdel * k;
-    app_log() << setw(12) << setprecision(8) << kval << setw(12) << setprecision(8) << sphericalAvgSk(sk3d_spline, kval)
+    app_log() << setw(12) << setprecision(8) << kval << setw(12) << setprecision(8) << sphericalAvgSk(spline, kval)
               << "\n";
   }
+}
 
+QMCFiniteSize::RealType QMCFiniteSize::calcPotentialDiscrete(vector<RealType> sk)
+{
+  //This is the \frac{1}{Omega} \sum_{\mathbf{k}} \frac{v_k}{2} S(\mathbf{k}) term.
+  return 0.5 * AA->evaluate_w_sk(Klist.kshell, sk.data());
+}
+
+QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
+{
+  UBspline_3d_d* spline = getSkSpline(sk);
+
+  RealType kmax = AA->get_kc();
   IndexType ngrid = Klist.kshell.size() - 1;
   vector<RealType> nonunigrid1d(ngrid + 2); //The +2 includes the k=0 point and the k=kmax point.
   nonunigrid1d[0]         = 0.0;
@@ -521,7 +474,7 @@ bool QMCFiniteSize::execute()
   {
     RealType kval        = std::sqrt(Klist.ksq[Klist.kshell[ks]]);
     nonunigrid1d[ks + 1] = kval;
-    RealType skavg       = sphericalAvgSk(sk3d_spline, kval);
+    RealType skavg       = sphericalAvgSk(spline, kval);
     RealType vk          = AA->Fk_symm[ks];
     k2vksk[ks + 1]       = 0.5 * vk * skavg * kval * kval;
   }
@@ -533,13 +486,63 @@ bool QMCFiniteSize::execute()
   RealType intnorm       = P->Lattice.Volume / 2.0 / M_PI / M_PI; //The volume factor here is because 1/Vol is
                                                                   //included in QMCPACK's v_k.  See CoulombFunctor.
 
+
+  return intnorm * integratedval;
+}
+
+bool QMCFiniteSize::execute()
+{
+  //Initialize the long range breakup.  For now, do the Esler method.
+  initBreakup();
+  IndexType Ne = P->getTotalNum();
+  Klist = P->SK->KLists;
+  kpts  = Klist.kpts; //These are in reduced coordinates.
+                      //Easier to spline, but will have to convert
+                      //for real space integration.
+
+  if (!skparser->has_grid())
+    skparser->set_grid(kpts);
+
+  cout << "Grid computed.\n";
+
+  //Print Spherical Avg from data
+  SK_raw = skparser->get_sk_raw();
+  SKerr_raw = skparser->get_skerr_raw();
+  if (skparser->is_normalized() == false)
+  {
+    for (int i = 0; i < SK_raw.size(); i++)
+    {
+      SK_raw[i] /= RealType(Ne);
+      SKerr_raw[i] /= RealType(Ne);
+    }
+  }
+  printSkRawSphAvg(SK_raw);
+
+  //Print Spherical Avg from spline
+  skparser->get_sk(SK, SKerr);
+  if (skparser->is_normalized() == false)
+  {
+    for (IndexType i = 0; i < SK.size(); i++)
+    {
+      SK[i] /= RealType(Ne);
+      SKerr[i] /= RealType(Ne);
+    }
+  }
+  skparser->get_grid(gridx, gridy, gridz);
+  UBspline_3d_d* sk3d_spline = getSkSpline(SK);
+  printSkSplineSphAvg(sk3d_spline);
+
+
+  //Calculate the correction
+  RealType V = calcPotentialDiscrete(SK_raw);
+  RealType vint = calcPotentialInt(SK);
+
   // Here are the fsc corrections to potential
   RealType rho     = RealType(Ne) / P->Lattice.Volume;
   RealType rs      = std::pow(3.0 / (4 * M_PI) * P->Lattice.Volume / RealType(Ne), 1.0 / 3.0);
-  RealType vlo     = 2 * M_PI * rho * b / RealType(Ne);
-  RealType vint    = intnorm * integratedval;
+//  RealType vlo     = 2 * M_PI * rho * b / RealType(Ne);
   RealType vfscorr = vint - V;
-  RealType tlo     = 1.0 / RealType(Ne * b * 8);
+//  RealType tlo     = 1.0 / RealType(Ne * b * 8);
 
   app_log() << "\n=========================================================\n";
   app_log() << " Finite Size Corrections:\n";
@@ -552,8 +555,8 @@ bool QMCFiniteSize::execute()
   app_log() << "  rs/a0 = " << setw(12) << setprecision(8) << rs << "\n";
   app_log() << "\n";
   app_log() << " Leading Order Corrections:\n";
-  app_log() << "  V_LO = " << setw(12) << setprecision(8) << vlo << " [Ha/electron], " << vlo * Ne << " [Ha]\n";
-  app_log() << "  T_LO = " << setw(12) << setprecision(8) << tlo << " [Ha/electron], " << tlo * Ne << " [Ha]\n";
+ // app_log() << "  V_LO = " << setw(12) << setprecision(8) << vlo << " [Ha/electron], " << vlo * Ne << " [Ha]\n";
+ // app_log() << "  T_LO = " << setw(12) << setprecision(8) << tlo << " [Ha/electron], " << tlo * Ne << " [Ha]\n";
   app_log() << "  NB: This is a crude estimate of the kinetic energy correction!\n";
   app_log() << "\n";
   app_log() << " Beyond Leading Order (Integrated corrections):\n";
