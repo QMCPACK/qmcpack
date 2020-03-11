@@ -73,6 +73,7 @@ SET(FSSRCS
   QMCFiniteSize/SkParserBase.cpp
   QMCFiniteSize/SkParserASCII.cpp
   QMCFiniteSize/SkParserScalarDat.cpp
+  QMCFiniteSize/FSUtilities.cpp
 )
 
 ADD_LIBRARY(fstool ${FSSRCS})

@@ -1,8 +1,7 @@
-#ifndef GRID_UTILITIES_H
-#define GRID_UTILITIES_H
+#ifndef FS_UTILITIES_H
+#define FS_UTILITIES_H
 
 #include <vector>
-#include <algorithm>
 #include "Configuration.h"
 
 namespace qmcplusplus
@@ -16,25 +15,9 @@ void get_gridinfo_from_posgrid(const std::vector<PosType>& posgridlist, //list o
                                RealType& lx,                            //the lower bound of grid (aka "left").
                                RealType& rx,                            //the upper bound (aka "right")
                                RealType& dx,                            // the grid spacing
-                               IndexType& Nx)                           // the number of grid points
-{
-  vector<RealType> kx;
-  kx.resize(posgridlist.size());
+                               IndexType& Nx);                          // the number of grid points
 
-  for (IndexType i = 0; i < posgridlist.size(); i++)
-    kx[i] = posgridlist[i][axis];
-
-  vector<RealType>::iterator it;
-
-  std::sort(kx.begin(), kx.end());
-
-  it = std::unique(kx.begin(), kx.end());
-
-  lx = *(kx.begin());
-  rx = *(it - 1);
-  Nx = it - kx.begin();
-  dx = (rx - lx) / RealType(Nx - 1);
-}
+void getStats(const std::vector<RealType>& vals, RealType& avg, RealType& err);
 
 } // namespace qmcplusplus
 #endif

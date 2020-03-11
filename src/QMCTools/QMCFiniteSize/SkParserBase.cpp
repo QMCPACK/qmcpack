@@ -1,6 +1,6 @@
 #include "QMCTools/QMCFiniteSize/SkParserBase.h"
 #include "Message/Communicate.h"
-#include "QMCTools/QMCFiniteSize/GridUtilities.h"
+#include "QMCTools/QMCFiniteSize/FSUtilities.h"
 
 namespace qmcplusplus
 {

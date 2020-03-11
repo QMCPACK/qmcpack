@@ -8,6 +8,7 @@
 #include "einspline/nubspline_eval_d.h"
 #include "einspline/nugrid.h"
 #include "einspline/nubspline_create.h"
+#include "QMCTools/QMCFiniteSize/FSUtilities.h"
 
 namespace qmcplusplus
 {
@@ -26,6 +27,7 @@ QMCFiniteSize::QMCFiniteSize(SkParserBase* skparser_i)
   mtheta = 80;
   mphi   = 80;
   h      = 0.00001;
+  NumSamples = 1000;
   build_spherical_grid(mtheta,mphi);
 }
 
@@ -490,6 +492,31 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
   return intnorm * integratedval;
 }
 
+void QMCFiniteSize::calcPotentialCorrection(RealType& val, RealType& err)
+{
+  //resample vsums and vints
+  vector<RealType> vsums, vints;
+  vsums.resize(NumSamples);
+  vints.resize(NumSamples);
+
+  #pragma omp parallel for
+  for (int i = 0; i < NumSamples; i++)
+  {
+    vsums[i] = calcPotentialDiscrete(SK_raw);
+    vints[i] = calcPotentialInt(SK);
+  }
+
+  RealType vint, vinterr;
+  getStats(vints,vint,vinterr);
+
+  RealType vsum,vsumerr;
+  getStats(vsums, vsum, vsumerr);
+
+  val = vint - vsum;
+  err = std::sqrt(vinterr * vinterr + vsumerr * vsumerr);
+}
+
+
 bool QMCFiniteSize::execute()
 {
   //Initialize the long range breakup.  For now, do the Esler method.
@@ -536,6 +563,10 @@ bool QMCFiniteSize::execute()
   //Calculate the correction
   RealType V = calcPotentialDiscrete(SK_raw);
   RealType vint = calcPotentialInt(SK);
+
+  RealType vcor, verr;
+  calcPotentialCorrection(vcor,verr);
+  app_log() << "AVGED: " << vcor << " +/- " << verr << endl;
 
   // Here are the fsc corrections to potential
   RealType rho     = RealType(Ne) / P->Lattice.Volume;
