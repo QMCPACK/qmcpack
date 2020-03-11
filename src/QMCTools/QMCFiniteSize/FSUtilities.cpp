@@ -3,13 +3,12 @@
 
 namespace qmcplusplus
 {
-
-void get_gridinfo_from_posgrid(const std::vector<PosType>& posgridlist, 
-                               const IndexType& axis,                   
-                               RealType& lx,                            
-                               RealType& rx,                            
-                               RealType& dx,                            
-                               IndexType& Nx)                           
+void get_gridinfo_from_posgrid(const std::vector<PosType>& posgridlist,
+                               const IndexType& axis,
+                               RealType& lx,
+                               RealType& rx,
+                               RealType& dx,
+                               IndexType& Nx)
 {
   std::vector<RealType> kx;
   kx.resize(posgridlist.size());

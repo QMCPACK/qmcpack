@@ -67,7 +67,7 @@ private:
   void printSkRawSphAvg(const vector<RealType>& sk);
   void printSkSplineSphAvg(UBspline_3d_d* spline);
   KContainer Klist;
-  vector<TinyVector<int,OHMMS_DIM>> kpts;
+  vector<TinyVector<int, OHMMS_DIM>> kpts;
 
   RealType calcPotentialDiscrete(vector<RealType> sk);
   RealType calcPotentialInt(vector<RealType> sk);
@@ -82,8 +82,8 @@ private:
   IndexType NumSamples;
   vector<PosType> sphericalgrid;
 
-  RealType Ne,Vol,rs,rho;
-  RealType tlo,tloerr,vlo,vloerr,Vfs,Vfserr;
+  RealType Ne, Vol, rs, rho;
+  RealType tlo, tloerr, vlo, vloerr, Vfs, Vfserr;
 };
 } // namespace qmcplusplus
 
