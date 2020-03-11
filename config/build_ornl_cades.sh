@@ -7,14 +7,13 @@
 ## * Execute this script in trunk/                            ##
 ##   ./config/build_ornl_cades.sh                             ##
 ##                                                            ##
-## Last verified: Mar 12, 2019                                ##
+## Last verified: Mar 11, 2020                                ##
 ################################################################
 
 # module files resulting from module imports below:
 # Currently Loaded Modulefiles:
-#   1) intel/18.0.0           4) gcc/6.3.0              7) cmake/3.11.0
-#   2) openmpi/3.1.1          5) hdf5_parallel/1.10.3   8) boost/1.67.0-pe3
-#   3) PE-intel/3.0           6) fftw/3.3.5-pe3         9) libxml2/2.9.9
+#   1) python/3.6.3           3) openmpi/3.1.5          5) gcc/6.3.0              7) fftw/3.3.5-pe3         9) boost/1.67.0-pe3
+#   2) intel/18.0.0           4) PE-intel/3.0           6) hdf5_parallel/1.10.3   8) cmake/3.11.0          10) libxml2/2.9.9
 
 source $MODULESHOME/init/bash
 module purge
