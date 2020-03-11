@@ -26,6 +26,7 @@ QMCFiniteSize::QMCFiniteSize(SkParserBase* skparser_i)
   mtheta = 80;
   mphi   = 80;
   h      = 0.00001;
+  build_spherical_grid(mtheta,mphi);
 }
 
 bool QMCFiniteSize::validateXML()
@@ -161,7 +162,7 @@ QMCFiniteSize::RealType QMCFiniteSize::sphericalAvgSk(UBspline_3d_d* spline, Rea
   IndexType ngrid = sphericalgrid.size();
   for (IndexType i = 0; i < ngrid; i++)
   {
-    kvec =k * sphericalgrid[i];
+    kvec = P->Lattice.k_unit(k * sphericalgrid[i]); // to reduced coordinates
     bool inx = true;
     bool iny = true;
     bool inz = true;
@@ -316,36 +317,6 @@ UBspline_3d_d* QMCFiniteSize::getSkSpline(RealType limit)
 
 void QMCFiniteSize::build_spherical_grid(IndexType mtheta, IndexType mphi)
 {
-  //sphericalgrid.resize(mtheta * mphi);
-  //RealType dphi      = 2 * M_PI / RealType(mphi - 1);
-  //RealType dcostheta = 2.0 / RealType(mtheta - 1);
-
-  //PosType tmp;
-
-
-  //cout << "SPHERICAL_GRID: " << mtheta*mphi << endl;
-  //for (IndexType i = 0; i < mtheta; i++)
-  //  for (IndexType j = 0; j < mphi; j++)
-  //  {
-  //    IndexType gindex = i * mtheta + j;
-
-  //    RealType costheta = -1.0 + dcostheta * i;
-  //    RealType theta    = std::acos(costheta);
-  //    RealType sintheta = std::sin(theta);
-
-  //    RealType phi    = dphi * j;
-  //    RealType sinphi = std::sin(phi);
-  //    RealType cosphi = std::cos(phi);
-  //    tmp[0]          = sintheta * cosphi;
-  //    tmp[1]          = sintheta * sinphi;
-  //    tmp[2]          = costheta;
-
-  //    //we do this last transformation because S(k) is splined in the lattice
-  //    //kvector units, and not the cartesian ones.
-  //    sphericalgrid[gindex] = P->Lattice.k_unit(tmp);
-  //  }
-  
-
   //Spherical grid from https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf
   RealType alpha = 4.0 * M_PI / (mtheta * mphi);
   RealType d = std::sqrt(alpha);
@@ -365,7 +336,7 @@ void QMCFiniteSize::build_spherical_grid(IndexType mtheta, IndexType mphi)
       tmp[0] = std::sin(theta)*std::cos(phi);
       tmp[1] = std::sin(theta)*std::sin(phi);
       tmp[2] = std::cos(theta);
-      sphericalgrid.push_back(P->Lattice.k_unit(tmp));
+      sphericalgrid.push_back(tmp);
     }
   }
 
@@ -499,8 +470,6 @@ bool QMCFiniteSize::execute()
   }
 
   UBspline_3d_d* sk3d_spline = getSkSpline();
-
-  build_spherical_grid(mtheta, mphi);
 
   vector<RealType> Amat;
   getSkInfo(sk3d_spline, Amat);
