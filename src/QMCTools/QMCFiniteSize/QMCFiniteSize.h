@@ -38,7 +38,9 @@ public:
   RealType integrate_spline(NUBspline_1d_d* spline, RealType a, RealType b, IndexType N);
   NUBspline_1d_d* spline_clamped(vector<RealType>& grid, vector<RealType>& vals, RealType lVal, RealType rVal);
 
-  void calcPotentialCorrection(RealType& val, RealType& err);
+  void calcPotentialCorrection();
+  void calcLeadingOrderCorrections();
+  void summary();
 
 private:
   RealType h; //this is for finite differencing.
@@ -79,6 +81,9 @@ private:
   IndexType mphi;
   IndexType NumSamples;
   vector<PosType> sphericalgrid;
+
+  RealType Ne,Vol,rs,rho;
+  RealType tlo,tloerr,vlo,vloerr,Vfs,Vfserr;
 };
 } // namespace qmcplusplus
 

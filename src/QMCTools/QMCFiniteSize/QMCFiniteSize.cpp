@@ -9,6 +9,7 @@
 #include "einspline/nugrid.h"
 #include "einspline/nubspline_create.h"
 #include "QMCTools/QMCFiniteSize/FSUtilities.h"
+#include "Utilities/RandomGenerator.h"
 
 namespace qmcplusplus
 {
@@ -18,7 +19,7 @@ QMCFiniteSize::QMCFiniteSize() : skparser(NULL), ptclPool(NULL), myRcut(0.0), my
   IndexType mphi   = 10;
   app_log() << "Building spherical grid. n_theta x n_phi = " << mtheta << " x " << mphi << endl;
   build_spherical_grid(mtheta, mphi);
-  h = 0.00001;
+  h = 0.1;
 }
 
 QMCFiniteSize::QMCFiniteSize(SkParserBase* skparser_i)
@@ -26,7 +27,7 @@ QMCFiniteSize::QMCFiniteSize(SkParserBase* skparser_i)
 {
   mtheta = 80;
   mphi   = 80;
-  h      = 0.00001;
+  h      = 0.1;
   NumSamples = 1000;
   build_spherical_grid(mtheta,mphi);
 }
@@ -485,25 +486,41 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
 
   //Integrate the spline and compute the thermodynamic limit.
   RealType integratedval = integrate_spline(integrand, 0.0, kmax, 100);
-  RealType intnorm       = P->Lattice.Volume / 2.0 / M_PI / M_PI; //The volume factor here is because 1/Vol is
+  RealType intnorm       = Vol / 2.0 / M_PI / M_PI; //The volume factor here is because 1/Vol is
                                                                   //included in QMCPACK's v_k.  See CoulombFunctor.
 
 
   return intnorm * integratedval;
 }
 
-void QMCFiniteSize::calcPotentialCorrection(RealType& val, RealType& err)
+void QMCFiniteSize::calcPotentialCorrection()
 {
   //resample vsums and vints
   vector<RealType> vsums, vints;
   vsums.resize(NumSamples);
   vints.resize(NumSamples);
 
+  RandomGenerator_t rng;
   #pragma omp parallel for
   for (int i = 0; i < NumSamples; i++)
   {
-    vsums[i] = calcPotentialDiscrete(SK_raw);
-    vints[i] = calcPotentialInt(SK);
+    vector<RealType> newSK_raw(SK_raw.size());
+    for (int j = 0; j < SK_raw.size(); j++)
+    {
+      RealType chi;
+      rng.generate_normal(&chi,1);
+      newSK_raw[j] = SK_raw[j] + SKerr_raw[j] * chi;
+    }
+    vsums[i]= calcPotentialDiscrete(newSK_raw);
+
+    vector<RealType> newSK(SK.size());
+    for (int j = 0; j < SK.size(); j++)
+    {
+      RealType chi;
+      rng.generate_normal(&chi,1);
+      newSK[j] = SK[j] + SKerr[j] * chi;
+    }
+    vints[i] = calcPotentialInt(newSK);
   }
 
   RealType vint, vinterr;
@@ -512,16 +529,75 @@ void QMCFiniteSize::calcPotentialCorrection(RealType& val, RealType& err)
   RealType vsum,vsumerr;
   getStats(vsums, vsum, vsumerr);
 
-  val = vint - vsum;
-  err = std::sqrt(vinterr * vinterr + vsumerr * vsumerr);
+  Vfs = vint - vsum;
+  Vfserr = std::sqrt(vinterr * vinterr + vsumerr * vsumerr);
 }
 
+void QMCFiniteSize::calcLeadingOrderCorrections()
+{
+  RandomGenerator_t rng;
+
+  vector<RealType> bs(NumSamples);
+  #pragma omp parallel for
+  for (int i = 0; i < NumSamples; i++)
+  {
+    vector<RealType> newSK(SK.size());
+    for (int j = 0; j < SK.size(); j++)
+    {
+      RealType chi;
+      rng.generate_normal(&chi,1);
+      newSK[j] = SK[j] + SKerr[j] * chi;
+
+    }
+    UBspline_3d_d* spline = getSkSpline(newSK);
+    vector<RealType> Amat;
+    getSkInfo(spline, Amat);
+    bs[i] = (Amat[0] + Amat[1] + Amat[2]) / 3.0;
+  }
+
+  RealType b,berr;
+  getStats(bs,b,berr);
+
+  vlo    = 2 * M_PI * rho * b / RealType(Ne);
+  vloerr = (2 * M_PI * rho / RealType(Ne)) * berr;
+  tlo    = 1.0 / RealType(Ne * b * 8);
+  tloerr = berr / (8 * RealType(Ne) * b * b);
+}
+
+void QMCFiniteSize::summary()
+{
+  // Here are the fsc corrections to potential
+  app_log() << "\n=========================================================\n";
+  app_log() << " Finite Size Corrections:\n";
+  app_log() << "=========================================================\n";
+  app_log() << " System summary:\n";
+  app_log() << fixed;
+  app_log() << "  Nelec = " << setw(12) << Ne << "\n";
+  app_log() << "  Vol   = " << setw(12) << setprecision(8) << Vol << " [a0^3]\n";
+  app_log() << "  Ne/V  = " << setw(12) << setprecision(8) << rho << " [1/a0^3]\n";
+  app_log() << "  rs/a0 = " << setw(12) << setprecision(8) << rs << "\n";
+  app_log() << "\n";
+  app_log() << " Leading Order Corrections:\n";
+  app_log() << "  V_LO / electron = " << setw(12) << setprecision(8) << vlo << " +/- " << vloerr << " [Ha/electron]\n";
+  app_log() << "  V_LO            = " << setw(12) << setprecision(8) << vlo * Ne << " +/- " << vloerr * Ne << " [Ha]\n";
+  app_log() << "  T_LO / electron = " << setw(12) << setprecision(8) << tlo << " +/- " << tloerr << " [Ha/electron]\n";
+  app_log() << "  T_LO            = " << setw(12) << setprecision(8) << tlo * Ne << " +/- " << tloerr * Ne << " [Ha]\n";
+  app_log() << "  NB: This is a crude estimate of the kinetic energy correction!\n";
+  app_log() << "\n";
+  app_log() << " Beyond Leading Order (Integrated corrections):\n";
+  app_log() << "  V_Int / electron = " << setw(12) << setprecision(8) << Vfs << " +/- " << Vfserr << " [Ha/electron]\n";
+  app_log() << "  V_Int            = " << setw(12) << setprecision(8) << Vfs*Ne << " +/- " << Vfserr*Ne << " [Ha]\n";
+
+}
 
 bool QMCFiniteSize::execute()
 {
-  //Initialize the long range breakup.  For now, do the Esler method.
+  //Initialize the long range breakup. Chosen in input xml
   initBreakup();
-  IndexType Ne = P->getTotalNum();
+  Ne  = P->getTotalNum();
+  Vol = P->Lattice.Volume;
+  rs  = std::pow(3.0 / (4 * M_PI) * Vol / RealType(Ne), 1.0 / 3.0);
+  rho = RealType(Ne) / Vol;
   Klist = P->SK->KLists;
   kpts  = Klist.kpts; //These are in reduced coordinates.
                       //Easier to spline, but will have to convert
@@ -546,7 +622,7 @@ bool QMCFiniteSize::execute()
   printSkRawSphAvg(SK_raw);
 
   //Print Spherical Avg from spline
-  skparser->get_sk(SK, SKerr);
+  skparser->get_sk(SK, SKerr); //now have SK on full grid
   if (skparser->is_normalized() == false)
   {
     for (IndexType i = 0; i < SK.size(); i++)
@@ -560,39 +636,10 @@ bool QMCFiniteSize::execute()
   printSkSplineSphAvg(sk3d_spline);
 
 
-  //Calculate the correction
-  RealType V = calcPotentialDiscrete(SK_raw);
-  RealType vint = calcPotentialInt(SK);
+  calcLeadingOrderCorrections();
+  calcPotentialCorrection();
 
-  RealType vcor, verr;
-  calcPotentialCorrection(vcor,verr);
-  app_log() << "AVGED: " << vcor << " +/- " << verr << endl;
-
-  // Here are the fsc corrections to potential
-  RealType rho     = RealType(Ne) / P->Lattice.Volume;
-  RealType rs      = std::pow(3.0 / (4 * M_PI) * P->Lattice.Volume / RealType(Ne), 1.0 / 3.0);
-//  RealType vlo     = 2 * M_PI * rho * b / RealType(Ne);
-  RealType vfscorr = vint - V;
-//  RealType tlo     = 1.0 / RealType(Ne * b * 8);
-
-  app_log() << "\n=========================================================\n";
-  app_log() << " Finite Size Corrections:\n";
-  app_log() << "=========================================================\n";
-  app_log() << " System summary:\n";
-  app_log() << fixed;
-  app_log() << "  Nelec = " << setw(12) << Ne << "\n";
-  app_log() << "  Vol   = " << setw(12) << setprecision(8) << P->Lattice.Volume << " [a0^3]\n";
-  app_log() << "  Ne/V  = " << setw(12) << setprecision(8) << rho << " [1/a0^3]\n";
-  app_log() << "  rs/a0 = " << setw(12) << setprecision(8) << rs << "\n";
-  app_log() << "\n";
-  app_log() << " Leading Order Corrections:\n";
- // app_log() << "  V_LO = " << setw(12) << setprecision(8) << vlo << " [Ha/electron], " << vlo * Ne << " [Ha]\n";
- // app_log() << "  T_LO = " << setw(12) << setprecision(8) << tlo << " [Ha/electron], " << tlo * Ne << " [Ha]\n";
-  app_log() << "  NB: This is a crude estimate of the kinetic energy correction!\n";
-  app_log() << "\n";
-  app_log() << " Beyond Leading Order (Integrated corrections):\n";
-  app_log() << "  V_Int = " << setw(12) << setprecision(8) << vfscorr << " [Ha/electron], " << vfscorr * Ne
-            << " [Ha]\n";
+  summary();
 }
 
 } // namespace qmcplusplus
