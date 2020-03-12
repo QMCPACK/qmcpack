@@ -1,48 +1,42 @@
 #!/bin/bash
 
 #
-# Installs compilers & libraries for QMCPACK testing via SPACK 
+# Installs compilers & libraries for QMCPACK testing via SPACK on a clean VM
+#   - assumes 32 jobs is reasonable 
 #
-#          *** DESTROYS EXISTING INSTALLATION ***
+#  ./vm_setup.sh        Builds current CI requirements (use with caution specs could become ambiguous)
+#  ./vm_setup.sh clean  *** DESTROYS EXISTING INSTALLATION ***
 #
 #
 
-rm -r -f $HOME/apps/spack $HOME/.spack
+module() { eval `/usr/bin/modulecmd bash $*`; }
 
-mkdir $HOME/.spack
-
-cat >$HOME/.spack/config.yaml<<EOF
+if [[ $1 == "clean" ]]; then
+   rm -r -f $HOME/spack $HOME/.spack
+   mkdir $HOME/.spack
+   cat >$HOME/.spack/config.yaml<<EOF
 config:
-
-  build_stage:
-    - /scratch/$USER/spack_build_stage
-    - /home/$USER/apps/spack/var/spack/stage
-
-  build_jobs: 12
-
+  build_jobs: 32
+  shared_linking: 'rpath'
 EOF
-# Use flash /scratch for builds
-rm -r -f /scratch/$USER/spack_build_stage
-mkdir /scratch/$USER/spack_build_stage
 
-cd $HOME/apps
-git clone https://github.com/spack/spack.git
-cd spack
+  cd $HOME
+  git clone https://github.com/spack/spack.git
+  cd spack
 # For reproducibility, use a specific version of Spack
 # Use tagged releases https://github.com/spack/spack/releases
 # git checkout v0.13.3
-git checkout b9dc263801ab8b9ce46e83adec8002c299fe2e44
+  git checkout b9dc263801ab8b9ce46e83adec8002c299fe2e44
 #Author: Justin S <3630356+codeandkey@users.noreply.github.com>
 #Date:   Fri Jan 3 15:52:59 2020 -0600
 #
 #    py-intervaltree: new package at 3.0.2 (#14277)
 
-module() { eval `/usr/bin/modulecmd bash $*`; }
+  cd bin
+  ./spack bootstrap
+fi
 
-cd bin
-./spack bootstrap
-
-export SPACK_ROOT=$HOME/apps/spack
+export SPACK_ROOT=$HOME/spack
 . $SPACK_ROOT/share/spack/setup-env.sh
 
 echo --- Spack list
@@ -113,11 +107,19 @@ spack load gcc@${gcc_vold}
 spack compiler find
 echo --- Spack compilers
 spack compilers
+
+if [[ $1 == "clean" ]]; then
+   cat >$HOME/.spack/packages.yaml<<EOF
+packages:
+  all:
+    compiler: [gcc@${gcc_vold}]
+EOF
+fi
+
 spack install --no-checksum libxml2@${libxml2_vold}%gcc@${gcc_vold}
 spack install cmake@${cmake_vold}%gcc@${gcc_vold}
 spack install boost@${boost_vold}%gcc@${gcc_vold}
 spack install openmpi@${ompi_vold}%gcc@${gcc_vold}
-#spack install hdf5@${hdf5_vold}%gcc@${gcc_vold}^openmpi@${ompi_vold}%gcc@${gcc_vold}
 spack install hdf5@${hdf5_vold}~mpi %gcc@${gcc_vold}
 spack install fftw@${fftw_vold}%gcc@${gcc_vold}
 spack unload gcc@${gcc_vold}
