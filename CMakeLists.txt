@@ -3,16 +3,6 @@
 ######################################################################
 CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0)
 
-cmake_policy(SET CMP0003 NEW)
-IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
-  cmake_policy(SET CMP0056 NEW)
-  # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
-  # are used in try_compile test cmake projects.
-  # CHECK_CXX_SOURCE_COMPILES and others depend on try_compile
-endif(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
-IF(CMAKE_GENERATOR MATCHES "Ninja")
-  cmake_policy(SET CMP0058 NEW)
-ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
 # CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
 # and environment variable in search path.
 # various Find<Package>.cmake modules may not follow this policy
