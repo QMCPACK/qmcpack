@@ -6,6 +6,16 @@ cd build_${ARGV}[1]_${ARGV}[2]
 BUILD_DIR=$(pwd)
 echo $BUILD_DIR
 
+export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
+
+echo "starting spack using ${SPACK_ENV_FILE}"
+
+# this depends on SPACK_ROOT being set in Jenkinsfile_xxx
+# it also supplies QMC_IMMUTABLE_FLAGS which makes it a bit more than the
+# environment from the set of loaded spack packages.
+. ${SPACK_ENV_FILE}
+
+module list
 
 ctest -j${JNK_THREADS} -L unit --output-on-failure --timeout 120
 ret=$?
