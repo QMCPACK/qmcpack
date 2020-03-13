@@ -17,7 +17,7 @@ spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 spack load fftw@$fftw_vnew%gcc@$gcc_vnew
 
-#if you've installed more than one python this will of course fail so don't
-spack load python
+#if you've installed more than one python for the new compiler this will fail
+spack load python%gcc@$gcc_vnew
 
 echo ${PATH}
