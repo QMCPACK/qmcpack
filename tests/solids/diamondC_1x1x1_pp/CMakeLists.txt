@@ -871,7 +871,6 @@ IF(NOT QMC_MIXED_PRECISION)
   LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "nonlocalecp" "0.61228622 0.000001")
   LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "mpc" "-3.43399790 0.000001")
   LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "samples" "18 0.0")
-ENDIF()
 
   QMC_RUN_AND_CHECK(bug-deterministic-diamondC_1x1x1_pp-vmc-dmc-lg_ts_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -882,7 +881,7 @@ ENDIF()
                     1 DET_DIAMOND_DMC_LGTS1_SCALARS # DMC cycle 1
                     2 DET_DIAMOND_DMC_LGTS2_SCALARS # DMC cycle 2
                     )
-
+ENDIF()
 
   # traces tests
   set(traces_python_reqs numpy;h5py)
