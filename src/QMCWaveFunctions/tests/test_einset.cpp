@@ -652,6 +652,78 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     REQUIRE( d2psiM[iat][2] == ComplexApprox( d2psiM_ref[iat][2] ));
   }
 
+  //Now we're going to test evaluateValue and evaluateVGL:
+
+  int OrbitalSetSize = spo->getOrbitalSetSize();  
+  //temporary arrays for holding the values of the up and down channels respectively.
+  SPOSet::ValueVector_t psi_work;
+
+  //temporary arrays for holding the gradients of the up and down channels respectively.
+  SPOSet::GradVector_t dpsi_work;
+
+  //temporary arrays for holding the laplacians of the up and down channels respectively.
+  SPOSet::ValueVector_t d2psi_work;
+
+   
+  psi_work.resize(OrbitalSetSize);
+
+  dpsi_work.resize(OrbitalSetSize);
+
+  d2psi_work.resize(OrbitalSetSize);
+
+  //We worked hard to generate nice reference data above.  Let's generate a test for evaluateV 
+  //and evaluateVGL by perturbing the electronic configuration by dR, and then make
+  //single particle moves that bring it back to our original R reference values.
+
+  //Our perturbation vector. 
+  ParticleSet::ParticlePos_t dR;
+  dR.resize(3);
+  //Values chosen based on divine inspiration.  Not important.
+  dR[0][0] = 0.1; dR[0][1] = 0.2; dR[0][2] = 0.1;
+  dR[1][0] = -0.1; dR[1][1] = -0.05 ; dR[1][2] = 0.05;
+  dR[2][0] = -0.1; dR[2][1] =0.0 ; dR[2][2] =0.0 ;
+
+  //The new R of our perturbed particle set.
+  ParticleSet::ParticlePos_t Rnew;
+  Rnew.resize(3);
+  Rnew = elec_.R+dR;
+  elec_.R=Rnew;
+  elec_.update(); 
+ 
+  //Now we test evaluateValue()
+  for(unsigned int iat=0; iat<3; iat++)
+  {
+    psi_work=0.0;
+    elec_.makeMove(iat,-dR[iat],false);
+    spo->evaluateValue(elec_,iat,psi_work);
+  
+    REQUIRE( psi_work[0] == ComplexApprox( psiM_ref[iat][0] ));
+    REQUIRE( psi_work[1] == ComplexApprox( psiM_ref[iat][1] ));
+    REQUIRE( psi_work[2] == ComplexApprox( psiM_ref[iat][2] ));
+    elec_.rejectMove(iat);
+  }
+
+  //Now we test evaluateVGL()
+  for(unsigned int iat=0; iat<3; iat++)
+  {
+    psi_work=0.0;
+    dpsi_work=0.0;
+    d2psi_work=0.0;
+
+    elec_.makeMove(iat,-dR[iat],false);
+    spo->evaluateVGL(elec_,iat,psi_work,dpsi_work,d2psi_work);
+  
+    REQUIRE( psi_work[0] == ComplexApprox( psiM_ref[iat][0] ));
+    REQUIRE( psi_work[1] == ComplexApprox( psiM_ref[iat][1] ));
+    REQUIRE( psi_work[2] == ComplexApprox( psiM_ref[iat][2] ));
+
+    REQUIRE( d2psi_work[0] == ComplexApprox( d2psiM_ref[iat][0] ));
+    REQUIRE( d2psi_work[1] == ComplexApprox( d2psiM_ref[iat][1] ));
+    REQUIRE( d2psi_work[2] == ComplexApprox( d2psiM_ref[iat][2] ));
+    elec_.rejectMove(iat);
+  }
+
+
 }
 #endif //QMC_COMPLEX
 
