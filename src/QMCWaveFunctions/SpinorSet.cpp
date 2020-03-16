@@ -167,7 +167,7 @@ SPOSet* SpinorSet::makeClone() const
   SpinorSet* myclone = new SpinorSet();
   std::shared_ptr<SPOSet> cloneup(spo_up->makeClone());
   std::shared_ptr<SPOSet> clonedn(spo_dn->makeClone());
-  myclone->set_spos(cloneup,clonedn);
+  myclone->set_spos(cloneup, clonedn);
   return myclone;
 }
 

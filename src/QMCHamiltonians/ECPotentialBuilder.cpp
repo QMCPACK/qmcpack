@@ -58,7 +58,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     localZeff.resize(ng, 1);
     localPot.resize(ng, 0);
     nonLocalPot.resize(ng, 0);
-    soPot.resize(ng,0);
+    soPot.resize(ng, 0);
     L2Pot.resize(ng, 0);
   }
   std::string ecpFormat("table");
