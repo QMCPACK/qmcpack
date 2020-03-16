@@ -394,6 +394,7 @@ void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ, bool m
 {
   activePtcl = iat;
   activePos  = R[iat] + displ;
+  activeSpinVal = spins[iat]; //Don't update the spin variable...  just keep track of it.
   computeNewPosDistTablesAndSK(iat, activePos, maybe_accept);
 }
 
