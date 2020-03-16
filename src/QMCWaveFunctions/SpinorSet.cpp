@@ -162,4 +162,13 @@ void SpinorSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi,
   dpsi = eye * (eis * psi_work_up - emis * psi_work_down);
 }
 
+SPOSet* SpinorSet::makeClone() const
+{
+  SpinorSet* myclone = new SpinorSet();
+  std::shared_ptr<SPOSet> cloneup(spo_up->makeClone());
+  std::shared_ptr<SPOSet> clonedn(spo_dn->makeClone());
+  myclone->set_spos(cloneup,clonedn);
+  return myclone;
+}
+
 } // namespace qmcplusplus
