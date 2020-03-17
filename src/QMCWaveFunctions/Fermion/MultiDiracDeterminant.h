@@ -154,21 +154,10 @@ public:
 
     const ValueVector_t& detValues_up = detValues;
     const ValueVector_t& detValues_dn = pseudo_dn.detValues;
-//    const GradMatrix_t& grads_up      = grads;
-//    const GradMatrix_t& grads_dn      = pseudo_dn.grads;
-//    const ValueMatrix_t& lapls_up     = lapls;
-//    const ValueMatrix_t& lapls_dn     = pseudo_dn.lapls;
     const ValueMatrix_t& M_up         = psiM;
     const ValueMatrix_t& M_dn         = pseudo_dn.psiM;
     const ValueMatrix_t& Minv_up      = psiMinv;
     const ValueMatrix_t& Minv_dn      = pseudo_dn.psiMinv;
-//    const GradMatrix_t& B_grad        = dpsiM;
-//    const ValueMatrix_t& B_lapl       = d2psiM;
-
-//    const size_t N1  = FirstIndex;
-//    const size_t N2  = pseudo_dn.FirstIndex;
-//    const size_t NP1 = NumPtcls;
-//    const size_t NP2 = pseudo_dn.NumPtcls;
 
     Phi->evaluateDerivativesWF(P,
                                 optvars, 
@@ -179,21 +168,11 @@ public:
                                 C2node_dn, 
                                 detValues_up,
                                 detValues_dn, 
-//*                                grads_up, 
-//*                                grads_dn, 
-//*                                lapls_up, 
-//*                                lapls_dn, 
                                 M_up, 
                                 M_dn, 
                                 Minv_up, 
                                 Minv_dn, 
-//                                B_grad,
-//                                B_lapl, 
                                 *detData, 
-//                                N1, 
-//                                N2, 
-//                                NP1, 
-//                                NP2, 
                                 lookup_tbl);
   }
 

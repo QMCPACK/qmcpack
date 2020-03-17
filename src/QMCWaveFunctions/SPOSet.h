@@ -197,12 +197,6 @@ public:
                                    const std::vector<std::vector<int>>& lookup_tbl)
   {}
 
-  virtual void evaluateDerivativesWF(ParticleSet& P,
-                                   const opt_variables_type& optvars,
-                                   std::vector<ValueType>& dlogpsi,
-                                   const int& FirstIndex,
-                                   const int& LastIndex)
-  {}
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */
@@ -215,21 +209,11 @@ public:
                                    const std::vector<size_t>& C2node_dn,
                                    const ValueVector_t& detValues_up,
                                    const ValueVector_t& detValues_dn,
-//                                   const GradMatrix_t& grads_up,
-//                                   const GradMatrix_t& grads_dn,
-//                                   const ValueMatrix_t& lapls_up,
-//                                   const ValueMatrix_t& lapls_dn,
                                    const ValueMatrix_t& M_up,
                                    const ValueMatrix_t& M_dn,
                                    const ValueMatrix_t& Minv_up,
                                    const ValueMatrix_t& Minv_dn,
-//                                   const GradMatrix_t& B_grad,
-//                                   const ValueMatrix_t& B_lapl,
                                    const std::vector<int>& detData_up,
-//                                   const size_t N1,
-//                                   const size_t N2,
-//                                   const size_t NP1,
-//                                   const size_t NP2,
                                    const std::vector<std::vector<int>>& lookup_tbl)
   {}
 
