@@ -430,6 +430,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 {
   activePtcl    = iat;
   activePos     = R[iat] + displ;
+  activeSpinVal = spins[iat];
   bool is_valid = true;
   if (Lattice.explicitly_defined)
   {
@@ -448,8 +449,9 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 
 bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
 {
+  bool check = makeMoveAndCheck(iat,displ);
   activeSpinVal = spins[iat] + sdispl;
-  return makeMoveAndCheck(iat, displ);
+  return check;
 }
 
 void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos, bool maybe_accept)
