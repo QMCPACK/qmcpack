@@ -74,7 +74,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       myTwist(0.0),
       ParentName(p.parentName()),
       coordinates_(std::move(p.coordinates_->makeClone()))
-  {
+{
   set_quantum_domain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable
   //need explicit copy:
@@ -392,15 +392,16 @@ void ParticleSet::update(bool skipSK)
 
 void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ, bool maybe_accept)
 {
-  activePtcl = iat;
-  activePos  = R[iat] + displ;
+  activePtcl    = iat;
+  activePos     = R[iat] + displ;
+  activeSpinVal = spins[iat];
   computeNewPosDistTablesAndSK(iat, activePos, maybe_accept);
 }
 
 void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
 {
   makeMove(iat, displ);
-  activeSpinVal = spins[iat] + sdispl;
+  activeSpinVal += sdispl;
 }
 
 void ParticleSet::flex_makeMove(const RefVector<ParticleSet>& P_list,
@@ -429,6 +430,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 {
   activePtcl    = iat;
   activePos     = R[iat] + displ;
+  activeSpinVal = spins[iat];
   bool is_valid = true;
   if (Lattice.explicitly_defined)
   {
@@ -447,8 +449,9 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 
 bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
 {
-  activeSpinVal = spins[iat] + sdispl;
-  return makeMoveAndCheck(iat, displ);
+  bool is_valid = makeMoveAndCheck(iat, displ);
+  activeSpinVal += sdispl;
+  return is_valid;
 }
 
 void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos, bool maybe_accept)
@@ -644,7 +647,7 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
     if (SK && SK->DoUpdate)
       SK->acceptMove(iat, GroupID[iat], R[iat]);
 
-    R[iat]     = activePos;
+    R[iat] = activePos;
     coordinates_->setOneParticlePos(activePos, iat);
     spins[iat] = activeSpinVal;
     activePtcl = -1;
@@ -745,7 +748,7 @@ void ParticleSet::initPropertyList()
   PropertyList.add("AltEnergy");
   PropertyList.add("LocalEnergy");
   PropertyList.add("LocalPotential");
-  
+
   // There is no point in checking this, its quickly not consistent as other objects update property list.
   // if (PropertyList.size() != WP::NUMPROPERTIES)
   // {

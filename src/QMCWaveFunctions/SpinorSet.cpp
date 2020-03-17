@@ -119,7 +119,7 @@ void SpinorSet::evaluate_notranspose(const ParticleSet& P,
 
   for (int iat = 0; iat < nelec; iat++)
   {
-    ParticleSet::Scalar_t s = P.spins[iat];
+    ParticleSet::Scalar_t s = P.activeSpin(iat);
 
     RealType coss(0.0), sins(0.0);
 
