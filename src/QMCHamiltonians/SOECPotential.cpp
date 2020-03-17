@@ -73,6 +73,7 @@ SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
   {
     APP_ABORT("SOECPotential::evaluate(): AOS is deprecated. Distance tables must be SOA\n");
   }
+  return Value;
 }
 
 OperatorBase* SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
