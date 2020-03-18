@@ -31,9 +31,10 @@ struct observable_helper;
 /** Abstract class for an estimator of a scalar operator.
  *
  * ScalarEstimators derived from ScalarEstimatorBase  implement three main functions
- * - reset : reset the internal values so that observables can be accumulated
  * - accumulate : measure and accumulate its value and the square of the value
- * - report : evaluate the block average and variance
+ * - add2Record : \todo document this
+ * - registerObservables : \todo document this
+ * - clone : because all types must be erased
  * ScalarEstimatorBase and its derived classes do not perform any I/O function.
  */
 struct ScalarEstimatorBase

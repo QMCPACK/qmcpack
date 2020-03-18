@@ -135,6 +135,8 @@ void QMCDriverNew::process(xmlNodePtr cur)
     // This used to get updated as a side effect of setStatus
     branch_engine_->read(h5_file_root_);
   }
+  else
+    estimator_manager_->reset();
 
   if (!drift_modifier_)
     drift_modifier_.reset(createDriftModifier(qmcdriver_input_));

@@ -131,10 +131,12 @@ void EstimatorManagerBase::setCollectionMode(bool collect)
   //CollectSum = (myComm->size() == 1)? false:collect;
 }
 
-/** reset names of the properties
+/** reset names of the properties Warning this is much different from some "resets" in the code which clear an object for general reuse
  *
  * The number of estimators and their order can vary from the previous state.
  * Clear properties before setting up a new BlockAverage data list.
+ *
+ * 
  */
 void EstimatorManagerBase::reset()
 {
