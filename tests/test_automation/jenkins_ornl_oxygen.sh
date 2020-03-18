@@ -1,7 +1,5 @@
 #!/bin/bash --login
 
-#this is will be general move cpu build soon
-
 export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
 
 echo "starting spack using ${SPACK_ENV_FILE}"
