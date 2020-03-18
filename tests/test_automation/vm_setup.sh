@@ -126,7 +126,7 @@ spack unload gcc@${gcc_vold}
 echo --- gcc@${gcc_vnew}
 spack install gcc@${gcc_vnew}
 spack load gcc@${gcc_vnew}
-spack compiler add
+spack compiler find
 spack install --no-checksum libxml2@${libxml2_vnew}%gcc@${gcc_vnew}
 #spack install --no-checksum cmake@${cmake_vnew}%gcc@${gcc_vnew}
 # BUILD LATEST CMAKE WITH OLD GCC DUE TO BUILD FAILURE WITH GCC_VNEW
@@ -140,56 +140,25 @@ spack unload gcc@${gcc_vnew}
 echo --- llvm@${llvm_vnew}
 spack install llvm@${llvm_vnew}
 spack load llvm@${llvm_vnew}
-spack compiler add
+spack compiler find
 spack unload llvm@${llvm_vnew}
-echo --- llvm@${llvm_vold}
-spack install llvm@${llvm_vold}%gcc@${gcc_vold}
-spack load llvm@${llvm_vold}%gcc@$gcc_vold
-spack compiler add
-spack unload llvm@${llvm_vold}%gcc@$gcc_vold
-echo --- llvm@${llvm_vcuda}
-spack install llvm@${llvm_vcuda}
-spack load llvm@${llvm_vcuda}
-spack compiler add
-spack unload llvm@${llvm_vcuda}
-echo --- gcc@${gcc_vintel}
-spack install gcc@${gcc_vintel}
-spack load gcc@${gcc_vintel}
-spack compiler add
-spack unload gcc@${gcc_vintel}
-echo --- gcc@${gcc_vpgi}
-spack install gcc@${gcc_vpgi}
-spack load gcc@${gcc_vpgi}
-spack compiler add
-spack unload gcc@${gcc_vpgi}
-echo --- gcc@${gcc_vcuda}
-spack install gcc@${gcc_vcuda}
-spack load gcc@${gcc_vcuda}
-spack compiler add
-spack unload gcc@${gcc_vcuda}
+
+# before you can build openmpi you need to define a fortran compiler for clang
+# we do this with a python script since we need to modify relatively free form yaml.
+# which btw we assume is in the same directory
+spack python ./add_fortran_for_spack_clang.py gcc@${gcc_vnew}
+spack install openmpi@${ompi_vnew}%clang@${llvm_vnew}^libxml2@${libxml2_vnew}%gcc@${gcc_vnew}
+
 echo --- Convenience
 spack install git
 echo --- Python setup for NEXUS
-spack install py-numpy@1.18.0%gcc@9.2.0
-spack install py-h5py^py-numpy@1.18.0%gcc@9.2.0
-spack install py-pandas@0.25.1^py-numpy@1.18.0%gcc@9.2.0
-spack install py-scipy@1.4.1^py-numpy@1.18.0%gcc@9.2.0
-spack activate py-numpy@1.18.0%gcc@9.2.0
-spack activate py-h5py^py-numpy@1.18.0%gcc@9.2.0
-spack activate py-pandas@0.25.1^py-numpy@1.18.0%gcc@9.2.0
-spack activate py-scipy@1.4.1^py-numpy@1.18.0%gcc@9.2.0
-# Specify py-numpy@1.16.4 to avoid python3 dependencies in later versions
-#spack install py-numpy@1.16.4
-#spack install py-h5py^py-numpy@1.16.4
-#spack install py-pandas@0.24.2^py-numpy@1.16.4
-#spack activate py-numpy@1.16.4
-#spack activate py-h5py^py-numpy@1.16.4
-#spack activate py-pandas@0.24.2^py-numpy@1.16.4
+spack install py-numpy@1.18.0%gcc@${gcc_vnew}
+spack install py-h5py^py-numpy@1.18.0%gcc@${gcc_vnew}
+spack install py-pandas@0.25.1^py-numpy@1.18.0%gcc@${gcc_vnew}
+spack install py-scipy@1.4.1^py-numpy@1.18.0%gcc@${gcc_vnew}
+spack activate py-numpy@1.18.0%gcc@${gcc_vnew}
+spack activate py-h5py^py-numpy@1.18.0%gcc@${gcc_vnew}
+spack activate py-pandas@0.25.1^py-numpy@1.18.0%gcc@${gcc_vnew}
+spack activate py-scipy@1.4.1^py-numpy@1.18.0%gcc@${gcc_vnew}
 
-echo --- PGI setup reminder
-echo "To configure the PGI compilers with one of the newly installed C++ libraries:"
-echo "spack load gcc@8.2.0 # For example"
-echo "cd /opt/pgi/linux86-64/19.4/bin"
-echo "sudo ./makelocalrc -x /opt/pgi/linux86-64/19.4/ -gcc `which gcc` -gpp `which g++` -g77 `which gfortran`"
-echo "gcc_vpgi is set to" $gcc_vpgi
 echo --- FINISH `date`
