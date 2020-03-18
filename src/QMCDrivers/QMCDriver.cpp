@@ -214,6 +214,9 @@ void QMCDriver::process(xmlNodePtr cur)
     branchEngine->setEstimatorManager(Estimators);
     branchEngine->read(h5FileRoot);
   }
+  else
+    Estimators->reset();
+  
   if (DriftModifier == 0)
     DriftModifier = createDriftModifier(cur, myComm);
   DriftModifier->parseXML(cur);

@@ -42,7 +42,7 @@ enum
 };
 
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal)
-    : MyEstimator(0) //, PopHist(5), DMCEnergyHist(5)
+    : MyEstimator(nullptr) //, PopHist(5), DMCEnergyHist(5)
 {
   BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
   BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
@@ -80,7 +80,7 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranc
     : BranchMode(abranch.BranchMode),
       iParam(abranch.iParam),
       vParam(abranch.vParam),
-      MyEstimator(0),
+      MyEstimator(nullptr),
       branching_cutoff_scheme(abranch.branching_cutoff_scheme),
       sParam(abranch.sParam)
 {
@@ -119,6 +119,9 @@ void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
 {
   RootName              = froot;
   MyEstimator->RootName = froot;
+  // This defensive coding smells bad.  Also reset historically in resetComponents and now in QMCDriver.cpp and QMCDriverNew.cpp
+  // Continues abiguity about ownership of EstimatorManagerBase.
+  // \todo remove this, for the purposes of fixing issue #2330 leave unchanged
   MyEstimator->reset();
 }
 
