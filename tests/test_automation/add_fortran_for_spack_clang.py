@@ -3,15 +3,16 @@
 import spack.config
 # spack uses this as well so it must be there
 import argparse
+import os
 
 parser = argparse.ArgumentParser(description='For chosen spec of gcc add gfortran as fortran compiler for all clang compiler configs')
-parser.add_argument('gcc_spec', type=string, help='spack spec to get gfortran from')
+parser.add_argument('gcc_spec', type=str, help='spack spec to get gfortran from')
 args = parser.parse_args()
 
 conf_scope = spack.config.ConfigScope('user/linux', os.path.join(os.environ['HOME'],'.spack','linux'))
 compilers_config = conf_scope.get_section_filename('compilers')
 
-gcc_configs = [ c for c in conf_scope.get_section('compilers')['compilers'] if args.gcc_spec) in c['compiler']['spec'] ]
+gcc_configs = [ c for c in conf_scope.get_section('compilers')['compilers'] if args.gcc_spec in c['compiler']['spec'] ]
 if len(gcc_configs) != 1:
     raise NameError('gcc version must evaluate to a single gcc spec')
 gcc = gcc_configs[0]
