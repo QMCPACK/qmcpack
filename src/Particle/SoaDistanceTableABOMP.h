@@ -149,12 +149,19 @@ public:
     }
   }
 
+  /** It has two implementation mw_evaluate_transfer_inplace and mw_evaluate_fuse_transfer with different D2H memory transfer schemes.
+   * Eventually, there will be only one version wihtout any transfer and solve the dilemma.
+   */
   inline void mw_evaluate(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
   {
     ScopedTimer eval(&eval_timer_);
     mw_evaluate_fuse_transfer(dt_list, p_list);
   }
 
+  /** this function implements mw_evaluate.
+   * After offloading the computation of distances and displacements, the per-walker result is transferred back walker by walker in place.
+   * The runtime overhead is very high for small problem size with many walkers.
+   */
   inline void mw_evaluate_transfer_inplace(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
   {
     const size_t nw = dt_list.size();
@@ -163,6 +170,7 @@ public:
       count_targets += p.getTotalNum();
     const size_t total_targets = count_targets;
 
+    // This is horrible optimization putting different data types in a single buffer but allows a single H2D transfer
     constexpr size_t realtype_size = sizeof(RealType);
     constexpr size_t int_size = sizeof(int);
     constexpr size_t ptr_size = sizeof(RealType*);
@@ -240,6 +248,10 @@ public:
     }
   }
 
+  /** this function implements mw_evaluate.
+   * After offloading the computation of distances and displacements, the result for all the walkers is transferred back together in one shot
+   * and then copied to per-walker data structure. Memory copy on the CPU is still costly and not beneficial for large problem size with a few walkers.
+   */
   inline void mw_evaluate_fuse_transfer(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
   {
     const size_t nw = dt_list.size();
@@ -248,6 +260,7 @@ public:
       count_targets += p.getTotalNum();
     const size_t total_targets = count_targets;
 
+    // This is horrible optimization putting different data types in a single buffer but allows a single H2D transfer
     const size_t realtype_size = sizeof(RealType);
     const size_t int_size = sizeof(int);
     const size_t ptr_size = sizeof(RealType*);

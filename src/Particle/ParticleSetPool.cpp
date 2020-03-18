@@ -165,7 +165,11 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     app_summary() << " ------------" << std::endl;
     app_summary() << "  Name: " << id << std::endl;
 
-    pTemp = new MCWalkerConfiguration(useGPU == "yes"?DynamicCoordinateKind::DC_POS_OFFLOAD:DynamicCoordinateKind::DC_POS);
+    // select OpenMP offload implementation in ParticleSet.
+    if (useGPU == "yes")
+      pTemp = new MCWalkerConfiguration(DynamicCoordinateKind::DC_POS_OFFLOAD);
+    else
+      pTemp = new MCWalkerConfiguration(DynamicCoordinateKind::DC_POS);
     //if(role == "MC")
     //  pTemp = new MCWalkerConfiguration;
     //else
