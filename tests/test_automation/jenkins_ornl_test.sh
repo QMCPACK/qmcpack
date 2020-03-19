@@ -1,6 +1,6 @@
 #!/bin/bash -x
 
-exit_code = 0
+exit_code=0
 
 echo "starting spack using ${SPACK_ENV_FILE}"
 
