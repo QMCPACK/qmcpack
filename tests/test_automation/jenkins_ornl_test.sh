@@ -17,7 +17,7 @@ export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
 
 module list
 
-ctest -j${JNK_THREADS} -L unit --output-on-failure --timeout 120
+ctest -j${JNK_THREADS} -L unit --output-on-failure --timeout 120 2>&1 | tee ${1}_${2}_ctest.out
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
   exit_code=${ret}
