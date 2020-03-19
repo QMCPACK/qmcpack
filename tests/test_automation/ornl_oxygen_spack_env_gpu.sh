@@ -4,7 +4,7 @@
 
 . ../tests/test_automation/spack_supported_package_versions.sh
 
-QMC_IMMUTABLE_FLAGS="-DQMC_CUDA=1"
+QMC_IMMUTABLE_FLAGS="-DQMC_CUDA=1 -DCMAKE_CXX_FLAGS=--nonsense"
 
 spack load boost@$boost_vnew%gcc@$gcc_vnew
 spack load gcc@$gcc_vcuda
