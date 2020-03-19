@@ -2,9 +2,9 @@
 
 exit_code = 0
 
-cd build_${ARGV}[1]_${ARGV}[2]
+cd build_${1}_${2}
 BUILD_DIR=$(pwd)
-echo $BUILD_DIR
+echo "BUILD_DIR: ${BUILD_DIR}"
 
 export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
 
