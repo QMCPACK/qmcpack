@@ -48,13 +48,18 @@ which cmake
 pwd
 echo "cmake ${QMCNSPACE_FLAG} ${QMCPRECISION_FLAG} -DENABLE_SOA=1 -DCMAKE_C_COMPILER=\"mpicc\" -DCMAKE_CXX_COMPILER=\"mpicxx\" ${QMC_IMMUTABLE_FLAGS} -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 ../.. 2>&1 | tee cmake.out"
 
+# this keeps tee from eating the exit status
+set -o pipefail
+
 cmake ${QMCNSPACE_FLAG} ${QMCPRECISION_FLAG} -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" ${QMC_IMMUTABLE_FLAGS} -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 ../.. 2>&1 | tee ${1}_${2}_cmake.out
 if [[ $? -ne 0 ]] ; then
   exit 1
 fi
 
 make -j ${JNK_THREADS} 2>&1 | tee ${1}_${2}_build.out
-if [[ $? -ne 0 ]] ; then
+MAKE_PIPE_RESULT=$?
+echo "make pipe result $MAKE_PIPE_RESULT"
+if [[ $MAKE_PIPE_RESULT -ne 0 ]] ; then
   exit 1
 fi
 
