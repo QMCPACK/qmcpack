@@ -38,6 +38,7 @@ public:
   using ComplexType = std::complex<Precision>;
 #ifdef QMC_COMPLEX
   using ValueType = ComplexType;
+    this will break complex
 #else
   using ValueType = RealType;
 #endif

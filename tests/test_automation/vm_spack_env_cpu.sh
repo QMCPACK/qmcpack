@@ -4,8 +4,6 @@
 
 . ../tests/test_automation/spack_supported_package_versions.sh
 
-QMC_IMMUTABLE_FLAGS="-DBUILD_AFQMC=1"
-
 spack load gcc@$gcc_vnew%gcc@$gcc_vold
 spack load boost@$boost_vnew%gcc@$gcc_vnew
 spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
@@ -21,5 +19,7 @@ spack load netlib-lapack%gcc@$gcc_vnew
 
 #if you've installed more than one python for the new compiler this will fail
 spack load python%gcc@$gcc_vnew
+
+QMC_IMMUTABLE_FLAGS="-DBUILD_AFQMC=1"
 
 echo ${PATH}
