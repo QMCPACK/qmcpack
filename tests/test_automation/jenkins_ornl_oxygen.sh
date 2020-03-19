@@ -53,7 +53,7 @@ if [[ $? -ne 0 ]] ; then
   exit 1
 fi
 
-make -j ${JNK_THREADS}
+make -j ${JNK_THREADS} 2>&1 | tee ${1}_${2}_build.out
 if [[ $? -ne 0 ]] ; then
   exit 1
 fi
