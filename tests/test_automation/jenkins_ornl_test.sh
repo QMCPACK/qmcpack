@@ -23,7 +23,7 @@ set -o pipefail
 # exclude failing hamiltonian test
 EXCLUDE_FLAG=''
 if [[ $2 == 'mixed' ]]; then
-    EXCLUDE_FLAG="-E 'unit_test_hamiltonian'"
+    EXCLUDE_FLAG='-E unit_test_hamiltonian'
 fi
 
 
