@@ -27,6 +27,8 @@ public:
 
   void getDrift(RealType tau, const GradType& qf, PosType& drift) const final;
 
+  void getDrift(RealType tau, const TrialWaveFunction::LogValueType& qf, ParticleSet::Scalar_t& drift) const final;
+
   bool parseXML(xmlNodePtr cur) final;
 
   DriftModifierUNR(RealType a = 1.0) : a_(a) {}

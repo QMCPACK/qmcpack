@@ -35,6 +35,8 @@ public:
    */
   virtual void getDrift(RealType tau, const GradType& qf, PosType& drift) const = 0;
 
+  virtual void getDrift(RealType tau, const TrialWaveFunction::LogValueType& qf, ParticleSet::Scalar_t& drift) const = 0;
+
   virtual void getDrifts(RealType tau, const std::vector<GradType>& qf, std::vector<PosType>&) const = 0;
   
   virtual bool parseXML(xmlNodePtr cur) { return true; }
