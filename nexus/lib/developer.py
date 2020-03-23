@@ -43,7 +43,6 @@ class DevBase(obj):
 #end class DevBase
 
 
-
 class Void(object):
     void_items = dict()
 
