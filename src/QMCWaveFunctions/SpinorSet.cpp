@@ -119,7 +119,7 @@ void SpinorSet::evaluate_notranspose(const ParticleSet& P,
 
   for (int iat = 0; iat < nelec; iat++)
   {
-    ParticleSet::Scalar_t s = P.spins[iat];
+    ParticleSet::Scalar_t s = P.activeSpin(iat);
 
     RealType coss(0.0), sins(0.0);
 
@@ -160,6 +160,15 @@ void SpinorSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi,
 
   psi  = eis * psi_work_up + emis * psi_work_down;
   dpsi = eye * (eis * psi_work_up - emis * psi_work_down);
+}
+
+SPOSet* SpinorSet::makeClone() const
+{
+  SpinorSet* myclone = new SpinorSet();
+  std::shared_ptr<SPOSet> cloneup(spo_up->makeClone());
+  std::shared_ptr<SPOSet> clonedn(spo_dn->makeClone());
+  myclone->set_spos(cloneup, clonedn);
+  return myclone;
 }
 
 } // namespace qmcplusplus
