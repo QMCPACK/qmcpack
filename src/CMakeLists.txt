@@ -314,6 +314,7 @@ ENDIF()
     SUBDIRS(OpenMP/tests)
     SUBDIRS(Optimize/tests)
     SUBDIRS(MinimalContainers/tests)
+    SUBDIRS(QMCTools/tests)
   endif() #}
 
 endif() #}}}
