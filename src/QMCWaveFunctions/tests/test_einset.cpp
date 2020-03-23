@@ -571,6 +571,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix_t dspsiM(elec_.R.size(), spo->getOrbitalSetSize()); //spin gradient
   SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
  
   //These are the reference values computed from a spin-polarized calculation, 
@@ -578,6 +579,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   SPOSet::ValueMatrix_t psiM_up(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::ValueMatrix_t psiM_down(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::ValueMatrix_t psiM_ref(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix_t dspsiM_ref(elec_.R.size(), spo->getOrbitalSetSize());
 
   SPOSet::GradMatrix_t dpsiM_up(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix_t dpsiM_down(elec_.R.size(), spo->getOrbitalSetSize());
@@ -654,12 +656,17 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
     ValueType eis(coss,sins);
     ValueType emis(coss,-sins);
+    ValueType eye(0,1.0);
     //Using the reference values for the up and down channels invdividually, we build the total reference spinor value
     //consistent with the current spin value of particle iat.
     psiM_ref[iat][0]=eis*psiM_up[iat][0]+emis*psiM_down[iat][0];
     psiM_ref[iat][1]=eis*psiM_up[iat][1]+emis*psiM_down[iat][1];
     psiM_ref[iat][2]=eis*psiM_up[iat][2]+emis*psiM_down[iat][2];
-    
+  
+    dspsiM_ref[iat][0] = eye*(eis*psiM_up[iat][0] - emis*psiM_down[iat][0]);
+    dspsiM_ref[iat][1] = eye*(eis*psiM_up[iat][1] - emis*psiM_down[iat][1]);
+    dspsiM_ref[iat][2] = eye*(eis*psiM_up[iat][2] - emis*psiM_down[iat][2]);
+  
     dpsiM_ref[iat][0]=eis*dpsiM_up[iat][0]+emis*dpsiM_down[iat][0];
     dpsiM_ref[iat][1]=eis*dpsiM_up[iat][1]+emis*dpsiM_down[iat][1];
     dpsiM_ref[iat][2]=eis*dpsiM_up[iat][2]+emis*dpsiM_down[iat][2];
@@ -670,6 +677,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   }
 
+  //OK.  Going to test evaluate_notranspose with spin.
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
  
   for(unsigned int iat=0; iat<3; iat++)
@@ -781,6 +789,28 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     elec_.rejectMove(iat);
   }
 
+  //Now we test evaluateSpin:
+  SPOSet::ValueVector_t dspsi_work;
+  dspsi_work.resize(OrbitalSetSize);
+
+  for(unsigned int iat=0; iat<3; iat++)
+  {
+    psi_work=0.0;
+    dspsi_work=0.0;
+    
+    elec_.makeMove(iat,-dR[iat],false);
+    spo->evaluate_spin(elec_,iat,psi_work,dspsi_work);
+    
+    REQUIRE( psi_work[0] == ComplexApprox( psiM_ref[iat][0] ));
+    REQUIRE( psi_work[1] == ComplexApprox( psiM_ref[iat][1] ));
+    REQUIRE( psi_work[2] == ComplexApprox( psiM_ref[iat][2] ));
+
+    REQUIRE( dspsi_work[0] == ComplexApprox( dspsiM_ref[iat][0] ));
+    REQUIRE( dspsi_work[1] == ComplexApprox( dspsiM_ref[iat][1] ));
+    REQUIRE( dspsi_work[2] == ComplexApprox( dspsiM_ref[iat][2] ));
+
+    elec_.rejectMove(iat);
+  }
 
 }
 #endif //QMC_COMPLEX
