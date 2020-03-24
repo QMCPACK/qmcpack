@@ -43,11 +43,10 @@ class DevBase(obj):
 #end class DevBase
 
 
+
 class Void(object):
     void_items = dict()
 
-    another_thing = dict()
-    
     @classmethod
     def _unavailable(cls,self):
         sid = id(self)
