@@ -144,7 +144,7 @@ public:
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,
                            const MultiDiracDeterminant& pseudo_dn,
-                           const ValueType& psiCurrent,
+                           const PsiValueType& psiCurrent,
                            const std::vector<ValueType>& Coeff,
                            const std::vector<size_t>& C2node_up,
                            const std::vector<size_t>& C2node_dn)

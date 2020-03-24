@@ -108,7 +108,7 @@ public:
   void evaluateDerivativesWF(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,
-                           const ValueType& psiCurrent,
+                           const QTFull::ValueType& psiCurrent,
                            const std::vector<ValueType>& Coeff,
                            const std::vector<size_t>& C2node_up,
                            const std::vector<size_t>& C2node_dn,
