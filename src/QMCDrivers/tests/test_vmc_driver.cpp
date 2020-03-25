@@ -236,6 +236,12 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
   REQUIRE(elec.spins[0] == Approx(-0.74465948215809097));
 
+  //Now we're going to test that the step updated the walker variables.
+  REQUIRE(elec.WalkerList[0]->R[0][0] == Approx(elec.R[0][0]));
+  REQUIRE(elec.WalkerList[0]->R[0][1] == Approx(elec.R[0][1]));
+  REQUIRE(elec.WalkerList[0]->R[0][2] == Approx(elec.R[0][2]));
+  REQUIRE(elec.WalkerList[0]->spins[0] == Approx(elec.spins[0]));
+  
   delete doc;
 }
 } // namespace qmcplusplus
