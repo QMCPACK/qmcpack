@@ -20,7 +20,7 @@ if h5py_available:
         ds = 'string value'
         di = 100
         df = np.pi
-        das = np.array(tuple('abcdefghijklmnopqrstuvwxyz'))
+        das = np.array(tuple('abcdefghijklmnopqrstuvwxyz'),dtype=bytes)
         dai = np.arange(20,dtype=np.int64)
         daf = 0.1*np.arange(20,dtype=np.float64)
 

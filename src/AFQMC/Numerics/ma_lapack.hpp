@@ -377,6 +377,83 @@ std::pair<MultiArray1D,MultiArray2D> symEigSelect(MultiArray2DA & A, int neig) {
         return std::pair<MultiArray1D,MultiArray2D>{eigVal,eigVec};
 }
 
+// Careful!!!! 
+// This routine modifies the original matrix.
+template<class MultiArray1D,
+         class MultiArray2D,
+         class MultiArray2DA,
+         class MultiArray2DB,
+         typename = typename std::enable_if_t<MultiArray1D::dimensionality == 1>,
+         typename = typename std::enable_if_t<MultiArray2DA::dimensionality == 2>,
+         typename = typename std::enable_if_t<MultiArray2DB::dimensionality == 2>,
+         typename = typename std::enable_if_t<MultiArray2D::dimensionality == 2>
+        >
+std::pair<MultiArray1D,MultiArray2D> genEigSelect(MultiArray2DA & A, MultiArray2DB & S,int neig, int itype=1) {
+        using eigSys = std::pair<MultiArray1D,MultiArray2D>;
+        using Type = typename MultiArray2D::element;
+        using TypeA = typename MultiArray2DA::element;
+        using TypeB = typename MultiArray2DB::element;
+        static_assert(std::is_same<Type,TypeA>::value,"Wrong types.");
+        static_assert(std::is_same<TypeA,TypeB>::value,"Wrong types.");
+        using RealType = typename qmcplusplus::afqmc::remove_complex<Type>::value_type;
+        using extensions = typename boost::multi::layout_t<1u>::extensions_type;
+        assert(A.size(0)==A.size(1));
+        assert(A.size(0)==S.size(0));
+        assert(S.size(0)==S.size(1));
+        assert(A.stride(1)==1);
+        assert(A.size(0)>0);
+        assert(S.stride(1)==1);
+        assert(S.size(0)>0);
+        int N = A.size(0);
+        int LDA = A.stride(0);
+        int LDS = S.stride(0);
+
+        MultiArray1D eigVal(extensions{neig});
+        MultiArray2D eigVec({neig,N});
+        // Transpose A to avoid using more memory
+        for(int i=0; i<N; i++)
+          for(int j=i+1; j<N; j++) {
+            using std::swap;
+            swap(A[i][j],A[j][i]);
+            swap(S[i][j],S[j][i]);
+          }
+
+        char JOBZ('V');
+        char RANGE('I');
+        char UPLO('U');
+        RealType VL=0;
+        RealType VU=0;
+        int IL=1;
+        int IU=neig;
+        RealType ABSTOL=0;//DLAMCH( 'Safe minimum' );
+        int M; // output: total number of eigenvalues found
+        std::vector<Type> WORK(1); // set with workspace query
+        int LWORK=-1;
+        std::vector<RealType> RWORK(7*N); // set with workspace query
+        std::vector<int> IWORK(5*N);
+        std::vector<int> IFAIL(N);
+        int INFO;
+
+        gvx (itype, JOBZ, RANGE, UPLO, N, pointer_dispatch(A.origin()), LDA, 
+                    pointer_dispatch(S.origin()), LDS, VL, VU, IL, IU, ABSTOL,
+                    M,pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N,
+                    pointer_dispatch(WORK.data()), LWORK,
+                    pointer_dispatch(RWORK.data()), pointer_dispatch(IWORK.data()), IFAIL.data(), INFO);
+
+        LWORK = int(real(WORK[0]));
+        WORK.resize(LWORK);
+
+        gvx (itype, JOBZ, RANGE, UPLO, N, pointer_dispatch(A.origin()), LDA, 
+                    pointer_dispatch(S.origin()), LDS, VL, VU, IL, IU, ABSTOL,
+                    M,pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N,
+                    pointer_dispatch(WORK.data()), LWORK,
+                    pointer_dispatch(RWORK.data()), pointer_dispatch(IWORK.data()), IFAIL.data(), INFO);
+        if(INFO != 0) throw std::runtime_error(" error in ma::eig: Error code != 0");
+        if(M != neig) throw std::runtime_error(" error in ma::eig: Not enough eigenvalues");
+
+        return std::pair<MultiArray1D,MultiArray2D>{eigVal,eigVec};
+}
+
 }
 
 #endif

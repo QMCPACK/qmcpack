@@ -7,7 +7,7 @@ import os
 from numpy import array,sqrt,arange,linspace,zeros,exp
 from generic import obj
 from periodic_table import is_element
-from developer import DevBase,error
+from developer import DevBase,error,to_str
 from fileio import TextFile
 from plotting import *
 from debug import *
@@ -176,9 +176,9 @@ class gamessBasisFile(gaussBasisFile):
             if estart==-1:
                 estart = file.size()
             #end if
-            self.text = file[file.tell():estart].strip() 
+            self.text = to_str(file[file.tell():estart].strip())
         else:
-            lines = file[:].splitlines()
+            lines = to_str(file[:]).splitlines()
             blines = []
             for line in lines:
                 ls = line.strip()
@@ -348,7 +348,7 @@ class GaussianBasisSet(DevBase):
                 ngauss = int(tokens[1])
                 scale  = array(tokens[2:],dtype=float)
                 bterms = obj()
-                for j in xrange(ngauss):
+                for j in range(ngauss):
                     index,expon,coeff = basis_lines[i].split(); i+=1
                     expon = GaussianBasisSet.process_float(expon)
                     coeff = GaussianBasisSet.process_float(coeff)
@@ -365,7 +365,7 @@ class GaussianBasisSet(DevBase):
                 ngauss = int(tokens[1])
                 scale  = array(tokens[2:],dtype=float)
                 bterms = obj()
-                for j in xrange(ngauss):
+                for j in range(ngauss):
                     expon,coeff = basis_lines[i].split(); i+=1
                     expon = GaussianBasisSet.process_float(expon)
                     coeff = GaussianBasisSet.process_float(coeff)
@@ -388,7 +388,7 @@ class GaussianBasisSet(DevBase):
                 ltext = GaussianBasisSet.crystal_lmap[l_type]
                 if ltext!='sp':
                     bterms = obj()
-                    for j in xrange(ngauss):
+                    for j in range(ngauss):
                         expon,coeff = basis_lines[i].split(); i+=1
                         expon = GaussianBasisSet.process_float(expon)
                         coeff = GaussianBasisSet.process_float(coeff)
@@ -398,7 +398,7 @@ class GaussianBasisSet(DevBase):
                 else: # sp has shared exponent for s and p, split them now
                     sterms = obj()
                     pterms = obj()
-                    for j in xrange(ngauss):
+                    for j in range(ngauss):
                         expon,scoeff,pcoeff = basis_lines[i].split(); i+=1
                         expon = GaussianBasisSet.process_float(expon)
                         scoeff = GaussianBasisSet.process_float(scoeff)
@@ -424,37 +424,37 @@ class GaussianBasisSet(DevBase):
         format = format.lower()
         if format=='gamess':
             #text += '{0} {1} 0. 0. 0.\n'.format(self.element,self.Zcore+self.Zval)
-            for ib in xrange(len(self.basis)):
+            for ib in range(len(self.basis)):
                 b = self.basis[ib]
                 line = '{0} {1}'.format(b.l,len(b.terms))
                 for s in b.scale:
                     line += ' {0}'.format(s)
                 #end for
                 text += line + '\n'
-                for it in xrange(len(b.terms)):
+                for it in range(len(b.terms)):
                     t = b.terms[it]
-                    text += '{0} {1:12.8f} {2: 12.8f}\n'.format(it+1,t.expon,t.coeff)
+                    text += '{0:<4} {1:12.8E} {2: 12.8E}\n'.format(it+1,t.expon,t.coeff)
                 #end for
             #end for
         elif format=='gaussian':
             #text += '{0} 0\n'.format(self.element)
-            for ib in xrange(len(self.basis)):
+            for ib in range(len(self.basis)):
                 b = self.basis[ib]
                 line = '{0} {1}'.format(b.l,len(b.terms))
                 for s in b.scale:
                     line += ' {0}'.format(s)
                 #end for
                 text += line + '\n'
-                for it in xrange(len(b.terms)):
+                for it in range(len(b.terms)):
                     t = b.terms[it]
-                    text += '{0:12.8f}{1: 12.8f}\n'.format(t.expon,t.coeff)
+                    text += '{0:12.8E} {1: 12.8E}\n'.format(t.expon,t.coeff)
                 #end for
             #end for
         elif format=='crystal':
             if occ is not None:
                 lcounts = dict(s=0,p=0,d=0,f=0)
             #end if
-            for ib in xrange(len(self.basis)):
+            for ib in range(len(self.basis)):
                 b = self.basis[ib]
                 if b.l not in self.crystal_lmap_reverse:
                     self.error('{0} channels cannot be handled by crystal'.format(b.l))
@@ -467,9 +467,9 @@ class GaussianBasisSet(DevBase):
                 lnum = self.crystal_lmap_reverse[b.l]
                 line = '0 {0} {1} {2} {3}'.format(lnum,len(b.terms),Zf,b.scale[0])
                 text += line + '\n'
-                for it in xrange(len(b.terms)):
+                for it in range(len(b.terms)):
                     t = b.terms[it]
-                    text += '{0:12.8f}{1: 12.8f}\n'.format(t.expon,t.coeff)
+                    text += '{0:12.8E} {1: 12.8E}\n'.format(t.expon,t.coeff)
                 #end for
             #end for
         else:
@@ -559,9 +559,9 @@ class GaussianBasisSet(DevBase):
             if l in lbasis:
                 exponents = []
                 lbas = lbasis[l]
-                for n in xrange(len(lbas)):
+                for n in range(len(lbas)):
                     uterms = lbas[n].terms
-                    for i in xrange(len(uterms)):
+                    for i in range(len(uterms)):
                         expon = uterms[i].expon
                         if len(exponents)==0:
                             exponents = array([expon],dtype=float)
@@ -627,7 +627,7 @@ class GaussianBasisSet(DevBase):
         #end if
         lbasis = self.lbasis()
         gexpon = obj()
-        for l,lbas in lbasis.iteritems():
+        for l,lbas in lbasis.items():
             e = []
             for n in range(len(lbas)):
                 e.append(lbas[n].terms[0].expon)
@@ -645,7 +645,7 @@ class GaussianBasisSet(DevBase):
         #end if
         lbasis = self.lbasis()
         gwidth = obj()
-        for l,lbas in lbasis.iteritems():
+        for l,lbas in lbasis.items():
             w = []
             for n in range(len(lbas)):
                 w.append(1./sqrt(2.*lbas[n].terms[0].expon))
@@ -662,7 +662,7 @@ class GaussianBasisSet(DevBase):
         if comp!=None:
             gwidths = self.prim_widths()
         #end if
-        for l,lsel in lselectors.iteritems():
+        for l,lsel in lselectors.items():
             if l not in lbasis:
                 self.error('cannot remove basis functions from channel {0}, channel not present'.format(l))
             #end if
@@ -687,12 +687,12 @@ class GaussianBasisSet(DevBase):
                 #end if
                 if less:
                     rem = iw[gw<rcut]
-                    for i in xrange(len(rem)-nkeep):
+                    for i in range(len(rem)-nkeep):
                         del lbas[rem[i]]
                     #end for
                 else:
                     rem = iw[gw>rcut]
-                    for i in xrange(nkeep,len(rem)):
+                    for i in range(nkeep,len(rem)):
                         del lbas[rem[i]]
                     #end for
                 #end if
@@ -701,14 +701,14 @@ class GaussianBasisSet(DevBase):
                     if lsel>len(lbas):
                         self.error('cannot remove {0} basis functions from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
                     #end if
-                    for i in xrange(lsel):
+                    for i in range(lsel):
                         del lbas[i]
                     #end for
                 elif comp=='>':
                     if lsel>len(lbas):
                         self.error('cannot remove {0} basis functions from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
                     #end if
-                    for i in xrange(len(lbas)-lsel,len(lbas)):
+                    for i in range(len(lbas)-lsel,len(lbas)):
                         del lbas[i]
                     #end for
                 else:
@@ -738,7 +738,7 @@ class GaussianBasisSet(DevBase):
     # test needed
     def remove_small_prims(self,**keep):
         lsel = obj()
-        for l,lbas in self.lbasis().iteritems():
+        for l,lbas in self.lbasis().items():
             if l in keep:
                 lsel[l] = len(lbas)-keep[l]
             #end if
@@ -750,7 +750,7 @@ class GaussianBasisSet(DevBase):
     # test needed
     def remove_large_prims(self,**keep):
         lsel = obj()
-        for l,lbas in self.lbasis().iteritems():
+        for l,lbas in self.lbasis().items():
             if l in keep:
                 lsel[l] = len(lbas)-keep[l]
             #end if
@@ -763,7 +763,7 @@ class GaussianBasisSet(DevBase):
     def remove_small_prims_rel(self,other,**keep):
         gwidths = other.prim_widths()
         lsel = obj()
-        for l,gw in gwidths.iteritems():
+        for l,gw in gwidths.items():
             lsel[l] = gw.min()
         #end for
         self.remove_prims(comp='<',keep=keep,**lsel)
@@ -774,7 +774,7 @@ class GaussianBasisSet(DevBase):
     def remove_large_prims_rel(self,other,**keep):
         gwidths = other.prim_widths()
         lsel = obj()
-        for l,gw in gwidths.iteritems():
+        for l,gw in gwidths.items():
             lsel[l] = gw.max()
         #end for
         self.remove_prims(comp='>',keep=keep,**lsel)
@@ -975,7 +975,7 @@ class GaussianBasisSet(DevBase):
                 else:
                     plotter = plot
                 #end if
-                plotter(range(len(lwidths)),lwidths,lstyle,label=l)
+                plotter(list(range(len(lwidths))),lwidths,lstyle,label=l)
             #end if
         #end for
         if label:

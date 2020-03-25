@@ -20,5 +20,4 @@ def test_execute():
     assert(out.strip()=='test')
     assert(err.strip()=='')
     assert(rc==0)
-
 #end def test_execute

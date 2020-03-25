@@ -35,32 +35,32 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w,
                              TrialWaveFunction& guide,
                              QMCHamiltonian& h,
                              RandomGenerator_t& rg)
-    : W(w),
+    : csoffset(0),
+      Traces(0),
+      W(w),
       Psi(psi),
       Guide(guide),
       H(h),
       RandomGen(rg),
-      DriftModifier(0),
       branchEngine(0),
-      Estimators(0),
-      Traces(0),
-      csoffset(0)
+      DriftModifier(0),
+      Estimators(0)
 {
   setDefaults();
 }
 
 /// Constructor.
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
-    : W(w),
-      Psi(psi),
-      H(h),
-      Guide(psi),
-      RandomGen(rg),
-      DriftModifier(0),
-      branchEngine(0),
-      Estimators(0),
+    : csoffset(0),
       Traces(0),
-      csoffset(0)
+      W(w),
+      Psi(psi),
+      Guide(psi),
+      H(h),
+      RandomGen(rg),
+      branchEngine(0),
+      DriftModifier(0),
+      Estimators(0)
 {
   setDefaults();
 }
@@ -79,16 +79,15 @@ void QMCUpdateBase::setDefaults()
   myParams.add(m_r2max, "maxDisplSq", "double"); //maximum displacement
   //store 1/mass per species
   SpeciesSet tspecies(W.getSpeciesSet());
+  assert(tspecies.getTotalNum() == W.groups());
   int massind = tspecies.addAttribute("mass");
   MassInvS.resize(tspecies.getTotalNum());
   for (int ig = 0; ig < tspecies.getTotalNum(); ++ig)
     MassInvS[ig] = 1.0 / tspecies(massind, ig);
   MassInvP.resize(W.getTotalNum());
   for (int ig = 0; ig < W.groups(); ++ig)
-  {
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       MassInvP[iat] = MassInvS[ig];
-  }
 
   InitWalkersTimer = TimerManager.createTimer("QMCUpdateBase::WalkerInit", timer_level_medium);
 }
@@ -112,6 +111,7 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher,
 
   NumPtcl = W.getTotalNum();
   deltaR.resize(NumPtcl);
+  deltaS.resize(NumPtcl);
   drift.resize(NumPtcl);
   G.resize(NumPtcl);
   dG.resize(NumPtcl);

@@ -43,10 +43,10 @@ struct HDFAttribIO<std::string> : public HDFAttribIOBase
   inline void read(hid_t grp, const char* name)
   {
     // Turn off error printing
-    H5E_auto_t func;
+    H5E_auto2_t func;
     void* client_data;
-    H5Eget_auto(&func, &client_data);
-    H5Eset_auto(NULL, NULL);
+    H5Eget_auto2(H5E_DEFAULT, &func, &client_data);
+    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     hid_t dataset = H5Dopen(grp, name);
     if (dataset > -1)
     {
@@ -70,7 +70,7 @@ struct HDFAttribIO<std::string> : public HDFAttribIOBase
       H5Dclose(dataset);
     }
     // Turn error printing back on
-    H5Eset_auto(func, client_data);
+    H5Eset_auto2(H5E_DEFAULT, func, client_data);
   }
 };
 
@@ -84,7 +84,7 @@ struct HDFAttribIO<std::ostringstream> : public HDFAttribIOBase
 
   inline void write(hid_t grp, const char* name)
   {
-    herr_t status = H5Eset_auto(NULL, NULL);
+    herr_t status = H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     status        = H5Gget_objinfo(grp, name, 0, NULL);
     hsize_t str80 = H5Tcopy(H5T_C_S1);
     H5Tset_size(str80, ref.str().size());

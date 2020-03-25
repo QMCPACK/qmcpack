@@ -1,0 +1,3 @@
+library 'qmcpack_shared_jenkins'
+
+common_pipeline(name:"gpu", spack_path:"/var/lib/jenkins/spack", prefix:"ornl_oxygen_", ram_disk:true)

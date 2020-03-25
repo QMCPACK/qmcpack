@@ -94,10 +94,10 @@ public:
   {}
 
   inline device_vector(std::string myName)
-      : name(myName),
-        data_pointer(NULL),
+      : data_pointer(NULL),
         current_size(0),
         alloc_size(0),
+        name(myName),
         own_data(true),
         managedmem(false),
         managed_flags(cudaMemAttachGlobal)
@@ -238,10 +238,10 @@ public:
       : data_pointer(NULL),
         current_size(0),
         alloc_size(0),
+        name(vec.name),
         own_data(true),
         managedmem(vec.managedmem),
-        managed_flags(vec.managed_flags),
-        name(vec.name)
+        managed_flags(vec.managed_flags)
   {
     resize(vec.size(), 1.0, managedmem);
     // fprintf(stderr, "device_vector copy constructor called, name=%s.\n",

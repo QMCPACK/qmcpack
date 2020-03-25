@@ -84,9 +84,9 @@ class AFQMCBasePropagator: public AFQMCInfo
             SDetOp(wfn.getSlaterDetOperations()),
             buffer(iextensions<1u>{1},aux_alloc_),
             local_group_comm(),
+            old_dt(-123456.789),
             last_nextra(-1),
             last_task_index(-1),
-            old_dt(-123456.789),
             order(6),
             nbatched_propagation(0),
             nbatched_qr(0),
@@ -168,6 +168,8 @@ class AFQMCBasePropagator: public AFQMCInfo
 
     std::vector<P1Type> P1;
 
+    CVector vMF;  
+
     RandomGenerator_t* rng;
 
     SlaterDetOperations* SDetOp;
@@ -206,8 +208,6 @@ class AFQMCBasePropagator: public AFQMCInfo
 
     CMatrix MFfactor;  
     CMatrix hybrid_weight;  
-
-    CVector vMF;  
 
     boost::multi::array<ComplexType,2> work; 
  

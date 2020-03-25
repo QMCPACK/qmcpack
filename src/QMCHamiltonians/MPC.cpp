@@ -30,8 +30,12 @@ namespace qmcplusplus
 void MPC::resetTargetParticleSet(ParticleSet& ptcl) {}
 
 MPC::MPC(ParticleSet& ptcl, double cutoff)
-    : PtclRef(&ptcl), Ecut(cutoff), FirstTime(true), VlongSpline(0), DensitySpline(0),
-      d_aa_ID(ptcl.addTable(ptcl, DT_SOA_PREFERRED))
+    : VlongSpline(0),
+      DensitySpline(0),
+      Ecut(cutoff),
+      d_aa_ID(ptcl.addTable(ptcl, DT_SOA_PREFERRED)),
+      PtclRef(&ptcl),
+      FirstTime(true)
 {
   initBreakup();
 }
@@ -188,7 +192,7 @@ void MPC::init_f_G()
   app_log() << "    Quadratic extrap = " << std::scientific << f_0 << std::endl;
   f_0 += 0.4 * M_PI * L * L * volInv;
   // std::cerr << "f_0 = " << f_0/volInv << std::endl;
-  double worst = 0.0, worstLin, worstQuad;
+  double worst = 0.0, worstLin = 0.0, worstQuad = 0.0;
   int iworst   = 0;
   for (int iG = 0; iG < numG; iG++)
   {
@@ -342,7 +346,7 @@ MPC::Return_t MPC::evalSR(ParticleSet& P) const
     for (size_t ipart = 0; ipart < NParticles; ipart++)
     {
       RealType esum(0);
-      const RealType* restrict dist = d_aa.Distances[ipart];
+      const auto& dist = d_aa.getDistRow(ipart);
       for (size_t j = 0; j < ipart; ++j)
         esum += cone / dist[j];
       SR += esum;

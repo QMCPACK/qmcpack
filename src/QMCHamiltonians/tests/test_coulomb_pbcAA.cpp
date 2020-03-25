@@ -14,13 +14,8 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#ifndef ENABLE_SOA
-#include "Particle/SymmetricDistanceTableData.h"
-#endif
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 
 
@@ -148,13 +143,12 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
 
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
-  int downIdx                  = tspecies.addSpecies("d");
   int chargeIdx                = tspecies.addAttribute("charge");
   int massIdx                  = tspecies.addAttribute("mass");
+  int pMembersizeIdx           = tspecies.addAttribute("membersize");
+  tspecies(pMembersizeIdx, upIdx)   = 1;
   tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(chargeIdx, downIdx) = -1;
   tspecies(massIdx, upIdx)     = 1.0;
-  tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
   elec.update();
@@ -164,11 +158,11 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
 
   // Self-energy correction, no background charge for e-e interaction
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-3.064495247));
+  REQUIRE(consts == Approx(-3.1151210154));
 
   double val = caa.evaluate(elec);
   //cout << "val = " << val << std::endl;
-  REQUIRE(val == Approx(-1.3680247006)); // not validated
+  REQUIRE(val == Approx(-1.418648723)); // not validated
 }
 
 

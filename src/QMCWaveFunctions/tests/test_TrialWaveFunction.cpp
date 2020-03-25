@@ -14,7 +14,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
@@ -95,7 +95,7 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
 
   //diamondC_1x1x1
   const char* spo_xml = "<tmp> \
-<determinantset type=\"einspline\" href=\"pwscf.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"2\"/> \
+<determinantset type=\"einspline\" href=\"diamondC_1x1x1.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"2\"/> \
 </tmp> \
 ";
 
@@ -137,9 +137,8 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   xmlNodePtr jas_root = doc.getRoot();
   xmlNodePtr jas1 = xmlFirstElementChild(jas_root);
 
-  RadialJastrowBuilder jb(elec_, psi);
-  bool build_okay = jb.put(jas1);
-  REQUIRE(build_okay);
+  RadialJastrowBuilder jb(c, elec_);
+  psi.addComponent(jb.buildComponent(jas1), "RadialJastrow");
 
 #if !defined(QMC_CUDA)
   // initialize distance tables.
@@ -171,24 +170,19 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   using ValueType = QMCTraits::ValueType;
   PosType delta(0.1, 0.1, 0.2);
 
-  elec_.setActive(moved_elec_id);
   elec_.makeMove(moved_elec_id, delta);
 
-  RealType r_val = psi.ratio(elec_, moved_elec_id);
   ValueType r_all_val = psi.calcRatio(elec_, moved_elec_id);
   ValueType r_fermionic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::FERMIONIC);
   ValueType r_bosonic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::NONFERMIONIC);
 
-  //std::cout << "debug YYY " << std::setprecision(16) << r_val << std::endl;
   //std::cout << "debug YYY " << std::setprecision(16) << r_all_val << std::endl;
   //std::cout << "debug YYY " << std::setprecision(16) << r_fermionic_val << std::endl;
   //std::cout << "debug YYY " << std::setprecision(16) << r_bosonic_val << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(r_val == Approx(1.742405749016986));
   REQUIRE(r_all_val == ComplexApprox(ValueType(1.653821746120792, 0.5484992491019633)));
   REQUIRE(r_fermionic_val == ComplexApprox(ValueType(1.804065087219802, 0.598328295048828)));
 #else
-  REQUIRE(r_val == Approx(2.305591774210242));
   REQUIRE(r_all_val == Approx(2.305591774210242));
   REQUIRE(r_fermionic_val == ValueApprox(2.515045914101833));
 #endif
@@ -226,15 +220,13 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   
   psi.flex_evaluateLog(wf_ref_list, p_ref_list);
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == ComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == ComplexApprox(std::complex<RealType>(-0.1201465271523596, 6.345732826640545)));
+  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == LogComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
+  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == LogComplexApprox(std::complex<RealType>(-0.1201465271523596, 6.345732826640545)));
 #else
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == ComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == ComplexApprox(std::complex<RealType>(-1.471840358291562, 3.141592653589793)));
+  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == LogComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
+  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == LogComplexApprox(std::complex<RealType>(-1.471840358291562, 3.141592653589793)));
 #endif
 
-  P_list[0]->setActive(moved_elec_id);
-  P_list[1]->setActive(moved_elec_id);
 
   std::vector<GradType> grad_old(2);
 
@@ -263,6 +255,27 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   REQUIRE(grad_old[1][2] == Approx(15.318325284049));
 #endif
 
+  PosType delta_sign_changed(0.1, 0.1, -0.2);
+  p_ref_list[0].get().makeMove(moved_elec_id, delta_sign_changed);
+  p_ref_list[1].get().makeMove(moved_elec_id, delta_sign_changed);
+
+  ValueType r_0 = wf_ref_list[0].get().calcRatio(p_ref_list[0].get(), moved_elec_id);
+  GradType grad_temp;
+  ValueType r_1 = wf_ref_list[1].get().calcRatioGrad(p_ref_list[1].get(), moved_elec_id, grad_temp);
+#if defined(QMC_COMPLEX)
+  REQUIRE(r_0 == ComplexApprox(ValueType(-0.045474407700114,-0.59956233350555)));
+  REQUIRE(r_1 == ComplexApprox(ValueType(-0.44602867091608,-1.8105588403509)));
+  REQUIRE(grad_temp[0] == ComplexApprox(ValueType(-6.6139971152489,22.82304260002)));
+  REQUIRE(grad_temp[1] == ComplexApprox(ValueType(8.3367501707711,-23.362154838104)));
+  REQUIRE(grad_temp[2] == ComplexApprox(ValueType(-2.6347597529645,0.67383144279783)));
+#else
+  REQUIRE(r_0 == Approx(-0.4138835449));
+  REQUIRE(r_1 == Approx(-2.5974770159));
+  REQUIRE(grad_temp[0] == Approx(-17.865723259764));
+  REQUIRE(grad_temp[1] == Approx(19.854257889369));
+  REQUIRE(grad_temp[2] == Approx(-2.9669578650441));
+#endif
+
   PosType delta_zero(0, 0, 0);
   p_ref_list[0].get().makeMove(moved_elec_id, delta_zero);
   p_ref_list[1].get().makeMove(moved_elec_id, delta);
@@ -281,10 +294,11 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   std::fill(ratios.begin(), ratios.end(), 0);
   std::vector<GradType> grad_new(2);
 
-  ratios[0] = WF_list[0]->ratioGrad(*P_list[0], moved_elec_id, grad_new[0]);
-  ratios[1] = WF_list[1]->ratioGrad(*P_list[1], moved_elec_id, grad_new[1]);
+  ratios[0] = WF_list[0]->calcRatioGrad(*P_list[0], moved_elec_id, grad_new[0]);
+  ratios[1] = WF_list[1]->calcRatioGrad(*P_list[1], moved_elec_id, grad_new[1]);
 
-  std::cout << "ratioGrad " << std::setprecision(14)
+  std::cout << "calcRatioGrad " << std::setprecision(14)
+            << ratios[0] << " " << ratios[1] << std::endl
             << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " "
             << grad_new[1][0] << " " << grad_new[1][1] << " " << grad_new[1][2]
             << std::endl;
@@ -292,7 +306,7 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
   
-  psi.flex_ratioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
+  psi.flex_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
 #if defined(QMC_COMPLEX)
   REQUIRE(ratios[0] == ComplexApprox(ValueType(1, 0)));
   REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
@@ -315,11 +329,11 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
 
   psi.flex_acceptMove(wf_ref_list, p_ref_list, moved_elec_id);
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == ComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == ComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
+  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == LogComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
+  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == LogComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
 #else
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == ComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == ComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
+  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == LogComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
+  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == LogComplexApprox(std::complex<RealType>(-0.6365029797784554, 3.141592653589793)));
 #endif
 
   psi.flex_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);

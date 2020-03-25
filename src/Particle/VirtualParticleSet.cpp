@@ -30,7 +30,7 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : refPS(
   Lattice  = p.Lattice;
   TotalNum = nptcl;
   R.resize(nptcl);
-  RSoA.resize(nptcl);
+  coordinates_->resize(nptcl);
 
   //create distancetables
   for (int i = 0; i < refPS.getNumDistTables(); ++i)
@@ -38,14 +38,20 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : refPS(
 }
 
 /// move virtual particles to new postions and update distance tables
-void VirtualParticleSet::makeMoves(int jel, const ParticlePos_t& vitualPos, bool sphere, int iat)
+void VirtualParticleSet::makeMoves(int jel,
+                                   const PosType& ref_pos,
+                                   const std::vector<PosType>& deltaV,
+                                   bool sphere,
+                                   int iat)
 {
   if (sphere && iat < 0)
     APP_ABORT("VirtualParticleSet::makeMoves is invoked incorrectly, the flag sphere=true requires iat specified!");
-  onSphere = sphere;
+  onSphere      = sphere;
   refPtcl       = jel;
   refSourcePtcl = iat;
-  R             = vitualPos;
+  assert(R.size() == deltaV.size());
+  for (size_t ivp = 0; ivp < R.size(); ivp++)
+    R[ivp] = ref_pos + deltaV[ivp];
   update();
 }
 

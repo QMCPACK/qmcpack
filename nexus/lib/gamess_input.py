@@ -53,7 +53,7 @@ class GIbase(DevBase):
 
 class GIarray(GIbase):
     def __init__(self,d):
-        for n,v in d.iteritems():
+        for n,v in d.items():
             if not isinstance(n,int):
                 self.error("keys must be integers\nattempted to initialize array from input provided: {0}\nnote that dict's are used only for arrays".format(d))
             #end if
@@ -365,7 +365,7 @@ class KeywordSpecGroup(KeywordGroup):
 
     def is_valid(self):
         valid = self.is_consistent()
-        for name,val in self.iteritems():
+        for name,val in self.items():
             if name in self.allowed_values:
                 if isinstance(val,str):
                     val = val.lower()
@@ -667,14 +667,14 @@ class DetGroup(KeywordSpecGroup):
 
 class BasisGroup(KeywordSpecGroup):
     keywords = set([
-            'gbasis','ngauss','ndfunc','npfunc','diffsp','diffs',
+            'gbasis','ngauss','ndfunc','nffunc','npfunc','diffsp','diffs',
             'polar' ,'split2','split3','basnam','extfil'
             ])
 
-    integers = set(['ngauss','ndfunc','nffunc'])
+    integers = set(['ngauss','ndfunc','nffunc','npfunc'])
     bools    = set(['diffsp','diffs','extfil'])
     strings  = set(['gbasis','polar'])
-    arrays   = set(['split2','split3','basname'])
+    arrays   = set(['split2','split3','basnam'])
 
     allowed_values = obj(
         #gbasis = set(['sto','n21','n31','n311','g3l','g3lx','mini','midi','dzv',
@@ -813,9 +813,6 @@ class GamessInput(SimulationInput,GIbase):
 
 
     def read_text(self,contents,filepath=None):
-        #print 8*'\n'
-        #print contents
-
         groups = obj()
         lines = contents.splitlines()
         ingroup = False
@@ -892,9 +889,7 @@ class GamessInput(SimulationInput,GIbase):
             #end if
         #end for
 
-        #print groups
-
-        for group_name,group_text in groups.iteritems():
+        for group_name,group_text in groups.items():
             failed = False
             if group_name in self.keyspec_groups:
                 self[group_name] = self.keyspec_groups[group_name](group_text)
@@ -925,10 +920,6 @@ class GamessInput(SimulationInput,GIbase):
                 self.message('Read failure: group "{0}" does not appear to be a keyword group\nand a generic read of card data failed\ndata for this group will not be available'.format(group_name))
             #end if
         #end for
-                    
-        #print self
-
-        #exit()
     #end def read_text
 
         
@@ -1180,7 +1171,8 @@ def generate_any_gamess_input(**kwargs):
 
 
 def check_keyspec_groups():
-    print 'checking GamessInput KeywordSpecGroups'    
+    from generic import error,warn
+
     groups      = GamessInput.keyspec_groups
     group_order = GamessInput.group_order
     glist = []
@@ -1190,13 +1182,13 @@ def check_keyspec_groups():
         #end if
     #end for
 
-    failed = False
+    err = ''
+    wrn = ''
 
     #check for unrecognized groups
     extra_groups = set(groups.keys())-set(group_order)
     if len(extra_groups)>0:
-        failed = True
-        print '  encountered unrecognized keyspec groups: {0}'.format(sorted(extra_groups))
+        err += '  encountered unrecognized keyspec groups: {0}\n'.format(sorted(extra_groups))
     #end if
 
     #check that integers, reals, bools, strings, and arrays are non-overlapping subsets of keywords
@@ -1211,8 +1203,8 @@ def check_keyspec_groups():
             arrays   = g.arrays
             )
         overlaps = obj()
-        for tname1,tset1 in go.iteritems():
-            for tname2,tset2 in go.iteritems():
+        for tname1,tset1 in go.items():
+            for tname2,tset2 in go.items():
                 if tname1!=tname2:
                     overlap = tset1 & tset2
                     if len(overlap)>0:
@@ -1222,24 +1214,21 @@ def check_keyspec_groups():
             #end for
         #end for
         if len(overlaps)>0:
-            failed = True
             msg = '  keyspec group {0} has overlapping keywords'.format(g.__name__)
             for tname1,tname2 in sorted(overlaps.keys()):
-                msg += '    \n {0} {1} overlap: {2}'.format(tname1,tname2,overlaps[tname1,tname2])
+                msg += '    \n {0} {1} overlap: {2}\n'.format(tname1,tname2,overlaps[tname1,tname2])
             #end for
-            print msg
+            err += msg
         #end if
         for tname in sorted(go.keys()):
             extra_keys = go[tname]-g.keywords
             if len(extra_keys)>0:
-                failed = True
-                print '  keyspec group {0} has unrecognized {1} keywords:\n    {2}'.format(g.__name__,tname,sorted(extra_keys))
+                err += '  keyspec group {0} has unrecognized {1} keywords:\n    {2}\n'.format(g.__name__,tname,sorted(extra_keys))
             #end if
         #end for
         extra_keys = set(g.allowed_values.keys())-g.keywords
         if len(extra_keys)>0:
-            failed = True
-            print '  keyspec group {0} has unrecognized allowed_value keywords:\n    {1}'.format(g.__name__,sorted(extra_keys))
+            err += '  keyspec group {0} has unrecognized allowed_value keywords:\n    {1}\n'.format(g.__name__,sorted(extra_keys))
         #end if
         type_keys = set()
         for keys in go:
@@ -1247,7 +1236,7 @@ def check_keyspec_groups():
         #end for
         undefined = g.keywords-type_keys
         if len(undefined)>0:
-            print '  keyspec group {0} has keywords w/o type assignment:\n    {1}'.format(g.__name__,sorted(undefined))
+            err += '  keyspec group {0} has keywords w/o type assignment:\n    {1}\n'.format(g.__name__,sorted(undefined))
         #end if
 
         #check that allowed values for each keyword have the right type
@@ -1264,8 +1253,7 @@ def check_keyspec_groups():
                 if kw in g.allowed_values:
                     for val in g.allowed_values[kw]:
                         if not isinstance(val,type):
-                            failed = True
-                            print '  allowed values of {0} keyword {1} are not all {2}: {3}'.format(g.__name__,kw,tname,sorted(g.allowed_values[kw]))
+                            err += '  allowed values of {0} keyword {1} are not all {2}: {3}\n'.format(g.__name__,kw,tname,sorted(g.allowed_values[kw]))
                             break
                         #end if
                     #end for
@@ -1290,24 +1278,24 @@ def check_keyspec_groups():
         #end for
     #end for
     if len(overlaps)>0:
-        print '\n  Note: some groups have overlapping keywords'
+        wrn += '\n  Note: some groups have overlapping keywords\n'
         for gname1,gname2 in sorted(overlaps.keys()):
-            print '    groups {0} and {1} have overlapping keywords:\n      {2}'.format(gname1,gname2,overlaps[gname1,gname2])
+            wrn += '    groups {0} and {1} have overlapping keywords:\n      {2}\n'.format(gname1,gname2,overlaps[gname1,gname2])
         #end for
     #end if
 
     #note any overlapping keyword and group names (also a feature)
     overlap = GamessInput.all_keywords & set(GamessInput.group_order)
     if len(overlap)>0:
-        print '\n  Note: some group names overlap with keywords:\n    {0}'.format(sorted(overlap))
+        wrn += '\n  Note: some group names overlap with keywords:\n    {0}\n'.format(sorted(overlap))
     #end if
 
-    if failed:
-        print '\ncheck failed, see messages above and fix implementation'
-    else:
-        print '\ncheck passed'
+    if len(err)>0:
+        error(err)
     #end if
-    exit()
+    if len(wrn)>0:
+        warn(wrn)
+    #end if
 #end def check_keyspec_groups
 
 #check_keyspec_groups()  # uncomment this to check keyword spec group self-consistency

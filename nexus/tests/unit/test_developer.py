@@ -1,4 +1,5 @@
 
+from testing import failed,FailedTest
 
 def test_import():
     from developer import log,error,warn
@@ -58,7 +59,6 @@ def test_unavailable():
         str,
         complex,
         int,
-        long,
         float,
         lambda v: v==0,
         lambda v: v!=0,
@@ -84,9 +84,13 @@ def test_unavailable():
         for v in void_imports:
             try:
                 op(v)
-                assert(1==0)
+                raise FailedTest
             except NexusError:
                 None
+            except FailedTest:
+                failed()
+            except Exception as e:
+                failed(str(e))
             #end try
         #end for
     #end for

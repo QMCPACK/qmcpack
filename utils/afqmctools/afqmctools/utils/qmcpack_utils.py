@@ -1,8 +1,7 @@
 import h5py
 import xml.etree.ElementTree as et
-from afqmctools.wavefunction.mol import read_qmcpack_wfn
 
-def write_xml_input(qmc_in, hamil_file, wfn_file, series=0,
+def write_xml_input(qmc_in, hamil_file, wfn_file, id_name='qmc', series=0,
                     rng_seed=None, options=None):
     """Generate template input file from hamiltonian and wavefunction.
 
@@ -14,6 +13,8 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0,
         HDF5 file containing Hamiltonian.
     wfn_file : string
         HDF5 file containing Wavefunction.
+    id_name : string
+        xml id for output files. Optional. Default "qmc".
     series : int
         Simulation series number. Optional. Default 0.
     options : dict
@@ -62,8 +63,8 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0,
         walker_type = walker_types[dims[3]]
 
     base = '''<simulation method="afqmc">
-    <project id="qmc" series="{:d}"/>
-    '''.format(series)
+    <project id="{:s}" series="{:d}"/>
+    '''.format(id_name, series)
     if rng_seed is not None:
         base += '''<random seed="{:d}"/>'''.format(rng_seed)
     base += '''<AFQMCInfo name="info0">
@@ -97,7 +98,7 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0,
             'timestep': 0.005,
             'blocks': 10000,
             'steps': 10,
-            'nWalkers': 10
+            'nWalkers': 10,
             }
         }
     if options is not None:
@@ -121,29 +122,31 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0,
 
 def add_param(root, block, name, val):
     node = root.find(block)
+    assert node is not None, "{} not found.".format(block)
     param = et.Element('parameter', name=name)
     param.text = str(val)
     node.append(param)
 
 def add_estimator(root, name, vals, block='execute', est_name='Estimator'):
     node = root.find(block)
-    if name is None:
-        param = et.Element(est_name)
-    else:
+    if est_name == 'Estimator':
         param = et.Element(est_name, name=name)
+    else:
+        param = et.Element(est_name)
+    base_name = "execute/Estimator[@name='{:s}']".format(name)
     node.append(param)
-    bname = "execute/Estimator[@name='{:s}']".format(name)
     for k, v in vals.items():
         # Add list of observables
         if k == 'obs':
             for o, p in v.items():
-                add_estimator(root, None, p,
-                          block=bname,
-                          est_name=o)
+                add_estimator(root, name, p,
+                              block=base_name,
+                              est_name=o)
         else:
             if est_name != 'Estimator':
-                bname += '/'+est_name
-            add_param(root, bname, k, v)
+                add_param(root, base_name+'/'+est_name, k, v)
+            else:
+                add_param(root, base_name, k, v)
 
 def indent(elem, ilevel=0):
     # Stackoverflow.

@@ -29,7 +29,7 @@ namespace qmcplusplus
  * @tparm T data type, float, double, complex<float>, complex<double>
  * @tparm Alloc memory allocator
  */
-template<typename T, unsigned D, size_t ALIGN = QMC_CLINE, typename Alloc = Mallocator<T, ALIGN>>
+template<typename T, unsigned D, typename Alloc = aligned_allocator<T>>
 struct VectorSoaContainer
 {
   using AoSElement_t = TinyVector<T, D>;
@@ -109,7 +109,7 @@ struct VectorSoaContainer
     if (isRefAttached())
       throw std::runtime_error("Resize not allowed on VectorSoaContainer constructed by initialized memory.");
 
-    size_t n_padded = getAlignedSize<T, ALIGN>(n);
+    size_t n_padded = getAlignedSize<T, Alloc::alignment>(n);
 
     if (n_padded * D > nAllocated)
     {
@@ -194,8 +194,8 @@ struct VectorSoaContainer
   ///helper class for operator ()(size_t i) to assign a value
   struct Accessor
   {
-    size_t M;
     T* _base;
+    size_t M;
     __forceinline Accessor(T* a, size_t ng) : _base(a), M(ng) {}
     template<typename T1>
     __forceinline Accessor& operator=(const TinyVector<T1, D>& rhs)

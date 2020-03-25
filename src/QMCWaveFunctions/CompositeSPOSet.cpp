@@ -88,7 +88,6 @@ void CompositeSPOSet::report()
   app_log() << "  components" << std::endl;
   for (int i = 0; i < components.size(); ++i)
   {
-    SPOSet& c = *components[i];
     app_log() << "    " << i << std::endl;
     components[i]->basic_report("      ");
   }
@@ -125,25 +124,25 @@ void CompositeSPOSet::clone_from(const CompositeSPOSet& master)
     add(master.components[c]->makeClone());
 }
 
-void CompositeSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+void CompositeSPOSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   int n = 0;
   for (int c = 0; c < components.size(); ++c)
   {
     SPOSet& component     = *components[c];
     ValueVector_t& values = *component_values[c];
-    component.evaluate(P, iat, values);
+    component.evaluateValue(P, iat, values);
     std::copy(values.begin(), values.end(), psi.begin() + n);
     n += component.size();
   }
 }
 
 
-void CompositeSPOSet::evaluate(const ParticleSet& P,
-                               int iat,
-                               ValueVector_t& psi,
-                               GradVector_t& dpsi,
-                               ValueVector_t& d2psi)
+void CompositeSPOSet::evaluateVGL(const ParticleSet& P,
+                                  int iat,
+                                  ValueVector_t& psi,
+                                  GradVector_t& dpsi,
+                                  ValueVector_t& d2psi)
 {
   int n = 0;
   for (int c = 0; c < components.size(); ++c)
@@ -152,7 +151,7 @@ void CompositeSPOSet::evaluate(const ParticleSet& P,
     ValueVector_t& values     = *component_values[c];
     GradVector_t& gradients   = *component_gradients[c];
     ValueVector_t& laplacians = *component_laplacians[c];
-    component.evaluate(P, iat, values, gradients, laplacians);
+    component.evaluateVGL(P, iat, values, gradients, laplacians);
     std::copy(values.begin(), values.end(), psi.begin() + n);
     std::copy(gradients.begin(), gradients.end(), dpsi.begin() + n);
     std::copy(laplacians.begin(), laplacians.end(), d2psi.begin() + n);

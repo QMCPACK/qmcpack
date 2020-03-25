@@ -26,6 +26,7 @@
 #define QMCPLUSPLUS_REPTILE_H
 
 #include "QMCDrivers/DriftOperators.h"
+#include "QMCDrivers/WalkerProperties.h"
 #include "Configuration.h"
 #include "Walker.h"
 
@@ -36,6 +37,7 @@ class MCWalkerConfiguration;
 class Reptile : public QMCTraits
 {
 public:
+  using WP = WalkerProperties::Indexes;
   typedef MCWalkerConfiguration::Walker_t Walker_t;
   //typedef Walker_t::Buffer_t              Buffer_t;
   //    typedef MCWalkerConfiguration::Walker_t Walker_t;
@@ -52,10 +54,10 @@ public:
 
   RealType tau;
 
-  IndexType direction, headindex, nbeads;
   MCWalkerConfiguration& w;
-  Walker_t* prophead;
   WalkerIter_t repstart, repend;
+  IndexType direction, headindex, nbeads;
+  Walker_t* prophead;
 
   inline Reptile(MCWalkerConfiguration& W, WalkerIter_t start, WalkerIter_t end)
       : w(W),
@@ -65,7 +67,6 @@ public:
         headindex(0),
         prophead(0) //, r2prop(0.0), r2accept(0.0),tau(0.0)
   {
-    w = W;
     Action.resize(3);
     Action[0] = w.addProperty("ActionBackward");
     Action[1] = w.addProperty("ActionForward");
@@ -192,7 +193,7 @@ public:
     app_log() << "BeadIndex\tWrapIndex\tEnergy\tAction[0]\tAction[1]\tAction[2]\t\n";
     for (int i = 0; i < nbeads; i++)
     {
-      app_log() << i << "\t" << getBeadIndex(i) << "\t" << getBead(i).Properties(LOCALENERGY) << "\t"
+      app_log() << i << "\t" << getBeadIndex(i) << "\t" << getBead(i).Properties(WP::LOCALENERGY) << "\t"
                 << getBead(i).Properties(Action[0]) << "\t" << getBead(i).Properties(Action[1]) << "\t"
                 << getBead(i).Properties(Action[2]) << "\n";
     }

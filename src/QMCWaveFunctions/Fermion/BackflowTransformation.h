@@ -69,9 +69,6 @@ public:
   /// quasiparticle coordinates
   ParticleSet QP;
 
-  /// Distance Table
-  const int myTableIndex_;
-
   // number of variational parameters
   int numParams;
 
@@ -97,8 +94,8 @@ public:
   // pos of first optimizable variable in global array
   int numVarBefore;
 
-  ParticleSet& targetPtcl;
-  //    PtclPoolType& ptclPool;
+  /// Distance Table
+  const int myTableIndex_;
 
   // matrix of laplacians
   // /vec{B(i)} = sum_{k} /grad_{k}^2 /vec{x_i}
@@ -151,11 +148,12 @@ public:
   opt_variables_type myVars;
 
   BackflowTransformation(ParticleSet& els)
-    : targetPtcl(els), QP(els), cutOff(0.0),
+      : QP(els),
+        cutOff(0.0),
 #ifdef ENABLE_SOA
-      myTableIndex_(els.addTable(els, DT_SOA))
+        myTableIndex_(els.addTable(els, DT_SOA))
 #else
-      myTableIndex_(els.addTable(els, DT_AOS))
+        myTableIndex_(els.addTable(els, DT_AOS))
 #endif
   {
     NumTargets = els.getTotalNum();
@@ -170,14 +168,14 @@ public:
     numVarBefore = 0;
   }
 
-  void copyFrom(BackflowTransformation& tr)
+  void copyFrom(const BackflowTransformation& tr, ParticleSet& targetPtcl)
   {
     cutOff       = tr.cutOff;
     numParams    = tr.numParams;
     numVarBefore = tr.numVarBefore;
     optIndexMap  = tr.optIndexMap;
-    bfFuns.resize((tr.bfFuns).size());
-    std::vector<BackflowFunctionBase*>::iterator it((tr.bfFuns).begin());
+    bfFuns.resize(tr.bfFuns.size());
+    auto it(tr.bfFuns.begin());
     for (int i = 0; i < (tr.bfFuns).size(); i++, it++)
       bfFuns[i] = (*it)->makeClone(targetPtcl);
   }
@@ -186,7 +184,7 @@ public:
   BackflowTransformation* makeClone(ParticleSet& tqp)
   {
     BackflowTransformation* clone = new BackflowTransformation(tqp);
-    clone->copyFrom(*this);
+    clone->copyFrom(*this, tqp);
     //       std::vector<BackflowFunctionBase*>::iterator it((bfFuns).begin());
     //       for(int i=0; i<(bfFuns).size() ; i++,it++)
     //       {
@@ -259,14 +257,6 @@ public:
         return true;
     return false;
   }
-
-  /** reset the distance table with a new target P
-   */
-  void resetTargetParticleSet(ParticleSet& P)
-  {
-    targetPtcl = P;
-  }
-
 
   void resetParameters(const opt_variables_type& active)
   {
@@ -354,7 +344,7 @@ public:
       oldQP[i] = newQP[i] = QP.R[i];
     const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
-    newQP[iat] -= myTable.Temp_dr[iat];
+    newQP[iat] -= myTable.getTempDispls()[iat];
 #else
     newQP[iat] += myTable.Temp[iat].dr1;
 #endif
@@ -405,7 +395,7 @@ public:
       oldQP[i] = newQP[i] = QP.R[i];
     const auto& myTable = P.getDistTable(myTableIndex_);
 #ifdef ENABLE_SOA
-    newQP[iat] -= myTable.Temp_dr[iat];
+    newQP[iat] -= myTable.getTempDispls()[iat];
 #else
     newQP[iat] += myTable.Temp[iat].dr1;
 #endif

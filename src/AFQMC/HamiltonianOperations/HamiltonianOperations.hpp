@@ -26,7 +26,12 @@
 #ifdef QMC_COMPLEX
 #include "AFQMC/HamiltonianOperations/KP3IndexFactorization.hpp"
 #include "AFQMC/HamiltonianOperations/KP3IndexFactorization_batched.hpp"
+#include "AFQMC/HamiltonianOperations/KP3IndexFactorization_batched_ooc.hpp"
 //#include "AFQMC/HamiltonianOperations/KPTHCOps.hpp"
+#else
+#include "AFQMC/HamiltonianOperations/Real3IndexFactorization.hpp"
+#include "AFQMC/HamiltonianOperations/Real3IndexFactorization_batched.hpp"
+#include "AFQMC/HamiltonianOperations/Real3IndexFactorization_batched_v2.hpp"
 #endif
 
 namespace qmcplusplus
@@ -143,6 +148,8 @@ class dummy_HOps
     return boost::multi::array<ComplexType,2>{};
   }
 
+  HamiltonianTypes getHamType() const { return UNKNOWN; }
+
 };
 
 }
@@ -153,7 +160,8 @@ class HamiltonianOperations:
         public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,
                                 SparseTensor<ComplexType,ComplexType>,
                                 KP3IndexFactorization,
-                                KP3IndexFactorization_batched
+                                KP3IndexFactorization_batched,
+                                KP3IndexFactorization_batched_ooc
 //                              ,KPTHCOps
                                 >
 #else
@@ -162,7 +170,10 @@ class HamiltonianOperations:
                                   SparseTensor<RealType,RealType>,
                                   SparseTensor<RealType,ComplexType>,
                                   SparseTensor<ComplexType,RealType>,
-                                  SparseTensor<ComplexType,ComplexType>
+                                  SparseTensor<ComplexType,ComplexType>,
+                                  Real3IndexFactorization,
+                                  Real3IndexFactorization_batched,
+                                  Real3IndexFactorization_batched_v2
                              >
 #endif
 {
@@ -180,9 +191,13 @@ class HamiltonianOperations:
     explicit HamiltonianOperations(STRR&& other) : variant(std::move(other)) {}
     explicit HamiltonianOperations(STRC&& other) : variant(std::move(other)) {}
     explicit HamiltonianOperations(STCR&& other) : variant(std::move(other)) {}
+    explicit HamiltonianOperations(Real3IndexFactorization&& other) : variant(std::move(other)) {}
+    explicit HamiltonianOperations(Real3IndexFactorization_batched&& other) : variant(std::move(other)) {}
+    explicit HamiltonianOperations(Real3IndexFactorization_batched_v2&& other) : variant(std::move(other)) {}
 #else
     explicit HamiltonianOperations(KP3IndexFactorization&& other) : variant(std::move(other)) {}
     explicit HamiltonianOperations(KP3IndexFactorization_batched&& other) : variant(std::move(other)) {}
+    explicit HamiltonianOperations(KP3IndexFactorization_batched_ooc&& other) : variant(std::move(other)) {}
 //    explicit HamiltonianOperations(KPTHCOps&& other) : variant(std::move(other)) {}
 #endif
     explicit HamiltonianOperations(STCC&& other) : variant(std::move(other)) {}
@@ -192,9 +207,13 @@ class HamiltonianOperations:
     explicit HamiltonianOperations(STRR const& other) = delete;
     explicit HamiltonianOperations(STRC const& other) = delete;
     explicit HamiltonianOperations(STCR const& other) = delete;
+    explicit HamiltonianOperations(Real3IndexFactorization const& other) = delete;
+    explicit HamiltonianOperations(Real3IndexFactorization_batched const& other) = delete;
+    explicit HamiltonianOperations(Real3IndexFactorization_batched_v2 const& other) = delete;
 #else
     explicit HamiltonianOperations(KP3IndexFactorization const& other) = delete;
     explicit HamiltonianOperations(KP3IndexFactorization_batched const& other) = delete;
+    explicit HamiltonianOperations(KP3IndexFactorization_batched_ooc const& other) = delete;
 //    explicit HamiltonianOperations(KPTHCOps const& other) = delete;
 #endif
     explicit HamiltonianOperations(STCC const& other) = delete;
@@ -329,6 +348,13 @@ class HamiltonianOperations:
     bool fast_ph_energy() const {
         return boost::apply_visitor(
             [&](auto&& a){return a.fast_ph_energy();},
+            *this
+        );
+    }
+ 
+    HamiltonianTypes getHamType() const {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.getHamType();},
             *this
         );
     }

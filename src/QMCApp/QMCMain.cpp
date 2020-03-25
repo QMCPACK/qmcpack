@@ -22,16 +22,16 @@
  */
 #include "QMCApp/QMCMain.h"
 #include "Platforms/accelerators.hpp"
-#include "QMCApp/ParticleSetPool.h"
-#include "QMCApp/WaveFunctionPool.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "Particle/ParticleSetPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Utilities/OutputManager.h"
 #include "Utilities/Timer.h"
 #include "Utilities/NewTimer.h"
 #include "Particle/HDFWalkerIO.h"
-#include "QMCApp/InitMolecularSystem.h"
+#include "Particle/InitMolecularSystem.h"
 #include "QMCDrivers/QMCDriver.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
@@ -546,6 +546,10 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
   bool append_run = false;
 
+  if(!population_)
+  {
+    population_.reset(new MCPopulation(myComm->size(), *qmcSystem, ptclPool->getParticleSet("e"), psiPool->getPrimary(), hamPool->getPrimary(), myComm->rank()));
+  }
   if (reuse)
     qmc_driver = std::move(last_driver);
   else
@@ -553,7 +557,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     QMCDriverFactory driver_factory;
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
     qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem, *ptclPool,
-                                             *psiPool, *hamPool, myComm);
+                                             *psiPool, *hamPool, *population_, myComm);
     append_run = das.append_run;
   }
 

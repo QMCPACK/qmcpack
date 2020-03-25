@@ -63,6 +63,7 @@ class TrialWaveFunction : public MPIObjectBase
 public:
   // derived types from WaveFunctionComponent
   typedef WaveFunctionComponent::RealType RealType;
+  using FullPrecRealType = WaveFunctionComponent::FullPrecRealType;
   typedef WaveFunctionComponent::ValueType ValueType;
   typedef WaveFunctionComponent::PosType PosType;
   typedef WaveFunctionComponent::GradType GradType;
@@ -111,12 +112,7 @@ public:
   void getPhases(std::vector<RealType>& pvals);
 
   inline RealType getPhaseDiff() const { return PhaseDiff; }
-  inline void resetPhaseDiff()
-  {
-    PhaseDiff = 0.0;
-    for (int i = 0; i < Z.size(); i++)
-      Z[i]->resetPhaseDiff();
-  }
+  inline void resetPhaseDiff() { PhaseDiff = 0.0; }
   inline RealType getLogPsi() const { return LogValue; }
   inline void setLogPsi(RealType LogPsi_new) { LogValue = LogPsi_new; }
 
@@ -169,15 +165,15 @@ public:
                         ParticleSet::ParticleGradient_t& fixedG,
                         ParticleSet::ParticleLaplacian_t& fixedL);
 
-  /** functions to handle particle-by-particle update
-   * both ratio and full_ratio will be replaced by calcRatio which will handle ValueType.
+  /** compute psi(R_new) / psi(R_current) ratio
+   * It returns a complex value if the wavefunction is complex.
+   * @param P the active ParticleSet
+   * @param iat the index of a particle moved to the new position.
+   * @param ct select ComputeType
+   * @return ratio value
    */
-  RealType ratio(ParticleSet& P, int iat);
-
-  /** function that computes psi(R_new) / psi(R_current). It returns a complex value if the wavefunction 
-  *   is complex. It differs from the ratio(ParticleSet& P, int iat) function in the way that the ratio
-  *   function takes the absolute value of psi(R_new) / psi(R_current). */
   ValueType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
+
   /** batched verison of calcRatio */
   static void flex_calcRatio(const RefVector<TrialWaveFunction>& WF_list,
                              const RefVector<ParticleSet>& P_list,
@@ -187,7 +183,9 @@ public:
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
-  void evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios);
+  void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct = ComputeType::ALL);
+  static void flex_evaluateRatios(const RefVector<TrialWaveFunction>& WF_list, const RefVector<const VirtualParticleSet>& VP_list, const RefVector<std::vector<ValueType>>& ratios_list, ComputeType ct = ComputeType::ALL);
+
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P,
                            const opt_variables_type& optvars,
@@ -208,19 +206,47 @@ public:
                           TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
                           TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
 
-  RealType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  /** compute psi(R_new) / psi(R_current) ratio and \nabla ln(psi(R_new)) gradients
+   * It returns a complex value if the wavefunction is complex.
+   * @param P the active ParticleSet
+   * @param iat the index of a particle moved to the new position.
+   * @param grad_iat gradients
+   * @return ratio value
+   */
+  ValueType calcRatioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+
+  /** compute psi(R_new) / psi(R_current) ratio and d/ds ln(psi(R_new)) spin gradient
+   * It returns a complex value if the wavefunction is complex.
+   * @param P the active ParticleSet
+   * @param iat the index of a particle moved to the new position.
+   * @param grad_iat real space gradient for iat
+   * @param spingrad_iat spin gradient for iat
+   * @return ratio value
+   */
+  ValueType calcRatioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad_iat);
 
   /** batched verison of ratioGrad 
    *
    *  all vector sizes must match
    */
-  static void flex_ratioGrad(const RefVector<TrialWaveFunction>& WF_list,
-                             const RefVector<ParticleSet>& P_list,
-                             int iat,
-                             std::vector<PsiValueType>& ratios,
-                             std::vector<GradType>& grad_new);
+  static void flex_calcRatioGrad(const RefVector<TrialWaveFunction>& WF_list,
+                                 const RefVector<ParticleSet>& P_list,
+                                 int iat,
+                                 std::vector<PsiValueType>& ratios,
+                                 std::vector<GradType>& grad_new);
 
   GradType evalGrad(ParticleSet& P, int iat);
+
+  /** compute d/ds ln(psi) spin gradient at current particle position for iat electron
+   *
+   * @param P active particle set.
+   * @param iat index of the particle moved to the new position.
+   * @param spingrad spingrad value.  Zeroed out first, then filled with d/ds ln(psi).
+   * @return \nabla ln(psi) (complex)
+   *
+   */
+  GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad);
+
   /** batched verison of evalGrad
     *
     * This is static because it should have no direct access
@@ -235,11 +261,11 @@ public:
   /* flexible batched version of rejectMove */
   static void flex_rejectMove(const RefVector<TrialWaveFunction>& wf_list, int iat);
 
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
   /* flexible batched version of acceptMove */
   static void flex_acceptMove(const RefVector<TrialWaveFunction>& wf_list,
                               const RefVector<ParticleSet>& p_list,
-                              int iat);
+                              int iat, bool safe_to_delay = false);
   void completeUpdates();
   /* flexible batched version of completeUpdates.  */
   void flex_completeUpdates(const std::vector<TrialWaveFunction*>& WF_list) const;
@@ -276,9 +302,9 @@ public:
   /* flexible batched version of copyFromBuffer. 
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    */
-  void flex_copyFromBuffer(const std::vector<TrialWaveFunction*>& WF_list,
-                           const std::vector<ParticleSet*>& P_list,
-                           const std::vector<WFBufferType*>& buf_list) const;
+  void flex_copyFromBuffer(const RefVector<TrialWaveFunction>& WF_list,
+                           const RefVector<ParticleSet>& P_list,
+                           const RefVector<WFBufferType>& buf_list) const;
 
   RealType KECorrection() const;
 
@@ -323,6 +349,8 @@ public:
   std::vector<NewTimer*>& get_timers() { return myTimers; }
 
 private:
+  static void debugOnlyCheckBuffer(WFBufferType& buffer);
+
   ///starting index of the buffer
   size_t BufferCursor;
 

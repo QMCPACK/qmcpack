@@ -404,7 +404,6 @@ namespace afqmc
     else
       assert(G.size(1) == wset.size() && G.size(0) == size_t(dm_size(not compact)));
     const int nw = wset.size(); 
-    const int ndet = abij.number_of_configurations(); 
     auto refc = abij.reference_configuration();
     double LogOverlapFactor(wset.getLogOverlapFactor());
     assert(Ov.size() >= nw);  
@@ -871,7 +870,6 @@ namespace afqmc
   void PHMSD::Overlap(const WlkSet& wset, TVec&& Ov)
   {
     const int nw = wset.size(); 
-    const int ndet = abij.number_of_configurations();
     assert(Ov.size() >= nw);  
     std::fill(Ov.begin(),Ov.begin()+nw,0);
     auto refc = abij.reference_configuration();
@@ -1189,7 +1187,7 @@ namespace afqmc
       for(int nd=0; nd<det_couplings[spin].size(); ++nd, ++nc) {
         if( nc%TG.Global().size() == TG.Global().rank() ) {
           abij.get_configuration(spin,nd,confg);
-          csr::CSR2MA('H',OrbMats[orb_spin_indx],SM_,confg);
+          ma::Matrix2MA('H',OrbMats[orb_spin_indx],SM_,confg);
           ovlps[spin][nd] = SDetOp.Overlap(SM_,0.0);
         }
       }
@@ -1226,7 +1224,7 @@ namespace afqmc
       for(int nd=0; nd<det_couplings[spin].size(); ++nd) {
         if( nd%TG.Global().size() == TG.Global().rank() ) {
           abij.get_configuration(spin,nd,confg);
-          csr::CSR2MA('H',OrbMats[orb_spin_indx],SM_,confg);
+          ma::Matrix2MA('H',OrbMats[orb_spin_indx],SM_,confg);
           ComplexType ov_ = SDetOp.MixedDensityMatrix(SM_,G2D_,0.0,true);
           ComplexType wgt(0.0);
           auto it = to_address(det_couplings[spin].values()) +
@@ -1271,7 +1269,7 @@ namespace afqmc
                  * Either calculate it (expensive) or demand orthogonality!!!   
                  */   
                 exct[0] = confg[exct[0]]; 
-                csr::CSR2MA('Z',OrbMats[orb_spin_indx],orbs,exct);
+                ma::Matrix2MA('Z',OrbMats[orb_spin_indx],orbs,exct);
                 ma::axpy(wgt,orbs[0],G[exct[1]]);
                 ma::axpy(ma::conj(wgt),orbs[1],G[exct[0]]);
               }

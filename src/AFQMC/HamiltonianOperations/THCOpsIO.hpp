@@ -24,6 +24,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Matrix/ma_hdf5_readers.hpp"
+#include "AFQMC/Numerics/ma_blas_extensions.hpp"
 
 #include "AFQMC/HamiltonianOperations/THCOps.hpp"
 #include "AFQMC/Hamiltonians/rotateHamiltonian.hpp"
@@ -60,7 +61,6 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   // fix later for multidet case
   std::vector<int> dims(10);
   ValueType E0;
-  int global_ncvecs=0;
   std::size_t gnmu,grotnmu,nmu,rotnmu,nmu0,nmuN,rotnmu0,rotnmuN;
 
   // read from HDF
@@ -218,19 +218,19 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
       boost::multi::array<ComplexType,2> B({NMO,NAEB});
       for(int i=0; i<ndet; i++) {
         // cPua = H(Piu) * conj(A)
-        csr::CSR2MA('T',PsiT[2*i],A);
+        ma::Matrix2MA('T',PsiT[2*i],A);
         auto&& cPua_i(cPua[i].get());
         auto&& rotcPua_i(rotcPua[i].get());
         ma::product(H(Piu.get()),A,cPua_i(cPua_i.extension(0),{0,NAEA}));
         ma::product(H(rotPiu.get()),A,rotcPua_i(cPua_i.extension(0),{0,NAEA}));
-        csr::CSR2MA('T',PsiT[2*i+1],B);
+        ma::Matrix2MA('T',PsiT[2*i+1],B);
         ma::product(H(Piu.get()),B,cPua_i(cPua_i.extension(0),{NAEA,NAEA+NAEB}));
         ma::product(H(rotPiu.get()),B,rotcPua_i(cPua_i.extension(0),{NAEA,NAEA+NAEB}));
       }
     } else {
       boost::multi::array<ComplexType,2> A({PsiT[0].size(1),PsiT[0].size(0)});
       for(int i=0; i<ndet; i++) {
-        csr::CSR2MA('T',PsiT[i],A);
+        ma::Matrix2MA('T',PsiT[i],A);
         // cPua = H(Piu) * conj(A)
         ma::product(H(Piu.get()),A,cPua[i].get());
         ma::product(H(rotPiu.get()),A,rotcPua[i].get());

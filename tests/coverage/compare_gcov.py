@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 import argparse
 from collections import OrderedDict, namedtuple, defaultdict
@@ -54,7 +55,7 @@ def remove_unwanted_file(gcov, fname, dir_base):
   if fname.endswith('.gcov'):
     os.unlink(os.path.join(dir_base,fname))
   else:
-    print 'Filter error, attempting to remove a non-gcov file: ',fname
+    print('Filter error, attempting to remove a non-gcov file: ',fname)
   return False
 
 # There are two locations for the source filename associated with each gcov
@@ -90,7 +91,7 @@ def merge_gcov_files_in_dir(fnames, directory, output_dir=None, src_prefix=None)
   if output_dir is None:
     output_dir = ''
 
-  for output_fname, input_fnames in to_merge.iteritems():
+  for output_fname, input_fnames in to_merge.items():
       inputs = [os.path.join(directory, fname) for fname in input_fnames]
       merge_gcov.merge_gcov_files(inputs, os.path.join(output_dir,output_fname),
                                   src_prefix_to_add=src_prefix)
@@ -107,9 +108,9 @@ def compare_gcov_dirs(dir_base, dir_unit):
   only_base = base_names.difference(unit_names)
   only_unit = unit_names.difference(base_names)
 
-  print 'Files in both: ',len(both)
-  print 'Files only in base: ',len(only_base)
-  print 'Files only in unit: ',len(only_unit)
+  print('Files in both: ',len(both))
+  print('Files only in base: ',len(only_base))
+  print('Files only in unit: ',len(only_unit))
 
   return both, only_base, only_unit, base_gcov_map, unit_gcov_map
 
@@ -142,7 +143,7 @@ def handle_uncovered(gcov_base, fname, dir_diff, always_copy=False):
 
 def mark_as_uncovered(gcov_base):
   diff_line_info = OrderedDict()
-  for line in gcov_base.line_info.iterkeys():
+  for line in gcov_base.line_info.keys():
     base_line = gcov_base.line_info[line]
     Uncov_norm= '#####'
     Nocode = '-'
@@ -191,7 +192,7 @@ def get_total_covered_lines(gcov):
 
   Nocode = '-'
 
-  for line in gcov.line_info.iterkeys():
+  for line in gcov.line_info.keys():
     base_line = gcov.line_info[line]
 
 
@@ -228,7 +229,7 @@ def get_total_covered_lines(gcov):
 def compute_gcov_diff(gcov_base, gcov_unit, print_diff=False, print_diff_summary=False, coverage_stats=None):
   diff_line_info = OrderedDict()
   if print_diff or print_diff_summary:
-    print 'file ',gcov_base.tags['Source']
+    print('file ',gcov_base.tags['Source'])
 
   total_base_count = 0
 
@@ -242,9 +243,9 @@ def compute_gcov_diff(gcov_base, gcov_unit, print_diff=False, print_diff_summary
   unit_totals_rel_covered = 0
   unit_totals_rel_uncovered = 0
 
-  for line in gcov_base.line_info.iterkeys():
+  for line in gcov_base.line_info.keys():
     if line not in gcov_unit.line_info:
-      print 'error, line not present: %d ,line=%s'%(line, gcov_base.line_info[line])
+      print('error, line not present: %d ,line=%s'%(line, gcov_base.line_info[line]))
     base_line = gcov_base.line_info[line]
     unit_line = gcov_unit.line_info[line]
 
@@ -336,19 +337,19 @@ def compute_gcov_diff(gcov_base, gcov_unit, print_diff=False, print_diff_summary
 
     if print_diff and line_has_diff:
       if gcov_base.line_info[line].src.strip() != gcov_unit.line_info[line].src.strip():
-        print 'line diff, base: ',gcov_base.line_info[line]
-        print '     unit: ',gcov_unit.line_info[line]
-      print '%9s  %9s %6d : %s'%(base_line.count, unit_line.count, line, gcov_unit.line_info[line].src)
+        print('line diff, base: ',gcov_base.line_info[line])
+        print('     unit: ',gcov_unit.line_info[line])
+      print('%9s  %9s %6d : %s'%(base_line.count, unit_line.count, line, gcov_unit.line_info[line].src))
     if diff_count is None:
-      print 'Unhandled case: ',line,diff_count,base_line.count,unit_line.count
+      print('Unhandled case: ',line,diff_count,base_line.count,unit_line.count)
 
     diff_line_info[line] = read_gcov.LineInfo(diff_count, line, base_line.src)
 
   if print_diff_summary:
-    print 'Base        Unit'
-    print '%4d/%-4d   %4d/%-4d  covered lines'%(base_totals_covered, base_totals_total, unit_totals_covered, unit_totals_total)
-    print '%4d/%-4d   %4d/%-4d  uncovered lines'%(base_totals_uncovered, base_totals_total, unit_totals_uncovered, unit_totals_total)
-    print '            %4d/%-4d  uncovered lines relative to base'%(unit_totals_rel_uncovered, (unit_totals_rel_uncovered+unit_totals_rel_covered))
+    print('Base        Unit')
+    print('%4d/%-4d   %4d/%-4d  covered lines'%(base_totals_covered, base_totals_total, unit_totals_covered, unit_totals_total))
+    print('%4d/%-4d   %4d/%-4d  uncovered lines'%(base_totals_uncovered, base_totals_total, unit_totals_uncovered, unit_totals_total))
+    print('            %4d/%-4d  uncovered lines relative to base'%(unit_totals_rel_uncovered, (unit_totals_rel_uncovered+unit_totals_rel_covered)))
 
 
   if coverage_stats is not None:
@@ -369,7 +370,7 @@ FunctionCoverageInfo = namedtuple('FunctionCoverageInfo',['uncovered','total','n
 
 def compute_gcov_func_diff(gcov_base, gcov_unit, print_diff=False, print_diff_summary=False, func_coverage_stats=None):
   if print_diff or print_diff_summary:
-    print 'file ',gcov_base.tags['Source']
+    print('file ',gcov_base.tags['Source'])
 
   uncovered_funcs = []
   nfunc = 0
@@ -394,11 +395,11 @@ def compute_gcov_func_diff(gcov_base, gcov_unit, print_diff=False, print_diff_su
 
 
 def print_function_coverage(func_coverage):
-  print 'Function coverage'
-  for name,fc in func_coverage.iteritems():
-    print name,fc.total,fc.uncovered
+  print('Function coverage')
+  for name,fc in func_coverage.items():
+    print(name,fc.total,fc.uncovered)
     for func in demangle.demangle(fc.names):
-      print '  ',func
+      print('  ',func)
 
 def by_uncovered(x,y):
   if x[1].uncovered == y[1].uncovered:
@@ -409,18 +410,18 @@ def by_uncovered(x,y):
 
 
 def print_coverage_summary(coverage_stats):
-  sorted_keys = sorted(coverage_stats.iteritems(), cmp=by_uncovered)
+  sorted_keys = sorted(coverage_stats.items(), cmp=by_uncovered)
 
   for source,stats in sorted_keys:
     percent = 0
 
     if stats.total > 0:
       percent = 100.0*stats.covered/stats.total
-    print source,'%4d/%-4d'%(stats.covered,stats.total),stats.uncovered,'%.2f'%percent
+    print(source,'%4d/%-4d'%(stats.covered,stats.total),stats.uncovered,'%.2f'%percent)
 
 def summarize_coverage_summary(coverage_stats):
     by_dirs = defaultdict(FileCoverage)
-    for source, stats in coverage_stats.iteritems():
+    for source, stats in coverage_stats.items():
       src = source
       while True:
         dirname = os.path.dirname(src)
@@ -435,7 +436,7 @@ def summarize_coverage_summary(coverage_stats):
           break
         src = dirname
 
-    print '\n by Dir \n'
+    print('\n by Dir \n')
     ordered = OrderedDict()
     for k in sorted(by_dirs.keys()):
       ordered[k] = by_dirs[k]
@@ -460,7 +461,7 @@ def print_gcov_diff(both, only_base, only_unit, base_gcov_map, unit_gcov_map):
     #print 'Function Info'
     compute_gcov_func_diff(gcov_base, gcov_unit, print_diff=False, func_coverage_stats=func_coverage_summary)
 
-  print '\nCompletely uncovered files (relative to base)\n'
+  print('\nCompletely uncovered files (relative to base)\n')
   for fname in only_base:
     gcov_base = base_gcov_map[fname]
     base_coverage = get_total_covered_lines(gcov_base)
@@ -469,16 +470,16 @@ def print_gcov_diff(both, only_base, only_unit, base_gcov_map, unit_gcov_map):
       rel_coverage = FileCoverage(0, base_coverage.covered, base_coverage.covered)
       src_name = gcov_base.tags['Source']
       if True:
-        print src_name,'%4d/%-4d'%(base_coverage.covered, base_coverage.total)
+        print(src_name,'%4d/%-4d'%(base_coverage.covered, base_coverage.total))
 
       coverage_summary[src_name] = CompareCoverage(base_coverage, unit_coverage, rel_coverage)
 
-  rel_coverage_summary = {src_name:x.rel for src_name,x in coverage_summary.iteritems()}
+  rel_coverage_summary = {src_name:x.rel for src_name,x in coverage_summary.items()}
   print_coverage_summary(rel_coverage_summary)
   summarize_coverage_summary(rel_coverage_summary)
 
 
-  func_coverage_summary2 = {src_name:FileCoverage(x.total-x.uncovered, x.uncovered, x.total) for src_name,x in func_coverage_summary.iteritems()}
+  func_coverage_summary2 = {src_name:FileCoverage(x.total-x.uncovered, x.uncovered, x.total) for src_name,x in func_coverage_summary.items()}
   print_function_coverage(func_coverage_summary)
   summarize_coverage_summary(func_coverage_summary2)
 
@@ -518,11 +519,11 @@ if __name__ ==  '__main__':
 
   if args.action in compare_action:
     if not args.unit_dir:
-      print '--unit-dir required for compare'
+      print('--unit-dir required for compare')
       sys.exit(1)
 
     if not args.output_dir:
-      print '--output-dir required for compare'
+      print('--output-dir required for compare')
       sys.exit(1)
 
     both, only_base, only_unit, base_gcov_map, unit_gcov_map = compare_gcov_dirs(args.base_dir, args.unit_dir)
@@ -538,7 +539,7 @@ if __name__ ==  '__main__':
 
   if args.action in diff_action:
     if not args.unit_dir:
-      print '--unit-dir required for diff'
+      print('--unit-dir required for diff')
       sys.exit(1)
 
     if args.file:

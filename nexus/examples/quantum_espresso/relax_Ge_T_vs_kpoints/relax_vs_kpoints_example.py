@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 from nexus import settings
 from nexus import generate_physical_system
@@ -60,16 +60,16 @@ for kgrid in supercell_kgrids:          # loop over supercell kgrids
 
 
 # perform the simulations
-run_project(relaxations)
+run_project()
 
 
 # analyze the results
 performed_runs = not settings.generate_only and not settings.status_only
 if performed_runs:
-    print
-    print 'Relaxation results:'
-    print '-------------------'
-    print '    kgrid     starting force   max force    # of cycles'
+    print()
+    print('Relaxation results:')
+    print('-------------------')
+    print('    kgrid     starting force   max force    # of cycles')
     for ik in range(len(supercell_kgrids)):
         kgrid = supercell_kgrids[ik]
         relax = relaxations[ik]
@@ -77,13 +77,13 @@ if performed_runs:
         start_force = pa.tot_forces[0]
         max_force   = pa.tot_forces.max()
         ncycles     = len(pa.tot_forces)
-        print '  {0:10}  {1:10}     {2:10}  {3:8}'.format(kgrid,start_force,max_force,ncycles)
+        print('  {0:10}  {1:10}     {2:10}  {3:8}'.format(kgrid,start_force,max_force,ncycles))
     #end for
-    print
-    print
-    print 'The final structure is:'
-    print 
-    print pa.structures.list()[-1].positions
+    print()
+    print()
+    print('The final structure is:')
+    print()
+    print(pa.structures.list()[-1].positions)
 #end if
 
 

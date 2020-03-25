@@ -222,7 +222,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   {
     if (applyPBC == true)
     {
-      ForceChiesaPBCAA* force_chi = new ForceChiesaPBCAA(*source, *target);
+      ForceChiesaPBCAA* force_chi = new ForceChiesaPBCAA(*source, *target, true);
       force_chi->put(cur);
       targetH->addOperator(force_chi, title, false);
     }

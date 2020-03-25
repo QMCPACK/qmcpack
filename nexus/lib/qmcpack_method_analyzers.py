@@ -103,7 +103,7 @@ class MethodAnalyzer(QAanalyzer):
         self.info.transfer_from(method_info)
 
         self.vlog('requested sources = '+str(list(request.data_sources)),n=2)
-        self.vlog('files available   = '+str(files.keys()),n=2)
+        self.vlog('files available   = '+str(list(files.keys())),n=2)
         self.vlog('available sources = '+str(list(data_sources)),n=2)
 
         if not matched:
@@ -137,7 +137,7 @@ class MethodAnalyzer(QAanalyzer):
                 if calc_est!=None:
                     estimators.transfer_from(calc_est)
                 #end if
-                for estname,est in estimators.iteritems():
+                for estname,est in estimators.items():
                     if est==None:
                         self.error('estimators have not been read properly by QmcpackInput',trace=False)
                     #end if
@@ -171,7 +171,7 @@ class MethodAnalyzer(QAanalyzer):
                 self.scalars_hdf = analyzers.scalars_hdf(not_scalars,nindent=self.subindent())
 
                 analyzer_quantities = analyzer_quantities & request.quantities
-                for name,type in analyzer_quants.iteritems():
+                for name,type in analyzer_quants.items():
                     if type in analyzer_quantities:
                         if type in analyzers:
                             qqa = analyzers[type](name,nindent=self.subindent())
@@ -216,7 +216,7 @@ class MethodAnalyzer(QAanalyzer):
             self.data.transfer_from(hdf)
         #end if
         remove = []
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if isinstance(value,HDFAnalyzer):
                 value.load_data_local(self.data)
                 value.info.data_loaded = True

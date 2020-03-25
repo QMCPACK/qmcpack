@@ -120,8 +120,9 @@ bool BranchIO::write(const std::string& fname)
   // Put log filename in property tree
   pt.put("state.branchmode", ref.BranchMode);
 
-  for (int i = 0; i < vParamName.size(); ++i)
-    pt.put("state.vparam." + vParamName[i], ref.vParam[i]);
+  auto it_vparam = ref.vParam.begin();
+  for (auto& name : vParamName)
+    pt.put("state.vparam." + name, *(it_vparam++));
   for (int i = 0; i < iParamName.size(); ++i)
     pt.put("state.iparam." + iParamName[i], ref.iParam[i]);
 
@@ -166,7 +167,6 @@ bool BranchIO::read(const std::string& fname)
 {
   int found_config = 0;
 
-#if defined(HAVE_LIBBOOST)
   if (myComm->rank() == 0)
   {
     initAttributes();
@@ -188,59 +188,14 @@ bool BranchIO::read(const std::string& fname)
       {
         ref.iParam[i++] = v.second.get_value<int>();
       }
-      i = 0;
+      auto it_vparam = ref.vParam.begin();
       BOOST_FOREACH (const ptree::value_type& v, pt.get_child("state.vparam"))
       {
-        ref.vParam[i++] = v.second.get_value<double>();
+        *(it_vparam++) = v.second.get_value<double>();
       }
       found_config = 1;
     }
   }
-#else
-  if (myComm->rank() == 0)
-  {
-    HDFVersion res_version(0, 4);  //start using major=0 and minor=4
-    HDFVersion res_20080624(0, 5); //major revision on 2008-06-24 0.5
-    HDFVersion in_version(0, 1);
-
-    //append .config.h5 if missing
-    std::string h5name(fname);
-    if (fname.find("qmc.h5") >= fname.size())
-      h5name.append(".qmc.h5");
-
-    hdf_archive prevconfig(myComm, true);
-    found_config = prevconfig.open(h5name, H5F_ACC_RDONLY);
-
-    if (found_config)
-    {
-      int n = ref.vParam.size() + ref.iParam.size();
-      /** temporary storage to broadcast restart data */
-      prevconfig.read(in_version.version, hdf::version);
-      myComm->bcast(in_version.version);
-      prevconfig.push(hdf::main_state, false);
-      if (in_version >= res_20080624)
-      {
-        //need a better version control
-        prevconfig.push(hdf::qmc_status, false);
-        prevconfig.read(ref.vParam, "vparam");
-        prevconfig.read(ref.iParam, "iparam");
-        prevconfig.read(ref.BranchMode, "branchmode");
-
-        prevconfig.push("histogram", false);
-        prevconfig.read(ref.EnergyHist, "energy");
-        prevconfig.read(ref.VarianceHist, "variance");
-        prevconfig.read(ref.R2Accepted, "r2accepted");
-        prevconfig.read(ref.R2Proposed, "r2proposed");
-        prevconfig.pop();
-
-        prevconfig.pop();
-      }
-      else
-        found_config = false;
-      prevconfig.pop();
-    }
-  }
-#endif
   myComm->bcast(found_config);
 
   if (!found_config)
@@ -278,8 +233,8 @@ void BranchIO::bcast_state()
   if (myComm->rank())
   {
     int ii = 0;
-    for (int i = 0; i < ref.vParam.size(); ++i, ++ii)
-      ref.vParam[i] = pdata[ii];
+    for (auto& vpar : ref.vParam)
+      vpar = pdata[ii++];
     for (int i = 0; i < ref.iParam.size(); ++i, ++ii)
       ref.iParam[i] = static_cast<int>(pdata[ii]);
     ref.BranchMode = static_cast<unsigned long>(pdata[ii]);

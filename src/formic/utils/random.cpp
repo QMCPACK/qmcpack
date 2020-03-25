@@ -21,7 +21,6 @@ void formic::set_seed(unsigned int seed) {
 
   // get MPI info
   const int nproc  = formic::mpi::size();
-  const int myrank = formic::mpi::rank();
 
   // temporarily initialize using the provided seed
   formic::global_lcg.set_seed(seed);

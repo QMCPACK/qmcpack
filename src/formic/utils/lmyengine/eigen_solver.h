@@ -31,7 +31,8 @@ namespace cqmc {
   
   namespace engine { 
 
-  class EigenSolver {
+  // typename S can be real and complex, depending on the type of parameters being optimized
+  template<typename S> class EigenSolver {
 
 protected:
 
@@ -99,19 +100,19 @@ protected:
   bool _variance_correct;
 
   /// \brief calculated eigenvector on each process 
-  formic::ColVec<double> _evecs;
+  formic::ColVec<S> _evecs;
 
   /// \brief calculated eigenvector for independent variables
-  formic::ColVec<double> _ind_evecs;
+  formic::ColVec<S> _ind_evecs;
 
   /// \brief converted wavefunction coefficients
-  formic::ColVec<double> _wf_coefficients;
+  formic::ColVec<S> _wf_coefficients;
 
   /// \brief derivative ratio vectors(merged with |value/guiding|^2 and weights)
-  formic::Matrix<double> & _der_rat;
+  formic::Matrix<S> & _der_rat;
 
   /// \brief local energy derivative vectors(merged with |value/guiding|^2 and weights) 
-  formic::Matrix<double> & _le_der;
+  formic::Matrix<S> & _le_der;
  
   
   public:
@@ -151,7 +152,7 @@ protected:
               const bool chase_closest,
               const bool ground,
               const bool variance_correct,
-              const std::vector<double> & vf,
+              const std::vector<S> & vf,
               const double init_cost,
               const double init_variance,
               const double hd_shift,
@@ -159,28 +160,28 @@ protected:
               const double lm_max_e_change,
               const double total_weight,
               const double vgsa,
-              formic::Matrix<double> & der_rat,
-              formic::Matrix<double> & le_der)
+              formic::Matrix<S> & der_rat,
+              formic::Matrix<S> & le_der)
   :_dep_ptr(dep_ptr),
   _nder(nfds-1),
   _nfds(nfds),
-  _residual_threshold(lm_eigen_thresh),
   _cost(init_cost),
+  _init_cost(init_cost),
   _init_variance(init_variance),
+  _max_energy_change(lm_max_e_change),
+  _hshift_i(0.0),
+  _hshift_s(0.0),
+  _hd_shift(hd_shift),
+  _var_weight(var_weight),
+  _residual_threshold(lm_eigen_thresh),
+  _total_weight(total_weight),
+  _vgsa(vgsa),
+  _tau(0.0),
   _var_deps_use(var_deps_use),
   _chase_lowest(chase_lowest),
   _chase_closest(chase_closest),
   _ground(ground),
   _variance_correct(variance_correct),
-  _init_cost(init_cost),
-  _max_energy_change(lm_max_e_change),
-  _total_weight(total_weight),
-  _vgsa(vgsa),
-  _tau(0.0),
-  _hshift_i(0.0),
-  _hshift_s(0.0),
-  _hd_shift(hd_shift),
-  _var_weight(var_weight),
   _der_rat(der_rat),
   _le_der(le_der)
   {
@@ -207,7 +208,7 @@ protected:
   //
   ////////////////////////////////////////////////////////////////////////////////////
 
-  virtual void add_krylov_vector(const formic::ColVec<double> & v) = 0;
+  virtual void add_krylov_vector(const formic::ColVec<S> & v) = 0;
 
   ////////////////////////////////////////////////////////////////////////////////
   // \brief adds a new Krylov basis vector for spam inner loop
@@ -216,7 +217,7 @@ protected:
   //
   ////////////////////////////////////////////////////////////////////////////////
 
-  virtual void add_krylov_vector_inner(const formic::ColVec<double> & v) = 0;
+  virtual void add_krylov_vector_inner(const formic::ColVec<S> & v) = 0;
 
   ////////////////////////////////////////////////////////////////////////////////
   // \brief adds a bunch of new Krylov vectors(which is a matrix) for spam outer 
@@ -225,7 +226,7 @@ protected:
   //
   ////////////////////////////////////////////////////////////////////////////////
 
-  virtual void add_krylov_vectors_outer(const formic::Matrix<double> & m) = 0;
+  virtual void add_krylov_vectors_outer(const formic::Matrix<S> & m) = 0;
 
   ////////////////////////////////////////////////////////////////////////////////////
   // \brief function that perfoms hamiltonian matrix-vector multiplication 
@@ -238,7 +239,7 @@ protected:
   //
   ////////////////////////////////////////////////////////////////////////////////////
 
-  virtual void HMatVecOp(const formic::ColVec<double> & x, formic::ColVec<double> & y, const bool transpose = false, const bool approximate = false) = 0;  
+  virtual void HMatVecOp(const formic::ColVec<S> & x, formic::ColVec<S> & y, const bool transpose = false, const bool approximate = false) = 0;  
 
   ////////////////////////////////////////////////////////////////////////////////////
   // \brief function that performs hamiltonian matrix-matrix multiplication 
@@ -265,7 +266,8 @@ protected:
   //
   ////////////////////////////////////////////////////////////////////////////////////
 
-  virtual void SMatVecOp(const formic::ColVec<double> & x, formic::ColVec<double> & y, const bool approximate = false) = 0;
+  virtual void SMatVecOp(const formic::ColVec<S> & x, formic::ColVec<S> & y, const bool approximate = false) = 0;
+  virtual void LSMatVecOp(const formic::ColVec<S> & x, formic::ColVec<S> & y, const bool approximate = false) = 0;
 
   ////////////////////////////////////////////////////////////////////////////////////
   // \brief function that performs overlap matrix-matrix multiplication 
@@ -370,7 +372,7 @@ protected:
   {
 					
     // calculate wave function parameters by scaling the eigenvector and make the first element 1
-    const double scaling = _evecs.at(0);
+    const S scaling = _evecs.at(0);
     _wf_coefficients.reset(_nfds);
     _wf_coefficients = _evecs;
     _wf_coefficients /= scaling;
@@ -396,7 +398,7 @@ protected:
   //
   //////////////////////////////////////////////////////////////////////////////////////////////
 
-  formic::ColVec<double> wf_coeff()
+  formic::ColVec<S> wf_coeff()
   {
     return _wf_coefficients;
   }

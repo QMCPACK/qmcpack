@@ -15,8 +15,8 @@
 
 namespace qmcplusplus
 {
-LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, basis_type* bs)
-    : LCAOrbitalSet(bs), cusp(ions, els)
+LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, basis_type* bs, bool optimize)
+    : LCAOrbitalSet(bs, optimize), cusp(ions, els)
 {}
 
 void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
@@ -33,27 +33,27 @@ SPOSet* LCAOrbitalSetWithCorrection::makeClone() const
   return myclone;
 }
 
-void LCAOrbitalSetWithCorrection::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+void LCAOrbitalSetWithCorrection::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
-  LCAOrbitalSet::evaluate(P, iat, psi);
+  LCAOrbitalSet::evaluateValue(P, iat, psi);
   cusp.addV(P, iat, psi.data());
 }
 
-void LCAOrbitalSetWithCorrection::evaluate(const ParticleSet& P,
-                                           int iat,
-                                           ValueVector_t& psi,
-                                           GradVector_t& dpsi,
-                                           ValueVector_t& d2psi)
+void LCAOrbitalSetWithCorrection::evaluateVGL(const ParticleSet& P,
+                                              int iat,
+                                              ValueVector_t& psi,
+                                              GradVector_t& dpsi,
+                                              ValueVector_t& d2psi)
 {
-  LCAOrbitalSet::evaluate(P, iat, psi, dpsi, d2psi);
+  LCAOrbitalSet::evaluateVGL(P, iat, psi, dpsi, d2psi);
   cusp.add_vector_vgl(P, iat, psi, dpsi, d2psi);
 }
 
-void LCAOrbitalSetWithCorrection::evaluate(const ParticleSet& P,
-                                           int iat,
-                                           ValueVector_t& psi,
-                                           GradVector_t& dpsi,
-                                           HessVector_t& grad_grad_psi)
+void LCAOrbitalSetWithCorrection::evaluateVGH(const ParticleSet& P,
+                                              int iat,
+                                              ValueVector_t& psi,
+                                              GradVector_t& dpsi,
+                                              HessVector_t& grad_grad_psi)
 {
   APP_ABORT("LCAOrbitalSetWithCorrection::evaluate with HessVector_t not implemented");
 }

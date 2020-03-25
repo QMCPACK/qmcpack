@@ -3,9 +3,36 @@
 import numpy as np
 import versions
 import testing
-from testing import value_eq,object_eq,object_diff
+from testing import value_eq as value_eq_orig
+from testing import object_eq as object_eq_orig
+from testing import object_diff as object_diff_orig
 
-associated_files = dict()
+
+struct_atol = 1e-10
+
+def value_eq(*args,**kwargs):
+    if 'atol' not in kwargs:
+        kwargs['atol'] = struct_atol
+    #end if
+    return value_eq_orig(*args,**kwargs)
+#end def value_eq
+
+def object_eq(*args,**kwargs):
+    if 'atol' not in kwargs:
+        kwargs['atol'] = struct_atol
+    #end if
+    return object_eq_orig(*args,**kwargs)
+#end def object_eq
+
+def object_diff(*args,**kwargs):
+    if 'atol' not in kwargs:
+        kwargs['atol'] = struct_atol
+    #end if
+    return object_diff_orig(*args,**kwargs)
+#end def object_diff
+
+
+associated_files     = dict()
 reference_inputs     = dict()
 reference_structures = dict()
 generated_structures = dict()
@@ -17,20 +44,44 @@ def get_files():
 #end def get_files
 
 
-def structure_same(s1,s2):
-    keys = ('units','elem','pos','axes','kpoints','kweights','kaxes')
-    o1 = s1.obj(keys)
-    o2 = s2.obj(keys)
-    return object_eq(o1,o2)
-#end def structure_same
-
-
 def structure_diff(s1,s2):
     keys = ('units','elem','pos','axes','kpoints','kweights','kaxes')
     o1 = s1.obj(keys)
     o2 = s2.obj(keys)
     return object_diff(o1,o2,full=True)
 #end def structure_diff
+
+
+def structure_same(s1,s2):
+    import numpy as np
+    keys = ('units','elem','axes','kpoints','kweights','kaxes')
+    o1 = s1.obj(keys)
+    o2 = s2.obj(keys)
+    osame = object_eq(o1,o2)
+    psame = value_eq(s1.pos,s2.pos)
+    if osame and not psame and len(s1.pos)==len(s2.pos):
+        if s1.all_periodic() and s2.all_periodic():
+            # wrap points around box edges
+            u1 = s1.pos_unit()
+            u1[np.abs(u1-1.0)<1e-10] = 0.0
+            u2 = s2.pos_unit()
+            u2[np.abs(u2-1.0)<1e-10] = 0.0
+            psame = value_eq(u1,u2)
+            if not psame:
+                # ensure nearest neighbors have zero min image distance
+                nt,dt = s1.neighbor_table(s1.pos,s2.pos,distances=True)
+                dsame = np.abs(dt[:,0]).max()<1e-10
+                # ensure species of nearest neighbors match
+                esame = True
+                for i,j in enumerate(nt[:,0]):
+                    esame &= s1.elem[i]==s2.elem[j]
+                #end for
+                psame = esame and dsame
+            #end if
+        #end if
+    #end if
+    return osame and psame
+#end def structure_same
 
 
 def get_reference_inputs():
@@ -60,6 +111,13 @@ def get_reference_inputs():
                      [2.6775, 0.8925, 2.6775],
                      [1.7850, 1.7850, 0.0000],
                      [2.6775, 2.6775, 0.8925]],
+            )
+        ref_in.diamond_64 = obj(
+            structure = 'diamond',
+            cell      = 'prim',
+            tiling    = [[ 2, -2,  2],
+                         [ 2,  2, -2],
+                         [-2,  2,  2]],
             )
         ref_in.wurtzite_prim = obj(
             units = 'A',
@@ -143,7 +201,9 @@ def get_reference_structures():
         ref_in = get_reference_inputs()
         ref = reference_structures
         for name,inputs in ref_in.items():
-            ref[name] = Structure(**inputs)
+            if 'cell' not in inputs:
+                ref[name] = Structure(**inputs)
+            #end if
         #end for
     #end if
     return obj(reference_structures)
@@ -156,7 +216,7 @@ def get_generated_structures():
     if len(generated_structures)==0:
         ref_in = get_reference_inputs()
         gen = generated_structures
-        for name,inputs in ref_in.iteritems():
+        for name,inputs in ref_in.items():
             gen[name] = generate_structure(**inputs)
         #end for
     #end if
@@ -169,7 +229,7 @@ def get_crystal_structures():
     from structure import Crystal,generate_structure
     if len(crystal_structures)==0:
         crys = crystal_structures
-        for (latt,cell),inputs in Crystal.known_crystals.iteritems():
+        for (latt,cell),inputs in Crystal.known_crystals.items():
             s = generate_structure(structure=latt,cell=cell)
             crys[latt+'_'+cell] = s
         #end for
@@ -177,6 +237,20 @@ def get_crystal_structures():
     return obj(crystal_structures)
 #end def get_crystal_structures
 
+
+def example_structure_h4():
+    # hydrogen at rs=1.31
+    from structure import Structure
+    natom = 4
+    alat = 3.3521298178767225
+    axes = alat*np.eye(3)
+    elem = ['H']*natom
+    pos = np.array([
+      [0, 0, 0], [alat/2., 0, 0], [0, alat/2, 0], [0, 0, alat/2]
+    ])
+    s1 = Structure(axes=axes, elem=elem, pos=pos, units='B')
+    return s1
+#end def example_structure_h4
 
 
 
@@ -245,6 +319,81 @@ def test_crystal_init():
         assert(structure_same(s,crys[name]))
     #end for
 #end def test_crystal_init
+
+
+
+def test_change_units():
+    import numpy as np
+    ref = get_reference_structures()
+    s = ref.diamond_conv.copy()
+    assert(value_eq(s.pos[-1],np.array([2.6775,2.6775,0.8925])))
+    s.change_units('B')
+    assert(value_eq(s.pos[-1],np.array([5.05974172,5.05974172,1.68658057])))
+#end def test_change_units
+
+
+
+def test_rotate():
+    import numpy as np
+    ref = get_reference_structures()
+    s0 = ref.CuO_prim.copy()
+    s1 = ref.CuO_prim.copy()
+
+    # Test the various parameter choices in the case that rp is given
+    # Perform rotation taking x-axis to x-axis (original positions should be found)
+    s1.rotate('x','x')
+    assert(value_eq(s1.pos,s0.pos))
+    assert(value_eq(s1.axes,s0.axes))
+    assert(value_eq(s1.kaxes,s0.kaxes))
+    # Perform active rotation taking x-coords to y-coords
+    s1.rotate([1,0,0],[0,1,0])
+    assert(value_eq(s1.pos,np.array([-s0.pos[:,1],s0.pos[:,0],s0.pos[:,2]]).T))
+    assert(value_eq(s1.axes,np.array([-s0.axes[:,1],s0.axes[:,0],s0.axes[:,2]]).T))
+    assert(value_eq(s1.kaxes,np.array([-s0.kaxes[:,1],s0.kaxes[:,0],s0.kaxes[:,2]]).T))
+    # Perform passive rotation taking x-axis to y-axis (original positions should be found)
+    s1.rotate('x','y',passive=True)
+    assert(value_eq(s1.pos,s0.pos))
+    assert(value_eq(s1.axes,s0.axes))
+    assert(value_eq(s1.kaxes,s0.kaxes))
+    # Perform active rotation about z-axis by an angle pi/2
+    s1.rotate('z',np.pi/2.0)
+    assert(value_eq(s1.pos,np.array([-s0.pos[:,1],s0.pos[:,0],s0.pos[:,2]]).T))
+    assert(value_eq(s1.axes,np.array([-s0.axes[:,1],s0.axes[:,0],s0.axes[:,2]]).T))
+    assert(value_eq(s1.kaxes,np.array([-s0.kaxes[:,1],s0.kaxes[:,0],s0.kaxes[:,2]]).T))
+    # Perform active rotation taking y-coords to x-coords (original positions should be found)
+    s1.rotate('y',[1,0,0])
+    assert(value_eq(s1.pos[-1],s0.pos[-1]))
+    assert(value_eq(s1.axes[-1],s0.axes[-1]))
+    assert(value_eq(s1.kaxes[-1],s0.kaxes[-1]))
+    # Perform active rotation taking a0-coords to a2-coords
+    s1.rotate(s0.axes[0],s0.axes[2])
+    assert(value_eq(s1.pos[-1],np.array([-2.15536928,3.46035669,0.86507139])))
+    assert(value_eq(s1.axes[-1],np.array([-3.91292278,3.02549423,-1.35344154])))
+    assert(value_eq(s1.kaxes[-1],np.array([-0.90768302,0.83458438,-0.15254555])))
+    # Perform active rotation taking a2-coords to a0-coords (original positions should be found)
+    s1.rotate('a2','a0')
+    assert(value_eq(s1.pos,s0.pos))
+    assert(value_eq(s1.axes,s0.axes))
+    assert(value_eq(s1.kaxes,s0.kaxes))
+
+    # Test the case where rp is not given
+    # Perform active rotation taking a2-coords to a0-coords
+    R = [[0.2570157723433977, 0.6326366344635742,-0.7305571719594085], 
+         [0.4370696746690278, 0.5981289557203555, 0.6717230469572912], 
+         [0.8619240060767753,-0.4919478031900122,-0.12277771249328594]]
+    s1.rotate(R)
+    assert(value_eq(s1.pos[-1],np.array([-2.15536928,3.46035669,0.86507139])))
+    assert(value_eq(s1.axes[-1],np.array([-3.91292278,3.02549423,-1.35344154])))
+    assert(value_eq(s1.kaxes[-1],np.array([-0.90768302,0.83458438,-0.15254555])))
+
+    # A final test which places the structure back into its original form
+    # Perform passive rotation taking a2-coords to a0-coords (original positions should be found)
+    s1.rotate([-0.5871158698555267, -0.8034668669004766, -0.09867091342903483],1.7050154439645373,passive=True)
+    assert(value_eq(s1.pos,s0.pos))
+    assert(value_eq(s1.axes,s0.axes))
+    assert(value_eq(s1.kaxes,s0.kaxes))
+
+#end def test_change_units
 
 
 
@@ -521,6 +670,7 @@ def test_read_write():
 
     # Read a POSCAR file
     d8_poscar = read_structure(poscar_file)
+
     assert(structure_same(d8_poscar,d8))
 #end def test_read_write
 
@@ -706,7 +856,11 @@ def test_unit_coords():
         [ 0.500, 0.500, 0.500 ],
         [ 0.625, 0.625, 0.625 ]])
         
-    assert(value_eq(s.pos_unit(),upos_ref))
+    upos = s.pos_unit()
+
+    upos[np.abs(upos-1.0)<1e-10] = 0.0
+
+    assert(value_eq(upos,upos_ref))
 
 #end def test_unit_coords
 
@@ -1030,7 +1184,6 @@ if versions.spglib_available:
 
 
 def test_count_kshells():
-    from test_physical_system import example_structure_h4
     s1 = example_structure_h4()
     kf = 1.465
     kcut = 5*kf
@@ -1066,26 +1219,30 @@ def test_rwigner():
 
 
 
-def test_cell_constants():
-    """
-    Compute the cell volume, Madelung constant, and Makov Payne correction
-    """
-    from structure import generate_structure
-
-    d2 = generate_structure(
-        structure = 'diamond',
-        cell      = 'prim',
-        )
-    # Construct the cubic 64 atom supercell
-    d64 = d2.tile_opt(32)
-
+def test_volume():
+    gen = get_generated_structures()
+    d64 = gen.diamond_64
     assert(value_eq(d64.volume(),363.994344))
-    assert(value_eq(d64.madelung(),-0.210284756321))
+#end def test_volume
 
-    assert(value_eq(d64.makov_payne(q=1,eps=5.68),0.0185109820705))
-    assert(value_eq(d64.makov_payne(q=2,eps=5.68),0.074043928282))
 
-#end def test_cell_constants
+
+if versions.scipy_available:
+    def test_madelung():
+        gen = get_generated_structures()
+        d64 = gen.diamond_64
+        assert(value_eq(d64.madelung(),-0.210284756321))
+    #end def test_madelung
+
+
+
+    def test_makov_payne():
+        gen = get_generated_structures()
+        d64 = gen.diamond_64
+        assert(value_eq(d64.makov_payne(q=1,eps=5.68),0.0185109820705))
+        assert(value_eq(d64.makov_payne(q=2,eps=5.68),0.074043928282))
+    #end def test_makov_payne
+#end if
 
 
 
@@ -1145,7 +1302,9 @@ def test_min_image_distances():
         [31,  1,  7],
         [30, 22, 20]])
 
-    assert(value_eq(nt,nt_ref))
+    for nti,nti_ref in zip(nt,nt_ref):
+        assert(set(nti)==set(nti_ref))
+    #end for
 
     dist = dt.ravel()
     assert(value_eq(dist.min(),1.42143636))

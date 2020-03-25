@@ -37,7 +37,7 @@ def test_coord_conversion():
         ]
 
     th_cos_sin = np.array(th_cos_sin)
-    th_cos_sin.shape = len(th_cos_sin)/3,3
+    th_cos_sin.shape = len(th_cos_sin)//3,3
     th  = th_cos_sin[:,0]
     cos = th_cos_sin[:,1]
     sin = th_cos_sin[:,2]
@@ -64,7 +64,7 @@ def test_coord_conversion():
     assert(c2p_works)
 
     phi = th
-    th = th[1:len(th)/2+1]
+    th = th[1:len(th)//2+1]
 
     sphere_ref = np.empty((len(th)*len(phi),3),dtype=float)
     cart_ref   = np.empty((len(th)*len(phi),3),dtype=float)
@@ -873,7 +873,7 @@ def test_grid_unit_points():
             assert(value_eq(upoints,upoints_ref))
 
             points = g.points_from_unit(upoints)
-            assert(value_eq(points,gref.points))
+            assert(value_eq(points,gref.points,atol=1e-8))
 
             assert(object_eq(g,gref))
         #end if

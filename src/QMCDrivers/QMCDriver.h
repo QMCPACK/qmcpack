@@ -26,7 +26,7 @@
 #include "Utilities/PooledData.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/DriverTraits.h"
@@ -114,7 +114,7 @@ public:
   /** Set the status of the QMCDriver
    * @param aname the root file name
    * @param h5name root name of the master hdf5 file containing previous qmcrun
-   * @param append if ture, the run is a continuation of the previous qmc
+   * @param append if true, the run is a continuation of the previous qmc
    *
    * All output files will be of
    * the form "aname.s00X.suffix", where "X" is number
@@ -272,6 +272,7 @@ protected:
   ///target population
   RealType nTargetPopulation;
 
+
   ///timestep
   RealType Tau;
 
@@ -296,18 +297,19 @@ protected:
   ///store any parameter that has to be read from a file
   ParameterSet m_param;
 
-  ///record engine for walkers
-  HDFWalkerOutput* wOut;
   ///walker ensemble
   MCWalkerConfiguration& W;
 
   ///trial function
   TrialWaveFunction& Psi;
 
-  WaveFunctionPool& psiPool;
-
   ///Hamiltonian
   QMCHamiltonian& H;
+
+  WaveFunctionPool& psiPool;
+
+  ///record engine for walkers
+  HDFWalkerOutput* wOut;
 
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;

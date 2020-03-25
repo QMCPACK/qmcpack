@@ -17,9 +17,12 @@
 
 #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "QMCDrivers/WalkerProperties.h"
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 CoulombPBCAB_CUDA::CoulombPBCAB_CUDA(ParticleSet& ions, ParticleSet& elns, bool cloning)
     : CoulombPBCAB(ions, elns, cloning),
       ElecRef(elns),
@@ -141,7 +144,7 @@ void CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   // Short-circuit for constant contribution (e.g. fixed ions)
   // if (!is_active) {
   //   for (int iw=0; iw<walkers.size(); iw++) {
-  // 	walkers[iw]->getPropertyBase()[NUMPROPERTIES+myIndex] = Value;
+  // 	walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES+myIndex] = Value;
   // 	LocalEnergy[iw] += Value;
   //   }
   //   return;
@@ -221,7 +224,7 @@ void CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   for (int iw = 0; iw < walkers.size(); iw++)
   {
     // fprintf (stderr, "Energy = %18.6f\n", SumHost[iw]);
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = esum[iw] + myConst;
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = esum[iw] + myConst;
     LocalEnergy[iw] += esum[iw] + myConst;
   }
 }

@@ -91,11 +91,7 @@ protected:
 
 public:
   // constructor
-  CountingJastrow(ParticleSet& P, RegionType* c, const Matrix<RealType>& f) 
-      : F(f), C(c) 
-  {
-    num_els = P.getTotalNum();
-  }
+  CountingJastrow(ParticleSet& P, RegionType* c, const Matrix<RealType>& f) : F(f), C(c) { num_els = P.getTotalNum(); }
 
   void checkInVariables(opt_variables_type& active)
   {
@@ -113,7 +109,7 @@ public:
 
   void resetParameters(const opt_variables_type& active)
   {
-    int ia, I, IJ, JI;
+    int ia, IJ, JI;
     std::string id;
     myVars.getIndex(active);
     for (int i = 0; i < myVars.size(); ++i)
@@ -125,13 +121,13 @@ public:
     // set F parameters from myVars
     for (int oi = 0; oi < opt_index[OPT_F].size(); ++oi)
     {
-      IJ    = opt_index[OPT_F][oi];
-      JI    = num_regions * (IJ % num_regions) + IJ / num_regions;
-      id    = opt_id[OPT_F][oi];
-      ia    = active.getLoc(id);
+      IJ         = opt_index[OPT_F][oi];
+      JI         = num_regions * (IJ % num_regions) + IJ / num_regions;
+      id         = opt_id[OPT_F][oi];
+      ia         = active.getLoc(id);
       myVars[id] = active[ia];
-      F(IJ) = std::real(myVars[id]);
-      F(JI) = std::real(myVars[id]);
+      F(IJ)      = std::real(myVars[id]);
+      F(JI)      = std::real(myVars[id]);
     }
     // reset parameters for counting regions
     C->resetParameters(active);
@@ -184,7 +180,7 @@ public:
         os.str("");
         os << "F_" << I << "_" << J;
         id_F = os.str();
-        myVars.insert(id_F, F(IJ), (opt_F && I < (num_regions-1)) );
+        myVars.insert(id_F, F(IJ), (opt_F && I < (num_regions - 1)));
         opt_index[OPT_F].push_back(IJ);
         opt_id[OPT_F].push_back(id_F);
       }
@@ -212,7 +208,7 @@ public:
   void resetTargetParticleSet(ParticleSet& P) {}
 
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     evaluateExponents(P);
     for (int i = 0; i < num_els; ++i)
@@ -226,8 +222,8 @@ public:
 
 
   void recompute(ParticleSet& P)
-  { 
-    evaluateExponents(P); 
+  {
+    evaluateExponents(P);
     LogValue = Jval;
   }
 
@@ -251,7 +247,7 @@ public:
         for (int i = 0; i < num_els; ++i)
         {
           FCgrad(I, i) += F(I, J) * C->grad(J, i); // 3*nels*MV
-          FClap(I, i)  += F(I, J) * C->lap(J, i);  // nels*MV
+          FClap(I, i) += F(I, J) * C->lap(J, i);   // nels*MV
         }
       }
     }
@@ -261,8 +257,8 @@ public:
       Jval += FCsum[I] * C->sum[I]; // VV
       for (int i = 0; i < num_els; ++i)
       {
-        Jgrad[i] += 2 * FCsum[I] * C->grad(I, i);                                       // 3*nels*VV
-        Jlap[i]  += 2 * FCsum[I] * C->lap(I, i) + 2 * dot(FCgrad(I, i), C->grad(I, i)); // nels*VV
+        Jgrad[i] += 2 * FCsum[I] * C->grad(I, i);                                      // 3*nels*VV
+        Jlap[i] += 2 * FCsum[I] * C->lap(I, i) + 2 * dot(FCgrad(I, i), C->grad(I, i)); // nels*VV
       }
     }
     // print out results every so often
@@ -315,9 +311,9 @@ public:
     {
       for (int J = 0; J < num_regions; ++J)
       {
-        FCsum_t[I]  += F(I, J) * C->sum_t[J];
+        FCsum_t[I] += F(I, J) * C->sum_t[J];
         FCgrad_t[I] += F(I, J) * C->grad_t[J];
-        FClap_t[I]  += F(I, J) * C->lap_t[J];
+        FClap_t[I] += F(I, J) * C->lap_t[J];
       }
     }
     // evaluate components of the exponent
@@ -329,12 +325,12 @@ public:
         if (i == iat)
         {
           Jgrad_t[i] += C->grad_t[I] * 2 * FCsum_t[I];
-          Jlap_t[i]  += C->lap_t[I] * 2 * FCsum_t[I] + 2 * dot(C->grad_t[I], FCgrad_t[I]);
+          Jlap_t[i] += C->lap_t[I] * 2 * FCsum_t[I] + 2 * dot(C->grad_t[I], FCgrad_t[I]);
         }
         else
         {
           Jgrad_t[i] += C->grad(I, i) * 2 * FCsum_t[I];
-          Jlap_t[i]  += C->lap(I, i) * 2 * FCsum_t[I] + 2 * dot(C->grad(I, i), FCgrad(I, i));
+          Jlap_t[i] += C->lap(I, i) * 2 * FCsum_t[I] + 2 * dot(C->grad(I, i), FCgrad(I, i));
         }
       }
     }
@@ -377,14 +373,14 @@ public:
     return Jgrad[iat];
   }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, PosType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, PosType& grad_iat)
   {
     evaluateTempExponents(P, iat);
     grad_iat += Jgrad_t[iat];
-    return std::exp(Jval_t - Jval);
+    return std::exp(static_cast<PsiValueType>(Jval_t - Jval));
   }
 
-  void acceptMove(ParticleSet& P, int iat)
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false)
   {
     C->acceptMove(P, iat);
     // update values for C, FC to those at proposed position
@@ -396,7 +392,7 @@ public:
       FClap(I, iat)  = FClap_t[I];
     }
     // update exponent values to that at proposed position
-    Jval = Jval_t;
+    Jval     = Jval_t;
     LogValue = Jval;
     for (int i = 0; i < num_els; ++i)
     {
@@ -407,15 +403,15 @@ public:
 
   void restore(int iat) { C->restore(iat); }
 
-  ValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat)
   {
     evaluateTempExponents(P, iat);
-    return std::exp(Jval_t - Jval);
+    return std::exp(static_cast<PsiValueType>(Jval_t - Jval));
   }
 
   void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    RealType logValue     = evaluateLog(P, P.G, P.L);
+    LogValueType logValue = evaluateLog(P, P.G, P.L);
     RealType* Jlap_begin  = &Jlap[0];
     RealType* Jlap_end    = Jlap_begin + Jlap.size();
     RealType* Jgrad_begin = &Jgrad[0][0];
@@ -427,9 +423,9 @@ public:
     DEBUG_PSIBUFFER(" CountingJastrow::registerData", buf.current());
   }
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
-    RealType logValue     = evaluateLog(P, P.G, P.L);
+    LogValueType logValue = evaluateLog(P, P.G, P.L);
     RealType* Jlap_begin  = &Jlap[0];
     RealType* Jlap_end    = Jlap_begin + Jlap.size();
     RealType* Jgrad_begin = &Jgrad[0][0];
@@ -495,14 +491,15 @@ public:
         for (int i = 0; i < num_els; ++i)
         {
           PosType grad_i(P.G[i]);
-          dJF_gg  += x * (dot(C->grad(I, i), grad_i) * C->sum[J] + C->sum[I] * dot(C->grad(J, i), grad_i));
+          dJF_gg += x * (dot(C->grad(I, i), grad_i) * C->sum[J] + C->sum[I] * dot(C->grad(J, i), grad_i));
           dJF_lap += x * (C->lap(I, i) * C->sum[J] + 2 * dot(C->grad(I, i), C->grad(J, i)) + C->lap(J, i) * C->sum[I]);
         }
-        dlogpsi[ia]      += dJF_val;
+        dlogpsi[ia] += dJF_val;
         dhpsioverpsi[ia] += -0.5 * dJF_lap - dJF_gg;
-        if(debug && deriv_print_index < debug_seqlen)
+        if (debug && deriv_print_index < debug_seqlen)
         {
-          app_log() << "  dJ/dF["<< I << "]["<< J << "]; ia: " << ia << ",  dlogpsi: "  << dlogpsi[ia] << ", dhpsioverpsi: "<< dhpsioverpsi[ia] << std::endl;
+          app_log() << "  dJ/dF[" << I << "][" << J << "]; ia: " << ia << ",  dlogpsi: " << dlogpsi[ia]
+                    << ", dhpsioverpsi: " << dhpsioverpsi[ia] << std::endl;
         }
       }
     }
@@ -531,7 +528,7 @@ public:
         for (int i = 0; i < num_els; ++i)
         {
           PosType grad_i(P.G[i]);
-          FCggsum[I]  += dot(FCgrad(I, i), grad_i);
+          FCggsum[I] += dot(FCgrad(I, i), grad_i);
           FClapsum[I] += FClap(I, i);
         }
       }
@@ -624,11 +621,9 @@ public:
               app_log() << "      J: " << J << std::endl;
               app_log() << "      dlogpsi term          : " << dCsum(J, pI) * (2 * FCsum[J]) << std::endl;
               app_log() << "      dhpsi/psi, graddotgrad: "
-                        << -1.0 * (dCggsum(J, pI) * (2.0 * FCsum[J]) + dCsum(J, pI) * 2.0 * FCggsum[J])
-                        << std::endl;
+                        << -1.0 * (dCggsum(J, pI) * (2.0 * FCsum[J]) + dCsum(J, pI) * 2.0 * FCggsum[J]) << std::endl;
               app_log() << "      dhpsi/psi, laplacian  : "
-                        << -0.5 * (2.0 * dCsum(J, pI) * FClapsum[J] + dClapsum(J, pI) * (2.0 * FCsum[J]))
-                        << std::endl;
+                        << -0.5 * (2.0 * dCsum(J, pI) * FClapsum[J] + dClapsum(J, pI) * (2.0 * FCsum[J])) << std::endl;
             }
           }
         }
@@ -646,7 +641,8 @@ public:
         int ia         = myVars.getIndex(id);
         if (ia == -1)
           continue; // ignore inactive parameters
-        app_log() << "    ia: " << ia << ",  dlogpsi: "  << dlogpsi[ia] << ", dhpsioverpsi: "<< dhpsioverpsi[ia] << std::endl;
+        app_log() << "    ia: " << ia << ",  dlogpsi: " << dlogpsi[ia] << ", dhpsioverpsi: " << dhpsioverpsi[ia]
+                  << std::endl;
       }
       app_log() << "  C derivatives: " << std::endl;
       for (int I = 0; I < num_regions; ++I)
@@ -661,7 +657,8 @@ public:
           int ia = I_vars.Index[pI];
           if (ia == -1)
             continue; // ignore inactive
-          app_log() << "      ia: " << ia << ",  dlogpsi: "  << dlogpsi[ia] << ", dhpsioverpsi: "<< dhpsioverpsi[ia] << std::endl;
+          app_log() << "      ia: " << ia << ",  dlogpsi: " << dlogpsi[ia] << ", dhpsioverpsi: " << dhpsioverpsi[ia]
+                    << std::endl;
         }
       }
       deriv_print_index = deriv_print_index % debug_period;

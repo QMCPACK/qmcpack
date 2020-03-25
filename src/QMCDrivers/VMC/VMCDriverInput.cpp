@@ -13,14 +13,13 @@
 
 namespace qmcplusplus
 {
-VMCDriverInput::VMCDriverInput(int walkers_per_rank, bool use_drift)
-    : walkers_per_rank_(walkers_per_rank), use_drift_(use_drift)
+VMCDriverInput::VMCDriverInput(bool use_drift)
+    : use_drift_(use_drift)
 {}
 
 void VMCDriverInput::readXML(xmlNodePtr node)
 {
   ParameterSet parameter_set_;
-  parameter_set_.add(walkers_per_rank_, "walkers", "int");
   std::string use_drift("yes");
   parameter_set_.add(use_drift, "usedrift", "string");
   parameter_set_.add(use_drift, "use_drift", "string");

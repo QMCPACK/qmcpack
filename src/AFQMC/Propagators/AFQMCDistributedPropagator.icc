@@ -139,8 +139,6 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   TG.local_barrier();
   AFQMCTimers[setup_timer]->stop();
 
-  MPI_Status st;
-
   // 1. Calculate Green function for all (local) walkers
   AFQMCTimers[G_for_vbias_timer]->start();
   wfn.MixedDensityMatrix_for_vbias(wset,G);

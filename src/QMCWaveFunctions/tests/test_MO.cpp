@@ -15,7 +15,6 @@
 #include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Numerics/OneDimGridBase.h"
-#include "Particle/DistanceTableData.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/GaussianBasisSet.h"
 #ifdef ENABLE_SOA
@@ -76,14 +75,12 @@ void test_He(bool transform)
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    TrialWaveFunction psi(c);
-
     WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"]    = &elec;
     particle_set_map["ion0"] = &ions;
 
 
-    SPOSetBuilderFactory bf(elec, psi, particle_set_map);
+    SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
     OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
     REQUIRE(MO_base.size() == 1);
@@ -118,12 +115,12 @@ void test_He(bool transform)
     ParticleSet::SingleParticlePos_t newpos(0.0001, 0.0, 0.0);
     elec.makeMove(0, newpos);
 
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
 
     // Generated from gen_mo.py for position [0.0001, 0.0, 0.0]
     REQUIRE(values[0] == Approx(0.9996037001));
 
-    sposet->evaluate(elec, 0, values, dpsi, d2psi);
+    sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
 
     // Generated from gen_mo.py for position [0.0001, 0.0, 0.0]
     REQUIRE(values[0] == Approx(0.9996037001));
@@ -136,7 +133,7 @@ void test_He(bool transform)
     ParticleSet::SingleParticlePos_t disp(1.0, 0.0, 0.0);
     elec.makeMove(0, disp);
 
-    sposet->evaluate(elec, 0, values, dpsi, d2psi);
+    sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
     // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
     REQUIRE(values[0] == Approx(0.2315567641));
     REQUIRE(dpsi[0][0] == Approx(-0.3805431885));
@@ -202,14 +199,12 @@ void test_Ne(bool transform)
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    TrialWaveFunction psi(c);
-
     WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"]    = &elec;
     particle_set_map["ion0"] = &ions;
 
 
-    SPOSetBuilderFactory bf(elec, psi, particle_set_map);
+    SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
     OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
     REQUIRE(MO_base.size() == 1);
@@ -244,14 +239,14 @@ void test_Ne(bool transform)
     ParticleSet::SingleParticlePos_t newpos(0.00001, 0.0, 0.0);
     elec.makeMove(0, newpos);
 
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
 
     std::cout << "values = " << values << std::endl;
 
     // Generated from gen_mo.py for position [1e-05, 0.0, 0.0]
     REQUIRE(values[0] == Approx(-16.11819042));
 
-    sposet->evaluate(elec, 0, values, dpsi, d2psi);
+    sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
     std::cout << "values = " << values << std::endl;
     std::cout << "dpsi = " << dpsi << std::endl;
     std::cout << "d2psi = " << d2psi << std::endl;
@@ -264,12 +259,12 @@ void test_Ne(bool transform)
 
     ParticleSet::SingleParticlePos_t disp(1.0, 0.0, 0.0);
     elec.makeMove(0, disp);
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
     // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
     REQUIRE(values[0] == Approx(-0.005041631374));
 
 
-    sposet->evaluate(elec, 0, values, dpsi, d2psi);
+    sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
     // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
     REQUIRE(values[0] == Approx(-0.005041631374));
     REQUIRE(dpsi[0][0] == Approx(0.01862216578));
@@ -339,14 +334,11 @@ void test_HCN(bool transform)
     REQUIRE(okay);
     xmlNodePtr root2 = doc2.getRoot();
 
-    TrialWaveFunction psi(c);
-
     WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"]    = &elec;
     particle_set_map["ion0"] = &ions;
 
-
-    SPOSetBuilderFactory bf(elec, psi, particle_set_map);
+    SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
     OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
     REQUIRE(MO_base.size() == 1);
@@ -380,7 +372,7 @@ void test_HCN(bool transform)
     ParticleSet::SingleParticlePos_t newpos;
     elec.makeMove(0, newpos);
 
-    sposet->evaluate(elec, 0, values);
+    sposet->evaluateValue(elec, 0, values);
 
     REQUIRE(values[0] == Approx(0.009452265234));
     REQUIRE(values[1] == Approx(0.02008357407));
@@ -390,7 +382,7 @@ void test_HCN(bool transform)
     REQUIRE(values[5] == Approx(0));
     REQUIRE(values[6] == Approx(0));
 
-    sposet->evaluate(elec, 0, values, dpsi, d2psi);
+    sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
 
 
     // Generated form gen_mo.py for position [0.0, 0.0, 0.0]
@@ -440,7 +432,7 @@ void test_HCN(bool transform)
     SPOSet::HessVector_t dhpsi;
     dhpsi.resize(7);
    
-    sposet->evaluate(elec, 0, values, dpsi, dhpsi);
+    sposet->evaluateVGH(elec, 0, values, dpsi, dhpsi);
     
     // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
     REQUIRE(values[0] == Approx( 0.009452265234));
@@ -550,7 +542,7 @@ void test_HCN(bool transform)
     SPOSet::HessMatrix_t diongradpsi(elec.R.size(), sposet->getOrbitalSetSize());
     SPOSet::GradMatrix_t dionlaplpsi(elec.R.size(), sposet->getOrbitalSetSize());
 
-    sposet->evaluateGradSource(elec, 0, elec.R.size(),ions,0, dionpsi,diongradpsi,dionlaplpsi);
+    sposet->evaluateGradSource(elec, 0, elec.R.size(), ions, 0, dionpsi,diongradpsi,dionlaplpsi);
     
   //============== Ion  0  Component  0 ===================
     REQUIRE( dionpsi[0][0][0]       == Approx(   0.0453112082) );  

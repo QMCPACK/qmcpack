@@ -17,7 +17,6 @@
 
 #include "Message/Communicate.h"
 #include "Numerics/OneDimGridBase.h"
-#include "Particle/DistanceTableData.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/GaussianBasisSet.h"
 
@@ -73,14 +72,12 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
 
-  TrialWaveFunction psi(c);
-
   WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
   particle_set_map["e"]    = &elec;
   particle_set_map["ion0"] = &ions;
 
 
-  SPOSetBuilderFactory bf(elec, psi, particle_set_map);
+  SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
   OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
   REQUIRE(MO_base.size() == 1);
@@ -108,14 +105,14 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
 
   typedef NGOBuilder::CenteredOrbitalType COT;
   OrbType bs_phi(lcob->myBasisSet);
-  bs_phi.setOrbitalSetSize(lcob->OrbitalSetSize);
+  bs_phi.setOrbitalSetSize(lcob->getOrbitalSetSize());
   bs_phi.BasisSetSize = lcob->BasisSetSize;
   bs_phi.setIdentity(false);
 
   *(bs_phi.C) = *(lcob->C);
 
   OrbType bs_eta(lcob->myBasisSet);
-  bs_eta.setOrbitalSetSize(lcob->OrbitalSetSize);
+  bs_eta.setOrbitalSetSize(lcob->getOrbitalSetSize());
   bs_eta.BasisSetSize = lcob->BasisSetSize;
   bs_eta.setIdentity(false);
   *(bs_eta.C) = *(lcob->C);

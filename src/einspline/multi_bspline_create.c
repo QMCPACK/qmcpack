@@ -295,7 +295,7 @@ create_multi_UBspline_3d_s (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
   spline->z_grid   = z_grid;
 
   int N = num_splines;
-#if defined(HAVE_SSE) || defined(BGQPX)
+#if defined(HAVE_SSE)
   if (N % 4) 
     N += 4 - (N % 4);
   // fprintf(stdout, " The coefs has been 16-byte aligned.\n");
@@ -1173,12 +1173,6 @@ create_multi_UBspline_3d_d (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
     N++;
 #endif
 
-#ifdef BGQPX
-  if (N % 4) 
-    N += 4 - (N % 4);
-  // fprintf(stdout, " The coefs has been 32-byte aligned.\n");
-#endif
-  
   spline->x_stride = Ny*Nz*N;
   spline->y_stride = Nz*N;
   spline->z_stride = N;
@@ -1553,12 +1547,6 @@ create_multi_UBspline_3d_z (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
 #ifdef HAVE_SSE2
   if (N & 3)
     N += 4-(N & 3);
-#endif
-
-#ifdef BGQPX
-  if (N % 2)
-    N += 2 - (N % 2);
-  // fprintf(stdout, " The coefs has been 32-byte aligned.\n");
 #endif
 
   spline->x_stride = (intptr_t)Ny*(intptr_t)Nz*N;

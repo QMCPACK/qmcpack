@@ -2358,14 +2358,18 @@ class SpheroidGrid(StructuredGridWithAxes):
         elif cells is not None:
             grid_dim = len(cells)
         #end if
-
-        # force bconds to match sphere constraints
-        if grid_dim==3:
-            bconds = tuple('oop')
-        elif grid_dim==2:
-            bconds = tuple('op')
-        else:
+        if grid_dim not in (2,3):
             self.error('only 2 and 3 dimensional spheroids grids are supported\nrequested dimension: {}'.format(grid_dim))
+        #end if
+
+        # bconds match sphere constraints by default
+        bconds = kwargs.get('bconds',None)
+        if bconds is None:
+            if grid_dim==3:
+                bconds = tuple('oop')
+            elif grid_dim==2:
+                bconds = tuple('op')
+            #end if
         #end if
 
         endpoint = self.has_endpoints(bconds=bconds,grid_dim=grid_dim)
@@ -3817,7 +3821,7 @@ if __name__=='__main__':
         if not g.initialized:
             continue
         #end if
-        print ' {:<16}  {} {}  {}  {}  {}'.format(label,g.grid_dim,g.space_dim,len(g.axes),g.bconds,g.shape)
+        print(' {:<16}  {} {}  {}  {}  {}'.format(label,g.grid_dim,g.space_dim,len(g.axes),g.bconds,g.shape))
     #end for
 
     if demos.plot_grids:
@@ -3830,7 +3834,7 @@ if __name__=='__main__':
         unit = False
 
         for name in grids_plot:
-            print name
+            print(name)
             grid = grids[name]
             if not unit:
                 grid.plot_points(show=0)
@@ -3924,7 +3928,7 @@ if __name__=='__main__':
         grids_check = 'c12 c13 c23'.split()
         for name in grids_check:
             g = grids[name]
-            print name,g.volume(),g.cell_volumes().sum()
+            print(name,g.volume(),g.cell_volumes().sum())
         #end for
     #end if
 
@@ -3975,8 +3979,8 @@ if __name__=='__main__':
 
     if demos.plot_surface:
 
-        gp = ParallelotopeGrid(
-            axes  = [[1,0],
+        gp = ParallelotopeGrid( 
+           axes  = [[1,0],
                      [1,1]],
             bconds = 'pp',
             cells  = (80,80),

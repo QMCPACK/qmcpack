@@ -187,6 +187,14 @@ struct TinyVector
   inline Type_t* end() { return X + D; }
   inline const Type_t* end() const { return X + D; }
 
+  TinyVector operator-() const
+  {
+    TinyVector inverse;
+    for (size_t d = 0; d < D; ++d)
+      inverse[d] = -X[d];
+    return inverse;
+  }
+
   /** Elementwise comparison
    *
    *  not optimized but useful for testing

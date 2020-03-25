@@ -7,74 +7,45 @@ import sys
 import time
 from afqmctools.utils.io import (
         format_fixed_width_floats,
-        format_fixed_width_strings
+        format_fixed_width_strings,
+        to_qmcpack_complex
         )
 from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
+from afqmctools.hamiltonian.io import (
+        write_qmcpack_sparse,
+        write_qmcpack_dense
+        )
 
 
 def write_hamil_mol(scf_data, hamil_file, chol_cut,
-                    verbose=True, cas=None, ortho_ao=False, nelec=None,
-                    real_chol=False):
+                    verbose=True, cas=None,
+                    ortho_ao=False, nelec=None,
+                    real_chol=False, df=False,
+                    dense=False):
     """Write QMCPACK hamiltonian from pyscf scf calculation on mol object.
     """
-    hcore, chol_vecs, nelec, enuc = generate_hamiltonian(scf_data,
-                                                         verbose=verbose,
-                                                         chol_cut=chol_cut,
-                                                         cas=cas,
-                                                         ortho_ao=ortho_ao,
-                                                         nelec=nelec)
-    nbasis = hcore.shape[-1]
-    msq = nbasis * nbasis
-    # Why did I transpose everything?
-    # QMCPACK expects [M^2, N_chol]
-    # Internally store [N_chol, M^2]
+    hcore, chol_vecs, nelec, enuc, X = generate_hamiltonian(scf_data,
+                                                            verbose=verbose,
+                                                            chol_cut=chol_cut,
+                                                            cas=cas,
+                                                            ortho_ao=ortho_ao,
+                                                            nelec=nelec,
+                                                            df=df)
+    # Want L_{(ik),n}
     chol_vecs = chol_vecs.T
-    chol_vecs = scipy.sparse.csr_matrix(chol_vecs)
-    mem = 64*chol_vecs.nnz/(1024.0**3)
-    if verbose:
-        print(" # Total number of non-zero elements in sparse cholesky ERI"
-               " tensor: %d"%chol_vecs.nnz)
-        nelem = chol_vecs.shape[0]*chol_vecs.shape[1]
-        print(" # Sparsity of ERI Cholesky tensor: "
-               "%f"%(1-float(chol_vecs.nnz)/nelem))
-        print(" # Total memory required for ERI tensor: %13.8e GB"%(mem))
-    write_qmcpack_cholesky(hcore, chol_vecs, nelec, nbasis, enuc,
-                           filename=hamil_file, real_chol=real_chol)
-
-def write_qmcpack_cholesky(hcore, chol, nelec, nmo, e0=0.0,
-                           filename='hamiltonian.h5', real_chol=False):
-    with h5py.File(filename, 'w') as fh5:
-        fh5['Hamiltonian/Energies'] = numpy.array([e0.real,0])
-        if real_chol:
-            fh5['Hamiltonian/hcore'] = hcore
-        else:
-            shape = hcore.shape
-            hcore = hcore.astype(numpy.complex128).view(numpy.float64)
-            hcore = hcore.reshape(shape+(2,))
-            fh5['Hamiltonian/hcore'] = hcore
-        # Number of non zero elements for two-body
-        nnz = chol.nnz
-        # number of cholesky vectors
-        nchol_vecs = chol.shape[-1]
-        fh5['Hamiltonian/Factorized/block_sizes'] = numpy.array([nnz])
-        (chol_unpacked, idx) = to_qmcpack_index(scipy.sparse.csr_matrix(chol),
-                                                real_chol=real_chol)
-        fh5['Hamiltonian/Factorized/index_0'] = numpy.array(idx)
-        fh5['Hamiltonian/Factorized/vals_0'] = numpy.array(chol_unpacked)
-        # Number of integral blocks used for chunked HDF5 storage.
-        # Currently hardcoded for simplicity.
-        nint_block = 1
-        (nalpha, nbeta) = nelec
-        unused = 0
-        fh5['Hamiltonian/dims'] = numpy.array([unused, nnz, nint_block, nmo,
-                                               nalpha, nbeta, unused,
-                                               nchol_vecs])
-        occups = [i for i in range(0, nalpha)]
-        occups += [i+nmo for i in range(0, nbeta)]
-        fh5['Hamiltonian/occups'] = numpy.array(occups)
+    nbasis = hcore.shape[-1]
+    if dense:
+        write_qmcpack_dense(hcore, chol_vecs, nelec,
+                            nbasis, enuc, real_chol=real_chol,
+                            filename=hamil_file,
+                            ortho=X)
+    else:
+        write_qmcpack_sparse(hcore, chol_vecs, nelec, nbasis, enuc,
+                             filename=hamil_file, real_chol=real_chol,
+                             verbose=verbose, ortho=X)
 
 def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
-                         ortho_ao=False, nelec=None):
+                         ortho_ao=False, nelec=None, df=False):
     # Unpack SCF data.
     # 1. core (1-body) Hamiltonian.
     hcore = scf_data['hcore']
@@ -86,41 +57,56 @@ def generate_hamiltonian(scf_data, chol_cut=1e-5, verbose=False, cas=None,
             print(" # UHF integrals are not allowed. Use ortho AO option (-a/--ao).")
             sys.exit()
         X = scf_data['mo_coeff']
+    df_ints = scf_data.get('df_ints', None)
     C = scf_data['mo_coeff']
     # 3. Pyscf mol object.
     mol = scf_data['mol']
     # Step 1. Rotate core Hamiltonian to orthogonal basis.
     if verbose:
-        print(" # Transforming hcore and eri to ortho AO basis.")
+        if ortho_ao:
+            print(" # Transforming hcore and eri to ortho AO basis.")
+        else:
+            print(" # Transforming hcore and eri to MO basis.")
     h1e = numpy.dot(X.T, numpy.dot(hcore, X))
     nbasis = h1e.shape[-1]
-    # Step 2. Genrate Cholesky decomposed ERIs in non-orthogonal AO basis.
     if verbose:
-        print (" # Performing modified Cholesky decomposition on ERI tensor.")
-    chol_vecs = chunked_cholesky(mol, max_error=chol_cut, verbose=verbose)
+        print(" # Number of basis functions: {}.".format(nbasis))
+    # Step 2. Genrate Cholesky decomposed ERIs in non-orthogonal AO basis.
+    if df_ints is not None and df:
+        chol_vecs = df_ints
+        if verbose:
+            print(" # Using DF integrals from checkpoint file.")
+        assert chol_vecs.shape[1] == nbasis*nbasis
+    else:
+        if verbose:
+            print (" # Performing modified Cholesky decomposition on ERI tensor.")
+        chol_vecs = chunked_cholesky(mol, max_error=chol_cut, verbose=verbose)
     if verbose:
         print (" # Orthogonalising Cholesky vectors.")
     start = time.time()
     # Step 2.a Orthogonalise Cholesky vectors.
-    ao2mo_chol(chol_vecs, X)
+    chol_trans = ao2mo_chol(chol_vecs, X)
     if verbose:
-        print (" # Time to orthogonalise: %f"%(time.time() - start))
+        print(" # Time to orthogonalise: %f"%(time.time() - start))
     enuc = mol.energy_nuc()
     # Step 3. (Optionally) freeze core / virtuals.
     nelec = mol.nelec
     if cas is not None:
         nfzc = (sum(mol.nelec)-cas[0])//2
         ncas = cas[1]
+        if ncas == -1:
+            ncas = nbasis - nfzc
         nfzv = nbasis - ncas - nfzc
-        h1e, chol_vecs, enuc = freeze_core(h1e, chol_vecs, enuc, nfzc, ncas,
+        h1e, chol_vecs, enuc = freeze_core(h1e, chol_trans, enuc, nfzc, ncas,
                                            verbose)
         h1e = h1e[0]
         nelec = (mol.nelec[0]-nfzc, mol.nelec[1]-nfzc)
+        # TODO: Don't do this. Pass (N,M) to wavefunction.
         mol.nelec = nelec
         orbs = numpy.identity(h1e.shape[-1])
         orbs = orbs[nfzc:nbasis-nfzv,nfzc:nbasis-nfzv]
         scf_data['mo_coeff'] = C[nfzc:nbasis-nfzv,nfzc:nbasis-nfzv]
-    return h1e, chol_vecs, nelec, enuc
+    return h1e, chol_trans, nelec, enuc, X
 
 
 def freeze_core(h1e, chol, ecore, nc, ncas, verbose=True):
@@ -148,10 +134,17 @@ def freeze_core(h1e, chol, ecore, nc, ncas, verbose=True):
     return h1e, chol, efzc
 
 def ao2mo_chol(eri, C):
-    nb = C.shape[-1]
-    for i, cv in enumerate(eri):
-        half = numpy.dot(cv.reshape(nb,nb), C)
-        eri[i] = numpy.dot(C.T, half).ravel()
+    nao = C.shape[0]
+    nmo = C.shape[1]
+    nik = nmo*nmo
+    nchol = eri.shape[0]
+    eri_ = eri.ravel()
+    for i in range(nchol):
+        cv = eri[i].reshape(nao,nao)
+        half = numpy.dot(cv, C)
+        # if nao < nmo we overwrite the data
+        eri_[i*nik:(i+1)*nik] = numpy.dot(C.T, half).ravel()
+    return eri_[:nchol*nik].reshape((nchol,nik))
 
 def chunked_cholesky(mol, max_error=1e-6, verbose=False, cmax=10):
     """Modified cholesky decomposition from pyscf eris.
@@ -184,7 +177,7 @@ def chunked_cholesky(mol, max_error=1e-6, verbose=False, cmax=10):
     nchol_max = cmax * nao
     # This shape is more convenient for pauxy.
     chol_vecs = numpy.zeros((nchol_max, nao*nao))
-    eri = numpy.zeros((nao,nao,nao,nao))
+    # eri = numpy.zeros((nao,nao,nao,nao))
     ndiag = 0
     dims = [0]
     nao_per_i = 0
@@ -290,36 +283,6 @@ def write_qmcpack_wfn_single(out, mos, nao):
             val = mos[i,j]
             out.write('(%.10e,%.10e) '%(val.real, val.imag))
         out.write('\n')
-
-
-def to_qmcpack_index(matrix, real_chol=True, offset=0):
-    try:
-        indptr = matrix.indptr
-        indices = matrix.indices
-        data = matrix.data
-    except AttributeError:
-        matrix = scipy.sparse.csr_matrix(matrix)
-        indptr = matrix.indptr
-        indices = matrix.indices
-        data = matrix.data
-    # QMCPACK expects ([i,j], m_{ij}) pairs
-    unpacked = []
-    idx = []
-    counter = 0
-    if real_chol:
-        for row in range(0, len(indptr)-1):
-            idx += [[row, i+offset] for i in indices[indptr[row]:indptr[row+1]]]
-            unpacked += [v.real for v in data[indptr[row]:indptr[row+1]]]
-            if len(data[indptr[row]:indptr[row+1]]) > 0:
-                counter = counter + 1
-    else:
-        for row in range(0, len(indptr)-1):
-            idx += [[row, i+offset] for i in indices[indptr[row]:indptr[row+1]]]
-            unpacked += [[v.real, v.imag] for v in data[indptr[row]:indptr[row+1]]]
-            if len(data[indptr[row]:indptr[row+1]]) > 0:
-                counter = counter + 1
-    return (unpacked, numpy.array(idx).flatten())
-
 
 def local_energy_generic_cholesky(h1e, chol_vecs, G, ecore):
     r"""Calculate local for generic two-body hamiltonian.

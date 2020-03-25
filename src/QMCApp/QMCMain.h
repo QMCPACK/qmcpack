@@ -19,7 +19,7 @@
 #ifndef QMCPLUSPLUS_MAINAPPLICATIONS_H
 #define QMCPLUSPLUS_MAINAPPLICATIONS_H
 
-#include "QMCApp/QMCDriverFactory.h"
+#include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCApp/QMCMainState.h"
 #include "QMCApp/QMCAppBase.h"
 

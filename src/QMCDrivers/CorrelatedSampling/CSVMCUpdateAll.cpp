@@ -14,6 +14,7 @@
 
 
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdateAll.h"
+#include "QMCDrivers/WalkerProperties.h"
 //#include "Utilities/OhmmsInfo.h"
 //#include "Particle/MCWalkerConfiguration.h"
 //#include "Particle/HDFWalkerIO.h"
@@ -26,6 +27,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 /// Constructor.
 CSVMCUpdateAll::CSVMCUpdateAll(MCWalkerConfiguration& w,
                                std::vector<TrialWaveFunction*>& psi,
@@ -38,6 +41,7 @@ CSVMCUpdateAll::CSVMCUpdateAll(MCWalkerConfiguration& w,
 
 void CSVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
+  using WP = WalkerProperties::Indexes;
   //create a 3N-Dimensional Gaussian with variance=1
   makeGaussRandomWithEngine(deltaR, RandomGen);
 
@@ -81,7 +85,7 @@ void CSVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
   for (int ipsi = 0; ipsi < nPsi; ipsi++)
     cumNorm[ipsi] += invsumratio[ipsi];
 
-  RealType g = sumratio[0] / thisWalker.Multiplicity * std::exp(2.0 * (logpsi[0] - thisWalker.Properties(LOGPSI)));
+  RealType g = sumratio[0] / thisWalker.Multiplicity * std::exp(2.0 * (logpsi[0] - thisWalker.Properties(WP::LOGPSI)));
 
   if (Random() > g)
   {
@@ -101,10 +105,10 @@ void CSVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
       W.G = *G1[ipsi];
 
       RealType et                                 = H1[ipsi]->evaluate(W);
-      thisWalker.Properties(ipsi, LOGPSI)         = logpsi[ipsi];
-      thisWalker.Properties(ipsi, SIGN)           = Psi1[ipsi]->getPhase();
-      thisWalker.Properties(ipsi, UMBRELLAWEIGHT) = invsumratio[ipsi];
-      thisWalker.Properties(ipsi, LOCALENERGY)    = et;
+      thisWalker.Properties(ipsi, WP::LOGPSI)         = logpsi[ipsi];
+      thisWalker.Properties(ipsi, WP::SIGN)           = Psi1[ipsi]->getPhase();
+      thisWalker.Properties(ipsi, WP::UMBRELLAWEIGHT) = invsumratio[ipsi];
+      thisWalker.Properties(ipsi, WP::LOCALENERGY)    = et;
       H1[ipsi]->auxHevaluate(W, thisWalker);
       H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
     }
@@ -181,7 +185,7 @@ void CSVMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute
   RealType logGb = logBackwardGF(deltaR);
 
   RealType g = sumratio[0] / thisWalker.Multiplicity *
-      std::exp(logGb - logGf + 2.0 * (logpsi[0] - thisWalker.Properties(LOGPSI)));
+      std::exp(logGb - logGf + 2.0 * (logpsi[0] - thisWalker.Properties(WP::LOGPSI)));
 
   if (Random() > g)
   {
@@ -201,10 +205,10 @@ void CSVMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute
       W.L                                         = *L1[ipsi];
       W.G                                         = *G1[ipsi];
       RealType et                                 = H1[ipsi]->evaluate(W);
-      thisWalker.Properties(ipsi, LOGPSI)         = logpsi[ipsi];
-      thisWalker.Properties(ipsi, SIGN)           = Psi1[ipsi]->getPhase();
-      thisWalker.Properties(ipsi, UMBRELLAWEIGHT) = invsumratio[ipsi];
-      thisWalker.Properties(ipsi, LOCALENERGY)    = et;
+      thisWalker.Properties(ipsi, WP::LOGPSI)         = logpsi[ipsi];
+      thisWalker.Properties(ipsi, WP::SIGN)           = Psi1[ipsi]->getPhase();
+      thisWalker.Properties(ipsi, WP::UMBRELLAWEIGHT) = invsumratio[ipsi];
+      thisWalker.Properties(ipsi, WP::LOCALENERGY)    = et;
       H1[ipsi]->auxHevaluate(W, thisWalker);
       H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
     }

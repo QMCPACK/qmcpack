@@ -28,6 +28,7 @@
 #include "Estimators/RMCLocalEnergyEstimator.h"
 #include "Estimators/CollectablesEstimator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "QMCDrivers/WalkerProperties.h"
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
@@ -52,33 +53,33 @@ enum
 
 //initialize the name of the primary estimator
 EstimatorManagerBase::EstimatorManagerBase(Communicate* c)
-    : RecordCount(0),
+    : MainEstimatorName("LocalEnergy"),
+      RecordCount(0),
       h_file(-1),
-      FieldWidth(20),
-      MainEstimatorName("LocalEnergy"),
       Archive(0),
       DebugArchive(0),
       myComm(0),
       MainEstimator(0),
       Collectables(0),
-      max4ascii(8)
+      max4ascii(8),
+      FieldWidth(20)
 {
   setCommunicator(c);
 }
 
 EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
-    : RecordCount(0),
-      h_file(-1),
-      FieldWidth(20),
-      MainEstimatorName(em.MainEstimatorName),
+    : MainEstimatorName(em.MainEstimatorName),
       Options(em.Options),
+      RecordCount(0),
+      h_file(-1),
       Archive(0),
       DebugArchive(0),
       myComm(0),
       MainEstimator(0),
       Collectables(0),
       EstimatorMap(em.EstimatorMap),
-      max4ascii(em.max4ascii)
+      max4ascii(em.max4ascii),
+      FieldWidth(20)
 {
   //inherit communicator
   setCommunicator(em.myComm);
@@ -478,6 +479,21 @@ void EstimatorManagerBase::getCurrentStatistics(MCWalkerConfiguration& W, RealTy
   eavg = tmp[0] / tmp[2];
   var  = tmp[1] / tmp[2] - eavg * eavg;
 }
+
+void EstimatorManagerBase::getCurrentStatistics(const int global_walkers, RefVector<MCPWalker>& walkers, RealType& eavg, RealType& var, Communicate* comm)
+{
+  LocalEnergyOnlyEstimator energynow;
+  energynow.clear();
+  energynow.accumulate(global_walkers, walkers, 1.0);
+  std::vector<RealType> tmp(3);
+  tmp[0] = energynow.scalars[0].result();
+  tmp[1] = energynow.scalars[0].result2();
+  tmp[2] = energynow.scalars[0].count();
+  comm->allreduce(tmp);
+  eavg = tmp[0] / tmp[2];
+  var  = tmp[1] / tmp[2] - eavg * eavg;
+}
+
 
 EstimatorManagerBase::EstimatorType* EstimatorManagerBase::getMainEstimator()
 {

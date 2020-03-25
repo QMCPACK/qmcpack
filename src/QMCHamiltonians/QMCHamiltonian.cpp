@@ -19,6 +19,8 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCHamiltonians/NonLocalECPotential.h"
 #include "Utilities/NewTimer.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
@@ -481,11 +483,27 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluate(ParticleSet& P)
     H[i]->setParticlePropertyList(P.PropertyList, myIndex);
   }
   KineticEnergy                  = H[0]->Value;
-  P.PropertyList[LOCALENERGY]    = LocalEnergy;
-  P.PropertyList[LOCALPOTENTIAL] = LocalEnergy - KineticEnergy;
+  P.PropertyList[WP::LOCALENERGY]    = LocalEnergy;
+  P.PropertyList[WP::LOCALPOTENTIAL] = LocalEnergy - KineticEnergy;
   // auxHevaluate(P);
   return LocalEnergy;
 }
+
+void QMCHamiltonian::updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset)
+{
+  if (std::isnan(op.Value))
+    APP_ABORT("QMCHamiltonian::evaluate component " + op.myName + " returns NaN\n");
+  // The following is a ridiculous breach of encapsulation.
+  ham.LocalEnergy += op.Value;
+  op.setObservables(ham.Observables);
+  op.setParticlePropertyList(pset.PropertyList, ham.myIndex);
+}
+
+void QMCHamiltonian::updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset) {
+      ham.KineticEnergy                 = op.Value;
+      pset.PropertyList[WP::LOCALENERGY]    = ham.LocalEnergy;
+      pset.PropertyList[WP::LOCALPOTENTIAL] = ham.LocalEnergy - ham.KineticEnergy;
+    }
 
 std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
                                                                             const RefVector<ParticleSet>& P_list)
@@ -502,29 +520,29 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluate(cons
       ScopedTimer local_timer(H_list[0].get().myTimers[i_ham_op]);
       const auto HC_list(extract_HC_list(H_list, i_ham_op));
 
-      // This lambda accomplishes two things
-      // 1. It makes clear T& and not std::reference_wrapper<T> is desired removing need for gets.
-      // 2. [] captures nothing insuring that we know these updates only depend on the three object involved.
-      auto updateNonKinetic = [](OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset) {
-        // both hamiltonian and operatorbase should have operator<< overides
-        if (std::isnan(op.Value))
-          APP_ABORT("QMCHamiltonian::evaluate component " + op.myName + " returns NaN\n");
+      // // This lambda accomplishes two things
+      // // 1. It makes clear T& and not std::reference_wrapper<T> is desired removing need for gets.
+      // // 2. [] captures nothing insuring that we know these updates only depend on the three object involved.
+      // auto updateNonKinetic = [](OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset) {
+      //   // both hamiltonian and operatorbase should have operator<< overides
+      //   if (std::isnan(op.Value))
+      //     APP_ABORT("QMCHamiltonian::evaluate component " + op.myName + " returns NaN\n");
 
-        // The following is a ridiculous breach of encapsulation.
-        ham.LocalEnergy += op.Value;
-        op.setObservables(ham.Observables);
-        op.setParticlePropertyList(pset.PropertyList, ham.myIndex);
-      };
+      //   // The following is a ridiculous breach of encapsulation.
+      //   ham.LocalEnergy += op.Value;
+      //   op.setObservables(ham.Observables);
+      //   op.setParticlePropertyList(pset.PropertyList, ham.myIndex);
+      // };
       HC_list[0].get().mw_evaluate(HC_list, P_list);
       for (int iw = 0; iw < H_list.size(); iw++)
         updateNonKinetic(HC_list[iw], H_list[iw], P_list[iw]);
     }
 
-    auto updateKinetic = [](OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset) {
-      ham.KineticEnergy                 = op.Value;
-      pset.PropertyList[LOCALENERGY]    = ham.LocalEnergy;
-      pset.PropertyList[LOCALPOTENTIAL] = ham.LocalEnergy - ham.KineticEnergy;
-    };
+    // auto updateKinetic = [](OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset) {
+    //   ham.KineticEnergy                 = op.Value;
+    //   pset.PropertyList[WP::LOCALENERGY]    = ham.LocalEnergy;
+    //   pset.PropertyList[LOCALPOTENTIAL] = ham.LocalEnergy - ham.KineticEnergy;
+    // };
 
     for (int iw = 0; iw < H_list.size(); iw++)
     {
@@ -626,6 +644,9 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_
   }
 }
 
+/** Looks like a hack see DMCBatched.cpp and DMC.cpp weight is used like temporary flag
+ *  from DMC.
+ */
 void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker)
 {
   // weight should be 0 from DMC
@@ -656,10 +677,45 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateWithToperator(ParticleS
     myTimers[i]->stop();
   }
   KineticEnergy                  = H[0]->Value;
-  P.PropertyList[LOCALENERGY]    = LocalEnergy;
-  P.PropertyList[LOCALPOTENTIAL] = LocalEnergy - KineticEnergy;
+  P.PropertyList[WP::LOCALENERGY]    = LocalEnergy;
+  P.PropertyList[WP::LOCALPOTENTIAL] = LocalEnergy - KineticEnergy;
   //   auxHevaluate(P);
   return LocalEnergy;
+}
+
+std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluateWithToperator(RefVector<QMCHamiltonian>& h_list, RefVector<ParticleSet>& p_list)
+{
+  std::vector<FullPrecRealType> local_energies(h_list.size(), 0.0);
+  if (h_list.size() > 1)
+  {
+    for (int iw = 0; iw < h_list.size(); iw++)
+      h_list[iw].get().LocalEnergy = 0.0;
+
+    int num_ham_operators = h_list[0].get().H.size();
+    for (int i_ham_op = 0; i_ham_op < num_ham_operators; ++i_ham_op)
+    {
+      ScopedTimer local_timer(h_list[0].get().myTimers[i_ham_op]);
+      const auto HC_list(extract_HC_list(h_list, i_ham_op));
+
+      HC_list[0].get().mw_evaluateWithToperator(HC_list, p_list);
+      for( int iw = 0; iw < h_list.size(); ++iw)
+        updateNonKinetic(HC_list[iw], h_list[iw], p_list[iw]);
+    }
+    
+    for (int iw = 0; iw < h_list.size(); iw++)
+    {
+      const auto HC_list(extract_HC_list(h_list, 0));
+      updateKinetic(HC_list[iw], h_list[iw], p_list[iw]);
+    }
+
+    for (int iw = 0; iw < h_list.size(); ++iw)
+      local_energies[iw] = h_list[iw].get().get_LocalEnergy();
+  }
+  else
+  {
+    local_energies[0] = h_list[0].get().evaluateWithToperator(p_list[0]);
+  }
+  return local_energies;
 }
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
@@ -723,6 +779,54 @@ void QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
     H[i]->setRandomGenerator(rng);
   for (int i = 0; i < auxH.size(); i++)
     auxH[i]->setRandomGenerator(rng);
+  if(nlpp_ptr)
+    nlpp_ptr->setRandomGenerator(rng);
+}
+
+  void QMCHamiltonian::setNonLocalMoves(xmlNodePtr cur)
+  {
+    if (nlpp_ptr != nullptr)
+      nlpp_ptr->setNonLocalMoves(cur);
+  }
+
+  void QMCHamiltonian::setNonLocalMoves(const std::string& non_local_move_option,
+                                        const double tau,
+                                        const double alpha,
+                                        const double gamma)
+  {
+    if (nlpp_ptr != nullptr)
+      nlpp_ptr->setNonLocalMoves(non_local_move_option,
+                                        tau,
+                                        alpha,
+                                        gamma);
+  }
+
+  int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P)
+  {
+    if (nlpp_ptr == nullptr)
+      return 0;
+    else
+      return nlpp_ptr->makeNonLocalMovesPbyP(P);
+  }
+
+
+std::vector<int> QMCHamiltonian::flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list,
+                                                        RefVector<ParticleSet>& p_list)
+{
+  QMCHamiltonian& db_hamiltonian = h_list[0].get();
+
+  std::vector<int> num_accepts(h_list.size(), 0);
+  if(h_list[0].get().nlpp_ptr)
+  {
+    if(h_list.size() > 1)
+    {
+      for( int iw = 0; iw < h_list.size(); ++iw)
+        num_accepts[iw] = h_list[iw].get().nlpp_ptr->makeNonLocalMovesPbyP(p_list[iw]);
+    }
+    else if(h_list.size() == 1)
+      num_accepts[0] = h_list[0].get().nlpp_ptr->makeNonLocalMovesPbyP(p_list[0]);
+  }
+  return num_accepts;
 }
 
 QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
@@ -771,13 +875,13 @@ void QMCHamiltonian::evaluate(MCWalkerConfiguration& W, std::vector<RealType>& e
   //KineticEnergyVector=H[0]->ValueVector;
   for (int iw = 0; iw < walkers.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[LOCALENERGY] = LocalEnergyVector[iw];
-    walkers[iw]->getPropertyBase()[LOCALPOTENTIAL] =
-        LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[NUMPROPERTIES];
+    walkers[iw]->getPropertyBase()[WP::LOCALENERGY] = LocalEnergyVector[iw];
+    walkers[iw]->getPropertyBase()[WP::LOCALPOTENTIAL] =
+        LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES];
   }
   energyVector = LocalEnergyVector;
-  // P.PropertyList[LOCALENERGY]=LocalEnergy;
-  // P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
+  // P.PropertyList[WP::WP::LOCALENERGY]=LocalEnergy;
+  // P.PropertyList[WP::LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
   for (int i = 0; i < auxH.size(); ++i)
   {
     auxH[i]->addEnergy(W, AuxEnergyVector);
@@ -812,9 +916,9 @@ void QMCHamiltonian::evaluate(MCWalkerConfiguration& W,
   KineticEnergyVector = H[0]->ValueVector;
   for (int iw = 0; iw < walkers.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[LOCALENERGY] = LocalEnergyVector[iw];
-    walkers[iw]->getPropertyBase()[LOCALPOTENTIAL] =
-        LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[NUMPROPERTIES];
+    walkers[iw]->getPropertyBase()[WP::LOCALENERGY] = LocalEnergyVector[iw];
+    walkers[iw]->getPropertyBase()[WP::LOCALPOTENTIAL] =
+        LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES];
   }
   energyVector = LocalEnergyVector;
 
