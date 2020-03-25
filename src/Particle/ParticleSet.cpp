@@ -688,7 +688,8 @@ void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)
 {
   if (P_list.size() > 1)
   {
-#pragma omp parallel for
+    // Leaving bare omp pragma here. It can potentially be improved with cleaner abstraction.
+    #pragma omp parallel for
     for (int iw = 0; iw < P_list.size(); iw++)
       P_list[iw].get().donePbyP();
   }
