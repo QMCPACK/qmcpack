@@ -710,6 +710,7 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 void ParticleSet::saveWalker(Walker_t& awalker)
 {
   awalker.R = R;
+  awalker.spins = spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
   awalker.G = G;
   awalker.L = L;
