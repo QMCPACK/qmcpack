@@ -46,7 +46,7 @@ cd build_${1}_${2}
 
 which cmake
 pwd
-echo "cmake ${QMCNSPACE_FLAG} ${QMCPRECISION_FLAG} -DENABLE_SOA=1 -DCMAKE_C_COMPILER=\"mpicc\" -DCMAKE_CXX_COMPILER=\"mpicxx\" ${QMC_IMMUTABLE_FLAGS} -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 ../.. 2>&1 | tee cmake.out"
+echo "cmake ${QMCNSPACE_FLAG} ${QMCPRECISION_FLAG} -DENABLE_SOA=1 -DCMAKE_C_COMPILER=\"mpicc\" -DCMAKE_CXX_COMPILER=\"mpicxx\" ${QMC_IMMUTABLE_FLAGS} -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 ${PARENT_WORKSPACE} 2>&1 | tee cmake.out"
 
 # this keeps tee from eating the exit status
 set -o pipefail
