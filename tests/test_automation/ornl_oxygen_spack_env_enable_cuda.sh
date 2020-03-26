@@ -2,7 +2,13 @@
 
 . $SPACK_ROOT/share/spack/setup-env.sh
 
-. ../tests/test_automation/spack_supported_package_versions.sh
+# This is to deal with the fact that we don't know the relationship between the working directory
+# and checkout directory in a relative way.
+# this doesn't deal with symlinks
+SRC="${BASH_SOURCE[0]}"
+SRC_DIR="$( cd -P "$( dirname "$SRC" )" >/dev/null 2>&1 && pwd )"
+
+. ${SRC_DIR}/spack_supported_package_versions.sh
 
 QMC_IMMUTABLE_FLAGS="-DENABLE_CUDA=1"
 

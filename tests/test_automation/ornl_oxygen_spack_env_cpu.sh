@@ -4,17 +4,11 @@
 
 # This is to deal with the fact that we don't know the relationship between the working directory
 # and checkout directory in a relative way.
-# This is from https://stackoverflow.com/questions/59895/how-to-get-the-source-directory-of-a-bash-script-from-within-the-script-itself
-# licensing issue?
-SOURCE="${BASH_SOURCE[0]}"
-while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
-  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
-  SOURCE="$(readlink "$SOURCE")"
-  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
-done
-DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+# this doesn't deal with symlinks
+SRC="${BASH_SOURCE[0]}"
+SRC_DIR="$( cd -P "$( dirname "$SRC" )" >/dev/null 2>&1 && pwd )"
 
-. ${DIR}/spack_supported_package_versions.sh
+. ${SRC_DIR}/spack_supported_package_versions.sh
 
 #temporary change from clang$llvm_vnew
 
