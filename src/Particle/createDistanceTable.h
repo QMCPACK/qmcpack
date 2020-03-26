@@ -43,7 +43,21 @@ namespace qmcplusplus
 DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream& description);
 
 ///free function create a distable table of s-t
-DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description);
+DistanceTableData* createDistanceTableAB(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description);
+DistanceTableData* createDistanceTableABOMP(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description);
+
+inline DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description)
+{
+  // during P-by-P move, the cost of single particle evaluation of distance tables
+  // is determined by the number of source particles.
+  // Thus the implementation selection is determined by the source particle set.
+#if defined(ENABLE_OFFLOAD)
+  if (s.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD)
+    return createDistanceTableABOMP(s, t, dt_type, description);
+  else
+#endif
+    return createDistanceTableAB(s, t, dt_type, description);
+}
 
 } // namespace qmcplusplus
 #endif
