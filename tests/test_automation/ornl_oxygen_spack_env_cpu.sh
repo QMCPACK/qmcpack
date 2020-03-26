@@ -14,7 +14,7 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
-. ${DIR}/tests/test_automation/spack_supported_package_versions.sh
+. ${DIR}/spack_supported_package_versions.sh
 
 #temporary change from clang$llvm_vnew
 
