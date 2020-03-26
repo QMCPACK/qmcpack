@@ -1,3 +1,3 @@
 library 'qmcpack_shared_jenkins'
 
-common_pipeline(name:"gpu", spack_path:"/var/lib/jenkins/spack", prefix:"ornl_oxygen_", workspace_root:"/scratch/jenkins", ram_disk:true, threads_per_flavor:6)
+common_pipeline(name:"gpu", spack_path:"/var/lib/jenkins/spack", prefix:"ornl_oxygen_", workspace_root:"/scratch/jenkins", threads_per_flavor:6)
