@@ -18,6 +18,7 @@
 
 namespace qmcplusplus
 {
+
 MCPopulation::MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr), num_ranks_(1), rank_(0) {}
  
 MCPopulation::MCPopulation(int num_ranks,

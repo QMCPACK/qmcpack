@@ -93,7 +93,6 @@ void DMCBatched::resetUpdateEngines()
   o << "  BranchInterval = " << dmcdriver_input_.get_branch_interval() << "\n";
   o << "  Steps per block = " << qmcdriver_input_.get_max_steps() << "\n";
   o << "  Number of blocks = " << qmcdriver_input_.get_max_blocks() << "\n";
-
   app_log() << o.str() << std::endl;
 
   app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs" << std::endl;
