@@ -127,7 +127,7 @@ fi
 
 echo --- Starting test builds and tests
 
-for sys in build_gccnew build_gcccuda build_gccnew_complex build_gcccuda_complex build_gccnew_nompi build_gccnew_nompi_complex
+for sys in build_gccnew build_gcccuda build_gccnew_complex build_gcccuda_complex build_gccnew_nompi build_gccnew_nompi_complex build_gccnew_aos build_gccnew_complex_aos
 do
 
 echo --- START $sys `date`
@@ -191,7 +191,7 @@ fi
 
 # GCC
 # Dates at https://gcc.gnu.org/releases.html
-gcc_vnew=9.2.0 # 2019-08-12
+gcc_vnew=9.3.0 # 2020-03-12
 
 #Zen2 optimziations are only in gcc 9.1+, with improved scheduling in 9.2+
 #For now, only use newer compilers
@@ -242,7 +242,9 @@ gccnewbuild) echo $ourenv
 	spack load gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
 	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
-	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+	if [[ $sys != *"nompi"* ]]; then
+	    spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+	fi
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
 	spack load amdblis
@@ -253,7 +255,9 @@ gcccudabuild) echo $ourenv
 	spack load gcc@$gcc_vcuda
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
 	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
-	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+	if [[ $sys != *"nompi"* ]]; then
+	    spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+	fi
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
 	spack load amdblis
@@ -265,7 +269,9 @@ clangnewbuild) echo $ourenv
 	spack load gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
 	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
-	spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+	if [[ $sys != *"nompi"* ]]; then
+	    spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+	fi
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
 	spack load amdblis
@@ -400,21 +406,18 @@ fi
 # Boilerplate for all tests
 CTCFG="$CTCFG -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1"
 
-# Selectively enable AFQMC due to more stringent compiler requirements
-if [[ $sys == *"complex"* ]]; then
-case "$sys" in
-*gccnew*|*clangnew*|*cuda*|*intel*) echo "AFQMC is enabled for this complex build"
-CTCFG="$CTCFG -DBUILD_AFQMC=1"
-;;
-*) echo "AFQMC is disabled for this complex build (either unsupported or unchecked)"
-CTCFG="$CTCFG -DBUILD_AFQMC=0"
-;;
-esac
+# Selectively enable AFQMC
+if [[ $sys == *"nompi"* ]]; then
+    echo "AFQMC is disabled for this build without MPI."
+    CTCFG="$CTCFG -DBUILD_AFQMC=0"
+else	
+    echo "AFQMC is enabled for this complex build"
+    CTCFG="$CTCFG -DBUILD_AFQMC=1"
 fi
 
 # Adjust which tests are run to control overall runtime
 case "$sys" in
-*gccnew|*gccnew_complex|*clangnew|*clangnew_complex|*gcccuda|*gcccuda_complex|*gcccuda_full) echo "Running full ("less limited") test set for $sys"
+*gccnew|*gccnew_aos|*gccnew_complex|*gccnew_complex_aos|*clangnew|*clangnew_complex|*gcccuda|*gcccuda_complex|*gcccuda_full) echo "Running full ("less limited") test set for $sys"
 THETESTS=$LESSLIMITEDTESTS
 ;;
 *) echo "Running limited test set for $sys"
