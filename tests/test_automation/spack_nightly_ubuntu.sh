@@ -59,10 +59,11 @@ function test_variant {
 # CUDA version is compatible with your compiler
 # https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
 
-# declare -a versions=("3.8.0" "3.7.0")
-declare -a versions=("3.8.0")
+# declare -a versions=("3.9.1" "3.8.0")
+declare -a versions=("3.9.1")
 declare -a compilers=("gcc@7.4.0" "intel@19.0.3.199" "pgi@19.7" "clang@9.0.0")
-# declare -a compilers=("intel@19.0.3.199")
+declare -a compilers=("pgi@19.7")
+declare -a withafqmc=("+afqmc" "~afqmc")
 declare -a withqe=("+qe" "~qe")
 declare -a withmpi=("+mpi" "~mpi")
 declare -a spotypes=("+complex" "~complex")
