@@ -480,9 +480,9 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialDiscrete(vector<RealType> sk
 QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
 {
   UBspline_3d_d* spline = getSkSpline(sk);
-  
-  RealType kmax = AA->get_kc();
-  IndexType ngrid = 2*Klist.kshell.size() - 1; //make a lager kmesh
+
+  RealType kmax   = AA->get_kc();
+  IndexType ngrid = 2 * Klist.kshell.size() - 1; //make a lager kmesh
 
   vector<RealType> nonunigrid1d, k2vksk;
   RealType dk = kmax / ngrid;
@@ -491,10 +491,10 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
   k2vksk.push_back(0.0);
   for (int i = 1; i < ngrid; i++)
   {
-    RealType kval = i*dk;
+    RealType kval = i * dk;
     nonunigrid1d.push_back(kval);
-    RealType skavg = sphericalAvgSk(spline,kval);
-    RealType k2vk = kval*kval*AA->evaluate_vlr_k(kval); //evaluation for arbitrary kshell for any LRHandler
+    RealType skavg = sphericalAvgSk(spline, kval);
+    RealType k2vk  = kval * kval * AA->evaluate_vlr_k(kval); //evaluation for arbitrary kshell for any LRHandler
     k2vksk.push_back(0.5 * k2vk * skavg);
   }
 
@@ -609,7 +609,6 @@ void QMCFiniteSize::summary()
 
 bool QMCFiniteSize::execute()
 {
-
   initialize();
   //Print Spherical Avg from data
   SK_raw    = skparser->get_sk_raw();

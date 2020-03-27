@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -157,7 +157,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
   }
 
   // use what is put in fillFk. Multiplies evalFk by -1
-  inline mRealType evaluate_vlr_k(mRealType k) override { return -1.0 * evalFk(k); } 
+  inline mRealType evaluate_vlr_k(mRealType k) override { return -1.0 * evalFk(k); }
 
 private:
   inline mRealType evalFk(mRealType k)
@@ -260,7 +260,6 @@ private:
     //  Fk[ki] = evalFk(k); //Call derived fn.
     //}
   }
-  
 };
 } // namespace qmcplusplus
 #endif

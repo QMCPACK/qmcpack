@@ -32,8 +32,8 @@
 //for a given simulation cell from post-processed QMC Data.  For
 //the potential, this is done by splining the structure factor
 //and performing the integral given in Holzmann et al., PRB 035126 (2016)
-//Assuming you have provided a long-ranged jastrow in the input xml, this will also 
-//calculate the kinetic energy correction from Holzmann et al. 
+//Assuming you have provided a long-ranged jastrow in the input xml, this will also
+//calculate the kinetic energy correction from Holzmann et al.
 //
 //Input:  Cell geometry.  Ion positions, cell geometries, etc, are taken from main.xml file.
 //                        Code recognizes ESHDF5 declarations in main.xml.
@@ -44,33 +44,33 @@
 
 using namespace qmcplusplus;
 typedef QMCTraits::RealType RealType;
-typedef QMCTraits::PosType  PosType;
+typedef QMCTraits::PosType PosType;
 typedef SkParserBase::Grid_t Grid_t;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-  OHMMS::Controller->initialize(argc,argv);
-  Random.init(0,1,-1);
+  OHMMS::Controller->initialize(argc, argv);
+  Random.init(0, 1, -1);
   std::cout.setf(std::ios::scientific, std::ios::floatfield);
-  std::cout.setf(std::ios::right,std::ios::adjustfield);
+  std::cout.setf(std::ios::right, std::ios::adjustfield);
   std::cout.precision(12);
 
   SkParserBase* skparser(NULL);
-  int iargc=2;
+  int iargc = 2;
 
-  while(iargc+1<argc)
+  while (iargc + 1 < argc)
   {
     std::string a(argv[iargc]);
-    std::string anxt(argv[iargc+1]);
-    std::cout<<" "<<a<<"  "<<anxt<<std::endl;
-    if(a=="--ascii")
+    std::string anxt(argv[iargc + 1]);
+    std::cout << " " << a << "  " << anxt << std::endl;
+    if (a == "--ascii")
     {
-      skparser=new SkParserASCII();
+      skparser = new SkParserASCII();
       skparser->parse(anxt);
     }
-    else if(a=="--scalardat")
+    else if (a == "--scalardat")
     {
-      skparser=new SkParserScalarDat();
+      skparser = new SkParserScalarDat();
       skparser->parse(anxt);
     }
     else if (a == "--help")
@@ -84,10 +84,10 @@ int main(int argc, char **argv)
     iargc++;
   }
 
-  if( skparser==NULL )
-    {
-      APP_ABORT("qmcfinitesize:  skparser failed to initialize");
-    }
+  if (skparser == NULL)
+  {
+    APP_ABORT("qmcfinitesize:  skparser failed to initialize");
+  }
 
   QMCFiniteSize qmcfs(skparser);
   qmcfs.parse(std::string(argv[1]));

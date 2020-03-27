@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
@@ -284,7 +284,7 @@ private:
     LRBreakup<BreakupBasis> breakuphandler(Basis);
     //Find size of basis from cutoffs
     mRealType kc = (LR_kc < 0) ? ref.LR_kc : LR_kc;
-    LR_kc = kc; // set internal kc
+    LR_kc        = kc; // set internal kc
     //mRealType kc(ref.LR_kc); //User cutoff parameter...
     //kcut is the cutoff for switching to approximate k-point degeneracies for
     //better performance in making the breakup. A good bet is 30*K-spacing so that
