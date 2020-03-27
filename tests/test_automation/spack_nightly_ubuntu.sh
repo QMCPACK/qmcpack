@@ -71,7 +71,8 @@ declare -a withtimers=("+timers" "~timers")
 declare -a withmixed=("+mixed" "~mixed")
 declare -a withsoa=("+soa" "~soa")
 declare -a withcuda=("+cuda" "~cuda")
-declare -a blasproviders=("netlib-lapack" "intel-mkl" "openblas")
+# spaces are allowed inside an quoted entry because it throws off the parser in the test_variant function
+declare -a blasproviders=("netlib-lapack^fftw%gcc" "intel-mkl" "openblas^fftw%gcc" "libflame^blis^fftw%gcc" "libflame^amdblis^fftw%gcc")
 # declare -a blasproviders=("intel-mkl")
 # cuda_arch value explicitly set to value of GPU card on naromero-desktop.cels.anl.gov
 gpu_card=61
