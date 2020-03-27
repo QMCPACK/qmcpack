@@ -141,12 +141,11 @@ for version in ${versions[@]}; do
 	    for mixed in ${withmixed[@]}; do
 		for soa in ${withsoa[@]}; do
 		    for blas in ${blasproviders[@]}; do
-			variant1='qmcpack~qe+mpi+timers~cuda'${spotype}${mixed}${soa}'@'${version}'%'${compiler}' ^'${blas}' ^mpich '${build_with_gcc}
-			test_variant "${variant1}"
+			variant1='qmcpack~qe+mpi+timers~cuda'${spotype}${mixed}${soa}'@'${version}'%'${compiler}' ^'${blas}' '${build_with_gcc}' '${build_with_python}
+			test_variant ${variant1}
 
 			# cuda version takes an extra arg
-			variant2='qmcpack~qe+mpi+timers+cuda'${spotype}${mixed}${soa}'@'${version}'%'${compiler}' cuda_arch='${gpu_card}' ^cuda@'${cuda_version}' ^'${blas}' ^mpich '${build_with_gcc}
-			# variant2='qmcpack~qe+mpi+timers+cuda'${spotype}${mixed}${soa}'@'${version}'%'${compiler}' ^cuda@'${cuda_version}' ^'${blas}' ^mpich '${build_with_gcc}
+			variant2='qmcpack~qe+mpi+timers+cuda'${spotype}${mixed}${soa}'@'${version}'%'${compiler}' cuda_arch='${gpu_card}' ^'${blas}' '${build_with_gcc}' '${build_with_python}
 			test_variant ${variant2}
 		    done
 		done
@@ -162,11 +161,11 @@ echo "##### Test that QE patch is applied ####"
 for version in ${versions[@]}; do
     for compiler in ${compilers[@]}; do
 	for blas in ${blasproviders[@]}; do
-	    variant3='qmcpack+qe+mpi~timers~cuda~complex~mixed~soa@'${version}'%'${compiler}' ^'${blas}' ^mpich '${build_with_gcc}
-	    test_variant $variant3
+	    variant3='qmcpack+qe+mpi~timers~cuda~complex~mixed~soa@'${version}'%'${compiler}' ^'${blas}' '${build_with_gcc}' '${build_with_python}
+	    test_variant ${variant3}
 	    
-	    variant4='qmcpack+qe~mpi~phdf5~timers~cuda~complex~mixed~soa@'${version}'%'${compiler}' ^'${blas}
-	    test_variant $variant4
+	    variant4='qmcpack+qe~mpi~phdf5~timers~cuda~complex~mixed~soa@'${version}'%'${compiler}' ^'${blas}' '${build_with_gcc_nompi}' '${build_with_python}
+	    test_variant ${variant4}
 
 	    # test that QMCPACK patch was REALLY applied
 	    spack find quantum-espresso@6.4.1"%"${compiler} patches=${qe_hash}
@@ -174,6 +173,24 @@ for version in ${versions[@]}; do
 	    then
 		echo "QMCPACK patch was not applied to QE." >> ${SPACK_FAILS}
 	    fi
-       done
-   done
+	done
+    done
+done
+
+# test AFQMC variants seperately since most variants
+# are specific to the real-space QMC code
+echo "##### Compiling AFQMC variants ######"
+echo "##### 6 variants per compiler #####"
+
+for version in ${versions[@]}; do
+    for compiler in ${compilers[@]}; do
+        for blas in ${blasproviders[@]}; do
+            variant5='qmcpack+afqmc~cuda@'${version}'%'${compiler}' ^'${blas}' '${build_with_gcc}' '${build_with_python}
+            test_variant ${variant5}
+
+	    # cuda version takes an extra arg
+            variant6='qmcpack+afqmc+cuda@'${version}'%'${compiler}' cuda_arch='${gpu_card}' ^'${blas}' '${build_with_gcc}' '${build_with_python}
+            test_variant ${variant6}
+	done
+    done
 done
