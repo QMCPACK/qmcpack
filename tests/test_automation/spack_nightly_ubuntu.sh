@@ -128,6 +128,10 @@ touch ${SPACK_CONFLICTS}
 #
 build_with_gcc='^boost%gcc@7.4.0 ^pkgconf%gcc@7.4.0 ^perl%gcc@7.4.0 ^libpciaccess%gcc@7.4.0 ^cmake%gcc@7.4.0 ^findutils%gcc@7.4.0 ^m4%gcc@7.4.0'
 build_with_gcc_nompi='^boost%gcc@7.4.0 ^pkgconf%gcc@7.4.0 ^perl%gcc@7.4.0 ^cmake%gcc@7.4.0'
+# - Better to install Python with Anaconda and then load via a module
+#
+# - Number of packages concretization preferences are expressed in packages.yaml
+build_with_python='^python@3.7.4'
 
 echo "##### Compiling QMCPACK variants without QE ######"
 echo "##### 36 variants per compiler #####"
