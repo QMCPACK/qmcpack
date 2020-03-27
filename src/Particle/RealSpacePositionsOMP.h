@@ -10,10 +10,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file RealSpacePostionsOffload.h
+/** @file RealSpacePostionsOMP.h
  */
-#ifndef QMCPLUSPLUS_REALSPACE_POSITIONS_OFFLOAD_H
-#define QMCPLUSPLUS_REALSPACE_POSITIONS_OFFLOAD_H
+#ifndef QMCPLUSPLUS_REALSPACE_POSITIONS_OMP_H
+#define QMCPLUSPLUS_REALSPACE_POSITIONS_OMP_H
 
 #include "Particle/DynamicCoordinates.h"
 #include "OhmmsSoA/Container.h"
@@ -24,23 +24,36 @@ namespace qmcplusplus
 {
 /** Introduced to handle virtual moves and ratio computations, e.g. for non-local PP evaluations.
    */
-class RealSpacePositionsOffload : public DynamicCoordinates
+class RealSpacePositionsOMP : public DynamicCoordinates
 {
 public:
-  RealSpacePositionsOffload() : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD) {}
-  RealSpacePositionsOffload(const RealSpacePositionsOffload& in)
+  RealSpacePositionsOMP() : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA_device_ptr(nullptr) {}
+  RealSpacePositionsOMP(const RealSpacePositionsOMP& in)
     : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA(in.RSoA)
   {
     RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
+    auto* pos_ptr = RSoA.data();
+    PRAGMA_OFFLOAD("omp target data use_device_ptr(pos_ptr)")
+    {
+      RSoA_device_ptr = pos_ptr;
+    }
     updateH2D();
   }
 
-  std::unique_ptr<DynamicCoordinates> makeClone() override { return std::make_unique<RealSpacePositionsOffload>(*this); }
+  std::unique_ptr<DynamicCoordinates> makeClone() override { return std::make_unique<RealSpacePositionsOMP>(*this); }
 
   void resize(size_t n) override
   {
-    RSoA.resize(n);
-    RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
+    if (RSoA.size() != n)
+    {
+      RSoA.resize(n);
+      RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
+      auto* pos_ptr = RSoA.data();
+      PRAGMA_OFFLOAD("omp target data use_device_ptr(pos_ptr)")
+      {
+        RSoA_device_ptr = pos_ptr;
+      }
+    }
   }
 
   size_t size() override { return RSoA_hostview.size(); }
@@ -76,9 +89,13 @@ public:
 
   void donePbyP() override { updateH2D(); }
 
+  RealType* getDevicePtr() const { return RSoA_device_ptr; }
 private:
   ///particle positions in SoA layout
   VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> RSoA;
+
+  /// the pointer of RSoA memory on the device
+  RealType* RSoA_device_ptr;
 
   ///host view of RSoA
   PosVectorSoa RSoA_hostview;

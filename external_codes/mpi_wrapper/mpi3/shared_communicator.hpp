@@ -39,43 +39,29 @@ private:
 	shared_communicator(communicator const& comm, mpi3::communicator_type t, int key = 0){
 		auto e = static_cast<enum error>(MPI_Comm_split_type(comm.get(), static_cast<int>(t), key, MPI_INFO_NULL, &impl_));
 		if(e != mpi3::error::success) throw std::system_error{e, "cannot send"};
-		boost::uuids::uuid tag = boost::uuids::random_generator()();
-		unsigned int Tag = reinterpret_cast<unsigned int const&>(tag);
-		this->broadcast_value(Tag, 0);
-		if(t == mpi3::communicator_type::core){
-			int cpu = sched_getcpu();
-			set_name(comm.name() + ":core/pu" + std::to_string(cpu));
-		}else 
-		if(t == mpi3::communicator_type::hw_thread){
-			set_name(comm.name() + ":hw_thread/tag" + std::to_string(Tag));
-		}else
-		if(t == mpi3::communicator_type::l1_cache){
-			set_name(comm.name() + ":l1_cache/tag" + std::to_string(Tag));
-		}else
-		if(t == mpi3::communicator_type::l2_cache){
-			set_name(comm.name() + ":l2_cache/tag" + std::to_string(Tag));
-		}else
-		if(t == mpi3::communicator_type::l3_cache){
-			set_name(comm.name() + ":l3_cache/tag" + std::to_string(Tag));
-		}else
-		if(t == mpi3::communicator_type::socket){
-			set_name(comm.name() + ":socket/tag" + std::to_string(Tag));
-		}else
-		if(t == mpi3::communicator_type::numa){
-			set_name(comm.name() + ":numa/tag" + std::to_string(Tag));
-		}else
-		if(t == mpi3::communicator_type::board){
-			set_name(comm.name() + ":board/tag" + std::to_string(Tag));
-		}else
-		if(t == mpi3::communicator_type::host){
-			set_name(comm.name() + ":host/tag" + std::to_string(Tag));
-		}else
-		if(t == mpi3::communicator_type::cu){
-			set_name(comm.name() + ":cu/tag" + std::to_string(Tag));
-		}else
-		if(t == mpi3::communicator_type::cluster){
-			set_name(comm.name() + ":cluster/tag" + std::to_string(Tag));
+		boost::uuids::uuid tag = boost::uuids::random_generator{}(); static_assert(sizeof(unsigned int)<=sizeof(boost::uuids::uuid), "!");
+		auto utag = reinterpret_cast<unsigned int const&>(tag);
+		this->broadcast_n(&utag, 1, 0);
+		auto Tag = std::to_string(utag);
+		std::string const& base = comm.name();
+		// !!! switch-case don't work here because in some MPI impls there are repeats !!!
+		if(communicator_type::shared==t){
+			#if __linux__
+			set_name(base+":core/pu" + std::to_string(::sched_getcpu())); //same as ::getcpu()
+			#else
+			set_name(base+":core/pu" + Tag);
+			#endif
 		}
+		else if(communicator_type::hw_thread==t) set_name(base+":hw_thread"+Tag);
+		else if(communicator_type::l1_cache ==t) set_name(base+":l1_cache" +Tag);
+		else if(communicator_type::l2_cache ==t) set_name(base+":l2_cache" +Tag);
+		else if(communicator_type::l3_cache ==t) set_name(base+":l3_cache" +Tag);
+		else if(communicator_type::socket   ==t) set_name(base+":socket"   +Tag);
+		else if(communicator_type::numa     ==t) set_name(base+":numa"     +Tag);
+		else if(communicator_type::board    ==t) set_name(base+":board"    +Tag);
+		else if(communicator_type::host     ==t) set_name(base+":cu"       +Tag);
+		else if(communicator_type::cu       ==t) set_name(base+":cu"       +Tag);
+		else if(communicator_type::cluster  ==t) set_name(base+":cluster"  +Tag);
 	}
 /*
 enum class communicator_type : int{

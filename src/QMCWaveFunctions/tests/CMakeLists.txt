@@ -56,7 +56,7 @@ ENDIF()
 
 ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp test_TrialWaveFunction.cpp test_wavefunction_factory.cpp
                test_bspline_jastrow.cpp test_counting_jastrow.cpp test_polynomial_eeI_jastrow.cpp
-               test_einset.cpp test_hybridrep.cpp test_pw.cpp test_wavefunction_pool.cpp
+               test_einset.cpp test_einset_spinor.cpp test_hybridrep.cpp test_pw.cpp test_wavefunction_pool.cpp
                test_dirac_det.cpp test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
                test_rpa_jastrow.cpp test_example_he.cpp test_user_jastrow.cpp
                test_lattice_gaussian.cpp test_kspace_jastrow.cpp

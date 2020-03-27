@@ -824,8 +824,8 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
   }
 
   // FIXME this needs to be fixed by SPF to separate evaluateDerivatives and evaluateDerivativesWF for otbital rotation matrix
-  //Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1], psiCurrent, *C, *C2node_up, *C2node_dn);
-  //Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0], psiCurrent, *C, *C2node_dn, *C2node_up);
+  Dets[0]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[1], psiCurrent, *C, *C2node_up, *C2node_dn);
+  Dets[1]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[0], psiCurrent, *C, *C2node_dn, *C2node_up);
 }
 
 void MultiSlaterDeterminantFast::buildOptVariables()
