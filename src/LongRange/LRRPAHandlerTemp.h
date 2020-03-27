@@ -156,6 +156,9 @@ struct LRRPAHandlerTemp : public LRHandlerBase
     return vk;
   }
 
+  // use what is put in fillFk. Multiplies evalFk by -1
+  inline mRealType evaluate_vlr_k(mRealType k) override { return -1.0 * evalFk(k); } 
+
 private:
   inline mRealType evalFk(mRealType k)
   {
@@ -257,6 +260,7 @@ private:
     //  Fk[ki] = evalFk(k); //Call derived fn.
     //}
   }
+  
 };
 } // namespace qmcplusplus
 #endif

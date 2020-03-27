@@ -126,6 +126,8 @@ public:
     return df;
   }
 
+  inline mRealType evaluate_vlr_k(mRealType k) { return evalFk(k); }
+
 
   /** evaluate the contribution from the long-range part for for spline
    */

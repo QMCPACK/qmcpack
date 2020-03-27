@@ -78,4 +78,13 @@ void EwaldHandler3D::fillFk(KContainer& KList)
   PreFactors[3] = 0.0;
   app_log().flush();
 }
+
+EwaldHandler3D::mRealType EwaldHandler3D::evaluate_vlr_k(mRealType k)
+{
+  mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
+  mRealType knorm  = 4 * M_PI / Volume;
+  mRealType k2     = k * k;
+  return knorm * std::exp(-k2 * kgauss) / k2;
+}
+
 } // namespace qmcplusplus

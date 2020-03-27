@@ -38,9 +38,12 @@ public:
   RealType integrate_spline(NUBspline_1d_d* spline, RealType a, RealType b, IndexType N);
   NUBspline_1d_d* spline_clamped(vector<RealType>& grid, vector<RealType>& vals, RealType lVal, RealType rVal);
 
+  void initialize();
   void calcPotentialCorrection();
   void calcLeadingOrderCorrections();
   void summary();
+  RealType calcPotentialDiscrete(vector<RealType> sk);
+  RealType calcPotentialInt(vector<RealType> sk);
 
 private:
   RealType h; //this is for finite differencing.
@@ -53,8 +56,8 @@ private:
   SkParserBase* skparser;
   bool processPWH(xmlNodePtr cur);
   bool wfnPut(xmlNodePtr cur);
-
   void initBreakup();
+
   ParticleSetPool ptclPool;
 
   RealType myConst;
@@ -68,9 +71,6 @@ private:
   void printSkSplineSphAvg(UBspline_3d_d* spline);
   KContainer Klist;
   vector<TinyVector<int, OHMMS_DIM>> kpts;
-
-  RealType calcPotentialDiscrete(vector<RealType> sk);
-  RealType calcPotentialInt(vector<RealType> sk);
 
   vector<RealType> SK_raw;
   vector<RealType> SKerr_raw;

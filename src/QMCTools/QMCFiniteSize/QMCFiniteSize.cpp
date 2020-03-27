@@ -15,8 +15,8 @@ namespace qmcplusplus
 {
 QMCFiniteSize::QMCFiniteSize() : skparser(NULL), ptclPool(NULL), myRcut(0.0), myConst(0.0), P(NULL), h(0.0)
 {
-  IndexType mtheta = 10;
-  IndexType mphi   = 10;
+  IndexType mtheta = 80;
+  IndexType mphi   = 80;
   app_log() << "Building spherical grid. n_theta x n_phi = " << mtheta << " x " << mphi << endl;
   build_spherical_grid(mtheta, mphi);
   h = 0.1;
@@ -367,6 +367,26 @@ QMCFiniteSize::RealType QMCFiniteSize::integrate_spline(NUBspline_1d_d* spline, 
   return (eps / 3.0) * sum;
 }
 
+void QMCFiniteSize::initialize()
+{
+  //Initialize the long range breakup. Chosen in input xml
+  initBreakup();
+  Ne    = P->getTotalNum();
+  Vol   = P->Lattice.Volume;
+  rs    = std::pow(3.0 / (4 * M_PI) * Vol / RealType(Ne), 1.0 / 3.0);
+  rho   = RealType(Ne) / Vol;
+  Klist = P->SK->KLists;
+  kpts  = Klist.kpts; //These are in reduced coordinates.
+                      //Easier to spline, but will have to convert
+                      //for real space integration.
+
+  if (!skparser->has_grid())
+    skparser->set_grid(kpts);
+  cout << "Grid computed.\n";
+
+  skparser->get_grid(gridx, gridy, gridz);
+}
+
 void QMCFiniteSize::printSkRawSphAvg(const vector<RealType>& sk)
 {
   vector<RealType> vsk_1d(Klist.kshell.size());
@@ -460,33 +480,33 @@ QMCFiniteSize::RealType QMCFiniteSize::calcPotentialDiscrete(vector<RealType> sk
 QMCFiniteSize::RealType QMCFiniteSize::calcPotentialInt(vector<RealType> sk)
 {
   UBspline_3d_d* spline = getSkSpline(sk);
+  
+  RealType kmax = AA->get_kc();
+  IndexType ngrid = 2*Klist.kshell.size() - 1; //make a lager kmesh
 
-  RealType kmax   = AA->get_kc();
-  IndexType ngrid = Klist.kshell.size() - 1;
-  vector<RealType> nonunigrid1d(ngrid + 2); //The +2 includes the k=0 point and the k=kmax point.
-  nonunigrid1d[0]         = 0.0;
-  nonunigrid1d[ngrid + 1] = kmax;
+  vector<RealType> nonunigrid1d, k2vksk;
+  RealType dk = kmax / ngrid;
 
-  vector<RealType> k2vksk(ngrid + 2);
-  k2vksk[0]         = 0.0;
-  k2vksk[ngrid + 1] = 0.0;
-
-  for (int ks = 0; ks < ngrid; ks++)
+  nonunigrid1d.push_back(0.0);
+  k2vksk.push_back(0.0);
+  for (int i = 1; i < ngrid; i++)
   {
-    RealType kval        = std::sqrt(Klist.ksq[Klist.kshell[ks]]);
-    nonunigrid1d[ks + 1] = kval;
-    RealType skavg       = sphericalAvgSk(spline, kval);
-    RealType vk          = AA->Fk_symm[ks];
-    k2vksk[ks + 1]       = 0.5 * vk * skavg * kval * kval;
+    RealType kval = i*dk;
+    nonunigrid1d.push_back(kval);
+    RealType skavg = sphericalAvgSk(spline,kval);
+    RealType k2vk = kval*kval*AA->evaluate_vlr_k(kval); //evaluation for arbitrary kshell for any LRHandler
+    k2vksk.push_back(0.5 * k2vk * skavg);
   }
+
+  k2vksk.push_back(0.0);
+  nonunigrid1d.push_back(kmax);
 
   NUBspline_1d_d* integrand = spline_clamped(nonunigrid1d, k2vksk, 0.0, 0.0);
 
   //Integrate the spline and compute the thermodynamic limit.
-  RealType integratedval = integrate_spline(integrand, 0.0, kmax, 100);
+  RealType integratedval = integrate_spline(integrand, 0.0, kmax, 200);
   RealType intnorm       = Vol / 2.0 / M_PI / M_PI; //The volume factor here is because 1/Vol is
                                                     //included in QMCPACK's v_k.  See CoulombFunctor.
-
 
   return intnorm * integratedval;
 }
@@ -589,22 +609,8 @@ void QMCFiniteSize::summary()
 
 bool QMCFiniteSize::execute()
 {
-  //Initialize the long range breakup. Chosen in input xml
-  initBreakup();
-  Ne    = P->getTotalNum();
-  Vol   = P->Lattice.Volume;
-  rs    = std::pow(3.0 / (4 * M_PI) * Vol / RealType(Ne), 1.0 / 3.0);
-  rho   = RealType(Ne) / Vol;
-  Klist = P->SK->KLists;
-  kpts  = Klist.kpts; //These are in reduced coordinates.
-                      //Easier to spline, but will have to convert
-                      //for real space integration.
 
-  if (!skparser->has_grid())
-    skparser->set_grid(kpts);
-
-  cout << "Grid computed.\n";
-
+  initialize();
   //Print Spherical Avg from data
   SK_raw    = skparser->get_sk_raw();
   SKerr_raw = skparser->get_skerr_raw();
@@ -628,10 +634,8 @@ bool QMCFiniteSize::execute()
       SKerr[i] /= RealType(Ne);
     }
   }
-  skparser->get_grid(gridx, gridy, gridz);
   UBspline_3d_d* sk3d_spline = getSkSpline(SK);
   printSkSplineSphAvg(sk3d_spline);
-
 
   calcLeadingOrderCorrections();
   calcPotentialCorrection();

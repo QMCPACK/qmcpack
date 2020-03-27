@@ -75,7 +75,9 @@ public:
     return v0;
   }
 
-  inline mRealType evaluateLR_r0() { return 2.0 * Sigma / std::sqrt(M_PI); }
+  mRealType evaluate_vlr_k(mRealType k) override;
+
+  mRealType evaluateLR_r0() { return 2.0 * Sigma / std::sqrt(M_PI); }
 
   /**  evaluate the first derivative of the short range part at r
    *

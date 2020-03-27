@@ -155,6 +155,8 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
     return vk;
   }
 
+  inline mRealType evaluate_vlr_k(mRealType k) override { return evalFk(k); }
+
 private:
   inline mRealType evalFk(mRealType k)
   {

@@ -117,6 +117,8 @@ public:
     return v;
   }
 
+  inline mRealType evaluate_vlr_k(mRealType k) { return evalYk(k); }
+
   /**  evaluate the first derivative of the short range part at r
    *
    * @param r  radius

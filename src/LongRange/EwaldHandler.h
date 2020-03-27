@@ -93,6 +93,8 @@ public:
    */
   inline mRealType srDf(mRealType r, mRealType rinv) { return 0.0; }
 
+  inline mRealType evaluate_vlr_k(mRealType k) override;
+
   void fillFk(KContainer& KList);
 
   /** evaluate k-dependent

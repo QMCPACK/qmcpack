@@ -55,6 +55,8 @@ struct LRHandlerBase
   ///Coefficient for strain fit.
   std::vector<mRealType> gstraincoefs;
 
+  virtual mRealType evaluate_vlr_k(mRealType k) = 0;
+
 
   //constructor
   explicit LRHandlerBase(mRealType kc) : MaxKshell(0), LR_kc(kc), LR_rc(0), ClassName("LRHandlerBase") {}
@@ -323,6 +325,7 @@ struct DummyLRHandler : public LRHandlerBase
     }
   }
 
+  mRealType evaluate_vlr_k(mRealType k) override { return 0.0; }
   mRealType evaluate(mRealType r, mRealType rinv) { return 0.0; }
   mRealType evaluateLR(mRealType r) { return 0.0; }
   mRealType srDf(mRealType r, mRealType rinv) { return 0.0; }

@@ -106,6 +106,31 @@ void EwaldHandler::fillFk(KContainer& KList)
   app_log().flush();
 }
 
+EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k)
+{
+  mRealType uk = 0.0;
+  if (SuperCellEnum == SUPERCELL_SLAB)
+  {
+    mRealType knorm           = M_PI / Area;
+    uk = knorm / k; //pi/(A*k)
+  }
+  else
+  {
+#if OHMMS_DIM == 2
+    mRealType kgauss       = 1.0 / (4 * Sigma * Sigma);
+    mRealType knorm        = 2 * M_PI / Volume;
+    mRealType k2 = k * k;
+    uk  = knorm * std::exp(-k2 * kgauss) / k2;
+#elif OHMMS_DIM == 3
+    mRealType kgauss       = 1.0 / (4 * Sigma * Sigma);
+    mRealType knorm        = 4 * M_PI / Volume;
+    mRealType k2 = k * k; 
+    uk  = knorm * std::exp(-k2 * kgauss) / k2;
+  }
+#endif
+  return uk;
+}
+
 EwaldHandler::mRealType EwaldHandler::evaluate_slab(mRealType z,
                                                     const std::vector<int>& kshell,
                                                     const pComplexType* restrict eikr_i,
