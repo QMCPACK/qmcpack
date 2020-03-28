@@ -140,6 +140,42 @@ public:
                              B_lapl, *detData, N1, N2, NP1, NP2, lookup_tbl);
   }
 
+  void evaluateDerivativesWF(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           const MultiDiracDeterminant& pseudo_dn,
+                           const PsiValueType& psiCurrent,
+                           const std::vector<ValueType>& Coeff,
+                           const std::vector<size_t>& C2node_up,
+                           const std::vector<size_t>& C2node_dn)
+  {
+    if (!Optimizable)
+      return;
+
+    const ValueVector_t& detValues_up = detValues;
+    const ValueVector_t& detValues_dn = pseudo_dn.detValues;
+    const ValueMatrix_t& M_up         = psiM;
+    const ValueMatrix_t& M_dn         = pseudo_dn.psiM;
+    const ValueMatrix_t& Minv_up      = psiMinv;
+    const ValueMatrix_t& Minv_dn      = pseudo_dn.psiMinv;
+
+    Phi->evaluateDerivativesWF(P,
+                                optvars, 
+                                dlogpsi, 
+                                psiCurrent, 
+                                Coeff, 
+                                C2node_up, 
+                                C2node_dn, 
+                                detValues_up,
+                                detValues_dn, 
+                                M_up, 
+                                M_dn, 
+                                Minv_up, 
+                                Minv_dn, 
+                                *detData, 
+                                lookup_tbl);
+  }
+
 
   inline void reportStatus(std::ostream& os) {}
   void resetTargetParticleSet(ParticleSet& P) { Phi->resetTargetParticleSet(P); }

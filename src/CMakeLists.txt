@@ -222,6 +222,12 @@ ENDIF()
     LongRange/LRCoulombSingleton.cpp
     )
 
+  IF(ENABLE_OFFLOAD)
+    SET(PARTICLE ${PARTICLE}
+      Particle/createDistanceTableABOMP.cpp
+      )
+  ENDIF(ENABLE_OFFLOAD)
+
   IF(OHMMS_DIM MATCHES 2)
     SET(PARTICLE ${PARTICLE} LongRange/TwoDEwaldHandler.cpp)
   ENDIF(OHMMS_DIM MATCHES 2)
@@ -255,12 +261,12 @@ ENDIF()
   SUBDIRS(einspline)
   SUBDIRS(MinimalContainers)
 
-  if(QMC_BUILD_SANDBOX_ONLY)
+if(QMC_BUILD_SANDBOX_ONLY)
 
-    MESSAGE(STATUS "Minimal build: only Sandbox")
-    SUBDIRS(Sandbox)
+  MESSAGE(STATUS "Minimal build: only Sandbox")
+  SUBDIRS(Sandbox)
 
-  else() #{{{
+else() #{{{
 
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)

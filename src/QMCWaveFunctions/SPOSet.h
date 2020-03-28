@@ -197,6 +197,26 @@ public:
                                    const std::vector<std::vector<int>>& lookup_tbl)
   {}
 
+  /** Evaluate the derivative of the optimized orbitals with respect to the parameters
+   *  this is used only for MSD, to be refined for better serving both single and multi SD
+   */
+  virtual void evaluateDerivativesWF(ParticleSet& P,
+                                   const opt_variables_type& optvars,
+                                   std::vector<ValueType>& dlogpsi,
+                                   const QTFull::ValueType& psiCurrent,
+                                   const std::vector<ValueType>& Coeff,
+                                   const std::vector<size_t>& C2node_up,
+                                   const std::vector<size_t>& C2node_dn,
+                                   const ValueVector_t& detValues_up,
+                                   const ValueVector_t& detValues_dn,
+                                   const ValueMatrix_t& M_up,
+                                   const ValueMatrix_t& M_dn,
+                                   const ValueMatrix_t& Minv_up,
+                                   const ValueMatrix_t& Minv_dn,
+                                   const std::vector<int>& detData_up,
+                                   const std::vector<std::vector<int>>& lookup_tbl)
+  {}
+
 
   /** reset the target particleset
    *  this is used to reset the pointer to ion-electron distance table needed by LCAO basis set.
