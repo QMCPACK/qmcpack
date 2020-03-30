@@ -7,3 +7,4 @@ CheckOptions: [ { key: readability-identifier-naming.NamespaceCase, value: lower
                 { key: readability-identifier-naming.VariableCase, value: lower_case },
                 { key: readability-identifier-naming.ClassMethodCase, value: camelBack },
                 { key: readability-identifier-naming.PrivateMemberPostfix, value: _ }]
+                
