@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //
@@ -61,8 +61,8 @@ void EwaldHandler3D::fillFk(KContainer& KList)
 
   Fk_symm.resize(MaxKshell);
   kMag.resize(MaxKshell);
-  mRealType kgauss       = 1.0 / (4 * Sigma * Sigma);
-  mRealType knorm        = 4 * M_PI / Volume;
+  mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
+  mRealType knorm  = 4 * M_PI / Volume;
   for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
   {
     mRealType t2e = KList.ksq[ki] * kgauss;
@@ -78,4 +78,13 @@ void EwaldHandler3D::fillFk(KContainer& KList)
   PreFactors[3] = 0.0;
   app_log().flush();
 }
+
+EwaldHandler3D::mRealType EwaldHandler3D::evaluate_vlr_k(mRealType k)
+{
+  mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
+  mRealType knorm  = 4 * M_PI / Volume;
+  mRealType k2     = k * k;
+  return knorm * std::exp(-k2 * kgauss) / k2;
+}
+
 } // namespace qmcplusplus
