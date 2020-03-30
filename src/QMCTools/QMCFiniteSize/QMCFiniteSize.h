@@ -46,42 +46,33 @@ public:
   RealType calcPotentialInt(vector<RealType> sk);
 
 private:
+  SkParserBase* skparser;
+  ParticleSetPool ptclPool;
+  RealType myRcut;
+  RealType myConst;
+  ParticleSet* P;
   RealType h; //this is for finite differencing.
   LRHandlerType* AA;
   GridType* myGrid;
   RadFunctorType* rVs;
-
-  ParticleSet* P;
-
-  SkParserBase* skparser;
   bool processPWH(xmlNodePtr cur);
   bool wfnPut(xmlNodePtr cur);
   void initBreakup();
-
-  ParticleSetPool ptclPool;
-
-  RealType myConst;
-  RealType myRcut;
-
   Grid_t gridx;
   Grid_t gridy;
   Grid_t gridz;
-
   void printSkRawSphAvg(const vector<RealType>& sk);
   void printSkSplineSphAvg(UBspline_3d_d* spline);
   KContainer Klist;
   vector<TinyVector<int, OHMMS_DIM>> kpts;
-
   vector<RealType> SK_raw;
   vector<RealType> SKerr_raw;
   vector<RealType> SK;
   vector<RealType> SKerr;
-
   IndexType mtheta;
   IndexType mphi;
   IndexType NumSamples;
   vector<PosType> sphericalgrid;
-
   RealType Ne, Vol, rs, rho;
   RealType tlo, tloerr, vlo, vloerr, Vfs, Vfserr;
 };

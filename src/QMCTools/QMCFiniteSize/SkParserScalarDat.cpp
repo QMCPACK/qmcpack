@@ -103,7 +103,7 @@ void SkParserScalarDat::read_sk_file(const string& fname)
 }
 
 
-bool SkParserScalarDat::parse(const string& fname)
+void SkParserScalarDat::parse(const string& fname)
 {
   // vector<vector<RealType> > rawdata(0);
   read_sk_file(fname);

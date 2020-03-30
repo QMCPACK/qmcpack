@@ -20,7 +20,7 @@ public:
   SkParserBase();
   ~SkParserBase(){};
 
-  virtual bool parse(const string& fname) = 0;
+  virtual void parse(const string& fname) = 0;
 
   void get_grid(Grid_t& xgrid, Grid_t& ygrid, Grid_t& zgrid);
   void get_sk(vector<RealType>& sk, vector<RealType>& skerr);

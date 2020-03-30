@@ -66,7 +66,7 @@ vector<RealType> SkParserASCII::get_skerr_from_data(vector<vector<RealType>>& fi
   return skerr;
 }
 
-bool SkParserASCII::parse(const string& fname)
+void SkParserASCII::parse(const string& fname)
 {
   vector<vector<RealType>> rawdata(0);
   rawdata   = read_sk_file(fname);

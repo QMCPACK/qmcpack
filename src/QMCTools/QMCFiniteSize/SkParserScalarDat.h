@@ -28,7 +28,7 @@ public:
     SKERR
   };
 
-  bool parse(const string& fname);
+  void parse(const string& fname);
 
 private:
   void read_sk_file(const string& fname);
