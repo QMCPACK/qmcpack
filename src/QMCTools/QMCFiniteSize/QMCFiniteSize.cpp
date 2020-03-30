@@ -13,7 +13,7 @@
 
 namespace qmcplusplus
 {
-QMCFiniteSize::QMCFiniteSize() : skparser(NULL), ptclPool(NULL), myRcut(0.0), myConst(0.0), P(NULL), h(0.0)
+QMCFiniteSize::QMCFiniteSize() : skparser(NULL), ptclPool(NULL), myRcut(0.0), myConst(0.0), P(NULL), h(0.0), sphericalgrid(0), myGrid(NULL)
 {
   IndexType mtheta = 80;
   IndexType mphi   = 80;
@@ -23,7 +23,7 @@ QMCFiniteSize::QMCFiniteSize() : skparser(NULL), ptclPool(NULL), myRcut(0.0), my
 }
 
 QMCFiniteSize::QMCFiniteSize(SkParserBase* skparser_i)
-    : skparser(skparser_i), ptclPool(NULL), myRcut(0.0), myConst(0.0), P(NULL), h(0.0), sphericalgrid(0)
+    : skparser(skparser_i), ptclPool(NULL), myRcut(0.0), myConst(0.0), P(NULL), h(0.0), sphericalgrid(0), myGrid(NULL)
 {
   mtheta     = 80;
   mphi       = 80;
@@ -99,10 +99,11 @@ bool QMCFiniteSize::validateXML()
   app_log() << " Summary of QMC systems \n";
   app_log() << "=========================================================\n";
   ptclPool.get(app_log());
+  return true;
 }
 
 
-bool QMCFiniteSize::wfnPut(xmlNodePtr cur)
+void QMCFiniteSize::wfnPut(xmlNodePtr cur)
 {
   std::string id("psi0"), target("e"), role("extra");
   OhmmsAttributeSet pAttrib;
@@ -640,6 +641,8 @@ bool QMCFiniteSize::execute()
   calcPotentialCorrection();
 
   summary();
+
+  return true;
 }
 
 } // namespace qmcplusplus

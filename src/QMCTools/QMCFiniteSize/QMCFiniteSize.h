@@ -52,11 +52,12 @@ private:
   RealType myConst;
   ParticleSet* P;
   RealType h; //this is for finite differencing.
-  LRHandlerType* AA;
+  vector<PosType> sphericalgrid;
   GridType* myGrid;
+  LRHandlerType* AA;
   RadFunctorType* rVs;
   bool processPWH(xmlNodePtr cur);
-  bool wfnPut(xmlNodePtr cur);
+  void wfnPut(xmlNodePtr cur);
   void initBreakup();
   Grid_t gridx;
   Grid_t gridy;
@@ -72,7 +73,6 @@ private:
   IndexType mtheta;
   IndexType mphi;
   IndexType NumSamples;
-  vector<PosType> sphericalgrid;
   RealType Ne, Vol, rs, rho;
   RealType tlo, tloerr, vlo, vloerr, Vfs, Vfserr;
 };
