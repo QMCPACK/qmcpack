@@ -105,6 +105,22 @@ public:
                            const size_t NP2,
                            const std::vector<std::vector<int>>& lookup_tbl) override;
 
+  void evaluateDerivativesWF(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           const QTFull::ValueType& psiCurrent,
+                           const std::vector<ValueType>& Coeff,
+                           const std::vector<size_t>& C2node_up,
+                           const std::vector<size_t>& C2node_dn,
+                           const ValueVector_t& detValues_up,
+                           const ValueVector_t& detValues_dn,
+                           const ValueMatrix_t& M_up,
+                           const ValueMatrix_t& M_dn,
+                           const ValueMatrix_t& Minv_up,
+                           const ValueMatrix_t& Minv_dn,
+                           const std::vector<int>& detData_up,
+                           const std::vector<std::vector<int>>& lookup_tbl) override;
+
   //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
   void table_method_eval(std::vector<ValueType>& dlogpsi,
                          std::vector<ValueType>& dhpsioverpsi,
@@ -133,6 +149,22 @@ public:
                          const size_t N2,
                          const size_t NP1,
                          const size_t NP2,
+                         const std::vector<std::vector<int>>& lookup_tbl);
+
+  void table_method_evalWF(std::vector<ValueType>& dlogpsi,
+                         const size_t nel,
+                         const size_t nmo,
+                         const ValueType& psiCurrent,
+                         const std::vector<RealType>& Coeff,
+                         const std::vector<size_t>& C2node_up,
+                         const std::vector<size_t>& C2node_dn,
+                         const ValueVector_t& detValues_up,
+                         const ValueVector_t& detValues_dn,
+                         const ValueMatrix_t& M_up,
+                         const ValueMatrix_t& M_dn,
+                         const ValueMatrix_t& Minv_up,
+                         const ValueMatrix_t& Minv_dn,
+                         const std::vector<int>& detData_up,
                          const std::vector<std::vector<int>>& lookup_tbl);
 
   void checkInVariables(opt_variables_type& active) override

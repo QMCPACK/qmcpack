@@ -37,8 +37,8 @@
 namespace qmcplusplus
 {
 
-MCWalkerConfiguration::MCWalkerConfiguration()
-    :
+MCWalkerConfiguration::MCWalkerConfiguration(const DynamicCoordinateKind kind)
+    : ParticleSet(kind),
 #ifdef QMC_CUDA
       RList_GPU("MCWalkerConfiguration::RList_GPU"),
       GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
