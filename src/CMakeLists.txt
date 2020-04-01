@@ -243,14 +243,14 @@ ENDIF()
     Particle/HDFWalkerInput_0_4.cpp
     )
 
-  IF(OHMMS_DIM  MATCHES 3)
+  IF(OHMMS_DIM MATCHES 3)
     SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
-  ENDIF(OHMMS_DIM  MATCHES 3)
+  ENDIF(OHMMS_DIM MATCHES 3)
 
   #Need to add this if nothing else but miniapps is compiled
-  if(QMC_BUILD_SANDBOX_ONLY)
-    set(PARTICLE  ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
-  endif()
+  IF(QMC_BUILD_SANDBOX_ONLY)
+    SET(PARTICLE ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
+  ENDIF(QMC_BUILD_SANDBOX_ONLY)
 
   ADD_LIBRARY(qmcbase ${PARTICLE} ${PARTICLEIO})
 
