@@ -11,7 +11,7 @@ Script is designed to run inside a user-level cronjob. `chronic` from more utils
 helpful to silence the script when everything runs correctly. More information
 about `chronic` can be found here at https://packages.debian.org/unstable/utils/moreutils
 
-Here is an example of how to add it to yoru crontab:
+Here is an example of how to add it to your crontab:
 ```
 MAILTO=naromero@anl.gov
 0  18 * * 0,3,5 chronic /home/naromero/nightly_anl_gce.sh
@@ -35,7 +35,7 @@ This is the compiler configuration that is very site-specific and is included as
 
 This file should be placed in `~/.spack/linux/compilers.yaml`
 
-If you are using compilers on top of modules, Spack will need to have the corret module name.
+If you are using compilers on top of modules, Spack will need to have the correct module name.
 
 
 ## Other Notes
