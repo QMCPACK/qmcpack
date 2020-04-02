@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //
@@ -75,7 +75,9 @@ public:
     return v0;
   }
 
-  inline mRealType evaluateLR_r0() { return 2.0 * Sigma / std::sqrt(M_PI); }
+  mRealType evaluate_vlr_k(mRealType k) override;
+
+  mRealType evaluateLR_r0() { return 2.0 * Sigma / std::sqrt(M_PI); }
 
   /**  evaluate the first derivative of the short range part at r
    *

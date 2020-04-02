@@ -41,7 +41,10 @@ public:
 
   DynamicCoordinates(const DynamicCoordinateKind kind_in) : variable_kind_(kind_in) {}
 
-  DynamicCoordinateKind getKindvariable() const { return variable_kind_; }
+  DynamicCoordinates(const DynamicCoordinates&) = default;
+  DynamicCoordinates& operator=(const DynamicCoordinates&) = delete;
+
+  DynamicCoordinateKind getKind() const { return variable_kind_; }
 
   virtual ~DynamicCoordinates() = default;
 

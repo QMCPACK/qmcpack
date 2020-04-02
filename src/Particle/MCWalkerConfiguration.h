@@ -127,7 +127,7 @@ public:
 #endif
 
   ///default constructor
-  MCWalkerConfiguration();
+  MCWalkerConfiguration(const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
   ///default constructor: copy only ParticleSet
   MCWalkerConfiguration(const MCWalkerConfiguration& mcw);
