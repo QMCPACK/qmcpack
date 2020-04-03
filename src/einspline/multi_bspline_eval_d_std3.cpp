@@ -537,9 +537,6 @@ eval_multi_UBspline_3d_d_vgh (const multi_UBspline_3d_d *spline,
   double uz = z*spline->z_grid.delta_inv;
   double ipartx, iparty, ipartz, tx, ty, tz;
 
-  //tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
-  //ty = std::modf (uy, &iparty);  int iy = (int) iparty;
-  //tz = std::modf (uz, &ipartz);  int iz = (int) ipartz;
   tx = std::modf (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
   ty = std::modf (uy, &iparty);  int iy = std::min(std::max(0,(int) iparty),spline->y_grid.num-1);
   tz = std::modf (uz, &ipartz);  int iz = std::min(std::max(0,(int) ipartz),spline->z_grid.num-1);
@@ -751,9 +748,6 @@ eval_multi_UBspline_3d_d_vgl (const multi_UBspline_3d_d *spline,
   double uy = y*spline->y_grid.delta_inv;
   double uz = z*spline->z_grid.delta_inv;
   double ipartx, iparty, ipartz, tx, ty, tz;
-  //tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
-  //ty = std::modf (uy, &iparty);  int iy = (int) iparty;
-  //tz = std::modf (uz, &ipartz);  int iz = (int) ipartz;
   tx = std::modf (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
   ty = std::modf (uy, &iparty);  int iy = std::min(std::max(0,(int) iparty),spline->y_grid.num-1);
   tz = std::modf (uz, &ipartz);  int iz = std::min(std::max(0,(int) ipartz),spline->z_grid.num-1);
