@@ -18,8 +18,7 @@
 //  Boston, MA  02110-1301  USA                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-#include <stdio.h>
-#include <math.h>
+#include <cmath>
 #include "bspline_base.h"
 #include "multi_nubspline_structs.h"
 #include "multi_nubspline_eval_z.h"
@@ -130,11 +129,11 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   y -= spline->y_grid.start;
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
-//   ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
-//   uy = fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
+//   ux = std::fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
+//   uy = std::fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
 //   double ipartx, iparty, tx, ty;
-//   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-//   ty = modf (uy, &iparty);  int iy = (int) iparty;
+//   tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+//   ty = std::modf (uy, &iparty);  int iy = (int) iparty;
 
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
@@ -213,11 +212,11 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   y -= spline->y_grid.start;
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
-//   ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
-//   uy = fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
+//   ux = std::fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
+//   uy = std::fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
 //   double ipartx, iparty, tx, ty;
-//   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-//   ty = modf (uy, &iparty);  int iy = (int) iparty;
+//   tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+//   ty = std::modf (uy, &iparty);  int iy = (int) iparty;
 
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
@@ -327,11 +326,11 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   y -= spline->y_grid.start;
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
-//   ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
-//   uy = fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
+//   ux = std::fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
+//   uy = std::fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
 //   double ipartx, iparty, tx, ty;
-//   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-//   ty = modf (uy, &iparty);  int iy = (int) iparty;
+//   tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+//   ty = std::modf (uy, &iparty);  int iy = (int) iparty;
 
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
@@ -458,11 +457,11 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   y -= spline->y_grid.start;
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
-//   ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
-//   uy = fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
+//   ux = std::fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
+//   uy = std::fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
 //   double ipartx, iparty, tx, ty;
-//   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-//   ty = modf (uy, &iparty);  int iy = (int) iparty;
+//   tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+//   ty = std::modf (uy, &iparty);  int iy = (int) iparty;
 
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
@@ -587,13 +586,13 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
 //   double uz = z*spline->z_grid.delta_inv;
-//   ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
-//   uy = fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
-//   uz = fmin (uz, (double)(spline->z_grid.num)-1.0e-5);
+//   ux = std::fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
+//   uy = std::fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
+//   uz = std::fmin (uz, (double)(spline->z_grid.num)-1.0e-5);
 //   double ipartx, iparty, ipartz, tx, ty, tz;
-//   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-//   ty = modf (uy, &iparty);  int iy = (int) iparty;
-//   tz = modf (uz, &ipartz);  int iz = (int) ipartz;
+//   tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+//   ty = std::modf (uy, &iparty);  int iy = (int) iparty;
+//   tz = std::modf (uz, &ipartz);  int iz = (int) ipartz;
 
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
@@ -736,13 +735,13 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
 //   double uz = z*spline->z_grid.delta_inv;
-//   ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
-//   uy = fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
-//   uz = fmin (uz, (double)(spline->z_grid.num)-1.0e-5);
+//   ux = std::fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
+//   uy = std::fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
+//   uz = std::fmin (uz, (double)(spline->z_grid.num)-1.0e-5);
 //   double ipartx, iparty, ipartz, tx, ty, tz;
-//   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-//   ty = modf (uy, &iparty);  int iy = (int) iparty;
-//   tz = modf (uz, &ipartz);  int iz = (int) ipartz;
+//   tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+//   ty = std::modf (uy, &iparty);  int iy = (int) iparty;
+//   tz = std::modf (uz, &ipartz);  int iz = (int) ipartz;
 
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
@@ -877,13 +876,13 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
 //   double uz = z*spline->z_grid.delta_inv;
-//   ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
-//   uy = fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
-//   uz = fmin (uz, (double)(spline->z_grid.num)-1.0e-5);
+//   ux = std::fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
+//   uy = std::fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
+//   uz = std::fmin (uz, (double)(spline->z_grid.num)-1.0e-5);
 //   double ipartx, iparty, ipartz, tx, ty, tz;
-//   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-//   ty = modf (uy, &iparty);  int iy = (int) iparty;
-//   tz = modf (uz, &ipartz);  int iz = (int) ipartz;
+//   tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+//   ty = std::modf (uy, &iparty);  int iy = (int) iparty;
+//   tz = std::modf (uz, &ipartz);  int iz = (int) ipartz;
 
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
@@ -1042,13 +1041,13 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 //   double ux = x*spline->x_grid.delta_inv;
 //   double uy = y*spline->y_grid.delta_inv;
 //   double uz = z*spline->z_grid.delta_inv;
-//   ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
-//   uy = fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
-//   uz = fmin (uz, (double)(spline->z_grid.num)-1.0e-5);
+//   ux = std::fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
+//   uy = std::fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
+//   uz = std::fmin (uz, (double)(spline->z_grid.num)-1.0e-5);
 //   double ipartx, iparty, ipartz, tx, ty, tz;
-//   tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-//   ty = modf (uy, &iparty);  int iy = (int) iparty;
-//   tz = modf (uz, &ipartz);  int iz = (int) ipartz;
+//   tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+//   ty = std::modf (uy, &iparty);  int iy = (int) iparty;
+//   tz = std::modf (uz, &ipartz);  int iz = (int) ipartz;
 
 //   int xs = spline->x_stride;
 //   int ys = spline->y_stride;
