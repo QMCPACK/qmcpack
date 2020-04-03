@@ -1,8 +1,8 @@
 #/bin/bash
 
-. $SPACK_ROOT/share/spack/setup-env.sh
-
-. ../tests/test_automation/spack_supported_package_versions.sh
+SRC="${BASH_SOURCE[0]}"
+SRC_DIR="$( cd -P "$( dirname "$SRC" )" >/dev/null 2>&1 && pwd )"
+. ${SRC_DIR}/start_spack_env.sh
 
 #temporary change from clang$llvm_vnew
 

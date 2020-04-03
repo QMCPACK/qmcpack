@@ -66,7 +66,7 @@ echo --- End listings
 
 # GCC
 # Dates at https://gcc.gnu.org/releases.html
-gcc_vnew=9.2.0 # 2019-08-12
+gcc_vnew=9.3.0 # 2020-03-12
 
 #Zen2 optimziations are only in gcc 9.1+, with improved scheduling in 9.2+
 #For now, only use newer compilers
@@ -118,7 +118,8 @@ spack install cmake@${cmake_vnew}%gcc@${gcc_vnew}
 spack install boost@${boost_vnew}%gcc@${gcc_vnew}
 spack install openmpi@${ompi_vnew}%gcc@${gcc_vnew} fabrics=auto ^libxml2@${libxml2_vnew}%gcc@${gcc_vnew}
 #spack HDF5 package requires fortran and hl (high level) support to be specifically enabled for use with QE
-spack install hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl ^openmpi@${ompi_vnew}%gcc@${gcc_vnew} fabrics=auto
+#spack install hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl ^openmpi@${ompi_vnew}%gcc@${gcc_vnew} fabrics=auto
+spack install hdf5@${hdf5_vnew}%gcc@${gcc_vnew} +fortran +hl -mpi #Avoid MPI otherwise nompi build can break
 spack install fftw@${fftw_vnew}%gcc@${gcc_vnew} ^openmpi@${ompi_vnew}%gcc@${gcc_vnew} fabrics=auto
 spack unload gcc@${gcc_vnew}
 echo --- gcc@${gcc_vcuda}

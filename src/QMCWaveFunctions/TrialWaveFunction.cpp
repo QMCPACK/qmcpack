@@ -1034,14 +1034,14 @@ void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value
   }
 }
 
-std::vector<std::reference_wrapper<WaveFunctionComponent>> TrialWaveFunction::extractWFCRefList(
-    const std::vector<std::reference_wrapper<TrialWaveFunction>>& wf_list,
+RefVector<WaveFunctionComponent> TrialWaveFunction::extractWFCRefList(
+    const RefVector<TrialWaveFunction>& wf_list,
     int id)
 {
   std::vector<std::reference_wrapper<WaveFunctionComponent>> wfc_list;
   wfc_list.reserve(wf_list.size());
-  for (auto wf : wf_list)
-    wfc_list.push_back(*(wf.get().Z[id]));
+  for (TrialWaveFunction& wf : wf_list)
+    wfc_list.push_back(*wf.Z[id]);
   return wfc_list;
 }
 
