@@ -97,7 +97,7 @@ int XmlStream::checkForPOD(const XmlElement& before, const XmlElement& after) co
 
   long length = after.startLoc - before.endLoc;
   long position = 0;
-  char c;
+  int c;
   int inComment = 0;
   while (foundPOD == 0 && position < length) 
   {
@@ -147,9 +147,9 @@ int XmlStream::addNextTag()
 {
   std::streampos start;
   std::streampos end;
-  int twoprev = '0';
-  int prev = '0';
-  int current = '0';
+  int twoprev = 0;
+  int prev = 0;
+  int current = 0;
   
   int isProcessingInstruction = 0;
   int isComment = 0;
@@ -173,9 +173,9 @@ int XmlStream::addNextTag()
 	stream_->get();
 	openCaretFound = 1;
       }
-      char one = stream_->get();
-      char two = stream_->get();
-      char three = stream_->get();
+      int one = stream_->get();
+      int two = stream_->get();
+      int three = stream_->get();
       if (one == '\?') 
       {
 	isProcessingInstruction = 1;
