@@ -382,9 +382,7 @@ private:
 
   static std::vector<WaveFunctionComponent*> extractWFCPtrList(const UPtrVector<TrialWaveFunction>& WF_list, int id);
 
-  static std::vector<std::reference_wrapper<WaveFunctionComponent>> extractWFCRefList(
-      const std::vector<std::reference_wrapper<TrialWaveFunction>>& WF_list,
-      int id);
+  static RefVector<WaveFunctionComponent> extractWFCRefList( const RefVector<TrialWaveFunction>& WF_list, int id);
   /** }@ */
 
   // helper function for extrating a list of gradients from a list of TrialWaveFunction

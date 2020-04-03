@@ -12,7 +12,7 @@
 
 #include "DynamicCoordinatesBuilder.h"
 #include "Particle/RealSpacePositions.h"
-#include "Particle/RealSpacePositionsOffload.h"
+#include "Particle/RealSpacePositionsOMP.h"
 
 namespace qmcplusplus
 {
@@ -23,8 +23,8 @@ std::unique_ptr<DynamicCoordinates> createDynamicCoordinates(const DynamicCoordi
   if (kind == DynamicCoordinateKind::DC_POS)
     return std::make_unique<RealSpacePositions>();
 #if defined(ENABLE_OFFLOAD)
-  else if(kind==DynamicCoordinateKind::DC_POS_OFFLOAD)
-    return std::make_unique<RealSpacePositionsOffload>();
+  else if (kind == DynamicCoordinateKind::DC_POS_OFFLOAD)
+    return std::make_unique<RealSpacePositionsOMP>();
 #endif
   else
     APP_ABORT("DynamicCoordinatesBuilder::createDynamicCoordinates unknown DynamicCoordinateKind");

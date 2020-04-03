@@ -23,7 +23,6 @@ PROJECT(qmctools)
 
 SET(MOSRCS
   ../Particle/InitMolecularSystem.cpp
-  ../Particle/ParticleSetPool.cpp
   QMCGaussianParserBase.cpp
   GaussianFCHKParser.cpp
   GamesXmlParser.cpp
@@ -67,6 +66,23 @@ ADD_EXECUTABLE(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
 TARGET_LINK_LIBRARIES(convertpw4qmc PRIVATE qmcutil Math::FFTW3)
 
 INSTALL(TARGETS convertpw4qmc
+        RUNTIME DESTINATION bin)
+
+SET(FSSRCS
+  QMCFiniteSize/QMCFiniteSize.cpp
+  QMCFiniteSize/SkParserBase.cpp
+  QMCFiniteSize/SkParserASCII.cpp
+  QMCFiniteSize/SkParserScalarDat.cpp
+  QMCFiniteSize/FSUtilities.cpp
+)
+
+ADD_LIBRARY(fstool ${FSSRCS})
+TARGET_LINK_LIBRARIES(fstool PUBLIC qmc qmcbase qmcwfs)
+
+ADD_EXECUTABLE(qmcfinitesize qmcfinitesize.cpp)
+TARGET_LINK_LIBRARIES(qmcfinitesize PRIVATE fstool)
+
+INSTALL(TARGETS qmcfinitesize
         RUNTIME DESTINATION bin)
 
 #ppconvert
