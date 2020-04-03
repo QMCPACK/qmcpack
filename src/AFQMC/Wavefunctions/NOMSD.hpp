@@ -47,6 +47,7 @@ namespace afqmc
  * Designed for non-orthogonal MSD expansions. 
  * For particle-hole orthogonal MSD wfns, use FastMSD.
  */  
+template<class devPsiT>
 class NOMSD: public AFQMCInfo
 { 
 
@@ -74,6 +75,7 @@ class NOMSD: public AFQMCInfo
   using CTensor_ref = boost::multi::array_ref<ComplexType,3,pointer>;
   using CTensor_cref = boost::multi::array_ref<const ComplexType,3,const_pointer>;
   using shmCVector = boost::multi::array<ComplexType,1,Allocator_shared>;  
+  using shmCMatrix = boost::multi::array<ComplexType,2,Allocator_shared>;  
   using shared_mutex = boost::mpi3::shm::mutex;  
 
   using stdCVector = boost::multi::array<ComplexType,1>;  
@@ -87,23 +89,25 @@ class NOMSD: public AFQMCInfo
 
   public:
 
+    template<class MType>
     NOMSD(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, 
           SlaterDetOperations&& sdet_,  
           HamiltonianOperations&& hop_, 
-          std::vector<ComplexType>&& ci_, std::vector<PsiT_Matrix>&& orbs_, 
+          std::vector<ComplexType>&& ci_, std::vector<MType>&& orbs_, 
           WALKER_TYPES wlk, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
                 alloc_(),  // right now device_allocator is default constructible 
                 alloc_shared_(make_localTG_allocator<ComplexType>(TG)),
                 SDetOp( std::move(sdet_) ), 
                 HamOp(std::move(hop_)),ci(std::move(ci_)),
-                OrbMats(move_vector<devPsiT_Matrix>(std::move(orbs_))),
+                OrbMats(move_vector<devPsiT>(std::move(orbs_))),
                 RefOrbMats({0,0},shared_allocator<ComplexType>{TG.Node()}),
-                walker_type(wlk),
-                nspins((walker_type==COLLINEAR)?(2):(1)),
-                NuclearCoulombEnergy(nce),
                 shmbuff_for_E(iextensions<1u>{1},alloc_shared_),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
+                walker_type(wlk),
+                nspins((walker_type==COLLINEAR)?(2):(1)),
+                number_of_references(-1),
+                NuclearCoulombEnergy(nce),
                 last_number_extra_tasks(-1),last_task_index(-1),
                 local_group_comm(),
                 shmbuff_for_G(nullptr),
@@ -118,6 +122,7 @@ class NOMSD: public AFQMCInfo
       transposed_vHS_ = HamOp.transposed_vHS();  
 
       excitedState = false;  
+      std::string rediag("");  
       std::string excited_file("");  
       std::string svd_Gf("no");
       std::string svd_O("no");
@@ -128,10 +133,13 @@ class NOMSD: public AFQMCInfo
       if(NMO > 1024 || NAEA > 512) nbatch_qr=0;
 
       ParameterSet m_param;
+      m_param.add(number_of_references,"number_of_references","int");
+      m_param.add(number_of_references,"nrefs","int");
       m_param.add(excited_file,"excited","std::string");
       // generalize this to multi-particle excitations, how do I read a list of integers???
       m_param.add(i_,"i","int");
       m_param.add(a_,"a","int");
+      m_param.add(rediag,"rediag","std::string");
       m_param.add(svd_Gf,"svd_with_Gfull","std::string");
       m_param.add(svd_Gm,"svd_with_Gmix","std::string");
       m_param.add(svd_O,"svd_with_Ovlp","std::string");
@@ -177,6 +185,10 @@ class NOMSD: public AFQMCInfo
         readWfn(excited_file,excitedOrbMat_,NMO,maxOccupExtendedMat.first,maxOccupExtendedMat.second);
         excitedOrbMat = excitedOrbMat_;
       }    
+
+      std::transform(rediag.begin(),rediag.end(),rediag.begin(),(int (*)(int)) tolower);
+      if(rediag == "yes" || rediag == "true") 
+         recompute_ci();
     }
 
     ~NOMSD() {
@@ -215,8 +227,8 @@ class NOMSD: public AFQMCInfo
     template<class Vec>
     void vMF(Vec&& v);
 
-    stdCMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, stdCVector const& vMF)
-    { return HamOp.getOneBodyPropagatorMatrix(TG,vMF); }
+    stdCMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG_, stdCVector const& vMF)
+    { return HamOp.getOneBodyPropagatorMatrix(TG_,vMF); }
 
     SlaterDetOperations* getSlaterDetOperations() {return std::addressof(SDetOp);} 
 
@@ -452,10 +464,13 @@ class NOMSD: public AFQMCInfo
      * Returns the number of reference Slater Matrices needed for back propagation.  
      */
     int number_of_references_for_back_propagation() const {
-      return ((walker_type==COLLINEAR)?OrbMats.size()/2:OrbMats.size());
+      if(number_of_references>0)   
+        return number_of_references; 
+      else  
+        return ((walker_type==COLLINEAR)?OrbMats.size()/2:OrbMats.size());
     }
 
-    ComplexType getReferenceWeight(int i) { return ci[i]; }
+    ComplexType getReferenceWeight(int i) const { return ci[i]; }
 
     /*
      * Returns the reference Slater Matrices needed for back propagation.  
@@ -476,16 +491,16 @@ class NOMSD: public AFQMCInfo
             for(int i=0; i<ndet; ++i) {
               boost::multi::array_ref<ComplexType,2> A_(to_address(RefOrbMats[i].origin()),
                                                         {nrow,ncol});  
-              csr::CSR2MAREF('H',OrbMats[i],A_);
+              ma::Matrix2MAREF('H',OrbMats[i],A_);
             }
           } else {
             for(int i=0; i<ndet; ++i) {
               boost::multi::array_ref<ComplexType,2> A_(to_address(RefOrbMats[i].origin()),
                                                         {NMO,NAEA});  
-              csr::CSR2MAREF('H',OrbMats[2*i],A_);
+              ma::Matrix2MAREF('H',OrbMats[2*i],A_);
               boost::multi::array_ref<ComplexType,2> B_(A_.origin()+A_.num_elements(),
                                                         {NMO,NAEB});  
-              csr::CSR2MAREF('H',OrbMats[2*i+1],B_);
+              ma::Matrix2MAREF('H',OrbMats[2*i+1],B_);
             }
           }
         } // TG.Node().root()
@@ -518,7 +533,7 @@ class NOMSD: public AFQMCInfo
     std::vector<ComplexType> ci;
 
     // eventually switched from CMatrix to SMHSparseMatrix(node)
-    std::vector<devPsiT_Matrix> OrbMats;
+    std::vector<devPsiT> OrbMats;
     mpi3CMatrix RefOrbMats;
 
     shmCVector shmbuff_for_E;
@@ -528,6 +543,8 @@ class NOMSD: public AFQMCInfo
     // in both cases below: closed_shell=0, UHF/ROHF=1, GHF=2
     WALKER_TYPES walker_type;
     int nspins;
+
+    int number_of_references;
 
     int nbatch;
     int nbatch_qr;
@@ -568,6 +585,8 @@ class NOMSD: public AFQMCInfo
 
     MPI_Request req_Gsend, req_Grecv;
     MPI_Request req_SMsend, req_SMrecv;
+
+    void recompute_ci();
 
     /* 
      * Computes the density matrix with respect to a given reference. 

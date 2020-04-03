@@ -398,6 +398,10 @@ struct ph_excitations
     return to_address(configurations.values()) + (*configurations.pointers_end(0));
   }
 
+  configuration_type const* configuration(int i) const {
+    return to_address(configurations.values()) + i; 
+  }
+
   Excitation_Iterator alpha_begin(int n) {
     assert(n>0);
     if(n<unique_alpha.size()) {

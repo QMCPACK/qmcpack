@@ -29,6 +29,7 @@
 #include "AFQMC/Numerics/detail/CUDA/Kernels/adiagApy.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/acAxpbB.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/zero_complex_part.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/axpyBatched.cuh"
 
 // Currently available:
 // Lvl-1: dot, axpy, scal
@@ -99,15 +100,15 @@ namespace qmc_cuda
   }
 
   // GEMV Specializations
-  template<typename T, typename Q1, typename Q2>
+  template<typename T, typename T2, typename Q1, typename Q2>
   inline static void gemv(char Atrans, int M, int N,
-                          T alpha,
+                          T2 alpha,
                           cuda_gpu_ptr<Q1> A, int lda,
                           cuda_gpu_ptr<Q2> x, int incx,
-                          T beta,
+                          T2 beta,
                           cuda_gpu_ptr<T> y, int incy)
   {
-    static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
+    static_assert(std::is_same<typename std::decay<Q1>::type,T2>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
     if(CUBLAS_STATUS_SUCCESS != cublas::cublas_gemv(*A.handles.cublas_handle,Atrans,
                                             M,N,alpha,to_address(A),lda,to_address(x),incx,
@@ -117,16 +118,16 @@ namespace qmc_cuda
 
   // GEMM Specializations
 // why is this not working with T const????
-  template<typename T, typename Q1, typename Q2> 
+  template<typename T, typename T2, typename Q1, typename Q2> 
   inline static void gemm(char Atrans, char Btrans, int M, int N, int K,
-                          T alpha,
+                          T2 alpha,
                           cuda_gpu_ptr<Q1> A, int lda,
                           cuda_gpu_ptr<Q2> B, int ldb,
-                          T beta,
+                          T2 beta,
                           cuda_gpu_ptr<T> C, int ldc)
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
-    static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
+    static_assert(std::is_same<typename std::decay<Q2>::type,T2>::value,"Wrong dispatch.\n");
     if(CUBLAS_STATUS_SUCCESS != cublas::cublas_gemm(*A.handles.cublas_handle,Atrans,Btrans,
                                             M,N,K,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(C),ldc)) 
       throw std::runtime_error("Error: cublas_gemm returned error code.");
@@ -287,6 +288,37 @@ namespace qmc_cuda
     delete [] A_h;
     delete [] B_h;
     delete [] C_h;
+  }
+
+  template<typename T1, typename T2, typename T3>
+  inline static void axpyBatched(int n, T1* x, cuda_gpu_ptr<T2>* a, int inca, 
+                                               cuda_gpu_ptr<T3>* b, int incb, int batchSize)
+  {
+    T2 const** a_ = new T2 const*[batchSize];
+    T3** b_ = new T3*[batchSize];
+    for(int i=0; i<batchSize; i++) {
+      a_[i] = to_address(a[i]);
+      b_[i] = to_address(b[i]);
+    }
+    kernels::axpy_batched_gpu(n,x,a_,inca,b_,incb,batchSize);
+    delete [] a_;
+    delete [] b_;
+  }
+
+  template<typename T1, typename T2, typename T3>
+  inline static void sumGwBatched(int n, T1* x, cuda_gpu_ptr<T2>* a, int inca,
+                                               cuda_gpu_ptr<T3>* b, int incb, 
+                                               int b0, int nw, int batchSize)
+  {
+    T2 const** a_ = new T2 const*[batchSize];
+    T3** b_ = new T3*[batchSize];
+    for(int i=0; i<batchSize; i++) {
+      a_[i] = to_address(a[i]);
+      b_[i] = to_address(b[i]);
+    }
+    kernels::sumGw_batched_gpu(n,x,a_,inca,b_,incb,b0,nw,batchSize);
+    delete [] a_;
+    delete [] b_;
   }
 
 }

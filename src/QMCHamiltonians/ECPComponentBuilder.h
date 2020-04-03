@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file ECPComponentBuilderBuilder.h
+/** @file
  * @brief Declaration of a builder class for an ECP component for an ionic type
  */
 #ifndef QMCPLUSPLUS_ECPCOMPONENT_BUILDER_H
@@ -33,8 +33,8 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
   typedef LocalECPotential::RadialPotentialType RadialPotentialType;
 
   int NumNonLocal;
-  int Lmax, Llocal, Nrule;
-  int NumSO; //The number of spin-orbit channels.
+  int Lmax, Llocal, Nrule, Srule;
+  int NumSO;  //The number of spin-orbit channels.
   int LmaxSO; //The maximum angular momentum of spin-orbit channels.
   int AtomicNumber;
   RealType Zeff;
@@ -91,7 +91,7 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
   **
   ** return void
   **
-  **/    
+  **/
   void buildSO(const std::vector<int>& angList,
                const Matrix<mRealType>& vnnso,
                RealType rmax,

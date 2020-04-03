@@ -21,8 +21,6 @@
 #include "QMCWaveFunctions/Jastrow/CountingJastrow.h"
 #include "QMCWaveFunctions/Jastrow/CountingJastrowBuilder.h"
 
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-
 #include <stdio.h>
 
 namespace qmcplusplus
@@ -134,6 +132,11 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   using RealType = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
   using VariableSet = optimize::VariableSet;
+  using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
+
+  Communicate* c;
+  OHMMS::Controller->initialize(0, NULL);
+  c = OHMMS::Controller;
 
   // initialize particle sets
   ParticleSet elec;
@@ -197,16 +200,13 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     </jastrow>";
   // test put for normalized_gaussian
   Libxml2Document doc;
-  TrialWaveFunction wf(NULL);
   bool parse_cj = doc.parseFromString(cj_normgauss_xml);
-  xmlNodePtr cj_root = doc.getRoot();
-  CountingJastrowBuilder cjb(elec, wf);
-  bool put_cj = cjb.put(cj_root);
-
   REQUIRE( parse_cj );
-  REQUIRE( put_cj );
 
-  CountingJastrow<CountingGaussianRegion>* cj = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(wf.getOrbitals()[0]);
+  xmlNodePtr cj_root = doc.getRoot();
+  CountingJastrowBuilder cjb(c, elec);
+
+  CountingJastrow<CountingGaussianRegion>* cj = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(cjb.buildComponent(cj_root));
   
   // reference for evaluateLog, evalGrad
   RealType Jval_exact = 7.8100074447e+00;
@@ -218,14 +218,14 @@ TEST_CASE("CountingJastrow","[wavefunction]")
 
 
   // test evaluateLog for cj
-  RealType logval = cj->evaluateLog(elec, elec.G, elec.L);
+  LogValueType logval = cj->evaluateLog(elec, elec.G, elec.L);
   for(int i = 0; i < num_els; ++i)
   {
     for(int k = 0; k < 3; ++k)
       REQUIRE( Jgrad_exact[i][k] == Approx( std::real(elec.G[i][k])) );
     REQUIRE( Jlap_exact[i] == Approx( std::real(elec.L[i])) );
   }
-  REQUIRE( Jval_exact == Approx(logval) );
+  REQUIRE( ComplexApprox(Jval_exact) == logval );
   
   // test automatic/minimal voronoi generator
   const char * cj_voronoi_xml = "<jastrow name=\"ncjf_voronoi\" type=\"Counting\" source=\"ion0\">\
@@ -241,17 +241,15 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     </jastrow>";
   // test put
   Libxml2Document doc2;
-  TrialWaveFunction wfv(NULL);
   bool parse_cjv = doc2.parseFromString(cj_voronoi_xml);
-  xmlNodePtr cjv_root = doc2.getRoot();
-  CountingJastrowBuilder cjvb(elec, wfv, ion0);
-  bool put_cjv = cjvb.put(cjv_root);
-
   REQUIRE( parse_cjv );
-  REQUIRE( put_cjv );
+
+  xmlNodePtr cjv_root = doc2.getRoot();
+  CountingJastrowBuilder cjvb(c, elec, ion0);
 
   // test evaluateLog for cjv
-  CountingJastrow<CountingGaussianRegion>* cjv = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(wfv.getOrbitals()[0]);
+  CountingJastrow<CountingGaussianRegion>* cjv = dynamic_cast<CountingJastrow<CountingGaussianRegion>*>(cjvb.buildComponent(cjv_root));
+
   for(int i = 0; i < num_els; ++i)
   {
     for(int k = 0; k < 3; ++k)
@@ -266,7 +264,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
       REQUIRE( Jgrad_exact[i][k] == Approx( std::real(elec.G[i][k])) );
     REQUIRE( Jlap_exact[i] == Approx( std::real(elec.L[i])) );
   }
-  REQUIRE( Jval_exact == Approx(logval) );
+  REQUIRE( ComplexApprox(Jval_exact) == logval );
   
   // test evalGrad
   for(int iat = 0; iat < num_els; ++iat)
@@ -292,7 +290,6 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   // test ratio, ratioGrad, acceptMove
   for(int iat = 0; iat < num_els; ++iat)
   {
-    elec.setActive(iat);
     elec.makeMoveAndCheck(iat,dr[iat]);
   
     RealType ratioval = std::real( cj->ratio(elec, iat) );
@@ -396,7 +393,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     optVars[p] = 0;
   cj->resetParameters(optVars);
   cj->recompute(elec);
-  REQUIRE( cj->LogValue == 0 );
+  REQUIRE( cj->LogValue == LogValueType(0) );
 #endif
 
 }

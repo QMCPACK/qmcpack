@@ -6,13 +6,14 @@
 # Prerequisites
 
  * C++ 14 and C99 capable compilers. 
- * CMake, build utility, http://www.cmake.org
+ * CMake v3.10.0 or later, build utility, http://www.cmake.org
  * BLAS/LAPACK, numerical library. Use platform-optimized libraries.
  * LibXml2, XML parser, http://xmlsoft.org/
  * HDF5, portable I/O library, http://www.hdfgroup.org/HDF5/
- * BOOST, peer-reviewed portable C++ source libraries, http://www.boost.org
+ * BOOST v1.61.0 or newer, peer-reviewed portable C++ source libraries, http://www.boost.org
  * FFTW, FFT library, http://www.fftw.org/
  * MPI, parallel library. Optional, but a near requirement for production calculations.
+ * Python3. Older versions are not supported as of January 2020.
 
 We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions over
 two years old may work but is discouraged and untested. Proprietary compilers (Intel, PGI) are generally supported over the same
@@ -23,18 +24,18 @@ performance and easiest configuration.
 Nightly testing currently includes the following software versions on x86:
 
 * Compilers
-  * GCC 8.3.0, 7.4.0, 5.5.0
-  * Clang/LLVM 7.0.1, 6.0.1, 4.0.1
-  * Intel 2019.4, 2018.5
-  * PGI 19.4
-* Boost 1.70.0, 1.61.0 
+  * GCC 9.2.0, 7.3.0
+  * Clang/LLVM 9.0.0, 5.0.1
+  * Intel 2019.1.0.166, 2019.0.5.281 configured to use C++ library from GCC 7.4.0 
+  * PGI 19.4 configured to use C++ library from GCC 8.3.0
+* Boost 1.70.0, 1.65.1
 * HDF5 1.10.5, 1.8.19
 * FFTW 3.3.8, 3.3.4
-* CMake 3.14.4, 3.8.2
+* CMake 3.16.2, 3.10.2
 * MPI
-  * OpenMPI 4.0.1, 2.1.1
-  * Intel MPI 2019.4, 2018.5
-* CUDA 10.1.243
+  * OpenMPI 4.0.2, 3.10.2
+  * Intel MPI 2019.1.0.166, 2019.0.5.281
+* CUDA 10.2.89
 
 # Building with CMake
 
@@ -176,7 +177,8 @@ make -j 8
 
 * HDF5 related
 ```
-     ENABLE_PHDF5        1(default)/0, enables/disable parallel collective IO.
+     HDF5_PREFER_PARALLEL 1(default for MPI build)/0, enables/disable parallel HDF5 library searching.
+     ENABLE_PHDF5         1(default for parallel HDF5 library)/0, enables/disable parallel collective I/O.
 
 ```
 

@@ -70,20 +70,6 @@ FUNCTION(MAYBE_SYMLINK SRC_DIR DST_DIR)
 ENDFUNCTION()
 
 
-# Macro to add the dependencies and libraries to an executable
-MACRO( ADD_QMC_EXE_DEP EXE )
-    # Add the package dependencies
-    TARGET_LINK_LIBRARIES(${EXE} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil)
-    FOREACH(l ${QMC_UTIL_LIBS})
-        TARGET_LINK_LIBRARIES(${EXE} ${l})
-    ENDFOREACH(l ${QMC_UTIL_LIBS})
-    IF(MPI_LIBRARY)
-        TARGET_LINK_LIBRARIES(${EXE} ${MPI_LIBRARY})
-    ENDIF(MPI_LIBRARY)
-ENDMACRO()
-
-
-
 # Macro to create the test name
 MACRO( CREATE_TEST_NAME TEST ${ARGN} )
     SET( TESTNAME "${TEST}" )
@@ -100,11 +86,11 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
     MATH( EXPR TOT_PROCS "${PROCS} * ${THREADS}" )
     SET( QMC_APP "${qmcpack_BINARY_DIR}/bin/qmcpack" )
     SET( TEST_ADDED_TEMP FALSE )
-    IF ( USE_MPI )
+    IF ( HAVE_MPI )
         IF ( ${TOT_PROCS} GREATER ${TEST_MAX_PROCS} )
             MESSAGE_VERBOSE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
-        ELSEIF ( USE_MPI )
-            ADD_TEST( ${TESTNAME} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${QMC_APP} ${ARGN} )
+        ELSE()
+            ADD_TEST( ${TESTNAME} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS} ${QMC_APP} ${ARGN} )
             SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}"
                 PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
@@ -140,6 +126,13 @@ FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED TEST_LABELS ${AR
     SET( ${TEST_LABELS} ${TEST_LABELS_TEMP} PARENT_SCOPE )
 ENDFUNCTION()
 
+IF (QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  FUNCTION(QMC_RUN_AND_CHECK)
+  ENDFUNCTION()
+  FUNCTION(SIMPLE_RUN_AND_CHECK)
+  ENDFUNCTION()
+ELSE (QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+
 
 # Add a test run and associated scalar checks
 # ---required inputs---
@@ -163,8 +156,8 @@ ENDFUNCTION()
 
 FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SHOULD_SUCCEED)
     # Map from name of check to appropriate flag for check_scalars.py
-    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "variance" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux" "kinetic_mixed" "kinetic_pure" "eeenergy_mixed" "eeenergy_pure" "potential_pure" "totenergy_A" "totenergy_B" "dtotenergy_AB" "ionion_A" "ionion_B" "dionion_AB" "eeenergy_A" "eeenergy_B" "deeenergy_AB" "Eloc" "ElocEstim" "latdev" "EnergyEstim__nume_real" "mpc")
-    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"    "--va"    "--ee"     "--ts" "--lp"      "--ii"       "--lpp"    "--nlpp" "--fl" "--ke_m" "--ke_p" "--ee_m" "--ee_p" "--lp_p" "--le_A" "--le_B" "--dle_AB" "--ii_A" "--ii_B" "--dii_AB" "--ee_A" "--ee_B" "--dee_AB" "--eloc" "--elocest" "--latdev" "--el" "--mpc")
+    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "variance" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux" "kinetic_mixed" "kinetic_pure" "eeenergy_mixed" "eeenergy_pure" "potential_pure" "totenergy_A" "totenergy_B" "dtotenergy_AB" "ionion_A" "ionion_B" "dionion_AB" "eeenergy_A" "eeenergy_B" "deeenergy_AB" "Eloc" "ElocEstim" "latdev" "EnergyEstim__nume_real" "kecorr" "mpc")
+    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"    "--va"    "--ee"     "--ts" "--lp"      "--ii"       "--lpp"    "--nlpp" "--fl" "--ke_m" "--ke_p" "--ee_m" "--ee_p" "--lp_p" "--le_A" "--le_B" "--dle_AB" "--ii_A" "--ii_B" "--dii_AB" "--ee_A" "--ee_B" "--dee_AB" "--eloc" "--elocest" "--latdev" "--el" "--kec" "--mpc")
 
 
     SET( TEST_ADDED FALSE )
@@ -281,6 +274,7 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
 
 endfunction()
 
+ENDIF(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
 FUNCTION( COVERAGE_RUN TESTNAME SRC_DIR PROCS THREADS ${ARGN} )
     SET( FULLNAME "coverage-${TESTNAME}")

@@ -79,7 +79,7 @@ nexus_core_defaults = obj(
     generate_only     = False,             # used by: Simulation,Machine
     sleep             = 3,                 # used by: ProjectManager
     runs              = 'runs',            # used by: Simulation,Machine
-    results           = 'results',         # used by: Simulation
+    results           = '',                # used by: Simulation
     local_directory   = './',              # used by: Simulation,Machine
     remote_directory  = './',              # used by: Simulation
     file_locations    = ['./'],            # used by: Simulation
@@ -112,7 +112,7 @@ def restore_nexus_core_defaults():
 
     nexus_core.set(**nexus_core_defaults.copy())
     nexus_noncore.set(**nexus_noncore_defaults.copy())
-    nexus_core_noncore.transfer_from(nexus_core,keys=nexus_core_noncore_defaults.keys())
+    nexus_core_noncore.transfer_from(nexus_core,keys=list(nexus_core_noncore_defaults.keys()))
 #end def restore_nexus_core_defaults
 
 restore_nexus_core_defaults()

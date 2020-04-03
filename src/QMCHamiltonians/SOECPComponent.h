@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratory
+//                    Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -23,15 +24,17 @@
 namespace qmcplusplus
 {
 /** class SOECPComponent
- **  brief Computes the nonlocal spin-orbit interaction $\Delta V_SO(r) |ljm_j><ljm_j|$.
+ **  brief Computes the nonlocal spin-orbit interaction \f$\Delta V_SO(r) |ljm_j><ljm_j|\f$.
  **  details This computes the nonlocal spin-orbit interaction between a single ion species and 
  **           a given electron.  
- **           Currently, this class does nothing other than generate and store $\Delta V_SO(r)$
+ **           Currently, this class does nothing other than generate and store \f$\Delta V_SO(r)\f$
  **           for different orbital angular momenta.  Implementation coming soon!  
  **/
+
 class SOECPComponent : public QMCTraits
 {
 private:
+  typedef std::vector<PosType> SpherGridType;
   typedef OneDimGridBase<RealType> GridType;
   typedef OneDimCubicSpline<RealType> RadialPotentialType;
 
@@ -39,6 +42,8 @@ private:
   int lmax;
   ///the number of non-local channels
   int nchannel;
+  int nknot;
+  int sknot;
   ///Maximum cutoff the non-local pseudopotential
   RealType Rmax;
   ///Angular momentum map
@@ -46,16 +51,41 @@ private:
   ///Non-Local part of the pseudo-potential
   std::vector<RadialPotentialType*> sopp_m;
 
-public:
+  ComplexType sMatrixElements(RealType s1, RealType s2, int dim);
+  ComplexType lmMatrixElements(int l, int m1, int m2, int dim);
+  int kroneckerDelta(int x, int y);
 
-  SOECPComponent* makeClone(const ParticleSet& qp)
-  {
-    APP_ABORT("SOECPComponent::makeClone not yet implemented");
-    return nullptr;
-  };
+  ComplexType getAngularIntegral(RealType sold,
+                                 RealType snew,
+                                 ParticleSet& W,
+                                 TrialWaveFunction& Psi,
+                                 int iel,
+                                 RealType r,
+                                 const PosType& dr);
+
+  std::vector<PosType> deltaV;
+  SpherGridType sgridxyz_m;
+  SpherGridType rrotsgrid_m;
+  std::vector<ValueType> psiratio;
+  std::vector<ValueType> vrad;
+  std::vector<RealType> sgridweight_m;
+
+
+public:
+  SOECPComponent();
+  ~SOECPComponent();
+
+  SOECPComponent* makeClone(const ParticleSet& qp);
 
   ///add a new Spin-Orbit component
   void add(int l, RadialPotentialType* pp);
+
+  void resize_warrays(int n, int m, int s);
+
+  void randomize_grid(RandomGenerator_t& myRNG);
+  template<typename T>
+  void randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG);
+
   ///API for accessing the value of an SO radial potential at distance r.  For unit and other testing.
   friend RealType getSplinedSOPot(SOECPComponent* so_pp, int l, double r);
   /** @brief Evaluate the spin orbit pp contribution 
@@ -70,31 +100,22 @@ public:
    *
    * @return RealType Contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    */
-  inline RealType evaluateOne(ParticleSet& W,
-                       int iat,
-                       TrialWaveFunction& Psi,
-                       int iel,
-                       RealType r,
-                       const PosType& dr)
-                       {
-                         APP_ABORT("evaluateOne not implemented yet\n"); 
-                         return 0.0;
-                       };
+  RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, int iel, RealType r, const PosType& dr);
 
   // This function needs to be updated to SoA. myTableIndex is introduced temporarily.
   inline RealType evaluateValueAndDerivatives(ParticleSet& P,
-                                       int iat,
-                                       TrialWaveFunction& psi,
-                                       const opt_variables_type& optvars,
-                                       const std::vector<RealType>& dlogpsi,
-                                       std::vector<RealType>& dhpsioverpsi,
-                                       const int myTableIndex)
-                                       {
-                                         APP_ABORT("evaluateValueAndDerivatives not implemented yet\n");
-                                         return 0.0;
-                                       };
+                                              int iat,
+                                              TrialWaveFunction& psi,
+                                              const opt_variables_type& optvars,
+                                              const std::vector<RealType>& dlogpsi,
+                                              std::vector<RealType>& dhpsioverpsi,
+                                              const int myTableIndex)
+  {
+    APP_ABORT("evaluateValueAndDerivatives not implemented yet\n");
+    return 0.0;
+  };
 
-  void print(std::ostream& os){};
+  void print(std::ostream& os);
 
   //void initVirtualParticle(const ParticleSet& qp){};
 
@@ -102,9 +123,12 @@ public:
   inline RealType getRmax() const { return Rmax; }
   inline void setLmax(int Lmax) { lmax = Lmax; }
   inline int getLmax() const { return lmax; }
+  inline int getNknot() const { return nknot; }
+  inline int getSknot() const { return sknot; }
 
   friend class ECPComponentBuilder;
-}; 
+  friend void copyGridUnrotatedForTest(SOECPComponent& nlpp);
+};
 
 } // namespace qmcplusplus
 #endif

@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_VMCFACTORYNEW_H
 #define QMCPLUSPLUS_VMCFACTORYNEW_H
 #include "QMCDrivers/QMCDriverInterface.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "Message/Communicate.h"
 
 
@@ -39,12 +39,10 @@ public:
       : vmc_mode_(vmode), input_node_(cur), qmc_counter_(qmc_counter)
   {}
 
-  QMCDriverInterface* create(MCPopulation&& pop,
+  QMCDriverInterface* create(MCPopulation& pop,
                              TrialWaveFunction& psi,
                              QMCHamiltonian& h,
-                             ParticleSetPool& ptclpool,
-                             HamiltonianPool& hpool,
-                             WaveFunctionPool& ppool,
+                             WaveFunctionPool& wf_pool,
                              Communicate* comm);
 };
 } // namespace qmcplusplus

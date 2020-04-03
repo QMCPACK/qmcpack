@@ -16,9 +16,12 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
+#include "QMCDrivers/WalkerProperties.h"
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 /// Constructor.
 DMCUpdateAllWithRejection::DMCUpdateAllWithRejection(MCWalkerConfiguration& w,
                                                      TrialWaveFunction& psi,
@@ -46,7 +49,7 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
   //RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
   makeGaussRandomWithEngine(deltaR, RandomGen);
   //save old local energy
-  RealType eold        = thisWalker.Properties(LOCALENERGY);
+  RealType eold        = thisWalker.Properties(WP::LOCALENERGY);
   RealType enew        = eold;
   bool accepted        = false;
   RealType rr_accepted = 0.0;
@@ -65,7 +68,7 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
       deltaR         = thisWalker.R - W.R - drift;
       RealType logGb = logBackwardGF(deltaR);
       //RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
-      RealType prob = std::min(std::exp(logGb - logGf + 2.0 * (logpsi - thisWalker.Properties(LOGPSI))), 1.0);
+      RealType prob = std::min(std::exp(logGb - logGf + 2.0 * (logpsi - thisWalker.Properties(WP::LOGPSI))), 1.0);
       //calculate rr_proposed here
       deltaR      = W.R - thisWalker.R;
       rr_proposed = Dot(deltaR, deltaR);
@@ -99,8 +102,8 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
   else
   {
     thisWalker.Age++;
-    thisWalker.Properties(R2ACCEPTED) = 0.0;
-    thisWalker.Properties(R2PROPOSED) = rr_proposed;
+    thisWalker.Properties(WP::R2ACCEPTED) = 0.0;
+    thisWalker.Properties(WP::R2PROPOSED) = rr_proposed;
   }
 
   const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
@@ -160,7 +163,7 @@ void DMCUpdateAllWithKill::advanceWalker(Walker_t& thisWalker, bool recompute)
     return;
   }
   //save old local energy
-  RealType eold = thisWalker.Properties(LOCALENERGY);
+  RealType eold = thisWalker.Properties(WP::LOCALENERGY);
   RealType enew = eold;
   RealType logpsi(Psi.evaluateLog(W));
   bool accepted        = false;
@@ -180,7 +183,7 @@ void DMCUpdateAllWithKill::advanceWalker(Walker_t& thisWalker, bool recompute)
     deltaR         = thisWalker.R - W.R - drift;
     RealType logGb = logBackwardGF(deltaR);
     //RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
-    RealType prob = std::min(std::exp(logGb - logGf + 2.0 * (logpsi - thisWalker.Properties(LOGPSI))), 1.0);
+    RealType prob = std::min(std::exp(logGb - logGf + 2.0 * (logpsi - thisWalker.Properties(WP::LOGPSI))), 1.0);
     //calculate rr_proposed here
     deltaR               = W.R - thisWalker.R;
     RealType rr_proposed = Dot(deltaR, deltaR);
@@ -188,8 +191,8 @@ void DMCUpdateAllWithKill::advanceWalker(Walker_t& thisWalker, bool recompute)
     {
       enew = eold;
       thisWalker.Age++;
-      thisWalker.Properties(R2ACCEPTED) = 0.0;
-      thisWalker.Properties(R2PROPOSED) = rr_proposed;
+      thisWalker.Properties(WP::R2ACCEPTED) = 0.0;
+      thisWalker.Properties(WP::R2PROPOSED) = rr_proposed;
       H.rejectedMove(W, thisWalker);
     }
     else

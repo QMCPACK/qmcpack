@@ -120,7 +120,6 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
   m_param.add(hdf_write_restart,"hdf_write_file","std::string");
   m_param.put(cur);
 
-
   // write all the choices here ...
 
   fix_bias = std::min(fix_bias,nSubstep);
@@ -137,8 +136,6 @@ bool AFQMCDriver::checkpoint(WalkerSet& wset, int block, int step)
   hdf_archive dump(globalComm,false);
   if(globalComm.rank() == 0) {
     std::string file;
-    char fileroot[128];
-    int nproc = globalComm.size();
     if(hdf_write_restart != std::string(""))
       file = hdf_write_restart;
     else
@@ -184,8 +181,6 @@ bool AFQMCDriver::writeSamples(WalkerSet& wset)
   hdf_archive dump(globalComm,false);
   if(globalComm.rank() == 0) {
     std::string file;
-    char fileroot[128];
-    int nproc = globalComm.size();
     file = project_title+std::string(".confg.h5");
 
     if(!dump.create(file)) {

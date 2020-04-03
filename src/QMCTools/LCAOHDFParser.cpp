@@ -161,7 +161,6 @@ void LCAOHDFParser::parse(const std::string& fname)
 
   if (multideterminant)
   {
-    outputFile;
     hdf_archive hin;
 
     if (!hin.open(outputFile.c_str(), H5F_ACC_RDONLY))

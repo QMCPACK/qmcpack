@@ -340,7 +340,6 @@ template<class T, typename Alloc>
 std::istream& operator>>(std::istream& is, Matrix<T, Alloc>& rhs)
 {
   typedef typename Matrix<T, Alloc>::size_type size_type;
-  size_type ii = 0;
   for (size_type i = 0; i < rhs.size(); i++)
   {
     is >> rhs(i++);

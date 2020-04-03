@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -78,9 +78,8 @@ void EwaldHandler::fillFk(KContainer& KList)
   else
   {
 #if OHMMS_DIM == 2
-    mRealType kgauss       = 1.0 / (4 * Sigma * Sigma);
-    mRealType knorm        = 2 * M_PI / Volume;
-    const mRealType acclog = std::abs(std::log(1.0e-10));
+    mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
+    mRealType knorm  = 2 * M_PI / Volume;
     for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
     {
       mRealType t2e = KList.ksq[ki] * kgauss;
@@ -91,9 +90,8 @@ void EwaldHandler::fillFk(KContainer& KList)
     }
     PreFactors[3] = 0.0;
 #elif OHMMS_DIM == 3
-    mRealType kgauss       = 1.0 / (4 * Sigma * Sigma);
-    mRealType knorm        = 4 * M_PI / Volume;
-    const mRealType acclog = std::abs(std::log(1.0e-10));
+    mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
+    mRealType knorm  = 4 * M_PI / Volume;
     for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
     {
       mRealType t2e = KList.ksq[ki] * kgauss;
@@ -102,27 +100,51 @@ void EwaldHandler::fillFk(KContainer& KList)
       while (ki < KList.kshell[ks + 1] && ki < Fk.size())
         Fk[ki++] = uk;
     }
-    PreFactors[3] = 0.0;
+    PreFactors[3]    = 0.0;
 #endif
   }
   app_log().flush();
 }
 
-EwaldHandler::mRealType EwaldHandler::evaluate_slab(mRealType z,
-                                                    const std::vector<int>& kshell,
-                                                    const pComplexType* restrict eikr_i,
-                                                    const pComplexType* restrict eikr_j)
+EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k)
 {
-  mRealType zp = z * Sigma;
-  mRealType vk = -SlabFunc0(z, zp);
-  //cout << "### SLAB " << z << " " << zp << std::endl;
-  for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
+  mRealType uk = 0.0;
+  if (SuperCellEnum == SUPERCELL_SLAB)
   {
-    mRealType u = 0; //\sum Real (e^ikr_i e^(-ikr_j))
-    for (; ki < kshell[ks + 1]; ki++, eikr_i++, eikr_j++)
-      u += ((*eikr_i).real() * (*eikr_j).real() + (*eikr_i).imag() * (*eikr_j).imag());
-    vk += u * Fk_symm[ks] * SlabFuncK(ks, z, zp);
+    mRealType knorm = M_PI / Area;
+    uk              = knorm / k; //pi/(A*k)
   }
-  return vk;
-}
+  else
+  {
+#if OHMMS_DIM == 2
+    mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
+    mRealType knorm  = 2 * M_PI / Volume;
+    mRealType k2     = k * k;
+    uk               = knorm * std::exp(-k2 * kgauss) / k2;
+#elif OHMMS_DIM == 3
+    mRealType kgauss = 1.0 / (4 * Sigma * Sigma);
+    mRealType knorm  = 4 * M_PI / Volume;
+    mRealType k2     = k * k;
+    uk               = knorm * std::exp(-k2 * kgauss) / k2;
+  }
+#endif
+    return uk;
+  }
+
+  EwaldHandler::mRealType EwaldHandler::evaluate_slab(mRealType z, const std::vector<int>& kshell,
+                                                      const pComplexType* restrict eikr_i,
+                                                      const pComplexType* restrict eikr_j)
+  {
+    mRealType zp = z * Sigma;
+    mRealType vk = -SlabFunc0(z, zp);
+    //cout << "### SLAB " << z << " " << zp << std::endl;
+    for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
+    {
+      mRealType u = 0; //\sum Real (e^ikr_i e^(-ikr_j))
+      for (; ki < kshell[ks + 1]; ki++, eikr_i++, eikr_j++)
+        u += ((*eikr_i).real() * (*eikr_j).real() + (*eikr_i).imag() * (*eikr_j).imag());
+      vk += u * Fk_symm[ks] * SlabFuncK(ks, z, zp);
+    }
+    return vk;
+  }
 } // namespace qmcplusplus

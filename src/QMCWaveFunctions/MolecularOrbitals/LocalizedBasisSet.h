@@ -23,6 +23,7 @@
 #define QMCPLUSPLUS_LOCALIZEDBASISSET_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
+#include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {

@@ -1,4 +1,3 @@
-
 SET(AFQMC_DEBUG 3)
 
 #-------------------------------------------------------------------
@@ -16,6 +15,8 @@ SET (AFQMC_SRCS
   Hamiltonians/HSPotential_Helpers.cpp
   Hamiltonians/FactorizedSparseHamiltonian.cpp
   Hamiltonians/KPFactorizedHamiltonian.cpp
+  Hamiltonians/RealDenseHamiltonian.cpp
+  Hamiltonians/RealDenseHamiltonian_v2.cpp
 #  Hamiltonians/KPTHCHamiltonian.cpp
   Hamiltonians/HamiltonianFactory_Helper.cpp
   Hamiltonians/HamiltonianFactory.cpp
@@ -47,10 +48,13 @@ IF(ENABLE_CUDA)
     Numerics/detail/CUDA/Kernels/KaKjw_to_KKwaj.cu
     Numerics/detail/CUDA/Kernels/batched_dot_wabn_wban.cu
     Numerics/detail/CUDA/Kernels/batched_Tab_to_Klr.cu
+    Numerics/detail/CUDA/Kernels/dot_wabn.cu
+    Numerics/detail/CUDA/Kernels/Tab_to_Kl.cu
     Numerics/detail/CUDA/Kernels/sampleGaussianRNG.cu
     Numerics/detail/CUDA/Kernels/construct_X.cu
     Numerics/detail/CUDA/Kernels/reference_operations.cu
     Numerics/detail/CUDA/Kernels/term_by_term_matrix_vec.cu
+    Numerics/detail/CUDA/Kernels/axpyBatched.cu
 #    Numerics/detail/CUDA/Kernels/myAtomicAdd.cu
   )
 ENDIF(ENABLE_CUDA)
@@ -58,13 +62,18 @@ ENDIF(ENABLE_CUDA)
 IF(ENABLE_CUDA)
   CUDA_ADD_LIBRARY(afqmc ${AFQMC_SRCS})
   CUDA_ADD_CUBLAS_TO_TARGET(afqmc)
-  target_link_libraries( afqmc ${CUDA_cusparse_LIBRARY} )
-  target_link_libraries( afqmc ${CUDA_cusolver_LIBRARY} )
-  target_link_libraries( afqmc ${CUDA_curand_LIBRARY} )
+  TARGET_LINK_LIBRARIES( afqmc PRIVATE ${CUDA_cusparse_LIBRARY} )
+  TARGET_LINK_LIBRARIES( afqmc PRIVATE ${CUDA_cusolver_LIBRARY} )
+  TARGET_LINK_LIBRARIES( afqmc PRIVATE ${CUDA_curand_LIBRARY} )
 ELSE(ENABLE_CUDA)
   ADD_LIBRARY(afqmc ${AFQMC_SRCS})
 ENDIF(ENABLE_CUDA)
 
+TARGET_LINK_LIBRARIES(afqmc PUBLIC qmcutil)
+TARGET_LINK_LIBRARIES(afqmc PRIVATE Math::BLAS_LAPACK Boost::boost)
+IF(HAVE_MPI)
+  TARGET_COMPILE_DEFINITIONS(afqmc PRIVATE "USE_MPI")
+ENDIF(HAVE_MPI)
 
 IF (BUILD_UNIT_TESTS)
   INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)

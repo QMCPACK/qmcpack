@@ -15,6 +15,7 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "Numerics/GaussianTimesRN.h"
 #include "Numerics/Transform2GridFunctor.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 
 namespace qmcplusplus
 {

@@ -32,10 +32,6 @@
 #include "type_traits/CUDATypes.h"
 #endif
 
-#if defined(ENABLE_SMARTPOINTER)
-#include <boost/shared_ptr.hpp>
-#endif
-
 namespace qmcplusplus
 {
 /** base class for Single-particle orbital sets
@@ -62,16 +58,6 @@ public:
   typedef ParticleSet::Walker_t Walker_t;
   typedef std::map<std::string, SPOSet*> SPOPool_t;
 
-  ///index in the builder list of sposets
-  int builder_index;
-  ///true if SPO is optimizable
-  bool Optimizable;
-  ///number of Single-particle orbitals
-  IndexType OrbitalSetSize;
-  /// Optimizable variables
-  opt_variables_type myVars;
-  ///name of the class
-  std::string className;
   /** name of the object
    *
    * Several user classes can own SPOSet and use objectName as counter
@@ -96,7 +82,7 @@ public:
 #endif
 
   /** constructor */
-  SPOSet();
+  SPOSet(bool ion_deriv = false, bool optimizable = false);
 
   /** destructor
    *
@@ -110,10 +96,15 @@ public:
 #endif
   }
 
+  // accessor function to Optimizable
+  inline bool isOptimizable() const { return Optimizable; }
+
   /** return the size of the orbital set
    * Ye: this needs to be replaced by getOrbitalSetSize();
    */
   inline int size() const { return OrbitalSetSize; }
+
+  inline const std::string& getClassName() const { return className; }
 
   /** print basic SPOSet information
    */
@@ -148,8 +139,19 @@ public:
 #endif
 
   /// create optimizable orbital rotation parameters
+  // Single Slater creation
+  virtual void buildOptVariables(const size_t nel) {}
+  // For the MSD case rotations must be created in MultiSlaterFast class
   virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) {}
-
+  // store parameters before getting destroyed by rotation.
+  virtual void storeParamsBeforeRotation() {}
+  // apply rotation to all the orbitals
+  virtual void applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy = false)
+  {
+    std::ostringstream o;
+    o << "SPOSet::applyRotation is not implemented by " << className << std::endl;
+    APP_ABORT(o.str());
+  }
   /// reset parameters to the values from optimizer
   virtual void resetParameters(const opt_variables_type& optVariables) = 0;
 
@@ -157,6 +159,13 @@ public:
   virtual void checkInVariables(opt_variables_type& active) {}
   virtual void checkOutVariables(const opt_variables_type& active) {}
 
+  virtual void evaluateDerivatives(ParticleSet& P,
+                                   const opt_variables_type& optvars,
+                                   std::vector<ValueType>& dlogpsi,
+                                   std::vector<ValueType>& dhpsioverpsi,
+                                   const int& FirstIndex,
+                                   const int& LastIndex)
+  {}
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */
@@ -188,6 +197,26 @@ public:
                                    const std::vector<std::vector<int>>& lookup_tbl)
   {}
 
+  /** Evaluate the derivative of the optimized orbitals with respect to the parameters
+   *  this is used only for MSD, to be refined for better serving both single and multi SD
+   */
+  virtual void evaluateDerivativesWF(ParticleSet& P,
+                                   const opt_variables_type& optvars,
+                                   std::vector<ValueType>& dlogpsi,
+                                   const QTFull::ValueType& psiCurrent,
+                                   const std::vector<ValueType>& Coeff,
+                                   const std::vector<size_t>& C2node_up,
+                                   const std::vector<size_t>& C2node_dn,
+                                   const ValueVector_t& detValues_up,
+                                   const ValueVector_t& detValues_dn,
+                                   const ValueMatrix_t& M_up,
+                                   const ValueMatrix_t& M_dn,
+                                   const ValueMatrix_t& Minv_up,
+                                   const ValueMatrix_t& Minv_dn,
+                                   const std::vector<int>& detData_up,
+                                   const std::vector<std::vector<int>>& lookup_tbl)
+  {}
+
 
   /** reset the target particleset
    *  this is used to reset the pointer to ion-electron distance table needed by LCAO basis set.
@@ -213,7 +242,7 @@ public:
    * @param iat active particle
    * @param psi values of the SPO
    */
-  virtual void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) = 0;
+  virtual void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) = 0;
 
   /** evaluate the values of this single-particle orbital sets of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
@@ -224,12 +253,7 @@ public:
   virtual void mw_evaluateValue(const std::vector<SPOSet*>& spo_list,
                                 const std::vector<ParticleSet*>& P_list,
                                 int iat,
-                                const std::vector<ValueVector_t*>& psi_v_list)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < spo_list.size(); iw++)
-      spo_list[iw]->evaluate(*P_list[iw], iat, *psi_v_list[iw]);
-  }
+                                const RefVector<ValueVector_t>& psi_v_list);
 
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
@@ -242,6 +266,19 @@ public:
                                  const ValueVector_t& psiinv,
                                  std::vector<ValueType>& ratios);
 
+  /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP, of multiple walkers
+   * @param spo_list the list of SPOSet pointers in a walker batch
+   * @param vp_list a list of virtual particle sets in a walker batch
+   * @param psi_list a list of values of the SPO, used as a scratch space if needed
+   * @param psiinv_list a list of the row of inverse slater matrix corresponding to the particle moved virtually
+   * @param ratios_list a list of returning determinant ratios
+   */
+  virtual void mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
+                                    const RefVector<const VirtualParticleSet>& vp_list,
+                                    const RefVector<ValueVector_t>& psi_list,
+                                    const RefVector<const ValueVector_t>& psiinv_list,
+                                    std::vector<std::vector<ValueType>>& ratios_list);
+
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
    * @param iat active particle
@@ -249,11 +286,11 @@ public:
    * @param dpsi gradients of the SPO
    * @param d2psi laplacians of the SPO
    */
-  virtual void evaluate(const ParticleSet& P,
-                        int iat,
-                        ValueVector_t& psi,
-                        GradVector_t& dpsi,
-                        ValueVector_t& d2psi) = 0;
+  virtual void evaluateVGL(const ParticleSet& P,
+                           int iat,
+                           ValueVector_t& psi,
+                           GradVector_t& dpsi,
+                           ValueVector_t& d2psi) = 0;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
@@ -266,14 +303,9 @@ public:
   virtual void mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
                               const std::vector<ParticleSet*>& P_list,
                               int iat,
-                              const std::vector<ValueVector_t*>& psi_v_list,
-                              const std::vector<GradVector_t*>& dpsi_v_list,
-                              const std::vector<ValueVector_t*>& d2psi_v_list)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < spo_list.size(); iw++)
-      spo_list[iw]->evaluate(*P_list[iw], iat, *psi_v_list[iw], *dpsi_v_list[iw], *d2psi_v_list[iw]);
-  }
+                              const RefVector<ValueVector_t>& psi_v_list,
+                              const RefVector<GradVector_t>& dpsi_v_list,
+                              const RefVector<ValueVector_t>& d2psi_v_list);
 
   /** evaluate the values, gradients and hessians of this single-particle orbital set
    * @param P current ParticleSet
@@ -282,11 +314,11 @@ public:
    * @param dpsi gradients of the SPO
    * @param grad_grad_psi hessians of the SPO
    */
-  virtual void evaluate(const ParticleSet& P,
-                        int iat,
-                        ValueVector_t& psi,
-                        GradVector_t& dpsi,
-                        HessVector_t& grad_grad_psi);
+  virtual void evaluateVGH(const ParticleSet& P,
+                           int iat,
+                           ValueVector_t& psi,
+                           GradVector_t& dpsi,
+                           HessVector_t& grad_grad_psi);
 
   /** evaluate the values, gradients, hessians, and grad hessians of this single-particle orbital set
    * @param P current ParticleSet
@@ -296,12 +328,19 @@ public:
    * @param grad_grad_psi hessians of the SPO
    * @param grad_grad_grad_psi grad hessians of the SPO
    */
-  virtual void evaluate(const ParticleSet& P,
-                        int iat,
-                        ValueVector_t& psi,
-                        GradVector_t& dpsi,
-                        HessVector_t& grad_grad_psi,
-                        GGGVector_t& grad_grad_grad_psi);
+  virtual void evaluateVGHGH(const ParticleSet& P,
+                             int iat,
+                             ValueVector_t& psi,
+                             GradVector_t& dpsi,
+                             HessVector_t& grad_grad_psi,
+                             GGGVector_t& grad_grad_grad_psi);
+
+  /** evaluate the values of this single-particle orbital set
+   * @param P current ParticleSet
+   * @param iat active particle
+   * @param psi values of the SPO
+   */
+  virtual void evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, ValueVector_t& dpsi);
 
   /** evaluate the third derivatives of this single-particle orbital set
    * @param P current ParticleSet
@@ -310,12 +349,6 @@ public:
    * @param grad_grad_grad_logdet third derivatives of the SPO
    */
   virtual void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet);
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  /// \brief  returns whether this is an LCOrbitalSetOpt object
-  /// Ye: This should be removed as AoS. On the SoA side, LCAOrbitalSet replace LCOrbitalSet and LCOrbitalSetOpt
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  virtual bool is_of_type_LCOrbitalSetOpt() const { return false; }
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet
@@ -424,16 +457,6 @@ public:
    */
   virtual void finalizeConstruction() {}
 
-  // Routine to set up data for the LCOrbitalSetOpt child class specifically
-  // Should be left empty for other derived classes
-  // Ye: This interface should be removed with AoS.
-  virtual void init_LCOrbitalSetOpt(const double mix_factor = 0.0){};
-
-  // Routine to update internal data for the LCOrbitalSetOpt child class specifically
-  // Should be left empty for other derived classes
-  // Ye: This interface should be removed with AoS.
-  virtual void rotate_B(const std::vector<RealType>& rot_mat){};
-
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
 
@@ -472,15 +495,21 @@ protected:
   bool putFromXML(xmlNodePtr coeff_ptr);
   bool putFromH5(const std::string& fname, xmlNodePtr coeff_ptr);
 #endif
+
+protected:
   ///true, if the derived class has non-zero ionic derivatives.
-  bool ionDerivs;
+  const bool ionDerivs;
+  ///true if SPO is optimizable
+  const bool Optimizable;
+  ///number of Single-particle orbitals
+  IndexType OrbitalSetSize;
+  /// Optimizable variables
+  opt_variables_type myVars;
+  ///name of the class
+  std::string className;
 };
 
-#if defined(ENABLE_SMARTPOINTER)
-typedef boost::shared_ptr<SPOSet> SPOSetPtr;
-#else
 typedef SPOSet* SPOSetPtr;
-#endif
 
 } // namespace qmcplusplus
 #endif

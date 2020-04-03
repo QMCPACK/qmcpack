@@ -17,6 +17,8 @@
 #include <fstream>
 #include <vector>
 #include <cmath>
+#include <map>
+#include <complex>
 
 class XmlNode;
 class FftContainer;
@@ -24,6 +26,9 @@ class KPoint;
 
 class EshdfFile 
 {
+  typedef std::map<std::vector<int>, std::complex<double> > momap_t;
+  typedef std::pair<std::vector<int>, std::complex<double> > mopair_t;
+
 private:
   qmcplusplus::hdf_archive outfile_;
 
@@ -53,8 +58,9 @@ private:
 		       std::vector<double>& weights, int& nup, int& ndn, 
 		       int spinpol, int ncol);
   void handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt, 
-		 const std::vector<double>& eigenvalues, int loc_ngvecs,
-		 int tot_ngvecs, double weight, int spinpol, int noncol);
+		 const std::vector<double>& eigenvalues, double weight, int spinpol, int noncol, const momap_t& moref);
+
+  void readKptGvecs(int kpt_num, const std::string& dir_name, int spinpol, momap_t& morefmap);
 
   qmcplusplus::hdf_archive openHdfFileForRead(const std::string& fname);
   

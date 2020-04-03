@@ -14,11 +14,8 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
@@ -41,6 +38,9 @@ using std::string;
 
 namespace qmcplusplus
 {
+using RealType     = WaveFunctionComponent::RealType;
+using PsiValueType = WaveFunctionComponent::PsiValueType;
+
 TEST_CASE("BSpline functor zero", "[wavefunction]")
 {
   BsplineFunctor<double> bf;
@@ -95,8 +95,6 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   tspecies(chargeIdx, downIdx) = -1;
   elec_.resetGroups();
 
-  TrialWaveFunction psi(c);
-
   const char* particles = "<tmp> \
 <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
    <correlation rcut=\"10\" size=\"10\" speciesA=\"u\" speciesB=\"d\"> \
@@ -113,25 +111,21 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow(elec_, psi);
-  bool build_okay = jastrow.put(jas1);
-  REQUIRE(build_okay);
-
-  WaveFunctionComponent* orb = psi.getOrbitals()[0];
+  RadialJastrowBuilder jastrow(c, elec_);
 
 #ifdef ENABLE_SOA
-  typedef J2OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>> J2Type;
+  typedef J2OrbitalSoA<BsplineFunctor<RealType>> J2Type;
 #else
-  typedef TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType>> J2Type;
+  typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType>> J2Type;
 #endif
-  J2Type* j2 = dynamic_cast<J2Type*>(orb);
-  REQUIRE(j2 != NULL);
+  std::unique_ptr<J2Type> j2(dynamic_cast<J2Type*>(jastrow.buildComponent(jas1)));
+  REQUIRE(j2);
 
   // update all distance tables
   elec_.update();
 
-  double logpsi = psi.evaluateLog(elec_);
-  REQUIRE(logpsi == Approx(0.1012632641)); // note: number not validated
+  double logpsi_real = std::real(j2->evaluateLog(elec_, elec_.G, elec_.L));
+  REQUIRE(logpsi_real == Approx(0.1012632641)); // note: number not validated
 
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
   REQUIRE(KE == Approx(-0.1616624771)); // note: number not validated
@@ -141,37 +135,20 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   WaveFunctionComponent::HessVector_t grad_grad_psi;
   grad_grad_psi.resize(elec_.getTotalNum());
   grad_grad_psi = 0.0;
-  
-  std::cout<<"eval hess"<<std::endl;
-  j2->evaluateHessian(elec_,grad_grad_psi);
+
+  std::cout << "eval hess" << std::endl;
+  j2->evaluateHessian(elec_, grad_grad_psi);
   std::vector<double> hess_values = {
-    -0.0627236,
-    0,
-    0,
-    0,
-    0.10652,
-    0,
-    0,
-    0,
-    0.10652,
-    -0.0627236,
-    0,
-    0,
-    0,
-    0.10652,
-    0,
-    0,
-    0,
-    0.10652,
+      -0.0627236, 0, 0, 0, 0.10652, 0, 0, 0, 0.10652, -0.0627236, 0, 0, 0, 0.10652, 0, 0, 0, 0.10652,
   };
 
-  int m=0;
-  for(int n=0; n<elec_.getTotalNum(); n++)
-    for(int i=0; i<OHMMS_DIM; i++)
-      for(int j=0; j<OHMMS_DIM; j++,m++)
-        {
-          REQUIRE(grad_grad_psi[n](i,j) == ComplexApprox(hess_values[m]).compare_real_only());
-        }
+  int m = 0;
+  for (int n = 0; n < elec_.getTotalNum(); n++)
+    for (int i = 0; i < OHMMS_DIM; i++)
+      for (int j = 0; j < OHMMS_DIM; j++, m++)
+      {
+        REQUIRE(std::real(grad_grad_psi[n](i, j)) == Approx(hess_values[m]));
+      }
 
 
   struct JValues
@@ -206,13 +183,13 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
                      {11.40, 0, 0, 0}};
 
 
-  BsplineFunctor<WaveFunctionComponent::RealType>* bf = j2->F[0];
+  BsplineFunctor<RealType>* bf = j2->F[0];
 
   for (int i = 0; i < N; i++)
   {
-    WaveFunctionComponent::RealType dv  = 0.0;
-    WaveFunctionComponent::RealType ddv = 0.0;
-    WaveFunctionComponent::RealType val = bf->evaluate(Vals[i].r, dv, ddv);
+    RealType dv  = 0.0;
+    RealType ddv = 0.0;
+    RealType val = bf->evaluate(Vals[i].r, dv, ddv);
     REQUIRE(Vals[i].u == Approx(val));
     REQUIRE(Vals[i].du == Approx(dv));
     REQUIRE(Vals[i].ddu == Approx(ddv));
@@ -236,12 +213,12 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
     double r      = 0.6 * i;
     elec_.R[0][0] = r;
     elec_.update();
-    double logpsi = psi.evaluateLog(elec_);
+    double logpsi_real = std::real(j2->evaluateLog(elec_, elec_.G, elec_.L));
     //double alt_val = bf->evaluate(r);
     double dv      = 0.0;
     double ddv     = 0.0;
     double alt_val = bf->evaluate(r, dv, ddv);
-    printf("%g %g %g %g %g\n", r, logpsi, alt_val, dv, ddv);
+    printf("%g %g %g %g %g\n", r, logpsi_real, alt_val, dv, ddv);
   }
 #endif
 
@@ -255,34 +232,34 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   std::vector<ValueType> ratios(elec_.getTotalNum());
   j2->evaluateRatiosAlltoOne(elec_, ratios);
 
-  REQUIRE(ratios[0] == ComplexApprox(0.9522052017).compare_real_only());
-  REQUIRE(ratios[1] == ComplexApprox(0.9871985577).compare_real_only());
+  REQUIRE(std::real(ratios[0]) == Approx(0.9522052017));
+  REQUIRE(std::real(ratios[1]) == Approx(0.9871985577));
 
   elec_.makeMove(0, newpos - elec_.R[0]);
-  ValueType ratio_0 = j2->ratio(elec_, 0);
+  PsiValueType ratio_0 = j2->ratio(elec_, 0);
   elec_.rejectMove(0);
 
-  REQUIRE(ratio_0 == ComplexApprox(0.9522052017).compare_real_only());
+  REQUIRE(std::real(ratio_0) == Approx(0.9522052017));
 
   VirtualParticleSet VP(elec_, 2);
-  ParticleSet::ParticlePos_t newpos2(2);
-  newpos2[0] = newpos;
-  newpos2[1] = PosType(0.2, 0.5, 0.3);
-  VP.makeMoves(1, newpos2);
+  std::vector<PosType> newpos2(2);
+  std::vector<ValueType> ratios2(2);
+  newpos2[0] = newpos - elec_.R[1];
+  newpos2[1] = PosType(0.2, 0.5, 0.3) - elec_.R[1];
+  VP.makeMoves(1, elec_.R[1], newpos2);
   j2->evaluateRatios(VP, ratios);
 
-  REQUIRE(ratios[0] == ComplexApprox(0.9871985577).compare_real_only());
-  REQUIRE(ratios[1] == ComplexApprox(0.9989268241).compare_real_only());
+  REQUIRE(std::real(ratios[0]) == Approx(0.9871985577));
+  REQUIRE(std::real(ratios[1]) == Approx(0.9989268241));
 
   //test acceptMove
   elec_.makeMove(1, newpos - elec_.R[1]);
-  ValueType ratio_1 = j2->ratio(elec_, 1);
+  PsiValueType ratio_1 = j2->ratio(elec_, 1);
   j2->acceptMove(elec_, 1);
   elec_.acceptMove(1);
 
-  REQUIRE(ratio_1 == ComplexApprox(0.9871985577).compare_real_only());
-  REQUIRE(j2->LogValue == Approx(0.0883791773));
-
+  REQUIRE(std::real(ratio_1) == Approx(0.9871985577));
+  REQUIRE(std::real(j2->LogValue) == Approx(0.0883791773));
 }
 
 TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
@@ -326,8 +303,6 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   tspecies(chargeIdx, downIdx) = -1;
   elec_.resetGroups();
 
-  TrialWaveFunction psi(c);
-
   const char* particles = "<tmp> \
    <jastrow type=\"One-Body\" name=\"J1\" function=\"bspline\" source=\"ion\" print=\"yes\"> \
        <correlation elementType=\"C\" rcut=\"10\" size=\"8\" cusp=\"0.0\"> \
@@ -347,31 +322,26 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow(elec_, psi, ions_);
-  bool build_okay = jastrow.put(jas1);
-  REQUIRE(build_okay);
-
-  WaveFunctionComponent* orb = psi.getOrbitals()[0];
+  RadialJastrowBuilder jastrow(c, elec_, ions_);
 
 #ifdef ENABLE_SOA
-  typedef J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>> J1Type;
+  typedef J1OrbitalSoA<BsplineFunctor<RealType>> J1Type;
 #else
-  typedef OneBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType>> J1Type;
+  typedef OneBodyJastrowOrbital<BsplineFunctor<RealType>> J1Type;
 #endif
-  J1Type* j1 = dynamic_cast<J1Type*>(orb);
-  REQUIRE(j1 != NULL);
+  std::unique_ptr<J1Type> j1(dynamic_cast<J1Type*>(jastrow.buildComponent(jas1)));
+  REQUIRE(j1);
 
   // update all distance tables
   elec_.update();
 
-  double logpsi = psi.evaluateLog(elec_);
-  REQUIRE(logpsi == Approx(0.3160552244)); // note: number not validated
+  double logpsi_real = std::real(j1->evaluateLog(elec_, elec_.G, elec_.L));
+  REQUIRE(logpsi_real == Approx(0.3160552244)); // note: number not validated
 
   //Ionic Derivative Test.
   QMCTraits::GradType gsource(0.0);
   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad_source;
   TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM> lapl_grad_source;
-  int nions  = ions_.getTotalNum();
   int nelecs = elec_.getTotalNum();
 
   for (int dim = 0; dim < OHMMS_DIM; dim++)
@@ -391,33 +361,33 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   gsource = j1->evalGradSource(elec_, ions_, 0);
 
   //Gradient comparison
-  REQUIRE(gsource[0] == ComplexApprox(-0.04695203659).compare_real_only());
-  REQUIRE(gsource[1] == ComplexApprox(0.00000000000).compare_real_only());
-  REQUIRE(gsource[2] == ComplexApprox(0.00000000000).compare_real_only());
+  REQUIRE(std::real(gsource[0]) == Approx(-0.04695203659));
+  REQUIRE(std::real(gsource[1]) == Approx(0.00000000000));
+  REQUIRE(std::real(gsource[2]) == Approx(0.00000000000));
 
   //Now we test evalGradSource that returns higher order derivatives.
   gsource = j1->evalGradSource(elec_, ions_, 0, grad_grad_source, lapl_grad_source);
 
   //Gradient comparison
-  REQUIRE(gsource[0] == ComplexApprox(-0.04695203659).compare_real_only());
-  REQUIRE(gsource[1] == ComplexApprox(0.00000000000).compare_real_only());
-  REQUIRE(gsource[2] == ComplexApprox(0.00000000000).compare_real_only());
+  REQUIRE(std::real(gsource[0]) == Approx(-0.04695203659));
+  REQUIRE(std::real(gsource[1]) == Approx(0.00000000000));
+  REQUIRE(std::real(gsource[2]) == Approx(0.00000000000));
 
   //Ion gradient of electron gradient comparison.
-  REQUIRE(grad_grad_source[0][0][0] == ComplexApprox(-0.008883672).compare_real_only());
-  REQUIRE(grad_grad_source[0][1][0] == ComplexApprox(-0.002111879).compare_real_only());
-  REQUIRE(grad_grad_source[1][0][1] == ComplexApprox(0.028489287).compare_real_only());
-  REQUIRE(grad_grad_source[1][1][1] == ComplexApprox(0.009231375).compare_real_only());
-  REQUIRE(grad_grad_source[2][0][2] == ComplexApprox(0.028489287).compare_real_only());
-  REQUIRE(grad_grad_source[2][1][2] == ComplexApprox(0.009231375).compare_real_only());
+  REQUIRE(std::real(grad_grad_source[0][0][0]) == Approx(-0.008883672));
+  REQUIRE(std::real(grad_grad_source[0][1][0]) == Approx(-0.002111879));
+  REQUIRE(std::real(grad_grad_source[1][0][1]) == Approx(0.028489287));
+  REQUIRE(std::real(grad_grad_source[1][1][1]) == Approx(0.009231375));
+  REQUIRE(std::real(grad_grad_source[2][0][2]) == Approx(0.028489287));
+  REQUIRE(std::real(grad_grad_source[2][1][2]) == Approx(0.009231375));
 
   //Ion gradient of electron laplacians.
-  REQUIRE(lapl_grad_source[0][0] == ComplexApprox(0.1494918378).compare_real_only());
-  REQUIRE(lapl_grad_source[0][1] == ComplexApprox(-0.0056182539).compare_real_only());
-  REQUIRE(lapl_grad_source[1][0] == ComplexApprox(0.0000000000).compare_real_only());
-  REQUIRE(lapl_grad_source[1][1] == ComplexApprox(0.0000000000).compare_real_only());
-  REQUIRE(lapl_grad_source[2][0] == ComplexApprox(0.0000000000).compare_real_only());
-  REQUIRE(lapl_grad_source[2][1] == ComplexApprox(0.0000000000).compare_real_only());
+  REQUIRE(std::real(lapl_grad_source[0][0]) == Approx(0.1494918378));
+  REQUIRE(std::real(lapl_grad_source[0][1]) == Approx(-0.0056182539));
+  REQUIRE(std::real(lapl_grad_source[1][0]) == Approx(0.0000000000));
+  REQUIRE(std::real(lapl_grad_source[1][1]) == Approx(0.0000000000));
+  REQUIRE(std::real(lapl_grad_source[2][0]) == Approx(0.0000000000));
+  REQUIRE(std::real(lapl_grad_source[2][1]) == Approx(0.0000000000));
 
 
   // now test evaluateHessian
@@ -425,38 +395,21 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   grad_grad_psi.resize(elec_.getTotalNum());
   grad_grad_psi = 0.0;
 
-  psi.evaluateHessian(elec_,grad_grad_psi);
-  
+  j1->evaluateHessian(elec_, grad_grad_psi);
+
   std::vector<double> hess_values = {
-    0.00888367,
-    0,
-    0,
-    0,
-    -0.0284893,
-    0,
-    0,
-    0,
-    -0.0284893,
-    0.00211188,
-    0,
-    0,
-    0,
-    -0.00923137,
-    0,
-    0,
-    0,
-    -0.00923137,
+      0.00888367, 0, 0, 0, -0.0284893, 0, 0, 0, -0.0284893, 0.00211188, 0, 0, 0, -0.00923137, 0, 0, 0, -0.00923137,
   };
 
-  int m=0;
-  for(int n=0; n<elec_.getTotalNum(); n++)
-    for(int i=0; i<OHMMS_DIM; i++)
-      for(int j=0; j<OHMMS_DIM; j++,m++)
-        {
-          REQUIRE(grad_grad_psi[n](i,j) == ComplexApprox(hess_values[m]).compare_real_only());
-        }
+  int m = 0;
+  for (int n = 0; n < elec_.getTotalNum(); n++)
+    for (int i = 0; i < OHMMS_DIM; i++)
+      for (int j = 0; j < OHMMS_DIM; j++, m++)
+      {
+        REQUIRE(std::real(grad_grad_psi[n](i, j)) == Approx(hess_values[m]));
+      }
 
-  psi.evaluateLog(elec_); // evaluateHessian has side effects
+  j1->evaluateLog(elec_, elec_.G, elec_.L); // evaluateHessian has side effects
 
 
   struct JValues
@@ -492,16 +445,16 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
 
 #ifdef ENABLE_SOA
-  BsplineFunctor<WaveFunctionComponent::RealType>* bf = j1->F[0];
+  BsplineFunctor<RealType>* bf = j1->F[0];
 #else
-  BsplineFunctor<WaveFunctionComponent::RealType>* bf  = j1->Fs[0];
+  BsplineFunctor<RealType>* bf  = j1->Fs[0];
 #endif
 
   for (int i = 0; i < N; i++)
   {
-    WaveFunctionComponent::RealType dv  = 0.0;
-    WaveFunctionComponent::RealType ddv = 0.0;
-    WaveFunctionComponent::RealType val = bf->evaluate(Vals[i].r, dv, ddv);
+    RealType dv  = 0.0;
+    RealType ddv = 0.0;
+    RealType val = bf->evaluate(Vals[i].r, dv, ddv);
     REQUIRE(Vals[i].u == Approx(val));
     REQUIRE(Vals[i].du == Approx(dv));
     REQUIRE(Vals[i].ddu == Approx(ddv));
@@ -525,12 +478,12 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
     double r      = 0.6 * i;
     elec_.R[0][0] = r;
     elec_.update();
-    double logpsi = psi.evaluateLog(elec_);
+    double logpsi_real = std::real(j1->evaluateLog(elec_, elec_.G, elec_.L));
     //double alt_val = bf->evaluate(r);
     double dv      = 0.0;
     double ddv     = 0.0;
     double alt_val = bf->evaluate(r, dv, ddv);
-    printf("%g %g %g %g %g\n", r, logpsi, alt_val, dv, ddv);
+    printf("%g %g %g %g %g\n", r, logpsi_real, alt_val, dv, ddv);
   }
 #endif
 
@@ -544,24 +497,23 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   std::vector<ValueType> ratios(elec_.getTotalNum());
   j1->evaluateRatiosAlltoOne(elec_, ratios);
 
-  REQUIRE(ratios[0] == ComplexApprox(0.9819208747).compare_real_only());
-  REQUIRE(ratios[1] == ComplexApprox(1.0040884258).compare_real_only());
+  REQUIRE(std::real(ratios[0]) == Approx(0.9819208747));
+  REQUIRE(std::real(ratios[1]) == Approx(1.0040884258));
 
   elec_.makeMove(0, newpos - elec_.R[0]);
-  ValueType ratio_0 = j1->ratio(elec_, 0);
+  PsiValueType ratio_0 = j1->ratio(elec_, 0);
   elec_.rejectMove(0);
 
-  REQUIRE(ratio_0 == ComplexApprox(0.9819208747).compare_real_only());
+  REQUIRE(std::real(ratio_0) == Approx(0.9819208747));
 
   // test acceptMove results
   elec_.makeMove(1, newpos - elec_.R[1]);
-  ValueType ratio_1 = j1->ratio(elec_, 1);
+  PsiValueType ratio_1 = j1->ratio(elec_, 1);
   j1->acceptMove(elec_, 1);
   elec_.acceptMove(1);
 
-  REQUIRE(ratio_1 == ComplexApprox(1.0040884258).compare_real_only());
-  REQUIRE(j1->LogValue == Approx(0.32013531536));
-
+  REQUIRE(std::real(ratio_1) == Approx(1.0040884258));
+  REQUIRE(std::real(j1->LogValue) == Approx(0.32013531536));
 
   // test to make sure that setting cusp for J1 works properly
   const char* particles2 = "<tmp> \
@@ -584,15 +536,10 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
   xmlNodePtr jas2 = xmlFirstElementChild(root2);
 
-  TrialWaveFunction psi2(c);
-  RadialJastrowBuilder jastrow2(elec_, psi2, ions_);
-  bool build_okay2 = jastrow2.put(jas2);
-  REQUIRE(build_okay2);
+  RadialJastrowBuilder jastrow2(c, elec_, ions_);
 
-  WaveFunctionComponent* orb2 = psi2.getOrbitals()[0];
-
-  J1Type* j12 = dynamic_cast<J1Type*>(orb2);
-  REQUIRE(j12 != NULL);
+  std::unique_ptr<J1Type> j12(dynamic_cast<J1Type*>(jastrow2.buildComponent(jas2)));
+  REQUIRE(j12);
 
   // Cut and paste from output of gen_bspline_jastrow.py
   // note only the first two rows should change from above
@@ -619,16 +566,16 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
                        {11.40, 0, 0, 0}};
 
 #ifdef ENABLE_SOA
-  BsplineFunctor<WaveFunctionComponent::RealType>* bf2 = j12->F[0];
+  BsplineFunctor<RealType>* bf2 = j12->F[0];
 #else
-  BsplineFunctor<WaveFunctionComponent::RealType>* bf2 = j12->Fs[0];
+  BsplineFunctor<RealType>* bf2 = j12->Fs[0];
 #endif
 
   for (int i = 0; i < N2; i++)
   {
-    WaveFunctionComponent::RealType dv  = 0.0;
-    WaveFunctionComponent::RealType ddv = 0.0;
-    WaveFunctionComponent::RealType val = bf2->evaluate(Vals2[i].r, dv, ddv);
+    RealType dv  = 0.0;
+    RealType ddv = 0.0;
+    RealType val = bf2->evaluate(Vals2[i].r, dv, ddv);
     REQUIRE(Vals2[i].du == Approx(dv));
     REQUIRE(Vals2[i].u == Approx(val));
     REQUIRE(Vals2[i].ddu == Approx(ddv));

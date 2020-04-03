@@ -1,5 +1,5 @@
 #INFO: **** input file is /home/abenali/Work/Development/QMCPACK-Fork/qmcpack/tests/molecules/LiH_dimer_ae/gamess/LiH.py ****
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 
 # Note import path which is different to molecule code

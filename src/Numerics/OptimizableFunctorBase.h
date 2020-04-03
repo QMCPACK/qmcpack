@@ -50,7 +50,7 @@ struct OptimizableFunctorBase
   ///typedef for name-value lists
   typedef optimize::VariableSet::variable_map_type variable_map_type;
   ///maximum cutoff
-  real_type cutoff_radius;
+  real_type cutoff_radius = 0.0;
   ///set of variables to be optimized
   opt_variables_type myVars;
   ///default constructor

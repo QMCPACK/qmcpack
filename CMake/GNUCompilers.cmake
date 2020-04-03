@@ -16,8 +16,11 @@ ENDIF(QMC_OMP)
 # Set gnu specific flags (which we always want)
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
 
-SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -D__forceinline=inline")
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -D__forceinline=inline")
+
+SET( CMAKE_C_FLAGS_DEBUG     "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer" )
+SET( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer" )
 
 # Suppress compile warnings
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Wno-deprecated")
@@ -27,11 +30,15 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Werror=vla")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wvla")
 
+# set compiler warnings
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wcomment -Wmisleading-indentation -Wmaybe-uninitialized -Wuninitialized -Wreorder -Wno-unknown-pragmas -Wno-sign-compare")
+
 # Set extra optimization specific flags
-SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -ffast-math" )
-SET( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math" )
-SET( CMAKE_C_FLAGS_RELWITHDEBINFO     "${CMAKE_C_FLAGS_RELWITHDEBINFO} -ffast-math" )
-SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ffast-math" )
+SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -fomit-frame-pointer -ffast-math" )
+SET( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer -ffast-math" )
+SET( CMAKE_C_FLAGS_RELWITHDEBINFO     "${CMAKE_C_FLAGS_RELWITHDEBINFO} -fomit-frame-pointer -ffast-math" )
+SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fomit-frame-pointer -ffast-math" )
 
 # Special architectural flags
 #--------------------------------------

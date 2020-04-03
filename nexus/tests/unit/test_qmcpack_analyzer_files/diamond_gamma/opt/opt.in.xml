@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<simulation>
+   <project id="opt" series="0">
+      <application name="qmcpack" role="molecu" class="serial" version="1.0"/>
+   </project>
+   <qmcsystem>
+      <simulationcell>
+         <parameter name="lattice" units="bohr">
+                  3.37316115        3.37316115       -0.00000000
+                  0.00000000        3.37316115        3.37316115
+                  3.37316115        0.00000000        3.37316115
+         </parameter>
+         <parameter name="bconds">
+            p p p
+         </parameter>
+         <parameter name="LR_dim_cutoff"       >    15                 </parameter>
+      </simulationcell>
+      <particleset name="e" random="yes">
+         <group name="u" size="4" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+         <group name="d" size="4" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+      </particleset>
+      <particleset name="ion0">
+         <group name="C" size="2" mass="21894.7135906">
+            <parameter name="charge"              >    4                     </parameter>
+            <parameter name="valence"             >    4                     </parameter>
+            <parameter name="atomicnumber"        >    6                     </parameter>
+            <parameter name="mass"                >    21894.7135906            </parameter>
+            <attrib name="position" datatype="posArray" condition="0">
+                     0.00000000        0.00000000        0.00000000
+                     1.68658058        1.68658058        1.68658057
+            </attrib>
+         </group>
+      </particleset>
+      <wavefunction name="psi0" target="e">
+         <sposet_builder type="bspline" href="../scf/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10" meshfactor="1.0" precision="float" truncate="no">
+            <sposet type="bspline" name="spo_ud" size="4" spindataset="0"/>
+         </sposet_builder>
+         <determinantset>
+            <slaterdeterminant>
+               <determinant id="updet" group="u" sposet="spo_ud" size="4"/>
+               <determinant id="downdet" group="d" sposet="spo_ud" size="4"/>
+            </slaterdeterminant>
+         </determinantset>
+         <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
+            <correlation speciesA="u" speciesB="u" size="8" rcut="2.385185123200013">
+               <coefficients id="uu" type="Array">                  
+0.32791567907711555 0.27355653046733214 0.2022459975132761 0.13250926452688797 
+0.07693477198380011 0.03958016198586048 0.018041460243340048 0.007285494521501352 
+               </coefficients>
+            </correlation>
+            <correlation speciesA="u" speciesB="d" size="8" rcut="2.385185123200013">
+               <coefficients id="ud" type="Array">                  
+0.4622964481786165 0.3689456281602729 0.26204434846037605 0.16561536983734443 
+0.09312133678993373 0.04656937099578651 0.02070664220461608 0.008183026023078828 
+               </coefficients>
+            </correlation>
+         </jastrow>
+      </wavefunction>
+      <hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+         <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+            <pseudo elementType="C" href="C.BFD.xml"/>
+         </pairpot>
+         <pairpot type="MPC" name="MPC" source="e" target="e" ecut="60.0" physical="no"/>
+         <estimator name="KEcorr" type="chiesa" source="e" psi="psi0"/>
+      </hamiltonian>
+   </qmcsystem>
+   <loop max="6">
+      <qmc method="linear" move="pbyp" checkpoint="-1">
+         <parameter name="warmupSteps"         >    300                </parameter>
+         <parameter name="blocks"              >    50                 </parameter>
+         <parameter name="steps"               >    1                  </parameter>
+         <parameter name="subSteps"            >    10                 </parameter>
+         <parameter name="timestep"            >    0.3                </parameter>
+         <parameter name="useDrift"            >    no                 </parameter>
+         <parameter name="samples"             >    51200              </parameter>
+         <parameter name="MinMethod"           >    OneShiftOnly         </parameter>
+         <parameter name="minwalkers"          >    0.2                </parameter>
+         <parameter name="nonlocalpp"          >    yes                </parameter>
+      </qmc>
+   </loop>
+</simulation>

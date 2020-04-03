@@ -19,7 +19,7 @@ namespace qmcplusplus
 {
 /** SpeciesKineticEnergy evaluate the kinetic energy of each species in the target
  * particle set separately instead of sum over every particle in the set such as BareKinetic
- *  <estimator type="specieskinetic" name="skinetic"/>
+ * <![CDATA][<estimator type="specieskinetic" name="skinetic"/>]]>
  * By default skinetic_u, skinetic_d, etc. columns will be added to scalar.dat.
  *  If hdf5="yes", then data will be added to stat.h5 as well.
  * The sum of every column that starts with skinetic should be equivalent to the Kinetic column.

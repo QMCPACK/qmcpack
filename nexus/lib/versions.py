@@ -8,21 +8,26 @@ Track versions of dependencies supported by Nexus.
 """
 
 import sys
-from platform import python_version
+from platform import python_version,python_version_tuple
 import datetime
 import importlib
 
 
-nexus_version = 1,8,0
+nexus_version = 2,0,0
 """
 Current Nexus version.
 """
 
-python_supported = 'python2'
+python_supported = 'python3'
 """
 Current Python family supported.
 """
 
+# Require Python 3
+if python_version_tuple()<('3','0','0'):
+    print('\nNexus is compatible only with Python 3.\n  You attempted to run with Python version {}.\n  Please rerun with Python 3.\n'.format(python_version()))
+    sys.exit(1)
+#end if
 
 years_supported = 2
 """
@@ -47,7 +52,7 @@ Required dependencies for Nexus.
 
 
 currently_supported = [
-    ('python2'    , (2,  7, 13) ),
+    ('python3'    , (3,  6,  0) ),
     ('numpy'      , (1, 13,  1) ),
     ('scipy'      , (0, 19,  1) ), # optional
     ('h5py'       , (2,  7,  1) ), # optional
@@ -56,6 +61,7 @@ currently_supported = [
     ('spglib'     , (1,  9,  9) ), # optional
     ('seekpath'   , (1,  4,  0) ), # optional
     ('pycifrw'    , (4,  3,  0) ), # optional
+    ('cif2cell'   , (1,  2, 10) ), # optional
     ]
 """
 Currently supported versions of Nexus dependencies.
@@ -67,27 +73,6 @@ import_aliases  = dict(
     )
 
 raw_version_data = dict(
-    # python 2 releases
-    #   https://www.python.org/dev/peps/pep-0373/
-    python2 = '''
-        2.7.1  2010-11-27
-        2.7.2  2011-07-21
-        2.7.3  2012-03-09
-        2.7.4  2013-04-06
-        2.7.5  2013-05-12
-        2.7.6  2013-11-10
-        2.7.7  2014-05-31
-        2.7.8  2014-06-30
-        2.7.9  2014-12-10
-        2.7.10 2015-05-23
-        2.7.11 2015-12-05
-        2.7.12 2016-06-25
-        2.7.13 2016-12-17
-        2.7.14 2017-09-16
-        2.7.15 2018-05-01
-        2.7.16 2019-03-02
-        ''',
-
     # python 3 releases
     #   3.3  https://www.python.org/dev/peps/pep-0398/
     #   3.4  https://www.python.org/dev/peps/pep-0429/
@@ -262,6 +247,15 @@ raw_version_data = dict(
         4.3    2017-02-27
         4.4    2018-02-12
         4.4.1  2019-02-27
+        ''',
+    # cif2cell releases
+    #   https://pypi.org/project/cif2cell/#history
+    #   https://sourceforge.net/projects/cif2cell/files/
+    cif2cell = '''
+        1.2.2   2014-08-26
+        1.2.7   2015-05-18
+        1.2.10  2016-01-19
+        2.0.0   2019-10-07
         ''',
     # seekpath releases
     #   https://pypi.org/project/seekpath/#history
@@ -811,13 +805,15 @@ class Versions(object):
                         s += '  {:<10} is missing.  Install {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
                     #end for
                 #end if
-                s += '\nOptional dependencies benefitting from user check or update:\n'
-                for name in opt_unknown:
-                    s += '  {:<10} version is unknown.  Check for {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
-                #end for
-                for name in opt_unsupported:
-                    s += '  {:<10} version {} is outdated.  Update to {} or greater.\n'.format(name,version_to_string(self.dependency_version[name]),version_to_string(self.currently_supported[name]))
-                #end for
+                if len(opt_unknown)>0 or len(opt_unsupported)>0:
+                    s += '\nOptional dependencies benefitting from user check or update:\n'
+                    for name in opt_unknown:
+                        s += '  {:<10} version is unknown.  Check for {} or greater.\n'.format(name,version_to_string(self.currently_supported[name]))
+                    #end for
+                    for name in opt_unsupported:
+                        s += '  {:<10} version {} is outdated.  Update to {} or greater.\n'.format(name,version_to_string(self.dependency_version[name]),version_to_string(self.currently_supported[name]))
+                    #end for
+                #end if
             #end if
         #end if
         s = n*pad+header+s.replace('\n','\n'+(n+1)*pad)+'\n'

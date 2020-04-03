@@ -632,11 +632,66 @@ void EshdfFile::getNumElectrons(vector<vector<double> >& occupations,
   ndn = static_cast<int>(round(ndn_flt));
 }
 
+vector<double> EshdfFile::getPtvs(const XmlNode& qeXml) {
+  const XmlNode& reciprocal_lattice_xml =
+    qeXml.getChild("output").getChild("basis_set").getChild("reciprocal_lattice");
+  vector<double> rlv; // reciprocal_lattice_vectors
+  reciprocal_lattice_xml.getChild("b1").getValue(rlv);
+  reciprocal_lattice_xml.getChild("b2").getValue(rlv);
+  reciprocal_lattice_xml.getChild("b3").getValue(rlv);
+
+  const double det = rlv[0]*(rlv[4]*rlv[8] - rlv[5]*rlv[7])
+    - rlv[1]*(rlv[3]*rlv[8] - rlv[5]*rlv[6])
+    + rlv[2]*(rlv[3]*rlv[7] - rlv[4]*rlv[6]);
+  const double invdet = 1.0/det;
+  vector<double> ptv;
+  ptv.push_back(invdet*(rlv[4]*rlv[8] - rlv[5]*rlv[7]));
+  ptv.push_back(invdet*(rlv[5]*rlv[6] - rlv[3]*rlv[8]));
+  ptv.push_back(invdet*(rlv[3]*rlv[7] - rlv[4]*rlv[6]));
+  ptv.push_back(invdet*(rlv[2]*rlv[7] - rlv[1]*rlv[8]));
+  ptv.push_back(invdet*(rlv[0]*rlv[8] - rlv[2]*rlv[6]));
+  ptv.push_back(invdet*(rlv[1]*rlv[6] - rlv[0]*rlv[7]));
+  ptv.push_back(invdet*(rlv[1]*rlv[5] - rlv[2]*rlv[4]));
+  ptv.push_back(invdet*(rlv[2]*rlv[3] - rlv[0]*rlv[5]));
+  ptv.push_back(invdet*(rlv[0]*rlv[4] - rlv[1]*rlv[3]));
+  return ptv;
+}
+
+void EshdfFile::readKptGvecs(int kpt_num,
+                             const string& dir_name,
+                             int spinpol,
+                             momap_t& morefmap)
+
+{
+  stringstream ss;
+  string fname;
+  if (spinpol == 1)
+    ss << dir_name << "wfcup" << (kpt_num + 1) << ".hdf5";
+  else 
+    ss << dir_name << "wfc" << (kpt_num + 1) << ".hdf5";
+  fname = ss.str();
+  hdf_archive wfc_file = openHdfFileForRead(fname);
+  vector<int> readShape;
+  wfc_file.getShape<int>("MillerIndices", readShape);
+  vector<int> gvecs;
+  array<int,2> shape{readShape[0], readShape[1]};
+  wfc_file.readSlabReshaped(gvecs, shape, "MillerIndices");
+  wfc_file.close();
+
+  for (int i = 0; i < readShape[0]; i++)
+  {
+    vector<int> gv;
+    for (int d = 0; d < readShape[1]; d++)
+      gv.push_back(gvecs[i * readShape[1] + d]);
+    mopair_t p(gv, std::complex<double>(0,0));
+    morefmap.insert(p);
+  }
+}
+
 // should already be in the electrons group when you call this
 void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt, 
 			  const std::vector<double>& eigenvalues,
-			  int loc_ngvecs, int tot_ngvecs,
-			  double weight, int spinpol, int noncol)
+			  double weight, int spinpol, int noncol, const momap_t& moref)
 {
   stringstream ss;
   ss << "kpoint_" << kpt_num;
@@ -646,30 +701,37 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
   vector<double> kpt_vector{kpt.kx,kpt.ky,kpt.kz};
   outfile_.write(kpt_vector, "reduced_k");
 
-  if (kpt_num == 0) 
+  //reread gvecs for this kpts to create a map to coeffs
+  //then will merge with the maximal gvec map in moref
+  //this will fill unused gvecs with zeros
+  string fname;
+  if (spinpol == 1) 
   {
     stringstream ss;
-    string fname;
-    if (spinpol == 1) 
-    {
-      ss << dir_name << "wfcup" << (kpt_num+1) << ".hdf5";
-      fname = ss.str();
-    }
-    else 
-    {
-      ss << dir_name << "wfc" << (kpt_num+1) << ".hdf5";
-      fname = ss.str();
-    }
-    hdf_archive wfc_file = openHdfFileForRead(fname);
-    vector<int> readShape;
-    wfc_file.getShape<int>("MillerIndices", readShape);   
-    vector<int> gvecs;
-    array<int,2> shape{readShape[0],readShape[1]};
-    wfc_file.readSlabReshaped(gvecs, shape, "MillerIndices");
-    wfc_file.close();
-    
-    outfile_.writeSlabReshaped(gvecs, shape, "gvectors");
-    outfile_.write(tot_ngvecs, "number_of_gvectors");
+    ss << dir_name << "wfcup" << (kpt_num+1) << ".hdf5";
+    fname = ss.str();
+  }
+  else 
+  {
+    stringstream ss;
+    ss << dir_name << "wfc" << (kpt_num+1) << ".hdf5";
+    fname = ss.str();
+  }
+  hdf_archive wfc_file = openHdfFileForRead(fname);
+  vector<int> readShape;
+  wfc_file.getShape<int>("MillerIndices", readShape);   
+  vector<int> gvecs;
+  array<int,2> shape{readShape[0],readShape[1]};
+  wfc_file.readSlabReshaped(gvecs, shape, "MillerIndices");
+  wfc_file.close();
+
+  vector<vector<int> > gvs;
+  for (int i=0; i < readShape[0]; i++)
+  {
+    vector<int> g;
+    for (int d = 0; d < readShape[1]; d++)
+      g.push_back(gvecs[i*readShape[1]+d]);
+    gvs.push_back(g);
   }
 
   // now do the non-gvectors related stuff
@@ -695,21 +757,24 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
   // set up storage space for the coefficients to be read from the file
   vector<double> upcoefs;
   vector<double> dncoefs;
+  int ng = gvs.size();
   if (spinpol == 0)
   {
-    if (noncol == 0) upcoefs.resize(tot_ngvecs*2);
+    if (noncol == 0) upcoefs.resize(ng*2);
     if (noncol == 1)
     {
-      upcoefs.resize(tot_ngvecs*4);
-      dncoefs.resize(tot_ngvecs*2);
+      upcoefs.resize(ng*4);
+      dncoefs.resize(ng*2);
     }
   }
   else
   {
-    upcoefs.resize(tot_ngvecs*2);
-    dncoefs.resize(tot_ngvecs*2); 
+    upcoefs.resize(ng*2);
+    dncoefs.resize(ng*2); 
   }
   
+  vector<momap_t> states_up;
+  vector<momap_t> states_dn;
   int states_to_loop = eigenvalues.size();
   if (spinpol == 1) states_to_loop /= 2;
   for (int state = 0; state < states_to_loop; state++)
@@ -730,56 +795,112 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
       spin_1_file.readSlabSelection(dncoefs, read_from, "evc");
     }
 
-    // once the coefficients are read in, write them out to the appropriate place
-    stringstream ss2;
-    ss2 << "state_" << state;
     if (spinpol == 0)
     {
       if (noncol == 0)
       {
-	outfile_.push("spin_0");
-	outfile_.push(ss2.str());
-	array<int,2> dims{tot_ngvecs,2};
-	outfile_.writeSlabReshaped(upcoefs, dims, "psi_g");
-	outfile_.pop();
-	outfile_.pop();
+        momap_t moup;
+        for (int i = 0; i < ng; i++)
+        {
+          complex<double> c(upcoefs[i*2], upcoefs[i*2+1]);
+          mopair_t p(gvs[i], c);
+          moup.insert(p);
+        }
+        //now fill in rest of gvecs with zeros 
+        moup.insert(moref.begin(), moref.end());
+        states_up.push_back(moup);
       }
-      else // non-colinear calculation
+      else 
       {
-	outfile_.push("spin_0");
-	outfile_.push(ss2.str());
-	array<int,2> dims{tot_ngvecs,2};
-
-	for (int i = 0; i < loc_ngvecs*2; i++) dncoefs[i] = upcoefs[i];
-	outfile_.writeSlabReshaped(dncoefs, dims, "psi_g");
-	outfile_.pop();
-	outfile_.pop();
-
-	outfile_.push("spin_1");
-	outfile_.push(ss2.str());
-	for (int i = 0; i < loc_ngvecs*2; i++) dncoefs[i] = upcoefs[i+loc_ngvecs*2];
-	outfile_.writeSlabReshaped(dncoefs, dims, "psi_g");
-	outfile_.pop();
-	outfile_.pop();
+        //dn part of spinor in second half of upcoefs
+        for (int i = 0; i < ng*2; i++) 
+          dncoefs[i] = upcoefs[i + 2*ng];
+        momap_t moup, modn;
+        for (int i = 0; i < ng; i++)
+        {
+          complex<double> c(upcoefs[i*2], upcoefs[i*2+1]);
+          mopair_t p(gvs[i], c);
+          moup.insert(p);
+          c = complex<double>(dncoefs[i*2], dncoefs[i*2+1]);
+          p = mopair_t(gvs[i], c);
+          modn.insert(p);
+        }
+        //now fill in rest of gvecs with zeros 
+        moup.insert(moref.begin(), moref.end());
+        modn.insert(moref.begin(), moref.end());
+        states_up.push_back(moup);
+        states_dn.push_back(modn);
       }
     }
-    else  // spin polarized case
+    else 
     {
-      array<int,2> dims{tot_ngvecs,2};
-      outfile_.push("spin_0");
-      outfile_.push(ss2.str());
-      outfile_.writeSlabReshaped(upcoefs, dims, "psi_g");
-      outfile_.pop();
-      outfile_.pop();
-
-      outfile_.push("spin_1");
-      outfile_.push(ss2.str());
-      outfile_.writeSlabReshaped(dncoefs, dims, "psi_g");
-      outfile_.pop();
-      outfile_.pop();
+      momap_t moup, modn;
+      for (int i = 0; i < ng; i++)
+      {
+        complex<double> c(upcoefs[i*2], upcoefs[i*2+1]);
+        mopair_t p(gvs[i], c);
+        moup.insert(p);
+        c = complex<double>(dncoefs[i*2], dncoefs[i*2+1]);
+        p = mopair_t(gvs[i], c);
+        modn.insert(p);
+      }
+      moup.insert(moref.begin(), moref.end());
+      modn.insert(moref.begin(), moref.end());
+      states_up.push_back(moup);
+      states_dn.push_back(modn);
     }
   }
+  spin_0_file.close();
+  spin_1_file.close();
 
+  //now write to eshdf
+  if (kpt_num == 0)
+  {
+    vector<int> allgvs;
+    int nallgvs = moref.size();
+    int dim = moref.begin()->first.size();
+    array<int,2> shape{nallgvs,dim};
+    for (auto& v : moref)
+    {
+      for (int d = 0; d < dim; d++)
+        allgvs.push_back(v.first[d]);
+    }
+    outfile_.writeSlabReshaped(allgvs, shape, "gvectors");
+    outfile_.write(nallgvs, "number_of_gvectors");
+  }
+
+  for (int state = 0; state < states_up.size(); state++)
+  {
+    stringstream ss;
+    ss << "state_" << state;
+    outfile_.push("spin_0");
+    outfile_.push(ss.str());
+    vector<double> c;
+    for (auto& v : states_up[state])
+    {
+      c.push_back(v.second.real());
+      c.push_back(v.second.imag());
+    }
+	array<int,2> dims{states_up[state].size(),2};
+	outfile_.writeSlabReshaped(c, dims, "psi_g");
+	outfile_.pop();
+	outfile_.pop();
+    if (noncol == 1 || spinpol == 1)
+    {
+      outfile_.push("spin_1");
+      outfile_.push(ss.str());
+      vector<double> c;
+      for (auto& v : states_dn[state])
+      {
+        c.push_back(v.second.real());
+        c.push_back(v.second.imag());
+      }
+	  array<int,2> dims{states_dn[state].size(),2};
+	  outfile_.writeSlabReshaped(c, dims, "psi_g");
+	  outfile_.pop();
+	  outfile_.pop();
+    }
+  }
 
   // now all the states are writen, so write out eigenvalues and number of states
   vector<double> eigval = eigenvalues;
@@ -823,35 +944,7 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
     outfile_.pop();
   }
 
-  spin_0_file.close();
-  spin_1_file.close();
-
   outfile_.pop(); // get out of the kpoint_ kpt_num group
-}
-
-vector<double> EshdfFile::getPtvs(const XmlNode& qeXml) {
-  const XmlNode& reciprocal_lattice_xml =
-    qeXml.getChild("output").getChild("basis_set").getChild("reciprocal_lattice");
-  vector<double> rlv; // reciprocal_lattice_vectors
-  reciprocal_lattice_xml.getChild("b1").getValue(rlv);
-  reciprocal_lattice_xml.getChild("b2").getValue(rlv);
-  reciprocal_lattice_xml.getChild("b3").getValue(rlv);
-
-  const double det = rlv[0]*(rlv[4]*rlv[8] - rlv[5]*rlv[7])
-    - rlv[1]*(rlv[3]*rlv[8] - rlv[5]*rlv[6])
-    + rlv[2]*(rlv[3]*rlv[7] - rlv[4]*rlv[6]);
-  const double invdet = 1.0/det;
-  vector<double> ptv;
-  ptv.push_back(invdet*(rlv[4]*rlv[8] - rlv[5]*rlv[7]));
-  ptv.push_back(invdet*(rlv[5]*rlv[6] - rlv[3]*rlv[8]));
-  ptv.push_back(invdet*(rlv[3]*rlv[7] - rlv[4]*rlv[6]));
-  ptv.push_back(invdet*(rlv[2]*rlv[7] - rlv[1]*rlv[8]));
-  ptv.push_back(invdet*(rlv[0]*rlv[8] - rlv[2]*rlv[6]));
-  ptv.push_back(invdet*(rlv[1]*rlv[6] - rlv[0]*rlv[7]));
-  ptv.push_back(invdet*(rlv[1]*rlv[5] - rlv[2]*rlv[4]));
-  ptv.push_back(invdet*(rlv[2]*rlv[3] - rlv[0]*rlv[5]));
-  ptv.push_back(invdet*(rlv[0]*rlv[4] - rlv[1]*rlv[3]));
-  return ptv;
 }
 
 void EshdfFile::writeQEElectrons(const XmlNode& qeXml, const string& dir_name) {
@@ -904,22 +997,13 @@ void EshdfFile::writeQEElectrons(const XmlNode& qeXml, const string& dir_name) {
   nels.push_back(ndn);
   outfile_.write(nels, "number_of_electrons");
 
-  int maxgvecs = 0;
-  int maxgvecs_index = -1;
-  for (int i = 0; i < ngvecs.size(); i++) 
-  {
-    if (ngvecs[i] > maxgvecs) {
-      maxgvecs = ngvecs[i];
-      maxgvecs_index = i;
-    }
-  }
-
-  // now read and write the appropriate coefficients to the kpoint_xxx group
-  for (int i = 0; i < kpts.size(); i++) 
-  {
-    handleKpt(i, dir_name, kpts[i], eigenvals[i], ngvecs[i], maxgvecs, weights[i], 
-	      spinpol, noncol);
-  }
+  //find maximal set of gvecs
+  momap_t moref;
+  for (int i = 0; i < kpts.size(); i++)
+    readKptGvecs(i, dir_name, spinpol, moref);
+  //moref now has maximal set of gvecs
+  for (int i = 0; i < kpts.size(); i++)
+    handleKpt(i, dir_name, kpts[i], eigenvals[i], weights[i], spinpol, noncol, moref);
 }
   
 

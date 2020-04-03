@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -55,9 +55,11 @@ struct LRHandlerBase
   ///Coefficient for strain fit.
   std::vector<mRealType> gstraincoefs;
 
+  virtual mRealType evaluate_vlr_k(mRealType k) = 0;
+
 
   //constructor
-  explicit LRHandlerBase(mRealType kc) : LR_kc(kc), ClassName("LRHandlerBase") {}
+  explicit LRHandlerBase(mRealType kc) : MaxKshell(0), LR_kc(kc), LR_rc(0), ClassName("LRHandlerBase") {}
 
   // virtual destructor
   virtual ~LRHandlerBase() {}
@@ -84,6 +86,19 @@ struct LRHandlerBase
       mRealType u = 0;
       for (; ki < kshell[ks + 1]; ki++, rk1++, rk2++)
         u += ((*rk1).real() * (*rk2).real() + (*rk1).imag() * (*rk2).imag());
+      vk += Fk_symm[ks] * u;
+    }
+    return vk;
+  }
+
+  inline mRealType evaluate_w_sk(const std::vector<int>& kshell, const pRealType* restrict sk)
+  {
+    mRealType vk = 0.0;
+    for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
+    {
+      mRealType u = 0;
+      for (; ki < kshell[ks + 1]; ki++)
+        u += (*sk++);
       vk += Fk_symm[ks] * u;
     }
     return vk;
@@ -286,6 +301,7 @@ struct DummyLRHandler : public LRHandlerBase
 
   void initBreakup(ParticleSet& ref)
   {
+    mRealType norm = 4.0 * M_PI / ref.Lattice.Volume;
     mRealType kcsq = LR_kc * LR_kc;
     KContainer& KList(ref.SK->KLists);
     int maxshell = KList.kshell.size() - 1;
@@ -300,19 +316,22 @@ struct DummyLRHandler : public LRHandlerBase
     MaxKshell = ksh;
     Fk_symm.resize(MaxKshell);
     Fk.resize(KList.kpts_cart.size());
-    mRealType u0 = 4.0 * M_PI / ref.Lattice.Volume;
     for (ksh = 0, ik = 0; ksh < MaxKshell; ksh++, ik++)
     {
-      mRealType v  = u0 * myFunc(kk[ik]); //rpa=u0/kk[ik];
+      mRealType v  = norm * myFunc(kk[KList.kshell[ksh]]); //rpa=u0/kk[ik];
       Fk_symm[ksh] = v;
       for (; ik < KList.kshell[ksh + 1]; ik++)
         Fk[ik] = v;
     }
   }
 
+  mRealType evaluate_vlr_k(mRealType k) override { return 0.0; }
   mRealType evaluate(mRealType r, mRealType rinv) { return 0.0; }
   mRealType evaluateLR(mRealType r) { return 0.0; }
   mRealType srDf(mRealType r, mRealType rinv) { return 0.0; }
+  void Breakup(ParticleSet& ref, mRealType rs_in) {}
+  void resetTargetParticleSet(ParticleSet& ref) {}
+  virtual LRHandlerBase* makeClone(ParticleSet& ref) { return new DummyLRHandler<Func>(LR_kc); }
 };
 
 } // namespace qmcplusplus

@@ -22,18 +22,18 @@
 namespace qmcplusplus
 {
 CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces)
-    : PtclA(ions),
+    : ForceBase(ions, elns),
+      PtclA(ions),
+      myTableIndex(elns.addTable(ions, DT_SOA_PREFERRED)),
       myConst(0.0),
       myGrid(nullptr),
       V0(nullptr),
       fV0(nullptr),
       dfV0(nullptr),
       ComputeForces(computeForces),
-      ForceBase(ions, elns),
       MaxGridPoints(10000),
-      Pion(ions),
       Peln(elns),
-      myTableIndex(elns.addTable(ions, DT_SOA_PREFERRED))
+      Pion(ions)
 {
   ReportEngine PRE("CoulombPBCAB", "CoulombPBCAB");
   set_energy_domain(potential);
@@ -206,14 +206,14 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
     {
       for (size_t b = 0; b < NptclB; ++b)
       {
-        z = 0.5*Qat[b];
-        const RealType* restrict dist = d_ab.Distances[b];
+        z                = 0.5 * Qat[b];
+        const auto& dist = d_ab.getDistRow(b);
         for (size_t a = 0; a < NptclA; ++a)
         {
           Return_t pairpot = z * Zat[a] * Vat[a]->splint(dist[a]) / dist[a];
           Vi_samp(a) += pairpot;
           Ve_samp(b) += pairpot;
-          Vsr        += pairpot;
+          Vsr += pairpot;
         }
       }
       Vsr *= 2.0;
@@ -230,7 +230,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
           Return_t pairpot = z * Qat[jat] * d_ab.rinv(nn) * rVs->splint(d_ab.r(nn));
           Vi_samp(iat) += pairpot;
           Ve_samp(jat) += pairpot;
-          Vsr          += pairpot;
+          Vsr += pairpot;
         }
       }
       Vsr *= 2.0;
@@ -263,7 +263,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
           v1 += Zspec[s] * q * AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[s], RhoKB.eikr[i]);
 #endif
         Ve_samp(i) += v1;
-        Vlr        += v1;
+        Vlr += v1;
       }
       for (int i = 0; i < PtclA.getTotalNum(); ++i)
       {
@@ -277,7 +277,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
           v1 += Qspec[s] * q * AB->evaluate(RhoKB.KLists.kshell, RhoKB.rhok[s], RhoKA.eikr[i]);
 #endif
         Vi_samp(i) += v1;
-        Vlr        += v1;
+        Vlr += v1;
       }
     }
   }
@@ -412,8 +412,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSR(ParticleSet& P)
   { //can be optimized but not important enough
     for (size_t b = 0; b < NptclB; ++b)
     {
-      const RealType* restrict dist = d_ab.Distances[b];
-      mRealType esum                = czero;
+      const auto& dist = d_ab.getDistRow(b);
+      mRealType esum   = czero;
       for (size_t a = 0; a < NptclA; ++a)
         esum += Zat[a] * Vat[a]->splint(dist[a]) / dist[a];
       res += esum * Qat[b];
@@ -792,9 +792,9 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSRwithForces(ParticleSet& P)
   {
     for (size_t b = 0; b < NptclB; ++b)
     {
-      const RealType* restrict dist = d_ab.Distances[b];
-      const RowContainerType dr     = d_ab.Displacements[b];
-      mRealType esum                = czero;
+      const auto& dist = d_ab.getDistRow(b);
+      const auto& dr   = d_ab.getDisplRow(b);
+      mRealType esum   = czero;
       for (size_t a = 0; a < NptclA; ++a)
       {
         //Low hanging SIMD fruit here.  See J1/J2 grad computation.

@@ -118,17 +118,13 @@ void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& r
     Dets[i]->evaluateRatiosAlltoOne(P, ratios);
 }
 
-SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
+SlaterDet::LogValueType SlaterDet::evaluateLog(ParticleSet& P,
                                            ParticleSet::ParticleGradient_t& G,
                                            ParticleSet::ParticleLaplacian_t& L)
 {
   LogValue   = 0.0;
-  PhaseValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-  {
     LogValue += Dets[i]->evaluateLog(P, G, L);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
   return LogValue;
 }
 
@@ -140,20 +136,14 @@ void SlaterDet::mw_evaluateLog(const std::vector<WaveFunctionComponent*>& WFC_li
   constexpr RealType czero(0);
 
   for (int iw = 0; iw < WFC_list.size(); iw++)
-  {
     WFC_list[iw]->LogValue   = czero;
-    WFC_list[iw]->PhaseValue = czero;
-  }
 
   for (int i = 0; i < Dets.size(); ++i)
   {
     const std::vector<WaveFunctionComponent*> Det_list(extract_Det_list(WFC_list, i));
     Dets[i]->mw_evaluateLog(Det_list, P_list, G_list, L_list);
     for (int iw = 0; iw < WFC_list.size(); iw++)
-    {
       WFC_list[iw]->LogValue += Det_list[iw]->LogValue;
-      WFC_list[iw]->PhaseValue += Det_list[iw]->PhaseValue;
-    }
   }
 }
 
@@ -187,19 +177,12 @@ void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
   DEBUG_PSIBUFFER(" SlaterDet::registerData ", buf.current());
 }
 
-SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+SlaterDet::LogValueType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ", buf.current());
-  //ValueType psi = 1.0;
-  //for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf,fromscratch);
-  //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
   LogValue   = 0.0;
-  PhaseValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-  {
     LogValue += Dets[i]->updateBuffer(P, buf, fromscratch);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
   DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ", buf.current());
   return LogValue;
 }

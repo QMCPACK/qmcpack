@@ -83,7 +83,7 @@ void SHOSet::report(const std::string& pad)
 }
 
 
-void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+void SHOSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   const PosType& r(P.activeR(iat));
   ValueVector_t p(&psi[0], size());
@@ -91,7 +91,7 @@ void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 }
 
 
-void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void SHOSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   const PosType& r(P.activeR(iat));
   ValueVector_t p(&psi[0], size());
@@ -172,7 +172,6 @@ void SHOSet::evaluate_d0(const PosType& xpos, ValueVector_t& psi)
     {
       int ns      = n + shift;
       bvalues(ns) = prefactors[n] * g * hermite(ns);
-      //d0_values(ns) = bvalues(ns);
     }
   }
   for (int s = 0; s < state_info.size(); ++s)
@@ -200,7 +199,6 @@ void SHOSet::evaluate_d1(const PosType& xpos, ValueVector_t& psi, GradVector_t& 
       int ns      = n + shift;
       RealType Hn = hermite(ns);
       bvalues(ns) = (-x + 2 * n * Hnm1 / Hn) * ol;
-      //d1_values(ns) = bvalues(ns);
       Hnm1 = Hn;
     }
   }
@@ -228,9 +226,7 @@ void SHOSet::evaluate_d2(const PosType& xpos, ValueVector_t& psi, ValueVector_t&
     for (int n = 0; n < qn_max[d]; ++n)
     {
       int ns      = n + shift;
-      RealType Hn = hermite(ns);
       bvalues(ns) = (-1.0 + x2 - 2 * n) * ol2;
-      //d2_values(ns) = bvalues(ns);
     }
   }
   for (int s = 0; s < state_info.size(); ++s)
@@ -434,7 +430,6 @@ void SHOSet::test_derivatives()
         }
         app_log() << "    laplacians" << std::endl;
         PosType x   = r / length;
-        RealType x2 = dot(x, x);
         for (int m = 0; m < nphi; ++m)
         {
           std::string qn = "";

@@ -760,7 +760,7 @@ Nexus is driven by simple user-defined scripts that resemble keyword-driven inpu
 
 \ifws
 \begin{lstlisting}[style=Python]
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # import Nexus functions
 from nexus import settings,job,get_machine,run_project 
@@ -821,7 +821,7 @@ run_project(qmc)                       # write input file and submit job
 \else
 
 \begin{lstlisting}[style=Python]
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # import Nexus functions
 from nexus import settings,job,get_machine,run_project 
@@ -1559,11 +1559,11 @@ d={'a':5,'b':6}         # dict
 o=obj(a=5,b=6)          # obj
 
                         # printing
-print t                 #  ('A', 42, 56, 123.0)
-print l                 #  ['B', 3.1400000000000001, 196]
-print a                 #  [1 2 3]
-print d                 #  {'a': 5, 'b': 6}
-print o                 #    a               = 5
+print(t)                #  ('A', 42, 56, 123.0)
+print(l)                #  ['B', 3.1400000000000001, 196]
+print(a)                #  [1 2 3]
+print(d)                #  {'a': 5, 'b': 6}
+print(o)                #    a               = 5
                         #    b               = 6
 
 len(t),len(l),len(a),len(d),len(o) #number of elements: (4, 3, 3, 2, 2)
@@ -1609,7 +1609,7 @@ An important feature of Python to be aware of is that assignment is most often b
 >>> 
 >>> p.a=7
 >>> 
->>> print o
+>>> print(o)
   a               = 7
   b               = 6
 
@@ -1617,7 +1617,7 @@ An important feature of Python to be aware of is that assignment is most often b
 >>> 
 >>> q.a=9
 >>> 
->>> print o
+>>> print(o)
   a               = 7
   b               = 6
 \end{shade}
@@ -1629,17 +1629,17 @@ Here \ishell{p} is just another name for \ishell{o}, while \ishell{q} is a fully
 \begin{shade}
 a = 5
 if a is None:
-    print 'a is None'
+    print('a is None')
 elif a==4:
-    print 'a is 4'
+    print('a is 4')
 elif a<=6 and a>2:
-    print 'a is in the range (2,6]'
+    print('a is in the range (2,6]')
 elif a<-1 or a>26:
-    print 'a is not in the range [-1,26]'
+    print('a is not in the range [-1,26]')
 elif a!=10: 
-    print 'a is not 10'
+    print('a is not 10')
 else:
-    print 'a is 10'
+    print('a is 10')
 #end if
 
 \end{shade}
@@ -1656,14 +1656,14 @@ for i in range(len(l)):  # loop over list indices
     s += l[i] + m[i]
 #end for
 
-print s                  # s is 21
+print(s)                 # s is 21
 
 s = 0                    
 for v in l:              # loop over list elements
     s += v
 #end for
 
-print s                  # s is 6
+print(s)                 # s is 6
 
 o = obj(a=5,b=6)
 s = 0
@@ -1671,14 +1671,14 @@ for v in o:              # loop over obj elements
     s += v
 #end for
 
-print s                  # s is 11
+print(s)                 # s is 11
 
 d = {'a':5,'b':4}
-for n,v in o.iteritems():# loop over name/value pairs in obj
+for n,v in o.items():# loop over name/value pairs in obj
     d[n] += v
 #end for
 
-print d                  # d is {'a': 10, 'b': 10}
+print(d)                 # d is {'a': 10, 'b': 10}
 
 \end{shade}
 
@@ -1686,15 +1686,15 @@ print d                  # d is {'a': 10, 'b': 10}
 \subsubsection{Functions: \ishell{def}, argument syntax}
 \begin{shade}
 def f(a,b,c=5):          # basic function, c has a default value
-    print a,b,c
+    print(a,b,c)
 #end def f
 
 f(1,b=2)                 # prints: 1 2 5
 
 
 def f(*args,**kwargs):   # general function, returns nothing
-    print args           #     args: tuple of positional arguments
-    print kwargs         #   kwargs: dict of keyword arguments
+    print(args)          #     args: tuple of positional arguments
+    print(kwargs)        #   kwargs: dict of keyword arguments
 #end def f
 
 f('s',(1,2),a=3,b='t')   # 2 pos., 2 kw. args, prints:

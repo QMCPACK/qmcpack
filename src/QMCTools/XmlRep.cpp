@@ -414,7 +414,6 @@ void XmlNode::readToString(std::string& s) const
     
     // now strip out any xml comments
     std::stringstream ss;
-    int inComment = 0;
     int commentStart = -1;
     int commentEnd = 0;
 

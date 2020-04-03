@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -41,7 +41,7 @@ bool sortByIndex(BandInfo leftB, BandInfo rightB)
 };
 
 
-bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
+bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
 {
   update_token(__FILE__, __LINE__, "ReadOrbitalInfo_ESHDF");
   app_log() << "  Reading orbital file in ESHDF format.\n";
@@ -150,14 +150,14 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
             app_error() << "Supercell ion " << i << " at " << SourcePtcl->R[j]
                         << " was found twice in the primitive cell as ion " << Super2Prim[i] << " and " << j
                         << std::endl;
-            abort();
+            if(!skipChecks) abort();
           }
         }
       }
       if (Super2Prim[i] < 0)
       {
         app_error() << "Supercell ion " << i << " not found in the primitive cell" << std::endl;
-        abort();
+        if(!skipChecks) abort();
       }
       else
       {
@@ -170,7 +170,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
       {
         app_error() << "Primitive cell ion " << i << " was found only " << prim_atom_counts[i]
                     << " times in the supercell rather than " << tiling_size << std::endl;
-        abort();
+        if(!skipChecks) abort();
       }
     // construct AtomicCentersInfo
     AtomicCentersInfo.resize(IonPos.size());
@@ -192,7 +192,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
             app_error() << "Primitive cell ion " << i << " vs supercell ion " << j
                         << " atomic number not matching: " << IonTypes[i] << " vs "
                         << SourcePtcl->mySpecies(Zind, SourcePtcl->GroupID[j]) << std::endl;
-            abort();
+            if(!skipChecks) abort();
           }
           // set non_overlapping_radius for each ion in primitive cell
           RealType r(0);

@@ -52,6 +52,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(warmup_steps_, "warmupsteps", "int");
   parameter_set.add(warmup_steps_, "warmup_steps", "int");
   parameter_set.add(num_crowds_, "crowds", "int");
+  parameter_set.add(walkers_per_rank_, "walkers", "int");
   parameter_set.add(steps_between_samples_, "stepsbetweensamples", "int");
   parameter_set.add(samples_per_thread_, "samplesperthread", "real");
   parameter_set.add(samples_per_thread_, "dmcwalkersperthread", "real");
@@ -63,7 +64,8 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(blocks_between_recompute_, "blocks_between_recompute", "int");
   parameter_set.add(drift_modifier_, "drift_modifier", "string");
   parameter_set.add(drift_modifier_unr_a_, "drift_UNR_a", "double");
-
+  parameter_set.add(max_disp_sq_, "maxDisplSq", "double");
+  
   OhmmsAttributeSet aAttrib;
 
   // first stage in from QMCDriverFactory

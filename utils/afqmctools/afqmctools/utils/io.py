@@ -10,6 +10,12 @@ def to_qmcpack_complex(array):
     shape = array.shape
     return array.view(numpy.float64).reshape(shape+(2,))
 
+def from_qmcpack_complex(data, shape=None):
+    if shape is not None:
+        return data.view(numpy.complex128).ravel().reshape(shape)
+    else:
+        return data.view(numpy.complex128).ravel()
+
 def add_dataset(fh5, name, value):
     try:
         fh5[name] = value

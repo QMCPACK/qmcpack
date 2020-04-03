@@ -149,7 +149,7 @@ void EinsplineSetExtended<StorageType>::setOrbitalSetSize(int norbs)
 }
 
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi)
+void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi)
 {
   ValueTimer.start();
   const PosType& r(P.activeR(iat));
@@ -261,7 +261,7 @@ void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P, int iat, 
 
 
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P, int iat, ComplexValueVector_t& psi)
+void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int iat, ComplexValueVector_t& psi)
 {
   ValueTimer.start();
   const PosType& r(P.activeR(iat));
@@ -288,7 +288,7 @@ void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P, int iat, 
 // with a real return value, i.e. simulations at the gamma or L
 // point.
 template<>
-void EinsplineSetExtended<double>::evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi)
+void EinsplineSetExtended<double>::evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi)
 {
   ValueTimer.start();
   const PosType& r(P.activeR(iat));
@@ -323,11 +323,11 @@ void EinsplineSetExtended<double>::evaluate(const ParticleSet& P, int iat, RealV
 
 // Value, gradient, and laplacian
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P,
-                                                 int iat,
-                                                 RealValueVector_t& psi,
-                                                 RealGradVector_t& dpsi,
-                                                 RealValueVector_t& d2psi)
+void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
+                                                    int iat,
+                                                    RealValueVector_t& psi,
+                                                    RealGradVector_t& dpsi,
+                                                    RealValueVector_t& d2psi)
 {
   VGLTimer.start();
   const PosType& r(P.activeR(iat));
@@ -511,11 +511,11 @@ void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P,
 
 // Value, gradient, and laplacian
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P,
-                                                 int iat,
-                                                 ComplexValueVector_t& psi,
-                                                 ComplexGradVector_t& dpsi,
-                                                 ComplexValueVector_t& d2psi)
+void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
+                                                    int iat,
+                                                    ComplexValueVector_t& psi,
+                                                    ComplexGradVector_t& dpsi,
+                                                    ComplexValueVector_t& d2psi)
 {
   VGLTimer.start();
   const PosType& r(P.activeR(iat));
@@ -552,11 +552,11 @@ void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P,
 
 // Value, gradient, and laplacian
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P,
-                                                 int iat,
-                                                 ComplexValueVector_t& psi,
-                                                 ComplexGradVector_t& dpsi,
-                                                 ComplexHessVector_t& grad_grad_psi)
+void EinsplineSetExtended<StorageType>::evaluateVGH(const ParticleSet& P,
+                                                    int iat,
+                                                    ComplexValueVector_t& psi,
+                                                    ComplexGradVector_t& dpsi,
+                                                    ComplexHessVector_t& grad_grad_psi)
 {
   VGLTimer.start();
   const PosType& r(P.activeR(iat));
@@ -598,11 +598,11 @@ void EinsplineSetExtended<StorageType>::evaluate(const ParticleSet& P,
 }
 
 template<>
-void EinsplineSetExtended<double>::evaluate(const ParticleSet& P,
-                                            int iat,
-                                            RealValueVector_t& psi,
-                                            RealGradVector_t& dpsi,
-                                            RealValueVector_t& d2psi)
+void EinsplineSetExtended<double>::evaluateVGL(const ParticleSet& P,
+                                               int iat,
+                                               RealValueVector_t& psi,
+                                               RealGradVector_t& dpsi,
+                                               RealValueVector_t& d2psi)
 {
   VGLTimer.start();
   const PosType& r(P.activeR(iat));
@@ -882,7 +882,6 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
     // Check if we are in the muffin tin;  if so, evaluate
     bool inTin = false, need2blend = false;
     PosType disp;
-    double b, db, d2b;
     for (int tin = 0; tin < MuffinTins.size(); tin++)
     {
       APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
@@ -893,8 +892,6 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
         if (need2blend)
         {
           disp      = MuffinTins[tin].disp(r);
-          double dr = std::sqrt(dot(disp, disp));
-          //MuffinTins[tin].blend_func(dr, b, db, d2b);
         }
         break;
       }
@@ -957,57 +954,6 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
     if (need2blend)
     {
       APP_ABORT("need2blend not implemented with Hessian evaluation.\n");
-      for (int j = 0; j < NumValenceOrbs; j++)
-      {
-        std::complex<double> psi_val, psi_lapl;
-        TinyVector<std::complex<double>, OHMMS_DIM> psi_grad;
-        PosType rhat                                      = 1.0 / std::sqrt(dot(disp, disp)) * disp;
-        std::complex<double> psi1                         = StorageValueVector[j];
-        std::complex<double> psi2                         = BlendValueVector[j];
-        TinyVector<std::complex<double>, OHMMS_DIM> dpsi1 = StorageGradVector[j];
-        TinyVector<std::complex<double>, OHMMS_DIM> dpsi2 = BlendGradVector[j];
-        std::complex<double> d2psi1                       = StorageLaplVector[j];
-        std::complex<double> d2psi2                       = BlendLaplVector[j];
-        TinyVector<std::complex<double>, OHMMS_DIM> zrhat;
-        for (int n = 0; n < OHMMS_DIM; n++)
-          zrhat[n] = rhat[n];
-        psi_val  = b * psi1 + (1.0 - b) * psi2;
-        psi_grad = b * dpsi1 + (1.0 - b) * dpsi2 + db * (psi1 - psi2) * zrhat;
-        psi_lapl =
-            b * d2psi1 + (1.0 - b) * d2psi2 + 2.0 * db * (dot(zrhat, dpsi1) - dot(zrhat, dpsi2)) + d2b * (psi1 - psi2);
-        psi(i, psiIndex) = real(psi_val);
-        for (int n = 0; n < OHMMS_DIM; n++)
-          dpsi(i, psiIndex)[n] = real(psi_grad[n]);
-        //d2psi(i,psiIndex) = real(psi_lapl);
-        psiIndex++;
-        if (MakeTwoCopies[j])
-        {
-          psi(i, psiIndex) = imag(psi_val);
-          for (int n = 0; n < OHMMS_DIM; n++)
-            dpsi(i, psiIndex)[n] = imag(psi_grad[n]);
-          //d2psi(i,psiIndex) = imag(psi_lapl);
-          psiIndex++;
-        }
-      }
-      // Copy core states
-      for (int j = NumValenceOrbs; j < N; j++)
-      {
-        std::complex<double> psi_val;
-        TinyVector<std::complex<double>, OHMMS_DIM> psi_grad;
-        psi_val          = StorageValueVector[j];
-        psi_grad         = StorageGradVector[j];
-        psi(i, psiIndex) = real(psi_val);
-        for (int n = 0; n < OHMMS_DIM; n++)
-          dpsi(i, psiIndex)[n] = real(psi_grad[n]);
-        psiIndex++;
-        if (MakeTwoCopies[j])
-        {
-          psi(i, psiIndex) = imag(psi_val);
-          for (int n = 0; n < OHMMS_DIM; n++)
-            dpsi(i, psiIndex)[n] = imag(psi_grad[n]);
-          psiIndex++;
-        }
-      }
     }
     else
     // No blending needed

@@ -1,5 +1,5 @@
 #INFO: **** input file is /g/g90/malone14/projects/qmcpack/tests/afqmc/C_uhf/pyscf/scf.py ****
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 import numpy
 from functools import reduce

@@ -78,7 +78,7 @@ public:
 
   void updateAfterSweep(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
@@ -86,7 +86,7 @@ public:
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  ValueType ratio(ParticleSet& P, int iat) override;
+  PsiValueType ratio(ParticleSet& P, int iat) override;
 
   //Ye: TODO, good performance needs batched SPO evaluation.
   //void mw_calcRatio(const std::vector<WaveFunctionComponent*>& WFC_list,
@@ -96,9 +96,15 @@ public:
 
   /** compute multiple ratios for a particle move
    */
-  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
+  void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  void mw_evaluateRatios(const RefVector<WaveFunctionComponent>& wfc_list,
+                         const RefVector<const VirtualParticleSet>& vp_list,
+                         std::vector<std::vector<ValueType>>& ratios) override;
+
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+
+  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad) override final;
 
   void mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
                     const std::vector<ParticleSet*>& P_list,
@@ -107,6 +113,8 @@ public:
                     std::vector<GradType>& grad_new) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
+
+  GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) override final;
 
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 
@@ -118,14 +126,14 @@ public:
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat) override;
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
   void mw_acceptMove(const std::vector<WaveFunctionComponent*>& WFC_list,
                      const std::vector<ParticleSet*>& P_list,
-                     int iat) override
+                     int iat, bool safe_to_delay = false) override
   {
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->acceptMove(*P_list[iw], iat);
+      WFC_list[iw]->acceptMove(*P_list[iw], iat, safe_to_delay);
   }
 
   void completeUpdates() override;
@@ -141,9 +149,9 @@ public:
   void restore(int iat) override;
 
   ///evaluate log of a determinant for a particle set
-  RealType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L) override;
+  LogValueType evaluateLog(ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
   //Ye: TODO, good performance needs batched SPO evaluation.
   //void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& WFC_list,
@@ -191,6 +199,7 @@ public:
 
   /// value of single-particle orbital for particle-by-particle update
   ValueVector_t psiV;
+  ValueVector_t dspin_psiV;
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
 
@@ -207,7 +216,7 @@ public:
    */
   int invRow_id;
 
-  ValueType curRatio;
+  PsiValueType curRatio;
   ValueType* FirstAddressOfdV;
   ValueType* LastAddressOfdV;
 
@@ -219,9 +228,20 @@ private:
   void resizeScratchObjectsForIonDerivs();
 
   /// internal function computing ratio and gradients after computing the SPOs, used by ratioGrad.
-  ValueType ratioGrad_compute(int iat, GradType& grad_iat);
+  PsiValueType ratioGrad_compute(int iat, GradType& grad_iat);
+
+  /// prepare invRow
+  void prepare_invRow(int WorkingIndex)
+  {
+    invRow_id = WorkingIndex;
+    updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  }
 };
 
+extern template class DiracDeterminant<>;
+#if defined(ENABLE_CUDA)
+extern template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#endif
 
 } // namespace qmcplusplus
 #endif

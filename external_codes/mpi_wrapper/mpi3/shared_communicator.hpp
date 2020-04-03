@@ -7,6 +7,13 @@
 #include "../mpi3/communicator.hpp"
 #include "../mpi3/environment.hpp" // processor_name
 
+//#include "/usr/src/kernels/4.18.16-300.fc29.x86_64/include/linux/getcpu.h"
+#include<sched.h>
+//#include<numa.h> // sudo dnf install numactl-devel
+
+#include <boost/uuid/uuid.hpp>
+#include<boost/uuid/uuid_generators.hpp>
+
 namespace boost{
 
 namespace mpi3{
@@ -23,25 +30,63 @@ private:
 		using detail::data;
 		return data(std::forward<T>(t));
 	}
-	shared_communicator(communicator&& c) : communicator(std::move(c)){}
-	shared_communicator(communicator const& comm, int key = 0){
-		int s = MPI_Comm_split_type(&comm, MPI_COMM_TYPE_SHARED, key, MPI_INFO_NULL, &impl_);
-	//	std::clog << "split " << static_cast<int>(MPI_COMM_TYPE_SHARED) << '\n';
-		if(s != MPI_SUCCESS) throw std::runtime_error("cannot split shared");
+	explicit shared_communicator(communicator&& c) : communicator(std::move(c)){}
+	explicit shared_communicator(communicator const& comm, int key = 0){
+		auto e = static_cast<enum error>(MPI_Comm_split_type(comm.get(), MPI_COMM_TYPE_SHARED, key, MPI_INFO_NULL, &impl_));
+		if(e != mpi3::error::success) throw std::system_error{e, "cannot split"};
 		name(mpi3::processor_name());
 	}
 	shared_communicator(communicator const& comm, mpi3::communicator_type t, int key = 0){
-		int s = MPI_Comm_split_type(&comm, static_cast<int>(t), key, MPI_INFO_NULL, &impl_);
-		std::clog << "split " << static_cast<int>(t) << '\n';
-		if(s != MPI_SUCCESS) throw std::runtime_error{"cannot split shared custom ompi type"};
+		auto e = static_cast<enum error>(MPI_Comm_split_type(comm.get(), static_cast<int>(t), key, MPI_INFO_NULL, &impl_));
+		if(e != mpi3::error::success) throw std::system_error{e, "cannot send"};
+		boost::uuids::uuid tag = boost::uuids::random_generator{}(); static_assert(sizeof(unsigned int)<=sizeof(boost::uuids::uuid), "!");
+		auto utag = reinterpret_cast<unsigned int const&>(tag);
+		this->broadcast_n(&utag, 1, 0);
+		auto Tag = std::to_string(utag);
+		std::string const& base = comm.name();
+		// !!! switch-case don't work here because in some MPI impls there are repeats !!!
+		if(communicator_type::shared==t){
+			#if __linux__
+			set_name(base+":core/pu" + std::to_string(::sched_getcpu())); //same as ::getcpu()
+			#else
+			set_name(base+":core/pu" + Tag);
+			#endif
+		}
+		else if(communicator_type::hw_thread==t) set_name(base+":hw_thread"+Tag);
+		else if(communicator_type::l1_cache ==t) set_name(base+":l1_cache" +Tag);
+		else if(communicator_type::l2_cache ==t) set_name(base+":l2_cache" +Tag);
+		else if(communicator_type::l3_cache ==t) set_name(base+":l3_cache" +Tag);
+		else if(communicator_type::socket   ==t) set_name(base+":socket"   +Tag);
+		else if(communicator_type::numa     ==t) set_name(base+":numa"     +Tag);
+		else if(communicator_type::board    ==t) set_name(base+":board"    +Tag);
+		else if(communicator_type::host     ==t) set_name(base+":cu"       +Tag);
+		else if(communicator_type::cu       ==t) set_name(base+":cu"       +Tag);
+		else if(communicator_type::cluster  ==t) set_name(base+":cluster"  +Tag);
 	}
+/*
+enum class communicator_type : int{
+	node = OMPI_COMM_TYPE_NODE,
+	hw_thread = OMPI_COMM_TYPE_HWTHREAD,
+	core = OMPI_COMM_TYPE_CORE,
+	l1_cache = OMPI_COMM_TYPE_L1CACHE,
+	l2_cache = OMPI_COMM_TYPE_L2CACHE,
+	l3_cache = OMPI_COMM_TYPE_L3CACHE,
+	socket = OMPI_COMM_TYPE_SOCKET,
+	numa = OMPI_COMM_TYPE_NUMA,
+	board = OMPI_COMM_TYPE_BOARD,
+	host = OMPI_COMM_TYPE_HOST,
+	cu = OMPI_COMM_TYPE_CU,
+	cpu = OMPI_COMM_TYPE_CU,
+	cluster = OMPI_COMM_TYPE_CLUSTER 
+};
+*/
 	friend class communicator;
 public:
 	shared_communicator& operator=(shared_communicator const& other) = default;
 	shared_communicator& operator=(shared_communicator&& other) = default;
 	inline shared_communicator split(int key) const{return split_shared(key);}
-	shared_communicator split(int color, int key) const{
-		return communicator::split(color, key);
+	auto split(int color, int key) const{
+		return shared_communicator{communicator::split(color, key)};
 	}
 
 	template<class T = char>

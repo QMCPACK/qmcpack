@@ -22,7 +22,7 @@
 namespace qmcplusplus
 {
 ZeroVarianceForce::ZeroVarianceForce(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& psi)
-    : ForceBase(ions, elns), Ions(ions), Electrons(elns), Psi(psi), d_ei_ID(elns.addTable(ions, DT_AOS))
+    : ForceBase(ions, elns), d_ei_ID(elns.addTable(ions, DT_AOS)), Ions(ions), Electrons(elns), Psi(psi)
 {
   for (int dim = 0; dim < OHMMS_DIM; dim++)
   {

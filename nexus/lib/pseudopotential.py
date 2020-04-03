@@ -36,13 +36,12 @@
 #                                                                    #
 #====================================================================#
 
-
-#! /usr/bin/env python
-
 import os
 from subprocess import Popen
 from execute import execute
+import numpy as np
 from numpy import linspace,array,zeros,append,mgrid,empty,exp,minimum,maximum,sqrt,arange
+
 from fileio import TextFile
 from xmlreader import readxml
 from superstring import string2val,split_delims
@@ -55,6 +54,11 @@ from physical_system import PhysicalSystem
 from plotting import *
 from debug import *
 
+try:
+    import matplotlib.pyplot as plt
+except:
+    plt = unavailable('matplotlib','pyplot')
+#end try
 
 
 def pp_elem_label(filename,guard=False):
@@ -281,7 +285,7 @@ class PPset(DevBase):
         #end if
         pseudos = obj()
         self.pseudos[label]=pseudos
-        for code,pps in code_pps.iteritems():
+        for code,pps in code_pps.items():
             clow = code.lower()
             if clow not in self.known_codes:
                 self.error('incorrect use of ppset\ninvalid simulation code "{0}" provided with set labeled "{1}"\nknown simulation codes are: {2}'.format(code,label,sorted(self.known_codes)))
@@ -552,7 +556,7 @@ class SemilocalPP(Pseudopotential):
 
     def get_nonlocal(self,l=None):
         vnl = obj()
-        for lc,vc in self.components.iteritems():
+        for lc,vc in self.components.items():
             if lc!=self.local and lc!='L2':
                 vnl[lc] = vc
             #end if
@@ -647,7 +651,7 @@ class SemilocalPP(Pseudopotential):
         vloc = vcs[self.local]
         # get the l channels
         vls = obj()
-        for l,vc in self.components.iteritems():
+        for l,vc in self.components.items():
             if l==self.local:
                 vls[l] = vloc
             else:
@@ -657,7 +661,7 @@ class SemilocalPP(Pseudopotential):
         # from l channels, reconstruct nonlocal components
         vcs.clear()
         vloc = vls[local]
-        for l,vl in vls.iteritems():
+        for l,vl in vls.items():
             if l==local:
                 vcs[l] = vloc
             else:
@@ -726,7 +730,7 @@ class SemilocalPP(Pseudopotential):
             self.remove_L2()
         #end if
         self.components[self.local] = vps[self.local]
-        for l,v in vps.iteritems():
+        for l,v in vps.items():
             if l!=self.local:
                 self.set_channel(l,v)
             #end if
@@ -939,7 +943,7 @@ class SemilocalPP(Pseudopotential):
         r    = None
         vmin = None
         vmax = None
-        for l,(rc,vc) in rv.iteritems():
+        for l,(rc,vc) in rv.items():
             if r is None:
                 r = rc
                 vmin = array(vc)
@@ -954,7 +958,7 @@ class SemilocalPP(Pseudopotential):
         vspread = vmax-vmin
         rcut = r[-1]
         nr = len(r)
-        for i in xrange(nr):
+        for i in range(nr):
             n = nr-1-i
             if vspread[n]>tol:
                 rcut = r[n]
@@ -1124,7 +1128,7 @@ class SemilocalPP(Pseudopotential):
                     if self.name!=None:
                         lab = self.name+' '+lab
                     #end if
-                    v = self.evaluate_channel(r,c,rpow,rmin-1e-12,with_local,with_L2)
+                    v = self.evaluate_channel(r,c,rpow,rmin-1e-12,False,with_local,with_L2)
                     rng = r>rmin-1e-12
                     r = r[rng]
                     if metric=='r2':
@@ -1205,7 +1209,10 @@ class SemilocalPP(Pseudopotential):
     #end def plot_positive_definite
 
                 
-    def plot_L2(self,show=True,fig=True,r=None,rmin=0.01,rmax=5.0,linestyle='-',title=None):
+    def plot_L2(self,show=True,fig=True,r=None,rmin=0.01,rmax=5.0,linestyle='-',title=None,color=None):
+        if fig:
+            figure(tight_layout=True)
+        #end if
         if r is None and self.numeric:
             r = self.r
         elif r is None:
@@ -1214,7 +1221,9 @@ class SemilocalPP(Pseudopotential):
         vs = self.evaluate_channel(r,'s',with_local=True,rmin=rmin-1e-12)
         for c in self.l_channels[1:]:
             if c in self.components:
-                color = self.channel_colors[c]
+                if color is None:
+                    color = self.channel_colors[c]
+                #end if
                 v = self.evaluate_channel(r,c,with_L2=False,rmin=rmin-1e-12)
                 rng = r>rmin-1e-12
                 r = r[rng]
@@ -1237,6 +1246,171 @@ class SemilocalPP(Pseudopotential):
             #end if
         #end if 
     #end def plot_L2
+
+
+    def plot_nonlocal_polar(self,show=True,lmax=10,rmin=0.01,rmax=2.0,nr=100,nt=100,levels=100,label=''):
+        from scipy.special import eval_legendre as legendre
+
+        tlabel = label
+        rpow = 1
+
+        # update rcut, if needed
+        if self.rcut is None:
+            self.update_rcut()
+        #end if
+        rc = self.rcut
+
+        # get legendre polynomials
+        th = np.linspace(0.0,2*np.pi,nt)
+        cos = np.cos(th)
+        sin = np.sin(th)
+        Pl  = obj()
+        Pli = obj()
+        for li in range(lmax):
+            pl_i =  (2*li+1)/(4*np.pi)*legendre(li,cos)
+            Pli[li] = pl_i
+            if li<len(self.l_channels):
+                l = self.l_channels[li]
+                Pl[l] = pl_i
+            #end if
+        #end for
+
+        # set the colormap and centre the colorbar
+        import matplotlib.colors as colors
+        class MidNorm(colors.Normalize):
+            def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+                self.midpoint = midpoint
+                colors.Normalize.__init__(self, vmin, vmax, clip)
+            #end def __init__
+            def __call__(self, value, clip=None):
+                x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
+                return np.ma.masked_array(np.interp(value, x, y), np.isnan(value))
+            #end def __call__
+        #end class MidNorm
+
+        # select a subset of the radial points
+        r = None
+        vl = obj()
+        vnl = self.get_nonlocal()
+        if self.numeric and not self.interpolatable:
+            for l in vnl.keys():
+                rf,vf = self.evaluate_nonlocal(l=l,rpow=rpow,rret=True)
+                if r is None:
+                    drf = rf[1]-rf[0]
+                    dr  = rmax/nr
+                    ndrf = int(np.round(np.ceil(dr/drf)))
+                    dr  = drf*ndrf
+                    rmax = nr*dr + 0.1*drf
+                    rng = rf<rmax
+                    r = rf[rng][::ndrf]
+                #end if
+                vl[l] = vf[rng][::ndrf]
+            #end for
+        else:
+            self.error('plot_polar does not yet support non-numeric potentials')
+        #end if
+
+        # plot the radial potentials
+        figure()
+        vmin = 1e99
+        vmax = -1e99
+        for l in self.l_channels:
+            if l in vl:
+                color = self.channel_colors[l]
+                v = vl[l]
+                plot(r,v,color+'-',label='v'+l)
+                vmin = min(v.min(),vmin)
+                vmax = max(v.max(),vmax)
+            #end if
+        #end for
+        plot([rc,rc],[vmin,vmax],'k--',lw=2)
+        xlim([-0.1*rc,1.1*rc])
+        xlabel('r (Bohr)')
+        ylabel('V NL (Ha)')
+        title((tlabel+'  NL channels').strip())
+        legend()
+
+        # function for a single polar plot
+        def plot_V(V,label):
+            vmin = V.min()
+            vmax = V.max()
+            vm = max(np.abs(vmin),np.abs(vmax))
+            vmin = -vm
+            vmax = vm
+            lev = linspace(vmin,vmax,levels)
+
+            fig = figure(tight_layout=True)
+            ax = fig.add_subplot(111)
+            ax.set_xlabel('x')
+            ax.set_ylabel('z')
+            ax.set_aspect('equal','box')
+            fig.tight_layout()
+
+            xlim(lim)
+            ylim(lim)
+
+            cmap = plt.cm.get_cmap('seismic')
+
+            mid_norm = MidNorm(vmin,vmax,0.0)
+
+            cs = ax.contourf(X,Z,V,levels=lev,cmap=cmap,clim=(vmin,vmax),norm=mid_norm)
+            plot(rc*cos,rc*sin,'k--',lw=2)
+
+            fig.colorbar(cs, ax=ax, shrink=0.9)
+
+            title((tlabel+'  V {}'.format(label)).strip())
+        #end def plot_V
+
+        # make a polar plot of each non-local component
+        R,COS = np.array(np.meshgrid(r,cos,indexing='ij'))
+        Z = R*COS
+        R,SIN = np.array(np.meshgrid(r,sin,indexing='ij'))
+        X = R*SIN
+        lim = [-1.1*rc,1.1*rc]
+        VSUM = None
+        for l in self.l_channels:
+            if l in vl:
+                VL,PL = np.array(np.meshgrid(vl[l],Pl[l],indexing='ij'))
+                V = VL*PL
+
+                if VSUM is None:
+                    VSUM = V.copy()
+                else:
+                    VSUM += V
+                #end if
+
+                plot_V(V,'NL '+l)
+            #end if
+        #end for
+
+        # plot the total non-local operator
+        plot_V(VSUM,'NL sum')
+
+        # plot approximation to L2 operator, if present
+        if self.has_L2():
+            vL2 = self.evaluate_L2(rpow=rpow)
+            vL2 = vL2[rng][::ndrf]
+            VL2SUM = None
+            for li in range(1,lmax):
+                print('V L2 {} of {}'.format(li,lmax))
+                v = li*(li+1)*vL2
+                VL,PL = np.array(np.meshgrid(v,Pli[li],indexing='ij'))
+                V = VL*PL
+                if VL2SUM is None:
+                    VL2SUM = V.copy()
+                else:
+                    VL2SUM += V
+                #end if
+                #plot_V(V,'L2 '+str(li))
+            #end for
+            plot_V(VL2SUM,'L2 sum (Lmax={})'.format(lmax))
+        #end if
+
+        if show:
+            show_plots()
+        #end if
+
+    #end def plot_nonlocal_polar
 
 
     def write_qmcpack(self,filepath=None):
@@ -1771,10 +1945,10 @@ class GaussianPP(SemilocalPP):
         #end if
         tmpfile = 'tmp.gamess'
         self.write(tmpfile,'gamess')
-	if extra is not None:
-	    command = 'ppconvert --gamess_pot {0} --s_ref "{1}" --p_ref "{1}" --d_ref "{1}" {2} {3} {4}'.format(tmpfile,ref,extra,opts,outfile)
-	else:
-	    command = 'ppconvert --gamess_pot {0} --s_ref "{1}" --p_ref "{1}" --d_ref "{1}" {2} {3}'.format(tmpfile,ref,opts,outfile)
+        if extra is not None:
+            command = 'ppconvert --gamess_pot {0} --s_ref "{1}" --p_ref "{1}" --d_ref "{1}" {2} {3} {4}'.format(tmpfile,ref,extra,opts,outfile)
+        else:
+            command = 'ppconvert --gamess_pot {0} --s_ref "{1}" --p_ref "{1}" --d_ref "{1}" {2} {3}'.format(tmpfile,ref,opts,outfile)
         execute(command,verbose=True)
         os.system('rm '+tmpfile)
     #end def ppconvert
@@ -1906,7 +2080,7 @@ class CasinoPP(SemilocalPP):
         file.seek('R(i)',1)
         file.readline()
         r = empty((ngrid,),dtype=float)
-        for ir in xrange(ngrid):
+        for ir in range(ngrid):
             r[ir] = float(file.readline())
         #end for
         # read each channel, convert to hartree units
@@ -1923,7 +2097,7 @@ class CasinoPP(SemilocalPP):
             l = self.l_channels[int(potline[eqloc+1])] # get the l value
             lvals.append(l)
             v = empty((ngrid,),dtype=float)
-            for ir in xrange(ngrid):
+            for ir in range(ngrid):
                 v[ir] = float(file.readline())
             #end for
             lpots.append(convert(v,self.unitmap[units],'Ha'))

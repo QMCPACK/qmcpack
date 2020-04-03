@@ -83,7 +83,6 @@ namespace ma
   inline static void gesvd_bufferSize (const int m, const int n, std::complex<T>* a, int& lwork)
   {
     std::complex<T> work;
-    T S;
     int status;
     lwork = -1;
     gesvd('A','A', m, n, a, m , nullptr, nullptr, m, nullptr, m, &work, lwork, nullptr, status);
@@ -211,6 +210,78 @@ namespace ma
   }
 
   inline static
+  void gvx (int ITYPE, char &JOBZ, char &RANGE, char &UPLO, int &N, float *A, int &LDA,
+             float *B, int &LDB,
+             float &VL, float &VU,int &IL, int &IU, float &ABSTOL, int &M, float *W,
+             float* Z, int &LDZ, float *WORK,
+             int &LWORK, float* RWORK, int* IWORK, int *IFAIL, int &INFO)
+  {
+    bool query = (LWORK==-1);
+    if(query) {
+      LWORK=-1;
+    }
+    ssygvx (ITYPE,JOBZ,RANGE,UPLO,N,A,LDA,B,LDB,VL,VU,IL,IU,ABSTOL,M,W,Z,LDZ,
+            WORK,LWORK,IWORK,IFAIL,INFO);
+    if(query) {
+      LWORK = int(WORK[0]);
+    }
+  }
+
+  inline static
+  void gvx (int ITYPE, char &JOBZ, char &RANGE, char &UPLO, int &N, double *A, int &LDA,
+             double *B, int &LDB,
+             double &VL, double &VU,int &IL, int &IU, double &ABSTOL, int &M, double *W,
+             double* Z, int &LDZ, double *WORK,
+             int &LWORK, double* RWORK, int* IWORK, int *IFAIL, int &INFO)
+  { 
+    bool query = (LWORK==-1);
+    if(query) {
+      LWORK=-1;
+    }
+    dsygvx (ITYPE,JOBZ,RANGE,UPLO,N,A,LDA,B,LDB,VL,VU,IL,IU,ABSTOL,M,W,Z,LDZ,
+            WORK,LWORK,IWORK,IFAIL,INFO);
+    if(query) {
+      LWORK = int(WORK[0]);
+    }
+  }
+
+  inline static
+  void gvx (int ITYPE, char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<float> *A, int &LDA,
+             std::complex<float> *B, int &LDB,
+             float &VL, float &VU,int &IL, int &IU, float &ABSTOL, int &M, float *W,
+             std::complex<float>* Z, int &LDZ, std::complex<float> *WORK,
+             int &LWORK, float* RWORK, int* IWORK, int *IFAIL, int &INFO)
+  { 
+    bool query = (LWORK==-1);
+    if(query) {
+      LWORK=-1;
+    }
+    chegvx (ITYPE,JOBZ,RANGE,UPLO,N,A,LDA,B,LDB,VL,VU,IL,IU,ABSTOL,M,W,Z,LDZ,
+            WORK,LWORK,RWORK,IWORK,IFAIL,INFO);
+    if(query) { 
+      LWORK = int(real(WORK[0]));
+    }
+  }
+
+  inline static
+  void gvx (int ITYPE, char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<double> *A, int &LDA,
+             std::complex<double> *B, int &LDB,
+             double &VL, double &VU,int &IL, int &IU, double &ABSTOL, int &M, double *W,
+             std::complex<double>* Z, int &LDZ, std::complex<double> *WORK,
+             int &LWORK, double* RWORK, int* IWORK, int *IFAIL, int &INFO)
+  {
+    bool query = (LWORK==-1);
+    if(query) {
+      LWORK=-1;
+    }
+    zhegvx (ITYPE,JOBZ,RANGE,UPLO,N,A,LDA,B,LDB,VL,VU,IL,IU,ABSTOL,M,W,Z,LDZ,
+            WORK,LWORK,RWORK,IWORK,IFAIL,INFO);
+    if(query) {
+      LWORK = int(real(WORK[0]));
+    }
+  }
+
+  inline static
   void getrf_bufferSize (const int n, const int m, float* a, const int lda, int &lwork) { lwork = 0; } 
   inline static
   void getrf_bufferSize (const int n, const int m, double* a, const int lda, int &lwork) { lwork = 0; } 
@@ -328,28 +399,14 @@ namespace ma
 	zgetri(n, a, n0, piv, work, n1, status);
   }
 
-  inline static void getriBatched (int n, float ** a, int lda, int * piv, float ** work, int& lwork, int * info, int batchSize)
+  template<typename T>
+  inline static void getriBatched (int n, T ** a, int lda, int * piv, T ** ainv, int ldc, int * info, int batchSize)
   {
-    for(int i=0; i<batchSize; i++)
-      getri(n,a[i],lda,piv+i*n,work[i],lwork,*(info+i));
-  }
-
-  inline static void getriBatched (int n, double ** a, int lda, int * piv, double ** work, int& lwork, int * info, int batchSize)
-  {
-    for(int i=0; i<batchSize; i++)
-      getri(n,a[i],lda,piv+i*n,work[i],lwork,*(info+i));
-  }
-
-  inline static void getriBatched (int n, std::complex<float> ** a, int lda, int * piv, std::complex<float> ** work, int& lwork, int * info, int batchSize)
-  {
-    for(int i=0; i<batchSize; i++)
-      getri(n,a[i],lda,piv+i*n,work[i],lwork,*(info+i));
-  }
-
-  inline static void getriBatched (int n, std::complex<double> ** a, int lda, int * piv, std::complex<double> ** work, int& lwork, int * info, int batchSize)
-  {
-    for(int i=0; i<batchSize; i++)
-      getri(n,a[i],lda,piv+i*n,work[i],lwork,*(info+i));
+    for(int i=0; i<batchSize; i++) {
+      getri(n,a[i],lda,piv+i*n,ainv[i],n*n,*(info+i));
+      for(int i=0; i<n; i++)
+        std::copy_n(a[i]+i*lda,n,ainv[i]+i*ldc);  
+    }
   }
 
   void static geqrf(int M, int N, std::complex<double> *A, const int LDA, std::complex<double> *TAU, std::complex<double> *WORK, int LWORK, int& INFO)
@@ -549,6 +606,22 @@ WORK[0]=0;
     lwork = -1;
     glq(m,n,k,nullptr,lda,nullptr,&work,lwork, status);
     lwork = int(real(work));
+  }
+
+  template<typename T1, typename T2>
+  inline static void matinvBatched (int n, T1 * const * a, int lda, T2 ** ainv, int lda_inv, int* info, int batchSize)
+  {
+    std::vector<int> piv(n);
+    int lwork(-1);
+    getri_bufferSize (n,ainv[0],lda_inv,lwork);
+    std::vector<T2> work(lwork);
+    for(int i=0; i<batchSize; i++) {
+      for(int p=0; p<n; p++) 
+        for(int q=0; q<n; q++) 
+          ainv[i][p*lda_inv+q] = a[i][p*lda+q]; 
+      getrf(n,n,ainv[i],lda,piv.data(),*(info+i));
+      getri(n,ainv[i],lda,piv.data(),work.data(),lwork,*(info+i));
+    }
   }
 
 }

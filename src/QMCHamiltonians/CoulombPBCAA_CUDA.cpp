@@ -16,19 +16,22 @@
 
 #include "QMCHamiltonians/CoulombPBCAA_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "QMCDrivers/WalkerProperties.h"
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 CoulombPBCAA_CUDA::CoulombPBCAA_CUDA(ParticleSet& ref, bool active, bool cloning)
     : CoulombPBCAA(ref, active, cloning),
       PtclRef(ref),
       SumGPU("CoulombPBCAATemp::SumGPU"),
+      L("CoulombPBCAATemp::L"),
+      Linv("CoulombPBCAATemp::Linv"),
       kpointsGPU("CoulombPBCAATemp::kpointsGPU"),
       kshellGPU("CoulombPBCAATemp::kshellGPU"),
       FkGPU("CoulombPBCAATemp::FkGPU"),
-      RhokGPU("CoulombPBCAATemp::RhokGPU"),
-      L("CoulombPBCAATemp::L"),
-      Linv("CoulombPBCAATemp::Linv")
+      RhokGPU("CoulombPBCAATemp::RhokGPU")
 {
 #ifdef QMC_CUDA
   gpu::host_vector<CUDA_PRECISION_FULL> LHost(9), LinvHost(9);
@@ -93,7 +96,7 @@ void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   {
     for (int iw = 0; iw < walkers.size(); iw++)
     {
-      walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = Value;
+      walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = Value;
       LocalEnergy[iw] += Value;
     }
     return;
@@ -158,7 +161,7 @@ void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   for (int iw = 0; iw < walkers.size(); iw++)
   {
     // fprintf (stderr, "Energy = %18.6f\n", SumHost[iw]);
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = SumHost[iw] + myConst;
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = SumHost[iw] + myConst;
     LocalEnergy[iw] += SumHost[iw] + myConst;
   }
 }

@@ -15,7 +15,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND C2_PP_MSDJ_SHORT "eeenergy" "12.142072 0.0052") # e-e energy
   LIST(APPEND C2_PP_MSDJ_SHORT "samples" "160000 0.0") # samples
   IF(ENABLE_SOA)
-  QMC_RUN_AND_CHECK(vmc_short_C2_pp_msdj-H5
+  QMC_RUN_AND_CHECK(short-C2_pp_msdj-H5-vmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_SHORT_H5_MSDJ
                     vmc_short_pp_msdj-H5.xml
@@ -26,7 +26,7 @@ IF (NOT QMC_CUDA)
   ELSE()
     MESSAGE("Skipping C2_pp H5 tests because H5 gaussian basis sets are not supported by AOS (ENABLE_SOA=0)")
   ENDIF()
-  QMC_RUN_AND_CHECK(vmc_short_C2_pp_msdj-XML
+  QMC_RUN_AND_CHECK(short-C2_pp_msdj-XML-vmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_SHORT_XML_MSDJ
                     vmc_short_pp_msdj-XML.xml
@@ -35,7 +35,7 @@ IF (NOT QMC_CUDA)
                     1 C2_PP_MSDJ_SHORT # VMC
                     )
 
-  QMC_RUN_AND_CHECK(vmc_short_C2_pp_msdj-XML-traditional
+  QMC_RUN_AND_CHECK(short-C2_pp_msdj-XML-traditional-vmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_SHORT_XML_MSDJ_TRAD
                     vmc_short_pp_msdj-XML-traditional.xml
@@ -51,7 +51,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND C2_PP_MSDJ_LONG "eeenergy" "12.142072 0.0020") # e-e energy
   LIST(APPEND C2_PP_MSDJ_LONG "samples" "1280000 0.0") # samples
   IF(ENABLE_SOA)
-  QMC_RUN_AND_CHECK(vmc_long_C2_pp_msdj-H5
+  QMC_RUN_AND_CHECK(long-C2_pp_msdj-H5-vmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_LONG_H5_MSDJ
                     vmc_long_pp_msdj-H5.xml
@@ -63,7 +63,7 @@ IF (NOT QMC_CUDA)
     MESSAGE("Skipping C2_pp H5 tests because H5 gaussian basis sets are not supported by AOS (ENABLE_SOA=0)")
   ENDIF()
 
-  QMC_RUN_AND_CHECK(vmc_long_C2_pp_msdj-XML
+  QMC_RUN_AND_CHECK(long-C2_pp_msdj-XML-vmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_LONG_XML_MSDJ
                     vmc_long_pp_msdj-XML.xml
@@ -72,7 +72,7 @@ IF (NOT QMC_CUDA)
                     1 C2_PP_MSDJ_LONG # VMC
                     )
 
-  QMC_RUN_AND_CHECK(vmc_long_C2_pp_msdj-XML-traditional
+  QMC_RUN_AND_CHECK(long-C2_pp_msdj-XML-traditional-vmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_LONG_XML_MSDJ_TRAD
                     vmc_long_pp_msdj-XML-traditional.xml

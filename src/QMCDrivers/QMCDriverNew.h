@@ -16,7 +16,13 @@
  *
  * This will replace QMCDriver once unified drivers are finished
  * the general documentation from QMCDriver.h must be moved before then
+ *  
+ * This driver base class should be generic with respect to precision,
+ * value type, device execution, and ...
+ * It should contain no typdefs not related to compiler bugs or platform workarounds
+ *
  */
+
 #ifndef QMCPLUSPLUS_QMCDRIVERNEW_H
 #define QMCPLUSPLUS_QMCDRIVERNEW_H
 
@@ -26,7 +32,7 @@
 #include "Utilities/PooledData.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/MCPopulation.h"
@@ -50,10 +56,10 @@ class TraceManager;
  * @{
  * @brief QMCDriverNew Base class for Unified Drivers
  *
- * General Principals
- * Parameters unchanged from input by driver are not copied into class state
- * The driver state machine should be simple.
- *
+ * # General Principals
+ * * Parameters used unchanged from input object are not copied into class state
+ * * The driver state machine should be as minimal as possible.
+ * * In non performance critical areas favor clarity over clever optimizations.
  */
 class QMCDriverNew : public QMCDriverInterface, public MPIObjectBase
 {
@@ -75,8 +81,9 @@ public:
   };
 
   using MCPWalker = MCPopulation::MCPWalker;
-  using Buffer    = MCPWalker::Buffer_t;
+  using WFBuffer  = MCPopulation::WFBuffer;
 
+  using SetNonLocalMoveHandler = std::function<void(QMCHamiltonian&)>;
   /** bits to classify QMCDriver
    *
    * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
@@ -85,29 +92,31 @@ public:
    */
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
-  /// whether to allow traces
-  bool allow_traces;
-  /// traces xml
-  xmlNodePtr traces_xml;
-
   /// Constructor.
   QMCDriverNew(QMCDriverInput&& input,
-               MCPopulation&& population,
+               MCPopulation& population,
                TrialWaveFunction& psi,
                QMCHamiltonian& h,
                WaveFunctionPool& ppool,
                const std::string timer_prefix,
-               Communicate* comm);
+               Communicate* comm,
+               SetNonLocalMoveHandler = &QMCDriverNew::defaultSetNonLocalMoveHandler);
+
+  QMCDriverNew(QMCDriverNew&&) = default;
 
   virtual ~QMCDriverNew();
 
   ///return current step
   inline IndexType current() const { return current_step_; }
 
+  // Do to a work-around currently in QMCDriverNew::QMCDriverNew this should never be true.
+  // I'm leaving this because this is what should happen for vmc.
+  void checkNumCrowdsLTNumThreads();
+
   /** Set the status of the QMCDriver
    * @param aname the root file name
    * @param h5name root name of the master hdf5 file containing previous qmcrun
-   * @param append if ture, the run is a continuation of the previous qmc
+   * @param append if true, the run is a continuation of the previous qmc
    *
    * All output files will be of
    * the form "aname.s00X.suffix", where "X" is number
@@ -132,16 +141,19 @@ public:
   void putWalkers(std::vector<xmlNodePtr>& wset);
 
   ///set the BranchEngineType
-  void setBranchEngine(SimpleFixedNodeBranch* be) { branchEngine = be; }
+  void setBranchEngine(SimpleFixedNodeBranch* be) { branch_engine_ = be; }
 
   ///return BranchEngineType*
-  SimpleFixedNodeBranch* getBranchEngine() { return branchEngine; }
+  SimpleFixedNodeBranch* getBranchEngine() { return branch_engine_; }
 
   /** This would be better than the many side effects calc_default_local_walkers has 
    *
    * struct WalkerDistribution
    */
-  virtual IndexType calc_default_local_walkers() = 0;
+
+  /** Virtual to deal with VMC and DMC having different default behavior with walker number.
+   */
+  virtual IndexType calc_default_local_walkers(IndexType walkers_per_rank) = 0;
 
   int addObservable(const std::string& aname);
 
@@ -161,9 +173,7 @@ public:
   std::string getEngineName() { return QMCType; }
   unsigned long getDriverMode() { return qmc_driver_mode_.to_ulong(); }
   IndexType get_walkers_per_crowd() const { return walkers_per_crowd_; }
-  IndexType get_living_walkers() const { return population_.get_active_walkers(); }
-
-  MCPopulation&& releasePopulation() { return std::move(population_); }
+  IndexType get_living_walkers() const { return population_.get_walkers().size(); }
 
   /** @ingroup Legacy interface to be dropped
    *  @{
@@ -177,7 +187,8 @@ public:
    */
   void process(xmlNodePtr cur);
 
-  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds);
+  static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
+
 
   /** should be set in input don't see a reason to set individually
    * @param pbyp if true, use particle-by-particle update
@@ -213,16 +224,18 @@ protected:
           collectables_timer(*TimerManager.createTimer(prefix + "Collectables", timer_level_medium))
     {}
   };
-  
+
   QMCDriverInput qmcdriver_input_;
 
   std::vector<std::unique_ptr<Crowd>> crowds_;
+  IndexType walkers_per_rank_;
   IndexType walkers_per_crowd_;
+
 
   std::string h5_file_root_;
 
   ///branch engine
-  SimpleFixedNodeBranch* branchEngine;
+  SimpleFixedNodeBranch* branch_engine_;
   ///drift modifer
   std::unique_ptr<DriftModifierBase> drift_modifier_;
 
@@ -260,7 +273,7 @@ protected:
 
 
   ///the entire (or on node) walker population
-  MCPopulation population_;
+  MCPopulation& population_;
 
   ///trial function
   TrialWaveFunction& Psi;
@@ -309,7 +322,7 @@ protected:
    *  @{
    */
   int num_crowds_;
-
+  RealType max_disp_sq_;
   ///the number of saved samples
   IndexType target_samples_;
 
@@ -342,11 +355,17 @@ public:
 
   bool putQMCInfo(xmlNodePtr cur);
 
-  void addWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
+  /** Adjust populations local walkers to this number
+  * @param nwalkers number of walkers to add
+  *
+  */
+  void makeLocalWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
 
   int get_num_crowds() { return num_crowds_; }
   void set_num_crowds(int num_crowds, const std::string& reason);
+  void set_walkers_per_rank(int walkers_per_rank, const std::string& reason);
   DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
+
   /** record the state of the block
    * @param block current block
    *
@@ -371,6 +390,9 @@ public:
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);
 
+  SetNonLocalMoveHandler setNonLocalMoveHandler_;
+
+  static void defaultSetNonLocalMoveHandler(QMCHamiltonian& gold_ham);
 };
 /**@}*/
 } // namespace qmcplusplus
