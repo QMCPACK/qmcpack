@@ -147,9 +147,9 @@ int XmlStream::addNextTag()
 {
   std::streampos start;
   std::streampos end;
-  char twoprev = '0';
-  char prev = '0';
-  char current = '0';
+  int twoprev = '0';
+  int prev = '0';
+  int current = '0';
   
   int isProcessingInstruction = 0;
   int isComment = 0;
