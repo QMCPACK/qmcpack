@@ -104,7 +104,8 @@ void SkAllEstimator::evaluateIonIon()
 
 SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
 {
-  RealType w = tWalker->Weight; // Segfaults unless setHistories() is called prior
+  // Segfaults unless setHistories() is called prior
+  RealType w = tWalker->Weight;
 #if defined(USE_REAL_STRUCT_FACTOR)
   //sum over species
   std::copy(P.SK->rhok_r[0], P.SK->rhok_r[0] + NumK, RhokTot_r.begin());
@@ -144,12 +145,11 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
       values[NumK + 2 * k + 1] = w * RhokTot_i[k];
     }
   }
-#else // Test case only touches this path at the moment
+#else // Is this path ever touched?
   //sum over species
   std::copy(P.SK->rhok[0], P.SK->rhok[0] + NumK, RhokTot.begin());
   for (int i = 1; i < NumeSpecies; ++i)
     accumulate_elements(P.SK->rhok[i], P.SK->rhok[i] + NumK, RhokTot.begin());
-  //Vector<ComplexType>::const_iterator iit(RhokTot.begin()), iit_end(RhokTot.end());
   for (int k = 0; k < NumK; k++)
     values[k] = w * (rhok[k].real() * rhok[k].real() + rhok[k].imag() * rhok[k].imag());
 
