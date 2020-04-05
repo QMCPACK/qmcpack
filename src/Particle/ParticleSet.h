@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: D. Das, University of Illinois at Urbana-Champaign
 //                    Bryan Clark, bclark@Princeton.edu, Princeton University
@@ -203,7 +203,7 @@ public:
   int current_step;
 
   ///default constructor
-  ParticleSet(const DynamicCoordinateKind kind = DynamicCoordinateKind::QV_POS);
+  ParticleSet(const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
   ///copy constructor
   ParticleSet(const ParticleSet& p);

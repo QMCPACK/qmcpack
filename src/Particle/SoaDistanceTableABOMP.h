@@ -120,17 +120,18 @@ public:
     auto* source_pos_ptr = Origin->getCoordinates().getAllParticlePos().data();
     auto* r_dr_ptr       = r_dr_memorypool_.data();
 
+    // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
     const int ChunkSizePerTeam = 256;
-    const int NumTeams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+    const int num_teams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     {
       ScopedTimer offload(&offload_timer_);
-      #pragma omp target teams distribute collapse(2) num_teams(N_targets*NumTeams) \
+      #pragma omp target teams distribute collapse(2) num_teams(N_targets*num_teams) \
         map(to: source_pos_ptr[:N_sources_padded*D]) \
         map(always, to: target_pos_ptr[:N_targets*D]) \
         map(always, from: r_dr_ptr[:r_dr_memorypool_.size()])
       for (int iat = 0; iat < N_targets_local; ++iat)
-        for (int team_id = 0; team_id < NumTeams; team_id++)
+        for (int team_id = 0; team_id < num_teams; team_id++)
         {
           const int first = ChunkSizePerTeam * team_id;
           const int last  = (first + ChunkSizePerTeam) > N_sources_local ? N_sources_local : first + ChunkSizePerTeam;
@@ -149,12 +150,19 @@ public:
     }
   }
 
+  /** It has two implementation mw_evaluate_transfer_inplace and mw_evaluate_fuse_transfer with different D2H memory transfer schemes.
+   * Eventually, there will be only one version wihtout any transfer and solve the dilemma.
+   */
   inline void mw_evaluate(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
   {
     ScopedTimer eval(&eval_timer_);
     mw_evaluate_fuse_transfer(dt_list, p_list);
   }
 
+  /** this function implements mw_evaluate.
+   * After offloading the computation of distances and displacements, the per-walker result is transferred back walker by walker in place.
+   * The runtime overhead is very high for small problem size with many walkers.
+   */
   inline void mw_evaluate_transfer_inplace(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
   {
     const size_t nw = dt_list.size();
@@ -163,6 +171,7 @@ public:
       count_targets += p.getTotalNum();
     const size_t total_targets = count_targets;
 
+    // This is horrible optimization putting different data types in a single buffer but allows a single H2D transfer
     constexpr size_t realtype_size = sizeof(RealType);
     constexpr size_t int_size = sizeof(int);
     constexpr size_t ptr_size = sizeof(RealType*);
@@ -197,18 +206,19 @@ public:
     }
 
     const int N_sources_local  = N_sources;
+    // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
     const int ChunkSizePerTeam = 256;
-    const int NumTeams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+    const int num_teams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     auto* input_ptr = offload_input.data();
 
     {
       ScopedTimer offload(&offload_timer_);
-      #pragma omp target teams distribute collapse(2) num_teams(total_targets*NumTeams) \
+      #pragma omp target teams distribute collapse(2) num_teams(total_targets*num_teams) \
         map(always, to: input_ptr[:offload_input.size()]) \
         nowait depend(out: total_targets)
       for (int iat = 0; iat < total_targets; ++iat)
-        for (int team_id = 0; team_id < NumTeams; team_id++)
+        for (int team_id = 0; team_id < num_teams; team_id++)
         {
           auto* target_pos_ptr = reinterpret_cast<RealType*>(input_ptr);
           const int walker_id  = reinterpret_cast<int*>(input_ptr + total_targets * D * realtype_size)[iat];
@@ -240,6 +250,10 @@ public:
     }
   }
 
+  /** this function implements mw_evaluate.
+   * After offloading the computation of distances and displacements, the result for all the walkers is transferred back together in one shot
+   * and then copied to per-walker data structure. Memory copy on the CPU is still costly and not beneficial for large problem size with a few walkers.
+   */
   inline void mw_evaluate_fuse_transfer(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
   {
     const size_t nw = dt_list.size();
@@ -248,6 +262,7 @@ public:
       count_targets += p.getTotalNum();
     const size_t total_targets = count_targets;
 
+    // This is horrible optimization putting different data types in a single buffer but allows a single H2D transfer
     const size_t realtype_size = sizeof(RealType);
     const size_t int_size = sizeof(int);
     const size_t ptr_size = sizeof(RealType*);
@@ -283,19 +298,20 @@ public:
     }
 
     const int N_sources_local  = N_sources;
+    // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
     const int ChunkSizePerTeam = 256;
-    const int NumTeams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+    const int num_teams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     auto* r_dr_ptr  = offload_output.data();
     auto* input_ptr = offload_input.data();
 
     {
       ScopedTimer offload(&offload_timer_);
-      #pragma omp target teams distribute collapse(2) num_teams(total_targets*NumTeams) \
+      #pragma omp target teams distribute collapse(2) num_teams(total_targets*num_teams) \
         map(always, to: input_ptr[:offload_input.size()]) \
         map(always, from: r_dr_ptr[:offload_output.size()])
       for (int iat = 0; iat < total_targets; ++iat)
-        for (int team_id = 0; team_id < NumTeams; team_id++)
+        for (int team_id = 0; team_id < num_teams; team_id++)
         {
           auto* target_pos_ptr = reinterpret_cast<RealType*>(input_ptr);
           const int walker_id  = reinterpret_cast<int*>(input_ptr + total_targets * D * realtype_size)[iat];

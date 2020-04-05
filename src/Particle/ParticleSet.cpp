@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
@@ -74,7 +74,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       myTwist(0.0),
       ParentName(p.parentName()),
       coordinates_(std::move(p.coordinates_->makeClone()))
-  {
+{
   set_quantum_domain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable
   //need explicit copy:
@@ -419,15 +419,16 @@ void ParticleSet::flex_update(const RefVector<ParticleSet>& p_list, bool skipSK)
 
 void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ, bool maybe_accept)
 {
-  activePtcl = iat;
-  activePos  = R[iat] + displ;
+  activePtcl    = iat;
+  activePos     = R[iat] + displ;
+  activeSpinVal = spins[iat];
   computeNewPosDistTablesAndSK(iat, activePos, maybe_accept);
 }
 
 void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
 {
   makeMove(iat, displ);
-  activeSpinVal = spins[iat] + sdispl;
+  activeSpinVal += sdispl;
 }
 
 void ParticleSet::flex_makeMove(const RefVector<ParticleSet>& P_list,
@@ -456,6 +457,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 {
   activePtcl    = iat;
   activePos     = R[iat] + displ;
+  activeSpinVal = spins[iat];
   bool is_valid = true;
   if (Lattice.explicitly_defined)
   {
@@ -474,8 +476,9 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 
 bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
 {
-  activeSpinVal = spins[iat] + sdispl;
-  return makeMoveAndCheck(iat, displ);
+  bool is_valid = makeMoveAndCheck(iat, displ);
+  activeSpinVal += sdispl;
+  return is_valid;
 }
 
 void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos, bool maybe_accept)
@@ -671,7 +674,7 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
     if (SK && SK->DoUpdate)
       SK->acceptMove(iat, GroupID[iat], R[iat]);
 
-    R[iat]     = activePos;
+    R[iat] = activePos;
     coordinates_->setOneParticlePos(activePos, iat);
     spins[iat] = activeSpinVal;
     activePtcl = -1;
@@ -688,7 +691,8 @@ void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)
 {
   if (P_list.size() > 1)
   {
-#pragma omp parallel for
+    // Leaving bare omp pragma here. It can potentially be improved with cleaner abstraction.
+    #pragma omp parallel for
     for (int iw = 0; iw < P_list.size(); iw++)
       P_list[iw].get().donePbyP();
   }
@@ -740,6 +744,7 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 void ParticleSet::saveWalker(Walker_t& awalker)
 {
   awalker.R = R;
+  awalker.spins = spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
   awalker.G = G;
   awalker.L = L;
@@ -778,7 +783,7 @@ void ParticleSet::initPropertyList()
   PropertyList.add("AltEnergy");
   PropertyList.add("LocalEnergy");
   PropertyList.add("LocalPotential");
-  
+
   // There is no point in checking this, its quickly not consistent as other objects update property list.
   // if (PropertyList.size() != WP::NUMPROPERTIES)
   // {

@@ -12,8 +12,8 @@
 
 /** @file DynamicCoordinates.h
  */
-#ifndef QMCPLUSPLUS_QUANTUM_VARIABLE_H
-#define QMCPLUSPLUS_QUANTUM_VARIABLE_H
+#ifndef QMCPLUSPLUS_DYNAMICCOORDINATES_H
+#define QMCPLUSPLUS_DYNAMICCOORDINATES_H
 
 #include <memory>
 #include "Configuration.h"
@@ -25,8 +25,8 @@ namespace qmcplusplus
  */
 enum class DynamicCoordinateKind
 {
-  QV_POS, // SoA positions
-  QV_POS_OFFLOAD, // SoA positions with OpenMP offload
+  DC_POS, // SoA positions
+  DC_POS_OFFLOAD, // SoA positions with OpenMP offload
 };
 
 /** quantum variables of all the particles
