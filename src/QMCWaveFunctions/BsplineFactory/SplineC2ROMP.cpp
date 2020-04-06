@@ -283,22 +283,25 @@ void SplineC2ROMP<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueV
     const size_t first_spo_local   = first_spo;
     const int nComplexBands_local  = nComplexBands;
 
-    PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
-                  map(always, from: psi_ptr[0:orb_size])")
-    for (int team_id = 0; team_id < NumTeams; team_id++)
     {
-      const int first = ChunkSizePerTeam * team_id;
-      const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-
-      int ix, iy, iz;
-      ST a[4], b[4], c[4];
-      spline2::computeLocationAndFractional(spline_ptr, rux, ruy, ruz, ix, iy, iz, a, b, c);
-
-      PRAGMA_OFFLOAD("omp parallel")
+      ScopedTimer offload(&offload_timer_);
+      PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) \
+                  map(always, from: psi_ptr[0:orb_size])")
+      for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_ptr + first, first, last);
-        C2R::assign_v(x, y, z, psi_ptr, orb_size, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size,
-                      first_spo_local, nComplexBands_local, first / 2, last / 2);
+        const int first = ChunkSizePerTeam * team_id;
+        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+
+        int ix, iy, iz;
+        ST a[4], b[4], c[4];
+        spline2::computeLocationAndFractional(spline_ptr, rux, ruy, ruz, ix, iy, iz, a, b, c);
+
+        PRAGMA_OFFLOAD("omp parallel")
+        {
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_ptr + first, first, last);
+          C2R::assign_v(x, y, z, psi_ptr, orb_size, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size,
+                        first_spo_local, nComplexBands_local, first / 2, last / 2);
+        }
       }
     }
   }
@@ -353,42 +356,45 @@ void SplineC2ROMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   const size_t first_spo_local   = first_spo;
   const int nComplexBands_local  = nComplexBands;
 
-  PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nVP) thread_limit(ChunkSizePerTeam) \
+  {
+    ScopedTimer offload(&offload_timer_);
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nVP) \
                 map(always, to: psiinv_ptr[0:psiinv_pos_copy.size()]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*nVP])")
-  for (int iat = 0; iat < nVP; iat++)
-    for (int team_id = 0; team_id < NumTeams; team_id++)
-    {
-      const int first      = ChunkSizePerTeam * team_id;
-      const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-      const int first_cplx = first / 2;
-      const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
-      const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-      const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
-      auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
-      auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
-      auto* restrict pos_scratch             = psiinv_ptr + orb_size;
-
-      int ix, iy, iz;
-      ST a[4], b[4], c[4];
-      spline2::computeLocationAndFractional(spline_ptr, ST(pos_scratch[iat * 6 + 3]), ST(pos_scratch[iat * 6 + 4]),
-                                            ST(pos_scratch[iat * 6 + 5]), ix, iy, iz, a, b, c);
-
-      TT sum(0);
-      PRAGMA_OFFLOAD("omp parallel")
+    for (int iat = 0; iat < nVP; iat++)
+      for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
-                                           last);
-        C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]), psi_iat_ptr,
-                      orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size, first_spo_local,
-                      nComplexBands_local, first / 2, last / 2);
+        const int first      = ChunkSizePerTeam * team_id;
+        const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const int first_cplx = first / 2;
+        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
+        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
+        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
+        auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
+        auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
+        auto* restrict pos_scratch             = psiinv_ptr + orb_size;
 
-        PRAGMA_OFFLOAD("omp for reduction(+:sum)")
-        for (int i = first_real; i < last_real; i++)
-          sum += psi_iat_ptr[i] * psiinv_ptr[i];
+        int ix, iy, iz;
+        ST a[4], b[4], c[4];
+        spline2::computeLocationAndFractional(spline_ptr, ST(pos_scratch[iat * 6 + 3]), ST(pos_scratch[iat * 6 + 4]),
+                                              ST(pos_scratch[iat * 6 + 5]), ix, iy, iz, a, b, c);
+
+        TT sum(0);
+        PRAGMA_OFFLOAD("omp parallel")
+        {
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
+                                             last);
+          C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
+                        psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
+                        first_spo_local, nComplexBands_local, first / 2, last / 2);
+
+          PRAGMA_OFFLOAD("omp for reduction(+:sum)")
+          for (int i = first_real; i < last_real; i++)
+            sum += psi_iat_ptr[i] * psiinv_ptr[i];
+        }
+        ratios_private_ptr[iat * NumTeams + team_id] = sum;
       }
-      ratios_private_ptr[iat * NumTeams + team_id] = sum;
-    }
+  }
 
   // do the reduction manually
   for (int iat = 0; iat < nVP; ++iat)
@@ -406,7 +412,7 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
                                             const RefVector<const ValueVector_t>& psiinv_list,
                                             std::vector<std::vector<ValueType>>& ratios_list)
 {
-  const size_t nw = spo_list.size();
+  const size_t nw       = spo_list.size();
   const size_t orb_size = psiinv_list[0].get().size();
 
   size_t mw_nVP = 0;
@@ -433,7 +439,7 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
     assert(ratios_list[iw].size() == VP.size());
     for (size_t iat = 0; iat < VP.getTotalNum(); ++iat, ++iVP)
     {
-      mw_ref_id[iVP] = iw;
+      mw_ref_id[iVP]     = iw;
       const PointType& r = VP.activeR(iat);
       PointType ru(PrimLattice.toUnit_floor(r));
       scratch_ptr[0] = r[0];
@@ -468,44 +474,46 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
   const size_t first_spo_local   = first_spo;
   const int nComplexBands_local  = nComplexBands;
 
-  PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) thread_limit(ChunkSizePerTeam) \
+  {
+    ScopedTimer offload(&offload_timer_);
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
                 map(always, to: mw_psiinv_ptr[0:mw_psiinv_pos_copy.size()], ref_id_ptr[0:mw_nVP]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
-  for (int iat = 0; iat < mw_nVP; iat++)
-    for (int team_id = 0; team_id < NumTeams; team_id++)
-    {
-      const int first      = ChunkSizePerTeam * team_id;
-      const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-      const int first_cplx = first / 2;
-      const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
-      const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-      const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
-      auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
-      auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
-      auto* restrict pos_scratch             = mw_psiinv_ptr + orb_size * nw;
-      auto* restrict psiinv_ptr              = mw_psiinv_ptr + ref_id_ptr[iat] * orb_size;
-
-      int ix, iy, iz;
-      ST a[4], b[4], c[4];
-      spline2::computeLocationAndFractional(spline_ptr, ST(pos_scratch[iat * 6 + 3]), ST(pos_scratch[iat * 6 + 4]),
-                                            ST(pos_scratch[iat * 6 + 5]), ix, iy, iz, a, b, c);
-
-      TT sum(0);
-      PRAGMA_OFFLOAD("omp parallel")
+    for (int iat = 0; iat < mw_nVP; iat++)
+      for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
-                                           last);
-        C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]), psi_iat_ptr,
-                      orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size, first_spo_local,
-                      nComplexBands_local, first / 2, last / 2);
+        const int first      = ChunkSizePerTeam * team_id;
+        const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const int first_cplx = first / 2;
+        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
+        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
+        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
+        auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
+        auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
+        auto* restrict pos_scratch             = mw_psiinv_ptr + orb_size * nw;
+        auto* restrict psiinv_ptr              = mw_psiinv_ptr + ref_id_ptr[iat] * orb_size;
 
-        PRAGMA_OFFLOAD("omp for reduction(+:sum)")
-        for (int i = first_real; i < last_real; i++)
-          sum += psi_iat_ptr[i] * psiinv_ptr[i];
+        int ix, iy, iz;
+        ST a[4], b[4], c[4];
+        spline2::computeLocationAndFractional(spline_ptr, ST(pos_scratch[iat * 6 + 3]), ST(pos_scratch[iat * 6 + 4]),
+                                              ST(pos_scratch[iat * 6 + 5]), ix, iy, iz, a, b, c);
+
+        TT sum(0);
+        PRAGMA_OFFLOAD("omp parallel")
+        {
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
+                                             last);
+          C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
+                        psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
+                        first_spo_local, nComplexBands_local, first / 2, last / 2);
+
+          PRAGMA_OFFLOAD("omp for reduction(+:sum)")
+          for (int i = first_real; i < last_real; i++)
+            sum += psi_iat_ptr[i] * psiinv_ptr[i];
+        }
+        ratios_private_ptr[iat * NumTeams + team_id] = sum;
       }
-      ratios_private_ptr[iat * NumTeams + team_id] = sum;
-    }
-
+  }
   // do the reduction manually
   iVP = 0;
   for (size_t iw = 0; iw < nw; iw++)
@@ -679,30 +687,33 @@ void SplineC2ROMP<ST>::evaluateVGL(const ParticleSet& P,
   const size_t first_spo_local   = first_spo;
   const int nComplexBands_local  = nComplexBands;
 
-  PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) thread_limit(ChunkSizePerTeam) \
-                map(always, from: results_scratch_ptr[0:orb_size*5])")
-  for (int team_id = 0; team_id < NumTeams; team_id++)
   {
-    const int first = ChunkSizePerTeam * team_id;
-    const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-
-    int ix, iy, iz;
-    ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
-    spline2::computeLocationAndFractional(spline_ptr, rux, ruy, ruz, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
-
-    const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
-                     PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
-                     PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
-    const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
-                          GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
-
-    PRAGMA_OFFLOAD("omp parallel")
+    ScopedTimer offload(&offload_timer_);
+    PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) \
+                map(always, from: results_scratch_ptr[0:orb_size*5])")
+    for (int team_id = 0; team_id < NumTeams; team_id++)
     {
-      spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                           offload_scratch_ptr + first, offload_scratch_ptr + padded_size + first,
-                                           offload_scratch_ptr + padded_size * 4 + first, padded_size, first, last);
-      C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, symGGt, G,
-                      myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local, first / 2, last / 2);
+      const int first = ChunkSizePerTeam * team_id;
+      const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+
+      int ix, iy, iz;
+      ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
+      spline2::computeLocationAndFractional(spline_ptr, rux, ruy, ruz, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
+
+      const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
+                       PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
+                       PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+      const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
+                            GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
+
+      PRAGMA_OFFLOAD("omp parallel")
+      {
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                             offload_scratch_ptr + first, offload_scratch_ptr + padded_size + first,
+                                             offload_scratch_ptr + padded_size * 4 + first, padded_size, first, last);
+        C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, symGGt, G,
+                        myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local, first / 2, last / 2);
+      }
     }
   }
 
@@ -722,7 +733,7 @@ void SplineC2ROMP<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocat
                                            const RefVector<GradVector_t>& dpsi_v_list,
                                            const RefVector<ValueVector_t>& d2psi_v_list)
 {
-  const size_t num_pos = psi_v_list.size();
+  const size_t num_pos       = psi_v_list.size();
   const int ChunkSizePerTeam = 128;
   const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   const auto padded_size     = myV.size();
@@ -747,44 +758,47 @@ void SplineC2ROMP<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocat
   const size_t first_spo_local   = first_spo;
   const int nComplexBands_local  = nComplexBands;
 
-  PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) thread_limit(ChunkSizePerTeam) \
+  {
+    ScopedTimer offload(&offload_timer_);
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
                     map(always, to: pos_copy_ptr[0:num_pos*6]) \
                     map(always, from: results_scratch_ptr[0:orb_size*num_pos*5])")
-  for (int iw = 0; iw < num_pos; iw++)
-    for (int team_id = 0; team_id < NumTeams; team_id++)
-    {
-      const int first      = ChunkSizePerTeam * team_id;
-      const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-      const int first_cplx = first / 2;
-      const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
-      const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-      const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
-      auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
-      auto* restrict psi_iw_ptr             = results_scratch_ptr + orb_size * iw * 5;
-
-      int ix, iy, iz;
-      ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
-      spline2::computeLocationAndFractional(spline_ptr, pos_copy_ptr[iw * 6 + 3], pos_copy_ptr[iw * 6 + 4],
-                                            pos_copy_ptr[iw * 6 + 5], ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
-
-      const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
-                       PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
-                       PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
-      const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
-                            GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
-
-      PRAGMA_OFFLOAD("omp parallel")
+    for (int iw = 0; iw < num_pos; iw++)
+      for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                             offload_scratch_iw_ptr + first,
-                                             offload_scratch_iw_ptr + padded_size + first,
-                                             offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
-                                             last);
-        C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr,
-                        orb_size, offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
-                        first_spo_local, nComplexBands_local, first / 2, last / 2);
+        const int first      = ChunkSizePerTeam * team_id;
+        const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const int first_cplx = first / 2;
+        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
+        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
+        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
+        auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
+        auto* restrict psi_iw_ptr             = results_scratch_ptr + orb_size * iw * 5;
+
+        int ix, iy, iz;
+        ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
+        spline2::computeLocationAndFractional(spline_ptr, pos_copy_ptr[iw * 6 + 3], pos_copy_ptr[iw * 6 + 4],
+                                              pos_copy_ptr[iw * 6 + 5], ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
+
+        const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
+                         PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
+                         PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+        const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
+                              GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
+
+        PRAGMA_OFFLOAD("omp parallel")
+        {
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                               offload_scratch_iw_ptr + first,
+                                               offload_scratch_iw_ptr + padded_size + first,
+                                               offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
+                                               last);
+          C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr,
+                          orb_size, offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
+                          first_spo_local, nComplexBands_local, first / 2, last / 2);
+        }
       }
-    }
+  }
 
   // do the reduction manually
   for (int iw = 0; iw < num_pos; ++iw)
