@@ -404,7 +404,7 @@ Remarks
 % estimator element
 \section{General estimators}
 
-A broad range of estimators for physical observables are available in \qmcpack.  The following sections contain input details for the total number density (\texttt{density}), number density resolved by particle spin (\texttt{spindensity}), spherically averaged pair correlation function (\texttt{gofr}), static structure factor (\texttt{sk}), energy density (\texttt{energydensity}), one body reduced density matrix (\texttt{dm1b}), $S(k)$ based kinetic energy correction (\texttt{chiesa}), forward walking (\texttt{ForwardWalking}), and force (\texttt{Force}) estimators.  Other estimators are not yet covered.
+A broad range of estimators for physical observables are available in \qmcpack.  The following sections contain input details for the total number density (\texttt{density}), number density resolved by particle spin (\texttt{spindensity}), spherically averaged pair correlation function (\texttt{gofr}), static structure factor (\texttt{sk}), static structure factor (\texttt{skall}), energy density (\texttt{energydensity}), one body reduced density matrix (\texttt{dm1b}), $S(k)$ based kinetic energy correction (\texttt{chiesa}), forward walking (\texttt{ForwardWalking}), and force (\texttt{Force}) estimators.  Other estimators are not yet covered.
 
 When an \texttt{<estimator/>} element appears in \texttt{<hamiltonian/>}, it is evaluated for all applicable chained QMC runs ({e.g.,} VMC$\rightarrow$DMC$\rightarrow$DMC).  Estimators are generally not accumulated during wavefunction optimization sections.    If an \texttt{<estimator/>} element is instead provided in a particular \texttt{<qmc/>} element, that estimator is only evaluated for that specific section ({e.g.,} during VMC only).
 
@@ -422,6 +422,7 @@ When an \texttt{<estimator/>} element appears in \texttt{<hamiltonian/>}, it is 
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{spindensity       } & \multicolumn{2}{l}{Spin density on a grid}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{gofr              } & \multicolumn{2}{l}{Pair correlation function (quantum species)}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{sk                } & \multicolumn{2}{l}{Static structure factor}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{SkAll             } & \multicolumn{2}{l}{Static structure factor needed for finite size correction}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{structurefactor   } & \multicolumn{2}{l}{Species resolved structure factor}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{specieskinetic    } & \multicolumn{2}{l}{Species resolved kinetic energy}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{latticedeviation  } & \multicolumn{2}{l}{Spatial deviation between two particlesets}\\
@@ -732,6 +733,55 @@ Additional information:
 \begin{lstlisting}[style=QMCPXML,caption=Static structure factor estimator element.]
   <estimator type="sk" name="sk" hdf5="yes"/>
 \end{lstlisting}
+
+
+
+\subsection{Static structure factor, \texttt{SkAll}}
+In order to compute the finite size correction to the potential energy, records of $\rho(\mathbf{k})$ is required. What sets \texttt{SkAll} apart from \texttt{sk} is that \texttt{SkAll} records $\rho(\mathbf{k})$ in addition to $s(\mathbf{k})$.
+
+% has a CUDA counterpart, may be useful to understand difference between cpu and gpu estimators
+% see HamiltonianFactory.cpp
+%    SkEstimator_CUDA* apot=new SkEstimator_CUDA(*targetPtcl);
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l X }
+\hline
+\multicolumn{6}{l}{\texttt{estimator type=SkAll} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & sk      &                     & Must be sk       \\
+   & \texttt{name}$^r$    &  text              & \textit{anything} & any                 & Unique name for estimator \\
+   & \texttt{hdf5}$^o$    &  boolean           & yes/no            & no                  & Output to \texttt{stat.h5} (yes) or \texttt{scalar.dat} (no) \\
+   & \texttt{writeionion}$^o$ &  boolean       & yes/no            & no                  & Writes file rhok\_IonIon.dat containing $s(\mathbf{k})$ for the ions \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+Additional information:
+\begin{itemize}
+  \item{\texttt{name:} This is the unique name for estimator instance.  A data structure of the same name will appear in \texttt{stat.h5} output files.}
+  \item{\texttt{hdf5:} If \texttt{hdf5==yes}, output data is directed to the \texttt{stat.h5} file (recommended usage).  If \texttt{hdf5==no}, the data is instead routed to the \texttt{scalar.dat} file, resulting in many columns of data with headings prefixed by \texttt{rhok} and postfixed by the k-point index.}
+  \item{This estimator only works in periodic boundary conditions.  Its presence in the input file is ignored otherwise.}
+  \item{This is not a species-resolved structure factor.  Additionally, for $\mathbf{k}$ vectors commensurate with the unit cell, $S(\mathbf{k})$ will include contributions from the static electronic density, thus meaning it wil not accurately measure the electron-electron density response.  }
+\end{itemize}
+
+\begin{lstlisting}[style=QMCPXML,caption=SkAll estimator element.]
+  <estimator type="skall" name="SkAll" hdf5="yes"/>
+\end{lstlisting}
+
+
+
+
+
+
+
 
 
 
