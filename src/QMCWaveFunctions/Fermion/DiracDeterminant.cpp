@@ -379,8 +379,7 @@ void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std
 {
   RatioTimer.start();
   const int WorkingIndex = VP.refPtcl - FirstIndex;
-  invRow_id              = WorkingIndex;
-  updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
   RatioTimer.stop();
   SPOVTimer.start();
   Phi->evaluateDetRatios(VP, psiV, invRow, ratios);
@@ -407,7 +406,7 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
     auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc_list[iw].get());
     const VirtualParticleSet& vp(vp_list[iw]);
     const int WorkingIndex = vp.refPtcl - FirstIndex;
-    det.prepare_invRow(WorkingIndex);
+    std::copy_n(det.psiM[WorkingIndex], det.invRow.size(), det.invRow.data());
     // build lists
     phi_list.push_back(*det.Phi);
     psiV_list.push_back(det.psiV);
