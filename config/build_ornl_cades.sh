@@ -7,17 +7,17 @@
 ## * Execute this script in trunk/                            ##
 ##   ./config/build_ornl_cades.sh                             ##
 ##                                                            ##
-## Last verified: Mar 12, 2019                                ##
+## Last verified: Mar 11, 2020                                ##
 ################################################################
 
 # module files resulting from module imports below:
 # Currently Loaded Modulefiles:
-#   1) intel/18.0.0           4) gcc/6.3.0              7) cmake/3.11.0
-#   2) openmpi/3.1.1          5) hdf5_parallel/1.10.3   8) boost/1.67.0-pe3
-#   3) PE-intel/3.0           6) fftw/3.3.5-pe3         9) libxml2/2.9.9
+#   1) python/3.6.3           3) openmpi/3.1.5          5) gcc/6.3.0              7) fftw/3.3.5-pe3         9) boost/1.67.0-pe3
+#   2) intel/18.0.0           4) PE-intel/3.0           6) hdf5_parallel/1.10.3   8) cmake/3.11.0          10) libxml2/2.9.9
 
 source $MODULESHOME/init/bash
 module purge
+module load python
 module load PE-intel/3.0
 module load intel/18.0.0
 module load gcc/6.3.0
@@ -37,47 +37,50 @@ CMAKE_FLAGS="-DCMAKE_C_COMPILER=mpicc \
              -DCMAKE_C_FLAGS=-xCOMMON-AVX512 \
              -DCMAKE_CXX_FLAGS=-xCOMMON-AVX512"
 
-# Configure and build cpu real AoS
+# Configure and build cpu real SoA. Build targets skylake nodes.
 echo ""
 echo ""
-echo "building QMCPACK for cpu AoS real for CADES SHPC Condo"
-mkdir -p build_cades_cpu_real
-cd build_cades_cpu_real
-cmake -DENABLE_SOA=0 $CMAKE_FLAGS ..
-make -j 16
-cd ..
-ln -sf ./build_cades_cpu_real/bin/qmcpack ./qmcpack_cades_cpu_real
-
-# Configure and build cpu complex AoS
-echo ""
-echo ""
-echo "building QMCPACK for cpu AoS complex for CADES SHPC Condo"
-mkdir -p build_cades_cpu_comp
-cd build_cades_cpu_comp
-cmake -DENABLE_SOA=0 -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
-make -j 16
-cd ..
-ln -sf ./build_cades_cpu_comp/bin/qmcpack ./qmcpack_cades_cpu_comp
-
-# Configure and build cpu real SoA
-echo ""
-echo ""
-echo "building QMCPACK for cpu SoA real for CADES SHPC Condo"
-mkdir -p build_cades_cpu_real_SoA
-cd build_cades_cpu_real_SoA
+echo "building QMCPACK for cpu SoA real for CADES SHPC Condo -- Using AVX512 for Skylake nodes"
+mkdir -p build_cades_cpu_real_skylake
+cd build_cades_cpu_real_skylake
 cmake -DENABLE_SOA=1 $CMAKE_FLAGS ..
 make -j 16
 cd ..
-ln -sf ./build_cades_cpu_real_SoA/bin/qmcpack ./qmcpack_cades_cpu_real_SoA
+ln -sf ./build_cades_cpu_real_skylake/bin/qmcpack ./qmcpack_cades_cpu_real_skylake
+
+# Configure and build cpu complex SoA. Build targets skylake nodes.
+echo ""
+echo ""
+echo "building QMCPACK for cpu SoA complex for CADES SHPC Condo -- Using AVX512 for Skylake nodes"
+mkdir -p build_cades_cpu_comp_skylake
+cd build_cades_cpu_comp_skylake
+cmake -DENABLE_SOA=1 -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
+make -j 16
+cd ..
+ln -sf ./build_cades_cpu_comp_skylake/bin/qmcpack ./qmcpack_cades_cpu_comp_skylake
+
+CMAKE_FLAGS="-DCMAKE_C_COMPILER=mpicc \
+             -DCMAKE_CXX_COMPILER=mpicxx"
+
+# Configure and build cpu real SoA 
+echo ""
+echo ""
+echo "building QMCPACK for cpu SoA real for CADES SHPC Condo"
+mkdir -p build_cades_cpu_real
+cd build_cades_cpu_real
+cmake -DENABLE_SOA=1 $CMAKE_FLAGS ..
+make -j 16
+cd ..
+ln -sf ./build_cades_cpu_real/bin/qmcpack ./qmcpack_cades_cpu_real
 
 # Configure and build cpu complex SoA
 echo ""
 echo ""
 echo "building QMCPACK for cpu SoA complex for CADES SHPC Condo"
-mkdir -p build_cades_cpu_comp_SoA
-cd build_cades_cpu_comp_SoA
+mkdir -p build_cades_cpu_comp
+cd build_cades_cpu_comp
 cmake -DQMC_COMPLEX=1 -DENABLE_SOA=1 $CMAKE_FLAGS ..
 make -j 16
 cd ..
-ln -sf ./build_cades_cpu_comp_SoA/bin/qmcpack ./qmcpack_cades_cpu_comp_SoA
+ln -sf ./build_cades_cpu_comp/bin/qmcpack ./qmcpack_cades_cpu_comp
 

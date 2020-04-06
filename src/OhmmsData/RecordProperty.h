@@ -231,7 +231,6 @@ struct RecordNamedProperty : public RecordProperty
   bool put(xmlNodePtr cur);
 };
 
-#if defined(HAVE_LIBXML2)
 template<class T>
 bool RecordNamedProperty<T>::put(xmlNodePtr cur)
 {
@@ -247,5 +246,4 @@ bool RecordNamedProperty<T>::put(xmlNodePtr cur)
   }
   return true;
 }
-#endif
 #endif

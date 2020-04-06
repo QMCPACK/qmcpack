@@ -18,8 +18,7 @@
 //  Boston, MA  02110-1301  USA                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
 #include "bspline_base.h"
 #include "multi_bspline_structs.h"
 #include "multi_bspline_eval_d.h"
@@ -41,7 +40,7 @@ eval_multi_UBspline_1d_z (const multi_UBspline_1d_z *spline,
   x -= spline->x_grid.start;
   double ux = x*spline->x_grid.delta_inv;
   double ipartx, tx;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
+  tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
   
   double tpx[4], a[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
@@ -74,7 +73,7 @@ eval_multi_UBspline_1d_z_vg (const multi_UBspline_1d_z *spline,
   x -= spline->x_grid.start;
   double ux = x*spline->x_grid.delta_inv;
   double ipartx, tx;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
+  tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
   
   double tpx[4], a[4], da[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
@@ -119,7 +118,7 @@ eval_multi_UBspline_1d_z_vgl (const multi_UBspline_1d_z *spline,
   x -= spline->x_grid.start;
   double ux = x*spline->x_grid.delta_inv;
   double ipartx, tx;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
+  tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
   
   double tpx[4], a[4], da[4], d2a[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
@@ -186,8 +185,8 @@ eval_multi_UBspline_2d_z (const multi_UBspline_2d_z *spline,
   double ux = x*spline->x_grid.delta_inv;
   double uy = y*spline->y_grid.delta_inv;
   double ipartx, iparty, tx, ty;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);  int iy = (int) iparty;
+  tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+  ty = std::modf (uy, &iparty);  int iy = (int) iparty;
   
   double tpx[4], tpy[4], a[4], b[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
@@ -230,8 +229,8 @@ eval_multi_UBspline_2d_z_vg (const multi_UBspline_2d_z *spline,
   double ux = x*spline->x_grid.delta_inv;
   double uy = y*spline->y_grid.delta_inv;
   double ipartx, iparty, tx, ty;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);  int iy = (int) iparty;
+  tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+  ty = std::modf (uy, &iparty);  int iy = (int) iparty;
   
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
@@ -298,8 +297,8 @@ eval_multi_UBspline_2d_z_vgl (const multi_UBspline_2d_z *spline,
   double ux = x*spline->x_grid.delta_inv;
   double uy = y*spline->y_grid.delta_inv;
   double ipartx, iparty, tx, ty;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);  int iy = (int) iparty;
+  tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+  ty = std::modf (uy, &iparty);  int iy = (int) iparty;
   
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4], d2a[4], d2b[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
@@ -387,8 +386,8 @@ eval_multi_UBspline_2d_z_vgh (const multi_UBspline_2d_z *spline,
   double ux = x*spline->x_grid.delta_inv;
   double uy = y*spline->y_grid.delta_inv;
   double ipartx, iparty, tx, ty;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);  int iy = (int) iparty;
+  tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+  ty = std::modf (uy, &iparty);  int iy = (int) iparty;
   
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4], d2a[4], d2b[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
@@ -580,9 +579,9 @@ eval_multi_UBspline_3d_z_vg (const multi_UBspline_3d_z *spline,
   double uy = y*spline->y_grid.delta_inv;
   double uz = z*spline->z_grid.delta_inv;
   double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);  int iz = (int) ipartz;
+  tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+  ty = std::modf (uy, &iparty);  int iy = (int) iparty;
+  tz = std::modf (uz, &ipartz);  int iz = (int) ipartz;
   
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], 
     da[4], db[4], dc[4];
@@ -670,9 +669,9 @@ eval_multi_UBspline_3d_z_vgl (const multi_UBspline_3d_z *spline,
   double uy = y*spline->y_grid.delta_inv;
   double uz = z*spline->z_grid.delta_inv;
   double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);  int iz = (int) ipartz;
+  tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+  ty = std::modf (uy, &iparty);  int iy = (int) iparty;
+  tz = std::modf (uz, &ipartz);  int iz = (int) ipartz;
   
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], 
     da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
@@ -785,9 +784,9 @@ eval_multi_UBspline_3d_z_vghgh (const multi_UBspline_3d_z *spline,
   double uy = y*spline->y_grid.delta_inv;
   double uz = z*spline->z_grid.delta_inv;
   double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);  int iz = (int) ipartz;
+  tx = std::modf (ux, &ipartx);  int ix = (int) ipartx;
+  ty = std::modf (uy, &iparty);  int iy = (int) iparty;
+  tz = std::modf (uz, &ipartz);  int iz = (int) ipartz;
   
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], 
     da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4],

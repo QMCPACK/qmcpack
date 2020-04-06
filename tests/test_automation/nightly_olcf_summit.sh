@@ -85,7 +85,7 @@ if [ -e ${source_dir}/CMakeLists.txt ]; then
       -DENABLE_TIMERS=1 \
       -DCMAKE_CXX_COMPILER=mpicxx \
       -DCMAKE_C_COMPILER=mpicc \
-      -DQMC_OPTIONS='-DMPIEXEC=sh;-DMPIEXEC_NUMPROC_FLAG=${source_dir}/tests/scripts/jsrunhelper.sh'"
+      -DQMC_OPTIONS='-DMPIEXEC_EXECUTABLE=/bin/sh;-DMPIEXEC_NUMPROC_FLAG=${source_dir}/tests/scripts/jsrunhelper.sh'"
 
     [[ ${variant} == *"Complex"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D QMC_COMPLEX=1"
     [[ ${variant} == *"-SoA"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D ENABLE_SOA=1"

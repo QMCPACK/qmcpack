@@ -176,6 +176,8 @@ fi
 #spack load boost
 
 
+# \todo Make this use spack_supported_package_versions.sh to share common spack loads
+#       with the CI
 #
 # Versions should be consistent with setup script
 #

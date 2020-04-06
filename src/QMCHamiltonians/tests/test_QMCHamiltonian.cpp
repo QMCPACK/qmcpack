@@ -14,9 +14,9 @@
 
 #include "type_traits/template_types.hpp"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "QMCApp/tests/MinimalParticlePool.h"
-#include "QMCApp/tests/MinimalWaveFunctionPool.h"
-#include "QMCApp/tests/MinimalHamiltonianPool.h"
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 namespace qmcplusplus
 {
 TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")

@@ -14,13 +14,8 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#ifndef ENABLE_SOA
-#include "Particle/SymmetricDistanceTableData.h"
-#endif
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/CoulombPotential.h"
@@ -80,7 +75,7 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   ion_species(pMembersizeIdx, pIdx) = 1;
 
   ions.resetGroups();
-  // Must update ions first in SoA so ions.RSoA is valid
+  // Must update ions first in SoA so ions.coordinates_ is valid
   ions.update();
 
 #ifdef ENABLE_SOA

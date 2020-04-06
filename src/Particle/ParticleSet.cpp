@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
@@ -20,6 +20,7 @@
 #include <numeric>
 #include <iomanip>
 #include "Particle/ParticleSet.h"
+#include "Particle/DynamicCoordinatesBuilder.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/createDistanceTable.h"
 #include "LongRange/StructFact.h"
@@ -45,7 +46,7 @@ const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_ne
                                                                           {PS_accept, "ParticleSet::acceptMove"},
                                                                           {PS_update, "ParticleSet::update"}};
 
-ParticleSet::ParticleSet()
+ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
     : quantum_domain(classical),
       IsGrouped(true),
       SameMass(true),
@@ -55,7 +56,8 @@ ParticleSet::ParticleSet()
       Properties(0, 0, 1, WP::MAXPROPERTIES),
       myTwist(0.0),
       ParentName("0"),
-      TotalNum(0)
+      TotalNum(0),
+      coordinates_(std::move(createDynamicCoordinates(kind)))
 {
   initPropertyList();
   setup_timers(myTimers, PSTimerNames, timer_level_fine);
@@ -70,7 +72,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       SK(0),
       Properties(p.Properties),
       myTwist(0.0),
-      ParentName(p.parentName())
+      ParentName(p.parentName()),
+      coordinates_(std::move(p.coordinates_->makeClone()))
 {
   set_quantum_domain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable
@@ -100,9 +103,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   setup_timers(myTimers, PSTimerNames, timer_level_fine);
   myTwist = p.myTwist;
 
-  RSoA = p.RSoA;
-  G    = p.G;
-  L    = p.L;
+  G = p.G;
+  L = p.L;
 }
 
 ParticleSet::~ParticleSet()
@@ -149,7 +151,10 @@ void ParticleSet::set_quantum_domain(quantum_domains qdomain)
 void ParticleSet::resetGroups()
 {
   int nspecies = mySpecies.getTotalNum();
-  if (nspecies == 0)
+  // Usually an empty ParticleSet indicates an error in the input file,
+  // but in some cases it is useful.  Allow an empty ParticleSet if it
+  // has the special name "empty".
+  if (nspecies == 0 && getName() != "empty")
   {
     APP_ABORT("ParticleSet::resetGroups() Failed. No species exisits");
   }
@@ -191,7 +196,7 @@ void ParticleSet::resetGroups()
   }
   // safety check if any group of particles has size 0, instruct users to fix the input.
   for (int group_id = 0; group_id < nspecies; group_id++)
-    if (ng[group_id] == 0)
+    if (ng[group_id] == 0 && getName() != "empty")
     {
       std::ostringstream err_msg;
       err_msg << "ParticleSet::resetGroups() Failed. ParticleSet '" << myName << "' "
@@ -376,7 +381,7 @@ void ParticleSet::update(bool skipSK)
 {
   ScopedTimer update_scope(myTimers[PS_update]);
 
-  RSoA.copyIn(R);
+  coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (!skipSK && SK)
@@ -385,17 +390,45 @@ void ParticleSet::update(bool skipSK)
   activePtcl = -1;
 }
 
+void ParticleSet::flex_update(const RefVector<ParticleSet>& p_list, bool skipSK)
+{
+  if (p_list.size() > 1)
+  {
+    ScopedTimer update_scope(p_list[0].get().myTimers[PS_update]);
+
+    for (ParticleSet& pset : p_list)
+      pset.setCoordinates(pset.R);
+
+    auto& dts = p_list[0].get().DistTables;
+    for (int i = 0; i < dts.size(); ++i)
+    {
+      const auto dt_list(extractDTRefList(p_list, i));
+      dts[i]->mw_evaluate(dt_list, p_list);
+    }
+
+    if (!skipSK && p_list[0].get().SK)
+    {
+#pragma omp parallel for
+      for (int iw = 0; iw < p_list.size(); iw++)
+        p_list[iw].get().SK->UpdateAllPart(p_list[iw]);
+    }
+  }
+  else if (p_list.size() == 1)
+    p_list[0].get().update(skipSK);
+}
+
 void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ, bool maybe_accept)
 {
-  activePtcl = iat;
-  activePos  = R[iat] + displ;
+  activePtcl    = iat;
+  activePos     = R[iat] + displ;
+  activeSpinVal = spins[iat];
   computeNewPosDistTablesAndSK(iat, activePos, maybe_accept);
 }
 
 void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
 {
   makeMove(iat, displ);
-  activeSpinVal = spins[iat] + sdispl;
+  activeSpinVal += sdispl;
 }
 
 void ParticleSet::flex_makeMove(const RefVector<ParticleSet>& P_list,
@@ -424,6 +457,7 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 {
   activePtcl    = iat;
   activePos     = R[iat] + displ;
+  activeSpinVal = spins[iat];
   bool is_valid = true;
   if (Lattice.explicitly_defined)
   {
@@ -442,8 +476,9 @@ bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ
 
 bool ParticleSet::makeMoveAndCheckWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl)
 {
-  activeSpinVal = spins[iat] + sdispl;
-  return makeMoveAndCheck(iat, displ);
+  bool is_valid = makeMoveAndCheck(iat, displ);
+  activeSpinVal += sdispl;
+  return is_valid;
 }
 
 void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticlePos_t& newpos, bool maybe_accept)
@@ -464,7 +499,7 @@ void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& 
                                                   bool maybe_accept)
 {
   ScopedTimer compute_newpos_scope(P_list[0].get().myTimers[PS_newpos]);
-  int dist_tables_size = P_list[0].get().DistTables.size();
+  const int dist_tables_size = P_list[0].get().DistTables.size();
 #pragma omp parallel
   {
     for (int i = 0; i < dist_tables_size; ++i)
@@ -506,7 +541,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker, const ParticlePo
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt * deltaR[iat];
   }
-  RSoA.copyIn(R);
+  coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -538,7 +573,7 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker,
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt[iat] * deltaR[iat];
   }
-  RSoA.copyIn(R);
+  coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -578,7 +613,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt * deltaR[iat] + drift[iat];
   }
-  RSoA.copyIn(R);
+  coordinates_->setAllParticlePos(R);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -611,7 +646,7 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
     for (int iat = 0; iat < deltaR.size(); ++iat)
       R[iat] = awalker.R[iat] + dt[iat] * deltaR[iat] + drift[iat];
   }
-  RSoA.copyIn(R);
+  coordinates_->setAllParticlePos(R);
 
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
@@ -639,8 +674,8 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
     if (SK && SK->DoUpdate)
       SK->acceptMove(iat, GroupID[iat], R[iat]);
 
-    R[iat]     = activePos;
-    RSoA(iat)  = activePos;
+    R[iat] = activePos;
+    coordinates_->setOneParticlePos(activePos, iat);
     spins[iat] = activeSpinVal;
     activePtcl = -1;
   }
@@ -654,13 +689,21 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
 
 void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)
 {
-  for (int iw = 0; iw < P_list.size(); iw++)
-    P_list[iw].get().donePbyP();
+  if (P_list.size() > 1)
+  {
+    // Leaving bare omp pragma here. It can potentially be improved with cleaner abstraction.
+    #pragma omp parallel for
+    for (int iw = 0; iw < P_list.size(); iw++)
+      P_list[iw].get().donePbyP();
+  }
+  else if (P_list.size() == 1)
+    P_list[0].get().donePbyP();
 }
 
 void ParticleSet::donePbyP()
 {
   ScopedTimer donePbyP_scope(myTimers[PS_donePbyP]);
+  coordinates_->donePbyP();
   if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
   activePtcl = -1;
@@ -677,7 +720,7 @@ void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
 void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 {
   R = awalker.R;
-  RSoA.copyIn(R);
+  coordinates_->setAllParticlePos(R);
 #if !defined(SOA_MEMORY_OPTIMIZED)
   G = awalker.G;
   L = awalker.L;
@@ -701,6 +744,7 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 void ParticleSet::saveWalker(Walker_t& awalker)
 {
   awalker.R = R;
+  awalker.spins = spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
   awalker.G = G;
   awalker.L = L;
@@ -739,7 +783,7 @@ void ParticleSet::initPropertyList()
   PropertyList.add("AltEnergy");
   PropertyList.add("LocalEnergy");
   PropertyList.add("LocalPotential");
-  
+
   // There is no point in checking this, its quickly not consistent as other objects update property list.
   // if (PropertyList.size() != WP::NUMPROPERTIES)
   // {
@@ -799,5 +843,16 @@ int ParticleSet::addPropertyHistory(int leng)
 // //       PropertyHistory[dindex].pop_back();
 //       }
 //     }
+
+RefVector<DistanceTableData> ParticleSet::extractDTRefList(
+    const RefVector<ParticleSet>& p_list,
+    int id)
+{
+  RefVector<DistanceTableData> dt_list;
+  dt_list.reserve(p_list.size());
+  for (ParticleSet& p : p_list)
+    dt_list.push_back(*p.DistTables[id]);
+  return dt_list;
+}
 
 } // namespace qmcplusplus
