@@ -230,12 +230,6 @@ private:
   /// internal function computing ratio and gradients after computing the SPOs, used by ratioGrad.
   PsiValueType ratioGrad_compute(int iat, GradType& grad_iat);
 
-  /// prepare invRow
-  void prepare_invRow(int WorkingIndex)
-  {
-    invRow_id = WorkingIndex;
-    updateEng.getInvRow(psiM, WorkingIndex, invRow);
-  }
 };
 
 extern template class DiracDeterminant<>;

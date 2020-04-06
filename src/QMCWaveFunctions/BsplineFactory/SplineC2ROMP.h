@@ -25,6 +25,7 @@
 #include "OpenMP/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "Utilities/FairDivide.h"
+#include "Utilities/NewTimer.h"
 
 namespace qmcplusplus
 {
@@ -66,6 +67,8 @@ public:
   using OffloadPosVector = VectorSoaContainer<DT, 3, OffloadAllocator<DT>>;
 
 private:
+  /// timer for offload portion
+  NewTimer& offload_timer_;
   ///primitive cell
   CrystalLattice<ST, 3> PrimLattice;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
@@ -109,7 +112,11 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2ROMP() : nComplexBands(0), GGt_offload(std::make_shared<OffloadVector<ST>>(9)), PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
+  SplineC2ROMP()
+      : offload_timer_(*TimerManager.createTimer("SplineC2ROMP::offload", timer_level_fine)),
+        nComplexBands(0),
+        GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
+        PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
   {
     is_complex = true;
     className  = "SplineC2ROMP";
@@ -160,7 +167,7 @@ public:
   void finalizeConstruction() override
   {
     // map the SplineInst->getSplinePtr() structure to GPU
-    auto* MultiSpline = SplineInst->getSplinePtr();
+    auto* MultiSpline    = SplineInst->getSplinePtr();
     auto* restrict coefs = MultiSpline->coefs;
     // attach pointers on the device to achieve deep copy
     PRAGMA_OFFLOAD("omp target map(always, to: MultiSpline[0:1], coefs[0:MultiSpline->coefs_size])")
@@ -175,7 +182,7 @@ public:
     PRAGMA_OFFLOAD("omp target update to(myKcart_ptr[0:myKcart->capacity()*3])")
     for (size_t i = 0; i < 9; i++)
     {
-      (*GGt_offload)[i] = GGt[i];
+      (*GGt_offload)[i]           = GGt[i];
       (*PrimLattice_G_offload)[i] = PrimLattice.G[i];
     }
     auto* PrimLattice_G_ptr = PrimLattice_G_offload->data();
@@ -193,7 +200,7 @@ public:
     // GPU CUDA code doesn't allow a change of the ordering
     nComplexBands = this->remap_kpoints();
 #endif
-    int nk = kPoints.size();
+    int nk  = kPoints.size();
     mKK     = std::make_shared<OffloadVector<ST>>(nk);
     myKcart = std::make_shared<OffloadPosVector<ST>>(nk);
     for (size_t i = 0; i < nk; ++i)
