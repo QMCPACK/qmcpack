@@ -756,6 +756,8 @@ In order to compute the finite size correction to the potential energy, records 
    & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
    & \texttt{type}$^r$    &  text              & sk      &                     & Must be sk       \\
    & \texttt{name}$^r$    &  text              & \textit{anything} & any                 & Unique name for estimator \\
+   & \texttt{source}$^r$  &  text              & Ion ParticleSet name & None             & - \\
+   & \texttt{target}$^r$  &  text              & Electron ParticleSet name & None        & - \\
    & \texttt{hdf5}$^o$    &  boolean           & yes/no            & no                  & Output to \texttt{stat.h5} (yes) or \texttt{scalar.dat} (no) \\
    & \texttt{writeionion}$^o$ &  boolean       & yes/no            & no                  & Writes file rhok\_IonIon.dat containing $s(\mathbf{k})$ for the ions \\
   \hline
@@ -773,7 +775,7 @@ Additional information:
 \end{itemize}
 
 \begin{lstlisting}[style=QMCPXML,caption=SkAll estimator element.]
-  <estimator type="skall" name="SkAll" hdf5="yes"/>
+  <estimator type="skall" name="SkAll" source="ion0" target="e" hdf5="yes"/>
 \end{lstlisting}
 
 
