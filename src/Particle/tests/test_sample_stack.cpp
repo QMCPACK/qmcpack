@@ -13,6 +13,7 @@
 #include "catch.hpp"
 
 
+#include "Particle/MCSample.h"
 #include "Particle/SampleStack.h"
 
 #include <stdio.h>
@@ -36,21 +37,22 @@ TEST_CASE("SampleStack", "[particle]")
   REQUIRE(samples.getMaxSamples() == 8);
   REQUIRE(samples.getNumSamples() == 0);
 
-  SampleStack::WalkerList_t walker_list;
+  using Walker_t     = ParticleSet::Walker_t;
+  using WalkerList_t = std::vector<Walker_t*>;
 
-  // Check adding an empty list doesn't break
-  samples.saveEnsemble(walker_list.begin(), walker_list.end());
-  REQUIRE(samples.getNumSamples() == 0);
-
+  WalkerList_t walker_list;
 
   // Add size one list
-  walker_list.push_back(new SampleStack::Walker_t(total_num));
+  walker_list.push_back(new Walker_t(total_num));
   walker_list[0]->R[0][0] = 1.1;
-  samples.saveEnsemble(walker_list.begin(), walker_list.end());
+  for (auto wi = walker_list.begin(); wi != walker_list.end(); wi++)
+  {
+    samples.appendSample(convertWalkerToSample(**wi));
+  }
   REQUIRE(samples.getNumSamples() == 1);
 
-  SampleStack::Walker_t w1;
-  samples.getSample(0, w1);
+  Walker_t w1;
+  samples.getSample(0).get(w1);
   REQUIRE(w1.R[0][0] == Approx(1.1));
 
   // Should test that more members of the Walker are saved correctly
