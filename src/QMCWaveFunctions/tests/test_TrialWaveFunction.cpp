@@ -217,7 +217,8 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
 // testing batched interfaces
   RefVector<ParticleSet> p_ref_list{elec_,elec_clone};
   RefVector<TrialWaveFunction> wf_ref_list{psi, *psi_clone};
-  
+
+  elec_.flex_update(p_ref_list);
   psi.flex_evaluateLog(wf_ref_list, p_ref_list);
 #if defined(QMC_COMPLEX)
   REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == LogComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));

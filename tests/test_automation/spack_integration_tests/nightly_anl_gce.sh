@@ -59,10 +59,11 @@ function test_variant {
 # CUDA version is compatible with your compiler
 # https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
 
-# declare -a versions=("3.8.0" "3.7.0")
-declare -a versions=("3.8.0")
+# declare -a versions=("3.9.1" "3.8.0")
+declare -a versions=("3.9.1")
 declare -a compilers=("gcc@7.4.0" "intel@19.0.3.199" "pgi@19.7" "clang@9.0.0")
-# declare -a compilers=("intel@19.0.3.199")
+declare -a compilers=("pgi@19.7")
+declare -a withafqmc=("+afqmc" "~afqmc")
 declare -a withqe=("+qe" "~qe")
 declare -a withmpi=("+mpi" "~mpi")
 declare -a spotypes=("+complex" "~complex")
@@ -70,7 +71,8 @@ declare -a withtimers=("+timers" "~timers")
 declare -a withmixed=("+mixed" "~mixed")
 declare -a withsoa=("+soa" "~soa")
 declare -a withcuda=("+cuda" "~cuda")
-declare -a blasproviders=("netlib-lapack" "intel-mkl" "openblas")
+# spaces are allowed inside an quoted entry because it throws off the parser in the test_variant function
+declare -a blasproviders=("netlib-lapack^fftw%gcc" "intel-mkl" "openblas^fftw%gcc" "libflame^blis^fftw%gcc" "libflame^amdblis^fftw%gcc")
 # declare -a blasproviders=("intel-mkl")
 # cuda_arch value explicitly set to value of GPU card on naromero-desktop.cels.anl.gov
 gpu_card=61
@@ -124,8 +126,12 @@ touch ${SPACK_CONFLICTS}
 # - Union of packages that should get compiled with GCC are: ^boost%gcc
 #   ^pkgconf%gcc ^perl%gcc ^libpciaccess%gcc ^numactl%gcc ^cmake%gcc ^findutils%gcc ^m4%gcc
 #
-build_with_gcc='^boost%gcc@7.4.0 ^pkgconf%gcc@7.4.0 ^perl%gcc@7.4.0 ^libpciaccess%gcc@7.4.0 ^cmake%gcc@7.4.0 ^findutils%gcc@7.4.0 ^m4%gcc@7.4.0'
-build_with_gcc_nompi='^boost%gcc@7.4.0 ^pkgconf%gcc@7.4.0 ^perl%gcc@7.4.0 ^cmake%gcc@7.4.0'
+# - Better to install Python with Anaconda and then load via a module
+#
+# - Number of packages concretization preferences are expressed in packages.yaml
+build_with_python='^python@3.7.4'
+build_with_gcc='^boost%gcc ^pkgconf%gcc ^perl%gcc ^libpciaccess%gcc ^cmake%gcc ^findutils%gcc ^m4%gcc'
+build_with_gcc_nompi='^boost%gcc ^pkgconf%gcc ^perl%gcc ^cmake%gcc'
 
 echo "##### Compiling QMCPACK variants without QE ######"
 echo "##### 36 variants per compiler #####"
@@ -135,12 +141,11 @@ for version in ${versions[@]}; do
 	    for mixed in ${withmixed[@]}; do
 		for soa in ${withsoa[@]}; do
 		    for blas in ${blasproviders[@]}; do
-			variant1='qmcpack~qe+mpi+timers~cuda'${spotype}${mixed}${soa}'@'${version}'%'${compiler}' ^'${blas}' ^mpich '${build_with_gcc}
-			test_variant "${variant1}"
+			variant1='qmcpack~qe+mpi+timers~cuda'${spotype}${mixed}${soa}'@'${version}'%'${compiler}' ^'${blas}' '${build_with_gcc}' '${build_with_python}
+			test_variant ${variant1}
 
 			# cuda version takes an extra arg
-			variant2='qmcpack~qe+mpi+timers+cuda'${spotype}${mixed}${soa}'@'${version}'%'${compiler}' cuda_arch='${gpu_card}' ^cuda@'${cuda_version}' ^'${blas}' ^mpich '${build_with_gcc}
-			# variant2='qmcpack~qe+mpi+timers+cuda'${spotype}${mixed}${soa}'@'${version}'%'${compiler}' ^cuda@'${cuda_version}' ^'${blas}' ^mpich '${build_with_gcc}
+			variant2='qmcpack~qe+mpi+timers+cuda'${spotype}${mixed}${soa}'@'${version}'%'${compiler}' cuda_arch='${gpu_card}' ^'${blas}' '${build_with_gcc}' '${build_with_python}
 			test_variant ${variant2}
 		    done
 		done
@@ -156,11 +161,11 @@ echo "##### Test that QE patch is applied ####"
 for version in ${versions[@]}; do
     for compiler in ${compilers[@]}; do
 	for blas in ${blasproviders[@]}; do
-	    variant3='qmcpack+qe+mpi~timers~cuda~complex~mixed~soa@'${version}'%'${compiler}' ^'${blas}' ^mpich '${build_with_gcc}
-	    test_variant $variant3
+	    variant3='qmcpack+qe+mpi~timers~cuda~complex~mixed~soa@'${version}'%'${compiler}' ^'${blas}' '${build_with_gcc}' '${build_with_python}
+	    test_variant ${variant3}
 	    
-	    variant4='qmcpack+qe~mpi~phdf5~timers~cuda~complex~mixed~soa@'${version}'%'${compiler}' ^'${blas}
-	    test_variant $variant4
+	    variant4='qmcpack+qe~mpi~phdf5~timers~cuda~complex~mixed~soa@'${version}'%'${compiler}' ^'${blas}' '${build_with_gcc_nompi}' '${build_with_python}
+	    test_variant ${variant4}
 
 	    # test that QMCPACK patch was REALLY applied
 	    spack find quantum-espresso@6.4.1"%"${compiler} patches=${qe_hash}
@@ -168,6 +173,24 @@ for version in ${versions[@]}; do
 	    then
 		echo "QMCPACK patch was not applied to QE." >> ${SPACK_FAILS}
 	    fi
-       done
-   done
+	done
+    done
+done
+
+# test AFQMC variants seperately since most variants
+# are specific to the real-space QMC code
+echo "##### Compiling AFQMC variants ######"
+echo "##### 6 variants per compiler #####"
+
+for version in ${versions[@]}; do
+    for compiler in ${compilers[@]}; do
+        for blas in ${blasproviders[@]}; do
+            variant5='qmcpack+afqmc~cuda@'${version}'%'${compiler}' ^'${blas}' '${build_with_gcc}' '${build_with_python}
+            test_variant ${variant5}
+
+	    # cuda version takes an extra arg
+            variant6='qmcpack+afqmc+cuda@'${version}'%'${compiler}' cuda_arch='${gpu_card}' ^'${blas}' '${build_with_gcc}' '${build_with_python}
+            test_variant ${variant6}
+	done
+    done
 done
