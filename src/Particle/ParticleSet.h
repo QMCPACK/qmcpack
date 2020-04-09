@@ -574,6 +574,7 @@ public:
     PrimitiveLattice = ptclin.PrimitiveLattice;
     R.InUnit         = ptclin.R.InUnit;
     R                = ptclin.R;
+    spins            = ptclin.spins;
     ID               = ptclin.ID;
     GroupID          = ptclin.GroupID;
     if (ptclin.SubPtcl.size())
