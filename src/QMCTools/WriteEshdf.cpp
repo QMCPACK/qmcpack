@@ -881,7 +881,8 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
       c.push_back(v.second.real());
       c.push_back(v.second.imag());
     }
-	array<int,2> dims{states_up[state].size(),2};
+    int dim = states_up[state].size();
+	array<int,2> dims{dim,2};
 	outfile_.writeSlabReshaped(c, dims, "psi_g");
 	outfile_.pop();
 	outfile_.pop();
@@ -895,7 +896,8 @@ void EshdfFile::handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt,
         c.push_back(v.second.real());
         c.push_back(v.second.imag());
       }
-	  array<int,2> dims{states_dn[state].size(),2};
+      dim = states_dn[state].size();
+	  array<int,2> dims{dim,2};
 	  outfile_.writeSlabReshaped(c, dims, "psi_g");
 	  outfile_.pop();
 	  outfile_.pop();
