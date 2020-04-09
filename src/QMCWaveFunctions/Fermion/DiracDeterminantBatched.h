@@ -35,7 +35,6 @@ public:
   typedef SPOSet::HessType HessType;
 
   typedef QMCTraits::QTFull::ValueType mValueType;
-  typedef OrbitalSetTraits<mValueType>::ValueMatrix_t ValueMatrix_hp_t;
   typedef TinyVector<mValueType, DIM> mGradType;
 
   /** constructor
@@ -191,8 +190,6 @@ public:
   DET_ENGINE_TYPE det_engine_;
 
   PsiValueType curRatio;
-  ValueType* FirstAddressOfdV;
-  ValueType* LastAddressOfdV;
 
 private:
   /// invert psiM or its copies

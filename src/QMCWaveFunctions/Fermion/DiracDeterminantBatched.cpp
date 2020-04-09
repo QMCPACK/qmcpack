@@ -72,8 +72,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
   dpsiV.resize(NumOrbitals);
   dspin_psiV.resize(NumOrbitals);
   d2psiV.resize(NumOrbitals);
-  FirstAddressOfdV = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
-  LastAddressOfdV  = FirstAddressOfdV + NumPtcls * NumOrbitals * DIM;
 }
 
 template<typename DET_ENGINE_TYPE>
@@ -213,23 +211,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::updateAfterSweep(ParticleSet& P,
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  if (Bytes_in_WFBuffer == 0)
-  {
-    //add the data: inverse, gradient and laplacian
-    Bytes_in_WFBuffer = buf.current();
-    buf.add(psiM.first_address(), psiM.last_address());
-    buf.add(FirstAddressOfdV, LastAddressOfdV);
-    buf.add(d2psiM.first_address(), d2psiM.last_address());
-    Bytes_in_WFBuffer = buf.current() - Bytes_in_WFBuffer;
-    // free local space
-    psiM.free();
-    dpsiM.free();
-    d2psiM.free();
-  }
-  else
-  {
-    buf.forward(Bytes_in_WFBuffer);
-  }
   buf.add(LogValue);
 }
 
@@ -247,7 +228,6 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
     updateAfterSweep(P, P.G, P.L);
   }
   BufferTimer.start();
-  buf.forward(Bytes_in_WFBuffer);
   buf.put(LogValue);
   BufferTimer.stop();
   return LogValue;
@@ -257,9 +237,7 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
-  psiM.attachReference(buf.lendReference<ValueType>(psiM.size()));
-  dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
-  d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
+  recompute(P);
   buf.get(LogValue);
   BufferTimer.stop();
 }

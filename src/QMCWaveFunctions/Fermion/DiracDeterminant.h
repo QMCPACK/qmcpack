@@ -47,7 +47,6 @@ public:
   typedef SPOSet::HessType HessType;
 
   typedef QMCTraits::QTFull::ValueType mValueType;
-  typedef OrbitalSetTraits<mValueType>::ValueMatrix_t ValueMatrix_hp_t;
   typedef TinyVector<mValueType, DIM> mGradType;
 
   /** constructor
