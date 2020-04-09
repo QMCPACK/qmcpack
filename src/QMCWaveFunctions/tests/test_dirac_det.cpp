@@ -17,6 +17,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
 
 #ifdef QMC_COMPLEX //This is for the spinor test.
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
@@ -40,7 +41,9 @@ using PsiValueType = QMCTraits::QTFull::ValueType;
 #ifdef ENABLE_CUDA
 typedef DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>> DetType;
 #else
-typedef DiracDeterminant<> DetType;
+// FIXME
+//typedef DiracDeterminant<> DetType;
+typedef DiracDeterminantBatched<> DetType;
 #endif
 
 template<typename T1, typename T2>

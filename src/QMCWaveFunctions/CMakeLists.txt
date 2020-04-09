@@ -200,6 +200,7 @@ ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminant.cpp
+  Fermion/DiracDeterminantBatched.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
   Fermion/MultiSlaterDeterminant.cpp

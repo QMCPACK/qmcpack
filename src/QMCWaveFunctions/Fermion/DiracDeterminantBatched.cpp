@@ -1,22 +1,16 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
-//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
-//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
 #include "Numerics/MatrixOperators.h"
@@ -28,22 +22,21 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-template<typename DU_TYPE>
-DiracDeterminant<DU_TYPE>::DiracDeterminant(SPOSetPtr const spos, int first)
-    : DiracDeterminantBase(spos, first), ndelay(1), invRow_id(-1)
+template<typename DET_ENGINE_TYPE>
+DiracDeterminantBatched<DET_ENGINE_TYPE>::DiracDeterminantBatched(SPOSetPtr const spos, int first)
+    : DiracDeterminantBase(spos, first)
 {
-  ClassName = "DiracDeterminant";
+  ClassName = "DiracDeterminantBatched";
 }
 
 /** set the index of the first particle in the determinant and reset the size of the determinant
  *@param first index of first particle
  *@param nel number of particles in the determinant
  */
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::set(int first, int nel, int delay)
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::set(int first, int nel, int delay)
 {
   FirstIndex = first;
-  ndelay     = delay;
 
   resize(nel, nel);
 
@@ -51,28 +44,26 @@ void DiracDeterminant<DU_TYPE>::set(int first, int nel, int delay)
     Phi->buildOptVariables(nel);
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   InverseTimer.start();
-  updateEng.invert_transpose(logdetT, invMat, LogValue);
+  det_engine_.invert_transpose(logdetT, invMat, LogValue);
   InverseTimer.stop();
 }
 
 
 ///reset the size: with the number of particles and number of orbtials
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
 {
   int norb = morb;
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
-  updateEng.resize(norb, ndelay);
   psiM.resize(nel, norb);
   dpsiM.resize(nel, norb);
   d2psiM.resize(nel, norb);
   psiV.resize(norb);
-  invRow.resize(norb);
   psiM_temp.resize(nel, norb);
   LastIndex   = FirstIndex + nel;
   NumPtcls    = nel;
@@ -85,38 +76,18 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
   LastAddressOfdV  = FirstAddressOfdV + NumPtcls * NumOrbitals * DIM;
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad(ParticleSet& P, int iat)
+template<typename DET_ENGINE_TYPE>
+typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatched<DET_ENGINE_TYPE>::evalGrad(ParticleSet& P, int iat)
 {
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  invRow_id = WorkingIndex;
-  updateEng.getInvRow(psiM, WorkingIndex, invRow);
-  GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
+  GradType g = simd::dot(psiM[WorkingIndex], dpsiM[WorkingIndex], psiM.rows());
   RatioTimer.stop();
   return g;
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradWithSpin(ParticleSet& P,
-                                                                                         int iat,
-                                                                                         LogValueType& spingrad)
-{
-  Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
-  RatioTimer.start();
-  const int WorkingIndex = iat - FirstIndex;
-  invRow_id = WorkingIndex;
-  updateEng.getInvRow(psiM, WorkingIndex, invRow);
-  GradType g          = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
-  LogValueType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
-  RatioTimer.stop();
-
-  spingrad += spin_g;
-  return g;
-}
-
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGrad(ParticleSet& P,
+template<typename DET_ENGINE_TYPE>
+typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::ratioGrad(ParticleSet& P,
                                                                                       int iat,
                                                                                       GradType& grad_iat)
 {
@@ -126,66 +97,23 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   return ratioGrad_compute(iat, grad_iat);
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGrad_compute(int iat,
+template<typename DET_ENGINE_TYPE>
+typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::ratioGrad_compute(int iat,
                                                                                               GradType& grad_iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-
-  // This is an optimization.
-  // check invRow_id against WorkingIndex to see if getInvRow() has been called already
-  // Some code paths call evalGrad before calling ratioGrad.
-  if (invRow_id != WorkingIndex)
-  {
-    invRow_id = WorkingIndex;
-    updateEng.getInvRow(psiM, WorkingIndex, invRow);
-  }
-  curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
+  curRatio = simd::dot(psiM[WorkingIndex], psiV.data(), psiV.size());
   grad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
-      simd::dot(invRow.data(), dpsiV.data(), invRow.size());
+      simd::dot(psiM[WorkingIndex], dpsiV.data(), psiM.rows());
   RatioTimer.stop();
   return curRatio;
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGradWithSpin(
-    ParticleSet& P,
-    int iat,
-    GradType& grad_iat,
-    LogValueType& spingrad_iat)
-{
-  SPOVGLTimer.start();
-  Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
-  Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
-  SPOVGLTimer.stop();
 
-  UpdateMode = ORB_PBYP_PARTIAL;
-  RatioTimer.start();
-  const int WorkingIndex = iat - FirstIndex;
-
-  // This is an optimization.
-  // check invRow_id against WorkingIndex to see if getInvRow() has been called already
-  // Some code paths call evalGrad before calling ratioGrad.
-  if (invRow_id != WorkingIndex)
-  {
-    invRow_id = WorkingIndex;
-    updateEng.getInvRow(psiM, WorkingIndex, invRow);
-  }
-  curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
-  grad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
-      simd::dot(invRow.data(), dpsiV.data(), invRow.size());
-
-  spingrad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
-      simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
-  RatioTimer.stop();
-
-  return curRatio;
-}
-
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
                                              const std::vector<ParticleSet*>& P_list,
                                              int iat,
                                              std::vector<PsiValueType>& ratios,
@@ -203,7 +131,7 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionCompo
 
   for (auto wfc : WFC_list)
   {
-    auto det = static_cast<DiracDeterminant<DU_TYPE>*>(wfc);
+    auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(wfc);
     phi_list.push_back(det->Phi);
     psi_v_list.push_back(det->psiV);
     dpsi_v_list.push_back(det->dpsiV);
@@ -214,23 +142,19 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionCompo
   SPOVGLTimer.stop();
 
   for (int iw = 0; iw < WFC_list.size(); iw++)
-    ratios[iw] = static_cast<DiracDeterminant<DU_TYPE>*>(WFC_list[iw])->ratioGrad_compute(iat, grad_new[iw]);
+    ratios[iw] = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(WFC_list[iw])->ratioGrad_compute(iat, grad_new[iw]);
 }
 
 
 /** move was accepted, update the real container
 */
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   const int WorkingIndex = iat - FirstIndex;
   LogValue += convertValueToLog(curRatio);
   UpdateTimer.start();
-  updateEng.acceptRow(psiM, WorkingIndex, psiV);
-  if (!safe_to_delay)
-    updateEng.updateInvMat(psiM);
-  // invRow becomes invalid after accepting a move
-  invRow_id = -1;
+  det_engine_.updateRow(psiM, WorkingIndex, psiV, curRatio);
   if (UpdateMode == ORB_PBYP_PARTIAL)
   {
     simd::copy(dpsiM[WorkingIndex], dpsiV.data(), NumOrbitals);
@@ -242,24 +166,21 @@ void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to
 
 /** move was rejected. copy the real container to the temporary to move on
 */
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::restore(int iat)
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::restore(int iat)
 {
   curRatio = 1.0;
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::completeUpdates()
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::completeUpdates()
 {
   UpdateTimer.start();
-  // invRow becomes invalid after updating the inverse matrix
-  invRow_id = -1;
-  updateEng.updateInvMat(psiM);
   UpdateTimer.stop();
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::updateAfterSweep(ParticleSet& P,
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::updateAfterSweep(ParticleSet& P,
                                                  ParticleSet::ParticleGradient_t& G,
                                                  ParticleSet::ParticleLaplacian_t& L)
 {
@@ -289,8 +210,8 @@ void DiracDeterminant<DU_TYPE>::updateAfterSweep(ParticleSet& P,
   }
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if (Bytes_in_WFBuffer == 0)
   {
@@ -312,8 +233,8 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(LogValue);
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::updateBuffer(ParticleSet& P,
+template<typename DET_ENGINE_TYPE>
+typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::updateBuffer(ParticleSet& P,
                                                                                          WFBufferType& buf,
                                                                                          bool fromscratch)
 {
@@ -332,17 +253,14 @@ typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::upda
   return LogValue;
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
   psiM.attachReference(buf.lendReference<ValueType>(psiM.size()));
   dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
   d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
   buf.get(LogValue);
-  // start with invRow labelled invalid
-  invRow_id = -1;
-  updateEng.initializeInv(psiM);
   BufferTimer.stop();
 }
 
@@ -350,8 +268,8 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
  * @param P current configuration
  * @param iat the particle thas is being moved
  */
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratio(ParticleSet& P, int iat)
+template<typename DET_ENGINE_TYPE>
+typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::ratio(ParticleSet& P, int iat)
 {
   UpdateMode             = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - FirstIndex;
@@ -359,33 +277,25 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   Phi->evaluateValue(P, iat, psiV);
   SPOVTimer.stop();
   RatioTimer.start();
-  // This is an optimization.
-  // check invRow_id against WorkingIndex to see if getInvRow() has been called
-  // This is intended to save redundant compuation in TM1 and TM3
-  if (invRow_id != WorkingIndex)
-  {
-    invRow_id = WorkingIndex;
-    updateEng.getInvRow(psiM, WorkingIndex, invRow);
-  }
-  curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
+  curRatio = simd::dot(psiM[WorkingIndex], psiV.data(), psiV.size());
   RatioTimer.stop();
   return curRatio;
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   RatioTimer.start();
   const int WorkingIndex = VP.refPtcl - FirstIndex;
-  std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
+  std::copy_n(psiM[WorkingIndex], d2psiV.size(), d2psiV.data());
   RatioTimer.stop();
   SPOVTimer.start();
-  Phi->evaluateDetRatios(VP, psiV, invRow, ratios);
+  Phi->evaluateDetRatios(VP, psiV, d2psiV, ratios);
   SPOVTimer.stop();
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionComponent>& wfc_list,
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionComponent>& wfc_list,
                                                   const RefVector<const VirtualParticleSet>& vp_list,
                                                   std::vector<std::vector<ValueType>>& ratios)
 {
@@ -401,14 +311,14 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
 
   for (size_t iw = 0; iw < nw; iw++)
   {
-    auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc_list[iw].get());
+    auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(wfc_list[iw].get());
     const VirtualParticleSet& vp(vp_list[iw]);
     const int WorkingIndex = vp.refPtcl - FirstIndex;
-    std::copy_n(det.psiM[WorkingIndex], det.invRow.size(), det.invRow.data());
+    std::copy_n(det.psiM[WorkingIndex], det.d2psiV.size(), det.d2psiV.data());
     // build lists
     phi_list.push_back(*det.Phi);
     psiV_list.push_back(det.psiV);
-    invRow_list.push_back(det.invRow);
+    invRow_list.push_back(det.d2psiV);
   }
   RatioTimer.stop();
 
@@ -417,8 +327,8 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
   SPOVTimer.stop();
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   SPOVTimer.start();
   Phi->evaluateValue(P, -1, psiV);
@@ -427,8 +337,8 @@ void DiracDeterminant<DU_TYPE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vect
 }
 
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::resizeScratchObjectsForIonDerivs()
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::resizeScratchObjectsForIonDerivs()
 {
   grad_source_psiM.resize(NumPtcls, NumOrbitals);
   grad_lapl_source_psiM.resize(NumPtcls, NumOrbitals);
@@ -439,8 +349,8 @@ void DiracDeterminant<DU_TYPE>::resizeScratchObjectsForIonDerivs()
   grad_phi_alpha_Minv.resize(NumPtcls, NumOrbitals);
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradSource(ParticleSet& P,
+template<typename DET_ENGINE_TYPE>
+typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatched<DET_ENGINE_TYPE>::evalGradSource(ParticleSet& P,
                                                                                        ParticleSet& source,
                                                                                        int iat)
 {
@@ -455,8 +365,8 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   return g;
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
   // Hessian is not often used, so only resize/allocate if used
   grad_grad_source_psiM.resize(psiM.rows(), psiM.cols());
@@ -481,8 +391,8 @@ void DiracDeterminant<DU_TYPE>::evaluateHessian(ParticleSet& P, HessVector_t& gr
   }
 }
 
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradSource(
+template<typename DET_ENGINE_TYPE>
+typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatched<DET_ENGINE_TYPE>::evalGradSource(
     ParticleSet& P,
     ParticleSet& source,
     int iat,
@@ -592,8 +502,8 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateLog(
+template<typename DET_ENGINE_TYPE>
+typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateLog(
     ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L)
@@ -620,8 +530,8 @@ typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::eval
   return LogValue;
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::recompute(ParticleSet& P)
 {
   SPOVGLTimer.start();
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
@@ -639,8 +549,8 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
   }
 }
 
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateDerivatives(ParticleSet& P,
                                                     const opt_variables_type& active,
                                                     std::vector<ValueType>& dlogpsi,
                                                     std::vector<ValueType>& dhpsioverpsi)
@@ -648,17 +558,17 @@ void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
   Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
 }
 
-template<typename DU_TYPE>
-DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(SPOSetPtr spo) const
+template<typename DET_ENGINE_TYPE>
+DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYPE>::makeCopy(SPOSetPtr spo) const
 {
-  DiracDeterminant<DU_TYPE>* dclone = new DiracDeterminant<DU_TYPE>(spo);
-  dclone->set(FirstIndex, LastIndex - FirstIndex, ndelay);
+  DiracDeterminantBatched<DET_ENGINE_TYPE>* dclone = new DiracDeterminantBatched<DET_ENGINE_TYPE>(spo);
+  dclone->set(FirstIndex, LastIndex - FirstIndex);
   return dclone;
 }
 
-template class DiracDeterminant<>;
+template class DiracDeterminantBatched<>;
 #if defined(ENABLE_CUDA)
-template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+//template class DiracDeterminantBatched<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus
