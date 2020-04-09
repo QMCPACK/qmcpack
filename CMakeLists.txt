@@ -12,6 +12,7 @@ IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
   cmake_policy(SET CMP0074 NEW)
   cmake_policy(SET CMP0075 NEW)
 ENDIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+include(CMakeDependentOption)
 
 ######################################################################
 # QMCPACK
@@ -188,7 +189,8 @@ SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 SET(ENABLE_CUDA 0 CACHE BOOL "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)")
 SET(ENABLE_SOA 1 CACHE BOOL "Enable/disable SoA optimization")
-SET(ENABLE_OFFLOAD 0 CACHE BOOL "Enable OpenMP offload")
+OPTION(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
+CMAKE_DEPENDENT_OPTION(USE_OBJECT_TARGET "USE CMake object target" OFF "ENABLE_OFFLOAD" OFF)
 
 IF(ENABLE_CUDA AND QMC_CUDA)
   MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
