@@ -25,7 +25,6 @@ namespace qmcplusplus
 {
 SkAllEstimator::SkAllEstimator(ParticleSet& source, ParticleSet& target)
 {
-  app_log() << "SkAllEstimator Constructor\n";
   elns          = &target;
   ions          = &source;
   NumeSpecies   = elns->getSpeciesSet().getTotalNum();
@@ -105,6 +104,7 @@ void SkAllEstimator::evaluateIonIon()
 
 SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
 {
+  // Segfaults unless setHistories() is called prior
   RealType w = tWalker->Weight;
 #if defined(USE_REAL_STRUCT_FACTOR)
   //sum over species
@@ -145,12 +145,11 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
       values[NumK + 2 * k + 1] = w * RhokTot_i[k];
     }
   }
-#else
+#else // Is this path ever touched?
   //sum over species
   std::copy(P.SK->rhok[0], P.SK->rhok[0] + NumK, RhokTot.begin());
   for (int i = 1; i < NumeSpecies; ++i)
     accumulate_elements(P.SK->rhok[i], P.SK->rhok[i] + NumK, RhokTot.begin());
-  Vector<ComplexType>::const_iterator iit(RhokTot.begin()), iit_end(RhokTot.end());
   for (int k = 0; k < NumK; k++)
     values[k] = w * (rhok[k].real() * rhok[k].real() + rhok[k].imag() * rhok[k].imag());
 
@@ -310,25 +309,37 @@ bool SkAllEstimator::put(xmlNodePtr cur)
   std::string write_ionion_flag = "no";
 
   pAttrib.add(hdf5_flag, "hdf5");
-  pAttrib.add(hdf5_flag, "hdf5");
   pAttrib.add(write_ionion_flag, "writeionion");
-
   pAttrib.put(cur);
   if (hdf5_flag == "yes")
     hdf5_out = true;
   else
     hdf5_out = false;
+  app_log() << "hdf5_out= " << hdf5_out << "\n";
 
   if (write_ionion_flag == "Yes" || write_ionion_flag == "yes")
   {
     app_log() << "SkAll:  evaluateIonIon()\n";
     evaluateIonIon();
   }
-
   return true;
 }
 
-bool SkAllEstimator::get(std::ostream& os) const { return true; }
+
+// Display some stuff
+bool SkAllEstimator::get(std::ostream& os) const
+{
+  app_log() << std::fixed;
+  app_log() << "\n";
+  app_log() << "  SkAllEstimator Settings:\n";
+  app_log() << "  ========================\n";
+  app_log() << "    NumeSpecies " << std::setw(10) << std::setprecision(4) << NumeSpecies << "\n";
+  app_log() << "  NumIonSpecies " << std::setw(10) << std::setprecision(4) << NumIonSpecies << "\n";
+  app_log() << "           NumK " << std::setw(10) << std::setprecision(4) << NumK << "\n";
+  app_log() << "      MaxKshell " << std::setw(10) << std::setprecision(4) << MaxKshell << "\n";
+
+  return true;
+}
 
 OperatorBase* SkAllEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
