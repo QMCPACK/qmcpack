@@ -60,7 +60,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
   int norb = morb;
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
-  psiM.resize(nel, norb);
+  psiMinv.resize(nel, norb);
   dpsiM.resize(nel, norb);
   d2psiM.resize(nel, norb);
   psiV.resize(norb);
@@ -70,7 +70,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
   NumOrbitals = norb;
 
   dpsiV.resize(NumOrbitals);
-  dspin_psiV.resize(NumOrbitals);
   d2psiV.resize(NumOrbitals);
 }
 
@@ -79,7 +78,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
 {
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  GradType g = simd::dot(psiM[WorkingIndex], dpsiM[WorkingIndex], psiM.rows());
+  GradType g = simd::dot(psiMinv[WorkingIndex], dpsiM[WorkingIndex], psiMinv.rows());
   RatioTimer.stop();
   return g;
 }
@@ -102,9 +101,9 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
   UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  curRatio = simd::dot(psiM[WorkingIndex], psiV.data(), psiV.size());
+  curRatio = simd::dot(psiMinv[WorkingIndex], psiV.data(), psiV.size());
   grad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
-      simd::dot(psiM[WorkingIndex], dpsiV.data(), psiM.rows());
+      simd::dot(psiMinv[WorkingIndex], dpsiV.data(), psiMinv.rows());
   RatioTimer.stop();
   return curRatio;
 }
@@ -152,7 +151,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::acceptMove(ParticleSet& P, int ia
   const int WorkingIndex = iat - FirstIndex;
   LogValue += convertValueToLog(curRatio);
   UpdateTimer.start();
-  det_engine_.updateRow(psiM, WorkingIndex, psiV, curRatio);
+  det_engine_.updateRow(psiMinv, WorkingIndex, psiV, curRatio);
   if (UpdateMode == ORB_PBYP_PARTIAL)
   {
     simd::copy(dpsiM[WorkingIndex], dpsiV.data(), NumOrbitals);
@@ -191,7 +190,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::updateAfterSweep(ParticleSet& P,
 
   if (NumPtcls == 1)
   {
-    ValueType y = psiM(0, 0);
+    ValueType y = psiMinv(0, 0);
     GradType rv = y * dpsiM(0, 0);
     G[FirstIndex] += rv;
     L[FirstIndex] += y * d2psiM(0, 0) - dot(rv, rv);
@@ -200,8 +199,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::updateAfterSweep(ParticleSet& P,
   {
     for (size_t i = 0, iat = FirstIndex; i < NumPtcls; ++i, ++iat)
     {
-      mValueType dot_temp = simd::dot(psiM[i], d2psiM[i], NumOrbitals);
-      mGradType rv        = simd::dot(psiM[i], dpsiM[i], NumOrbitals);
+      mValueType dot_temp = simd::dot(psiMinv[i], d2psiM[i], NumOrbitals);
+      mGradType rv        = simd::dot(psiMinv[i], dpsiM[i], NumOrbitals);
       G[iat] += rv;
       L[iat] += dot_temp - dot(rv, rv);
     }
@@ -238,6 +237,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::copyFromBuffer(ParticleSet& P, WF
 {
   BufferTimer.start();
   recompute(P);
+  ///FIXME transfer to device
   buf.get(LogValue);
   BufferTimer.stop();
 }
@@ -255,7 +255,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
   Phi->evaluateValue(P, iat, psiV);
   SPOVTimer.stop();
   RatioTimer.start();
-  curRatio = simd::dot(psiM[WorkingIndex], psiV.data(), psiV.size());
+  curRatio = simd::dot(psiMinv[WorkingIndex], psiV.data(), psiV.size());
   RatioTimer.stop();
   return curRatio;
 }
@@ -265,7 +265,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatios(const VirtualParti
 {
   RatioTimer.start();
   const int WorkingIndex = VP.refPtcl - FirstIndex;
-  std::copy_n(psiM[WorkingIndex], d2psiV.size(), d2psiV.data());
+  std::copy_n(psiMinv[WorkingIndex], d2psiV.size(), d2psiV.data());
   RatioTimer.stop();
   SPOVTimer.start();
   Phi->evaluateDetRatios(VP, psiV, d2psiV, ratios);
@@ -292,7 +292,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateRatios(const RefVector
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(wfc_list[iw].get());
     const VirtualParticleSet& vp(vp_list[iw]);
     const int WorkingIndex = vp.refPtcl - FirstIndex;
-    std::copy_n(det.psiM[WorkingIndex], det.d2psiV.size(), det.d2psiV.data());
+    std::copy_n(det.psiMinv[WorkingIndex], det.d2psiV.size(), det.d2psiV.data());
     // build lists
     phi_list.push_back(*det.Phi);
     psiV_list.push_back(det.psiV);
@@ -311,7 +311,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatiosAlltoOne(ParticleSe
   SPOVTimer.start();
   Phi->evaluateValue(P, -1, psiV);
   SPOVTimer.stop();
-  MatrixOperators::product(psiM, psiV.data(), &ratios[FirstIndex]);
+  MatrixOperators::product(psiMinv, psiV.data(), &ratios[FirstIndex]);
 }
 
 
@@ -337,7 +337,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
   {
     resizeScratchObjectsForIonDerivs();
     Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
-    g = simd::dot(psiM.data(), grad_source_psiM.data(), psiM.size());
+    g = simd::dot(psiMinv.data(), grad_source_psiM.data(), psiMinv.size());
   }
 
   return g;
@@ -347,10 +347,10 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
   // Hessian is not often used, so only resize/allocate if used
-  grad_grad_source_psiM.resize(psiM.rows(), psiM.cols());
+  grad_grad_source_psiM.resize(psiMinv.rows(), psiMinv.cols());
   //IM A HACK.  Assumes evaluateLog has already been executed.
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, grad_grad_source_psiM);
-  invertPsiM(psiM_temp, psiM);
+  invertPsiM(psiM_temp, psiMinv);
 
   phi_alpha_Minv      = 0.0;
   grad_phi_Minv       = 0.0;
@@ -360,11 +360,11 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateHessian(ParticleSet& P, H
 
   for (int i = 0, iat = FirstIndex; i < NumPtcls; i++, iat++)
   {
-    GradType rv = simd::dot(psiM[i], dpsiM[i], NumOrbitals);
-    //  HessType hess_tmp=simd::dot(psiM[i],grad_grad_source_psiM[i],NumOrbitals);
+    GradType rv = simd::dot(psiMinv[i], dpsiM[i], NumOrbitals);
+    //  HessType hess_tmp=simd::dot(psiMinv[i],grad_grad_source_psiM[i],NumOrbitals);
     HessType hess_tmp;
     hess_tmp           = 0.0;
-    hess_tmp           = simd::dot(psiM[i], grad_grad_source_psiM[i], NumOrbitals);
+    hess_tmp           = simd::dot(psiMinv[i], grad_grad_source_psiM[i], NumOrbitals);
     grad_grad_psi[iat] = hess_tmp - outerProduct(rv, rv);
   }
 }
@@ -384,15 +384,15 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
     Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM, grad_grad_source_psiM,
                             grad_lapl_source_psiM);
     // HACK HACK HACK
-    // Phi->evaluateVGL(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
-    // psiM_temp = psiM;
-    // LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
+    // Phi->evaluateVGL(P, FirstIndex, LastIndex, psiMinv, dpsiM, d2psiM);
+    // psiM_temp = psiMinv;
+    // LogValue=InvertWithLog(psiMinv.data(),NumPtcls,NumOrbitals,
     // 			   WorkSpace.data(),Pivot.data(),PhaseValue);
     // for (int i=0; i<NumPtcls; i++)
     //   for (int j=0; j<NumPtcls; j++) {
     // 	double val = 0.0;
     // 	for (int k=0; k<NumPtcls; k++)
-    // 	  val += psiM(i,k) * psiM_temp(k,j);
+    // 	  val += psiMinv(i,k) * psiM_temp(k,j);
     // 	val -= (i == j) ? 1.0 : 0.0;
     // 	if (std::abs(val) > 1.0e-12)
     // 	  std::cerr << "Error in inverse.\n";
@@ -400,7 +400,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
     // for (int i=0; i<NumPtcls; i++) {
     //   P.G[FirstIndex+i] = GradType();
     //   for (int j=0; j<NumOrbitals; j++)
-    // 	P.G[FirstIndex+i] += psiM(i,j)*dpsiM(i,j);
+    // 	P.G[FirstIndex+i] += psiMinv(i,j)*dpsiM(i,j);
     // }
     // Compute matrices
     phi_alpha_Minv      = 0.0;
@@ -412,7 +412,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
       {
         lapl_phi_Minv(i, j) = 0.0;
         for (int k = 0; k < NumOrbitals; k++)
-          lapl_phi_Minv(i, j) += d2psiM(i, k) * psiM(j, k);
+          lapl_phi_Minv(i, j) += d2psiM(i, k) * psiMinv(j, k);
       }
     for (int dim = 0; dim < OHMMS_DIM; dim++)
     {
@@ -421,10 +421,10 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
         {
           for (int k = 0; k < NumOrbitals; k++)
           {
-            phi_alpha_Minv(i, j)[dim] += grad_source_psiM(i, k)[dim] * psiM(j, k);
-            grad_phi_Minv(i, j)[dim] += dpsiM(i, k)[dim] * psiM(j, k);
+            phi_alpha_Minv(i, j)[dim] += grad_source_psiM(i, k)[dim] * psiMinv(j, k);
+            grad_phi_Minv(i, j)[dim] += dpsiM(i, k)[dim] * psiMinv(j, k);
             for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
-              grad_phi_alpha_Minv(i, j)(dim, dim_el) += grad_grad_source_psiM(i, k)(dim, dim_el) * psiM(j, k);
+              grad_phi_alpha_Minv(i, j)(dim, dim_el) += grad_grad_source_psiM(i, k)(dim, dim_el) * psiMinv(j, k);
           }
         }
     }
@@ -437,7 +437,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
           dval(dim, dim_el) = grad_phi_alpha_Minv(i, i)(dim, dim_el);
       for (int j = 0; j < NumOrbitals; j++)
       {
-        gradPsi += grad_source_psiM(i, j) * psiM(i, j);
+        gradPsi += grad_source_psiM(i, j) * psiMinv(i, j);
         for (int dim = 0; dim < OHMMS_DIM; dim++)
           for (int k = 0; k < OHMMS_DIM; k++)
             dval(dim, k) -= phi_alpha_Minv(j, i)[dim] * grad_phi_Minv(i, j)[k];
@@ -449,7 +449,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
         for (int j = 0; j < NumOrbitals; j++)
         {
           // First term, eq 9
-          lapl_grad[dim][iel] += grad_lapl_source_psiM(i, j)[dim] * psiM(i, j);
+          lapl_grad[dim][iel] += grad_lapl_source_psiM(i, j)[dim] * psiMinv(i, j);
           // Second term, eq 9
           if (j == i)
             for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
@@ -490,7 +490,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
 
   if (NumPtcls == 1)
   {
-    ValueType y = psiM(0, 0);
+    ValueType y = psiMinv(0, 0);
     GradType rv = y * dpsiM(0, 0);
     G[FirstIndex] += rv;
     L[FirstIndex] += y * d2psiM(0, 0) - dot(rv, rv);
@@ -499,8 +499,8 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
   {
     for (int i = 0, iat = FirstIndex; i < NumPtcls; i++, iat++)
     {
-      mGradType rv   = simd::dot(psiM[i], dpsiM[i], NumOrbitals);
-      mValueType lap = simd::dot(psiM[i], d2psiM[i], NumOrbitals);
+      mGradType rv   = simd::dot(psiMinv[i], dpsiM[i], NumOrbitals);
+      mValueType lap = simd::dot(psiMinv[i], d2psiM[i], NumOrbitals);
       G[iat] += rv;
       L[iat] += lap - dot(rv, rv);
     }
@@ -516,14 +516,13 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::recompute(ParticleSet& P)
   SPOVGLTimer.stop();
   if (NumPtcls == 1)
   {
-    //CurrentDet=psiM(0,0);
     ValueType det = psiM_temp(0, 0);
-    psiM(0, 0)    = RealType(1) / det;
+    psiMinv(0, 0)    = RealType(1) / det;
     LogValue      = convertValueToLog(det);
   }
   else
   {
-    invertPsiM(psiM_temp, psiM);
+    invertPsiM(psiM_temp, psiMinv);
   }
 }
 

@@ -37,17 +37,16 @@ protected:
   int ndelay;
 
 public:
-  typedef SPOSet::IndexVector_t IndexVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t GradVector_t;
-  typedef SPOSet::GradMatrix_t GradMatrix_t;
-  typedef SPOSet::HessMatrix_t HessMatrix_t;
-  typedef SPOSet::HessVector_t HessVector_t;
-  typedef SPOSet::HessType HessType;
+  using ValueVector_t = SPOSet::ValueVector_t;
+  using ValueMatrix_t = SPOSet::ValueMatrix_t;
+  using GradVector_t  = SPOSet::GradVector_t;
+  using GradMatrix_t  = SPOSet::GradMatrix_t;
+  using HessMatrix_t  = SPOSet::HessMatrix_t;
+  using HessVector_t  = SPOSet::HessVector_t;
+  using HessType      = SPOSet::HessType;
 
-  typedef QMCTraits::QTFull::ValueType mValueType;
-  typedef TinyVector<mValueType, DIM> mGradType;
+  using mValueType = QMCTraits::QTFull::ValueType;
+  using mGradType  = TinyVector<mValueType, DIM>;
 
   /** constructor
    *@param spos the single-particle orbital set
