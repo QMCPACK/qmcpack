@@ -73,16 +73,16 @@ struct LRRPAHandlerTemp : public LRHandlerBase
     fillFk(ref.SK->KLists);
   }
 
-  LRHandlerBase* makeClone(ParticleSet& ref) { return new LRRPAHandlerTemp<Func, BreakupBasis>(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) override { return new LRRPAHandlerTemp<Func, BreakupBasis>(*this, ref); }
 
-  void initBreakup(ParticleSet& ref)
+  void initBreakup(ParticleSet& ref) override
   {
     InitBreakup(ref.Lattice, 1);
     fillFk(ref.SK->KLists);
     LR_rc = Basis.get_rc();
   }
 
-  void Breakup(ParticleSet& ref, mRealType rs_ext)
+  void Breakup(ParticleSet& ref, mRealType rs_ext) override
   {
     //ref.Lattice.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
     if (rs_ext > 0)
@@ -95,11 +95,11 @@ struct LRRPAHandlerTemp : public LRHandlerBase
     LR_rc = Basis.get_rc();
   }
 
-  void resetTargetParticleSet(ParticleSet& ref) { myFunc.reset(ref); }
+  void resetTargetParticleSet(ParticleSet& ref) override { myFunc.reset(ref); }
 
   void resetTargetParticleSet(ParticleSet& ref, mRealType rs) { myFunc.reset(ref, rs); }
 
-  inline mRealType evaluate(mRealType r, mRealType rinv)
+  inline mRealType evaluate(mRealType r, mRealType rinv) override
   {
     mRealType v = 0.0;
     for (int n = 0; n < coefs.size(); n++)
@@ -112,7 +112,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv)
+  inline mRealType srDf(mRealType r, mRealType rinv) override
   {
     mRealType df = 0.0;
     //mRealType df = myFunc.df(r, rinv);
@@ -123,7 +123,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r)
+  inline mRealType evaluateLR(mRealType r) override
   {
     mRealType vk = 0.0;
     return vk;

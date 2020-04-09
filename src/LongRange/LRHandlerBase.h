@@ -299,7 +299,7 @@ struct DummyLRHandler : public LRHandlerBase
 
   DummyLRHandler(const DummyLRHandler& aLR) : LRHandlerBase(aLR) {}
 
-  void initBreakup(ParticleSet& ref)
+  void initBreakup(ParticleSet& ref) override
   {
     mRealType norm = 4.0 * M_PI / ref.Lattice.Volume;
     mRealType kcsq = LR_kc * LR_kc;
@@ -326,12 +326,12 @@ struct DummyLRHandler : public LRHandlerBase
   }
 
   mRealType evaluate_vlr_k(mRealType k) override { return 0.0; }
-  mRealType evaluate(mRealType r, mRealType rinv) { return 0.0; }
-  mRealType evaluateLR(mRealType r) { return 0.0; }
-  mRealType srDf(mRealType r, mRealType rinv) { return 0.0; }
-  void Breakup(ParticleSet& ref, mRealType rs_in) {}
-  void resetTargetParticleSet(ParticleSet& ref) {}
-  virtual LRHandlerBase* makeClone(ParticleSet& ref) { return new DummyLRHandler<Func>(LR_kc); }
+  mRealType evaluate(mRealType r, mRealType rinv) override { return 0.0; }
+  mRealType evaluateLR(mRealType r) override { return 0.0; }
+  mRealType srDf(mRealType r, mRealType rinv) override { return 0.0; }
+  void Breakup(ParticleSet& ref, mRealType rs_in) override {}
+  void resetTargetParticleSet(ParticleSet& ref) override {}
+  virtual LRHandlerBase* makeClone(ParticleSet& ref) override { return new DummyLRHandler<Func>(LR_kc); }
 };
 
 } // namespace qmcplusplus
