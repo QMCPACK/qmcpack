@@ -24,10 +24,10 @@ class XmlNode;
 class FftContainer;
 class KPoint;
 
-class EshdfFile 
+class EshdfFile
 {
-  typedef std::map<std::vector<int>, std::complex<double> > momap_t;
-  typedef std::pair<std::vector<int>, std::complex<double> > mopair_t;
+  typedef std::map<std::vector<int>, std::complex<double>> momap_t;
+  typedef std::pair<std::vector<int>, std::complex<double>> mopair_t;
 
 private:
   qmcplusplus::hdf_archive outfile_;
@@ -48,23 +48,32 @@ private:
   void handleDensity(const XmlNode& qeXml, const std::string& dir_name, int spinpol);
   std::vector<double> getPtvs(const XmlNode& qeXml);
   void processKPts(const XmlNode& band_structure_xml,
-		   const std::vector<double>& ptvs,
-		   std::vector<std::vector<double > >& eigenvals,
-		   std::vector<std::vector<double > >& occupations,
-		   std::vector<KPoint>& kpts,
-		   std::vector<double>& weights,
-		   std::vector<int>& ngvecs);
-  void getNumElectrons(std::vector<std::vector<double> >& occupations, 
-		       std::vector<double>& weights, int& nup, int& ndn, 
-		       int spinpol, int ncol);
-  void handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt, 
-		 const std::vector<double>& eigenvalues, double weight, int spinpol, int noncol, const momap_t& moref);
+                   const std::vector<double>& ptvs,
+                   std::vector<std::vector<double>>& eigenvals,
+                   std::vector<std::vector<double>>& occupations,
+                   std::vector<KPoint>& kpts,
+                   std::vector<double>& weights,
+                   std::vector<int>& ngvecs);
+  void getNumElectrons(std::vector<std::vector<double>>& occupations,
+                       std::vector<double>& weights,
+                       int& nup,
+                       int& ndn,
+                       int spinpol,
+                       int ncol);
+  void handleKpt(int kpt_num,
+                 const std::string& dir_name,
+                 KPoint& kpt,
+                 const std::vector<double>& eigenvalues,
+                 double weight,
+                 int spinpol,
+                 int noncol,
+                 const momap_t& moref);
 
   void readKptGvecs(int kpt_num, const std::string& dir_name, int spinpol, momap_t& morefmap);
 
   qmcplusplus::hdf_archive openHdfFileForRead(const std::string& fname);
-  
-  EshdfFile(const EshdfFile& f); // no copy constructor
+
+  EshdfFile(const EshdfFile& f);            // no copy constructor
   EshdfFile& operator=(const EshdfFile& f); // operator= not allowed
 public:
   EshdfFile(const std::string& hdfFileName);
