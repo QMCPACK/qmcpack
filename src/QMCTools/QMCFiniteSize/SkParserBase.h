@@ -18,7 +18,7 @@ public:
   typedef LinearGrid<RealType> Grid_t;
 
   SkParserBase();
-  ~SkParserBase(){};
+  virtual ~SkParserBase() {}
 
   virtual void parse(const string& fname) = 0;
 
