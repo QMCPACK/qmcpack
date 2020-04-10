@@ -24,7 +24,6 @@ class XmlNode;
 class FftContainer;
 class KPoint;
 
-
 /*! helper class meant to control access ot the eshdf file that is being
     created and provide helper functions so that the proper xml data
     from QBOX or quantum espresso can be handed to it and the data can
@@ -32,8 +31,8 @@ class KPoint;
 */
 class EshdfFile 
 {
-  typedef std::map<std::vector<int>, std::complex<double> > momap_t;
-  typedef std::pair<std::vector<int>, std::complex<double> > mopair_t;
+  typedef std::map<std::vector<int>, std::complex<double>> momap_t;
+  typedef std::pair<std::vector<int>, std::complex<double>> mopair_t;
 
 private:
   qmcplusplus::hdf_archive outfile_;
@@ -91,15 +90,24 @@ private:
       see if noncolinear spins were used (0 for no, 1 for yes)
    */
   void getNumElectrons(std::vector<std::vector<double> >& occupations, 
-		       std::vector<double>& weights, int& nup, int& ndn, 
-		       int spinpol, int ncol);
+		       std::vector<double>& weights,
+		       int& nup,
+		       int& ndn, 
+		       int spinpol,
+		       int ncol);
   /*! helper function to read in the data from the wfc(kpt_num).hdf5 files located in
       directory dir_name.  Needs to know the KPoint, its eigenvalues, weight, the
       flags for spinolarized and noncolinear as well as the momap_t that handles
       the global mapping from g_vectors at individual k_points to global ones 
   */
-  void handleKpt(int kpt_num, const std::string& dir_name, KPoint& kpt, 
-		 const std::vector<double>& eigenvalues, double weight, int spinpol, int noncol, const momap_t& moref);
+  void handleKpt(int kpt_num,
+		 const std::string& dir_name,
+		 KPoint& kpt, 
+		 const std::vector<double>& eigenvalues,
+		 double weight,
+		 int spinpol,
+		 int noncol,
+		 const momap_t& moref);
   /*! handles reading in the g-vectors for a particular k-point so that they can be inserted 
       into a momap_t.  Needs to know the number of the kpoint (kpt_num), the directory where
       it is located (dir_name) and whether it is spin polarized (spinpol)
@@ -107,8 +115,8 @@ private:
   void readKptGvecs(int kpt_num, const std::string& dir_name, int spinpol, momap_t& morefmap);
   /*! will open the hdf file fname and will make an hdf_archive */
   qmcplusplus::hdf_archive openHdfFileForRead(const std::string& fname);
-  
-  EshdfFile(const EshdfFile& f); // no copy constructor
+
+  EshdfFile(const EshdfFile& f);            // no copy constructor
   EshdfFile& operator=(const EshdfFile& f); // operator= not allowed
 public:
   /*! constructor that sets up the hdf_archive data structure that will hold the eshdf
