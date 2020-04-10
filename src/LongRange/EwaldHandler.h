@@ -99,7 +99,7 @@ public:
 
   /** evaluate k-dependent
    */
-  mRealType evaluate_slab(mRealType z,
+  mRealType evaluate_slab(pRealType z,
                           const std::vector<int>& kshell,
                           const pComplexType* restrict rk1,
                           const pComplexType* restrict rk2) override;
