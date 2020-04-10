@@ -691,8 +691,8 @@ void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)
 {
   if (P_list.size() > 1)
   {
-    // Leaving bare omp pragma here. It can potentially be improved with cleaner abstraction.
-    #pragma omp parallel for
+// Leaving bare omp pragma here. It can potentially be improved with cleaner abstraction.
+#pragma omp parallel for
     for (int iw = 0; iw < P_list.size(); iw++)
       P_list[iw].get().donePbyP();
   }
@@ -719,7 +719,8 @@ void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
 
 void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 {
-  R = awalker.R;
+  R     = awalker.R;
+  spins = awalker.spins;
   coordinates_->setAllParticlePos(R);
 #if !defined(SOA_MEMORY_OPTIMIZED)
   G = awalker.G;
@@ -743,7 +744,7 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 
 void ParticleSet::saveWalker(Walker_t& awalker)
 {
-  awalker.R = R;
+  awalker.R     = R;
   awalker.spins = spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
   awalker.G = G;
@@ -844,9 +845,7 @@ int ParticleSet::addPropertyHistory(int leng)
 //       }
 //     }
 
-RefVector<DistanceTableData> ParticleSet::extractDTRefList(
-    const RefVector<ParticleSet>& p_list,
-    int id)
+RefVector<DistanceTableData> ParticleSet::extractDTRefList(const RefVector<ParticleSet>& p_list, int id)
 {
   RefVector<DistanceTableData> dt_list;
   dt_list.reserve(p_list.size());
