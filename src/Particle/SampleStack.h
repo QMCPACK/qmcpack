@@ -52,7 +52,7 @@ public:
   /// load a single sample from SampleStack
   void loadSample(ParticleSet::ParticlePos_t& Pos, size_t iw) const;
 
-  void appendSample(MCSample sample);
+  void appendSample(MCSample&& sample);
 
   bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
   ///clear the ensemble

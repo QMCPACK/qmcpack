@@ -45,9 +45,9 @@ TEST_CASE("SampleStack", "[particle]")
   // Add size one list
   walker_list.push_back(new Walker_t(total_num));
   walker_list[0]->R[0][0] = 1.1;
-  for (auto wi = walker_list.begin(); wi != walker_list.end(); wi++)
+  for (auto wi : walker_list)
   {
-    samples.appendSample(convertWalkerToSample(**wi));
+    samples.appendSample(convertWalkerToSample(*wi));
   }
   REQUIRE(samples.getNumSamples() == 1);
 

@@ -18,7 +18,6 @@
 #ifndef QMCPLUSPLUS_MCSAMPLE_H
 #define QMCPLUSPLUS_MCSAMPLE_H
 
-#include <vector>
 #include "Particle/ParticleSet.h"
 #include "Particle/Walker.h"
 

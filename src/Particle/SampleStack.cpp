@@ -55,11 +55,11 @@ void SampleStack::saveEnsemble(std::vector<MCSample>& walker_list)
   }
 }
 
-void SampleStack::appendSample(MCSample walker)
+void SampleStack::appendSample(MCSample &&sample)
 {
   if (current_sample_count_ < max_samples_)
   {
-    *sample_vector_[current_sample_count_] = walker;
+    *sample_vector_[current_sample_count_] = sample;
     current_sample_count_++;
   }
 }

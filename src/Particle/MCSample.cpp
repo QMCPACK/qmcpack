@@ -23,10 +23,7 @@ using Walker_t = ParticleSet::Walker_t;
 
 MCSample convertWalkerToSample(Walker_t& walker)
 {
-  int n = walker.R.size();
-  MCSample sample(n);
-  sample.put(walker);
-  return sample;
+  return MCSample(walker);
 }
 
 
