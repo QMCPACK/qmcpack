@@ -81,9 +81,10 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       PosType dr;
       DriftModifier->getDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
+      bool is_valid = W.makeMoveAndCheck(iat, dr);
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
-      if (!W.makeMoveAndCheck(iat, dr) || rr > m_r2max)
+      if (!is_valid || rr > m_r2max)
       {
         ++nRejectTemp;
         continue;

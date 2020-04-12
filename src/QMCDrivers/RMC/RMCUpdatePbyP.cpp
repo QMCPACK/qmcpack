@@ -151,9 +151,10 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       PosType dr;
       DriftModifier->getDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
+      bool is_valid = W.makeMoveAndCheck(iat, dr);
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
-      if (!W.makeMoveAndCheck(iat, dr) || rr > m_r2max)
+      if (!is_valid || rr > m_r2max)
       {
         ++nRejectTemp;
         continue;
@@ -279,10 +280,10 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       PosType dr;
       DriftModifier->getDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
-      //RealType rr=dot(dr,dr);
+      bool is_valid = W.makeMoveAndCheck(iat, dr);
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
-      if (!W.makeMoveAndCheck(iat, dr) || rr > m_r2max)
+      if (!is_valid || rr > m_r2max)
       {
         ++nRejectTemp;
         continue;

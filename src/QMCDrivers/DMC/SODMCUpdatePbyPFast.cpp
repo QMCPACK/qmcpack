@@ -83,9 +83,10 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
       ds = tauovermass/spinMass*std::real(spingrad_iat); //using raw spin grad, no UNR modifier
       dr += sqrttau * deltaR[iat];
       ds += std::sqrt(tauovermass/spinMass)*deltaS[iat];
+      bool is_valid = W.makeMoveAndCheckWithSpin(iat, dr, ds);
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
-      if (!W.makeMoveAndCheckWithSpin(iat, dr, ds) || rr > m_r2max)
+      if (!is_valid || rr > m_r2max)
       {
         ++nRejectTemp;
         continue;
