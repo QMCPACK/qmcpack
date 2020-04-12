@@ -153,13 +153,11 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       dr += sqrttau * deltaR[iat];
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
-      if (rr > m_r2max)
+      if (!W.makeMoveAndCheck(iat, dr) || rr > m_r2max)
       {
         ++nRejectTemp;
         continue;
       }
-      if (!W.makeMoveAndCheck(iat, dr))
-        continue;
       ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
@@ -284,13 +282,11 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       //RealType rr=dot(dr,dr);
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
-      if (rr > m_r2max)
+      if (!W.makeMoveAndCheck(iat, dr) || rr > m_r2max)
       {
         ++nRejectTemp;
         continue;
       }
-      if (!W.makeMoveAndCheck(iat, dr))
-        continue;
       ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
