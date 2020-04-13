@@ -57,6 +57,7 @@ void SampleStack::saveEnsemble(std::vector<MCSample>& walker_list)
 
 void SampleStack::appendSample(MCSample &&sample)
 {
+  // Ignore samples in excess of the expected number of samples
   if (current_sample_count_ < max_samples_)
   {
     *sample_vector_[current_sample_count_] = std::move(sample);
