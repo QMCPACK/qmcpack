@@ -167,6 +167,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::newQMCDriver(std::unique_p
     }
 
     branchEngine = last_driver->getBranchEngine();
+    branchEngine->resetRun(cur);
   }
 
   //create a driver
