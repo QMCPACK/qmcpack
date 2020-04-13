@@ -49,18 +49,9 @@ struct MCSample
     G.resize(n);
     L.resize(n);
   }
-  inline void put(const Walker_t& w)
-  {
-    R      = w.R;
-    G      = w.G;
-    L      = w.L;
-    LogPsi = w.Properties(WP::LOGPSI);
-    Sign   = w.Properties(WP::SIGN);
-    PE     = w.Properties(WP::LOCALPOTENTIAL);
-    KE     = w.Properties(WP::LOCALENERGY) - PE;
-  }
 
-  inline void get(Walker_t& w) const
+
+  inline void convertToWalker(Walker_t& w) const
   {
     w.R                              = R;
     w.G                              = G;
@@ -71,10 +62,6 @@ struct MCSample
     w.Properties(WP::LOCALENERGY)    = PE + KE;
   }
 };
-
-
-MCSample convertWalkerToSample(ParticleSet::Walker_t& walker);
-
 
 } // namespace qmcplusplus
 #endif

@@ -59,7 +59,7 @@ void SampleStack::appendSample(MCSample &&sample)
 {
   if (current_sample_count_ < max_samples_)
   {
-    *sample_vector_[current_sample_count_] = sample;
+    *sample_vector_[current_sample_count_] = std::move(sample);
     current_sample_count_++;
   }
 }

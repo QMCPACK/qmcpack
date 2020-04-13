@@ -210,7 +210,6 @@ ENDIF()
     Particle/DynamicCoordinatesBuilder.cpp
     Particle/MCWalkerConfiguration.cpp
     Particle/SampleStack.cpp
-    Particle/MCSample.cpp
     Particle/createDistanceTableAA.cpp
     Particle/createDistanceTableAB.cpp
     Particle/HDFWalkerInputManager.cpp

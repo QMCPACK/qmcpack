@@ -353,7 +353,7 @@ void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
 {
   for (; first != last; first++)
   {
-    samples.appendSample(convertWalkerToSample(**first));
+    samples.appendSample(MCSample(**first));
   }
 }
 /** load a single sample from SampleStack
@@ -378,7 +378,7 @@ void MCWalkerConfiguration::loadEnsemble()
   {
     Walker_t* awalker = new Walker_t(TotalNum);
     awalker->Properties.copy(prop);
-    samples.getSample(i).get(*awalker);
+    samples.getSample(i).convertToWalker(*awalker);
     WalkerList[i] = awalker;
   }
   resizeWalkerHistories();
@@ -455,7 +455,7 @@ void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& ot
       {
         Walker_t* awalker = new Walker_t(TotalNum);
         awalker->Properties.copy(prop);
-        astack.getSample(j).get(*awalker);
+        astack.getSample(j).convertToWalker(*awalker);
         WalkerList[iw] = awalker;
       }
       if (doclean)

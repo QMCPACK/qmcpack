@@ -47,12 +47,12 @@ TEST_CASE("SampleStack", "[particle]")
   walker_list[0]->R[0][0] = 1.1;
   for (auto wi : walker_list)
   {
-    samples.appendSample(convertWalkerToSample(*wi));
+    samples.appendSample(MCSample(*wi));
   }
   REQUIRE(samples.getNumSamples() == 1);
 
   Walker_t w1;
-  samples.getSample(0).get(w1);
+  samples.getSample(0).convertToWalker(w1);
   REQUIRE(w1.R[0][0] == Approx(1.1));
 
   // Should test that more members of the Walker are saved correctly
