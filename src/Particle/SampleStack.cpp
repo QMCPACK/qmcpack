@@ -12,61 +12,11 @@
 
 #include "Particle/SampleStack.h"
 #include "Particle/HDFWalkerOutput.h"
+#include "Particle/MCSample.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus
 {
-/** store minimum Walker data for the next section
- */
-struct MCSample
-{
-  using WP       = WalkerProperties::Indexes;
-  using Walker_t = ParticleSet::Walker_t;
-
-  ParticleSet::ParticlePos_t R;
-  ParticleSet::ParticleGradient_t G;
-  ParticleSet::ParticleLaplacian_t L;
-  ParticleSet::RealType LogPsi, Sign, PE, KE;
-
-  inline MCSample(const Walker_t& w) : R(w.R), G(w.G), L(w.L)
-  {
-    LogPsi = w.Properties(WP::LOGPSI);
-    Sign   = w.Properties(WP::SIGN);
-    PE     = w.Properties(WP::LOCALPOTENTIAL);
-    KE     = w.Properties(WP::LOCALENERGY) - PE;
-  }
-
-  inline MCSample(int n)
-  {
-    R.resize(n);
-    G.resize(n);
-    L.resize(n);
-  }
-
-  inline void put(const Walker_t& w)
-  {
-    R      = w.R;
-    G      = w.G;
-    L      = w.L;
-    LogPsi = w.Properties(WP::LOGPSI);
-    Sign   = w.Properties(WP::SIGN);
-    PE     = w.Properties(WP::LOCALPOTENTIAL);
-    KE     = w.Properties(WP::LOCALENERGY) - PE;
-  }
-
-  inline void get(Walker_t& w) const
-  {
-    w.R                              = R;
-    w.G                              = G;
-    w.L                              = L;
-    w.Properties(WP::LOGPSI)         = LogPsi;
-    w.Properties(WP::SIGN)           = Sign;
-    w.Properties(WP::LOCALPOTENTIAL) = PE;
-    w.Properties(WP::LOCALENERGY)    = PE + KE;
-  }
-};
-
-
 SampleStack::SampleStack() : total_num_(0), max_samples_(10), current_sample_count_(0) {}
 
 /** allocate the SampleStack
@@ -88,18 +38,30 @@ void SampleStack::setMaxSamples(int n)
   }
 }
 
-/** save the [first,last) walkers to SampleStack
- */
-void SampleStack::saveEnsemble(walker_iterator first, walker_iterator last)
+MCSample& SampleStack::getSample(unsigned int i) const { return *sample_vector_[i]; }
+
+void SampleStack::saveEnsemble(std::vector<MCSample>& walker_list)
 {
   //safety check
   if (max_samples_ == 0)
     return;
+  auto first = walker_list.begin();
+  auto last  = walker_list.end();
   while ((first != last) && (current_sample_count_ < max_samples_))
   {
-    sample_vector_[current_sample_count_]->put(**first);
+    *sample_vector_[current_sample_count_] = *first;
     ++first;
     ++current_sample_count_;
+  }
+}
+
+void SampleStack::appendSample(MCSample &&sample)
+{
+  // Ignore samples in excess of the expected number of samples
+  if (current_sample_count_ < max_samples_)
+  {
+    *sample_vector_[current_sample_count_] = std::move(sample);
+    current_sample_count_++;
   }
 }
 
@@ -107,10 +69,6 @@ void SampleStack::saveEnsemble(walker_iterator first, walker_iterator last)
 /** load a single sample from SampleStack
  */
 void SampleStack::loadSample(ParticleSet::ParticlePos_t& Pos, size_t iw) const { Pos = sample_vector_[iw]->R; }
-
-void SampleStack::getSample(unsigned int i, Walker_t& w) const { sample_vector_[i]->get(w); }
-
-void SampleStack::putSample(unsigned int i, const Walker_t& w) { sample_vector_[i]->put(w); }
 
 bool SampleStack::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock)
 {
@@ -136,7 +94,7 @@ void SampleStack::clearEnsemble()
     if (sample_vector_[i])
       delete sample_vector_[i];
   sample_vector_.clear();
-  max_samples_     = 0;
+  max_samples_          = 0;
   current_sample_count_ = 0;
 }
 

@@ -31,9 +31,6 @@ class MCSample;
 class SampleStack
 {
 public:
-  using Walker_t        = ParticleSet::Walker_t;
-  using WalkerList_t    = std::vector<Walker_t*>;
-  using walker_iterator = WalkerList_t::iterator;
   using PropertySetType = QMCTraits::PropertySetType;
 
   SampleStack();
@@ -44,33 +41,19 @@ public:
 
   bool empty() const { return sample_vector_.empty(); }
 
-  void putSample(unsigned int i, const Walker_t& w);
-
-  void getSample(unsigned int i, Walker_t& w) const;
+  MCSample& getSample(unsigned int i) const;
 
   //@{save/load/clear function for optimization
   inline int getNumSamples() const { return current_sample_count_; }
   ///set the number of max samples
   void setMaxSamples(int n);
-  ///save the position of current walkers to SampleStack
-  //void saveEnsemble();
   ///save the position of current walkers
-  void saveEnsemble(walker_iterator first, walker_iterator last);
+  void saveEnsemble(std::vector<MCSample>& walker_list);
   /// load a single sample from SampleStack
   void loadSample(ParticleSet::ParticlePos_t& Pos, size_t iw) const;
-  /** load SampleStack data to current walkers
-   */
-  //void loadEnsemble(PropertySetType& PropertyList, WalkerList_t& WalkerList);
-  //void loadEnsemble(const Walker_t& wcopy);
-  /** load SampleStack from others
-    */
-  //void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean = true);
-  /** dump Samples to a file
-   * @param others MCWalkerConfigurations whose samples will be collected
-   * @param out engine to write the samples to state_0/walkers
-   * @param np number of processors
-   * @return true with non-zero samples
-   */
+
+  void appendSample(MCSample&& sample);
+
   bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
