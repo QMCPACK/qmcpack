@@ -850,7 +850,7 @@ ENDIF()
                     )
 
 
-IF(NOT QMC_MIXED_PRECISION)
+IF((NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA) AND (NOT QMC_COMPLEX))
   # DMC cycle 1
   LIST(APPEND DET_DIAMOND_DMC_LGTS1_SCALARS "totenergy" "-11.15181221 0.000001")
   LIST(APPEND DET_DIAMOND_DMC_LGTS1_SCALARS "kinetic" "11.34674025 0.000001")
@@ -872,7 +872,7 @@ IF(NOT QMC_MIXED_PRECISION)
   LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "mpc" "-3.02667676 0.000001")
   LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "samples" "18 0.0")
 
-  QMC_RUN_AND_CHECK(bug-deterministic-diamondC_1x1x1_pp-vmc-dmc-lg_ts_sdj
+  QMC_RUN_AND_CHECK(deterministic-diamondC_1x1x1_pp-vmc-dmc-multi_ts_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     det_qmc_short_vmc_dmc_lg_ts
                     det_qmc_short_vmc_dmc_lg_ts.in.xml
