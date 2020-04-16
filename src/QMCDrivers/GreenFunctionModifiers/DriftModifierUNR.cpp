@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -27,9 +27,23 @@ void DriftModifierUNR::getDrift(RealType tau, const GradType& qf, PosType& drift
   drift *= sc;
 }
 
+void DriftModifierUNR::getDrift(RealType tau,
+                                const TrialWaveFunction::LogValueType& qf,
+                                ParticleSet::Scalar_t& drift) const
+{
+  // convert the complex WF gradient to real
+  convert(qf, drift);
+  RealType vsq = drift * drift;
+  RealType sc  = (vsq < std::numeric_limits<RealType>::epsilon())
+      ? tau
+      : ((-1.0 + std::sqrt(1.0 + 2.0 * a_ * tau * vsq)) / (a_ * vsq));
+  //Apply the umrigar scaling to drift.
+  drift *= sc;
+}
+
 void DriftModifierUNR::getDrifts(RealType tau, const std::vector<GradType>& qf, std::vector<PosType>& drift) const
 {
-  for(int i = 0; i < qf.size(); ++i)
+  for (int i = 0; i < qf.size(); ++i)
   {
     getDrift(tau, qf[i], drift[i]);
   }
