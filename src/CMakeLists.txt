@@ -145,7 +145,6 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
     Numerics/OptimizableFunctorBase.cpp
     Numerics/SmoothFunctions.cpp
     Platforms/sysutil.cpp
-    Platforms/accelerators.cpp
     QMCFactory/OneDimGridFactory.cpp
     Message/Communicate.cpp
     Message/MPIObjectBase.cpp
@@ -256,7 +255,7 @@ ENDIF()
 
   TARGET_LINK_LIBRARIES(qmcbase PRIVATE qmcminimalcontainers Math::BLAS_LAPACK Math::scalar_vector_functions)
 
-  TARGET_LINK_LIBRARIES(qmcbase PUBLIC qmcutil)
+  TARGET_LINK_LIBRARIES(qmcbase PUBLIC qmcplatforms qmcutil)
 
   SUBDIRS(einspline)
   SUBDIRS(MinimalContainers)
@@ -268,6 +267,7 @@ if(QMC_BUILD_SANDBOX_ONLY)
 
 else() #{{{
 
+  SUBDIRS(Platforms)
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
   SUBDIRS(QMCDrivers)

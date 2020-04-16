@@ -17,6 +17,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
+#include "Platforms/OpenMP/ompBLAS.hpp"
 
 namespace qmcplusplus
 {
@@ -60,10 +61,12 @@ public:
     temp.resize(norb);
     rcopy.resize(norb);
     // invoke the Fahy's variant of Sherman-Morrison update.
-    BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, psiV.data(), 1, czero, temp.data(), 1);
+    int dummy_handle = 0;
+    int success =0;
+    success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv.data(), norb, psiV.data(), 1, czero, temp.data(), 1);
     temp[rowchanged] -= cone;
     std::copy_n(Ainv[rowchanged], norb, rcopy.data());
-    BLAS::ger(norb, norb, static_cast<T>(-RATIOT(1)/c_ratio_in), rcopy.data(), 1, temp.data(), 1, Ainv.data(), norb);
+    success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(-RATIOT(1)/c_ratio_in), rcopy.data(), 1, temp.data(), 1, Ainv.data(), norb);
   }
 
 };
