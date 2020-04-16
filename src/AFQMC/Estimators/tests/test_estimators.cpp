@@ -9,7 +9,7 @@
 // File created by: Fionn Malone, malone14@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "Configuration.h"
 
@@ -43,6 +43,8 @@ using std::cerr;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
+
+extern std::string UTEST_HAMIL, UTEST_WFN;
 
 namespace qmcplusplus
 {

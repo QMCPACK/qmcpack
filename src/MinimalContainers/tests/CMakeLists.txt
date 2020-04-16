@@ -18,6 +18,6 @@ SET(SRCS test_ConstantSizeMatrix.cpp)
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
 
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcminimalcontainers)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcminimalcontainers)
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

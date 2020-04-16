@@ -17,7 +17,7 @@ SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/afqmc/HamiltonianOperations)
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 
 ADD_EXECUTABLE(${UTEST_EXE} test_hamiltonian_operations.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main afqmc)
 IF (QMC_COMPLEX)
   SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_ham_chol_uc_wfn_rhf)
   ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"

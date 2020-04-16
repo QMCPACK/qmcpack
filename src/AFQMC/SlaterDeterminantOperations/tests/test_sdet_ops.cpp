@@ -11,9 +11,8 @@
 
 #undef NDEBUG
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
-//#define CATCH_CONFIG_MAIN
 //#include "catch.hpp"
 #include "Configuration.h"
 

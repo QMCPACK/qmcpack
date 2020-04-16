@@ -23,3 +23,7 @@ IF(HAVE_MPI)
   SET_PROPERTY(TARGET message APPEND PROPERTY INCLUDE_DIRECTORIES "${qmcpack_SOURCE_DIR}/external_codes/mpi_wrapper")
   SET_PROPERTY(TARGET message APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${qmcpack_SOURCE_DIR}/external_codes/mpi_wrapper")
 ENDIF()
+
+
+ADD_LIBRARY(catch_main catch_main.cpp)
+TARGET_LINK_LIBRARIES(catch_main message)

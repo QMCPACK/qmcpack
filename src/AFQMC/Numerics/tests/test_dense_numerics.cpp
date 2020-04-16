@@ -18,10 +18,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-//#define CATCH_CONFIG_MAIN
 //#include "catch.hpp"
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 #include "Configuration.h"
 
 // Always test the fallback code, regardless of MKL definition

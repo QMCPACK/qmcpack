@@ -11,7 +11,7 @@
 
 #undef NDEBUG
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include<algorithm> // std::sort
 #include<cassert>
