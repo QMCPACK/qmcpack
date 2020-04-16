@@ -10,8 +10,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Platforms/OpenMP/ompBLAS.hpp"
 #include <stdexcept>
+#include "Platforms/OpenMP/ompBLAS.hpp"
+#include "config.h"
 
 namespace qmcplusplus
 {
@@ -38,12 +39,13 @@ ompBLAS_status gemv_impl(ompBLAS_handle& handle,
       throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_impl!");
 
     //BLAS::gemv(trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
+    PRAGMA_OFFLOAD("omp target teams distribute num_teams(m) map(always, tofrom: y[:m]) map(always, to: A[:lda*m], x[:n])")
     for(size_t i = 0; i < m; i++)
     {
-      const T* __restrict__ A_row = A + i * lda;
       T dot_sum(0);
+      PRAGMA_OFFLOAD("omp parallel for simd reduction(+: dot_sum)")
       for(size_t j = 0; j < n; j++)
-        dot_sum += x[j] * A_row[j];
+        dot_sum += x[j] * A[i * lda + j];
       y[i] = alpha * dot_sum + beta * y[i];
     }
     return 0;
