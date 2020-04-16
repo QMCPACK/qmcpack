@@ -19,7 +19,7 @@
 namespace qmcplusplus
 {
 
-MCPopulation::MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr) {}
+MCPopulation::MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr), num_ranks_(1), rank_(0) {}
  
 MCPopulation::MCPopulation(int num_ranks,
                            MCWalkerConfiguration& mcwc,
@@ -27,9 +27,8 @@ MCPopulation::MCPopulation(int num_ranks,
                            TrialWaveFunction* trial_wf,
                            QMCHamiltonian* hamiltonian,
                            int this_rank)
-    : num_ranks_(num_ranks), num_local_walkers_per_node_(num_ranks, 0), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), rank_(this_rank)
+    : num_local_walkers_per_node_(num_ranks, 0), trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), num_ranks_(num_ranks), rank_(this_rank)
 {
-  walker_offsets_     = mcwc.WalkerOffsets;
   num_global_walkers_ = mcwc.GlobalNumWalkers;
   num_local_walkers_  = mcwc.LocalNumWalkers;
   num_particles_      = mcwc.getParticleNum();
@@ -57,16 +56,16 @@ MCPopulation::MCPopulation(int num_ranks,
 }
 
 MCPopulation::MCPopulation(int num_ranks,
-             ParticleSet* elecs,
-             TrialWaveFunction* trial_wf,
-             QMCHamiltonian* hamiltonian,
-             int this_rank)
-    : num_ranks_(num_ranks),
-      num_particles_(elecs->R.size()),
+                           ParticleSet* elecs,
+                           TrialWaveFunction* trial_wf,
+                           QMCHamiltonian* hamiltonian,
+                           int this_rank)
+    : num_particles_(elecs->R.size()),
       num_local_walkers_per_node_(num_ranks, 0),
       trial_wf_(trial_wf),
       elec_particle_set_(elecs),
       hamiltonian_(hamiltonian),
+      num_ranks_(num_ranks),
       rank_(this_rank)
 {}
 
@@ -74,15 +73,6 @@ MCPopulation::MCPopulation(int num_ranks,
 /** Default creates walkers equal to num_local_walkers_ and zeroed positions
  */
 void MCPopulation::createWalkers() { createWalkers(num_local_walkers_); }
-
-void MCPopulation::createWalkerInplace(UPtr<MCPWalker>& walker_ptr)
-{
-  //SO this would be where the walker reuse hack would go
-  walker_ptr    = std::make_unique<MCPWalker>(num_particles_);
-  walker_ptr->R = elec_particle_set_->R;
-  walker_ptr->registerData();
-  walker_ptr->Properties = elec_particle_set_->Properties;
-}
 
 /** we could also search for walker_ptr
  */
@@ -93,24 +83,28 @@ void MCPopulation::allocateWalkerStuffInplace(int walker_index)
   walkers_[walker_index]->DataSet.allocate();
 }
 
-/** Creates walkers with starting positions pos and a clone of the electron particle set and trial wavefunction
- *  
- *  Needed
- *  in: DataSet.size()
- *  in.
- */
 void MCPopulation::createWalkers(IndexType num_walkers)
 {
   num_local_walkers_ = num_walkers;
   // Ye: need to resize walker_t and ParticleSet Properties
+  // Really MCPopulation does not own this elec_particle_set_  seems like it should be immutable
   elec_particle_set_->Properties.resize(1, elec_particle_set_->PropertyList.size());
 
+  // This pattern is begging for a micro benchmark, is this really better
+  // than the simpler walkers_.pushback;
   walkers_.resize(num_walkers);
-
+  auto createWalker = [this](UPtr<MCPWalker>& walker_ptr) {
+    walker_ptr    = std::make_unique<MCPWalker>(num_particles_);
+    walker_ptr->R = elec_particle_set_->R;
+    // Side effect of this changes size of walker_ptr->Properties if done after registerData() you end up with
+    // a bad buffer.
+    walker_ptr->Properties = elec_particle_set_->Properties;
+    walker_ptr->registerData();
+        
+  };
+  
   for (auto& walker_ptr : walkers_)
-  {
-    createWalkerInplace(walker_ptr);
-  }
+    createWalker(walker_ptr);
 
   int num_walkers_created = 0;
   for (auto& walker_ptr : walkers_)
@@ -168,7 +162,7 @@ void MCPopulation::createWalkers(IndexType num_walkers)
  *  It would be better if this could be done just by
  *  reusing memory.
  */
-MCPopulation::MCPWalker& MCPopulation::spawnWalker()
+MCPopulation::MCPWalker* MCPopulation::spawnWalker()
 {
   ++num_local_walkers_;
   outputManager.pause();
@@ -187,20 +181,31 @@ MCPopulation::MCPWalker& MCPopulation::spawnWalker()
   {
     walkers_.push_back(std::move(dead_walkers_.back()));
     dead_walkers_.pop_back();
+    //This will only work if there has been no change in the data structuring of Walker since createWalkers
+    walkers_.back()->DataSet.clear();
+    walkers_.back()->registerData();
     makeDependentObjects();
+    //Here we assume no allocate is necessary since there should have been no changes in the other walker
+    //elements since createWalkers, yet it must be called
+    walkers_.back()->DataSet.allocate();
+    walkers_.back()->Multiplicity = 1.0;
+    walkers_.back()->Weight = 1.0;
   }
   else
   {
     walkers_.push_back(std::make_unique<MCPWalker>(num_particles_));
     walkers_.back()->R = elec_particle_set_->R;
-    walkers_.back()->registerData();
     walkers_.back()->Properties = elec_particle_set_->Properties;
+    walkers_.back()->DataSet.clear();
+    walkers_.back()->registerData();
     makeDependentObjects();
     walkers_.back()->DataSet.allocate();
+    walkers_.back()->Multiplicity = 1.0;
+    walkers_.back()->Weight = 1.0;
   }
   outputManager.resume();
 
-  return *(walkers_.back());
+  return walkers_.back().get();
 }
 
 /** Kill last walker
@@ -219,7 +224,6 @@ void MCPopulation::killLastWalker()
  */
 void MCPopulation::killWalker(MCPWalker& walker)
 {
-  --num_local_walkers_;
   // find the walker and null its pointer in the walker vector
   auto it_walkers = walkers_.begin();
   auto it_psets   = walker_elec_particle_sets_.begin();
@@ -235,6 +239,7 @@ void MCPopulation::killWalker(MCPWalker& walker)
       walker_elec_particle_sets_.erase(it_psets);
       walker_trial_wavefunctions_.erase(it_twfs);
       walker_hamiltonians_.erase(it_hams);
+      --num_local_walkers_;
       return;
     }
     ++it_walkers;
@@ -251,6 +256,8 @@ void MCPopulation::syncWalkersPerNode(Communicate* comm)
   
   std::vector<int> nwoff(ncontexts + 1, 0);
 
+  // \todo better if this was not state.
+  std::fill(num_local_walkers_per_node_.begin(), num_local_walkers_per_node_.end(), 0);
   num_local_walkers_per_node_[comm->rank()] = num_local_walkers_;
   comm->allreduce(num_local_walkers_per_node_);
 
@@ -259,7 +266,6 @@ void MCPopulation::syncWalkersPerNode(Communicate* comm)
     nwoff[ip + 1] = nwoff[ip] + num_local_walkers_per_node_[ip];
   }
   num_global_walkers_ = nwoff[ncontexts];
-  walker_offsets_     = std::move(nwoff);
 }
 
 /** Creates walkers doing their first touch in their crowd (thread) context

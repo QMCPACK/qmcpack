@@ -50,10 +50,10 @@ class eeI_JastrowOrbital : public WaveFunctionComponent
 {
   //flag to prevent parallel output
   bool Write_Chiesa_Correction;
-  ///table index for i-el
-  const int ei_table_index_;
   ///table index for el-el
   const int ee_table_index_;
+  ///table index for i-el
+  const int ei_table_index_;
   //nuber of particles
   int Nelec, Nion;
   //N*N
@@ -105,9 +105,9 @@ public:
 
   eeI_JastrowOrbital(ParticleSet& ions, ParticleSet& elecs, bool is_master)
       : Write_Chiesa_Correction(is_master),
-        KEcorr(0.0),
         ee_table_index_(elecs.addTable(elecs, DT_AOS)),
-        ei_table_index_(elecs.addTable(ions, DT_AOS))
+        ei_table_index_(elecs.addTable(ions, DT_AOS)),
+        KEcorr(0.0)
   {
     ClassName = "eeI_JastrowOrbital";
     eRef      = &elecs;

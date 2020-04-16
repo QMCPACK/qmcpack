@@ -159,14 +159,14 @@ struct HDFAttribIO<int> : public HDFAttribIOBase
   inline void read(hid_t grp, const char* name)
   {
     // Turn off error printing
-    H5E_auto_t func;
+    H5E_auto2_t func;
     void* client_data;
-    H5Eget_auto(&func, &client_data);
-    H5Eset_auto(NULL, NULL);
+    H5Eget_auto2(H5E_DEFAULT, &func, &client_data);
+    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     hid_t h1  = H5Dopen(grp, name);
     hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
     H5Dclose(h1);
-    H5Eset_auto(func, client_data);
+    H5Eset_auto2(H5E_DEFAULT, func, client_data);
   }
 };
 
@@ -191,17 +191,17 @@ struct HDFAttribIO<double> : public HDFAttribIOBase
 
   inline void read(hid_t grp, const char* name)
   {
-    H5E_auto_t func;
+    H5E_auto2_t func;
     void* client_data;
-    H5Eget_auto(&func, &client_data);
-    H5Eset_auto(NULL, NULL);
+    H5Eget_auto2(H5E_DEFAULT, &func, &client_data);
+    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     hid_t h1 = H5Dopen(grp, name);
     if (h1 >= 0)
     {
       hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
       H5Dclose(h1);
     }
-    H5Eset_auto(func, client_data);
+    H5Eset_auto2(H5E_DEFAULT, func, client_data);
   }
 };
 
@@ -236,17 +236,17 @@ struct HDFAttribIO<TinyVector<double, D>> : public HDFAttribIOBase
 
   inline void read(hid_t grp, const char* name)
   {
-    H5E_auto_t func;
+    H5E_auto2_t func;
     void* client_data;
-    H5Eget_auto(&func, &client_data);
-    H5Eset_auto(NULL, NULL);
+    H5Eget_auto2(H5E_DEFAULT, &func, &client_data);
+    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     hid_t h1 = H5Dopen(grp, name);
     if (h1 > -1)
     {
       hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0]));
       H5Dclose(h1);
     }
-    H5Eset_auto(func, client_data);
+    H5Eset_auto2(H5E_DEFAULT, func, client_data);
   }
 };
 
@@ -319,14 +319,14 @@ struct HDFAttribIO<TinyVector<int, D>> : public HDFAttribIOBase
   inline void read(hid_t grp, const char* name)
   {
     // Turn off error printing
-    H5E_auto_t func;
+    H5E_auto2_t func;
     void* client_data;
-    H5Eget_auto(&func, &client_data);
-    H5Eset_auto(NULL, NULL);
+    H5Eget_auto2(H5E_DEFAULT, &func, &client_data);
+    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     hid_t h1  = H5Dopen(grp, name);
     hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0]));
     H5Dclose(h1);
-    H5Eset_auto(func, client_data);
+    H5Eset_auto2(H5E_DEFAULT, func, client_data);
   }
 };
 
@@ -352,10 +352,10 @@ struct HDFAttribIO<std::vector<TinyVector<int, D>>> : public HDFAttribIOBase
 
   inline void read(hid_t grp, const char* name)
   {
-    H5E_auto_t func;
+    H5E_auto2_t func;
     void* client_data;
-    H5Eget_auto(&func, &client_data);
-    H5Eset_auto(NULL, NULL);
+    H5Eget_auto2(H5E_DEFAULT, &func, &client_data);
+    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     hid_t h1 = H5Dopen(grp, name);
     if (h1 >= 0)
     {
@@ -371,7 +371,7 @@ struct HDFAttribIO<std::vector<TinyVector<int, D>>> : public HDFAttribIOBase
       hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0][0]));
       H5Dclose(h1);
     }
-    H5Eset_auto(func, client_data);
+    H5Eset_auto2(H5E_DEFAULT, func, client_data);
   }
 };
 
@@ -398,10 +398,10 @@ struct HDFAttribIO<std::vector<TinyVector<double, D>>> : public HDFAttribIOBase
   inline void read(hid_t grp, const char* name)
   {
     // Turn off error printing
-    H5E_auto_t func;
+    H5E_auto2_t func;
     void* client_data;
-    H5Eget_auto(&func, &client_data);
-    H5Eset_auto(NULL, NULL);
+    H5Eget_auto2(H5E_DEFAULT, &func, &client_data);
+    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     hid_t h1  = H5Dopen(grp, name);
     hid_t ret = -1;
     if (h1 >= 0)
@@ -418,7 +418,7 @@ struct HDFAttribIO<std::vector<TinyVector<double, D>>> : public HDFAttribIOBase
       ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0][0]));
       H5Dclose(h1);
     }
-    H5Eset_auto(func, client_data);
+    H5Eset_auto2(H5E_DEFAULT, func, client_data);
   }
 };
 
@@ -808,10 +808,10 @@ struct HDFAttribIO<Array<double, D>> : public HDFAttribIOBase
   inline void read(hid_t grp, const char* name)
   {
     // Turn off error printing
-    H5E_auto_t func;
+    H5E_auto2_t func;
     void* client_data;
-    H5Eget_auto(&func, &client_data);
-    H5Eset_auto(NULL, NULL);
+    H5Eget_auto2(H5E_DEFAULT, &func, &client_data);
+    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     hid_t h1 = H5Dopen(grp, name);
     if (h1 > 0)
     {
@@ -823,7 +823,7 @@ struct HDFAttribIO<Array<double, D>> : public HDFAttribIOBase
       H5Sclose(dataspace);
       H5Dclose(h1);
     }
-    H5Eset_auto(func, client_data);
+    H5Eset_auto2(H5E_DEFAULT, func, client_data);
   }
 };
 

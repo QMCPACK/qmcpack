@@ -145,7 +145,11 @@ class Qmcpack(Simulation):
         if result_name=='jastrow' or result_name=='wavefunction':
             analyzer = self.load_analyzer_image()
             if not 'results' in analyzer or not 'optimization' in analyzer.results:
-                self.error('analyzer did not compute results required to determine jastrow')
+                if self.should_twist_average:
+                    self.error('Wavefunction optimization was performed for each twist separately.\nCurrently, the transfer of per-twist wavefunction parameters from\none QMCPACK simulation to another is not supported.  Please either\nredo the optimization with a single twist (see "twist" or "twistnum"\noptions), or request that this feature be implemented.')
+                else:
+                    self.error('analyzer did not compute results required to determine jastrow')
+                #end if
             #end if
             opt_file = analyzer.results.optimization.optimal_file
             opt_file = str(opt_file)

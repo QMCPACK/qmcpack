@@ -155,9 +155,9 @@ public:
   TwoBodyJastrowOrbitalBspline(ParticleSet& pset, int tid)
       : J2OrbitalSoA<FT>(pset, tid),
         PtclRef(pset),
-        UpdateListGPU("TwoBodyJastrowOrbitalBspline::UpdateListGPU"),
         L("TwoBodyJastrowOrbitalBspline::L"),
         Linv("TwoBodyJastrowOrbitalBspline::Linv"),
+        UpdateListGPU("TwoBodyJastrowOrbitalBspline::UpdateListGPU"),
         SumGPU("TwoBodyJastrowOrbitalBspline::SumGPU"),
         GradLaplGPU("TwoBodyJastrowOrbitalBspline::GradLaplGPU"),
         OneGradGPU("TwoBodyJastrowOrbitalBspline::OneGradGPU"),

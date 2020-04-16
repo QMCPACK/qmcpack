@@ -21,16 +21,16 @@
  * @brief Implments QMCMain operators.
  */
 #include "QMCApp/QMCMainState.h"
-#include "QMCApp/QMCDriverFactory.h"
-#include "QMCApp/WaveFunctionPool.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "QMCDrivers/QMCDriverFactory.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/RMC/RMCFactory.h"
-#include "QMCDrivers/QMCOptimize.h"
-#include "QMCDrivers/QMCFixedSampleLinearOptimize.h"
-#include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
+#include "QMCDrivers/WFOpt/QMCOptimize.h"
+#include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimize.h"
+#include "QMCDrivers/WFOpt/QMCCorrelatedSamplingLinearOptimize.h"
 #include "QMCDrivers/WaveFunctionTester.h"
 #include <queue>
 #include "OhmmsData/AttributeSet.h"

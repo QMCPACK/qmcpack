@@ -42,7 +42,7 @@ def execute(command):
 parser = OptionParser(
         usage='usage: %prog [options]',
         add_help_option=False,
-        version='%prog 1.8'
+        version='%prog 2.0'
         )
 parser.add_option('-h','--help',dest='help',
                   action='store_true',default=False,
@@ -52,6 +52,8 @@ parser.add_option('-l','--leave_paths',dest='leave_paths',
                   action='store_true',default=False,
                   help='Do not add paths to Linux configuration files, e.g. .bashrc (default=%default).'
                   )
+parser.add_option('-c','--config_file',dest='config_file',default='none',
+                  help='Name of config file for install.  Default is to search for one based on the local shell.')
 options,args = parser.parse_args()
 
 if options.help:
@@ -129,7 +131,11 @@ else:
     #end if
 
     # find config (rc) file for shell
-    rc_files = shell_rc_files[shell]
+    if options.config_file=='none':
+        rc_files = shell_rc_files[shell]
+    else:
+        rc_files = [options.config_file]
+    #end if
     home = os.path.expanduser('~') # this is cross-platform
     rc_file = None
     search_paths = []
@@ -157,7 +163,7 @@ set_env_formats = dict(
 set_env_fmt = set_env_formats[shell]
 
 header_start = '### added by Nexus '
-header = '### added by Nexus 1.8.0 installer ###'
+header = '### added by Nexus 2.0.0 installer ###'
 footer = '### end Nexus additions ###'
 paths  = set_env_fmt.format('PATH',bin_dir+':$PATH')
 paths += set_env_fmt.format('PYTHONPATH',lib_dir+':$PYTHONPATH')

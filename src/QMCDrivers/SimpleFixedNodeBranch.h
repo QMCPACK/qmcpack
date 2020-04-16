@@ -41,13 +41,14 @@ class EstimatorManagerBase;
 
 /** Manages the state of QMC sections and handles population control for DMCs
  *
- * TODO: Remove Estimator dependency, only has come dependency. Express accumulate in
+ * \todo: Remove Estimator dependency, only has come dependency. Express accumulate in
  *       the actual DMC algorithm (i.e. in DMCBatched.cpp)
- * TODO: Remove duplicate reading of Driver XML section with own copies of input
+ * \todo: Remove duplicate reading of Driver XML section with own copies of input
  *       parameters.
- * TODO: Rename, it is the only branching class so its name is too much
- * TODO: Use normal types for data members, don't be clever to be clever
+ * \todo: Rename, it is the only branching class so its name is too much
+ * \todo: Use normal types for data members, don't be clever,
  *       the parameter enums violate KISS and make debugging annoying
+ * \todo: Remove as much state as possible.
  *
  * QMCDriver object owns a SimpleFixedNodeBranch to keep track of the
  * progress of a qmc section. It implements several methods to control the
@@ -57,7 +58,44 @@ class EstimatorManagerBase;
  * manages the population (killing and duplicating walkers) and
  * load balancing among multiple MPI tasks.
  * \see {http://qmcpack.cmscc.org/qmc-basics}
- */
+ *
+ * Steps in 'Legacy' SFNB states machine
+ * 1. Construction (gets global walker number (rank or section wide?)
+ * 2. setEstimatorManager (also makes bootstrapping SFNB state dependent on valid Communicate*)
+ * 3. put(reads driver XML node yet again)
+ * 4. setWalkerController (Maybe a WalkerController pointer is passed in)
+ * 5. InitWalkerController 
+ *   a. Creates walkercontroller if WalkerController is a nullptr
+ *   b. If TargetWalkers isn't known
+ *      aa. allreduce and updates MCMW globalWalkers.
+ *      bb. resets walker offsets
+ *      cc. sets target walkers to whatever current total active walkers is.
+ *   c. resets WalkerController
+ *   d. If not a restart
+ *      aa. saves fixW and killWalker to internal params, otherwise just discards.
+ *      bb. updates SFNB copy of MAX/MINWALKRS from walker controller, 
+ *          these were set in constructer but I guess thats ony if this is a restart
+ *   e. setWalkerId
+ *      aa. call start()
+ *         1. Which calls reset which crucially calculates and update logN state.
+ *      bb. updates all the walker id's of walkers in MCWC.
+ * 6. checkParameters
+ *   a. getCurrentStatistics from SFNB's estimator
+ *   b. set ETrial, EREF, SIGMA2 from estimator
+ *   c. clear EnergyHist and VarianceHist
+ *
+ * Finally branch can be called! It will be called once each step.
+ *
+ * 7. call branch (iter and MCMW)
+ *   a. Not first iter during warmup then call WalkerController branch.
+ *      else call WC doNotBranch, returns pop_now
+ *   b. copy a bunch a state from WC to SFNB (should be with respect to pop_now - number of released nodes)
+ *   c. If using taueff update that based on acceptance ration and current tau.
+ *   d. If not warmup calculate ETRIAL based on EREF and feedback * log(TargetWalkers) - log(pop_now) 
+ *   e. set WC's TrialEnergy
+ *   d. multiply walkers.Colelctables *= the inverse weight.
+ *   f. call SFNB's estimator accumilator on MCWC
+ */  
 struct SimpleFixedNodeBranch : public QMCTraits
 {
   typedef SimpleFixedNodeBranch ThisType;

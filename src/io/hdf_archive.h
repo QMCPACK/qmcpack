@@ -59,7 +59,7 @@ private:
   ///transfer property
   hid_t xfer_plist;
   ///error type
-  H5E_auto_t err_func;
+  H5E_auto2_t err_func;
   ///error handling
   void* client_data;
   ///FILO to handle H5Group
@@ -78,14 +78,14 @@ public:
   template<class Comm = Communicate*>
   hdf_archive(Comm c, bool request_pio = false) : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
   {
-    H5Eget_auto(&err_func, &client_data);
-    H5Eset_auto(NULL, NULL);
+    H5Eget_auto2(H5E_DEFAULT, &err_func, &client_data);
+    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     set_access_plist(request_pio, c);
   }
   hdf_archive() : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
   {
-    H5Eget_auto(&err_func, &client_data);
-    H5Eset_auto(NULL, NULL);
+    H5Eget_auto2(H5E_DEFAULT, &err_func, &client_data);
+    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     set_access_plist();
   }
   ///destructor

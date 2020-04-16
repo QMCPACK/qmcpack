@@ -13,7 +13,7 @@ import datetime
 import importlib
 
 
-nexus_version = 1,8,0
+nexus_version = 2,0,0
 """
 Current Nexus version.
 """

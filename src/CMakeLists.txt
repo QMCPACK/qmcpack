@@ -120,9 +120,7 @@ if (HAVE_MPI)
   INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/mpi_wrapper")
 endif()
 
-if (HAVE_LIBBOOST)
-    INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
-endif()
+INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
 
 
   ####################################
@@ -174,8 +172,13 @@ ENDIF()
   ENDIF(QMC_CUDA)
 
   IF(HAVE_CUDA)
-    TARGET_LINK_LIBRARIES(qmcutil ${CUDA_LIBRARIES})
+    TARGET_LINK_LIBRARIES(qmcutil PRIVATE ${CUDA_LIBRARIES})
   ENDIF(HAVE_CUDA)
+
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 IO::HDF5 Boost::boost ${QMC_UTIL_LIBS})
+  IF(HAVE_MPI)
+    TARGET_LINK_LIBRARIES(qmcutil PUBLIC MPI::MPI_CXX)
+  ENDIF()
 
   # For unit tests, enable use for the fake RNG
   FUNCTION( USE_FAKE_RNG TARGET )
@@ -199,10 +202,14 @@ ENDIF()
   # create libqmcbase
   ####################################
   SET(PARTICLE ${PARTICLE}
+    Particle/InitMolecularSystem.cpp
+    Particle/ParticleSetPool.cpp
     Particle/ParticleSet.cpp
     Particle/VirtualParticleSet.cpp
     Particle/ParticleSet.BC.cpp
+    Particle/DynamicCoordinatesBuilder.cpp
     Particle/MCWalkerConfiguration.cpp
+    Particle/SampleStack.cpp
     Particle/createDistanceTableAA.cpp
     Particle/createDistanceTableAB.cpp
     Particle/HDFWalkerInputManager.cpp
@@ -215,6 +222,12 @@ ENDIF()
     LongRange/LRCoulombSingleton.cpp
     )
 
+  IF(ENABLE_OFFLOAD)
+    SET(PARTICLE ${PARTICLE}
+      Particle/createDistanceTableABOMP.cpp
+      )
+  ENDIF(ENABLE_OFFLOAD)
+
   IF(OHMMS_DIM MATCHES 2)
     SET(PARTICLE ${PARTICLE} LongRange/TwoDEwaldHandler.cpp)
   ENDIF(OHMMS_DIM MATCHES 2)
@@ -225,46 +238,44 @@ ENDIF()
     ParticleIO/ParticleLayoutIO.cpp
     ParticleIO/XMLParticleIO.cpp
     ParticleIO/ParticleIOUtility.cpp
+    Particle/HDFWalkerOutput.cpp
+    Particle/HDFWalkerInput_0_0.cpp
+    Particle/HDFWalkerInput_0_4.cpp
     )
 
-  IF(HAVE_LIBHDF5)
-    SET(PARTICLEIO ${PARTICLEIO}
-      Particle/HDFWalkerOutput.cpp
-      Particle/HDFWalkerInput_0_0.cpp
-      Particle/HDFWalkerInput_0_4.cpp
-      )
-
-    IF(OHMMS_DIM  MATCHES 3)
-      SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
-    ENDIF(OHMMS_DIM  MATCHES 3)
-
-  ENDIF(HAVE_LIBHDF5)
+  IF(OHMMS_DIM MATCHES 3)
+    SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
+  ENDIF(OHMMS_DIM MATCHES 3)
 
   #Need to add this if nothing else but miniapps is compiled
-  if(QMC_BUILD_SANDBOX_ONLY)
-    set(PARTICLE  ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
-  endif()
+  IF(QMC_BUILD_SANDBOX_ONLY)
+    SET(PARTICLE ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
+  ENDIF(QMC_BUILD_SANDBOX_ONLY)
 
-  ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO})
+  ADD_LIBRARY(qmcbase ${PARTICLE} ${PARTICLEIO})
 
-  TARGET_LINK_LIBRARIES(qmcbase qmcminimalcontainers)
-  #IF(QMC_BUILD_STATIC)
-  #  ADD_LIBRARY(qmcbase STATIC ${PARTICLE}  ${PARTICLEIO})
-  #ELSE(QMC_BUILD_STATIC)
-  #  ADD_LIBRARY(qmcbase SHARED ${PARTICLE}  ${PARTICLEIO})
-  #ENDIF(QMC_BUILD_STATIC)
-  #SUBDIRS(einspline)
+  TARGET_LINK_LIBRARIES(qmcbase PRIVATE qmcminimalcontainers Math::BLAS_LAPACK Math::scalar_vector_functions)
 
-  if(QMC_BUILD_SANDBOX_ONLY)
+  TARGET_LINK_LIBRARIES(qmcbase PUBLIC qmcutil)
 
-    MESSAGE(STATUS "Minimal build: only Sandbox")
-    SUBDIRS(Sandbox)
+  SUBDIRS(einspline)
+  SUBDIRS(MinimalContainers)
 
-  else() #{{{
+if(QMC_BUILD_SANDBOX_ONLY)
+
+  MESSAGE(STATUS "Minimal build: only Sandbox")
+  SUBDIRS(Sandbox)
+
+else() #{{{
 
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
   SUBDIRS(QMCDrivers)
+
+  IF(BUILD_LMYENGINE_INTERFACE)
+    SET(FORMIC_BINARY_DIR ${qmcpack_BINARY_DIR})
+    SUBDIRS(formic/utils)
+  ENDIF(BUILD_LMYENGINE_INTERFACE)
 
   IF(BUILD_AFQMC)
    SUBDIRS(AFQMC)
@@ -280,8 +291,6 @@ ENDIF()
   SUBDIRS(QMCTools)
   #ENDIF(BUILD_QMCTOOLS)
 
-  SUBDIRS(MinimalContainers)
-  
   if (BUILD_UNIT_TESTS) #{
     #Unit test directories
     INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
@@ -310,6 +319,8 @@ ENDIF()
     SUBDIRS(CUDA/tests)
     SUBDIRS(OpenMP/tests)
     SUBDIRS(Optimize/tests)
+    SUBDIRS(MinimalContainers/tests)
+    SUBDIRS(QMCTools/tests)
   endif() #}
 
 endif() #}}}

@@ -15,9 +15,9 @@
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
-#include "QMCApp/tests/MinimalParticlePool.h"
-#include "QMCApp/tests/MinimalWaveFunctionPool.h"
-#include "QMCApp/tests/MinimalHamiltonianPool.h"
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
 
@@ -53,7 +53,7 @@ TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
 
   auto testWRTWalkersPerRank = [&](int walkers_per_rank) {
     MCPopulation population(num_ranks, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
-                            hamiltonian_pool.getPrimary());
+                            hamiltonian_pool.getPrimary(),comm->rank());
     QMCDriverInput qmcdriver_copy(qmcdriver_input);
     VMCDriverInput vmcdriver_input("yes");
     VMCBatched vmc_batched(std::move(qmcdriver_copy), std::move(vmcdriver_input), population,
