@@ -224,6 +224,7 @@ def kinetic():
     ktot  = 0.0
     nspin = np.zeros((nspins,),dtype=int)
     kspin = np.zeros((nspins,),dtype=float)
+    normspin = np.zeros((nspins,),dtype=float)
     norb  = []
     korb  = []
     eorb  = []
@@ -236,6 +237,7 @@ def kinetic():
             nsorb.append(len(dks.kin))
             ksorb.extend(dks.kin)
             esorb.extend(dks.eig)
+            normspin[s] += dks.ne
         #end for
         nsorb = np.array(nsorb,dtype=int)
         ksorb = np.array(ksorb,dtype=float)
@@ -256,11 +258,16 @@ def kinetic():
         eorb.append(esorb)
     #end for
 
+    def arr2str(a):
+        return '{}'.format(a).strip().strip('[]')
+    #end def arr2str
+
     log('\nNumber of spins              : {}'.format(nspins))
     log('Number kpoints               : {}'.format(nkpoints))
-    log('Number of electrons per spin : {}'.format(nspin))
+    log('Number of electrons per spin : {}'.format(arr2str(nspin)))
+    log('Summed orbital norm per spin : {}'.format(arr2str(normspin)))
     log('Total kinetic energy         : {} Ha'.format(ktot))
-    log('Kinetic energy per spin      : {} Ha'.format(kspin))
+    log('Kinetic energy per spin      : {} Ha'.format(arr2str(kspin)))
 
     spin_labels = {0:'up',1:'down'}
     if opt.orb_info:
