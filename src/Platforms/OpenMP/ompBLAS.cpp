@@ -12,7 +12,6 @@
 
 #include "Platforms/OpenMP/ompBLAS.hpp"
 #include <stdexcept>
-#include "Numerics/OhmmsBlas.h"
 
 namespace qmcplusplus
 {
@@ -35,7 +34,18 @@ ompBLAS_status gemv_impl(ompBLAS_handle& handle,
 {
   if (trans == 'T')
   {
-    BLAS::gemv(trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
+    if (incx !=1 || incy != 1)
+      throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_impl!");
+
+    //BLAS::gemv(trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
+    for(size_t i = 0; i < m; i++)
+    {
+      const T* __restrict__ A_row = A + i * lda;
+      T dot_sum(0);
+      for(size_t j = 0; j < n; j++)
+        dot_sum += x[j] * A_row[j];
+      y[i] = alpha * dot_sum + beta * y[i];
+    }
     return 0;
   }
   else
@@ -214,7 +224,13 @@ ompBLAS_status ger_impl(ompBLAS_handle& handle,
                         T* const        A,
                         const int&      lda)
 {
-  BLAS::ger(m, n, alpha, x, incx, y, incy, A, lda);
+  if (incx !=1 || incy != 1)
+    throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::ger_impl!");
+
+  //BLAS::ger(m, n, alpha, x, incx, y, incy, A, lda);
+  for(size_t i = 0; i < n; i++)
+    for(size_t j = 0; j < m; j++)
+      A[i * lda + j] += alpha * x[j] * y[i];
   return 0;
 }
 
