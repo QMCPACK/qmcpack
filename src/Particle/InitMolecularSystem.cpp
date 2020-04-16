@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Jordan E. Vincent, University of Illinois at Urbana-Champaign
 //                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
@@ -61,6 +61,9 @@ bool InitMolecularSystem::put(xmlNodePtr cur)
   else
     initMolecule(ions, els);
 
+  makeUniformRandom(els->spins);
+  els->spins *= 2 * M_PI;
+
   app_log() << "</init>" << std::endl;
   app_log().flush();
 
@@ -112,10 +115,10 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   //makeGaussRandom(chi);
   makeSphereRandom(chi);
   // the upper limit of the electron index with spin up
-  const int numUp   = els->last(0);
+  const int numUp = els->last(0);
   // the upper limit of the electron index with spin down. Pay attention to the no spin down electron case.
-  const int numDown = els->last(els->groups()>1?1:0) - els->first(0);
-  int item    = 0;
+  const int numDown = els->last(els->groups() > 1 ? 1 : 0) - els->first(0);
+  int item          = 0;
   int nup_tot = 0, ndown_tot = numUp;
   std::vector<LoneElectron> loneQ;
   RealType rmin = cutoff;
