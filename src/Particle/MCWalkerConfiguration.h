@@ -24,6 +24,7 @@
 #define QMCPLUSPLUS_MCWALKERCONFIGURATION_H
 #include "Particle/ParticleSet.h"
 #include "Particle/Walker.h"
+#include "Particle/SampleStack.h"
 #include "Utilities/IteratorUtility.h"
 //#include "Particle/Reptile.h"
 
@@ -126,7 +127,7 @@ public:
 #endif
 
   ///default constructor
-  MCWalkerConfiguration();
+  MCWalkerConfiguration(const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
   ///default constructor: copy only ParticleSet
   MCWalkerConfiguration(const MCWalkerConfiguration& mcw);
@@ -168,11 +169,16 @@ public:
    * @param head pointer to the head walker
    * @param tail pointer to the tail walker
    *
+   * \todo I believe this can/should be deleted
    * Special function introduced to work with Reptation method.
    * Clear the current WalkerList and add two walkers, head and tail.
    * OwnWalkers are set to false.
    */
   void copyWalkerRefs(Walker_t* head, Walker_t* tail);
+
+  /** make fake walker list for testing
+   */
+  void fakeWalkerList(Walker_t* first, Walker_t* second);
 
   ///clean up the walker list and make a new list
   void resize(int numWalkers, int numPtcls);
@@ -276,7 +282,8 @@ public:
   inline bool updatePbyP() const { return ReadyForPbyP; }
 
   //@{save/load/clear function for optimization
-  inline int numSamples() const { return CurSampleCount; }
+  //
+  int numSamples() const { return samples.getNumSamples(); }
   ///set the number of max samples
   void setNumSamples(int n);
   ///save the position of current walkers to SampleStack
@@ -301,6 +308,12 @@ public:
   bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
+
+  const SampleStack& getSampleStack() const { return samples; }
+  SampleStack& getSampleStack() { return samples; }
+
+  /// Transitional forwarding methods
+  int getMaxSamples() const;
   //@}
 
   template<typename ForwardIter>
@@ -441,10 +454,7 @@ public:
 private:
   MultiChain* Polymer;
 
-  int MaxSamples;
-  int CurSampleCount;
-  //add samples
-  std::vector<MCSample*> SampleStack;
+  SampleStack samples;
 
   /** initialize the PropertyList
    *

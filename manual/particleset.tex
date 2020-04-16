@@ -77,6 +77,8 @@ The \ixml{particleset} blocks specify the particles in the QMC simulations: thei
 \begin{itemize}
 \item \ixml{name}/\ixml{id} \\
 Unique name for the particle set. Default is ``e" for electrons. ``i" or ``ion0" is typically used for ions. 
+For special cases where an empty particle set is needed, the special name ``empty" can be used to bypass
+the zero-size error check.
 \end{itemize}
 % Line 192 in ParticleIO/XMLParticleIO.cpp
 % Lines 144-145 in QMCApp/ParticleSetPool.cpp

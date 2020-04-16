@@ -19,8 +19,7 @@ SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/afqmc/Wavefunctions)
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 
 ADD_EXECUTABLE(${UTEST_EXE} test_wfn_factory.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc qmcutil
-                      ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc)
 LIST(LENGTH AFQMC_UNIT_TEST_INPUTS NUM_PAIRS)
 MATH(EXPR ENDP "${NUM_PAIRS}-1")
 FOREACH(I RANGE 0 ${ENDP} 2)
@@ -38,7 +37,7 @@ ENDFOREACH()
 IF(NOT QMC_COMPLEX)
   SET(UTEST_EXE test_afqmc_phmsd)
   ADD_EXECUTABLE(${UTEST_EXE} test_phmsd.cpp)
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc)
   SET(UTEST_NAME deterministic-unit_test_afqmc_phmsd)
   ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
                 "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5 "

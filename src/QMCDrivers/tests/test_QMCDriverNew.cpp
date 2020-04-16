@@ -16,16 +16,15 @@
 #include "QMCDrivers/tests/QMCDriverNewTestWrapper.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
 #include "Message/Communicate.h"
-#include "QMCApp/tests/MinimalParticlePool.h"
-#include "QMCApp/tests/MinimalWaveFunctionPool.h"
-#include "QMCApp/tests/MinimalHamiltonianPool.h"
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
 
 namespace qmcplusplus
 {
-
 TEST_CASE("QMCDriverNew tiny case", "[drivers]")
 {
   using namespace testing;
@@ -45,10 +44,11 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
-  
+
   MinimalHamiltonianPool mhp;
   HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
-  MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary());
+  MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
+                          hamiltonian_pool.getPrimary(), comm->rank());
   QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input), population, *(wavefunction_pool.getPrimary()),
                                     *(hamiltonian_pool.getPrimary()), wavefunction_pool, comm);
 
@@ -89,10 +89,11 @@ TEST_CASE("QMCDriverNew integration", "[drivers]")
   MinimalWaveFunctionPool wfp;
   WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
-  
+
   MinimalHamiltonianPool mhp;
   HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
-  MCPopulation population(4, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary());
+  MCPopulation population(4, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
+                          hamiltonian_pool.getPrimary(), comm->rank());
   QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input), population, *(wavefunction_pool.getPrimary()),
                                     *(hamiltonian_pool.getPrimary()), wavefunction_pool, comm);
 

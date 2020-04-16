@@ -16,6 +16,7 @@
 
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
+#include "QMCHamiltonians/NLPPJob.h"
 
 namespace qmcplusplus
 {
@@ -193,34 +194,34 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent
     if (ecp_component_list[0].get().VP)
     {
       // Compute ratios with VP
-#pragma omp parallel for
-      for (size_t i = 0; i < ecp_component_list.size(); i++)
-      {
-        NonLocalECPComponent& component(ecp_component_list[i]);
-        ParticleSet& W(p_list[i]);
-        const NLPPJob<RealType>& job = joblist[i];
-
-        component.buildQuadraturePointDeltaPositions(job.ion_elec_dist, job.ion_elec_displ, component.deltaV);
-        component.VP->makeMoves(job.electron_id, job.elec_pos, component.deltaV, true, job.ion_id);
-      }
-
-      RefVector<const VirtualParticleSet> vp_list;
+      RefVector<VirtualParticleSet> vp_list;
+      RefVector<const VirtualParticleSet> const_vp_list;
+      RefVector<const std::vector<PosType>> deltaV_list;
       RefVector<std::vector<ValueType>> psiratios_list;
       vp_list.reserve(ecp_component_list.size());
+      const_vp_list.reserve(ecp_component_list.size());
+      deltaV_list.reserve(ecp_component_list.size());
       psiratios_list.reserve(ecp_component_list.size());
 
       for (size_t i = 0; i < ecp_component_list.size(); i++)
       {
         NonLocalECPComponent& component(ecp_component_list[i]);
+        const NLPPJob<RealType>& job = joblist[i];
+
+        component.buildQuadraturePointDeltaPositions(job.ion_elec_dist, job.ion_elec_displ, component.deltaV);
+
         vp_list.push_back(*component.VP);
+        const_vp_list.push_back(*component.VP);
+        deltaV_list.push_back(component.deltaV);
         psiratios_list.push_back(component.psiratio);
       }
 
+      VirtualParticleSet::flex_makeMoves(vp_list, deltaV_list, joblist, true);
       if (use_DLA)
-        TrialWaveFunction::flex_evaluateRatios(psi_list, vp_list, psiratios_list,
+        TrialWaveFunction::flex_evaluateRatios(psi_list, const_vp_list, psiratios_list,
                                                TrialWaveFunction::ComputeType::FERMIONIC);
       else
-        TrialWaveFunction::flex_evaluateRatios(psi_list, vp_list, psiratios_list);
+        TrialWaveFunction::flex_evaluateRatios(psi_list, const_vp_list, psiratios_list);
     }
     else
     {

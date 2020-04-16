@@ -76,16 +76,16 @@ p = polyfit(seps,energies,nfit)
 sf = linspace(seps.min(),seps.max(),200)
 ef = polyval(p,sf)
 
-print
-print 'DMC '+Elabel+' vs separation distance'
+print()
+print('DMC '+Elabel+' vs separation distance')
 for i in range(len(seps)):
-    print '  {0:6.4f}  {1:6.4f} +/- {2:6.4f}'.format(seps[i],energies[i],errors[i])
+    print('  {0:6.4f}  {1:6.4f} +/- {2:6.4f}'.format(seps[i],energies[i],errors[i]))
 #end for
 
 mloc = ef.argmin()
-print
-print 'DMC bond length, binding energy:',sf[mloc],ef[mloc]
-print 'Exp bond length, binding energy:',se,ee
+print()
+print('DMC bond length, binding energy:',sf[mloc],ef[mloc])
+print('Exp bond length, binding energy:',se,ee)
 
 
 figure()

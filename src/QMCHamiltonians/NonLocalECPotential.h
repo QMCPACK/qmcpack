@@ -18,12 +18,13 @@
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCHamiltonians/ForceBase.h"
-#include "QMCHamiltonians/NLPPJob.h"
 #include "Particle/NeighborLists.h"
 
 namespace qmcplusplus
 {
 class NonLocalECPComponent;
+template<typename T>
+struct NLPPJob;
 
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials

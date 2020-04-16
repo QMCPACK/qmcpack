@@ -20,6 +20,7 @@
     
     
 SET(WFBASE_SRCS
+  WaveFunctionPool.cpp
   WaveFunctionComponent.cpp
   DiffWaveFunctionComponent.cpp
   WaveFunctionComponentBuilder.cpp
@@ -105,7 +106,7 @@ IF(OHMMS_DIM MATCHES 3)
   ENDIF(ENABLE_SOA)
 
   IF(QMC_CUDA)
-    SET(FERMION_SRCS ${FERMION_SRCS}
+    SET(WFSSRCS_CUDA
       Fermion/determinant_update.cu
       Fermion/delayed_update.cu
       Fermion/DiracDeterminantCUDA.cpp
@@ -113,14 +114,14 @@ IF(OHMMS_DIM MATCHES 3)
       TrialWaveFunction_CUDA.cpp
       )
     IF(ENABLE_SOA)
-      SET(JASTROW_SRCS ${JASTROW_SRCS}
+      SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
         Jastrow/BsplineJastrowCuda.cu
         Jastrow/BsplineJastrowCudaPBC.cu
         Jastrow/OneBodyJastrowOrbitalBspline.cpp
         Jastrow/TwoBodyJastrowOrbitalBspline.cpp
         )
     ELSE(ENABLE_SOA)
-      SET(JASTROW_SRCS ${JASTROW_SRCS}
+      SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
         Jastrow/BsplineJastrowCuda.cu
         Jastrow/BsplineJastrowCudaPBC.cu
         Jastrow/OneBodyJastrowOrbitalBsplineAoS.cpp
@@ -128,7 +129,7 @@ IF(OHMMS_DIM MATCHES 3)
         )
     ENDIF(ENABLE_SOA)
     IF(HAVE_EINSPLINE)
-      SET(FERMION_SRCS ${FERMION_SRCS}
+      SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
         EinsplineSetCuda.cpp
         PhaseFactors.cu
         AtomicOrbitalCuda.cu
@@ -215,22 +216,27 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   )
 
 IF(ENABLE_CUDA)
-  SET(FERMION_SRCS ${FERMION_SRCS} Fermion/delayed_update_helper.cu)
+  SET(WFSSRCS_CUDA ${WFSSRCS_CUDA} Fermion/delayed_update_helper.cu)
 ENDIF(ENABLE_CUDA)
 
 ####################################
 # create libqmcwfs
 ####################################
-IF(QMC_CUDA OR ENABLE_CUDA)
-  CUDA_ADD_LIBRARY(qmcwfs ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
-ELSE(QMC_CUDA OR ENABLE_CUDA)
+IF(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmcwfs OBJECT ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
+ELSE(USE_OBJECT_TARGET)
   ADD_LIBRARY(qmcwfs ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
+ENDIF(USE_OBJECT_TARGET)
+
+IF(QMC_CUDA OR ENABLE_CUDA)
+  CUDA_ADD_LIBRARY(qmcwfs_cuda ${WFSSRCS_CUDA})
+  CUDA_ADD_CUBLAS_TO_TARGET(qmcwfs_cuda)
+  TARGET_LINK_LIBRARIES(qmcwfs_cuda PUBLIC qmcbase)
+  TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_cuda ${CUDA_cusolver_LIBRARY})
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
-IF(HAVE_CUDA)
-  CUDA_ADD_CUBLAS_TO_TARGET(qmcwfs)
-  TARGET_LINK_LIBRARIES( qmcwfs ${CUDA_cusolver_LIBRARY} )
-ENDIF(HAVE_CUDA)
+TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcbase)
+TARGET_LINK_LIBRARIES(qmcwfs PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3 Math::scalar_vector_functions)
 
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcwfs STATIC ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})

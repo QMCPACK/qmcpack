@@ -104,12 +104,12 @@ struct Walker
   ///Weight of the walker
   FullPrecRealType Weight;
   ///Weight of the walker
-  RealType ReleasedNodeWeight;
+  FullPrecRealType ReleasedNodeWeight;
   /** Number of copies for branching
    *
    * When Multiplicity = 0, this walker will be destroyed.
    */
-  RealType Multiplicity;
+  FullPrecRealType Multiplicity;
   /// mark true if this walker is being sent.
   bool SendInProgress;
 
@@ -430,7 +430,7 @@ struct Walker
 #endif
     //Don't add the nLocal but the actual allocated size.  We want to register once for the life of a
     //walker so we leave space for additional properties.
-    DataSet.add(Properties.data(), Properties.data() + Properties.sizeofElement() * Properties.capacity());
+    DataSet.add(Properties.data(), Properties.data() + Properties.capacity());
     //DataSet.add(Properties.first_address(), Properties.last_address());
 
     // \todo likely to be broken if the Properties change above is needed.
@@ -463,7 +463,7 @@ struct Walker
     DataSet.get(G.first_address(), G.last_address());
     DataSet.get(L.first_address(), L.last_address());
 #endif
-    DataSet.get(Properties.data(), Properties.data() + Properties.sizeofElement() * Properties.capacity());
+    DataSet.get(Properties.data(), Properties.data() + Properties.capacity());
     for (int iat = 0; iat < PropertyHistory.size(); iat++)
       DataSet.get(PropertyHistory[iat].data(), PropertyHistory[iat].data() + PropertyHistory[iat].size());
     DataSet.get(PHindex.data(), PHindex.data() + PHindex.size());
@@ -512,7 +512,7 @@ struct Walker
     DataSet.put(G.first_address(), G.last_address());
     DataSet.put(L.first_address(), L.last_address());
 #endif
-    DataSet.put(Properties.data(), Properties.data() + Properties.sizeofElement() * Properties.capacity());
+    DataSet.put(Properties.data(), Properties.data() + Properties.capacity());
     for (int iat = 0; iat < PropertyHistory.size(); iat++)
       DataSet.put(PropertyHistory[iat].data(), PropertyHistory[iat].data() + PropertyHistory[iat].size());
     DataSet.put(PHindex.data(), PHindex.data() + PHindex.size());

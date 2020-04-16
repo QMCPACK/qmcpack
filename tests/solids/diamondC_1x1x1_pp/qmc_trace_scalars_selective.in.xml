@@ -3,6 +3,7 @@
    <project id="qmc_trace_scalars_selective" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
+   <random seed="71"/>
    <qmcsystem>
       <simulationcell>
          <parameter name="lattice" units="bohr">

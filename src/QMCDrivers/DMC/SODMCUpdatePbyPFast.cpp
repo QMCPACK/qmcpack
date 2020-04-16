@@ -2,12 +2,9 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories 
 //
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
@@ -86,15 +83,14 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
       ds = tauovermass/spinMass*std::real(spingrad_iat); //using raw spin grad, no UNR modifier
       dr += sqrttau * deltaR[iat];
       ds += std::sqrt(tauovermass/spinMass)*deltaS[iat];
+      bool is_valid = W.makeMoveAndCheckWithSpin(iat, dr, ds);
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
-      if (rr > m_r2max)
+      if (!is_valid || rr > m_r2max)
       {
         ++nRejectTemp;
         continue;
       }
-      if (!W.makeMoveAndCheckWithSpin(iat, dr, ds))
-        continue;
       ValueType ratio = Psi.calcRatioGradWithSpin(W, iat, grad_iat, spingrad_iat);
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
