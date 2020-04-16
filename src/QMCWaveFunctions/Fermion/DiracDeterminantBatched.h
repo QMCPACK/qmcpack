@@ -17,11 +17,11 @@
 #define QMCPLUSPLUS_DIRACDETERMINANTBATCHED_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
+#include "QMCWaveFunctions/Fermion/MatrixUpdateOMP.h"
 
 namespace qmcplusplus
 {
-template<typename DET_ENGINE_TYPE = DiracMatrix<QMCTraits::QTFull::ValueType>>
+template<typename DET_ENGINE_TYPE = MatrixUpdateOMP<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
 public:

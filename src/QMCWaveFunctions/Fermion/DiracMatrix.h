@@ -187,21 +187,6 @@ public:
     invMat = psiM_fp;
   }
 
-  template<typename T, typename VVT, typename RATIOT>
-  inline void updateRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV, RATIOT c_ratio_in)
-  {
-    // update the inverse matrix
-    constexpr T cone(1);
-    constexpr T czero(0);
-    const int norb = Ainv.rows();
-    T temp[norb], rcopy[norb];
-    // invoke the Fahy's variant of Sherman-Morrison update.
-    BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, psiV.data(), 1, czero, temp, 1);
-    temp[rowchanged] -= cone;
-    std::copy_n(Ainv[rowchanged], norb, rcopy);
-    BLAS::ger(norb, norb, static_cast<T>(-RATIOT(1)/c_ratio_in), rcopy, 1, temp, 1, Ainv.data(), norb);
-  }
-
 };
 } // namespace qmcplusplus
 
