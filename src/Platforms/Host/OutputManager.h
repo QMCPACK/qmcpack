@@ -16,7 +16,7 @@
 #ifndef OUTPUTMANAGER_H
 #define OUTPUTMANAGER_H
 
-#include <Utilities/InfoStream.h>
+#include <Platforms/Host/InfoStream.h>
 
 
 enum class Verbosity

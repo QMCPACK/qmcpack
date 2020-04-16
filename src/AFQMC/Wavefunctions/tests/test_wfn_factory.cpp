@@ -22,7 +22,7 @@
 #include "Utilities/SimpleRandom.h"
 #include <Utilities/NewTimer.h>
 #include "Utilities/Timer.h"
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 
 #undef APP_ABORT
 #define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}

@@ -18,6 +18,7 @@
 #endif
 #include <omp.h>
 #include "qmc_common.h"
+#include "Platforms/Host/OutputManager.h"
 
 namespace qmcplusplus
 {

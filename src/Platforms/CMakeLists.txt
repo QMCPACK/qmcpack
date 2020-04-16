@@ -12,6 +12,8 @@
 
 SET(HOST_SRCS
     sysutil.cpp
+    Host/InfoStream.cpp
+    Host/OutputManager.cpp
 )
 
 SET(DEVICE_SRCS
