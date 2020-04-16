@@ -230,6 +230,7 @@ ompBLAS_status ger_impl(ompBLAS_handle& handle,
     throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::ger_impl!");
 
   //BLAS::ger(m, n, alpha, x, incx, y, incy, A, lda);
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always, tofrom: A[:lda*m]) map(always, to: x[:n], y[:m])")
   for(size_t i = 0; i < n; i++)
     for(size_t j = 0; j < m; j++)
       A[i * lda + j] += alpha * x[j] * y[i];
