@@ -19,6 +19,9 @@ namespace qmcplusplus
 namespace ompBLAS
 {
 
+#pragma omp declare reduction(+: std::complex<float>: omp_out += omp_in)
+#pragma omp declare reduction(+: std::complex<double>: omp_out += omp_in)
+
 template<typename T>
 ompBLAS_status gemv_impl(ompBLAS_handle& handle,
                          const char&     trans,
@@ -101,12 +104,7 @@ ompBLAS_status gemv(ompBLAS_handle&                  handle,
                     std::complex<float>* const       y,
                     const int&                       incy)
 {
-#if defined(__ibmxl__)
-  throw std::runtime_error("IBM XL doesn't support std::complex in ompBLAS::gemv_impl!");
-  return 0;
-#else
   return gemv_impl(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
-#endif
 }
 
 ompBLAS_status gemv(ompBLAS_handle&                   handle,
@@ -122,12 +120,7 @@ ompBLAS_status gemv(ompBLAS_handle&                   handle,
                     std::complex<double>* const       y,
                     const int&                        incy)
 {
-#if defined(__ibmxl__)
-  throw std::runtime_error("IBM XL doesn't support std::complex in ompBLAS::gemv_impl!");
-  return 0;
-#else
   return gemv_impl(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
-#endif
 }
 
 
