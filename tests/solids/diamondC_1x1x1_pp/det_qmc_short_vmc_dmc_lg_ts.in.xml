@@ -98,7 +98,7 @@
      <parameter name="targetwalkers"> 2  </parameter>
      <parameter name="reconfiguration">   no </parameter>
      <parameter name="warmupSteps">  3  </parameter>
-     <parameter name="timestep">  0.3 </parameter>
+     <parameter name="timestep">  0.6 </parameter>
      <parameter name="steps">   3   </parameter>
      <parameter name="blocks">  3   </parameter>
      <parameter name="nonlocalmoves">  yes </parameter>

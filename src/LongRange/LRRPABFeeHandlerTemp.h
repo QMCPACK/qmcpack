@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -74,16 +74,16 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
     fillFk(ref.SK->KLists);
   }
 
-  LRHandlerBase* makeClone(ParticleSet& ref) { return new LRRPABFeeHandlerTemp<Func, BreakupBasis>(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) override { return new LRRPABFeeHandlerTemp<Func, BreakupBasis>(*this, ref); }
 
-  void initBreakup(ParticleSet& ref)
+  void initBreakup(ParticleSet& ref) override
   {
     InitBreakup(ref.Lattice, 1);
     fillFk(ref.SK->KLists);
     LR_rc = Basis.get_rc();
   }
 
-  void Breakup(ParticleSet& ref, mRealType rs_ext)
+  void Breakup(ParticleSet& ref, mRealType rs_ext) override
   {
     //ref.Lattice.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
     rs = rs_ext;
@@ -93,11 +93,11 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
     LR_rc = Basis.get_rc();
   }
 
-  void resetTargetParticleSet(ParticleSet& ref) { myFunc.reset(ref); }
+  void resetTargetParticleSet(ParticleSet& ref) override { myFunc.reset(ref); }
 
   void resetTargetParticleSet(ParticleSet& ref, mRealType rs) { myFunc.reset(ref, rs); }
 
-  inline mRealType evaluate(mRealType r, mRealType rinv)
+  inline mRealType evaluate(mRealType r, mRealType rinv) override
   {
     mRealType v = 0.0;
     for (int n = 0; n < coefs.size(); n++)
@@ -110,7 +110,7 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv)
+  inline mRealType srDf(mRealType r, mRealType rinv) override
   {
     mRealType df = 0.0;
     //mRealType df = myFunc.df(r, rinv);
@@ -122,7 +122,7 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r)
+  inline mRealType evaluateLR(mRealType r) override
   {
     mRealType vk = 0.0;
     return vk;
@@ -154,6 +154,8 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
     //} //ki
     return vk;
   }
+
+  inline mRealType evaluate_vlr_k(mRealType k) override { return evalFk(k); }
 
 private:
   inline mRealType evalFk(mRealType k)
