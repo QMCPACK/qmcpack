@@ -131,7 +131,7 @@ EwaldHandler::mRealType EwaldHandler::evaluate_vlr_k(mRealType k)
     return uk;
   }
 
-  EwaldHandler::mRealType EwaldHandler::evaluate_slab(mRealType z, const std::vector<int>& kshell,
+  EwaldHandler::mRealType EwaldHandler::evaluate_slab(pRealType z, const std::vector<int>& kshell,
                                                       const pComplexType* restrict eikr_i,
                                                       const pComplexType* restrict eikr_j)
   {
