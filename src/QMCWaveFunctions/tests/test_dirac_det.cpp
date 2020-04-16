@@ -640,8 +640,7 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
 
   ParticleGradient_t G;
   ParticleLaplacian_t L;
-  //This is a vector of ValueType, so we're using it..."
-  ParticleLaplacian_t SG;
+  ParticleAttrib<ValueType> SG;
 
   G.resize(nelec);
   L.resize(nelec);
