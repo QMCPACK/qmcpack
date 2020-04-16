@@ -1,8 +1,11 @@
 #!/bin/bash
 
+# Modified version of nitrogen nightlies script to perform manual builds of unit tests 
+
 echo --- Script START `date`
 
-localonly=no
+#localonly=no
+localonly=yes
 
 if [[ $localonly == "yes" ]]; then
 echo --- Local CMake/Make/CTest only. No cdash drop.
@@ -13,15 +16,27 @@ fi
 #export LIMITEDTESTS=""
 #export LESSLIMITEDTESTS=""
 # Nightly settings:
-export GLOBALTCFG="-j 16 --timeout 360 -VV"
-export LIMITEDTESTS="-R deterministic -LE unstable -E long-"
-#export LESSLIMITEDTESTS="-E long- -LE unstable"
-export LESSLIMITEDTESTS="-E long-"
+#export GLOBALTCFG="-j 16 --timeout 1200 -VV"
+#export LIMITEDTESTS="-R deterministic -LE unstable -E long-"
+##export LESSLIMITEDTESTS="-E long- -LE unstable"
+#export LESSLIMITEDTESTS="-E long-"
+# Manual CI settings:
+export GLOBALTCFG="-j 64 --timeout 120 --output-on-failure --no-tests=error"
+#export LIMITEDTESTS="-L deterministic "
+#export LESSLIMITEDTESTS="-L deterministic "
+export LIMITEDTESTS="-L unit "
+export LESSLIMITEDTESTS="-L unit "
 
 # Directory in which to run tests. Should be an absolute path and fastest usable filesystem
-test_path=/scratch/${USER}   # RAID FLASH on oxygen
+#test_path=/scratch/${USER}   # RAID FLASH on oxygen
+test_path=`pwd`
+#test_dir=${test_path}/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
+test_dir=${test_path}
 
-test_dir=${test_path}/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
+
+# Use a file to signal problems since ctest is run in a subshell
+rm -f ${test_dir}/.ctest_failures
+
 
 export QMC_DATA=/scratch/pk7/QMC_DATA # Route to directory containing performance test files
 
@@ -43,6 +58,58 @@ export PATH=$PGI/linux86-64/2019/bin:$PATH
 # via https://software.intel.com/en-us/forums/intel-clusters-and-hpc-technology/topic/799716
 #export FI_PROVIDER=sockets
 export I_MPI_FABRICS=shm
+
+### SPACK PACKAGE VERSIONS
+#
+# \todo Make this use spack_supported_package_versions.sh to share common spack loads
+#       with the CI
+#
+# Versions should be consistent with setup script
+#
+
+# GCC
+# Dates at https://gcc.gnu.org/releases.html
+gcc_vnew=9.3.0 # 2020-03-12
+
+#Zen2 optimziations are only in gcc 9.1+, with improved scheduling in 9.2+
+#For now, only use newer compilers
+
+# For CUDA toolkit compatibility
+gcc_vcuda=8.3.0 #  2019-02-22
+
+# LLVM 
+# Dates at http://releases.llvm.org/
+llvm_vnew=10.0.0 # 2020-03-24
+#Zen2 scheduling optimizations are only in LLVM 10+
+
+# HDF5
+hdf5_vnew=1.10.5 # Releeased 2019-02-28
+hdf5_vold=1.8.19 # Released 2017-06-16
+
+# CMake 
+# Dates at https://cmake.org/files/
+cmake_vnew=3.16.5 # Released 2020-03-04
+cmake_vold=3.10.2 # Released 2018-01-18
+
+# OpenMPI
+# Dates at https://www.open-mpi.org/software/ompi/v4.0/
+ompi_vnew=4.0.3 # Released 2019-10-07
+#ompi_vold=2.1.2 # Released 2017-09-20
+
+libxml2_vnew=2.9.9 # Released 2019-01-03 See http://xmlsoft.org/sources/
+libxml2_vold=2.9.1 # Released 2013-04-19
+
+# FFTW
+# Dates at http://www.fftw.org/release-notes.html
+fftw_vnew=3.3.8 # Released 2018-05-28
+#fftw_vold=3.3.4 # Released 2014-03-16
+
+# BOOST
+# Dates at https://www.boost.org/users/history/
+boost_vnew=1.72.0 # Released 2019-04-12
+boost_vold=1.67.0 # Released 2016-05-13
+
+### END SPACK VERSION USAGE
 
 module() { eval `/usr/bin/modulecmd bash $*`; }
 
@@ -68,15 +135,20 @@ if [ -e ${test_dir} ]; then
 cd ${test_dir}
 
 # Minimize load on GitHub by maintaining a local cloned git used for all builds
+#if [ ! -e qmcpack ]; then
+#echo --- Cloning QMCPACK git `date`
+#git clone https://github.com/QMCPACK/qmcpack.git --depth 1
+#else
+#cd qmcpack
+#echo --- Updating local QMCPACK git `date`
+#git pull
+#cd ..
+#fi
 if [ ! -e qmcpack ]; then
-echo --- Cloning QMCPACK git `date`
-git clone https://github.com/QMCPACK/qmcpack.git --depth 1
-else
-cd qmcpack
-echo --- Updating local QMCPACK git `date`
-git pull
-cd ..
+    echo --- Must be run from a directory containing qmcpack git repo
+    exit 1
 fi
+
 
 # Sanity check cmake config file present
 if [ -e qmcpack/CMakeLists.txt ]; then
@@ -92,7 +164,8 @@ export QE_VERSION=6.4.1
 sys=build_gccnew
 # QE version 6.x unpacks to qe-; Older versions 5.x uses espresso-
 export QE_PREFIX=qe-
-export QE_BIN=${test_dir}/${sys}_QE/${QE_PREFIX}${QE_VERSION}/bin
+#export QE_BIN=${test_dir}/${sys}_QE/${QE_PREFIX}${QE_VERSION}/bin
+export QE_BIN=/scratch/${USER}/QMCPACK_CI_BUILDS_DO_NOT_REMOVE/${sys}_QE/${QE_PREFIX}${QE_VERSION}/bin
 echo --- QE_BIN set to ${QE_BIN}
 if [ ! -e ${QE_BIN}/pw.x ]; then
     # Start from clean build if no executable present
@@ -107,12 +180,11 @@ if [ ! -e ${QE_BIN}/pw.x ]; then
     cd ${QE_PREFIX}${QE_VERSION}
 
 (
-#Hardwired version numbers here need to be updated in future by relocating list of versions below to above this point	
-    spack load gcc@9.2.0
-    spack load openmpi@4.0.2
+    spack load gcc@${gcc_vnew}
+    spack load openmpi@${ompi_vnew}
     spack load amdblis
     spack load netlib-lapack
-    spack load hdf5@1.10.5
+    spack load hdf5@${hdf5_vnew}
     spack load fftw
     ./configure CC=mpicc MPIF90=mpif90 F77=mpi90 BLAS_LIBS=-lblis LAPACK_LIBS=-llapack  --with-scalapack=no --with-hdf5=`spack location -i hdf5@1.10.5`
     make -j 64 pwall # Parallel build tested OK for pwall with QE 6.4.1. Parallel build of all does NOT work due to broken dependencies
@@ -127,7 +199,7 @@ fi
 
 echo --- Starting test builds and tests
 
-for sys in build_gccnew build_gcccuda build_gccnew_complex build_gcccuda_complex build_gccnew_nompi build_gccnew_nompi_complex build_gccnew_aos build_gccnew_complex_aos
+for sys in build_gccnew build_gcccuda build_gcccuda_full build_gcccuda_complex build_gccnew_complex build_gccnew_nompi build_gccnew_nompi_complex build_clangnew build_clangnew_complex build_clangnew_mixed build_clangnew_complex_mixed build_clangnew_aos build_clangnew_complex_aos 
 do
 
 echo --- START $sys `date`
@@ -168,73 +240,11 @@ ourenv=gccnewbuild
 fi
 
 
-#
-# FUTURE UPGRADE: Use spack environments  
-#
-# 2019-06 Not possible to install a clean environment with e.g. only a single libxml2
-# Load individual modules and treat ambiguities by hand instead 
-#
-#echo Build is $sys using env $ourenv
-#spack env activate $ourenv
-#spack load libxml2
-#spack load cmake
-#spack load openmpi
-#spack load hdf5
-#spack load boost
-
-
-# \todo Make this use spack_supported_package_versions.sh to share common spack loads
-#       with the CI
-#
-# Versions should be consistent with setup script
-#
-
-# GCC
-# Dates at https://gcc.gnu.org/releases.html
-gcc_vnew=9.3.0 # 2020-03-12
-
-#Zen2 optimziations are only in gcc 9.1+, with improved scheduling in 9.2+
-#For now, only use newer compilers
-
-# For CUDA toolkit compatibility
-gcc_vcuda=8.3.0 #  2019-02-22
-
-# LLVM 
-# Dates at http://releases.llvm.org/
-llvm_vnew=9.0.0 # 2019-09-19
-#Zen2 scheduleing optimization are only ing LLVM 10+
-
-# HDF5
-hdf5_vnew=1.10.5 # Releeased 2019-02-28
-hdf5_vold=1.8.19 # Released 2017-06-16
-
-# CMake 
-# Dates at https://cmake.org/files/
-cmake_vnew=3.16.2 # Released 2019-12-19
-cmake_vold=3.10.2 # Released 2018-01-18
-
-# OpenMPI
-# Dates at https://www.open-mpi.org/software/ompi/v4.0/
-ompi_vnew=4.0.2 # Released 2019-10-07
-ompi_vold=2.1.2 # Released 2017-09-20
-
-libxml2_vnew=2.9.9 # Released 2019-01-03 See http://xmlsoft.org/sources/
-libxml2_vold=2.9.1 # Released 2013-04-19
-
-# FFTW
-# Dates at http://www.fftw.org/release-notes.html
-fftw_vnew=3.3.8 # Released 2018-05-28
-fftw_vold=3.3.4 # Released 2014-03-16
-
-# BOOST
-# Dates at https://www.boost.org/users/history/
-boost_vnew=1.70.0 # Released 2019-04-12
-boost_vold=1.65.1 # Released 2016-05-13
 
 spack load git
 
 # Python version determined by numpy install in setup script
-spack load python # Has numpy, scipy, h5py, pandas "activated" and available for import
+spack load python%gcc@$gcc_vnew # Has numpy, scipy, h5py, pandas "activated" and available for import
 
 case "$ourenv" in
 gccnewbuild) echo $ourenv
@@ -415,9 +425,11 @@ else
     CTCFG="$CTCFG -DBUILD_AFQMC=1"
 fi
 
+
+
 # Adjust which tests are run to control overall runtime
 case "$sys" in
-*gccnew|*gccnew_aos|*gccnew_complex|*gccnew_complex_aos|*clangnew|*clangnew_complex|*gcccuda|*gcccuda_complex|*gcccuda_full) echo "Running full ("less limited") test set for $sys"
+*gccnew|*clangnew|*gcccuda|*gccnew_complex|*clangnew_complex|*gcccuda_complex|*clangnew_aos|*clangnew_complex_aos|*gcccuda_full) echo "Running full ("less limited") test set for $sys"
 THETESTS=$LESSLIMITEDTESTS
 ;;
 *) echo "Running limited test set for $sys"
@@ -431,14 +443,44 @@ echo $QMCPACK_TEST_SUBMIT_NAME
 echo $CTCFG
 if [[ $localonly == "yes" ]]; then
 echo --- START cmake `date` 
-cmake ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 ../qmcpack/ 
+cmake ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 ../qmcpack/
 echo --- END cmake `date`
 echo --- START make `date` 
-make -j 16
+#make -j 16
+make -j 64
 echo --- END make `date`
-echo --- START ctest `date` 
-ctest ${GLOBALTCFG} ${THETESTS}
+echo --- START ctest `date`
+#Workaround CUDA concurrency problems
+case "$sys" in
+    *cuda*)
+	ctest ${GLOBALTCFG} ${THETESTS} -DN_CONCURRENT_TESTS=1
+	ret=$?
+	if [[ ${ret} -ne 0 ]] ; then
+	    echo > $test_dir/.ctest_failures
+	fi
+	;;
+    *)
+	ctest ${GLOBALTCFG} ${THETESTS}
+	ret=$?
+	if [[ ${ret} -ne 0 ]] ; then
+	    echo > $test_dir/.ctest_failures
+	fi
+	;;
+esac
 echo --- END ctest `date`
+# Nexus tests for some builds
+case "$sys" in
+    *build_gccnew*)
+	echo --- START ntest `date`
+	ctest ${GLOBALTCFG} -R ntest
+	ret=$?
+	if [[ ${ret} -ne 0 ]] ; then
+	    echo > $test_dir/.ctest_failures
+	fi
+	echo --- END ntest `date`
+	;;
+esac
+
 else
 echo --- START ctest `date` 
 echo ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
@@ -468,3 +510,7 @@ echo "ERROR: No directory ${test_path}"
 exit 1
 fi
 echo --- Script END `date`
+if [ -e $test_dir/.ctest_failures ]; then
+    echo --- FAILURES OCCURRED. CHECK OUTPUT.
+fi
+
