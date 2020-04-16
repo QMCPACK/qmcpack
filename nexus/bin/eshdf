@@ -66,6 +66,11 @@ def vlog(*args,**kwargs):
 #end def vlog
 
 
+def user_error(msg):
+    error(msg,'User',trace=False)
+#end def user_error
+
+
 
 def read_eshdf_nofk_data(filename,Ef):
     from numpy import array,pi,dot,sqrt,abs,zeros
@@ -191,23 +196,23 @@ def kinetic():
 
     # check files provided
     if len(eshdf_files)!=1:
-        error('exactly one ESHDF file is allowed as input.\nYou provided: {}'.format(eshdf_files),'User')
+        user_error('exactly one ESHDF file is allowed as input.\nYou provided: {}'.format(eshdf_files))
     #end if
     eshdf_filepath = eshdf_files[0]
     if not os.path.exists(eshdf_filepath):
-        error('ESHDF file does not exist.\nPlease check the path provided:\n  {}'.format(eshdf_filepath),'User')
+        user_error('ESHDF file does not exist.\nPlease check the path provided:\n  {}'.format(eshdf_filepath))
     elif not eshdf_filepath.endswith('.h5'):
-        error('file provided is not an HDF5 file.\nAn ESHDF file must have a .h5 extension.\nPlease check the path provided:\n  {}'.format(eshdf_filepath),'User')
+        user_error('file provided is not an HDF5 file.\nAn ESHDF file must have a .h5 extension.\nPlease check the path provided:\n  {}'.format(eshdf_filepath))
     #end if
 
     # check Fermi energy
     if opt.E_fermi is None:
-        error('please provide the Fermi energy via the --Ef option.','User')
+        user_error('please provide the Fermi energy via the --Ef option.')
     else:
         try:
             opt.E_fermi = float(opt.E_fermi)
         except:
-            error('value provided for Fermi energy is not a real number.\nYou provided: {}'.format(opt.E_fermi),'User')
+            user_error('value provided for Fermi energy is not a real number.\nYou provided: {}'.format(opt.E_fermi))
         #end try
     #end if
 
@@ -281,13 +286,13 @@ operations = obj(
 if __name__=='__main__':
 
     if len(sys.argv)<2:
-        error('First argument must be operation to perform on ESHDF file.\ne.g. to examine kinetic energies, type "eshdf kinetic ..."\nValid operations are: {0}'.format(sorted(operations.keys())),'User')
+        user_error('First argument must be operation to perform on ESHDF file.\ne.g. to examine kinetic energies, type "eshdf kinetic ..."\nValid operations are: {0}'.format(sorted(operations.keys())))
     #end if
     op_type = sys.argv[1]
     if op_type in operations:
         operations[op_type]()
     else:
-        error('Unknown operation: {0}\nValid options are: {1}'.format(op_type,sorted(operations.keys())),'User')
+        user_error('Unknown operation: {0}\nValid options are: {1}'.format(op_type,sorted(operations.keys())))
     #end if
 
 #end if
