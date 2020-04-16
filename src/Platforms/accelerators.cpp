@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "Platforms/accelerators.hpp"
 #include "config.h"
 #ifdef ENABLE_CUDA
 #include <cuda_runtime_api.h>

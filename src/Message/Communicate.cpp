@@ -15,14 +15,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <Configuration.h>
 #include "Message/Communicate.h"
-#include "Message/TagMaker.h"
 #include <iostream>
 #include <cstdio>
-#include <Platforms/sysutil.h>
-#include <Utilities/FairDivide.h>
 #include <fstream>
+#include "config.h"
+#include "Message/TagMaker.h"
+#include "Platforms/sysutil.h"
+#include "Utilities/FairDivide.h"
 
 #ifdef HAVE_MPI
 #include "mpi3/shared_communicator.hpp"
