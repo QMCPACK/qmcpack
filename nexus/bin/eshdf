@@ -173,6 +173,10 @@ def kinetic():
                       default='None',
                       help='Fermi energy in eV (default=%default).'
                       )
+    parser.add_option('--norm_tol',dest='norm_tol',
+                      action='store',type='float',default=1e-6,
+                      help='Fermi energy in eV (default=%default).'
+                      )
     parser.add_option('-o','--orb',dest='orb_info',
                       action='store_true',default=False,
                       help='Print per orbital kinetic energies (default=%default).'
@@ -268,6 +272,11 @@ def kinetic():
     log('Summed orbital norm per spin : {}'.format(arr2str(normspin)))
     log('Total kinetic energy         : {} Ha'.format(ktot))
     log('Kinetic energy per spin      : {} Ha'.format(arr2str(kspin)))
+
+    norm_diff = np.abs(normspin-nspin).max()
+    if norm_diff>opt.norm_tol:
+        warn('Orbitals are not properly normalized!\nError in the summed norm is: {}\nThis exceeds a tolerance of: {}'.format(norm_diff,opt.norm_tol))
+    #end if
 
     spin_labels = {0:'up',1:'down'}
     if opt.orb_info:
