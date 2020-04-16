@@ -1,8 +1,16 @@
 #! /usr/bin/env python3
 
+# Python standard library imports
 import os
 import sys
 from optparse import OptionParser
+
+# Non-standard Python library imports
+import numpy as np
+
+# Nexus imports
+from generic import obj
+from developer import log,warn,error,ci
 
 
 
@@ -47,10 +55,22 @@ except:
 
 
 
+opt = obj(
+    verbose = False,
+    )
+
+def vlog(*args,**kwargs):
+    if opt.verbose:
+        log(*args,**kwargs)
+    #end if
+#end def vlog
+
+
 
 def read_eshdf_nofk_data(filename,Ef):
     from numpy import array,pi,dot,sqrt,abs,zeros
     from numpy.linalg import inv,det
+    from unit_converter import convert
 
     def h5int(i):
         return array(i,dtype=int)[0]
@@ -122,7 +142,7 @@ def read_eshdf_nofk_data(filename,Ef):
         axes     = axes,
         kaxes    = kaxes,
         nkpoints = nk,
-        nspin    = ns,
+        nspins   = ns,
         data     = data,
         )
     return res
@@ -131,12 +151,123 @@ def read_eshdf_nofk_data(filename,Ef):
 
 
 def kinetic():
+
     # read command line inputs
     usage = '''usage: %prog kinetic [options] [eshdf_file]'''
     parser = OptionParser(usage=usage,add_help_option=False,version='%prog 0.1')
 
+    parser.add_option('-h','--help',dest='help',
+                      action='store_true',default=False,
+                      help='Print help information and exit (default=%default).'
+                      )
+    #parser.add_option('-v','--verbose',dest='verbose',
+    #                  action='store_true',default=False,
+    #                  help='Print detailed information (default=%default).'
+    #                  )
+    parser.add_option('--Ef',dest='E_fermi',
+                      default='None',
+                      help='Fermi energy in eV (default=%default).'
+                      )
+    parser.add_option('-o','--orb',dest='orb_info',
+                      action='store_true',default=False,
+                      help='Print per orbital kinetic energies (default=%default).'
+                      )
+
+
     options,args = parser.parse_args()
-    scalar_files = list(sorted(args[1:]))
+    eshdf_files = list(sorted(args[1:]))
+
+    opt.transfer_from(options.__dict__)
+    for k,v in opt.items():
+        if v=='None':
+            opt[k] = None
+        #end if
+    #end for
+
+    if opt.help or len(eshdf_files)==0:
+        print('\n'+parser.format_help().strip()+'\n')
+        exit()
+    #end if
+
+    # check files provided
+    if len(eshdf_files)!=1:
+        error('exactly one ESHDF file is allowed as input.\nYou provided: {}'.format(eshdf_files),'User')
+    #end if
+    eshdf_filepath = eshdf_files[0]
+    if not os.path.exists(eshdf_filepath):
+        error('ESHDF file does not exist.\nPlease check the path provided:\n  {}'.format(eshdf_filepath),'User')
+    elif not eshdf_filepath.endswith('.h5'):
+        error('file provided is not an HDF5 file.\nAn ESHDF file must have a .h5 extension.\nPlease check the path provided:\n  {}'.format(eshdf_filepath),'User')
+    #end if
+
+    # check Fermi energy
+    if opt.E_fermi is None:
+        error('please provide the Fermi energy via the --Ef option.','User')
+    else:
+        try:
+            opt.E_fermi = float(opt.E_fermi)
+        except:
+            error('value provided for Fermi energy is not a real number.\nYou provided: {}'.format(opt.E_fermi),'User')
+        #end try
+    #end if
+
+    d = read_eshdf_nofk_data(eshdf_filepath,opt.E_fermi)
+
+    nkpoints = d.nkpoints
+    nspins   = d.nspins
+
+    ktot  = 0.0
+    nspin = np.zeros((nspins,),dtype=int)
+    kspin = np.zeros((nspins,),dtype=float)
+    norb  = []
+    korb  = []
+    eorb  = []
+    for s in range(nspins):
+        nsorb = []
+        ksorb = []
+        esorb = []
+        for k in range(nkpoints):
+            dks = d.data[k,s]
+            nsorb.append(len(dks.kin))
+            ksorb.extend(dks.kin)
+            esorb.extend(dks.eig)
+        #end for
+        nsorb = np.array(nsorb,dtype=int)
+        ksorb = np.array(ksorb,dtype=float)
+        esorb = np.array(esorb,dtype=float)
+
+        order = esorb.argsort()
+        esorb = esorb[order]
+        ksorb = ksorb[order]
+
+        ns = nsorb.sum()
+        ks = ksorb.sum()
+
+        ktot    += ks
+        nspin[s] = ns
+        kspin[s] = ks
+        norb.append(nsorb)
+        korb.append(ksorb)
+        eorb.append(esorb)
+    #end for
+
+    log('\nNumber of spins              : {}'.format(nspins))
+    log('Number kpoints               : {}'.format(nkpoints))
+    log('Number of electrons per spin : {}'.format(nspin))
+    log('Total kinetic energy         : {} Ha'.format(ktot))
+    log('Kinetic energy per spin      : {} Ha'.format(kspin))
+
+    spin_labels = {0:'up',1:'down'}
+    if opt.orb_info:
+        log('\nPer orbital kinetic energies')
+        for s in range(nspins):
+            log('  Spin {} energies'.format(spin_labels[s]))
+            log('    index  KS eig (eV)  kinetic (Ha)')
+            for i,(eig,kin) in enumerate(zip(eorb[s],korb[s])):
+                log('    {:>3}    {: 10.6f}   {: 10.6f}'.format(i,eig,kin))
+            #end for
+        #end for
+    #end if
 #end def kinetic
 
 
@@ -150,13 +281,13 @@ operations = obj(
 if __name__=='__main__':
 
     if len(sys.argv)<2:
-        error('First argument must be operation to perform on ESHDF file.\ne.g. to examine kinetic energies, type "eshdf kinetic ..."\nValid operations are: {0}'.format(sorted(operations.keys())))
+        error('First argument must be operation to perform on ESHDF file.\ne.g. to examine kinetic energies, type "eshdf kinetic ..."\nValid operations are: {0}'.format(sorted(operations.keys())),'User')
     #end if
     op_type = sys.argv[1]
     if op_type in operations:
         operations[op_type]()
     else:
-        error('Unknown operation: {0}\nValid options are: {1}'.format(op_type,sorted(operations.keys())))
+        error('Unknown operation: {0}\nValid options are: {1}'.format(op_type,sorted(operations.keys())),'User')
     #end if
 
 #end if
