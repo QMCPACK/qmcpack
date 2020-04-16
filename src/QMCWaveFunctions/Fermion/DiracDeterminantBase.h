@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -144,12 +144,12 @@ public:
     return 0;
   }
 
-  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad) override
+  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ValueType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::ratioGradWithSpins():  Implementation required\n");
     return 0.0;
   } 
-  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) override
+  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, ValueType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::evalGradWithSpins():  Implementation required\n");
     return GradType();
