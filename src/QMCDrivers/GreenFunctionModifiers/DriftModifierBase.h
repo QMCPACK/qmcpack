@@ -24,9 +24,10 @@ namespace qmcplusplus
 class DriftModifierBase
 {
 public:
-  using RealType = QMCTraits::RealType;
-  using PosType  = QMCTraits::PosType;
-  using GradType = QMCTraits::GradType;
+  using RealType  = QMCTraits::RealType;
+  using PosType   = QMCTraits::PosType;
+  using GradType  = QMCTraits::GradType;
+  using ValueType = QMCTraits::ValueType;
 
   /** evaluate a drift with a real force
    * @param tau timestep
@@ -35,9 +36,7 @@ public:
    */
   virtual void getDrift(RealType tau, const GradType& qf, PosType& drift) const = 0;
 
-  virtual void getDrift(RealType tau,
-                        const TrialWaveFunction::LogValueType& qf,
-                        ParticleSet::Scalar_t& drift) const = 0;
+  virtual void getDrift(RealType tau, const ValueType& qf, ParticleSet::Scalar_t& drift) const = 0;
 
   virtual void getDrifts(RealType tau, const std::vector<GradType>& qf, std::vector<PosType>&) const = 0;
 

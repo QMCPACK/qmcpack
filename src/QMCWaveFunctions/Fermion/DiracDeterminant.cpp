@@ -1,6 +1,6 @@
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -90,7 +90,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 {
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  invRow_id = WorkingIndex;
+  invRow_id              = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   RatioTimer.stop();
@@ -100,15 +100,15 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradWithSpin(ParticleSet& P,
                                                                                          int iat,
-                                                                                         LogValueType& spingrad)
+                                                                                         ValueType& spingrad)
 {
   Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  invRow_id = WorkingIndex;
+  invRow_id              = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
-  GradType g          = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
-  LogValueType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
+  GradType g       = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
+  ValueType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
   RatioTimer.stop();
 
   spingrad += spin_g;
@@ -151,11 +151,10 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGradWithSpin(
-    ParticleSet& P,
-    int iat,
-    GradType& grad_iat,
-    LogValueType& spingrad_iat)
+typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGradWithSpin(ParticleSet& P,
+                                                                                              int iat,
+                                                                                              GradType& grad_iat,
+                                                                                              ValueType& spingrad_iat)
 {
   SPOVGLTimer.start();
   Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);

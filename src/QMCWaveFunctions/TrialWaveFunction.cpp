@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -389,7 +389,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
   return grad_iat;
 }
 
-TrialWaveFunction::GradType TrialWaveFunction::evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad)
+TrialWaveFunction::GradType TrialWaveFunction::evalGradWithSpin(ParticleSet& P, int iat, ValueType& spingrad)
 {
   GradType grad_iat;
   spingrad = 0;
@@ -481,7 +481,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
 TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSet& P,
                                                                       int iat,
                                                                       GradType& grad_iat,
-                                                                      LogValueType& spingrad_iat)
+                                                                      ValueType& spingrad_iat)
 {
   spingrad_iat = 0.0;
   PsiValueType r(1.0);
@@ -599,7 +599,8 @@ void TrialWaveFunction::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 
 void TrialWaveFunction::flex_acceptMove(const RefVector<TrialWaveFunction>& wf_list,
                                         const RefVector<ParticleSet>& p_list,
-                                        int iat, bool safe_to_delay)
+                                        int iat,
+                                        bool safe_to_delay)
 {
   if (wf_list.size() > 1)
   {
@@ -616,8 +617,8 @@ void TrialWaveFunction::flex_acceptMove(const RefVector<TrialWaveFunction>& wf_l
     {
       ScopedTimer localtimer(wf_list[0].get().get_timers()[ii]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
-      wavefunction_components[i]->mw_acceptMove(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list),
-                                                iat, safe_to_delay);
+      wavefunction_components[i]->mw_acceptMove(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list), iat,
+                                                safe_to_delay);
       for (int iw = 0; iw < wf_list.size(); iw++)
       {
         wf_list[iw].get().LogValue += std::real(wfc_list[iw].get().LogValue);
@@ -882,7 +883,10 @@ void TrialWaveFunction::evaluateRatios(const VirtualParticleSet& VP, std::vector
     }
 }
 
-void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& wf_list, const RefVector<const VirtualParticleSet>& vp_list, const RefVector<std::vector<ValueType>>& ratios_list, ComputeType ct)
+void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& wf_list,
+                                            const RefVector<const VirtualParticleSet>& vp_list,
+                                            const RefVector<std::vector<ValueType>>& ratios_list,
+                                            ComputeType ct)
 {
   if (wf_list.size() > 1)
   {
@@ -898,7 +902,7 @@ void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& 
 
     for (int i = 0, ii = NL_TIMER; i < wavefunction_components.size(); i++, ii += TIMER_SKIP)
       if (ct == ComputeType::ALL || (wavefunction_components[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
-        (!wavefunction_components[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+          (!wavefunction_components[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
       {
         ScopedTimer local_timer(wf_list[0].get().get_timers()[ii]);
         const auto wfc_list(extractWFCRefList(wf_list, i));
@@ -913,7 +917,6 @@ void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& 
   }
   else if (wf_list.size() == 1)
     wf_list[0].get().evaluateRatios(vp_list[0], ratios_list[0], ct);
-
 }
 
 void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP,
@@ -1034,9 +1037,8 @@ void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value
   }
 }
 
-RefVector<WaveFunctionComponent> TrialWaveFunction::extractWFCRefList(
-    const RefVector<TrialWaveFunction>& wf_list,
-    int id)
+RefVector<WaveFunctionComponent> TrialWaveFunction::extractWFCRefList(const RefVector<TrialWaveFunction>& wf_list,
+                                                                      int id)
 {
   std::vector<std::reference_wrapper<WaveFunctionComponent>> wfc_list;
   wfc_list.reserve(wf_list.size());
