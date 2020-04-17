@@ -22,7 +22,6 @@
 PROJECT(qmctools)
 
 SET(MOSRCS
-  ../Particle/InitMolecularSystem.cpp
   QMCGaussianParserBase.cpp
   GaussianFCHKParser.cpp
   GamesXmlParser.cpp
