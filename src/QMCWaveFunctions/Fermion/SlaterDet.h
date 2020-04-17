@@ -112,7 +112,7 @@ public:
   virtual inline PsiValueType ratioGradWithSpin(ParticleSet& P,
                                                 int iat,
                                                 GradType& grad_iat,
-                                                ValueType& spingrad_iat) override
+                                                ComplexType& spingrad_iat) override
   {
     return Dets[getDetID(iat)]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
   }
@@ -129,7 +129,7 @@ public:
 
   virtual GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 
-  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, ValueType& spingrad) override
+  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
   {
     return Dets[getDetID(iat)]->evalGradWithSpin(P, iat, spingrad);
   }

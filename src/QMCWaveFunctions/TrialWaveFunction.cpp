@@ -389,7 +389,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
   return grad_iat;
 }
 
-TrialWaveFunction::GradType TrialWaveFunction::evalGradWithSpin(ParticleSet& P, int iat, ValueType& spingrad)
+TrialWaveFunction::GradType TrialWaveFunction::evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad)
 {
   GradType grad_iat;
   spingrad = 0;
@@ -481,7 +481,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
 TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSet& P,
                                                                       int iat,
                                                                       GradType& grad_iat,
-                                                                      ValueType& spingrad_iat)
+                                                                      ComplexType& spingrad_iat)
 {
   spingrad_iat = 0.0;
   PsiValueType r(1.0);

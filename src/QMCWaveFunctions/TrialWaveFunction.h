@@ -63,6 +63,7 @@ class TrialWaveFunction : public MPIObjectBase
 public:
   // derived types from WaveFunctionComponent
   typedef WaveFunctionComponent::RealType RealType;
+  typedef WaveFunctionComponent::ComplexType ComplexType;
   using FullPrecRealType = WaveFunctionComponent::FullPrecRealType;
   typedef WaveFunctionComponent::ValueType ValueType;
   typedef WaveFunctionComponent::PosType PosType;
@@ -226,7 +227,7 @@ public:
    * @param spingrad_iat spin gradient for iat
    * @return ratio value
    */
-  ValueType calcRatioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ValueType& spingrad_iat);
+  ValueType calcRatioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat);
 
   /** batched verison of ratioGrad 
    *
@@ -248,7 +249,7 @@ public:
    * @return \nabla ln(psi) (complex)
    *
    */
-  GradType evalGradWithSpin(ParticleSet& P, int iat, ValueType& spingrad);
+  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad);
 
   /** batched verison of evalGrad
     *

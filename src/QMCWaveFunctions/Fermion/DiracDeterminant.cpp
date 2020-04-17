@@ -100,15 +100,15 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradWithSpin(ParticleSet& P,
                                                                                          int iat,
-                                                                                         ValueType& spingrad)
+                                                                                         ComplexType& spingrad)
 {
   Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
   invRow_id              = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
-  GradType g       = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
-  ValueType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
+  GradType g         = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
+  ComplexType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
   RatioTimer.stop();
 
   spingrad += spin_g;
@@ -154,7 +154,7 @@ template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGradWithSpin(ParticleSet& P,
                                                                                               int iat,
                                                                                               GradType& grad_iat,
-                                                                                              ValueType& spingrad_iat)
+                                                                                              ComplexType& spingrad_iat)
 {
   SPOVGLTimer.start();
   Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
