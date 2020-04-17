@@ -57,6 +57,8 @@ using std::endl;
 using std::ifstream;
 using std::setprecision;
 
+extern std::string UTEST_HAMIL, UTEST_WFN;
+
 namespace qmcplusplus
 {
 
