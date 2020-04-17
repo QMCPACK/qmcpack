@@ -34,6 +34,7 @@ namespace qmcplusplus
 {
 using RealType     = QMCTraits::RealType;
 using ValueType    = QMCTraits::ValueType;
+using ComplexType  = QMCTraits::ComplexType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 using PsiValueType = QMCTraits::QTFull::ValueType;
 
@@ -640,7 +641,7 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
 
   ParticleGradient_t G;
   ParticleLaplacian_t L;
-  ParticleAttrib<ValueType> SG;
+  ParticleAttrib<ComplexType> SG;
 
   G.resize(nelec);
   L.resize(nelec);

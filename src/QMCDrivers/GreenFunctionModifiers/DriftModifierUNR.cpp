@@ -27,7 +27,7 @@ void DriftModifierUNR::getDrift(RealType tau, const GradType& qf, PosType& drift
   drift *= sc;
 }
 
-void DriftModifierUNR::getDrift(RealType tau, const ValueType& qf, ParticleSet::Scalar_t& drift) const
+void DriftModifierUNR::getDrift(RealType tau, const ComplexType& qf, ParticleSet::Scalar_t& drift) const
 {
   // convert the complex WF gradient to real
   convert(qf, drift);
