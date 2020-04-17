@@ -75,7 +75,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
     {
       //get the displacement
-      TrialWaveFunction::LogValueType spingrad_iat;
+      ComplexType spingrad_iat;
       GradType grad_iat = Psi.evalGradWithSpin(W, iat, spingrad_iat);
       PosType dr;
       ParticleSet::Scalar_t ds;
