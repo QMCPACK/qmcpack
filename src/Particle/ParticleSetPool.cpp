@@ -443,8 +443,10 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
     //for(int i=0; i<qp->getTotalNum(); ++i)
     //  std::cout << qp->GroupID[i] << " " << qp->R[i] << std::endl;
 
+#if !defined(QMC_CUDA)
     makeUniformRandom(qp->spins);
     qp->spins *= 2 * M_PI;
+#endif
 
     if (qp->Lattice.SuperCellEnum)
       qp->createSK();
