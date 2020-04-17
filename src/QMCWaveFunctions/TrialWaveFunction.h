@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
@@ -63,6 +63,7 @@ class TrialWaveFunction : public MPIObjectBase
 public:
   // derived types from WaveFunctionComponent
   typedef WaveFunctionComponent::RealType RealType;
+  typedef WaveFunctionComponent::ComplexType ComplexType;
   using FullPrecRealType = WaveFunctionComponent::FullPrecRealType;
   typedef WaveFunctionComponent::ValueType ValueType;
   typedef WaveFunctionComponent::PosType PosType;
@@ -184,7 +185,10 @@ public:
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct = ComputeType::ALL);
-  static void flex_evaluateRatios(const RefVector<TrialWaveFunction>& WF_list, const RefVector<const VirtualParticleSet>& VP_list, const RefVector<std::vector<ValueType>>& ratios_list, ComputeType ct = ComputeType::ALL);
+  static void flex_evaluateRatios(const RefVector<TrialWaveFunction>& WF_list,
+                                  const RefVector<const VirtualParticleSet>& VP_list,
+                                  const RefVector<std::vector<ValueType>>& ratios_list,
+                                  ComputeType ct = ComputeType::ALL);
 
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P,
@@ -223,7 +227,7 @@ public:
    * @param spingrad_iat spin gradient for iat
    * @return ratio value
    */
-  ValueType calcRatioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad_iat);
+  ValueType calcRatioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat);
 
   /** batched verison of ratioGrad 
    *
@@ -245,7 +249,7 @@ public:
    * @return \nabla ln(psi) (complex)
    *
    */
-  GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad);
+  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad);
 
   /** batched verison of evalGrad
     *
@@ -265,7 +269,8 @@ public:
   /* flexible batched version of acceptMove */
   static void flex_acceptMove(const RefVector<TrialWaveFunction>& wf_list,
                               const RefVector<ParticleSet>& p_list,
-                              int iat, bool safe_to_delay = false);
+                              int iat,
+                              bool safe_to_delay = false);
   void completeUpdates();
   /* flexible batched version of completeUpdates.  */
   void flex_completeUpdates(const std::vector<TrialWaveFunction*>& WF_list) const;
@@ -382,7 +387,7 @@ private:
 
   static std::vector<WaveFunctionComponent*> extractWFCPtrList(const UPtrVector<TrialWaveFunction>& WF_list, int id);
 
-  static RefVector<WaveFunctionComponent> extractWFCRefList( const RefVector<TrialWaveFunction>& WF_list, int id);
+  static RefVector<WaveFunctionComponent> extractWFCRefList(const RefVector<TrialWaveFunction>& WF_list, int id);
   /** }@ */
 
   // helper function for extrating a list of gradients from a list of TrialWaveFunction

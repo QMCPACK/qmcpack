@@ -25,7 +25,6 @@
 #include "io/hdf_archive.h"
 #include <set>
 #include <map>
-#include "Particle/InitMolecularSystem.h"
 #include <sstream>
 #include <bitset>
 #include <iomanip>

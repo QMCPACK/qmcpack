@@ -329,10 +329,9 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
-  ///temporary buffer to accumulate data
-  //ostrstream log_buffer;
-
-  //PooledData<RealType> HamPool;
+  ///turn on spin moves
+  std::string SpinMoves;
+  RealType SpinMass;
 
   ///Copy Constructor (disabled).
   QMCDriver(const QMCDriver&) = delete;

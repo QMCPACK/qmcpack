@@ -314,8 +314,10 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
       makeUniformRandom(ref_.R);
       ref_.R.setUnit(PosUnit::Lattice);
       ref_.convert2Cart(ref_.R);
+#if !defined(QMC_CUDA)
       makeUniformRandom(ref_.spins);
       ref_.spins *= 2 * M_PI;
+#endif
     }
     else // put them [0,1) in the cell
       ref_.applyBC(ref_.R);

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
@@ -112,7 +112,7 @@ public:
   virtual inline PsiValueType ratioGradWithSpin(ParticleSet& P,
                                                 int iat,
                                                 GradType& grad_iat,
-                                                LogValueType& spingrad_iat) override
+                                                ComplexType& spingrad_iat) override
   {
     return Dets[getDetID(iat)]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
   }
@@ -129,7 +129,7 @@ public:
 
   virtual GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 
-  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) override
+  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
   {
     return Dets[getDetID(iat)]->evalGradWithSpin(P, iat, spingrad);
   }
@@ -182,7 +182,8 @@ public:
 
   virtual void mw_acceptMove(const std::vector<WaveFunctionComponent*>& wfc_list,
                              const std::vector<ParticleSet*>& P_list,
-                             int iat, bool safe_to_delay = false) override
+                             int iat,
+                             bool safe_to_delay = false) override
   {
     constexpr RealType czero(0);
 

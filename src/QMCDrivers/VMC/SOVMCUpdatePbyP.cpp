@@ -65,7 +65,7 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         ParticleSet::Scalar_t ds;
         if (UseDrift)
         {
-          TrialWaveFunction::LogValueType spingrad_now;
+          ComplexType spingrad_now;
           GradType grad_now = Psi.evalGradWithSpin(W, iat, spingrad_now);
           DriftModifier->getDrift(tauovermass, grad_now, dr);
           DriftModifier->getDrift(tauovermass / spinMass, spingrad_now, ds);
@@ -86,7 +86,7 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         if (UseDrift)
         {
           GradType grad_new;
-          TrialWaveFunction::LogValueType spingrad_new;
+          ComplexType spingrad_new;
           prob = std::norm(Psi.calcRatioGradWithSpin(W, iat, grad_new, spingrad_new));
           DriftModifier->getDrift(tauovermass, grad_new, dr);
           dr             = W.R[iat] - W.activePos - dr;
