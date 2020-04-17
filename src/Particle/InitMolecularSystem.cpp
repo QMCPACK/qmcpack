@@ -61,8 +61,10 @@ bool InitMolecularSystem::put(xmlNodePtr cur)
   else
     initMolecule(ions, els);
 
+#if !defined(QMC_CUDA)
   makeUniformRandom(els->spins);
   els->spins *= 2 * M_PI;
+#endif
 
   app_log() << "</init>" << std::endl;
   app_log().flush();
