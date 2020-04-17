@@ -73,7 +73,6 @@ using namespace afqmc;
 TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
 {
   Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
   //c = OHMMS::Controller;
 
   const int NMO = 4;
@@ -900,7 +899,6 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 
 TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 

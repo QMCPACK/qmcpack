@@ -27,7 +27,6 @@ namespace qmcplusplus
 {
 TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   const char* particles = "<tmp> \
 <particleset name=\"ion0\" size=\"1\"> \
@@ -94,7 +93,6 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 }
 TEST_CASE("read_dynamic_spin_eset_xml", "[particle_io][xml]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   const char* particles = "<tmp> \
 <particleset name=\"e\"> \

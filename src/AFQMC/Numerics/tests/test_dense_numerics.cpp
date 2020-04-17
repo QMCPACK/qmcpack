@@ -709,7 +709,6 @@ void test_dense_matrix_mult_device(Allocator alloc)
 
 TEST_CASE("dense_ma_operations_device", "[matrix_operations]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 

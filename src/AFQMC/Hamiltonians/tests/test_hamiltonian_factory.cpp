@@ -141,7 +141,6 @@ void ham_generation_timing(boost::mpi3::communicator &world)
 }
 TEST_CASE("ham_factory", "[hamiltonian_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
@@ -161,7 +160,6 @@ TEST_CASE("ham_factory", "[hamiltonian_factory]")
 
 TEST_CASE("ham_generation_timing_hdf", "[hamiltonian_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 

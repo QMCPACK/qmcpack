@@ -78,7 +78,6 @@ TEST_CASE("ReadFileBuffer_simple_serial", "[hamiltonian]")
 
 TEST_CASE("ReadFileBuffer_simple_mpi", "[hamiltonian]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   ReadFileBuffer buf(c);
@@ -93,7 +92,6 @@ TEST_CASE("ReadFileBuffer_simple_mpi", "[hamiltonian]")
 
 TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   ECPComponentBuilder ecp("test_read_ecp", c);
@@ -108,7 +106,6 @@ TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
 
 TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   ECPComponentBuilder ecp("test_read_sorep", c);
@@ -173,7 +170,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   typedef QMCTraits::ValueType ValueType;
   typedef QMCTraits::PosType PosType;
 
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   //Cell definition:
@@ -475,7 +471,6 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   typedef QMCTraits::ValueType ValueType;
   typedef QMCTraits::PosType PosType;
 
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   //Cell definition:

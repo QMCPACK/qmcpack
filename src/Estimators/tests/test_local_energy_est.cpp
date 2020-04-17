@@ -29,7 +29,6 @@ using WP = WalkerProperties::Indexes;
 
 TEST_CASE("LocalEnergyOnly", "[estimators]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   LocalEnergyOnlyEstimator le_est;
 
@@ -47,7 +46,6 @@ TEST_CASE("LocalEnergyOnly", "[estimators]")
 
 TEST_CASE("LocalEnergy", "[estimators]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   QMCHamiltonian H;
   LocalEnergyEstimator le_est(H, false);
@@ -77,7 +75,6 @@ TEST_CASE("LocalEnergy", "[estimators]")
 
 TEST_CASE("LocalEnergy with hdf5", "[estimators]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   QMCHamiltonian H;
   LocalEnergyEstimator le_est(H, true);

@@ -206,7 +206,6 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
 
 TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
 
 #ifdef ENABLE_CUDA

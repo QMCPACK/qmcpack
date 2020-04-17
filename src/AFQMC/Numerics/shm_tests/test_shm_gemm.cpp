@@ -105,7 +105,6 @@ void timing_shm_blas(int c)
 
 int main(int argc, char* argv[])
 {
-  OHMMS::Controller->initialize(0, NULL);
   boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
   int c=10;

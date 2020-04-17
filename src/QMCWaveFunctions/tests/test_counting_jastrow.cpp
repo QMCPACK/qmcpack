@@ -135,7 +135,6 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   // initialize particle sets

@@ -243,7 +243,6 @@ const char *propg_xml_block =
 
 TEST_CASE("reduced_density_matrix", "[estimators]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 

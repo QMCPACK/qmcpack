@@ -547,7 +547,6 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
 
 TEST_CASE("csr_matrix_serial", "[csr]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   // serial
   {
     using Type = double;
@@ -567,7 +566,6 @@ TEST_CASE("csr_matrix_serial", "[csr]")
 
 TEST_CASE("csr_matrix_shm", "[csr]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   mpi3::shared_communicator node(world.split_shared());
 
@@ -594,7 +592,6 @@ TEST_CASE("csr_matrix_shm", "[csr]")
 #ifdef TEST_CSR_LARGE_MEMORY
 TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   mpi3::shared_communicator node(world.split_shared());
 

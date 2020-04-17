@@ -21,7 +21,6 @@ namespace qmcplusplus
 {
 TEST_CASE("WaveFunctionFactory", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   ParticleSet* qp = new ParticleSet;

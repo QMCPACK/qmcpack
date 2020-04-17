@@ -28,7 +28,6 @@ TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
   using namespace testing;
   Concurrency::OverrideMaxThreads<> override(8);
   Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   Libxml2Document doc;

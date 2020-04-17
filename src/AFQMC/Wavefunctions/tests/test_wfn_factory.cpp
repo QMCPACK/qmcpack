@@ -724,7 +724,6 @@ const char *wlk_xml_block_noncol =
 #if 0
 TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
@@ -1049,7 +1048,6 @@ const char *wlk_xml_block =
 
 TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
@@ -1068,7 +1066,6 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
 
 TEST_CASE("wfn_fac_distributed", "[wavefunction_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 

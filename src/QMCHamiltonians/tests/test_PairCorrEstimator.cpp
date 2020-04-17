@@ -68,7 +68,6 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   typedef QMCTraits::RealType RealType;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;

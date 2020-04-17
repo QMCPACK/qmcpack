@@ -315,7 +315,6 @@ void test_phmsd(boost::mpi3::communicator& world)
 
 TEST_CASE("test_read_phmsd", "[test_read_phmsd]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
@@ -332,7 +331,6 @@ TEST_CASE("test_read_phmsd", "[test_read_phmsd]")
 
 TEST_CASE("test_phmsd", "[read_phmsd]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
