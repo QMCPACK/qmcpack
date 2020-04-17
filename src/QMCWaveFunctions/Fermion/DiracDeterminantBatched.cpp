@@ -45,7 +45,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::set(int first, int nel, int delay
 }
 
 template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& invMat)
 {
   InverseTimer.start();
   det_engine_.invert_transpose(logdetT, invMat, LogValue);
@@ -311,7 +311,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatiosAlltoOne(ParticleSe
   SPOVTimer.start();
   Phi->evaluateValue(P, -1, psiV);
   SPOVTimer.stop();
-  MatrixOperators::product(psiMinv, psiV.data(), &ratios[FirstIndex]);
+  ValueMatrix_t psiMinv_host_view(psiMinv.data(), psiMinv.rows(), psiMinv.cols());
+  MatrixOperators::product(psiMinv_host_view, psiV.data(), &ratios[FirstIndex]);
 }
 
 

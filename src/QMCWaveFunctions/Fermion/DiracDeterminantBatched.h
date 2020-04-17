@@ -18,6 +18,8 @@
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/MatrixUpdateOMP.h"
+#include "Platforms/PinnedAllocator.h"
+#include "OpenMP/OMPallocator.hpp"
 
 namespace qmcplusplus
 {
@@ -35,6 +37,12 @@ public:
 
   using mValueType = QMCTraits::QTFull::ValueType;
   using mGradType  = TinyVector<mValueType, DIM>;
+
+  template<typename DT>
+  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
+  template<typename DT>
+  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
+  using OffloadPinnedValueMatrix_t = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
 
   /** constructor
    *@param spos the single-particle orbital set
@@ -160,7 +168,7 @@ public:
   ValueMatrix_t psiM_temp;
 
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix_t psiMinv;
+  OffloadPinnedValueMatrix_t psiMinv;
 
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
   GradMatrix_t dpsiM;
@@ -188,7 +196,7 @@ public:
 
 private:
   /// invert psiM or its copies
-  void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
+  void invertPsiM(const ValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& invMat);
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();

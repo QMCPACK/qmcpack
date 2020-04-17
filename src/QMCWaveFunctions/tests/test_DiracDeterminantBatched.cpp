@@ -40,8 +40,8 @@ using PsiValueType = QMCTraits::QTFull::ValueType;
 
 typedef DiracDeterminantBatched<> DetType;
 
-template<typename T1, typename T2>
-void check_matrix(Matrix<T1>& a, Matrix<T2>& b)
+template<typename T1, typename ALLOC1, typename T2, typename ALLOC2>
+void check_matrix(Matrix<T1, ALLOC1>& a, Matrix<T2, ALLOC2>& b)
 {
   REQUIRE(a.size() == b.size());
   for (int i = 0; i < a.rows(); i++)
