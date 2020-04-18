@@ -236,7 +236,7 @@ IF(QMC_CUDA OR ENABLE_CUDA)
   TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_cuda ${CUDA_cusolver_LIBRARY})
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
-TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcbase)
+TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcbase platform_device)
 TARGET_LINK_LIBRARIES(qmcwfs PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3 Math::scalar_vector_functions)
 
 #IF(QMC_BUILD_STATIC)

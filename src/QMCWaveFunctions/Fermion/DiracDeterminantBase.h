@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -73,20 +73,11 @@ public:
   virtual void setBF(BackflowTransformation* BFTrans) {}
 
   ///optimizations  are disabled
-  virtual inline void checkInVariables(opt_variables_type& active) override
-  {
-    Phi->checkInVariables(active);
-  }
+  virtual inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
 
-  virtual inline void checkOutVariables(const opt_variables_type& active) override
-  {
-    Phi->checkOutVariables(active);
-  }
+  virtual inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
 
-  virtual void resetParameters(const opt_variables_type& active) override
-  {
-    Phi->resetParameters(active);
-  }
+  virtual void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
 
   // To be removed with AoS
   void resetTargetParticleSet(ParticleSet& P) override final
@@ -108,23 +99,23 @@ public:
   using WaveFunctionComponent::updateBuffer;
 
   using WaveFunctionComponent::acceptMove;
-  using WaveFunctionComponent::mw_acceptMove;
   using WaveFunctionComponent::completeUpdates;
-  using WaveFunctionComponent::mw_completeUpdates;
   using WaveFunctionComponent::evalGrad;
-  using WaveFunctionComponent::mw_evalGrad;
-  using WaveFunctionComponent::ratio;
+  using WaveFunctionComponent::mw_acceptMove;
   using WaveFunctionComponent::mw_calcRatio;
-  using WaveFunctionComponent::ratioGrad;
+  using WaveFunctionComponent::mw_completeUpdates;
+  using WaveFunctionComponent::mw_evalGrad;
   using WaveFunctionComponent::mw_ratioGrad;
-  using WaveFunctionComponent::restore;
   using WaveFunctionComponent::mw_restore;
+  using WaveFunctionComponent::ratio;
+  using WaveFunctionComponent::ratioGrad;
+  using WaveFunctionComponent::restore;
 
   using WaveFunctionComponent::evalGradSource;
   using WaveFunctionComponent::evaluateHessian;
   using WaveFunctionComponent::evaluateRatios;
-  using WaveFunctionComponent::mw_evaluateRatios;
   using WaveFunctionComponent::evaluateRatiosAlltoOne;
+  using WaveFunctionComponent::mw_evaluateRatios;
 
   // used by DiracDeterminantWithBackflow
   virtual void evaluateDerivatives(ParticleSet& P,
@@ -144,12 +135,12 @@ public:
     return 0;
   }
 
-  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad) override
+  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::ratioGradWithSpins():  Implementation required\n");
     return 0.0;
-  } 
-  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) override
+  }
+  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::evalGradWithSpins():  Implementation required\n");
     return GradType();

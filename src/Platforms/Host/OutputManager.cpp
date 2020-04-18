@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <Utilities/OutputManager.h>
+#include <Platforms/Host/OutputManager.h>
 
 
 InfoStream infoSummary(&std::cout);

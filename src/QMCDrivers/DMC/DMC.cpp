@@ -49,9 +49,7 @@ DMC::DMC(MCWalkerConfiguration& w,
       KillNodeCrossing(0),
       BranchInterval(-1),
       Reconfiguration("no"),
-      mover_MaxAge(-1),
-      SpinMoves("no"),
-      SpinMass(1.0)
+      mover_MaxAge(-1)
 {
   RootName = "dmc";
   QMCType  = "DMC";
@@ -62,8 +60,6 @@ DMC::DMC(MCWalkerConfiguration& w,
   m_param.add(NonLocalMove, "nonlocalmove", "string");
   m_param.add(NonLocalMove, "nonlocalmoves", "string");
   m_param.add(mover_MaxAge, "MaxAge", "double");
-  m_param.add(SpinMoves,"SpinMoves","string");
-  m_param.add(SpinMass,"SpinMass","double");
 }
 
 void DMC::resetUpdateEngines()
@@ -90,12 +86,6 @@ void DMC::resetUpdateEngines()
     estimatorClones.resize(NumThreads, 0);
     traceClones.resize(NumThreads, 0);
     FairDivideLow(W.getActiveWalkers(), NumThreads, wPerNode);
-
-    tolower(SpinMoves);
-    if (SpinMoves != "yes" && SpinMoves != "no")
-    {
-      APP_ABORT("SpinMoves must be yes/no\n");
-    }
 
     {
       //log file

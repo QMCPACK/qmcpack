@@ -19,7 +19,7 @@
 #ifndef QMCPLUSPLUS_PROGRESSREPORTENGINE_H
 #define QMCPLUSPLUS_PROGRESSREPORTENGINE_H
 
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 #include "Message/Communicate.h"
 #include "Utilities/Timer.h"
 #include "OhmmsData/OhmmsElementBase.h"

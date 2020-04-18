@@ -22,7 +22,7 @@
 #include <omp.h>
 
 #include "Concurrency/TasksOneToOne.hpp"
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 
 namespace qmcplusplus
 {

@@ -25,6 +25,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "LongRange/StructFact.h"
 #include "Particle/HDFWalkerOutput.h"
+#include "Particle/MCSample.h"
 #include "QMCDrivers/QMCDriver.h"
 #include <io/hdf_hyperslab.h>
 #include "HDFVersion.h"
@@ -36,7 +37,6 @@
 
 namespace qmcplusplus
 {
-
 MCWalkerConfiguration::MCWalkerConfiguration(const DynamicCoordinateKind kind)
     : ParticleSet(kind),
 #ifdef QMC_CUDA
@@ -345,11 +345,17 @@ void MCWalkerConfiguration::setNumSamples(int n) { samples.setMaxSamples(n); }
 
 /** save the current walkers to SampleStack
  */
-void MCWalkerConfiguration::saveEnsemble() { samples.saveEnsemble(WalkerList.begin(), WalkerList.end()); }
+void MCWalkerConfiguration::saveEnsemble() { saveEnsemble(WalkerList.begin(), WalkerList.end()); }
 
 /** save the [first,last) walkers to SampleStack
  */
-void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last) { samples.saveEnsemble(first, last); }
+void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
+{
+  for (; first != last; first++)
+  {
+    samples.appendSample(MCSample(**first));
+  }
+}
 /** load a single sample from SampleStack
  */
 void MCWalkerConfiguration::loadSample(ParticleSet::ParticlePos_t& Pos, size_t iw) const
@@ -361,7 +367,7 @@ void MCWalkerConfiguration::loadSample(ParticleSet::ParticlePos_t& Pos, size_t i
  */
 void MCWalkerConfiguration::loadEnsemble()
 {
-  using WP = WalkerProperties::Indexes;
+  using WP     = WalkerProperties::Indexes;
   int nsamples = std::min(samples.getMaxSamples(), samples.getNumSamples());
   if (samples.empty() || nsamples == 0)
     return;
@@ -372,7 +378,7 @@ void MCWalkerConfiguration::loadEnsemble()
   {
     Walker_t* awalker = new Walker_t(TotalNum);
     awalker->Properties.copy(prop);
-    samples.getSample(i, *awalker);
+    samples.getSample(i).convertToWalker(*awalker);
     WalkerList[i] = awalker;
   }
   resizeWalkerHistories();
@@ -449,7 +455,7 @@ void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& ot
       {
         Walker_t* awalker = new Walker_t(TotalNum);
         awalker->Properties.copy(prop);
-        astack.getSample(j, *awalker);
+        astack.getSample(j).convertToWalker(*awalker);
         WalkerList[iw] = awalker;
       }
       if (doclean)

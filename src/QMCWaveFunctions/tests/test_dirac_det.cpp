@@ -35,6 +35,7 @@ namespace qmcplusplus
 {
 using RealType     = QMCTraits::RealType;
 using ValueType    = QMCTraits::ValueType;
+using ComplexType  = QMCTraits::ComplexType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 using PsiValueType = QMCTraits::QTFull::ValueType;
 
@@ -491,8 +492,7 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
 
   ParticleGradient_t G;
   ParticleLaplacian_t L;
-  //This is a vector of ValueType, so we're using it..."
-  ParticleLaplacian_t SG;
+  ParticleAttrib<ComplexType> SG;
 
   G.resize(nelec);
   L.resize(nelec);
@@ -551,7 +551,7 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   elec_.makeMoveAndCheckWithSpin(1, dr, ds);
 
   ValueType ratio_new;
-  LogValueType spingrad_new;
+  ValueType spingrad_new;
   GradType grad_new;
 
   //This tests ratio only evaluation.  Indirectly a call to evaluate(P,iat)
@@ -584,7 +584,7 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   REQUIRE(g_singleeval[1] == ComplexApprox(G[1][1]));
   REQUIRE(g_singleeval[2] == ComplexApprox(G[1][2]));
 
-  LogValueType spingrad_old_test;
+  ValueType spingrad_old_test;
   g_singleeval = dd.evalGradWithSpin(elec_, 1, spingrad_old_test);
 
   REQUIRE(spingrad_old_test == ComplexApprox(SG[1]));

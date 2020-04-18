@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2017 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by:  Mark Dewing, mdewing@anl.gov Argonne National Laboratory
 //
@@ -116,11 +116,15 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
   ParticleSet* elec = pp.getParticleSet("elec");
   REQUIRE(ions != NULL);
   REQUIRE(elec->R.size() == 4);
+  REQUIRE(elec->spins.size() == 4);
 
   // should do something
   pp.randomize();
 
   REQUIRE(elec->R[0][0] != 0.0);
+#if !defined(QMC_CUDA)
+  REQUIRE(elec->spins[0] != 0.0);
+#endif
 }
 
 TEST_CASE("ParticleSetPool putTileMatrix", "[qmcapp]")

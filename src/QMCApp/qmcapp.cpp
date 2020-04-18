@@ -22,7 +22,7 @@
 #include "Message/Communicate.h"
 #include "Utilities/SimpleParser.h"
 #include "Utilities/ProgressReportEngine.h"
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 #include "OhmmsData/FileUtility.h"
 #include "Platforms/sysutil.h"
 #include "Platforms/devices.h"

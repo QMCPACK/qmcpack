@@ -10,19 +10,16 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-SUBDIRS(OpenMP)
-
-SET(HOST_SRCS
-    sysutil.cpp
-    Host/InfoStream.cpp
-    Host/OutputManager.cpp
+SET(COMM_SRCS
+    Communicate.cpp
+    MPIObjectBase.cpp
 )
 
-SET(DEVICE_SRCS
-    accelerators.cpp
-)
+ADD_LIBRARY(message ${COMM_SRCS})
+TARGET_LINK_LIBRARIES(message PUBLIC platform_host)
 
-ADD_LIBRARY(platform_host ${HOST_SRCS})
-
-ADD_LIBRARY(platform_device ${DEVICE_SRCS})
-TARGET_LINK_LIBRARIES(platform_device PUBLIC qmcomp message)
+IF(HAVE_MPI)
+  TARGET_LINK_LIBRARIES(message PUBLIC MPI::MPI_CXX)
+  SET_PROPERTY(TARGET message APPEND PROPERTY INCLUDE_DIRECTORIES "${qmcpack_SOURCE_DIR}/external_codes/mpi_wrapper")
+  SET_PROPERTY(TARGET message APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${qmcpack_SOURCE_DIR}/external_codes/mpi_wrapper")
+ENDIF()

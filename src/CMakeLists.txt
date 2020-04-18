@@ -116,10 +116,6 @@ IF (IS_GIT_PROJECT)
   MESSAGE("Git commit hash: ${GIT_CONFIG_COMMIT_HASH}")
 ENDIF()
 
-if (HAVE_MPI)
-  INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/mpi_wrapper")
-endif()
-
 INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
 
 
@@ -132,8 +128,6 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
     Utilities/OhmmsObject.cpp
     Utilities/SpeciesSet.cpp
     Utilities/SimpleParser.cpp
-    Utilities/InfoStream.cpp
-    Utilities/OutputManager.cpp
     Utilities/NewTimer.cpp
     Utilities/RunTimeManager.cpp
     Utilities/ProgressReportEngine.cpp
@@ -144,7 +138,6 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
     Numerics/OhmmsBlas.cpp
     Numerics/OptimizableFunctorBase.cpp
     Numerics/SmoothFunctions.cpp
-    Platforms/sysutil.cpp
     QMCFactory/OneDimGridFactory.cpp
     Message/Communicate.cpp
     Message/MPIObjectBase.cpp
@@ -174,10 +167,8 @@ ENDIF()
     TARGET_LINK_LIBRARIES(qmcutil PRIVATE ${CUDA_LIBRARIES})
   ENDIF(HAVE_CUDA)
 
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC message)
   TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 IO::HDF5 Boost::boost ${QMC_UTIL_LIBS})
-  IF(HAVE_MPI)
-    TARGET_LINK_LIBRARIES(qmcutil PUBLIC MPI::MPI_CXX)
-  ENDIF()
 
   # For unit tests, enable use for the fake RNG
   FUNCTION( USE_FAKE_RNG TARGET )
@@ -255,10 +246,12 @@ ENDIF()
 
   TARGET_LINK_LIBRARIES(qmcbase PRIVATE qmcminimalcontainers Math::BLAS_LAPACK Math::scalar_vector_functions)
 
-  TARGET_LINK_LIBRARIES(qmcbase PUBLIC qmcplatforms qmcutil)
+  TARGET_LINK_LIBRARIES(qmcbase PUBLIC qmcutil)
 
   SUBDIRS(einspline)
   SUBDIRS(MinimalContainers)
+  SUBDIRS(Message)
+  SUBDIRS(Platforms)
 
 if(QMC_BUILD_SANDBOX_ONLY)
 
@@ -267,7 +260,6 @@ if(QMC_BUILD_SANDBOX_ONLY)
 
 else() #{{{
 
-  SUBDIRS(Platforms)
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
   SUBDIRS(QMCDrivers)

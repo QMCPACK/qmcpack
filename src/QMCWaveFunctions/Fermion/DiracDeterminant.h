@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -102,7 +102,7 @@ public:
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
-  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad) override final;
+  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override final;
 
   void mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
                     const std::vector<ParticleSet*>& P_list,
@@ -112,7 +112,7 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat) override;
 
-  GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) override final;
+  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override final;
 
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 
@@ -128,7 +128,8 @@ public:
 
   void mw_acceptMove(const std::vector<WaveFunctionComponent*>& WFC_list,
                      const std::vector<ParticleSet*>& P_list,
-                     int iat, bool safe_to_delay = false) override
+                     int iat,
+                     bool safe_to_delay = false) override
   {
     for (int iw = 0; iw < WFC_list.size(); iw++)
       WFC_list[iw]->acceptMove(*P_list[iw], iat, safe_to_delay);
@@ -227,7 +228,6 @@ private:
 
   /// internal function computing ratio and gradients after computing the SPOs, used by ratioGrad.
   PsiValueType ratioGrad_compute(int iat, GradType& grad_iat);
-
 };
 
 extern template class DiracDeterminant<>;
