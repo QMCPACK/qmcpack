@@ -54,7 +54,7 @@ IF ((NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA))
   ENDIF()
 ENDIF()
 
-ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp FakeSPO.cpp test_DiracDeterminantBatched.cpp)
+ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp FakeSPO.cpp test_DiracDeterminantBatched.cpp test_TrialWaveFunction.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcwfs Math::BLAS_LAPACK Math::scalar_vector_functions)
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

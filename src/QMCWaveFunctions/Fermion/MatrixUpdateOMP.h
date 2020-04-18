@@ -66,6 +66,39 @@ public:
     // invoke the Fahy's variant of Sherman-Morrison update.
     int dummy_handle = 0;
     int success =0;
+    auto* psiV_ptr = psiV.data();
+    auto* Ainv_ptr  = Ainv.data();
+    auto* temp_ptr  = temp.data();
+    auto* rcopy_ptr = rcopy.data();
+    PRAGMA_OFFLOAD("omp target data map(always, to: psiV_ptr[:norb]) map(always, from: Ainv_ptr[:Ainv.rows()*Ainv.cols()]) use_device_ptr(psiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
+    {
+      success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, norb, psiV_ptr, 1, czero, temp_ptr, 1);
+      PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
+      {
+        temp_ptr[rowchanged] -= cone;
+        PRAGMA_OFFLOAD("omp parallel for simd")
+        for(int i = 0; i < norb; i++)
+          rcopy_ptr[i] = Ainv_ptr[rowchanged * norb + i];
+      }
+      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(-RATIOT(1)/c_ratio_in), rcopy_ptr, 1, temp_ptr, 1, Ainv_ptr, norb);
+    }
+  }
+
+  template<typename VVT, typename RATIOVT, typename OMPALLOC>
+  inline void mw_updateRow(const RefVector<Matrix<T, OMPALLOC>>& Ainv_list, int rowchanged, const RefVector<VVT>& psi_v_list, const RATIOVT& c_ratio_v)
+  {
+    for(int i = 0; i < Ainv_list.size(); i++)
+      updateRow(Ainv_list[i].get(), rowchanged, psi_v_list[i].get(), c_ratio_v[i]);
+/*
+    // update the inverse matrix
+    constexpr T cone(1);
+    constexpr T czero(0);
+    const int norb = Ainv.rows();
+    temp.resize(norb);
+    rcopy.resize(norb);
+    // invoke the Fahy's variant of Sherman-Morrison update.
+    int dummy_handle = 0;
+    int success =0;
     success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv.data(), norb, psiV.data(), 1, czero, temp.data(), 1);
     auto* Ainv_ptr  = Ainv.data();
     auto* temp_ptr  = temp.data();
@@ -79,6 +112,7 @@ public:
     }
     success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(-RATIOT(1)/c_ratio_in), rcopy.data(), 1, temp.data(), 1, Ainv.data(), norb);
     PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[:Ainv.rows()*Ainv.cols()])")
+*/
   }
 
 };

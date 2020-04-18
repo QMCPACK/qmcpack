@@ -43,6 +43,8 @@ public:
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadPinnedValueMatrix_t = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
+  using OffloadPinnedValueVector_t = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
+  using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
 
   /** constructor
    *@param spos the single-particle orbital set
@@ -120,11 +122,7 @@ public:
 
   void mw_acceptMove(const std::vector<WaveFunctionComponent*>& WFC_list,
                      const std::vector<ParticleSet*>& P_list,
-                     int iat, bool safe_to_delay = false) override
-  {
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->acceptMove(*P_list[iw], iat, safe_to_delay);
-  }
+                     int iat, bool safe_to_delay = false) override;
 
   void completeUpdates() override;
 
@@ -185,7 +183,8 @@ public:
   HessMatrix_t grad_phi_alpha_Minv;
 
   /// value of single-particle orbital for particle-by-particle update
-  ValueVector_t psiV;
+  OffloadPinnedValueVector_t psiV;
+  ValueVector_t psiV_host_view;
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
 

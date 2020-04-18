@@ -64,6 +64,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
   dpsiM.resize(nel, norb);
   d2psiM.resize(nel, norb);
   psiV.resize(norb);
+  psiV_host_view.attachReference(psiV.data(), norb);
   psiM_temp.resize(nel, norb);
   LastIndex   = FirstIndex + nel;
   NumPtcls    = nel;
@@ -89,7 +90,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
                                                                                       GradType& grad_iat)
 {
   SPOVGLTimer.start();
-  Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
+  Phi->evaluateVGL(P, iat, psiV_host_view, dpsiV, d2psiV);
   SPOVGLTimer.stop();
   return ratioGrad_compute(iat, grad_iat);
 }
@@ -130,7 +131,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const std::vector<Wa
   {
     auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(wfc);
     phi_list.push_back(det->Phi);
-    psi_v_list.push_back(det->psiV);
+    psi_v_list.push_back(det->psiV_host_view);
     dpsi_v_list.push_back(det->dpsiV);
     d2psi_v_list.push_back(det->d2psiV);
   }
@@ -159,6 +160,47 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::acceptMove(ParticleSet& P, int ia
   }
   UpdateTimer.stop();
   curRatio = 1.0;
+}
+
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_acceptMove(const std::vector<WaveFunctionComponent*>& WFC_list,
+                     const std::vector<ParticleSet*>& P_list,
+                     int iat, bool safe_to_delay)
+{
+  UpdateTimer.start();
+
+  RefVector<OffloadPinnedValueMatrix_t> psiMinv_list;
+  psiMinv_list.reserve(WFC_list.size());
+  RefVector<OffloadPinnedValueVector_t> psi_v_list;
+  psi_v_list.reserve(WFC_list.size());
+  std::vector<PsiValueType> curRatio_v;
+  curRatio_v.reserve(WFC_list.size());
+
+  for (auto wfc : WFC_list)
+  {
+    auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(wfc);
+    psiMinv_list.push_back(det->psiMinv);
+    psi_v_list.push_back(det->psiV);
+    curRatio_v.push_back(det->curRatio);
+  }
+
+  const int WorkingIndex = iat - FirstIndex;
+  det_engine_.mw_updateRow(psiMinv_list, WorkingIndex, psi_v_list, curRatio_v);
+
+  for (auto wfc : WFC_list)
+  {
+    auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(wfc);
+
+    det->LogValue += convertValueToLog(det->curRatio);
+    if (UpdateMode == ORB_PBYP_PARTIAL)
+    {
+      simd::copy(det->dpsiM[WorkingIndex], det->dpsiV.data(), NumOrbitals);
+      simd::copy(det->d2psiM[WorkingIndex], det->d2psiV.data(), NumOrbitals);
+    }
+    det->curRatio = 1.0;
+  }
+
+  UpdateTimer.stop();
 }
 
 /** move was rejected. copy the real container to the temporary to move on
@@ -252,7 +294,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
   UpdateMode             = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - FirstIndex;
   SPOVTimer.start();
-  Phi->evaluateValue(P, iat, psiV);
+  Phi->evaluateValue(P, iat, psiV_host_view);
   SPOVTimer.stop();
   RatioTimer.start();
   curRatio = simd::dot(psiMinv[WorkingIndex], psiV.data(), psiV.size());
@@ -268,7 +310,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatios(const VirtualParti
   std::copy_n(psiMinv[WorkingIndex], d2psiV.size(), d2psiV.data());
   RatioTimer.stop();
   SPOVTimer.start();
-  Phi->evaluateDetRatios(VP, psiV, d2psiV, ratios);
+  Phi->evaluateDetRatios(VP, psiV_host_view, d2psiV, ratios);
   SPOVTimer.stop();
 }
 
@@ -295,7 +337,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateRatios(const RefVector
     std::copy_n(det.psiMinv[WorkingIndex], det.d2psiV.size(), det.d2psiV.data());
     // build lists
     phi_list.push_back(*det.Phi);
-    psiV_list.push_back(det.psiV);
+    psiV_list.push_back(det.psiV_host_view);
     invRow_list.push_back(det.d2psiV);
   }
   RatioTimer.stop();
@@ -309,7 +351,7 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   SPOVTimer.start();
-  Phi->evaluateValue(P, -1, psiV);
+  Phi->evaluateValue(P, -1, psiV_host_view);
   SPOVTimer.stop();
   ValueMatrix_t psiMinv_host_view(psiMinv.data(), psiMinv.rows(), psiMinv.cols());
   MatrixOperators::product(psiMinv_host_view, psiV.data(), &ratios[FirstIndex]);

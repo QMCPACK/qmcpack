@@ -42,7 +42,7 @@ ompBLAS_status gemv_impl(ompBLAS_handle& handle,
       throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_impl!");
 
     //BLAS::gemv(trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
-    PRAGMA_OFFLOAD("omp target teams distribute num_teams(m) map(tofrom: y[:m]) map(to: A[:lda*m], x[:n])")
+    PRAGMA_OFFLOAD("omp target teams distribute num_teams(m) is_device_ptr(A, x, y)")
     for(size_t i = 0; i < m; i++)
     {
       T dot_sum(0);
@@ -233,7 +233,7 @@ ompBLAS_status ger_impl(ompBLAS_handle& handle,
     throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::ger_impl!");
 
   //BLAS::ger(m, n, alpha, x, incx, y, incy, A, lda);
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(tofrom: A[:lda*m]) map(to: x[:n], y[:m])")
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(A, x, y)")
   for(size_t i = 0; i < n; i++)
     for(size_t j = 0; j < m; j++)
       A[i * lda + j] += alpha * x[j] * y[i];
