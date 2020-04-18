@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_MATRIX_UPDATE_OMP_H
 
 #include "simd/allocator.hpp"
+#include "Platforms/PinnedAllocator.h"
 #include "OpenMP/OMPallocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -31,13 +32,19 @@ class MatrixUpdateOMP
 {
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
+  template<typename DT>
+  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
+  using OffloadValueVector_t = Vector<T, OffloadAllocator<T>>;
+  using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
 
   /// matrix inversion engine
   DiracMatrix<T_FP> detEng;
   /// scratch space for rank-1 update
-  Vector<T, OffloadAllocator<T>> temp;
+  OffloadValueVector_t temp;
   // scratch space for keeping one row of Ainv
-  Vector<T, OffloadAllocator<T>> rcopy;
+  OffloadValueVector_t rcopy;
+  // pointer buffer
+  Vector<T*, OffloadPinnedAllocator<T*>> ptr_buffer;
 
 public:
 
@@ -84,35 +91,47 @@ public:
     }
   }
 
-  template<typename VVT, typename RATIOVT, typename OMPALLOC>
-  inline void mw_updateRow(const RefVector<Matrix<T, OMPALLOC>>& Ainv_list, int rowchanged, const RefVector<VVT>& psi_v_list, const RATIOVT& c_ratio_v)
+  template<typename DEVPTRV, typename RATIOT, typename ALLOC>
+  inline void mw_updateRow(const DEVPTRV& Ainv_list, int norb, int rowchanged, const DEVPTRV& psi_v_list, const Vector<RATIOT, ALLOC>& c_ratio_v)
   {
-    for(int i = 0; i < Ainv_list.size(); i++)
-      updateRow(Ainv_list[i].get(), rowchanged, psi_v_list[i].get(), c_ratio_v[i]);
-/*
+    ptr_buffer.resize(Ainv_list.size() + psi_v_list.size());
+    size_t nw = Ainv_list.size();
+    for(int i = 0; i < nw; i++)
+    {
+      ptr_buffer[i] = Ainv_list[i];
+      ptr_buffer[i + nw] = psi_v_list[i];
+    }
+
     // update the inverse matrix
     constexpr T cone(1);
     constexpr T czero(0);
-    const int norb = Ainv.rows();
-    temp.resize(norb);
-    rcopy.resize(norb);
-    // invoke the Fahy's variant of Sherman-Morrison update.
-    int dummy_handle = 0;
-    int success =0;
-    success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv.data(), norb, psiV.data(), 1, czero, temp.data(), 1);
-    auto* Ainv_ptr  = Ainv.data();
+    temp.resize(norb * nw);
+    rcopy.resize(norb * nw);
     auto* temp_ptr  = temp.data();
     auto* rcopy_ptr = rcopy.data();
-    PRAGMA_OFFLOAD("omp target map(to: Ainv_ptr[:norb*norb]) map(tofrom: temp_ptr[:norb]) map(from: rcopy_ptr[:norb])")
+
+    int dummy_handle = 0;
+    int success =0;
+    auto* ptr_buffer_ptr = ptr_buffer.data();
+    PRAGMA_OFFLOAD("omp target data map(always, to: ptr_buffer_ptr[:ptr_buffer.size()]) use_device_ptr(temp_ptr, rcopy_ptr)")
     {
-      temp_ptr[rowchanged] -= cone;
-      PRAGMA_OFFLOAD("omp parallel for simd")
-      for(int i = 0; i < norb; i++)
-        rcopy_ptr[i] = Ainv_ptr[rowchanged * norb + i];
+      for(int iw = 0; iw < nw; iw++)
+      {
+        auto* Ainv_ptr = ptr_buffer[iw];
+        auto* psiV_ptr = ptr_buffer[iw + nw];
+        auto c_ratio_in = c_ratio_v[iw];
+        // invoke the Fahy's variant of Sherman-Morrison update.
+        success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, norb, psiV_ptr, 1, czero, temp_ptr + norb * iw, 1);
+        PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
+        {
+          temp_ptr[rowchanged + norb * iw] -= cone;
+          PRAGMA_OFFLOAD("omp parallel for simd")
+          for(int i = 0; i < norb; i++)
+            rcopy_ptr[i + norb * iw] = Ainv_ptr[rowchanged * norb + i];
+        }
+        success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(-RATIOT(1)/c_ratio_in), rcopy_ptr + norb * iw, 1, temp_ptr + norb * iw, 1, Ainv_ptr, norb);
+      }
     }
-    success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(-RATIOT(1)/c_ratio_in), rcopy.data(), 1, temp.data(), 1, Ainv.data(), norb);
-    PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[:Ainv.rows()*Ainv.cols()])")
-*/
   }
 
 };

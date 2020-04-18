@@ -169,27 +169,33 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_acceptMove(const std::vector<W
 {
   UpdateTimer.start();
 
-  RefVector<OffloadPinnedValueMatrix_t> psiMinv_list;
-  psiMinv_list.reserve(WFC_list.size());
-  RefVector<OffloadPinnedValueVector_t> psi_v_list;
-  psi_v_list.reserve(WFC_list.size());
-  std::vector<PsiValueType> curRatio_v;
-  curRatio_v.reserve(WFC_list.size());
+  std::vector<ValueType*> psiMinv_dev_ptr_list;
+  psiMinv_dev_ptr_list.resize(WFC_list.size());
+  std::vector<ValueType*> psiV_dev_ptr_list;
+  psiV_dev_ptr_list.resize(WFC_list.size());
+  Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>> curRatio_v;
+  curRatio_v.resize(WFC_list.size());
 
-  for (auto wfc : WFC_list)
+  const int nw = WFC_list.size();
+  for (int iw = 0; iw < nw; iw++)
   {
-    auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(wfc);
-    psiMinv_list.push_back(det->psiMinv);
-    psi_v_list.push_back(det->psiV);
-    curRatio_v.push_back(det->curRatio);
+    auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(WFC_list[iw]);
+    psiMinv_dev_ptr_list[iw] = getContainerDevicePtr(det->psiMinv);
+    psiV_dev_ptr_list[iw]    = getContainerDevicePtr(det->psiV);
+    curRatio_v[iw]           = det->curRatio;
+    auto* psiV_ptr = det->psiV.data();
+    PRAGMA_OFFLOAD("omp target update to(psiV_ptr[:det->psiV.size()])")
   }
 
   const int WorkingIndex = iat - FirstIndex;
-  det_engine_.mw_updateRow(psiMinv_list, WorkingIndex, psi_v_list, curRatio_v);
+  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiMinv.rows(), WorkingIndex, psiV_dev_ptr_list, curRatio_v);
 
   for (auto wfc : WFC_list)
   {
     auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(wfc);
+
+    auto* Ainv_ptr  = det->psiMinv.data();
+    PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[:psiMinv.size()])")
 
     det->LogValue += convertValueToLog(det->curRatio);
     if (UpdateMode == ORB_PBYP_PARTIAL)
