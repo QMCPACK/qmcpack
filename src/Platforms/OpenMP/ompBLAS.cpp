@@ -129,18 +129,31 @@ ompBLAS_status gemv_batched_impl(ompBLAS_handle& handle,
                                  const char      trans,
                                  const int       m,
                                  const int       n,
-                                 const T         alpha,
+                                 const T*        alpha,
                                  const T* const  A[],
                                  const int       lda,
                                  const T* const  x[],
                                  const int       incx,
-                                 const T         beta,
+                                 const T*        beta,
                                  T* const        y[],
                                  const int       incy,
                                  const int       batch_count)
 {
   if (trans == 'T')
   {
+    if (incx !=1 || incy != 1)
+      throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_batched_impl!");
+
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(batch_count * m) is_device_ptr(A, x, y, alpha, beta)")
+    for(size_t ib = 0; ib < batch_count; ib++)
+      for(size_t i = 0; i < m; i++)
+      {
+        T dot_sum(0);
+        PRAGMA_OFFLOAD("omp parallel for simd reduction(+: dot_sum)")
+        for(size_t j = 0; j < n; j++)
+          dot_sum += x[ib][j] * A[ib][i * lda + j];
+        y[ib][i] = alpha[ib] * dot_sum + beta[ib] * y[ib][i];
+      }
     return 0;
   }
   else
@@ -153,12 +166,12 @@ ompBLAS_status gemv_batched(ompBLAS_handle&    handle,
                             const char         trans,
                             const int          m,
                             const int          n,
-                            const float        alpha,
+                            const float*       alpha,
                             const float* const A[],
                             const int          lda,
                             const float* const x[],
                             const int          incx,
-                            const float        beta,
+                            const float*       beta,
                             float* const       y[],
                             const int          incy,
                             const int          batch_count)
@@ -170,12 +183,12 @@ ompBLAS_status gemv_batched(ompBLAS_handle&     handle,
                             const char          trans,
                             const int           m,
                             const int           n,
-                            const double        alpha,
+                            const double*       alpha,
                             const double* const A[],
                             const int           lda,
                             const double* const x[],
                             const int           incx,
-                            const double        beta,
+                            const double*       beta,
                             double* const       y[],
                             const int           incy,
                             const int           batch_count)
@@ -187,12 +200,12 @@ ompBLAS_status gemv_batched(ompBLAS_handle&                  handle,
                             const char                       trans,
                             const int                        m,
                             const int                        n,
-                            const std::complex<float>        alpha,
+                            const std::complex<float>*       alpha,
                             const std::complex<float>* const A[],
                             const int                        lda,
                             const std::complex<float>* const x[],
                             const int                        incx,
-                            const std::complex<float>        beta,
+                            const std::complex<float>*       beta,
                             std::complex<float>* const       y[],
                             const int                        incy,
                             const int                        batch_count)
@@ -204,18 +217,19 @@ ompBLAS_status gemv_batched(ompBLAS_handle&                   handle,
                             const char                        trans,
                             const int                         m,
                             const int                         n,
-                            const std::complex<double>        alpha,
+                            const std::complex<double>*       alpha,
                             const std::complex<double>* const A[],
                             const int                         lda,
                             const std::complex<double>* const x[],
                             const int                         incx,
-                            const std::complex<double>        beta,
+                            const std::complex<double>*       beta,
                             std::complex<double>* const       y[],
                             const int                         incy,
                             const int                         batch_count)
 {
   return gemv_batched_impl(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
 }
+
 
 template<typename T>
 ompBLAS_status ger_impl(ompBLAS_handle& handle,
@@ -239,7 +253,6 @@ ompBLAS_status ger_impl(ompBLAS_handle& handle,
       A[i * lda + j] += alpha * x[j] * y[i];
   return 0;
 }
-
 
 ompBLAS_status ger(ompBLAS_handle&    handle,
                    const int          m,
@@ -297,5 +310,88 @@ ompBLAS_status ger(ompBLAS_handle&                   handle,
   return ger_impl(handle, m, n, alpha, x, incx, y, incy, A, lda);
 }
 
+template<typename T>
+ompBLAS_status ger_batched_impl(ompBLAS_handle& handle,
+                                const int       m,
+                                const int       n,
+                                const T*        alpha,
+                                const T* const  x[],
+                                const int       incx,
+                                const T* const  y[],
+                                const int       incy,
+                                T* const        A[],
+                                const int       lda,
+                                const int       batch_count)
+{
+  if (incx !=1 || incy != 1)
+    throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::ger_batched_impl!");
+
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) is_device_ptr(A, x, y, alpha)")
+  for(size_t ib = 0; ib < batch_count; ib++)
+    for(size_t i = 0; i < n; i++)
+      for(size_t j = 0; j < m; j++)
+        A[ib][i * lda + j] += alpha[ib] * x[ib][j] * y[ib][i];
+  return 0;
+}
+
+ompBLAS_status ger_batched(ompBLAS_handle&    handle,
+                           const int          m,
+                           const int          n,
+                           const float*       alpha,
+                           const float* const x[],
+                           const int          incx,
+                           const float* const y[],
+                           const int          incy,
+                           float* const       A[],
+                           const int          lda,
+                           const int          batch_count)
+{
+  return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
+}
+
+ompBLAS_status ger_batched(ompBLAS_handle&     handle,
+                           const int           m,
+                           const int           n,
+                           const double*       alpha,
+                           const double* const x[],
+                           const int           incx,
+                           const double* const y[],
+                           const int           incy,
+                           double* const       A[],
+                           const int           lda,
+                           const int           batch_count)
+{
+  return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
+}
+
+ompBLAS_status ger_batched(ompBLAS_handle&                  handle,
+                           const int                        m,
+                           const int                        n,
+                           const std::complex<float>*       alpha,
+                           const std::complex<float>* const x[],
+                           const int                        incx,
+                           const std::complex<float>* const y[],
+                           const int                        incy,
+                           std::complex<float>* const       A[],
+                           const int                        lda,
+                           const int                        batch_count)
+{
+  return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
+}
+
+ompBLAS_status ger_batched(ompBLAS_handle&                   handle,
+                           const int                         m,
+                           const int                         n,
+                           const std::complex<double>*       alpha,
+                           const std::complex<double>* const x[],
+                           const int                         incx,
+                           const std::complex<double>* const y[],
+                           const int                         incy,
+                           std::complex<double>* const       A[],
+                           const int                         lda,
+                           const int                         batch_count)
+{
+  return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
+}
 } // namespace ompBLAS
 } // namespace qmcplusplus

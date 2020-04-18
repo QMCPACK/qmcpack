@@ -43,8 +43,29 @@ class MatrixUpdateOMP
   OffloadValueVector_t temp;
   // scratch space for keeping one row of Ainv
   OffloadValueVector_t rcopy;
+  // scratch space for keeping ratio inverse
+  OffloadValueVector_t c_ratio_inv;
+  // constant array value T(1)
+  OffloadValueVector_t cone_vec;
+  // constant array value T(0)
+  OffloadValueVector_t czero_vec;
   // pointer buffer
   Vector<T*, OffloadPinnedAllocator<T*>> ptr_buffer;
+
+  void resize_fill_constant_arrays(size_t n)
+  {
+    if (cone_vec.size() < n)
+    {
+      cone_vec.resize(n);
+      czero_vec.resize(n);
+      std::fill_n(cone_vec.data(), n, T(1));
+      std::fill_n(czero_vec.data(), n, T(0));
+      auto* cone_ptr = cone_vec.data();
+      PRAGMA_OFFLOAD("omp target update to(cone_ptr[:n])")
+      auto* czero_ptr = czero_vec.data();
+      PRAGMA_OFFLOAD("omp target update to(czero_ptr[:n])")
+    }
+  }
 
 public:
 
@@ -94,43 +115,56 @@ public:
   template<typename DEVPTRV, typename RATIOT, typename ALLOC>
   inline void mw_updateRow(const DEVPTRV& Ainv_list, int norb, int rowchanged, const DEVPTRV& psi_v_list, const Vector<RATIOT, ALLOC>& c_ratio_v)
   {
-    ptr_buffer.resize(Ainv_list.size() + psi_v_list.size());
     size_t nw = Ainv_list.size();
-    for(int i = 0; i < nw; i++)
+    temp.resize(norb * nw);
+    rcopy.resize(norb * nw);
+    c_ratio_inv.resize(nw);
+    auto* temp_ptr  = temp.data();
+    auto* temp_dev_ptr = getContainerDevicePtr(temp);
+    auto* rcopy_ptr = rcopy.data();
+    auto* rcopy_dev_ptr = getContainerDevicePtr(rcopy);
+    auto* c_ratio_inv_ptr = c_ratio_inv.data();
+
+    // to handle T** of Ainv, psi_v, temp, rcopy
+    ptr_buffer.resize(nw * 4);
+    for(int iw = 0; iw < nw; iw++)
     {
-      ptr_buffer[i] = Ainv_list[i];
-      ptr_buffer[i + nw] = psi_v_list[i];
+      ptr_buffer[iw]          = Ainv_list[iw];
+      ptr_buffer[iw + nw]     = psi_v_list[iw];
+      ptr_buffer[iw + nw * 2] = temp_dev_ptr + norb * iw;
+      ptr_buffer[iw + nw * 3] = rcopy_dev_ptr + norb * iw;
     }
 
     // update the inverse matrix
     constexpr T cone(1);
     constexpr T czero(0);
-    temp.resize(norb * nw);
-    rcopy.resize(norb * nw);
-    auto* temp_ptr  = temp.data();
-    auto* rcopy_ptr = rcopy.data();
-
     int dummy_handle = 0;
     int success =0;
     auto* ptr_buffer_ptr = ptr_buffer.data();
-    PRAGMA_OFFLOAD("omp target data map(always, to: ptr_buffer_ptr[:ptr_buffer.size()]) use_device_ptr(temp_ptr, rcopy_ptr)")
+    auto* c_ratio_ptr    = c_ratio_v.data();
+    resize_fill_constant_arrays(nw);
+    auto* cone_ptr = cone_vec.data();
+    auto* czero_ptr = czero_vec.data();
+    PRAGMA_OFFLOAD("omp target data map(always, to: ptr_buffer_ptr[:ptr_buffer.size()], c_ratio_ptr[:nw]) \
+                    use_device_ptr(ptr_buffer_ptr, c_ratio_ptr, c_ratio_inv_ptr, cone_ptr, czero_ptr)")
     {
+      // invoke the Fahy's variant of Sherman-Morrison update.
+      success = ompBLAS::gemv_batched(dummy_handle, 'T', norb, norb, cone_ptr, ptr_buffer_ptr, norb, ptr_buffer_ptr + nw, 1, czero_ptr, ptr_buffer_ptr + nw * 2, 1, nw);
+      PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) is_device_ptr(ptr_buffer_ptr, c_ratio_ptr, c_ratio_inv_ptr)")
       for(int iw = 0; iw < nw; iw++)
       {
-        auto* Ainv_ptr = ptr_buffer[iw];
-        auto* psiV_ptr = ptr_buffer[iw + nw];
-        auto c_ratio_in = c_ratio_v[iw];
-        // invoke the Fahy's variant of Sherman-Morrison update.
-        success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, norb, psiV_ptr, 1, czero, temp_ptr + norb * iw, 1);
-        PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
-        {
-          temp_ptr[rowchanged + norb * iw] -= cone;
-          PRAGMA_OFFLOAD("omp parallel for simd")
-          for(int i = 0; i < norb; i++)
-            rcopy_ptr[i + norb * iw] = Ainv_ptr[rowchanged * norb + i];
-        }
-        success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(-RATIOT(1)/c_ratio_in), rcopy_ptr + norb * iw, 1, temp_ptr + norb * iw, 1, Ainv_ptr, norb);
+        auto* Ainv_ptr  = ptr_buffer_ptr[iw];
+        auto* temp_ptr  = ptr_buffer_ptr[nw * 2 + iw];
+        auto* rcopy_ptr = ptr_buffer_ptr[nw * 3 + iw];
+
+        c_ratio_inv_ptr[iw] = - static_cast<T>(RATIOT(1)/c_ratio_ptr[iw]);
+        temp_ptr[rowchanged] -= cone;
+        PRAGMA_OFFLOAD("omp parallel for simd")
+        for(int i = 0; i < norb; i++)
+          rcopy_ptr[i] = Ainv_ptr[rowchanged * norb + i];
       }
+
+      success = ompBLAS::ger_batched(dummy_handle, norb, norb, c_ratio_inv_ptr, ptr_buffer_ptr + nw * 3, 1, ptr_buffer_ptr + nw * 2, 1, ptr_buffer_ptr, norb, nw);
     }
   }
 
