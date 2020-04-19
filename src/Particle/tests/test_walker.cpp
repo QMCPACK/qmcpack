@@ -33,7 +33,6 @@ using WP = WalkerProperties::Indexes;
 
 TEST_CASE("walker", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   MCPWalker w(1);
   REQUIRE(w.R.size() == 1);
@@ -55,7 +54,6 @@ TEST_CASE("walker assumptions", "[particle]")
 
 TEST_CASE("walker HDF read and write", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   MCPWalker w1(1);

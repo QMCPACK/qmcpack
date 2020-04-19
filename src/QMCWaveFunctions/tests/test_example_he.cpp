@@ -27,7 +27,6 @@ using PsiValueType = WaveFunctionComponent::PsiValueType;
 
 TEST_CASE("ExampleHe", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   ParticleSet* elec = new ParticleSet;

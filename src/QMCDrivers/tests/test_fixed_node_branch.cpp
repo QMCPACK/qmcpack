@@ -33,7 +33,6 @@ namespace qmcplusplus
 {
 TEST_CASE("Fixed node branch", "[drivers][walker_control]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   EstimatorManagerBase emb(c);

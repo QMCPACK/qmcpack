@@ -79,7 +79,6 @@ public:
 
 TEST_CASE("Crowd integration", "[drivers]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* comm = OHMMS::Controller;
 
   EstimatorManagerBase em(comm);

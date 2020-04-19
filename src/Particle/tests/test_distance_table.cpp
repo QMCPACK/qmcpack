@@ -31,7 +31,6 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
 {
   // test that particle distances are properly calculated
 
-  OHMMS::Controller->initialize(0, NULL);
 
   const char* particles = "<tmp> \
 <particleset name=\"e\" random=\"yes\"> \
@@ -156,7 +155,6 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
 
 TEST_CASE("distance_open_xy", "[distance_table][xml]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   const char* particles = "<tmp> \
 <particleset name=\"e\" random=\"yes\"> \
@@ -260,7 +258,6 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
 {
   // pull out distances between specific species
 
-  OHMMS::Controller->initialize(0, NULL);
 
   const char* particles = "<tmp> \
 <particleset name=\"e\" random=\"yes\"> \
@@ -376,7 +373,6 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   // test that particle distances are properly calculated under periodic boundary condition
   // There are many details in this example, but the main idea is simple: When a particle is moved by a full lattice vector, no distance should change.
 
-  OHMMS::Controller->initialize(0, NULL);
 
   const char* particles = "<tmp> \
   <simulationcell>\

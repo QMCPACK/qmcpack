@@ -12,7 +12,7 @@
 
 #undef NDEBUG
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "Configuration.h"
 
@@ -84,7 +84,6 @@ using communicator = boost::mpi3::communicator;
 
 void test_basic_walker_features(bool serial)
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
@@ -217,7 +216,6 @@ const char *xml_block =
 
 void test_hyperslab()
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
@@ -284,7 +282,6 @@ void test_hyperslab()
 
 void test_double_hyperslab()
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
 
   using Type = std::complex<double>;
@@ -363,7 +360,6 @@ void test_double_hyperslab()
 
 void test_walker_io()
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 

@@ -82,7 +82,6 @@ void setupParticleSetPool(ParticleSetPool& pp)
 TEST_CASE("WaveFunctionPool", "[qmcapp]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   WaveFunctionPool wp(c);

@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -44,7 +44,6 @@ TEST_CASE("Pade functor", "[wavefunction]")
 TEST_CASE("Pade Jastrow", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
