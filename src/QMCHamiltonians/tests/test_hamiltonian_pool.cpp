@@ -33,7 +33,6 @@ extern ParticleSet* createElectronParticleSet();
 TEST_CASE("HamiltonianPool", "[qmcapp]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   HamiltonianPool hpool(c);

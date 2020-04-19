@@ -37,7 +37,6 @@ using GradType = TrialWaveFunction::GradType;
 
 TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   ParticleSet ions_;

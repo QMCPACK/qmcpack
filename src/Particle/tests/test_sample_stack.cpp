@@ -25,7 +25,6 @@ namespace qmcplusplus
 {
 TEST_CASE("SampleStack", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   SampleStack samples;
 

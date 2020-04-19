@@ -48,7 +48,6 @@ TEST_CASE("PolynomialFunctor3D functor zero", "[wavefunction]")
 TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;

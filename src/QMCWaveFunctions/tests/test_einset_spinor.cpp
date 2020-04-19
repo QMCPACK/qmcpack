@@ -39,7 +39,6 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   using ValueType = SPOSet::ValueType;
   using RealType  = SPOSet::RealType;
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;

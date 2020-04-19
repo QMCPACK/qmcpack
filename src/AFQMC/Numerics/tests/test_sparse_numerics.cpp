@@ -214,7 +214,6 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
 TEST_CASE("sparse_ma_operations", "[matrix_operations]")
 {
 #ifdef ENABLE_CUDA
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 

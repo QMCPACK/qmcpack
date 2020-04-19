@@ -29,7 +29,6 @@ TEST_CASE("read_particle_mass_same_xml", "[particle_io][xml]")
 {
   // test that particle masses are properly read in
 
-  OHMMS::Controller->initialize(0, NULL);
 
   const char* particles = "<tmp> \
 <particleset name=\"e\" random=\"yes\"> \

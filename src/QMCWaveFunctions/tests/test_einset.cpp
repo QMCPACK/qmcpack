@@ -31,7 +31,6 @@ namespace qmcplusplus
 TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -240,7 +239,6 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -444,7 +442,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
 TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet* elec = new ParticleSet;

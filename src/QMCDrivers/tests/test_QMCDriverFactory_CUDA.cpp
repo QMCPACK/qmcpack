@@ -40,7 +40,6 @@ namespace qmcplusplus
 TEST_CASE("QMCDriverFactory create VMC_CUDA Driver", "[qmcapp]")
 {
   Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   QMCDriverFactory driver_factory;

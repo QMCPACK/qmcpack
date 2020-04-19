@@ -11,7 +11,7 @@
 
 //#undef NDEBUG
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "Configuration.h"
 
@@ -53,6 +53,8 @@ using std::cerr;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
+
+extern std::string UTEST_HAMIL, UTEST_WFN;
 
 namespace qmcplusplus
 {
@@ -722,7 +724,6 @@ const char *wlk_xml_block_noncol =
 #if 0
 TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
@@ -1047,7 +1048,6 @@ const char *wlk_xml_block =
 
 TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
@@ -1066,7 +1066,6 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
 
 TEST_CASE("wfn_fac_distributed", "[wavefunction_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 

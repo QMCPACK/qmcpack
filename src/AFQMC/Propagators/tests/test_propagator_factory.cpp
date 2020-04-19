@@ -11,7 +11,7 @@
 
 #undef NDEBUG
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "Configuration.h"
 
@@ -53,6 +53,8 @@ using std::cerr;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
+
+extern std::string UTEST_HAMIL, UTEST_WFN;
 
 namespace qmcplusplus
 {
@@ -408,7 +410,6 @@ const char *propg_xml_block1 =
 
 TEST_CASE("propg_fac_shared", "[propagator_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
@@ -423,7 +424,6 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
 
 TEST_CASE("propg_fac_distributed", "[propagator_factory]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 

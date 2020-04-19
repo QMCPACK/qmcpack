@@ -11,7 +11,7 @@
 
 #include <functional>
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 //#include <catch.hpp>
 
