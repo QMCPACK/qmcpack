@@ -514,6 +514,7 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
         ratios_private_ptr[iat * NumTeams + team_id] = sum;
       }
   }
+
   // do the reduction manually
   iVP = 0;
   for (size_t iw = 0; iw < nw; iw++)
@@ -800,7 +801,6 @@ void SplineC2ROMP<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocat
       }
   }
 
-  // do the reduction manually
   for (int iw = 0; iw < num_pos; ++iw)
   {
     auto* restrict results_iw_ptr = results_scratch_ptr + orb_size * iw * 5;
@@ -843,6 +843,175 @@ void SplineC2ROMP<ST>::mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
   }
 
   evaluateVGLMultiPos(multi_pos_copy, psi_v_list, dpsi_v_list, d2psi_v_list);
+}
+
+template<typename ST>
+void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>& spo_list,
+                                                      const std::vector<ParticleSet*>& P_list,
+                                                      int iat,
+                                                      const Vector<ValueType*>& invRow_ptr_list,
+                                                      VGLVector_t& phi_vgl_v,
+                                                      VGVector_t& psi_ratio_grads_v)
+{
+  const int nwalkers = spo_list.size();
+  multi_pos_copy.resize(nwalkers * 6);
+
+  // pack particle positions
+  for (int iw = 0; iw < nwalkers; ++iw)
+  {
+    const PointType& r = P_list[iw]->activeR(iat);
+    PointType ru(PrimLattice.toUnit_floor(r));
+    multi_pos_copy[iw * 6]     = r[0];
+    multi_pos_copy[iw * 6 + 1] = r[1];
+    multi_pos_copy[iw * 6 + 2] = r[2];
+    multi_pos_copy[iw * 6 + 3] = ru[0];
+    multi_pos_copy[iw * 6 + 4] = ru[1];
+    multi_pos_copy[iw * 6 + 5] = ru[2];
+  }
+
+  auto& multi_pos = multi_pos_copy;
+
+  const size_t num_pos       = nwalkers;
+  const int ChunkSizePerTeam = 128;
+  const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+  const auto padded_size     = myV.size();
+  // for V(1)G(3)H(6) intermediate result
+  if (offload_scratch.size() < padded_size * num_pos * 10)
+    offload_scratch.resize(padded_size * num_pos * 10);
+  const auto orb_size = phi_vgl_v.size() / num_pos;
+  // for V(1)G(3)L(1) final result
+  if (results_scratch.size() < orb_size * num_pos * 5)
+    results_scratch.resize(orb_size * num_pos * 5);
+  // per team ratio and grads
+  if (rg_private.size() < num_pos * NumTeams * 4)
+    rg_private.resize(num_pos, NumTeams * 4);
+
+  // Ye: need to extract sizes and pointers before entering target region
+  const auto* spline_ptr         = SplineInst->getSplinePtr();
+  auto* pos_copy_ptr             = multi_pos.data();
+  auto* offload_scratch_ptr      = offload_scratch.data();
+  auto* results_scratch_ptr      = results_scratch.data();
+  const auto myKcart_padded_size = myKcart->capacity();
+  auto* mKK_ptr                  = mKK->data();
+  auto* GGt_ptr                  = GGt_offload->data();
+  auto* PrimLattice_G_ptr        = PrimLattice_G_offload->data();
+  auto* myKcart_ptr              = myKcart->data();
+  auto* phi_vgl_ptr              = phi_vgl_v.data();
+  auto* invRow_ptr_list_ptr      = invRow_ptr_list.data();
+  auto* rg_private_ptr           = rg_private.data();
+  const size_t first_spo_local   = first_spo;
+  const size_t phi_vgl_stride    = phi_vgl_v.capacity();
+  const size_t psi_rg_stride     = psi_ratio_grads_v.capacity();
+  const int nComplexBands_local  = nComplexBands;
+
+  {
+    ScopedTimer offload(&offload_timer_);
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
+                    map(always, to: pos_copy_ptr[0:num_pos*6], invRow_ptr_list_ptr[0:num_pos]) \
+                    map(always, from: rg_private_ptr[0:rg_private.size()])")
+    for (int iw = 0; iw < num_pos; iw++)
+      for (int team_id = 0; team_id < NumTeams; team_id++)
+      {
+        const int first      = ChunkSizePerTeam * team_id;
+        const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const int first_cplx = first / 2;
+        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
+        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
+        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
+        auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
+        auto* restrict psi_iw_ptr             = results_scratch_ptr + orb_size * iw * 5;
+
+        int ix, iy, iz;
+        ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
+        spline2::computeLocationAndFractional(spline_ptr, pos_copy_ptr[iw * 6 + 3], pos_copy_ptr[iw * 6 + 4],
+                                              pos_copy_ptr[iw * 6 + 5], ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
+
+        const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
+                         PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
+                         PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
+        const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
+                              GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
+
+        PRAGMA_OFFLOAD("omp parallel")
+        {
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                               offload_scratch_iw_ptr + first,
+                                               offload_scratch_iw_ptr + padded_size + first,
+                                               offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
+                                               last);
+          C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr,
+                          orb_size, offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
+                          first_spo_local, nComplexBands_local, first / 2, last / 2);
+        }
+
+        // FIXME :: copy results_scratch to phi_vgl_v  and do reduction
+        ValueType* restrict psi   = psi_iw_ptr;
+        ValueType* restrict dpsi  = psi_iw_ptr + orb_size;
+        ValueType* restrict d2psi = psi_iw_ptr + orb_size * 4;
+
+        ValueType* restrict out_phi_v = phi_vgl_ptr + iw * orb_size;
+        ValueType* restrict out_phi_g = phi_vgl_ptr + phi_vgl_stride + iw * orb_size * 3;
+        ValueType* restrict out_phi_l = phi_vgl_ptr + phi_vgl_stride * 4 + iw * orb_size;
+
+        auto* invRow = invRow_ptr_list_ptr[iw];
+
+        ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
+        PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
+        for (size_t j = first/2; j < (last/2 > orb_size ? orb_size : last/2); j++)
+        {
+          const size_t psiIndex = first_spo_local + j + (j < nComplexBands_local ? j : nComplexBands_local);
+
+          out_phi_v[psiIndex]         = psi[psiIndex];
+          out_phi_l[psiIndex]         = d2psi[psiIndex];
+          out_phi_g[psiIndex * 3]     = dpsi[psiIndex * 3];
+          out_phi_g[psiIndex * 3 + 1] = dpsi[psiIndex * 3 + 1];
+          out_phi_g[psiIndex * 3 + 2] = dpsi[psiIndex * 3 + 2];
+
+          ratio  += psi[psiIndex] * invRow[psiIndex];
+          grad_x += dpsi[psiIndex * 3    ] * invRow[psiIndex];
+          grad_y += dpsi[psiIndex * 3 + 1] * invRow[psiIndex];
+          grad_z += dpsi[psiIndex * 3 + 2] * invRow[psiIndex];
+
+          if (j < nComplexBands_local)
+          {
+            out_phi_v[psiIndex + 1]     = psi[psiIndex + 1];
+            out_phi_l[psiIndex + 1]     = d2psi[psiIndex + 1];
+            out_phi_g[psiIndex * 3 + 3] = dpsi[psiIndex * 3 + 3];
+            out_phi_g[psiIndex * 3 + 4] = dpsi[psiIndex * 3 + 4];
+            out_phi_g[psiIndex * 3 + 5] = dpsi[psiIndex * 3 + 5];
+
+            ratio  += psi[psiIndex + 1] * invRow[psiIndex];
+            grad_x += dpsi[psiIndex * 3 + 3] * invRow[psiIndex];
+            grad_y += dpsi[psiIndex * 3 + 4] * invRow[psiIndex];
+            grad_z += dpsi[psiIndex * 3 + 5] * invRow[psiIndex];
+          }
+        }
+
+        rg_private_ptr[(iw * NumTeams + team_id) * 4    ] = ratio;
+        rg_private_ptr[(iw * NumTeams + team_id) * 4 + 1] = grad_x;
+        rg_private_ptr[(iw * NumTeams + team_id) * 4 + 2] = grad_y;
+        rg_private_ptr[(iw * NumTeams + team_id) * 4 + 3] = grad_z;
+      }
+  }
+
+  for (int iw = 0; iw < num_pos; iw++)
+  {
+    ValueType ratio(0);
+    for (int team_id = 0; team_id < NumTeams; team_id++)
+      ratio += rg_private[iw][team_id * 4];
+    psi_ratio_grads_v.data(0)[iw] = ratio;
+
+    ValueType grad_x(0), grad_y(0), grad_z(0);
+    for (int team_id = 0; team_id < NumTeams; team_id++)
+    {
+      grad_x += rg_private[iw][team_id * 4 + 1];
+      grad_y += rg_private[iw][team_id * 4 + 2];
+      grad_z += rg_private[iw][team_id * 4 + 3];
+    }
+    psi_ratio_grads_v.data(1)[iw] = grad_x / ratio;
+    psi_ratio_grads_v.data(2)[iw] = grad_y / ratio;
+    psi_ratio_grads_v.data(3)[iw] = grad_z / ratio;
+  }
 }
 
 template<typename ST>

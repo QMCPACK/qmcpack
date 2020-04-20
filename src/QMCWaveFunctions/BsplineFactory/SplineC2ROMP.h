@@ -83,8 +83,10 @@ private:
   std::shared_ptr<OffloadVector<ST>> GGt_offload;
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
-  ///thread private ratios for reduction when using nested threading, numVP x numThread
+  ///team private ratios for reduction, numVP x numTeams
   Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
+  ///team private ratios and grads for reduction, numVP x numTeams
+  Matrix<TT, OffloadPinnedAllocator<TT>> rg_private;
   ///offload scratch space, dynamically resized to the maximal need
   Vector<ST, OffloadPinnedAllocator<ST>> offload_scratch;
   ///result scratch space, dynamically resized to the maximal need
@@ -248,6 +250,13 @@ public:
                               const RefVector<ValueVector_t>& psi_v_list,
                               const RefVector<GradVector_t>& dpsi_v_list,
                               const RefVector<ValueVector_t>& d2psi_v_list) override;
+
+  virtual void mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>& spo_list,
+                                              const std::vector<ParticleSet*>& P_list,
+                                              int iat,
+                                              const Vector<ValueType*>& invRow_ptr_list,
+                                              VGLVector_t& phi_vgl_v,
+                                              VGVector_t& psi_ratio_grads_v) override;
 
   void assign_vgh(const PointType& r,
                   ValueVector_t& psi,

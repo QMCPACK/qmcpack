@@ -107,6 +107,7 @@ public:
   using SPOSet::evaluateVGL;
   using SPOSet::finalizeConstruction;
   using SPOSet::mw_evaluateVGL;
+  using SPOSet::mw_evaluateVGLandDetRatioGrads;
 
   virtual SPOSet* makeClone() const override = 0;
 
