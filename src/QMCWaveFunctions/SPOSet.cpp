@@ -26,13 +26,14 @@
 
 namespace qmcplusplus
 {
-SPOSet::SPOSet(bool ion_deriv, bool optimizable)
+SPOSet::SPOSet(bool use_OMP_offload, bool ion_deriv, bool optimizable)
     :
 #if !defined(ENABLE_SOA)
       Identity(false),
       BasisSetSize(0),
       C(nullptr),
 #endif
+      useOMPoffload(use_OMP_offload),
       ionDerivs(ion_deriv),
       Optimizable(optimizable),
       OrbitalSetSize(0)
@@ -97,12 +98,12 @@ void SPOSet::mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
     spo_list[iw]->evaluateVGL(*P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
 }
 
-void SPOSet::mw_evaluateVGLandDetRatioGrad(const std::vector<SPOSet*>& spo_list,
-                                           const std::vector<ParticleSet*>& P_list,
-                                           int iat,
-                                           const Vector<ValueType*>& invRow_ptr_list,
-                                           VGLVector_t& phi_vgl_v,
-                                           VGVector_t& psi_ratio_grads_v)
+void SPOSet::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>& spo_list,
+                                            const std::vector<ParticleSet*>& P_list,
+                                            int iat,
+                                            const Vector<ValueType*>& invRow_ptr_list,
+                                            VGLVector_t& phi_vgl_v,
+                                            VGVector_t& psi_ratio_grads_v)
 {
   auto* __restrict__ psi_ratios = psi_ratio_grads_v.data(0);
   auto* __restrict__ psi_grad_x = psi_ratio_grads_v.data(1);
