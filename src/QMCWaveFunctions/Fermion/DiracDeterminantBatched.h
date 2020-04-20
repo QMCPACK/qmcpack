@@ -42,9 +42,12 @@ public:
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
+
   using OffloadPinnedValueMatrix_t = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedValueVector_t = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
+  using OffloadVGLVector_t = VectorSoaContainer<ValueType, DIM + 2, OffloadAllocator<ValueType>>;
+  using OffloadPinnedVGVector_t = VectorSoaContainer<ValueType, DIM + 1, OffloadPinnedAllocator<ValueType>>;
 
   /** constructor
    *@param spos the single-particle orbital set
@@ -167,6 +170,10 @@ public:
 
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
+  /// device pointer of psiMinv data
+  ValueType* psiMinv_dev_ptr;
+  /// multi-walker pointers of psiMinv data
+  Vector<ValueType*, OffloadPinnedAllocator<ValueType*>> psiMinv_dev_ptr_list;
 
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
   GradMatrix_t dpsiM;
@@ -185,13 +192,22 @@ public:
   /// value of single-particle orbital for particle-by-particle update
   OffloadPinnedValueVector_t psiV;
   ValueVector_t psiV_host_view;
+  /// multi-walker pointers of psiV data
+  Vector<ValueType*, OffloadPinnedAllocator<ValueType*>> psiV_dev_ptr_list;
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
+
+  /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw*norb]
+  OffloadVGLVector_t phi_vgl_v;
 
   /// delayed update engine
   DET_ENGINE_TYPE det_engine_;
 
+  // psi(r')/psi(r) during a PbyP move
   PsiValueType curRatio;
+
+  // multi walker of ratio and grads
+  OffloadPinnedVGVector_t ratio_grads_v;
 
 private:
   /// invert psiM or its copies

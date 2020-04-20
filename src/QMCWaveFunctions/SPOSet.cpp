@@ -119,8 +119,9 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>& spo_list
     GradVector_t dphi_v(reinterpret_cast<GradType*>(phi_vgl_v.data(1)) + norb_requested * iw, norb_requested);
     ValueVector_t d2phi_v(phi_vgl_v.data(4) + norb_requested * iw, norb_requested);
     spo_list[iw]->evaluateVGL(*P_list[iw], iat, phi_v, dphi_v, d2phi_v);
+
     psi_ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
-    GradType grad_one = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested);
+    GradType grad_one = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested) / psi_ratios[iw];
     psi_grad_x[iw] = grad_one[0];
     psi_grad_y[iw] = grad_one[1];
     psi_grad_z[iw] = grad_one[2];

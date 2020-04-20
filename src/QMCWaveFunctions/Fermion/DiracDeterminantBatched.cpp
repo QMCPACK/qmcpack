@@ -61,6 +61,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
   psiMinv.resize(nel, norb);
+  psiMinv_dev_ptr = getContainerDevicePtr(psiMinv);
   dpsiM.resize(nel, norb);
   d2psiM.resize(nel, norb);
   psiV.resize(norb);
@@ -127,20 +128,32 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const std::vector<Wa
   RefVector<ValueVector_t> d2psi_v_list;
   d2psi_v_list.reserve(WFC_list.size());
 
-  for (auto wfc : WFC_list)
+  psiMinv_dev_ptr_list.resize(WFC_list.size());
+  for (int iw = 0; iw < WFC_list.size(); iw++)
   {
-    auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(wfc);
+    auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(WFC_list[iw]);
     phi_list.push_back(det->Phi);
-    psi_v_list.push_back(det->psiV_host_view);
-    dpsi_v_list.push_back(det->dpsiV);
-    d2psi_v_list.push_back(det->d2psiV);
+    psiMinv_dev_ptr_list[iw] = Phi->isOMPoffload() ? det->psiMinv_dev_ptr : det->psiMinv.data();
   }
 
-  Phi->mw_evaluateVGL(phi_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+  phi_vgl_v.resize(WFC_list.size() * psiMinv.cols());
+  ratio_grads_v.resize(WFC_list.size());
+
+  Vector<ValueType*> psiMinv_dev_ptr_list_view(psiMinv_dev_ptr_list.data(), psiMinv_dev_ptr_list.size());
+  VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
+  VectorSoaContainer<ValueType, DIM + 1> ratio_grads_v_view(ratio_grads_v.data(), ratio_grads_v.size(), ratio_grads_v.capacity());
+  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_dev_ptr_list_view, phi_vgl_v_view, ratio_grads_v_view);
   SPOVGLTimer.stop();
 
   for (int iw = 0; iw < WFC_list.size(); iw++)
-    ratios[iw] = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(WFC_list[iw])->ratioGrad_compute(iat, grad_new[iw]);
+  {
+    auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(WFC_list[iw]);
+    ratios[iw] = det->curRatio = ratio_grads_v.data(0)[iw];
+    grad_new[iw][0] = ratio_grads_v.data(1)[iw];
+    grad_new[iw][1] = ratio_grads_v.data(2)[iw];
+    grad_new[iw][2] = ratio_grads_v.data(3)[iw];
+  }
+  // TODO: if Phi->isOMPoffload() = false, need to transfer phi_vgl_v and ratio_grads_v to device
 }
 
 
@@ -169,9 +182,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_acceptMove(const std::vector<W
 {
   UpdateTimer.start();
 
-  std::vector<ValueType*> psiMinv_dev_ptr_list;
   psiMinv_dev_ptr_list.resize(WFC_list.size());
-  std::vector<ValueType*> psiV_dev_ptr_list;
   psiV_dev_ptr_list.resize(WFC_list.size());
   Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>> curRatio_v;
   curRatio_v.resize(WFC_list.size());
@@ -180,7 +191,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_acceptMove(const std::vector<W
   for (int iw = 0; iw < nw; iw++)
   {
     auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(WFC_list[iw]);
-    psiMinv_dev_ptr_list[iw] = getContainerDevicePtr(det->psiMinv);
+    psiMinv_dev_ptr_list[iw] = det->psiMinv_dev_ptr;
     psiV_dev_ptr_list[iw]    = getContainerDevicePtr(det->psiV);
     curRatio_v[iw]           = det->curRatio;
     auto* psiV_ptr = det->psiV.data();

@@ -118,6 +118,11 @@ public:
   /** return the size of the orbitals
    */
   inline int getOrbitalSetSize() const { return OrbitalSetSize; }
+
+  /** Query if this SPOSet uses OpenMP offload
+  */
+  inline bool isOMPoffload() const { return useOMPoffload; }
+
   /** Query if this SPOSet has an explicit ion dependence. returns true if it does.
   */
   inline bool hasIonDerivs() const { return ionDerivs; }

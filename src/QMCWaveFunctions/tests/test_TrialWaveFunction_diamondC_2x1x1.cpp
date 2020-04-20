@@ -325,6 +325,11 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   // testing batched interfaces
 
   psi.flex_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
+  std::cout << "flex_calcRatioGrad " << std::setprecision(14)
+            << ratios[0] << " " << ratios[1] << std::endl
+            << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " "
+            << grad_new[1][0] << " " << grad_new[1][1] << " " << grad_new[1][2]
+            << std::endl;
 #if defined(QMC_COMPLEX)
   REQUIRE(ratios[0] == ComplexApprox(ValueType(1, 0)).epsilon(5e-5));
   REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(713.71203320653,0.020838031942702)).epsilon(7e-3));
