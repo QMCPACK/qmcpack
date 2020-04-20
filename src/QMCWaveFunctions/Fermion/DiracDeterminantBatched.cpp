@@ -61,7 +61,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
   psiMinv.resize(nel, norb);
-  psiMinv_dev_ptr = getContainerDevicePtr(psiMinv);
+  psiMinv_dev_ptr = getOffloadDevicePtr(psiMinv.data());
   dpsiM.resize(nel, norb);
   d2psiM.resize(nel, norb);
   psiV.resize(norb);
@@ -192,7 +192,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_acceptMove(const std::vector<W
   {
     auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(WFC_list[iw]);
     psiMinv_dev_ptr_list[iw] = det->psiMinv_dev_ptr;
-    psiV_dev_ptr_list[iw]    = getContainerDevicePtr(det->psiV);
+    psiV_dev_ptr_list[iw]    = getOffloadDevicePtr(det->psiV.data());
     curRatio_v[iw]           = det->curRatio;
     auto* psiV_ptr = det->psiV.data();
     PRAGMA_OFFLOAD("omp target update to(psiV_ptr[:det->psiV.size()])")

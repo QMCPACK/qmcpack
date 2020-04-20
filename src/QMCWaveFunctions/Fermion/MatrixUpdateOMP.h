@@ -120,9 +120,9 @@ public:
     rcopy.resize(norb * nw);
     c_ratio_inv.resize(nw);
     auto* temp_ptr  = temp.data();
-    auto* temp_dev_ptr = getContainerDevicePtr(temp);
+    auto* temp_dev_ptr = getOffloadDevicePtr(temp.data());
     auto* rcopy_ptr = rcopy.data();
-    auto* rcopy_dev_ptr = getContainerDevicePtr(rcopy);
+    auto* rcopy_dev_ptr = getOffloadDevicePtr(rcopy.data());
     auto* c_ratio_inv_ptr = c_ratio_inv.data();
 
     // to handle T** of Ainv, psi_v, temp, rcopy

@@ -54,10 +54,9 @@ struct OMPallocator : public HostAllocator
 };
 
 template<typename T>
-auto* getContainerDevicePtr(T& dataset)
+T* getOffloadDevicePtr(T* host_ptr)
 {
-  auto* host_ptr = dataset.data();
-  typename T::value_type* device_ptr;
+  T* device_ptr;
   PRAGMA_OFFLOAD("omp target data use_device_ptr(host_ptr)")
   {
     device_ptr = host_ptr;
