@@ -43,12 +43,7 @@ struct VectorSoaContainer
    * @param n new nLocal
    * @param n_padded new nGhosts
    */
-  VectorSoaContainer(T* ptr, size_t n, size_t n_padded)
-  {
-    nLocal  = n;
-    nGhosts = n_padded;
-    myData  = ptr;
-  }
+  VectorSoaContainer(T* ptr, size_t n, size_t n_padded) : nLocal(n), nGhosts(n_padded), nAllocated(0), myData(ptr) {}
 
   ///destructor
   ~VectorSoaContainer() { free(); }
