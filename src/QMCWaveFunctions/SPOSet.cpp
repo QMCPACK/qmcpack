@@ -97,6 +97,35 @@ void SPOSet::mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
     spo_list[iw]->evaluateVGL(*P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
 }
 
+void SPOSet::mw_evaluateVGLandDetRatioGrad(const std::vector<SPOSet*>& spo_list,
+                                           const std::vector<ParticleSet*>& P_list,
+                                           int iat,
+                                           const Vector<ValueType*>& invRow_ptr_list,
+                                           VGLVector_t& phi_vgl_v,
+                                           VGVector_t& psi_ratio_grads_v)
+{
+  auto* __restrict__ psi_ratios = psi_ratio_grads_v.data(0);
+  auto* __restrict__ psi_grad_x = psi_ratio_grads_v.data(1);
+  auto* __restrict__ psi_grad_y = psi_ratio_grads_v.data(2);
+  auto* __restrict__ psi_grad_z = psi_ratio_grads_v.data(3);
+
+  const size_t nw = spo_list.size();
+  const size_t norb_requested = phi_vgl_v.size() / nw;
+#pragma omp parallel for
+  for (int iw = 0; iw < nw; iw++)
+  {
+    ValueVector_t phi_v(phi_vgl_v.data() + norb_requested * iw, norb_requested);
+    GradVector_t dphi_v(reinterpret_cast<GradType*>(phi_vgl_v.data(1)) + norb_requested * iw, norb_requested);
+    ValueVector_t d2phi_v(phi_vgl_v.data(4) + norb_requested * iw, norb_requested);
+    spo_list[iw]->evaluateVGL(*P_list[iw], iat, phi_v, dphi_v, d2phi_v);
+    psi_ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
+    GradType grad_one = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested);
+    psi_grad_x[iw] = grad_one[0];
+    psi_grad_y[iw] = grad_one[1];
+    psi_grad_z[iw] = grad_one[2];
+  }
+}
+
 void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)
 {
   APP_ABORT("Need specialization of SPOSet::evaluateThirdDeriv(). \n");

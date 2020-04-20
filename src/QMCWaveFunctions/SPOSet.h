@@ -24,7 +24,6 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "io/hdf_archive.h"
 #if !defined(ENABLE_SOA)
 #include "Message/CommOperators.h"
 #endif
@@ -55,6 +54,7 @@ public:
   typedef OrbitalSetTraits<ValueType>::GradHessVector_t GGGVector_t;
   typedef OrbitalSetTraits<ValueType>::GradHessMatrix_t GGGMatrix_t;
   typedef OrbitalSetTraits<ValueType>::VGLVector_t VGLVector_t;
+  typedef OrbitalSetTraits<ValueType>::VGVector_t VGVector_t;
   typedef ParticleSet::Walker_t Walker_t;
   typedef std::map<std::string, SPOSet*> SPOPool_t;
 
@@ -306,6 +306,21 @@ public:
                               const RefVector<ValueVector_t>& psi_v_list,
                               const RefVector<GradVector_t>& dpsi_v_list,
                               const RefVector<ValueVector_t>& d2psi_v_list);
+
+  /** evaluate the values, gradients and laplacians of this single-particle orbital sets
+   *  and determinant ratio and grads of multiple walkers
+   * @param spo_list the list of SPOSet pointers in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat active particle
+   * @param phi_vgl_v orbital values, gradients and laplacians of all the walkers
+   * @param psi_ratio_grads_v determinant ratio and grads of all the walkers
+   */
+  virtual void mw_evaluateVGLandDetRatioGrad(const std::vector<SPOSet*>& spo_list,
+                              const std::vector<ParticleSet*>& P_list,
+                              int iat,
+                              const Vector<ValueType*>& invRow_ptr_list,
+                              VGLVector_t& phi_vgl_v,
+                              VGVector_t& psi_ratio_grads_v);
 
   /** evaluate the values, gradients and hessians of this single-particle orbital set
    * @param P current ParticleSet
