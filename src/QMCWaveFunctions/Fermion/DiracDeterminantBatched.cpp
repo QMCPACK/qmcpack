@@ -90,17 +90,12 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
                                                                                       int iat,
                                                                                       GradType& grad_iat)
 {
+  UpdateMode = ORB_PBYP_PARTIAL;
+
   SPOVGLTimer.start();
   Phi->evaluateVGL(P, iat, psiV_host_view, dpsiV, d2psiV);
   SPOVGLTimer.stop();
-  return ratioGrad_compute(iat, grad_iat);
-}
 
-template<typename DET_ENGINE_TYPE>
-typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::ratioGrad_compute(int iat,
-                                                                                              GradType& grad_iat)
-{
-  UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
   curRatio = simd::dot(psiMinv[WorkingIndex], psiV.data(), psiV.size());

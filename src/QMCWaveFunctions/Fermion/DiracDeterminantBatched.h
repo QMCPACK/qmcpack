@@ -216,9 +216,6 @@ private:
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
 
-  /// internal function computing ratio and gradients after computing the SPOs, used by ratioGrad.
-  PsiValueType ratioGrad_compute(int iat, GradType& grad_iat);
-
 };
 
 extern template class DiracDeterminantBatched<>;
