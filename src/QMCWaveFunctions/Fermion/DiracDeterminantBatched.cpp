@@ -148,12 +148,12 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const std::vector<Wa
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
     auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(WFC_list[iw]);
+    det->UpdateMode = ORB_PBYP_PARTIAL;
     ratios[iw] = det->curRatio = ratio_grads_v.data(0)[iw];
     grad_new[iw][0] = ratio_grads_v.data(1)[iw];
     grad_new[iw][1] = ratio_grads_v.data(2)[iw];
     grad_new[iw][2] = ratio_grads_v.data(3)[iw];
   }
-  // TODO: if Phi->isOMPoffload() = false, need to transfer phi_vgl_v and ratio_grads_v to device
 }
 
 
@@ -182,28 +182,22 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_acceptMove(const std::vector<W
 {
   UpdateTimer.start();
 
-  psiMinv_dev_ptr_list.resize(WFC_list.size());
-  psiV_dev_ptr_list.resize(WFC_list.size());
-  Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>> curRatio_v;
-  curRatio_v.resize(WFC_list.size());
-
   const int nw = WFC_list.size();
+  psiMinv_dev_ptr_list.resize(nw);
   for (int iw = 0; iw < nw; iw++)
   {
     auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(WFC_list[iw]);
     psiMinv_dev_ptr_list[iw] = det->psiMinv_dev_ptr;
-    psiV_dev_ptr_list[iw]    = getOffloadDevicePtr(det->psiV.data());
-    curRatio_v[iw]           = det->curRatio;
-    auto* psiV_ptr = det->psiV.data();
-    PRAGMA_OFFLOAD("omp target update to(psiV_ptr[:det->psiV.size()])")
   }
 
-  const int WorkingIndex = iat - FirstIndex;
-  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiMinv.rows(), WorkingIndex, psiV_dev_ptr_list, curRatio_v);
+  // TODO: if Phi->isOMPoffload() = false, need to transfer phi_vgl_v and ratio_grads_v to device
 
-  for (auto wfc : WFC_list)
+  const int WorkingIndex = iat - FirstIndex;
+  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiMinv.rows(), WorkingIndex, phi_vgl_v, ratio_grads_v);
+
+  for (int iw = 0; iw < nw; iw++)
   {
-    auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(wfc);
+    auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(WFC_list[iw]);
 
     auto* Ainv_ptr  = det->psiMinv.data();
     PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[:psiMinv.size()])")
@@ -211,8 +205,11 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_acceptMove(const std::vector<W
     det->LogValue += convertValueToLog(det->curRatio);
     if (UpdateMode == ORB_PBYP_PARTIAL)
     {
-      simd::copy(det->dpsiM[WorkingIndex], det->dpsiV.data(), NumOrbitals);
-      simd::copy(det->d2psiM[WorkingIndex], det->d2psiV.data(), NumOrbitals);
+      GradVector_t dphi_v(reinterpret_cast<GradType*>(phi_vgl_v.data(1)) + NumOrbitals * iw, NumOrbitals);
+      ValueVector_t d2phi_v(phi_vgl_v.data(4) + NumOrbitals * iw, NumOrbitals);
+
+      simd::copy(det->dpsiM[WorkingIndex], dphi_v.data(), NumOrbitals);
+      simd::copy(det->d2psiM[WorkingIndex], d2phi_v.data(), NumOrbitals);
     }
     det->curRatio = 1.0;
   }
