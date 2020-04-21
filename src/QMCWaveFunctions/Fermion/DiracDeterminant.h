@@ -126,13 +126,17 @@ public:
    */
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
-  void mw_acceptMove(const RefVector<WaveFunctionComponent>& WFC_list,
-                     const RefVector<ParticleSet>& P_list,
-                     int iat,
-                     bool safe_to_delay = false) override
+  void mw_accept_rejectMove(const RefVector<WaveFunctionComponent>& WFC_list,
+                            const RefVector<ParticleSet>& P_list,
+                            int iat,
+                            const std::vector<bool>& isAccepted,
+                            bool safe_to_delay = false) override
   {
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw].get().acceptMove(P_list[iw], iat, safe_to_delay);
+      if (isAccepted[iw])
+        WFC_list[iw].get().acceptMove(P_list[iw], iat, safe_to_delay);
+      else
+        WFC_list[iw].get().restore(iat);
   }
 
   void completeUpdates() override;

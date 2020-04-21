@@ -350,7 +350,8 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   REQUIRE(grad_new[1][2] == Approx(-768.40759023695).epsilon(1e-4));
 #endif
 
-  psi.flex_acceptMove(wf_ref_list, p_ref_list, moved_elec_id);
+  std::vector<bool> isAccepted(2, true);
+  psi.flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted);
   std::cout << "flex_acceptMove WF_list[0] getLogPsi getPhase " << std::setprecision(16) << WF_list[0]->getLogPsi() << " " << WF_list[0]->getPhase() << std::endl;
   std::cout << "flex_acceptMove WF_list[1] getLogPsi getPhase " << std::setprecision(16) << WF_list[1]->getLogPsi() << " " << WF_list[1]->getPhase() << std::endl;
 #if defined(QMC_COMPLEX)

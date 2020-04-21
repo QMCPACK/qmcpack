@@ -555,23 +555,6 @@ void TrialWaveFunction::rejectMove(int iat)
   PhaseDiff = 0;
 }
 
-void TrialWaveFunction::flex_rejectMove(const RefVector<TrialWaveFunction>& wf_list, int iat)
-{
-  if (wf_list.size() > 1)
-  {
-    const int num_wfc             = wf_list[0].get().Z.size();
-    auto& wavefunction_components = wf_list[0].get().Z;
-
-    for (int i = 0; i < num_wfc; i++)
-    {
-      const auto wfc_list(extractWFCRefList(wf_list, i));
-      wavefunction_components[i]->mw_restore(wfc_list, iat);
-    }
-  }
-  else if (wf_list.size() == 1)
-    wf_list[0].get().rejectMove(iat);
-}
-
 /** update the state with the new data
  * @param P ParticleSet
  * @param iat index of the particle with a trial move
@@ -594,10 +577,11 @@ void TrialWaveFunction::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
     LogValue += std::real(Z[i]->LogValue);
 }
 
-void TrialWaveFunction::flex_acceptMove(const RefVector<TrialWaveFunction>& wf_list,
-                                        const RefVector<ParticleSet>& p_list,
-                                        int iat,
-                                        bool safe_to_delay)
+void TrialWaveFunction::flex_accept_rejectMove(const RefVector<TrialWaveFunction>& wf_list,
+                                               const RefVector<ParticleSet>& p_list,
+                                               int iat,
+                                               const std::vector<bool>& isAccepted,
+                                               bool safe_to_delay)
 {
   if (wf_list.size() > 1)
   {
@@ -605,25 +589,30 @@ void TrialWaveFunction::flex_acceptMove(const RefVector<TrialWaveFunction>& wf_l
     auto& wavefunction_components = wf_list[0].get().Z;
 
     for (int iw = 0; iw < wf_list.size(); iw++)
-    {
-      wf_list[iw].get().LogValue   = 0;
-      wf_list[iw].get().PhaseValue = 0;
-    }
+      if (isAccepted[iw])
+      {
+        wf_list[iw].get().LogValue   = 0;
+        wf_list[iw].get().PhaseValue = 0;
+      }
 
     for (int i = 0, ii = ACCEPT_TIMER; i < num_wfc; i++, ii += TIMER_SKIP)
     {
       ScopedTimer localtimer(wf_list[0].get().get_timers()[ii]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
-      wavefunction_components[i]->mw_acceptMove(wfc_list, p_list, iat, safe_to_delay);
+      wavefunction_components[i]->mw_accept_rejectMove(wfc_list, p_list, iat, isAccepted, safe_to_delay);
       for (int iw = 0; iw < wf_list.size(); iw++)
-      {
-        wf_list[iw].get().LogValue += std::real(wfc_list[iw].get().LogValue);
-        wf_list[iw].get().PhaseValue += std::imag(wfc_list[iw].get().LogValue);
-      }
+        if (isAccepted[iw])
+        {
+          wf_list[iw].get().LogValue += std::real(wfc_list[iw].get().LogValue);
+          wf_list[iw].get().PhaseValue += std::imag(wfc_list[iw].get().LogValue);
+        }
     }
   }
   else if (wf_list.size() == 1)
-    wf_list[0].get().acceptMove(p_list[0], iat, safe_to_delay);
+    if (isAccepted[0])
+      wf_list[0].get().acceptMove(p_list[0], iat, safe_to_delay);
+    else
+      wf_list[0].get().rejectMove(iat);
 }
 
 void TrialWaveFunction::completeUpdates()
