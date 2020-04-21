@@ -256,7 +256,8 @@ public:
                                               int iat,
                                               const Vector<ValueType*>& invRow_ptr_list,
                                               VGLVector_t& phi_vgl_v,
-                                              VGVector_t& psi_ratio_grads_v) override;
+                                              std::vector<ValueType>& ratios,
+                                              std::vector<GradType>& grads) override;
 
   void assign_vgh(const PointType& r,
                   ValueVector_t& psi,

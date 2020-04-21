@@ -851,7 +851,8 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>
                                                       int iat,
                                                       const Vector<ValueType*>& invRow_ptr_list,
                                                       VGLVector_t& phi_vgl_v,
-                                                      VGVector_t& psi_ratio_grads_v)
+                                                      std::vector<ValueType>& ratios,
+                                                      std::vector<GradType>& grads)
 {
   const int nwalkers = spo_list.size();
   multi_pos_copy.resize(nwalkers * 6);
@@ -998,7 +999,7 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>
     ValueType ratio(0);
     for (int team_id = 0; team_id < NumTeams; team_id++)
       ratio += rg_private[iw][team_id * 4];
-    psi_ratio_grads_v.data(0)[iw] = ratio;
+    ratios[iw] = ratio;
 
     ValueType grad_x(0), grad_y(0), grad_z(0);
     for (int team_id = 0; team_id < NumTeams; team_id++)
@@ -1007,9 +1008,7 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>
       grad_y += rg_private[iw][team_id * 4 + 2];
       grad_z += rg_private[iw][team_id * 4 + 3];
     }
-    psi_ratio_grads_v.data(1)[iw] = grad_x / ratio;
-    psi_ratio_grads_v.data(2)[iw] = grad_y / ratio;
-    psi_ratio_grads_v.data(3)[iw] = grad_z / ratio;
+    grads[iw] = {grad_x / ratio, grad_y / ratio, grad_z / ratio};
   }
 }
 

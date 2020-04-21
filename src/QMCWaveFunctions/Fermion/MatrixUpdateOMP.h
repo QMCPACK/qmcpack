@@ -112,8 +112,8 @@ public:
     }
   }
 
-  template<typename DEVPTRV, typename VGLV, typename VGV>
-  inline void mw_updateRow(const DEVPTRV& Ainv_list, int norb, int rowchanged, const VGLV& phi_vgl_v, const VGV& ratio_grads_v)
+  template<typename DEVPTRV, typename VGLV, typename VV>
+  inline void mw_updateRow(const DEVPTRV& Ainv_list, int norb, int rowchanged, const VGLV& phi_vgl_v, const VV& ratios)
   {
     size_t nw = Ainv_list.size();
     temp.resize(norb * nw);
@@ -131,7 +131,7 @@ public:
       ptr_buffer[iw + nw]     = const_cast<T*>(phi_vgl_v_dev_ptr + norb * iw);
       ptr_buffer[iw + nw * 2] = temp_dev_ptr + norb * iw;
       ptr_buffer[iw + nw * 3] = rcopy_dev_ptr + norb * iw;
-      c_ratio_inv[iw]         = T(-1) / ratio_grads_v.data(0)[iw];
+      c_ratio_inv[iw]         = T(-1) / ratios[iw];
     }
 
     // update the inverse matrix

@@ -34,7 +34,6 @@ public:
   using HessMatrix_t  = SPOSet::HessMatrix_t;
   using HessVector_t  = SPOSet::HessVector_t;
   using HessType      = SPOSet::HessType;
-  using VGVector_t    = SPOSet::VGVector_t;
 
   using mValueType = QMCTraits::QTFull::ValueType;
   using mGradType  = TinyVector<mValueType, DIM>;
@@ -48,7 +47,6 @@ public:
   using OffloadPinnedValueVector_t = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
   using OffloadVGLVector_t = VectorSoaContainer<ValueType, DIM + 2, OffloadAllocator<ValueType>>;
-  using OffloadPinnedVGVector_t = VectorSoaContainer<ValueType, DIM + 1, OffloadPinnedAllocator<ValueType>>;
 
   /** constructor
    *@param spos the single-particle orbital set
@@ -207,8 +205,8 @@ public:
   // psi(r')/psi(r) during a PbyP move
   PsiValueType curRatio;
 
-  // multi walker of ratio and grads
-  VGVector_t ratio_grads_v;
+  // multi walker of ratios
+  std::vector<ValueType> ratios_local;
 
 private:
   /// invert psiM or its copies

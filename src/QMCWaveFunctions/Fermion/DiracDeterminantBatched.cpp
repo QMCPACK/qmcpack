@@ -132,21 +132,18 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const std::vector<Wa
   }
 
   phi_vgl_v.resize(WFC_list.size() * psiMinv.cols());
-  ratio_grads_v.resize(WFC_list.size());
+  ratios_local.resize(WFC_list.size());
 
   Vector<ValueType*> psiMinv_dev_ptr_list_view(psiMinv_dev_ptr_list.data(), psiMinv_dev_ptr_list.size());
   VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
-  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_dev_ptr_list_view, phi_vgl_v_view, ratio_grads_v);
+  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_dev_ptr_list_view, phi_vgl_v_view, ratios_local, grad_new);
   SPOVGLTimer.stop();
 
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
     auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(WFC_list[iw]);
     det->UpdateMode = ORB_PBYP_PARTIAL;
-    ratios[iw] = det->curRatio = ratio_grads_v.data(0)[iw];
-    grad_new[iw][0] = ratio_grads_v.data(1)[iw];
-    grad_new[iw][1] = ratio_grads_v.data(2)[iw];
-    grad_new[iw][2] = ratio_grads_v.data(3)[iw];
+    ratios[iw] = det->curRatio = ratios_local[iw];
   }
 }
 
@@ -195,7 +192,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_acceptMove(const std::vector<W
   }
 
   const int WorkingIndex = iat - FirstIndex;
-  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiMinv.rows(), WorkingIndex, phi_vgl_v, ratio_grads_v);
+  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiMinv.rows(), WorkingIndex, phi_vgl_v, ratios_local);
 
   for (int iw = 0; iw < nw; iw++)
   {

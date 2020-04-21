@@ -103,13 +103,9 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>& spo_list
                                             int iat,
                                             const Vector<ValueType*>& invRow_ptr_list,
                                             VGLVector_t& phi_vgl_v,
-                                            VGVector_t& psi_ratio_grads_v)
+                                            std::vector<ValueType>& ratios,
+                                            std::vector<GradType>& grads)
 {
-  auto* __restrict__ psi_ratios = psi_ratio_grads_v.data(0);
-  auto* __restrict__ psi_grad_x = psi_ratio_grads_v.data(1);
-  auto* __restrict__ psi_grad_y = psi_ratio_grads_v.data(2);
-  auto* __restrict__ psi_grad_z = psi_ratio_grads_v.data(3);
-
   const size_t nw = spo_list.size();
   const size_t norb_requested = phi_vgl_v.size() / nw;
 #pragma omp parallel for
@@ -120,11 +116,8 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>& spo_list
     ValueVector_t d2phi_v(phi_vgl_v.data(4) + norb_requested * iw, norb_requested);
     spo_list[iw]->evaluateVGL(*P_list[iw], iat, phi_v, dphi_v, d2phi_v);
 
-    psi_ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
-    GradType grad_one = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested) / psi_ratios[iw];
-    psi_grad_x[iw] = grad_one[0];
-    psi_grad_y[iw] = grad_one[1];
-    psi_grad_z[iw] = grad_one[2];
+    ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
+    grads[iw] = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested) / ratios[iw];
   }
 }
 

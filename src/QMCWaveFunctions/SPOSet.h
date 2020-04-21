@@ -54,7 +54,6 @@ public:
   typedef OrbitalSetTraits<ValueType>::GradHessVector_t GGGVector_t;
   typedef OrbitalSetTraits<ValueType>::GradHessMatrix_t GGGMatrix_t;
   typedef OrbitalSetTraits<ValueType>::VGLVector_t VGLVector_t;
-  typedef OrbitalSetTraits<ValueType>::VGVector_t VGVector_t;
   typedef ParticleSet::Walker_t Walker_t;
   typedef std::map<std::string, SPOSet*> SPOPool_t;
 
@@ -325,7 +324,8 @@ public:
                                               int iat,
                                               const Vector<ValueType*>& invRow_ptr_list,
                                               VGLVector_t& phi_vgl_v,
-                                              VGVector_t& psi_ratio_grads_v);
+                                              std::vector<ValueType>& ratios,
+                                              std::vector<GradType>& grads);
 
   /** evaluate the values, gradients and hessians of this single-particle orbital set
    * @param P current ParticleSet
