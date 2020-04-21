@@ -913,29 +913,24 @@ a single Spack command.
 
 \subsection{Known Limitations}
 The QMCPACK Spack package inherits the limitations of the underlying
-Spack infrastructure and its dependencies. The main limitation is that installation can fail when building a
-dependency such as HDF5, MPICH, etc. For
-\ishell{spack install qmcpack} to succeed, it is very important to
-leverage preinstalled packages on your computer or supercomputer. The
-other frequently encountered challenge is that the compiler configuration
-is nonintuitive.  This is especially the case with the Intel
-compiler. If you encounter any difficulties, we recommend verifying that one of the less complex packages from spack installs
-correctly on your system.
+Spack infrastructure and its dependencies. The main limitation is that
+installation can fail when building a dependency such as HDF5, MPICH,
+etc. For \ishell{spack install qmcpack} to succeed, it is very
+important to leverage preinstalled packages on your computer or
+supercomputer. The other frequently encountered challenge is that the
+compiler configuration is nonintuitive.  This is especially the case
+with the Intel compiler. If you encounter any difficulties, we
+recommend testing the Spack compiler configuration on a simpler
+packages, e.g. HDF5.
 
 Here are some additional limitations of the QMCPACK Spack package that
 will be resolved in future releases:
 \begin{itemize}
-\item Due to limitation in QE's autoconf, the QE variant will fail to build
-  in serial. In other words, \verb|qmcpack install qmcpack~mpi| will issue
-  a conflict. To install QE, you will need to disable the QE variant
-  for the serial binary, \verb|qmcpack install qmcpack~mpi~qe|. 
-
-\item Robust CUDA support in Spack is a work-in-progress.  It will
+\item CUDA support in Spack still has some limitation.  It will
   catch only some compiler-CUDA conflicts.
-\item AFQMC is not part of the Spack package at this time.
-\item The Spack package will install Nexus as part of the
-  installation, but actual use of Nexus from within the Spack
-  environment is untested.
+\item The Intel compiler must find a recent and compatible GCC
+  compiler in its path or one must be explicity set with the
+  \ishell{-gcc-name} and \ishell{-gxx-name} flags.
 \end{itemize}
 
 \subsection{Setting up the Spack Environment}
