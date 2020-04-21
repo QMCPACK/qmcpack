@@ -51,14 +51,14 @@ void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
   APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
 }
 
-void SPOSet::mw_evaluateValue(const std::vector<SPOSet*>& spo_list,
-                              const std::vector<ParticleSet*>& P_list,
+void SPOSet::mw_evaluateValue(const RefVector<SPOSet>& spo_list,
+                              const RefVector<ParticleSet>& P_list,
                               int iat,
                               const RefVector<ValueVector_t>& psi_v_list)
 {
 #pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
-    spo_list[iw]->evaluateValue(*P_list[iw], iat, psi_v_list[iw]);
+    spo_list[iw].get().evaluateValue(P_list[iw], iat, psi_v_list[iw]);
 }
 
 void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
@@ -86,8 +86,8 @@ void SPOSet::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
 
 }
 
-void SPOSet::mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
-                            const std::vector<ParticleSet*>& P_list,
+void SPOSet::mw_evaluateVGL(const RefVector<SPOSet>& spo_list,
+                            const RefVector<ParticleSet>& P_list,
                             int iat,
                             const RefVector<ValueVector_t>& psi_v_list,
                             const RefVector<GradVector_t>& dpsi_v_list,
@@ -95,7 +95,7 @@ void SPOSet::mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
 {
 #pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
-    spo_list[iw]->evaluateVGL(*P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
+    spo_list[iw].get().evaluateVGL(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
 }
 
 void SPOSet::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>& spo_list,

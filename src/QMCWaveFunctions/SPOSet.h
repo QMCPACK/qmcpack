@@ -254,8 +254,8 @@ public:
    * @param iat active particle
    * @param psi_v_list the list of value vector pointers in a walker batch
    */
-  virtual void mw_evaluateValue(const std::vector<SPOSet*>& spo_list,
-                                const std::vector<ParticleSet*>& P_list,
+  virtual void mw_evaluateValue(const RefVector<SPOSet>& spo_list,
+                                const RefVector<ParticleSet>& P_list,
                                 int iat,
                                 const RefVector<ValueVector_t>& psi_v_list);
 
@@ -304,8 +304,8 @@ public:
    * @param dpsi_v_list the list of gradient vector pointers in a walker batch
    * @param d2psi_v_list the list of laplacian vector pointers in a walker batch
    */
-  virtual void mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
-                              const std::vector<ParticleSet*>& P_list,
+  virtual void mw_evaluateVGL(const RefVector<SPOSet>& spo_list,
+                              const RefVector<ParticleSet>& P_list,
                               int iat,
                               const RefVector<ValueVector_t>& psi_v_list,
                               const RefVector<GradVector_t>& dpsi_v_list,
