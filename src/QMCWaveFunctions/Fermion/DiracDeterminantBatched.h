@@ -86,11 +86,10 @@ public:
    */
   PsiValueType ratio(ParticleSet& P, int iat) override;
 
-  //Ye: TODO, good performance needs batched SPO evaluation.
-  //void mw_calcRatio(const std::vector<WaveFunctionComponent*>& WFC_list,
-  //                  const std::vector<ParticleSet*>& P_list,
-  //                  int iat,
-  //                  std::vector<PsiValueType>& ratios) override;
+  void mw_calcRatio(const std::vector<WaveFunctionComponent*>& WFC_list,
+                    const std::vector<ParticleSet*>& P_list,
+                    int iat,
+                    std::vector<PsiValueType>& ratios) override;
 
   /** compute multiple ratios for a particle move
    */

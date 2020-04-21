@@ -316,6 +316,44 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
 }
 
 template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const std::vector<WaveFunctionComponent*>& WFC_list,
+                                             const std::vector<ParticleSet*>& P_list,
+                                             int iat,
+                                             std::vector<PsiValueType>& ratios)
+{
+  SPOVGLTimer.start();
+  std::vector<SPOSet*> phi_list;
+  phi_list.reserve(WFC_list.size());
+
+  psiMinv_dev_ptr_list.resize(WFC_list.size());
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+  {
+    auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(WFC_list[iw]);
+    phi_list.push_back(det->Phi);
+    psiMinv_dev_ptr_list[iw] = Phi->isOMPoffload() ? det->psiMinv_dev_ptr : det->psiMinv.data();
+  }
+
+  phi_vgl_v.resize(WFC_list.size() * psiMinv.cols());
+  ratios_local.resize(WFC_list.size());
+
+  Vector<ValueType*> psiMinv_dev_ptr_list_view(psiMinv_dev_ptr_list.data(), psiMinv_dev_ptr_list.size());
+  VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
+
+  // calling Phi->mw_evaluateVGLandDetRatioGrads is a temporary workaround.
+  // We may implement mw_evaluateVandDetRatio in the future.
+  std::vector<GradType> grad_new(WFC_list.size());
+  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_dev_ptr_list_view, phi_vgl_v_view, ratios_local, grad_new);
+  SPOVGLTimer.stop();
+
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+  {
+    auto det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>*>(WFC_list[iw]);
+    det->UpdateMode = ORB_PBYP_PARTIAL;
+    ratios[iw] = det->curRatio = ratios_local[iw];
+  }
+}
+
+template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   RatioTimer.start();
