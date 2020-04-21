@@ -846,8 +846,8 @@ void SplineC2ROMP<ST>::mw_evaluateVGL(const RefVector<SPOSet>& sa_list,
 }
 
 template<typename ST>
-void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>& spo_list,
-                                                      const std::vector<ParticleSet*>& P_list,
+void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
+                                                      const RefVector<ParticleSet>& P_list,
                                                       int iat,
                                                       const Vector<ValueType*>& invRow_ptr_list,
                                                       VGLVector_t& phi_vgl_v,
@@ -860,7 +860,7 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>
   // pack particle positions
   for (int iw = 0; iw < nwalkers; ++iw)
   {
-    const PointType& r = P_list[iw]->activeR(iat);
+    const PointType& r = P_list[iw].get().activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     multi_pos_copy[iw * 6]     = r[0];
     multi_pos_copy[iw * 6 + 1] = r[1];

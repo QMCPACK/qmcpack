@@ -251,8 +251,8 @@ public:
                               const RefVector<GradVector_t>& dpsi_v_list,
                               const RefVector<ValueVector_t>& d2psi_v_list) override;
 
-  virtual void mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>& spo_list,
-                                              const std::vector<ParticleSet*>& P_list,
+  virtual void mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
+                                              const RefVector<ParticleSet>& P_list,
                                               int iat,
                                               const Vector<ValueType*>& invRow_ptr_list,
                                               VGLVector_t& phi_vgl_v,

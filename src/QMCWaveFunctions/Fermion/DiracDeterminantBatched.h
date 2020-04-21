@@ -86,8 +86,8 @@ public:
    */
   PsiValueType ratio(ParticleSet& P, int iat) override;
 
-  void mw_calcRatio(const std::vector<WaveFunctionComponent*>& WFC_list,
-                    const std::vector<ParticleSet*>& P_list,
+  void mw_calcRatio(const RefVector<WaveFunctionComponent>& WFC_list,
+                    const RefVector<ParticleSet>& P_list,
                     int iat,
                     std::vector<PsiValueType>& ratios) override;
 
@@ -101,8 +101,8 @@ public:
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
-  void mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
-                    const std::vector<ParticleSet*>& P_list,
+  void mw_ratioGrad(const RefVector<WaveFunctionComponent>& WFC_list,
+                    const RefVector<ParticleSet>& P_list,
                     int iat,
                     std::vector<PsiValueType>& ratios,
                     std::vector<GradType>& grad_new) override;
@@ -121,16 +121,16 @@ public:
    */
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
-  void mw_acceptMove(const std::vector<WaveFunctionComponent*>& WFC_list,
-                     const std::vector<ParticleSet*>& P_list,
+  void mw_acceptMove(const RefVector<WaveFunctionComponent>& WFC_list,
+                     const RefVector<ParticleSet>& P_list,
                      int iat, bool safe_to_delay = false) override;
 
   void completeUpdates() override;
 
-  void mw_completeUpdates(const std::vector<WaveFunctionComponent*>& WFC_list) override
+  void mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list) override
   {
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->completeUpdates();
+    for (WaveFunctionComponent& wfc : WFC_list)
+      wfc.completeUpdates();
   }
 
   /** move was rejected. copy the real container to the temporary to move on

@@ -98,8 +98,8 @@ void SPOSet::mw_evaluateVGL(const RefVector<SPOSet>& spo_list,
     spo_list[iw].get().evaluateVGL(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
 }
 
-void SPOSet::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>& spo_list,
-                                            const std::vector<ParticleSet*>& P_list,
+void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
+                                            const RefVector<ParticleSet>& P_list,
                                             int iat,
                                             const Vector<ValueType*>& invRow_ptr_list,
                                             VGLVector_t& phi_vgl_v,
@@ -114,7 +114,7 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>& spo_list
     ValueVector_t phi_v(phi_vgl_v.data() + norb_requested * iw, norb_requested);
     GradVector_t dphi_v(reinterpret_cast<GradType*>(phi_vgl_v.data(1)) + norb_requested * iw, norb_requested);
     ValueVector_t d2phi_v(phi_vgl_v.data(4) + norb_requested * iw, norb_requested);
-    spo_list[iw]->evaluateVGL(*P_list[iw], iat, phi_v, dphi_v, d2phi_v);
+    spo_list[iw].get().evaluateVGL(P_list[iw], iat, phi_v, dphi_v, d2phi_v);
 
     ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
     grads[iw] = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested) / ratios[iw];

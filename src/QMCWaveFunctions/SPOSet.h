@@ -319,8 +319,8 @@ public:
    * @param phi_vgl_v orbital values, gradients and laplacians of all the walkers
    * @param psi_ratio_grads_v determinant ratio and grads of all the walkers
    */
-  virtual void mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>& spo_list,
-                                              const std::vector<ParticleSet*>& P_list,
+  virtual void mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
+                                              const RefVector<ParticleSet>& P_list,
                                               int iat,
                                               const Vector<ValueType*>& invRow_ptr_list,
                                               VGLVector_t& phi_vgl_v,
