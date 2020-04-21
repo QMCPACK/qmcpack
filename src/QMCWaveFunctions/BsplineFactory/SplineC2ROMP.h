@@ -241,8 +241,8 @@ public:
                            GradVector_t& dpsi,
                            ValueVector_t& d2psi) override;
 
-  virtual void mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
-                              const std::vector<ParticleSet*>& P_list,
+  virtual void mw_evaluateVGL(const RefVector<SPOSet>& sa_list,
+                              const RefVector<ParticleSet>& P_list,
                               int iat,
                               const RefVector<ValueVector_t>& psi_v_list,
                               const RefVector<GradVector_t>& dpsi_v_list,

@@ -273,7 +273,7 @@ public:
                               bool safe_to_delay = false);
   void completeUpdates();
   /* flexible batched version of completeUpdates.  */
-  void flex_completeUpdates(const std::vector<TrialWaveFunction*>& WF_list) const;
+  void flex_completeUpdates(const RefVector<TrialWaveFunction>& WF_list) const;
 
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */
@@ -383,18 +383,10 @@ private:
   /** @{
    *  @brief helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
    */
-  std::vector<WaveFunctionComponent*> extractWFCPtrList(const std::vector<TrialWaveFunction*>& WF_list, int id) const;
-
   static std::vector<WaveFunctionComponent*> extractWFCPtrList(const UPtrVector<TrialWaveFunction>& WF_list, int id);
 
   static RefVector<WaveFunctionComponent> extractWFCRefList(const RefVector<TrialWaveFunction>& WF_list, int id);
   /** }@ */
-
-  // helper function for extrating a list of gradients from a list of TrialWaveFunction
-  std::vector<ParticleSet::ParticleGradient_t*> extractGPtrList(const std::vector<TrialWaveFunction*>& wf_list) const;
-
-  // helper function for extracting a list of laplacian from a list of TrialWaveFunction
-  std::vector<ParticleSet::ParticleLaplacian_t*> extractLPtrList(const std::vector<TrialWaveFunction*>& wf_list) const;
 
   // helper function for extrating a list of gradients from a list of TrialWaveFunction
   static RefVector<ParticleSet::ParticleGradient_t> extractGRefList(const RefVector<TrialWaveFunction>& wf_list);

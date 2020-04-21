@@ -242,24 +242,8 @@ struct WaveFunctionComponent : public QMCTraits
    * @param iat particle index
    * @param grad_now the list of gradients in a walker batch, \f$\nabla\ln\Psi\f$
    */
-  virtual void mw_evalGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
-                           const std::vector<ParticleSet*>& P_list,
-                           int iat,
-                           std::vector<GradType>& grad_now)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      grad_now[iw] = WFC_list[iw]->evalGrad(*P_list[iw], iat);
-  }
-
-  /** compute the current gradients for the iat-th particle of multiple walkers
-   * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch
-   * @param P_list the list of ParticleSet pointers in a walker batch
-   * @param iat particle index
-   * @param grad_now the list of gradients in a walker batch, \f$\nabla\ln\Psi\f$
-   */
-  virtual void mw_evalGrad(const std::vector<std::reference_wrapper<WaveFunctionComponent>>& WFC_list,
-                           const std::vector<std::reference_wrapper<ParticleSet>>& P_list,
+  virtual void mw_evalGrad(const RefVector<WaveFunctionComponent>& WFC_list,
+                           const RefVector<ParticleSet>& P_list,
                            int iat,
                            std::vector<GradType>& grad_now)
   {
@@ -356,14 +340,14 @@ struct WaveFunctionComponent : public QMCTraits
    * @param iat particle index
    * @param safe_to_delay if true, delayed accept is safe.
    */
-  virtual void mw_acceptMove(const std::vector<WaveFunctionComponent*>& WFC_list,
-                             const std::vector<ParticleSet*>& P_list,
+  virtual void mw_acceptMove(const RefVector<WaveFunctionComponent>& WFC_list,
+                             const RefVector<ParticleSet>& P_list,
                              int iat,
                              bool safe_to_delay = false)
   {
 #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->acceptMove(*P_list[iw], iat, safe_to_delay);
+      WFC_list[iw].get().acceptMove(P_list[iw], iat, safe_to_delay);
   }
 
   /** complete all the delayed updates, must be called after each substep or step during pbyp move
@@ -373,11 +357,11 @@ struct WaveFunctionComponent : public QMCTraits
   /** complete all the delayed updates for all the walkers in a batch
    * must be called after each substep or step during pbyp move
    */
-  virtual void mw_completeUpdates(const std::vector<WaveFunctionComponent*>& WFC_list)
+  virtual void mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list)
   {
 #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->completeUpdates();
+      WFC_list[iw].get().completeUpdates();
   }
 
   /** If a move for iat-th particle is rejected, restore to the content.
@@ -394,11 +378,11 @@ struct WaveFunctionComponent : public QMCTraits
    *
    * Ye: hopefully we can gradually move away from restore
    */
-  virtual void mw_restore(const std::vector<WaveFunctionComponent*>& WFC_list, int iat)
+  virtual void mw_restore(const RefVector<WaveFunctionComponent>& WFC_list, int iat)
   {
     //#pragma omp parallel for
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->restore(iat);
+    for (WaveFunctionComponent& wfc : WFC_list)
+      wfc.restore(iat);
   }
 
   /** evaluate the ratio of the new to old WaveFunctionComponent value
@@ -441,7 +425,7 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual void mw_registerData(const std::vector<WaveFunctionComponent*>& WFC_list,
                                const std::vector<ParticleSet*>& P_list,
-                               const std::vector<WFBufferType*>& buf_list)
+                               const RefVector<WFBufferType>& buf_list)
   {
     // We can't make this static but we can use a lambda with no capture to
     // restrict access to *this scope
@@ -449,7 +433,7 @@ struct WaveFunctionComponent : public QMCTraits
       wfc.registerData(pset, wfb);
     };
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      registerComponentData(*(WFC_list[iw]), *(P_list[iw]), *(buf_list[iw]));
+      registerComponentData(*(WFC_list[iw]), *(P_list[iw]), buf_list[iw]);
   }
 
   /** For particle-by-particle move. Put the objects of this class
