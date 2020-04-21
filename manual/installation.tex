@@ -1033,6 +1033,27 @@ packages can be found at
 
 \url{http://spack.readthedocs.io/en/latest/getting_started.html#system-packages}
 
+Beginning with QMCPACK v3.9.0, Python 3.x is required. However,
+installing Python with a compiler besides GCC is tricky. We recommend
+leveraging your local Python installation by adding an entry in
+\ishell{\~/.spack/packages.yaml}:
+\begin{shade}
+packages:
+    python:
+       modules:
+         python@3.7.4: anaconda3/2019.10
+\end{shade}
+
+Or if a module is not available
+\begin{shade}
+packages:
+    python:
+       paths:
+          python@3.7.4: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/anaconda3/2019.10/bin/python
+       buildable: False
+\end{shade}
+
+
 \subsection{Building QMCPACK}
 The QMCPACK Spack package has a number of variants to support different compile time
 options and different versions of the application. A full list can be displayed by typing:
