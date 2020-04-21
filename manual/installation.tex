@@ -965,9 +965,30 @@ to add one:
 your-laptop> spack compiler add <path-to-compiler>
 \end{shade}
 
-The Intel compiler that requires checkout a license is particular
-tricky. First go ahead and add the compiler by modifying
-\ishell{\~/.spack/linux/compilers.yaml}. Here is an example of a typical configuration:
+The Intel compiler, and other commerical compilers like PGI, typically
+require extra environment variables to work properly. If you have an
+module environment set-up by your system administrators, it is
+recommended that you set the module name in
+\ishell{\~/.spack/linux/compilers.yaml}. Here is an example for the
+Intel compiler
+\begin{shade}
+- compiler:
+    environment:{}
+    extra_rpaths:  []
+    flags: {}
+    modules:
+    - intel/18.0.3
+    operating_system: ubuntu14.04
+    paths:
+      cc: /soft/com/packages/intel/18/u3/compilers_and_libraries_2018.3.222/linux/bin/intel64/icc
+      cxx: /soft/com/packages/intel/18/u3/compilers_and_libraries_2018.3.222/linux/bin/intel64/icpc
+      f77: /soft/com/packages/intel/18/u3/compilers_and_libraries_2018.3.222/linux/bin/intel64/ifort
+      fc: /soft/com/packages/intel/18/u3/compilers_and_libraries_2018.3.222/linux/bin/intel64/ifort
+    spec: intel@18.0.3
+    target: x86_64
+\end{shade}
+
+If a module is not available, you will have to set-up the environment variables manually:
 \begin{shade}
 - compiler:
     environment:
