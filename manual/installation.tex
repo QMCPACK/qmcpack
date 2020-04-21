@@ -1220,19 +1220,15 @@ CMake, and pkg-config. The Intel compiler for Mac on OS X is not well
 supported by Spack packages and will most likely lead to a compile
 time failure in one of QMCPACK's dependencies.
 
-\subsection{Installing QMCPACK with Spack on IBM Blue Gene}
-This is untested at this time. In principle, it should work as long as each
-package found in
-
-\begin{shade}
-Blue Gene prompt> spack spec qmcpack
-\end{shade}
-can be compiled for the compute nodes.
-
 \subsection{Installing QMCPACK with Spack on Cray Supercomputers}
-There are a number of issues in the Cray module environment. Spack
-contributors are working to fix these problems. We will update this
-section once we have a recipe that works reliably.
+Spack now works with the Cray environment. To leverage the installed
+Cray environment, both a \ishell{compilers.yaml} and
+\ishell{packages.yaml} file should be provided by the supercomputing
+facility. Additionally, Spack packages compiled by the facility can be
+re-using by chaining Spack installations
+\url{https://spack.readthedocs.io/en/latest/chain.html}
+
+Instructions for DOE supercomputing facilities that support the are forthcoming.
 
 \subsection{Reporting Bugs}
 Bugs with the QMCPACK Spack package should be filed at the main GitHub
