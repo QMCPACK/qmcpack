@@ -192,14 +192,14 @@ struct WaveFunctionComponent : public QMCTraits
    * @param L_list the list of Laplacians pointers in a walker batch, \f$\nabla^2\ln\Psi\f$
    * @@param values the log WF values of walkers in a batch
    */
-  virtual void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& WFC_list,
-                              const std::vector<ParticleSet*>& P_list,
-                              const std::vector<ParticleSet::ParticleGradient_t*>& G_list,
-                              const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list)
+  virtual void mw_evaluateLog(const RefVector<WaveFunctionComponent>& WFC_list,
+                              const RefVector<ParticleSet>& P_list,
+                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list)
   {
 #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->evaluateLog(*P_list[iw], *G_list[iw], *L_list[iw]);
+      WFC_list[iw].get().evaluateLog(P_list[iw], G_list[iw], L_list[iw]);
   }
 
   /** recompute the value of the WaveFunctionComponents which require critical accuracy.

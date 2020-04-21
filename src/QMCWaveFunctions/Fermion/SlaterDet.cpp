@@ -128,22 +128,22 @@ SlaterDet::LogValueType SlaterDet::evaluateLog(ParticleSet& P,
   return LogValue;
 }
 
-void SlaterDet::mw_evaluateLog(const std::vector<WaveFunctionComponent*>& WFC_list,
-                               const std::vector<ParticleSet*>& P_list,
-                               const std::vector<ParticleSet::ParticleGradient_t*>& G_list,
-                               const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list)
+void SlaterDet::mw_evaluateLog(const RefVector<WaveFunctionComponent>& WFC_list,
+                               const RefVector<ParticleSet>& P_list,
+                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list)
 {
-  constexpr RealType czero(0);
+  constexpr LogValueType czero(0);
 
-  for (int iw = 0; iw < WFC_list.size(); iw++)
-    WFC_list[iw]->LogValue   = czero;
+  for (WaveFunctionComponent& wfc : WFC_list)
+    wfc.LogValue = czero;
 
   for (int i = 0; i < Dets.size(); ++i)
   {
-    const std::vector<WaveFunctionComponent*> Det_list(extract_Det_list(WFC_list, i));
+    const auto Det_list(extract_DetRef_list(WFC_list, i));
     Dets[i]->mw_evaluateLog(Det_list, P_list, G_list, L_list);
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw]->LogValue += Det_list[iw]->LogValue;
+      WFC_list[iw].get().LogValue += Det_list[iw].get().LogValue;
   }
 }
 

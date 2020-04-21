@@ -72,10 +72,10 @@ public:
                                    ParticleSet::ParticleGradient_t& G,
                                    ParticleSet::ParticleLaplacian_t& L) override;
 
-  virtual void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& wfc_list,
-                              const std::vector<ParticleSet*>& P_list,
-                              const std::vector<ParticleSet::ParticleGradient_t*>& G_list,
-                              const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list) override;
+  virtual void mw_evaluateLog(const RefVector<WaveFunctionComponent>& wfc_list,
+                              const RefVector<ParticleSet>& P_list,
+                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) override;
 
   virtual void recompute(ParticleSet& P) override;
 

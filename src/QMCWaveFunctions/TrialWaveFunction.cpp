@@ -154,8 +154,7 @@ void TrialWaveFunction::flex_evaluateLog(const RefVector<TrialWaveFunction>& wf_
     {
       ScopedTimer local_timer(wf_list[0].get().myTimers[ii]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
-      wavefunction_components[i]->mw_evaluateLog(convert_ref_to_ptr_list(wfc_list), convert_ref_to_ptr_list(p_list),
-                                                 convert_ref_to_ptr_list(g_list), convert_ref_to_ptr_list(l_list));
+      wavefunction_components[i]->mw_evaluateLog(wfc_list, p_list, g_list, l_list);
       auto accumulateLogAndPhase = [](TrialWaveFunction& twf, WaveFunctionComponent& wfc) {
         twf.LogValue += std::real(wfc.LogValue);
         twf.PhaseValue += std::imag(wfc.LogValue);
