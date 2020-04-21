@@ -1026,11 +1026,10 @@ packages:
         buildable: False
 \end{shade}
 
-Some trial-and-error might be involved to get the directory correct. If
-you do not include enough of the tree path, Spack will not be able to
-register the package in its database. More information about system
-packages can be found at
-
+Some trial-and-error might be involved to set the directories
+correctly. If you do not include enough of the tree path, Spack will
+not be able to register the package in its database. More information
+about system packages can be found at
 \url{http://spack.readthedocs.io/en/latest/getting_started.html#system-packages}
 
 Beginning with QMCPACK v3.9.0, Python 3.x is required. However,
@@ -1141,7 +1140,7 @@ Virtual Packages:
     None
 \end{lstlisting}
 
-For example, to install the complex version of QMCPACK in mixed-precision use:
+For example, to install the complex-valued version of QMCPACK in mixed-precision use:
 
 \begin{shade}
 your-laptop> spack install qmcpack+mixed+complex%gcc@7.2.0 ^intel-mkl
@@ -1177,7 +1176,7 @@ your-laptop> spack install qmcpack+cuda%intel@18.0.3 cuda_arch=61 ^intel-mkl
 \end{shade}
 
 Due to limitations in the Spack CUDA package, if your compiler and
-CUDA combination give you a conflict you will need to specify a
+CUDA combination give you a conflict, you will need to set a
 specific verison of CUDA that is compatible with your compiler on the
 command line. For example,
 \begin{shade}
