@@ -136,8 +136,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const std::vector<Wa
 
   Vector<ValueType*> psiMinv_dev_ptr_list_view(psiMinv_dev_ptr_list.data(), psiMinv_dev_ptr_list.size());
   VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
-  VectorSoaContainer<ValueType, DIM + 1> ratio_grads_v_view(ratio_grads_v.data(), ratio_grads_v.size(), ratio_grads_v.capacity());
-  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_dev_ptr_list_view, phi_vgl_v_view, ratio_grads_v_view);
+  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_dev_ptr_list_view, phi_vgl_v_view, ratio_grads_v);
   SPOVGLTimer.stop();
 
   for (int iw = 0; iw < WFC_list.size(); iw++)
@@ -185,7 +184,15 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_acceptMove(const std::vector<W
     psiMinv_dev_ptr_list[iw] = det->psiMinv_dev_ptr;
   }
 
-  // TODO: if Phi->isOMPoffload() = false, need to transfer phi_vgl_v and ratio_grads_v to device
+  if (Phi->isOMPoffload())
+  {
+    auto* phi_vgl_v_ptr = phi_vgl_v.data();
+    PRAGMA_OFFLOAD("omp target update from(phi_vgl_v_ptr[phi_vgl_v.capacity():phi_vgl_v.capacity()*4])")
+  }
+  else
+  {
+    // TODO: need to transfer phi_vgl_v and ratio_grads_v to device
+  }
 
   const int WorkingIndex = iat - FirstIndex;
   det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiMinv.rows(), WorkingIndex, phi_vgl_v, ratio_grads_v);

@@ -34,6 +34,7 @@ public:
   using HessMatrix_t  = SPOSet::HessMatrix_t;
   using HessVector_t  = SPOSet::HessVector_t;
   using HessType      = SPOSet::HessType;
+  using VGVector_t    = SPOSet::VGVector_t;
 
   using mValueType = QMCTraits::QTFull::ValueType;
   using mGradType  = TinyVector<mValueType, DIM>;
@@ -207,7 +208,7 @@ public:
   PsiValueType curRatio;
 
   // multi walker of ratio and grads
-  OffloadPinnedVGVector_t ratio_grads_v;
+  VGVector_t ratio_grads_v;
 
 private:
   /// invert psiM or its copies

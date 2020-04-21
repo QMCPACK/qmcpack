@@ -79,7 +79,7 @@ public:
     Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
     detEng.invert_transpose(logdetT, Ainv_host_view, LogValue);
     auto* Ainv_ptr  = Ainv.data();
-    PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.rows()*Ainv.cols()])")
+    PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
   }
 
   template<typename VVT, typename RATIOT, typename OMPALLOC>
@@ -108,7 +108,7 @@ public:
         for(int i = 0; i < norb; i++)
           rcopy_ptr[i] = Ainv_ptr[rowchanged * norb + i];
       }
-      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(-RATIOT(1)/c_ratio_in), rcopy_ptr, 1, temp_ptr, 1, Ainv_ptr, norb);
+      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1)/c_ratio_in), rcopy_ptr, 1, temp_ptr, 1, Ainv_ptr, norb);
     }
   }
 
@@ -122,7 +122,6 @@ public:
     auto* temp_dev_ptr = getOffloadDevicePtr(temp.data());
     auto* rcopy_dev_ptr = getOffloadDevicePtr(rcopy.data());
     auto* phi_vgl_v_dev_ptr = getOffloadDevicePtr(phi_vgl_v.data());
-    auto* c_ratio_inv_ptr = c_ratio_inv.data();
 
     // to handle T** of Ainv, psi_v, temp, rcopy
     ptr_buffer.resize(nw * 4);
@@ -132,6 +131,7 @@ public:
       ptr_buffer[iw + nw]     = const_cast<T*>(phi_vgl_v_dev_ptr + norb * iw);
       ptr_buffer[iw + nw * 2] = temp_dev_ptr + norb * iw;
       ptr_buffer[iw + nw * 3] = rcopy_dev_ptr + norb * iw;
+      c_ratio_inv[iw]         = T(-1) / ratio_grads_v.data(0)[iw];
     }
 
     // update the inverse matrix
@@ -140,23 +140,22 @@ public:
     int dummy_handle = 0;
     int success =0;
     auto* ptr_buffer_ptr = ptr_buffer.data();
-    auto* ratio_grads_ptr = ratio_grads_v.data();
+    auto* c_ratio_inv_ptr = c_ratio_inv.data();
     resize_fill_constant_arrays(nw);
     auto* cone_ptr = cone_vec.data();
     auto* czero_ptr = czero_vec.data();
-    PRAGMA_OFFLOAD("omp target data map(always, to: ptr_buffer_ptr[:ptr_buffer.size()]) \
-                    use_device_ptr(ptr_buffer_ptr, phi_vgl_v_ptr, ratio_grads_ptr, c_ratio_inv_ptr, cone_ptr, czero_ptr)")
+    PRAGMA_OFFLOAD("omp target data map(always, to: ptr_buffer_ptr[:ptr_buffer.size()], c_ratio_inv_ptr[:c_ratio_inv.size()]) \
+                    use_device_ptr(ptr_buffer_ptr, c_ratio_inv_ptr, cone_ptr, czero_ptr)")
     {
       // invoke the Fahy's variant of Sherman-Morrison update.
       success = ompBLAS::gemv_batched(dummy_handle, 'T', norb, norb, cone_ptr, ptr_buffer_ptr, norb, ptr_buffer_ptr + nw, 1, czero_ptr, ptr_buffer_ptr + nw * 2, 1, nw);
-      PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) is_device_ptr(ptr_buffer_ptr, phi_vgl_v_ptr, ratio_grads_ptr, c_ratio_inv_ptr)")
+      PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) is_device_ptr(ptr_buffer_ptr)")
       for(int iw = 0; iw < nw; iw++)
       {
         auto* Ainv_ptr  = ptr_buffer_ptr[iw];
         auto* temp_ptr  = ptr_buffer_ptr[nw * 2 + iw];
         auto* rcopy_ptr = ptr_buffer_ptr[nw * 3 + iw];
 
-        c_ratio_inv_ptr[iw] = - T(1) / ratio_grads_ptr[iw];
         temp_ptr[rowchanged] -= cone;
         PRAGMA_OFFLOAD("omp parallel for simd")
         for(int i = 0; i < norb; i++)

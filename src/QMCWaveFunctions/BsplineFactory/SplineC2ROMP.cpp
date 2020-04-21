@@ -901,7 +901,6 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const std::vector<SPOSet*>
   auto* rg_private_ptr           = rg_private.data();
   const size_t first_spo_local   = first_spo;
   const size_t phi_vgl_stride    = phi_vgl_v.capacity();
-  const size_t psi_rg_stride     = psi_ratio_grads_v.capacity();
   const int nComplexBands_local  = nComplexBands;
 
   {
