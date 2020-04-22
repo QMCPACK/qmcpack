@@ -341,14 +341,14 @@ struct WaveFunctionComponent : public QMCTraits
    * @param safe_to_delay if true, delayed accept is safe.
    */
   virtual void mw_accept_rejectMove(const RefVector<WaveFunctionComponent>& WFC_list,
-                             const RefVector<ParticleSet>& P_list,
-                             int iat,
-                             const std::vector<bool>& isAccepted,
-                             bool safe_to_delay = false)
+                                    const RefVector<ParticleSet>& P_list,
+                                    int iat,
+                                    const std::vector<bool>& isAccepted,
+                                    bool safe_to_delay = false)
   {
 #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      if(isAccepted[iw])
+      if (isAccepted[iw])
         WFC_list[iw].get().acceptMove(P_list[iw], iat, safe_to_delay);
       else
         WFC_list[iw].get().restore(iat);

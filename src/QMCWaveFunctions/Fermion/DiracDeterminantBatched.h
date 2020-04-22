@@ -41,11 +41,11 @@ public:
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
   template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-  using OffloadPinnedValueVector_t = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
-  using OffloadPinnedValueMatrix_t = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
+  using OffloadPinnedAllocator        = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
+  using OffloadPinnedValueVector_t    = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
+  using OffloadPinnedValueMatrix_t    = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
-  using OffloadVGLVector_t = VectorSoaContainer<ValueType, DIM + 2, OffloadAllocator<ValueType>>;
+  using OffloadVGLVector_t            = VectorSoaContainer<ValueType, DIM + 2, OffloadAllocator<ValueType>>;
 
   /** constructor
    *@param spos the single-particle orbital set
@@ -216,7 +216,6 @@ private:
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
-
 };
 
 extern template class DiracDeterminantBatched<>;

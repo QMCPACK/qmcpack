@@ -83,7 +83,6 @@ void SPOSet::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
 #pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].get().evaluateDetRatios(vp_list[iw], psi_list[iw], psiinv_list[iw], ratios_list[iw]);
-
 }
 
 void SPOSet::mw_evaluateVGL(const RefVector<SPOSet>& spo_list,
@@ -106,7 +105,7 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
                                             std::vector<ValueType>& ratios,
                                             std::vector<GradType>& grads)
 {
-  const size_t nw = spo_list.size();
+  const size_t nw             = spo_list.size();
   const size_t norb_requested = phi_vgl_v.size() / nw;
 #pragma omp parallel for
   for (int iw = 0; iw < nw; iw++)
@@ -117,7 +116,7 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
     spo_list[iw].get().evaluateVGL(P_list[iw], iat, phi_v, dphi_v, d2phi_v);
 
     ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
-    grads[iw] = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested) / ratios[iw];
+    grads[iw]  = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested) / ratios[iw];
   }
 }
 
