@@ -30,6 +30,8 @@
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantWithBackflow.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
 #include <vector>
 //#include "QMCWaveFunctions/Fermion/ci_node.h"
@@ -411,6 +413,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 
   // whether to use an optimizable slater determinant
   std::string optimize("no");
+  std::string use_batch("no");
 #if defined(ENABLE_CUDA)
   std::string useGPU("yes");
 #else
@@ -420,6 +423,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   OhmmsAttributeSet sdAttrib;
   sdAttrib.add(delay_rank, "delay_rank");
   sdAttrib.add(optimize, "optimize");
+  sdAttrib.add(use_batch, "batch");
   sdAttrib.add(useGPU, "gpu");
   sdAttrib.put(cur->parent);
 
@@ -468,8 +472,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   int lastIndex  = targetPtcl.last(spin_group);
   if (firstIndex == lastIndex)
     return true;
-  std::string dname;
-  getNodeName(dname, cur);
+
   DiracDeterminantBase* adet = 0;
   {
 #if defined(QMC_CUDA)
@@ -477,6 +480,11 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #else
     if (UseBackflow)
       adet = new DiracDeterminantWithBackflow(targetPtcl, psi, BFTrans, firstIndex);
+    else if (use_batch == "yes")
+    {
+      app_log() << "  Using DiracDeterminantBatched" << std::endl;
+      adet = new DiracDeterminantBatched<>(psi, firstIndex);
+    }
 #if defined(ENABLE_CUDA)
     else if (useGPU == "yes")
     {

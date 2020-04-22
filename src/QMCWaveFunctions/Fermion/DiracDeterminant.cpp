@@ -133,7 +133,6 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  GradType rv;
 
   // This is an optimization.
   // check invRow_id against WorkingIndex to see if getInvRow() has been called already
@@ -164,7 +163,6 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  GradType rv;
 
   // This is an optimization.
   // check invRow_id against WorkingIndex to see if getInvRow() has been called already
@@ -410,7 +408,6 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
     phi_list.push_back(*det.Phi);
     psiV_list.push_back(det.psiV);
     invRow_list.push_back(det.invRow);
-    //det.Phi->evaluateDetRatios(vp, det.psiV, det.invRow, ratios[iw]);
   }
   RatioTimer.stop();
 
@@ -630,7 +627,6 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
   SPOVGLTimer.stop();
   if (NumPtcls == 1)
   {
-    //CurrentDet=psiM(0,0);
     ValueType det = psiM_temp(0, 0);
     psiM(0, 0)    = RealType(1) / det;
     LogValue      = convertValueToLog(det);

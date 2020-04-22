@@ -4,38 +4,28 @@
 //
 // Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
-//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/**@file DiracDeterminant.h
- * @brief Declaration of DiracDeterminant with a S(ingle)P(article)O(rbital)Set
+/**@file DiracDeterminantBatched.h
+ * @brief Declaration of DiracDeterminantBatched with a S(ingle)P(article)O(rbital)Set
  */
-#ifndef QMCPLUSPLUS_DIRACDETERMINANT_H
-#define QMCPLUSPLUS_DIRACDETERMINANT_H
+#ifndef QMCPLUSPLUS_DIRACDETERMINANTBATCHED_H
+#define QMCPLUSPLUS_DIRACDETERMINANTBATCHED_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
-#if defined(ENABLE_CUDA)
-#include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
-#endif
+#include "QMCWaveFunctions/Fermion/MatrixUpdateOMP.h"
+#include "Platforms/PinnedAllocator.h"
+#include "OpenMP/OMPallocator.hpp"
 
 namespace qmcplusplus
 {
-template<typename DU_TYPE = DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
-class DiracDeterminant : public DiracDeterminantBase
+template<typename DET_ENGINE_TYPE = MatrixUpdateOMP<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
+class DiracDeterminantBatched : public DiracDeterminantBase
 {
-protected:
-  int ndelay;
-
 public:
   using ValueVector_t = SPOSet::ValueVector_t;
   using ValueMatrix_t = SPOSet::ValueMatrix_t;
@@ -48,15 +38,24 @@ public:
   using mValueType = QMCTraits::QTFull::ValueType;
   using mGradType  = TinyVector<mValueType, DIM>;
 
+  template<typename DT>
+  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
+  template<typename DT>
+  using OffloadPinnedAllocator        = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
+  using OffloadPinnedValueVector_t    = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
+  using OffloadPinnedValueMatrix_t    = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
+  using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
+  using OffloadVGLVector_t            = VectorSoaContainer<ValueType, DIM + 2, OffloadAllocator<ValueType>>;
+
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminant(SPOSetPtr const spos, int first = 0);
+  DiracDeterminantBatched(SPOSetPtr const spos, int first = 0);
 
   // copy constructor and assign operator disabled
-  DiracDeterminant(const DiracDeterminant& s) = delete;
-  DiracDeterminant& operator=(const DiracDeterminant& s) = delete;
+  DiracDeterminantBatched(const DiracDeterminantBatched& s) = delete;
+  DiracDeterminantBatched& operator=(const DiracDeterminantBatched& s) = delete;
 
   /** set the index of the first particle in the determinant and reset the size of the determinant
    *@param first index of first particle
@@ -86,11 +85,10 @@ public:
    */
   PsiValueType ratio(ParticleSet& P, int iat) override;
 
-  //Ye: TODO, good performance needs batched SPO evaluation.
-  //void mw_calcRatio(const std::vector<WaveFunctionComponent*>& WFC_list,
-  //                  const std::vector<ParticleSet*>& P_list,
-  //                  int iat,
-  //                  std::vector<PsiValueType>& ratios) override;
+  void mw_calcRatio(const RefVector<WaveFunctionComponent>& WFC_list,
+                    const RefVector<ParticleSet>& P_list,
+                    int iat,
+                    std::vector<PsiValueType>& ratios) override;
 
   /** compute multiple ratios for a particle move
    */
@@ -102,8 +100,6 @@ public:
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
-  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override final;
-
   void mw_ratioGrad(const RefVector<WaveFunctionComponent>& WFC_list,
                     const RefVector<ParticleSet>& P_list,
                     int iat,
@@ -111,8 +107,6 @@ public:
                     std::vector<GradType>& grad_new) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
-
-  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override final;
 
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 
@@ -130,21 +124,14 @@ public:
                             const RefVector<ParticleSet>& P_list,
                             int iat,
                             const std::vector<bool>& isAccepted,
-                            bool safe_to_delay = false) override
-  {
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      if (isAccepted[iw])
-        WFC_list[iw].get().acceptMove(P_list[iw], iat, safe_to_delay);
-      else
-        WFC_list[iw].get().restore(iat);
-  }
+                            bool safe_to_delay = false) override;
 
   void completeUpdates() override;
 
   void mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list) override
   {
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw].get().completeUpdates();
+    for (WaveFunctionComponent& wfc : WFC_list)
+      wfc.completeUpdates();
   }
 
   /** move was rejected. copy the real container to the temporary to move on
@@ -173,7 +160,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminant* makeCopy(SPOSet* spo) const override;
+  DiracDeterminantBatched* makeCopy(SPOSet* spo) const override;
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
@@ -181,10 +168,13 @@ public:
   ValueMatrix_t psiM_temp;
 
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix_t psiM;
-
-  /// temporary container for testing
-  ValueMatrix_t psiMinv;
+  OffloadPinnedValueMatrix_t psiMinv;
+  /// device pointer of psiMinv data
+  ValueType* psiMinv_dev_ptr;
+  /// multi-walker pointers of psiMinv data
+  std::vector<ValueType*> psiMinv_dev_ptr_list;
+  /// multi-walker pointers of invRow data
+  Vector<ValueType*, OffloadPinnedAllocator<ValueType*>> invRow_dev_ptr_list;
 
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
   GradMatrix_t dpsiM;
@@ -201,42 +191,36 @@ public:
   HessMatrix_t grad_phi_alpha_Minv;
 
   /// value of single-particle orbital for particle-by-particle update
-  ValueVector_t psiV;
-  ValueVector_t dspin_psiV;
+  OffloadPinnedValueVector_t psiV;
+  ValueVector_t psiV_host_view;
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
 
+  /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw*norb]
+  OffloadVGLVector_t phi_vgl_v;
+
   /// delayed update engine
-  DU_TYPE updateEng;
+  DET_ENGINE_TYPE det_engine_;
 
-  /// the row of up-to-date inverse matrix
-  ValueVector_t invRow;
-
-  /** row id correspond to the up-to-date invRow. [0 norb), invRow is ready; -1, invRow is not valid.
-   *  This id is set after calling getInvRow indicating invRow has been prepared for the invRow_id row
-   *  ratioGrad checks if invRow_id is consistent. If not, invRow needs to be recomputed.
-   *  acceptMove and completeUpdates mark invRow invalid by setting invRow_id to -1
-   */
-  int invRow_id;
-
+  // psi(r')/psi(r) during a PbyP move
   PsiValueType curRatio;
-  ValueType* FirstAddressOfdV;
-  ValueType* LastAddressOfdV;
+
+  // multi walker of ratios
+  std::vector<ValueType> ratios_local;
+  // multi walker of ratios
+  std::vector<GradType> grad_new_local;
 
 private:
   /// invert psiM or its copies
-  void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
+  void invertPsiM(const ValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& invMat);
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
-
-  /// internal function computing ratio and gradients after computing the SPOs, used by ratioGrad.
-  PsiValueType ratioGrad_compute(int iat, GradType& grad_iat);
 };
 
-extern template class DiracDeterminant<>;
+extern template class DiracDeterminantBatched<>;
 #if defined(ENABLE_CUDA)
-extern template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+//extern template class DiracDeterminantBatched<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus

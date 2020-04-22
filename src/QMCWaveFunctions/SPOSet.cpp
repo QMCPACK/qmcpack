@@ -26,13 +26,14 @@
 
 namespace qmcplusplus
 {
-SPOSet::SPOSet(bool ion_deriv, bool optimizable)
+SPOSet::SPOSet(bool use_OMP_offload, bool ion_deriv, bool optimizable)
     :
 #if !defined(ENABLE_SOA)
       Identity(false),
       BasisSetSize(0),
       C(nullptr),
 #endif
+      useOMPoffload(use_OMP_offload),
       ionDerivs(ion_deriv),
       Optimizable(optimizable),
       OrbitalSetSize(0)
@@ -82,7 +83,6 @@ void SPOSet::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
 #pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].get().evaluateDetRatios(vp_list[iw], psi_list[iw], psiinv_list[iw], ratios_list[iw]);
-
 }
 
 void SPOSet::mw_evaluateVGL(const RefVector<SPOSet>& spo_list,
@@ -95,6 +95,29 @@ void SPOSet::mw_evaluateVGL(const RefVector<SPOSet>& spo_list,
 #pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].get().evaluateVGL(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
+}
+
+void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
+                                            const RefVector<ParticleSet>& P_list,
+                                            int iat,
+                                            const Vector<ValueType*>& invRow_ptr_list,
+                                            VGLVector_t& phi_vgl_v,
+                                            std::vector<ValueType>& ratios,
+                                            std::vector<GradType>& grads)
+{
+  const size_t nw             = spo_list.size();
+  const size_t norb_requested = phi_vgl_v.size() / nw;
+#pragma omp parallel for
+  for (int iw = 0; iw < nw; iw++)
+  {
+    ValueVector_t phi_v(phi_vgl_v.data() + norb_requested * iw, norb_requested);
+    GradVector_t dphi_v(reinterpret_cast<GradType*>(phi_vgl_v.data(1)) + norb_requested * iw, norb_requested);
+    ValueVector_t d2phi_v(phi_vgl_v.data(4) + norb_requested * iw, norb_requested);
+    spo_list[iw].get().evaluateVGL(P_list[iw], iat, phi_v, dphi_v, d2phi_v);
+
+    ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
+    grads[iw]  = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested) / ratios[iw];
+  }
 }
 
 void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)

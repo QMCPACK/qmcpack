@@ -340,14 +340,18 @@ struct WaveFunctionComponent : public QMCTraits
    * @param iat particle index
    * @param safe_to_delay if true, delayed accept is safe.
    */
-  virtual void mw_acceptMove(const RefVector<WaveFunctionComponent>& WFC_list,
-                             const RefVector<ParticleSet>& P_list,
-                             int iat,
-                             bool safe_to_delay = false)
+  virtual void mw_accept_rejectMove(const RefVector<WaveFunctionComponent>& WFC_list,
+                                    const RefVector<ParticleSet>& P_list,
+                                    int iat,
+                                    const std::vector<bool>& isAccepted,
+                                    bool safe_to_delay = false)
   {
 #pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw].get().acceptMove(P_list[iw], iat, safe_to_delay);
+      if (isAccepted[iw])
+        WFC_list[iw].get().acceptMove(P_list[iw], iat, safe_to_delay);
+      else
+        WFC_list[iw].get().restore(iat);
   }
 
   /** complete all the delayed updates, must be called after each substep or step during pbyp move
@@ -370,20 +374,6 @@ struct WaveFunctionComponent : public QMCTraits
    * Ye: hopefully we can gradually move away from restore
    */
   virtual void restore(int iat) = 0;
-
-  /** If a move for iat-th particle on some walkers in a batch is rejected, restore their contents
-   *  Note that all the lists only include rejected walkers.
-   * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch
-   * @param iat index of the particle whose new position was proposed
-   *
-   * Ye: hopefully we can gradually move away from restore
-   */
-  virtual void mw_restore(const RefVector<WaveFunctionComponent>& WFC_list, int iat)
-  {
-    //#pragma omp parallel for
-    for (WaveFunctionComponent& wfc : WFC_list)
-      wfc.restore(iat);
-  }
 
   /** evaluate the ratio of the new to old WaveFunctionComponent value
    * @param P the active ParticleSet

@@ -10,6 +10,8 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
+SUBDIRS(OpenMP)
+
 SET(HOST_SRCS
     sysutil.cpp
     Host/InfoStream.cpp
@@ -23,4 +25,4 @@ SET(DEVICE_SRCS
 ADD_LIBRARY(platform_host ${HOST_SRCS})
 
 ADD_LIBRARY(platform_device ${DEVICE_SRCS})
-TARGET_LINK_LIBRARIES(platform_device PUBLIC message)
+TARGET_LINK_LIBRARIES(platform_device PUBLIC qmcomp message)
