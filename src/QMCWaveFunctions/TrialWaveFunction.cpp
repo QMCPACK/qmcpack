@@ -609,10 +609,12 @@ void TrialWaveFunction::flex_accept_rejectMove(const RefVector<TrialWaveFunction
     }
   }
   else if (wf_list.size() == 1)
+  {
     if (isAccepted[0])
       wf_list[0].get().acceptMove(p_list[0], iat, safe_to_delay);
     else
       wf_list[0].get().rejectMove(iat);
+  }
 }
 
 void TrialWaveFunction::completeUpdates()
@@ -717,8 +719,7 @@ void TrialWaveFunction::flex_registerData(const UPtrVector<TrialWaveFunction>& w
     ScopedTimer local_timer(wf_list[0]->myTimers[ii]);
     std::vector<WaveFunctionComponent*> wfc_list(extractWFCPtrList(wf_list, i));
 
-    wavefunction_components[i]->mw_registerData(wfc_list, convertUPtrToPtrVector(P_list),
-                                                buf_list);
+    wavefunction_components[i]->mw_registerData(wfc_list, convertUPtrToPtrVector(P_list), buf_list);
   }
 
   auto addPhaseAndLog = [](WFBufferType& wfb, TrialWaveFunction& twf) {
