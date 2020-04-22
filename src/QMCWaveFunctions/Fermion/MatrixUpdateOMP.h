@@ -114,30 +114,46 @@ public:
   }
 
   template<typename VGLV, typename VV>
-  inline void mw_updateRow(const std::vector<T*>& Ainv_accepted_list,
+  inline void mw_updateRow(const std::vector<T*>& Ainv_psiM_vgl_accepted_list,
                            int norb,
                            int rowchanged,
                            const std::vector<bool>& isAccepted,
                            const VGLV& phi_vgl_v,
                            const VV& ratios)
   {
-    const size_t n_accepted = Ainv_accepted_list.size();
+    // extract the number of accepted walkers. Ainv_psiM_vgl_accepted_list ships three pointers.
+    const size_t n_accepted = Ainv_psiM_vgl_accepted_list.size() / 3;
     temp.resize(norb * n_accepted);
     rcopy.resize(norb * n_accepted);
     c_ratio_inv.resize(n_accepted);
-    auto* temp_dev_ptr      = getOffloadDevicePtr(temp.data());
-    auto* rcopy_dev_ptr     = getOffloadDevicePtr(rcopy.data());
-    auto* phi_vgl_v_dev_ptr = getOffloadDevicePtr(phi_vgl_v.data());
 
+    T* temp_dev_ptr;
+    T* rcopy_dev_ptr;
+    const T* phi_vgl_v_dev_ptr;
+    T* temp_ptr = temp.data();
+    T* rcopy_ptr = rcopy.data();
+    const T* phi_vgl_v_ptr = phi_vgl_v.data();
+    PRAGMA_OFFLOAD("omp target data use_device_ptr(temp_ptr, rcopy_ptr, phi_vgl_v_ptr)")
+    {
+      temp_dev_ptr = temp_ptr;
+      rcopy_dev_ptr = rcopy_ptr;
+      phi_vgl_v_dev_ptr = phi_vgl_v_ptr;
+    }
+
+    const size_t phi_vgl_v_stride = phi_vgl_v.capacity();
     // to handle T** of Ainv, psi_v, temp, rcopy
-    ptr_buffer.resize(n_accepted * 4);
+    ptr_buffer.resize(n_accepted * 8);
     for (int iw = 0, count = 0; iw < isAccepted.size(); iw++)
       if (isAccepted[iw])
       {
-        ptr_buffer[count]                  = Ainv_accepted_list[count];
+        ptr_buffer[count]                  = Ainv_psiM_vgl_accepted_list[count];
         ptr_buffer[count + n_accepted]     = const_cast<T*>(phi_vgl_v_dev_ptr + norb * iw);
         ptr_buffer[count + n_accepted * 2] = temp_dev_ptr + norb * count;
         ptr_buffer[count + n_accepted * 3] = rcopy_dev_ptr + norb * count;
+        ptr_buffer[count + n_accepted * 4] = Ainv_psiM_vgl_accepted_list[count + n_accepted];
+        ptr_buffer[count + n_accepted * 5] = Ainv_psiM_vgl_accepted_list[count + n_accepted * 2];
+        ptr_buffer[count + n_accepted * 6] = const_cast<T*>(phi_vgl_v_dev_ptr + phi_vgl_v_stride + norb * 3 * iw);
+        ptr_buffer[count + n_accepted * 7] = const_cast<T*>(phi_vgl_v_dev_ptr + phi_vgl_v_stride * 4 + norb * iw);
         c_ratio_inv[count]                 = T(-1) / ratios[iw];
         count++;
       }
@@ -163,14 +179,26 @@ public:
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(n_accepted) is_device_ptr(ptr_buffer_ptr)")
       for (int iw = 0; iw < n_accepted; iw++)
       {
-        auto* Ainv_ptr  = ptr_buffer_ptr[iw];
-        auto* temp_ptr  = ptr_buffer_ptr[n_accepted * 2 + iw];
-        auto* rcopy_ptr = ptr_buffer_ptr[n_accepted * 3 + iw];
+        auto* Ainv_ptr   = ptr_buffer_ptr[iw];
+        auto* temp_ptr   = ptr_buffer_ptr[n_accepted * 2 + iw];
+        auto* rcopy_ptr  = ptr_buffer_ptr[n_accepted * 3 + iw];
+        auto* dpsiM_out  = ptr_buffer_ptr[n_accepted * 4 + iw];
+        auto* d2psiM_out = ptr_buffer_ptr[n_accepted * 5 + iw];
+        auto* dpsiM_in   = ptr_buffer_ptr[n_accepted * 6 + iw];
+        auto* d2psiM_in  = ptr_buffer_ptr[n_accepted * 7 + iw];
 
         temp_ptr[rowchanged] -= cone;
         PRAGMA_OFFLOAD("omp parallel for simd")
         for (int i = 0; i < norb; i++)
+        {
           rcopy_ptr[i] = Ainv_ptr[rowchanged * norb + i];
+          // the following copying data on the device is not part of SM-1
+          // it is intended to copy dpsiM and d2psiM from temporary to final without a separate kernel.
+          dpsiM_out[i * 3]     = dpsiM_in[i * 3];
+          dpsiM_out[i * 3 + 1] = dpsiM_in[i * 3 + 1];
+          dpsiM_out[i * 3 + 2] = dpsiM_in[i * 3 + 2];
+          d2psiM_out[i]        = d2psiM_in[i];
+        }
       }
 
       success = ompBLAS::ger_batched(dummy_handle, norb, norb, c_ratio_inv_ptr, ptr_buffer_ptr + n_accepted * 3, 1,

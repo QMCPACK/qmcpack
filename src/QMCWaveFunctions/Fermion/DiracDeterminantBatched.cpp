@@ -16,6 +16,9 @@
 #include "Numerics/MatrixOperators.h"
 #include "simd/simd.hpp"
 
+PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<float>: omp_out += omp_in)")
+PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<double>: omp_out += omp_in)")
+
 namespace qmcplusplus
 {
 /** constructor
@@ -63,15 +66,18 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
     norb = nel; // for morb == -1 (default)
   psiMinv.resize(nel, norb);
   psiMinv_dev_ptr = getOffloadDevicePtr(psiMinv.data());
-  dpsiM.resize(nel, norb);
-  d2psiM.resize(nel, norb);
-  psiV.resize(norb);
-  psiV_host_view.attachReference(psiV.data(), norb);
-  psiM_temp.resize(nel, norb);
+  psiM_vgl.resize(nel * norb);
+  psiM_vgl_dev_ptr = getOffloadDevicePtr(psiM_vgl.data());
+  psiM_temp.attachReference(psiM_vgl.data(0), nel, norb);
+  dpsiM.attachReference(reinterpret_cast<GradType*>(psiM_vgl.data(1)), nel, norb);
+  d2psiM.attachReference(psiM_vgl.data(4), nel, norb);
+
   LastIndex   = FirstIndex + nel;
   NumPtcls    = nel;
   NumOrbitals = norb;
 
+  psiV.resize(NumOrbitals);
+  psiV_host_view.attachReference(psiV.data(), NumOrbitals);
   dpsiV.resize(NumOrbitals);
   d2psiV.resize(NumOrbitals);
 }
@@ -83,10 +89,57 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
 {
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  ///FIXME do dot on GPU and transfer grads back mw_evalGrad
   GradType g = simd::dot(psiMinv[WorkingIndex], dpsiM[WorkingIndex], psiMinv.rows());
   RatioTimer.stop();
   return g;
+}
+
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVector<WaveFunctionComponent>& WFC_list,
+                           const RefVector<ParticleSet>& P_list,
+                           int iat,
+                           std::vector<GradType>& grad_now)
+{
+//  for (int iw = 0; iw < WFC_list.size(); iw++)
+//    grad_now[iw] = WFC_list[iw].get().evalGrad(P_list[iw].get(), iat);
+  RatioTimer.start();
+  const int WorkingIndex = iat - FirstIndex;
+  const int nw = WFC_list.size();
+  invRow_dev_ptr_list.resize(nw*2);
+  auto* invRow_dev_ptr_list_ptr = invRow_dev_ptr_list.data();
+  for (int iw = 0; iw < nw; iw++)
+  {
+    auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+    invRow_dev_ptr_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
+    invRow_dev_ptr_list[nw + iw] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
+  }
+
+  const int norb = NumOrbitals;
+  grads_value_v.resize(nw, DIM);
+  auto* __restrict__ grads_value_v_ptr = grads_value_v.data();
+  PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) \
+                  map(always, to: invRow_dev_ptr_list_ptr[:invRow_dev_ptr_list.size()]) \
+                  map(always, from: grads_value_v_ptr[:grads_value_v.size()])")
+  for (int iw = 0; iw < nw; iw++)
+  {
+    ValueType* __restrict__ invRow_ptr = invRow_dev_ptr_list_ptr[iw];
+    ValueType* __restrict__ dpsiM_row_ptr = invRow_dev_ptr_list_ptr[nw + iw];
+    ValueType grad_x(0), grad_y(0), grad_z(0);
+    PRAGMA_OFFLOAD("omp parallel for reduction(+: grad_x, grad_y, grad_z)")
+    for (int iorb = 0 ; iorb < norb; iorb++)
+    {
+      grad_x += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM];
+      grad_y += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM + 1];
+      grad_z += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM + 2];
+    }
+    grads_value_v_ptr[iw * DIM]     = grad_x;
+    grads_value_v_ptr[iw * DIM + 1] = grad_y;
+    grads_value_v_ptr[iw * DIM + 2] = grad_z;
+  }
+
+  for (int iw = 0; iw < nw; iw++)
+    grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
+  RatioTimer.stop();
 }
 
 template<typename DET_ENGINE_TYPE>
@@ -129,6 +182,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVector<Wave
     phi_list.push_back(*det.Phi);
     invRow_dev_ptr_list[iw] =
         (Phi->isOMPoffload() ? det.psiMinv_dev_ptr : det.psiMinv.data()) + NumOrbitals * (iat - FirstIndex);
+    //FIXME if (!Phi->isOMPoffload()) transfer row back to host for non-offload Phi->mw_evaluateVGLandDetRatioGrads.
   }
 
   phi_vgl_v.resize(WFC_list.size() * psiMinv.cols());
@@ -184,51 +238,31 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
     if (isAccepted[iw])
       count++;
   const int n_accepted = count;
-  psiMinv_dev_ptr_list.resize(n_accepted);
-
-  for (int iw = 0, count = 0; iw < nw; iw++)
-    if (isAccepted[iw])
-    {
-      auto& det                     = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-      psiMinv_dev_ptr_list[count++] = det.psiMinv_dev_ptr;
-    }
-
-  if (Phi->isOMPoffload() && n_accepted > 0)
-  {
-    auto* phi_vgl_v_ptr = phi_vgl_v.data();
-    ///FIXME no need to transfer back phi_vgl_v_ptr
-    PRAGMA_OFFLOAD("omp target update from(phi_vgl_v_ptr[phi_vgl_v.capacity():phi_vgl_v.capacity()*4])")
-  }
-  else
-  {
-    // FIXME: need to transfer phi_vgl_v and ratio_grads_v to device
-  }
+  dev_ptr_list.resize(n_accepted*3);
 
   const int WorkingIndex = iat - FirstIndex;
-  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiMinv.rows(), WorkingIndex, isAccepted, phi_vgl_v, ratios_local);
-
-  for (int iw = 0; iw < nw; iw++)
+  for (int iw = 0, count = 0; iw < nw; iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     if (isAccepted[iw])
     {
-      ///FIXME no need to transfer Ainv
-      auto* Ainv_ptr = det.psiMinv.data();
-      PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[:psiMinv.size()])")
-
+      dev_ptr_list[count] = det.psiMinv_dev_ptr;
+      dev_ptr_list[n_accepted + count] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
+      dev_ptr_list[n_accepted * 2 + count] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() * 4 + NumOrbitals * WorkingIndex;
       det.LogValue += convertValueToLog(det.curRatio);
-      if (UpdateMode == ORB_PBYP_PARTIAL)
-      {
-        GradVector_t dphi_v(reinterpret_cast<GradType*>(phi_vgl_v.data(1)) + NumOrbitals * iw, NumOrbitals);
-        ValueVector_t d2phi_v(phi_vgl_v.data(4) + NumOrbitals * iw, NumOrbitals);
-
-        ///FIXME copy on device.
-        simd::copy(det.dpsiM[WorkingIndex], dphi_v.data(), NumOrbitals);
-        simd::copy(det.d2psiM[WorkingIndex], d2phi_v.data(), NumOrbitals);
-      }
+      count++;
     }
     det.curRatio = 1.0;
   }
+
+  if (!Phi->isOMPoffload() && n_accepted > 0)
+  {
+    auto* phi_vgl_v_ptr = phi_vgl_v.data();
+    // FIXME: need to transfer both phi_vgl_v and ratio_grads_v to device
+    PRAGMA_OFFLOAD("omp target update to(phi_vgl_v_ptr[phi_vgl_v.capacity():phi_vgl_v.capacity()*4])")
+  }
+
+  det_engine_.mw_updateRow(dev_ptr_list, psiMinv.rows(), WorkingIndex, isAccepted, phi_vgl_v, ratios_local);
 
   UpdateTimer.stop();
 }
@@ -245,7 +279,24 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::completeUpdates()
 {
   UpdateTimer.start();
-  ///FIXME transfer psiMinv, dpsiM, d2psiM back to host in mw_completeUpdates
+  /// no action here because single walker code path keep Ainv, dpsiM, d2psiM up to date on the host.
+  UpdateTimer.stop();
+}
+
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list)
+{
+  UpdateTimer.start();
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+  {
+    auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+    auto* Ainv_ptr = det.psiMinv.data();
+    PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[:psiMinv.size()])")
+
+    auto& my_psiM_vgl = det.psiM_vgl;
+    auto* psiM_vgl_ptr = my_psiM_vgl.data();
+    PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4])")
+  }
   UpdateTimer.stop();
 }
 
@@ -258,6 +309,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::updateAfterSweep(ParticleSet& P,
   { //need to compute dpsiM and d2psiM. Do not touch psiM!
     SPOVGLTimer.start();
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
+    //FIXME maybe need the same transfer as recompute
     SPOVGLTimer.stop();
   }
 
@@ -311,7 +363,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::copyFromBuffer(ParticleSet& P, WF
 {
   BufferTimer.start();
   recompute(P);
-  ///FIXME transfer to device
   buf.get(LogValue);
   BufferTimer.stop();
 }
@@ -632,7 +683,15 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::recompute(ParticleSet& P)
 {
   SPOVGLTimer.start();
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
-  /// transfer dpsiM, d2psiM to device.
+  // mw_evaluate_notranspose will be needed. if Phi supports offload, it only guarantees device ready in results.
+  // if Phi is not offload. A transfer of dpsiM, d2psiM to device is needed.
+  // now evaluate_notranspose only guarantees host. So always transfer.
+  //if(!Phi->isOMPoffload())
+  {
+    auto* psiM_vgl_ptr = psiM_vgl.data();
+    PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
+  }
+
   SPOVGLTimer.stop();
   if (NumPtcls == 1)
   {
