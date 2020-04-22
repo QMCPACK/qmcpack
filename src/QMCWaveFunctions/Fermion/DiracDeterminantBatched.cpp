@@ -332,29 +332,30 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
                                                             int iat,
                                                             std::vector<PsiValueType>& ratios)
 {
-  SPOVGLTimer.start();
+  SPOVTimer.start();
   RefVector<SPOSet> phi_list;
   phi_list.reserve(WFC_list.size());
 
-  psiMinv_dev_ptr_list.resize(WFC_list.size());
+  invRow_dev_ptr_list.resize(WFC_list.size());
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     phi_list.push_back(*det.Phi);
-    psiMinv_dev_ptr_list[iw] = Phi->isOMPoffload() ? det.psiMinv_dev_ptr : det.psiMinv.data();
+    invRow_dev_ptr_list[iw] = (Phi->isOMPoffload() ? det.psiMinv_dev_ptr : det.psiMinv.data())
+                            + NumOrbitals * (iat - FirstIndex);
   }
 
   phi_vgl_v.resize(WFC_list.size() * psiMinv.cols());
   ratios_local.resize(WFC_list.size());
   grad_new_local.resize(WFC_list.size());
 
-  Vector<ValueType*> psiMinv_dev_ptr_list_view(psiMinv_dev_ptr_list.data(), psiMinv_dev_ptr_list.size());
+  Vector<ValueType*> invRow_dev_ptr_list_view(invRow_dev_ptr_list.data(), invRow_dev_ptr_list.size());
   VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
 
   // calling Phi->mw_evaluateVGLandDetRatioGrads is a temporary workaround.
   // We may implement mw_evaluateVandDetRatio in the future.
-  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_dev_ptr_list_view, phi_vgl_v_view, ratios_local, grad_new_local);
-  SPOVGLTimer.stop();
+  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, invRow_dev_ptr_list_view, phi_vgl_v_view, ratios_local, grad_new_local);
+  SPOVTimer.stop();
 
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
