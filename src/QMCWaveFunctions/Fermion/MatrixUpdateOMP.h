@@ -112,27 +112,29 @@ public:
     }
   }
 
-  template<typename DEVPTRV, typename VGLV, typename VV>
-  inline void mw_updateRow(const DEVPTRV& Ainv_list, int norb, int rowchanged, const VGLV& phi_vgl_v, const VV& ratios)
+  template<typename VGLV, typename VV>
+  inline void mw_updateRow(const std::vector<T*>& Ainv_accepted_list, int norb, int rowchanged, const std::vector<bool>& isAccepted, const VGLV& phi_vgl_v, const VV& ratios)
   {
-    size_t nw = Ainv_list.size();
-    temp.resize(norb * nw);
-    rcopy.resize(norb * nw);
-    c_ratio_inv.resize(nw);
+    const size_t n_accepted = Ainv_accepted_list.size();
+    temp.resize(norb * n_accepted);
+    rcopy.resize(norb * n_accepted);
+    c_ratio_inv.resize(n_accepted);
     auto* temp_dev_ptr = getOffloadDevicePtr(temp.data());
     auto* rcopy_dev_ptr = getOffloadDevicePtr(rcopy.data());
     auto* phi_vgl_v_dev_ptr = getOffloadDevicePtr(phi_vgl_v.data());
 
     // to handle T** of Ainv, psi_v, temp, rcopy
-    ptr_buffer.resize(nw * 4);
-    for(int iw = 0; iw < nw; iw++)
-    {
-      ptr_buffer[iw]          = Ainv_list[iw];
-      ptr_buffer[iw + nw]     = const_cast<T*>(phi_vgl_v_dev_ptr + norb * iw);
-      ptr_buffer[iw + nw * 2] = temp_dev_ptr + norb * iw;
-      ptr_buffer[iw + nw * 3] = rcopy_dev_ptr + norb * iw;
-      c_ratio_inv[iw]         = T(-1) / ratios[iw];
-    }
+    ptr_buffer.resize(n_accepted * 4);
+    for(int iw = 0, count = 0; iw < isAccepted.size(); iw++)
+      if (isAccepted[iw])
+      {
+        ptr_buffer[count]                  = Ainv_accepted_list[count];
+        ptr_buffer[count + n_accepted]     = const_cast<T*>(phi_vgl_v_dev_ptr + norb * iw);
+        ptr_buffer[count + n_accepted * 2] = temp_dev_ptr + norb * count;
+        ptr_buffer[count + n_accepted * 3] = rcopy_dev_ptr + norb * count;
+        c_ratio_inv[count]                 = T(-1) / ratios[iw];
+        count++;
+      }
 
     // update the inverse matrix
     constexpr T cone(1);
@@ -141,20 +143,20 @@ public:
     int success =0;
     auto* ptr_buffer_ptr = ptr_buffer.data();
     auto* c_ratio_inv_ptr = c_ratio_inv.data();
-    resize_fill_constant_arrays(nw);
+    resize_fill_constant_arrays(n_accepted);
     auto* cone_ptr = cone_vec.data();
     auto* czero_ptr = czero_vec.data();
     PRAGMA_OFFLOAD("omp target data map(always, to: ptr_buffer_ptr[:ptr_buffer.size()], c_ratio_inv_ptr[:c_ratio_inv.size()]) \
                     use_device_ptr(ptr_buffer_ptr, c_ratio_inv_ptr, cone_ptr, czero_ptr)")
     {
       // invoke the Fahy's variant of Sherman-Morrison update.
-      success = ompBLAS::gemv_batched(dummy_handle, 'T', norb, norb, cone_ptr, ptr_buffer_ptr, norb, ptr_buffer_ptr + nw, 1, czero_ptr, ptr_buffer_ptr + nw * 2, 1, nw);
-      PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) is_device_ptr(ptr_buffer_ptr)")
-      for(int iw = 0; iw < nw; iw++)
+      success = ompBLAS::gemv_batched(dummy_handle, 'T', norb, norb, cone_ptr, ptr_buffer_ptr, norb, ptr_buffer_ptr + n_accepted, 1, czero_ptr, ptr_buffer_ptr + n_accepted * 2, 1, n_accepted);
+      PRAGMA_OFFLOAD("omp target teams distribute num_teams(n_accepted) is_device_ptr(ptr_buffer_ptr)")
+      for(int iw = 0; iw < n_accepted; iw++)
       {
         auto* Ainv_ptr  = ptr_buffer_ptr[iw];
-        auto* temp_ptr  = ptr_buffer_ptr[nw * 2 + iw];
-        auto* rcopy_ptr = ptr_buffer_ptr[nw * 3 + iw];
+        auto* temp_ptr  = ptr_buffer_ptr[n_accepted * 2 + iw];
+        auto* rcopy_ptr = ptr_buffer_ptr[n_accepted * 3 + iw];
 
         temp_ptr[rowchanged] -= cone;
         PRAGMA_OFFLOAD("omp parallel for simd")
@@ -162,7 +164,7 @@ public:
           rcopy_ptr[i] = Ainv_ptr[rowchanged * norb + i];
       }
 
-      success = ompBLAS::ger_batched(dummy_handle, norb, norb, c_ratio_inv_ptr, ptr_buffer_ptr + nw * 3, 1, ptr_buffer_ptr + nw * 2, 1, ptr_buffer_ptr, norb, nw);
+      success = ompBLAS::ger_batched(dummy_handle, norb, norb, c_ratio_inv_ptr, ptr_buffer_ptr + n_accepted * 3, 1, ptr_buffer_ptr + n_accepted * 2, 1, ptr_buffer_ptr, norb, n_accepted);
     }
   }
 

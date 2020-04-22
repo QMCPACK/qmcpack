@@ -42,9 +42,8 @@ public:
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-
-  using OffloadPinnedValueMatrix_t = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedValueVector_t = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
+  using OffloadPinnedValueMatrix_t = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
   using OffloadVGLVector_t = VectorSoaContainer<ValueType, DIM + 2, OffloadAllocator<ValueType>>;
 
@@ -121,9 +120,11 @@ public:
    */
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
-  void mw_acceptMove(const RefVector<WaveFunctionComponent>& WFC_list,
-                     const RefVector<ParticleSet>& P_list,
-                     int iat, bool safe_to_delay = false) override;
+  void mw_accept_rejectMove(const RefVector<WaveFunctionComponent>& WFC_list,
+                            const RefVector<ParticleSet>& P_list,
+                            int iat,
+                            const std::vector<bool>& isAccepted,
+                            bool safe_to_delay = false) override;
 
   void completeUpdates() override;
 
@@ -171,7 +172,9 @@ public:
   /// device pointer of psiMinv data
   ValueType* psiMinv_dev_ptr;
   /// multi-walker pointers of psiMinv data
-  Vector<ValueType*, OffloadPinnedAllocator<ValueType*>> psiMinv_dev_ptr_list;
+  std::vector<ValueType*> psiMinv_dev_ptr_list;
+  /// multi-walker pointers of invRow data
+  Vector<ValueType*, OffloadPinnedAllocator<ValueType*>> invRow_dev_ptr_list;
 
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
   GradMatrix_t dpsiM;
@@ -190,8 +193,6 @@ public:
   /// value of single-particle orbital for particle-by-particle update
   OffloadPinnedValueVector_t psiV;
   ValueVector_t psiV_host_view;
-  /// multi-walker pointers of psiV data
-  Vector<ValueType*, OffloadPinnedAllocator<ValueType*>> psiV_dev_ptr_list;
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
 
@@ -206,6 +207,8 @@ public:
 
   // multi walker of ratios
   std::vector<ValueType> ratios_local;
+  // multi walker of ratios
+  std::vector<GradType> grad_new_local;
 
 private:
   /// invert psiM or its copies

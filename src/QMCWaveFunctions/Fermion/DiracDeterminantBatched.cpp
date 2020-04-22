@@ -116,27 +116,23 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVector<Wave
   SPOVGLTimer.start();
   RefVector<SPOSet> phi_list;
   phi_list.reserve(WFC_list.size());
-  RefVector<ValueVector_t> psi_v_list;
-  psi_v_list.reserve(WFC_list.size());
-  RefVector<GradVector_t> dpsi_v_list;
-  dpsi_v_list.reserve(WFC_list.size());
-  RefVector<ValueVector_t> d2psi_v_list;
-  d2psi_v_list.reserve(WFC_list.size());
 
-  psiMinv_dev_ptr_list.resize(WFC_list.size());
+  invRow_dev_ptr_list.resize(WFC_list.size());
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     phi_list.push_back(*det.Phi);
-    psiMinv_dev_ptr_list[iw] = Phi->isOMPoffload() ? det.psiMinv_dev_ptr : det.psiMinv.data();
+    invRow_dev_ptr_list[iw] = (Phi->isOMPoffload() ? det.psiMinv_dev_ptr : det.psiMinv.data())
+                            + NumOrbitals * (iat - FirstIndex);
   }
 
   phi_vgl_v.resize(WFC_list.size() * psiMinv.cols());
   ratios_local.resize(WFC_list.size());
+  grad_new_local.resize(WFC_list.size());
 
-  Vector<ValueType*> psiMinv_dev_ptr_list_view(psiMinv_dev_ptr_list.data(), psiMinv_dev_ptr_list.size());
+  Vector<ValueType*> invRow_dev_ptr_list_view(invRow_dev_ptr_list.data(), invRow_dev_ptr_list.size());
   VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
-  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_dev_ptr_list_view, phi_vgl_v_view, ratios_local, grad_new);
+  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, invRow_dev_ptr_list_view, phi_vgl_v_view, ratios_local, grad_new_local);
   SPOVGLTimer.stop();
 
   for (int iw = 0; iw < WFC_list.size(); iw++)
@@ -144,6 +140,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVector<Wave
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     det.UpdateMode = ORB_PBYP_PARTIAL;
     ratios[iw] = det.curRatio = ratios_local[iw];
+    grad_new[iw] += grad_new_local[iw];
   }
 }
 
@@ -167,21 +164,30 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::acceptMove(ParticleSet& P, int ia
 }
 
 template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_acceptMove(const RefVector<WaveFunctionComponent>& WFC_list,
-                                                             const RefVector<ParticleSet>& P_list,
-                                                             int iat, bool safe_to_delay)
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVector<WaveFunctionComponent>& WFC_list,
+                                                                    const RefVector<ParticleSet>& P_list,
+                                                                    int iat,
+                                                                    const std::vector<bool>& isAccepted,
+                                                                    bool safe_to_delay)
 {
   UpdateTimer.start();
 
   const int nw = WFC_list.size();
-  psiMinv_dev_ptr_list.resize(nw);
+  int count = 0;
   for (int iw = 0; iw < nw; iw++)
-  {
-    auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-    psiMinv_dev_ptr_list[iw] = det.psiMinv_dev_ptr;
-  }
+    if (isAccepted[iw])
+      count++;
+  const int n_accepted = count;
+  psiMinv_dev_ptr_list.resize(n_accepted);
 
-  if (Phi->isOMPoffload())
+  for (int iw = 0, count = 0; iw < nw; iw++)
+    if (isAccepted[iw])
+    {
+      auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+      psiMinv_dev_ptr_list[count++] = det.psiMinv_dev_ptr;
+    }
+
+  if (Phi->isOMPoffload() && n_accepted > 0)
   {
     auto* phi_vgl_v_ptr = phi_vgl_v.data();
     PRAGMA_OFFLOAD("omp target update from(phi_vgl_v_ptr[phi_vgl_v.capacity():phi_vgl_v.capacity()*4])")
@@ -192,11 +198,16 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_acceptMove(const RefVector<Wav
   }
 
   const int WorkingIndex = iat - FirstIndex;
-  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiMinv.rows(), WorkingIndex, phi_vgl_v, ratios_local);
+  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiMinv.rows(), WorkingIndex, isAccepted, phi_vgl_v, ratios_local);
 
   for (int iw = 0; iw < nw; iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+    if (!isAccepted[iw])
+    {
+      det.curRatio = 1.0;
+      continue;
+    }
 
     auto* Ainv_ptr  = det.psiMinv.data();
     PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[:psiMinv.size()])")
@@ -335,14 +346,14 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
 
   phi_vgl_v.resize(WFC_list.size() * psiMinv.cols());
   ratios_local.resize(WFC_list.size());
+  grad_new_local.resize(WFC_list.size());
 
   Vector<ValueType*> psiMinv_dev_ptr_list_view(psiMinv_dev_ptr_list.data(), psiMinv_dev_ptr_list.size());
   VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
 
   // calling Phi->mw_evaluateVGLandDetRatioGrads is a temporary workaround.
   // We may implement mw_evaluateVandDetRatio in the future.
-  std::vector<GradType> grad_new(WFC_list.size());
-  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_dev_ptr_list_view, phi_vgl_v_view, ratios_local, grad_new);
+  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_dev_ptr_list_view, phi_vgl_v_view, ratios_local, grad_new_local);
   SPOVGLTimer.stop();
 
   for (int iw = 0; iw < WFC_list.size(); iw++)
