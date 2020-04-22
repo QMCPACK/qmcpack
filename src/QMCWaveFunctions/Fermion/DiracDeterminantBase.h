@@ -101,12 +101,11 @@ public:
   using WaveFunctionComponent::acceptMove;
   using WaveFunctionComponent::completeUpdates;
   using WaveFunctionComponent::evalGrad;
-  using WaveFunctionComponent::mw_acceptMove;
+  using WaveFunctionComponent::mw_accept_rejectMove;
   using WaveFunctionComponent::mw_calcRatio;
   using WaveFunctionComponent::mw_completeUpdates;
   using WaveFunctionComponent::mw_evalGrad;
   using WaveFunctionComponent::mw_ratioGrad;
-  using WaveFunctionComponent::mw_restore;
   using WaveFunctionComponent::ratio;
   using WaveFunctionComponent::ratioGrad;
   using WaveFunctionComponent::restore;

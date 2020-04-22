@@ -165,12 +165,6 @@ public:
 
   virtual inline void restore(int iat) override { return Dets[getDetID(iat)]->restore(iat); }
 
-  virtual void mw_restore(const RefVector<WaveFunctionComponent>& wfc_list, int iat) override
-  {
-    const int det_id = getDetID(iat);
-    Dets[det_id]->mw_restore(extract_DetRef_list(wfc_list, det_id), iat);
-  }
-
   virtual inline void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override
   {
     Dets[getDetID(iat)]->acceptMove(P, iat, safe_to_delay);
@@ -180,25 +174,28 @@ public:
       LogValue += Dets[i]->LogValue;
   }
 
-  virtual void mw_acceptMove(const RefVector<WaveFunctionComponent>& wfc_list,
-                             const RefVector<ParticleSet>& P_list,
-                             int iat,
-                             bool safe_to_delay = false) override
+  virtual void mw_accept_rejectMove(const RefVector<WaveFunctionComponent>& wfc_list,
+                                    const RefVector<ParticleSet>& P_list,
+                                    int iat,
+                                    const std::vector<bool>& isAccepted,
+                                    bool safe_to_delay = false) override
   {
     constexpr LogValueType czero(0);
 
-    for (WaveFunctionComponent& wfc : wfc_list)
-      wfc.LogValue = czero;
+    for (int iw = 0; iw < wfc_list.size(); iw++)
+      if (isAccepted[iw])
+        wfc_list[iw].get().LogValue = czero;
 
     for (int i = 0; i < Dets.size(); ++i)
     {
       const auto Det_list(extract_DetRef_list(wfc_list, i));
 
       if (i == getDetID(iat))
-        Dets[i]->mw_acceptMove(Det_list, P_list, iat, safe_to_delay);
+        Dets[i]->mw_accept_rejectMove(Det_list, P_list, iat, isAccepted, safe_to_delay);
 
       for (int iw = 0; iw < wfc_list.size(); iw++)
-        wfc_list[iw].get().LogValue += Det_list[iw].get().LogValue;
+        if (isAccepted[iw])
+          wfc_list[iw].get().LogValue += Det_list[iw].get().LogValue;
     }
   }
 

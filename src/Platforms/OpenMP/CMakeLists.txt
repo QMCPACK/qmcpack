@@ -10,19 +10,9 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-SUBDIRS(OpenMP)
-
-SET(HOST_SRCS
-    sysutil.cpp
-    Host/InfoStream.cpp
-    Host/OutputManager.cpp
+SET(OMP_SRCS
+  ompBLAS.cpp
 )
 
-SET(DEVICE_SRCS
-    accelerators.cpp
-)
 
-ADD_LIBRARY(platform_host ${HOST_SRCS})
-
-ADD_LIBRARY(platform_device ${DEVICE_SRCS})
-TARGET_LINK_LIBRARIES(platform_device PUBLIC qmcomp message)
+ADD_LIBRARY(qmcomp ${OMP_SRCS})

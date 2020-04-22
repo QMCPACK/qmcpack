@@ -37,6 +37,14 @@ struct VectorSoaContainer
 
   ///default constructor
   VectorSoaContainer() : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr) {}
+
+  /** constructor for a view, attach to pre-allocated data
+   * @param ptr new myData
+   * @param n new nLocal
+   * @param n_padded new nGhosts
+   */
+  VectorSoaContainer(T* ptr, size_t n, size_t n_padded) : nLocal(n), nGhosts(n_padded), nAllocated(0), myData(ptr) {}
+
   ///destructor
   ~VectorSoaContainer() { free(); }
 

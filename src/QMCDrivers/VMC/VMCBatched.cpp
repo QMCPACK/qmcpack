@@ -101,12 +101,12 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   std::vector<RealType> prob(num_walkers);
 
   // local list to handle accept/reject
+  std::vector<bool> isAccepted;
   std::vector<std::reference_wrapper<ParticleSet>> elec_accept_list, elec_reject_list;
   std::vector<std::reference_wrapper<TrialWaveFunction>> twf_accept_list, twf_reject_list;
+  isAccepted.reserve(num_walkers);
   elec_accept_list.reserve(num_walkers);
   elec_reject_list.reserve(num_walkers);
-  twf_accept_list.reserve(num_walkers);
-  twf_reject_list.reserve(num_walkers);
 
   for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); sub_step++)
   {
@@ -170,8 +170,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
         std::transform(ratios.begin(), ratios.end(), prob.begin(), [](auto ratio) { return std::norm(ratio); });
 
-        twf_accept_list.clear();
-        twf_reject_list.clear();
+        isAccepted.clear();
         elec_accept_list.clear();
         elec_reject_list.clear();
 
@@ -180,18 +179,17 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
               step_context.get_random_gen()() < prob[i_accept] * std::exp(log_gb[i_accept] - log_gf[i_accept]))
           {
             crowd.incAccept();
-            twf_accept_list.push_back(crowd.get_walker_twfs()[i_accept]);
+            isAccepted.push_back(true);
             elec_accept_list.push_back(crowd.get_walker_elecs()[i_accept]);
           }
           else
           {
             crowd.incReject();
-            twf_reject_list.push_back(crowd.get_walker_twfs()[i_accept]);
+            isAccepted.push_back(false);
             elec_reject_list.push_back(crowd.get_walker_elecs()[i_accept]);
           }
 
-        TrialWaveFunction::flex_acceptMove(twf_accept_list, elec_accept_list, iat, true);
-        TrialWaveFunction::flex_rejectMove(twf_reject_list, iat);
+        TrialWaveFunction::flex_accept_rejectMove(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, isAccepted, true);
 
         ParticleSet::flex_acceptMove(elec_accept_list, iat, true);
         ParticleSet::flex_rejectMove(elec_reject_list, iat);
