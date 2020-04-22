@@ -926,7 +926,7 @@ packages, e.g. HDF5.
 Here are some additional limitations of the QMCPACK Spack package that
 will be resolved in future releases:
 \begin{itemize}
-\item CUDA support in Spack still has some limitation.  It will
+\item CUDA support in Spack still has some limitations.  It will
   catch only some compiler-CUDA conflicts.
 \item The Intel compiler must find a recent and compatible GCC
   compiler in its path or one must be explicity set with the
@@ -1176,7 +1176,7 @@ your-laptop> spack install qmcpack+cuda%intel@18.0.3 cuda_arch=61 ^intel-mkl
 \end{shade}
 
 Due to limitations in the Spack CUDA package, if your compiler and
-CUDA combination give you a conflict, you will need to set a
+CUDA combination conflict, you will need to set a
 specific verison of CUDA that is compatible with your compiler on the
 command line. For example,
 \begin{shade}
@@ -1224,10 +1224,10 @@ Spack now works with the Cray environment. To leverage the installed
 Cray environment, both a \ishell{compilers.yaml} and
 \ishell{packages.yaml} file should be provided by the supercomputing
 facility. Additionally, Spack packages compiled by the facility can be
-re-using by chaining Spack installations
+reused by chaining Spack installations
 \url{https://spack.readthedocs.io/en/latest/chain.html}
 
-Instructions for DOE supercomputing facilities that support the are forthcoming.
+Instructions for DOE supercomputing facilities that support Spack directly will be forthcoming.
 
 \subsection{Reporting Bugs}
 Bugs with the QMCPACK Spack package should be filed at the main GitHub
