@@ -18,7 +18,7 @@
 #include "QMCDrivers/tests/SetupDMCTest.h"
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 
 namespace qmcplusplus
 {
