@@ -19,7 +19,7 @@
 namespace qmcplusplus
 {
 RotatedSPOs::RotatedSPOs(SPOSet* spos)
-    : SPOSet(spos->hasIonDerivs(), true), Phi(spos), params_supplied(false), IsCloned(false), nel_major_(0)
+    : SPOSet(spos->isOMPoffload(), spos->hasIonDerivs(), true), Phi(spos), params_supplied(false), IsCloned(false), nel_major_(0)
 {
   className      = "RotatedSPOs";
   OrbitalSetSize = Phi->getOrbitalSetSize();
