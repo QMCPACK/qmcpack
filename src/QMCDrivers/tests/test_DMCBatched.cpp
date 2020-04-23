@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -27,10 +27,7 @@ namespace testing
 class DMCBatchedTest
 {
 public:
-  DMCBatchedTest()
-  {
-    up_dtest_ = std::make_unique<SetupDMCTest>(1);
-  }
+  DMCBatchedTest() { up_dtest_ = std::make_unique<SetupDMCTest>(1); }
 
   void testCalcDefaultLocalWalkers()
   {
@@ -42,9 +39,9 @@ public:
       dmc_batched.set_walkers_per_rank(walkers_per_rank, "testing");
       if (dtest_.num_crowds < 8)
         dmc_batched.set_num_crowds(Concurrency::maxThreads(), "Insufficient threads available to match test input");
-      QMCDriverNew::AdjustedWalkerCounts awc{0,0,0,0};
+      QMCDriverNew::AdjustedWalkerCounts awc{0, 0, 0, 0};
       awc.walkers_per_rank = walkers_per_rank;
-      awc.num_crowds = dtest_.num_crowds;
+      awc.num_crowds       = dtest_.num_crowds;
       // what we're testing is whether the awc is transformed to a valid set of walker counts
       awc = dmc_batched.calcDefaultLocalWalkers(awc);
 
@@ -75,11 +72,10 @@ public:
   {
     using namespace testing;
     SetupDMCTest& dtest = get_dtest();
-
-    
   }
-  
+
   SetupDMCTest& get_dtest() { return *up_dtest_; }
+
 private:
   UPtr<SetupDMCTest> up_dtest_;
 };
@@ -107,8 +103,6 @@ TEST_CASE("DMCBatched change of walkers_per_crowd", "[drivers]")
   outputManager.resume();
 
   Concurrency::OverrideMaxThreads<> override(8);
-  
-  
 }
 
 } // namespace qmcplusplus

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -524,9 +524,10 @@ void SimpleFixedNodeBranch::branch(int iter, MCPopulation& population)
     vParam[SBVP::TAUEFF] = vParam[SBVP::TAU] * R2Accepted.result() / R2Proposed.result();
 
   if (BranchMode[B_KILLNODES])
-    EnergyHist(vParam[SBVP::ENOW] - std::log(wc_ensemble_prop.LivingFraction) / vParam[SBVP::TAUEFF], wc_ensemble_prop.Weight);
+    EnergyHist(vParam[SBVP::ENOW] - std::log(wc_ensemble_prop.LivingFraction) / vParam[SBVP::TAUEFF],
+               wc_ensemble_prop.Weight);
   else
-    EnergyHist(vParam[SBVP::ENOW],wc_ensemble_prop.Weight);
+    EnergyHist(vParam[SBVP::ENOW], wc_ensemble_prop.Weight);
 
   if (BranchMode[B_DMCSTAGE]) // main stage
   {
@@ -577,7 +578,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCPopulation& population)
       BranchMode.set(B_DMCSTAGE, 1); //set BranchModex to main stage
       //reset the histogram
       EnergyHist.clear();
-      EnergyHist(vParam[SBVP::ENOW],wc_ensemble_prop.Weight);
+      EnergyHist(vParam[SBVP::ENOW], wc_ensemble_prop.Weight);
       R2Accepted.clear();
       R2Proposed.clear();
       if (sParam[MIXDMCOPT] == "yes")

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -187,8 +187,9 @@ QMCTraits::FullPrecRealType WalkerControlMPI::branch(int iter, MCPopulation& pop
   if (adjust.num_walkers != num_per_node[MyContext])
   {
     std::ostringstream error_message;
-    error_message << "failure MPI population control pop.get_num_local_walkers() " << pop.get_num_local_walkers() << " != "
-       << "num_per_node[" << num_per_node[MyContext] << "]\n";
+    error_message << "failure MPI population control pop.get_num_local_walkers() " << pop.get_num_local_walkers()
+                  << " != "
+                  << "num_per_node[" << num_per_node[MyContext] << "]\n";
     throw std::runtime_error(error_message.str());
   }
 
@@ -238,7 +239,7 @@ void WalkerControlMPI::determineNewWalkerPopulation(int Cur_pop,
       minus.insert(minus.end(), -dn, ip);
     }
   }
-  #ifndef NDEBUG
+#ifndef NDEBUG
   if (plus.size() != minus.size())
   {
     app_error() << "Walker send/recv pattern doesn't match. "
@@ -246,7 +247,7 @@ void WalkerControlMPI::determineNewWalkerPopulation(int Cur_pop,
                 << std::endl;
     throw std::runtime_error("Trying to swap in WalkerControlMPI::swapWalkersSimple with mismatched queues");
   }
-  #endif
+#endif
 }
 
 /** swap Walkers with Recv/Send or Irecv/Isend
@@ -583,7 +584,7 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   if (recv_message_list.size() > 0)
   {
     std::for_each(recv_message_list.begin(), recv_message_list.end(), [&recv_requests, this](WalkerMessage& message) {
-                                                                        //MCPWalker& walker = message.walker;
+      //MCPWalker& walker = message.walker;
       recv_requests.emplace_back(
           myComm->comm.ireceive_n(message.walker.DataSet.data(), message.walker.DataSet.size(), message.source_rank));
       size_t dsize = message.walker.DataSet.size();
@@ -601,7 +602,7 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
     {
       for (int im = 0; im < recv_requests.size(); ++im)
       {
-        if(!recv_waited[im])
+        if (!recv_waited[im])
         {
           //recv_requests[im].wait();
           recv_waited[im] = 1;
@@ -630,7 +631,7 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
     {
       for (int im = 0; im < send_requests.size(); im++)
       {
-        if(!send_waited[im])
+        if (!send_waited[im])
         {
           //send_requests[im].wait();
           send_waited[im] = 1;
@@ -644,7 +645,7 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
     myTimers[DMC_MPI_send]->stop();
   }
 
-  
+
   std::for_each(zombies.begin(), zombies.end(), [&pop](MCPWalker& zombie) { pop.killWalker(zombie); });
   adjust.good_walkers.clear();
   adjust.copies_to_make.clear();
@@ -671,7 +672,7 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   // if ( send_message_list.empty() )
   //   return 0;
   // else
-    return send_message_list.size();
+  return send_message_list.size();
 }
 
 

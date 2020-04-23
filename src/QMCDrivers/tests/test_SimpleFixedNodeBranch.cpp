@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -36,17 +36,16 @@ class SetupSimpleFixedNodeBranch
 public:
   SetupSimpleFixedNodeBranch(Communicate* comm)
   {
-    comm_ = comm;
-    emb_ = std::make_unique<EstimatorManagerBase>(comm_);
+    comm_                   = comm;
+    emb_                    = std::make_unique<EstimatorManagerBase>(comm_);
     FakeEstimator* fake_est = new FakeEstimator;
     emb_->add(fake_est, "fake");
-
   }
 
   SetupSimpleFixedNodeBranch()
   {
-    comm_ = OHMMS::Controller;
-    emb_ = std::make_unique<EstimatorManagerBase>(comm_);
+    comm_                   = OHMMS::Controller;
+    emb_                    = std::make_unique<EstimatorManagerBase>(comm_);
     FakeEstimator* fake_est = new FakeEstimator;
     emb_->add(fake_est, "fake");
   }
@@ -110,21 +109,20 @@ public:
 
     return sfnb;
   }
-  
-private:
 
+private:
   void createMyNode(SimpleFixedNodeBranch& sfnb, const char* xml)
   {
     doc_ = std::make_unique<Libxml2Document>();
     doc_->parseFromString(xml);
     sfnb.myNode = doc_->getRoot();
   }
-  
+
   Communicate* comm_;
   UPtr<EstimatorManagerBase> emb_;
   UPtr<MCPopulation> pop_;
   UPtr<Libxml2Document> doc_;
-  
+
   RealType tau_           = 1.0;
   int num_global_walkers_ = 16;
 
@@ -132,16 +130,15 @@ private:
   UPtr<MCWalkerConfiguration> mcwc_;
 };
 
-}
+} // namespace testing
 
 TEST_CASE("SimpleFixedNodeBranch::branch(MCWC...)", "[drivers][legacy]")
 {
   using namespace testing;
   SetupSimpleFixedNodeBranch setup_sfnb;
-  SimpleFixedNodeBranch sfnb = setup_sfnb();  
-  
-  // \todo: check walker ID's here. might need more walkers to make this significant.
+  SimpleFixedNodeBranch sfnb = setup_sfnb();
 
+  // \todo: check walker ID's here. might need more walkers to make this significant.
 }
 
 TEST_CASE("SimpleFixedNodeBranch::branch(MCPopulation...)", "[drivers]")
@@ -149,10 +146,9 @@ TEST_CASE("SimpleFixedNodeBranch::branch(MCPopulation...)", "[drivers]")
   using namespace testing;
   SetupPools pools;
   SetupSimpleFixedNodeBranch setup_sfnb(pools.comm);
-  SimpleFixedNodeBranch sfnb = setup_sfnb(*pools.particle_pool->getParticleSet("e"),
-                                          *pools.wavefunction_pool->getPrimary(),
-                                          *pools.hamiltonian_pool->getPrimary());  
-  
+  SimpleFixedNodeBranch sfnb =
+      setup_sfnb(*pools.particle_pool->getParticleSet("e"), *pools.wavefunction_pool->getPrimary(),
+                 *pools.hamiltonian_pool->getPrimary());
 }
 
 

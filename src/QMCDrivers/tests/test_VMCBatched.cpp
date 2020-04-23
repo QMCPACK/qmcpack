@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -34,9 +34,8 @@ public:
     Communicate* comm;
     OHMMS::Controller->initialize(0, NULL);
     comm_ = OHMMS::Controller;
-
   }
-  
+
   void testCalcDefaultLocalWalkers()
   {
     using namespace testing;
@@ -76,10 +75,10 @@ public:
       vmc_batched.set_walkers_per_rank(walkers_per_rank, "testing");
       if (num_crowds < 8)
         vmc_batched.set_num_crowds(Concurrency::maxThreads(), "Insufficient threads available to match test input");
-      QMCDriverNew::AdjustedWalkerCounts awc{0,0,0,0};
-      awc.num_crowds = num_crowds;
+      QMCDriverNew::AdjustedWalkerCounts awc{0, 0, 0, 0};
+      awc.num_crowds       = num_crowds;
       awc.walkers_per_rank = walkers_per_rank;
-      awc = vmc_batched.calcDefaultLocalWalkers(awc);
+      awc                  = vmc_batched.calcDefaultLocalWalkers(awc);
 
       if (walkers_per_rank < num_crowds)
       {
@@ -125,7 +124,7 @@ public:
 private:
   Communicate* comm_;
 };
-}
+} // namespace testing
 
 TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
 {
@@ -134,4 +133,4 @@ TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
   vbt.testCalcDefaultLocalWalkers();
 }
 
-} // namespace testing
+} // namespace qmcplusplus

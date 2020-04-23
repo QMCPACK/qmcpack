@@ -52,10 +52,11 @@ QMCDriverNew::AdjustedWalkerCounts DMCBatched::calcDefaultLocalWalkers(QMCDriver
   int num_threads(Concurrency::maxThreads<>());
 
   int orig_walkers_per_rank = awc.walkers_per_rank;
-  
+
   if (awc.num_crowds == 0)
     awc.num_crowds = std::min(num_threads, awc.walkers_per_rank);
-  awc.walkers_per_crowd = (awc.walkers_per_rank % awc.num_crowds) ? awc.walkers_per_rank / awc.num_crowds + 1 : awc.walkers_per_rank / awc.num_crowds;
+  awc.walkers_per_crowd = (awc.walkers_per_rank % awc.num_crowds) ? awc.walkers_per_rank / awc.num_crowds + 1
+                                                                  : awc.walkers_per_rank / awc.num_crowds;
 
   awc.walkers_per_rank = awc.walkers_per_crowd * awc.num_crowds;
   if (awc.walkers_per_rank != orig_walkers_per_rank)
@@ -154,7 +155,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   std::vector<FullPrecRealType> old_walker_energies(num_walkers);
   auto readOldEnergies = [](MCPWalker& walker, FullPrecRealType& old_walker_energy) {
     old_walker_energy = walker.Properties(WP::LOCALENERGY);
-  };  
+  };
   for (int iw = 0; iw < num_walkers; ++iw)
     readOldEnergies(walkers[iw], old_walker_energies[iw]);
   std::vector<FullPrecRealType> new_walker_energies{old_walker_energies};
@@ -179,10 +180,12 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       auto delta_r_start = it_delta_r + iat * num_walkers;
       auto delta_r_end   = delta_r_start + num_walkers;
 
-      std::vector<int> walkers_who_have_been_on_wire(num_walkers, 0);;
+      std::vector<int> walkers_who_have_been_on_wire(num_walkers, 0);
+      ;
       for (int iw = 0; iw < walkers.size(); ++iw)
       {
-        walkers[iw].get().get_has_been_on_wire() ? walkers_who_have_been_on_wire[iw] = 1 : walkers_who_have_been_on_wire[iw] = 0;
+        walkers[iw].get().get_has_been_on_wire() ? walkers_who_have_been_on_wire[iw] = 1
+                                                 : walkers_who_have_been_on_wire[iw] = 0;
       }
       //get the displacement
       TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, grads_now);
@@ -194,20 +197,20 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       // only DMC does this
       // TODO: rr needs a real name
       std::vector<RealType> rr(num_walkers, 0.0);
-      assert( rr.size() == delta_r_end - delta_r_start );
+      assert(rr.size() == delta_r_end - delta_r_start);
       std::transform(delta_r_start, delta_r_end, rr.begin(),
                      [tauovermass](auto& delta_r) { return tauovermass * dot(delta_r, delta_r); });
 
-      // in DMC this was done here, changed to match VMCBatched pending factoring to common source
-      // if (rr > m_r2max)
-      // {
-      //   ++nRejectTemp;
-      //   continue;
-      // }
-      #ifndef NDEBUG
-      for(int i = 0; i < rr.size(); ++i)
+// in DMC this was done here, changed to match VMCBatched pending factoring to common source
+// if (rr > m_r2max)
+// {
+//   ++nRejectTemp;
+//   continue;
+// }
+#ifndef NDEBUG
+      for (int i = 0; i < rr.size(); ++i)
         assert(std::isfinite(rr[i]));
-      #endif
+#endif
       auto elecs = crowd.get_walker_elecs();
       ParticleSet::flex_makeMove(crowd.get_walker_elecs(), iat, drifts);
 
@@ -277,7 +280,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         }
       }
 
-      TrialWaveFunction::flex_accept_rejectMove(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, isAccepted, true);
+      TrialWaveFunction::flex_accept_rejectMove(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, isAccepted,
+                                                true);
 
       ParticleSet::flex_acceptMove(elec_accept_list, iat, true);
       ParticleSet::flex_rejectMove(elec_reject_list, iat);
@@ -351,17 +355,17 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       ParticleSet::flex_saveWalker(moved_nonlocal.walker_elecs, moved_nonlocal.walkers);
     }
   }
-  catch(const std::out_of_range& exc)
+  catch (const std::out_of_range& exc)
   {
     std::cout << "Out of range error in non local move updates: " << exc.what() << std::endl;
   }
-  catch(const std::exception& exc)
+  catch (const std::exception& exc)
   {
     std::cout << "Serious issue in flex_make_NonLocalMoves(): " << exc.what() << std::endl;
   }
 
   dmc_timers.tmove_timer.stop();
-  
+
   setMultiplicities(sft.dmcdrv_input, walkers, step_context.get_random_gen());
 }
 
@@ -432,7 +436,7 @@ void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThrea
 
     for (int iw = 0; iw < moved.walkers.size(); ++iw)
     {
-      assert( moved.rr_proposed[iw] > 0 );
+      assert(moved.rr_proposed[iw] > 0);
       resetSigNLocalEnergy(moved.walkers[iw], moved.walker_twfs[iw], local_energies[iw], moved.rr_accepted[iw],
                            moved.rr_proposed[iw]);
       // this might mean new_energies are actually unneeded which would be nice.
@@ -528,18 +532,21 @@ void DMCBatched::runDMCStep(int crowd_id,
 
 void DMCBatched::process(xmlNodePtr node)
 {
-  QMCDriverNew::AdjustedWalkerCounts awc = adjustGlobalWalkerCount(myComm, dmcdriver_input_.get_target_walkers(), qmcdriver_input_.get_walkers_per_rank(), get_num_crowds());
+  QMCDriverNew::AdjustedWalkerCounts awc =
+      adjustGlobalWalkerCount(myComm, dmcdriver_input_.get_target_walkers(), qmcdriver_input_.get_walkers_per_rank(),
+                              get_num_crowds());
 
-  walkers_per_rank_ = awc.walkers_per_rank;
+  walkers_per_rank_  = awc.walkers_per_rank;
   walkers_per_crowd_ = awc.walkers_per_crowd;
-  num_crowds_ = awc.num_crowds;
+  num_crowds_        = awc.num_crowds;
 
   app_log() << "DMCBatched Driver running with target_walkers=" << awc.global_walkers << '\n'
             << "                               walkers_per_rank=" << walkers_per_rank_ << '\n'
             << "                               num_crowds=" << num_crowds_ << '\n';
 
   // side effect updates walkers_per_crowd_;
-  makeLocalWalkers(awc.walkers_per_rank, ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+  makeLocalWalkers(awc.walkers_per_rank,
+                   ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
   population_.syncWalkersPerNode(myComm);
   Base::process(node);
 }

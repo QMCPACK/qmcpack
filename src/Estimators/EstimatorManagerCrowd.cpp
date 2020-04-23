@@ -14,7 +14,6 @@
 
 namespace qmcplusplus
 {
-
 EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerBase& em)
     : MainEstimatorName(em.MainEstimatorName),
       Options(em.Options),
@@ -51,4 +50,4 @@ void EstimatorManagerCrowd::stopBlock()
 }
 
 
-}
+} // namespace qmcplusplus

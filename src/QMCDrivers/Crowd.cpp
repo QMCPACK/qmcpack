@@ -41,13 +41,13 @@ void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& 
 
 void Crowd::loadWalkers()
 {
-  for(int i = 0; i < mcp_walkers_.size(); ++i)
+  for (int i = 0; i < mcp_walkers_.size(); ++i)
     walker_elecs_[i].get().loadWalker(mcp_walkers_[i], true);
 }
 
 void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
 {
-  for ( QMCHamiltonian& ham : walker_hamiltonians_ )
+  for (QMCHamiltonian& ham : walker_hamiltonians_)
     ham.setRandomGenerator(&rng);
 }
 

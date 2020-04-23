@@ -313,25 +313,25 @@ void EstimatorManagerBase::stopBlockNew(RealType accept, RealType block_weight, 
 }
 
 
-
 /** Called at end of block in Unified Driver
  *
  */
-QMCTraits::FullPrecRealType EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimatorBase>& estimators)
+QMCTraits::FullPrecRealType EstimatorManagerBase::collectScalarEstimators(
+    const RefVector<ScalarEstimatorBase>& estimators)
 {
   using ScalarType = ScalarEstimatorBase::RealType;
 
-  AverageCache = 0.0;
+  AverageCache        = 0.0;
   SquaredAverageCache = 0.0;
 
   // One scalar estimator can be accumulating many scalar values
-  int num_scalars  = estimators[0].get().size();
+  int num_scalars = estimators[0].get().size();
   if (AverageCache.size() != num_scalars)
     throw std::runtime_error(
         "EstimatorManagerBase and Crowd ScalarManagers do not agree on number of scalars being estimated");
   Vector<ScalarType> averages_work(num_scalars, 0.0);
   Vector<ScalarType> sq_averages_work(num_scalars, 0.0);
-  
+
   auto accumulateVectorsInPlace = [](auto& vec_a, const auto& vec_b) {
     for (int i = 0; i < vec_a.size(); ++i)
       vec_a[i] += vec_b[i];
@@ -425,30 +425,30 @@ void EstimatorManagerBase::collectBlockAverages()
 void EstimatorManagerBase::makeBlockAverages()
 {
   //there is only one EstimatormanagerBase per rank in the unified driver.
-    //copy cached data to RemoteData[0]
-    int n1 = AverageCache.size();
-    int n2 = n1 + AverageCache.size();
-    int n3 = n2 + PropertyCache.size();
-    {
-      BufferType::iterator cur(RemoteData[0]->begin());
-      copy(AverageCache.begin(), AverageCache.end(), cur);
-      copy(SquaredAverageCache.begin(), SquaredAverageCache.end(), cur + n1);
-      copy(PropertyCache.begin(), PropertyCache.end(), cur + n2);
-    }
-    myComm->reduce(*RemoteData[0]);
-    if (myComm->rank() == 0)
-    {
-      BufferType::iterator cur(RemoteData[0]->begin());
-      copy(cur, cur + n1, AverageCache.begin());
-      copy(cur + n1, cur + n2, SquaredAverageCache.begin());
-      copy(cur + n2, cur + n3, PropertyCache.begin());
-      RealType invTotWgt = 1.0 / PropertyCache[weightInd];
-      AverageCache *= invTotWgt;
-      SquaredAverageCache *= invTotWgt;
-      //do not weight weightInd i.e. its index 0!
-      for (int i = 1; i < PropertyCache.size(); i++)
-        PropertyCache[i] *= invTotWgt;
-    }
+  //copy cached data to RemoteData[0]
+  int n1 = AverageCache.size();
+  int n2 = n1 + AverageCache.size();
+  int n3 = n2 + PropertyCache.size();
+  {
+    BufferType::iterator cur(RemoteData[0]->begin());
+    copy(AverageCache.begin(), AverageCache.end(), cur);
+    copy(SquaredAverageCache.begin(), SquaredAverageCache.end(), cur + n1);
+    copy(PropertyCache.begin(), PropertyCache.end(), cur + n2);
+  }
+  myComm->reduce(*RemoteData[0]);
+  if (myComm->rank() == 0)
+  {
+    BufferType::iterator cur(RemoteData[0]->begin());
+    copy(cur, cur + n1, AverageCache.begin());
+    copy(cur + n1, cur + n2, SquaredAverageCache.begin());
+    copy(cur + n2, cur + n3, PropertyCache.begin());
+    RealType invTotWgt = 1.0 / PropertyCache[weightInd];
+    AverageCache *= invTotWgt;
+    SquaredAverageCache *= invTotWgt;
+    //do not weight weightInd i.e. its index 0!
+    for (int i = 1; i < PropertyCache.size(); i++)
+      PropertyCache[i] *= invTotWgt;
+  }
   //add the block average to summarize
   energyAccumulator(AverageCache[0]);
   varAccumulator(SquaredAverageCache[0] - AverageCache[0] * AverageCache[0]);
@@ -467,7 +467,6 @@ void EstimatorManagerBase::makeBlockAverages()
   }
   RecordCount++;
 }
-
 
 
 /** accumulate Local energies and collectables
@@ -530,7 +529,11 @@ void EstimatorManagerBase::getCurrentStatistics(MCWalkerConfiguration& W, RealTy
   var  = tmp[1] / tmp[2] - eavg * eavg;
 }
 
-void EstimatorManagerBase::getCurrentStatistics(const int global_walkers, RefVector<MCPWalker>& walkers, RealType& eavg, RealType& var, Communicate* comm)
+void EstimatorManagerBase::getCurrentStatistics(const int global_walkers,
+                                                RefVector<MCPWalker>& walkers,
+                                                RealType& eavg,
+                                                RealType& var,
+                                                Communicate* comm)
 {
   LocalEnergyOnlyEstimator energynow;
   energynow.clear();

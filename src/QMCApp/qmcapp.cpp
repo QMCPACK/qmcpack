@@ -48,7 +48,7 @@ int main(int argc, char** argv)
   {
     //qmc_common  and MPI is initialized
 #ifdef HAVE_MPI
-    mpi3::environment env; //argc, argv);
+    mpi3::environment env(argc, argv);
     OHMMS::Controller->initialize(env);
 #endif
     qmcplusplus::qmc_common.initialize(argc, argv);

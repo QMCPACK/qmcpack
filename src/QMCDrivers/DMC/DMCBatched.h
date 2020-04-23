@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 developers.
+// Copyright (c) 2020 developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -20,7 +20,6 @@
 
 namespace qmcplusplus
 {
-
 class DriverModifierBase;
 
 namespace testing
@@ -33,7 +32,7 @@ class DMCBatchedTest;
 class DMCBatched : public QMCDriverNew
 {
 public:
-  using Base = QMCDriverNew;
+  using Base              = QMCDriverNew;
   using FullPrecRealType  = QMCTraits::FullPrecRealType;
   using PosType           = QMCTraits::PosType;
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
@@ -66,8 +65,7 @@ public:
   {
   public:
     NewTimer& tmove_timer;
-    DMCTimers(const std::string& prefix)
-        : tmove_timer(*TimerManager.createTimer(prefix + "Tmove", timer_level_medium))
+    DMCTimers(const std::string& prefix) : tmove_timer(*TimerManager.createTimer(prefix + "Tmove", timer_level_medium))
     {}
   };
 
@@ -184,7 +182,7 @@ private:
     std::vector<RealType>& gf_accs;
   };
 
-  
+
   /** for the return of DMCPerWalkerRefs split into moved and stalled
    *
    *  until C++17 we need a structure to return the split moved and stalled refs
@@ -196,12 +194,12 @@ private:
     DMCPerWalkerRefs moved;
     DMCPerWalkerRefs stalled;
   };
-  
+
   static MovedStalled buildMovedStalled(const std::vector<int>& did_walker_move, const DMCPerWalkerRefRefs& refs);
 
   static void handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThread& sft, DriverTimers& timers);
   static void handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForThread& sft);
-// struct DMCTimers
+  // struct DMCTimers
   // {
   //   NewTimer& dmc_movePbyP;
   //   DriverTimers(const std::string& prefix)

@@ -226,8 +226,12 @@ public:
    *  from the previous section passed in
    *  rather than retaining the estimator manager to get them.
    */
-  static void getCurrentStatistics(const int global_walkers, RefVector<MCPWalker>& walkers, RealType& eavg, RealType& var, Communicate* comm);
-  
+  static void getCurrentStatistics(const int global_walkers,
+                                   RefVector<MCPWalker>& walkers,
+                                   RealType& eavg,
+                                   RealType& var,
+                                   Communicate* comm);
+
   template<class CT>
   void write(CT& anything, bool doappend)
   {

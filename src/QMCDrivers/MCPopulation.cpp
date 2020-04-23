@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -18,9 +18,10 @@
 
 namespace qmcplusplus
 {
+MCPopulation::MCPopulation()
+    : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr), num_ranks_(1), rank_(0)
+{}
 
-MCPopulation::MCPopulation() : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr), num_ranks_(1), rank_(0) {}
- 
 MCPopulation::MCPopulation(int num_ranks,
                            MCWalkerConfiguration& mcwc,
                            ParticleSet* elecs,
@@ -104,9 +105,8 @@ void MCPopulation::createWalkers(IndexType num_walkers)
     // a bad buffer.
     walker_ptr->Properties = elec_particle_set_->Properties;
     walker_ptr->registerData();
-        
   };
-  
+
   for (auto& walker_ptr : walkers_)
     createWalker(walker_ptr);
 
@@ -157,13 +157,13 @@ void MCPopulation::createWalkers(IndexType num_walkers)
   TrialWaveFunction::flex_registerData(walker_trial_wavefunctions_, walker_elec_particle_sets_, mcp_wfbuffers);
 
   std::for_each(walkers_.begin(), walkers_.end(), [](auto& walker) {
-                                                    MCPWalker& this_walker = *walker;
-                                                    this_walker.DataSet.allocate();
-                                                  });
+    MCPWalker& this_walker = *walker;
+    this_walker.DataSet.allocate();
+  });
 
   // Now we kill the extra walkers and elements that we made.
   num_walkers /= 2;
-  for(int i = 0; i < num_walkers; ++i)
+  for (int i = 0; i < num_walkers; ++i)
     killLastWalker();
 }
 
@@ -178,7 +178,7 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
 {
   ++num_local_walkers_;
   outputManager.pause();
-  
+
   if (dead_walkers_.size() > 0)
   {
     walkers_.push_back(std::move(dead_walkers_.back()));
@@ -191,18 +191,18 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
     dead_walker_hamiltonians_.pop_back();
     // Emulating the legacy implementation valid walker elements were created with the initial walker and DataSet
     // registration and allocation were done then so are not necessary when resurrecting walkers and elements
-    walkers_.back()->Generation = 0;
-    walkers_.back()->Age = 0;
+    walkers_.back()->Generation         = 0;
+    walkers_.back()->Age                = 0;
     walkers_.back()->ReleasedNodeWeight = 1.0;
-    walkers_.back()->ReleasedNodeAge = 0;
-    walkers_.back()->Multiplicity = 1.0;
-    walkers_.back()->Weight = 1.0;
+    walkers_.back()->ReleasedNodeAge    = 0;
+    walkers_.back()->Multiplicity       = 1.0;
+    walkers_.back()->Weight             = 1.0;
   }
   else
   {
     app_warning() << "Spawning walker outside of reserves, this ideally should never happend." << std::endl;
     walkers_.push_back(std::make_unique<MCPWalker>(num_particles_));
-    walkers_.back()->R = elec_particle_set_->R;
+    walkers_.back()->R          = elec_particle_set_->R;
     walkers_.back()->Properties = elec_particle_set_->Properties;
     walkers_.back()->registerData();
 
@@ -215,11 +215,11 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
     walker_trial_wavefunctions_.back()->registerData(*(walker_elec_particle_sets_.back()), walkers_.back()->DataSet);
     walkers_.back()->DataSet.allocate();
     walkers_.back()->Multiplicity = 1.0;
-    walkers_.back()->Weight = 1.0;
+    walkers_.back()->Weight       = 1.0;
   }
 
   outputManager.resume();
-  assert( walkers_.back().get()->DataSet.size() == 9440 );
+  assert(walkers_.back().get()->DataSet.size() == 9440);
   return walkers_.back().get();
 }
 
@@ -281,8 +281,9 @@ void MCPopulation::killWalker(MCPWalker& walker)
 
 void MCPopulation::syncWalkersPerNode(Communicate* comm)
 {
-  std::vector<IndexType> num_local_walkers_per_node(comm->size(), 0);;
-  
+  std::vector<IndexType> num_local_walkers_per_node(comm->size(), 0);
+  ;
+
   num_local_walkers_per_node[comm->rank()] = num_local_walkers_;
   comm->allreduce(num_local_walkers_per_node);
 

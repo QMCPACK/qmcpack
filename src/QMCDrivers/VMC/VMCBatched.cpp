@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -187,7 +187,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
             elec_reject_list.push_back(crowd.get_walker_elecs()[i_accept]);
           }
 
-        TrialWaveFunction::flex_accept_rejectMove(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, isAccepted, true);
+        TrialWaveFunction::flex_accept_rejectMove(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, isAccepted,
+                                                  true);
 
         ParticleSet::flex_acceptMove(elec_accept_list, iat, true);
         ParticleSet::flex_rejectMove(elec_reject_list, iat);

@@ -56,7 +56,7 @@ namespace testing
 {
 class DMCBatchedTest;
 class VMCBatchedTest;
-}
+} // namespace testing
 
 /** @ingroup QMCDrivers
  * @{
@@ -70,8 +70,8 @@ class VMCBatchedTest;
 class QMCDriverNew : public QMCDriverInterface, public MPIObjectBase
 {
 public:
-  using RealType              = QMCTraits::RealType;
-  using IndexType             = QMCTraits::IndexType;
+  using RealType         = QMCTraits::RealType;
+  using IndexType        = QMCTraits::IndexType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
 
   /** separate but similar to QMCModeEnum
@@ -195,10 +195,10 @@ public:
   void putTraces(xmlNodePtr txml) {}
   void requestTraces(bool allow_traces) {}
   /** }@ */
-    
+
 protected:
   void endBlock();
-  
+
   struct AdjustedWalkerCounts
   {
     IndexType global_walkers;
@@ -206,14 +206,17 @@ protected:
     int num_crowds;
     int walkers_per_crowd;
   };
-    
+
   /** this is intended to become static
    *
    *  it cant be because calc_default_local_walkers is virtual
    */
-  QMCDriverNew::AdjustedWalkerCounts adjustGlobalWalkerCount(Communicate* comm, IndexType desired_count, IndexType walkers_per_rank, int num_crowds);
+  QMCDriverNew::AdjustedWalkerCounts adjustGlobalWalkerCount(Communicate* comm,
+                                                             IndexType desired_count,
+                                                             IndexType walkers_per_rank,
+                                                             int num_crowds);
 
-  
+
   /** The timers for the driver.
    *
    * This cleans up the driver constructor, and a reference to this structure 
@@ -241,7 +244,7 @@ protected:
 
   QMCDriverInput qmcdriver_input_;
 
-    /** @ingroup Driver mutable input values
+  /** @ingroup Driver mutable input values
    *
    *  they should be limited to values that can be changed from input
    *  or are live state.
@@ -259,7 +262,7 @@ protected:
   IndexType walkers_per_rank_;
   IndexType walkers_per_crowd_;
   /**}@*/
-  
+
   std::vector<std::unique_ptr<Crowd>> crowds_;
 
 

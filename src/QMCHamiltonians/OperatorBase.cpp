@@ -71,6 +71,7 @@ void OperatorBase::mw_evaluate(const RefVector<OperatorBase>& O_list, const RefV
     O_list[iw].get().evaluate(P_list[iw]);
 }
 
+
 void OperatorBase::set_energy_domain(energy_domains edomain)
 {
   if (energy_domain_valid(edomain))

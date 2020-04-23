@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -95,7 +95,7 @@ class EstimatorManagerBase;
  *   e. set WC's TrialEnergy
  *   d. multiply walkers.Colelctables *= the inverse weight.
  *   f. call SFNB's estimator accumilator on MCWC
- */  
+ */
 struct SimpleFixedNodeBranch : public QMCTraits
 {
   typedef SimpleFixedNodeBranch ThisType;
@@ -187,7 +187,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
     VPARAM_MAX = 17 // four extra, why? Sloppy or undocumented hack?
   };
   using SBVP = SimpleBranchVectorParameter;
-  
+
   /** controlling parameters of full precision real type
    *
    * Mostly internal
@@ -215,8 +215,8 @@ struct SimpleFixedNodeBranch : public QMCTraits
   std::unique_ptr<WalkerControlBase> WalkerController;
   ///Backup WalkerController for mixed DMC
   std::unique_ptr<WalkerControlBase> BackupWalkerController;
-  
-  ///TODO: Should not be raw pointer 
+
+  ///TODO: Should not be raw pointer
   EstimatorManagerBase* MyEstimator;
   ///a simple accumulator for energy
   accumulator_set<FullPrecRealType> EnergyHist;

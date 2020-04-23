@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -68,7 +68,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(drift_modifier_, "drift_modifier", "string");
   parameter_set.add(drift_modifier_unr_a_, "drift_UNR_a", "double");
   parameter_set.add(max_disp_sq_, "maxDisplSq", "double");
-  
+
   OhmmsAttributeSet aAttrib;
 
   // first stage in from QMCDriverFactory

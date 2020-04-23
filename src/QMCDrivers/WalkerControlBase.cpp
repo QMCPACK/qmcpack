@@ -2,9 +2,9 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
@@ -831,7 +831,7 @@ void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
   // What we care about here are the populations we'll have after the adjusts are
   // applied on each rank.
   // This differs from the legacy implementation which had partially updated state at this point.
-  auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(myComm, adjust.num_walkers);
+  auto num_per_node            = WalkerControlBase::syncFutureWalkersPerRank(myComm, adjust.num_walkers);
   IndexType current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
   // limit Nmax
   // We assume the difference in number of walkers is no greater than 1

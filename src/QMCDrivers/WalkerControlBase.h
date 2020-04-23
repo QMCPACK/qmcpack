@@ -2,9 +2,9 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
@@ -297,6 +297,7 @@ protected:
   MCDataType<FullPrecRealType> ensemble_property_;
 
   friend class qmcplusplus::testing::UnifiedDriverWalkerControlMPITest;
+
 private:
   /** unified: Refactoring possibly dead releaseNodesCode out
    * @{
@@ -314,7 +315,10 @@ private:
    */
   static auto walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustmentCriteria wac);
 
-  static void updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data, WalkerAdjustmentCriteria wac, PopulationAdjustment& adjustment, MCPopulation& pop);
+  static void updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data,
+                                          WalkerAdjustmentCriteria wac,
+                                          PopulationAdjustment& adjustment,
+                                          MCPopulation& pop);
   /**}@*/
 };
 

@@ -123,8 +123,8 @@ struct ScalarEstimatorBase
     }
     return weight;
   }
-  
-  
+
+
   /** a virtual function to accumulate observables or collectables
    * @param W const MCWalkerConfiguration
    * @param first const_iterator for the first walker
@@ -135,7 +135,7 @@ struct ScalarEstimatorBase
    */
   virtual void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) = 0;
 
-   /** a virtual function to accumulate observables or collectables
+  /** a virtual function to accumulate observables or collectables
    * @param global_walkers_ walkers per ranks or walkers total?
    * @param RefVector of MCPWalkers
    * @param wgt weight or maybe norm

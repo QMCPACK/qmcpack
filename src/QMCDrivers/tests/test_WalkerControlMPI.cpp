@@ -183,25 +183,25 @@ TEST_CASE("MPI WalkerControl multiplicity swap walkers", "[drivers][walker_contr
 TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control]")
 {
   auto test_func = []() {
-  outputManager.pause();
-  testing::UnifiedDriverWalkerControlMPITest test;
-  outputManager.resume();
+    outputManager.pause();
+    testing::UnifiedDriverWalkerControlMPITest test;
+    outputManager.resume();
 
-  SECTION("Simple")
-  {
-    std::vector<int> count_before{1, 1, 1};
-    std::vector<int> count_after{1, 1, 1};
-    // One walker on every node, should be no swapping
-    test.testPopulationDiff(count_before, count_after);
-  }
+    SECTION("Simple")
+    {
+      std::vector<int> count_before{1, 1, 1};
+      std::vector<int> count_after{1, 1, 1};
+      // One walker on every node, should be no swapping
+      test.testPopulationDiff(count_before, count_after);
+    }
 
-  SECTION("LoadBalance")
-  {
-    std::vector<int> count_before{3, 1, 1};
-    std::vector<int> count_after{1, 2, 2};
-    test.testPopulationDiff(count_before, count_after);
-  }
-                   };
+    SECTION("LoadBalance")
+    {
+      std::vector<int> count_before{3, 1, 1};
+      std::vector<int> count_after{1, 2, 2};
+      test.testPopulationDiff(count_before, count_after);
+    }
+  };
   MPIExceptionWrapper mew;
   mew(test_func);
 }

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 developers.
+// Copyright (c) 2020 developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -28,17 +28,16 @@
 
 namespace qmcplusplus
 {
-
 class MCPopulation
 {
 public:
-  using MCPWalker  = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using WFBuffer   = MCPWalker::WFBuffer_t;
-  using RealType   = QMCTraits::RealType;
-  using Properties = MCPWalker::PropertyContainer_t;
-  using IndexType  = QMCTraits::IndexType;
+  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using WFBuffer         = MCPWalker::WFBuffer_t;
+  using RealType         = QMCTraits::RealType;
+  using Properties       = MCPWalker::PropertyContainer_t;
+  using IndexType        = QMCTraits::IndexType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-  
+
 private:
   // Potential thread safety issue
   MCDataType<QMCTraits::FullPrecRealType> ensemble_property_;
@@ -52,7 +51,7 @@ private:
   IndexType target_samples_     = 0;
   //Properties properties_;
   ParticleSet ions_;
-  
+
   // By making this a linked list and creating the crowds at the same time we could get first touch.
   UPtrVector<MCPWalker> walkers_;
   UPtrVector<MCPWalker> dead_walkers_;
@@ -83,9 +82,9 @@ private:
   UPtrVector<ParticleSet> dead_walker_elec_particle_sets_;
   UPtrVector<TrialWaveFunction> dead_walker_trial_wavefunctions_;
   UPtrVector<QMCHamiltonian> dead_walker_hamiltonians_;
-  
+
   // MCPopulation immutables
-  // would be nice if they were const but we'd lose the default move assignment 
+  // would be nice if they were const but we'd lose the default move assignment
   int num_ranks_;
   int rank_;
 
@@ -107,9 +106,9 @@ public:
                QMCHamiltonian* hamiltonian,
                int this_rank);
 
-  MCPopulation(MCPopulation&)  = delete;
+  MCPopulation(MCPopulation&) = delete;
   MCPopulation& operator=(MCPopulation&) = delete;
-  MCPopulation(MCPopulation&&) = default;
+  MCPopulation(MCPopulation&&)           = default;
 
   /** @ingroup PopulationControl
    *
@@ -117,7 +116,7 @@ public:
    *   * createWalkers must have been called
    *  @{
    */
-  MCPWalker*  spawnWalker();
+  MCPWalker* spawnWalker();
   void killWalker(MCPWalker&);
   void killLastWalker();
   void createWalkerInplace(UPtr<MCPWalker>& walker_ptr);
@@ -147,13 +146,13 @@ public:
   template<typename ITER, typename = RequireInputIterator<ITER>>
   void distributeWalkers(ITER it_group_start, ITER group_end, int walkers_per_group)
   {
-    auto it_group = it_group_start;
+    auto it_group               = it_group_start;
     auto it_walkers             = walkers_.begin();
     auto it_walker_elecs        = walker_elec_particle_sets_.begin();
     auto it_walker_twfs         = walker_trial_wavefunctions_.begin();
     auto it_walker_hamiltonians = walker_hamiltonians_.begin();
 
-    assert( ( group_end - it_group < walkers_.size()) || walkers_per_group ==  1);
+    assert((group_end - it_group < walkers_.size()) || walkers_per_group == 1);
 
     // while (it_group != group_end)
     // {
@@ -172,7 +171,7 @@ public:
     // }
 
     // For now ignore the requesting walkers_per_group
-    
+
     while (it_walkers != walkers_.end())
     {
       it_group = it_group_start;
@@ -213,7 +212,7 @@ public:
   //const Properties& get_properties() const { return properties_; }
   const SpeciesSet& get_species_set() const { return species_set_; }
   const ParticleSet& get_ions() const { return ions_; }
-  const ParticleSet* get_golden_electrons() const {return elec_particle_set_; }
+  const ParticleSet* get_golden_electrons() const { return elec_particle_set_; }
   void syncWalkersPerNode(Communicate* comm);
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
