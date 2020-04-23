@@ -343,7 +343,7 @@ protected:
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
 
-  ///temporary storage for random displacemenyt
+  ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
   // ///alternate method of setting QMC run parameters
