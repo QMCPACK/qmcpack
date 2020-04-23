@@ -19,8 +19,8 @@ namespace qmcplusplus
 namespace ompBLAS
 {
 
-#pragma omp declare reduction(+: std::complex<float>: omp_out += omp_in)
-#pragma omp declare reduction(+: std::complex<double>: omp_out += omp_in)
+PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<float>: omp_out += omp_in)")
+PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<double>: omp_out += omp_in)")
 
 template<typename T>
 ompBLAS_status gemv_impl(ompBLAS_handle& handle,
