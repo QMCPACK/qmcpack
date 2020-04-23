@@ -41,7 +41,7 @@ VMC::VMC(MCWalkerConfiguration& w,
          QMCHamiltonian& h,
          WaveFunctionPool& ppool,
          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm), UseDrift("yes"), SpinMoves("no"), SpinMass(1.0)
+    : QMCDriver(w, psi, h, ppool, comm), UseDrift("yes")
 {
   RootName = "vmc";
   QMCType  = "VMC";
@@ -50,8 +50,6 @@ VMC::VMC(MCWalkerConfiguration& w,
   m_param.add(UseDrift, "useDrift", "string");
   m_param.add(UseDrift, "usedrift", "string");
   m_param.add(UseDrift, "use_drift", "string");
-  m_param.add(SpinMoves, "SpinMoves", "string");
-  m_param.add(SpinMass, "SpinMass", "double");
 
   prevSteps               = nSteps;
   prevStepsBetweenSamples = nStepsBetweenSamples;
@@ -183,11 +181,6 @@ void VMC::resetRun()
 #endif
       hClones[ip]->setRandomGenerator(Rng[ip]);
       
-      tolower(SpinMoves);
-      if (SpinMoves != "yes" && SpinMoves != "no") 
-      {
-        APP_ABORT("SpinMoves must be yes/no\n");
-      }
       if (SpinMoves == "yes") 
       {
         if (qmc_driver_mode[QMC_UPDATE_MODE]) 

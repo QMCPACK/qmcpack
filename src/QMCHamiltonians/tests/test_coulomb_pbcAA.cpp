@@ -31,7 +31,6 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -76,7 +75,6 @@ TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -124,7 +122,6 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;

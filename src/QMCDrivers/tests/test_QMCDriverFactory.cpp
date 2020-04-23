@@ -34,7 +34,6 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
 {
   using namespace testing;
   Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   QMCDriverFactory driver_factory;
@@ -71,7 +70,6 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
 {
   using namespace testing;
   Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   QMCDriverFactory driver_factory;
@@ -107,7 +105,6 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
 {
   using namespace testing;
   Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   QMCDriverFactory driver_factory;
@@ -143,7 +140,6 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
 {
   using namespace testing;
   Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   QMCDriverFactory driver_factory;

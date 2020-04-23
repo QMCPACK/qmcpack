@@ -45,7 +45,6 @@ public:
 
   SetupSimpleFixedNodeBranch()
   {
-    OHMMS::Controller->initialize(0, NULL);
     comm_ = OHMMS::Controller;
     emb_ = std::make_unique<EstimatorManagerBase>(comm_);
     FakeEstimator* fake_est = new FakeEstimator;

@@ -24,7 +24,6 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
 {
   using namespace testing;
   Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   MinimalParticlePool mpp;
@@ -59,7 +58,6 @@ TEST_CASE("MCPopulation::distributeWalkers", "[particle][population]")
 {
   using namespace testing;
   Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   MinimalParticlePool mpp;

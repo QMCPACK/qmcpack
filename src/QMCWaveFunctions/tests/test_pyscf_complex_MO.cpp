@@ -44,7 +44,6 @@ void test_C_diamond()
 
   SECTION(section_name.str())
   {
-    OHMMS::Controller->initialize(0, NULL);
     Communicate* c = OHMMS::Controller;
 
     Libxml2Document doc;

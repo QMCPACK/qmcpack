@@ -26,7 +26,7 @@ SET(QMCAPPDIR
     CoupledMC.cpp
 )
 ADD_LIBRARY(qmc ${QMCAPPDIR})
-TARGET_LINK_LIBRARIES(qmc PUBLIC qmcutil)
+TARGET_LINK_LIBRARIES(qmc PUBLIC qmcutil platform_device)
 
 ####################################
 # QMCPACK application
@@ -38,7 +38,7 @@ ADD_CUSTOM_COMMAND(TARGET qmcpack
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP})
 
-TARGET_LINK_LIBRARIES(qmcpack qmc qmcdriver qmcham qmcwfs qmcbase qmcutil)
+TARGET_LINK_LIBRARIES(qmcpack qmc qmcdriver)
 
 IF(BUILD_AFQMC)
   TARGET_LINK_LIBRARIES(qmcpack afqmc)
@@ -47,14 +47,6 @@ ENDIF(BUILD_AFQMC)
 IF(BUILD_FCIQMC)
   TARGET_LINK_LIBRARIES(qmcpack fciqmc)
 ENDIF(BUILD_FCIQMC)
-
-FOREACH(l ${QMC_UTIL_LIBS})
-  TARGET_LINK_LIBRARIES(qmcpack ${l})
-ENDFOREACH(l ${QMC_UTIL_LIBS})
-
-IF(MPI_LIBRARY)
-  TARGET_LINK_LIBRARIES(qmcpack ${MPI_LIBRARY})
-ENDIF(MPI_LIBRARY)
 
 INSTALL(TARGETS qmcpack
         RUNTIME DESTINATION bin)

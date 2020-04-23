@@ -16,7 +16,8 @@
 #ifndef QMCPLUSPLUS_GLOBAL_OBJECTS_H
 #define QMCPLUSPLUS_GLOBAL_OBJECTS_H
 
-#include <Configuration.h>
+#include <ostream>
+#include <string>
 
 namespace qmcplusplus
 {

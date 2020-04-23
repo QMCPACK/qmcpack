@@ -89,7 +89,7 @@ int main(int argc, char** argv)
   ions.Lattice.BoxBConds=1;
   ions.Lattice.LR_rc=5;
   tile_cell(ions,tmat,scale);
-  ions.RSoA=ions.R; //this needs to be handled internally
+  ions.setCoordinates(ions.R); //this needs to be handled internally
 
   const int nions=ions.getTotalNum();
   const int nels=count_electrons(ions);
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
     els.R.InUnit = PosUnit::Lattice;
     random_th.generate_uniform(&els.R[0][0],nels3);
     els.convert2Cart(els.R); // convert to Cartiesian
-    els.RSoA=els.R; //this needs to be handled internally
+    els.setCoordinates(els.R); //this needs to be handled internally
     els.setName("e");
   }
 
@@ -196,7 +196,7 @@ int main(int argc, char** argv)
       RealType r=sqrt(dot(d,d));
       r_err += r;
       if(r > eps) 
-        cerr << "SoA-AoS error " << iat << " "  << els.RSoA[iat] << " " << els_aos.R[iat] << endl;
+        cerr << "SoA-AoS error " << iat << " "  << els.getCoordinates().getAllParticlePos()[iat] << " " << els_aos.R[iat] << endl;
     }
     cout << "Done with the sweep. |els.R-els_aos.R|^2/nels = " << r_err/nels << endl;
   }

@@ -23,7 +23,6 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
 {
   using RealType = OptimizableFunctorBase::real_type;
 
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   // prepare xml input to set up the functor

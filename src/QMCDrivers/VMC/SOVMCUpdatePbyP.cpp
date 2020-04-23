@@ -2,13 +2,9 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
@@ -26,16 +22,17 @@ typedef int TraceManager;
 
 namespace qmcplusplus
 {
-
 /// Constructor
-SOVMCUpdatePbyP::SOVMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+SOVMCUpdatePbyP::SOVMCUpdatePbyP(MCWalkerConfiguration& w,
+                                 TrialWaveFunction& psi,
+                                 QMCHamiltonian& h,
+                                 RandomGenerator_t& rg)
     : QMCUpdateBase(w, psi, h, rg),
-      buffer_timer_(*TimerManager.createTimer("SOVMCUpdatePbyP::Buffer",timer_level_medium)),
-      movepbyp_timer_(*TimerManager.createTimer("SOVMCUpdatePbyP::MovePbyP",timer_level_medium)),
-      hamiltonian_timer_(*TimerManager.createTimer("SOVMCUpdatePbyP::Hamiltonian",timer_level_medium)),
-      collectables_timer_(*TimerManager.createTimer("SOVMCUpdatePbyP::Collectables",timer_level_medium))
-{
-}
+      buffer_timer_(*TimerManager.createTimer("SOVMCUpdatePbyP::Buffer", timer_level_medium)),
+      movepbyp_timer_(*TimerManager.createTimer("SOVMCUpdatePbyP::MovePbyP", timer_level_medium)),
+      hamiltonian_timer_(*TimerManager.createTimer("SOVMCUpdatePbyP::Hamiltonian", timer_level_medium)),
+      collectables_timer_(*TimerManager.createTimer("SOVMCUpdatePbyP::Collectables", timer_level_medium))
+{}
 
 SOVMCUpdatePbyP::~SOVMCUpdatePbyP() {}
 
@@ -68,44 +65,44 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         ParticleSet::Scalar_t ds;
         if (UseDrift)
         {
-          TrialWaveFunction::LogValueType spingrad_now;
-          GradType grad_now = Psi.evalGradWithSpin(W, iat,spingrad_now);
+          ComplexType spingrad_now;
+          GradType grad_now = Psi.evalGradWithSpin(W, iat, spingrad_now);
           DriftModifier->getDrift(tauovermass, grad_now, dr);
-          ds = tauovermass/spinMass*std::real(spingrad_now); //using raw spin grad, no UNR modifier
+          DriftModifier->getDrift(tauovermass / spinMass, spingrad_now, ds);
           dr += sqrttau * deltaR[iat];
-          ds += std::sqrt(tauovermass/spinMass)*deltaS[iat]; 
+          ds += std::sqrt(tauovermass / spinMass) * deltaS[iat];
         }
         else
         {
           dr = sqrttau * deltaR[iat];
-          ds = std::sqrt(tauovermass/spinMass)*deltaS[iat];
+          ds = std::sqrt(tauovermass / spinMass) * deltaS[iat];
         }
-        if (!W.makeMoveAndCheckWithSpin(iat,dr,ds))
+        if (!W.makeMoveAndCheckWithSpin(iat, dr, ds))
         {
-            ++nReject;
-            continue;
+          ++nReject;
+          continue;
         }
         RealType prob(0);
         if (UseDrift)
         {
           GradType grad_new;
-          TrialWaveFunction::LogValueType spingrad_new;
-          prob = std::norm(Psi.calcRatioGradWithSpin(W, iat, grad_new,spingrad_new));
+          ComplexType spingrad_new;
+          prob = std::norm(Psi.calcRatioGradWithSpin(W, iat, grad_new, spingrad_new));
           DriftModifier->getDrift(tauovermass, grad_new, dr);
           dr             = W.R[iat] - W.activePos - dr;
           RealType logGb = -oneover2tau * dot(dr, dr);
           RealType logGf = mhalf * dot(deltaR[iat], deltaR[iat]);
 
-          ds = tauovermass/spinMass*std::real(spingrad_new);
+          DriftModifier->getDrift(tauovermass / spinMass, spingrad_new, ds);
           ds = W.spins[iat] - W.activeSpinVal - ds;
-          logGb += -spinMass*oneover2tau*ds*ds;
-          logGf += mhalf*deltaS[iat]*deltaS[iat];
+          logGb += -spinMass * oneover2tau * ds * ds;
+          logGf += mhalf * deltaS[iat] * deltaS[iat];
 
           prob *= std::exp(logGb - logGf);
         }
         else
         {
-          prob = std::norm(Psi.calcRatio(W,iat));
+          prob = std::norm(Psi.calcRatio(W, iat));
         }
         if (prob >= std::numeric_limits<RealType>::epsilon() && RandomGen() < prob)
         {

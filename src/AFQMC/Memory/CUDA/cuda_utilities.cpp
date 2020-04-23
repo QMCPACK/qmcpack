@@ -20,7 +20,7 @@
 #include<complex>
 #include<cstdlib>
 #include<stdexcept>
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #include <cuda_runtime.h>

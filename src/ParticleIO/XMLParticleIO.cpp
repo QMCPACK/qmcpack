@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -206,7 +206,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
       gAttrib.put(cur0);
       nat_group.push_back(nat_per_group);
       ng_in += nat_per_group;
-      ntot  += nat_per_group;
+      ntot += nat_per_group;
       ng++;
     }
     else if (cname == attrib_tag)
@@ -314,6 +314,10 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
       makeUniformRandom(ref_.R);
       ref_.R.setUnit(PosUnit::Lattice);
       ref_.convert2Cart(ref_.R);
+#if !defined(QMC_CUDA)
+      makeUniformRandom(ref_.spins);
+      ref_.spins *= 2 * M_PI;
+#endif
     }
     else // put them [0,1) in the cell
       ref_.applyBC(ref_.R);

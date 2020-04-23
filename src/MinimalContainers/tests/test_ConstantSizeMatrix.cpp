@@ -12,7 +12,6 @@
 #include "MinimalContainers/ConstantSizeMatrix.hpp"
 #include "OhmmsPETE/OhmmsMatrix.h"
 
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
 

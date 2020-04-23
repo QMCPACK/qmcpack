@@ -28,7 +28,6 @@ namespace qmcplusplus
 {
 TEST_CASE("EstimatorManagerBase", "[estimators]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   EstimatorManagerBase em(c);
@@ -60,7 +59,6 @@ TEST_CASE("EstimatorManagerBase", "[estimators]")
 
 TEST_CASE("EstimatorManagerBase::collectScalarEstimators", "[estimators]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   FakeEstimator fake_estimator;

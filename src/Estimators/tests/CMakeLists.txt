@@ -20,16 +20,7 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 SET(SRCS test_accumulator.cpp test_local_energy_est.cpp test_manager.cpp test_trace_manager.cpp)
 
-
-#EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
-#EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple.txt" ${UTEST_DIR})
-#EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/C.BFD.xml" ${UTEST_DIR})
-
-
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcham qmcwfs qmcbase qmcutil qmcdriver ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcdriver)
 
-#ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-#SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-

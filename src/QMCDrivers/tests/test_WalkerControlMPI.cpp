@@ -11,7 +11,7 @@
 
 #include <functional>
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 //#include <catch.hpp>
 
@@ -21,7 +21,7 @@
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/tests/test_WalkerControlMPI.h"
 #include "Utilities/MPIExceptionWrapper.hpp"
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 
 
 //#include "Concurrency/Info.hpp"

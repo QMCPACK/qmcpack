@@ -33,7 +33,6 @@ using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 TEST_CASE("lattice gaussian", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;

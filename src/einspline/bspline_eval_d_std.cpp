@@ -18,8 +18,7 @@
 //  Boston, MA  02110-1301  USA                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
 #include <cassert>
 #include "bspline_base.h"
 #include "bspline_structs.h"

@@ -31,7 +31,6 @@ namespace qmcplusplus
 
 TEST_CASE("TraceManager", "[estimators]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   Array<TraceInt, 1>* int_sample;
@@ -57,7 +56,6 @@ TEST_CASE("TraceManager", "[estimators]")
 // Moved here from TraceManager.cpp, check_trace_build
 TEST_CASE("TraceManager check_trace_build", "[estimators]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   std::string domain = "domain";
   std::string name   = "name";
