@@ -93,9 +93,15 @@ TEST_CASE("EstimatorManagerBase::collectScalarEstimators", "[estimators]")
   // all three started with values of 1.0,2.0,3.0,4.0
   // the third had a second value of 2.0 accumulated to these
   // samples should have equal weight
-  double correct_value = 5.0 / 4.0;
-  
+  double correct_value = 5.0 / 4.0;  
   REQUIRE(em.get_AverageCache()[0] == Approx(correct_value));
+  correct_value = 8.0 / 4.0;  
+  REQUIRE(em.get_AverageCache()[1] == Approx(correct_value));
+  correct_value = 11.0 / 4.0;  
+  REQUIRE(em.get_AverageCache()[2] == Approx(correct_value));
+  correct_value = 14.0 / 4.0;  
+  REQUIRE(em.get_AverageCache()[3] == Approx(correct_value));
+
 }
 
 
