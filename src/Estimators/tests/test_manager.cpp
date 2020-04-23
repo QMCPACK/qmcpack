@@ -89,11 +89,12 @@ TEST_CASE("EstimatorManagerBase::collectScalarEstimators", "[estimators]")
 
   em.collectScalarEstimators(est_list);
 
-  // We have three "walkers" two have one sample each of 1.0
-  // one has two samples of 1.0, 2,0
-  // Expected behavior is samples in a block for a walker are averaged
-  // Walkers for blocks are averaged.  Walkers have equal weight.
-  double correct_value = (2.0 + ((1.0 + 2.0) / 2)) / 3;
+  // We have three "walkers"
+  // all three started with values of 1.0,2.0,3.0,4.0
+  // the third had a second value of 2.0 accumulated to these
+  // samples should have equal weight
+  double correct_value = 5.0 / 4.0;
+  
   REQUIRE(em.get_AverageCache()[0] == Approx(correct_value));
 }
 

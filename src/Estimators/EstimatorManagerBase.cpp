@@ -345,9 +345,9 @@ QMCTraits::FullPrecRealType EstimatorManagerBase::collectScalarEstimators(
     accumulateVectorsInPlace(AverageCache, averages_work);
     accumulateVectorsInPlace(SquaredAverageCache, sq_averages_work);
   }
-  //RealType tnorm = 1.0 / tot_weight;
-  //AverageCache *= tnorm;
-  //SquaredAverageCache *= tnorm;
+  RealType tnorm = 1.0 / tot_weight;
+  AverageCache *= tnorm;
+  SquaredAverageCache *= tnorm;
   return tot_weight;
 }
 
