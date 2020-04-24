@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -16,6 +17,7 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <functional>
 
 #include "Particle/MCWalkerConfiguration.h"
 #include "Estimators/EstimatorManagerBase.h"
@@ -184,6 +186,7 @@ void EstimatorManagerBase::start(int blocks, bool record)
   varAccumulator.clear();
   int nc = (Collectables) ? Collectables->size() : 0;
   BlockAverages.setValues(0.0);
+  // \todo Collectables should just have its own data structures not change the EMBS layout.
   AverageCache.resize(BlockAverages.size() + nc);
   SquaredAverageCache.resize(BlockAverages.size() + nc);
   PropertyCache.resize(BlockProperties.size());
@@ -345,9 +348,6 @@ QMCTraits::FullPrecRealType EstimatorManagerBase::collectScalarEstimators(
     accumulateVectorsInPlace(AverageCache, averages_work);
     accumulateVectorsInPlace(SquaredAverageCache, sq_averages_work);
   }
-  RealType tnorm = 1.0 / tot_weight;
-  AverageCache *= tnorm;
-  SquaredAverageCache *= tnorm;
   return tot_weight;
 }
 
@@ -426,19 +426,26 @@ void EstimatorManagerBase::makeBlockAverages()
 {
   //there is only one EstimatormanagerBase per rank in the unified driver.
   //copy cached data to RemoteData[0]
+  //we should not handle RemoteData elsewhere.
+  
   int n1 = AverageCache.size();
   int n2 = n1 + AverageCache.size();
   int n3 = n2 + PropertyCache.size();
+
+  // This is a hack but it needs to be the correct size
+  
+  std::vector<double> send_buffer(n3,0.0);
+  std::vector<double> recv_buffer(n3,0.0);  
   {
-    BufferType::iterator cur(RemoteData[0]->begin());
+    auto cur = send_buffer.begin();
     copy(AverageCache.begin(), AverageCache.end(), cur);
     copy(SquaredAverageCache.begin(), SquaredAverageCache.end(), cur + n1);
     copy(PropertyCache.begin(), PropertyCache.end(), cur + n2);
   }
-  myComm->reduce(*RemoteData[0]);
+  myComm->comm.reduce_n(send_buffer.begin(), send_buffer.size(), recv_buffer.begin(), std::plus<>{}, 0);
   if (myComm->rank() == 0)
   {
-    BufferType::iterator cur(RemoteData[0]->begin());
+    auto cur = recv_buffer.begin();
     copy(cur, cur + n1, AverageCache.begin());
     copy(cur + n1, cur + n2, SquaredAverageCache.begin());
     copy(cur + n2, cur + n3, PropertyCache.begin());

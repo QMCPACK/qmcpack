@@ -38,6 +38,12 @@ class MCWalkerConfiguration;
 class QMCHamiltonian;
 class CollectablesEstimator;
 
+namespace testing
+{
+class EstimatorManagerBaseTest;
+} // namespace testing
+
+
 /** Class to manage a set of ScalarEstimators */
 class EstimatorManagerBase : public EstimatorManagerInterface
 {
@@ -321,6 +327,8 @@ private:
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;
+
+  friend class qmcplusplus::testing::EstimatorManagerBaseTest;
 };
 } // namespace qmcplusplus
 #endif
