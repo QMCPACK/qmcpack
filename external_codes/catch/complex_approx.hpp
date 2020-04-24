@@ -61,7 +61,7 @@ public:
 
     friend bool operator == (std::complex<float> const& lhs, ComplexApprox const& rhs)
     {
-        return rhs.approx_compare_zero(std::abs(lhs - rhs.m_value), std::abs(rhs.m_value));
+        return rhs.approx_compare_zero(std::abs(std::complex<double>(lhs) - rhs.m_value), std::abs(rhs.m_value));
     }
 
     friend bool operator == (ComplexApprox const &lhs, std::complex<double> const& rhs)
