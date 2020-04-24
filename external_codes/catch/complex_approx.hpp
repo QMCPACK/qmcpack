@@ -12,14 +12,14 @@ class ComplexApprox
     double m_epsilon;
 
     bool approx_compare_zero(const double dist, const double magnitude) const
-     {
-        /* need to workaround catch to provide consistent behavior for a real value.
-          bool Approx::equalityComparisonImpl(const double other) const {
-          return marginComparison(m_value, other, m_margin) || marginComparison(m_value, other, m_epsilon * (m_scale + std::fabs(m_value)));
-          }
-        */
-        return Approx(dist).epsilon(0.0).margin(m_epsilon * (1.0 + magnitude)) == 0.0;
-     }
+    {
+      /* need to workaround catch to provide consistent behavior for a real value.
+        bool Approx::equalityComparisonImpl(const double other) const {
+        return marginComparison(m_value, other, m_margin) || marginComparison(m_value, other, m_epsilon * (m_scale + std::fabs(m_value)));
+        }
+      */
+      return Approx(dist).epsilon(0.0).margin(m_epsilon * (1.0 + magnitude)) == 0.0;
+    }
 
 public:
     ComplexApprox(const std::complex<double> &value) : m_value(value) {
