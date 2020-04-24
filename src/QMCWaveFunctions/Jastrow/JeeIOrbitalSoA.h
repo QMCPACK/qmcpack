@@ -1030,6 +1030,8 @@ public:
     PosType rI    = source.R[isrc];
     for (int iondim = 0; iondim < 3; iondim++)
     {
+      Lp=0; Gp=0;
+      Lm=0; Gm=0;
       source.R[isrc][iondim] = rI[iondim] + delta;
       source.update();
       P.update();
@@ -1043,8 +1045,8 @@ public:
  
       //symmetric finite difference formula for gradient.
       g_return[iondim] = c1 * (log_p.real() - log_m.real());
-      grad_grad[iondim] = c1*(Gp-Gm);
-      lapl_grad[iondim] = c1*(Lp-Lm);       
+      grad_grad[iondim] += c1*(Gp-Gm);
+      lapl_grad[iondim] += c1*(Lp-Lm);       
       //reset everything to how it was.
       source.R[isrc][iondim] = rI[iondim];
       source.update();
