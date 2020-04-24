@@ -19,13 +19,18 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/tests/FakeEstimator.h"
 #include "Estimators/ScalarEstimatorBase.h"
-
+#include "Estimators/tests/EstimatorManagerBaseTest.h"
 
 #include <stdio.h>
 #include <sstream>
 
 namespace qmcplusplus
 {
+
+namespace testing
+{
+}
+
 TEST_CASE("EstimatorManagerBase", "[estimators]")
 {
   Communicate* c = OHMMS::Controller;
@@ -61,51 +66,23 @@ TEST_CASE("EstimatorManagerBase::collectScalarEstimators", "[estimators]")
 {
   Communicate* c = OHMMS::Controller;
 
-  FakeEstimator fake_estimator;
-  fake_estimator.scalars.resize(4);
-  fake_estimator.scalars_saved.resize(4);
-  fake_estimator.scalars[0](1.0);
-  fake_estimator.scalars[1](2.0);
-  fake_estimator.scalars[2](3.0);
-  fake_estimator.scalars[3](4.0);
+  testing::EstimatorManagerBaseTest embt(c, 1);
+  // by design we have done no averaging here
+  // the division by total weight happens only when a block is over and the
+  // accumulated data has been reduced down.  So here there should just be simple sums.
 
-  std::vector<FakeEstimator> estimators;
-  estimators.push_back(fake_estimator);
-  estimators.push_back(fake_estimator);
-  estimators.push_back(fake_estimator);
-
-  estimators[2].scalars[0](2.0);
-  estimators[2].scalars[1](2.0);
-  estimators[2].scalars[2](2.0);
-  estimators[2].scalars[3](2.0);
-
-  RefVector<ScalarEstimatorBase> est_list = makeRefVector<ScalarEstimatorBase>(estimators);
-  EstimatorManagerBase em(c);
-
-  em.get_AverageCache().resize(4);
-  em.get_SquaredAverageCache().resize(4);
-  est_list[0].get().scalars.resize(4);
-
-
-  em.collectScalarEstimators(est_list);
-
-  // We have three "walkers"
-  // all three started with values of 1.0,2.0,3.0,4.0
-  // the third had a second value of 2.0 accumulated to these
-  // samples should have equal weight
-  double correct_value = 5.0 / 4.0;  
-  REQUIRE(em.get_AverageCache()[0] == Approx(correct_value));
-  correct_value = 8.0 / 4.0;  
-  REQUIRE(em.get_AverageCache()[1] == Approx(correct_value));
-  correct_value = 11.0 / 4.0;  
-  REQUIRE(em.get_AverageCache()[2] == Approx(correct_value));
-  correct_value = 14.0 / 4.0;  
-  REQUIRE(em.get_AverageCache()[3] == Approx(correct_value));
+  embt.fakeSomeScalarSamples();
+  embt.collectScalarEstimators();
+  double correct_value = 5.0;  
+  REQUIRE(embt.em.get_AverageCache()[0] == Approx(correct_value));
+  correct_value = 8.0;  
+  REQUIRE(embt.em.get_AverageCache()[1] == Approx(correct_value));
+  correct_value = 11.0;  
+  REQUIRE(embt.em.get_AverageCache()[2] == Approx(correct_value));
+  correct_value = 14.0;  
+  REQUIRE(embt.em.get_AverageCache()[3] == Approx(correct_value));
 
 }
-
-
-
 
 TEST_CASE("Estimator adhoc addVector operator", "[estimators]")
 {
