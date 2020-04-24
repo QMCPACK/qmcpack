@@ -20,8 +20,8 @@ namespace qmcplusplus
 typedef QMCTraits::RealType RealType;
 using namespace spoinfo;
 
-const RealType no_energy_tol = std::numeric_limits<int>::max();
-const int no_index           = -1;
+constexpr RealType no_energy_tol = std::numeric_limits<RealType>::max();
+constexpr int no_index           = -1;
 
 
 // construction/destruction

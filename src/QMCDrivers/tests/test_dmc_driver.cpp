@@ -16,13 +16,11 @@
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCApp/ParticleSetPool.h"
-#include "QMCApp/HamiltonianPool.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "Particle/ParticleSetPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"
@@ -43,7 +41,6 @@ namespace qmcplusplus
 TEST_CASE("DMC", "[drivers][dmc]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -145,7 +142,6 @@ TEST_CASE("DMC", "[drivers][dmc]")
 TEST_CASE("SODMC", "[drivers][dmc]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;

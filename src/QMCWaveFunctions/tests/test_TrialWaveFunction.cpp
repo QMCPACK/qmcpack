@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -14,7 +15,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
@@ -34,9 +35,8 @@ using LogValueType = TrialWaveFunction::LogValueType;
 using PsiValueType = TrialWaveFunction::PsiValueType;
 using GradType = TrialWaveFunction::GradType;
 
-TEST_CASE("TrialWaveFunction", "[wavefunction]")
+TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -95,7 +95,7 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
 
   //diamondC_1x1x1
   const char* spo_xml = "<tmp> \
-<determinantset type=\"einspline\" href=\"pwscf.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"2\"/> \
+<determinantset type=\"einspline\" href=\"diamondC_1x1x1.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"2\"/> \
 </tmp> \
 ";
 
@@ -217,7 +217,8 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
 // testing batched interfaces
   RefVector<ParticleSet> p_ref_list{elec_,elec_clone};
   RefVector<TrialWaveFunction> wf_ref_list{psi, *psi_clone};
-  
+
+  elec_.flex_update(p_ref_list);
   psi.flex_evaluateLog(wf_ref_list, p_ref_list);
 #if defined(QMC_COMPLEX)
   REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == LogComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
@@ -327,7 +328,8 @@ TEST_CASE("TrialWaveFunction", "[wavefunction]")
   REQUIRE(grad_new[1][2] == Approx(4.8529516184558));
 #endif
 
-  psi.flex_acceptMove(wf_ref_list, p_ref_list, moved_elec_id);
+  std::vector<bool> isAccepted(2, true);
+  psi.flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted);
 #if defined(QMC_COMPLEX)
   REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == LogComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));
   REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == LogComplexApprox(std::complex<RealType>(0.4351202455204972, 6.665972664860828)));

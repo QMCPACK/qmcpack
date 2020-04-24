@@ -17,7 +17,6 @@
 
 #include "Message/Communicate.h"
 #include "Numerics/OneDimGridBase.h"
-#include "Particle/DistanceTableData.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/GaussianBasisSet.h"
 
@@ -33,7 +32,6 @@ namespace qmcplusplus
 {
 TEST_CASE("CuspCorrection He", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   ParticleSet elec;
@@ -231,7 +229,6 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
 
 TEST_CASE("readCuspInfo", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   typedef OneDimGridBase<double> GridType;
   typedef LCOrbitalSetWithCorrection<LocalizedBasisSet<SphericalBasisSet<NGOrbital, GridType>>, false> OrbType;

@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/TinyVector.h"
@@ -30,7 +30,6 @@ namespace qmcplusplus
 
 TEST_CASE("ParticleSet distance table management", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   ParticleSet ions;
   ParticleSet elecs;
@@ -71,7 +70,6 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
 
 TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   ParticleSet source;
 
@@ -86,9 +84,9 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
   source.R[1][2] = 3.2;
 
   source.update();
-  /// make sure RSoA is updated no matter SoA or AoS.
-  REQUIRE(source.RSoA[0][1] == Approx(1.0));
-  REQUIRE(source.RSoA[1][2] == Approx(3.2));
+  /// make sure getCoordinates().getAllParticlePos() is updated no matter SoA or AoS.
+  REQUIRE(source.getCoordinates().getAllParticlePos()[0][1] == Approx(1.0));
+  REQUIRE(source.getCoordinates().getAllParticlePos()[1][2] == Approx(3.2));
 
   const int TableID = source.addTable(source, DT_SOA);
   source.update();
@@ -108,7 +106,6 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 
 TEST_CASE("symmetric_distance_table PBC", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   ParticleSet source;
 
@@ -145,7 +142,6 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 
 TEST_CASE("particle set lattice with vacuum", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   ParticleSet source;
 

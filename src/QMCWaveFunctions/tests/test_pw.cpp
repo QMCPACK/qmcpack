@@ -14,10 +14,8 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
@@ -33,7 +31,6 @@ namespace qmcplusplus
 TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -177,7 +174,6 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;

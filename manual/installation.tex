@@ -321,10 +321,10 @@ FFTW_LIBRARY_DIRS   Specify library directories for FFTW
 \item CTest related
 %
 \begin{shade}
-MPIEXEC                Specify the mpi wrapper, e.g. srun, aprun, mpirun, etc.
+MPIEXEC_EXECUTABLE     Specify the mpi wrapper, e.g. srun, aprun, mpirun, etc.
 MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag,
                        e.g. "-n", "-np", etc.
-MPIEXEC_PREFLAGS     Flags to pass to MPIEXEC directly before the executable to run.   
+MPIEXEC_PREFLAGS       Flags to pass to MPIEXEC_EXECUTABLE directly before the executable to run.
 \end{shade}
 
 \item LLVM/Clang Developer Options\\
@@ -913,29 +913,24 @@ a single Spack command.
 
 \subsection{Known Limitations}
 The QMCPACK Spack package inherits the limitations of the underlying
-Spack infrastructure and its dependencies. The main limitation is that installation can fail when building a
-dependency such as HDF5, MPICH, etc. For
-\ishell{spack install qmcpack} to succeed, it is very important to
-leverage preinstalled packages on your computer or supercomputer. The
-other frequently encountered challenge is that the compiler configuration
-is nonintuitive.  This is especially the case with the Intel
-compiler. If you encounter any difficulties, we recommend verifying that one of the less complex packages from spack installs
-correctly on your system.
+Spack infrastructure and its dependencies. The main limitation is that
+installation can fail when building a dependency such as HDF5, MPICH,
+etc. For \ishell{spack install qmcpack} to succeed, it is very
+important to leverage preinstalled packages on your computer or
+supercomputer. The other frequently encountered challenge is that the
+compiler configuration is nonintuitive.  This is especially the case
+with the Intel compiler. If you encounter any difficulties, we
+recommend testing the Spack compiler configuration on a simpler
+packages, e.g. HDF5.
 
 Here are some additional limitations of the QMCPACK Spack package that
 will be resolved in future releases:
 \begin{itemize}
-\item Due to limitation in QE's autoconf, the QE variant will fail to build
-  in serial. In other words, \verb|qmcpack install qmcpack~mpi| will issue
-  a conflict. To install QE, you will need to disable the QE variant
-  for the serial binary, \verb|qmcpack install qmcpack~mpi~qe|. 
-
-\item Robust CUDA support in Spack is a work-in-progress.  It will
+\item CUDA support in Spack still has some limitations.  It will
   catch only some compiler-CUDA conflicts.
-\item AFQMC is not part of the Spack package at this time.
-\item The Spack package will install Nexus as part of the
-  installation, but actual use of Nexus from within the Spack
-  environment is untested.
+\item The Intel compiler must find a recent and compatible GCC
+  compiler in its path or one must be explicity set with the
+  \ishell{-gcc-name} and \ishell{-gxx-name} flags.
 \end{itemize}
 
 \subsection{Setting up the Spack Environment}
@@ -970,9 +965,30 @@ to add one:
 your-laptop> spack compiler add <path-to-compiler>
 \end{shade}
 
-The Intel compiler that requires checkout a license is particular
-tricky. First go ahead and add the compiler by modifying
-\ishell{\~/.spack/linux/compilers.yaml}. Here is an example of a typical configuration:
+The Intel compiler, and other commerical compilers like PGI, typically
+require extra environment variables to work properly. If you have an
+module environment set-up by your system administrators, it is
+recommended that you set the module name in
+\ishell{\~/.spack/linux/compilers.yaml}. Here is an example for the
+Intel compiler
+\begin{shade}
+- compiler:
+    environment:{}
+    extra_rpaths:  []
+    flags: {}
+    modules:
+    - intel/18.0.3
+    operating_system: ubuntu14.04
+    paths:
+      cc: /soft/com/packages/intel/18/u3/compilers_and_libraries_2018.3.222/linux/bin/intel64/icc
+      cxx: /soft/com/packages/intel/18/u3/compilers_and_libraries_2018.3.222/linux/bin/intel64/icpc
+      f77: /soft/com/packages/intel/18/u3/compilers_and_libraries_2018.3.222/linux/bin/intel64/ifort
+      fc: /soft/com/packages/intel/18/u3/compilers_and_libraries_2018.3.222/linux/bin/intel64/ifort
+    spec: intel@18.0.3
+    target: x86_64
+\end{shade}
+
+If a module is not available, you will have to set-up the environment variables manually:
 \begin{shade}
 - compiler:
     environment:
@@ -1010,12 +1026,32 @@ packages:
         buildable: False
 \end{shade}
 
-Some trial-and-error might be involved to get the directory correct. If
-you do not include enough of the tree path, Spack will not be able to
-register the package in its database. More information about system
-packages can be found at
-
+Some trial-and-error might be involved to set the directories
+correctly. If you do not include enough of the tree path, Spack will
+not be able to register the package in its database. More information
+about system packages can be found at
 \url{http://spack.readthedocs.io/en/latest/getting_started.html#system-packages}
+
+Beginning with QMCPACK v3.9.0, Python 3.x is required. However,
+installing Python with a compiler besides GCC is tricky. We recommend
+leveraging your local Python installation by adding an entry in
+\ishell{\~/.spack/packages.yaml}:
+\begin{shade}
+packages:
+    python:
+       modules:
+         python@3.7.4: anaconda3/2019.10
+\end{shade}
+
+Or if a module is not available
+\begin{shade}
+packages:
+    python:
+       paths:
+          python@3.7.4: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/anaconda3/2019.10/bin/python
+       buildable: False
+\end{shade}
+
 
 \subsection{Building QMCPACK}
 The QMCPACK Spack package has a number of variants to support different compile time
@@ -1035,10 +1071,12 @@ Tags:
     ecp  ecp-apps
 
 Preferred version:  
-    3.8.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.8.0
+    3.9.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.1
 
 Safe versions:  
-    develop    [git] https://github.com/QMCPACK/qmcpack.git
+    develop  [git] https://github.com/QMCPACK/qmcpack.git
+    3.9.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.1
+    3.9.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.0
     3.8.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.8.0
     3.7.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.7.0
     3.6.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.6.0
@@ -1055,6 +1093,10 @@ Variants:
 
     build_type [Release]    Debug, Release,         The build type to build
                             RelWithDebInfo          
+    afqmc [off]             True, False             Install with AFQMC support.
+                                                    NOTE that if used in
+                                                    combination with CUDA, only
+                                                    AFQMC will have CUDA.
     complex [off]           True, False             Build the complex (general
                                                     twist/k-point) version
     cuda [off]              True, False             Build with CUDA
@@ -1072,6 +1114,8 @@ Variants:
     mpi [on]                True, False             Build with MPI support
     phdf5 [on]              True, False             Build with parallel collective
                                                     I/O
+    ppconvert [off]         True, False             Install with pseudopotential
+                                                    converter.
     qe [on]                 True, False             Install with patched Quantum
                                                     Espresso 6.4.0
     soa [on]                True, False             Build with Structure-of-Array
@@ -1084,10 +1128,10 @@ Installation Phases:
     cmake    build    install
 
 Build Dependencies:
-    blas  boost  cmake  cuda  fftw-api  hdf5  lapack  libxml2  mpi
+    blas  boost  cmake  cuda  fftw-api  hdf5  lapack  libxml2  mpi  python
 
 Link Dependencies:
-    blas  boost  cuda  fftw-api  hdf5  lapack  libxml2  mpi
+    blas  boost  cuda  fftw-api  hdf5  lapack  libxml2  mpi  python
 
 Run Dependencies:
     py-matplotlib  py-numpy  quantum-espresso
@@ -1096,7 +1140,7 @@ Virtual Packages:
     None
 \end{lstlisting}
 
-For example, to install the complex version of QMCPACK in mixed-precision use:
+For example, to install the complex-valued version of QMCPACK in mixed-precision use:
 
 \begin{shade}
 your-laptop> spack install qmcpack+mixed+complex%gcc@7.2.0 ^intel-mkl
@@ -1132,7 +1176,7 @@ your-laptop> spack install qmcpack+cuda%intel@18.0.3 cuda_arch=61 ^intel-mkl
 \end{shade}
 
 Due to limitations in the Spack CUDA package, if your compiler and
-CUDA combination give you a conflict you will need to specify a
+CUDA combination conflict, you will need to set a
 specific verison of CUDA that is compatible with your compiler on the
 command line. For example,
 \begin{shade}
@@ -1175,19 +1219,15 @@ CMake, and pkg-config. The Intel compiler for Mac on OS X is not well
 supported by Spack packages and will most likely lead to a compile
 time failure in one of QMCPACK's dependencies.
 
-\subsection{Installing QMCPACK with Spack on IBM Blue Gene}
-This is untested at this time. In principle, it should work as long as each
-package found in
-
-\begin{shade}
-Blue Gene prompt> spack spec qmcpack
-\end{shade}
-can be compiled for the compute nodes.
-
 \subsection{Installing QMCPACK with Spack on Cray Supercomputers}
-There are a number of issues in the Cray module environment. Spack
-contributors are working to fix these problems. We will update this
-section once we have a recipe that works reliably.
+Spack now works with the Cray environment. To leverage the installed
+Cray environment, both a \ishell{compilers.yaml} and
+\ishell{packages.yaml} file should be provided by the supercomputing
+facility. Additionally, Spack packages compiled by the facility can be
+reused by chaining Spack installations
+\url{https://spack.readthedocs.io/en/latest/chain.html}
+
+Instructions for DOE supercomputing facilities that support Spack directly will be forthcoming.
 
 \subsection{Reporting Bugs}
 Bugs with the QMCPACK Spack package should be filed at the main GitHub

@@ -366,12 +366,13 @@ void SimpleFixedNodeBranch::flush(int counter)
 void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
 {
   //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
-  //RealType pop_now= WalkerController->branch(iter,walkers,0.1);
+  
   FullPrecRealType pop_now;
   if (BranchMode[B_DMCSTAGE] || iter)
     pop_now = WalkerController->branch(iter, walkers, 0.1);
   else
     pop_now = WalkerController->doNotBranch(iter, walkers); //do not branch for the first step of a warmup
+
   //population for trial energy modification should not include any released node walkers.
   pop_now -= WalkerController->get_ensemble_property().RNSamples;
   //current energy
@@ -743,11 +744,16 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
     std::string reconfig("no");
     // method is actually IndexType so conceivably indicates much more that reconfig="yes" or "no"
     if (WalkerController->get_method())
-      reconfig = "yes";
+      reconfig = "runwhileincorrect"; // forces SR during warmup?
     std::string reconfig_prev(reconfig);
     ParameterSet p;
     p.add(reconfig, "reconfiguration", "string");
     p.put(cur);
+    if(reconfig != "no" && reconfig != "runwhileincorrect")
+    {
+      // remove this once bug is fixed
+      APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
+    }
     same_wc = (reconfig == reconfig_prev);
   }
 

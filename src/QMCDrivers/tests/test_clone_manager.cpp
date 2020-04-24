@@ -18,13 +18,11 @@
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCDrivers/QMCUpdateBase.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 
 
 #include <stdio.h>
@@ -48,7 +46,6 @@ public:
 
 TEST_CASE("QMCUpdate", "[drivers]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   MCWalkerConfiguration elec;
@@ -77,7 +74,6 @@ TEST_CASE("QMCUpdate", "[drivers]")
 
 TEST_CASE("CloneManager", "[drivers]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   HamiltonianPool hpool(c);

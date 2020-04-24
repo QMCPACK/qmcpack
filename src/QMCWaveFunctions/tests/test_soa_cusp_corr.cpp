@@ -17,7 +17,6 @@
 
 #include "Message/Communicate.h"
 #include "Numerics/OneDimGridBase.h"
-#include "Particle/DistanceTableData.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/GaussianBasisSet.h"
 
@@ -30,7 +29,6 @@ namespace qmcplusplus
 {
 TEST_CASE("readCuspInfo", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   typedef OneDimGridBase<double> GridType;
@@ -66,7 +64,6 @@ TEST_CASE("readCuspInfo", "[wavefunction]")
 
 TEST_CASE("applyCuspInfo", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   Libxml2Document doc;
@@ -247,7 +244,6 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
 TEST_CASE("HCN MO with cusp", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   Libxml2Document doc;
@@ -427,7 +423,6 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 // Test case with multiple atoms of the same type
 TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   Libxml2Document doc;

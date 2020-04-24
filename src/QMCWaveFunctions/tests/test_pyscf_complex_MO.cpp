@@ -22,7 +22,6 @@
 #include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Numerics/OneDimGridBase.h"
-#include "Particle/DistanceTableData.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/GaussianBasisSet.h"
 #ifdef ENABLE_SOA
@@ -45,7 +44,6 @@ void test_C_diamond()
 
   SECTION(section_name.str())
   {
-    OHMMS::Controller->initialize(0, NULL);
     Communicate* c = OHMMS::Controller;
 
     Libxml2Document doc;

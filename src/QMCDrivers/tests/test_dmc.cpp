@@ -15,11 +15,9 @@
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"
@@ -42,7 +40,6 @@ namespace qmcplusplus
 TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][dmc]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -142,7 +139,6 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
 
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;

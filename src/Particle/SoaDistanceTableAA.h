@@ -80,10 +80,9 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   inline void evaluate(ParticleSet& P)
   {
     constexpr T BigR = std::numeric_limits<T>::max();
-    //P.RSoA.copyIn(P.R);
     for (int iat = 0; iat < N_targets; ++iat)
     {
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, distances_[iat].data(), displacements_[iat], 0, N_targets,
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), distances_[iat].data(), displacements_[iat], 0, N_targets,
                                              iat);
       distances_[iat][iat] = BigR; //assign big distance
     }
@@ -92,12 +91,12 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
-    DTD_BConds<T, D, SC>::computeDistances(rnew, P.RSoA, temp_r_.data(), temp_dr_, 0, N_targets, P.activePtcl);
+    DTD_BConds<T, D, SC>::computeDistances(rnew, P.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0, N_targets, P.activePtcl);
     // set up old_r_ and old_dr_ for moves may get accepted.
     if (prepare_old)
     {
       //recompute from scratch
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, old_r_.data(), old_dr_, 0, N_targets, iat);
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), old_r_.data(), old_dr_, 0, N_targets, iat);
       old_r_[iat] = std::numeric_limits<T>::max(); //assign a big number
 
       // If the full table is not ready all the time, overwrite the current value.
