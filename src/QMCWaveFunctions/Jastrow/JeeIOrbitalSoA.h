@@ -969,6 +969,92 @@ public:
       }
     }
   }
+
+  inline GradType evalGradSource(ParticleSet& P, ParticleSet& source, int isrc)
+  {
+    ParticleSet::ParticleGradient_t tempG;
+    ParticleSet::ParticleLaplacian_t tempL;
+    tempG.resize(P.getTotalNum());
+    tempL.resize(P.getTotalNum()); 
+    RealType delta      = 0.00001;
+    ValueType c1        = 1.0 / delta / 2.0;
+    ValueType c2        = 1.0 / delta / delta;
+   
+    GradType g_return(0.0);
+    // GRAD TEST COMPUTATION
+    PosType rI    = source.R[isrc];
+    for (int iondim = 0; iondim < 3; iondim++)
+    {
+      source.R[isrc][iondim] = rI[iondim] + delta;
+      source.update();
+      P.update();
+  
+      LogValueType log_p = evaluateLog(P,tempG,tempL);
+  
+      source.R[isrc][iondim] = rI[iondim] - delta;
+      source.update();
+      P.update();
+      LogValueType log_m = evaluateLog(P,tempG,tempL);
+ 
+      //symmetric finite difference formula for gradient.
+      g_return[iondim] = c1 * (log_p.real() - log_m.real());
+
+      //reset everything to how it was.
+      source.R[isrc][iondim] = rI[iondim];
+      source.update();
+      P.update();
+    }
+      //this lastone makes sure the distance tables correspond to unperturbed source.
+    return g_return;
+  }
+
+  inline GradType evalGradSource(ParticleSet& P,
+                                 ParticleSet& source,
+                                 int isrc,
+                                 TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
+                                 TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
+  {
+    ParticleSet::ParticleGradient_t Gp,Gm;
+    ParticleSet::ParticleLaplacian_t Lp,Lm;
+    Gp.resize(P.getTotalNum());
+    Gm.resize(P.getTotalNum());
+    Lp.resize(P.getTotalNum()); 
+    Lm.resize(P.getTotalNum()); 
+
+    RealType delta      = 0.00001;
+    ValueType c1        = 1.0 / delta / 2.0;
+    ValueType c2        = 1.0 / delta / delta;
+   
+    GradType g_return(0.0);
+    // GRAD TEST COMPUTATION
+    PosType rI    = source.R[isrc];
+    for (int iondim = 0; iondim < 3; iondim++)
+    {
+      source.R[isrc][iondim] = rI[iondim] + delta;
+      source.update();
+      P.update();
+  
+      LogValueType log_p = evaluateLog(P,Gp,Lp);
+  
+      source.R[isrc][iondim] = rI[iondim] - delta;
+      source.update();
+      P.update();
+      LogValueType log_m = evaluateLog(P,Gm,Lm);
+ 
+      //symmetric finite difference formula for gradient.
+      g_return[iondim] = c1 * (log_p.real() - log_m.real());
+      grad_grad[iondim] = c1*(Gp-Gm);
+      lapl_grad[iondim] = c1*(Lp-Lm);       
+      //reset everything to how it was.
+      source.R[isrc][iondim] = rI[iondim];
+      source.update();
+      P.update();
+    }
+    source.update();
+    P.update();
+      //this lastone makes sure the distance tables correspond to unperturbed source.
+    return g_return;
+  }
 };
 
 } // namespace qmcplusplus
