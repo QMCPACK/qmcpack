@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2017 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -15,8 +16,8 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "QMCWaveFunctions/tests/FakeSPO.h"
 
 #ifdef QMC_COMPLEX //This is for the spinor test.
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
@@ -34,6 +35,7 @@ namespace qmcplusplus
 {
 using RealType     = QMCTraits::RealType;
 using ValueType    = QMCTraits::ValueType;
+using ComplexType  = QMCTraits::ComplexType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 using PsiValueType = QMCTraits::QTFull::ValueType;
 
@@ -52,156 +54,6 @@ void check_matrix(Matrix<T1>& a, Matrix<T2>& b)
     for (int j = 0; j < a.cols(); j++)
     {
       REQUIRE(a(i, j) == ValueApprox(b(i, j)));
-    }
-  }
-}
-
-class FakeSPO : public SPOSet
-{
-public:
-  Matrix<ValueType> a;
-  Matrix<ValueType> a2;
-  Vector<ValueType> v;
-  Matrix<ValueType> v2;
-
-  FakeSPO();
-  virtual ~FakeSPO() {}
-
-  virtual void report() {}
-  virtual void resetParameters(const opt_variables_type& optVariables) {}
-  virtual void resetTargetParticleSet(ParticleSet& P) {}
-  virtual void setOrbitalSetSize(int norbs);
-
-  virtual void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi);
-
-  virtual void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-
-  virtual void evaluate_notranspose(const ParticleSet& P,
-                                    int first,
-                                    int last,
-                                    ValueMatrix_t& logdet,
-                                    GradMatrix_t& dlogdet,
-                                    ValueMatrix_t& d2logdet);
-};
-
-FakeSPO::FakeSPO()
-{
-  className = "FakeSPO";
-  a.resize(3, 3);
-
-  a(0, 0) = 2.3;
-  a(0, 1) = 4.5;
-  a(0, 2) = 2.6;
-  a(1, 0) = 0.5;
-  a(1, 1) = 8.5;
-  a(1, 2) = 3.3;
-  a(2, 0) = 1.8;
-  a(2, 1) = 4.4;
-  a(2, 2) = 4.9;
-
-  v.resize(3);
-  v[0] = 1.9;
-  v[1] = 2.0;
-  v[2] = 3.1;
-
-
-  a2.resize(4, 4);
-  a2(0, 0) = 2.3;
-  a2(0, 1) = 4.5;
-  a2(0, 2) = 2.6;
-  a2(0, 3) = 1.2;
-  a2(1, 0) = 0.5;
-  a2(1, 1) = 8.5;
-  a2(1, 2) = 3.3;
-  a2(1, 3) = 0.3;
-  a2(2, 0) = 1.8;
-  a2(2, 1) = 4.4;
-  a2(2, 2) = 4.9;
-  a2(2, 3) = 2.8;
-  a2(3, 0) = 0.8;
-  a2(3, 1) = 4.1;
-  a2(3, 2) = 3.2;
-  a2(3, 3) = 1.1;
-
-  v2.resize(3, 4);
-
-  v2(0, 0) = 3.2;
-  v2(0, 1) = 0.5;
-  v2(0, 2) = 5.9;
-  v2(0, 3) = 3.7;
-  v2(1, 0) = 0.3;
-  v2(1, 1) = 1.4;
-  v2(1, 2) = 3.9;
-  v2(1, 3) = 8.2;
-  v2(2, 0) = 3.3;
-  v2(2, 1) = 5.4;
-  v2(2, 2) = 4.9;
-  v2(2, 3) = 2.2;
-}
-
-void FakeSPO::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; }
-
-void FakeSPO::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
-{
-  if (OrbitalSetSize == 3)
-  {
-    for (int i = 0; i < 3; i++)
-    {
-      psi[i] = a(iat, i);
-    }
-  }
-  else if (OrbitalSetSize == 4)
-  {
-    for (int i = 0; i < 4; i++)
-    {
-      psi[i] = a2(iat, i);
-    }
-  }
-}
-
-void FakeSPO::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
-{
-  if (OrbitalSetSize == 3)
-  {
-    for (int i = 0; i < 3; i++)
-    {
-      psi[i] = v[i];
-    }
-  }
-  else if (OrbitalSetSize == 4)
-  {
-    for (int i = 0; i < 4; i++)
-    {
-      psi[i] = v2(iat, i);
-    }
-  }
-}
-
-void FakeSPO::evaluate_notranspose(const ParticleSet& P,
-                                   int first,
-                                   int last,
-                                   ValueMatrix_t& logdet,
-                                   GradMatrix_t& dlogdet,
-                                   ValueMatrix_t& d2logdet)
-{
-  if (OrbitalSetSize == 3)
-  {
-    for (int i = 0; i < 3; i++)
-    {
-      for (int j = 0; j < 3; j++)
-      {
-        logdet(j, i) = a(i, j);
-      }
-    }
-  }
-  else if (OrbitalSetSize == 4)
-  {
-    for (int i = 0; i < 4; i++)
-    {
-      for (int j = 0; j < 4; j++)
-      {
-        logdet(j, i) = a2(i, j);
-      }
     }
   }
 }
@@ -640,8 +492,7 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
 
   ParticleGradient_t G;
   ParticleLaplacian_t L;
-  //This is a vector of ValueType, so we're using it..."
-  ParticleLaplacian_t SG;
+  ParticleAttrib<ComplexType> SG;
 
   G.resize(nelec);
   L.resize(nelec);
@@ -700,7 +551,7 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   elec_.makeMoveAndCheckWithSpin(1, dr, ds);
 
   ValueType ratio_new;
-  LogValueType spingrad_new;
+  ValueType spingrad_new;
   GradType grad_new;
 
   //This tests ratio only evaluation.  Indirectly a call to evaluate(P,iat)
@@ -733,7 +584,7 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   REQUIRE(g_singleeval[1] == ComplexApprox(G[1][1]));
   REQUIRE(g_singleeval[2] == ComplexApprox(G[1][2]));
 
-  LogValueType spingrad_old_test;
+  ValueType spingrad_old_test;
   g_singleeval = dd.evalGradWithSpin(elec_, 1, spingrad_old_test);
 
   REQUIRE(spingrad_old_test == ComplexApprox(SG[1]));

@@ -32,7 +32,6 @@ namespace qmcplusplus
 TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -153,7 +152,6 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -317,14 +315,14 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   elec_2.R[0] = elec_.R[1];
   elec_2.R[1] = elec_.R[0];
   elec_2.update();
-  std::vector<ParticleSet*> P_list;
-  P_list.push_back(&elec_);
-  P_list.push_back(&elec_2);
+  RefVector<ParticleSet> P_list;
+  P_list.push_back(elec_);
+  P_list.push_back(elec_2);
 
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
-  std::vector<SPOSet*> spo_list;
-  spo_list.push_back(spo.get());
-  spo_list.push_back(spo_2.get());
+  RefVector<SPOSet> spo_list;
+  spo_list.push_back(*spo);
+  spo_list.push_back(*spo_2);
 
   SPOSet::ValueVector_t psi(spo->getOrbitalSetSize());
   SPOSet::GradVector_t dpsi(spo->getOrbitalSetSize());

@@ -20,6 +20,6 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 ADD_EXECUTABLE(${UTEST_EXE} test_project_data.cpp test_rng_control.cpp)
 
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmc)
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

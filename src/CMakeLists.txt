@@ -116,10 +116,6 @@ IF (IS_GIT_PROJECT)
   MESSAGE("Git commit hash: ${GIT_CONFIG_COMMIT_HASH}")
 ENDIF()
 
-if (HAVE_MPI)
-  INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/mpi_wrapper")
-endif()
-
 INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
 
 
@@ -132,8 +128,6 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
     Utilities/OhmmsObject.cpp
     Utilities/SpeciesSet.cpp
     Utilities/SimpleParser.cpp
-    Utilities/InfoStream.cpp
-    Utilities/OutputManager.cpp
     Utilities/NewTimer.cpp
     Utilities/RunTimeManager.cpp
     Utilities/ProgressReportEngine.cpp
@@ -144,8 +138,6 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
     Numerics/OhmmsBlas.cpp
     Numerics/OptimizableFunctorBase.cpp
     Numerics/SmoothFunctions.cpp
-    Platforms/sysutil.cpp
-    Platforms/accelerators.cpp
     QMCFactory/OneDimGridFactory.cpp
     Message/Communicate.cpp
     Message/MPIObjectBase.cpp
@@ -175,10 +167,8 @@ ENDIF()
     TARGET_LINK_LIBRARIES(qmcutil PRIVATE ${CUDA_LIBRARIES})
   ENDIF(HAVE_CUDA)
 
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC message)
   TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 IO::HDF5 Boost::boost ${QMC_UTIL_LIBS})
-  IF(HAVE_MPI)
-    TARGET_LINK_LIBRARIES(qmcutil PUBLIC MPI::MPI_CXX)
-  ENDIF()
 
   # For unit tests, enable use for the fake RNG
   FUNCTION( USE_FAKE_RNG TARGET )
@@ -209,6 +199,7 @@ ENDIF()
     Particle/ParticleSet.BC.cpp
     Particle/DynamicCoordinatesBuilder.cpp
     Particle/MCWalkerConfiguration.cpp
+    Particle/SampleStack.cpp
     Particle/createDistanceTableAA.cpp
     Particle/createDistanceTableAB.cpp
     Particle/HDFWalkerInputManager.cpp
@@ -220,6 +211,12 @@ ENDIF()
     LongRange/EwaldHandler3D.cpp
     LongRange/LRCoulombSingleton.cpp
     )
+
+  IF(ENABLE_OFFLOAD)
+    SET(PARTICLE ${PARTICLE}
+      Particle/createDistanceTableABOMP.cpp
+      )
+  ENDIF(ENABLE_OFFLOAD)
 
   IF(OHMMS_DIM MATCHES 2)
     SET(PARTICLE ${PARTICLE} LongRange/TwoDEwaldHandler.cpp)
@@ -236,14 +233,14 @@ ENDIF()
     Particle/HDFWalkerInput_0_4.cpp
     )
 
-  IF(OHMMS_DIM  MATCHES 3)
+  IF(OHMMS_DIM MATCHES 3)
     SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
-  ENDIF(OHMMS_DIM  MATCHES 3)
+  ENDIF(OHMMS_DIM MATCHES 3)
 
   #Need to add this if nothing else but miniapps is compiled
-  if(QMC_BUILD_SANDBOX_ONLY)
-    set(PARTICLE  ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
-  endif()
+  IF(QMC_BUILD_SANDBOX_ONLY)
+    SET(PARTICLE ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
+  ENDIF(QMC_BUILD_SANDBOX_ONLY)
 
   ADD_LIBRARY(qmcbase ${PARTICLE} ${PARTICLEIO})
 
@@ -253,13 +250,15 @@ ENDIF()
 
   SUBDIRS(einspline)
   SUBDIRS(MinimalContainers)
+  SUBDIRS(Message)
+  SUBDIRS(Platforms)
 
-  if(QMC_BUILD_SANDBOX_ONLY)
+if(QMC_BUILD_SANDBOX_ONLY)
 
-    MESSAGE(STATUS "Minimal build: only Sandbox")
-    SUBDIRS(Sandbox)
+  MESSAGE(STATUS "Minimal build: only Sandbox")
+  SUBDIRS(Sandbox)
 
-  else() #{{{
+else() #{{{
 
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
@@ -313,6 +312,7 @@ ENDIF()
     SUBDIRS(OpenMP/tests)
     SUBDIRS(Optimize/tests)
     SUBDIRS(MinimalContainers/tests)
+    SUBDIRS(QMCTools/tests)
   endif() #}
 
 endif() #}}}

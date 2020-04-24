@@ -46,7 +46,6 @@ public:
 
 TEST_CASE("QMCUpdate", "[drivers]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   MCWalkerConfiguration elec;
@@ -75,7 +74,6 @@ TEST_CASE("QMCUpdate", "[drivers]")
 
 TEST_CASE("CloneManager", "[drivers]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   HamiltonianPool hpool(c);

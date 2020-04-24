@@ -32,7 +32,6 @@ namespace qmcplusplus
 {
 TEST_CASE("CuspCorrection He", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   ParticleSet elec;
@@ -230,7 +229,6 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
 
 TEST_CASE("readCuspInfo", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   typedef OneDimGridBase<double> GridType;
   typedef LCOrbitalSetWithCorrection<LocalizedBasisSet<SphericalBasisSet<NGOrbital, GridType>>, false> OrbType;

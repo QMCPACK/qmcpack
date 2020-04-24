@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: D. Das, University of Illinois at Urbana-Champaign
 //                    Bryan Clark, bclark@Princeton.edu, Princeton University
@@ -203,7 +203,7 @@ public:
   int current_step;
 
   ///default constructor
-  ParticleSet();
+  ParticleSet(const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
   ///copy constructor
   ParticleSet(const ParticleSet& p);
@@ -268,6 +268,9 @@ public:
    *@param skip SK update if skipSK is true
    */
   void update(bool skipSK = false);
+
+  /// batched version of update
+  static void flex_update(const RefVector<ParticleSet>& P_list, bool skipSK = false);
 
   /** create Structure Factor with PBCs
    */
@@ -571,6 +574,7 @@ public:
     PrimitiveLattice = ptclin.PrimitiveLattice;
     R.InUnit         = ptclin.R.InUnit;
     R                = ptclin.R;
+    spins            = ptclin.spins;
     ID               = ptclin.ID;
     GroupID          = ptclin.GroupID;
     if (ptclin.SubPtcl.size())
@@ -643,6 +647,8 @@ public:
   }
 
   inline int getNumDistTables() const { return DistTables.size(); }
+
+  static RefVector<DistanceTableData> extractDTRefList(const RefVector<ParticleSet>& p_list, int id);
 
 protected:
   /** map to handle distance tables

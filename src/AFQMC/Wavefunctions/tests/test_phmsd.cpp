@@ -11,7 +11,7 @@
 
 //#undef NDEBUG
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "Configuration.h"
 
@@ -22,7 +22,7 @@
 #include "Utilities/SimpleRandom.h"
 #include <Utilities/NewTimer.h>
 #include "Utilities/Timer.h"
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 
 #undef APP_ABORT
 #define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}
@@ -56,6 +56,8 @@ using std::cerr;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
+
+extern std::string UTEST_HAMIL, UTEST_WFN;
 
 namespace qmcplusplus
 {
@@ -315,7 +317,6 @@ void test_phmsd(boost::mpi3::communicator& world)
 
 TEST_CASE("test_read_phmsd", "[test_read_phmsd]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
@@ -332,7 +333,6 @@ TEST_CASE("test_read_phmsd", "[test_read_phmsd]")
 
 TEST_CASE("test_phmsd", "[read_phmsd]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 

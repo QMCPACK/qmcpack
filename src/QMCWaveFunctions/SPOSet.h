@@ -24,7 +24,6 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "io/hdf_archive.h"
 #if !defined(ENABLE_SOA)
 #include "Message/CommOperators.h"
 #endif
@@ -82,7 +81,7 @@ public:
 #endif
 
   /** constructor */
-  SPOSet(bool ion_deriv = false, bool optimizable = false);
+  SPOSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false);
 
   /** destructor
    *
@@ -118,6 +117,11 @@ public:
   /** return the size of the orbitals
    */
   inline int getOrbitalSetSize() const { return OrbitalSetSize; }
+
+  /** Query if this SPOSet uses OpenMP offload
+  */
+  inline bool isOMPoffload() const { return useOMPoffload; }
+
   /** Query if this SPOSet has an explicit ion dependence. returns true if it does.
   */
   inline bool hasIonDerivs() const { return ionDerivs; }
@@ -197,6 +201,26 @@ public:
                                    const std::vector<std::vector<int>>& lookup_tbl)
   {}
 
+  /** Evaluate the derivative of the optimized orbitals with respect to the parameters
+   *  this is used only for MSD, to be refined for better serving both single and multi SD
+   */
+  virtual void evaluateDerivativesWF(ParticleSet& P,
+                                     const opt_variables_type& optvars,
+                                     std::vector<ValueType>& dlogpsi,
+                                     const QTFull::ValueType& psiCurrent,
+                                     const std::vector<ValueType>& Coeff,
+                                     const std::vector<size_t>& C2node_up,
+                                     const std::vector<size_t>& C2node_dn,
+                                     const ValueVector_t& detValues_up,
+                                     const ValueVector_t& detValues_dn,
+                                     const ValueMatrix_t& M_up,
+                                     const ValueMatrix_t& M_dn,
+                                     const ValueMatrix_t& Minv_up,
+                                     const ValueMatrix_t& Minv_dn,
+                                     const std::vector<int>& detData_up,
+                                     const std::vector<std::vector<int>>& lookup_tbl)
+  {}
+
 
   /** reset the target particleset
    *  this is used to reset the pointer to ion-electron distance table needed by LCAO basis set.
@@ -230,8 +254,8 @@ public:
    * @param iat active particle
    * @param psi_v_list the list of value vector pointers in a walker batch
    */
-  virtual void mw_evaluateValue(const std::vector<SPOSet*>& spo_list,
-                                const std::vector<ParticleSet*>& P_list,
+  virtual void mw_evaluateValue(const RefVector<SPOSet>& spo_list,
+                                const RefVector<ParticleSet>& P_list,
                                 int iat,
                                 const RefVector<ValueVector_t>& psi_v_list);
 
@@ -280,12 +304,28 @@ public:
    * @param dpsi_v_list the list of gradient vector pointers in a walker batch
    * @param d2psi_v_list the list of laplacian vector pointers in a walker batch
    */
-  virtual void mw_evaluateVGL(const std::vector<SPOSet*>& spo_list,
-                              const std::vector<ParticleSet*>& P_list,
+  virtual void mw_evaluateVGL(const RefVector<SPOSet>& spo_list,
+                              const RefVector<ParticleSet>& P_list,
                               int iat,
                               const RefVector<ValueVector_t>& psi_v_list,
                               const RefVector<GradVector_t>& dpsi_v_list,
                               const RefVector<ValueVector_t>& d2psi_v_list);
+
+  /** evaluate the values, gradients and laplacians of this single-particle orbital sets
+   *  and determinant ratio and grads of multiple walkers
+   * @param spo_list the list of SPOSet pointers in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat active particle
+   * @param phi_vgl_v orbital values, gradients and laplacians of all the walkers
+   * @param psi_ratio_grads_v determinant ratio and grads of all the walkers
+   */
+  virtual void mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
+                                              const RefVector<ParticleSet>& P_list,
+                                              int iat,
+                                              const Vector<ValueType*>& invRow_ptr_list,
+                                              VGLVector_t& phi_vgl_v,
+                                              std::vector<ValueType>& ratios,
+                                              std::vector<GradType>& grads);
 
   /** evaluate the values, gradients and hessians of this single-particle orbital set
    * @param P current ParticleSet
@@ -477,6 +517,8 @@ protected:
 #endif
 
 protected:
+  ///true, if the derived class uses OpenMP offload and statisfies a few assumptions
+  const bool useOMPoffload;
   ///true, if the derived class has non-zero ionic derivatives.
   const bool ionDerivs;
   ///true if SPO is optimizable

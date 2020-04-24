@@ -108,7 +108,7 @@ template<typename T>
 inline void eval_e2iphi(int n, const T* restrict phi, T* restrict phase_r, T* restrict phase_i)
 {
   for (int i = 0; i < n; i++)
-    sincos(*phi++, phase_i++, phase_r++);
+    sincos(phi[i], phase_i + i, phase_r + i);
 }
 template<typename T>
 inline void eval_e2iphi(int n, const T* restrict phi, std::complex<T>* restrict z)

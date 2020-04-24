@@ -64,7 +64,6 @@ TEST_CASE("BSpline functor one", "[wavefunction]")
 TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -265,7 +264,6 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;

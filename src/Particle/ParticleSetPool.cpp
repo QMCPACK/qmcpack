@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
@@ -32,14 +32,19 @@
 
 namespace qmcplusplus
 {
-ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c), SimulationCell(nullptr), TileMatrix(0)
+ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
+    : MPIObjectBase(c), SimulationCell(nullptr), TileMatrix(0)
 {
   TileMatrix.diagonal(1);
   ClassName = "ParticleSetPool";
   myName    = aname;
 }
 
-ParticleSetPool::ParticleSetPool(ParticleSetPool&& other) : MPIObjectBase(other.myComm), SimulationCell(other.SimulationCell), TileMatrix(other.TileMatrix), myPool(std::move(other.myPool))
+ParticleSetPool::ParticleSetPool(ParticleSetPool&& other)
+    : MPIObjectBase(other.myComm),
+      SimulationCell(other.SimulationCell),
+      TileMatrix(other.TileMatrix),
+      myPool(std::move(other.myPool))
 {
   ClassName = other.ClassName;
   myName    = other.myName;
@@ -143,6 +148,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   std::string role("none");
   std::string randomR("no");
   std::string randomsrc;
+  std::string useGPU("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id, "id");
   pAttrib.add(id, "name");
@@ -150,6 +156,9 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   pAttrib.add(randomR, "random");
   pAttrib.add(randomsrc, "randomsrc");
   pAttrib.add(randomsrc, "random_source");
+#if defined(ENABLE_OFFLOAD)
+  pAttrib.add(useGPU, "gpu");
+#endif
   pAttrib.put(cur);
   //backward compatibility
   if (id == "e" && role == "none")
@@ -161,7 +170,11 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     app_summary() << " ------------" << std::endl;
     app_summary() << "  Name: " << id << std::endl;
 
-    pTemp = new MCWalkerConfiguration;
+    // select OpenMP offload implementation in ParticleSet.
+    if (useGPU == "yes")
+      pTemp = new MCWalkerConfiguration(DynamicCoordinateKind::DC_POS_OFFLOAD);
+    else
+      pTemp = new MCWalkerConfiguration(DynamicCoordinateKind::DC_POS);
     //if(role == "MC")
     //  pTemp = new MCWalkerConfiguration;
     //else
@@ -198,7 +211,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
 void ParticleSetPool::randomize()
 {
   app_log() << "ParticleSetPool::randomize " << randomize_nodes.size() << " ParticleSet"
-            << (randomize_nodes.size()==1?"":"s") << "." << std::endl;
+            << (randomize_nodes.size() == 1 ? "" : "s") << "." << std::endl;
   bool success = true;
   for (int i = 0; i < randomize_nodes.size(); ++i)
   {
@@ -295,15 +308,15 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
     }
 
     tolower(lr_handler);
-    if( lr_handler == "ewald")
+    if (lr_handler == "ewald")
     {
       LRCoulombSingleton::this_lr_type = LRCoulombSingleton::EWALD;
     }
-    else if ( lr_handler == "opt_breakup")
+    else if (lr_handler == "opt_breakup")
     {
       LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
     }
-    else if ( lr_handler == "opt_breakup_original")
+    else if (lr_handler == "opt_breakup_original")
     {
       LRCoulombSingleton::this_lr_type = LRCoulombSingleton::NATOLI;
     }
@@ -429,6 +442,12 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
     }
     //for(int i=0; i<qp->getTotalNum(); ++i)
     //  std::cout << qp->GroupID[i] << " " << qp->R[i] << std::endl;
+
+#if !defined(QMC_CUDA)
+    makeUniformRandom(qp->spins);
+    qp->spins *= 2 * M_PI;
+#endif
+
     if (qp->Lattice.SuperCellEnum)
       qp->createSK();
     qp->resetGroups();

@@ -2,12 +2,13 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -58,6 +59,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     localZeff.resize(ng, 1);
     localPot.resize(ng, 0);
     nonLocalPot.resize(ng, 0);
+    soPot.resize(ng, 0);
     L2Pot.resize(ng, 0);
   }
   std::string ecpFormat("table");
@@ -68,6 +70,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   std::string use_DLA("no");
   std::string pbc("yes");
   std::string forces("no");
+  std::string physicalSO("no");
 
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat, "format");
@@ -75,6 +78,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   pAttrib.add(use_DLA, "DLA");
   pAttrib.add(pbc, "pbc");
   pAttrib.add(forces, "forces");
+  pAttrib.add(physicalSO, "physicalSO");
   pAttrib.put(cur);
 
   bool doForces = (forces == "yes") || (forces == "true");
@@ -151,6 +155,16 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
   if (hasSOPot)
   {
+#ifndef QMC_COMPLEX
+    APP_ABORT("SOECPotential evaluations require complex build. Rebuild with -D QMC_COMPLEX=1\n");
+#endif
+    if (physicalSO == "yes")
+      app_log() << "    Spin-Orbit potential included in local energy" << std::endl;
+    else if (physicalSO == "no")
+      app_log() << "    Spin-Orbit potential is not included in local energy" << std::endl;
+    else
+      APP_ABORT("physicalSO must be set to yes/no. Unknown option given\n");
+
     SOECPotential* apot = new SOECPotential(IonConfig, targetPtcl, targetPsi);
     int nknot_max       = 0;
     int sknot_max       = 0;
@@ -167,7 +181,10 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
               << "    Maximum grid on a sphere for SOECPotential: " << nknot_max << std::endl;
     app_log() << "    Maximum grid for Simpson's rule for spin integral: " << sknot_max << std::endl;
 
-    targetH.addOperator(apot, "SOECP"); //default is physical operator
+    if (physicalSO == "yes")
+      targetH.addOperator(apot, "SOECP"); //default is physical operator
+    else
+      targetH.addOperator(apot, "SOECP", false);
   }
   if (hasL2Pot)
   {

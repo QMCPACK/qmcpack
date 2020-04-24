@@ -151,4 +151,4 @@ struct cuBLAS
 };
 
 } // namespace qmcplusplus
-#endif // CUBLAS_CXX_H
+#endif // QMCPLUSPLUS_CUBLAS_H

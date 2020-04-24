@@ -3,16 +3,6 @@
 ######################################################################
 CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0)
 
-cmake_policy(SET CMP0003 NEW)
-IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
-  cmake_policy(SET CMP0056 NEW)
-  # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
-  # are used in try_compile test cmake projects.
-  # CHECK_CXX_SOURCE_COMPILES and others depend on try_compile
-endif(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
-IF(CMAKE_GENERATOR MATCHES "Ninja")
-  cmake_policy(SET CMP0058 NEW)
-ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
 # CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
 # and environment variable in search path.
 # various Find<Package>.cmake modules may not follow this policy
@@ -22,6 +12,7 @@ IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
   cmake_policy(SET CMP0074 NEW)
   cmake_policy(SET CMP0075 NEW)
 ENDIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+include(CMakeDependentOption)
 
 ######################################################################
 # QMCPACK
@@ -189,7 +180,7 @@ SET(GCOV_SUPPORTED FALSE)
 SET(ENABLE_GCOV FALSE CACHE BOOL "Enable code coverage")
 
 ######################################################################
-# enable MPI and OPNEMP  if possible
+# enable MPI and OPENMP  if possible
 ######################################################################
 SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
@@ -198,7 +189,8 @@ SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 SET(ENABLE_CUDA 0 CACHE BOOL "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)")
 SET(ENABLE_SOA 1 CACHE BOOL "Enable/disable SoA optimization")
-SET(ENABLE_OFFLOAD 0 CACHE BOOL "Enable OpenMP offload")
+OPTION(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
+CMAKE_DEPENDENT_OPTION(USE_OBJECT_TARGET "USE CMake object target" OFF "ENABLE_OFFLOAD" OFF)
 
 IF(ENABLE_CUDA AND QMC_CUDA)
   MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
@@ -439,7 +431,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     SET(ENABLE_MKL FALSE CACHE BOOL "ENABLE MKL for non-intel compilers (Experimental)")
   ENDIF (INTEL_COMPILER)
   IF (ENABLE_MKL)
-   INCLUDE(CMake/FindMKL.cmake)
+    INCLUDE(CMake/FindMKL.cmake)
   ENDIF(ENABLE_MKL)
   IF ( HAVE_MKL )
     # Skip adding Math::BLAS_LAPACK target which has been imported by FindMKL.
@@ -454,9 +446,9 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
       MESSAGE(FATAL_ERROR "MKL found via LAPACK/BLAS. Please pass -DENABLE_MKL=1 to cmake for full Intel MKL utilization. -DMKL_ROOT may also be needed for the include files to be found.")
     ENDIF()
-    MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
     MESSAGE(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
-    SET(LAPACK_LIBRARY ${LAPACK_LINKER_FLAGS} ${LAPACK_LIBRARIES})
+    MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
+    SET(LAPACK_LIBRARY ${LAPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS})
     # Add Math::BLAS_LAPACK target
     ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
     SET_TARGET_PROPERTIES(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES "${LAPACK_LIBRARY}")
@@ -500,6 +492,20 @@ IF(QMC_MPI)
                         "Use a different MPI library or build MVAPICH2 with --disable-registration-cache configure option.")
   ENDIF()
 
+  IF(${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "Open MPI")
+    IF(NOT MPIEXEC_PREFLAGS)
+      SET(MPIEXEC_PREFLAGS "--bind-to;none")
+      MESSAGE(STATUS "Detected Open MPI. Setting bind-to options for thread affinity in MPIEXEC_PREFLAGS.")
+    ELSE(NOT MPIEXEC_PREFLAGS)
+      IF(NOT "${MPIEXEC_PREFLAGS}" MATCHES "--bind-to")
+        MESSAGE(WARNING "Default Open MPI thread affinity policy may bind all the threads to a single core and "
+                        "significantly slow down testing. Add proper --bind-to options via MPIEXEC_PREFLAGS. "
+                        "If you don't know exactly what affinity to add, "
+                        "add '--bind-to;none' to your current MPIEXEC_PREFLAGS to stop this warning.")
+      ENDIF()
+    ENDIF(NOT MPIEXEC_PREFLAGS)
+  ENDIF()
+
   IF(NOT ${CMAKE_CXX_COMPILER} STREQUAL ${MPI_CXX_COMPILER})
     SET(MPI_WARNING_LIST
         "Building MPI version without using MPI compiler wrappers.\n"
@@ -516,7 +522,8 @@ IF(QMC_MPI)
   MESSAGE(STATUS "MPI runner MPIEXEC_EXECUTABLE : ${MPIEXEC_EXECUTABLE}")
   MESSAGE(STATUS "MPIEXEC_NUMPROC_FLAG : ${MPIEXEC_NUMPROC_FLAG}")
   MESSAGE(STATUS "MPIEXEC_PREFLAGS : ${MPIEXEC_PREFLAGS}")
-  MESSAGE(STATUS "Tests run as : ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} NUM_PROCS ${MPIEXEC_PREFLAGS} EXECUTABLE")
+  STRING(REPLACE ";" " " MPIEXEC_PREFLAGS_PRINT "${MPIEXEC_PREFLAGS}")
+  MESSAGE(STATUS "Tests run as : ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} NUM_PROCS ${MPIEXEC_PREFLAGS_PRINT} EXECUTABLE")
 
   SET(HAVE_MPI 1)
   MESSAGE(STATUS "MPI is enabled")

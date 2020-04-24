@@ -1,6 +1,6 @@
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -90,7 +90,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 {
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  invRow_id = WorkingIndex;
+  invRow_id              = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   RatioTimer.stop();
@@ -100,15 +100,15 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradWithSpin(ParticleSet& P,
                                                                                          int iat,
-                                                                                         LogValueType& spingrad)
+                                                                                         ComplexType& spingrad)
 {
   Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  invRow_id = WorkingIndex;
+  invRow_id              = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
-  GradType g          = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
-  LogValueType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
+  GradType g         = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
+  ComplexType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
   RatioTimer.stop();
 
   spingrad += spin_g;
@@ -133,7 +133,6 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  GradType rv;
 
   // This is an optimization.
   // check invRow_id against WorkingIndex to see if getInvRow() has been called already
@@ -151,11 +150,10 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGradWithSpin(
-    ParticleSet& P,
-    int iat,
-    GradType& grad_iat,
-    LogValueType& spingrad_iat)
+typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGradWithSpin(ParticleSet& P,
+                                                                                              int iat,
+                                                                                              GradType& grad_iat,
+                                                                                              ComplexType& spingrad_iat)
 {
   SPOVGLTimer.start();
   Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
@@ -165,7 +163,6 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  GradType rv;
 
   // This is an optimization.
   // check invRow_id against WorkingIndex to see if getInvRow() has been called already
@@ -187,14 +184,14 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionComponent*>& WFC_list,
-                                             const std::vector<ParticleSet*>& P_list,
+void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVector<WaveFunctionComponent>& WFC_list,
+                                             const RefVector<ParticleSet>& P_list,
                                              int iat,
                                              std::vector<PsiValueType>& ratios,
                                              std::vector<GradType>& grad_new)
 {
   SPOVGLTimer.start();
-  std::vector<SPOSet*> phi_list;
+  RefVector<SPOSet> phi_list;
   phi_list.reserve(WFC_list.size());
   RefVector<ValueVector_t> psi_v_list;
   psi_v_list.reserve(WFC_list.size());
@@ -203,20 +200,20 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const std::vector<WaveFunctionCompo
   RefVector<ValueVector_t> d2psi_v_list;
   d2psi_v_list.reserve(WFC_list.size());
 
-  for (auto wfc : WFC_list)
+  for (WaveFunctionComponent& wfc : WFC_list)
   {
-    auto det = static_cast<DiracDeterminant<DU_TYPE>*>(wfc);
-    phi_list.push_back(det->Phi);
-    psi_v_list.push_back(det->psiV);
-    dpsi_v_list.push_back(det->dpsiV);
-    d2psi_v_list.push_back(det->d2psiV);
+    auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc);
+    phi_list.push_back(*det.Phi);
+    psi_v_list.push_back(det.psiV);
+    dpsi_v_list.push_back(det.dpsiV);
+    d2psi_v_list.push_back(det.d2psiV);
   }
 
   Phi->mw_evaluateVGL(phi_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
   SPOVGLTimer.stop();
 
   for (int iw = 0; iw < WFC_list.size(); iw++)
-    ratios[iw] = static_cast<DiracDeterminant<DU_TYPE>*>(WFC_list[iw])->ratioGrad_compute(iat, grad_new[iw]);
+    ratios[iw] = static_cast<DiracDeterminant<DU_TYPE>&>(WFC_list[iw].get()).ratioGrad_compute(iat, grad_new[iw]);
 }
 
 
@@ -379,8 +376,7 @@ void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std
 {
   RatioTimer.start();
   const int WorkingIndex = VP.refPtcl - FirstIndex;
-  invRow_id              = WorkingIndex;
-  updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
   RatioTimer.stop();
   SPOVTimer.start();
   Phi->evaluateDetRatios(VP, psiV, invRow, ratios);
@@ -407,12 +403,11 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
     auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc_list[iw].get());
     const VirtualParticleSet& vp(vp_list[iw]);
     const int WorkingIndex = vp.refPtcl - FirstIndex;
-    det.prepare_invRow(WorkingIndex);
+    std::copy_n(det.psiM[WorkingIndex], det.invRow.size(), det.invRow.data());
     // build lists
     phi_list.push_back(*det.Phi);
     psiV_list.push_back(det.psiV);
     invRow_list.push_back(det.invRow);
-    //det.Phi->evaluateDetRatios(vp, det.psiV, det.invRow, ratios[iw]);
   }
   RatioTimer.stop();
 
@@ -632,7 +627,6 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
   SPOVGLTimer.stop();
   if (NumPtcls == 1)
   {
-    //CurrentDet=psiM(0,0);
     ValueType det = psiM_temp(0, 0);
     psiM(0, 0)    = RealType(1) / det;
     LogValue      = convertValueToLog(det);
