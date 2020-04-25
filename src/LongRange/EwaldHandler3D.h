@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //
@@ -55,47 +55,49 @@ public:
    */
   EwaldHandler3D(const EwaldHandler3D& aLR, ParticleSet& ref);
 
-  LRHandlerBase* makeClone(ParticleSet& ref) { return new EwaldHandler3D(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) override { return new EwaldHandler3D(*this, ref); }
 
-  void initBreakup(ParticleSet& ref);
+  void initBreakup(ParticleSet& ref) override;
 
-  void Breakup(ParticleSet& ref, mRealType rs_in) { initBreakup(ref); }
+  void Breakup(ParticleSet& ref, mRealType rs_in) override { initBreakup(ref); }
 
-  void resetTargetParticleSet(ParticleSet& ref) {}
+  void resetTargetParticleSet(ParticleSet& ref) override {}
 
-  inline mRealType evaluate(mRealType r, mRealType rinv) { return erfc(r * Sigma) * rinv; }
+  inline mRealType evaluate(mRealType r, mRealType rinv) override { return erfc(r * Sigma) * rinv; }
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r) { return erf(r * Sigma) / r; }
+  inline mRealType evaluateLR(mRealType r) override { return erf(r * Sigma) / r; }
 
-  inline mRealType evaluateSR_k0()
+  inline mRealType evaluateSR_k0() override
   {
     mRealType v0 = M_PI / Sigma / Sigma / Volume;
     return v0;
   }
 
-  inline mRealType evaluateLR_r0() { return 2.0 * Sigma / std::sqrt(M_PI); }
+  mRealType evaluate_vlr_k(mRealType k) override;
+
+  mRealType evaluateLR_r0() override { return 2.0 * Sigma / std::sqrt(M_PI); }
 
   /**  evaluate the first derivative of the short range part at r
    *
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv)
+  inline mRealType srDf(mRealType r, mRealType rinv) override
   {
     return -2.0 * Sigma * std::exp(-Sigma * Sigma * r * r) / (std::sqrt(M_PI) * r) - erfc(Sigma * r) * rinv * rinv;
   }
+
   /**  evaluate the first derivative of the long range part (in real space) at r
    *
    * @param r  radius
    */
-  inline mRealType lrDf(mRealType r)
+  inline mRealType lrDf(mRealType r) override
   {
     mRealType rinv = 1.0 / r;
     return 2.0 * Sigma * std::exp(-Sigma * Sigma * r * r) / (std::sqrt(M_PI) * r) - erf(Sigma * r) * rinv * rinv;
   }
-
 
   void fillFk(KContainer& KList);
 
@@ -122,7 +124,7 @@ public:
   }
 
   //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<mRealType, OHMMS_DIM> k, mRealType kmag)
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<pRealType, OHMMS_DIM> k, pRealType kmag) override
   {
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
 
@@ -141,7 +143,7 @@ public:
   }
 
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<mRealType, OHMMS_DIM> r, mRealType rmag)
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<pRealType, OHMMS_DIM> r, pRealType rmag) override
   {
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
 
@@ -158,7 +160,7 @@ public:
     return deriv_tensor;
   }
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain()
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain() override
   {
     mRealType v0 = -M_PI / Sigma / Sigma / Volume;
     SymTensor<mRealType, OHMMS_DIM> stress;
@@ -170,7 +172,7 @@ public:
 
   inline mRealType evaluateLR_r0_dstrain(int i, int j) { return 0.0; }
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain()
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain() override
   {
     SymTensor<mRealType, OHMMS_DIM> stress;
     return stress;

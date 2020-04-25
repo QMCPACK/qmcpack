@@ -17,9 +17,9 @@
 #include "type_traits/template_types.hpp"
 #include "Estimators/tests/FakeEstimator.h"
 
-#include "QMCApp/tests/MinimalWaveFunctionPool.h"
-#include "QMCApp/tests/MinimalParticlePool.h"
-#include "QMCApp/tests/MinimalHamiltonianPool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 
 #include "QMCDrivers/tests/SetupPools.h"
 
@@ -79,7 +79,6 @@ public:
 
 TEST_CASE("Crowd integration", "[drivers]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* comm = OHMMS::Controller;
 
   EstimatorManagerBase em(comm);

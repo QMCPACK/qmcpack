@@ -14,13 +14,8 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#ifndef ENABLE_SOA
-#include "Particle/SymmetricDistanceTableData.h"
-#endif
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -37,7 +32,6 @@ namespace qmcplusplus
 TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -136,7 +130,6 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -245,7 +238,6 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 TEST_CASE("fccz h3", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;

@@ -13,7 +13,7 @@
 #include "AFQMC/Memory/CUDA/cuda_init.h"
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"

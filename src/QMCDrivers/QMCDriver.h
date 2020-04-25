@@ -26,7 +26,7 @@
 #include "Utilities/PooledData.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/DriverTraits.h"
@@ -329,10 +329,9 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
-  ///temporary buffer to accumulate data
-  //ostrstream log_buffer;
-
-  //PooledData<RealType> HamPool;
+  ///turn on spin moves
+  std::string SpinMoves;
+  RealType SpinMass;
 
   ///Copy Constructor (disabled).
   QMCDriver(const QMCDriver&) = delete;

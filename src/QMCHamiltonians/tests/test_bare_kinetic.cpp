@@ -10,17 +10,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#ifndef ENABLE_SOA
-#include "Particle/SymmetricDistanceTableData.h"
-#endif
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -41,7 +36,6 @@ namespace qmcplusplus
 TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -118,7 +112,6 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   typedef QMCTraits::ValueType ValueType;
   typedef QMCTraits::PosType PosType;
 
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   //Cell definition:

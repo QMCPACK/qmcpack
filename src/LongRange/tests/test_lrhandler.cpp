@@ -9,7 +9,7 @@
 // File created by: Yubo "Paul" Yang, yubo.paul.yang@gmail.com, University of Illinois Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "Configuration.h"
 #include "Lattice/CrystalLattice.h"

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -68,39 +68,41 @@ public:
    */
   EwaldHandler(const EwaldHandler& aLR, ParticleSet& ref);
 
-  LRHandlerBase* makeClone(ParticleSet& ref) { return new EwaldHandler(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) override { return new EwaldHandler(*this, ref); }
 
-  void initBreakup(ParticleSet& ref);
+  void initBreakup(ParticleSet& ref) override;
 
-  void Breakup(ParticleSet& ref, mRealType rs_in) { initBreakup(ref); }
+  void Breakup(ParticleSet& ref, mRealType rs_in) override { initBreakup(ref); }
 
-  void resetTargetParticleSet(ParticleSet& ref) {}
+  void resetTargetParticleSet(ParticleSet& ref) override {}
 
-  inline mRealType evaluate(mRealType r, mRealType rinv) { return erfc(r * Sigma) * rinv; }
+  inline mRealType evaluate(mRealType r, mRealType rinv) override { return erfc(r * Sigma) * rinv; }
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r) { return -erf(r * Sigma) / r; }
+  inline mRealType evaluateLR(mRealType r) override { return -erf(r * Sigma) / r; }
 
-  inline mRealType evaluateSR_k0() { return 0.0; }
+  inline mRealType evaluateSR_k0() override { return 0.0; }
 
-  inline mRealType evaluateLR_r0() { return 2.0 * Sigma / std::sqrt(M_PI) + PreFactors[3]; }
+  inline mRealType evaluateLR_r0() override { return 2.0 * Sigma / std::sqrt(M_PI) + PreFactors[3]; }
 
   /**  evaluate the first derivative of the short range part at r
    *
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv) { return 0.0; }
+  inline mRealType srDf(mRealType r, mRealType rinv) override { return 0.0; }
+
+  mRealType evaluate_vlr_k(mRealType k) override;
 
   void fillFk(KContainer& KList);
 
   /** evaluate k-dependent
    */
-  mRealType evaluate_slab(mRealType z,
+  mRealType evaluate_slab(pRealType z,
                           const std::vector<int>& kshell,
                           const pComplexType* restrict rk1,
-                          const pComplexType* restrict rk2);
+                          const pComplexType* restrict rk2) override;
 
   /** evaluate k=0 term at z
    * @param z distance in the slab direction

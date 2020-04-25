@@ -14,13 +14,8 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#ifndef ENABLE_SOA
-#include "Particle/SymmetricDistanceTableData.h"
-#endif
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "LongRange/EwaldHandler3D.h"
@@ -35,7 +30,6 @@ namespace qmcplusplus
 TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -124,7 +118,6 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
 TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;

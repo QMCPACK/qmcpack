@@ -16,9 +16,9 @@
 #include "QMCDrivers/tests/QMCDriverNewTestWrapper.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
 #include "Message/Communicate.h"
-#include "QMCApp/tests/MinimalParticlePool.h"
-#include "QMCApp/tests/MinimalWaveFunctionPool.h"
-#include "QMCApp/tests/MinimalHamiltonianPool.h"
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
@@ -30,7 +30,6 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   using namespace testing;
   Concurrency::OverrideMaxThreads<> override(8);
   Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   Libxml2Document doc;
@@ -75,7 +74,6 @@ TEST_CASE("QMCDriverNew integration", "[drivers]")
   using namespace testing;
   Concurrency::OverrideMaxThreads<> override(8);
   Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   Libxml2Document doc;

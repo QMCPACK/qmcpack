@@ -28,7 +28,6 @@
 
 namespace qmcplusplus
 {
-
 namespace testing
 {
 class UnifiedDriverWalkerControlMPITest;
@@ -83,6 +82,33 @@ public:
     LE_MAX
   };
 
+  struct PopulationAdjustment
+  {
+    int num_walkers{0}; // This is the number of walkers we are adjusting to
+    RefVector<MCPWalker> good_walkers;
+    std::vector<int> copies_to_make;
+    RefVector<MCPWalker> bad_walkers;
+  };
+
+  struct WalkerAdjustmentCriteria
+  {
+    FullPrecRealType esum{0.0};
+    FullPrecRealType e2sum{0.0};
+    FullPrecRealType wsum{0.0};
+    FullPrecRealType ecum{0.0};
+    FullPrecRealType w2sum{0.0};
+    FullPrecRealType besum{0.0};
+    FullPrecRealType bwgtsum{0.0};
+    FullPrecRealType r2_accepted{0.0};
+    FullPrecRealType r2_proposed{0.0};
+    int nfn{0};
+    int nrn{0};
+    int ngoodfn{0};
+    int ncr{0};
+    int nc{0};
+  };
+
+
   /** default constructor
    *
    * Set the SwapMode to zero so that instantiation can be done
@@ -125,10 +151,15 @@ public:
    */
   inline FullPrecRealType getCurrentValue(int i) { return curData[i]; }
 
-  /** update properties without branching */
+  /** return global population
+   *  update properties without branching 
+   *
+   */
   int doNotBranch(int iter, MCWalkerConfiguration& W);
 
-  /** update properties without branching */
+  /** return global population
+   *  update properties without branching
+   */
   int doNotBranch(int iter, MCPopulation& pop);
 
   /** sort Walkers between good and bad and prepare branching
@@ -137,14 +168,7 @@ public:
    */
   int sortWalkers(MCWalkerConfiguration& W);
 
-  struct PopulationAdjustment {
-    int num_walkers; // This is the number of walkers we are adjusting to
-    RefVector<MCPWalker> good_walkers;
-    std::vector<int> copies_to_make;
-    RefVector<MCPWalker> bad_walkers;
-  };
-
-  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers );
+  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
 
   /** create data structure needed to do population adjustment
    *
@@ -158,7 +182,7 @@ public:
    *  unfortunately right now this requires knowledge of the global context, seems unecessary
    *  but this is why MCPopulation is handed in.
    */
-  int adjustPopulation(MCPopulation& pop, PopulationAdjustment& adjust);
+  int adjustPopulation(PopulationAdjustment& adjust);
 
   /** apply per node limit Nmax and Nmin
    */
@@ -173,13 +197,22 @@ public:
   /** reset to accumulate data */
   virtual void reset();
 
-  /** perform branch and swap walkers as required */
+  /** perform branch and swap walkers as required 
+   *
+   *  \return global population
+   */
   virtual int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
 
-  /** perform branch and swap walkers as required */
+  /** perform branch and swap walkers as required 
+   *
+   *  \return global population
+   */
   virtual int branch(int iter, MCPopulation& pop, FullPrecRealType trigger);
 
-  virtual FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau) { return 1.0 / (static_cast<FullPrecRealType>(ngen) * tau); }
+  virtual FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau)
+  {
+    return 1.0 / (static_cast<FullPrecRealType>(ngen) * tau);
+  }
 
   bool put(xmlNodePtr cur);
 
@@ -189,7 +222,10 @@ public:
   int get_n_min() const { return n_min_; }
   FullPrecRealType get_target_sigma() const { return target_sigma_; }
   MCDataType<FullPrecRealType>& get_ensemble_property() { return ensemble_property_; }
-  void set_ensemble_property(MCDataType<FullPrecRealType>& ensemble_property) { ensemble_property_ = ensemble_property; }
+  void set_ensemble_property(MCDataType<FullPrecRealType>& ensemble_property)
+  {
+    ensemble_property_ = ensemble_property;
+  }
   IndexType get_num_contexts() const { return num_contexts_; }
   void set_write_release_nodes(bool write_release_nodes) { write_release_nodes_ = write_release_nodes; }
   IndexType get_method() const { return method_; }
@@ -202,7 +238,8 @@ protected:
    * \param[in]    the population adjustment, it is not updated to reflect local state and is now invalid.
    */
   static void onRankSpawnKill(MCPopulation& pop, PopulationAdjustment& adjust);
-  
+
+
   ///id for the method
   IndexType method_;
   ///minimum number of walkers
@@ -253,6 +290,20 @@ protected:
   MCDataType<FullPrecRealType> ensemble_property_;
 
   friend class qmcplusplus::testing::UnifiedDriverWalkerControlMPITest;
+private:
+  /** Refactoring possibly dead releaseNodesCode out
+   * @{
+   */
+  static auto rn_walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustmentCriteria wac);
+
+  static auto addReleaseNodeWalkers(PopulationAdjustment& adjust,
+                                    WalkerAdjustmentCriteria& wac,
+                                    RefVector<MCPWalker>& good_walkers_rn,
+                                    std::vector<int>& copies_to_make_rn);
+  /**}@*/
+  static auto walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustmentCriteria wac);
+
+  static void updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data, WalkerAdjustmentCriteria wac, PopulationAdjustment& adjustment, MCPopulation& pop);
 };
 
 } // namespace qmcplusplus

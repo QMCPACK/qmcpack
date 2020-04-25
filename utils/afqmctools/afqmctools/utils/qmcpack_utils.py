@@ -1,6 +1,5 @@
 import h5py
 import xml.etree.ElementTree as et
-from afqmctools.wavefunction.mol import read_qmcpack_wfn
 
 def write_xml_input(qmc_in, hamil_file, wfn_file, id_name='qmc', series=0,
                     rng_seed=None, options=None):

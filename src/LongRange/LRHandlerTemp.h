@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Bryan Clark, bclark@Princeton.edu, Princeton University
@@ -102,7 +102,8 @@ public:
   inline mRealType evaluate(mRealType r, mRealType rinv)
   {
     mRealType v = 0.0;
-    if (r>=LR_rc) return v;
+    if (r >= LR_rc)
+      return v;
     v = myFunc(r, rinv);
     for (int n = 0; n < coefs.size(); n++)
       v -= coefs[n] * Basis.h(n, r);
@@ -118,7 +119,8 @@ public:
   {
     APP_ABORT("LRHandlerTemp::srDF not implemented (missing gcoefs)");
     mRealType df = 0.0;
-    if (r>=LR_rc) return df;
+    if (r >= LR_rc)
+      return df;
     df = myFunc.df(r);
     //RealType df = myFunc.df(r, rinv);
     for (int n = 0; n < coefs.size(); n++)
@@ -126,13 +128,16 @@ public:
     return df;
   }
 
+  inline mRealType evaluate_vlr_k(mRealType k) { return evalFk(k); }
+
 
   /** evaluate the contribution from the long-range part for for spline
    */
   inline mRealType evaluateLR(mRealType r)
   {
     mRealType v = 0.0;
-    if (r>=LR_rc) return myFunc(r, 1./r);
+    if (r >= LR_rc)
+      return myFunc(r, 1. / r);
     for (int n = 0; n < coefs.size(); n++)
       v += coefs[n] * Basis.h(n, r);
     return v;
@@ -208,7 +213,7 @@ private:
     LRBreakup<BreakupBasis> breakuphandler(Basis);
     //Find size of basis from cutoffs
     mRealType kc = (LR_kc < 0) ? ref.LR_kc : LR_kc;
-    LR_kc = kc; // set internal kc
+    LR_kc        = kc; // set internal kc
     //RealType kc(ref.LR_kc); //User cutoff parameter...
     //kcut is the cutoff for switching to approximate k-point degeneracies for
     //better performance in making the breakup. A good bet is 30*K-spacing so that

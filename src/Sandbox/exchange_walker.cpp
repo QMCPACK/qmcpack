@@ -140,7 +140,7 @@ int main(int argc, char** argv)
     RandomGenerator<RealType> random_th(myPrimes[world.rank()]);
 
     tile_graphite(ions,tmat,scale);
-    ions.RSoA=ions.R; //fill the SoA
+    ions.setCoordinates(ions.R); //fill the SoA
 
     const int nions=ions.getTotalNum();
     const int nels=count_electrons(ions);
@@ -156,7 +156,7 @@ int main(int argc, char** argv)
       els.R.InUnit = PosUnit::Lattice;
       random_th.generate_uniform(&els.R[0][0],nels3);
       els.convert2Cart(els.R); // convert to Cartiesian
-      els.RSoA=els.R;
+      els.setCoordinates(els.R);
     }
 
     size_t nw=4;

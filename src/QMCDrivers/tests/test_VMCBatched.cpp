@@ -9,15 +9,15 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "Message/Communicate.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
-#include "QMCApp/tests/MinimalParticlePool.h"
-#include "QMCApp/tests/MinimalWaveFunctionPool.h"
-#include "QMCApp/tests/MinimalHamiltonianPool.h"
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
 
@@ -28,7 +28,6 @@ TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
   using namespace testing;
   Concurrency::OverrideMaxThreads<> override(8);
   Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   Libxml2Document doc;

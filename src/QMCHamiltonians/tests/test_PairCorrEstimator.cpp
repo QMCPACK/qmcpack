@@ -13,11 +13,10 @@
 #include "catch.hpp"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Lattice/CrystalLattice.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 
 #include <stdio.h>
 #include <string>
@@ -69,7 +68,6 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   typedef QMCTraits::RealType RealType;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
@@ -141,7 +139,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   const int ee_table_id = elec->addTable(*elec, DT_AOS);
 #endif
 
-  const DistanceTableData& dii(elec->getDistTable(ee_table_id));
+  const auto& dii(elec->getDistTable(ee_table_id));
   elec->update(); // distance table evaluation here
 
   // Make a PairCorrEstimator, call put() to set up internals
