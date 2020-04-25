@@ -47,6 +47,13 @@ MAP = {
         'm_atom_correlation': {
             'group': 'ATOM_CORRELATORS/M',
             'numer': 'correlator1D_M'
+        'gen_fock_plus': {
+            'group': 'GenFockPlus',
+            'numer': 'gfockp'
+        },
+        'gen_fock_minus': {
+            'group': 'GenFockMinus',
+            'numer': 'gfockm'
         }
     }
 

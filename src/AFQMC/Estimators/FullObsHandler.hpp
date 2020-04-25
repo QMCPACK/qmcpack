@@ -99,6 +99,9 @@ class FullObsHandler: public AFQMCInfo
       std::transform(cname.begin(),cname.end(),cname.begin(),(int (*)(int)) tolower);
       if(cname =="onerdm") {
         properties.emplace_back(Observable(std::move(full1rdm(TG,info,cur,walker_type,nave,block_size)))); 
+      } else if(cname =="gfock" || cname=="genfock" || cname=="ekt") {
+        properties.emplace_back(Observable(std::move(generalizedFockMatrix(TG,info,cur,walker_type,
+                                            wfn0.getHamiltonianOperations(),nave,block_size)))); 
       } else if(cname =="diag2rdm") {
         properties.emplace_back(Observable(std::move(diagonal2rdm(TG,info,cur,walker_type,nave,block_size)))); 
       } else if(cname =="twordm") {
@@ -260,6 +263,9 @@ class FullObsHandler: public AFQMCInfo
             Xw[iw] = CIcoeff * Ov[iw] * std::conj(detR[iw][iref]); 
         } 
       } 
+      if(nrefs == 1)
+        for(int iw=0; iw<nw; iw++) 
+          Xw[iw] = ComplexType(1.0); 
 
       // MAM: Since most of the simpler estimators need G4D in host memory, 
       //      I'm providing a copy of the structure there already

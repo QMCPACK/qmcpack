@@ -715,6 +715,12 @@ std::cout<<"\n";
       comm->barrier();
     }
 
+    template<class Mat, class MatB>
+    void generalizedFockMatrix(Mat&& G, MatB&& Fp, MatB&& Fm)
+    {
+      APP_ABORT(" Error: generalizedFockMatrix not implemented for this hamiltonian.\n"); 
+    }
+
     bool distribution_over_cholesky_vectors() const { return false; }
     int number_of_ke_vectors() const{
         return rotMuv.size(0);

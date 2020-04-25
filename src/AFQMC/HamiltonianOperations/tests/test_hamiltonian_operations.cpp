@@ -18,6 +18,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsApp/ProjectData.h"
 #include "io/hdf_archive.h"
+#include "io/hdf_multi.h"
 
 #undef APP_ABORT
 #define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}
@@ -34,6 +35,7 @@
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
+#include "AFQMC/Matrix/csr_hdf5_readers.hpp"
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Utilities/test_utils.hpp"
@@ -55,6 +57,7 @@ namespace qmcplusplus
 {
 
 using namespace afqmc;
+
 
 template<class Alloc>
 void ham_ops_basic_serial(boost::mpi3::communicator & world)
@@ -102,24 +105,59 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
     using CMatrix = ComplexMatrix<Alloc>;
-    boost::multi::array<ComplexType,3> OrbMat;
-    int walker_type = readWfn(std::string(UTEST_WFN),OrbMat,NMO,NAEA,NAEB);
+    boost::multi::array<ComplexType,3> OrbMat({2,NMO,NAEA});
+    hdf_archive dump;
+    if(!dump.open(UTEST_WFN,H5F_ACC_RDONLY)) {
+        app_error()<<" Error opening HDF wavefunction file.\n";
+    }
+    dump.push("Wavefunction", false);
+    dump.push("NOMSD", false);
+    dump.push(std::string("PsiT_0"));
+    //int walker_type = readWfn(std::string(UTEST_WFN),OrbMat,NMO,NAEA,NAEB);
+    int walker_type = 1;
     int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
     WALKER_TYPES WTYPE = CLOSED;
     if(walker_type==1) WTYPE = COLLINEAR;
     if(walker_type==2) WTYPE = NONCOLLINEAR;
 
+    auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
+    Alloc alloc_(make_localTG_allocator<ComplexType>(TG));
     std::vector<PsiT_Matrix> PsiT;
     PsiT.reserve(2);
-    PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[0],1e-8,'H',gTG.Node()));
-    if(walker_type>0)
-      PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-                                        OrbMat[1](OrbMat.extension(1),{0,NAEB}),
-                                        1e-8,'H',gTG.Node()));
+    PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix,shared_allocator<ComplexType> >(dump,gTG.Node()));
+    //PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
+                                        //OrbMat[0],1e-8,'H',gTG.Node()));
+    if(walker_type>0) {
+      dump.pop();
+      dump.push(std::string("PsiT_1"));
+      PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix,shared_allocator<ComplexType> >(dump,gTG.Node()));
+      //PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
+                                        //OrbMat[1](OrbMat.extension(1),{0,NAEB}),
+                                        //1e-8,'H',gTG.Node()));
+                                        //}
+    }
 
+    dump.pop();
+    {
+        boost::multi::array<ComplexType,2> Psi0A({NMO,NAEA});
+        dump.readEntry(Psi0A, "Psi0_alpha");
+        for(int i = 0; i < NMO; i++) {
+            for(int j = 0; j < NAEA; j++) {
+                OrbMat[0][i][j] = Psi0A[i][j];
+            }
+        }
+        if(walker_type>0) {
+            boost::multi::array<ComplexType,2> Psi0B({NMO,NAEA});
+            dump.readEntry(Psi0B, "Psi0_beta");
+            for(int i = 0; i < NMO; i++) {
+                for(int j = 0; j < NAEB; j++) {
+                    OrbMat[1][i][j] = Psi0B[i][j];
+                }
+            }
+        }
+    }
+    dump.close();
     hdf_archive dummy;
-    auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
     auto HOps(ham.getHamiltonianOperations(false,false,WTYPE,PsiT,1e-6,1e-6,TG,TG,dummy));
 
     // Calculates Overlap, G
@@ -131,7 +169,6 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     auto SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
 #endif
 
-    Alloc alloc_(make_localTG_allocator<ComplexType>(TG));
     boost::multi::array<ComplexType,3,Alloc> devOrbMat(OrbMat, alloc_);
     std::vector<devcsr_Matrix> devPsiT(move_vector<devcsr_Matrix>(std::move(PsiT)));
 
@@ -146,7 +183,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     REQUIRE( imag(Ovlp) == Approx(0.0) );
 
     boost::multi::array<ComplexType,2,Alloc> Eloc({1,3},alloc_);
-    boost::multi::array_ref<ComplexType,2,pointer> Gw(make_device_ptr(G.origin()),{NEL*NMO,1});
+    boost::multi::array_ref<ComplexType,2,pointer> Gw(make_device_ptr(G.origin()),{1,NEL*NMO});
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
     Eloc[0][0] = ( TG.Node() += ComplexType(Eloc[0][0]) );
     Eloc[0][1] = ( TG.Node() += ComplexType(Eloc[0][1]) );
@@ -163,43 +200,129 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     } else {
       app_log()<<" EJ: " <<setprecision(12) <<Eloc[0][2] <<std::endl;
       app_log()<<" EXX: " <<setprecision(12) <<Eloc[0][1] <<std::endl;
+      app_log()<<" ETotal: " <<setprecision(12) <<Eloc[0][0]+Eloc[0][1]+Eloc[0][2] <<std::endl;
     }
 
     double sqrtdt = std::sqrt(0.01);
     auto nCV = HOps.local_number_of_cholesky_vectors();
 
     CMatrix X({nCV,1},alloc_);
-    HOps.vbias(Gw,X,sqrtdt);
+    //HOps.vbias(Gw,X,sqrtdt);
     TG.local_barrier();
     ComplexType Xsum=0;
-    for(int i=0; i<X.size(); i++)
-        Xsum += X[i][0];
-    if(std::abs(file_data.Xsum)>1e-8) {
-      REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
-      REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
-    } else {
-      app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
+    //for(int i=0; i<X.size(); i++)
+        //Xsum += X[i][0];
+    //if(std::abs(file_data.Xsum)>1e-8) {
+      //REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
+      //REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
+    //} else {
+      //app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
+    //}
+
+    //int vdim1 = (HOps.transposed_vHS()?1:NMO*NMO);
+    //int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
+    //CMatrix vHS({vdim1,vdim2},alloc_);
+    //TG.local_barrier();
+    //HOps.vHS(X,vHS,sqrtdt);
+    //TG.local_barrier();
+    //ComplexType Vsum=0;
+    //if(HOps.transposed_vHS()) {
+      //for(int i=0; i<vHS.size(1); i++)
+        //Vsum += vHS[0][i];
+    //} else {
+      //for(int i=0; i<vHS.size(0); i++)
+        //Vsum += vHS[i][0];
+    //}
+    //if(std::abs(file_data.Vsum)>1e-8) {
+      //REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
+      //REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
+    //} else {
+      //app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
+    //}
+    // Test Generalised Fock matrix.
+    int dm_size;
+    CMatrix G2({1,1}, alloc_);
+    dm_size = 2*NMO*NMO;
+    G2.reextent({2*NMO,NMO});
+    boost::multi::array<double,2> Mat({NMO,NMO});
+    hdf_archive ref;
+    if(!ref.open("G.h5",H5F_ACC_RDONLY)) {
+        app_error()<<" Error opening HDF wavefunction file.\n";
+    }
+    ref.readEntry(Mat, "Ga");
+    for (int i = 0; i < NMO; i++) {
+      for (int j = 0; j < NMO; j++) {
+        G2[i][j] = Mat[i][j];
+      }
+    }
+    ref.readEntry(Mat, "Gb");
+    for (int i = 0; i < NMO; i++) {
+      for (int j = 0; j < NMO; j++) {
+        G2[NMO+i][j] = Mat[i][j];
+      }
     }
 
-    int vdim1 = (HOps.transposed_vHS()?1:NMO*NMO);
-    int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
-    CMatrix vHS({vdim1,vdim2},alloc_);
-    TG.local_barrier();
-    HOps.vHS(X,vHS,sqrtdt);
-    TG.local_barrier();
-    ComplexType Vsum=0;
-    if(HOps.transposed_vHS()) {
-      for(int i=0; i<vHS.size(1); i++)
-        Vsum += vHS[0][i];
-    } else {
-      for(int i=0; i<vHS.size(0); i++)
-        Vsum += vHS[i][0];
+    //if(WTYPE==COLLINEAR) {
+      //dm_size = 2*NMO*NMO;
+      //G2.reextent({2*NMO,NMO});
+    //} else if(WTYPE==CLOSED) {
+      //dm_size = NMO*NMO;
+      //G2.reextent({NMO,NMO});
+    //} else {
+      //APP_ABORT("NON COLLINEAR Wavefunction not implemented.");
+    //}
+    //Ovlp = SDet.MixedDensityMatrix(devPsiT[0],devOrbMat[0], G2.sliced(0,NMO),0.0,false);
+    //if(WTYPE==COLLINEAR) {
+      //Ovlp *= SDet.MixedDensityMatrix(devPsiT[1],devOrbMat[1](devOrbMat.extension(1),{0,NAEB}), G.sliced(NMO,2*NMO),0.0,false);
+    //}
+    int nwalk = 1;
+    CMatrix Gw2({nwalk,dm_size}, alloc_);
+    for (int nw = 0; nw < nwalk; nw++) {
+      for (int i = 0; i < NMO; i++) {
+        for (int j = 0; j < NMO; j++) {
+          Gw2[nw][i*NMO+j] = G2[i][j];
+          Gw2[nw][NMO*NMO+i*NMO+j] = G2[i+NMO][j];
+        }
+      }
     }
-    if(std::abs(file_data.Vsum)>1e-8) {
-      REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
-      REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
-    } else {
-      app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
+    boost::multi::array_ref<ComplexType,2,pointer> Gw2_(make_device_ptr(Gw2.origin()),{nwalk,dm_size});
+    boost::multi::array<ComplexType,3,Alloc> GFock({2,nwalk,dm_size},alloc_);
+    fill_n(GFock.origin(),GFock.num_elements(),ComplexType(0.0));
+    //for(int i = 0; i < nwalk; i++) {
+      //std::cout << Gw2_[i][0] << std::endl;
+    //}
+    //std::cout << "INIT: " << Gw2_[0][0] << " " << Gw2_[0][NMO*NMO] << std::endl;
+    HOps.generalizedFockMatrix(Gw2_,GFock[0],GFock[1]);
+    //boost::multi::array_ref<ComplexType,2,pointer> GR(make_device_ptr(GFock[0][0].origin()), {NMO,NMO});
+    //for(int i = 0; i < nwalk; i++) {
+      //std::cout << GFock[0][i][0] << std::endl;
+    //}
+    //std::cout << "GFOCK: " << GFock[0][0][0] << " " << GFock[1][0][0] << std::endl;
+    //std::cout << "Fm: " << std::endl;
+    std::fill_n(Mat.origin(),Mat.num_elements(),0.0);
+    ref.readEntry(Mat, "Fha");
+    for(int i = 0; i < NMO; i++) {
+        for(int j = 0; j < NMO; j++) {
+          if (std::abs(Mat[i][j]-real(GFock[1][0][i*NMO+j])) > 1e-5) {
+            std::cout << "DELTAA: " << i << " " << j << " " << Mat[i][j] << " " << real(GFock[1][0][i*NMO+j]) << std::endl;
+          }
+          //if(std::abs(real(GFock[1][0][i*NMO+j]))>1e-6)
+            //std::cout << i << " " << j << " " << real(GFock[1][0][i*NMO+j]) << " " << std::endl;
+        }
+    }
+    //std::cout << "Fp: " << std::endl;
+    std::fill_n(Mat.origin(),Mat.num_elements(),0.0);
+    ref.readEntry(Mat, "Fpa");
+    for(int i = 0; i < NMO; i++) {
+        for(int j = 0; j < NMO; j++) {
+          //std::cout << Mat[i][j] << std::endl;
+          //std::cout << Mat[i][j]-real(GFock[0][0][i*NMO+j]) << std::endl;
+          if (std::abs(Mat[i][j]-real(GFock[0][0][i*NMO+j])) > 1e-5) {
+            std::cout << "DELTAB: " << i << " " << j << " " << Mat[i][j] << " " << real(GFock[0][0][i*NMO+j]) << std::endl;
+          }
+          //if(std::abs(real(GFock[0][0][i*NMO+j]))>1e-6)
+            //std::cout << i << " " << j << " " << real(GFock[0][0][i*NMO+j]) << " " << real(GFock[0][1][i*NMO+j]) << " " << real(GFock[0][2][i*NMO+j]) << std::endl;
+        }
     }
   }
 }
