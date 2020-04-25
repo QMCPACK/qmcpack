@@ -262,7 +262,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
   if (!Phi->isOMPoffload() && n_accepted > 0)
   {
     auto* phi_vgl_v_ptr = phi_vgl_v.data();
-    PRAGMA_OFFLOAD("omp target update to(phi_vgl_v_ptr[phi_vgl_v.capacity():phi_vgl_v.capacity()*4])")
+    PRAGMA_OFFLOAD("omp target update to(phi_vgl_v_ptr[:phi_vgl_v.capacity()*5])")
   }
 
   det_engine_.mw_updateRow(dev_ptr_list, psiMinv.rows(), WorkingIndex, isAccepted, phi_vgl_v, ratios_local);
@@ -400,13 +400,20 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
   RefVector<SPOSet> phi_list;
   phi_list.reserve(WFC_list.size());
 
+  const int WorkingIndex = iat - FirstIndex;
   invRow_dev_ptr_list.resize(WFC_list.size());
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     phi_list.push_back(*det.Phi);
-    invRow_dev_ptr_list[iw] =
-        (Phi->isOMPoffload() ? det.psiMinv_dev_ptr : det.psiMinv.data()) + NumOrbitals * (iat - FirstIndex);
+    if (Phi->isOMPoffload())
+      invRow_dev_ptr_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
+    else
+    {
+      invRow_dev_ptr_list[iw] = det.psiMinv.data() + NumOrbitals * WorkingIndex;
+      auto* Ainv_ptr = det.psiMinv.data();
+      PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[NumOrbitals*WorkingIndex:NumOrbitals])")
+    }
   }
 
   phi_vgl_v.resize(WFC_list.size() * psiMinv.cols());
