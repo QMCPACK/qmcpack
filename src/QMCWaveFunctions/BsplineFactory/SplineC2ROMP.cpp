@@ -980,10 +980,10 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
             out_phi_g[psiIndex * 3 + 4] = dpsi[psiIndex * 3 + 4];
             out_phi_g[psiIndex * 3 + 5] = dpsi[psiIndex * 3 + 5];
 
-            ratio  += psi[psiIndex + 1] * invRow[psiIndex];
-            grad_x += dpsi[psiIndex * 3 + 3] * invRow[psiIndex];
-            grad_y += dpsi[psiIndex * 3 + 4] * invRow[psiIndex];
-            grad_z += dpsi[psiIndex * 3 + 5] * invRow[psiIndex];
+            ratio  += psi[psiIndex + 1] * invRow[psiIndex + 1];
+            grad_x += dpsi[psiIndex * 3 + 3] * invRow[psiIndex + 1];
+            grad_y += dpsi[psiIndex * 3 + 4] * invRow[psiIndex + 1];
+            grad_z += dpsi[psiIndex * 3 + 5] * invRow[psiIndex + 1];
           }
         }
 
