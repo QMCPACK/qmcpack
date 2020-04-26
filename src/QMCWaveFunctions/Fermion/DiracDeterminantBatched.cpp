@@ -104,7 +104,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVector<WaveF
   const int WorkingIndex = iat - FirstIndex;
   const int nw = WFC_list.size();
   invRow_dev_ptr_list.resize(nw*2);
-  auto* invRow_dev_ptr_list_ptr = invRow_dev_ptr_list.data();
   for (int iw = 0; iw < nw; iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
@@ -114,6 +113,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVector<WaveF
 
   const int norb = NumOrbitals;
   grads_value_v.resize(nw, DIM);
+  auto* invRow_dev_ptr_list_ptr = invRow_dev_ptr_list.data();
   auto* __restrict__ grads_value_v_ptr = grads_value_v.data();
   PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) \
                   map(always, to: invRow_dev_ptr_list_ptr[:invRow_dev_ptr_list.size()]) \
@@ -174,16 +174,16 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVector<Wave
   phi_list.reserve(WFC_list.size());
 
   const int WorkingIndex = iat - FirstIndex;
-  invRow_dev_ptr_list.resize(WFC_list.size());
+  std::vector<const ValueType*> psiMinv_row_dev_ptr_list(WFC_list.size(), nullptr);
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     phi_list.push_back(*det.Phi);
     if (Phi->isOMPoffload())
-      invRow_dev_ptr_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
+      psiMinv_row_dev_ptr_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
     else
     {
-      invRow_dev_ptr_list[iw] = det.psiMinv.data() + NumOrbitals * WorkingIndex;
+      psiMinv_row_dev_ptr_list[iw] = det.psiMinv.data() + NumOrbitals * WorkingIndex;
       auto* Ainv_ptr = det.psiMinv.data();
       PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[NumOrbitals*WorkingIndex:NumOrbitals])")
     }
@@ -193,9 +193,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVector<Wave
   ratios_local.resize(WFC_list.size());
   grad_new_local.resize(WFC_list.size());
 
-  Vector<ValueType*> invRow_dev_ptr_list_view(invRow_dev_ptr_list.data(), invRow_dev_ptr_list.size());
   VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
-  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, invRow_dev_ptr_list_view, phi_vgl_v_view, ratios_local,
+  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v_view, ratios_local,
                                       grad_new_local);
   SPOVGLTimer.stop();
 
@@ -401,16 +400,16 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
   phi_list.reserve(WFC_list.size());
 
   const int WorkingIndex = iat - FirstIndex;
-  invRow_dev_ptr_list.resize(WFC_list.size());
+  std::vector<const ValueType*> psiMinv_row_dev_ptr_list(WFC_list.size(), nullptr);
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     phi_list.push_back(*det.Phi);
     if (Phi->isOMPoffload())
-      invRow_dev_ptr_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
+      psiMinv_row_dev_ptr_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
     else
     {
-      invRow_dev_ptr_list[iw] = det.psiMinv.data() + NumOrbitals * WorkingIndex;
+      psiMinv_row_dev_ptr_list[iw] = det.psiMinv.data() + NumOrbitals * WorkingIndex;
       auto* Ainv_ptr = det.psiMinv.data();
       PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[NumOrbitals*WorkingIndex:NumOrbitals])")
     }
@@ -420,12 +419,11 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
   ratios_local.resize(WFC_list.size());
   grad_new_local.resize(WFC_list.size());
 
-  Vector<ValueType*> invRow_dev_ptr_list_view(invRow_dev_ptr_list.data(), invRow_dev_ptr_list.size());
   VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
 
   // calling Phi->mw_evaluateVGLandDetRatioGrads is a temporary workaround.
   // We may implement mw_evaluateVandDetRatio in the future.
-  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, invRow_dev_ptr_list_view, phi_vgl_v_view, ratios_local,
+  Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v_view, ratios_local,
                                       grad_new_local);
   SPOVTimer.stop();
 

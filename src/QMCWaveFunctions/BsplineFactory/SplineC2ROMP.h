@@ -99,6 +99,8 @@ private:
   Vector<ST, OffloadPinnedAllocator<ST>> multi_pos_copy;
   ///reference particle id of all the quadrature points
   Vector<int, OffloadPinnedAllocator<int>> mw_ref_id;
+  ///multi purpose H2D buffer
+  Matrix<char, OffloadPinnedAllocator<char>> buffer_H2D;
 
   void evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos_copy,
                            const RefVector<ValueVector_t>& psi_v_list,
@@ -254,7 +256,7 @@ public:
   virtual void mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
                                               const RefVector<ParticleSet>& P_list,
                                               int iat,
-                                              const Vector<ValueType*>& invRow_ptr_list,
+                                              const std::vector<const ValueType*>& invRow_ptr_list,
                                               VGLVector_t& phi_vgl_v,
                                               std::vector<ValueType>& ratios,
                                               std::vector<GradType>& grads) override;
