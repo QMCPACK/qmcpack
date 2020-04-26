@@ -101,42 +101,21 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVector<WaveF
                            std::vector<GradType>& grad_now)
 {
   RatioTimer.start();
-  const int WorkingIndex = iat - FirstIndex;
+
   const int nw = WFC_list.size();
-  invRow_dev_ptr_list.resize(nw*2);
+  std::vector<const ValueType*> invRow_list(nw, nullptr);
+  std::vector<const ValueType*> dpsiM_row_list(nw, nullptr);
+
+  const int WorkingIndex = iat - FirstIndex;
   for (int iw = 0; iw < nw; iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-    invRow_dev_ptr_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
-    invRow_dev_ptr_list[nw + iw] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
+    invRow_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
+    dpsiM_row_list[iw] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
   }
 
-  const int norb = NumOrbitals;
-  grads_value_v.resize(nw, DIM);
-  auto* invRow_dev_ptr_list_ptr = invRow_dev_ptr_list.data();
-  auto* __restrict__ grads_value_v_ptr = grads_value_v.data();
-  PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) \
-                  map(always, to: invRow_dev_ptr_list_ptr[:invRow_dev_ptr_list.size()]) \
-                  map(always, from: grads_value_v_ptr[:grads_value_v.size()])")
-  for (int iw = 0; iw < nw; iw++)
-  {
-    ValueType* __restrict__ invRow_ptr = invRow_dev_ptr_list_ptr[iw];
-    ValueType* __restrict__ dpsiM_row_ptr = invRow_dev_ptr_list_ptr[nw + iw];
-    ValueType grad_x(0), grad_y(0), grad_z(0);
-    PRAGMA_OFFLOAD("omp parallel for reduction(+: grad_x, grad_y, grad_z)")
-    for (int iorb = 0 ; iorb < norb; iorb++)
-    {
-      grad_x += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM];
-      grad_y += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM + 1];
-      grad_z += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM + 2];
-    }
-    grads_value_v_ptr[iw * DIM]     = grad_x;
-    grads_value_v_ptr[iw * DIM + 1] = grad_y;
-    grads_value_v_ptr[iw * DIM + 2] = grad_z;
-  }
+  det_engine_.mw_evalGrad(invRow_list, dpsiM_row_list, NumOrbitals, grad_now);
 
-  for (int iw = 0; iw < nw; iw++)
-    grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
   RatioTimer.stop();
 }
 

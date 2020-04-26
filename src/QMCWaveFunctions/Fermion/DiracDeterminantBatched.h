@@ -214,8 +214,6 @@ public:
   std::vector<ValueType> ratios_local;
   // multi walker of grads
   std::vector<GradType> grad_new_local;
-  // multi walker of grads for transfer needs.
-  OffloadPinnedValueMatrix_t grads_value_v;
 
 private:
   /// invert psiM or its copies
