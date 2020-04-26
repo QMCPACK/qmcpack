@@ -189,7 +189,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVector<Wave
     }
   }
 
-  phi_vgl_v.resize(WFC_list.size() * psiMinv.cols());
+  resizeMultiWalkerScratch(psiMinv.cols(), WFC_list.size());
   ratios_local.resize(WFC_list.size());
   grad_new_local.resize(WFC_list.size());
 
@@ -241,7 +241,9 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
     if (isAccepted[iw])
       count++;
   const int n_accepted = count;
-  dev_ptr_list.resize(n_accepted*3);
+  std::vector<ValueType*> psiMinv_dev_ptr_list(n_accepted, nullptr);
+  std::vector<ValueType*> psiM_g_dev_ptr_list(n_accepted, nullptr);
+  std::vector<ValueType*> psiM_l_dev_ptr_list(n_accepted, nullptr);
 
   const int WorkingIndex = iat - FirstIndex;
   for (int iw = 0, count = 0; iw < nw; iw++)
@@ -249,9 +251,9 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     if (isAccepted[iw])
     {
-      dev_ptr_list[count] = det.psiMinv_dev_ptr;
-      dev_ptr_list[n_accepted + count] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
-      dev_ptr_list[n_accepted * 2 + count] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() * 4 + NumOrbitals * WorkingIndex;
+      psiMinv_dev_ptr_list[count] = det.psiMinv_dev_ptr;
+      psiM_g_dev_ptr_list[count] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
+      psiM_l_dev_ptr_list[count] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() * 4 + NumOrbitals * WorkingIndex;
       det.LogValue += convertValueToLog(det.curRatio);
       count++;
     }
@@ -264,7 +266,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
     PRAGMA_OFFLOAD("omp target update to(phi_vgl_v_ptr[:phi_vgl_v.capacity()*5])")
   }
 
-  det_engine_.mw_updateRow(dev_ptr_list, psiMinv.rows(), WorkingIndex, isAccepted, phi_vgl_v, ratios_local);
+  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, psiMinv.rows(), WorkingIndex, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_v.capacity(), ratios_local);
 
   UpdateTimer.stop();
 }
@@ -415,7 +417,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
     }
   }
 
-  phi_vgl_v.resize(WFC_list.size() * psiMinv.cols());
+  resizeMultiWalkerScratch(psiMinv.cols(), WFC_list.size());
   ratios_local.resize(WFC_list.size());
   grad_new_local.resize(WFC_list.size());
 
@@ -502,6 +504,17 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resizeScratchObjectsForIonDerivs(
   grad_phi_Minv.resize(NumPtcls, NumOrbitals);
   lapl_phi_Minv.resize(NumPtcls, NumOrbitals);
   grad_phi_alpha_Minv.resize(NumPtcls, NumOrbitals);
+}
+
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::resizeMultiWalkerScratch(int norb, int nw)
+{
+  const size_t total_size = norb * nw;
+  if (phi_vgl_v.size() < total_size)
+  {
+    phi_vgl_v.resize(total_size);
+    phi_vgl_v_dev_ptr = getOffloadDevicePtr(phi_vgl_v.data());
+  }
 }
 
 template<typename DET_ENGINE_TYPE>

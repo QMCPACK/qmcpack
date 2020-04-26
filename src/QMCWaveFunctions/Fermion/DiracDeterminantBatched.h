@@ -201,6 +201,8 @@ public:
 
   /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw*norb]
   OffloadVGLVector_t phi_vgl_v;
+  /// device pointer of phi_vgl_v data;
+  ValueType* phi_vgl_v_dev_ptr;
 
   /// delayed update engine
   DET_ENGINE_TYPE det_engine_;
@@ -221,6 +223,9 @@ private:
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
+
+  /// Resize multi walker scratch spaces
+  void resizeMultiWalkerScratch(int norb, int nw);
 };
 
 extern template class DiracDeterminantBatched<>;
