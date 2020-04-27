@@ -1381,7 +1381,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             std::move(LQKbnl),std::move(LQKbln),std::move(Qmap),
             std::move(vn0),
             std::move(gQ),nsampleQ,E0,device_allocator<ComplexType>{},
-            global_origin,global_ncvecs));
+            global_origin,global_ncvecs,memory));
   } else {
     return HamiltonianOperations(KP3IndexFactorization_batched(
             type,std::move(nmo_per_kp),std::move(nchol_per_kp),std::move(kminus),
@@ -1390,7 +1390,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             std::move(LQKbnl),std::move(LQKbln),std::move(Qmap),
             std::move(vn0),
             std::move(gQ),nsampleQ,E0,device_allocator<ComplexType>{},
-            global_origin,global_ncvecs));
+            global_origin,global_ncvecs,memory));
   }
 
 }

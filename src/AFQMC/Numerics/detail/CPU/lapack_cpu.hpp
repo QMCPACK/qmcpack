@@ -32,6 +32,10 @@
 #include "AFQMC/Numerics/detail/CPU/Blasf.h"
 #include "AFQMC/Numerics/detail/utilities.hpp"
 
+#ifdef ENABLE_CUDA
+#define __NO_QR__
+#endif
+
 namespace ma 
 {
 
