@@ -2,6 +2,19 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [3.9.2] - 2020-05-01
+
+### Notes
+
+This is an important bugfix release. As described in
+[\#2330](https://github.com/QMCPACK/qmcpack/issues/2330), since v3.8.0
+the default build of QMCPACK would not correctly use different time
+steps in different DMC blocks, biasing the results. Thanks to Chandler
+Bennett for identifying this.
+
+* Additional changes will be described here.
+
+
 ## [3.9.1] - 2020-02-11
 
 ### Notes
