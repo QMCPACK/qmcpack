@@ -30,7 +30,7 @@
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Numerics/detail/utilities.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include "AFQMC/Numerics/helpers/batched_operations.hpp"
+#include "AFQMC/Numerics/batched_operations.hpp"
 
 namespace qmcplusplus
 {

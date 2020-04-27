@@ -21,7 +21,7 @@
 #include "ma_blas.hpp"
 #include "ma_lapack.hpp"
 #include "AFQMC/Numerics/detail/sparse.hpp"
-#include "AFQMC/Numerics/helpers/determinant.hpp"
+#include "AFQMC/Numerics/determinant.hpp"
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 

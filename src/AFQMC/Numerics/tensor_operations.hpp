@@ -19,11 +19,7 @@
 #include "AFQMC/Numerics/detail/utilities.hpp"
 #if defined(ENABLE_CUDA)
 #include "AFQMC/Memory/custom_pointers.hpp"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_KKwaj.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_QKajw.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/vKKwij_to_vwKiKj.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/term_by_term_matrix_vec.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/ajw_to_waj.cuh"
+#include "AFQMC/Numerics/device_kernels.hpp"
 #endif
 
 namespace ma

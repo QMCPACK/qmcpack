@@ -63,7 +63,6 @@ class AFQMCFactory
       std::vector<uint_type> myprimes;
       RandomNumberControl::PrimeNumbers.get(baseoffset,nprocs,myprimes); 
       arch::INIT(gTG.Node(),(unsigned long long int)(myprimes[rank]));
-//      qmc_cuda::CUDA_INIT(gTG.Node(),(unsigned long long int)(myprimes[rank]));
 #endif
       TimerManager.set_timer_threshold(timer_level_coarse);
       setup_timers(AFQMCTimers, AFQMCTimerNames,timer_level_coarse);
