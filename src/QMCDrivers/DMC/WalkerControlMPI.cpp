@@ -558,7 +558,6 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
         adjust.bad_walkers.pop_back();
       }
       MCPWalker& spawned_walker = *(pop.spawnWalker());
-      assert(spawned_walker.DataSet.size() == 9440);
       new_walkers.push_back(spawned_walker);
 
       recv_message_list.push_back(WalkerMessage{new_walkers.back(), minus[ic], plus[ic]});

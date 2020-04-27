@@ -132,25 +132,6 @@ void UnifiedDriverWalkerControlMPITest::reportWalkersPerRank(Communicate* c, MCP
 
 } // namespace testing
 
-TEST_CASE("WalkerControlMPI::determineNewWalkerPopulation", "[drivers][walker_control]")
-{
-  int cur_pop      = 5;
-  int num_contexts = 3;
-
-  std::vector<int> num_per_node = {3, 1, 1};
-
-  for (int i = 0; i < num_contexts; ++i)
-  {
-    std::vector<int> fair_offset;
-    std::vector<int> minus;
-    std::vector<int> plus;
-    WalkerControlMPI::determineNewWalkerPopulation(cur_pop, num_contexts, i, num_per_node, fair_offset, minus, plus);
-
-    CHECK(minus.size() == 2);
-    CHECK(plus.size() == 2);
-  }
-}
-
 /** Here we manipulate just the Multiplicity of a set of 1 walkers per rank
  */
 TEST_CASE("MPI WalkerControl multiplicity swap walkers", "[drivers][walker_control]")

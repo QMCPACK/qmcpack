@@ -219,7 +219,6 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
   }
 
   outputManager.resume();
-  assert(walkers_.back().get()->DataSet.size() == 9440);
   return walkers_.back().get();
 }
 
