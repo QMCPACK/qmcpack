@@ -10,24 +10,8 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-SUBDIRS(OpenMP)
-
-SET(HOST_SRCS
-    sysutil.cpp
-    Host/InfoStream.cpp
-    Host/OutputManager.cpp
+SET(CUDA_SRCS
+  cuBLAS_inhouse.cu
 )
 
-SET(DEVICE_SRCS
-    accelerators.cpp
-)
-
-ADD_LIBRARY(platform_host ${HOST_SRCS})
-
-ADD_LIBRARY(platform_device ${DEVICE_SRCS})
-TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_omp message)
-
-IF(ENABLE_CUDA)
-  SUBDIRS(CUDA)
-  TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cuda)
-ENDIF(ENABLE_CUDA)
+CUDA_ADD_LIBRARY(platform_cuda ${CUDA_SRCS})
