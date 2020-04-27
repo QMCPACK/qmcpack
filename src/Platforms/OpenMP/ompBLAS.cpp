@@ -10,17 +10,15 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <stdexcept>
 #include "Platforms/OpenMP/ompBLAS.hpp"
+#include <stdexcept>
 #include "config.h"
+#include "Platforms/OpenMP/ompReduction.hpp"
 
 namespace qmcplusplus
 {
 namespace ompBLAS
 {
-
-PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<float>: omp_out += omp_in)")
-PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<double>: omp_out += omp_in)")
 
 template<typename T>
 ompBLAS_status gemv_impl(ompBLAS_handle& handle,

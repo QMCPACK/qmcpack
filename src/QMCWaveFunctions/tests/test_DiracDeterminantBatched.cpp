@@ -38,7 +38,11 @@ using ValueType    = QMCTraits::ValueType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 using PsiValueType = QMCTraits::QTFull::ValueType;
 
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+typedef DiracDeterminantBatched<MatrixUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>> DetType;
+#else
 typedef DiracDeterminantBatched<> DetType;
+#endif
 
 template<typename T1, typename ALLOC1, typename T2, typename ALLOC2>
 void check_matrix(Matrix<T1, ALLOC1>& a, Matrix<T2, ALLOC2>& b)

@@ -9,8 +9,8 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_MATRIX_UPDATE_OMP_H
-#define QMCPLUSPLUS_MATRIX_UPDATE_OMP_H
+#ifndef QMCPLUSPLUS_MATRIX_UPDATE_CUDA_H
+#define QMCPLUSPLUS_MATRIX_UPDATE_CUDA_H
 
 #include "simd/allocator.hpp"
 #include "Platforms/PinnedAllocator.h"
@@ -29,7 +29,7 @@ namespace qmcplusplus
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
 template<typename T, typename T_FP>
-class MatrixUpdateOMP
+class MatrixUpdateCUDA
 {
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
