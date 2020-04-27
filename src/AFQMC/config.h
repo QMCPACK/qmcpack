@@ -93,8 +93,8 @@ namespace afqmc
   using shm_pointer = typename shared_allocator<T>::pointer; 
 
 #if defined(ENABLE_CUDA)
-  template<class T>  using device_allocator = qmc_cuda::cuda_gpu_allocator<T>;
-  template<class T>  using device_ptr = qmc_cuda::cuda_gpu_ptr<T>;
+  template<class T>  using device_allocator = device::device_allocator<T>;
+  template<class T>  using device_ptr = device::device_pointer<T>;
   template<class T>  using localTG_allocator = device_allocator<T>;
   template<class T>  using node_allocator = device_allocator<T>;
   template<class T, class TG> 
@@ -106,17 +106,17 @@ namespace afqmc
   template<class T> device_ptr<T> make_device_ptr(T* p) 
   {
     print_stacktrace;
-    throw std::runtime_error(" Invalid pointer conversion: cuda_gpu_ptr<T> to T*.");
+    throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
   }   
   template<class T> device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p) 
   { 
     print_stacktrace;
-    throw std::runtime_error(" Invalid pointer conversion: cuda_gpu_ptr<T> to T*.");
+    throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
   }   
   template<class T> device_ptr<T> make_device_ptr(shm::shm_ptr_with_raw_ptr_dispatch<T> p) 
   { 
     print_stacktrace;
-    throw std::runtime_error(" Invalid pointer conversion: cuda_gpu_ptr<T> to T*.");
+    throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
   }   
 #else
   template<class T>  using device_allocator = std::allocator<T>;
@@ -132,7 +132,7 @@ namespace afqmc
   template<class T> device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p) 
   { //return device_ptr<T>{to_address(p)}; }
     print_stacktrace;
-    throw std::runtime_error(" Invalid pointer conversion: cuda_gpu_ptr<T> to T*.");
+    throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
   }  
   template<class T> device_ptr<T> make_device_ptr(shm::shm_ptr_with_raw_ptr_dispatch<T> p) 
   { return device_ptr<T>{to_address(p)}; }

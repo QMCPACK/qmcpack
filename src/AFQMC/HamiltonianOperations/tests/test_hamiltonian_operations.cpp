@@ -342,8 +342,8 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 #ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
 
-  qmc_cuda::CUDA_INIT(node);
-  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+  arch::INIT(node);
+  using Alloc = device::device_allocator<ComplexType>;
 #else
   using Alloc = shared_allocator<ComplexType>;
 #endif

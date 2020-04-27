@@ -12,23 +12,34 @@
 
 #include "AFQMC/Memory/CUDA/cuda_init.h"
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
-#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
+#include "AFQMC/Memory/device_pointers.hpp"
 #include "Platforms/Host/OutputManager.h"
 
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
-namespace qmc_cuda {
+namespace arch {
 
-  // work around for problem with csrmm 
-  extern boost::multi::array<std::complex<double>,1,qmc_cuda::cuda_gpu_allocator<std::complex<double>>>
+extern cublasHandle_t afqmc_cublas_handle;
+//extern  cublasXtHandle_t afqmc_cublasXt_handle;
+extern cusparseHandle_t afqmc_cusparse_handle;
+extern cusolverDnHandle_t afqmc_cusolverDn_handle;
+extern curandGenerator_t afqmc_curand_generator;
+
+}
+
+/*
+namespace device {
+
+  extern boost::multi::array<std::complex<double>,1,
+                             device::device_allocator<std::complex<double>>>
                             *cusparse_buffer;
 
-  extern cublasHandle_t afqmc_cublas_handle;
-//extern  cublasXtHandle_t afqmc_cublasXt_handle;
-  extern cusparseHandle_t afqmc_cusparse_handle;
-  extern cusolverDnHandle_t afqmc_cusolverDn_handle;
-  extern curandGenerator_t afqmc_curand_generator;
+}
+*/
+
+namespace qmc_cuda {
+
   extern bool afqmc_cuda_handles_init;
   extern cusparseMatDescr_t afqmc_cusparse_matrix_descr;
 
@@ -57,30 +68,31 @@ namespace qmc_cuda {
 
     cuda_check(cudaSetDevice(node.rank()),"cudaSetDevice()");
 
-    cublas_check(cublasCreate (& afqmc_cublas_handle ), "cublasCreate");
-//    cublas_check(cublasXtCreate (& afqmc_cublasXt_handle ), "cublasXtCreate");
+    cublas_check(cublasCreate (& arch::afqmc_cublas_handle ), "cublasCreate");
+//    cublas_check(cublasXtCreate (& arch::afqmc_cublasXt_handle ), "cublasXtCreate");
     int devID[8] {0,1,2,3,4,5,6,7};
-//    cublas_check(cublasXtDeviceSelect(afqmc_cublasXt_handle, 1, devID), "cublasXtDeviceSelect");
-//    cublas_check(cublasXtSetPinningMemMode(afqmc_cublasXt_handle, CUBLASXT_PINNING_ENABLED), 
+//    cublas_check(cublasXtDeviceSelect(arch::afqmc_cublasXt_handle, 1, devID), "cublasXtDeviceSelect");
+//    cublas_check(cublasXtSetPinningMemMode(arch::afqmc_cublasXt_handle, CUBLASXT_PINNING_ENABLED), 
 //                                            "cublasXtSetPinningMemMode");
-    cusolver_check(cusolverDnCreate (& afqmc_cusolverDn_handle ), "cusolverDnCreate");
-    //curand_check(curandCreateGenerator(&afqmc_curand_generator, CURAND_RNG_PSEUDO_DEFAULT),
-    curand_check(curandCreateGenerator(&afqmc_curand_generator, CURAND_RNG_PSEUDO_MT19937),
+    cusolver_check(cusolverDnCreate (& arch::afqmc_cusolverDn_handle ), "cusolverDnCreate");
+    //curand_check(curandCreateGenerator(&arch::afqmc_curand_generator, CURAND_RNG_PSEUDO_DEFAULT),
+    curand_check(curandCreateGenerator(&arch::afqmc_curand_generator, CURAND_RNG_PSEUDO_MT19937),
                                             "curandCreateGenerator");
-    curand_check(curandSetPseudoRandomGeneratorSeed(afqmc_curand_generator,iseed),
+    curand_check(curandSetPseudoRandomGeneratorSeed(arch::afqmc_curand_generator,iseed),
                                             "curandSetPseudoRandomGeneratorSeed");
 
-    cusparse_check(cusparseCreate (& afqmc_cusparse_handle ), "cusparseCreate");
+    cusparse_check(cusparseCreate (& arch::afqmc_cusparse_handle ), "cusparseCreate");
     cusparse_check(cusparseCreateMatDescr(&afqmc_cusparse_matrix_descr), 
             "cusparseCreateMatDescr: Matrix descriptor initialization failed"); 
     cusparseSetMatType(afqmc_cusparse_matrix_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(afqmc_cusparse_matrix_descr,CUSPARSE_INDEX_BASE_ZERO); 
 
-    cusparse_buffer = new boost::multi::array<std::complex<double>,1,
-                                 qmc_cuda::cuda_gpu_allocator<std::complex<double>>>(
+/*
+    device::cusparse_buffer = new boost::multi::array<std::complex<double>,1,
+                                 device::device_allocator<std::complex<double>>>(
                                  (typename boost::multi::layout_t<1u>::extensions_type{1},
-                                 qmc_cuda::cuda_gpu_allocator<std::complex<double>>{}));
-
+                                 device::device_allocator<std::complex<double>>{}));
+*/
   }
 
 }

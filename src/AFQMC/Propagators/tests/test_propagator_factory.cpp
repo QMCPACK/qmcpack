@@ -415,7 +415,7 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
 
 #ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
-  qmc_cuda::CUDA_INIT(node);
+  arch::INIT(node);
 #endif
 
   propg_fac_shared(world);
@@ -430,7 +430,7 @@ TEST_CASE("propg_fac_distributed", "[propagator_factory]")
 #ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
   int ngrp(world.size());
-  qmc_cuda::CUDA_INIT(node);
+  arch::INIT(node);
 #else
   auto node = world.split_shared(world.rank());
   int ngrp(world.size()/node.size());

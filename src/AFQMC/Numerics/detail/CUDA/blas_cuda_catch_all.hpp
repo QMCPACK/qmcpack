@@ -23,7 +23,7 @@
 // Lvl-2: gemv
 // Lvl-3: gemm
 
-namespace qmc_cuda 
+namespace device 
 {
 
 /*

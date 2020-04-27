@@ -15,10 +15,6 @@
 #ifndef AFQMC_CUDA_UTILITIES_HPP
 #define AFQMC_CUDA_UTILITIES_HPP
 
-#define GPU_MEMORY_POINTER_TYPE      1001
-#define MANAGED_MEMORY_POINTER_TYPE  2001
-#define CPU_OUTOFCARS_POINTER_TYPE   3001
-
 #include<cassert>
 #include<cstdlib>
 #include<iostream>
@@ -47,13 +43,7 @@
 
 namespace qmc_cuda {
 
-/*
-// Do I need these here???
-  extern cublasHandle_t afqmc_cublas_handle;
-  extern cublasXtHandle_t afqmc_cublasXt_handle;
-  extern cusolverDnHandle_t afqmc_cusolverDn_handle;
-*/
-  extern curandGenerator_t afqmc_curand_generator;
+//  extern curandGenerator_t afqmc_curand_generator;
   extern cusparseMatDescr_t afqmc_cusparse_matrix_descr;
 
   extern std::vector<cudaStream_t> afqmc_cuda_streams;
@@ -67,21 +57,6 @@ namespace qmc_cuda {
   cublasOperation_t cublasOperation(char A); 
   cusparseOperation_t cusparseOperation(char A); 
 
-  struct gpu_handles {
-    cublasHandle_t* cublas_handle;
-//    cublasXtHandle_t* cublasXt_handle;
-    cusparseHandle_t* cusparse_handle;
-    cusolverDnHandle_t* cusolverDn_handle; 
-    curandGenerator_t* curand_generator;
-    bool operator==(gpu_handles const& other) const {
-      return (cublas_handle==other.cublas_handle &&
-//              cublasXt_handle==other.cublasXt_handle &&
-              cusparse_handle==other.cusparse_handle &&  
-              cusolverDn_handle==other.cusolverDn_handle &&
-              curand_generator==other.curand_generator);
-    }
-    bool operator!=(gpu_handles const& other) const { return not (*this == other); }
-  };
 }
 
 #endif
