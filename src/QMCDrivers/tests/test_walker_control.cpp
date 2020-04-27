@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //
@@ -63,13 +63,11 @@ TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
 
     for (int i = 0; i < plus.size(); i++)
     {
-      if (me == plus[i])
-        NewNum[plus[i]]--;
+      NewNum[plus[i]]--;
     }
     for (int i = 0; i < minus.size(); i++)
     {
-      if (me == minus[i])
-        NewNum[minus[i]]++;
+      NewNum[minus[i]]++;
     }
   }
   //output_vector("New num per node: ", NewNum);
@@ -133,13 +131,11 @@ TEST_CASE("Walker control assign walkers odd ranks", "[drivers][walker_control]"
 
     for (int i = 0; i < plus.size(); i++)
     {
-      if (me == plus[i])
-        NewNum[plus[i]]--;
+      NewNum[plus[i]]--;
     }
     for (int i = 0; i < minus.size(); i++)
     {
-      if (me == minus[i])
-        NewNum[minus[i]]++;
+      NewNum[minus[i]]++;
     }
   }
   //output_vector("New num per node: ", NewNum);
