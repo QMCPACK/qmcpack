@@ -20,6 +20,10 @@
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "Platforms/OpenMP/ompBLAS.hpp"
 
+
+PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<float>: omp_out += omp_in)")
+PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<double>: omp_out += omp_in)")
+
 namespace qmcplusplus
 {
 /** implements dirac matrix update using OpenMP

@@ -16,9 +16,6 @@
 #include "Numerics/MatrixOperators.h"
 #include "simd/simd.hpp"
 
-PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<float>: omp_out += omp_in)")
-PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<double>: omp_out += omp_in)")
-
 namespace qmcplusplus
 {
 /** constructor
