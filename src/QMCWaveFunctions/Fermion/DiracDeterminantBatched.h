@@ -169,10 +169,6 @@ public:
   OffloadPinnedValueMatrix_t psiMinv;
   /// device pointer of psiMinv data
   ValueType* psiMinv_dev_ptr;
-  /// multi-walker pointers of psiMinv data
-  std::vector<ValueType*> dev_ptr_list;
-  /// multi-walker pointers of invRow data
-  Vector<ValueType*, OffloadPinnedAllocator<ValueType*>> invRow_dev_ptr_list;
 
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
   OffloadVGLVector_t psiM_vgl;
