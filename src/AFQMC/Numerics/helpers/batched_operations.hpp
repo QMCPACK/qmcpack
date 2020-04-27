@@ -394,7 +394,7 @@ void Tanb_to_Kl(int nwalk, int nocc, int nchol, int nchol_tot,
 
 template<typename T, typename Q, typename R>
 void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
-                    cuda_gpu_ptr<R> alpha, cuda_gpu_ptr<Q> Tab,tched_diagonal_sum
+                    cuda_gpu_ptr<R> alpha, cuda_gpu_ptr<Q> Tab,
                     T* y , int incy)
 {
   kernels::batched_dot_wabn_wban(nbatch,nwalk,nocc,nchol,to_address(alpha),to_address(Tab),
@@ -449,10 +449,10 @@ void batched_dot( char TA, char TB, int N, int M, T alpha,
     APP_ABORT(" Error: batched_dot not yet available in gpu.\n");
 }
 
-template<typename I, typename T, typename Q>
+template<typename I, typename T, typename Q, typename T1>
 void batched_ab_ba( cuda_gpu_ptr<I> n, cuda_gpu_ptr<Q>* A, int lda,
                            cuda_gpu_ptr<Q>* B, int ldb,
-                           cuda_gpu_ptr<T>* y, int batchSize )
+                           T1 alpha, cuda_gpu_ptr<T>* y, int batchSize )
 {
 //  kernels::batched_dot(TA,TB,N,M,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(y),incy);
     APP_ABORT(" Error: batched_dot not yet available in gpu.\n");

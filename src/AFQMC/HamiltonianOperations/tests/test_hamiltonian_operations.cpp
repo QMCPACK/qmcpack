@@ -112,13 +112,19 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     }
     dump.push("Wavefunction", false);
     dump.push("NOMSD", false);
-    dump.push(std::string("PsiT_0"));
     //int walker_type = readWfn(std::string(UTEST_WFN),OrbMat,NMO,NAEA,NAEB);
-    int walker_type = 1;
-    int NEL = (walker_type==0)?NAEA:(NAEA+NAEB);
-    WALKER_TYPES WTYPE = CLOSED;
-    if(walker_type==1) WTYPE = COLLINEAR;
-    if(walker_type==2) WTYPE = NONCOLLINEAR;
+    std::vector<int> dims(5);
+    if(!dump.readEntry(dims,"dims")) {
+      app_error()<<" Error in getCommonInput(): Problems reading dims. \n";
+      APP_ABORT("");
+    }
+    WALKER_TYPES WTYPE(initWALKER_TYPES(dims[3]));
+//    int walker_type = dims[3];
+    dump.push(std::string("PsiT_0"));
+    int NEL = (WTYPE==CLOSED)?NAEA:(NAEA+NAEB);
+//    WALKER_TYPES WTYPE = CLOSED;
+//    if(walker_type==1) WTYPE = COLLINEAR;
+//    if(walker_type==2) WTYPE = NONCOLLINEAR;
 
     auto TG = TaskGroup_(gTG,std::string("DummyTG"),1,gTG.getTotalCores());
     Alloc alloc_(make_localTG_allocator<ComplexType>(TG));
@@ -127,7 +133,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
     PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix,shared_allocator<ComplexType> >(dump,gTG.Node()));
     //PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
                                         //OrbMat[0],1e-8,'H',gTG.Node()));
-    if(walker_type>0) {
+    if(WTYPE!=CLOSED) {
       dump.pop();
       dump.push(std::string("PsiT_1"));
       PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix,shared_allocator<ComplexType> >(dump,gTG.Node()));
@@ -146,7 +152,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
                 OrbMat[0][i][j] = Psi0A[i][j];
             }
         }
-        if(walker_type>0) {
+        if(WTYPE!=CLOSED) {
             boost::multi::array<ComplexType,2> Psi0B({NMO,NAEA});
             dump.readEntry(Psi0B, "Psi0_beta");
             for(int i = 0; i < NMO; i++) {
@@ -184,6 +190,8 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
 
     boost::multi::array<ComplexType,2,Alloc> Eloc({1,3},alloc_);
     boost::multi::array_ref<ComplexType,2,pointer> Gw(make_device_ptr(G.origin()),{1,NEL*NMO});
+    // This assumes {nwalk,...} which is not correct for some HamOps
+    // make this generic
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
     Eloc[0][0] = ( TG.Node() += ComplexType(Eloc[0][0]) );
     Eloc[0][1] = ( TG.Node() += ComplexType(Eloc[0][1]) );

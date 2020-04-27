@@ -85,6 +85,7 @@ class Real3IndexFactorization_batched_v2
 
     template<class shmCMatrix_, class shmSpRMatrix_, class shmSpC3Tensor_>
     Real3IndexFactorization_batched_v2(WALKER_TYPES type,
+                 TaskGroup_& TG,
                  mpi3RMatrix&& hij_,
                  shmCMatrix_&& haj_,
                  shmSpRMatrix_&& vik,
@@ -104,7 +105,7 @@ class Real3IndexFactorization_batched_v2
         local_nCV(0),
         E0(e0_),
         hij(std::move(hij_)),
-        hij_dev(hij.extensions(),allocator_),
+        hij_dev(hij.extensions(),make_node_allocator<ComplexType>(TG)),
         haj(std::move(haj_)),
         Likn(std::move(vik)),
         Lnak(std::move(move_vector<shmSpC3Tensor>(std::move(vnak)))),
@@ -814,9 +815,9 @@ class Real3IndexFactorization_batched_v2
         Carr.clear();
         for(int ispin=0, is0=0; ispin<nspin; ispin++, is0+=NMO*NMO) {
           for(int w=0; w<nwalk; w++) {
-            Aarr.push_back(hij_dev.origin());
-            Barr.push_back(G[w].origin()+is0);
-            Carr.push_back(Fm[w].origin()+is0);
+            Aarr.push_back(make_device_ptr(hij_dev.origin()));
+            Barr.push_back(make_device_ptr(G[w].origin())+is0);
+            Carr.push_back(make_device_ptr(Fm[w].origin())+is0);
           }
         }
         using ma::gemmBatched;
@@ -834,9 +835,9 @@ class Real3IndexFactorization_batched_v2
         C4Tensor_ref Fp4D(make_device_ptr(Fp.origin()),{nwalk,nspin,NMO,NMO});
         for(int ispin=0, is0=0; ispin<nspin; ispin++, is0+=NMO*NMO) {
           for(int w=0; w<nwalk; w++) {
-            Aarr.push_back(hij_dev.origin());
-            Barr.push_back(G[w].origin()+is0);
-            Carr.push_back(Fp[w].origin()+is0);
+            Aarr.push_back(make_device_ptr(hij_dev.origin()));
+            Barr.push_back(make_device_ptr(G[w].origin())+is0);
+            Carr.push_back(make_device_ptr(Fp[w].origin())+is0);
 
             // add diagonal contribution to Fp
             ma::add(ComplexType(1.0),Fp4D[w][ispin],

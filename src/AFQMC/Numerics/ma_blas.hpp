@@ -100,7 +100,7 @@ MultiArrayND scal(T a, MultiArrayND&& x){
         scal(x.num_elements(), a, pointer_dispatch(x.origin()), 1);
         return std::forward<MultiArrayND>(x);
 }
-
+/*
 template<class T,
         class MultiArray3D,
         typename = typename std::enable_if<std::decay<MultiArray3D>::type::dimensionality == 3>::type,
@@ -114,7 +114,7 @@ MultiArray3D scal(T a, MultiArray3D&& x){
         scal(x.num_elements(), a, pointer_dispatch(x.origin()), 1);
         return std::forward<MultiArray3D>(x);
 }
-
+*/
 template<class T, class MultiArray1D>
 auto operator*=(MultiArray1D&& x, T a) -> decltype(scal(a, std::forward<MultiArray1D>(x))){
 	return scal(a, std::forward<MultiArray1D>(x));

@@ -55,6 +55,7 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
                           Wavefunction& wfn_, stdCMatrix&& h1_, CVector&& vmf_, 
                           RandomGenerator_t* r): 
             base(info,cur,tg_,wfn_,std::move(h1_),std::move(vmf_),r),
+            bpX(iextensions<1u>{1},shared_allocator<ComplexType>{TG.TG_local()}),
             req_Gsend(MPI_REQUEST_NULL),
             req_Grecv(MPI_REQUEST_NULL),
             req_vsend(MPI_REQUEST_NULL),
@@ -64,8 +65,7 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
             req_X2send(MPI_REQUEST_NULL),
             req_X2recv(MPI_REQUEST_NULL),
             req_bpvsend(MPI_REQUEST_NULL),
-            req_bpvrecv(MPI_REQUEST_NULL),
-            bpX(iextensions<1u>{1},shared_allocator<ComplexType>{TG.TG_local()})
+            req_bpvrecv(MPI_REQUEST_NULL)
     {
       assert(TG.getNGroupsPerTG() > 1);
 
