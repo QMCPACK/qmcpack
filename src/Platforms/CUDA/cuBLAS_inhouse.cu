@@ -90,8 +90,8 @@ cuBLAS_inhouse_status gemv_batched_impl(cuBLAS_inhouse_handle& handle,
     if (incx != 1 || incy != 1)
       throw std::runtime_error("incx !=1 or incy != 1 are not implemented in cuBLAS_inhouse::gemv_batched_impl!");
 
-    const int ROWBS          = 32;
-    const int COLBS          = 32;
+    const int ROWBS          = 16;
+    const int COLBS          = 64;
     const int num_row_blocks = (m + ROWBS - 1) / ROWBS;
     dim3 dimBlock(COLBS);
     dim3 dimGrid(batch_count, num_row_blocks);
@@ -176,8 +176,8 @@ cuBLAS_inhouse_status gemv_batched(cuBLAS_inhouse_handle& handle,
 
 
 template<typename T, int ROWBS, int COLBS>
-__global__ void ger_batched_kernel(const int m, // number of columns in row major
-                                   const int n, // number of rows in row major
+__global__ void ger_batched_kernel(const int m, // number of columns in row major A
+                                   const int n, // number of rows in row major A
                                    const T* __restrict__ alpha,
                                    const T* const x[],
                                    const T* const y[],
@@ -193,7 +193,7 @@ __global__ void ger_batched_kernel(const int m, // number of columns in row majo
   const int row_end   = (row_begin + ROWBS) < n ? (row_begin + ROWBS) : n;
   const int col_id = blockIdx.z * COLBS + threadIdx.x;
 
-  for (int row_id = 0; row_id < row_end; row_id++)
+  for (int row_id = row_begin; row_id < row_end; row_id++)
     if (col_id < m)
       A_iw[row_id * lda + col_id] += alpha[iw] * x_iw[col_id] * y_iw[row_id];
 }
@@ -217,8 +217,8 @@ cuBLAS_inhouse_status ger_batched_impl(cuBLAS_inhouse_handle& handle,
   if (incx != 1 || incy != 1)
     throw std::runtime_error("incx !=1 or incy != 1 are not implemented in cuBLAS_inhouse::ger_batched_impl!");
 
-  const int ROWBS          = 32;
-  const int COLBS          = 32;
+  const int ROWBS          = 16;
+  const int COLBS          = 64;
   const int num_row_blocks = (n + ROWBS - 1) / ROWBS;
   const int num_col_blocks = (m + COLBS - 1) / COLBS;
   dim3 dimBlock(COLBS);
