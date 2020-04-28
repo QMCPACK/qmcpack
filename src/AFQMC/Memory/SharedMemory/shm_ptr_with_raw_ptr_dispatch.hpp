@@ -71,6 +71,7 @@ struct shm_ptr_with_raw_ptr_dispatch{
         using pointer = T*; // TODO self?
         using reference = T&; //TODO fancy_reference?
         using iterator_category = std::random_access_iterator_tag;
+        using rebind_const = shm_ptr_with_raw_ptr_dispatch<const T>;
         std::shared_ptr<mpi3::shared_window<value_type>> wSP_;
         std::ptrdiff_t offset = 0;
         shm_ptr_with_raw_ptr_dispatch(){}

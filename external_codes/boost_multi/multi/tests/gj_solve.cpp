@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS
-c++ -Ofast -std=c++14 -Wall -Wextra -Wpedantic $0 -o $0.x `#-lboost_timer` && $0.x $@ && rm -f $0.x;exit
+$CXX $0 -o $0x -lboost_timer&&$0x&&rm $0x;exit
 #endif
 
 #include "../../multi/array.hpp"
@@ -42,7 +42,7 @@ auto gj_solve2(Matrix&& A, Vector&& y)->decltype(y[0]/=A[0][0], y){
 		auto const& yr = (y[r] /= Arr);
 		for(idx r2 = r + 1; r2 != Asize; ++r2){
 			auto&& Ar2 = A[r2]; auto const& Ar2r = A[r2][r];
-			std::transform(Ar2.begin() + r + 1, Ar2.end(), Ar.begin() + r + 1, Ar2.begin() + r + 1, [&](auto&& a, auto&& b){return a - Ar2r*b;});
+			std::transform(std::move(Ar2).begin() + r + 1, std::move(Ar2).end(), std::move(Ar).begin() + r + 1, std::move(Ar2).begin() + r + 1, [&](auto&& a, auto&& b){return a - Ar2r*b;});
 			y[r2] -= Ar2r*yr;
 		}
 	}
@@ -53,7 +53,7 @@ auto gj_solve2(Matrix&& A, Vector&& y)->decltype(y[0]/=A[0][0], y){
 	return y;
 }
 
-//#include <boost/timer/timer.hpp>
+#include <boost/timer/timer.hpp>
 
 int main(){
 	{
@@ -67,7 +67,7 @@ int main(){
 		std::transform(A.data(), A.data() + A.num_elements(), A.data(), [](auto x){return x/=2.e6;});
 		std::vector<double> y(3000); std::iota(y.begin(), y.end(), 0.2);
 		{
-		//	boost::timer::auto_cpu_timer t;
+			boost::timer::auto_cpu_timer t;
 			gj_solve(A({1000, 4000}, {0, 3000}), y);
 		}
 		cout << y[45] << std::endl;
@@ -77,7 +77,7 @@ int main(){
 		std::transform(A.data(), A.data() + A.num_elements(), A.data(), [](auto x){return x/=2.e6;});
 		std::vector<double> y(3000); std::iota(y.begin(), y.end(), 0.2);
 		{
-		//	boost::timer::auto_cpu_timer t;
+			boost::timer::auto_cpu_timer t;
 			gj_solve2(A({1000, 4000}, {0, 3000}), y);
 		}
 		cout << y[45] << std::endl;

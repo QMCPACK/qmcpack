@@ -1,37 +1,61 @@
-#ifdef COMPILATION_INSTRUCTIONS
-$CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic $0 -o $0.x && $0.x $@ && rm -f $0.x; exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
+// © Alfredo A. Correa 2019-2020
+
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi array pointer"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
 
 #include "../array.hpp"
-#include<cassert>
 
 namespace multi = boost::multi;
 
-int main(){
-	multi::array<double, 3> A
-		#if __INTEL_COMPILER
-		= (double[3][2][2])
-		#endif
-		{
-			{{ 1.2,  1.1}, { 2.4, 1.}},
-			{{11.2,  3.0}, {34.4, 4.}},
-			{{ 1.2,  1.1}, { 2.4, 1.}}
-		};	
-	auto p = &A[1];
-	auto p2 = p + 1;
-	assert( &(*p )[0][0] == &A[1][0][0] );
-	assert( &(*p2)[0][0] == &A[2][0][0] ); // this is true only because A is contiguous
-	p2 = p;
-	assert( p2 == p );
-	auto p3 = &A[2][1];
-	assert( &(*p3)[1] == &A[2][1][1] );
-	assert( &p3->operator[](1) == &A[2][1][1] );
-	{
-		multi::array_ptr<double, 3> Bptr(A.data(), {3, 2, 2});
-	//	auto const& Aref = *multi::array_ptr<double, 3>(A.data(), {3, 2, 2});
-//		auto const& Aref = *multi::array_ptr(A.data(), {3, 2, 2});
-//		assert( &A[2][1][1] == &Aref[2][1][1] );
-	}
+BOOST_AUTO_TEST_CASE(multi_array_ptr){
 
+	{
+		double a[4][5] = {
+			{ 0,  1,  2,  3,  4}, 
+			{ 5,  6,  7,  8,  9}, 
+			{10, 11, 12, 13, 14}, 
+			{15, 16, 17, 18, 19}
+		};
+		double b[4][5];
+
+		multi::array_ptr<double, 2> aP = &a; // = multi::addressof(a);
+		BOOST_REQUIRE( aP->extensions() == multi::extensions(a) );
+		BOOST_REQUIRE( extensions(*aP) == multi::extensions(a) );
+		using multi::extensions;
+		BOOST_REQUIRE( extensions(*aP) == extensions(a) );
+		BOOST_REQUIRE( &aP->operator[](1)[1] == &a[1][1] );
+
+		multi::array_ptr<double, 2> aP2 = &a;
+		BOOST_REQUIRE( aP == aP2 );
+
+		multi::array_ptr<double, 2> bP = &b;
+		BOOST_REQUIRE( bP != aP );
+
+		bP = aP;
+		BOOST_REQUIRE( aP == bP );
+		BOOST_REQUIRE( *aP == *bP );
+		BOOST_REQUIRE( aP->operator==(*bP) );
+
+		auto&& aR = *aP;
+		BOOST_REQUIRE( &aR[1][1] == &a[1][1] );
+		BOOST_REQUIRE( aR == *aP );
+		BOOST_REQUIRE( aR.equal(aP->begin()) );
+		BOOST_REQUIRE( size(aR) == aP->size() );
+	}
+	{
+		std::vector<double> v1(100, 3.);
+		std::vector<double> const v2(100, 4.);
+		multi::array_ptr<double, 2> v1P2D(v1.data(), {10, 10});
+		multi::array_cptr<double, 2> v2P2D(v2.data(), {10, 10});
+
+		*v1P2D = *v2P2D;
+		v1P2D->operator=(*v2P2D);
+
+		BOOST_REQUIRE( v1[8] == 4. );
+	}
 }
 

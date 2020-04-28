@@ -447,6 +447,7 @@ template<class MultiArray2D> transpose_tag<MultiArray2D> transposed(MultiArray2D
 	return {std::forward<MultiArray2D>(arg)};
 }
 
+// return a pointer instead of a copy, that way you don't care if it is copyable or not
 template<class MultiArray2D>
 MultiArray2D arg(transpose_tag<MultiArray2D> const& tt){return tt.arg1;}
 

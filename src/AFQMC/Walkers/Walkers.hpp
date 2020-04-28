@@ -48,6 +48,7 @@ namespace afqmc
       
       ~walker() {}
 
+      // might need implementations for these, since array_refs have protected copy/move constr  
       walker(walker&& other) = default;  
       walker(walker const& other) = default;  
       walker& operator=(walker&& other) = delete;  
@@ -126,10 +127,18 @@ namespace afqmc
     using difference_type = std::ptrdiff_t;
     using reference = walker<Ptr>;
 
+    walker_iterator(walker_iterator const& it):
+        pos(it.pos),W(it.W.origin(),it.W.extensions()),indx(it.indx),desc(it.desc)
+    {}
+
+    walker_iterator(walker_iterator && it):
+        pos(it.pos),W(it.W.origin(),it.W.extensions()),indx(it.indx),desc(it.desc)
+    {}
+
     private:
 
     int pos;
-    Wlk_Buff W;
+    mutable Wlk_Buff W;
     wlk_indices const* indx;
     wlk_descriptor const* desc; 
 
@@ -138,7 +147,7 @@ namespace afqmc
     void increment(){++pos;}
     void decrement(){--pos;}
     bool equal(walker_iterator const& other) const{ return pos == other.pos; }
-    reference dereference() const { return reference(W[pos],*indx,*desc);}
+    reference dereference() const { return reference(W[pos],*indx,*desc); }
     void advance(difference_type n){pos += n;}
     difference_type distance_to(walker_iterator other) const{ return other.pos - pos; }
   };
