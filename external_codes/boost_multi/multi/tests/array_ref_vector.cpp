@@ -15,14 +15,14 @@ $CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 using std::cout; using std::cerr;
 namespace multi = boost::multi;
 
-BOOST_AUTO_TEST_CASE(array_ref_vector){
-	std::vector<double> buffer(100);
-	multi::array_ref<double, 2, std::vector<double>::iterator> A(buffer.begin(), {10, 10});
-	A[1][1] = 9;
-	BOOST_REQUIRE( A[1][1] == 9 );
-	BOOST_REQUIRE( buffer[11]==9 );
+BOOST_AUTO_TEST_CASE(array_ref_vector){ // TODO deside what to do with generalized pointers
+//	std::vector<double> buffer(100);
+//	multi::array_ref<double, 2, std::vector<double>::iterator> A(buffer.begin(), {10, 10});
+//	A[1][1] = 9;
+//	BOOST_REQUIRE( A[1][1] == 9 );
+//	BOOST_REQUIRE( buffer[11]==9 );
 
-	A[2]; // requires operator+ 
-	A[1][1]; // requires operator*
+//	A[2]; // requires operator+ 
+//	A[1][1]; // requires operator*
 }
 

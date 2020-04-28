@@ -728,6 +728,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 template<class WlkSet, class CTens, class CMat>
 void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR)
 {
+
   using std::copy_n;
   const ComplexType one(1.),zero(0.);
   auto walker_type = wset.getWalkerType();
@@ -925,7 +926,6 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
     TG.local_barrier();
 //std::cout<<" vrecv: " <<TG.Global().rank() <<" " <<ma::dot(vrecv[0],vrecv[0]) <<"\n\n" <<std::endl;
 
-/**/
     for(int nr=0; nr<nrefs; ++nr) {
 
       // 3. copy reference to SlaterMatrix
@@ -978,6 +978,7 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
            wset[i].SlaterMatrix(Alpha).origin()+r0);
   }
   TG.TG_local().barrier();
+
 }
 
 

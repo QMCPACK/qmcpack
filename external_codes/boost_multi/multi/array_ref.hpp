@@ -17,7 +17,7 @@ $CXX $0 -o $0x&&$0x&&rm $0x;exit
 #include "./detail/types.hpp"     // dimensionality_type
 #include "./detail/operators.hpp" // random_iterable
 #include "./detail/memory.hpp"    // pointer_traits
-#include "./utility/const_iterator.hpp"
+//#include "./utility/const_iterator.hpp"
 
 #include "./config/NODISCARD.hpp"
 
@@ -25,6 +25,7 @@ $CXX $0 -o $0x&&$0x&&rm $0x;exit
 #include<boost/pointer_cast.hpp>
 
 #include<algorithm> // copy_n
+#include<cstring> // for memset in reinterpret_cast
 
 #if defined(__CUDACC__)
 #define HD __host__ __device__
@@ -349,7 +350,11 @@ struct basic_array :
 	friend struct basic_array<typename types::element, typename Layout::rank{} + 1, typename types::element_ptr&>;
 	using types::layout;
 	constexpr auto layout() const /*HD*/{return array_types<T, D, ElementPtr, Layout>::layout();}
-	using basic_const_array = basic_array<T, D, typename std::pointer_traits<ElementPtr>::template rebind<T const>, Layout>;
+	using basic_const_array = basic_array<T, D, 
+		typename std::pointer_traits<ElementPtr>::template rebind<typename basic_array::element_type const>,
+	//	typename multi::iterator_traits<ElementPtr>::rebind_const, 
+		Layout
+	>;
 protected:
 	using types::types;
 	template<typename, dimensionality_type, class Alloc> friend struct static_array;
@@ -360,7 +365,6 @@ protected: basic_array(basic_array&&) = default; // if you need to generate a co
 public   : basic_array(basic_array&&) = default; // in C++ < 17 this is necessary to return references from functions
 #endif
 public:
-//MAM
 	basic_array(basic_array const&) = default;
 	friend constexpr auto dimensionality(basic_array const& self){return self.dimensionality;}
 	using typename types::reference;
@@ -764,10 +768,11 @@ public:
 		std::move(*this).assign(std::move(o).begin(), std::move(o).end() );
 		return std::move(*this);
 	}
-	template<class Array> void swap(Array&& o)&&{
-		assert( std::move(*this).extension() == std::forward<Array>(o).extension() );
-		adl::swap_ranges(this->begin(), this->end(), adl_begin(std::forward<Array>(o)));
+	template<class Array> void swap(Array&& o) &&{assert( std::move(*this).extension() == std::forward<Array>(o).extension() );
+		adl_swap_ranges(this->begin(), this->end(), adl_begin(std::forward<Array>(o)));
 	}
+	template<class A> void swap(A&& o) &{return swap(std::forward<A>(o));}
+
 	friend void swap(basic_array&& a, basic_array&& b){std::move(a).swap(std::move(b));}
 	template<class Array> void swap(basic_array const& s, Array&& a){s.swap(a);}
 	template<class Array> void swap(Array&& a, basic_array const& s){s.swap(a);}
@@ -788,7 +793,7 @@ private:
 	friend bool lexicographical_compare(basic_array&& a1, basic_array&& a2){
 		if(a1.extension().first() > a2.extension().first()) return true;
 		if(a1.extension().first() < a2.extension().first()) return false;
-		return adl::lexicographical_compare(
+		return adl_lexicographical_compare(
 			std::move(a1).begin(), std::move(a1).end(), 
 			std::move(a2).begin(), std::move(a2).end()
 		);
@@ -833,10 +838,10 @@ public:
 	basic_array<std::decay_t<T2>, D, P2> const_array_cast()&&{
 		return {this->layout(), const_cast<P2>(this->base())};
 	}
-	template<class T2, class P2 = T2*>
-	basic_array<std::decay_t<T2>, D, P2> move_array_cast()&&{
-		return {this->layout(), multi::make_const_iterator(this->base())};
-	}
+//	template<class T2, class P2 = T2*> // TODO implement move pointer
+//	basic_array<std::decay_t<T2>, D, P2> move_array_cast()&&{
+//		return {this->layout(), multi::make_const_iterator(this->base())};
+//	}
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -970,7 +975,12 @@ struct basic_array<T, dimensionality_type{1}, ElementPtr, Layout> :
 	using decay_type = array<typename types::element, dimensionality_type{1}, decltype(default_allocator_of(std::declval<ElementPtr>()))>;
 	       decay_type decay(          )&&      {return decay_type{std::move(*this)};}
 	friend decay_type decay(basic_array&& self){return std::move(self).decay();}
-	using basic_const_array = basic_array<T, 1, typename std::pointer_traits<ElementPtr>::template rebind<T const>, Layout>;
+	using basic_const_array = basic_array<
+		T, 1, 
+		typename std::pointer_traits<ElementPtr>::template rebind<typename basic_array::element_type const>,
+	//	typename multi::iterator_traits<ElementPtr>::rebind_const, 
+		Layout
+	>;
 protected:
 	template<class A>
 	void intersection_assign_(A&& other)&{
@@ -1173,8 +1183,9 @@ public:
 //	}
 	bool operator<(basic_array const& o) const&{return lexicographical_compare(*this, o);}//operator< <basic_array const&>(o);}
 	template<class Array> void swap(Array&& o)&&{{using multi::extension; assert(this->extension() == extension(o));}
-		adl::swap_ranges(this->begin(), this->end(), adl_begin(std::forward<Array>(o)));
+		adl_swap_ranges(this->begin(), this->end(), adl_begin(std::forward<Array>(o)));
 	}
+	template<class A> void swap(A&& o)&{return swap(std::forward<A>(o));}
 	friend void swap(basic_array&& a, basic_array&& b){std::move(a).swap(std::move(b));}
 	template<class A, typename = std::enable_if_t<not std::is_base_of<basic_array, std::decay_t<A>>{}> > friend void swap(basic_array&& s, A&& a){s.swap(a);}
 	template<class A, typename = std::enable_if_t<not std::is_base_of<basic_array, std::decay_t<A>>{}> > friend void swap(A&& a, basic_array&& s){s.swap(a);}
@@ -1184,7 +1195,7 @@ private:
 		using multi::extension;
 		if(extension(a1).first() > extension(a2).first()) return true;
 		if(extension(a1).first() < extension(a2).first()) return false;
-		return adl::lexicographical_compare(adl_begin(a1), adl_end(a1), adl_begin(a2), adl_end(a2));
+		return adl_lexicographical_compare(adl_begin(a1), adl_end(a1), adl_begin(a2), adl_end(a2));
 	}
 public:
 	template<class O>
@@ -1213,11 +1224,10 @@ public:
 	basic_array<T2, 1, P2> reinterpret_array_cast() const{
 		static_assert( sizeof(T)%sizeof(T2)== 0, "error: reinterpret_array_cast is limited to integral stride values, therefore the element target size must be multiple of the source element size. Use custom pointers to allow reintrepreation of array elements in other cases" );
 //			this->layout().scale(sizeof(T)/sizeof(T2));
+		static_assert( sizeof(P2) == sizeof(typename basic_array::element_ptr), "reinterpret on equal size?");
 		auto const thisbase = this->base();
-		return {
-			this->layout().scale(sizeof(T)/sizeof(T2)), 
-			reinterpret_cast<P2 const&>(thisbase) // 
-		};
+		P2 new_base; std::memcpy(&new_base, &thisbase, sizeof(P2)); //reinterpret_cast<P2 const&>(thisbase) // TODO find a better way, fancy pointers wouldn't need reinterpret_cast
+		return {this->layout().scale(sizeof(T)/sizeof(T2)), new_base};
 	}
 };
 
@@ -1261,7 +1271,7 @@ protected:
 	constexpr array_ref() noexcept
 		: basic_array<T, D, ElementPtr>{typename array_ref::types::layout_t{}, nullptr}{}
 public:
-//	[[deprecated("references are not copyable, use &&")]]
+	[[deprecated("references are not copyable, use &&")]]
 	array_ref(array_ref const&) = default; // don't try to use `auto` for references, use `auto&&` or explicit value type
 	constexpr array_ref(typename array_ref::element_ptr p, typename array_ref::extensions_type e = {}) noexcept
 		: basic_array<T, D, ElementPtr>{typename array_ref::types::layout_t{e}, p}{}

@@ -443,13 +443,13 @@ struct transpose_tag{
 
 template<class MultiArray2D> struct op_tag<transpose_tag<MultiArray2D>> : std::integral_constant<char, 'T'>{};
 
-template<class MultiArray2D> transpose_tag<MultiArray2D> transposed(MultiArray2D&& arg){
+template<class MultiArray2D> transpose_tag<MultiArray2D> transposed_matrix(MultiArray2D&& arg){
 	return {std::forward<MultiArray2D>(arg)};
 }
 
 // return a pointer instead of a copy, that way you don't care if it is copyable or not
 template<class MultiArray2D>
-MultiArray2D arg(transpose_tag<MultiArray2D> const& tt){return tt.arg1;}
+MultiArray2D const& arg(transpose_tag<MultiArray2D> const& tt){return tt.arg1;}
 
 template<class MultiArray2D>
 struct hermitian_tag{
@@ -466,17 +466,17 @@ template<class MultiArray2D> hermitian_tag<MultiArray2D> hermitian(MultiArray2D&
 }
 
 template<class MultiArray2D>
-MultiArray2D arg(hermitian_tag<MultiArray2D> const& nt){return nt.arg1;}
+MultiArray2D const& arg(hermitian_tag<MultiArray2D> const& nt){return nt.arg1;}
 
 template<class MultiArray2D> struct op_tag<hermitian_tag<MultiArray2D>> : std::integral_constant<char, 'C'>{};
 
-template<class MultiArray2D>
-MultiArray2D arg(hermitian_tag<MultiArray2D>& ht){return ht.arg1;}
+//template<class MultiArray2D>
+//MultiArray2D const& arg(hermitian_tag<MultiArray2D>& ht){return ht.arg1;}
 
 
 template<class MA2D> auto T(MA2D&& arg)
-->decltype(transposed(std::forward<MA2D>(arg))){
-	return transposed(std::forward<MA2D>(arg));
+->decltype(transposed_matrix(std::forward<MA2D>(arg))){
+	return transposed_matrix(std::forward<MA2D>(arg));
 }
 template<class MA2D> auto H(MA2D&& arg)
 ->decltype(hermitian(std::forward<MA2D>(arg))){
@@ -488,8 +488,8 @@ template<class MA2D> auto N(MA2D&& arg)
 }
 
 template<class MA2D> auto trans(MA2D&& arg)
-->decltype(transposed(std::forward<MA2D>(arg))){
-	return transposed(std::forward<MA2D>(arg));
+->decltype(transposed_matrix(std::forward<MA2D>(arg))){
+	return transposed_matrix(std::forward<MA2D>(arg));
 }
 template<class MA2D> auto herm(MA2D&& arg)
 ->decltype(hermitian(std::forward<MA2D>(arg))){

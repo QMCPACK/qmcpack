@@ -3,7 +3,7 @@ $CXX $0 -o $0x -ltbb&&$0x&&rm $0x;exit
 #endif
 //  © Alfredo A. Correa 2018-2020
 
-#include "../../multi/array.hpp"
+#include "../tests/../array.hpp"
 
 #include<numeric>
 #include<algorithm> // generate

@@ -242,6 +242,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 template<class WlkSet, class CTens, class CMat>
 void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR)
 {
+
   using std::copy_n;
   auto walker_type = wset.getWalkerType();
   int nwalk = wset.size();

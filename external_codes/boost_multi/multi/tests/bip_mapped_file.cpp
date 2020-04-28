@@ -38,7 +38,7 @@ static void mremove(std::experimental::filesystem::path f){std::experimental::fi
 //	return ret;
 //}
 
-#include "../../multi/array.hpp"
+#include "../tests/../array.hpp"
 
 namespace multi = boost::multi;
 
@@ -48,6 +48,7 @@ using marray = multi::array<T, D, mallocator<T>>;
 using std::tuple;
 
 int main(){
+
 std::experimental::filesystem::path file = "bip_mapped_file.bin";
 mremove(file);
 {

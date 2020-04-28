@@ -44,7 +44,7 @@ namespace adl{ \
 		template<class... As> auto operator()(As&&... as) const->decltype(_(priority<4>{}, std::forward<As>(as)...)){return _(priority<4>{}, std::forward<As>(as)...);} \
 	} FuN; \
 } \
-}} void* FuN##_dummy
+}}
 
 //BOOST_MULTI_DEFINE_ADL(copy_n);
 //BOOST_MULTI_DEFINE_ADL(fill_n);
@@ -313,7 +313,7 @@ auto alloc_uninitialized_fill_n(Alloc& a, ForwardIt first, Size n, T const& v)
 
 namespace boost{namespace multi{ \
 
-__attribute__((unused))
+//__attribute__((unused))
 static constexpr class adl_distance_t{
 	template<class... As>          auto _(priority<1>,        As&&... as) const DECLRETURN(     std::distance(std::forward<As>(as)...))
 	template<class... As>          auto _(priority<2>,        As&&... as) const DECLRETURN(          distance(std::forward<As>(as)...))
@@ -322,7 +322,7 @@ public:
 	template<class... As> auto operator()(As&&... as) const DECLRETURN(_(priority<4>{}, std::forward<As>(as)...))
 } adl_distance;
 
-__attribute__((unused))
+//__attribute__((unused))
 static constexpr class{
 	template<class... As>          auto _(priority<1>,        As&&... as) const DECLRETURN(              std::begin(std::forward<As>(as)...))
 	template<class... As>          auto _(priority<2>,        As&&... as) const DECLRETURN(                   begin(std::forward<As>(as)...))
@@ -331,7 +331,7 @@ public:
 	template<class... As> auto operator()(As&&... as) const DECLRETURN(_(priority<3>{}, std::forward<As>(as)...))
 } adl_begin;
 
-__attribute__((unused))
+//__attribute__((unused))
 static constexpr class{
 	template<class... As>          auto _(priority<1>,        As&&... as) const DECLRETURN(              std::end(std::forward<As>(as)...))
 	template<class... As>          auto _(priority<2>,        As&&... as) const DECLRETURN(                   end(std::forward<As>(as)...))
@@ -339,6 +339,22 @@ static constexpr class{
 public:
 	template<class... As> auto operator()(As&&... as) const DECLRETURN(_(priority<4>{}, std::forward<As>(as)...))
 } adl_end;
+
+static constexpr class{
+	template<class... As>          auto _(priority<1>,        As&&... as) const DECLRETURN(              std::swap_ranges(std::forward<As>(as)...))
+	template<class... As>          auto _(priority<2>,        As&&... as) const DECLRETURN(                   swap_ranges(std::forward<As>(as)...))
+	template<class T, class... As> auto _(priority<3>, T&& t, As&&... as) const DECLRETURN(std::forward<T>(t).swap_ranges(std::forward<As>(as)...))
+public:
+	template<class... As> auto operator()(As&&... as) const DECLRETURN(_(priority<4>{}, std::forward<As>(as)...))
+} adl_swap_ranges;
+
+static constexpr class{
+	template<class... As>          auto _(priority<1>,        As&&... as) const DECLRETURN(              std::lexicographical_compare(std::forward<As>(as)...))
+	template<class... As>          auto _(priority<2>,        As&&... as) const DECLRETURN(                   lexicographical_compare(std::forward<As>(as)...))
+	template<class T, class... As> auto _(priority<3>, T&& t, As&&... as) const DECLRETURN(std::forward<T>(t).lexicographical_compare(std::forward<As>(as)...))
+public:
+	template<class... As> auto operator()(As&&... as) const DECLRETURN(_(priority<4>{}, std::forward<As>(as)...))
+} adl_lexicographical_compare;
 
 }}
 
@@ -358,18 +374,14 @@ namespace adl{ \
 }}
 
 namespace boost{namespace multi{ \
-namespace adl{ \
-	namespace custom{template<class...> struct alloc_uninitialized_default_construct_n_t;} 	__attribute__((unused)) 
-	static constexpr class alloc_uninitialized_default_construct_n_t{ \
-/*		template<class... As> [[deprecated]] auto _(priority<0>,        As&&... as) const = delete;*/ \
-		template<class... As>          auto _(priority<1>,        As&&... as) const{return xtd::            alloc_uninitialized_default_construct_n              (std::forward<As>(as)...);} // TODO: use boost? 
+	__attribute__((unused)) 
+	static constexpr class adl_alloc_uninitialized_default_construct_n_t{
+		template<class... As>          auto _(priority<1>,        As&&... as) const{return xtd::                  alloc_uninitialized_default_construct_n              (std::forward<As>(as)...);} // TODO: use boost? 
 		template<class... As>          auto _(priority<2>,        As&&... as) const DECLRETURN(                   alloc_uninitialized_default_construct_n              (std::forward<As>(as)...))
 		template<class T, class... As> auto _(priority<3>, T&& t, As&&... as) const DECLRETURN(std::forward<T>(t).alloc_uninitialized_default_construct_n              (std::forward<As>(as)...))
-		template<class... As>          auto _(priority<4>,        As&&... as) const DECLRETURN(custom::           alloc_uninitialized_default_construct_n_t<As&&...>::_(std::forward<As>(as)...))
 	public:
 		template<class... As> auto operator()(As&&... as) const{return (_(priority<4>{}, std::forward<As>(as)...));}
-	} alloc_uninitialized_default_construct_n; \
-} \
+	} adl_alloc_uninitialized_default_construct_n; \
 }}
 
 namespace boost{namespace multi{ \
@@ -377,7 +389,7 @@ namespace adl{ \
 	namespace custom{template<class...> struct uninitialized_default_construct_n_t;} 	__attribute__((unused)) 
 	static constexpr class uninitialized_default_construct_n_t{ \
 		template<class... As>          auto _(priority<1>,        As&&... as) const{return            xtd::uninitialized_default_construct_n              (std::forward<As>(as)...);}
-		template<class... As>          auto _(priority<2>,        As&&... as) const DECLRETURN(                   uninitialized_default_construct_n              (std::forward<As>(as)...))
+//		template<class... As>          auto _(priority<2>,        As&&... as) const DECLRETURN(                   uninitialized_default_construct_n              (std::forward<As>(as)...))
 		template<class T, class... As> auto _(priority<3>, T&& t, As&&... as) const DECLRETURN(std::forward<T>(t).uninitialized_default_construct_n              (std::forward<As>(as)...))
 		template<class... As>          auto _(priority<4>,        As&&... as) const DECLRETURN(custom::           uninitialized_default_construct_n_t<As&&...>::_(std::forward<As>(as)...))
 	public:
@@ -414,7 +426,7 @@ namespace adl{ \
 		template<class... As> auto operator()(As&&... as) const DECLRETURN(_(priority<5>{}, std::forward<As>(as)...)) \
 	} alloc_uninitialized_copy; \
 } \
-}} void* alloc_uninitialized_copy_dummy;
+}}
 
 namespace boost{namespace multi{ \
 namespace adl{ \
@@ -428,7 +440,7 @@ namespace adl{ \
 		template<class... As> auto operator()(As&&... as) const{return _(priority<4>{}, std::forward<As>(as)...);} \
 	} alloc_uninitialized_copy_n; \
 } \
-}} void* alloc_uninitialized_copy_n_dummy;
+}}
 
 namespace boost{namespace multi{ \
 namespace adl{ \
@@ -444,7 +456,7 @@ namespace adl{ \
 		template<class T1, class... As> auto operator()(T1&& t1, As&&... as) const->decltype(_(priority<4>{}, std::forward<T1>(t1), std::forward<As>(as)...)){return _(priority<4>{}, t1, std::forward<As>(as)...);} \
 	} alloc_uninitialized_fill_n; \
 } \
-}} void* alloc_uninitialized_fill_n_dummy;
+}}
 
 namespace boost{
 namespace multi{
@@ -471,8 +483,8 @@ template<> struct recursive<1>{
 }}
 
 
-BOOST_MULTI_DEFINE_ADL(lexicographical_compare);
-BOOST_MULTI_DEFINE_ADL(swap_ranges);
+//BOOST_MULTI_DEFINE_ADL(lexicographical_compare);
+//BOOST_MULTI_DEFINE_ADL(swap_ranges);
 
 //BOOST_MULTI_DEFINE_ADL(begin);
 //BOOST_MULTI_DEFINE_ADL(end);
@@ -493,7 +505,7 @@ BOOST_AUTO_TEST_CASE(multi_detail_adl){
 	std::vector<double> v{1., 2., 3.};
 	std::vector<double> w(3);
 
-	multi::adl::copy_n(v.data(), 3, w.data());
+	multi::adl_copy_n(v.data(), 3, w.data());
 
 	BOOST_REQUIRE(
 		multi::adl_equal(v.data(), v.data()+v.size(), w.data())

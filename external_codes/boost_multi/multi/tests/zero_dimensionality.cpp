@@ -1,5 +1,5 @@
-#ifdef COMPILATION_INSTRUCTIONS//-*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
-$CXX -Wall -Wextra $0 -o $0x -lboost_unit_test_framework -lcudart&&$0x&&rm $0x;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
+$CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 // © Alfredo Correa 2019-2020
 #define BOOST_TEST_DYN_LINK 
@@ -9,7 +9,7 @@ $CXX -Wall -Wextra $0 -o $0x -lboost_unit_test_framework -lcudart&&$0x&&rm $0x;e
 #include<iostream>
 
 #include "../array.hpp"
-#include "../adaptors/cuda.hpp"
+//#include "../adaptors/cuda.hpp"
 
 #include<complex>
 
@@ -60,6 +60,7 @@ BOOST_AUTO_TEST_CASE(zero_dimensionality){
 		multi::array<std::complex<double>, 0> a = std::complex<double>{1., 2.};
 		assert( num_elements(a) == 1 );
 	}
+#if 0
 	{
 		multi::cuda::array<double, 0> a0; a0 = 45.;
 		multi::cuda::array<double, 0> b0; b0 = 45.;
@@ -70,5 +71,6 @@ BOOST_AUTO_TEST_CASE(zero_dimensionality){
 		multi::cuda::managed::array<double, 0> b0; b0 = 45.;
 		BOOST_REQUIRE( a0 == b0 );
 	}
+#endif
 }
 

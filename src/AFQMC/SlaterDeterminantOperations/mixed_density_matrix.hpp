@@ -674,10 +674,11 @@ Tp MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Tp LogOverlapF
       //ma::product(T1.sliced(N0,Nn),
       //            T(B),
       //            T2.sliced(N0,Nn)); 
+
       if(N0!=Nn)
-        ma::product(T(T1(T1.extension(0),{N0,Nn})),
+        ma::product(ComplexType(1.0),T(T1(T1.extension(0),{N0,Nn})),
                 T(B),
-                T2.sliced(N0,Nn)); 
+                ComplexType(0.0),T2.sliced(N0,Nn)); 
 
       comm.barrier();
     

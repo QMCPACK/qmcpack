@@ -52,9 +52,9 @@ BOOST_AUTO_TEST_CASE(array_ref_from_carray){
 
 template<class T> void what(T&&) = delete;
 
-BOOST_AUTO_TEST_CASE(array_from_iterator_range){
-	std::vector<double> v(20);
-	multi::array_ref<double, 2, std::vector<double>::iterator> R(begin(v), {4, 5});
+//BOOST_AUTO_TEST_CASE(array_from_iterator_range){
+//	std::vector<double> v(20);
+//	multi::array_ref<double, 2, std::vector<double>::iterator> R(begin(v), {4, 5});
 //	assert( P.base() == biit );
 //	auto at = [](auto&& pp, std::ptrdiff_t idx) -> multi::array_ref<double, 2, decltype(biit)>::reference{
 //		return {pp.layout().sub, pp.base() + pp.layout().operator()(idx)};
@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(array_from_iterator_range){
 //			std::cout << P[i][j] << ',';
 //		std::cout << std::endl;
 //	}
-}
+//}
 
 #if 0
 

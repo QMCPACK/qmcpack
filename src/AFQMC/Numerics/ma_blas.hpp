@@ -33,6 +33,7 @@ template<class MultiArray1DX,
          typename = typename std::enable_if_t<std::decay<MultiArray1DY>::type::dimensionality == 1>
         >
 MultiArray1DY copy(MultiArray1DX&& x, MultiArray1DY&& y){
+        assert( x.num_elements() == y.num_elements() );
         copy(x.size(), pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()), y.stride(0));
         return std::forward<MultiArray1DY>(y);
 }
@@ -44,10 +45,43 @@ template<class MultiArray2DX,
          typename = void
         >
 MultiArray2DY copy(MultiArray2DX&& x, MultiArray2DY&& y){
-        assert( x.stride(0) == x.size(1) ); // only on contiguous arrays 
-        assert( x.stride(1) == 1 );            // only on contiguous arrays 
-        copy(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
+        assert( x.stride(1) == 1 );
+        assert( y.stride(1) == 1 );
+        assert( x.size(0) == y.size(0) );
+        assert( x.size(1) == y.size(1) );
+        if( (x.stride(0) == x.size(1)) && (y.stride(0) == y.size(1)) ) {
+            copy(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
+        } else {
+            copy2D(x.size(0),x.size(1), pointer_dispatch(x.origin()), x.stride(0), 
+                                        pointer_dispatch(y.origin()), y.stride(0));
+        }
         return std::forward<MultiArray2DY>(y);
+}
+
+template<class MultiArrayNDX,
+         class MultiArrayNDY,
+         typename = typename std::enable_if_t<(std::decay<MultiArrayNDX>::type::dimensionality > 2)>,
+         typename = typename std::enable_if_t<(std::decay<MultiArrayNDY>::type::dimensionality > 2)>,
+         typename = void,
+         typename = void
+        >
+MultiArrayNDY copy(MultiArrayNDX&& x, MultiArrayNDY&& y){
+#ifdef NDEBUG
+        // only on contiguous arrays 
+        long sz(x.size(0));
+        for(int i=1; i<int(std::decay<MultiArrayND>::type::dimensionality); ++i)
+          sz *= x.size(i);
+        assert( x.num_elements() == sz );
+        assert( x.stride(std::decay<MultiArrayND>::type::dimensionality-1) == 1 );
+        sz=y.size(0); 
+        for(int i=1; i<int(std::decay<MultiArrayND>::type::dimensionality); ++i)
+          sz *= y.size(i);
+        assert( y.num_elements() == sz );
+        assert( y.stride(std::decay<MultiArrayND>::type::dimensionality-1) == 1 );
+        assert( x.num_elements() == y.num_elements() );
+#endif
+        copy(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
+        return std::forward<MultiArrayNDY>(y);
 }
 
 template<class MultiArray1Dx, 

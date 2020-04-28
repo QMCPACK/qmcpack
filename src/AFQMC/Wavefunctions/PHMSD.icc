@@ -505,13 +505,15 @@ namespace afqmc
         } else {
           if(compact) {
             ma::product(T(Ra),GA2D0_,GA2D_);
-            G({0,GAdims.first*GAdims.second},iw) = GA1D_;
+            //G({0,GAdims.first*GAdims.second},iw) = GA1D_;
+            ma::copy(GA1D_,G({0,GAdims.first*GAdims.second},iw));
           } else {
             boost::multi::array_ref<ComplexType,1> G1D(Gfulla.origin(),
                                    iextensions<1u>{long(Gfulla.num_elements())});
             ma::product(T(Ra),GA2D0_,GA2D_);
             ma::product(T(OrbMats[0]),GA2D_,Gfulla);
-            G({0,Gfulla.num_elements()},iw) = G1D;
+            ma::copy(G1D,G({0,Gfulla.num_elements()},iw));
+            //G({0,Gfulla.num_elements()},iw) = G1D;
           }  
         }
 
@@ -531,13 +533,15 @@ namespace afqmc
         } else {
           if(compact) {
             ma::product(T(Rb),GB2D0_,GB2D_);
-            G({GAdims.first*GAdims.second,G.size(0)},iw) = GB1D_;
+            //G({GAdims.first*GAdims.second,G.size(0)},iw) = GB1D_;
+            ma::copy(GB1D_, G({GAdims.first*GAdims.second,G.size(0)},iw));
           } else {
             boost::multi::array_ref<ComplexType,1> G1D(Gfullb.origin(),
                                    iextensions<1u>{Gfullb.num_elements()});
             ma::product(T(Rb),GB2D0_,GB2D_);
             ma::product(T(OrbMats.back()),GB2D_,Gfullb);
-            G({Gfulla.num_elements(),G.size(0)},iw) = G1D;
+            //G({Gfulla.num_elements(),G.size(0)},iw) = G1D;
+            ma::copy(G1D,G({Gfulla.num_elements(),G.size(0)},iw));
           }
         }
       }

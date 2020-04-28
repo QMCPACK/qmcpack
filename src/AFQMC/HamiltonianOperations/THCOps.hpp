@@ -775,14 +775,13 @@ std::cout<<"\n";
       assert(T1.size(0) == nu);
       assert(T1.size(1) == nel_);
 
-      using ma::transposed;
       comm->barrier();
       ComplexType a = (walker_type==CLOSED)?ComplexType(2.0):ComplexType(1.0);
       for(int iw=0; iw<nw; ++iw) {
         boost::multi::array_cref<ComplexType,2> Giw(to_address(G[iw].origin()),{nel_,nmo_});
         // transposing inetermediary to make dot products faster in the next step
-        ma::product(transposed(Piu.get()({0,nmo_},{u0,uN})),
-                  transposed(Giw),
+        ma::product(ma::T(Piu.get()({0,nmo_},{u0,uN})),
+                  ma::T(Giw),
                   T1.sliced(u0,uN));
         for(int u=u0; u<uN; ++u)
           Guu[u][iw] = a*ma::dot(cPua[0].get()[u],T1[u]);
@@ -861,7 +860,6 @@ std::cout<<"\n";
         assert(T1.size(0) == size_t(nel_));
         assert(T1.size(1) == size_t(nv));
 
-        using ma::transposed;
         ma::product(G,rotPiu.get()({0,nmo_},{v0,vN}),
                     T1(T1.extension(0),{v0,vN}));
         // This operation might benefit from a 2-D work distribution
@@ -881,7 +879,6 @@ std::cout<<"\n";
         assert(T1.size(0) == nel_);
         assert(T1.size(1) == nv);
 
-        using ma::transposed;
         ma::product(G,rotPiu.get()({0,nmo_},{v0,vN}),
                     T1(T1.extension(0),{v0,vN}));
         // This operation might benefit from a 2-D work distribution
@@ -938,7 +935,6 @@ std::cout<<"\n";
       assert(T1.size(0) == size_t(nel_));
       assert(T1.size(1) == size_t(nv));
 
-      using ma::transposed;
       ma::product(G,rotPiu.get()({0,nmo_},{v0,vN}),
                   T1(T1.extension(0),{v0,vN}));
       // This operation might benefit from a 2-D work distribution

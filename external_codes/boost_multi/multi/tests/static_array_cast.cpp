@@ -58,14 +58,24 @@ template<class T, class F> involuted(T&&, F)->involuted<T const, F>;
 #endif
 
 template<class It, class F>
-class involuter : public std::iterator_traits<It>{
+class involuter{//: public std::iterator_traits<It>{
 	It it_; // [[no_unique_address]] 
 	F f_;
+	template<class, class> friend class involuter;
 public:
-	using rebind_const = involuter<typename multi::iterator_traits<It>::rebind_const, F>;
+	using pointer = void;
+	using element_type = typename std::pointer_traits<It>::element_type;
+	using difference_type = typename std::pointer_traits<It>::difference_type;
+	template <class U> using rebind = involuter<typename std::pointer_traits<It>::template rebind<U>, F>;
+	using reference = involuted<typename std::iterator_traits<It>::reference, F>;
+	using value_type = typename std::iterator_traits<It>::value_type;
+	using iterator_category = typename std::iterator_traits<It>::iterator_category;
+
+//	using rebind_const = involuter<typename multi::iterator_traits<It>::rebind_const, F>;
 	explicit involuter(It it, F f = {}) : it_{std::move(it)}, f_{std::move(f)}{}
 	involuter(involuter const& other) = default;
-	using reference = involuted<typename std::iterator_traits<It>::reference, F>;
+	template<class Other> involuter(involuter<Other, F> const& o) : it_{o.it_}, f_{o.f_}{}
+//	using reference = involuted<typename std::iterator_traits<It>::reference, F>;
 	auto operator*() const{return reference{*it_, f_};}
 	bool operator==(involuter const& o) const{return it_==o.it_;}
 	bool operator!=(involuter const& o) const{return it_!=o.it_;}

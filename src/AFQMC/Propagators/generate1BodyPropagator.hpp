@@ -87,10 +87,10 @@ namespace afqmc
 
       // running on host regardless
       boost::multi::array<ComplexType,2> h1_(H1);
-      boost::multi::array<ComplexType,2> h1ext_(H1ext);
-      //boost::multi::array<ComplexType,2> h1ext_({NMO,NMO});
+      //boost::multi::array<ComplexType,2> h1ext_(H1ext);
+      boost::multi::array<ComplexType,2> h1ext_({NMO,NMO});
       //copy_n(H1ext.origin(),NMO*NMO,h1ext_.origin());
-      //h1ext_ = H1ext;
+      h1ext_ = H1ext;
        
 
       ma::add(ComplexType(-0.5*dt),h1_,ComplexType(-0.5*dt),h1ext_,h1_);  

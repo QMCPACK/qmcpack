@@ -83,17 +83,23 @@ template<class T, class F> involuted(T&&, F)->involuted<T const, F>;
 #endif
 
 template<class It, class F>
-class involuter : public std::iterator_traits<It>{
+class involuter{//: public std::iterator_traits<It>{
 	It it_;
 	CPP_NO_UNIQUE_ADDRESS F f_;
 public:
+	template<class T> using rebind = involuter<typename std::pointer_traits<It>::template rebind<T>, F>;
+	using reference = involuted<typename std::iterator_traits<It>::reference, F>;
+	using difference_type = typename std::pointer_traits<It>::difference_type;
+
+	using value_type = typename std::iterator_traits<It>::value_type;
+	using pointer  = void;
+	using iterator_category = typename std::iterator_traits<It>::iterator_category;
 	involuter(It it) : involuter(
 		std::move(it), 
 		default_construct<F>()
 //		[&]{if constexpr(sizeof(F)<=1) return *(F*)(this); else return F{};}()
 	){}
 	involuter(It it, F f) : it_{std::move(it)}, f_{std::move(f)}{}
-	using reference = involuted<typename std::iterator_traits<It>::reference, F>;
 	auto operator*() const{return reference{*it_, f_};}
 	involuter& operator+=(typename involuter::difference_type n){it_+=n; return *this;}
 	involuter operator+(typename involuter::difference_type n) const{return {it_+n, f_};}
@@ -158,11 +164,17 @@ struct bitransformer{
 #endif
 
 template<class P = std::complex<double>*>
-struct indirect_real : std::iterator_traits<typename std::pointer_traits<P>::element_type::value_type*>{
+struct indirect_real{// : std::iterator_traits<typename std::pointer_traits<P>::element_type::value_type*>{
 	P impl_;
 	indirect_real(P const& p) : impl_{p}{}
     auto operator+(std::ptrdiff_t n) const{return indirect_real{impl_ + n};}
 	double& operator*() const{return reinterpret_cast<double(&)[2]>(*impl_)[0];}
+
+	using difference_type = std::ptrdiff_t;
+	using value_type = typename std::iterator_traits<P>::value_type;
+	using pointer = void;
+	using reference = void;
+	using iterator_category = typename std::iterator_traits<P>::iterator_category;
 };
 
 struct A{
@@ -303,10 +315,10 @@ int main(){
 
 		multi::array<double, 2> d2real_copy = reinterpret_array_cast<double>(d2D);//d2Dreal;
 
-		using multi::static_array_cast;
-		auto&& d2Dreal2 = static_array_cast<double, indirect_real<>>(d2D);
-		assert( d2Dreal2[2][1] == 12. );
-
+	//	using multi::static_array_cast;
+	//	auto&& d2Dreal2 = static_array_cast<double, indirect_real<>>(d2D);
+	//	assert( d2Dreal2[2][1] == 12. );
+#if 0
 		struct indirect_imag{
 			std::complex<double>* underlying; using element_type = double;
 			indirect_imag(std::complex<double>* underlying) : underlying{underlying}{}
@@ -323,7 +335,7 @@ int main(){
 		assert( d2imag2[2][1] == 1. );
 		double* p = d2imag2.base();
 		assert( *p == 3 );
-
+#endif
 	}
 	{
 		using complex = std::complex<double>;
