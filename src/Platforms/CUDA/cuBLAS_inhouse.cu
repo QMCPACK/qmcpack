@@ -12,11 +12,61 @@
 
 #include "Platforms/CUDA/cuBLAS_inhouse.hpp"
 #include <stdexcept>
+#include <cuComplex.h>
 
 namespace qmcplusplus
 {
 namespace cuBLAS_inhouse
 {
+
+template<typename T, int ROWBS, int COLBS>
+__global__ void gemvT_batched_kernel(const int       m,
+                                     const int       n,
+                                     const T*        alpha,
+                                     const T* const  A[],
+                                     const int       lda,
+                                     const T* const  x[],
+                                     const T*        beta,
+                                     T* const        y[])
+{
+  static_assert(ROWBS <= COLBS, "Row block size must be smaller than column block size!");
+
+  __shared__ T sum[ROWBS][COLBS];
+  __shared__ T x_part[COLBS];
+
+  const int tid = threadIdx.x;
+  for (int i = 0; i < ROWBS; i++)
+    sum[i][tid] = T(0.0);
+
+  const T* A_iw = A[blockIdx.x];
+  const T* x_iw = x[blockIdx.x];
+
+  const int row_begin = blockIdx.y * ROWBS;
+  const int row_end = (blockIdx.y + 1) * ROWBS < m ? (blockIdx.y + 1) * ROWBS : m;
+
+  const int num_col_block = (n + COLBS - 1) / COLBS;
+  for (int ib = 0; ib < num_col_block; ib++)
+  {
+    const int col_id = ib * COLBS + tid;
+    if (col_id < n)
+      x_part[tid] = x_iw[col_id];
+    for (int row_id = row_begin; row_id < row_end; row_id++)
+      if (col_id < n)
+        sum[row_id - row_begin][tid] += x_part[tid] * A_iw[row_id * lda + col_id];
+  }
+
+  const int row_max = ROWBS < m ? ROWBS : m;
+  const int col_max = COLBS < n ? COLBS : n;
+
+  T dot_sum(0);
+  for (int col_id = 0; col_id < col_max; col_id++)
+    if (tid < row_max)
+      dot_sum += sum[tid][col_id];
+
+  T* y_iw = y[blockIdx.x];
+  if (tid < row_max)
+    y_iw[row_begin + tid] = alpha[blockIdx.x] * dot_sum + beta[blockIdx.x] * y_iw[row_begin + tid];
+}
 
 template<typename T>
 cuBLAS_inhouse_status gemv_batched_impl(cuBLAS_inhouse_handle& handle,
@@ -38,18 +88,13 @@ cuBLAS_inhouse_status gemv_batched_impl(cuBLAS_inhouse_handle& handle,
     if (incx !=1 || incy != 1)
       throw std::runtime_error("incx !=1 or incy != 1 are not implemented in cuBLAS_inhouse::gemv_batched_impl!");
 
-/*
-    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(batch_count * m) is_device_ptr(A, x, y, alpha, beta)")
-    for(size_t ib = 0; ib < batch_count; ib++)
-      for(size_t i = 0; i < m; i++)
-      {
-        T dot_sum(0);
-        PRAGMA_OFFLOAD("omp parallel for simd reduction(+: dot_sum)")
-        for(size_t j = 0; j < n; j++)
-          dot_sum += x[ib][j] * A[ib][i * lda + j];
-        y[ib][i] = alpha[ib] * dot_sum + beta[ib] * y[ib][i];
-      }
-*/
+    const int ROWBS = 32;
+    const int COLBS = 32;
+    const int num_row_blocks = (m + ROWBS - 1) / ROWBS;
+    dim3 dimBlock(COLBS);
+    dim3 dimGrid(batch_count, num_row_blocks);
+    gemvT_batched_kernel<T, ROWBS, COLBS><<<dimGrid, dimBlock, 0, handle>>>(m, n, alpha, A, lda, x, beta, y);
+
     return cudaPeekAtLastError();
   }
   else
@@ -106,7 +151,8 @@ cuBLAS_inhouse_status gemv_batched(cuBLAS_inhouse_handle&                  handl
                             const int                        incy,
                             const int                        batch_count)
 {
-  return gemv_batched_impl(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
+  //return gemv_batched_impl(handle, trans, m, n, (const cuComplex*)alpha, (const cuComplex* const*)A, lda, (const cuComplex* const*)x, incx, (const cuComplex*)beta, (cuComplex* const*)y, incy, batch_count);
+  return cudaSuccess;
 }
 
 cuBLAS_inhouse_status gemv_batched(cuBLAS_inhouse_handle&                   handle,
@@ -123,7 +169,8 @@ cuBLAS_inhouse_status gemv_batched(cuBLAS_inhouse_handle&                   hand
                             const int                         incy,
                             const int                         batch_count)
 {
-  return gemv_batched_impl(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
+  //return gemv_batched_impl(handle, trans, m, n, (const cuDoubleComplex*)alpha, (const cuDoubleComplex* const*)A, lda, (const cuDoubleComplex* const*)x, incx, (const cuDoubleComplex*)beta, (cuDoubleComplex* const*)y, incy, batch_count);
+  return cudaSuccess;
 }
 
 

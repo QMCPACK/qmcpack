@@ -20,7 +20,10 @@
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "Platforms/OpenMP/ompBLAS.hpp"
 #include "Platforms/OpenMP/ompReduction.hpp"
-
+#include <cuda_runtime_api.h>
+#include "Numerics/CUDA/cuBLAS.hpp"
+#include "Platforms/CUDA/cuBLAS_inhouse.hpp"
+#include "CUDA/cudaError.h"
 
 namespace qmcplusplus
 {
@@ -58,6 +61,12 @@ class MatrixUpdateCUDA
   // pointer buffer
   Vector<char, OffloadPinnedAllocator<char>> buffer_H2D;
 
+  // CUDA specific variables
+  cudaStream_t hstream;
+  cublasHandle_t h_cublas;
+
+  inline void waitStream() { cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!"); }
+
   void resize_fill_constant_arrays(size_t nw)
   {
     if (cone_vec.size() < nw)
@@ -86,6 +95,20 @@ class MatrixUpdateCUDA
   }
 
 public:
+  /// default constructor
+  MatrixUpdateCUDA()
+  {
+    cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
+    //cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
+    //cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
+  }
+
+  ~MatrixUpdateCUDA()
+  {
+    //cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
+    cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
+  }
+
   /** compute the inverse of the transpose of matrix A
    * @param logdetT orbital value matrix
    * @param Ainv inverse matrix
@@ -232,8 +255,9 @@ public:
       T* ratio_inv_mw   = reinterpret_cast<T*>(buffer_H2D_ptr + sizeof(T*) * n_accepted * 8);
 
       // invoke the Fahy's variant of Sherman-Morrison update.
-      success = ompBLAS::gemv_batched(dummy_handle, 'T', norb, norb, cone_ptr, Ainv_mw_ptr, norb, phiV_mw_ptr, 1,
-                                      czero_ptr, temp_mw_ptr, 1, n_accepted);
+      cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, norb, cone_ptr, Ainv_mw_ptr, norb, phiV_mw_ptr, 1,
+                                      czero_ptr, temp_mw_ptr, 1, n_accepted), "cuBLAS_inhouse::gemv_batched failed!");
+      waitStream();
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(n_accepted) is_device_ptr(Ainv_mw_ptr, temp_mw_ptr, \
                      rcopy_mw_ptr, dpsiM_mw_out, d2psiM_mw_out, dpsiM_mw_in, d2psiM_mw_in)")
       for (int iw = 0; iw < n_accepted; iw++)
