@@ -23,7 +23,7 @@
 #include <cuda_runtime_api.h>
 #include "Numerics/CUDA/cuBLAS.hpp"
 #include "Platforms/CUDA/cuBLAS_inhouse.hpp"
-#include "CUDA/cudaError.h"
+#include "QMCWaveFunctions/Fermion/matrix_update_helper.hpp"
 
 namespace qmcplusplus
 {
@@ -259,33 +259,12 @@ public:
       // invoke the Fahy's variant of Sherman-Morrison update.
       cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, norb, cone_ptr, Ainv_mw_ptr, norb, phiV_mw_ptr, 1,
                                       czero_ptr, temp_mw_ptr, 1, n_accepted), "cuBLAS_inhouse::gemv_batched failed!");
+
+      cudaErrorCheck(CUDA::copyAinvRow_saveGL_cuda(hstream, rowchanged, norb, Ainv_mw_ptr, norb, temp_mw_ptr,
+                                    rcopy_mw_ptr, dpsiM_mw_in, d2psiM_mw_in, dpsiM_mw_out, d2psiM_mw_out,
+                                    n_accepted), "CUDA::copyAinvRow_saveGL_cud failed!");
+
       waitStream();
-
-      PRAGMA_OFFLOAD("omp target teams distribute num_teams(n_accepted) is_device_ptr(Ainv_mw_ptr, temp_mw_ptr, \
-                     rcopy_mw_ptr, dpsiM_mw_out, d2psiM_mw_out, dpsiM_mw_in, d2psiM_mw_in)")
-      for (int iw = 0; iw < n_accepted; iw++)
-      {
-        T* __restrict__ Ainv_ptr   = Ainv_mw_ptr[iw];
-        T* __restrict__ temp_ptr   = temp_mw_ptr[iw];
-        T* __restrict__ rcopy_ptr  = rcopy_mw_ptr[iw];
-        T* __restrict__ dpsiM_out  = dpsiM_mw_out[iw];
-        T* __restrict__ d2psiM_out = d2psiM_mw_out[iw];
-        T* __restrict__ dpsiM_in   = dpsiM_mw_in[iw];
-        T* __restrict__ d2psiM_in  = d2psiM_mw_in[iw];
-
-        temp_ptr[rowchanged] -= cone;
-        PRAGMA_OFFLOAD("omp parallel for simd")
-        for (int i = 0; i < norb; i++)
-        {
-          rcopy_ptr[i] = Ainv_ptr[rowchanged * norb + i];
-          // the following copying data on the device is not part of SM-1
-          // it is intended to copy dpsiM and d2psiM from temporary to final without a separate kernel.
-          dpsiM_out[i * 3]     = dpsiM_in[i * 3];
-          dpsiM_out[i * 3 + 1] = dpsiM_in[i * 3 + 1];
-          dpsiM_out[i * 3 + 2] = dpsiM_in[i * 3 + 2];
-          d2psiM_out[i]        = d2psiM_in[i];
-        }
-      }
 
       success = ompBLAS::ger_batched(dummy_handle, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
                                      Ainv_mw_ptr, norb, n_accepted);
