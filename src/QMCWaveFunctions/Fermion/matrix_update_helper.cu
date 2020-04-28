@@ -74,6 +74,9 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
                                     float* const d2phi_out[],
                                     const int batch_count)
 {
+  if (batch_count == 0)
+    return cudaSuccess;
+
   const int COLBS = 32;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
@@ -95,6 +98,9 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
                                     double* const d2phi_out[],
                                     const int batch_count)
 {
+  if (batch_count == 0)
+    return cudaSuccess;
+
   const int COLBS = 32;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);

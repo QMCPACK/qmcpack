@@ -175,6 +175,29 @@ cuBLAS_inhouse_status gemv_batched(cuBLAS_inhouse_handle& handle,
 }
 
 
+template<typename T, int ROWBS, int COLBS>
+__global__ void ger_batched_kernel(const int m, // number of columns in row major
+                                   const int n, // number of rows in row major
+                                   const T* __restrict__ alpha,
+                                   const T* const x[],
+                                   const T* const y[],
+                                   T* const A[],
+                                   const int lda)
+{
+  const int iw = blockIdx.x;
+  const T* __restrict__ x_iw = x[iw];
+  const T* __restrict__ y_iw = y[iw];
+  T* __restrict__ A_iw = A[iw];
+
+  const int row_begin = blockIdx.y * ROWBS;
+  const int row_end   = (row_begin + ROWBS) < n ? (row_begin + ROWBS) : n;
+  const int col_id = blockIdx.z * COLBS + threadIdx.x;
+
+  for (int row_id = 0; row_id < row_end; row_id++)
+    if (col_id < m)
+      A_iw[row_id * lda + col_id] += alpha[iw] * x_iw[col_id] * y_iw[row_id];
+}
+
 template<typename T>
 cuBLAS_inhouse_status ger_batched_impl(cuBLAS_inhouse_handle& handle,
                                        const int m,
@@ -194,13 +217,13 @@ cuBLAS_inhouse_status ger_batched_impl(cuBLAS_inhouse_handle& handle,
   if (incx != 1 || incy != 1)
     throw std::runtime_error("incx !=1 or incy != 1 are not implemented in cuBLAS_inhouse::ger_batched_impl!");
 
-  /*
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(3) is_device_ptr(A, x, y, alpha)")
-  for(size_t ib = 0; ib < batch_count; ib++)
-    for(size_t i = 0; i < n; i++)
-      for(size_t j = 0; j < m; j++)
-        A[ib][i * lda + j] += alpha[ib] * x[ib][j] * y[ib][i];
-*/
+  const int ROWBS          = 32;
+  const int COLBS          = 32;
+  const int num_row_blocks = (n + ROWBS - 1) / ROWBS;
+  const int num_col_blocks = (m + COLBS - 1) / COLBS;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count, num_row_blocks, num_col_blocks);
+  ger_batched_kernel<T, ROWBS, COLBS><<<dimGrid, dimBlock, 0, handle>>>(m, n, alpha, x, y, A, lda);
   return cudaPeekAtLastError();
 }
 
@@ -246,7 +269,8 @@ cuBLAS_inhouse_status ger_batched(cuBLAS_inhouse_handle& handle,
                                   const int lda,
                                   const int batch_count)
 {
-  return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
+  //return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
+  return cudaSuccess;
 }
 
 cuBLAS_inhouse_status ger_batched(cuBLAS_inhouse_handle& handle,
@@ -261,7 +285,8 @@ cuBLAS_inhouse_status ger_batched(cuBLAS_inhouse_handle& handle,
                                   const int lda,
                                   const int batch_count)
 {
-  return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
+  //return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
+  return cudaSuccess;
 }
 } // namespace cuBLAS_inhouse
 } // namespace qmcplusplus

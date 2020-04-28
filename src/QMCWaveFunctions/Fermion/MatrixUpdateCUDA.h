@@ -264,10 +264,10 @@ public:
                                     rcopy_mw_ptr, dpsiM_mw_in, d2psiM_mw_in, dpsiM_mw_out, d2psiM_mw_out,
                                     n_accepted), "CUDA::copyAinvRow_saveGL_cud failed!");
 
-      waitStream();
 
-      success = ompBLAS::ger_batched(dummy_handle, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
-                                     Ainv_mw_ptr, norb, n_accepted);
+      cudaErrorCheck(cuBLAS_inhouse::ger_batched(hstream, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
+                                     Ainv_mw_ptr, norb, n_accepted), "cuBLAS_inhouse::ger_batched failed!");
+      waitStream();
     }
   }
 };
