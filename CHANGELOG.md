@@ -10,12 +10,12 @@ This is an important bug fix release. As described in [\#2330](https://github.co
 timestep was not correctly changed between different DMC blocks if the time step was changed in the input, biasing the results.
 Runs using a single time step were not affected. Thanks to Chandler Bennett for identifying the problem.
 
-* Bug fix: timestep was not correctly changed between DMC blocks if it was changed in the input [\#2330](https://github.com/QMCPACK/qmcpack/issues/2330)
-* qmcfinitesize tool added. [\#2329](https://github.com/QMCPACK/qmcpack/pull/2329) 
-* QMCPACK spack package now supports AFQMC. [\#2237](https://github.com/QMCPACK/qmcpack/issues/2237)
+* Bug fix: timestep was not correctly changed between DMC blocks if it was changed in the input [\#2330](https://github.com/QMCPACK/qmcpack/issues/2330).
+* qmcfinitesize tool added [\#2329](https://github.com/QMCPACK/qmcpack/pull/2329).
+* QMCPACK spack package now supports AFQMC [\#2237](https://github.com/QMCPACK/qmcpack/issues/2237).
 * Improvements to deterministic tests: these are now fully reliable other than for some CUDA builds and some mixed precision CPU configurations.
-* Many improvements to cmake configuration for faster builds, e.g. [\#2389](https://github.com/QMCPACK/qmcpack/pull/2389)
-* Ongoing source cleanup and fewer compile-time warnings, e.g. [\#2375](https://github.com/QMCPACK/qmcpack/pull/2375)
+* Many improvements to cmake configuration for faster builds, e.g. [\#2389](https://github.com/QMCPACK/qmcpack/pull/2389).
+* Ongoing source cleanup and fewer compile-time warnings, e.g. [\#2375](https://github.com/QMCPACK/qmcpack/pull/2375).
 
 ## [3.9.1] - 2020-02-11
 
