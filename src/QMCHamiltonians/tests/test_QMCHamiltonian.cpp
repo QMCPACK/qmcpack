@@ -22,7 +22,6 @@ namespace qmcplusplus
 TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
 {
   Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   MinimalParticlePool mpp;

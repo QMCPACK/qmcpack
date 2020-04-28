@@ -24,7 +24,7 @@
 #include <OhmmsData/RecordProperty.h>
 #include <Lattice/CrystalLattice.h>
 #include <ParticleBase/ParticleAttrib.h>
-#include <Utilities/OutputManager.h>
+#include <Platforms/Host/OutputManager.h>
 #include <Message/Communicate.h>
 
 //define empty DEBUG_MEMORY

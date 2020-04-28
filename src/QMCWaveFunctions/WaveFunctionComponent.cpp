@@ -29,8 +29,7 @@ WaveFunctionComponent::WaveFunctionComponent()
       dPsi(nullptr),
       ClassName("WaveFunctionComponent"),
       Bytes_in_WFBuffer(0)
-{
-}
+{}
 
 // WaveFunctionComponent::WaveFunctionComponent(const WaveFunctionComponent& old):
 //   Optimizable(old.Optimizable), UseBuffer(old.UseBuffer),
@@ -44,23 +43,20 @@ WaveFunctionComponent::WaveFunctionComponent()
 // }
 
 
-void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d)
-{
-  dPsi = d;
-}
+void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d) { dPsi = d; }
 
 void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
-                                      const opt_variables_type& active,
-                                      std::vector<ValueType>& dlogpsi, 
-                                      std::vector<ValueType>& dhpsioverpsi)
+                                                const opt_variables_type& active,
+                                                std::vector<ValueType>& dlogpsi,
+                                                std::vector<ValueType>& dhpsioverpsi)
 {
   if (dPsi)
     dPsi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
 }
 
 void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
-                                      const opt_variables_type& active,
-                                      std::vector<ValueType>& dlogpsi)
+                                                  const opt_variables_type& active,
+                                                  std::vector<ValueType>& dlogpsi)
 {
   if (dPsi)
     dPsi->evaluateDerivativesWF(P, active, dlogpsi);

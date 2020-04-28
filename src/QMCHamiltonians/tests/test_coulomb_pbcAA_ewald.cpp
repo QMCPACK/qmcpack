@@ -29,7 +29,6 @@ namespace qmcplusplus
 TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -76,7 +75,6 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
 TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -126,7 +124,6 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
 TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;

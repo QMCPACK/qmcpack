@@ -27,7 +27,7 @@
 #include "Message/Communicate.h"
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 #include <sstream>
 
 int main(int argc, char** argv)

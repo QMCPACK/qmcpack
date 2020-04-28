@@ -108,7 +108,6 @@ public:
   MCPopulation(MCPopulation&)  = delete;
   MCPopulation& operator=(MCPopulation&) = delete;
   MCPopulation(MCPopulation&&) = default;
-  MCPopulation& operator=(MCPopulation&&) = default;
 
   /** @ingroup PopulationControl
    *

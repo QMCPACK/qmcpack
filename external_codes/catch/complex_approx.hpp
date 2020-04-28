@@ -11,9 +11,14 @@ class ComplexApprox
     std::complex<double> m_value;
     double m_epsilon;
 
-    bool approx_compare(const double lhs, const double rhs) const
+    bool approx_compare_zero(const double dist, const double magnitude) const
     {
-        return Approx(lhs).epsilon(m_epsilon) == rhs;
+      /* need to workaround catch to provide consistent behavior for a real value.
+        bool Approx::equalityComparisonImpl(const double other) const {
+        return marginComparison(m_value, other, m_margin) || marginComparison(m_value, other, m_epsilon * (m_scale + std::fabs(m_value)));
+        }
+      */
+      return Approx(dist).epsilon(0.0).margin(m_epsilon * (1.0 + magnitude)) == 0.0;
     }
 
 public:
@@ -33,7 +38,7 @@ public:
       init_epsilon();
     }
 
-   void init_epsilon() {
+    void init_epsilon() {
       // Copied from catch.hpp - would be better to copy it from Approx object
       m_epsilon = std::numeric_limits<float>::epsilon()*100;
     }
@@ -51,16 +56,12 @@ public:
 
     friend bool operator == (std::complex<double> const& lhs, ComplexApprox const& rhs)
     {
-        bool is_equal = rhs.approx_compare(lhs.real(), rhs.m_value.real());
-        is_equal &= rhs.approx_compare(lhs.imag(), rhs.m_value.imag());
-        return is_equal;
+        return rhs.approx_compare_zero(std::abs(lhs - rhs.m_value), std::abs(rhs.m_value));
     }
 
     friend bool operator == (std::complex<float> const& lhs, ComplexApprox const& rhs)
     {
-        bool is_equal = rhs.approx_compare(lhs.real(), rhs.m_value.real());
-        is_equal &= rhs.approx_compare(lhs.imag(), rhs.m_value.imag());
-        return is_equal;
+        return rhs.approx_compare_zero(std::abs(std::complex<double>(lhs) - rhs.m_value), std::abs(rhs.m_value));
     }
 
     friend bool operator == (ComplexApprox const &lhs, std::complex<double> const& rhs)

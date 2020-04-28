@@ -238,6 +238,7 @@ class XMLreader(DevBase):
         
         #create the parser
         self.parser = expat.ParserCreate()
+        self.parser.buffer_text = True
         self.parser.StartElementHandler  = self.found_element_start
         self.parser.EndElementHandler    = self.found_element_end
         self.parser.CharacterDataHandler = self.found_text

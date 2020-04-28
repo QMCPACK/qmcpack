@@ -33,7 +33,6 @@ namespace qmcplusplus
 TEST_CASE("Bare Force", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -75,7 +74,7 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   ion_species(pMembersizeIdx, pIdx) = 1;
 
   ions.resetGroups();
-  // Must update ions first in SoA so ions.RSoA is valid
+  // Must update ions first in SoA so ions.coordinates_ is valid
   ions.update();
 
 #ifdef ENABLE_SOA
@@ -145,7 +144,6 @@ void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
 TEST_CASE("Chiesa Force", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -244,7 +242,6 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
 TEST_CASE("Ceperley Force", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   //CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -331,7 +328,6 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
 TEST_CASE("Ion-ion Force", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;

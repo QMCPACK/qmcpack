@@ -12,7 +12,7 @@
 
 #include "catch.hpp"
 
-#include "Utilities/InfoStream.h"
+#include "Platforms/Host/InfoStream.h"
 #include <stdio.h>
 #include <string>
 #include <vector>

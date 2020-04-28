@@ -17,6 +17,7 @@
 #include "Numerics/Quadrature.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
+#include "QMCHamiltonians/SOECPComponent.h"
 
 //for wavefunction
 #include "OhmmsData/Libxml2Doc.h"
@@ -24,13 +25,20 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "QMCWaveFunctions/SpinorSet.h"
 //for nonlocal moves
 #include "QMCHamiltonians/NonLocalTOperator.h"
+
 
 //for Hamiltonian manipulations.
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "LongRange/EwaldHandler3D.h"
+
+#ifdef QMC_COMPLEX //This is for the spinor test.
+#include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -70,7 +78,6 @@ TEST_CASE("ReadFileBuffer_simple_serial", "[hamiltonian]")
 
 TEST_CASE("ReadFileBuffer_simple_mpi", "[hamiltonian]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   ReadFileBuffer buf(c);
@@ -85,7 +92,6 @@ TEST_CASE("ReadFileBuffer_simple_mpi", "[hamiltonian]")
 
 TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   ECPComponentBuilder ecp("test_read_ecp", c);
@@ -100,20 +106,19 @@ TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
 
 TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   ECPComponentBuilder ecp("test_read_sorep", c);
 
-  bool okay = ecp.read_pp_file("Zn.ccECP-SO.xml");
+  bool okay = ecp.read_pp_file("so_ecp_test.xml");
   REQUIRE(okay);
 
-  REQUIRE(ecp.Zeff == 20);
+  REQUIRE(ecp.Zeff == 13);
 
   double rlist[5] = {0.001, 0.500, 1.000, 2.000, 10.000};
-  double so_p[5]  = {0.0614288376917, 0.10399457248, 4.85269969439e-06, 4.6722444395e-25, 0.000};
-  double so_d[5]  = {0.0850898886265, 0.0029447669325, 6.35734161822e-08, 2.8386702794e-27, 0.000};
-  double so_f[5]  = {-0.284560515732, 0.0071131554209, 6.79818097092e-05, 1.64868282163e-15, 0.000};
+  double so_p[5]  = {0.999999000005, 0.778800783071, 0.3678794411714, 0.01831563888873418, 0.000};
+  double so_d[5]  = {9.99998000e-01, 6.06530660e-01, 1.35335283e-01, 3.35462628e-04, 0.000};
+  double so_f[5]  = {9.99997000e-01, 4.72366553e-01, 4.97870684e-02, 6.14421235e-06, 0.000};
 
   for (int i = 0; i < 5; i++)
   {
@@ -157,6 +162,7 @@ TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
 }
 
 void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp) { nlpp.rrotsgrid_m = nlpp.sgridxyz_m; }
+void copyGridUnrotatedForTest(SOECPComponent& sopp) { sopp.rrotsgrid_m = sopp.sgridxyz_m; }
 
 TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 {
@@ -164,7 +170,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   typedef QMCTraits::ValueType ValueType;
   typedef QMCTraits::PosType PosType;
 
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   //Cell definition:
@@ -404,8 +409,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
       if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
       {
         Value2 += nlpp->evaluateOneWithForces(elec, iat, psi, jel, dist[iat], -displ[iat], HFTerm[iat]);
-        Value3 += nlpp->evaluateOneWithForces(elec, ions, iat, psi, jel, dist[iat], -displ[iat], HFTerm2[iat],
-                                              PulayTerm);
+        Value3 +=
+            nlpp->evaluateOneWithForces(elec, ions, iat, psi, jel, dist[iat], -displ[iat], HFTerm2[iat], PulayTerm);
       }
   }
   //These values are validated against print statements.
@@ -455,4 +460,147 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //HFTerm[1][2]+PulayTerm[1][2] =  0.0
 #endif
 }
+
+#ifdef QMC_COMPLEX
+TEST_CASE("Evaluate_soecp", "[hamiltonian]")
+{
+  app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+  app_log() << "!!!! Evaluate SOECPComponent !!!!\n";
+  app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+  typedef QMCTraits::RealType RealType;
+  typedef QMCTraits::ValueType ValueType;
+  typedef QMCTraits::PosType PosType;
+
+  Communicate* c = OHMMS::Controller;
+
+  //Cell definition:
+
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = false; // periodic
+  Lattice.R.diagonal(20);
+  Lattice.LR_dim_cutoff = 15;
+  Lattice.reset();
+
+
+  ParticleSet ions;
+  ParticleSet elec;
+
+  ions.setName("ion0");
+  ions.create(1);
+  ions.R[0][0] = 0.0;
+  ions.R[0][1] = 0.0;
+  ions.R[0][2] = 0.0;
+
+
+  SpeciesSet& ion_species       = ions.getSpeciesSet();
+  int pIdx                      = ion_species.addSpecies("H");
+  int pChargeIdx                = ion_species.addAttribute("charge");
+  int iatnumber                 = ion_species.addAttribute("atomic_number");
+  ion_species(pChargeIdx, pIdx) = 0;
+  ion_species(iatnumber, pIdx)  = 1;
+  ions.Lattice                  = Lattice;
+  ions.createSK();
+
+
+  elec.Lattice = Lattice;
+  elec.setName("e");
+  elec.create(1);
+  elec.R[0][0]  = 0.138;
+  elec.R[0][1]  = -0.24;
+  elec.R[0][2]  = 0.216;
+  elec.spins[0] = 0.0;
+
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+
+  elec.createSK();
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.addParticleSet(&elec);
+  ptcl.addParticleSet(&ions);
+
+  ions.resetGroups();
+  elec.resetGroups();
+
+  TrialWaveFunction psi(c);
+
+  std::vector<PosType> kup, kdn;
+  std::vector<RealType> k2up, k2dn;
+  QMCTraits::IndexType nelec = elec.getTotalNum();
+  REQUIRE(nelec == 1);
+
+  kup.resize(nelec);
+  kup[0] = PosType(1, 1, 1);
+
+  k2up.resize(nelec);
+  //For some goofy reason, EGOSet needs to be initialized with:
+  //1.) A k-vector list (fine).
+  //2.) A list of -|k|^2.  To save on expensive - sign multiplication apparently.
+  k2up[0] = -dot(kup[0], kup[0]);
+
+  kdn.resize(nelec);
+  kdn[0] = PosType(2, 2, 2);
+
+  k2dn.resize(nelec);
+  k2dn[0] = -dot(kdn[0], kdn[0]);
+
+  std::shared_ptr<EGOSet> spo_up(new EGOSet(kup, k2up));
+  std::shared_ptr<EGOSet> spo_dn(new EGOSet(kdn, k2dn));
+
+  SpinorSet* spinor_set = new SpinorSet();
+  spinor_set->set_spos(spo_up, spo_dn);
+
+  DiracDeterminant<>* dd    = new DiracDeterminant<>(spinor_set);
+  QMCTraits::IndexType norb = spo_up->size();
+  REQUIRE(norb == 1);
+  dd->resize(nelec, norb);
+
+  psi.addComponent(dd, "spinor");
+
+  //Now we set up the SO ECP component.
+  ECPComponentBuilder ecp("test_read_soecp", c);
+
+  bool okay3 = ecp.read_pp_file("so_ecp_test.xml");
+  REQUIRE(okay3);
+
+  SOECPComponent* sopp = ecp.pp_so;
+  REQUIRE(sopp != nullptr);
+  copyGridUnrotatedForTest(*sopp);
+
+  const int myTableIndex = elec.addTable(ions, DT_SOA_PREFERRED);
+
+  const auto& myTable = elec.getDistTable(myTableIndex);
+
+  // update all distance tables
+  ions.update();
+  elec.update();
+
+  //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
+  double logpsi = psi.evaluateLog(elec);
+
+  RealType Value1(0.0);
+
+#ifdef ENABLE_SOA
+  for (int jel = 0; jel < elec.getTotalNum(); jel++)
+  {
+    const auto& dist  = myTable.getDistRow(jel);
+    const auto& displ = myTable.getDisplRow(jel);
+    for (int iat = 0; iat < ions.getTotalNum(); iat++)
+    {
+      if (sopp != nullptr && dist[iat] < sopp->getRmax())
+      {
+        Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
+      }
+    }
+  }
+  REQUIRE(Value1 == Approx(0.1644374207));
+#endif
+}
+#endif
+
+
 } // namespace qmcplusplus

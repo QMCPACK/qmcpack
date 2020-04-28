@@ -38,9 +38,6 @@ private:
   RealType logoffset, logepsilon;
   ///option to enable/disable drift equation or RN for VMC
   std::string UseDrift;
-  ///turn on spin moves
-  std::string SpinMoves;
-  RealType SpinMass;
   ///check the run-time environments
   void resetRun();
   ///copy constructor

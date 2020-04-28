@@ -48,7 +48,6 @@ TEST_CASE("PolynomialFunctor3D functor zero", "[wavefunction]")
 TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -64,7 +63,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   ions_.R[1][2] = 0.0;
   SpeciesSet& source_species(ions_.getSpeciesSet());
   source_species.addSpecies("O");
-  ions_.RSoA = ions_.R;
+  ions_.setCoordinates(ions_.R);
   //ions_.resetGroups();
 
   elec_.setName("elec");

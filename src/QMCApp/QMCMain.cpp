@@ -27,7 +27,7 @@
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 #include "Utilities/Timer.h"
 #include "Utilities/NewTimer.h"
 #include "Particle/HDFWalkerIO.h"

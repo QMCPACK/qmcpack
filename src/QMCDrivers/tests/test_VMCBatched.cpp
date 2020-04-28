@@ -9,7 +9,7 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "Message/Communicate.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
@@ -28,7 +28,6 @@ TEST_CASE("VMCBatched::calc_default_local_walkers", "[drivers]")
   using namespace testing;
   Concurrency::OverrideMaxThreads<> override(8);
   Communicate* comm;
-  OHMMS::Controller->initialize(0, NULL);
   comm = OHMMS::Controller;
 
   Libxml2Document doc;

@@ -51,7 +51,16 @@ def run_test(cpw4q_exe, h5diff_exe, gold_file, conv_inp):
         
 
 def run_one_converter_test(cpw4q_exe, h5diff_exe):
-    conv_input_files = glob.glob('*.sample')
+    code = 'qbox'
+    if 'pwscf' in os.getcwd():
+        code = 'pwscf'
+
+    if code == 'qbox':
+        conv_input_files = glob.glob('*.sample')
+
+    if code == 'pwscf':
+        conv_input_files = glob.glob('*.xml')
+    
     if len(conv_input_files) != 1:
         print ("Unexpected number of input files (should be 1): ",
                len(conv_input_files))
