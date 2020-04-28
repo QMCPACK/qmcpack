@@ -29,7 +29,7 @@ __global__ void gemvT_batched_kernel(const int       m,
                                      const T*        beta,
                                      T* const        y[])
 {
-  static_assert(ROWBS <= COLBS, "Row block size must be smaller than column block size!");
+  static_assert(ROWBS <= COLBS, "Row block size must not be larger than column block size!");
 
   __shared__ T sum[ROWBS][COLBS];
   __shared__ T x_part[COLBS];
@@ -42,20 +42,20 @@ __global__ void gemvT_batched_kernel(const int       m,
   const T* x_iw = x[blockIdx.x];
 
   const int row_begin = blockIdx.y * ROWBS;
-  const int row_end = (blockIdx.y + 1) * ROWBS < m ? (blockIdx.y + 1) * ROWBS : m;
+  const int row_max = (m - row_begin) < ROWBS ? (m - row_begin) : ROWBS;
 
-  const int num_col_block = (n + COLBS - 1) / COLBS;
-  for (int ib = 0; ib < num_col_block; ib++)
+  const int num_col_blocks = (n + COLBS - 1) / COLBS;
+  for (int ib = 0; ib < num_col_blocks; ib++)
   {
     const int col_id = ib * COLBS + tid;
     if (col_id < n)
       x_part[tid] = x_iw[col_id];
-    for (int row_id = row_begin; row_id < row_end; row_id++)
+    for (int row_id = row_begin; row_id < row_begin + row_max; row_id++)
       if (col_id < n)
         sum[row_id - row_begin][tid] += x_part[tid] * A_iw[row_id * lda + col_id];
   }
+  __syncthreads();
 
-  const int row_max = ROWBS < m ? ROWBS : m;
   const int col_max = COLBS < n ? COLBS : n;
 
   T dot_sum(0);
@@ -83,6 +83,8 @@ cuBLAS_inhouse_status gemv_batched_impl(cuBLAS_inhouse_handle& handle,
                                  const int       incy,
                                  const int       batch_count)
 {
+  if (batch_count == 0) return cudaSuccess;
+
   if (trans == 'T')
   {
     if (incx !=1 || incy != 1)
@@ -94,7 +96,6 @@ cuBLAS_inhouse_status gemv_batched_impl(cuBLAS_inhouse_handle& handle,
     dim3 dimBlock(COLBS);
     dim3 dimGrid(batch_count, num_row_blocks);
     gemvT_batched_kernel<T, ROWBS, COLBS><<<dimGrid, dimBlock, 0, handle>>>(m, n, alpha, A, lda, x, beta, y);
-
     return cudaPeekAtLastError();
   }
   else
@@ -187,6 +188,8 @@ cuBLAS_inhouse_status ger_batched_impl(cuBLAS_inhouse_handle& handle,
                                 const int       lda,
                                 const int       batch_count)
 {
+  if (batch_count == 0) return cudaSuccess;
+
   if (incx !=1 || incy != 1)
     throw std::runtime_error("incx !=1 or incy != 1 are not implemented in cuBLAS_inhouse::ger_batched_impl!");
 

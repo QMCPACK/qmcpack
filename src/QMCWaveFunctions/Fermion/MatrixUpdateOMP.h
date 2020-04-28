@@ -186,6 +186,8 @@ public:
                            const std::vector<T>& ratios)
   {
     const size_t n_accepted = Ainv_list.size();
+    if (n_accepted == 0) return;
+
     resize_scratch_arrays(norb, n_accepted);
 
     // to handle T** of Ainv, psi_v, temp, rcopy

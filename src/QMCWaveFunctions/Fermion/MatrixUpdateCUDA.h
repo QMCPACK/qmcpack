@@ -209,6 +209,8 @@ public:
                            const std::vector<T>& ratios)
   {
     const size_t n_accepted = Ainv_list.size();
+    if (n_accepted == 0) return;
+
     resize_scratch_arrays(norb, n_accepted);
 
     // to handle T** of Ainv, psi_v, temp, rcopy
@@ -258,6 +260,7 @@ public:
       cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, norb, cone_ptr, Ainv_mw_ptr, norb, phiV_mw_ptr, 1,
                                       czero_ptr, temp_mw_ptr, 1, n_accepted), "cuBLAS_inhouse::gemv_batched failed!");
       waitStream();
+
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(n_accepted) is_device_ptr(Ainv_mw_ptr, temp_mw_ptr, \
                      rcopy_mw_ptr, dpsiM_mw_out, d2psiM_mw_out, dpsiM_mw_in, d2psiM_mw_in)")
       for (int iw = 0; iw < n_accepted; iw++)
