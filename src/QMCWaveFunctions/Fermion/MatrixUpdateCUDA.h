@@ -147,7 +147,7 @@ public:
                           std::vector<GT>& grad_now)
   {
     const int nw = invRow_list.size();
-    buffer_H2D.resize(sizeof(T*) * 2 * nw);
+    resize_scratch_arrays(norb, nw);
     Matrix<const T*> ptr_buffer(reinterpret_cast<const T**>(buffer_H2D.data()), 2, nw);
     for (int iw = 0; iw < nw; iw++)
     {
