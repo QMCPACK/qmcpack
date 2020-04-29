@@ -99,8 +99,13 @@ class FullObsHandler: public AFQMCInfo
       std::transform(cname.begin(),cname.end(),cname.begin(),(int (*)(int)) tolower);
       if(cname =="onerdm") {
         properties.emplace_back(Observable(std::move(full1rdm(TG,info,cur,walker_type,nave,block_size)))); 
+      } else if(cname =="gfock" || cname=="genfock" || cname=="ekt") {
+        properties.emplace_back(Observable(std::move(generalizedFockMatrix(TG,info,cur,walker_type,
+                                            wfn0.getHamiltonianOperations(),nave,block_size)))); 
       } else if(cname =="diag2rdm") {
         properties.emplace_back(Observable(std::move(diagonal2rdm(TG,info,cur,walker_type,nave,block_size)))); 
+      } else if(cname =="twordm") {
+        properties.emplace_back(Observable(std::move(full2rdm(TG,info,cur,walker_type,nave,block_size))));
       } else if(cname =="n2r" || cname =="ontop2rdm") {
 #if defined(ENABLE_CUDA)
         std::string str("false");
@@ -119,6 +124,12 @@ class FullObsHandler: public AFQMCInfo
                   TG,info,cur,walker_type,true,shared_allocator<ComplexType>{TG.TG_local()},
                   shared_allocator<ComplexType>{TG.Node()},nave,block_size)))); 
         }
+      } else if(cname =="realspace_correlators") {
+        properties.emplace_back(Observable(std::move(realspace_correlators(
+                TG,info,cur,walker_type,nave,block_size))));
+      } else if(cname =="correlators") {
+        properties.emplace_back(Observable(std::move(atomcentered_correlators(
+                TG,info,cur,walker_type,nave,block_size))));
       }
       cur = cur->next;
     }
@@ -172,6 +183,7 @@ class FullObsHandler: public AFQMCInfo
     }
 
     stdCVector Xw(iextensions<1u>{nw});
+    std::fill_n(Xw.origin(),Xw.num_elements(),ComplexType(1.0,0.0));
     stdCVector Ov(iextensions<1u>{2*nw});
     stdCMatrix detR(DevdetR); 
 
@@ -239,17 +251,21 @@ class FullObsHandler: public AFQMCInfo
 
       //2. calculate and accumulate appropriate weights 
       copy_n( DevOv.origin(), 2*nw, Ov.origin());
-      if(walker_type == CLOSED) { 
-        for(int iw=0; iw<nw; iw++) 
-          Xw[iw] = CIcoeff * Ov[iw] * detR[iw][iref] * detR[iw][iref]; 
-      } else if(walker_type == COLLINEAR) {
-        for(int iw=0; iw<nw; iw++) { 
-          Xw[iw] = CIcoeff * Ov[iw] * Ov[iw+nw] * detR[iw][2*iref] * detR[iw][2*iref+1]; 
-        }
-      } else if(walker_type == NONCOLLINEAR) {
-        for(int iw=0; iw<nw; iw++) 
-          Xw[iw] = CIcoeff * Ov[iw] * detR[iw][iref]; 
+      if(nrefs > 1) {
+        if(walker_type == CLOSED) { 
+          for(int iw=0; iw<nw; iw++) 
+            Xw[iw] = CIcoeff * Ov[iw] * Ov[iw] * std::conj(detR[iw][iref] * detR[iw][iref]); 
+        } else if(walker_type == COLLINEAR) {
+          for(int iw=0; iw<nw; iw++) 
+            Xw[iw] = CIcoeff * Ov[iw] * Ov[iw+nw] * std::conj(detR[iw][2*iref] * detR[iw][2*iref+1]); 
+        } else if(walker_type == NONCOLLINEAR) {
+          for(int iw=0; iw<nw; iw++) 
+            Xw[iw] = CIcoeff * Ov[iw] * std::conj(detR[iw][iref]); 
+        } 
       } 
+      if(nrefs == 1)
+        for(int iw=0; iw<nw; iw++) 
+          Xw[iw] = ComplexType(1.0); 
 
       // MAM: Since most of the simpler estimators need G4D in host memory, 
       //      I'm providing a copy of the structure there already

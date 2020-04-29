@@ -62,6 +62,22 @@ dot(MultiArray1Dx&& x, MultiArray1Dy&& y){
         return dot(x.size(), pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()), y.stride(0));
 }
 
+template<class MultiArray2Dx,
+         class MultiArray2Dy,
+         typename = typename std::enable_if<std::decay<MultiArray2Dx>::type::dimensionality == 2>::type,
+         typename = typename std::enable_if<std::decay<MultiArray2Dy>::type::dimensionality == 2>::type,
+         typename = void
+>
+typename std::decay<MultiArray2Dx>::type::element
+dot(MultiArray2Dx&& x, MultiArray2Dy&& y){
+        assert( x.stride(0) == x.size(1) ); // only on contiguous arrays 
+        assert( x.stride(1) == 1 );            // only on contiguous arrays 
+        assert( y.stride(0) == y.size(1) ); // only on contiguous arrays 
+        assert( y.stride(1) == 1 );            // only on contiguous arrays 
+        assert( x.num_elements() == y.num_elements());
+        return dot(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
+}
+
 template<class T, class MultiArray1D, typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type >
 MultiArray1D scal(T a, MultiArray1D&& x){
 	scal(x.size(), a, pointer_dispatch(x.origin()), x.stride(0));
@@ -69,17 +85,36 @@ MultiArray1D scal(T a, MultiArray1D&& x){
 }
 
 template<class T,
-        class MultiArray2D,
-        typename = typename std::enable_if<std::decay<MultiArray2D>::type::dimensionality == 2>::type,
+        class MultiArrayND,
+        typename = typename std::enable_if<(std::decay<MultiArrayND>::type::dimensionality > 1)>::type,
         typename = void // TODO change to use dispatch 
     >
-MultiArray2D scal(T a, MultiArray2D&& x){
-        assert( x.stride(0) == x.size(1) ); // only on contiguous arrays 
-        assert( x.stride(1) == 1 );            // only on contiguous arrays 
+MultiArrayND scal(T a, MultiArrayND&& x){
+#ifdef NDEBUG
+        long sz(x.size(0));
+        for(int i=1; i<int(std::decay<MultiArrayND>::type::dimensionality); ++i) 
+          sz *= x.size(i);
+        assert( x.num_elements() == sz ); 
+        assert( x.stride(std::decay<MultiArrayND>::type::dimensionality-1) == 1 );            // only on contiguous arrays 
+#endif
         scal(x.num_elements(), a, pointer_dispatch(x.origin()), 1);
-        return std::forward<MultiArray2D>(x);
+        return std::forward<MultiArrayND>(x);
 }
-
+/*
+template<class T,
+        class MultiArray3D,
+        typename = typename std::enable_if<std::decay<MultiArray3D>::type::dimensionality == 3>::type,
+        typename = void, // TODO change to use dispatch 
+        typename = void // TODO change to use dispatch 
+    >
+MultiArray3D scal(T a, MultiArray3D&& x){
+        assert( x.stride(0) == x.size(1)*x.size(2) ); // only on contiguous arrays 
+        assert( x.stride(1) == x.size(2) ); // only on contiguous arrays 
+        assert( x.stride(2) == 1 );            // only on contiguous arrays 
+        scal(x.num_elements(), a, pointer_dispatch(x.origin()), 1);
+        return std::forward<MultiArray3D>(x);
+}
+*/
 template<class T, class MultiArray1D>
 auto operator*=(MultiArray1D&& x, T a) -> decltype(scal(a, std::forward<MultiArray1D>(x))){
 	return scal(a, std::forward<MultiArray1D>(x));

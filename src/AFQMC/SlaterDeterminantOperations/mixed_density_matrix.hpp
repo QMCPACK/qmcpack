@@ -1098,6 +1098,7 @@ void DensityMatrices(std::vector<MatA> const& Left, std::vector<MatB> const& Rig
   using ma::gemmBatched;
   using ma::getrfBatched;
   using ma::getriBatched;
+  using ma::batched_determinant_from_getrf;
 
   int nbatch = Right.size();
   int NMO = (herm?Left[0].size(1):Left[0].size(0));
@@ -1158,8 +1159,7 @@ void DensityMatrices(std::vector<MatA> const& Left, std::vector<MatB> const& Rig
                  ma::pointer_dispatch(IWORK.origin()), 
                  ma::pointer_dispatch(IWORK.origin())+nbatch*NEL, nbatch);
 
-  using ma::strided_determinant_from_getrf;
-  strided_determinant_from_getrf(NEL, ma::pointer_dispatch(Garray[0]), NEL, G[0].stride(0),
+  batched_determinant_from_getrf(NEL, Garray.data(), NEL, 
                                    IWORK.origin(),NEL,LogOverlapFactor,
                                    to_address(ovlp.origin()), nbatch);
 
@@ -1191,19 +1191,7 @@ void DensityMatrices(std::vector<MatA> const& Left, std::vector<MatB> const& Rig
         gemmBatched('N','T',NMO,NMO,NEL,ComplexType(1.0),NMarray.data(),ldM,
                     Larray.data(),ldL,ComplexType(0.0),Garray.data(),ldG,nbatch);
 
-/*
-        // C = conj(A) * T2
-        for(int b=0; b<nbatch; ++b)
-          ma::product(T(Left[b]),TNM3D[b],G[b]);
-*/
-
       } else {
-
-/*
-        // T2 = T1 * H(A) 
-        for(int b=0; b<nbatch; ++b)
-          ma::product(TNN3D[b],H(Left[b]),TNM3D[b]);
-*/
 
         // T2 = T1 * H(A) 
         gemmBatched('C','N',NMO,NEL,NEL,ComplexType(1.0),Larray.data(),ldL,
