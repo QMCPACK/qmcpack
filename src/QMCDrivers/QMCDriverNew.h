@@ -197,21 +197,27 @@ public:
   /** }@ */
 
 protected:
+  /** This is a data structure strictly for QMCDriver and its derived classes
+   *
+   *  i.e. its nested in scope for a reason
+   */
   struct AdjustedWalkerCounts
   {
     IndexType global_walkers;
     IndexType walkers_per_rank;
     int num_crowds;
     int walkers_per_crowd;
+    RealType reserve_walkers;
   };
 
-  /** this is intended to become static
+  /** "pure" factory function for AdjustedWalkerCounts
    *
-   *  it cant be because calc_default_local_walkers is virtual
+   *  It can't be static because calc_default_local_walkers is virtual
    */
   QMCDriverNew::AdjustedWalkerCounts adjustGlobalWalkerCount(Communicate* comm,
                                                              IndexType desired_count,
                                                              IndexType walkers_per_rank,
+                                                             RealType reserve_walkers,
                                                              int num_crowds);
 
 
@@ -376,7 +382,7 @@ public:
   * @param nwalkers number of walkers to add
   *
   */
-  void makeLocalWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
+  void makeLocalWalkers(int nwalkers, RealType reserve, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
 
   virtual AdjustedWalkerCounts calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const = 0;
   int get_num_crowds() { return num_crowds_; }

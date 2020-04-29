@@ -123,10 +123,14 @@ public:
   void allocateWalkerStuffInplace(int walker_index);
   /** }@ */
 
-  void createWalkers();
+  //void createWalkers();
+  
   /** Creates walkers with a clone of the golden electron particle set and golden trial wavefunction
+   *
+   *  \param[in] num_walkers number of living walkers in initial population
+   *  \param[in] reserve multiple above that to reserve >=1.0
    */
-  void createWalkers(IndexType num_walkers);
+  void createWalkers(IndexType num_walkers,RealType reserve = 1.0);
   void createWalkers(int num_crowds_,
                      int num_walkers_per_crowd_,
                      IndexType num_walkers,
@@ -188,6 +192,7 @@ public:
       }
     }
   }
+
   /**@ingroup Accessors
    * @{
    */
@@ -226,6 +231,8 @@ public:
   }
 
   UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
+  UPtrVector<MCPWalker>& get_dead_walkers() { return dead_walkers_; }
+
   UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
   UPtrVector<QMCHamiltonian>& get_dead_hamiltonians() { return dead_walker_hamiltonians_; }
 

@@ -268,7 +268,7 @@ void VMCBatched::process(xmlNodePtr node)
 
   QMCDriverNew::AdjustedWalkerCounts awc =
       adjustGlobalWalkerCount(myComm, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
-                              get_num_crowds());
+                              1.0, get_num_crowds());
 
   // This code bothers me now, most of the code bases this on what is actually there.
   population_.set_num_local_walkers(awc.walkers_per_rank);
@@ -283,7 +283,7 @@ void VMCBatched::process(xmlNodePtr node)
             << "                               num_crowds=" << num_crowds_ << '\n';
 
   // side effect updates walkers_per_crowd_;
-  makeLocalWalkers(awc.walkers_per_rank,
+  makeLocalWalkers(awc.walkers_per_rank, awc.reserve_walkers,
                    ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 
   Base::process(node);

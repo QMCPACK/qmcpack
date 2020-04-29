@@ -79,8 +79,7 @@ void DMCBatched::resetUpdateEngines()
   // I'd like to do away with this method in DMCBatched.
 
   // false indicates we do not support kill at node crossings.
-  branch_engine_->initWalkerController(population_,
-                                       dmcdriver_input_.get_reconfiguration(), false);
+  branch_engine_->initWalkerController(population_, dmcdriver_input_.get_reconfiguration(), false);
 
   estimator_manager_->reset();
 
@@ -116,9 +115,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   crowd.loadWalkers();
 
   int nnode_crossing(0);
-  auto& walker_twfs      = crowd.get_walker_twfs();
-  auto& walkers          = crowd.get_walkers();
-  auto& walker_elecs     = crowd.get_walker_elecs();
+  auto& walker_twfs  = crowd.get_walker_twfs();
+  auto& walkers      = crowd.get_walkers();
+  auto& walker_elecs = crowd.get_walker_elecs();
 
   // Note this resets the identities of all the walker TWFs
   auto copyTWFFromBuffer = [](TrialWaveFunction& twf, ParticleSet& pset, MCPWalker& walker) {
@@ -351,7 +350,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         moved_nonlocal.walker_mcp_wfbuffers.push_back(walker_mcp_wfbuffers[iw]);
       }
     }
-    
+
     TrialWaveFunction::flex_updateBuffer(moved_nonlocal.walker_twfs, moved_nonlocal.walker_elecs,
                                          moved_nonlocal.walker_mcp_wfbuffers);
     ParticleSet::flex_saveWalker(moved_nonlocal.walker_elecs, moved_nonlocal.walkers);
@@ -523,7 +522,7 @@ void DMCBatched::process(xmlNodePtr node)
 {
   QMCDriverNew::AdjustedWalkerCounts awc =
       adjustGlobalWalkerCount(myComm, dmcdriver_input_.get_target_walkers(), qmcdriver_input_.get_walkers_per_rank(),
-                              get_num_crowds());
+                              dmcdriver_input_.get_reserve(), get_num_crowds());
 
   walkers_per_rank_  = awc.walkers_per_rank;
   walkers_per_crowd_ = awc.walkers_per_crowd;
@@ -535,6 +534,7 @@ void DMCBatched::process(xmlNodePtr node)
 
   // side effect updates walkers_per_crowd_;
   makeLocalWalkers(awc.walkers_per_rank,
+                   awc.reserve_walkers,
                    ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
   population_.syncWalkersPerNode(myComm);
   Base::process(node);

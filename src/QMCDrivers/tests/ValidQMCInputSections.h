@@ -91,6 +91,7 @@ constexpr std::array<const char*, 2> valid_dmc_input_sections{
     <parameter name="crowds">                 8 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="walkers">                32 </parameter>
+    <parameter name="reserve">                1.5 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
     <parameter name="substeps">               5 </parameter>
     <parameter name="steps">                  1 </parameter>

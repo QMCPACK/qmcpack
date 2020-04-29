@@ -54,7 +54,7 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       wOut(0),
       timers_(timer_prefix),
       setNonLocalMoveHandler_(snlm_handler)
-      // num_crowds_(input.get_num_crowds())
+// num_crowds_(input.get_num_crowds())
 {
   QMCType = "invalid";
 
@@ -63,7 +63,7 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
     set_num_crowds(Concurrency::maxThreads(), "RandomNumberControl's maximum children set to omp_get_max_threads()");
   else
     num_crowds_ = input.get_num_crowds();
- 
+
   rotation = 0;
 
   // This needs to be done here to keep dependency on CrystalLattice out of the QMCDriverInput.
@@ -306,11 +306,13 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   return true;
 }
 
-void QMCDriverNew::makeLocalWalkers(int nwalkers, const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
+void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
+                                    RealType reserve,
+                                    const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
   if (population_.get_walkers().size() == 0)
   {
-    population_.createWalkers(nwalkers);
+    population_.createWalkers(nwalkers, reserve);
   }
   else if (population_.get_walkers().size() < nwalkers)
   {
@@ -480,21 +482,17 @@ std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
 
 void QMCDriverNew::defaultSetNonLocalMoveHandler(QMCHamiltonian& ham) {}
 
-
-/** static function
- *
- *  
- */
 QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communicate* comm,
                                                                          IndexType desired_count,
                                                                          IndexType walkers_per_rank,
+                                                                         RealType reserve_walkers,
                                                                          int num_crowds)
 {
   int ranks = myComm->size();
   AdjustedWalkerCounts awc{0, 0, 0, 0};
-  ;
   awc.global_walkers   = desired_count;
   awc.walkers_per_rank = walkers_per_rank;
+  awc.reserve_walkers  = reserve_walkers;
   if (awc.global_walkers != 0)
   {
     if (awc.global_walkers % ranks)
@@ -508,7 +506,6 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communi
       awc.walkers_per_rank = awc.global_walkers / ranks;
   }
 
-  // side effect updates Base::walkers_per_crowd_;
   awc = this->calcDefaultLocalWalkers(awc);
 
   if (awc.walkers_per_rank * ranks != awc.global_walkers)

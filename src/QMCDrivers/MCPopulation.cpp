@@ -72,7 +72,7 @@ MCPopulation::MCPopulation(int num_ranks,
 
 /** Default creates walkers equal to num_local_walkers_ and zeroed positions
  */
-void MCPopulation::createWalkers() { createWalkers(num_local_walkers_); }
+//void MCPopulation::createWalkers() { createWalkers(num_local_walkers_); }
 
 /** we could also search for walker_ptr
  */
@@ -83,10 +83,9 @@ void MCPopulation::allocateWalkerStuffInplace(int walker_index)
   walkers_[walker_index]->DataSet.allocate();
 }
 
-void MCPopulation::createWalkers(IndexType num_walkers)
+void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
 {
-  num_walkers *= 2;
-  num_local_walkers_ = num_walkers;
+  IndexType num_walkers_plus_reserve = static_cast<IndexType>(num_walkers * reserve);
 
   // Hack to hopefully insure no truly new walkers will be made by spawn, since I suspect that
   // doesn't capture everything that needs to make a walker + elements valid to load from a transferred
@@ -97,7 +96,7 @@ void MCPopulation::createWalkers(IndexType num_walkers)
 
   // This pattern is begging for a micro benchmark, is this really better
   // than the simpler walkers_.pushback;
-  walkers_.resize(num_walkers);
+  walkers_.resize(num_walkers_plus_reserve);
   auto createWalker = [this](UPtr<MCPWalker>& walker_ptr) {
     walker_ptr    = std::make_unique<MCPWalker>(num_particles_);
     walker_ptr->R = elec_particle_set_->R;
@@ -116,7 +115,7 @@ void MCPopulation::createWalkers(IndexType num_walkers)
     if (walker_ptr->ID == 0)
     {
       // And so walker ID's start at one because 0 is magic.
-      // TODO: This is C++ all indexes start at 0, make uninitialized ID = -1
+      // \todo This is C++ all indexes start at 0, make uninitialized ID = -1
       walker_ptr->ID       = (++num_walkers_created) * num_ranks_ + rank_;
       walker_ptr->ParentID = walker_ptr->ID;
     }
@@ -127,16 +126,16 @@ void MCPopulation::createWalkers(IndexType num_walkers)
   // Sadly the wfc makeClone interface depends on the full particle set as a way to not to keep track
   // of what different wave function components depend on. I'm going to try and create a hollow elec PS
   // with an eye toward removing the ParticleSet dependency of WFC components in the future.
-  walker_elec_particle_sets_.resize(num_walkers);
+  walker_elec_particle_sets_.resize(num_walkers_plus_reserve);
   std::for_each(walker_elec_particle_sets_.begin(), walker_elec_particle_sets_.end(),
                 [this](std::unique_ptr<ParticleSet>& elec_ps_ptr) {
                   elec_ps_ptr.reset(new ParticleSet(*elec_particle_set_));
                 });
 
   auto it_weps = walker_elec_particle_sets_.begin();
-  walker_trial_wavefunctions_.resize(num_walkers);
+  walker_trial_wavefunctions_.resize(num_walkers_plus_reserve);
   auto it_wtw = walker_trial_wavefunctions_.begin();
-  walker_hamiltonians_.resize(num_walkers);
+  walker_hamiltonians_.resize(num_walkers_plus_reserve);
   auto it_ham = walker_hamiltonians_.begin();
   while (it_wtw != walker_trial_wavefunctions_.end())
   {
@@ -150,7 +149,7 @@ void MCPopulation::createWalkers(IndexType num_walkers)
   outputManager.resume();
 
   RefVector<WFBuffer> mcp_wfbuffers;
-  mcp_wfbuffers.reserve(num_walkers);
+  mcp_wfbuffers.reserve(num_walkers_plus_reserve);
   std::for_each(walkers_.begin(), walkers_.end(),
                 [&mcp_wfbuffers](auto& walker) { mcp_wfbuffers.push_back((*walker).DataSet); });
 
@@ -161,9 +160,13 @@ void MCPopulation::createWalkers(IndexType num_walkers)
     this_walker.DataSet.allocate();
   });
 
-  // Now we kill the extra walkers and elements that we made.
-  num_walkers /= 2;
-  for (int i = 0; i < num_walkers; ++i)
+  // kill and spawn walkers update the state variable num_local_walkers_
+  // so it must start at the number of reserved walkers
+  num_local_walkers_ = num_walkers_plus_reserve;
+
+  IndexType extra_walkers = num_walkers_plus_reserve - num_walkers;
+  // Now we kill the extra reserve walkers and elements that we made.
+  for (int i = 0; i < extra_walkers; ++i)
     killLastWalker();
 }
 

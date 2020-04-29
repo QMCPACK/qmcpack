@@ -40,13 +40,19 @@ void DMCDriverInput::readXML(xmlNodePtr node)
 
   // DMC target walkers is MPI_world scope
   parameter_set_.add(target_walkers_, "TargetWalkers", "int");
-  parameter_set_.put(node);
 
+  parameter_set_.add(reserve_, "reserve", "double");
+
+  parameter_set_.put(node);
+  
   // TODO: similar check for alpha and gamma
   if(max_age_ < 0)
     throw std::runtime_error("Illegal input for MaxAge in DMC input section");
   if(branch_interval_ < 0)
     throw std::runtime_error("Illegal input for branchInterval or substeps in DMC input section");
+
+  if(reserve_ < 1.0)
+    throw std::runtime_error("You can only reserve walkers above the target walker count");
 }
 
 std::ostream& operator<<(std::ostream& o_stream, const DMCDriverInput& dmci) { return o_stream; }
