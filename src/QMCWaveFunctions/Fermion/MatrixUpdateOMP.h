@@ -266,6 +266,19 @@ public:
                                      Ainv_mw_ptr, norb, n_accepted);
     }
   }
+
+  void mw_getInvRowReady(const int row_id, bool transfer_to_host)
+  {
+    //FIXME in case transfer_to_host
+  }
+
+  void mw_transferAinv_D2H(const std::vector<T*>& Ainv_ptr_list, const std::vector<T*>& Ainv_dev_ptr_list, size_t matrix_size)
+  {
+    for (T* Ainv_ptr : Ainv_ptr_list)
+    {
+      PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[:matrix_size])")
+    }
+  }
 };
 } // namespace qmcplusplus
 
