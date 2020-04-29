@@ -126,14 +126,14 @@ void WalkerSetBase<Alloc,Ptr>::setup()
   // careful! These are only used to calculate memory needs and access points/partitionings
   int ncol=NAEA;
   int nrow=NMO;
-  // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs} 
+  // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs, nHist} 
   if(walkerType == CLOSED)  {
-    wlk_desc = {NMO,NAEA,0,0,0,0};
+    wlk_desc = {NMO,NAEA,0,0,0,0,0};
   } else if(walkerType == COLLINEAR) {
-    wlk_desc = {NMO,NAEA,NAEB,0,0,0};
+    wlk_desc = {NMO,NAEA,NAEB,0,0,0,0};
     ncol += NAEB;
   } else if(walkerType == NONCOLLINEAR) {
-    wlk_desc = {2*NMO,NAEA+NAEB,0,0,0,0};
+    wlk_desc = {2*NMO,NAEA+NAEB,0,0,0,0,0};
     nrow += NMO;
     ncol += NAEB;
   } else {

@@ -79,7 +79,7 @@ namespace ma
     T work, S;
     int status;
     lwork = -1;
-    gesvd('A','A', m, n, a, m , nullptr, nullptr, m, nullptr, m, &work, lwork, nullptr, status);
+    gesvd('A','A', m, n, a, m , nullptr, nullptr, m, nullptr, m, &work, lwork, status);
     lwork = int(work);
   }
 
@@ -87,9 +87,10 @@ namespace ma
   inline static void gesvd_bufferSize (const int m, const int n, std::complex<T>* a, int& lwork)
   {
     std::complex<T> work;
+    T rwork;
     int status;
     lwork = -1;
-    gesvd('A','A', m, n, a, m , nullptr, nullptr, m, nullptr, m, &work, lwork, nullptr, status);
+    gesvd('A','A', m, n, a, m , nullptr, nullptr, m, nullptr, m, &work, lwork, &rwork, status);
     lwork = int(real(work));
   }
 

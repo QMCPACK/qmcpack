@@ -65,6 +65,13 @@ namespace ma
   }
 
   template<class T>
+  inline void batched_determinant_from_getrf(int n, T** M, int lda, int* pivot, int pstride, T LogOverlapFactor, T* res, int nbatch)
+  {
+    for(int b=0; b<nbatch; b++) 
+      determinant_from_getrf(n,M[b],lda,pivot+b*pstride,LogOverlapFactor,res+b);
+  }
+
+  template<class T>
   T determinant_from_geqrf(int n, T* M, int lda, T* buff, T LogOverlapFactor)
   {
     T res(0.0); 
@@ -141,6 +148,20 @@ namespace qmc_cuda{
   inline void strided_determinant_from_getrf(int n, cuda_gpu_ptr<T> A, int lda, int Mstride, cuda_gpu_ptr<int> piv, int pstride, T LogOverlapFactor, T* res, int nbatch)
   {
     kernels::strided_determinant_from_getrf_gpu(n,to_address(A),lda,Mstride,to_address(piv),pstride,LogOverlapFactor,res,nbatch);
+  }
+
+  template<class T>
+  inline void batched_determinant_from_getrf(int n, cuda_gpu_ptr<T>* A, int lda, cuda_gpu_ptr<int> piv, int pstride, T LogOverlapFactor, T* res, int nbatch)
+  {
+    T **A_h = new T*[nbatch];
+    for(int i=0; i<nbatch; i++)
+      A_h[i] = to_address(A[i]);
+    T **A_d;
+    cudaMalloc((void **)&A_d,  nbatch*sizeof(*A_h));
+    cudaMemcpy(A_d, A_h, nbatch*sizeof(*A_h), cudaMemcpyHostToDevice);
+    kernels::batched_determinant_from_getrf_gpu(n,A_d,lda,to_address(piv),pstride,LogOverlapFactor,res,nbatch);
+    cudaFree(A_d);
+    delete [] A_h;
   }
 
   template<class T>
