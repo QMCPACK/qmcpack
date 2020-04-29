@@ -589,13 +589,10 @@ bool DMCBatched::run()
 
       // Accumulate on the whole population
       // But it is now visible in the algorithm not hidden in the BranchEngine::branch.
-      // TODO: optimize as task block?
+      // \todo make task block
+      // probably something smart can be done to include reduction over crowds below
       for (UPtr<Crowd>& crowd_ptr : crowds_)
-      {
-        Crowd& crowd_ref = *crowd_ptr;
-        if (crowd_ref.size() > 0)
-          crowd_ref.accumulate(population_.get_num_global_walkers());
-      }
+        crowd_ptr->accumulate(population_.get_num_global_walkers());
     }
 
     RefVector<ScalarEstimatorBase> all_scalar_estimators;
@@ -604,7 +601,6 @@ bool DMCBatched::run()
     // Collect all the ScalarEstimatorsFrom EMCrowds
     for (const UPtr<Crowd>& crowd : crowds_)
     {
-      Crowd& crowd_ref  = *crowd;
       auto crowd_sc_est = crowd->get_estimator_manager_crowd().get_scalar_estimators();
       all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
                                    std::make_move_iterator(crowd_sc_est.end()));

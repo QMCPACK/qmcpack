@@ -69,6 +69,8 @@ public:
   
   void accumulate(int global_walkers)
   {
+    if (this->size() == 0)
+      return;
     estimator_manager_crowd_.accumulate(global_walkers, mcp_walkers_, walker_elecs_);
   }
 
