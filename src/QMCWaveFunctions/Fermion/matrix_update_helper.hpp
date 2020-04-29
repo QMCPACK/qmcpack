@@ -52,6 +52,22 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
                                     double* const dphi_out[],
                                     double* const d2phi_out[],
                                     const int batch_count);
+/** calculate gradients
+ */
+cudaError_t calcGradients_cuda(cudaStream_t& hstream,
+                               const int n,
+                               const float* const Ainvrow[],
+                               const float* const dpsiMrow[],
+                               float* const grads_now,
+                               const int batch_count);
+
+cudaError_t calcGradients_cuda(cudaStream_t& hstream,
+                               const int n,
+                               const double* const Ainvrow[],
+                               const double* const dpsiMrow[],
+                               double* const grads_now,
+                               const int batch_count);
+
 } // namespace CUDA
 } // namespace qmcplusplus
 #endif

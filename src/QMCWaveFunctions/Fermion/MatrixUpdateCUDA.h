@@ -54,12 +54,20 @@ class MatrixUpdateCUDA
   T* rcopy_dev_ptr;
   // constant array value T(1)
   OffloadValueVector_t cone_vec;
+  // device pointer of cone_vec
+  T* cone_dev_ptr;
   // constant array value T(0)
   OffloadValueVector_t czero_vec;
+  // device pointer of czero_vec
+  T* czero_dev_ptr;
   // multi walker of grads for transfer needs.
   OffloadPinnedValueMatrix_t grads_value_v;
+  // device pointer of grads_value_v
+  T* grads_value_dev_ptr;
   // pointer buffer
   Vector<char, OffloadPinnedAllocator<char>> buffer_H2D;
+  // device pointer of buffer_H2D
+  char* buffer_H2D_dev_ptr;
 
   // CUDA specific variables
   cudaStream_t hstream;
@@ -77,8 +85,10 @@ class MatrixUpdateCUDA
       std::fill_n(czero_vec.data(), nw, T(0));
       T* cone_ptr = cone_vec.data();
       PRAGMA_OFFLOAD("omp target update to(cone_ptr[:nw])")
+      cone_dev_ptr = getOffloadDevicePtr(cone_ptr);
       T* czero_ptr = czero_vec.data();
       PRAGMA_OFFLOAD("omp target update to(czero_ptr[:nw])")
+      czero_dev_ptr = getOffloadDevicePtr(czero_ptr);
     }
   }
 
@@ -88,10 +98,18 @@ class MatrixUpdateCUDA
     if (temp.size() < total_size)
     {
       temp.resize(total_size);
+      temp_dev_ptr = getOffloadDevicePtr(temp.data());
       rcopy.resize(total_size);
-      temp_dev_ptr  = getOffloadDevicePtr(temp.data());
       rcopy_dev_ptr = getOffloadDevicePtr(rcopy.data());
+      buffer_H2D.resize((sizeof(T*) * 8 + sizeof(T)) * nw);
+      buffer_H2D_dev_ptr = getOffloadDevicePtr(buffer_H2D.data());
     }
+  }
+
+  void resizeGradsArray(size_t nw, size_t ndim)
+  {
+    grads_value_v.resize(nw, ndim);
+    grads_value_dev_ptr = getOffloadDevicePtr(grads_value_v.data());
   }
 
 public:
@@ -137,30 +155,23 @@ public:
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
     }
 
-    constexpr unsigned DIM = GT::Size;
-    grads_value_v.resize(nw, DIM);
-    auto* __restrict__ grads_value_v_ptr = grads_value_v.data();
-    auto* buffer_H2D_ptr                 = buffer_H2D.data();
+    cudaErrorCheck(cudaMemcpyAsync(buffer_H2D_dev_ptr, buffer_H2D.data(), buffer_H2D.size(), cudaMemcpyHostToDevice,
+                                   hstream),
+                   "cudaMemcpyAsync buffer_H2D failed!");
 
-    PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) \
-                    map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
-                    map(always, from: grads_value_v_ptr[:grads_value_v.size()])")
-    for (int iw = 0; iw < nw; iw++)
-    {
-      const T* __restrict__ invRow_ptr    = reinterpret_cast<const T**>(buffer_H2D_ptr)[iw];
-      const T* __restrict__ dpsiM_row_ptr = reinterpret_cast<const T**>(buffer_H2D_ptr)[nw + iw];
-      T grad_x(0), grad_y(0), grad_z(0);
-      PRAGMA_OFFLOAD("omp parallel for reduction(+: grad_x, grad_y, grad_z)")
-      for (int iorb = 0; iorb < norb; iorb++)
-      {
-        grad_x += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM];
-        grad_y += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM + 1];
-        grad_z += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM + 2];
-      }
-      grads_value_v_ptr[iw * DIM]     = grad_x;
-      grads_value_v_ptr[iw * DIM + 1] = grad_y;
-      grads_value_v_ptr[iw * DIM + 2] = grad_z;
-    }
+    resizeGradsArray(nw, GT::Size);
+
+    const T** invRow_ptr    = reinterpret_cast<const T**>(buffer_H2D_dev_ptr);
+    const T** dpsiM_row_ptr = reinterpret_cast<const T**>(buffer_H2D_dev_ptr) + nw;
+
+    cudaErrorCheck(CUDA::calcGradients_cuda(hstream, norb, invRow_ptr, dpsiM_row_ptr, grads_value_dev_ptr, nw),
+                   "CUDA::calcGradients_cuda failed!");
+
+    cudaErrorCheck(cudaMemcpyAsync(grads_value_v.data(), grads_value_dev_ptr, grads_value_v.size() * sizeof(T),
+                                   cudaMemcpyDeviceToHost, hstream),
+                   "cudaMemcpyAsync grads_value_v failed!");
+
+    waitStream();
 
     for (int iw = 0; iw < nw; iw++)
       grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
@@ -209,12 +220,12 @@ public:
                            const std::vector<T>& ratios)
   {
     const size_t n_accepted = Ainv_list.size();
-    if (n_accepted == 0) return;
+    if (n_accepted == 0)
+      return;
 
     resize_scratch_arrays(norb, n_accepted);
 
     // to handle T** of Ainv, psi_v, temp, rcopy
-    buffer_H2D.resize((sizeof(T*) * 8 + sizeof(T)) * n_accepted);
     Matrix<T*> ptr_buffer(reinterpret_cast<T**>(buffer_H2D.data()), 8, n_accepted);
     T* c_ratio_inv = reinterpret_cast<T*>(buffer_H2D.data() + sizeof(T*) * 8 * n_accepted);
     for (int iw = 0, count = 0; iw < isAccepted.size(); iw++)
@@ -234,39 +245,37 @@ public:
       }
 
     // update the inverse matrix
-    constexpr T cone(1);
-    constexpr T czero(0);
-    int dummy_handle     = 0;
-    int success          = 0;
-    auto* buffer_H2D_ptr = buffer_H2D.data();
     resize_fill_constant_arrays(n_accepted);
-    T* cone_ptr  = cone_vec.data();
-    T* czero_ptr = czero_vec.data();
-    PRAGMA_OFFLOAD("omp target data \
-                    map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
-                    use_device_ptr(buffer_H2D_ptr, cone_ptr, czero_ptr)")
+
+    cudaErrorCheck(cudaMemcpyAsync(buffer_H2D_dev_ptr, buffer_H2D.data(), buffer_H2D.size(), cudaMemcpyHostToDevice,
+                                   hstream),
+                   "cudaMemcpyAsync buffer_H2D failed!");
+
     {
-      T** Ainv_mw_ptr   = reinterpret_cast<T**>(buffer_H2D_ptr);
-      T** phiV_mw_ptr   = reinterpret_cast<T**>(buffer_H2D_ptr + sizeof(T*) * n_accepted);
-      T** temp_mw_ptr   = reinterpret_cast<T**>(buffer_H2D_ptr + sizeof(T*) * n_accepted * 2);
-      T** rcopy_mw_ptr  = reinterpret_cast<T**>(buffer_H2D_ptr + sizeof(T*) * n_accepted * 3);
-      T** dpsiM_mw_out  = reinterpret_cast<T**>(buffer_H2D_ptr + sizeof(T*) * n_accepted * 4);
-      T** d2psiM_mw_out = reinterpret_cast<T**>(buffer_H2D_ptr + sizeof(T*) * n_accepted * 5);
-      T** dpsiM_mw_in   = reinterpret_cast<T**>(buffer_H2D_ptr + sizeof(T*) * n_accepted * 6);
-      T** d2psiM_mw_in  = reinterpret_cast<T**>(buffer_H2D_ptr + sizeof(T*) * n_accepted * 7);
-      T* ratio_inv_mw   = reinterpret_cast<T*>(buffer_H2D_ptr + sizeof(T*) * n_accepted * 8);
+      T** Ainv_mw_ptr   = reinterpret_cast<T**>(buffer_H2D_dev_ptr);
+      T** phiV_mw_ptr   = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted);
+      T** temp_mw_ptr   = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 2);
+      T** rcopy_mw_ptr  = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 3);
+      T** dpsiM_mw_out  = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 4);
+      T** d2psiM_mw_out = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 5);
+      T** dpsiM_mw_in   = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 6);
+      T** d2psiM_mw_in  = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 7);
+      T* ratio_inv_mw   = reinterpret_cast<T*>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 8);
 
       // invoke the Fahy's variant of Sherman-Morrison update.
-      cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, norb, cone_ptr, Ainv_mw_ptr, norb, phiV_mw_ptr, 1,
-                                      czero_ptr, temp_mw_ptr, 1, n_accepted), "cuBLAS_inhouse::gemv_batched failed!");
+      cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, norb, cone_dev_ptr, Ainv_mw_ptr, norb,
+                                                  phiV_mw_ptr, 1, czero_dev_ptr, temp_mw_ptr, 1, n_accepted),
+                     "cuBLAS_inhouse::gemv_batched failed!");
 
       cudaErrorCheck(CUDA::copyAinvRow_saveGL_cuda(hstream, rowchanged, norb, Ainv_mw_ptr, norb, temp_mw_ptr,
-                                    rcopy_mw_ptr, dpsiM_mw_in, d2psiM_mw_in, dpsiM_mw_out, d2psiM_mw_out,
-                                    n_accepted), "CUDA::copyAinvRow_saveGL_cud failed!");
+                                                   rcopy_mw_ptr, dpsiM_mw_in, d2psiM_mw_in, dpsiM_mw_out, d2psiM_mw_out,
+                                                   n_accepted),
+                     "CUDA::copyAinvRow_saveGL_cuda failed!");
 
 
       cudaErrorCheck(cuBLAS_inhouse::ger_batched(hstream, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
-                                     Ainv_mw_ptr, norb, n_accepted), "cuBLAS_inhouse::ger_batched failed!");
+                                                 Ainv_mw_ptr, norb, n_accepted),
+                     "cuBLAS_inhouse::ger_batched failed!");
       waitStream();
     }
   }
