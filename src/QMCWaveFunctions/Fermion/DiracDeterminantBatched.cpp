@@ -325,6 +325,9 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::updateAfterSweep(ParticleSet& P,
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
 {
+  buf.add(psiMinv.first_address(), psiMinv.last_address());
+  buf.add(dpsiM.first_address(), dpsiM.last_address());
+  buf.add(d2psiM.first_address(), d2psiM.last_address());
   buf.add(LogValue);
 }
 
@@ -343,6 +346,9 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
     updateAfterSweep(P, P.G, P.L);
   }
   BufferTimer.start();
+  buf.put(psiMinv.first_address(), psiMinv.last_address());
+  buf.put(dpsiM.first_address(), dpsiM.last_address());
+  buf.put(d2psiM.first_address(), d2psiM.last_address());
   buf.put(LogValue);
   BufferTimer.stop();
   return LogValue;
@@ -352,7 +358,14 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
-  recompute(P);
+  buf.get(psiMinv.first_address(), psiMinv.last_address());
+  buf.get(dpsiM.first_address(), dpsiM.last_address());
+  buf.get(d2psiM.first_address(), d2psiM.last_address());
+  auto* psiMinv_ptr = psiMinv.data();
+  PRAGMA_OFFLOAD("omp target update to(psiMinv_ptr[:psiMinv.size()])")
+  auto* psiM_vgl_ptr = psiM_vgl.data();
+  const size_t psiM_vgl_stride = psiM_vgl.capacity();
+  PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl_stride:psiM_vgl_stride*4])")
   buf.get(LogValue);
   BufferTimer.stop();
 }
