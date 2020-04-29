@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 developers.
+// Copyright (c) 2020 developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -20,15 +20,19 @@
 
 namespace qmcplusplus
 {
-
 class DriverModifierBase;
 
+namespace testing
+{
+class DMCBatchedTest;
+}
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a DMC using particle-by-particle threaded and batched moves.
  */
 class DMCBatched : public QMCDriverNew
 {
 public:
+  using Base              = QMCDriverNew;
   using FullPrecRealType  = QMCTraits::FullPrecRealType;
   using PosType           = QMCTraits::PosType;
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
@@ -68,12 +72,19 @@ public:
 
   DMCBatched(DMCBatched&&) = default;
 
-  /** The initial number of local walkers
+  /** DMCBatched driver will eventually ignore cur
    *
-   *  Currently substantially the same as VMCBatch so if it doesn't change
-   *  This should be pulled down the QMCDriverNew
+   *  This is the shared entry point
+   *  from QMCMain so cannot be updated yet
+   *  
+   *  Contains logic that sets walkers_per_rank_ 
+   *  TargetWalkers trump walkers, if it is not set
+   *  walkers which is by default per rank for the batched drivers
+   *  from this or the previous section wins.
+   *
+   *  walkers is still badly named.
    */
-  IndexType calc_default_local_walkers(IndexType walkers_per_rank);
+  void process(xmlNodePtr cur);
 
   bool run();
 
@@ -90,6 +101,8 @@ public:
   QMCRunType getRunType() { return QMCRunType::DMC_BATCH; }
 
   void setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian);
+
+  QMCDriverNew::AdjustedWalkerCounts calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const;
 
 private:
   DMCDriverInput dmcdriver_input_;
@@ -174,7 +187,7 @@ private:
 
   static void handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThread& sft, DriverTimers& timers);
   static void handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForThread& sft);
-// struct DMCTimers
+  // struct DMCTimers
   // {
   //   NewTimer& dmc_movePbyP;
   //   DriverTimers(const std::string& prefix)
@@ -183,6 +196,8 @@ private:
   // };
 
   // DMCTimers dmc_timers_;
+
+  friend class qmcplusplus::testing::DMCBatchedTest;
 };
 
 } // namespace qmcplusplus
