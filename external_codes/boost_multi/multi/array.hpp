@@ -177,9 +177,7 @@ public:
 	//	array_alloc{a}, ref(array_alloc::allocate(num_elements(o)), extensions(o))
 		static_array(extensions(o), a) // TODO: should be uninitialized_copy
 	{
-//MAM
-		//adl_copy(o.begin(), o.end(), this->begin()); // TODO: should be uninitialized_copy
-		adl_copy_n(o.begin(), distance(o.begin(),o.end()), this->begin()); // TODO: should be uninitialized_copy
+		adl_copy(o.begin(), o.end(), this->begin()); // TODO: should be uninitialized_copy
 	}
 	template<class TT, class... Args>
 	static_array(static_array<TT, D, Args...> const& o)
@@ -662,9 +660,7 @@ struct array : static_array<T, D, Alloc>,
 	boost::multi::random_iterable<array<T, D, Alloc> >
 {
 	using static_ = static_array<T, D, Alloc>;
-	//static_assert(std::is_same<typename array::alloc_traits::value_type, T>{} or std::is_same<typename array::alloc_traits::value_type, void>{}, "!");
-	static_assert( std::is_same<typename std::allocator_traits<Alloc>::value_type, T>{}, 
-		"allocator value type must match array value type");
+	static_assert(std::is_same<typename array::alloc_traits::value_type, T>{} or std::is_same<typename array::alloc_traits::value_type, void>{}, "!");
 public:
 //	array_ptr<T, D, typename array::element_const_ptr> operator&() const&{return {this->base(), this->extensions()};}
 //	array_ptr<T, D, typename array::element_ptr> operator&() &{return {this->base(), this->extensions()};}

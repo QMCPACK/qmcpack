@@ -94,7 +94,7 @@ inline void write_distributed_MA(MultiArray & A, std::array<size_t,2> offset, st
       }
       TG.Cores().all_reduce_in_place_n(ndim.begin(),ndim.size(),std::plus<>());
       if(TG.Cores().rank() < nnodes_per_TG) 
-        TG.Cores().send_n(A.origin(),A.num_elements(),0,TG.Cores().rank());
+        TG.Cores().send_n(to_address(A.origin()),A.num_elements(),0,TG.Cores().rank());
     }
   }
   TG.Global().barrier();
