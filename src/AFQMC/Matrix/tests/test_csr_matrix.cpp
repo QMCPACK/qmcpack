@@ -266,7 +266,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
 #ifdef ENABLE_CUDA
                 {
                   using dev_csr_matrix = ma::sparse::csr_matrix<Type,IndxType,IntType,
-                                                              qmc_cuda::cuda_gpu_allocator<Type>>;
+                                                              device::device_allocator<Type>>;
                   dev_csr_matrix small11(small4);
                   REQUIRE(small11.num_non_zero_elements() == 4);
                   auto val_ = small11.non_zero_values_data();

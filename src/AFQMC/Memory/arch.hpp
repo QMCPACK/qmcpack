@@ -12,15 +12,11 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef AFQMC_CUSTOM_POINTERS_HPP
-#define AFQMC_CUSTOM_POINTERS_HPP
+#ifndef AFQMC_ARCH_HPP
+#define AFQMC_ARCH_HPP
 
-#include "AFQMC/Memory/raw_pointers.hpp" 
 #if defined(ENABLE_CUDA)
-#include "AFQMC/Memory/device_pointers.hpp" 
-//#include "AFQMC/Memory/CUDA/cuda_utilities.h"
-//#include "AFQMC/Memory/CUDA/cuda_init.h"
-//#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
+#include "AFQMC/Memory/CUDA/cuda_arch.h"
 #endif
 
 #endif

@@ -17,12 +17,8 @@
 
 #include<cassert>
 #if defined(ENABLE_CUDA)
-#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/batched_dot_wabn_wban.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/dot_wabn.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/batched_Tab_to_Klr.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/Tab_to_Kl.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/vbias_from_v1.cuh"
+#include "AFQMC/Memory/custom_pointers.hpp"
+#include "AFQMC/Numerics/device_kernels.hpp"
 #endif
 
 namespace ma
@@ -354,13 +350,13 @@ void batched_diagonal_sum( int* n, std::complex<Q> *const* A, int lda,
 } // namespace ma
 
 #ifdef ENABLE_CUDA
-namespace qmc_cuda{
+namespace device{
 
 template<typename T, typename Q>
 void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
-                    int nchol_tot, int ncholQ, int ncholQ0, cuda_gpu_ptr<int> kdiag,
-                    cuda_gpu_ptr<Q> Tab, cuda_gpu_ptr<T>  Kl,
-                    cuda_gpu_ptr<T> Kr)
+                    int nchol_tot, int ncholQ, int ncholQ0, device_pointer<int> kdiag,
+                    device_pointer<Q> Tab, device_pointer<T>  Kl,
+                    device_pointer<T> Kr)
 {
   kernels::batched_Tab_to_Klr(nterms,nwalk,nocc,nchol_max,nchol_tot,ncholQ,ncholQ0,
                              to_address(kdiag), to_address(Tab),
@@ -369,9 +365,9 @@ void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
 
 template<typename T, typename Q>
 void batched_Tanb_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
-                    int nchol_tot, int ncholQ, int ncholQ0, cuda_gpu_ptr<int> kdiag,
-                    cuda_gpu_ptr<Q> Tab, cuda_gpu_ptr<T>  Kl,
-                    cuda_gpu_ptr<T> Kr)
+                    int nchol_tot, int ncholQ, int ncholQ0, device_pointer<int> kdiag,
+                    device_pointer<Q> Tab, device_pointer<T>  Kl,
+                    device_pointer<T> Kr)
 {
   kernels::batched_Tanb_to_Klr(nterms,nwalk,nocc,nchol_max,nchol_tot,ncholQ,ncholQ0,
                              to_address(kdiag), to_address(Tab),
@@ -380,21 +376,21 @@ void batched_Tanb_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
 
 template<typename T, typename Q>
 void Tab_to_Kl(int nwalk, int nocc, int nchol,
-                    cuda_gpu_ptr<Q> Tab, cuda_gpu_ptr<T>  Kl)
+                    device_pointer<Q> Tab, device_pointer<T>  Kl)
 {
   kernels::Tab_to_Kl(nwalk,nocc,nchol,to_address(Tab),to_address(Kl));
 }
 
 template<typename T, typename Q>
 void Tanb_to_Kl(int nwalk, int nocc, int nchol, int nchol_tot,
-                    cuda_gpu_ptr<Q> Tab, cuda_gpu_ptr<T>  Kl)
+                    device_pointer<Q> Tab, device_pointer<T>  Kl)
 {
   kernels::Tanb_to_Kl(nwalk,nocc,nchol,nchol_tot,to_address(Tab),to_address(Kl));
 }
 
 template<typename T, typename Q, typename R>
 void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
-                    cuda_gpu_ptr<R> alpha, cuda_gpu_ptr<Q> Tab,
+                    device_pointer<R> alpha, device_pointer<Q> Tab,
                     T* y , int incy)
 {
   kernels::batched_dot_wabn_wban(nbatch,nwalk,nocc,nchol,to_address(alpha),to_address(Tab),
@@ -403,7 +399,7 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
 
 template<typename T, typename Q, typename R>
 void batched_dot_wanb_wbna( int nbatch, int nwalk, int nocc, int nchol,
-                    cuda_gpu_ptr<R> alpha, cuda_gpu_ptr<Q> Tab,
+                    device_pointer<R> alpha, device_pointer<Q> Tab,
                     T* y , int incy)
 {
   kernels::batched_dot_wanb_wbna(nbatch,nwalk,nocc,nchol,to_address(alpha),to_address(Tab),
@@ -411,30 +407,30 @@ void batched_dot_wanb_wbna( int nbatch, int nwalk, int nocc, int nchol,
 }
 
 template<typename T, typename Q, typename R>
-void dot_wabn( int nwalk, int nocc, int nchol, R alpha, cuda_gpu_ptr<Q> Tab,
+void dot_wabn( int nwalk, int nocc, int nchol, R alpha, device_pointer<Q> Tab,
                     T* y , int incy)
 {
   kernels::dot_wabn(nwalk,nocc,nchol,alpha,to_address(Tab),y,incy);
 }
 
 template<typename T, typename Q, typename R>
-void dot_wpan_waqn_Fwpq( int nwalk, int nocc, int nchol, R alpha, cuda_gpu_ptr<Q> Tab,
-                    cuda_gpu_ptr<T> F)
+void dot_wpan_waqn_Fwpq( int nwalk, int nocc, int nchol, R alpha, device_pointer<Q> Tab,
+                    device_pointer<T> F)
 {
   kernels::dot_wpan_waqn_Fwpq(nwalk,nocc,nchol,alpha,to_address(Tab),to_address(F));
 }
 
 template<typename T, typename Q, typename R>
-void dot_wanb( int nwalk, int nocc, int nchol, R alpha, cuda_gpu_ptr<Q> Tab,
+void dot_wanb( int nwalk, int nocc, int nchol, R alpha, device_pointer<Q> Tab,
                     T* y , int incy)
 {
   kernels::dot_wanb(nwalk,nocc,nchol,alpha,to_address(Tab),y,incy);
 }
 
 template<typename T, typename Q, typename R>
-void vbias_from_v1( int nwalk, int nkpts, int nchol_max, cuda_gpu_ptr<int> Qsym, cuda_gpu_ptr<int> kminus,
-                    cuda_gpu_ptr<int> ncholpQ, cuda_gpu_ptr<int> ncholpQ0, R alpha,
-                    cuda_gpu_ptr<Q> v1, T* vb)
+void vbias_from_v1( int nwalk, int nkpts, int nchol_max, device_pointer<int> Qsym, device_pointer<int> kminus,
+                    device_pointer<int> ncholpQ, device_pointer<int> ncholpQ0, R alpha,
+                    device_pointer<Q> v1, T* vb)
 {
   kernels::vbias_from_v1(nwalk,nkpts,nchol_max,to_address(Qsym),to_address(kminus),
             to_address(ncholpQ),to_address(ncholpQ0),alpha,to_address(v1),vb);
@@ -442,25 +438,25 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, cuda_gpu_ptr<int> Qsym,
 
 template<typename T, typename Q>
 void batched_dot( char TA, char TB, int N, int M, T alpha,
-                  cuda_gpu_ptr<Q> A, int lda, cuda_gpu_ptr<Q> B, int ldb,
-                  T beta, cuda_gpu_ptr<T> y, int incy)
+                  device_pointer<Q> A, int lda, device_pointer<Q> B, int ldb,
+                  T beta, device_pointer<T> y, int incy)
 {
 //  kernels::batched_dot(TA,TB,N,M,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(y),incy);
     APP_ABORT(" Error: batched_dot not yet available in gpu.\n");
 }
 
 template<typename I, typename T, typename Q, typename T1>
-void batched_ab_ba( cuda_gpu_ptr<I> n, cuda_gpu_ptr<Q>* A, int lda,
-                           cuda_gpu_ptr<Q>* B, int ldb,
-                           T1 alpha, cuda_gpu_ptr<T>* y, int batchSize )
+void batched_ab_ba( device_pointer<I> n, device_pointer<Q>* A, int lda,
+                           device_pointer<Q>* B, int ldb,
+                           T1 alpha, device_pointer<T>* y, int batchSize )
 {
 //  kernels::batched_dot(TA,TB,N,M,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(y),incy);
     APP_ABORT(" Error: batched_dot not yet available in gpu.\n");
 }
 
 template<typename I, typename T, typename Q>
-void batched_diagonal_sum( cuda_gpu_ptr<I> n, cuda_gpu_ptr<Q>* A, int lda,
-                           T alpha, cuda_gpu_ptr<T>* y, int batchSize )
+void batched_diagonal_sum( device_pointer<I> n, device_pointer<Q>* A, int lda,
+                           T alpha, device_pointer<T>* y, int batchSize )
 {
 //  kernels::batched_dot(TA,TB,N,M,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(y),incy);
     APP_ABORT(" Error: batched_dot not yet available in gpu.\n");
