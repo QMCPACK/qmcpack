@@ -4,11 +4,16 @@ from pyscf.pbc import gto, tools
 from pyscf.pbc.dft import numint
 from pyscf import gto as molgto
 import os
+import sys
 import numpy
 from mpi4py import MPI
-from gto_basis_utils import extend_gto_id
-from pyscf_driver import (pyscf_driver_init, pyscf_driver_get_info, pyscf_driver_end, 
-                pyscf_driver_mp2,pyscf_driver_hamil,pyscf_driver_mp2no)
+from afqmctools.utils.gto_basis_utils import extend_gto_id
+try:
+    from pyscf_driver import (pyscf_driver_init, pyscf_driver_get_info, pyscf_driver_end,
+                    pyscf_driver_mp2,pyscf_driver_hamil,pyscf_driver_mp2no)
+except ImportError:
+    print("Warning: module pyscf_driver not found. AFQMC QE converter required to "
+          "use this module.")
 
 def make_cell(latt,sp_label,atid,atpos,basis_='gthdzvp',pseudo_='gthpbe',mesh=None,prec=1e-8):
     assert(len(atid) == len(atpos))
@@ -78,7 +83,7 @@ def make_image_comm(nimage, comm=MPI.COMM_WORLD):
     assert( parent_nproc%nimage == 0 )
     nproc_image = parent_nproc / nimage
     my_image_id = parent_mype / nproc_image
-    me_image    = parent_mype%nproc_image 
+    me_image    = parent_mype%nproc_image
     intra_image = comm.Split(my_image_id,comm.rank)
     inter_image = comm.Split(me_image,comm.rank)
     return intra_image, inter_image
@@ -86,7 +91,7 @@ def make_image_comm(nimage, comm=MPI.COMM_WORLD):
 # put these in modules later
 def qe_driver_init(norb, qe_prefix, qe_outdir, atm_labels,
                    intra_image=MPI.COMM_WORLD, inter_image=None,
-                   npools=1, outdir='./qedrv', #remove_dir=True, 
+                   npools=1, outdir='./qedrv', #remove_dir=True,
                    set_soft_links=True, verbose=True,add_image_tag=True):
 #    if remove_dir:
 #        assert(set_soft_links)
@@ -102,11 +107,11 @@ def qe_driver_init(norb, qe_prefix, qe_outdir, atm_labels,
         inter_size = 1
 
     fname = outdir
-    if add_image_tag: 
+    if add_image_tag:
         fname += '.'+str(inter_rank)+'/'
     else:
         fname += '/'
-    if  intra_rank == 0:
+    if intra_rank == 0:
 #        if remove_dir:
 #            os.system('rm -rf '+fname+'\n')
         if set_soft_links:
@@ -115,9 +120,9 @@ def qe_driver_init(norb, qe_prefix, qe_outdir, atm_labels,
             os.system('ln -s ./'+qe_outdir+'/'+qe_prefix+'.save/ '+fname+'/'+qe_prefix+'.save')
     MPI.COMM_WORLD.barrier()
 
-    # initialize driver: 
-    nkpts, nat, nsp, npwx, ngm, mesh = pyscf_driver_init(
-            inter_size,npools,intra_size/npools,norb,qe_prefix,fname,verbose)
+    # initialize driver:
+    nkpts, nat, nsp, npwx, ngm, mesh = pyscf_driver_init(inter_size, npools, intra_size/npools,
+                                                         norb, qe_prefix, fname, verbose)
     atms = numpy.array(atm_labels)  # don't know how to return an array of strings
     atom_ids,atom_pos,kpts,latt = pyscf_driver_get_info(nat,nsp,nkpts)#,atms)
     atom_pos=atom_pos.T
@@ -126,16 +131,16 @@ def qe_driver_init(norb, qe_prefix, qe_outdir, atm_labels,
     qe_info = {'species' : atms,
                'nsp' : nsp,
                'nat' : nat,
-               'at_id' : atom_ids, 
-               'at_pos' : atom_pos, 
-               'nkpts' : nkpts, 
-               'kpts' : kpts, 
-               'latt' : latt, 
-               'npwx' : npwx, 
-               'mesh' : mesh, 
-               'ngm' : ngm, 
+               'at_id' : atom_ids,
+               'at_pos' : atom_pos,
+               'nkpts' : nkpts,
+               'kpts' : kpts,
+               'latt' : latt,
+               'npwx' : npwx,
+               'mesh' : mesh,
+               'ngm' : ngm,
                'outdir' : fname
-               } 
+               }
     if verbose and (MPI.COMM_WORLD.rank==0):
         print("# species = {}".format(qe_info['nsp']))
         print("# atoms = {}".format(qe_info['nat']))
@@ -150,14 +155,14 @@ def qe_driver_init(norb, qe_prefix, qe_outdir, atm_labels,
         print(" K-points: ")
         print(qe_info['kpts'])
 
-    return qe_info 
+    return qe_info
 
 def qe_driver_end():
     if(MPI.COMM_WORLD.rank==0):
         print(" Closing QE driver.")
     pyscf_driver_end()
 
-def gen_qe_gto(qe_info,gto_files={},x=None,basis_map={},  
+def gen_qe_gto(qe_info,gto_files={},x=None,basis_map={},
                fname='pyscf.orbitals.h5',prec=1e-12):
     basis = {}
     n0=0
@@ -223,11 +228,7 @@ def qe_driver_hamil(qe_info,out_prefix='pwscf',
 # subroutine pyscf_driver_hamil(out_prefix_, nread_from_h5, h5_add_orbs_, &
 #       ndet, eigcut, nextracut, thresh, ncholmax, &
 #       get_hf, get_mp2, update_qe_bands, ehf, emp2)
-    ehf, emp2 = pyscf_driver_hamil(out_prefix, nread_from_h5, h5_add_orbs, 
-             ndet, eigcut, nextracut, thresh, ncholmax, 
+    ehf, emp2 = pyscf_driver_hamil(out_prefix, nread_from_h5, h5_add_orbs,
+             ndet, eigcut, nextracut, thresh, ncholmax,
              get_hf, get_mp2, update_qe_bands)
     return ehf, emp2
-    
-
-
-

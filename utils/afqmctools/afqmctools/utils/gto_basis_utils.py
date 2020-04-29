@@ -10,9 +10,9 @@ def extend_gto(fname,sym='X',expo=None):
         base_gto = ''
     assert( len(expo) > 0 )
     assert( len(expo) <= 7 )
-    lname = numpy.array(['S','P','D','F','G','H','I']) 
+    lname = numpy.array(['S','P','D','F','G','H','I'])
     for i in range(len(expo)):
-        base_gto += sym + "   " + lname[i] + " \n  {}  1.00\n".format(expo[i]) 
+        base_gto += sym + "   " + lname[i] + " \n  {}  1.00\n".format(expo[i])
     return base_gto
 
 def extend_gto_id(fname,sym,expo,ids):
@@ -25,7 +25,7 @@ def extend_gto_id(fname,sym,expo,ids):
     assert( len(expo) <= len(ids) )
     assert( len(expo) > 0 )
     for i in range(len(expo)):
-        base_gto += sym + "   " + ids[i] + " \n  {}  1.00\n".format(expo[i]) 
+        base_gto += sym + "   " + ids[i] + " \n  {}  1.00\n".format(expo[i])
     return base_gto
 
 def default_basis_map(Lmax,atoms):
@@ -36,7 +36,7 @@ def default_basis_map(Lmax,atoms):
     def add_shell(L,bmap,x):
         labels = ['S','P','D','F','G','H','I']
         for i in range(0,L+1):
-            bmap.append(labels[i])        
+            bmap.append(labels[i])
         if L==2:
             x.append(0.5)
             x.append(0.5)
