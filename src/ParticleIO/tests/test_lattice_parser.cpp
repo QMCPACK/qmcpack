@@ -27,7 +27,6 @@ namespace qmcplusplus
 {
 TEST_CASE("read_lattice_xml", "[particle_io][xml]")
 {
-  OHMMS::Controller->initialize(0, NULL);
 
   const char* particles = "<tmp> \
  <parameter name=\"lattice\" units=\"bohr\"> \

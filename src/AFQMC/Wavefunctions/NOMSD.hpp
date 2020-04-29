@@ -231,6 +231,7 @@ class NOMSD: public AFQMCInfo
     { return HamOp.getOneBodyPropagatorMatrix(TG_,vMF); }
 
     SlaterDetOperations* getSlaterDetOperations() {return std::addressof(SDetOp);} 
+    HamiltonianOperations* getHamiltonianOperations() { return std::addressof(HamOp);}
 
     /*
      * local contribution to vbias for the Green functions in G 

@@ -158,7 +158,8 @@ template<class T = void> struct allocator_shm_ptr_with_raw_ptr_dispatch{
         bool operator!=(allocator_shm_ptr_with_raw_ptr_dispatch const& other) const{return not(other == *this);}
         template<class U, class... As>
         void construct(U* p, As&&... as){::new((void*)p) U(std::forward<As>(as)...);}
-        template< class U >     void destroy(U* p){p->~U();}
+        template< class U >
+        void destroy(U* p){p->~U();}
 };
 
 

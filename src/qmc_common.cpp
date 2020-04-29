@@ -16,8 +16,10 @@
 
 
 #include <qmc_common.h>
-#include <Platforms/sysutil.h>
+#include "config.h"
 #include "qmcpack_version.h"
+#include "Message/Communicate.h"
+#include "Platforms/Host/OutputManager.h"
 
 namespace qmcplusplus
 {

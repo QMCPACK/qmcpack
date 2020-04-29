@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <Utilities/InfoStream.h>
+#include <Platforms/Host/InfoStream.h>
 #include <fstream>
 
 void InfoStream::pause()

@@ -19,7 +19,7 @@
 #include<type_traits>
 #include<cassert>
 #include<vector>
-#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
+#include "AFQMC/Memory/custom_pointers.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cusparse_wrapper.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cublas_wrapper.hpp"
 #include<cassert>
@@ -27,18 +27,18 @@
 
 #include "multi/array.hpp"
 
-namespace qmc_cuda
+namespace device 
 {
 
   extern boost::multi::array<std::complex<double>,1,
-                             qmc_cuda::cuda_gpu_allocator<std::complex<double>>> *cusparse_buffer;
+                             device::device_allocator<std::complex<double>>> *cusparse_buffer;
 
 
   template<typename T, typename Q>
   void csrmv(const char transa, const int M, const int K, const T alpha, const char *matdescra, 
-        cuda_gpu_ptr<T> const A, cuda_gpu_ptr<int> const indx, cuda_gpu_ptr<int> const pntrb, 
-        cuda_gpu_ptr<int> const pntre, cuda_gpu_ptr<Q> const x, const T beta, 
-        cuda_gpu_ptr<T> y  )
+        device_pointer<T> const A, device_pointer<int> const indx, device_pointer<int> const pntrb, 
+        device_pointer<int> const pntre, device_pointer<Q> const x, const T beta, 
+        device_pointer<T> y  )
   {
     static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
     // somehow need to check if the matrix is compact!
@@ -49,17 +49,17 @@ namespace qmc_cuda
      throw std::runtime_error("Error: cudaMemcpy returned error code in csrmv.");
     int nnz = pe-pb; 
     if(CUSPARSE_STATUS_SUCCESS != cusparse::cusparse_csrmv(*A.handles.cusparse_handle,transa,
-            M,K,nnz,alpha,afqmc_cusparse_matrix_descr,
+            M,K,nnz,alpha,qmc_cuda::afqmc_cusparse_matrix_descr,
             to_address(A),to_address(pntrb),to_address(indx),to_address(x),beta,to_address(y)))
       throw std::runtime_error("Error: cusparse_csrmv returned error code.");
   }
 
   template<typename T, typename Q>
   void csrmm(const char transa, const int M, const int N, const int K, const T alpha, 
-             const char *matdescra,  cuda_gpu_ptr<T> A, cuda_gpu_ptr<int> indx, 
-             cuda_gpu_ptr<int> pntrb, cuda_gpu_ptr<int> pntre, 
-             cuda_gpu_ptr<Q> B, const int ldb, const T beta, 
-             cuda_gpu_ptr<T> C, const int ldc)
+             const char *matdescra,  device_pointer<T> A, device_pointer<int> indx, 
+             device_pointer<int> pntrb, device_pointer<int> pntre, 
+             device_pointer<Q> B, const int ldb, const T beta, 
+             device_pointer<T> C, const int ldc)
   {
     static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
     // somehow need to check if the matrix is compact!
@@ -83,9 +83,14 @@ namespace qmc_cuda
 // /*
       char transb('T');
       // setup work space for column major matrix C
-      if(cusparse_buffer->num_elements() < M*N) 
+      if(cusparse_buffer == nullptr) {  
+        cusparse_buffer = new boost::multi::array<std::complex<double>,1,
+                                 device::device_allocator<std::complex<double>>>(
+                                   typename boost::multi::layout_t<1u>::extensions_type{M*M},
+                                   device::device_allocator<std::complex<double>>{}); 
+      } else if(cusparse_buffer->num_elements() < M*N) 
         cusparse_buffer->reextent(typename boost::multi::layout_t<1u>::extensions_type{M*N});
-      cuda_gpu_ptr<T> C_(cusparse_buffer->origin().pointer_cast<T>());  
+      device_pointer<T> C_(cusparse_buffer->origin().pointer_cast<T>());  
 
       // if beta != 0, transpose C into C_
       if( std::abs(beta) > 1e-12 )
@@ -96,7 +101,7 @@ namespace qmc_cuda
 
       // call csrmm2 on C_  
       if(CUSPARSE_STATUS_SUCCESS != cusparse::cusparse_csrmm2(*A.handles.cusparse_handle,transa,
-            transb,M,N,K,nnz,alpha,afqmc_cusparse_matrix_descr,
+            transb,M,N,K,nnz,alpha,qmc_cuda::afqmc_cusparse_matrix_descr,
             to_address(A),to_address(pntrb),to_address(indx),
             to_address(B),ldb,beta,to_address(C_),M))
         throw std::runtime_error("Error: cusparse_csrmm returned error code.");
@@ -113,13 +118,18 @@ namespace qmc_cuda
       char transT('T');
       char transN('N');
       // setup work space for column major matrix B,C
-      if(cusparse_buffer->num_elements() < (M+K)*N)
+      if(cusparse_buffer == nullptr) {
+        cusparse_buffer = new boost::multi::array<std::complex<double>,1,
+                                 device::device_allocator<std::complex<double>>>(
+                                   typename boost::multi::layout_t<1u>::extensions_type{(M+K)*N},
+                                   device::device_allocator<std::complex<double>>{});
+      } else if(cusparse_buffer->num_elements() < (M+K)*N)
         cusparse_buffer->reextent(typename boost::multi::layout_t<1u>::extensions_type{(M+K)*N});
       // A is MxK 
       // B should be MxN
-      cuda_gpu_ptr<T> B_(cusparse_buffer->origin().pointer_cast<T>());  
+      device_pointer<T> B_(cusparse_buffer->origin().pointer_cast<T>());  
       // C should be KxN
-      cuda_gpu_ptr<T> C_(B_+M*N);
+      device_pointer<T> C_(B_+M*N);
 
       // if beta != 0, transpose C into C_
       if( std::abs(beta) > 1e-12 )
@@ -135,7 +145,7 @@ namespace qmc_cuda
 
       // call csrmm2 on C_  
       if(CUSPARSE_STATUS_SUCCESS != cusparse::cusparse_csrmm(*A.handles.cusparse_handle,transa,
-            M,N,K,nnz,alpha,afqmc_cusparse_matrix_descr,
+            M,N,K,nnz,alpha,qmc_cuda::afqmc_cusparse_matrix_descr,
             to_address(A),to_address(pntrb),to_address(indx),
             to_address(B_),M,beta,to_address(C_),K))
         throw std::runtime_error("Error: cusparse_csrmm returned error code.");

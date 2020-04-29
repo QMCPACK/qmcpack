@@ -41,7 +41,6 @@ namespace qmcplusplus
 TEST_CASE("VMC", "[drivers][vmc]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
   c->setName("test");
   ParticleSet ions;
@@ -142,7 +141,6 @@ TEST_CASE("VMC", "[drivers][vmc]")
 TEST_CASE("SOVMC", "[drivers][vmc]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
   c->setName("test");
   ParticleSet ions;

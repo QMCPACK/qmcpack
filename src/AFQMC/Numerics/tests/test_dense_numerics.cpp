@@ -18,10 +18,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-//#define CATCH_CONFIG_MAIN
 //#include "catch.hpp"
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 #include "Configuration.h"
 
 // Always test the fallback code, regardless of MKL definition
@@ -261,6 +260,7 @@ void test_dense_matrix_mult()
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
                 array_ref<double, 2> A(a.data(), {3,3});
                 REQUIRE(A.num_elements() == a.size());
+cout<<" lqf: " <<ma::gelqf_optimal_workspace_size(A) <<" " <<ma::glq_optimal_workspace_size(A) <<std::endl;
                 WORK.resize( std::max(ma::gelqf_optimal_workspace_size(A),
                                       ma::glq_optimal_workspace_size(A)) );
                 ma::gelqf(A,TAU,WORK);
@@ -710,16 +710,15 @@ void test_dense_matrix_mult_device(Allocator alloc)
 
 TEST_CASE("dense_ma_operations_device", "[matrix_operations]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
-  qmc_cuda::CUDA_INIT(node);
+  arch::INIT(node);
 
   {
     //using T = std::complex<double>;
     using T = double;
-    using Alloc = qmc_cuda::cuda_gpu_allocator<T>;
+    using Alloc = device::device_allocator<T>;
 
     Alloc gpu_alloc{};
  

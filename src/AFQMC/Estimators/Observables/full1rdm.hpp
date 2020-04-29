@@ -37,9 +37,8 @@ namespace afqmc
 {
 
 /* 
- * Observable class that calculates the walker averaged "full" 1 RDM.
- * In this context, "full" means that no contraction over the RDM is
- * being performed. The resulting RDM will be [spin][x*NMO][x*NMO],
+ * Observable class that calculates the walker averaged 1 RDM.
+ * The resulting RDM will be [spin][x*NMO][x*NMO],
  * where x:2 for NONCOLLINEAR and 1 for everything else.
  */
 class full1rdm: public AFQMCInfo
@@ -294,6 +293,8 @@ class full1rdm: public AFQMCInfo
     ma::product( ComplexType(1.0,0.0), ma::T( DMWork( {0, nw}, {i0,iN}) ),  denom, 
                  ComplexType(1.0,0.0), DMAverage[iav].sliced(i0,iN)); 
     TG.TG_local().barrier();
+//app_log()<<" DMAv: " <<iav <<" " <<ma::sum(DMAverage[iav]) <<"\n";
+//TG.Global().barrier();
   }
 
   template< class HostCVec>
@@ -388,6 +389,8 @@ class full1rdm: public AFQMCInfo
       ma::axpy( Xw[iw], G2D[iw].sliced(i0,iN), DMWork[iw].sliced(i0,iN) );
     }
     TG.TG_local().barrier();
+//app_log()<<" DMWORK: " <<ma::sum(DMWork) <<"\n";
+//TG.Global().barrier();
   }
 
   // G should be device accesible memory

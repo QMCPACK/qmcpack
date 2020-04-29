@@ -11,7 +11,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
 #include <OhmmsSoA/Container.h>
@@ -47,6 +46,12 @@ TEST_CASE("vector", "[OhmmsSoA]")
   REQUIRE(RSoA[1][0] == Approx(1.68658058));
   REQUIRE(RSoA[1][1] == Approx(1.68658058));
   REQUIRE(RSoA[1][2] == Approx(1.68658058));
+
+  //check view value
+  vec_soa_t RSoA_view(RSoA.data(), RSoA.size(), RSoA.capacity());
+  REQUIRE(RSoA_view[1][0] == Approx(1.68658058));
+  REQUIRE(RSoA_view[1][1] == Approx(1.68658058));
+  REQUIRE(RSoA_view[1][2] == Approx(1.68658058));
 }
 
 TEST_CASE("VectorSoaContainer copy constructor", "[OhmmsSoA]")

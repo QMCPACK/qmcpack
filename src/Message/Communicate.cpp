@@ -15,22 +15,18 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <Configuration.h>
 #include "Message/Communicate.h"
-#include "Message/TagMaker.h"
 #include <iostream>
 #include <cstdio>
-#include <Platforms/sysutil.h>
-#include <Utilities/FairDivide.h>
 #include <fstream>
+#include "config.h"
+#include "Platforms/sysutil.h"
+#include "Utilities/FairDivide.h"
 
 #ifdef HAVE_MPI
 #include "mpi3/shared_communicator.hpp"
 #endif
 
-
-//static data of TagMaker::CurrentTag is initialized.
-int TagMaker::CurrentTag = 1000;
 
 //Global Communicator is created without initialization
 Communicate* OHMMS::Controller = new Communicate;

@@ -11,7 +11,7 @@
 
 #undef NDEBUG
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include<algorithm> // std::sort
 #include<cassert>
@@ -266,7 +266,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
 #ifdef ENABLE_CUDA
                 {
                   using dev_csr_matrix = ma::sparse::csr_matrix<Type,IndxType,IntType,
-                                                              qmc_cuda::cuda_gpu_allocator<Type>>;
+                                                              device::device_allocator<Type>>;
                   dev_csr_matrix small11(small4);
                   REQUIRE(small11.num_non_zero_elements() == 4);
                   auto val_ = small11.non_zero_values_data();
@@ -547,7 +547,6 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
 
 TEST_CASE("csr_matrix_serial", "[csr]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   // serial
   {
     using Type = double;
@@ -567,7 +566,6 @@ TEST_CASE("csr_matrix_serial", "[csr]")
 
 TEST_CASE("csr_matrix_shm", "[csr]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   mpi3::shared_communicator node(world.split_shared());
 
@@ -594,7 +592,6 @@ TEST_CASE("csr_matrix_shm", "[csr]")
 #ifdef TEST_CSR_LARGE_MEMORY
 TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   mpi3::shared_communicator node(world.split_shared());
 

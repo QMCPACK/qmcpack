@@ -158,6 +158,76 @@ __global__ void kernel_strided_determinant_from_getrf(int N, thrust::complex<T> 
    __syncthreads();
 }
 
+template<class T>
+__global__ void kernel_batched_determinant_from_getrf(int N, T *const* m, int lda, int const* piv, int pstride, T LogOverlapFactor, T *det, int nbatch) {
+
+   __shared__ T tmp[64];
+   __shared__ T sg[64];
+   int t = threadIdx.x;
+   int batch = blockIdx.x;
+   if( batch >= nbatch ) return;
+
+   int const* piv_ = piv+batch*pstride;
+   T const* m_ = m[batch];
+
+   tmp[t]=T(0.0);
+   sg[t]=T(1.0);
+
+   for(int ip=threadIdx.x; ip<N; ip+=blockDim.x) {
+    if(m_[ip*lda+ip] < 0.0) {
+      tmp[t] += log(-m_[ip*lda+ip]);
+      sg[t] *= T(-1.0);
+    } else
+      tmp[t] += log(m_[ip*lda+ip]);
+    if(piv_[ip]!=(ip+1))
+      sg[t] *= T(-1.0);
+   }
+   __syncthreads();
+
+   // not optimal but ok for now
+   if (threadIdx.x == 0) {
+     int imax = (N > blockDim.x)?blockDim.x:N;
+     for(int i=1; i<imax; i++) {
+       tmp[0] += tmp[i];
+       sg[0] *= sg[i];
+      }
+     *(det+batch) = sg[0]*exp(tmp[0]-LogOverlapFactor);
+   }
+   __syncthreads();
+}
+
+template<class T>
+__global__ void kernel_batched_determinant_from_getrf(int N, thrust::complex<T> *const* m, int lda, int const* piv, int pstride, thrust::complex<T> LogOverlapFactor, thrust::complex<T> *det, int nbatch)
+{
+
+   __shared__ thrust::complex<T> tmp[64];
+   int batch = blockIdx.x;
+   if( batch >= nbatch ) return;
+   int t = threadIdx.x;
+
+   tmp[t]=thrust::complex<T>(0.0);
+
+   int const* piv_ = piv+batch*pstride;
+   thrust::complex<T> const* m_ = m[batch];
+
+   for(int ip=threadIdx.x; ip<N; ip+=blockDim.x)
+    if(piv_[ip]==(ip+1)){
+      tmp[t] += log(m_[ip*lda+ip]);
+    }else{
+      tmp[t] += log(-m_[ip*lda+ip]);
+    }
+   __syncthreads();
+
+   // not optimal but ok for now
+   if (threadIdx.x == 0) {
+     int imax = (N > blockDim.x)?blockDim.x:N;
+     for(int i=1; i<imax; i++)
+       tmp[0] += tmp[i];
+     *(det+batch) = exp(tmp[0]-LogOverlapFactor);
+   }
+   __syncthreads();
+}
+
 template<typename T>
 __global__ void kernel_determinant_from_geqrf(int N, T *m, int lda, T* buff, T LogOverlapFactor, thrust::complex<T> *det) {
 
@@ -274,6 +344,23 @@ void strided_determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda,
 {
   kernel_strided_determinant_from_getrf<<<nbatch,64>>>(N,
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,mstride,piv,pstride,
+                                    static_cast<thrust::complex<double>>(LogOverlapFactor),
+                                    reinterpret_cast<thrust::complex<double> *>(res) , nbatch);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
+void batched_determinant_from_getrf_gpu(int N, double **m, int lda, int *piv, int pstride, double LogOverlapFactor, double* res, int nbatch)
+{
+  kernel_batched_determinant_from_getrf<<<nbatch,64>>>(N,m,lda,piv,pstride,LogOverlapFactor,res,nbatch);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
+void batched_determinant_from_getrf_gpu(int N, std::complex<double> **m, int lda, int *piv, int pstride, std::complex<double> LogOverlapFactor, std::complex<double>* res, int nbatch)
+{
+  kernel_batched_determinant_from_getrf<<<nbatch,64>>>(N,
+                                    reinterpret_cast<thrust::complex<double> **>(m),lda,piv,pstride,
                                     static_cast<thrust::complex<double>>(LogOverlapFactor),
                                     reinterpret_cast<thrust::complex<double> *>(res) , nbatch);
   qmc_cuda::cuda_check(cudaGetLastError());

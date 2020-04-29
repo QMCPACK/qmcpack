@@ -371,6 +371,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
                                    MFfactor[n0+ni],hybrid_weight[n0+ni],work);
       }
       if(wset.getBPPos() >=0 && wset.getBPPos()<wset.NumBackProp()) wset.advanceBPPos();
+      if(wset.getBPPos() >=0) wset.advanceHistoryPos();
     }
     TG.local_barrier();
     AFQMCTimers[extra_timer]->stop();
@@ -543,12 +544,16 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       // 2. bcast G 
       AFQMCTimers[vHS_comm_overhead_timer]->start();
 #ifdef BUILD_AFQMC_WITH_NCCL
+#ifdef ENABLE_CUDA
       if(k == TG.getLocalTGRank()) 
         copy_n(Gstore.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
       NCCLCHECK(ncclBcast(to_address(Gwork.origin()+Gak0),2*(GakN-Gak0),ncclDouble,k,
                           TG.ncclTG(),TG.ncclStream()));
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
       //TG.TG_Cores().broadcast_n(to_address(Gwork.origin())+Gak0,GakN-Gak0,k);
+#else
+#error "BUILD_AFQMC_WITH_NCCL only with ENABLE_CUDA"
+#endif
 #else
       if(k == TG.getLocalTGRank()) 
         copy_n(Gstore.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
@@ -592,10 +597,14 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       AFQMCTimers[vHS_comm_overhead_timer]->start();
       // 4. Reduce vHS
 #ifdef BUILD_AFQMC_WITH_NCCL
+#ifdef ENABLE_CUDA
       NCCLCHECK(ncclReduce((const void*)to_address(vHS.origin()+vak0),
                     (void*)to_address(vrecv.origin()+vak0), 2*(vakN-vak0),
                      ncclDouble, ncclSum,k,TG.ncclTG(),TG.ncclStream()));
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
+#else
+#error "BUILD_AFQMC_WITH_NCCL only with ENABLE_CUDA"
+#endif
 #else
       TG.TG_Cores().reduce_n(to_address(vHS.origin())+vak0,vakN-vak0,
                              to_address(vrecv.origin())+vak0,std::plus<>(),k);
@@ -631,6 +640,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     // reduce MF and HWs
     if(TG.TG().size() > 1) {
 #ifdef BUILD_AFQMC_WITH_NCCL
+#ifdef ENABLE_CUDA
       NCCLCHECK(ncclAllReduce((const void*)to_address(MFfactor.origin()),
                     (void*)to_address(MFfactor.origin()), 2*MFfactor.num_elements(),
                      ncclDouble, ncclSum,TG.ncclTG(),TG.ncclStream()));
@@ -638,6 +648,9 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
                      (void*)to_address(hybrid_weight.origin()), 2*hybrid_weight.num_elements(),
                      ncclDouble, ncclSum,TG.ncclTG(),TG.ncclStream()));
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
+#else
+#error "BUILD_AFQMC_WITH_NCCL only with ENABLE_CUDA"
+#endif
 #else
       TG.TG().all_reduce_in_place_n(to_address(MFfactor.origin()),MFfactor.num_elements(),
                                   std::plus<>());
@@ -702,6 +715,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
                                    MFfactor[n0+ni],hybrid_weight[n0+ni],work);
       }
       if(wset.getBPPos() >=0 && wset.getBPPos()<wset.NumBackProp()) wset.advanceBPPos();
+      if(wset.getBPPos() >=0) wset.advanceHistoryPos();
     }
     TG.local_barrier();
     AFQMCTimers[extra_timer]->stop();

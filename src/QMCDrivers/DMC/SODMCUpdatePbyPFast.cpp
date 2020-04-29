@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories 
+// File developed by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
@@ -75,16 +75,16 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
     {
       //get the displacement
-      TrialWaveFunction::LogValueType spingrad_iat;
+      ComplexType spingrad_iat;
       GradType grad_iat = Psi.evalGradWithSpin(W, iat, spingrad_iat);
       PosType dr;
       ParticleSet::Scalar_t ds;
       DriftModifier->getDrift(tauovermass, grad_iat, dr);
-      ds = tauovermass/spinMass*std::real(spingrad_iat); //using raw spin grad, no UNR modifier
+      DriftModifier->getDrift(tauovermass / spinMass, spingrad_iat, ds);
       dr += sqrttau * deltaR[iat];
-      ds += std::sqrt(tauovermass/spinMass)*deltaS[iat];
+      ds += std::sqrt(tauovermass / spinMass) * deltaS[iat];
       bool is_valid = W.makeMoveAndCheckWithSpin(iat, dr, ds);
-      RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
+      RealType rr   = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
       if (!is_valid || rr > m_r2max)
       {
@@ -103,15 +103,15 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
       else
       {
         FullPrecRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
-        logGf += -0.5*deltaS[iat]*deltaS[iat];
+        logGf += -0.5 * deltaS[iat] * deltaS[iat];
         //Use the force of the particle iat
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
-        ds = tauovermass/spinMass*std::real(spingrad_iat);
+        DriftModifier->getDrift(tauovermass / spinMass, spingrad_iat, ds);
         dr                     = W.R[iat] - W.activePos - dr;
         ds                     = W.spins[iat] - W.activeSpinVal - ds;
         FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
-        logGb                 += -spinMass*oneover2tau*ds*ds;
-        RealType prob          = std::norm(ratio) * std::exp(logGb - logGf);
+        logGb += -spinMass * oneover2tau * ds * ds;
+        RealType prob = std::norm(ratio) * std::exp(logGb - logGf);
         if (RandomGen() < prob)
         {
           ++nAcceptTemp;

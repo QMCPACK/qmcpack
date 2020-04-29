@@ -20,9 +20,9 @@
 #include<complex>
 #include<cstdlib>
 #include<stdexcept>
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
-#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
+#include "AFQMC/Memory/device_pointers.hpp"
 #include <cuda_runtime.h>
 #include "cublas_v2.h"
 //#include "cublasXt.h"
@@ -33,30 +33,13 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
+
 namespace qmc_cuda {
 
-  // work around for problem with csrmm 
-  boost::multi::array<std::complex<double>,1,qmc_cuda::cuda_gpu_allocator<std::complex<double>>> 
-                            *cusparse_buffer(nullptr);
-                                        //(typename boost::multi::layout_t<1u>::extensions_type{1},
-                                        //qmc_cuda::cuda_gpu_allocator<std::complex<double>>{});
-
-  cublasHandle_t afqmc_cublas_handle;
-//  cublasXtHandle_t afqmc_cublasXt_handle;
-  cusparseHandle_t afqmc_cusparse_handle;
-  cusolverDnHandle_t afqmc_cusolverDn_handle;
-  curandGenerator_t afqmc_curand_generator;
   bool afqmc_cuda_handles_init = false;
   cusparseMatDescr_t afqmc_cusparse_matrix_descr;
 
   std::vector<cudaStream_t> afqmc_cuda_streams;
-
-  gpu_handles base_cuda_gpu_ptr::handles{&afqmc_cublas_handle,
-//                                         &afqmc_cublasXt_handle,
-                                         &afqmc_cusparse_handle,
-                                         &afqmc_cusolverDn_handle,
-                                         &afqmc_curand_generator  
-                                        }; 
 
   void cuda_check(cudaError_t sucess, std::string message)
   {

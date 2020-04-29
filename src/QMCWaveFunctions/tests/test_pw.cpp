@@ -31,7 +31,6 @@ namespace qmcplusplus
 TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -175,7 +174,6 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;

@@ -83,8 +83,10 @@ private:
   std::shared_ptr<OffloadVector<ST>> GGt_offload;
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
-  ///thread private ratios for reduction when using nested threading, numVP x numThread
+  ///team private ratios for reduction, numVP x numTeams
   Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
+  ///team private ratios and grads for reduction, numVP x numTeams
+  Matrix<TT, OffloadPinnedAllocator<TT>> rg_private;
   ///offload scratch space, dynamically resized to the maximal need
   Vector<ST, OffloadPinnedAllocator<ST>> offload_scratch;
   ///result scratch space, dynamically resized to the maximal need
@@ -97,6 +99,8 @@ private:
   Vector<ST, OffloadPinnedAllocator<ST>> multi_pos_copy;
   ///reference particle id of all the quadrature points
   Vector<int, OffloadPinnedAllocator<int>> mw_ref_id;
+  ///multi purpose H2D buffer
+  Matrix<char, OffloadPinnedAllocator<char>> buffer_H2D;
 
   void evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos_copy,
                            const RefVector<ValueVector_t>& psi_v_list,
@@ -113,7 +117,8 @@ protected:
 
 public:
   SplineC2ROMP()
-      : offload_timer_(*TimerManager.createTimer("SplineC2ROMP::offload", timer_level_fine)),
+      : BsplineSet(true),
+        offload_timer_(*TimerManager.createTimer("SplineC2ROMP::offload", timer_level_fine)),
         nComplexBands(0),
         GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
         PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
@@ -241,12 +246,20 @@ public:
                            GradVector_t& dpsi,
                            ValueVector_t& d2psi) override;
 
-  virtual void mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
-                              const std::vector<ParticleSet*>& P_list,
+  virtual void mw_evaluateVGL(const RefVector<SPOSet>& sa_list,
+                              const RefVector<ParticleSet>& P_list,
                               int iat,
                               const RefVector<ValueVector_t>& psi_v_list,
                               const RefVector<GradVector_t>& dpsi_v_list,
                               const RefVector<ValueVector_t>& d2psi_v_list) override;
+
+  virtual void mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
+                                              const RefVector<ParticleSet>& P_list,
+                                              int iat,
+                                              const std::vector<const ValueType*>& invRow_ptr_list,
+                                              VGLVector_t& phi_vgl_v,
+                                              std::vector<ValueType>& ratios,
+                                              std::vector<GradType>& grads) override;
 
   void assign_vgh(const PointType& r,
                   ValueVector_t& psi,

@@ -58,9 +58,6 @@ private:
   std::string UseFastGrad;
   ///input to control maximum age allowed for walkers.
   IndexType mover_MaxAge;
-  ///turn on spin moves
-  std::string SpinMoves;
-  RealType SpinMass;
 
   void resetUpdateEngines();
   /// Copy Constructor (disabled)

@@ -47,7 +47,6 @@ TEST_CASE("SkAll", "[hamiltonian]")
   typedef QMCTraits::RealType RealType;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   // XML parser

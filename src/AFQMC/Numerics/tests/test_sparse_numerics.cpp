@@ -214,12 +214,11 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
 TEST_CASE("sparse_ma_operations", "[matrix_operations]")
 {
 #ifdef ENABLE_CUDA
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
-  qmc_cuda::CUDA_INIT(node);
-  using Alloc = qmc_cuda::cuda_gpu_allocator<double>;
+  arch::INIT(node);
+  using Alloc = device::device_allocator<double>;
   test_sparse_matrix_mult<Alloc>();
 #endif
   test_sparse_matrix_mult();

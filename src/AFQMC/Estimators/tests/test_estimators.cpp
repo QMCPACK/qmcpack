@@ -9,7 +9,7 @@
 // File created by: Fionn Malone, malone14@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "Configuration.h"
 
@@ -43,6 +43,8 @@ using std::cerr;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
+
+extern std::string UTEST_HAMIL, UTEST_WFN;
 
 namespace qmcplusplus
 {
@@ -241,14 +243,13 @@ const char *propg_xml_block =
 
 TEST_CASE("reduced_density_matrix", "[estimators]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
 #ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
-  qmc_cuda::CUDA_INIT(node);
-  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+  arch::INIT(node);
+  using Alloc = device::device_allocator<ComplexType>;
 #else
   using Alloc = shared_allocator<ComplexType>;
 #endif

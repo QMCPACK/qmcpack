@@ -36,7 +36,6 @@ void test_He(bool transform)
 
   SECTION(section_name.str())
   {
-    OHMMS::Controller->initialize(0, NULL);
     Communicate* c = OHMMS::Controller;
 
     ParticleSet elec;
@@ -157,7 +156,6 @@ void test_Ne(bool transform)
 
   SECTION(section_name.str())
   {
-    OHMMS::Controller->initialize(0, NULL);
     Communicate* c = OHMMS::Controller;
 
     ParticleSet elec;
@@ -289,7 +287,6 @@ void test_HCN(bool transform)
 
   SECTION(section_name.str())
   {
-    OHMMS::Controller->initialize(0, NULL);
     Communicate* c = OHMMS::Controller;
 
     Libxml2Document doc;

@@ -28,7 +28,7 @@
 
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Utilities/Utils.hpp"
-#include "AFQMC/Numerics/helpers/batched_operations.hpp"
+#include "AFQMC/Numerics/batched_operations.hpp"
 #include "AFQMC/Numerics/tensor_operations.hpp"
 
 namespace qmcplusplus
@@ -126,12 +126,15 @@ class KP3IndexFactorization_batched
                  ValueType e0_,
                  Allocator const& alloc_,
                  int cv0,
-                 int gncv): 
+                 int gncv, 
+                 int bf_size = 4096): 
         allocator_(alloc_),
         sp_allocator_(alloc_),
         walker_type(type),
         global_nCV(gncv),
         global_origin(cv0),
+        default_buffer_size_in_MB(bf_size), 
+        last_nw(-1),
         E0(e0_),
         H1(std::move(hij_)),
         haj(std::move(h1)),
@@ -384,10 +387,10 @@ class KP3IndexFactorization_batched
       }
 
       // take from BufferManager.
-      long default_buffer_size_in_MB(4L*1024L);
-      long batch_size;
+//      long default_buffer_size_in_MB(4L*1024L);
+      long batch_size(0);
       if(addEXX) {
-        long Bytes = default_buffer_size_in_MB*1024L*1024L;
+        long Bytes = long(default_buffer_size_in_MB)*1024L*1024L;
         Bytes /= size_t(nwalk*nocc_max*nocc_max*nchol_max*sizeof(SPComplexType));
         long bz0 = std::max(2L, Bytes);
         // batch_size includes the factor of 2 from Q/Qm pair
@@ -399,6 +402,12 @@ class KP3IndexFactorization_batched
                                     batch_size;
       } 
       set_buffer(mem_needs);
+      if(last_nw != nwalk) { 
+        app_log()<<"  --  KP3IndexFactorization_batched::energy(): batch_size, total_memory, EXX_memory: " 
+                 <<batch_size <<" " <<sizeof(SPComplexType)*(mem_needs/1024L/1024L) <<" MB " 
+                 <<sizeof(SPComplexType)*((batch_size*long(nwalk*nocc_max*nocc_max*nchol_max)+batch_size)/1024L/1024L) <<" MB. \n"; 
+        last_nw = nwalk;
+      }
 
       // messy
       sp_pointer Krptr(nullptr), Klptr(nullptr); 
@@ -1311,6 +1320,12 @@ class KP3IndexFactorization_batched
       }
     }
 
+    template<class Mat, class MatB>
+    void generalizedFockMatrix(Mat&& G, MatB&& Fp, MatB&& Fm)
+    {
+      APP_ABORT(" Error: generalizedFockMatrix not implemented for this hamiltonian.\n"); 
+    }
+
     bool distribution_over_cholesky_vectors() const{ return true; }
     int number_of_ke_vectors() const{ return local_nCV; }
     int local_number_of_cholesky_vectors() const{ return 2*local_nCV; } 
@@ -1342,6 +1357,9 @@ class KP3IndexFactorization_batched
     int global_nCV;
     int local_nCV;
     int global_origin;
+   
+    int default_buffer_size_in_MB;
+    int last_nw;
 
     ValueType E0;
 

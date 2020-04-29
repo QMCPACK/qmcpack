@@ -11,9 +11,8 @@
 
 #undef NDEBUG
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
-//#define CATCH_CONFIG_MAIN
 //#include "catch.hpp"
 #include "Configuration.h"
 
@@ -74,7 +73,6 @@ using namespace afqmc;
 TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
 {
   Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
   //c = OHMMS::Controller;
 
   const int NMO = 4;
@@ -432,7 +430,7 @@ void SDetOps_complex_serial(Allocator alloc)
   ov_=SDet.Overlap(A(A.extension(0),A.extension(1)),B,0.0); myREQUIRE(ov_,ov);
   ov_=SDet.Overlap(A,B(B.extension(0),B.extension(1)),0.0); myREQUIRE(ov_,ov);
 
-// copy not yet working with cuda_gpu_ptr
+// copy not yet working with device_pointer
   array A_ = A({0,2},{0,3});
   array B_ = B({0,3},{0,2});
   ov_=SDet.Overlap(A({0,2},{0,3}),B({0,3},{0,2}),0.0); myREQUIRE(ov_,ov2);
@@ -530,6 +528,27 @@ void SDetOps_complex_serial(Allocator alloc)
   SDet.Orthogonalize(Q,0.0);
   ov_=SDet.Overlap_noHerm(Q,Q,0.0);
   myREQUIRE( ov_, std::complex<double>(1.,0.));
+
+  // Batched
+  // TODO fix CPU.
+#ifdef ENABLE_CUDA
+  boost::multi::array<Type,3,Allocator> Gw({3,NMO,NMO},alloc);
+  std::vector<array_ref> RA, RB, Gwv;
+  boost::multi::array<Type,1,Allocator> ovlp(iextensions<1u>{3});
+  for(int i = 0; i < 3; i++) {
+    RA.emplace_back(Aref);
+    RB.emplace_back(Bref);
+    Gwv.emplace_back(array_ref(Gw[i].origin(), {NMO,NMO}));
+  }
+  Type log_ovlp;
+  Type ov_ref = -7.623325999999989+22.20453200000001i;
+
+  SDet.BatchedDensityMatrices(RA,RB,Gwv,log_ovlp,ovlp,false);
+  for(int i = 0; i < 3; i++) {
+    check(Gwv[i],g_ref);
+    myREQUIRE(ovlp[i], ov_ref);
+  }
+#endif
 
 }
 
@@ -901,14 +920,13 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 
 TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
 
 #ifdef ENABLE_CUDA
-  qmc_cuda::CUDA_INIT(node);
-  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+  arch::INIT(node);
+  using Alloc = device::device_allocator<ComplexType>;
 #else
   using Alloc = std::allocator<ComplexType>;
 #endif
