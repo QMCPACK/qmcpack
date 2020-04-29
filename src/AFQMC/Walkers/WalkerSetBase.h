@@ -89,7 +89,8 @@ class WalkerSetBase: public AFQMCInfo
         RandomGenerator_t* r, Allocator alloc_, BPAllocator bpalloc_):
                 AFQMCInfo(info),TG(tg_),rng(r),
                 walker_size(1),walker_memory_usage(0),
-                bp_walker_size(0),bp_walker_memory_usage(0),bp_pos(-1),
+                bp_walker_size(0),bp_walker_memory_usage(0),
+                bp_pos(-1),history_pos(0),
                 walkerType(UNDEFINED_WALKER_TYPE),
                 tot_num_walkers(0),
 		walker_buffer({0,1},alloc_),
@@ -136,6 +137,13 @@ class WalkerSetBase: public AFQMCInfo
     return wlk_desc[4];
   }
   /*
+   * Returns the length of the history buffers. 
+   */
+  int HistoryBufferLength() const {
+    return wlk_desc[6];
+  }
+
+  /*
    * Returns the position of the insertion point in the BP stack. 
    */
   int getBPPos() const {
@@ -146,6 +154,19 @@ class WalkerSetBase: public AFQMCInfo
   }
   void advanceBPPos() {
     bp_pos++; 
+  }
+
+  /*
+   * Returns, sets and advances the position of the insertion point in the History circular buffers. 
+   */
+  int getHistoryPos() const {
+    return history_pos;
+  }
+  void setHistoryPos(int p) {
+    history_pos=p%wlk_desc[6];
+  }
+  void advanceHistoryPos() {
+    history_pos = (history_pos+1)%wlk_desc[6];
   }
 
 
@@ -279,10 +300,11 @@ class WalkerSetBase: public AFQMCInfo
     assert(walker_buffer.size(1) == walker_size);
     assert(bp_buffer.size(0) == bp_walker_size);
     assert(walker_buffer.size(0) == bp_buffer.size(1));
-    // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs} 
+    // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs, nHist} 
     wlk_desc[3]=nbp;
     wlk_desc[4]=nCV;
     wlk_desc[5]=nref;
+    wlk_desc[6]=3*nbp;
     int ncol=NAEA;
     int nrow=NMO;
     if(walkerType != CLOSED) {
@@ -296,13 +318,18 @@ class WalkerSetBase: public AFQMCInfo
         APP_ABORT("");
       }
     }
+    // store nbpx3 history of weights and factors in circular buffer
     int cnt=0;
     data_displ[FIELDS] = cnt;          cnt+=nbp*nCV;
-    data_displ[WEIGHT_FAC] = cnt;      cnt+=nbp;
-    data_displ[WEIGHT_HISTORY] = cnt;  cnt+=nbp;
+    data_displ[WEIGHT_FAC] = cnt;      cnt+=wlk_desc[6];
+    data_displ[WEIGHT_HISTORY] = cnt;  cnt+=wlk_desc[6];
     bp_walker_size = cnt;  
-    if(bp_buffer.size(0) != bp_walker_size)
+    if(bp_buffer.size(0) != bp_walker_size) {
       bp_buffer.reextent({bp_walker_size,walker_buffer.size(0)});
+      using std::fill_n;
+      fill_n(to_address(bp_buffer.origin())+data_displ[WEIGHT_FAC]*bp_buffer.size(1),
+             wlk_desc[6]*bp_buffer.size(1),ComplexType(1.0));
+    }
     if(nbp > 0 && (data_displ[SMN]<0 || data_displ[SM_AUX]<0) ) {
       auto sz(walker_size);
       data_displ[SMN] = walker_size;  walker_size+=nrow*ncol;
@@ -476,6 +503,8 @@ class WalkerSetBase: public AFQMCInfo
     itend = itbegin+tot_num_walkers;
     int pos = 0;
     int cnt=0;
+    // circular buffer
+    int his_pos = ((history_pos==0)?wlk_desc[6]-1:history_pos-1);
     for(; itbegin!=itend; ++itbegin, ++pos) {
       if(itbegin->second <= 0) { // just checking
         APP_ABORT("Error in WalkerSetBase::branch(): Problems during branch.\n");
@@ -484,8 +513,8 @@ class WalkerSetBase: public AFQMCInfo
         // need synthetic references to make this easier!!!
         using std::fill_n;
         fill_n(W[pos].origin()+data_displ[WEIGHT],1,ComplexType(itbegin->first,0.0));
-        if(bp_pos-1 >= 0 && bp_pos-1 < wlk_desc[3]) 
-          fill_n(BPW[data_displ[WEIGHT_HISTORY]+bp_pos-1].origin()+pos,1,
+        if(wlk_desc[6]>0 && his_pos >= 0 && his_pos < wlk_desc[6]) 
+          fill_n(BPW[data_displ[WEIGHT_HISTORY]+his_pos].origin()+pos,1,
                  ComplexType(itbegin->first,0.0));
       } else {
         // if there is space, branch within walker set
@@ -495,8 +524,8 @@ class WalkerSetBase: public AFQMCInfo
         // need synthetic references to make this easier!!!
         using std::fill_n;
         fill_n(W[pos].origin()+data_displ[WEIGHT],1,ComplexType(itbegin->first,0.0));
-        if(bp_pos-1 >= 0 && bp_pos-1 < wlk_desc[3]) 
-          fill_n(BPW[data_displ[WEIGHT_HISTORY]+bp_pos-1].origin()+pos,1,
+        if(wlk_desc[6]>0 && his_pos >= 0 && his_pos < wlk_desc[6]) 
+          fill_n(BPW[data_displ[WEIGHT_HISTORY]+his_pos].origin()+pos,1,
                  ComplexType(itbegin->first,0.0));
         for(int i=0; i<n; i++) { 
           W[tot_num_walkers] = W[pos];
@@ -520,11 +549,13 @@ class WalkerSetBase: public AFQMCInfo
     assert(walker_buffer.size(1) == walker_size);
     auto W( boost::multi::static_array_cast<element, pointer>(walker_buffer) );
     ma::scal(ComplexType(w0),W({0,tot_num_walkers},data_displ[WEIGHT]));
-    if(scale_last_history) 
-      if(bp_pos-1 >= 0 && bp_pos-1 < wlk_desc[3]) { 
+    if(scale_last_history) { 
+      int his_pos = ((history_pos==0)?wlk_desc[6]-1:history_pos-1);
+      if(wlk_desc[6]>0 && his_pos >= 0 && his_pos < wlk_desc[6]) { 
         auto BPW( boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer) );
-        ma::scal(ComplexType(w0),BPW[data_displ[WEIGHT_HISTORY]+bp_pos-1]);
+        ma::scal(ComplexType(w0),BPW[data_displ[WEIGHT_HISTORY]+his_pos]);
       }
+    }
   } 
 
   void scaleWeightsByOverlap() {
@@ -640,13 +671,13 @@ class WalkerSetBase: public AFQMCInfo
   stdCMatrix_ref getWeightFactors()
   {
     return stdCMatrix_ref(to_address(bp_buffer.origin())+data_displ[WEIGHT_FAC]*bp_buffer.size(1),
-                                {wlk_desc[3],bp_buffer.size(1)});
+                                {wlk_desc[6],bp_buffer.size(1)});
   }
 
   stdCMatrix_ref getWeightHistory()
   {
     return stdCMatrix_ref(to_address(bp_buffer.origin())+data_displ[WEIGHT_HISTORY]*bp_buffer.size(1),
-                                {wlk_desc[3],bp_buffer.size(1)});
+                                {wlk_desc[6],bp_buffer.size(1)});
   }
 
   double getLogOverlapFactor() const { return LogOverlapFactor; }
@@ -675,8 +706,9 @@ class WalkerSetBase: public AFQMCInfo
   int walker_size, walker_memory_usage;
   int bp_walker_size, bp_walker_memory_usage;
   int bp_pos;
+  int history_pos;
 
-  // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs} 
+  // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs, nHist} 
   wlk_descriptor wlk_desc; 
   wlk_indices data_displ; 
 

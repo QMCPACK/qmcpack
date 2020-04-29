@@ -68,7 +68,6 @@ def write_hamil_supercell(comm, scf_data, hamil_file, chol_cut,
     tstart = time.clock()
 
     # Setup parallel partition of work.
-    maxvecs = maxvecs * nmo_tot
     part = Partition(comm, maxvecs, nmo_tot, nmo_max, nkpts)
     if comm.rank == 0 and verbose:
         print(" # Each kpoint is distributed accross {} mpi tasks."
@@ -112,6 +111,80 @@ def write_hamil_supercell(comm, scf_data, hamil_file, chol_cut,
                    ik2n, exxdiv, nelec=nelec)
         h5file.close()
 
+def write_rhoG_supercell(comm, scf_data, hdf_file, Gcut,
+                        verbose=True,
+                        ortho_ao=False, write_real=False, phdf=False):
+
+    nproc = comm.size
+    rank = comm.rank
+
+    tstart = time.clock()
+
+    # Unpack pyscf data.
+    # 1. Rotation matrix to orthogonalised basis.
+    X = scf_data['X']
+    # 2. Pyscf cell object.
+    cell = scf_data['cell']
+    # 3. kpoints
+    kpts = scf_data['kpts']
+    # 4. Number of MOs per kpoint.
+    nmo_pk = scf_data['nmo_pk']
+    nkpts = len(kpts)
+    nao = cell.nao_nr()
+
+    quit()
+
+    # Update for GDF
+    mydf = df.FFTDF(cell, kpts)
+    nmo_max = numpy.max(nmo_pk)
+    assert(nmo_max is not None)
+
+    kconserv = tools.get_kconserv(cell, kpts)
+    ik2n, nmo_tot = setup_basis_map(Xocc, nmo_max, nkpts, nmo_pk, ortho_ao)
+    if comm.rank == 0:
+        h5file = h5py.File(hamil_file, "w")
+        h5grp = h5file.create_group("rhoG")
+    else:
+        h5file = None
+
+    numv = 0
+
+    # Setup parallel partition of work.
+    part = Partition(comm, 0, nmo_tot, nmo_max, nkpts)
+    if comm.rank == 0 and verbose:
+        print(" # Each kpoint is distributed accross {} mpi tasks."
+              .format(part.nproc_pk))
+        sys.stdout.flush()
+    # Set up mapping for shifted FFT grid.
+    if rank == 0 and verbose:
+        app_mem = (nmo_max*nmo_max*ngs*16) / 1024.0**3
+        print(" # Approx. local memory required: {:.2e} GB.".format(app_mem))
+        sys.stdout.flush()
+
+    if rank == 0 and verbose:
+        print(" # Generating orbital products.")
+        sys.stdout.flush()
+
+    for k in range(part.nkk):
+        k1 = part.n2k1[k]
+        k2 = part.n2k2[k]
+        i0 = part.ij0 // nmo_pk[k2]
+        iN = part.ijN // nmo_pk[k2]
+        if part.ijN % nmo_pk[k2] != 0:
+            iN += 1
+        if iN > nmo_pk[k1]:
+            iN = nmo_pk[k1]
+        pij = part.ij0 % nmo_pk[k2]
+        n_ = min(part.ijN, nmo_pk[k1]*nmo_pk[k2]) - part.ij0
+        X_t = X[k1][:,i0:iN].copy()
+        Xaoik[k,:,0:n_] = mydf.get_mo_pairs_G((X_t,X[k2]),
+                                            (kpts[k1],kpts[k2]),
+                                            kpts[k2]-kpts[k1],
+                                            compact=False)[:,pij:pij+n_]
+        X_t = None
+        Xaolj[k,:,:] = Xaoik[k,:,:]
+        coulG = tools.get_coulG(cell, kpts[k2]-kpts[k1], mesh=mydf.mesh)
+        Xaoik[k,:,:] *= (coulG*cell.vol/ngs**2).reshape(-1,1)
 
 def setup_basis_map(Xocc, nmo_max, nkpts, nmo_pk, ortho_ao):
     # setup basic mapping, use eigenvalues later

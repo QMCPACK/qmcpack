@@ -160,6 +160,48 @@ __global__ void kernel_dot_wanb2(int nwalk, int nocc, int nchol,
     }
 }
 
+template<typename T, typename T2>
+__global__ void kernel_dot_wpan_waqn_Fwpq(int nwalk, int nmo, int nchol,
+                    thrust::complex<T2> const alpha, thrust::complex<T2> const* Tab,
+                    thrust::complex<T>* F)
+{
+  __shared__ thrust::complex<T> cache[ DOT_BLOCK_SIZE ];
+  int p = blockIdx.x;
+  int q = blockIdx.y;
+  int a = blockIdx.z;
+  thrust::complex<T> alp = static_cast<thrust::complex<T>>(alpha);
+  for(int w=0; w<nwalk; w++) {
+    thrust::complex<T2> const* A_(Tab + ((w*nmo+p)*nmo + a)*nchol);
+    thrust::complex<T2> const* B_(Tab + ((w*nmo+a)*nmo + q)*nchol);
+    cache[ threadIdx.x ] = thrust::complex<T>(0.0);
+    int i = threadIdx.x;
+    while( i < nchol ) {
+        cache[ threadIdx.x ] += static_cast<thrust::complex<T>>(A_[ i ] * B_[ i ]);
+        i += blockDim.x;
+    }
+    __syncthreads(); // required because later on the current thread is accessing
+                     // data written by another thread    
+    i = DOT_BLOCK_SIZE / 2;
+    while( i > 0 ) {
+        if( threadIdx.x < i ) cache[ threadIdx.x ] += cache[ threadIdx.x + i ];
+        __syncthreads();
+        i /= 2; //not sure bitwise operations are actually faster
+    }
+    if( threadIdx.x == 0 ) {
+        T re = (alp * cache[ 0 ]).real();
+        T im = (alp * cache[ 0 ]).imag();
+        T* re_ = reinterpret_cast<T*>(F+(w*nmo+p)*nmo+q);
+#if __CUDA_ARCH__ < 600
+        myAtomicAdd(re_,re);
+        myAtomicAdd(re_+1,im);
+#else
+        atomicAdd(re_,re);
+        atomicAdd(re_+1,im);
+#endif
+    }
+  }
+}
+
 void dot_wabn( int nwalk, int nocc, int nchol, 
                std::complex<double> const alpha, std::complex<double> const* Tab, 
                std::complex<double>* y, int incy)
@@ -304,5 +346,47 @@ void dot_wanb( int nwalk, int nocc, int nchol,
   qmc_cuda::cuda_check(cudaDeviceSynchronize(),"dot_wanb");
 }
 */
+
+void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
+               std::complex<double> const alpha, std::complex<double> const* Tab,
+               std::complex<double>* F)
+{
+  dim3 grid_dim(nmo,nmo,nmo);
+  kernel_dot_wpan_waqn_Fwpq<<<grid_dim,DOT_BLOCK_SIZE>>>(nwalk,nmo,nchol,
+                                   static_cast<thrust::complex<double> const>(alpha),
+                                   reinterpret_cast<thrust::complex<double> const*>(Tab),
+                                   reinterpret_cast<thrust::complex<double> *>(F));
+  qmc_cuda::cuda_check(cudaGetLastError(),"dot_wpan_waqn_Fwpq");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"dot_wpan_waqn_Fwpq");
+}
+
+void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
+               std::complex<float> const alpha, std::complex<float> const* Tab,
+               std::complex<float>* F)
+{
+  dim3 grid_dim(nmo,nmo,nmo);
+  kernel_dot_wpan_waqn_Fwpq<<<grid_dim,DOT_BLOCK_SIZE>>>(nwalk,nmo,nchol,
+                                   static_cast<thrust::complex<float> const>(alpha),
+                                   reinterpret_cast<thrust::complex<float> const*>(Tab),
+                                   reinterpret_cast<thrust::complex<float> *>(F));
+  qmc_cuda::cuda_check(cudaGetLastError(),"dot_wpan_waqn_Fwpq");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"dot_wpan_waqn_Fwpq");
+}
+
+
+
+void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
+               std::complex<float> const alpha, std::complex<float> const* Tab,
+               std::complex<double>* F) 
+{
+  dim3 grid_dim(nmo,nmo,nmo);
+  kernel_dot_wpan_waqn_Fwpq<<<grid_dim,DOT_BLOCK_SIZE>>>(nwalk,nmo,nchol,
+                                   static_cast<thrust::complex<float> const>(alpha),
+                                   reinterpret_cast<thrust::complex<float> const*>(Tab),
+                                   reinterpret_cast<thrust::complex<double> *>(F));
+  qmc_cuda::cuda_check(cudaGetLastError(),"dot_wpan_waqn_Fwpq");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(),"dot_wpan_waqn_Fwpq");
+}
+
 
 }

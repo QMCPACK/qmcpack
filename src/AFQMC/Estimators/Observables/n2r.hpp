@@ -234,6 +234,8 @@ class n2r: public AFQMCInfo
     set_buffer2(N2);
     stdCMatrix_ref Gr_(Buff2.origin(), {nsp,(iN-i0)});
 
+// change batched_dot to a ** interface to make it more general and useful
+
     for(int iw=0; iw<nw; iw++) {
       if(TG.TG_local().root()) denom[iw] += Xw[iw];
       auto&& Gu = G[iw][0];   

@@ -65,6 +65,12 @@ class dummy_HOps
   }
 
   template<class... Args>
+  void generalizedFockMatrix(Args&&... args)
+  {
+    throw std::runtime_error("calling visitor on dummy_HOps object");
+  }
+
+  template<class... Args>
   void fast_energy(Args&&... args)
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
@@ -253,6 +259,14 @@ class HamiltonianOperations:
     void fast_energy(Args&&... args) {
         boost::apply_visitor(
             [&](auto&& a){a.fast_energy(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
+    void generalizedFockMatrix(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.generalizedFockMatrix(std::forward<Args>(args)...);},
             *this
         );
     }

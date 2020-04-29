@@ -87,6 +87,22 @@ void dot_wabn( int nwalk, int nocc, int nchol,
 }
 
 template<typename T, typename Q>
+void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
+                    std::complex<Q> alpha, std::complex<Q> const* Tab,
+                    std::complex<T>* F)
+{
+  std::complex<T> alp(static_cast<std::complex<T>>(alpha));
+  for(int w=0; w<nwalk; ++w) {
+    auto A_(Tab + w*nmo*nmo*nchol);
+    using ma::dot;
+    for(int p=0; p<nmo; ++p)
+      for(int q=0; q<nmo; ++q, ++F) 
+        for(int a=0; a<nmo; ++a)
+          *F += alp*static_cast<std::complex<T>>(ma::dot(nchol,A_+(p*nmo+a)*nchol,1,A_+(a*nmo+q)*nchol,1));
+  }
+}
+
+template<typename T, typename Q>
 void dot_wanb( int nwalk, int nocc, int nchol,
                     std::complex<Q> alpha, std::complex<Q> const* Tab,
                     std::complex<T>* y, int incy)
@@ -299,6 +315,41 @@ void batched_dot( char TA, char TB, int N, int M, std::complex<T> const alpha,
   } 
 }
 
+// y[s] = y[s] + sum_ab A[s][a][b] * B[s][b][a] 
+// shapes of arrays are in packed form in n array
+template<typename T, typename Q>
+void batched_ab_ba( int* n, std::complex<Q> *const* A, int lda, 
+                           std::complex<Q> *const* B, int ldb, 
+                           std::complex<T> alpha, std::complex<T> ** y, int batchSize ) 
+{
+  // not optimal, blocked algorithm is faster
+  for(int b=0; b<batchSize; b++) {
+    int n1( n[2*b] );
+    int n2( n[2*b+1] );
+    std::complex<Q> const* A_(A[b]);
+    std::complex<Q> const* B_(B[b]);
+    std::complex<T> y_(0.0);
+    for(int i=0; i<n1; i++) 
+      for(int j=0; j<n2; j++)
+        y_ += static_cast<std::complex<T>>( A_[i*lda+j] * B_[j*ldb+i] ); 
+    *(y[b]) += alpha*y_;
+  }
+}
+
+template<typename T, typename Q>
+void batched_diagonal_sum( int* n, std::complex<Q> *const* A, int lda,
+                           std::complex<T> alpha, std::complex<T> ** y, int batchSize )
+{
+   for(int b=0; b<batchSize; b++) {
+    std::complex<Q> const* A_(A[b]);
+    std::complex<T> y_(0.0);
+    int n_(n[b]);
+    for(int i=0; i<n_; i++) 
+      y_ += static_cast<std::complex<T>>( A_[i*lda+i] );
+    *(y[b]) = alpha * y_;
+  }
+}
+
 
 } // namespace ma
 
@@ -367,6 +418,13 @@ void dot_wabn( int nwalk, int nocc, int nchol, R alpha, cuda_gpu_ptr<Q> Tab,
 }
 
 template<typename T, typename Q, typename R>
+void dot_wpan_waqn_Fwpq( int nwalk, int nocc, int nchol, R alpha, cuda_gpu_ptr<Q> Tab,
+                    cuda_gpu_ptr<T> F)
+{
+  kernels::dot_wpan_waqn_Fwpq(nwalk,nocc,nchol,alpha,to_address(Tab),to_address(F));
+}
+
+template<typename T, typename Q, typename R>
 void dot_wanb( int nwalk, int nocc, int nchol, R alpha, cuda_gpu_ptr<Q> Tab,
                     T* y , int incy)
 {
@@ -386,6 +444,23 @@ template<typename T, typename Q>
 void batched_dot( char TA, char TB, int N, int M, T alpha,
                   cuda_gpu_ptr<Q> A, int lda, cuda_gpu_ptr<Q> B, int ldb,
                   T beta, cuda_gpu_ptr<T> y, int incy)
+{
+//  kernels::batched_dot(TA,TB,N,M,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(y),incy);
+    APP_ABORT(" Error: batched_dot not yet available in gpu.\n");
+}
+
+template<typename I, typename T, typename Q, typename T1>
+void batched_ab_ba( cuda_gpu_ptr<I> n, cuda_gpu_ptr<Q>* A, int lda,
+                           cuda_gpu_ptr<Q>* B, int ldb,
+                           T1 alpha, cuda_gpu_ptr<T>* y, int batchSize )
+{
+//  kernels::batched_dot(TA,TB,N,M,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(y),incy);
+    APP_ABORT(" Error: batched_dot not yet available in gpu.\n");
+}
+
+template<typename I, typename T, typename Q>
+void batched_diagonal_sum( cuda_gpu_ptr<I> n, cuda_gpu_ptr<Q>* A, int lda,
+                           T alpha, cuda_gpu_ptr<T>* y, int batchSize )
 {
 //  kernels::batched_dot(TA,TB,N,M,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(y),incy);
     APP_ABORT(" Error: batched_dot not yet available in gpu.\n");

@@ -873,6 +873,12 @@ app_log()<<" E time: "
 */
     }
 
+    template<class Mat, class MatB>
+    void generalizedFockMatrix(Mat&& G, MatB&& Fp, MatB&& Fm)
+    {
+      APP_ABORT(" Error: generalizedFockMatrix not implemented for this hamiltonian.\n"); 
+    }
+
     bool distribution_over_cholesky_vectors() const { return true; }
     int number_of_ke_vectors() const{ return std::accumulate(nGpk.begin(),nGpk.end(),0)*rotPiu.size(1);}
     int local_number_of_cholesky_vectors() const{ return 2*std::accumulate(ncholpQ.begin(),ncholpQ.end(),0); }

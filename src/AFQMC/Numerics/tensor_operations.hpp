@@ -23,6 +23,7 @@
 #include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_QKajw.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/vKKwij_to_vwKiKj.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/term_by_term_matrix_vec.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/ajw_to_waj.cuh"
 #endif
 
 namespace ma
@@ -201,6 +202,20 @@ void term_by_term_matrix_vector(TENSOR_OPERATIONS op, int dim, int nrow, int nco
   }
 } 
 
+template<typename T, typename Q>
+void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, T const* Tab,  Q* Tba)
+{
+  for(int w=0; w<nwalk; w++) {
+    for(int b=0; b<nb; b++) {
+      for(int a=0; a<na; a++) {
+        T const* Tn( Tab + ((w*na+a)*nb+b)*nchol);
+        for(int n=0; n<nchol; n++, ++Tba, ++Tn) 
+          *Tba = static_cast<Q>(*Tn);
+      }
+    }
+  }  
+}
+
 } //namespace ma
 
 #ifdef ENABLE_CUDA
@@ -253,6 +268,12 @@ void term_by_term_matrix_vector(ma::TENSOR_OPERATIONS op, int dim, int nrow, int
     kernels::term_by_term_mat_vec_div(dim,nrow,ncol,to_address(A),lda,to_address(x),incx);
   else
     APP_ABORT(" Error: Unknown operation in term_by_term_matrix_vector. \n");
+}
+
+template<typename T, typename Q>
+void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, cuda_gpu_ptr<T> Tab, cuda_gpu_ptr<Q> Tba)
+{
+  kernels::transpose_wabn_to_wban(nwalk,na,nb,nchol,to_address(Tab),to_address(Tba));
 }
 
 }
