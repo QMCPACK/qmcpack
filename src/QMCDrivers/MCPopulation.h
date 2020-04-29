@@ -78,7 +78,8 @@ private:
   UPtrVector<TrialWaveFunction> walker_trial_wavefunctions_;
   UPtrVector<QMCHamiltonian> walker_hamiltonians_;
 
-  // In the spirit of the legacy implementation why take advantage of constructors and destructors at all
+  // We still haven't cleaned up the dependence between different walker elements so they all need to be tracked
+  // as in the legacy implementation.
   UPtrVector<ParticleSet> dead_walker_elec_particle_sets_;
   UPtrVector<TrialWaveFunction> dead_walker_trial_wavefunctions_;
   UPtrVector<QMCHamiltonian> dead_walker_hamiltonians_;
@@ -123,8 +124,6 @@ public:
   void allocateWalkerStuffInplace(int walker_index);
   /** }@ */
 
-  //void createWalkers();
-  
   /** Creates walkers with a clone of the golden electron particle set and golden trial wavefunction
    *
    *  \param[in] num_walkers number of living walkers in initial population

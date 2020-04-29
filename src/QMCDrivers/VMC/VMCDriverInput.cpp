@@ -26,6 +26,8 @@ void VMCDriverInput::readXML(xmlNodePtr node)
   parameter_set_.add(samples_, "samples", "int");
   parameter_set_.add(samples_per_thread_, "samplesperthread", "int");
   parameter_set_.add(steps_between_samples_, "stepsbetweensamples", "int");
+  parameter_set_.add(total_walkers_, "walkers", "int");  
+  parameter_set_.add(total_walkers_, "total_walkers", "int");  
   parameter_set_.put(node);
   if(use_drift == "no")
     use_drift_ = false;

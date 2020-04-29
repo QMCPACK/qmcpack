@@ -51,8 +51,8 @@ public:
   void process(xmlNodePtr node)
   {
     // We want to test the reserve ability as well
-    AdjustedWalkerCounts awc = adjustGlobalWalkerCount(myComm, qmcdriver_input_.get_total_walkers(),
-                                                       qmcdriver_input_.get_walkers_per_rank(), 1.5, get_num_crowds());
+    AdjustedWalkerCounts awc = adjustGlobalWalkerCount(myComm, 32,
+                                                       32, 1.5, get_num_crowds());
 
     // side effect updates walkers_per_crowd_;
     // I purposely don't update the base class state variables for walkers here since I suspect they are unecessary state.

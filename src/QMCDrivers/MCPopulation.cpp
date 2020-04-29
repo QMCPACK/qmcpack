@@ -228,8 +228,6 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
 /** Kill last walker (just barely)
  *
  *  By kill we mean put it and all its elements in a "dead" list.
- *  For laughs we are going to ignore the object lifetimes like in legacy and
- *  hope it makes walkers created from the MPI buffer valid.
  */
 void MCPopulation::killLastWalker()
 {
@@ -247,8 +245,6 @@ void MCPopulation::killLastWalker()
 /** Kill a walker (just barely)
  *
  *  By kill we mean put it and all its elements in a "dead" list.
- *  For laughs we are going to ignore the object lifetimes like in legacy and
- *  hope it makes walkers created from the MPI buffer valid.
  */
 void MCPopulation::killWalker(MCPWalker& walker)
 {
