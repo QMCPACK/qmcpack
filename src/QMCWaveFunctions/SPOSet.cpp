@@ -100,7 +100,7 @@ void SPOSet::mw_evaluateVGL(const RefVector<SPOSet>& spo_list,
 void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
                                             const RefVector<ParticleSet>& P_list,
                                             int iat,
-                                            const Vector<ValueType*>& invRow_ptr_list,
+                                            const std::vector<const ValueType*>& invRow_ptr_list,
                                             VGLVector_t& phi_vgl_v,
                                             std::vector<ValueType>& ratios,
                                             std::vector<GradType>& grads)

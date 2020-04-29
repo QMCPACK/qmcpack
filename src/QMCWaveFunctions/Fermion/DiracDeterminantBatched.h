@@ -108,6 +108,11 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat) override;
 
+  void mw_evalGrad(const RefVector<WaveFunctionComponent>& WFC_list,
+                   const RefVector<ParticleSet>& P_list,
+                   int iat,
+                   std::vector<GradType>& grad_now) override;
+
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 
   GradType evalGradSource(ParticleSet& P,
@@ -128,11 +133,7 @@ public:
 
   void completeUpdates() override;
 
-  void mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list) override
-  {
-    for (WaveFunctionComponent& wfc : WFC_list)
-      wfc.completeUpdates();
-  }
+  void mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list) override;
 
   /** move was rejected. copy the real container to the temporary to move on
    */
@@ -164,22 +165,20 @@ public:
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
-  /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix_t psiM_temp;
-
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
   /// device pointer of psiMinv data
   ValueType* psiMinv_dev_ptr;
-  /// multi-walker pointers of psiMinv data
-  std::vector<ValueType*> psiMinv_dev_ptr_list;
-  /// multi-walker pointers of invRow data
-  Vector<ValueType*, OffloadPinnedAllocator<ValueType*>> invRow_dev_ptr_list;
 
-  /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
+  /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
+  OffloadVGLVector_t psiM_vgl;
+  /// device pointer of psiM_vgl data;
+  ValueType* psiM_vgl_dev_ptr;
+  /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
+  ValueMatrix_t psiM_temp;
+  /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
   GradMatrix_t dpsiM;
-
-  /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
+  /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
   ValueMatrix_t d2psiM;
 
   /// Used for force computations
@@ -198,6 +197,8 @@ public:
 
   /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw*norb]
   OffloadVGLVector_t phi_vgl_v;
+  /// device pointer of phi_vgl_v data;
+  ValueType* phi_vgl_v_dev_ptr;
 
   /// delayed update engine
   DET_ENGINE_TYPE det_engine_;
@@ -205,9 +206,9 @@ public:
   // psi(r')/psi(r) during a PbyP move
   PsiValueType curRatio;
 
-  // multi walker of ratios
+  // multi walker of ratio
   std::vector<ValueType> ratios_local;
-  // multi walker of ratios
+  // multi walker of grads
   std::vector<GradType> grad_new_local;
 
 private:
@@ -216,6 +217,9 @@ private:
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
+
+  /// Resize multi walker scratch spaces
+  void resizeMultiWalkerScratch(int norb, int nw);
 };
 
 extern template class DiracDeterminantBatched<>;
