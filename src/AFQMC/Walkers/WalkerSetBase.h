@@ -335,7 +335,7 @@ class WalkerSetBase: public AFQMCInfo
       data_displ[SMN] = walker_size;  walker_size+=nrow*ncol;
       data_displ[SM_AUX] = walker_size;  walker_size+=nrow*ncol;
       CMatrix wb({walker_buffer.size(0),walker_size},walker_buffer.get_allocator());
-      wb( wb.extension(0), {0,sz} ) = walker_buffer; 
+      ma::copy(walker_buffer,wb( wb.extension(0), {0,sz} ));
       walker_buffer = std::move(wb);
     }
   }
@@ -642,18 +642,18 @@ class WalkerSetBase: public AFQMCInfo
   }
 
   // Careful!!! This matrix returns an array_ref, NOT a copy!!!
-  stdCMatrix_ref getFields(int ip)
+  stdCMatrix_ref&& getFields(int ip)
   {
     if(ip < 0 || ip > wlk_desc[3])
       APP_ABORT(" Error: index out of bounds in getFields. \n");
     int skip = (data_displ[FIELDS] + ip*wlk_desc[4])*bp_buffer.size(1); 
-    return stdCMatrix_ref(to_address(bp_buffer.origin())+skip,{wlk_desc[4],bp_buffer.size(1)});
+    return std::move(stdCMatrix_ref(to_address(bp_buffer.origin())+skip,{wlk_desc[4],bp_buffer.size(1)}));
   } 
 
-  stdCTensor_ref getFields()
+  stdCTensor_ref&& getFields()
   {
-    return stdCTensor_ref(to_address(bp_buffer.origin())+data_displ[FIELDS]*bp_buffer.size(1),
-                            {wlk_desc[3],wlk_desc[4],bp_buffer.size(1)});
+    return std::move(stdCTensor_ref(to_address(bp_buffer.origin())+data_displ[FIELDS]*bp_buffer.size(1),
+                            {wlk_desc[3],wlk_desc[4],bp_buffer.size(1)}));
   }
 
   template<class Mat>  
@@ -668,16 +668,16 @@ class WalkerSetBase: public AFQMCInfo
       F = V;
   }
 
-  stdCMatrix_ref getWeightFactors()
+  stdCMatrix_ref&& getWeightFactors()
   {
-    return stdCMatrix_ref(to_address(bp_buffer.origin())+data_displ[WEIGHT_FAC]*bp_buffer.size(1),
-                                {wlk_desc[6],bp_buffer.size(1)});
+    return std::move(stdCMatrix_ref(to_address(bp_buffer.origin())+data_displ[WEIGHT_FAC]*bp_buffer.size(1),
+                                {wlk_desc[6],bp_buffer.size(1)}));
   }
 
-  stdCMatrix_ref getWeightHistory()
+  stdCMatrix_ref&& getWeightHistory()
   {
-    return stdCMatrix_ref(to_address(bp_buffer.origin())+data_displ[WEIGHT_HISTORY]*bp_buffer.size(1),
-                                {wlk_desc[6],bp_buffer.size(1)});
+    return std::move(stdCMatrix_ref(to_address(bp_buffer.origin())+data_displ[WEIGHT_HISTORY]*bp_buffer.size(1),
+                                {wlk_desc[6],bp_buffer.size(1)}));
   }
 
   double getLogOverlapFactor() const { return LogOverlapFactor; }

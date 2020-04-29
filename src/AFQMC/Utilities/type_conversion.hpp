@@ -105,7 +105,22 @@ std::vector<Q> move_vector(std::vector<T> && other, Aux param)
   for(auto& v:other) res.emplace_back(std::move(v),param);
   return res;
 }
-
+/*
+// to bypass the lack of copy constructor of multi::array_refs/basic_arrays
+template<class VType, class MType,
+         typename = typename std::enable_if_t<MType::dimensionality == 2>
+        >
+void emplace_back_array_ref(VType& V, MType&& M, bool device=true) {
+  // noly makes sense for continguous arrays
+  assert(M.stride(0) == M.size(1));
+  assert(M.stride(1) == 1);
+  if(device) {  
+    V.emplace_back(make_device_ptr(M.origin()),iextensions<2u>{M.size(0),M.size(1)});
+  } else {
+    V.emplace_back(to_address(M.origin()),iextensions<2u>{M.size(0),M.size(1)});
+  }
+} 
+*/
 }
 
 }

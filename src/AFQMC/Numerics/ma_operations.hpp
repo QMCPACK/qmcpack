@@ -60,7 +60,7 @@ template<class MA> struct op_tag : std::integral_constant<char, 'N'>{}; // see s
 template<class MA> MA arg(MA&& ma){return std::forward<MA>(ma);} // see specializations below
 
 template<class MultiArray2D, typename = typename std::enable_if<(std::decay<MultiArray2D>::type::dimensionality > 1)>::type>
-MultiArray2D transpose(MultiArray2D&& A){
+MultiArray2D&& transpose(MultiArray2D&& A){
 	assert(A.size(0) == A.size(1));
         typename std::decay<MultiArray2D>::type::element one(1.0);
         return ma::geam< 'T' > (one, arg(A), std::forward<MultiArray2D>(A));
@@ -80,7 +80,7 @@ template<class MultiArray2DA,
          typename = typename std::enable_if<(std::decay<MultiArray2DA>::type::dimensionality 
                                                 == std::decay<MultiArray2DB>::type::dimensionality)>::type
         >
-MultiArray2DB transpose(MultiArray2DA&& A, MultiArray2DB&& B){
+MultiArray2DB&& transpose(MultiArray2DA&& A, MultiArray2DB&& B){
         typename std::decay<MultiArray2DA>::type::element one(1.0);
         return ma::geam< 'T' > (one, arg(A), std::forward<MultiArray2DB>(B));
 }
@@ -92,7 +92,7 @@ template<class MultiArray2DA,
          typename = typename std::enable_if<(std::decay<MultiArray2DA>::type::dimensionality
                                                 == std::decay<MultiArray2DB>::type::dimensionality)>::type
         >
-MultiArray2DB transform(MultiArray2DA const& A, MultiArray2DB&& B){
+MultiArray2DB&& transform(MultiArray2DA const& A, MultiArray2DB&& B){
         typename std::decay<MultiArray2DA>::type::element one(1.0);
         return ma::geam< op_tag<MultiArray2DA>::value > (one, arg(A), std::forward<MultiArray2DB>(B));
 }
@@ -104,7 +104,7 @@ template<class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
                 std::decay<MultiArray2DC>::type::dimensionality == 2
         >::type
 >
-MultiArray2DC add(T alpha, MultiArray2DA const& A, T beta, MultiArray2DB const& B, MultiArray2DC&& C){
+MultiArray2DC&& add(T alpha, MultiArray2DA const& A, T beta, MultiArray2DB const& B, MultiArray2DC&& C){
         return ma::geam<
                 op_tag<MultiArray2DA>::value,
                 op_tag<MultiArray2DB>::value
@@ -119,7 +119,7 @@ template<class T, class MultiArray3DA, class MultiArray3DB, class MultiArray3DC,
                 std::decay<MultiArray3DC>::type::dimensionality == 3
         >::type
 >
-MultiArray3DC productStridedBatched(T alpha, MultiArray3DA const& A, MultiArray3DB const& B, T beta, MultiArray3DC&& C){
+MultiArray3DC&& productStridedBatched(T alpha, MultiArray3DA const& A, MultiArray3DB const& B, T beta, MultiArray3DC&& C){
         return ma::gemmStridedBatched<
                 op_tag<MultiArray3DB>::value,
                 op_tag<MultiArray3DA>::value
@@ -134,7 +134,7 @@ template<class T, class MultiArray2DA, class MultiArray1DB, class MultiArray1DC,
 		std::decay<MultiArray1DC>::type::dimensionality == 1
 	>::type, typename = void // TODO change to use dispatch
 >
-MultiArray1DC product(T alpha, MultiArray2DA const& A, MultiArray1DB const& B, T beta, MultiArray1DC&& C){
+MultiArray1DC&& product(T alpha, MultiArray2DA const& A, MultiArray1DB const& B, T beta, MultiArray1DC&& C){
 	return ma::gemv<
 		(op_tag<MultiArray2DA>::value=='N')?'T':'N'
 	>
@@ -152,7 +152,7 @@ template<class T, class SparseMatrixA, class MultiArray1DB, class MultiArray1DC,
         typename = void, // TODO change to use dispatch 
         typename = void // TODO change to use dispatch 
 >
-MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T beta, MultiArray1DC&& C){
+MultiArray1DC&& product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T beta, MultiArray1DC&& C){
         using elementA = typename SparseMatrixA::element; 
         using elementB = typename MultiArray1DB::element; 
         using elementC = typename std::decay<MultiArray1DC>::type::element;
@@ -190,7 +190,7 @@ template<class MultiArray2DA, class MultiArray1DB, class MultiArray1DC,
                 std::decay<MultiArray1DC>::type::dimensionality == 1
         >::type, typename = void // TODO change to use dispatch 
 >
-MultiArray1DC product(MultiArray2DA const& A, MultiArray1DB const& B, MultiArray1DC&& C){
+MultiArray1DC&& product(MultiArray2DA const& A, MultiArray1DB const& B, MultiArray1DC&& C){
         using Type = typename std::decay<MultiArray2DA>::type::element;
         return product(Type(1.), A, B, Type(0.), std::forward<MultiArray1DC>(C));
 }
@@ -203,7 +203,7 @@ template<class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
 		std::decay<MultiArray2DC>::type::dimensionality == 2
 	>::type
 >
-MultiArray2DC product(T alpha, MultiArray2DA const& A, MultiArray2DB const& B, T beta, MultiArray2DC&& C){
+MultiArray2DC&& product(T alpha, MultiArray2DA const& A, MultiArray2DB const& B, T beta, MultiArray2DC&& C){
 	return ma::gemm<
 		op_tag<MultiArray2DB>::value,
 		op_tag<MultiArray2DA>::value
@@ -222,7 +222,7 @@ template<class T, class SparseMatrixA, class MultiArray2DB, class MultiArray2DC,
         typename = void, 
         typename = void // TODO change to use dispatch 
 >
-MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T beta, MultiArray2DC&& C){
+MultiArray2DC&& product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T beta, MultiArray2DC&& C){
         using elementA = std::remove_cv_t<typename SparseMatrixA::element>; 
         using elementB = std::remove_cv_t<typename MultiArray2DB::element>; 
         using elementC = typename std::decay<MultiArray2DC>::type::element;
@@ -268,7 +268,7 @@ template<class T, class SparseMatrixA, class MultiArray2DB, class MultiArray2DC,
         typename = void,
         typename = void // TODO change to use dispatch 
 >
-MultiArray2DC product(T alpha, MultiArray2DB const& B, SparseMatrixA const& A, T beta, MultiArray2DC&& C ) 
+MultiArray2DC&& product(T alpha, MultiArray2DB const& B, SparseMatrixA const& A, T beta, MultiArray2DC&& C ) 
 {
   APP_ABORT(" Error: DenseMatrix x SparseMatrix product not implemented. \n\n\n");
   return std::forward<MultiArray2DC>(C);
@@ -281,7 +281,7 @@ template<class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
                 std::decay<MultiArray2DC>::type::dimensionality == 2
         >::type
 >
-MultiArray2DC product(MultiArray2DA const& A, MultiArray2DB const& B, MultiArray2DC&& C){
+MultiArray2DC&& product(MultiArray2DA const& A, MultiArray2DB const& B, MultiArray2DC&& C){
         using Type = typename std::decay<MultiArray2DA>::type::element;
         return product(Type(1.), A, B, Type(0.), std::forward<MultiArray2DC>(C));
 }
@@ -429,7 +429,7 @@ template<class MultiArray2D> normal_tag<MultiArray2D> normal(MultiArray2D&& arg)
 }
 
 template<class MultiArray2D>
-MultiArray2D arg(normal_tag<MultiArray2D> const& nt){return nt.arg1;}
+MultiArray2D&& arg(normal_tag<MultiArray2D> const& nt){return nt.arg1;}
 
 template<class MultiArray2D>
 struct transpose_tag{
@@ -625,7 +625,7 @@ MultiArray2D exp(MultiArray2D const& A, bool printeV=false) {
 template<class MultiArray2D,
          typename = typename std::enable_if_t<MultiArray2D::dimensionality == 2>
         >
-MultiArray2D cholesky(MultiArray2D&& A){
+MultiArray2D&& cholesky(MultiArray2D&& A){
         assert(A.size(0)==A.size(1));
         if(is_hermitian(A)) { 
           return potrf( transpose( std::forward<MultiArray2D>(A)) );

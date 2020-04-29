@@ -362,9 +362,10 @@ protected:
 #if __cplusplus >= 201703L
 protected: basic_array(basic_array&&) = default; // if you need to generate a copy you can't use `auto` here, use `decay`.
 #else
-public   : basic_array(basic_array&&) = default; // in C++ < 17 this is necessary to return references from functions
+public   : basic_array(basic_array&&) noexcept = default; // in C++ < 17 this is necessary to return references from functions
 #endif
 public:
+//        [[deprecated("references are not copyable, use &&")]]
 	basic_array(basic_array const&) = default;
 	friend constexpr auto dimensionality(basic_array const& self){return self.dimensionality;}
 	using typename types::reference;
@@ -1271,7 +1272,7 @@ protected:
 	constexpr array_ref() noexcept
 		: basic_array<T, D, ElementPtr>{typename array_ref::types::layout_t{}, nullptr}{}
 public:
-	[[deprecated("references are not copyable, use &&")]]
+//	[[deprecated("references are not copyable, use &&")]]
 	array_ref(array_ref const&) = default; // don't try to use `auto` for references, use `auto&&` or explicit value type
 	constexpr array_ref(typename array_ref::element_ptr p, typename array_ref::extensions_type e = {}) noexcept
 		: basic_array<T, D, ElementPtr>{typename array_ref::types::layout_t{e}, p}{}

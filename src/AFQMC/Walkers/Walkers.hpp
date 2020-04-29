@@ -39,44 +39,45 @@ namespace afqmc
 
       template<class ma>
       walker(ma&& a, const wlk_indices& i_, const wlk_descriptor& d_): 
-        w_(boost::multi::array_ref<element,1,pointer>(a.origin(),iextensions<1u>{a.size()})),
-           indx(i_),desc(d_) 
+        w_(a.origin(),iextensions<1u>{a.size()}),indx(i_),desc(d_) 
       {
 	static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
-	assert(stride(w_)==1);
       }
       
       ~walker() {}
 
-      // might need implementations for these, since array_refs have protected copy/move constr  
-      walker(walker&& other) = default;  
-      walker(walker const& other) = default;  
+      walker(walker&& other): w_(other.w_.origin(), iextensions<1u>{other.w_.size()}), 
+                              indx(other.indx),desc(other.desc)  {} 
+      walker(walker const& other): w_(other.w_.origin(),iextensions<1u>{other.w_.size()}), 
+                              indx(other.indx),desc(other.desc)  {} 
+
+      // no copy/move assignment
       walker& operator=(walker&& other) = delete;  
       walker& operator=(walker const& other) = delete; 
 
       pointer base() {return w_.origin(); }
       int size() const {return w_.size(0); }
-      SMType SlaterMatrix(SpinTypes s) {
+      SMType&& SlaterMatrix(SpinTypes s) {
         if(desc[2] <= 0 && s!=Alpha)
           APP_ABORT("error:walker spin out of range in SlaterMatrix(SpinType).\n");
-        return (s==Alpha)?(SMType(getw_(SM),{desc[0],desc[1]})):
-              (SMType(getw_(SM)+desc[0]*desc[1],{desc[0],desc[2]}));
+        return (s==Alpha)?(std::move(SMType(getw_(SM),{desc[0],desc[1]}))):
+              (std::move(SMType(getw_(SM)+desc[0]*desc[1],{desc[0],desc[2]})));
       }
-      SMType SlaterMatrixN(SpinTypes s) {
+      SMType&& SlaterMatrixN(SpinTypes s) {
         if(indx[SMN] < 0)
           APP_ABORT("error: access to uninitialized BP sector. \n");
         if(desc[2] <= 0 && s!=Alpha)
           APP_ABORT("error:walker spin out of range in SlaterMatrixN(SpinType).\n");
-        return (s==Alpha)?(SMType(getw_(SMN),{desc[0],desc[1]})):
-                          (SMType(getw_(SMN)+desc[0]*desc[1],{desc[0],desc[2]}));
+        return (s==Alpha)?(std::move(SMType(getw_(SMN),{desc[0],desc[1]}))):
+                          (std::move(SMType(getw_(SMN)+desc[0]*desc[1],{desc[0],desc[2]})));
       }
-      SMType SlaterMatrixAux(SpinTypes s) {
+      SMType&& SlaterMatrixAux(SpinTypes s) {
         if(indx[SM_AUX] < 0)
           APP_ABORT("error: access to uninitialized BP sector. \n");
         if(desc[2] <= 0 && s!=Alpha)
           APP_ABORT("error:walker spin out of range in SlaterMatrixAux(SpinType).\n");
-        return (s==Alpha)?(SMType(getw_(SM_AUX),{desc[0],desc[1]})):
-                          (SMType(getw_(SM_AUX)+desc[0]*desc[1],{desc[0],desc[2]}));
+        return (s==Alpha)?(std::move(SMType(getw_(SM_AUX),{desc[0],desc[1]}))):
+                          (std::move(SMType(getw_(SM_AUX)+desc[0]*desc[1],{desc[0],desc[2]})));
       }
       pointer weight() { return getw_(WEIGHT); } 
       pointer phase() { return getw_(PHASE); } 

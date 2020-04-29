@@ -513,6 +513,9 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
     if(walker_type!=COLLINEAR)
       APP_ABORT(" Error: Spin dependent P1 being used with CLOSED walker.\n");
   }
+  auto emplace_arrayptr = [] (auto&V,auto&&M) {
+    V.emplace_back(M.origin(),iextensions<2u>{1,2});
+  };
 
   std::vector<CMatrix_ref> Ai; 
   Ai.reserve(nbatch);
@@ -523,11 +526,13 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
     for(int iw=0; iw<nwalk; iw+=nbatch, nt+=nbatch) { 
       int nb = std::min(nbatch,nwalk-iw);
       Ai.clear();
-      for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
+      //for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
+      for(int ni=0; ni<nb; ni++) emplace_arrayptr(Ai,wset[iw+ni].SlaterMatrix(Alpha)); 
       SDetOp->BatchedPropagate(Ai,P1[0],vHS3D.sliced(nt,nt+nb),order,TA);
       if(walker_type == COLLINEAR) { 
         Ai.clear();
-        for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
+        //for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
+        for(int ni=0; ni<nb; ni++) emplace_arrayptr(Ai,wset[iw+ni].SlaterMatrix(Beta)); 
         SDetOp->BatchedPropagate(Ai,P1[spin],vHS3D.sliced(nt,nt+nb),order,TA);
       }  
     }
@@ -544,11 +549,13 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
       int nb = std::min(nbatch,nwalk-iw);
       ma::transpose(vHS2D(vHS2D.extension(0),{nt,nt+nb}),local_vHS.sliced(0,nb));  
       Ai.clear();
-      for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
+      //for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
+      for(int ni=0; ni<nb; ni++) emplace_arrayptr(Ai,wset[iw+ni].SlaterMatrix(Alpha)); 
       SDetOp->BatchedPropagate(Ai,P1[0],local3D.sliced(0,nb),order,TA);
       if(walker_type == COLLINEAR) {
         Ai.clear();
-        for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
+        //for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
+        for(int ni=0; ni<nb; ni++) emplace_arrayptr(Ai,wset[iw+ni].SlaterMatrix(Beta)); 
         SDetOp->BatchedPropagate(Ai,P1[spin],local3D.sliced(0,nb),order,TA);
       }  
     }
@@ -608,11 +615,15 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
     stdCVector detR_(iextensions<1u>{nbatch});
     std::vector<CMatrix_ref> Ai;
     Ai.reserve(nbatch);
+    auto emplace_arrayptr = [] (auto&V,auto&&M) {
+      V.emplace_back(M.origin(),iextensions<2u>{1,2});
+    };
     if(walker_type != COLLINEAR) {
       for(int iw=0; iw<nw; iw+=nbatch) {
         int nb = std::min(nbatch,nw-iw);
         Ai.clear();
-        for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
+        //for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
+        for(int ni=0; ni<nb; ni++) emplace_arrayptr(Ai,wset[iw+ni].SlaterMatrix(Alpha)); 
         SDetOp->BatchedOrthogonalize(Ai,LogOverlapFactor,local_vHS.origin());
         // GPU trickery,to make sure detR_ is in CPU, since detR is in CPU
         copy_n(local_vHS.origin(),nb,detR_.origin());
@@ -624,13 +635,15 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
         int nb = std::min(nbatch,nw-iw);
         // Alpha 
         Ai.clear();
-        for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
+        //for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
+        for(int ni=0; ni<nb; ni++) emplace_arrayptr(Ai,wset[iw+ni].SlaterMatrix(Alpha)); 
         SDetOp->BatchedOrthogonalize(Ai,LogOverlapFactor,local_vHS.origin());
         copy_n(local_vHS.origin(),nb,detR_.origin());
         for(int ni=0; ni<nb; ni++) detR[iw+ni][0] *= detR_[ni]; 
         // Beta
         Ai.clear();
-        for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
+        //for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Beta));
+        for(int ni=0; ni<nb; ni++) emplace_arrayptr(Ai,wset[iw+ni].SlaterMatrix(Beta)); 
         SDetOp->BatchedOrthogonalize(Ai,LogOverlapFactor,local_vHS.origin());
         copy_n(local_vHS.origin(),nb,detR_.origin());
         for(int ni=0; ni<nb; ni++) detR[iw+ni][1] *= detR_[ni]; 

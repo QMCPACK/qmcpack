@@ -197,19 +197,22 @@ class FullObsHandler: public AFQMCInfo
     std::vector<SMType> RefsB;
     std::vector<SMType> SMA;
     std::vector<SMType> SMB;
-    RefsA.reserve(nw);
-    SMA.reserve(nw);
     GA.reserve(nw);
+    SMA.reserve(nw);
+    RefsA.reserve(nw);
     if(walker_type == COLLINEAR) RefsB.reserve(nw);
     if(walker_type == COLLINEAR) SMB.reserve(nw);
     if(walker_type == COLLINEAR) GB.reserve(nw);
-
 
     if(impsamp) 
       denominator[iav] += std::accumulate(wgt.begin(),wgt.end(),ComplexType(0.0));
     else {
       APP_ABORT(" Finish implementation of free projection. \n\n\n");
     }
+
+    auto emplace_arrayptr = [] (auto&V,auto&&M) {
+      V.emplace_back(M.origin(),iextensions<2u>{1,2});  
+    };
 
     for(int iref=0, is=0; iref<nrefs; iref++, is+=nspins) {
 
@@ -227,12 +230,17 @@ class FullObsHandler: public AFQMCInfo
       // using SlaterMatrixAux to store References in device memory
       if(walker_type == COLLINEAR) {
         for(int iw=0; iw<nw; iw++) {
-          SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
-          SMB.emplace_back(wset[iw].SlaterMatrixN(Beta));
-          GA.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin()),{NMO,NMO}) );
-          GB.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin())+NMO*NMO,{NMO,NMO}) );
-          RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
-          RefsB.emplace_back(wset[iw].SlaterMatrixAux(Beta));
+          auto&& A(wset[iw].SlaterMatrixN(Alpha));  
+          //SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
+          //SMB.emplace_back(wset[iw].SlaterMatrixN(Beta));
+          emplace_arrayptr(SMA,wset[iw].SlaterMatrixN(Alpha));  
+          emplace_arrayptr(SMB,wset[iw].SlaterMatrixN(Beta));  
+          GA.emplace_back(make_device_ptr(G2D[iw].origin()),iextensions<2u>{NMO,NMO});
+          GB.emplace_back(make_device_ptr(G2D[iw].origin())+NMO*NMO,iextensions<2u>{NMO,NMO});
+          //RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
+          //RefsB.emplace_back(wset[iw].SlaterMatrixAux(Beta));
+          emplace_arrayptr(RefsA,wset[iw].SlaterMatrixAux(Alpha));  
+          emplace_arrayptr(RefsB,wset[iw].SlaterMatrixAux(Beta));  
           copy_n(Refs[iw][iref].origin() , RefsA.back().num_elements(), RefsA.back().origin());
           copy_n(Refs[iw][iref].origin()+RefsA.back().num_elements() , 
                  RefsB.back().num_elements() , RefsB.back().origin());
@@ -241,9 +249,11 @@ class FullObsHandler: public AFQMCInfo
         wfn0.DensityMatrix(RefsB, SMB, GB, DevOv.sliced(nw,2*nw), LogOverlapFactor, false, false);
       } else {
         for(int iw=0; iw<nw; iw++) {
-          SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
-          GA.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin()),{NMO,NMO}) );
-          RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
+          //SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
+          emplace_arrayptr(SMA,wset[iw].SlaterMatrixN(Alpha));  
+          GA.emplace_back( make_device_ptr(G2D[iw].origin()),iextensions<2u>{NMO,NMO});
+          //RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
+          emplace_arrayptr(RefsA,wset[iw].SlaterMatrixAux(Alpha));  
           copy_n(Refs[iw][iref].origin() , RefsA.back().num_elements(), RefsA.back().origin());
         }
         wfn0.DensityMatrix(RefsA, SMA, GA, DevOv.sliced(0,nw), LogOverlapFactor, false, false);
