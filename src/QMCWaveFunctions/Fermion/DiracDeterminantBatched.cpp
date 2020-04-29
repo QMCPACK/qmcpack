@@ -267,12 +267,22 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list)
 {
   UpdateTimer.start();
+
+  const int nw = WFC_list.size();
+  std::vector<ValueType*> Ainv_ptr_list(nw, nullptr), Ainv_dev_ptr_list(nw, nullptr);
+
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-    auto* Ainv_ptr = det.psiMinv.data();
-    PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[:psiMinv.size()])")
+    Ainv_ptr_list[iw] = det.psiMinv.data();
+    Ainv_dev_ptr_list[iw] = det.psiMinv_dev_ptr;
+  }
 
+  det_engine_.mw_transferAinv_D2H(Ainv_ptr_list, Ainv_dev_ptr_list, psiMinv.size());
+
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+  {
+    auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     auto& my_psiM_vgl = det.psiM_vgl;
     auto* psiM_vgl_ptr = my_psiM_vgl.data();
     PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4])")
@@ -399,6 +409,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
 
   VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
 
+  det_engine_.mw_getInvRowReady(WorkingIndex, false);
   // calling Phi->mw_evaluateVGLandDetRatioGrads is a temporary workaround.
   // We may implement mw_evaluateVandDetRatio in the future.
   Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v_view, ratios_local,

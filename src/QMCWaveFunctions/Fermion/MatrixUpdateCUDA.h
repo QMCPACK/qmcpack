@@ -276,8 +276,22 @@ public:
       cudaErrorCheck(cuBLAS_inhouse::ger_batched(hstream, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
                                                  Ainv_mw_ptr, norb, n_accepted),
                      "cuBLAS_inhouse::ger_batched failed!");
-      waitStream();
     }
+  }
+
+  void mw_getInvRowReady(const int row_id, bool transfer_to_host)
+  {
+    //FIXME in case transfer_to_host
+    waitStream();
+  }
+
+  void mw_transferAinv_D2H(const std::vector<T*>& Ainv_ptr_list, const std::vector<T*>& Ainv_dev_ptr_list, size_t matrix_size)
+  {
+    for (int iw = 0; iw < Ainv_ptr_list.size(); iw++)
+      cudaErrorCheck(cudaMemcpyAsync(Ainv_ptr_list[iw], Ainv_dev_ptr_list[iw], matrix_size * sizeof(T),
+                                     cudaMemcpyDeviceToHost, hstream),
+                     "cudaMemcpyAsync Ainv failed!");
+    waitStream();
   }
 };
 } // namespace qmcplusplus
