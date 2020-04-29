@@ -179,7 +179,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       auto delta_r_end   = delta_r_start + num_walkers;
 
       //This is very useful thing to be able to look at in the debugger
-#ifndef NDBEBUG
+#ifndef NDEBUG
       std::vector<int> walkers_who_have_been_on_wire(num_walkers, 0);
       ;
       for (int iw = 0; iw < walkers.size(); ++iw)
