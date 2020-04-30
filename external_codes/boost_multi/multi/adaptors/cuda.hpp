@@ -1,5 +1,5 @@
-#ifdef COMPILATION_INSTRUCTIONS//-*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4-*-
-$CXX -x c++ $0 -o $0x -lcudart -lboost_unit_test_framework -lboost_timer&&$0x&&rm $0x;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
+$CXX $0 -o $0x -lcudart -lboost_unit_test_framework -lboost_timer&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 
@@ -70,6 +70,7 @@ auto copy(const double* first, const double* last, boost::multi::array_iterator<
 #include<boost/timer/timer.hpp>
 
 #include<chrono>
+#include<numeric>
 
 template <class T>
 __attribute__((always_inline)) inline void DoNotOptimize(const T &value) {
@@ -89,12 +90,36 @@ namespace multi = boost::multi;
 namespace cuda = multi::cuda;
 namespace utf = boost::unit_test::framework;
 
+BOOST_AUTO_TEST_CASE(multi_adaptors_cuda_construct_1d){
+	multi::array<double, 1> A(4, 99.);
+	cuda::array<double, 1> Agpu{A};
+	BOOST_REQUIRE( extensions(A) == extensions(Agpu) );
+	BOOST_REQUIRE( Agpu == A );
+}
+
 BOOST_AUTO_TEST_CASE(multi_adaptors_cuda_copy_1d){
 	multi::array<double, 1> A(4, 99.);
 	cuda::array<double, 1> Agpu(4);
 	BOOST_REQUIRE( extensions(A) == extensions(Agpu) );
+	Agpu({0, 4}) = A({0, 4});
+	BOOST_REQUIRE( Agpu == A );
+}
+
+BOOST_AUTO_TEST_CASE(multi_adaptors_cuda_construct_2d){
+	multi::array<double, 2> A({4, 6}, 99.);
+	cuda::array<double, 2> Agpu{A};
+	BOOST_REQUIRE( extensions(A) == extensions(Agpu) );
+	BOOST_REQUIRE( Agpu == A );
+}
+
+BOOST_AUTO_TEST_CASE(multi_adaptors_cuda_copy_2d){
+	multi::array<double, 2> A({4, 6}); std::iota(A.data_elements(), A.data_elements() + A.num_elements(), 1.);
+	cuda::array<double, 2> Agpu({4, 6}, 99.);
+	BOOST_REQUIRE( extensions(A) == extensions(Agpu) );
+	Agpu({0, 4}, {1, 6}) = A({0, 4}, {1, 6});
+	BOOST_REQUIRE( Agpu != A );
 	Agpu = A;
-//	BOOST_REQUIRE( Agpu[1] == 99. );
+	BOOST_REQUIRE( Agpu == A );
 }
 
 BOOST_AUTO_TEST_CASE(multi_adaptors_cuda_copy_vs_move){
@@ -124,15 +149,6 @@ BOOST_AUTO_TEST_CASE(multi_adaptors_cuda_copy_vs_move_complex){
 		BOOST_REQUIRE( Agpu.empty() );
 		BOOST_REQUIRE( Agpu_mov.size() == 30 );
 	}();
-}
-
-
-BOOST_AUTO_TEST_CASE(multi_adaptors_cuda_copy_2d){
-//	multi::array<double, 2> A({4, 4}, 99.);
-//	cuda::array<double, 2> Agpu({4, 4}, 99.);
-//	BOOST_REQUIRE( extensions(A) == extensions(Agpu) );
-//	Agpu = A;
-//	BOOST_REQUIRE( Agpu[1] == 99. );
 }
 
 BOOST_AUTO_TEST_CASE(multi_adaptors_cuda_managed_double){

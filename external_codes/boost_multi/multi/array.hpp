@@ -37,10 +37,10 @@ protected:
 		return n?std::allocator_traits<allocator_type>::allocate(alloc_, n):nullptr;
 	}
 	auto uninitialized_fill_n(typename std::allocator_traits<allocator_type>::pointer base, typename std::allocator_traits<allocator_type>::size_type num_elements, typename std::allocator_traits<allocator_type>::value_type e){
-		return adl::alloc_uninitialized_fill_n(alloc_, base, num_elements, e);
+		return adl_alloc_uninitialized_fill_n(alloc_, base, num_elements, e);
 	}
 	template<typename It> auto uninitialized_copy_n(It first, size_type n, typename std::allocator_traits<allocator_type>::pointer data){
-		return adl::alloc_uninitialized_copy_n(alloc_, first, n, data);
+		return adl_alloc_uninitialized_copy_n(alloc_, first, n, data);
 	}
 	template<typename It> auto destroy_n(It first, size_type n){return adl::alloc_destroy_n(this->alloc(), first, n);}
 public:
@@ -69,6 +69,7 @@ protected:
 		return adl::alloc_uninitialized_value_construct_n(static_array::alloc(), this->base_, this->num_elements());
 	}
 	auto uninitialized_default_construct(){
+	//	return std::uninitialized_default_construct_n(this->base_, this->num_elements());
 		return adl_alloc_uninitialized_default_construct_n(static_array::alloc(), this->base_, this->num_elements());
 	}
 	template<typename It> auto uninitialized_copy_elements(It first){
@@ -126,12 +127,24 @@ public:
 
 	template<class TT> auto uninitialized_fill_elements(TT const& value){return array_alloc::uninitialized_fill_n(this->data_elements(), this->num_elements(), value);}
 	
-	template<class Range, typename = decltype(static_array(std::declval<Range const&>().begin(), std::declval<Range const&>().end(), std::declval<typename static_array::allocator_type const&>())), 
+/*	template<class Range, typename = decltype(static_array(std::declval<Range const&>().begin(), std::declval<Range const&>().end(), std::declval<typename static_array::allocator_type const&>())), 
 		std::enable_if_t<not std::is_base_of<static_array, Range>{}, int> = 0,
 		std::enable_if_t<not std::is_convertible<Range, typename static_array::extensions_type>{}, int> = 0
 	>
 	explicit static_array(Range const& rng, typename static_array::allocator_type const& a = {})
 		: static_array(adl_begin(rng), adl_end(rng), a){}
+*/
+//	template<class Range, typename = decltype(static_array(std::declval<Range const&>().begin(), std::declval<Range const&>().end(), std::declval<typename static_array::allocator_type const&>())), 
+//		std::enable_if_t<not std::is_base_of<static_array, Range>{}, int> = 0,
+//		std::enable_if_t<not std::is_convertible<Range, typename static_array::extensions_type>{}, int> = 0
+//	>
+	template<class... As>
+	static_array(array_ref<T, D, As...> const& other, typename static_array::allocator_type const& a = {}) :
+		array_alloc{a},
+		ref{array_alloc::allocate(other.num_elements()), other.extensions()}
+	{
+		adl_alloc_uninitialized_copy_n(static_array::alloc(), other.data_elements(), other.num_elements(), this->data_elements());
+	}
 	// analgous to std::vector::vector (3) https://en.cppreference.com/w/cpp/container/vector/vector
 	static_array(typename static_array::extensions_type x, typename static_array::element const& e, typename static_array::allocator_type const& a) : //2
 		array_alloc{a}, 
@@ -143,7 +156,7 @@ public:
 	explicit static_array(Element const& e, typename static_array::allocator_type const& a)
 	:	static_array(typename static_array::extensions_type{}, e, a){}
 	auto uninitialized_fill(typename static_array::element const& e){
-		return adl::alloc_uninitialized_fill_n(this->alloc(), this->base_, this->num_elements(), e);
+		return adl_alloc_uninitialized_fill_n(this->alloc(), this->base_, this->num_elements(), e);
 	}
 	static_array(typename static_array::extensions_type const& x, typename static_array::element const& e)  //2
 	:	array_alloc{}, ref(array_alloc::allocate(typename static_array::layout_t{x}.num_elements()), x){
@@ -179,11 +192,11 @@ public:
 	{
 		adl_copy(o.begin(), o.end(), this->begin()); // TODO: should be uninitialized_copy
 	}
-	template<class TT, class... Args>
-	static_array(static_array<TT, D, Args...> const& o)
-	: array_alloc{}, ref{array_alloc::allocate(num_elements(o)), extensions(o)}{
-		static_array::uninitialized_copy_elements(o.data_elements());
-	}
+//	template<class TT, class... Args>
+//	static_array(static_array<TT, D, Args...> const& o)
+//	: array_alloc{}, ref{array_alloc::allocate(num_elements(o)), extensions(o)}{
+//		static_array::uninitialized_copy_elements(o.data_elements());
+//	}
 	template<class TT, class... Args>
 	static_array(array_ref<TT, D, Args...>&& o)
 	: array_alloc{}, ref{array_alloc::allocate(num_elements(o)), extensions(o)}{
@@ -425,7 +438,7 @@ protected:
 	using alloc_traits = typename std::allocator_traits<typename static_array::allocator_type>;
 	using ref = array_ref<T, 0, typename std::allocator_traits<typename std::allocator_traits<Alloc>::template rebind_alloc<T>>::pointer>;
 	auto uninitialized_value_construct(){return adl::alloc_uninitialized_value_construct_n(static_array::alloc(), this->base_, this->num_elements());}
-	template<typename It> auto uninitialized_copy(It first){return adl::alloc_uninitialized_copy_n(this->alloc(), first, this->num_elements(), this->data());}
+	template<typename It> auto uninitialized_copy(It first){return adl_alloc_uninitialized_copy_n(this->alloc(), first, this->num_elements(), this->data());}
 	template<typename It>
 	auto uninitialized_move(It first){
 		using boost::multi::uninitialized_move_n;

@@ -55,5 +55,25 @@ BOOST_AUTO_TEST_CASE(multi_array_range_section){
 		BOOST_REQUIRE( &A[1][2][3][4] == &apply(A, std::array<int, 4>{1, 2, 3, 4}) );
 		BOOST_REQUIRE( &A[1][2][3][4] == &apply(A, std::make_tuple(1, 2, 3, 4))    );
 	}
+	{
+		multi::array<double, 2> A = {
+			{1., 2., 3., 4.},
+			{5., 6., 7., 8.},
+			{9., 0., 1., 2.},
+			{3., 4., 5., 6.}
+		};
+		multi::array<double, 2> B = {
+			{91., 92., 93., 94.},
+			{95., 96., 97., 98.},
+			{99., 90., 91., 92.},
+			{93., 94., 95., 96.}
+		};
+
+		A({0, 2}, {0, 2}) = B({0, 2}, {0, 2});
+		BOOST_REQUIRE( A != B );
+		BOOST_REQUIRE( A({0, 2}, {0, 2}) == B({0, 2}, {0, 2}) );
+		BOOST_REQUIRE( A[1][1] == 96. );
+
+	}
 }
 

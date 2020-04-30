@@ -91,7 +91,7 @@ public:
 	}
 	template<class InputIt, class Size, class ForwardIt, typename T1 = typename std::iterator_traits<ForwardIt>::value_type>
 	auto alloc_uninitialized_copy_n(InputIt first, Size count, ForwardIt d_first)
-	DECLRETURN(adl::uninitialized_copy_n(first, count, d_first))
+	DECLRETURN(adl_uninitialized_copy_n(first, count, d_first))
 	template<class InputIt, class Size, class ForwardIt, typename T1 = typename std::iterator_traits<ForwardIt>::value_type>
 	auto alloc_uninitialized_copy(InputIt first, Size count, ForwardIt d_first) 
 	DECLRETURN(uninitialized_copy(first, count, d_first))

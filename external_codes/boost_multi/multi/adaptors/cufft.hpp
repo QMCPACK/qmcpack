@@ -1,5 +1,5 @@
-#ifdef COMPILATION_INSTRUCTIONS//-*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
-time $CXX $0 -o $0x -lcudart -lcufft `pkg-config --libs fftw3` -lboost_unit_test_framework&&time $0x&&rm $0x;exit
+#ifdef COMPILATION// -*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
+$CXX $0 -o $0x -lcudart -lcufft `pkg-config --libs fftw3` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2020
 
@@ -72,6 +72,7 @@ class plan{
 	plan(plan const&) = delete;
 	plan(plan&& other) : h_{std::exchange(other.h_, {})}{} // needed in <=C++14 for return
 	void ExecZ2Z(complex_type const* idata, complex_type* odata, int direction) const{
+		++tl_execute_count;
 		assert(idata_ and odata_); assert(direction_!=0);
 		cufftResult r = ::cufftExecZ2Z(h_, const_cast<complex_type*>(idata), odata, direction); 
 		switch(r){
@@ -104,6 +105,7 @@ class plan{
 		swap(h_, other.h_);
 	}
 public:
+	thread_local static int tl_execute_count;
 	plan& operator=(plan other){swap(other); return *this;}
 	void operator()() const{ExecZ2Z(idata_, odata_, direction_);}
 	template<class I, class O>
@@ -263,6 +265,8 @@ public:
 	}
 };
 
+thread_local int plan::tl_execute_count = 0;
+
 template<typename In, class Out>
 auto dft(In const& i, Out&& o, int s)
 ->decltype(cufft::plan{i, o, s}(), std::forward<Out>(o)){
@@ -285,7 +289,7 @@ auto many_dft(It1 first, It1 last, It2 d_first, sign s)
 template<typename In, class Out,  std::size_t D = In::dimensionality, std::enable_if_t<(D==1), int> = 0>
 Out&& dft(std::array<bool, D> which, In const& i, Out&& o, int s){
 	if(which[0]) return cufft::dft(i, std::forward<Out>(o), s);
-	else return std::forward<Out>(o) = i;
+	else return std::forward<Out>(std::forward<Out>(o) = i);
 }
 
 template<typename In, class Out, std::size_t D = In::dimensionality, std::enable_if_t<(D>1), int> = 0> 
@@ -304,7 +308,7 @@ auto dft(std::array<bool, D> which, In const& i, Out&& o, int s)
 		}
 	}else if(which[0]==false){
 		if(D==1 or std::all_of(begin(which)+1, end(which), [](auto e){return e==false;})){
-			if(base(o) != base(i)) std::forward<Out>(o) = i;
+			if(base(o) != base(i)) std::forward<Out>(o) = i;//.assign(i);//std::forward<Out>(o) = i;
 			else if(o.layout() != i.layout()) std::forward<Out>(o) = +i;
 		}
 		else if(ff==end(which)) many_dft(i.begin(), i.end(), o.begin(), s);
@@ -481,7 +485,7 @@ namespace utf = boost::unit_test;
 
 template <class T>
 __attribute__((always_inline)) inline void DoNotOptimize(const T &value) {
-  asm volatile("" : "+m"(const_cast<T &>(value)));
+	asm volatile("" : "+m"(const_cast<T &>(value)));
 }
 
 struct watch : private std::chrono::high_resolution_clock{
@@ -499,34 +503,10 @@ struct watch : private std::chrono::high_resolution_clock{
 
 constexpr complex I{0, 1};
 
-BOOST_AUTO_TEST_CASE(cufft_dft_1D_out_of_place, *utf::tolerance(0.00001)* utf::timeout(2) ){
-	static_assert( not std::is_convertible<multi::memory::cuda::ptr<std::complex<double>>, std::complex<double>*>{}, "!" );
-//	int good = fftw_init_threads(); assert(good);
-//	fftw_plan_with_nthreads(std::thread::hardware_concurrency());
-
-	multi::array<complex, 1> const in_cpu = {
-		1. + 2.*I, 2. + 3. *I, 4. + 5.*I, 5. + 6.*I
-	};
-	multi::array<complex, 1> fw_cpu(size(in_cpu));
-	multi::fft::dft(in_cpu, fw_cpu, multi::fft::forward);
-	BOOST_REQUIRE( in_cpu[1] == +2. + 3.*I );
-	BOOST_REQUIRE( fw_cpu[2] == -2. - 2.*I );
-
-	multi::cuda::array<complex, 1> const in_gpu = in_cpu;
-	multi::cuda::array<complex, 1> fw_gpu(size(in_cpu));
-//	multi::fft::dft( in_gpu, fw_gpu, multi::fft::forward );
-//	BOOST_REQUIRE( static_cast<complex>(fw_gpu[3]) - fw_cpu[3] == 0. );
-
-	multi::cuda::managed::array<complex, 1> const in_mng = in_cpu;
-	multi::cuda::managed::array<complex, 1> fw_mng(size(in_cpu));
-//	multi::fft::dft( in_mng, fw_mng, multi::fft::forward );
-//	BOOST_REQUIRE( fw_mng[3] - fw_cpu[3] == 0. );
-}
-
 #if 1
 
-#if 1
 BOOST_AUTO_TEST_CASE(cufft_2D, *boost::unit_test::tolerance(0.0001)){
+
 	multi::array<complex, 2> const in_cpu = {
 		{ 1. + 2.*I, 9. - 1.*I, 2. + 4.*I},
 		{ 3. + 3.*I, 7. - 4.*I, 1. + 9.*I},
@@ -556,9 +536,7 @@ BOOST_AUTO_TEST_CASE(cufft_2D, *boost::unit_test::tolerance(0.0001)){
 	BOOST_TEST( imag(fw2_mng[3][1] - fw_cpu[3][1]) == 0. );
 
 }
-#endif
 
-#if 0
 BOOST_AUTO_TEST_CASE(cufft_3D_timing, *boost::unit_test::tolerance(0.0001)){
 
 	auto x = std::make_tuple(300, 300, 300);
@@ -569,8 +547,7 @@ BOOST_AUTO_TEST_CASE(cufft_3D_timing, *boost::unit_test::tolerance(0.0001)){
 		{
 		//	boost::timer::auto_cpu_timer t;  // 1.041691s wall, 1.030000s user + 0.000000s system = 1.030000s CPU (98.9%)
 			multi::fftw::dft(in_cpu, fw_cpu, multi::fftw::forward);
-
-		//	BOOST_TEST( fw_cpu[8][9][10] != 99. );
+			BOOST_TEST( fw_cpu[8][9][10] != 99. );
 		}
 	}
 	{
@@ -597,9 +574,7 @@ BOOST_AUTO_TEST_CASE(cufft_3D_timing, *boost::unit_test::tolerance(0.0001)){
 		//	BOOST_TEST( fw_gpu[8][9][10].operator complex() != 99. );
 		}
 	}
-
 }
-#endif
 
 BOOST_AUTO_TEST_CASE(cufft_many_3D, *utf::tolerance(0.00001) ){
 
@@ -632,19 +607,18 @@ BOOST_AUTO_TEST_CASE(cufft_4D, *utf::tolerance(0.00001)){
 		);
 		return ret;
 	}();
+
 	multi::array<complex, 3> out(extensions(in));
 //	multi::fftw::dft({true, false, true}, in, out, multi::fftw::forward);
-	multi::fft::many_dft((in<<1).begin(), (in<<1).end(), (out<<1).begin(), multi::fftw::forward);
+	multi::fft::many_dft(begin(in<<1), end(in<<1), begin(out<<1), multi::fftw::forward);
 
 	multi::cuda::array<complex, 3> in_gpu = in;
 	multi::cuda::array<complex, 3> out_gpu(extensions(in));
 
-	multi::fft::dft({true, false, true}, in_gpu, out_gpu, multi::fft::forward);//multi::cufft::forward);	
-//	multi::cufft::many_dft(in_gpu.begin(), in_gpu.end(), out_gpu.begin(), multi::fftw::forward);
+//	multi::cufft::dft({true, false, true}, in_gpu, out_gpu, multi::fft::forward);//multi::cufft::forward);	
+	multi::cufft::many_dft(begin(in_gpu<<1), end(in_gpu<<1), begin(out_gpu<<1), multi::fftw::forward);
 	BOOST_TEST( imag( static_cast<complex>(out_gpu[5][4][3]) - out[5][4][3]) == 0. );	
 }
-
-template<class T> void what(T&&) = delete;
 
 BOOST_AUTO_TEST_CASE(cufft_combinations, *utf::tolerance(0.00001)){
 

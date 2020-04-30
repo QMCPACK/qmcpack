@@ -150,10 +150,10 @@ public:
 	template<class U> using rebind = ptr<U, typename std::pointer_traits<raw_pointer>::template rebind<U>>;
 
 	template<class Other, typename = std::enable_if_t<std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{} and not std::is_same<Other, T>{} >>
-	/*explicit(false)*/ ptr(ptr<Other> const& o) HD : rp_{static_cast<raw_pointer>(o.rp_)}{}
-	template<class Other, typename = std::enable_if_t<not std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{} and not std::is_same<Other, T>{}>>
-	explicit/*(true)*/ ptr(ptr<Other> const& o, void** = 0) HD : rp_{static_cast<raw_pointer>(o.rp_)}{}
-	explicit ptr(raw_pointer rp) HD : rp_{rp}{}
+	/*explicit(false)*/ constexpr ptr(ptr<Other> const& o) : rp_{static_cast<raw_pointer>(o.rp_)}{}
+	template<class Other, typename = std::enable_if_t<not std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{} and not std::is_same<Other, T>{}>, typename = decltype(static_cast<raw_pointer>(std::declval<ptr<Other>>().rp_))>
+	explicit/*(true)*/ constexpr ptr(ptr<Other> const& o, void** = 0) : rp_{static_cast<raw_pointer>(o.rp_)}{}
+	explicit constexpr ptr(raw_pointer rp)  : rp_{rp}{}
 	template<class Other, typename = decltype(static_cast<raw_pointer>(std::declval<Other const&>().rp_))> 
 	explicit ptr(Other const& o) : rp_{static_cast<raw_pointer>(o.rp_)}{}
 	ptr() = default;
@@ -188,19 +188,19 @@ public:
 	ptr& operator-=(typename ptr::difference_type n) HD{rp_-=n; return *this;}
 //	friend bool operator==(ptr const& s, ptr const& t){return s.impl_==t.impl_;}
 //	friend bool operator!=(ptr const& s, ptr const& t){return s.impl_!=t.impl_;}
-	ptr operator+(typename ptr::difference_type n) const HD{return ptr{rp_ + n};}
-	ptr operator-(typename ptr::difference_type n) const HD{return ptr{rp_ - n};}
+	constexpr ptr operator+(typename ptr::difference_type n) const {return ptr{rp_ + n};}
+	constexpr ptr operator-(typename ptr::difference_type n) const HD{return ptr{rp_ - n};}
 	using reference = ref<element_type>;
-#ifdef __NVCC__
-  #ifndef __CUDA_ARCH__
-    __host__ reference operator*() const{return {*this};}
-  #else
-    __device__ reference operator*() const{return *rp_; }
-  #endif
-#else
-  reference operator*() const __host__ __device__ { return {*this}; }
+//#ifdef __NVCC__
+//	#ifndef __CUDA_ARCH__
+//		__host__   constexpr reference operator*() const{return {*this};}
+//	#else
+//		__device__ constexpr reference operator*() const{return *rp_; }
+//	#endif
+//#else
+	constexpr reference operator*() const __host__ __device__ { return {*this}; }
 //  __device__ reference operator*() const{return *rp_;}
-#endif
+//#endif
 	reference operator[](difference_type n) const __host__ __device__{return *((*this)+n);}
 	friend ptr to_address(ptr const& p){return p;}
 	difference_type operator-(ptr const& o) const HD{return rp_-o.rp_;}
@@ -279,7 +279,7 @@ private:
 	ref(pointer const& p) HD: pimpl_{p}{}
 	template<class TT> friend struct ref;
 public:
-	ref(T& t) __host__ __device__: pimpl_{&t}{}
+	constexpr ref(T& t) : pimpl_{&t}{}
 //	ref(T& t) HD : pimpl_{&t}{}
 	template<class Other, typename = decltype(implicit_cast<pointer>(std::declval<ref<Other>>().pimpl_))>
 	/*explicit(false)*/ ref(ref<Other>&& o) HD : pimpl_{implicit_cast<pointer>(std::move(o).pimpl_)}{}
@@ -328,7 +328,7 @@ public:
 	};
 	skeleton_t skeleton()&& HD{return {pimpl_.rp_};}
 public:
-	ref(ref&& r) HD : pimpl_(std::move(r.pimpl_).rp_){}
+	constexpr ref(ref&& r) : pimpl_{std::move(r.pimpl_).rp_}{}
 //	ref& operator=(ref const&)& = delete;
 private:
 	ref& move_assign(ref&& other, std::true_type)&{

@@ -10,9 +10,9 @@ $CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #include "../array.hpp"
 
 namespace multi = boost::multi;
+namespace utf = boost::unit_test;
 
-BOOST_AUTO_TEST_CASE(multi_array_ptr){
-
+BOOST_AUTO_TEST_CASE(multi_array_ptr, *utf::timeout(2)){
 	{
 		double a[4][5] = {
 			{ 0,  1,  2,  3,  4}, 
@@ -45,6 +45,24 @@ BOOST_AUTO_TEST_CASE(multi_array_ptr){
 		BOOST_REQUIRE( aR == *aP );
 		BOOST_REQUIRE( aR.equal(aP->begin()) );
 		BOOST_REQUIRE( size(aR) == aP->size() );
+	}
+	{
+		double a[4][5] = {
+			{ 0,  1,  2,  3,  4}, 
+			{ 5,  6,  7,  8,  9}, 
+			{10, 11, 12, 13, 14}, 
+			{15, 16, 17, 18, 19}
+		};
+		
+		std::vector<multi::array_ptr<double, 1>> ps;
+		ps.emplace_back(&a[0][0], 5);
+		ps.emplace_back(&a[2][0], 5);
+		ps.emplace_back(&a[3][0], 5);
+
+		BOOST_TEST( &(*ps[2])[4] == &a[3][4] );
+		BOOST_TEST( (*ps[2])[4] == 19 );
+		BOOST_TEST( ps[2]->operator[](4) == 19 );
+
 	}
 	{
 		std::vector<double> v1(100, 3.);
