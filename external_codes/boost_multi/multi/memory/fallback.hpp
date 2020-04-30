@@ -4,9 +4,9 @@
 #ifndef MULTI_MEMORY_FALLBACK_HPP
 #define MULTI_MEMORY_FALLBACK_HPP
 
-//#if(__cpp_lib_memory_resource>=201603L)
+#if(__cpp_lib_memory_resource>=201603L)
 #include<memory_resource>
-//#endif
+#endif
 
 #include<stdlib.h> // aligned_alloc in c++17 this will be <cstdlib
 
