@@ -47,14 +47,13 @@ typedef DiracDeterminantBatched<> DetType;
 template<typename T1, typename ALLOC1, typename T2, typename ALLOC2>
 void check_matrix(Matrix<T1, ALLOC1>& a, Matrix<T2, ALLOC2>& b)
 {
-  REQUIRE(a.size() == b.size());
-  for (int i = 0; i < a.rows(); i++)
-  {
-    for (int j = 0; j < a.cols(); j++)
+  REQUIRE(a.rows() >= b.rows());
+  REQUIRE(a.cols() >= b.cols());
+  for (int i = 0; i < b.rows(); i++)
+    for (int j = 0; j < b.cols(); j++)
     {
       REQUIRE(a(i, j) == ValueApprox(b(i, j)));
     }
-  }
 }
 
 TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
@@ -237,7 +236,7 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   std::cout << ddb.psiMinv << std::endl;
 #endif
 
-  check_matrix(orig_a, ddb.psiMinv);
+  check_matrix(ddb.psiMinv, orig_a);
 }
 
 TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
@@ -326,7 +325,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   // force update Ainv in ddc using SM-1 code path
   ddc.completeUpdates();
 
-  check_matrix(a_update1, ddc.psiMinv);
+  check_matrix(ddc.psiMinv, a_update1);
 
   grad                    = ddc.evalGrad(elec, 1);
   PsiValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
@@ -379,7 +378,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 #endif
 
   // compare all the elements of psiMinv in ddc and orig_a
-  check_matrix(orig_a, ddc.psiMinv);
+  check_matrix(ddc.psiMinv, orig_a);
 }
 
 } // namespace qmcplusplus
