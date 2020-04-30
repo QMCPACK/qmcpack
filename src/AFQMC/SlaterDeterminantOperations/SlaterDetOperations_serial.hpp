@@ -24,6 +24,7 @@
 
 #include "mpi3/shared_communicator.hpp"
 #include "type_traits/scalar_traits.h"
+#include "AFQMC/Utilities/type_conversion.hpp"
 
 namespace qmcplusplus
 {
@@ -124,7 +125,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 
     template<class MatA, class MatP1, class MatV>
     void BatchedPropagate(std::vector<MatA> &Ai, const MatP1& P1, const MatV& V, int order=6, char TA='N') {
-      static_assert( decltype(*Ai[0])::dimensionality == 2, " dimenionality == 2" );
+      static_assert( pointedType<MatA>::dimensionality == 2, " dimenionality == 2" );
       static_assert( std::decay<MatV>::type::dimensionality == 3, " dimenionality == 3" );
       if(Ai.size() == 0) return;
       assert(Ai.size() == V.size(0));
@@ -165,6 +166,9 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     template<class MatA, class MatB, class MatC, class TVec>
     void BatchedMixedDensityMatrix( std::vector<MatA>& hermA, std::vector<MatB> &Bi, MatC&& C, T LogOverlapFactor, TVec&& ovlp, bool compact=false, bool herm=true) {
       if(Bi.size()==0) return;
+      static_assert((pointedType<MatA>::dimensionality == 2 or
+                    pointedType<MatA>::dimensionality == -2), "Wrong dimensionality");
+      static_assert(pointedType<MatB>::dimensionality == 2,  "Wrong dimensionality"); 
       static_assert(std::decay<MatC>::type::dimensionality == 3, "Wrong dimensionality");
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
       int NMO = (herm?(*hermA[0]).size(1):(*hermA[0]).size(0));
@@ -189,8 +193,10 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     void BatchedDensityMatrices(const std::vector<MatA>& Left, const std::vector<MatB> &Right, std::vector<MatC>& G, T LogOverlapFactor, TVec&& ovlp, bool compact=false, bool herm=true) {
       if(Left.size()==0) return;
       if(Right.size()==0) return;
-      static_assert(decltype(*Right[0])::dimensionality == 2, "Wrong dimensionality");
-      static_assert(decltype(*G[0])::dimensionality == 2, "Wrong dimensionality");
+      static_assert((pointedType<MatA>::dimensionality == 2 or
+                    pointedType<MatA>::dimensionality == -2), "Wrong dimensionality");
+      static_assert(pointedType<MatB>::dimensionality == 2, "Wrong dimensionality"); 
+      static_assert(pointedType<MatC>::dimensionality == 2, "Wrong dimensionality");
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
       int NMO = (herm?(*Left[0]).size(1):(*Left[0]).size(0));
       int NAEA = (herm?(*Left[0]).size(0):(*Left[0]).size(1));
@@ -213,6 +219,9 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 
     template<class MatA, class MatB, class TVec>
     void BatchedOverlap( std::vector<MatA>& hermA, std::vector<MatB> &Bi, T LogOverlapFactor, TVec&& ovlp, bool herm=true) {
+      static_assert((pointedType<MatA>::dimensionality == 2 or
+                    pointedType<MatA>::dimensionality == -2), "Wrong dimensionality");
+      static_assert(pointedType<MatB>::dimensionality == 2, "Wrong dimensionality"); 
       if(Bi.size()==0) return;
       assert(hermA.size() > 0);
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
@@ -230,6 +239,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 
     template<class MatA, class PTR>
     void BatchedOrthogonalize(std::vector<MatA> &Ai, T LogOverlapFactor, PTR detR) {
+      static_assert(pointedType<MatA>::dimensionality == 2, "Wrong dimensionality");
 #ifdef ENABLE_CUDA
       // QR on the transpose
       if(Ai.size()==0) return;
@@ -256,7 +266,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       gqrStrided(NMO,NAEA,NAEA,AT.origin(),NMO,NMO*NAEA,T_.origin(),NMO,WORK.origin(),sz,IWORK.origin(),nbatch);
       for(int i=0; i<nbatch; i++) {
         ma::transpose(AT[i],*Ai[i]);
-        scale_columns(NMO,NAEA,*Ai[i].origin(),*Ai[i].stride(0),scl[i].origin());
+        scale_columns(NMO,NAEA,(*Ai[i]).origin(),(*Ai[i]).stride(0),scl[i].origin());
       }
 #else
       int nw=Ai.size();
@@ -293,7 +303,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       gqrStrided(NMO,NAEA,NAEA,AT.origin(),NMO,NMO*NAEA,T_.origin(),NMO,WORK.origin(),sz,IWORK.origin(),nbatch);
       for(int i=0; i<nbatch; i++) {
         ma::transpose(AT[i],*Ai[i]);
-        scale_columns(NMO,NAEA,*Ai[i].origin(),*Ai[i].stride(0),scl[i].origin());
+        scale_columns(NMO,NAEA,(*Ai[i]).origin(),(*Ai[i]).stride(0),scl[i].origin());
       }
 #else
       int nw=Ai.size();

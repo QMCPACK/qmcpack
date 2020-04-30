@@ -939,7 +939,9 @@ template< class MatA,
 void MixedDensityMatrix( std::vector<MatA>& hermA, std::vector<MatB> &Bi, MatC&& C, Tp LogOverlapFactor, TVec&& ovlp, Mat&& TNN3D, Mat&& TNM3D, IBuffer& IWORK, bool compact=true, bool herm=true)
 {
   static_assert( std::decay<TVec>::type::dimensionality == 1, " TVec::dimensionality == 1" );
-  static_assert( decltype(*Bi[0])::dimensionality == 2, " MatB::dimensionality == 2" );
+  static_assert( (pointedType<MatA>::dimensionality == 2 or
+                  pointedType<MatA>::dimensionality == -2), " MatB::dimensionality == 2" );
+  static_assert( pointedType<MatB>::dimensionality == 2, " MatB::dimensionality == 2" );
   static_assert( std::decay<MatC>::type::dimensionality == 3, " MatC::dimensionality == 3" );
   static_assert( std::decay<Mat>::type::dimensionality == 3, "std::decay<Mat>::type::dimensionality == 3" );
 
@@ -1090,8 +1092,10 @@ template< class MatA,
 void DensityMatrices(std::vector<MatA> const& Left, std::vector<MatB> const& Right, std::vector<MatC>& G, Tp LogOverlapFactor, TVec&& ovlp, Mat&& TNN3D, Mat&& TNM3D, IBuffer& IWORK, bool compact=true, bool herm=true)
 {
   static_assert( std::decay<TVec>::type::dimensionality == 1, " TVec::dimensionality == 1" );
-  static_assert( decltype(*Right[0])::dimensionality == 2, " MatB::dimensionality == 2" );
-  static_assert( decltype(*G[0])::dimensionality == 2, " MatC::dimensionality == 2" );
+  static_assert( (pointedType<MatA>::dimensionality == 2 or
+                  pointedType<MatA>::dimensionality == -2), " MatA::dimensionality == 2" );
+  static_assert( pointedType<MatB>::dimensionality == 2, " MatB::dimensionality == 2" );
+  static_assert( pointedType<MatC>::dimensionality == 2, " MatC::dimensionality == 2" );
   static_assert( std::decay<Mat>::type::dimensionality == 3, "std::decay<Mat>::type::dimensionality == 3" );
 
   using ma::T;
@@ -1123,7 +1127,7 @@ void DensityMatrices(std::vector<MatA> const& Left, std::vector<MatB> const& Rig
   }
   assert( IWORK.num_elements() >= nbatch*(NEL+1) );
 
-  using pointer = typename decltype(*G[0])::element_ptr;
+  using pointer = typename pointedType<MatC>::element_ptr;
 
   int ldR = (*Right[0]).stride(0);
   int ldL = (*Left[0]).stride(0);
@@ -1217,8 +1221,10 @@ template< class MatA,
         >
 void Overlap( std::vector<MatA>& hermA, std::vector<MatB> &Bi, Tp LogOverlapFactor, TVec&& ovlp, Mat&& TNN3D, IBuffer& IWORK, bool herm=true)
 {
+  static_assert( (pointedType<MatA>::dimensionality == 2 or
+                  pointedType<MatA>::dimensionality == -2), " MatA::dimensionality == 2" );
+  static_assert( pointedType<MatB>::dimensionality == 2, " MatB::dimensionality == 2" );
   static_assert( std::decay<TVec>::type::dimensionality == 1, " TVec::dimensionality == 1" );
-  static_assert( decltype(*Bi[0])::dimensionality == 2, " MatB::dimensionality == 2" );
   static_assert( std::decay<Mat>::type::dimensionality == 3, "std::decay<Mat>::type::dimensionality == 3" );
 
   using ma::T;
