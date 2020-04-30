@@ -61,7 +61,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
   int norb = morb;
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
-  psiMinv.resize(nel, norb);
+  psiMinv.resize(nel, getAlignedSize<ValueType>(norb));
   psiMinv_dev_ptr = getOffloadDevicePtr(psiMinv.data());
   psiM_vgl.resize(nel * norb);
   psiM_vgl_dev_ptr = getOffloadDevicePtr(psiM_vgl.data());
@@ -86,7 +86,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
 {
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  GradType g = simd::dot(psiMinv[WorkingIndex], dpsiM[WorkingIndex], psiMinv.rows());
+  GradType g = simd::dot(psiMinv[WorkingIndex], dpsiM[WorkingIndex], NumOrbitals);
   RatioTimer.stop();
   return g;
 }
@@ -107,7 +107,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVector<WaveF
   for (int iw = 0; iw < nw; iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-    invRow_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
+    invRow_list[iw] = det.psiMinv_dev_ptr + psiMinv.cols() * WorkingIndex;
     dpsiM_row_list[iw] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
   }
 
@@ -130,9 +130,9 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
 
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  curRatio               = simd::dot(psiMinv[WorkingIndex], psiV.data(), psiV.size());
+  curRatio               = simd::dot(psiMinv[WorkingIndex], psiV.data(), NumOrbitals);
   grad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
-      simd::dot(psiMinv[WorkingIndex], dpsiV.data(), psiMinv.rows());
+      simd::dot(psiMinv[WorkingIndex], dpsiV.data(), NumOrbitals);
   RatioTimer.stop();
   return curRatio;
 }
@@ -156,16 +156,16 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVector<Wave
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     phi_list.push_back(*det.Phi);
     if (Phi->isOMPoffload())
-      psiMinv_row_dev_ptr_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
+      psiMinv_row_dev_ptr_list[iw] = det.psiMinv_dev_ptr + psiMinv.cols() * WorkingIndex;
     else
     {
-      psiMinv_row_dev_ptr_list[iw] = det.psiMinv.data() + NumOrbitals * WorkingIndex;
+      psiMinv_row_dev_ptr_list[iw] = det.psiMinv.data() + psiMinv.cols() * WorkingIndex;
       auto* Ainv_ptr = det.psiMinv.data();
-      PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[NumOrbitals*WorkingIndex:NumOrbitals])")
+      PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[psiMinv.cols()*WorkingIndex:NumOrbitals])")
     }
   }
 
-  resizeMultiWalkerScratch(psiMinv.cols(), WFC_list.size());
+  resizeMultiWalkerScratch(NumOrbitals, WFC_list.size());
   ratios_local.resize(WFC_list.size());
   grad_new_local.resize(WFC_list.size());
 
@@ -242,7 +242,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
     PRAGMA_OFFLOAD("omp target update to(phi_vgl_v_ptr[:phi_vgl_v.capacity()*5])")
   }
 
-  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, psiMinv.rows(), WorkingIndex, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_v.capacity(), ratios_local);
+  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, NumOrbitals, psiMinv.cols(), WorkingIndex, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_v.capacity(), ratios_local);
 
   UpdateTimer.stop();
 }
@@ -385,7 +385,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
   Phi->evaluateValue(P, iat, psiV_host_view);
   SPOVTimer.stop();
   RatioTimer.start();
-  curRatio = simd::dot(psiMinv[WorkingIndex], psiV.data(), psiV.size());
+  curRatio = simd::dot(psiMinv[WorkingIndex], psiV.data(), NumOrbitals);
   RatioTimer.stop();
   return curRatio;
 }
@@ -407,16 +407,16 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     phi_list.push_back(*det.Phi);
     if (Phi->isOMPoffload())
-      psiMinv_row_dev_ptr_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
+      psiMinv_row_dev_ptr_list[iw] = det.psiMinv_dev_ptr + psiMinv.cols() * WorkingIndex;
     else
     {
-      psiMinv_row_dev_ptr_list[iw] = det.psiMinv.data() + NumOrbitals * WorkingIndex;
+      psiMinv_row_dev_ptr_list[iw] = det.psiMinv.data() + psiMinv.cols() * WorkingIndex;
       auto* Ainv_ptr = det.psiMinv.data();
       PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[NumOrbitals*WorkingIndex:NumOrbitals])")
     }
   }
 
-  resizeMultiWalkerScratch(psiMinv.cols(), WFC_list.size());
+  resizeMultiWalkerScratch(NumOrbitals, WFC_list.size());
   ratios_local.resize(WFC_list.size());
   grad_new_local.resize(WFC_list.size());
 
@@ -489,7 +489,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatiosAlltoOne(ParticleSe
   SPOVTimer.start();
   Phi->evaluateValue(P, -1, psiV_host_view);
   SPOVTimer.stop();
-  ValueMatrix_t psiMinv_host_view(psiMinv.data(), psiMinv.rows(), psiMinv.cols());
+  ValueMatrix_t psiMinv_host_view(psiMinv.data(), psiMinv.rows(), NumOrbitals);
+  //FIXME due to padding in psiMinv
   MatrixOperators::product(psiMinv_host_view, psiV.data(), &ratios[FirstIndex]);
 }
 
@@ -528,6 +529,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
   {
     resizeScratchObjectsForIonDerivs();
     Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
+    // FIXME due padding of psiMinv
     g = simd::dot(psiMinv.data(), grad_source_psiM.data(), psiMinv.size());
   }
 
@@ -538,7 +540,7 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
   // Hessian is not often used, so only resize/allocate if used
-  grad_grad_source_psiM.resize(psiMinv.rows(), psiMinv.cols());
+  grad_grad_source_psiM.resize(psiMinv.rows(), NumOrbitals);
   //IM A HACK.  Assumes evaluateLog has already been executed.
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, grad_grad_source_psiM);
   invertPsiM(psiM_temp, psiMinv);

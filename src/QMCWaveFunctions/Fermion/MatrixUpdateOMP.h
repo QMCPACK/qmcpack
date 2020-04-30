@@ -150,6 +150,7 @@ public:
     constexpr T cone(1);
     constexpr T czero(0);
     const int norb = Ainv.rows();
+    const int lda = Ainv.cols();
     resize_scratch_arrays(norb, 1);
     // invoke the Fahy's variant of Sherman-Morrison update.
     int dummy_handle  = 0;
@@ -159,19 +160,19 @@ public:
     T* temp_ptr       = temp.data();
     T* rcopy_ptr      = rcopy.data();
     PRAGMA_OFFLOAD("omp target data map(always, to: phiV_ptr[:norb]) \
-                    map(always, from: Ainv_ptr[:Ainv.rows()*Ainv.cols()]) \
+                    map(always, from: Ainv_ptr[:Ainv.size()]) \
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
-      success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, norb, phiV_ptr, 1, czero, temp_ptr, 1);
+      success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
       PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
       {
         temp_ptr[rowchanged] -= cone;
         PRAGMA_OFFLOAD("omp parallel for simd")
         for (int i = 0; i < norb; i++)
-          rcopy_ptr[i] = Ainv_ptr[rowchanged * norb + i];
+          rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
       }
       success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1) / c_ratio_in), rcopy_ptr, 1, temp_ptr,
-                             1, Ainv_ptr, norb);
+                             1, Ainv_ptr, lda);
     }
   }
 
@@ -179,6 +180,7 @@ public:
                            const std::vector<T*>& psiM_g_list,
                            const std::vector<T*>& psiM_l_list,
                            int norb,
+                           int lda,
                            int rowchanged,
                            const std::vector<bool>& isAccepted,
                            const T* phi_vgl_v_dev_ptr,
@@ -234,7 +236,7 @@ public:
       T* ratio_inv_mw   = reinterpret_cast<T*>(buffer_H2D_ptr + sizeof(T*) * n_accepted * 8);
 
       // invoke the Fahy's variant of Sherman-Morrison update.
-      success = ompBLAS::gemv_batched(dummy_handle, 'T', norb, norb, cone_ptr, Ainv_mw_ptr, norb, phiV_mw_ptr, 1,
+      success = ompBLAS::gemv_batched(dummy_handle, 'T', norb, norb, cone_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr, 1,
                                       czero_ptr, temp_mw_ptr, 1, n_accepted);
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(n_accepted) is_device_ptr(Ainv_mw_ptr, temp_mw_ptr, \
                      rcopy_mw_ptr, dpsiM_mw_out, d2psiM_mw_out, dpsiM_mw_in, d2psiM_mw_in)")
@@ -252,7 +254,7 @@ public:
         PRAGMA_OFFLOAD("omp parallel for simd")
         for (int i = 0; i < norb; i++)
         {
-          rcopy_ptr[i] = Ainv_ptr[rowchanged * norb + i];
+          rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
           // the following copying data on the device is not part of SM-1
           // it is intended to copy dpsiM and d2psiM from temporary to final without a separate kernel.
           dpsiM_out[i * 3]     = dpsiM_in[i * 3];
@@ -263,7 +265,7 @@ public:
       }
 
       success = ompBLAS::ger_batched(dummy_handle, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
-                                     Ainv_mw_ptr, norb, n_accepted);
+                                     Ainv_mw_ptr, lda, n_accepted);
     }
   }
 

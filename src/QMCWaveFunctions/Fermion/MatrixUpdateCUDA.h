@@ -184,6 +184,7 @@ public:
     constexpr T cone(1);
     constexpr T czero(0);
     const int norb = Ainv.rows();
+    const int lda = Ainv.cols();
     resize_scratch_arrays(norb, 1);
     // invoke the Fahy's variant of Sherman-Morrison update.
     int dummy_handle  = 0;
@@ -193,19 +194,19 @@ public:
     T* temp_ptr       = temp.data();
     T* rcopy_ptr      = rcopy.data();
     PRAGMA_OFFLOAD("omp target data map(always, to: phiV_ptr[:norb]) \
-                    map(always, from: Ainv_ptr[:Ainv.rows()*Ainv.cols()]) \
+                    map(always, from: Ainv_ptr[:Ainv.size()]) \
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
-      success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, norb, phiV_ptr, 1, czero, temp_ptr, 1);
+      success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
       PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
       {
         temp_ptr[rowchanged] -= cone;
         PRAGMA_OFFLOAD("omp parallel for simd")
         for (int i = 0; i < norb; i++)
-          rcopy_ptr[i] = Ainv_ptr[rowchanged * norb + i];
+          rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
       }
       success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1) / c_ratio_in), rcopy_ptr, 1, temp_ptr,
-                             1, Ainv_ptr, norb);
+                             1, Ainv_ptr, lda);
     }
   }
 
@@ -213,6 +214,7 @@ public:
                            const std::vector<T*>& psiM_g_list,
                            const std::vector<T*>& psiM_l_list,
                            int norb,
+                           int lda,
                            int rowchanged,
                            const std::vector<bool>& isAccepted,
                            const T* phi_vgl_v_dev_ptr,
@@ -263,18 +265,18 @@ public:
       T* ratio_inv_mw   = reinterpret_cast<T*>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 8);
 
       // invoke the Fahy's variant of Sherman-Morrison update.
-      cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, norb, cone_dev_ptr, Ainv_mw_ptr, norb,
+      cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, norb, cone_dev_ptr, Ainv_mw_ptr, lda,
                                                   phiV_mw_ptr, 1, czero_dev_ptr, temp_mw_ptr, 1, n_accepted),
                      "cuBLAS_inhouse::gemv_batched failed!");
 
-      cudaErrorCheck(CUDA::copyAinvRow_saveGL_cuda(hstream, rowchanged, norb, Ainv_mw_ptr, norb, temp_mw_ptr,
+      cudaErrorCheck(CUDA::copyAinvRow_saveGL_cuda(hstream, rowchanged, norb, Ainv_mw_ptr, lda, temp_mw_ptr,
                                                    rcopy_mw_ptr, dpsiM_mw_in, d2psiM_mw_in, dpsiM_mw_out, d2psiM_mw_out,
                                                    n_accepted),
                      "CUDA::copyAinvRow_saveGL_cuda failed!");
 
 
       cudaErrorCheck(cuBLAS_inhouse::ger_batched(hstream, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
-                                                 Ainv_mw_ptr, norb, n_accepted),
+                                                 Ainv_mw_ptr, lda, n_accepted),
                      "cuBLAS_inhouse::ger_batched failed!");
     }
   }
