@@ -9,8 +9,9 @@
 // File refactored from: MCWalkerConfiguration.cpp, QMCUpdate.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCDrivers/MCPopulation.h"
+#include <numeric>
 
+#include "QMCDrivers/MCPopulation.h"
 #include "Configuration.h"
 #include "Concurrency/TasksOneToOne.hpp"
 #include "Message/CommOperators.h"
