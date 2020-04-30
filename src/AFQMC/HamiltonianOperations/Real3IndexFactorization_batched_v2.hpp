@@ -29,7 +29,7 @@
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Utilities/Utils.hpp"
-#include "AFQMC/Numerics/helpers/batched_operations.hpp"
+#include "AFQMC/Numerics/batched_operations.hpp"
 #include "AFQMC/Numerics/tensor_operations.hpp"
 
 namespace qmcplusplus

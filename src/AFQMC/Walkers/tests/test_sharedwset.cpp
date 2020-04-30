@@ -88,7 +88,7 @@ void test_basic_walker_features(bool serial)
   auto node = world.split_shared(world.rank());
 
 #ifdef ENABLE_CUDA
-  qmc_cuda::CUDA_INIT(node);
+  arch::INIT(node);
 #endif
 
   using Type = std::complex<double>;
@@ -220,7 +220,7 @@ void test_hyperslab()
   auto node = world.split_shared(world.rank());
 
 #ifdef ENABLE_CUDA
-  qmc_cuda::CUDA_INIT(node);
+  arch::INIT(node);
 #endif
 
   using Type = std::complex<double>;
@@ -366,7 +366,7 @@ void test_walker_io()
   using Type = std::complex<double>;
 
 #ifdef ENABLE_CUDA
-  qmc_cuda::CUDA_INIT(node);
+  arch::INIT(node);
 #endif
 
   //assert(world.size()%2 == 0);

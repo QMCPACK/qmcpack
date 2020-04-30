@@ -23,7 +23,7 @@
 #include "AFQMC/Numerics/detail/CUDA/cusolver_wrapper.hpp"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/setIdentity.cuh"
 
-namespace qmc_cuda 
+namespace device 
 {
   using qmcplusplus::afqmc::remove_complex;
 

@@ -430,7 +430,7 @@ void SDetOps_complex_serial(Allocator alloc)
   ov_=SDet.Overlap(A(A.extension(0),A.extension(1)),B,0.0); myREQUIRE(ov_,ov);
   ov_=SDet.Overlap(A,B(B.extension(0),B.extension(1)),0.0); myREQUIRE(ov_,ov);
 
-// copy not yet working with cuda_gpu_ptr
+// copy not yet working with device_pointer
   array A_ = A({0,2},{0,3});
   array B_ = B({0,3},{0,2});
   ov_=SDet.Overlap(A({0,2},{0,3}),B({0,3},{0,2}),0.0); myREQUIRE(ov_,ov2);
@@ -925,8 +925,8 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
 
 
 #ifdef ENABLE_CUDA
-  qmc_cuda::CUDA_INIT(node);
-  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+  arch::INIT(node);
+  using Alloc = device::device_allocator<ComplexType>;
 #else
   using Alloc = std::allocator<ComplexType>;
 #endif

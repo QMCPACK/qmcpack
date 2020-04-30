@@ -27,9 +27,10 @@
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/config.0.h"
 
-#include "AFQMC/Memory/custom_pointers.hpp"
 #ifdef ENABLE_CUDA
-#include "AFQMC/Numerics/detail/CUDA/Kernels/sampleGaussianRNG.cuh"
+#include "AFQMC/Memory/device_pointers.hpp"
+#include "AFQMC/Memory/CUDA/cuda_arch.h"
+#include "AFQMC/Numerics/device_kernels.hpp"
 #include "cuda_runtime.h"
 #endif
 
@@ -346,9 +347,9 @@ inline void memory_report()
 #ifdef ENABLE_CUDA
 template<class T,
         class Dummy>
-void sampleGaussianFields_n(qmc_cuda::cuda_gpu_ptr<T> V, int n, Dummy &r) 
+void sampleGaussianFields_n(device::device_pointer<T> V, int n, Dummy &r) 
 {
-  kernels::sampleGaussianRNG(to_address(V),n,qmc_cuda::afqmc_curand_generator);
+  kernels::sampleGaussianRNG(to_address(V),n,arch::afqmc_curand_generator);
 }
 #endif
 
