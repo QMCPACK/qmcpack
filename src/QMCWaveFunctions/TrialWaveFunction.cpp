@@ -627,15 +627,18 @@ void TrialWaveFunction::completeUpdates()
   }
 }
 
-void TrialWaveFunction::flex_completeUpdates(const RefVector<TrialWaveFunction>& wf_list) const
+void TrialWaveFunction::flex_completeUpdates(const RefVector<TrialWaveFunction>& wf_list)
 {
   if (wf_list.size() > 1)
   {
-    for (int i = 0, ii = ACCEPT_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
+    const int num_wfc             = wf_list[0].get().Z.size();
+    auto& wavefunction_components = wf_list[0].get().Z;
+
+    for (int i = 0, ii = ACCEPT_TIMER; i < num_wfc; i++, ii += TIMER_SKIP)
     {
-      ScopedTimer local_timer(myTimers[ii]);
+      ScopedTimer local_timer(wf_list[0].get().get_timers()[ii]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
-      Z[i]->mw_completeUpdates(wfc_list);
+      wavefunction_components[i]->mw_completeUpdates(wfc_list);
     }
   }
   else if (wf_list.size() == 1)
