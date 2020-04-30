@@ -533,12 +533,12 @@ void SDetOps_complex_serial(Allocator alloc)
   // TODO fix CPU.
 #ifdef ENABLE_CUDA
   boost::multi::array<Type,3,Allocator> Gw({3,NMO,NMO},alloc);
-  std::vector<array_ref> RA, RB, Gwv;
+  std::vector<array_ptr> RA, RB, Gwv;
   boost::multi::array<Type,1,Allocator> ovlp(iextensions<1u>{3});
   for(int i = 0; i < 3; i++) {
-    RA.emplace_back(Aref);
-    RB.emplace_back(Bref);
-    Gwv.emplace_back(array_ref(Gw[i].origin(), {NMO,NMO}));
+    RA.emplace_back(&Aref);
+    RB.emplace_back(&Bref);
+    Gwv.emplace_back(&(Gw[i]));
   }
   Type log_ovlp;
   Type ov_ref = -7.623325999999989+22.20453200000001i;

@@ -25,6 +25,7 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
+#include <utility>  // declval
 #include<type_traits> // enable_if
 #include<vector>
 
@@ -36,6 +37,7 @@
 namespace ma{
 
 using qmcplusplus::afqmc::to_address;
+using qmcplusplus::afqmc::pointedType;
 
 template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::dimensionality > 1)>::type>
 bool is_hermitian(MultiArray2D const& A){
@@ -286,32 +288,33 @@ MultiArray2DC&& product(MultiArray2DA const& A, MultiArray2DB const& B, MultiArr
         return product(Type(1.), A, B, Type(0.), std::forward<MultiArray2DC>(C));
 }
 
-template<class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
+template<class T, class MultiArrayPtr2DA, class MultiArrayPtr2DB, class MultiArrayPtr2DC,
         typename = typename std::enable_if<
-                (MultiArray2DA::dimensionality == 2) and
-                (MultiArray2DB::dimensionality == 2) and
-                std::decay<MultiArray2DC>::type::dimensionality == 2
+                (pointedType<MultiArrayPtr2DA>::dimensionality == 2) and
+                (pointedType<MultiArrayPtr2DB>::dimensionality == 2) and
+                 pointedType<MultiArrayPtr2DC>::dimensionality == 2
         >::type,
         typename = void,
         typename = void
 >
-void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, std::vector<MultiArray2DB>& B,
-                                      T beta, std::vector<MultiArray2DC>& C){
+void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArrayPtr2DA>& A, 
+                                               std::vector<MultiArrayPtr2DB>& B,
+                                      T beta,  std::vector<MultiArrayPtr2DC>& C){
         int nbatch = C.size();
         assert(A.size() >= nbatch);
         assert(B.size() >= nbatch);
 
-        using pointer = typename MultiArray2DC::element_ptr;
-        using element = typename MultiArray2DC::element;
+        using pointer = typename pointedType<MultiArrayPtr2DC>::element_ptr;
+        using element = typename pointedType<MultiArrayPtr2DC>::element;
 
-        int M = C[0].size(1);
-        int N = C[0].size(0);
+        int M = (*C[0]).size(1);
+        int N = (*C[0]).size(0);
         int K;
-        if( TB == 'N' ) K = B[0].size(0);
-        else K = B[0].size(1);
-        int lda = A[0]->stride(0);
-        int ldb = B[0].stride(0);
-        int ldc = C[0].stride(0);
+        if( TB == 'N' ) K = (*B[0]).size(0);
+        else K = (*B[0]).size(1);
+        int lda = (*A[0]).stride(0);
+        int ldb = (*B[0]).stride(0);
+        int ldc = (*C[0]).stride(0);
         std::vector<pointer> Ai;
         std::vector<pointer> Bi;
         std::vector<pointer> Ci;
@@ -319,28 +322,28 @@ void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, s
         Bi.reserve(nbatch);
         Ci.reserve(nbatch);
         for(int i=0; i<nbatch; i++) {
-          assert(lda == A[i]->stride(0));
-          assert(ldb == B[i].stride(0));
-          assert(ldc == C[i].stride(0));
-          assert(M == C[i].size(1));
-          assert(N == C[i].size(0));
+          assert(lda == (*A[i]).stride(0));
+          assert(ldb == (*B[i]).stride(0));
+          assert(ldc == (*C[i]).stride(0));
+          assert(M == (*C[i]).size(1));
+          assert(N == (*C[i]).size(0));
           if(TB == 'N' ) {
-            assert(K == B[i].size(0));
-            assert(M == B[i].size(1));
+            assert(K == (*B[i]).size(0));
+            assert(M == (*B[i]).size(1));
           } else {
-            assert(K == B[i].size(1));
-            assert(M == B[i].size(0));
+            assert(K == (*B[i]).size(1));
+            assert(M == (*B[i]).size(0));
           }
-          if(TA == 'N') {
-            assert(K == A[i]->size(1));
-            assert(N == A[i]->size(0));
+          if(TA == 'N') { 
+            assert(K == (*A[i]).size(1));
+            assert(N == (*A[i]).size(0));
           } else {
-            assert(K == A[i]->size(0));
-            assert(N == A[i]->size(1));
+            assert(K == (*A[i]).size(0));
+            assert(N == (*A[i]).size(1));
           }
-          Ai.emplace_back(A[i]->origin());
-          Bi.emplace_back(B[i].origin());
-          Ci.emplace_back(C[i].origin());
+          Ai.emplace_back((*A[i]).origin());
+          Bi.emplace_back((*B[i]).origin());
+          Ci.emplace_back((*C[i]).origin());
         }
 
         using ma::gemmBatched;
@@ -352,23 +355,24 @@ void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, s
 }
 
 // no batched sparse product yet, serialize call
-template<class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
+template<class T, class MultiArrayPtr2DA, class MultiArrayPtr2DB, class MultiArrayPtr2DC,
         typename = typename std::enable_if<
-                (MultiArray2DA::dimensionality == -2) and
-                (MultiArray2DB::dimensionality == 2) and
-                std::decay<MultiArray2DC>::type::dimensionality == 2
+                (pointedType<MultiArrayPtr2DA>::dimensionality == -2) and
+                (pointedType<MultiArrayPtr2DB>::dimensionality == 2) and
+                pointedType<MultiArrayPtr2DC>::dimensionality == 2
         >::type,
         typename = void
 >
-void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, std::vector<MultiArray2DB>& B, 
-                                      T beta, std::vector<MultiArray2DC>& C){
+void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArrayPtr2DA>& A, 
+                                               std::vector<MultiArrayPtr2DB>& B, 
+                                      T beta,  std::vector<MultiArrayPtr2DC>& C){
         int nbatch = C.size();
         assert(A.size() >= nbatch);
         assert(B.size() >= nbatch);
 
-        using elementA = std::remove_cv_t<typename MultiArray2DA::element>;
-        using elementB = std::remove_cv_t<typename MultiArray2DB::element>;
-        using elementC = typename std::decay<MultiArray2DC>::type::element;
+        using elementA = std::remove_cv_t<typename pointedType<MultiArrayPtr2DA>::element>;
+        using elementB = std::remove_cv_t<typename pointedType<MultiArrayPtr2DB>::element>;
+        using elementC = typename pointedType<MultiArrayPtr2DC>::element;
         assert(TA == 'N' || TA == 'T' || TA == 'C' || TA == 'H');
         assert(TB == 'N');
 /*
@@ -385,29 +389,31 @@ void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, s
 
         for(int i=0; i<nbatch; i++) { 
           csrmm( TA, 
-            A[i]->size(0), B[i].size(1), A[i]->size(1),
+            (*A[i]).size(0), (*B[i]).size(1), (*A[i]).size(1),
             elementA(alpha), "GxxCxx",
-            pointer_dispatch(A[i]->non_zero_values_data()),
-            pointer_dispatch(A[i]->non_zero_indices2_data()),
-            pointer_dispatch(A[i]->pointers_begin()),
-            pointer_dispatch(A[i]->pointers_end()),
-            pointer_dispatch(B[i].origin()), B[i].stride(0),
+            pointer_dispatch((*A[i]).non_zero_values_data()),
+            pointer_dispatch((*A[i]).non_zero_indices2_data()),
+            pointer_dispatch((*A[i]).pointers_begin()),
+            pointer_dispatch((*A[i]).pointers_end()),
+            pointer_dispatch((*B[i]).origin()), (*B[i]).stride(0),
             elementA(beta),
-            pointer_dispatch(C[i].origin()),
-            C[i].stride(0));
+            pointer_dispatch((*C[i]).origin()),
+            (*C[i]).stride(0));
         }
 }
 
-template<class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
+template<class MultiArrayPtr2DA, class MultiArrayPtr2DB, class MultiArrayPtr2DC,
         typename = typename std::enable_if<
-                (MultiArray2DA::dimensionality == 2 or MultiArray2DA::dimensionality == -2) and
-                (MultiArray2DB::dimensionality == 2) and
-                std::decay<MultiArray2DC>::type::dimensionality == 2
+            (pointedType<MultiArrayPtr2DA>::dimensionality == 2 or 
+             pointedType<MultiArrayPtr2DA>::dimensionality == -2) and
+            (pointedType<MultiArrayPtr2DB>::dimensionality == 2) and
+            pointedType<MultiArrayPtr2DC>::dimensionality == 2
         >::type
 >
-void BatchedProduct(char TA, char TB, std::vector<MultiArray2DA*>& A, std::vector<MultiArray2DB>& B, 
-                                      std::vector<MultiArray2DC>& C){
-        using Type = typename std::decay<MultiArray2DA>::type::element;
+void BatchedProduct(char TA, char TB, std::vector<MultiArrayPtr2DA>& A, 
+                                      std::vector<MultiArrayPtr2DB>& B, 
+                                      std::vector<MultiArrayPtr2DC>& C){
+        using Type = typename pointedType<MultiArrayPtr2DA>::element;
         return BatchedProduct(TA,TB,Type(1.), A, B, Type(0.), C);
 }
 

@@ -65,9 +65,8 @@ class WalkerSetBase: public AFQMCInfo
   using BPCMatrix_ref = boost::multi::array_ref<bp_element,2,bp_pointer>;
   using BPCTensor_ref = boost::multi::array_ref<bp_element,3,bp_pointer>;
 
-  using stdCVector_ref = boost::multi::array_ref<bp_element,1>;
-  using stdCMatrix_ref = boost::multi::array_ref<bp_element,2>;
-  using stdCTensor_ref = boost::multi::array_ref<bp_element,3>;
+  using stdCMatrix_ptr = boost::multi::array_ptr<bp_element,2>;
+  using stdCTensor_ptr = boost::multi::array_ptr<bp_element,3>;
 
   public:
 
@@ -268,11 +267,11 @@ class WalkerSetBase: public AFQMCInfo
           fill_n(W[pos].origin(),W[pos].size(0),ComplexType(0,0));
           reference w0(W[pos],data_displ,wlk_desc);
           //w0.SlaterMatrix(Alpha) = A;
-          auto&& SM_(w0.SlaterMatrix(Alpha));
+          auto&& SM_(*w0.SlaterMatrix(Alpha));
           SM_ = A;
           if(walkerType == COLLINEAR) {
             //w0.SlaterMatrix(Beta) = B; 
-            auto&& SMB_(w0.SlaterMatrix(Beta));
+            auto&& SMB_(*w0.SlaterMatrix(Beta));
             SMB_ = B; 
           }
           pos++;
@@ -642,25 +641,25 @@ class WalkerSetBase: public AFQMCInfo
   }
 
   // Careful!!! This matrix returns an array_ref, NOT a copy!!!
-  stdCMatrix_ref&& getFields(int ip)
+  stdCMatrix_ptr getFields(int ip)
   {
     if(ip < 0 || ip > wlk_desc[3])
       APP_ABORT(" Error: index out of bounds in getFields. \n");
     int skip = (data_displ[FIELDS] + ip*wlk_desc[4])*bp_buffer.size(1); 
-    return std::move(stdCMatrix_ref(to_address(bp_buffer.origin())+skip,{wlk_desc[4],bp_buffer.size(1)}));
+    return stdCMatrix_ptr(to_address(bp_buffer.origin())+skip,{wlk_desc[4],bp_buffer.size(1)});
   } 
 
-  stdCTensor_ref&& getFields()
+  stdCTensor_ptr getFields()
   {
-    return std::move(stdCTensor_ref(to_address(bp_buffer.origin())+data_displ[FIELDS]*bp_buffer.size(1),
-                            {wlk_desc[3],wlk_desc[4],bp_buffer.size(1)}));
+    return stdCTensor_ptr(to_address(bp_buffer.origin())+data_displ[FIELDS]*bp_buffer.size(1),
+                            {wlk_desc[3],wlk_desc[4],bp_buffer.size(1)});
   }
 
   template<class Mat>  
   void storeFields(int ip, Mat&& V)
   {
     static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
-    auto&& F(getFields(ip));
+    auto&& F(*getFields(ip));
     if(V.stride(0) == V.size(1)) {
       using std::copy_n;
       copy_n(V.origin(),F.num_elements(),F.origin());
@@ -668,16 +667,16 @@ class WalkerSetBase: public AFQMCInfo
       F = V;
   }
 
-  stdCMatrix_ref&& getWeightFactors()
+  stdCMatrix_ptr getWeightFactors()
   {
-    return std::move(stdCMatrix_ref(to_address(bp_buffer.origin())+data_displ[WEIGHT_FAC]*bp_buffer.size(1),
-                                {wlk_desc[6],bp_buffer.size(1)}));
+    return stdCMatrix_ptr(to_address(bp_buffer.origin())+data_displ[WEIGHT_FAC]*bp_buffer.size(1),
+                                {wlk_desc[6],bp_buffer.size(1)});
   }
 
-  stdCMatrix_ref&& getWeightHistory()
+  stdCMatrix_ptr getWeightHistory()
   {
-    return std::move(stdCMatrix_ref(to_address(bp_buffer.origin())+data_displ[WEIGHT_HISTORY]*bp_buffer.size(1),
-                                {wlk_desc[6],bp_buffer.size(1)}));
+    return stdCMatrix_ptr(to_address(bp_buffer.origin())+data_displ[WEIGHT_HISTORY]*bp_buffer.size(1),
+                                {wlk_desc[6],bp_buffer.size(1)});
   }
 
   double getLogOverlapFactor() const { return LogOverlapFactor; }

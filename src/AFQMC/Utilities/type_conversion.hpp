@@ -14,10 +14,15 @@
 #ifndef AFQMC_TYPE_CONVERSION_HPP 
 #define AFQMC_TYPE_CONVERSION_HPP 
 
+#include <type_traits> // decay_t
+
 namespace qmcplusplus
 {
 namespace afqmc
 {
+
+template<class MPtr>
+using pointedType = std::decay_t<decltype(*std::declval<MPtr&>())>;
 
 // convert to single precision
 template<typename T>
