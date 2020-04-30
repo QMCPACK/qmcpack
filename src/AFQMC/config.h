@@ -138,25 +138,6 @@ namespace afqmc
   { return device_ptr<T>{to_address(p)}; }
 #endif
 
-
-/*
-  // casting array types until I'm allowed to use c++17!!!
-  template<class Ptr, class Array, 
-           typename = decltype(std::declval<Array>().extensions())
-          >
-  auto array_cast(Array&& A)
-  {
-    using element = typename std::decay<Array>::type::element;
-    constexpr auto D(std::decay<Array>::type::dimensionality);
-    // make sure it is continuous
-    for(int i=0; i<int(D-1); i++)
-      assert(A.stride(i) == A.size(i+1));
-    return boost::multi::array_ref<element,D,Ptr>(make_device_ptr(A.origin()),
-                                                  A.extensions());
-  }
-*/
-
-
   // new types
   using SpCType_shm_csr_matrix = ma::sparse::csr_matrix<SPComplexType,int,std::size_t,
                                 shared_allocator<SPComplexType>,
