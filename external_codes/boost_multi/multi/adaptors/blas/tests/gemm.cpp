@@ -1,5 +1,5 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&&`#nvcc -x cu --expt-relaxed-constexpr -O3 --compiler-options=-Wall`clang++ -D_MULTI_CUBLAS_ALWAYS_SYNC -O3 $0 -o $0x -Wno-deprecated-declarations `pkg-config --libs blas` -lcudart -lcublas -lboost_unit_test_framework&&$0x&&rm $0x $0.cpp; exit
+#ifdef COMPILATION// -*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
+$CXX -D_MULTI_CUBLAS_ALWAYS_SYNC $0 -o $0x `pkg-config --libs blas` -lcudart -lcublas -lboost_unit_test_framework&&$0x&&rm $0x; exit
 #endif
 // © Alfredo A. Correa 2019-2020
 
@@ -400,7 +400,7 @@ BOOST_AUTO_TEST_CASE(multi_constructors_inqnvcc_bug){
 	multiplies_bind1st m_as_operator4(std::move(m));
 	auto c4 = m_as_operator4(b);
 	BOOST_REQUIRE( c == c4 );
-	BOOST_REQUIRE( empty(m) );
+	BOOST_REQUIRE( is_empty(m) );
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_gemm_elongated){

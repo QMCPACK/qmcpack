@@ -1,8 +1,9 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&&$CXX -Wall -Wextra -Wpedantic -Wfatal-errors -D_TEST_MULTI_ADAPTORS_BLAS_CORE $0.cpp -o $0x `pkg-config --libs blas`&&$0x&&(rm $0x $0.cpp; for a in `find tests/ -name '*.cpp'`; do sh $a || break; done); exit
+#ifdef COMPILATION// -*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
+$CXX $0 -o $0x `pkg-config --libs blas`&&$0x&&rm $0x;exit
 #endif
+//for a in `find tests/ -name '*.cpp'`; do sh $a || break; done); exit
 // https://software.intel.com/en-us/articles/intel-mkl-link-line-advisor
-// © Alfredo A. Correa 2019
+// © Alfredo A. Correa 2019-2020
 
 #ifndef MULTI_ADAPTORS_BLAS_CORE_HPP
 #define MULTI_ADAPTORS_BLAS_CORE_HPP
@@ -34,9 +35,10 @@ extern "C"{
 #define Z _Complex d
 #if(_BLAS_INT==32)
 #define INT std::int32_t
-#endif
-#if(_BLAS_INT==64)
+#elif(_BLAS_INT==64)
 #define INT std::int64_t
+#else
+#define INT std::int32_t // 32bit safe? pesimistic?
 #endif
 #define INTEGER INT const&
 #define N INTEGER n
@@ -324,9 +326,10 @@ xtrsm(s) xtrsm(d) xtrsm(c) xtrsm(z)
 #undef BC
 
 }}}
+
 ///////////////////////////////////////////////////////////////////////////////
 
-#if _TEST_MULTI_ADAPTORS_BLAS_CORE
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_CORE
 
 #include "../../array.hpp"
 #include "../../utility.hpp"

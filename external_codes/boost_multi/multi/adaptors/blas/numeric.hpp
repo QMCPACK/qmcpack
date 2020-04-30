@@ -1,9 +1,12 @@
-#ifdef COMPILATION_INSTRUCTIONS
+#ifdef COMPILATION// -*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
+$CXX -Wfatal-errors $0 -o $0x -lcudart -lcufft `pkg-config --libs fftw3` -lboost_unit_test_framework `pkg-config --libs blas`&&$0x&&rm $0x;exit
+#endif
+/*
 (echo '#include"'$0'"'>$0.cpp)&&nvcc -x cu --expt-relaxed-constexpr`#$CXX -Wall -Wextra -Wpedantic` -D_TEST_MULTI_ADAPTORS_BLAS_NUMERIC $0.cpp -o $0x -lboost_unit_test_framework -lcudart -Wno-deprecated-declarations \
 `pkg-config --libs blas` \
 `#-Wl,-rpath,/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -L/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core` \
 -lboost_timer &&$0x&& rm $0x $0.cpp; exit
-#endif
+*/
 // © Alfredo A. Correa 2019-2020
 
 #ifndef MULTI_ADAPTORS_BLAS_NUMERIC_HPP
@@ -21,7 +24,8 @@
 //#include<experimental/type_traits>
 
 namespace boost{
-namespace multi{namespace blas{
+namespace multi{
+namespace blas{
 
 template<class T> struct Complex_{T real; T imag;};
 
@@ -118,15 +122,25 @@ auto default_allocator_of(involuter<It, F> const& s){
 }
 
 template<class It, class F>
-class involuter : public std::iterator_traits<It>{
+class involuter{// : public std::iterator_traits<It>{
 	It it_; // [[no_unique_address]] 
 	F f_;
+	template<class, class> friend class involuter;
 public:
+	using difference_type = typename std::iterator_traits<It>::difference_type;
+	using value_type 	  = typename std::iterator_traits<It>::value_type;
+	using pointer         = involuter<It, F>;//svoid; // typename std::iterator_traits<It>::pointer
+	using reference 	  = involuted<typename std::iterator_traits<It>::reference, F>;
+	using iterator_category = typename std::iterator_traits<It>::iterator_category;
+	using element_type 	  = typename std::pointer_traits<It>::element_type;
+	template<class U> using rebind = involuter<typename std::pointer_traits<It>::template rebind<U>, F>; 
+
 	involuter() = default;
 	explicit involuter(It it, F f = {}) HD : it_{std::move(it)}, f_{std::move(f)}{}
 	involuter(involuter const& other) = default;
-	using reference = involuted<typename std::iterator_traits<It>::reference, F>;
-	auto operator*() const HD{return reference{*it_, f_};}
+	template<class Other> 
+	constexpr involuter(involuter<Other, F> const& other) : it_{other.it_}, f_{other.f_}{}
+	constexpr auto operator*() const {return reference{*it_, f_};}
 	bool operator==(involuter const& o) const{return it_==o.it_;}
 	bool operator!=(involuter const& o) const{return it_!=o.it_;}
 	involuter& operator+=(typename involuter::difference_type n) HD{it_+=n; return *this;}
@@ -167,7 +181,6 @@ struct conjugate{
 	}
 };
 
-
 namespace detail{
 template<class Ref> struct conjugated : involuted<Ref, conjugate>{
 	auto real() const{return static_cast<typename conjugated::decay_type>(*this).real();}
@@ -180,7 +193,7 @@ template<class Ref> struct conjugated : involuted<Ref, conjugate>{
 };
 template<class It>  using conjugater = involuter<It, conjugate>;
 
-template<class It> conjugater<It> make_conjugater(It it){return {it};}
+template<class It> auto make_conjugater(It it){return conjugater<It>{it};}
 template<class It> It make_conjugater(conjugater<It> it){return underlying(it);}
 
 }
@@ -188,49 +201,55 @@ template<class It> It make_conjugater(conjugater<It> it){return underlying(it);}
 template<class T> auto imag(involuted<T, conjugate> const& s){return s.decay().imag();}
 template<class T> auto real(involuted<T, conjugate> const& s){return s.decay().real();}
 
-
-
-#if 0
-constexpr auto conj = [](auto const& a){using std::conj; return conj(std::forward<decltype(a)>(a));};
-
-template<class ComplexRef> struct conjd : involuted<ComplexRef, decltype(conj)>{
-	conjd(ComplexRef r) : involuted<ComplexRef, decltype(conj)>(r){}
-	decltype(auto) real() const{return this->r_.real();}
-	decltype(auto) imag() const{return negated<decltype(this->r_.imag())>(this->r_.imag());}//-this->r_.imag();}//negated<std::decay_t<decltype(this->r_.imag())>>(this->r_.imag());} 
-	friend decltype(auto) real(conjd const& self){using std::real; return real(static_cast<typename conjd::decay_type>(self));}
-	friend decltype(auto) imag(conjd const& self){using std::imag; return imag(static_cast<typename conjd::decay_type>(self));}
+template<class A = void> struct is_complex{
+	template<class T> static auto _(T const& t) -> decltype(t->imag(), std::true_type());
+	                  static auto _(...) -> std::false_type;
+	constexpr operator bool() const{return decltype(_(base(std::declval<A>()))){};}
+	template<class AA> constexpr auto operator()(AA&&){return _(base(std::declval<A>()));}
 };
-template<class T> conjd(T&&)->conjd<T>;
 
-template<class Complex> using conjr = involuter<Complex, decltype(conj)>;
+template<class A = void> struct is_conjugated{
+	template<class It> static std::true_type  _(detail::conjugater<It> a);
+	                   static std::false_type _(...);
+	constexpr operator bool() const{return decltype(_(base(std::declval<A>()))){};}
+	template<class AA> constexpr auto operator()(AA&&){return _(base(std::declval<A>()));}
+};
 
-#endif
-
+template<class A, class D = std::decay_t<A>, typename Elem=typename D::element_type, typename Ptr=typename D::element_ptr,
+	std::enable_if_t<not is_conjugated<A>{}, int> =0>
+decltype(auto) conjugated(A&& a){
+	return multi::static_array_cast<Elem, detail::conjugater<Ptr>>(a);
 }
 
+template<class A, class D = std::decay_t<A>, typename Elem=typename D::element_type, typename Ptr=typename D::element_ptr::underlying_type,
+	std::enable_if_t<    is_conjugated<A>{}, int> =0>
+decltype(auto) conjugated(A&& a){
+	return multi::static_array_cast<Elem, Ptr>(a);
+}
 
-}}
+}
+}
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-#if _TEST_MULTI_ADAPTORS_BLAS_NUMERIC
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_NUMERIC
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi cuBLAS gemm"
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS numeric"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../blas/gemm.hpp"
+//#include "../blas/gemm.hpp"
 
 #include "../../array.hpp"
 #include "../../utility.hpp"
 
-#include "../../adaptors/cuda.hpp"
+//#include "../../adaptors/cuda.hpp"
 
 #include<cassert>
 #include<iostream>
-
 
 namespace multi = boost::multi;
 
@@ -244,21 +263,22 @@ template<class M> decltype(auto) print(M const& C){
 	return cout<<std::endl;
 }
 
-BOOST_AUTO_TEST_CASE(multi_blas_numeric){
+using complex = std::complex<double>; constexpr complex I{0, 1};
 
-	using complex = std::complex<double>;
-	complex const I{0, 1};
+BOOST_AUTO_TEST_CASE(multi_blas_numeric_real_imag_part){
 
 	multi::array<double, 2> A = {
 		{1., 3., 4.}, 
 		{9., 7., 1.}
 	};
-	multi::array<complex, 2> Acomplex = A;
+	multi::array<complex, 2> Acplx = A;
+
 	multi::array<complex, 2> B = {
 		{1. - 3.*I, 6. + 2.*I},
 		{8. + 2.*I, 2. + 4.*I},
 		{2. - 1.*I, 1. + 1.*I}
 	};
+
 	multi::array<double, 2> Breal = {
 		{1., 6.},
 		{8., 2.},
@@ -269,18 +289,44 @@ BOOST_AUTO_TEST_CASE(multi_blas_numeric){
 		{+2., +4.},
 		{-1., +1.}
 	};
+
 	using multi::blas::real;
 	using multi::blas::imag;
-	
+
 	BOOST_REQUIRE( Breal == real(B) );
 	BOOST_REQUIRE( real(B) == Breal );
 	BOOST_REQUIRE( imag(B) == Bimag );
 
-	using multi::blas::hermitized;
 	BOOST_REQUIRE( B[1][0] == 8. + 2.*I );
 	BOOST_REQUIRE( imag(B[1][0]) == 2. );
-	BOOST_REQUIRE( hermitized(B)[0][1] == 8. - 2.*I );
-	BOOST_REQUIRE( imag(hermitized(B)[0][1]) == -2. );
+// 	using multi::blas::hermitized;
+//	BOOST_REQUIRE( hermitized(B)[0][1] == 8. - 2.*I );
+//	BOOST_REQUIRE( imag(hermitized(B)[0][1]) == -2. );
+	
+}
+
+template<class T> void what(T&&) = delete;
+
+BOOST_AUTO_TEST_CASE(multi_blas_numeric_real_conjugated){
+
+	multi::array<complex, 2> B = {
+		{1. - 3.*I, 6. + 2.*I},
+		{8. + 2.*I, 2. + 4.*I},
+		{2. - 1.*I, 1. + 1.*I}
+	};
+	auto BdataC = multi::blas::detail::make_conjugater(B.data_elements());
+	BOOST_REQUIRE( *BdataC == 1. + 3.*I );
+
+	static_assert(not multi::blas::is_conjugated<decltype(B)>{}, "!");
+	auto&& Bconj = multi::blas::conjugated(B);
+	static_assert(multi::blas::is_conjugated<decltype(Bconj)>{}, "!");
+
+	BOOST_REQUIRE( conjugated(Bconj) == B );
+	BOOST_REQUIRE( base(conjugated(Bconj)) == base(B) );
+
+}
+
+#if 0
 
 	namespace cuda = multi::cuda;
 	{
@@ -326,6 +372,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_numeric){
 //	gemm('T', 'T', 1., A, B, 0., C);
 //	gemm('T', 'T', 1., real(A), B, 0., C);
 }
+#endif
 #endif
 #endif
 

@@ -1,7 +1,8 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&&$CXX -Wall -Wextra -D_TEST_MULTI_ADAPTORS_BLAS_DOT $0.cpp -o$0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x $0.cpp;exit
+#ifdef COMPILATION// -*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
+$CXX -Wfatal-errors $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
+
 #ifndef MULTI_ADAPTORS_BLAS_DOT_HPP
 #define MULTI_ADAPTORS_BLAS_DOT_HPP
 
@@ -15,44 +16,36 @@ namespace boost{
 namespace multi{
 namespace blas{
 
-namespace{
+template<class A, std::enable_if_t<not is_conjugated<A>{}, int> =0> 
+auto dot_base_aux(A&& a){return base(a);}
 
-using core::dotu;
-using core::dotc;
+template<class A, std::enable_if_t<  is_conjugated<A>{}, int> =0> 
+auto dot_base_aux(A&& a){return underlying(base(a));}
 
-template<class A> auto dot_base_aux(A&& a, std::false_type){return base(a);}
-template<class A> auto dot_base_aux(A&& a, std::true_type){return underlying(base(a));}
+template<class X1D, class Y1D, class R, std::enable_if_t<not is_complex<X1D>{}, int> =0>
+auto dot(X1D const& x, Y1D const& y, R&& r){
+	return core::dot(size(x), base(x), stride(x), base(y), stride(y), &r), std::forward<R>(r);}
 
-template<class X1D, class Y1D, class R>
-auto dot_aux(X1D const& x, Y1D const& y, R&& r, std::true_type){
+template<class X1D, class Y1D, class R, std::enable_if_t<    is_complex<X1D>{}, int> =0>
+auto dot(X1D const& x, Y1D const& y, R&& r){
 
-	auto base_x = dot_base_aux(x, is_hermitized<X1D>{}); (void)base_x;
-	auto base_y = dot_base_aux(y, is_hermitized<Y1D>{}); (void)base_y;
+	auto base_x = dot_base_aux(x);
+	auto base_y = dot_base_aux(y);
 
-	     if(not is_hermitized<X1D>{} and not is_hermitized<Y1D>{}) dotu(size(x), base_x, stride(x), base_y, stride(y), &r);
-	else if(not is_hermitized<X1D>{} and     is_hermitized<Y1D>{}) dotc(size(x), base_y, stride(y), base_x, stride(x), &r);
-	else if(    is_hermitized<X1D>{} and not is_hermitized<Y1D>{}) dotc(size(x), base_x, stride(x), base_y, stride(y), &r);
+	using core::dotu;
+	using core::dotc;
+
+	     if(not is_conjugated<X1D>{} and not is_conjugated<Y1D>{}) dotu(size(x), base_x, stride(x), base_y, stride(y), &r);
+	else if(not is_conjugated<X1D>{} and     is_conjugated<Y1D>{}) dotc(size(x), base_y, stride(y), base_x, stride(x), &r);
+	else if(    is_conjugated<X1D>{} and not is_conjugated<Y1D>{}) dotc(size(x), base_x, stride(x), base_y, stride(y), &r);
 	else                                                           assert(0);
 	return std::forward<R>(r);
 }
 
-using core::dot;
-
-template<class X1D, class Y1D, class R>
-auto dot_aux(X1D const& x, Y1D const& y, R&& r, std::false_type)
-->decltype(dot(size(x), base(x), stride(x), base(y), stride(y), &r), std::forward<R>(r)){assert(size(x)==size(y) and not offset(x) and not offset(y) );
-	return dot(size(x), base(x), stride(x), base(y), stride(y), &r), std::forward<R>(r);}
-}
-
-template<class X1D, class Y1D, class R>
-auto dot(X1D const& x, Y1D const& y, R&& r)
-->decltype(dot_aux(x, y, std::forward<R>(r), is_complex_array<std::decay_t<X1D>>{})){
-	return dot_aux(x, y, std::forward<R>(r), is_complex_array<std::decay_t<X1D>>{});}
-
 template<class X1D, class Y1D, class Alloc>
 NODISCARD("when last argument is an allocator")
 auto alloc_dot(X1D const& x, Y1D const& y, Alloc const& alloc){
-	return dot(x, y, multi::static_array<typename X1D::value_type, 0, Alloc>(0, alloc) );
+	return dot(x, y, multi::array<typename X1D::value_type, 0, Alloc>(0, alloc) );
 }
 
 template<class X1D, class Y1D>
@@ -61,10 +54,9 @@ auto dot(X1D const& x, Y1D const& y){
 	return alloc_dot(x, y, common(get_allocator(x), get_allocator(y)));
 }
 
-
 }}}
 
-#if _TEST_MULTI_ADAPTORS_BLAS_DOT
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_DOT
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi cuBLAS dot"
 #define BOOST_TEST_DYN_LINK
@@ -100,7 +92,7 @@ decltype(auto) print_1D(M const& C){
 	return cout<<std::endl;
 }
 
-BOOST_AUTO_TEST_CASE(multi_blas_dot_impl){
+BOOST_AUTO_TEST_CASE(multi_blas_dot_impl_real){
 	multi::array<double, 2> const cA = {
 		{1.,  2.,  3.,  4.},
 		{5.,  6.,  7.,  8.},
@@ -108,14 +100,18 @@ BOOST_AUTO_TEST_CASE(multi_blas_dot_impl){
 	};
 	using blas::dot;
 	{
+		double d = dot(cA[1], cA[2]);
+		BOOST_REQUIRE( d==std::inner_product(begin(cA[1]), begin(cA[2]), end(cA[1]), 0.) );
+	}
+	{
 		double d = NAN;
 		dot(cA[1], cA[2], d);
-		BOOST_TEST( d==std::inner_product(begin(cA[1]), begin(cA[2]), end(cA[1]), 0.) );
+		BOOST_REQUIRE( d==std::inner_product(begin(cA[1]), begin(cA[2]), end(cA[1]), 0.) );
 	}
 	{
 		double d = NAN;
 		auto d2 = dot(cA[1], cA[2], d);
-		BOOST_TEST( d==d2 );
+		BOOST_REQUIRE( d==d2 );
 	}
 	{
 		multi::array<double, 0> d;
@@ -136,29 +132,44 @@ BOOST_AUTO_TEST_CASE(multi_blas_dot_impl){
 			assert( sqrt(s)==nrm2(cA[1]) );
 		}
 	}
+}
+
+#if 1
+BOOST_AUTO_TEST_CASE(multi_blas_dot_impl_complex){
+
+	using complex = std::complex<double>; complex const I{0, 1};
+	multi::array<complex, 2> const A = {
+		{1. +    I,  2. + 3.*I,  3.+2.*I,  4.-9.*I},
+		{5. + 2.*I,  6. + 6.*I,  7.+2.*I,  8.-3.*I},
+		{9. + 1.*I, 10. + 9.*I, 11.+1.*I, 12.+2.*I}
+	};
+	print_2D(A);
+	print_1D(A[1]);
+	using blas::conjugated;
+	using blas::dot;
 	{
-		using complex = std::complex<double>; complex const I{0, 1};
-		multi::array<complex, 2> const A = {
-			{1. +    I,  2. + 3.*I,  3.+2.*I,  4.-9.*I},
-			{5. + 2.*I,  6. + 6.*I,  7.+2.*I,  8.-3.*I},
-			{9. + 1.*I, 10. + 9.*I, 11.+1.*I, 12.+2.*I}
-		};
-		print_2D(A);
-		print_1D(A[1]);
-		using blas::conjugated;
+		complex c; dot(A[1], A[1], c);
+		BOOST_TEST( c == std::inner_product(begin(A[1]), end(A[1]), begin(A[1]), complex{0}) );
+	}
+	{
+		complex c = dot(A[1], A[1]);
+		BOOST_TEST( c == std::inner_product(begin(A[1]), end(A[1]), begin(A[1]), complex{0}) );
+	}
+	{
+		conjugated(A[1]);
+//		complex c; dot(A[1], conjugated(A[1]), c);
+//		BOOST_TEST( c == std::inner_product(begin(A[1]), end(A[1]), begin(A[1]), complex{0}, std::plus<>{}, [](auto a, auto b){return a*conj(b);}) );
+	}
+#if 0
+
+
+	{
+
+
+
 
 		{
-			complex c; dot(A[1], A[1], c);
-			BOOST_TEST( c == std::inner_product(begin(A[1]), end(A[1]), begin(A[1]), complex{0}) );
-		}
-		{
-			complex c = dot(A[1], A[1]);
-			BOOST_TEST( c == std::inner_product(begin(A[1]), end(A[1]), begin(A[1]), complex{0}) );
-		}
-		{
-			complex c; dot(A[1], conjugated(A[1]), c);
-			BOOST_TEST( c == std::inner_product(begin(A[1]), end(A[1]), begin(A[1]), complex{0}, std::plus<>{}, [](auto a, auto b){return a*conj(b);}) );
-		}
+
 		{
 			multi::array<complex, 1> cc = {1., 2., 3.};
 			dot(A[1], conjugated(A[1]), cc[0]);
@@ -184,7 +195,11 @@ BOOST_AUTO_TEST_CASE(multi_blas_dot_impl){
 		//	BOOST_REQUIRE( dot(conjugated(a), conjugated(b))() == 19. + 27.*I );
 		}
 	}
+#endif
 }
+#endif
+
+
 #endif
 #endif
 
