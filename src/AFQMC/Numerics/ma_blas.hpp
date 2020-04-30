@@ -66,18 +66,18 @@ template<class MultiArrayNDX,
          typename = void
         >
 MultiArrayNDY&& copy(MultiArrayNDX&& x, MultiArrayNDY&& y){
-#ifdef NDEBUG
+#ifndef NDEBUG
         // only on contiguous arrays 
         long sz(x.size(0));
-        for(int i=1; i<int(std::decay<MultiArrayND>::type::dimensionality); ++i)
+        for(int i=1; i<int(std::decay<MultiArrayNDX>::type::dimensionality); ++i)
           sz *= x.size(i);
         assert( x.num_elements() == sz );
-        assert( x.stride(std::decay<MultiArrayND>::type::dimensionality-1) == 1 );
+        assert( x.stride(std::decay<MultiArrayNDX>::type::dimensionality-1) == 1 );
         sz=y.size(0); 
-        for(int i=1; i<int(std::decay<MultiArrayND>::type::dimensionality); ++i)
+        for(int i=1; i<int(std::decay<MultiArrayNDY>::type::dimensionality); ++i)
           sz *= y.size(i);
         assert( y.num_elements() == sz );
-        assert( y.stride(std::decay<MultiArrayND>::type::dimensionality-1) == 1 );
+        assert( y.stride(std::decay<MultiArrayNDY>::type::dimensionality-1) == 1 );
         assert( x.num_elements() == y.num_elements() );
 #endif
         copy(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
@@ -124,7 +124,7 @@ template<class T,
         typename = void // TODO change to use dispatch 
     >
 MultiArrayND&& scal(T a, MultiArrayND&& x){
-#ifdef NDEBUG
+#ifndef NDEBUG
         long sz(x.size(0));
         for(int i=1; i<int(std::decay<MultiArrayND>::type::dimensionality); ++i) 
           sz *= x.size(i);
