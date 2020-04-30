@@ -15,14 +15,96 @@
 #  - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
 #  - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
 #  - cd $GOPATH/src/$REPO_NAME
+#    - apt upgrade -y --quiet
+# nvidia-cuda-dev  nvidia-smi
+#      - sh ./array_ptr.cpp
+#      - sh ./array_ref.cpp
+#      - sh ./sort.cpp
+#      - sh ./comparisons.cpp
+#      - sh ./constructors.cpp
+#      - sh ./initializer_list.cpp
+#      - sh ./layout.cpp
+#      - sh ./fill.cpp
+#      - sh ./rotated.cpp
+#      - sh ./allocator.cpp
+#      - sh ./reextent.cpp
+
+#      - DEBIAN_FRONTEND=noninteractive apt install --assume-yes  build-essential 
+#      - DEBIAN_FRONTEND=noninteractive apt-get update
+#      - DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends --assume-yes --quiet g++-7
+
+image: debian:testing
+
+variables:
+  CXX: "c++"
+  DOCKER_DRIVER: overlay2
+
+before_script:
+    - perl -pi -e 's/main/main\ contrib\ non-free/g' /etc/apt/sources.list
+    - apt update --quiet
+    - DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends --assume-yes --quiet libboost-test-dev libboost-timer-dev libtbb-dev libboost-serialization-dev libboost-iostreams-dev librange-v3-dev valgrind
 
 stages:
     - test
 #    - build
 
-Test:
+gcc:
     stage: test
     script:
+      - DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends --assume-yes --quiet g++
+      - ln --symbolic --force . ../multi
+      - export CXX="g++     -x c++  -Wall -Wextra -Wpedantic -Ofast "
+      - $CXX --version
       - cd tests
-      - sh ./array_ref.cpp
+      - for a in ./*.cpp; do echo $a; sh $a || exit; echo "\n"; done;
+
+gcc8:
+    stage: test
+    script:
+      - DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends --assume-yes --quiet g++-8 g++-10
+      - ln --symbolic --force . ../multi
+      - export CXX="g++-8     -x c++  -Wall -Wextra -Wpedantic -Ofast "
+      - $CXX --version
+      - cd tests
+      - for a in ./*.cpp; do echo $a; sh $a || exit; echo "\n"; done;
+
+clang:
+    stage: test
+    script:
+      - DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends --assume-yes --quiet clang
+      - ln --symbolic --force . ../multi
+      - export CXX="clang++ -x c++ -Wall -Wextra -Wpedantic -Wmove -Ofast "
+      - $CXX --version
+      - cd tests
+      - for a in ./*.cpp; do echo $a; sh $a || exit; echo "\n"; done;
+
+clang8:
+    stage: test
+    script:
+      - DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends --assume-yes --quiet clang-8
+      - ln --symbolic --force . ../multi
+      - export CXX="clang++-8 -x c++ -Wall -Wextra -Wpedantic -Wmove -Ofast "
+      - $CXX --version
+      - cd tests
+      - for a in ./*.cpp; do echo $a; sh $a || exit; echo "\n"; done;
+
+clang10:
+    stage: test
+    script:
+      - DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends --assume-yes --quiet clang-10
+      - ln --symbolic --force . ../multi
+      - export CXX="clang++-10 -x c++ -Wall -Wextra -Wpedantic -Wmove -Ofast "
+      - $CXX --version
+      - cd tests
+      - for a in ./*.cpp; do echo $a; sh $a || exit; echo "\n"; done;
+
+nvcc:
+    stage: test
+    script:
+      - DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends --assume-yes --quiet g++ nvidia-cuda-toolkit 
+      - ln --symbolic --force . ../multi
+      - export CXX="nvcc    -x cu --compiler-options=-Wall,-Wextra,-O3"
+      - $CXX --version
+      - cd tests
+      - for a in ./*.cpp; do echo $a; sh $a || exit; echo "\n"; done;
 
