@@ -390,6 +390,7 @@ void SDetOps_complex_serial(Allocator alloc)
   using vector = std::vector<Type>;
   using array = boost::multi::array<Type,2,Allocator>;
   using array_ref = boost::multi::array_ref<Type,2,typename Allocator::pointer>;
+  using array_ptr = boost::multi::array_ptr<Type,2,typename Allocator::pointer>;
   using namespace std::complex_literals;
 
   const Type ov = -7.62332599999999 + 22.20453200000000i;
@@ -533,19 +534,25 @@ void SDetOps_complex_serial(Allocator alloc)
   // TODO fix CPU.
 #ifdef ENABLE_CUDA
   boost::multi::array<Type,3,Allocator> Gw({3,NMO,NMO},alloc);
-  std::vector<array_ref> RA, RB, Gwv;
+  //std::vector<array_ptr> RA;
+  std::vector<decltype(&Aref)> RA;
+  std::vector<decltype(&Bref)> RB;
+  std::vector<decltype(&Gw[0])> Gwv;
+  RA.reserve(3);
+  RB.reserve(3);
+  Gwv.reserve(3);
   boost::multi::array<Type,1,Allocator> ovlp(iextensions<1u>{3});
   for(int i = 0; i < 3; i++) {
-    RA.emplace_back(Aref);
-    RB.emplace_back(Bref);
-    Gwv.emplace_back(array_ref(Gw[i].origin(), {NMO,NMO}));
+    RA.emplace_back(&Aref);
+    RB.emplace_back(&Bref);
+    Gwv.emplace_back(&Gw[i]);
   }
   Type log_ovlp;
   Type ov_ref = -7.623325999999989+22.20453200000001i;
 
   SDet.BatchedDensityMatrices(RA,RB,Gwv,log_ovlp,ovlp,false);
   for(int i = 0; i < 3; i++) {
-    check(Gwv[i],g_ref);
+    check(*Gwv[i],g_ref);
     myREQUIRE(ovlp[i], ov_ref);
   }
 #endif

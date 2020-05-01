@@ -293,7 +293,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     std::tie(cvg0,cvgN) = FairDivideBoundary(TG.getLocalTGRank(),globalnCV,TG.getNCoresPerTG());
     for(int ni=0; ni<nsteps; ni++) {
       if(bp_step<bp_max) {
-        auto&& V(wset.getFields(bp_step));
+        auto&& V(*wset.getFields(bp_step));
         if(nsteps==1) {
           copy_n(Xrecv[cvg0].origin(),nwalk*(cvgN-cvg0),V[cvg0].origin());
           ma::scal(sqrtdt,V.sliced(cvg0,cvgN));
@@ -623,7 +623,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       std::tie(cvg0,cvgN) = FairDivideBoundary(TG.getLocalTGRank(),globalnCV,TG.getNCoresPerTG());
       for(int ni=0; ni<nsteps; ni++) {
         if(bp_step<bp_max) {
-          auto&& V(wset.getFields(bp_step));
+          auto&& V(*wset.getFields(bp_step));
           if(nsteps==1) {
             copy_n(Xrecv[cvg0].origin(),nwalk*(cvgN-cvg0),V[cvg0].origin());
             ma::scal(sqrtdt,V.sliced(cvg0,cvgN));
@@ -728,6 +728,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 template<class WlkSet, class CTens, class CMat>
 void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR)
 {
+
   using std::copy_n;
   const ComplexType one(1.),zero(0.);
   auto walker_type = wset.getWalkerType();
@@ -817,7 +818,7 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
   }
   TG.local_barrier();
 
-  auto&& Fields(wset.getFields());
+  auto&& Fields(*wset.getFields());
   assert(Fields.size(0) >= nbpsteps);
   assert(Fields.size(1) == globalnCV);
   assert(Fields.size(2) == nwalk);
@@ -859,12 +860,12 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
   // and copying the back propagated references into SlaterMatrix
   // 0. copy SlaterMatrix to SlaterMatrixAux 
   for(int i=0; i<nwalk; i++) {
-    copy_n(wset[i].SlaterMatrix(Alpha).origin()+r0,rN-r0,
-           wset[i].SlaterMatrixAux(Alpha).origin()+r0);
+    copy_n((*wset[i].SlaterMatrix(Alpha)).origin()+r0,rN-r0,
+           (*wset[i].SlaterMatrixAux(Alpha)).origin()+r0);
     // optimize for the single reference case
     if(nrefs==1)
       copy_n(Refs[i][0].origin()+r0,rN-r0,
-             wset[i].SlaterMatrix(Alpha).origin()+r0);
+             (*wset[i].SlaterMatrix(Alpha)).origin()+r0);
   }
   TG.TG_local().barrier();
 
@@ -925,14 +926,13 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
     TG.local_barrier();
 //std::cout<<" vrecv: " <<TG.Global().rank() <<" " <<ma::dot(vrecv[0],vrecv[0]) <<"\n\n" <<std::endl;
 
-/**/
     for(int nr=0; nr<nrefs; ++nr) {
 
       // 3. copy reference to SlaterMatrix
       if(nrefs>1)
         for(int i=0; i<nwalk; i++)
           copy_n(Refs[i][nr].origin()+r0,rN-r0,
-                 wset[i].SlaterMatrix(Alpha).origin()+r0);
+                 (*wset[i].SlaterMatrix(Alpha)).origin()+r0);
       TG.TG_local().barrier();
 
       // 4. Propagate walkers
@@ -961,7 +961,7 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
       // 5. copy reference to back 
       if(nrefs>1)
         for(int i=0; i<nwalk; i++)
-          copy_n(wset[i].SlaterMatrix(Alpha).origin()+r0,rN-r0,
+          copy_n((*wset[i].SlaterMatrix(Alpha)).origin()+r0,rN-r0,
                  Refs[i][nr].origin()+r0);
       TG.TG_local().barrier();
 
@@ -972,12 +972,13 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
   // 6. restore the Slater Matrix 
   for(int i=0; i<nwalk; i++) {
     if(nrefs==1)
-      copy_n(wset[i].SlaterMatrix(Alpha).origin()+r0,rN-r0,
+      copy_n((*wset[i].SlaterMatrix(Alpha)).origin()+r0,rN-r0,
              Refs[i][0].origin()+r0);
-    copy_n(wset[i].SlaterMatrixAux(Alpha).origin()+r0,rN-r0,
-           wset[i].SlaterMatrix(Alpha).origin()+r0);
+    copy_n((*wset[i].SlaterMatrixAux(Alpha)).origin()+r0,rN-r0,
+           (*wset[i].SlaterMatrix(Alpha)).origin()+r0);
   }
   TG.TG_local().barrier();
+
 }
 
 

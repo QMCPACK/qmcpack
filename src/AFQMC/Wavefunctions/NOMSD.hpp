@@ -71,6 +71,7 @@ class NOMSD: public AFQMCInfo
   using CTensor = boost::multi::array<ComplexType,3,Allocator>;  
   using CVector_ref = boost::multi::array_ref<ComplexType,1,pointer>;
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;
+  using CMatrix_ptr = boost::multi::array_ptr<ComplexType,2,pointer>;
   using CMatrix_cref = boost::multi::array_ref<const ComplexType,2,const_pointer>;
   using CTensor_ref = boost::multi::array_ref<ComplexType,3,pointer>;
   using CTensor_cref = boost::multi::array_ref<const ComplexType,3,const_pointer>;

@@ -64,6 +64,7 @@ class AFQMCBasePropagator: public AFQMCInfo
   using stdCVector_ref = boost::multi::array_ref<ComplexType,1>;  
   using stdCMatrix_ref = boost::multi::array_ref<ComplexType,2>;  
   using stdC3Tensor_ref = boost::multi::array_ref<ComplexType,3>;  
+  using CMatrix_ptr = boost::multi::array_ptr<ComplexType,2,pointer>;  
 
   using mpi3CVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;  
   using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;  

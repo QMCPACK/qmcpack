@@ -55,7 +55,7 @@ class FullObsHandler: public AFQMCInfo
   using shared_pointer = typename sharedAllocator::pointer;
   using const_shared_pointer = typename sharedAllocator::const_pointer;
 
-  using devCMatrix_ref = boost::multi::array_ref<ComplexType,2,device_ptr<ComplexType>>;
+  using devCMatrix_ptr = boost::multi::array_ptr<ComplexType,2,device_ptr<ComplexType>>;
 
   using sharedCVector = boost::multi::array<ComplexType,1,sharedAllocator>;
   using sharedCVector_ref = boost::multi::array_ref<ComplexType,1,shared_pointer>;
@@ -191,19 +191,18 @@ class FullObsHandler: public AFQMCInfo
     // MAM: The pointer type of GA/GB needs to be device_ptr, it can not be  
     //      one of the shared_memory types. The dispatching in DensityMatrices is done
     //      through the pointer type of the result matrix (GA/GB).
-    std::vector<devCMatrix_ref> GA;
-    std::vector<devCMatrix_ref> GB;
+    std::vector<devCMatrix_ptr> GA;
+    std::vector<devCMatrix_ptr> GB;
     std::vector<SMType> RefsA;
     std::vector<SMType> RefsB;
     std::vector<SMType> SMA;
     std::vector<SMType> SMB;
-    RefsA.reserve(nw);
-    SMA.reserve(nw);
     GA.reserve(nw);
+    SMA.reserve(nw);
+    RefsA.reserve(nw);
     if(walker_type == COLLINEAR) RefsB.reserve(nw);
     if(walker_type == COLLINEAR) SMB.reserve(nw);
     if(walker_type == COLLINEAR) GB.reserve(nw);
-
 
     if(impsamp) 
       denominator[iav] += std::accumulate(wgt.begin(),wgt.end(),ComplexType(0.0));
@@ -229,22 +228,24 @@ class FullObsHandler: public AFQMCInfo
         for(int iw=0; iw<nw; iw++) {
           SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
           SMB.emplace_back(wset[iw].SlaterMatrixN(Beta));
-          GA.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin()),{NMO,NMO}) );
-          GB.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin())+NMO*NMO,{NMO,NMO}) );
+          GA.emplace_back(make_device_ptr(G2D[iw].origin()),iextensions<2u>{NMO,NMO});
+          GB.emplace_back(make_device_ptr(G2D[iw].origin())+NMO*NMO,iextensions<2u>{NMO,NMO});
           RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
           RefsB.emplace_back(wset[iw].SlaterMatrixAux(Beta));
-          copy_n(Refs[iw][iref].origin() , RefsA.back().num_elements(), RefsA.back().origin());
-          copy_n(Refs[iw][iref].origin()+RefsA.back().num_elements() , 
-                 RefsB.back().num_elements() , RefsB.back().origin());
+          copy_n(Refs[iw][iref].origin() , (*RefsA.back()).num_elements(), 
+                 (*RefsA.back()).origin());
+          copy_n(Refs[iw][iref].origin()+(*RefsA.back()).num_elements() , 
+                 (*RefsB.back()).num_elements() , (*RefsB.back()).origin());
         }
         wfn0.DensityMatrix(RefsA, SMA, GA, DevOv.sliced(0,nw), LogOverlapFactor, false, false);
         wfn0.DensityMatrix(RefsB, SMB, GB, DevOv.sliced(nw,2*nw), LogOverlapFactor, false, false);
       } else {
         for(int iw=0; iw<nw; iw++) {
           SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
-          GA.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin()),{NMO,NMO}) );
+          GA.emplace_back( make_device_ptr(G2D[iw].origin()),iextensions<2u>{NMO,NMO});
           RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
-          copy_n(Refs[iw][iref].origin() , RefsA.back().num_elements(), RefsA.back().origin());
+          copy_n(Refs[iw][iref].origin() , (*RefsA.back()).num_elements(), 
+                   (*RefsA.back()).origin());
         }
         wfn0.DensityMatrix(RefsA, SMA, GA, DevOv.sliced(0,nw), LogOverlapFactor, false, false);
       } 

@@ -34,6 +34,15 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+// distribution:  size,  global,  offset
+//   - rotMuv:    {rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0}
+//   - rotPiu:    {size_t(NMO),grotnmu},{size_t(NMO),grotnmu},{0,0}
+//   - rotcPua    {grotnmu,nel_},{grotnmu,nel_},{0,0}
+//   - Piu:       {size_t(NMO),nmu},{size_t(NMO),gnmu},{0,nmu0}
+//   - Luv:       {nmu,gnmu},{gnmu,gnmu},{nmu0,0}
+//   - cPua       {nmu,nel_},{gnmu,nel_},{nmu0,0}
+
+
 // Some code duplication with THCHamiltonian class.
 template<typename T>
 THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2)
@@ -47,8 +56,8 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   using SpC = ComplexType;
 #endif
 
-  using shm_Vmatrix = mpi3_shared_ma_proxy<T>;
-  using shm_Cmatrix = mpi3_shared_ma_proxy<ComplexType>;
+  using shmVmatrix = boost::multi::array<ValueType,2,shared_allocator<ValueType>>;
+  using shmCmatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
 
   if(type==COLLINEAR)
     assert(PsiT.size()%2 == 0);
@@ -150,48 +159,44 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
 
   // Until I figure something else, rotPiu and rotcPua are not distributed because a full copy is needed
   size_t nel_ = ((type==CLOSED)?NAEA:(NAEA+NAEB));
-  shm_Vmatrix rotMuv(TGwfn.Node(),{rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0});
-  shm_Cmatrix rotPiu(TGwfn.Node(),{size_t(NMO),grotnmu});
-  shm_Cmatrix Piu(TGwfn.Node(),{size_t(NMO),nmu},{size_t(NMO),gnmu},{0,nmu0});
-  shm_Vmatrix Luv(TGwfn.Node(),{nmu,gnmu},{gnmu,gnmu},{nmu0,0});
+  shmVmatrix rotMuv({rotnmu,grotnmu},shared_allocator<ValueType>{TGwfn.Node()});
+  shmCmatrix rotPiu({size_t(NMO),grotnmu},shared_allocator<ComplexType>{TGwfn.Node()});
+  shmCmatrix Piu({size_t(NMO),nmu},shared_allocator<ComplexType>{TGwfn.Node()});
+  shmVmatrix Luv({nmu,gnmu},shared_allocator<ValueType>{TGwfn.Node()});
 
   // read Half transformed first
   if(TGwfn.Node().root()) {
     /***************************************/
-    auto rpiu_ = rotPiu.get();
-    if(!dump.readEntry(rpiu_,"HalfTransformedFullOrbitals")) {
+    if(!dump.readEntry(rotPiu,"HalfTransformedFullOrbitals")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading HalfTransformedFullOrbitals. \n";
       APP_ABORT("");
     }
     /***************************************/
-    typename shm_Vmatrix::ma_type muv_(rotMuv.get());
-    hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab(muv_,
-                                                           rotMuv.global_size(),
-                                                           rotMuv.shape(),
-                                                           rotMuv.global_offset());
+    hyperslab_proxy<shmVmatrix,2> hslab(rotMuv,
+            std::array<size_t,2>{grotnmu,grotnmu},
+            std::array<size_t,2>{rotnmu,grotnmu},
+            std::array<size_t,2>{rotnmu0,0});
     if(!dump.readEntry(hslab,"HalfTransformedMuv")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                 <<" Problems reading HalfTransformedMuv. \n";
       APP_ABORT("");
     }
     /***************************************/
-    typename shm_Cmatrix::ma_type piu_(Piu.get());
-    hyperslab_proxy<typename shm_Cmatrix::ma_type,2> hslab2(piu_,
-                                                         Piu.global_size(),
-                                                         Piu.shape(),
-                                                         Piu.global_offset());
+    hyperslab_proxy<shmCmatrix,2> hslab2(Piu,
+            std::array<size_t,2>{size_t(NMO),gnmu},
+            std::array<size_t,2>{size_t(NMO),nmu},
+            std::array<size_t,2>{0,nmu0});                 
     if(!dump.readEntry(hslab2,"Orbitals")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Orbitals. \n";
       APP_ABORT("");
     }
     /***************************************/
-    typename shm_Vmatrix::ma_type luv_(Luv.get());
-    hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab3(luv_,
-                                                         Luv.global_size(),
-                                                         Luv.shape(),
-                                                         Luv.global_offset());
+    hyperslab_proxy<shmVmatrix,2> hslab3(Luv,
+            std::array<size_t,2>{gnmu,gnmu},
+            std::array<size_t,2>{nmu,gnmu},
+            std::array<size_t,2>{nmu0,0});
     if(!dump.readEntry(hslab3,"Luv")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Luv. \n";
@@ -202,14 +207,14 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   TGwfn.global_barrier();
 
   // half-rotated Pia
-  std::vector<shm_Cmatrix> rotcPua;
+  std::vector<shmCmatrix> rotcPua;
   rotcPua.reserve(ndet);
   for(int i=0; i<ndet; i++)
-    rotcPua.emplace_back(shm_Cmatrix(TGwfn.Node(),{grotnmu,nel_}));
-  std::vector<shm_Cmatrix> cPua;
+    rotcPua.emplace_back(shmCmatrix({grotnmu,nel_},shared_allocator<ComplexType>{TGwfn.Node()}));
+  std::vector<shmCmatrix> cPua;
   cPua.reserve(ndet);
   for(int i=0; i<ndet; i++)
-    cPua.emplace_back(shm_Cmatrix(TGwfn.Node(),{nmu,nel_},{gnmu,nel_},{nmu0,0}));
+    cPua.emplace_back(shmCmatrix({nmu,nel_},shared_allocator<ComplexType>{TGwfn.Node()}));
   if(TGwfn.Node().root()) {
     // simple
     using ma::H;
@@ -219,21 +224,19 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
       for(int i=0; i<ndet; i++) {
         // cPua = H(Piu) * conj(A)
         ma::Matrix2MA('T',PsiT[2*i],A);
-        auto&& cPua_i(cPua[i].get());
-        auto&& rotcPua_i(rotcPua[i].get());
-        ma::product(H(Piu.get()),A,cPua_i(cPua_i.extension(0),{0,NAEA}));
-        ma::product(H(rotPiu.get()),A,rotcPua_i(cPua_i.extension(0),{0,NAEA}));
+        ma::product(H(Piu),A,cPua[i](cPua[i].extension(0),{0,NAEA}));
+        ma::product(H(rotPiu),A,rotcPua[i](cPua[i].extension(0),{0,NAEA}));
         ma::Matrix2MA('T',PsiT[2*i+1],B);
-        ma::product(H(Piu.get()),B,cPua_i(cPua_i.extension(0),{NAEA,NAEA+NAEB}));
-        ma::product(H(rotPiu.get()),B,rotcPua_i(cPua_i.extension(0),{NAEA,NAEA+NAEB}));
+        ma::product(H(Piu),B,cPua[i](cPua[i].extension(0),{NAEA,NAEA+NAEB}));
+        ma::product(H(rotPiu),B,rotcPua[i](cPua[i].extension(0),{NAEA,NAEA+NAEB}));
       }
     } else {
       boost::multi::array<ComplexType,2> A({PsiT[0].size(1),PsiT[0].size(0)});
       for(int i=0; i<ndet; i++) {
         ma::Matrix2MA('T',PsiT[i],A);
         // cPua = H(Piu) * conj(A)
-        ma::product(H(Piu.get()),A,cPua[i].get());
-        ma::product(H(rotPiu.get()),A,rotcPua[i].get());
+        ma::product(H(Piu),A,cPua[i]);
+        ma::product(H(rotPiu),A,rotcPua[i]);
       }
     }
   }
@@ -248,57 +251,53 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
     hij.emplace_back(rotateHij(type,&PsiT[nd],&PsiT[nd+skp],H1));
   }
 
-  return THCOps<T>(TGwfn.TG_local(),NMO,NAEA,NAEB,type,std::move(H1),
+  return THCOps<T>(TGwfn.TG_local(),NMO,NAEA,NAEB,type,nmu0,rotnmu0,std::move(H1),
                                       std::move(hij),std::move(rotMuv),std::move(rotPiu),
                                       std::move(rotcPua),std::move(Luv),
                                       std::move(Piu),std::move(cPua),std::move(v0),E0);
 }
 
 // single writer right now
-template<class shm_Vmatrix,
-         class shm_Cmatrix>
-inline void writeTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, int ndet,
+template<class shmVmatrix,
+         class shmCmatrix>
+inline void writeTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, 
+                              size_t nmu0, size_t rotnmu0, int ndet,
                               TaskGroup_& TGprop, TaskGroup_& TGwfn,
                               boost::multi::array<ValueType,2> & H1,
-                              shm_Cmatrix & rotPiu,
-                              shm_Vmatrix & rotMuv,
-                              shm_Cmatrix & Piu,
-                              shm_Vmatrix & Luv,
+                              shmCmatrix & rotPiu,
+                              shmVmatrix & rotMuv,
+                              shmCmatrix & Piu,
+                              shmVmatrix & Luv,
                               boost::multi::array<ComplexType,2> & v0,
                               ValueType E0)
 {
 
+  size_t gnmu(Luv.size(1));
+  size_t grotnmu(rotMuv.size(1));
   if(TGwfn.Global().root()) {
     dump.push("HamiltonianOperations");
     dump.push("THCOps");
-    std::vector<int> dims{NMO,NAEA,NAEB,ndet,type,int(Luv.global_size(0)),int(rotMuv.global_size(0))};
+    std::vector<int> dims{NMO,NAEA,NAEB,ndet,type,int(gnmu),int(grotnmu)};
     dump.write(dims,"dims");
     std::vector<ValueType> et{E0};
     dump.write(et,"E0");
     dump.write(H1,"H1");
     dump.write(v0,"v0");
-    auto rotPiu_(rotPiu.get());
-    auto Piu_(Piu.get());
-    auto rotMuv_(rotMuv.get());
-    auto Luv_(Luv.get());
-    dump.write(rotPiu_,"HalfTransformedFullOrbitals");
-    ma_hdf5::write_distributed_MA(rotMuv_,rotMuv.global_offset(),rotMuv.global_size(),
+    dump.write(rotPiu,"HalfTransformedFullOrbitals");
+    ma_hdf5::write_distributed_MA(rotMuv,{grotnmu,grotnmu},{rotnmu0,0},
                                   dump,"HalfTransformedMuv",TGwfn);
-    ma_hdf5::write_distributed_MA(Piu_,Piu.global_offset(),Piu.global_size(),
+    ma_hdf5::write_distributed_MA(Piu,{size_t(NMO),gnmu},{0,nmu0},
                                   dump,"Orbitals",TGprop);
-    ma_hdf5::write_distributed_MA(Luv_,Luv.global_offset(),Luv.global_size(),
+    ma_hdf5::write_distributed_MA(Luv,{gnmu,gnmu},{nmu0,0},
                                   dump,"Luv",TGprop);
     dump.pop();
     dump.pop();
   } else {
-    auto Piu_(Piu.get());
-    auto rotMuv_(rotMuv.get());
-    auto Luv_(Luv.get());
-    ma_hdf5::write_distributed_MA(rotMuv_,rotMuv.global_offset(),rotMuv.global_size(),
+    ma_hdf5::write_distributed_MA(rotMuv,{grotnmu,grotnmu},{rotnmu0,0},
                                   dump,"HalfTransformedMuv",TGwfn);
-    ma_hdf5::write_distributed_MA(Piu_,Piu.global_offset(),Piu.global_size(),
+    ma_hdf5::write_distributed_MA(Piu,{size_t(NMO),gnmu},{0,nmu0},
                                   dump,"Orbitals",TGprop);
-    ma_hdf5::write_distributed_MA(Luv_,Luv.global_offset(),Luv.global_size(),
+    ma_hdf5::write_distributed_MA(Luv,{gnmu,gnmu},{nmu0,0},
                                   dump,"Luv",TGprop);
   }
   TGwfn.Global().barrier();

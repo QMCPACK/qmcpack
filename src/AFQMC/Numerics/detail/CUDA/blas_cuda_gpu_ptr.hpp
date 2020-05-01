@@ -322,6 +322,33 @@ namespace device
     delete [] b_;
   }
 
+  template <typename T, typename T2>
+  inline static void copy2D(int N, int M, device_pointer<T> src, int lda, 
+                                          device_pointer<T2> dst, int ldb){
+    static_assert(std::is_same<typename std::decay<T>::type,T2>::value,"Wrong dispatch.\n");
+    if(cudaSuccess != cudaMemcpy2D(to_address(dst),sizeof(T2)*ldb,
+                    to_address(src),sizeof(T)*lda,M*sizeof(T),N,cudaMemcpyDeviceToDevice))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code in copy2D.");
+  }
+
+  template <typename T, typename T2>
+  inline static void copy2D(int N, int M, T const* src, int lda,
+                                          device_pointer<T2> dst, int ldb){
+    static_assert(std::is_same<typename std::decay<T>::type,T2>::value,"Wrong dispatch.\n");
+    if(cudaSuccess != cudaMemcpy2D(to_address(dst),sizeof(T2)*ldb,
+                    src,sizeof(T)*lda,M*sizeof(T),N,cudaMemcpyHostToDevice))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code in copy2D.");
+  }
+
+  template <typename T, typename T2>
+  inline static void copy2D(int N, int M, device_pointer<T> src, int lda,
+                                          T2* dst, int ldb){
+    static_assert(std::is_same<typename std::decay<T>::type,T2>::value,"Wrong dispatch.\n");
+    if(cudaSuccess != cudaMemcpy2D(dst,sizeof(T2)*ldb,
+                    to_address(src),sizeof(T)*lda,M*sizeof(T),N,cudaMemcpyDeviceToHost))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code in copy2D.");
+  }
+
 }
 
 #endif

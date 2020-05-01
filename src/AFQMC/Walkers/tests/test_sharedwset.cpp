@@ -134,7 +134,7 @@ const char *xml_block =
   double tot_weight=0.0;
   for(WalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
     auto sm = it->SlaterMatrix(Alpha);
-    REQUIRE( it->SlaterMatrix(Alpha) == initA );
+    REQUIRE( *it->SlaterMatrix(Alpha) == initA );
     *it->weight() = cnt*1.0+0.5;
     *it->overlap() = cnt*1.0+0.5;
     *it->E1() = cnt*1.0+0.5;
@@ -406,7 +406,7 @@ const char *xml_block =
   double tot_weight=0.0;
   for(WalkerSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
     auto sm = it->SlaterMatrix(Alpha);
-    REQUIRE( it->SlaterMatrix(Alpha) == initA );
+    REQUIRE( *it->SlaterMatrix(Alpha) == initA );
     *it->weight() = cnt*1.0+0.5;
     *it->overlap() = cnt*1.0+0.5;
     *it->E1() = cnt*1.0+0.5;
@@ -453,7 +453,7 @@ const char *xml_block =
     WalkerSet wset2(TG,doc.getRoot(),info,&rng);
     restartFromHDF5(wset2,nwalkers,"dummy_walkers.h5",read,true);
     for(int i=0; i < nwalkers; i++) {
-      REQUIRE( wset[i].SlaterMatrix(Alpha) == wset2[i].SlaterMatrix(Alpha) );
+      REQUIRE( *wset[i].SlaterMatrix(Alpha) == *wset2[i].SlaterMatrix(Alpha) );
       REQUIRE( *wset[i].weight() == *wset2[i].weight() );
       REQUIRE( *wset[i].overlap() == *wset2[i].overlap() );
       REQUIRE( *wset[i].E1() == *wset2[i].E1() );

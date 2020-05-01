@@ -103,7 +103,7 @@ namespace afqmc
           boost::multi::array_ref<ComplexType,2> G2D_(localGbuff.origin(),
                        {dm_dims_ref(false,Alpha).first,dm_dims_ref(false,Alpha).second});
           Ovmsd[0][0][iw] = SDetOp.MixedDensityMatrixForWoodbury(OrbMats[0],
-                                            wset[iw].SlaterMatrix(Alpha),
+                                            *wset[iw].SlaterMatrix(Alpha),
                                             G2D_,LogOverlapFactor,
                                             refc,QQ0A[iw],true);
           confg.resize(NAEA);
@@ -118,7 +118,7 @@ namespace afqmc
           boost::multi::array_ref<ComplexType,2> G2D_(localGbuff.origin(),
                        {dm_dims_ref(false,Beta).first,dm_dims_ref(false,Beta).second});
           Ovmsd[1][0][iw] = SDetOp.MixedDensityMatrixForWoodbury(OrbMats.back(),
-                            wset[iw].SlaterMatrix(SpinTypes((walker_type==CLOSED)?0:1)),
+                            *wset[iw].SlaterMatrix(SpinTypes((walker_type==CLOSED)?0:1)),
                             G2D_,LogOverlapFactor,
                             refc,QQ0B[iw],true);
           confg.resize(NAEB);
@@ -157,7 +157,7 @@ namespace afqmc
           for(int iw=0; iw<nwalk; iw++) {
             if(iw%TG.TG_local().size()==TG.TG_local().rank()) {
               Ovmsd[spin][nd][iw] = SDetOp.MixedDensityMatrixFromConfiguration(OrbMats[orb_spin_indx],
-                                                wset[iw].SlaterMatrix(SpinTypes(wlk_spin_indx)),
+                                                *wset[iw].SlaterMatrix(SpinTypes(wlk_spin_indx)),
                                                 G2D_,LogOverlapFactor,confg.data(),true);
               if(transposed_G_for_E_) { 
                 boost::multi::array_ref<ComplexType,3> G3D(to_address(G.origin()),
@@ -477,10 +477,10 @@ namespace afqmc
       local_ov[1][0]=1.0;
       for(int iw=w0; iw<wN; ++iw) {
         // 1. calculate list of overlaps
-        ComplexType ov0 = SDetOp.MixedDensityMatrixForWoodbury(OrbMats[0],wset[iw].SlaterMatrix(Alpha),
+        ComplexType ov0 = SDetOp.MixedDensityMatrixForWoodbury(OrbMats[0],*wset[iw].SlaterMatrix(Alpha),
                           GA2D0_,LogOverlapFactor,refc,local_QQ0inv0,true);
         calculate_overlaps(0,1,0,abij,local_QQ0inv0,Qwork,local_ov[0]);
-        ov0 *= SDetOp.MixedDensityMatrixForWoodbury(OrbMats.back(),wset[iw].SlaterMatrix(Beta),
+        ov0 *= SDetOp.MixedDensityMatrixForWoodbury(OrbMats.back(),*wset[iw].SlaterMatrix(Beta),
                           GB2D0_,LogOverlapFactor,refc+NAEA,local_QQ0inv1,true);
         calculate_overlaps(0,1,1,abij,local_QQ0inv1,Qwork,local_ov[1]);
         for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it) 
@@ -505,13 +505,15 @@ namespace afqmc
         } else {
           if(compact) {
             ma::product(T(Ra),GA2D0_,GA2D_);
-            G({0,GAdims.first*GAdims.second},iw) = GA1D_;
+            //G({0,GAdims.first*GAdims.second},iw) = GA1D_;
+            ma::copy(GA1D_,G({0,GAdims.first*GAdims.second},iw));
           } else {
             boost::multi::array_ref<ComplexType,1> G1D(Gfulla.origin(),
                                    iextensions<1u>{long(Gfulla.num_elements())});
             ma::product(T(Ra),GA2D0_,GA2D_);
             ma::product(T(OrbMats[0]),GA2D_,Gfulla);
-            G({0,Gfulla.num_elements()},iw) = G1D;
+            ma::copy(G1D,G({0,Gfulla.num_elements()},iw));
+            //G({0,Gfulla.num_elements()},iw) = G1D;
           }  
         }
 
@@ -531,13 +533,15 @@ namespace afqmc
         } else {
           if(compact) {
             ma::product(T(Rb),GB2D0_,GB2D_);
-            G({GAdims.first*GAdims.second,G.size(0)},iw) = GB1D_;
+            //G({GAdims.first*GAdims.second,G.size(0)},iw) = GB1D_;
+            ma::copy(GB1D_, G({GAdims.first*GAdims.second,G.size(0)},iw));
           } else {
             boost::multi::array_ref<ComplexType,1> G1D(Gfullb.origin(),
                                    iextensions<1u>{Gfullb.num_elements()});
             ma::product(T(Rb),GB2D0_,GB2D_);
             ma::product(T(OrbMats.back()),GB2D_,Gfullb);
-            G({Gfulla.num_elements(),G.size(0)},iw) = G1D;
+            //G({Gfulla.num_elements(),G.size(0)},iw) = G1D;
+            ma::copy(G1D,G({Gfulla.num_elements(),G.size(0)},iw));
           }
         }
       }
@@ -590,12 +594,12 @@ namespace afqmc
           int M0,Mn,sz = GAdims.second;
           std::tie(M0,Mn) = FairDivideBoundary(local_group_comm.rank(),sz,local_group_comm.size());  
           int iw = (last_task_index+ntasks_total_serial);
-          ComplexType ov0 = SDetOp.MixedDensityMatrixForWoodbury(OrbMats[0],wset[iw].SlaterMatrix(Alpha),
+          ComplexType ov0 = SDetOp.MixedDensityMatrixForWoodbury(OrbMats[0],*wset[iw].SlaterMatrix(Alpha),
              GA2D0_shm,LogOverlapFactor,refc,QQ0inv0,local_group_comm,true);
           calculate_overlaps(local_group_comm.rank(),local_group_comm.size(),0,
                              abij,QQ0inv0,Qwork,unique_overlaps[0]);
           local_group_comm.barrier();
-          ov0 *= SDetOp.MixedDensityMatrixForWoodbury(OrbMats.back(),wset[iw].SlaterMatrix(Beta),
+          ov0 *= SDetOp.MixedDensityMatrixForWoodbury(OrbMats.back(),*wset[iw].SlaterMatrix(Beta),
              GB2D0_shm,LogOverlapFactor,refc+NAEA,QQ0inv1,local_group_comm,true);
           calculate_overlaps(local_group_comm.rank(),local_group_comm.size(),1,
                              abij,QQ0inv1,Qwork,unique_overlaps[1]);
@@ -772,7 +776,7 @@ namespace afqmc
 
       for(int iw=0; iw<nw; ++iw) {
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
-        Ov[iw] = SDetOp.MixedDensityMatrix(RefA,wset[iw].SlaterMatrix(Alpha),G2D_,
+        Ov[iw] = SDetOp.MixedDensityMatrix(RefA,*wset[iw].SlaterMatrix(Alpha),G2D_,
                                              LogOverlapFactor,compact,herm);
         if(walker_type==CLOSED) Ov[iw] *= ComplexType(Ov[iw]);
         if(transposed)
@@ -810,14 +814,14 @@ namespace afqmc
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
 
         if(iw%2==0) {
-          ovlp2[iw] = SDetOp.MixedDensityMatrix(RefA,wset[iw/2].SlaterMatrix(Alpha),
+          ovlp2[iw] = SDetOp.MixedDensityMatrix(RefA,*wset[iw/2].SlaterMatrix(Alpha),
                                GA2D_,LogOverlapFactor,compact,herm);
           if(transposed)
             G[iw/2].sliced(0,GAdims.first*GAdims.second) = GA1D_;
           else
             G({0,GAdims.first*GAdims.second},iw/2) = GA1D_;
         } else {
-          ovlp2[iw] = SDetOp.MixedDensityMatrix(RefB,wset[iw/2].SlaterMatrix(Beta),
+          ovlp2[iw] = SDetOp.MixedDensityMatrix(RefB,*wset[iw/2].SlaterMatrix(Beta),
                                  GB2D_,LogOverlapFactor,compact,herm);
           if(transposed)
             G[iw/2].sliced(GAdims.first*GAdims.second,G.size(1)) = GB1D_;
@@ -847,7 +851,7 @@ namespace afqmc
     TG.local_barrier();
     for(int iw=0; iw<nw; ++iw) {
       if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
-      Ov[iw] = SDetOp.MixedDensityMatrix( Left[iw], Right[iw], G[iw],
+      Ov[iw] = SDetOp.MixedDensityMatrix( *Left[iw], *Right[iw], *G[iw],
                                            LogOverlapFactor,compact,herm);
     }
     TG.local_barrier();
@@ -888,7 +892,7 @@ namespace afqmc
       // task_w_d = = wlk_w*ndet + d 
       ComplexType ov0;
       for(int iw=w0; iw<wN; ++iw) {
-        ov0 = SDetOp.OverlapForWoodbury(OrbMats[0],wset[iw].SlaterMatrix(Alpha),LogOverlapFactor,refc,local_QQ0inv0);
+        ov0 = SDetOp.OverlapForWoodbury(OrbMats[0],*wset[iw].SlaterMatrix(Alpha),LogOverlapFactor,refc,local_QQ0inv0);
 	local_ov[0][0] = 1.0;
         calculate_overlaps(0,1,0,abij,local_QQ0inv0,Qwork,local_ov[0]);
 	for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it) { 
@@ -931,7 +935,7 @@ namespace afqmc
           local_group_comm.barrier();
           int iw = (last_task_index+ntasks_total_serial);
           ComplexType ov;
-          SDetOp.OverlapForWoodbury(OrbMats[0],wset[iw].SlaterMatrix(Alpha),std::addressof(ov),refc,QQ0inv0,local_group_comm);
+          SDetOp.OverlapForWoodbury(OrbMats[0],*wset[iw].SlaterMatrix(Alpha),std::addressof(ov),refc,QQ0inv0,local_group_comm);
           calculate_overlaps(local_group_comm.rank(),local_group_comm.size(),0,abij,QQ0inv0,Qwork,unique_overlaps[0]);
           local_group_comm.barrier();
           int cnt=0;
@@ -958,9 +962,9 @@ namespace afqmc
       local_ov[0][0]=1.0;  
       local_ov[1][0]=1.0;  
       for(int iw=w0; iw<wN; ++iw) {
-        ComplexType ov0 = SDetOp.OverlapForWoodbury(OrbMats[0],wset[iw].SlaterMatrix(Alpha),LogOverlapFactor,refc,local_QQ0inv0);
+        ComplexType ov0 = SDetOp.OverlapForWoodbury(OrbMats[0],*wset[iw].SlaterMatrix(Alpha),LogOverlapFactor,refc,local_QQ0inv0);
         calculate_overlaps(0,1,0,abij,local_QQ0inv0,Qwork,local_ov[0]);
-        ov0 *= SDetOp.OverlapForWoodbury(OrbMats.back(),wset[iw].SlaterMatrix(Beta),LogOverlapFactor,refc+NAEA,local_QQ0inv1);
+        ov0 *= SDetOp.OverlapForWoodbury(OrbMats.back(),*wset[iw].SlaterMatrix(Beta),LogOverlapFactor,refc+NAEA,local_QQ0inv1);
         calculate_overlaps(0,1,1,abij,local_QQ0inv1,Qwork,local_ov[1]);
         for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it) {
           Ov[iw] += ma::conj(std::get<2>(*it))*ov0*
@@ -1018,9 +1022,9 @@ namespace afqmc
           if(local_group_comm.rank()==0) unique_overlaps[1][0] = 1.0; 
           local_group_comm.barrier();
           int iw = (last_task_index+ntasks_total_serial);
-          ComplexType ov = SDetOp.OverlapForWoodbury(OrbMats[0],wset[iw].SlaterMatrix(Alpha),LogOverlapFactor,refc,QQ0inv0,local_group_comm);
+          ComplexType ov = SDetOp.OverlapForWoodbury(OrbMats[0],*wset[iw].SlaterMatrix(Alpha),LogOverlapFactor,refc,QQ0inv0,local_group_comm);
           calculate_overlaps(local_group_comm.rank(),local_group_comm.size(),0,abij,QQ0inv0,Qwork,unique_overlaps[0]);
-          ov *= SDetOp.OverlapForWoodbury(OrbMats.back(),wset[iw].SlaterMatrix(Beta),LogOverlapFactor,refc+NAEA,QQ0inv1,local_group_comm);
+          ov *= SDetOp.OverlapForWoodbury(OrbMats.back(),*wset[iw].SlaterMatrix(Beta),LogOverlapFactor,refc+NAEA,QQ0inv1,local_group_comm);
           calculate_overlaps(local_group_comm.rank(),local_group_comm.size(),1,abij,QQ0inv1,Qwork,unique_overlaps[1]);
           local_group_comm.barrier();
           size_t cnt=0;
@@ -1054,9 +1058,9 @@ namespace afqmc
       for(typename WlkSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
         if( (cnt++)%TG.getNCoresPerTG() == TG.getLocalTGRank() ) {
           if(excitedState && numExcitations.first>0)
-            OrthogonalizeExcited(it->SlaterMatrix(Alpha),Alpha,LogOverlapFactor);
+            OrthogonalizeExcited(*it->SlaterMatrix(Alpha),Alpha,LogOverlapFactor);
           else  
-            detR = SDetOp.Orthogonalize(it->SlaterMatrix(Alpha),LogOverlapFactor);
+            detR = SDetOp.Orthogonalize(*it->SlaterMatrix(Alpha),LogOverlapFactor);
           if(!impSamp) {
             if(walker_type==CLOSED)
               *it->weight() *= (detR*detR);
@@ -1070,9 +1074,9 @@ namespace afqmc
       for(typename WlkSet::iterator it=wset.begin(); it!=wset.end(); ++it) {
         if( (2*(cnt++))%TG.getNCoresPerTG() == TG.getLocalTGRank() ) {
           if(excitedState && numExcitations.first>0)
-            OrthogonalizeExcited(it->SlaterMatrix(Alpha),Alpha,LogOverlapFactor);
+            OrthogonalizeExcited(*it->SlaterMatrix(Alpha),Alpha,LogOverlapFactor);
           else
-            detR = SDetOp.Orthogonalize(it->SlaterMatrix(Alpha),LogOverlapFactor);
+            detR = SDetOp.Orthogonalize(*it->SlaterMatrix(Alpha),LogOverlapFactor);
           if(!impSamp) {
             std::lock_guard<shared_mutex> guard(*mutex);
             *it->weight() *= detR;
@@ -1080,9 +1084,9 @@ namespace afqmc
         }
         if( (2*(cnt++)+1)%TG.getNCoresPerTG() == TG.getLocalTGRank() ) {
           if(excitedState && numExcitations.second>0)
-            OrthogonalizeExcited(it->SlaterMatrix(Beta),Beta,LogOverlapFactor);
+            OrthogonalizeExcited(*it->SlaterMatrix(Beta),Beta,LogOverlapFactor);
           else
-            detR = SDetOp.Orthogonalize(it->SlaterMatrix(Beta),LogOverlapFactor);
+            detR = SDetOp.Orthogonalize(*it->SlaterMatrix(Beta),LogOverlapFactor);
           if(!impSamp) {
             std::lock_guard<shared_mutex> guard(*mutex);
             *it->weight() *= detR;
