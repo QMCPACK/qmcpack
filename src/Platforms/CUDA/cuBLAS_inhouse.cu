@@ -53,18 +53,19 @@ __global__ void gemvT_batched_kernel(const int m,
       if (col_id < n)
         sum[row_id - row_begin][tid] += x_part[tid] * A_iw[row_id * lda + col_id];
   }
+
+  for (int iend = COLBS / 2; iend > 0; iend /= 2)
+  {
+    __syncthreads();
+    for (int irow = 0; irow < row_max; irow++)
+      if (tid < iend)
+        sum[irow][tid] += sum[irow][tid + iend];
+  }
+
   __syncthreads();
-
-  const int col_max = COLBS < n ? COLBS : n;
-
-  T dot_sum(0);
-  for (int col_id = 0; col_id < col_max; col_id++)
-    if (tid < row_max)
-      dot_sum += sum[tid][col_id];
-
   T* __restrict__ y_iw = y[blockIdx.x];
   if (tid < row_max)
-    y_iw[row_begin + tid] = alpha[blockIdx.x] * dot_sum + beta[blockIdx.x] * y_iw[row_begin + tid];
+    y_iw[row_begin + tid] = alpha[blockIdx.x] * sum[tid][0] + beta[blockIdx.x] * y_iw[row_begin + tid];
 }
 
 template<typename T>
@@ -90,7 +91,7 @@ cuBLAS_inhouse_status gemv_batched_impl(cuBLAS_inhouse_handle& handle,
     if (incx != 1 || incy != 1)
       throw std::runtime_error("incx !=1 or incy != 1 are not implemented in cuBLAS_inhouse::gemv_batched_impl!");
 
-    const int ROWBS          = 16;
+    const int ROWBS          = 4;
     const int COLBS          = 64;
     const int num_row_blocks = (m + ROWBS - 1) / ROWBS;
     dim3 dimBlock(COLBS);
