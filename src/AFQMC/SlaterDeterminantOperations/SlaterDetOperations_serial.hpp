@@ -24,6 +24,7 @@
 
 #include "mpi3/shared_communicator.hpp"
 #include "type_traits/scalar_traits.h"
+#include "AFQMC/Utilities/type_conversion.hpp"
 
 namespace qmcplusplus
 {
@@ -124,13 +125,13 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 
     template<class MatA, class MatP1, class MatV>
     void BatchedPropagate(std::vector<MatA> &Ai, const MatP1& P1, const MatV& V, int order=6, char TA='N') {
-      static_assert( std::decay<MatA>::type::dimensionality == 2, " dimenionality == 2" );
+      static_assert( pointedType<MatA>::dimensionality == 2, " dimenionality == 2" );
       static_assert( std::decay<MatV>::type::dimensionality == 3, " dimenionality == 3" );
       if(Ai.size() == 0) return;
       assert(Ai.size() == V.size(0));
       int nbatch = Ai.size();
-      int NMO = Ai[0].size(0);
-      int NAEA = Ai[0].size(1);
+      int NMO = (*Ai[0]).size(0);
+      int NAEA =(* Ai[0]).size(1);
 //      for(int i=0; i<Ai.size(); ++i)
 //        Propagate(Ai[i],P1,V[i],order);
       set_buffer(nbatch*3*NMO*NAEA);
@@ -142,33 +143,36 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       // could be batched when csrmm is batched  
       if(TA=='H' || TA=='h') {
         for(int ib=0; ib<nbatch; ib++)
-          ma::product(ma::H(P1),Ai[ib],TMN[ib]);
+          ma::product(ma::H(P1),*Ai[ib],TMN[ib]);
         SlaterDeterminantOperations::batched::apply_expM(V,TMN,T1,T2,order,TA);
         for(int ib=0; ib<nbatch; ib++)
-          ma::product(ma::H(P1),TMN[ib],Ai[ib]);
+          ma::product(ma::H(P1),TMN[ib],*Ai[ib]);
       } else if(TA=='T' || TA=='t') {
         for(int ib=0; ib<nbatch; ib++)
-          ma::product(ma::T(P1),Ai[ib],TMN[ib]);
+          ma::product(ma::T(P1),*Ai[ib],TMN[ib]);
         SlaterDeterminantOperations::batched::apply_expM(V,TMN,T1,T2,order,TA);
         for(int ib=0; ib<nbatch; ib++)
-          ma::product(ma::T(P1),TMN[ib],Ai[ib]);
+          ma::product(ma::T(P1),TMN[ib],*Ai[ib]);
       } else {
         for(int ib=0; ib<nbatch; ib++) 
-          ma::product(P1,Ai[ib],TMN[ib]);
+          ma::product(P1,*(Ai[ib]),TMN[ib]);
         SlaterDeterminantOperations::batched::apply_expM(V,TMN,T1,T2,order);
         for(int ib=0; ib<nbatch; ib++) 
-          ma::product(P1,TMN[ib],Ai[ib]);
+          ma::product(P1,TMN[ib],*Ai[ib]);
       }
     }
 
     // C[nwalk, M, N]
     template<class MatA, class MatB, class MatC, class TVec>
-    void BatchedMixedDensityMatrix( std::vector<MatA*>& hermA, std::vector<MatB> &Bi, MatC&& C, T LogOverlapFactor, TVec&& ovlp, bool compact=false, bool herm=true) {
+    void BatchedMixedDensityMatrix( std::vector<MatA>& hermA, std::vector<MatB> &Bi, MatC&& C, T LogOverlapFactor, TVec&& ovlp, bool compact=false, bool herm=true) {
       if(Bi.size()==0) return;
+      static_assert((pointedType<MatA>::dimensionality == 2 or
+                    pointedType<MatA>::dimensionality == -2), "Wrong dimensionality");
+      static_assert(pointedType<MatB>::dimensionality == 2,  "Wrong dimensionality"); 
       static_assert(std::decay<MatC>::type::dimensionality == 3, "Wrong dimensionality");
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-      int NMO = (herm?hermA[0]->size(1):hermA[0]->size(0));
-      int NAEA = (herm?hermA[0]->size(0):hermA[0]->size(1));
+      int NMO = (herm?(*hermA[0]).size(1):(*hermA[0]).size(0));
+      int NAEA = (herm?(*hermA[0]).size(0):(*hermA[0]).size(1));
       int nbatch = Bi.size();
       assert(C.size(0) == nbatch);
       assert(ovlp.size() == nbatch);
@@ -188,11 +192,14 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     template<class MatA, class MatB, class MatC, class TVec>
     void BatchedDensityMatrices(const std::vector<MatA>& Left, const std::vector<MatB> &Right, std::vector<MatC>& G, T LogOverlapFactor, TVec&& ovlp, bool compact=false, bool herm=true) {
       if(Left.size()==0) return;
-      static_assert(std::decay<MatB>::type::dimensionality == 2, "Wrong dimensionality");
-      static_assert(std::decay<MatC>::type::dimensionality == 2, "Wrong dimensionality");
+      if(Right.size()==0) return;
+      static_assert((pointedType<MatA>::dimensionality == 2 or
+                    pointedType<MatA>::dimensionality == -2), "Wrong dimensionality");
+      static_assert(pointedType<MatB>::dimensionality == 2, "Wrong dimensionality"); 
+      static_assert(pointedType<MatC>::dimensionality == 2, "Wrong dimensionality");
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-      int NMO = (herm?Left[0].size(1):Left[0].size(0));
-      int NAEA = (herm?Left[0].size(0):Left[0].size(1));
+      int NMO = (herm?(*Left[0]).size(1):(*Left[0]).size(0));
+      int NAEA = (herm?(*Left[0]).size(0):(*Left[0]).size(1));
       int nbatch = Left.size();
       assert(Right.size() == nbatch);
       assert(G.size() == nbatch);
@@ -211,12 +218,15 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     }
 
     template<class MatA, class MatB, class TVec>
-    void BatchedOverlap( std::vector<MatA*>& hermA, std::vector<MatB> &Bi, T LogOverlapFactor, TVec&& ovlp, bool herm=true) {
+    void BatchedOverlap( std::vector<MatA>& hermA, std::vector<MatB> &Bi, T LogOverlapFactor, TVec&& ovlp, bool herm=true) {
+      static_assert((pointedType<MatA>::dimensionality == 2 or
+                    pointedType<MatA>::dimensionality == -2), "Wrong dimensionality");
+      static_assert(pointedType<MatB>::dimensionality == 2, "Wrong dimensionality"); 
       if(Bi.size()==0) return;
       assert(hermA.size() > 0);
       static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-      int NMO = (herm?hermA[0]->size(1):hermA[0]->size(0));
-      int NAEA = (herm?hermA[0]->size(0):hermA[0]->size(1));
+      int NMO = (herm?(*hermA[0]).size(1):(*hermA[0]).size(0));
+      int NAEA = (herm?(*hermA[0]).size(0):(*hermA[0]).size(1));
       int nbatch = Bi.size();
       assert(ovlp.size() == nbatch);
       set_buffer(nbatch*NAEA*NAEA);
@@ -229,11 +239,12 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 
     template<class MatA, class PTR>
     void BatchedOrthogonalize(std::vector<MatA> &Ai, T LogOverlapFactor, PTR detR) {
+      static_assert(pointedType<MatA>::dimensionality == 2, "Wrong dimensionality");
 #ifdef ENABLE_CUDA
       // QR on the transpose
       if(Ai.size()==0) return;
-      int NMO = Ai[0].size(0);
-      int NAEA = Ai[0].size(1);
+      int NMO = (*Ai[0]).size(0);
+      int NAEA = (*Ai[0]).size(1);
       int nbatch = Ai.size();
       set_buffer(nbatch*(NMO*NAEA + 2*NMO));
       TTensor_ref AT(TBuff.origin(), {nbatch,NAEA,NMO});
@@ -245,7 +256,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       if(WORK.num_elements() < nbatch*sz)
         WORK.reextent(iextensions<1u>{nbatch*sz});
       for(int i=0; i<nbatch; i++)
-        ma::transpose(Ai[i],AT[i]);
+        ma::transpose(*Ai[i],AT[i]);
       // careful, expects fortran order
       geqrfStrided(NMO,NAEA,AT.origin(),NMO,NMO*NAEA,T_.origin(),NMO,IWORK.origin(),nbatch);
       using ma::determinant_from_geqrf;
@@ -254,13 +265,13 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
         *(detR+i) = determinant_from_geqrf(NAEA,AT[i].origin(),NMO,scl[i].origin(),LogOverlapFactor);
       gqrStrided(NMO,NAEA,NAEA,AT.origin(),NMO,NMO*NAEA,T_.origin(),NMO,WORK.origin(),sz,IWORK.origin(),nbatch);
       for(int i=0; i<nbatch; i++) {
-        ma::transpose(AT[i],Ai[i]);
-        scale_columns(NMO,NAEA,Ai[i].origin(),Ai[i].stride(0),scl[i].origin());
+        ma::transpose(AT[i],*Ai[i]);
+        scale_columns(NMO,NAEA,(*Ai[i]).origin(),(*Ai[i]).stride(0),scl[i].origin());
       }
 #else
       int nw=Ai.size();
       for(int i=0; i<nw; i++) 
-        *(detR+i) = Orthogonalize(Ai[i], LogOverlapFactor);
+        *(detR+i) = Orthogonalize(*Ai[i], LogOverlapFactor);
 #endif
     }
 
@@ -269,8 +280,8 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 #ifdef ENABLE_CUDA
       // QR on the transpose
       if(Ai.size()==0) return;
-      int NMO = Ai[0].size(0);
-      int NAEA = Ai[0].size(1);
+      int NMO = (*Ai[0]).size(0);
+      int NAEA = (*Ai[0]).size(1);
       int nbatch = Ai.size();
       set_buffer(nbatch*(NMO*NAEA + 2*NMO));
       TTensor_ref AT(TBuff.origin(), {nbatch,NAEA,NMO});
@@ -282,7 +293,7 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       if(WORK.num_elements() < nbatch*sz)
         WORK.reextent(iextensions<1u>{nbatch*sz});
       for(int i=0; i<nbatch; i++)
-        ma::transpose(Ai[i],AT[i]);
+        ma::transpose(*Ai[i],AT[i]);
       // careful, expects fortran order
       geqrfStrided(NMO,NAEA,AT.origin(),NMO,NMO*NAEA,T_.origin(),NMO,IWORK.origin(),nbatch);
       using ma::determinant_from_geqrf;
@@ -291,13 +302,13 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
         determinant_from_geqrf(NAEA,AT[i].origin(),NMO,scl[i].origin());
       gqrStrided(NMO,NAEA,NAEA,AT.origin(),NMO,NMO*NAEA,T_.origin(),NMO,WORK.origin(),sz,IWORK.origin(),nbatch);
       for(int i=0; i<nbatch; i++) {
-        ma::transpose(AT[i],Ai[i]);
-        scale_columns(NMO,NAEA,Ai[i].origin(),Ai[i].stride(0),scl[i].origin());
+        ma::transpose(AT[i],*Ai[i]);
+        scale_columns(NMO,NAEA,(*Ai[i]).origin(),(*Ai[i]).stride(0),scl[i].origin());
       }
 #else
       int nw=Ai.size();
       for(int i=0; i<nw; i++)
-        Orthogonalize(Ai[i], LogOverlapFactor);
+        Orthogonalize(*Ai[i], LogOverlapFactor);
 #endif
     }
 

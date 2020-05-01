@@ -190,7 +190,7 @@ class BackPropagatedEstimator: public EstimatorBase
     stdCVector wgt(iextensions<1u>{wset.size()});
     wset.getProperty(WEIGHT,wgt);
     if(path_restoration) {
-      auto&& factors(wset.getWeightFactors());
+      auto&& factors(*wset.getWeightFactors());
       int hpos(wset.getHistoryPos()); // position where next step goes... go bach in history... 
       int maxpos(wset.HistoryBufferLength());
       int nbp(bp_step);

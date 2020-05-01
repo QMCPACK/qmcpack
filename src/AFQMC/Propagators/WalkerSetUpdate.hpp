@@ -141,10 +141,10 @@ std::cout<<" update: "
   w.setProperty(PSEUDO_ELOC_,work[1]);
   w.setProperty(OVLP,work[2]);
   if(BackProp) {
-    auto&& WFac(w.getWeightFactors()[w.getHistoryPos()]);
+    auto&& WFac((*w.getWeightFactors())[w.getHistoryPos()]);
     using std::copy_n;
     copy_n(work[3].origin(),nwalk,WFac.origin());
-    auto&& WHis(w.getWeightHistory()[w.getHistoryPos()]);
+    auto&& WHis((*w.getWeightHistory())[w.getHistoryPos()]);
     copy_n(work[0].origin(),nwalk,WHis.origin());
   }
 
@@ -219,10 +219,10 @@ void local_energy_walker_update(Wlk&& w, RealType dt, bool apply_constrain, Real
   w.setProperty(EXX_,work[4]);
   w.setProperty(EJ_,work[5]);
   if(BackProp) {
-    auto&& WFac(w.getWeightFactors()[w.getHistoryPos()]);
+    auto&& WFac((*w.getWeightFactors())[w.getHistoryPos()]);
     using std::copy_n;
     copy_n(work[6].origin(),nwalk,WFac.origin());
-    auto&& WHis(w.getWeightHistory()[w.getHistoryPos()]);
+    auto&& WHis((*w.getWeightHistory())[w.getHistoryPos()]);
     copy_n(work[0].origin(),nwalk,WHis.origin());
   }
 

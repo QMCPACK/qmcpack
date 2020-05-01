@@ -281,8 +281,8 @@ void test_phmsd(boost::mpi3::communicator& world)
       for(int i = 0; i < NAEB; i++)
         ob[i] -= NMO;
       getSlaterMatrix(TrialB, ob, NAEB);
-      ComplexType ovlpa = sdet->Overlap(TrialA, wset[0].SlaterMatrix(Alpha), logovlp);
-      ComplexType ovlpb = sdet->Overlap(TrialB, wset[0].SlaterMatrix(Beta), logovlp);
+      ComplexType ovlpa = sdet->Overlap(TrialA, *wset[0].SlaterMatrix(Alpha), logovlp);
+      ComplexType ovlpb = sdet->Overlap(TrialB, *wset[0].SlaterMatrix(Beta), logovlp);
       ovlp_sum += ma::conj(coeffs[idet])*ovlpa*ovlpb;
       //boost::multi::array_ref<ComplexType,2> GB(to_address(GBuff.origin()), {NAEA,NMO});
       //sdet->MixedDensityMatrix(TrialB, wset[0].SlaterMatrix(Alpha), GA, logovlp, true);
