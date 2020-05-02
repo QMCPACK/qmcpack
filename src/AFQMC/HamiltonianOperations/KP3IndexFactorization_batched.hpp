@@ -13,8 +13,8 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_AFQMC_HAMILTONIANOPERATIONS_KP3INDEXFACTORIZATION_BATCHED_HPP
-#define QMCPLUSPLUS_AFQMC_HAMILTONIANOPERATIONS_KP3INDEXFACTORIZATION_BATCHED_HPP
+#ifndef QMCPLUSPLUS_AFQMC_HAMILTONIANOPERATIONS_KP3INDEXFACTORIZATION_BATCHED_OOC_HPP
+#define QMCPLUSPLUS_AFQMC_HAMILTONIANOPERATIONS_KP3INDEXFACTORIZATION_BATCHED_OCC_HPP
 
 #include <vector>
 #include <type_traits>
@@ -25,6 +25,7 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Utilities/Utils.hpp"
@@ -37,10 +38,14 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
+
+// testing the use of dynamic data transfer during execution to reduce memory in GPU
+// when an approach is found, integrate in original class through additional template parameter
+
+template<class LQKankMatrix>
 class KP3IndexFactorization_batched
 {
-
-
   // allocators
   using Allocator = device_allocator<ComplexType>;
   using SpAllocator = device_allocator<SPComplexType>; 
@@ -49,6 +54,9 @@ class KP3IndexFactorization_batched
   using Allocator_shared = node_allocator<ComplexType>; 
   using SpAllocator_shared = node_allocator<SPComplexType>; 
   using IAllocator_shared = node_allocator<int>; 
+
+  using buffer_alloc_type = device_buffer_type<SPComplexType>;  
+  using buffer_alloc_Itype = device_buffer_type<int>;  
 
   // type defs
   using pointer = typename Allocator::pointer;
@@ -85,6 +93,12 @@ class KP3IndexFactorization_batched
   using Sp4Tensor_ref = SPComplexArray_ref<4,sp_pointer>;
   using Sp5Tensor_ref = SPComplexArray_ref<5,sp_pointer>;
 
+  using StaticIVector = boost::multi::static_array<int,1,buffer_alloc_Itype>;
+  using StaticVector = boost::multi::static_array<SPComplexType,1,buffer_alloc_type>;
+  using StaticMatrix = boost::multi::static_array<SPComplexType,2,buffer_alloc_type>;
+  using Static3Tensor = boost::multi::static_array<SPComplexType,3,buffer_alloc_type>;
+  using Static4Tensor = boost::multi::static_array<SPComplexType,4,buffer_alloc_type>;
+
   using shmCVector = ComplexVector<Allocator_shared>;  
   using shmCMatrix = ComplexMatrix<Allocator_shared>;  
   using shmIMatrix = IntegerMatrix<IAllocator_shared>;  
@@ -107,6 +121,7 @@ class KP3IndexFactorization_batched
     template<class shmCMatrix_, class shmSpMatrix_>
     KP3IndexFactorization_batched(
                  WALKER_TYPES type,
+                 afqmc::TaskGroup_& tg_,
                  stdIVector&& nopk_,
                  stdIVector&& ncholpQ_,
                  stdIVector&& kminus_,
@@ -126,14 +141,16 @@ class KP3IndexFactorization_batched
                  ValueType e0_,
                  Allocator const& alloc_,
                  int cv0,
-                 int gncv, 
+                 int gncv,
                  int bf_size = 4096): 
+        TG(tg_),
         allocator_(alloc_),
         sp_allocator_(alloc_),
+        buffer_allocator(device_buffer_generator.get()), // hard-wired to device like Allocator
         walker_type(type),
         global_nCV(gncv),
         global_origin(cv0),
-        default_buffer_size_in_MB(bf_size), 
+        default_buffer_size_in_MB(bf_size),
         last_nw(-1),
         E0(e0_),
         H1(std::move(hij_)),
@@ -144,7 +161,11 @@ class KP3IndexFactorization_batched
         nelpk(std::move(nelpk_)),
         QKToK2(std::move(QKToK2_)),
         LQKikn(std::move(move_vector<shmSpMatrix>(std::move(vik)))),
-        LQKank(std::move(move_vector<shmSpMatrix>(std::move(vak)))),
+        //LQKank(std::move(move_vector<LQKankMatrix>(std::move(vak),TG.Node()))),
+        LQKank(std::move(move_vector<LQKankMatrix>(std::move(vak)))),
+        //needs_copy(true),
+        needs_copy(std::is_same<decltype(make_device_ptr(LQKank[0].origin())),
+                                sp_pointer>::value),
         LQKakn(std::move(move_vector<shmSpMatrix>(std::move(vakn)))),
         LQKbnl(std::move(move_vector<shmSpMatrix>(std::move(vbl)))),
         LQKbln(std::move(move_vector<shmSpMatrix>(std::move(vbln)))),
@@ -156,9 +177,6 @@ class KP3IndexFactorization_batched
         Qwn({1,1}),
         generator(),
         distribution(gQ.begin(),gQ.end()), 
-        BTMats(iextensions<1u>{1},sp_allocator_),
-        TMats(iextensions<1u>{1},sp_allocator_),
-        IMats(iextensions<1u>{1},IAllocator{allocator_}),
         KKTransID({nopk.size(),nopk.size()}, IAllocator{allocator_}),
         dev_nopk(nopk),
         dev_i0pk( typename IVector::extensions_type{nopk.size()}, IAllocator{allocator_}),
@@ -258,18 +276,24 @@ class KP3IndexFactorization_batched
         }
       }
       copy_n(KKid.origin(),KKid.num_elements(),KKTransID.origin());  
+
+      long memank = 0;
+      if(needs_copy) 
+        for(auto& v: LQKank) memank = std::max(memank,2*v.num_elements()); 
+      else
+        for(auto& v: LQKank) memank += v.num_elements();  
+
       // report memory usage
       size_t likn(0),lakn(0),lbln(0),misc(0);
       for(auto& v: LQKikn) likn += v.num_elements();  
       for(auto& v: LQKakn) lakn += v.num_elements();  
-      for(auto& v: LQKank) lakn += v.num_elements();  
       for(auto& v: LQKbln) lbln += v.num_elements();  
       for(auto& v: LQKbnl) lbln += v.num_elements();  
       app_log()<<"****************************************************************** \n" 
                <<"  Static memory usage by KP3IndexFactorization_batched (node 0 in MB) \n"
-               <<"  L[Q][K][ikn]: " <<likn*sizeof(SPComplexType)/1024.0/1024.0 <<" \n" 
-               <<"  L[Q][K][akn]: " <<lakn*sizeof(SPComplexType)/1024.0/1024.0 <<" \n" 
-               <<"  L[Q][K][bln]: " <<lbln*sizeof(SPComplexType)/1024.0/1024.0 <<" \n"; 
+               <<"    L[Q][K][ikn]: " <<likn*sizeof(SPComplexType)/1024.0/1024.0 <<" \n" 
+               <<"    L[Q][K][akn]: " <<(lakn+memank)*sizeof(SPComplexType)/1024.0/1024.0 <<" \n" 
+               <<"    L[Q][K][bln]: " <<lbln*sizeof(SPComplexType)/1024.0/1024.0 <<" \n";
       memory_report();
     }
 
@@ -282,7 +306,7 @@ class KP3IndexFactorization_batched
 
     // must have the same signature as shared classes, so keeping it with std::allocator
     // NOTE: THIS SHOULD USE mpi3::shm!!!
-    boost::multi::array<ComplexType,2> getOneBodyPropagatorMatrix(TaskGroup_& TG, boost::multi::array<ComplexType,1> const& vMF) {
+    boost::multi::array<ComplexType,2> getOneBodyPropagatorMatrix(TaskGroup_& TG_, boost::multi::array<ComplexType,1> const& vMF) {
 
       int nkpts = nopk.size();
       int NMO = std::accumulate(nopk.begin(),nopk.end(),0);
@@ -293,8 +317,8 @@ class KP3IndexFactorization_batched
       CVector P1D(iextensions<1u>{NMO*NMO});
       fill_n(P1D.origin(),P1D.num_elements(),ComplexType(0));
       vHS(vMF_, P1D);
-      if(TG.TG().size() > 1)
-        TG.TG().all_reduce_in_place_n(to_address(P1D.origin()),P1D.num_elements(),std::plus<>());
+      if(TG_.TG().size() > 1)
+        TG_.TG().all_reduce_in_place_n(to_address(P1D.origin()),P1D.num_elements(),std::plus<>());
 
       boost::multi::array<ComplexType,2> P1({NMO,NMO});
       copy_n(P1D.origin(),NMO*NMO,P1.origin());
@@ -309,7 +333,7 @@ class KP3IndexFactorization_batched
             P1[I][J] += H1[K][i][j] + vn0[K][i][j];
             P1[J][I] += H1[K][j][i] + vn0[K][j][i];
             // This is really cutoff dependent!!!
-#if MIXED_PRECISION
+#if AFQMC_MIXED_PRECISION
             if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-5 ) {
 #else
             if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-6 ) {
@@ -375,17 +399,6 @@ class KP3IndexFactorization_batched
       if(E.size(0) != nwalk || E.size(1) < 3)
         APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix dimensions \n");
 
-      long mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);   // for GKK
-      size_t cnt(0);  
-      if(addEJ) { 
-#if MIXED_PRECISION
-        mem_needs += 2*nwalk*local_nCV;
-#else
-        if(not getKr) mem_needs += nwalk*local_nCV;                  // for Kr 
-        if(not getKl) mem_needs += nwalk*local_nCV;                  // for Kl
-#endif
-      }
-
       // take from BufferManager.
 //      long default_buffer_size_in_MB(4L*1024L);
       long batch_size(0);
@@ -398,63 +411,29 @@ class KP3IndexFactorization_batched
         // make sure batch_size is even
         batch_size = batch_size - (batch_size%2L);
         assert(batch_size%2L == 0); 
-        mem_needs += batch_size*long(nwalk*nocc_max*nocc_max*nchol_max) +
-                                    batch_size;
       } 
-      set_buffer(mem_needs);
-      if(last_nw != nwalk) { 
-        app_log()<<"  --  KP3IndexFactorization_batched::energy(): batch_size, total_memory, EXX_memory: " 
-                 <<batch_size <<" " <<sizeof(SPComplexType)*(mem_needs/1024L/1024L) <<" MB " 
-                 <<sizeof(SPComplexType)*((batch_size*long(nwalk*nocc_max*nocc_max*nchol_max)+batch_size)/1024L/1024L) <<" MB. \n"; 
-        last_nw = nwalk;
-      }
 
-      // messy
-      sp_pointer Krptr(nullptr), Klptr(nullptr); 
       long Knr=0, Knc=0;
       if(addEJ) {
         Knr=nwalk;
         Knc=local_nCV;
-        cnt=0;
-#if MIXED_PRECISION
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride(0) == KEright->size(1));
         }
-#else
-        if(getKr) {
-          assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV); 
-          assert(KEright->stride() == KEright->size(1));
-          Krptr = make_device_ptr(KEright->origin()); 
-        } else 
-#endif
-        {
-          Krptr = BTMats.origin(); 
-          cnt += nwalk*local_nCV;
-        }
-#if MIXED_PRECISION
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
         }
-#else
-        if(getKl) {
-          assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV); 
-          assert(KEleft->stride(0) == KEleft->size(1));
-          Klptr = make_device_ptr(KEleft->origin());
-        } else 
-#endif
-        {
-          Klptr = BTMats.origin()+cnt; 
-          cnt += nwalk*local_nCV;
-        }
-        fill_n(Krptr,Knr*Knc,SPComplexType(0.0));
-        fill_n(Klptr,Knr*Knc,SPComplexType(0.0));
       } else if(getKr or getKl) {
         APP_ABORT(" Error: Kr and/or Kl can only be calculated with addEJ=true.\n");
       }   
-      SpMatrix_ref Kl(Klptr,{Knr,Knc});
-      SpMatrix_ref Kr(Krptr,{Knr,Knc});
+      StaticMatrix Kl({Knr,Knc},
+                        buffer_allocator->template get_allocator<SPComplexType>());
+      StaticMatrix Kr({Knr,Knc},
+                        buffer_allocator->template get_allocator<SPComplexType>());
+      fill_n(Kr.origin(),Knr*Knc,SPComplexType(0.0));
+      fill_n(Kl.origin(),Knr*Knc,SPComplexType(0.0));
 
       for(int n=0; n<nwalk; n++) 
         fill_n(E[n].origin(),3,ComplexType(0.));
@@ -466,10 +445,8 @@ class KP3IndexFactorization_batched
 
       // later on, rewrite routine to loop over spins, to avoid storage of both spin
       // components simultaneously
-      Sp4Tensor_ref GKK(BTMats.origin()+cnt,
-                        {nspin,nkpts,nkpts,nwalk*nmo_max*nocc_max});
-      fill_n(GKK.origin(),GKK.num_elements(),SPComplexType(0.0));
-      cnt += GKK.num_elements();
+      Static4Tensor GKK({nspin,nkpts,nkpts,nwalk*nmo_max*nocc_max},
+                        buffer_allocator->template get_allocator<SPComplexType>());
       GKaKjw_to_GKKwaj(G3Da,GKK[0],nelpk[nd].sliced(0,nkpts),dev_nelpk[nd],dev_a0pk[nd]);
       if(walker_type==COLLINEAR)  
         GKaKjw_to_GKKwaj(G3Db,GKK[1],nelpk[nd].sliced(nkpts,2*nkpts),
@@ -537,20 +514,33 @@ class KP3IndexFactorization_batched
         std::vector<int> kdiag;
         kdiag.reserve(batch_size);
 
-        if(IMats.num_elements() < batch_size) {
-          IMats = std::move(IVector(iextensions<1u>{batch_size}));
-          using std::fill_n;
-          fill_n(IMats.origin(),batch_size,0);
-        }
-        SpVector_ref dev_scl_factors(BTMats.origin()+cnt,{batch_size}); 
-        cnt += dev_scl_factors.num_elements();
+        StaticIVector IMats(iextensions<1u>{batch_size}, 
+                        buffer_allocator->template get_allocator<int>());
+        fill_n(IMats.origin(),IMats.num_elements(),0);
+        StaticVector dev_scl_factors(iextensions<1u>{batch_size},
+                        buffer_allocator->template get_allocator<SPComplexType>());
+        Static3Tensor T1({batch_size,nwalk*nocc_max,nocc_max*nchol_max},
+                        buffer_allocator->template get_allocator<SPComplexType>());
         SPRealType scl = (walker_type==CLOSED?2.0:1.0);
-        size_t nqk=1;  
+        
+        // I WANT C++17!!!!!!
+        long mem_ank(0); 
+        if(needs_copy) 
+            mem_ank = nkpts*nocc_max*nchol_max*nmo_max;
+        StaticVector LBuff(iextensions<1u>{2*mem_ank},
+                    buffer_allocator->template get_allocator<SPComplexType>());
+        sp_pointer LQptr(nullptr), LQmptr(nullptr); 
+        if(needs_copy) {
+          // data will be copied here  
+          LQptr = LBuff.origin();
+          LQmptr = LBuff.origin() + mem_ank;
+        }
+
         for(int spin=0; spin<nspin; ++spin) {
-          nqk=1;  
           for(int Q=0; Q<nkpts; ++Q) {
             if( Qmap[Q] < 0 ) continue;
             bool haveKE=false;
+            int Qm = kminus[Q];
 
             // simple implementation for now
             Aarray.clear();
@@ -559,13 +549,28 @@ class KP3IndexFactorization_batched
             scl_factors.clear();  
             kdiag.clear();  
             batch_cnt=0;
-            Sp3Tensor_ref T1(dev_scl_factors.origin()+dev_scl_factors.num_elements(),
-                                {batch_size,nwalk*nocc_max,nocc_max*nchol_max});
+
+            // choose source of data depending on whether data needs to be copied or not
+            if(!needs_copy) {
+              // set to local array origin 
+              LQptr = make_device_ptr(LQKank[nd*nspin*nkpts+spin*nkpts+Q].origin()); 
+              LQmptr = make_device_ptr(LQKank[nd*nspin*nkpts+spin*nkpts+Qm].origin());
+            }        
+
+            SpMatrix_ref LQ( LQptr, LQKank[nd*nspin*nkpts+spin*nkpts+Q].extensions());
+            SpMatrix_ref LQm( LQmptr, LQKank[nd*nspin*nkpts+spin*nkpts+Qm].extensions());
+
+            if(needs_copy) {
+              copy_n(to_address(LQKank[nd*nspin*nkpts+spin*nkpts+Q].origin()),
+                    LQ.num_elements(),LQ.origin()); 
+              if( Q != Qm)
+                copy_n(to_address(LQKank[nd*nspin*nkpts+spin*nkpts+Qm].origin()),
+                      LQm.num_elements(),LQm.origin()); 
+            }
 
             for(int Ka=0; Ka<nkpts; ++Ka) {
               int K0 = ((Qmap[Q]>0)?0:Ka);
               for(int Kb=K0; Kb<nkpts; ++Kb) {
-                int Qm = kminus[Q];
                 int Kl_ = QKToK2[Qm][Kb];
                 int Kk = QKToK2[Q][Ka];
 
@@ -576,10 +581,11 @@ class KP3IndexFactorization_batched
                   Aarray.push_back(sp_pointer(LQKbnl[nd*nspin*number_of_symmetric_Q+
                                             spin*number_of_symmetric_Q+Qmap[Q]-1][Kb].origin()));
                 else  
-                  Aarray.push_back(sp_pointer(LQKank[nd*nspin*nkpts+spin*nkpts+Qm][Kb].origin()));
+                  Aarray.push_back(sp_pointer(LQm[Kb].origin()));
+
                 Barray.push_back(GKK[spin][Ka][Kl_].origin());
                 Carray.push_back(T1[batch_cnt++].origin());
-                Aarray.push_back(sp_pointer(LQKank[nd*nspin*nkpts+spin*nkpts+Q][Ka].origin()));
+                Aarray.push_back(sp_pointer(LQ[Ka].origin()));
                 Barray.push_back(GKK[spin][Kb][Kk].origin());
                 Carray.push_back(T1[batch_cnt++].origin());
  
@@ -660,13 +666,16 @@ class KP3IndexFactorization_batched
           // calculate Kr
           APP_ABORT(" Error: Finish addEJ and not addEXX");
         }
-        size_t nqk=0;  
         RealType scl = (walker_type==CLOSED?2.0:1.0);
         using ma::adotpby;
         for(int n=0; n<nwalk; ++n) {
           adotpby(SPComplexType(0.5*scl*scl),Kl[n],Kr[n],
                       ComplexType(0.0),E[n].origin()+2);
         }
+        if(getKr) 
+          copy_n(Kr.origin(),Kr.num_elements(),KEright->origin());
+        if(getKl) 
+          copy_n(Kl.origin(),Kl.num_elements(),KEleft->origin());
       }
     }
 
@@ -675,6 +684,7 @@ class KP3IndexFactorization_batched
     void energy_sampleQ(Mat&& E, MatB const& Gc, int nd, MatC* KEleft, MatD* KEright, bool addH1=true, bool addEJ=true, bool addEXX=true) {
 
       APP_ABORT("Error: energy_sampleQ not yet implemented in batched routine.\n");
+/*
       using std::fill_n;
       int nkpts = nopk.size(); 
       assert(E.size(1)>=3);
@@ -826,7 +836,6 @@ class KP3IndexFactorization_batched
           for(int n=0; n<nwalk; ++n) 
             for(int nQ=0; nQ<nsampleQ; ++nQ) {
               Qwn[n][nQ] = distribution(generator);
-/*
               RealType drand = distribution(generator);
               RealType s(0.0);
               bool found=false;
@@ -840,10 +849,8 @@ class KP3IndexFactorization_batched
               } 
               if(not found) 
                 APP_ABORT(" Error: sampleQ Qwn. \n");  
-*/
             }
         }
-
         size_t local_memory_needs = 2*nocca_max*nocca_max*nchol_max; 
         if(TMats.num_elements() < local_memory_needs) { 
           TMats = std::move(SpVector(iextensions<1u>{local_memory_needs})); 
@@ -1042,6 +1049,7 @@ class KP3IndexFactorization_batched
           }
         }
       }
+*/
     }
 
     template<class... Args>
@@ -1088,26 +1096,18 @@ class KP3IndexFactorization_batched
       SPComplexType minusimhalfa(0.0,-0.5*a);
       SPComplexType imhalfa(0.0,0.5*a);
 
-      // wasting some memory right now in vKK and XQnw, since I only need to store 
-      // for the Q assign to this node. If necessary, optimize later
-      size_t mem_needs((nkpts+number_of_symmetric_Q)*nkpts*nwalk*nmo_max*nmo_max + nwalk*2*nkpts*nchol_max);
-#if MIXED_PRECISION
-      mem_needs += X.num_elements();
-#endif
-      if(BTMats.num_elements() < mem_needs) { 
-        BTMats = std::move(SpVector(iextensions<1u>{mem_needs}));
-        using std::fill_n;
-        fill_n(BTMats.origin(),BTMats.num_elements(),SPComplexType(0.0));
-      }
-
-      Sp3Tensor_ref vKK(BTMats.origin(),{nkpts+number_of_symmetric_Q,nkpts,nwalk*nmo_max*nmo_max} );
-      Sp4Tensor_ref XQnw(vKK.origin()+vKK.num_elements(),{nkpts,2,nchol_max,nwalk} );
+      Static3Tensor vKK({nkpts+number_of_symmetric_Q,nkpts,nwalk*nmo_max*nmo_max},
+                           buffer_allocator->template get_allocator<SPComplexType>()); 
+      fill_n(vKK.origin(),vKK.num_elements(),SPComplexType(0.0));
+      Static4Tensor XQnw({nkpts,2,nchol_max,nwalk},  
+                           buffer_allocator->template get_allocator<SPComplexType>()); 
       fill_n(XQnw.origin(),XQnw.num_elements(),SPComplexType(0.0));
 
       // "rotate" X  
       //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)  
 #if MIXED_PRECISION
-      SpMatrix_ref Xdev(XQnw.origin()+XQnw.num_elements(),X.extensions());
+      StaticMatrix Xdev(X.extensions(),
+                           buffer_allocator->template get_allocator<SPComplexType>()); 
       copy_n_cast(make_device_ptr(X.origin()),X.num_elements(),Xdev.origin());
 #else
       SpMatrix_ref Xdev(make_device_ptr(X.origin()),X.extensions());
@@ -1134,6 +1134,7 @@ class KP3IndexFactorization_batched
         ma::scal(c,v);
       }
 
+      int nmo_max2 = nmo_max*nmo_max;  
       using ma::gemmBatched;
       std::vector<sp_pointer> Aarray;
       std::vector<sp_pointer> Barray;
@@ -1153,14 +1154,14 @@ class KP3IndexFactorization_batched
           }
         }
       }
-      int nmo_max2 = nmo_max*nmo_max;  
       // C: v = T(X) * T(Lik) --> F: T(Lik) * T(X) = v   
       gemmBatched('T','T',nmo_max2,nwalk,nchol_max,SPComplexType(1.0),Aarray.data(),nchol_max,Barray.data(),nwalk,
                                                    SPComplexType(0.0),Carray.data(),nmo_max2,Aarray.size());
 
-      Aarray.clear();  
-      Barray.clear();  
-      Carray.clear();  
+
+      Aarray.clear();
+      Barray.clear();
+      Carray.clear();
       for(int Q=0; Q<nkpts; ++Q) {      // momentum conservation index   
         if( Qmap[Q] < 0 ) continue;
         // v[nw][i(in K)][k(in Q(K))] += sum_n LQK[i][k][n] X[Q][0][n][nw]
@@ -1171,6 +1172,7 @@ class KP3IndexFactorization_batched
             Barray.push_back(XQnw[Q][0].origin());
             Carray.push_back(vKK[K][QK].origin());
           }
+
         } else if(Qmap[Q]>0) { // rho(Q)^+ term 
           for(int K=0; K<nkpts; ++K) {        // K is the index of the kpoint pair of (i,k)
             int QK = QKToK2[Q][K];
@@ -1259,15 +1261,6 @@ class KP3IndexFactorization_batched
       SPComplexType minusimhalfa(0.0,-0.5*a*scl);
       SPComplexType imhalfa(0.0,0.5*a*scl);
 
-      // space for GQK and for v1
-      // also wasting some memory here in distributed case
-      size_t mem_needs(nkpts*nkpts*nwalk*nocca_max*nmo_max + (nkpts+number_of_symmetric_Q)*nchol_max*nwalk); 
-      if(BTMats.num_elements() < mem_needs) { 
-        BTMats = std::move(SpVector(iextensions<1u>{mem_needs})); 
-        using std::fill_n;
-        fill_n(BTMats.origin(),BTMats.num_elements(),SPComplexType(0.0));
-      }
-
       assert(G.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
       C3Tensor_cref G3Da(make_device_ptr(G.origin()),{nocca_tot,nmo_tot,nwalk} );
       C3Tensor_cref G3Db(make_device_ptr(G.origin())+G3Da.num_elements()*(nspin-1),
@@ -1278,9 +1271,13 @@ class KP3IndexFactorization_batched
       }
 
       for(int spin=0; spin<nspin; spin++) {
-        fill_n(BTMats.origin(),mem_needs,SPComplexType(0.0));
-        Sp3Tensor_ref v1(BTMats.origin(),{nkpts+number_of_symmetric_Q,nchol_max,nwalk});
-        Sp3Tensor_ref GQ(v1.origin()+v1.num_elements(),{nkpts,nkpts*nocc_max*nmo_max,nwalk} );
+        size_t cnt(0);
+        Static3Tensor v1({nkpts+number_of_symmetric_Q,nchol_max,nwalk}, 
+                           buffer_allocator->template get_allocator<SPComplexType>()); 
+        Static3Tensor GQ({nkpts,nkpts*nocc_max*nmo_max,nwalk},
+                           buffer_allocator->template get_allocator<SPComplexType>()); 
+        fill_n(v1.origin(),v1.num_elements(),SPComplexType(0.0));
+        fill_n(GQ.origin(),GQ.num_elements(),SPComplexType(0.0));
 
         if(spin==0) 
           GKaKjw_to_GQKajw(G3Da,GQ,nelpk[nd],dev_nelpk[nd],dev_a0pk[nd]);
@@ -1323,7 +1320,7 @@ class KP3IndexFactorization_batched
     template<class Mat, class MatB>
     void generalizedFockMatrix(Mat&& G, MatB&& Fp, MatB&& Fm)
     {
-      APP_ABORT(" Error: generalizedFockMatrix not implemented for this hamiltonian.\n"); 
+      APP_ABORT(" Error: generalizedFockMatrix not implemented for this hamiltonian.\n");  
     }
 
     bool distribution_over_cholesky_vectors() const{ return true; }
@@ -1349,15 +1346,18 @@ class KP3IndexFactorization_batched
 
     int nocc_max;
 
+    afqmc::TaskGroup_& TG;
+
     Allocator allocator_;
     SpAllocator sp_allocator_;
+    device_allocator_generator_type *buffer_allocator;
 
     WALKER_TYPES walker_type;
 
     int global_nCV;
     int local_nCV;
     int global_origin;
-   
+
     int default_buffer_size_in_MB;
     int last_nw;
 
@@ -1392,7 +1392,8 @@ class KP3IndexFactorization_batched
     std::vector<shmSpMatrix> LQKikn;
 
     // half-tranformed Cholesky tensor
-    std::vector<shmSpMatrix> LQKank;
+    std::vector<LQKankMatrix> LQKank;
+    const bool needs_copy;
 
     // half-tranformed Cholesky tensor
     std::vector<shmSpMatrix> LQKakn;
@@ -1427,12 +1428,6 @@ class KP3IndexFactorization_batched
     std::default_random_engine generator;
     std::discrete_distribution<int> distribution;
 
-    // shared buffer space
-    // using matrix since there are issues with vectors
-    SpVector BTMats;
-    SpVector TMats;
-    IVector IMats;
-
     IMatrix KKTransID;
     IVector dev_nopk;
     IVector dev_i0pk;
@@ -1452,19 +1447,6 @@ class KP3IndexFactorization_batched
 //    std::default_random_engine generator;
 //    std::uniform_real_distribution<RealType> distribution(RealType(0.0),Realtype(1.0));
 
-    void set_buffer(size_t N) {
-      if(BTMats.num_elements() < N) { 
-        app_log()<<" Resizing buffer space in KP3IndexFactorization_batched to " <<N*sizeof(SPComplexType)/1024.0/1024.0 <<" MBs. \n";
-        {
-          BTMats = std::move(SpVector(iextensions<1u>{N}));
-        }
-        memory_report();
-        using std::fill_n;
-        fill_n(BTMats.origin(),N,SPComplexType(0.0));
-      }
-    }
-
-    // MAM: nocc_max should be spin dependent 
     template<class MatA, class MatB, class IVec, class IVec2>
     void GKaKjw_to_GKKwaj(MatA const& GKaKj, MatB && GKKaj,IVec && nocc, IVec2 && dev_no, IVec2 && dev_a0)
     {

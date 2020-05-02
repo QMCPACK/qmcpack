@@ -117,9 +117,9 @@ namespace afqmc
             BufferAllocatorGenerator< device_memory_resource, device_allocator<char> >;  
 
   template<class T>
-    using host_buffer_type = typename host_allocator_generator_type::allocator<T>; 
+    using host_buffer_type = typename host_allocator_generator_type::template allocator<T>; 
   template<class T>
-    using device_buffer_type = typename device_allocator_generator_type::allocator<T>; 
+    using device_buffer_type = typename device_allocator_generator_type::template allocator<T>; 
   
   void update_buffer_generators();
 
