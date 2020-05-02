@@ -25,6 +25,7 @@
 #include "AFQMC/Memory/SharedMemory/shm_ptr_with_raw_ptr_dispatch.hpp"
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
+#include "multi/memory/fallback.hpp"
 
 #include "Utilities/NewTimer.h"
 #include "AFQMC/Utilities/myTimer.h"
@@ -118,6 +119,10 @@ namespace afqmc
     print_stacktrace;
     throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
   }   
+
+  using device_memory_resource = device::memory_resource;
+  template<class T> using device_constructor = device::constructor<T>;
+
 #else
   template<class T>  using device_allocator = std::allocator<T>;
   template<class T>  using device_ptr = T*;
@@ -136,7 +141,13 @@ namespace afqmc
   }  
   template<class T> device_ptr<T> make_device_ptr(shm::shm_ptr_with_raw_ptr_dispatch<T> p) 
   { return device_ptr<T>{to_address(p)}; }
+
+  using device_memory_resource = boost::multi::memory::resource<>; 
+  template<class T>  using device_constructor = device_allocator<T>; 
+
 #endif
+
+  using host_memory_resource = boost::multi::memory::resource<>; 
 
   // new types
   using SpCType_shm_csr_matrix = ma::sparse::csr_matrix<SPComplexType,int,std::size_t,

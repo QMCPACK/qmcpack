@@ -29,6 +29,7 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "mpi3/shm/mutex.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 

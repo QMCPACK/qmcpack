@@ -21,7 +21,7 @@ SET (AFQMC_SRCS
   Hamiltonians/HamiltonianFactory_Helper.cpp
   Hamiltonians/HamiltonianFactory.cpp
   Hamiltonians/THCHamiltonian.cpp
-  Memory/buffer_handler.cpp
+  Memory/buffer_allocators.cpp
   )
 
 IF(ENABLE_CUDA)

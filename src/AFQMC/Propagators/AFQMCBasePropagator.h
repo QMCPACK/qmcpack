@@ -27,6 +27,7 @@
 #include "Utilities/RandomGenerator.h"
 
 #include "AFQMC/config.h"
+#include "AFQMC/Memory/buffer_allocators.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Propagators/generate1BodyPropagator.hpp"
@@ -114,6 +115,9 @@ class AFQMCBasePropagator: public AFQMCInfo
       int nextra = steps%fix_bias;
       for(int i=0; i<nblk; i++) {
         step(fix_bias,wset,E1,dt);
+        // MAM: I need to update buffer generators here, otherwise the
+        //      first block would be quite slow
+        update_buffer_generators();
       }
       if(nextra>0) 
         step(nextra,wset,E1,dt);

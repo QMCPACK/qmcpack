@@ -31,6 +31,7 @@ using qmcplusplus::afqmc::to_address;
 
 template<class T> struct device_allocator;
 template<class T> struct device_pointer;
+struct memory_resource;
 
 // no const for now
 template<class T>
@@ -235,12 +236,25 @@ struct device_pointer<void>: base_device_pointer {
   using element_type = T;
   using value_type = void;
   void* impl_;
+  friend class memory_resource;
   device_pointer(std::nullptr_t = nullptr): impl_(nullptr){}
   device_pointer(device_pointer const& other) = default;
+  template<typename Q>
+  device_pointer(device_pointer<Q> const& ptr):impl_(reinterpret_cast<T*>(ptr.impl_)) {}
   device_pointer& operator=(device_pointer const& other) = default;
   device_pointer& operator=(std::nullptr_t){impl_=nullptr; return *this;}
   bool operator==(std::nullptr_t) const{return (impl_==nullptr);}
   bool operator!=(std::nullptr_t) const{return not operator==(nullptr);}
+  explicit operator bool() const{return (impl_!=nullptr);}
+  bool operator==(device_pointer const& other) const{ return impl_==other.impl_; }
+  bool operator!=(device_pointer const& other) const{ return not (*this == other); }
+  bool operator<=(device_pointer<T> const& other) const{
+    return impl_ <= other.impl_;
+  }
+
+  protected:
+  device_pointer(T* impl__):
+                         impl_(impl__) {}
 };
 
 // this class is not safe, since it allows construction of a gpu_ptr from a raw ptr
@@ -265,7 +279,7 @@ struct device_pointer: base_device_pointer{
   device_pointer() = default;
   device_pointer(std::nullptr_t): impl_(nullptr){}  
   template<typename Q>
-  device_pointer(device_pointer<Q> const& ptr):impl_(ptr.impl_) {}
+  device_pointer(device_pointer<Q> const& ptr):impl_(reinterpret_cast<T*>(ptr.impl_)) {}
   reference operator*() const{ return reference(device_pointer{impl_}); }
   reference operator[](std::ptrdiff_t n) const { return reference(device_pointer{impl_ + n}); }
 // is this correct? should I just delete it?
@@ -357,6 +371,51 @@ template<class T> struct device_allocator{
 //  }
 };
 
+struct memory_resource{
+
+  using pointer = device_pointer<void>;
+
+  device_pointer<void> allocate(std::size_t size, std::size_t alignment = alignof(std::max_align_t))
+  {
+    if(size == 0) return device_pointer<void>{};
+    void* p;
+    arch::malloc(&p,size);
+    return device_pointer<void>{p};
+  }
+
+  void deallocate(device_pointer<void> ptr, std::size_t = alignof(std::max_align_t))
+  {
+     arch::free(ptr.impl_);
+  }   
+
+  bool operator==(memory_resource const& other) const{
+    return true;
+  }
+
+  bool operator!=(memory_resource const& other) const{
+    return false;
+  }
+
+};
+
+// finish later
+template<class T>
+struct constructor{
+  template<class U> struct rebind{typedef constructor<U> other;};
+  using value_type = T;
+  using pointer = device_pointer<T>;
+  using const_pointer = device_pointer<T const>;
+  using void_pointer = device_pointer<void>;
+  using const_void_pointer = device_pointer<void const>;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+
+  template<class U, class... Args>
+  void construct(U p, Args&&... args) {}
+
+  template< class U >
+  void destroy(U p) {}
+};
 
 /* Don't know how to implement this on the kernel side, without propagating the 
  * cuda code upstream due to the template needed to pass the UnaryOperator

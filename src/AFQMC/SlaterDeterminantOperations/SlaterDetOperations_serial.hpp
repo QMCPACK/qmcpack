@@ -33,25 +33,22 @@ namespace afqmc
 {
 
 // Implementation that doesn't use shared memory
-// This version is designed for GPU and/or threading with OpenMP
-template<class AllocType> 
-class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType> 
+// This version is designed for GPU and/or threading with OpenMP/libraries 
+template<class Type, class buffer_generator_type> 
+class SlaterDetOperations_serial : 
+        public SlaterDetOperations_base<Type,buffer_generator_type> 
 {
   public:
 
     using communicator = boost::mpi3::shared_communicator;
-    using Base = SlaterDetOperations_base<AllocType>; 
-    using Alloc = typename Base::Alloc;
-    using T = typename Base::T;
-    using pointer = typename Base::pointer;
-    using const_pointer = typename Base::const_pointer;
-    using IAlloc = typename Base::IAlloc;
+    using Base = SlaterDetOperations_base<Type,buffer_generator_type>;
 
+    using T = typename Base::T;
+    using buffer_type_T = typename Base::buffer_type_T;
     using IVector = typename Base::IVector;
     using TVector = typename Base::TVector;
     using TMatrix = typename Base::TMatrix;
-    using TMatrix_ref = typename Base::TMatrix_ref;
-    using TTensor_ref = typename Base::TTensor_ref;
+    using TTensor = boost::multi::static_array<T,3,buffer_type_T>;
 
     using Base::MixedDensityMatrix;
     using Base::MixedDensityMatrixForWoodbury;
@@ -63,13 +60,13 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
     using Base::Propagate;
     using Base::Orthogonalize;
 
-    SlaterDetOperations_serial(AllocType alloc_={}):
-      SlaterDetOperations_base<AllocType>(alloc_)
+    SlaterDetOperations_serial(buffer_generator_type* bgen):
+      SlaterDetOperations_base<Type,buffer_generator_type>(bgen)
     {
     }
 
-    SlaterDetOperations_serial(int NMO, int NAEA, AllocType alloc_={}):
-      SlaterDetOperations_base<AllocType>(NMO,NAEA,alloc_)
+    SlaterDetOperations_serial(int NMO, int NAEA, buffer_generator_type* bgen):
+      SlaterDetOperations_base<Type,buffer_generator_type>(NMO,NAEA,bgen)
     {
     }
 
@@ -132,12 +129,9 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       int nbatch = Ai.size();
       int NMO = (*Ai[0]).size(0);
       int NAEA =(* Ai[0]).size(1);
-//      for(int i=0; i<Ai.size(); ++i)
-//        Propagate(Ai[i],P1,V[i],order);
-      set_buffer(nbatch*3*NMO*NAEA);
-      TTensor_ref TMN(TBuff.data(), {nbatch,NMO,NAEA});
-      TTensor_ref T1(TMN.data()+TMN.num_elements(), {nbatch,NMO,NAEA});
-      TTensor_ref T2(T1.data()+T1.num_elements(), {nbatch,NMO,NAEA});
+      TTensor TMN({nbatch,NMO,NAEA},buffer_generator->template get_allocator<T>());
+      TTensor T1({nbatch,NMO,NAEA},buffer_generator->template get_allocator<T>());
+      TTensor T2({nbatch,NMO,NAEA},buffer_generator->template get_allocator<T>());
       using ma::T;
       using ma::H;
       // could be batched when csrmm is batched  
@@ -180,11 +174,9 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       if(compact) {
         n1=n2=n3=0;
       }
-      set_buffer(nbatch*NAEA*NAEA + n1*n2*n3);
-      TTensor_ref TNN3D(TBuff.origin(), {nbatch,NAEA,NAEA});
-      TTensor_ref TNM3D(TBuff.origin()+TNN3D.num_elements(), {n1,n2,n3});
-      if(IWORK.num_elements() < nbatch*(NMO+1))
-        IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
+      TTensor TNN3D({nbatch,NAEA,NAEA},buffer_generator->template get_allocator<T>());
+      TTensor TNM3D({n1,n2,n3},buffer_generator->template get_allocator<T>());
+      IVector IWORK(iextensions<1u>{nbatch*(NMO+1)},buffer_generator->template get_allocator<int>());
       SlaterDeterminantOperations::batched::MixedDensityMatrix(hermA,Bi,
                 std::forward<MatC>(C),LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,compact,herm);
     }
@@ -208,11 +200,9 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       if(compact) {
         n1=n2=n3=0;
       }
-      set_buffer(nbatch*NAEA*NAEA + n1*n2*n3);
-      TTensor_ref TNN3D(TBuff.origin(), {nbatch,NAEA,NAEA});
-      TTensor_ref TNM3D(TBuff.origin()+TNN3D.num_elements(), {n1,n2,n3});
-      if(IWORK.num_elements() < nbatch*(NMO+1))
-        IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
+      TTensor TNN3D({nbatch,NAEA,NAEA},buffer_generator->template get_allocator<T>());
+      TTensor TNM3D({n1,n2,n3},buffer_generator->template get_allocator<T>());
+      IVector IWORK(iextensions<1u>{nbatch*(NMO+1)},buffer_generator->template get_allocator<int>());
       SlaterDeterminantOperations::batched::DensityMatrices(Left,Right,G,
                 LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,compact,herm);
     }
@@ -229,10 +219,8 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       int NAEA = (herm?(*hermA[0]).size(0):(*hermA[0]).size(1));
       int nbatch = Bi.size();
       assert(ovlp.size() == nbatch);
-      set_buffer(nbatch*NAEA*NAEA);
-      TTensor_ref TNN3D(TBuff.origin(), {nbatch,NAEA,NAEA});
-      if(IWORK.num_elements() < nbatch*(NMO+1))
-        IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
+      TTensor TNN3D({nbatch,NAEA,NAEA},buffer_generator->template get_allocator<T>());
+      IVector IWORK(iextensions<1u>{nbatch*(NMO+1)},buffer_generator->template get_allocator<int>());
       SlaterDeterminantOperations::batched::Overlap(hermA,Bi,LogOverlapFactor,
                 std::forward<TVec>(ovlp),TNN3D,IWORK,herm);
     }
@@ -246,15 +234,12 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       int NMO = (*Ai[0]).size(0);
       int NAEA = (*Ai[0]).size(1);
       int nbatch = Ai.size();
-      set_buffer(nbatch*(NMO*NAEA + 2*NMO));
-      TTensor_ref AT(TBuff.origin(), {nbatch,NAEA,NMO});
-      TMatrix_ref T_(AT.origin() + AT.num_elements(), {nbatch,NMO});
-      TMatrix_ref scl(T_.origin() + T_.num_elements(), {nbatch,NMO});
-      if(IWORK.num_elements() < nbatch*(NMO+1))
-        IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
+      TTensor AT({nbatch,NAEA,NMO},buffer_generator->template get_allocator<T>());
+      TMatrix T_({nbatch,NMO},buffer_generator->template get_allocator<T>());
+      TMatrix scl({nbatch,NMO},buffer_generator->template get_allocator<T>());
       int sz = ma::gqr_optimal_workspace_size(AT[0]);
-      if(WORK.num_elements() < nbatch*sz)
-        WORK.reextent(iextensions<1u>{nbatch*sz});
+      TVector WORK(iextensions<1u>{nbatch*sz},buffer_generator->template get_allocator<T>());
+      IVector IWORK(iextensions<1u>{nbatch*(NMO+1)},buffer_generator->template get_allocator<int>());
       for(int i=0; i<nbatch; i++)
         ma::transpose(*Ai[i],AT[i]);
       // careful, expects fortran order
@@ -283,15 +268,12 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
       int NMO = (*Ai[0]).size(0);
       int NAEA = (*Ai[0]).size(1);
       int nbatch = Ai.size();
-      set_buffer(nbatch*(NMO*NAEA + 2*NMO));
-      TTensor_ref AT(TBuff.origin(), {nbatch,NAEA,NMO});
-      TMatrix_ref T_(AT.origin() + AT.num_elements(), {nbatch,NMO});
-      TMatrix_ref scl(T_.origin() + T_.num_elements(), {nbatch,NMO});
-      if(IWORK.num_elements() < nbatch*(NMO+1))
-        IWORK.reextent(iextensions<1u>{nbatch*(NMO+1)});
+      TTensor AT({nbatch,NAEA,NMO},buffer_generator->template get_allocator<T>());
+      TMatrix T_({nbatch,NMO},buffer_generator->template get_allocator<T>());
+      TMatrix scl({nbatch,NMO},buffer_generator->template get_allocator<T>());
       int sz = ma::gqr_optimal_workspace_size(AT[0]);
-      if(WORK.num_elements() < nbatch*sz)
-        WORK.reextent(iextensions<1u>{nbatch*sz});
+      TVector WORK(iextensions<1u>{nbatch*sz},buffer_generator->template get_allocator<T>());
+      IVector IWORK(iextensions<1u>{nbatch*(NMO+1)},buffer_generator->template get_allocator<int>());
       for(int i=0; i<nbatch; i++)
         ma::transpose(*Ai[i],AT[i]);
       // careful, expects fortran order
@@ -314,10 +296,8 @@ class SlaterDetOperations_serial : public SlaterDetOperations_base<AllocType>
 
   protected:
 
-    using Base::IWORK;
-    using Base::WORK;
-    using Base::TBuff;
-    using Base::set_buffer;
+    using Base::buffer_generator;
+    using Base::work_size;
 
 };
 

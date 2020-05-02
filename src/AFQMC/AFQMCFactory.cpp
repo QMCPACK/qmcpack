@@ -28,6 +28,7 @@
 #include "AFQMC/Propagators/PropagatorFactory.h"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
 #include "AFQMC/Drivers/DriverFactory.h"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 #include"AFQMC/Utilities/myTimer.h"
 
@@ -87,6 +88,11 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
     }
     cur=cur->next;
   }
+
+  // eventually read an inital buffer size from input
+  // they are initialized now with 10 MBs
+  // host_buffer_type->resize(buffer_size);
+  // device_buffer_type->resize(buffer_size);
 
   // first look only for AFQMCInfo
   // Careful here, since all factories have a reference to this map

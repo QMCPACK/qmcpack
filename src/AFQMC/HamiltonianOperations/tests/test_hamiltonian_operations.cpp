@@ -39,6 +39,7 @@
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Utilities/test_utils.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/Numerics/ma_blas.hpp"
@@ -58,6 +59,9 @@ namespace qmcplusplus
 
 using namespace afqmc;
 
+namespace afqmc {
+extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
+}
 
 template<class Alloc>
 void ham_ops_basic_serial(boost::mpi3::communicator & world)
@@ -168,9 +172,9 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
 
     // Calculates Overlap, G
 // NOTE: Make small factory routine!
-    //SlaterDetOperations SDet( SlaterDetOperations_serial<Alloc>(NMO,NAEA) );
 #ifdef ENABLE_CUDA
-    auto SDet( SlaterDetOperations_serial<Alloc>(NMO,NAEA) );
+    auto SDet( SlaterDetOperations_serial<ComplexType,device_allocator_generator_type>(
+                NMO,NAEA,afqmc::device_buffer_generator.get()) );
 #else
     auto SDet( SlaterDetOperations_shared<ComplexType>(NMO,NAEA) );
 #endif
