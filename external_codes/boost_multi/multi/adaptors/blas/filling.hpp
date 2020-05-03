@@ -1,7 +1,7 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&&c++ -Wall -D_TEST_MULTI_ADAPTORS_BLAS_FILLING $0.cpp -o $0x `pkg-config --cflags --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x $0.cpp;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2019
+// © Alfredo A. Correa 2019-2020
 
 #ifndef MULTI_ADAPTORS_BLAS_FILLING_HPP
 #define MULTI_ADAPTORS_BLAS_FILLING_HPP
@@ -14,12 +14,19 @@ namespace boost{
 namespace multi{
 namespace blas{
 
-enum class uplo  : char{L='L', U='U'};
+//enum class uplo  : char{L='L', U='U'};
+//enum uplo : char{
+//	L = 'U',
+//	U = 'L'
+//};
 
 enum class filling : char{
-	lower = static_cast<char>(uplo::U),
-	upper = static_cast<char>(uplo::L)
+	lower = 'U', //static_cast<char>(uplo::U),
+	upper = 'L'  //static_cast<char>(uplo::L)
 };
+
+static constexpr filling U = filling::upper;
+static constexpr filling L = filling::lower;
 
 filling flip(filling side){
 	switch(side){
@@ -31,7 +38,7 @@ filling flip(filling side){
 filling operator-(filling side){return flip(side);}
 filling operator+(filling side){return side;}
 
-template<class A2D>
+template<class A2D, std::enable_if_t<is_conjugated<A2D>{}, int> =0>
 filling detect_triangular_aux(A2D const& A, std::false_type){
 	{
 		for(auto i = size(A); i != 0; --i){
@@ -48,7 +55,12 @@ filling detect_triangular_aux(A2D const& A, std::false_type){
 }
 
 template<class A2D>
-filling detect_triangular_aux(A2D const& A, std::true_type);
+filling detect_triangular(A2D const& A);
+
+template<class A2D, std::enable_if_t<is_conjugated<A2D>{}, int> =0>
+filling detect_triangular_aux(A2D const& A){
+	return flip(detect_triangular(hermitized(A)));
+}
 
 template<class A2D>
 filling detect_triangular(A2D const& A){
@@ -69,20 +81,15 @@ filling detect_triangular(A2D const& A){
 	}
 	return filling::lower;
 #else
-	return detect_triangular_aux(A, is_conjugated_t<A2D>{});//std::integral_constant<bool, not is_hermitized<A2D>()>{});
+	return detect_triangular_aux(A);//, is_conjugated<A2D>{});//std::integral_constant<bool, not is_hermitized<A2D>()>{});
 #endif
-}
-
-template<class A2D>
-filling detect_triangular_aux(A2D const& A, std::true_type){
-	return flip(detect_triangular(hermitized(A)));
 }
 
 }}
 
 }
 
-#if _TEST_MULTI_ADAPTORS_BLAS_FILLING
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_FILLING
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi adaptors side"
 #define BOOST_TEST_DYN_LINK
@@ -113,8 +120,6 @@ decltype(auto) print(M const& C){
 namespace multi = boost::multi;
 using complex = std::complex<double>;
 auto const I = complex(0., 1.);
-
-template<class T> void what();
 
 BOOST_AUTO_TEST_CASE(multi_adaptors_blas_side){
 	return;

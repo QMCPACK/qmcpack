@@ -47,7 +47,7 @@ public:
 	allocator& operator=(allocator const&) = default;
 	bool operator==(allocator const& o) const{return mp_ == o.mp_;}
 	bool operator!=(allocator const& o) const{return mp_ != o.mp_;}
-	using void_pointer = void*;//typename std::pointer_traits<typename Memory::pointer>::template rebind<void>;
+	using void_pointer = typename std::pointer_traits<decltype(std::declval<memory_type*>()->allocate(0, 0))>::template rebind<void>;
 	pointer allocate(size_type n){
 		return static_cast<pointer>(static_cast<void_pointer>(mp_->allocate(n*sizeof(value_type), alignof(T))));
 	}
