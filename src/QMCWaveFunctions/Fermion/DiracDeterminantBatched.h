@@ -228,6 +228,9 @@ private:
 
   /// Resize multi walker scratch spaces
   void resizeMultiWalkerScratch(int norb, int nw);
+
+protected:
+  int ndelay;
 };
 
 extern template class DiracDeterminantBatched<>;

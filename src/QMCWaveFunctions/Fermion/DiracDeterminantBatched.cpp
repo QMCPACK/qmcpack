@@ -24,7 +24,7 @@ namespace qmcplusplus
  */
 template<typename DET_ENGINE_TYPE>
 DiracDeterminantBatched<DET_ENGINE_TYPE>::DiracDeterminantBatched(SPOSetPtr const spos, int first)
-    : DiracDeterminantBase(spos, first)
+    : DiracDeterminantBase(spos, first), ndelay(1)
 {
   ClassName = "DiracDeterminantBatched";
 }
@@ -37,6 +37,7 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::set(int first, int nel, int delay)
 {
   FirstIndex = first;
+  ndelay     = delay;
 
   resize(nel, nel);
 
@@ -73,6 +74,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
   NumPtcls    = nel;
   NumOrbitals = norb;
 
+  det_engine_.resize(norb, ndelay);
+
   psiV.resize(NumOrbitals);
   psiV_host_view.attachReference(psiV.data(), NumOrbitals);
   dpsiV.resize(NumOrbitals);
@@ -102,6 +105,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVector<WaveF
   const int nw = WFC_list.size();
   std::vector<const ValueType*> invRow_list(nw, nullptr);
   std::vector<const ValueType*> dpsiM_row_list(nw, nullptr);
+  RefVector<DET_ENGINE_TYPE> engine_list;
+  engine_list.reserve(nw);
 
   const int WorkingIndex = iat - FirstIndex;
   for (int iw = 0; iw < nw; iw++)
@@ -109,9 +114,10 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVector<WaveF
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     invRow_list[iw] = det.psiMinv_dev_ptr + psiMinv.cols() * WorkingIndex;
     dpsiM_row_list[iw] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
+    engine_list.push_back(det.det_engine_);
   }
 
-  det_engine_.mw_evalGrad(invRow_list, dpsiM_row_list, NumOrbitals, grad_now);
+  det_engine_.mw_evalGrad(engine_list, invRow_list, dpsiM_row_list, NumOrbitals, grad_now);
 
   RatioTimer.stop();
 }
@@ -741,7 +747,7 @@ template<typename DET_ENGINE_TYPE>
 DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYPE>::makeCopy(SPOSetPtr spo) const
 {
   DiracDeterminantBatched<DET_ENGINE_TYPE>* dclone = new DiracDeterminantBatched<DET_ENGINE_TYPE>(spo);
-  dclone->set(FirstIndex, LastIndex - FirstIndex);
+  dclone->set(FirstIndex, LastIndex - FirstIndex, ndelay);
   return dclone;
 }
 

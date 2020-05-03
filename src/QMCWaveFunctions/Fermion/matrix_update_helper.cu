@@ -180,5 +180,52 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
+template<typename T, int COLBS>
+__global__ void copy_n_batched_kernel(const T* const in[],
+                                      const int n,
+                                      T* const out[])
+{
+  const int iw                 = blockIdx.x;
+  const T* __restrict__ in_iw  = in[iw];
+  T* __restrict__ out_iw       = out[iw];
+
+  const int col_id = blockIdx.y * COLBS + threadIdx.x;
+  out_iw[col_id] = in_iw[col_id];
+}
+
+cudaError_t copy_n_batched_cuda(cudaStream_t& hstream,
+                        const float* const in[],
+                        const int n,
+                        float* const out[],
+                        const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 128;
+  const int num_col_blocks = (n + COLBS - 1) / COLBS;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count, num_col_blocks);
+  copy_n_batched_kernel<float, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(in, n, out);
+  return cudaPeekAtLastError();
+}
+
+cudaError_t copy_n_batched_cuda(cudaStream_t& hstream,
+                        const double* const in[],
+                        const int n,
+                        double* const out[],
+                        const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 128;
+  const int num_col_blocks = (n + COLBS - 1) / COLBS;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count, num_col_blocks);
+  copy_n_batched_kernel<double, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(in, n, out);
+  return cudaPeekAtLastError();
+}
+
 } // namespace CUDA
 } // namespace qmcplusplus

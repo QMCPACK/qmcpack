@@ -34,6 +34,8 @@ namespace qmcplusplus
 template<typename T, typename T_FP>
 class MatrixUpdateCUDA
 {
+  using This_t = MatrixUpdateCUDA<T, T_FP>;
+
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
   template<typename DT>
@@ -127,6 +129,12 @@ public:
     cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
   }
 
+  /** resize the internal storage
+   * @param norb number of electrons/orbitals
+   * @param delay, maximum delay 0<delay<=norb
+   */
+  inline void resize(int norb, int delay) { }
+
   /** compute the inverse of the transpose of matrix A
    * @param logdetT orbital value matrix
    * @param Ainv inverse matrix
@@ -141,7 +149,8 @@ public:
   }
 
   template<typename GT>
-  inline void mw_evalGrad(const std::vector<const T*>& invRow_list,
+  inline void mw_evalGrad(const RefVector<This_t>& engines,
+                          const std::vector<const T*>& invRow_list,
                           const std::vector<const T*>& dpsiM_row_list,
                           int norb,
                           std::vector<GT>& grad_now)
