@@ -1,5 +1,5 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&&$CXX -Wall -Wextra -Wpedantic -D_TEST_MULTI_ADAPTORS_BLAS_SCAL $0.cpp -o$0x `pkg-config --cflags --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x $0.cpp;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x `pkg-config --cflags --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 
@@ -33,9 +33,9 @@ auto asum(X1D const& x)
 }}
 }
 
-#if _TEST_MULTI_ADAPTORS_BLAS_SCAL
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_SCAL
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi.BLAS trsm"
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi.BLAS asum"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 #include<boost/test/floating_point_comparison.hpp>
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_asum_double){
 		{-5.,  6.,  -7.,  8.},
 		{9., 10., 11., 12.}
 	};
-	BOOST_REQUIRE(asum(A[1]) == std::accumulate(begin(A[1]), end(A[1]), 0., [](auto&& a, auto&& b){return a+abs(b);}));
+	BOOST_REQUIRE(asum(A[1]) == std::accumulate(begin(A[1]), end(A[1]), 0., [](auto&& a, auto&& b){return a+std::abs(b);}));
 }
 
 using complex = std::complex<double>;
@@ -71,11 +71,11 @@ BOOST_AUTO_TEST_CASE(multi_blas_asum_complex){
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_asum_double_carray){
-	double A[3][4] = {
-		{1.,  2.,  3.,  4.},
-		{-5.,  6.,  -7.,  8.},
-		{9., 10., 11., 12.}
-	}; (void)A;
+//	double A[3][4] = {
+//		{1.,  2.,  3.,  4.},
+//		{-5.,  6.,  -7.,  8.},
+//		{9., 10., 11., 12.}
+//	}; (void)A;
 //	using std::begin; using std::end;
 //	BOOST_REQUIRE(asum(A[1]) == std::accumulate(begin(A[1]), end(A[1]), 0., [](auto&& a, auto&& b){return a+abs(b);}));
 }

@@ -1,6 +1,8 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&& c++ -std=c++17 -Wall -Wextra -Wfatal-errors -D_TEST_BOOST_MULTI_MEMORY_ALLOCATOR $0.cpp -o $0x && $0x && rm $0x $0.cpp; exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x&&$0x&&rm $0x;exit
 #endif
+// © Alfredo A. Correa 2019-2020
+
 #ifndef BOOST_MULTI_MEMORY_ALLOCATOR_HPP
 #define BOOST_MULTI_MEMORY_ALLOCATOR_HPP
 
@@ -17,7 +19,7 @@ namespace multi{
 namespace memory{
 
 template<class T, class Memory
-#if(__cpp_lib_memory_resource>=201603L)
+#if defined(__cpp_lib_memory_resource) and (__cpp_lib_memory_resource>=201603L)
 	= std::pmr::memory_resource //= std::allocator<std::byte>
 #endif
 	, typename Constructor = std::allocator<T>
@@ -25,7 +27,7 @@ template<class T, class Memory
 class allocator{
 	using memory_type = Memory;
 	memory_type* mp_ 
-#if(__cpp_lib_memory_resource>=201603L)
+#if defined(__cpp_lib_memory_resource) and (__cpp_lib_memory_resource>=201603L)
 		= std::pmr::get_default_resource()
 #endif
 	;
@@ -39,12 +41,13 @@ public:
 //	static_assert( std::is_same<pointer, typename constructor_type::pointer>{}, 
 //		"incompatible pointer types");
 	allocator() = default;
-	allocator(memory_type* mp) : mp_{mp}{}
-	allocator(allocator const& o) : mp_{o.mp_}, ctor_{o.ctor_}{}
+	allocator(memory_type* mp, constructor_type const& ctor = {}) : mp_{mp}, ctor_{ctor}{}
+	allocator(constructor_type const& ctor) : mp_{}, ctor_{ctor}{}
+	allocator(allocator const& o) = default;//: mp_{o.mp_}, ctor_{o.ctor_}{}
 	allocator& operator=(allocator const&) = default;
 	bool operator==(allocator const& o) const{return mp_ == o.mp_;}
 	bool operator!=(allocator const& o) const{return mp_ != o.mp_;}
-	using void_pointer = void*;//typename std::pointer_traits<typename Memory::pointer>::template rebind<void>;
+	using void_pointer = typename std::pointer_traits<decltype(std::declval<memory_type*>()->allocate(0, 0))>::template rebind<void>;
 	pointer allocate(size_type n){
 		return static_cast<pointer>(static_cast<void_pointer>(mp_->allocate(n*sizeof(value_type), alignof(T))));
 	}
@@ -62,7 +65,7 @@ public:
 
 }}}
 
-#ifdef _TEST_BOOST_MULTI_MEMORY_ALLOCATOR
+#if not __INCLUDE_LEVEL__ // _TEST_BOOST_MULTI_MEMORY_ALLOCATOR
 
 #include "../memory/monotonic.hpp"
 #include<boost/align/is_aligned.hpp>

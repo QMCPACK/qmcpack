@@ -1,5 +1,5 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&&c++ -Wall -D_TEST_MULTI_ADAPTORS_BLAS_SIDE $0.cpp -o $0x `pkg-config --cflags --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x $0.cpp;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019
 
@@ -34,9 +34,9 @@ side swap(side s){
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-#if _TEST_MULTI_ADAPTORS_BLAS_SIDE
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_SIDE
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi adaptors side"
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS adaptors side"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
@@ -63,10 +63,7 @@ decltype(auto) print(M const& C){
 }
 
 namespace multi = boost::multi;
-using complex = std::complex<double>;
-auto const I = complex(0., 1.);
-
-template<class T> void what();
+using complex = std::complex<double>; constexpr complex I{0, 1};
 
 BOOST_AUTO_TEST_CASE(multi_adaptors_blas_side){
 	return;

@@ -1,10 +1,10 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&&$CXX -Wall -Wextra `#-Wfatal-errors` -D_TEST_MULTI_MEMORY_FALLBACK $0.cpp -o$0x&& $0x&&rm $0x $0.cpp;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x&&$0x&&rm $0x;exit
 #endif
 #ifndef MULTI_MEMORY_FALLBACK_HPP
 #define MULTI_MEMORY_FALLBACK_HPP
 
-#if(__cpp_lib_memory_resource>=201603L)
+#if defined(__cpp_lib_memory_resource) and (__cpp_lib_memory_resource>=201603L)
 #include<memory_resource>
 #endif
 
@@ -35,7 +35,7 @@ inline auto get_default_resource(){
 }
 
 template<class MemoryResource1, class MemoryResource2
-#if(__cpp_lib_memory_resource>=201603L)
+#if defined(__cpp_lib_memory_resource) and (__cpp_lib_memory_resource>=201603L)
 	= std::pmr::memory_resource
 #else
 	= memory::resource<>
@@ -77,7 +77,7 @@ using fallback_allocator = memory::allocator<T, fallback<MR1, MR2>>;//, alignof(
 
 }}}
 
-#if _TEST_MULTI_MEMORY_FALLBACK
+#if not __INCLUDE_LEVEL__ //  _TEST_MULTI_MEMORY_FALLBACK
 
 #include "../../multi/array.hpp"
 #include "../memory/stack.hpp"
@@ -149,7 +149,7 @@ int main(){
 }
 cout <<"----------"<< std::endl;
 {
-	memory::fallback<memory::stack<char*>> f;//({buffer.data(), (std::ptrdiff_t)buffer.size()});
+	memory::fallback<memory::stack<char*>> f;//({buffer.data(), (std::ptrdiff_t)buffer.size()}); // TODO error in nvcc
 	for(int i = 0; i != 3; ++i){
 		std::vector<char> buffer(f.max_needed());
 		f = {{buffer.data(), (std::ptrdiff_t)buffer.size()}};
