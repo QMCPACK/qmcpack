@@ -25,8 +25,10 @@ __global__ void gemvT_batched_kernel(const int m,
                                      const T* const A[],
                                      const int lda,
                                      const T* const x[],
+                                     const int incx,
                                      const T* __restrict__ beta,
-                                     T* const y[])
+                                     T* const y[],
+                                     const int incy)
 {
   static_assert(ROWBS <= COLBS, "Row block size must not be larger than column block size!");
 
@@ -48,7 +50,7 @@ __global__ void gemvT_batched_kernel(const int m,
   {
     const int col_id = ib * COLBS + tid;
     if (col_id < n)
-      x_part[tid] = x_iw[col_id];
+      x_part[tid] = x_iw[col_id * incx];
     for (int row_id = row_begin; row_id < row_begin + row_max; row_id++)
       if (col_id < n)
         sum[row_id - row_begin][tid] += x_part[tid] * A_iw[row_id * lda + col_id];
@@ -65,7 +67,32 @@ __global__ void gemvT_batched_kernel(const int m,
   __syncthreads();
   T* __restrict__ y_iw = y[blockIdx.x];
   if (tid < row_max)
-    y_iw[row_begin + tid] = alpha[blockIdx.x] * sum[tid][0] + beta[blockIdx.x] * y_iw[row_begin + tid];
+    y_iw[(row_begin + tid) * incy] = alpha[blockIdx.x] * sum[tid][0] + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
+}
+
+template<typename T, int ROWBS>
+__global__ void gemvN_batched_kernel(const int m,
+                                     const int n,
+                                     const T* __restrict__ alpha,
+                                     const T* const A[],
+                                     const int lda,
+                                     const T* const x[],
+                                     const int incx,
+                                     const T* __restrict__ beta,
+                                     T* const y[],
+                                     const int incy)
+{
+  const T* __restrict__ A_iw = A[blockIdx.x];
+  const T* __restrict__ x_iw = x[blockIdx.x];
+  T* __restrict__ y_iw = y[blockIdx.x];
+
+  const int tid = threadIdx.x;
+  const int row_begin = blockIdx.y * ROWBS;
+
+  T sum(0);
+  for (int col_id = 0; col_id < n; col_id++)
+    sum += A_iw[col_id * lda + row_begin + tid] * x_iw[col_id * incx];
+  y_iw[(row_begin + tid) * incy] = sum;
 }
 
 template<typename T>
@@ -83,26 +110,27 @@ cuBLAS_inhouse_status gemv_batched_impl(cuBLAS_inhouse_handle& handle,
                                         const int incy,
                                         const int batch_count)
 {
-  if (batch_count == 0)
+  if (batch_count == 0 || m == 0 || n == 0)
     return cudaSuccess;
 
   if (trans == 'T')
   {
-    if (incx != 1 || incy != 1)
-      throw std::runtime_error("incx !=1 or incy != 1 are not implemented in cuBLAS_inhouse::gemv_batched_impl!");
-
     const int ROWBS          = 4;
     const int COLBS          = 64;
     const int num_row_blocks = (m + ROWBS - 1) / ROWBS;
     dim3 dimBlock(COLBS);
     dim3 dimGrid(batch_count, num_row_blocks);
-    gemvT_batched_kernel<T, ROWBS, COLBS><<<dimGrid, dimBlock, 0, handle>>>(m, n, alpha, A, lda, x, beta, y);
-    return cudaPeekAtLastError();
+    gemvT_batched_kernel<T, ROWBS, COLBS><<<dimGrid, dimBlock, 0, handle>>>(m, n, alpha, A, lda, x, incx, beta, y, incy);
   }
   else
   {
-    throw std::runtime_error("trans = 'N' not implemented in gemv_batched_impl!");
+    const int ROWBS          = 64;
+    const int num_row_blocks = (m + ROWBS - 1) / ROWBS;
+    dim3 dimBlock(ROWBS);
+    dim3 dimGrid(batch_count, num_row_blocks);
+    gemvN_batched_kernel<T, ROWBS><<<dimGrid, dimBlock, 0, handle>>>(m, n, alpha, A, lda, x, incx, beta, y, incy);
   }
+  return cudaPeekAtLastError();
 }
 
 cuBLAS_inhouse_status gemv_batched(cuBLAS_inhouse_handle& handle,
