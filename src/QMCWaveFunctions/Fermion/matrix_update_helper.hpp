@@ -68,20 +68,6 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
                                double* const grads_now,
                                const int batch_count);
 
-/** batched device memory copy
- */
-cudaError_t copy_n_batched_cuda(cudaStream_t& hstream,
-                        const float* const in[],
-                        const int n,
-                        float* const out[],
-                        const int batch_count);
-
-cudaError_t copy_n_batched_cuda(cudaStream_t& hstream,
-                        const double* const in[],
-                        const int n,
-                        double* const out[],
-                        const int batch_count);
-
 } // namespace CUDA
 } // namespace qmcplusplus
 #endif

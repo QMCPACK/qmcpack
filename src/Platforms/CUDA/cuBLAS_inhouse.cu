@@ -321,5 +321,88 @@ cuBLAS_inhouse_status ger_batched(cuBLAS_inhouse_handle& handle,
   //return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
   return cudaSuccess;
 }
+
+template<typename T, int COLBS>
+__global__ void copy_batched_kernel(const int n,
+                                    const T* const in[],
+                                    T* const out[])
+{
+  const int iw                 = blockIdx.x;
+  const T* __restrict__ in_iw  = in[iw];
+  T* __restrict__ out_iw       = out[iw];
+
+  const int col_id = blockIdx.y * COLBS + threadIdx.x;
+  out_iw[col_id] = in_iw[col_id];
+}
+
+template<typename T>
+cuBLAS_inhouse_status copy_batched_impl(cudaStream_t& hstream,
+                                   const int n,
+                                   const T* const in[],
+                                   const int incx,
+                                   T* const out[],
+                                   const int incy,
+                                   const int batch_count)
+{
+  if (batch_count == 0 || n == 0)
+    return cudaSuccess;
+
+  if (incx != 1 || incy != 1)
+    throw std::runtime_error("incx !=1 or incy != 1 are not implemented in cuBLAS_inhouse::copy_batched_impl!");
+
+  const int COLBS = 128;
+  const int num_col_blocks = (n + COLBS - 1) / COLBS;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count, num_col_blocks);
+  copy_batched_kernel<T, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(n, in, out);
+  return cudaPeekAtLastError();
+}
+
+cuBLAS_inhouse_status copy_batched(cudaStream_t& hstream,
+                                   const int n,
+                                   const float* const in[],
+                                   const int incx,
+                                   float* const out[],
+                                   const int incy,
+                                   const int batch_count)
+{
+  return copy_batched_impl(hstream, n, in, incx, out, incy, batch_count);
+}
+
+cuBLAS_inhouse_status copy_batched(cudaStream_t& hstream,
+                                   const int n,
+                                   const double* const in[],
+                                   const int incx,
+                                   double* const out[],
+                                   const int incy,
+                                   const int batch_count)
+{
+  return copy_batched_impl(hstream, n, in, incx, out, incy, batch_count);
+}
+
+cuBLAS_inhouse_status copy_batched(cudaStream_t& hstream,
+                                   const int n,
+                                   const std::complex<float>* const in[],
+                                   const int incx,
+                                   std::complex<float>* const out[],
+                                   const int incy,
+                                   const int batch_count)
+{
+  //return copy_batched_impl(hstream, n, in, incx, out, incy, batch_count);
+  return cudaSuccess;
+}
+
+cuBLAS_inhouse_status copy_batched(cudaStream_t& hstream,
+                                   const int n,
+                                   const std::complex<double>* const in[],
+                                   const int incx,
+                                   std::complex<double>* const out[],
+                                   const int incy,
+                                   const int batch_count)
+{
+  //return copy_batched_impl(hstream, n, in, incx, out, incy, batch_count);
+  return cudaSuccess;
+}
+
 } // namespace cuBLAS_inhouse
 } // namespace qmcplusplus

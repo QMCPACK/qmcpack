@@ -129,6 +129,38 @@ cuBLAS_inhouse_status ger_batched(cuBLAS_inhouse_handle& handle,
                                   const int lda,
                                   const int batch_count);
 
+cuBLAS_inhouse_status copy_batched(cudaStream_t& hstream,
+                                   const int n,
+                                   const float* const in[],
+                                   const int incx,
+                                   float* const out[],
+                                   const int incy,
+                                   const int batch_count);
+
+cuBLAS_inhouse_status copy_batched(cudaStream_t& hstream,
+                                   const int n,
+                                   const double* const in[],
+                                   const int incx,
+                                   double* const out[],
+                                   const int incy,
+                                   const int batch_count);
+
+cuBLAS_inhouse_status copy_batched(cudaStream_t& hstream,
+                                   const int n,
+                                   const std::complex<float>* const in[],
+                                   const int incx,
+                                   std::complex<float>* const out[],
+                                   const int incy,
+                                   const int batch_count);
+
+cuBLAS_inhouse_status copy_batched(cudaStream_t& hstream,
+                                   const int n,
+                                   const std::complex<double>* const in[],
+                                   const int incx,
+                                   std::complex<double>* const out[],
+                                   const int incy,
+                                   const int batch_count);
+
 } // namespace cuBLAS_inhouse
 
 } // namespace qmcplusplus

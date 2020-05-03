@@ -213,8 +213,8 @@ class MatrixDelayedUpdateCUDA
 
     // save Ainv[rowchanged] to invRow
     //std::copy_n(Ainv[rowchanged], norb, invRow.data());
-    cudaErrorCheck(CUDA::copy_n_batched_cuda(hstream, oldRow_mw_ptr, norb, invRow_mw_ptr, nw),
-                   "CUDAe::copy_n_batched_cuda failed!");
+    cudaErrorCheck(cuBLAS_inhouse::copy_batched(hstream, norb, oldRow_mw_ptr, 1, invRow_mw_ptr, 1, nw),
+                   "cuBLAS_inhouse::copy_batched failed!");
     // multiply V (NxK) Binv(KxK) U(KxN) invRow right to the left
     //BLAS::gemv('T', norb, delay_count, cone, U_gpu.data(), norb, invRow.data(), 1, czero, p_gpu.data(), 1);
     //BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
