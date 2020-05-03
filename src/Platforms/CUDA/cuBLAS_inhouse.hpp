@@ -25,6 +25,8 @@ namespace cuBLAS_inhouse
 typedef cudaError_t cuBLAS_inhouse_status;
 typedef cudaStream_t cuBLAS_inhouse_handle;
 
+// BLAS2
+// Xgemv_batched
 cuBLAS_inhouse_status gemv_batched(cuBLAS_inhouse_handle& handle,
                                    const char trans,
                                    const int m,
@@ -81,6 +83,7 @@ cuBLAS_inhouse_status gemv_batched(cuBLAS_inhouse_handle& handle,
                                    const int incy,
                                    const int batch_count);
 
+// Xger_batched
 cuBLAS_inhouse_status ger_batched(cuBLAS_inhouse_handle& handle,
                                   const int m,
                                   const int n,
@@ -129,6 +132,8 @@ cuBLAS_inhouse_status ger_batched(cuBLAS_inhouse_handle& handle,
                                   const int lda,
                                   const int batch_count);
 
+// BLAS1
+// Xcopy_batched
 cuBLAS_inhouse_status copy_batched(cudaStream_t& hstream,
                                    const int n,
                                    const float* const in[],
@@ -160,6 +165,72 @@ cuBLAS_inhouse_status copy_batched(cudaStream_t& hstream,
                                    std::complex<double>* const out[],
                                    const int incy,
                                    const int batch_count);
+
+// Xscal_batched
+cuBLAS_inhouse_status scal_batched(cudaStream_t& hstream,
+                                   const int n,
+                                   const float* const scale,
+                                   float* const inout[],
+                                   const int inc,
+                                   const int batch_count);
+
+cuBLAS_inhouse_status scal_batched(cudaStream_t& hstream,
+                                   const int n,
+                                   const double* const scale,
+                                   double* const inout[],
+                                   const int inc,
+                                   const int batch_count);
+
+cuBLAS_inhouse_status scal_batched(cudaStream_t& hstream,
+                                   const int n,
+                                   const std::complex<float>* const scale,
+                                   std::complex<float>* const inout[],
+                                   const int inc,
+                                   const int batch_count);
+
+cuBLAS_inhouse_status scal_batched(cudaStream_t& hstream,
+                                   const int n,
+                                   const std::complex<double>* const scale,
+                                   std::complex<double>* const inout[],
+                                   const int inc,
+                                   const int batch_count);
+
+// Xdot_batched
+cuBLAS_inhouse_status dot_batched(cudaStream_t& hstream,
+                                  const int n,
+                                  const float* const x[],
+                                  const int incx,
+                                  const float* const y[],
+                                  const int incy,
+                                  float* const res,
+                                  const int batch_count);
+
+cuBLAS_inhouse_status dot_batched(cudaStream_t& hstream,
+                                  const int n,
+                                  const double* const x[],
+                                  const int incx,
+                                  const double* const y[],
+                                  const int incy,
+                                  double* const res,
+                                  const int batch_count);
+
+cuBLAS_inhouse_status dot_batched(cudaStream_t& hstream,
+                                  const int n,
+                                  const std::complex<float>* const x[],
+                                  const int incx,
+                                  const std::complex<float>* const y[],
+                                  const int incy,
+                                  std::complex<float>* const res,
+                                  const int batch_count);
+
+cuBLAS_inhouse_status dot_batched(cudaStream_t& hstream,
+                                  const int n,
+                                  const std::complex<double>* const x[],
+                                  const int incx,
+                                  const std::complex<double>* const y[],
+                                  const int incy,
+                                  std::complex<double>* const res,
+                                  const int batch_count);
 
 } // namespace cuBLAS_inhouse
 
