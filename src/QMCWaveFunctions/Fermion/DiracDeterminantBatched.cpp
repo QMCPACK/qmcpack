@@ -223,7 +223,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
     if (isAccepted[iw])
       count++;
   const int n_accepted = count;
-  std::vector<ValueType*> psiMinv_dev_ptr_list(n_accepted, nullptr);
+  std::vector<ValueType*> psiMinv_dev_ptr_list(nw, nullptr);
   std::vector<ValueType*> psiM_g_dev_ptr_list(n_accepted, nullptr);
   std::vector<ValueType*> psiM_l_dev_ptr_list(n_accepted, nullptr);
 
@@ -231,9 +231,9 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
   for (int iw = 0, count = 0; iw < nw; iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+    psiMinv_dev_ptr_list[iw] = det.psiMinv_dev_ptr;
     if (isAccepted[iw])
     {
-      psiMinv_dev_ptr_list[count] = det.psiMinv_dev_ptr;
       psiM_g_dev_ptr_list[count] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
       psiM_l_dev_ptr_list[count] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() * 4 + NumOrbitals * WorkingIndex;
       det.LogValue += convertValueToLog(det.curRatio);

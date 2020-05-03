@@ -196,7 +196,7 @@ public:
                            const size_t phi_vgl_stride,
                            const std::vector<T>& ratios)
   {
-    const size_t n_accepted = Ainv_list.size();
+    const size_t n_accepted = psiM_g_list.size();
     if (n_accepted == 0) return;
 
     resize_scratch_arrays(norb, n_accepted);
@@ -208,7 +208,7 @@ public:
     for (int iw = 0, count = 0; iw < isAccepted.size(); iw++)
       if (isAccepted[iw])
       {
-        ptr_buffer[0][count] = Ainv_list[count];
+        ptr_buffer[0][count] = Ainv_list[iw];
         ptr_buffer[1][count] = const_cast<T*>(phi_vgl_v_dev_ptr + norb * iw);
         ptr_buffer[2][count] = temp_dev_ptr + norb * count;
         ptr_buffer[3][count] = rcopy_dev_ptr + norb * count;
