@@ -99,6 +99,9 @@ namespace afqmc
             base_mr.deallocate(static_cast<raw_pointer>(_start),_size);
           _size = new_size+1024;
           _start = static_cast<pointer>(base_mr.allocate(_size,Align));
+          // useful to set to zero in GPUs
+          using std::fill_n;
+          fill_n(_start,_size,0);
           mr_ = fallback{{_start,_size},std::addressof(base_mr)};
         }
       }      
