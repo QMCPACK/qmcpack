@@ -50,7 +50,11 @@ namespace boost{
 namespace serialization{
 	template<class Archive> struct archive_traits;
 	template<class> struct nvp;
-	template<class T> const nvp<T> make_nvp(char const* name, T& t);
+	template<class T> inline const nvp<T> make_nvp(char const* name, T& t)
+#if defined(BOOST_VERSION) and (BOOST_VERSION > 107100)
+noexcept
+#endif
+	;
 	template<class T> class array_wrapper;
 	template<class T, class S> const array_wrapper<T> make_array(T* t, S s);
 //	template<class T> 
@@ -403,11 +407,11 @@ public:
 		typename types::element_const_ptr new_base = typename types::element_ptr(this->base()) + std::ptrdiff_t{Layout::operator()(i)};
 		return typename types::const_reference(this->layout().sub_, new_base);
 	}
-	constexpr typename types::reference       operator[](index i) &&{ assert( this->extension().contains(i) );
+	constexpr typename types::reference       operator[](index i) &&{ assert( this->extension().contains(i) && "out of bounds" );
 		typename types::element_ptr new_base = typename types::element_ptr(this->base()) + std::ptrdiff_t{Layout::operator()(i)};
 		return typename types::reference(this->layout().sub_, new_base);
 	}
-	constexpr typename types::reference       operator[](index i) &{ assert( this->extension().contains(i) );
+	constexpr typename types::reference       operator[](index i) &{ assert( this->extension().contains(i) && "out of bounds" );
 		typename types::element_ptr new_base = typename types::element_ptr(this->base()) + std::ptrdiff_t{Layout::operator()(i)};
 		return typename types::reference(this->layout().sub_, new_base);
 	}
@@ -493,7 +497,8 @@ public:
 	}
 	decltype(auto) rotated() const&{
 		typename types::layout_t new_layout = *this; new_layout.rotate();
-		return basic_const_array{new_layout, types::base_};
+		typename basic_const_array::element_ptr new_base_{types::base_};
+		return basic_const_array{new_layout, new_base_};
 	}
 	friend decltype(auto) rotated(basic_array const&  self){return self.rotated();}
 	friend decltype(auto) rotated(basic_array      && self){return std::move(self).rotated();}
@@ -995,8 +1000,8 @@ struct basic_array<T, dimensionality_type{1}, ElementPtr, Layout> :
 	auto get_allocator() const{return default_allocator_of(basic_array::base());}
 	friend auto get_allocator(basic_array const& self){return self.get_allocator();}
 	using decay_type = array<typename types::element, dimensionality_type{1}, decltype(default_allocator_of(std::declval<ElementPtr>()))>;
-	       decay_type decay(          )&&      {return decay_type{std::move(*this)};}
-	friend decay_type decay(basic_array&& self){return std::move(self).decay();}
+	       decay_type decay()           const&      {return decay_type{*this};}
+	friend decay_type decay(basic_array const& self){return self.decay();}
 	using basic_const_array = basic_array<
 		T, 1, 
 		typename std::pointer_traits<ElementPtr>::template rebind<typename basic_array::element_type const>,
@@ -1469,7 +1474,7 @@ template<class It, class Tuple> array_ref(It, Tuple)->array_ref<typename std::it
 
 #if 1
 template<class T, std::size_t N>
-constexpr auto rotated(const T(&t)[N]) noexcept{
+constexpr auto rotated(const T(&t)[N]) noexcept{ // TODO move to utility
 	return multi::array_ref<std::remove_all_extents<T[N]>, std::rank<T[N]>{}, decltype(base(t))>(
 		base(t), extensions(t)
 	).rotated();

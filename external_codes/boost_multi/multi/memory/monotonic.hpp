@@ -1,6 +1,8 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"' > $0.cpp) && c++ -std=c++17 -Wall -Wextra -Wfatal-errors -D_TEST_BOOST_MULTI_MEMORY_MONOTONIC $0.cpp -o $0x && $0x && rm $0x $0.cpp; exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x&&$0x&&rm $0x;exit
 #endif
+// © Alfredo A. Correa 2019-2020
+
 #ifndef BOOST_MULTI_MEMORY_MONOTONIC_HPP
 #define BOOST_MULTI_MEMORY_MONOTONIC_HPP
 
@@ -13,6 +15,18 @@
 namespace boost{
 namespace multi{
 namespace memory{
+
+template<class Ptr> // TODO test with actual fancy ptr
+Ptr align_up(Ptr p, std::size_t align = alignof(std::max_align_t)){
+	using multi::to_address;
+	auto p_(to_address(p));
+	assert( sizeof(decltype(*p_))==1 );
+	auto q_ = reinterpret_cast<decltype(p_)>(
+		(reinterpret_cast<std::uintptr_t>(p_) + (align-1))
+		& ~(align-1)
+	);
+	return p+std::distance(p_,q_);
+}
 
 template<class T>
 T* align_up(T* p, std::size_t align = alignof(std::max_align_t)){
@@ -93,7 +107,7 @@ using monotonic_allocator = multi::memory::allocator<T, monotonic<char*>>;
 
 }}}
 
-#if _TEST_BOOST_MULTI_MEMORY_MONOTONIC
+#if not __INCLUDE_LEVEL__ // _TEST_BOOST_MULTI_MEMORY_MONOTONIC
 
 #include "../../multi/array.hpp"
 

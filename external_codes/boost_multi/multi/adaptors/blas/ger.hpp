@@ -1,7 +1,7 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && clang++ `#-DNDEBUG` -O3 -std=c++14 -Wall -Wextra -Wpedantic -Wfatal-errors -D_TEST_MULTI_ADAPTORS_BLAS_GER -DADD_ $0x.cpp -o $0x.x -lblas && time $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX -DADD_ $0 -o $0x -lblas -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// Alfredo A. Correa 2019 ©
+// © Alfredo A. Correa 2019-2020
 
 #ifndef MULTI_ADAPTORS_BLAS_GER_HPP
 #define MULTI_ADAPTORS_BLAS_GER_HPP
@@ -28,7 +28,7 @@ Out ger(T alpha, It1 x_first, It1 x_last, It2 y_first, It2 y_last, Out A_first){
 }
 
 template<class T, class X1D, class Y1D, class A2D>
-A2D ger(T alpha, X1D const& x, Y1D const& y, A2D&& A){
+A2D&& ger(T alpha, X1D const& x, Y1D const& y, A2D&& A){
 	if(stride(A) == 1){
 		auto e = ger(alpha, begin(y), end(y), begin(x), end(x), begin(rotated(A)));
 		assert( end(rotated(A)) == e );
@@ -37,7 +37,7 @@ A2D ger(T alpha, X1D const& x, Y1D const& y, A2D&& A){
 		auto e = ger(alpha, begin(x), end(x), begin(y), end(y), begin(A));
 		assert( end(A) == e );
 	}
-	return A;
+	return std::forward<A2D>(A);
 }
 
 template<class T, class It1, class Size1, class It2, class Size2, class Out>
@@ -98,7 +98,11 @@ A2D geru(T alpha, X1D const& x, Y1D const& y, A2D&& A){
 
 }}}
 
-#if _TEST_MULTI_ADAPTORS_BLAS_GER
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_GER
+
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi blas ger"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
 
 #include "../../array.hpp"
 #include "../../utility.hpp"
@@ -112,8 +116,8 @@ A2D geru(T alpha, X1D const& x, Y1D const& y, A2D&& A){
 using std::cout;
 namespace multi = boost::multi;
 
-int main(){
-
+BOOST_AUTO_TEST_CASE(multi_blas_ger){
+	namespace blas = multi::blas;
 	{
 		multi::array<double, 2> A = {
 			{0., 0. ,0.},
@@ -121,7 +125,7 @@ int main(){
 		};
 		multi::array<double, 1> const x = { 0., 0., 1.};
 		multi::array<double, 1> const y = { 0., 1.};
-		multi::blas::ger(1., x, y, A); // A = a*A + (y^T)(x)
+		blas::ger(1., x, y, A); // A = a*A + (y^T)(x)
 		for(int i = 0; i != size(A); ++i){
 			for(int j = 0; j != size(A[i]); ++j)
 				std::cout << A[i][j] << ' ';
@@ -131,6 +135,7 @@ int main(){
 	//	a = {{2., 3.}, {1., 4.}, {1., 0.}}; GER[1, {1., 2., 5.}, {-2., 1.}, a]; Print[a] : {{0., 4.}, {-3., 6.}, {-9., 5.}}
 	//	assert( A[1][1] == 6. );
 	}
+	return;
 	{
 		multi::array<double, 2> A = {
 			{0., 0.},
@@ -139,7 +144,7 @@ int main(){
 		};
 		multi::array<double, 1> const x = {0., 0., 1.};
 		multi::array<double, 1> const y = {0., 1.};
-		multi::blas::ger(1., x, y, rotated(A)); // A^T = a*A^T + (y^T)(x) and A = a*A + (x^T)y
+		blas::ger(1., x, y, rotated(A)); // A^T = a*A^T + (y^T)(x) and A = a*A + (x^T)y
 	//	a = {{2., 3.}, {1., 4.}, {1., 0.}}; GER[1, {1., 2., 5.}, {-2., 1.}, a]; Print[a] : {{0., 4.}, {-3., 6.}, {-9., 5.}}
 		for(int i = 0; i != size(A); ++i){
 			for(int j = 0; j != size(A[i]); ++j)
@@ -149,7 +154,6 @@ int main(){
 //		std::cout << A[1][2] << std::endl;
 //		assert( A[1][2] == 1. );
 	}
-	return 0;
 	{
 		multi::array<double, 2> A = {
 			{2., 3., 6., 8.},
@@ -172,12 +176,10 @@ int main(){
 		};
 		multi::array<double, 1> const x = { 1., 2., 5.};
 		multi::array<double, 1> const y = {-2., 1., 1., 1.};
-		multi::blas::ger(1., x, y, A); // 
+		blas::ger(1., x, y, A); // 
 	//	a = {{2., 3.}, {1., 4.}, {1., 0.}}; GER[1, {1., 2., 5.}, {-2., 1.}, a]; Print[a] : {{0., 4.}, {-3., 6.}, {-9., 5.}}
 	//	assert( A[1][1] == 4. );
 	}
-
-	return 0;
 	{
 		multi::array<double, 2> a = {
 			{2., 1., 1.},
@@ -185,7 +187,7 @@ int main(){
 		};
 		multi::array<double, 1> const x = { 1., 2., 5.};
 		multi::array<double, 1> const y = {-2., 1.};
-		multi::blas::ger(1., x, y, rotated(a));
+		blas::ger(1., x, y, rotated(a));
 	//	a = {{2., 3.}, {1., 4.}, {1., 0.}}; GER[1, {1., 2., 5.}, {-2., 1.}, a]; Print[a] : {{0., 4.}, {-3., 6.}, {-9., 5.}}
 		assert( a[1][1] == 6. );
 	}

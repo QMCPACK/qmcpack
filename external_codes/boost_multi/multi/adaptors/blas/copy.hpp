@@ -1,11 +1,14 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&&$CXX -D_TEST_MULTI_ADAPTORS_BLAS_COPY $0.cpp -o $0x `pkg-config --cflags --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x $0.cpp;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
+
 #ifndef MULTI_ADAPTORS_BLAS_COPY_HPP
 #define MULTI_ADAPTORS_BLAS_COPY_HPP
 
 #include "../blas/core.hpp"
+#include "../blas/operations.hpp"
+
 #include "../../config/NODISCARD.hpp"
 
 namespace boost{
@@ -34,9 +37,9 @@ Ret copy(X1D const& x){
 
 }}}
 
-#if _TEST_MULTI_ADAPTORS_BLAS_COPY
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_COPY
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi cuBLAS gemm"
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi blas copy"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
@@ -48,8 +51,7 @@ Ret copy(X1D const& x){
 namespace multi = boost::multi;
 namespace blas = multi::blas;
 
-using complex = std::complex<double>;
-complex const I{0, 1};
+using complex = std::complex<double>; constexpr complex I{0, 1};
 
 BOOST_AUTO_TEST_CASE(multi_blas_copy){
 	{
@@ -77,13 +79,13 @@ BOOST_AUTO_TEST_CASE(multi_blas_copy){
 	}
 	{
 		multi::array<complex, 2> const A = {
-			{1., 2., 3.},
+			{1., 2., 3. + I},
 			{4., 5., 6.},
 			{7., 8., 9.}
 		};
-		multi::array<complex, 1> B = blas::copy(rotated(A)[2]);
+		multi::array<complex, 1> B = blas::copy(blas::T(A)[2]);
 		BOOST_REQUIRE( size(B) == 3 );
-		BOOST_REQUIRE( B[0] == 3. );
+		BOOST_REQUIRE( B[0] == 3. + I);
 	}
 }
 
