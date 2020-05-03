@@ -209,7 +209,9 @@ __global__ void ger_batched_kernel(const int m, // number of columns in row majo
                                    const int n, // number of rows in row major A
                                    const T* __restrict__ alpha,
                                    const T* const x[],
+                                   const int incx,
                                    const T* const y[],
+                                   const int incy,
                                    T* const A[],
                                    const int lda)
 {
@@ -220,11 +222,16 @@ __global__ void ger_batched_kernel(const int m, // number of columns in row majo
 
   const int row_begin = blockIdx.y * ROWBS;
   const int row_end   = (row_begin + ROWBS) < n ? (row_begin + ROWBS) : n;
-  const int col_id = blockIdx.z * COLBS + threadIdx.x;
+  const int tid = threadIdx.x;
+  const int col_id = blockIdx.z * COLBS + tid;
+
+  __shared__ T x_part[COLBS];
+  if (col_id < m)
+    x_part[tid] = x_iw[col_id * incx];
 
   for (int row_id = row_begin; row_id < row_end; row_id++)
     if (col_id < m)
-      A_iw[row_id * lda + col_id] += alpha[iw] * x_iw[col_id] * y_iw[row_id];
+      A_iw[row_id * lda + col_id] += alpha[iw] * x_part[tid] * y_iw[row_id * incy];
 }
 
 template<typename T>
@@ -240,11 +247,8 @@ cuBLAS_inhouse_status ger_batched_impl(cuBLAS_inhouse_handle& handle,
                                        const int lda,
                                        const int batch_count)
 {
-  if (batch_count == 0)
+  if (batch_count == 0 || m == 0 || n == 0)
     return cudaSuccess;
-
-  if (incx != 1 || incy != 1)
-    throw std::runtime_error("incx !=1 or incy != 1 are not implemented in cuBLAS_inhouse::ger_batched_impl!");
 
   const int ROWBS          = 16;
   const int COLBS          = 64;
@@ -252,7 +256,7 @@ cuBLAS_inhouse_status ger_batched_impl(cuBLAS_inhouse_handle& handle,
   const int num_col_blocks = (m + COLBS - 1) / COLBS;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count, num_row_blocks, num_col_blocks);
-  ger_batched_kernel<T, ROWBS, COLBS><<<dimGrid, dimBlock, 0, handle>>>(m, n, alpha, x, y, A, lda);
+  ger_batched_kernel<T, ROWBS, COLBS><<<dimGrid, dimBlock, 0, handle>>>(m, n, alpha, x, incx, y, incy, A, lda);
   return cudaPeekAtLastError();
 }
 
