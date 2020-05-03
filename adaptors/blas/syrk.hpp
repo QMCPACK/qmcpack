@@ -1,10 +1,10 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&&$CXX `#--compiler-options` -Wall -Wextra -Wpedantic -D_TEST_MULTI_ADAPTORS_BLAS_SYRK $0.cpp -o $0x -lboost_unit_test_framework \
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x -lboost_unit_test_framework -lboost_timer \
 `pkg-config --libs blas` \
 `#-Wl,-rpath,/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -L/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -liomp5` \
--lboost_timer &&$0x&& rm $0x $0.cpp; exit
+&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2019
+// © Alfredo A. Correa 2019-2020
 
 #ifndef MULTI_ADAPTORS_BLAS_SYRK_HPP
 #define MULTI_ADAPTORS_BLAS_SYRK_HPP
@@ -17,7 +17,7 @@
 namespace boost{
 namespace multi{namespace blas{
 
-using blas::core::syrk;
+using core::syrk;
 
 template<typename AA, typename BB, class A2D, class C2D>
 auto syrk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c)
@@ -43,10 +43,10 @@ auto syrk(AA alpha, A2D const& a, C2D&& c)
 	return syrk(filling::upper, alpha, a, syrk(filling::lower, alpha, a, std::forward<C2D>(c)));}
 
 template<typename AA, class A2D, class Ret = typename A2D::decay_type>
-NODISCARD("because input argument is const")
-auto syrk(AA alpha, A2D const& a)
-->decltype(*syrk(alpha, a, Ret({size(a), size(a)}, get_allocator(a)))){
-	return *syrk(alpha, a, Ret({size(a), size(a)}, get_allocator(a)));}
+NODISCARD("because input argument is const") // this decay in the return type is important
+auto syrk(AA alpha, A2D const& a)->std::decay_\
+t<decltype(syrk(alpha, a, Ret({size(a), size(a)}, get_allocator(a))))>{
+	return syrk(alpha, a, Ret({size(a), size(a)}, get_allocator(a)));}
 
 template<class A2D>
 NODISCARD("")
@@ -60,9 +60,9 @@ auto syrk(A2D const& A)
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-#if _TEST_MULTI_ADAPTORS_BLAS_SYRK
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_SYRK
 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi cuBLAS gemm"
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi cuBLAS syrk"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
@@ -97,7 +97,6 @@ template<class M> decltype(auto) print(M const& C){
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_syrk_real){
-
 	multi::array<double, 2> const a = {
 		{ 1., 3., 4.},
 		{ 9., 7., 1.}
@@ -212,6 +211,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_syrk_complex){
 	}
 }
 
+
 BOOST_AUTO_TEST_CASE(multi_blas_syrk_automatic_operation_complex){
 	using complex = std::complex<double>;
 	constexpr auto const I = complex{0., 1.};
@@ -314,7 +314,6 @@ BOOST_AUTO_TEST_CASE(multi_blas_syrk_automatic_implicit_zero){
 	}
 }
 
-
 BOOST_AUTO_TEST_CASE(multi_blas_syrk_automatic_symmetrization){
 	multi::array<double, 2> const a = {
 		{ 1., 3., 4.},
@@ -323,9 +322,12 @@ BOOST_AUTO_TEST_CASE(multi_blas_syrk_automatic_symmetrization){
 	{
 		multi::array<double, 2> c({2, 2}, 9999.);
 		using multi::blas::syrk;
+		using multi::blas::gemm;
+		using multi::blas::T;
 		syrk(1., a, c); // c⸆=c=aa⸆=(aa⸆)⸆
 		BOOST_REQUIRE( c[1][0] == 34. );
 		BOOST_REQUIRE( c[0][1] == 34. );
+		BOOST_REQUIRE( syrk(a) == gemm(a, T(a)) );
 	}
 	{
 		using multi::blas::syrk;
@@ -346,13 +348,31 @@ BOOST_AUTO_TEST_CASE(multi_blas_syrk_automatic_symmetrization){
 		BOOST_REQUIRE( c[2][1] == 19. );
 		BOOST_REQUIRE( c[1][2] == 19. );
 	}
+}
+
+#if 0
+
+
+
+}
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
 #if 0
 	{
-		{
-			multi::array<complex, 2> C({2, 2}, 9999.);
-			syrk(1., rotated(A), C); // C^T = C =  A*A^T = (A*A^T)^T, A*A^T, C are C-ordering, information in C lower triangular
-			assert( C[1][0] == complex(18., -21.) );
-		}
+
 		{
 			multi::array<complex, 2> C({2, 2}, 9999.);
 			syrk(1., rotated(A), rotated(C)); // C^T=C=A*A^T=(A*A^T)^T
@@ -417,7 +437,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_syrk_herk_fallback){
 		BOOST_REQUIRE( c[0][1] == 9999. );
 	}
 }
-
+#endif
 
 #endif
 #endif

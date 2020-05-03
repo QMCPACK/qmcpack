@@ -35,6 +35,15 @@ BOOST_AUTO_TEST_CASE(multi_tests_element_access_with_tuple){
 
 }
 
+BOOST_AUTO_TEST_CASE(multi_tests_extension_with_tuple){
+	std::tuple<int, int> t = {3, 3};
+	multi::array<double, 2> m1(t, 44.);
+	BOOST_REQUIRE( size(m1) == 3 );
+	
+	std::array<int, 3> a = {3, 3};
+	multi::array<double, 2> m2(a, 55.);
+}
+
 #if 1
 BOOST_AUTO_TEST_CASE(multi_test_constness_reference){
 	multi::array<double, 2> const m({10, 10}, 99.);

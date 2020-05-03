@@ -1,5 +1,5 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&&c++ -Wall -Wextra -Wpedantic -Wfatal-errors -D_TEST_MULTI_ADAPTORS_BLAS_IAMAX $0.cpp -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x $0.cpp;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 #ifndef MULTI_ADAPTORS_BLAS_IAMAX_HPP
@@ -33,7 +33,7 @@ template<class X1D> auto amax(X1D const& x){return begin(x) + iamax(x);}
 
 }}}
 
-#if _TEST_MULTI_ADAPTORS_BLAS_IAMAX
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_IAMAX
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS iamax"
 #define BOOST_TEST_DYN_LINK
@@ -51,22 +51,21 @@ namespace blas = multi::blas;
 
 BOOST_AUTO_TEST_CASE(multi_adaptors_blas_iamax_real){
 	multi::array<double, 1> const A = {1., 2., 3., 4.};
-	using blas::iamax;
-	auto i = iamax(A);
+
+	auto i = blas::iamax(A);
 	BOOST_REQUIRE( i == 3 );
-	BOOST_REQUIRE( A[iamax(A)] == 4. );
-	using blas::amax;
-	BOOST_REQUIRE( *amax(A) == 4. );
+	BOOST_REQUIRE( A[blas::iamax(A)] == 4. );
+
+	BOOST_REQUIRE( *blas::amax(A) == 4. );
 }
 
 using complex = std::complex<double>;
 
 BOOST_AUTO_TEST_CASE(multi_adaptors_blas_iamax_complex){
 	multi::array<complex, 1> const A = {1., 2., 3., 4.};
-	using blas::iamax;
-	auto i = iamax(A);
+	auto i = blas::iamax(A);
 	BOOST_REQUIRE( i == 3 );
-	BOOST_REQUIRE( A[iamax(A)] == 4. );
+	BOOST_REQUIRE( A[blas::iamax(A)] == 4. );
 	BOOST_REQUIRE( *blas::amax(A) == 4. );
 }
 

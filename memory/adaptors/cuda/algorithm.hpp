@@ -1,12 +1,12 @@
-#ifdef COMPILATION_INSTRUCTIONS//-*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
-$CXX -D_TEST_MULTI_MEMORY_ADAPTORS_CUDA_ALGORITHM -g -x c++ $0 -o $0x -lcudart -lboost_unit_test_framework -lboost_timer&&$0x&&rm $0x;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX -x c++ $0 -o $0x -lcudart -lboost_unit_test_framework -lboost_timer&&$0x&&rm $0x;exit
 #endif
 #ifndef BOOST_MULTI_MEMORY_ADAPTORS_CUDA_ALGORITHM_HPP
 #define BOOST_MULTI_MEMORY_ADAPTORS_CUDA_ALGORITHM_HPP
 
 #include          "../cuda/cstring.hpp"
-#include "../../../../multi/array_ref.hpp"
-#include "../../../../multi/detail/adl.hpp"
+#include "../../../array_ref.hpp"
+#include "../../../detail/adl.hpp"
 
 #include "../cuda/error.hpp"
 
@@ -230,7 +230,8 @@ auto copy(
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef _TEST_MULTI_MEMORY_ADAPTORS_CUDA_ALGORITHM
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_MEMORY_ADAPTORS_CUDA_ALGORITHM
+
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi initializer_list"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>

@@ -1,9 +1,10 @@
-#ifdef COMPILATION_INSTRUCTIONS
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
 $CXX $0 -o $0x -lboost_unit_test_framework `pkg-config --libs blas` \
 `#-Wl,-rpath,/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -L/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -liomp5` \
 -lboost_timer &&$0x&&rm $0x; exit
 #endif
-// © Alfredo A. Correa 2019
+// © Alfredo A. Correa 2019-2020
+
 #ifndef MULTI_ADAPTORS_BLAS_HERK_HPP
 #define MULTI_ADAPTORS_BLAS_HERK_HPP
 
@@ -25,26 +26,28 @@ $CXX $0 -o $0x -lboost_unit_test_framework `pkg-config --libs blas` \
 namespace boost{
 namespace multi{namespace blas{
 
-template<class A> auto base_aux(A&& a, std::false_type){return base(a);}
-template<class A> auto base_aux(A&& a, std::true_type){return underlying(base(a));}
+template<class A, std::enable_if_t<not is_conjugated<A>{}, int> =0> 
+auto base_aux(A&& a){return base(a);}
+
+template<class A, std::enable_if_t<    is_conjugated<A>{}, int> =0>
+auto base_aux(A&& a){return underlying(base(a));}
 
 using core::herk;
 
-template<class AA, class BB, class A2D, class C2D, class = typename A2D::element_ptr>
-auto herk_aux(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c, std::true_type)
-->decltype(herk('\0', '\0', size(c), size(         a), alpha, base_aux(a, is_hermitized<A2D>{}), stride(rotated(a)), beta, base_aux(c, is_hermitized<std::decay_t<C2D>>{}), stride(c)), std::forward<C2D>(c))
+template<class AA, class BB, class A2D, class C2D, class = typename A2D::element_ptr, std::enable_if_t<is_complex<C2D>{}, int> =0>
+auto herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c)
+->decltype(herk('\0', '\0', size(c), size(         a), alpha, base_aux(a), stride(rotated(a)), beta, base_aux(c), stride(c)), std::forward<C2D>(c))
 {
 	assert( size(a) == size(c) );
 	assert( size(c) == size(rotated(c)) );
+	if( is_conjugated<C2D>{} ){ herk(flip(c_side), alpha, a, beta, hermitized(c)); return std::forward<C2D>(c);}
 	if(size(c)==0) return std::forward<C2D>(c);
-	if(is_hermitized<std::decay_t<C2D>>{}){
-		herk_aux(flip(c_side), alpha, a, beta, hermitized(c), std::true_type{});
-	}else{
-		auto base_a = base_aux(a, is_hermitized<A2D>{});
-		auto base_c = base_aux(c, is_hermitized<std::decay_t<C2D>>{});
-		if(is_hermitized<A2D>{}){
+	{
+		auto base_a = base_aux(a);
+		auto base_c = base_aux(c); //  static_assert( not is_conjugated<C2D>{}, "!" );
+		if(is_conjugated<A2D>{}){
 			// if you get an error here might be due to lack of inclusion of a header file with the backend appropriate for your type of iterator
-				 if(stride(a)==1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base_c, stride(c));
+				 if(stride(a)==1 and stride(c)!=1) core::herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base_c, stride(c));
 			else if(stride(a)==1 and stride(c)==1){
 				if(size(a)==1) herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base_c, stride(c));
 				else assert(0);
@@ -58,7 +61,7 @@ auto herk_aux(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c, std::tru
 				if(size(a)==1) herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base_c, stride(rotated(c)));
 				else assert(0);
 			}
-			else if(stride(a)==1 and stride(c)!=1) assert(0);//herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base(c), stride(c));
+			else if(stride(a)==1 and stride(c)!=1) assert(0);//case not implemented, herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base(c), stride(c)); 
 			else if(stride(a)==1 and stride(c)==1) herk(c_side==filling::upper?'U':'L', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base_c, stride(rotated(c)));
 			else assert(0);
 		}
@@ -66,15 +69,15 @@ auto herk_aux(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c, std::tru
 	return std::forward<C2D>(c);
 }
 
-template<class AA, class BB, class A2D, class C2D, class = typename A2D::element_ptr>
-auto herk_aux(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c, std::false_type)
+template<class AA, class BB, class A2D, class C2D, class = typename A2D::element_ptr, std::enable_if_t<not is_complex<C2D>{}, int> =0>
+auto herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c)
 ->decltype(syrk(c_side, alpha, a, beta, std::forward<C2D>(c))){
 	return syrk(c_side, alpha, a, beta, std::forward<C2D>(c));}
 
-template<class AA, class BB, class A2D, class C2D, class = typename A2D::element_ptr>
-auto herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c)
-->decltype(herk_aux(c_side, alpha, a, beta, std::forward<C2D>(c), is_complex_array<std::decay_t<C2D>>{})){
-	return herk_aux(c_side, alpha, a, beta, std::forward<C2D>(c), is_complex_array<std::decay_t<C2D>>{});}
+//template<class AA, class BB, class A2D, class C2D, class = typename A2D::element_ptr>
+//auto herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c)
+//->decltype(herk_aux(c_side, alpha, a, beta, std::forward<C2D>(c), is_complex<C2D>{})){
+//	return herk_aux(c_side, alpha, a, beta, std::forward<C2D>(c), is_complex<C2D>{});}
 
 template<class AA, class A2D, class C2D, class = typename A2D::element_ptr>
 auto herk(filling c_side, AA alpha, A2D const& a, C2D&& c)
@@ -100,7 +103,7 @@ auto herk(A2D const& a, C2D const& c)
 template<class AA, class A2D, class Ret = typename A2D::decay_type>
 NODISCARD("when second argument is const")
 auto herk(AA alpha, A2D const& a)
-->std::decay_t<decltype(herk(alpha, a, Ret({size(a), size(a)}, get_allocator(a))))>{
+{//->std::decay_t<decltype(herk(alpha, a, Ret({size(a), size(a)}, get_allocator(a))))>{
 	return herk(alpha, a, Ret({size(a), size(a)}, get_allocator(a)));
 }
 
@@ -127,8 +130,8 @@ template<class A2D> auto herk(filling s, A2D const& a)
 	return herk(s, 1., a);}
 
 template<class A2D> auto herk(A2D const& a)
-->decltype(herk(1., a)){
-	return herk(1., a);}
+//->decltype(herk(1., a)){
+{	return herk(1., a);}
 
 }}
 
@@ -145,6 +148,7 @@ template<class A2D> auto herk(A2D const& a)
 #include "../../adaptors/blas/nrm2.hpp"
 
 #include<iostream>
+#include<numeric>
 
 namespace utf = boost::unit_test;
 namespace multi = boost::multi;
@@ -166,47 +170,65 @@ constexpr complex I(0, 1);
 
 BOOST_AUTO_TEST_CASE(inq_case){
 	using namespace multi::blas;
-	multi::array<double, 2> A({4, 3});
-	for(auto i : extension(A))
-		for(auto j : extension(A[i]))
-			A[i][j] = 20.*(i + 1)*sqrt(j);
-
-	BOOST_REQUIRE(
-		herk(0.01, hermitized(A)) == gemm(0.01, transposed(A), A) 
-	);
+	multi::array<double, 2> const a = {
+		{0, 1, 2},	
+		{3, 4, 5},
+		{6, 7, 8},
+		{9, 10, 11}
+	};
+	BOOST_REQUIRE( gemm(a, T(a))[1][2] == 86. );
+	{
+		multi::array<double, 2> c({4, 4});
+		herk(1.0, a, c);
+		BOOST_REQUIRE( c == gemm(a, T(a)) );
+	}
+	{
+		multi::array<double, 2> c = herk(1.0, a);
+		BOOST_REQUIRE( c == gemm(a, T(a)) );
+	}
+	{
+		BOOST_REQUIRE( herk(a) == gemm(a, T(a)) );
+	}
+	{
+		BOOST_REQUIRE( herk(2.0, a) == gemm(2.0, a, T(a)) );
+	}
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_herk1x1_case){
-	multi::array<double, 2> A = {{1., 2., 3.}};
-	multi::array<double, 2> B = multi::blas::herk(A);
+	namespace blas = multi::blas;
+	multi::array<double, 2> const A = {{1., 2., 3.}};
+	multi::array<double, 2> B = blas::herk(A);
 	BOOST_REQUIRE( size(B) == 1 );
 	BOOST_REQUIRE( B[0][0] == 1.*1. + 2.*2. + 3.*3. );
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_herk1x1_case_scale){
-	multi::array<double, 2> A = {{1., 2., 3.}};
-	multi::array<double, 2> B = multi::blas::herk(0.1, A);
+	namespace blas = multi::blas;
+	multi::array<double, 2> const A = {{1., 2., 3.}};
+	multi::array<double, 2> B = blas::herk(0.1, A);
 	BOOST_REQUIRE( size(B) == 1 );
 	BOOST_TEST( B[0][0] == (1.*1. + 2.*2. + 3.*3.)*0.1 );
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_herk1x1_complex_real_case){
-	multi::array<complex, 2> A = {{1., 2., 3.}};
-	multi::array<complex, 2> B = multi::blas::herk(A);
+	namespace blas = multi::blas;
+	multi::array<complex, 2> const A = {{1., 2., 3.}};
+	multi::array<complex, 2> B = blas::herk(1.0, A);
 	BOOST_REQUIRE( size(B) == 1 );
 	BOOST_REQUIRE( B[0][0] == 1.*1. + 2.*2. + 3.*3. );
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_herk1x1_complex_real_case_scale, *utf::tolerance(0.00001)){
-	multi::array<complex, 2> A = {{1., 2., 3.}};
-	multi::array<complex, 2> B = multi::blas::herk(0.1, A);
+	namespace blas = multi::blas;
+	multi::array<complex, 2> const A = {{1., 2., 3.}};
+	multi::array<complex, 2> B = blas::herk(0.1, A);
 	BOOST_REQUIRE( size(B) == 1 );
 	BOOST_TEST( real( B[0][0]/0.1 ) == 1.*1. + 2.*2. + 3.*3. );
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_herk1x1_complex_case){
-	multi::array<complex, 2> A = {{1. + 2.*I, 2.+3.*I, 3. + 4.*I}};
 	namespace blas = multi::blas;
+	multi::array<complex, 2> const A = {{1. + 2.*I, 2.+3.*I, 3. + 4.*I}};
 	multi::array<complex, 2> B = blas::herk(A);
 	BOOST_REQUIRE( size(B) == 1 );
 	BOOST_REQUIRE( B[0][0] == std::norm(1. + 2.*I) + std::norm(2.+3.*I) + std::norm(3. + 4.*I) );
@@ -215,68 +237,68 @@ BOOST_AUTO_TEST_CASE(multi_blas_herk1x1_complex_case){
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_herk1x1_complex_case_hermitized_out_param){
-	multi::array<complex, 2> A = {{1. + 2.*I}, {2.+3.*I}, {3. + 4.*I}};
 	namespace blas = multi::blas;
+	multi::array<complex, 2> const A = {{1. + 2.*I}, {2.+3.*I}, {3. + 4.*I}};
 	multi::array<complex, 2> B({1, 1});
 	BOOST_REQUIRE( size(B) == 1 );
 
-	blas::herk(blas::hermitized(A), B);
+	blas::herk(blas::filling::upper, 1.0, blas::H(A), 0.0, B);
 
 	BOOST_REQUIRE( B[0][0] == std::norm(1. + 2.*I) + std::norm(2.+3.*I) + std::norm(3. + 4.*I) );
 
-	using blas::herk; using blas::hermitized; using blas::nrm2;
-	BOOST_TEST( std::sqrt(real(B[0][0])) == nrm2(rotated(A)[0])() );
+	BOOST_TEST( std::sqrt(real(B[0][0])) == blas::nrm2(blas::T(A)[0])() );
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_herk1x1_complex_case_hermitized){
 	multi::array<complex, 2> A = {{1. + 2.*I}, {2.+3.*I}, {3. + 4.*I}};
 	namespace blas = multi::blas;
-	multi::array<complex, 2> B = blas::herk(blas::hermitized(A));
+	multi::array<complex, 2> B = blas::herk(blas::H(A));
 	BOOST_REQUIRE( size(B) == 1 );
 	BOOST_REQUIRE( B[0][0] == std::norm(1. + 2.*I) + std::norm(2.+3.*I) + std::norm(3. + 4.*I) );
 
-	using blas::herk; using blas::hermitized; using blas::nrm2;
-	BOOST_TEST( std::sqrt(real(herk(hermitized(A))[0][0])) == nrm2(rotated(A)[0])() );
+	BOOST_TEST( std::sqrt(real(blas::herk(blas::H(A))[0][0])) == blas::nrm2(rotated(A)[0])() );
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_herk1x1_complex_case_hermitized_auto){
-	multi::array<complex, 2> A = {{1. + 2.*I}, {2.+3.*I}, {3. + 4.*I}};
 	namespace blas = multi::blas;
 
+	multi::array<complex, 2> A = {{1. + 2.*I}, {2.+3.*I}, {3. + 4.*I}};
 	auto B = blas::herk(1., blas::hermitized(A));
 	static_assert( std::is_same<decltype(B), multi::array<complex, 2>>{}, "!" );
 	BOOST_REQUIRE( size(B) == 1 );
 	BOOST_REQUIRE( B[0][0] == std::norm(1. + 2.*I) + std::norm(2.+3.*I) + std::norm(3. + 4.*I) );
 
-	using blas::herk; using blas::hermitized; using blas::nrm2;
-	BOOST_TEST( std::sqrt(real(herk(hermitized(A))[0][0])) == nrm2(rotated(A)[0])() );
+	BOOST_TEST( std::sqrt(real(blas::herk(blas::H(A))[0][0])) == blas::nrm2(rotated(A)[0])() );
 }
-
 
 #if 1
 #if 1
 
 BOOST_AUTO_TEST_CASE(multi_blas_herk_complex_identity){
+	namespace blas = multi::blas;
 	multi::array<complex, 2> const a = {
 		{ 1. + 3.*I, 3.- 2.*I, 4.+ 1.*I},
 		{ 9. + 1.*I, 7.- 8.*I, 1.- 3.*I}
 	};
-	using namespace multi::blas;
+
 	{
 		multi::array<complex, 2> c({2, 2}, 9999.);
-		herk(filling::lower, 1., a, 0., c); // c†=c=aa†=(aa†)†, `c` in lower triangular
+		blas::herk(blas::filling::lower, 1., a, 0., c); // c†=c=aa†=(aa†)†, `c` in lower triangular
 		BOOST_REQUIRE( c[1][0]==complex(50., -49.) );
 		BOOST_REQUIRE( c[0][1]==9999. );
 	}
 	{
 		multi::array<complex, 2> c({2, 2}, 9999.);
-		herk(filling::lower, 1., a, 0., hermitized(c)); // c†=c=aa†=(aa†)†, `c` in lower triangular
-		BOOST_REQUIRE( hermitized(c)[1][0]==complex(50., -49.) );
-		BOOST_REQUIRE( hermitized(c)[0][1]==9999. );
+		static_assert(blas::is_conjugated<decltype(blas::H(c))>{}, "!" );
+
+		blas::herk(blas::filling::lower, 1., a, 0., blas::H(c)); // c†=c=aa†=(aa†)†, `c` in upper triangular
+
+		BOOST_REQUIRE( blas::H(c)[1][0]==complex(50., -49.) );
+		BOOST_REQUIRE( blas::H(c)[0][1]==9999. );
 	}
 	{
-		multi::array<complex, 2> c({2, 2}, 9999.);
-	//	herk(filling::lower, 1., a, 0., transposed(c)); // c†=c=aa†=(aa†)†, `c` in lower triangular
+	//	multi::array<complex, 2> c({2, 2}, 9999.);
+	//	blas::herk(blas::filling::lower, 1., a, 0., blas::T(c)); // c†=c=aa†=(aa†)†, `c` in lower triangular
 	//	BOOST_REQUIRE( transposed(c)[1][0]==complex(50., -49.) );
 	//	BOOST_REQUIRE( transposed(c)[0][1]==9999. );
 	}
@@ -295,53 +317,48 @@ BOOST_AUTO_TEST_CASE(multi_blas_herk_complex_identity){
 	}
 	{
 		multi::array<complex, 2> c({3, 3}, 9999.);
-		herk(filling::lower, 1., transposed(a), 0., transposed(c)); // c†=c=aT(aT)† not supported
+		herk(blas::filling::lower, 1., blas::T(a), 0., blas::T(c)); // c†=c=aT(aT)† not supported
 		BOOST_REQUIRE( transposed(c)[1][0]==complex(52., -90.) );
 		BOOST_REQUIRE( transposed(c)[0][1]==9999. );
 	}
 	{
 		multi::array<complex, 2> c({3, 3}, 9999.);
-		herk(filling::lower, 1., transposed(a), 0., hermitized(transposed(c))); // c†=c=aT(aT)† not supported
-	//	print( hermitized(transposed(c)) );
-		BOOST_REQUIRE( hermitized(transposed(c))[1][0]==complex(52., -90.) );
-		BOOST_REQUIRE( hermitized(transposed(c))[0][1]==9999. );
+		blas::herk(blas::filling::lower, 1., blas::T(a), 0., blas::H(blas::T(c))); // c†=c=aT(aT)† not supported
+		BOOST_REQUIRE( blas::H(blas::T(c))[1][0]==complex(52., -90.) );
+		BOOST_REQUIRE( blas::H(blas::T(c))[0][1]==9999. );
 	}
-#if 0
 	{
-		multi::array<complex, 2> c({3, 3}, 9999.);
-		using namespace multi::blas;
-		herk(filling::lower, 1., transposed(a), 0., c); // c†=c=aa†=(aa†)†, `c` in lower triangular
-		print(c);
-		BOOST_REQUIRE( c[1][0]==complex(50., -49.) );
-		BOOST_REQUIRE( c[0][1]==9999. );
+//		multi::array<complex, 2> c({3, 3}, 9999.);
+//		using namespace multi::blas;
+//		blas::herk(blas::filling::lower, 1., blas::T(a), 0., c); // c†=c=aa†=(aa†)†, `c` in lower triangular
+//		BOOST_REQUIRE( c[1][0]==complex(50., -49.) );
+//		BOOST_REQUIRE( c[0][1]==9999. );
 	}
+#if 1
 	{
 		multi::array<complex, 2> c({2, 2}, 9999.);
-		using namespace multi::blas;
-		herk(filling::upper, 1., a, 0., c); // c†=c=aa†=(aa†)†, `c` in upper triangular
+		blas::herk(blas::U, 1., a, 0., c); // c†=c=aa†=(aa†)†, `c` in upper triangular
 		BOOST_REQUIRE( c[0][1]==complex(50., +49.) );
 		BOOST_REQUIRE( c[1][0]==9999. );
 	}
 	{
 		multi::array<complex, 2> c({2, 2}, 9999.);
-		using namespace multi::blas;
-		herk(1., a, c); // c†=c=aa†=(aa†)†, `c` in lower triangular
+		blas::herk(1., a, c); // c†=c=aa†=(aa†)†
 		BOOST_REQUIRE( c[0][1]==complex(50., +49.) );
 		BOOST_REQUIRE( c[1][0]==complex(50., -49.) );
 	}
 	{
 		multi::array<complex, 2> c({3, 3}, 9999.);
-		using namespace multi::blas;
-		herk(filling::lower, 1., hermitized(a), 0., c); // c†=c=aa†=(aa†)†, `c` in lower triangular
+		blas::herk(blas::L, 1., blas::H(a), 0., c); // c†=c=aa†=(aa†)†, `c` in lower triangular
 		BOOST_REQUIRE( c[1][0]==complex(52., 90.) );
 		BOOST_REQUIRE( c[0][1]==9999. );
 	}
 	{
-		multi::array<complex, 2> c({3, 3}, 9999.);
-		using namespace multi::blas;
-		herk(filling::lower, 1., transposed(a), 0., c); // c†=c=aa†=(aa†)†, `c` in lower triangular
-		BOOST_REQUIRE( c[0][1]==9999. );
-		BOOST_REQUIRE( c[1][0]==complex(52., 90.) );
+	//	multi::array<complex, 2> c({3, 3}, 9999.);
+	//	using namespace multi::blas;
+	//	herk(filling::lower, 1., transposed(a), 0., c); // c†=c=aa†=(aa†)†, `c` in lower triangular
+	//	BOOST_REQUIRE( c[0][1]==9999. );
+	//	BOOST_REQUIRE( c[1][0]==complex(52., 90.) );
 	}
 #endif
 }

@@ -1,14 +1,15 @@
-#ifdef COMPILATION// -*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
 $CXX $0 -o $0x `pkg-config --libs blas`&&$0x&&rm $0x;exit
 #endif
-//for a in `find tests/ -name '*.cpp'`; do sh $a || break; done); exit
+//(for a in `find tests/ -name '*.cpp'`; do sh $a || break; done); exit
+
 // https://software.intel.com/en-us/articles/intel-mkl-link-line-advisor
 // © Alfredo A. Correa 2019-2020
 
 #ifndef MULTI_ADAPTORS_BLAS_CORE_HPP
 #define MULTI_ADAPTORS_BLAS_CORE_HPP
 
-//#include <cblas/cblas.h>
+//#include <cblas/cblas.h> // consider being replaceable by cblas.h
 
 #include<iostream> // debug
 #include<cassert>
