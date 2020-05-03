@@ -1,5 +1,5 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXX $0 -o$0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
+$CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 #ifndef MULTI_LAYOUT_HPP
 #define MULTI_LAYOUT_HPP
@@ -293,6 +293,7 @@ struct layout_t : multi::equality_comparable2<layout_t<D>, void>{
 		void serialize_impl(Archive& ar, std::index_sequence<I...>){
 			using boost::serialization::make_nvp;
 			(void)std::initializer_list<int>{(ar & make_nvp("extension", std::get<I>(*this)),0)...};
+		//	(void)std::initializer_list<int>{(ar & boost::serialization::nvp<std::remove_reference_t<decltype(std::get<I>(*this))> >{"extension", std::get<I>(*this)},0)...};
 		}
 		template<class Archive>
 		void serialize(Archive& ar, unsigned){

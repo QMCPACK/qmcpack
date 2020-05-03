@@ -101,6 +101,12 @@ auto default_allocator_of(T*)
 ->decltype(std::allocator<typename std::iterator_traits<T*>::value_type>{}){
 	return std::allocator<typename std::iterator_traits<T*>::value_type>{};}
 
+template<class T>
+constexpr 
+auto to_address(T* const& t)
+->decltype(t){
+	return t;}
+
 //template<class It>
 //constexpr auto get_allocator(It const& it)
 //->decltype(get_allocator(to_address(it))){

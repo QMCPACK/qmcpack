@@ -1,3 +1,4 @@
+# -*-indent-tabs-mode:nil;c-basic-offset:2;tab-width:4;-*-
 # This file is a template, and might need editing before it works on your project.
 #image: golang:latest
 
@@ -107,4 +108,14 @@ nvcc:
       - $CXX --version
       - cd tests
       - for a in ./*.cpp; do echo $a; sh $a || exit; echo "\n"; done;
+
+blas:
+    stage: test
+    script:
+      - DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends --assume-yes --quiet g++ pkg-config libblas-dev libblas64-dev nvidia-cuda-toolkit
+      - ln --symbolic --force . ../multi
+      - export CXX="g++     -x c++  -Wall -Wextra -Wpedantic -Ofast "
+      - $CXX --version
+      - cd adaptors/blas
+      - for a in ./*.hpp; do echo $a; sh $a || exit; echo "\n"; done;
 

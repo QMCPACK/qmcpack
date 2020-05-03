@@ -1,7 +1,7 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&& clang++ -O3 -std=c++14 -Wall -Wextra -Wpedantic -D_TEST_MULTI_ADAPTORS_BLAS_AXPY $0.cpp -o $0x `pkg-config --libs blas64` &&$0x&& rm $0x $0.cpp; exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// Alfredo A. Correa 2019 ©
+// © Alfredo Correa 2019-2020
 
 #ifndef MULTI_ADAPTORS_BLAS_AXPY_HPP
 #define MULTI_ADAPTORS_BLAS_AXPY_HPP
@@ -38,7 +38,12 @@ Y1D&& axpy(X1D const& x, Y1D&& y){return axpy(+1., x, y);}
 }}
 }
 
-#if _TEST_MULTI_ADAPTORS_BLAS_AXPY
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_AXPY
+
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi.BLAS axpy"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
+//#include<boost/test/floating_point_comparison.hpp>
 
 #include "../../array.hpp"
 #include "../../utility.hpp"
@@ -53,8 +58,9 @@ Y1D&& axpy(X1D const& x, Y1D&& y){return axpy(+1., x, y);}
 
 using std::cout;
 namespace multi = boost::multi;
+namespace blas = multi::blas;
 
-int main(){
+BOOST_AUTO_TEST_CASE(multi_blas_axpy_double){
 	multi::array<double, 2> const cA = {
 		{1.,  2.,  3.,  4.},
 		{5.,  6.,  7.,  8.},
@@ -62,19 +68,16 @@ int main(){
 	};
 	multi::array<double, 2> A = cA;
 	multi::array<double, 1> const b = cA[2];
-	using multi::blas::axpy;
-	axpy(2., b, A[1]); // y = a*x + y, y+= a*x
+
+	blas::axpy(2., b, A[1]); // y = a*x + y, y+= a*x
 	assert( A[1][2] == 2.*b[2] + cA[1][2] );
 
 	using complex = std::complex<double>;
 	complex const I = {0., 1.};
-	using multi::blas::real;
-	using multi::blas::imag;
-	using multi::blas::axpy;
 	multi::array<complex, 1> AC = {1. + 2.*I, 3. + 4.*I, 4. - 8.*I};
 	multi::array<complex, 1> BC(size(AC), complex{0.});
-	axpy(+1., begin(real(AC)), end(real(AC)), begin(real(BC)));
-	axpy(-1., begin(imag(AC)), end(imag(AC)), begin(imag(BC)));
+	blas::axpy(+1., begin(blas::real(AC)), end(blas::real(AC)), begin(blas::real(BC)));
+	blas::axpy(-1., begin(blas::imag(AC)), end(blas::imag(AC)), begin(blas::imag(BC)));
 	assert( BC[2] == std::conj(AC[2]) );
 }
 

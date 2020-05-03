@@ -1,15 +1,17 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&&clang++ -O3 -std=c++14 -Wall -Wextra -Wpedantic `#-Wfatal-errors` -D_TEST_MULTI_ADAPTORS_BLAS_GEMV -DADD_ $0.cpp -o $0x \
-`pkg-config --cflags --libs blas` \
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX -DADD_ $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework \
 `#-Wl,-rpath,/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -L/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core` \
-&&$0x&& rm $0x $0.cpp; exit
+&&$0x&&rm $0x;exit
 #endif
-// Alfredo A. Correa 2019 ©
+// © Alfredo A. Correa 2019-2020
 
 #ifndef MULTI_ADAPTORS_BLAS_GEMV_HPP
 #define MULTI_ADAPTORS_BLAS_GEMV_HPP
 
 #include "../blas/core.hpp"
+#include "./../../detail/../utility.hpp"
+#include "././../../detail/.././array_ref.hpp"
+//#include "../../../../detail/utility.hpp"
 
 namespace boost{
 namespace multi{
@@ -168,7 +170,11 @@ Y1D&& gemv(T const& a, A2D const& A, X1D const& x, T const& b, Y1D&& y, Conj&& c
 
 }}}
 
-#if _TEST_MULTI_ADAPTORS_BLAS_GEMV
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_GEMV
+
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi blas gemv"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
 
 #include "../../array.hpp"
 #include "../../utility.hpp"
@@ -182,8 +188,9 @@ Y1D&& gemv(T const& a, A2D const& A, X1D const& x, T const& b, Y1D&& y, Conj&& c
 using std::cout;
 namespace multi = boost::multi;
 
-int main(){
-	using multi::blas::gemv;
+BOOST_AUTO_TEST_CASE(multi_blas_gemv){
+	namespace blas = multi::blas;
+
 	using std::abs;
 	{
 		multi::array<double, 2> const M = {
@@ -195,12 +202,13 @@ int main(){
 		multi::array<double, 1> const X = {1.1,2.1,3.1, 4.1};
 		multi::array<double, 1> Y = {4.,5.,6.};
 		double a = 1.1, b = 1.2;
-		gemv('T', a, M, X, b, Y); // y = a*M*x + b*y
+		blas::gemv('T', a, M, X, b, Y); // y = a*M*x + b*y
 
 		multi::array<double, 1> const Y3 = {214.02, 106.43, 188.37}; // = 1.1 {{9., 24., 30., 9.}, {4., 10., 12., 7.}, {14., 16., 36., 1.}}.{1.1, 2.1, 3.1, 4.1} + 1.2 {4., 5., 6.}
 //		cout << abs(Y[1] - Y3[1]) << std::endl;
 		assert( abs(Y[1] - Y3[1]) < 2e-14 );
 	}
+#if 0
 	{
 		double const M[3][4] = {
 			{ 9., 24., 30., 9.},
@@ -216,6 +224,7 @@ int main(){
 		double Y3[3] = {214.02, 106.43, 188.37};
 		assert( abs(Y[1] - Y3[1]) < 2e-14 );
 	}
+
 	{
 		multi::array<double, 2> const M = {
 			{ 9., 24., 30., 9.},
@@ -273,7 +282,7 @@ int main(){
 		multi::array<double, 1> const Y3 = {214.02, 106.43, 188.37}; // = 1.1 {{9., 24., 30., 9.}, {4., 10., 12., 7.}, {14., 16., 36., 1.}}.{1.1, 2.1, 3.1, 4.1} + 1.2 {4., 5., 6.}
 		assert( abs(Y[1] - Y3[1]) < 2e-14 );
 	}
-
+#endif
 }
 
 #endif
