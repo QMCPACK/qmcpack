@@ -180,5 +180,94 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
+template<typename T, int COLBS>
+__global__ void add_delay_list_compute_y_kernel(int* const delay_list[],
+                                             const int rowchanged,
+                                             const int delay_count,
+                                             T* const binvrow[],
+                                             const T* const p[],
+                                             const T* const ratio,
+                                             T* const y)
+{
+  // original CPU code
+  //delay_list[delay_count] = rowchanged;
+  // x
+  //T y = c_ratio;
+  //for (int i = 0; i < delay_count; i++)
+  //  y += Binv[delay_count][i] * p[i];
+  //Binv[delay_count][delay_count] = y = T(1) / y;
+
+  const int tid = threadIdx.x;
+  const int iw                    = blockIdx.x;
+  int* __restrict__ delay_list_iw    = delay_list[iw];
+
+  if (tid == 0)
+    delay_list_iw[delay_count] = rowchanged;
+
+  T* __restrict__ binvrow_iw = binvrow[iw];
+  const T* __restrict__ p_iw = p[iw];
+
+  __shared__ T sum[COLBS];
+  sum[tid] = T(0);
+
+  const int num_col_blocks = (delay_count + COLBS - 1) / COLBS;
+  for (int ib = 0; ib < num_col_blocks; ib++)
+  {
+    const int col_id = ib * COLBS + tid;
+    if (col_id < delay_count)
+      sum[tid] += binvrow_iw[col_id] * p_iw[col_id];
+  }
+
+  for (int iend = COLBS / 2; iend > 0; iend /= 2)
+  {
+    __syncthreads();
+    if (tid < iend)
+      sum[tid] += sum[tid + iend];
+  }
+
+  if (tid == 0)
+    binvrow_iw[delay_count] = y[iw] = T(1) / (ratio[iw] + sum[0]);
+}
+
+cudaError_t add_delay_list_compute_y_batched(cudaStream_t& hstream,
+                                             int* const delay_list[],
+                                             const int rowchanged,
+                                             const int delay_count,
+                                             float* const binvrow[],
+                                             const float* const p[],
+                                             const float* const ratio,
+                                             float* const y,
+                                             const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 64;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  add_delay_list_compute_y_kernel<float, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binvrow, p, ratio, y);
+  return cudaPeekAtLastError();
+}
+
+cudaError_t add_delay_list_compute_y_batched(cudaStream_t& hstream,
+                                             int* const delay_list[],
+                                             const int rowchanged,
+                                             const int delay_count,
+                                             double* const binvrow[],
+                                             const double* const p[],
+                                             const double* const ratio,
+                                             double* const y,
+                                             const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 64;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  add_delay_list_compute_y_kernel<double, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binvrow, p, ratio, y);
+  return cudaPeekAtLastError();
+}
+
 } // namespace CUDA
 } // namespace qmcplusplus

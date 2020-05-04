@@ -68,6 +68,26 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
                                double* const grads_now,
                                const int batch_count);
 
+cudaError_t add_delay_list_compute_y_batched(cudaStream_t& hstream,
+                                             int* const delay_list[],
+                                             const int rowchanged,
+                                             const int delay_count,
+                                             float* const binvrow[],
+                                             const float* const p[],
+                                             const float* const ratio,
+                                             float* const y,
+                                             const int batch_count);
+
+cudaError_t add_delay_list_compute_y_batched(cudaStream_t& hstream,
+                                             int* const delay_list[],
+                                             const int rowchanged,
+                                             const int delay_count,
+                                             double* const binvrow[],
+                                             const double* const p[],
+                                             const double* const ratio,
+                                             double* const y,
+                                             const int batch_count);
+
 } // namespace CUDA
 } // namespace qmcplusplus
 #endif
