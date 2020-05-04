@@ -169,12 +169,8 @@ public:
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
-  /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
+  /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$, actual memory owned by det_engine_
   OffloadPinnedValueMatrix_t psiMinv;
-  /// device pointer of psiMinv data
-  ValueType* psiMinv_dev_ptr;
-  /// multi-walker pointers of psiMinv data
-  std::vector<ValueType*> dev_ptr_list;
   /// multi-walker pointers of invRow data
   Vector<ValueType*, OffloadPinnedAllocator<ValueType*>> invRow_dev_ptr_list;
 
