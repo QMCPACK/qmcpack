@@ -25,7 +25,7 @@ namespace qmcplusplus
 {
 
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-using DiracDet = DiracDeterminantBatched<MatrixUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+using DiracDet = DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #else
 using DiracDet = DiracDeterminantBatched<MatrixUpdateOMP<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
@@ -121,9 +121,9 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   REQUIRE(spo != nullptr);
 
   auto* det_up = new DiracDet(spo);
-  det_up->set(0, 2);
+  det_up->set(0, 2, 2);
   auto* det_dn = new DiracDet(spo);
-  det_dn->set(2, 2);
+  det_dn->set(2, 2, 2);
 
   auto* slater_det = new SlaterDet(elec_);
   slater_det->add(det_up, 0);
@@ -353,7 +353,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
 #endif
 
   std::vector<bool> isAccepted(2, true);
-  psi.flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted);
+  psi.flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted, true);
   std::cout << "flex_acceptMove WF_list[0] getLogPsi getPhase " << std::setprecision(16) << WF_list[0]->getLogPsi() << " " << WF_list[0]->getPhase() << std::endl;
   std::cout << "flex_acceptMove WF_list[1] getLogPsi getPhase " << std::setprecision(16) << WF_list[1]->getLogPsi() << " " << WF_list[1]->getPhase() << std::endl;
 #if defined(QMC_COMPLEX)
@@ -364,21 +364,25 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
 #endif
 
-  psi.flex_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
+  psi.flex_evalGrad(wf_ref_list, p_ref_list, 1, grad_old);
+  std::cout << "evalGrad next electron " << std::setprecision(14)
+            << grad_old[0][0] << " " << grad_old[0][1] << " " << grad_old[0][2] << " "
+            << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2]
+            << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(713.71203320653,0.020838031942702)).epsilon(8e-5));
-  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(713.71203320654,0.020838031944677)).epsilon(8e-5));
-  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(-768.42842826889,-0.020838032035842)).epsilon(8e-5));
-  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(713.71203320656,0.020838031892613)).epsilon(8e-5));
-  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(713.71203320657,0.020838031894628)).epsilon(8e-5));
-  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(-768.42842826892,-0.020838031981896)).epsilon(8e-5));
+  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726,-7.605305979232e-05)).epsilon(8e-5));
+  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401,-7.605302517238e-05)).epsilon(8e-5));
+  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(64.050803536571,7.6052975324197e-05)).epsilon(8e-5));
+  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(-114.82740072726,-7.605305979232e-05)).epsilon(8e-5));
+  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(-93.980772428401,-7.605302517238e-05)).epsilon(8e-5));
+  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(64.050803536571,7.6052975324197e-05)).epsilon(8e-5));
 #else
-  REQUIRE(grad_old[0][0] == Approx(713.69119517463).epsilon(1e-4));
-  REQUIRE(grad_old[0][1] == Approx(713.69119517463).epsilon(1e-4));
-  REQUIRE(grad_old[0][2] == Approx(-768.40759023689).epsilon(1e-4));
-  REQUIRE(grad_old[1][0] == Approx(713.69119517467).epsilon(1e-4));
-  REQUIRE(grad_old[1][1] == Approx(713.69119517468).epsilon(1e-4));
-  REQUIRE(grad_old[1][2] == Approx(-768.40759023695).epsilon(1e-4));
+  REQUIRE(grad_old[0][0] == Approx(-114.82732467419).epsilon(1e-4));
+  REQUIRE(grad_old[0][1] == Approx(-93.98069637537).epsilon(1e-4));
+  REQUIRE(grad_old[0][2] == Approx(64.050727483593).epsilon(1e-4));
+  REQUIRE(grad_old[1][0] == Approx(-114.82732467419).epsilon(1e-4));
+  REQUIRE(grad_old[1][1] == Approx(-93.98069637537).epsilon(1e-4));
+  REQUIRE(grad_old[1][2] == Approx(64.050727483593).epsilon(1e-4));
 #endif
 
 

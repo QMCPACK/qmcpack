@@ -108,7 +108,6 @@ class MatrixDelayedUpdateCUDA
   /// dot output
   DeviceValueVector_t y_gpu;
   /// list of delayed electrons
-  Vector<int, CUDAHostAllocator<int>> delay_list;
   Vector<int, CUDAAllocator<int>> delay_list_gpu;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
@@ -288,7 +287,6 @@ public:
     p_gpu.resize(delay);
     tempMat_gpu.resize(norb, delay);
     Binv_gpu.resize(delay, delay);
-    delay_list.resize(delay);
     delay_list_gpu.resize(delay);
     invRow.resize(norb);
     invRow_dev_ptr = getOffloadDevicePtr(invRow.data());

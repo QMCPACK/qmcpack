@@ -290,6 +290,21 @@ public:
     }
   }
 
+  inline void mw_accept_rejectRow(const RefVector<This_t>& engines,
+                                  int rowchanged,
+                                  int norb,
+                                  const std::vector<T*>& Ainv_list,
+                                  int lda,
+                                  const std::vector<T*>& psiM_g_list,
+                                  const std::vector<T*>& psiM_l_list,
+                                  const std::vector<bool>& isAccepted,
+                                  const T* phi_vgl_v_dev_ptr,
+                                  const size_t phi_vgl_stride,
+                                  const std::vector<T>& ratios)
+  {
+    mw_updateRow(Ainv_list, psiM_g_list, psiM_l_list, norb, lda, rowchanged, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_stride, ratios);
+  }
+
   void mw_getInvRowReady(const int row_id, bool transfer_to_host)
   {
     //FIXME in case transfer_to_host

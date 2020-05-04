@@ -223,6 +223,9 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
     if (isAccepted[iw])
       count++;
   const int n_accepted = count;
+
+  RefVector<DET_ENGINE_TYPE> engine_list;
+  engine_list.reserve(nw);
   std::vector<ValueType*> psiMinv_dev_ptr_list(nw, nullptr);
   std::vector<ValueType*> psiM_g_dev_ptr_list(n_accepted, nullptr);
   std::vector<ValueType*> psiM_l_dev_ptr_list(n_accepted, nullptr);
@@ -231,6 +234,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
   for (int iw = 0, count = 0; iw < nw; iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+    engine_list.push_back(det.det_engine_);
     psiMinv_dev_ptr_list[iw] = det.psiMinv_dev_ptr;
     if (isAccepted[iw])
     {
@@ -248,7 +252,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
     PRAGMA_OFFLOAD("omp target update to(phi_vgl_v_ptr[:phi_vgl_v.capacity()*5])")
   }
 
-  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, NumOrbitals, psiMinv.cols(), WorkingIndex, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_v.capacity(), ratios_local);
+  //det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, NumOrbitals, psiMinv.cols(), WorkingIndex, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_v.capacity(), ratios_local);
+  det_engine_.mw_accept_rejectRow(engine_list, WorkingIndex, NumOrbitals, psiMinv_dev_ptr_list, psiMinv.cols(), psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_v.capacity(), ratios_local);
 
   UpdateTimer.stop();
 }
