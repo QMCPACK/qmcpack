@@ -19,8 +19,8 @@ namespace qmcplusplus
 namespace cuBLAS_inhouse
 {
 template<typename T, int ROWBS, int COLBS>
-__global__ void gemvT_batched_kernel(const int m,
-                                     const int n,
+__global__ void gemvT_batched_kernel(const int m, // number of columns in row major A
+                                     const int n, // number of rows in row major A
                                      const T* __restrict__ alpha,
                                      const T* const A[],
                                      const int lda,
@@ -43,16 +43,16 @@ __global__ void gemvT_batched_kernel(const int m,
   const T* __restrict__ x_iw = x[blockIdx.x];
 
   const int row_begin = blockIdx.y * ROWBS;
-  const int row_max   = (m - row_begin) < ROWBS ? (m - row_begin) : ROWBS;
+  const int row_max   = (n - row_begin) < ROWBS ? (n - row_begin) : ROWBS;
 
-  const int num_col_blocks = (n + COLBS - 1) / COLBS;
+  const int num_col_blocks = (m + COLBS - 1) / COLBS;
   for (int ib = 0; ib < num_col_blocks; ib++)
   {
     const int col_id = ib * COLBS + tid;
-    if (col_id < n)
+    if (col_id < m)
       x_part[tid] = x_iw[col_id * incx];
     for (int row_id = row_begin; row_id < row_begin + row_max; row_id++)
-      if (col_id < n)
+      if (col_id < m)
         sum[row_id - row_begin][tid] += x_part[tid] * A_iw[row_id * lda + col_id];
   }
 
@@ -71,8 +71,8 @@ __global__ void gemvT_batched_kernel(const int m,
 }
 
 template<typename T, int ROWBS>
-__global__ void gemvN_batched_kernel(const int m,
-                                     const int n,
+__global__ void gemvN_batched_kernel(const int m, // number of columns in row major A
+                                     const int n, // number of rows in row major A
                                      const T* __restrict__ alpha,
                                      const T* const A[],
                                      const int lda,
@@ -92,7 +92,7 @@ __global__ void gemvN_batched_kernel(const int m,
   T sum(0);
   for (int col_id = 0; col_id < n; col_id++)
     sum += A_iw[col_id * lda + row_begin + tid] * x_iw[col_id * incx];
-  y_iw[(row_begin + tid) * incy] = sum;
+  y_iw[(row_begin + tid) * incy] = alpha[blockIdx.x] * sum + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
 }
 
 template<typename T>
@@ -117,7 +117,7 @@ cuBLAS_inhouse_status gemv_batched_impl(cuBLAS_inhouse_handle& handle,
   {
     const int ROWBS          = 4;
     const int COLBS          = 64;
-    const int num_row_blocks = (m + ROWBS - 1) / ROWBS;
+    const int num_row_blocks = (n + ROWBS - 1) / ROWBS;
     dim3 dimBlock(COLBS);
     dim3 dimGrid(batch_count, num_row_blocks);
     gemvT_batched_kernel<T, ROWBS, COLBS><<<dimGrid, dimBlock, 0, handle>>>(m, n, alpha, A, lda, x, incx, beta, y, incy);
