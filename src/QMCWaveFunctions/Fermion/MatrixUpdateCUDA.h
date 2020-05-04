@@ -291,10 +291,10 @@ public:
   }
 
   inline void mw_accept_rejectRow(const RefVector<This_t>& engines,
-                                  int rowchanged,
-                                  int norb,
+                                  const int rowchanged,
+                                  const int norb,
                                   const std::vector<T*>& Ainv_list,
-                                  int lda,
+                                  const int lda,
                                   const std::vector<T*>& psiM_g_list,
                                   const std::vector<T*>& psiM_l_list,
                                   const std::vector<bool>& isAccepted,
@@ -303,6 +303,16 @@ public:
                                   const std::vector<T>& ratios)
   {
     mw_updateRow(Ainv_list, psiM_g_list, psiM_l_list, norb, lda, rowchanged, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_stride, ratios);
+  }
+
+  /** update the full Ainv and reset delay_count
+   * @param Ainv inverse matrix
+   */
+  inline void mw_updateInvMat(const RefVector<This_t>& engines,
+                              const int norb,
+                              const std::vector<T*>& Ainv_list,
+                              const int lda)
+  {
   }
 
   void mw_getInvRowReady(const int row_id, bool transfer_to_host)

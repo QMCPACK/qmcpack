@@ -348,6 +348,46 @@ cudaError_t fake_accept_add_delay_list_update_Binv_U_batched(cudaStream_t& hstre
   return cudaPeekAtLastError();
 }
 
+template<typename T, int COLBS>
+__global__ void applyW_kernel(const int* const delay_list[],
+                           const int delay_count,
+                           T* const tempMat[],
+                           const int lda)
+{
+  const int iw  = blockIdx.x;
+  const int* __restrict__ delay_list_iw = delay_list[iw];
+  T* __restrict__ tempMat_iw          = tempMat[iw];
+
+  const int tid = threadIdx.x;
+  const int num_blocks = (delay_count + COLBS - 1) / COLBS;
+  for (int ib = 0; ib < num_blocks; ib++)
+  {
+    const int col_id = ib * COLBS + tid;
+    if (col_id < delay_count)
+    {
+      const int row_id = delay_list_iw[col_id];
+      if (row_id >= 0)
+        tempMat_iw[row_id * lda + col_id] -= T(1);
+    }
+  }
+}
+
+cudaError_t applyW_batched(cudaStream_t& hstream,
+                           const int* const delay_list[],
+                           const int delay_count,
+                           float* const tempMat[],
+                           const int lda,
+                           const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 32;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  applyW_kernel<float, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, tempMat, lda);
+  return cudaPeekAtLastError();
+}
 
 } // namespace CUDA
 } // namespace qmcplusplus

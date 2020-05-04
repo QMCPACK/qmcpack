@@ -105,6 +105,14 @@ cudaError_t fake_accept_add_delay_list_update_Binv_U_batched(cudaStream_t& hstre
                                                              double* const Urow[],
                                                              const int norb,
                                                              const int batch_count);
+
+cudaError_t applyW_batched(cudaStream_t& hstream,
+                           const int* const delay_list[],
+                           const int delay_count,
+                           float* const tempMat[],
+                           const int lda,
+                           const int batch_count);
+
 } // namespace CUDA
 } // namespace qmcplusplus
 #endif

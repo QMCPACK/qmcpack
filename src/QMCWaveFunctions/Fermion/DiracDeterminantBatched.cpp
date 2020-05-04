@@ -255,6 +255,9 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
   //det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, NumOrbitals, psiMinv.cols(), WorkingIndex, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_v.capacity(), ratios_local);
   det_engine_.mw_accept_rejectRow(engine_list, WorkingIndex, NumOrbitals, psiMinv_dev_ptr_list, psiMinv.cols(), psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_v.capacity(), ratios_local);
 
+  if (!safe_to_delay)
+    det_engine_.mw_updateInvMat(engine_list, NumOrbitals, psiMinv_dev_ptr_list, psiMinv.cols());
+
   UpdateTimer.stop();
 }
 

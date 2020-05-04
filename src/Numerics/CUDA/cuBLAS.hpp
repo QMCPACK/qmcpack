@@ -68,9 +68,9 @@ namespace qmcplusplus
 {
 /** interface to cuBLAS calls for different data types S/C/D/Z
  */
-struct cuBLAS
+namespace cuBLAS
 {
-  static inline void gemm(cublasHandle_t& handle,
+  inline void gemm(cublasHandle_t& handle,
                           const cublasOperation_t& transa,
                           const cublasOperation_t& transb,
                           int m,
@@ -89,7 +89,7 @@ struct cuBLAS
                      "cublasSgemm failed!");
   }
 
-  static inline void gemm(cublasHandle_t& handle,
+  inline void gemm(cublasHandle_t& handle,
                           const cublasOperation_t& transa,
                           const cublasOperation_t& transb,
                           int m,
@@ -109,7 +109,7 @@ struct cuBLAS
                      "cublasCgemm failed!");
   }
 
-  static inline void gemm(cublasHandle_t& handle,
+  inline void gemm(cublasHandle_t& handle,
                           const cublasOperation_t& transa,
                           const cublasOperation_t& transb,
                           int m,
@@ -128,7 +128,7 @@ struct cuBLAS
                      "cublasDgemm failed!");
   }
 
-  static inline void gemm(cublasHandle_t& handle,
+  inline void gemm(cublasHandle_t& handle,
                           const cublasOperation_t& transa,
                           const cublasOperation_t& transb,
                           int m,
@@ -147,6 +147,85 @@ struct cuBLAS
                                  (const cuDoubleComplex*)A, lda, (const cuDoubleComplex*)B, ldb,
                                  (const cuDoubleComplex*)beta, (cuDoubleComplex*)C, ldc),
                      "cublasZgemm failed!");
+  }
+
+  inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
+                          const cublasOperation_t& transa,
+                          const cublasOperation_t& transb,
+                          int m,
+                          int n,
+                          int k,
+                          const float* alpha,
+                          const float* const A[],
+                          int lda,
+                          const float* const B[],
+                          int ldb,
+                          const float* beta,
+                          float* const C[],
+                          int ldc,
+                          int batchCount)
+  {
+    return cublasSgemmBatched(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount);
+  }
+
+  inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
+                          const cublasOperation_t& transa,
+                          const cublasOperation_t& transb,
+                          int m,
+                          int n,
+                          int k,
+                          const std::complex<float>* alpha,
+                          const std::complex<float>* const A[],
+                          int lda,
+                          const std::complex<float>* const B[],
+                          int ldb,
+                          const std::complex<float>* beta,
+                          std::complex<float>* const C[],
+                          int ldc,
+                          int batchCount)
+  {
+    return cublasCgemmBatched(handle, transa, transb, m, n, k, (const cuComplex*)alpha, (const cuComplex**)A, lda,
+                                 (const cuComplex**)B, ldb, (const cuComplex*)beta, (cuComplex**)C, ldc, batchCount);
+  }
+
+  inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
+                          const cublasOperation_t& transa,
+                          const cublasOperation_t& transb,
+                          int m,
+                          int n,
+                          int k,
+                          const double* alpha,
+                          const double* const A[],
+                          int lda,
+                          const double* const B[],
+                          int ldb,
+                          const double* beta,
+                          double* const C[],
+                          int ldc,
+                          int batchCount)
+  {
+    return cublasDgemmBatched(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount);
+  }
+
+  inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
+                          const cublasOperation_t& transa,
+                          const cublasOperation_t& transb,
+                          int m,
+                          int n,
+                          int k,
+                          const std::complex<double>* alpha,
+                          const std::complex<double>* const A[],
+                          int lda,
+                          const std::complex<double>* const B[],
+                          int ldb,
+                          const std::complex<double>* beta,
+                          std::complex<double>* const C[],
+                          int ldc,
+                          int batchCount)
+  {
+    return cublasZgemmBatched(handle, transa, transb, m, n, k, (const cuDoubleComplex*)alpha,
+                                 (const cuDoubleComplex**)A, lda, (const cuDoubleComplex**)B, ldb,
+                                 (const cuDoubleComplex*)beta, (cuDoubleComplex**)C, ldc, batchCount);
   }
 };
 
