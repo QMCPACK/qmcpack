@@ -182,12 +182,12 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
 
 template<typename T, int COLBS>
 __global__ void add_delay_list_compute_y_kernel(int* const delay_list[],
-                                             const int rowchanged,
-                                             const int delay_count,
-                                             T* const binvrow[],
-                                             const T* const p[],
-                                             const T* const ratio,
-                                             T* const y)
+                                                const int rowchanged,
+                                                const int delay_count,
+                                                T* const binvrow[],
+                                                const T* const p[],
+                                                const T* const ratio,
+                                                T* const y)
 {
   // original CPU code
   //delay_list[delay_count] = rowchanged;
@@ -197,9 +197,9 @@ __global__ void add_delay_list_compute_y_kernel(int* const delay_list[],
   //  y += Binv[delay_count][i] * p[i];
   //Binv[delay_count][delay_count] = y = T(1) / y;
 
-  const int tid = threadIdx.x;
+  const int tid                   = threadIdx.x;
   const int iw                    = blockIdx.x;
-  int* __restrict__ delay_list_iw    = delay_list[iw];
+  int* __restrict__ delay_list_iw = delay_list[iw];
 
   if (tid == 0)
     delay_list_iw[delay_count] = rowchanged;
@@ -245,7 +245,8 @@ cudaError_t add_delay_list_compute_y_batched(cudaStream_t& hstream,
   const int COLBS = 64;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  add_delay_list_compute_y_kernel<float, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binvrow, p, ratio, y);
+  add_delay_list_compute_y_kernel<float, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binvrow, p, ratio, y);
   return cudaPeekAtLastError();
 }
 
@@ -265,9 +266,88 @@ cudaError_t add_delay_list_compute_y_batched(cudaStream_t& hstream,
   const int COLBS = 64;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  add_delay_list_compute_y_kernel<double, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binvrow, p, ratio, y);
+  add_delay_list_compute_y_kernel<double, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binvrow, p, ratio, y);
   return cudaPeekAtLastError();
 }
+
+template<typename T, int COLBS>
+__global__ void fake_accept_add_delay_list_update_Binv_U_kernel(int* const delay_list[],
+                                                                const int delay_count,
+                                                                T* const binv[],
+                                                                const int lda,
+                                                                T* const Urow[],
+                                                                const int norb)
+{
+  const int iw  = blockIdx.x;
+  const int tid = threadIdx.x;
+
+  T* __restrict__ Urow_iw   = Urow[iw];
+  const int num_blocks_norb = (norb + COLBS - 1) / COLBS;
+  for (int ib = 0; ib < num_blocks_norb; ib++)
+  {
+    const int col_id = ib * COLBS + tid;
+    if (col_id < norb)
+      Urow_iw[col_id] = T(0);
+  }
+
+  T* __restrict__ binv_iw          = binv[iw];
+  const int num_blocks_delay_count = (delay_count + COLBS - 1) / COLBS;
+  for (int ib = 0; ib < num_blocks_delay_count; ib++)
+  {
+    const int col_id = ib * COLBS + tid;
+    if (col_id < delay_count)
+      binv_iw[delay_count * lda + col_id] = binv_iw[delay_count + lda * col_id] = T(0);
+  }
+
+  int* __restrict__ delay_list_iw = delay_list[iw];
+  if (tid == 0)
+  {
+    binv_iw[delay_count * lda + delay_count] = T(1);
+    delay_list_iw[delay_count]               = -1;
+  }
+}
+
+cudaError_t fake_accept_add_delay_list_update_Binv_U_batched(cudaStream_t& hstream,
+                                                             int* const delay_list[],
+                                                             const int delay_count,
+                                                             float* const binv[],
+                                                             const int lda,
+                                                             float* const Urow[],
+                                                             const int norb,
+                                                             const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 128;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  fake_accept_add_delay_list_update_Binv_U_kernel<float, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, binv, lda, Urow, norb);
+  return cudaPeekAtLastError();
+}
+
+cudaError_t fake_accept_add_delay_list_update_Binv_U_batched(cudaStream_t& hstream,
+                                                             int* const delay_list[],
+                                                             const int delay_count,
+                                                             double* const binv[],
+                                                             const int lda,
+                                                             double* const Urow[],
+                                                             const int norb,
+                                                             const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 128;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  fake_accept_add_delay_list_update_Binv_U_kernel<double, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, binv, lda, Urow, norb);
+  return cudaPeekAtLastError();
+}
+
 
 } // namespace CUDA
 } // namespace qmcplusplus

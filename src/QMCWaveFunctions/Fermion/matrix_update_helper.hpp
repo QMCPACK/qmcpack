@@ -88,6 +88,23 @@ cudaError_t add_delay_list_compute_y_batched(cudaStream_t& hstream,
                                              double* const y,
                                              const int batch_count);
 
+cudaError_t fake_accept_add_delay_list_update_Binv_U_batched(cudaStream_t& hstream,
+                                                             int* const delay_list[],
+                                                             const int delay_count,
+                                                             float* const binv[],
+                                                             const int lda,
+                                                             float* const Urow[],
+                                                             const int norb,
+                                                             const int batch_count);
+
+cudaError_t fake_accept_add_delay_list_update_Binv_U_batched(cudaStream_t& hstream,
+                                                             int* const delay_list[],
+                                                             const int delay_count,
+                                                             double* const binv[],
+                                                             const int lda,
+                                                             double* const Urow[],
+                                                             const int norb,
+                                                             const int batch_count);
 } // namespace CUDA
 } // namespace qmcplusplus
 #endif

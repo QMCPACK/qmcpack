@@ -195,7 +195,10 @@ class MatrixDelayedUpdateCUDA
    * @param Ainv inverse matrix
    * @param rowchanged the row id corresponding to the proposed electron
    */
-  inline void mw_prepareInvRow(const RefVector<This_t>& engines, const int norb, const std::vector<const T*>& oldRow_list, const std::vector<T*>& invRow_list)
+  inline void mw_prepareInvRow(const RefVector<This_t>& engines,
+                               const int norb,
+                               const std::vector<const T*>& oldRow_list,
+                               const std::vector<T*>& invRow_list)
   {
     const int nw = engines.size();
     resize_prepareInvRow_scratch_arrays(nw);
@@ -205,7 +208,7 @@ class MatrixDelayedUpdateCUDA
     Matrix<T*> ptr_buffer(reinterpret_cast<T**>(prepare_inv_row_buffer_H2D.data()), 7, nw);
     for (int iw = 0; iw < nw; iw++)
     {
-      This_t& engine = engines[iw];
+      This_t& engine    = engines[iw];
       ptr_buffer[0][iw] = const_cast<T*>(oldRow_list[iw]);
       ptr_buffer[1][iw] = invRow_list[iw];
       ptr_buffer[2][iw] = engine.U_gpu.data();
@@ -215,17 +218,17 @@ class MatrixDelayedUpdateCUDA
       ptr_buffer[6][iw] = engine.V_gpu.data();
     }
 
-    cudaErrorCheck(cudaMemcpyAsync(prepare_inv_row_buffer_H2D_dev_ptr, prepare_inv_row_buffer_H2D.data(), prepare_inv_row_buffer_H2D.size(), cudaMemcpyHostToDevice,
-                                   hstream),
+    cudaErrorCheck(cudaMemcpyAsync(prepare_inv_row_buffer_H2D_dev_ptr, prepare_inv_row_buffer_H2D.data(),
+                                   prepare_inv_row_buffer_H2D.size(), cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync prepare_inv_row_buffer_H2D failed!");
 
-    T** oldRow_mw_ptr   = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr);
-    T** invRow_mw_ptr   = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw);
-    T** U_mw_ptr   = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 2);
-    T** p_mw_ptr   = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 3);
-    T** Binv_mw_ptr   = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 4);
-    T** BinvRow_mw_ptr   = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 5);
-    T** V_mw_ptr   = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 6);
+    T** oldRow_mw_ptr  = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr);
+    T** invRow_mw_ptr  = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw);
+    T** U_mw_ptr       = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 2);
+    T** p_mw_ptr       = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 3);
+    T** Binv_mw_ptr    = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 4);
+    T** BinvRow_mw_ptr = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 5);
+    T** V_mw_ptr       = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr + sizeof(T*) * nw * 6);
 
     // save Ainv[rowchanged] to invRow
     //std::copy_n(Ainv[rowchanged], norb, invRow.data());
@@ -236,15 +239,15 @@ class MatrixDelayedUpdateCUDA
     //BLAS::gemv('N', delay_count, delay_count, -cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
     //BLAS::gemv('N', norb, delay_count, cone, V.data(), norb, Binv[delay_count], 1, cone, invRow.data(), 1);
     cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, delay_count, cone_dev_ptr, U_mw_ptr, norb,
-                                                  invRow_mw_ptr, 1, czero_dev_ptr, p_mw_ptr, 1, nw),
-                     "cuBLAS_inhouse::gemv_batched failed!");
-    cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'N', delay_count, delay_count, cminusone_dev_ptr, Binv_mw_ptr, lda_Binv,
-                                                  p_mw_ptr, 1, czero_dev_ptr, BinvRow_mw_ptr, 1, nw),
-                     "cuBLAS_inhouse::gemv_batched failed!");
+                                                invRow_mw_ptr, 1, czero_dev_ptr, p_mw_ptr, 1, nw),
+                   "cuBLAS_inhouse::gemv_batched failed!");
+    cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'N', delay_count, delay_count, cminusone_dev_ptr, Binv_mw_ptr,
+                                                lda_Binv, p_mw_ptr, 1, czero_dev_ptr, BinvRow_mw_ptr, 1, nw),
+                   "cuBLAS_inhouse::gemv_batched failed!");
     cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'N', norb, delay_count, cone_dev_ptr, V_mw_ptr, norb,
-                                                  BinvRow_mw_ptr, 1, cone_dev_ptr, invRow_mw_ptr, 1, nw),
-                     "cuBLAS_inhouse::gemv_batched failed!");
-/*
+                                                BinvRow_mw_ptr, 1, cone_dev_ptr, invRow_mw_ptr, 1, nw),
+                   "cuBLAS_inhouse::gemv_batched failed!");
+    /*
     if(delay_count==1)
     {
       //cudaErrorCheck(cuBLAS_inhouse::copy_batched(hstream, 2, BinvRow_mw_ptr, 1, invRow_mw_ptr, 1, nw),
@@ -327,8 +330,8 @@ public:
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
     }
 
-    cudaErrorCheck(cudaMemcpyAsync(evalGrad_buffer_H2D_dev_ptr, evalGrad_buffer_H2D.data(), evalGrad_buffer_H2D.size(), cudaMemcpyHostToDevice,
-                                   hstream),
+    cudaErrorCheck(cudaMemcpyAsync(evalGrad_buffer_H2D_dev_ptr, evalGrad_buffer_H2D.data(), evalGrad_buffer_H2D.size(),
+                                   cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync evalGrad_buffer_H2D failed!");
 
     resizeGradsArray(nw, GT::Size);
@@ -356,7 +359,7 @@ public:
     constexpr T cone(1);
     constexpr T czero(0);
     const int norb = Ainv.rows();
-    const int lda = Ainv.cols();
+    const int lda  = Ainv.cols();
     resize_updateRow_scratch_arrays(norb, 1);
     // invoke the Fahy's variant of Sherman-Morrison update.
     int dummy_handle  = 0;
@@ -421,8 +424,8 @@ public:
     // update the inverse matrix
     resize_fill_constant_arrays(n_accepted);
 
-    cudaErrorCheck(cudaMemcpyAsync(update_buffer_H2D_dev_ptr, update_buffer_H2D.data(), update_buffer_H2D.size(), cudaMemcpyHostToDevice,
-                                   hstream),
+    cudaErrorCheck(cudaMemcpyAsync(update_buffer_H2D_dev_ptr, update_buffer_H2D.data(), update_buffer_H2D.size(),
+                                   cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync update_buffer_H2D failed!");
 
     {
@@ -437,8 +440,8 @@ public:
       T* ratio_inv_mw   = reinterpret_cast<T*>(update_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 8);
 
       // invoke the Fahy's variant of Sherman-Morrison update.
-      cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, norb, cone_dev_ptr, Ainv_mw_ptr, lda,
-                                                  phiV_mw_ptr, 1, czero_dev_ptr, temp_mw_ptr, 1, n_accepted),
+      cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, norb, cone_dev_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr,
+                                                  1, czero_dev_ptr, temp_mw_ptr, 1, n_accepted),
                      "cuBLAS_inhouse::gemv_batched failed!");
 
       cudaErrorCheck(CUDA::copyAinvRow_saveGL_cuda(hstream, rowchanged, norb, Ainv_mw_ptr, lda, temp_mw_ptr,
@@ -465,9 +468,8 @@ public:
                                   const size_t phi_vgl_stride,
                                   const std::vector<T>& ratios)
   {
-    const int nw = engines.size();
+    const int nw         = engines.size();
     const int n_accepted = psiM_g_list.size();
-    const int n_rejected = nw - n_accepted;
     resize_accept_rejectRow_scratch_arrays(nw);
     resize_fill_constant_arrays(nw);
 
@@ -481,58 +483,56 @@ public:
       {
         ptr_buffer[0][count_accepted] = Ainv_list[iw] + lda * rowchanged;
         ptr_buffer[1][count_accepted] = engine.V_gpu.data();
-        ptr_buffer[2][count_accepted] = engine.U_gpu.data();
+        ptr_buffer[2][count_accepted] = engine.U_gpu.data() + norb * delay_count;
         ptr_buffer[3][count_accepted] = engine.p_gpu.data();
         ptr_buffer[4][count_accepted] = engine.Binv_gpu.data();
         ptr_buffer[5][count_accepted] = engine.Binv_gpu.data() + delay_count * lda_Binv;
         ptr_buffer[6][count_accepted] = engine.Binv_gpu.data() + delay_count;
         ptr_buffer[7][count_accepted] = reinterpret_cast<T*>(engine.delay_list_gpu.data());
         ptr_buffer[8][count_accepted] = const_cast<T*>(phi_vgl_v_dev_ptr + norb * iw);
-        ptr_buffer[9][count_accepted] = engine.invRow_dev_ptr;
-        c_ratio[count_accepted] = ratios[iw];
+        ptr_buffer[9][count_accepted] = engine.V_gpu.data() + norb * delay_count;
+        c_ratio[count_accepted]       = ratios[iw];
         count_accepted++;
       }
       else
       {
         ptr_buffer[0][n_accepted + count_rejected] = Ainv_list[iw] + lda * rowchanged;
         ptr_buffer[1][n_accepted + count_rejected] = engine.V_gpu.data();
-        ptr_buffer[2][n_accepted + count_rejected] = engine.U_gpu.data();
+        ptr_buffer[2][n_accepted + count_rejected] = engine.U_gpu.data() + norb * delay_count;
         ptr_buffer[3][n_accepted + count_rejected] = engine.p_gpu.data();
         ptr_buffer[4][n_accepted + count_rejected] = engine.Binv_gpu.data();
         ptr_buffer[5][n_accepted + count_rejected] = engine.Binv_gpu.data() + delay_count * lda_Binv;
         ptr_buffer[6][n_accepted + count_rejected] = engine.Binv_gpu.data() + delay_count;
         ptr_buffer[7][n_accepted + count_rejected] = reinterpret_cast<T*>(engine.delay_list_gpu.data());
-        ptr_buffer[9][n_accepted + count_rejected] = engine.invRow_dev_ptr;
+        ptr_buffer[9][n_accepted + count_rejected] = engine.V_gpu.data() + norb * delay_count;
         count_rejected++;
       }
     }
 
-    cudaErrorCheck(cudaMemcpyAsync(accept_rejectRow_buffer_H2D_dev_ptr, accept_rejectRow_buffer_H2D.data(), accept_rejectRow_buffer_H2D.size(),
-                                   cudaMemcpyHostToDevice, hstream),
+    cudaErrorCheck(cudaMemcpyAsync(accept_rejectRow_buffer_H2D_dev_ptr, accept_rejectRow_buffer_H2D.data(),
+                                   accept_rejectRow_buffer_H2D.size(), cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync prepare_inv_row_buffer_H2D failed!");
 
-    T** invRow_mw_ptr   = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr);
-    T** V_mw_ptr   = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw);
-    T** U_mw_ptr   = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 2);
-    T** p_mw_ptr   = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 3);
-    T** Binv_mw_ptr   = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 4);
-    T** BinvRow_mw_ptr   = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 5);
-    T** BinvCol_mw_ptr   = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 6);
-    int** delay_list_mw_ptr   = reinterpret_cast<int**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 7);
-    T** phiV_mw_ptr   = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 8);
-    T** checkinvRow_mw_ptr   = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 9);
-    T* c_ratio_mw_ptr   = reinterpret_cast<T*>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 10);
+    T** invRow_mw_ptr       = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr);
+    T** V_mw_ptr            = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw);
+    T** U_row_mw_ptr        = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 2);
+    T** p_mw_ptr            = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 3);
+    T** Binv_mw_ptr         = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 4);
+    T** BinvRow_mw_ptr      = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 5);
+    T** BinvCol_mw_ptr      = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 6);
+    int** delay_list_mw_ptr = reinterpret_cast<int**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 7);
+    T** phiV_mw_ptr         = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 8);
+    T** V_row_mw_ptr        = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 9);
+    T* c_ratio_mw_ptr       = reinterpret_cast<T*>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 10);
 
     //std::copy_n(Ainv[rowchanged], norb, V[delay_count]);
-    //FIXME V row
-    cudaErrorCheck(cuBLAS_inhouse::copy_batched(hstream, norb, invRow_mw_ptr, 1, V_mw_ptr, 1, nw),
+    cudaErrorCheck(cuBLAS_inhouse::copy_batched(hstream, norb, invRow_mw_ptr, 1, V_row_mw_ptr, 1, nw),
                    "cuBLAS_inhouse::copy_batched failed!");
     // handle accepted walkers
     //std::copy_n(psiV.data(), norb, U[delay_count]);
-    //FIXME U row
-    cudaErrorCheck(cuBLAS_inhouse::copy_batched(hstream, norb, phiV_mw_ptr, 1, U_mw_ptr, 1, n_accepted),
+    cudaErrorCheck(cuBLAS_inhouse::copy_batched(hstream, norb, phiV_mw_ptr, 1, U_row_mw_ptr, 1, n_accepted),
                    "cuBLAS_inhouse::copy_batched failed!");
-/*
+    /*
     cudaErrorCheck(cuBLAS_inhouse::copy_batched(hstream, norb, invRow_mw_ptr, 1, checkinvRow_mw_ptr, 1, n_accepted),
                    "cuBLAS_inhouse::copy_batched failed!");
     waitStream();
@@ -548,7 +548,7 @@ public:
     //BLAS::gemv('T', norb, delay_count + 1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
     cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, delay_count, cminusone_dev_ptr, V_mw_ptr, norb,
                                                 phiV_mw_ptr, 1, czero_dev_ptr, p_mw_ptr, 1, n_accepted),
-                     "cuBLAS_inhouse::gemv_batched failed!");
+                   "cuBLAS_inhouse::gemv_batched failed!");
     //delay_list[delay_count] = rowchanged;
     // x
     //T y = -p[delay_count];
@@ -557,29 +557,37 @@ public:
     //Binv[delay_count][delay_count] = y = T(1) / y;
     y_gpu.resize(nw);
     T* y_mw_ptr = y_gpu.data();
-    cudaErrorCheck(CUDA::add_delay_list_compute_y_batched(hstream, delay_list_mw_ptr, rowchanged, delay_count, BinvRow_mw_ptr,
-                                                          p_mw_ptr, c_ratio_mw_ptr, y_mw_ptr, n_accepted),
-                     "CUDA::add_delay_list_compute_y_batched failed!");
+    cudaErrorCheck(CUDA::add_delay_list_compute_y_batched(hstream, delay_list_mw_ptr, rowchanged, delay_count,
+                                                          BinvRow_mw_ptr, p_mw_ptr, c_ratio_mw_ptr, y_mw_ptr,
+                                                          n_accepted),
+                   "CUDA::add_delay_list_compute_y_batched failed!");
     // Y
     //BLAS::gemv('T', delay_count, delay_count, y, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data() + delay_count,
     //           lda_Binv);
     cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', delay_count, delay_count, y_mw_ptr, Binv_mw_ptr, lda_Binv,
                                                 p_mw_ptr, 1, czero_dev_ptr, BinvCol_mw_ptr, lda_Binv, n_accepted),
-                     "cuBLAS_inhouse::gemv_batched failed!");
+                   "cuBLAS_inhouse::gemv_batched failed!");
     // X
     //BLAS::ger(delay_count, delay_count, cone, Binv[delay_count], 1, Binv.data() + delay_count, lda_Binv,
     //          Binv.data(), lda_Binv);
     cudaErrorCheck(cuBLAS_inhouse::ger_batched(hstream, delay_count, delay_count, cone_dev_ptr, BinvRow_mw_ptr, 1,
                                                BinvCol_mw_ptr, lda_Binv, Binv_mw_ptr, lda_Binv, n_accepted),
-                     "cuBLAS_inhouse::ger_batched failed!");
+                   "cuBLAS_inhouse::ger_batched failed!");
     // Z
     //for (int i = 0; i < delay_count; i++)
     //  Binv[delay_count][i] *= y;
     cudaErrorCheck(cuBLAS_inhouse::scal_batched(hstream, delay_count, y_mw_ptr, BinvRow_mw_ptr, 1, n_accepted),
                    "cuBLAS_inhouse::scal_batched failed!");
 
+    // handle Y, Z with zero and x with 1
+    const int n_rejected = nw - n_accepted;
+    cudaErrorCheck(CUDA::fake_accept_add_delay_list_update_Binv_U_batched(hstream, delay_list_mw_ptr + n_accepted,
+                                                                          delay_count, Binv_mw_ptr + n_accepted,
+                                                                          lda_Binv, U_row_mw_ptr + n_accepted, norb,
+                                                                          n_rejected),
+                   "CUDA::add_delay_list_update_Binv_U_batched failed!");
     delay_count++;
-/*
+    /*
     // update Ainv when maximal delay is reached
     if (delay_count == lda_Binv)
       updateInvMat(Ainv);
@@ -592,7 +600,9 @@ public:
     waitStream();
   }
 
-  void mw_transferAinv_D2H(const std::vector<T*>& Ainv_ptr_list, const std::vector<T*>& Ainv_dev_ptr_list, size_t matrix_size)
+  void mw_transferAinv_D2H(const std::vector<T*>& Ainv_ptr_list,
+                           const std::vector<T*>& Ainv_dev_ptr_list,
+                           size_t matrix_size)
   {
     for (int iw = 0; iw < Ainv_ptr_list.size(); iw++)
       cudaErrorCheck(cudaMemcpyAsync(Ainv_ptr_list[iw], Ainv_dev_ptr_list[iw], matrix_size * sizeof(T),
