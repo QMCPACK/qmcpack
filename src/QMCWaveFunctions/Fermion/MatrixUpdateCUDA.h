@@ -317,8 +317,9 @@ public:
    */
   inline void mw_updateInvMat(const RefVector<This_t>& engines) {}
 
-  std::vector<const T*> mw_getInvRow(const RefVector<This_t>& engines, const int row_id, bool on_host) const
+  std::vector<const T*> mw_getInvRow(const RefVector<This_t>& engines, const int row_id, bool on_host)
   {
+    waitStream(); // this can be skipped if mw_evalGrad gets called already.
     const size_t nw = engines.size();
     std::vector<const T*> row_ptr_list;
     row_ptr_list.reserve(nw);
