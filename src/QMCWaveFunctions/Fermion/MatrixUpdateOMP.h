@@ -102,10 +102,7 @@ public:
     psiMinv_dev_ptr = getOffloadDevicePtr(psiMinv.data());
   }
 
-  OffloadPinnedValueMatrix_t& get_psiMinv()
-  {
-    return psiMinv;
-  }
+  OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
 
   /** compute the inverse of the transpose of matrix A
    * @param logdetT orbital value matrix
@@ -127,7 +124,7 @@ public:
                           std::vector<GT>& grad_now)
   {
     const int norb = psiMinv.rows();
-    const int nw = engines.size();
+    const int nw   = engines.size();
     buffer_H2D.resize(sizeof(T*) * 2 * nw);
     Matrix<const T*> ptr_buffer(reinterpret_cast<const T**>(buffer_H2D.data()), 2, nw);
     for (int iw = 0; iw < nw; iw++)
@@ -172,7 +169,7 @@ public:
     constexpr T cone(1);
     constexpr T czero(0);
     const int norb = Ainv.rows();
-    const int lda = Ainv.cols();
+    const int lda  = Ainv.cols();
     resize_scratch_arrays(norb, 1);
     // invoke the Fahy's variant of Sherman-Morrison update.
     int dummy_handle  = 0;
@@ -207,10 +204,11 @@ public:
                            const size_t phi_vgl_stride,
                            const std::vector<T>& ratios)
   {
-    const int norb = psiMinv.rows();
-    const int lda = psiMinv.cols();
+    const int norb          = psiMinv.rows();
+    const int lda           = psiMinv.cols();
     const size_t n_accepted = psiM_g_list.size();
-    if (n_accepted == 0) return;
+    if (n_accepted == 0)
+      return;
 
     resize_scratch_arrays(norb, n_accepted);
 
@@ -306,18 +304,27 @@ public:
   /** update the full Ainv and reset delay_count
    * @param Ainv inverse matrix
    */
-  inline void mw_updateInvMat(const RefVector<This_t>& engines)
-  {
-  }
+  inline void mw_updateInvMat(const RefVector<This_t>& engines) {}
 
   std::vector<const T*> mw_getInvRow(const RefVector<This_t>& engines, const int row_id, bool on_host) const
   {
     const size_t nw = engines.size();
     std::vector<const T*> row_ptr_list;
     row_ptr_list.reserve(nw);
-    for (This_t& engine : engines)
-      row_ptr_list.push_back(engine.psiMinv_dev_ptr + row_id * psiMinv.cols());
-    //FIXME in case transfer_to_host, transfer and return host pointer.
+    if (on_host)
+    {
+      for (This_t& engine : engines)
+      {
+        auto* ptr = engine.psiMinv.data();
+        PRAGMA_OFFLOAD("omp target update from(ptr[row_id * psiMinv.cols():psiMinv.cols()])")
+        row_ptr_list.push_back(ptr + row_id * psiMinv.cols());
+      }
+    }
+    else
+    {
+      for (This_t& engine : engines)
+        row_ptr_list.push_back(engine.psiMinv_dev_ptr + row_id * psiMinv.cols());
+    }
     return row_ptr_list;
   }
 
@@ -326,7 +333,7 @@ public:
     for (This_t& engine : engines)
     {
       auto* ptr = engine.psiMinv.data();
-      PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[:matrix_size])")
+      PRAGMA_OFFLOAD("omp target update from(ptr[:psiMinv.size()])")
     }
   }
 };
