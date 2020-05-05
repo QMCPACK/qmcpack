@@ -26,13 +26,15 @@
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
-
+#include "AFQMC/Memory/buffer_allocators.h"
 
 namespace qmcplusplus
 {
 
 namespace afqmc
 {
+
+extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
 
 /*
  * This class manages a list of "full" observables.
@@ -68,15 +70,20 @@ class FullObsHandler: public AFQMCInfo
   using stdCMatrix = boost::multi::array<ComplexType,2>;
   using stdCVector_ref = boost::multi::array_ref<ComplexType,1>;
 
+  using shm_buffer_alloc_type = localTG_buffer_type<ComplexType>;
+  using StaticSHMVector = boost::multi::static_array<ComplexType,1,shm_buffer_alloc_type>;
+  using StaticSHM4Tensor = boost::multi::static_array<ComplexType,4,shm_buffer_alloc_type>;
+
   public:
 
   FullObsHandler(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
         std::string name_, xmlNodePtr cur, WALKER_TYPES wlk, 
         Wavefunction& wfn):
-                                    AFQMCInfo(info),TG(tg_),walker_type(wlk),
+                                    AFQMCInfo(info),TG(tg_),
+                                    shm_buffer_allocator(localTG_buffer_generator.get()),
+                                    walker_type(wlk),
                                     wfn0(wfn), writer(false), block_size(1), nave(1),name(name_),
                                     nspins((walker_type==COLLINEAR)?2:1),
-                                    Buff(iextensions<1u>{1},make_localTG_allocator<ComplexType>(TG)), 
                                     G4D_host({0,0,0,0},shared_allocator<ComplexType>{TG.TG_local()})
   {
 
@@ -171,10 +178,11 @@ class FullObsHandler: public AFQMCInfo
     int nw(wset.size());
     int nrefs(Refs.size(1));
     double LogOverlapFactor(wset.getLogOverlapFactor());
-    set_buffer( nw * (dm_size+3) );
-    sharedC4Tensor_ref G4D(Buff.origin(), {nw, nspins, std::get<0>(Gdims),std::get<1>(Gdims)});
-    sharedCMatrix_ref G2D(Buff.origin(), {nw, dm_size});
-    sharedCVector_ref DevOv(G4D.origin()+G4D.num_elements(), {2*nw});
+    StaticSHM4Tensor G4D({nw, nspins, std::get<0>(Gdims),std::get<1>(Gdims)},
+                        shm_buffer_allocator->template get_allocator<ComplexType>());
+    StaticSHMVector DevOv(iextensions<1u>{2*nw},
+                        shm_buffer_allocator->template get_allocator<ComplexType>());
+    sharedCMatrix_ref G2D(G4D.origin(), {nw, dm_size});
 
     if(G4D_host.num_elements() != G4D.num_elements()) {
       G4D_host = std::move(mpi3C4Tensor(G4D.extensions(),
@@ -290,6 +298,8 @@ class FullObsHandler: public AFQMCInfo
 
   TaskGroup_& TG;
 
+  localTG_allocator_generator_type *shm_buffer_allocator;
+
   WALKER_TYPES walker_type;
 
   Wavefunction& wfn0;
@@ -311,18 +321,8 @@ class FullObsHandler: public AFQMCInfo
   // denominator (nave, ...)  
   stdCVector denominator;    
 
-  // buffer space
-  sharedCVector Buff;
-
   // space for G in host space
   mpi3C4Tensor G4D_host; 
-
-  void set_buffer(size_t N) {
-    if(Buff.num_elements() < N)
-      Buff = std::move(sharedCVector(iextensions<1u>{N},make_localTG_allocator<ComplexType>(TG)));
-    using std::fill_n;
-    fill_n(Buff.origin(),N,ComplexType(0.0));
-  }
 
 };
 
