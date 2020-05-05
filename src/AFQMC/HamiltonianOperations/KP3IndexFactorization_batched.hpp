@@ -164,7 +164,7 @@ class KP3IndexFactorization_batched
         //LQKank(std::move(move_vector<LQKankMatrix>(std::move(vak),TG.Node()))),
         LQKank(std::move(move_vector<LQKankMatrix>(std::move(vak)))),
         //needs_copy(true),
-        needs_copy(std::is_same<decltype(make_device_ptr(LQKank[0].origin())),
+        needs_copy(not std::is_same<decltype(make_device_ptr(LQKank[0].origin())),
                                 sp_pointer>::value),
         LQKakn(std::move(move_vector<shmSpMatrix>(std::move(vakn)))),
         LQKbnl(std::move(move_vector<shmSpMatrix>(std::move(vbl)))),
@@ -289,8 +289,12 @@ class KP3IndexFactorization_batched
       for(auto& v: LQKakn) lakn += v.num_elements();  
       for(auto& v: LQKbln) lbln += v.num_elements();  
       for(auto& v: LQKbnl) lbln += v.num_elements();  
-      app_log()<<"****************************************************************** \n" 
-               <<"  Static memory usage by KP3IndexFactorization_batched (node 0 in MB) \n"
+      app_log()<<"****************************************************************** \n"; 
+      if(needs_copy)
+        app_log()<<"  Using out of core storage of LQKakn \n";  
+      else
+        app_log()<<"  Using device storage of LQKakn \n";  
+      app_log()<<"  Static memory usage by KP3IndexFactorization_batched (node 0 in MB) \n"
                <<"    L[Q][K][ikn]: " <<likn*sizeof(SPComplexType)/1024.0/1024.0 <<" \n" 
                <<"    L[Q][K][akn]: " <<(lakn+memank)*sizeof(SPComplexType)/1024.0/1024.0 <<" \n" 
                <<"    L[Q][K][bln]: " <<lbln*sizeof(SPComplexType)/1024.0/1024.0 <<" \n";
