@@ -30,8 +30,6 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
-
 /*
  * Propagates the walker population nsteps forward with a fixed vbias (from the initial 
  * configuration).   
@@ -39,7 +37,7 @@ extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generato
 template<class WlkSet>
 void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealType dt) 
 { 
-  if(localTG_buffer_generator == nullptr) {
+  if(buffer_allocator == nullptr) {
     app_error()<<" Error: localTG_buffer_generator == nullptr. \n" <<std::endl;
     APP_ABORT("");
   }  
@@ -233,42 +231,18 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
   int nwalk = wset.size();
   int globalnCV = wfn.global_number_of_cholesky_vectors();
 
-  int vhs_nr = NMO*NMO, vhs_nc = nwalk;
-  if(transposed_vHS_) std::swap(vhs_nr,vhs_nc);
-  int vhs3d_n1 = NMO, vhs3d_n2 = NMO, vhs3d_n3 = nwalk;
+  auto vhs_ext = iextensions<2u>{NMO*NMO,nwalk};
+  auto vhs3d_ext = iextensions<3u>{NMO,NMO,nwalk};
   if(transposed_vHS_) {
-    vhs3d_n1 = nwalk;
-    vhs3d_n2 = vhs3d_n3 = NMO; 
-  }  
+    vhs_ext = iextensions<2u>{nwalk,NMO*NMO};
+    vhs3d_ext = iextensions<3u>{nwalk,NMO,NMO};
+  }
 
-  //  shared buffer used for:
-  //  X:               [ globalnCV * nwalk ]
-  //  vHS:             [ NMO*NMO * nwalk ]      
-  // memory_needs: nwalk * ( globalnCV + NMO*NMO )
-  size_t memory_needs = nwalk * ( globalnCV + NMO*NMO );
-
-  // 0. Allocate memory and set shared memory structures
-  if(buffer.num_elements() < memory_needs ) { 
-    buffer = std::move(sharedCVector(iextensions<1u>{memory_needs},aux_alloc_));
-    using std::fill_n;
-    fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
-  }  
-
-  // convert array to a basic_array<element,1,pointer>. This generates a view of buffer 
-  // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()  
-  //auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
-  CVector_ref mem_pool(make_device_ptr(buffer.origin()),buffer.extensions());
-  //auto mem_pool(array_cast<pointer>(buffer));
-
-  size_t displ=0;
-  CMatrix_ref X(mem_pool.origin()+displ, {long(globalnCV),long(nwalk)}); 
-    displ+=X.num_elements();
-  // HS potential for all steps.
-  // Actual dimensions depend on transposed_vHS_, see above
-  CMatrix_ref vHS(mem_pool.origin()+displ, {vhs_nr,vhs_nc}); 
-  // second view of vHS matrix for use in propagation step
-  // Actual dimensions depend on transposed_vHS_, see above
-  C3Tensor_ref vHS3D(mem_pool.origin()+displ,{vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
+  StaticMatrix vHS(vhs_ext,
+            buffer_allocator->template get_allocator<ComplexType>());
+  StaticMatrix X({long(globalnCV),long(nwalk)},
+            buffer_allocator->template get_allocator<ComplexType>());
+  C3Tensor_ref vHS3D(make_device_ptr(vHS.origin()),vhs3d_ext);
 
   auto&& Fields(*wset.getFields());
   assert(Fields.size(0) >= nbpsteps);  
@@ -322,8 +296,7 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
   for(int ni=nbpsteps-1; ni>=0; --ni) {   
 
     // 1. Get X(nCV,nwalk) from wset
-    copy_n(Fields[ni][cv0].origin(),nwalk*(cvN-cv0),X[cv0].origin());
-//std::fill_n(X.origin(),X.num_elements(),ComplexType(0.0));
+    copy_n(Fields[ni][cv0].origin(),nwalk*(cvN-cv0),make_device_ptr(X[cv0].origin()));
     TG.TG_local().barrier();    
 
     // 2. Calculate vHS(M*M,nwalk)/vHS(nwalk,M*M) 
@@ -545,8 +518,6 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
    */
   template<class WlkSet, class CMat>
   void AFQMCBasePropagator::Orthogonalize_shared(WlkSet& wset, CMat&& detR) {
-    if(new_overlaps.size() < 1)
-      new_overlaps.reextent(iextensions<1u>{1});
     auto walker_type = wset.getWalkerType();
     double LogOverlapFactor(wset.getLogOverlapFactor());
     if(walker_type != COLLINEAR) {

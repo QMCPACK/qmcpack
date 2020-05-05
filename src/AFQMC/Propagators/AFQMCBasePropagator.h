@@ -94,7 +94,6 @@ class AFQMCBasePropagator: public AFQMCInfo
             vMF(std::move(vmf_)),
             rng(r),
             SDetOp(wfn.getSlaterDetOperations()),
-            buffer(iextensions<1u>{1},aux_alloc_),
             local_group_comm(),
             old_dt(-123456.789),
             last_nextra(-1),
@@ -136,10 +135,6 @@ class AFQMCBasePropagator: public AFQMCInfo
 
     template<class WlkSet, class CTens, class CMat>
     void BackPropagate(int steps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR); 
-
-    // reset shared memory buffers
-    // useful when the current buffers use too much memory (e.g. reducing steps in future calls)
-    void reset() { buffer.reextent(iextensions<1u>{0}); }
 
     bool hybrid_propagation() { return hybrid; }
 
@@ -191,8 +186,6 @@ class AFQMCBasePropagator: public AFQMCInfo
 
     SlaterDetOperations* SDetOp;
 
-    sharedCVector buffer;    
-
     shared_communicator local_group_comm;
 
     RealType old_dt;
@@ -219,12 +212,6 @@ class AFQMCBasePropagator: public AFQMCInfo
     // intead of doing this, should use TBuff to transpose vHS3D and only have propagation 
     // with vHD3D[nwalk*nsteps,...]
     CMatrix local_vHS;  
-
-    CVector new_overlaps;  
-    CMatrix new_energies;  
-
-    CMatrix MFfactor;  
-    CMatrix hybrid_weight;  
 
     boost::multi::array<ComplexType,2> work; 
  

@@ -82,8 +82,10 @@ class AFQMCDistributedPropagator: public AFQMCBasePropagator
                    RealType dt, int fix_bias=1) {
       int nblk = steps/fix_bias;
       int nextra = steps%fix_bias;
-      for(int i=0; i<nblk; i++)
+      for(int i=0; i<nblk; i++) {
         step(fix_bias,wset,E1,dt);
+        update_buffer_generators();
+      }
       if(nextra>0)
         step(nextra,wset,E1,dt);
       TG.local_barrier();
@@ -103,10 +105,6 @@ class AFQMCDistributedPropagator: public AFQMCBasePropagator
 
     template<class WlkSet>
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);
-
-    // additional dimension for temporary computation
-    C3Tensor MFfactor;
-    C3Tensor hybrid_weight;
 
 };
 
