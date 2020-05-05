@@ -169,6 +169,9 @@ public:
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
+  /// return  for testing
+  auto& getPsiMinv() const { return psiMinv; }
+
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$, actual memory owned by det_engine_
   OffloadPinnedValueMatrix_t psiMinv;
   /// multi-walker pointers of invRow data

@@ -18,23 +18,19 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
 namespace qmcplusplus
 {
 
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-using DiracDet = DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
-#else
-using DiracDet = DiracDeterminantBatched<MatrixUpdateOMP<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
-#endif
-
 using LogValueType = TrialWaveFunction::LogValueType;
 using PsiValueType = TrialWaveFunction::PsiValueType;
 using GradType = TrialWaveFunction::GradType;
 
-TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
+template<class DiracDet>
+void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 {
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
@@ -121,9 +117,9 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   REQUIRE(spo != nullptr);
 
   auto* det_up = new DiracDet(spo);
-  det_up->set(0, 2, 2);
+  det_up->set(0, 2, ndelay);
   auto* det_dn = new DiracDet(spo);
-  det_dn->set(2, 2, 2);
+  det_dn->set(2, 2, ndelay);
 
   auto* slater_det = new SlaterDet(elec_);
   slater_det->add(det_up, 0);
@@ -364,7 +360,13 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
 #endif
 
-  psi.flex_evalGrad(wf_ref_list, p_ref_list, 1, grad_old);
+  RefVector<ParticleSet> elec_accept_list;
+  for (int iw = 0; iw < isAccepted.size(); iw++)
+    elec_accept_list.push_back(p_ref_list[iw]);
+  ParticleSet::flex_acceptMove(elec_accept_list, moved_elec_id);
+
+  const int moved_elec_id_next = 1;
+  psi.flex_evalGrad(wf_ref_list, p_ref_list, moved_elec_id_next, grad_old);
   std::cout << "evalGrad next electron " << std::setprecision(14)
             << grad_old[0][0] << " " << grad_old[0][1] << " " << grad_old[0][2] << " "
             << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2]
@@ -385,11 +387,76 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   REQUIRE(grad_old[1][2] == Approx(64.050727483593).epsilon(1e-4));
 #endif
 
+  std::vector<PosType> displ(2);
+  displ[0] = displ[1] = {0.1, 0.2, 0.3};
+
+  ParticleSet::flex_makeMove(p_ref_list, moved_elec_id_next, displ);
+  TrialWaveFunction::flex_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id_next, ratios, grad_new);
+  std::cout << "ratioGrad next electron " << std::setprecision(14)
+            << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " "
+            << grad_new[1][0] << " " << grad_new[1][1] << " " << grad_new[1][2]
+            << std::endl;
+#if defined(QMC_COMPLEX)
+  REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(9.6073058494562,-1.4375146770852e-05)).epsilon(8e-5));
+  REQUIRE(grad_new[0][1] == ComplexApprox(ValueType(6.3111018321898,-1.4375146510386e-05)).epsilon(8e-5));
+  REQUIRE(grad_new[0][2] == ComplexApprox(ValueType(-3.2027658046121,1.4375146020225e-05)).epsilon(8e-5));
+  REQUIRE(grad_new[1][0] == ComplexApprox(ValueType(9.6073058494562,-1.4375146770852e-05)).epsilon(8e-5));
+  REQUIRE(grad_new[1][1] == ComplexApprox(ValueType(6.3111018321898,-1.4375146510386e-05)).epsilon(8e-5));
+  REQUIRE(grad_new[1][2] == ComplexApprox(ValueType(-3.2027658046121,1.4375146020225e-05)).epsilon(8e-5));
+#else
+  REQUIRE(grad_new[0][0] == Approx(9.607320224603).epsilon(1e-4));
+  REQUIRE(grad_new[0][1] == Approx(6.3111162073363).epsilon(1e-4));
+  REQUIRE(grad_new[0][2] == Approx(-3.2027801797581).epsilon(1e-4));
+  REQUIRE(grad_new[1][0] == Approx(9.607320224603).epsilon(1e-4));
+  REQUIRE(grad_new[1][1] == Approx(6.3111162073363).epsilon(1e-4));
+  REQUIRE(grad_new[1][2] == Approx(-3.2027801797581).epsilon(1e-4));
+#endif
+
+  isAccepted[0] = true;
+  isAccepted[1] = false;
+  TrialWaveFunction::flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id_next, isAccepted, true);
+
+  elec_accept_list.clear();
+  for (int iw = 0; iw < isAccepted.size(); iw++)
+    elec_accept_list.push_back(p_ref_list[iw]);
+  ParticleSet::flex_acceptMove(elec_accept_list, moved_elec_id_next);
+  TrialWaveFunction::flex_completeUpdates(wf_ref_list);
+
+  std::cout << "invMat next electron " << std::setprecision(14)
+            << det_up->getPsiMinv()[0][0] << " " << det_up->getPsiMinv()[0][1] << " "
+            << det_up->getPsiMinv()[1][0] << " " << det_up->getPsiMinv()[1][1] << " " << std::endl;
+#if defined(QMC_COMPLEX)
+  REQUIRE(det_up->getPsiMinv()[0][0] == ComplexApprox(ValueType(38.503358805635,-38.503358805645)).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[0][1] == ComplexApprox(ValueType(-31.465077529568,31.465077529576)).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[1][0] == ComplexApprox(ValueType(-27.188228530061,27.188228530068)).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[1][1] == ComplexApprox(ValueType(22.759962501254,-22.75996250126)).epsilon(1e-4));
+#else
+  REQUIRE(det_up->getPsiMinv()[0][0] == Approx(77.0067176113).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[0][1] == Approx(-62.9301550592).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[1][0] == Approx(-54.376457060136).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
+#endif
 
   //FIXME more thinking and fix about ownership and schope are needed for exiting clean
   delete psi_clone;
 #endif
 
+}
+
+TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
+{
+  using VT = QMCTraits::ValueType;
+  using FPVT = QMCTraits::QTFull::ValueType;
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(1);
+  //testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(2);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateCUDA<VT, FPVT>>>(1);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateCUDA<VT, FPVT>>>(2);
+#endif
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(1);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(2);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMP<VT, FPVT>>>(1);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMP<VT, FPVT>>>(2);
 }
 
 } // namespace qmcplusplus
