@@ -32,6 +32,7 @@
 namespace qmcplusplus {
 namespace afqmc { 
   extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
+  extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
 }
 }
 
@@ -64,12 +65,15 @@ namespace arch {
   {
     qmc_cuda::CUDA_INIT(node,iseed);
     using qmcplusplus::afqmc::device_buffer_generator;
+    using qmcplusplus::afqmc::localTG_buffer_generator;
     using qmcplusplus::afqmc::device_allocator_generator_type;
     if(device_buffer_generator == nullptr ) {
       device_buffer_generator = std::make_shared<device_allocator_generator_type> ( 
                       device::memory_resource{},
                       std::size_t(20*1024*1024),
-                      device::device_allocator<char>{} );    
+                      device::constructor<char>{} );    
+      // same memory space, so use same memory resource
+      localTG_buffer_generator = device_buffer_generator;  
     } else {
        std::cerr<<" Warning: device_buffer_generator already initialized in arch::INIT." 
                 <<std::endl; 

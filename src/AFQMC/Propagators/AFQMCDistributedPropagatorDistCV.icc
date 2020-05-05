@@ -40,6 +40,11 @@ namespace afqmc
 template<class WlkSet>
 void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType Eshift, RealType dt) 
 {
+  if(localTG_buffer_generator == nullptr) {
+    app_error()<<" Error: localTG_buffer_generator == nullptr. \n" <<std::endl;
+    APP_ABORT("");
+  }
+
   using ma::axpy;
   using std::fill_n;
   using std::copy_n;
@@ -237,7 +242,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     int q = (node_number+k)%nnodes;
     CMatrix_ref mf_(MFfactor[q*nsteps].origin(), {long(nsteps),long(nwalk)});
     CMatrix_ref hw_(hybrid_weight[q*nsteps].origin(), {long(nsteps),long(nwalk)});
-    assemble_X(nsteps,nwalk,sqrtdt,X,vbias,mf_,hw_);
+    //assemble_X(nsteps,nwalk,sqrtdt,X,vbias,mf_,hw_);
     TG.local_barrier();
     AFQMCTimers[assemble_X_timer]->stop();
     if(bp_step >= 0 && bp_step<bp_max) {
@@ -572,7 +577,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       AFQMCTimers[assemble_X_timer]->start();
       CMatrix_ref mf_(MFfactor[k*nsteps].origin(), {long(nsteps),long(nwalk)});
       CMatrix_ref hw_(hybrid_weight[k*nsteps].origin(), {long(nsteps),long(nwalk)});
-      assemble_X(nsteps,nwalk,sqrtdt,X,vbias,mf_,hw_);
+      //assemble_X(nsteps,nwalk,sqrtdt,X,vbias,mf_,hw_);
       TG.local_barrier();
       AFQMCTimers[assemble_X_timer]->stop();
       if(bp_step >= 0 && bp_step<bp_max) {

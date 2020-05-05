@@ -15,8 +15,10 @@
 #ifndef AFQMC_BUFFER_HANDLER_HPP
 #define AFQMC_BUFFER_HANDLER_HPP
 
-#include "AFQMC/config.h"
 #include <cstddef>
+
+#include "AFQMC/config.h"
+#include "mpi3/shared_communicator.hpp"
 
 // new allocators
 #include "multi/memory/fallback.hpp"
@@ -115,22 +117,23 @@ namespace afqmc
 
 
   using host_allocator_generator_type = 
-            BufferAllocatorGenerator< host_memory_resource, std::allocator<char> >; 
+            BufferAllocatorGenerator< host_memory_resource, device_constructor<char> >; 
   using device_allocator_generator_type = 
-            BufferAllocatorGenerator< device_memory_resource, device_allocator<char> >;  
+            BufferAllocatorGenerator< device_memory_resource, device_constructor<char> >;  
+  using localTG_allocator_generator_type = 
+            BufferAllocatorGenerator< shm_memory_resource, device_constructor<char> >;  
 
   template<class T>
     using host_buffer_type = typename host_allocator_generator_type::template allocator<T>; 
   template<class T>
     using device_buffer_type = typename device_allocator_generator_type::template allocator<T>; 
+  template<class T>
+    using localTG_buffer_type = typename localTG_allocator_generator_type::template allocator<T>; 
   
   void update_buffer_generators();
-
-//  extern std::shared_ptr<host_allocator_generator_type> host_buffer_generator;
-//  extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-
-//  void initialize_buffer_generators(std::size_t size_in_MBs); 
-//  void destroy_buffer_generators();
+  void make_localTG_buffer_generator(mpi3::shared_communicator& local, 
+                                     std::size_t sz=std::size_t(20*1024*1024));
+  void destroy_shm_buffer_generators(); 
 
 }
 }

@@ -82,6 +82,9 @@ void test_read_phmsd(boost::mpi3::communicator & world)
     auto TGwfn = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
+    // initialize TG buffer
+    make_localTG_buffer_generator(TG.TG_local(),20*1024L*1024L);
+
     int NMO;
     int NAEA;
     int NAEB;
@@ -141,6 +144,7 @@ void test_read_phmsd(boost::mpi3::communicator & world)
     REQUIRE(abij.number_of_configurations() == ndets_to_read);
   }
 
+  destroy_shm_buffer_generators();  
 }
 
 void getBasicWavefunction(std::vector<int>& occs, std::vector<ComplexType>& coeffs, int NEL)
@@ -194,6 +198,9 @@ void test_phmsd(boost::mpi3::communicator& world)
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     auto TGwfn = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
+
+    // initialize TG buffer
+    make_localTG_buffer_generator(TG.TG_local(),20*1024L*1024L);
 
     int NMO;
     int NAEA;
@@ -312,7 +319,9 @@ void test_phmsd(boost::mpi3::communicator& world)
     //for(int i=0; i < vMF.size(); i++) {
       //std::cout << vMF[i] << std::endl;
     //}
+
   }
+  destroy_shm_buffer_generators();
 }
 
 TEST_CASE("test_read_phmsd", "[test_read_phmsd]")

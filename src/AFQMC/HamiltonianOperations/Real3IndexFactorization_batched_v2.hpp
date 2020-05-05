@@ -460,8 +460,6 @@ class Real3IndexFactorization_batched_v2
         assert( Likn.size(1) == v.size(0) );
 
 #if MIXED_PRECISION
-        size_t mem_needs = G.num_elements()+v.num_elements();
-        set_buffer(mem_needs);
         StaticVector vsp(v.extensions(),
                 buffer_allocator->template get_allocator<SPComplexType>());
         StaticVector Gsp(G.extensions(),
@@ -605,9 +603,9 @@ class Real3IndexFactorization_batched_v2
 
       long gsz(0);
 #if MIXED_PRECISION
-      gsz = nspin*nw*NMO*NMO;
+      gsz = nspin*nwmax*NMO*NMO;
 #else
-      if(nspin>1) gsz = nspin*nw*NMO*NMO;
+      if(nspin>1) gsz = nspin*nwmax*NMO*NMO;
 #endif
       StaticVector GBuff(iextensions<1u>{gsz},
                 buffer_allocator->template get_allocator<SPComplexType>());

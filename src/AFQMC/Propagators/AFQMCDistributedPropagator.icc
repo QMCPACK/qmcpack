@@ -186,7 +186,7 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     // 4b. Assemble X(nCV,nsteps,nwalk)
     CMatrix_ref mf_(MFfactor[1].origin(), {long(nsteps),long(nwalk)});
     CMatrix_ref hw_(hybrid_weight[1].origin(), {long(nsteps),long(nwalk)});
-    assemble_X(nsteps,nwalk,sqrtdt,X,vbias,mf_,hw_,false);
+    //assemble_X(nsteps,nwalk,sqrtdt,X,vbias,mf_,hw_,false);
     if(k == node_number) {
       TG.TG_local().all_reduce_n(to_address(MFfactor[1].origin()),MFfactor[1].num_elements(),
                            to_address(MFfactor[0].origin()),std::plus<>());

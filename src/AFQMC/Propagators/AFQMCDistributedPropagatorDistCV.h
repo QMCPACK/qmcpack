@@ -117,13 +117,17 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
       int nblk = steps/fix_bias;
       int nextra = steps%fix_bias;
       if(low_memory_step) {
-        for(int i=0; i<nblk; i++)
+        for(int i=0; i<nblk; i++) {
           step_collective(fix_bias,wset,E1,dt);
+          update_buffer_generators();
+        }  
         if(nextra>0)
           step_collective(nextra,wset,E1,dt);
       } else {
-        for(int i=0; i<nblk; i++)
+        for(int i=0; i<nblk; i++) {
           step(fix_bias,wset,E1,dt);
+          update_buffer_generators();
+        }
         if(nextra>0)
           step(nextra,wset,E1,dt);
       }

@@ -39,7 +39,7 @@ template<class T> struct shm_ptr_with_raw_ptr_dispatch;
 template<>
 struct shm_ptr_with_raw_ptr_dispatch<const void>{
         using T = const void;
-        std::shared_ptr<mpi3::shared_window<>> wSP_;
+        std::shared_ptr<mpi3::shared_window<char>> wSP_;
         std::ptrdiff_t offset = 0;
         shm_ptr_with_raw_ptr_dispatch(std::nullptr_t = nullptr){}
         shm_ptr_with_raw_ptr_dispatch(shm_ptr_with_raw_ptr_dispatch const& other) = default;
@@ -53,14 +53,25 @@ template<>
 struct shm_ptr_with_raw_ptr_dispatch<void>{
         using T = void;
         using element_type = T;
-        std::shared_ptr<mpi3::shared_window<>> wSP_;
+        std::shared_ptr<mpi3::shared_window<char>> wSP_;
         std::ptrdiff_t offset = 0;
         shm_ptr_with_raw_ptr_dispatch(std::nullptr_t = nullptr){}
         shm_ptr_with_raw_ptr_dispatch(shm_ptr_with_raw_ptr_dispatch const& other) = default;
         shm_ptr_with_raw_ptr_dispatch& operator=(shm_ptr_with_raw_ptr_dispatch const& other) = default;
         shm_ptr_with_raw_ptr_dispatch& operator=(std::nullptr_t){wSP_.reset(); return *this;}
+        template<typename Q>
+        shm_ptr_with_raw_ptr_dispatch(shm_ptr_with_raw_ptr_dispatch<Q> const& ptr):
+              wSP_(ptr.wSP_),offset(ptr.offset) {}
         bool operator==(std::nullptr_t) const{return (bool)wSP_;}
         bool operator!=(std::nullptr_t) const{return not operator==(nullptr);}
+        explicit operator bool() const{return (bool)wSP_;}
+        bool operator==(shm_ptr_with_raw_ptr_dispatch const& other) const{ 
+            return (wSP_->base(0)==other.wSP_->base(0)) && (offset==other.offset); 
+        }
+        bool operator!=(shm_ptr_with_raw_ptr_dispatch const& other) const{ return not (*this == other); }
+        bool operator<(shm_ptr_with_raw_ptr_dispatch const& other) const{
+                return wSP_->base(0) + offset < other.wSP_->base(0) + other.offset;
+        }
 };
 
 template<class T> struct allocator_shm_ptr_with_raw_ptr_dispatch;
@@ -75,22 +86,25 @@ struct shm_ptr_with_raw_ptr_dispatch{
         using iterator_category = std::random_access_iterator_tag;
         using rebind_const = shm_ptr_with_raw_ptr_dispatch<const T>;
         using default_allocator_type = allocator_shm_ptr_with_raw_ptr_dispatch<value_type>;
-        std::shared_ptr<mpi3::shared_window<value_type>> wSP_;
-        std::ptrdiff_t offset = 0;
+        std::shared_ptr<mpi3::shared_window<char>> wSP_;
+        std::ptrdiff_t offset = 0;  // in Bytes 
         shm_ptr_with_raw_ptr_dispatch(){}
         shm_ptr_with_raw_ptr_dispatch(std::nullptr_t){}
         shm_ptr_with_raw_ptr_dispatch(shm_ptr_with_raw_ptr_dispatch const& other) = default;
+        template<typename Q>
+        shm_ptr_with_raw_ptr_dispatch(shm_ptr_with_raw_ptr_dispatch<Q> const& ptr):
+            wSP_(ptr.wSP_),offset(ptr.offset) {}
         shm_ptr_with_raw_ptr_dispatch& operator=(shm_ptr_with_raw_ptr_dispatch const& other) = default;
         shm_ptr_with_raw_ptr_dispatch& operator=(std::nullptr_t){return *this;}
         ~shm_ptr_with_raw_ptr_dispatch() = default;
-        T& operator*() const{return *((T*)(wSP_->base(0)) + offset);}
-        T& operator[](int idx) const{return ((T*)(wSP_->base(0)) + offset)[idx];}
-        T* operator->() const{return (T*)(wSP_->base(0)) + offset;}
+        T& operator*() const{return *(reinterpret_cast<T*>(wSP_->base(0) + offset));}
+        T& operator[](int idx) const{return (reinterpret_cast<T*>(wSP_->base(0) + offset))[idx];}
+        T* operator->() const{return reinterpret_cast<T*>(wSP_->base(0) + offset);}
         T* get() const{
             if( wSP_ == nullptr )
                 return nullptr;
             else  
-                return wSP_->base(0) + offset;
+                return reinterpret_cast<T*>(wSP_->base(0) + offset); 
         }
         explicit operator T*() const{return get();}
         explicit operator bool() const{return (bool)wSP_;}//.get();}
@@ -118,11 +132,20 @@ struct shm_ptr_with_raw_ptr_dispatch{
                 ret -= d;
                 return ret;
         }
-        std::ptrdiff_t operator-(shm_ptr_with_raw_ptr_dispatch other) const{return offset-other.offset;}
-        shm_ptr_with_raw_ptr_dispatch& operator--(){--offset; return *this;}
-        shm_ptr_with_raw_ptr_dispatch& operator++(){++offset; return *this;}
-        shm_ptr_with_raw_ptr_dispatch& operator-=(std::ptrdiff_t d){offset -= d; return *this;}
-        shm_ptr_with_raw_ptr_dispatch& operator+=(std::ptrdiff_t d){offset += d; return *this;}
+        std::ptrdiff_t operator-(shm_ptr_with_raw_ptr_dispatch other) const{
+            if((offset-other.offset)%sizeof(T)!=0) {throw;}
+            return (offset-other.offset)/sizeof(T);
+        }
+        shm_ptr_with_raw_ptr_dispatch& operator--(){offset-=sizeof(T); return *this;}
+        shm_ptr_with_raw_ptr_dispatch& operator++(){offset+=sizeof(T); return *this;}
+        shm_ptr_with_raw_ptr_dispatch& operator-=(std::ptrdiff_t d){
+            offset -= d*sizeof(T); 
+            return *this;
+        }
+        shm_ptr_with_raw_ptr_dispatch& operator+=(std::ptrdiff_t d){
+            offset += d*sizeof(T); 
+            return *this;
+        }
         bool operator==(shm_ptr_with_raw_ptr_dispatch<T> const& other) const{
                 return wSP_->base(0) == other.wSP_->base(0) and offset == other.offset;
         }
@@ -131,7 +154,7 @@ struct shm_ptr_with_raw_ptr_dispatch{
                 return wSP_->base(0) + offset < other.wSP_->base(0) + other.offset;
         }
         static element_type* to_address(shm_ptr_with_raw_ptr_dispatch p) noexcept{
-                return p.wSP_->base(0) + p.offset;
+                return reinterpret_cast<element_type*>(p.wSP_->base(0) + p.offset);
         }
         friend pointer to_address(shm_ptr_with_raw_ptr_dispatch const& p){return shm_ptr_with_raw_ptr_dispatch::to_address(p);}
 };
@@ -153,8 +176,11 @@ template<class T = void> struct allocator_shm_ptr_with_raw_ptr_dispatch{
 
         shm_ptr_with_raw_ptr_dispatch<T> allocate(size_type n, const void* /*hint*/ = 0){
                 shm_ptr_with_raw_ptr_dispatch<T> ret = 0;
-                ret.wSP_.reset(new mpi3::shared_window<T>{
-                        comm_.make_shared_window<T>(comm_.root()?n:0)
+//                ret.wSP_.reset(new mpi3::shared_window<T>{
+//                        comm_.make_shared_window<T>(comm_.root()?n:0)
+//                });
+                ret.wSP_.reset(new mpi3::shared_window<char>{
+                        comm_,comm_.root()?(long(n*sizeof(T))):0,int(sizeof(T))
                 });
                 return ret;
         }
@@ -172,6 +198,31 @@ template<class T = void> struct allocator_shm_ptr_with_raw_ptr_dispatch{
         template< class U >
         void destroy(U *p){
             p->~U();
+        }
+};
+
+struct memory_resource_shm_ptr_with_raw_ptr_dispatch{
+
+        using pointer = shm_ptr_with_raw_ptr_dispatch<void>;
+
+        mpi3::shared_communicator comm_;
+
+        shm_ptr_with_raw_ptr_dispatch<void> allocate(
+            std::size_t size, std::size_t alignment = alignof(std::max_align_t)) { 
+                shm_ptr_with_raw_ptr_dispatch<char> ret = 0;
+                ret.wSP_.reset(new mpi3::shared_window<char>{
+                        comm_,comm_.root()?long(size):0,int(alignment)
+                });
+                return ret;
+        }
+        void deallocate(shm_ptr_with_raw_ptr_dispatch<void> ptr, std::size_t){ptr.wSP_.reset();}
+
+        bool operator==(memory_resource_shm_ptr_with_raw_ptr_dispatch const& other) const{
+            return comm_ == other.comm_;
+        }
+
+        bool operator!=(memory_resource_shm_ptr_with_raw_ptr_dispatch const& other) const{
+            return not(other == *this);
         }
 };
 
