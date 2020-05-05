@@ -61,9 +61,13 @@ namespace afqmc {
   }
 
   void destroy_shm_buffer_generators() {
+#if defined(ENABLE_CUDA)
+    // do nothing 
+#else
     if(localTG_buffer_generator != nullptr)
       localTG_buffer_generator.reset(); 
     localTG_buffer_generator = nullptr;
+#endif
   }
 
 }
