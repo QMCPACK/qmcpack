@@ -27,8 +27,10 @@
 #define PsiT_IN_SHM
 
 // guard with directive that checks if boost version is >=1.65
+// uncomment to enable stacktrace
+//#define ENABLE_STACKTRACE
 #include <boost/version.hpp>
-#if BOOST_VERSION >= 106500
+#if (BOOST_VERSION >= 106500) && defined(ENABLE_STACKTRACE)
 #include <boost/stacktrace.hpp>
 #define print_stacktrace std::cout << boost::stacktrace::stacktrace();
 #else
