@@ -677,9 +677,9 @@ class KP3IndexFactorization_batched
                       ComplexType(0.0),E[n].origin()+2);
         }
         if(getKr) 
-          copy_n(Kr.origin(),Kr.num_elements(),KEright->origin());
+          copy_n_cast(Kr.origin(),Kr.num_elements(),make_device_ptr(KEright->origin()));
         if(getKl) 
-          copy_n(Kl.origin(),Kl.num_elements(),KEleft->origin());
+          copy_n_cast(Kl.origin(),Kl.num_elements(),make_device_ptr(KEleft->origin()));
       }
     }
 
