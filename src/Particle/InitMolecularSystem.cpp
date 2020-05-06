@@ -120,12 +120,14 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   const int numUp = els->last(0);
   // the upper limit of the electron index with spin down. Pay attention to the no spin down electron case.
   const int numDown = els->last(els->groups() > 1 ? 1 : 0) - els->first(0);
-  int item          = 0;
+  // consumer counter of random numbers chi
+  int random_number_counter = 0;
   int nup_tot = 0, ndown_tot = numUp;
   std::vector<LoneElectron> loneQ;
   RealType rmin = cutoff;
   ParticleSet::SingleParticlePos_t cm;
 
+  // Step 1. Distribute even Q[iat] of atomic center iat. If Q[iat] is odd, put Q[iat]-1 and save the lone electron.
   if (d_ii.DTType == DT_SOA)
   {
     for (size_t iat = 0; iat < Centers; iat++)
@@ -147,9 +149,9 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
       {
         // initialize electron positions in pairs
         if (nup_tot < numUp)
-          els->R[nup_tot++] = ions->R[iat] + sep * chi[item++];
+          els->R[nup_tot++] = ions->R[iat] + sep * chi[random_number_counter++];
         if (ndown_tot < numDown)
-          els->R[ndown_tot++] = ions->R[iat] + sep * chi[item++];
+          els->R[ndown_tot++] = ions->R[iat] + sep * chi[random_number_counter++];
       }
     }
   }
@@ -173,70 +175,57 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
       for (int k = 0; k < v2; k++)
       {
         if (nup_tot < numUp)
-          els->R[nup_tot++] = ions->R[iat] + sep * chi[item++];
+          els->R[nup_tot++] = ions->R[iat] + sep * chi[random_number_counter++];
         if (ndown_tot < numDown)
-          els->R[ndown_tot++] = ions->R[iat] + sep * chi[item++];
+          els->R[ndown_tot++] = ions->R[iat] + sep * chi[random_number_counter++];
       }
     }
 #endif
   }
 
+  // Step 2. Distribute the electrons left alone
   // mmorales: changed order of spin assignment to help with spin
   // imbalances in molecules at large distances.
   // Not guaranteed to work, but should help in most cases
   // as long as atoms in molecules are defined sequencially
   std::vector<LoneElectron>::iterator it(loneQ.begin());
   std::vector<LoneElectron>::iterator it_end(loneQ.end());
-  //while(nup_tot<numUp && it != it_end)
-  //{
-  //  els->R[nup_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
-  //  ++it;
-  //}
-  //while(it != it_end)
-  //{
-  //  els->R[ndown_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
-  //  ++it;
-  //}
   while (it != it_end && nup_tot != numUp && ndown_tot != numDown)
   {
     if (nup_tot < numUp)
     {
-      els->R[nup_tot++] = ions->R[(*it).ID] + (*it).BondLength * chi[item++];
+      els->R[nup_tot++] = ions->R[(*it).ID] + (*it).BondLength * chi[random_number_counter++];
       ++it;
     }
     if (ndown_tot < numDown && it != it_end)
     {
-      els->R[ndown_tot++] = ions->R[(*it).ID] + (*it).BondLength * chi[item++];
+      els->R[ndown_tot++] = ions->R[(*it).ID] + (*it).BondLength * chi[random_number_counter++];
       ++it;
     }
   }
+
+  // Step 3. Handle more than neutral electrons
   //extra electrons around the geometric center
   RealType cnorm = 1.0 / static_cast<RealType>(Centers);
-  cm             = cnorm * cm;
+  RealType sep = rmin * 2;
+  cm = cnorm * cm;
   if (nup_tot < numUp)
-  {
-    RealType sep = rmin * 2;
-    int iu       = 0;
     while (nup_tot < numUp)
-    {
-      els->R[nup_tot++] = cm + sep * chi[iu++];
-    }
-  }
+      els->R[nup_tot++] = cm + sep * chi[random_number_counter++];
   if (ndown_tot < numDown)
-  {
-    RealType sep = rmin * 2;
-    int iu       = 0;
     while (ndown_tot < numDown)
-    {
-      els->R[ndown_tot++] = cm + sep * chi[iu++];
-    }
-  }
+      els->R[ndown_tot++] = cm + sep * chi[random_number_counter++];
+
+  // safety check. all the random numbers should have been consumed once and only once.
+  if (random_number_counter != chi.size())
+    throw std::runtime_error("initMolecule unexpected random number consumption. Please report a bug!");
+
   //put all the electrons in a unit box
   if (els->Lattice.SuperCellEnum != SUPERCELL_OPEN)
   {
     els->R.setUnit(PosUnit::Cartesian);
     els->applyBC(els->R);
-    els->update(0);
+    els->update(false);
   }
 }
 
