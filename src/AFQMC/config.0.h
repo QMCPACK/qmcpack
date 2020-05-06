@@ -27,12 +27,18 @@
 #define PsiT_IN_SHM
 
 // guard with directive that checks if boost version is >=1.65
-#include <boost/version.hpp>
-#if BOOST_VERSION >= 106500
-#include <boost/stacktrace.hpp>
-#define print_stacktrace std::cout << boost::stacktrace::stacktrace();
+// uncomment to enable stacktrace
+//#define ENABLE_STACKTRACE
+#if defined(ENABLE_STACKTRACE)
+ #include <boost/version.hpp>
+ #if BOOST_VERSION >= 106500
+  #include <boost/stacktrace.hpp>
+  #define print_stacktrace std::cout << boost::stacktrace::stacktrace();
+ #else
+  #define print_stacktrace std::cout << "stacktrace not enabled.\n";  
+ #endif
 #else
-#define print_stacktrace std::cout << "stacktrace not enabled.\n"; 
+ #define print_stacktrace std::cout << "stacktrace not enabled.\n"; 
 #endif
 
 namespace qmcplusplus
