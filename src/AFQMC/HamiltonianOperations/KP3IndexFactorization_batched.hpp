@@ -337,7 +337,7 @@ class KP3IndexFactorization_batched
             P1[I][J] += H1[K][i][j] + vn0[K][i][j];
             P1[J][I] += H1[K][j][i] + vn0[K][j][i];
             // This is really cutoff dependent!!!
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
             if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-5 ) {
 #else
             if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-6 ) {

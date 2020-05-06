@@ -426,8 +426,17 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
             buffer_allocator->template get_allocator<ComplexType>());
   StaticMatrix new_energies({nwalk,3},
             buffer_allocator->template get_allocator<ComplexType>());
-  StaticMatrix vrecv(vhs_ext,
+  StaticMatrix vrecv_buff(vhs_ext,
             buffer_allocator->template get_allocator<ComplexType>());
+  C3Tensor_ref vHS3D(make_device_ptr(vrecv_buff.origin()),vhs3d_ext);
+// in mixed precision, using vrecv_buff as 2 single precision arrays.
+// final result will be in first half of recasted array, will then cast_inplace 
+// to full precision
+#if defined(MIXED_PRECISION)
+  SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.origin())),vhs_ext);
+#else
+  CMatrix_ref vrecv(make_device_ptr(vrecv_buff.origin()),vhs_ext);
+#endif
 
   // scope controlling lifetime of temporary arrays
   {
@@ -436,22 +445,46 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
             buffer_allocator->template get_allocator<ComplexType>());
     Static3Tensor globalhybrid_weight({nnodes,nsteps,nwalk},
             buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix Gwork(G_ext,
+    StaticSPMatrix Gstore(G_ext,
+            sp_buffer_allocator->template get_allocator<SPComplexType>());
+
+    int Gak0,GakN;
+    std::tie(Gak0,GakN) = FairDivideBoundary(TG.getLocalTGRank(),
+                    int(Gstore.num_elements()),TG.getNCoresPerTG());
+
+    // 1. Calculate Green function for all (local) walkers
+    AFQMCTimers[G_for_vbias_timer]->start();
+#if defined(MIXED_PRECISION)
+    {
+      StaticMatrix Gstore_(G_ext,
             buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix Gstore(G_ext,
-            buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix vbias({long(localnCV),long(nwalk)},
-            buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix X({long(localnCV),long(nwalk*nsteps)},
-            buffer_allocator->template get_allocator<ComplexType>());
+      wfn.MixedDensityMatrix_for_vbias(wset,Gstore_);
+      copy_n_cast(make_device_ptr(Gstore_.origin())+Gak0,GakN-Gak0,
+                  make_device_ptr(Gstore.origin())+Gak0);  
+    } 
+#else
+    wfn.MixedDensityMatrix_for_vbias(wset,Gstore);
+#endif
+    TG.local_barrier();
+    AFQMCTimers[G_for_vbias_timer]->stop();
+
+    StaticSPMatrix Gwork(G_ext,
+            buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix vbias({long(localnCV),long(nwalk)},
+            buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix X({long(localnCV),long(nwalk*nsteps)},
+            buffer_allocator->template get_allocator<SPComplexType>());
+// reusing second half of vrecv buffer reinterpreted as a SPComplex Array
+#if defined(MIXED_PRECISION)
+    SPCMatrix_ref vHS(sp_pointer(make_device_ptr(vrecv_buff.origin()))+
+                vrecv_buff.num_elements(),vhs_ext);
+#else
     StaticMatrix vHS(vhs_ext,
             buffer_allocator->template get_allocator<ComplexType>());
+#endif
 
     // partition G and v for communications: all cores communicate a piece of the matrix
     int vak0,vakN;
-    int Gak0,GakN;
-    std::tie(Gak0,GakN) = FairDivideBoundary(TG.getLocalTGRank(),
-                    int(Gwork.num_elements()),TG.getNCoresPerTG());
     std::tie(vak0,vakN) = FairDivideBoundary(TG.getLocalTGRank(),
                     int(vHS.num_elements()),TG.getNCoresPerTG());
 
@@ -498,11 +531,6 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 
     MPI_Status st;
 
-    // 1. Calculate Green function for all (local) walkers
-    AFQMCTimers[G_for_vbias_timer]->start();
-    wfn.MixedDensityMatrix_for_vbias(wset,Gstore);
-    AFQMCTimers[G_for_vbias_timer]->stop();
-
     for(int k=0; k<nnodes; ++k) {
 
       // 2. bcast G 
@@ -512,8 +540,13 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
                make_device_ptr(Gwork.origin())+Gak0);
 #ifdef BUILD_AFQMC_WITH_NCCL
 #ifdef ENABLE_CUDA
+#if defined(MIXED_PRECISION)
+      NCCLCHECK(ncclBcast(to_address(Gwork.origin()+Gak0),2*(GakN-Gak0),ncclFloat,k,
+                          TG.ncclTG(),TG.ncclStream()));
+#else
       NCCLCHECK(ncclBcast(to_address(Gwork.origin()+Gak0),2*(GakN-Gak0),ncclDouble,k,
                           TG.ncclTG(),TG.ncclStream()));
+#endif
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
 #else
 #error "BUILD_AFQMC_WITH_NCCL only with ENABLE_CUDA"
@@ -562,9 +595,15 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       // 4. Reduce vHS
 #ifdef BUILD_AFQMC_WITH_NCCL
 #ifdef ENABLE_CUDA
+#if defined(MIXED_PRECISION)
+      NCCLCHECK(ncclReduce((const void*)to_address(vHS.origin()+vak0),
+                    (void*)to_address(vrecv.origin()+vak0), 2*(vakN-vak0),
+                     ncclFloat, ncclSum,k,TG.ncclTG(),TG.ncclStream()));
+#else
       NCCLCHECK(ncclReduce((const void*)to_address(vHS.origin()+vak0),
                     (void*)to_address(vrecv.origin()+vak0), 2*(vakN-vak0),
                      ncclDouble, ncclSum,k,TG.ncclTG(),TG.ncclStream()));
+#endif
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
 #else
 #error "BUILD_AFQMC_WITH_NCCL only with ENABLE_CUDA"
@@ -605,12 +644,21 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     if(TG.TG().size() > 1) {
 #ifdef BUILD_AFQMC_WITH_NCCL
 #ifdef ENABLE_CUDA
+#if defined(MIXED_PRECISION)
+      NCCLCHECK(ncclAllReduce((const void*)to_address(MFfactor.origin()),
+                    (void*)to_address(MFfactor.origin()), 2*MFfactor.num_elements(),
+                     ncclFloat, ncclSum,TG.ncclTG(),TG.ncclStream()));
+      NCCLCHECK(ncclAllReduce((const void*)to_address(hybrid_weight.origin()),
+                     (void*)to_address(hybrid_weight.origin()), 2*hybrid_weight.num_elements(),
+                     ncclFloat, ncclSum,TG.ncclTG(),TG.ncclStream()));
+#else
       NCCLCHECK(ncclAllReduce((const void*)to_address(MFfactor.origin()),
                     (void*)to_address(MFfactor.origin()), 2*MFfactor.num_elements(),
                      ncclDouble, ncclSum,TG.ncclTG(),TG.ncclStream()));
       NCCLCHECK(ncclAllReduce((const void*)to_address(hybrid_weight.origin()),
                      (void*)to_address(hybrid_weight.origin()), 2*hybrid_weight.num_elements(),
                      ncclDouble, ncclSum,TG.ncclTG(),TG.ncclStream()));
+#endif
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
 #else
 #error "BUILD_AFQMC_WITH_NCCL only with ENABLE_CUDA"
@@ -633,7 +681,13 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     AFQMCTimers[vHS_comm_overhead_timer]->stop();
   } // scope controlling lifetime of temporary arrays
 
-  C3Tensor_ref vHS3D(make_device_ptr(vrecv.origin()),vhs3d_ext);
+#if defined(MIXED_PRECISION)
+// cast_inplace vHS3D
+  TG.local_barrier();
+  if(TG.localTG.root())
+    inplace_cast<SPComplexType,ComplexType>(make_device_ptr(vrecv.origin()),vrecv.num_elements());
+  TG.local_barrier();
+#endif
 
   // From here on is similar to Shared 
   int nx = 1;

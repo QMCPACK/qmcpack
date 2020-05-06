@@ -61,12 +61,16 @@ class AFQMCBasePropagator: public AFQMCInfo
   using StaticVector = boost::multi::static_array<ComplexType,1,buffer_alloc_type>;
   using StaticMatrix = boost::multi::static_array<ComplexType,2,buffer_alloc_type>;
   using Static3Tensor = boost::multi::static_array<ComplexType,3,buffer_alloc_type>;
+  using StaticSPVector = boost::multi::static_array<SPComplexType,1,buffer_alloc_SPtype>;
+  using StaticSPMatrix = boost::multi::static_array<SPComplexType,2,buffer_alloc_SPtype>;
+  using StaticSP3Tensor = boost::multi::static_array<SPComplexType,3,buffer_alloc_SPtype>;
 
   using CVector = boost::multi::array<ComplexType,1,allocator>;  
   using CMatrix = boost::multi::array<ComplexType,2,allocator>;  
   using C3Tensor = boost::multi::array<ComplexType,3,allocator>;  
   using CVector_ref = boost::multi::array_ref<ComplexType,1,pointer>;  
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;  
+  using SPCMatrix_ref = boost::multi::array_ref<SPComplexType,2,sp_pointer>;  
   using C3Tensor_ref = boost::multi::array_ref<ComplexType,3,pointer>;  
   using sharedCVector = ComplexVector<aux_allocator>; 
   using stdCVector = boost::multi::array<ComplexType,1>;  
