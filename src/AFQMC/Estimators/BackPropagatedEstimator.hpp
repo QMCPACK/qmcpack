@@ -65,24 +65,27 @@ class BackPropagatedEstimator: public EstimatorBase
                                       Refs({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                                       observ0(TG,info,name,cur,wlk,wfn), wfn0(wfn), prop0(prop),
                                       max_nback_prop(10),
-                                      nStabalize(10), block_size(1), path_restoration(false),
-                                      importanceSampling(impsamp_),first(true)
+                                      nStabilize(10), block_size(1), path_restoration(false),
+                                      importanceSampling(impsamp_),extra_path_restoration(false),first(true)
   {
     int nave(1);
     if(cur != NULL) {
       ParameterSet m_param;
       std::string restore_paths;
-      m_param.add(nStabalize, "ortho", "int");
+      std::string restore_paths2;
+      m_param.add(nStabilize, "ortho", "int");
       m_param.add(max_nback_prop, "nsteps", "int");
       m_param.add(nave, "naverages", "int");
       m_param.add(restore_paths, "path_restoration", "std::string");
+      m_param.add(restore_paths2, "extra_path_restoration", "std::string");
       m_param.add(block_size, "block_size", "int");
       m_param.add(nblocks_skip, "nskip", "int");
       m_param.put(cur);
-      if(restore_paths == "true") {
+      if(restore_paths == "true" || restore_paths == "yes") 
         path_restoration = true;
-      } else {
-        path_restoration = false;
+      if(restore_paths2 == "true" || restore_paths2 == "yes") { 
+        path_restoration = true;
+        extra_path_restoration = true;
       }
     }
 
@@ -120,6 +123,10 @@ class BackPropagatedEstimator: public EstimatorBase
 
   void accumulate_block(WalkerSet& wset)
   {
+// MAM: BP will not work as written if steps in execute don't sync with steps in BP.
+//      Maybe keep track of which steps in nback_prop_steps have been done
+//      and make sure they are not skipped!!!
+//      Fix Fix Fix...
     accumulated_in_last_block=false;
     int bp_step = wset.getBPPos();
     if(bp_step <=0)
@@ -176,17 +183,23 @@ class BackPropagatedEstimator: public EstimatorBase
     TG.TG_local().barrier();
 
     //3. propagate backwards the references
-    prop0.BackPropagate(bp_step,nStabalize,wset,Refs_,detR);
+    prop0.BackPropagate(bp_step,nStabilize,wset,Refs_,detR);
 
     //4. calculate properties 
     // adjust weights here is path restoration
     stdCVector wgt(iextensions<1u>{wset.size()});
     wset.getProperty(WEIGHT,wgt);
     if(path_restoration) {
-      auto&& factors(wset.getWeightFactors());
-      for(int k=0; k<bp_step; k++)  
+      auto&& factors(*wset.getWeightFactors());
+      int hpos(wset.getHistoryPos()); // position where next step goes... go bach in history... 
+      int maxpos(wset.HistoryBufferLength());
+      int nbp(bp_step);
+      if( extra_path_restoration ) nbp*=2;   
+      for(int k=0; k<nbp; k++) {  
+        hpos = ((hpos==0)?maxpos-1:hpos-1); // start going back since position is advanced for next step already 
         for(int i=0; i<wgt.size(); i++) 
-          wgt[i] *= factors[k][i];
+          wgt[i] *= factors[hpos][i];
+      }
     } else if(!importanceSampling) {
       stdCVector phase(iextensions<1u>{wset.size()});
       wset.getProperty(PHASE,phase);
@@ -280,12 +293,13 @@ class BackPropagatedEstimator: public EstimatorBase
   ComplexType one = ComplexType(1.0, 0.0);
 
   // Frequency of reorthogonalisation.
-  int nStabalize;
+  int nStabilize;
   // Block size over which RDM will be averaged.
   int block_size;
   // Whether to restore cosine projection and real local energy apprximation for weights
   // along back propagation path.
   bool path_restoration, importanceSampling;
+  bool extra_path_restoration;
 
   int first;
 

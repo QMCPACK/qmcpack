@@ -27,9 +27,6 @@
 #undef APP_ABORT
 #define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}
 
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdio.h>
 #include <string>
 #include <vector>
 #include <complex>
@@ -281,8 +278,8 @@ void test_phmsd(boost::mpi3::communicator& world)
       for(int i = 0; i < NAEB; i++)
         ob[i] -= NMO;
       getSlaterMatrix(TrialB, ob, NAEB);
-      ComplexType ovlpa = sdet->Overlap(TrialA, wset[0].SlaterMatrix(Alpha), logovlp);
-      ComplexType ovlpb = sdet->Overlap(TrialB, wset[0].SlaterMatrix(Beta), logovlp);
+      ComplexType ovlpa = sdet->Overlap(TrialA, *wset[0].SlaterMatrix(Alpha), logovlp);
+      ComplexType ovlpb = sdet->Overlap(TrialB, *wset[0].SlaterMatrix(Beta), logovlp);
       ovlp_sum += ma::conj(coeffs[idet])*ovlpa*ovlpb;
       //boost::multi::array_ref<ComplexType,2> GB(to_address(GBuff.origin()), {NAEA,NMO});
       //sdet->MixedDensityMatrix(TrialB, wset[0].SlaterMatrix(Alpha), GA, logovlp, true);
@@ -322,8 +319,8 @@ TEST_CASE("test_read_phmsd", "[test_read_phmsd]")
 
 #ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
-  qmc_cuda::CUDA_INIT(node);
-  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+  arch::INIT(node);
+  using Alloc = device::device_allocator<ComplexType>;
 #else
   using Alloc = shared_allocator<ComplexType>;
 #endif
@@ -338,8 +335,8 @@ TEST_CASE("test_phmsd", "[read_phmsd]")
 
 #ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
-  qmc_cuda::CUDA_INIT(node);
-  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+  arch::INIT(node);
+  using Alloc = device::device_allocator<ComplexType>;
 #else
   using Alloc = shared_allocator<ComplexType>;
 #endif

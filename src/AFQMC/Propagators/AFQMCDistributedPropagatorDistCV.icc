@@ -293,7 +293,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     std::tie(cvg0,cvgN) = FairDivideBoundary(TG.getLocalTGRank(),globalnCV,TG.getNCoresPerTG());
     for(int ni=0; ni<nsteps; ni++) {
       if(bp_step<bp_max) {
-        auto&& V(wset.getFields(bp_step));
+        auto&& V(*wset.getFields(bp_step));
         if(nsteps==1) {
           copy_n(Xrecv[cvg0].origin(),nwalk*(cvgN-cvg0),V[cvg0].origin());
           ma::scal(sqrtdt,V.sliced(cvg0,cvgN));
@@ -371,6 +371,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
                                    MFfactor[n0+ni],hybrid_weight[n0+ni],work);
       }
       if(wset.getBPPos() >=0 && wset.getBPPos()<wset.NumBackProp()) wset.advanceBPPos();
+      if(wset.getBPPos() >=0) wset.advanceHistoryPos();
     }
     TG.local_barrier();
     AFQMCTimers[extra_timer]->stop();
@@ -543,12 +544,16 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       // 2. bcast G 
       AFQMCTimers[vHS_comm_overhead_timer]->start();
 #ifdef BUILD_AFQMC_WITH_NCCL
+#ifdef ENABLE_CUDA
       if(k == TG.getLocalTGRank()) 
         copy_n(Gstore.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
       NCCLCHECK(ncclBcast(to_address(Gwork.origin()+Gak0),2*(GakN-Gak0),ncclDouble,k,
                           TG.ncclTG(),TG.ncclStream()));
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
       //TG.TG_Cores().broadcast_n(to_address(Gwork.origin())+Gak0,GakN-Gak0,k);
+#else
+#error "BUILD_AFQMC_WITH_NCCL only with ENABLE_CUDA"
+#endif
 #else
       if(k == TG.getLocalTGRank()) 
         copy_n(Gstore.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
@@ -592,10 +597,14 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       AFQMCTimers[vHS_comm_overhead_timer]->start();
       // 4. Reduce vHS
 #ifdef BUILD_AFQMC_WITH_NCCL
+#ifdef ENABLE_CUDA
       NCCLCHECK(ncclReduce((const void*)to_address(vHS.origin()+vak0),
                     (void*)to_address(vrecv.origin()+vak0), 2*(vakN-vak0),
                      ncclDouble, ncclSum,k,TG.ncclTG(),TG.ncclStream()));
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
+#else
+#error "BUILD_AFQMC_WITH_NCCL only with ENABLE_CUDA"
+#endif
 #else
       TG.TG_Cores().reduce_n(to_address(vHS.origin())+vak0,vakN-vak0,
                              to_address(vrecv.origin())+vak0,std::plus<>(),k);
@@ -614,7 +623,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       std::tie(cvg0,cvgN) = FairDivideBoundary(TG.getLocalTGRank(),globalnCV,TG.getNCoresPerTG());
       for(int ni=0; ni<nsteps; ni++) {
         if(bp_step<bp_max) {
-          auto&& V(wset.getFields(bp_step));
+          auto&& V(*wset.getFields(bp_step));
           if(nsteps==1) {
             copy_n(Xrecv[cvg0].origin(),nwalk*(cvgN-cvg0),V[cvg0].origin());
             ma::scal(sqrtdt,V.sliced(cvg0,cvgN));
@@ -631,6 +640,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     // reduce MF and HWs
     if(TG.TG().size() > 1) {
 #ifdef BUILD_AFQMC_WITH_NCCL
+#ifdef ENABLE_CUDA
       NCCLCHECK(ncclAllReduce((const void*)to_address(MFfactor.origin()),
                     (void*)to_address(MFfactor.origin()), 2*MFfactor.num_elements(),
                      ncclDouble, ncclSum,TG.ncclTG(),TG.ncclStream()));
@@ -638,6 +648,9 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
                      (void*)to_address(hybrid_weight.origin()), 2*hybrid_weight.num_elements(),
                      ncclDouble, ncclSum,TG.ncclTG(),TG.ncclStream()));
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
+#else
+#error "BUILD_AFQMC_WITH_NCCL only with ENABLE_CUDA"
+#endif
 #else
       TG.TG().all_reduce_in_place_n(to_address(MFfactor.origin()),MFfactor.num_elements(),
                                   std::plus<>());
@@ -702,6 +715,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
                                    MFfactor[n0+ni],hybrid_weight[n0+ni],work);
       }
       if(wset.getBPPos() >=0 && wset.getBPPos()<wset.NumBackProp()) wset.advanceBPPos();
+      if(wset.getBPPos() >=0) wset.advanceHistoryPos();
     }
     TG.local_barrier();
     AFQMCTimers[extra_timer]->stop();
@@ -714,6 +728,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 template<class WlkSet, class CTens, class CMat>
 void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR)
 {
+
   using std::copy_n;
   const ComplexType one(1.),zero(0.);
   auto walker_type = wset.getWalkerType();
@@ -803,7 +818,7 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
   }
   TG.local_barrier();
 
-  auto&& Fields(wset.getFields());
+  auto&& Fields(*wset.getFields());
   assert(Fields.size(0) >= nbpsteps);
   assert(Fields.size(1) == globalnCV);
   assert(Fields.size(2) == nwalk);
@@ -845,12 +860,12 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
   // and copying the back propagated references into SlaterMatrix
   // 0. copy SlaterMatrix to SlaterMatrixAux 
   for(int i=0; i<nwalk; i++) {
-    copy_n(wset[i].SlaterMatrix(Alpha).origin()+r0,rN-r0,
-           wset[i].SlaterMatrixAux(Alpha).origin()+r0);
+    copy_n((*wset[i].SlaterMatrix(Alpha)).origin()+r0,rN-r0,
+           (*wset[i].SlaterMatrixAux(Alpha)).origin()+r0);
     // optimize for the single reference case
     if(nrefs==1)
       copy_n(Refs[i][0].origin()+r0,rN-r0,
-             wset[i].SlaterMatrix(Alpha).origin()+r0);
+             (*wset[i].SlaterMatrix(Alpha)).origin()+r0);
   }
   TG.TG_local().barrier();
 
@@ -911,14 +926,13 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
     TG.local_barrier();
 //std::cout<<" vrecv: " <<TG.Global().rank() <<" " <<ma::dot(vrecv[0],vrecv[0]) <<"\n\n" <<std::endl;
 
-/**/
     for(int nr=0; nr<nrefs; ++nr) {
 
       // 3. copy reference to SlaterMatrix
       if(nrefs>1)
         for(int i=0; i<nwalk; i++)
           copy_n(Refs[i][nr].origin()+r0,rN-r0,
-                 wset[i].SlaterMatrix(Alpha).origin()+r0);
+                 (*wset[i].SlaterMatrix(Alpha)).origin()+r0);
       TG.TG_local().barrier();
 
       // 4. Propagate walkers
@@ -947,7 +961,7 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
       // 5. copy reference to back 
       if(nrefs>1)
         for(int i=0; i<nwalk; i++)
-          copy_n(wset[i].SlaterMatrix(Alpha).origin()+r0,rN-r0,
+          copy_n((*wset[i].SlaterMatrix(Alpha)).origin()+r0,rN-r0,
                  Refs[i][nr].origin()+r0);
       TG.TG_local().barrier();
 
@@ -958,12 +972,13 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps, int nStabaliz
   // 6. restore the Slater Matrix 
   for(int i=0; i<nwalk; i++) {
     if(nrefs==1)
-      copy_n(wset[i].SlaterMatrix(Alpha).origin()+r0,rN-r0,
+      copy_n((*wset[i].SlaterMatrix(Alpha)).origin()+r0,rN-r0,
              Refs[i][0].origin()+r0);
-    copy_n(wset[i].SlaterMatrixAux(Alpha).origin()+r0,rN-r0,
-           wset[i].SlaterMatrix(Alpha).origin()+r0);
+    copy_n((*wset[i].SlaterMatrixAux(Alpha)).origin()+r0,rN-r0,
+           (*wset[i].SlaterMatrix(Alpha)).origin()+r0);
   }
   TG.TG_local().barrier();
+
 }
 
 

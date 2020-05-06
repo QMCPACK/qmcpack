@@ -272,7 +272,7 @@ public:
                                      bool safe_to_delay = false);
   void completeUpdates();
   /* flexible batched version of completeUpdates.  */
-  void flex_completeUpdates(const RefVector<TrialWaveFunction>& WF_list) const;
+  static void flex_completeUpdates(const RefVector<TrialWaveFunction>& WF_list);
 
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */

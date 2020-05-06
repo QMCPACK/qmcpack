@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && c++ -std=c++17 -Wall -Wextra -Wfatal-errors -D_TEST_BOOST_MULTI_DETAIL_STACK_ALLOCATOR $0x.cpp -o $0x.x && time $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+(echo "#include\""$0"\"" > $0x.cpp) && c++ -std=c++17 -Wall -Wextra `#-Wfatal-errors` -D_TEST_BOOST_MULTI_DETAIL_STACK_ALLOCATOR $0x.cpp -o $0x.x && time $0x.x $@ && rm -f $0x.x $0x.cpp; exit
 #endif
 #ifndef BOOST_MULTI_DETAIL_STACK_ALLOCATOR_HPP
 #define BOOST_MULTI_DETAIL_STACK_ALLOCATOR_HPP
@@ -13,7 +13,10 @@
 namespace boost{
 namespace multi{
 
-template<class Alloc = std::allocator<char>, typename std::allocator_traits<Alloc>::size_type MaxAlignemnt = sizeof(std::max_align_t)>
+template<
+	class Alloc = std::allocator<char>, 
+	typename std::allocator_traits<Alloc>::size_type MaxAlignemnt = alignof(std::max_align_t)
+>
 class stack_buffer : private monotonic_buffer<Alloc, MaxAlignemnt>{
 	using base_ = monotonic_buffer<Alloc, MaxAlignemnt>;
 public:
@@ -42,8 +45,9 @@ public:
 		assert(this->position_ == 0 and positions_.empty());
 		base_::reset(bytes);
 	}
-	template<size_type  RequiredAlignment = sizeof(std::max_align_t)>
+	template<size_type RequiredAlignment = alignof(std::max_align_t)>
 	void_pointer allocate(size_type req_bytes, size_type al = RequiredAlignment){
+		if(req_bytes == 0) return this->buffer_ + this->position_; 
 		static_assert( RequiredAlignment <= MaxAlignemnt, "!");
 		assert( al <= this->max_alignment );
 		auto bytes = this->align_up(req_bytes);
@@ -65,6 +69,7 @@ public:
 		return p;
 	}
 	void deallocate(void_pointer p, size_type req_bytes){
+		if(req_bytes == 0) return;
 		auto bytes = this->align_up(req_bytes);
 		this->deallocated_bytes_ += bytes;
 		if(not this->in_buffer(static_cast<char_pointer>(p))){
@@ -77,15 +82,15 @@ public:
 			}
 			#ifndef _BOOST_MULTI_RELAX_STACK_CONDITION
 			else{
-				assert(0); // throw std::logic_error{"stack violation!"}; // careful
+				assert(0 && "stack violation"); // throw std::logic_error{"stack violation!"}; // careful with throwing from deallocation! TODO should invalidate the buffer?
 			}
 			#endif
 		}
 	}
 };
 
-template<class T = void, class Alloc = std::allocator<char>>
-using stack_allocator = multi::generic_allocator<T, multi::stack_buffer<Alloc>>;
+template<class T = void, class Alloc = std::allocator<char>, typename std::allocator_traits<Alloc>::size_type MaxAlignemnt = alignof(std::max_align_t)>
+using stack_allocator = multi::generic_allocator<T, multi::stack_buffer<Alloc, MaxAlignemnt>>;
 
 }}
 
@@ -105,19 +110,20 @@ using boost::alignment::is_aligned;
 int main(){
 	{
 		std::size_t guess_bytes = 120;
-		multi::stack_buffer<std::allocator<char>> buf{guess_bytes};
+		multi::stack_buffer<std::allocator<char>, 32> buf{guess_bytes};
 		for(int i = 0; i != 3; ++i){
 			cout<<"pass "<< i << std::endl;
 		//	multi::stack_buffer buf{guess_bytes, std::allocator<char>{}}; // needs CTAD
 			{
 			//	multi::array A({2, 10}, 0., &buf); assert( is_aligned(alignof(double), &A[1][3]) ); // needs CTAD
-				multi::array<double, 2, multi::stack_allocator<double, std::allocator<char>> > A({2, 10}, &buf); assert( is_aligned(alignof(double), &A[1][3]) );
-				multi::array<double, 2, multi::stack_allocator<> > B({3, 10}, &buf); assert( is_aligned(alignof(double), &B[2][3]) );
-				multi::array<double, 2, multi::stack_allocator<> > C({4, 10}, &buf); assert( is_aligned(alignof(double), &C[3][3]) );
-				std::vector<int, multi::stack_allocator<int>> v(3, &buf); assert( is_aligned(alignof(int), &v[1]) );
+				multi::stack_allocator<double, std::allocator<char>, 32> sa(&buf);
+				multi::array<double, 2, multi::stack_allocator<double, std::allocator<char>, 32>> A({2, 10}, &buf); assert( is_aligned(alignof(double), &A[1][3]) );
+				multi::array<double, 2, multi::stack_allocator<double, std::allocator<char>, 32>> B({3, 10}, &buf); assert( is_aligned(alignof(double), &B[2][3]) );
+				multi::array<double, 2, multi::stack_allocator<double, std::allocator<char>, 32>> C({4, 10}, &buf); assert( is_aligned(alignof(double), &C[3][3]) );
+				std::vector<int, multi::stack_allocator<int, std::allocator<char>, 32>> v(3, &buf); assert( is_aligned(alignof(int), &v[1]) );
 			//	v.push_back(3); // can produce a runtime error because it is not using buffer as a stack
 				for(int j = 0; j != 100; ++j){
-					multi::array<double, 2, multi::stack_allocator<> > D({4, 10}, &buf); assert( is_aligned(alignof(double), &D[2][1]) );
+					multi::array<double, 2, multi::stack_allocator<double, std::allocator<char>, 32> > D({4, 10}, &buf); assert( is_aligned(alignof(double), &D[2][1]) );
 					multi::array<float, 2, multi::stack_allocator<> > E({4, 10}, &buf); assert( is_aligned(alignof(float), &E[3][3]) );
 				}
 				multi::array<double, 2, multi::stack_allocator<> > F({4, 10}, &buf); assert( is_aligned(alignof(double), &F[2][1]) );

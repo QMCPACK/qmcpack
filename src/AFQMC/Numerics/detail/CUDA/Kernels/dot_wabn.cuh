@@ -42,6 +42,18 @@ void dot_wanb( int nwalk, int nocc, int nchol,
 void dot_wanb( int nwalk, int nocc, int nchol, 
                std::complex<float> const alpha, std::complex<float> const* Tab,
                std::complex<double>* y, int incy);
+
+
+void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
+               std::complex<double> const alpha, std::complex<double> const* Tab,
+               std::complex<double>* F);
+void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
+               std::complex<float> const alpha, std::complex<float> const* Tab,
+               std::complex<double>* F);
+void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
+               std::complex<float> const alpha, std::complex<float> const* Tab,
+               std::complex<float>* F);
+
 }
 
 #endif

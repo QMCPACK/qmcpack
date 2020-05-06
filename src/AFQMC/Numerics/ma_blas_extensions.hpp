@@ -45,7 +45,7 @@ template<class T,
          typename = typename std::enable_if<std::decay<MultiArray1Dx>::type::dimensionality == 1>::type,
          typename = typename std::enable_if<std::decay<MultiArray1Dy>::type::dimensionality == 1>::type
 >
-MultiArray1Dy
+MultiArray1Dy&&
 axty(T const alpha, MultiArray1Dx const& x, MultiArray1Dy && y){
         assert(x.size() == y.size());
         axty(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()), y.stride(0));
@@ -59,7 +59,7 @@ template<class T,
          typename = typename std::enable_if<std::decay<MultiArray2DB>::type::dimensionality == 2>::type,
          typename = void
 >
-MultiArray2DB
+MultiArray2DB&&
 axty(T const alpha, MultiArray2DA const& A, MultiArray2DB && B){
         assert(A.num_elements() == B.num_elements());
         assert(A.stride(1)==1);
@@ -80,7 +80,7 @@ template<class T,
                                 (MultiArray1D::dimensionality == 1) and
                                 (std::decay<MultiArray2DB>::type::dimensionality == 2)>
 >
-MultiArray2DB
+MultiArray2DB&&
 acAxpbB(T const alpha, MultiArray2DA const& A, MultiArray1D const& x, T const beta, MultiArray2DB && B){
         assert(A.num_elements() == B.num_elements());
         assert(A.size(0)==B.size(0));
@@ -97,7 +97,7 @@ template<class T,
          typename = typename std::enable_if<std::decay<MultiArray2DA>::type::dimensionality == 2>::type,
          typename = typename std::enable_if<std::decay<MultiArray1Dy>::type::dimensionality == 1>::type
 >
-MultiArray1Dy
+MultiArray1Dy&&
 adiagApy(T const alpha, MultiArray2DA const& A, MultiArray1Dy && y){
         assert(A.size(0) == A.size(1));
         assert(A.size(0) == y.size());
@@ -157,7 +157,7 @@ sum(MultiArray4D const& A){
 template<class T, class MultiArray1D,
         typename = typename std::enable_if< std::decay<MultiArray1D>::type::dimensionality == 1 >
 >
-MultiArray1D setVector(T alpha, MultiArray1D&& a){
+MultiArray1D&& setVector(T alpha, MultiArray1D&& a){
         set1D(a.size(0),  alpha, pointer_dispatch(a.origin()), a.stride(0) );
         return std::forward<MultiArray1D>(a);
 }
@@ -172,7 +172,7 @@ void zero_complex_part(MultiArray1D&& a){
 template<class MultiArray2D,
         typename = std::enable_if_t< std::decay<MultiArray2D>::type::dimensionality == 2 >
         >
-MultiArray2D set_identity(MultiArray2D&& m){
+MultiArray2D&& set_identity(MultiArray2D&& m){
         set_identity(m.size(1),m.size(0),pointer_dispatch(m.origin()),m.stride(0));
         return std::forward<MultiArray2D>(m);
 }
@@ -181,7 +181,7 @@ template<class MultiArray3D,
         typename = std::enable_if_t< std::decay<MultiArray3D>::type::dimensionality == 3 >,
         typename = void
         >
-MultiArray3D set_identity(MultiArray3D&& m){
+MultiArray3D&& set_identity(MultiArray3D&& m){
         set_identity_strided(m.size(0),m.stride(0),m.size(2),m.size(1),pointer_dispatch(m.origin()),m.stride(1));
         return std::forward<MultiArray3D>(m);
 }
@@ -189,7 +189,7 @@ MultiArray3D set_identity(MultiArray3D&& m){
 template<class T, class MultiArray2D,
         typename = typename std::enable_if< std::decay<MultiArray2D>::type::dimensionality == 2 >
 >
-MultiArray2D fill(MultiArray2D&& m, T const& value){
+MultiArray2D&& fill(MultiArray2D&& m, T const& value){
         using qmcplusplus::afqmc::fill2D;
         fill2D(m.size(0),m.size(1),pointer_dispatch(m.origin()),m.stride(0),value);
         return std::forward<MultiArray2D>(m);

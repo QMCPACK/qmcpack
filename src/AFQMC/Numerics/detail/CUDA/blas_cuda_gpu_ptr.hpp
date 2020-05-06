@@ -18,7 +18,8 @@
 #include<type_traits>
 #include<cassert>
 #include<vector>
-#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
+//#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
+#include "AFQMC/Memory/device_pointers.hpp" 
 #include "AFQMC/Numerics/detail/CUDA/cublas_wrapper.hpp"
 //#include "AFQMC/Numerics/detail/CUDA/cublasXt_wrapper.hpp"
 // hand coded kernels for blas extensions
@@ -36,11 +37,11 @@
 // Lvl-2: gemv
 // Lvl-3: gemm
 
-namespace qmc_cuda 
+namespace device 
 {
   // copy Specializations
   template<typename T, typename Q>
-  inline static void copy(int n, cuda_gpu_ptr<Q> x, int incx, cuda_gpu_ptr<T> y, int incy)
+  inline static void copy(int n, device_pointer<Q> x, int incx, device_pointer<T> y, int incy)
   {
     static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
     if(CUBLAS_STATUS_SUCCESS != cublas::cublas_copy(*x.handles.cublas_handle,n,to_address(x),incx,to_address(y),incy))
@@ -48,7 +49,7 @@ namespace qmc_cuda
   }
 
   template<typename T, typename Q>
-  inline static void copy(int n, T const* x, int incx, cuda_gpu_ptr<Q> y, int incy)
+  inline static void copy(int n, T const* x, int incx, device_pointer<Q> y, int incy)
   {
     static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
     if(cudaSuccess != cudaMemcpy2D(to_address(y),sizeof(Q)*incy,
@@ -58,7 +59,7 @@ namespace qmc_cuda
   }
 
   template<typename T, typename Q>
-  inline static void copy(int n, cuda_gpu_ptr<Q> x, int incx, T* y, int incy)
+  inline static void copy(int n, device_pointer<Q> x, int incx, T* y, int incy)
   {
     static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
     assert(sizeof(Q)==sizeof(T));
@@ -70,7 +71,7 @@ namespace qmc_cuda
 
   // scal Specializations
   template<typename T, typename Q>
-  inline static void scal(int n, Q alpha, cuda_gpu_ptr<T> x, int incx=1)
+  inline static void scal(int n, Q alpha, device_pointer<T> x, int incx=1)
   {
     static_assert(std::is_convertible<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
     if(CUBLAS_STATUS_SUCCESS != cublas::cublas_scal(*x.handles.cublas_handle,n,T(alpha),to_address(x),incx))
@@ -79,8 +80,8 @@ namespace qmc_cuda
 
   // dot Specializations
   template<typename T, typename Q>
-  inline static auto dot(int const n, cuda_gpu_ptr<Q> x, int const incx, 
-                                      cuda_gpu_ptr<T> y, int const incy)
+  inline static auto dot(int const n, device_pointer<Q> x, int const incx, 
+                                      device_pointer<T> y, int const incy)
   {
     static_assert(std::is_same<typename std::decay<Q>::type,
                                typename std::decay<T>::type>::value,"Wrong dispatch.\n");
@@ -90,8 +91,8 @@ namespace qmc_cuda
   // axpy Specializations
   template<typename T, typename Q>
   inline static void axpy(int n, T const a,
-                          cuda_gpu_ptr<Q> x, int incx, 
-                          cuda_gpu_ptr<T> y, int incy)
+                          device_pointer<Q> x, int incx, 
+                          device_pointer<T> y, int incy)
   {
     static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
     if(CUBLAS_STATUS_SUCCESS != cublas::cublas_axpy(*x.handles.cublas_handle,n,a,
@@ -103,10 +104,10 @@ namespace qmc_cuda
   template<typename T, typename T2, typename Q1, typename Q2>
   inline static void gemv(char Atrans, int M, int N,
                           T2 alpha,
-                          cuda_gpu_ptr<Q1> A, int lda,
-                          cuda_gpu_ptr<Q2> x, int incx,
+                          device_pointer<Q1> A, int lda,
+                          device_pointer<Q2> x, int incx,
                           T2 beta,
-                          cuda_gpu_ptr<T> y, int incy)
+                          device_pointer<T> y, int incy)
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T2>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
@@ -121,10 +122,10 @@ namespace qmc_cuda
   template<typename T, typename T2, typename Q1, typename Q2> 
   inline static void gemm(char Atrans, char Btrans, int M, int N, int K,
                           T2 alpha,
-                          cuda_gpu_ptr<Q1> A, int lda,
-                          cuda_gpu_ptr<Q2> B, int ldb,
+                          device_pointer<Q1> A, int lda,
+                          device_pointer<Q2> B, int ldb,
                           T2 beta,
-                          cuda_gpu_ptr<T> C, int ldc)
+                          device_pointer<T> C, int ldc)
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T2>::value,"Wrong dispatch.\n");
@@ -138,10 +139,10 @@ namespace qmc_cuda
   template<typename T, typename Q1, typename Q2>
   inline static void geam(char Atrans, char Btrans, int M, int N,
                          T const alpha,
-                         cuda_gpu_ptr<Q1> A, int lda,
+                         device_pointer<Q1> A, int lda,
                          T const beta,
-                         cuda_gpu_ptr<Q2> B, int ldb,
-                         cuda_gpu_ptr<T> C, int ldc)
+                         device_pointer<Q2> B, int ldb,
+                         device_pointer<T> C, int ldc)
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
@@ -152,7 +153,7 @@ namespace qmc_cuda
 
   template<typename T>
   //inline static void set1D(int n, T const alpha, ptr x, int incx)
-  inline static void set1D(int n, T const alpha, cuda_gpu_ptr<T> x, int incx)
+  inline static void set1D(int n, T const alpha, device_pointer<T> x, int incx)
   {
     // No set funcion in cuda!!! Avoiding kernels for now
     //std::vector<T> buff(n,alpha); 
@@ -164,8 +165,8 @@ namespace qmc_cuda
 
   // dot extension 
   template<typename T, typename T1, typename T2, typename Q1, typename Q2>
-  inline static void adotpby(int const n, T1 const alpha, cuda_gpu_ptr<Q1> x, int const incx, 
-                                cuda_gpu_ptr<Q2> y, int const incy, 
+  inline static void adotpby(int const n, T1 const alpha, device_pointer<Q1> x, int const incx, 
+                                device_pointer<Q2> y, int const incy, 
                                 T2 const beta, T* result)
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T1>::value,"Wrong dispatch.\n");
@@ -178,8 +179,8 @@ namespace qmc_cuda
   template<typename T, typename Q>
   inline static void axty(int n,
                          T const alpha,
-                         cuda_gpu_ptr<Q> x, int incx,
-                         cuda_gpu_ptr<T> y, int incy)
+                         device_pointer<Q> x, int incx,
+                         device_pointer<T> y, int incy)
   {
     static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
     if(incx != 1 || incy != 1)
@@ -191,10 +192,10 @@ namespace qmc_cuda
   template<typename T, typename Q1, typename Q2>
   inline static void acAxpbB(int m, int n,
                              T const alpha,
-                             cuda_gpu_ptr<Q1> A, int lda,
-                             cuda_gpu_ptr<Q2> x, int incx,
+                             device_pointer<Q1> A, int lda,
+                             device_pointer<Q2> x, int incx,
                              T const beta,
-                             cuda_gpu_ptr<T> B, int ldb)
+                             device_pointer<T> B, int ldb)
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
@@ -205,48 +206,48 @@ namespace qmc_cuda
   template<typename T, typename Q1>
   inline static void adiagApy(int n,
                          T const alpha,
-                         cuda_gpu_ptr<Q1> A, int lda,
-                         cuda_gpu_ptr<T> y, int incy)
+                         device_pointer<Q1> A, int lda,
+                         device_pointer<T> y, int incy)
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
     kernels::adiagApy(n,alpha,to_address(A),lda,to_address(y),incy);
   }
 
   template<typename T>
-  inline static void zero_complex_part(int n, cuda_gpu_ptr<T> x)
+  inline static void zero_complex_part(int n, device_pointer<T> x)
   {
     kernels::zero_complex_part(n,to_address(x));
   }
 
   template<typename T>
-  inline static auto sum(int n, cuda_gpu_ptr<T> x, int incx) 
+  inline static auto sum(int n, device_pointer<T> x, int incx) 
   {
     return kernels::sum(n,to_address(x),incx);
   }
 
   template<typename T>
-  inline static auto sum(int m, int n, cuda_gpu_ptr<T> A, int lda)
+  inline static auto sum(int m, int n, device_pointer<T> A, int lda)
   {
     return kernels::sum(m,n,to_address(A),lda);
   }
 
   template<typename T>
-  void set_identity(int m, int n, cuda_gpu_ptr<T> A, int lda)
+  void set_identity(int m, int n, device_pointer<T> A, int lda)
   {
     kernels::set_identity(m,n,to_address(A),lda);
   }
 
   template<typename T>
-  void set_identity_strided(int nbatch, int stride, int m, int n, cuda_gpu_ptr<T> A, int lda)
+  void set_identity_strided(int nbatch, int stride, int m, int n, device_pointer<T> A, int lda)
   {
     kernels::set_identity_strided(nbatch,stride,m,n,to_address(A),lda);
   }
 
   template<typename T, typename Q1, typename Q2>
   inline static void gemmStridedBatched(char Atrans, char Btrans, int M, int N, int K,
-                          T const alpha, cuda_gpu_ptr<Q1> A, int lda, int strideA,
-                          cuda_gpu_ptr<Q2> B, int ldb, int strideB, T beta,
-                          cuda_gpu_ptr<T> C, int ldc, int strideC, int batchSize)
+                          T const alpha, device_pointer<Q1> A, int lda, int strideA,
+                          device_pointer<Q2> B, int ldb, int strideB, T beta,
+                          device_pointer<T> C, int ldc, int strideC, int batchSize)
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
@@ -257,9 +258,9 @@ namespace qmc_cuda
 
   template<typename T, typename Q1, typename Q2>
   inline static void gemmBatched(char Atrans, char Btrans, int M, int N, int K,
-                          T const alpha, cuda_gpu_ptr<Q1> * A, int lda, 
-                          cuda_gpu_ptr<Q2> * B, int ldb, T beta,
-                          cuda_gpu_ptr<T> * C, int ldc, int batchSize)
+                          T const alpha, device_pointer<Q1> * A, int lda, 
+                          device_pointer<Q2> * B, int ldb, T beta,
+                          device_pointer<T> * C, int ldc, int batchSize)
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
@@ -291,8 +292,8 @@ namespace qmc_cuda
   }
 
   template<typename T1, typename T2, typename T3>
-  inline static void axpyBatched(int n, T1* x, cuda_gpu_ptr<T2>* a, int inca, 
-                                               cuda_gpu_ptr<T3>* b, int incb, int batchSize)
+  inline static void axpyBatched(int n, T1* x, device_pointer<T2>* a, int inca, 
+                                               device_pointer<T3>* b, int incb, int batchSize)
   {
     T2 const** a_ = new T2 const*[batchSize];
     T3** b_ = new T3*[batchSize];
@@ -306,8 +307,8 @@ namespace qmc_cuda
   }
 
   template<typename T1, typename T2, typename T3>
-  inline static void sumGwBatched(int n, T1* x, cuda_gpu_ptr<T2>* a, int inca,
-                                               cuda_gpu_ptr<T3>* b, int incb, 
+  inline static void sumGwBatched(int n, T1* x, device_pointer<T2>* a, int inca,
+                                               device_pointer<T3>* b, int incb, 
                                                int b0, int nw, int batchSize)
   {
     T2 const** a_ = new T2 const*[batchSize];
@@ -319,6 +320,33 @@ namespace qmc_cuda
     kernels::sumGw_batched_gpu(n,x,a_,inca,b_,incb,b0,nw,batchSize);
     delete [] a_;
     delete [] b_;
+  }
+
+  template <typename T, typename T2>
+  inline static void copy2D(int N, int M, device_pointer<T> src, int lda, 
+                                          device_pointer<T2> dst, int ldb){
+    static_assert(std::is_same<typename std::decay<T>::type,T2>::value,"Wrong dispatch.\n");
+    if(cudaSuccess != cudaMemcpy2D(to_address(dst),sizeof(T2)*ldb,
+                    to_address(src),sizeof(T)*lda,M*sizeof(T),N,cudaMemcpyDeviceToDevice))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code in copy2D.");
+  }
+
+  template <typename T, typename T2>
+  inline static void copy2D(int N, int M, T const* src, int lda,
+                                          device_pointer<T2> dst, int ldb){
+    static_assert(std::is_same<typename std::decay<T>::type,T2>::value,"Wrong dispatch.\n");
+    if(cudaSuccess != cudaMemcpy2D(to_address(dst),sizeof(T2)*ldb,
+                    src,sizeof(T)*lda,M*sizeof(T),N,cudaMemcpyHostToDevice))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code in copy2D.");
+  }
+
+  template <typename T, typename T2>
+  inline static void copy2D(int N, int M, device_pointer<T> src, int lda,
+                                          T2* dst, int ldb){
+    static_assert(std::is_same<typename std::decay<T>::type,T2>::value,"Wrong dispatch.\n");
+    if(cudaSuccess != cudaMemcpy2D(dst,sizeof(T2)*ldb,
+                    to_address(src),sizeof(T)*lda,M*sizeof(T),N,cudaMemcpyDeviceToHost))
+      throw std::runtime_error("Error: cudaMemcpy2D returned error code in copy2D.");
   }
 
 }

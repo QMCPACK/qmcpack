@@ -24,7 +24,6 @@
 #include "Utilities/FairDivide.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "mpi3/shared_communicator.hpp"
-#include "AFQMC/Matrix/mpi3_shared_ma_proxy.hpp"
 #include "type_traits/scalar_traits.h"
 #include "AFQMC/Wavefunctions/Excitations.hpp"
 #include "AFQMC/Wavefunctions/phmsd_helpers.hpp"
@@ -35,26 +34,26 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+// distribution:  size,  global,  offset
+//   - rotMuv:    {rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0}
+//   - rotPiu:    {size_t(NMO),grotnmu},{size_t(NMO),grotnmu},{0,0}
+//   - rotcPua    {grotnmu,nel_},{grotnmu,nel_},{0,0}
+//   - Piu:       {size_t(NMO),nmu},{size_t(NMO),gnmu},{0,nmu0}
+//   - Luv:       {nmu,gnmu},{gnmu,gnmu},{nmu0,0}
+//   - cPua       {nmu,nel_},{gnmu,nel_},{nmu0,0}
+
 template<class T>
 class THCOps
 {
-#if defined(MIXED_PRECISION)
-  using SpT = typename to_single_precision<T>::value_type;
-  using SpC = typename to_single_precision<ComplexType>::value_type;
-#else
-  using SpT = T;
-  using SpC = ComplexType;
-#endif
 
   using TVector = boost::multi::array<T,1>;
-  using SpTVector = boost::multi::array<SpT,1>;
   using CVector = boost::multi::array<ComplexType,1>;
   using CMatrix = boost::multi::array<ComplexType,2>;
   using TMatrix = boost::multi::array<T,2>;
-  using shmCMatrix = mpi3_shared_ma_proxy<ComplexType>;
-  using shmVMatrix = mpi3_shared_ma_proxy<T>;
-  using communicator = boost::mpi3::shared_communicator;
+  using shmVMatrix = boost::multi::array<T,2,shared_allocator<T>>;
+  using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
   using shmSpMatrix = boost::multi::array<SPComplexType,2,shared_allocator<SPComplexType>>;
+  using communicator = boost::mpi3::shared_communicator;
 
   public:
 
@@ -67,6 +66,8 @@ class THCOps
     THCOps(communicator& c_,
            int nmo_, int naoa_, int naob_,
            WALKER_TYPES type,
+           int nmu0_,
+           int rotnmu0_, 
            CMatrix&& hij_,
            std::vector<CVector>&& h1,
            shmVMatrix&& rotmuv_,
@@ -80,6 +81,7 @@ class THCOps
            bool verbose=false ):
                 comm(std::addressof(c_)),
                 NMO(nmo_),NAOA(naoa_),NAOB(naob_),
+                nmu0(nmu0_),gnmu(0),rotnmu0(rotnmu0_),grotnmu(0),
                 walker_type(type),
                 hij(std::move(hij_)),
                 haj(std::move(h1)),
@@ -91,7 +93,7 @@ class THCOps
                 cPua(std::move(pau_)),
                 v0(std::move(v0_)),
                 E0(e0_),
-                SM_TMats({1,1},shared_allocator<SPComplexType>{c_})
+                SM_TMats({1,1},shared_allocator<ComplexType>{c_})
     {
 /*
 for(int i=0; i<haj[0].size(0); i++)
@@ -102,6 +104,8 @@ for(int i=0; i<hij.size(0); i++)
     std::cout<<i <<" " <<j <<" " <<hij[i][j]  <<"\n";
 std::cout<<"\n";
 */
+      gnmu = Luv.size(1);
+      grotnmu = rotMuv.size(1);  
       if(haj.size() > 1)
 	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
       assert(comm);
@@ -209,7 +213,7 @@ std::cout<<"\n";
 
       int nmo_ = rotPiu.size(0);
       int nu = rotMuv.size(0);
-      int nu0 = rotMuv.global_offset()[0];
+      int nu0 = rotnmu0; 
       int nv = rotMuv.size(1);
       int nel_ = rotcPua[0].size(1);
       int nspin = (walker_type==COLLINEAR)?2:1;
@@ -227,7 +231,7 @@ std::cout<<"\n";
       // consider moving loop over spin to avoid storing the second copy which is not used
       // simultaneously
       size_t memory_needs = nspin*nu*nv + nv + nu  + nel_*(nv+nu);
-      set_shm_buffer(memory_needs);
+      set_shmbuffer(memory_needs);
       size_t cnt=0;
       // Guv[nspin][nu][nv]
       boost::multi::array_ref<ComplexType,3> Guv(to_address(SM_TMats.origin()),{nspin,nu,nv});
@@ -241,7 +245,6 @@ std::cout<<"\n";
       boost::multi::array_ref<ComplexType,1> Tuu(to_address(SM_TMats.origin())+cnt,iextensions<1u>{nu});
       cnt+=Tuu.num_elements();
 
-      auto&& M_(rotMuv.get());
       int bsz = 256;
       int nbu = ((uN-u0) + bsz - 1) / bsz;
       int nbv = (nv + bsz - 1) / bsz;
@@ -255,7 +258,7 @@ std::cout<<"\n";
           // otherwise it is quite inefficient to get Ej only
           Guv_Guu(Gw,Guv,Guu,T1,k);
           if(addEJ) {
-            ma::product(rotMuv.get().sliced(u0,uN),Guu,
+            ma::product(rotMuv.sliced(u0,uN),Guu,
                         Tuu.sliced(u0,uN));
             if(getKl)
               std::copy_n(to_address(Guu.origin())+nu0+u0,uN-u0,to_address((*Kl)[wi].origin())+u0);
@@ -275,7 +278,7 @@ std::cout<<"\n";
                 int jN = std::min((bv+1)*bsz,nv);
                 for(int i=i0; i<iN; ++i) {
                   for(int j=j0; j<jN; ++j)
-                    E_ += Guv[0][i][j] * M_[i][j] * Guv[0][j][i];
+                    E_ += Guv[0][i][j] * rotMuv[i][j] * Guv[0][j][i];
                 }
               }
             }
@@ -290,7 +293,7 @@ std::cout<<"\n";
           Guv_Guu(Gw,Guv,Guu,T1,k);
           // move calculation of Guv/Guu here to avoid storing 2 copies of Guv for alpha/beta
           if(addEJ) {
-            ma::product(rotMuv.get().sliced(u0,uN),Guu,
+            ma::product(rotMuv.sliced(u0,uN),Guu,
                       Tuu.sliced(u0,uN));
             if(getKl)
               std::copy_n(to_address(Guu.origin())+nu0+u0,uN,to_address((*Kl)[wi].origin())+u0);
@@ -309,7 +312,7 @@ std::cout<<"\n";
                 int jN = std::min((bv+1)*bsz,nv);
                 for(int i=i0; i<iN; ++i) {
                   for(int j=j0; j<jN; ++j)
-                    E_ += Guv[0][i][j] * M_[i][j] * Guv[0][j][i];
+                    E_ += Guv[0][i][j] * rotMuv[i][j] * Guv[0][j][i];
                 }
               }
             }
@@ -321,7 +324,7 @@ std::cout<<"\n";
                 int jN = std::min((bv+1)*bsz,nv);
                 for(int i=i0; i<iN; ++i) {
                   for(int j=j0; j<jN; ++j)
-                    E_ += Guv[1][i][j] * M_[i][j] * Guv[1][j][i];
+                    E_ += Guv[1][i][j] * rotMuv[i][j] * Guv[1][j][i];
                 }
               }
             }
@@ -363,7 +366,7 @@ std::cout<<"\n";
       int naob_ = QQ0B.size(1);
       int nmo_ = rotPiu.size(0);
       int nu = rotMuv.size(0);
-      int nu0 = rotMuv.global_offset()[0];
+      int nu0 = rotnmu0; 
       int nv = rotMuv.size(1);
       int nel_ = rotcPua[0].size(1);
       // checking
@@ -393,7 +396,7 @@ std::cout<<"\n";
       // consider moving loop over spin to avoid storing the second copy which is not used
       // simultaneously
       size_t memory_needs = nu*nv + nv + nu  + nel_*(nv+2*nu+2*nel_);
-      set_shm_buffer(memory_needs);
+      set_shmbuffer(memory_needs);
       size_t cnt=0;
       // if Alpha/Beta have different references, allocate the largest and
       // have distinct references for each
@@ -450,21 +453,21 @@ std::cout<<"\n";
                                                         iextensions<1u>{Gw.num_elements()});
           Guv_Guu2(Gw,Guv,Gvv,Scu,0);
           if(u0!=uN)
-            ma::product(rotMuv.get().sliced(u0,uN),Gvv,
+            ma::product(rotMuv.sliced(u0,uN),Gvv,
                       Tuu.sliced(u0,uN));
-          auto Mptr = rotMuv.get()[u0].origin();
+          auto Mptr = rotMuv[u0].origin();
           auto Gptr = to_address(Guv[u0].origin());
           for(size_t k=0, kend=(uN-u0)*nv; k<kend; ++k, ++Gptr, ++Mptr)
             (*Gptr) *= (*Mptr);
           if(u0!=uN)
-            ma::product(Guv.sliced(u0,uN),rotcPua[0].get(),
+            ma::product(Guv.sliced(u0,uN),rotcPua[0],
                       Qub.sliced(u0,uN));
           comm->barrier();
           if(k0!=kN)
             ma::product(Scu.sliced(k0,kN),Qub,
                       Xcb.sliced(k0,kN));
           // Tub = rotcPua.*Tu
-          auto rPptr = rotcPua[0].get()[nu0+u0].origin();
+          auto rPptr = rotcPua[0][nu0+u0].origin();
           auto Tuuptr = Tuu.origin()+u0;
           auto Tubptr = Tub[u0].origin();
           for(size_t u_=u0; u_<uN; ++u_, ++Tuuptr)
@@ -493,21 +496,21 @@ std::cout<<"\n";
                                                         iextensions<1u>{Gw.num_elements()});
           Guv_Guu2(Gw,Guv,Gvv,Scu,0);
           if(u0!=uN)
-            ma::product(rotMuv.get().sliced(u0,uN),Gvv,
+            ma::product(rotMuv.sliced(u0,uN),Gvv,
                       Tuu.sliced(u0,uN));
-          auto Mptr = rotMuv.get()[u0].origin();
+          auto Mptr = rotMuv[u0].origin();
           auto Gptr = to_address(Guv[u0].origin());
           for(size_t k=0, kend=(uN-u0)*nv; k<kend; ++k, ++Gptr, ++Mptr)
             (*Gptr) *= (*Mptr);
           if(u0!=uN)
-            ma::product(Guv.sliced(u0,uN),rotcPua[0].get(),
+            ma::product(Guv.sliced(u0,uN),rotcPua[0],
                       Qub.sliced(u0,uN));
           comm->barrier();
           if(k0!=kN)
             ma::product(Scu.sliced(k0,kN),Qub,
                       Xcb.sliced(k0,kN));
           // Tub = rotcPua.*Tu
-          auto rPptr = rotcPua[0].get()[nu0+u0].origin();
+          auto rPptr = rotcPua[0][nu0+u0].origin();
           auto Tuuptr = Tuu.origin()+u0;
           auto Tubptr = Tub[u0].origin();
           for(size_t u_=u0; u_<uN; ++u_, ++Tuuptr)
@@ -583,12 +586,12 @@ std::cout<<"\n";
 #else
       size_t memory_needs = nu*nwalk + nwalk*nu*nmo_;
 #endif
-      set_shm_buffer(memory_needs);
+      set_shmbuffer(memory_needs);
       boost::multi::array_ref<ComplexType,2> Tuw(to_address(SM_TMats.origin()),{nu,nwalk});
       // O[nwalk * nmu * nmu]
 #if defined(QMC_COMPLEX)
       // reinterpret as RealType matrices with 2x the columns
-      boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(Luv.origin()),
+      boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(to_address(Luv.origin())),
                                                  {Luv.size(0),2*Luv.size(1)});
       boost::multi::array_cref<RealType,2> X_R(reinterpret_cast<RealType const*>(to_address(X.origin())),
                                                  {X.size(0),2*X.size(1)});
@@ -597,7 +600,7 @@ std::cout<<"\n";
       ma::product(Luv_R.sliced(u0,uN),X_R,
                   Tuw_R.sliced(u0,uN));
 #else
-      ma::product(Luv.get().sliced(u0,uN),X,
+      ma::product(Luv.sliced(u0,uN),X,
                   Tuw.sliced(u0,uN));
 #endif
       comm->barrier();
@@ -608,14 +611,14 @@ std::cout<<"\n";
         // v[wi][ik] = sum_u Qiu[i][u] * Piu[k][u]
         // O[nmo * nmu]
         for(int i=k0; i<kN; i++) {
-          auto p_ = Piu.get()[i].origin();
+          auto p_ = Piu[i].origin();
           for(int u=0; u<nu; u++, ++p_)
             Qiu[i][u] = Tuw[u][wi]*ma::conj(*p_);
         }
         boost::multi::array_ref<ComplexType,2> v_(to_address(v[wi].origin()),{nmo_,nmo_});
         // this can benefit significantly from 2-D partition of work
         // O[nmo * nmo * nmu]
-        ma::product(a,Qiu.sliced(k0,kN),T(Piu.get()),
+        ma::product(a,Qiu.sliced(k0,kN),T(Piu),
                     c,v_.sliced(k0,kN));
       }
 #else
@@ -626,14 +629,14 @@ std::cout<<"\n";
       // O[nmo * nmu]
       for(int wi=0; wi<nwalk; wi++)
         for(int i=k0; i<kN; i++) {
-          auto p_ = Piu.get()[i].origin();
+          auto p_ = Piu[i].origin();
           for(int u=0; u<nu; u++, ++p_)
             Qwiu[wi][i][u] = Tuw[u][wi]*ma::conj(*p_);
         }
       boost::multi::array_ref<ComplexType,2> v_(to_address(v.origin()),{nwalk*nmo_,nmo_});
       // this can benefit significantly from 2-D partition of work
       // O[nmo * nmo * nmu]
-      ma::product(a,Qiu.sliced(wk0,wkN),T(Piu.get()),
+      ma::product(a,Qiu.sliced(wk0,wkN),T(Piu),
                   c,v_.sliced(wk0,wkN));
 #endif
       comm->barrier();
@@ -673,13 +676,13 @@ std::cout<<"\n";
       std::tie(c0,cN) = FairDivideBoundary(comm->rank(),nchol,comm->size());
       if(haj.size()==1) {
         size_t memory_needs = nwalk*nu + nel_*nu;
-        set_shm_buffer(memory_needs);
+        set_shmbuffer(memory_needs);
         boost::multi::array_ref<ComplexType,2> Guu(to_address(SM_TMats.origin()),{nu,nwalk});
         boost::multi::array_ref<ComplexType,2> T1(to_address(SM_TMats.origin())+nwalk*nu,{nu,nel_});
         Guu_from_compact(G,Guu,T1);
 #if defined(QMC_COMPLEX)
         // reinterpret as RealType matrices with 2x the columns
-        boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(Luv.origin()),
+        boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(to_address(Luv.origin())),
                                                  {Luv.size(0),2*Luv.size(1)});
         boost::multi::array_ref<RealType,2> Guu_R(reinterpret_cast<RealType*>(Guu.origin()),
                                                  {nu,2*nwalk});
@@ -688,18 +691,18 @@ std::cout<<"\n";
         ma::product(a,T(Luv_R(Luv_R.extension(0),{c0,cN})),Guu_R,
                     c,v_R.sliced(c0,cN));
 #else
-        ma::product(a,T(Luv.get()(Luv.get().extension(0),{c0,cN})),Guu,
+        ma::product(a,T(Luv(Luv.extension(0),{c0,cN})),Guu,
                     c,v.sliced(c0,cN));
 #endif
       } else {
         size_t memory_needs = nwalk*nu + nmo_*nu;
-        set_shm_buffer(memory_needs);
+        set_shmbuffer(memory_needs);
         boost::multi::array_ref<ComplexType,2> Guu(to_address(SM_TMats.origin()),{nu,nwalk});
         boost::multi::array_ref<ComplexType,2> T1(to_address(SM_TMats.origin())+nwalk*nu,{nmo_,nu});
         Guu_from_full(G,Guu,T1);
 #if defined(QMC_COMPLEX)
         // reinterpret as RealType matrices with 2x the columns
-        boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(Luv.origin()),
+        boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(to_address(Luv.origin())),
                                                  {Luv.size(0),2*Luv.size(1)});
         boost::multi::array_ref<RealType,2> Guu_R(reinterpret_cast<RealType*>(Guu.origin()),
                                                  {nu,2*nwalk});
@@ -708,11 +711,17 @@ std::cout<<"\n";
         ma::product(a,T(Luv_R(Luv_R.extension(0),{c0,cN})),Guu_R,
                     c,v_R.sliced(c0,cN));
 #else
-        ma::product(a,T(Luv.get()(Luv.get().extension(0),{c0,cN})),Guu,
+        ma::product(a,T(Luv(Luv.extension(0),{c0,cN})),Guu,
                     c,v.sliced(c0,cN));
 #endif
       }
       comm->barrier();
+    }
+
+    template<class Mat, class MatB>
+    void generalizedFockMatrix(Mat&& G, MatB&& Fp, MatB&& Fm)
+    {
+      APP_ABORT(" Error: generalizedFockMatrix not implemented for this hamiltonian.\n"); 
     }
 
     bool distribution_over_cholesky_vectors() const { return false; }
@@ -769,17 +778,16 @@ std::cout<<"\n";
       assert(T1.size(0) == nu);
       assert(T1.size(1) == nel_);
 
-      using ma::transposed;
       comm->barrier();
       ComplexType a = (walker_type==CLOSED)?ComplexType(2.0):ComplexType(1.0);
       for(int iw=0; iw<nw; ++iw) {
         boost::multi::array_cref<ComplexType,2> Giw(to_address(G[iw].origin()),{nel_,nmo_});
         // transposing inetermediary to make dot products faster in the next step
-        ma::product(transposed(Piu.get()({0,nmo_},{u0,uN})),
-                  transposed(Giw),
+        ma::product(ma::T(Piu({0,nmo_},{u0,uN})),
+                  ma::T(Giw),
                   T1.sliced(u0,uN));
         for(int u=u0; u<uN; ++u)
-          Guu[u][iw] = a*ma::dot(cPua[0].get()[u],T1[u]);
+          Guu[u][iw] = a*ma::dot(cPua[0][u],T1[u]);
       }
       comm->barrier();
     }
@@ -804,11 +812,11 @@ std::cout<<"\n";
       ComplexType a = (walker_type==CLOSED)?ComplexType(2.0):ComplexType(1.0);
       for(int iw=0; iw<nw; ++iw) {
         boost::multi::array_cref<ComplexType,2> Giw(to_address(G[iw].origin()),{nmo_,nmo_});
-        ma::product(Giw,Piu.get()({0,nmo_},{u0,uN}),
+        ma::product(Giw,Piu({0,nmo_},{u0,uN}),
                   T1(T1.extension(0),{u0,uN}));
         for(int i=0; i<nmo_; ++i) {
           auto Ti = T1[i].origin();
-          auto Pi = Piu.get()[i].origin();
+          auto Pi = Piu[i].origin();
           for(int u=u0; u<uN; ++u,++Ti,++Pi)
             Guu[u][iw] += a*(*Pi)*(*Ti);
         }
@@ -838,7 +846,7 @@ std::cout<<"\n";
       assert(rotPiu.size(1) == nv);
       int v0,vN;
       std::tie(v0,vN) = FairDivideBoundary(comm->rank(),nv,comm->size());
-      int nu0 = rotMuv.global_offset()[0];
+      int nu0 = rotnmu0; 
       ComplexType zero(0.0,0.0);
 
       assert(Guu.size(0) == nv);
@@ -855,16 +863,15 @@ std::cout<<"\n";
         assert(T1.size(0) == size_t(nel_));
         assert(T1.size(1) == size_t(nv));
 
-        using ma::transposed;
-        ma::product(G,rotPiu.get()({0,nmo_},{v0,vN}),
+        ma::product(G,rotPiu({0,nmo_},{v0,vN}),
                     T1(T1.extension(0),{v0,vN}));
         // This operation might benefit from a 2-D work distribution
-        ma::product(rotcPua[k].get().sliced(nu0,nu0+nu),
+        ma::product(rotcPua[k].sliced(nu0,nu0+nu),
                     T1(T1.extension(0),{v0,vN}),
                     Guv[0]({0,nu},{v0,vN}));
         for(int v=v0; v<vN; ++v)
           if( v < nu0 || v >= nu0+nu ) {
-            Guu[v] = ma::dot(rotcPua[k].get()[v],T1(T1.extension(0),v)); 
+            Guu[v] = ma::dot(rotcPua[k][v],T1(T1.extension(0),v)); 
           } else
             Guu[v] = Guv[0][v-nu0][v];
       } else {
@@ -875,20 +882,19 @@ std::cout<<"\n";
         assert(T1.size(0) == nel_);
         assert(T1.size(1) == nv);
 
-        using ma::transposed;
-        ma::product(G,rotPiu.get()({0,nmo_},{v0,vN}),
+        ma::product(G,rotPiu({0,nmo_},{v0,vN}),
                     T1(T1.extension(0),{v0,vN}));
         // This operation might benefit from a 2-D work distribution
         // Alpha
-        ma::product(rotcPua[k].get()({nu0,nu0+nu},{0,NAOA}),
+        ma::product(rotcPua[k]({nu0,nu0+nu},{0,NAOA}),
                     T1({0,NAOA},{v0,vN}),
                     Guv[0]({0,nu},{v0,vN}));
-        ma::product(rotcPua[k].get()({nu0,nu0+nu},{NAOA,nel_}),
+        ma::product(rotcPua[k]({nu0,nu0+nu},{NAOA,nel_}),
                     T1({NAOA,nel_},{v0,vN}),
                     Guv[1]({0,nu},{v0,vN}));
         for(int v=v0; v<vN; ++v)
           if( v < nu0 || v >= nu0+nu ) {
-            Guu[v] = ma::dot(rotcPua[k].get()[v],T1(T1.extension(0),v));
+            Guu[v] = ma::dot(rotcPua[k][v],T1(T1.extension(0),v));
           } else
             Guu[v] = Guv[0][v-nu0][v]+Guv[1][v-nu0][v];
       }
@@ -917,7 +923,7 @@ std::cout<<"\n";
       assert(rotPiu.size(1) == nv);
       int v0,vN;
       std::tie(v0,vN) = FairDivideBoundary(comm->rank(),nv,comm->size());
-      int nu0 = rotMuv.global_offset()[0];
+      int nu0 = rotnmu0; 
       ComplexType zero(0.0,0.0);
 
       assert(Guu.size(0) == nv);
@@ -932,16 +938,15 @@ std::cout<<"\n";
       assert(T1.size(0) == size_t(nel_));
       assert(T1.size(1) == size_t(nv));
 
-      using ma::transposed;
-      ma::product(G,rotPiu.get()({0,nmo_},{v0,vN}),
+      ma::product(G,rotPiu({0,nmo_},{v0,vN}),
                   T1(T1.extension(0),{v0,vN}));
       // This operation might benefit from a 2-D work distribution
-      ma::product(rotcPua[k].get().sliced(nu0,nu0+nu),
+      ma::product(rotcPua[k].sliced(nu0,nu0+nu),
                   T1(T1.extension(0),{v0,vN}),
                   Guv(Guv.extension(0),{v0,vN}));
       for(int v=v0; v<vN; ++v)
         if( v < nu0 || v >= nu0+nu ) {
-          Guu[v] = ma::dot(rotcPua[k].get()[v],T1(T1.extension(0),v)); 
+          Guu[v] = ma::dot(rotcPua[k][v],T1(T1.extension(0),v)); 
         } else
          Guu[v] = Guv[v-nu0][v];
       comm->barrier();
@@ -952,6 +957,8 @@ std::cout<<"\n";
     communicator* comm;
 
     int NMO,NAOA,NAOB;
+
+    int nmu0,gnmu,rotnmu0,grotnmu;
 
     WALKER_TYPES walker_type;
 
@@ -1000,7 +1007,7 @@ std::cout<<"\n";
 
     myTimer Timer;
 
-    void set_shm_buffer(size_t N) {
+    void set_shmbuffer(size_t N) {
       if(SM_TMats.num_elements() < N)
         SM_TMats.reextent({N,1});
     }

@@ -27,9 +27,6 @@
 #undef APP_ABORT
 #define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}
 
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdio.h>
 #include <string>
 #include <vector>
 #include <complex>
@@ -1054,8 +1051,8 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
 #ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
 
-  qmc_cuda::CUDA_INIT(node);
-  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+  arch::INIT(node);
+  using Alloc = device::device_allocator<ComplexType>;
 #else
   using Alloc = shared_allocator<ComplexType>;
 #endif
@@ -1073,8 +1070,8 @@ TEST_CASE("wfn_fac_distributed", "[wavefunction_factory]")
   auto node = world.split_shared(world.rank());
   int ngrp(world.size());
 
-  qmc_cuda::CUDA_INIT(node);
-  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+  arch::INIT(node);
+  using Alloc = device::device_allocator<ComplexType>;
 #else
   auto node = world.split_shared(world.rank());
   int ngrp(world.size()/node.size());

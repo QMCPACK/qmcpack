@@ -55,7 +55,7 @@ class FullObsHandler: public AFQMCInfo
   using shared_pointer = typename sharedAllocator::pointer;
   using const_shared_pointer = typename sharedAllocator::const_pointer;
 
-  using devCMatrix_ref = boost::multi::array_ref<ComplexType,2,device_ptr<ComplexType>>;
+  using devCMatrix_ptr = boost::multi::array_ptr<ComplexType,2,device_ptr<ComplexType>>;
 
   using sharedCVector = boost::multi::array<ComplexType,1,sharedAllocator>;
   using sharedCVector_ref = boost::multi::array_ref<ComplexType,1,shared_pointer>;
@@ -99,8 +99,13 @@ class FullObsHandler: public AFQMCInfo
       std::transform(cname.begin(),cname.end(),cname.begin(),(int (*)(int)) tolower);
       if(cname =="onerdm") {
         properties.emplace_back(Observable(std::move(full1rdm(TG,info,cur,walker_type,nave,block_size)))); 
+      } else if(cname =="gfock" || cname=="genfock" || cname=="ekt") {
+        properties.emplace_back(Observable(std::move(generalizedFockMatrix(TG,info,cur,walker_type,
+                                            wfn0.getHamiltonianOperations(),nave,block_size)))); 
       } else if(cname =="diag2rdm") {
         properties.emplace_back(Observable(std::move(diagonal2rdm(TG,info,cur,walker_type,nave,block_size)))); 
+      } else if(cname =="twordm") {
+        properties.emplace_back(Observable(std::move(full2rdm(TG,info,cur,walker_type,nave,block_size))));
       } else if(cname =="n2r" || cname =="ontop2rdm") {
 #if defined(ENABLE_CUDA)
         std::string str("false");
@@ -119,6 +124,12 @@ class FullObsHandler: public AFQMCInfo
                   TG,info,cur,walker_type,true,shared_allocator<ComplexType>{TG.TG_local()},
                   shared_allocator<ComplexType>{TG.Node()},nave,block_size)))); 
         }
+      } else if(cname =="realspace_correlators") {
+        properties.emplace_back(Observable(std::move(realspace_correlators(
+                TG,info,cur,walker_type,nave,block_size))));
+      } else if(cname =="correlators") {
+        properties.emplace_back(Observable(std::move(atomcentered_correlators(
+                TG,info,cur,walker_type,nave,block_size))));
       }
       cur = cur->next;
     }
@@ -172,6 +183,7 @@ class FullObsHandler: public AFQMCInfo
     }
 
     stdCVector Xw(iextensions<1u>{nw});
+    std::fill_n(Xw.origin(),Xw.num_elements(),ComplexType(1.0,0.0));
     stdCVector Ov(iextensions<1u>{2*nw});
     stdCMatrix detR(DevdetR); 
 
@@ -179,19 +191,18 @@ class FullObsHandler: public AFQMCInfo
     // MAM: The pointer type of GA/GB needs to be device_ptr, it can not be  
     //      one of the shared_memory types. The dispatching in DensityMatrices is done
     //      through the pointer type of the result matrix (GA/GB).
-    std::vector<devCMatrix_ref> GA;
-    std::vector<devCMatrix_ref> GB;
+    std::vector<devCMatrix_ptr> GA;
+    std::vector<devCMatrix_ptr> GB;
     std::vector<SMType> RefsA;
     std::vector<SMType> RefsB;
     std::vector<SMType> SMA;
     std::vector<SMType> SMB;
-    RefsA.reserve(nw);
-    SMA.reserve(nw);
     GA.reserve(nw);
+    SMA.reserve(nw);
+    RefsA.reserve(nw);
     if(walker_type == COLLINEAR) RefsB.reserve(nw);
     if(walker_type == COLLINEAR) SMB.reserve(nw);
     if(walker_type == COLLINEAR) GB.reserve(nw);
-
 
     if(impsamp) 
       denominator[iav] += std::accumulate(wgt.begin(),wgt.end(),ComplexType(0.0));
@@ -217,39 +228,45 @@ class FullObsHandler: public AFQMCInfo
         for(int iw=0; iw<nw; iw++) {
           SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
           SMB.emplace_back(wset[iw].SlaterMatrixN(Beta));
-          GA.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin()),{NMO,NMO}) );
-          GB.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin())+NMO*NMO,{NMO,NMO}) );
+          GA.emplace_back(make_device_ptr(G2D[iw].origin()),iextensions<2u>{NMO,NMO});
+          GB.emplace_back(make_device_ptr(G2D[iw].origin())+NMO*NMO,iextensions<2u>{NMO,NMO});
           RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
           RefsB.emplace_back(wset[iw].SlaterMatrixAux(Beta));
-          copy_n(Refs[iw][iref].origin() , RefsA.back().num_elements(), RefsA.back().origin());
-          copy_n(Refs[iw][iref].origin()+RefsA.back().num_elements() , 
-                 RefsB.back().num_elements() , RefsB.back().origin());
+          copy_n(Refs[iw][iref].origin() , (*RefsA.back()).num_elements(), 
+                 (*RefsA.back()).origin());
+          copy_n(Refs[iw][iref].origin()+(*RefsA.back()).num_elements() , 
+                 (*RefsB.back()).num_elements() , (*RefsB.back()).origin());
         }
         wfn0.DensityMatrix(RefsA, SMA, GA, DevOv.sliced(0,nw), LogOverlapFactor, false, false);
         wfn0.DensityMatrix(RefsB, SMB, GB, DevOv.sliced(nw,2*nw), LogOverlapFactor, false, false);
       } else {
         for(int iw=0; iw<nw; iw++) {
           SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
-          GA.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin()),{NMO,NMO}) );
+          GA.emplace_back( make_device_ptr(G2D[iw].origin()),iextensions<2u>{NMO,NMO});
           RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
-          copy_n(Refs[iw][iref].origin() , RefsA.back().num_elements(), RefsA.back().origin());
+          copy_n(Refs[iw][iref].origin() , (*RefsA.back()).num_elements(), 
+                   (*RefsA.back()).origin());
         }
         wfn0.DensityMatrix(RefsA, SMA, GA, DevOv.sliced(0,nw), LogOverlapFactor, false, false);
       } 
 
       //2. calculate and accumulate appropriate weights 
       copy_n( DevOv.origin(), 2*nw, Ov.origin());
-      if(walker_type == CLOSED) { 
-        for(int iw=0; iw<nw; iw++) 
-          Xw[iw] = CIcoeff * Ov[iw] * detR[iw][iref] * detR[iw][iref]; 
-      } else if(walker_type == COLLINEAR) {
-        for(int iw=0; iw<nw; iw++) { 
-          Xw[iw] = CIcoeff * Ov[iw] * Ov[iw+nw] * detR[iw][2*iref] * detR[iw][2*iref+1]; 
-        }
-      } else if(walker_type == NONCOLLINEAR) {
-        for(int iw=0; iw<nw; iw++) 
-          Xw[iw] = CIcoeff * Ov[iw] * detR[iw][iref]; 
+      if(nrefs > 1) {
+        if(walker_type == CLOSED) { 
+          for(int iw=0; iw<nw; iw++) 
+            Xw[iw] = CIcoeff * Ov[iw] * Ov[iw] * std::conj(detR[iw][iref] * detR[iw][iref]); 
+        } else if(walker_type == COLLINEAR) {
+          for(int iw=0; iw<nw; iw++) 
+            Xw[iw] = CIcoeff * Ov[iw] * Ov[iw+nw] * std::conj(detR[iw][2*iref] * detR[iw][2*iref+1]); 
+        } else if(walker_type == NONCOLLINEAR) {
+          for(int iw=0; iw<nw; iw++) 
+            Xw[iw] = CIcoeff * Ov[iw] * std::conj(detR[iw][iref]); 
+        } 
       } 
+      if(nrefs == 1)
+        for(int iw=0; iw<nw; iw++) 
+          Xw[iw] = ComplexType(1.0); 
 
       // MAM: Since most of the simpler estimators need G4D in host memory, 
       //      I'm providing a copy of the structure there already
