@@ -523,6 +523,21 @@ public:
       auto iter       = std::find(elecs_inside(ig, jat).begin(), elecs_inside(ig, jat).end(), iat);
       auto iter_dist  = elecs_inside_dist(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
       auto iter_displ = elecs_inside_displ(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
+      // sentinel code
+      if (iter == elecs_inside(ig, jat).end())
+      {
+        std::cerr << std::setprecision(std::numeric_limits<valT>::digits10 + 1)
+                  << "updating electron iat = " << iat << " near ion " << jat << " dist " << eI_table.getDistRow(iat)[jat] << std::endl;
+        throw std::runtime_error("BUG electron not found in elecs_inside");
+      }
+      else if (std::abs(eI_table.getDistRow(iat)[jat] - *iter_dist) >= std::numeric_limits<valT>::epsilon())
+      {
+        std::cerr << std::setprecision(std::numeric_limits<valT>::digits10 + 1)
+                  << "inconsistent electron iat = " << iat << " near ion " << jat << " dist " << eI_table.getDistRow(iat)[jat]
+                  << " stored value = " << *iter_dist << std::endl;
+        throw std::runtime_error("BUG eI distance stored value elecs_inside_dist not matching distance table");
+      }
+
       if (eI_table.getTempDists()[jat] < Ion_cutoff[jat]) // the new position is still inside
       {
         *iter_dist                                                      = eI_table.getTempDists()[jat];
@@ -1001,10 +1016,11 @@ public:
 
       //reset everything to how it was.
       source.R[isrc][iondim] = rI[iondim];
-      source.update();
-      P.update();
     }
-      //this lastone makes sure the distance tables correspond to unperturbed source.
+    // this last one makes sure the distance tables and internal neighbourlist correspond to unperturbed source.
+    source.update();
+    P.update();
+    build_compact_list(P);
     return g_return;
   }
 
@@ -1049,12 +1065,11 @@ public:
       lapl_grad[iondim] += c1*(Lp-Lm);       
       //reset everything to how it was.
       source.R[isrc][iondim] = rI[iondim];
-      source.update();
-      P.update();
     }
+    // this last one makes sure the distance tables and internal neighbourlist correspond to unperturbed source.
     source.update();
     P.update();
-      //this lastone makes sure the distance tables correspond to unperturbed source.
+    build_compact_list(P);
     return g_return;
   }
 };
