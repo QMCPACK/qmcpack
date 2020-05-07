@@ -22,21 +22,7 @@ namespace qmcplusplus
 template<class T, typename ALLOC = std::allocator<T>>
 class ConstantSizeMatrix
 {
-private:
-  size_t m_;
-  size_t n_;
-  size_t m_max_;
-  size_t n_max_;
-  std::vector<T, ALLOC> data_;
-
 public:
-  size_t capacity() { return n_max_ * m_max_; }
-  size_t n_capacity() { return n_max_; }
-
-  size_t size() const { return n_ * m_; }
-  size_t cols() const { return n_; }
-  size_t rows() const { return m_; }
-
   ConstantSizeMatrix(size_t m, size_t n, size_t m_max, size_t n_max, T val = T())
       : m_(m), n_(n), m_max_(m_max), n_max_(n_max), data_(n_max * m_max, val)
   {
@@ -165,14 +151,20 @@ public:
   T* data() { return data_.data(); }
   const T* data() const { return data_.data(); }
 
+  size_t capacity() { return n_max_ * m_max_; }
+  size_t n_capacity() { return n_max_; }
+
+  size_t size() const { return n_ * m_; }
+  size_t cols() const { return n_; }
+  size_t rows() const { return m_; }
+
   void resize(size_t m, size_t n)
   {
     if (n > n_max_ || m > m_max_)
     {
       std::ostringstream error;
-      error << "You cannot resize a constant size matrix beyond its initial max dimensions ( "
-         << m << "," << n << " > " << m_max_ << ","
-            << n_max_ << " )\n";
+      error << "You cannot resize a constant size matrix beyond its initial max dimensions ( " << m << "," << n << " > "
+            << m_max_ << "," << n_max_ << " )\n";
       throw std::domain_error(error.str());
     }
     n_ = n;
@@ -183,6 +175,15 @@ public:
   auto end() { return data_.end(); }
   auto begin() const { return data_.begin(); }
   auto end() const { return data_.end(); }
+
+private:
+  size_t m_;
+  size_t n_;
+  size_t m_max_;
+  size_t n_max_;
+  std::vector<T, ALLOC> data_;
+
+
 };
 
 extern template class ConstantSizeMatrix<float>;

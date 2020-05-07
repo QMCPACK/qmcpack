@@ -317,14 +317,15 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy)
   {
     Properties.resize(ncopy, m);
   }
-  catch (std::domain_error & de)
+  catch (std::domain_error& de)
   {
     app_error() << de.what() << '\n'
-       << "This is likely because you have request walker properties in excess of WALKER_MAX_PROPERTIES.\n"
-       << "reconfigure build with cmake ... -DWALKER_MAX_PROPERTIES=<at least properties required>." << std::endl; 
+                << "This is likely because you have request walker properties in excess of WALKER_MAX_PROPERTIES.\n"
+                << "reconfigure build with cmake ... -DWALKER_MAX_PROPERTIES=<at least properties required>."
+                << std::endl;
     APP_ABORT("Fatal Exception");
   }
-  
+
   iterator it(WalkerList.begin()), it_end(WalkerList.end());
   while (it != it_end)
   {

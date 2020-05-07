@@ -187,7 +187,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     myPool[id] = pTemp;
     XMLParticleParser pread(*pTemp, TileMatrix);
     bool success = pread.put(cur);
-    //if random_source is given, create a node <init target="" source=""/>
+    //if random_source is given, create a node <init target="" soruce=""/>
     if (randomR == "yes" && !randomsrc.empty())
     {
       xmlNodePtr anode = xmlNewNode(NULL, (const xmlChar*)"init");
