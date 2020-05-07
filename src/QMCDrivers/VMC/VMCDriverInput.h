@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -40,7 +40,6 @@ protected:
   IndexType samples_per_thread_    = -1;
   IndexType samples_               = -1;
   IndexType steps_between_samples_ = -1;
-  IndexType total_walkers_         = 0;
   /** @} */
 
 public:
@@ -48,7 +47,6 @@ public:
   IndexType get_samples_per_thread() const { return samples_per_thread_; }
   IndexType get_samples() const { return samples_; }
   IndexType get_steps_between_samples() const { return steps_between_samples_; }
-  IndexType get_total_walkers() const { return total_walkers_; }
 
   friend std::ostream& operator<<(std::ostream& o_stream, const VMCDriverInput& vmci);
 };

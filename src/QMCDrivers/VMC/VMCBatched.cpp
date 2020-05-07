@@ -266,7 +266,7 @@ void VMCBatched::process(xmlNodePtr node)
   // \todo get total walkers should be coming from VMCDriverInput
 
   QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(myComm, vmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
+      adjustGlobalWalkerCount(myComm, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
                               1.0, get_num_crowds());
 
   // This code bothers me now, most of the code bases this on what is actually there.

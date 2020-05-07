@@ -519,7 +519,7 @@ void DMCBatched::runDMCStep(int crowd_id,
 void DMCBatched::process(xmlNodePtr node)
 {
   QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(myComm, dmcdriver_input_.get_target_walkers(), qmcdriver_input_.get_walkers_per_rank(),
+      adjustGlobalWalkerCount(myComm, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
                               dmcdriver_input_.get_reserve(), get_num_crowds());
 
   walkers_per_rank_  = awc.walkers_per_rank;
@@ -531,8 +531,7 @@ void DMCBatched::process(xmlNodePtr node)
             << "                               num_crowds=" << num_crowds_ << '\n';
 
   // side effect updates walkers_per_crowd_;
-  makeLocalWalkers(awc.walkers_per_rank,
-                   awc.reserve_walkers,
+  makeLocalWalkers(awc.walkers_per_rank, awc.reserve_walkers,
                    ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
   population_.syncWalkersPerNode(myComm);
   Base::process(node);

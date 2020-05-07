@@ -90,7 +90,7 @@ constexpr std::array<const char*, 2> valid_dmc_input_sections{
   <qmc method="dmc_batch" move="pbyp">
     <parameter name="crowds">                 8 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
-    <parameter name="target_walkers">                32 </parameter>
+    <parameter name="total_walkers">                32 </parameter>
     <parameter name="reserve">                1.5 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
     <parameter name="substeps">               5 </parameter>

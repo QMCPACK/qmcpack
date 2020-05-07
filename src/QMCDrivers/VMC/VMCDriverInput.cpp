@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -26,8 +26,6 @@ void VMCDriverInput::readXML(xmlNodePtr node)
   parameter_set_.add(samples_, "samples", "int");
   parameter_set_.add(samples_per_thread_, "samplesperthread", "int");
   parameter_set_.add(steps_between_samples_, "stepsbetweensamples", "int");
-  parameter_set_.add(total_walkers_, "walkers", "int");  
-  parameter_set_.add(total_walkers_, "total_walkers", "int");  
   parameter_set_.put(node);
   if(use_drift == "no")
     use_drift_ = false;
