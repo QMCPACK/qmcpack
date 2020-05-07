@@ -260,7 +260,6 @@ void test_dense_matrix_mult()
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
                 array_ref<double, 2> A(a.data(), {3,3});
                 REQUIRE(A.num_elements() == a.size());
-cout<<" lqf: " <<ma::gelqf_optimal_workspace_size(A) <<" " <<ma::glq_optimal_workspace_size(A) <<std::endl;
                 WORK.resize( std::max(ma::gelqf_optimal_workspace_size(A),
                                       ma::glq_optimal_workspace_size(A)) );
                 ma::gelqf(A,TAU,WORK);

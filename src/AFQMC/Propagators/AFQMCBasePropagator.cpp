@@ -181,8 +181,8 @@ void AFQMCBasePropagator::reset_nextra(int nextra)
 }
 
 void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtdt, 
-                          CMatrix_ref& X, CMatrix_ref & vbias, CMatrix_ref& MF, 
-                          CMatrix_ref& HWs, bool addRAND) 
+                          StaticMatrix& X, StaticMatrix & vbias, StaticMatrix& MF, 
+                          StaticMatrix& HWs, bool addRAND) 
 {
   // remember to call vbi = apply_bound_vbias(*vb);
   // X[m,ni,iw] = rand[m,ni,iw] + im * ( vbias[m,iw] - vMF[m]  )
@@ -191,7 +191,7 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtd
   //           = sum_m [ im * ( vMF[m] - vbias[m,iw] ) * 
   //                     ( X[m,ni,iw] - halfim * ( vbias[m,iw] - vMF[m] ) ) ] 
   // MF[ni,iw] = sum_m ( im * X[m,ni,iw] * vMF[m] )   
- 
+
   TG.local_barrier();
   ComplexType im(0.0,1.0);
   int nCV = int(X.size(0));
@@ -201,12 +201,12 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtd
     int i0,iN;
     std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),int(X.num_elements()),
                                          TG.TG_local().size());  
-    sampleGaussianFields_n(X.origin()+i0,iN-i0,*rng);
+    sampleGaussianFields_n(make_device_ptr(X.origin())+i0,iN-i0,*rng);
   }
 
   // construct X
-  fill_n(HWs.origin(),HWs.num_elements(),ComplexType(0));  
-  fill_n(MF.origin(),MF.num_elements(),ComplexType(0));  
+  fill_n(make_device_ptr(HWs.origin()),HWs.num_elements(),ComplexType(0));  
+  fill_n(make_device_ptr(MF.origin()),MF.num_elements(),ComplexType(0));  
 
 // leaving compiler switch until I decide how to do this better
 // basically hide this decision somewhere based on the value of pointer!!!
@@ -219,13 +219,14 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtd
                        to_address(X.origin())
                       );
 #else
-  boost::multi::array_ref<ComplexType,3> X3D(X.origin(),{long(X.size(0)),long(nsteps),long(nwalk)});
+  boost::multi::array_ref<ComplexType,3> X3D(to_address(X.origin()),
+                        {long(X.size(0)),long(nsteps),long(nwalk)});
   int m0,mN;
   std::tie(m0,mN) = FairDivideBoundary(TG.TG_local().rank(),nCV,TG.TG_local().size());   
   TG.local_barrier();
   for(int m=m0; m<mN; ++m) { 
     auto X_m = X3D[m];
-    auto vb_ = vbias[m].origin();
+    auto vb_ = to_address(vbias[m].origin());
     auto vmf_t = sqrtdt*apply_bound_vbias(vMF[m],1.0);
     auto vmf_ = sqrtdt*vMF[m];
     // apply bounds to vbias
@@ -233,8 +234,8 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtd
       vb_[iw] = apply_bound_vbias(vb_[iw],sqrtdt);
     for(int ni=0; ni<nsteps; ni++) {
       auto X_ = X3D[m][ni].origin();
-      auto hws_ = HWs[ni].origin();
-      auto mf_ = MF[ni].origin();
+      auto hws_ = to_address(HWs[ni].origin());
+      auto mf_ = to_address(MF[ni].origin());
       for(int iw=0; iw<nwalk; iw++) {
         // No force bias term when doing free projection.
         ComplexType vdiff = free_projection?ComplexType(0.0, 0.0):(im*(vb_[iw]-vmf_t));
