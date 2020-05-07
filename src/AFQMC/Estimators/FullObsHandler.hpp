@@ -26,13 +26,15 @@
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
-
+#include "AFQMC/Memory/buffer_allocators.h"
 
 namespace qmcplusplus
 {
 
 namespace afqmc
 {
+
+extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
 
 /*
  * This class manages a list of "full" observables.
@@ -55,7 +57,7 @@ class FullObsHandler: public AFQMCInfo
   using shared_pointer = typename sharedAllocator::pointer;
   using const_shared_pointer = typename sharedAllocator::const_pointer;
 
-  using devCMatrix_ref = boost::multi::array_ref<ComplexType,2,device_ptr<ComplexType>>;
+  using devCMatrix_ptr = boost::multi::array_ptr<ComplexType,2,device_ptr<ComplexType>>;
 
   using sharedCVector = boost::multi::array<ComplexType,1,sharedAllocator>;
   using sharedCVector_ref = boost::multi::array_ref<ComplexType,1,shared_pointer>;
@@ -68,15 +70,20 @@ class FullObsHandler: public AFQMCInfo
   using stdCMatrix = boost::multi::array<ComplexType,2>;
   using stdCVector_ref = boost::multi::array_ref<ComplexType,1>;
 
+  using shm_buffer_alloc_type = localTG_buffer_type<ComplexType>;
+  using StaticSHMVector = boost::multi::static_array<ComplexType,1,shm_buffer_alloc_type>;
+  using StaticSHM4Tensor = boost::multi::static_array<ComplexType,4,shm_buffer_alloc_type>;
+
   public:
 
   FullObsHandler(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
         std::string name_, xmlNodePtr cur, WALKER_TYPES wlk, 
         Wavefunction& wfn):
-                                    AFQMCInfo(info),TG(tg_),walker_type(wlk),
+                                    AFQMCInfo(info),TG(tg_),
+                                    shm_buffer_allocator(localTG_buffer_generator.get()),
+                                    walker_type(wlk),
                                     wfn0(wfn), writer(false), block_size(1), nave(1),name(name_),
                                     nspins((walker_type==COLLINEAR)?2:1),
-                                    Buff(iextensions<1u>{1},make_localTG_allocator<ComplexType>(TG)), 
                                     G4D_host({0,0,0,0},shared_allocator<ComplexType>{TG.TG_local()})
   {
 
@@ -171,10 +178,11 @@ class FullObsHandler: public AFQMCInfo
     int nw(wset.size());
     int nrefs(Refs.size(1));
     double LogOverlapFactor(wset.getLogOverlapFactor());
-    set_buffer( nw * (dm_size+3) );
-    sharedC4Tensor_ref G4D(Buff.origin(), {nw, nspins, std::get<0>(Gdims),std::get<1>(Gdims)});
-    sharedCMatrix_ref G2D(Buff.origin(), {nw, dm_size});
-    sharedCVector_ref DevOv(G4D.origin()+G4D.num_elements(), {2*nw});
+    StaticSHM4Tensor G4D({nw, nspins, std::get<0>(Gdims),std::get<1>(Gdims)},
+                        shm_buffer_allocator->template get_allocator<ComplexType>());
+    StaticSHMVector DevOv(iextensions<1u>{2*nw},
+                        shm_buffer_allocator->template get_allocator<ComplexType>());
+    sharedCMatrix_ref G2D(G4D.origin(), {nw, dm_size});
 
     if(G4D_host.num_elements() != G4D.num_elements()) {
       G4D_host = std::move(mpi3C4Tensor(G4D.extensions(),
@@ -191,19 +199,18 @@ class FullObsHandler: public AFQMCInfo
     // MAM: The pointer type of GA/GB needs to be device_ptr, it can not be  
     //      one of the shared_memory types. The dispatching in DensityMatrices is done
     //      through the pointer type of the result matrix (GA/GB).
-    std::vector<devCMatrix_ref> GA;
-    std::vector<devCMatrix_ref> GB;
+    std::vector<devCMatrix_ptr> GA;
+    std::vector<devCMatrix_ptr> GB;
     std::vector<SMType> RefsA;
     std::vector<SMType> RefsB;
     std::vector<SMType> SMA;
     std::vector<SMType> SMB;
-    RefsA.reserve(nw);
-    SMA.reserve(nw);
     GA.reserve(nw);
+    SMA.reserve(nw);
+    RefsA.reserve(nw);
     if(walker_type == COLLINEAR) RefsB.reserve(nw);
     if(walker_type == COLLINEAR) SMB.reserve(nw);
     if(walker_type == COLLINEAR) GB.reserve(nw);
-
 
     if(impsamp) 
       denominator[iav] += std::accumulate(wgt.begin(),wgt.end(),ComplexType(0.0));
@@ -229,22 +236,24 @@ class FullObsHandler: public AFQMCInfo
         for(int iw=0; iw<nw; iw++) {
           SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
           SMB.emplace_back(wset[iw].SlaterMatrixN(Beta));
-          GA.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin()),{NMO,NMO}) );
-          GB.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin())+NMO*NMO,{NMO,NMO}) );
+          GA.emplace_back(make_device_ptr(G2D[iw].origin()),iextensions<2u>{NMO,NMO});
+          GB.emplace_back(make_device_ptr(G2D[iw].origin())+NMO*NMO,iextensions<2u>{NMO,NMO});
           RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
           RefsB.emplace_back(wset[iw].SlaterMatrixAux(Beta));
-          copy_n(Refs[iw][iref].origin() , RefsA.back().num_elements(), RefsA.back().origin());
-          copy_n(Refs[iw][iref].origin()+RefsA.back().num_elements() , 
-                 RefsB.back().num_elements() , RefsB.back().origin());
+          copy_n(Refs[iw][iref].origin() , (*RefsA.back()).num_elements(), 
+                 (*RefsA.back()).origin());
+          copy_n(Refs[iw][iref].origin()+(*RefsA.back()).num_elements() , 
+                 (*RefsB.back()).num_elements() , (*RefsB.back()).origin());
         }
         wfn0.DensityMatrix(RefsA, SMA, GA, DevOv.sliced(0,nw), LogOverlapFactor, false, false);
         wfn0.DensityMatrix(RefsB, SMB, GB, DevOv.sliced(nw,2*nw), LogOverlapFactor, false, false);
       } else {
         for(int iw=0; iw<nw; iw++) {
           SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
-          GA.emplace_back( devCMatrix_ref(make_device_ptr(G2D[iw].origin()),{NMO,NMO}) );
+          GA.emplace_back( make_device_ptr(G2D[iw].origin()),iextensions<2u>{NMO,NMO});
           RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
-          copy_n(Refs[iw][iref].origin() , RefsA.back().num_elements(), RefsA.back().origin());
+          copy_n(Refs[iw][iref].origin() , (*RefsA.back()).num_elements(), 
+                   (*RefsA.back()).origin());
         }
         wfn0.DensityMatrix(RefsA, SMA, GA, DevOv.sliced(0,nw), LogOverlapFactor, false, false);
       } 
@@ -289,6 +298,8 @@ class FullObsHandler: public AFQMCInfo
 
   TaskGroup_& TG;
 
+  localTG_allocator_generator_type *shm_buffer_allocator;
+
   WALKER_TYPES walker_type;
 
   Wavefunction& wfn0;
@@ -310,18 +321,8 @@ class FullObsHandler: public AFQMCInfo
   // denominator (nave, ...)  
   stdCVector denominator;    
 
-  // buffer space
-  sharedCVector Buff;
-
   // space for G in host space
   mpi3C4Tensor G4D_host; 
-
-  void set_buffer(size_t N) {
-    if(Buff.num_elements() < N)
-      Buff = std::move(sharedCVector(iextensions<1u>{N},make_localTG_allocator<ComplexType>(TG)));
-    using std::fill_n;
-    fill_n(Buff.origin(),N,ComplexType(0.0));
-  }
 
 };
 

@@ -15,6 +15,7 @@
 #include "AFQMC/config.h"
 #include "boost/variant.hpp"
 
+#include "AFQMC/Memory/buffer_allocators.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations_shared.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations_serial.hpp"
 
@@ -24,12 +25,11 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+// device_allocator_generator_type is equal to host_allocator_generator_type
+// when devices are not enabled 
 class SlaterDetOperations:
-#ifdef ENABLE_CUDA
-        public boost::variant<SlaterDetOperations_shared<ComplexType>,SlaterDetOperations_serial<device_allocator<ComplexType>>>
-#else
-        public boost::variant<SlaterDetOperations_shared<ComplexType>,SlaterDetOperations_serial<std::allocator<ComplexType>>>
-#endif
+        public boost::variant<SlaterDetOperations_shared<ComplexType>,
+                   SlaterDetOperations_serial<ComplexType,device_allocator_generator_type>>
 {
 
     public:
@@ -42,13 +42,8 @@ class SlaterDetOperations:
 
     explicit SlaterDetOperations(SlaterDetOperations_shared<ComplexType> const& other) = delete;
 
-#ifdef ENABLE_CUDA
-    explicit SlaterDetOperations(SlaterDetOperations_serial<device_allocator<ComplexType>> const& other) = delete;
-    explicit SlaterDetOperations(SlaterDetOperations_serial<device_allocator<ComplexType>>&& other) : variant(std::move(other)) {}
-#else
-    explicit SlaterDetOperations(SlaterDetOperations_serial<std::allocator<ComplexType>>&& other) : variant(std::move(other)) {}
-    explicit SlaterDetOperations(SlaterDetOperations_serial<std::allocator<ComplexType>> const& other) = delete;
-#endif
+    explicit SlaterDetOperations(SlaterDetOperations_serial<ComplexType,device_allocator_generator_type> const& other) = delete;
+    explicit SlaterDetOperations(SlaterDetOperations_serial<ComplexType,device_allocator_generator_type>&& other) : variant(std::move(other)) {}
 
     SlaterDetOperations(SlaterDetOperations const& other) = delete;
     SlaterDetOperations(SlaterDetOperations && other) = default;

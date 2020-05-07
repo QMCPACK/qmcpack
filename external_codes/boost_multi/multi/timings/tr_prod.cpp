@@ -180,13 +180,13 @@ auto tr_prod_block2(Matrix1 const& A, Matrix2 const& B){
 	auto const bs = B.size();
 	auto const i2 = as/2;
 	auto const j2 = bs/2;
-/*	if(A.size() > 1024){
+	if(A.size() > 1024){
 		auto t1 = std::async([&]{return tr_prod_block2(A({ 0, i2}, { 0, j2}), B({ 0, j2}, { 0, i2}));});
 		auto t2 = std::async([&]{return tr_prod_block2(A({ 0, i2}, {j2, bs}), B({j2, bs}, { 0, i2}));});
 		auto t3 = std::async([&]{return tr_prod_block2(A({i2, as}, { 0, j2}), B({ 0, j2}, {i2, as}));});
 		auto t4 = std::async([&]{return tr_prod_block2(A({i2, as}, {j2, bs}), B({j2, bs}, {i2, as}));});
 		return t1.get() + t2.get() + t3.get() + t4.get();
-	}else*/
+	}else
 	{
 	//	boost::multi::array<std::decay_t<decltype(A({ 0, i2}, { 0, j2}))>, 1> v =
 	//		{A({ 0, i2}, { 0, j2}), A({ 0, i2}, {j2, bs})};

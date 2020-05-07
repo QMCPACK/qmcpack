@@ -1,27 +1,50 @@
 #ifdef COMPILATION_INSTRUCTIONS
-c++ -std=c++14 -Wall -Wextra -Wpedantic -lblas -DADD_ $0 -o $0x.x  && time $0x.x $@ && rm -f $0x.x; exit
+$CXX -Wall -Wextra -Wpedantic $0 -o $0x `pkg-config --libs blas` -lcudart -lcublas -lboost_unit_test_framework&&$0x&&rm $0x; exit
 #endif
+// © Alfredo A. Correa 2019-2020
 
-#include "../../blas.hpp"
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS/cuBLAS iamax"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
+
+#include "../../blas/iamax.hpp"
 
 #include "../../../array.hpp"
+#include "../../../adaptors/cuda.hpp"
+#include "../../../adaptors/blas/cuda.hpp"
 
 #include<complex>
-#include<cassert>
 
 using std::cout;
 namespace multi = boost::multi;
+namespace blas = multi::blas;
 
-int main(){
-	{
-		using Z = std::complex<double>; Z const I(0.,1.);
-		multi::array<Z, 2> const A = {
-			{1. + 2.*I,  2.,  3.,  4.},
-			{5.,  6. + 3.*I,  7.,  8.},
-			{9., 10., 11.+ 4.*I, 12.}
-		};
-		using multi::blas::iamax; // izmax, uses zero-based indexing
-		assert(iamax(A[1]) == std::distance(begin(A[1]), std::max_element(begin(A[1]), end(A[1]), [](auto&& a, auto&& b){return std::abs(real(a)) + std::abs(imag(a)) < std::abs(real(b)) + std::abs(imag(b));})));
-	}
+using complex = std::complex<double>;
+complex const I{0, 1};
+
+BOOST_AUTO_TEST_CASE(multi_adaptors_blas_iamax){
+	multi::array<complex, 2> const A = {
+		{1. + 2.*I,  2.,  3.,  4.},
+		{5.,  6. + 3.*I,  7.,  8.},
+		{9., 10., 11.+ 4.*I, 12.}
+	};
+	using blas::iamax;
+	auto chess = [](auto const& a, auto const& b){
+		using std::abs; 
+		return abs(real(a))+abs(imag(a)) < abs(real(b))+abs(imag(b));
+	};
+	BOOST_REQUIRE(iamax(A[1])==std::max_element(begin(A[1]), end(A[1]), chess)-begin(A[1]));
+	BOOST_REQUIRE(A[1][iamax(A[1])]==*std::max_element(begin(A[1]), end(A[1]), chess));
 }
+
+BOOST_AUTO_TEST_CASE(multi_adaptors_blas_iamax_cuda){
+	multi::cuda::array<complex, 2> const A = {
+		{1. + 2.*I,  2.,  3.,  4.},
+		{5.,  6. + 3.*I,  7.,  8.},
+		{9., 10., 11.+ 4.*I, 12.}
+	};
+	using blas::iamax;
+	BOOST_REQUIRE(iamax(A[1])==1);
+}
+
 

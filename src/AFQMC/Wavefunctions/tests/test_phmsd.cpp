@@ -27,9 +27,6 @@
 #undef APP_ABORT
 #define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}
 
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdio.h>
 #include <string>
 #include <vector>
 #include <complex>
@@ -81,6 +78,9 @@ void test_read_phmsd(boost::mpi3::communicator & world)
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     auto TGwfn = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
+
+    // initialize TG buffer
+    make_localTG_buffer_generator(TG.TG_local(),20*1024L*1024L);
 
     int NMO;
     int NAEA;
@@ -141,6 +141,7 @@ void test_read_phmsd(boost::mpi3::communicator & world)
     REQUIRE(abij.number_of_configurations() == ndets_to_read);
   }
 
+  destroy_shm_buffer_generators();  
 }
 
 void getBasicWavefunction(std::vector<int>& occs, std::vector<ComplexType>& coeffs, int NEL)
@@ -194,6 +195,9 @@ void test_phmsd(boost::mpi3::communicator& world)
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     auto TGwfn = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
+
+    // initialize TG buffer
+    make_localTG_buffer_generator(TG.TG_local(),20*1024L*1024L);
 
     int NMO;
     int NAEA;
@@ -281,8 +285,8 @@ void test_phmsd(boost::mpi3::communicator& world)
       for(int i = 0; i < NAEB; i++)
         ob[i] -= NMO;
       getSlaterMatrix(TrialB, ob, NAEB);
-      ComplexType ovlpa = sdet->Overlap(TrialA, wset[0].SlaterMatrix(Alpha), logovlp);
-      ComplexType ovlpb = sdet->Overlap(TrialB, wset[0].SlaterMatrix(Beta), logovlp);
+      ComplexType ovlpa = sdet->Overlap(TrialA, *wset[0].SlaterMatrix(Alpha), logovlp);
+      ComplexType ovlpb = sdet->Overlap(TrialB, *wset[0].SlaterMatrix(Beta), logovlp);
       ovlp_sum += ma::conj(coeffs[idet])*ovlpa*ovlpb;
       //boost::multi::array_ref<ComplexType,2> GB(to_address(GBuff.origin()), {NAEA,NMO});
       //sdet->MixedDensityMatrix(TrialB, wset[0].SlaterMatrix(Alpha), GA, logovlp, true);
@@ -312,7 +316,9 @@ void test_phmsd(boost::mpi3::communicator& world)
     //for(int i=0; i < vMF.size(); i++) {
       //std::cout << vMF[i] << std::endl;
     //}
+
   }
+  destroy_shm_buffer_generators();
 }
 
 TEST_CASE("test_read_phmsd", "[test_read_phmsd]")

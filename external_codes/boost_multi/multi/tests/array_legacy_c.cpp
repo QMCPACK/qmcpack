@@ -1,6 +1,10 @@
-#ifdef COMPILATION_INSTRUCTIONS
-$CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic -Werror `#-Wfatal-errors` -I$HOME/include $0 -o $0.x && $0.x $@ && rm -f $0.x; exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
+
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi legacy adaptor example"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
 
 #include<iostream>
 
@@ -23,7 +27,7 @@ void fftw_plan_dft(
 }
 }
 
-int main(){
+BOOST_AUTO_TEST_CASE(array_legacy_c){
 	using std::complex;
 
 	multi::array<complex<double>, 2> const in = {
@@ -43,6 +47,14 @@ int main(){
 		(fake::fftw_complex*)in.data_elements(), (fake::fftw_complex*)out.data_elements(), 1, 0
 	);
 
+struct basic : multi::layout_t<2>{
+	double* p;
+};
+
+struct ref : basic{
+};
+
+
 	{
 		multi::array<double, 2> d2D = 
 			{
@@ -51,10 +63,22 @@ int main(){
 				{100, 11, 12, 13, 14}, 
 				{ 50,  6,  7,  8,  9} 
 			};
-		assert( d2D.is_compact() );
-		assert( rotated(d2D).is_compact() );
-		assert( d2D[3].is_compact() );
-		assert( not rotated(d2D)[2].is_compact() );
+
+	#if __has_cpp_attribute(no_unique_address) >=201803
+		BOOST_TEST( sizeof(d2D)==sizeof(double*)+6*sizeof(std::size_t) );
+	#endif
+		BOOST_REQUIRE( d2D.is_compact() );
+		BOOST_REQUIRE( rotated(d2D).is_compact() );
+		BOOST_REQUIRE( d2D[3].is_compact() );
+		BOOST_REQUIRE( not rotated(d2D)[2].is_compact() );
+	}
+	{
+		using complex = std::complex<double>;
+		multi::array<complex, 2> d2D({5, 3});
+		BOOST_REQUIRE( d2D.is_compact() );
+		BOOST_REQUIRE( rotated(d2D).is_compact() );
+		BOOST_REQUIRE( d2D[3].is_compact() );
+		BOOST_REQUIRE( not rotated(d2D)[2].is_compact() );
 	}
 
 }

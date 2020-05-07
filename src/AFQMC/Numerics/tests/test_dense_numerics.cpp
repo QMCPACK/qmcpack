@@ -260,7 +260,6 @@ void test_dense_matrix_mult()
                 vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
                 array_ref<double, 2> A(a.data(), {3,3});
                 REQUIRE(A.num_elements() == a.size());
-cout<<" lqf: " <<ma::gelqf_optimal_workspace_size(A) <<" " <<ma::glq_optimal_workspace_size(A) <<std::endl;
                 WORK.resize( std::max(ma::gelqf_optimal_workspace_size(A),
                                       ma::glq_optimal_workspace_size(A)) );
                 ma::gelqf(A,TAU,WORK);
@@ -670,7 +669,8 @@ void test_dense_matrix_mult_device(Allocator alloc)
                           ma::gqr_optimal_workspace_size(A[0]));
      array<T,1,Allocator> WORK(iextensions<1u>{sz},alloc);
      array<T,2,Allocator> Id({3,3},alloc);
-     array<int,1,Allocator> info(iextensions<1u>{2},alloc);
+     using IAllocator = typename Allocator::template rebind<int>::other; 
+     array<int,1,IAllocator> info(iextensions<1u>{2},IAllocator{alloc});
      array<T,2,Allocator> TAU({2,4},alloc);
 
      geqrfStrided(4,3,A.origin(),4,12,TAU.origin(),4,info.origin(),2);

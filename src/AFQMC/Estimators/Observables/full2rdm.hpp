@@ -29,12 +29,15 @@
 
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 namespace qmcplusplus
 {
 
 namespace afqmc
 {
+
+extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
 
 /* 
  * Observable class that calculates the walker averaged 2 RDM.
@@ -70,6 +73,10 @@ class full2rdm: public AFQMCInfo
   using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
   using mpi3CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
   using mpi3C4Tensor = boost::multi::array<ComplexType,4,shared_allocator<ComplexType>>;
+
+  using buffer_alloc_type = device_buffer_type<ComplexType>;
+  using StaticVector = boost::multi::static_array<ComplexType,1,buffer_alloc_type>;
+  using StaticMatrix = boost::multi::static_array<ComplexType,2,buffer_alloc_type>;
 
   public:
 
@@ -275,16 +282,6 @@ class full2rdm: public AFQMCInfo
   // DMWork (nwalk, nspinblocks, x*NMO*x*NMO), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
   mpi3CMatrix DMWork;
 
-  // buffer space
-  CVector Buff;
-
-  void set_buffer(size_t N) {
-    if(Buff.num_elements() < N)
-      Buff = std::move(CVector(iextensions<1u>{N}));
-    using std::fill_n;
-    fill_n(Buff.origin(),N,ComplexType(0.0));
-  }
-
   // expects host accesible memory
   template<class MatG, class CVec>
   void acc_no_rotation(MatG&& G, CVec&& Xw)
@@ -299,13 +296,15 @@ class full2rdm: public AFQMCInfo
     size_t M2(NMO*NMO);
     size_t M4(M2*M2);
     size_t N = size_t(dN)*M2;
-    set_buffer(N + M2);
-    CMatrix_ref R( Buff.origin(), {dN,NMO*NMO});
-    CVector_ref R1D( Buff.origin(), R.num_elements());
-    CMatrix_ref Q( Buff.origin(), {NMO*NMO,NMO});
-    CVector_ref Q1D( Buff.origin(), Q.num_elements());
+    StaticMatrix R({dN,NMO*NMO},
+                device_buffer_generator->template get_allocator<ComplexType>());
+    CMatrix_ref Q( R.origin(), {NMO*NMO,NMO});
+    CVector_ref R1D( R.origin(), R.num_elements());
+    CVector_ref Q1D( Q.origin(), Q.num_elements());
+
     // put this in shared memory!!!
-    CMatrix_ref Gt( R.origin() + R.num_elements(), {NMO,NMO});
+    StaticMatrix Gt( {NMO,NMO},
+                device_buffer_generator->template get_allocator<ComplexType>());
     CMatrix_ref GtC( Gt.origin() , {NMO*NMO,1});
 #if ENABLE_CUDA
     if(Grot.size() < R.num_elements()) 
