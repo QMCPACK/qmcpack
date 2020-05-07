@@ -320,8 +320,9 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy)
   catch (std::domain_error& de)
   {
     app_error() << de.what() << '\n'
-                << "This is likely because you have request walker properties in excess of WALKER_MAX_PROPERTIES.\n"
-                << "reconfigure build with cmake ... -DWALKER_MAX_PROPERTIES=<at least properties required>."
+                << "This is likely because some object has attempted to add walker properties\n"
+       << " in excess of WALKER_MAX_PROPERTIES.\n"
+                << "build with cmake ... -DWALKER_MAX_PROPERTIES=at_least_properties_required"
                 << std::endl;
     APP_ABORT("Fatal Exception");
   }
