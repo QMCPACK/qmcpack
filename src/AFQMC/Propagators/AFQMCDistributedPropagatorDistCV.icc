@@ -432,11 +432,12 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 // in mixed precision, using vrecv_buff as 2 single precision arrays.
 // final result will be in first half of recasted array, will then cast_inplace 
 // to full precision
-#if defined(MIXED_PRECISION)
-  SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.origin())),vhs_ext);
-#else
+//#if defined(MIXED_PRECISION)
+//  SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.origin())),vhs_ext);
+//#else
+//  CMatrix_ref vrecv(make_device_ptr(vrecv_buff.origin()),vhs_ext);
+//#endif
   CMatrix_ref vrecv(make_device_ptr(vrecv_buff.origin()),vhs_ext);
-#endif
 
   // scope controlling lifetime of temporary arrays
   {
@@ -445,8 +446,10 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
             buffer_allocator->template get_allocator<ComplexType>());
     Static3Tensor globalhybrid_weight({nnodes,nsteps,nwalk},
             buffer_allocator->template get_allocator<ComplexType>());
-    StaticSPMatrix Gstore(G_ext,
-            sp_buffer_allocator->template get_allocator<SPComplexType>());
+    StaticMatrix Gstore(G_ext,
+            buffer_allocator->template get_allocator<ComplexType>());
+//    StaticSPMatrix Gstore(G_ext,
+//            buffer_allocator->template get_allocator<SPComplexType>());
 
     int Gak0,GakN;
     std::tie(Gak0,GakN) = FairDivideBoundary(TG.getLocalTGRank(),
@@ -468,6 +471,16 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     TG.local_barrier();
     AFQMCTimers[G_for_vbias_timer]->stop();
 
+    StaticMatrix Gwork(G_ext,
+            buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix vbias({long(localnCV),long(nwalk)},
+            buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix X({long(localnCV),long(nwalk*nsteps)},
+            buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix vHS(vhs_ext,
+            buffer_allocator->template get_allocator<ComplexType>());
+
+/*
     StaticSPMatrix Gwork(G_ext,
             buffer_allocator->template get_allocator<SPComplexType>());
     StaticSPMatrix vbias({long(localnCV),long(nwalk)},
@@ -482,6 +495,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     StaticMatrix vHS(vhs_ext,
             buffer_allocator->template get_allocator<ComplexType>());
 #endif
+*/
 
     // partition G and v for communications: all cores communicate a piece of the matrix
     int vak0,vakN;
@@ -683,10 +697,10 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 
 #if defined(MIXED_PRECISION)
 // cast_inplace vHS3D
-  TG.local_barrier();
-  if(TG.localTG.root())
-    inplace_cast<SPComplexType,ComplexType>(make_device_ptr(vrecv.origin()),vrecv.num_elements());
-  TG.local_barrier();
+//  TG.local_barrier();
+//  if(TG.localTG().root())
+//    inplace_cast<SPComplexType,ComplexType>(make_device_ptr(vrecv.origin()),vrecv.num_elements());
+//  TG.local_barrier();
 #endif
 
   // From here on is similar to Shared 

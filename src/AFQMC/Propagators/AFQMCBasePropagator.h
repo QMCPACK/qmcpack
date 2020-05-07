@@ -54,6 +54,7 @@ class AFQMCBasePropagator: public AFQMCInfo
   using pointer = device_ptr<ComplexType>;
   // allocator for memory shared by all cores in working local group 
   using aux_allocator = localTG_allocator<ComplexType>;
+  using sp_pointer = typename device_allocator<SPComplexType>::pointer;
 
   using buffer_alloc_type = localTG_buffer_type<ComplexType>;
   using buffer_alloc_SPtype = localTG_buffer_type<SPComplexType>;
