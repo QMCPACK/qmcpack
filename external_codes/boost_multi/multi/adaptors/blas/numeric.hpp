@@ -1,12 +1,6 @@
-#ifdef COMPILATION// -*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
-$CXX -Wfatal-errors $0 -o $0x -lcudart -lcufft `pkg-config --libs fftw3` -lboost_unit_test_framework `pkg-config --libs blas`&&$0x&&rm $0x;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-/*
-(echo '#include"'$0'"'>$0.cpp)&&nvcc -x cu --expt-relaxed-constexpr`#$CXX -Wall -Wextra -Wpedantic` -D_TEST_MULTI_ADAPTORS_BLAS_NUMERIC $0.cpp -o $0x -lboost_unit_test_framework -lcudart -Wno-deprecated-declarations \
-`pkg-config --libs blas` \
-`#-Wl,-rpath,/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -L/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core` \
--lboost_timer &&$0x&& rm $0x $0.cpp; exit
-*/
 // © Alfredo A. Correa 2019-2020
 
 #ifndef MULTI_ADAPTORS_BLAS_NUMERIC_HPP
@@ -20,8 +14,6 @@ $CXX -Wfatal-errors $0 -o $0x -lcudart -lcufft `pkg-config --libs fftw3` -lboost
 #else
 #define HD
 #endif
-
-//#include<experimental/type_traits>
 
 namespace boost{
 namespace multi{
@@ -59,7 +51,9 @@ auto imag(A&& a)
 ->decltype(imag_aux(std::forward<A>(a), typename std::decay_t<A>::element_type{})){
 	return imag_aux(std::forward<A>(a), typename std::decay_t<A>::element_type{});}
 
-template<class It, class F> class involuter;
+template<class Ref, class Involution> class involuted;
+
+template<class It, class F, class Reference = involuted<typename std::iterator_traits<It>::reference, F> > class involuter;
 
 template<class Ref, class Involution>
 class involuted{
@@ -92,11 +86,16 @@ public:
 	auto operator==(DecayType&& other) const
 	->decltype(this->operator decay_type()==other){
 		return this->operator decay_type()==other;}
-	template<class DecayType>//, class Involuted /**/>
-	friend bool operator==(DecayType&& other, involuted const& self)
-//	->decltype(other == self.operator decay_type())
-	{
+	template<class DecayType>
+	auto operator!=(DecayType&& other) const
+	->decltype(this->operator decay_type()!=other){
+		return this->operator decay_type()!=other;}
+	template<class DecayType, std::enable_if_t<not std::is_base_of<involuted, DecayType>{}, int> =0>
+	friend auto operator==(DecayType&& other, involuted const& self){
 		return other == self.operator decay_type();}
+	template<class DecayType, std::enable_if_t<not std::is_base_of<involuted, DecayType>{}, int> =0>
+	friend auto operator!=(DecayType&& other, involuted const& self){
+		return other != self.operator decay_type();}
 //	auto imag() const{return static_cast<decay_type>(*this).imag();}
 	template<class Any> friend Any& operator<<(Any&& a, involuted const& self)
 //	->decltype(a << self.operator decay_type())
@@ -110,8 +109,8 @@ template<class T, class F> involuted(T&&, F)->involuted<T const, F>;
 //template<class T, class F> involuted(T const&, F)->involuted<T const&, F>;
 #endif
 
-template<class It, class F>
-class involuter;
+//template<class It, class F>
+//class involuter;
 
 template<class It, class F>
 auto get_allocator(involuter<It, F> const& s);
@@ -121,45 +120,55 @@ auto default_allocator_of(involuter<It, F> const& s){
 	return default_allocator_of(s.it_);
 }
 
-template<class It, class F>
+template<class It, class F, class Reference>
 class involuter{// : public std::iterator_traits<It>{
 	It it_; // [[no_unique_address]] 
 	F f_;
-	template<class, class> friend class involuter;
+	template<class, class, class> friend class involuter;
 public:
 	using difference_type = typename std::iterator_traits<It>::difference_type;
 	using value_type 	  = typename std::iterator_traits<It>::value_type;
 	using pointer         = involuter<It, F>;//svoid; // typename std::iterator_traits<It>::pointer
-	using reference 	  = involuted<typename std::iterator_traits<It>::reference, F>;
+	using reference 	  = Reference;
 	using iterator_category = typename std::iterator_traits<It>::iterator_category;
 	using element_type 	  = typename std::pointer_traits<It>::element_type;
 	template<class U> using rebind = involuter<typename std::pointer_traits<It>::template rebind<U>, F>; 
 
 	involuter() = default;
-	explicit involuter(It it, F f = {}) HD : it_{std::move(it)}, f_{std::move(f)}{}
+	explicit involuter(It it, F f = {}) : it_{std::move(it)}, f_{std::move(f)}{}
 	involuter(involuter const& other) = default;
-	template<class Other> 
-	constexpr involuter(involuter<Other, F> const& other) : it_{other.it_}, f_{other.f_}{}
+//	template<class Other, > constexpr involuter(Other const& other) : it_{other.it_}, f_{other.f_}{}
+
+	template<class Other, typename = decltype(_implicit_cast<It>(typename Other::underlying_type{}))> 
+	constexpr involuter(Other const& o) : it_{o.it_}, f_{o.f_}{}
+	template<class Other, typename = decltype(_explicit_cast<It>(typename Other::underlying_type{}))> 
+	explicit constexpr involuter(Other const& o, int = 0) : it_{o.it_}, f_{o.f_}{}
+
 	constexpr auto operator*() const {return reference{*it_, f_};}
 	bool operator==(involuter const& o) const{return it_==o.it_;}
 	bool operator!=(involuter const& o) const{return it_!=o.it_;}
 	involuter& operator+=(typename involuter::difference_type n) HD{it_+=n; return *this;}
-	auto operator+(typename involuter::difference_type n) const HD{return involuter{it_+n, f_};}
-	decltype(auto) operator->() const{
-		return involuter<typename std::iterator_traits<It>::pointer, F>{&*it_, f_};
-	}
+	constexpr auto operator+(typename involuter::difference_type n) const{return involuter{it_+n, f_};}
+//	decltype(auto) operator->() const{
+//		return &const_cast<reference&>(reinterpret_cast<reference const&>(*this));
+//		return reference{*it_, f_};
+//		return involuter<typename std::iterator_traits<It>::pointer, F>{&*it_, f_};
+//	}
 	auto operator-(involuter const& other) const{return it_-other.it_;}
 	explicit operator bool() const{return it_;}
 	using underlying_type = It;
 	friend underlying_type underlying(involuter const& self) HD{return self.it_;}
-	operator It() const HD{return underlying(*this);}
+	constexpr explicit operator It() const {return underlying(*this);}
 	template<class Itt, class FF> friend auto get_allocator(involuter<Itt, FF> const&);
 	friend auto default_allocator_of(involuter const& s){
 		using multi::default_allocator_of;
 		return default_allocator_of(s.it_);
 	}
 	using default_allocator_type = typename multi::pointer_traits<It>::default_allocator_type;
-//	friend auto get_allocator(involuter const& s){return get_allocator(s.it_);}
+	friend auto get_allocator(involuter const& s){
+		using boost::multi::get_allocator;
+		return get_allocator(s.it_);
+	}
 };
 
 template<class It, class F>
@@ -171,6 +180,7 @@ auto get_allocator(involuter<It, F> const& s){
 template<class Ref> using negated = involuted<Ref, std::negate<>>;
 template<class It>  using negater = involuter<It, std::negate<>>;
 
+#if 1
 struct conjugate{
 	template<class T>
 	auto operator()(T const& a) const{
@@ -180,50 +190,60 @@ struct conjugate{
 		return conj(A);
 	}
 };
+#endif
 
+#if 0
 namespace detail{
 template<class Ref> struct conjugated : involuted<Ref, conjugate>{
+	using involuted<Ref, conjugate>::involuted;
+	template<class Other>
+	conjugated(conjugated<Other> const& other) : involuted<Ref, conjugate>{static_cast<involuted<Ref, conjugate> const&>(other)}{}
 	auto real() const{return static_cast<typename conjugated::decay_type>(*this).real();}
 	auto imag() const{return static_cast<typename conjugated::decay_type>(*this).imag();}
 	friend auto imag(conjugated const& self){return self.imag();}
 	friend auto real(conjugated const& self){return self.real();}
+public:
+	decltype(auto) operator->() const{return this;}
 //	friend auto conj(conjugated const& self){
 //		return conjugate{}(static_cast<typename conjugated::decay_type>(self));
 //	}
 };
-template<class It>  using conjugater = involuter<It, conjugate>;
+}
+#endif
+
+template<class Ref> using conjugated = involuted<Ref, conjugate>;
+
+template<class It> using conjugater = involuter<It, conjugate>;//, conjugated<typename std::iterator_traits<It>::reference> >;
 
 template<class It> auto make_conjugater(It it){return conjugater<It>{it};}
 template<class It> It make_conjugater(conjugater<It> it){return underlying(it);}
-
-}
 
 template<class T> auto imag(involuted<T, conjugate> const& s){return s.decay().imag();}
 template<class T> auto real(involuted<T, conjugate> const& s){return s.decay().real();}
 
 template<class A = void> struct is_complex{
-	template<class T> static auto _(T const& t) -> decltype(t->imag(), std::true_type());
-	                  static auto _(...) -> std::false_type;
+	template<class T> static auto _(T const& t) -> decltype(imag(*t), std::true_type());
+	                  static auto _(...       ) ->                    std::false_type  ;
 	constexpr operator bool() const{return decltype(_(base(std::declval<A>()))){};}
 	template<class AA> constexpr auto operator()(AA&&){return _(base(std::declval<A>()));}
 };
 
 template<class A = void> struct is_conjugated{
-	template<class It> static std::true_type  _(detail::conjugater<It> a);
-	                   static std::false_type _(...);
+	template<class It> static std::true_type  _(conjugater<It> a);
+	                   static std::false_type _(...             );
 	constexpr operator bool() const{return decltype(_(base(std::declval<A>()))){};}
 	template<class AA> constexpr auto operator()(AA&&){return _(base(std::declval<A>()));}
 };
 
 template<class A, class D = std::decay_t<A>, typename Elem=typename D::element_type, typename Ptr=typename D::element_ptr,
 	std::enable_if_t<not is_conjugated<A>{}, int> =0>
-decltype(auto) conjugated(A&& a){
-	return multi::static_array_cast<Elem, detail::conjugater<Ptr>>(a);
+decltype(auto) conj(A&& a){
+	return multi::static_array_cast<Elem, conjugater<Ptr>>(a);
 }
 
 template<class A, class D = std::decay_t<A>, typename Elem=typename D::element_type, typename Ptr=typename D::element_ptr::underlying_type,
 	std::enable_if_t<    is_conjugated<A>{}, int> =0>
-decltype(auto) conjugated(A&& a){
+decltype(auto) conj(A&& a){
 	return multi::static_array_cast<Elem, Ptr>(a);
 }
 
@@ -314,15 +334,41 @@ BOOST_AUTO_TEST_CASE(multi_blas_numeric_real_conjugated){
 		{8. + 2.*I, 2. + 4.*I},
 		{2. - 1.*I, 1. + 1.*I}
 	};
-	auto BdataC = multi::blas::detail::make_conjugater(B.data_elements());
+	BOOST_REQUIRE( B[0][0] == 1. - 3.*I );
+
+	multi::array<complex, 2> const Bconst = {
+		{1. - 3.*I, 6. + 2.*I},
+		{8. + 2.*I, 2. + 4.*I},
+		{2. - 1.*I, 1. + 1.*I}
+	};
+	BOOST_REQUIRE( Bconst[0][0] == 1. - 3.*I );
+
+	auto BdataC = multi::blas::make_conjugater(B.data_elements());
+	auto BconstdataC = multi::blas::make_conjugater(Bconst.data_elements());
+	decltype(BconstdataC) ppp = BdataC;
+	ppp = BdataC;
+
 	BOOST_REQUIRE( *BdataC == 1. + 3.*I );
 
+	static_assert(    multi::blas::is_complex<decltype(B)>{}, "!");
 	static_assert(not multi::blas::is_conjugated<decltype(B)>{}, "!");
-	auto&& Bconj = multi::blas::conjugated(B);
+
+	auto&& Bconj = multi::blas::conj(B);
 	static_assert(multi::blas::is_conjugated<decltype(Bconj)>{}, "!");
 
-	BOOST_REQUIRE( conjugated(Bconj) == B );
-	BOOST_REQUIRE( base(conjugated(Bconj)) == base(B) );
+	BOOST_REQUIRE( Bconj[0][0] == 1. + 3.*I );
+	BOOST_TEST_REQUIRE( imag(*base(Bconj)) == +3 );
+//	BOOST_TEST_REQUIRE( base(Bconj)->imag() == +3 );
+	BOOST_REQUIRE( rotated(Bconj)[1][0] == Bconj[0][1] );
+
+//	BOOST_REQUIRE( base(Bconj) == -3.*I );
+	static_assert(multi::blas::is_complex<decltype(Bconj)>{}, "!");
+
+	BOOST_REQUIRE( conj(Bconj) == B );
+	BOOST_REQUIRE( base(conj(Bconj)) == base(B) );
+
+	BOOST_REQUIRE( base(conj(Bconj))->imag() == -3. );
+//	BOOST_REQUIRE( base(conjugated(Bconj))->imag() == -3. );
 
 }
 

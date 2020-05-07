@@ -1,5 +1,5 @@
-#ifdef COMPILATION// -*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
-$CXX -Wfatal-errors $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 
@@ -136,6 +136,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_dot_impl_real){
 
 #if 1
 BOOST_AUTO_TEST_CASE(multi_blas_dot_impl_complex){
+	namespace blas = multi::blas;
 
 	using complex = std::complex<double>; complex const I{0, 1};
 	multi::array<complex, 2> const A = {
@@ -143,20 +144,18 @@ BOOST_AUTO_TEST_CASE(multi_blas_dot_impl_complex){
 		{5. + 2.*I,  6. + 6.*I,  7.+2.*I,  8.-3.*I},
 		{9. + 1.*I, 10. + 9.*I, 11.+1.*I, 12.+2.*I}
 	};
-	print_2D(A);
-	print_1D(A[1]);
-	using blas::conjugated;
-	using blas::dot;
+//	print_2D(A);
+//	print_1D(A[1]);
 	{
-		complex c; dot(A[1], A[1], c);
+		complex c; blas::dot(A[1], A[1], c);
 		BOOST_TEST( c == std::inner_product(begin(A[1]), end(A[1]), begin(A[1]), complex{0}) );
 	}
 	{
-		complex c = dot(A[1], A[1]);
+		complex c = blas::dot(A[1], A[1]);
 		BOOST_TEST( c == std::inner_product(begin(A[1]), end(A[1]), begin(A[1]), complex{0}) );
 	}
 	{
-		conjugated(A[1]);
+//		conjugated(A[1]);
 //		complex c; dot(A[1], conjugated(A[1]), c);
 //		BOOST_TEST( c == std::inner_product(begin(A[1]), end(A[1]), begin(A[1]), complex{0}, std::plus<>{}, [](auto a, auto b){return a*conj(b);}) );
 	}

@@ -13,6 +13,7 @@
 
 #include "catch.hpp"
 
+#include "boost/version.hpp"
 #include <vector>
 #include "multi/array.hpp"
 #include "io/hdf_archive.h"

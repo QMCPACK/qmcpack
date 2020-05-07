@@ -31,12 +31,15 @@
 #include "AFQMC/Numerics/detail/utilities.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/batched_operations.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 namespace qmcplusplus
 {
 
 namespace afqmc
 {
+
+extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
 
 /* 
  * Observable class that calculates the walker averaged on-top pair density 
@@ -74,6 +77,9 @@ class atomcentered_correlators: public AFQMCInfo
   using mpi3CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
   using mpi3C4Tensor = boost::multi::array<ComplexType,4,shared_allocator<ComplexType>>;
 
+  using shm_buffer_alloc_type = localTG_buffer_type<ComplexType>;
+  using StaticMatrix = boost::multi::static_array<ComplexType,2,shm_buffer_alloc_type>;
+  using Static3Tensor = boost::multi::static_array<ComplexType,3,shm_buffer_alloc_type>;
 
 // MAM: Note -
 // This class uses lots of memory, but can be safely moved to single precision.
@@ -98,7 +104,6 @@ class atomcentered_correlators: public AFQMCInfo
                 DMAverage1D({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                 DMWork1D({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                 denom(iextensions<1u>{0},shared_allocator<ComplexType>{TG.TG_local()}),
-                Buff(iextensions<1u>{0},alloc),
                 NwIJ({0,0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                 NwI({0,0,0},shared_allocator<ComplexType>{TG.TG_local()})
   {
@@ -288,12 +293,10 @@ class atomcentered_correlators: public AFQMCInfo
 
     // calculate green functions in atom basis and send to host for processing/accumulation
     // if memory becomes a problem, then batch over walkers
-    int N = NAO*(NMO + NAO) + nsites*nsites + nsites; 
     // calculate nwbatch based on size of available memory on global buffer
     int iw0(0);
     int i0, iN;  
     int nwbatch(nw);
-    set_buffer(nwbatch*N);
     std::vector<decltype(ma::pointer_dispatch(S.origin()))> Aarray; Aarray.reserve(nwbatch*nsites*nsites);
     std::vector<decltype(ma::pointer_dispatch(S.origin()))> Barray; Barray.reserve(nwbatch*nsites*nsites);
     std::vector<decltype(ma::pointer_dispatch(S.origin()))> Carray; Carray.reserve(nwbatch*nsites*nsites);
@@ -301,10 +304,14 @@ class atomcentered_correlators: public AFQMCInfo
     {
       int nwlk = std::min(nwbatch,nw-iw0);  
         
-      CTensor_ref QwI(make_device_ptr(Buff.origin()), {nwlk,NAO,NMO});
-      CTensor_ref MwIJ(QwI.origin()+QwI.num_elements(), {nwlk,NAO,NAO});
-      CTensor_ref devNwIJ(MwIJ.origin()+MwIJ.num_elements(), {nwlk,nsites,nsites});
-      CMatrix_ref devNwI(devNwIJ.origin()+devNwIJ.num_elements(), {nwlk,nsites});
+      Static3Tensor QwI({nwlk,NAO,NMO},
+                        localTG_buffer_generator->template get_allocator<ComplexType>());
+      Static3Tensor MwIJ({nwlk,NAO,NAO}, 
+                        localTG_buffer_generator->template get_allocator<ComplexType>());
+      Static3Tensor devNwIJ({nwlk,nsites,nsites},
+                        localTG_buffer_generator->template get_allocator<ComplexType>());
+      StaticMatrix devNwI({nwlk,nsites},
+                        localTG_buffer_generator->template get_allocator<ComplexType>());
 
       for(int is=0; is<nsp; ++is)   { 
 
@@ -574,18 +581,8 @@ class atomcentered_correlators: public AFQMCInfo
 
   mpi3CVector denom; 
 
-  // buffer space
-  CVector Buff;
-
   mpi3C4Tensor NwIJ;
   mpi3CTensor NwI;
-
-  void set_buffer(size_t N) {
-    if(Buff.num_elements() < N)
-      Buff = std::move(CVector(iextensions<1u>{N},alloc));
-    using std::fill_n;
-    fill_n(Buff.origin(),N,ComplexType(0.0));
-  }
 
 };
 

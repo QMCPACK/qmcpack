@@ -31,12 +31,15 @@
 #include "AFQMC/Numerics/detail/utilities.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/batched_operations.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 namespace qmcplusplus
 {
 
 namespace afqmc
 {
+
+extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
 
 /* 
  * Observable class that calculates the walker averaged on-top pair density 
@@ -68,6 +71,9 @@ class realspace_correlators: public AFQMCInfo
   using mpi3CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
   using mpi3C4Tensor = boost::multi::array<ComplexType,4,shared_allocator<ComplexType>>;
 
+  using shm_buffer_alloc_type = localTG_buffer_type<ComplexType>;
+  using StaticMatrix = boost::multi::static_array<ComplexType,2,shm_buffer_alloc_type>;
+
   public:
 
   realspace_correlators(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, 
@@ -79,7 +85,6 @@ class realspace_correlators: public AFQMCInfo
                 DMAverage({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                 DMWork({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                 denom(iextensions<1u>{0},shared_allocator<ComplexType>{TG.TG_local()}),
-                Buff(iextensions<1u>{0},alloc),
                 Gr_host({0,0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
                 Orrp({0,0},shared_allocator<ComplexType>{TG.TG_local()})
   {
@@ -251,12 +256,12 @@ class realspace_correlators: public AFQMCInfo
     // calculate green functions in real space and send to host for processing/accumulation
     // if memory becomes a problem, then batch over walkers
     {
-      int N = nsp*nw*(npts*NMO+npts*npts);
-      set_buffer(N);
-      CMatrix_ref T(make_device_ptr(Buff.origin()), {nw*nsp*NMO,npts});
-      CTensor_ref T3D(T.origin(), {nw,nsp,NMO*npts});
-      CMatrix_ref Gr(T.origin()+T.num_elements(), {nsp*nw,npts*npts});
-      CTensor_ref Gr3D(Gr.origin(), {nw,nsp,npts*npts});
+      StaticMatrix T({nw*nsp*NMO,npts}, 
+                        localTG_buffer_generator->template get_allocator<ComplexType>());
+      StaticMatrix Gr({nsp*nw,npts*npts},
+                        localTG_buffer_generator->template get_allocator<ComplexType>());
+      CTensor_ref Gr3D(make_device_ptr(Gr.origin()), {nw,nsp,npts*npts});
+      CTensor_ref T3D(make_device_ptr(T.origin()), {nw,nsp,NMO*npts});
       CMatrix_ref G2D( make_device_ptr(G.origin()), {nw*nsp*NMO, NMO});
 
       // T1[iw][ispin][i][r] = sum_j G[iw][ispin][i][j] * Psi(j,r)
@@ -432,18 +437,8 @@ class realspace_correlators: public AFQMCInfo
 
   mpi3CVector denom; 
 
-  // buffer space
-  CVector Buff;
-
   mpi3C4Tensor Gr_host;
   mpi3CMatrix Orrp;
-
-  void set_buffer(size_t N) {
-    if(Buff.num_elements() < N)
-      Buff = std::move(CVector(iextensions<1u>{N},alloc));
-    using std::fill_n;
-    fill_n(Buff.origin(),N,ComplexType(0.0));
-  }
 
 };
 

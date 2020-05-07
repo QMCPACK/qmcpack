@@ -16,7 +16,7 @@ template<class M> decltype(auto) transposed(M const& m){return rotated(m);}
 
 template<class A, typename D=std::decay_t<A>, typename E=typename D::element_type>
 decltype(auto) conjugated_transposed(A&& a){
-	return transposed(boost::multi::blas::conjugated(std::forward<A>(a)));
+	return transposed(blas::conj(std::forward<A>(a)));
 }
 
 template<class A> decltype(auto) identity(A&& a){return std::forward<A>(a);}
@@ -37,8 +37,9 @@ decltype(auto) hermitized(A&& a){return conjugated_transposed(std::forward<A>(a)
 template<class A>
 decltype(auto) transposed(A&& a){return rotated(std::forward<A>(a));}
 
-template<class A> decltype(auto) C(A&& a){return hermitized(std::forward<A>(a));}
-template<class A> decltype(auto) H(A&& a){return          C(std::forward<A>(a));}
+template<class A> [[deprecated("use blas::H instead of blas::C for hermitized to avoid confusions")]]
+decltype(auto) C(A&& a){return hermitized(std::forward<A>(a));}
+template<class A> decltype(auto) H(A&& a){return hermitized(std::forward<A>(a));}
 template<class A> decltype(auto) T(A&& a){return transposed(std::forward<A>(a));}
 template<class A> decltype(auto) N(A&& a){return identity  (std::forward<A>(a));}
 
@@ -68,24 +69,23 @@ namespace multi = boost::multi;
 using complex = std::complex<double>; constexpr complex I{0, 1};
 
 BOOST_AUTO_TEST_CASE(m){
+	namespace blas = multi::blas;
 	multi::array<complex, 2> const A = {
 		{1. - 3.*I, 6.  + 2.*I},
 		{8. + 2.*I, 2. + 4.*I},
 		{2. - 1.*I, 1. + 1.*I}
 	};
-	using multi::blas::hermitized;
+	using blas::hermitized;
 	BOOST_REQUIRE( hermitized(A)[0][1] == conj(A[1][0]) );
 
-	using multi::blas::C;
-	static_assert( multi::blas::is_conjugated<decltype(C(A))>{}, "!" );
-	BOOST_REQUIRE( C(A)[0][1] == conj(A[1][0]) );
+	static_assert( blas::is_conjugated<decltype(blas::H(A))>{}, "!" );
+	BOOST_REQUIRE( blas::H(A)[0][1] == conj(A[1][0]) );
 
-	using multi::blas::transposed;
+	using blas::transposed;
 	BOOST_REQUIRE( transposed(A)[0][1] == A[1][0] );
 
-	using multi::blas::T;
-	static_assert( not multi::blas::is_conjugated<decltype(T(A))>{}, "!" );
-	BOOST_REQUIRE( T(A)[0][1] == A[1][0] );
+	static_assert( not blas::is_conjugated<decltype(blas::T(A))>{}, "!" );
+	BOOST_REQUIRE( blas::T(A)[0][1] == A[1][0] );
 	
 //	static_assert( multi::blas::is_conjugated<decltype(T(A))>{}, "!" );
 
