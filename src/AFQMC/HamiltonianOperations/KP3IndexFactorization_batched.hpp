@@ -1511,6 +1511,7 @@ class KP3IndexFactorization_batched
     template<class MatA, class MatB>
     void vbias_from_v1(ComplexType a, MatA const& v1, MatB && vbias)
     {
+      using BType = typename std::decay<MatB>::type::element ;
       int nwalk = vbias.size(1);
       int nkpts = nopk.size();
       int nchol_max = *std::max_element(ncholpQ.begin(),ncholpQ.end());
@@ -1519,7 +1520,8 @@ class KP3IndexFactorization_batched
 // using make_device_ptr(vbias.origin()) to catch errors here
       vbias_from_v1(nwalk,nkpts,nchol_max,dev_Qmap.origin(),dev_kminus.origin(),
                              dev_ncholpQ.origin(),dev_Q2vbias.origin(),
-                             a,v1.origin(),to_address(make_device_ptr(vbias.origin())));
+                             static_cast<BType>(a),
+                             v1.origin(),to_address(make_device_ptr(vbias.origin())));
 
     }
 

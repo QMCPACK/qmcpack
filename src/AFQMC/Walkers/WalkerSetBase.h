@@ -53,8 +53,8 @@ class WalkerSetBase: public AFQMCInfo
   using const_pointer = const Ptr; 
   using Allocator = Alloc;
 
-  using bp_element = ComplexType; //typename std::pointer_traits<BPPtr>::element_type;
-  using bp_pointer = ComplexType*; //BPPtr;
+  using bp_element = SPComplexType; //typename std::pointer_traits<BPPtr>::element_type;
+  using bp_pointer = SPComplexType*; //BPPtr;
   using const_bp_element = const bp_element;
   using const_bp_pointer = const bp_pointer; 
   using BPAllocator = shared_allocator<bp_element>;//BPAlloc;
@@ -327,7 +327,7 @@ class WalkerSetBase: public AFQMCInfo
       bp_buffer.reextent({bp_walker_size,walker_buffer.size(0)});
       using std::fill_n;
       fill_n(to_address(bp_buffer.origin())+data_displ[WEIGHT_FAC]*bp_buffer.size(1),
-             wlk_desc[6]*bp_buffer.size(1),ComplexType(1.0));
+             wlk_desc[6]*bp_buffer.size(1),bp_element(1.0));
     }
     if(nbp > 0 && (data_displ[SMN]<0 || data_displ[SM_AUX]<0) ) {
       auto sz(walker_size);
@@ -552,7 +552,7 @@ class WalkerSetBase: public AFQMCInfo
       int his_pos = ((history_pos==0)?wlk_desc[6]-1:history_pos-1);
       if(wlk_desc[6]>0 && his_pos >= 0 && his_pos < wlk_desc[6]) { 
         auto BPW( boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer) );
-        ma::scal(ComplexType(w0),BPW[data_displ[WEIGHT_HISTORY]+his_pos]);
+        ma::scal(bp_element(w0),BPW[data_displ[WEIGHT_HISTORY]+his_pos]);
       }
     }
   } 
