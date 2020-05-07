@@ -24,7 +24,20 @@
 namespace ma
 {
 
-// Tab [nbatch][nwalk][nocc][nocc][nchol]
+/** Contract 3D tensor over for use in exchange calculation.
+ * E_x[w] ~ sum_{labn} T1[l,w,a,b,n] T2[l,w,b,a,n]
+ * l is the batching parameter (like Q vectors in k-point code)
+ *
+ * \param[in]     nbatch Number of tensors to batch over.
+ * \param[in]     nwalk  Number of walkers.
+ * \param[in]     nocc   Number of electrons.
+ * \param[in]     nchol  Number of Cholesky vectors.
+ * \param[in]     alpha  Pointer to array of nbatch scaling factors.
+ * \param[in]     Tab    Pointer to packed tensors {T1[l0,w0,a,b,n],T2[[l0,w0,a,b,n]...}.
+ *                       Should be allocated on device.
+ * \param[in,out] y      Pointer to accumulator array. Typically E[w].
+ * \param[in]     incy   Stride for y.
+*/
 template<typename T, typename Q>
 void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
                     std::complex<Q> const* alpha, std::complex<Q> const* Tab,
