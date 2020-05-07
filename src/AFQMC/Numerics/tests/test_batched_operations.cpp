@@ -52,6 +52,7 @@ template<typename T> using Tensor1D = array<T,1,Alloc<T>>;
 template<typename T> using Tensor2D = array<T,2,Alloc<T>>;
 template<typename T> using Tensor3D = array<T,3,Alloc<T>>;
 template<typename T> using Tensor4D = array<T,4,Alloc<T>>;
+template<typename T> using Tensor5D = array<T,5,Alloc<T>>;
 
 template<typename T> using Tensor2D_ref = array_ref<T,2,pointer<T>>;
 template<typename T> using Tensor1D_ref = array_ref<T,1,pointer<T>>;
@@ -164,19 +165,24 @@ TEST_CASE("batched_dot_wabn_wban", "[Numerics][batched_operations]")
   int nwalk = 3;
   int nocc = 7;
   int nchol = 13;
-  std::vector<ComplexType> buffer(nwalk*nocc*nocc*nchol);
-  create_data(buffer, ComplexType(1.0));
-  Tensor4D<ComplexType> Twabn({nwalk, nocc, nocc, nchol}, alloc);
+  // 2*nbatch as routine expects left and right tensors to contract. 
+  std::vector<ComplexType> buffer(2*nbatch*nwalk*nocc*nocc*nchol);
+  create_data(buffer, ComplexType(1e4));
+  Tensor5D<ComplexType> Twabn({2*nbatch, nwalk, nocc, nocc, nchol}, alloc);
+  Tensor1D<ComplexType> scal({nbatch}, 1.0, alloc);
   copy_n(buffer.data(), buffer.size(), Twabn.origin());
   std::vector<pointer<ComplexType>> Aarray;
-  std::vector<pointer<ComplexType>> out(nbatch);
-  for (int i=0; i<nbatch; i++)  {
-    Aarray.push_back(Twabn.origin());
-  }
-  //using ma::batched_dot_wabn_wban;
-  //batched_dot_wabn_wban(nbatch, nwalk, nocc, nchol, ComplexType(1.0),
-                        //Twban.origin(), ComplexType(1.0), out.data(), 1);
+  array<ComplexType,1,Alloc<ComplexType>> out(iextensions<1u>{nwalk}, alloc);
+  array<ComplexType,1,Alloc<ComplexType>> ref = {ComplexType(1693.073254599684),
+                                                 ComplexType(1930.853888599637),
+                                                 ComplexType(2189.312510839587)};
+  using ma::batched_dot_wabn_wban;
+  batched_dot_wabn_wban(nbatch, nwalk, nocc, nchol, scal.origin(),
+                        Twabn.origin(), to_address(out.data()), 1);
+  //std::cout << std::setprecision(16) << "this: " <<  out[0] << " " << out[1] << " " << out[2] << std::endl;
+  verify_approx(ref,out);
 }
+
 
 TEST_CASE("dot_wabn", "[Numerics][batched_operations]")
 {
@@ -190,10 +196,10 @@ TEST_CASE("dot_wabn", "[Numerics][batched_operations]")
   Tensor4D<ComplexType> Twabn({nwalk, nocc, nocc, nchol}, alloc);
   copy_n(buffer.data(), buffer.size(), Twabn.origin());
   array<ComplexType,1,Alloc<ComplexType>> out(iextensions<1u>{nwalk}, alloc);
-  using ma::dot_wabn;
-  dot_wabn(nwalk, nocc, nchol, ComplexType(1.0), Twabn.origin(), out.origin(), 1);
-  array<ComplexType,1,Alloc<ComplexType>> ref = {ComplexType(7045.35), ComplexType(58699.7), ComplexType(162049.0)};
-  verify_approx(out, ref);
+  //using ma::dot_wabn;
+  //dot_wabn(nwalk, nocc, nchol, ComplexType(1.0), Twabn.origin(), to_address(out.origin()), 1);
+  //array<ComplexType,1,Alloc<ComplexType>> ref = {ComplexType(7045.35), ComplexType(58699.7), ComplexType(162049.0)};
+  //verify_approx(out, ref);
 }
 
 TEST_CASE("dot_wanb", "[Numerics][batched_operations]")
@@ -208,8 +214,8 @@ TEST_CASE("dot_wanb", "[Numerics][batched_operations]")
   Tensor4D<ComplexType> Twanb({nwalk, nocc, nchol, nocc}, alloc);
   copy_n(buffer.data(), buffer.size(), Twanb.origin());
   array<ComplexType,1,Alloc<ComplexType>> out(iextensions<1u>{nwalk}, alloc);
-  using ma::dot_wanb;
-  dot_wanb(nwalk, nocc, nchol, ComplexType(1.0), Twanb.origin(), out.origin(), 1);
+  //using ma::dot_wanb;
+  //dot_wanb(nwalk, nocc, nchol, ComplexType(1.0), Twanb.origin(), to_address(out.origin()), 1);
   //std::cout << "{";
   //for (auto i : out)
     //std::cout << "ComplexType(" << real(i) << ")," << std::endl;
@@ -230,25 +236,25 @@ TEST_CASE("vbias_from_v1", "[Numerics][batched_operations]")
   std::vector<int> Q2vbias = {0, 14, 14+6};
   std::vector<int> kminus = {0, 1, 2};
   std::vector<ComplexType> buffer(nkpts*nchol_max*nwalk);
-  create_data(buffer, ComplexType(100));
   Tensor3D<ComplexType> v1({nkpts, nchol_max, nwalk}, alloc);
+  create_data(buffer, ComplexType(100));
+  copy_n(buffer.data(), buffer.size(), v1.origin());
   Tensor2D<ComplexType> vbias({2*nchol_tot,nwalk}, 0.0, alloc);
   Tensor1D<int> dev_nchol_pq(iextensions<1u>{nkpts}, alloc);
   Tensor1D<int> dev_Qmap(iextensions<1u>{nkpts}, alloc);
   Tensor1D<int> dev_Q2vbias(iextensions<1u>{nkpts}, alloc);
   Tensor1D<int> dev_kminus(iextensions<1u>{nkpts}, alloc);
-  copy_n(buffer.begin(), buffer.size(), v1.origin());
-  copy_n(nchol_pq.begin(), nchol_pq.size(), dev_nchol_pq.origin());
-  copy_n(Qmap.begin(), Qmap.size(), dev_Qmap.origin());
-  copy_n(Q2vbias.begin(), Q2vbias.size(), dev_Q2vbias.origin());
-  copy_n(kminus.begin(), kminus.size(), dev_kminus.origin());
+  copy_n(nchol_pq.data(), nchol_pq.size(), dev_nchol_pq.origin());
+  copy_n(Qmap.data(), Qmap.size(), dev_Qmap.origin());
+  copy_n(Q2vbias.data(), Q2vbias.size(), dev_Q2vbias.origin());
+  copy_n(kminus.data(), kminus.size(), dev_kminus.origin());
   using ma::vbias_from_v1;
   vbias_from_v1(nwalk, nkpts, nchol_max, dev_Qmap.origin(), dev_kminus.origin(),
                 dev_nchol_pq.origin(), dev_Q2vbias.origin(), ComplexType(1.0),
-                v1.origin(), vbias.origin());
-  // too many elements to copy paste. Just test a few.
-  REQUIRE(real(vbias[0][1]) == Approx(0.85));
-  REQUIRE(imag(vbias[11][3]) == Approx(2.36));
+                v1.origin(), to_address(vbias.origin()));
+  copy_n(vbias.origin(), buffer.size(), buffer.data());
+  REQUIRE(real(buffer[1]) == Approx(0.01));
+  REQUIRE(imag(buffer[47]) == Approx(-0.12));
 }
 
 }
