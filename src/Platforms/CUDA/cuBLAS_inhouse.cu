@@ -325,14 +325,25 @@ cuBLAS_inhouse_status ger_batched(cuBLAS_inhouse_handle& handle,
 template<typename T, int COLBS>
 __global__ void copy_batched_kernel(const int n,
                                     const T* const in[],
-                                    T* const out[])
+                                    const int incx,
+                                    T* const out[],
+                                    const int incy)
 {
   const int iw                 = blockIdx.x;
   const T* __restrict__ in_iw  = in[iw];
   T* __restrict__ out_iw       = out[iw];
 
   const int col_id = blockIdx.y * COLBS + threadIdx.x;
-  out_iw[col_id] = in_iw[col_id];
+  if (incx == 1 && incy == 1)
+  {
+    if (col_id < n)
+      out_iw[col_id] = in_iw[col_id];
+  }
+  else
+  {
+    if (col_id < n)
+      out_iw[col_id * incx] = in_iw[col_id * incx];
+  }
 }
 
 template<typename T>
@@ -347,14 +358,11 @@ cuBLAS_inhouse_status copy_batched_impl(cudaStream_t& hstream,
   if (batch_count == 0 || n == 0)
     return cudaSuccess;
 
-  if (incx != 1 || incy != 1)
-    throw std::runtime_error("incx !=1 or incy != 1 are not implemented in cuBLAS_inhouse::copy_batched_impl!");
-
   const int COLBS = 128;
   const int num_col_blocks = (n + COLBS - 1) / COLBS;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count, num_col_blocks);
-  copy_batched_kernel<T, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(n, in, out);
+  copy_batched_kernel<T, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(n, in, incx, out, incy);
   return cudaPeekAtLastError();
 }
 
@@ -416,7 +424,16 @@ __global__ void scal_batched_kernel(const int n,
   const T scale_iw = scale[iw];
 
   const int col_id = blockIdx.y * COLBS + threadIdx.x;
-  inout_iw[col_id * inc] *= scale_iw;
+  if (inc == 1)
+  {
+    if (col_id < n)
+      inout_iw[col_id] *= scale_iw;
+  }
+  else
+  {
+    if (col_id < n)
+      inout_iw[col_id * inc] *= scale_iw;
+  }
 }
 
 template<typename T>

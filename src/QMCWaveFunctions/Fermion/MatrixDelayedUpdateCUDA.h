@@ -264,21 +264,6 @@ class MatrixDelayedUpdateCUDA
     cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'N', norb, delay_count, cone_dev_ptr, V_mw_ptr, norb,
                                                 BinvRow_mw_ptr, 1, cone_dev_ptr, invRow_mw_ptr, 1, nw),
                    "cuBLAS_inhouse::gemv_batched failed!");
-    /*
-    if(delay_count==1)
-    {
-      //cudaErrorCheck(cuBLAS_inhouse::copy_batched(hstream, 2, BinvRow_mw_ptr, 1, invRow_mw_ptr, 1, nw),
-      //               "cuBLAS_inhouse::copy_batched failed!");
-      waitStream();
-      for (int iw = 0; iw < nw; iw++)
-      {
-        This_t& engine = engines[iw];
-        auto* ptr = engine.invRow.data();
-        #pragma omp target update from(ptr[:invRow.size()])
-        std::cout << "iw = " << iw << " " << ptr[0] << " " << ptr[1] << std::endl;
-      }
-    }
-*/
   }
 
 public:
@@ -659,6 +644,19 @@ public:
                    Ainv_mw_ptr, lda, nw), "cuBLAS::gemm_batched failed!");
     }
     delay_count = 0;
+  }
+
+  void print_Ainv(const RefVector<This_t>& engines)
+  {
+    for (This_t& engine : engines)
+    {
+      std::cout << "debug Ainv host  " << engine.psiMinv[0][0] << " " << engine.psiMinv[0][1] << " "
+                                       << engine.psiMinv[1][0] << " " << engine.psiMinv[1][1] << std::endl;
+      auto* temp_ptr = engine.psiMinv.data();
+      PRAGMA_OFFLOAD("omp target update from(temp_ptr[:psiMinv.size()])")
+      std::cout << "debug Ainv devi  " << engine.psiMinv[0][0] << " " << engine.psiMinv[0][1] << " "
+                                       << engine.psiMinv[1][0] << " " << engine.psiMinv[1][1] << std::endl;
+    }
   }
 
   std::vector<const T*> mw_getInvRow(const RefVector<This_t>& engines, const int row_id, bool on_host)
