@@ -524,6 +524,7 @@ public:
       auto iter_dist  = elecs_inside_dist(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
       auto iter_displ = elecs_inside_displ(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
       // sentinel code
+      #ifndef NDEBUG
       if (iter == elecs_inside(ig, jat).end())
       {
         std::cerr << std::setprecision(std::numeric_limits<valT>::digits10 + 1)
@@ -537,6 +538,7 @@ public:
                   << " stored value = " << *iter_dist << std::endl;
         throw std::runtime_error("BUG eI distance stored value elecs_inside_dist not matching distance table");
       }
+      #endif
 
       if (eI_table.getTempDists()[jat] < Ion_cutoff[jat]) // the new position is still inside
       {
