@@ -360,6 +360,7 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy_n(Alloc &a, It1 f, Size n, s
 
 template<class Alloc, class It1, class Size, typename T>
 shm_ptr_with_raw_ptr_dispatch<T> alloc_uninitialized_copy_n(Alloc &a, It1 f, Size n, shm_ptr_with_raw_ptr_dispatch<T> d){
+        if(n==0) return d;
         d.wSP_->fence();
         using std::uninitialized_copy_n;
         if(d.wSP_->get_group().root()) uninitialized_copy_n(f, n, to_address(d));
@@ -394,6 +395,7 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_copy(Alloc &a, It1 f, It1 l, shm_
 
 template<class Alloc, class It1, typename T>
 shm_ptr_with_raw_ptr_dispatch<T> alloc_uninitialized_copy(Alloc &a, It1 f, It1 l, shm_ptr_with_raw_ptr_dispatch<T> d){
+        if(distance(f, l)==0) return d;
         d.wSP_->fence();
         using std::uninitialized_copy;
         if(d.wSP_->get_group().root()) uninitialized_copy(f, l, to_address(d));
@@ -438,7 +440,6 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_default_construct_n(Alloc &a, shm
         if(n==0) return f;
         f.wSP_->fence();
         if(f.wSP_->get_group().root()) {
-            using std::addressof;
             auto current(f);
             try{
                 for(; n > 0; ++current, --n) a.construct(current, T()); //(::new((void*)current) T());
@@ -454,7 +455,6 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_value_construct_n(Alloc &a, shm_p
         if(n==0) return f;
         f.wSP_->fence();
         if(f.wSP_->get_group().root()) {
-            using std::addressof;
             auto current(f);
             try{
                 for(; n > 0; ++current, --n) a.construct(current, T()); //(::new((void*)current) T());
@@ -467,9 +467,9 @@ shm_ptr_with_raw_ptr_dispatch<T> uninitialized_value_construct_n(Alloc &a, shm_p
 
 template<class Alloc, class T, class Size>
 shm_ptr_with_raw_ptr_dispatch<T> alloc_uninitialized_default_construct_n(Alloc &a, shm_ptr_with_raw_ptr_dispatch<T> f, Size n){
+        if(n==0) return f;
         f.wSP_->fence();
         if(f.wSP_->get_group().root()) {
-            using std::addressof;
             auto current(f);
             try{
                 for(; n > 0; ++current, --n) a.construct(current, T()); //(::new((void*)current) T());
@@ -482,9 +482,9 @@ shm_ptr_with_raw_ptr_dispatch<T> alloc_uninitialized_default_construct_n(Alloc &
 
 template<class Alloc, class T, class Size>
 shm_ptr_with_raw_ptr_dispatch<T> alloc_uninitialized_value_construct_n(Alloc &a, shm_ptr_with_raw_ptr_dispatch<T> f, Size n){
+        if(n==0) return f;
         f.wSP_->fence();
         if(f.wSP_->get_group().root()) {
-            using std::addressof;
             auto current(f);
             try{
                 for(; n > 0; ++current, --n) a.construct(current, T()); //(::new((void*)current) T());
@@ -505,10 +505,10 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
                     Alloc &a,
                     multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first, 
                     Size n, T const& val){
+  if(n==0) return first;  
   base(first).wSP_->fence();
   if(first.wSP_->get_group().root()) {
     auto current = first;
-    using std::addressof;
     try{
       for(; n > 0; ++current, --n)
         a.construct(base(current), val);
@@ -534,10 +534,10 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uniniti
                     Alloc &a,
                     multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
                     Size n, T const& val){
+  if(n==0) return first;  
   base(first).wSP_->fence();
   if(first.wSP_->get_group().root()) {
     auto current = first;
-    using std::addressof;
     try{
       for(; n > 0; ++current, --n)
         a.construct(base(current), val);
@@ -565,12 +565,12 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
              multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
+  if(n==0) return dest;  
   base(dest).wSP_->fence();
   base(first).wSP_->fence();
   if(base(dest).wSP_->get_group().root()) {
     auto f = first;
     auto d = dest;
-    using std::addressof;
     for(; n > 0; ++f, ++d, --n)
       *d = *f; 
   }
@@ -585,11 +585,11 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
                          ForwardIt first,
                          Size n,
                          multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest ){
+  if(n==0) return dest;  
   base(dest).wSP_->fence();
   if(base(dest).wSP_->get_group().root()) {
     auto f = first;
     auto d = dest;
-    using std::addressof;
     for(; n > 0; ++f, ++d, --n)
       *d = *f;       
   }
@@ -606,11 +606,11 @@ multi::array_iterator<T, 1, T*> copy_n(
                          multi::array_iterator<T, 1, T*> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
+  if(n==0) return dest;  
   base(first).wSP_->fence();
   {
     auto f = first;
     auto d = dest;
-    using std::addressof;
     for(; n > 0; ++f, ++d, --n)
       *d = *f;       
   }
@@ -655,12 +655,12 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
                            Size n,
                            multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
+  if(n==0) return dest;  
   base(first).wSP_->fence();
   base(dest).wSP_->fence();
   if(base(dest).wSP_->get_group().root()) {
     auto f = first;
     auto d = dest;
-    using std::addressof;
     try{
       for(; n > 0; ++f, ++d, --n)
         a.construct(base(d), *f);
@@ -679,12 +679,12 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uniniti
                            Size n,
                            multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
+  if(n==0) return dest;  
   base(first).wSP_->fence();
   base(dest).wSP_->fence();
   if(base(dest).wSP_->get_group().root()) {
     auto f = first;
     auto d = dest;
-    using std::addressof;
     try{
       for(; n > 0; ++f, ++d, --n)
         a.construct(base(d), *f);
@@ -733,11 +733,11 @@ multi::array_iterator<T, 1, T*> uninitialized_copy(
                          multi::array_iterator<T, 1, T*> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
+  if(std::distance(first,last)==0) return dest;  
   assert( stride(first) == stride(last) );
   base(first).wSP_->fence();
   {
     auto d = dest;
-    using std::addressof;
     try{
       for(; first != last; ++first, ++d)
         a.construct(base(d), *first);
@@ -765,11 +765,11 @@ multi::array_iterator<T, 1, T*> alloc_uninitialized_copy(
                          multi::array_iterator<T, 1, T*> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
+  if(std::distance(first,last)==0) return dest;  
   assert( stride(first) == stride(last) );
   base(first).wSP_->fence();
   {
     auto d = dest;
-    using std::addressof;
     try{
       for(; first != last; ++first, ++d)
         a.construct(base(d), *first);
@@ -784,6 +784,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
                             Alloc& a,   
                             multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f, 
                             Size n){
+  if(n==0) return f;  
   base(f).wSP_->fence();
   if(base(f).wSP_->get_group().root()) {
       auto current(f);
@@ -801,6 +802,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
                             Alloc& a, 
                             multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f, 
                             Size n){
+  if(n==0) return f;  
   base(f).wSP_->fence();
   if(base(f).wSP_->get_group().root()) {
       auto current(f);
@@ -818,6 +820,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uniniti
                             Alloc& a,
                             multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f,
                             Size n){
+  if(n==0) return f;  
   base(f).wSP_->fence();
   if(base(f).wSP_->get_group().root()) {
       auto current(f);
@@ -835,6 +838,7 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uniniti
                             Alloc& a,
                             multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f,
                             Size n){
+  if(n==0) return f;  
   base(f).wSP_->fence();
   if(base(f).wSP_->get_group().root()) {
       auto current(f);
