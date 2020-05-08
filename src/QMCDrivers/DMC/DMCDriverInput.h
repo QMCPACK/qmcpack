@@ -58,7 +58,7 @@ private:
   ///input to control maximum age allowed for walkers.
   IndexType max_age_ = 10;
   /// reserved walkers for population growth
-  RealType reserve_ = 1.5;
+  RealType reserve_ = 1.0;
   double alpha_ = 0.0;
   double gamma_ = 0.0;
   /** @} */
