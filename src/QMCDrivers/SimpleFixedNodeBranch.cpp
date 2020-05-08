@@ -464,7 +464,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
   MyEstimator->accumulate(walkers);
 }
 
-void SimpleFixedNodeBranch::branch(int iter, UPtrVector<Crowd>& crowds,  MCPopulation& population)
+void SimpleFixedNodeBranch::branch(int iter, MCPopulation& population)
 {
   //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
   //RealType pop_now= WalkerController->branch(iter,walkers,0.1);

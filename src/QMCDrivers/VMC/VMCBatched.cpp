@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -33,35 +33,31 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
   // qmc_driver_mode.set(QMC_WARMUP, 0);
 }
 
-VMCBatched::IndexType VMCBatched::calc_default_local_walkers(IndexType walkers_per_rank)
+QMCDriverNew::AdjustedWalkerCounts VMCBatched::calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const
 {
   checkNumCrowdsLTNumThreads();
   int num_threads(Concurrency::maxThreads<>());
-  if (num_crowds_ == 0)
-    num_crowds_ = std::min(num_threads, walkers_per_rank);
+  if (awc.num_crowds == 0)
+    awc.num_crowds = std::min(num_threads, awc.walkers_per_rank);
 
-  if (walkers_per_rank < num_crowds_)
-    walkers_per_rank = num_crowds_;
-  walkers_per_crowd_ =
-      (walkers_per_rank % num_crowds_) ? walkers_per_rank / num_crowds_ + 1 : walkers_per_rank / num_crowds_;
-  IndexType local_walkers = walkers_per_crowd_ * num_crowds_;
-  population_.set_num_local_walkers(local_walkers);
-  population_.set_num_global_walkers(local_walkers * population_.get_num_ranks());
-  if (walkers_per_rank != qmcdriver_input_.get_walkers_per_rank())
-    app_warning() << "VMCBatched driver has adjusted walkers per rank to: " << local_walkers << '\n';
+  if (awc.walkers_per_rank == awc.num_crowds)
+    awc.walkers_per_crowd = 1;
+  if (awc.walkers_per_rank < awc.num_crowds)
+    awc.walkers_per_rank = awc.num_crowds;
+  awc.walkers_per_crowd = (awc.walkers_per_rank % awc.num_crowds) ? awc.walkers_per_rank / awc.num_crowds + 1
+                                                                  : awc.walkers_per_rank / awc.num_crowds;
+  awc.walkers_per_rank = awc.walkers_per_crowd * awc.num_crowds;
+  if (awc.walkers_per_rank != qmcdriver_input_.get_walkers_per_rank())
+    app_warning() << "VMCBatched driver has adjusted walkers per rank to: " << awc.walkers_per_rank << '\n';
 
   if (vmcdriver_input_.get_samples() >= 0 || vmcdriver_input_.get_samples_per_thread() >= 0 ||
       vmcdriver_input_.get_steps_between_samples() >= 0)
     app_warning() << "VMCBatched currently ignores samples and samplesperthread\n";
 
-  if (local_walkers != walkers_per_rank)
-    app_warning() << "VMCBatched changed the number of walkers to " << local_walkers << ". User input was "
-                  << walkers_per_rank << std::endl;
-
-  app_log() << "VMCBatched walkers per crowd " << walkers_per_crowd_ << std::endl;
+  app_log() << "VMCBatched walkers per crowd " << awc.walkers_per_crowd << std::endl;
   // TODO: Simplify samples, samples per thread etc in the unified driver
   // see logic in original VMC.cpp
-  return local_walkers;
+  return awc;
 }
 
 void VMCBatched::advanceWalkers(const StateForThread& sft,
@@ -111,7 +107,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); sub_step++)
   {
     //This generates an entire steps worth of deltas.
-    step_context.nextDeltaRs();
+    step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
 
     // up and down electrons are "species" within qmpack
     for (int ig = 0; ig < step_context.get_num_groups(); ++ig) //loop over species
@@ -149,7 +145,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         // This is inelegant
         if (use_drift)
         {
-          TrialWaveFunction::flex_calcRatioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios, grads_new);
+          TrialWaveFunction::flex_calcRatioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios,
+                                                grads_new);
           std::transform(delta_r_start, delta_r_end, log_gf.begin(),
                          [mhalf](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
 
@@ -189,7 +186,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
             elec_reject_list.push_back(crowd.get_walker_elecs()[i_accept]);
           }
 
-        TrialWaveFunction::flex_accept_rejectMove(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, isAccepted, true);
+        TrialWaveFunction::flex_accept_rejectMove(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, isAccepted,
+                                                  true);
 
         ParticleSet::flex_acceptMove(elec_accept_list, iat, true);
         ParticleSet::flex_rejectMove(elec_reject_list, iat);
@@ -261,6 +259,33 @@ void VMCBatched::runVMCStep(int crowd_id,
   bool recompute_this_step = (is_recompute_block && (step + 1) == max_steps);
   advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step);
   crowd.accumulate(sft.population.get_num_global_walkers());
+}
+
+void VMCBatched::process(xmlNodePtr node)
+{
+  // \todo get total walkers should be coming from VMCDriverInput
+
+  QMCDriverNew::AdjustedWalkerCounts awc =
+      adjustGlobalWalkerCount(myComm, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
+                              1.0, get_num_crowds());
+
+  // This code bothers me now, most of the code bases this on what is actually there.
+  population_.set_num_local_walkers(awc.walkers_per_rank);
+  population_.set_num_global_walkers(awc.global_walkers);
+
+  walkers_per_rank_  = awc.walkers_per_rank;
+  walkers_per_crowd_ = awc.walkers_per_crowd;
+  num_crowds_        = awc.num_crowds;
+
+  app_log() << "VMCBatched Driver running with total_walkers=" << awc.global_walkers << '\n'
+            << "                               walkers_per_rank=" << walkers_per_rank_ << '\n'
+            << "                               num_crowds=" << num_crowds_ << '\n';
+
+  // side effect updates walkers_per_crowd_;
+  makeLocalWalkers(awc.walkers_per_rank, awc.reserve_walkers,
+                   ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+
+  Base::process(node);
 }
 
 /** Runs the actual VMC section
