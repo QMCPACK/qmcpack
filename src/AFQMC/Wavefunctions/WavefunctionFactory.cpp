@@ -25,12 +25,15 @@
 #include "AFQMC/Wavefunctions/PHMSD.hpp"
 #include "AFQMC/HamiltonianOperations/HamOpsIO.hpp"
 #include "AFQMC/Wavefunctions/Excitations.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 namespace qmcplusplus
 {
 
 namespace afqmc
 {
+
+extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
 
 Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwfn,
                                             xmlNodePtr cur, WALKER_TYPES walker_type, Hamiltonian& h,
@@ -293,9 +296,11 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
                         walker_type,NCE,targetNW));
     } else
     {
-      SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
-                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
-                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
+      SlaterDetOperations SDetOp( 
+                        SlaterDetOperations_serial<ComplexType,device_allocator_generator_type>( 
+                            ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
+                            ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)),
+                            device_buffer_generator.get() ));
       return Wavefunction(NOMSD<devcsr_Matrix>(AFinfo,cur,TGwfn,std::move(SDetOp),std::move(HOps),
                         std::move(ci),std::move(PsiT),
                         walker_type,NCE,targetNW));
@@ -748,9 +753,11 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
       }  
     } else
     {
-      SlaterDetOperations SDetOp( SlaterDetOperations_serial<device_allocator<ComplexType>>(
-                        ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
-                        ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)) ));
+      SlaterDetOperations SDetOp(
+                        SlaterDetOperations_serial<ComplexType,device_allocator_generator_type>(
+                            ((walker_type!=NONCOLLINEAR)?(NMO):(2*NMO)),
+                            ((walker_type!=NONCOLLINEAR)?(NAEA):(NAEA+NAEB)),
+                            device_buffer_generator.get() ));
       if(dense_trial == "yes") {
         using MType = ComplexMatrix<node_allocator<ComplexType>>;
         std::vector<MType> PsiT_;

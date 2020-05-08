@@ -125,6 +125,8 @@ void reduced_density_matrix(boost::mpi3::communicator & world)
     const char *wfn_xml_block = wfn_xml.c_str();
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
+    // initialize TG buffer
+    make_localTG_buffer_generator(TG.TG_local(),20*1024L*1024L);
     int nwalk = 1; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
     Libxml2Document doc2;
@@ -238,6 +240,7 @@ const char *propg_xml_block =
       APP_ABORT(" NONCOLLINEAR Wavefunction found.\n");
     }
 
+    destroy_shm_buffer_generators();
   }
 }
 

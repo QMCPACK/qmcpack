@@ -126,6 +126,9 @@
 /* Using CUDA for GPU execution, next generation */
 #cmakedefine ENABLE_CUDA @ENABLE_CUDA@
 
+/* Using boost::stacktrace */ 
+#cmakedefine ENABLE_STACKTRACE @ENABLE_STACKTRACE@
+
 /* Setting base precision for CUDA kernels */
 #cmakedefine CUDA_PRECISION @CUDA_PRECISION@
 

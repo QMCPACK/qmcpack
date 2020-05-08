@@ -27,6 +27,7 @@
 #include "Utilities/RandomGenerator.h"
 
 #include "AFQMC/config.h"
+#include "AFQMC/Memory/buffer_allocators.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Propagators/generate1BodyPropagator.hpp"
@@ -38,6 +39,8 @@ namespace qmcplusplus
 
 namespace afqmc
 {
+
+extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
 
 /*
  * Base class for AFQMC propagators.
@@ -51,6 +54,13 @@ class AFQMCBasePropagator: public AFQMCInfo
   using pointer = device_ptr<ComplexType>;
   // allocator for memory shared by all cores in working local group 
   using aux_allocator = localTG_allocator<ComplexType>;
+
+  using buffer_alloc_type = localTG_buffer_type<ComplexType>;
+  using buffer_alloc_SPtype = localTG_buffer_type<SPComplexType>;
+
+  using StaticVector = boost::multi::static_array<ComplexType,1,buffer_alloc_type>;
+  using StaticMatrix = boost::multi::static_array<ComplexType,2,buffer_alloc_type>;
+  using Static3Tensor = boost::multi::static_array<ComplexType,3,buffer_alloc_type>;
 
   using CVector = boost::multi::array<ComplexType,1,allocator>;  
   using CMatrix = boost::multi::array<ComplexType,2,allocator>;  
@@ -77,13 +87,13 @@ class AFQMCBasePropagator: public AFQMCInfo
                           stdCMatrix&& h1_, CVector&& vmf_, 
                           RandomGenerator_t* r):
             AFQMCInfo(info),TG(tg_),
+            buffer_allocator(localTG_buffer_generator.get()),
             alloc_(),aux_alloc_(make_localTG_allocator<ComplexType>(TG)),wfn(wfn_),
             H1(std::move(h1_),shared_allocator<ComplexType>{TG.Node()}),
             H1ext({2,1,1},shared_allocator<ComplexType>{TG.Node()}),
             vMF(std::move(vmf_)),
             rng(r),
             SDetOp(wfn.getSlaterDetOperations()),
-            buffer(iextensions<1u>{1},aux_alloc_),
             local_group_comm(),
             old_dt(-123456.789),
             last_nextra(-1),
@@ -114,6 +124,9 @@ class AFQMCBasePropagator: public AFQMCInfo
       int nextra = steps%fix_bias;
       for(int i=0; i<nblk; i++) {
         step(fix_bias,wset,E1,dt);
+        // MAM: I need to update buffer generators here, otherwise the
+        //      first block would be quite slow
+        update_buffer_generators();
       }
       if(nextra>0) 
         step(nextra,wset,E1,dt);
@@ -122,10 +135,6 @@ class AFQMCBasePropagator: public AFQMCInfo
 
     template<class WlkSet, class CTens, class CMat>
     void BackPropagate(int steps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR); 
-
-    // reset shared memory buffers
-    // useful when the current buffers use too much memory (e.g. reducing steps in future calls)
-    void reset() { buffer.reextent(iextensions<1u>{0}); }
 
     bool hybrid_propagation() { return hybrid; }
 
@@ -156,6 +165,8 @@ class AFQMCBasePropagator: public AFQMCInfo
 
     TaskGroup_& TG;
 
+    localTG_allocator_generator_type *buffer_allocator;
+
     allocator alloc_;
  
     aux_allocator aux_alloc_;
@@ -174,8 +185,6 @@ class AFQMCBasePropagator: public AFQMCInfo
     RandomGenerator_t* rng;
 
     SlaterDetOperations* SDetOp;
-
-    sharedCVector buffer;    
 
     shared_communicator local_group_comm;
 
@@ -204,20 +213,14 @@ class AFQMCBasePropagator: public AFQMCInfo
     // with vHD3D[nwalk*nsteps,...]
     CMatrix local_vHS;  
 
-    CVector new_overlaps;  
-    CMatrix new_energies;  
-
-    CMatrix MFfactor;  
-    CMatrix hybrid_weight;  
-
     boost::multi::array<ComplexType,2> work; 
  
     template<class WlkSet>
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);
 
     void assemble_X(size_t nsteps, size_t nwalk, RealType sqrtdt,
-                    CMatrix_ref& X, CMatrix_ref & vbias,
-                    CMatrix_ref& MF, CMatrix_ref& HW, bool addRAND=true);
+                    StaticMatrix& X, StaticMatrix& vbias,
+                    StaticMatrix& MF, StaticMatrix& HW, bool addRAND=true);
 
     void reset_nextra(int nextra); 
 

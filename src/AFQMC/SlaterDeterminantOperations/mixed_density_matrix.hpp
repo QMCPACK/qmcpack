@@ -1092,8 +1092,9 @@ template< class MatA,
 void DensityMatrices(std::vector<MatA> const& Left, std::vector<MatB> const& Right, std::vector<MatC>& G, Tp LogOverlapFactor, TVec&& ovlp, Mat&& TNN3D, Mat&& TNM3D, IBuffer& IWORK, bool compact=true, bool herm=true)
 {
   static_assert( std::decay<TVec>::type::dimensionality == 1, " TVec::dimensionality == 1" );
-  static_assert( (pointedType<MatA>::dimensionality == 2 or
-                  pointedType<MatA>::dimensionality == -2), " MatA::dimensionality == 2" );
+//  static_assert( (pointedType<MatA>::dimensionality == 2 or
+//                  pointedType<MatA>::dimensionality == -2), " MatA::dimensionality == 2" );
+  static_assert( pointedType<MatA>::dimensionality == 2, " MatA::dimensionality == 2" );
   static_assert( pointedType<MatB>::dimensionality == 2, " MatB::dimensionality == 2" );
   static_assert( pointedType<MatC>::dimensionality == 2, " MatC::dimensionality == 2" );
   static_assert( std::decay<Mat>::type::dimensionality == 3, "std::decay<Mat>::type::dimensionality == 3" );

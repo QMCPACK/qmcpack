@@ -31,6 +31,7 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   Concurrency::OverrideMaxThreads<> override(8);
   Communicate* comm;
   comm = OHMMS::Controller;
+  outputManager.pause();
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_tiny_index]);
@@ -60,6 +61,8 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   // We want to express out expectations of the QMCDriver state machine so we catch
   // changes to it over time.
   qmcdriver.set_calc_walker_answers(1, 1);
+  outputManager.resume();
+
   REQUIRE(qmcdriver.getBranchEngine() == nullptr);
   qmcdriver.process(node);
   REQUIRE(qmcdriver.getBranchEngine() != nullptr);
@@ -68,16 +71,19 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   // What else should we expect after process
 }
 
-
+/** Since we check the DMC only feature of reserve walkers perhaps this should be
+ *  a DMC integration test.
+ */
 TEST_CASE("QMCDriverNew integration", "[drivers]")
 {
   using namespace testing;
   Concurrency::OverrideMaxThreads<> override(8);
   Communicate* comm;
   comm = OHMMS::Controller;
+  outputManager.pause();
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
+  bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
   QMCDriverInput qmcdriver_input(3);
@@ -90,7 +96,7 @@ TEST_CASE("QMCDriverNew integration", "[drivers]")
 
   MinimalHamiltonianPool mhp;
   HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
-  MCPopulation population(4, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
+  MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
                           hamiltonian_pool.getPrimary(), comm->rank());
   QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input), population, *(wavefunction_pool.getPrimary()),
                                     *(hamiltonian_pool.getPrimary()), wavefunction_pool, comm);
@@ -103,10 +109,15 @@ TEST_CASE("QMCDriverNew integration", "[drivers]")
   qmcdriver.setStatus(root_name, prev_config_file, false);
   // We want to express out expectations of the QMCDriver state machine so we catch
   // changes to it over time.
-  REQUIRE(qmcdriver.getBranchEngine() == nullptr);
+  CHECK(qmcdriver.getBranchEngine() == nullptr);
+  outputManager.resume();
+
   qmcdriver.process(node);
-  REQUIRE(qmcdriver.getBranchEngine() != nullptr);
-  REQUIRE(qmcdriver.get_living_walkers() == 32);
+  CHECK(qmcdriver.getBranchEngine() != nullptr);
+  CHECK(qmcdriver.get_living_walkers() == 32);
+  CHECK(population.get_num_local_walkers() == 32);
+  QMCTraits::IndexType reserved_walkers = population.get_num_local_walkers() + population.get_dead_walkers().size();
+  CHECK(reserved_walkers == 48);
   // What else should we expect after process
 }
 
