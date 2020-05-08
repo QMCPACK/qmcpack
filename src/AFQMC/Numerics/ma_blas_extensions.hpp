@@ -195,6 +195,7 @@ MultiArray2D&& fill(MultiArray2D&& m, T const& value){
         return std::forward<MultiArray2D>(m);
 }
 
+// Kernel?
 template<class CSR,
          class MultiArray2D,
          typename = typename std::enable_if_t<(std::decay<CSR>::type::dimensionality == -2)>,

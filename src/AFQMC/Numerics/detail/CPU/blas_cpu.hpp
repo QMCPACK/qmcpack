@@ -781,6 +781,7 @@ namespace ma
   }
 
   // y = beta*y + alpha * dot(a,b)
+  // Move to kernels
   template<typename T, typename Q>
   inline static
   void adotpby(int n, T const alpha, const T* restrict a, int incx, const T* restrict b, int incy, Q const beta, Q* result)

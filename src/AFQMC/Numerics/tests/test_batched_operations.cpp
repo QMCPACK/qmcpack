@@ -68,7 +68,7 @@ void create_data(std::vector<T>& buffer, T scale)
 }
 
 // Test data for assertions was created from captured output.
-TEST_CASE("Tab_to_Kl", "[batched_operations]")
+TEST_CASE("Tab_to_Kl", "[Numerics][batched_operations]")
 {
 
   Alloc<ComplexType> alloc{};
