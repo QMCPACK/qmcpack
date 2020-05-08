@@ -777,7 +777,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLRwithForces(ParticleSet& P)
       grad[iat] = TinyVector<RealType, DIM>(0.0, 0.0, 0.0);
     dAB->evaluateGrad(PtclA, P, j, Zat, grad);
     for (int iat = 0; iat < grad.size(); iat++)
-      forces[iat] += Qspec[j] * Zat[iat] * grad[iat];
+      forces[iat] += Qspec[j] * grad[iat];
   } // electron species
   return evalLR(P);
 }
