@@ -993,9 +993,9 @@ public:
     ParticleSet::ParticleLaplacian_t tempL;
     tempG.resize(P.getTotalNum());
     tempL.resize(P.getTotalNum());
-    RealType delta = 0.00001;
-    ValueType c1   = 1.0 / delta / 2.0;
-    ValueType c2   = 1.0 / delta / delta;
+    QTFull::RealType delta = 0.00001;
+    QTFull::RealType c1   = 1.0 / delta / 2.0;
+    QTFull::RealType c2   = 1.0 / delta / delta;
 
     GradType g_return(0.0);
     // GRAD TEST COMPUTATION
@@ -1013,8 +1013,12 @@ public:
       P.update();
       LogValueType log_m = evaluateLog(P, tempG, tempL);
 
+      QTFull::RealType log_p_r(0.0), log_m_r(0.0);
+      
+      log_p_r=log_p.real();
+      log_m_r=log_m.real();
       //symmetric finite difference formula for gradient.
-      g_return[iondim] = c1 * (log_p.real() - log_m.real());
+      g_return[iondim] = c1 * (log_p_r - log_m_r);
 
       //reset everything to how it was.
       source.R[isrc][iondim] = rI[iondim];
@@ -1032,17 +1036,18 @@ public:
                                  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
                                  TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
   {
-    ParticleSet::ParticleGradient_t Gp, Gm;
-    ParticleSet::ParticleLaplacian_t Lp, Lm;
+    ParticleSet::ParticleGradient_t Gp, Gm, dG;
+    ParticleSet::ParticleLaplacian_t Lp, Lm, dL;
     Gp.resize(P.getTotalNum());
     Gm.resize(P.getTotalNum());
+    dG.resize(P.getTotalNum());
     Lp.resize(P.getTotalNum());
     Lm.resize(P.getTotalNum());
+    dL.resize(P.getTotalNum());
 
-    RealType delta = 0.00001;
-    ValueType c1   = 1.0 / delta / 2.0;
-    ValueType c2   = 1.0 / delta / delta;
-
+    QTFull::RealType delta = 0.00001;
+    QTFull::RealType c1   = 1.0 / delta / 2.0;
+    QTFull::RealType c2   = 1.0 / delta / delta; 
     GradType g_return(0.0);
     // GRAD TEST COMPUTATION
     PosType rI = source.R[isrc];
@@ -1062,11 +1067,16 @@ public:
       source.update();
       P.update();
       LogValueType log_m = evaluateLog(P, Gm, Lm);
-
+      QTFull::RealType log_p_r(0.0), log_m_r(0.0);
+      
+      log_p_r=log_p.real();
+      log_m_r=log_m.real();
+      dG=Gp-Gm;
+      dL=Lp-Lm;
       //symmetric finite difference formula for gradient.
-      g_return[iondim] = c1 * (log_p.real() - log_m.real());
-      grad_grad[iondim] += c1 * (Gp - Gm);
-      lapl_grad[iondim] += c1 * (Lp - Lm);
+      g_return[iondim] = c1 * (log_p_r - log_m_r);
+      grad_grad[iondim] += c1 * dG;
+      lapl_grad[iondim] += c1 * dL;
       //reset everything to how it was.
       source.R[isrc][iondim] = rI[iondim];
     }
