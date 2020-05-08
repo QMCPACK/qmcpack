@@ -422,12 +422,12 @@ inline void LCAOrbitalSet::evaluate_ionderiv_v_impl(const vgl_type& temp,
                                              int i,
                                              GradMatrix_t& dpsi) const
 {
- // std::copy_n(temp.data(0), OrbitalSetSize, psi.data());
+  const size_t output_size = dpsi.cols();
   const ValueType* restrict gx = temp.data(1);
   const ValueType* restrict gy = temp.data(2);
   const ValueType* restrict gz = temp.data(3);
 
-  for (size_t j = 0; j < OrbitalSetSize; j++)
+  for (size_t j = 0; j < output_size; j++)
   {
     //As mentioned in SoaLocalizedBasisSet, LCAO's have a nice property that
     // for an atomic center, the ion gradient is the negative of the elecron gradient.
@@ -444,7 +444,7 @@ inline void LCAOrbitalSet::evaluate_ionderiv_vgl_impl(const vghgh_type& temp,
                                              HessMatrix_t& dgpsi,
                                              GradMatrix_t& dlpsi) const
 {
- // std::copy_n(temp.data(0), OrbitalSetSize, psi.data());
+  const size_t output_size = dpsi.cols();
   const ValueType* restrict gx = temp.data(1);
   const ValueType* restrict gy = temp.data(2);
   const ValueType* restrict gz = temp.data(3);
@@ -464,7 +464,7 @@ inline void LCAOrbitalSet::evaluate_ionderiv_vgl_impl(const vghgh_type& temp,
   const ValueType* restrict gh_yzz = temp.data(18);
   const ValueType* restrict gh_zzz = temp.data(19);
 
-  for (size_t j = 0; j < OrbitalSetSize; j++)
+  for (size_t j = 0; j < output_size; j++)
   {
     //As mentioned in SoaLocalizedBasisSet, LCAO's have a nice property that
     // for an atomic center, the ion gradient is the negative of the elecron gradient.
