@@ -1150,7 +1150,7 @@ class KP3IndexFactorization
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vbias(const MatA& Gw, MatB&& v, double a=1., double c=0., int nd=0) {
-      using GType = typename std::decay<MatA>::type::element ;
+      using GType = typename std::decay_t<typename MatA::element>;
       using vType = typename std::decay<MatB>::type::element ;
       int nkpts = nopk.size();
       assert(nd >= 0 && nd < nelpk.size());

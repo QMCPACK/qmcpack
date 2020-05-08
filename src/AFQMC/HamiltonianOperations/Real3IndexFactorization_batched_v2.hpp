@@ -372,7 +372,7 @@ class Real3IndexFactorization_batched_v2
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
-      using XType = typename std::decay<MatA>::type::element ;
+      using XType = typename std::decay_t<typename MatA::element>;
       using vType = typename std::decay<MatB>::type::element ;
       assert( Likn.size(1) == X.size(0) );
       assert( Likn.size(0) == v.size(0) );
@@ -438,8 +438,8 @@ class Real3IndexFactorization_batched_v2
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
-      using GType = typename std::decay<MatA>::type::element ;
-      using vType = typename std::decay<MatB>::type::element ;
+      using GType = typename std::decay_t<typename MatA::element>;
+      using vType = typename std::decay_t<MatB>::element;
       if(walker_type==CLOSED) a*=2.0;
       // setup buffer space if changing precision in G or v
       size_t vmem(0),Gmem(0);

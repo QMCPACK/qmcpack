@@ -564,7 +564,7 @@ std::cout<<"\n";
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vHS(MatA & X, MatB&& v, double a=1., double c=0.) {
-      using XType = typename std::decay<MatA>::type::element ;
+      using XType = typename std::decay_t<typename MatA::element>;
       using vType = typename std::decay<MatB>::type::element ;
       int nwalk = X.size(1);
 #if defined(QMC_COMPLEX)
@@ -703,7 +703,7 @@ std::cout<<"\n";
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vbias(MatA const& G, MatB&& v, double a=1., double c=0., int k=0) {
-      using GType = typename std::decay<MatA>::type::element ;
+      using GType = typename std::decay_t<typename MatA::element>;
       using vType = typename std::decay<MatB>::type::element ;
       if(k>0)
 	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");

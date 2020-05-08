@@ -490,7 +490,9 @@ ForwardIt copy(device_pointer<T const> const Abeg, device_pointer<T const> const
 // if types of pointers are not the same (without cv qualifiers)!!!
 template<typename T, typename Q, typename Size>
 device_pointer<Q> copy_n_cast(device_pointer<T> const A, Size n, device_pointer<Q> B) {
-  kernels::copy_n_cast(to_address(A),n,to_address(B));
+//  if constexpr (std::is_same<std::decay_t<T>,Q>::value) copy_n(A,n,B); 
+//  else 
+    kernels::copy_n_cast(to_address(A),n,to_address(B));
   return B+n;
 }
 

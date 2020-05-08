@@ -292,7 +292,7 @@ class SparseTensor
             >
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
       using vType = typename std::decay<MatB>::type::element ;
-      using XType = typename std::decay<MatA>::type::element ;
+      using XType = typename std::decay_t<typename MatA::element>;
       assert( Spvn.size(1) == X.size(0) );
       assert( Spvn.size(0) == v.size(0) );
       assert( X.size(1) == v.size(1) );
@@ -364,7 +364,7 @@ class SparseTensor
             >
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
       using vType = typename std::decay<MatB>::type::element ;
-      using GType = typename std::decay<MatA>::type::element ;
+      using GType = typename std::decay_t<typename MatA::element>;
       if(not separateEJ) k=0;
       if(walker_type==CLOSED) a*=2.0;
       assert( SpvnT[k].size(1) == G.size(0) );
