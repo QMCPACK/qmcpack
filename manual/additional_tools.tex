@@ -112,3 +112,30 @@ When using an ionized state, the three reference states are all set as ``1s(2)2p
 Unfortunately, if the generated UPF file is used in QE, the calculation may be incorrect because of the presence of ``ghost'' states. Potentially these can be removed by adjusting the local channel (e.g., by setting \ishell{--local_channel 1}, which chooses the p channel as the local channel instead of d.
 For this reason, validation of UPF PPs is always required from the third row and is strongly encouraged in general. For example, check that the expected ionization potential and electron affinities are obtained for the atom and that dimer properties are consistent with those obtained by a quantum chemistry code or a plane-wave code that does not use the Kleinman-Bylander projectors.
 \input{pseudopotentials}
+
+\subsection{wftester}\label{sec:wftester}
+While not really a stand-alone application, wftester (short for ``Wave Function Tester") is a helpful tool for testing pre-existing and experimental estimators and observables.  It provides the user with derived quantities from the Hamiltonian and wave function, but evaluated at a small set of configurations. 
+
+The wftester is implemented as a QMCDriver, so one invokes \qmcpack in the normal manner with a correct input XML, the difference being the addition of an additional qmc input block.  This is the main advantage of this tool--it allows testing of realistic systems and realistic combinations of observables.  It can also be invoked before launching into optimization, VMC, or DMC runs, as it is a valid <qmc> block.
+
+ As an example, the following code generates a random walker configuration and compares the trial wave function ratio computed in two different ways:
+
+\begin{lstlisting}[style=QMCPXML,caption=The following executes the wavefunction ratio test in ``wftester" ]
+  <qmc method="wftester">
+    <parameter name="ratio">    yes    </parameter>
+  </qmc>
+\end{lstlisting}
+
+Here's a summary of some of the tests provided:
+\begin{itemize}
+\item Ratio Test.  Invoked with \begin{verbatim}<parameter name="ratio">yes</parameter>\end{verbatim}  This computes the implemented wave function ratio associated with a single-particle move using two different methods.
+\item Clone Test. Invoked with \begin{verbatim}<parameter name="clone">yes</parameter>\end{verbatim}  This checks the cloning of TrialWaveFunction, ParticleSet, Hamiltonian, and Walkers.  
+\item Elocal Test.  Invoked with \begin{verbatim}<parameter name="printEloc">yes</parameter>\end{verbatim}  For an input electron configuration (can be random), print the value of TrialWaveFunction, LocalEnergy, and all local observables for this configuration.  
+\item Derivative Test.  Invoked with \begin{verbatim}<parameter name="ratio">deriv</parameter>}\end{verbatim}  Computes electron gradients, laplacians, and wave function parameter derivatives using implemented calls and compares them to finite-difference results.   
+\item Ion Gradient Test.  Invoked with \begin{verbatim}<parameter name="source">ion0</parameter>\end{verbatim}  Calls the implemented evaluateGradSource functions and compares them against finite-difference results.  
+\item ``Basic Test".  Invoked with \begin{verbatim}<parameter name="basic">yes</parameter>\end{verbatim}  Performs ratio, gradient, and laplacian tests against finite-difference and direct computation of wave function values.  
+
+\end{itemize}
+
+The output of the various tests will be to standard out or ``wftest.000" after successful execution of qmcpack.  
+ 
