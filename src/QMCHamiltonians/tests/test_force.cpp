@@ -20,6 +20,7 @@
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
+#include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
 
@@ -199,6 +200,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
+
   ForceChiesaPBCAA force(ions, elec);
   force.addionion = false;
   force.InitMatrix();
@@ -219,10 +221,47 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   REQUIRE(force.forces_IonIon[1][1] == Approx(0.0));
   REQUIRE(force.forces_IonIon[1][2] == Approx(0.0));
 
-  // Let's test CoulombPBCAA IonIon forces, too
+  // Let's test CoulombPBCAA and CoulombPBCAB forces, too; Unvalidated externally
   CoulombPBCAA ionForce(ions, false, true);
   REQUIRE(ionForce.forces[0][0] == Approx(-0.1478626893));
   REQUIRE(ionForce.forces[1][0] == Approx(0.1478626893));
+
+  CoulombPBCAB elecIonForce(ions, elec, true);
+  elecIonForce.evaluate(elec); // Not computed upon construction
+  std::cout << " CoulombElecIon = " << elecIonForce.forces << std::endl;
+  REQUIRE(elecIonForce.forces[0][0] == Approx(3.186558296));
+  REQUIRE(elecIonForce.forces[0][1] == Approx(3.352572459));
+  REQUIRE(elecIonForce.forces[1][0] == Approx(-0.3950094326));
+  REQUIRE(elecIonForce.forces[1][1] == Approx(0.142639218));
+
+  // The following crafty test is supposed to crash if some checks are out of place
+  // This imitates an actual simulation, where Nelec ~= Nnuc that would also crash
+
+  // ParticleSet with 3 ions
+  ParticleSet ions3;
+  ions3.setName("ion");
+  ions3.create(3);
+  ions3.R = 0.0;
+  SpeciesSet& ion3_species           = ions3.getSpeciesSet();
+  int p3Idx                          = ion3_species.addSpecies("H");
+  int p3ChargeIdx                    = ion3_species.addAttribute("charge");
+  int p3MembersizeIdx                = ion3_species.addAttribute("membersize");
+  ion3_species(p3ChargeIdx, p3Idx)     = 1;
+  ion3_species(p3MembersizeIdx, p3Idx) = 1;
+  ions3.Lattice = Lattice;
+  ions3.createSK();
+  ions3.resetGroups();
+
+  // Namely, sending in incompatible force arrays to evaluateWithIonDerivs is not
+  // supposed to do harm, IF
+  // 1) forces are not enabled
+  CoulombPBCAA noIonForce(ions3, false, false);
+  // 2) The species is active
+  CoulombPBCAA noElecForce(elec, true, true);
+
+  TrialWaveFunction psi(c);
+  noIonForce.evaluateWithIonDerivs(ions3, ions3, psi, noElecForce.forces, noElecForce.forces );
+  noElecForce.evaluateWithIonDerivs(elec, ions3, psi, noIonForce.forces, noIonForce.forces );
 
   // It seems a bit silly to test the makeClone method
   // but this class does not use the compiler's copy constructor and
@@ -230,7 +269,6 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // copied.  Would be nice if there were a better way than inspection
   // to ensure all the members are copied/set up/tested.
 
-  TrialWaveFunction psi(c);
   OperatorBase* base_force2 = force.makeClone(elec, psi);
   ForceChiesaPBCAA* force2        = dynamic_cast<ForceChiesaPBCAA*>(base_force2);
   REQUIRE(force2 != NULL);
