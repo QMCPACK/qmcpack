@@ -410,6 +410,12 @@ struct constructor{
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
 
+  constructor() = default; 
+  ~constructor() = default;
+  constructor(constructor const& other) = default;
+  template<class U>
+  constructor(constructor<U> const& other) {}
+
   template<class U, class... Args>
   void construct(U p, Args&&... args) {}
 
