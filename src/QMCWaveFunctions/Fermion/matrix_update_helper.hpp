@@ -113,6 +113,13 @@ cudaError_t applyW_batched(cudaStream_t& hstream,
                            const int lda,
                            const int batch_count);
 
+cudaError_t applyW_batched(cudaStream_t& hstream,
+                           const int* const delay_list[],
+                           const int delay_count,
+                           double* const tempMat[],
+                           const int lda,
+                           const int batch_count);
+
 } // namespace CUDA
 } // namespace qmcplusplus
 #endif

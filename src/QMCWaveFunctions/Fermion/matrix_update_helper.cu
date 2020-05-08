@@ -389,5 +389,22 @@ cudaError_t applyW_batched(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
+cudaError_t applyW_batched(cudaStream_t& hstream,
+                           const int* const delay_list[],
+                           const int delay_count,
+                           double* const tempMat[],
+                           const int lda,
+                           const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 32;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  applyW_kernel<double, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, tempMat, lda);
+  return cudaPeekAtLastError();
+}
+
 } // namespace CUDA
 } // namespace qmcplusplus
