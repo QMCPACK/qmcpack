@@ -1,6 +1,10 @@
 #ifndef AFQMC_CONFIG_0_H 
 #define AFQMC_CONFIG_0_H 
 
+#if defined __INTEL_COMPILER
+#pragma warning disable 2196
+#endif
+
 #define BOOST_NO_AUTO_PTR
 
 #define ADD_TESTS_TIMERS
