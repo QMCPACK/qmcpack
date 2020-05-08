@@ -128,12 +128,12 @@ The wftester is implemented as a QMCDriver, so one invokes \qmcpack in the norma
 
 Here's a summary of some of the tests provided:
 \begin{itemize}
-\item Ratio test.  Invoked with \begin{verbatim}<parameter name="ratio">yes</parameter>\end{verbatim}  This computes the implemented wave function ratio associated with a single-particle move using two different methods.
-\item Clone test. Invoked with \begin{verbatim}<parameter name="clone">yes</parameter>\end{verbatim}  This checks the cloning of TrialWaveFunction, ParticleSet, Hamiltonian, and Walkers.  
+\item Ratio Test.  Invoked with \begin{verbatim}<parameter name="ratio">yes</parameter>\end{verbatim}  This computes the implemented wave function ratio associated with a single-particle move using two different methods.
+\item Clone Test. Invoked with \begin{verbatim}<parameter name="clone">yes</parameter>\end{verbatim}  This checks the cloning of TrialWaveFunction, ParticleSet, Hamiltonian, and Walkers.  
 \item Elocal Test.  Invoked with \begin{verbatim}<parameter name="printEloc">yes</parameter>\end{verbatim}  For an input electron configuration (can be random), print the value of TrialWaveFunction, LocalEnergy, and all local observables for this configuration.  
 \item Derivative Test.  Invoked with \begin{verbatim}<parameter name="ratio">deriv</parameter>}\end{verbatim}  Computes electron gradients, laplacians, and wave function parameter derivatives using implemented calls and compares them to finite-difference results.   
-\item Ion gradient test.  Invoked with \begin{verbatim}<parameter name="source">ion0</parameter>\end{verbatim}  Calls the implemented evaluateGradSource functions and compares them against finite-difference results.  
-\item ``Basic test".  Invoked with \begin{verbatim}<parameter name="basic">yes</parameter>\end{verbatim}  Performs ratio, gradient, and laplacian tests against finite-difference and direct computation of wave function values.  
+\item Ion Gradient Test.  Invoked with \begin{verbatim}<parameter name="source">ion0</parameter>\end{verbatim}  Calls the implemented evaluateGradSource functions and compares them against finite-difference results.  
+\item ``Basic Test".  Invoked with \begin{verbatim}<parameter name="basic">yes</parameter>\end{verbatim}  Performs ratio, gradient, and laplacian tests against finite-difference and direct computation of wave function values.  
 
 \end{itemize}
 
