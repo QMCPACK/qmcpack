@@ -15,6 +15,7 @@
 #ifndef AFQMC_COPY_N_CAST_KERNELS_HPP
 #define AFQMC_COPY_N_CAST_KERNELS_HPP
 
+#include <stdexcept>
 #include<cassert>
 #include <complex>
 
