@@ -29,7 +29,7 @@
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Utilities/Utils.hpp"
-#include "AFQMC/Numerics/helpers/batched_operations.hpp"
+#include "AFQMC/Numerics/batched_operations.hpp"
 #include "AFQMC/Numerics/tensor_operations.hpp"
 
 namespace qmcplusplus
@@ -479,6 +479,12 @@ class Real3IndexFactorization_batched
         ma::product(SPValueType(a),ma::T(Likn),G,SPValueType(c),v);
 #endif
       }
+    }
+
+    template<class Mat, class MatB>
+    void generalizedFockMatrix(Mat&& G, MatB&& Fp, MatB&& Fm)
+    {
+      APP_ABORT(" Error: generalizedFockMatrix not implemented for this hamiltonian.\n"); 
     }
 
     bool distribution_over_cholesky_vectors() const{ return true; }

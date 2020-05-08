@@ -1,8 +1,7 @@
-#ifdef COMPILATION_INSTRUCTIONS
-$CXX -O3 -std=c++14 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0.x && $0.x $@ && rm -f $0.x; exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
+$CXX $0 -o $0x&&$0x&&rm $0x;exit
 #endif
-
-//#include<boost/operators.hpp>
+// © Alfredo A. Correa 2018-2020
 
 #include<iostream>
 #include<cassert>
@@ -15,12 +14,13 @@ template<class T = void> class ptr{
 	static double value;
 public:
 	using difference_type = std::ptrdiff_t;
-	using value_type = T;
+	using value_type = std::decay_t<T>;
 	using pointer = T*;
 	using reference = ref<T>;
 	using iterator_category = std::random_access_iterator_tag;
 	ptr() = default;//ptr(ptr const=default; ptr& operator=(ptr const&)=default;
 	ptr(std::nullptr_t){}
+	template<class Other> ptr(ptr<Other> const&){}
 	reference operator*() const{return reference{&value};}
 	ptr operator+(difference_type) const{return *this;}
 	ptr& operator+=(difference_type){return *this;}
@@ -29,20 +29,26 @@ public:
 	bool operator==(ptr const&) const{return true;}
 	bool operator!=(ptr const&) const{return false;}
 //	explicit operator T*() const{return &value;}
-	ptr const& operator->() const{return *this;} 
+	ptr const& operator->() const{return *this;}
 	friend ptr to_address(ptr const& p){return p;}
-	operator ptr<T const>() const{return {};}
+	explicit operator bool(){return false;}
+//	operator double*() const{return &value;}
+	friend std::allocator<value_type> get_allocator(ptr const&){return std::allocator<value_type>{};}
 };
 template<> double ptr<double>::value = 42.;
 template<> double ptr<double const>::value = 42.;
 
+template<class T> struct ref;
+
 template<class T> struct ref{
-private:
+protected:
 	T* p_;
 	ref(T* p) : p_{p}{}
 	friend class ptr<T>;
+	friend struct ref<T const>;
 public:
-	bool operator==(ref const&) const{std::cout << "compared" << std::endl; return true;}
+	ref(ref<std::remove_const_t<T>> const& other) : p_{other.p_}{}
+	bool operator==(ref const&) const{return true;}
 	bool operator!=(ref const&) const{return false;}
 	using decay_t = std::decay_t<T>;
 };
@@ -80,7 +86,8 @@ ptr<T2> copy_n(ptr<T1>, Size, ptr<T2> d){ // custom copy_n, Boost.Multi uses cop
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// multi-fancy glue, where should this be? In boost/multi/adaptors/MyFancyApaptor.hpp if anything, or in user code if it is very special
+// multi-fancy glue, where should this be? 
+// In boost/multi/adaptors/MyFancyApaptor.hpp if anything, or in user code if it is very specialized
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../array.hpp"
@@ -102,8 +109,8 @@ auto copy(It first, It last, multi::array_iterator<T, 1, fancy::ptr<T>> dest){ (
 }
 
 template<class It, class T> // custom copy 2D (aka double strided copy)
-auto copy(It first, It last, multi::array_iterator<T, 2, fancy::ptr<T>> dest){ (void)last;
-	std::cerr << "2D copy(It, It, it2D) with strides " << stride(first) << " " << stride(dest) << std::endl;
+auto copy(It first, It last, multi::array_iterator<T, 2, fancy::ptr<T>> dest){ (void)last; (void)first;
+	std::cerr<<"2D copy(It, It, it2D) with strides 1"<< first.stride() <<" "<< dest.stride() <<std::endl;
 	return dest;
 }
 
@@ -123,32 +130,36 @@ using std::cout; using std::cerr;
 namespace multi = boost::multi;
 
 int main(){
-
-
-	multi::array<double, 2, fancy::allocator<double> > A({5, 5}); // default element ctor
+#if 0
+	multi::array<double, 2, fancy::allocator<double>> A( 
+//		multi::index_extensions<2>
+		{5, 5}
+	); // default element ctor
+	assert( size(A) == 5 );
 	assert( A[1][1] == A[2][2] );
 
-	multi::array<double, 2, fancy::allocator<double> > B = A; // copy ctor
+	multi::array<double, 2, fancy::allocator<double>> B(A); // copy ctor
 	assert( A[1][1] == B[1][1] );
 
-	multi::array<double, 2, fancy::allocator<double> > C({5, 5}, 42.); // element value ctor
+	multi::array<double, 2, fancy::allocator<double>> C({5, 5}, 42.); // element value ctor
 
-	multi::array<double, 2, fancy::allocator<double> > D;
+	multi::array<double, 2, fancy::allocator<double>> D; assert( D.num_elements() == 0 );
 
-	D = C;
+	D = C; assert( D == C);
 
-	D = std::move(B);
+	D = std::move(B); assert( D.size() == 5 and B.size() == 0 );
 
 //	C = A; // calls custom copy
 //	multi::array_ref<double, 2, fancy::ptr<double>> AA(A.data(), {5, 5});
-	C = A({0, 5}, {0,5});
+//	C = A({0, 5}, {0,5});
 
 	multi::array<double, 2, fancy::allocator<double> > CC;// = A({0, 5}, {0,5});
-	CC = A({0, 5}, {0,5});
+//	CC = A({0, 5}, {0,5});
 
 //	using std::copy_n;
 //	copy_n(A.data(), 25, A.data());
 	static_assert( multi::array_iterator<double, 2, double*>::rank{} == 2, "!");
+#endif
 }
 
 

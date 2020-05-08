@@ -21,10 +21,12 @@ SET (AFQMC_SRCS
   Hamiltonians/HamiltonianFactory_Helper.cpp
   Hamiltonians/HamiltonianFactory.cpp
   Hamiltonians/THCHamiltonian.cpp
+  Memory/buffer_allocators.cpp
   )
 
 IF(ENABLE_CUDA)
   SET(AFQMC_SRCS ${AFQMC_SRCS} 
+    Memory/CUDA/cuda_arch.cpp
     Memory/CUDA/cuda_utilities.cpp
     Memory/CUDA/cuda_init.cpp
     Numerics/detail/CUDA/Kernels/determinant.cu 

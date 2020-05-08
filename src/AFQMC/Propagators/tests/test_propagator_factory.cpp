@@ -22,11 +22,8 @@
 #include "Utilities/SimpleRandom.h"
 
 #undef APP_ABORT
-#define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}
+#define APP_ABORT(x) {std::cout << x <<std::endl; throw;}
 
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdio.h>
 #include <string>
 #include <vector>
 #include <complex>
@@ -99,6 +96,9 @@ void propg_fac_shared(boost::mpi3::communicator & world)
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
+
+    // initialize TG buffer
+    make_localTG_buffer_generator(TG.TG_local(),20*1024L*1024L);
 
     WALKER_TYPES type = afqmc::getWalkerType(UTEST_WFN);
     const char *wlk_xml_block_closed =
@@ -227,6 +227,7 @@ std::cout<<setprecision(12);
 
     TimerManager.print(nullptr);
 
+    destroy_shm_buffer_generators();
   }
 }
 
@@ -272,6 +273,9 @@ void propg_fac_distributed(boost::mpi3::communicator & world, int ngrp)
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
     qmcplusplus::Timer Time;
+
+    // initialize TG buffer
+    make_localTG_buffer_generator(TG.TG_local(),20*1024L*1024L);
 
     WALKER_TYPES type = afqmc::getWalkerType(UTEST_WFN);
     const char *wlk_xml_block_closed =
@@ -405,6 +409,8 @@ const char *propg_xml_block1 =
     }
 
     TimerManager.print(nullptr);
+
+    destroy_shm_buffer_generators();
   }
 }
 
@@ -415,7 +421,7 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
 
 #ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
-  qmc_cuda::CUDA_INIT(node);
+  arch::INIT(node);
 #endif
 
   propg_fac_shared(world);
@@ -430,7 +436,7 @@ TEST_CASE("propg_fac_distributed", "[propagator_factory]")
 #ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
   int ngrp(world.size());
-  qmc_cuda::CUDA_INIT(node);
+  arch::INIT(node);
 #else
   auto node = world.split_shared(world.rank());
   int ngrp(world.size()/node.size());

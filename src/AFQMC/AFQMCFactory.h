@@ -25,6 +25,7 @@
 #include<AFQMC/Wavefunctions/WavefunctionFactory.h>
 #include<AFQMC/Propagators/PropagatorFactory.h>
 #include<AFQMC/Drivers/DriverFactory.h>
+#include<AFQMC/Memory/buffer_allocators.h>
 
 #include "OhmmsData/libxmldefs.h"
 
@@ -62,14 +63,16 @@ class AFQMCFactory
       gTG.Global().broadcast_value(baseoffset);  
       std::vector<uint_type> myprimes;
       RandomNumberControl::PrimeNumbers.get(baseoffset,nprocs,myprimes); 
-      qmc_cuda::CUDA_INIT(gTG.Node(),(unsigned long long int)(myprimes[rank]));
+      arch::INIT(gTG.Node(),(unsigned long long int)(myprimes[rank]));
 #endif
       TimerManager.set_timer_threshold(timer_level_coarse);
       setup_timers(AFQMCTimers, AFQMCTimerNames,timer_level_coarse);
     }
 
     ///destructor
-    ~AFQMCFactory() {}
+    ~AFQMCFactory() {
+        destroy_shm_buffer_generators();
+    }
 
     /*
      *  Parses xml input and creates all non-executable objects.

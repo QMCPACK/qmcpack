@@ -28,6 +28,7 @@
 #include "mpi3/shm/mutex.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
@@ -39,6 +40,8 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
+extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
 
 /*
  * Class that implements a multi-Slater determinant trial wave-function.
@@ -55,7 +58,6 @@ class NOMSD: public AFQMCInfo
 // if number_of_devices > 0, nextra should always be 0, 
 // so code doesn't need to be portable in places guarded by if(nextra>0)
 
-
   // allocators
   using Allocator = device_allocator<ComplexType>;
   using Allocator_shared = localTG_allocator<ComplexType>;
@@ -66,11 +68,15 @@ class NOMSD: public AFQMCInfo
   using pointer_shared = typename Allocator_shared::pointer;
   using const_pointer_shared = typename Allocator_shared::const_pointer;
 
+  using buffer_alloc_type = device_buffer_type<ComplexType>;
+  using shm_buffer_alloc_type = localTG_buffer_type<ComplexType>;
+
   using CVector = boost::multi::array<ComplexType,1,Allocator>;  
   using CMatrix = boost::multi::array<ComplexType,2,Allocator>;  
   using CTensor = boost::multi::array<ComplexType,3,Allocator>;  
   using CVector_ref = boost::multi::array_ref<ComplexType,1,pointer>;
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;
+  using CMatrix_ptr = boost::multi::array_ptr<ComplexType,2,pointer>;
   using CMatrix_cref = boost::multi::array_ref<const ComplexType,2,const_pointer>;
   using CTensor_ref = boost::multi::array_ref<ComplexType,3,pointer>;
   using CTensor_cref = boost::multi::array_ref<const ComplexType,3,const_pointer>;
@@ -87,6 +93,13 @@ class NOMSD: public AFQMCInfo
 
   using stdCMatrix_ref = boost::multi::array_ref<ComplexType,2>;  
 
+  using StaticVector = boost::multi::static_array<ComplexType,1,buffer_alloc_type>;
+  using StaticMatrix = boost::multi::static_array<ComplexType,2,buffer_alloc_type>;
+  using Static3Tensor = boost::multi::static_array<ComplexType,3,buffer_alloc_type>;
+
+  using StaticSHMVector = boost::multi::static_array<ComplexType,1,shm_buffer_alloc_type>;
+  using StaticSHMMatrix = boost::multi::static_array<ComplexType,2,shm_buffer_alloc_type>;
+
   public:
 
     template<class MType>
@@ -96,13 +109,14 @@ class NOMSD: public AFQMCInfo
           std::vector<ComplexType>&& ci_, std::vector<MType>&& orbs_, 
           WALKER_TYPES wlk, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
+                buffer_allocator(device_buffer_generator.get()), 
+                shm_buffer_allocator(localTG_buffer_generator.get()),
                 alloc_(),  // right now device_allocator is default constructible 
                 alloc_shared_(make_localTG_allocator<ComplexType>(TG)),
                 SDetOp( std::move(sdet_) ), 
                 HamOp(std::move(hop_)),ci(std::move(ci_)),
                 OrbMats(move_vector<devPsiT>(std::move(orbs_))),
                 RefOrbMats({0,0},shared_allocator<ComplexType>{TG.Node()}),
-                shmbuff_for_E(iextensions<1u>{1},alloc_shared_),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
                 walker_type(wlk),
                 nspins((walker_type==COLLINEAR)?(2):(1)),
@@ -231,6 +245,7 @@ class NOMSD: public AFQMCInfo
     { return HamOp.getOneBodyPropagatorMatrix(TG_,vMF); }
 
     SlaterDetOperations* getSlaterDetOperations() {return std::addressof(SDetOp);} 
+    HamiltonianOperations* getHamiltonianOperations() { return std::addressof(HamOp);}
 
     /*
      * local contribution to vbias for the Green functions in G 
@@ -289,10 +304,10 @@ class NOMSD: public AFQMCInfo
     template<class WlkSet>
     void Energy(WlkSet& wset) {
       int nw = wset.size();
-      if(ovlp.num_elements() != nw)
-        ovlp.reextent(iextensions<1u>{nw});
-      if(eloc.size(0) != nw || eloc.size(1) != 3)
-        eloc.reextent({nw,3});
+      StaticVector ovlp(iextensions<1u>{nw},
+                        buffer_allocator->template get_allocator<ComplexType>());
+      StaticMatrix eloc({nw,3},
+                        buffer_allocator->template get_allocator<ComplexType>());  
       Energy(wset,eloc,ovlp);
       TG.local_barrier();
       if(TG.getLocalTGRank()==0) {
@@ -329,8 +344,8 @@ class NOMSD: public AFQMCInfo
                                             bool compact=true, bool transpose=false) 
     {
       int nw = wset.size();
-      if(ovlp.num_elements() != nw)
-        ovlp.reextent(iextensions<1u>{nw});
+      StaticVector ovlp(iextensions<1u>{nw},
+                        buffer_allocator->template get_allocator<ComplexType>());
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact,transpose);
     }
 
@@ -403,8 +418,8 @@ class NOMSD: public AFQMCInfo
     template<class WlkSet, class MatG>
     void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G) {
       int nw = wset.size();
-      if(ovlp.num_elements() != nw)
-        ovlp.reextent(iextensions<1u>{nw});	
+      StaticVector ovlp(iextensions<1u>{nw},
+                        buffer_allocator->template get_allocator<ComplexType>());
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact_G_for_vbias,transposed_G_for_vbias_);
     }
 
@@ -426,8 +441,8 @@ class NOMSD: public AFQMCInfo
     void Overlap(WlkSet& wset)
     {
       int nw = wset.size();
-      if(ovlp.num_elements() != nw)
-        ovlp.reextent(iextensions<1u>{nw});
+      StaticVector ovlp(iextensions<1u>{nw},
+                        buffer_allocator->template get_allocator<ComplexType>());
       Overlap(wset,ovlp);
       TG.local_barrier();
       if(TG.getLocalTGRank()==0) {
@@ -435,7 +450,6 @@ class NOMSD: public AFQMCInfo
       }	 
       TG.local_barrier();
     }
-
 
     /*
      * Orthogonalizes the Slater matrices of all walkers in the set.  
@@ -522,6 +536,9 @@ class NOMSD: public AFQMCInfo
 
     TaskGroup_& TG;
 
+    device_allocator_generator_type *buffer_allocator;
+    localTG_allocator_generator_type *shm_buffer_allocator;
+
     Allocator alloc_; 
     Allocator_shared alloc_shared_;
  
@@ -535,8 +552,6 @@ class NOMSD: public AFQMCInfo
     // eventually switched from CMatrix to SMHSparseMatrix(node)
     std::vector<devPsiT> OrbMats;
     mpi3CMatrix RefOrbMats;
-
-    shmCVector shmbuff_for_E;
 
     std::unique_ptr<shared_mutex> mutex;
 
@@ -578,10 +593,6 @@ class NOMSD: public AFQMCInfo
     CMatrix extendedMatBeta;
     std::pair<int,int> maxOccupExtendedMat;
     std::pair<int,int> numExcitations; 
-
-    // buffers and work arrays, careful here!!!
-    CVector ovlp, localGbuff, ovlp2;
-    CMatrix eloc, eloc2, eloc3;
 
     MPI_Request req_Gsend, req_Grecv;
     MPI_Request req_SMsend, req_SMrecv;

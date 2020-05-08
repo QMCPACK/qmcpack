@@ -24,6 +24,7 @@
 
 #include "mpi3/shared_communicator.hpp"
 #include "type_traits/scalar_traits.h"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 namespace qmcplusplus
 {
@@ -31,22 +32,17 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+extern std::shared_ptr<host_allocator_generator_type> host_buffer_generator;
+
 template<class T = ComplexType>
-class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocator<T>>
+class SlaterDetOperations_shared : 
+    public SlaterDetOperations_base<T,host_allocator_generator_type>
 {
   public:
 
-    using Base = SlaterDetOperations_base<std::allocator<T>>;
-    using Alloc = std::allocator<T>; 
-    using pointer = typename Base::pointer;
-    using const_pointer = typename Base::const_pointer;
-    using IAlloc = typename Base::IAlloc;
+    using Base = SlaterDetOperations_base<T,host_allocator_generator_type>;
     using communicator = boost::mpi3::shared_communicator;
     using shmTVector = boost::multi::array<T,1,shared_allocator<T>>;  
-
-    using IVector = typename Base::IVector;
-    using TVector = typename Base::TVector;
-    using TMatrix = typename Base::TMatrix;
 
     using Base::MixedDensityMatrix;
     using Base::MixedDensityMatrixForWoodbury;
@@ -57,17 +53,17 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
     using Base::OverlapForWoodbury;
     using Base::Propagate;
     using Base::Orthogonalize;
-    using Base::IWORK;
-    using Base::WORK;
+    using IVector = typename Base::IVector;
+    using TVector = typename Base::TVector;
 
     SlaterDetOperations_shared():
-      SlaterDetOperations_base<Alloc>(Alloc{}),
+      SlaterDetOperations_base<T,host_allocator_generator_type>(host_buffer_generator.get()),
       SM_TMats(nullptr)
     {
     }
 
     SlaterDetOperations_shared(int NMO, int NAEA):
-      SlaterDetOperations_base<Alloc>(NMO,NAEA,Alloc{}),
+      SlaterDetOperations_base<T,host_allocator_generator_type>(NMO,NAEA,host_buffer_generator.get()),
       SM_TMats(nullptr)
     {
     }
@@ -88,6 +84,8 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
       assert(SM_TMats->num_elements() >= NAEA*(NAEA+NMO));
       boost::multi::array_ref<T,2> TNN(to_address(SM_TMats->origin()), {NAEA,NAEA});
       boost::multi::array_ref<T,2> TNM(to_address(SM_TMats->origin())+NAEA*NAEA, {NAEA,NMO});  
+      TVector WORK(iextensions<1u>{work_size},buffer_generator->template get_allocator<T>());
+      IVector IWORK(iextensions<1u>{NMO+1},buffer_generator->template get_allocator<int>());
       return SlaterDeterminantOperations::shm::MixedDensityMatrix<T>(hermA,B,std::forward<MatC>(C),LogOverlapFactor,TNN,TNM,IWORK,WORK,comm,compact,herm);
     }
 
@@ -109,6 +107,8 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
       boost::multi::array_ref<T,2> TAB(to_address(SM_TMats->origin())+cnt, {Nact,NEL});
       cnt+=TAB.num_elements();
       boost::multi::array_ref<T,2> TNM(to_address(SM_TMats->origin())+cnt, {NEL,NMO});
+      TVector WORK(iextensions<1u>{work_size},buffer_generator->template get_allocator<T>());
+      IVector IWORK(iextensions<1u>{NMO+1},buffer_generator->template get_allocator<int>());
       return SlaterDeterminantOperations::shm::MixedDensityMatrixForWoodbury<T>(hermA,B,std::forward<MatC>(C),LogOverlapFactor,std::forward<MatQ>(QQ0),ref,TNN,TAB,TNM,IWORK,WORK,comm,compact);
     }
 
@@ -119,6 +119,7 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
       assert(SM_TMats->num_elements() >= 2*NAEA*NAEA);
       boost::multi::array_ref<T,2> TNN(to_address(SM_TMats->origin()), {NAEA,NAEA});
       boost::multi::array_ref<T,2> TNN2(to_address(SM_TMats->origin())+NAEA*NAEA, {NAEA,NAEA});
+      IVector IWORK(iextensions<1u>{NAEA+1},buffer_generator->template get_allocator<int>());
       return SlaterDeterminantOperations::shm::Overlap<T>(hermA,B,LogOverlapFactor,TNN,IWORK,TNN2,comm,herm);
     }
 
@@ -133,6 +134,8 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
       assert(SM_TMats->num_elements() >= NEL*(Nact+NEL));
       boost::multi::array_ref<T,2> TNN(to_address(SM_TMats->origin()), {NEL,NEL});
       boost::multi::array_ref<T,2> TMN(to_address(SM_TMats->origin())+NEL*NEL, {Nact,NEL});
+      TVector WORK(iextensions<1u>{work_size},buffer_generator->template get_allocator<T>());
+      IVector IWORK(iextensions<1u>{Nact+1},buffer_generator->template get_allocator<int>());
       return SlaterDeterminantOperations::shm::OverlapForWoodbury<T>(hermA,B,LogOverlapFactor,std::forward<MatC>(QQ0),ref,TNN,TMN,IWORK,WORK,comm);
     }
 
@@ -201,6 +204,9 @@ class SlaterDetOperations_shared : public SlaterDetOperations_base<std::allocato
     }
 
   protected:
+
+    using Base::buffer_generator;
+    using Base::work_size;
 
     // shm temporary matrices
     std::unique_ptr<shmTVector> SM_TMats;

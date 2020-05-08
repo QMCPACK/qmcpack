@@ -494,6 +494,12 @@ namespace ma
       y[jc] = x[ic];
   }
 
+  template <typename T>
+  inline static void copy2D(int N, int M, T const* src, int lda, T * dst, int ldb){
+    for(int i=0; i<N; ++i, src+=lda, dst+=ldb) 
+      copy(M, src, 1, dst, 1);  
+  }  
+
   inline static void ger(int m, int n, double alpha, const double *x, int incx,
                          const double *y, int incy, double *a, int lda)
   {

@@ -25,6 +25,7 @@
 #include "AFQMC/Memory/SharedMemory/shm_ptr_with_raw_ptr_dispatch.hpp"
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
+#include "multi/memory/fallback.hpp"
 
 #include "Utilities/NewTimer.h"
 #include "AFQMC/Utilities/myTimer.h"
@@ -93,8 +94,8 @@ namespace afqmc
   using shm_pointer = typename shared_allocator<T>::pointer; 
 
 #if defined(ENABLE_CUDA)
-  template<class T>  using device_allocator = qmc_cuda::cuda_gpu_allocator<T>;
-  template<class T>  using device_ptr = qmc_cuda::cuda_gpu_ptr<T>;
+  template<class T>  using device_allocator = device::device_allocator<T>;
+  template<class T>  using device_ptr = device::device_pointer<T>;
   template<class T>  using localTG_allocator = device_allocator<T>;
   template<class T>  using node_allocator = device_allocator<T>;
   template<class T, class TG> 
@@ -106,18 +107,23 @@ namespace afqmc
   template<class T> device_ptr<T> make_device_ptr(T* p) 
   {
     print_stacktrace;
-    throw std::runtime_error(" Invalid pointer conversion: cuda_gpu_ptr<T> to T*.");
+    throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
   }   
   template<class T> device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p) 
   { 
     print_stacktrace;
-    throw std::runtime_error(" Invalid pointer conversion: cuda_gpu_ptr<T> to T*.");
+    throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
   }   
   template<class T> device_ptr<T> make_device_ptr(shm::shm_ptr_with_raw_ptr_dispatch<T> p) 
   { 
     print_stacktrace;
-    throw std::runtime_error(" Invalid pointer conversion: cuda_gpu_ptr<T> to T*.");
+    throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
   }   
+
+  using device_memory_resource = device::memory_resource;
+  using shm_memory_resource = device::memory_resource;
+  template<class T> using device_constructor = device::constructor<T>;
+
 #else
   template<class T>  using device_allocator = std::allocator<T>;
   template<class T>  using device_ptr = T*;
@@ -132,30 +138,18 @@ namespace afqmc
   template<class T> device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p) 
   { //return device_ptr<T>{to_address(p)}; }
     print_stacktrace;
-    throw std::runtime_error(" Invalid pointer conversion: cuda_gpu_ptr<T> to T*.");
+    throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
   }  
   template<class T> device_ptr<T> make_device_ptr(shm::shm_ptr_with_raw_ptr_dispatch<T> p) 
   { return device_ptr<T>{to_address(p)}; }
+
+  using device_memory_resource = boost::multi::memory::resource<>; 
+  using shm_memory_resource = shm::memory_resource_shm_ptr_with_raw_ptr_dispatch; 
+  template<class T>  using device_constructor = device_allocator<T>; 
+
 #endif
 
-
-/*
-  // casting array types until I'm allowed to use c++17!!!
-  template<class Ptr, class Array, 
-           typename = decltype(std::declval<Array>().extensions())
-          >
-  auto array_cast(Array&& A)
-  {
-    using element = typename std::decay<Array>::type::element;
-    constexpr auto D(std::decay<Array>::type::dimensionality);
-    // make sure it is continuous
-    for(int i=0; i<int(D-1); i++)
-      assert(A.stride(i) == A.size(i+1));
-    return boost::multi::array_ref<element,D,Ptr>(make_device_ptr(A.origin()),
-                                                  A.extensions());
-  }
-*/
-
+  using host_memory_resource = boost::multi::memory::resource<>; 
 
   // new types
   using SpCType_shm_csr_matrix = ma::sparse::csr_matrix<SPComplexType,int,std::size_t,

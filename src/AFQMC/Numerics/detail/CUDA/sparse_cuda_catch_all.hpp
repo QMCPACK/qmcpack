@@ -19,7 +19,7 @@
 #include <typeinfo>
 #include "AFQMC/config.0.h"
 
-namespace qmc_cuda
+namespace device 
 {
 
   template<typename T, typename Q, class ptrA, class ptrI, class ptrI2, class ptrB, class ptrC>

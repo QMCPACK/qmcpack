@@ -38,7 +38,7 @@ namespace qmc_cuda {
 using qmcplusplus::afqmc::to_address;
 
 template<class T> struct cuda_gpu_allocator;
-template<class T> struct cuda_gpu_ptr;
+template<class T> struct device_pointer;
 
 // no const for now
 template<class T>
@@ -48,7 +48,7 @@ struct cuda_gpu_reference {
 
   using value_type = T; 
   using decay_value_type = typename std::decay<T>::type;
-  using pointer = cuda_gpu_ptr<T>;
+  using pointer = device_pointer<T>;
 
   // must construct through a gpu_ptr for now, to keep some sort of control/safety 
   cuda_gpu_reference(pointer const& gpu_ptr) : impl_(to_address(gpu_ptr)) {}
@@ -221,7 +221,7 @@ struct cuda_gpu_reference {
 };
 
 
-struct base_cuda_gpu_ptr
+struct base_device_pointer
 {
   static gpu_handles handles;
 };
@@ -229,7 +229,7 @@ struct base_cuda_gpu_ptr
 // this class is not safe, since it allows construction of a gpu_ptr from a raw ptr
 // which might not be in gpu memory. Fix this!!!
 template<class T>
-struct cuda_gpu_ptr: base_cuda_gpu_ptr{
+struct device_pointer: base_device_pointer{
   using difference_type = std::ptrdiff_t;
   using value_type = T;
   using element_type = T;
@@ -243,44 +243,45 @@ struct cuda_gpu_ptr: base_cuda_gpu_ptr{
   static const int memory_type = GPU_MEMORY_POINTER_TYPE; 
   using default_allocator_type = cuda_gpu_allocator<T>;
   friend class cuda_gpu_allocator<T>;
-  friend class cuda_gpu_ptr<typename std::decay<T>::type>;
+  friend class device_pointer<typename std::decay<T>::type>;
   default_allocator_type default_allocator() const{ return cuda_gpu_allocator<T>{}; };
-  cuda_gpu_ptr() = default;
-  cuda_gpu_ptr(std::nullptr_t): impl_(nullptr){}  
+  device_pointer() = default;
+  device_pointer(std::nullptr_t): impl_(nullptr){}  
 // eventually check if memory types and blas types are convertible, e.g. CPU_MEMORY to CPU_OUTOFCARD
   template<typename Q>
-  cuda_gpu_ptr(cuda_gpu_ptr<Q> const& ptr):impl_(ptr.impl_) {}
-  reference operator*() const{ return reference(cuda_gpu_ptr{impl_}); }
-  reference operator[](std::ptrdiff_t n) const { return reference(cuda_gpu_ptr{impl_ + n}); }
+  device_pointer(device_pointer<Q> const& ptr):impl_(ptr.impl_) {}
+  reference operator*() const{ return reference(device_pointer{impl_}); }
+  reference operator[](std::ptrdiff_t n) const { return reference(device_pointer{impl_ + n}); }
   T* operator->() const{return impl_;}
   explicit operator bool() const{return (impl_!=nullptr);}
-//  operator cuda_gpu_ptr<T const>() const{return cuda_gpu_ptr<T const>{impl_}; }
-  auto operator+(std::ptrdiff_t n) const{return cuda_gpu_ptr{impl_ + n};} 
-  std::ptrdiff_t operator-(cuda_gpu_ptr other) const{return std::ptrdiff_t(impl_-other.impl_);}
-  cuda_gpu_ptr& operator++() {++impl_; return *this;} 
-  cuda_gpu_ptr& operator--() {--impl_; return *this;} 
-  cuda_gpu_ptr& operator+=(std::ptrdiff_t d){impl_ += d; return *this;}
-  cuda_gpu_ptr& operator-=(std::ptrdiff_t d){impl_ -= d; return *this;}
-  bool operator==(cuda_gpu_ptr const& other) const{ return impl_==other.impl_; }
-  bool operator!=(cuda_gpu_ptr const& other) const{ return not (*this == other); } 
-  bool operator<=(cuda_gpu_ptr<T> const& other) const{
+//  operator device_pointer<T const>() const{return device_pointer<T const>{impl_}; }
+  auto operator+(std::ptrdiff_t n) const{return device_pointer{impl_ + n};} 
+  std::ptrdiff_t operator-(device_pointer other) const{return std::ptrdiff_t(impl_-other.impl_);}
+  device_pointer& operator++() {++impl_; return *this;} 
+  device_pointer& operator--() {--impl_; return *this;} 
+  device_pointer& operator+=(std::ptrdiff_t d){impl_ += d; return *this;}
+  device_pointer& operator-=(std::ptrdiff_t d){impl_ -= d; return *this;}
+  bool operator==(device_pointer const& other) const{ return impl_==other.impl_; }
+  bool operator!=(device_pointer const& other) const{ return not (*this == other); } 
+  bool operator<=(device_pointer<T> const& other) const{
     return impl_ <= other.impl_;
   }
   T* to_address() const {return impl_;}
-  friend decltype(auto) to_address(cuda_gpu_ptr const& self){return self.to_address();}
+  friend decltype(auto) to_address(device_pointer const& self){return self.to_address();}
   template<class Q>
-  cuda_gpu_ptr<Q> pointer_cast(){
-    cuda_gpu_ptr<Q> res;
+  device_pointer<Q> pointer_cast(){
+    device_pointer<Q> res;
     res.impl_ = reinterpret_cast<Q*>(impl_);
     return res;
   }
   template<class Q>
-  friend cuda_gpu_ptr<Q> pointer_cast(cuda_gpu_ptr const& self){
-    return cuda_gpu_ptr<Q>{reinterpret_cast<Q*>(self.impl_)};
+  friend device_pointer<Q> pointer_cast(device_pointer&& self){
+    return self.pointer_cast<Q>();
+//    return device_pointer<Q>{reinterpret_cast<Q*>(self.impl_)};
   }
   T* impl_;
   protected:
-  cuda_gpu_ptr(T* impl__):
+  device_pointer(T* impl__):
                          impl_(impl__) {}
 };
 
@@ -294,8 +295,8 @@ template<class T> struct cuda_gpu_allocator{
   using element_type = T;
   using value_type = T;
   using const_value_type = T const;
-  using pointer = cuda_gpu_ptr<T>;
-  using const_pointer = cuda_gpu_ptr<T const>;
+  using pointer = device_pointer<T>;
+  using const_pointer = device_pointer<T const>;
   using reference = T&;
   using const_reference = T const&;
   using size_type = std::size_t;
@@ -307,19 +308,19 @@ template<class T> struct cuda_gpu_allocator{
   template<class U>
   cuda_gpu_allocator(cuda_gpu_allocator<U> const& other) {}
 
-  cuda_gpu_ptr<T> allocate(size_type n, const void* hint = 0){
-    if(n == 0) return cuda_gpu_ptr<T>{};
+  device_pointer<T> allocate(size_type n, const void* hint = 0){
+    if(n == 0) return device_pointer<T>{};
     T* p;
     if(cudaSuccess != cudaMalloc ((void**)&p,n*sizeof(T))) {
       std::cerr<<" Error allocating " <<n*sizeof(T)/1024.0/1024.0 <<" MBs on GPU." <<std::endl;
       throw std::runtime_error("Error: cudaMalloc returned error code."); 
     }
-    cuda_gpu_ptr<T> res;
+    device_pointer<T> res;
     res.impl_=p;
     return res;
-//    return cuda_gpu_ptr<T>{p};
+//    return device_pointer<T>{p};
   }
-  void deallocate(cuda_gpu_ptr<T> ptr, size_type){
+  void deallocate(device_pointer<T> ptr, size_type){
     cudaFree(ptr.impl_); 
   }
   bool operator==(cuda_gpu_allocator const& other) const{
@@ -329,41 +330,43 @@ template<class T> struct cuda_gpu_allocator{
     return false; 
   }
   template<class U, class... Args>
-  void construct(U* p, Args&&... args){
-    //::new((void*)p) U(std::forward<Args>(args)...);
-  }
+  void construct(U* p, Args&&... args) {} 
+//{
+//    ::new((void*)p) U(std::forward<Args>(args)...);
+//  }
   template< class U >
-  void destroy(U* p){
-    //p->~U();
-  }
+  void destroy(U* p) {}
+//  {
+//    p->~U();
+//  }
 };
 
 
 /* Don't know how to implement this on the kernel side, without propagating the 
  * cuda code upstream due to the template needed to pass the UnaryOperator
 template<class T, class F>
-F for_each(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last, F f){
+F for_each(device_pointer<T> first, device_pointer<T> last, F f){
         if(first == last) return f;
         return kernels::for_each(to_address(first), to_address(last), f);
 }
 */
 /**************** copy_n *****************/
 template<typename T, typename Size>
-cuda_gpu_ptr<T> copy_n(cuda_gpu_ptr<T> const A, Size n, cuda_gpu_ptr<T> B) {
+device_pointer<T> copy_n(device_pointer<T> const A, Size n, device_pointer<T> B) {
   if(cudaSuccess != cudaMemcpy(to_address(B),to_address(A),n*sizeof(T),cudaMemcpyDefault))
    throw std::runtime_error("Error: cudaMemcpy returned error code.");
   return B+n;
 }
 
 template<typename T, typename Size>
-cuda_gpu_ptr<T> copy_n(T* const A, Size n, cuda_gpu_ptr<T> B) {
+device_pointer<T> copy_n(T* const A, Size n, device_pointer<T> B) {
   if(cudaSuccess != cudaMemcpy(to_address(B),A,n*sizeof(T),cudaMemcpyDefault))
    throw std::runtime_error("Error: cudaMemcpy returned error code.");
   return B+n;
 }
 
 template<typename T, typename Size>
-T* copy_n(cuda_gpu_ptr<T> const A, Size n, T* B) {
+T* copy_n(device_pointer<T> const A, Size n, T* B) {
   if(cudaSuccess != cudaMemcpy(B,to_address(A),n*sizeof(T),cudaMemcpyDefault))
    throw std::runtime_error("Error: cudaMemcpy returned error code.");
   return B+n;
@@ -371,17 +374,17 @@ T* copy_n(cuda_gpu_ptr<T> const A, Size n, T* B) {
 
 /**************** copy *****************/
 template<typename T>
-cuda_gpu_ptr<T> copy(cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, cuda_gpu_ptr<T> B) {
+device_pointer<T> copy(device_pointer<T> const Abeg, device_pointer<T> const Aend, device_pointer<T> B) {
   return copy_n(Abeg,std::distance(Abeg,Aend),B);
 }
 
 template<typename T>
-cuda_gpu_ptr<T> copy(T* const Abeg, T* const Aend, cuda_gpu_ptr<T> B) {
+device_pointer<T> copy(T* const Abeg, T* const Aend, device_pointer<T> B) {
   return copy_n(Abeg,std::distance(Abeg,Aend),B);
 }
 
 template<typename T>
-T* copy(cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, T* B) {
+T* copy(device_pointer<T> const Abeg, device_pointer<T> const Aend, T* B) {
   return copy_n(Abeg,std::distance(Abeg,Aend),B);
 }
 
@@ -389,45 +392,45 @@ T* copy(cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, T* B) {
 // NOTE: Eliminate this routine, merge with copy_n and dispatch to kernel call
 // if types of pointers are not the same (without cv qualifiers)!!!
 template<typename T, typename Q, typename Size>
-cuda_gpu_ptr<Q> copy_n_cast(cuda_gpu_ptr<T> const A, Size n, cuda_gpu_ptr<Q> B) {
+device_pointer<Q> copy_n_cast(device_pointer<T> const A, Size n, device_pointer<Q> B) {
   kernels::copy_n_cast(to_address(A),n,to_address(B));
   return B+n;
 }
 
 template<typename T, typename Size>
-cuda_gpu_ptr<T> copy_n_cast(cuda_gpu_ptr<T> const A, Size n, cuda_gpu_ptr<T> B) {
+device_pointer<T> copy_n_cast(device_pointer<T> const A, Size n, device_pointer<T> B) {
   return copy_n(A,n,B);
 }
 
 template<typename T, typename Q, typename Size>
-cuda_gpu_ptr<Q> copy_n_cast(T* const A, Size n, cuda_gpu_ptr<Q> B) {
+device_pointer<Q> copy_n_cast(T* const A, Size n, device_pointer<Q> B) {
   throw std::runtime_error(" Error: copy_n_cast(gpu_ptr,n,T*) is disabled.");
   return B+n;
 }
 
 template<typename T, typename Q, typename Size>
-Q* copy_n_cast(cuda_gpu_ptr<T> const A, Size n, Q* B) {
+Q* copy_n_cast(device_pointer<T> const A, Size n, Q* B) {
   throw std::runtime_error(" Error: copy_n_cast(gpu_ptr,n,T*) is disabled.");
   return B+n;
 }
 
 /**************** fill_n *****************/
 //template<typename T, typename Size, typename... Args>
-//cuda_gpu_ptr<T> fill_n(cuda_gpu_ptr<T> first, Size n, Args&&...args){
+//device_pointer<T> fill_n(device_pointer<T> first, Size n, Args&&...args){
 //  if(n == 0) return first;
 //  kernels::fill_n(to_address(first), n, std::forward<Args>(args)...);
 //  return first + n;
 //}
 
 template<typename T, typename Size>
-cuda_gpu_ptr<T> fill_n(cuda_gpu_ptr<T> first, Size n, T const& val){
+device_pointer<T> fill_n(device_pointer<T> first, Size n, T const& val){
   if(n == 0) return first;
   kernels::fill_n(to_address(first), n, val);
   return first + n;
 }
 
 template<typename T>
-cuda_gpu_ptr<T> fill(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last, T const& val){
+device_pointer<T> fill(device_pointer<T> first, device_pointer<T> last, T const& val){
   return fill_n(first,std::distance(first,last),val); 
 }
 
@@ -435,7 +438,7 @@ cuda_gpu_ptr<T> fill(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last, T const& val){
 /**************** uninitialized_fill_n *****************/
 
 template<typename T, typename Size>
-cuda_gpu_ptr<T> uninitialized_fill_n(cuda_gpu_ptr<T> first, Size n, T const& val){
+device_pointer<T> uninitialized_fill_n(device_pointer<T> first, Size n, T const& val){
   if(n == 0) return first;
   //kernels::uninitialized_fill_n(to_address(first), n, val);
   kernels::fill_n(to_address(first), n, val);
@@ -443,12 +446,12 @@ cuda_gpu_ptr<T> uninitialized_fill_n(cuda_gpu_ptr<T> first, Size n, T const& val
 }
 
 template<typename T>
-cuda_gpu_ptr<T> uninitialized_fill(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last, T const& val){
+device_pointer<T> uninitialized_fill(device_pointer<T> first, device_pointer<T> last, T const& val){
   return uninitialized_fill_n(first,std::distance(first,last),val);
 }
 
 template<class Alloc, typename T, typename Size>
-cuda_gpu_ptr<T> uninitialized_fill_n(Alloc &a, cuda_gpu_ptr<T> first, Size n, T const& val){
+device_pointer<T> uninitialized_fill_n(Alloc &a, device_pointer<T> first, Size n, T const& val){
   if(n == 0) return first;
   //kernels::uninitialized_fill_n(to_address(first), n, val);
   kernels::fill_n(to_address(first), n, val);
@@ -456,125 +459,125 @@ cuda_gpu_ptr<T> uninitialized_fill_n(Alloc &a, cuda_gpu_ptr<T> first, Size n, T 
 }
 
 template<class Alloc, typename T>
-cuda_gpu_ptr<T> uninitialized_fill(Alloc &a, cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last, T const& val){
+device_pointer<T> uninitialized_fill(Alloc &a, device_pointer<T> first, device_pointer<T> last, T const& val){
   return uninitialized_fill_n(a, first,std::distance(first,last),val);
 }
 
 /******************/
 
 template<typename T, typename Size>
-cuda_gpu_ptr<T> uninitialized_default_construct_n(cuda_gpu_ptr<T> first, Size n){
+device_pointer<T> uninitialized_default_construct_n(device_pointer<T> first, Size n){
   return uninitialized_fill_n(first,n,T());
 }
 
 template<typename T>
-cuda_gpu_ptr<T> uninitialized_default_construct(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last){
+device_pointer<T> uninitialized_default_construct(device_pointer<T> first, device_pointer<T> last){
   return uninitialized_fill_n(first,std::distance(first,last),T());
 }
 
 template<class Alloc, typename T, typename Size>
-cuda_gpu_ptr<T> uninitialized_default_construct_n(Alloc &a, cuda_gpu_ptr<T> first, Size n){
+device_pointer<T> uninitialized_default_construct_n(Alloc &a, device_pointer<T> first, Size n){
   return uninitialized_fill_n(first,n,T());
 }
 
 template<class Alloc, typename T>
-cuda_gpu_ptr<T> uninitialized_default_construct(Alloc &a, cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last){
+device_pointer<T> uninitialized_default_construct(Alloc &a, device_pointer<T> first, device_pointer<T> last){
   return uninitialized_fill_n(first,std::distance(first,last),T());
 }
 
 template<typename T, typename Size>
-cuda_gpu_ptr<T> uninitialized_value_construct_n(cuda_gpu_ptr<T> first, Size n){
+device_pointer<T> uninitialized_value_construct_n(device_pointer<T> first, Size n){
   return uninitialized_fill_n(first,n,T());
 }
 
 template<typename T>
-cuda_gpu_ptr<T> uninitialized_value_construct_n(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last){
+device_pointer<T> uninitialized_value_construct_n(device_pointer<T> first, device_pointer<T> last){
   return uninitialized_fill_n(first,std::distance(first,last),T());
 }
 
 template<class Alloc, typename T, typename Size>
-cuda_gpu_ptr<T> uninitialized_value_construct_n(Alloc &a, cuda_gpu_ptr<T> first, Size n){
+device_pointer<T> uninitialized_value_construct_n(Alloc &a, device_pointer<T> first, Size n){
   return uninitialized_fill_n(first,n,T());
 }
 
 template<class Alloc, typename T>
-cuda_gpu_ptr<T> uninitialized_value_construct_n(Alloc &a, cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last){
+device_pointer<T> uninitialized_value_construct_n(Alloc &a, device_pointer<T> first, device_pointer<T> last){
   return uninitialized_fill_n(first,std::distance(first,last),T());
 }
 
 /**************** uninitialized_copy_n *****************/
 /*
 template<typename T, typename Size> 
-cuda_gpu_ptr<T> uninitialized_copy_n(cuda_gpu_ptr<T> first, Size n, cuda_gpu_ptr<T> dest){
+device_pointer<T> uninitialized_copy_n(device_pointer<T> first, Size n, device_pointer<T> dest){
   if(n == 0) return dest;
   kernels::uninitialized_copy_n(n,to_address(first), 1, to_address(dest), 1);
   return dest + n;
 }
 
 template<class T> 
-cuda_gpu_ptr<T> uninitialized_copy(cuda_gpu_ptr<T> first, cuda_gpu_ptr<T> last, cuda_gpu_ptr<T> dest){
+device_pointer<T> uninitialized_copy(device_pointer<T> first, device_pointer<T> last, device_pointer<T> dest){
   return uninitialized_copy_n(first,std::distance(first,last),dest); 
 }
 */
 // only trivial types for now, no placement new yet 
 template<typename T, typename Size>
-cuda_gpu_ptr<T> uninitialized_copy_n(cuda_gpu_ptr<T> A, Size n, cuda_gpu_ptr<T> B) {
+device_pointer<T> uninitialized_copy_n(device_pointer<T> A, Size n, device_pointer<T> B) {
   return copy_n(A,n,B);
 }
 
 template<typename T, typename Size>
-cuda_gpu_ptr<T> uninitialized_copy_n(T* A, Size n, cuda_gpu_ptr<T> B) {
+device_pointer<T> uninitialized_copy_n(T* A, Size n, device_pointer<T> B) {
   return copy_n(A,n,B);
 }
 
 template<typename T, typename Size>
-T* uninitialized_copy_n(cuda_gpu_ptr<T> A, Size n, T* B) {
+T* uninitialized_copy_n(device_pointer<T> A, Size n, T* B) {
   return copy_n(A,n,B);
 }
 
 template<class Alloc, typename T, typename Size>
-cuda_gpu_ptr<T> uninitialized_copy_n(Alloc &a, cuda_gpu_ptr<T> A, Size n, cuda_gpu_ptr<T> B) {
+device_pointer<T> uninitialized_copy_n(Alloc &a, device_pointer<T> A, Size n, device_pointer<T> B) {
   return copy_n(A,n,B);
 }
 
 template<class Alloc, typename T, typename Size>
-cuda_gpu_ptr<T> uninitialized_copy_n(Alloc &a, T* A, Size n, cuda_gpu_ptr<T> B) {
+device_pointer<T> uninitialized_copy_n(Alloc &a, T* A, Size n, device_pointer<T> B) {
   return copy_n(A,n,B);
 }
 
 template<class Alloc, typename T, typename Size>
-T* uninitialized_copy_n(Alloc &a, cuda_gpu_ptr<T> A, Size n, T* B) {
+T* uninitialized_copy_n(Alloc &a, device_pointer<T> A, Size n, T* B) {
   return copy_n(A,n,B);
 }
 
 /**************** uninitialized_copy *****************/
 template<typename T>
-cuda_gpu_ptr<T> uninitialized_copy(cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, cuda_gpu_ptr<T> B) {
+device_pointer<T> uninitialized_copy(device_pointer<T> const Abeg, device_pointer<T> const Aend, device_pointer<T> B) {
   return copy_n(Abeg,std::distance(Abeg,Aend),B);
 }
 
 template<typename T>
-cuda_gpu_ptr<T> uninitialized_copy(T* const Abeg, T* const Aend, cuda_gpu_ptr<T> B) {
+device_pointer<T> uninitialized_copy(T* const Abeg, T* const Aend, device_pointer<T> B) {
   return copy_n(Abeg,std::distance(Abeg,Aend),B);
 }
 
 template<typename T>
-T* uninitialized_copy(cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, T* B) {
+T* uninitialized_copy(device_pointer<T> const Abeg, device_pointer<T> const Aend, T* B) {
   return copy_n(Abeg,std::distance(Abeg,Aend),B);
 }
 
 template<class Alloc, typename T>
-cuda_gpu_ptr<T> uninitialized_copy(Alloc &a, cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, cuda_gpu_ptr<T> B) {
+device_pointer<T> uninitialized_copy(Alloc &a, device_pointer<T> const Abeg, device_pointer<T> const Aend, device_pointer<T> B) {
   return copy_n(Abeg,std::distance(Abeg,Aend),B);
 }
 
 template<class Alloc, typename T>
-cuda_gpu_ptr<T> uninitialized_copy(Alloc &a, T* const Abeg, T* const Aend, cuda_gpu_ptr<T> B) {
+device_pointer<T> uninitialized_copy(Alloc &a, T* const Abeg, T* const Aend, device_pointer<T> B) {
   return copy_n(Abeg,std::distance(Abeg,Aend),B);
 }
 
 template<class Alloc, typename T>
-T* uninitialized_copy(Alloc &a, cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> const Aend, T* B) {
+T* uninitialized_copy(Alloc &a, device_pointer<T> const Abeg, device_pointer<T> const Aend, T* B) {
   return copy_n(Abeg,std::distance(Abeg,Aend),B);
 }
 
@@ -583,23 +586,23 @@ T* uninitialized_copy(Alloc &a, cuda_gpu_ptr<T> const Abeg, cuda_gpu_ptr<T> cons
 // NOTE: Not sure what to do here
 // should at least guard agains non-trivial types
 template<typename T, typename Size>
-cuda_gpu_ptr<T> destroy_n(cuda_gpu_ptr<T> first, Size n){
+device_pointer<T> destroy_n(device_pointer<T> first, Size n){
   return first + n;
 }
 
 template<class Alloc, typename T, typename Size>
-cuda_gpu_ptr<T> destroy_n(Alloc &a, cuda_gpu_ptr<T> first, Size n){
+device_pointer<T> destroy_n(Alloc &a, device_pointer<T> first, Size n){
   return first + n;
 }
 
 /**************** print *****************/
 template<typename T>
-void print(std::string str, cuda_gpu_ptr<T> p, int n) {
+void print(std::string str, device_pointer<T> p, int n) {
   kernels::print(str,to_address(p),n);
 }
 
 template<typename T>
-void fill2D(int n, int m, qmc_cuda::cuda_gpu_ptr<T> first, int lda, T const& val) { 
+void fill2D(int n, int m, qmc_cuda::device_pointer<T> first, int lda, T const& val) { 
   assert(lda >= m);  
   kernels::fill2D_n(n,m,to_address(first),lda,val);
 }
@@ -615,9 +618,9 @@ namespace multi{
 // Can always call cudaMemcopy2D like you do in the blas backend
 
 template<class Alloc, typename T, typename Size>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_fill_n(
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> uninitialized_fill_n(
                     Alloc &a,
-                    multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first, 
+                    multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> first, 
                     Size n, T const& val){
   if(n == 0) return first;
   kernels::fill_n(to_address(base(first)), n, stride(first), val);
@@ -625,10 +628,10 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_fill_n(
 }
 
 template<class Alloc, typename T, typename Size>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_fill(      
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> uninitialized_fill(      
                     Alloc &a,
-                    multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first, 
-                    multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> last, T const& val){
+                    multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> first, 
+                    multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> last, T const& val){
   assert( stride(first) == stride(last) );
   if(std::distance(first,last) == 0 ) return first;
   kernels::fill_n(to_address(base(first)), std::distance(first,last), stride(first), val);
@@ -636,10 +639,10 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_fill(
 }
 
 template<class T, class Q1, class Q2>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy( 
-           multi::array_iterator<Q1, 1, qmc_cuda::cuda_gpu_ptr<Q2>> first,
-           multi::array_iterator<Q1, 1, qmc_cuda::cuda_gpu_ptr<Q2>> last,
-           multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> copy( 
+           multi::array_iterator<Q1, 1, qmc_cuda::device_pointer<Q2>> first,
+           multi::array_iterator<Q1, 1, qmc_cuda::device_pointer<Q2>> last,
+           multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
   assert( stride(first) == stride(last) );
@@ -652,10 +655,10 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy(
 }
 
 template<class T, class ForwardIt>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy(
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> copy(
                          ForwardIt first,
                          ForwardIt last,
-                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+                         multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> dest ){
   assert( stride(first) == stride(last) );
   if(std::distance(first,last) == 0 ) return dest;
   if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
@@ -667,8 +670,8 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy(
 
 template<class T, class Q1, class Q2>
 multi::array_iterator<T, 1, T*> copy(
-                         multi::array_iterator<Q1, 1, qmc_cuda::cuda_gpu_ptr<Q2>> first,
-                         multi::array_iterator<Q1, 1, qmc_cuda::cuda_gpu_ptr<Q2>> last,
+                         multi::array_iterator<Q1, 1, qmc_cuda::device_pointer<Q2>> first,
+                         multi::array_iterator<Q1, 1, qmc_cuda::device_pointer<Q2>> last,
                          multi::array_iterator<T, 1, T*> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
@@ -682,10 +685,10 @@ multi::array_iterator<T, 1, T*> copy(
 }
 
 template<class T, class Q1, class Q2, typename Size>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy_n( 
-             multi::array_iterator<Q1, 1, qmc_cuda::cuda_gpu_ptr<Q2>> first,
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> copy_n( 
+             multi::array_iterator<Q1, 1, qmc_cuda::device_pointer<Q2>> first,
              Size N,
-             multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+             multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
   if(N==0) return dest;  
@@ -697,10 +700,10 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy_n(
 }
 
 template<class T, class ForwardIt, typename Size>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy_n(
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> copy_n(
                          ForwardIt first,
                          Size n,
-                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+                         multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> dest ){
   if(n == 0) return dest;
   if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
                                  to_address(base(first)),sizeof(T)*stride(first),
@@ -711,7 +714,7 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> copy_n(
 
 template<class T, class Q1, class Q2, typename Size>
 multi::array_iterator<T, 1, T*> copy_n(
-                         multi::array_iterator<Q1, 1, qmc_cuda::cuda_gpu_ptr<Q2>> first,
+                         multi::array_iterator<Q1, 1, qmc_cuda::device_pointer<Q2>> first,
                          Size N,
                          multi::array_iterator<T, 1, T*> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
@@ -725,11 +728,11 @@ multi::array_iterator<T, 1, T*> copy_n(
 }
 
 template<class Alloc, class T, class ForwardIt>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy( 
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> uninitialized_copy( 
                          Alloc &a,
                          ForwardIt first,
                          ForwardIt last,
-                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+                         multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> dest ){
   assert( stride(first) == stride(last) );
   if(std::distance(first,last) == 0 ) return dest;
   if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
@@ -741,11 +744,11 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
 
 /*
 template<class Alloc, class T, class Q>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy( 
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> uninitialized_copy( 
                          Alloc &a,
-                         multi::array_iterator<Q, 1, qmc_cuda::cuda_gpu_ptr<Q>> first,
-                         multi::array_iterator<Q, 1, qmc_cuda::cuda_gpu_ptr<Q>> last,
-                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+                         multi::array_iterator<Q, 1, qmc_cuda::device_pointer<Q>> first,
+                         multi::array_iterator<Q, 1, qmc_cuda::device_pointer<Q>> last,
+                         multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
   assert( stride(first) == stride(last) );
   if(std::distance(first,last) == 0 ) return dest;
@@ -757,11 +760,11 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
 }
 
 template<class Alloc, class T, class Q>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> uninitialized_copy(
                          Alloc &a,
                          multi::array_iterator<Q, 1, boost::mpi3::intranode::array_ptr<Q>> first,
                          multi::array_iterator<Q, 1, boost::mpi3::intranode::array_ptr<Q>> last,
-                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+                         multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
   assert( stride(first) == stride(last) );
   if(std::distance(first,last) == 0 ) return dest;
@@ -773,11 +776,11 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
 }
 
 template<class Alloc, class T, class Q1, class Q2>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> uninitialized_copy(
                          Alloc &a,
                          multi::array_iterator<Q1, 1, Q2*> first,
                          multi::array_iterator<Q1, 1, Q2*> last,
-                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+                         multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
   assert( stride(first) == stride(last) );
@@ -793,8 +796,8 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy(
 template<class Alloc, class T, class Q1, class Q2>
 multi::array_iterator<T, 1, T*> uninitialized_copy(
                          Alloc &a,
-                         multi::array_iterator<Q1, 1, qmc_cuda::cuda_gpu_ptr<Q2>> first,
-                         multi::array_iterator<Q1, 1, qmc_cuda::cuda_gpu_ptr<Q2>> last,
+                         multi::array_iterator<Q1, 1, qmc_cuda::device_pointer<Q2>> first,
+                         multi::array_iterator<Q1, 1, qmc_cuda::device_pointer<Q2>> last,
                          multi::array_iterator<T, 1, T*> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
@@ -810,11 +813,11 @@ multi::array_iterator<T, 1, T*> uninitialized_copy(
 
 /*
 template<class Alloc, class T, class Q, typename Size>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy_n( 
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> uninitialized_copy_n( 
                            Alloc &a,
-                           multi::array_iterator<Q, 1, qmc_cuda::cuda_gpu_ptr<Q>> first,
+                           multi::array_iterator<Q, 1, qmc_cuda::device_pointer<Q>> first,
                            Size N,
-                           multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+                           multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
   if(N==0) return dest;
   if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
@@ -828,7 +831,7 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy_n(
 template<class Alloc, class T, class Q1, class Q2, typename Size>
 multi::array_iterator<T, 1, T*> uninitialized_copy_n(
                          Alloc &a,
-                         multi::array_iterator<Q1, 1, qmc_cuda::cuda_gpu_ptr<Q2>> first,
+                         multi::array_iterator<Q1, 1, qmc_cuda::device_pointer<Q2>> first,
                          Size n,
                          multi::array_iterator<T, 1, T*> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
@@ -842,11 +845,11 @@ multi::array_iterator<T, 1, T*> uninitialized_copy_n(
 }
 
 template<class Alloc, class T, class ForwardIt, typename Size>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy_n(
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> uninitialized_copy_n(
                          Alloc &a,
                          ForwardIt first,
                          Size n,
-                         multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> dest ){
+                         multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> dest ){
   if(n == 0 ) return dest;
   if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
                                  to_address(base(first)),sizeof(T)*stride(first),
@@ -856,32 +859,32 @@ multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_copy_n(
 }
 
 template<class Alloc, typename T, typename Size>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_default_construct_n(
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> uninitialized_default_construct_n(
                         Alloc &a, 
-                        multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first, Size n){
+                        multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> first, Size n){
   return uninitialized_fill_n(first,n,T());
 }
 
 template<class Alloc, typename T>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_default_construct(
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> uninitialized_default_construct(
                         Alloc &a, 
-                        multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first, 
-                        multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> last){
+                        multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> first, 
+                        multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> last){
   return uninitialized_fill_n(a,first,std::distance(first,last),T());
 }
 
 template<class Alloc, typename T, typename Size>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_value_construct_n(
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> uninitialized_value_construct_n(
                         Alloc &a,
-                        multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first, Size n){
+                        multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> first, Size n){
   return uninitialized_fill_n(first,n,T());
 }
 
 template<class Alloc, typename T>
-multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> uninitialized_value_construct(
+multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> uninitialized_value_construct(
                         Alloc &a,
-                        multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> first,
-                        multi::array_iterator<T, 1, qmc_cuda::cuda_gpu_ptr<T>> last){
+                        multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> first,
+                        multi::array_iterator<T, 1, qmc_cuda::device_pointer<T>> last){
   return uninitialized_fill_n(a,first,std::distance(first,last),T());
 }
 

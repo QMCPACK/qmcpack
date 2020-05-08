@@ -669,7 +669,8 @@ void test_dense_matrix_mult_device(Allocator alloc)
                           ma::gqr_optimal_workspace_size(A[0]));
      array<T,1,Allocator> WORK(iextensions<1u>{sz},alloc);
      array<T,2,Allocator> Id({3,3},alloc);
-     array<int,1,Allocator> info(iextensions<1u>{2},alloc);
+     using IAllocator = typename Allocator::template rebind<int>::other; 
+     array<int,1,IAllocator> info(iextensions<1u>{2},IAllocator{alloc});
      array<T,2,Allocator> TAU({2,4},alloc);
 
      geqrfStrided(4,3,A.origin(),4,12,TAU.origin(),4,info.origin(),2);
@@ -712,12 +713,12 @@ TEST_CASE("dense_ma_operations_device", "[matrix_operations]")
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
-  qmc_cuda::CUDA_INIT(node);
+  arch::INIT(node);
 
   {
     //using T = std::complex<double>;
     using T = double;
-    using Alloc = qmc_cuda::cuda_gpu_allocator<T>;
+    using Alloc = device::device_allocator<T>;
 
     Alloc gpu_alloc{};
  

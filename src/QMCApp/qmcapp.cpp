@@ -44,13 +44,13 @@ void output_hardware_info(Communicate* comm, Libxml2Document& doc, xmlNodePtr ro
 int main(int argc, char** argv)
 {
   using namespace qmcplusplus;
+#ifdef HAVE_MPI
+  mpi3::environment env(argc, argv);
+  OHMMS::Controller->initialize(env);
+#endif
   try
   {
     //qmc_common  and MPI is initialized
-#ifdef HAVE_MPI
-    mpi3::environment env(argc, argv);
-    OHMMS::Controller->initialize(env);
-#endif
     qmcplusplus::qmc_common.initialize(argc, argv);
     int clones = 1;
 #ifdef QMC_CUDA
@@ -245,7 +245,6 @@ int main(int argc, char** argv)
       delete qmc;
     if (useGPU)
       Finalize_CUDA();
-    OHMMS::Controller->finalize();
   }
   catch (const std::exception& e)
   {
@@ -258,6 +257,7 @@ int main(int argc, char** argv)
     APP_ABORT("Unhandled Exception");
   }
 
+  OHMMS::Controller->finalize();
   return 0;
 }
 

@@ -22,31 +22,31 @@
 #include "AFQMC/Numerics/detail/CUDA/cusolver_wrapper.hpp"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/setIdentity.cuh"
 
-namespace qmc_cuda 
+namespace device 
 {
   using qmcplusplus::afqmc::remove_complex;
 
   template<typename T, typename R, typename I>
   inline static void hevr (char JOBZ, char RANGE, char UPLO, int N,    
-                         cuda_gpu_ptr<T> A, int LDA, T VL, T VU,int IL, int IU, T ABSTOL, int &M,                                                      
-                         cuda_gpu_ptr<T> W, cuda_gpu_ptr<T> Z, int LDZ, cuda_gpu_ptr<I> ISUPPZ,                  
-                         cuda_gpu_ptr<T> WORK, int &LWORK,      
-                         cuda_gpu_ptr<R> RWORK, int &LRWORK,               
-                         cuda_gpu_ptr<I> IWORK, int &LIWORK, int& INFO)
+                         device_pointer<T> A, int LDA, T VL, T VU,int IL, int IU, T ABSTOL, int &M,                                                      
+                         device_pointer<T> W, device_pointer<T> Z, int LDZ, device_pointer<I> ISUPPZ,                  
+                         device_pointer<T> WORK, int &LWORK,      
+                         device_pointer<R> RWORK, int &LRWORK,               
+                         device_pointer<I> IWORK, int &LIWORK, int& INFO)
   {
     throw std::runtime_error("Error: hevr not implemented in gpu."); 
   }
 
   // getrf_bufferSize
   template<typename T>
-  inline static void getrf_bufferSize (const int n, const int m, cuda_gpu_ptr<T> a, int lda, int& lwork)
+  inline static void getrf_bufferSize (const int n, const int m, device_pointer<T> a, int lda, int& lwork)
   {
     cusolver::cusolver_getrf_bufferSize(*a.handles.cusolverDn_handle,n, m, to_address(a), lda, &lwork);
   }
 
   template<typename T, typename R, typename I>
-  inline static void getrf (const int n, const int m, cuda_gpu_ptr<T> && a, int lda, 
-                            cuda_gpu_ptr<I> && piv, int &st, cuda_gpu_ptr<R> work) 
+  inline static void getrf (const int n, const int m, device_pointer<T> && a, int lda, 
+                            device_pointer<I> && piv, int &st, device_pointer<R> work) 
   {
     cusolverStatus_t status = cusolver::cusolver_getrf(*a.handles.cusolverDn_handle, n, m,
                      to_address(a), lda, to_address(work), to_address(piv), to_address(piv)+n);
@@ -59,7 +59,7 @@ namespace qmc_cuda
 
   // getrfBatched
   template<typename T, typename I>
-  inline static void getrfBatched (const int n, cuda_gpu_ptr<T> * a, int lda, cuda_gpu_ptr<I> piv, cuda_gpu_ptr<I> info, int batchSize)
+  inline static void getrfBatched (const int n, device_pointer<T> * a, int lda, device_pointer<I> piv, device_pointer<I> info, int batchSize)
   {
     T **A_d;
     T **A_h;
@@ -78,7 +78,7 @@ namespace qmc_cuda
 
   // getri_bufferSize
   template<typename T>
-  inline static void getri_bufferSize (int n, cuda_gpu_ptr<T> a, int lda, int& lwork)
+  inline static void getri_bufferSize (int n, device_pointer<T> a, int lda, int& lwork)
   {
     // gpu uses getrs to invert matrix, which requires n*n workspace 
     lwork = n*n;
@@ -86,7 +86,7 @@ namespace qmc_cuda
 
   // write separate query function to avoid hack!!!
   template<typename T, typename R, typename I>
-  inline static void getri(int n, cuda_gpu_ptr<T> a, int lda, cuda_gpu_ptr<I> piv, cuda_gpu_ptr<R> work, int n1, int& status)
+  inline static void getri(int n, device_pointer<T> a, int lda, device_pointer<I> piv, device_pointer<R> work, int n1, int& status)
   {
     if(n1 < n*n)
       throw std::runtime_error("Error: getri<GPU_MEMORY_POINTER_TYPE> required buffer space of n*n."); 
@@ -111,7 +111,7 @@ namespace qmc_cuda
 
   // getriBatched
   template<typename T, typename I>
-  inline static void getriBatched (int n, cuda_gpu_ptr<T> * a, int lda, cuda_gpu_ptr<I> piv, cuda_gpu_ptr<T> * ainv, int ldc, cuda_gpu_ptr<I> info, int batchSize)
+  inline static void getriBatched (int n, device_pointer<T> * a, int lda, device_pointer<I> piv, device_pointer<T> * ainv, int ldc, device_pointer<I> info, int batchSize)
   {
     T **A_d, **C_d;
     T **A_h, **C_h;
@@ -137,7 +137,7 @@ namespace qmc_cuda
 
   // matinveBatched
   template<typename T1, typename T2, typename I>
-  inline static void matinvBatched (int n, cuda_gpu_ptr<T1> * a, int lda, cuda_gpu_ptr<T2> * ainv, int lda_inv, cuda_gpu_ptr<I> info, int batchSize)
+  inline static void matinvBatched (int n, device_pointer<T1> * a, int lda, device_pointer<T2> * ainv, int lda_inv, device_pointer<I> info, int batchSize)
   {
     T1 **A_d, **A_h;
     T2 **C_d, **C_h;
@@ -163,7 +163,7 @@ namespace qmc_cuda
 
   // geqrf
   template<typename T>
-  inline static void geqrf_bufferSize (int m, int n, cuda_gpu_ptr<T> a, int lda, int& lwork)
+  inline static void geqrf_bufferSize (int m, int n, device_pointer<T> a, int lda, int& lwork)
   {
     if(CUSOLVER_STATUS_SUCCESS != cusolver::cusolver_geqrf_bufferSize(*a.handles.cusolverDn_handle,
                 m, n, to_address(a), lda, &lwork))
@@ -171,7 +171,7 @@ namespace qmc_cuda
   }
 
   template<typename T>
-  inline static void geqrf(int M, int N, cuda_gpu_ptr<T> A, const int LDA, cuda_gpu_ptr<T> TAU, cuda_gpu_ptr<T> WORK, int LWORK, int& INFO) 
+  inline static void geqrf(int M, int N, device_pointer<T> A, const int LDA, device_pointer<T> TAU, device_pointer<T> WORK, int LWORK, int& INFO) 
   {
     // allocating here for now
     int* piv;
@@ -193,20 +193,20 @@ namespace qmc_cuda
 
   // gelqf
   template<typename T>
-  inline static void gelqf_bufferSize (int m, int n, cuda_gpu_ptr<T> a, int lda, int& lwork)
+  inline static void gelqf_bufferSize (int m, int n, device_pointer<T> a, int lda, int& lwork)
   {
       lwork = 0;  
   }
 
   template<typename T>
-  inline static void gelqf(int M, int N, cuda_gpu_ptr<T> A, const int LDA, cuda_gpu_ptr<T> TAU, cuda_gpu_ptr<T> WORK, int LWORK, int& INFO)
+  inline static void gelqf(int M, int N, device_pointer<T> A, const int LDA, device_pointer<T> TAU, device_pointer<T> WORK, int LWORK, int& INFO)
   {
       throw std::runtime_error("Error: gelqf not implemented in CUDA backend. \n"); 
   }
 
  // gqr
   template<typename T>
-  static void gqr_bufferSize (int m, int n, int k, cuda_gpu_ptr<T> a, int lda, int& lwork)
+  static void gqr_bufferSize (int m, int n, int k, device_pointer<T> a, int lda, int& lwork)
   {
     if(CUSOLVER_STATUS_SUCCESS != cusolver::cusolver_gqr_bufferSize(*a.handles.cusolverDn_handle,
                                             m,n,k,to_address(a),lda,&lwork))
@@ -214,7 +214,7 @@ namespace qmc_cuda
   }
 
   template<typename T>
-  void static gqr(int M, int N, int K, cuda_gpu_ptr<T> A, const int LDA, cuda_gpu_ptr<T> TAU, cuda_gpu_ptr<T> WORK, int LWORK, int& INFO)
+  void static gqr(int M, int N, int K, device_pointer<T> A, const int LDA, device_pointer<T> TAU, device_pointer<T> WORK, int LWORK, int& INFO)
   {
     // allocating here for now
     int* piv;
@@ -235,7 +235,7 @@ namespace qmc_cuda
   }
 
   template<typename T, typename I>
-  void static gqrStrided(int M, int N, int K, cuda_gpu_ptr<T> A, const int LDA, const int Astride, cuda_gpu_ptr<T> TAU, const int Tstride, cuda_gpu_ptr<T> WORK, int LWORK, cuda_gpu_ptr<I> info, int batchSize )
+  void static gqrStrided(int M, int N, int K, device_pointer<T> A, const int LDA, const int Astride, device_pointer<T> TAU, const int Tstride, device_pointer<T> WORK, int LWORK, device_pointer<I> info, int batchSize )
   {
     cusolverStatus_t status = cusolver::cusolver_gqr_strided(*A.handles.cusolverDn_handle, M, N, K,
                     to_address(A), LDA, Astride, to_address(TAU), Tstride, to_address(WORK), LWORK, 
@@ -248,20 +248,20 @@ namespace qmc_cuda
 
   // glq 
   template<typename T>
-  static void glq_bufferSize (int m, int n, int k, cuda_gpu_ptr<T> a, int lda, int& lwork)
+  static void glq_bufferSize (int m, int n, int k, device_pointer<T> a, int lda, int& lwork)
   {
       lwork = 0;  
   }
 
   template<typename T>
-  void static glq(int M, int N, int K, cuda_gpu_ptr<T> A, const int LDA, cuda_gpu_ptr<T> TAU, cuda_gpu_ptr<T> WORK, int LWORK, int& INFO)
+  void static glq(int M, int N, int K, device_pointer<T> A, const int LDA, device_pointer<T> TAU, device_pointer<T> WORK, int LWORK, int& INFO)
   {
       throw std::runtime_error("Error: glq not implemented in CUDA backend. \n"); 
   }
 
   // batched geqrf
   template<typename T, typename I>
-  inline static void geqrfBatched(int M, int N, cuda_gpu_ptr<T> *A, const int LDA, cuda_gpu_ptr<T>* TAU, cuda_gpu_ptr<I> info, int batchSize)
+  inline static void geqrfBatched(int M, int N, device_pointer<T> *A, const int LDA, device_pointer<T>* TAU, device_pointer<I> info, int batchSize)
   {
     T **B_h = new T*[2*batchSize];
     T **A_h(B_h);
@@ -285,7 +285,7 @@ namespace qmc_cuda
   }
 
   template<typename T, typename I>
-  inline static void geqrfStrided(int M, int N, cuda_gpu_ptr<T> A, const int LDA, const int Astride, cuda_gpu_ptr<T> TAU, const int Tstride, cuda_gpu_ptr<I> info, int batchSize)
+  inline static void geqrfStrided(int M, int N, device_pointer<T> A, const int LDA, const int Astride, device_pointer<T> TAU, const int Tstride, device_pointer<I> info, int batchSize)
   {
 /*
     T **B_h = new T*[2*batchSize];
@@ -328,17 +328,17 @@ namespace qmc_cuda
 
   // gesvd_bufferSize
   template<typename T>
-  inline static void gesvd_bufferSize (const int m, const int n, cuda_gpu_ptr<T> a, int& lwork)
+  inline static void gesvd_bufferSize (const int m, const int n, device_pointer<T> a, int& lwork)
   {
     cusolver::cusolver_gesvd_bufferSize(*a.handles.cusolverDn_handle, m, n, to_address(a), &lwork);
   }
 
   template<typename T, typename R>
   inline static void gesvd (char jobU, char jobVT, const int m, const int n, 
-                            cuda_gpu_ptr<T> && A, int lda, cuda_gpu_ptr<R> && S,
-                            cuda_gpu_ptr<T> && U, int ldu,
-                            cuda_gpu_ptr<T> && VT, int ldvt,
-                            cuda_gpu_ptr<T> && W, int lw,
+                            device_pointer<T> && A, int lda, device_pointer<R> && S,
+                            device_pointer<T> && U, int ldu,
+                            device_pointer<T> && VT, int ldvt,
+                            device_pointer<T> && W, int lw,
                             int &st)
   {
     int *devSt;
@@ -357,11 +357,11 @@ namespace qmc_cuda
 
   template<typename T, typename R>
   inline static void gesvd (char jobU, char jobVT, const int m, const int n,
-                            cuda_gpu_ptr<T> && A, int lda, cuda_gpu_ptr<R> && S,
-                            cuda_gpu_ptr<T> && U, int ldu,
-                            cuda_gpu_ptr<T> && VT, int ldvt,
-                            cuda_gpu_ptr<T> && W, int lw,
-                            cuda_gpu_ptr<R> && RW,
+                            device_pointer<T> && A, int lda, device_pointer<R> && S,
+                            device_pointer<T> && U, int ldu,
+                            device_pointer<T> && VT, int ldvt,
+                            device_pointer<T> && W, int lw,
+                            device_pointer<R> && RW,
                             int &st)
   {
     int *devSt;

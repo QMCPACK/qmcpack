@@ -1,6 +1,8 @@
 #ifdef COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && c++ -std=c++14 -Wall -Wextra -D_TEST_MULTI_DETAIL_TYPES $0x.cpp -o $0x.x && time $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+$CXX $0.cpp -o $0x&&$0x&&rm $0x $0.cpp;exit
 #endif
+//  © Alfredo A. Correa 2018-2019
+
 #ifndef MULTI_DETAIL_TYPES_HPP
 #define MULTI_DETAIL_TYPES_HPP
 
@@ -16,6 +18,17 @@
 namespace boost{
 namespace multi{
 
+using size_type = std::make_signed_t<std::size_t>;
+
+using index               = std::make_signed_t<size_type>;
+using difference_type     = std::make_signed_t<index>;
+using index_range         = range<index>;
+using index_extension     = extension_t<index>;
+using dimensionality_type = index;
+
+using iextension = index_extension;
+using irange     = index_range;
+
 namespace detail{
 
 template<typename, typename>
@@ -26,7 +39,7 @@ struct append_to_type_seq<T, TT<Ts...>>{
     using type = TT<Ts..., T>;
 };
 
-template<typename T, unsigned int N, template<typename...> class TT = std::tuple> 
+template<typename T, dimensionality_type N, template<typename...> class TT = std::tuple> 
 struct repeat{
     using type = typename
         append_to_type_seq<
@@ -60,6 +73,7 @@ constexpr auto static_size(Array const&) -> decltype(static_size<Array>()){
     return static_size<Array>();
 }
 
+//TODO consolidate with tuple_tail defined somewhere else
 template<class Tuple>
 constexpr auto head(Tuple&& t)
 ->decltype(std::get<0>(std::forward<Tuple>(t))){
@@ -84,40 +98,38 @@ std::array<T, N-1> tail(std::array<T, N> const& a){
 
 }
 
-using size_type = std::make_signed_t<std::size_t>;
+template<typename T, dimensionality_type D>
+struct initializer_list{
+	using type = std::initializer_list<typename initializer_list<T, D-1>::type>;
+};
+template<typename T>
+struct initializer_list<T, 1>{using type = std::initializer_list<T>;};
 
-using index               = std::make_signed_t<size_type>;
-using difference_type     = std::make_signed_t<index>;
-using index_range         = range<index>;
-using index_extension     = extension_t<index>;
-using dimensionality_type = index;
-
-using iextension = index_extension;
-using irange     = index_range;
+template<typename T, dimensionality_type D>
+using initializer_list_t = typename initializer_list<T, D>::type;
 
 template<dimensionality_type D> using index_extensions = typename detail::repeat<index_extension, D>::type;
 //template<dimensionality_type D> using iextensions = index_extensions<D>;
 
 template<dimensionality_type D> 
 struct iextensions : detail::repeat<index_extension, D>::type{
+	static constexpr dimensionality_type dimensionality = D;
 	using base_ = typename detail::repeat<index_extension, D>::type;
 	using base_::base_;
 //	template<class... Args, typename = std::enable_if_t<sizeof...(Args)==D>>
 //	iextensions(Args... args) : detail::repeat<index_extension, D>::type{args...}{}
+	iextensions() = default;
 	template<class T>
-	iextensions(std::array<T, D> const& arr) : iextensions(arr, std::make_index_sequence<D>{}){}//detail::repeat<index_extension, D>::type{as_tuple(arr)}{}
-	iextensions(std::array<iextension, D> const& arr) : iextensions(arr, std::make_index_sequence<D>{}){}//detail::repeat<index_extension, D>::type{as_tuple(arr)}{}
+	iextensions(std::array<T, static_cast<std::size_t>(D)> const& arr) : iextensions(arr, std::make_index_sequence<static_cast<std::size_t>(D)>{}){}//detail::repeat<index_extension, D>::type{as_tuple(arr)}{}
+	iextensions(std::array<iextension, static_cast<std::size_t>(D)> const& arr) : iextensions(arr, std::make_index_sequence<static_cast<std::size_t>(D)>{}){}//detail::repeat<index_extension, D>::type{as_tuple(arr)}{}
 	base_ const& base() const{return *this;}
 	friend decltype(auto) base(iextensions const& s){return s.base();}
 private:
 	template <class T, size_t... Is> 
-	iextensions(std::array<T, D> const& arr, std::index_sequence<Is...>) : iextensions{arr[Is]...}{}
+	iextensions(std::array<T, static_cast<std::size_t>(D)> const& arr, std::index_sequence<Is...>) : iextensions{arr[Is]...}{}
 };
 
-//template<dimensionality_type D>
-//using extensions_t = iextensions<D>;
-
-#if __cpp_deduction_guides
+#if defined(__cpp_deduction_guides) and __cpp_deduction_guides >= 201703
 template<class... Args> iextensions(Args...) -> iextensions<sizeof...(Args)>;
 #endif
 
@@ -130,16 +142,46 @@ auto contains(index_extensions<D> const& ie, Tuple const& tp){
 
 }}
 
-#if _TEST_MULTI_DETAIL_TYPES
+
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_DETAIL_TYPES
+
+#include<range/v3/begin_end.hpp>
+#include<range/v3/utility/concepts.hpp>
 
 #include<cassert>
 #include<iostream>
+#include<numeric> // accumulate
 #include<vector>
+
 
 using std::cout;
 namespace multi = boost::multi;
 
-int main(){}
+
+template<class T> T what(T&&) = delete;
+
+int main(){
+
+	multi::index_extension x(10);
+
+	assert( *begin(x) == 0 );
+	assert( size(x) == 10 );
+	assert( x[0] == 0 );
+	assert( x[1] == 1 );
+	assert( x[9] == 9 );
+	
+	auto b = begin(x);
+	assert( b[0] == x[0] );
+	assert( b[1] == x[1] );
+
+	static_assert( ranges::forward_iterator< std::decay_t<decltype(b)> > , "!");
+
+	assert( std::accumulate( begin(x), end(x), 0) == 0 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 );
+
+	std::iterator_traits<std::decay_t<decltype(begin(x))>>::difference_type d; (void)d;
+//	for(auto i : x) std::cout << i << std::endl;
+
+}
 #endif
 #endif
 
