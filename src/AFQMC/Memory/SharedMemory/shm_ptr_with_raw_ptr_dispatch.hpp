@@ -182,9 +182,6 @@ template<class T = void> struct allocator_shm_ptr_with_raw_ptr_dispatch{
 
         shm_ptr_with_raw_ptr_dispatch<T> allocate(size_type n, const void* /*hint*/ = 0){
                 shm_ptr_with_raw_ptr_dispatch<T> ret = 0;
-//                ret.wSP_.reset(new mpi3::shared_window<T>{
-//                        comm_.make_shared_window<T>(comm_.root()?n:0)
-//                });
                 ret.wSP_.reset(new mpi3::shared_window<char>{
                         comm_,comm_.root()?(long(n*sizeof(T))):0,int(sizeof(T))
                 });
@@ -197,26 +194,15 @@ template<class T = void> struct allocator_shm_ptr_with_raw_ptr_dispatch{
         }
         bool operator==(allocator_shm_ptr_with_raw_ptr_dispatch const& other) const{return comm_ == other.comm_;}
         bool operator!=(allocator_shm_ptr_with_raw_ptr_dispatch const& other) const{return not(other == *this);}
-/*
-        template<class U, class... As>
-        void construct(U *p, As&&... as){
-          ::new((void*)p) U(std::forward<As>(as)...);
-        }
-        template< class U, class ... As >
-        void destroy(U *p, As&&... as){
-            p->~U();
-        }
-*/
+        // this routine synchronizes
         template<class U, class... As>
         void construct(U p, As&&... as){
-          //::new((void*)to_address(p)) U(std::forward<As>(as)...);
-//          uninitialized_fill_n(p,1,std::forward<As>(as)...);
+          uninitialized_fill_n(p,1,std::forward<As>(as)...);
         }
+        // this routine synchronizes
         template< class U, class... As >
         void destroy(U p, As&&... as){
-            destroy_n(p,1);
-            //using value = typename std::pointer_traits<U>::value_type; 
-            //(to_address(p))->~value();
+          destroy_n(p,1);
         }
 };
 
