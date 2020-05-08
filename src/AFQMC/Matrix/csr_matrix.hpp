@@ -411,11 +411,13 @@ class ucsr_matrix:
 
 		IsRoot r(Valloc_);
 		if(r.root()){
-			for(size_type i = 0; i != base::size1_; ++i){
-				Palloc_ts::construct(Palloc_, to_address(base::pointers_begin_+i), i*nnzpr_unique);
-				Palloc_ts::construct(Palloc_, to_address(base::pointers_end_+i), i*nnzpr_unique);
-			}
-                        Palloc_ts::construct(Palloc_, to_address(base::pointers_begin_+base::size1_), base::size1_*nnzpr_unique);
+                        auto pb(to_address(base::pointers_begin_));
+                        auto pe(to_address(base::pointers_end_));
+		        for(size_type i = 0; i != base::size1_; ++i){
+                            *(pb+i) = i*nnzpr_unique;
+                            *(pe+i) = i*nnzpr_unique;
+		        }
+                        *(pb+base::size1_) = base::size1_*nnzpr_unique;
 		}
 		r.barrier();
 	}
@@ -450,12 +452,14 @@ class ucsr_matrix:
                 IsRoot r(Valloc_);
                 if(r.root()){
 			IntType cnter(0);
+                        auto pb(to_address(base::pointers_begin_));
+                        auto pe(to_address(base::pointers_end_));
                         for(size_type i = 0; i != base::size1_; ++i){
-                                Palloc_ts::construct(Palloc_, to_address(base::pointers_begin_+i), cnter); 
-                                Palloc_ts::construct(Palloc_, to_address(base::pointers_end_+i), cnter);
+                                *(pb+i) = cnter; 
+                                *(pe+i) = cnter; 
 				cnter += static_cast<IntType>(nnzpr[i]); 
                         }
-                        Palloc_ts::construct(Palloc_, to_address(base::pointers_begin_+base::size1_), cnter);
+                        *(pb+base::size1_) = cnter; 
                 }
 		r.barrier();
         }
@@ -617,8 +621,10 @@ IsRoot r_(Valloc_);
                 assert(get<0>(indices) >= 0);
                 assert(get<0>(indices) < base::size1_);
 		if(base::pointers_end_[get<0>(indices)] < base::pointers_begin_[get<0>(indices)+1]) { 
-			Valloc_ts::construct(Valloc_,to_address(base::data_ + base::pointers_end_[get<0>(indices)]), std::forward<Args>(args)...);
-			Ialloc_ts::construct(Ialloc_,to_address(base::jdata_ + base::pointers_end_[get<0>(indices)]), get<1>(indices));
+                        ::new (static_cast<void*>(to_address(base::data_ + base::pointers_end_[get<0>(indices)]))) value_type(std::forward<Args>(args)...); 
+			//Valloc_ts::construct(Valloc_,to_address(base::data_ + base::pointers_end_[get<0>(indices)]), std::forward<Args>(args)...);
+                        ::new (static_cast<void*>(to_address(base::jdata_ + base::pointers_end_[get<0>(indices)]))) index_type(get<1>(indices)); 
+			//Ialloc_ts::construct(Ialloc_,to_address(base::jdata_ + base::pointers_end_[get<0>(indices)]), get<1>(indices));
 			++base::pointers_end_[get<0>(indices)];
 		} else  {
                   APP_ABORT(" Error: row size exceeded the maximum \n\n\n");
@@ -951,7 +957,8 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
 			size_type disp_ = std::distance(to_address(loc),to_address(base::jdata_ + base::pointers_end_[get<0>(indices)]));
 			if( disp_ > 0 && *loc == get<1>(indices)) { 
 				// value exists, construct in place 
-                        	base::Valloc_ts::construct(base::Valloc_,to_address(base::data_ + base::pointers_begin_[get<0>(indices)] + disp), std::forward<Args>(args)...);
+                        	//base::Valloc_ts::construct(base::Valloc_,to_address(base::data_ + base::pointers_begin_[get<0>(indices)] + disp), std::forward<Args>(args)...);
+                                ::new (static_cast<void*>(to_address(base::data_ + base::pointers_begin_[get<0>(indices)] + disp))) value_type(std::forward<Args>(args)...);
 			} else {
 				// new value, shift back and add in correct place
 				if(disp_ > 0) {
@@ -963,8 +970,10 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                                            to_address(base::jdata_+base::pointers_end_[get<0>(indices)] + 1));
 				}
                         	++base::pointers_end_[get<0>(indices)];
-                        	base::Valloc_ts::construct(base::Valloc_,to_address(base::data_+base::pointers_begin_[get<0>(indices)] + disp), std::forward<Args>(args)...);
-                        	base::Ialloc_ts::construct(base::Ialloc_, to_address(base::jdata_+base::pointers_begin_[get<0>(indices)] + disp), get<1>(indices));
+                        	//base::Valloc_ts::construct(base::Valloc_,to_address(base::data_+base::pointers_begin_[get<0>(indices)] + disp), std::forward<Args>(args)...);
+                                ::new (static_cast<void*>(to_address(base::data_ + base::pointers_begin_[get<0>(indices)] + disp))) value_type(std::forward<Args>(args)...);
+                        	//base::Ialloc_ts::construct(base::Ialloc_, to_address(base::jdata_+base::pointers_begin_[get<0>(indices)] + disp), get<1>(indices));
+                                ::new (static_cast<void*>(to_address(base::jdata_ + base::pointers_begin_[get<0>(indices)] + disp))) index_type(get<1>(indices));
 			}
                 } else throw std::out_of_range("row size exceeded the maximum");
         }	
@@ -980,8 +989,10 @@ class csr_matrix: public ucsr_matrix<ValType,IndxType,IntType,ValType_alloc,IsRo
                         if(base::pointers_begin_[get<0>(indices)] == 
                                 base::pointers_end_[get<0>(indices)] or 
                                 get<1>(indices) > base::jdata_[base::pointers_end_[get<0>(indices)]-1] ) { 
-                        	base::Valloc_ts::construct(base::Valloc_,to_address(base::data_+base::pointers_end_[get<0>(indices)]), std::forward<Args>(args)...);
-                        	base::Ialloc_ts::construct(base::Ialloc_, to_address(base::jdata_+base::pointers_end_[get<0>(indices)]), get<1>(indices));
+                        	//base::Valloc_ts::construct(base::Valloc_,to_address(base::data_+base::pointers_end_[get<0>(indices)]), std::forward<Args>(args)...);
+                                ::new (static_cast<void*>(to_address(base::data_ + base::pointers_end_[get<0>(indices)]))) value_type(std::forward<Args>(args)...);
+                        	//base::Ialloc_ts::construct(base::Ialloc_, to_address(base::jdata_+base::pointers_end_[get<0>(indices)]), get<1>(indices));
+                                ::new (static_cast<void*>(to_address(base::jdata_ + base::pointers_end_[get<0>(indices)]))) index_type(get<1>(indices));
                                 ++base::pointers_end_[get<0>(indices)];
                         } else // otherwise throw 
                             throw std::runtime_error("inconsistent column index in emplace_back");
