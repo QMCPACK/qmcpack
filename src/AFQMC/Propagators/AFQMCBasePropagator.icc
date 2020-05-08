@@ -117,7 +117,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     // 2. Calculate vbias for initial configuration
     AFQMCTimers[vbias_timer]->start();
     if (free_projection) {
-      fill_n(vbias.origin(), localnCV*nwalk, ComplexType(0.0,0.0));
+      fill_n(vbias.origin(), localnCV*nwalk, SPComplexType(0.0,0.0));
     } else {
       wfn.vbias(G,vbias,sqrtdt);
     }

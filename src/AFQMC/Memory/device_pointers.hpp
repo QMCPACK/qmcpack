@@ -511,6 +511,14 @@ Q* copy_n_cast(device_pointer<T> const A, Size n, Q* B) {
   return B+n;
 }
 
+/**************** inplace_cast *****************/
+template<typename T, typename Q, typename Size>
+void inplace_cast(device_pointer<T> A, Size n) {
+  T* A_(to_address(A));
+  Q* B_(reinterpret_cast<Q*>(A_));
+  kernels::inplace_cast(n,A_,B_);
+}
+
 /**************** fill_n *****************/
 //template<typename T, typename Size, typename... Args>
 //device_pointer<T> fill_n(device_pointer<T> first, Size n, Args&&...args){
