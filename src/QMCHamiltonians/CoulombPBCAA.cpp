@@ -181,7 +181,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
                                                            ParticleSet::ParticlePos_t& hf_terms,
                                                            ParticleSet::ParticlePos_t& pulay_terms)
 {
-  hf_terms -= forces;
+  if (ComputeForces and !is_active)
+    hf_terms -= forces;
   //No pulay term.
   return Value;
 }
