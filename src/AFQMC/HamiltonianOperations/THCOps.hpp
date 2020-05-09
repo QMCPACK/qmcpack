@@ -27,12 +27,16 @@
 #include "type_traits/scalar_traits.h"
 #include "AFQMC/Wavefunctions/Excitations.hpp"
 #include "AFQMC/Wavefunctions/phmsd_helpers.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 namespace qmcplusplus
 {
 
 namespace afqmc
 {
+
+extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
+extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
 
 // distribution:  size,  global,  offset
 //   - rotMuv:    {rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0}
@@ -45,18 +49,35 @@ namespace afqmc
 template<class T>
 class THCOps
 {
-
-  using pointer = ComplexType*;
-  using const_pointer = ComplexType const*;
-
-  using TVector = boost::multi::array<T,1>;
-  using CVector = boost::multi::array<ComplexType,1>;
-  using CMatrix = boost::multi::array<ComplexType,2>;
-  using TMatrix = boost::multi::array<T,2>;
-  using shmVMatrix = boost::multi::array<T,2,shared_allocator<T>>;
-  using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
-  using shmSpMatrix = boost::multi::array<SPComplexType,2,shared_allocator<SPComplexType>>;
   using communicator = boost::mpi3::shared_communicator;
+
+  // allocators
+  // device_allocator for local work space
+  // localTG_allocator for shared work space
+  // node_allocator for fixed arrays, e.g. Luv, Piu, ...
+
+  // pointers
+  using pointer = typename device_allocator<ComplexType>::pointer;
+  using const_pointer = typename device_allocator<ComplexType>::const_pointer;
+  using sp_pointer = typename device_allocator<SPComplexType>::pointer;
+  using const_sp_pointer = typename device_allocator<SPComplexType>::const_pointer;
+
+  // arrays on shared work space
+  // remember that this is device memory when built with accelerator support
+  template<class U, int N>
+  using Array = boost::multi::static_array<U,N,device_buffer_type<U>>;
+  template<class U, int N>
+  using ShmArray = boost::multi::static_array<U,N,localTG_buffer_type<U>>;
+
+  // arrays on node allocator, for fixed arrays, e.g. Luv, Piu, ...
+  // remember that this is device memory when built with accelerator support
+  using nodeVMatrix = boost::multi::array<T,2,node_allocator<T>>;
+  using nodeCMatrix = boost::multi::array<ComplexType,2,node_allocator<ComplexType>>;
+  using nodeSPMatrix = boost::multi::array<SPComplexType,2,node_allocator<SPComplexType>>;
+
+  // host array on shared memory
+  using mpi3VMatrix = boost::multi::array<ValueType,2,shared_allocator<ValueType>>;
+  using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
 
   public:
 
@@ -71,18 +92,20 @@ class THCOps
            WALKER_TYPES type,
            int nmu0_,
            int rotnmu0_, 
-           CMatrix&& hij_,
-           std::vector<CVector>&& h1,
-           shmVMatrix&& rotmuv_,
-           shmCMatrix&& rotpiu_,
-           std::vector<shmCMatrix>&& rotpau_,
-           shmVMatrix&& luv_,
-           shmCMatrix&& piu_,
-           std::vector<shmCMatrix>&& pau_,
-           CMatrix&& v0_,
+           mpi3CMatrix&& hij_,
+           mpi3CMatrix&& h1,
+           mpi3VMatrix&& rotmuv_,
+           mpi3CMatrix&& rotpiu_,
+           std::vector<mpi3CMatrix>&& rotpau_,
+           mpi3VMatrix&& luv_,
+           mpi3CMatrix&& piu_,
+           std::vector<mpi3CMatrix>&& pau_,
+           mpi3CMatrix&& v0_,
            ValueType e0_,
            bool verbose=false ):
                 comm(std::addressof(c_)),
+                device_buffer_allocator(device_buffer_generator.get()),
+                shm_buffer_allocator(localTG_buffer_generator.get()),
                 NMO(nmo_),NAOA(naoa_),NAOB(naob_),
                 nmu0(nmu0_),gnmu(0),rotnmu0(rotnmu0_),grotnmu(0),
                 walker_type(type),
@@ -90,23 +113,13 @@ class THCOps
                 haj(std::move(h1)),
                 rotMuv(std::move(rotmuv_)),
                 rotPiu(std::move(rotpiu_)),
-                rotcPua(std::move(rotpau_)),
+                rotcPua(std::move(move_vector<nodeCMatrix>(std::move(rotpau_)))),
                 Luv(std::move(luv_)),
                 Piu(std::move(piu_)),
-                cPua(std::move(pau_)),
-                v0(std::move(v0_)),
-                E0(e0_),
-                SM_TMats({1,1},shared_allocator<ComplexType>{c_})
+                cPua(std::move(move_vector<nodeCMatrix>(std::move(pau_)))),
+                vn0(std::move(v0_)),
+                E0(e0_)
     {
-/*
-for(int i=0; i<haj[0].size(0); i++)
-  std::cout<<i <<" " <<haj[0][i]  <<"\n";
-std::cout<<"H1:\n";
-for(int i=0; i<hij.size(0); i++)
-  for(int j=0; j<hij.size(1); j++)
-    std::cout<<i <<" " <<j <<" " <<hij[i][j]  <<"\n";
-std::cout<<"\n";
-*/
       gnmu = Luv.size(1);
       grotnmu = rotMuv.size(1);  
       if(haj.size() > 1)
@@ -150,11 +163,12 @@ std::cout<<"\n";
     THCOps(THCOps&& other) = default;
     THCOps& operator=(THCOps&& other) = default;
 
-    CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, CVector const& vMF) {
+    boost::multi::array<ComplexType,2> getOneBodyPropagatorMatrix(TaskGroup_& TG, 
+                    boost::multi::array<ComplexType,1> const& vMF) {
       int NMO = hij.size(0);
       // in non-collinear case with SO, keep SO matrix here and add it
       // for now, stay collinear
-      CMatrix H1({NMO,NMO});
+      boost::multi::array<ComplexType,2> H1({NMO,NMO});
 
       // add sum_n vMF*Spvn, vMF has local contribution only!
       boost::multi::array_ref<ComplexType,1> H1D(H1.origin(),iextensions<1u>{NMO*NMO});
@@ -162,19 +176,19 @@ std::cout<<"\n";
       vHS(vMF, H1D);
       TG.TG().all_reduce_in_place_n(H1D.origin(),H1D.num_elements(),std::plus<>());
 
-      // add hij + v0 and symmetrize
+      // add hij + vn0 and symmetrize
       using ma::conj;
       for(int i=0; i<NMO; i++) {
-        H1[i][i] += hij[i][i] + v0[i][i];
+        H1[i][i] += hij[i][i] + vn0[i][i];
         for(int j=i+1; j<NMO; j++) {
-          H1[i][j] += hij[i][j] + v0[i][j];
-          H1[j][i] += hij[j][i] + v0[j][i];
+          H1[i][j] += hij[i][j] + vn0[i][j];
+          H1[j][i] += hij[j][i] + vn0[j][i];
           if( std::abs( H1[i][j] - ma::conj(H1[j][i]) ) > 1e-8 ) {
             app_error()<<" Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
             app_error()<<i <<" " <<j <<" " <<H1[i][j] <<" " <<H1[j][i] <<" "
-                       <<H1[i][j]-(hij[i][j] + v0[i][j]) <<" " <<H1[j][i]-(hij[j][i] + v0[j][i]) <<" "
+                       <<H1[i][j]-(hij[i][j] + vn0[i][j]) <<" " <<H1[j][i]-(hij[j][i] + vn0[j][i]) <<" "
                        <<hij[i][j] <<" " <<hij[j][i] <<" "
-                       <<v0[i][j] <<" " <<v0[j][i] <<std::endl;
+                       <<vn0[i][j] <<" " <<vn0[j][i] <<std::endl;
             APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");
           }
           H1[i][j] = 0.5*(H1[i][j]+ma::conj(H1[j][i]));
@@ -233,20 +247,18 @@ std::cout<<"\n";
       // right now the algorithm uses 2 copies of matrices of size nuxnv in COLLINEAR case,
       // consider moving loop over spin to avoid storing the second copy which is not used
       // simultaneously
-      size_t memory_needs = nspin*nu*nv + nv + nu  + nel_*(nv+nu);
-      set_shmbuffer(memory_needs);
-      size_t cnt=0;
+      //size_t memory_needs = nspin*nu*nv + nv + nu  + nel_*(nv+nu);
       // Guv[nspin][nu][nv]
-      boost::multi::array_ref<ComplexType,3> Guv(to_address(SM_TMats.origin()),{nspin,nu,nv});
-      cnt+=Guv.num_elements();
+      ShmArray<ComplexType,3> Guv({nspin,nu,nv},
+                        shm_buffer_allocator->template get_allocator<ComplexType>());
       // Guu[u]: summed over spin
-      boost::multi::array_ref<ComplexType,1> Guu(to_address(SM_TMats.origin())+cnt,iextensions<1u>{nv});
-      cnt+=Guu.num_elements();
+      ShmArray<ComplexType,1> Guu(iextensions<1u>{nv},
+                        shm_buffer_allocator->template get_allocator<ComplexType>());
       // T1[nel_][nv]
-      boost::multi::array_ref<ComplexType,2> T1(to_address(SM_TMats.origin())+cnt,{nel_,nv});
-      cnt+=T1.num_elements();
-      boost::multi::array_ref<ComplexType,1> Tuu(to_address(SM_TMats.origin())+cnt,iextensions<1u>{nu});
-      cnt+=Tuu.num_elements();
+      ShmArray<ComplexType,2> T1({nel_,nv},
+                        shm_buffer_allocator->template get_allocator<ComplexType>());
+      ShmArray<ComplexType,1> Tuu(iextensions<1u>{nu},
+                        shm_buffer_allocator->template get_allocator<ComplexType>());
 
       int bsz = 256;
       int nbu = ((uN-u0) + bsz - 1) / bsz;
@@ -345,6 +357,7 @@ std::cout<<"\n";
                      ph_excitations<int,ComplexType> const& abij,
                      std::array<index_aos,2> const& det_couplings)
     {
+      APP_ABORT(" Error: fast_energy not yet working");  
       if(haj.size() != 1)
         APP_ABORT(" Error: Single reference implementation currently in THCOps::fast_energy.\n");
       if(walker_type!=CLOSED)
@@ -357,6 +370,7 @@ std::cout<<"\n";
        * QQ0A[nwalk][NAOA][NAEA]
        * QQ0B[nwalk][NAOA][NAEA]
        */
+/*
       static_assert(std::decay<MatE>::type::dimensionality==4, "Wrong dimensionality");
       static_assert(std::decay<MatO>::type::dimensionality==3, "Wrong dimensionality");
       static_assert(std::decay<MatG>::type::dimensionality==3, "Wrong dimensionality");
@@ -424,9 +438,8 @@ std::cout<<"\n";
       boost::multi::array_ref<ComplexType,2> Tub(to_address(SM_TMats.origin())+cnt,{nu,nel_});
       cnt+=Tub.num_elements();
       assert(cnt <= memory_needs);
-      if(eloc.size(0) != 2 || eloc.size(1) != nwalk || eloc.size(2) != 3)
-        eloc.reextent({2,nwalk,3});
-
+      boost::multi::static_array<ComplexType,3,dev_buffer_type> eloc({2,nwalk,3}
+                        device_buffer_allocator->template get_allocator<ComplexType>());
       std::fill_n(eloc.origin(),eloc.num_elements(),ComplexType(0.0));
 
       RealType scl = (walker_type==CLOSED?2.0:1.0);
@@ -485,12 +498,10 @@ std::cout<<"\n";
             eloc[0][wi][1] += -0.5*scl*Xcb[c][c];
           for(int c=k0; c<kN; ++c)
             eloc[0][wi][2] += 0.5*scl*scl*Jcb[c][c];
-/*
           calculate_ph_energies(0,comm->rank(),comm->size(),
                                 E[0],Ov[0],QQ0A,Qwork,
                                 rotMuv,
                                 abij,det_couplings);
-*/
         }
 
         { // Beta: Unnecessary in CLOSED walker type (on Walker)
@@ -546,6 +557,7 @@ std::cout<<"\n";
         }
       }
       comm->barrier();
+*/
     }
 
     template<class MatA, class MatB,
@@ -594,38 +606,39 @@ std::cout<<"\n";
 
       if(not std::is_same<XType,ComplexType>::value) memory_needs += X.num_elements();
       if(not std::is_same<vType,ComplexType>::value) memory_needs += v.num_elements();
-      set_shmbuffer(memory_needs);
+      ShmArray<ComplexType,1> SM_TMats(iextensions<1u>{memory_needs},
+                        shm_buffer_allocator->template get_allocator<ComplexType>());
       size_t cnt(0);
       const_pointer Xptr(nullptr);
       pointer vptr(nullptr);
       // setup origin of Xsp and copy_n_cast if necessary
       if(std::is_same<XType,ComplexType>::value) {
-        Xptr = reinterpret_cast<const_pointer>(to_address(X.origin()));
+        Xptr = reinterpret_cast<const_pointer>(make_device_ptr(X.origin()));
       } else {
         long i0, iN;
         std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
                                   long(X.num_elements()),long(comm->size()));
-        copy_n_cast(to_address(X.origin())+i0,iN-i0,to_address(SM_TMats.origin())+i0);
+        copy_n_cast(make_device_ptr(X.origin())+i0,iN-i0,make_device_ptr(SM_TMats.origin())+i0);
         cnt += size_t(X.num_elements());
-        Xptr = to_address(SM_TMats.origin());
+        Xptr = make_device_ptr(SM_TMats.origin());
       }
       // setup origin of vsp and copy_n_cast if necessary
       if(std::is_same<vType,ComplexType>::value) {
-        vptr = reinterpret_cast<pointer>(to_address(v.origin()));
+        vptr = reinterpret_cast<pointer>(make_device_ptr(v.origin()));
       } else {
         long i0, iN;
         std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
                                   long(v.num_elements()),long(comm->size()));
-        vptr = to_address(SM_TMats.origin())+cnt;
+        vptr = make_device_ptr(SM_TMats.origin())+cnt;
         cnt += size_t(v.num_elements());
         if( std::abs(c) > 1e-12 )
-          copy_n_cast(to_address(v.origin())+i0,iN-i0,vptr+i0);
+          copy_n_cast(make_device_ptr(v.origin())+i0,iN-i0,vptr+i0);
       }
       // setup array references
       boost::multi::array_cref<ComplexType,2> Xsp(Xptr, X.extensions());
       boost::multi::array_ref<ComplexType,2> vsp(vptr, v.extensions());
 
-      boost::multi::array_ref<ComplexType,2> Tuw(to_address(SM_TMats.origin())+cnt,{nu,nwalk});
+      boost::multi::array_ref<ComplexType,2> Tuw(make_device_ptr(SM_TMats.origin())+cnt,{nu,nwalk});
       // O[nwalk * nmu * nmu]
 #if defined(QMC_COMPLEX)
       // reinterpret as RealType matrices with 2x the columns
@@ -727,7 +740,8 @@ std::cout<<"\n";
       else memory_needs += nu*nmo_;
       if(not std::is_same<GType,ComplexType>::value) memory_needs += G.num_elements();
       if(not std::is_same<vType,ComplexType>::value) memory_needs += v.num_elements();
-      set_shmbuffer(memory_needs);
+      ShmArray<ComplexType,1> SM_TMats(iextensions<1u>{memory_needs},
+                        shm_buffer_allocator->template get_allocator<ComplexType>());
       size_t cnt(0);
       const_pointer Gptr(nullptr);
       pointer vptr(nullptr);
@@ -837,7 +851,7 @@ std::cout<<"\n";
     // transpose=true means vHS[nwalk][ik], false means vHS[ik][nwalk]
     bool transposed_vHS() const {return true;}
 
-    bool fast_ph_energy() const { return true; }
+    bool fast_ph_energy() const { return false; }
 
     boost::multi::array<ComplexType,2> getHSPotentials()
     {
@@ -1039,6 +1053,8 @@ std::cout<<"\n";
   protected:
 
     communicator* comm;
+    device_allocator_generator_type *device_buffer_allocator;
+    localTG_allocator_generator_type *shm_buffer_allocator;
 
     int NMO,NAOA,NAOB;
 
@@ -1047,54 +1063,44 @@ std::cout<<"\n";
     WALKER_TYPES walker_type;
 
     // bare one body hamiltonian
-    CMatrix hij;
+    mpi3CMatrix hij;
 
     // (potentially half rotated) one body hamiltonian
-    std::vector<CVector> haj;
+    nodeCMatrix haj;
 
     /************************************************/
     // Used in the calculation of the energy
     // Coulomb matrix elements of interpolating vectors
-    shmVMatrix rotMuv;
+    nodeVMatrix rotMuv;
 
     // Orbitals at interpolating points
-    shmCMatrix rotPiu;
+    nodeCMatrix rotPiu;
 
     // Half-rotated Orbitals at interpolating points
-    std::vector<shmCMatrix> rotcPua;
+    std::vector<nodeCMatrix> rotcPua;
     /************************************************/
 
     /************************************************/
     // Following 3 used in calculation of vbias and vHS
     // Cholesky factorization of Muv
-    shmVMatrix Luv;
+    nodeVMatrix Luv;
 
     // Orbitals at interpolating points
-    shmCMatrix Piu;
+    nodeCMatrix Piu;
 
     // Half-rotated Orbitals at interpolating points
-    std::vector<shmCMatrix> cPua;
+    std::vector<nodeCMatrix> cPua;
     /************************************************/
 
     // one-body piece of Hamiltonian factorization
-    CMatrix v0;
+    mpi3CMatrix vn0;
 
     ValueType E0;
 
     // shared memory for intermediates
-    //shmSpMatrix SM_TMats;
-    boost::multi::array<ComplexType,2,shared_allocator<ComplexType>> SM_TMats;
-
     boost::multi::array<ComplexType,2> Rbk;
 
-    boost::multi::array<ComplexType,3> eloc;
-
     myTimer Timer;
-
-    void set_shmbuffer(size_t N) {
-      if(SM_TMats.num_elements() < N)
-        SM_TMats.reextent({N,1});
-    }
 
 };
 

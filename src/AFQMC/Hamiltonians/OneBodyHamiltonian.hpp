@@ -54,6 +54,7 @@ class OneBodyHamiltonian: public AFQMCInfo
 
   protected:
 
+  // this should be in shared memory, no need for all the copies!!! 
   boost::multi::array<ValueType,2> H1;
 
   // nuclear coulomb term
