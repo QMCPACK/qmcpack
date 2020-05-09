@@ -180,6 +180,7 @@ void AFQMCBasePropagator::reset_nextra(int nextra)
     APP_ABORT("Error: Problems in AFQMCBasePropagator::reset_nextra()\n");
 }
 
+/*
 void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtdt, 
                           StaticMatrix& X, StaticMatrix & vbias, StaticMatrix& MF, 
                           StaticMatrix& HWs, bool addRAND) 
@@ -248,6 +249,7 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtd
   TG.local_barrier();
 #endif
 }
+*/
 
 }
 

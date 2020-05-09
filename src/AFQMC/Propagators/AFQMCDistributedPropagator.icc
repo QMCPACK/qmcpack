@@ -86,21 +86,42 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
             buffer_allocator->template get_allocator<ComplexType>());
   StaticMatrix new_energies({nwalk,3},
             buffer_allocator->template get_allocator<ComplexType>());
-  StaticMatrix vHS(vhs_ext,
+  StaticMatrix vHS_buff(vhs_ext,
             buffer_allocator->template get_allocator<ComplexType>());
+  SPCMatrix_ref vHS(sp_pointer(make_device_ptr(vHS_buff.origin())),vhs_ext);
   {
-    StaticMatrix G(G_ext,
+    StaticSPMatrix G(G_ext,
+            buffer_allocator->template get_allocator<SPComplexType>());
+
+    // 1. Calculate Green function for all (local) walkers
+    AFQMCTimers[G_for_vbias_timer]->start();
+#if defined(MIXED_PRECISION)
+    { // control scope of Gc 
+      int Gak0,GakN;
+      std::tie(Gak0,GakN) = FairDivideBoundary(TG.getLocalTGRank(),
+                    int(G.num_elements()),TG.getNCoresPerTG());
+      StaticMatrix Gc(G_ext,
             buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix Gwork(G_ext,
-            buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix X({long(nCV),long(nwalk*nsteps)},
-            buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix vbias({long(nCV),long(nwalk)},
-            buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix RNG({long(nCV),long(nwalk*nsteps)},
-            buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix vHSwork(vhs_ext,
-            buffer_allocator->template get_allocator<ComplexType>());
+      wfn.MixedDensityMatrix_for_vbias(wset,Gc);
+      copy_n_cast(make_device_ptr(Gc.origin())+Gak0,GakN-Gak0,
+                  make_device_ptr(G.origin())+Gak0);
+    }
+    TG.local_barrier();
+#else
+    wfn.MixedDensityMatrix_for_vbias(wset,G);
+#endif
+    AFQMCTimers[G_for_vbias_timer]->stop();
+
+    StaticSPMatrix Gwork(G_ext,
+            buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix X({long(nCV),long(nwalk*nsteps)},
+            buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix vbias({long(nCV),long(nwalk)},
+            buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix RNG({long(nCV),long(nwalk*nsteps)},
+            buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix vHSwork(vhs_ext,
+            buffer_allocator->template get_allocator<SPComplexType>());
     StaticMatrix MFfactor_t({nsteps,nwalk},
             buffer_allocator->template get_allocator<ComplexType>());
     StaticMatrix hybrid_weight_t({nsteps,nwalk},
@@ -120,10 +141,6 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     std::tie(vb0,vbN) = FairDivideBoundary(TG.getLocalTGRank(),
                             int(vbias.num_elements()),TG.getNCoresPerTG());
 
-    // 1. Calculate Green function for all (local) walkers
-    AFQMCTimers[G_for_vbias_timer]->start();
-    wfn.MixedDensityMatrix_for_vbias(wset,G);
-    AFQMCTimers[G_for_vbias_timer]->stop();
     // generate random numbers
     {
       int i0,iN;
@@ -188,7 +205,15 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     }
   }
 
-  C3Tensor_ref vHS3D(make_device_ptr(vHS.origin()),vhs3d_ext);
+#if defined(MIXED_PRECISION)
+  // is this clever or dirsty? seems to work well and saves memory!
+  TG.local_barrier();
+  using qmcplusplus::afqmc::inplace_cast;
+  if(TG.TG_local().root())
+    inplace_cast<SPComplexType,ComplexType>(vHS.origin(),vHS.num_elements());
+  TG.local_barrier();
+#endif
+  C3Tensor_ref vHS3D(make_device_ptr(vHS_buff.origin()),vhs3d_ext);
 
   // From here on is similar to Shared 
   int nx = 1;

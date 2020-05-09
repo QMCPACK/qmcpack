@@ -496,7 +496,9 @@ ForwardIt copy(device_pointer<T const> const Abeg, device_pointer<T const> const
 // if types of pointers are not the same (without cv qualifiers)!!!
 template<typename T, typename Q, typename Size>
 device_pointer<Q> copy_n_cast(device_pointer<T> const A, Size n, device_pointer<Q> B) {
-  kernels::copy_n_cast(to_address(A),n,to_address(B));
+//  if constexpr (std::is_same<std::decay_t<T>,Q>::value) copy_n(A,n,B); 
+//  else 
+    kernels::copy_n_cast(to_address(A),n,to_address(B));
   return B+n;
 }
 
@@ -515,6 +517,14 @@ template<typename T, typename Q, typename Size>
 Q* copy_n_cast(device_pointer<T> const A, Size n, Q* B) {
   throw std::runtime_error(" Error: copy_n_cast(gpu_ptr,n,T*) is disabled.");
   return B+n;
+}
+
+/**************** inplace_cast *****************/
+template<typename T, typename Q, typename Size>
+void inplace_cast(device_pointer<T> A, Size n) {
+  T* A_(to_address(A));
+  Q* B_(reinterpret_cast<Q*>(A_));
+  kernels::inplace_cast(n,A_,B_);
 }
 
 /**************** fill_n *****************/

@@ -12,13 +12,20 @@
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef AFQMC_KERNELS_SETTINGS_HPP
-#define AFQMC_KERNELS_SETTINGS_HPP
+#ifndef AFQMC_INPLACE_CAST_KERNELS_HPP
+#define AFQMC_INPLACE_CAST_KERNELS_HPP
 
-#define BOOST_NO_AUTO_PTR
+#include<cassert>
+#include <complex>
 
-static const size_t DOT_BLOCK_SIZE = 32; 
-static const size_t REDUCE_BLOCK_SIZE = 32; 
-static const size_t MAX_THREADS_PER_DIM = 1024; 
+namespace kernels
+{
+
+void inplace_cast(unsigned long n, std::complex<float>* A, std::complex<double>* B);
+void inplace_cast(unsigned long n, std::complex<double>* A, std::complex<float>* B);
+void inplace_cast(long n, std::complex<float>* A, std::complex<double>* B);
+void inplace_cast(long n, std::complex<double>* A, std::complex<float>* B);
+
+}
 
 #endif

@@ -28,8 +28,6 @@
 #define byRows   999
 #define byCols   111
 
-#define PsiT_IN_SHM
-
 // guard with directive that checks if boost version is >=1.65
 // uncomment to enable stacktrace
 #define ENABLE_STACKTRACE
