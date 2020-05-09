@@ -197,6 +197,30 @@ TEST_CASE("term_by_term_matrix_vector", "[Numerics][tensor_operations]")
 
 }
 
+TEST_CASE("transpose_wabn_to_wban", "[Numerics][tensor_operations]")
+{
+
+  Alloc<ComplexType> alloc{};
+  int nwalk = 5;
+  int na = 7;
+  int nb = 5;
+  int nchol = 11;
+  std::vector<ComplexType> buffer(nwalk*na*nb*nchol);
+  create_data(buffer, ComplexType(1.0));
+  Tensor4D<ComplexType> Twabn({nwalk, na, nb, nchol}, alloc);
+  Tensor4D<ComplexType> Twban({nwalk, na, nb, nchol}, 0.0, alloc);
+  copy_n(buffer.data(), buffer.size(), Twabn.origin());
+  // Twabn = numpy.arange(nw*na*nb*nc).reshape((nw,na,nb,nc))
+  // Twban = numpy.transpose(Twabn, (0,2,1,3))
+  using ma::transpose_wabn_to_wban;
+  transpose_wabn_to_wban(nwalk, na, nb, nchol, Twabn.origin(), Twban.origin());
+  Tensor1D_ref<ComplexType> chunk(Twban.origin()+10, iextensions<1u>{10});
+  // From Twban.copy().ravel()[10:20].
+  Tensor1D<ComplexType> ref = {10, 55, 56, 57, 58, 59, 60, 61, 62, 63};
+  verify_approx(chunk, ref);
+
+}
+
 //TEST_CASE("vKKwij_tovwKiKj", "[Numerics][tensor_operations]")
 //{
 
