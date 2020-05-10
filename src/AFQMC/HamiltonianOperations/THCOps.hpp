@@ -57,9 +57,9 @@ class THCOps
   // node_allocator for fixed arrays, e.g. Luv, Piu, ...
 
   // pointers
-  using pointer = typename device_allocator<ComplexType>::pointer;
+  using pointer = typename device_buffer_type<ComplexType>::pointer;
   using const_pointer = typename device_allocator<ComplexType>::const_pointer;
-  using sp_pointer = typename device_allocator<SPComplexType>::pointer;
+  using sp_pointer = typename device_buffer_type<SPComplexType>::pointer;
   using const_sp_pointer = typename device_allocator<SPComplexType>::const_pointer;
 
   // arrays on shared work space
@@ -67,13 +67,16 @@ class THCOps
   template<class U, int N>
   using Array = boost::multi::static_array<U,N,device_buffer_type<U>>;
   template<class U, int N>
+  using Array_ref = boost::multi::array_ref<U,N,typename device_buffer_type<U>::pointer>;
+  template<class U, int N>
+  using Array_cref = boost::multi::array_cref<U,N,typename device_allocator<U>::const_pointer>;
+  template<class U, int N>
   using ShmArray = boost::multi::static_array<U,N,localTG_buffer_type<U>>;
 
   // arrays on node allocator, for fixed arrays, e.g. Luv, Piu, ...
   // remember that this is device memory when built with accelerator support
-  using nodeVMatrix = boost::multi::array<T,2,node_allocator<T>>;
-  using nodeCMatrix = boost::multi::array<ComplexType,2,node_allocator<ComplexType>>;
-  using nodeSPMatrix = boost::multi::array<SPComplexType,2,node_allocator<SPComplexType>>;
+  template<class U, int N>
+  using nodeArray = boost::multi::array<U,N,node_allocator<U>>;
 
   // host array on shared memory
   using mpi3VMatrix = boost::multi::array<ValueType,2,shared_allocator<ValueType>>;
@@ -113,10 +116,10 @@ class THCOps
                 haj(std::move(h1)),
                 rotMuv(std::move(rotmuv_)),
                 rotPiu(std::move(rotpiu_)),
-                rotcPua(std::move(move_vector<nodeCMatrix>(std::move(rotpau_)))),
+                rotcPua(std::move(move_vector<nodeArray<SPComplexType,2>>(std::move(rotpau_)))),
                 Luv(std::move(luv_)),
                 Piu(std::move(piu_)),
-                cPua(std::move(move_vector<nodeCMatrix>(std::move(pau_)))),
+                cPua(std::move(move_vector<nodeArray<SPComplexType,2>>(std::move(pau_)))),
                 vn0(std::move(v0_)),
                 E0(e0_)
     {
@@ -209,6 +212,8 @@ class THCOps
     // Kl and Kr must be in shared memory for this to work correctly
     template<class Mat, class MatB, class MatC, class MatD>
     void energy(Mat&& E, MatB const& G, int k, MatC* Kl, MatD* Kr, bool addH1=true, bool addEJ=true, bool addEXX=true) {
+      using std::fill_n;
+      using std::copy_n;
       if(k>0)
 	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
       // G[nel][nmo]
@@ -221,7 +226,7 @@ class THCOps
       int getKl = Kl!=nullptr;
 
       // addH1
-      std::fill_n(E.origin(),E.num_elements(),ComplexType(0.0));
+      fill_n(E.origin(),E.num_elements(),ComplexType(0.0));
       if(addH1) {
         ma::product(ComplexType(1.0),G,haj[k],ComplexType(0.0),E(E.extension(0),0));
         for(int i=0; i<nwalk; i++) E[i][0] += E0;
@@ -249,26 +254,26 @@ class THCOps
       // simultaneously
       //size_t memory_needs = nspin*nu*nv + nv + nu  + nel_*(nv+nu);
       // Guv[nspin][nu][nv]
-      ShmArray<ComplexType,3> Guv({nspin,nu,nv},
-                        shm_buffer_allocator->template get_allocator<ComplexType>());
+      ShmArray<SPComplexType,3> Guv({nspin,nu,nv},
+                        shm_buffer_allocator->template get_allocator<SPComplexType>());
       // Guu[u]: summed over spin
-      ShmArray<ComplexType,1> Guu(iextensions<1u>{nv},
-                        shm_buffer_allocator->template get_allocator<ComplexType>());
+      ShmArray<SPComplexType,1> Guu(iextensions<1u>{nv},
+                        shm_buffer_allocator->template get_allocator<SPComplexType>());
       // T1[nel_][nv]
-      ShmArray<ComplexType,2> T1({nel_,nv},
-                        shm_buffer_allocator->template get_allocator<ComplexType>());
-      ShmArray<ComplexType,1> Tuu(iextensions<1u>{nu},
-                        shm_buffer_allocator->template get_allocator<ComplexType>());
+      ShmArray<SPComplexType,2> T1({nel_,nv},
+                        shm_buffer_allocator->template get_allocator<SPComplexType>());
+      ShmArray<SPComplexType,1> Tuu(iextensions<1u>{nu},
+                        shm_buffer_allocator->template get_allocator<SPComplexType>());
 
       int bsz = 256;
       int nbu = ((uN-u0) + bsz - 1) / bsz;
       int nbv = (nv + bsz - 1) / bsz;
 
       if(walker_type==CLOSED || walker_type==NONCOLLINEAR) {
-        RealType scl = (walker_type==CLOSED?2.0:1.0);
+        SPRealType scl = (walker_type==CLOSED?2.0:1.0);
         for(int wi=0; wi<nwalk; wi++) {
-          boost::multi::array_cref<ComplexType,2> Gw(to_address(G[wi].origin()),{nel_,nmo_});
-          boost::multi::array_cref<ComplexType,1> G1D(to_address(G[wi].origin()),iextensions<1u>{nel_*nmo_});
+          Array_cref<SPComplexType,2> Gw(make_device_ptr(G[wi].origin()),{nel_,nmo_});
+          Array_cref<SPComplexType,1> G1D(Gw.origin(),iextensions<1u>{nel_*nmo_});
           // need a new routine if addEXX is false,
           // otherwise it is quite inefficient to get Ej only
           Guv_Guu(Gw,Guv,Guu,T1,k);
@@ -276,15 +281,15 @@ class THCOps
             ma::product(rotMuv.sliced(u0,uN),Guu,
                         Tuu.sliced(u0,uN));
             if(getKl)
-              std::copy_n(to_address(Guu.origin())+nu0+u0,uN-u0,to_address((*Kl)[wi].origin())+u0);
+              copy_n(make_device_ptr(Guu.origin())+nu0+u0,uN-u0,
+                                        make_device_ptr((*Kl)[wi].origin())+u0);
             if(getKr)
-              std::copy_n(to_address(Tuu.origin())+u0,uN-u0,to_address((*Kr)[wi].origin())+u0);
+              copy_n(make_device_ptr(Tuu.origin())+u0,uN-u0,make_device_ptr((*Kr)[wi].origin())+u0);
             E[wi][2] = 0.5*scl*scl*ma::dot(Guu.sliced(nu0+u0,nu0+uN),Tuu.sliced(u0,uN));
           }
           if(addEXX) {
-//Timer.reset("T0");
-//Timer.start("T0");
-            ComplexType E_(0.0);
+            SPComplexType E_(0.0);
+//move this to a kernel!
             for(int bu=0; bu<nbu; ++bu) {
               int i0 = u0+bu*bsz;
               int iN = std::min(u0+(bu+1)*bsz,uN);
@@ -302,18 +307,18 @@ class THCOps
         }
       } else {
         for(int wi=0; wi<nwalk; wi++) {
-          boost::multi::array_cref<ComplexType,2> Gw(to_address(G[wi].origin()),{nel_,nmo_});
-          boost::multi::array_cref<ComplexType,1> G1DA(to_address(G[wi].origin()),iextensions<1u>{NAOA*nmo_});
-          boost::multi::array_cref<ComplexType,1> G1DB(to_address(G[wi].origin())+NAOA*nmo_,iextensions<1u>{NAOB*nmo_});
+          Array_cref<ComplexType,2> Gw(to_address(G[wi].origin()),{nel_,nmo_});
+          Array_cref<ComplexType,1> G1DA(to_address(G[wi].origin()),iextensions<1u>{NAOA*nmo_});
+          Array_cref<ComplexType,1> G1DB(to_address(G[wi].origin())+NAOA*nmo_,iextensions<1u>{NAOB*nmo_});
           Guv_Guu(Gw,Guv,Guu,T1,k);
           // move calculation of Guv/Guu here to avoid storing 2 copies of Guv for alpha/beta
           if(addEJ) {
             ma::product(rotMuv.sliced(u0,uN),Guu,
                       Tuu.sliced(u0,uN));
             if(getKl)
-              std::copy_n(to_address(Guu.origin())+nu0+u0,uN,to_address((*Kl)[wi].origin())+u0);
+              copy_n(to_address(Guu.origin())+nu0+u0,uN,to_address((*Kl)[wi].origin())+u0);
             if(getKr)
-              std::copy_n(to_address(Tuu.origin())+u0,uN,to_address((*Kr)[wi].origin())+u0);
+              copy_n(to_address(Tuu.origin())+u0,uN,to_address((*Kr)[wi].origin())+u0);
             E[wi][2] = 0.5*ma::dot(Guu.sliced(nu0+u0,nu0+uN),Tuu.sliced(u0,uN));
           }
           if(addEXX) {
@@ -566,9 +571,13 @@ class THCOps
              typename = void
             >
     void vHS(MatA const& X, MatB&& v, double a=1., double c=0.) {
-        boost::multi::array_cref<ComplexType,2> X_(to_address(X.origin()),{X.size(0),1});
-        boost::multi::array_ref<ComplexType,2> v_(to_address(v.origin()),{1,v.size(0)});
-        vHS(X_,v_,a,c);
+      using XType = typename std::decay_t<typename MatA::element>;
+      using vType = typename std::decay<MatB>::type::element ;
+      boost::multi::array_ref<vType,2,decltype(v.origin())> v_(v.origin(),
+                                        {1,v.size(0)});
+      boost::multi::array_ref<XType const,2,decltype(X.origin())> X_(X.origin(),
+                                        {X.size(0),1});
+      vHS(X_,v_,a,c);
     }
 
     template<class MatA, class MatB,
@@ -597,23 +606,18 @@ class THCOps
       std::tie(k0,kN) = FairDivideBoundary(comm->rank(),nmo_,comm->size());
       int wk0,wkN;
       std::tie(wk0,wkN) = FairDivideBoundary(comm->rank(),nwalk*nmo_,comm->size());
-#define LOW_MEMORY
-#if defined(LOW_MEMORY)
-      size_t memory_needs = nu*nwalk + nu*nmo_;
-#else
       size_t memory_needs = nu*nwalk + nwalk*nu*nmo_;
-#endif
 
-      if(not std::is_same<XType,ComplexType>::value) memory_needs += X.num_elements();
-      if(not std::is_same<vType,ComplexType>::value) memory_needs += v.num_elements();
-      ShmArray<ComplexType,1> SM_TMats(iextensions<1u>{memory_needs},
-                        shm_buffer_allocator->template get_allocator<ComplexType>());
+      if(not std::is_same<XType,SPComplexType>::value) memory_needs += X.num_elements();
+      if(not std::is_same<vType,SPComplexType>::value) memory_needs += v.num_elements();
+      ShmArray<SPComplexType,1> SM_TMats(iextensions<1u>{memory_needs},
+                        shm_buffer_allocator->template get_allocator<SPComplexType>());
       size_t cnt(0);
-      const_pointer Xptr(nullptr);
-      pointer vptr(nullptr);
+      const_sp_pointer Xptr(nullptr);
+      sp_pointer vptr(nullptr);
       // setup origin of Xsp and copy_n_cast if necessary
-      if(std::is_same<XType,ComplexType>::value) {
-        Xptr = reinterpret_cast<const_pointer>(make_device_ptr(X.origin()));
+      if(std::is_same<XType,SPComplexType>::value) {
+        Xptr = pointer_cast<SPComplexType const>(make_device_ptr(X.origin()));
       } else {
         long i0, iN;
         std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
@@ -623,8 +627,8 @@ class THCOps
         Xptr = make_device_ptr(SM_TMats.origin());
       }
       // setup origin of vsp and copy_n_cast if necessary
-      if(std::is_same<vType,ComplexType>::value) {
-        vptr = reinterpret_cast<pointer>(make_device_ptr(v.origin()));
+      if(std::is_same<vType,SPComplexType>::value) {
+        vptr = pointer_cast<SPComplexType>(make_device_ptr(v.origin()));
       } else {
         long i0, iN;
         std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
@@ -635,18 +639,18 @@ class THCOps
           copy_n_cast(make_device_ptr(v.origin())+i0,iN-i0,vptr+i0);
       }
       // setup array references
-      boost::multi::array_cref<ComplexType,2> Xsp(Xptr, X.extensions());
-      boost::multi::array_ref<ComplexType,2> vsp(vptr, v.extensions());
+      Array_cref<SPComplexType,2> Xsp(Xptr, X.extensions());
+      Array_ref<SPComplexType,2> vsp(vptr, v.extensions());
 
-      boost::multi::array_ref<ComplexType,2> Tuw(make_device_ptr(SM_TMats.origin())+cnt,{nu,nwalk});
+      Array_ref<SPComplexType,2> Tuw(make_device_ptr(SM_TMats.origin())+cnt,{nu,nwalk});
       // O[nwalk * nmu * nmu]
 #if defined(QMC_COMPLEX)
       // reinterpret as RealType matrices with 2x the columns
-      boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(to_address(Luv.origin())),
+      Array_ref<RealType,2> Luv_R(pointer_cast<RealType>(make_device_ptr(Luv.origin())),
                                                  {Luv.size(0),2*Luv.size(1)});
-      boost::multi::array_cref<RealType,2> X_R(reinterpret_cast<RealType const*>(to_address(Xsp.origin())),
+      Array_cref<RealType,2> X_R(pointer_cast<RealType const>(Xsp.origin()),
                                                  {Xsp.size(0),2*Xsp.size(1)});
-      boost::multi::array_ref<RealType,2> Tuw_R(reinterpret_cast<RealType*>(Tuw.origin()),
+      Array_ref<RealType,2> Tuw_R(pointer_cast<RealType>(Tuw.origin()),
                                                  {nu,2*nwalk});
       ma::product(Luv_R.sliced(u0,uN),X_R,
                   Tuw_R.sliced(u0,uN));
@@ -655,26 +659,8 @@ class THCOps
                   Tuw.sliced(u0,uN));
 #endif
       comm->barrier();
-#if defined(LOW_MEMORY)
-      boost::multi::array_ref<ComplexType,2> Qiu(Tuw.origin()+Tuw.num_elements(),{nmo_,nu});
-      for(int wi=0; wi<nwalk; wi++) {
-        // Qiu[i][u] = T[u][wi] * conj(Piu[i][u])
-        // v[wi][ik] = sum_u Qiu[i][u] * Piu[k][u]
-        // O[nmo * nmu]
-        for(int i=k0; i<kN; i++) {
-          auto p_ = Piu[i].origin();
-          for(int u=0; u<nu; u++, ++p_)
-            Qiu[i][u] = Tuw[u][wi]*ma::conj(*p_);
-        }
-        boost::multi::array_ref<ComplexType,2> v_(to_address(vsp[wi].origin()),{nmo_,nmo_});
-        // this can benefit significantly from 2-D partition of work
-        // O[nmo * nmo * nmu]
-        ma::product(a,Qiu.sliced(k0,kN),T(Piu),
-                    c,v_.sliced(k0,kN));
-      }
-#else
-      boost::multi::array_ref<ComplexType,2> Qiu(Tuw.origin()+Tuw.num_elements(),{nwalk*nmo_,nu});
-      boost::multi::array_ref<ComplexType,3> Qwiu(Tuw.origin()+Tuw.num_elements(),{nwalk,nmo_,nu});
+      Array_ref<SPComplexType,2> Qiu(Tuw.origin()+Tuw.num_elements(),{nwalk*nmo_,nu});
+      Array_ref<SPComplexType,3> Qwiu(Tuw.origin()+Tuw.num_elements(),{nwalk,nmo_,nu});
       // Qiu[i][u] = T[u][wi] * conj(Piu[i][u])
       // v[wi][ik] = sum_u Qiu[i][u] * Piu[k][u]
       // O[nmo * nmu]
@@ -684,14 +670,13 @@ class THCOps
           for(int u=0; u<nu; u++, ++p_)
             Qwiu[wi][i][u] = Tuw[u][wi]*ma::conj(*p_);
         }
-      boost::multi::array_ref<ComplexType,2> v_(to_address(vsp.origin()),{nwalk*nmo_,nmo_});
+      Array_ref<SPComplexType,2> v_(vsp.origin(),{nwalk*nmo_,nmo_});
       // this can benefit significantly from 2-D partition of work
       // O[nmo * nmo * nmu]
-      ma::product(a,Qiu.sliced(wk0,wkN),T(Piu),
-                  c,v_.sliced(wk0,wkN));
-#endif
+      ma::product(SPComplexType(a),Qiu.sliced(wk0,wkN),T(Piu),
+                  SPComplexType(c),v_.sliced(wk0,wkN));
       comm->barrier();
-      if(not std::is_same<vType,ComplexType>::value) {
+      if(not std::is_same<vType,SPComplexType>::value) {
         long i0, iN;
         std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
                                   long(v.num_elements()),long(comm->size()));
@@ -706,9 +691,13 @@ class THCOps
              typename = void
             >
     void vbias(MatA const& G, MatB&& v, double a=1., double c=0., int k=0) {
-        boost::multi::array_cref<ComplexType,2> G_(to_address(G.origin()),{1,G.size(0)});
-        boost::multi::array_ref<ComplexType,2> v_(to_address(v.origin()),{v.size(0),1});
-        vbias(G_,v_,a,c,k);
+      using GType = typename std::decay_t<typename MatA::element>;
+      using vType = typename std::decay<MatB>::type::element ;
+      boost::multi::array_ref<vType,2,decltype(v.origin())> v_(v.origin(),
+                                        {v.size(0),1});
+      boost::multi::array_ref<GType const,2,decltype(G.origin())> G_(G.origin(),
+                                        {1,G.size(0)});
+      vbias(G_,v_,a,c,k);
     }
 
     template<class MatA, class MatB,
@@ -738,51 +727,51 @@ class THCOps
       size_t memory_needs = nwalk*nu;
       if(haj.size()==1) memory_needs += nu*nel_;
       else memory_needs += nu*nmo_;
-      if(not std::is_same<GType,ComplexType>::value) memory_needs += G.num_elements();
-      if(not std::is_same<vType,ComplexType>::value) memory_needs += v.num_elements();
-      ShmArray<ComplexType,1> SM_TMats(iextensions<1u>{memory_needs},
-                        shm_buffer_allocator->template get_allocator<ComplexType>());
+      if(not std::is_same<GType,SPComplexType>::value) memory_needs += G.num_elements();
+      if(not std::is_same<vType,SPComplexType>::value) memory_needs += v.num_elements();
+      ShmArray<SPComplexType,1> SM_TMats(iextensions<1u>{memory_needs},
+                        shm_buffer_allocator->template get_allocator<SPComplexType>());
       size_t cnt(0);
-      const_pointer Gptr(nullptr);
-      pointer vptr(nullptr);
+      const_sp_pointer Gptr(nullptr);
+      sp_pointer vptr(nullptr);
       // setup origin of Gsp and copy_n_cast if necessary
-      if(std::is_same<GType,ComplexType>::value) {
-        Gptr = reinterpret_cast<const_pointer>(to_address(G.origin()));
+      if(std::is_same<GType,SPComplexType>::value) {
+        Gptr = pointer_cast<SPComplexType const>(make_device_ptr(G.origin()));
       } else {
         long i0, iN;
         std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
                                   long(G.num_elements()),long(comm->size()));
-        copy_n_cast(to_address(G.origin())+i0,iN-i0,to_address(SM_TMats.origin())+i0);
+        copy_n_cast(make_device_ptr(G.origin())+i0,iN-i0,make_device_ptr(SM_TMats.origin())+i0);
         cnt += size_t(G.num_elements());
-        Gptr = to_address(SM_TMats.origin());
+        Gptr = make_device_ptr(SM_TMats.origin());
       }
       // setup origin of vsp and copy_n_cast if necessary
-      if(std::is_same<vType,ComplexType>::value) {
-        vptr = reinterpret_cast<pointer>(to_address(v.origin()));
+      if(std::is_same<vType,SPComplexType>::value) {
+        vptr = pointer_cast<SPComplexType>(make_device_ptr(v.origin()));
       } else {
         long i0, iN;
         std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
                                   long(v.num_elements()),long(comm->size()));
-        vptr = to_address(SM_TMats.origin())+cnt;
+        vptr = make_device_ptr(SM_TMats.origin())+cnt;
         cnt += size_t(v.num_elements());
         if( std::abs(c) > 1e-12 )
-          copy_n_cast(to_address(v.origin())+i0,iN-i0,vptr+i0);
+          copy_n_cast(make_device_ptr(v.origin())+i0,iN-i0,vptr+i0);
       }
       // setup array references
-      boost::multi::array_cref<ComplexType const,2> Gsp(Gptr, G.extensions());
-      boost::multi::array_ref<ComplexType,2> vsp(vptr, v.extensions());
+      Array_cref<SPComplexType,2> Gsp(Gptr, G.extensions());
+      Array_ref<SPComplexType,2> vsp(vptr, v.extensions());
 
       if(haj.size()==1) {
-        boost::multi::array_ref<ComplexType,2> Guu(to_address(SM_TMats.origin())+cnt,{nu,nwalk});
-        boost::multi::array_ref<ComplexType,2> T1(Guu.origin()+Guu.num_elements(),{nu,nel_});
+        Array_ref<SPComplexType,2> Guu(make_device_ptr(SM_TMats.origin())+cnt,{nu,nwalk});
+        Array_ref<SPComplexType,2> T1(Guu.origin()+Guu.num_elements(),{nu,nel_});
         Guu_from_compact(Gsp,Guu,T1);
 #if defined(QMC_COMPLEX)
         // reinterpret as RealType matrices with 2x the columns
-        boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(to_address(Luv.origin())),
+        Array_ref<SPRealType,2> Luv_R(pointer_cast<SPRealType>(make_device_ptr(Luv.origin())),
                                                  {Luv.size(0),2*Luv.size(1)});
-        boost::multi::array_ref<RealType,2> Guu_R(reinterpret_cast<RealType*>(Guu.origin()),
+        Array_ref<SPRealType,2> Guu_R(pointer_cast<SPRealType>(Guu.origin()),
                                                  {nu,2*nwalk});
-        boost::multi::array_ref<RealType,2> vsp_R(reinterpret_cast<RealType*>(to_address(vsp.origin())),
+        Array_ref<SPRealType,2> vsp_R(pointer_cast<SPRealType>(vsp.origin()),
                                                  {vsp.size(0),2*vsp.size(1)});
         ma::product(a,T(Luv_R(Luv_R.extension(0),{c0,cN})),Guu_R,
                     c,vsp_R.sliced(c0,cN));
@@ -791,16 +780,16 @@ class THCOps
                     c,vsp.sliced(c0,cN));
 #endif
       } else {
-        boost::multi::array_ref<ComplexType,2> Guu(to_address(SM_TMats.origin())+cnt,{nu,nwalk});
-        boost::multi::array_ref<ComplexType,2> T1(Guu.origin()+Guu.num_elements(),{nmo_,nu});
+        Array_ref<SPComplexType,2> Guu(make_device_ptr(SM_TMats.origin())+cnt,{nu,nwalk});
+        Array_ref<SPComplexType,2> T1(Guu.origin()+Guu.num_elements(),{nmo_,nu});
         Guu_from_full(Gsp,Guu,T1);
 #if defined(QMC_COMPLEX)
         // reinterpret as RealType matrices with 2x the columns
-        boost::multi::array_ref<RealType,2> Luv_R(reinterpret_cast<RealType*>(to_address(Luv.origin())),
+        Array_ref<SPRealType,2> Luv_R(pointer_cast<SPRealType>(make_device_ptr(Luv.origin())),
                                                  {Luv.size(0),2*Luv.size(1)});
-        boost::multi::array_ref<RealType,2> Guu_R(reinterpret_cast<RealType*>(Guu.origin()),
+        Array_ref<SPRealType,2> Guu_R(pointer_cast<SPRealType>(Guu.origin()),
                                                  {nu,2*nwalk});
-        boost::multi::array_ref<RealType,2> vsp_R(reinterpret_cast<RealType*>(to_address(vsp.origin())),
+        Array_ref<SPRealType,2> vsp_R(pointer_cast<SPRealType>(vsp.origin()),
                                                  {vsp.size(0),2*vsp.size(1)});
         ma::product(a,T(Luv_R(Luv_R.extension(0),{c0,cN})),Guu_R,
                     c,vsp_R.sliced(c0,cN));
@@ -809,9 +798,9 @@ class THCOps
                     c,vsp.sliced(c0,cN));
 #endif
       }
-      if(not std::is_same<vType,ComplexType>::value) {
-        copy_n_cast(to_address(vsp[c0].origin()),vsp.size(1)*(cN-c0),
-                to_address(v[c0].origin()));
+      if(not std::is_same<vType,SPComplexType>::value) {
+        copy_n_cast(make_device_ptr(vsp[c0].origin()),vsp.size(1)*(cN-c0),
+                make_device_ptr(v[c0].origin()));
       }
       comm->barrier();
     }
@@ -878,8 +867,9 @@ class THCOps
 
       comm->barrier();
       ComplexType a = (walker_type==CLOSED)?ComplexType(2.0):ComplexType(1.0);
+// batched blas?
       for(int iw=0; iw<nw; ++iw) {
-        boost::multi::array_cref<ComplexType,2> Giw(to_address(G[iw].origin()),{nel_,nmo_});
+        Array_cref<SPComplexType,2> Giw(make_device_ptr(G[iw].origin()),{nel_,nmo_});
         // transposing intermediary to make dot products faster in the next step
         ma::product(ma::T(Piu({0,nmo_},{u0,uN})),
                   ma::T(Giw),
@@ -893,6 +883,7 @@ class THCOps
     // Guu[nu][nwalk]
     template<class MatA, class MatB, class MatC>
     void Guu_from_full(MatA const& G, MatB&& Guu, MatC&& T1) {
+      using std::fill_n;
       int nmo_ = int(Piu.size(0));
       int nu = int(Piu.size(1));
       int u0,uN;
@@ -906,10 +897,11 @@ class THCOps
       assert(T1.size(0) == nmo_);
 
       comm->barrier();
-      std::fill_n(Guu[u0].origin(),nw*(uN-u0),ComplexType(0.0));
+      fill_n(Guu[u0].origin(),nw*(uN-u0),ComplexType(0.0));
       ComplexType a = (walker_type==CLOSED)?ComplexType(2.0):ComplexType(1.0);
+// batched blas?
       for(int iw=0; iw<nw; ++iw) {
-        boost::multi::array_cref<ComplexType,2> Giw(to_address(G[iw].origin()),{nmo_,nmo_});
+        Array_cref<SPComplexType,2> Giw(make_device_ptr(G[iw].origin()),{nmo_,nmo_});
         ma::product(Giw,Piu({0,nmo_},{u0,uN}),
                   T1(T1.extension(0),{u0,uN}));
         for(int i=0; i<nmo_; ++i) {
@@ -933,7 +925,6 @@ class THCOps
     // T1[nel_][nu]
     template<class MatA, class MatB, class MatC, class MatD>
     void Guv_Guu(MatA const& G, MatB&& Guv, MatC&& Guu, MatD&& T1, int k) {
-
       static_assert(std::decay<MatA>::type::dimensionality == 2, "Wrong dimensionality");
       static_assert(std::decay<MatB>::type::dimensionality == 3, "Wrong dimensionality");
       static_assert(std::decay<MatC>::type::dimensionality == 1, "Wrong dimensionality");
@@ -945,7 +936,7 @@ class THCOps
       int v0,vN;
       std::tie(v0,vN) = FairDivideBoundary(comm->rank(),nv,comm->size());
       int nu0 = rotnmu0; 
-      ComplexType zero(0.0,0.0);
+      SPComplexType zero(0.0,0.0);
 
       assert(Guu.size(0) == nv);
       assert(Guv.size(1) == nu);
@@ -967,6 +958,7 @@ class THCOps
         ma::product(rotcPua[k].sliced(nu0,nu0+nu),
                     T1(T1.extension(0),{v0,vN}),
                     Guv[0]({0,nu},{v0,vN}));
+// batched?
         for(int v=v0; v<vN; ++v)
           if( v < nu0 || v >= nu0+nu ) {
             Guu[v] = ma::dot(rotcPua[k][v],T1(T1.extension(0),v)); 
@@ -990,6 +982,7 @@ class THCOps
         ma::product(rotcPua[k]({nu0,nu0+nu},{NAOA,nel_}),
                     T1({NAOA,nel_},{v0,vN}),
                     Guv[1]({0,nu},{v0,vN}));
+// batched?
         for(int v=v0; v<vN; ++v)
           if( v < nu0 || v >= nu0+nu ) {
             Guu[v] = ma::dot(rotcPua[k][v],T1(T1.extension(0),v));
@@ -999,6 +992,7 @@ class THCOps
       comm->barrier();
     }
 
+/*
     // since this is for energy, only compact is accepted
     // Computes Guv and Guu for a single walker
     // As opposed to the other Guu routines,
@@ -1049,7 +1043,7 @@ class THCOps
          Guu[v] = Guv[v-nu0][v];
       comm->barrier();
     }
-
+*/
   protected:
 
     communicator* comm;
@@ -1066,41 +1060,36 @@ class THCOps
     mpi3CMatrix hij;
 
     // (potentially half rotated) one body hamiltonian
-    nodeCMatrix haj;
+    nodeArray<ComplexType,2> haj;
 
     /************************************************/
     // Used in the calculation of the energy
     // Coulomb matrix elements of interpolating vectors
-    nodeVMatrix rotMuv;
+    nodeArray<SPValueType,2> rotMuv;
 
     // Orbitals at interpolating points
-    nodeCMatrix rotPiu;
+    nodeArray<SPValueType,2> rotPiu;
 
     // Half-rotated Orbitals at interpolating points
-    std::vector<nodeCMatrix> rotcPua;
+    std::vector<nodeArray<SPComplexType,2>> rotcPua;
     /************************************************/
 
     /************************************************/
     // Following 3 used in calculation of vbias and vHS
     // Cholesky factorization of Muv
-    nodeVMatrix Luv;
+    nodeArray<SPValueType,2> Luv;
 
     // Orbitals at interpolating points
-    nodeCMatrix Piu;
+    nodeArray<SPValueType,2> Piu;
 
     // Half-rotated Orbitals at interpolating points
-    std::vector<nodeCMatrix> cPua;
+    std::vector<nodeArray<SPComplexType,2>> cPua;
     /************************************************/
 
     // one-body piece of Hamiltonian factorization
     mpi3CMatrix vn0;
 
     ValueType E0;
-
-    // shared memory for intermediates
-    boost::multi::array<ComplexType,2> Rbk;
-
-    myTimer Timer;
 
 };
 
