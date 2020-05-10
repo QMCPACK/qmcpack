@@ -51,6 +51,10 @@ class SparseTensor
   using SpT1 = T1;
   using SpT2 = T2;
 #endif
+
+  using const_sp_pointer = SPComplexType const*;
+  using sp_pointer = SPComplexType*;
+
   using T1shm_csr_matrix = ma::sparse::csr_matrix<SpT1,int,std::size_t,
                                 shared_allocator<SpT1>,
                                 ma::sparse::is_root>;
@@ -273,30 +277,13 @@ class SparseTensor
              typename = void
             >
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
-      assert( Spvn.size(1) == X.size(0) );
-      assert( Spvn.size(0) == v.size(0) );
-
-#if MIXED_PRECISION
-      size_t mem_needs = X.num_elements()+v.num_elements();  
-      set_buffer(mem_needs);
-      boost::multi::array_ref<SPComplexType,1> vsp(to_address(SM_TMats.origin()), v.extensions());  
-      boost::multi::array_ref<SPComplexType,1> Xsp(vsp.origin()+vsp.num_elements(), X.extensions());  
-      size_t i0, iN;
-      std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(X.num_elements()),size_t(comm->size()));
-      copy_n_cast(to_address(X.origin())+i0,iN-i0,to_address(Xsp.origin())+i0);
-      boost::multi::array_ref<SPComplexType,1> v_(to_address(vsp.origin()) + Spvn_view.local_origin()[0],
-                                        iextensions<1u>{Spvn_view.size(0)});
-      comm->barrier();
-      ma::product(SPValueType(a),Spvn_view,Xsp,SPValueType(c),v_);
-      copy_n_cast(to_address(v_.origin()),v_.num_elements(),to_address(v.origin())+Spvn_view.local_origin()[0]);
-      comm->barrier();
-#else
-      using Type = typename std::decay<MatB>::type::element;
-      // Spvn*X
-      boost::multi::array_ref<Type,1> v_(to_address(v.origin()) + Spvn_view.local_origin()[0],
-                                        iextensions<1u>{Spvn_view.size(0)});
-      ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
-#endif
+      using BType = typename std::decay<MatB>::type::element ;
+      using AType = typename std::decay<MatA>::type::element ;
+      boost::multi::array_ref<BType,2,decltype(v.origin())> v_(v.origin(),
+                                        {v.size(0),1});
+      boost::multi::array_ref<AType,2,decltype(X.origin())> X_(X.origin(),
+                                        {X.size(0),1});
+      return vHS(X_,v_,a,c);
     }
 
     template<class MatA, class MatB,
@@ -304,31 +291,56 @@ class SparseTensor
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
+      using vType = typename std::decay<MatB>::type::element ;
+      using XType = typename std::decay_t<typename MatA::element>;
       assert( Spvn.size(1) == X.size(0) );
       assert( Spvn.size(0) == v.size(0) );
       assert( X.size(1) == v.size(1) );
-#if MIXED_PRECISION
-      size_t mem_needs = X.num_elements()+v.num_elements();
-      set_buffer(mem_needs);
-      boost::multi::array_ref<SPComplexType,2> vsp(to_address(SM_TMats.origin()), v.extensions());
-      boost::multi::array_ref<SPComplexType,2> Xsp(vsp.origin()+vsp.num_elements(), X.extensions());
-      size_t i0, iN;
-      std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(X.num_elements()),size_t(comm->size()));
-      copy_n_cast(to_address(X.origin())+i0,iN-i0,to_address(Xsp.origin())+i0);
+
+      // setup buffer space if changing precision in X or v
+      size_t vmem(0),Xmem(0);
+      if(not std::is_same<XType,SPComplexType>::value) Xmem = X.num_elements();
+      if(not std::is_same<vType,SPComplexType>::value) vmem = v.num_elements();
+      set_buffer(vmem+Xmem);
+      const_sp_pointer Xptr(nullptr);
+      sp_pointer vptr(nullptr);
+      // setup origin of Xsp and copy_n_cast if necessary
+      if(std::is_same<XType,SPComplexType>::value) {
+        Xptr = reinterpret_cast<const_sp_pointer>(to_address(X.origin()));
+      } else {
+        long i0, iN;
+        std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
+                                  long(X.num_elements()),long(comm->size()));
+        copy_n_cast(to_address(X.origin())+i0,iN-i0,to_address(SM_TMats.origin())+i0);
+        Xptr = to_address(SM_TMats.origin());
+      }
+      // setup origin of vsp and copy_n_cast if necessary
+      if(std::is_same<vType,SPComplexType>::value) {
+        vptr = reinterpret_cast<sp_pointer>(to_address(v.origin()));
+      } else {
+        long i0, iN;
+        std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
+                                  long(v.num_elements()),long(comm->size()));
+        vptr = to_address(SM_TMats.origin())+Xmem;
+        if( std::abs(c) > 1e-12 )
+          copy_n_cast(to_address(v.origin())+i0,iN-i0,vptr+i0);
+      }
+      // setup array references
+      boost::multi::array_cref<SPComplexType,2> Xsp(Xptr, X.extensions());
+      boost::multi::array_ref<SPComplexType,2> vsp(vptr, v.extensions());
+      comm->barrier();
+
       boost::multi::array_ref<SPComplexType,2> v_(to_address(vsp[Spvn_view.local_origin()[0]].origin()),
                                         {long(Spvn_view.size(0)),long(vsp.size(1))});
-      comm->barrier();
       ma::product(SPValueType(a),Spvn_view,Xsp,SPValueType(c),v_);
-      copy_n_cast(to_address(v_.origin()),v_.num_elements(),
+
+      // copy data back if changing precision
+      if(not std::is_same<vType,SPComplexType>::value) {
+        copy_n(to_address(v_.origin()),v_.num_elements(),
                   to_address(v[Spvn_view.local_origin()[0]].origin()));
+      }
       comm->barrier();
-#else
-      using Type = typename std::decay<MatB>::type::element;
-      // Spvn*X
-      boost::multi::array_ref<Type,2> v_(to_address(v[Spvn_view.local_origin()[0]].origin()),
-                                        {long(Spvn_view.size(0)),long(v.size(1))});
-      ma::product(SPValueType(a),Spvn_view,X,SPValueType(c),v_);
-#endif
+
     }
 
     template<class MatA, class MatB,
@@ -337,35 +349,13 @@ class SparseTensor
              typename = void
             >
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
-      if(not separateEJ) k=0;
-      assert( SpvnT[k].size(1) == G.size(0) );
-      assert( SpvnT[k].size(0) == v.size(0) );
-
-#if MIXED_PRECISION
-      size_t mem_needs = G.num_elements()+v.num_elements();
-      set_buffer(mem_needs);
-      boost::multi::array_ref<SPComplexType,1> vsp(to_address(SM_TMats.origin()), v.extensions());
-      boost::multi::array_ref<SPComplexType,1> Gsp(vsp.origin()+vsp.num_elements(), G.extensions());
-      size_t i0, iN;
-      std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(G.num_elements()),size_t(comm->size()));
-      using std::copy_n;
-      copy_n(to_address(G.origin())+i0,iN-i0,to_address(Gsp.origin())+i0);
-      boost::multi::array_ref<SPComplexType,1> v_(to_address(vsp.origin()) + SpvnT_view[k].local_origin()[0],
-                                        iextensions<1u>{SpvnT_view[k].size(0)});
-      comm->barrier();
-      if(walker_type==CLOSED) a*=2.0;
-      ma::product(SpT2(a), SpvnT_view[k], Gsp, SpT2(c), v_);
-      copy_n(to_address(v_.origin()),v_.num_elements(),
-                  to_address(v.origin()) + SpvnT_view[k].local_origin()[0]);
-      comm->barrier();
-#else
-      using Type = typename std::decay<MatB>::type::element ;
-      // SpvnT*G
-      boost::multi::array_ref<Type,1> v_(to_address(v.origin()) + SpvnT_view[k].local_origin()[0],
-                                        iextensions<1u>{SpvnT_view[k].size(0)});
-      if(walker_type==CLOSED) a*=2.0;
-      ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
-#endif
+      using BType = typename std::decay<MatB>::type::element ;
+      using AType = typename std::decay<MatA>::type::element ;
+      boost::multi::array_ref<BType,2,decltype(v.origin())> v_(v.origin(),
+                                        {v.size(0),1});
+      boost::multi::array_cref<AType,2,decltype(G.origin())> G_(G.origin(),
+                                        {G.size(0),1});
+      return vbias(G_,v_,a,c,k);
     }
 
     template<class MatA, class MatB,
@@ -373,35 +363,56 @@ class SparseTensor
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
+      using vType = typename std::decay<MatB>::type::element ;
+      using GType = typename std::decay_t<typename MatA::element>;
       if(not separateEJ) k=0;
+      if(walker_type==CLOSED) a*=2.0;
       assert( SpvnT[k].size(1) == G.size(0) );
       assert( SpvnT[k].size(0) == v.size(0) );
       assert( G.size(1) == v.size(1) );
 
-#if MIXED_PRECISION
-      size_t mem_needs = G.num_elements()+v.num_elements();
-      set_buffer(mem_needs);
-      boost::multi::array_ref<SPComplexType,2> vsp(to_address(SM_TMats.origin()), v.extensions());
-      boost::multi::array_ref<SPComplexType,2> Gsp(vsp.origin()+vsp.num_elements(), G.extensions());
-      size_t i0, iN;
-      std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(G.num_elements()),size_t(comm->size()));
-      copy_n(to_address(G.origin())+i0,iN-i0,to_address(Gsp.origin())+i0);
+      // setup buffer space if changing precision in G or v
+      size_t vmem(0),Gmem(0);
+      if(not std::is_same<GType,SPComplexType>::value) Gmem = G.num_elements();
+      if(not std::is_same<vType,SPComplexType>::value) vmem = v.num_elements();
+      set_buffer(vmem+Gmem);
+      const_sp_pointer Gptr(nullptr);
+      sp_pointer vptr(nullptr);
+      // setup origin of Gsp and copy_n_cast if necessary
+      if(std::is_same<GType,SPComplexType>::value) {
+        Gptr = reinterpret_cast<const_sp_pointer>(to_address(G.origin()));
+      } else {
+        long i0, iN;
+        std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
+                                  long(G.num_elements()),long(comm->size()));
+        copy_n_cast(to_address(G.origin())+i0,iN-i0,to_address(SM_TMats.origin())+i0);
+        Gptr = to_address(SM_TMats.origin());
+      }
+      // setup origin of vsp and copy_n_cast if necessary
+      if(std::is_same<vType,SPComplexType>::value) {
+        vptr = reinterpret_cast<sp_pointer>(to_address(v.origin()));
+      } else {
+        long i0, iN;
+        std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
+                                  long(v.num_elements()),long(comm->size()));
+        vptr = to_address(SM_TMats.origin())+Gmem;
+        if( std::abs(c) > 1e-12 )
+          copy_n_cast(to_address(v.origin())+i0,iN-i0,vptr+i0);
+      }
+      // setup array references
+      boost::multi::array_cref<SPComplexType,2> Gsp(Gptr, G.extensions());
+      boost::multi::array_ref<SPComplexType,2> vsp(vptr, v.extensions());
+      comm->barrier();
       boost::multi::array_ref<SPComplexType,2> v_(to_address(vsp[SpvnT_view[k].local_origin()[0]].origin()),
                                         {long(SpvnT_view[k].size(0)),long(vsp.size(1))});
-      comm->barrier();
-      if(walker_type==CLOSED) a*=2.0;
       ma::product(SpT2(a), SpvnT_view[k], Gsp, SpT2(c), v_);
-      copy_n(to_address(v_.origin()),v_.num_elements(),
-                  to_address(to_address(v[SpvnT_view[k].local_origin()[0]].origin()))); 
+
+      // copy data back if changing precision
+      if(not std::is_same<vType,SPComplexType>::value) {
+        copy_n(to_address(v_.origin()),v_.num_elements(),
+                  to_address(v[SpvnT_view[k].local_origin()[0]].origin())); 
+      }
       comm->barrier();
-#else
-      using Type = typename std::decay<MatB>::type::element ;
-      // SpvnT*G
-      boost::multi::array_ref<Type,2> v_(to_address(v[SpvnT_view[k].local_origin()[0]].origin()),
-                                        {long(SpvnT_view[k].size(0)),long(v.size(1))});
-      if(walker_type==CLOSED) a*=2.0;
-      ma::product(SpT2(a), SpvnT_view[k], G, SpT2(c), v_);
-#endif
     }
 
     template<class Mat, class MatB>

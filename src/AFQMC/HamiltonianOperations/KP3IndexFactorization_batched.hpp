@@ -44,7 +44,7 @@ extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
 // when an approach is found, integrate in original class through additional template parameter
 
 template<class LQKankMatrix>
-class KP3IndexFactorization_batched
+class KP3IndexFactorization_batched 
 {
   // allocators
   using Allocator = device_allocator<ComplexType>;
@@ -146,7 +146,7 @@ class KP3IndexFactorization_batched
         TG(tg_),
         allocator_(alloc_),
         sp_allocator_(alloc_),
-        buffer_allocator(device_buffer_generator.get()), // hard-wired to device like Allocator
+        device_buffer_allocator(device_buffer_generator.get()), // hard-wired to device like Allocator
         walker_type(type),
         global_nCV(gncv),
         global_origin(cv0),
@@ -337,7 +337,7 @@ class KP3IndexFactorization_batched
             P1[I][J] += H1[K][i][j] + vn0[K][i][j];
             P1[J][I] += H1[K][j][i] + vn0[K][j][i];
             // This is really cutoff dependent!!!
-#if AFQMC_MIXED_PRECISION
+#if MIXED_PRECISION
             if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-5 ) {
 #else
             if( std::abs(P1[I][J]-ma::conj(P1[J][I]))*2.0 > 1e-6 ) {
@@ -433,9 +433,9 @@ class KP3IndexFactorization_batched
         APP_ABORT(" Error: Kr and/or Kl can only be calculated with addEJ=true.\n");
       }   
       StaticMatrix Kl({Knr,Knc},
-                        buffer_allocator->template get_allocator<SPComplexType>());
+                        device_buffer_allocator->template get_allocator<SPComplexType>());
       StaticMatrix Kr({Knr,Knc},
-                        buffer_allocator->template get_allocator<SPComplexType>());
+                        device_buffer_allocator->template get_allocator<SPComplexType>());
       fill_n(Kr.origin(),Knr*Knc,SPComplexType(0.0));
       fill_n(Kl.origin(),Knr*Knc,SPComplexType(0.0));
 
@@ -450,7 +450,7 @@ class KP3IndexFactorization_batched
       // later on, rewrite routine to loop over spins, to avoid storage of both spin
       // components simultaneously
       Static4Tensor GKK({nspin,nkpts,nkpts,nwalk*nmo_max*nocc_max},
-                        buffer_allocator->template get_allocator<SPComplexType>());
+                        device_buffer_allocator->template get_allocator<SPComplexType>());
       GKaKjw_to_GKKwaj(G3Da,GKK[0],nelpk[nd].sliced(0,nkpts),dev_nelpk[nd],dev_a0pk[nd]);
       if(walker_type==COLLINEAR)  
         GKaKjw_to_GKKwaj(G3Db,GKK[1],nelpk[nd].sliced(nkpts,2*nkpts),
@@ -519,12 +519,12 @@ class KP3IndexFactorization_batched
         kdiag.reserve(batch_size);
 
         StaticIVector IMats(iextensions<1u>{batch_size}, 
-                        buffer_allocator->template get_allocator<int>());
+                        device_buffer_allocator->template get_allocator<int>());
         fill_n(IMats.origin(),IMats.num_elements(),0);
         StaticVector dev_scl_factors(iextensions<1u>{batch_size},
-                        buffer_allocator->template get_allocator<SPComplexType>());
+                        device_buffer_allocator->template get_allocator<SPComplexType>());
         Static3Tensor T1({batch_size,nwalk*nocc_max,nocc_max*nchol_max},
-                        buffer_allocator->template get_allocator<SPComplexType>());
+                        device_buffer_allocator->template get_allocator<SPComplexType>());
         SPRealType scl = (walker_type==CLOSED?2.0:1.0);
         
         // I WANT C++17!!!!!!
@@ -532,7 +532,7 @@ class KP3IndexFactorization_batched
         if(needs_copy) 
             mem_ank = nkpts*nocc_max*nchol_max*nmo_max;
         StaticVector LBuff(iextensions<1u>{2*mem_ank},
-                    buffer_allocator->template get_allocator<SPComplexType>());
+                    device_buffer_allocator->template get_allocator<SPComplexType>());
         sp_pointer LQptr(nullptr), LQmptr(nullptr); 
         if(needs_copy) {
           // data will be copied here  
@@ -1101,17 +1101,17 @@ class KP3IndexFactorization_batched
       SPComplexType imhalfa(0.0,0.5*a);
 
       Static3Tensor vKK({nkpts+number_of_symmetric_Q,nkpts,nwalk*nmo_max*nmo_max},
-                           buffer_allocator->template get_allocator<SPComplexType>()); 
+                           device_buffer_allocator->template get_allocator<SPComplexType>()); 
       fill_n(vKK.origin(),vKK.num_elements(),SPComplexType(0.0));
       Static4Tensor XQnw({nkpts,2,nchol_max,nwalk},  
-                           buffer_allocator->template get_allocator<SPComplexType>()); 
+                           device_buffer_allocator->template get_allocator<SPComplexType>()); 
       fill_n(XQnw.origin(),XQnw.num_elements(),SPComplexType(0.0));
 
       // "rotate" X  
       //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)  
 #if MIXED_PRECISION
       StaticMatrix Xdev(X.extensions(),
-                           buffer_allocator->template get_allocator<SPComplexType>()); 
+                           device_buffer_allocator->template get_allocator<SPComplexType>()); 
       copy_n_cast(make_device_ptr(X.origin()),X.num_elements(),Xdev.origin());
 #else
       SpMatrix_ref Xdev(make_device_ptr(X.origin()),X.extensions());
@@ -1266,26 +1266,29 @@ class KP3IndexFactorization_batched
       SPComplexType imhalfa(0.0,0.5*a*scl);
 
       assert(G.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
-      C3Tensor_cref G3Da(make_device_ptr(G.origin()),{nocca_tot,nmo_tot,nwalk} );
-      C3Tensor_cref G3Db(make_device_ptr(G.origin())+G3Da.num_elements()*(nspin-1),
+      // MAM: use reshape when available, then no need to deal with types
+      using GType = typename std::decay<MatA>::type::element ;
+      boost::multi::array_ref<GType const,3,decltype(make_device_ptr(G.origin()))> 
+            G3Da(make_device_ptr(G.origin()),{nocca_tot,nmo_tot,nwalk} );
+      boost::multi::array_ref<GType const,3,decltype(make_device_ptr(G.origin()))>
+            G3Db(make_device_ptr(G.origin())+G3Da.num_elements()*(nspin-1),
                                                      {noccb_tot,nmo_tot,nwalk} );
-      {  
-        // assuming contiguous
-        ma::scal(c,v);
-      }
+      
+      // assuming contiguous
+      ma::scal(c,v);
 
       for(int spin=0; spin<nspin; spin++) {
         size_t cnt(0);
         Static3Tensor v1({nkpts+number_of_symmetric_Q,nchol_max,nwalk}, 
-                           buffer_allocator->template get_allocator<SPComplexType>()); 
+                           device_buffer_allocator->template get_allocator<SPComplexType>()); 
         Static3Tensor GQ({nkpts,nkpts*nocc_max*nmo_max,nwalk},
-                           buffer_allocator->template get_allocator<SPComplexType>()); 
+                           device_buffer_allocator->template get_allocator<SPComplexType>()); 
         fill_n(v1.origin(),v1.num_elements(),SPComplexType(0.0));
         fill_n(GQ.origin(),GQ.num_elements(),SPComplexType(0.0));
 
-        if(spin==0) 
+        if(spin==0)  
           GKaKjw_to_GQKajw(G3Da,GQ,nelpk[nd],dev_nelpk[nd],dev_a0pk[nd]);
-        else
+        else 
           GKaKjw_to_GQKajw(G3Db,GQ,nelpk[nd].sliced(nkpts,2*nkpts),
                                    dev_nelpk[nd].sliced(nkpts,2*nkpts),
                                    dev_a0pk[nd].sliced(nkpts,2*nkpts));
@@ -1354,7 +1357,7 @@ class KP3IndexFactorization_batched
 
     Allocator allocator_;
     SpAllocator sp_allocator_;
-    device_allocator_generator_type *buffer_allocator;
+    device_allocator_generator_type *device_buffer_allocator;
 
     WALKER_TYPES walker_type;
 
@@ -1508,6 +1511,7 @@ class KP3IndexFactorization_batched
     template<class MatA, class MatB>
     void vbias_from_v1(ComplexType a, MatA const& v1, MatB && vbias)
     {
+      using BType = typename std::decay<MatB>::type::element ;
       int nwalk = vbias.size(1);
       int nkpts = nopk.size();
       int nchol_max = *std::max_element(ncholpQ.begin(),ncholpQ.end());
@@ -1516,7 +1520,8 @@ class KP3IndexFactorization_batched
 // using make_device_ptr(vbias.origin()) to catch errors here
       vbias_from_v1(nwalk,nkpts,nchol_max,dev_Qmap.origin(),dev_kminus.origin(),
                              dev_ncholpQ.origin(),dev_Q2vbias.origin(),
-                             a,v1.origin(),to_address(make_device_ptr(vbias.origin())));
+                             static_cast<BType>(a),
+                             v1.origin(),to_address(make_device_ptr(vbias.origin())));
 
     }
 

@@ -27,7 +27,7 @@
 #define MKL_Complex16   std::complex<double>
 
 #undef APP_ABORT
-#define APP_ABORT(x) {std::cout << x; exit(0);}
+#define APP_ABORT(x) {std::cout << x; throw;}
 
 #include<iostream>
 #include<vector>

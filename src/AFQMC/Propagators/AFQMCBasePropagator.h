@@ -54,6 +54,7 @@ class AFQMCBasePropagator: public AFQMCInfo
   using pointer = device_ptr<ComplexType>;
   // allocator for memory shared by all cores in working local group 
   using aux_allocator = localTG_allocator<ComplexType>;
+  using sp_pointer = typename device_allocator<SPComplexType>::pointer;
 
   using buffer_alloc_type = localTG_buffer_type<ComplexType>;
   using buffer_alloc_SPtype = localTG_buffer_type<SPComplexType>;
@@ -61,22 +62,29 @@ class AFQMCBasePropagator: public AFQMCInfo
   using StaticVector = boost::multi::static_array<ComplexType,1,buffer_alloc_type>;
   using StaticMatrix = boost::multi::static_array<ComplexType,2,buffer_alloc_type>;
   using Static3Tensor = boost::multi::static_array<ComplexType,3,buffer_alloc_type>;
+  using StaticSPVector = boost::multi::static_array<SPComplexType,1,buffer_alloc_SPtype>;
+  using StaticSPMatrix = boost::multi::static_array<SPComplexType,2,buffer_alloc_SPtype>;
+  using StaticSP3Tensor = boost::multi::static_array<SPComplexType,3,buffer_alloc_SPtype>;
 
   using CVector = boost::multi::array<ComplexType,1,allocator>;  
   using CMatrix = boost::multi::array<ComplexType,2,allocator>;  
   using C3Tensor = boost::multi::array<ComplexType,3,allocator>;  
   using CVector_ref = boost::multi::array_ref<ComplexType,1,pointer>;  
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;  
+  using SPCMatrix_ref = boost::multi::array_ref<SPComplexType,2,sp_pointer>;  
   using C3Tensor_ref = boost::multi::array_ref<ComplexType,3,pointer>;  
   using sharedCVector = ComplexVector<aux_allocator>; 
   using stdCVector = boost::multi::array<ComplexType,1>;  
   using stdCMatrix = boost::multi::array<ComplexType,2>;  
   using stdCVector_ref = boost::multi::array_ref<ComplexType,1>;  
+  using stdSPCVector_ref = boost::multi::array_ref<SPComplexType,1>;  
   using stdCMatrix_ref = boost::multi::array_ref<ComplexType,2>;  
+  using stdSPCMatrix_ref = boost::multi::array_ref<SPComplexType,2>;  
   using stdC3Tensor_ref = boost::multi::array_ref<ComplexType,3>;  
   using CMatrix_ptr = boost::multi::array_ptr<ComplexType,2,pointer>;  
 
   using mpi3CVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;  
+  using mpi3SPCVector = boost::multi::array<SPComplexType,1,shared_allocator<SPComplexType>>;  
   using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;  
   using mpi3CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;  
 
@@ -218,9 +226,10 @@ class AFQMCBasePropagator: public AFQMCInfo
     template<class WlkSet>
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);
 
+    template<class MatA, class MatB, class MatC, class MatD>
     void assemble_X(size_t nsteps, size_t nwalk, RealType sqrtdt,
-                    StaticMatrix& X, StaticMatrix& vbias,
-                    StaticMatrix& MF, StaticMatrix& HW, bool addRAND=true);
+                          MatA&& X, MatB&& vbias, MatC&& MF,
+                          MatD&& HWs, bool addRAND=true);
 
     void reset_nextra(int nextra); 
 
@@ -233,10 +242,11 @@ class AFQMCBasePropagator: public AFQMCInfo
     template<class WSet>
     void apply_propagators_batched(char TA, WSet& wset, int ni, C3Tensor_ref& vHS3D);
 
-    ComplexType apply_bound_vbias(ComplexType v, RealType sqrtdt)
+    template<typename T>
+    T apply_bound_vbias(T v, RealType sqrtdt)
     {
-      return (std::abs(v)>vbias_bound*sqrtdt)?
-                (v/(std::abs(v)/static_cast<ValueType>(vbias_bound*sqrtdt))):(v);
+      return (std::abs(v)>std::abs(static_cast<T>(vbias_bound*sqrtdt)))?
+                (v/(std::abs(v)/static_cast<T>(vbias_bound*sqrtdt))):(v);
     }
 
     // taken from NOMSD 

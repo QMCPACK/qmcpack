@@ -51,6 +51,7 @@ public:
   void reserve(int crowd_size);
   void startRun() {}
   void startBlock(int steps);
+  void stopBlock();
 
   EstimatorManagerCrowd& get_estimator_manager_crowd() { return estimator_manager_crowd_; }
   void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian);
@@ -68,6 +69,8 @@ public:
   
   void accumulate(int global_walkers)
   {
+    if (this->size() == 0)
+      return;
     estimator_manager_crowd_.accumulate(global_walkers, mcp_walkers_, walker_elecs_);
   }
 

@@ -89,29 +89,43 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 
   { // using scope to control lifetime of StaticArrays, avoiding unnecesary buffer space 
 
-    StaticMatrix G(G_ext,
-            buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix vbias({long(localnCV),long(nwalk)},
-            buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix X({long(localnCV),long(nwalk*nsteps)},
-            buffer_allocator->template get_allocator<ComplexType>());
+    StaticSPMatrix G(G_ext,
+            buffer_allocator->template get_allocator<SPComplexType>());
 
     // 1. Calculate Green function for all walkers
     AFQMCTimers[G_for_vbias_timer]->start();
+#if defined(MIXED_PRECISION)
+    {
+      int Gak0,GakN;
+      std::tie(Gak0,GakN) = FairDivideBoundary(TG.getLocalTGRank(),
+                    int(G.num_elements()),TG.getNCoresPerTG());
+      StaticMatrix Gc(G_ext,
+            buffer_allocator->template get_allocator<ComplexType>());
+      wfn.MixedDensityMatrix_for_vbias(wset,Gc);
+      copy_n_cast(make_device_ptr(Gc.origin())+Gak0,GakN-Gak0,
+                  make_device_ptr(G.origin())+Gak0);
+    }
+    TG.local_barrier();
+#else
     wfn.MixedDensityMatrix_for_vbias(wset,G);
+#endif
     AFQMCTimers[G_for_vbias_timer]->stop();
 //std::cout<<" G: " <<ma::dot(G(G.extension(0),0),G(G.extension(0),0)) <<std::endl;
 
+    StaticSPMatrix vbias({long(localnCV),long(nwalk)},
+            buffer_allocator->template get_allocator<SPComplexType>());
     // 2. Calculate vbias for initial configuration
     AFQMCTimers[vbias_timer]->start();
     if (free_projection) {
-      fill_n(vbias.origin(), localnCV*nwalk, ComplexType(0.0,0.0));
+      fill_n(vbias.origin(), localnCV*nwalk, SPComplexType(0.0,0.0));
     } else {
       wfn.vbias(G,vbias,sqrtdt);
     }
     AFQMCTimers[vbias_timer]->stop();
 //std::cout<<" vbias: " <<ma::dot(vbias(vbias.extension(0),0),vbias(vbias.extension(0),0)) <<std::endl;
 
+    StaticSPMatrix X({long(localnCV),long(nwalk*nsteps)},
+            buffer_allocator->template get_allocator<SPComplexType>());
     // 3. Assemble X(nCV,nsteps,nwalk)
     AFQMCTimers[assemble_X_timer]->start();
     assemble_X(nsteps,nwalk,sqrtdt,X,vbias,MFfactor,hybrid_weight);
@@ -130,10 +144,10 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
           auto&& V(*wset.getFields(bp_step));
           if(nsteps==1) {
             copy_n(X[cv0].origin(),nwalk*(cvN-cv0),V[cv0].origin());
-            ma::scal(sqrtdt,V.sliced(cv0,cvN));
+            ma::scal(SPComplexType(sqrtdt),V.sliced(cv0,cvN));
           } else {
-            ma::add(ComplexType(0.0),   V.sliced(cv0,cvN),
-                  ComplexType(sqrtdt),X( {cv0,cvN}, {ni*nwalk,(ni+1)*nwalk} ),
+            ma::add(SPComplexType(0.0),   V.sliced(cv0,cvN),
+                  SPComplexType(sqrtdt),X( {cv0,cvN}, {ni*nwalk,(ni+1)*nwalk} ),
                                       V.sliced(cv0,cvN));
           }
           bp_step++;
@@ -145,7 +159,17 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 
   // 4. Calculate vHS(M*M,nsteps,nwalk)/vHS(nsteps,nwalk,M*M)
     AFQMCTimers[vHS_timer]->start();
+#if defined(MIXED_PRECISION)
+    // is this clever or dirsty? seems to work well and saves memory!
+    SPCMatrix_ref vsp(sp_pointer(make_device_ptr(vHS.origin())),vhs_ext);
+    wfn.vHS(X,vsp,sqrtdt);
+    TG.local_barrier();
+    if(TG.TG_local().root())
+      inplace_cast<SPComplexType,ComplexType>(vsp.origin(),vsp.num_elements());
+    TG.local_barrier();
+#else
     wfn.vHS(X,vHS,sqrtdt);
+#endif
     AFQMCTimers[vHS_timer]->stop();
 //std::cout<<" Pg vHS: " <<TG.Global().rank() <<" " <<ma::sum(vHS) <<"\n" <<std::endl;
 //std::cout<<" vHS: " <<ma::dot(vHS[0],vHS[0]) <<"\n\n" <<std::endl;
@@ -240,8 +264,8 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
 
   StaticMatrix vHS(vhs_ext,
             buffer_allocator->template get_allocator<ComplexType>());
-  StaticMatrix X({long(globalnCV),long(nwalk)},
-            buffer_allocator->template get_allocator<ComplexType>());
+  StaticSPMatrix X({long(globalnCV),long(nwalk)},
+            buffer_allocator->template get_allocator<SPComplexType>());
   C3Tensor_ref vHS3D(make_device_ptr(vHS.origin()),vhs3d_ext);
 
   auto&& Fields(*wset.getFields());
@@ -301,7 +325,17 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
 
     // 2. Calculate vHS(M*M,nwalk)/vHS(nwalk,M*M) 
     //  X has been scaled by sqrtdt to avoid needing it here 
+#if defined(MIXED_PRECISION)
+    // is this clever or dirsty? seems to work well and saves memory!
+    SPCMatrix_ref vsp(sp_pointer(make_device_ptr(vHS.origin())),vhs_ext);
+    wfn.vHS(X,vsp);
+    TG.local_barrier();
+    if(TG.TG_local().root())
+      inplace_cast<SPComplexType,ComplexType>(vsp.origin(),vsp.num_elements());
+    TG.local_barrier();
+#else
     wfn.vHS(X,vHS);
+#endif
 //std::cout<<" BP vHS: " <<TG.Global().rank() <<" " <<ma::sum(vHS) <<"\n" <<std::endl;
 
     for(int nr=0; nr<nrefs; ++nr) {   
@@ -594,6 +628,78 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
     }
     TG.local_barrier();
   }
+
+template<class MatA, class MatB, class MatC, class MatD> 
+void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtdt,
+                          MatA&& X, MatB&& vbias, MatC&& MF,
+                          MatD&& HWs, bool addRAND)
+{
+  using XType = typename std::decay<MatA>::type::element ;
+  using vType = typename std::decay<MatB>::type::element ;
+  // remember to call vbi = apply_bound_vbias(*vb);
+  // X[m,ni,iw] = rand[m,ni,iw] + im * ( vbias[m,iw] - vMF[m]  )
+  // HW[ni,iw] = sum_m [ im * ( vMF[m] - vbias[m,iw] ) * 
+  //                     ( rand[m,ni,iw] + halfim * ( vbias[m,iw] - vMF[m] ) ) ] 
+  //           = sum_m [ im * ( vMF[m] - vbias[m,iw] ) * 
+  //                     ( X[m,ni,iw] - halfim * ( vbias[m,iw] - vMF[m] ) ) ] 
+  // MF[ni,iw] = sum_m ( im * X[m,ni,iw] * vMF[m] )   
+
+  TG.local_barrier();
+  ComplexType im(0.0,1.0);
+  int nCV = int(X.size(0));
+  // generate random numbers
+  if(addRAND)
+  {
+    int i0,iN;
+    std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),int(X.num_elements()),
+                                         TG.TG_local().size());
+    sampleGaussianFields_n(make_device_ptr(X.origin())+i0,iN-i0,*rng);
+  }
+
+  // construct X
+  fill_n(make_device_ptr(HWs.origin()),HWs.num_elements(),ComplexType(0));
+  fill_n(make_device_ptr(MF.origin()),MF.num_elements(),ComplexType(0));
+
+// leaving compiler switch until I decide how to do this better
+// basically hide this decision somewhere based on the value of pointer!!!
+#ifdef ENABLE_CUDA
+  kernels::construct_X(nCV,nsteps,nwalk,free_projection,sqrtdt,vbias_bound,
+                       to_address(vMF.origin()),
+                       to_address(vbias.origin()),
+                       to_address(HWs.origin()),
+                       to_address(MF.origin()),
+                       to_address(X.origin())
+                      );
+#else
+  boost::multi::array_ref<XType,3> X3D(to_address(X.origin()),
+                        {long(X.size(0)),long(nsteps),long(nwalk)});
+  int m0,mN;
+  std::tie(m0,mN) = FairDivideBoundary(TG.TG_local().rank(),nCV,TG.TG_local().size());
+  TG.local_barrier();
+  for(int m=m0; m<mN; ++m) {
+    auto X_m = X3D[m];
+    auto vb_ = to_address(vbias[m].origin());
+    auto vmf_t = sqrtdt*apply_bound_vbias(vMF[m],1.0);
+    auto vmf_ = sqrtdt*vMF[m];
+    // apply bounds to vbias
+    for(int iw=0; iw<nwalk; iw++)
+      vb_[iw] = apply_bound_vbias(vb_[iw],sqrtdt);
+    for(int ni=0; ni<nsteps; ni++) {
+      auto X_ = X3D[m][ni].origin();
+      auto hws_ = to_address(HWs[ni].origin());
+      auto mf_ = to_address(MF[ni].origin());
+      for(int iw=0; iw<nwalk; iw++) {
+        // No force bias term when doing free projection.
+        ComplexType vdiff = free_projection?ComplexType(0.0, 0.0):(im*(static_cast<ComplexType>(vb_[iw])-vmf_t));
+        X_[iw] += static_cast<XType>(vdiff);
+        hws_[iw] -= vdiff * ( static_cast<ComplexType>(X_[iw]) - 0.5*vdiff );
+        mf_[iw] += im * static_cast<ComplexType>(X_[iw]) * vmf_;
+      }
+    }
+  }
+  TG.local_barrier();
+#endif
+}
 
 }
 

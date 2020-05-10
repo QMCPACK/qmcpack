@@ -139,7 +139,7 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
 
   protected: 
 
-    mpi3CVector bpX;
+    mpi3SPCVector bpX;
     std::vector<int> bpx_counts, bpx_displ;
 
     bool buffer_reallocated=false;
