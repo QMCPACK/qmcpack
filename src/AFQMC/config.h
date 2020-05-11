@@ -123,6 +123,7 @@ namespace afqmc
   using device_memory_resource = device::memory_resource;
   using shm_memory_resource = device::memory_resource;
   template<class T> using device_constructor = device::constructor<T>;
+  template<class T> using shm_constructor = device::constructor<T>;
 
 #else
   template<class T>  using device_allocator = std::allocator<T>;
@@ -146,9 +147,11 @@ namespace afqmc
   using device_memory_resource = boost::multi::memory::resource<>; 
   using shm_memory_resource = shm::memory_resource_shm_ptr_with_raw_ptr_dispatch; 
   template<class T>  using device_constructor = device_allocator<T>; 
+  template<class T>  using shm_constructor = shared_allocator<T>;  
 
 #endif
 
+  template<class T>  using host_constructor = std::allocator<T>; 
   using host_memory_resource = boost::multi::memory::resource<>; 
 
   // new types

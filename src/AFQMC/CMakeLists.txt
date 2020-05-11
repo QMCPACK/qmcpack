@@ -43,6 +43,7 @@ IF(ENABLE_CUDA)
     Numerics/detail/CUDA/Kernels/zero_complex_part.cu
     Numerics/detail/CUDA/Kernels/batchedDot.cu
     Numerics/detail/CUDA/Kernels/copy_n_cast.cu
+    Numerics/detail/CUDA/Kernels/inplace_cast.cu
     Numerics/detail/CUDA/Kernels/ajw_to_waj.cu 
     Numerics/detail/CUDA/Kernels/vKKwij_to_vwKiKj.cu 
     Numerics/detail/CUDA/Kernels/KaKjw_to_QKajw.cu

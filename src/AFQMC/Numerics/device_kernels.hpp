@@ -32,6 +32,7 @@
 #include "AFQMC/Numerics/detail/CUDA/Kernels/zero_complex_part.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/batchedDot.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/copy_n_cast.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/inplace_cast.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/ajw_to_waj.cuh" 
 #include "AFQMC/Numerics/detail/CUDA/Kernels/vKKwij_to_vwKiKj.cuh" 
 #include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_QKajw.cuh"

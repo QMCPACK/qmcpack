@@ -56,6 +56,7 @@ class Real3IndexFactorization_batched_v2
   // type defs
   using pointer = typename Allocator::pointer;
   using sp_pointer = typename SpAllocator::pointer;
+  using const_sp_pointer = typename SpAllocator::const_pointer;
   using sp_rpointer = typename SpRAllocator::pointer;
   using pointer_shared = typename Allocator_shared::pointer;
   using sp_pointer_shared = typename SpAllocator_shared::pointer;
@@ -357,21 +358,13 @@ class Real3IndexFactorization_batched_v2
              typename = void
             >
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
-      assert( Likn.size(1) == X.size(0) );
-      assert( Likn.size(0) == v.size(0) );
-#if MIXED_PRECISION
-      StaticVector vsp(v.extensions(), 
-        buffer_allocator->template get_allocator<SPComplexType>());
-      StaticVector Xsp(X.extensions(), 
-        buffer_allocator->template get_allocator<SPComplexType>());
-      copy_n_cast(make_device_ptr(X.origin()),X.num_elements(),Xsp.origin());
-      if( std::abs(c-0.0) > 1e-6 )
-        copy_n_cast(make_device_ptr(v.origin()),v.num_elements(),vsp.origin());
-      ma::product(SPValueType(a),Likn,Xsp,SPValueType(c),vsp);
-      copy_n_cast(vsp.origin(),vsp.num_elements(),make_device_ptr(v.origin()));
-#else 
-      ma::product(SPValueType(a),Likn,X,SPValueType(c),v);
-#endif
+      using BType = typename std::decay<MatB>::type::element ;
+      using AType = typename std::decay<MatA>::type::element ;
+      boost::multi::array_ref<BType,2,decltype(v.origin())> v_(v.origin(),
+                                        {v.size(0),1});
+      boost::multi::array_ref<AType,2,decltype(X.origin())> X_(X.origin(),
+                                        {X.size(0),1});
+      return vHS(X_,v_,a,c);
     }
 
     template<class MatA, class MatB,
@@ -379,22 +372,43 @@ class Real3IndexFactorization_batched_v2
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
+      using XType = typename std::decay_t<typename MatA::element>;
+      using vType = typename std::decay<MatB>::type::element ;
       assert( Likn.size(1) == X.size(0) );
       assert( Likn.size(0) == v.size(0) );
       assert( X.size(1) == v.size(1) );
-#if MIXED_PRECISION
-      StaticMatrix vsp(v.extensions(),
-        buffer_allocator->template get_allocator<SPComplexType>());
-      StaticMatrix Xsp(X.extensions(),
-        buffer_allocator->template get_allocator<SPComplexType>());
-      copy_n_cast(make_device_ptr(X.origin()),X.num_elements(),Xsp.origin());
-      if( std::abs(c-0.0) > 1e-6 )
-        copy_n_cast(make_device_ptr(v.origin()),v.num_elements(),vsp.origin());
+      // setup buffer space if changing precision in X or v
+      size_t vmem(0),Xmem(0);
+      if(not std::is_same<XType,SPComplexType>::value) Xmem = X.num_elements();
+      if(not std::is_same<vType,SPComplexType>::value) vmem = v.num_elements();
+      StaticVector SPBuff(iextensions<1u>{Xmem+vmem},
+                buffer_allocator->template get_allocator<SPComplexType>());
+      sp_pointer vptr(nullptr);
+      const_sp_pointer Xptr(nullptr);
+      // setup origin of Gsp and copy_n_cast if necessary
+      using qmcplusplus::afqmc::pointer_cast;
+      if(std::is_same<XType,SPComplexType>::value) {
+        Xptr = pointer_cast<SPComplexType const>(make_device_ptr(X.origin()));
+      } else {
+        copy_n_cast(make_device_ptr(X.origin()),X.num_elements(),make_device_ptr(SPBuff.origin()));
+        Xptr = make_device_ptr(SPBuff.origin());
+      }
+      // setup origin of vsp and copy_n_cast if necessary
+      if(std::is_same<vType,SPComplexType>::value) {
+        vptr = pointer_cast<SPComplexType>(make_device_ptr(v.origin()));
+      } else {
+        vptr = make_device_ptr(SPBuff.origin())+Xmem;
+        if( std::abs(c) > 1e-12 )
+          copy_n_cast(make_device_ptr(v.origin()),v.num_elements(),vptr);
+      }
+      // work  
+      boost::multi::array_cref<SPComplexType const,2,const_sp_pointer> Xsp(Xptr, X.extensions());
+      boost::multi::array_ref<SPComplexType,2,sp_pointer> vsp(vptr, v.extensions());
       ma::product(SPValueType(a),Likn,Xsp,SPValueType(c),vsp);
-      copy_n_cast(vsp.origin(),vsp.num_elements(),make_device_ptr(v.origin()));
-#else
-      ma::product(SPValueType(a),Likn,X,SPValueType(c),v);
-#endif
+      if(not std::is_same<vType,SPComplexType>::value) {
+        copy_n_cast(make_device_ptr(vsp.origin()),v.num_elements(),
+                make_device_ptr(v.origin()));
+      }
     }
 
     template<class MatA, class MatB,
@@ -403,74 +417,19 @@ class Real3IndexFactorization_batched_v2
              typename = void
             >
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
-      if(walker_type==CLOSED) a*=2.0;
-      if(haj.size(0) == 1) {
-        if(walker_type==COLLINEAR) {
-          int NMO, nel[2];
-          NMO = Lnak[0].size(2);
-          nel[0] = Lnak[0].size(1);
-          nel[1] = Lnak[1].size(1);
-          double c_[2];
-          c_[0] = c;
-          c_[1] = c;
-          if( std::abs(c-0.0) < 1e-8 ) c_[1] = 1.0;
-#if MIXED_PRECISION
-          StaticVector vsp(v.extensions(),
-                buffer_allocator->template get_allocator<SPComplexType>());
-          if( std::abs(c-0.0) > 1e-6 )
-            copy_n_cast(make_device_ptr(v.origin()),v.num_elements(),vsp.origin());
-#endif
-          for(int ispin=0, is0=0; ispin<2; ispin++) {
-            assert( Lnak[ispin].size(0) == v.size(0) );
-            assert( Lnak[ispin].size(1)*Lnak[ispin].size(2) == G.size(0) );
-            SpCMatrix_ref Ln(make_device_ptr(Lnak[ispin].origin()), {local_nCV,nel[ispin]*NMO});
-#if MIXED_PRECISION
-            StaticVector Gsp(iextensions<1u>{nel[ispin]*NMO},
-                buffer_allocator->template get_allocator<SPComplexType>());
-            copy_n_cast(make_device_ptr(G.origin())+is0,Gsp.num_elements(),Gsp.origin());
-            ma::product(SPComplexType(a),Ln,Gsp,SPComplexType(c_[ispin]),vsp);
-#else
-            ma::product(SPComplexType(a),Ln,G.sliced(is0,is0+nel[ispin]*NMO),SPComplexType(c_[ispin]),v);
-#endif
-            is0 += nel[ispin]*NMO;
-          }
-#if MIXED_PRECISION
-          copy_n_cast(vsp.origin(),vsp.num_elements(),make_device_ptr(v.origin()));
-#endif
-        } else {
-          assert( Lnak[0].size(1)*Lnak[0].size(2) == G.size(0) );
-          assert( Lnak[0].size(0) == v.size(0) );
-          SpCMatrix_ref Ln(make_device_ptr(Lnak[0].origin()), {local_nCV,Lnak[0].size(1)*Lnak[0].size(2)});
-#if MIXED_PRECISION
-          StaticVector vsp(v.extensions(),
-                buffer_allocator->template get_allocator<SPComplexType>());
-          SpCVector_ref Gsp(vsp.origin()+vsp.num_elements(), G.extensions());
-          copy_n_cast(make_device_ptr(G.origin()),G.num_elements(),Gsp.origin());
-          if( std::abs(c-0.0) > 1e-6 )
-            copy_n_cast(make_device_ptr(v.origin()),v.num_elements(),vsp.origin());
-          ma::product(SPComplexType(a),Ln,Gsp,SPComplexType(c),vsp);
-          copy_n_cast(vsp.origin(),vsp.num_elements(),make_device_ptr(v.origin()));
-#else
-          ma::product(SPComplexType(a),Ln,G,SPComplexType(c),v);
-#endif
-        }
+      using BType = typename std::decay<MatB>::type::element ;
+      using AType = typename std::decay<MatA>::type::element ;
+      boost::multi::array_ref<BType,2,decltype(v.origin())> v_(v.origin(),
+                                        {v.size(0),1});
+      if((haj.size(0) == 1) && (walker_type!=COLLINEAR)) {  
+        boost::multi::array_ref<AType const,2,decltype(G.origin())> G_(G.origin(),
+                                          {1,G.size(0)});
+        return vbias(G_,v_,a,c,k);
       } else {
-        // multideterminant is not half-rotated, so use Likn
-        assert( Likn.size(0) == G.size(0) );
-        assert( Likn.size(1) == v.size(0) );
-
-#if MIXED_PRECISION
-        StaticVector vsp(v.extensions(),
-                buffer_allocator->template get_allocator<SPComplexType>());
-        StaticVector Gsp(G.extensions(),
-                buffer_allocator->template get_allocator<SPComplexType>());
-        copy_n_cast(make_device_ptr(G.origin()),G.num_elements(),Gsp.origin());
-        ma::product(SPValueType(a),ma::T(Likn),Gsp,SPValueType(c),vsp);
-        copy_n_cast(vsp.origin(),vsp.num_elements(),make_device_ptr(v.origin()));
-#else
-        ma::product(SPValueType(a),ma::T(Likn),G,SPValueType(c),v);
-#endif
-      }
+        boost::multi::array_ref<AType const,2,decltype(G.origin())> G_(G.origin(),
+                                          {G.size(0),1});
+        return vbias(G_,v_,a,c,k);
+      }  
     }
 
     // v(n,w) = sum_ak L(ak,n) G(w,ak)
@@ -479,7 +438,37 @@ class Real3IndexFactorization_batched_v2
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
+      using GType = typename std::decay_t<typename MatA::element>;
+      using vType = typename std::decay_t<MatB>::element;
       if(walker_type==CLOSED) a*=2.0;
+      // setup buffer space if changing precision in G or v
+      size_t vmem(0),Gmem(0);
+      if(not std::is_same<GType,SPComplexType>::value) Gmem = G.num_elements();
+      if(not std::is_same<vType,SPComplexType>::value) vmem = v.num_elements();
+      StaticVector SPBuff(iextensions<1u>{Gmem+vmem},
+                buffer_allocator->template get_allocator<SPComplexType>());
+      sp_pointer vptr(nullptr);
+      const_sp_pointer Gptr(nullptr);
+      // setup origin of Gsp and copy_n_cast if necessary
+      using qmcplusplus::afqmc::pointer_cast;
+      if(std::is_same<GType,SPComplexType>::value) {
+        Gptr = pointer_cast<SPComplexType const>(make_device_ptr(G.origin()));
+      } else {
+        copy_n_cast(make_device_ptr(G.origin()),G.num_elements(),make_device_ptr(SPBuff.origin()));
+        Gptr = make_device_ptr(SPBuff.origin());
+      }
+      // setup origin of vsp and copy_n_cast if necessary
+      if(std::is_same<vType,SPComplexType>::value) {
+        vptr = pointer_cast<SPComplexType>(make_device_ptr(v.origin()));
+      } else {
+        vptr = make_device_ptr(SPBuff.origin())+Gmem;
+        if( std::abs(c) > 1e-12 )
+          copy_n_cast(make_device_ptr(v.origin()),v.num_elements(),vptr);
+      }
+      // setup array references
+      boost::multi::array_cref<SPComplexType const,2,const_sp_pointer> Gsp(Gptr, G.extensions());
+      boost::multi::array_ref<SPComplexType,2,sp_pointer> vsp(vptr, v.extensions());
+
       if(haj.size(0) == 1) {
         int nwalk = v.size(1);
         if(walker_type==COLLINEAR) { 
@@ -491,46 +480,21 @@ class Real3IndexFactorization_batched_v2
           double c_[2];
           c_[0] = c;
           c_[1] = c;  
-          if( std::abs(c-0.0) < 1e-8 ) c_[1] = 1.0; 
-          StaticMatrix vsp(v.extensions(),
-                buffer_allocator->template get_allocator<SPComplexType>());
-          if( std::abs(c-0.0) > 1e-6 )
-            copy_n_cast(make_device_ptr(v.origin()),v.num_elements(),vsp.origin());
+          if( std::abs(c) < 1e-8 ) c_[1] = 1.0; 
           for(int ispin=0, is0=0; ispin<2; ispin++) {
             assert( Lnak[ispin].size(0) == v.size(0) );
             assert( Lnak[ispin].size(1) == G.size(0) );
             SpCMatrix_ref Ln(make_device_ptr(Lnak[ispin].origin()), {local_nCV,nel[ispin]*NMO});
-#if MIXED_PRECISION
-            StaticMatrix Gsp({nel[ispin]*NMO,nwalk},
-                buffer_allocator->template get_allocator<SPComplexType>());
-            copy_n_cast(make_device_ptr(G.origin())+is0*nwalk,Gsp.num_elements(),Gsp.origin());
-            ma::product(SPComplexType(a),Ln,Gsp,SPComplexType(c_[ispin]),vsp);
-#else
-            ma::product(SPComplexType(a),Ln,G.sliced(is0,is0+nel[ispin]*NMO),SPComplexType(c_[ispin]),v);
-#endif
+            ma::product(SPComplexType(a),Ln,Gsp.sliced(is0,is0+nel[ispin]*NMO),
+                        SPComplexType(c_[ispin]),vsp);
             is0 += nel[ispin]*NMO;
           }
-#if MIXED_PRECISION
-          copy_n_cast(vsp.origin(),vsp.num_elements(),make_device_ptr(v.origin()));
-#endif
         } else {
           assert( G.size(0) == v.size(1) );
           assert( Lnak[0].size(1)*Lnak[0].size(2) == G.size(1) );
           assert( Lnak[0].size(0) == v.size(0) );
           SpCMatrix_ref Ln(make_device_ptr(Lnak[0].origin()), {local_nCV,Lnak[0].size(1)*Lnak[0].size(2)});
-#if MIXED_PRECISION
-          StaticMatrix vsp(v.extensions(),
-                buffer_allocator->template get_allocator<SPComplexType>());
-          StaticMatrix Gsp(G.extensions(),
-                buffer_allocator->template get_allocator<SPComplexType>());
-          copy_n_cast(make_device_ptr(G.origin()),G.num_elements(),Gsp.origin());
-          if( std::abs(c-0.0) > 1e-6 )
-            copy_n_cast(make_device_ptr(v.origin()),v.num_elements(),vsp.origin());
           ma::product(SPComplexType(a),Ln,ma::T(Gsp),SPComplexType(c),vsp);
-          copy_n_cast(vsp.origin(),vsp.num_elements(),make_device_ptr(v.origin()));
-#else
-          ma::product(SPComplexType(a),Ln,ma::T(G),SPComplexType(c),v);
-#endif
         }
       } else {
         // multideterminant is not half-rotated, so use Likn
@@ -538,17 +502,11 @@ class Real3IndexFactorization_batched_v2
         assert( Likn.size(1) == v.size(0) );
         assert( G.size(1) == v.size(1) );
 
-#if MIXED_PRECISION
-        StaticMatrix vsp(v.extensions(),
-              buffer_allocator->template get_allocator<SPComplexType>());
-        StaticMatrix Gsp(G.extensions(),
-              buffer_allocator->template get_allocator<SPComplexType>());
-        copy_n_cast(make_device_ptr(G.origin()),G.num_elements(),Gsp.origin());
         ma::product(SPValueType(a),ma::T(Likn),Gsp,SPValueType(c),vsp);
-        copy_n_cast(vsp.origin(),vsp.num_elements(),make_device_ptr(v.origin()));
-#else
-        ma::product(SPValueType(a),ma::T(Likn),G,SPValueType(c),v);
-#endif
+      }
+      if(not std::is_same<vType,SPComplexType>::value) {
+        copy_n_cast(make_device_ptr(vsp.origin()),v.num_elements(),
+                make_device_ptr(v.origin()));
       }
     }
 
