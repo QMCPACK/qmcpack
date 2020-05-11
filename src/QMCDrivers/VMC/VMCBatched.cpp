@@ -391,10 +391,9 @@ bool VMCBatched::run()
     }
     // Should this be adjusted if crowds have different
     total_accept_ratio /= crowds_.size();
-    estimator_manager_->collectScalarEstimators(all_scalar_estimators, population_.get_num_local_walkers(),
-                                                total_block_weight);
+    estimator_manager_->collectScalarEstimators(all_scalar_estimators);
     // TODO: should be accept rate for block
-    estimator_manager_->stopBlockNew(total_accept_ratio);
+    estimator_manager_->stopBlockNew(total_accept_ratio, total_block_weight, 0.0);
   }
 
   // This is confusing logic from VMC.cpp want this functionality write documentation of this
