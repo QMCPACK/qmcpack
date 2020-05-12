@@ -475,6 +475,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 
   DiracDeterminantBase* adet = 0;
 
+  //TODO: the switch logic should be improved as we refine the input tags.
 #if defined(QMC_CUDA)
   adet = new DiracDeterminantCUDA(psi, firstIndex);
 #else
