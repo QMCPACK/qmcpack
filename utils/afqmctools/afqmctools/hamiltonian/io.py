@@ -43,7 +43,8 @@ def write_qmcpack_sparse(hcore, chol, nelec, nmo, e0=0.0, filename='hamiltonian.
         fh5['Hamiltonian/dims'] = numpy.array([unused, nnz, nint_block, nmo,
                                                nalpha, nbeta, unused,
                                                nchol_vecs])
-        fh5['Hamiltonian/ComplexIntegrals'] = numpy.array([not int(real_chol)])
+        fh5['Hamiltonian/ComplexIntegrals'] = numpy.array([not int(real_chol)],
+                                                          dtype=numpy.int32)
         # TODO: FDM This is deprecated, remove eventually.
         occups = [i for i in range(0, nalpha)]
         occups += [i+nmo for i in range(0, nbeta)]
@@ -89,7 +90,8 @@ def write_qmcpack_dense(hcore, chol, nelec, nmo, enuc=0.0,
         fh5['Hamiltonian/dims'] = numpy.array([0, 0, 0, nmo,
                                                nelec[0], nelec[1], 0,
                                                chol.shape[-1]])
-        fh5['Hamiltonian/ComplexIntegrals'] = numpy.array([not int(real_chol)])
+        fh5['Hamiltonian/ComplexIntegrals'] = numpy.array([not int(real_chol)],
+                                                          dtype=numpy.int32)
         if ortho is not None:
             fh5['Hamiltonian/X'] = ortho
 
