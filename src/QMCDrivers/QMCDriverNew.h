@@ -197,6 +197,8 @@ public:
   /** }@ */
 
 protected:
+  void endBlock();
+
   /** This is a data structure strictly for QMCDriver and its derived classes
    *
    *  i.e. its nested in scope for a reason

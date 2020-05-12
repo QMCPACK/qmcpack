@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -493,7 +493,8 @@ void QMCHamiltonian::updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, Par
 {
   if (std::isnan(op.Value))
     APP_ABORT("QMCHamiltonian::evaluate component " + op.myName + " returns NaN\n");
-  // The following is a ridiculous breach of encapsulation.
+  // The following is a ridiculous breach of encapsulation, also if any operator fails to
+  // save the result of mw_evaluateWithToperator in Value the local energy will be wrong.
   ham.LocalEnergy += op.Value;
   op.setObservables(ham.Observables);
   op.setParticlePropertyList(pset.PropertyList, ham.myIndex);
@@ -501,6 +502,7 @@ void QMCHamiltonian::updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, Par
 
 void QMCHamiltonian::updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset) {
       ham.KineticEnergy                 = op.Value;
+      // this assumes updateKinetic is called after updateNonKinetic is called.
       pset.PropertyList[WP::LOCALENERGY]    = ham.LocalEnergy;
       pset.PropertyList[WP::LOCALPOTENTIAL] = ham.LocalEnergy - ham.KineticEnergy;
     }
@@ -813,7 +815,12 @@ void QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
 std::vector<int> QMCHamiltonian::flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list,
                                                         RefVector<ParticleSet>& p_list)
 {
-  QMCHamiltonian& db_hamiltonian = h_list[0].get();
+  //std::cout << "h_list size: " << h_list.size() << '\n';
+  if (h_list.size() < 1)
+  {
+    throw std::runtime_error("too small h_list");
+  }
+  QMCHamiltonian& db_hamiltonian = h_list.at(0).get();
 
   std::vector<int> num_accepts(h_list.size(), 0);
   if(h_list[0].get().nlpp_ptr)

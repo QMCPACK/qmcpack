@@ -61,6 +61,14 @@ public:
     {}
   };
 
+  class DMCTimers
+  {
+  public:
+    NewTimer& tmove_timer;
+    DMCTimers(const std::string& prefix) : tmove_timer(*TimerManager.createTimer(prefix + "Tmove", timer_level_medium))
+    {}
+  };
+
   /// Constructor.
   DMCBatched(QMCDriverInput&& qmcdriver_input,
              DMCDriverInput&& input,
@@ -93,7 +101,7 @@ public:
   static void runDMCStep(int crowd_id,
                          const StateForThread& sft,
                          DriverTimers& timers,
-                         //                         DMCTimers& dmc_timers,
+                         DMCTimers& dmc_timers,
                          UPtrVector<ContextForSteps>& move_context,
                          UPtrVector<Crowd>& crowds);
 
@@ -106,6 +114,10 @@ public:
 
 private:
   DMCDriverInput dmcdriver_input_;
+
+  /** I think its better if these have there own type and variable name
+   */
+  DMCTimers dmc_timers_;
   /// Interval between branching
   IndexType branch_interval_;
   void resetUpdateEngines();
@@ -117,7 +129,7 @@ private:
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
                              DriverTimers& timers,
-                             //                             DMCTimers& dmc_timers,
+                             DMCTimers& dmc_timers,
                              ContextForSteps& move_context,
                              bool recompute);
 

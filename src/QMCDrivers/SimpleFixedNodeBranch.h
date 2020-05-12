@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -95,7 +95,7 @@ class EstimatorManagerBase;
  *   e. set WC's TrialEnergy
  *   d. multiply walkers.Colelctables *= the inverse weight.
  *   f. call SFNB's estimator accumilator on MCWC
- */  
+ */
 struct SimpleFixedNodeBranch : public QMCTraits
 {
   typedef SimpleFixedNodeBranch ThisType;
@@ -301,7 +301,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * @param killwalker 
    * @return number of copies to make in case targetwalkers changed
    */
-  int initWalkerController(MCPopulation& pop, bool fixW, bool killwalker);
+  int initWalkerController(MCPopulation& pop, IndexType target_walkers, bool fixW, bool killwalker);
 
   /** initialize reptile stats
    *
@@ -440,7 +440,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   /** perform branching
    * @param iter current step
-   * @param w Walker configuration
+   * @param walker population
    */
   void branch(int iter, MCPopulation& population);
 

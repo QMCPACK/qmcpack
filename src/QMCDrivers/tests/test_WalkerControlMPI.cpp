@@ -92,9 +92,9 @@ void UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& ran
                                                      {rank_counts_before[rank] - 1},
                                                      RefVector<MCPWalker>{}};
 
-  wc_.adjustPopulation(pop_adjust);
-  WalkerControlBase::onRankSpawnKill(*pop_, pop_adjust);
-
+  // this expands the walkers to be copied into real walkers.
+  WalkerControlBase::onRankKill(*pop_, pop_adjust);
+  WalkerControlBase::onRankSpawn(*pop_, pop_adjust);
 
   wc_.Cur_pop = std::accumulate(rank_counts_before.begin(), rank_counts_before.end(), 0);
 
@@ -137,10 +137,10 @@ TEST_CASE("WalkerControlMPI::determineNewWalkerPopulation", "[drivers][walker_co
   int cur_pop      = 5;
   int num_contexts = 3;
 
-  std::vector<int> num_per_node = {3, 1, 1};
 
   for (int i = 0; i < num_contexts; ++i)
   {
+    std::vector<int> num_per_node = {3, 1, 1};
     std::vector<int> fair_offset;
     std::vector<int> minus;
     std::vector<int> plus;
@@ -183,25 +183,25 @@ TEST_CASE("MPI WalkerControl multiplicity swap walkers", "[drivers][walker_contr
 TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control]")
 {
   auto test_func = []() {
-  outputManager.pause();
-  testing::UnifiedDriverWalkerControlMPITest test;
-  outputManager.resume();
+    outputManager.pause();
+    testing::UnifiedDriverWalkerControlMPITest test;
+    outputManager.resume();
 
-  SECTION("Simple")
-  {
-    std::vector<int> count_before{1, 1, 1};
-    std::vector<int> count_after{1, 1, 1};
-    // One walker on every node, should be no swapping
-    test.testPopulationDiff(count_before, count_after);
-  }
+    SECTION("Simple")
+    {
+      std::vector<int> count_before{1, 1, 1};
+      std::vector<int> count_after{1, 1, 1};
+      // One walker on every node, should be no swapping
+      test.testPopulationDiff(count_before, count_after);
+    }
 
-  SECTION("LoadBalance")
-  {
-    std::vector<int> count_before{3, 1, 1};
-    std::vector<int> count_after{1, 2, 2};
-    test.testPopulationDiff(count_before, count_after);
-  }
-                   };
+    SECTION("LoadBalance")
+    {
+      std::vector<int> count_before{3, 1, 1};
+      std::vector<int> count_after{1, 2, 2};
+      test.testPopulationDiff(count_before, count_after);
+    }
+  };
   MPIExceptionWrapper mew;
   mew(test_func);
 }

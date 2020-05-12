@@ -520,4 +520,32 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communi
   return awc;
 }
 
+void QMCDriverNew::endBlock()
+{
+  RefVector<ScalarEstimatorBase> all_scalar_estimators;
+  FullPrecRealType total_block_weight = 0.0;
+  FullPrecRealType total_accept_ratio = 0.0;
+  // Collect all the ScalarEstimatorsFrom EMCrowds
+  double cpu_block_time = 0.0;
+  for (const UPtr<Crowd>& crowd : crowds_)
+  {
+    crowd->stopBlock();
+    auto crowd_sc_est = crowd->get_estimator_manager_crowd().get_scalar_estimators();
+    all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
+                                 std::make_move_iterator(crowd_sc_est.end()));
+    total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
+    total_accept_ratio += crowd->get_accept_ratio() * crowd->get_estimator_manager_crowd().get_block_weight();
+    cpu_block_time += crowd->get_estimator_manager_crowd().get_cpu_block_time();
+  }
+  // Note: that this is already averaged in crowds and then summed weighted by the walkers
+  // in each crowd (which can be different) and then as a result the average is over
+  // local walkers
+  total_accept_ratio /= total_block_weight; //population_.get_num_local_walkers();
+  estimator_manager_->collectScalarEstimators(all_scalar_estimators);
+  cpu_block_time /= crowds_.size();
+
+  // TODO: should be accept rate for block
+  estimator_manager_->stopBlockNew(total_accept_ratio, total_block_weight, cpu_block_time);
+}
+
 } // namespace qmcplusplus

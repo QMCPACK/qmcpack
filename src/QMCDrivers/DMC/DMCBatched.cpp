@@ -39,7 +39,8 @@ DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
     : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, wf_pool,
                    "DMCBatched::", comm,
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
-      dmcdriver_input_(input)
+      dmcdriver_input_(input),
+      dmc_timers_("DMCBatched::")
 {
   QMCType = "DMCBatched";
 }
@@ -79,7 +80,8 @@ void DMCBatched::resetUpdateEngines()
   // I'd like to do away with this method in DMCBatched.
 
   // false indicates we do not support kill at node crossings.
-  branch_engine_->initWalkerController(population_, dmcdriver_input_.get_reconfiguration(), false);
+  branch_engine_->initWalkerController(population_, qmcdriver_input_.get_total_walkers(),
+                                       dmcdriver_input_.get_reconfiguration(), false);
 
   estimator_manager_->reset();
 
@@ -104,7 +106,7 @@ void DMCBatched::resetUpdateEngines()
 void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 DriverTimers& timers,
-                                //                                DMCTimers& dmc_timers,
+                                DMCTimers& dmc_timers,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
@@ -134,9 +136,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
   auto it_delta_r = step_context.deltaRsBegin();
 
-  std::vector<TrialWaveFunction::GradType> grads_now(num_walkers, TrialWaveFunction::GradType(0.0));
-  std::vector<TrialWaveFunction::GradType> grads_new(num_walkers, TrialWaveFunction::GradType(0.0));
-  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers, TrialWaveFunction::PsiValueType(0.0));
+  std::vector<TrialWaveFunction::GradType> grads_now(num_walkers, 0.0);
+  std::vector<TrialWaveFunction::GradType> grads_new(num_walkers, 0.0);
+  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers, 0.0);
   std::vector<PosType> drifts(num_walkers, 0.0);
   std::vector<RealType> log_gf(num_walkers, 0.0);
   std::vector<RealType> log_gb(num_walkers, 0.0);
@@ -315,44 +317,56 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   handleMovedWalkers(these.moved, sft, timers);
   handleStalledWalkers(these.stalled, sft);
 
-  //myTimers[DMC_tmoves]->start();
-  std::vector<int> walker_non_local_moves_accepted(
-      QMCHamiltonian::flex_makeNonLocalMoves(walker_hamiltonians, walker_elecs));
-
-
-  // could be premature optimization
-  int num_moved_nonlocal   = 0;
-  int total_moved_nonlocal = 0;
-  for (int iw = 0; iw < walkers.size(); ++iw)
+  try
   {
-    if (walker_non_local_moves_accepted[iw] > 0)
-    {
-      num_moved_nonlocal++;
-      total_moved_nonlocal += walker_non_local_moves_accepted[iw];
-      crowd.incNonlocalAccept();
-    }
-  }
+    dmc_timers.tmove_timer.start();
+    std::vector<int> walker_non_local_moves_accepted(
+        QMCHamiltonian::flex_makeNonLocalMoves(crowd.get_walker_hamiltonians(), crowd.get_walker_elecs()));
 
-  if (num_moved_nonlocal > 0)
-  {
-    DMCPerWalkerRefs moved_nonlocal(num_moved_nonlocal);
-
-    for (int iw = 0; iw < these.moved.walkers.size(); ++iw)
+    //could be premature optimization
+    int num_moved_nonlocal   = 0;
+    int total_moved_nonlocal = 0;
+    for (int iw = 0; iw < walkers.size(); ++iw)
     {
       if (walker_non_local_moves_accepted[iw] > 0)
       {
-        moved_nonlocal.walkers.push_back(walkers[iw]);
-        moved_nonlocal.walker_twfs.push_back(walker_twfs[iw]);
-        moved_nonlocal.walker_elecs.push_back(walker_elecs[iw]);
-        moved_nonlocal.walker_hamiltonians.push_back(walker_hamiltonians[iw]);
-        moved_nonlocal.walker_mcp_wfbuffers.push_back(walker_mcp_wfbuffers[iw]);
+        num_moved_nonlocal++;
+        total_moved_nonlocal += walker_non_local_moves_accepted[iw];
+        crowd.incNonlocalAccept();
       }
     }
 
-    TrialWaveFunction::flex_updateBuffer(moved_nonlocal.walker_twfs, moved_nonlocal.walker_elecs,
-                                         moved_nonlocal.walker_mcp_wfbuffers);
-    ParticleSet::flex_saveWalker(moved_nonlocal.walker_elecs, moved_nonlocal.walkers);
+    if (num_moved_nonlocal > 0)
+    {
+      DMCPerWalkerRefs moved_nonlocal(num_moved_nonlocal);
+
+      for (int iw = 0; iw < these.moved.walkers.size(); ++iw)
+      {
+        if (walker_non_local_moves_accepted[iw] > 0)
+        {
+          moved_nonlocal.walkers.push_back(walkers[iw]);
+          moved_nonlocal.walker_twfs.push_back(walker_twfs[iw]);
+          moved_nonlocal.walker_elecs.push_back(walker_elecs[iw]);
+          moved_nonlocal.walker_hamiltonians.push_back(walker_hamiltonians[iw]);
+          moved_nonlocal.walker_mcp_wfbuffers.push_back(walker_mcp_wfbuffers[iw]);
+        }
+      }
+      TrialWaveFunction::flex_updateBuffer(moved_nonlocal.walker_twfs, moved_nonlocal.walker_elecs,
+                                           moved_nonlocal.walker_mcp_wfbuffers);
+      ParticleSet::flex_saveWalker(moved_nonlocal.walker_elecs, moved_nonlocal.walkers);
+    }
   }
+  catch (const std::out_of_range& exc)
+  {
+    std::cout << "Out of range error in non local move updates: " << exc.what() << std::endl;
+  }
+  catch (const std::exception& exc)
+  {
+    std::cout << "Serious issue in flex_make_NonLocalMoves(): " << exc.what() << std::endl;
+  }
+
+  dmc_timers.tmove_timer.stop();
+
   setMultiplicities(sft.dmcdrv_input, walkers, step_context.get_random_gen());
 }
 
@@ -366,6 +380,7 @@ DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& d
     if (did_walker_move[iw] > 0)
       num_moved++;
   }
+
 
   MovedStalled these(num_walkers, num_moved);
   for (int iw = 0; iw < num_walkers; ++iw)
@@ -497,7 +512,7 @@ void DMCBatched::setMultiplicities(const DMCDriverInput& dmcdriver_input,
 void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
-                            //                            DMCTimers& dmc_timers,
+                            DMCTimers& dmc_timers,
                             UPtrVector<ContextForSteps>& context_for_steps,
                             UPtrVector<Crowd>& crowds)
 {
@@ -513,7 +528,7 @@ void DMCBatched::runDMCStep(int crowd_id,
       sft.recomputing_blocks ? (1 + sft.block) % sft.qmcdrv_input.get_blocks_between_recompute() == 0 : false;
   IndexType step           = sft.step;
   bool recompute_this_step = (is_recompute_block && (step + 1) == max_steps);
-  advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step);
+  advanceWalkers(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step);
 }
 
 void DMCBatched::process(xmlNodePtr node)
@@ -576,7 +591,8 @@ bool DMCBatched::run()
     {
       ScopedTimer local_timer(&(timers_.run_steps_timer));
       dmc_state.step = step;
-      crowd_task(runDMCStep, dmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
+      crowd_task(runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_), std::ref(crowds_));
+
 
       branch_engine_->branch(step, population_);
 
@@ -589,29 +605,16 @@ bool DMCBatched::run()
       // \todo make task block
       // probably something smart can be done to include reduction over crowds below
       for (UPtr<Crowd>& crowd_ptr : crowds_)
-        crowd_ptr->accumulate(population_.get_num_global_walkers());
+      {
+        Crowd& crowd_ref = *crowd_ptr;
+        if (crowd_ref.size() > 0)
+          crowd_ref.accumulate(population_.get_num_global_walkers());
+      }
     }
-
-    RefVector<ScalarEstimatorBase> all_scalar_estimators;
-    FullPrecRealType total_block_weight = 0.0;
-    FullPrecRealType total_accept_ratio = 0.0;
-    // Collect all the ScalarEstimatorsFrom EMCrowds
-    for (const UPtr<Crowd>& crowd : crowds_)
-    {
-      auto crowd_sc_est = crowd->get_estimator_manager_crowd().get_scalar_estimators();
-      all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
-                                   std::make_move_iterator(crowd_sc_est.end()));
-      total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
-      total_accept_ratio += crowd->get_accept_ratio();
-    }
-    // Should this be adjusted if crowds have different
-    total_accept_ratio /= crowds_.size();
-    estimator_manager_->collectScalarEstimators(all_scalar_estimators);
-
-    // TODO: should be accept rate for block
-    estimator_manager_->stopBlockNew(total_accept_ratio, total_block_weight, 0.0);
+    endBlock();
   }
-  return false;
+
+  return finalize(num_blocks, true);
 }
 
 } // namespace qmcplusplus

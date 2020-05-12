@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
@@ -121,10 +122,10 @@ public:
   /** start a block */
   void start();
 
-  /** start controller  and initialize the IDs of walkers*/
+  /** legacy: start controller  and initialize the IDs of walkers*/
   void setWalkerID(MCWalkerConfiguration& walkers);
 
-  /** start controller
+  /** unified driver: start controller
    *
    *  WalkerID's are initialized by MCPopulation, SOC
    */
@@ -151,18 +152,18 @@ public:
    */
   inline FullPrecRealType getCurrentValue(int i) { return curData[i]; }
 
-  /** return global population
+  /** legacy: return global population
    *  update properties without branching 
    *
    */
   int doNotBranch(int iter, MCWalkerConfiguration& W);
 
-  /** return global population
+  /** unified driver: return global population
    *  update properties without branching
    */
-  int doNotBranch(int iter, MCPopulation& pop);
+  FullPrecRealType doNotBranch(int iter, MCPopulation& pop);
 
-  /** sort Walkers between good and bad and prepare branching
+  /** legacy: sort Walkers between good and bad and prepare branching
    *
    *  not a sort changes internal state of walkers to copy and how many of each copy
    */
@@ -170,25 +171,26 @@ public:
 
   static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
 
-  /** create data structure needed to do population adjustment
+  /** unified: create data structure needed to do population adjustment
    *
    *  refactored sortWalkers
    *  This data structure contains what was updated in the state.
    */
   PopulationAdjustment calcPopulationAdjustment(MCPopulation& pop);
 
-  /** do the actual adjustment
+  /** unified: do the actual adjustment
    *
    *  unfortunately right now this requires knowledge of the global context, seems unecessary
    *  but this is why MCPopulation is handed in.
+   *  This does was applyNmaxNmin used to.
    */
-  int adjustPopulation(PopulationAdjustment& adjust);
+  void limitPopulation(PopulationAdjustment& adjust);
 
-  /** apply per node limit Nmax and Nmin
+  /** legacy: apply per node limit Nmax and Nmin
    */
   int applyNmaxNmin(int current_population);
 
-  /** copy good walkers to W
+  /** legacy: copy good walkers to W
    */
   int copyWalkers(MCWalkerConfiguration& W);
 
@@ -197,17 +199,17 @@ public:
   /** reset to accumulate data */
   virtual void reset();
 
-  /** perform branch and swap walkers as required 
+  /** legacy: perform branch and swap walkers as required 
    *
    *  \return global population
    */
   virtual int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
 
-  /** perform branch and swap walkers as required 
+  /** unified: perform branch and swap walkers as required 
    *
    *  \return global population
    */
-  virtual int branch(int iter, MCPopulation& pop, FullPrecRealType trigger);
+  virtual FullPrecRealType branch(int iter, MCPopulation& pop);
 
   virtual FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau)
   {
@@ -235,9 +237,15 @@ protected:
   /** makes adjustments to local population based on adjust
    *
    * \param[inout] pop the local population
+   * \param[inout] the population adjustment 
+   */
+  static void onRankKill(MCPopulation& pop, PopulationAdjustment& adjust);
+  /** makes adjustments to local population based on adjust
+   *
+   * \param[inout] pop the local population
    * \param[in]    the population adjustment, it is not updated to reflect local state and is now invalid.
    */
-  static void onRankSpawnKill(MCPopulation& pop, PopulationAdjustment& adjust);
+  static void onRankSpawn(MCPopulation& pop, PopulationAdjustment& adjust);
 
 
   ///id for the method
@@ -290,8 +298,9 @@ protected:
   MCDataType<FullPrecRealType> ensemble_property_;
 
   friend class qmcplusplus::testing::UnifiedDriverWalkerControlMPITest;
+
 private:
-  /** Refactoring possibly dead releaseNodesCode out
+  /** unified: Refactoring possibly dead releaseNodesCode out
    * @{
    */
   static auto rn_walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustmentCriteria wac);
@@ -301,9 +310,17 @@ private:
                                     RefVector<MCPWalker>& good_walkers_rn,
                                     std::vector<int>& copies_to_make_rn);
   /**}@*/
+
+  /** unified: CalcAdjust segmenting
+   * @{
+   */
   static auto walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustmentCriteria wac);
 
-  static void updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data, WalkerAdjustmentCriteria wac, PopulationAdjustment& adjustment, MCPopulation& pop);
+  static void updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data,
+                                          WalkerAdjustmentCriteria wac,
+                                          PopulationAdjustment& adjustment,
+                                          MCPopulation& pop);
+  /**}@*/
 };
 
 } // namespace qmcplusplus

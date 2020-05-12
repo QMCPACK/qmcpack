@@ -377,23 +377,7 @@ bool VMCBatched::run()
       }
     }
 
-    RefVector<ScalarEstimatorBase> all_scalar_estimators;
-    FullPrecRealType total_block_weight = 0.0;
-    FullPrecRealType total_accept_ratio = 0.0;
-    // Collect all the ScalarEstimatorsFrom EMCrowds
-    for (const UPtr<Crowd>& crowd : crowds_)
-    {
-      auto crowd_sc_est = crowd->get_estimator_manager_crowd().get_scalar_estimators();
-      all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
-                                   std::make_move_iterator(crowd_sc_est.end()));
-      total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
-      total_accept_ratio += crowd->get_accept_ratio();
-    }
-    // Should this be adjusted if crowds have different
-    total_accept_ratio /= crowds_.size();
-    estimator_manager_->collectScalarEstimators(all_scalar_estimators);
-    // TODO: should be accept rate for block
-    estimator_manager_->stopBlockNew(total_accept_ratio, total_block_weight, 0.0);
+    endBlock();
   }
 
   // This is confusing logic from VMC.cpp want this functionality write documentation of this
