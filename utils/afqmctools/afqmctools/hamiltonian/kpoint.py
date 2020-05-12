@@ -241,6 +241,9 @@ def write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk, qk_to_k2, kminus,
     comm.barrier()
 
     dims_ = h5file.grp.create_dataset("dims", (8,), dtype=numpy.int32)
+    h5file.grp.create_dataset("ComplexIntegrals",
+                              data=numpy.array([1]),
+                              dtype=numpy.int32)
     et_ = h5file.grp.create_dataset("Energies", (2,), dtype=numpy.float64)
     kp_ = h5file.grp.create_dataset("KPoints", (nkpts,3), dtype=numpy.float64)
     nmo_pk_ = h5file.grp.create_dataset("NMOPerKP", (nkpts,), dtype=numpy.int32)
