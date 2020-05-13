@@ -40,8 +40,9 @@ namespace afqmc
 
       using memory_type = MemoryResource; 
       memory_type base_mr; 
+      using base_element = char;   // switch to byte in c++17  
       using raw_pointer = decltype(std::declval<memory_type&>().allocate(0, 0));
-      using pointer = typename std::pointer_traits<decltype(std::declval<memory_type&>().allocate(0, 0))>::template rebind<char>; 
+      using pointer = typename std::pointer_traits<decltype(std::declval<memory_type&>().allocate(0, 0))>::template rebind<base_element>; 
       using stack_mr = boost::multi::memory::stack<pointer,Align>;
       using fallback = boost::multi::memory::fallback<stack_mr,memory_type>;
 
@@ -61,24 +62,7 @@ namespace afqmc
             _start(static_cast<pointer>(base_mr.allocate(_size,Align))), 
             mr_({_start,_size},std::addressof(base_mr)),
             constr_(c) 
-      {
-/*
-        std::cout<<" Constructing BufferAllocatorGenerator: \n"
-                 <<"   - size: " <<_size <<"\n";
-        auto p = static_cast<int*>(mr_.allocate(16,8));
-        *p = 10;
-        std::cout<<" p (10): " <<*p <<std::endl; 
-        mr_.deallocate(p,16);
-
-        auto A(allocator<int>{std::addressof(mr_)}); 
-        auto q = A.allocate(8);
-        *q = 20;
-        std::cout<<" q (20): " <<*q <<std::endl;
-        A.deallocate(q,8); 
-
-        std::cout<<" max_needed: " <<mr_.max_needed() <<std::endl;
-*/
-      }
+      {}
 
       ~BufferAllocatorGenerator() {
         if(_start != nullptr) base_mr.deallocate(static_cast<raw_pointer>(_start),_size); 
@@ -91,7 +75,7 @@ namespace afqmc
       // sets size of buffer to "at least" new_size elements
       void resize(long new_size) {                      
         if( new_size > _size ) {
-          std::cout<<"\n********************************************************* \n"
+          app_log()<<"\n********************************************************* \n"
                    <<"   Resizing memory buffer to: " <<new_size/1024.0/1024.0 
                    <<" MBs. \n" 
                    <<"********************************************************* \n" 
@@ -103,7 +87,7 @@ namespace afqmc
           _start = static_cast<pointer>(base_mr.allocate(_size,Align));
           // useful to set to zero in GPUs
           using std::fill_n;
-          fill_n(_start,_size,0);
+          fill_n(_start,_size,base_element(0));
           mr_ = fallback{{_start,_size},std::addressof(base_mr)};
         }
       }      

@@ -304,7 +304,10 @@ void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArrayPtr2DA>& A,
         assert(A.size() >= nbatch);
         assert(B.size() >= nbatch);
 
-        using pointer = typename pointedType<MultiArrayPtr2DC>::element_ptr;
+        // need to do it this way to preserve qualifiers! can also use decltype
+        using pointerA = typename pointedType<MultiArrayPtr2DA>::element_ptr;
+        using pointerB = typename pointedType<MultiArrayPtr2DB>::element_ptr;
+        using pointerC = typename pointedType<MultiArrayPtr2DC>::element_ptr;
         using element = typename pointedType<MultiArrayPtr2DC>::element;
 
         int M = (*C[0]).size(1);
@@ -315,9 +318,9 @@ void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArrayPtr2DA>& A,
         int lda = (*A[0]).stride(0);
         int ldb = (*B[0]).stride(0);
         int ldc = (*C[0]).stride(0);
-        std::vector<pointer> Ai;
-        std::vector<pointer> Bi;
-        std::vector<pointer> Ci;
+        std::vector<pointerA> Ai;
+        std::vector<pointerB> Bi;
+        std::vector<pointerC> Ci;
         Ai.reserve(nbatch);
         Bi.reserve(nbatch);
         Ci.reserve(nbatch);

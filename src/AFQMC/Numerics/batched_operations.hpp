@@ -346,6 +346,65 @@ void batched_diagonal_sum( int* n, std::complex<Q> *const* A, int lda,
   }
 }
 
+// C[u][w] = a * sum_n A[u][w][n] * B[u][n]
+template<typename T>
+void Auwn_Bun_Cuw(int nu, int nw, int na, T alpha, T const* A, T const* B, T* C){
+  for(int u=0; u<nu; ++u, ++B)
+    for(int iw=0; iw<nw; ++iw, ++C, ++A) 
+      (*C) = alpha*ma::dot(A,B); 
+} 
+
+// C[u][w] = alpha * sum_i A[w][i][u] * B[i][u]
+template<typename T>
+void Awiu_Biu_Cuw(int nu, int nw, int ni, T alpha, T const* A, T const* B, int ldb, T* C, int ldc){
+  for(int w=0; w<nw; ++w) {
+    for(int i=0; i<ni; ++i) {
+      auto Ci(C + w); 
+      auto Bi(B + i*ldb);
+      for(int u=0; u<nu; ++u,++A,++Bi,Ci+=ldc)
+        *C += alpha*(*A)*(*Bi);
+    }
+  }
+}
+
+// Ckij = transA(Aij) * Bjk 
+template<typename T>
+void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, T const* A, int lda, 
+        T const* B, int ldb, T* C, int ldc1, int ldc2)
+{
+  if( transA == 'N') {
+    for(int k=0; k<nk; ++k) {
+      for(int i=0; i<ni; ++i) {
+        auto A_(A + i*lda);
+        auto B_(B + k);
+        auto C_(C + k*ldc1*ldc2 + i*ldc2);
+        for(int j=0; j<nk; ++j,++C_,++A_,B_+=ldb) (*C_) = (*A_) * (*B_);
+      }
+    }
+  } else if( transA == 'C' ) {  
+    for(int k=0; k<nk; ++k) {
+      for(int i=0; i<ni; ++i) {
+        auto A_(A + i*lda);
+        auto B_(B + k);
+        auto C_(C + k*ldc1*ldc2 + i*ldc2);  
+        for(int j=0; j<nk; ++j,++C_,++A_,B_+=ldb) (*C_) = ma::conj(*A_) * (*B_); 
+      }
+    }
+  } else 
+    throw std::runtime_error(" Invalid parameter in element_wise_Aij_Bjk_Ckij. ");
+}
+
+template<typename T, typename T1>
+void inplace_product(int nbatch, int n, int m, T1 const* B, int ldb, std::complex<T> *A, int lda)
+{
+  for(int nb=0; nb<nbatch; nb++) 
+    for(int i=0; i<n; ++i) {
+      auto A_(A + (nb*n+i)*lda);  
+      auto B_(B + i*ldb);  
+      for(int j=0; j<m; ++j, ++A_, ++B_) *A_ *= static_cast<T>(*B_);
+    }
+}
+
 
 } // namespace ma
 
@@ -434,6 +493,34 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, device_pointer<int> Qsy
 {
   kernels::vbias_from_v1(nwalk,nkpts,nchol_max,to_address(Qsym),to_address(kminus),
             to_address(ncholpQ),to_address(ncholpQ0),alpha,to_address(v1),vb);
+}
+
+template<typename T1, typename T2, typename T3, typename T4>
+void Auwn_Bun_Cuw(int nu, int nw, int na, T1 alpha, device_pointer<T2> A, 
+                  device_pointer<T3> B, device_pointer<T4> C)
+{
+  kernels::Auwn_Bun_Cuw(nu,nw,na,alpha,to_address(A),to_address(B),to_address(C));
+}
+
+template<typename T1, typename T2, typename T3, typename T4>
+void Awiu_Biu_Cuw(int nu, int nw, int ni, T1 alpha, device_pointer<T2> A,
+                  device_pointer<T3> B, int ldb, device_pointer<T4> C, int ldc)
+{
+  kernels::Awiu_Biu_Cuw(nu,nw,ni,alpha,to_address(A),to_address(B),ldb,to_address(C),ldc);
+}
+
+template<typename T1, typename T2, typename T3>
+void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, device_pointer<T1> A, int lda,
+        device_pointer<T2> B, int ldb, device_pointer<T3>C, int ldc1, int ldc2)
+{
+  kernels::element_wise_Aij_Bjk_Ckij(transA,ni,nj,nk,
+                to_address(A),lda,to_address(B),ldb,to_address(C),ldc1,ldc2);
+}
+
+template<typename T, typename T1>
+void inplace_product(int nbatch, int n, int m, device_pointer<T1> B, int ldb, device_pointer<T> A, int lda)
+{
+  kernels::inplace_product(nbatch,n,m,to_address(B),ldb,to_address(A),lda);
 }
 
 template<typename T, typename Q>

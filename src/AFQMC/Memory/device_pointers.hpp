@@ -529,58 +529,58 @@ void inplace_cast(device_pointer<T> A, Size n) {
 //  return first + n;
 //}
 
-template<typename T, typename Size>
-device_pointer<T> fill_n(device_pointer<T> first, Size n, T const& val){
+template<typename T, typename Size, typename Q>
+device_pointer<T> fill_n(device_pointer<T> first, Size n, Q const& val){
   if(n == 0) return first;
-  kernels::fill_n(to_address(first), n, val);
+  kernels::fill_n(to_address(first), n, T(val));
   return first + n;
 }
 
-template<typename T>
-device_pointer<T> fill(device_pointer<T> first, device_pointer<T> last, T const& val){
-  return fill_n(first,std::distance(first,last),val); 
+template<typename T, typename Q>
+device_pointer<T> fill(device_pointer<T> first, device_pointer<T> last, Q const& val){
+  return fill_n(first,std::distance(first,last),T(val)); 
 }
 
 
 /**************** uninitialized_fill_n *****************/
 
-template<typename T, typename Size>
-device_pointer<T> uninitialized_fill_n(device_pointer<T> first, Size n, T const& val){
+template<typename T, typename Size, typename Q>
+device_pointer<T> uninitialized_fill_n(device_pointer<T> first, Size n, Q const& val){
   if(n == 0) return first;
   //kernels::uninitialized_fill_n(to_address(first), n, val);
-  kernels::fill_n(to_address(first), n, val);
+  kernels::fill_n(to_address(first), n, T(val));
   return first + n;
 }
 
-template<typename T>
-device_pointer<T> uninitialized_fill(device_pointer<T> first, device_pointer<T> last, T const& val){
-  return uninitialized_fill_n(first,std::distance(first,last),val);
+template<typename T, typename Q>
+device_pointer<T> uninitialized_fill(device_pointer<T> first, device_pointer<T> last, Q const& val){
+  return uninitialized_fill_n(first,std::distance(first,last),T(val));
 }
 
-template<class Alloc, typename T, typename Size>
-device_pointer<T> uninitialized_fill_n(Alloc &a, device_pointer<T> first, Size n, T const& val){
+template<class Alloc, typename T, typename Size, typename Q>
+device_pointer<T> uninitialized_fill_n(Alloc &a, device_pointer<T> first, Size n, Q const& val){
   if(n == 0) return first;
   //kernels::uninitialized_fill_n(to_address(first), n, val);
-  kernels::fill_n(to_address(first), n, val);
+  kernels::fill_n(to_address(first), n, T(val));
   return first + n;
 }
 
-template<class Alloc, typename T>
-device_pointer<T> uninitialized_fill(Alloc &a, device_pointer<T> first, device_pointer<T> last, T const& val){
-  return uninitialized_fill_n(a, first,std::distance(first,last),val);
+template<class Alloc, typename T, typename Q>
+device_pointer<T> uninitialized_fill(Alloc &a, device_pointer<T> first, device_pointer<T> last, Q const& val){
+  return uninitialized_fill_n(a, first,std::distance(first,last),T(val));
 }
 
-template<class Alloc, typename T, typename Size>
-device_pointer<T> alloc_uninitialized_fill_n(Alloc &a, device_pointer<T> first, Size n, T const& val){
+template<class Alloc, typename T, typename Size, typename Q>
+device_pointer<T> alloc_uninitialized_fill_n(Alloc &a, device_pointer<T> first, Size n, Q const& val){
   if(n == 0) return first;
   //kernels::uninitialized_fill_n(to_address(first), n, val);
-  kernels::fill_n(to_address(first), n, val);
+  kernels::fill_n(to_address(first), n, T(val));
   return first + n;
 }
 
-template<class Alloc, typename T>
-device_pointer<T> alloc_uninitialized_fill(Alloc &a, device_pointer<T> first, device_pointer<T> last, T const& val){
-  return uninitialized_fill_n(a, first,std::distance(first,last),val);
+template<class Alloc, typename T, typename Q>
+device_pointer<T> alloc_uninitialized_fill(Alloc &a, device_pointer<T> first, device_pointer<T> last, Q const& val){
+  return uninitialized_fill_n(a, first,std::distance(first,last),T(val));
 }
 
 /******************/
@@ -800,10 +800,10 @@ void print(std::string str, device_pointer<T> p, int n) {
   kernels::print(str,to_address(p),n);
 }
 
-template<typename T>
-void fill2D(int n, int m, device::device_pointer<T> first, int lda, T const& val) { 
+template<typename T, typename Q>
+void fill2D(int n, int m, device::device_pointer<T> first, int lda, Q const& val) { 
   assert(lda >= m);  
-  kernels::fill2D_n(n,m,to_address(first),lda,val);
+  kernels::fill2D_n(n,m,to_address(first),lda,T(val));
 }
 
 }

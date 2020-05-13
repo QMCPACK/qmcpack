@@ -266,9 +266,11 @@ namespace device
     static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
 // replace with single call to cudaMalloc and cudaMemcpy
     T **A_d, **B_d, **C_d;
-    T **A_h, **B_h, **C_h;
-    A_h = new T*[batchSize];
-    B_h = new T*[batchSize];
+    Q1 **A_h;
+    Q2 **B_h;
+    T **C_h;
+    A_h = new Q1*[batchSize];
+    B_h = new Q2*[batchSize];
     C_h = new T*[batchSize];
     for(int i=0; i<batchSize; i++) {
       A_h[i] = to_address(A[i]);

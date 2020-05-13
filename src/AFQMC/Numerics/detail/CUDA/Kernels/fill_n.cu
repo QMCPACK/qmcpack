@@ -42,7 +42,12 @@ __global__ void kernel_fill2D_n(Size N, Size M, T* y, Size lda, T const a)
     }
 }
 
-
+void fill_n(char * first, int N, int incx, char const value)
+{
+  kernel_fill_n<<<1,256>>>(N,first,incx,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
 void fill_n(int * first, int N, int incx, int const value)
 { 
   kernel_fill_n<<<1,256>>>(N,first,incx,value);
@@ -74,6 +79,12 @@ void fill_n(std::complex<double> * first, int N, int incx, std::complex<double> 
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
+void fill_n(char * first, int N, char const value)
+{ 
+  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
 void fill_n(int * first, int N, int const value)
 { 
   kernel_fill_n<<<1,256>>>(N,first,1,value);

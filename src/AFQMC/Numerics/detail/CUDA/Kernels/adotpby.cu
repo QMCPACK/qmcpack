@@ -60,7 +60,7 @@ __global__ void kernel_adotpby(int N, T const alpha, T const* x, int const incx,
                                       T const* y, int const incy, Q const beta, Q* res) {
    // assert(blockIdx.x==0 and blockIdx.y==0 and blockIdx.z==0)
 
-   __shared__ T tmp[256];
+   __shared__ T tmp[1024];
    int t = threadIdx.x;
 
    tmp[t]=T(0.0);
@@ -88,7 +88,7 @@ void adotpby(int N, double const alpha, double const* x, int const incx,
                     double const* y, int const incy, 
                     double const beta, double* res) 
 {
-  kernel_adotpby<<<1,256>>>(N,alpha,x,incx,y,incy,beta,res);
+  kernel_adotpby<<<1,1024>>>(N,alpha,x,incx,y,incy,beta,res);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
@@ -98,7 +98,7 @@ void adotpby(int N, std::complex<double> const alpha,
                     std::complex<double> const* y, int const incy, 
                     std::complex<double> const beta, std::complex<double>* res)
 {
-  kernel_adotpby<<<1,256>>>(N,
+  kernel_adotpby<<<1,1024>>>(N,
                             static_cast<thrust::complex<double> const >(alpha),
                             reinterpret_cast<thrust::complex<double> const*>(x),incx,
                             reinterpret_cast<thrust::complex<double> const*>(y),incy,
@@ -112,7 +112,7 @@ void adotpby(int N, float const alpha, float const* x, int const incx,
                     float const* y, int const incy,                   
                     float const beta, float* res)
 {
-  kernel_adotpby<<<1,256>>>(N,alpha,x,incx,y,incy,beta,res);
+  kernel_adotpby<<<1,1024>>>(N,alpha,x,incx,y,incy,beta,res);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
@@ -122,7 +122,7 @@ void adotpby(int N, std::complex<float> const alpha,
                     std::complex<float> const* y, int const incy,
                     std::complex<float> const beta, std::complex<float>* res)
 {
-  kernel_adotpby<<<1,256>>>(N,
+  kernel_adotpby<<<1,1024>>>(N,
                             static_cast<thrust::complex<float> const>(alpha),
                             reinterpret_cast<thrust::complex<float> const*>(x),incx,
                             reinterpret_cast<thrust::complex<float> const*>(y),incy,
@@ -136,7 +136,7 @@ void adotpby(int N, float const alpha, float const* x, int const incx,
                     float const* y, int const incy,
                     double const beta, double* res)
 {
-  kernel_adotpby<<<1,256>>>(N,alpha,x,incx,y,incy,beta,res);
+  kernel_adotpby<<<1,1024>>>(N,alpha,x,incx,y,incy,beta,res);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
@@ -146,7 +146,7 @@ void adotpby(int N, std::complex<float> const alpha,
                     std::complex<float> const* y, int const incy,
                     std::complex<double> const beta, std::complex<double>* res)
 {
-  kernel_adotpby<<<1,256>>>(N,
+  kernel_adotpby<<<1,1024>>>(N,
                             static_cast<thrust::complex<float> const>(alpha),
                             reinterpret_cast<thrust::complex<float> const*>(x),incx,
                             reinterpret_cast<thrust::complex<float> const*>(y),incy,
