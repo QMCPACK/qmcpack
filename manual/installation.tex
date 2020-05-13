@@ -1031,7 +1031,7 @@ installed, you will need to manually add them to your
 for the Intel MKL package.
 
 \begin{shade}
-your-laptop> cat \~/.spack/packages.yaml
+your-laptop> cat ~/.spack/packages.yaml
 packages:
     intel-mkl:
         paths:
@@ -1084,10 +1084,11 @@ Tags:
     ecp  ecp-apps
 
 Preferred version:  
-    3.9.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.1
+    3.9.2      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.2
 
 Safe versions:  
     develop  [git] https://github.com/QMCPACK/qmcpack.git
+    3.9.2      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.2
     3.9.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.1
     3.9.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.0
     3.8.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.8.0
@@ -1102,14 +1103,13 @@ Safe versions:
 
 Variants:
     Name [Default]          Allowed values          Description
-
-
-    build_type [Release]    Debug, Release,         The build type to build
-                            RelWithDebInfo          
+    ====================    ====================    ====================
     afqmc [off]             True, False             Install with AFQMC support.
                                                     NOTE that if used in
                                                     combination with CUDA, only
                                                     AFQMC will have CUDA.
+    build_type [Release]    Debug, Release,         The build type to build
+                            RelWithDebInfo
     complex [off]           True, False             Build the complex (general
                                                     twist/k-point) version
     cuda [off]              True, False             Build with CUDA
@@ -1129,8 +1129,6 @@ Variants:
                                                     I/O
     ppconvert [off]         True, False             Install with pseudopotential
                                                     converter.
-    qe [on]                 True, False             Install with patched Quantum
-                                                    Espresso 6.4.0
     soa [on]                True, False             Build with Structure-of-Array
                                                     instead of Array-of-Structure
                                                     code. Only for CPU codeand
