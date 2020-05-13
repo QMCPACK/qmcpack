@@ -1241,9 +1241,42 @@ reused by chaining Spack installations
 
 Instructions for DOE supercomputing facilities that support Spack directly will be forthcoming.
 
+\subsection{Installing Quantum-ESPRESSO with Spack}
+More information about the QE Spack package can be obtained directly
+from Spack
+\begin{shade}
+spack info quantum-espresso
+\end{shade}
+
+There are many variants available for QE, most, but not all, are
+compatible with QMCPACK patch. Here is a minimalistic example of the
+Spack installation command that needs to be invoked:
+\begin{shade}
+your-laptop> spack install quantum-espresso+qmcpack~patch@6.4.1%gcc hdf5=parallel
+\end{shade}
+
+The \ishell{\~} decorator means deactivate the \ishell{patch}
+variant. This refers not to the QMCPACK patch, but to the upstream
+patching that is present for some versions of QE. These upstream QE
+patches fix specific critical autoconf/configure fixes. Unfortunately,
+some of these QE upstream patches are incompatible with the QMCPACK
+patch. Note that the Spack package will prevent you from installing
+incompatible variants and will emit an error message explaining the
+nature of the incompatibility.
+
+A serial (no MPI) installation is also available, but the Spack installation command
+is non-intuitive for Spack newcomers:
+\begin{shade}
+your-laptop> spack install quantum-espresso+qmcpack~patch~mpi~scalapack@6.4.1%gcc hdf5=serial
+\end{shade}
+
+QE Spack package is well tested with GCC and Intel compilers, but will not work
+with the PGI compiler or in a cross-compile environment.
+
 \subsection{Reporting Bugs}
-Bugs with the QMCPACK Spack package should be filed at the main GitHub
-Spack repo \url{https://github.com/spack/spack/issues}
+Bugs with the QMCPACK or Quantum-ESPRESSO Spack package should be
+filed at the main GitHub Spack repo
+\url{https://github.com/spack/spack/issues}
 
 In the GitHub issue, include \ishell{@naromero77} to get the attention
 of our developer.
