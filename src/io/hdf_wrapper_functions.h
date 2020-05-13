@@ -96,7 +96,7 @@ inline bool checkShapeConsistency(hid_t grp, const std::string& aname, int rank,
 {
   using TSpaceType = h5_space_type<T, 0>;
 
-  std::vector<hsize_t> dims_in(rank);
+  std::vector<hsize_t> dims_in;
   if(getDataShape<T>(grp, aname, dims_in))
   {
     const int user_rank = rank - TSpaceType::added_rank();

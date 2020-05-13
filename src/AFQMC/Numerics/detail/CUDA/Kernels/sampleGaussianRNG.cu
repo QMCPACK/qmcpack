@@ -33,16 +33,15 @@ void sampleGaussianRNG( double* V, int n, curandGenerator_t & gen)
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
-/*
  // Convert to double if really necessary
 void sampleGaussianRNG( float* V, int n, curandGenerator_t & gen) 
 {
-  qmc_cuda::curand_check(curandGenerateNormalFloat(gen,V,n,0.0,1.0),
-                                          "curandGenerateNormalFloat");
+  qmc_cuda::curand_check(curandGenerateNormal(gen,V,n,float(0.0),float(1.0)),
+                                          "curandGenerateNormal");
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-*/
+
 void sampleGaussianRNG( std::complex<double>* V, int n, curandGenerator_t & gen) 
 {
   qmc_cuda::curand_check(curandGenerateNormalDouble(gen,
@@ -55,16 +54,18 @@ void sampleGaussianRNG( std::complex<double>* V, int n, curandGenerator_t & gen)
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-/*
+
 void sampleGaussianRNG( std::complex<float>* V, int n, curandGenerator_t & gen) 
 {
-  qmc_cuda::curand_check(curandGenerateNormalFloat(gen,
-                        reinterpret_cast<float*>(V),2*n,0.0,1.0),
-                                          "curandGenerateNormalFloat");
+  qmc_cuda::curand_check(curandGenerateNormal(gen,
+                        reinterpret_cast<float*>(V),2*n,float(0.0),float(1.0)),
+                                          "curandGenerateNormal");
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
   // hack hack hack!!!
   kernels::zero_complex_part(n,V);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
 } 
-*/
+
 }

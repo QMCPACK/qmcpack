@@ -172,6 +172,9 @@ class dummy_wavefunction
   SlaterDetOperations SDet;
   SlaterDetOperations* getSlaterDetOperations() {return std::addressof(SDet);}
 
+  HamiltonianOperations HOps;
+  HamiltonianOperations* getHamiltonianOperations() {return std::addressof(HOps);}
+
 };
 }
 
@@ -377,6 +380,13 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,
     SlaterDetOperations* getSlaterDetOperations() {
         return boost::apply_visitor(
               [&](auto&& a){return a.getSlaterDetOperations();},
+              *this
+        );
+    }
+
+    HamiltonianOperations* getHamiltonianOperations() {
+        return boost::apply_visitor(
+              [&](auto&& a){return a.getHamiltonianOperations();},
               *this
         );
     }

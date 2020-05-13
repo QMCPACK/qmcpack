@@ -27,7 +27,8 @@
 
 namespace qmcplusplus
 {
-/** implements dirac matrix update using OpenMP
+/** Implements dirac matrix update using OpenMP offload and CUDA.
+ * It is used as DET_ENGINE_TYPE in DiracDeterminantBatched.
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
@@ -70,10 +71,14 @@ class MatrixUpdateCUDA
   OffloadPinnedValueMatrix_t grads_value_v;
   // device pointer of grads_value_v
   T* grads_value_dev_ptr;
-  // pointer buffer
-  Vector<char, OffloadPinnedAllocator<char>> buffer_H2D;
-  // device pointer of buffer_H2D
-  char* buffer_H2D_dev_ptr;
+  // mw_update pointer buffer
+  Vector<char, OffloadPinnedAllocator<char>> update_buffer_H2D;
+  // device pointer of update_buffer_H2D
+  char* update_buffer_H2D_dev_ptr;
+  // mw_evalGrad pointer buffer
+  Vector<char, OffloadPinnedAllocator<char>> evalGrad_buffer_H2D;
+  // device pointer of evalGrad_buffer_H2D
+  char* evalGrad_buffer_H2D_dev_ptr;
 
   // CUDA specific variables
   cudaStream_t hstream;
@@ -98,7 +103,16 @@ class MatrixUpdateCUDA
     }
   }
 
-  void resize_scratch_arrays(int norb, size_t nw)
+  void resize_evalGrad_scratch_arrays(size_t nw)
+  {
+    if (evalGrad_buffer_H2D.size() < sizeof(T*) * 2 * nw)
+    {
+      evalGrad_buffer_H2D.resize(sizeof(T*) * 2 * nw);
+      evalGrad_buffer_H2D_dev_ptr = getOffloadDevicePtr(evalGrad_buffer_H2D.data());
+    }
+  }
+
+  void resize_updateRow_scratch_arrays(int norb, size_t nw)
   {
     size_t total_size = norb * nw;
     if (temp.size() < total_size)
@@ -107,8 +121,8 @@ class MatrixUpdateCUDA
       temp_dev_ptr = getOffloadDevicePtr(temp.data());
       rcopy.resize(total_size);
       rcopy_dev_ptr = getOffloadDevicePtr(rcopy.data());
-      buffer_H2D.resize((sizeof(T*) * 8 + sizeof(T)) * nw);
-      buffer_H2D_dev_ptr = getOffloadDevicePtr(buffer_H2D.data());
+      update_buffer_H2D.resize((sizeof(T*) * 8 + sizeof(T)) * nw);
+      update_buffer_H2D_dev_ptr = getOffloadDevicePtr(update_buffer_H2D.data());
     }
   }
 
@@ -166,22 +180,22 @@ public:
   {
     const int norb = psiMinv.rows();
     const int nw   = engines.size();
-    resize_scratch_arrays(norb, nw);
-    Matrix<const T*> ptr_buffer(reinterpret_cast<const T**>(buffer_H2D.data()), 2, nw);
+    resize_evalGrad_scratch_arrays(nw);
+    Matrix<const T*> ptr_buffer(reinterpret_cast<const T**>(evalGrad_buffer_H2D.data()), 2, nw);
     for (int iw = 0; iw < nw; iw++)
     {
       ptr_buffer[0][iw] = engines[iw].get().psiMinv_dev_ptr + rowchanged * psiMinv.cols();
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
     }
 
-    cudaErrorCheck(cudaMemcpyAsync(buffer_H2D_dev_ptr, buffer_H2D.data(), buffer_H2D.size(), cudaMemcpyHostToDevice,
+    cudaErrorCheck(cudaMemcpyAsync(evalGrad_buffer_H2D_dev_ptr, evalGrad_buffer_H2D.data(), evalGrad_buffer_H2D.size(), cudaMemcpyHostToDevice,
                                    hstream),
-                   "cudaMemcpyAsync buffer_H2D failed!");
+                   "cudaMemcpyAsync evalGrad_buffer_H2D failed!");
 
     resizeGradsArray(nw, GT::Size);
 
-    const T** invRow_ptr    = reinterpret_cast<const T**>(buffer_H2D_dev_ptr);
-    const T** dpsiM_row_ptr = reinterpret_cast<const T**>(buffer_H2D_dev_ptr) + nw;
+    const T** invRow_ptr    = reinterpret_cast<const T**>(evalGrad_buffer_H2D_dev_ptr);
+    const T** dpsiM_row_ptr = reinterpret_cast<const T**>(evalGrad_buffer_H2D_dev_ptr) + nw;
 
     cudaErrorCheck(CUDA::calcGradients_cuda(hstream, norb, invRow_ptr, dpsiM_row_ptr, grads_value_dev_ptr, nw),
                    "CUDA::calcGradients_cuda failed!");
@@ -204,7 +218,7 @@ public:
     constexpr T czero(0);
     const int norb = Ainv.rows();
     const int lda  = Ainv.cols();
-    resize_scratch_arrays(norb, 1);
+    resize_updateRow_scratch_arrays(norb, 1);
     // invoke the Fahy's variant of Sherman-Morrison update.
     int dummy_handle  = 0;
     int success       = 0;
@@ -244,11 +258,11 @@ public:
     if (n_accepted == 0)
       return;
 
-    resize_scratch_arrays(norb, n_accepted);
+    resize_updateRow_scratch_arrays(norb, n_accepted);
 
     // to handle T** of Ainv, psi_v, temp, rcopy
-    Matrix<T*> ptr_buffer(reinterpret_cast<T**>(buffer_H2D.data()), 8, n_accepted);
-    T* c_ratio_inv = reinterpret_cast<T*>(buffer_H2D.data() + sizeof(T*) * 8 * n_accepted);
+    Matrix<T*> ptr_buffer(reinterpret_cast<T**>(update_buffer_H2D.data()), 8, n_accepted);
+    T* c_ratio_inv = reinterpret_cast<T*>(update_buffer_H2D.data() + sizeof(T*) * 8 * n_accepted);
     for (int iw = 0, count = 0; iw < isAccepted.size(); iw++)
       if (isAccepted[iw])
       {
@@ -268,20 +282,20 @@ public:
     // update the inverse matrix
     resize_fill_constant_arrays(n_accepted);
 
-    cudaErrorCheck(cudaMemcpyAsync(buffer_H2D_dev_ptr, buffer_H2D.data(), buffer_H2D.size(), cudaMemcpyHostToDevice,
+    cudaErrorCheck(cudaMemcpyAsync(update_buffer_H2D_dev_ptr, update_buffer_H2D.data(), update_buffer_H2D.size(), cudaMemcpyHostToDevice,
                                    hstream),
-                   "cudaMemcpyAsync buffer_H2D failed!");
+                   "cudaMemcpyAsync update_buffer_H2D failed!");
 
     {
-      T** Ainv_mw_ptr   = reinterpret_cast<T**>(buffer_H2D_dev_ptr);
-      T** phiV_mw_ptr   = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted);
-      T** temp_mw_ptr   = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 2);
-      T** rcopy_mw_ptr  = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 3);
-      T** dpsiM_mw_out  = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 4);
-      T** d2psiM_mw_out = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 5);
-      T** dpsiM_mw_in   = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 6);
-      T** d2psiM_mw_in  = reinterpret_cast<T**>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 7);
-      T* ratio_inv_mw   = reinterpret_cast<T*>(buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 8);
+      T** Ainv_mw_ptr   = reinterpret_cast<T**>(update_buffer_H2D_dev_ptr);
+      T** phiV_mw_ptr   = reinterpret_cast<T**>(update_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted);
+      T** temp_mw_ptr   = reinterpret_cast<T**>(update_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 2);
+      T** rcopy_mw_ptr  = reinterpret_cast<T**>(update_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 3);
+      T** dpsiM_mw_out  = reinterpret_cast<T**>(update_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 4);
+      T** d2psiM_mw_out = reinterpret_cast<T**>(update_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 5);
+      T** dpsiM_mw_in   = reinterpret_cast<T**>(update_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 6);
+      T** d2psiM_mw_in  = reinterpret_cast<T**>(update_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 7);
+      T* ratio_inv_mw   = reinterpret_cast<T*>(update_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 8);
 
       // invoke the Fahy's variant of Sherman-Morrison update.
       cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, norb, cone_dev_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr,

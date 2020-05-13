@@ -32,14 +32,16 @@ namespace afqmc {
   template<class T>
   inline static std::complex<T> const* to_address(std::complex<T> const* p) { return p; }
 
-  template<class Q, class T,
-           typename = typename std::enable_if_t<std::is_fundamental<Q>::value>,
-           typename = typename std::enable_if_t<std::is_fundamental<T>::value>>
-  inline static Q* pointer_cast(T* p) { return reinterpret_cast<Q*>(p); }
+//  template<class Q, class T,
+//           typename = typename std::enable_if_t<std::is_fundamental<Q>::value>,
+//           typename = typename std::enable_if_t<std::is_fundamental<T>::value>>
+//  inline static Q* pointer_cast(T* p) { return reinterpret_cast<Q*>(p); }
 
-  template<class Q, class T,
-           typename = typename std::enable_if_t<std::is_fundamental<Q>::value>>
-  inline static Q* pointer_cast(std::complex<T>* p) { return reinterpret_cast<Q*>(p); }
+//  template<class Q, class T>
+//  inline static Q* pointer_cast(std::complex<T>* p) { return reinterpret_cast<Q*>(p); }
+
+  template<class Q, class T>
+  inline static Q* pointer_cast(T* p) { return reinterpret_cast<Q*>(p); }
 
 
   /************* copy_n_cast ****************/

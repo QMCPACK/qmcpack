@@ -316,9 +316,9 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
       int NMO, NAEA, NAEB=0;
       { // to limit the scope
         auto w = wset[0];
-        NMO = w.SlaterMatrix(Alpha).size(0);
-        NAEA = w.SlaterMatrix(Alpha).size(1);
-        if(walker_type==COLLINEAR) NAEB = w.SlaterMatrix(Beta).size(1)
+        NMO = (*w.SlaterMatrix(Alpha)).size(0);
+        NAEA = (*w.SlaterMatrix(Alpha)).size(1);
+        if(walker_type==COLLINEAR) NAEB = (*w.SlaterMatrix(Beta)).size(1)
       }
 
       std::vector<int> Idata(7);
@@ -365,9 +365,9 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
       int NMO, NAEA, NAEB=0;
       { // to limit the scope
         auto w = wset[0];
-        NMO = w.SlaterMatrix(Alpha).size(0);
-        NAEA = w.SlaterMatrix(Alpha).size(1);
-        if(walker_type==COLLINEAR) NAEB = w.SlaterMatrix(Beta).size(1);
+        NMO = (*w.SlaterMatrix(Alpha)).size(0);
+        NAEA = (*w.SlaterMatrix(Alpha)).size(1);
+        if(walker_type==COLLINEAR) NAEB = (*w.SlaterMatrix(Beta)).size(1);
       }
 
       std::vector<int> Idata(7);

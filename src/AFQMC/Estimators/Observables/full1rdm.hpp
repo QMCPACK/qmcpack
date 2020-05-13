@@ -29,6 +29,7 @@
 
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 namespace qmcplusplus
 {
@@ -36,10 +37,11 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
+
 /* 
- * Observable class that calculates the walker averaged "full" 1 RDM.
- * In this context, "full" means that no contraction over the RDM is
- * being performed. The resulting RDM will be [spin][x*NMO][x*NMO],
+ * Observable class that calculates the walker averaged 1 RDM.
+ * The resulting RDM will be [spin][x*NMO][x*NMO],
  * where x:2 for NONCOLLINEAR and 1 for everything else.
  */
 class full1rdm: public AFQMCInfo
@@ -70,6 +72,9 @@ class full1rdm: public AFQMCInfo
   using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
   using mpi3CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
   using mpi3C4Tensor = boost::multi::array<ComplexType,4,shared_allocator<ComplexType>>;
+
+  using buffer_alloc_type = device_buffer_type<ComplexType>;
+  using StaticMatrix = boost::multi::static_array<ComplexType,2,buffer_alloc_type>;
 
   public:
 
@@ -294,6 +299,8 @@ class full1rdm: public AFQMCInfo
     ma::product( ComplexType(1.0,0.0), ma::T( DMWork( {0, nw}, {i0,iN}) ),  denom, 
                  ComplexType(1.0,0.0), DMAverage[iav].sliced(i0,iN)); 
     TG.TG_local().barrier();
+//app_log()<<" DMAv: " <<iav <<" " <<ma::sum(DMAverage[iav]) <<"\n";
+//TG.Global().barrier();
   }
 
   template< class HostCVec>
@@ -361,16 +368,6 @@ class full1rdm: public AFQMCInfo
   // DMWork (nwalk, spin*x*NMO*x*NMO), x=(1:CLOSED/COLLINEAR, 2:NONCOLLINEAR)
   mpi3CMatrix DMWork;
 
-  // buffer space
-  CVector Buff;
-
-  void set_buffer(size_t N) {
-    if(Buff.num_elements() < N)
-      Buff = std::move(CVector(iextensions<1u>{N}));
-    using std::fill_n;
-    fill_n(Buff.origin(),N,ComplexType(0.0));
-  }
-
   // expects host accesible memory
   template<class MatG, class CVec>
   void acc_no_rotation(MatG&& G, CVec&& Xw)
@@ -388,6 +385,8 @@ class full1rdm: public AFQMCInfo
       ma::axpy( Xw[iw], G2D[iw].sliced(i0,iN), DMWork[iw].sliced(i0,iN) );
     }
     TG.TG_local().barrier();
+//app_log()<<" DMWORK: " <<ma::sum(DMWork) <<"\n";
+//TG.Global().barrier();
   }
 
   // G should be device accesible memory
@@ -408,11 +407,11 @@ class full1rdm: public AFQMCInfo
     // can batch in the future if too slow
     // Grot = Xc * G * H(Xc)
     int nX = XRot.size(0);
-    int sz = nX * (NMO + (iN-i0)); 
     int npts = (iN-i0)*nX;
-    set_buffer(sz);
-    CMatrix_ref T1(Buff.origin(),{(iN-i0),NMO});
-    CMatrix_ref T2(T1.origin()+T1.num_elements(),{(iN-i0),nX});
+    StaticMatrix T1({(iN-i0),NMO}, 
+                device_buffer_generator->template get_allocator<ComplexType>());
+    StaticMatrix T2({(iN-i0),nX},
+                device_buffer_generator->template get_allocator<ComplexType>());
     if(Grot.size() != npts) 
       Grot = std::move(stdCVector(iextensions<1u>(npts)));
 

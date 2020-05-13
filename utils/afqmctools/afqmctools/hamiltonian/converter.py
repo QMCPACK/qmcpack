@@ -3,7 +3,10 @@ import numpy
 import scipy.sparse
 import scipy.linalg
 import sys
-from afqmctools.utils.io import to_qmcpack_complex
+from afqmctools.utils.io import (
+        to_qmcpack_complex,
+        from_qmcpack_complex
+        )
 from afqmctools.hamiltonian.io import (
         write_sparse_basic,
         write_sparse_chol_chunk
@@ -188,6 +191,10 @@ def read_qmcpack_sparse(filename, get_chol=True):
         real_ints = False
         enuc = fh5['Hamiltonian/Energies'][:][0]
         dims = fh5['Hamiltonian/dims'][:]
+        try:
+            complex_ints = bool(fh5['Hamiltonian/ComplexIntegrals'][0])
+        except KeyError:
+            complex_ints = None
         chunks = dims[2]
         nmo = dims[3]
         nalpha = dims[4]
@@ -208,6 +215,11 @@ def read_qmcpack_sparse(filename, get_chol=True):
             # Real format.
             hcore = fh5['Hamiltonian/hcore'][:]
             real_ints = True
+    # might not be present in integral file.
+    if complex_ints is not None:
+        msg = ("ComplexIntegrals flag conflicts with integral data type. "
+               "dtype = {:} ComplexIntegrals = {:}.".format(hcore.dtype, complex_ints))
+        assert real_ints ^ complex_ints, msg
     if get_chol:
         chol_vecs = read_cholesky(filename, real_ints=real_ints)
     else:
@@ -343,7 +355,7 @@ def write_fcidump(filename, hcore, chol, enuc, nmo, nelec, tol=1e-8,
                             if not cplx:
                                 if abs(eris[i,k,l,j].imag > 1e-12):
                                     print("# Found complex integrals with cplx==False.")
-                                    sys.exit()
+                                    #sys.exit()
                             out = fmt_integral(eris[i,k,l,j], i, k, j, l,
                                                cplx, paren=paren)
                             f.write(out)
@@ -423,7 +435,7 @@ def get_kpoint_chol(filename, nchol_pk, minus_k, i):
     return Lk
 
 def read_qmcpack_dense(filename):
-    """Read in integrals from qmcpack hdf5 format. kpoint dependent case.
+    """Read in integrals from qmcpack hdf5 format.
 
     Parameters
     ----------
@@ -439,11 +451,29 @@ def read_qmcpack_dense(filename):
     ecore : float
         Core contribution to the total energy.
     """
+    real_ints = False
     with h5py.File(filename, 'r') as fh5:
         enuc = fh5['Hamiltonian/Energies'][:][0]
         dims = fh5['Hamiltonian/dims'][:]
-        hcore = fh5['Hamiltonian/hcore'][:]
-        chol = fh5['Hamiltonian/DenseFactorized/L'][:]
+        nmo = dims[3]
+        nchol = dims[-1]
+        try:
+            hcore = from_qmcpack_complex(fh5['Hamiltonian/hcore'][:], (nmo,nmo))
+            chol = from_qmcpack_complex(fh5['Hamiltonian/DenseFactorized/L'][:],
+                                        (nmo*nmo,nchol))
+        except ValueError:
+            hcore = fh5['Hamiltonian/hcore'][:]
+            chol = fh5['Hamiltonian/DenseFactorized/L'][:]
+            real_ints = True
+        try:
+            complex_ints = bool(fh5['Hamiltonian/ComplexIntegrals'][0])
+        except KeyError:
+            complex_ints = None
+
+        if complex_ints is not None:
+            msg = ("ComplexIntegrals flag conflicts with integral data type. "
+                   "dtype = {:} ComplexIntegrals = {:}.".format(hcore.dtype, complex_ints))
+            assert real_ints ^ complex_ints, msg
 
     return hcore, chol, enuc
 
@@ -510,7 +540,7 @@ def write_fcidump_kpoint(filename, hcore, chol, enuc, nmo_tot, nelec,
                     if not cplx:
                         if len(numpy.where(numpy.abs(eri.imag) > 1e-12)) > 0:
                             print("# Found complex integrals with cplx==False.")
-                            sys.exit()
+                            #sys.exit()
                     ik = 0
                     for i in range(0, nmo_pk[ki]):
                         kk = qk_k2[iq,ki]

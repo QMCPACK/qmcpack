@@ -21,10 +21,11 @@
 #include "ma_blas.hpp"
 #include "ma_lapack.hpp"
 #include "AFQMC/Numerics/detail/sparse.hpp"
-#include "AFQMC/Numerics/helpers/determinant.hpp"
+#include "AFQMC/Numerics/determinant.hpp"
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
+#include <utility>  // declval
 #include<type_traits> // enable_if
 #include<vector>
 
@@ -36,6 +37,7 @@
 namespace ma{
 
 using qmcplusplus::afqmc::to_address;
+using qmcplusplus::afqmc::pointedType;
 
 template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::dimensionality > 1)>::type>
 bool is_hermitian(MultiArray2D const& A){
@@ -60,7 +62,7 @@ template<class MA> struct op_tag : std::integral_constant<char, 'N'>{}; // see s
 template<class MA> MA arg(MA&& ma){return std::forward<MA>(ma);} // see specializations below
 
 template<class MultiArray2D, typename = typename std::enable_if<(std::decay<MultiArray2D>::type::dimensionality > 1)>::type>
-MultiArray2D transpose(MultiArray2D&& A){
+MultiArray2D&& transpose(MultiArray2D&& A){
 	assert(A.size(0) == A.size(1));
         typename std::decay<MultiArray2D>::type::element one(1.0);
         return ma::geam< 'T' > (one, arg(A), std::forward<MultiArray2D>(A));
@@ -80,7 +82,7 @@ template<class MultiArray2DA,
          typename = typename std::enable_if<(std::decay<MultiArray2DA>::type::dimensionality 
                                                 == std::decay<MultiArray2DB>::type::dimensionality)>::type
         >
-MultiArray2DB transpose(MultiArray2DA&& A, MultiArray2DB&& B){
+MultiArray2DB&& transpose(MultiArray2DA&& A, MultiArray2DB&& B){
         typename std::decay<MultiArray2DA>::type::element one(1.0);
         return ma::geam< 'T' > (one, arg(A), std::forward<MultiArray2DB>(B));
 }
@@ -92,7 +94,7 @@ template<class MultiArray2DA,
          typename = typename std::enable_if<(std::decay<MultiArray2DA>::type::dimensionality
                                                 == std::decay<MultiArray2DB>::type::dimensionality)>::type
         >
-MultiArray2DB transform(MultiArray2DA const& A, MultiArray2DB&& B){
+MultiArray2DB&& transform(MultiArray2DA const& A, MultiArray2DB&& B){
         typename std::decay<MultiArray2DA>::type::element one(1.0);
         return ma::geam< op_tag<MultiArray2DA>::value > (one, arg(A), std::forward<MultiArray2DB>(B));
 }
@@ -104,7 +106,7 @@ template<class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
                 std::decay<MultiArray2DC>::type::dimensionality == 2
         >::type
 >
-MultiArray2DC add(T alpha, MultiArray2DA const& A, T beta, MultiArray2DB const& B, MultiArray2DC&& C){
+MultiArray2DC&& add(T alpha, MultiArray2DA const& A, T beta, MultiArray2DB const& B, MultiArray2DC&& C){
         return ma::geam<
                 op_tag<MultiArray2DA>::value,
                 op_tag<MultiArray2DB>::value
@@ -119,7 +121,7 @@ template<class T, class MultiArray3DA, class MultiArray3DB, class MultiArray3DC,
                 std::decay<MultiArray3DC>::type::dimensionality == 3
         >::type
 >
-MultiArray3DC productStridedBatched(T alpha, MultiArray3DA const& A, MultiArray3DB const& B, T beta, MultiArray3DC&& C){
+MultiArray3DC&& productStridedBatched(T alpha, MultiArray3DA const& A, MultiArray3DB const& B, T beta, MultiArray3DC&& C){
         return ma::gemmStridedBatched<
                 op_tag<MultiArray3DB>::value,
                 op_tag<MultiArray3DA>::value
@@ -134,7 +136,7 @@ template<class T, class MultiArray2DA, class MultiArray1DB, class MultiArray1DC,
 		std::decay<MultiArray1DC>::type::dimensionality == 1
 	>::type, typename = void // TODO change to use dispatch
 >
-MultiArray1DC product(T alpha, MultiArray2DA const& A, MultiArray1DB const& B, T beta, MultiArray1DC&& C){
+MultiArray1DC&& product(T alpha, MultiArray2DA const& A, MultiArray1DB const& B, T beta, MultiArray1DC&& C){
 	return ma::gemv<
 		(op_tag<MultiArray2DA>::value=='N')?'T':'N'
 	>
@@ -152,7 +154,7 @@ template<class T, class SparseMatrixA, class MultiArray1DB, class MultiArray1DC,
         typename = void, // TODO change to use dispatch 
         typename = void // TODO change to use dispatch 
 >
-MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T beta, MultiArray1DC&& C){
+MultiArray1DC&& product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T beta, MultiArray1DC&& C){
         using elementA = typename SparseMatrixA::element; 
         using elementB = typename MultiArray1DB::element; 
         using elementC = typename std::decay<MultiArray1DC>::type::element;
@@ -190,7 +192,7 @@ template<class MultiArray2DA, class MultiArray1DB, class MultiArray1DC,
                 std::decay<MultiArray1DC>::type::dimensionality == 1
         >::type, typename = void // TODO change to use dispatch 
 >
-MultiArray1DC product(MultiArray2DA const& A, MultiArray1DB const& B, MultiArray1DC&& C){
+MultiArray1DC&& product(MultiArray2DA const& A, MultiArray1DB const& B, MultiArray1DC&& C){
         using Type = typename std::decay<MultiArray2DA>::type::element;
         return product(Type(1.), A, B, Type(0.), std::forward<MultiArray1DC>(C));
 }
@@ -203,7 +205,7 @@ template<class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
 		std::decay<MultiArray2DC>::type::dimensionality == 2
 	>::type
 >
-MultiArray2DC product(T alpha, MultiArray2DA const& A, MultiArray2DB const& B, T beta, MultiArray2DC&& C){
+MultiArray2DC&& product(T alpha, MultiArray2DA const& A, MultiArray2DB const& B, T beta, MultiArray2DC&& C){
 	return ma::gemm<
 		op_tag<MultiArray2DB>::value,
 		op_tag<MultiArray2DA>::value
@@ -222,7 +224,7 @@ template<class T, class SparseMatrixA, class MultiArray2DB, class MultiArray2DC,
         typename = void, 
         typename = void // TODO change to use dispatch 
 >
-MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T beta, MultiArray2DC&& C){
+MultiArray2DC&& product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T beta, MultiArray2DC&& C){
         using elementA = std::remove_cv_t<typename SparseMatrixA::element>; 
         using elementB = std::remove_cv_t<typename MultiArray2DB::element>; 
         using elementC = typename std::decay<MultiArray2DC>::type::element;
@@ -268,7 +270,7 @@ template<class T, class SparseMatrixA, class MultiArray2DB, class MultiArray2DC,
         typename = void,
         typename = void // TODO change to use dispatch 
 >
-MultiArray2DC product(T alpha, MultiArray2DB const& B, SparseMatrixA const& A, T beta, MultiArray2DC&& C ) 
+MultiArray2DC&& product(T alpha, MultiArray2DB const& B, SparseMatrixA const& A, T beta, MultiArray2DC&& C ) 
 {
   APP_ABORT(" Error: DenseMatrix x SparseMatrix product not implemented. \n\n\n");
   return std::forward<MultiArray2DC>(C);
@@ -281,37 +283,38 @@ template<class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
                 std::decay<MultiArray2DC>::type::dimensionality == 2
         >::type
 >
-MultiArray2DC product(MultiArray2DA const& A, MultiArray2DB const& B, MultiArray2DC&& C){
+MultiArray2DC&& product(MultiArray2DA const& A, MultiArray2DB const& B, MultiArray2DC&& C){
         using Type = typename std::decay<MultiArray2DA>::type::element;
         return product(Type(1.), A, B, Type(0.), std::forward<MultiArray2DC>(C));
 }
 
-template<class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
+template<class T, class MultiArrayPtr2DA, class MultiArrayPtr2DB, class MultiArrayPtr2DC,
         typename = typename std::enable_if<
-                (MultiArray2DA::dimensionality == 2) and
-                (MultiArray2DB::dimensionality == 2) and
-                std::decay<MultiArray2DC>::type::dimensionality == 2
+                (pointedType<MultiArrayPtr2DA>::dimensionality == 2) and
+                (pointedType<MultiArrayPtr2DB>::dimensionality == 2) and
+                 pointedType<MultiArrayPtr2DC>::dimensionality == 2
         >::type,
         typename = void,
         typename = void
 >
-void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, std::vector<MultiArray2DB>& B,
-                                      T beta, std::vector<MultiArray2DC>& C){
+void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArrayPtr2DA>& A, 
+                                               std::vector<MultiArrayPtr2DB>& B,
+                                      T beta,  std::vector<MultiArrayPtr2DC>& C){
         int nbatch = C.size();
         assert(A.size() >= nbatch);
         assert(B.size() >= nbatch);
 
-        using pointer = typename MultiArray2DC::element_ptr;
-        using element = typename MultiArray2DC::element;
+        using pointer = typename pointedType<MultiArrayPtr2DC>::element_ptr;
+        using element = typename pointedType<MultiArrayPtr2DC>::element;
 
-        int M = C[0].size(1);
-        int N = C[0].size(0);
+        int M = (*C[0]).size(1);
+        int N = (*C[0]).size(0);
         int K;
-        if( TB == 'N' ) K = B[0].size(0);
-        else K = B[0].size(1);
-        int lda = A[0]->stride(0);
-        int ldb = B[0].stride(0);
-        int ldc = C[0].stride(0);
+        if( TB == 'N' ) K = (*B[0]).size(0);
+        else K = (*B[0]).size(1);
+        int lda = (*A[0]).stride(0);
+        int ldb = (*B[0]).stride(0);
+        int ldc = (*C[0]).stride(0);
         std::vector<pointer> Ai;
         std::vector<pointer> Bi;
         std::vector<pointer> Ci;
@@ -319,28 +322,28 @@ void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, s
         Bi.reserve(nbatch);
         Ci.reserve(nbatch);
         for(int i=0; i<nbatch; i++) {
-          assert(lda == A[i]->stride(0));
-          assert(ldb == B[i].stride(0));
-          assert(ldc == C[i].stride(0));
-          assert(M == C[i].size(1));
-          assert(N == C[i].size(0));
+          assert(lda == (*A[i]).stride(0));
+          assert(ldb == (*B[i]).stride(0));
+          assert(ldc == (*C[i]).stride(0));
+          assert(M == (*C[i]).size(1));
+          assert(N == (*C[i]).size(0));
           if(TB == 'N' ) {
-            assert(K == B[i].size(0));
-            assert(M == B[i].size(1));
+            assert(K == (*B[i]).size(0));
+            assert(M == (*B[i]).size(1));
           } else {
-            assert(K == B[i].size(1));
-            assert(M == B[i].size(0));
+            assert(K == (*B[i]).size(1));
+            assert(M == (*B[i]).size(0));
           }
-          if(TA == 'N') {
-            assert(K == A[i]->size(1));
-            assert(N == A[i]->size(0));
+          if(TA == 'N') { 
+            assert(K == (*A[i]).size(1));
+            assert(N == (*A[i]).size(0));
           } else {
-            assert(K == A[i]->size(0));
-            assert(N == A[i]->size(1));
+            assert(K == (*A[i]).size(0));
+            assert(N == (*A[i]).size(1));
           }
-          Ai.emplace_back(A[i]->origin());
-          Bi.emplace_back(B[i].origin());
-          Ci.emplace_back(C[i].origin());
+          Ai.emplace_back((*A[i]).origin());
+          Bi.emplace_back((*B[i]).origin());
+          Ci.emplace_back((*C[i]).origin());
         }
 
         using ma::gemmBatched;
@@ -352,23 +355,24 @@ void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, s
 }
 
 // no batched sparse product yet, serialize call
-template<class T, class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
+template<class T, class MultiArrayPtr2DA, class MultiArrayPtr2DB, class MultiArrayPtr2DC,
         typename = typename std::enable_if<
-                (MultiArray2DA::dimensionality == -2) and
-                (MultiArray2DB::dimensionality == 2) and
-                std::decay<MultiArray2DC>::type::dimensionality == 2
+                (pointedType<MultiArrayPtr2DA>::dimensionality == -2) and
+                (pointedType<MultiArrayPtr2DB>::dimensionality == 2) and
+                pointedType<MultiArrayPtr2DC>::dimensionality == 2
         >::type,
         typename = void
 >
-void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, std::vector<MultiArray2DB>& B, 
-                                      T beta, std::vector<MultiArray2DC>& C){
+void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArrayPtr2DA>& A, 
+                                               std::vector<MultiArrayPtr2DB>& B, 
+                                      T beta,  std::vector<MultiArrayPtr2DC>& C){
         int nbatch = C.size();
         assert(A.size() >= nbatch);
         assert(B.size() >= nbatch);
 
-        using elementA = std::remove_cv_t<typename MultiArray2DA::element>;
-        using elementB = std::remove_cv_t<typename MultiArray2DB::element>;
-        using elementC = typename std::decay<MultiArray2DC>::type::element;
+        using elementA = std::remove_cv_t<typename pointedType<MultiArrayPtr2DA>::element>;
+        using elementB = std::remove_cv_t<typename pointedType<MultiArrayPtr2DB>::element>;
+        using elementC = typename pointedType<MultiArrayPtr2DC>::element;
         assert(TA == 'N' || TA == 'T' || TA == 'C' || TA == 'H');
         assert(TB == 'N');
 /*
@@ -385,29 +389,31 @@ void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArray2DA*>& A, s
 
         for(int i=0; i<nbatch; i++) { 
           csrmm( TA, 
-            A[i]->size(0), B[i].size(1), A[i]->size(1),
+            (*A[i]).size(0), (*B[i]).size(1), (*A[i]).size(1),
             elementA(alpha), "GxxCxx",
-            pointer_dispatch(A[i]->non_zero_values_data()),
-            pointer_dispatch(A[i]->non_zero_indices2_data()),
-            pointer_dispatch(A[i]->pointers_begin()),
-            pointer_dispatch(A[i]->pointers_end()),
-            pointer_dispatch(B[i].origin()), B[i].stride(0),
+            pointer_dispatch((*A[i]).non_zero_values_data()),
+            pointer_dispatch((*A[i]).non_zero_indices2_data()),
+            pointer_dispatch((*A[i]).pointers_begin()),
+            pointer_dispatch((*A[i]).pointers_end()),
+            pointer_dispatch((*B[i]).origin()), (*B[i]).stride(0),
             elementA(beta),
-            pointer_dispatch(C[i].origin()),
-            C[i].stride(0));
+            pointer_dispatch((*C[i]).origin()),
+            (*C[i]).stride(0));
         }
 }
 
-template<class MultiArray2DA, class MultiArray2DB, class MultiArray2DC,
+template<class MultiArrayPtr2DA, class MultiArrayPtr2DB, class MultiArrayPtr2DC,
         typename = typename std::enable_if<
-                (MultiArray2DA::dimensionality == 2 or MultiArray2DA::dimensionality == -2) and
-                (MultiArray2DB::dimensionality == 2) and
-                std::decay<MultiArray2DC>::type::dimensionality == 2
+            (pointedType<MultiArrayPtr2DA>::dimensionality == 2 or 
+             pointedType<MultiArrayPtr2DA>::dimensionality == -2) and
+            (pointedType<MultiArrayPtr2DB>::dimensionality == 2) and
+            pointedType<MultiArrayPtr2DC>::dimensionality == 2
         >::type
 >
-void BatchedProduct(char TA, char TB, std::vector<MultiArray2DA*>& A, std::vector<MultiArray2DB>& B, 
-                                      std::vector<MultiArray2DC>& C){
-        using Type = typename std::decay<MultiArray2DA>::type::element;
+void BatchedProduct(char TA, char TB, std::vector<MultiArrayPtr2DA>& A, 
+                                      std::vector<MultiArrayPtr2DB>& B, 
+                                      std::vector<MultiArrayPtr2DC>& C){
+        using Type = typename pointedType<MultiArrayPtr2DA>::element;
         return BatchedProduct(TA,TB,Type(1.), A, B, Type(0.), C);
 }
 
@@ -429,7 +435,7 @@ template<class MultiArray2D> normal_tag<MultiArray2D> normal(MultiArray2D&& arg)
 }
 
 template<class MultiArray2D>
-MultiArray2D arg(normal_tag<MultiArray2D> const& nt){return nt.arg1;}
+MultiArray2D&& arg(normal_tag<MultiArray2D> const& nt){return nt.arg1;}
 
 template<class MultiArray2D>
 struct transpose_tag{
@@ -443,12 +449,13 @@ struct transpose_tag{
 
 template<class MultiArray2D> struct op_tag<transpose_tag<MultiArray2D>> : std::integral_constant<char, 'T'>{};
 
-template<class MultiArray2D> transpose_tag<MultiArray2D> transposed(MultiArray2D&& arg){
+template<class MultiArray2D> transpose_tag<MultiArray2D> transposed_matrix(MultiArray2D&& arg){
 	return {std::forward<MultiArray2D>(arg)};
 }
 
+// return a pointer instead of a copy, that way you don't care if it is copyable or not
 template<class MultiArray2D>
-MultiArray2D arg(transpose_tag<MultiArray2D> const& tt){return tt.arg1;}
+MultiArray2D const& arg(transpose_tag<MultiArray2D> const& tt){return tt.arg1;}
 
 template<class MultiArray2D>
 struct hermitian_tag{
@@ -465,17 +472,17 @@ template<class MultiArray2D> hermitian_tag<MultiArray2D> hermitian(MultiArray2D&
 }
 
 template<class MultiArray2D>
-MultiArray2D arg(hermitian_tag<MultiArray2D> const& nt){return nt.arg1;}
+MultiArray2D const& arg(hermitian_tag<MultiArray2D> const& nt){return nt.arg1;}
 
 template<class MultiArray2D> struct op_tag<hermitian_tag<MultiArray2D>> : std::integral_constant<char, 'C'>{};
 
-template<class MultiArray2D>
-MultiArray2D arg(hermitian_tag<MultiArray2D>& ht){return ht.arg1;}
+//template<class MultiArray2D>
+//MultiArray2D const& arg(hermitian_tag<MultiArray2D>& ht){return ht.arg1;}
 
 
 template<class MA2D> auto T(MA2D&& arg)
-->decltype(transposed(std::forward<MA2D>(arg))){
-	return transposed(std::forward<MA2D>(arg));
+->decltype(transposed_matrix(std::forward<MA2D>(arg))){
+	return transposed_matrix(std::forward<MA2D>(arg));
 }
 template<class MA2D> auto H(MA2D&& arg)
 ->decltype(hermitian(std::forward<MA2D>(arg))){
@@ -487,8 +494,8 @@ template<class MA2D> auto N(MA2D&& arg)
 }
 
 template<class MA2D> auto trans(MA2D&& arg)
-->decltype(transposed(std::forward<MA2D>(arg))){
-	return transposed(std::forward<MA2D>(arg));
+->decltype(transposed_matrix(std::forward<MA2D>(arg))){
+	return transposed_matrix(std::forward<MA2D>(arg));
 }
 template<class MA2D> auto herm(MA2D&& arg)
 ->decltype(hermitian(std::forward<MA2D>(arg))){
@@ -624,7 +631,7 @@ MultiArray2D exp(MultiArray2D const& A, bool printeV=false) {
 template<class MultiArray2D,
          typename = typename std::enable_if_t<MultiArray2D::dimensionality == 2>
         >
-MultiArray2D cholesky(MultiArray2D&& A){
+MultiArray2D&& cholesky(MultiArray2D&& A){
         assert(A.size(0)==A.size(1));
         if(is_hermitian(A)) { 
           return potrf( transpose( std::forward<MultiArray2D>(A)) );

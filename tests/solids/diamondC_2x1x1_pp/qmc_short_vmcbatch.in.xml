@@ -83,7 +83,7 @@
       </hamiltonian>
    </qmcsystem>
    <qmc method="vmc_batch" move="pbyp">
-      <parameter name="walkers"             >    16              </parameter>
+      <parameter name="total_walkers"             >    16              </parameter>
       <parameter name="blocks"              >    1000            </parameter>
       <parameter name="steps"               >    2.0             </parameter>
       <parameter name="subSteps"            >    2               </parameter>

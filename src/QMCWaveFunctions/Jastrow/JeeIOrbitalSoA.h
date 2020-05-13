@@ -523,6 +523,23 @@ public:
       auto iter       = std::find(elecs_inside(ig, jat).begin(), elecs_inside(ig, jat).end(), iat);
       auto iter_dist  = elecs_inside_dist(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
       auto iter_displ = elecs_inside_displ(ig, jat).begin() + std::distance(elecs_inside(ig, jat).begin(), iter);
+// sentinel code
+#ifndef NDEBUG
+      if (iter == elecs_inside(ig, jat).end())
+      {
+        std::cerr << std::setprecision(std::numeric_limits<valT>::digits10 + 1) << "updating electron iat = " << iat
+                  << " near ion " << jat << " dist " << eI_table.getDistRow(iat)[jat] << std::endl;
+        throw std::runtime_error("BUG electron not found in elecs_inside");
+      }
+      else if (std::abs(eI_table.getDistRow(iat)[jat] - *iter_dist) >= std::numeric_limits<valT>::epsilon())
+      {
+        std::cerr << std::setprecision(std::numeric_limits<valT>::digits10 + 1) << "inconsistent electron iat = " << iat
+                  << " near ion " << jat << " dist " << eI_table.getDistRow(iat)[jat]
+                  << " stored value = " << *iter_dist << std::endl;
+        throw std::runtime_error("BUG eI distance stored value elecs_inside_dist not matching distance table");
+      }
+#endif
+
       if (eI_table.getTempDists()[jat] < Ion_cutoff[jat]) // the new position is still inside
       {
         *iter_dist                                                      = eI_table.getTempDists()[jat];
@@ -968,6 +985,106 @@ public:
         dhpsioverpsi[kk] = (ValueType)sum;
       }
     }
+  }
+
+  inline GradType evalGradSource(ParticleSet& P, ParticleSet& source, int isrc)
+  {
+    ParticleSet::ParticleGradient_t tempG;
+    ParticleSet::ParticleLaplacian_t tempL;
+    tempG.resize(P.getTotalNum());
+    tempL.resize(P.getTotalNum());
+    QTFull::RealType delta = 0.00001;
+    QTFull::RealType c1   = 1.0 / delta / 2.0;
+    QTFull::RealType c2   = 1.0 / delta / delta;
+
+    GradType g_return(0.0);
+    // GRAD TEST COMPUTATION
+    PosType rI = source.R[isrc];
+    for (int iondim = 0; iondim < 3; iondim++)
+    {
+      source.R[isrc][iondim] = rI[iondim] + delta;
+      source.update();
+      P.update();
+
+      LogValueType log_p = evaluateLog(P, tempG, tempL);
+
+      source.R[isrc][iondim] = rI[iondim] - delta;
+      source.update();
+      P.update();
+      LogValueType log_m = evaluateLog(P, tempG, tempL);
+
+      QTFull::RealType log_p_r(0.0), log_m_r(0.0);
+      
+      log_p_r=log_p.real();
+      log_m_r=log_m.real();
+      //symmetric finite difference formula for gradient.
+      g_return[iondim] = c1 * (log_p_r - log_m_r);
+
+      //reset everything to how it was.
+      source.R[isrc][iondim] = rI[iondim];
+    }
+    // this last one makes sure the distance tables and internal neighbourlist correspond to unperturbed source.
+    source.update();
+    P.update();
+    build_compact_list(P);
+    return g_return;
+  }
+
+  inline GradType evalGradSource(ParticleSet& P,
+                                 ParticleSet& source,
+                                 int isrc,
+                                 TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
+                                 TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
+  {
+    ParticleSet::ParticleGradient_t Gp, Gm, dG;
+    ParticleSet::ParticleLaplacian_t Lp, Lm, dL;
+    Gp.resize(P.getTotalNum());
+    Gm.resize(P.getTotalNum());
+    dG.resize(P.getTotalNum());
+    Lp.resize(P.getTotalNum());
+    Lm.resize(P.getTotalNum());
+    dL.resize(P.getTotalNum());
+
+    QTFull::RealType delta = 0.00001;
+    QTFull::RealType c1   = 1.0 / delta / 2.0;
+    QTFull::RealType c2   = 1.0 / delta / delta; 
+    GradType g_return(0.0);
+    // GRAD TEST COMPUTATION
+    PosType rI = source.R[isrc];
+    for (int iondim = 0; iondim < 3; iondim++)
+    {
+      Lp                     = 0;
+      Gp                     = 0;
+      Lm                     = 0;
+      Gm                     = 0;
+      source.R[isrc][iondim] = rI[iondim] + delta;
+      source.update();
+      P.update();
+
+      LogValueType log_p = evaluateLog(P, Gp, Lp);
+
+      source.R[isrc][iondim] = rI[iondim] - delta;
+      source.update();
+      P.update();
+      LogValueType log_m = evaluateLog(P, Gm, Lm);
+      QTFull::RealType log_p_r(0.0), log_m_r(0.0);
+      
+      log_p_r=log_p.real();
+      log_m_r=log_m.real();
+      dG=Gp-Gm;
+      dL=Lp-Lm;
+      //symmetric finite difference formula for gradient.
+      g_return[iondim] = c1 * (log_p_r - log_m_r);
+      grad_grad[iondim] += c1 * dG;
+      lapl_grad[iondim] += c1 * dL;
+      //reset everything to how it was.
+      source.R[isrc][iondim] = rI[iondim];
+    }
+    // this last one makes sure the distance tables and internal neighbourlist correspond to unperturbed source.
+    source.update();
+    P.update();
+    build_compact_list(P);
+    return g_return;
   }
 };
 

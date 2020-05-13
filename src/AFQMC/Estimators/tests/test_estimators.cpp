@@ -18,7 +18,7 @@
 #include "io/hdf_archive.h"
 
 #undef APP_ABORT
-#define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}
+#define APP_ABORT(x) {std::cout << x <<std::endl; throw;}
 
 #include <stdio.h>
 #include <string>
@@ -125,6 +125,8 @@ void reduced_density_matrix(boost::mpi3::communicator & world)
     const char *wfn_xml_block = wfn_xml.c_str();
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
+    // initialize TG buffer
+    make_localTG_buffer_generator(TG.TG_local(),20*1024L*1024L);
     int nwalk = 1; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
     Libxml2Document doc2;
@@ -238,6 +240,7 @@ const char *propg_xml_block =
       APP_ABORT(" NONCOLLINEAR Wavefunction found.\n");
     }
 
+    destroy_shm_buffer_generators();
   }
 }
 
@@ -248,8 +251,8 @@ TEST_CASE("reduced_density_matrix", "[estimators]")
 
 #ifdef ENABLE_CUDA
   auto node = world.split_shared(world.rank());
-  qmc_cuda::CUDA_INIT(node);
-  using Alloc = qmc_cuda::cuda_gpu_allocator<ComplexType>;
+  arch::INIT(node);
+  using Alloc = device::device_allocator<ComplexType>;
 #else
   using Alloc = shared_allocator<ComplexType>;
 #endif

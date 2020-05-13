@@ -20,11 +20,14 @@
 #include "AFQMC/Propagators/Propagator.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
+
+extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
 
 /*
  * Top class for back propagated estimators. 
@@ -55,34 +58,42 @@ class BackPropagatedEstimator: public EstimatorBase
   using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
   using mpi3CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
 
+  using buffer_alloc_type = device_buffer_type<ComplexType>;
+  using StaticMatrix = boost::multi::static_array<ComplexType,2,buffer_alloc_type>;
+
   public:
 
   BackPropagatedEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
         std::string name, xmlNodePtr cur, WALKER_TYPES wlk, WalkerSet& wset, 
         Wavefunction& wfn, Propagator& prop, bool impsamp_=true) :
-                                      EstimatorBase(info),TG(tg_), walker_type(wlk),
-                                      writer(false), 
-                                      Refs({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),
+                                      EstimatorBase(info),TG(tg_), 
+                                      buffer_allocator(device_buffer_generator.get()),
+                                      walker_type(wlk),writer(false), 
+                                      Refs({0,0,0},shared_allocator<ComplexType>{TG.TG_local()}),  
                                       observ0(TG,info,name,cur,wlk,wfn), wfn0(wfn), prop0(prop),
                                       max_nback_prop(10),
-                                      nStabalize(10), block_size(1), path_restoration(false),
-                                      importanceSampling(impsamp_),first(true)
+                                      nStabilize(10), block_size(1), path_restoration(false),
+                                      importanceSampling(impsamp_),extra_path_restoration(false),
+                                      first(true)
   {
     int nave(1);
     if(cur != NULL) {
       ParameterSet m_param;
       std::string restore_paths;
-      m_param.add(nStabalize, "ortho", "int");
+      std::string restore_paths2;
+      m_param.add(nStabilize, "ortho", "int");
       m_param.add(max_nback_prop, "nsteps", "int");
       m_param.add(nave, "naverages", "int");
       m_param.add(restore_paths, "path_restoration", "std::string");
+      m_param.add(restore_paths2, "extra_path_restoration", "std::string");
       m_param.add(block_size, "block_size", "int");
       m_param.add(nblocks_skip, "nskip", "int");
       m_param.put(cur);
-      if(restore_paths == "true") {
+      if(restore_paths == "true" || restore_paths == "yes") 
         path_restoration = true;
-      } else {
-        path_restoration = false;
+      if(restore_paths2 == "true" || restore_paths2 == "yes") { 
+        path_restoration = true;
+        extra_path_restoration = true;
       }
     }
 
@@ -101,8 +112,8 @@ class BackPropagatedEstimator: public EstimatorBase
       APP_ABORT("max_nback_prop <= 0 is not allowed.\n");
 
     int ncv(prop0.global_number_of_cholesky_vectors());
-    int nref(wfn0.number_of_references_for_back_propagation());
-    wset.resize_bp(max_nback_prop,ncv,nref);
+    nrefs=wfn0.number_of_references_for_back_propagation();
+    wset.resize_bp(max_nback_prop,ncv,nrefs);
     wset.setBPPos(0);
     // set SMN in case BP begins right away
     if(nblocks_skip==0)
@@ -120,6 +131,10 @@ class BackPropagatedEstimator: public EstimatorBase
 
   void accumulate_block(WalkerSet& wset)
   {
+// MAM: BP will not work as written if steps in execute don't sync with steps in BP.
+//      Maybe keep track of which steps in nback_prop_steps have been done
+//      and make sure they are not skipped!!!
+//      Fix Fix Fix...
     accumulated_in_last_block=false;
     int bp_step = wset.getBPPos();
     if(bp_step <=0)
@@ -153,7 +168,6 @@ class BackPropagatedEstimator: public EstimatorBase
     }
 
     AFQMCTimers[back_propagate_timer]->start();
-    int nrefs = wfn0.number_of_references_for_back_propagation();
     int nrow(NMO*((walker_type==NONCOLLINEAR)?2:1));
     int ncol(NAEA+((walker_type==CLOSED)?0:NAEB));
     int nx((walker_type==COLLINEAR)?2:1);
@@ -161,8 +175,8 @@ class BackPropagatedEstimator: public EstimatorBase
     // 1. check structures
     if(Refs.size(0) != wset.size() || Refs.size(1) != nrefs || Refs.size(2) !=nrow*ncol) 
       Refs = std::move(mpi3CTensor({wset.size(),nrefs,nrow*ncol},Refs.get_allocator()));
-    if(detR.size(0) != wset.size() || detR.size(1) != nx*nrefs)
-      detR.reextent({wset.size(),nrefs*nx}); 
+    StaticMatrix detR({wset.size(),nrefs*nx},
+                        buffer_allocator->template get_allocator<ComplexType>());
 
     int n0,n1;
     std::tie(n0,n1) = FairDivideBoundary(TG.getLocalTGRank(),int(Refs.size(2)),TG.getNCoresPerTG());
@@ -176,17 +190,23 @@ class BackPropagatedEstimator: public EstimatorBase
     TG.TG_local().barrier();
 
     //3. propagate backwards the references
-    prop0.BackPropagate(bp_step,nStabalize,wset,Refs_,detR);
+    prop0.BackPropagate(bp_step,nStabilize,wset,Refs_,detR);
 
     //4. calculate properties 
     // adjust weights here is path restoration
     stdCVector wgt(iextensions<1u>{wset.size()});
     wset.getProperty(WEIGHT,wgt);
     if(path_restoration) {
-      auto&& factors(wset.getWeightFactors());
-      for(int k=0; k<bp_step; k++)  
+      auto&& factors(*wset.getWeightFactors());
+      int hpos(wset.getHistoryPos()); // position where next step goes... go bach in history... 
+      int maxpos(wset.HistoryBufferLength());
+      int nbp(bp_step);
+      if( extra_path_restoration ) nbp*=2;   
+      for(int k=0; k<nbp; k++) {  
+        hpos = ((hpos==0)?maxpos-1:hpos-1); // start going back since position is advanced for next step already 
         for(int i=0; i<wgt.size(); i++) 
-          wgt[i] *= factors[k][i];
+          wgt[i] *= factors[hpos][i];
+      }
     } else if(!importanceSampling) {
       stdCVector phase(iextensions<1u>{wset.size()});
       wset.getProperty(PHASE,phase);
@@ -224,14 +244,13 @@ class BackPropagatedEstimator: public EstimatorBase
       if(writer && first) { 
         first=false;
         int nave(nback_prop_steps.size());
-        int nref(detR.size(1));
         if(write_metadata) {
           dump.push("Observables");
           dump.push("BackPropagated");
           dump.push("Metadata");
           dump.write(nback_prop_steps, "BackPropSteps");
           dump.write(nave, "NumAverages");
-          dump.write(nref, "NumReferences");
+          dump.write(nrefs, "NumReferences");
           dump.pop();
           dump.pop();
           dump.pop();
@@ -254,6 +273,8 @@ class BackPropagatedEstimator: public EstimatorBase
 
   TaskGroup_& TG;
 
+  device_allocator_generator_type *buffer_allocator;
+
   WALKER_TYPES walker_type;
 
   bool writer;
@@ -267,10 +288,9 @@ class BackPropagatedEstimator: public EstimatorBase
 
   Propagator& prop0;
 
+  int nrefs;
   int max_nback_prop;
   std::vector<int> nback_prop_steps;  
-
-  boost::multi::array<ComplexType,2> detR;
 
   RealType weight, weight_sub;
   RealType targetW = 1;
@@ -280,12 +300,13 @@ class BackPropagatedEstimator: public EstimatorBase
   ComplexType one = ComplexType(1.0, 0.0);
 
   // Frequency of reorthogonalisation.
-  int nStabalize;
+  int nStabilize;
   // Block size over which RDM will be averaged.
   int block_size;
   // Whether to restore cosine projection and real local energy apprximation for weights
   // along back propagation path.
   bool path_restoration, importanceSampling;
+  bool extra_path_restoration;
 
   int first;
 

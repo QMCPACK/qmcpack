@@ -1374,7 +1374,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
 //                            vn0,nsampleQ,gQ,E0,global_ncvecs);
 
   if(ooc == "yes" || ooc == "true") {
-    return HamiltonianOperations(KP3IndexFactorization_batched_ooc(type, TG,
+    return HamiltonianOperations(KP3IndexFactorization_batched<shmSpMatrix>
+            (type, TG,
             std::move(nmo_per_kp),std::move(nchol_per_kp),std::move(kminus),
             std::move(nocc_per_kp),std::move(QKtok2),std::move(H1),std::move(haj),
             std::move(LQKikn),std::move(LQKank),std::move(LQKakn),
@@ -1383,8 +1384,10 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             std::move(gQ),nsampleQ,E0,device_allocator<ComplexType>{},
             global_origin,global_ncvecs,memory));
   } else {
-    return HamiltonianOperations(KP3IndexFactorization_batched(
-            type,std::move(nmo_per_kp),std::move(nchol_per_kp),std::move(kminus),
+    using devSpMatrix = boost::multi::array<SPComplexType,2,device_allocator<SPComplexType>>;
+    return HamiltonianOperations(KP3IndexFactorization_batched<devSpMatrix>
+            (type, TG,
+            std::move(nmo_per_kp),std::move(nchol_per_kp),std::move(kminus),
             std::move(nocc_per_kp),std::move(QKtok2),std::move(H1),std::move(haj),
             std::move(LQKikn),std::move(LQKank),std::move(LQKakn),
             std::move(LQKbnl),std::move(LQKbln),std::move(Qmap),

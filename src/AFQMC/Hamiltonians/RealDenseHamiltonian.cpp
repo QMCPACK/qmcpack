@@ -249,10 +249,13 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
   if(TG.TG_local().size() > 1 || not (batched=="yes" || batched == "true" ))
     return HamiltonianOperations(Real3IndexFactorization(TGwfn,type,std::move(H1),std::move(haj),
             std::move(Likn),std::move(Lakn),std::move(Lank),std::move(vn0),E0,nc0,global_ncvecs));
-  else
-    return HamiltonianOperations(Real3IndexFactorization_batched(type,std::move(H1),std::move(haj),
-            std::move(Likn),std::move(Lakn),std::move(Lank),std::move(vn0),E0,device_allocator<ComplexType>{},
-            nc0,global_ncvecs));
+  else {
+    throw std::runtime_error("Calling disabled class Real3IndexFactorization_batched.\n");
+    return HamiltonianOperations{}; 
+  }
+//    return HamiltonianOperations(Real3IndexFactorization_batched(type,std::move(H1),std::move(haj),
+//            std::move(Likn),std::move(Lakn),std::move(Lank),std::move(vn0),E0,device_allocator<ComplexType>{},
+//            nc0,global_ncvecs));
 
 }
 

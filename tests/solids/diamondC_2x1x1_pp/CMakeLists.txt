@@ -33,7 +33,7 @@
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
                     qmc_short_vmcbatch_4b.in.xml
-                    1 4
+                    4 4
                     TRUE
                     0 DIAMOND2_SCALARS # VMC
                     )
@@ -71,12 +71,13 @@ ENDIF()
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )
 
+  # 1 rank 4 threads 16 walkers (4 crowds of 4 walkers)
   LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc_4r_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short_vmc_dmc_4r
                     qmc_short_vmc_dmc_4r.in.xml
-                    4 4
+                    1 4
                     TRUE
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )

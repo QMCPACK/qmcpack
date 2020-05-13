@@ -2,8 +2,11 @@
 #define CONSTANTSIZEMATRIX_H
 
 #include <vector>
+#include <sstream>
+#include <exception>
 
 #include "OhmmsPETE/OhmmsMatrix.h"
+
 namespace qmcplusplus
 {
 /** Drop in replacement for OhmmsMatrix as a storage object
@@ -43,13 +46,13 @@ public:
   void copy(const RHS& rhs)
   {
     if (this->data_.capacity() < rhs.size())
-      throw std::runtime_error("Constant size vector cannot fit copy.");
+      throw std::runtime_error("Constant size vector cannot fit matrix to be copied.");
     data_.assign(rhs.begin(), rhs.end());
   }
   void copy(const ConstantSizeMatrix& rhs)
   {
     if (this->data_.capacity() < rhs.size())
-      throw std::runtime_error("Constant size vector cannot fit copy.");
+      throw std::runtime_error("Constant size vector cannot fit matrix to be copied.");
     if (&rhs == this)
       throw std::runtime_error("ConstantSizeMatrix.copy(ConstantSizeMatrix& rhs) &rhs == this");
     data_.assign(rhs.data_.begin(), rhs.data_.end());
@@ -69,8 +72,7 @@ public:
     return *this;
   }
 
-  template<template<typename, class>
-           class RHS,
+  template<template<typename, class> class RHS,
            typename TP,
            class ALLOCP,
            typename = IsHostSafe<ALLOC>,
@@ -78,29 +80,35 @@ public:
   ConstantSizeMatrix<T, ALLOC>& operator=(const RHS<TP, ALLOCP>& rhs)
   {
     if (this->data_.capacity() < rhs.size())
-      throw std::runtime_error("ConstantSizeMatrix cannot take assignment of larger than max size");
+      throw std::runtime_error("ConstantSizeMatrix cannot be assigned a matrix larger than itself.");
     data_.assign(rhs.begin(), rhs.end());
     return *this;
   }
 
-  template<class TP,
-           class ALLOCP,
-           typename = IsHostSafe<ALLOC>,
-           typename = IsHostSafe<ALLOCP>>
+  template<class TP, class ALLOCP, typename = IsHostSafe<ALLOC>, typename = IsHostSafe<ALLOCP>>
   ConstantSizeMatrix<T, ALLOC>& operator=(const Matrix<TP, ALLOCP>& rhs)
   {
     if (this->data_.capacity() < rhs.size())
-      throw std::runtime_error("ConstantSizeMatrix cannot take assignment of larger than max size");
+    {
+      std::basic_ostringstream<char> error;
+      error << "ConstantSizeMatrix cannot take assignment of larger than max size (" << n_max_ << " by " << m_max_
+            << ") \n";
+      throw std::runtime_error(error.str());
+    }
     if (this->n_max_ < rhs.cols())
-      throw std::runtime_error("ConstantSizeMatrix cannot take assignment OhmmsMatrix with col dimension larger than n_max");
+    {
+      std::basic_ostringstream<char> error;
+      error << "ConstantSizeMatrix cannot be assigned a matrix dimension larger than n_max (" << n_max_ << ")\n";
+      throw std::runtime_error(error.str());
+    }
     n_ = rhs.cols();
     m_ = rhs.rows();
-    for(size_t row = 0; row < rhs.rows(); ++row)
-      std::copy(rhs[row],rhs[row]+n_,(*this)[row]);
+    for (size_t row = 0; row < rhs.rows(); ++row)
+      std::copy(rhs[row], rhs[row] + n_, (*this)[row]);
     return *this;
   }
-  /**}@*/
 
+  /** @} */
   // returns a const pointer of i-th row
   const T* operator[](size_t i) const { return data_.data() + i * n_max_; }
 
@@ -112,7 +120,7 @@ public:
   T& operator()(size_t i)
   {
     // As far as I know no code does this and none should
-    if(n_ <= i)
+    if (n_ <= i)
       throw std::runtime_error("ConstantSizeMatrix doesn't support access to second row values through operator()");
     return data_[i];
   }
@@ -121,7 +129,7 @@ public:
   T operator()(size_t i) const
   {
     // As far as I know no code does this and none should
-    if(n_ <= i)
+    if (n_ <= i)
       throw std::runtime_error("ConstantSizeMatrix doesn't support access to second row values through operator()");
     return data_[i];
   }
@@ -149,11 +157,16 @@ public:
   size_t size() const { return n_ * m_; }
   size_t cols() const { return n_; }
   size_t rows() const { return m_; }
-  
+
   void resize(size_t m, size_t n)
   {
     if (n > n_max_ || m > m_max_)
-      throw std::runtime_error("You cannot resize a constant size matrix beyond its initial max dimensions");
+    {
+      std::ostringstream error;
+      error << "You cannot resize a constant size matrix beyond its initial max dimensions ( " << m << "," << n << " > "
+            << m_max_ << "," << n_max_ << " )\n";
+      throw std::domain_error(error.str());
+    }
     n_ = n;
     m_ = m;
   }
@@ -169,6 +182,8 @@ private:
   size_t m_max_;
   size_t n_max_;
   std::vector<T, ALLOC> data_;
+
+
 };
 
 extern template class ConstantSizeMatrix<float>;

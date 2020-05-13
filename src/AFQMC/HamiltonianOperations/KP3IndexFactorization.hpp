@@ -41,6 +41,9 @@ namespace afqmc
 class KP3IndexFactorization
 {
 
+  using sp_pointer = SPComplexType*;  
+  using const_sp_pointer = SPComplexType const*;  
+
   using IVector = boost::multi::array<int,1>;
   using CVector = boost::multi::array<ComplexType,1>;
   using SpVector = boost::multi::array<SPComplexType,1>;
@@ -982,21 +985,24 @@ class KP3IndexFactorization
       using vType = typename std::decay<MatB>::type::element; 
       boost::multi::array_ref<vType,3>  v3D(to_address(v.origin()),{nwalk,nmo_tot,nmo_tot});
 
-#if MIXED_PRECISION
-      size_t mem_needs = Xw.num_elements();
-      set_shm_buffer(mem_needs);
-
-      SpMatrix_ref X(to_address(SM_TMats.origin()),Xw.extensions());
-      {
-        size_t i0, iN;
-        std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(Xw.num_elements()),size_t(comm->size()));
-        copy_n_cast(to_address(Xw.origin())+i0,iN-i0,X.origin()+i0);
-      }
-      comm->barrier();
-#else
-      //SpMatrix_ref X(make_device_ptr(Xw.origin()),Xw.extensions());
-      SpMatrix_ref X(to_address(Xw.origin()),Xw.extensions());
-#endif
+      sp_pointer Xptr(nullptr);
+      // I WANT C++17!!!!!!
+      using XType = typename std::decay<MatA>::type::element ;
+      if( std::is_same<SPComplexType,XType>::value ) {
+        Xptr = reinterpret_cast<sp_pointer>(to_address(Xw.origin()));
+      } else {
+        size_t mem_needs = Xw.num_elements();
+        set_shm_buffer(mem_needs);
+        Xptr = to_address(SM_TMats.origin());
+        {
+          size_t i0, iN;
+          std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(Xw.num_elements()),
+                                               size_t(comm->size()));
+          copy_n_cast(to_address(Xw.origin())+i0,iN-i0,Xptr+i0);
+        }
+        comm->barrier();
+      }  
+      SpMatrix_ref X(Xptr,Xw.extensions());
 
       // "rotate" X
       //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)
@@ -1081,11 +1087,7 @@ class KP3IndexFactorization
                 for(int i=0; i<ni; i++) {
                   auto v3D_ni(to_address(v3D[nw][ni0+i].origin()) + nk0);
                   for(int k=0; k<nk; k++, ++v3D_ni)
-#if MIXED_PRECISION
                     *v3D_ni += static_cast<vType>(vki_n[k][i]);
-#else
-                    *v3D_ni += vki_n[k][i];
-#endif
                 }
               }
             } 
@@ -1117,11 +1119,7 @@ class KP3IndexFactorization
                 for(int k=0; k<nk; k++) {
                   auto v3D_nk = to_address(v3D[nw][nk0+k].origin()) + ni0;
                   for(int i=0; i<ni; i++, ++v3D_nk)
-#if MIXED_PRECISION
                     *v3D_nk += static_cast<vType>(vik3D_n[i][k]);
-#else
-                    *v3D_nk += vik3D_n[i][k];
-#endif
                 }
               }
             }
@@ -1152,6 +1150,8 @@ class KP3IndexFactorization
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vbias(const MatA& Gw, MatB&& v, double a=1., double c=0., int nd=0) {
+      using GType = typename std::decay_t<typename MatA::element>;
+      using vType = typename std::decay<MatB>::type::element ;
       int nkpts = nopk.size();
       assert(nd >= 0 && nd < nelpk.size());
       int nwalk = Gw.size(1);
@@ -1176,35 +1176,32 @@ class KP3IndexFactorization
       SPComplexType halfa(0.5*a*scl,0.0);
       SPComplexType minusimhalfa(0.0,-0.5*a*scl);
       SPComplexType imhalfa(0.0,0.5*a*scl);
-      size_t local_memory_needs = 2*nchol_max*nwalk + std::max(nocca_max,noccb_max)*nwalk;
+      size_t local_memory_needs = 2*nchol_max*nwalk; 
       if(TMats.num_elements() < local_memory_needs) TMats.reextent({local_memory_needs,1});
       SpMatrix_ref vlocal(TMats.origin(),{2*nchol_max,nwalk});
       std::fill_n(vlocal.origin(),vlocal.num_elements(),SPComplexType(0.0));
-      SpMatrix_ref Gl(TMats.origin()+vlocal.num_elements(),{std::max(nocca_max,noccb_max),nwalk});
 
       assert(Gw.num_elements() == nwalk*(nocca_tot+noccb_tot)*nmo_tot);
-#if MIXED_PRECISION
-      size_t mem_needs = Gw.num_elements();
-      set_shm_buffer(mem_needs);
-
-      {
-        size_t i0, iN;
-        std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(Gw.num_elements()),size_t(comm->size()));
-        copy_n_cast(to_address(Gw.origin())+i0,iN-i0,to_address(SM_TMats.origin())+i0);
+      const_sp_pointer Gptr(nullptr);
+      // I WANT C++17!!!!!!
+      if( std::is_same<SPComplexType,GType>::value ) {
+        Gptr = reinterpret_cast<const_sp_pointer>(to_address(Gw.origin())); 
+      } else {  
+        size_t mem_needs = Gw.num_elements();
+        set_shm_buffer(mem_needs);
+        {
+          size_t i0, iN;
+          std::tie(i0,iN) = FairDivideBoundary(size_t(comm->rank()),size_t(Gw.num_elements()),size_t(comm->size()));
+          copy_n_cast(to_address(Gw.origin())+i0,iN-i0,to_address(SM_TMats.origin())+i0);
+        }
+        Gptr = to_address(SM_TMats.origin()); 
+        comm->barrier();
       }
-      boost::multi::array_ref<SPComplexType,3> G3Da(to_address(SM_TMats.origin()),
-                                                        {nocca_tot,nmo_tot,nwalk} );
-      boost::multi::array_ref<SPComplexType,3> G3Db(to_address(SM_TMats.origin())+
-                                                        G3Da.num_elements()*(nspin-1),
-                                                        {noccb_tot,nmo_tot,nwalk} );
-#else
-      boost::multi::array_cref<ComplexType,3> G3Da(to_address(Gw.origin()),
-                                                        {nocca_tot,nmo_tot,nwalk} );
-      boost::multi::array_cref<ComplexType,3> G3Db(to_address(Gw.origin())+
-                                                        G3Da.num_elements()*(nspin-1),
-                                                        {noccb_tot,nmo_tot,nwalk} );
-#endif
 
+      boost::multi::array_cref<SPComplexType,3> G3Da(Gptr,
+                                                        {nocca_tot,nmo_tot,nwalk} );
+      boost::multi::array_cref<SPComplexType,3> G3Db(Gptr+G3Da.num_elements()*(nspin-1),
+                                                        {noccb_tot,nmo_tot,nwalk} );
 
       {
         size_t i0, iN;
@@ -1333,6 +1330,12 @@ class KP3IndexFactorization
         }
       }
       comm->barrier();
+    }
+
+    template<class Mat, class MatB>
+    void generalizedFockMatrix(Mat&& G, MatB&& Fp, MatB&& Fm)
+    {
+      APP_ABORT(" Error: generalizedFockMatrix not implemented for this hamiltonian.\n"); 
     }
 
     bool distribution_over_cholesky_vectors() const{ return true; }

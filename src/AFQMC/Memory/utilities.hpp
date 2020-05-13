@@ -17,6 +17,7 @@
 
 #ifdef ENABLE_CUDA
 #include <cuda_runtime.h>
+#include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #endif
 #include "Message/OpenMP.h"
 

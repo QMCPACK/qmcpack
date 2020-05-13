@@ -18,11 +18,8 @@
 #include<cassert>
 #include "AFQMC/Numerics/detail/utilities.hpp"
 #if defined(ENABLE_CUDA)
-#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_KKwaj.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_QKajw.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/vKKwij_to_vwKiKj.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/term_by_term_matrix_vec.cuh"
+#include "AFQMC/Memory/custom_pointers.hpp"
+#include "AFQMC/Numerics/device_kernels.hpp"
 #endif
 
 namespace ma
@@ -201,33 +198,47 @@ void term_by_term_matrix_vector(TENSOR_OPERATIONS op, int dim, int nrow, int nco
   }
 } 
 
+template<typename T, typename Q>
+void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, T const* Tab,  Q* Tba)
+{
+  for(int w=0; w<nwalk; w++) {
+    for(int b=0; b<nb; b++) {
+      for(int a=0; a<na; a++) {
+        T const* Tn( Tab + ((w*na+a)*nb+b)*nchol);
+        for(int n=0; n<nchol; n++, ++Tba, ++Tn) 
+          *Tba = static_cast<Q>(*Tn);
+      }
+    }
+  }  
+}
+
 } //namespace ma
 
 #ifdef ENABLE_CUDA
-namespace qmc_cuda{
+namespace device{
 
 template<typename T, typename Q>
 void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                     int nocc_max, cuda_gpu_ptr<int> nmo, cuda_gpu_ptr<int> nmo0,
-                     cuda_gpu_ptr<int> nocc, cuda_gpu_ptr<int> nocc0,
-                     cuda_gpu_ptr<Q> A, cuda_gpu_ptr<T>  B) {
+                     int nocc_max, device_pointer<int> nmo, device_pointer<int> nmo0,
+                     device_pointer<int> nocc, device_pointer<int> nocc0,
+                     device_pointer<Q> A, device_pointer<T>  B) {
   kernels::KaKjw_to_KKwaj(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,to_address(nmo),to_address(nmo0),
                           to_address(nocc),to_address(nocc0),to_address(A),to_address(B));
 }
 
 template<typename T, typename Q>
 void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                     int nocc_max, cuda_gpu_ptr<int> nmo, cuda_gpu_ptr<int> nmo0,
-                     cuda_gpu_ptr<int> nocc, cuda_gpu_ptr<int> nocc0, cuda_gpu_ptr<int> QKtok2,
-                     cuda_gpu_ptr<Q> A, cuda_gpu_ptr<T>  B) {
+                     int nocc_max, device_pointer<int> nmo, device_pointer<int> nmo0,
+                     device_pointer<int> nocc, device_pointer<int> nocc0, device_pointer<int> QKtok2,
+                     device_pointer<Q> A, device_pointer<T>  B) {
   kernels::KaKjw_to_QKajw(nwalk,nkpts,nmo_max,nmo_tot,nocc_max,to_address(nmo),to_address(nmo0),
               to_address(nocc),to_address(nocc0),to_address(QKtok2),to_address(A),to_address(B));
 }
 
 template<typename T, typename Q>
 void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                     cuda_gpu_ptr<int> kk, cuda_gpu_ptr<int> nmo, cuda_gpu_ptr<int> nmo0,
-                     cuda_gpu_ptr<Q> A, cuda_gpu_ptr<T>  B) {
+                     device_pointer<int> kk, device_pointer<int> nmo, device_pointer<int> nmo0,
+                     device_pointer<Q> A, device_pointer<T>  B) {
   kernels::vKKwij_to_vwKiKj(nwalk,nkpts,nmo_max,nmo_tot,to_address(kk),to_address(nmo),
                             to_address(nmo0),to_address(A),to_address(B));
 }
@@ -239,8 +250,8 @@ void vKKwij_to_vwKiKj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
  */
 template<typename T, typename T2>
 void term_by_term_matrix_vector(ma::TENSOR_OPERATIONS op, int dim, int nrow, int ncol, 
-                                  cuda_gpu_ptr<T> A, int lda,
-                                  cuda_gpu_ptr<T2> x, int incx)
+                                  device_pointer<T> A, int lda,
+                                  device_pointer<T2> x, int incx)
 {
   assert(dim==0 || dim==1);
   if(op==ma::TOp_PLUS) 
@@ -253,6 +264,12 @@ void term_by_term_matrix_vector(ma::TENSOR_OPERATIONS op, int dim, int nrow, int
     kernels::term_by_term_mat_vec_div(dim,nrow,ncol,to_address(A),lda,to_address(x),incx);
   else
     APP_ABORT(" Error: Unknown operation in term_by_term_matrix_vector. \n");
+}
+
+template<typename T, typename Q>
+void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, device_pointer<T> Tab, device_pointer<Q> Tba)
+{
+  kernels::transpose_wabn_to_wban(nwalk,na,nb,nchol,to_address(Tab),to_address(Tba));
 }
 
 }

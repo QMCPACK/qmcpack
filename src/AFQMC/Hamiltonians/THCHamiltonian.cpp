@@ -15,7 +15,6 @@
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
 #include "AFQMC/Hamiltonians/rotateHamiltonian.hpp"
-#include "AFQMC/Matrix/mpi3_shared_ma_proxy.hpp"
 #include "AFQMC/HamiltonianOperations/THCOpsIO.hpp"
 
 namespace qmcplusplus
@@ -98,20 +97,31 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     nmu = nmuN-nmu0;
   }
 
-  using shm_Vmatrix = mpi3_shared_ma_proxy<ValueType>;
-  using shm_Cmatrix = mpi3_shared_ma_proxy<ComplexType>;
+  using shmVmatrix = boost::multi::array<ValueType,2,shared_allocator<ValueType>>;
+  using shmCmatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+  using Vmatrix_ref = boost::multi::array_ref<ValueType,2>;
+  using Cmatrix_ref = boost::multi::array_ref<ComplexType,2>;
+//shared_allocator<ValueType>{TG.Node()}
 
   // INCONSISTENT IN REAL BUILD!!!!!! FIX FIX FIX
   // Until I figure something else, rotPiu and rotcPua are not distributed because a full copy is needed
+  // distribution:  size,  global,  offset
+  //   - rotMuv:    {rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0}
+  //   - rotPiu:    {size_t(NMO),grotnmu},{size_t(NMO),grotnmu},{0,0}
+  //   - rotcPua    {grotnmu,nel_},{grotnmu,nel_},{0,0}
+  //   - Piu:       {size_t(NMO),nmu},{size_t(NMO),gnmu},{0,nmu0}
+  //   - Luv:       {nmu,gnmu},{gnmu,gnmu},{nmu0,0}
+  //   - cPua       {nmu,nel_},{gnmu,nel_},{nmu0,0}
+  //  
   size_t nel_ = PsiT[0].size(0) + ((type==CLOSED)?0:(PsiT[1].size(0)));
-  shm_Vmatrix rotMuv(TG.Node(),{rotnmu,grotnmu},{grotnmu,grotnmu},{rotnmu0,0});
-  shm_Cmatrix rotPiu(TG.Node(),{size_t(NMO),grotnmu});
-  std::vector<shm_Cmatrix> rotcPua;
+  shmVmatrix rotMuv({rotnmu,grotnmu},shared_allocator<ValueType>{TG.Node()});
+  shmCmatrix rotPiu({size_t(NMO),grotnmu},shared_allocator<ComplexType>{TG.Node()});
+  std::vector<shmCmatrix> rotcPua;
   rotcPua.reserve(ndet);
   for(int i=0; i<ndet; i++)
-    rotcPua.emplace_back(shm_Cmatrix(TG.Node(),{grotnmu,nel_}));
-  shm_Cmatrix Piu(TG.Node(),{size_t(NMO),nmu},{size_t(NMO),gnmu},{0,nmu0});
-  shm_Vmatrix Luv(TG.Node(),{nmu,gnmu},{gnmu,gnmu},{nmu0,0});
+    rotcPua.emplace_back(shmCmatrix({grotnmu,nel_},shared_allocator<ComplexType>{TG.Node()}));
+  shmCmatrix Piu({size_t(NMO),nmu},shared_allocator<ComplexType>{TG.Node()});
+  shmVmatrix Luv({nmu,gnmu},shared_allocator<ValueType>{TG.Node()});
   // right now only 1 reader. Use hyperslabs and parallel io later
   // read Half transformed first
   if(TG.Node().root()) {
@@ -119,18 +129,17 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     if(not test_Luv) {
       /***************************************/
       // read full matrix, not distributed for now
-      auto piu_ = rotPiu.get();
-      if(!dump.readEntry(piu_,"HalfTransformedFullOrbitals")) {
+      if(!dump.readEntry(rotPiu,"HalfTransformedFullOrbitals")) {
         app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                    <<" Problems reading HalfTransformedFullOrbitals. \n";
         APP_ABORT("");
       }
       /***************************************/
-      typename shm_Vmatrix::ma_type muv_(rotMuv.get());
-      hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab(muv_,
-                                                           rotMuv.global_size(),
-                                                           rotMuv.shape(),
-                                                           rotMuv.global_offset());
+      Vmatrix_ref M_(to_address(rotMuv.origin()),rotMuv.extensions());  
+      hyperslab_proxy<shmVmatrix,2> hslab(rotMuv,
+            std::array<size_t,2>{grotnmu,grotnmu},
+            std::array<size_t,2>{rotnmu,grotnmu},
+            std::array<size_t,2>{rotnmu0,0});
       if(!dump.readEntry(hslab,"HalfTransformedMuv")) {
         app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                    <<" Problems reading HalfTransformedMuv. \n";
@@ -143,22 +152,20 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
   if(TG.Node().root()) {
     /***************************************/
-    typename shm_Cmatrix::ma_type piu_(Piu.get());
-    hyperslab_proxy<typename shm_Cmatrix::ma_type,2> hslab(piu_,
-                                                         Piu.global_size(),
-                                                         Piu.shape(),
-                                                         Piu.global_offset());
+    hyperslab_proxy<shmCmatrix,2> hslab(Piu,
+            std::array<size_t,2>{size_t(NMO),gnmu},
+            std::array<size_t,2>{size_t(NMO),nmu},
+            std::array<size_t,2>{0,nmu0});
     if(!dump.readEntry(hslab,"Orbitals")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Orbitals. \n";
       APP_ABORT("");
     }
     /***************************************/
-    typename shm_Vmatrix::ma_type luv_(Luv.get());
-    hyperslab_proxy<typename shm_Vmatrix::ma_type,2> hslab2(luv_,
-                                                         Luv.global_size(),
-                                                         Luv.shape(),
-                                                         Luv.global_offset());
+    hyperslab_proxy<shmVmatrix,2> hslab2(Luv,
+            std::array<size_t,2>{gnmu,gnmu},
+            std::array<size_t,2>{nmu,gnmu},
+            std::array<size_t,2>{nmu0,0});
     if(!dump.readEntry(hslab2,"Luv")) {
       app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                  <<" Problems reading Luv. \n";
@@ -173,17 +180,15 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   {
 
     // TOO MUCH MEMORY, FIX FIX FIX!!!
-    shm_Cmatrix Piu__(TG.Node(),{size_t(NMO),gnmu});
-    shm_Vmatrix Luv__(TG.Node(),{gnmu,gnmu});
+    shmCmatrix Piu__({size_t(NMO),gnmu},shared_allocator<ComplexType>{TG.Node()});
+    shmVmatrix Luv__({gnmu,gnmu},shared_allocator<ValueType>{TG.Node()});
     if(TG.Node().root()) {
-      auto luv_ = Luv__.get();
-      if(!dump.readEntry(luv_,"Luv")) {
+      if(!dump.readEntry(Luv__,"Luv")) {
         app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                    <<" Problems reading Orbitals. \n";
         APP_ABORT("");
       }
-      auto piu_ = Piu__.get();
-      if(!dump.readEntry(piu_,"Orbitals")) {
+      if(!dump.readEntry(Piu__,"Orbitals")) {
         app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
                    <<" Problems reading Orbitals. \n";
         APP_ABORT("");
@@ -202,14 +207,14 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
     // Muv = Luv * H(Luv)
     // This can benefit from 2D split of work
-    ma::product(Luv__.get(),H(Luv__.get().sliced(c0,cN)),Muv);
+    ma::product(Luv__,H(Luv__.sliced(c0,cN)),Muv);
 
     if(test_Luv) {
       for(int i=0; i<gnmu; ++i)
-        std::copy_n(Muv[i].origin(),nc,rotMuv.get()[i].origin()+c0);
+        std::copy_n(Muv[i].origin(),nc,rotMuv[i].origin()+c0);
       TG.Node().barrier();
       if(TG.Node().root())
-        TG.Cores().all_reduce_in_place_n(rotMuv.origin(),rotMuv.num_elements(),std::plus<>());
+        TG.Cores().all_reduce_in_place_n(to_address(rotMuv.origin()),rotMuv.num_elements(),std::plus<>());
     }
 
     // since generating v0 takes some effort and temporary space,
@@ -217,14 +222,14 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     //         = -0.5 sum_j,u,v ma::conj(Piu(i,u)) ma::conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
     //         = -0.5 sum_u,v ma::conj(Piu(i,u)) W(u,v) Piu(l,u), where
     // W(u,v) = Muv(u,v) * sum_j Piu(j,u) ma::conj(Piu(j,v))
-    ma::product(H(Piu__.get()),Piu__.get()({0,long(NMO)},{long(c0),long(cN)}),Tuv);
+    ma::product(H(Piu__),Piu__({0,long(NMO)},{long(c0),long(cN)}),Tuv);
     auto itM = Muv.origin();
     auto itT = Tuv.origin();
     for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = ma::conj(*itT)*(*itM);
     boost::multi::array<ComplexType,2> T_({Tuv.size(1),size_t(NMO)});
-    ma::product(T(Tuv),H(Piu__.get()),T_);
-    ma::product(-0.5,T(T_),T(Piu__.get()({0,long(NMO)},{long(c0),long(cN)})),0.0,v0);
+    ma::product(T(Tuv),H(Piu__),T_);
+    ma::product(-0.5,T(T_),T(Piu__({0,long(NMO)},{long(c0),long(cN)})),0.0,v0);
 
     // reduce over Global
     TG.Global().all_reduce_in_place_n(v0.origin(),v0.num_elements(),std::plus<>());
@@ -242,14 +247,14 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
     // Muv = Luv * H(Luv)
     // This can benefit from 2D split of work
-    ma::product(Luv.get(),H(Luv.get().sliced(c0,cN)),Muv);
+    ma::product(Luv,H(Luv.sliced(c0,cN)),Muv);
 
     if(test_Luv) {
       for(int i=0; i<gnmu; ++i)
-        std::copy_n(Muv[i].origin(),nc,rotMuv.get()[i].origin()+c0);
+        std::copy_n(Muv[i].origin(),nc,rotMuv[i].origin()+c0);
       TG.Node().barrier();
       if(TG.Node().root())
-        TG.Cores().all_reduce_in_place_n(rotMuv.origin(),rotMuv.num_elements(),std::plus<>());
+        TG.Cores().all_reduce_in_place_n(to_address(rotMuv.origin()),rotMuv.num_elements(),std::plus<>());
     }
 
     // since generating v0 takes some effort and temporary space,
@@ -257,14 +262,14 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     //         = -0.5 sum_j,u,v ma::conj(Piu(i,u)) ma::conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
     //         = -0.5 sum_u,v ma::conj(Piu(i,u)) W(u,v) Piu(l,u), where
     // W(u,v) = Muv(u,v) * sum_j Piu(j,u) ma::conj(Piu(j,v))
-    ma::product(H(Piu.get()),Piu.get()({0,long(NMO)},{long(c0),long(cN)}),Tuv);
+    ma::product(H(Piu),Piu({0,long(NMO)},{long(c0),long(cN)}),Tuv);
     auto itM = Muv.origin();
     auto itT = Tuv.origin();
     for(size_t i=0; i<Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = ma::conj(*itT)*(*itM);
     boost::multi::array<ComplexType,2> T_({Tuv.size(1),size_t(NMO)});
-    ma::product(T(Tuv),H(Piu.get()),T_);
-    ma::product(-0.5,T(T_),T(Piu.get()({0,long(NMO)},{long(c0),long(cN)})),0.0,v0);
+    ma::product(T(Tuv),H(Piu),T_);
+    ma::product(-0.5,T(T_),T(Piu({0,long(NMO)},{long(c0),long(cN)})),0.0,v0);
 
     // reduce over Global
     TG.Global().all_reduce_in_place_n(v0.origin(),v0.num_elements(),std::plus<>());
@@ -275,10 +280,10 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   long naeb_ = PsiT.back().size(0);
 
   // half-rotated Pia
-  std::vector<shm_Cmatrix> cPua;
+  std::vector<shmCmatrix> cPua;
   cPua.reserve(ndet);
   for(int i=0; i<ndet; i++)
-    cPua.emplace_back(shm_Cmatrix(TG.Node(),{nmu,nel_},{gnmu,nel_},{nmu0,0}));
+    cPua.emplace_back(shmCmatrix({nmu,nel_},shared_allocator<ComplexType>{TG.Node()}));
   if(TG.Node().root()) {
     // simple
     using ma::H;
@@ -288,26 +293,26 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
       for(int i=0; i<ndet; i++) {
         // cPua = H(Piu) * ma::conj(A)
         ma::Matrix2MA('T',PsiT[2*i],A);
-        ma::product(H(Piu.get()),A,
-                    cPua[i].get()({0,long(nmu)},{0,long(naea_)}));
+        ma::product(H(Piu),A,
+                    cPua[i]({0,long(nmu)},{0,long(naea_)}));
         if(not test_Luv)
-          ma::product(H(rotPiu.get()),A,
-                      rotcPua[i].get()({0,long(grotnmu)},{0,long(naea_)}));
+          ma::product(H(rotPiu),A,
+                      rotcPua[i]({0,long(grotnmu)},{0,long(naea_)}));
         ma::Matrix2MA('T',PsiT[2*i+1],B);
-        ma::product(H(Piu.get()),B,
-                    cPua[i].get()({0,long(nmu)},{naea_,long(nel_)}));
+        ma::product(H(Piu),B,
+                    cPua[i]({0,long(nmu)},{naea_,long(nel_)}));
         if(not test_Luv)
-          ma::product(H(rotPiu.get()),B,
-                      rotcPua[i].get()({0,long(grotnmu)},{naea_,long(nel_)}));
+          ma::product(H(rotPiu),B,
+                      rotcPua[i]({0,long(grotnmu)},{naea_,long(nel_)}));
       }
     } else {
       boost::multi::array<ComplexType,2> A({PsiT[0].size(1),PsiT[0].size(0)});
       for(int i=0; i<ndet; i++) {
         ma::Matrix2MA('T',PsiT[i],A);
         // cPua = H(Piu) * ma::conj(A)
-        ma::product(H(Piu.get()),A,cPua[i].get());
+        ma::product(H(Piu),A,cPua[i]);
         if(not test_Luv)
-          ma::product(H(rotPiu.get()),A,rotcPua[i].get());
+          ma::product(H(rotPiu),A,rotcPua[i]);
       }
     }
     if(test_Luv) {
@@ -335,13 +340,14 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 //std::cout<<" nmu: " <<Luv.size(0) <<" " <<rotMuv.size(0) <<std::endl;
 
   if(write_hdf)
-    writeTHCOps(hdf_restart,type,NMO,naea_,naeb_,ndet,TGprop,TGwfn,H1,
+    writeTHCOps(hdf_restart,type,NMO,naea_,naeb_,nmu0,rotnmu0,ndet,TGprop,TGwfn,H1,
                 rotPiu,rotMuv,Piu,Luv,v0,E0);
 
-  return HamiltonianOperations(THCOps<ValueType>(TGwfn.TG_local(),NMO,naea_,naeb_,type,std::move(H1),
-                                      std::move(hij),std::move(rotMuv),std::move(rotPiu),
-                                      std::move(rotcPua),std::move(Luv),
-                                      std::move(Piu),std::move(cPua),std::move(v0),E0));
+  return HamiltonianOperations(THCOps<ValueType>(TGwfn.TG_local(),NMO,naea_,naeb_,type,
+                                nmu0,rotnmu0,std::move(H1),
+                                std::move(hij),std::move(rotMuv),std::move(rotPiu),
+                                std::move(rotcPua),std::move(Luv),
+                                std::move(Piu),std::move(cPua),std::move(v0),E0));
 }
 
 

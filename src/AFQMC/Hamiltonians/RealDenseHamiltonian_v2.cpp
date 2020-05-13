@@ -235,7 +235,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
 //    return HamiltonianOperations(Real3IndexFactorization(TGwfn,type,std::move(H1),std::move(haj),
 //            std::move(Likn),std::move(Lakn),std::move(Lank),std::move(vn0),E0,nc0,global_ncvecs));
 //  else
-    return HamiltonianOperations(Real3IndexFactorization_batched_v2(type,std::move(H1),std::move(haj),
+    return HamiltonianOperations(Real3IndexFactorization_batched_v2(type,TGprop,std::move(H1),std::move(haj),
             std::move(Likn),std::move(Lnak),std::move(vn0),E0,device_allocator<ComplexType>{},
             nc0,global_ncvecs,max_memory_MB));
 
