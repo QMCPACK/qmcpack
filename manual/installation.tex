@@ -899,17 +899,30 @@ Install the Windows Subsystem for Linux and Bash on Windows.
 Open a bash shell and follow the install directions for Ubuntu in Section~\ref{sec:buildubuntu}.
 
 \section{Installing via Spack}
-Spack is a package manager for scientific software.
-One of the primary goals of Spack is to reduce the barrier for users to install scientific
-software. Spack is intended to work on everything from laptop
-computers to high-end supercomputers. More information about Spack can
-be found at \url{https://spack.readthedocs.io/en/latest}. The major
-advantage of installation with Spack is that all dependencies are
-automatically built, potentially including all the compilers and libraries, and
-different versions of QMCPACK can easily coexist with each other.
-The QMCPACK Spack package also knows how to automatically build
-and patch QE. In principle, QMCPACK can be installed with
-a single Spack command.
+Spack is a package manager for scientific software.  One of the
+primary goals of Spack is to reduce the barrier for users to install
+scientific software. Spack is intended to work on everything from
+laptop computers to high-end supercomputers. More information about
+Spack can be found at
+\url{https://spack.readthedocs.io/en/latest}. The major advantage of
+installation with Spack is that all dependencies are automatically
+built, potentially including all the compilers and libraries, and
+different versions of QMCPACK can easily coexist with each other. We
+are also able to install a patched version of Quantum ESPRESSO (QE)
+via a seperate Spack command. Earlier versions of the QMCPACK Spack
+package bundled QE as a variant, but this method was not robust and
+frequently led to installation failures.
+
+With a properly configured Spack environment, you can be up and
+running on your computer with two simple commaneds:
+\begin{shade}
+your-laptop> spack install qmcpack@3.9.2%gcc
+
+your-laptop> spack install quantum-espresso+qmcpack~patch@6.4.1%gcc hdf5=parallel
+\end{shade}
+
+A more detailed explanation of these commands and the syntax follows.
+
 
 \subsection{Known Limitations}
 The QMCPACK Spack package inherits the limitations of the underlying
