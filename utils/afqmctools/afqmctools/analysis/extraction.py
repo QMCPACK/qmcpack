@@ -1,6 +1,6 @@
 import h5py
 import numpy
-from afqmctools.utils.io import from_qmcpack_cplx
+from afqmctools.utils.io import from_qmcpack_complex
 
 # Map user names to QMCPACK names.
 MAP = {
@@ -47,6 +47,7 @@ MAP = {
         'm_atom_correlation': {
             'group': 'ATOM_CORRELATORS/M',
             'numer': 'correlator1D_M'
+        },
         'gen_fock_plus': {
             'group': 'GenFockPlus',
             'numer': 'gfockp'
@@ -84,11 +85,11 @@ def extract_data(filename, group, estimator, sample=None):
         numer_id = [d for d in dsets if estimator in d]
         if sample is not None:
             assert sample < len(numer_id)
-            numer = from_qmcpack_cplx(fh5[group][numer_id[sample]][:])
-            denom = from_qmcpack_cplx(fh5[group][denom_id[sample]][:])
+            numer = from_qmcpack_complex(fh5[group][numer_id[sample]][:])
+            denom = from_qmcpack_complex(fh5[group][denom_id[sample]][:])
         else:
-            numer = numpy.array([from_qmcpack_cplx(fh5[group][d][:]) for d in numer_id])
-            denom = numpy.array([from_qmcpack_cplx(fh5[group][d][:])[0] for d in denom_id])
+            numer = numpy.array([from_qmcpack_complex(fh5[group][d][:]) for d in numer_id])
+            denom = numpy.array([from_qmcpack_complex(fh5[group][d][:])[0] for d in denom_id])
         return numer, denom
 
 def extract_observable(filename, estimator='back_propagated',
@@ -162,6 +163,9 @@ def get_metadata(filename, path=''):
             except ValueError:
                 # Scalar data.
                 md[k] = v[()]
+            except KeyError:
+                print("Error: path does not exist.")
+                md = None
     return md
 
 def get_estimator_len(filename, name='Mixed'):
