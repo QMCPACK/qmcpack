@@ -5,7 +5,8 @@ There are a few components in QMCPACK use BLAS/LAPACK with their own characteris
 
 \subsection{Real space QMC}
 \subsubsection{Single particle orbitals}
-LCAO relies on GEMV to compute SPOs from a basis set.
+Spline evaluation as commonly used in solid-state simulations does not use any dense linear algebra library calls.
+LCAO evaluation as commonly used in molecular calculations relies on BLAS2 GEMV to compute SPOs from a basis set.
 
 \subsubsection{Slater determinants}
 Slater determinants are calculated on $N \times N$ Slater matrices. $N$ is the number of electrons for a given spin.
