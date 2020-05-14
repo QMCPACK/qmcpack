@@ -902,6 +902,44 @@ namespace cublas {
     return sucess;
   }
 
+  inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
+                          char Atrans, char Btrans, int M, int N, int K,
+                          float alpha,
+                          std::complex<float> ** A, int lda,
+                          float ** B, int ldb,
+                          float beta,
+                          std::complex<float> ** C, int ldc, int batchSize)
+  {
+    cublasStatus_t sucess =
+                cublasSgemmBatched(handle,
+                        cublasOperation(Atrans),cublasOperation(Btrans),2*M,N,K,
+                        &alpha,
+                        reinterpret_cast<float **>(A),2*lda,
+                        B, ldb, &beta, 
+                        reinterpret_cast<float **>(C),2*ldc,batchSize);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
+  inline cublasStatus_t cublas_gemmBatched(cublasHandle_t handle,
+                          char Atrans, char Btrans, int M, int N, int K,
+                          double alpha,
+                          std::complex<double> ** A, int lda,
+                          double ** B, int ldb,
+                          double beta,
+                          std::complex<double> ** C, int ldc, int batchSize)
+  {
+    cublasStatus_t sucess =
+                cublasDgemmBatched(handle,
+                        cublasOperation(Atrans),cublasOperation(Btrans),2*M,N,K,
+                        &alpha,
+                        reinterpret_cast<double **>(A),2*lda,
+                        B, ldb, &beta, 
+                        reinterpret_cast<double **>(C),2*ldc,batchSize);
+    cudaDeviceSynchronize ();
+    return sucess;
+  }
+
   inline cublasStatus_t cublas_geqrfBatched( cublasHandle_t handle, 
                                     int m, 
                                     int n,

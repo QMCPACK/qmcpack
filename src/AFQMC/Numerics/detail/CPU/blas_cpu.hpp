@@ -1016,6 +1016,29 @@ namespace ma
 #endif
   }
 
+  template<typename T, typename Q>
+  inline static void gemmBatched(char Atrans, char Btrans, int M, int N, int K,
+                          Q alpha, T ** A, int lda,
+                          Q ** B, int ldb, Q beta,
+                          T ** C, int ldc, int batchSize)
+  {
+#ifdef HAVE_MKL
+    assert(Atrans=='n' || Atrans=='N');
+    CBLAS_TRANSPOSE opA(cblas_operation(Atrans));
+    CBLAS_TRANSPOSE opB(cblas_operation(Btrans));
+    int M_(2*M);
+    int lda_(2*lda);
+    int ldc_(2*ldc);
+    gemm_batch(CblasColMajor,&opA,&opB,&M_,&N,&K,
+               &alpha,(const void**)A,&lda_,(const void**)B,&ldb,
+               &beta,(void**)C,&ldc_,1,&batchSize);
+#else
+    // No batched gemm, :-( gemm loop
+    for(int i=0; i<batchSize; i++)
+        gemm(Atrans,Btrans,M,N,K,alpha,A[i],lda,B[i],ldb,beta,C[i],ldc);
+#endif
+  }
+
   template<typename T>
   inline static void axpyBatched(int n, T* x, T *const* a, int inca, T** b, int incb, int batchSize) 
   {

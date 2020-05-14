@@ -248,7 +248,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   } else {
     // very inefficient, find better work distribution for calculation of v0
     // that doesn't so much temporary space!!!
-    boost::multi::array<SPComplexType,2> v0_({NMO,NMO});
+    boost::multi::array<SPValueType,2> v0_({NMO,NMO});
     // very simple partitioning until something more sophisticated is in place!!!
     using ma::H;
     using ma::T;
@@ -347,15 +347,15 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   shmCMatrix hij({ndet,(naea_+naeb_)*NMO},shared_allocator<ComplexType>{TG.Node()});
   shmCMatrix H1({NMO,NMO},shared_allocator<ComplexType>{TG.Node()});
   if( TG.Node().root() ) {
+    // dense one body hamiltonian
+    //auto H1_ = getH1();
+    copy_n_cast((OneBodyHamiltonian::H1).origin(),NMO*NMO,to_address(H1.origin()));
     int skp=((type==COLLINEAR)?1:0);
     for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
       check_wavefunction_consistency(type,&PsiT[nd],&PsiT[nd+skp],NMO,naea_,naeb_);
-      auto hij_(rotateHij(type,&PsiT[nd],&PsiT[nd+skp],OneBodyHamiltonian::H1));
+      auto hij_(rotateHij(type,&PsiT[nd],&PsiT[nd+skp],H1));
       std::copy_n(hij_.origin(),hij_.num_elements(),to_address(hij[n].origin()));
     }
-    // dense one body hamiltonian
-    auto H1_ = getH1();
-    std::copy_n(H1_.origin(),NMO*NMO,to_address(H1.origin()));
   }
   TG.Node().barrier();
 
