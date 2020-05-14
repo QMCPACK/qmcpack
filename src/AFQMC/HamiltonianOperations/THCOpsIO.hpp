@@ -44,20 +44,13 @@ namespace afqmc
 
 
 // Some code duplication with THCHamiltonian class.
-template<typename T>
-THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2)
+inline THCOps loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2)
 {
-
-#if defined(MIXED_PRECISION)
-  using SpT = typename to_single_precision<T>::value_type;
-  using SpC = typename to_single_precision<ComplexType>::value_type;
-#else
-  using SpT = T;
-  using SpC = ComplexType;
-#endif
 
   using shmVMatrix = boost::multi::array<ValueType,2,shared_allocator<ValueType>>;
   using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+  using shmSPVMatrix = boost::multi::array<SPValueType,2,shared_allocator<SPValueType>>;
+  using shmSPCMatrix = boost::multi::array<SPComplexType,2,shared_allocator<SPComplexType>>;
 
   if(type==COLLINEAR)
     assert(PsiT.size()%2 == 0);
@@ -157,10 +150,10 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
 
   // Until I figure something else, rotPiu and rotcPua are not distributed because a full copy is needed
   size_t nel_ = ((type==CLOSED)?NAEA:(NAEA+NAEB));
-  shmVMatrix rotMuv({rotnmu,grotnmu},shared_allocator<ValueType>{TGwfn.Node()});
-  shmCMatrix rotPiu({size_t(NMO),grotnmu},shared_allocator<ComplexType>{TGwfn.Node()});
-  shmCMatrix Piu({size_t(NMO),nmu},shared_allocator<ComplexType>{TGwfn.Node()});
-  shmVMatrix Luv({nmu,gnmu},shared_allocator<ValueType>{TGwfn.Node()});
+  shmSPVMatrix rotMuv({rotnmu,grotnmu},shared_allocator<SPValueType>{TGwfn.Node()});
+  shmSPVMatrix rotPiu({size_t(NMO),grotnmu},shared_allocator<SPValueType>{TGwfn.Node()});
+  shmSPVMatrix Piu({size_t(NMO),nmu},shared_allocator<SPValueType>{TGwfn.Node()});
+  shmSPVMatrix Luv({nmu,gnmu},shared_allocator<SPValueType>{TGwfn.Node()});
 
   // read Half transformed first
   if(TGwfn.Node().root()) {
@@ -171,7 +164,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
       APP_ABORT("");
     }
     /***************************************/
-    hyperslab_proxy<shmVMatrix,2> hslab(rotMuv,
+    hyperslab_proxy<shmSPVMatrix,2> hslab(rotMuv,
             std::array<size_t,2>{grotnmu,grotnmu},
             std::array<size_t,2>{rotnmu,grotnmu},
             std::array<size_t,2>{rotnmu0,0});
@@ -181,7 +174,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
       APP_ABORT("");
     }
     /***************************************/
-    hyperslab_proxy<shmCMatrix,2> hslab2(Piu,
+    hyperslab_proxy<shmSPVMatrix,2> hslab2(Piu,
             std::array<size_t,2>{size_t(NMO),gnmu},
             std::array<size_t,2>{size_t(NMO),nmu},
             std::array<size_t,2>{0,nmu0});                 
@@ -191,7 +184,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
       APP_ABORT("");
     }
     /***************************************/
-    hyperslab_proxy<shmVMatrix,2> hslab3(Luv,
+    hyperslab_proxy<shmSPVMatrix,2> hslab3(Luv,
             std::array<size_t,2>{gnmu,gnmu},
             std::array<size_t,2>{nmu,gnmu},
             std::array<size_t,2>{nmu0,0});
@@ -205,20 +198,20 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   TGwfn.global_barrier();
 
   // half-rotated Pia
-  std::vector<shmCMatrix> rotcPua;
+  std::vector<shmSPCMatrix> rotcPua;
   rotcPua.reserve(ndet);
   for(int i=0; i<ndet; i++)
-    rotcPua.emplace_back(shmCMatrix({grotnmu,nel_},shared_allocator<ComplexType>{TGwfn.Node()}));
-  std::vector<shmCMatrix> cPua;
+    rotcPua.emplace_back(shmSPCMatrix({grotnmu,nel_},shared_allocator<SPComplexType>{TGwfn.Node()}));
+  std::vector<shmSPCMatrix> cPua;
   cPua.reserve(ndet);
   for(int i=0; i<ndet; i++)
-    cPua.emplace_back(shmCMatrix({nmu,nel_},shared_allocator<ComplexType>{TGwfn.Node()}));
+    cPua.emplace_back(shmSPCMatrix({nmu,nel_},shared_allocator<SPComplexType>{TGwfn.Node()}));
   if(TGwfn.Node().root()) {
     // simple
     using ma::H;
     if(type==COLLINEAR) {
-      boost::multi::array<ComplexType,2> A({NMO,NAEA});
-      boost::multi::array<ComplexType,2> B({NMO,NAEB});
+      boost::multi::array<SPComplexType,2> A({NMO,NAEA});
+      boost::multi::array<SPComplexType,2> B({NMO,NAEB});
       for(int i=0; i<ndet; i++) {
         // cPua = H(Piu) * conj(A)
         ma::Matrix2MA('T',PsiT[2*i],A);
@@ -229,7 +222,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
         ma::product(H(rotPiu),B,rotcPua[i](cPua[i].extension(0),{NAEA,NAEA+NAEB}));
       }
     } else {
-      boost::multi::array<ComplexType,2> A({PsiT[0].size(1),PsiT[0].size(0)});
+      boost::multi::array<SPComplexType,2> A({PsiT[0].size(1),PsiT[0].size(0)});
       for(int i=0; i<ndet; i++) {
         ma::Matrix2MA('T',PsiT[i],A);
         // cPua = H(Piu) * conj(A)
@@ -252,7 +245,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   }
   TGwfn.Node().barrier();
 
-  return THCOps<T>(TGwfn.TG_local(),NMO,NAEA,NAEB,type,nmu0,rotnmu0,std::move(H1),
+  return THCOps(TGwfn.TG_local(),NMO,NAEA,NAEB,type,nmu0,rotnmu0,std::move(H1),
                                       std::move(hij),std::move(rotMuv),std::move(rotPiu),
                                       std::move(rotcPua),std::move(Luv),
                                       std::move(Piu),std::move(cPua),std::move(vn0),E0);
@@ -265,9 +258,9 @@ inline void writeTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA,
                               size_t nmu0, size_t rotnmu0, int ndet,
                               TaskGroup_& TGprop, TaskGroup_& TGwfn,
                               shmCMatrix & H1,
-                              shmCMatrix & rotPiu,
+                              shmVMatrix & rotPiu,
                               shmVMatrix & rotMuv,
-                              shmCMatrix & Piu,
+                              shmVMatrix & Piu,
                               shmVMatrix & Luv,
                               shmCMatrix & vn0,
                               ValueType E0)

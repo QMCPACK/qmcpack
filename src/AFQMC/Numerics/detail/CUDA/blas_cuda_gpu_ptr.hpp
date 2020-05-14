@@ -31,6 +31,7 @@
 #include "AFQMC/Numerics/detail/CUDA/Kernels/acAxpbB.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/zero_complex_part.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/axpyBatched.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/get_diagonal.cuh"
 
 // Currently available:
 // Lvl-1: dot, axpy, scal
@@ -173,6 +174,19 @@ namespace device
     static_assert(std::is_same<typename std::decay<Q2>::type,T1>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<T2>::type,T>::value,"Wrong dispatch.\n");
     kernels::adotpby(n,alpha,to_address(x),incx,to_address(y),incy,beta,result);
+  }
+
+  // dot extension 
+  template<typename T, typename T1, typename T2, typename Q1, typename Q2>
+  inline static void strided_adotpby(int nk, int const n, T1 const alpha, 
+                                device_pointer<Q1> A, int const lda,
+                                device_pointer<Q2> B, int const ldb,
+                                T2 const beta, T* y, int inc)
+  {
+    static_assert(std::is_same<typename std::decay<Q1>::type,T1>::value,"Wrong dispatch.\n");
+    static_assert(std::is_same<typename std::decay<Q2>::type,T1>::value,"Wrong dispatch.\n");
+    static_assert(std::is_same<typename std::decay<T2>::type,T>::value,"Wrong dispatch.\n");
+    kernels::strided_adotpby(nk,n,alpha,to_address(A),lda,to_address(B),ldb,beta,y,inc);
   }
 
   // axty
@@ -351,6 +365,11 @@ namespace device
       throw std::runtime_error("Error: cudaMemcpy2D returned error code in copy2D.");
   }
 
+  template <typename T, typename T2>
+  inline static void get_diagonal_strided(int nk, int ni, device_pointer<T> A, int lda, int stride, 
+                device_pointer<T2> B, int ldb) {
+    kernels::get_diagonal_strided(nk,ni,to_address(A),lda,stride,to_address(B),ldb);
+  }
 }
 
 #endif

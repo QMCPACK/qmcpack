@@ -36,6 +36,16 @@ void Awiu_Biu_Cuw(int nu, int nw, int ni, std::complex<double> alpha, std::compl
 void Awiu_Biu_Cuw(int nu, int nw, int ni, std::complex<float> alpha, std::complex<float> const* A,
                         std::complex<float> const* B, int ldb, std::complex<float> *C, int ldc);
 
+// C[i][k] = sum_i A[i][j][k] * B[k][j]
+void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<double> const* A, int lda, int stride, 
+                            std::complex<double> const* B, int ldb, std::complex<double>* C, int ldc);
+void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<double> const* A, int lda, int stride, 
+                            double const* B, int ldb, std::complex<double>* C, int ldc);
+void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<float> const* A, int lda, int stride, 
+                            std::complex<float> const* B, int ldb, std::complex<float>* C, int ldc);
+void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<float> const* A, int lda, int stride, 
+                            float const* B, int ldb, std::complex<float>* C, int ldc);
+
 // element-wise C[k][i][j] = A[i][j] * B[j][k]
 void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, double const* A, 
     int lda, std::complex<double> const* B, int ldb, std::complex<double> * C, int ldc1, int ldc2);

@@ -785,11 +785,19 @@ namespace ma
   inline static
   void adotpby(int n, T const alpha, const T* restrict a, int incx, const T* restrict b, int incy, Q const beta, Q* result)
   {
-    
     T res=T(0);
     for(int i=0, ia=0, ib=0; i<n; ++i, ia+=incx, ib+=incy)
       res += a[ia]*b[ib];
     *result = beta*(*result) + static_cast<Q>(alpha*res);
+  }
+
+  // y[n*inc] = beta*y[n*inc] + alpha * dot(a[n*lda],b[n*lda])
+  template<typename T, typename Q>
+  inline static
+  void strided_adotpby(int nb, int n, T const alpha, const T* restrict a, int lda, const T* restrict b, int ldb, Q const beta, Q* result, int inc)
+  {
+    for(int k=0; k<nb; k++) 
+      adotpby(n,alpha,a+k*lda,1,b+k*ldb,1,beta,result+k*inc);
   }
 
 /*
@@ -1021,6 +1029,18 @@ namespace ma
     // since this is not parallel, no need to coordinate over iw
     for(int i=0; i<batchSize; i++)
         axpy(n,x[i],a[i],inca,b[i],incb);
+  }
+
+  // A[k][i] = B[k][i][i]
+  template<typename T>
+  inline static void get_diagonal_strided(int nk, int ni, T const* B , int ldb, int stride,
+                                 T* A, int lda)
+  {
+    for(int k=0; k<nk; ++k) {
+      auto Bk( B + k*stride );
+      auto Ak( A + k*lda );
+      for(int i=0; i<ni; ++i) A[k] += Bk[ i*ldb + i ];   
+    }
   }
 
 }

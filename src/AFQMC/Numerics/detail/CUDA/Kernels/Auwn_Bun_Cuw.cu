@@ -84,6 +84,47 @@ __global__ void kernel_Awiu_Biu_Cuw( int nu, int nw, int ni,
     }
 }
 
+// Cik = sum_j Aijk * Bkj  ( nthreads per block 32 )
+template<typename T, typename T1>
+__global__ void kernel_Aijk_Bkj_Cik(int ni, int nj, int nk, thrust::complex<T> const* A, int lda, int stride,
+                            T1 const* B, int ldb, thrust::complex<T>* C, int ldc)
+{
+    __shared__ thrust::complex<T> cache[ 32 ];
+    int k = blockIdx.x;
+    int i = blockIdx.y;
+    if( (i<ni) && (k<nk) ) {
+
+      cache[ threadIdx.x ] = thrust::complex<T>(0.0);
+      auto A_( A + i*stride + k + threadIdx.x*lda );
+      auto B_( B + k*ldb + threadIdx.x );
+      auto Bn_( B + k*ldb + nj );
+      while( B_ < Bn_ ) {
+        cache[ threadIdx.x ] += (*A_) * static_cast<thrust::complex<T>>(*B_);
+        A_ += blockDim.x*lda;
+        B_ += blockDim.x;
+      }  
+
+      __syncthreads(); 
+      int j = 16; 
+      while( j > 0 ) {
+        if( threadIdx.x < j ) cache[ threadIdx.x ] += cache[ threadIdx.x + j ];
+        __syncthreads();
+        j /= 2; //not sure bitwise operations are actually faster
+      }
+      if( threadIdx.x == 0 ) {
+        // no concurrent access to Cik, so no need for atomic
+        *(C + i*ldc + k) += cache[0];
+/*
+        T re = (cache[ 0 ]).real();
+        T im = (cache[ 0 ]).imag();
+        T* re_ = reinterpret_cast<T*>(C + i*ldc + k);
+        atomicAdd(re_,re);
+        atomicAdd(re_+1,im);
+*/
+      }
+    }
+}
+
 // element-wise C[k][i][j] = A[i][j] * B[j][k]
 template<typename T>
 __global__ void kernel_element_wise_Aij_Bjk_Ckij( char transA, int ni, int nj, int nk,
@@ -221,6 +262,61 @@ void Awiu_Biu_Cuw(int nu, int nw, int na, std::complex<float> alpha, std::comple
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
+
+
+// C[i][k] = sum_i A[i][j][k] * B[k][j]
+void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<double> const* A, int lda, int stride,
+                            std::complex<double> const* B, int ldb, std::complex<double>* C, int ldc)
+{
+  // expect nk >> ni,nj
+  dim3 grid_dim(nk,ni,1);
+  kernel_Aijk_Bkj_Cik<<<grid_dim,32>>>(ni,nj,nk,
+                                   reinterpret_cast<thrust::complex<double> const*>(A),lda, stride,
+                                   reinterpret_cast<thrust::complex<double> const*>(B),ldb,
+                                   reinterpret_cast<thrust::complex<double> *>(C),ldc);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
+void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<double> const* A, int lda, int stride,
+                            double const* B, int ldb, std::complex<double>* C, int ldc)
+{
+  // expect nk >> ni,nj
+  dim3 grid_dim(nk,ni,1);
+  kernel_Aijk_Bkj_Cik<<<grid_dim,32>>>(ni,nj,nk,
+                                   reinterpret_cast<thrust::complex<double> const*>(A),lda, stride,
+                                   B,ldb, 
+                                   reinterpret_cast<thrust::complex<double> *>(C),ldc);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
+void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<float> const* A, int lda, int stride,
+                            std::complex<float> const* B, int ldb, std::complex<float>* C, int ldc)
+{
+  // expect nk >> ni,nj
+  dim3 grid_dim(nk,ni,1);
+  kernel_Aijk_Bkj_Cik<<<grid_dim,32>>>(ni,nj,nk,
+                                   reinterpret_cast<thrust::complex<float> const*>(A),lda, stride,
+                                   reinterpret_cast<thrust::complex<float> const*>(B),ldb,
+                                   reinterpret_cast<thrust::complex<float> *>(C),ldc);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
+void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<float> const* A, int lda, int stride,
+                            float const* B, int ldb, std::complex<float>* C, int ldc)
+{
+  // expect nk >> ni,nj
+  dim3 grid_dim(nk,ni,1);
+  kernel_Aijk_Bkj_Cik<<<grid_dim,32>>>(ni,nj,nk,
+                                   reinterpret_cast<thrust::complex<float> const*>(A),lda, stride,
+                                   B,ldb,
+                                   reinterpret_cast<thrust::complex<float> *>(C),ldc);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+
 
 // element-wise C[k][i][j] = A[i][j] * B[j][k]
 void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk,

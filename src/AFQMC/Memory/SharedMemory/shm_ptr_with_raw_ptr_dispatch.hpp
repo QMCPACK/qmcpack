@@ -309,6 +309,17 @@ shm_ptr_with_raw_ptr_dispatch<T> alloc_destroy_n(Alloc &a, shm_ptr_with_raw_ptr_
 }
 
 template<class It1, typename T, typename Size>
+shm_ptr_with_raw_ptr_dispatch<T> copy_n_cast(It1 first, Size n, shm_ptr_with_raw_ptr_dispatch<T> d_first){
+        if(n==0) return d_first;
+        d_first.wSP_->fence();
+        using qmcplusplus::afqmc::copy_n_cast;
+        if(d_first.wSP_->get_group().root()) copy_n_cast(to_address(first),n,to_address(d_first));
+        d_first.wSP_->fence();
+        mpi3::communicator(d_first.wSP_->get_group(),0).barrier();
+        return d_first + n;
+}
+
+template<class It1, typename T, typename Size>
 shm_ptr_with_raw_ptr_dispatch<T> copy_n(It1 first, Size n, shm_ptr_with_raw_ptr_dispatch<T> d_first){
         if(n==0) return d_first;
         d_first.wSP_->fence();

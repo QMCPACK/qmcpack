@@ -503,7 +503,7 @@ device_pointer<T> copy_n_cast(device_pointer<T> const A, Size n, device_pointer<
 
 template<typename T, typename Q, typename Size>
 device_pointer<Q> copy_n_cast(T* const A, Size n, device_pointer<Q> B) {
-  throw std::runtime_error(" Error: copy_n_cast(gpu_ptr,n,T*) is disabled.");
+  throw std::runtime_error(" Error: copy_n_cast(T*,n,gpu_ptr) is disabled.");
   return B+n;
 }
 

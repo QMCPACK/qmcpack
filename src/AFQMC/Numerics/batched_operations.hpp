@@ -347,6 +347,7 @@ void batched_diagonal_sum( int* n, std::complex<Q> *const* A, int lda,
 }
 
 // C[u][w] = a * sum_n A[u][w][n] * B[u][n]
+// should be called: Aijk_Bik_Cij
 template<typename T>
 void Auwn_Bun_Cuw(int nu, int nw, int na, T alpha, T const* A, T const* B, T* C){
   for(int u=0; u<nu; ++u, ++B)
@@ -356,13 +357,29 @@ void Auwn_Bun_Cuw(int nu, int nw, int na, T alpha, T const* A, T const* B, T* C)
 
 // C[u][w] = alpha * sum_i A[w][i][u] * B[i][u]
 template<typename T>
+// Aijk_Bjk_Cki
 void Awiu_Biu_Cuw(int nu, int nw, int ni, T alpha, T const* A, T const* B, int ldb, T* C, int ldc){
   for(int w=0; w<nw; ++w) {
     for(int i=0; i<ni; ++i) {
       auto Ci(C + w); 
       auto Bi(B + i*ldb);
       for(int u=0; u<nu; ++u,++A,++Bi,Ci+=ldc)
-        *C += alpha*(*A)*(*Bi);
+        *Ci += alpha*(*A)*(*Bi);
+    }
+  }
+}
+
+// C[i][k] = sum_i A[i][j][k] * B[k][j]
+template<typename T, typename T1>
+void Aijk_Bkj_Cik(int ni, int nj, int nk, T const* A, int lda, int stride, T1 const* B, int ldb, T* C, int ldc){
+  for(int i=0; i<ni; ++i) {
+    auto Ci(C + i*ldc);
+    auto Ai_(A + i*stride);
+    for(int k=0; k<nk; ++k, ++Ci) {
+      auto Ak(Ai_ + k);  
+      auto Bk(B + k*ldb);
+      for(int j=0; j<nj; ++j,Ak+=lda,++Bk)
+        *Ci += (*Ak)*static_cast<T>(*Bk);
     }
   }
 }
@@ -507,6 +524,12 @@ void Awiu_Biu_Cuw(int nu, int nw, int ni, T1 alpha, device_pointer<T2> A,
                   device_pointer<T3> B, int ldb, device_pointer<T4> C, int ldc)
 {
   kernels::Awiu_Biu_Cuw(nu,nw,ni,alpha,to_address(A),to_address(B),ldb,to_address(C),ldc);
+}
+
+template<typename T1, typename T2, typename T3>
+void Aijk_Bkj_Cik(int ni, int nj, int nk, device_pointer<T1> A, int lda, int stride, 
+                    device_pointer<T2> B, int ldb, device_pointer<T3> C, int ldc) {
+  kernels::Aijk_Bkj_Cik(ni,nj,nk,to_address(A),lda,stride,to_address(B),ldb,to_address(C),ldc);
 }
 
 template<typename T1, typename T2, typename T3>

@@ -47,7 +47,6 @@ extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generato
 //   - Luv:       {nmu,gnmu},{gnmu,gnmu},{nmu0,0}
 //   - cPua       {nmu,nel_},{gnmu,nel_},{nmu0,0}
 
-template<class T>
 class THCOps
 {
   using communicator = boost::mpi3::shared_communicator;
@@ -82,6 +81,8 @@ class THCOps
   // host array on shared memory
   using mpi3VMatrix = boost::multi::array<ValueType,2,shared_allocator<ValueType>>;
   using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+  using mpi3SPVMatrix = boost::multi::array<SPValueType,2,shared_allocator<SPValueType>>;
+  using mpi3SPCMatrix = boost::multi::array<SPComplexType,2,shared_allocator<SPComplexType>>;
 
   public:
 
@@ -98,12 +99,12 @@ class THCOps
            int rotnmu0_, 
            mpi3CMatrix&& hij_,
            mpi3CMatrix&& h1,
-           mpi3VMatrix&& rotmuv_,
-           mpi3CMatrix&& rotpiu_,
-           std::vector<mpi3CMatrix>&& rotpau_,
-           mpi3VMatrix&& luv_,
-           mpi3CMatrix&& piu_,
-           std::vector<mpi3CMatrix>&& pau_,
+           mpi3SPVMatrix&& rotmuv_,
+           mpi3SPVMatrix&& rotpiu_,
+           std::vector<mpi3SPCMatrix>&& rotpau_,
+           mpi3SPVMatrix&& luv_,
+           mpi3SPVMatrix&& piu_,
+           std::vector<mpi3SPCMatrix>&& pau_,
            mpi3CMatrix&& v0_,
            ValueType e0_,
            bool verbose=false ):
@@ -176,10 +177,10 @@ class THCOps
       // in non-collinear case with SO, keep SO matrix here and add it
       // for now, stay collinear
 
-      Array<SPComplexType,1> vMF_(vMF,
-                        shm_buffer_allocator->template get_allocator<SPComplexType>());
-      Array<SPComplexType,1> P1D(iextensions<1u>{NMO*NMO},ComplexType(0),
-                        shm_buffer_allocator->template get_allocator<SPComplexType>());
+      Array<ComplexType,1> vMF_(vMF,
+                        shm_buffer_allocator->template get_allocator<ComplexType>());
+      Array<ComplexType,1> P1D(iextensions<1u>{NMO*NMO},ComplexType(0),
+                        shm_buffer_allocator->template get_allocator<ComplexType>());
 
       vHS(vMF_, P1D);
       if(TG.TG().size() > 1)
@@ -342,30 +343,25 @@ class THCOps
           std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
                                   long(nelec[ispin]*nmo_),long(comm->size()));
           using ma::adotpby;
-          for(int n=0; n<nw; ++n) {
-            adotpby(SPComplexType(-0.5*scl),
-                        Gsp[n].sliced(ispin*nelec[0]*nmo_+i0,ispin*nelec[0]*nmo_+iN),
-                        Twbk2D[n].sliced(i0,iN),ComplexType(0.0),E[iw+n].origin()+1);
-          }
+          adotpby(SPComplexType(-0.5*scl),
+                      Gsp({0,nw},{ispin*nelec[0]*nmo_+i0,ispin*nelec[0]*nmo_+iN}),
+                      Twbk2D({0,nw},{i0,iN}),ComplexType(0.0),E({iw,iw+nw},1));
           comm->barrier();  
         }
         comm->barrier();
         if(addEJ) {
           Array<SPComplexType,2> Tuu({nw,(uN-u0)},
                         device_buffer_allocator->template get_allocator<SPComplexType>());
-          ma::product(Guu,ma::T(rotMuv.sliced(u0,uN)),
-                      Tuu);
-          // use batched_dot, write it in GPU!!!
+          ma::product(Guu,ma::T(rotMuv.sliced(u0,uN)),Tuu);
           using ma::adotpby;
-          for(int n=0; n<nw; ++n) {
-            adotpby(SPComplexType(0.5*scl*scl),Guu[n].sliced(nu0+u0,nu0+uN),Tuu[n],
-                      ComplexType(0.0),E[iw+n].origin()+2);
-          }
+          adotpby(SPComplexType(0.5*scl*scl),Guu({0,nw},{nu0+u0,nu0+uN}),Tuu,
+                      ComplexType(0.0),E({iw,iw+nw},2));
+
           if(getKl)
-            ma::add( SPComplexType(1.0), Guu({iw,iw+nw},{nu0+u0,nu0+uN}), SPComplexType(0.0), Tuu, 
-                     (*Kl)({iw,iw+nw},{u0,uN}) );
+            ma::add(SPComplexType(1.0),Guu({iw,iw+nw},{nu0+u0,nu0+uN}),SPComplexType(0.0), 
+                     Tuu, (*Kl)({iw,iw+nw},{u0,uN}) );
           if(getKr) 
-            ma::add( SPComplexType(1.0), Tuu, SPComplexType(0.0), Tuu, 
+            ma::add(SPComplexType(1.0),Tuu,SPComplexType(0.0),Tuu, 
                      (*Kr)({iw,iw+nw},{u0,uN}) );
         }
         comm->barrier();
@@ -670,11 +666,11 @@ class THCOps
       // O[nwalk * nmu * nmu]
 #if defined(QMC_COMPLEX)
       // reinterpret as RealType matrices with 2x the columns
-      Array_ref<RealType,2> Luv_R(pointer_cast<RealType>(make_device_ptr(Luv.origin())),
+      Array_ref<SPRealType,2> Luv_R(pointer_cast<SPRealType>(make_device_ptr(Luv.origin())),
                                                  {Luv.size(0),2*Luv.size(1)});
-      Array_cref<RealType,2> X_R(pointer_cast<RealType const>(Xsp.origin()),
+      Array_cref<SPRealType,2> X_R(pointer_cast<SPRealType const>(Xsp.origin()),
                                                  {Xsp.size(0),2*Xsp.size(1)});
-      Array_ref<RealType,2> Tuw_R(pointer_cast<RealType>(Tuw.origin()),
+      Array_ref<SPRealType,2> Tuw_R(pointer_cast<SPRealType>(Tuw.origin()),
                                                  {nu,2*nwalk});
       ma::product(Luv_R.sliced(u0,uN),X_R,
                   Tuw_R.sliced(u0,uN));
@@ -712,7 +708,7 @@ class THCOps
         long i0, iN;
         std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
                                   long(v.num_elements()),long(comm->size()));
-        copy_n_cast(vsp.origin()+i0,iN-i0,to_address(v.origin())+i0);
+        copy_n_cast(vsp.origin()+i0,iN-i0,make_device_ptr(v.origin())+i0);
       }
       comm->barrier();
     }
@@ -802,8 +798,8 @@ class THCOps
                                                  {nu,2*nwalk});
         Array_ref<SPRealType,2> vsp_R(pointer_cast<SPRealType>(vsp.origin()),
                                                  {vsp.size(0),2*vsp.size(1)});
-        ma::product(a,T(Luv_R(Luv_R.extension(0),{c0,cN})),Guu_R,
-                    c,vsp_R.sliced(c0,cN));
+        ma::product(SPRealType(a),T(Luv_R(Luv_R.extension(0),{c0,cN})),Guu_R,
+                    SPRealType(c),vsp_R.sliced(c0,cN));
 #else
         ma::product(a,T(Luv(Luv.extension(0),{c0,cN})),Guu,
                     c,vsp.sliced(c0,cN));
@@ -819,8 +815,8 @@ class THCOps
                                                  {nu,2*nwalk});
         Array_ref<SPRealType,2> vsp_R(pointer_cast<SPRealType>(vsp.origin()),
                                                  {vsp.size(0),2*vsp.size(1)});
-        ma::product(a,T(Luv_R(Luv_R.extension(0),{c0,cN})),Guu_R,
-                    c,vsp_R.sliced(c0,cN));
+        ma::product(SPRealType(a),T(Luv_R(Luv_R.extension(0),{c0,cN})),Guu_R,
+                    SPRealType(c),vsp_R.sliced(c0,cN));
 #else
         ma::product(a,T(Luv(Luv.extension(0),{c0,cN})),Guu,
                     c,vsp.sliced(c0,cN));
@@ -1001,13 +997,25 @@ class THCOps
       // G[w][u][v] = sum_a rotcPua[u][a] * T[w][a][v]  
       ma::BatchedProduct('N','N',Pua,Twav,Gwuv);
 
-      for(int iw=0; iw<nw; ++iw) {
-        for(int v=v0; v<vN; ++v)
-          if( v < nu0 || v >= nu0+nu ) {
-            Guu[iw][v] = ma::dot(rotcPua[k][v],Tav[iw]({0,nelec[ispin]},v)); 
-          } else
-            Guu[iw][v] = Guv[iw][v-nu0][v];
-      }
+      // Gwv = Gwvv, in range v={nu0,nu0+nu}
+      using ma::get_diagonal_strided;
+      using ma::Aijk_Bkj_Cik;
+//  needs distribution
+      if( comm->root() ) {
+        get_diagonal_strided(Guv({0,nw},{0,nu},{nu0,nu0+nu}), Guu({0,nw},{nu0,nu0+nu}));
+        // dispatch these through ma_blas_extensions!!!
+        // Gwv = sum_a Twav Pva
+        if(nu0 > 0)   // calculate Guu from u={0,nu0} 
+          Aijk_Bkj_Cik(nw,nelec[ispin],nu0,
+                     make_device_ptr(Tav.origin()),Tav.stride(1),Tav.stride(0),
+                     make_device_ptr(rotcPua[k].origin()),rotcPua[k].stride(0),
+                     make_device_ptr(Guu.origin()),nv);
+        if(nu0+nu < nv) // calculate Guu from u={nu0+nu,nv}
+          Aijk_Bkj_Cik(nw,nelec[ispin],nv-nu0-nu,
+                     make_device_ptr(Tav.origin())+nu0+nu,Tav.stride(1),Tav.stride(0),
+                     make_device_ptr(rotcPua[k][nu0+nu].origin()),rotcPua[k].stride(0),
+                     make_device_ptr(Guu.origin())+nu0+nu,nv);
+      }  
       comm->barrier();
     }
 
