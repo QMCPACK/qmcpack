@@ -43,6 +43,17 @@ ENDIF()
 IF ( NOT Python3_FOUND )
   MESSAGE( FATAL_ERROR "Could not find required python3" )
 ENDIF ( NOT Python3_FOUND )
+
+######################################################################
+# Check is PySCF is availabile within Python
+######################################################################
+TEST_PYTHON_MODULE(pyscf HAVE_PYSCF)
+IF (NOT HAVE_PYSCF)
+  MESSAGE( STATUS "Unable to import PySCF python module. PySCF tests will not be run." )
+ELSE()
+  MESSAGE( STATUS "Successfully imported PySCF python module." )
+ENDIF()
+  
 ######################################################################
 # Verify QE executables present if QE_BIN specified
 ######################################################################
