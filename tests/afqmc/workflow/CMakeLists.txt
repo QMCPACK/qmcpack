@@ -3,7 +3,7 @@ MESSAGE("Adding tests for afqmctools and QMCPACK workflow")
 INCLUDE("${qmcpack_SOURCE_DIR}/CMake/test_labels.cmake")
 
 FUNCTION(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS NPROC_INT)
-  SET(TESTDIR "${CMAKE_CURRENT_BINARY_DIR}/qmcpack_${test_name}-16-1")
+  SET(TESTDIR "${CMAKE_CURRENT_BINARY_DIR}/converter_test_qmcpack_${test_name}-16-1")
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory "${input_dir}" "${TESTDIR}")
 
   # 1. Run scf.
