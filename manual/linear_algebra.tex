@@ -1,0 +1,40 @@
+\section{Linear algebra}
+
+Like in many methods which solve the Schr\"odinger equation, linear algebra plays a critical role in QMC algorithms and thus is crucial to the performance of QMCPACK.
+There are a few components in QMCPACK use BLAS/LAPACK with their own characteristics.
+
+\subsection{Real space QMC}
+\subsubsection{Single particle orbitals}
+Spline evaluation as commonly used in solid-state simulations does not use any dense linear algebra library calls.
+LCAO evaluation as commonly used in molecular calculations relies on BLAS2 GEMV to compute SPOs from a basis set.
+
+\subsubsection{Slater determinants}
+Slater determinants are calculated on $N \times N$ Slater matrices. $N$ is the number of electrons for a given spin.
+In the actually implementation, operations on the inverse matrix of Slater matrix for each walker dominate the computation.
+To initialize it, DGETRF and DGETRI from LAPACK are called. The inverse matrix can be stored out of place.
+During random walking, inverse matrices are updated by either Sherman-Morrison rank-1 update or delayed update.
+Update algorithms heavily relies on BLAS. All the BLAS operations require S,C,D,Z cases.
+
+Sherman-Morrison rank-1 update uses BLAS2 GEMV and GER on $N \times N$ matrices.
+
+Delayed rank-K update uses
+\begin{itemize}
+  \item BLAS1 SCOPY, SCAL on $k$ and $N$ array.
+  \item BLAS2 GEMV, GER on $k \times N$ and $k \times k$ matrices. $k$ ranges from 1 to $K$ when updates are delayed and accumulated.
+  \item BLAS3 GEMM at the final update.
+    \begin{itemize}
+       \item 'T', 'N', K, N, N
+       \item 'N', 'N', N, K, K
+       \item 'N', 'N', N, N, K
+    \end{itemize}
+\end{itemize}
+The optimal K depends on the hardware but it usually ranges from 32 to 256.
+
+QMCPACK solves systems with a few to thousands of electrons. To make all the BLAS/LAPACK operation efficient on accelerators.
+Batching is needed and optimized for $N < 2000$. Non-batched functions needs to be optimized for $N > 500$.
+Note: 2000 and 500 are only rough estimates.
+
+\subsubsection{Wavefunction optimizer}
+to be added.
+
+\subsection{Auxiliary field QMC}
