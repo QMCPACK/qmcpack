@@ -25,7 +25,7 @@
 #include "Platforms/Host/OutputManager.h"
 
 #undef APP_ABORT
-#define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}
+#define APP_ABORT(x) {std::cout << x <<std::endl; throw;}
 
 #include <string>
 #include <vector>
@@ -34,6 +34,7 @@
 #include <random>
 
 #include "AFQMC/Utilities/test_utils.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
@@ -109,6 +110,9 @@ void wfn_fac(boost::mpi3::communicator & world)
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
+
+    // initialize TG buffer
+    make_localTG_buffer_generator(TG.TG_local(),20*1024L*1024L);
 
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
@@ -311,7 +315,6 @@ const char *wlk_xml_block_noncol =
 
       REQUIRE(size_of_G == wfn2.size_of_G_for_vbias());
       wfn2.MixedDensityMatrix_for_vbias(wset2,G);
-
       REQUIRE( nCV == wfn2.local_number_of_cholesky_vectors());
       wfn2.vbias(G,X,sqrtdt);
       Xsum=0;
@@ -367,6 +370,8 @@ const char *wlk_xml_block_noncol =
       if(TG.Node().root())
         remove("dummy.h5");
     }
+    
+    destroy_shm_buffer_generators();
   }
 }
 
@@ -418,6 +423,9 @@ void wfn_fac_distributed(boost::mpi3::communicator & world, int ngroups)
     auto TGwfn = TaskGroup_(gTG,std::string("WfnTG"),ngroups,gTG.getTotalCores());
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
+
+    // initialize TG buffer
+    make_localTG_buffer_generator(TG.TG_local(),20*1024L*1024L);
 
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
@@ -714,7 +722,7 @@ const char *wlk_xml_block_noncol =
     if(TG.Node().root())
       remove("dummy.h5");
 
-
+    destroy_shm_buffer_generators();
   }
 }
 
@@ -1039,6 +1047,7 @@ const char *wlk_xml_block =
     }
 
 #endif
+    destroy_shm_buffer_generators();
   }
 }
 #endif
@@ -1058,6 +1067,7 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
 #endif
 
   wfn_fac<Alloc>(world);
+  destroy_shm_buffer_generators();
 
 }
 
@@ -1079,6 +1089,7 @@ TEST_CASE("wfn_fac_distributed", "[wavefunction_factory]")
 #endif
 
   wfn_fac_distributed<Alloc>(world, ngrp);
+  destroy_shm_buffer_generators();
 
 }
 

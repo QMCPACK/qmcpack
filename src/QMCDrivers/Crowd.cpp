@@ -41,23 +41,32 @@ void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& 
 
 void Crowd::loadWalkers()
 {
-  for(int i = 0; i < mcp_walkers_.size(); ++i)
+  for (int i = 0; i < mcp_walkers_.size(); ++i)
     walker_elecs_[i].get().loadWalker(mcp_walkers_[i], true);
 }
 
 void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
 {
-  for ( QMCHamiltonian& ham : walker_hamiltonians_ )
+  for (QMCHamiltonian& ham : walker_hamiltonians_)
     ham.setRandomGenerator(&rng);
 }
 
 void Crowd::startBlock(int num_steps)
 {
+  if (this->size() == 0)
+    return;
   n_accept_ = 0;
   n_reject_ = 0;
   // VMCBatched does no nonlocal moves
   n_nonlocal_accept_ = 0;
   estimator_manager_crowd_.startBlock(num_steps);
+}
+
+void Crowd::stopBlock()
+{
+  if (this->size() == 0)
+    return;
+  estimator_manager_crowd_.stopBlock();
 }
 
 } // namespace qmcplusplus

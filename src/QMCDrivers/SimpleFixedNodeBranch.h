@@ -442,7 +442,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * @param iter current step
    * @param w Walker configuration
    */
-  void branch(int iter, UPtrVector<Crowd>& crowds, MCPopulation& population);
+  void branch(int iter, MCPopulation& population);
 
   /** update RMC counters and running averages.
    * @param iter the iteration

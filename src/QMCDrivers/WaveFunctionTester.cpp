@@ -102,6 +102,10 @@ bool WaveFunctionTester::run()
   app_log() << "Starting a Wavefunction tester.  Additional information in " << fname << std::endl;
 
   put(qmcNode);
+
+  RandomGenerator_t* Rng1        = new RandomGenerator_t();
+  H.setRandomGenerator(Rng1);
+
   if (checkSlaterDetOption == "no")
     checkSlaterDet = false;
   if (checkRatio == "yes")
@@ -1410,6 +1414,7 @@ void WaveFunctionTester::runRatioV()
 
 void WaveFunctionTester::runGradSourceTest()
 {
+   
   app_log() << " ===== runGradSourceTest =====\n";
   ParticleSetPool::PoolType::iterator p;
   for (p = PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)

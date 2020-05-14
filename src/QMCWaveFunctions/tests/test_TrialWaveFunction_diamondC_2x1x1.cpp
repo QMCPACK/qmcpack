@@ -24,7 +24,11 @@
 namespace qmcplusplus
 {
 
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+using DiracDet = DiracDeterminantBatched<MatrixUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#else
 using DiracDet = DiracDeterminantBatched<MatrixUpdateOMP<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#endif
 
 using LogValueType = TrialWaveFunction::LogValueType;
 using PsiValueType = TrialWaveFunction::PsiValueType;

@@ -36,9 +36,17 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+// MAM: to make the working precision of this class a template parameter, 
+//      sed away SPComplexType by another type ( which is then defined through a template parameter)
+//      This should be enough, since some parts are kept at ComplexType precision
+//      defined through the cmake
+
 // Custom implementation for real build
 class Real3IndexFactorization
 {
+
+  using sp_pointer = SPComplexType*;
+  using const_sp_pointer = SPComplexType const*;
 
   using IVector = boost::multi::array<int,1>;
   using CVector = boost::multi::array<ComplexType,1>;
@@ -384,28 +392,53 @@ class Real3IndexFactorization
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
+      using XType = typename std::decay_t<typename MatA::element>;
+      using vType = typename std::decay<MatB>::type::element ;
       assert( Likn.size(1) == X.size(0) );
       assert( Likn.size(0) == v.size(0) );
       assert( X.size(1) == v.size(1) );
       long ik0, ikN;
       std::tie(ik0,ikN) = FairDivideBoundary(long(TG.TG_local().rank()),long(Likn.size(0)),long(TG.TG_local().size()));
-#if MIXED_PRECISION
-      size_t mem_needs = X.num_elements()+v.num_elements();
-      set_shm_buffer(mem_needs);
-      boost::multi::array_ref<SPComplexType,2> vsp(to_address(SM_TMats.origin()), v.extensions());
-      boost::multi::array_ref<SPComplexType,2> Xsp(vsp.origin()+vsp.num_elements(), X.extensions());
-      long i0, iN;
-      std::tie(i0,iN) = FairDivideBoundary(long(TG.TG_local().rank()),long(X.num_elements()),long(TG.TG_local().size()));
-      copy_n_cast(to_address(X.origin())+i0,iN-i0,to_address(Xsp.origin())+i0);
+      // setup buffer space if changing precision in X or v
+      size_t vmem(0),Xmem(0);
+      if(not std::is_same<XType,SPComplexType>::value) Xmem = X.num_elements();
+      if(not std::is_same<vType,SPComplexType>::value) vmem = v.num_elements();
+      set_shm_buffer(vmem+Xmem);
+      sp_pointer vptr(nullptr);
+      const_sp_pointer Xptr(nullptr);
+      // setup origin of Xsp and copy_n_cast if necessary
+      if(std::is_same<XType,SPComplexType>::value) {
+        Xptr = reinterpret_cast<const_sp_pointer>(to_address(X.origin()));
+      } else {  
+        long i0, iN;
+        std::tie(i0,iN) = FairDivideBoundary(long(TG.TG_local().rank()),
+                                  long(X.num_elements()),long(TG.TG_local().size()));
+        copy_n_cast(to_address(X.origin())+i0,iN-i0,to_address(SM_TMats.origin())+i0);
+        Xptr = to_address(SM_TMats.origin());  
+      }
+      // setup origin of vsp and copy_n_cast if necessary
+      if(std::is_same<vType,SPComplexType>::value) {
+        vptr = reinterpret_cast<sp_pointer>(to_address(v.origin()));
+      } else {  
+        long i0, iN;
+        std::tie(i0,iN) = FairDivideBoundary(long(TG.TG_local().rank()),
+                                  long(v.num_elements()),long(TG.TG_local().size()));
+        vptr = to_address(SM_TMats.origin())+Xmem;
+        if( std::abs(c) > 1e-12 )
+          copy_n_cast(to_address(v.origin())+i0,iN-i0,vptr+i0);
+      }
+      // setup array references
+      boost::multi::array_cref<SPComplexType const,2> Xsp(Xptr, X.extensions());
+      boost::multi::array_ref<SPComplexType,2> vsp(vptr, v.extensions());
       TG.TG_local().barrier();
+
       ma::product(SPValueType(a),Likn.sliced(ik0,ikN),Xsp,
                   SPValueType(c),vsp.sliced(ik0,ikN));
-      copy_n_cast(to_address(vsp[ik0].origin()),vsp.size(1)*(ikN-ik0),
-                  to_address(v[ik0].origin()));
-#else
-      ma::product(SPValueType(a),Likn.sliced(ik0,ikN),X,
-                  SPValueType(c),v.sliced(ik0,ikN));
-#endif
+
+      if(not std::is_same<vType,SPComplexType>::value) {
+        copy_n_cast(to_address(vsp[ik0].origin()),vsp.size(1)*(ikN-ik0),
+                to_address(v[ik0].origin()));
+      }
       TG.TG_local().barrier();
     }
 
@@ -439,61 +472,68 @@ class Real3IndexFactorization
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
+      using GType = typename std::decay_t<typename MatA::element>;
+      using vType = typename std::decay<MatB>::type::element ;
+      long ic0, icN;
+      // setup buffer space if changing precision in G or v
+      size_t vmem(0),Gmem(0);
+      if(not std::is_same<GType,SPComplexType>::value) Gmem = G.num_elements(); 
+      if(not std::is_same<vType,SPComplexType>::value) vmem = v.num_elements(); 
+      set_shm_buffer(vmem+Gmem);
+      const_sp_pointer Gptr(nullptr);
+      sp_pointer vptr(nullptr);  
+      // setup origin of Gsp and copy_n_cast if necessary
+      if(std::is_same<GType,SPComplexType>::value) {
+        Gptr = reinterpret_cast<const_sp_pointer>(to_address(G.origin()));
+      } else { 
+        long i0, iN;
+        std::tie(i0,iN) = FairDivideBoundary(long(TG.TG_local().rank()),
+                                  long(G.num_elements()),long(TG.TG_local().size()));
+        copy_n_cast(to_address(G.origin())+i0,iN-i0,to_address(SM_TMats.origin())+i0);
+        Gptr = to_address(SM_TMats.origin()); 
+      }
+      // setup origin of vsp and copy_n_cast if necessary
+      if(std::is_same<vType,SPComplexType>::value) {
+        vptr = reinterpret_cast<sp_pointer>(to_address(v.origin()));
+      } else { 
+        long i0, iN;
+        std::tie(i0,iN) = FairDivideBoundary(long(TG.TG_local().rank()),
+                                  long(v.num_elements()),long(TG.TG_local().size()));
+        vptr = to_address(SM_TMats.origin())+Gmem;
+        if( std::abs(c) > 1e-12 )
+          copy_n_cast(to_address(v.origin())+i0,iN-i0,vptr+i0);
+      }
+      // setup array references
+      boost::multi::array_cref<SPComplexType const,2> Gsp(Gptr, G.extensions());
+      boost::multi::array_ref<SPComplexType,2> vsp(vptr, v.extensions());
+      TG.TG_local().barrier();
+
       if(haj.size(0) == 1) {
         assert( Lakn.size(0) == G.size(1) );
         assert( Lakn.size(1) == v.size(0) );
         assert( G.size(0) == v.size(1) );
-        long ic0, icN;
-        std::tie(ic0,icN) = FairDivideBoundary(long(TG.TG_local().rank()),long(Lakn.size(1)),long(TG.TG_local().size()));
+        std::tie(ic0,icN) = FairDivideBoundary(long(TG.TG_local().rank()),
+                                        long(Lakn.size(1)),long(TG.TG_local().size()));
 
-#if MIXED_PRECISION
-        size_t mem_needs = G.num_elements()+v.num_elements();
-        set_shm_buffer(mem_needs);
-        boost::multi::array_ref<SPComplexType,2> vsp(to_address(SM_TMats.origin()), v.extensions());
-        boost::multi::array_ref<SPComplexType,2> Gsp(vsp.origin()+vsp.num_elements(), G.extensions());
-        long i0, iN;
-        std::tie(i0,iN) = FairDivideBoundary(long(TG.TG_local().rank()),long(G.num_elements()),long(TG.TG_local().size()));
-        copy_n_cast(to_address(G.origin())+i0,iN-i0,to_address(Gsp.origin())+i0);
-        TG.TG_local().barrier();
         if(walker_type==CLOSED) a*=2.0;
         ma::product(SPValueType(a),ma::T(Lakn(Lakn.extension(0),{ic0,icN})),ma::T(Gsp),
                   SPValueType(c),vsp.sliced(ic0,icN));
-        copy_n_cast(to_address(vsp[ic0].origin()),vsp.size(1)*(icN-ic0),
-                  to_address(v[ic0].origin()));
-        TG.TG_local().barrier();
-#else
-        if(walker_type==CLOSED) a*=2.0;
-        ma::product(SPValueType(a),ma::T(Lakn(Lakn.extension(0),{ic0,icN})),ma::T(G),
-                  SPValueType(c),v.sliced(ic0,icN));
-#endif
       } else {
         // multideterminant is not half-rotated, so use Likn
         assert( Likn.size(0) == G.size(0) );
         assert( Likn.size(1) == v.size(0) );
         assert( G.size(1) == v.size(1) );
-        long ic0, icN;
-        std::tie(ic0,icN) = FairDivideBoundary(long(TG.TG_local().rank()),long(Likn.size(1)),long(TG.TG_local().size()));
+        std::tie(ic0,icN) = FairDivideBoundary(long(TG.TG_local().rank()),
+                                long(Likn.size(1)),long(TG.TG_local().size()));
 
-#if MIXED_PRECISION
-        size_t mem_needs = G.num_elements()+v.num_elements();
-        set_shm_buffer(mem_needs);
-        boost::multi::array_ref<SPComplexType,2> vsp(to_address(SM_TMats.origin()), v.extensions());
-        boost::multi::array_ref<SPComplexType,2> Gsp(vsp.origin()+vsp.num_elements(), G.extensions());
-        long i0, iN;
-        std::tie(i0,iN) = FairDivideBoundary(long(TG.TG_local().rank()),long(G.num_elements()),long(TG.TG_local().size()));
-        copy_n_cast(to_address(G.origin())+i0,iN-i0,to_address(Gsp.origin())+i0);
-        TG.TG_local().barrier();
         if(walker_type==CLOSED) a*=2.0;
         ma::product(SPValueType(a),ma::T(Likn(Likn.extension(0),{ic0,icN})),Gsp,
                   SPValueType(c),vsp.sliced(ic0,icN));
+      }
+      // copy data back if changing precision
+      if(not std::is_same<vType,SPComplexType>::value) {
         copy_n_cast(to_address(vsp[ic0].origin()),vsp.size(1)*(icN-ic0),
-                  to_address(v[ic0].origin()));
-        TG.TG_local().barrier();
-#else
-        if(walker_type==CLOSED) a*=2.0;
-        ma::product(SPValueType(a),ma::T(Likn(Likn.extension(0),{ic0,icN})),G,
-                  SPValueType(c),v.sliced(ic0,icN));
-#endif
+                to_address(v[ic0].origin()));
       }
       TG.TG_local().barrier();
     }

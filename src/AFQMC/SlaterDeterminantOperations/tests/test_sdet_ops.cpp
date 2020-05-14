@@ -20,7 +20,7 @@
 
 // Avoid the need to link with other libraries just to get APP_ABORT
 #undef APP_ABORT
-#define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}
+#define APP_ABORT(x) {std::cout << x <<std::endl; throw;}
 
 #include <stdio.h>
 #include <string>
@@ -33,6 +33,7 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
+#include "AFQMC/Memory/buffer_allocators.h"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/mixed_density_matrix.hpp"
@@ -378,8 +379,8 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
 }
 */
 
-template<class Allocator, class SDet_Type>
-void SDetOps_complex_serial(Allocator alloc)
+template<class Allocator, class buffer_generator>
+void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
 {
   static_assert(std::is_same<typename Allocator::value_type, ComplexType>::value,"Incorrect type.\n");
 
@@ -417,8 +418,7 @@ void SDetOps_complex_serial(Allocator alloc)
   array_ref Aref(A.origin(),{NEL,NMO});
   array_ref Bref(B.origin(),{NMO,NEL});
 
-  SlaterDetOperations SDet( SDet_Type(NMO,NEL) );
-  //SDet_Type SDet(NMO,NEL);
+  SlaterDetOperations SDet( SlaterDetOperations_serial<Type,buffer_generator>(NMO,NEL,bgen) );
 
   /**** Overlaps ****/
   Type ov_; 
@@ -925,6 +925,9 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 
 }
 
+extern std::shared_ptr<host_allocator_generator_type> host_buffer_generator;
+extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
+
 TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
 {
   auto world = boost::mpi3::environment::get_world_instance();
@@ -934,10 +937,14 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
 #ifdef ENABLE_CUDA
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
+  using gen_type = device_allocator_generator_type;  
+  auto gptr(device_buffer_generator.get());
 #else
   using Alloc = std::allocator<ComplexType>;
+  using gen_type = host_allocator_generator_type;  
+  auto gptr(host_buffer_generator.get());
 #endif
-  SDetOps_complex_serial<Alloc,SlaterDetOperations_serial<Alloc>>(Alloc{});
+  SDetOps_complex_serial<Alloc,gen_type>(Alloc{},gptr);
 
 }
 

@@ -265,7 +265,7 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
     // v-
     vb_ = (vb + (nc0+nc)*nwalk);
     // v- = -a*i*(v[Q]-v[-Q]) 
-    auto ialpha(alpha*std::complex<double>(0.0,1.0));
+    auto ialpha(alpha*std::complex<T>(0.0,1.0));
     for(int n=0; n<ntot; ++n)
       vb_[ n ] -= ialpha*static_cast<std::complex<T>>(v1_[ n ]);
     for(int n=0; n<ntot; ++n)

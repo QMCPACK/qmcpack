@@ -12,6 +12,7 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Drivers/AFQMCDriver.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 namespace qmcplusplus
 {
@@ -61,6 +62,9 @@ bool AFQMCDriver::run(WalkerSet& wset)
       else
         Eshift += dShift*(estim0.getEloc_step()-Eshift);
 
+      // MAM: updating here to avoid doing multiple loops with secondary allocation.
+      // should do nothing after first block is finished
+
     }
 
     // checkpoint
@@ -81,6 +85,9 @@ bool AFQMCDriver::run(WalkerSet& wset)
     estim0.accumulate_block(wset);
 
     estim0.print(iBlock+1,total_time,Eshift,wset);
+
+    // resize stack pointers to match maximum buffer use 
+    update_buffer_generators();
 
   }
 

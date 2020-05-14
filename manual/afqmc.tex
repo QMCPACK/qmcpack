@@ -212,8 +212,186 @@ The back\_propagation estimator has the following parameters:
 \end{itemize}
 
 \section{File formats}
-... Coming Soon ...
+QMCPACK offers three factorization approaches which are appropriate in different settings. The most generic approach implemented
+is based on the modified-Cholesky
+factorization\cite{BeebeCholesky1977,KochCholesky2003,AquilanteMOLCAS2009,PurwantoCa2011,PurwantoDownfolding2013} of the ERI
+tensor:
+\begin{equation}
+    v_{pqrs} = V_{(pr),(sq)} \approx \sum_n^{N_\mathrm{chol}} L_{pr,n} L^{*}_{sq,n},
+\end{equation}
+where the sum is truncated at $N_{\mathrm{chol}} = x_c M$, $x_c$ is typically between $5$ and $10$, $M$ is the number of basis
+functions and we have assumed that the single-particle orbitals are in general complex.
+The storage requirement is thus naively $\mathcal{O}(M^3)$.
+Note we follow the usual definition of $v_{pqrs} = \langle pq | rs \rangle = (pr|qs)$.
+With this form of factorization QMCPACK allows for the integrals to be stored in either dense or sparse format.
 
+The dense case is the simplest and is only implemented for Hamiltonians with \emph{real} integrals (and basis functions, i.e. not the homegeneous electron gas which has complex orbitals but real integrals).
+The file format is given as follows:
+\begin{lstlisting}[style=SHELL,caption=Sample Dense Cholesky QMCPACK Hamtiltonian.]
+$ h5dump -n afqmc.h5
+HDF5 "afqmc.h5" {
+    FILE_CONTENTS {
+        group      /
+        group      /Hamiltonian
+        group      /Hamiltonian/DenseFactorized
+        dataset    /Hamiltonian/DenseFactorized/L
+        dataset    /Hamiltonian/dims
+        dataset    /Hamiltonian/hcore
+        dataset    /Hamiltonian/Energies
+    }
+}
+\end{lstlisting}
+where the datasets are given by the following
+\begin{itemize}
+    \item \ishell{/Hamiltonian/DenseFactorized/L}: Contains the $[M^2,N_\mathrm{nchol}]$ dimensional matrix representatation of $L_{pr,n}$.
+    \item \ishell{/Hamiltonian/dims}: Descriptor array of length 8 containing $[0,0,0,M,N_\alpha,N_\beta,0,N_\mathrm{nchol}]$. Note that $N_\alpha$ and $N_\beta$ are somewhat redundant and will be read from the input file and wavefunction. This allows for the Hamiltonian to be used with different (potentially spin polarized) wavefunctions.
+    \item \ishell{/Hamiltonian/hcore}: Contains the $[M,M]$ dimensional one-body Hamiltonian matrix elements $h_{pq}$.
+    \item \ishell{/Hamiltonian/Energies}: Array containing $[E_{II}, E_{\mathrm{core}}]$. $E_{II}$ should contain ion-ion repulsion energy and any additional constant terms which have to be added to the total energy. $E_{\mathrm{core}}$ is deprecated and not used.
+\end{itemize}
+
+Typically the Cholesky matrix is sparse, particularly if written in the non-orthogonal AO basis (not currently supported in QMCPACK). In this case only a small number of non-zero elements (denoted $nnz$ below) need to be stored which can reduce the memory overhead considerably.
+Internally QMCPACK stores this matrix in the CSR format, and the HDF5 file format is reflective of this.
+For large systems and, more generally when running in parallel, it is convenient to chunk the writing/reading of the Cholesky matrix into blocks of size $[M^2,\frac{N_{\mathrm{chol}}}{N_{\mathrm{blocks}}}]$ (if interpreted as a dense array).
+This is achieved by writing these blocks to different data sets in the file.
+For the sparse case the Hamtiltonian file format is given as follows:
+\begin{lstlisting}[style=SHELL,caption=Sample Sparse Cholesky QMCPACK Hamtiltonian.]
+$ h5dump -n afqmc.h5
+HDF5 "afqmc.h5" {
+    FILE_CONTENTS {
+        group      /
+        group      /Hamiltonian
+        group      /Hamiltonian/Factorized
+        dataset    /Hamiltonian/Factorized/block_sizes
+        dataset    /Hamiltonian/Factorized/index_0
+        dataset    /Hamiltonian/Factorized/vals_0
+        dataset    /Hamiltonian/ComplexIntegrals
+        dataset    /Hamiltonian/dims
+        dataset    /Hamiltonian/hcore
+        dataset    /Hamiltonian/Energies
+    }
+}
+\end{lstlisting}
+\begin{itemize}
+    \item \ishell{/Hamiltonian/Factorized/block_sizes}: Contains the number of elements in each block of the sparse representation of the Cholesky matrix $L_{pr,n}$. In this case there is 1 block.
+    \item \ishell{/Hamiltonian/Factorized/index_0}: $[2\times nnz]$ dimensional array, containing the indices of the non-zero values of $L_{ik,n}$. The row indices are stored in the even entries, and the column indices in the odd entries.
+    \item \ishell{/Hamiltonian/Factorized/vals_0}: $[nnz]$ length array containing non-zero values of $L_{pr,n}$ for chunk 0.
+    \item \ishell{/Hamiltonian/dims}: Descriptor array of length 8 containing $[0,nnz,N_{\mathrm{block}},M,N_\alpha,N_\beta,0,N_\mathrm{nchol}]$.
+    \item \ishell{/Hamiltonian/ComplexIntegrals}: Length 1 array that specifies if integrals are complex valued. 1 for complex integrals, 0 for real integrals.
+    \item \ishell{/Hamiltonian/hcore}: Contains the $[M,M]$ dimensional one-body Hamiltonian matrix elements $h_{pq}$. Due to its small size this is written as a dense 2D-array.
+    \item \ishell{/Hamiltonian/Energies}: Array containing $[E_{II}, E_{\mathrm{core}}]$. $E_{II}$ should contain ion-ion repulsion energy and any additional constant terms which have to be added to the total energy. $E_{\mathrm{core}}$ is deprecated and not used.
+\end{itemize}
+
+To reduce the memory overhead of storing the three-index tensor we recently adapted the
+tensor-hypercontraction\cite{HohensteinTHCI2012,ParrishTHCII2012,HohensteinTHCIII2012} (THC) approach for use in AFQMC\cite{MaloneISDF2019}. Within the THC approach we
+can approximate the orbital products entering the ERIs as
+\begin{equation}
+    \varphi^{*}_p(\mathbf{r})\varphi_r(\mathbf{r}) \approx \sum_\mu^{N_\mu} \zeta_\mu(\mathbf{r}) \varphi^*_p(\mathbf{r}_\mu)\varphi_r(\mathbf{r}_\mu),\label{eq:orb_prod}
+\end{equation}
+where $\varphi_p(\mathbf{r})$ are the one-electron orbitals and $\mathbf{r}_\mu$ are a set of specially selected interpolating
+points, $\zeta_\mu(\mathbf{r})$ are a set of interpolating vectors and $N_\mu = x_\mu M$. We can then write the ERI tensor as a
+product of rank-2 tensors
+\begin{equation}
+    v_{pqrs} \approx \sum_{\mu\nu} \varphi^{*}_p(\mathbf{r}_\mu)\varphi_r(\mathbf{r}_\mu) M_{\mu\nu} \varphi^{*}_q(\mathbf{r}_\nu)\varphi_s(\mathbf{r}_\nu)\label{eq:4ix_thc},
+\end{equation}
+where
+\begin{equation}
+    M_{\mu\nu} = \int d\mathbf{r}d\mathbf{r}' \zeta_\mu(\mathbf{r})\frac{1}{|\mathbf{r}-\mathbf{r}'|}\zeta^{*}_\nu(\mathbf{r}')\label{eq:mmat}.
+\end{equation}
+We also require the half-rotated versions of these quantities which live on a different set of $\tilde{N}_\mu$ interpolating points $\tilde{\mathbf{r}}_\mu$ (see Ref.~\cite{MaloneISDF2019}).
+The file format for THC factorization is as follows:
+\begin{lstlisting}[style=SHELL,caption=Sample Sparse Cholesky QMCPACK Hamtiltonian.]
+$ h5dump -n afqmc.h5
+HDF5 "afqmc.h5" {
+    FILE_CONTENTS {
+        group      /
+        group      /Hamiltonian
+        group      /Hamiltonian/THC
+        dataset    /Hamiltonian/THC/Luv
+        dataset    /Hamiltonian/THC/Orbitals
+        dataset    /Hamiltonian/THC/HalfTransformedMuv
+        dataset    /Hamiltonian/THC/HalfTransformedFullOrbitals
+        dataset    /Hamiltonian/THC/HalfTransformedOccOrbitals
+        dataset    /Hamiltonian/THC/dims
+        dataset    /Hamiltonian/ComplexIntegrals
+        dataset    /Hamiltonian/dims
+        dataset    /Hamiltonian/hcore
+        dataset    /Hamiltonian/Energies
+    }
+}
+\end{lstlisting}
+\begin{itemize}
+    \item \ishell{/Hamiltonian/THC/Luv}: Cholesky factorization of the $M_{\mu\nu}$ matrix given in Eq.~\ref{eq:mmat}.
+    \item \ishell{/Hamiltonian/THC/Orbitals}: $[M,N_\mu]$ dimensional array of orbitals evaluated at chosen interpolating points $\varphi_i(\mathbf{r}_\mu)$.
+    \item \ishell{/Hamiltonian/THC/HalfTransformedMuv}: $[\tilde{N}_\mu,\tilde{N}_\mu]$ dimensional array containing half-transformed $\tilde{M}_{\mu\nu}$.
+    \item \ishell{/Hamiltonian/THC/HalfTransformedFullOrbitals}: $[M,\tilde{N}_\mu]$ dimensional array containing orbital set computed at half-transformed interpolating points $\varphi_i(\tilde{\mathbf{r}}_\mu)$.
+    \item \ishell{/Hamiltonian/THC/HalfTransformedOccOrbitals}: $[N_\alpha+N_\beta,\tilde{N}_\mu]$ dimensional array containing half-rotated orbital set computed at half-transformed interpolating points $\varphi_a(\tilde{\mathbf{r}}_\mu) = \sum_{p} A_{pa}^* \varphi_{p}(\tilde{\mathbf{r}}_\mu)$, where $\mathbf{A}$ is the Slater-Matrix of the (currently single-determinant) trial wavefunction.
+    \item \ishell{/Hamiltonian/THC/dims}: Descriptor array containing $[M, N_\mu, \tilde{N}_\mu]$.
+    \item \ishell{/Hamiltonian/ComplexIntegrals}: Length 1 array that specifies if integrals are complex valued. 1 for complex integrals, 0 for real integrals.
+    \item \ishell{/Hamiltonian/dims}: Descriptor array of length 8 containing $[0,0,0,M,N_\alpha,N_\beta,0,0]$.
+    \item \ishell{/Hamiltonian/hcore}: Contains the $[M,M]$ dimensional one-body Hamiltonian matrix elements $h_{ij}$.
+    \item \ishell{/Hamiltonian/Energies}: Array containing $[E_{II}, E_{\mathrm{core}}]$. $E_{II}$ should contain ion-ion repulsion energy and any additional constant terms which have to be added to the total energy (such as the electron-electron interaction Madelung contribution of $\frac{1}{2} N \xi )$. $E_{\mathrm{core}}$ is deprecated and not used.
+\end{itemize}
+
+Finally, we have implemented an explicitly $k$-point dependent factorization for periodic systems\cite{MottaKPoint2019,MaloneGPU2020}
+\begin{equation}
+    v_{pqrs} = \sum_{\substack{n\textbf{Q}\textbf{k}\textbf{k}' \\ pqrs\sigma\sigma'}} L^{\textbf{Q},\textbf{k}}_{pr,n} {L^{\textbf{Q},\textbf{k}'}_{sq,n}}^{*}\label{eq:kp_h2}
+\end{equation}
+where $\textbf{k}$, $\textbf{k}'$ and $\textbf{Q}$ are vectors in the first Brillouin zone.
+The one-body Hamiltonian is block diagonal in $\textbf{k}$ and in Eq. \ref{eq:kp_h2} we have used momentum conservation $(\textbf{k}_p - \textbf{k}_r + \textbf{k}_q - \textbf{k}_s) = \textbf{G}$ with $\textbf{G}$ being some vector in the reciprocal lattice of the simulation cell.
+The convention for the Cholesky matrix $L^{\textbf{Q},\textbf{k}}_{pr,\gamma}$ is as follows: $\textbf{k}_r = \textbf{k}_p - \textbf{Q}$, so the vector $\textbf{k}$ labels the \textit{k}-point of the first band index, $\textit{p}$, while the \textit{k}-point vector of the second band index, $\textit{r}$, is given by $\textbf{k} - \textbf{Q}$.  Electron repulsion integrals at different $\textbf{Q}$ vectors are zero by symmetry, resulting in a reduction in the number of required $\mathbf{Q}$ vectors.
+For certain $\textbf{Q}$ vectors that satisfy $\textbf{Q} \ne -\textbf{Q}$ (this is not satisfied at the origin and at high symmetry points on the edge of the 1BZ), we have ${L^{\textbf{Q},\textbf{k}}_{sq,\gamma}}^{*} = {L^{-\textbf{Q},\textbf{k}-\textbf{Q}}_{qs,\gamma}}$, which requires us to store Cholesky vectors for either one of the $(\textbf{Q},-\textbf{Q})$ pair, but not both.
+
+In what follows let $m_{\mathbf{k}}$ denote the number of basis functions for basis functions of a given $k$-point (these can in principle differ for different $k$-points due to linear dependencies), $n^{\alpha}_{\mathbf{k}}$ the number of $\alpha$ electrons in a given $k$-point and $n_{\mathrm{chol}}^{\mathbf{Q}_n}$ the number of Cholesky vectors for momentum transfer $\mathbf{Q}_n$.
+The file format for this factorization is as follows (for a $2\times2\times2$ $k$-point mesh, for denser meshes generally there will be far fewer symmetry inequivalent momentum transfer vectors than there are $k$-points):
+\begin{lstlisting}[style=SHELL,caption=Sample Dense $k$-point dependent Cholesky QMCPACK Hamtiltonian.]
+$ h5dump -n afqmc.h5
+HDF5 "afqmc.h5" {
+    FILE_CONTENTS {
+        group      /
+        group      /Hamiltonian
+        group      /Hamiltonian/KPFactorized
+        dataset    /Hamiltonian/KPFactorized/L0
+        dataset    /Hamiltonian/KPFactorized/L1
+        dataset    /Hamiltonian/KPFactorized/L2
+        dataset    /Hamiltonian/KPFactorized/L3
+        dataset    /Hamiltonian/KPFactorized/L4
+        dataset    /Hamiltonian/KPFactorized/L5
+        dataset    /Hamiltonian/KPFactorized/L6
+        dataset    /Hamiltonian/KPFactorized/L7
+        dataset    /Hamiltonian/NCholPerKP
+        dataset    /Hamiltonian/MinusK
+        dataset    /Hamiltonian/NMOPerKP
+        dataset    /Hamiltonian/QKTok2
+        dataset    /Hamiltonian/H1_kp0
+        dataset    /Hamiltonian/H1_kp1
+        dataset    /Hamiltonian/H1_kp2
+        dataset    /Hamiltonian/H1_kp3
+        dataset    /Hamiltonian/H1_kp4
+        dataset    /Hamiltonian/H1_kp5
+        dataset    /Hamiltonian/H1_kp6
+        dataset    /Hamiltonian/H1_kp7
+        dataset    /Hamiltonian/ComplexIntegrals
+        dataset    /Hamiltonian/KPoints
+        dataset    /Hamiltonian/dims
+        dataset    /Hamiltonian/Energies
+    }
+}
+\end{lstlisting}
+\begin{itemize}
+    \item \ishell{/Hamiltonian/KPFactorized/L[n]}: This series of datasets store elements of the Cholesky tensors $L[\mathbf{Q}_n,\mathbf{k},pr,n]$. Each data set is of dimension $[N_k,m_{\mathbf{k}}\times m_{\mathbf{k}'},n^{\mathbf{Q}_n}_\mathrm{chol}]$, where, again, $k$ is the $k$-point associated with basis function $p$, the $k$-point of basis function $r$ is defined via the mapping \ishell{QKtok2}.
+    \item \ishell{/Hamiltonian/NCholPerKP}: $N_k$ length array giving number of Cholesky vectors per $k$-point.
+    \item \ishell{/Hamiltonian/MinusK}: $N_k$ length array mapping a $k$-point to its inverse: $\mathbf{k}_i+$\ishell{MinusK[i]} $= \mathbf{0} \mod \mathbf{G}$.
+    \item \ishell{/Hamiltonian/NMOPerKP}: $N_k$ length array listing number of basis functions per $k$-point.
+    \item \ishell{/Hamiltonian/QKTok2}: $[N_k,N_k]$ dimensional array. \ishell{QKtok2[i,j]} yields the $k$ point index satisfying $\mathbf{k}=\mathbf{Q}_i-\mathbf{k}_j+\mathbf{G}$.
+    \item \ishell{/Hamiltonian/dims}: Descriptor array of length 8 containing $[0,0,0,M,N_\alpha,N_\beta,0,0]$.
+    \item \ishell{/Hamiltonian/H1_kp[n]}: Contains the $[m_{\mathbf{k}_n},m_{\mathbf{k}_n}]$ dimensional one-body Hamiltonian matrix elements $h_{(\mathbf{k}_{n}p)(\mathbf{k}_{n}q)}$.
+    \item \ishell{/Hamiltonian/ComplexIntegrals}: Length 1 array that specifies if integrals are complex valued. 1 for complex integrals, 0 for real integrals.
+    \item \ishell{/Hamiltonian/KPoints} $[N_k,3]$ Dimensional array containing $k$-points used to sample Brillouin zone.
+    \item \ishell{/Hamiltonian/dims}: Descriptor array of length 8 containing $[0,0,N_k,M,N_\alpha,N_\beta,0,N_\mathrm{nchol}]$. Note that $M$ is the total number of basis functions, i.e. $M=\sum_\mathbf{k} m_\mathbf{k}$, and likewise for the number of electrons.
+    \item \ishell{/Hamiltonian/Energies}: Array containing $[E_{II}, E_{\mathrm{core}}]$. $E_{II}$ should contain ion-ion repulsion energy and any additional constant terms which have to be added to the total energy (such as the electron-electron interaction Madelung contribution of $\frac{1}{2} N \xi )$. $E_{\mathrm{core}}$ is deprecated and not used.
+\end{itemize}
+
+Finally, complex integrals should be written as an array with an additional dimension, e.g., a 1D array should be written as a 2D array with \ishell{array_hdf5[:,0]=real(1d_array)} and \ishell{array_hdf5[:,1]=imag(1d_array)}. The functions \ishell{afqmctools.utils.misc.from_qmcpack_complex} and \ishell{afqmctools.utils.misc.to_qmcpack_complex} can be used to transform qmcpack format to complex valued numpy arrays of the appropriate shape.
 \section{Advice/Useful Information}
 
 AFQMC calculations are computationally expensive and require some care to obtain reasonable performance.

@@ -37,6 +37,11 @@ namespace afqmc
 template<class WlkSet>
 void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealType dt) 
 {
+  if(buffer_allocator == nullptr) {
+    app_error()<<" Error: localTG_buffer_generator == nullptr. \n" <<std::endl;
+    APP_ABORT("");
+  }
+
   using std::fill_n;
   using std::copy_n;
   AFQMCTimers[setup_timer]->start();
@@ -51,87 +56,21 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   const int node_number = TG.getLocalGroupNumber();
   // if transposed_XXX_=true  --> XXX[nwalk][...], 
   // if transposed_XXX_=false --> XXX[...][nwalk]
-  int vhs_nr = NMO*NMO, vhs_nc = nwalk*nsteps;
-  if(transposed_vHS_) std::swap(vhs_nr,vhs_nc);
-  int vhs3d_n1 = NMO, vhs3d_n2 = NMO, vhs3d_n3 = nwalk*nsteps;
+  auto vhs_ext = iextensions<2u>{NMO*NMO,nwalk*nsteps};
+  auto vhs3d_ext = iextensions<3u>{NMO,NMO,nwalk*nsteps};
+  auto G_ext = iextensions<2u>{Gsize,nwalk};
   if(transposed_vHS_) {
-    vhs3d_n1 = nwalk*nsteps;
-    vhs3d_n2 = vhs3d_n3 = NMO;
+    vhs_ext = iextensions<2u>{nwalk*nsteps,NMO*NMO};
+    vhs3d_ext = iextensions<3u>{nwalk*nsteps,NMO,NMO};
   }
-  long G_nr = Gsize, G_nc = nwalk;
-  if(transposed_G_) std::swap(G_nr,G_nc);
+  if(transposed_G_) G_ext = iextensions<2u>{nwalk,Gsize};
 
-  //  Shared buffer used for:
+  //  Summary of temporary memory usage: 
   //  G_for_vbias:     [ Gsize * nwalk ] (2 copies)
   //  X:               [ nCV * nwalk * nstep ] (2 copies)
   //  vbias:           [ nCV * nwalk ] 
   //  vHS:             [ NMO*NMO * nwalk * nstep ] (2 copies)     
-  // memory_needs: nwalk * ( 2*Gsize + nCV*(nstep+1) + 2*NMO*NMO*nstep )
-  size_t memory_needs = nwalk * ( 2*Gsize + nCV*(2*nsteps+1) + 2*NMO*NMO*nsteps );
-  bool new_shm_space=false;  
-
-  // 0. Allocate memory and set shared memory structures
-  if(buffer.num_elements() < memory_needs ) {
-    buffer = std::move(sharedCVector(iextensions<1u>{memory_needs},aux_alloc_));
-    fill_n(buffer.origin(),buffer.num_elements(),ComplexType(0.0));
-    new_shm_space=true;
-  }  
-
-  // convert array to a basic_array<element,1,pointer>. This generates a view of buffer 
-  // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()  
-  //auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
-  CVector_ref mem_pool(make_device_ptr(buffer.origin()),buffer.extensions());
-
-  /* 
-   * MAM: Careful here!!!
-   * Order of allocation is important, since Gowrk and X (initialiex to RNG) are bcasted in the same 
-   * MPI message. They need to be contiguous.
-   */
-  size_t displ=0;
-  // Mixed Density Matrix for walkers at original configuration
-  CMatrix_ref G(mem_pool.origin()+displ, {G_nr,G_nc}); 
-    displ+=G_nr*G_nc; 
-  // Mixed Density Matrix used for computation/communication 
-  CMatrix_ref Gwork(mem_pool.origin()+displ, {G_nr,G_nc}); 
-    displ+=G_nr*G_nc; 
-  // right hand side matrix in calculation of HS potential for all steps: ~ sigma + (vbias-vMF)
-  // The same vbias is used in all steps
-  CMatrix_ref X(mem_pool.origin()+displ, {long(nCV),long(nwalk*nsteps)}); 
-    displ+=nCV*nwalk*nsteps;
-  // Store RNGs  
-  CMatrix_ref RNG(mem_pool.origin()+displ, {long(nCV),nwalk*nsteps}); 
-    displ+=nCV*nwalk*nsteps;
-  // vias potential for walkers at original configuration
-  CMatrix_ref vbias(mem_pool.origin()+displ, {long(nCV),nwalk}); 
-    displ+=nCV*nwalk;
-  // HS potential for all steps.
-  CMatrix_ref vHS(mem_pool.origin()+displ, {vhs_nr,vhs_nc}); 
-    displ+=vhs_nr*vhs_nc;
-  // HS potential for computation/communication 
-  CMatrix_ref vHSwork(mem_pool.origin()+displ, {vhs_nr,vhs_nc}); 
-    displ+=vhs_nr*vhs_nc;
-  // second view of vHS matrix for use in propagation step
-  C3Tensor_ref vHS3D(vHS.origin(),{vhs3d_n1,vhs3d_n2,vhs3d_n3}); 
-
-  // partition G and v for communications: all cores communicate a piece of the matrix
-  long vak0,vakN;
-  long vb0,vbN;
-  // This includes both Gwork and X
-  long GpX0,GpXN;
-  std::tie(GpX0,GpXN) = FairDivideBoundary(TG.getLocalTGRank(),int(Gwork.num_elements()+X.num_elements()),
-                                           TG.getNCoresPerTG());
-  std::tie(vak0,vakN) = FairDivideBoundary(TG.getLocalTGRank(),int(vHSwork.num_elements()),TG.getNCoresPerTG());
-  std::tie(vb0,vbN) = FairDivideBoundary(TG.getLocalTGRank(),int(vbias.num_elements()),TG.getNCoresPerTG());
-
-  // local matrices for temporary accumulation
-  if(MFfactor.size(1) != nsteps || MFfactor.size(2) != nwalk)
-    MFfactor = std::move(C3Tensor({2,nsteps,nwalk}));
-  if(hybrid_weight.size(1) != nsteps || hybrid_weight.size(2) != nwalk)
-    hybrid_weight = std::move(C3Tensor({2,nsteps,nwalk}));
-
-  if(new_overlaps.size(0) != nwalk) new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
-  if(new_energies.size(0) != nwalk || new_energies.size(1) != 3) 
-    new_energies = std::move(CMatrix({nwalk,3}));
+  //  memory_needs: nwalk * ( 2*Gsize + nCV*(nstep+1) + 2*NMO*NMO*nstep )
 
   // if timestep changed, recalculate one body propagator
   if( std::abs(dt-old_dt) > 1e-6 )
@@ -139,73 +78,142 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   TG.local_barrier();
   AFQMCTimers[setup_timer]->stop();
 
-  // 1. Calculate Green function for all (local) walkers
-  AFQMCTimers[G_for_vbias_timer]->start();
-  wfn.MixedDensityMatrix_for_vbias(wset,G);
-  AFQMCTimers[G_for_vbias_timer]->stop();
-  // generate random numbers
+  StaticMatrix MFfactor({nsteps,nwalk},
+            buffer_allocator->template get_allocator<ComplexType>());
+  StaticMatrix hybrid_weight({nsteps,nwalk},
+            buffer_allocator->template get_allocator<ComplexType>());
+  StaticVector new_overlaps(iextensions<1u>{nwalk},
+            buffer_allocator->template get_allocator<ComplexType>());
+  StaticMatrix new_energies({nwalk,3},
+            buffer_allocator->template get_allocator<ComplexType>());
+  StaticMatrix vHS_buff(vhs_ext,
+            buffer_allocator->template get_allocator<ComplexType>());
+  SPCMatrix_ref vHS(sp_pointer(make_device_ptr(vHS_buff.origin())),vhs_ext);
   {
-    int i0,iN;
-    std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),int(RNG.num_elements()),
-                                         TG.TG_local().size());
-    sampleGaussianFields_n(RNG.origin()+i0,iN-i0,*rng);
-  }
+    StaticSPMatrix G(G_ext,
+            buffer_allocator->template get_allocator<SPComplexType>());
 
-  for(int k=0; k<nnodes; ++k) { 
+    // 1. Calculate Green function for all (local) walkers
+    AFQMCTimers[G_for_vbias_timer]->start();
+#if defined(MIXED_PRECISION)
+    { // control scope of Gc 
+      int Gak0,GakN;
+      std::tie(Gak0,GakN) = FairDivideBoundary(TG.getLocalTGRank(),
+                    int(G.num_elements()),TG.getNCoresPerTG());
+      StaticMatrix Gc(G_ext,
+            buffer_allocator->template get_allocator<ComplexType>());
+      wfn.MixedDensityMatrix_for_vbias(wset,Gc);
+      copy_n_cast(make_device_ptr(Gc.origin())+Gak0,GakN-Gak0,
+                  make_device_ptr(G.origin())+Gak0);
+    }
+    TG.local_barrier();
+#else
+    wfn.MixedDensityMatrix_for_vbias(wset,G);
+#endif
+    AFQMCTimers[G_for_vbias_timer]->stop();
 
-    // 2. bcast G (and X) to TG 
-    AFQMCTimers[vHS_comm_overhead_timer]->start();
-    if(k == node_number) {
-      int i0,iN,Gak0,GakN;
+    StaticSPMatrix Gwork(G_ext,
+            buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix X({long(nCV),long(nwalk*nsteps)},
+            buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix vbias({long(nCV),long(nwalk)},
+            buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix RNG({long(nCV),long(nwalk*nsteps)},
+            buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix vHSwork(vhs_ext,
+            buffer_allocator->template get_allocator<SPComplexType>());
+    StaticMatrix MFfactor_t({nsteps,nwalk},
+            buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix hybrid_weight_t({nsteps,nwalk},
+            buffer_allocator->template get_allocator<ComplexType>());
+
+    // partition G and v for communications: all cores communicate a piece of the matrix
+    long vak0,vakN;
+    long vb0,vbN;
+    // This includes both Gwork and X
+    long G0,GN, X0, XN;
+    std::tie(G0,GN) = FairDivideBoundary(TG.getLocalTGRank(),
+                            int(Gwork.num_elements()),TG.getNCoresPerTG());
+    std::tie(X0,XN) = FairDivideBoundary(TG.getLocalTGRank(),
+                            int(X.num_elements()),TG.getNCoresPerTG());
+    std::tie(vak0,vakN) = FairDivideBoundary(TG.getLocalTGRank(),
+                            int(vHSwork.num_elements()),TG.getNCoresPerTG());
+    std::tie(vb0,vbN) = FairDivideBoundary(TG.getLocalTGRank(),
+                            int(vbias.num_elements()),TG.getNCoresPerTG());
+
+    // generate random numbers
+    {
+      int i0,iN;
       std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),int(RNG.num_elements()),
                                          TG.TG_local().size());
-      std::tie(Gak0,GakN) = FairDivideBoundary(TG.TG_local().rank(),int(G.num_elements()),
-                                         TG.TG_local().size());
-      using std::copy_n;
-      copy_n(RNG.origin()+i0,iN-i0,X.origin()+i0);
-      // can I do this in a way I don't need the barrier???
-      copy_n(G.origin()+Gak0,GakN-Gak0,Gwork.origin()+Gak0);
-      TG.local_barrier();
-    }    
-    core_comm.broadcast_n(to_address(Gwork.origin())+GpX0,GpXN-GpX0,k); 
-    TG.local_barrier();
-    AFQMCTimers[vHS_comm_overhead_timer]->stop();
-
-    // calculate vHS contribution from this node
-    // 4a. Calculate vbias for initial configuration
-    AFQMCTimers[vbias_timer]->start();
-    wfn.vbias(Gwork,vbias,sqrtdt);
-    AFQMCTimers[vbias_timer]->stop();
-
-    // all_reduce vbias
-    AFQMCTimers[vHS_comm_overhead_timer]->start();
-    core_comm.all_reduce_in_place_n(to_address(vbias.origin())+vb0,vbN-vb0,std::plus<>());
-    TG.local_barrier();
-    AFQMCTimers[vHS_comm_overhead_timer]->stop();
-
-    // 4b. Assemble X(nCV,nsteps,nwalk)
-    CMatrix_ref mf_(MFfactor[1].origin(), {long(nsteps),long(nwalk)});
-    CMatrix_ref hw_(hybrid_weight[1].origin(), {long(nsteps),long(nwalk)});
-    assemble_X(nsteps,nwalk,sqrtdt,X,vbias,mf_,hw_,false);
-    if(k == node_number) {
-      TG.TG_local().all_reduce_n(to_address(MFfactor[1].origin()),MFfactor[1].num_elements(),
-                           to_address(MFfactor[0].origin()),std::plus<>());
-      TG.TG_local().all_reduce_n(to_address(hybrid_weight[1].origin()),hybrid_weight[1].num_elements(),
-                           to_address(hybrid_weight[0].origin()),std::plus<>());
+      sampleGaussianFields_n(make_device_ptr(RNG.origin())+i0,iN-i0,*rng);
     }
 
-    // 4c. Calculate vHS(M*M,nsteps,nwalk)
-    AFQMCTimers[vHS_timer]->start();
-    wfn.vHS(X,vHSwork,sqrtdt);
-    TG.local_barrier();
-    AFQMCTimers[vHS_timer]->stop();
+    for(int k=0; k<nnodes; ++k) { 
 
-    AFQMCTimers[vHS_comm_overhead_timer]->start();
-    core_comm.reduce_n(to_address(vHSwork.origin())+vak0,vakN-vak0,
+      // 2. bcast G (and X) to TG 
+      AFQMCTimers[vHS_comm_overhead_timer]->start();
+      if(k == node_number) {
+        int i0,iN,Gak0,GakN;
+        std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),int(RNG.num_elements()),
+                                         TG.TG_local().size());
+        std::tie(Gak0,GakN) = FairDivideBoundary(TG.TG_local().rank(),int(G.num_elements()),
+                                         TG.TG_local().size());
+        copy_n(make_device_ptr(RNG.origin())+i0,iN-i0,make_device_ptr(X.origin())+i0);
+        // can I do this in a way I don't need the barrier???
+        copy_n(make_device_ptr(G.origin())+Gak0,GakN-Gak0,make_device_ptr(Gwork.origin())+Gak0);
+        TG.local_barrier();
+      }    
+      core_comm.broadcast_n(to_address(Gwork.origin())+G0,GN-G0,k); 
+      core_comm.broadcast_n(to_address(X.origin())+X0,XN-X0,k); 
+      TG.local_barrier();
+      AFQMCTimers[vHS_comm_overhead_timer]->stop();
+
+      // calculate vHS contribution from this node
+      // 4a. Calculate vbias for initial configuration
+      AFQMCTimers[vbias_timer]->start();
+      wfn.vbias(Gwork,vbias,sqrtdt);
+      AFQMCTimers[vbias_timer]->stop();
+
+      // all_reduce vbias
+      AFQMCTimers[vHS_comm_overhead_timer]->start();
+      core_comm.all_reduce_in_place_n(to_address(vbias.origin())+vb0,vbN-vb0,std::plus<>());
+      TG.local_barrier();
+      AFQMCTimers[vHS_comm_overhead_timer]->stop();
+
+      // 4b. Assemble X(nCV,nsteps,nwalk)
+      assemble_X(nsteps,nwalk,sqrtdt,X,vbias,MFfactor_t,hybrid_weight_t,false);
+      if(k == node_number) {
+        TG.TG_local().all_reduce_n(to_address(MFfactor_t.origin()),MFfactor_t.num_elements(),
+                           to_address(MFfactor.origin()),std::plus<>());
+        TG.TG_local().all_reduce_n(to_address(hybrid_weight_t.origin()),
+                           hybrid_weight_t.num_elements(),to_address(hybrid_weight.origin()),
+                           std::plus<>());
+      }
+
+      // 4c. Calculate vHS(M*M,nsteps,nwalk)
+      AFQMCTimers[vHS_timer]->start();
+      wfn.vHS(X,vHSwork,sqrtdt);
+      TG.local_barrier();
+      AFQMCTimers[vHS_timer]->stop();
+
+      AFQMCTimers[vHS_comm_overhead_timer]->start();
+      core_comm.reduce_n(to_address(vHSwork.origin())+vak0,vakN-vak0,
                        to_address(vHS.origin())+vak0,std::plus<>(),k);
-    TG.local_barrier();
-    AFQMCTimers[vHS_comm_overhead_timer]->stop();
+      TG.local_barrier();
+      AFQMCTimers[vHS_comm_overhead_timer]->stop();
+    }
   }
+
+#if defined(MIXED_PRECISION)
+  // is this clever or dirsty? seems to work well and saves memory!
+  TG.local_barrier();
+  using qmcplusplus::afqmc::inplace_cast;
+  if(TG.TG_local().root())
+    inplace_cast<SPComplexType,ComplexType>(vHS.origin(),vHS.num_elements());
+  TG.local_barrier();
+#endif
+  C3Tensor_ref vHS3D(make_device_ptr(vHS_buff.origin()),vhs3d_ext);
 
   // From here on is similar to Shared 
   int nx = 1;
@@ -249,14 +257,14 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     if(TG.TG_local().root()) {                           
       if(free_projection) { 
         free_projection_walker_update(wset,dt,new_overlaps,
-                         MFfactor[0][ni],Eshift,hybrid_weight[0][ni],work);
+                         MFfactor[ni],Eshift,hybrid_weight[ni],work);
       } else if(hybrid) {
         hybrid_walker_update(wset,dt,apply_constrain,importance_sampling,
-                         Eshift,new_overlaps,MFfactor[0][ni],hybrid_weight[0][ni],work);
+                         Eshift,new_overlaps,MFfactor[ni],hybrid_weight[ni],work);
       } else {
         local_energy_walker_update(wset,dt,apply_constrain,Eshift,
                                    new_overlaps,new_energies,
-                                   MFfactor[0][ni],hybrid_weight[0][ni],work);
+                                   MFfactor[ni],hybrid_weight[ni],work);
       }
     }
     TG.local_barrier();

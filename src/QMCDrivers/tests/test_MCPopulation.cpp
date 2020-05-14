@@ -37,8 +37,10 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   TrialWaveFunction twf(comm);
   MCPopulation population(1, particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary(),comm->rank());
 
-  population.createWalkers(8);
-  REQUIRE(population.get_walkers().size() == 8);
+  population.createWalkers(8, 2.0);
+  CHECK(population.get_walkers().size() == 8);
+  CHECK(population.get_dead_walkers().size() == 8);
+  CHECK(population.get_num_local_walkers() == 8);
 }
 
 // TEST_CASE("MCPopulation::createWalkers first touch", "[particle][population]")

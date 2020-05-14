@@ -31,7 +31,7 @@
 
 // Avoid the need to link with other libraries just to get APP_ABORT
 #undef APP_ABORT
-#define APP_ABORT(x) {std::cout << x; exit(0);}
+#define APP_ABORT(x) {std::cout << x; throw;}
 
 #include <stdio.h>
 #include <string>
@@ -253,139 +253,138 @@ void test_dense_matrix_mult()
 		array<double, 2> Id2({3,3});
 		ma::product(A, B, Id2);
 
-    verify_approx(Id, Id2);
-  }
-  {
-    std::vector<double> WORK;
-    array<double,1> TAU(iextensions<1u>{3});
+		verify_approx(Id, Id2);
+	}
+        {
+                std::vector<double> WORK;
+                array<double,1> TAU(iextensions<1u>{3});
 
-    vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
-    array_ref<double, 2> A(a.data(), {3,3});
-    REQUIRE(A.num_elements() == a.size());
-    cout<<" lqf: " <<ma::gelqf_optimal_workspace_size(A) <<" " <<ma::glq_optimal_workspace_size(A) <<std::endl;
-    WORK.resize( std::max(ma::gelqf_optimal_workspace_size(A),
-          ma::glq_optimal_workspace_size(A)) );
-    ma::gelqf(A,TAU,WORK);
-    ma::glq(A,TAU,WORK);
+                vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
+                array_ref<double, 2> A(a.data(), {3,3});
+                REQUIRE(A.num_elements() == a.size());
+                WORK.resize( std::max(ma::gelqf_optimal_workspace_size(A),
+                                      ma::glq_optimal_workspace_size(A)) );
+                ma::gelqf(A,TAU,WORK);
+                ma::glq(A,TAU,WORK);
 
-    array<double, 2> Id({3,3});
-    ma::set_identity(Id);
+                array<double, 2> Id({3,3});
+                ma::set_identity(Id);
 
-    using ma::H;
-    array<double, 2> Id2({3,3});
-    ma::product(H(A), A, Id2);
+                using ma::H;
+                array<double, 2> Id2({3,3});
+                ma::product(H(A), A, Id2);
 
-    verify_approx(Id, Id2);
-  }
-  {
-    std::vector<double> WORK;
-    array<double,1> TAU(iextensions<1u>{4});
+                verify_approx(Id, Id2);
+        }
+        {
+                std::vector<double> WORK;
+                array<double,1> TAU(iextensions<1u>{4});
 
-    vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
-    array_ref<double, 2> A(a.data(), {4,3});
-    REQUIRE(A.num_elements() == a.size());
-    WORK.resize( std::max(ma::gelqf_optimal_workspace_size(A),
-          ma::glq_optimal_workspace_size(A)) );
-    ma::gelqf(A,TAU,WORK);
-    ma::glq(A,TAU,WORK);
+                vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
+                array_ref<double, 2> A(a.data(), {4,3});
+                REQUIRE(A.num_elements() == a.size());
+                WORK.resize( std::max(ma::gelqf_optimal_workspace_size(A),
+                                      ma::glq_optimal_workspace_size(A)) );
+                ma::gelqf(A,TAU,WORK);
+                ma::glq(A,TAU,WORK);
 
-    array<double, 2> Id({3,3});
-    ma::set_identity(Id);
+                array<double, 2> Id({3,3});
+                ma::set_identity(Id);
 
-    using ma::H;
-    array<double, 2> Id2({3,3});
-    ma::product(H(A), A, Id2);
+                using ma::H;
+                array<double, 2> Id2({3,3});
+                ma::product(H(A), A, Id2);
 
-    verify_approx(Id, Id2);
-  }
-  {
-    std::vector<double> WORK;
-    array<double,1> TAU(iextensions<1u>{3});
+                verify_approx(Id, Id2);
+        }
+        {
+                std::vector<double> WORK;
+                array<double,1> TAU(iextensions<1u>{3});
 
-    vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
-    array_ref<double, 2> A(a.data(), {3,3});
-    REQUIRE(A.num_elements() == a.size());
-    WORK.resize( std::max(ma::geqrf_optimal_workspace_size(A),
-          ma::gqr_optimal_workspace_size(A)) );
-    ma::geqrf(A,TAU,WORK);
-    ma::gqr(A,TAU,WORK);
+                vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
+                array_ref<double, 2> A(a.data(), {3,3});
+                REQUIRE(A.num_elements() == a.size());
+                WORK.resize( std::max(ma::geqrf_optimal_workspace_size(A),
+                                      ma::gqr_optimal_workspace_size(A)) );
+                ma::geqrf(A,TAU,WORK);
+                ma::gqr(A,TAU,WORK);
 
-    array<double, 2> Id({3,3});
-    ma::set_identity(Id);
+                array<double, 2> Id({3,3});
+                ma::set_identity(Id);
 
-    using ma::H;
-    array<double, 2> Id2({3,3});
-    ma::product(H(A), A, Id2);
+                using ma::H;
+                array<double, 2> Id2({3,3});
+                ma::product(H(A), A, Id2);
 
-    verify_approx(Id, Id2);
-  }
-  {
-    std::vector<double> WORK;
-    array<double,1> TAU(iextensions<1u>{4});
+                verify_approx(Id, Id2);
+        }
+        {
+                std::vector<double> WORK;
+                array<double,1> TAU(iextensions<1u>{4});
 
-    vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
-    array_ref<double, 2> A(a.data(), {3,4});
-    REQUIRE(A.num_elements() == a.size());
-    WORK.resize( std::max(ma::geqrf_optimal_workspace_size(A),
-          ma::gqr_optimal_workspace_size(A)) );
-    ma::geqrf(A,TAU,WORK);
-    ma::gqr(A,TAU,WORK);
+                vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
+                array_ref<double, 2> A(a.data(), {3,4});
+                REQUIRE(A.num_elements() == a.size());
+                WORK.resize( std::max(ma::geqrf_optimal_workspace_size(A),
+                                      ma::gqr_optimal_workspace_size(A)) );
+                ma::geqrf(A,TAU,WORK);
+                ma::gqr(A,TAU,WORK);
 
-    array<double, 2> Id({3,3});
-    ma::set_identity(Id);
+                array<double, 2> Id({3,3});
+                ma::set_identity(Id);
 
-    using ma::H;
-    array<double, 2> Id2({3,3});
-    ma::product(A, H(A), Id2);
+                using ma::H;
+                array<double, 2> Id2({3,3});
+                ma::product(A, H(A), Id2);
 
-    verify_approx(Id, Id2);
-  }
-  {
-    vector<double> a = {
-      9.,24.,30., 45.,
-      4.,10.,12., 12.
-    };
-    array_ref<double, 2> A(a.data(), {2,4});
-    vector<double> at = {
-      9.,4.,
-      24.,10.,
-      30.,12.,
-      45.,12.
-    };
-    array_ref<double, 2> AT(at.data(), {4,2});
-    array<double, 2> B({4,2});
-    ma::transpose(A,B);
-    verify_approx( AT, B );
-  }
-  {
-    using namespace std::complex_literals;
-    vector<std::complex<double>> m_a = {
-      1.90000,   1.40000 + 0.90000i,   0.40000 + 0.80000i,
-      1.40000 - 0.90000i,   0.20000,   2.20000 + 0.60000i,
-      0.40000 - 0.80000i,   2.20000 - 0.60000i,   0.60000
-    };
-    vector<std::complex<double>> m_b = {
-      25.9622476651464 +  0.0000000000000i,   17.7794485121929 + 13.1574958765530i,
-      11.2649352514491 + 16.4823940873968i,
-      17.7794485121928 - 13.1574958765530i,   20.5657808536051 -  0.0000000000000i,
-      17.9925255171787 +  6.0065935802308i,
-      11.2649352514491 - 16.4823940873968i,   17.9925255171787 -  6.0065935802308i,
-      17.9429273455619 -  0.0000000000000i
-    };
+                verify_approx(Id, Id2);
+        }
+        {
+                vector<double> a = {
+                        9.,24.,30., 45.,
+                        4.,10.,12., 12.
+                };
+                array_ref<double, 2> A(a.data(), {2,4});
+                vector<double> at = {
+                        9.,4.,
+                        24.,10.,
+                        30.,12.,
+                        45.,12.
+                };
+                array_ref<double, 2> AT(at.data(), {4,2});
+                array<double, 2> B({4,2});
+                ma::transpose(A,B);
+                verify_approx( AT, B );
+        }
+        {
+                using namespace std::complex_literals;
+                vector<std::complex<double>> m_a = {
+                    1.90000,   1.40000 + 0.90000i,   0.40000 + 0.80000i,
+                    1.40000 - 0.90000i,   0.20000,   2.20000 + 0.60000i,
+                    0.40000 - 0.80000i,   2.20000 - 0.60000i,   0.60000
+                };
+                vector<std::complex<double>> m_b = {
+                    25.9622476651464 +  0.0000000000000i,   17.7794485121929 + 13.1574958765530i,
+                    11.2649352514491 + 16.4823940873968i,
+                    17.7794485121928 - 13.1574958765530i,   20.5657808536051 -  0.0000000000000i,
+                    17.9925255171787 +  6.0065935802308i,
+                    11.2649352514491 - 16.4823940873968i,   17.9925255171787 -  6.0065935802308i,
+                    17.9429273455619 -  0.0000000000000i
+                };
 
-    array<std::complex<double>,2> A({3,3});
-    array<std::complex<double>,2> B({3,3});
+                array<std::complex<double>,2> A({3,3});
+                array<std::complex<double>,2> B({3,3});
 
-    for(int i=0, k=0; i<A.size(0); i++)
-      for(int j=0; j<A.size(1); j++,k++)
-        A[i][j] = m_a[k];
-    for(int i=0, k=0; i<A.size(0); i++)
-      for(int j=0; j<A.size(1); j++,k++)
-        B[i][j] = m_b[k];
+                for(int i=0, k=0; i<A.size(0); i++)
+                    for(int j=0; j<A.size(1); j++,k++)
+                        A[i][j] = m_a[k];
+                for(int i=0, k=0; i<A.size(0); i++)
+                    for(int j=0; j<A.size(1); j++,k++)
+                        B[i][j] = m_b[k];
 
-    array<std::complex<double>,2> C = ma::exp(A);
-    verify_approx( C, B );
-  }
+                array<std::complex<double>,2> C = ma::exp(A);
+                verify_approx( C, B );
+        }
 }
 
 TEST_CASE("dense_ma_operations", "[matrix_operations]")

@@ -10,6 +10,7 @@
 #include "AFQMC/Drivers/DriverFactory.h"
 #include "AFQMC/Drivers/AFQMCDriver.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 #include "AFQMC/Walkers/WalkerSetFactory.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
@@ -195,6 +196,11 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   // setup task groups
   auto& TGprop = TGHandler.getTG(nnodes_propg);
   auto& TGwfn = TGHandler.getTG(nnodes_wfn);
+
+  // setting TG buffer generator here, as soon as localTG is available from any TG 
+  // defaults to 20MB. Read from input!!!
+  std::size_t buffer_size(20);
+  make_localTG_buffer_generator(TGwfn.TG_local(),buffer_size*1024L*1024L);
 
   // walker set and type
   WalkerSet& wset = WSetFac.getWalkerSet(TGHandler.getTG(1),wset_name,rng);

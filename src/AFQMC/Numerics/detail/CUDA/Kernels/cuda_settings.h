@@ -19,5 +19,6 @@
 
 static const size_t DOT_BLOCK_SIZE = 32; 
 static const size_t REDUCE_BLOCK_SIZE = 32; 
+static const size_t MAX_THREADS_PER_DIM = 1024; 
 
 #endif

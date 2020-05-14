@@ -25,6 +25,7 @@
 #include<AFQMC/Wavefunctions/WavefunctionFactory.h>
 #include<AFQMC/Propagators/PropagatorFactory.h>
 #include<AFQMC/Drivers/DriverFactory.h>
+#include<AFQMC/Memory/buffer_allocators.h>
 
 #include "OhmmsData/libxmldefs.h"
 
@@ -69,7 +70,9 @@ class AFQMCFactory
     }
 
     ///destructor
-    ~AFQMCFactory() {}
+    ~AFQMCFactory() {
+        destroy_shm_buffer_generators();
+    }
 
     /*
      *  Parses xml input and creates all non-executable objects.

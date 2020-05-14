@@ -217,7 +217,10 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   )
 
 IF(ENABLE_CUDA)
-  SET(WFSSRCS_CUDA ${WFSSRCS_CUDA} Fermion/delayed_update_helper.cu)
+  SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
+      Fermion/delayed_update_helper.cu
+      Fermion/matrix_update_helper.cu
+      )
 ENDIF(ENABLE_CUDA)
 
 ####################################
