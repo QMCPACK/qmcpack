@@ -1,3 +1,16 @@
+////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source
+// License.  See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by:
+// Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+//
+// File created by:
+// Fionn Malone, malone14@llnl.gov, Lawrence Livermore National Laboratory
+////////////////////////////////////////////////////////////////////////////////
+
 #ifndef HDF5_CONSISTENCY_HELPER_HPP
 #define HDF5_CONSISTENCY_HELPER_HPP
 
@@ -13,8 +26,16 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
+
 // Helper functions for reading integral data from HDF5 files.
-// Check if data matches type T, else copy if  QMC_COMPLEX=1, else abort.
+// Currently only read one-dimensional integrals into std::vector<ValueType> and two-dimensional
+// integrals into boost::multi::array<ValueType,2>, so only handle these overloads.
+
+/** read data from filespace (name) to buffer (out).
+ * If QMC_COMPLEX = 1 and T = RealType then handle this through copy.
+ * If QMC_COMPLEX = 0 and T = ComplexType then abort with error message.
+ * @return true if successful. false indiciates name not found in dump.
+ */
 template<typename T>
 int readComplexOrReal(hdf_archive& dump, std::string name, std::vector<T>& out)
 {
