@@ -27,7 +27,6 @@ SET(HAMSRCS
   NonLocalTOperator.cpp
   ForwardWalking.cpp
   PairCorrEstimator.cpp
-  LocalMomentEstimator.cpp
   DensityEstimator.cpp
   SkPot.cpp
   SkEstimator.cpp
