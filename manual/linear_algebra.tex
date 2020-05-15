@@ -38,3 +38,16 @@ Note: 2000 and 500 are only rough estimates.
 to be added.
 
 \subsection{Auxiliary field QMC}
+
+The AFQMC implementation in QMCPACK relies heavily on linear algebra operations from BLAS/LAPACK. The performance of the code is netirely dependent on the performance of these libraries. See below for a detailed list of the main routines used from BLAS/LAPACK. Since the AFQMC code can work with both single and double precision builds, all 4 versions of these routines (S,C,D,Z) are generally needed, for this reason we omit the data type label.
+
+\begin{itemize}
+ \item BLAS1: SCAL, COPY, DOT, AXPY
+ \item BLAS2: GEMV, GER
+ \item BLAS3: GEMM
+ \item LAPACK: GETRF, GETRI, GELQF, UNGLQ, ORGLQ, GESVD, HEEVR, HEGVX
+\end{itemize}
+
+While the dimensions of the matrix operations will depend entirely on the details of the calculation, typical matrix dimensions range from the 100s, for small system sizes, to over 20000 for the largest calculations attempted so far.
+For builds with GPU accelerators, we make use of batched and strided implementations of these routines. Batched implementations of GEMM, GETRF, GETRI, GELQF and UNGLQ are particularly important for the performance of the GPU build on small to medium size problems. Batched implementations of DOT, AXPY and GEMV would also be quite useful, but they are not yet generally available.
+On GPU builds, the code uses batched implementations of these routines when available by default.
