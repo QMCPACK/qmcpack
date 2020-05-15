@@ -52,10 +52,6 @@ IF(OHMMS_DIM MATCHES 3)
     ZeroVarianceForce.cpp
     ForceCeperley.cpp
     ForceChiesaPBCAA.cpp
-#    StressPBCAA.cpp
-#    StressPBCAB.cpp
-#    StressKinetic.cpp
-    StressPBC.cpp
     LocalCorePolPotential.cpp
     LocalECPotential.cpp
     NonLocalECPComponent.cpp
