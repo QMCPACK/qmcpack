@@ -207,40 +207,19 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
     const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
     RealType z;
     //Loop over distinct eln-ion pairs
-    if (d_ab.DTType == DT_SOA)
+    for (size_t b = 0; b < NptclB; ++b)
     {
-      for (size_t b = 0; b < NptclB; ++b)
+      z                = 0.5 * Qat[b];
+      const auto& dist = d_ab.getDistRow(b);
+      for (size_t a = 0; a < NptclA; ++a)
       {
-        z                = 0.5 * Qat[b];
-        const auto& dist = d_ab.getDistRow(b);
-        for (size_t a = 0; a < NptclA; ++a)
-        {
-          Return_t pairpot = z * Zat[a] * Vat[a]->splint(dist[a]) / dist[a];
-          Vi_samp(a) += pairpot;
-          Ve_samp(b) += pairpot;
-          Vsr += pairpot;
-        }
+        Return_t pairpot = z * Zat[a] * Vat[a]->splint(dist[a]) / dist[a];
+        Vi_samp(a) += pairpot;
+        Ve_samp(b) += pairpot;
+        Vsr += pairpot;
       }
-      Vsr *= 2.0;
     }
-    else
-    {
-#ifndef ENABLE_SOA
-      for (int iat = 0; iat < NptclA; iat++)
-      {
-        z                   = .5 * Zat[iat];
-        RadFunctorType* rVs = Vat[iat];
-        for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
-        {
-          Return_t pairpot = z * Qat[jat] * d_ab.rinv(nn) * rVs->splint(d_ab.r(nn));
-          Vi_samp(iat) += pairpot;
-          Ve_samp(jat) += pairpot;
-          Vsr += pairpot;
-        }
-      }
-      Vsr *= 2.0;
-#endif
-    }
+    Vsr *= 2.0;
   }
   {
     //LR
@@ -302,10 +281,6 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   RealType Vicsum = Vi_const.sum();
   RealType Vsum   = Vesum + Visum;
   RealType Vcsum  = Vecsum + Vicsum;
-  RealType Vsrold = evalSR_old(P);
-  RealType Vlrold = evalLR_old(P);
-  RealType Vcold  = evalConsts_old(false);
-  RealType Vcorig = evalConsts_orig(false);
   if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
   {
     app_log() << "accumtest: CoulombPBCAA::evaluate()" << std::endl;
@@ -331,28 +306,6 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
     app_log() << "sharetest: CoulombPBCAB::evalConsts()" << std::endl;
     app_log() << "sharetest:   e share:" << Vecsum << std::endl;
     app_log() << "sharetest:   i share:" << Vicsum << std::endl;
-  }
-  if (std::abs(Vsrold - Vsrnow) > TraceManager::trace_tol)
-  {
-    app_log() << "versiontest: CoulombPBCAA::evalSR()" << std::endl;
-    app_log() << "versiontest:    old:" << Vsrold << std::endl;
-    app_log() << "versiontest:    mod:" << Vsrnow << std::endl;
-    APP_ABORT("Trace check failed");
-  }
-  if (std::abs(Vlrold - Vlrnow) > TraceManager::trace_tol)
-  {
-    app_log() << "versiontest: CoulombPBCAA::evalLR()" << std::endl;
-    app_log() << "versiontest:    old:" << Vlrold << std::endl;
-    app_log() << "versiontest:    mod:" << Vlrnow << std::endl;
-    APP_ABORT("Trace check failed");
-  }
-  if (std::abs(Vcold - Vcorig) > TraceManager::trace_tol || std::abs(Vcnow - Vcorig) > TraceManager::trace_tol)
-  {
-    app_log() << "versiontest: CoulombPBCAA::evalConsts()" << std::endl;
-    app_log() << "versiontest:    old:" << Vcold << std::endl;
-    app_log() << "versiontest:   orig:" << Vcorig << std::endl;
-    app_log() << "versiontest:    mod:" << Vcnow << std::endl;
-    APP_ABORT("Trace check failed");
   }
 #endif
   return Value;
@@ -413,35 +366,14 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSR(ParticleSet& P)
   constexpr mRealType czero(0);
   const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
   mRealType res = czero;
-  if (d_ab.DTType == DT_SOA)
-  { //can be optimized but not important enough
-    for (size_t b = 0; b < NptclB; ++b)
-    {
-      const auto& dist = d_ab.getDistRow(b);
-      mRealType esum   = czero;
-      for (size_t a = 0; a < NptclA; ++a)
-        esum += Zat[a] * Vat[a]->splint(dist[a]) / dist[a];
-      res += esum * Qat[b];
-    }
-  }
-  else
+  //can be optimized but not important enough
+  for (size_t b = 0; b < NptclB; ++b)
   {
-#ifndef ENABLE_SOA
-    //Loop over distinct eln-ion pairs
-    for (int iat = 0; iat < NptclA; iat++)
-    {
-      mRealType esum      = czero;
-      RadFunctorType* rVs = Vat[iat];
-      for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
-      {
-        // if(d_ab.r(nn)>=(myRcut-0.1)) continue;
-        esum += Qat[jat] * d_ab.rinv(nn) * rVs->splint(d_ab.r(nn));
-        ;
-      }
-      //Accumulate pair sums...species charge for atom i.
-      res += Zat[iat] * esum;
-    }
-#endif
+    const auto& dist = d_ab.getDistRow(b);
+    mRealType esum   = czero;
+    for (size_t a = 0; a < NptclA; ++a)
+      esum += Zat[a] * Vat[a]->splint(dist[a]) / dist[a];
+    res += esum * Qat[b];
   }
   return res;
 }
@@ -484,95 +416,6 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLR(ParticleSet& P)
     }
   } //specion
   return res;
-}
-
-/** Evaluate the background term. Other constants are handled by AA potentials.
- *
- * \f$V_{bg}^{AB}=-\sum_{\alpha}\sum_{\beta} N^{\alpha} N^{\beta} q^{\alpha} q^{\beta} v_s(k=0) \f$
- * @todo Here is where the charge system has to be handled.
- */
-CoulombPBCAB::Return_t CoulombPBCAB::evalConsts_orig(bool report)
-{
-  RealType Consts = 0.0;
-  RealType vs_k0  = AB->evaluateSR_k0();
-  for (int i = 0; i < NumSpeciesA; i++)
-  {
-    RealType q = Zspec[i] * NofSpeciesA[i];
-    for (int j = 0; j < NumSpeciesB; j++)
-    {
-      Consts -= vs_k0 * Qspec[j] * NofSpeciesB[j] * q;
-    }
-  }
-  if (report)
-    app_log() << "   Constant of PBCAB " << Consts << std::endl;
-  return Consts;
-}
-
-
-CoulombPBCAB::Return_t CoulombPBCAB::evalLR_old(ParticleSet& P)
-{
-  RealType res = 0.0;
-  const StructFact& RhoKA(*(PtclA.SK));
-  const StructFact& RhoKB(*(P.SK));
-  for (int i = 0; i < NumSpeciesA; i++)
-  {
-    RealType esum = 0.0;
-    for (int j = 0; j < NumSpeciesB; j++)
-    {
-#if defined(USE_REAL_STRUCT_FACTOR)
-      esum += Qspec[j] *
-          AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i], RhoKB.rhok_r[j], RhoKB.rhok_i[j]);
-#else
-      esum += Qspec[j] * AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i], RhoKB.rhok[j]);
-#endif
-    } //speceln
-    res += Zspec[i] * esum;
-  } //specion
-  return res;
-}
-
-
-CoulombPBCAB::Return_t CoulombPBCAB::evalSR_old(ParticleSet& P)
-{
-  const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
-  RealType res = 0.0;
-  //Loop over distinct eln-ion pairs
-  for (int iat = 0; iat < NptclA; iat++)
-  {
-    RealType esum       = 0.0;
-    RadFunctorType* rVs = Vat[iat];
-#ifndef ENABLE_SOA
-    for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
-    {
-      // if(d_ab.r(nn)>=(myRcut-0.1)) continue;
-      esum += Qat[jat] * d_ab.rinv(nn) * rVs->splint(d_ab.r(nn));
-      ;
-    }
-#endif
-    //Accumulate pair sums...species charge for atom i.
-    res += Zat[iat] * esum;
-  }
-  return res;
-}
-
-CoulombPBCAB::Return_t CoulombPBCAB::evalConsts_old(bool report)
-{
-  RealType v0_;
-  v0_ = AB->evaluateSR_k0();
-  //Can simplify this if we know a way to get number of particles with each
-  //groupID.
-  RealType Consts = 0.0;
-  for (int i = 0; i < NumSpeciesA; i++)
-  {
-    RealType q = Zspec[i] * NofSpeciesA[i];
-    for (int j = 0; j < NumSpeciesB; j++)
-    {
-      Consts += -v0_ * Qspec[j] * NofSpeciesB[j] * q;
-    }
-  }
-  if (report)
-    app_log() << "   Constant of PBCAB " << Consts << std::endl;
-  return Consts;
 }
 
 
