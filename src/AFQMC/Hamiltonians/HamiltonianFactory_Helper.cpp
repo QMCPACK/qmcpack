@@ -59,6 +59,7 @@ namespace afqmc
       bool distribute_Ham = (TG.getNGroupsPerTG() < TG.getTotalNodes());
       std::vector<IndexType> row_counts(nrows);
 
+      app_log() << " Reading sparse factorized two-electron integrals." << std::endl;
       // calculate column range that belong to this node
       if(distribute_Ham) {
         // count number of non-zero elements along each column (Chol Vec)
