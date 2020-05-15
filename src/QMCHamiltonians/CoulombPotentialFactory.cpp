@@ -22,7 +22,6 @@
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #if OHMMS_DIM == 3
-#include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "QMCHamiltonians/ECPotentialBuilder.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/ForceCeperley.h"
@@ -315,29 +314,6 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   ecp.put(cur);
 #else
   APP_ABORT("HamiltonianFactory::addPseudoPotential\n pairpot@type=\"pseudo\" is invalid if DIM != 3");
-#endif
-}
-
-void HamiltonianFactory::addCorePolPotential(xmlNodePtr cur)
-{
-#if OHMMS_DIM == 3
-  std::string src("i"), title("CorePol");
-  OhmmsAttributeSet pAttrib;
-  pAttrib.add(title, "name");
-  pAttrib.add(src, "source");
-  pAttrib.put(cur);
-  PtclPoolType::iterator pit(ptclPool.find(src));
-  if (pit == ptclPool.end())
-  {
-    ERRORMSG("Missing source ParticleSet" << src)
-    return;
-  }
-  ParticleSet* ion        = (*pit).second;
-  OperatorBase* cpp = (new LocalCorePolPotential(*ion, *targetPtcl));
-  cpp->put(cur);
-  targetH->addOperator(cpp, title);
-#else
-  APP_ABORT("HamiltonianFactory::addCorePolPotential\n pairpot@type=\"cpp\" is invalid if DIM != 3");
 #endif
 }
 

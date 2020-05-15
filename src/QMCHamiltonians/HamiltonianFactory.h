@@ -90,7 +90,6 @@ private:
   void addCoulombPotential(xmlNodePtr cur);
   void addForceHam(xmlNodePtr cur);
   void addPseudoPotential(xmlNodePtr cur);
-  void addCorePolPotential(xmlNodePtr cur);
   void addMPCPotential(xmlNodePtr cur, bool physical = false);
 };
 } // namespace qmcplusplus

@@ -166,12 +166,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         addMPCPotential(cur);
       else if (potType == "pseudo")
         addPseudoPotential(cur);
-#if !defined(QMC_CUDA)
-      else if (potType == "cpp")
-      {
-        addCorePolPotential(cur);
-      }
-#endif
 #endif
     }
     else if (cname == "constant")

@@ -51,7 +51,6 @@ IF(OHMMS_DIM MATCHES 3)
     ZeroVarianceForce.cpp
     ForceCeperley.cpp
     ForceChiesaPBCAA.cpp
-    LocalCorePolPotential.cpp
     LocalECPotential.cpp
     NonLocalECPComponent.cpp
     NonLocalECPotential.deriv.cpp
