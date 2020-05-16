@@ -193,7 +193,7 @@ def read_qmcpack_hamiltonian(filename, get_chol=True):
         return hamil
     elif ham_type == 'thc':
         print(" Please implement THC hamiltonian reader.")
-        hamil = 'not_implemented'
+        hamil = {}
     else:
         hamil = None
         raise TypeError("Unknown Hamiltonian type in read_qmcpack_hamiltonian.")
