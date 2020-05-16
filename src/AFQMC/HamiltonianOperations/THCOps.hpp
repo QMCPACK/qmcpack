@@ -196,13 +196,17 @@ class THCOps
         for(int j=i+1; j<NMO; j++) {
           H1[i][j] += hij[i][j] + vn0[i][j];
           H1[j][i] += hij[j][i] + vn0[j][i];
-          if( std::abs( H1[i][j] - ma::conj(H1[j][i]) ) > 1e-8 ) {
-            app_error()<<" Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
+#if MIXED_PRECISION
+          if( std::abs( H1[i][j] - ma::conj(H1[j][i]) ) > 1e-5 ) {
+#else
+          if( std::abs( H1[i][j] - ma::conj(H1[j][i]) ) > 1e-6 ) {
+#endif
+            app_error()<<" WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
             app_error()<<i <<" " <<j <<" " <<H1[i][j] <<" " <<H1[j][i] <<" "
                        <<H1[i][j]-(hij[i][j] + vn0[i][j]) <<" " <<H1[j][i]-(hij[j][i] + vn0[j][i]) <<" "
                        <<hij[i][j] <<" " <<hij[j][i] <<" "
                        <<vn0[i][j] <<" " <<vn0[j][i] <<std::endl;
-            APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");
+            //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");
           }
           H1[i][j] = 0.5*(H1[i][j]+ma::conj(H1[j][i]));
           H1[j][i] = ma::conj(H1[i][j]);
@@ -376,12 +380,16 @@ class THCOps
           Array<SPComplexType,2> Twu({nw,(uN-u0)},
                         device_buffer_allocator->template get_allocator<SPComplexType>());
 #if defined(QMC_COMPLEX)
-          ma::product(Guu,ma::T(rotMuv.sliced(u0,uN)),Twu);
+          ma::product(Guu.sliced(0,nw),ma::T(rotMuv.sliced(u0,uN)),Twu);
 #else
           // need to keep rotMuv on the left hand side in real build
           Array<SPComplexType,2> Tuw({(uN-u0),nw},
                         device_buffer_allocator->template get_allocator<SPComplexType>());
-          ma::product(rotMuv.sliced(u0,uN),ma::T(Guu),Tuw);
+          ShmArray<SPComplexType,2> Gvw({nv,nw},
+                        shm_buffer_allocator->template get_allocator<SPComplexType>());
+          ma::transpose(Guu({0,nw},{v0,vN}),Gvw.sliced(v0,vN));
+          comm->barrier();
+          ma::product(rotMuv.sliced(u0,uN),Gvw,Tuw);
           ma::transpose(Tuw,Twu);
 #endif
           using ma::adotpby;
@@ -389,7 +397,7 @@ class THCOps
                       ComplexType(0.0),E({iw,iw+nw},2));
 
           if(getKl)
-            ma::add(SPComplexType(1.0),Guu({iw,iw+nw},{nu0+u0,nu0+uN}),SPComplexType(0.0), 
+            ma::add(SPComplexType(1.0),Guu({0,nw},{nu0+u0,nu0+uN}),SPComplexType(0.0), 
                      Twu, (*Kl)({iw,iw+nw},{u0,uN}) );
           if(getKr) 
             ma::add(SPComplexType(1.0),Twu,SPComplexType(0.0),Twu, 
@@ -664,17 +672,6 @@ class THCOps
       size_t cnt(0);
       const_sp_pointer Xptr(nullptr);
       sp_pointer vptr(nullptr);
-      // setup origin of Xsp and copy_n_cast if necessary
-      if(std::is_same<XType,SPComplexType>::value) {
-        Xptr = pointer_cast<SPComplexType const>(make_device_ptr(X.origin()));
-      } else {
-        long i0, iN;
-        std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
-                                  long(X.num_elements()),long(comm->size()));
-        copy_n_cast(make_device_ptr(X.origin())+i0,iN-i0,make_device_ptr(SM_TMats.origin())+i0);
-        cnt += size_t(X.num_elements());
-        Xptr = make_device_ptr(SM_TMats.origin());
-      }
       // setup origin of vsp and copy_n_cast if necessary
       if(std::is_same<vType,SPComplexType>::value) {
         vptr = pointer_cast<SPComplexType>(make_device_ptr(v.origin()));
@@ -682,19 +679,25 @@ class THCOps
         long i0, iN;
         std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
                                   long(v.num_elements()),long(comm->size()));
-        vptr = make_device_ptr(SM_TMats.origin())+cnt;
+        vptr = make_device_ptr(SM_TMats.origin());
         cnt += size_t(v.num_elements());
         if( std::abs(c) > 1e-12 )
           copy_n_cast(make_device_ptr(v.origin())+i0,iN-i0,vptr+i0);
       }
+      // setup origin of Xsp and copy_n_cast if necessary
+      if(std::is_same<XType,SPComplexType>::value) {
+        Xptr = pointer_cast<SPComplexType const>(make_device_ptr(X.origin()));
+      } else {
+        long i0, iN;
+        std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
+                                  long(X.num_elements()),long(comm->size()));
+        copy_n_cast(make_device_ptr(X.origin())+i0,iN-i0,make_device_ptr(SM_TMats.origin())+cnt+i0);
+        Xptr = make_device_ptr(SM_TMats.origin())+cnt;
+        cnt += size_t(X.num_elements());
+      }
       // setup array references
       Array_cref<SPComplexType,2> Xsp(Xptr, X.extensions());
-#if defined(QMC_COMPLEX)
       Array_ref<SPComplexType,2> vsp(vptr, v.extensions());
-#else
-      // real build needs some gymnastics to place Piu on left hand side of product
-      Array_ref<SPComplexType,2> vsp(vptr, {nmo_,nwalk*nmo_});
-#endif
 
       int u0,uN;
       std::tie(u0,uN) = FairDivideBoundary(comm->rank(),nu,comm->size());
@@ -717,70 +720,63 @@ class THCOps
       comm->barrier();
       int k0,kN;
       std::tie(k0,kN) = FairDivideBoundary(comm->rank(),nmo_,comm->size());
-      Array_ref<SPComplexType,2> Qiu(Tuw.origin()+Tuw.num_elements(),{nwmax*nmo_,nu});
-      Array_ref<SPComplexType,3> Qwiu(Qiu.origin(),{nwmax,nmo_,nu});
       int iw(0);
       while( iw < nwalk) {
         int nw = std::min(nwmax,nwalk-iw);
-        // Qiu[i][u] = T[u][wi] * conj(Piu[i][u])
-        // v[wi][ik] = sum_u Qiu[i][u] * Piu[k][u]
-        // O[nmo * nmu]
-        // Qwiu[w][i][u] = Piu[i][u] * Tuw[u][w]
+#if defined(QMC_COMPLEX)
+        // Qwiu[w][i][u] = T[u][w] * conj(Piu[i][u])
+        // v[w][i][k] = sum_u Qwiu[w][i][u] * Piu[k][u]
+        Array_ref<SPComplexType,2> Qwiu(Tuw.origin()+Tuw.num_elements(),{nw*nmo_,nu});
         using ma::element_wise_Aij_Bjk_Ckij;
         element_wise_Aij_Bjk_Ckij('C',(kN-k0),nu,nw,make_device_ptr(Piu[k0].origin()),nu,
                         make_device_ptr(Tuw.origin())+iw,nwalk,
                         make_device_ptr(Qwiu.origin())+k0*nu,nmo_,nu);
         comm->barrier();
         // v[w][i][j] = sum_u Qwiu[w][i][u] * Piu[j][u] 
-#if defined(QMC_COMPLEX)
         Array_ref<SPComplexType,2> v_(vsp[iw].origin(),{nw*nmo_,nmo_});
         int wk0,wkN;
         std::tie(wk0,wkN) = FairDivideBoundary(comm->rank(),nw*nmo_,comm->size());
-        ma::product(SPComplexType(a),Qiu.sliced(wk0,wkN),T(Piu),
+        ma::product(SPComplexType(a),Qwiu.sliced(wk0,wkN),T(Piu),
                   SPComplexType(c),v_.sliced(wk0,wkN));
 #else
-        int wk0,wkN;
-        std::tie(wk0,wkN) = FairDivideBoundary(comm->rank(),nw*nmo_,comm->size());
-        auto&& v_(vsp({0,nmo_},{iw*nmo_+wk0,iw*nmo_+wkN}));
-        ma::product(SPRealType(a),Piu,ma::T(Qiu.sliced(wk0,wkN)),
-                    SPRealType(c),v_);
+        // Qwui[w][u][i] = Piu[i][u] * T[u][w] 
+        // v[w][i][j] = sum_u Piu[i][u] Qwui[w][u][j] // using batched blas
+        Array_ref<SPComplexType,3> Qwui(Tuw.origin()+Tuw.num_elements(),{nw,nu,nmo_});
+        using ma::element_wise_Aij_Bjk_Ckji;
+        element_wise_Aij_Bjk_Ckji((kN-k0),nu,nw,make_device_ptr(Piu[k0].origin()),nu,
+                        make_device_ptr(Tuw.origin())+iw,nwalk,
+                        make_device_ptr(Qwui.origin())+k0,nmo_,nu*nmo_);
+/*
+        for(int w=0; w<nw; w++)
+          for(int u=0; u<nu; u++)
+            for(int i=0; i<nmo_; i++)
+              Qwui[w][u][i] = static_cast<SPComplexType>(Piu[i][u]) * Tuw[u][w];
+*/
+        comm->barrier();
+        Array_ref<SPComplexType,3> v_(vsp[iw].origin(),{nw,nmo_,nmo_});
+        std::vector<decltype(&(Piu.sliced(0,1)))> vPiu;  
+        std::vector<decltype(&(Qwui[0]))> vQui;  
+        std::vector<decltype(&(v_[0].sliced(0,1)))> vVij;  
+        vPiu.reserve(nw);
+        vQui.reserve(nw);
+        vVij.reserve(nw);
+        for(int w=0; w<nw; ++w) {
+          vPiu.emplace_back(&(Piu.sliced(k0,kN)));
+          vQui.emplace_back(&(Qwui[w]));
+          vVij.emplace_back(&(v_[w].sliced(k0,kN)));
+        }
+        ma::BatchedProduct('N','N',SPRealType(a),vPiu,vQui,
+                                   SPRealType(c),vVij);
 #endif
         iw += nw;
         comm->barrier();
       }
-#if defined(QMC_COMPLEX)
       if(not std::is_same<vType,SPComplexType>::value) {
         long i0, iN;
         std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
                                   long(v.num_elements()),long(comm->size()));
         copy_n_cast(vsp.origin()+i0,iN-i0,make_device_ptr(v.origin())+i0);
       }
-#else
-      // transpose to temporary matrix (take memory from Qiu.origin())
-      // then copy_n_cast to v    
-      if(Qiu.num_elements() > v.num_elements()) { 
-        long i0, iN;
-        std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
-                                  long(v.num_elements()),long(comm->size()));
-        Array_ref<SPComplexType,1> v_(Qwiu.origin(),iextensions<1u>{nwalk*nmo_*nmo_});
-        copy_n(vsp.origin()+i0,iN-i0,v_.origin()+i0);
-        comm->barrier(); 
-        for(int i=0; i<nmo_; i++)
-        for(int w=0; w<nwalk; w++)
-        for(int j=0; j<nmo_; j++)
-          v[w][i*nmo_+j] = static_cast<vType>(vsp[i][w*nmo_+j]);
-//        viwj_vwij(nwalk,nmo_,i0,iN,v_.origin(),make_device_ptr(v.origin()));
-      } else {
-        long i0, iN;
-        std::tie(i0,iN) = FairDivideBoundary(long(comm->rank()),
-                                  long(v.num_elements()),long(comm->size()));
-        ShmArray<SPComplexType,1> v_(iextensions<1u>{nwalk*nmo_*nmo_},
-                        shm_buffer_allocator->template get_allocator<SPComplexType>());
-        copy_n(vsp.origin()+i0,iN-i0,make_device_ptr(v_.origin())+i0);
-        comm->barrier();
-//        viwj_vwij(nwalk,nmo_,i0,iN,make_device_ptr(v_.origin()),make_device_ptr(v.origin()));
-      }
-#endif
       comm->barrier();
     }
 
@@ -965,10 +961,20 @@ class THCOps
       comm->barrier();
 
       // transposing intermediary to make dot products faster in the next step
+#if defined(QMC_COMPLEX)
       ma::product(ma::T(Piu({0,nmo_},{u0,uN})),ma::T(Gw),T1);
+#else
+      {
+        int k0,kN;
+        std::tie(k0,kN) = FairDivideBoundary(comm->rank(),nmo_,comm->size());
+        ShmArray<SPComplexType,2> TGw({nmo_,nw*nel_},
+                    shm_buffer_allocator->template get_allocator<SPComplexType>());
+        ma::transpose(Gw(Gw.extension(0),{k0,kN}),TGw.sliced(k0,kN));
+        comm->barrier();
+        ma::product(ma::T(Piu({0,nmo_},{u0,uN})),TGw,T1);
+      }
+#endif
       // Guu[u][w] = a * sum_n T1[u][w][n] * cPua[u][n]
-      // since u >> w,n, it would take too long to setup batched_dot. Need 
-      // custom version for speed right now. Try openmp from here, should work
       using ma::Auwn_Bun_Cuw;
       Auwn_Bun_Cuw(uN-u0,nw,nel_,SPComplexType(a),T1.origin(),
                  make_device_ptr(cPua[0][u0].origin()),make_device_ptr(Guu[u0].origin()));
@@ -1035,16 +1041,19 @@ class THCOps
       assert(rotPiu.size(1) == nv);
       int v0,vN;
       std::tie(v0,vN) = FairDivideBoundary(comm->rank(),nv,comm->size());
+      int k0,kN;
+      std::tie(k0,kN) = FairDivideBoundary(comm->rank(),nmo_,comm->size());
       int nu0 = rotnmu0; 
       SPComplexType zero(0.0,0.0);
 
       // sync first
       comm->barrier();
 
-      using array_ptr = boost::multi::array_ptr<SPComplexType,2,const_sp_pointer>;  
+      using const_array_ptr = boost::multi::array_ptr<SPComplexType,2,const_sp_pointer>;  
+      using array_ptr = boost::multi::array_ptr<SPComplexType,2,sp_pointer>;  
       auto Pua_ptr( &( rotcPua[k]( {nu0,nu0+nu}, {ispin*nup,nup+ispin*ndown} ) ) );  
 
-      std::vector<array_ptr> Gwaj;   
+      std::vector<const_array_ptr> Gwaj;   
       std::vector<decltype(&(rotPiu({0,1},{0,1})))> Pjv;  
       std::vector<decltype(&(Tav[0]({0,1},{0,1})))> Twav;   
       std::vector<decltype(Pua_ptr)> Pua;   
@@ -1068,12 +1077,21 @@ class THCOps
 #if defined(QMC_COMPLEX)
       ma::BatchedProduct('N','N',Gwaj,Pjv,Twav);
 #else
+      ShmArray<SPComplexType,3> Gja({nw,nmo_,nelec[ispin]},
+                        shm_buffer_allocator->template get_allocator<SPComplexType>());
       Array_ref<SPComplexType,3> Tva(Guv.origin(),{nw,nv,nelec[ispin]});
+      std::vector<array_ptr> Gwja;   
       std::vector<decltype(&(Tva[0]({0,1},{0,1})))> Twva;
       Twva.reserve(nw);
-      for(int iw=0; iw<nw; ++iw) 
+      Gwja.reserve(nw);
+      for(int iw=0; iw<nw; ++iw) { 
         Twva.emplace_back(&(Tva[iw]({v0,vN},{0,nelec[ispin]})));
-      ma::BatchedProduct('T','T',Pjv,Gwaj,Twva);
+        Gwja.emplace_back( make_device_ptr(Gja[iw].origin()), 
+                            iextensions<2u>{nmo_,nelec[ispin]} ); 
+        ma::transpose((*(Gwaj[iw]))({0,nelec[ispin]},{k0,kN}),
+                      (*(Gwja[iw])).sliced(k0,kN));
+      }
+      ma::BatchedProduct('T','N',Pjv,Gwja,Twva);
       for(int iw=0; iw<nw; ++iw) ma::transpose(*Twva[iw],*Twav[iw]);
       comm->barrier();
 #endif

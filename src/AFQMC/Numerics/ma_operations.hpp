@@ -308,7 +308,7 @@ void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArrayPtr2DA>& A,
         using pointerA = typename pointedType<MultiArrayPtr2DA>::element_ptr;
         using pointerB = typename pointedType<MultiArrayPtr2DB>::element_ptr;
         using pointerC = typename pointedType<MultiArrayPtr2DC>::element_ptr;
-        using element = typename pointedType<MultiArrayPtr2DC>::element;
+        using element = typename pointedType<MultiArrayPtr2DA>::element;
 
         int M = (*C[0]).size(1);
         int N = (*C[0]).size(0);

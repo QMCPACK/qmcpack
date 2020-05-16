@@ -334,7 +334,7 @@ namespace device
     T2 **C_h;
     A_h = new Q1*[batchSize];
     B_h = new Q2*[batchSize];
-    C_h = new T*[batchSize];
+    C_h = new T2*[batchSize];
     for(int i=0; i<batchSize; i++) {
       A_h[i] = to_address(A[i]);
       B_h[i] = to_address(B[i]);

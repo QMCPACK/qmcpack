@@ -46,6 +46,12 @@ void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<float> const* A, int lda,
 void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<float> const* A, int lda, int stride, 
                             float const* B, int ldb, std::complex<float>* C, int ldc);
 
+// A[w][i][j] = B[i][w][j]
+void viwj_vwij(int nw, int ni, int i0, int iN, std::complex<double> const* B, std::complex<double>* A);
+void viwj_vwij(int nw, int ni, int i0, int iN, std::complex<double> const* B, std::complex<float>* A);
+void viwj_vwij(int nw, int ni, int i0, int iN, std::complex<float> const* B, std::complex<double>* A);
+void viwj_vwij(int nw, int ni, int i0, int iN, std::complex<float> const* B, std::complex<float>* A);
+
 // element-wise C[k][i][j] = A[i][j] * B[j][k]
 void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, double const* A, 
     int lda, std::complex<double> const* B, int ldb, std::complex<double> * C, int ldc1, int ldc2);
@@ -55,6 +61,16 @@ void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, std::complex
     int lda, std::complex<double> const* B, int ldb, std::complex<double> * C, int ldc1, int ldc2);
 void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, std::complex<float> const* A, 
     int lda, std::complex<float> const* B, int ldb, std::complex<float> * C, int ldc1, int ldc2);
+
+// element-wise C[k][j][i] = A[i][j] * B[j][k]
+void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk, double const* A, int lda,
+    std::complex<double> const* B, int ldb, std::complex<double> * C, int ldc, int stride);
+void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk, float const* A, int lda,
+    std::complex<float> const* B, int ldb, std::complex<float> * C, int ldc, int stride);
+void element_wise_Aij_Bjk_Ckji(char transA, int ni, int nj, int nk, std::complex<double> const* A, 
+    int lda, std::complex<double> const* B, int ldb, std::complex<double> * C, int ldc, int stride);
+void element_wise_Aij_Bjk_Ckji(char transA, int ni, int nj, int nk, std::complex<float> const* A,
+    int lda, std::complex<float> const* B, int ldb, std::complex<float> * C, int ldc, int stride);
 
 }
 

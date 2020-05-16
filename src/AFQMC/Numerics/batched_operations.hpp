@@ -384,6 +384,18 @@ void Aijk_Bkj_Cik(int ni, int nj, int nk, T const* A, int lda, int stride, T1 co
   }
 }
 
+// A[w][i][j] = B[i][w][j]
+template<typename T, typename T1>
+void viwj_vwij(int nw, int ni, int i0, int iN, T const* B, T1* A){
+  for(int w=0; w<nw; ++w) { 
+    for(int i=i0; i<iN; ++i) { 
+      auto A_(A + (w*ni+i)*ni);
+      auto B_(B + (i*nw+w)*ni);  
+      for(int j=0; j<ni; ++j, ++A_, ++B_) *A_ = static_cast<T1>(*B_);  
+    }
+  }
+}
+
 // Ckij = transA(Aij) * Bjk 
 template<typename T>
 void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, T const* A, int lda, 
@@ -409,6 +421,20 @@ void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, T const* A, 
     }
   } else 
     throw std::runtime_error(" Invalid parameter in element_wise_Aij_Bjk_Ckij. ");
+}
+
+template<typename T1, typename T2>
+void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk, T1 const* A, int lda,
+        T2 const* B, int ldb, T2* C, int ldc, int stride)
+{
+    for(int k=0; k<nk; k++) {
+      for(int j=0; j<nj; j++) {
+        auto A_(A + j);
+        auto B_(*(B + j*ldb + k));
+        auto C_(C + k*stride + j*ldc);
+        for(int i=0; i<ni; i++, A_+=lda, ++C_) (*C_) = (*A_) * B_; 
+      }
+    }
 }
 
 template<typename T, typename T1>
@@ -532,12 +558,26 @@ void Aijk_Bkj_Cik(int ni, int nj, int nk, device_pointer<T1> A, int lda, int str
   kernels::Aijk_Bkj_Cik(ni,nj,nk,to_address(A),lda,stride,to_address(B),ldb,to_address(C),ldc);
 }
 
+// A[w][i][j] = B[i][w][j]
+template<typename T, typename T1>
+void viwj_vwij(int nw, int ni, int i0, int iN, device_pointer<T> B, device_pointer<T1> A){
+  kernels::viwj_vwij(nw,ni,i0,iN,to_address(B),to_address(A));
+}
+
 template<typename T1, typename T2, typename T3>
 void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, device_pointer<T1> A, int lda,
         device_pointer<T2> B, int ldb, device_pointer<T3>C, int ldc1, int ldc2)
 {
   kernels::element_wise_Aij_Bjk_Ckij(transA,ni,nj,nk,
                 to_address(A),lda,to_address(B),ldb,to_address(C),ldc1,ldc2);
+}
+
+template<typename T1, typename T2, typename T3>
+void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk, device_pointer<T1> A, int lda,
+        device_pointer<T2> B, int ldb, device_pointer<T3>C, int ldc, int stride)
+{
+  kernels::element_wise_Aij_Bjk_Ckji(ni,nj,nk,
+                to_address(A),lda,to_address(B),ldb,to_address(C),ldc,stride);
 }
 
 template<typename T, typename T1>
