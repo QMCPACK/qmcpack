@@ -21,8 +21,10 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Utilities/kp_utilities.hpp"
+#include "AFQMC/Utilities/hdf5_consistency_helper.hpp"
 #include "AFQMC/Hamiltonians/RealDenseHamiltonian.h"
 #include "AFQMC/SlaterDeterminantOperations/rotate.hpp"
+
 
 namespace qmcplusplus
 {
@@ -79,11 +81,11 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
   // right now only Node.root() reads
   if( distNode.root() ) {
     if(!dump.open(fileName,H5F_ACC_RDONLY)) {
-      app_error()<<" Error opening integral file in THCHamiltonian. \n";
+      app_error()<<" Error opening integral file in RealDenseHamiltonian. \n";
       APP_ABORT("");
     }
     if(!dump.push("Hamiltonian",false)) {
-      app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
+      app_error()<<" Error in RealDenseHamiltonian::getHamiltonianOperations():"
                  <<" Group not Hamiltonian found. \n";
       APP_ABORT("");
     }
@@ -123,6 +125,14 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
 
   if( TG.Node().root() ) {
     // now read H1, use ref to avoid issues with shared pointers!
+    std::vector<int> shape;
+    if(dump.getShape<boost::multi::array<RealType,2>>("hcore", shape)) {
+      if(shape.size() == 3) {
+        app_error() << " Found complex one-body integrals in RealDenseHamiltonian::getHamiltonianOperations().\n";
+        app_error() << " Please generate real integrals.\n";
+        APP_ABORT("");
+      }
+    }
     RMatrix_ref h1_(to_address(H1.origin()),H1.extensions());
     if(!dump.readEntry(h1_,std::string("hcore"))) {
       app_error()<<" Error in RealDenseHamiltonian::getHamiltonianOperations():"
@@ -141,6 +151,13 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
     hyperslab_proxy<SpRMatrix_ref,2> hslab(L,std::array<int,2>{NMO*NMO,global_ncvecs},
                                              std::array<int,2>{NMO*NMO,local_ncv},
                                              std::array<int,2>{0,nc0});
+    std::vector<int> shape;
+    if(dump.getShape<boost::multi::array<RealType,2>>("L", shape)) {
+      if(shape.size() == 3) {
+        app_log() << " Error: Found complex cholesky integrals in RealDenseHamiltonian::getHamiltonianOperations().\n";
+        APP_ABORT(" Please generate real integrals.\n");
+      }
+    }
     if(!dump.readEntry(hslab,std::string("L"))) {
       app_error()<<" Error in RealDenseHamiltonian::getHamiltonianOperations():"
                <<" Problems reading /Hamiltonian/DenseFactorized/L. \n";
@@ -149,7 +166,7 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
     if(Likn.size(0) != NMO*NMO || Likn.size(1) != local_ncv) {
       app_error()<<" Error in RealDenseHamiltonian::getHamiltonianOperations():"
              <<" Problems reading /Hamiltonian/DenseFactorized/L. \n"
-             <<" Unexpected dimensins: " <<Likn.size(0) <<" " <<Likn.size(1) <<std::endl;
+             <<" Unexpected dimensions: " <<Likn.size(0) <<" " <<Likn.size(1) <<std::endl;
       APP_ABORT("");
     }
     dump.pop();
