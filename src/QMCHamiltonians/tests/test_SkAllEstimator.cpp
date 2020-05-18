@@ -184,11 +184,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
 
 
   // Set up the distance table, match expected layout
-#ifdef ENABLE_SOA
   const int ee_table_id = elec->addTable(*elec, DT_SOA);
-#else
-  const int ee_table_id = elec->addTable(*elec, DT_AOS);
-#endif
 
   const auto& dii(elec->getDistTable(ee_table_id));
   elec->update(); // distance table evaluation here
