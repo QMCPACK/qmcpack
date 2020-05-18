@@ -39,7 +39,6 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   if(type==COLLINEAR)
     assert(PsiT.size()%2 == 0);
   int ndet = ((type!=COLLINEAR)?(PsiT.size()):(PsiT.size()/2));
-  bool test_Luv = not useHalfRotatedMuv;
 
   if(ndet > 1)
     APP_ABORT("Error: ndet > 1 not yet implemented in THCHamiltonian::getHamiltonianOperations.\n");
@@ -91,9 +90,6 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   TG.Global().broadcast_value(gnmu);
   TG.Global().broadcast_value(grotnmu);
 
-  if(test_Luv)
-    grotnmu = gnmu;
-
   // setup partition, in general matrices are partitioned asize_t 'u'
   {
     int node_number = TGwfn.getLocalGroupNumber();
@@ -138,26 +134,24 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   // read Half transformed first
   if(distNode.root()) {
     using ma::conj;
-    if(not test_Luv) {
-      /***************************************/
-      // read full matrix, not distributed for now
-      if(!dump.readEntry(rotPiu,"HalfTransformedFullOrbitals")) {
-        app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
-                   <<" Problems reading HalfTransformedFullOrbitals. \n";
-        APP_ABORT("");
-      }
-      /***************************************/
-      hyperslab_proxy<shmSPVMatrix,2> hslab(rotMuv,
-            std::array<size_t,2>{grotnmu,grotnmu},
-            std::array<size_t,2>{rotnmu,grotnmu},
-            std::array<size_t,2>{rotnmu0,0});
-      if(!dump.readEntry(hslab,"HalfTransformedMuv")) {
-        app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
-                   <<" Problems reading HalfTransformedMuv. \n";
-        APP_ABORT("");
-      }
-      /***************************************/
+    /***************************************/
+    // read full matrix, not distributed for now
+    if(!dump.readEntry(rotPiu,"HalfTransformedFullOrbitals")) {
+      app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
+                 <<" Problems reading HalfTransformedFullOrbitals. \n";
+      APP_ABORT("");
     }
+    /***************************************/
+    hyperslab_proxy<shmSPVMatrix,2> hslab(rotMuv,
+          std::array<size_t,2>{grotnmu,grotnmu},
+          std::array<size_t,2>{rotnmu,grotnmu},
+          std::array<size_t,2>{rotnmu0,0});
+    if(!dump.readEntry(hslab,"HalfTransformedMuv")) {
+      app_error()<<" Error in THCHamiltonian::getHamiltonianOperations():"
+                 <<" Problems reading HalfTransformedMuv. \n";
+      APP_ABORT("");
+    }
+    /***************************************/
   }
   TG.global_barrier();
 
@@ -224,14 +218,6 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     // This can benefit from 2D split of work
     ma::product(Luv__,H(Luv__.sliced(c0,cN)),Muv);
 
-    if(test_Luv) {
-      for(int i=0; i<gnmu; ++i)
-        std::copy_n(Muv[i].origin(),nc,rotMuv[i].origin()+c0);
-      TG.Node().barrier();
-      if(TG.Node().root())
-        TG.Cores().all_reduce_in_place_n(to_address(rotMuv.origin()),rotMuv.num_elements(),std::plus<>());
-    }
-
     // since generating v0 takes some effort and temporary space,
     // v0(i,l) = -0.5*sum_j <i,j|j,l>
     //         = -0.5 sum_j,u,v ma::conj(Piu(i,u)) ma::conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
@@ -270,14 +256,6 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     // Muv = Luv * H(Luv)
     // This can benefit from 2D split of work
     ma::product(Luv,H(Luv.sliced(c0,cN)),Muv);
-
-    if(test_Luv) {
-      for(int i=0; i<gnmu; ++i)
-        std::copy_n(Muv[i].origin(),nc,rotMuv[i].origin()+c0);
-      TG.Node().barrier();
-      if(TG.Node().root())
-        TG.Cores().all_reduce_in_place_n(to_address(rotMuv.origin()),rotMuv.num_elements(),std::plus<>());
-    }
 
     // since generating v0 takes some effort and temporary space,
     // v0(i,l) = -0.5*sum_j <i,j|j,l>
@@ -321,15 +299,13 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
         ma::Matrix2MA('T',PsiT[2*i],A);
         ma::product(H(Piu),A,
                     cPua[i]({0,long(nmu)},{0,long(naea_)}));
-        if(not test_Luv)
-          ma::product(H(rotPiu),A,
-                      rotcPua[i]({0,long(grotnmu)},{0,long(naea_)}));
+        ma::product(H(rotPiu),A,
+                    rotcPua[i]({0,long(grotnmu)},{0,long(naea_)}));
         ma::Matrix2MA('T',PsiT[2*i+1],B);
         ma::product(H(Piu),B,
                     cPua[i]({0,long(nmu)},{naea_,long(nel_)}));
-        if(not test_Luv)
-          ma::product(H(rotPiu),B,
-                      rotcPua[i]({0,long(grotnmu)},{naea_,long(nel_)}));
+        ma::product(H(rotPiu),B,
+                    rotcPua[i]({0,long(grotnmu)},{naea_,long(nel_)}));
       }
     } else {
       boost::multi::array<SPComplexType,2> A({PsiT[0].size(1),PsiT[0].size(0)});
@@ -337,14 +313,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
         ma::Matrix2MA('T',PsiT[i],A);
         // cPua = H(Piu) * ma::conj(A)
         ma::product(H(Piu),A,cPua[i]);
-        if(not test_Luv)
-          ma::product(H(rotPiu),A,rotcPua[i]);
+        ma::product(H(rotPiu),A,rotcPua[i]);
       }
-    }
-    if(test_Luv) {
-      copy_n(Piu.origin(),Piu.num_elements(),rotPiu.origin());
-      for(int i=0; i<ndet; i++)
-        copy_n(cPua[i].origin(),cPua[i].num_elements(),rotcPua[i].origin());
     }
   }
   TG.node_barrier();

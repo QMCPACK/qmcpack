@@ -280,20 +280,20 @@ inline void writeTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA,
     dump.write(H1,"H1");
     dump.write(vn0,"v0");
     dump.write(rotPiu,"HalfTransformedFullOrbitals");
-    ma_hdf5::write_distributed_MA(rotMuv,{grotnmu,grotnmu},{rotnmu0,0},
+    ma_hdf5::write_distributed_MA(rotMuv,{rotnmu0,0},{grotnmu,grotnmu},
                                   dump,"HalfTransformedMuv",TGwfn);
-    ma_hdf5::write_distributed_MA(Piu,{size_t(NMO),gnmu},{0,nmu0},
+    ma_hdf5::write_distributed_MA(Piu,{0,nmu0},{size_t(NMO),gnmu},
                                   dump,"Orbitals",TGprop);
-    ma_hdf5::write_distributed_MA(Luv,{gnmu,gnmu},{nmu0,0},
+    ma_hdf5::write_distributed_MA(Luv,{nmu0,0},{gnmu,gnmu},
                                   dump,"Luv",TGprop);
     dump.pop();
     dump.pop();
   } else {
-    ma_hdf5::write_distributed_MA(rotMuv,{grotnmu,grotnmu},{rotnmu0,0},
+    ma_hdf5::write_distributed_MA(rotMuv,{rotnmu0,0},{grotnmu,grotnmu},
                                   dump,"HalfTransformedMuv",TGwfn);
-    ma_hdf5::write_distributed_MA(Piu,{size_t(NMO),gnmu},{0,nmu0},
+    ma_hdf5::write_distributed_MA(Piu,{0,nmu0},{size_t(NMO),gnmu},
                                   dump,"Orbitals",TGprop);
-    ma_hdf5::write_distributed_MA(Luv,{gnmu,gnmu},{nmu0,0},
+    ma_hdf5::write_distributed_MA(Luv,{nmu0,0},{gnmu,gnmu},
                                   dump,"Luv",TGprop);
   }
   TGwfn.Global().barrier();
