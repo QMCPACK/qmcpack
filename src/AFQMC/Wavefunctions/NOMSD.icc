@@ -145,10 +145,7 @@ namespace afqmc
     std::tie(nak0,nak1) = FairDivideBoundary(TG.getLocalTGRank(),Gsize*nwalk,TG.getNCoresPerTG());
 
     // use mpi3 when ready
-    if(req_Grecv!=MPI_REQUEST_NULL)
-        MPI_Request_free(&req_Grecv);
-    if(req_Gsend!=MPI_REQUEST_NULL)
-        MPI_Request_free(&req_Gsend);
+    MPI_Request req_Gsend, req_Grecv;
     MPI_Send_init(to_address(Gwork.origin())+nak0,(nak1-nak0)*sizeof(ComplexType),MPI_CHAR,
                   TG.prev_core(),1234,&(TG.TG()),&req_Gsend);
     MPI_Recv_init(to_address(Grecv.origin())+nak0,(nak1-nak0)*sizeof(ComplexType),MPI_CHAR,
@@ -191,6 +188,8 @@ namespace afqmc
     TG.local_barrier();    
     copy_n(eloc2[node_number*nwalk].origin(),3*nwalk,E.origin());
     copy_n(overlaps.origin(),nwalk,Ov.origin());
+    MPI_Request_free(&req_Grecv);
+    MPI_Request_free(&req_Gsend);
     TG.local_barrier();    
   }
 
@@ -255,10 +254,7 @@ namespace afqmc
     int nak0,nak1;
     std::tie(nak0,nak1) = FairDivideBoundary(TG.getLocalTGRank(),Gsize*nwalk,TG.getNCoresPerTG());
 
-    if(req_SMrecv!=MPI_REQUEST_NULL)
-          MPI_Request_free(&req_SMrecv);
-    if(req_SMsend!=MPI_REQUEST_NULL)
-          MPI_Request_free(&req_SMsend);
+    MPI_Request req_SMsend, req_SMrecv;
     // use mpi3 when ready
     MPI_Send_init(to_address(SMwork.origin())+nak0,(nak1-nak0)*sizeof(ComplexType),MPI_CHAR,
                     TG.prev_core(),2345,&(TG.TG()),&req_SMsend);
@@ -319,6 +315,8 @@ namespace afqmc
       E[i][1] = elocal[i][1]/Ov[i];
       E[i][2] = elocal[i][2]/Ov[i];
     }
+    MPI_Request_free(&req_SMrecv);
+    MPI_Request_free(&req_SMsend);
     TG.local_barrier();    
   }
 

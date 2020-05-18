@@ -30,7 +30,6 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
             WALKER_TYPES type,std::vector<PsiT_Matrix>& PsiT, double cutvn,
             double cutv2,TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& hdf_restart)
 {
-
   // hack until parallel hdf is in place
   bool write_hdf = false;
   if(TGwfn.Global().root()) write_hdf = !hdf_restart.closed();
@@ -42,15 +41,24 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   int ndet = ((type!=COLLINEAR)?(PsiT.size()):(PsiT.size()/2));
   bool test_Luv = not useHalfRotatedMuv;
 
-  //std::cout<<" test_Luv: " <<std::boolalpha <<test_Luv <<std::endl;
-
   if(ndet > 1)
     APP_ABORT("Error: ndet > 1 not yet implemented in THCHamiltonian::getHamiltonianOperations.\n");
+
+  // this communicator needs to be used for data structures that are distributed
+  // over multiple nodes in a TG. When built with accelerator support, multiple
+  // members of the TG will reside in the same node, so the Node() communicator will lead
+  // to wrong results. For host only builds, this will just be a copy of Node.
+  auto distNode(TG.Node().split(TGwfn.getLocalGroupNumber(),TG.Node().rank()));
+  if(TGwfn.getLocalGroupNumber() != TGprop.getLocalGroupNumber()) {
+    // relax this later
+    app_error()<<" Error: nnodes in wavefunction must match value in Propagator. \n" <<std::endl;
+    APP_ABORT("");
+  }
 
   size_t gnmu,grotnmu,nmu,rotnmu,nmu0,nmuN,rotnmu0,rotnmuN;
   hdf_archive dump(TGwfn.Global());
   // right now only Node.root() reads
-  if( TG.Node().root() ) {
+  if( distNode.root() ) {
     if(!dump.open(fileName,H5F_ACC_RDONLY)) {
       app_error()<<" Error opening integral file in THCHamiltonian. \n";
       APP_ABORT("");
@@ -118,17 +126,17 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   //   - cPua       {nmu,nel_},{gnmu,nel_},{nmu0,0}
   //  
   size_t nel_ = PsiT[0].size(0) + ((type==CLOSED)?0:(PsiT[1].size(0)));
-  shmSPVMatrix rotMuv({rotnmu,grotnmu},shared_allocator<SPValueType>{TG.Node()});
-  shmSPVMatrix rotPiu({size_t(NMO),grotnmu},shared_allocator<SPValueType>{TG.Node()});
+  shmSPVMatrix rotMuv({rotnmu,grotnmu},shared_allocator<SPValueType>{distNode});
+  shmSPVMatrix rotPiu({size_t(NMO),grotnmu},shared_allocator<SPValueType>{distNode});
   std::vector<shmSPCMatrix> rotcPua;
   rotcPua.reserve(ndet);
   for(int i=0; i<ndet; i++)
-    rotcPua.emplace_back(shmSPCMatrix({grotnmu,nel_},shared_allocator<SPComplexType>{TG.Node()}));
-  shmSPVMatrix Piu({size_t(NMO),nmu},shared_allocator<SPValueType>{TG.Node()});
-  shmSPVMatrix Luv({nmu,gnmu},shared_allocator<SPValueType>{TG.Node()});
+    rotcPua.emplace_back(shmSPCMatrix({grotnmu,nel_},shared_allocator<SPComplexType>{distNode}));
+  shmSPVMatrix Piu({size_t(NMO),nmu},shared_allocator<SPValueType>{distNode});
+  shmSPVMatrix Luv({nmu,gnmu},shared_allocator<SPValueType>{distNode});
   // right now only 1 reader. Use hyperslabs and parallel io later
   // read Half transformed first
-  if(TG.Node().root()) {
+  if(distNode.root()) {
     using ma::conj;
     if(not test_Luv) {
       /***************************************/
@@ -153,7 +161,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   }
   TG.global_barrier();
 
-  if(TG.Node().root()) {
+  if(distNode.root()) {
     /***************************************/
     hyperslab_proxy<shmSPVMatrix,2> hslab(Piu,
             std::array<size_t,2>{size_t(NMO),gnmu},
@@ -301,8 +309,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
   std::vector<shmSPCMatrix> cPua;
   cPua.reserve(ndet);
   for(int i=0; i<ndet; i++)
-    cPua.emplace_back(shmSPCMatrix({nmu,nel_},shared_allocator<SPComplexType>{TG.Node()}));
-  if(TG.Node().root()) {
+    cPua.emplace_back(shmSPCMatrix({nmu,nel_},shared_allocator<SPComplexType>{distNode}));
+  if(distNode.root()) {
     // simple
     using ma::H;
     if(type==COLLINEAR) {
@@ -345,26 +353,31 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
                  OneBodyHamiltonian::FrozenCoreEnergy;
 
   shmCMatrix hij({ndet,(naea_+naeb_)*NMO},shared_allocator<ComplexType>{TG.Node()});
-  shmCMatrix H1({NMO,NMO},shared_allocator<ComplexType>{TG.Node()});
+  shmCMatrix H1_({NMO,NMO},shared_allocator<ComplexType>{TG.Node()});
   if( TG.Node().root() ) {
     // dense one body hamiltonian
-    //auto H1_ = getH1();
-    copy_n_cast((OneBodyHamiltonian::H1).origin(),NMO*NMO,to_address(H1.origin()));
+    copy_n_cast((OneBodyHamiltonian::H1).origin(),NMO*NMO,to_address(H1_.origin()));
     int skp=((type==COLLINEAR)?1:0);
     for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
       check_wavefunction_consistency(type,&PsiT[nd],&PsiT[nd+skp],NMO,naea_,naeb_);
-      auto hij_(rotateHij(type,&PsiT[nd],&PsiT[nd+skp],H1));
+      auto hij_(rotateHij(type,&PsiT[nd],&PsiT[nd+skp],H1_));
       std::copy_n(hij_.origin(),hij_.num_elements(),to_address(hij[n].origin()));
     }
   }
   TG.Node().barrier();
 
   if(write_hdf)
-    writeTHCOps(hdf_restart,type,NMO,naea_,naeb_,nmu0,rotnmu0,ndet,TGprop,TGwfn,H1,
+    writeTHCOps(hdf_restart,type,NMO,naea_,naeb_,nmu0,rotnmu0,ndet,TGprop,TGwfn,H1_,
                 rotPiu,rotMuv,Piu,Luv,v0,E0);
 
+  if( distNode.root() ) { 
+    dump.pop();
+    dump.pop();
+    dump.close();
+  }
+
   return HamiltonianOperations(THCOps(TGwfn.TG_local(),NMO,naea_,naeb_,type,
-                                nmu0,rotnmu0,std::move(H1),
+                                nmu0,rotnmu0,std::move(H1_),
                                 std::move(hij),std::move(rotMuv),std::move(rotPiu),
                                 std::move(rotcPua),std::move(Luv),
                                 std::move(Piu),std::move(cPua),std::move(v0),E0));
