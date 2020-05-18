@@ -114,9 +114,7 @@ QMCMain::QMCMain(Communicate* c)
                 << "\n  CUDA base precision = " << GET_MACRO_VAL(CUDA_PRECISION)
                 << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
 #endif
-#ifdef ENABLE_SOA
                 << "\n\n  Structure-of-arrays (SoA) optimization enabled"
-#endif
                 << std::endl;
   app_summary() << std::endl;
   app_summary().flush();
