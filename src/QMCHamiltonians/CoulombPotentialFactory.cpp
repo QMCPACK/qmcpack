@@ -27,7 +27,6 @@
 #include "QMCHamiltonians/ForceCeperley.h"
 
 #include "QMCHamiltonians/PulayForce.h"
-#include "QMCHamiltonians/ZeroVarianceForce.h"
 #include "QMCHamiltonians/ACForce.h"
 #if defined(HAVE_LIBFFTW)
 #include "QMCHamiltonians/MPC.h"
@@ -237,17 +236,6 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
     }
     TrialWaveFunction& psi = *psi_it->second->targetPsi;
     targetH->addOperator(new PulayForce(*source, *target, psi), "PulayForce", false);
-  }
-  else if (mode == "zero_variance")
-  {
-    app_log() << "Adding zero-variance force term.\n";
-    OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
-    if (psi_it == psiPool.end())
-    {
-      APP_ABORT("Unknown psi \"" + PsiName + "\" for zero-variance force.");
-    }
-    TrialWaveFunction& psi = *psi_it->second->targetPsi;
-    targetH->addOperator(new ZeroVarianceForce(*source, *target, psi), "ZVForce", false);
   }
   else if (mode == "acforce")
   {
