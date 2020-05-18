@@ -26,7 +26,6 @@
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 
-#include "QMCHamiltonians/PulayForce.h"
 #include "QMCHamiltonians/ACForce.h"
 #if defined(HAVE_LIBFFTW)
 #include "QMCHamiltonians/MPC.h"
@@ -146,31 +145,6 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   }
 }
 
-// void
-// HamiltonianFactory::addPulayForce (xmlNodePtr cur) {
-//   std::string a("ion0"),targetName("e"),title("Pulay");
-//   OhmmsAttributeSet hAttrib;
-//   hAttrib.add(a,"source");
-//   hAttrib.add(targetName,"target");
-
-//   PtclPoolType::iterator pit(ptclPool.find(a));
-//   if(pit == ptclPool.end()) {
-//     ERRORMSG("Missing source ParticleSet" << a)
-//     return;
-//   }
-
-//   ParticleSet* source = (*pit).second;
-//   pit = ptclPool.find(targetName);
-//   if(pit == ptclPool.end()) {
-//     ERRORMSG("Missing target ParticleSet" << targetName)
-//     return;
-//   }
-//   ParticleSet* target = (*pit).second;
-
-//   targetH->addOperator(new PulayForce(*source, *target), title, false);
-
-// }
-
 void HamiltonianFactory::addForceHam(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
@@ -226,16 +200,6 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
       force_cep->put(cur);
       targetH->addOperator(force_cep, title, false);
     }
-  }
-  else if (mode == "pulay")
-  {
-    OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
-    if (psi_it == psiPool.end())
-    {
-      APP_ABORT("Unknown psi \"" + PsiName + "\" for Pulay force.");
-    }
-    TrialWaveFunction& psi = *psi_it->second->targetPsi;
-    targetH->addOperator(new PulayForce(*source, *target, psi), "PulayForce", false);
   }
   else if (mode == "acforce")
   {

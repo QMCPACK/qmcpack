@@ -47,7 +47,6 @@ SET(HAMSRCS
 IF(OHMMS_DIM MATCHES 3)
   SET(HAMSRCS ${HAMSRCS}
     ChiesaCorrection.cpp
-    PulayForce.cpp
     ForceCeperley.cpp
     ForceChiesaPBCAA.cpp
     LocalECPotential.cpp
