@@ -71,11 +71,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(massIdx, upIdx)     = 1.0;
 
-#ifdef ENABLE_SOA
   elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
   elec.update();
 
   CloneManager::clear_for_unit_tests();
@@ -169,11 +165,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(massIdx, upIdx)     = 1.0;
 
-#ifdef ENABLE_SOA
   elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
   elec.update();
 
   CloneManager::clear_for_unit_tests();
