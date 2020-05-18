@@ -37,7 +37,6 @@ DistanceTableData* createDistanceTableAB(const ParticleSet& s, ParticleSet& t, i
   //int sc=s.Lattice.SuperCellEnum;
   int sc = t.Lattice.SuperCellEnum;
   std::ostringstream o;
-  bool useSoA = (dt_type == DT_SOA || dt_type == DT_SOA_PREFERRED);
   o << "  Distance table for dissimilar particles (A-B):" << std::endl;
   o << "    source: " << s.getName() << "  target: " << t.getName() << std::endl;
   o << "    Using structure-of-arrays (SoA) data layout" << std::endl;
@@ -96,7 +95,7 @@ DistanceTableData* createDistanceTableAB(const ParticleSet& s, ParticleSet& t, i
   }
 
   //set dt properties
-  dt->DTType = (useSoA) ? DT_SOA : DT_AOS;
+  dt->DTType = DT_SOA;
   std::ostringstream p;
   p << s.getName() << "_" << t.getName();
   dt->setName(p.str()); //assign the table name
