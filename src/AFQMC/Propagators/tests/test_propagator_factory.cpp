@@ -24,9 +24,6 @@
 #undef APP_ABORT
 #define APP_ABORT(x) {std::cout << x <<std::endl; throw;}
 
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdio.h>
 #include <string>
 #include <vector>
 #include <complex>

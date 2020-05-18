@@ -22,13 +22,13 @@
 namespace kernels 
 {
 
-template<typename T>
-__global__ void kernel_fill_n(int N, T* x, int incx, T const a)
+template<typename Size, typename Size1, typename T>
+__global__ void kernel_fill_n(Size N, T* x, Size1 incx, T const a)
 {
  if(threadIdx.x >= N) return; 
- for(int ip=threadIdx.x; ip<N; ip+=blockDim.x)
+ for(Size ip=Size(threadIdx.x); ip<N; ip+=Size(blockDim.x))
   {
-    x[ip*incx] = a;
+    x[ip*Size(incx)] = a;
   }
 }
 
@@ -80,7 +80,19 @@ void fill_n(std::complex<double> * first, int N, int incx, std::complex<double> 
 }
 
 void fill_n(char * first, int N, char const value)
-{ 
+{
+  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+void fill_n(long int * first, long unsigned int N, const long int value)
+{
+  kernel_fill_n<<<1,256>>>(N,first,1,value);
+  qmc_cuda::cuda_check(cudaGetLastError());
+  qmc_cuda::cuda_check(cudaDeviceSynchronize());
+}
+void fill_n(long unsigned int * first, long unsigned int N, const long unsigned int value)
+{
   kernel_fill_n<<<1,256>>>(N,first,1,value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());

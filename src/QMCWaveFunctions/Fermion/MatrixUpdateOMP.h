@@ -19,14 +19,13 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "Platforms/OpenMP/ompBLAS.hpp"
+#include "Platforms/OpenMP/ompReduction.hpp"
 
-
-PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<float>: omp_out += omp_in)")
-PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<double>: omp_out += omp_in)")
 
 namespace qmcplusplus
 {
-/** implements dirac matrix update using OpenMP
+/** Implements dirac matrix update using OpenMP offload.
+ * It is used as DET_ENGINE_TYPE in DiracDeterminantBatched.
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
@@ -82,7 +81,7 @@ class MatrixUpdateOMP
     {
       temp.resize(total_size);
       rcopy.resize(total_size);
-      temp_dev_ptr = getOffloadDevicePtr(temp.data());
+      temp_dev_ptr  = getOffloadDevicePtr(temp.data());
       rcopy_dev_ptr = getOffloadDevicePtr(rcopy.data());
     }
   }
@@ -119,18 +118,18 @@ public:
     constexpr unsigned DIM = GT::Size;
     grads_value_v.resize(nw, DIM);
     auto* __restrict__ grads_value_v_ptr = grads_value_v.data();
-    auto* buffer_H2D_ptr = buffer_H2D.data();
+    auto* buffer_H2D_ptr                 = buffer_H2D.data();
 
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) \
                     map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
                     map(always, from: grads_value_v_ptr[:grads_value_v.size()])")
     for (int iw = 0; iw < nw; iw++)
     {
-      const T* __restrict__ invRow_ptr = reinterpret_cast<const T**>(buffer_H2D_ptr)[iw];
+      const T* __restrict__ invRow_ptr    = reinterpret_cast<const T**>(buffer_H2D_ptr)[iw];
       const T* __restrict__ dpsiM_row_ptr = reinterpret_cast<const T**>(buffer_H2D_ptr)[nw + iw];
       T grad_x(0), grad_y(0), grad_z(0);
       PRAGMA_OFFLOAD("omp parallel for reduction(+: grad_x, grad_y, grad_z)")
-      for (int iorb = 0 ; iorb < norb; iorb++)
+      for (int iorb = 0; iorb < norb; iorb++)
       {
         grad_x += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM];
         grad_y += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM + 1];
@@ -152,28 +151,29 @@ public:
     constexpr T cone(1);
     constexpr T czero(0);
     const int norb = Ainv.rows();
+    const int lda = Ainv.cols();
     resize_scratch_arrays(norb, 1);
     // invoke the Fahy's variant of Sherman-Morrison update.
-    int dummy_handle = 0;
-    int success      = 0;
+    int dummy_handle  = 0;
+    int success       = 0;
     const T* phiV_ptr = phiV.data();
     T* Ainv_ptr       = Ainv.data();
     T* temp_ptr       = temp.data();
     T* rcopy_ptr      = rcopy.data();
     PRAGMA_OFFLOAD("omp target data map(always, to: phiV_ptr[:norb]) \
-                    map(always, from: Ainv_ptr[:Ainv.rows()*Ainv.cols()]) \
+                    map(always, from: Ainv_ptr[:Ainv.size()]) \
                     use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
     {
-      success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, norb, phiV_ptr, 1, czero, temp_ptr, 1);
+      success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
       PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
       {
         temp_ptr[rowchanged] -= cone;
         PRAGMA_OFFLOAD("omp parallel for simd")
         for (int i = 0; i < norb; i++)
-          rcopy_ptr[i] = Ainv_ptr[rowchanged * norb + i];
+          rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
       }
       success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1) / c_ratio_in), rcopy_ptr, 1, temp_ptr,
-                             1, Ainv_ptr, norb);
+                             1, Ainv_ptr, lda);
     }
   }
 
@@ -181,6 +181,7 @@ public:
                            const std::vector<T*>& psiM_g_list,
                            const std::vector<T*>& psiM_l_list,
                            int norb,
+                           int lda,
                            int rowchanged,
                            const std::vector<bool>& isAccepted,
                            const T* phi_vgl_v_dev_ptr,
@@ -188,6 +189,8 @@ public:
                            const std::vector<T>& ratios)
   {
     const size_t n_accepted = Ainv_list.size();
+    if (n_accepted == 0) return;
+
     resize_scratch_arrays(norb, n_accepted);
 
     // to handle T** of Ainv, psi_v, temp, rcopy
@@ -213,9 +216,9 @@ public:
     // update the inverse matrix
     constexpr T cone(1);
     constexpr T czero(0);
-    int dummy_handle      = 0;
-    int success           = 0;
-    auto* buffer_H2D_ptr  = buffer_H2D.data();
+    int dummy_handle     = 0;
+    int success          = 0;
+    auto* buffer_H2D_ptr = buffer_H2D.data();
     resize_fill_constant_arrays(n_accepted);
     T* cone_ptr  = cone_vec.data();
     T* czero_ptr = czero_vec.data();
@@ -234,10 +237,10 @@ public:
       T* ratio_inv_mw   = reinterpret_cast<T*>(buffer_H2D_ptr + sizeof(T*) * n_accepted * 8);
 
       // invoke the Fahy's variant of Sherman-Morrison update.
-      success = ompBLAS::gemv_batched(dummy_handle, 'T', norb, norb, cone_ptr, Ainv_mw_ptr, norb,
-                                      phiV_mw_ptr, 1, czero_ptr, temp_mw_ptr, 1,
-                                      n_accepted);
-      PRAGMA_OFFLOAD("omp target teams distribute num_teams(n_accepted) is_device_ptr(Ainv_mw_ptr, temp_mw_ptr, rcopy_mw_ptr, dpsiM_mw_out, d2psiM_mw_out, dpsiM_mw_in, d2psiM_mw_in)")
+      success = ompBLAS::gemv_batched(dummy_handle, 'T', norb, norb, cone_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr, 1,
+                                      czero_ptr, temp_mw_ptr, 1, n_accepted);
+      PRAGMA_OFFLOAD("omp target teams distribute num_teams(n_accepted) is_device_ptr(Ainv_mw_ptr, temp_mw_ptr, \
+                     rcopy_mw_ptr, dpsiM_mw_out, d2psiM_mw_out, dpsiM_mw_in, d2psiM_mw_in)")
       for (int iw = 0; iw < n_accepted; iw++)
       {
         T* __restrict__ Ainv_ptr   = Ainv_mw_ptr[iw];
@@ -252,7 +255,7 @@ public:
         PRAGMA_OFFLOAD("omp parallel for simd")
         for (int i = 0; i < norb; i++)
         {
-          rcopy_ptr[i] = Ainv_ptr[rowchanged * norb + i];
+          rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
           // the following copying data on the device is not part of SM-1
           // it is intended to copy dpsiM and d2psiM from temporary to final without a separate kernel.
           dpsiM_out[i * 3]     = dpsiM_in[i * 3];
@@ -262,8 +265,21 @@ public:
         }
       }
 
-      success = ompBLAS::ger_batched(dummy_handle, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1,
-                                     temp_mw_ptr, 1, Ainv_mw_ptr, norb, n_accepted);
+      success = ompBLAS::ger_batched(dummy_handle, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
+                                     Ainv_mw_ptr, lda, n_accepted);
+    }
+  }
+
+  void mw_getInvRowReady(const int row_id, bool transfer_to_host)
+  {
+    //FIXME in case transfer_to_host
+  }
+
+  void mw_transferAinv_D2H(const std::vector<T*>& Ainv_ptr_list, const std::vector<T*>& Ainv_dev_ptr_list, size_t matrix_size)
+  {
+    for (T* Ainv_ptr : Ainv_ptr_list)
+    {
+      PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[:matrix_size])")
     }
   }
 };

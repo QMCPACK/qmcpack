@@ -94,18 +94,18 @@ namespace afqmc
 
       template<class T>
       allocator<T> get_allocator(){
-        return allocator<T>{std::addressof(mr_)};
+        return allocator<T>{std::addressof(mr_),constr_};
       }
 
   };
 
 
   using host_allocator_generator_type = 
-            BufferAllocatorGenerator< host_memory_resource, device_constructor<char> >; 
+            BufferAllocatorGenerator< host_memory_resource, host_constructor<char> >; 
   using device_allocator_generator_type = 
             BufferAllocatorGenerator< device_memory_resource, device_constructor<char> >;  
   using localTG_allocator_generator_type = 
-            BufferAllocatorGenerator< shm_memory_resource, device_constructor<char> >;  
+            BufferAllocatorGenerator< shm_memory_resource, shm_constructor<char> >;  
 
   template<class T>
     using host_buffer_type = typename host_allocator_generator_type::template allocator<T>; 

@@ -474,31 +474,47 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     return true;
 
   DiracDeterminantBase* adet = 0;
-  {
+
+  //TODO: the switch logic should be improved as we refine the input tags.
 #if defined(QMC_CUDA)
-    adet = new DiracDeterminantCUDA(psi, firstIndex);
+  adet = new DiracDeterminantCUDA(psi, firstIndex);
 #else
-    if (UseBackflow)
-      adet = new DiracDeterminantWithBackflow(targetPtcl, psi, BFTrans, firstIndex);
-    else if (use_batch == "yes")
+  if (UseBackflow)
+    adet = new DiracDeterminantWithBackflow(targetPtcl, psi, BFTrans, firstIndex);
+  else
+  {
+    if (use_batch == "yes")
     {
-      app_log() << "  Using DiracDeterminantBatched" << std::endl;
-      adet = new DiracDeterminantBatched<>(psi, firstIndex);
-    }
-#if defined(ENABLE_CUDA)
-    else if (useGPU == "yes")
-    {
-      app_log() << "  Using DiracDeterminant with DelayedUpdateCUDA engine" << std::endl;
-      adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
-    }
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+      if (useGPU == "yes")
+      {
+        app_log() << "  Using DiracDeterminantBatched with MatrixUpdateCUDA engine" << std::endl;
+        adet = new DiracDeterminantBatched<MatrixUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
+      }
+      else
 #endif
+      {
+        app_log() << "  Using DiracDeterminantBatched with MatrixUpdateOMP engine" << std::endl;
+        adet = new DiracDeterminantBatched<>(psi, firstIndex);
+      }
+    }
     else
     {
-      app_log() << "  Using DiracDeterminant with DelayedUpdate engine" << std::endl;
-      adet = new DiracDeterminant<>(psi, firstIndex);
-    }
+#if defined(ENABLE_CUDA)
+      if (useGPU == "yes")
+      {
+        app_log() << "  Using DiracDeterminant with DelayedUpdateCUDA engine" << std::endl;
+        adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
+      }
+      else
 #endif
+      {
+        app_log() << "  Using DiracDeterminant with DelayedUpdate engine" << std::endl;
+        adet = new DiracDeterminant<>(psi, firstIndex);
+      }
+    }
   }
+#endif
 
   if (delay_rank < 0 || delay_rank > lastIndex - firstIndex)
   {

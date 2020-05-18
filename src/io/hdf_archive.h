@@ -163,8 +163,9 @@ public:
   }
 
   /** read the shape of multidimensional filespace from the group aname
-   * The dimensions contributed by T is excluded.
    * this function can be used to query dataset for preparing containers.
+   * The dimensions contributed by T is excluded.
+   * See how exactly user dimensions are calculated in getDataShape function definition.
    * @return true if successful
    */
   template<typename T>

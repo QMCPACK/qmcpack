@@ -15,4 +15,4 @@ SET(OMP_SRCS
 )
 
 
-ADD_LIBRARY(qmcomp ${OMP_SRCS})
+ADD_LIBRARY(platform_omp ${OMP_SRCS})

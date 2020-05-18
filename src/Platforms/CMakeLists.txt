@@ -25,4 +25,9 @@ SET(DEVICE_SRCS
 ADD_LIBRARY(platform_host ${HOST_SRCS})
 
 ADD_LIBRARY(platform_device ${DEVICE_SRCS})
-TARGET_LINK_LIBRARIES(platform_device PUBLIC qmcomp message)
+TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_omp message)
+
+IF(ENABLE_CUDA)
+  SUBDIRS(CUDA)
+  TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cuda)
+ENDIF(ENABLE_CUDA)

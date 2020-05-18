@@ -22,7 +22,7 @@ namespace afqmc {
   auto host_buffer_generator = std::make_shared<host_allocator_generator_type> ( 
             host_memory_resource{},
             std::size_t(10*1024*1024),
-            device_constructor<char>{}
+            host_constructor<char>{}
         );
 //#if defined(ENABLE_ACCELERATOR)
 #if defined(ENABLE_CUDA)
@@ -56,7 +56,7 @@ namespace afqmc {
     if(localTG_buffer_generator == nullptr)
       localTG_buffer_generator = std::make_shared<localTG_allocator_generator_type> (
                       shm::memory_resource_shm_ptr_with_raw_ptr_dispatch{local},
-                      sz, device_constructor<char>{} );
+                      sz, shm_constructor<char>{local} );
 #endif
   }
 

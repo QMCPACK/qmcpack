@@ -3,11 +3,23 @@ import numpy
 import scipy.sparse
 import scipy.linalg
 import sys
-from afqmctools.utils.io import to_qmcpack_complex
+from afqmctools.utils.io import (
+        to_qmcpack_complex,
+        from_qmcpack_complex
+        )
 from afqmctools.hamiltonian.io import (
         write_sparse_basic,
         write_sparse_chol_chunk
         )
+
+
+def get_dset_simple(fh5, name):
+    try:
+        dset = fh5[name][:]
+        return dset
+    except KeyError:
+        print("Error reading {:} dataset".format(name))
+        return None
 
 def read_fcidump(filename, symmetry=8, verbose=True):
     """Read in integrals from file.
@@ -110,6 +122,31 @@ def read_fcidump(filename, symmetry=8, verbose=True):
     nbeta = nalpha - ms2
     return h1e, h2e, ecore, (nalpha, nbeta)
 
+def read_hamil_type(filename):
+    ham_type = None
+    with h5py.File(filename, 'r') as fh5:
+        try:
+            ds = fh5['Hamiltonian/DenseFactorized/L']
+            return 'dense'
+        except KeyError:
+            ham_type = None
+        try:
+            ds = fh5['Hamiltonian/Factorized/vals_0']
+            return 'sparse'
+        except KeyError:
+            ham_type = None
+        try:
+            ds = fh5['Hamiltonian/KPFactorized/L0']
+            return 'kpoint'
+        except KeyError:
+            ham_type = None
+        try:
+            ds = fh5['Hamiltonian/THC/Luv']
+            return 'thc'
+        except KeyError:
+            ham_type = None
+    return ham_type
+
 def read_qmcpack_hamiltonian(filename, get_chol=True):
     """Read Hamiltonian from QMCPACK format.
 
@@ -123,7 +160,8 @@ def read_qmcpack_hamiltonian(filename, get_chol=True):
     hamil : dict
         Data read from file.
     """
-    try:
+    ham_type = read_hamil_type(filename)
+    if ham_type == 'kpoint':
         hc, chol, enuc, nmo, nelec, nmok, qkk2, nchol_pk, minus_k = (
                 read_qmcpack_cholesky_kpoint(filename, get_chol=get_chol)
                 )
@@ -138,10 +176,7 @@ def read_qmcpack_hamiltonian(filename, get_chol=True):
             'minus_k': minus_k,
             'qk_k2': qkk2
             }
-        return hamil
-    except KeyError:
-        pass
-    try:
+    elif ham_type == 'sparse':
         hc, chol, enuc, nmo, nelec = read_qmcpack_sparse(filename,
                                                          get_chol=get_chol)
         hamil = {
@@ -152,15 +187,16 @@ def read_qmcpack_hamiltonian(filename, get_chol=True):
             'nelec': nelec
             }
         return hamil
-    except KeyError:
-        pass
-    try:
+    elif ham_type == 'dense':
         hcore, chol, enuc = read_qmcpack_dense(filename)
         hamil = {'hcore': hcore, 'chol': chol, 'enuc': enuc}
         return hamil
-    except KeyError:
-        print("Error reading Hamiltonian file. Unknown format.")
+    elif ham_type == 'thc':
+        print(" Please implement THC hamiltonian reader.")
+        hamil = {}
+    else:
         hamil = None
+        raise TypeError("Unknown Hamiltonian type in read_qmcpack_hamiltonian.")
     return hamil
 
 def read_qmcpack_sparse(filename, get_chol=True):
@@ -184,30 +220,12 @@ def read_qmcpack_sparse(filename, get_chol=True):
     nelec : tuple
         Number of electrons.
     """
-    with h5py.File(filename, 'r') as fh5:
-        real_ints = False
-        enuc = fh5['Hamiltonian/Energies'][:][0]
-        dims = fh5['Hamiltonian/dims'][:]
-        chunks = dims[2]
-        nmo = dims[3]
-        nalpha = dims[4]
-        nbeta = dims[5]
-        nchol = dims[7]
-        try:
-            hcore = fh5['Hamiltonian/hcore'][:]
-            hcore = hcore.view(numpy.complex128).reshape(nmo,nmo)
-        except KeyError:
-            # Old sparse format.
-            hcore = fh5['Hamiltonian/H1'][:].view(numpy.complex128).ravel()
-            idx = fh5['Hamiltonian/H1_indx'][:]
-            row_ix = idx[::2]
-            col_ix = idx[1::2]
-            hcore = scipy.sparse.csr_matrix((hcore, (row_ix, col_ix))).toarray()
-            hcore = numpy.tril(hcore, -1) + numpy.tril(hcore, 0).conj().T
-        except ValueError:
-            # Real format.
-            hcore = fh5['Hamiltonian/hcore'][:]
-            real_ints = True
+    enuc, dims, hcore, real_ints = read_common_input(filename)
+    chunks = dims[2]
+    nmo = dims[3]
+    nalpha = dims[4]
+    nbeta = dims[5]
+    nchol = dims[7]
     if get_chol:
         chol_vecs = read_cholesky(filename, real_ints=real_ints)
     else:
@@ -216,7 +234,10 @@ def read_qmcpack_sparse(filename, get_chol=True):
 
 def read_cholesky(filename, full=True, ichunk=None, real_ints=False):
     with h5py.File(filename, 'r') as fh5:
-        block_sizes = fh5['Hamiltonian/Factorized/block_sizes'][:]
+        try:
+            block_sizes = fh5['Hamiltonian/Factorized/block_sizes'][:]
+        except KeyError:
+            print(" Error reading Hamiltonian/Factorized/block_sizes")
         nval = sum(block_sizes)
         s = 0
         dims = fh5['Hamiltonian/dims'][:]
@@ -244,9 +265,15 @@ def read_cholesky(filename, full=True, ichunk=None, real_ints=False):
 def get_chunk(fh5, ichunk, real_ints):
     ixs = fh5['Hamiltonian/Factorized/index_%i'%ichunk][:]
     if real_ints:
-        vals = fh5['Hamiltonian/Factorized/vals_%i'%ichunk][:].ravel()
+        try:
+            vals = fh5['Hamiltonian/Factorized/vals_%i'%ichunk][:].ravel()
+        except KeyError:
+            print(" Error reading Hamiltonian/Factorized/vals_{:}".format(ichunk))
     else:
-        vals = fh5['Hamiltonian/Factorized/vals_%i'%ichunk][:].view(numpy.complex128).ravel()
+        try:
+            vals = fh5['Hamiltonian/Factorized/vals_%i'%ichunk][:].view(numpy.complex128).ravel()
+        except KeyError:
+            print(" Error reading Hamiltonian/Factorized/vals_{:}".format(ichunk))
     return ixs, vals
 
 def check_sym(ikjl, nmo, sym):
@@ -383,24 +410,33 @@ def read_qmcpack_cholesky_kpoint(filename, get_chol=True):
         Array mapping (q,k) pair to kpoint: Q = k_i - k_k + G.
         qk_k2[iQ,ik_i] = i_kk.
     """
+    enuc, dims, hcore, real_ints = read_common_input(filename, get_hcore=False)
     with h5py.File(filename, 'r') as fh5:
-        enuc = fh5['Hamiltonian/Energies'][:][0]
-        dims = fh5['Hamiltonian/dims'][:]
-        nmo_tot = dims[3]
-        nkp = dims[2]
-        nmo_pk = fh5['Hamiltonian/NMOPerKP'][:]
-        nchol_pk = fh5['Hamiltonian/NCholPerKP'][:]
-        qk_k2 = fh5['Hamiltonian/QKTok2'][:]
-        minus_k = fh5['Hamiltonian/MinusK'][:]
+        nmo_pk = get_dset_simple(fh5, 'Hamiltonian/NMOPerKP')
+        nchol_pk = get_dset_simple(fh5, 'Hamiltonian/NCholPerKP')
+        qk_k2 = get_dset_simple(fh5, 'Hamiltonian/QKTok2')
+        minus_k = get_dset_simple(fh5, 'Hamiltonian/MinusK')
         hcore = []
+        nkp = dims[2]
+        nmo_tot = dims[3]
         nalpha = dims[4]
         nbeta = dims[5]
+        if nmo_pk is None:
+            raise KeyError("Could not read NMOPerKP dataset.")
         for i in range(0, nkp):
-            hk = fh5['Hamiltonian/H1_kp{}'.format(i)][:]
+            hk = get_dset_simple(fh5, 'Hamiltonian/H1_kp{}'.format(i))
+            if hk is None:
+                raise KeyError("Could not read one-body hamiltonian.")
             nmo = nmo_pk[i]
             hcore.append(hk.view(numpy.complex128).reshape(nmo,nmo))
         chol_vecs = []
+        if nmo_pk is None:
+            raise KeyError("Error nmo_pk dataset does not exist.")
         nmo_max = max(nmo_pk)
+    if minus_k is None:
+        raise KeyError("Error MinusK dataset does not exist.")
+    if nchol_pk is None:
+        raise KeyError("Error NCholPerKP dataset does not exist.")
     if get_chol:
         for i in range(0, nkp):
             chol_vecs.append(get_kpoint_chol(filename, nchol_pk, minus_k, i))
@@ -413,17 +449,21 @@ def read_qmcpack_cholesky_kpoint(filename, get_chol=True):
 def get_kpoint_chol(filename, nchol_pk, minus_k, i):
     with h5py.File(filename, 'r') as fh5:
         try:
-            Lk = fh5['Hamiltonian/KPFactorized/L{}'.format(i)][:]
+            Lk = get_dset_simple(fh5, 'Hamiltonian/KPFactorized/L{}'.format(i))
+            if Lk is None:
+                raise TypeError("Could not read Cholesky integrals from file.")
             nchol = nchol_pk[i]
             Lk = Lk.view(numpy.complex128)[:,:,0]
         except KeyError:
-            Lk = fh5['Hamiltonian/KPFactorized/L{}'.format(minus_k[i])][:]
+            Lk = get_dset_simple(fh5, 'Hamiltonian/KPFactorized/L{}'.format(i))
+            if Lk is None:
+                raise TypeError("Could not read Cholesky integrals from file.")
             nchol = nchol_pk[minus_k[i]]
             Lk = Lk.view(numpy.complex128).conj()[:,:,0]
     return Lk
 
 def read_qmcpack_dense(filename):
-    """Read in integrals from qmcpack hdf5 format. kpoint dependent case.
+    """Read in integrals from qmcpack hdf5 format.
 
     Parameters
     ----------
@@ -439,14 +479,76 @@ def read_qmcpack_dense(filename):
     ecore : float
         Core contribution to the total energy.
     """
+    real_ints = False
+    enuc, dims, hcore, real_ints = read_common_input(filename)
     with h5py.File(filename, 'r') as fh5:
-        enuc = fh5['Hamiltonian/Energies'][:][0]
-        dims = fh5['Hamiltonian/dims'][:]
-        hcore = fh5['Hamiltonian/hcore'][:]
-        chol = fh5['Hamiltonian/DenseFactorized/L'][:]
-
+        nmo = dims[3]
+        nchol = dims[-1]
+        if real_ints:
+            try:
+                chol = fh5['Hamiltonian/DenseFactorized/L'][:]
+            except KeyError:
+                print("Error Hamiltonian/DenseFactorized/L")
+        else:
+            try:
+                chol = from_qmcpack_complex(fh5['Hamiltonian/DenseFactorized/L'][:],
+                                            (nmo*nmo,nchol))
+            except KeyError:
+                print("Error Hamiltonian/DenseFactorized/L")
     return hcore, chol, enuc
 
+def read_common_input(filename, get_hcore=True):
+    with h5py.File(filename, 'r') as fh5:
+        try:
+            enuc = fh5['Hamiltonian/Energies'][:][0]
+        except:
+            print(" Error reading Hamiltonian/Energies dataset.")
+            enuc = None
+        try:
+            dims = fh5['Hamiltonian/dims'][:]
+        except:
+            dims = None
+        assert dims is not None, "Error reading Hamiltonian/dims data set."
+        assert len(dims) == 8, "Hamiltonian dims data set has incorrect length."
+        nmo = dims[3]
+        real_ints = False
+        if get_hcore:
+            try:
+                hcore = from_qmcpack_complex(fh5['Hamiltonian/hcore'][:], (nmo,nmo))
+            except ValueError:
+                hcore = fh5['Hamiltonian/hcore'][:]
+                real_ints = True
+            except KeyError:
+                hcore = None
+                pass
+            if hcore is None:
+                try:
+                    # old sparse format only for complex.
+                    hcore = fh5['Hamiltonian/H1'][:].view(numpy.complex128).ravel()
+                    idx = fh5['Hamiltonian/H1_indx'][:]
+                    row_ix = idx[::2]
+                    col_ix = idx[1::2]
+                    hcore = scipy.sparse.csr_matrix((hcore, (row_ix, col_ix))).toarray()
+                    hcore = numpy.tril(hcore, -1) + numpy.tril(hcore, 0).conj().T
+                except:
+                    hcore = None
+                    print("Error reading Hamiltonian/hcore data set.")
+            try:
+                complex_ints = bool(fh5['Hamiltonian/ComplexIntegrals'][0])
+            except KeyError:
+                complex_ints = None
+
+            if complex_ints is not None:
+                if hcore is not None:
+                    hc_type = hcore.dtype
+                else:
+                    hc_type = type(hcore)
+                msg = ("ComplexIntegrals flag conflicts with integral data type. "
+                       "dtype = {:} ComplexIntegrals = {:}.".format(hc_type, complex_ints))
+                assert real_ints ^ complex_ints, msg
+        else:
+            hcore = None
+    return enuc, dims, hcore, real_ints
 
 def fcidump_header(nel, norb, spin):
     header = (

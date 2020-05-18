@@ -18,7 +18,7 @@
 #include "io/hdf_archive.h"
 
 #undef APP_ABORT
-#define APP_ABORT(x) {std::cout << x <<std::endl; exit(0);}
+#define APP_ABORT(x) {std::cout << x <<std::endl; throw;}
 
 #include <stdio.h>
 #include <string>

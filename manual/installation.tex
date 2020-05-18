@@ -899,17 +899,30 @@ Install the Windows Subsystem for Linux and Bash on Windows.
 Open a bash shell and follow the install directions for Ubuntu in Section~\ref{sec:buildubuntu}.
 
 \section{Installing via Spack}
-Spack is a package manager for scientific software.
-One of the primary goals of Spack is to reduce the barrier for users to install scientific
-software. Spack is intended to work on everything from laptop
-computers to high-end supercomputers. More information about Spack can
-be found at \url{https://spack.readthedocs.io/en/latest}. The major
-advantage of installation with Spack is that all dependencies are
-automatically built, potentially including all the compilers and libraries, and
-different versions of QMCPACK can easily coexist with each other.
-The QMCPACK Spack package also knows how to automatically build
-and patch QE. In principle, QMCPACK can be installed with
-a single Spack command.
+Spack is a package manager for scientific software.  One of the
+primary goals of Spack is to reduce the barrier for users to install
+scientific software. Spack is intended to work on everything from
+laptop computers to high-end supercomputers. More information about
+Spack can be found at
+\url{https://spack.readthedocs.io/en/latest}. The major advantage of
+installation with Spack is that all dependencies are automatically
+built, potentially including all the compilers and libraries, and
+different versions of QMCPACK can easily coexist with each other. We
+are also able to install a patched version of Quantum ESPRESSO (QE)
+via a seperate Spack command. Earlier versions of the QMCPACK Spack
+package bundled QE as a variant, but this method was not robust and
+frequently led to installation failures.
+
+With a properly configured Spack environment, you can be up and
+running on your computer with two simple commaneds:
+\begin{shade}
+your-laptop> spack install qmcpack@3.9.2%gcc
+
+your-laptop> spack install quantum-espresso+qmcpack~patch@6.4.1%gcc hdf5=parallel
+\end{shade}
+
+A more detailed explanation of these commands and the syntax follows.
+
 
 \subsection{Known Limitations}
 The QMCPACK Spack package inherits the limitations of the underlying
@@ -1018,7 +1031,7 @@ installed, you will need to manually add them to your
 for the Intel MKL package.
 
 \begin{shade}
-your-laptop> cat \~/.spack/packages.yaml
+your-laptop> cat ~/.spack/packages.yaml
 packages:
     intel-mkl:
         paths:
@@ -1071,10 +1084,11 @@ Tags:
     ecp  ecp-apps
 
 Preferred version:  
-    3.9.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.1
+    3.9.2      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.2
 
 Safe versions:  
     develop  [git] https://github.com/QMCPACK/qmcpack.git
+    3.9.2      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.2
     3.9.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.1
     3.9.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.0
     3.8.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.8.0
@@ -1089,14 +1103,13 @@ Safe versions:
 
 Variants:
     Name [Default]          Allowed values          Description
-
-
-    build_type [Release]    Debug, Release,         The build type to build
-                            RelWithDebInfo          
+    ====================    ====================    ====================
     afqmc [off]             True, False             Install with AFQMC support.
                                                     NOTE that if used in
                                                     combination with CUDA, only
                                                     AFQMC will have CUDA.
+    build_type [Release]    Debug, Release,         The build type to build
+                            RelWithDebInfo
     complex [off]           True, False             Build the complex (general
                                                     twist/k-point) version
     cuda [off]              True, False             Build with CUDA
@@ -1116,8 +1129,6 @@ Variants:
                                                     I/O
     ppconvert [off]         True, False             Install with pseudopotential
                                                     converter.
-    qe [on]                 True, False             Install with patched Quantum
-                                                    Espresso 6.4.0
     soa [on]                True, False             Build with Structure-of-Array
                                                     instead of Array-of-Structure
                                                     code. Only for CPU codeand
@@ -1145,7 +1156,8 @@ For example, to install the complex-valued version of QMCPACK in mixed-precision
 \begin{shade}
 your-laptop> spack install qmcpack+mixed+complex%gcc@7.2.0 ^intel-mkl
 \end{shade}
-where
+where the \ishell{+} decorators in front of \ishell{mixed} and
+\ishell{complex} indicate that the variant should be activated.
 
 \begin{shade}
 %gcc@7.2.0
@@ -1229,9 +1241,42 @@ reused by chaining Spack installations
 
 Instructions for DOE supercomputing facilities that support Spack directly will be forthcoming.
 
+\subsection{Installing Quantum-ESPRESSO with Spack}
+More information about the QE Spack package can be obtained directly
+from Spack
+\begin{shade}
+spack info quantum-espresso
+\end{shade}
+
+There are many variants available for QE, most, but not all, are
+compatible with QMCPACK patch. Here is a minimalistic example of the
+Spack installation command that needs to be invoked:
+\begin{shade}
+your-laptop> spack install quantum-espresso+qmcpack~patch@6.4.1%gcc hdf5=parallel
+\end{shade}
+
+The \ishell{\~} decorator means deactivate the \ishell{patch}
+variant. This refers not to the QMCPACK patch, but to the upstream
+patching that is present for some versions of QE. These upstream QE
+patches fix specific critical autoconf/configure fixes. Unfortunately,
+some of these QE upstream patches are incompatible with the QMCPACK
+patch. Note that the Spack package will prevent you from installing
+incompatible variants and will emit an error message explaining the
+nature of the incompatibility.
+
+A serial (no MPI) installation is also available, but the Spack installation command
+is non-intuitive for Spack newcomers:
+\begin{shade}
+your-laptop> spack install quantum-espresso+qmcpack~patch~mpi~scalapack@6.4.1%gcc hdf5=serial
+\end{shade}
+
+QE Spack package is well tested with GCC and Intel compilers, but will not work
+with the PGI compiler or in a cross-compile environment.
+
 \subsection{Reporting Bugs}
-Bugs with the QMCPACK Spack package should be filed at the main GitHub
-Spack repo \url{https://github.com/spack/spack/issues}
+Bugs with the QMCPACK or Quantum-ESPRESSO Spack package should be
+filed at the main GitHub Spack repo
+\url{https://github.com/spack/spack/issues}
 
 In the GitHub issue, include \ishell{@naromero77} to get the attention
 of our developer.

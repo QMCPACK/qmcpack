@@ -19,7 +19,7 @@
 #include "Configuration.h"
 
 #undef APP_ABORT
-#define APP_ABORT(x) {std::cout << x; exit(0);}
+#define APP_ABORT(x) {std::cout << x; throw;}
 
 #include <vector>
 #include<iostream>

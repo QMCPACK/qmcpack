@@ -10,17 +10,15 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <stdexcept>
 #include "Platforms/OpenMP/ompBLAS.hpp"
+#include <stdexcept>
 #include "config.h"
+#include "Platforms/OpenMP/ompReduction.hpp"
 
 namespace qmcplusplus
 {
 namespace ompBLAS
 {
-
-PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<float>: omp_out += omp_in)")
-PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<double>: omp_out += omp_in)")
 
 template<typename T>
 ompBLAS_status gemv_impl(ompBLAS_handle& handle,
@@ -139,6 +137,8 @@ ompBLAS_status gemv_batched_impl(ompBLAS_handle& handle,
                                  const int       incy,
                                  const int       batch_count)
 {
+  if (batch_count == 0) return 0;
+
   if (trans == 'T')
   {
     if (incx !=1 || incy != 1)
@@ -323,6 +323,8 @@ ompBLAS_status ger_batched_impl(ompBLAS_handle& handle,
                                 const int       lda,
                                 const int       batch_count)
 {
+  if (batch_count == 0) return 0;
+
   if (incx !=1 || incy != 1)
     throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::ger_batched_impl!");
 

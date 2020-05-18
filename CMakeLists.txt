@@ -43,22 +43,23 @@ ENDIF()
 IF ( NOT Python3_FOUND )
   MESSAGE( FATAL_ERROR "Could not find required python3" )
 ENDIF ( NOT Python3_FOUND )
+
+######################################################################
+# Check is PySCF is availabile within Python
+######################################################################
+TEST_PYTHON_MODULE(pyscf HAVE_PYSCF)
+IF (NOT HAVE_PYSCF)
+  MESSAGE( STATUS "Unable to import PySCF python module. PySCF tests will not be run." )
+ELSE()
+  MESSAGE( STATUS "Successfully imported PySCF python module." )
+ENDIF()
+  
 ######################################################################
 # Verify QE executables present if QE_BIN specified
 ######################################################################
 IF ( DEFINED QE_BIN )
   INCLUDE(CMake/run_qe.cmake)
   VERIFY_QE_PRESENT( ${QE_BIN} )
-ENDIF()
-
-######################################################################
-# Verify PYSCF package is present
-######################################################################
-IF ( DEFINED PYSCF_BIN )
-  TEST_PYTHON_MODULE(pyscf HAVE_PYSCF)
-  IF (NOT HAVE_PYSCF)
-    MESSAGE( FATAL_ERROR "PYSCF_BIN was specified but could not import pyscf." )
-  ENDIF()
 ENDIF()
 
 ######################################################################
@@ -144,7 +145,7 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 # QMC_MPI =  enable MPI
 # QMC_OMP = enable OMP
 ######################################################################
-SET(WALKER_MAX_PROPERTIES 256 CACHE STRING "Maximum number of properties tracked by walkers")
+SET(WALKER_MAX_PROPERTIES 2048 CACHE STRING "Maximum number of properties tracked by walkers")
 MARK_AS_ADVANCED(WALKER_MAX_PROPERTIES)
 SET(OHMMS_DIM 3 CACHE STRING "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
@@ -257,6 +258,7 @@ SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(MPIP_PROFILE 0)
 SET(QMC_BUILD_STATIC 0 CACHE BOOL "Link to static libraries")
 SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
+SET(ENABLE_STACKTRACE 0 CACHE BOOL "Enable use of boost::stacktrace")
 
 ######################################################################
 # Install options
