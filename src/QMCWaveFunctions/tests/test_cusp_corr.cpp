@@ -58,11 +58,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   ions.update();
 
 
-#ifdef ENABLE_SOA
   elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
   elec.update();
 
 
