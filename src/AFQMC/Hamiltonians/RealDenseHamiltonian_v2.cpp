@@ -122,6 +122,14 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
 
   if( TG.Node().root() ) {
     // now read H1, use ref to avoid issues with shared pointers!
+    std::vector<int> shape;
+    if(dump.getShape<boost::multi::array<RealType,2>>("hcore", shape)) {
+      if(shape.size() == 3) {
+        app_error() << " Found complex one-body integrals in RealDenseHamiltonian_v2::getHamiltonianOperations().\n";
+        app_error() << " Please generate real integrals.\n";
+        APP_ABORT("");
+      }
+    }
     RMatrix_ref h1_(to_address(H1.origin()),H1.extensions());
     if(!dump.readEntry(h1_,std::string("hcore"))) {
       app_error()<<" Error in RealDenseHamiltonian_v2::getHamiltonianOperations():"
@@ -140,6 +148,13 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
     hyperslab_proxy<SpRMatrix_ref,2> hslab(L,std::array<int,2>{NMO*NMO,global_ncvecs},
                                              std::array<int,2>{NMO*NMO,local_ncv},
                                              std::array<int,2>{0,nc0});
+    std::vector<int> shape;
+    if(dump.getShape<boost::multi::array<RealType,2>>("L", shape)) {
+      if(shape.size() == 3) {
+        app_log() << " Error: Found complex cholesky integrals in RealDenseHamiltonian_v2::getHamiltonianOperations().\n";
+        APP_ABORT(" Please generate real integrals.\n");
+      }
+    }
     if(!dump.readEntry(hslab,std::string("L"))) {
       app_error()<<" Error in RealDenseHamiltonian_v2::getHamiltonianOperations():"
                <<" Problems reading /Hamiltonian/DenseFactorized/L. \n";
