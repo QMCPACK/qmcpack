@@ -232,24 +232,29 @@ def kinetic():
     norb  = []
     korb  = []
     eorb  = []
+    kpidx= []
     for s in range(nspins):
         nsorb = []
         ksorb = []
         esorb = []
+        kpsidx = []
         for k in range(nkpoints):
             dks = d.data[k,s]
             nsorb.append(len(dks.kin))
             ksorb.extend(dks.kin)
             esorb.extend(dks.eig)
+            kpsidx.extend([k]*len(dks.kin))
             normspin[s] += dks.ne
         #end for
         nsorb = np.array(nsorb,dtype=int)
         ksorb = np.array(ksorb,dtype=float)
         esorb = np.array(esorb,dtype=float)
+        kpsidx = np.array(kpsidx,dtype=int)
 
         order = esorb.argsort()
         esorb = esorb[order]
         ksorb = ksorb[order]
+        kpsidx = kpsidx[order]
 
         ns = nsorb.sum()
         ks = ksorb.sum()
@@ -260,6 +265,7 @@ def kinetic():
         norb.append(nsorb)
         korb.append(ksorb)
         eorb.append(esorb)
+        kpidx.append(kpsidx)
     #end for
 
     def arr2str(a):
@@ -283,9 +289,9 @@ def kinetic():
         log('\nPer orbital kinetic energies')
         for s in range(nspins):
             log('  Spin {} energies'.format(spin_labels[s]))
-            log('    index  KS eig (eV)  kinetic (Ha)')
-            for i,(eig,kin) in enumerate(zip(eorb[s],korb[s])):
-                log('    {:>3}    {: 10.6f}   {: 10.6f}'.format(i,eig,kin))
+            log('    index kpoint_index  KS eig (eV)  kinetic (Ha)')
+            for i,(kpi,eig,kin) in enumerate(zip(kpidx[s],eorb[s],korb[s])):
+                log('    {:>3}      {:>3}        {: 10.6f}   {: 10.6f}'.format(i,kpi,eig,kin))
             #end for
         #end for
     #end if

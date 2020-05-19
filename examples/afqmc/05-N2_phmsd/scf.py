@@ -2,9 +2,7 @@
 
 import sys
 import h5py
-import scipy.linalg
 import numpy
-import argparse
 from pyscf import gto, scf, mcscf, fci, lib
 from afqmctools.utils.pyscf_utils import load_from_pyscf_chk_mol
 from afqmctools.hamiltonian.mol import write_hamil_mol
@@ -63,7 +61,7 @@ def gen_test_data():
     write_hamil_mol(scf_data, 'afqmc.h5', 1e-5, verbose=True)
     # Save CI expansion to scf file. Not necessary for AFQMC but for test
     # reproducibility.
-    with h5py.File('scf.chk', 'r+') as fh5:
+    with h5py.File('reference/scf.chk', 'r') as fh5:
         ci = fh5['ci'][:]
         occa = fh5['occa'][:]
         occb = fh5['occb'][:]
