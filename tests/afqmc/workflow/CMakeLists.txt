@@ -26,7 +26,7 @@ FUNCTION(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   ADD_TEST(NAME ${TESTNAME} COMMAND
            python ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/test_afqmc_input.py --input afqmc.h5
            WORKING_DIRECTORY ${TESTDIR})
-  SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_pyscf_${test_name}")
+  SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_pyscf_to_afqmc_${test_name}")
   SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
 
   # 3. Generate xml input.
