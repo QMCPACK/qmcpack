@@ -3,20 +3,95 @@
 echo --- Script START `date`
 
 localonly=no
+#localonly=yes
+
+jobtype=nightly
+case "$jobtype" in
+    nightly )
+	echo --- Nightly job
+    ;;
+    weekly )
+	echo --- Weekly job
+    ;;
+    * )
+# If a new jobtype is added, add support in all similar case statements below    
+	echo Unknown jobtype $jobtype
+	exit 1
+	;;
+esac
+
 
 if [[ $localonly == "yes" ]]; then
 echo --- Local CMake/Make/CTest only. No cdash drop.
 fi
 
-# Weekly settings:
-#export GLOBALTCFG="--timeout 4800 -VV"
-#export LIMITEDTESTS=""
-#export LESSLIMITEDTESTS=""
-# Nightly settings:
-export GLOBALTCFG="-j 16 --timeout 1200 -VV"
-export LIMITEDTESTS="-R deterministic -LE unstable -E long-"
-#export LESSLIMITEDTESTS="-E long- -LE unstable"
-export LESSLIMITEDTESTS="-E long-"
+
+if [ -e `dirname "$0"`/ornl_versions.sh ]; then
+    source `dirname "$0"`/ornl_versions.sh
+else
+    echo Did not find version numbers script ornl_versions.sh
+    exit 1
+fi
+
+
+plat=`lscpu|grep Vendor|sed 's/.*ID:[ ]*//'`
+case "$plat" in
+    GenuineIntel )
+	ourplatform=Intel
+	;;
+    AuthenticaAMD )
+	ourplatform=AMD
+	;;
+    * )
+	# ARM support should be trivial, but is not yet done
+	echo Unknown platform
+	exit 1
+	;;
+esac
+echo --- Using $ourplatform architecture
+
+ourhostname=`hostname|sed 's/\..*//g'`
+echo --- Host is $ourhostname
+
+
+case "$ourhostname" in
+    sulfur )
+	if [[ $jobtype == "nightly" ]]; then
+	    buildsys="build_intel2020_nompi build_intel2020 build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_intel2020_aos build_gccnew_nompi_mkl build_gccold_nompi_mkl build_clangnew_nompi_mkl build_clangold_nompi_mkl build_gccnew_nompi build_clangnew_nompi build_gccnew_mkl build_gccnew_mkl_complex build_clangnew_mkl build_clangnew_mkl_complex build_clangnew_mkl_mixed"
+	else
+	    buildsys="build_gccnew_mkl_nompi build_clangnew_mkl_nompi build_intel2020_nompi build_intel2020 build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_intel2020_aos"
+	fi
+    ;;
+    nitrogen )
+	if [[ $jobtype == "nightly" ]]; then
+	    buildsys="build_gccnew build_pgi2019_nompi build_gcccuda build_gcccuda_full build_gcccuda_complex build_gccnew_complex build_gccnew_nompi build_gccnew_nompi_complex build_clangnew build_clangnew_complex build_clangnew_mixed build_clangnew_complex_mixed build_clangnew_aos build_clangnew_complex_aos"
+	else
+	    buildsys="build_gccnew build_pgi2019_nompi build_gcccuda build_gcccuda_complex build_gccnew_complex build_clangnew"
+	fi
+    ;;
+    * )
+	echo Unknown host will use gccnew only
+	buildsys="build_gccnew"
+	;;
+esac
+
+
+case "$jobtype" in
+    weekly )
+	export GLOBALTCFG="-j 48 --timeout 4800 -VV"
+	export LIMITEDTESTS=""
+	export LESSLIMITEDTESTS=""
+	;;
+    nightly )
+	export GLOBALTCFG="-j 48 --timeout 1200 -VV"
+	export LIMITEDTESTS="-R deterministic -LE unstable -E long-"
+	export LESSLIMITEDTESTS="-E long-"
+	;;
+    * )
+	echo Unknown jobtype $jobtype
+	exit 1
+	;;
+esac
 
 # Directory in which to run tests. Should be an absolute path and fastest usable filesystem
 test_path=/scratch/${USER}   # RAID FLASH on oxygen
@@ -44,61 +119,10 @@ export PATH=$PGI/linux86-64/2019/bin:$PATH
 #export FI_PROVIDER=sockets
 export I_MPI_FABRICS=shm
 
-### SPACK PACKAGE VERSIONS
-#
-# \todo Make this use spack_supported_package_versions.sh to share common spack loads
-#       with the CI
-#
-# Versions should be consistent with setup script
-#
-
-# GCC
-# Dates at https://gcc.gnu.org/releases.html
-gcc_vnew=9.3.0 # 2020-03-12
-
-#Zen2 optimziations are only in gcc 9.1+, with improved scheduling in 9.2+
-#For now, only use newer compilers
-
-# For CUDA toolkit compatibility
-gcc_vcuda=8.3.0 #  2019-02-22
-
-# LLVM 
-# Dates at http://releases.llvm.org/
-llvm_vnew=10.0.0 # 2020-03-24
-#Zen2 scheduling optimizations are only in LLVM 10+
-
-# HDF5
-hdf5_vnew=1.10.5 # Releeased 2019-02-28
-hdf5_vold=1.8.19 # Released 2017-06-16
-
-# CMake 
-# Dates at https://cmake.org/files/
-cmake_vnew=3.16.5 # Released 2020-03-04
-cmake_vold=3.10.2 # Released 2018-01-18
-
-# OpenMPI
-# Dates at https://www.open-mpi.org/software/ompi/v4.0/
-ompi_vnew=4.0.3 # Released 2019-10-07
-#ompi_vold=2.1.2 # Released 2017-09-20
-
-libxml2_vnew=2.9.9 # Released 2019-01-03 See http://xmlsoft.org/sources/
-libxml2_vold=2.9.1 # Released 2013-04-19
-
-# FFTW
-# Dates at http://www.fftw.org/release-notes.html
-fftw_vnew=3.3.8 # Released 2018-05-28
-#fftw_vold=3.3.4 # Released 2014-03-16
-
-# BOOST
-# Dates at https://www.boost.org/users/history/
-boost_vnew=1.72.0 # Released 2019-04-12
-boost_vold=1.67.0 # Released 2016-05-13
-
-### END SPACK VERSION USAGE
-
 module() { eval `/usr/bin/modulecmd bash $*`; }
 
 export SPACK_ROOT=$HOME/apps/spack
+export PATH=$SPACK_ROOT/bin:$PATH
 . $SPACK_ROOT/share/spack/setup-env.sh
 
 echo --- Spack list
@@ -137,7 +161,7 @@ export PYTHONPATH=${test_dir}/qmcpack/nexus/lib
 echo --- PYTHONPATH=$PYTHONPATH
 #
 # Quantum Espresso setup/download/build
-# Future improvement: use spack version
+# Future improvement: use spack version or build for more compiler variants
 #
 
 export QE_VERSION=6.4.1
@@ -161,12 +185,20 @@ if [ ! -e ${QE_BIN}/pw.x ]; then
 (
     spack load gcc@${gcc_vnew}
     spack load openmpi@${ompi_vnew}
-    spack load amdblis
-    spack load netlib-lapack
+    if [ "$ourplatform" == "AMD" ]; then
+	spack load amdblis
+	spack load netlib-lapack
+    else
+	spack load blis
+	spack load netlib-lapack
+    fi
     spack load hdf5@${hdf5_vnew}
-    spack load fftw
-    ./configure CC=mpicc MPIF90=mpif90 F77=mpi90 BLAS_LIBS=-lblis LAPACK_LIBS=-llapack  --with-scalapack=no --with-hdf5=`spack location -i hdf5@1.10.5`
-    make -j 64 pwall # Parallel build tested OK for pwall with QE 6.4.1. Parallel build of all does NOT work due to broken dependencies
+    spack load fftw@${fftw_vnew}
+    ./configure CC=mpicc MPIF90=mpif90 F77=mpif90 BLAS_LIBS=-lblis LAPACK_LIBS=-llapack  --with-scalapack=no --with-hdf5=`spack location -i hdf5@1.10.5`
+    ## GCC10 fortran will abort on argument mismatches in QE MPI unless -fallow-argument-mismatch specified
+    #cp make.inc make.inc_orig
+    #sed -i -E 's/(^FFLAGS.*= )/\1 -fallow-argument-mismatch /g' make.inc
+    make -j 48 pwall # Parallel build tested OK for pwall with QE 6.4.1. Parallel build of all does NOT work due to broken dependencies
 )
     echo -- New QE executable `ls -l bin/pw.x`
     cd ${test_dir}
@@ -176,9 +208,112 @@ fi
 # Finished with QE
 
 
+
+#
+# PySCF setup
+# 
+
+sys=build_gccnew
+export PYSCF_HOME=${test_dir}/${sys}_pyscf/pyscf
+echo --- PYSCF_HOME set to ${PYSCF_HOME}
+if [ ! -e ${PYSCF_HOME}/pyscf/lib/libxc_itrf.so ]; then
+# Existence of shared library produced in ~final step of pyscf install as proxy for successful installation
+    if [ -e ${test_dir}/${sys}_pyscf ]; then
+	rm -r -f ${test_dir}/${sys}_pyscf
+    fi
+    mkdir ${test_dir}/${sys}_pyscf
+		
+    cd ${test_dir}/${sys}_pyscf
+(
+
+spack load git
+spack load gcc@${gcc_vnew}
+spack load python%gcc@${gcc_vnew}
+spack load cmake%gcc@${gcc_vnew}
+if [ "$ourplatform" == "AMD" ]; then
+    spack load amdblis
+    spack load netlib-lapack
+else
+    spack load blis
+    spack load netlib-lapack
+fi
+
+git clone https://github.com/pyscf/pyscf.git
+cd pyscf
+git checkout v1.7.1 # Relased 2020-03-01
+topdir=`pwd`
+here=`pwd`/opt
+herelib=`pwd`/opt/lib
+mkdir opt
+cd opt
+
+
+echo --- libcint
+git clone https://github.com/sunqm/libcint.git
+cd libcint
+git checkout origin/cint3
+mkdir build
+cd build
+cmake -DWITH_F12=1 -DWITH_RANGE_COULOMB=1 -DWITH_COULOMB_ERF=1 \
+    -DCMAKE_INSTALL_PREFIX:PATH=$here -DCMAKE_INSTALL_LIBDIR:PATH=lib ..
+make
+make install
+
+cd ..
+cd ..
+
+
+echo --- libxc
+git clone https://gitlab.com/libxc/libxc.git
+cd libxc
+git checkout 3.0.0
+autoreconf -i
+./configure --prefix=$here --libdir=$herelib --enable-shared --disable-fortran LIBS=-lm
+make
+make install
+cd ..
+
+
+echo --- xcfun library
+git clone https://github.com/dftlibs/xcfun.git
+cd xcfun
+git checkout 355f42497a9cd17d16ae91da1f1aaaf93756ae8b
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS=1 -DXC_MAX_ORDER=3 -DXCFUN_ENABLE_TESTS=0 \
+    -DCMAKE_INSTALL_PREFIX:PATH=$here -DCMAKE_INSTALL_LIBDIR:PATH=lib ..
+make
+make install
+cd ..
+cd ..
+echo --- PySCF dependency setup complete
+cd ..
+
+echo --- Top level PySCF directory `pwd`
+cd pyscf/lib
+mkdir build
+cd build
+cmake -DBUILD_LIBCINT=0 -DBUILD_LIBXC=0 -DBUILD_XCFUN=0 -DCMAKE_INSTALL_PREFIX:PATH=$here ..
+make
+echo --- PySCF build done
+export PYTHONPATH=$topdir:$PYTHONPATH
+export LD_LIBRARY_PATH=$herelib:$LD_LIBRARY_PATH
+echo export PYTHONPATH=$topdir:\$PYTHONPATH
+echo export LD_LIBRARY_PATH=$herelib:\$LD_LIBRARY_PATH
+
+)
+    cd ${test_dir}
+else
+    echo -- Found existing PySCF installation
+fi
+# Note PYTHONPATH and LD_LIBRARY_PATH are modified in gccnew buildtype below
+# Avoids potential incompatibilities with builds from other compiler and library versions
+#
+# Finished with PySCF setup
+
 echo --- Starting test builds and tests
 
-for sys in build_gccnew build_gcccuda build_gcccuda_full build_gcccuda_complex build_gccnew_complex build_gccnew_nompi build_gccnew_nompi_complex build_clangnew build_clangnew_complex build_clangnew_mixed build_clangnew_complex_mixed build_clangnew_aos build_clangnew_complex_aos 
+for sys in $buildsys
 do
 
 echo --- START $sys `date`
@@ -191,6 +326,9 @@ fi
 mkdir $sys
 cd $sys
 
+# Use subshell to allow compiler setup to contaminate the environment
+# e.g. No "unload" capability is provided for Intel compiler scripts
+(
 
 # Set appropriate environment
 if [[ $sys == *"gccnew"* ]]; then
@@ -219,29 +357,65 @@ ourenv=gccnewbuild
 fi
 
 
-
 spack load git
 
-# Python version determined by numpy install in setup script
-spack load python%gcc@$gcc_vnew # Has numpy, scipy, h5py, pandas "activated" and available for import
-
+# Load the modules needed for this type of build
+# Choose python on a per build type basis to minimize risk of contamination by e.g. older/newer HDF5 picked up via python modules
 case "$ourenv" in
 gccnewbuild) echo $ourenv
-	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vnew
+	spack load python%gcc@$gcc_vnew
+	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
 	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
 	if [[ $sys != *"nompi"* ]]; then
 	    spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+	    spack load py-mpi4py%gcc@$gcc_vnew
 	fi
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
-	spack load amdblis
-	spack load netlib-lapack
+	if [ "$ourplatform" == "AMD" ]; then
+	    spack load amdblis
+	    spack load netlib-lapack
+	else
+	    spack load blis
+	    spack load netlib-lapack
+	fi
+	# Make PySCF available
+	export PYSCF_BIN=$PYSCF_HOME
+	export PYTHONPATH=${test_dir}/build_gccnew_pyscf/pyscf:$PYTHONPATH
+	export PYTHONPATH=${test_dir}/qmcpack/utils/afqmctools/:$PYTHONPATH
+	export PYTHONPATH=${test_dir}/qmcpack/src/QMCTools/:$PYTHONPATH
+	export LD_LIBRARY_PATH=${test_dir}/build_gccnew_pyscf/pyscf/opt/lib:$LD_LIBRARY_PATH
+	echo PYSCF_BIN=$PYSCF_HOME
+	echo PYTHONPATH=$PYTHONPATH
+	echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+	# For debugging module availability etc. can check if afmctools are working here
+	#${test_dir}/qmcpack/utils/afqmctools/bin/pyscf_to_afqmc.py
+;;
+gccoldbuild) echo $ourenv
+	spack load gcc@$gcc_vold
+	spack load python%gcc@$gcc_vold
+	spack load boost@$boost_vold%gcc@$gcc_vold
+	spack load hdf5@$hdf5_vold%gcc@$gcc_vold
+	spack load cmake@$cmake_vold%gcc@$gcc_vold
+	if [[ $sys != *"nompi"* ]]; then
+	    spack load openmpi@$ompi_vold%gcc@$gcc_vold
+	fi
+	spack load libxml2@$libxml2_vold%gcc@$gcc_vold
+	spack load fftw@$fftw_vold%gcc@$gcc_vold
+	if [ "$ourplatform" == "AMD" ]; then
+	    spack load amdblis
+	    spack load netlib-lapack
+	else
+	    spack load blis
+	    spack load netlib-lapack
+	fi
 ;;
 gcccudabuild) echo $ourenv
-	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vcuda
+	spack load python%gcc@$gcc_vnew
+	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
 	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
 	if [[ $sys != *"nompi"* ]]; then
@@ -249,13 +423,19 @@ gcccudabuild) echo $ourenv
 	fi
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
-	spack load amdblis
-	spack load netlib-lapack
+	if [ "$ourplatform" == "AMD" ]; then
+	    spack load amdblis
+	    spack load netlib-lapack
+	else
+	    spack load blis
+	    spack load netlib-lapack
+	fi
 ;;
 clangnewbuild) echo $ourenv
 	spack load llvm@$llvm_vnew
-	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load gcc@$gcc_vnew
+	spack load python%gcc@$gcc_vnew
+	spack load boost@$boost_vnew%gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
 	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
 	if [[ $sys != *"nompi"* ]]; then
@@ -263,28 +443,47 @@ clangnewbuild) echo $ourenv
 	fi
 	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
-	spack load amdblis
-	spack load netlib-lapack
+	if [ "$ourplatform" == "AMD" ]; then
+	    spack load amdblis
+	    spack load netlib-lapack
+	else
+	    spack load blis
+	    spack load netlib-lapack
+	fi
+;;
+clangoldbuild) echo $ourenv
+	spack load llvm@$llvm_vold
+	spack load gcc@$gcc_vold
+	spack load python%gcc@$gcc_vold
+	spack load boost@$boost_vold%gcc@$gcc_vold
+	spack load hdf5@$hdf5_vold%gcc@$gcc_vold
+	spack load cmake@$cmake_vold%gcc@$gcc_vold
+	if [[ $sys != *"nompi"* ]]; then
+	    spack load openmpi@$ompi_vold%gcc@$gcc_vold
+	fi
+	spack load libxml2@$libxml2_vold%gcc@$gcc_vold
+	spack load fftw@$fftw_vold%gcc@$gcc_vold
+	if [ "$ourplatform" == "AMD" ]; then
+	    spack load amdblis
+	    spack load netlib-lapack
+	else
+	    spack load blis
+	    spack load netlib-lapack
+	fi
+;;
+gccintelbuild) echo $ourenv
+	spack load gcc@$gcc_vintel # Provides old enough C++ library for Intel compiler
+	spack load python%gcc@$gcc_vnew
+	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
+	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
 ;;
 *) echo "Problems: Unknown build environment"
 	exit 1
 ;;
 esac
 module list
-
-# Use subshell to allow Intel MKL or Intel compiler setup to contaminate the environment
-# No "unload" capability is provided
-(
-
-if [[ $sys == *"intel2020"* ]]; then
-source /opt/intel2020/bin/compilervars.sh intel64
-fi
-if [[ $sys == *"intel2019"* ]]; then
-source /opt/intel2019/bin/compilervars.sh intel64
-fi
-if [[ $sys == *"intel2018"* ]]; then
-source /opt/intel2018/bin/compilervars.sh intel64
-fi
 
 # Construct test name and configure flags
 # Compiler and major version, MPI or not
@@ -299,8 +498,11 @@ CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_MPI=1"
 export OMPI_CC=gcc
 export OMPI_CXX=g++
 
-# Add QE to any gcc MPI builds
+if [[ $sys == *"gccnew"* ]]; then
+# Add QE to any gccnew MPI builds
+# Restrict to gccnew to avoid problems with mismatched libraries, mpi etc.
 CTCFG="$CTCFG -DQE_BIN=${QE_BIN}" 
+fi
 
 fi
 fi
@@ -321,6 +523,16 @@ fi
 
 # Intel
 if [[ $sys == *"intel"* ]]; then
+
+if [[ $sys == *"intel2020"* ]]; then
+source /opt/intel2020/bin/compilervars.sh intel64
+fi
+if [[ $sys == *"intel2019"* ]]; then
+source /opt/intel2019/bin/compilervars.sh intel64
+fi
+if [[ $sys == *"intel2018"* ]]; then
+source /opt/intel2018/bin/compilervars.sh intel64
+fi
 # Assumie the Intel dumpversion string has format AA.B.C.DDD
 # AA is historically major year and a good enough unique identifier,
 # but Intel 2020 packages currently (12/2019) come with the 19.1 compiler.
@@ -360,12 +572,12 @@ CTCFG="$CTCFG -DQMC_CUDA=1"
 fi
 
 # MKL
-# MKLROOT set in sourced Intel compilervars.sh 
+# MKLROOT set in sourced Intel mklvars.sh 
 if [[ $sys == *"mkl"* ]]; then
 QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-MKL
 # MKL setup used by many builds for BLAS, LAPACK etc.
 source /opt/intel2020/mkl/bin/mklvars.sh intel64
-CTCFG="$CTCFG -DENABLE_MKL=1 -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib"
+CTCFG="$CTCFG -DENABLE_MKL=1 -DCMAKE_PREFIX_PATH=$MKLROOT/lib"
 fi
 
 # Complex
@@ -408,7 +620,7 @@ fi
 
 # Adjust which tests are run to control overall runtime
 case "$sys" in
-*gccnew|*clangnew|*gcccuda|*gccnew_complex|*clangnew_complex|*gcccuda_complex|*clangnew_aos|*clangnew_complex_aos|*gcccuda_full) echo "Running full ("less limited") test set for $sys"
+*intel2020*|*gccnew*|*clangnew*|*pgi*|*gcccuda*) echo "Running full ("less limited") test set for $sys"
 THETESTS=$LESSLIMITEDTESTS
 ;;
 *) echo "Running limited test set for $sys"
