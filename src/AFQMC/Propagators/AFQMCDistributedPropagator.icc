@@ -103,6 +103,7 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
       StaticMatrix Gc(G_ext,
             buffer_allocator->template get_allocator<ComplexType>());
       wfn.MixedDensityMatrix_for_vbias(wset,Gc);
+      TG.local_barrier();
       copy_n_cast(make_device_ptr(Gc.origin())+Gak0,GakN-Gak0,
                   make_device_ptr(G.origin())+Gak0);
     }

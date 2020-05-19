@@ -997,10 +997,13 @@ namespace ma
 #endif
   }
 
-  template<typename T>
+  template<typename T, typename Q1, typename Q2,
+           typename = typename std::enable_if_t<std::is_same<typename std::decay<Q1>::type,T>::value>,
+           typename = typename std::enable_if_t<std::is_same<typename std::decay<Q2>::type,T>::value>
+         > 
   inline static void gemmBatched(char Atrans, char Btrans, int M, int N, int K,
-                          T alpha, T ** A, int lda, 
-                          T ** B, int ldb, T beta,
+                          T alpha, Q1 ** A, int lda, 
+                          Q2 ** B, int ldb, T beta,
                           T ** C, int ldc, int batchSize)
   {
 #ifdef HAVE_MKL
@@ -1016,11 +1019,16 @@ namespace ma
 #endif
   }
 
-  template<typename T, typename Q>
+//  template<typename T, typename Q>
+  template<typename T, typename Q1, typename Q2, typename T2,
+           typename = typename std::enable_if_t<std::is_same<typename std::decay<Q1>::type,T2>::value>,
+           typename = typename std::enable_if_t<std::is_same<typename std::decay<Q2>::type,T>::value>,
+           typename = typename std::enable_if_t<std::is_same<std::complex<T>,T2>::value>
+          >
   inline static void gemmBatched(char Atrans, char Btrans, int M, int N, int K,
-                          Q alpha, T ** A, int lda,
-                          Q ** B, int ldb, Q beta,
-                          T ** C, int ldc, int batchSize)
+                          T alpha, Q1 ** A, int lda,
+                          Q2 ** B, int ldb, T beta,
+                          T2 ** C, int ldc, int batchSize)
   {
 #ifdef HAVE_MKL
     assert(Atrans=='n' || Atrans=='N');
@@ -1062,7 +1070,7 @@ namespace ma
     for(int k=0; k<nk; ++k) {
       auto Bk( B + k*stride );
       auto Ak( A + k*lda );
-      for(int i=0; i<ni; ++i) A[k] += Bk[ i*ldb + i ];   
+      for(int i=0; i<ni; ++i) Ak[i] += Bk[ i*ldb + i ];   
     }
   }
 

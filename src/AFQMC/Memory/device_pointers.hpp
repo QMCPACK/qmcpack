@@ -822,6 +822,25 @@ namespace multi{
 /**************** copy *****************/
 // Can always call cudaMemcopy2D like you do in the blas backend
 
+template<typename T, typename Size>
+multi::array_iterator<T, 1, device::device_pointer<T>> fill_n(
+                    multi::array_iterator<T, 1, device::device_pointer<T>> first,
+                    Size n, T const& val){
+  if(n == 0) return first;
+  kernels::fill_n(to_address(base(first)), n, stride(first), val);
+  return first + n;
+}
+
+template<typename T, typename Size>
+multi::array_iterator<T, 1, device::device_pointer<T>> fill(
+                    multi::array_iterator<T, 1, device::device_pointer<T>> first,
+                    multi::array_iterator<T, 1, device::device_pointer<T>> last, T const& val){
+  assert( stride(first) == stride(last) );
+  if(std::distance(first,last) == 0 ) return first;
+  kernels::fill_n(to_address(base(first)), std::distance(first,last), stride(first), val);
+  return first + std::distance(first,last);
+}
+
 template<class Alloc, typename T, typename Size>
 multi::array_iterator<T, 1, device::device_pointer<T>> uninitialized_fill_n(
                     Alloc &a,

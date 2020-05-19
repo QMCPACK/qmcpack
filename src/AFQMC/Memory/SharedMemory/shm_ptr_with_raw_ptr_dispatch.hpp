@@ -139,9 +139,10 @@ struct shm_ptr_with_raw_ptr_dispatch{
                 ret -= d;
                 return ret;
         }
-        std::ptrdiff_t operator-(shm_ptr_with_raw_ptr_dispatch other) const{
-            if((offset-other.offset)%sizeof(T)!=0) {throw;}
-            return (offset-other.offset)/sizeof(T);
+        std::ptrdiff_t operator-(shm_ptr_with_raw_ptr_dispatch<T> other) const{
+            std::ptrdiff_t pdiff(wSP_->base(0) + offset - (other.wSP_->base(0) + other.offset)); 
+            if(pdiff%sizeof(T)!=0) {throw;}
+            return pdiff/sizeof(T);
         }
         shm_ptr_with_raw_ptr_dispatch& operator--(){offset-=sizeof(T); return *this;}
         shm_ptr_with_raw_ptr_dispatch& operator++(){offset+=sizeof(T); return *this;}
@@ -232,12 +233,29 @@ struct memory_resource_shm_ptr_with_raw_ptr_dispatch{
         }
 };
 
+template<typename T, typename Size, typename TT>
+shm_ptr_with_raw_ptr_dispatch<T> fill_n(shm_ptr_with_raw_ptr_dispatch<T> first, Size n, TT const& val){
+        if(n==0) return first;
+        first.wSP_->fence();
+        if(first.wSP_->get_group().root()) std::fill_n(to_address(first), n, val); 
+        first.wSP_->fence();
+        first.wSP_->fence();
+        mpi3::communicator(first.wSP_->get_group(),0).barrier();
+        return first + n;
+}
+
+template<typename T, typename Q>
+shm_ptr_with_raw_ptr_dispatch<T> fill(shm_ptr_with_raw_ptr_dispatch<T> first, 
+                                      shm_ptr_with_raw_ptr_dispatch<T> last, Q const& val){
+        if(std::distance(first,last)==0) return first;
+        return fill_n(first,std::distance(first,last),val);
+}
 
 template<typename T, typename Size, typename TT>
 shm_ptr_with_raw_ptr_dispatch<T> uninitialized_fill_n(shm_ptr_with_raw_ptr_dispatch<T> first, Size n, TT const& val){
         if(n==0) return first;
         first.wSP_->fence();
-        if(first.wSP_->get_group().root()) std::uninitialized_fill_n(to_address(first), n, val); // change to to_pointer
+        if(first.wSP_->get_group().root()) std::uninitialized_fill_n(to_address(first), n, val); 
         first.wSP_->fence();
         first.wSP_->fence();
         mpi3::communicator(first.wSP_->get_group(),0).barrier();
@@ -471,6 +489,35 @@ shm_ptr_with_raw_ptr_dispatch<T> alloc_uninitialized_value_construct_n(Alloc &a,
 
 namespace boost{
 namespace multi{
+
+template<typename T, typename Size, typename Q>
+multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> fill_n(
+                    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
+                    Size n, Q const& val){
+  if(n==0) return first;
+  base(first).wSP_->fence();
+  if(first.wSP_->get_group().root()) {
+    auto current = first;
+    try{
+      for(; n > 0; ++current, --n)
+        *(base(current)) = T(val);
+    }catch(...){throw;}
+  }
+  base(first).wSP_->fence();
+  base(first).wSP_->fence();
+  mpi3::communicator(base(first).wSP_->get_group(),0).barrier();
+  return first + n;
+}
+
+template<typename T, typename Q>
+multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> fill_n(
+                    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
+                    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last,
+                    Q const& val){
+  assert( stride(first) == stride(last) );
+  return fill_n(first,std::distance(first,last),val);
+}
+
 
 template<class Alloc, typename T, typename Size>
 multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_fill_n(

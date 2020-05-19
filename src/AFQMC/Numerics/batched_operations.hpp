@@ -350,21 +350,21 @@ void batched_diagonal_sum( int* n, std::complex<Q> *const* A, int lda,
 // should be called: Aijk_Bik_Cij
 template<typename T>
 void Auwn_Bun_Cuw(int nu, int nw, int na, T alpha, T const* A, T const* B, T* C){
-  for(int u=0; u<nu; ++u, ++B)
-    for(int iw=0; iw<nw; ++iw, ++C, ++A) 
-      (*C) = alpha*ma::dot(A,B); 
+  for(int u=0; u<nu; ++u, B+=na)
+    for(int iw=0; iw<nw; ++iw, ++C, A+=na) 
+      (*C) = alpha*ma::dot(na,A,1,B,1); 
 } 
 
 // C[u][w] = alpha * sum_i A[w][i][u] * B[i][u]
-template<typename T>
+template<typename T, typename Q>
 // Aijk_Bjk_Cki
-void Awiu_Biu_Cuw(int nu, int nw, int ni, T alpha, T const* A, T const* B, int ldb, T* C, int ldc){
+void Awiu_Biu_Cuw(int nu, int nw, int ni, T alpha, T const* A, Q const* B, int ldb, T* C, int ldc){
   for(int w=0; w<nw; ++w) {
     for(int i=0; i<ni; ++i) {
       auto Ci(C + w); 
       auto Bi(B + i*ldb);
       for(int u=0; u<nu; ++u,++A,++Bi,Ci+=ldc)
-        *Ci += alpha*(*A)*(*Bi);
+        *Ci += alpha*(*A)*static_cast<T>(*Bi);
     }
   }
 }
@@ -407,7 +407,7 @@ void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, T const* A, 
         auto A_(A + i*lda);
         auto B_(B + k);
         auto C_(C + k*ldc1*ldc2 + i*ldc2);
-        for(int j=0; j<nk; ++j,++C_,++A_,B_+=ldb) (*C_) = (*A_) * (*B_);
+        for(int j=0; j<nj; ++j,++C_,++A_,B_+=ldb) (*C_) = (*A_) * (*B_);
       }
     }
   } else if( transA == 'C' ) {  
@@ -416,7 +416,7 @@ void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, T const* A, 
         auto A_(A + i*lda);
         auto B_(B + k);
         auto C_(C + k*ldc1*ldc2 + i*ldc2);  
-        for(int j=0; j<nk; ++j,++C_,++A_,B_+=ldb) (*C_) = ma::conj(*A_) * (*B_); 
+        for(int j=0; j<nj; ++j,++C_,++A_,B_+=ldb) (*C_) = ma::conj(*A_) * (*B_); 
       }
     }
   } else 
@@ -444,7 +444,7 @@ void inplace_product(int nbatch, int n, int m, T1 const* B, int ldb, std::comple
     for(int i=0; i<n; ++i) {
       auto A_(A + (nb*n+i)*lda);  
       auto B_(B + i*ldb);  
-      for(int j=0; j<m; ++j, ++A_, ++B_) *A_ *= static_cast<T>(*B_);
+      for(int j=0; j<m; ++j, ++A_, ++B_) *A_ *= static_cast<std::complex<T>>(*B_);
     }
 }
 

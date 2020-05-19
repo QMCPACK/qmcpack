@@ -235,8 +235,19 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
     // reduce over Global
     TG.Global().all_reduce_in_place_n(v0_.origin(),v0_.num_elements(),std::plus<>());
-    if(TG.Node().root()) 
+    if(TG.Node().root()) { 
       copy_n_cast(v0_.origin(),NMO*NMO,to_address(v0.origin()));
+#if MIXED_PRECISION
+      // MAM: Since Muv gets large, might have problems with the check for hermicity below
+      // fixing here
+      for(int i=0; i<NMO; i++)
+        for(int j=i+1; j<NMO; j++)
+        {
+          v0[i][j] = 0.5*(v0[i][j]+ma::conj(v0[j][i]));
+          v0[j][i] = ma::conj(v0[i][j]);
+        }  
+#endif  
+    }
     TG.Node().barrier();
 
   } else {
@@ -248,7 +259,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     using ma::T;
     using ma::conj;
     size_t c0,cN,nc;
-    std::tie(c0,cN) = FairDivideBoundary(size_t(TG.Global().rank()),nmu,size_t(TG.Global().size()));
+    std::tie(c0,cN) = FairDivideBoundary(size_t(TG.Global().rank()),gnmu,size_t(TG.Global().size()));
     nc = cN-c0;
     boost::multi::array<SPValueType,2> Tuv({gnmu,nc});
     boost::multi::array<SPValueType,2> Muv({gnmu,nc});
@@ -260,7 +271,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
     // since generating v0 takes some effort and temporary space,
     // v0(i,l) = -0.5*sum_j <i,j|j,l>
     //         = -0.5 sum_j,u,v ma::conj(Piu(i,u)) ma::conj(Piu(j,v)) Muv Piu(j,u) Piu(l,v)
-    //         = -0.5 sum_u,v ma::conj(Piu(i,u)) W(u,v) Piu(l,u), where
+    //         = -0.5 sum_u,v ma::conj(Piu(i,u)) W(u,v) Piu(l,v), where
     // W(u,v) = Muv(u,v) * sum_j Piu(j,u) ma::conj(Piu(j,v))
     ma::product(H(Piu),Piu({0,long(NMO)},{long(c0),long(cN)}),Tuv);
     auto itM = Muv.origin();
@@ -274,8 +285,19 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool
 
     // reduce over Global
     TG.Global().all_reduce_in_place_n(v0_.origin(),v0_.num_elements(),std::plus<>());
-    if(TG.Node().root()) 
+    if(TG.Node().root()) { 
       copy_n_cast(v0_.origin(),NMO*NMO,to_address(v0.origin()));
+#if MIXED_PRECISION
+      // MAM: Since Muv gets large, might have problems with the check for hermicity below
+      // fixing here
+      for(int i=0; i<NMO; i++) 
+        for(int j=i+1; j<NMO; j++) 
+        {
+          v0[i][j] = 0.5*(v0[i][j]+ma::conj(v0[j][i]));  
+          v0[j][i] = ma::conj(v0[i][j]);
+        }  
+#endif
+    }
     TG.Node().barrier();
   }
   TG.global_barrier();

@@ -344,10 +344,8 @@ namespace afqmc
     assert(SM.size(1) == Gsize);
     // to force synchronization before modifying structures in SHM
     TG.local_barrier();
-    if(TG.TG_local().root()) {
-      fill_n(Ov.origin(),nw,0);
-      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
-    }
+    fill_n(Ov.origin(),nw,0);
+    fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
     TG.local_barrier();
     if(walker_type != COLLINEAR) {
 
@@ -759,12 +757,10 @@ namespace afqmc
     double LogOverlapFactor(wset.getLogOverlapFactor());
     assert(Ov.size() >= nw);  
     fill_n(Ov.origin(),nw,0);
-    if(TG.TG_local().root() ) {
-      // need strided fill_n????
-      if(G.size(1) != G.stride(0))
-        APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n"); 
-      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
-    }
+    // need strided fill_n????
+    if(G.size(1) != G.stride(0))
+      APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n"); 
+    fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
     TG.local_barrier();
     auto Gsize = size_t(dm_size(not compact));
     auto wlk_dims = wset.walker_dims();
@@ -1364,8 +1360,7 @@ namespace afqmc
     if(G.size(1) != G.stride(0))
       APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
     using std::fill_n;
-    if(TG.TG_local().root())
-      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
+    fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
     TG.TG_local().barrier();
     if(Refs!=nullptr) {
       assert(detR!=nullptr);
@@ -1524,9 +1519,7 @@ namespace afqmc
     // Transposed temporaries for back propagation.
     if(G.size(1) != G.stride(0))
       APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
-    using std::fill_n;
-    if(TG.TG_local().root()) 
-      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
+    fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
     TG.TG_local().barrier();
     if(Refs!=nullptr) {
       assert(detR!=nullptr);
