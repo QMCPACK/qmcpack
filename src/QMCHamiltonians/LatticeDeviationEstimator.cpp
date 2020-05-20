@@ -26,11 +26,7 @@ LatticeDeviationEstimator::LatticeDeviationEstimator(ParticleSet& P,
       sgroup(sgroup_in),
       hdf5_out(false),
       per_xyz(false),
-#ifdef ENABLE_SOA
       myTableID_(P.addTable(sP, DT_SOA))
-#else
-      myTableID_(P.addTable(sP, DT_AOS))
-#endif
 {
   // calculate number of source particles to use as lattice sites
   int src_species_id = sspecies.findSpecies(sgroup);
@@ -120,13 +116,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
         if (tspecies.speciesName[tpset.GroupID[jat]] == tgroup)
         {
           // distance between particle iat in source pset, and jat in target pset
-#ifdef ENABLE_SOA
           r = d_table.getDistRow(jat)[iat];
-#else
-          int nn = d_table.loc(iat, jat); // location where distance is stored
-          r = d_table.r(nn);
-#endif
-
           r2 = r*r;
           Value += r2;
 
@@ -137,11 +127,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
 
           if (per_xyz)
           {
-#ifdef ENABLE_SOA
             dr = d_table.getDisplRow(jat)[iat];
-#else
-            dr = d_table.dr(nn);
-#endif
             for (int idir = 0; idir < OHMMS_DIM; idir++)
             {
               RealType dir2 = dr[idir] * dr[idir];

@@ -190,12 +190,7 @@ void RPAJastrow::makeShortRange()
   nfunc = new FuncType;
   SRA   = new ShortRangePartAdapter<RealType>(myHandler);
   SRA->setRmax(Rcut);
-#ifdef ENABLE_SOA
   J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>(targetPtcl, IsManager);
-#else
-  TwoBodyJastrowOrbital<BsplineFunctor<RealType>>* j2 =
-      new TwoBodyJastrowOrbital<BsplineFunctor<RealType>>(targetPtcl, IsManager);
-#endif
   size_t nparam  = 12;  // number of Bspline parameters
   size_t npts    = 100; // number of 1D grid points for basis functions
   RealType cusp  = SRA->df(0);
@@ -223,7 +218,7 @@ void RPAJastrow::makeShortRange()
 
 void RPAJastrow::resetParameters(const opt_variables_type& active)
 {
-  //This code was removed in April6, 2017.  To reimplement, please consult a revision
+  //This code was removed in 6 April 2017.  To reimplement, please consult a revision
   //earlier than this.
 }
 

@@ -304,8 +304,14 @@ void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArrayPtr2DA>& A,
         assert(A.size() >= nbatch);
         assert(B.size() >= nbatch);
 
-        using pointer = typename pointedType<MultiArrayPtr2DC>::element_ptr;
-        using element = typename pointedType<MultiArrayPtr2DC>::element;
+        // need to do it this way to preserve qualifiers! can also use decltype
+        //using pointerA_ = typename pointedType<MultiArrayPtr2DA>::element_ptr;
+        //using pointerB_ = typename pointedType<MultiArrayPtr2DB>::element_ptr;
+        //using pointerC_ = typename pointedType<MultiArrayPtr2DC>::element_ptr;
+        using pointerA = decltype(pointer_dispatch((*A[0]).origin())); 
+        using pointerB = decltype(pointer_dispatch((*B[0]).origin())); 
+        using pointerC = decltype(pointer_dispatch((*C[0]).origin())); 
+        using element = typename pointedType<MultiArrayPtr2DA>::element;
 
         int M = (*C[0]).size(1);
         int N = (*C[0]).size(0);
@@ -315,9 +321,9 @@ void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArrayPtr2DA>& A,
         int lda = (*A[0]).stride(0);
         int ldb = (*B[0]).stride(0);
         int ldc = (*C[0]).stride(0);
-        std::vector<pointer> Ai;
-        std::vector<pointer> Bi;
-        std::vector<pointer> Ci;
+        std::vector<pointerA> Ai;
+        std::vector<pointerB> Bi;
+        std::vector<pointerC> Ci;
         Ai.reserve(nbatch);
         Bi.reserve(nbatch);
         Ci.reserve(nbatch);
@@ -341,9 +347,9 @@ void BatchedProduct(char TA, char TB, T alpha, std::vector<MultiArrayPtr2DA>& A,
             assert(K == (*A[i]).size(0));
             assert(N == (*A[i]).size(1));
           }
-          Ai.emplace_back((*A[i]).origin());
-          Bi.emplace_back((*B[i]).origin());
-          Ci.emplace_back((*C[i]).origin());
+          Ai.emplace_back(pointer_dispatch((*A[i]).origin()));
+          Bi.emplace_back(pointer_dispatch((*B[i]).origin()));
+          Ci.emplace_back(pointer_dispatch((*C[i]).origin()));
         }
 
         using ma::gemmBatched;

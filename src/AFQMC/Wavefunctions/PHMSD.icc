@@ -73,7 +73,7 @@ namespace afqmc
     std::fill_n(opSpinEJ.origin(),nwalk,ComplexType(0.0));
 
     // dummy: ugly but not sure how to do it better 
-    CMatrix* dummyMatPtr(nullptr);
+    SPCMatrix* dummyMatPtr(nullptr);
 
     auto refc = abij.reference_configuration();
     std::vector<int> confg(NAEA);
@@ -210,7 +210,7 @@ namespace afqmc
                 if(nt%TG.TG_local().size()==TG.TG_local().rank()) {
                   size_t nd_alp = get<0>(*(confgs+(*it)));
                   auto w_ = ma::conj(get<2>(*(confgs+(*it)))) * Ovmsd[0][nd_alp][iw] * Ovmsd[1][nd][iw];
-                  opSpinEJ[iw] += w_*ma::dot(KEleft[iw],KEright[nd_alp][iw]);
+                  opSpinEJ[iw] += w_*static_cast<ComplexType>(ma::dot(KEleft[iw],KEright[nd_alp][iw]));
                 }  
               }  
             }

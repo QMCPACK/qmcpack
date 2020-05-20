@@ -340,30 +340,14 @@ MPC::Return_t MPC::evalSR(ParticleSet& P) const
 {
   const DistanceTableData& d_aa = P.getDistTable(d_aa_ID);
   RealType SR                   = 0.0;
-  if (d_aa.DTType == DT_SOA)
+  const RealType cone(1);
+  for (size_t ipart = 0; ipart < NParticles; ipart++)
   {
-    const RealType cone(1);
-    for (size_t ipart = 0; ipart < NParticles; ipart++)
-    {
-      RealType esum(0);
-      const auto& dist = d_aa.getDistRow(ipart);
-      for (size_t j = 0; j < ipart; ++j)
-        esum += cone / dist[j];
-      SR += esum;
-    }
-  }
-  else
-  {
-#ifndef ENABLE_SOA
-    for (int ipart = 0; ipart < NParticles; ipart++)
-    {
-      RealType esum = 0.0;
-      for (int nn = d_aa.M[ipart], jpart = ipart + 1; nn < d_aa.M[ipart + 1]; nn++, jpart++)
-        esum += d_aa.rinv(nn);
-      //Accumulate pair sums...species charge for atom i.
-      SR += esum;
-    }
-#endif
+    RealType esum(0);
+    const auto& dist = d_aa.getDistRow(ipart);
+    for (size_t j = 0; j < ipart; ++j)
+      esum += cone / dist[j];
+    SR += esum;
   }
   return SR;
 }

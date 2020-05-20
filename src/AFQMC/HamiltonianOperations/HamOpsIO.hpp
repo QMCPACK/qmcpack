@@ -79,7 +79,7 @@ HamiltonianOperations loadHamOps(hdf_archive& dump, WALKER_TYPES type, int NMO, 
   TGwfn.Global().broadcast_value(hops_type);
 
   if(hops_type==1)
-    return HamiltonianOperations(loadTHCOps<ValueType>(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
+    return HamiltonianOperations(loadTHCOps(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
   else if(hops_type==211)
     return HamiltonianOperations(loadSparseTensor<ValueType,ValueType>(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
   else if(hops_type==212)

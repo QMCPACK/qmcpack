@@ -382,6 +382,10 @@ app_log()<<nn <<" " <<nc <<std::endl;
         APP_ABORT(" Error in TaskGroup_::TaskGroup_() \n");
       }
       
+      // MAM: How do I check that distribution of ranks is made along a node first???
+      //      Not sure how to check, but print warning if nnodes>1 and ranks are
+      //      distributed over nodes first (e.g. adjacent ranks in Global are in different nodes)
+      //      This would kill performance!!!
       TG_number = global_.rank()/nnodes_per_TG; 
       number_of_TGs = global_.size()/nnodes_per_TG;
 

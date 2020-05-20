@@ -19,6 +19,7 @@
 #include<cassert>
 #include<vector>
 //#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
+#include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Memory/device_pointers.hpp" 
 #include "AFQMC/Numerics/detail/CUDA/cublas_wrapper.hpp"
 //#include "AFQMC/Numerics/detail/CUDA/cublasXt_wrapper.hpp"
@@ -31,6 +32,7 @@
 #include "AFQMC/Numerics/detail/CUDA/Kernels/acAxpbB.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/zero_complex_part.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/axpyBatched.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/get_diagonal.cuh"
 
 // Currently available:
 // Lvl-1: dot, axpy, scal
@@ -175,6 +177,19 @@ namespace device
     kernels::adotpby(n,alpha,to_address(x),incx,to_address(y),incy,beta,result);
   }
 
+  // dot extension 
+  template<typename T, typename T1, typename T2, typename Q1, typename Q2>
+  inline static void strided_adotpby(int nk, int const n, T1 const alpha, 
+                                device_pointer<Q1> A, int const lda,
+                                device_pointer<Q2> B, int const ldb,
+                                T2 const beta, T* y, int inc)
+  {
+    static_assert(std::is_same<typename std::decay<Q1>::type,T1>::value,"Wrong dispatch.\n");
+    static_assert(std::is_same<typename std::decay<Q2>::type,T1>::value,"Wrong dispatch.\n");
+    static_assert(std::is_same<typename std::decay<T2>::type,T>::value,"Wrong dispatch.\n");
+    kernels::strided_adotpby(nk,n,alpha,to_address(A),lda,to_address(B),ldb,beta,y,inc);
+  }
+
   // axty
   template<typename T, typename Q>
   inline static void axty(int n,
@@ -256,20 +271,70 @@ namespace device
                beta,to_address(C),ldc,strideC,batchSize);
   }
 
-  template<typename T, typename Q1, typename Q2>
+  template<typename T, typename Q1, typename Q2,
+           typename = typename std::enable_if_t<std::is_same<typename std::decay<Q1>::type,T>::value>, 
+           typename = typename std::enable_if_t<std::is_same<typename std::decay<Q2>::type,T>::value> 
+          >
   inline static void gemmBatched(char Atrans, char Btrans, int M, int N, int K,
                           T const alpha, device_pointer<Q1> * A, int lda, 
-                          device_pointer<Q2> * B, int ldb, T beta,
+                          device_pointer<Q2> * B, int ldb, T const beta,
                           device_pointer<T> * C, int ldc, int batchSize)
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
 // replace with single call to cudaMalloc and cudaMemcpy
     T **A_d, **B_d, **C_d;
-    T **A_h, **B_h, **C_h;
-    A_h = new T*[batchSize];
-    B_h = new T*[batchSize];
+    Q1 **A_h;
+    Q2 **B_h;
+    T **C_h;
+    A_h = new Q1*[batchSize];
+    B_h = new Q2*[batchSize];
     C_h = new T*[batchSize];
+    for(int i=0; i<batchSize; i++) {
+      A_h[i] = to_address(A[i]);
+      B_h[i] = to_address(B[i]);
+      C_h[i] = to_address(C[i]);
+    }
+    cudaMalloc((void **)&A_d,  batchSize*sizeof(*A_h));
+    cudaMalloc((void **)&B_d,  batchSize*sizeof(*B_h));
+    cudaMalloc((void **)&C_d,  batchSize*sizeof(*C_h));
+    cudaMemcpy(A_d, A_h, batchSize*sizeof(*A_h), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, B_h, batchSize*sizeof(*B_h), cudaMemcpyHostToDevice);
+    cudaMemcpy(C_d, C_h, batchSize*sizeof(*C_h), cudaMemcpyHostToDevice);
+    cublas::cublas_gemmBatched(*(A[0]).handles.cublas_handle,Atrans,Btrans,M,N,K,
+               alpha,A_d,lda,B_d,ldb,beta,C_d,ldc,batchSize);
+    cudaFree(A_d);
+    cudaFree(B_d);
+    cudaFree(C_d);
+    delete [] A_h;
+    delete [] B_h;
+    delete [] C_h;
+  }
+
+  template<typename T, typename Q1, typename Q2, typename T2, 
+           typename = typename std::enable_if_t<std::is_same<typename std::decay<Q1>::type,T2>::value>, 
+           typename = typename std::enable_if_t<std::is_same<typename std::decay<Q2>::type,T>::value>,
+           typename = typename std::enable_if_t<std::is_same<std::complex<T>,T2>::value>  
+          >
+  inline static void gemmBatched(char Atrans, char Btrans, int M, int N, int K,
+                          T const alpha, device_pointer<Q1> * A, int lda,
+                          device_pointer<Q2> * B, int ldb, T const beta,
+                          device_pointer<T2> * C, int ldc, int batchSize)
+  {
+// check that remove_complex<T2> == T ???
+    static_assert(std::is_same<typename std::decay<Q1>::type,T2>::value,"Wrong dispatch.\n");
+    static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
+    assert( Atrans == 'N' || Atrans == 'n' );
+// replace with single call to cudaMalloc and cudaMemcpy
+    T2 **A_d; 
+    T **B_d; 
+    T2 **C_d;
+    Q1 **A_h;
+    Q2 **B_h;
+    T2 **C_h;
+    A_h = new Q1*[batchSize];
+    B_h = new Q2*[batchSize];
+    C_h = new T2*[batchSize];
     for(int i=0; i<batchSize; i++) {
       A_h[i] = to_address(A[i]);
       B_h[i] = to_address(B[i]);
@@ -349,6 +414,11 @@ namespace device
       throw std::runtime_error("Error: cudaMemcpy2D returned error code in copy2D.");
   }
 
+  template <typename T, typename T2>
+  inline static void get_diagonal_strided(int nk, int ni, device_pointer<T> A, int lda, int stride, 
+                device_pointer<T2> B, int ldb) {
+    kernels::get_diagonal_strided(nk,ni,to_address(A),lda,stride,to_address(B),ldb);
+  }
 }
 
 #endif

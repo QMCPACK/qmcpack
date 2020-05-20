@@ -410,8 +410,8 @@ class ucsr_matrix:
 		base::pointers_end_ = Palloc_.allocate(std::get<0>(arr));
 
 		IsRoot r(Valloc_);
-		if(r.root()){
-                    if(nnzpr_unique > 0) {
+                if(nnzpr_unique > 0) {
+		    if(r.root()){
                         auto pb(to_address(base::pointers_begin_));
                         auto pe(to_address(base::pointers_end_));
 		        for(size_type i = 0; i != base::size1_; ++i){
@@ -419,11 +419,11 @@ class ucsr_matrix:
                             *(pe+i) = i*nnzpr_unique;
 		        }
                         *(pb+base::size1_) = base::size1_*nnzpr_unique;
-		    } else {
-                        using std::fill_n;
-                        fill_n(base::pointers_begin_,std::get<0>(arr)+1,int_type(0));
-                        fill_n(base::pointers_end_,std::get<0>(arr),int_type(0));
                     }
+		} else {
+                    using std::fill_n;
+                    fill_n(base::pointers_begin_,std::get<0>(arr)+1,int_type(0));
+                    fill_n(base::pointers_end_,std::get<0>(arr),int_type(0));
                 }
 		r.barrier();
 	}
@@ -456,8 +456,8 @@ class ucsr_matrix:
 
 		assert(nnzpr.size() >= base::size1_);
                 IsRoot r(Valloc_);
-                if(r.root()){
-                    if(sz > 0) {
+                if(sz > 0) {
+                    if(r.root()){
 			IntType cnter(0);
                         auto pb(to_address(base::pointers_begin_));
                         auto pe(to_address(base::pointers_end_));
@@ -467,11 +467,11 @@ class ucsr_matrix:
 				cnter += static_cast<IntType>(nnzpr[i]); 
                         }
                         *(pb+base::size1_) = cnter; 
-                    } else {
-                        using std::fill_n;
-                        fill_n(base::pointers_begin_,std::get<0>(arr)+1,int_type(0));
-                        fill_n(base::pointers_end_,std::get<0>(arr),int_type(0));
                     }
+                } else {
+                    using std::fill_n;
+                    fill_n(base::pointers_begin_,std::get<0>(arr)+1,int_type(0));
+                    fill_n(base::pointers_end_,std::get<0>(arr),int_type(0));
                 }
 		r.barrier();
         }

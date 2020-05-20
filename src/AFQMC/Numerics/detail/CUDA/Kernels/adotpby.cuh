@@ -49,6 +49,15 @@ void adotpby(int N, std::complex<float> const alpha,
                     std::complex<double> const beta, std::complex<double>* res);
 
 
+void strided_adotpby(int NB, int N, std::complex<double> const alpha,
+                    std::complex<double> const* A, int const lda,
+                    std::complex<double> const* B, int const ldb,
+                    std::complex<double> const beta, std::complex<double>* C, int ldc);
+
+void strided_adotpby(int NB, int N, std::complex<float> const alpha,
+                    std::complex<float> const* A, int const lda,
+                    std::complex<float> const* B, int const ldb,
+                    std::complex<double> const beta, std::complex<double>* C, int ldc);
 
 }
 

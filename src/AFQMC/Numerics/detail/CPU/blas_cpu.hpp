@@ -786,11 +786,19 @@ namespace ma
   inline static
   void adotpby(int n, T const alpha, const T* restrict a, int incx, const T* restrict b, int incy, Q const beta, Q* result)
   {
-    
     T res=T(0);
     for(int i=0, ia=0, ib=0; i<n; ++i, ia+=incx, ib+=incy)
       res += a[ia]*b[ib];
     *result = beta*(*result) + static_cast<Q>(alpha*res);
+  }
+
+  // y[n*inc] = beta*y[n*inc] + alpha * dot(a[n*lda],b[n*lda])
+  template<typename T, typename Q>
+  inline static
+  void strided_adotpby(int nb, int n, T const alpha, const T* restrict a, int lda, const T* restrict b, int ldb, Q const beta, Q* result, int inc)
+  {
+    for(int k=0; k<nb; k++) 
+      adotpby(n,alpha,a+k*lda,1,b+k*ldb,1,beta,result+k*inc);
   }
 
 /*
@@ -990,10 +998,13 @@ namespace ma
 #endif
   }
 
-  template<typename T>
+  template<typename T, typename Q1, typename Q2,
+           typename = typename std::enable_if_t<std::is_same<typename std::decay<Q1>::type,T>::value>,
+           typename = typename std::enable_if_t<std::is_same<typename std::decay<Q2>::type,T>::value>
+         > 
   inline static void gemmBatched(char Atrans, char Btrans, int M, int N, int K,
-                          T alpha, T ** A, int lda, 
-                          T ** B, int ldb, T beta,
+                          T alpha, Q1 ** A, int lda, 
+                          Q2 ** B, int ldb, T beta,
                           T ** C, int ldc, int batchSize)
   {
 #ifdef HAVE_MKL
@@ -1002,6 +1013,34 @@ namespace ma
     gemm_batch(CblasColMajor,&opA,&opB,&M,&N,&K,
                &alpha,(const void**)A,&lda,(const void**)B,&ldb,
                &beta,(void**)C,&ldc,1,&batchSize);
+#else
+    // No batched gemm, :-( gemm loop
+    for(int i=0; i<batchSize; i++)
+        gemm(Atrans,Btrans,M,N,K,alpha,A[i],lda,B[i],ldb,beta,C[i],ldc);
+#endif
+  }
+
+//  template<typename T, typename Q>
+  template<typename T, typename Q1, typename Q2, typename T2,
+           typename = typename std::enable_if_t<std::is_same<typename std::decay<Q1>::type,T2>::value>,
+           typename = typename std::enable_if_t<std::is_same<typename std::decay<Q2>::type,T>::value>,
+           typename = typename std::enable_if_t<std::is_same<std::complex<T>,T2>::value>
+          >
+  inline static void gemmBatched(char Atrans, char Btrans, int M, int N, int K,
+                          T alpha, Q1 ** A, int lda,
+                          Q2 ** B, int ldb, T beta,
+                          T2 ** C, int ldc, int batchSize)
+  {
+#ifdef HAVE_MKL
+    assert(Atrans=='n' || Atrans=='N');
+    CBLAS_TRANSPOSE opA(cblas_operation(Atrans));
+    CBLAS_TRANSPOSE opB(cblas_operation(Btrans));
+    int M_(2*M);
+    int lda_(2*lda);
+    int ldc_(2*ldc);
+    gemm_batch(CblasColMajor,&opA,&opB,&M_,&N,&K,
+               &alpha,(const void**)A,&lda_,(const void**)B,&ldb,
+               &beta,(void**)C,&ldc_,1,&batchSize);
 #else
     // No batched gemm, :-( gemm loop
     for(int i=0; i<batchSize; i++)
@@ -1022,6 +1061,18 @@ namespace ma
     // since this is not parallel, no need to coordinate over iw
     for(int i=0; i<batchSize; i++)
         axpy(n,x[i],a[i],inca,b[i],incb);
+  }
+
+  // A[k][i] = B[k][i][i]
+  template<typename T>
+  inline static void get_diagonal_strided(int nk, int ni, T const* B , int ldb, int stride,
+                                 T* A, int lda)
+  {
+    for(int k=0; k<nk; ++k) {
+      auto Bk( B + k*stride );
+      auto Ak( A + k*lda );
+      for(int i=0; i<ni; ++i) Ak[i] += Bk[ i*ldb + i ];   
+    }
   }
 
 }

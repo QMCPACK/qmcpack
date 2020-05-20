@@ -322,13 +322,13 @@ void sampleGaussianFields_n(T* V, int n, RandomNumberGenerator_& rng)
   {
     RealType temp1=1-0.9999999999*rng(), temp2=rng();
     RealType mag = std::sqrt(-2.0*std::log(temp1));
-    V[i]  =mag*std::cos(6.283185306*temp2);
-    V[i+1]=mag*std::sin(6.283185306*temp2);
+    V[i]  =T(mag*std::cos(6.283185306*temp2));
+    V[i+1]=T(mag*std::sin(6.283185306*temp2));
   }
   if (n%2==1)
   {
     RealType temp1=1-0.9999999999*rng(), temp2=rng();
-    V[n-1]=std::sqrt(-2.0*std::log(temp1))*std::cos(6.283185306*temp2);
+    V[n-1]=T(std::sqrt(-2.0*std::log(temp1))*std::cos(6.283185306*temp2));
   }
 }
 

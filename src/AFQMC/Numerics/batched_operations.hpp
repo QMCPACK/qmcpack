@@ -384,6 +384,108 @@ void batched_diagonal_sum( int* n, std::complex<Q> *const* A, int lda,
   }
 }
 
+// C[u][w] = a * sum_n A[u][w][n] * B[u][n]
+// should be called: Aijk_Bik_Cij
+template<typename T>
+void Auwn_Bun_Cuw(int nu, int nw, int na, T alpha, T const* A, T const* B, T* C){
+  for(int u=0; u<nu; ++u, B+=na)
+    for(int iw=0; iw<nw; ++iw, ++C, A+=na) 
+      (*C) = alpha*ma::dot(na,A,1,B,1); 
+} 
+
+// C[u][w] = alpha * sum_i A[w][i][u] * B[i][u]
+template<typename T, typename Q>
+// Aijk_Bjk_Cki
+void Awiu_Biu_Cuw(int nu, int nw, int ni, T alpha, T const* A, Q const* B, int ldb, T* C, int ldc){
+  for(int w=0; w<nw; ++w) {
+    for(int i=0; i<ni; ++i) {
+      auto Ci(C + w); 
+      auto Bi(B + i*ldb);
+      for(int u=0; u<nu; ++u,++A,++Bi,Ci+=ldc)
+        *Ci += alpha*(*A)*static_cast<T>(*Bi);
+    }
+  }
+}
+
+// C[i][k] = sum_i A[i][j][k] * B[k][j]
+template<typename T, typename T1>
+void Aijk_Bkj_Cik(int ni, int nj, int nk, T const* A, int lda, int stride, T1 const* B, int ldb, T* C, int ldc){
+  for(int i=0; i<ni; ++i) {
+    auto Ci(C + i*ldc);
+    auto Ai_(A + i*stride);
+    for(int k=0; k<nk; ++k, ++Ci) {
+      auto Ak(Ai_ + k);  
+      auto Bk(B + k*ldb);
+      for(int j=0; j<nj; ++j,Ak+=lda,++Bk)
+        *Ci += (*Ak)*static_cast<T>(*Bk);
+    }
+  }
+}
+
+// A[w][i][j] = B[i][w][j]
+template<typename T, typename T1>
+void viwj_vwij(int nw, int ni, int i0, int iN, T const* B, T1* A){
+  for(int w=0; w<nw; ++w) { 
+    for(int i=i0; i<iN; ++i) { 
+      auto A_(A + (w*ni+i)*ni);
+      auto B_(B + (i*nw+w)*ni);  
+      for(int j=0; j<ni; ++j, ++A_, ++B_) *A_ = static_cast<T1>(*B_);  
+    }
+  }
+}
+
+// Ckij = transA(Aij) * Bjk 
+template<typename T>
+void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, T const* A, int lda, 
+        T const* B, int ldb, T* C, int ldc1, int ldc2)
+{
+  if( transA == 'N') {
+    for(int k=0; k<nk; ++k) {
+      for(int i=0; i<ni; ++i) {
+        auto A_(A + i*lda);
+        auto B_(B + k);
+        auto C_(C + k*ldc1*ldc2 + i*ldc2);
+        for(int j=0; j<nj; ++j,++C_,++A_,B_+=ldb) (*C_) = (*A_) * (*B_);
+      }
+    }
+  } else if( transA == 'C' ) {  
+    for(int k=0; k<nk; ++k) {
+      for(int i=0; i<ni; ++i) {
+        auto A_(A + i*lda);
+        auto B_(B + k);
+        auto C_(C + k*ldc1*ldc2 + i*ldc2);  
+        for(int j=0; j<nj; ++j,++C_,++A_,B_+=ldb) (*C_) = ma::conj(*A_) * (*B_); 
+      }
+    }
+  } else 
+    throw std::runtime_error(" Invalid parameter in element_wise_Aij_Bjk_Ckij. ");
+}
+
+template<typename T1, typename T2>
+void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk, T1 const* A, int lda,
+        T2 const* B, int ldb, T2* C, int ldc, int stride)
+{
+    for(int k=0; k<nk; k++) {
+      for(int j=0; j<nj; j++) {
+        auto A_(A + j);
+        auto B_(*(B + j*ldb + k));
+        auto C_(C + k*stride + j*ldc);
+        for(int i=0; i<ni; i++, A_+=lda, ++C_) (*C_) = (*A_) * B_; 
+      }
+    }
+}
+
+template<typename T, typename T1>
+void inplace_product(int nbatch, int n, int m, T1 const* B, int ldb, std::complex<T> *A, int lda)
+{
+  for(int nb=0; nb<nbatch; nb++) 
+    for(int i=0; i<n; ++i) {
+      auto A_(A + (nb*n+i)*lda);  
+      auto B_(B + i*ldb);  
+      for(int j=0; j<m; ++j, ++A_, ++B_) *A_ *= static_cast<std::complex<T>>(*B_);
+    }
+}
+
 
 } // namespace ma
 
@@ -474,6 +576,54 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, device_pointer<int> Qsy
 {
   kernels::vbias_from_v1(nwalk,nkpts,nchol_max,to_address(Qsym),to_address(kminus),
             to_address(ncholpQ),to_address(ncholpQ0),alpha,to_address(v1),vb);
+}
+
+template<typename T1, typename T2, typename T3, typename T4>
+void Auwn_Bun_Cuw(int nu, int nw, int na, T1 alpha, device_pointer<T2> A, 
+                  device_pointer<T3> B, device_pointer<T4> C)
+{
+  kernels::Auwn_Bun_Cuw(nu,nw,na,alpha,to_address(A),to_address(B),to_address(C));
+}
+
+template<typename T1, typename T2, typename T3, typename T4>
+void Awiu_Biu_Cuw(int nu, int nw, int ni, T1 alpha, device_pointer<T2> A,
+                  device_pointer<T3> B, int ldb, device_pointer<T4> C, int ldc)
+{
+  kernels::Awiu_Biu_Cuw(nu,nw,ni,alpha,to_address(A),to_address(B),ldb,to_address(C),ldc);
+}
+
+template<typename T1, typename T2, typename T3>
+void Aijk_Bkj_Cik(int ni, int nj, int nk, device_pointer<T1> A, int lda, int stride, 
+                    device_pointer<T2> B, int ldb, device_pointer<T3> C, int ldc) {
+  kernels::Aijk_Bkj_Cik(ni,nj,nk,to_address(A),lda,stride,to_address(B),ldb,to_address(C),ldc);
+}
+
+// A[w][i][j] = B[i][w][j]
+template<typename T, typename T1>
+void viwj_vwij(int nw, int ni, int i0, int iN, device_pointer<T> B, device_pointer<T1> A){
+  kernels::viwj_vwij(nw,ni,i0,iN,to_address(B),to_address(A));
+}
+
+template<typename T1, typename T2, typename T3>
+void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, device_pointer<T1> A, int lda,
+        device_pointer<T2> B, int ldb, device_pointer<T3>C, int ldc1, int ldc2)
+{
+  kernels::element_wise_Aij_Bjk_Ckij(transA,ni,nj,nk,
+                to_address(A),lda,to_address(B),ldb,to_address(C),ldc1,ldc2);
+}
+
+template<typename T1, typename T2, typename T3>
+void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk, device_pointer<T1> A, int lda,
+        device_pointer<T2> B, int ldb, device_pointer<T3>C, int ldc, int stride)
+{
+  kernels::element_wise_Aij_Bjk_Ckji(ni,nj,nk,
+                to_address(A),lda,to_address(B),ldb,to_address(C),ldc,stride);
+}
+
+template<typename T, typename T1>
+void inplace_product(int nbatch, int n, int m, device_pointer<T1> B, int ldb, device_pointer<T> A, int lda)
+{
+  kernels::inplace_product(nbatch,n,m,to_address(B),ldb,to_address(A),lda);
 }
 
 template<typename T, typename Q>

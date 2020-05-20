@@ -103,6 +103,10 @@ class AFQMCDistributedPropagator: public AFQMCBasePropagator
     // every core communicates a segment to increase effective bandwidth
     boost::mpi3::communicator core_comm;
 
+    // additional dimension for temporary computation
+    C3Tensor MFfactor;
+    C3Tensor hybrid_weight;
+
     template<class WlkSet>
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);
 
