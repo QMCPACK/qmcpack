@@ -164,7 +164,7 @@ using shmMatrix = SPComplexMatrix<shared_allocator<SPComplexType>>;
 
 #ifdef QMC_COMPLEX
 class HamiltonianOperations:
-        public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,
+        public boost::variant<dummy::dummy_HOps,THCOps,
                                 SparseTensor<ComplexType,ComplexType>,
                                 KP3IndexFactorization,
                                 KP3IndexFactorization_batched<devMatrix>,
@@ -173,7 +173,7 @@ class HamiltonianOperations:
                                 >
 #else
 class HamiltonianOperations:
-        public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,
+        public boost::variant<dummy::dummy_HOps,THCOps,
                                   SparseTensor<RealType,RealType>,
                                   SparseTensor<RealType,ComplexType>,
                                   SparseTensor<ComplexType,RealType>,
@@ -208,7 +208,7 @@ class HamiltonianOperations:
 //    explicit HamiltonianOperations(KPTHCOps&& other) : variant(std::move(other)) {}
 #endif
     explicit HamiltonianOperations(STCC&& other) : variant(std::move(other)) {}
-    explicit HamiltonianOperations(THCOps<ValueType>&& other) : variant(std::move(other)) {}
+    explicit HamiltonianOperations(THCOps&& other) : variant(std::move(other)) {}
 
 #ifndef QMC_COMPLEX
     explicit HamiltonianOperations(STRR const& other) = delete;
@@ -224,7 +224,7 @@ class HamiltonianOperations:
 //    explicit HamiltonianOperations(KPTHCOps const& other) = delete;
 #endif
     explicit HamiltonianOperations(STCC const& other) = delete;
-    explicit HamiltonianOperations(THCOps<ValueType> const& other) = delete;
+    explicit HamiltonianOperations(THCOps const& other) = delete;
 
     HamiltonianOperations(HamiltonianOperations const& other) = delete;
     HamiltonianOperations(HamiltonianOperations&& other) = default;

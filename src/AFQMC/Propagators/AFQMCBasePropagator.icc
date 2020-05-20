@@ -60,6 +60,15 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
   }  
   if(transposed_G_) G_ext = iextensions<2u>{nwalk,Gsize};    
 
+  if(MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk) 
+    MFfactor = std::move(CMatrix({long(nsteps),long(nwalk)}));
+  if(hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk) 
+    hybrid_weight = std::move(CMatrix({long(nsteps),long(nwalk)}));
+  if(new_overlaps.size(0) != nwalk) 
+    new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
+  if(new_energies.size(0) != nwalk || new_energies.size(1) != 3) 
+    new_energies = std::move(CMatrix({long(nwalk),3}));
+
 
   //  shared buffer used for:
   //  G_for_vbias:     [ Gsize * nwalk ]
@@ -76,14 +85,6 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     generateP1(dt,walker_type);
   AFQMCTimers[setup_timer]->stop();
 
-  StaticMatrix MFfactor({nsteps,nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
-  StaticMatrix hybrid_weight({nsteps,nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
-  StaticVector new_overlaps(iextensions<1u>{nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
-  StaticMatrix new_energies({nwalk,3},
-            buffer_allocator->template get_allocator<ComplexType>());
   StaticMatrix vHS(vhs_ext,
             buffer_allocator->template get_allocator<ComplexType>());
 
@@ -122,7 +123,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
       wfn.vbias(G,vbias,sqrtdt);
     }
     AFQMCTimers[vbias_timer]->stop();
-//std::cout<<" vbias: " <<ma::dot(vbias(vbias.extension(0),0),vbias(vbias.extension(0),0)) <<std::endl;
+//std::cout<<" vbias: " <<ma::sum(vbias) <<std::endl;
 
     StaticSPMatrix X({long(localnCV),long(nwalk*nsteps)},
             buffer_allocator->template get_allocator<SPComplexType>());
@@ -155,7 +156,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
       }
       TG.TG_local().barrier();
     }     
-//std::cout<<" X: " <<ma::dot(X(X.extension(0),0),X(X.extension(0),0)) <<std::endl;
+//std::cout<<" X: " <<ma::sum(X) <<std::endl;
 
   // 4. Calculate vHS(M*M,nsteps,nwalk)/vHS(nsteps,nwalk,M*M)
     AFQMCTimers[vHS_timer]->start();
@@ -172,7 +173,6 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 #endif
     AFQMCTimers[vHS_timer]->stop();
 //std::cout<<" Pg vHS: " <<TG.Global().rank() <<" " <<ma::sum(vHS) <<"\n" <<std::endl;
-//std::cout<<" vHS: " <<ma::dot(vHS[0],vHS[0]) <<"\n\n" <<std::endl;
   } 
 
   C3Tensor_ref vHS3D(make_device_ptr(vHS.origin()),vhs3d_ext); 

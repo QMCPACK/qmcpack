@@ -65,6 +65,16 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   }
   if(transposed_G_) G_ext = iextensions<2u>{nwalk,Gsize};
 
+  if(MFfactor.size(1) != nsteps || MFfactor.size(2) != nwalk)
+    MFfactor = std::move(C3Tensor({2,nsteps,nwalk}));
+  if(hybrid_weight.size(1) != nsteps || hybrid_weight.size(2) != nwalk)
+    hybrid_weight = std::move(C3Tensor({2,nsteps,nwalk}));
+
+  if(new_overlaps.size(0) != nwalk) 
+    new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
+  if(new_energies.size(0) != nwalk || new_energies.size(1) != 3) 
+    new_energies = std::move(CMatrix({nwalk,3}));
+
   //  Summary of temporary memory usage: 
   //  G_for_vbias:     [ Gsize * nwalk ] (2 copies)
   //  X:               [ nCV * nwalk * nstep ] (2 copies)
@@ -78,14 +88,6 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   TG.local_barrier();
   AFQMCTimers[setup_timer]->stop();
 
-  StaticMatrix MFfactor({nsteps,nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
-  StaticMatrix hybrid_weight({nsteps,nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
-  StaticVector new_overlaps(iextensions<1u>{nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
-  StaticMatrix new_energies({nwalk,3},
-            buffer_allocator->template get_allocator<ComplexType>());
   StaticMatrix vHS_buff(vhs_ext,
             buffer_allocator->template get_allocator<ComplexType>());
   SPCMatrix_ref vHS(sp_pointer(make_device_ptr(vHS_buff.origin())),vhs_ext);
@@ -103,6 +105,7 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
       StaticMatrix Gc(G_ext,
             buffer_allocator->template get_allocator<ComplexType>());
       wfn.MixedDensityMatrix_for_vbias(wset,Gc);
+      TG.local_barrier();
       copy_n_cast(make_device_ptr(Gc.origin())+Gak0,GakN-Gak0,
                   make_device_ptr(G.origin())+Gak0);
     }
@@ -122,10 +125,6 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
             buffer_allocator->template get_allocator<SPComplexType>());
     StaticSPMatrix vHSwork(vhs_ext,
             buffer_allocator->template get_allocator<SPComplexType>());
-    StaticMatrix MFfactor_t({nsteps,nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix hybrid_weight_t({nsteps,nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
 
     // partition G and v for communications: all cores communicate a piece of the matrix
     long vak0,vakN;
@@ -182,12 +181,12 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
       AFQMCTimers[vHS_comm_overhead_timer]->stop();
 
       // 4b. Assemble X(nCV,nsteps,nwalk)
-      assemble_X(nsteps,nwalk,sqrtdt,X,vbias,MFfactor_t,hybrid_weight_t,false);
+      assemble_X(nsteps,nwalk,sqrtdt,X,vbias,MFfactor[1],hybrid_weight[1],false);
       if(k == node_number) {
-        TG.TG_local().all_reduce_n(to_address(MFfactor_t.origin()),MFfactor_t.num_elements(),
-                           to_address(MFfactor.origin()),std::plus<>());
-        TG.TG_local().all_reduce_n(to_address(hybrid_weight_t.origin()),
-                           hybrid_weight_t.num_elements(),to_address(hybrid_weight.origin()),
+        TG.TG_local().all_reduce_n(to_address(MFfactor[1].origin()),MFfactor[1].num_elements(),
+                           to_address(MFfactor[0].origin()),std::plus<>());
+        TG.TG_local().all_reduce_n(to_address(hybrid_weight[1].origin()),
+                           hybrid_weight[1].num_elements(),to_address(hybrid_weight[0].origin()),
                            std::plus<>());
       }
 
@@ -257,14 +256,14 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     if(TG.TG_local().root()) {                           
       if(free_projection) { 
         free_projection_walker_update(wset,dt,new_overlaps,
-                         MFfactor[ni],Eshift,hybrid_weight[ni],work);
+                         MFfactor[0][ni],Eshift,hybrid_weight[0][ni],work);
       } else if(hybrid) {
         hybrid_walker_update(wset,dt,apply_constrain,importance_sampling,
-                         Eshift,new_overlaps,MFfactor[ni],hybrid_weight[ni],work);
+                         Eshift,new_overlaps,MFfactor[0][ni],hybrid_weight[0][ni],work);
       } else {
         local_energy_walker_update(wset,dt,apply_constrain,Eshift,
                                    new_overlaps,new_energies,
-                                   MFfactor[ni],hybrid_weight[ni],work);
+                                   MFfactor[0][ni],hybrid_weight[0][ni],work);
       }
     }
     TG.local_barrier();

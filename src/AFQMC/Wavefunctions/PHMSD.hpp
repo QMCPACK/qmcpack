@@ -63,7 +63,9 @@ class PHMSD: public AFQMCInfo
 
   // allocators
   using Allocator = std::allocator<ComplexType>; //device_allocator<ComplexType>;
+  using SPAllocator = std::allocator<SPComplexType>; //device_allocator<ComplexType>;
   using Allocator_shared = shared_allocator<ComplexType>; //localTG_allocator<ComplexType>;
+  using SPAllocator_shared = shared_allocator<SPComplexType>; //localTG_allocator<ComplexType>;
 
   // type defs
   using pointer = typename Allocator::pointer;
@@ -73,6 +75,7 @@ class PHMSD: public AFQMCInfo
 
   using CVector = boost::multi::array<ComplexType,1,Allocator>;
   using CMatrix = boost::multi::array<ComplexType,2,Allocator>;
+  using SPCMatrix = boost::multi::array<SPComplexType,2,SPAllocator>;
   using CTensor = boost::multi::array<ComplexType,3,Allocator>;
   using CVector_ref = boost::multi::array_ref<ComplexType,1,pointer>;
   using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;
@@ -82,6 +85,8 @@ class PHMSD: public AFQMCInfo
   using shmCVector = boost::multi::array<ComplexType,1,Allocator_shared>;
   using shmCMatrix = boost::multi::array<ComplexType,2,Allocator_shared>;
   using shmC3Tensor = boost::multi::array<ComplexType,3,Allocator_shared>;
+  using shmSPCMatrix = boost::multi::array<SPComplexType,2,SPAllocator_shared>;
+  using shmSPC3Tensor = boost::multi::array<SPComplexType,3,SPAllocator_shared>;
   using shmC4Tensor = boost::multi::array<ComplexType,4,Allocator_shared>;
   using shared_mutex = boost::mpi3::shm::mutex;
   using index_aos = ma::sparse::array_of_sequences<int,int,
@@ -144,8 +149,8 @@ class PHMSD: public AFQMCInfo
                 QQ0B({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}),
                 GrefA({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}),
                 GrefB({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
-                KEright({1,1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
-                KEleft({1,1},shared_allocator<ComplexType>{TG.TG_local()}), 
+                KEright({1,1,1},shared_allocator<SPComplexType>{TG.TG_local()}), 
+                KEleft({1,1},shared_allocator<SPComplexType>{TG.TG_local()}), 
                 det_couplings{std::move(beta_coupled_to_unique_alpha__),
                               std::move(alpha_coupled_to_unique_beta__)},
                 req_Gsend(MPI_REQUEST_NULL),
@@ -585,8 +590,8 @@ class PHMSD: public AFQMCInfo
     shmC3Tensor QQ0B;    // [nwalk][NAOB][NAEB]
     shmC3Tensor GrefA;     // [nwalk][NAOA][NMO]
     shmC3Tensor GrefB;     // [nwalk][NAOB][NMO]
-    shmC3Tensor KEright;   
-    shmCMatrix KEleft;     
+    shmSPC3Tensor KEright;   
+    shmSPCMatrix KEleft;     
      
 
     // array of sequence structure storing the list of connected alpha/beta configurations
