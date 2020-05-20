@@ -19,7 +19,8 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 ADD_EXECUTABLE(${UTEST_EXE} test_dense_numerics.cpp test_ma_blas.cpp
   test_sparse_numerics.cpp test_sparse_numerics_native.cpp test_batched_operations.cpp
-  test_ma_blas_extensions.cpp test_tensor_operations.cpp test_determinant.cpp)
+  test_ma_blas_extensions.cpp test_tensor_operations.cpp test_determinant.cpp
+  test_misc_kernels.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main afqmc Math::BLAS_LAPACK)
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
