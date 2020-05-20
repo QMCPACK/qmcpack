@@ -221,6 +221,12 @@ class AFQMCBasePropagator: public AFQMCInfo
     // with vHD3D[nwalk*nsteps,...]
     CMatrix local_vHS;  
 
+    CVector new_overlaps;  
+    CMatrix new_energies;  
+
+    CMatrix MFfactor;  
+    CMatrix hybrid_weight;  
+
     boost::multi::array<ComplexType,2> work; 
  
     template<class WlkSet>

@@ -115,13 +115,15 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   Spvn_ncols = dims[8];
 
   // read 1-body hamiltonian and exchange potential (v0)
-  boost::multi::array<ValueType,2> H1({NMO,NMO});
+  boost::multi::array<ComplexType,2> H1({NMO,NMO});
   boost::multi::array<ComplexType,2> v0({NMO,NMO});
   if(TGwfn.Global().root()) {
-    if(!dump.readEntry(H1,"H1")) {
+    boost::multi::array<ValueType,2> H1_({NMO,NMO});
+    if(!dump.readEntry(H1_,"H1")) {
       app_error()<<" Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");
     }
+    copy_n_cast(H1_.origin(),NMO*NMO,to_address(H1.origin()));
     if(!dump.readEntry(v0,"v0")) {
       app_error()<<" Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");

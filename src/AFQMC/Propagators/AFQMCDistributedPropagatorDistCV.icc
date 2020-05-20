@@ -71,6 +71,15 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   }
   if(transposed_G_) G_ext = iextensions<2u>{nwalk,Gsize};
 
+  if(MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk)
+    MFfactor = std::move(CMatrix({long(nsteps),long(nwalk)}));
+  if(hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk)
+    hybrid_weight = std::move(CMatrix({long(nsteps),long(nwalk)}));
+  if(new_overlaps.size(0) != nwalk) 
+    new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
+  if(new_energies.size(0) != nwalk || new_energies.size(1) != 3)
+    new_energies = std::move(CMatrix({long(nwalk),3}));
+
   //  Temporary memory usage summary: 
   //  G_for_vbias:     [ Gsize * nwalk ] (2 copies)
   //  vbias:           [ localnCV * nwalk ] 
@@ -83,14 +92,6 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     generateP1(dt,walker_type);
   TG.local_barrier();
 
-  StaticMatrix MFfactor({nsteps,nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
-  StaticMatrix hybrid_weight({nsteps,nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
-  StaticVector new_overlaps(iextensions<1u>{nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
-  StaticMatrix new_energies({nwalk,3},
-            buffer_allocator->template get_allocator<ComplexType>());
   StaticMatrix vrecv_buff(vhs_ext,
             buffer_allocator->template get_allocator<ComplexType>());
   SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.origin())),vhs_ext);
@@ -436,6 +437,15 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
   }
   if(transposed_G_) G_ext = iextensions<2u>{nwalk,Gsize};
 
+  if(MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk)
+    MFfactor = std::move(CMatrix({long(nsteps),long(nwalk)}));
+  if(hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk)
+    hybrid_weight = std::move(CMatrix({long(nsteps),long(nwalk)}));
+  if(new_overlaps.size(0) != nwalk) 
+    new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
+  if(new_energies.size(0) != nwalk || new_energies.size(1) != 3)
+    new_energies = std::move(CMatrix({long(nwalk),3}));
+
   //  Temporary memory usage summary: 
   //  G_for_vbias:     [ Gsize * nwalk ] (2 copies)
   //  vbias:           [ localnCV * nwalk ] 
@@ -448,14 +458,6 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     generateP1(dt,walker_type);
   TG.local_barrier();
 
-  StaticMatrix MFfactor({nsteps,nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
-  StaticMatrix hybrid_weight({nsteps,nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
-  StaticVector new_overlaps(iextensions<1u>{nwalk},
-            buffer_allocator->template get_allocator<ComplexType>());
-  StaticMatrix new_energies({nwalk,3},
-            buffer_allocator->template get_allocator<ComplexType>());
   StaticMatrix vrecv_buff(vhs_ext,
             buffer_allocator->template get_allocator<ComplexType>());
   C3Tensor_ref vHS3D(make_device_ptr(vrecv_buff.origin()),vhs3d_ext);

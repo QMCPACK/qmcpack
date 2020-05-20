@@ -47,6 +47,9 @@
 #include "AFQMC/Numerics/detail/CUDA/Kernels/reference_operations.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/term_by_term_matrix_vec.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/axpyBatched.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/Auwn_Bun_Cuw.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/inplace_product.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/get_diagonal.cuh"
 
 #endif
 

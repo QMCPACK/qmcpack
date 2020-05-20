@@ -25,6 +25,7 @@
 
 namespace ma{
 
+// res = beta*y + alpha * dot(x,y)
 template<class T,
          class Q,
          class MultiArray1Dx,
@@ -37,6 +38,28 @@ void adotpby(T const alpha, MultiArray1Dx const& x, MultiArray1Dy const& y, Q co
         assert(x.size() == y.size());
         adotpby(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(0),
                                         pointer_dispatch(y.origin()), y.stride(0), beta, to_address(res));
+}
+
+// res[n*inc] = beta*res[n*inc] + alpha * dot(x[n*lda],y[n*lda])
+template<class T,
+         class Q,
+         class MultiArray2Dx,
+         class MultiArray2Dy,
+         class MultiArray1D,
+         typename = typename std::enable_if<std::decay<MultiArray2Dx>::type::dimensionality == 2>::type,
+         typename = typename std::enable_if<std::decay<MultiArray2Dy>::type::dimensionality == 2>::type,
+         typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type
+>
+void adotpby(T const alpha, MultiArray2Dx const& x, MultiArray2Dy const& y, Q const beta, MultiArray1D res){
+        if(x.size(0) != y.size(0) ||
+           x.size(0) != res.size(0) ||  
+           x.size(1) != y.size(1) ||
+           x.stride(1) != 1 ||
+           y.stride(1) != 1 ) 
+            throw std::runtime_error(" Error: Inconsistent matrix dimensions in adotpby(2D).\n");
+        strided_adotpby(x.size(0), x.size(1), alpha, pointer_dispatch(x.origin()), x.stride(0),
+                                      pointer_dispatch(y.origin()), y.stride(0), 
+                                      beta, to_address(res.origin()), res.stride(0));
 }
 
 template<class T,
@@ -195,6 +218,22 @@ MultiArray2D&& fill(MultiArray2D&& m, T const& value){
         return std::forward<MultiArray2D>(m);
 }
 
+// A[k][i] = B[k][i][i]
+template<class MultiArray3D, class MultiArray2D,
+        typename = typename std::enable_if< std::decay<MultiArray3D>::type::dimensionality == 3 >,
+        typename = typename std::enable_if< std::decay<MultiArray2D>::type::dimensionality == 2 >
+>
+void get_diagonal_strided(MultiArray3D const& B, MultiArray2D &&A){
+        if(A.size(0) != B.size(0) ||
+           A.size(1) != B.size(1) ||
+           A.size(1) != B.size(2) ||
+           A.stride(1) != 1 ||
+           B.stride(2) != 1 )
+            throw std::runtime_error(" Error: Inconsistent matrix dimensions in get_diagonal_strided.\n");
+        get_diagonal_strided(A.size(0),A.size(1),pointer_dispatch(B.origin()),B.stride(1),B.stride(0),
+                pointer_dispatch(A.origin()),A.stride(0)); 
+}
+
 template<class CSR,
          class MultiArray2D,
          typename = typename std::enable_if_t<(std::decay<CSR>::type::dimensionality == -2)>,
@@ -312,7 +351,8 @@ void Matrix2MA(char TA, CSR const& A, MultiArray2D& M, Vector const& occups)
       M.reextent({A.size(1),nrows});
   } else
     throw std::runtime_error(" Error: Unknown operation in Matrix2MA.\n");
-  std::fill_n(M.origin(),M.num_elements(),Type(0));
+  using std::fill_n;  
+  fill_n(M.origin(),M.num_elements(),Type(0));
   auto pbegin = A.pointers_begin();
   auto pend = A.pointers_end();
   auto p0 = pbegin[0];
