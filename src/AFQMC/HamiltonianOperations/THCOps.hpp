@@ -183,8 +183,9 @@ class THCOps
                         shm_buffer_allocator->template get_allocator<ComplexType>());
 
       vHS(vMF_, P1D);
-      if(TG.TG().size() > 1)
-        TG.TG().all_reduce_in_place_n(to_address(P1D.origin()),P1D.num_elements(),std::plus<>());
+      if(TG.TG_Cores().size() > 1 && TG.TG_local().root())
+        TG.TG_Cores().all_reduce_in_place_n(to_address(P1D.origin()),P1D.num_elements(),std::plus<>());
+      TG.TG().barrier();
 
       boost::multi::array<ComplexType,2> H1({NMO,NMO});
       copy_n(P1D.origin(),NMO*NMO,H1.origin());
