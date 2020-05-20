@@ -294,6 +294,8 @@ public:
     if (R.size() != a.R.size())
       resize(a.R.size());
     R     = a.R;
+    if (spins.size() != a.spins.size())
+      resize(a.spins.size());
     spins = a.spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
     G = a.G;
@@ -435,6 +437,7 @@ public:
     DataSet.add(ReleasedNodeWeight);
     // vectors
     DataSet.add(R.first_address(), R.last_address());
+    DataSet.add(spins.first_address(), spins.last_address());
 #if !defined(SOA_MEMORY_OPTIMIZED)
     DataSet.add(G.first_address(), G.last_address());
     DataSet.add(L.first_address(), L.last_address());
@@ -470,6 +473,7 @@ public:
     DataSet >> ID >> ParentID >> Generation >> Age >> ReleasedNodeAge >> ReleasedNodeWeight;
     // vectors
     DataSet.get(R.first_address(), R.last_address());
+    DataSet.get(spins.first_address(), spins.last_address());
 #if !defined(SOA_MEMORY_OPTIMIZED)
     DataSet.get(G.first_address(), G.last_address());
     DataSet.get(L.first_address(), L.last_address());
@@ -519,6 +523,7 @@ public:
     DataSet << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight;
     // vectors
     DataSet.put(R.first_address(), R.last_address());
+    DataSet.put(spins.first_address(), spins.last_address());
 #if !defined(SOA_MEMORY_OPTIMIZED)
     DataSet.put(G.first_address(), G.last_address());
     DataSet.put(L.first_address(), L.last_address());

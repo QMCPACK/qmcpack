@@ -101,6 +101,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   auto createWalker = [this](UPtr<MCPWalker>& walker_ptr) {
     walker_ptr    = std::make_unique<MCPWalker>(num_particles_);
     walker_ptr->R = elec_particle_set_->R;
+    walker_ptr->spins = elec_particle_set_->spins;
     // Side effect of this changes size of walker_ptr->Properties if done after registerData() you end up with
     // a bad buffer.
     walker_ptr->Properties = elec_particle_set_->Properties;
@@ -207,6 +208,7 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
     app_warning() << "Spawning walker outside of reserves, this ideally should never happend." << std::endl;
     walkers_.push_back(std::make_unique<MCPWalker>(num_particles_));
     walkers_.back()->R          = elec_particle_set_->R;
+    walkers_.back()->spins      = elec_particle_set_->spins;
     walkers_.back()->Properties = elec_particle_set_->Properties;
     walkers_.back()->registerData();
 
