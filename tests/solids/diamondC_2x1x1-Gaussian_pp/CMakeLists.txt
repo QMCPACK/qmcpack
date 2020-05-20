@@ -1,7 +1,6 @@
 
 
 # Reference VMC run in qmc-ref "-21.70152 +/- 0.00042"
-IF(ENABLE_SOA)
   LIST(APPEND DIAMOND_SCALARS "totenergy" "-21.70152 0.015")
   LIST(APPEND DIAMOND_SCALARS "kinetic" "20.6385 0.16 ")
   LIST(APPEND DIAMOND_SCALARS "potential" "-42.3400 0.19")
@@ -50,6 +49,3 @@ IF(ENABLE_SOA)
                     1 LONG_DIAMOND_DMC_SCALARS # DMC
                     )
 
-ELSE()
-  MESSAGE("Skipping all tests since PBC gaussians only enabled with SOA")
-ENDIF()

@@ -11,7 +11,7 @@ FUNCTION(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   ADD_TEST(NAME ${TESTNAME} COMMAND python ${TESTDIR}/scf.py gen_test_data WORKING_DIRECTORY ${TESTDIR})
   SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
 
-  # 2. Generate hamiltonian/wavefunction.
+  # 2.a Generate hamiltonian/wavefunction.
   SET(INT_SCRIPT)
   SET(TESTNAME "converter_test_pyscf_to_afqmc_${test_name}")
   ADD_TEST(NAME ${TESTNAME}
@@ -21,11 +21,19 @@ FUNCTION(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_pyscf_${test_name}")
   SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc" )
 
+  # 2.b Test Hamiltonian consistency.
+  SET(TESTNAME "converter_test_hamiltonian_consistency_${test_name}")
+  ADD_TEST(NAME ${TESTNAME} COMMAND
+           python ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/test_afqmc_input.py --input afqmc.h5
+           WORKING_DIRECTORY ${TESTDIR})
+  SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_pyscf_to_afqmc_${test_name}")
+  SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
+
   # 3. Generate xml input.
   SET(TESTNAME "converter_test_gen_input_${test_name}")
   ADD_TEST(NAME ${TESTNAME} COMMAND python "${TESTDIR}/gen_input.py"
            WORKING_DIRECTORY ${TESTDIR})
-  SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_pyscf_to_afqmc_${test_name}")
+  SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_hamiltonian_consistency_${test_name}")
   SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
 
   # 5. Run AFQMC.

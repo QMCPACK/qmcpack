@@ -125,64 +125,62 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
   int numSpecies            = sSet.getTotalNum();
   if (spin == "yes")
   {
-#ifdef ENABLE_SOA
-    APP_ABORT("Spin one body backflow not supported on SOA");
-#endif
-    if (funct != "Bspline")
-      APP_ABORT("DON'T KNOW WHAT TO DO YET"); //will template this
-    Backflow_eI_spin<BsplineFunctor<RealType>>* tbf1 =
-        new Backflow_eI_spin<BsplineFunctor<RealType>>(*ions, targetPtcl);
-    tbf1->numParams = 0;
-    xmlNodePtr cur1 = cur->children;
-    std::string cname;
-    while (cur1 != NULL)
-    {
-      getNodeName(cname, cur1);
-      if (cname == "correlation")
-      {
-        RealType my_cusp = 0.0;
-        std::string speciesA("0");
-        std::string speciesB("e"); //assume electrons
-        OhmmsAttributeSet anAttrib;
-        anAttrib.add(speciesA, "elementType");
-        anAttrib.add(speciesA, "speciesA");
-        anAttrib.add(speciesB, "speciesB");
-        anAttrib.add(my_cusp, "cusp");
-        anAttrib.put(cur1);
-        BsplineFunctor<RealType>* afunc = new BsplineFunctor<RealType>(my_cusp);
-        afunc->elementType              = speciesA;
-        int ig                          = sSet.findSpecies(speciesA);
-        afunc->cutoff_radius            = ions->Lattice.WignerSeitzRadius;
-        int jg                          = -1;
-        if (speciesB.size())
-          jg = tSet.findSpecies(speciesB);
-        if (ig < numSpecies)
-        {
-          //ignore
-          afunc->put(cur1);
-          tbf1->addFunc(ig, afunc, jg);
-          //WHAT IS THIS
-          afunc->myVars.setParameterType(optimize::BACKFLOW_P);
-          tbf1->myVars.insertFrom(afunc->myVars);
-          tbf1->myVars.resetIndex();
-          afunc->myVars.getIndex(tbf1->myVars);
-          tbf1->numParams = tbf1->myVars.size();
-          int offset_a    = tbf1->myVars.getIndex(afunc->myVars.name(0));
-          if (jg < 0)
-          {
-            for (int jjg = 0; jjg < targetPtcl.groups(); ++jjg)
-              tbf1->offsetPrms(ig, jjg) = offset_a;
-          }
-          else
-            tbf1->offsetPrms(ig, jg) = offset_a;
-        }
-      }
-      cur1 = cur1->next;
-    }
-    //synch parameters
-    tbf1->resetParameters(tbf1->myVars);
-    tbf1->derivs.resize(tbf1->numParams);
-    tbf = tbf1;
+    APP_ABORT("Spin one body backflow not supported");
+    //if (funct != "Bspline")
+    //  APP_ABORT("DON'T KNOW WHAT TO DO YET"); //will template this
+    //Backflow_eI_spin<BsplineFunctor<RealType>>* tbf1 =
+    //    new Backflow_eI_spin<BsplineFunctor<RealType>>(*ions, targetPtcl);
+    //tbf1->numParams = 0;
+    //xmlNodePtr cur1 = cur->children;
+    //std::string cname;
+    //while (cur1 != NULL)
+    //{
+    //  getNodeName(cname, cur1);
+    //  if (cname == "correlation")
+    //  {
+    //    RealType my_cusp = 0.0;
+    //    std::string speciesA("0");
+    //    std::string speciesB("e"); //assume electrons
+    //    OhmmsAttributeSet anAttrib;
+    //    anAttrib.add(speciesA, "elementType");
+    //    anAttrib.add(speciesA, "speciesA");
+    //    anAttrib.add(speciesB, "speciesB");
+    //    anAttrib.add(my_cusp, "cusp");
+    //    anAttrib.put(cur1);
+    //    BsplineFunctor<RealType>* afunc = new BsplineFunctor<RealType>(my_cusp);
+    //    afunc->elementType              = speciesA;
+    //    int ig                          = sSet.findSpecies(speciesA);
+    //    afunc->cutoff_radius            = ions->Lattice.WignerSeitzRadius;
+    //    int jg                          = -1;
+    //    if (speciesB.size())
+    //      jg = tSet.findSpecies(speciesB);
+    //    if (ig < numSpecies)
+    //    {
+    //      //ignore
+    //      afunc->put(cur1);
+    //      tbf1->addFunc(ig, afunc, jg);
+    //      //WHAT IS THIS
+    //      afunc->myVars.setParameterType(optimize::BACKFLOW_P);
+    //      tbf1->myVars.insertFrom(afunc->myVars);
+    //      tbf1->myVars.resetIndex();
+    //      afunc->myVars.getIndex(tbf1->myVars);
+    //      tbf1->numParams = tbf1->myVars.size();
+    //      int offset_a    = tbf1->myVars.getIndex(afunc->myVars.name(0));
+    //      if (jg < 0)
+    //      {
+    //        for (int jjg = 0; jjg < targetPtcl.groups(); ++jjg)
+    //          tbf1->offsetPrms(ig, jjg) = offset_a;
+    //      }
+    //      else
+    //        tbf1->offsetPrms(ig, jg) = offset_a;
+    //    }
+    //  }
+    //  cur1 = cur1->next;
+    //}
+    ////synch parameters
+    //tbf1->resetParameters(tbf1->myVars);
+    //tbf1->derivs.resize(tbf1->numParams);
+    //tbf = tbf1;
   }
   else //keep original implementation
   {

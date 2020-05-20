@@ -78,11 +78,7 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   // Must update ions first in SoA so ions.coordinates_ is valid
   ions.update();
 
-#ifdef ENABLE_SOA
   elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
   elec.update();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
