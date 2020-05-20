@@ -163,11 +163,11 @@ class SlaterDetOperations_shared :
       comm.barrier();
       if(comm.root()) {
         if(TA=='H' || TA=='h') 
-          ma::product(ma::H(P1),std::forward<Mat>(A),T0);
+          ma::product(ma::H(P1),std::forward<Mat>(T0),A);
         else if(TA=='T' || TA=='t') 
-          ma::product(ma::T(P1),std::forward<Mat>(A),T0);
+          ma::product(ma::T(P1),std::forward<Mat>(T0),A);
         else 
-          ma::product(P1,std::forward<Mat>(A),T0);
+          ma::product(P1,std::forward<Mat>(T0),A);
       }
       comm.barrier();
     }
