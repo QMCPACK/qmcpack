@@ -36,18 +36,9 @@ DistanceTableData* createDistanceTableABOMP(const ParticleSet& s, ParticleSet& t
   DistanceTableData* dt = 0;
   int sc = t.Lattice.SuperCellEnum;
   std::ostringstream o;
-  bool useSoA = (dt_type == DT_SOA || dt_type == DT_SOA_PREFERRED);
   o << "  Distance table for dissimilar particles (A-B):" << std::endl;
   o << "    source: " << s.getName() << "  target: " << t.getName() << std::endl;
-  if (useSoA)
-  {
-    o << "    Using structure-of-arrays (SoA) data layout and OpenMP offload" << std::endl;
-  }
-  else
-  {
-    APP_ABORT("createDistanceTable (AB) with OpenMP offload. Using array-of-structure (AoS) data layout is removed."
-              "with ENABLE_SOA=1.");
-  }
+  o << "    Using structure-of-arrays (SoA) data layout and OpenMP offload" << std::endl;
 
   if (sc == SUPERCELL_BULK)
   {

@@ -12,24 +12,12 @@
 
 #include "RadialJastrowBuilder.h"
 
-#if defined(ENABLE_SOA)
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
-#else
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodySpinJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/DiffOneBodySpinJastrowOrbital.h"
-#endif
 
 #if defined(QMC_CUDA)
-#if defined(ENABLE_SOA)
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
-#else
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBsplineAoS.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBsplineAoS.h"
-#endif
 #endif
 
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
@@ -99,16 +87,8 @@ template<class RadFuncType>
 class JastrowTypeHelper
 {
 public:
-#if defined(ENABLE_SOA)
   using J1OrbitalType = J1OrbitalSoA<RadFuncType>;
   using J2OrbitalType = J2OrbitalSoA<RadFuncType>;
-#else
-  using J1OrbitalType = OneBodyJastrowOrbital<RadFuncType>;
-  using J2OrbitalType = TwoBodyJastrowOrbital<RadFuncType>;
-  // spin polarized J1
-  using J1OrbitalTypeSpin     = OneBodySpinJastrowOrbital<RadFuncType>;
-  using DiffJ1OrbitalTypeSpin = DiffOneBodyJastrowOrbital<RadFuncType>;
-#endif
   using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFuncType>;
   using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
 };
@@ -118,24 +98,13 @@ class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>>
 {
 public:
   using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
-#if defined(QMC_CUDA) && defined(ENABLE_SOA)
+#if defined(QMC_CUDA)
   using J1OrbitalType = OneBodyJastrowOrbitalBspline<RadFuncType>;
   using J2OrbitalType = TwoBodyJastrowOrbitalBspline<RadFuncType>;
 #endif
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
-  using J1OrbitalType = OneBodyJastrowOrbitalBsplineAoS;
-  using J2OrbitalType = TwoBodyJastrowOrbitalBsplineAoS;
-#endif
-#if !defined(QMC_CUDA) && defined(ENABLE_SOA)
+#if !defined(QMC_CUDA)
   using J1OrbitalType = J1OrbitalSoA<RadFuncType>;
   using J2OrbitalType = J2OrbitalSoA<RadFuncType>;
-#endif
-#if !defined(QMC_CUDA) && !defined(ENABLE_SOA)
-  using J1OrbitalType = OneBodyJastrowOrbital<RadFuncType>;
-  using J2OrbitalType = TwoBodyJastrowOrbital<RadFuncType>;
-  // spin polarized J1
-  using J1OrbitalTypeSpin     = OneBodySpinJastrowOrbital<RadFuncType>;
-  using DiffJ1OrbitalTypeSpin = DiffOneBodyJastrowOrbital<RadFuncType>;
 #endif
   using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFuncType>;
   using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
@@ -447,12 +416,7 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur
   using RadFunctorType   = CubicSplineSingle<RT, SplineEngineType>;
   using GridType         = LinearGrid<RT>;
   using HandlerType      = LRHandlerBase;
-#if defined(ENABLE_SOA)
   using J1OrbitalType = J1OrbitalSoA<RadFunctorType>;
-#endif
-#if !defined(ENABLE_SOA)
-  using J1OrbitalType = OneBodyJastrowOrbital<RadFunctorType>;
-#endif
   using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFunctorType>;
 
   /*
@@ -568,11 +532,8 @@ WaveFunctionComponent* RadialJastrowBuilder::buildComponent(xmlNodePtr cur)
       app_error() << "RPA for one-body jastrow is only available for 3D\n";
 #endif
       guardAgainstOBC();
-#if defined(ENABLE_SOA)
-      app_error() << "one body RPA jastrow is not compatible with SOA at the moment\n";
-#else
-      return createJ1<RPAFunctor>(cur);
-#endif
+      app_error() << "one body RPA jastrow is not supported at the moment\n";
+      //return createJ1<RPAFunctor>(cur);
     }
     else
       app_error() << "Unknown one jastrow body function: " << Jastfunction << ".\n";

@@ -70,11 +70,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(massIdx, upIdx)     = 1.0;
 
-#ifdef ENABLE_SOA
   elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
   elec.update();
 
 
@@ -169,11 +165,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(massIdx, upIdx)     = 1.0;
 
-#ifdef ENABLE_SOA
   elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
   elec.update();
 
 

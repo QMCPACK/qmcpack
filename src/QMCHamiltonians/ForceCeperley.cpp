@@ -67,66 +67,32 @@ ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
   const auto& d_ab        = P.getDistTable(d_ei_ID);
   const ParticleScalar_t* restrict Zat = Ions.Z.first_address();
   const ParticleScalar_t* restrict Qat = P.Z.first_address();
-
-  if (d_ab.DTType == DT_SOA)
+  for (int jat = 0; jat < Nel; jat++)
   {
-    for (int jat = 0; jat < Nel; jat++)
-    {
-      const auto& dist  = d_ab.getDistRow(jat);
-      const auto& displ = d_ab.getDisplRow(jat);
-      for (int iat = 0; iat < Nnuc; iat++)
-      {
-        // electron contribution (special treatment if distance is inside cutoff!)
-        RealType r       = dist[iat];
-        RealType zoverr3 = Qat[jat] * Zat[iat] / (r * r * r);
-        if (r >= Rcut)
-        {
-          forces[iat] += zoverr3 * displ[iat];
-        }
-        else
-        {
-          RealType g_q = 0.0;
-          for (int q = 0; q < N_basis; q++)
-          {
-            g_q += c[q] * std::pow(r, m_exp + q + 1);
-          }
-          g_q *= zoverr3;
-          // negative sign accounts for definition of target as electrons
-          forces[iat]            += g_q * displ[iat];
-          forces_ShortRange[iat] += g_q * displ[iat];
-        }
-      }
-    }
-  }
-  else
-  {
-#ifndef ENABLE_SOA
+    const auto& dist  = d_ab.getDistRow(jat);
+    const auto& displ = d_ab.getDisplRow(jat);
     for (int iat = 0; iat < Nnuc; iat++)
     {
       // electron contribution (special treatment if distance is inside cutoff!)
-      for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; nn++, jat++)
+      RealType r       = dist[iat];
+      RealType zoverr3 = Qat[jat] * Zat[iat] / (r * r * r);
+      if (r >= Rcut)
       {
-        RealType zoverr3 = Qat[jat] * Zat[iat] * std::pow(d_ab.rinv(nn), 3);
-        if (d_ab.r(nn) >= Rcut)
+        forces[iat] += zoverr3 * displ[iat];
+      }
+      else
+      {
+        RealType g_q = 0.0;
+        for (int q = 0; q < N_basis; q++)
         {
-          forces[iat] -= zoverr3 * d_ab.dr(nn);
+          g_q += c[q] * std::pow(r, m_exp + q + 1);
         }
-        else
-        {
-          RealType r   = d_ab.r(nn);
-          RealType g_q = 0.0;
-          for (int q = 0; q < N_basis; q++)
-          {
-            g_q += c[q] * std::pow(r, m_exp + q + 1);
-          }
-          g_q *= zoverr3;
-          // negative sign accounts for definition of target as electrons
-          forces[iat]            -= g_q * d_ab.dr(nn);
-          forces_ShortRange[iat] -= g_q * d_ab.dr(nn);
-        }
+        g_q *= zoverr3;
+        // negative sign accounts for definition of target as electrons
+        forces[iat]            += g_q * displ[iat];
+        forces_ShortRange[iat] += g_q * displ[iat];
       }
     }
-#endif
   }
   return 0.0;
 }

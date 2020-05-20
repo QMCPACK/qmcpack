@@ -1,5 +1,4 @@
 
-IF(ENABLE_SOA)
  IF (NOT QMC_CUDA)
   IF (NOT QMC_COMPLEX)
 
@@ -122,12 +121,9 @@ LIST(APPEND LiH_ae_MSD_OPT_CI_SCALARS "ionion" "0.995380119260 0.001000000000")
                     )
 
   ELSE()
-    MESSAGE_VERBOSE("Skipping LiH_ae_MSD tests because gaussian basis with HDF5 support are not supported by AoS build (ENABLE_SOA=0)")
+    MESSAGE_VERBOSE("Skipping LiH_ae_MSD tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   ENDIF()
  ELSE()
-    MESSAGE_VERBOSE("Skipping LiH_ae_MSD tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
- ENDIF()
-ELSE()
   MESSAGE_VERBOSE("Skipping LiH_ae_MSD tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
-ENDIF()
+ ENDIF()
 

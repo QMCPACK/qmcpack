@@ -85,25 +85,15 @@ IF(OHMMS_DIM MATCHES 3)
     Jastrow/CountingJastrowBuilder.cpp
     )
 
-  IF(ENABLE_SOA)
-    SET(FERMION_SRCS ${FERMION_SRCS} lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp)
-    IF(NOT QMC_COMPLEX)
-      #lcao cusp correction is not ready for complex
-      SET(FERMION_SRCS ${FERMION_SRCS}
-        lcao/CuspCorrection.cpp
-        lcao/LCAOrbitalSetWithCorrection.cpp
-        lcao/CuspCorrectionConstruction.cpp
-        )
-    ENDIF(NOT QMC_COMPLEX)
-  ELSE(ENABLE_SOA)
-    IF(NOT QMC_COMPLEX)
-      SET(FERMION_SRCS ${FERMION_SRCS}
-        MolecularOrbitals/STOBuilder.cpp
-        MolecularOrbitals/GTOBuilder.cpp
-        MolecularOrbitals/NGOBuilder.cpp
-        )
-    ENDIF(NOT QMC_COMPLEX)
-  ENDIF(ENABLE_SOA)
+  SET(FERMION_SRCS ${FERMION_SRCS} lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp)
+  IF(NOT QMC_COMPLEX)
+    #lcao cusp correction is not ready for complex
+    SET(FERMION_SRCS ${FERMION_SRCS}
+      lcao/CuspCorrection.cpp
+      lcao/LCAOrbitalSetWithCorrection.cpp
+      lcao/CuspCorrectionConstruction.cpp
+      )
+  ENDIF(NOT QMC_COMPLEX)
 
   IF(QMC_CUDA)
     SET(WFSSRCS_CUDA
@@ -113,21 +103,12 @@ IF(OHMMS_DIM MATCHES 3)
       Fermion/SlaterDetCUDA.cpp
       TrialWaveFunction_CUDA.cpp
       )
-    IF(ENABLE_SOA)
-      SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
-        Jastrow/BsplineJastrowCuda.cu
-        Jastrow/BsplineJastrowCudaPBC.cu
-        Jastrow/OneBodyJastrowOrbitalBspline.cpp
-        Jastrow/TwoBodyJastrowOrbitalBspline.cpp
-        )
-    ELSE(ENABLE_SOA)
-      SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
-        Jastrow/BsplineJastrowCuda.cu
-        Jastrow/BsplineJastrowCudaPBC.cu
-        Jastrow/OneBodyJastrowOrbitalBsplineAoS.cpp
-        Jastrow/TwoBodyJastrowOrbitalBsplineAoS.cpp
-        )
-    ENDIF(ENABLE_SOA)
+    SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
+      Jastrow/BsplineJastrowCuda.cu
+      Jastrow/BsplineJastrowCudaPBC.cu
+      Jastrow/OneBodyJastrowOrbitalBspline.cpp
+      Jastrow/TwoBodyJastrowOrbitalBspline.cpp
+      )
     IF(HAVE_EINSPLINE)
       SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
         EinsplineSetCuda.cpp

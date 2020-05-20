@@ -890,18 +890,17 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
       //find cell center nearest to each dynamic particle
       int nd, nn;
       RealType dist;
-      for (nd = 0; nd < ndomains; nd++)
-#ifndef ENABLE_SOA
-        for (nn = dtab.M[nd], p = 0; nn < dtab.M[nd + 1]; ++nn, ++p)
-        {
-          dist = dtab.r(nn);
-          if (dist < nearcell[p].r)
-          {
-            nearcell[p].r = dist;
-            nearcell[p].i = nd;
-          }
-        }
-#endif
+      APP_ABORT("SoA transformation needed for Voronoi grids")
+      //for (nd = 0; nd < ndomains; nd++)
+      //  for (nn = dtab.M[nd], p = 0; nn < dtab.M[nd + 1]; ++nn, ++p)
+      //  {
+      //    dist = dtab.r(nn);
+      //    if (dist < nearcell[p].r)
+      //    {
+      //      nearcell[p].r = dist;
+      //      nearcell[p].i = nd;
+      //    }
+      //  }
       //accumulate values for each dynamic particle
       for (p = 0; p < ndparticles; p++)
       {
@@ -995,18 +994,17 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
       //find cell center nearest to each dynamic particle
       int nn;
       RealType dist;
-      for (nd = 0; nd < ndomains; nd++)
-#ifndef ENABLE_SOA
-        for (nn = dtab.M[nd], p = 0; nn < dtab.M[nd + 1]; ++nn, ++p)
-        {
-          dist = dtab.r(nn);
-          if (dist < nearcell[p].r)
-          {
-            nearcell[p].r = dist;
-            nearcell[p].i = nd;
-          }
-        }
-#endif
+      APP_ABORT("SoA transformation needed for Voronoi grids")
+      //for (nd = 0; nd < ndomains; nd++)
+      //  for (nn = dtab.M[nd], p = 0; nn < dtab.M[nd + 1]; ++nn, ++p)
+      //  {
+      //    dist = dtab.r(nn);
+      //    if (dist < nearcell[p].r)
+      //    {
+      //      nearcell[p].r = dist;
+      //      nearcell[p].i = nd;
+      //    }
+      //  }
       //accumulate values for each dynamic particle
       for (p = 0; p < ndparticles; p++)
       {
