@@ -19,13 +19,8 @@
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#ifdef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
-#else
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
-#endif
 
 #include <stdio.h>
 #include <string>
@@ -112,11 +107,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
   RadialJastrowBuilder jastrow(c, elec_);
 
-#ifdef ENABLE_SOA
   typedef J2OrbitalSoA<BsplineFunctor<RealType>> J2Type;
-#else
-  typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType>> J2Type;
-#endif
   std::unique_ptr<J2Type> j2(dynamic_cast<J2Type*>(jastrow.buildComponent(jas1)));
   REQUIRE(j2);
 
@@ -322,11 +313,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
 
   RadialJastrowBuilder jastrow(c, elec_, ions_);
 
-#ifdef ENABLE_SOA
   typedef J1OrbitalSoA<BsplineFunctor<RealType>> J1Type;
-#else
-  typedef OneBodyJastrowOrbital<BsplineFunctor<RealType>> J1Type;
-#endif
   std::unique_ptr<J1Type> j1(dynamic_cast<J1Type*>(jastrow.buildComponent(jas1)));
   REQUIRE(j1);
 
@@ -441,12 +428,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
                      {10.80, 0, 0, 0},
                      {11.40, 0, 0, 0}};
 
-
-#ifdef ENABLE_SOA
   BsplineFunctor<RealType>* bf = j1->F[0];
-#else
-  BsplineFunctor<RealType>* bf  = j1->Fs[0];
-#endif
 
   for (int i = 0; i < N; i++)
   {
@@ -563,11 +545,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
                        {10.80, 0, 0, 0},
                        {11.40, 0, 0, 0}};
 
-#ifdef ENABLE_SOA
   BsplineFunctor<RealType>* bf2 = j12->F[0];
-#else
-  BsplineFunctor<RealType>* bf2 = j12->Fs[0];
-#endif
 
   for (int i = 0; i < N2; i++)
   {

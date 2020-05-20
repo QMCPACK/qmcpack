@@ -75,11 +75,7 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
 
   elec.createSK();
 
-#ifdef ENABLE_SOA
   elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
   elec.update();
 
 
@@ -151,11 +147,7 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
 
   elec.createSK();
 
-#ifdef ENABLE_SOA
   elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
   elec.update();
 
 

@@ -240,67 +240,65 @@ public:
    */
   inline void evaluate(const ParticleSet& P, ParticleSet& QP)
   {
-#ifndef ENABLE_SOA
-    RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int sg = 0; sg < RadFunc.rows(); ++sg)
-    {
-      for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
-      {
-        int nn = myTable.M[iat]; //starting nn for the iat-th source
-        for (int tg = 0; tg < RadFunc.cols(); ++tg)
-        {
-          FT* func = RadFunc(sg, tg);
-          if (func)
-            for (int jat = t_offset[tg]; jat < t_offset[tg + 1]; ++jat, ++nn)
-            {
-              RealType uij = func->evaluate(myTable.r(nn), du, d2u);
-              QP.R[jat] += (UIJ(jat, iat) = uij * myTable.dr(nn)); // dr(ij) = r_j-r_i
-            }
-          else
-            nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
-        }
-      }
-    }
-#endif
+    APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluate")
+    //RealType du, d2u;
+    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //for (int sg = 0; sg < RadFunc.rows(); ++sg)
+    //{
+    //  for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
+    //  {
+    //    int nn = myTable.M[iat]; //starting nn for the iat-th source
+    //    for (int tg = 0; tg < RadFunc.cols(); ++tg)
+    //    {
+    //      FT* func = RadFunc(sg, tg);
+    //      if (func)
+    //        for (int jat = t_offset[tg]; jat < t_offset[tg + 1]; ++jat, ++nn)
+    //        {
+    //          RealType uij = func->evaluate(myTable.r(nn), du, d2u);
+    //          QP.R[jat] += (UIJ(jat, iat) = uij * myTable.dr(nn)); // dr(ij) = r_j-r_i
+    //        }
+    //      else
+    //        nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
+    //    }
+    //  }
+    //}
   }
 
 
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector_t& Bmat, HessMatrix_t& Amat)
   {
-    RealType du, d2u, temp;
-    const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int sg = 0; sg < RadFunc.rows(); ++sg)
-    {
-      for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
-      {
-#ifndef ENABLE_SOA
-        int nn = myTable.M[iat]; //starting nn for the iat-th source
-        for (int tg = 0; tg < RadFunc.cols(); ++tg)
-        {
-          FT* func = RadFunc(sg, tg);
-          if (func)
-            for (int jat = t_offset[tg]; jat < t_offset[tg + 1]; ++jat, ++nn)
-            {
-              RealType uij = func->evaluate(myTable.r(nn), du, d2u);
-              //PosType u = uij*myTable.dr(nn);
-              du *= myTable.rinv(nn);
-              QP.R[jat] += (UIJ(jat, iat) = uij * myTable.dr(nn));
-              HessType& hess = AIJ(jat, iat);
-              hess           = du * outerProduct(myTable.dr(nn), myTable.dr(nn));
-              hess[0] += uij;
-              hess[4] += uij;
-              hess[8] += uij;
-              Amat(jat, jat) += hess;
-              //u = (d2u+4.0*du)*myTable.dr(nn);
-              Bmat[jat] += (BIJ(jat, iat) = (d2u + 4.0 * du) * myTable.dr(nn));
-            }
-          else
-            nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
-        }
-#endif
-      }
-    }
+    APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluate")
+    //RealType du, d2u, temp;
+    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //for (int sg = 0; sg < RadFunc.rows(); ++sg)
+    //{
+    //  for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
+    //  {
+    //    int nn = myTable.M[iat]; //starting nn for the iat-th source
+    //    for (int tg = 0; tg < RadFunc.cols(); ++tg)
+    //    {
+    //      FT* func = RadFunc(sg, tg);
+    //      if (func)
+    //        for (int jat = t_offset[tg]; jat < t_offset[tg + 1]; ++jat, ++nn)
+    //        {
+    //          RealType uij = func->evaluate(myTable.r(nn), du, d2u);
+    //          //PosType u = uij*myTable.dr(nn);
+    //          du *= myTable.rinv(nn);
+    //          QP.R[jat] += (UIJ(jat, iat) = uij * myTable.dr(nn));
+    //          HessType& hess = AIJ(jat, iat);
+    //          hess           = du * outerProduct(myTable.dr(nn), myTable.dr(nn));
+    //          hess[0] += uij;
+    //          hess[4] += uij;
+    //          hess[8] += uij;
+    //          Amat(jat, jat) += hess;
+    //          //u = (d2u+4.0*du)*myTable.dr(nn);
+    //          Bmat[jat] += (BIJ(jat, iat) = (d2u + 4.0 * du) * myTable.dr(nn));
+    //        }
+    //      else
+    //        nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
+    //    }
+    //  }
+    //}
   }
 
 
@@ -308,40 +306,39 @@ public:
    */
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
   {
-#ifndef ENABLE_SOA
-    RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int sg = 0; sg < RadFunc.rows(); ++sg)
-    {
-      for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
-      {
-        int nn = myTable.M[iat]; //starting nn for the iat-th source
-        for (int tg = 0; tg < RadFunc.cols(); ++tg)
-        {
-          FT* func = RadFunc(sg, tg);
-          if (func)
-            for (int jat = t_offset[tg]; jat < t_offset[tg + 1]; ++jat, ++nn)
-            {
-              RealType uij = func->evaluate(myTable.r(nn), du, d2u);
-              du *= myTable.rinv(nn);
-              //PosType u = uij*myTable.dr(nn);
-              QP.R[jat] += (UIJ(jat, iat) = uij * myTable.dr(nn));
-              HessType& hess = AIJ(jat, iat);
-              hess           = du * outerProduct(myTable.dr(nn), myTable.dr(nn));
-              hess[0] += uij;
-              hess[4] += uij;
-              hess[8] += uij;
-              Amat(jat, jat) += hess;
-              // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
-              //u = (d2u+4.0*du)*myTable.dr(nn);
-              Bmat_full(jat, jat) += (BIJ(jat, iat) = (d2u + 4.0 * du) * myTable.dr(nn));
-            }
-          else
-            nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
-        }
-      }
-    }
-#endif
+    APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluate")
+    //RealType du, d2u;
+    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //for (int sg = 0; sg < RadFunc.rows(); ++sg)
+    //{
+    //  for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
+    //  {
+    //    int nn = myTable.M[iat]; //starting nn for the iat-th source
+    //    for (int tg = 0; tg < RadFunc.cols(); ++tg)
+    //    {
+    //      FT* func = RadFunc(sg, tg);
+    //      if (func)
+    //        for (int jat = t_offset[tg]; jat < t_offset[tg + 1]; ++jat, ++nn)
+    //        {
+    //          RealType uij = func->evaluate(myTable.r(nn), du, d2u);
+    //          du *= myTable.rinv(nn);
+    //          //PosType u = uij*myTable.dr(nn);
+    //          QP.R[jat] += (UIJ(jat, iat) = uij * myTable.dr(nn));
+    //          HessType& hess = AIJ(jat, iat);
+    //          hess           = du * outerProduct(myTable.dr(nn), myTable.dr(nn));
+    //          hess[0] += uij;
+    //          hess[4] += uij;
+    //          hess[8] += uij;
+    //          Amat(jat, jat) += hess;
+    //          // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
+    //          //u = (d2u+4.0*du)*myTable.dr(nn);
+    //          Bmat_full(jat, jat) += (BIJ(jat, iat) = (d2u + 4.0 * du) * myTable.dr(nn));
+    //        }
+    //      else
+    //        nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
+    //    }
+    //  }
+    //}
   }
 
   /** calculate quasi-particle coordinates after pbyp move
@@ -356,24 +353,23 @@ public:
    */
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP)
   {
-#ifndef ENABLE_SOA
-    RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
-    int tg = P.GroupID[iat]; //species of this particle
-    for (int sg = 0; sg < RadFunc.rows(); ++sg)
-    {
-      FT* func = RadFunc(sg, tg);
-      if (func)
-      {
-        for (int j = s_offset[sg]; j < s_offset[sg + 1]; ++j)
-        {
-          RealType uij = func->evaluate(myTable.Temp[j].r1, du, d2u);
-          PosType u    = (UIJ_temp[j] = uij * myTable.Temp[j].dr1) - UIJ(iat, j);
-          newQP[iat] += u;
-        }
-      }
-    }
-#endif
+    APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluatePbyP")
+    //RealType du, d2u;
+    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //int tg = P.GroupID[iat]; //species of this particle
+    //for (int sg = 0; sg < RadFunc.rows(); ++sg)
+    //{
+    //  FT* func = RadFunc(sg, tg);
+    //  if (func)
+    //  {
+    //    for (int j = s_offset[sg]; j < s_offset[sg + 1]; ++j)
+    //    {
+    //      RealType uij = func->evaluate(myTable.Temp[j].r1, du, d2u);
+    //      PosType u    = (UIJ_temp[j] = uij * myTable.Temp[j].dr1) - UIJ(iat, j);
+    //      newQP[iat] += u;
+    //    }
+    //  }
+    //}
   }
 
   inline void evaluatePbyP(const ParticleSet& P,
@@ -386,31 +382,30 @@ public:
 
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP, HessMatrix_t& Amat)
   {
-#ifndef ENABLE_SOA
-    RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
-    int tg = P.GroupID[iat]; //species of this particle
-    for (int sg = 0; sg < RadFunc.rows(); ++sg)
-    {
-      FT* func = RadFunc(sg, tg);
-      if (func)
-      {
-        for (int j = s_offset[sg]; j < s_offset[sg + 1]; ++j)
-        {
-          RealType uij = func->evaluate(myTable.Temp[j].r1, du, d2u);
-          PosType u    = (UIJ_temp[j] = uij * myTable.Temp[j].dr1) - UIJ(iat, j);
-          newQP[iat] += u;
-          HessType& hess = AIJ_temp[j];
-          hess           = (du * myTable.Temp[j].rinv1) * outerProduct(myTable.Temp[j].dr1, myTable.Temp[j].dr1);
-          hess[0] += uij;
-          hess[4] += uij;
-          hess[8] += uij;
-          // should I expand this??? Is the compiler smart enough???
-          Amat(iat, iat) += (hess - AIJ(iat, j));
-        }
-      }
-    }
-#endif
+    APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluatePbyP")
+    //RealType du, d2u;
+    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //int tg = P.GroupID[iat]; //species of this particle
+    //for (int sg = 0; sg < RadFunc.rows(); ++sg)
+    //{
+    //  FT* func = RadFunc(sg, tg);
+    //  if (func)
+    //  {
+    //    for (int j = s_offset[sg]; j < s_offset[sg + 1]; ++j)
+    //    {
+    //      RealType uij = func->evaluate(myTable.Temp[j].r1, du, d2u);
+    //      PosType u    = (UIJ_temp[j] = uij * myTable.Temp[j].dr1) - UIJ(iat, j);
+    //      newQP[iat] += u;
+    //      HessType& hess = AIJ_temp[j];
+    //      hess           = (du * myTable.Temp[j].rinv1) * outerProduct(myTable.Temp[j].dr1, myTable.Temp[j].dr1);
+    //      hess[0] += uij;
+    //      hess[4] += uij;
+    //      hess[8] += uij;
+    //      // should I expand this??? Is the compiler smart enough???
+    //      Amat(iat, iat) += (hess - AIJ(iat, j));
+    //    }
+    //  }
+    //}
   }
 
   inline void evaluatePbyP(const ParticleSet& P,
@@ -428,33 +423,32 @@ public:
                            GradMatrix_t& Bmat_full,
                            HessMatrix_t& Amat)
   {
-#ifndef ENABLE_SOA
-    RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
-    int tg = P.GroupID[iat]; //species of this particle
-    for (int sg = 0; sg < RadFunc.rows(); ++sg)
-    {
-      FT* func = RadFunc(sg, tg);
-      if (func)
-      {
-        for (int j = s_offset[sg]; j < s_offset[sg + 1]; ++j)
-        {
-          RealType uij = func->evaluate(myTable.Temp[j].r1, du, d2u);
-          PosType u    = (UIJ_temp[j] = uij * myTable.Temp[j].dr1) - UIJ(iat, j);
-          newQP[iat] += u;
-          du *= myTable.Temp[j].rinv1;
-          HessType& hess = AIJ_temp[j];
-          hess           = du * outerProduct(myTable.Temp[j].dr1, myTable.Temp[j].dr1);
-          hess[0] += uij;
-          hess[4] += uij;
-          hess[8] += uij;
-          Amat(iat, iat) += (hess - AIJ(iat, j));
-          BIJ_temp[j] = (d2u + 4.0 * du) * myTable.Temp[j].dr1;
-          Bmat_full(iat, iat) += (BIJ_temp[j] - BIJ(iat, j));
-        }
-      }
-    }
-#endif
+    APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluatePbyP")
+    //RealType du, d2u;
+    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //int tg = P.GroupID[iat]; //species of this particle
+    //for (int sg = 0; sg < RadFunc.rows(); ++sg)
+    //{
+    //  FT* func = RadFunc(sg, tg);
+    //  if (func)
+    //  {
+    //    for (int j = s_offset[sg]; j < s_offset[sg + 1]; ++j)
+    //    {
+    //      RealType uij = func->evaluate(myTable.Temp[j].r1, du, d2u);
+    //      PosType u    = (UIJ_temp[j] = uij * myTable.Temp[j].dr1) - UIJ(iat, j);
+    //      newQP[iat] += u;
+    //      du *= myTable.Temp[j].rinv1;
+    //      HessType& hess = AIJ_temp[j];
+    //      hess           = du * outerProduct(myTable.Temp[j].dr1, myTable.Temp[j].dr1);
+    //      hess[0] += uij;
+    //      hess[4] += uij;
+    //      hess[8] += uij;
+    //      Amat(iat, iat) += (hess - AIJ(iat, j));
+    //      BIJ_temp[j] = (d2u + 4.0 * du) * myTable.Temp[j].dr1;
+    //      Bmat_full(iat, iat) += (BIJ_temp[j] - BIJ(iat, j));
+    //    }
+    //  }
+    //}
   }
 
   /** calculate only Bmat
@@ -462,29 +456,28 @@ public:
    */
   inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full)
   {
-#ifndef ENABLE_SOA
-    RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int sg = 0; sg < RadFunc.rows(); ++sg)
-    {
-      for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
-      {
-        int nn = myTable.M[iat]; //starting nn for the iat-th source
-        for (int tg = 0; tg < RadFunc.cols(); ++tg)
-        {
-          FT* func = RadFunc(sg, tg);
-          if (func)
-            for (int jat = t_offset[tg]; jat < t_offset[tg + 1]; ++jat, ++nn)
-            {
-              RealType uij = func->evaluate(myTable.r(nn), du, d2u);
-              Bmat_full(jat, jat) += (BIJ(jat, iat) = (d2u + 4.0 * du * myTable.rinv(nn)) * myTable.dr(nn));
-            }
-          else
-            nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
-        }
-      }
-    }
-#endif
+    APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluateBmatOnly")
+    //RealType du, d2u;
+    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //for (int sg = 0; sg < RadFunc.rows(); ++sg)
+    //{
+    //  for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
+    //  {
+    //    int nn = myTable.M[iat]; //starting nn for the iat-th source
+    //    for (int tg = 0; tg < RadFunc.cols(); ++tg)
+    //    {
+    //      FT* func = RadFunc(sg, tg);
+    //      if (func)
+    //        for (int jat = t_offset[tg]; jat < t_offset[tg + 1]; ++jat, ++nn)
+    //        {
+    //          RealType uij = func->evaluate(myTable.r(nn), du, d2u);
+    //          Bmat_full(jat, jat) += (BIJ(jat, iat) = (d2u + 4.0 * du * myTable.rinv(nn)) * myTable.dr(nn));
+    //        }
+    //      else
+    //        nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
+    //    }
+    //  }
+    //}
   }
 
   /** calculate quasi-particle coordinates, Bmat and Amat
@@ -498,55 +491,54 @@ public:
                                       GradMatrix_t& Ymat,
                                       HessArray_t& Xmat)
   {
-#ifndef ENABLE_SOA
-    RealType du, d2u;
-    const auto& myTable = P.getDistTable(myTableIndex_);
-    for (int sg = 0; sg < RadFunc.rows(); ++sg)
-    {
-      for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
-      {
-        int nn = myTable.M[iat]; //starting nn for the iat-th source
-        for (int tg = 0; tg < RadFunc.cols(); ++tg)
-        {
-          FT* func = RadFunc(sg, tg);
-          if (func)
-            for (int jat = t_offset[tg]; jat < t_offset[tg + 1]; ++jat, ++nn)
-            {
-              RealType uij = func->evaluate(myTable.r(nn), du, d2u);
-              //           std::fill(derivs.begin(),derivs.end(),0.0);
-              int NPrms = func->NumParams;
-              std::vector<TinyVector<RealType, 3>> derivsju(NPrms);
-              func->evaluateDerivatives(myTable.r(nn), derivsju);
-              du *= myTable.rinv(nn);
-              //PosType u = uij*myTable.dr(nn);
-              QP.R[jat] += (UIJ(jat, iat) = uij * myTable.dr(nn));
-              HessType op    = outerProduct(myTable.dr(nn), myTable.dr(nn));
-              HessType& hess = AIJ(jat, iat);
-              hess           = du * op;
-              hess[0] += uij;
-              hess[4] += uij;
-              hess[8] += uij;
-              Amat(jat, jat) += hess;
-              // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
-              //u = (d2u+4.0*du)*myTable.dr(nn);
-              Bmat_full(jat, jat) += (BIJ(jat, iat) = (d2u + 4.0 * du) * myTable.dr(nn));
-              //WARNINGL offsetPrms
-              for (int prm = 0, la = indexOfFirstParam + offsetPrms(sg, tg); prm < NPrms; prm++, la++)
-              {
-                Cmat(la, jat) += myTable.dr(nn) * derivsju[prm][0];
-                Xmat(la, jat, jat) += (derivsju[prm][1] * myTable.rinv(nn)) * op;
-                Xmat(la, jat, jat)[0] += derivsju[prm][0];
-                Xmat(la, jat, jat)[4] += derivsju[prm][0];
-                Xmat(la, jat, jat)[8] += derivsju[prm][0];
-                Ymat(la, jat) += (derivsju[prm][2] + 4.0 * derivsju[prm][1] * myTable.rinv(nn)) * myTable.dr(nn);
-              }
-            }
-          else
-            nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
-        }
-      }
-    }
-#endif
+    APP_ABORT("SoA implementation needed for Backflow_eI_spin::evaluateWithDerivatives")
+    //RealType du, d2u;
+    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //for (int sg = 0; sg < RadFunc.rows(); ++sg)
+    //{
+    //  for (int iat = s_offset[sg]; iat < s_offset[sg + 1]; ++iat)
+    //  {
+    //    int nn = myTable.M[iat]; //starting nn for the iat-th source
+    //    for (int tg = 0; tg < RadFunc.cols(); ++tg)
+    //    {
+    //      FT* func = RadFunc(sg, tg);
+    //      if (func)
+    //        for (int jat = t_offset[tg]; jat < t_offset[tg + 1]; ++jat, ++nn)
+    //        {
+    //          RealType uij = func->evaluate(myTable.r(nn), du, d2u);
+    //          //           std::fill(derivs.begin(),derivs.end(),0.0);
+    //          int NPrms = func->NumParams;
+    //          std::vector<TinyVector<RealType, 3>> derivsju(NPrms);
+    //          func->evaluateDerivatives(myTable.r(nn), derivsju);
+    //          du *= myTable.rinv(nn);
+    //          //PosType u = uij*myTable.dr(nn);
+    //          QP.R[jat] += (UIJ(jat, iat) = uij * myTable.dr(nn));
+    //          HessType op    = outerProduct(myTable.dr(nn), myTable.dr(nn));
+    //          HessType& hess = AIJ(jat, iat);
+    //          hess           = du * op;
+    //          hess[0] += uij;
+    //          hess[4] += uij;
+    //          hess[8] += uij;
+    //          Amat(jat, jat) += hess;
+    //          // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
+    //          //u = (d2u+4.0*du)*myTable.dr(nn);
+    //          Bmat_full(jat, jat) += (BIJ(jat, iat) = (d2u + 4.0 * du) * myTable.dr(nn));
+    //          //WARNINGL offsetPrms
+    //          for (int prm = 0, la = indexOfFirstParam + offsetPrms(sg, tg); prm < NPrms; prm++, la++)
+    //          {
+    //            Cmat(la, jat) += myTable.dr(nn) * derivsju[prm][0];
+    //            Xmat(la, jat, jat) += (derivsju[prm][1] * myTable.rinv(nn)) * op;
+    //            Xmat(la, jat, jat)[0] += derivsju[prm][0];
+    //            Xmat(la, jat, jat)[4] += derivsju[prm][0];
+    //            Xmat(la, jat, jat)[8] += derivsju[prm][0];
+    //            Ymat(la, jat) += (derivsju[prm][2] + 4.0 * derivsju[prm][1] * myTable.rinv(nn)) * myTable.dr(nn);
+    //          }
+    //        }
+    //      else
+    //        nn += t_offset[tg + 1] - t_offset[tg]; //move forward by the number of particles in the group tg
+    //    }
+    //  }
+    //}
   }
 };
 } // namespace qmcplusplus

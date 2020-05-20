@@ -47,7 +47,6 @@
                     0 DIAMOND2_SCALARS # VMC
                     )
 
-IF(ENABLE_SOA OR QMC_CUDA)
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
@@ -56,9 +55,6 @@ IF(ENABLE_SOA OR QMC_CUDA)
                     TRUE
                     0 DIAMOND2_SCALARS # VMC
                     )
-ELSE()
-  MESSAGE("Skipping diamondC_2x1x1_hybridrep_pp-vmc_sdj test because neither SOA nor CUDA is enabled")
-ENDIF()
 
 # Reference DMC run in qmc-ref "-21.844975 0.001113"
   LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")

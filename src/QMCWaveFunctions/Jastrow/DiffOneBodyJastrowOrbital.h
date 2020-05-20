@@ -183,85 +183,46 @@ public:
         (*lapLogPsi[p]) = 0.0;
       std::vector<TinyVector<RealType, 3>> derivs(NumVars);
 
-      if (d_table.DTType == DT_SOA)
+      constexpr RealType cone(1);
+      constexpr RealType lapfac(OHMMS_DIM - cone);
+      const size_t ns = d_table.sources();
+      const size_t nt = P.getTotalNum();
+
+      aligned_vector<int> iadj(nt);
+      aligned_vector<RealType> dist(nt);
+      std::vector<PosType> displ(nt);
+
+      for (size_t i = 0; i < ns; ++i)
       {
-        constexpr RealType cone(1);
-        constexpr RealType lapfac(OHMMS_DIM - cone);
-        const size_t ns = d_table.sources();
-        const size_t nt = P.getTotalNum();
-
-        aligned_vector<int> iadj(nt);
-        aligned_vector<RealType> dist(nt);
-        std::vector<PosType> displ(nt);
-
-        for (size_t i = 0; i < ns; ++i)
+        FT* func = Fs[i];
+        if (func == 0)
+          continue;
+        int first(OffSet[i].first);
+        int last(OffSet[i].second);
+        bool recalcFunc(false);
+        for (int rcs = first; rcs < last; rcs++)
+          if (rcsingles[rcs] == true)
+            recalcFunc = true;
+        if (recalcFunc)
         {
-          FT* func = Fs[i];
-          if (func == 0)
-            continue;
-          int first(OffSet[i].first);
-          int last(OffSet[i].second);
-          bool recalcFunc(false);
-          for (int rcs = first; rcs < last; rcs++)
-            if (rcsingles[rcs] == true)
-              recalcFunc = true;
-          if (recalcFunc)
+          size_t nn = d_table.get_neighbors(i, func->cutoff_radius, iadj.data(), dist.data(), displ.data());
+          for (size_t nj = 0; nj < nn; ++nj)
           {
-            size_t nn = d_table.get_neighbors(i, func->cutoff_radius, iadj.data(), dist.data(), displ.data());
-            for (size_t nj = 0; nj < nn; ++nj)
+            std::fill(derivs.begin(), derivs.end(), 0);
+            if (!func->evaluateDerivatives(dist[nj], derivs))
+              continue;
+            int j = iadj[nj];
+            RealType rinv(cone / dist[nj]);
+            PosType& dr = displ[nj];
+            for (int p = first, ip = 0; p < last; ++p, ++ip)
             {
-              std::fill(derivs.begin(), derivs.end(), 0);
-              if (!func->evaluateDerivatives(dist[nj], derivs))
-                continue;
-              int j = iadj[nj];
-              RealType rinv(cone / dist[nj]);
-              PosType& dr = displ[nj];
-              for (int p = first, ip = 0; p < last; ++p, ++ip)
-              {
-                dLogPsi[p] -= derivs[ip][0];
-                RealType dudr(rinv * derivs[ip][1]);
-                (*gradLogPsi[p])[j] -= dudr * dr;
-                (*lapLogPsi[p])[j]  -= derivs[ip][2] + lapfac * dudr;
-              }
+              dLogPsi[p] -= derivs[ip][0];
+              RealType dudr(rinv * derivs[ip][1]);
+              (*gradLogPsi[p])[j] -= dudr * dr;
+              (*lapLogPsi[p])[j]  -= derivs[ip][2] + lapfac * dudr;
             }
           }
         }
-      }
-      else
-      {
-#ifndef ENABLE_SOA
-        for (int i = 0; i < d_table.sources(); ++i)
-        {
-          FT* func = Fs[i];
-          if (func == 0)
-            continue;
-          int first(OffSet[i].first);
-          int last(OffSet[i].second);
-          bool recalcFunc(false);
-          for (int rcs = first; rcs < last; rcs++)
-            if (rcsingles[rcs] == true)
-              recalcFunc = true;
-          if (recalcFunc)
-          {
-            for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; ++nn)
-            {
-              std::fill(derivs.begin(), derivs.end(), 0.0);
-              if (!func->evaluateDerivatives(d_table.r(nn), derivs))
-                continue;
-              int j = d_table.J[nn];
-              RealType rinv(d_table.rinv(nn));
-              PosType dr(d_table.dr(nn));
-              for (int p = first, ip = 0; p < last; ++p, ++ip)
-              {
-                dLogPsi[p] -= derivs[ip][0];
-                RealType dudr(rinv * derivs[ip][1]);
-                (*gradLogPsi[p])[j] -= dudr * dr;
-                (*lapLogPsi[p])[j]  -= derivs[ip][2] + 2.0 * dudr;
-              }
-            }
-          }
-        }
-#endif
       }
       for (int k = 0; k < myVars.size(); ++k)
       {

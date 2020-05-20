@@ -128,59 +128,29 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   ParticleSet::SingleParticlePos_t cm;
 
   // Step 1. Distribute even Q[iat] of atomic center iat. If Q[iat] is odd, put Q[iat]-1 and save the lone electron.
-  if (d_ii.DTType == DT_SOA)
+  for (size_t iat = 0; iat < Centers; iat++)
   {
-    for (size_t iat = 0; iat < Centers; iat++)
+    cm += ions->R[iat];
+    const auto& dist = d_ii.getDistRow(iat);
+    for (size_t jat = iat + 1; jat < Centers; ++jat)
     {
-      cm += ions->R[iat];
-      const auto& dist = d_ii.getDistRow(iat);
-      for (size_t jat = iat + 1; jat < Centers; ++jat)
-      {
-        rmin = std::min(rmin, dist[jat]);
-      }
-      //use 40% of the minimum bond
-      RealType sep = rmin * 0.4;
-      int v2       = Qtot[iat] / 2;
-      if (Qtot[iat] > v2 * 2)
-      {
-        loneQ.push_back(LoneElectron(iat, sep));
-      }
-      for (int k = 0; k < v2; k++)
-      {
-        // initialize electron positions in pairs
-        if (nup_tot < numUp)
-          els->R[nup_tot++] = ions->R[iat] + sep * chi[random_number_counter++];
-        if (ndown_tot < numDown)
-          els->R[ndown_tot++] = ions->R[iat] + sep * chi[random_number_counter++];
-      }
+      rmin = std::min(rmin, dist[jat]);
     }
-  }
-  else
-  {
-#ifndef ENABLE_SOA
-    for (int iat = 0; iat < Centers; iat++)
+    //use 40% of the minimum bond
+    RealType sep = rmin * 0.4;
+    int v2       = Qtot[iat] / 2;
+    if (Qtot[iat] > v2 * 2)
     {
-      cm += ions->R[iat];
-      for (int nn = d_ii.M[iat]; nn < d_ii.M[iat + 1]; nn++)
-      {
-        rmin = std::min(rmin, d_ii.r(nn));
-      }
-      //use 40% of the minimum bond
-      RealType sep = rmin * 0.4;
-      int v2       = Qtot[iat] / 2;
-      if (Qtot[iat] > v2 * 2)
-      {
-        loneQ.push_back(LoneElectron(iat, sep));
-      }
-      for (int k = 0; k < v2; k++)
-      {
-        if (nup_tot < numUp)
-          els->R[nup_tot++] = ions->R[iat] + sep * chi[random_number_counter++];
-        if (ndown_tot < numDown)
-          els->R[ndown_tot++] = ions->R[iat] + sep * chi[random_number_counter++];
-      }
+      loneQ.push_back(LoneElectron(iat, sep));
     }
-#endif
+    for (int k = 0; k < v2; k++)
+    {
+      // initialize electron positions in pairs
+      if (nup_tot < numUp)
+        els->R[nup_tot++] = ions->R[iat] + sep * chi[random_number_counter++];
+      if (ndown_tot < numDown)
+        els->R[ndown_tot++] = ions->R[iat] + sep * chi[random_number_counter++];
+    }
   }
 
   // Step 2. Distribute the electrons left alone

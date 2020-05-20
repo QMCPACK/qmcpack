@@ -35,6 +35,7 @@ SET(SRCS test_bare_kinetic.cpp
          test_hamiltonian_factory.cpp
          test_PairCorrEstimator.cpp
          test_SkAllEstimator.cpp
+         test_QMCHamiltonian.cpp
          )
          
 IF(QMC_CUDA)
@@ -42,10 +43,6 @@ IF(QMC_CUDA)
       test_coulomb_CUDA.cpp 
 )
 ENDIF()
-
-IF(ENABLE_SOA)
-  SET(SRCS test_QMCHamiltonian.cpp ${SRCS})
-ENDIF(ENABLE_SOA)
 
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple.txt" ${UTEST_DIR})

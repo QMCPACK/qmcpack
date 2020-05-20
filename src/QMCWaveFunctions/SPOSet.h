@@ -24,9 +24,6 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#if !defined(ENABLE_SOA)
-#include "Message/CommOperators.h"
-#endif
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
@@ -62,23 +59,6 @@ public:
    * Several user classes can own SPOSet and use objectName as counter
    */
   std::string objectName;
-#if !defined(ENABLE_SOA)
-  ///true if C is an identity matrix
-  bool Identity;
-  ///if true, do not clean up
-  bool IsCloned;
-  ///number of Single-particle orbitals
-  IndexType BasisSetSize;
-  /** pointer matrix containing the coefficients
-   *
-   * makeClone makes a shallow copy
-   */
-  ValueMatrix_t* C;
-  ///occupation number
-  Vector<RealType> Occ;
-  ///Pass Communicator
-  Communicate* myComm;
-#endif
 
   /** constructor */
   SPOSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false);
@@ -89,10 +69,6 @@ public:
    */
   virtual ~SPOSet()
   {
-#if !defined(ENABLE_SOA)
-    if (!IsCloned && C != nullptr)
-      delete C;
-#endif
   }
 
   // accessor function to Optimizable
@@ -125,22 +101,12 @@ public:
   /** Query if this SPOSet has an explicit ion dependence. returns true if it does.
   */
   inline bool hasIonDerivs() const { return ionDerivs; }
-#if !defined(ENABLE_SOA)
-  int getBasisSetSize() const { return BasisSetSize; }
 
-  bool setIdentity(bool useIdentity);
-
-  void checkObject();
-
-  ///get C and Occ
-  bool put(xmlNodePtr cur);
-#else
   /// return the size of the basis set if there is any
   virtual int getBasisSetSize() const { return 0; }
 
   /// check a few key parameters before putting the SPO into a determinant
   virtual void checkObject() const {}
-#endif
 
   /// create optimizable orbital rotation parameters
   // Single Slater creation
@@ -507,13 +473,6 @@ public:
 
   virtual void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi);
   virtual void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi);
-#endif
-
-#if !defined(ENABLE_SOA)
-protected:
-  bool putOccupation(xmlNodePtr occ_ptr);
-  bool putFromXML(xmlNodePtr coeff_ptr);
-  bool putFromH5(const std::string& fname, xmlNodePtr coeff_ptr);
 #endif
 
 protected:

@@ -29,34 +29,14 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
     if (PPset[ipp])
       PPset[ipp]->randomize_grid(*myRNG);
   const auto& myTable = P.getDistTable(myTableIndex);
-  if (myTable.DTType == DT_SOA)
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
   {
-    for (int jel = 0; jel < P.getTotalNum(); jel++)
-    {
-      const auto& dist  = myTable.getDistRow(jel);
-      const auto& displ = myTable.getDisplRow(jel);
-      for (int iat = 0; iat < NumIons; iat++)
-        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-          Value += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
-                                                        dhpsioverpsi);
-    }
-  }
-  else
-  {
-#ifndef ENABLE_SOA
+    const auto& dist  = myTable.getDistRow(jel);
+    const auto& displ = myTable.getDisplRow(jel);
     for (int iat = 0; iat < NumIons; iat++)
-      if (PP[iat])
-      {
-        for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
-        {
-          RealType r(myTable.r(nn));
-          if (r > PP[iat]->getRmax())
-            continue;
-          Value +=
-              PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, iel, r, myTable.dr(nn), optvars, dlogpsi, dhpsioverpsi);
-        }
-      }
-#endif
+      if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        Value += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                      dhpsioverpsi);
   }
   return Value;
 }

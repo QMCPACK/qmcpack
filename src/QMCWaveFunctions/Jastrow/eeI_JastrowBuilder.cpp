@@ -16,9 +16,6 @@
 
 #include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
-#ifndef ENABLE_SOA
-#include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
-#endif
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
@@ -126,11 +123,7 @@ WaveFunctionComponent* eeI_JastrowBuilder::buildComponent(xmlNodePtr cur)
     SpeciesSet& iSet = sourcePtcl->getSpeciesSet();
     if (ftype == "polynomial")
     {
-#ifdef ENABLE_SOA
       typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
-#else
-      typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
-#endif
       J3Type* J3 = new J3Type(*sourcePtcl, targetPtcl, true);
       putkids(kids, *J3);
       return J3;

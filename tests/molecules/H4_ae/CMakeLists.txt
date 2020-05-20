@@ -80,7 +80,6 @@ IF (NOT QMC_CUDA)
                       5 H4_OPT_SCALARS # OPT step 5
                       )
 
-   IF(ENABLE_SOA)
     #
     # H4 starting from perturbed orbitals, using optimizable determinants, and the adaptive linear method
     #
@@ -149,9 +148,6 @@ IF (NOT QMC_CUDA)
                       ${MP_SUCCESS}
                       8 H4_FDLR_SCALARS # Final VMC step
                       TRUE)
-   ELSE()
-    MESSAGE("Skipping H4_ae orbital rotation tests because they are no more supported with AoS builds.")
-   ENDIF(ENABLE_SOA)
 
     LIST(APPEND H4_CJS_SCALARS "totenergy" "-2.0438 0.0045") # total energy
 
