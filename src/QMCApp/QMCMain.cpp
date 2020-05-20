@@ -585,6 +585,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     qmc_driver->run();
     t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
+    qmc_driver->endSection();
     last_driver    = std::move(qmc_driver);
     return true;
   }

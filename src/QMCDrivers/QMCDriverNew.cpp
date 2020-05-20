@@ -86,11 +86,15 @@ int QMCDriverNew::addObservable(const std::string& aname)
 QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return estimator_manager_->getObservable(i); }
 
 
-QMCDriverNew::~QMCDriverNew()
+QMCDriverNew::~QMCDriverNew() {}
+
+void QMCDriverNew::releaseRng()
 {
   for (int i = 0; i < Rng.size(); ++i)
     RandomNumberControl::Children[i] = Rng[i].release();
 }
+
+void QMCDriverNew::endSection() { releaseRng(); }
 
 void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
 {
@@ -356,6 +360,11 @@ void QMCDriverNew::createRngsStepContexts()
 
   Rng.resize(num_crowds_);
 
+  // Create RNG's for using with old drivers
+  int num_threads(Concurrency::maxThreads<>());
+  int rng_compat_size = std::max(num_threads, num_crowds_);
+  RngCompatibility.resize(rng_compat_size);
+
   if (RandomNumberControl::Children.size() == 0)
   {
     app_warning() << "  Initializing global RandomNumberControl! "
@@ -370,6 +379,17 @@ void QMCDriverNew::createRngsStepContexts()
     RandomNumberControl::Children[i] = nullptr;
     step_contexts_[i] = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
                                                           population_.get_particle_group_indexes(), *(Rng[i]));
+
+    RngCompatibility[i] = Rng[i].get();
+  }
+
+  // Only needed when using old drivers
+  if (rng_compat_size > num_crowds_)
+  {
+    for (int i = 0; i < rng_compat_size; i++)
+    {
+      RngCompatibility[i] = RandomNumberControl::Children[i];
+    }
   }
 }
 

@@ -406,6 +406,10 @@ public:
    */
   bool finalize(int block, bool dumpwalkers = true);
 
+  virtual void endSection();
+  /// Release RNG's back to global control
+  void releaseRng();
+
   int rotation;
   const std::string& get_root_name() const { return root_name_; }
   std::string getRotationName(std::string RootName);

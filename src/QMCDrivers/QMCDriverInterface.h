@@ -58,6 +58,7 @@ public:
   virtual BranchEngineType* getBranchEngine()                           = 0;
   virtual std::string getEngineName()                                   = 0;
   virtual unsigned long getDriverMode()                                 = 0;
+  virtual void endSection() {}
   virtual ~QMCDriverInterface() {}
 };
 
