@@ -400,22 +400,6 @@ TEST_CASE("inplace_product", "[Numerics][batched_operations]")
   verify_approx(A, ref);
 }
 
-// Not used.
-//TEST_CASE("dot_wpan_waqn_Fwpq", "[Numerics][batched_operations]")
-//{
-//}
-// Not used.
-//TEST_CASE("batched_Tanb_to_Kl", "[batched_operations]")
-//{
-
-//}
-
-// Not used.
-//TEST_CASE("batched_Tanb_to_Klr", "[batched_operations]")
-//{
-
-//}
-
 // Not clear.
 //TEST_CASE("batched_ab_ba", "[Numerics][batched_operations]")
 //{
@@ -453,33 +437,33 @@ TEST_CASE("inplace_product", "[Numerics][batched_operations]")
 // Buggy.
 TEST_CASE("vbias_from_v1", "[Numerics][batched_operations]")
 {
-  Alloc<ComplexType> alloc{};
-  int nkpts = 3;
-  int nwalk = 4;
-  int nchol_max = 7;
-  int nchol_tot = 7+3+5;
-  std::vector<int> nchol_pq = {7, 3, 5};
-  std::vector<int> Qmap = {1, 2, 3};
-  std::vector<int> Q2vbias = {0, 14, 14+6};
-  std::vector<int> kminus = {0, 1, 2};
-  std::vector<ComplexType> buffer(nkpts*nchol_max*nwalk);
-  Tensor3D<ComplexType> v1({nkpts, nchol_max, nwalk}, alloc);
-  create_data(buffer, ComplexType(100));
-  copy_n(buffer.data(), buffer.size(), v1.origin());
-  Tensor2D<ComplexType> vbias({2*nchol_tot,nwalk}, 0.0, alloc);
-  Tensor1D<int> dev_nchol_pq(iextensions<1u>{nkpts}, alloc);
-  Tensor1D<int> dev_Qmap(iextensions<1u>{nkpts}, alloc);
-  Tensor1D<int> dev_Q2vbias(iextensions<1u>{nkpts}, alloc);
-  Tensor1D<int> dev_kminus(iextensions<1u>{nkpts}, alloc);
-  copy_n(nchol_pq.data(), nchol_pq.size(), dev_nchol_pq.origin());
-  copy_n(Qmap.data(), Qmap.size(), dev_Qmap.origin());
-  copy_n(Q2vbias.data(), Q2vbias.size(), dev_Q2vbias.origin());
-  copy_n(kminus.data(), kminus.size(), dev_kminus.origin());
-  using ma::vbias_from_v1;
-  vbias_from_v1(nwalk, nkpts, nchol_max, dev_Qmap.origin(), dev_kminus.origin(),
-                dev_nchol_pq.origin(), dev_Q2vbias.origin(), ComplexType(1.0),
-                v1.origin(), to_address(vbias.origin()));
-  copy_n(vbias.origin(), buffer.size(), buffer.data());
+  //Alloc<ComplexType> alloc{};
+  //int nkpts = 3;
+  //int nwalk = 4;
+  //int nchol_max = 7;
+  //int nchol_tot = 7+3+5;
+  //std::vector<int> nchol_pq = {7, 3, 5};
+  //std::vector<int> Qmap = {1, 2, 3};
+  //std::vector<int> Q2vbias = {0, 14, 14+6};
+  //std::vector<int> kminus = {0, 1, 2};
+  //std::vector<ComplexType> buffer(nkpts*nchol_max*nwalk);
+  //Tensor3D<ComplexType> v1({nkpts, nchol_max, nwalk}, alloc);
+  //create_data(buffer, ComplexType(100));
+  //copy_n(buffer.data(), buffer.size(), v1.origin());
+  //Tensor2D<ComplexType> vbias({2*nchol_tot,nwalk}, 0.0, alloc);
+  //Tensor1D<int> dev_nchol_pq(iextensions<1u>{nkpts}, alloc);
+  //Tensor1D<int> dev_Qmap(iextensions<1u>{nkpts}, alloc);
+  //Tensor1D<int> dev_Q2vbias(iextensions<1u>{nkpts}, alloc);
+  //Tensor1D<int> dev_kminus(iextensions<1u>{nkpts}, alloc);
+  //copy_n(nchol_pq.data(), nchol_pq.size(), dev_nchol_pq.origin());
+  //copy_n(Qmap.data(), Qmap.size(), dev_Qmap.origin());
+  //copy_n(Q2vbias.data(), Q2vbias.size(), dev_Q2vbias.origin());
+  //copy_n(kminus.data(), kminus.size(), dev_kminus.origin());
+  //using ma::vbias_from_v1;
+  //vbias_from_v1(nwalk, nkpts, nchol_max, dev_Qmap.origin(), dev_kminus.origin(),
+                //dev_nchol_pq.origin(), dev_Q2vbias.origin(), ComplexType(1.0),
+                //v1.origin(), to_address(vbias.origin()));
+  //copy_n(vbias.origin(), buffer.size(), buffer.data());
   //REQUIRE(real(buffer[1]) == Approx(0.01));
   //REQUIRE(imag(buffer[47]) == Approx(-0.12));
 }
