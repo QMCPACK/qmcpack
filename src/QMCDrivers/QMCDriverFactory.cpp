@@ -272,7 +272,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     VMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE], qmc_common.qmc_counter);
     new_driver.reset(
-        fac.create(population, *primaryPsi, *primaryH, wavefunction_pool, comm));
+        fac.create(population, *primaryPsi, *primaryH, wavefunction_pool, qmc_system.getSampleStack(), comm));
   }
   else if (das.new_run_type == QMCRunType::DMC)
   {

@@ -14,6 +14,7 @@
 #include "Concurrency/Info.hpp"
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "Particle/MCSample.h"
 
 namespace qmcplusplus
 {
@@ -25,8 +26,11 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        WaveFunctionPool& ppool,
+                       SampleStack& samples,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, ppool, "VMCBatched::", comm), vmcdriver_input_(input)
+    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, ppool, "VMCBatched::", comm),
+      vmcdriver_input_(input),
+      samples_(samples)
 {
   QMCType = "VMCBatched";
   // qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
@@ -50,14 +54,69 @@ QMCDriverNew::AdjustedWalkerCounts VMCBatched::calcDefaultLocalWalkers(QMCDriver
   if (awc.walkers_per_rank != qmcdriver_input_.get_walkers_per_rank())
     app_warning() << "VMCBatched driver has adjusted walkers per rank to: " << awc.walkers_per_rank << '\n';
 
-  if (vmcdriver_input_.get_samples() >= 0 || vmcdriver_input_.get_samples_per_thread() >= 0 ||
-      vmcdriver_input_.get_steps_between_samples() >= 0)
-    app_warning() << "VMCBatched currently ignores samples and samplesperthread\n";
 
   app_log() << "VMCBatched walkers per crowd " << awc.walkers_per_crowd << std::endl;
   // TODO: Simplify samples, samples per thread etc in the unified driver
   // see logic in original VMC.cpp
   return awc;
+}
+
+void VMCBatched::calcSamples(int& adjusted_steps_between_samples, int& adjusted_steps, int& samples_per_node) const
+{
+  int num_threads(Concurrency::maxThreads<>());
+
+  if (vmcdriver_input_.get_samples() >= 0 || vmcdriver_input_.get_samples_per_thread() >= 0 ||
+      vmcdriver_input_.get_steps_between_samples() >= 0)
+  {
+    int nsteps  = qmcdriver_input_.get_max_steps();
+    int nblocks = qmcdriver_input_.get_max_blocks();
+    int nprocs  = population_.get_num_ranks();
+
+    int steps_between_samples_ = vmcdriver_input_.get_steps_between_samples();
+
+    int total_samples_from_target_samples     = vmcdriver_input_.get_samples();
+    int total_samples_from_samples_per_thread = vmcdriver_input_.get_samples_per_thread() * nprocs * num_threads;
+
+    int total_target_samples = std::max(total_samples_from_target_samples, total_samples_from_samples_per_thread);
+
+    int local_samples = total_target_samples / nprocs;
+
+    if (total_target_samples > 0)
+    {
+      int total_walkers = population_.get_num_global_walkers();
+
+      // Adjust the values to balance the load so all threads and ranks collect the same number of samples
+
+      // Make the target number of samples a multiple of the total number of walkers
+      int total_target_samples_adjusted = ((total_target_samples + total_walkers - 1) / total_walkers) * total_walkers;
+
+
+      int nstep_target = total_target_samples_adjusted;
+      if (steps_between_samples_ > 0)
+      {
+        nstep_target = total_target_samples_adjusted * steps_between_samples_;
+      }
+
+      // Adjust number of steps to match
+      adjusted_steps = std::max(nsteps, int((1.0 * nstep_target / total_walkers + nblocks - 1) / nblocks));
+      //qmcdriver_input_.set_max_steps(nsteps);
+
+      // Adjust steps between samples
+      adjusted_steps_between_samples =
+          int((total_walkers * adjusted_steps * nblocks * 1.0) / total_target_samples_adjusted);
+
+      int total_samples_final = total_walkers * nblocks * adjusted_steps;
+
+      // Number samples on this node (or rank)
+      samples_per_node = total_samples_final / nprocs;
+
+      app_log() << "VMCBatched driver total samples:  " << total_samples_final << std::endl;
+      app_log() << "VMCBatched driver adjusted nsteps:  " << nsteps << std::endl;
+      app_log() << "VMCBatched driver adjusted steps between samples:  " << adjusted_steps_between_samples << std::endl;
+    }
+
+    //samples_.setMaxSamples(local_samples+1);
+  }
 }
 
 void VMCBatched::advanceWalkers(const StateForThread& sft,
@@ -285,6 +344,13 @@ void VMCBatched::process(xmlNodePtr node)
   makeLocalWalkers(awc.walkers_per_rank, awc.reserve_walkers,
                    ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 
+  int adjusted_steps;
+  int samples_per_node;
+  calcSamples(adjusted_steps, steps_between_samples_, samples_per_node);
+
+  samples_.setMaxSamples(samples_per_node + 1);
+  qmcdriver_input_.set_max_steps(adjusted_steps);
+
   Base::process(node);
 }
 
@@ -347,6 +413,15 @@ bool VMCBatched::run()
       ScopedTimer local_timer(&(timers_.run_steps_timer));
       vmc_state.step = step;
       crowd_task(runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
+
+      if (steps_between_samples_ && step % steps_between_samples_ == 0)
+      {
+        auto& walkers = population_.get_walkers();
+        for (auto& walker : walkers)
+        {
+          samples_.appendSample(MCSample(*walker));
+        }
+      }
     }
 
     RefVector<ScalarEstimatorBase> all_scalar_estimators;

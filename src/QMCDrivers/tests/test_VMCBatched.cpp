@@ -69,9 +69,10 @@ public:
                               hamiltonian_pool.getPrimary(), comm->rank());
       QMCDriverInput qmcdriver_copy(qmcdriver_input);
       VMCDriverInput vmcdriver_input("yes");
+      SampleStack samples;
       VMCBatched vmc_batched(std::move(qmcdriver_copy), std::move(vmcdriver_input), population,
                              *(wavefunction_pool.getPrimary()), *(hamiltonian_pool.getPrimary()), wavefunction_pool,
-                             comm);
+                             samples, comm);
       vmc_batched.set_walkers_per_rank(walkers_per_rank, "testing");
       if (num_crowds < 8)
         vmc_batched.set_num_crowds(Concurrency::maxThreads(), "Insufficient threads available to match test input");

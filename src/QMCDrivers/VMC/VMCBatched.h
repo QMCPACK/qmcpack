@@ -68,6 +68,7 @@ public:
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
              WaveFunctionPool& ppool,
+             SampleStack& samples,
              Communicate* comm);
 
   void process(xmlNodePtr node);
@@ -99,6 +100,7 @@ public:
   auto getCDLW();
 
   QMCDriverNew::AdjustedWalkerCounts calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const;
+  void calcSamples(int& adjusted_steps_between_samples, int& adjusted_steps, int& samples_per_node) const;
 
 private:
   int prevSteps;
@@ -111,6 +113,10 @@ private:
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;
+
+  SampleStack& samples_;
+
+  int steps_between_samples_;
 
   friend class qmcplusplus::testing::VMCBatchedTest;
   ;

@@ -130,6 +130,7 @@ public:
   RealType get_max_disp_sq() const { return max_disp_sq_; }
   IndexType get_max_blocks() const { return max_blocks_; }
   IndexType get_max_steps() const { return max_steps_; }
+  void set_max_steps(IndexType max_steps) { max_steps_ = max_steps; }
   IndexType get_warmup_steps() const { return warmup_steps_; }
   IndexType get_steps_between_samples() const { return steps_between_samples_; }
   IndexType get_samples_per_thread() const { return samples_per_thread_; }
