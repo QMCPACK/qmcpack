@@ -98,6 +98,7 @@ TEST_CASE("KaKjw_to_KKwaj", "[Numerics][tensor_operations]")
 
 }
 
+// Buggy.
 TEST_CASE("KaKjw_to_QKwaj", "[Numerics][tensor_operations]")
 {
 
@@ -115,6 +116,7 @@ TEST_CASE("KaKjw_to_QKwaj", "[Numerics][tensor_operations]")
   Tensor1D<int> nmo_pk0 = {0, nmo_k, 2*nmo_k};
   Tensor1D<int> nel_pk0 = {0, occ_k, 2*occ_k};
   Tensor1D<int> qk_to_k2 = {2, 0, 1};
+  std::cout << buffer.size() << " " << KaKjw.num_elements() << std::endl;
   copy_n(buffer.data(), buffer.size(), KaKjw.origin());
   //using ma::KaKjw_to_QKajw;
   //KaKjw_to_QKajw(nwalk, nk, nmo_k, nk*nmo_k, occ_k,
