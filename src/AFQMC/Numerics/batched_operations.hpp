@@ -399,7 +399,7 @@ template<typename T, typename Q>
 void Awiu_Biu_Cuw(int nu, int nw, int ni, T alpha, T const* A, Q const* B, int ldb, T* C, int ldc){
   for(int w=0; w<nw; ++w) {
     for(int i=0; i<ni; ++i) {
-      auto Ci(C + w); 
+      auto Ci(C + w);
       auto Bi(B + i*ldb);
       for(int u=0; u<nu; ++u,++A,++Bi,Ci+=ldc)
         *Ci += alpha*(*A)*static_cast<T>(*Bi);
@@ -435,6 +435,7 @@ void viwj_vwij(int nw, int ni, int i0, int iN, T const* B, T1* A){
 }
 
 // Ckij = transA(Aij) * Bjk 
+//        conj(Aij)?
 template<typename T>
 void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, T const* A, int lda, 
         T const* B, int ldb, T* C, int ldc1, int ldc2)
@@ -475,6 +476,7 @@ void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk, T1 const* A, int lda,
     }
 }
 
+// A[n][i][j] * = B[i][j]
 template<typename T, typename T1>
 void inplace_product(int nbatch, int n, int m, T1 const* B, int ldb, std::complex<T> *A, int lda)
 {
