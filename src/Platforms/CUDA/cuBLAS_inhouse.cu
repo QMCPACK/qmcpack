@@ -89,10 +89,13 @@ __global__ void gemvN_batched_kernel(const int m, // number of columns in row ma
   const int tid = threadIdx.x;
   const int row_begin = blockIdx.y * ROWBS;
 
-  T sum(0);
-  for (int col_id = 0; col_id < n; col_id++)
-    sum += A_iw[col_id * lda + row_begin + tid] * x_iw[col_id * incx];
-  y_iw[(row_begin + tid) * incy] = alpha[blockIdx.x] * sum + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
+  if (row_begin + tid < m)
+  {
+    T sum(0);
+    for (int col_id = 0; col_id < n; col_id++)
+      sum += A_iw[col_id * lda + row_begin + tid] * x_iw[col_id * incx];
+    y_iw[(row_begin + tid) * incy] = alpha[blockIdx.x] * sum + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
+  }
 }
 
 template<typename T>

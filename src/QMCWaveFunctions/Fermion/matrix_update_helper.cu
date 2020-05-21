@@ -202,7 +202,10 @@ __global__ void add_delay_list_compute_y_kernel(int* const delay_list[],
   int* __restrict__ delay_list_iw = delay_list[iw];
 
   if (tid == 0)
+  {
     delay_list_iw[delay_count] = rowchanged;
+    //printf("check add_delay %p %d last %d\n", delay_list_iw, delay_list_iw[delay_count], delay_list_iw[(delay_count - 1 < 0)? 0: (delay_count - 1)]);
+  }
 
   T* __restrict__ binvrow_iw = binvrow[iw];
   const T* __restrict__ p_iw = p[iw];
@@ -305,6 +308,7 @@ __global__ void fake_accept_add_delay_list_update_Binv_U_kernel(int* const delay
   {
     binv_iw[delay_count * lda + delay_count] = T(1);
     delay_list_iw[delay_count]               = -1;
+    //printf("check fake %p %d last %d\n", delay_list_iw, delay_list_iw[delay_count], delay_list_iw[(delay_count - 1 < 0)? 0: (delay_count - 1)]);
   }
 }
 
@@ -366,6 +370,7 @@ __global__ void applyW_kernel(const int* const delay_list[],
     if (col_id < delay_count)
     {
       const int row_id = delay_list_iw[col_id];
+      //printf("check applyW %d %d\n", col_id, delay_list_iw[col_id]);
       if (row_id >= 0)
         tempMat_iw[row_id * lda + col_id] -= T(1);
     }
@@ -381,6 +386,8 @@ cudaError_t applyW_batched(cudaStream_t& hstream,
 {
   if (batch_count == 0)
     return cudaSuccess;
+
+  //printf("YYdebug batch_count %d\n", batch_count);
 
   const int COLBS = 32;
   dim3 dimBlock(COLBS);
@@ -403,6 +410,31 @@ cudaError_t applyW_batched(cudaStream_t& hstream,
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
   applyW_kernel<double, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, tempMat, lda);
+  return cudaPeekAtLastError();
+}
+
+__global__ void print_delay_list_kernel(int* const delay_list[], const int delay_count)
+{
+  const int tid                   = threadIdx.x;
+  const int iw                    = blockIdx.x;
+  int* __restrict__ delay_list_iw = delay_list[iw];
+
+  if (tid == 0)
+    printf("check delay_list %p %d last %d\n", delay_list_iw, delay_list_iw[delay_count], delay_list_iw[(delay_count - 1 < 0)? 0: (delay_count - 1)]);
+}
+
+cudaError_t print_delay_list_batched(cudaStream_t& hstream,
+                                    int* const delay_list[],
+                                    const int delay_count,
+                                    const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 64;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  print_delay_list_kernel<<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count);
   return cudaPeekAtLastError();
 }
 
