@@ -248,6 +248,158 @@ TEST_CASE("dot_wanb", "[Numerics][batched_operations]")
   verify_approx(out, ref);
 }
 
+TEST_CASE("Auwn_Bun_Cuw", "[Numerics][batched_operations]")
+{
+  Alloc<ComplexType> alloc{};
+  int nu = 3;
+  int nw = 2;
+  int nn = 4;
+  Tensor3D<ComplexType> A({nu, nw, nn}, 1.0, alloc);
+  Tensor2D<ComplexType> B({nu, nn}, 2.0, alloc);
+  Tensor2D<ComplexType> C({nu, nw}, 0.0, alloc);
+  ComplexType alpha = 0.5;
+  // C = alpha * numpy.einsum('uwn,un->uw', A, B)
+  using ma::Auwn_Bun_Cuw;
+  Auwn_Bun_Cuw(nu, nw, nn, alpha, A.origin(), B.origin(), C.origin());
+  Tensor2D<ComplexType> ref({nu, nw}, 4.0, alloc);
+  verify_approx(C, ref);
+}
+
+TEST_CASE("Awiu_Biu_Cuw", "[Numerics][batched_operations]")
+{
+  Alloc<ComplexType> alloc{};
+  int nu = 3;
+  int nw = 2;
+  int nn = 4;
+  Tensor3D<ComplexType> A({nw, nn, nu}, 1.0, alloc);
+  Tensor2D<ComplexType> B({nn, nu}, 2, alloc);
+  B[0][1] = 0.0;
+  Tensor2D<ComplexType> C({nu, nw}, 0.0, alloc);
+  ComplexType alpha = 0.5;
+  // C = alpha * numpy.einsum('wnu,nu->uw', A, B)
+  using ma::Awiu_Biu_Cuw;
+  Awiu_Biu_Cuw(nu, nw, nn, alpha, A.origin(), B.origin(), B.size(1), C.origin(), C.size(1));
+  Tensor2D<ComplexType> ref({nu, nw}, 4.0, alloc);
+  ref[1][0] = 3.0;
+  ref[1][1] = 3.0;
+  verify_approx(C, ref);
+}
+
+TEST_CASE("Aijk_Bkj_Cik", "[Numerics][batched_operations]")
+{
+  Alloc<ComplexType> alloc{};
+  int ni = 3;
+  int nj = 2;
+  int nk = 4;
+  Tensor3D<ComplexType> A({ni, nj, nk}, 1.0, alloc);
+  Tensor2D<ComplexType> B({nk, nj}, 2, alloc);
+  B[0][1] = 0.0;
+  Tensor2D<ComplexType> C({ni, nk}, 0.0, alloc);
+  // C = alpha * numpy.einsum('wnu,nu->uw', A, B)
+  using ma::Aijk_Bkj_Cik;
+  Aijk_Bkj_Cik(ni, nj, nk, A.origin(), A.size(1), A.stride(0),
+               B.origin(), B.stride(0), C.origin(), C.stride(0));
+  Tensor2D<ComplexType> ref({ni, nk}, 4.0, alloc);
+  ref[0][0] = 2.0;
+  ref[1][0] = 2.0;
+  ref[2][0] = 2.0;
+  verify_approx(C, ref);
+}
+
+TEST_CASE("viwj_vwij", "[Numerics][batched_operations]")
+{
+  Alloc<ComplexType> alloc{};
+  int ni = 3;
+  int nj = 2;
+  int nw = 4;
+  Tensor3D<ComplexType> A({nw, ni, nj}, 0.0, alloc);
+  Tensor3D<ComplexType> B({ni, nw, nj}, 0.0, alloc);
+  std::vector<ComplexType> buffer(ni*nj*nw);
+  create_data(buffer, ComplexType(1.0));
+  copy_n(buffer.data(), buffer.size(), B.origin());
+  using ma::viwj_vwij;
+  viwj_vwij(nw, ni, 0, nj, B.data(), A.data());
+  //std::cout << A[0][1][1] << " " << A[1][2][1] << std::endl;
+}
+
+TEST_CASE("element_wise_Aij_Bjk_Ckij", "[Numerics][batched_operations]")
+{
+  Alloc<ComplexType> alloc{};
+  int ni = 3;
+  int nj = 2;
+  int nk = 2;
+  using ma::element_wise_Aij_Bjk_Ckij;
+  {
+    Tensor2D<ComplexType> A({ni, nj}, 3.0, alloc);
+    Tensor2D<ComplexType> B({nj, nk}, 2.0, alloc);
+    Tensor3D<ComplexType> C({nk, ni, nj}, 0.0, alloc);
+    element_wise_Aij_Bjk_Ckij('N', ni, nj, nk,
+                              A.origin(), A.stride(0),
+                              B.origin(), B.stride(0),
+                              C.origin(), C.size(1), C.size(2));
+    Tensor3D<ComplexType> ref({nk, ni, nj}, 6.0, alloc);
+    verify_approx(C, ref);
+  }
+  {
+    Tensor2D<ComplexType> A({ni, nj}, ComplexType(0.0,-3.0), alloc);
+    Tensor2D<ComplexType> B({nj, nk}, ComplexType(1.0,2.0), alloc);
+    Tensor3D<ComplexType> C({nk, ni, nj}, 0.0, alloc);
+    element_wise_Aij_Bjk_Ckij('C', ni, nj, nk,
+                              A.origin(), A.stride(0),
+                              B.origin(), B.stride(0),
+                              C.origin(), C.size(1), C.size(2));
+    Tensor3D<ComplexType> ref({nk, ni, nj}, ComplexType(-6.0,3.0), alloc);
+    verify_approx(C, ref);
+  }
+}
+
+TEST_CASE("element_wise_Aij_Bjk_Ckji", "[Numerics][batched_operations]")
+{
+  Alloc<ComplexType> alloc{};
+  Alloc<double> dalloc{};
+  int ni = 3;
+  int nj = 2;
+  int nk = 2;
+  using ma::element_wise_Aij_Bjk_Ckij;
+  {
+    Tensor2D<ComplexType> A({ni, nj}, -3.0, alloc);
+    Tensor2D<ComplexType> B({nj, nk}, ComplexType(1.0,2.0), alloc);
+    Tensor3D<ComplexType> C({nk, nj, ni}, 0.0, alloc);
+    element_wise_Aij_Bjk_Ckji(ni, nj, nk,
+                              A.origin(), A.stride(0),
+                              B.origin(), B.stride(0),
+                              C.origin(), C.size(2), C.stride(0));
+    Tensor3D<ComplexType> ref({nk, nj, ni}, ComplexType(-3.0, -6.0), alloc);
+    verify_approx(C, ref);
+  }
+  {
+    Tensor2D<double> A({ni, nj}, -3.0, dalloc);
+    Tensor2D<ComplexType> B({nj, nk}, ComplexType(1.0,2.0), alloc);
+    Tensor3D<ComplexType> C({nk, nj, ni}, 0.0, alloc);
+    element_wise_Aij_Bjk_Ckji(ni, nj, nk,
+                              A.origin(), A.stride(0),
+                              B.origin(), B.stride(0),
+                              C.origin(), C.size(2), C.stride(0));
+    Tensor3D<ComplexType> ref({nk, nj, ni}, ComplexType(-3.0, -6.0), alloc);
+    verify_approx(C, ref);
+  }
+}
+
+TEST_CASE("inplace_product", "[Numerics][batched_operations]")
+{
+  Alloc<ComplexType> alloc{};
+  Alloc<double> dalloc{};
+  int nb = 4;
+  int ni = 3;
+  int nj = 2;
+  Tensor3D<ComplexType> A({nb, ni, nj}, ComplexType(1.0,-3.0), alloc);
+  Tensor2D<double> B({ni, nj}, 2.0, dalloc);
+  using ma::inplace_product;
+  inplace_product(nb, ni, nj, B.origin(), B.size(1), A.origin(), A.size(2));
+  Tensor3D<ComplexType> ref({nb, ni, nj}, ComplexType(2.0,-6.0), alloc);
+  verify_approx(A, ref);
+}
+
 // Not used.
 //TEST_CASE("dot_wpan_waqn_Fwpq", "[Numerics][batched_operations]")
 //{

@@ -250,4 +250,23 @@ TEST_CASE("fill2D", "[Numerics][ma_blas_extensions]")
   verify_approx(y, ref);
 }
 
+TEST_CASE("get_diagonal_strided", "[Numerics][ma_blas_extensions]")
+{
+  Alloc<ComplexType> alloc{};
+  int nk = 2;
+  int ni = 3;
+  int nj = 3;
+  Tensor2D<ComplexType> A({nk, ni}, 0.0, alloc);
+  Tensor3D<ComplexType> B({nk, ni, nj}, ComplexType(1.0,-3.0), alloc);
+  B[0][0][0] = ComplexType(1.0);
+  B[0][2][2] = ComplexType(0,-1.0);
+  B[1][0][0] = ComplexType(1.0);
+  B[1][2][2] = ComplexType(0,-1.0);
+  using ma::get_diagonal_strided;
+  get_diagonal_strided(B, A);
+  Tensor2D<ComplexType> ref = {{ComplexType(1.0),ComplexType(1.0,-3.0),ComplexType(0,-1.0)},
+                               {ComplexType(1.0),ComplexType(1.0,-3.0),ComplexType(0,-1.0)}};
+  verify_approx(A, ref);
+}
+
 }
