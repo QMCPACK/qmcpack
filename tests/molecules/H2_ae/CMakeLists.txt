@@ -1,6 +1,6 @@
 
 IF (NOT QMC_CUDA)
- IF (NOT QMC_COMPLEX AND ENABLE_SOA)
+ IF (NOT QMC_COMPLEX)
   IF(BUILD_LMYENGINE_INTERFACE)
 
   #
@@ -36,7 +36,7 @@ IF (NOT QMC_CUDA)
     MESSAGE_VERBOSE("Skipping H2 test because lmyengine interface was not built (BUILD_LMYENGINE_INTERFACE=0)")
   ENDIF(BUILD_LMYENGINE_INTERFACE)
  ELSE()
-    MESSAGE_VERBOSE("Skipping H2 tests because orbital rotation is not supported by complex build (QMC_COMPLEX=1) and SoA build (ENABLE_SOA=1) is required")
+    MESSAGE_VERBOSE("Skipping H2 tests because orbital rotation is not supported by complex build (QMC_COMPLEX=1)")
  ENDIF()
 ELSE()
     MESSAGE_VERBOSE("Skipping H2 tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")

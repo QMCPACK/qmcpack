@@ -391,7 +391,10 @@ HDF5 "afqmc.h5" {
     \item \ishell{/Hamiltonian/Energies}: Array containing $[E_{II}, E_{\mathrm{core}}]$. $E_{II}$ should contain ion-ion repulsion energy and any additional constant terms which have to be added to the total energy (such as the electron-electron interaction Madelung contribution of $\frac{1}{2} N \xi )$. $E_{\mathrm{core}}$ is deprecated and not used.
 \end{itemize}
 
-Finally, complex integrals should be written as an array with an additional dimension, e.g., a 1D array should be written as a 2D array with \ishell{array_hdf5[:,0]=real(1d_array)} and \ishell{array_hdf5[:,1]=imag(1d_array)}. The functions \ishell{afqmctools.utils.misc.from_qmcpack_complex} and \ishell{afqmctools.utils.misc.to_qmcpack_complex} can be used to transform qmcpack format to complex valued numpy arrays of the appropriate shape.
+Complex integrals should be written as an array with an additional dimension, e.g., a 1D array should be written as a 2D array with \ishell{array_hdf5[:,0]=real(1d_array)} and \ishell{array_hdf5[:,1]=imag(1d_array)}. The functions \ishell{afqmctools.utils.misc.from_qmcpack_complex} and \ishell{afqmctools.utils.misc.to_qmcpack_complex} can be used to transform qmcpack format to complex valued numpy arrays of the appropriate shape and vice versa.
+
+Finally, if using external tools to generate this file format, we provide a sanity checker script in \ishell{utils/afqmctools/bin/test_afqmc_input.py} which will raise errors if the format does not conform to what is being used internally.
+
 \section{Advice/Useful Information}
 
 AFQMC calculations are computationally expensive and require some care to obtain reasonable performance.

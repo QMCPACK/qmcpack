@@ -84,11 +84,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-#ifdef ENABLE_SOA
   elec_.addTable(ions_, DT_SOA);
-#else
-  elec_.addTable(ions_, DT_AOS);
-#endif
   elec_.resetGroups();
   elec_.createSK(); // needed by AoS J2 for ChiesaKEcorrection
 

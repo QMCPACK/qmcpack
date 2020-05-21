@@ -39,6 +39,7 @@
 
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/coo_matrix.hpp"
+#include "AFQMC/Utilities/hdf5_consistency_helper.hpp"
 
 #define MORE  1555
 #define LAST  2777
@@ -241,7 +242,7 @@ inline void multiple_reader_hdf5_csr(container& Q, matrix_map_ const& map_, hdf_
             app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading index_" <<myblock_number <<" dataset. \n";
             APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading index_ dataset. \n");
           }
-          if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(myblock_number))) {
+          if(!readComplexOrReal(dump,std::string("vals_")+std::to_string(myblock_number),vvec)) {
             app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading vals_" <<myblock_number <<" dataset. \n";
             APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading vals_ dataset. \n");
           }
@@ -312,7 +313,7 @@ inline void read_csr_matrix_from_hdf_into_distributed_container(container& Q, ma
         app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading index_" <<k <<" dataset. \n";
         APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading index_ dataset. \n");
       }
-      if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(k))) {
+      if(!readComplexOrReal(dump,std::string("vals_")+std::to_string(k),vvec)) {
         app_error()<<" Error in multiple_reader_hdf5_csr: Problems reading vals_" <<k <<" dataset. \n";
         APP_ABORT(" Error in multiple_reader_hdf5_csr: Problems reading vals_ dataset. \n");
       }
@@ -383,7 +384,7 @@ inline void multiple_reader_local_count(hdf_archive& dump, matrix_partition cons
             app_error()<<" Error in multiple_reader_hdf5_SpMat: Problems reading index_" <<myblock_number <<" dataset. \n";
             APP_ABORT(" Error in multiple_reader_hdf5_SpMat: Problems reading index dataset. \n");
           }
-          if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(myblock_number))) {
+          if(!readComplexOrReal(dump,std::string("vals_")+std::to_string(myblock_number),vvec)) {
             app_error()<<" Error in multiple_reader_hdf5_SpMat: Problems reading vals_" <<myblock_number <<" dataset. \n";
             APP_ABORT(" Error in multiple_reader_hdf5_SpMat: Problems reading vals_ dataset. \n");
           }
@@ -462,7 +463,7 @@ inline void multiple_reader_global_count(hdf_archive& dump, matrix_partition con
           app_error()<<" Error in multiple_reader_count_entries: Problems reading index_" <<ib <<" dataset. \n";
           APP_ABORT(" Error in multiple_reader_count_entries: Problems reading index_  dataset. \n");
         }
-        if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(ib))) {
+        if(!readComplexOrReal(dump,std::string("vals_")+std::to_string(ib),vvec)) {
           app_error()<<" Error in multiple_reader_count_entries: Problems reading vals_" <<ib <<" dataset. \n";
           APP_ABORT(" Error in multiple_reader_count_entries: Problems reading vals_ dataset. \n");
         } 

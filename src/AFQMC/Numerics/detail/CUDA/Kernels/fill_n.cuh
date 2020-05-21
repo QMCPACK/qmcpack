@@ -21,12 +21,14 @@
 namespace kernels 
 {
 
+void fill_n(char * first, int N, int stride, char const value);
 void fill_n(int * first, int N, int stride, int const value);
 void fill_n(float * first, int N,  int stride, float const value);
 void fill_n(double * first, int N,  int stride, double const value);
 void fill_n(std::complex<float> * first, int N,  int stride, std::complex<float> const value);
 void fill_n(std::complex<double> * first, int N,  int stride, std::complex<double> const value);
 
+void fill_n(char * first, int N, char const value);
 void fill_n(int * first, int N, int const value);
 void fill_n(long unsigned int * first, long unsigned int N, const long unsigned int value);
 void fill_n(float * first, int N, float const value);

@@ -103,35 +103,15 @@ LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
   {
     const DistanceTableData& d_table(P.getDistTable(myTableIndex));
     Value = 0.0;
-    if (d_table.DTType == DT_SOA)
+    const size_t Nelec = P.getTotalNum();
+    for (size_t iel = 0; iel < Nelec; ++iel)
     {
-      const size_t Nelec = P.getTotalNum();
-      for (size_t iel = 0; iel < Nelec; ++iel)
-      {
-        const auto& dist = d_table.getDistRow(iel);
-        Return_t esum(0);
-        for (size_t iat = 0; iat < NumIons; ++iat)
-          if (PP[iat] != nullptr)
-            esum += PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
-        Value -= esum;
-      }
-    }
-    else
-    {
-#ifndef ENABLE_SOA
-      //loop over all the ions
-      for (int iat = 0; iat < NumIons; iat++)
-      {
-        RadialPotentialType* ppot(PP[iat]);
-        if (ppot == nullptr)
-          continue;
-        Return_t esum(0);
-        for (int nn = d_table.M[iat]; nn < d_table.M[iat + 1]; ++nn)
-          esum += ppot->splint(d_table.r(nn)) * d_table.rinv(nn);
-        //count the sign and effective charge
-        Value -= esum * Zeff[iat];
-      }
-#endif
+      const auto& dist = d_table.getDistRow(iel);
+      Return_t esum(0);
+      for (size_t iat = 0; iat < NumIons; ++iat)
+        if (PP[iat] != nullptr)
+          esum += PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
+      Value -= esum;
     }
   }
   return Value;
@@ -189,48 +169,22 @@ LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
   Ve_samp                     = 0.0;
   Vi_samp                     = 0.0;
 
-  if (d_table.DTType == DT_SOA)
+  const size_t Nelec = P.getTotalNum();
+  for (size_t iel = 0; iel < Nelec; ++iel)
   {
-    const size_t Nelec = P.getTotalNum();
-    for (size_t iel = 0; iel < Nelec; ++iel)
-    {
-      const auto& dist = d_table.getDistRow(iel);
-      Return_t esum(0), pairpot;
-      for (size_t iat = 0; iat < NumIons; ++iat)
-        if (PP[iat] != nullptr)
-        {
-          pairpot = -0.5 * PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
-          Vi_samp(iat) += pairpot;
-          Ve_samp(iel) += pairpot;
-          esum         += pairpot;
-        }
-      Value += esum;
-    }
-    Value *= 2.0;
-  }
-  else
-  {
-#ifndef ENABLE_SOA
-    //loop over all the ions
-    for (int iat = 0; iat < NumIons; iat++)
-    {
-      RadialPotentialType* ppot(PP[iat]);
-      if (ppot == 0)
-        continue;
-      Return_t esum(0.0), pairpot;
-      //loop over all the electrons
-      for (int nn = d_table.M[iat], iel = 0; nn < d_table.M[iat + 1]; ++nn, iel++)
+    const auto& dist = d_table.getDistRow(iel);
+    Return_t esum(0), pairpot;
+    for (size_t iat = 0; iat < NumIons; ++iat)
+      if (PP[iat] != nullptr)
       {
-        pairpot = -.5 * Zeff[iat] * ppot->splint(d_table.r(nn)) * d_table.rinv(nn);
-      Vi_samp(iat) += pairpot;
-      Ve_samp(iel) += pairpot;
-      esum         += pairpot;
+        pairpot = -0.5 * PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
+        Vi_samp(iat) += pairpot;
+        Ve_samp(iel) += pairpot;
+        esum         += pairpot;
       }
-      Value += esum;
-    }
-    Value *= 2.0;
-#endif
+    Value += esum;
   }
+  Value *= 2.0;
 
 #if defined(TRACE_CHECK)
   RealType Vnow  = Value;
@@ -269,19 +223,15 @@ LocalECPotential::Return_t LocalECPotential::evaluate_orig(ParticleSet& P)
 {
   const DistanceTableData& d_table(P.getDistTable(myTableIndex));
   Value = 0.0;
-  //loop over all the ions
-  for (int iat = 0; iat < NumIons; iat++)
+  const size_t Nelec = P.getTotalNum();
+  for (size_t iel = 0; iel < Nelec; ++iel)
   {
-    RadialPotentialType* ppot(PP[iat]);
-    if (ppot == 0)
-      continue;
-    Return_t esum(0.0);
-#ifndef ENABLE_SOA
-    for (int nn = d_table.M[iat]; nn < d_table.M[iat + 1]; ++nn)
-      esum += ppot->splint(d_table.r(nn)) * d_table.rinv(nn);
-#endif
-    //count the sign and effective charge
-    Value -= esum * Zeff[iat];
+    const auto& dist = d_table.getDistRow(iel);
+    Return_t esum(0);
+    for (size_t iat = 0; iat < NumIons; ++iat)
+      if (PP[iat] != nullptr)
+        esum += PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
+    Value -= esum;
   }
   return Value;
 }

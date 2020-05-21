@@ -17,14 +17,7 @@
 #include "Numerics/OneDimGridBase.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/GaussianBasisSet.h"
-#ifdef ENABLE_SOA
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
-#else
-#include "QMCWaveFunctions/MolecularOrbitals/LocalizedBasisSet.h"
-#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSet.h"
-#include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
-#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-#endif
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus
@@ -62,11 +55,7 @@ void test_He(bool transform)
     ions.update();
 
 
-#ifdef ENABLE_SOA
     elec.addTable(ions, DT_SOA);
-#else
-    elec.addTable(ions, DT_AOS);
-#endif
     elec.update();
 
     Libxml2Document doc;
@@ -185,11 +174,7 @@ void test_Ne(bool transform)
     ions.update();
 
 
-#ifdef ENABLE_SOA
     elec.addTable(ions, DT_SOA);
-#else
-    elec.addTable(ions, DT_AOS);
-#endif
     elec.update();
 
     Libxml2Document doc;
@@ -319,11 +304,7 @@ void test_HCN(bool transform)
 
     elec.R = 0.0;
 
-#ifdef ENABLE_SOA
     elec.addTable(ions, DT_SOA);
-#else
-    elec.addTable(ions, DT_AOS);
-#endif
     elec.update();
 
     Libxml2Document doc2;
@@ -534,7 +515,6 @@ void test_HCN(bool transform)
     elec.makeMove(0, disp);
 
 
-#if defined(ENABLE_SOA) 
     SPOSet::GradMatrix_t dionpsi(elec.R.size(), sposet->getOrbitalSetSize());
     SPOSet::HessMatrix_t diongradpsi(elec.R.size(), sposet->getOrbitalSetSize());
     SPOSet::GradMatrix_t dionlaplpsi(elec.R.size(), sposet->getOrbitalSetSize());
@@ -688,7 +668,6 @@ void test_HCN(bool transform)
     REQUIRE( dionpsi[0][4][2]       == Approx(-7.300043903e-05) );  
     REQUIRE( dionpsi[0][5][2]       == Approx(2.910525987e-06) );  
     REQUIRE( dionpsi[0][6][2]       == Approx(-1.56074936e-05) );  
-#endif
  
     SPOSetBuilderFactory::clear();
   }

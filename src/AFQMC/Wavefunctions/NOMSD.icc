@@ -145,10 +145,7 @@ namespace afqmc
     std::tie(nak0,nak1) = FairDivideBoundary(TG.getLocalTGRank(),Gsize*nwalk,TG.getNCoresPerTG());
 
     // use mpi3 when ready
-    if(req_Grecv!=MPI_REQUEST_NULL)
-        MPI_Request_free(&req_Grecv);
-    if(req_Gsend!=MPI_REQUEST_NULL)
-        MPI_Request_free(&req_Gsend);
+    MPI_Request req_Gsend, req_Grecv;
     MPI_Send_init(to_address(Gwork.origin())+nak0,(nak1-nak0)*sizeof(ComplexType),MPI_CHAR,
                   TG.prev_core(),1234,&(TG.TG()),&req_Gsend);
     MPI_Recv_init(to_address(Grecv.origin())+nak0,(nak1-nak0)*sizeof(ComplexType),MPI_CHAR,
@@ -191,6 +188,8 @@ namespace afqmc
     TG.local_barrier();    
     copy_n(eloc2[node_number*nwalk].origin(),3*nwalk,E.origin());
     copy_n(overlaps.origin(),nwalk,Ov.origin());
+    MPI_Request_free(&req_Grecv);
+    MPI_Request_free(&req_Gsend);
     TG.local_barrier();    
   }
 
@@ -255,10 +254,7 @@ namespace afqmc
     int nak0,nak1;
     std::tie(nak0,nak1) = FairDivideBoundary(TG.getLocalTGRank(),Gsize*nwalk,TG.getNCoresPerTG());
 
-    if(req_SMrecv!=MPI_REQUEST_NULL)
-          MPI_Request_free(&req_SMrecv);
-    if(req_SMsend!=MPI_REQUEST_NULL)
-          MPI_Request_free(&req_SMsend);
+    MPI_Request req_SMsend, req_SMrecv;
     // use mpi3 when ready
     MPI_Send_init(to_address(SMwork.origin())+nak0,(nak1-nak0)*sizeof(ComplexType),MPI_CHAR,
                     TG.prev_core(),2345,&(TG.TG()),&req_SMsend);
@@ -319,6 +315,8 @@ namespace afqmc
       E[i][1] = elocal[i][1]/Ov[i];
       E[i][2] = elocal[i][2]/Ov[i];
     }
+    MPI_Request_free(&req_SMrecv);
+    MPI_Request_free(&req_SMsend);
     TG.local_barrier();    
   }
 
@@ -346,10 +344,8 @@ namespace afqmc
     assert(SM.size(1) == Gsize);
     // to force synchronization before modifying structures in SHM
     TG.local_barrier();
-    if(TG.TG_local().root()) {
-      fill_n(Ov.origin(),nw,0);
-      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
-    }
+    fill_n(Ov.origin(),nw,0);
+    fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
     TG.local_barrier();
     if(walker_type != COLLINEAR) {
 
@@ -761,12 +757,10 @@ namespace afqmc
     double LogOverlapFactor(wset.getLogOverlapFactor());
     assert(Ov.size() >= nw);  
     fill_n(Ov.origin(),nw,0);
-    if(TG.TG_local().root() ) {
-      // need strided fill_n????
-      if(G.size(1) != G.stride(0))
-        APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n"); 
-      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
-    }
+    // need strided fill_n????
+    if(G.size(1) != G.stride(0))
+      APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n"); 
+    fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
     TG.local_barrier();
     auto Gsize = size_t(dm_size(not compact));
     auto wlk_dims = wset.walker_dims();
@@ -1366,8 +1360,7 @@ namespace afqmc
     if(G.size(1) != G.stride(0))
       APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
     using std::fill_n;
-    if(TG.TG_local().root())
-      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
+    fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
     TG.TG_local().barrier();
     if(Refs!=nullptr) {
       assert(detR!=nullptr);
@@ -1526,9 +1519,7 @@ namespace afqmc
     // Transposed temporaries for back propagation.
     if(G.size(1) != G.stride(0))
       APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
-    using std::fill_n;
-    if(TG.TG_local().root()) 
-      fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
+    fill_n(G.origin(),G.num_elements(),ComplexType(0.0));
     TG.TG_local().barrier();
     if(Refs!=nullptr) {
       assert(detR!=nullptr);

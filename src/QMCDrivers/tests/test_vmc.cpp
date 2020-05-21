@@ -70,11 +70,7 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(massIdx, upIdx)     = 1.0;
 
-#ifdef ENABLE_SOA
   elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
   elec.update();
 
 

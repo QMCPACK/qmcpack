@@ -27,7 +27,6 @@ SET(HAMSRCS
   NonLocalTOperator.cpp
   ForwardWalking.cpp
   PairCorrEstimator.cpp
-  LocalMomentEstimator.cpp
   DensityEstimator.cpp
   SkPot.cpp
   SkEstimator.cpp
@@ -48,15 +47,8 @@ SET(HAMSRCS
 IF(OHMMS_DIM MATCHES 3)
   SET(HAMSRCS ${HAMSRCS}
     ChiesaCorrection.cpp
-    PulayForce.cpp
-    ZeroVarianceForce.cpp
     ForceCeperley.cpp
     ForceChiesaPBCAA.cpp
-#    StressPBCAA.cpp
-#    StressPBCAB.cpp
-#    StressKinetic.cpp
-    StressPBC.cpp
-    LocalCorePolPotential.cpp
     LocalECPotential.cpp
     NonLocalECPComponent.cpp
     NonLocalECPotential.deriv.cpp

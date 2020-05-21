@@ -123,6 +123,20 @@ namespace device
     throw std::runtime_error("Error: Calling qmc_cuda::adotpby catch all."); 
   }
 
+  // dot extension 
+  template<typename T, typename Q, class ptrA, class ptrB, class ptrC>
+  inline static void strided_adotpby(int nb, int const n, T const alpha, ptrA x, int const incx, ptrB y, int const incy, Q const beta, ptrC result, int inc)
+  {
+    std::cout<<" types: (strided_adotpby)"
+             <<"  T: " <<typeid(alpha).name() <<"\n"
+             <<"  Q: " <<typeid(beta).name() <<"\n"
+             <<"  ptrA: " <<typeid(x).name() <<"\n"
+             <<"  ptrB: " <<typeid(y).name() <<"\n"
+             <<"  ptrC: " <<typeid(result).name() <<std::endl;
+    print_stacktrace
+    throw std::runtime_error("Error: Calling qmc_cuda::strided_adotpby catch all.");
+  }
+
   // axty
   template<class T, class ptrA, class ptrB>
   inline static void axty(int n,

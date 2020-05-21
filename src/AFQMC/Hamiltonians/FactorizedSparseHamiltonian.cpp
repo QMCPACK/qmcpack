@@ -32,7 +32,12 @@ namespace afqmc
 
 boost::multi::array<ComplexType,1> FactorizedSparseHamiltonian::halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta) {
   check_wavefunction_consistency(type,Alpha,Beta,NMO,NAEA,NAEB);
+#if defined(QMC_COMPLEX)
   return rotateHij(type,Alpha,Beta,OneBodyHamiltonian::H1);
+#else
+  boost::multi::array<ComplexType,2> H1_(OneBodyHamiltonian::H1);  
+  return rotateHij(type,Alpha,Beta,H1_);
+#endif
 }
 
 SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double cut,

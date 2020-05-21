@@ -326,7 +326,7 @@ class WalkerSetBase: public AFQMCInfo
     if(bp_buffer.size(0) != bp_walker_size) {
       bp_buffer.reextent({bp_walker_size,walker_buffer.size(0)});
       using std::fill_n;
-      fill_n(to_address(bp_buffer.origin())+data_displ[WEIGHT_FAC]*bp_buffer.size(1),
+      fill_n(bp_buffer.origin()+data_displ[WEIGHT_FAC]*bp_buffer.size(1),
              wlk_desc[6]*bp_buffer.size(1),bp_element(1.0));
     }
     if(nbp > 0 && (data_displ[SMN]<0 || data_displ[SM_AUX]<0) ) {

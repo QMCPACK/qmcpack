@@ -19,10 +19,6 @@
 #include "QMCHamiltonians/BareKineticEnergy.h"
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#ifndef ENABLE_SOA
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
-#endif
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
 
@@ -61,11 +57,7 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   int massIdx = tspecies.addAttribute("mass");
   tspecies(massIdx, upIdx)   = 1.0;
 
-#ifdef ENABLE_SOA
   elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
   elec.update();
 
 
@@ -243,7 +235,6 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   //This is validated against an alternate code path (waveefunction tester for local energy).
   REQUIRE(keval == Approx(-0.147507745));
 
-#ifdef ENABLE_SOA
   ParticleSet::ParticlePos_t HFTerm, PulayTerm;
   HFTerm.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());
@@ -259,6 +250,5 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   REQUIRE(PulayTerm[1][1] == Approx(0.0));
   REQUIRE(PulayTerm[1][2] == Approx(0.0));
 
-#endif
 }
 } // namespace qmcplusplus
