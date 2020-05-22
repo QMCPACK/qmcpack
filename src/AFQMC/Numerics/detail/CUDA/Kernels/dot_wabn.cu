@@ -20,6 +20,8 @@
 #include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
 #define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
+#define STRING2(x) #x
+#define STRING(x) STRING2(x)
 
 namespace kernels 
 {
@@ -57,12 +59,8 @@ __global__ void kernel_dot_wabn(int nwalk, int nocc, int nchol,
         T re = (alp * cache[ 0 ]).real();
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(y+w*incy);
-#if __CUDA_ARCH__ < 600
-        std::runtime_error("Error: CUDA_ARCH < 600 not supported.");
-#else
         atomicAdd(re_,re); 
         atomicAdd(re_+1,im); 
-#endif
     }
 }
 
@@ -104,12 +102,8 @@ __global__ void kernel_dot_wanb(int nt, int nwalk, int nocc, int nchol,
         T re = (alp * cache[ 0 ]).real();
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(y+blockIdx.x*incy);
-#if __CUDA_ARCH__ < 600
-        std::runtime_error("Error: CUDA_ARCH < 600 not supported.");
-#else
         atomicAdd(re_,re);
         atomicAdd(re_+1,im);
-#endif
     }
 }
 
@@ -145,12 +139,8 @@ __global__ void kernel_dot_wanb2(int nwalk, int nocc, int nchol,
         T re = (alp * cache[ 0 ]).real();
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(y+w*incy);
-#if __CUDA_ARCH__ < 600
-        std::runtime_error("Error: CUDA_ARCH < 600 not supported.");
-#else
         atomicAdd(re_,re);
         atomicAdd(re_+1,im);
-#endif
     }
 }
 
@@ -185,12 +175,8 @@ __global__ void kernel_dot_wpan_waqn_Fwpq(int nwalk, int nmo, int nchol,
         T re = (alp * cache[ 0 ]).real();
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(F+(w*nmo+p)*nmo+q);
-#if __CUDA_ARCH__ < 600
-        std::runtime_error("Error: CUDA_ARCH < 600 not supported.");
-#else
         atomicAdd(re_,re);
         atomicAdd(re_+1,im);
-#endif
     }
   }
 }
