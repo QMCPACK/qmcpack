@@ -37,7 +37,7 @@ namespace afqmc
  * @return true if successful. false indiciates name not found in dump.
  */
 template<typename T>
-int readComplexOrReal(hdf_archive& dump, std::string name, std::vector<T>& out)
+bool readComplexOrReal(hdf_archive& dump, std::string name, std::vector<T>& out)
 {
   std::vector<int> shape;
   int ndim = 1; // vector
@@ -59,6 +59,7 @@ int readComplexOrReal(hdf_archive& dump, std::string name, std::vector<T>& out)
   } else {
     app_log() << " Error reading " << name << " dataspace. Shape mismatch.\n";
     APP_ABORT("");
+    return false;
   }
 #else
   if(shape.size() == ndim+1) {
@@ -94,6 +95,7 @@ bool readComplexOrReal(hdf_archive& dump, std::string name, boost::multi::array<
   } else {
     app_log() << " Error reading " << name << " dataspace. Shape mismatch.\n";
     APP_ABORT("");
+    return false;
   }
 #else
   if(shape.size() == ndim+1) {
