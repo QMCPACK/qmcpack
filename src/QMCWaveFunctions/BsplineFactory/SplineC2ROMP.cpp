@@ -436,7 +436,7 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
   for (size_t iw = 0; iw < nw; iw++)
   {
     const VirtualParticleSet& VP = vp_list[iw];
-    assert(ratios_list[iw].size() == VP.size());
+    assert(ratios_list[iw].size() == VP.getTotalNum());
     for (size_t iat = 0; iat < VP.getTotalNum(); ++iat, ++iVP)
     {
       mw_ref_id[iVP]     = iw;
