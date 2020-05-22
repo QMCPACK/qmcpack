@@ -2,7 +2,7 @@ Example 6: Back Propagation
 ===========================
 
 .. note::
-    matplotlib is required to generate to generate the figure in this example.
+    matplotlib is required to generate the figure in this example.
 
 The basic estimators printed out in the qmcpack `*.scalar.dat` files are *mixed*
 estimates. Unless the operator for which the mixed estimate is computed commutes with the
