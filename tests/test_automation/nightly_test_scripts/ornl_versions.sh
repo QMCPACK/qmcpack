@@ -14,6 +14,7 @@ gcc_vold=7.3.0 # 2018-01-25
 #gcc_vcuda=8.2.1 #  For CUDA 10.2 compatibility  https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
 gcc_vcuda=8.3.0 #  Not officially supported with RHEL8.1 but 8.2.1 is not available in spack
 gcc_vintel=8.3.0 # Compiler for C++ library used by Intel compiler
+gcc_vpgi=8.3.0 # Use makelocalrc to configure PGI with this compiler
 
 # LLVM 
 # Zen2 scheduling optimizations are only in LLVM 10+
