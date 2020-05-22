@@ -39,7 +39,7 @@ case "$plat" in
     GenuineIntel )
 	ourplatform=Intel
 	;;
-    AuthenticaAMD )
+    AuthenticAMD )
 	ourplatform=AMD
 	;;
     * )
@@ -57,14 +57,14 @@ echo --- Host is $ourhostname
 case "$ourhostname" in
     sulfur )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="build_intel2020_nompi build_intel2020 build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_intel2020_aos build_gccnew_nompi_mkl build_gccold_nompi_mkl build_clangnew_nompi_mkl build_clangold_nompi_mkl build_gccnew_nompi build_clangnew_nompi build_gccnew_mkl build_gccnew_mkl_complex build_clangnew_mkl build_clangnew_mkl_complex build_clangnew_mkl_mixed"
+	    buildsys="build_intel2020_nompi build_intel2020 build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_gccnew_nompi_mkl build_gccold_nompi_mkl build_clangnew_nompi_mkl build_clangold_nompi_mkl build_gccnew_nompi build_clangnew_nompi build_gccnew_mkl build_gccnew_mkl_complex build_clangnew_mkl build_clangnew_mkl_complex build_clangnew_mkl_mixed build_gcccuda build_gcccuda_complex build_gcccuda_full build_pgi2019_nompi"
 	else
-	    buildsys="build_gccnew_mkl_nompi build_clangnew_mkl_nompi build_intel2020_nompi build_intel2020 build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_intel2020_aos"
+	    buildsys="build_gccnew_mkl_nompi build_clangnew_mkl_nompi build_intel2020_nompi build_intel2020 build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_gcccuda build_gcccuda_complex build_pgi2019_nompi"
 	fi
     ;;
     nitrogen )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="build_gccnew build_pgi2019_nompi build_gcccuda build_gcccuda_full build_gcccuda_complex build_gccnew_complex build_gccnew_nompi build_gccnew_nompi_complex build_clangnew build_clangnew_complex build_clangnew_mixed build_clangnew_complex_mixed build_clangnew_aos build_clangnew_complex_aos"
+	    buildsys="build_gccnew build_pgi2019_nompi build_gcccuda build_gcccuda_full build_gcccuda_complex build_gccnew_complex build_gccnew_nompi build_gccnew_nompi_complex build_clangnew build_clangnew_complex build_clangnew_mixed build_clangnew_complex_mixed"
 	else
 	    buildsys="build_gccnew build_pgi2019_nompi build_gcccuda build_gcccuda_complex build_gccnew_complex build_clangnew"
 	fi
@@ -102,8 +102,10 @@ export QMC_DATA=/scratch/pk7/QMC_DATA # Route to directory containing performanc
 
 # CUDA 10 setup
 export CUDAVER=10.2
-export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda-${CUDAVER}/bin/:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-export LD_LIBRARY_PATH=/usr/local/cuda-${CUDAVER}/lib64
+#export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda-${CUDAVER}/bin/:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+export PATH=/usr/local/cuda-${CUDAVER}/bin/:${PATH}
+#export LD_LIBRARY_PATH=/usr/local/cuda-${CUDAVER}/lib64
+export LD_LIBRARY_PATH=/usr/local/cuda-${CUDAVER}/lib64:${LD_LIBRARY_PATH}
 
 # Specify GPUs for testing. Obtain device IDs via "nvidia-smi -L"
 #export CUDA_VISIBLE_DEVICES=
@@ -600,6 +602,8 @@ fi
 if [[ $sys == *"aos"* ]]; then
 QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-AoS
 CTCFG="$CTCFG -DENABLE_SOA=0"
+echo "*** ERROR: AoS Builds are deprecated as of 2020-05-19"
+exit 1
 else
 CTCFG="$CTCFG -DENABLE_SOA=1"
 fi
