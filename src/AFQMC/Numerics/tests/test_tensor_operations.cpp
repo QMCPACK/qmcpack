@@ -98,36 +98,50 @@ TEST_CASE("KaKjw_to_KKwaj", "[Numerics][tensor_operations]")
 
 }
 
-// Buggy.
 TEST_CASE("KaKjw_to_QKwaj", "[Numerics][tensor_operations]")
 {
-
   Alloc<double> alloc{};
   int nwalk = 5;
-  int occ_k = 5;
-  int nmo_k = 10;
-  int nk = 3;
+  int occ_k = 4;
+  int nmo_k = 8;
+  int nk = 4;
   std::vector<double> buffer(nk*occ_k*nk*nmo_k*nwalk);
   create_data(buffer, 1.0);
-  Tensor3D<double> KaKjw({nk*occ_k, nk*nmo_k, nwalk}, alloc);
+  Tensor5D<double> KaKjw({nk, occ_k, nk, nmo_k, nwalk}, alloc);
   Tensor5D<double> QKajw({nk, nk, occ_k, nmo_k, nwalk}, 0.0, alloc);
-  Tensor1D<int> nmo_pk = {nmo_k, nmo_k, nmo_k};
-  Tensor1D<int> nel_pk = {occ_k, occ_k, occ_k};
-  Tensor1D<int> nmo_pk0 = {0, nmo_k, 2*nmo_k};
-  Tensor1D<int> nel_pk0 = {0, occ_k, 2*occ_k};
-  Tensor1D<int> qk_to_k2 = {2, 0, 1};
-  std::cout << buffer.size() << " " << KaKjw.num_elements() << std::endl;
+  Tensor1D<int> nmo_pk = {nmo_k, nmo_k, nmo_k, nmo_k};
+  Tensor1D<int> nel_pk = {occ_k, occ_k, occ_k, occ_k};
+  Tensor1D<int> nmo_pk0 = {0, nmo_k, 2*nmo_k, 3*nmo_k};
+  Tensor1D<int> nel_pk0 = {0, occ_k, 2*occ_k, 3*occ_k};
+  // From 221 k-point grid
+  Tensor2D<int> qk_to_k2 = {{0, 1, 2, 3},
+                            {1, 0, 3, 2},
+                            {2, 3, 0, 1},
+                            {3, 2, 1, 0}};
   copy_n(buffer.data(), buffer.size(), KaKjw.origin());
-  //using ma::KaKjw_to_QKajw;
-  //KaKjw_to_QKajw(nwalk, nk, nmo_k, nk*nmo_k, occ_k,
-                 //nmo_pk.origin(), nmo_pk0.origin(),
-                 //nel_pk.origin(), nel_pk0.origin(),
-                 //qk_to_k2.origin(),
-                 //KaKjw.origin(), QKajw.origin());
+  using ma::KaKjw_to_QKajw;
+  KaKjw_to_QKajw(nwalk, nk, nmo_k, nk*nmo_k, occ_k,
+                 nmo_pk.origin(), nmo_pk0.origin(),
+                 nel_pk.origin(), nel_pk0.origin(),
+                 qk_to_k2.origin(),
+                 KaKjw.origin(), QKajw.origin());
   // Just captured from output.
-  //REQUIRE(QKajw[1][2][3][4][4] == Approx(1974.0));
-  //REQUIRE(QKajw[2][1][3][4][4] == Approx(1224.0));
-  //REQUIRE(QKajw[2][1][4][3][4] == Approx(1369.0));
+  REQUIRE(QKajw[1][2][3][4][4] == Approx(1904.0));
+  REQUIRE(QKajw[2][1][3][4][4] == Approx(1264.0));
+  REQUIRE(QKajw[2][1][1][3][4] == Approx(939.0));
+  // Check structure consistency.
+  for (int iq = 0; iq < nk; iq++) {
+    for (int k1 = 0; k1 < nk; k1++) {
+      int k2 = qk_to_k2[iq][k1];
+      for (int ia=0; ia < nel_pk[k1]; ia++) {
+        for (int ij=0; ij < nmo_pk[k2]; ij++) {
+          for (int iw=0; iw < nwalk; iw++) {
+            REQUIRE(KaKjw[k1][ia][k2][ij][iw] == QKajw[iq][k1][ia][ij][iw]);
+          }
+        }
+      }
+    }
+  }
 
 }
 

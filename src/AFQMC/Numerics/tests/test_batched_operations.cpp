@@ -434,38 +434,29 @@ TEST_CASE("inplace_product", "[Numerics][batched_operations]")
 //}
 
 
-// Buggy.
 TEST_CASE("vbias_from_v1", "[Numerics][batched_operations]")
 {
   Alloc<ComplexType> alloc{};
-  int nkpts = 3;
+  int nkpts = 4;
   int nwalk = 4;
-  int nchol_max = 7;
-  int nchol_tot = 7+3+5;
-  std::vector<int> nchol_pq = {7, 3, 5};
-  std::vector<int> Qmap = {1, 2, 3};
-  std::vector<int> Q2vbias = {0, 14, 14+6};
-  std::vector<int> kminus = {0, 1, 2};
-  std::vector<ComplexType> buffer(nkpts*nchol_max*nwalk);
-  Tensor3D<ComplexType> v1({nkpts, nchol_max, nwalk}, alloc);
-  create_data(buffer, ComplexType(100));
-  copy_n(buffer.data(), buffer.size(), v1.origin());
-  Tensor2D<ComplexType> vbias({2*nchol_tot,nwalk}, 0.0, alloc);
-  Tensor1D<int> dev_nchol_pq(iextensions<1u>{nkpts}, alloc);
-  Tensor1D<int> dev_Qmap(iextensions<1u>{nkpts}, alloc);
-  Tensor1D<int> dev_Q2vbias(iextensions<1u>{nkpts}, alloc);
-  Tensor1D<int> dev_kminus(iextensions<1u>{nkpts}, alloc);
-  copy_n(nchol_pq.data(), nchol_pq.size(), dev_nchol_pq.origin());
-  copy_n(Qmap.data(), Qmap.size(), dev_Qmap.origin());
-  copy_n(Q2vbias.data(), Q2vbias.size(), dev_Q2vbias.origin());
-  copy_n(kminus.data(), kminus.size(), dev_kminus.origin());
+  int nchol_max = 87;
+  int nchol_tot = 339;
+  Tensor1D<int> qmap = {1, 2, 3, 4};
+  Tensor1D<int> kminus = {0, 1, 2, 3};
+  Tensor1D<int> nchol_pq = {87, 84, 84, 84};
+  Tensor1D<int> q2vbias = {0, 174, 342, 510};
+  Tensor3D<ComplexType> v1({2*nkpts, nchol_max, nwalk}, ComplexType(1.0,-0.007), alloc);
+  Tensor2D<ComplexType> vbias({2*nchol_tot, nwalk}, 0.0, alloc);
   using ma::vbias_from_v1;
-  vbias_from_v1(nwalk, nkpts, nchol_max, dev_Qmap.origin(), dev_kminus.origin(),
-                dev_nchol_pq.origin(), dev_Q2vbias.origin(), ComplexType(1.0),
+  vbias_from_v1(nwalk, nkpts, nchol_max, qmap.origin(), kminus.origin(),
+                nchol_pq.origin(), q2vbias.origin(), ComplexType(0.05),
                 v1.origin(), to_address(vbias.origin()));
-  copy_n(vbias.origin(), buffer.size(), buffer.data());
-  //REQUIRE(real(buffer[1]) == Approx(2.01));
-  //REQUIRE(imag(buffer[47]) == Approx(-0.19));
+  array<ComplexType,2> vbias_host({2*nchol_tot, nwalk}, 0.0);
+  copy_n(vbias.origin(), vbias.num_elements(), vbias_host.origin());
+  // Captured from stdout
+  REQUIRE(real(vbias_host[0][0]) == Approx(0.1));
+  REQUIRE(imag(vbias_host[10][0]) == Approx(-0.0007));
+  REQUIRE(imag(vbias_host[100][2]) == Approx(0));
 }
 
 }
