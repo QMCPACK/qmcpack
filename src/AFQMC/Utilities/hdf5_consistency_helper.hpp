@@ -65,6 +65,7 @@ bool readComplexOrReal(hdf_archive& dump, std::string name, std::vector<T>& out)
   if(shape.size() == ndim+1) {
     app_log() << " Error: Found complex integrals with QMC_COMPLEX=0.\n";
     APP_ABORT(" Please recompile with QMC_COMPLEX=1 or generate real integrals if appropriate.\n");
+    return false;
   } else {
     dump.readEntry(out, name);
     return true;
@@ -101,6 +102,7 @@ bool readComplexOrReal(hdf_archive& dump, std::string name, boost::multi::array<
   if(shape.size() == ndim+1) {
     app_log() << " Error: Found complex integrals with QMC_COMPLEX=0.\n";
     APP_ABORT(" Please recompile with QMC_COMPLEX=1 or generate real integrals if appropriate.\n");
+    return false;
   } else {
     dump.readEntry(out, name);
     return true;
