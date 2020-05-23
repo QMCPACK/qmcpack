@@ -167,31 +167,34 @@ TEST_CASE("term_by_term_matrix_vector", "[Numerics][tensor_operations]")
   term_by_term_matrix_vector(ma::TOp_PLUS, 1, nrow, ncol,
                              A.origin(), ncol,
                              x.origin(), 1);
-  ref = {{0,2,4},{3,5,7},{6,8,10}};
+  // MAM: operator asignment from initializer lists is not working on Multi
+  //      on some compilers( nvcc, intel19 )
+  //      It does work on construction, so a temporary fix     
+  ref = Tensor2D<ComplexType>{{0,2,4},{3,5,7},{6,8,10}};
   verify_approx(ref,A);
   copy_n(buffer.data(), buffer.size(), A.origin());
   term_by_term_matrix_vector(ma::TOp_MINUS, 0, nrow, ncol,
                              A.origin(), ncol,
                              x.origin(), 1);
-  ref = {{0,1,2},{2,3,4},{4,5,6}};
+  ref = Tensor2D<ComplexType>{{0,1,2},{2,3,4},{4,5,6}};
   verify_approx(ref,A);
   copy_n(buffer.data(), buffer.size(), A.origin());
   term_by_term_matrix_vector(ma::TOp_MINUS, 1, nrow, ncol,
                              A.origin(), ncol,
                              x.origin(), 1);
-  ref = {{0,0,0},{3,3,3},{6,6,6}};
+  ref = Tensor2D<ComplexType>{{0,0,0},{3,3,3},{6,6,6}};
   verify_approx(ref,A);
   copy_n(buffer.data(), buffer.size(), A.origin());
   term_by_term_matrix_vector(ma::TOp_MUL, 0, nrow, ncol,
                              A.origin(), ncol,
                              x.origin(), 1);
-  ref = {{0,0,0},{3,4,5},{12,14,16}};
+  ref = Tensor2D<ComplexType>{{0,0,0},{3,4,5},{12,14,16}};
   verify_approx(ref,A);
   copy_n(buffer.data(), buffer.size(), A.origin());
   term_by_term_matrix_vector(ma::TOp_MUL, 1, nrow, ncol,
                              A.origin(), ncol,
                              x.origin(), 1);
-  ref = {{0,1,4},{0,4,10},{0,7,16}};
+  ref = Tensor2D<ComplexType>{{0,1,4},{0,4,10},{0,7,16}};
   verify_approx(ref,A);
   // Avoid dividing by zero
   copy_n(buffer.data()+1, x.size(), x.origin());
@@ -199,18 +202,17 @@ TEST_CASE("term_by_term_matrix_vector", "[Numerics][tensor_operations]")
   term_by_term_matrix_vector(ma::TOp_DIV, 0, nrow, ncol,
                              A.origin(), ncol,
                              x.origin(), 1);
-  ref = {{0,1,2},{1.5,2.0,2.5},{2,2.333333333333,2.666666666667}};
+  ref = Tensor2D<ComplexType>{{0,1,2},{1.5,2.0,2.5},{2,2.333333333333,2.666666666667}};
   verify_approx(ref,A);
   copy_n(buffer.data()+1, x.size(), x.origin());
   copy_n(buffer.data(), buffer.size(), A.origin());
   term_by_term_matrix_vector(ma::TOp_DIV, 1, nrow, ncol,
                              A.origin(), ncol,
                              x.origin(), 1);
-  ref = {{0.0,0.5,0.666666666667},
+  ref = Tensor2D<ComplexType>{{0.0,0.5,0.666666666667},
          {3.0,2.0,1.666666666667},
          {6.0,3.5,2.666666666667}};
   verify_approx(ref,A);
-
 }
 
 TEST_CASE("transpose_wabn_to_wban", "[Numerics][tensor_operations]")
