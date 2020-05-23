@@ -41,21 +41,20 @@ def make_cell(latt,sp_label,atid,atpos,basis_='gthdzvp',pseudo_='gthpbe',mesh=No
     cell.build()
     return cell
 
-def write_esh5_orbitals(cell, name):
+def write_esh5_orbitals(cell, name, kpts = numpy.zeros((1,3),dtype=numpy.float64)):
     def to_qmcpack_complex(array):
         shape = array.shape
         return array.view(numpy.float64).reshape(shape+(2,))
     nao = cell.nao_nr()
-    kpts = numpy.zeros((1,3),dtype=numpy.float64)
 
     fh5 = File(name,'w')
     coords = cell.gen_uniform_grids(cell.mesh)
+    
+    kpts = numpy.asarray(kpts)
+    nkpts = len(kpts)
+    norbs = numpy.zeros((nkpts,),dtype=int)
+    norbs[:] = nao
 
-    norbs = numpy.zeros((1,),dtype=int)
-    norbs[0] = nao
-
-    norbs = numpy.zeros((1,),dtype=int)
-    norbs[0] = nao
     grp = fh5.create_group("OrbsG")
     dset = grp.create_dataset("reciprocal_vectors", data=cell.reciprocal_vectors())
     dset = grp.create_dataset("number_of_kpoints", data=len(kpts))
@@ -64,8 +63,6 @@ def write_esh5_orbitals(cell, name):
     dset = grp.create_dataset("fft_grid", data=cell.mesh)
     dset = grp.create_dataset("grid_type", data=int(0))
     nnr = cell.mesh[0]*cell.mesh[1]*cell.mesh[2]
-    orb = numpy.zeros((nnr,2),dtype=numpy.float64)
-    aoi_G = numpy.empty((1,len(coords)), dtype=numpy.complex128)
     # loop over kpoints later
     for (ik,k) in enumerate(kpts):
         ao = numint.KNumInt().eval_ao(cell, coords, k)[0]
@@ -189,7 +186,7 @@ def gen_qe_gto(qe_info,gto_files={},x=None,basis_map={},
                  basis_=basis,
                  mesh=qe_info['mesh'],prec=prec)
     nao = cell.nao_nr()
-    write_esh5_orbitals(cell, qe_info['outdir']+fname)
+    write_esh5_orbitals(cell, qe_info['outdir']+fname, kpts=qe_info['kpts'])
     return nao
 
 def qe_driver_MP2(qe_info,out_prefix='pyscf_drv',
