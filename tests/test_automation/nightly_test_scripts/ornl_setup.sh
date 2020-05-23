@@ -21,7 +21,7 @@ case "$plat" in
     GenuineIntel )
 	ourplatform=Intel
 	;;
-    AuthenticaAMD )
+    AuthenticAMD )
 	ourplatform=AMD
 	;;
     * )
@@ -169,6 +169,11 @@ spack load gcc@${gcc_vintel}
 spack compiler find
 spack unload gcc@${gcc_vintel}
 fi
+echo --- gcc@${gcc_vpgi}
+spack install gcc@${gcc_vpgi}
+spack load gcc@${gcc_vpgi}
+spack compiler find
+spack unload gcc@${gcc_vpgi}
 echo --- llvm@${llvm_vnew}
 spack install llvm@${llvm_vnew}
 spack load llvm@${llvm_vnew}
@@ -231,5 +236,10 @@ spack activate py-h5py%gcc@${gcc_vold}
 spack activate py-pandas%gcc@${gcc_vold} 
 spack activate py-lxml%gcc@${gcc_vold} 
 spack unload python
-
+echo --- PGI setup reminder
+echo "To configure the PGI compilers with one of the newly installed C++ libraries:"
+echo "spack load gcc@${gcc_vpgi} # For example"
+echo "cd /opt/pgi/linux86-64/19.10/bin"
+echo "sudo ./makelocalrc -x /opt/pgi/linux86-64/19.10/ -gcc `which gcc` -gpp `which g++` -g77 `which gfortran`"
+echo "gcc_vpgi is set to" ${gcc_vpgi}
 echo --- FINISH setup script `date`
