@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source
 // License.  See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by:
 //    Lawrence Livermore National Laboratory 
@@ -11,12 +11,15 @@
 // Miguel A. Morales, moralessilva2@llnl.gov 
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef MY_ATOMIC_ADD_H
-#define MY_ATOMIC_ADD_H
+
+
+#ifndef CUDA_WORKAROUND_LEGACY_HARDWARE_H
+#define CUDA_WORKAROUND_LEGACY_HARDWARE_H
 
 namespace kernels
 {
-inline __device__ double myAtomicAdd(double* address, double val)
+#if __CUDA_ARCH__ < 600
+inline __device__ double atomicAdd(double* address, double val)
 {
     unsigned long long int* address_as_ull =
                               (unsigned long long int*)address;
@@ -34,7 +37,7 @@ inline __device__ double myAtomicAdd(double* address, double val)
     return __longlong_as_double(old);
 }
 
-inline __device__ float myAtomicAdd(float* address, float val)
+inline __device__ float atomicAdd(float* address, float val)
 {
     unsigned long long int* address_as_ull =
                               (unsigned long long int*)address;
@@ -51,6 +54,7 @@ inline __device__ float myAtomicAdd(float* address, float val)
 
     return __int_as_float(old);
 }
-}
 
+#endif
+}
 #endif

@@ -21,7 +21,7 @@
 #define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #if __CUDA_ARCH__ < 600
-#include "AFQMC/Numerics/detail/CUDA/Kernels/myAtomicAdd.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_workaround_legacy_hardware.cuh"
 #endif
 
 namespace kernels 
@@ -63,13 +63,8 @@ __global__ void kernel_batched_dot_wabn_wban(int nbatch, int nwalk, int nocc, in
         T re = (alp * cache[ 0 ]).real();
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(y+w*incy);
-#if __CUDA_ARCH__ < 600
-        myAtomicAdd(re_,re);
-        myAtomicAdd(re_+1,im);
-#else
         atomicAdd(re_,re);
         atomicAdd(re_+1,im);
-#endif
     }
 }
 
@@ -108,13 +103,8 @@ __global__ void kernel_batched_dot_wanb_wbna(int nbatch, int nwalk, int nocc, in
         T re = (alp * cache[ 0 ]).real();
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(y+w*incy);
-#if __CUDA_ARCH__ < 600
-        myAtomicAdd(re_,re);
-        myAtomicAdd(re_+1,im);
-#else
         atomicAdd(re_,re);
         atomicAdd(re_+1,im);
-#endif
     }
 }
 
