@@ -55,6 +55,12 @@ namespace qmc_cuda {
     int num_devices=0;
     cudaGetDeviceCount(&num_devices);
     qmcplusplus::app_log()<<" Running in node with " <<num_devices <<" GPUs. \n";
+    cudaDeviceProp dev;
+    cuda_check(cudaGetDeviceProperties(&dev, 0),"cudaGetDeviceProperties");
+    qmcplusplus::app_log()<<" CUDA compute capability: " << dev.major << "." << dev.minor <<std::endl;
+    if (dev.major <= 6) {
+      qmcplusplus::app_log()<<" Warning CUDA major compute capability < 6.0" <<std::endl;
+    }
     if(num_devices < node.size()) {
       qmcplusplus::app_error()<<"Error: # GPU < # tasks in node. " <<std::endl;
       qmcplusplus::app_error()<<"# GPU: " <<num_devices <<std::endl;

@@ -61,7 +61,6 @@ IF(ENABLE_CUDA)
     Numerics/detail/CUDA/Kernels/Auwn_Bun_Cuw.cu
     Numerics/detail/CUDA/Kernels/inplace_product.cu
     Numerics/detail/CUDA/Kernels/get_diagonal.cu
-#    Numerics/detail/CUDA/Kernels/myAtomicAdd.cu
   )
 ENDIF(ENABLE_CUDA)
 
