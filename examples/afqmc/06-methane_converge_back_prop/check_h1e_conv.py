@@ -2,9 +2,13 @@
 import glob
 import h5py
 import numpy
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
+try:
+    import matplotlib as mpl
+    mpl.use('Agg')
+    import matplotlib.pyplot as plt
+    have_mpl = True
+except ImportError:
+    have_mpl = False
 import scipy.stats
 from afqmctools.analysis.average import average_one_rdm
 from afqmctools.analysis.extraction import (
@@ -53,10 +57,11 @@ def plot_convergence(filename):
 
     # Finally plot the one-body energy and check the estimator is converged with
     # respect to back propagation time.
-    plt.errorbar(tau_bps, energies, yerr=errs, fmt='o')
-    plt.xlabel(r'$\tau_{BP}$')
-    plt.ylabel(r'$E_{1B}$ (Ha)')
-    plt.savefig('h1e_conv.pdf', fmt='pdf', bbox_inches='tight')
+    if have_mpl:
+        plt.errorbar(tau_bps, energies, yerr=errs, fmt='o')
+        plt.xlabel(r'$\tau_{BP}$')
+        plt.ylabel(r'$E_{1B}$ (Ha)')
+        plt.savefig('h1e_conv.pdf', fmt='pdf', bbox_inches='tight')
 
 if __name__ == '__main__':
     plot_convergence('qmc.s000.stat.h5')

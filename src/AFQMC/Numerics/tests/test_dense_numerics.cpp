@@ -148,14 +148,15 @@ void test_dense_matrix_mult()
 	}
 
 	{
-	vector<double> m = {
-		1.,2.,1.,
-		2.,5.,8.,
-		1.,8.,9.
-	};
-	array_ref<double, 2> M(m.data(), {3,3});
-	REQUIRE( ma::is_hermitian(M) );
-	}{
+    vector<double> m = {
+      1.,2.,1.,
+      2.,5.,8.,
+      1.,8.,9.
+    };
+    array_ref<double, 2> M(m.data(), {3,3});
+    REQUIRE( ma::is_hermitian(M) );
+	}
+  {
 	vector<double> m = {
 		1.,0.  , 2.,0. ,  1.,0.,
 		2.,0.  , 5.,0. ,  8.,-1.,
@@ -163,78 +164,79 @@ void test_dense_matrix_mult()
 	};
 	array_ref<complex<double>, 2> M(reinterpret_cast<complex<double>*>(m.data()), {3,3});
 	REQUIRE( ma::is_hermitian(M) );
-	}{
-	vector<double> m = {
-		1.,2.,1.,
-		2.,5.,8.,
-		1.,8.,9.
-	};
-	array_ref<double, 2> M(m.data(), {3,3});
-	REQUIRE( ma::is_hermitian(M) );
+	}
+  {
+    vector<double> m = {
+      1.,2.,1.,
+      2.,5.,8.,
+      1.,8.,9.
+    };
+    array_ref<double, 2> M(m.data(), {3,3});
+    REQUIRE( ma::is_hermitian(M) );
 	}
 	{
-	vector<double> a = {
-		1.,0.,1.,
-		3.,5.,8.,
-		4.,8.,9.
-	};
-	array_ref<double, 2> A(a.data(), {3,3});
-	REQUIRE( A.num_elements() == a.size() );
-	vector<double> b = {
-		6.,2.,8.,
-		9.,5.,5.,
-		1.,7.,9.
-	};
-	array_ref<double, 2> B(b.data(), {3,3});
-	REQUIRE( B.num_elements() == b.size() );
+    vector<double> a = {
+      1.,0.,1.,
+      3.,5.,8.,
+      4.,8.,9.
+    };
+    array_ref<double, 2> A(a.data(), {3,3});
+    REQUIRE( A.num_elements() == a.size() );
+    vector<double> b = {
+      6.,2.,8.,
+      9.,5.,5.,
+      1.,7.,9.
+    };
+    array_ref<double, 2> B(b.data(), {3,3});
+    REQUIRE( B.num_elements() == b.size() );
 
-	vector<double> c(9);
-	array_ref<double, 2> C(c.data(), {3,3});
-	REQUIRE( C.num_elements() == c.size() );
+    vector<double> c(9);
+    array_ref<double, 2> C(c.data(), {3,3});
+    REQUIRE( C.num_elements() == c.size() );
 
-	ma::product(A, B, C);
+    ma::product(A, B, C);
 
-	vector<double> ab = {
-		7., 9., 17.,
-		71., 87., 121.,
-		105., 111., 153.
-	};
-	array_ref<double, 2> AB(ab.data(), {3,3});
-	REQUIRE( AB.num_elements() == ab.size() );
+    vector<double> ab = {
+      7., 9., 17.,
+      71., 87., 121.,
+      105., 111., 153.
+    };
+    array_ref<double, 2> AB(ab.data(), {3,3});
+    REQUIRE( AB.num_elements() == ab.size() );
 
-	verify_approx(C, AB);
+    verify_approx(C, AB);
 
-	using ma::N;
-	ma::product(N(A), N(B), C); // same as ma::product(A, B, C);
-	verify_approx(C, AB);
+    using ma::N;
+    ma::product(N(A), N(B), C); // same as ma::product(A, B, C);
+    verify_approx(C, AB);
 
-	using ma::T;
+    using ma::T;
 
-	ma::product(T(A), B, C);
-	vector<double> atb = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
-	array_ref<double, 2> AtB(atb.data(), {3,3});
-	verify_approx(C, AtB);
+    ma::product(T(A), B, C);
+    vector<double> atb = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
+    array_ref<double, 2> AtB(atb.data(), {3,3});
+    verify_approx(C, AtB);
 
-	ma::product(A, T(B), C);
-	vector<double> abt = {14., 14., 10., 92., 92., 110., 112., 121., 141.};
-	array_ref<double, 2> ABt(abt.data(), {3,3});
-	verify_approx(C, ABt);
+    ma::product(A, T(B), C);
+    vector<double> abt = {14., 14., 10., 92., 92., 110., 112., 121., 141.};
+    array_ref<double, 2> ABt(abt.data(), {3,3});
+    verify_approx(C, ABt);
 
-	ma::product(T(A), T(B), C);
-	vector<double> atbt = {44., 44., 58., 74., 65., 107., 94., 94., 138.};
-	array_ref<double, 2> AtBt(atbt.data(), {3,3});
-	verify_approx(C, AtBt);
+    ma::product(T(A), T(B), C);
+    vector<double> atbt = {44., 44., 58., 74., 65., 107., 94., 94., 138.};
+    array_ref<double, 2> AtBt(atbt.data(), {3,3});
+    verify_approx(C, AtBt);
 
-	using ma::H;
-        ma::product(H(A), T(B), C);
-        vector<double> ahbt = {44., 44., 58., 74., 65., 107., 94., 94., 138.};
-        array_ref<double, 2> AhBt(ahbt.data(), {3,3});
-        verify_approx(C, AhBt);
+    using ma::H;
+    ma::product(H(A), T(B), C);
+    vector<double> ahbt = {44., 44., 58., 74., 65., 107., 94., 94., 138.};
+    array_ref<double, 2> AhBt(ahbt.data(), {3,3});
+    verify_approx(C, AhBt);
 
-        ma::product(A, H(B), C);
-        vector<double> abh = {14., 14., 10., 92., 92., 110., 112., 121., 141.};
-        array_ref<double, 2> ABh(abh.data(), {3,3});
-        verify_approx(C, ABh);
+    ma::product(A, H(B), C);
+    vector<double> abh = {14., 14., 10., 92., 92., 110., 112., 121., 141.};
+    array_ref<double, 2> ABh(abh.data(), {3,3});
+    verify_approx(C, ABh);
 
 	}
 
@@ -476,9 +478,9 @@ void test_dense_matrix_mult_device(Allocator alloc)
 
   {
     vector<T> m = {
- 	9.,24.,30., 9.,
-	4.,10.,12., 7.,
-	14.,16.,36., 1.
+    9.,24.,30., 9.,
+    4.,10.,12., 7.,
+    14.,16.,36., 1.
     };
     vector<T> x = {1.,2.,3., 4.};
     vector<T> y = {4.,5.,6.};
@@ -503,9 +505,9 @@ void test_dense_matrix_mult_device(Allocator alloc)
 
   {
     vector<T> m = {
-	1.,2.,1.,
-	2.,5.,8.,
-	1.,8.,9.
+    1.,2.,1.,
+    2.,5.,8.,
+    1.,8.,9.
     };
     array<T,2,Allocator> M({3,3},alloc);
     copy_n(m.data(),m.size(),M.origin()); 
@@ -515,9 +517,9 @@ void test_dense_matrix_mult_device(Allocator alloc)
   }
   {
     vector<T> m = {
-	1.,2.,1.,
-	2.,5.,8.,
-	1.,8.,9.
+    1.,2.,1.,
+    2.,5.,8.,
+    1.,8.,9.
     };
     array<T,2,Allocator> M({3,3},alloc);
     copy_n(m.data(),m.size(),M.origin());          
@@ -529,14 +531,14 @@ void test_dense_matrix_mult_device(Allocator alloc)
   }
   {
     vector<T> a = {
-	1.,0.,1.,
-	3.,5.,8.,
-	4.,8.,9.
+    1.,0.,1.,
+    3.,5.,8.,
+    4.,8.,9.
     };
     vector<T> b = {
-	6.,2.,8.,
-	9.,5.,5.,
-	1.,7.,9.
+    6.,2.,8.,
+    9.,5.,5.,
+    1.,7.,9.
     };
 
     array<T,2,Allocator> A({3,3},alloc);
@@ -552,9 +554,9 @@ void test_dense_matrix_mult_device(Allocator alloc)
     ma::product(A, B, D);
 
     vector<T> ab = {
-	7., 9., 17.,
-	71., 87., 121.,
-	105., 111., 153.
+    7., 9., 17.,
+    71., 87., 121.,
+    105., 111., 153.
     };
     array_ref<T, 2> AB(ab.data(), {3,3});
     verify_approx(D, AB);
