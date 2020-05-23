@@ -67,9 +67,9 @@ void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk, double const* A, int lda,
     std::complex<double> const* B, int ldb, std::complex<double> * C, int ldc, int stride);
 void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk, float const* A, int lda,
     std::complex<float> const* B, int ldb, std::complex<float> * C, int ldc, int stride);
-void element_wise_Aij_Bjk_Ckji(char transA, int ni, int nj, int nk, std::complex<double> const* A, 
+void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk, std::complex<double> const* A, 
     int lda, std::complex<double> const* B, int ldb, std::complex<double> * C, int ldc, int stride);
-void element_wise_Aij_Bjk_Ckji(char transA, int ni, int nj, int nk, std::complex<float> const* A,
+void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk, std::complex<float> const* A,
     int lda, std::complex<float> const* B, int ldb, std::complex<float> * C, int ldc, int stride);
 
 }
