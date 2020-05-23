@@ -57,6 +57,12 @@ class MatrixDelayedUpdateCUDA
   T* temp_dev_ptr;
   // row of up-to-date Ainv
   OffloadValueVector_t invRow;
+  /** row id correspond to the up-to-date invRow. [0 norb), invRow is ready; -1, invRow is not valid.
+   *  This id is set after calling getInvRow indicating invRow has been prepared for the invRow_id row
+   *  ratioGrad checks if invRow_id is consistent. If not, invRow needs to be recomputed.
+   *  acceptMove and completeUpdates mark invRow invalid by setting invRow_id to -1
+   */
+  int invRow_id;
   /// device pointer of invRow
   T* invRow_dev_ptr;
   // scratch space for keeping one row of Ainv
@@ -123,6 +129,12 @@ class MatrixDelayedUpdateCUDA
   cublasHandle_t h_cublas;
 
   inline void waitStream() { cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!"); }
+  // ensure no previous delay left
+  inline void guard_no_delay() const
+  {
+    if (delay_count != 0) throw std::runtime_error("BUG: unexpected call sequence delay_count is not 0");
+  }
+
 
   void resize_fill_constant_arrays(size_t nw)
   {
@@ -211,8 +223,8 @@ class MatrixDelayedUpdateCUDA
    * @param Ainv inverse matrix
    * @param rowchanged the row id corresponding to the proposed electron
    */
-  inline void mw_prepareInvRow(const RefVector<This_t>& engines,
-                               const int rowchanged)
+  void mw_prepareInvRow(const RefVector<This_t>& engines,
+                        const int rowchanged)
   {
     const int norb = psiMinv.rows();
     const int nw = engines.size();
@@ -262,146 +274,27 @@ class MatrixDelayedUpdateCUDA
     cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'N', norb, delay_count, cone_dev_ptr, V_mw_ptr, norb,
                                                 BinvRow_mw_ptr, 1, cone_dev_ptr, invRow_mw_ptr, 1, nw),
                    "cuBLAS_inhouse::gemv_batched failed!");
+    // mark row prepared
+    invRow_id = rowchanged;
   }
 
-public:
-  /// default constructor
-  MatrixDelayedUpdateCUDA() : delay_count(0)
+  void mw_updateRow(const RefVector<This_t>& engines,
+                    const int rowchanged,
+                    const std::vector<T*>& psiM_g_list,
+                    const std::vector<T*>& psiM_l_list,
+                    const std::vector<bool>& isAccepted,
+                    const T* phi_vgl_v_dev_ptr,
+                    const size_t phi_vgl_stride,
+                    const std::vector<T>& ratios)
   {
-    cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
-    cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
-    cublasSetPointerMode(h_cublas, CUBLAS_POINTER_MODE_DEVICE);
-    cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
-  }
+    guard_no_delay();
 
-  ~MatrixDelayedUpdateCUDA()
-  {
-    cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
-    cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
-  }
-
-  /** resize the internal storage
-   * @param norb number of electrons/orbitals
-   * @param delay, maximum delay 0<delay<=norb
-   */
-  inline void resize(int norb, int delay)
-  {
-    V_gpu.resize(delay, norb);
-    U_gpu.resize(delay, norb);
-    p_gpu.resize(delay);
-    tempMat_gpu.resize(norb, delay);
-    Binv_gpu.resize(delay, delay);
-    delay_list_gpu.resize(delay);
-    invRow.resize(norb);
-    invRow_dev_ptr = getOffloadDevicePtr(invRow.data());
-    psiMinv.resize(norb, getAlignedSize<T>(norb));
-    psiMinv_dev_ptr = getOffloadDevicePtr(psiMinv.data());
-  }
-
-  OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
-
-  /** compute the inverse of the transpose of matrix A
-   * @param logdetT orbital value matrix
-   * @param Ainv inverse matrix
-   */
-  template<typename TREAL, typename OMPALLOC>
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T, OMPALLOC>& Ainv, std::complex<TREAL>& LogValue)
-  {
-    Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-    detEng.invert_transpose(logdetT, Ainv_host_view, LogValue);
-    T* Ainv_ptr = Ainv.data();
-    PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
-  }
-
-  template<typename GT>
-  inline void mw_evalGrad(const RefVector<This_t>& engines,
-                          const std::vector<const T*>& dpsiM_row_list,
-                          const int rowchanged,
-                          std::vector<GT>& grad_now)
-  {
-    const int norb = psiMinv.rows();
-
-    mw_prepareInvRow(engines, rowchanged);
-
-    const int nw = engines.size();
-    resize_evalGrad_scratch_arrays(nw);
-    Matrix<const T*> ptr_buffer(reinterpret_cast<const T**>(evalGrad_buffer_H2D.data()), 2, nw);
-    for (int iw = 0; iw < nw; iw++)
-    {
-      ptr_buffer[0][iw] = engines[iw].get().invRow_dev_ptr;
-      ptr_buffer[1][iw] = dpsiM_row_list[iw];
-    }
-
-    cudaErrorCheck(cudaMemcpyAsync(evalGrad_buffer_H2D_dev_ptr, evalGrad_buffer_H2D.data(), evalGrad_buffer_H2D.size(),
-                                   cudaMemcpyHostToDevice, hstream),
-                   "cudaMemcpyAsync evalGrad_buffer_H2D failed!");
-
-    resizeGradsArray(nw, GT::Size);
-
-    const T** invRow_ptr    = reinterpret_cast<const T**>(evalGrad_buffer_H2D_dev_ptr);
-    const T** dpsiM_row_ptr = reinterpret_cast<const T**>(evalGrad_buffer_H2D_dev_ptr) + nw;
-
-    cudaErrorCheck(CUDA::calcGradients_cuda(hstream, norb, invRow_ptr, dpsiM_row_ptr, grads_value_dev_ptr, nw),
-                   "CUDA::calcGradients_cuda failed!");
-
-    cudaErrorCheck(cudaMemcpyAsync(grads_value_v.data(), grads_value_dev_ptr, grads_value_v.size() * sizeof(T),
-                                   cudaMemcpyDeviceToHost, hstream),
-                   "cudaMemcpyAsync grads_value_v failed!");
-
-    waitStream();
-
-    for (int iw = 0; iw < nw; iw++)
-      grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
-  }
-
-  template<typename VVT, typename RATIOT, typename OMPALLOC>
-  inline void updateRow(Matrix<T, OMPALLOC>& Ainv, int rowchanged, const VVT& phiV, RATIOT c_ratio_in)
-  {
-    // update the inverse matrix
-    constexpr T cone(1);
-    constexpr T czero(0);
-    const int norb = Ainv.rows();
-    const int lda  = Ainv.cols();
-    resize_updateRow_scratch_arrays(norb, 1);
-    // invoke the Fahy's variant of Sherman-Morrison update.
-    int dummy_handle  = 0;
-    int success       = 0;
-    const T* phiV_ptr = phiV.data();
-    T* Ainv_ptr       = Ainv.data();
-    T* temp_ptr       = temp.data();
-    T* rcopy_ptr      = rcopy.data();
-    PRAGMA_OFFLOAD("omp target data map(always, to: phiV_ptr[:norb]) \
-                    map(always, from: Ainv_ptr[:Ainv.size()]) \
-                    use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
-    {
-      success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
-      PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
-      {
-        temp_ptr[rowchanged] -= cone;
-        PRAGMA_OFFLOAD("omp parallel for simd")
-        for (int i = 0; i < norb; i++)
-          rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
-      }
-      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1) / c_ratio_in), rcopy_ptr, 1, temp_ptr,
-                             1, Ainv_ptr, lda);
-    }
-  }
-
-  inline void mw_updateRow(const RefVector<This_t>& engines,
-                           int rowchanged,
-                           const std::vector<T*>& psiM_g_list,
-                           const std::vector<T*>& psiM_l_list,
-                           const std::vector<bool>& isAccepted,
-                           const T* phi_vgl_v_dev_ptr,
-                           const size_t phi_vgl_stride,
-                           const std::vector<T>& ratios)
-  {
-    const int norb          = psiMinv.rows();
-    const int lda           = psiMinv.cols();
     const size_t n_accepted = psiM_g_list.size();
     if (n_accepted == 0)
       return;
 
+    const int norb          = psiMinv.rows();
+    const int lda           = psiMinv.cols();
     resize_updateRow_scratch_arrays(norb, n_accepted);
 
     // to handle T** of Ainv, psi_v, temp, rcopy
@@ -458,23 +351,156 @@ public:
     }
   }
 
-  inline void mw_accept_rejectRow(const RefVector<This_t>& engines,
-                                  const int rowchanged,
-                                  const std::vector<T*>& psiM_g_list,
-                                  const std::vector<T*>& psiM_l_list,
-                                  const std::vector<bool>& isAccepted,
-                                  const T* phi_vgl_v_dev_ptr,
-                                  const size_t phi_vgl_stride,
-                                  const std::vector<T>& ratios)
+public:
+  /// default constructor
+  MatrixDelayedUpdateCUDA() : delay_count(0), invRow_id(-1)
   {
-    const int norb          = psiMinv.rows();
-    const int lda           = psiMinv.cols();
+    cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
+    cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
+    cublasSetPointerMode(h_cublas, CUBLAS_POINTER_MODE_DEVICE);
+    cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
+  }
+
+  ~MatrixDelayedUpdateCUDA()
+  {
+    cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
+    cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
+  }
+
+  /** resize the internal storage
+   * @param norb number of electrons/orbitals
+   * @param delay, maximum delay 0<delay<=norb
+   */
+  inline void resize(int norb, int delay)
+  {
+    V_gpu.resize(delay, norb);
+    U_gpu.resize(delay, norb);
+    p_gpu.resize(delay);
+    tempMat_gpu.resize(norb, delay);
+    Binv_gpu.resize(delay, delay);
+    delay_list_gpu.resize(delay);
+    invRow.resize(norb);
+    invRow_dev_ptr = getOffloadDevicePtr(invRow.data());
+    psiMinv.resize(norb, getAlignedSize<T>(norb));
+    psiMinv_dev_ptr = getOffloadDevicePtr(psiMinv.data());
+  }
+
+  inline OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
+
+  /** compute the inverse of the transpose of matrix A
+   * @param logdetT orbital value matrix
+   * @param Ainv inverse matrix
+   */
+  template<typename TREAL, typename OMPALLOC>
+  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T, OMPALLOC>& Ainv, std::complex<TREAL>& LogValue)
+  {
+    guard_no_delay();
+    Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
+    detEng.invert_transpose(logdetT, Ainv_host_view, LogValue);
+    T* Ainv_ptr = Ainv.data();
+    PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+  }
+
+  // prepare invRow and compute the old gradients.
+  template<typename GT>
+  void mw_evalGrad(const RefVector<This_t>& engines,
+                   const std::vector<const T*>& dpsiM_row_list,
+                   const int rowchanged,
+                   std::vector<GT>& grad_now)
+  {
+    mw_prepareInvRow(engines, rowchanged);
+
+    const int nw = engines.size();
+    resize_evalGrad_scratch_arrays(nw);
+    Matrix<const T*> ptr_buffer(reinterpret_cast<const T**>(evalGrad_buffer_H2D.data()), 2, nw);
+    for (int iw = 0; iw < nw; iw++)
+    {
+      ptr_buffer[0][iw] = engines[iw].get().invRow_dev_ptr;
+      ptr_buffer[1][iw] = dpsiM_row_list[iw];
+    }
+
+    cudaErrorCheck(cudaMemcpyAsync(evalGrad_buffer_H2D_dev_ptr, evalGrad_buffer_H2D.data(), evalGrad_buffer_H2D.size(),
+                                   cudaMemcpyHostToDevice, hstream),
+                   "cudaMemcpyAsync evalGrad_buffer_H2D failed!");
+
+    resizeGradsArray(nw, GT::Size);
+
+    const T** invRow_ptr    = reinterpret_cast<const T**>(evalGrad_buffer_H2D_dev_ptr);
+    const T** dpsiM_row_ptr = reinterpret_cast<const T**>(evalGrad_buffer_H2D_dev_ptr) + nw;
+
+    const int norb = psiMinv.rows();
+    cudaErrorCheck(CUDA::calcGradients_cuda(hstream, norb, invRow_ptr, dpsiM_row_ptr, grads_value_dev_ptr, nw),
+                   "CUDA::calcGradients_cuda failed!");
+    cudaErrorCheck(cudaMemcpyAsync(grads_value_v.data(), grads_value_dev_ptr, grads_value_v.size() * sizeof(T),
+                                   cudaMemcpyDeviceToHost, hstream),
+                   "cudaMemcpyAsync grads_value_v failed!");
+    waitStream();
+
+    for (int iw = 0; iw < nw; iw++)
+      grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
+  }
+
+  template<typename VVT, typename RATIOT, typename OMPALLOC>
+  void updateRow(Matrix<T, OMPALLOC>& Ainv, int rowchanged, const VVT& phiV, RATIOT c_ratio_in)
+  {
+    guard_no_delay();
+    // update the inverse matrix
+    constexpr T cone(1);
+    constexpr T czero(0);
+    const int norb = Ainv.rows();
+    const int lda  = Ainv.cols();
+    resize_updateRow_scratch_arrays(norb, 1);
+    // invoke the Fahy's variant of Sherman-Morrison update.
+    int dummy_handle  = 0;
+    int success       = 0;
+    const T* phiV_ptr = phiV.data();
+    T* Ainv_ptr       = Ainv.data();
+    T* temp_ptr       = temp.data();
+    T* rcopy_ptr      = rcopy.data();
+    PRAGMA_OFFLOAD("omp target data map(always, to: phiV_ptr[:norb]) \
+                    map(always, from: Ainv_ptr[:Ainv.size()]) \
+                    use_device_ptr(phiV_ptr, Ainv_ptr, temp_ptr, rcopy_ptr)")
+    {
+      success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
+      PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
+      {
+        temp_ptr[rowchanged] -= cone;
+        PRAGMA_OFFLOAD("omp parallel for simd")
+        for (int i = 0; i < norb; i++)
+          rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
+      }
+      success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1) / c_ratio_in), rcopy_ptr, 1, temp_ptr,
+                             1, Ainv_ptr, lda);
+    }
+  }
+
+  void mw_accept_rejectRow(const RefVector<This_t>& engines,
+                           const int rowchanged,
+                           const std::vector<T*>& psiM_g_list,
+                           const std::vector<T*>& psiM_l_list,
+                           const std::vector<bool>& isAccepted,
+                           const T* phi_vgl_v_dev_ptr,
+                           const size_t phi_vgl_stride,
+                           const std::vector<T>& ratios)
+  {
+    // invRow consumed, mark invRow_id unset
+    invRow_id = -1;
+
+    const int lda_Binv = Binv_gpu.cols();
+    // using SM-1 if the number of maximal delay is 1
+    if (lda_Binv == 1)
+    {
+      mw_updateRow(engines, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_stride, ratios);
+      return;
+    }
+
+    const int norb       = psiMinv.rows();
+    const int lda        = psiMinv.cols();
     const int nw         = engines.size();
     const int n_accepted = psiM_g_list.size();
     resize_accept_rejectRow_scratch_arrays(nw);
     resize_fill_constant_arrays(nw);
 
-    const int lda_Binv = Binv_gpu.cols();
     Matrix<T*> ptr_buffer(reinterpret_cast<T**>(accept_rejectRow_buffer_H2D.data()), 14, nw);
     T* c_ratio_inv = reinterpret_cast<T*>(accept_rejectRow_buffer_H2D.data() + sizeof(T*) * 14 * nw);
     for (int iw = 0, count_accepted = 0, count_rejected = 0; iw < nw; iw++)
@@ -579,7 +605,6 @@ public:
                                                                           n_rejected),
                    "CUDA::add_delay_list_update_Binv_U_batched failed!");
     delay_count++;
-
     // update Ainv when maximal delay is reached
     if (delay_count == lda_Binv)
       mw_updateInvMat(engines);
@@ -588,7 +613,7 @@ public:
   /** update the full Ainv and reset delay_count
    * @param Ainv inverse matrix
    */
-  inline void mw_updateInvMat(const RefVector<This_t>& engines)
+  void mw_updateInvMat(const RefVector<This_t>& engines)
   {
     if (delay_count == 0)
       return;
@@ -647,7 +672,7 @@ public:
     delay_count = 0;
   }
 
-  void print_Ainv(const RefVector<This_t>& engines)
+  inline void print_Ainv(const RefVector<This_t>& engines)
   {
     for (This_t& engine : engines)
     {
@@ -660,8 +685,12 @@ public:
     }
   }
 
+  /** return invRow host or device pointers based on on_host request
+   * prepare invRow if not already.
+   */
   std::vector<const T*> mw_getInvRow(const RefVector<This_t>& engines, const int row_id, bool on_host)
   {
+    if (invRow_id != row_id)
     {
       // this can be skipped if mw_evalGrad gets called already.
       mw_prepareInvRow(engines, row_id);
@@ -688,8 +717,10 @@ public:
     return row_ptr_list;
   }
 
-  void mw_transferAinv_D2H(const RefVector<This_t>& engines)
+  inline void mw_transferAinv_D2H(const RefVector<This_t>& engines)
   {
+    guard_no_delay();
+
     for (This_t& engine : engines)
       cudaErrorCheck(cudaMemcpyAsync(engine.psiMinv.data(), engine.psiMinv_dev_ptr, engine.psiMinv.size() * sizeof(T),
                                      cudaMemcpyDeviceToHost, hstream),
