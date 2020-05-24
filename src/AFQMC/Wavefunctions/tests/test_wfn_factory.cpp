@@ -226,7 +226,7 @@ const char *wlk_xml_block_noncol =
         ComplexType Xsum2=0;
         for(int i=0; i<X.size(0); i++) {
           Xsum += X[i][0];
-          Xsum2 += 0.5*X[i][0]*X[i][0];
+          Xsum2 += ComplexType(0.5)*X[i][0]*X[i][0];
         }
         app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<" Time: " <<t1 <<std::endl;
         app_log()<<" Xsum2 (EJ): " <<setprecision(12) <<Xsum2/sqrtdt/sqrtdt <<std::endl;
@@ -331,7 +331,7 @@ const char *wlk_xml_block_noncol =
         ComplexType Xsum2(0.0);
         for(int i=0; i<X.size(0); i++) {
           Xsum += X[i][0];
-          Xsum2 += 0.5*X[i][0]*X[i][0];
+          Xsum2 += ComplexType(0.5)*X[i][0]*X[i][0];
         }
         app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
         app_log()<<" Xsum2 (EJ): " <<setprecision(12) <<Xsum2/sqrtdt/sqrtdt <<std::endl;
