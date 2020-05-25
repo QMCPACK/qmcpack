@@ -136,6 +136,8 @@ class MatrixDelayedUpdateCUDA
       throw std::runtime_error("BUG: unexpected call sequence delay_count is not 0");
   }
 
+  // check if the number of maximal delay is 1 (SM-1)
+  inline bool isSM1() const { return Binv_gpu.rows() == 1; }
 
   void resize_fill_constant_arrays(size_t nw)
   {
@@ -408,14 +410,18 @@ public:
                    const int rowchanged,
                    std::vector<GT>& grad_now)
   {
-    mw_prepareInvRow(engines, rowchanged);
+    if (!isSM1())
+      mw_prepareInvRow(engines, rowchanged);
 
     const int nw = engines.size();
     resize_evalGrad_scratch_arrays(nw);
     Matrix<const T*> ptr_buffer(reinterpret_cast<const T**>(evalGrad_buffer_H2D.data()), 2, nw);
     for (int iw = 0; iw < nw; iw++)
     {
-      ptr_buffer[0][iw] = engines[iw].get().invRow_dev_ptr;
+      if (isSM1())
+        ptr_buffer[0][iw] = engines[iw].get().psiMinv_dev_ptr + rowchanged * psiMinv.cols();
+      else
+        ptr_buffer[0][iw] = engines[iw].get().invRow_dev_ptr;
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
     }
 
@@ -486,8 +492,7 @@ public:
     // invRow consumed, mark invRow_id unset
     invRow_id = -1;
 
-    // using SM-1 if the number of maximal delay is 1
-    if (Binv_gpu.rows() == 1)
+    if (isSM1())
     {
       mw_updateRow(engines, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_stride,
                    ratios);
@@ -681,29 +686,44 @@ public:
    */
   std::vector<const T*> mw_getInvRow(const RefVector<This_t>& engines, const int row_id, bool on_host)
   {
-    if (invRow_id != row_id)
-    {
-      // this can be skipped if mw_evalGrad gets called already.
-      mw_prepareInvRow(engines, row_id);
+    if (isSM1())
       waitStream();
-    }
+    else
+      if (invRow_id != row_id)
+      {
+        // this can be skipped if mw_evalGrad gets called already.
+        mw_prepareInvRow(engines, row_id);
+        waitStream();
+      }
 
     const size_t nw = engines.size();
     std::vector<const T*> row_ptr_list;
     row_ptr_list.reserve(nw);
     if (on_host)
     {
+      // copy values to host and return host pointer
       for (This_t& engine : engines)
-      {
-        auto* ptr = engine.invRow.data();
-        PRAGMA_OFFLOAD("omp target update from(ptr[:invRow.size()])")
-        row_ptr_list.push_back(ptr);
-      }
+        if (isSM1())
+        {
+          auto* ptr = engine.psiMinv.data();
+          PRAGMA_OFFLOAD("omp target update from(ptr[row_id * psiMinv.cols():psiMinv.cols()])")
+          row_ptr_list.push_back(ptr + row_id * psiMinv.cols());
+        }
+        else
+        {
+          auto* ptr = engine.invRow.data();
+          PRAGMA_OFFLOAD("omp target update from(ptr[:invRow.size()])")
+          row_ptr_list.push_back(ptr);
+        }
     }
     else
     {
+      // return device pointer
       for (This_t& engine : engines)
-        row_ptr_list.push_back(engine.invRow_dev_ptr);
+        if (isSM1())
+          row_ptr_list.push_back(engine.psiMinv_dev_ptr + row_id * psiMinv.cols());
+        else
+          row_ptr_list.push_back(engine.invRow_dev_ptr);
     }
     return row_ptr_list;
   }
