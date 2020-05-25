@@ -486,15 +486,15 @@ public:
     // invRow consumed, mark invRow_id unset
     invRow_id = -1;
 
-    const int lda_Binv = Binv_gpu.cols();
     // using SM-1 if the number of maximal delay is 1
-    if (lda_Binv == 1)
+    if (Binv_gpu.rows() == 1)
     {
       mw_updateRow(engines, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_stride,
                    ratios);
       return;
     }
 
+    const int lda_Binv   = Binv_gpu.cols();
     const int norb       = psiMinv.rows();
     const int lda        = psiMinv.cols();
     const int nw         = engines.size();

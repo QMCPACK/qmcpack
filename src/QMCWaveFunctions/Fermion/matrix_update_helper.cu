@@ -181,7 +181,7 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
 }
 
 template<typename T, int COLBS>
-__global__ void add_delay_list_save_y_GL_kernel(int* const delay_list[],
+__global__ void add_delay_list_save_y_VGL_kernel(int* const delay_list[],
                                                 const int rowchanged,
                                                 const int delay_count,
                                                 T* const binv[],
@@ -293,7 +293,7 @@ cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
   const int COLBS = 64;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  add_delay_list_save_y_GL_kernel<float, COLBS>
+  add_delay_list_save_y_VGL_kernel<float, COLBS>
       <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binv, binv_lda, ratio_inv, phi_in,
                                           dphi_in, d2phi_in, phi_out, dphi_out, d2phi_out, norb, n_accepted);
   return cudaPeekAtLastError();
@@ -322,7 +322,7 @@ cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
   const int COLBS = 64;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  add_delay_list_save_y_GL_kernel<double, COLBS>
+  add_delay_list_save_y_VGL_kernel<double, COLBS>
       <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binv, binv_lda, ratio_inv, phi_in,
                                           dphi_in, d2phi_in, phi_out, dphi_out, d2phi_out, norb, n_accepted);
   return cudaPeekAtLastError();
