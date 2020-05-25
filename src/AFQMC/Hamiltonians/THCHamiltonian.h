@@ -55,10 +55,10 @@ class THCHamiltonian: public OneBodyHamiltonian
 
   ~THCHamiltonian() {}
 
-  THCHamiltonian(THCHamiltonian const& other) = default;
+  THCHamiltonian(THCHamiltonian const& other) = delete;
   THCHamiltonian(THCHamiltonian && other) = default;
-  THCHamiltonian& operator=(THCHamiltonian const& other) = default;
-  THCHamiltonian& operator=(THCHamiltonian && other) = default;
+  THCHamiltonian& operator=(THCHamiltonian const& other) = delete;
+  THCHamiltonian& operator=(THCHamiltonian && other) = delete;
 
   ValueType getNuclearCoulombEnergy() const { return OneBodyHamiltonian::NuclearCoulombEnergy; }
 

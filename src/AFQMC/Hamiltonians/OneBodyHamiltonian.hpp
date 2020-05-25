@@ -31,7 +31,7 @@ class OneBodyHamiltonian: public AFQMCInfo
   OneBodyHamiltonian(OneBodyHamiltonian const& other) = delete;
   OneBodyHamiltonian(OneBodyHamiltonian && other) = default;
   OneBodyHamiltonian& operator=(OneBodyHamiltonian const& other) = delete;
-  OneBodyHamiltonian& operator=(OneBodyHamiltonian && other) = default;
+  OneBodyHamiltonian& operator=(OneBodyHamiltonian && other) = delete;
 
   ~OneBodyHamiltonian() {}
 

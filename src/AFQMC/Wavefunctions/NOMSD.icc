@@ -2162,10 +2162,11 @@ namespace afqmc
               TG.TG_local().all_reduce_in_place_n(to_address(eloc2.origin()),3,std::plus<>());
             if(TG.TG_local().root()) {
               if(idet != jdet) {
-                H[idet][jdet] = ov_[0]*(eloc2[0][0]+eloc2[0][1]+eloc2[0][2]);
-                S[idet][jdet] = ov_[0];
+                //ComplexType ovij = static_cast<ComplexType>(ov_[0]);
+                H[idet][jdet] = ComplexType(ov_[0]*(eloc2[0][0]+eloc2[0][1]+eloc2[0][2]));
+                //S[idet][jdet] = ComplexType(ov_[0]);
                 H[jdet][idet] = ma::conj(H[idet][jdet]);   
-                S[jdet][idet] = ma::conj(ov_[0]);   
+                S[jdet][idet] = ma::conj(S[idet][jdet]);   
                 energy[0] += ma::conj(cidet)*cjdet*H[idet][jdet] +
                              ma::conj(cjdet)*cidet*H[jdet][idet];
                 energy[1] += ma::conj(cidet)*cjdet*S[idet][jdet] +
