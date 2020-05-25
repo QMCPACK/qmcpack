@@ -184,57 +184,108 @@ template<typename T, int COLBS>
 __global__ void add_delay_list_save_y_GL_kernel(int* const delay_list[],
                                                 const int rowchanged,
                                                 const int delay_count,
-                                                T* const binvrow[],
+                                                T* const binv[],
+                                                const int binv_lda,
                                                 const T* const ratio_inv,
+                                                const T* const phi_in[],
                                                 const T* const dphi_in[],
                                                 const T* const d2phi_in[],
+                                                T* const phi_out[],
                                                 T* const dphi_out[],
                                                 T* const d2phi_out[],
-                                                const int n)
+                                                const int norb,
+                                                const int n_accepted)
 {
   const int tid = threadIdx.x;
   const int iw  = blockIdx.x;
 
-  int* __restrict__ delay_list_iw   = delay_list[iw];
-  T* __restrict__ binvrow_iw        = binvrow[iw];
-  const T* __restrict__ dphi_in_iw  = dphi_in[iw];
-  const T* __restrict__ d2phi_in_iw = d2phi_in[iw];
-  T* __restrict__ dphi_out_iw       = dphi_out[iw];
-  T* __restrict__ d2phi_out_iw      = d2phi_out[iw];
-
-  if (tid == 0)
+  if (iw < n_accepted)
   {
-    delay_list_iw[delay_count] = rowchanged;
-    binvrow_iw[delay_count] = ratio_inv[iw];
-  }
+    // real accept, settle y and Z
+    int* __restrict__ delay_list_iw   = delay_list[iw];
+    T* __restrict__ binvrow_iw        = binv[iw] + delay_count * binv_lda;
+    const T* __restrict__ phi_in_iw   = phi_in[iw];
+    const T* __restrict__ dphi_in_iw  = dphi_in[iw];
+    const T* __restrict__ d2phi_in_iw = d2phi_in[iw];
+    T* __restrict__ phi_out_iw        = phi_out[iw];
+    T* __restrict__ dphi_out_iw       = dphi_out[iw];
+    T* __restrict__ d2phi_out_iw      = d2phi_out[iw];
 
-  const int num_col_blocks = (n + COLBS - 1) / COLBS;
-  for (int ib = 0; ib < num_col_blocks; ib++)
-  {
-    const int col_id = ib * COLBS + tid;
-    if (col_id < n)
+    if (tid == 0)
     {
-      // copy dphiV and d2phiV from temporary to final without a separate kernel.
-      dphi_out_iw[col_id * 3]     = dphi_in_iw[col_id * 3];
-      dphi_out_iw[col_id * 3 + 1] = dphi_in_iw[col_id * 3 + 1];
-      dphi_out_iw[col_id * 3 + 2] = dphi_in_iw[col_id * 3 + 2];
-      d2phi_out_iw[col_id]        = d2phi_in_iw[col_id];
+      delay_list_iw[delay_count] = rowchanged;
+      binvrow_iw[delay_count]    = ratio_inv[iw];
+    }
+
+    const int num_delay_count_col_blocks = (delay_count + COLBS - 1) / COLBS;
+    for (int ib = 0; ib < num_delay_count_col_blocks; ib++)
+    {
+      const int col_id = ib * COLBS + tid;
+      if (col_id < delay_count)
+        binvrow_iw[col_id] *= ratio_inv[iw];
+    }
+
+    const int num_col_blocks = (norb + COLBS - 1) / COLBS;
+    for (int ib = 0; ib < num_col_blocks; ib++)
+    {
+      const int col_id = ib * COLBS + tid;
+      if (col_id < norb)
+      {
+        // copy phiV, dphiV and d2phiV from temporary to final without a separate kernel.
+        phi_out_iw[col_id]          = phi_in_iw[col_id];
+        dphi_out_iw[col_id * 3]     = dphi_in_iw[col_id * 3];
+        dphi_out_iw[col_id * 3 + 1] = dphi_in_iw[col_id * 3 + 1];
+        dphi_out_iw[col_id * 3 + 2] = dphi_in_iw[col_id * 3 + 2];
+        d2phi_out_iw[col_id]        = d2phi_in_iw[col_id];
+      }
+    }
+  }
+  else
+  {
+    // fake accept. Set Y, Z with zero and x with 1
+    T* __restrict__ Urow_iw   = phi_out[iw];
+    const int num_blocks_norb = (norb + COLBS - 1) / COLBS;
+    for (int ib = 0; ib < num_blocks_norb; ib++)
+    {
+      const int col_id = ib * COLBS + tid;
+      if (col_id < norb)
+        Urow_iw[col_id] = T(0);
+    }
+
+    T* __restrict__ binv_iw          = binv[iw];
+    const int num_blocks_delay_count = (delay_count + COLBS - 1) / COLBS;
+    for (int ib = 0; ib < num_blocks_delay_count; ib++)
+    {
+      const int col_id = ib * COLBS + tid;
+      if (col_id < delay_count)
+        binv_iw[delay_count * binv_lda + col_id] = binv_iw[delay_count + binv_lda * col_id] = T(0);
+    }
+
+    int* __restrict__ delay_list_iw = delay_list[iw];
+    if (tid == 0)
+    {
+      binv_iw[delay_count * binv_lda + delay_count] = T(1);
+      delay_list_iw[delay_count]                    = -1;
     }
   }
 }
 
-cudaError_t add_delay_list_save_y_GL_batched(cudaStream_t& hstream,
-                                             int* const delay_list[],
-                                             const int rowchanged,
-                                             const int delay_count,
-                                             float* const binvrow[],
-                                             const float* const ratio_inv,
-                                             const float* const dphi_in[],
-                                             const float* const d2phi_in[],
-                                             float* const dphi_out[],
-                                             float* const d2phi_out[],
-                                             const int n,
-                                             const int batch_count)
+cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
+                                              int* const delay_list[],
+                                              const int rowchanged,
+                                              const int delay_count,
+                                              float* const binv[],
+                                              const int binv_lda,
+                                              const float* const ratio_inv,
+                                              const float* const phi_in[],
+                                              const float* const dphi_in[],
+                                              const float* const d2phi_in[],
+                                              float* const phi_out[],
+                                              float* const dphi_out[],
+                                              float* const d2phi_out[],
+                                              const int norb,
+                                              const int n_accepted,
+                                              const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -243,22 +294,27 @@ cudaError_t add_delay_list_save_y_GL_batched(cudaStream_t& hstream,
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
   add_delay_list_save_y_GL_kernel<float, COLBS>
-      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binvrow, ratio_inv, dphi_in, d2phi_in, dphi_out, d2phi_out, n);
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binv, binv_lda, ratio_inv, phi_in,
+                                          dphi_in, d2phi_in, phi_out, dphi_out, d2phi_out, norb, n_accepted);
   return cudaPeekAtLastError();
 }
 
-cudaError_t add_delay_list_save_y_GL_batched(cudaStream_t& hstream,
-                                             int* const delay_list[],
-                                             const int rowchanged,
-                                             const int delay_count,
-                                             double* const binvrow[],
-                                             const double* const ratio_inv,
-                                             const double* const dphi_in[],
-                                             const double* const d2phi_in[],
-                                             double* const dphi_out[],
-                                             double* const d2phi_out[],
-                                             const int n,
-                                             const int batch_count)
+cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
+                                              int* const delay_list[],
+                                              const int rowchanged,
+                                              const int delay_count,
+                                              double* const binv[],
+                                              const int binv_lda,
+                                              const double* const ratio_inv,
+                                              const double* const phi_in[],
+                                              const double* const dphi_in[],
+                                              const double* const d2phi_in[],
+                                              double* const phi_out[],
+                                              double* const dphi_out[],
+                                              double* const d2phi_out[],
+                                              const int norb,
+                                              const int n_accepted,
+                                              const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -267,99 +323,19 @@ cudaError_t add_delay_list_save_y_GL_batched(cudaStream_t& hstream,
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
   add_delay_list_save_y_GL_kernel<double, COLBS>
-      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binvrow, ratio_inv, dphi_in, d2phi_in, dphi_out, d2phi_out, n);
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binv, binv_lda, ratio_inv, phi_in,
+                                          dphi_in, d2phi_in, phi_out, dphi_out, d2phi_out, norb, n_accepted);
   return cudaPeekAtLastError();
 }
 
 template<typename T, int COLBS>
-__global__ void fake_accept_add_delay_list_update_Binv_U_kernel(int* const delay_list[],
-                                                                const int delay_count,
-                                                                T* const binv[],
-                                                                const int lda,
-                                                                T* const Urow[],
-                                                                const int norb)
+__global__ void applyW_kernel(const int* const delay_list[], const int delay_count, T* const tempMat[], const int lda)
 {
-  const int iw  = blockIdx.x;
-  const int tid = threadIdx.x;
-
-  T* __restrict__ Urow_iw   = Urow[iw];
-  const int num_blocks_norb = (norb + COLBS - 1) / COLBS;
-  for (int ib = 0; ib < num_blocks_norb; ib++)
-  {
-    const int col_id = ib * COLBS + tid;
-    if (col_id < norb)
-      Urow_iw[col_id] = T(0);
-  }
-
-  T* __restrict__ binv_iw          = binv[iw];
-  const int num_blocks_delay_count = (delay_count + COLBS - 1) / COLBS;
-  for (int ib = 0; ib < num_blocks_delay_count; ib++)
-  {
-    const int col_id = ib * COLBS + tid;
-    if (col_id < delay_count)
-      binv_iw[delay_count * lda + col_id] = binv_iw[delay_count + lda * col_id] = T(0);
-  }
-
-  int* __restrict__ delay_list_iw = delay_list[iw];
-  if (tid == 0)
-  {
-    binv_iw[delay_count * lda + delay_count] = T(1);
-    delay_list_iw[delay_count]               = -1;
-    //printf("check fake %p %d last %d\n", delay_list_iw, delay_list_iw[delay_count], delay_list_iw[(delay_count - 1 < 0)? 0: (delay_count - 1)]);
-  }
-}
-
-cudaError_t fake_accept_add_delay_list_update_Binv_U_batched(cudaStream_t& hstream,
-                                                             int* const delay_list[],
-                                                             const int delay_count,
-                                                             float* const binv[],
-                                                             const int lda,
-                                                             float* const Urow[],
-                                                             const int norb,
-                                                             const int batch_count)
-{
-  if (batch_count == 0)
-    return cudaSuccess;
-
-  const int COLBS = 128;
-  dim3 dimBlock(COLBS);
-  dim3 dimGrid(batch_count);
-  fake_accept_add_delay_list_update_Binv_U_kernel<float, COLBS>
-      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, binv, lda, Urow, norb);
-  return cudaPeekAtLastError();
-}
-
-cudaError_t fake_accept_add_delay_list_update_Binv_U_batched(cudaStream_t& hstream,
-                                                             int* const delay_list[],
-                                                             const int delay_count,
-                                                             double* const binv[],
-                                                             const int lda,
-                                                             double* const Urow[],
-                                                             const int norb,
-                                                             const int batch_count)
-{
-  if (batch_count == 0)
-    return cudaSuccess;
-
-  const int COLBS = 128;
-  dim3 dimBlock(COLBS);
-  dim3 dimGrid(batch_count);
-  fake_accept_add_delay_list_update_Binv_U_kernel<double, COLBS>
-      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, binv, lda, Urow, norb);
-  return cudaPeekAtLastError();
-}
-
-template<typename T, int COLBS>
-__global__ void applyW_kernel(const int* const delay_list[],
-                           const int delay_count,
-                           T* const tempMat[],
-                           const int lda)
-{
-  const int iw  = blockIdx.x;
+  const int iw                          = blockIdx.x;
   const int* __restrict__ delay_list_iw = delay_list[iw];
-  T* __restrict__ tempMat_iw          = tempMat[iw];
+  T* __restrict__ tempMat_iw            = tempMat[iw];
 
-  const int tid = threadIdx.x;
+  const int tid        = threadIdx.x;
   const int num_blocks = (delay_count + COLBS - 1) / COLBS;
   for (int ib = 0; ib < num_blocks; ib++)
   {
@@ -417,13 +393,14 @@ __global__ void print_delay_list_kernel(int* const delay_list[], const int delay
   int* __restrict__ delay_list_iw = delay_list[iw];
 
   if (tid == 0)
-    printf("check delay_list %p %d last %d\n", delay_list_iw, delay_list_iw[delay_count], delay_list_iw[(delay_count - 1 < 0)? 0: (delay_count - 1)]);
+    printf("check delay_list %p %d last %d\n", delay_list_iw, delay_list_iw[delay_count],
+           delay_list_iw[(delay_count - 1 < 0) ? 0 : (delay_count - 1)]);
 }
 
 cudaError_t print_delay_list_batched(cudaStream_t& hstream,
-                                    int* const delay_list[],
-                                    const int delay_count,
-                                    const int batch_count)
+                                     int* const delay_list[],
+                                     const int delay_count,
+                                     const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
