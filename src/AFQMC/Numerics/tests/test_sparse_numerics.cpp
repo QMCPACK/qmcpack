@@ -59,7 +59,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
     A_[2][1] = 3.;
     A_[0][1] = 9.;
 
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     A_.remove_empty_spaces();
     ma::sparse::csr_matrix<double,int,int,Allocator> A(A_);
 #else
@@ -213,7 +213,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
 
 TEST_CASE("sparse_ma_operations", "[matrix_operations]")
 {
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
