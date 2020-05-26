@@ -359,7 +359,7 @@ namespace afqmc
       for(int iw=0; iw<nw; ++iw) {
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
         Ov[iw] = SDetOp.MixedDensityMatrix(OrbMats[nd],A[iw],G2D_,LogOverlapFactor,true);
-        if(walker_type==CLOSED) Ov[iw] *= ComplexType(Ov[iw]);
+        if(walker_type==CLOSED) Ov[iw] *= Ov[iw];
         if(transposed_G_for_E_) 
           G[iw] = G1D_; 
         else
@@ -459,7 +459,7 @@ namespace afqmc
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
         Ov[iw] = SDetOp.MixedDensityMatrix(RefA,*wset[iw].SlaterMatrix(Alpha),G2D_,
                                              LogOverlapFactor,compact,herm);
-        if(walker_type==CLOSED) Ov[iw] *= ComplexType(Ov[iw]);
+        if(walker_type==CLOSED) Ov[iw] *= Ov[iw];
         if(transposed) 
           G[iw] = G1D_; 
         else

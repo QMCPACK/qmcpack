@@ -66,7 +66,7 @@ struct device_reference {
   operator decay_value_type() const & { return this->val(); }
 
   // try getting rid of this
-  operator decay_value_type&() & = delete; 
+//  operator decay_value_type&() & = delete; 
 
   pointer operator& () const { return pointer{impl_}; }
 

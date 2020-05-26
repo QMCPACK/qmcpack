@@ -174,7 +174,7 @@ class atomcentered_correlators: public AFQMCInfo
       // slowwwww!!!!!
       for(int i=0; i<NAO; i++)  
         for(int j=0; j<NAO; j++) 
-          S[0][i][j] = ComplexType( std::conj( ComplexType(S[0][i][j]) ) );  
+          S[0][i][j] = std::conj( ComplexType(S[0][i][j]) );  
       ma::product(S[0],ma::T(S[1]),XY);
     } else {
       TG.Node().broadcast_n(&nsites,1,0);  
