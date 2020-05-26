@@ -18,8 +18,8 @@
 #include<hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
-#define ENABLE_CUDA 1
-#include "AFQMC/Memory/CUDA/cuda_utilities.h"
+#define ENABLE_HIP 1
+#include "AFQMC/Memory/HIP/cuda_utilities.h"
 
 namespace kernels 
 {

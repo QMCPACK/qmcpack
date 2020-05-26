@@ -23,8 +23,8 @@
 #include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
 #include<hip/hip_runtime.h>
-#define ENABLE_CUDA 1
-#include "AFQMC/Memory/CUDA/cuda_utilities.h"
+#define ENABLE_HIP 1
+#include "AFQMC/Memory/HIP/cuda_utilities.h"
 
 namespace kernels 
 {

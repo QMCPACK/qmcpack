@@ -16,16 +16,16 @@
 #include <thrust/complex.h>
 #include <thrust/reduce.h>
 #include <thrust/device_ptr.h>
-#include "AFQMC/Numerics/detail/CUDA/Kernels/strided_range.hpp"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/strided_2Drange.hpp"
-#define ENABLE_CUDA 1
-#include "AFQMC/Memory/CUDA/cuda_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/strided_range.hpp"
+#include "AFQMC/Numerics/detail/HIP/Kernels/strided_2Drange.hpp"
+#define ENABLE_HIP 1
+#include "AFQMC/Memory/HIP/cuda_utilities.h"
 
 namespace kernels
 {
 
 /*
- * There is a bug in CUDA9.2 when calling reduce with thrust::complex.
+ * There is a bug in HIP9.2 when calling reduce with thrust::complex.
  * Temporary hack until bug is fixed...
  */
 

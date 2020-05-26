@@ -17,10 +17,10 @@
 #include<hip/hip_runtime.h>
 #include "hiprand.h"
 #include<hip/hip_runtime.h>
-#include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/zero_complex_part.cuh"
-#define ENABLE_CUDA 1
-#include "AFQMC/Memory/CUDA/cuda_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/cuda_settings.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/zero_complex_part.cuh"
+#define ENABLE_HIP 1
+#include "AFQMC/Memory/HIP/cuda_utilities.h"
 
 namespace kernels
 {

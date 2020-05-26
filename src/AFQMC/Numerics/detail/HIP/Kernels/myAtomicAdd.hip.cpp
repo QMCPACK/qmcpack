@@ -12,7 +12,7 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#if __CUDA_ARCH__ < 600
+#if __HIP_ARCH__ < 600
 namespace kernels
 {
 

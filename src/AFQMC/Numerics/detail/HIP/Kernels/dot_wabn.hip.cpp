@@ -18,11 +18,11 @@
 #include<hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
-#include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
-#define ENABLE_CUDA 1
-#include "AFQMC/Memory/CUDA/cuda_utilities.h"
-#if __CUDA_ARCH__ < 600
-#include "AFQMC/Numerics/detail/CUDA/Kernels/myAtomicAdd.cu"
+#include "AFQMC/Numerics/detail/HIP/Kernels/cuda_settings.h"
+#define ENABLE_HIP 1
+#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#if __HIP_ARCH__ < 600
+#include "AFQMC/Numerics/detail/HIP/Kernels/myAtomicAdd.cu"
 #endif
 
 namespace kernels 
@@ -61,7 +61,7 @@ __global__ void kernel_dot_wabn(int nwalk, int nocc, int nchol,
         T re = (alp * cache[ 0 ]).real();
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(y+w*incy);
-#if __CUDA_ARCH__ < 600
+#if __HIP_ARCH__ < 600
         myAtomicAdd(re_,re); 
         myAtomicAdd(re_+1,im); 
 #else
@@ -109,7 +109,7 @@ __global__ void kernel_dot_wanb(int nt, int nwalk, int nocc, int nchol,
         T re = (alp * cache[ 0 ]).real();
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(y+blockIdx.x*incy);
-#if __CUDA_ARCH__ < 600
+#if __HIP_ARCH__ < 600
         myAtomicAdd(re_,re);
         myAtomicAdd(re_+1,im);
 #else
@@ -151,7 +151,7 @@ __global__ void kernel_dot_wanb2(int nwalk, int nocc, int nchol,
         T re = (alp * cache[ 0 ]).real();
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(y+w*incy);
-#if __CUDA_ARCH__ < 600
+#if __HIP_ARCH__ < 600
         myAtomicAdd(re_,re);
         myAtomicAdd(re_+1,im);
 #else
@@ -192,7 +192,7 @@ __global__ void kernel_dot_wpan_waqn_Fwpq(int nwalk, int nmo, int nchol,
         T re = (alp * cache[ 0 ]).real();
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(F+(w*nmo+p)*nmo+q);
-#if __CUDA_ARCH__ < 600
+#if __HIP_ARCH__ < 600
         myAtomicAdd(re_,re);
         myAtomicAdd(re_+1,im);
 #else
