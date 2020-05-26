@@ -1,0 +1,375 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Specifying the Simulation Cell &mdash; QMC Manual 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Obtaining, installing, and validating QMCPACK" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> QMC Manual
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">Features of QMCPACK</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Obtaining, installing, and validating QMCPACK</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Specifying the Simulation Cell</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#lattice">Lattice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#boundary-conditions">Boundary conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vacuum">Vacuum</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#lr-dim-cutoff">LR_dim_cutoff</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">QMC Manual</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Specifying the Simulation Cell</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/simulationcell.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="specifying-the-simulation-cell">
+<span id="chap-simulationcell"></span><h1>Specifying the Simulation Cell<a class="headerlink" href="#specifying-the-simulation-cell" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="code docutils literal notranslate"><span class="pre">simulationcell</span></code> block specifies the geometry of the cell, how the boundary
+conditions should be handled, and how ewald summation should be broken
+up.</p>
+<p><code class="docutils literal notranslate"><span class="pre">simulationcell</span></code> Element:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 85%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>Parent elements:</p></td>
+<td><p><code class="code docutils literal notranslate"><span class="pre">qmcsystem</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Child elements:</p></td>
+<td><p>None</p></td>
+</tr>
+</tbody>
+</table>
+<p>Attributes:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 11%" />
+<col style="width: 20%" />
+<col style="width: 14%" />
+<col style="width: 39%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>parameter name</strong></p></th>
+<th class="head"><p><strong>datatype</strong></p></th>
+<th class="head"><p><strong>values</strong></p></th>
+<th class="head"><p><strong>default</strong></p></th>
+<th class="head"><p><strong>description</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lattice</span></code></p></td>
+<td><p>9 floats</p></td>
+<td><p>any float</p></td>
+<td><p>Must be specified</p></td>
+<td><p>Specification of lattice vectors.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">bconds</span></code></p></td>
+<td><p>string</p></td>
+<td><p>“p” or “n”</p></td>
+<td><p>“n n n “</p></td>
+<td><p>Boundary conditions for each axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">vacuum</span></code></p></td>
+<td><p>float</p></td>
+<td><p><span class="math notranslate nohighlight">\(\geq 1.0\)</span></p></td>
+<td><p>1.0</p></td>
+<td><p>Vacuum scale.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">LR_dim_cutoff</span></code></p></td>
+<td><p>float</p></td>
+<td><p>float</p></td>
+<td><p>15</p></td>
+<td><p>Ewald breakup distance.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">LR_tol</span></code></p></td>
+<td><p>float</p></td>
+<td><p>float</p></td>
+<td><p>3e-4</p></td>
+<td><p>Tolerance in Ha for Ewald ion-ion energy per atom.</p></td>
+</tr>
+</tbody>
+</table>
+<p>An example of a block is given below:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">simulationcell</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">parameter</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;lattice&quot;</span><span class="o">&gt;</span>
+      <span class="mf">3.8</span>       <span class="mf">0.0</span>       <span class="mf">0.0</span>
+      <span class="mf">0.0</span>       <span class="mf">3.8</span>       <span class="mf">0.0</span>
+      <span class="mf">0.0</span>       <span class="mf">0.0</span>       <span class="mf">3.8</span>
+    <span class="o">&lt;/</span><span class="n">parameter</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">parameter</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;bconds&quot;</span><span class="o">&gt;</span>
+       <span class="n">p</span> <span class="n">p</span> <span class="n">p</span>
+    <span class="o">&lt;/</span><span class="n">parameter</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">parameter</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;LR_dim_cutoff&quot;</span><span class="o">&gt;</span> <span class="mi">20</span> <span class="o">&lt;/</span><span class="n">parameter</span><span class="o">&gt;</span>
+  <span class="o">&lt;/</span><span class="n">simulationcell</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Here, a cubic cell 3.8 bohr on a side will be used. This simulation will
+use periodic boundary conditions, and the maximum <span class="math notranslate nohighlight">\(k\)</span> vector will
+be <span class="math notranslate nohighlight">\(20/r_{wigner-seitz}\)</span> of the cell.</p>
+<div class="section" id="lattice">
+<h2>Lattice<a class="headerlink" href="#lattice" title="Permalink to this headline">¶</a></h2>
+<p>The cell is specified using 3 lattice vectors.</p>
+</div>
+<div class="section" id="boundary-conditions">
+<h2>Boundary conditions<a class="headerlink" href="#boundary-conditions" title="Permalink to this headline">¶</a></h2>
+<p>QMCPACK offers the capability to use a mixture of open and periodic
+boundary conditions. The parameter expects a single string of three
+characters separated by spaces, <em>e.g.</em> “p p p” for purely periodic
+boundary conditions. These characters control the behavior of the
+<span class="math notranslate nohighlight">\(x\)</span>, <span class="math notranslate nohighlight">\(y\)</span>, and <span class="math notranslate nohighlight">\(z\)</span>, axes, respectively. Non periodic
+directions must be placed after the periodic ones. Examples of valid
+include:</p>
+<p><strong>“p p p”</strong> Periodic boundary conditions. Corresponds to a 3D crystal.</p>
+<p><strong>“p p n”</strong> Slab geometry. Corresponds to a 2D crystal.</p>
+<p><strong>“p n n”</strong> Wire geometry. Corresponds to a 1D crystal.</p>
+<p><strong>“n n n”</strong>
+Open boundary conditions. Corresponds to an isolated molecule in a vacuum.</p>
+</div>
+<div class="section" id="vacuum">
+<h2>Vacuum<a class="headerlink" href="#vacuum" title="Permalink to this headline">¶</a></h2>
+<p>The vacuum option allows adding a vacuum region in slab or wire boundary
+conditions (<code class="docutils literal notranslate"><span class="pre">bconds=</span> <span class="pre">p</span> <span class="pre">p</span> <span class="pre">n</span></code> or <code class="docutils literal notranslate"><span class="pre">bconds=</span> <span class="pre">p</span> <span class="pre">n</span> <span class="pre">n</span></code>, respectively). The main use is to save memory with
+spline or plane-wave basis trial wavefunctions, because no basis
+functions are required inside the vacuum region. For example, a large
+vacuum region can be added above and below a graphene sheet without
+having to generate the trial wavefunction in such a large box or to have
+as many splines as would otherwise be required. Note that the trial
+wavefunction must still be generated in a large enough box to
+sufficiently reduce periodic interactions in the underlying electronic
+structure calculation.</p>
+<p>With the vacuum option, the box used for Ewald summation increases along
+the axis labeled by a factor of``vacuum``. Note that all the particles remain in
+the original box without altering their positions. i.e. Bond lengths are
+not changed by this option. The default value is 1, no change to the
+specified axes.</p>
+<p>An example of a <code class="docutils literal notranslate"><span class="pre">simulationcell</span></code> block using is given below. The size of the box along
+the z-axis increases from 12 to 18 by the vacuum scale of 1.5.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">simulationcell</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">parameter</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;lattice&quot;</span><span class="o">&gt;</span>
+      <span class="mf">3.8</span>       <span class="mf">0.0</span>       <span class="mf">0.0</span>
+      <span class="mf">0.0</span>       <span class="mf">3.8</span>       <span class="mf">0.0</span>
+      <span class="mf">0.0</span>       <span class="mf">0.0</span>      <span class="mf">12.0</span>
+    <span class="o">&lt;/</span><span class="n">parameter</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">parameter</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;bconds&quot;</span><span class="o">&gt;</span>
+       <span class="n">p</span> <span class="n">p</span> <span class="n">n</span>
+    <span class="o">&lt;/</span><span class="n">parameter</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">parameter</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;vacuum&quot;</span><span class="o">&gt;</span> <span class="mf">1.5</span> <span class="o">&lt;/</span><span class="n">parameter</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">parameter</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;LR_dim_cutoff&quot;</span><span class="o">&gt;</span> <span class="mi">20</span> <span class="o">&lt;/</span><span class="n">parameter</span><span class="o">&gt;</span>
+  <span class="o">&lt;/</span><span class="n">simulationcell</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="lr-dim-cutoff">
+<h2>LR_dim_cutoff<a class="headerlink" href="#lr-dim-cutoff" title="Permalink to this headline">¶</a></h2>
+<p>When using periodic boundary conditions direct calculation of the
+Coulomb energy is not well behaved. As a result, QMCPACK uses an
+optimized Ewald summation technique to compute the Coulomb
+interaction. <a class="bibtex reference internal" href="#natoli1995" id="id1">[NC95]</a></p>
+<p>In the Ewald summation, the energy is broken into short- and long-ranged
+terms. The short-ranged term is computed directly in real space, while
+the long-ranged term is computed in reciprocal space. controls where the
+short-ranged term ends and the long-ranged term begins. The real-space
+cutoff, reciprocal-space cutoff, and are related via:</p>
+<div class="math notranslate nohighlight">
+\[\mathrm{LR\_dim\_cutoff} = r_{c} \times k_{c}\]</div>
+<p>where <span class="math notranslate nohighlight">\(r_{c}\)</span> is the Wigner-Seitz radius, and <span class="math notranslate nohighlight">\(k_{c}\)</span> is the
+length of the maximum <span class="math notranslate nohighlight">\(k\)</span>-vector used in the long-ranged term.
+Larger values of increase the accuracy of the evaluation. A value of 15
+tends to be conservative.</p>
+<p id="bibtex-bibliography-simulationcell-0"><dl class="citation">
+<dt class="bibtex label" id="ipcc-sc17"><span class="brackets">MLC+17</span></dt>
+<dd><p>Amrita Mathuriya, Ye Luo, Raymond C. Clay, III, Anouar Benali, Luke Shulenburger, and Jeongnim Kim. Embracing a new era of highly efficient and productive quantum monte carlo simulations. In <em>Proceedings of the International Conference for High Performance Computing, Networking, Storage and Analysis</em>, SC ‘17, 38:1–38:12. New York, NY, USA, 2017. ACM. URL: <a class="reference external" href="http://doi.acm.org/10.1145/3126908.3126952">http://doi.acm.org/10.1145/3126908.3126952</a>, <a class="reference external" href="https://doi.org/10.1145/3126908.3126952">doi:10.1145/3126908.3126952</a>.</p>
+</dd>
+<dt class="bibtex label" id="natoli1995"><span class="brackets"><a class="fn-backref" href="#id1">NC95</a></span></dt>
+<dd><p>Vincent Natoli and David M. Ceperley. An optimized method for treating long-range potentials. <em>Journal of Computational Physics</em>, 117(1):171 – 178, 1995. URL: <a class="reference external" href="http://www.sciencedirect.com/science/article/pii/S0021999185710546">http://www.sciencedirect.com/science/article/pii/S0021999185710546</a>, <a class="reference external" href="https://doi.org/http://dx.doi.org/10.1006/jcph.1995.1054">doi:http://dx.doi.org/10.1006/jcph.1995.1054</a>.</p>
+</dd>
+</dl>
+</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="installation.html" class="btn btn-neutral float-left" title="Obtaining, installing, and validating QMCPACK" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, John Batson
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

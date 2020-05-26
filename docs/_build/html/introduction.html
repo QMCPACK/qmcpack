@@ -1,0 +1,500 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Introduction &mdash; QMC Manual 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Features of QMCPACK" href="features.html" />
+    <link rel="prev" title="User’s Guide and Developer’s Manual for" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> QMC Manual
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#quickstart-and-a-first-qmcpack-calculation">Quickstart and a first QMCPACK calculation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#authors-and-history">Authors and History</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#support-and-contacting-the-developers">Support and Contacting the Developers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance">Performance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#open-source-license">Open Source License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#contributing-to-qmcpack">Contributing to QMCPACK</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#qmcpack-roadmap">QMCPACK Roadmap</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#code">Code</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#documentation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">Features of QMCPACK</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Obtaining, installing, and validating QMCPACK</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulationcell.html">Specifying the Simulation Cell</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">QMC Manual</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Introduction</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/introduction.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="introduction">
+<span id="id1"></span><h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>QMCPACK is an open-source, high-performance electronic structure code
+that implements numerous Quantum Monte Carlo (QMC) algorithms. Its main
+applications are electronic structure calculations of molecular,
+periodic 2D, and periodic 3D solid-state systems. Variational Monte
+Carlo (VMC), diffusion Monte Carlo (DMC), and a number of other advanced
+QMC algorithms are implemented. By directly solving the Schrodinger
+equation, QMC methods offer greater accuracy than methods such as
+density functional theory but at a trade-off of much greater
+computational expense. Distinct from many other correlated many-body
+methods, QMC methods are readily applicable to both bulk (periodic) and
+isolated molecular systems.</p>
+<p>QMCPACK is written in C++ and is designed with the modularity afforded
+by object-oriented programming. It makes extensive use of template
+metaprogramming to achieve high computational efficiency. Because of the
+modular architecture, the addition of new wavefunctions, algorithms, and
+observables is relatively straightforward. For parallelization, QMCPACK
+uses a fully hybrid (OpenMP,CUDA)/MPI approach to optimize memory usage
+and to take advantage of the growing number of cores per SMP node or
+graphical processing units (GPUs) and accelerators. High parallel and
+computational efficiencies are achievable on the largest supercomputers.
+Finally, QMCPACK uses standard file formats for input and output in XML
+and HDF5 to facilitate data exchange.</p>
+<p>This manual currently serves as an introduction to the essential
+features of QMCPACK and as a guide to installing and running it. Over
+time this manual will be expanded to include a fuller introduction to
+QMC methods in general and to include more of the specialized features
+in QMCPACK.</p>
+<div class="section" id="quickstart-and-a-first-qmcpack-calculation">
+<h2>Quickstart and a first QMCPACK calculation<a class="headerlink" href="#quickstart-and-a-first-qmcpack-calculation" title="Permalink to this headline">¶</a></h2>
+<p>In case you are keen to get started, this section describes how to
+quickly build and run QMCPACK on a standard UNIX or Linux-like system.
+The autoconfiguring build system usually works without much fuss on
+these systems. If C++, MPI, BLAS/LAPACK, FFTW, HDF5, and CMake are
+already installed, QMCPACK can be built and run within five minutes. For
+supercomputers, cross-compilation systems, and other computer clusters,
+the build system might require hints on the locations of libraries and
+which versions to use, typical of any code; see
+<a class="reference internal" href="installation.html#obtaininginstalling"><span class="std std-ref">Obtaining, installing, and validating QMCPACK</span></a>.
+<span class="xref std std-ref">installexamples</span> includes
+complete examples of installations for common workstations and
+supercomputers that you can reuse.</p>
+<p>To build QMCPACK:</p>
+<ol class="arabic simple">
+<li><p>Download the latest QMCPACK distribution from <a class="reference external" href="http://www.qmcpack.org">http://www.qmcpack.org</a>.</p></li>
+<li><p>Untar the archive (e.g., <code class="docutils literal notranslate"><span class="pre">tar</span> <span class="pre">xvf</span> <span class="pre">qmcpack_v1.3.tar.gz</span></code>).</p></li>
+<li><p>Check the instructions in the README file.</p></li>
+<li><p>Run CMake in a suitable build directory to configure QMCPACK for your
+system: <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">qmcpack/build;</span> <span class="pre">cmake</span> <span class="pre">..</span></code></p></li>
+<li><p>If CMake is unable to find all needed libraries, see
+<a class="reference internal" href="installation.html#obtaininginstalling"><span class="std std-ref">Obtaining, installing, and validating QMCPACK</span></a> for
+instructions and specific build instructions for common systems.</p></li>
+<li><p>Build QMCPACK: <code class="docutils literal notranslate"><span class="pre">make</span></code> or <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">-j</span> <span class="pre">16</span></code>; use the latter for a faster parallel build on a
+system using, for example, 16 processes.</p></li>
+<li><p>The QMCPACK executable is <code class="docutils literal notranslate"><span class="pre">bin/qmcpack</span></code>.</p></li>
+</ol>
+<p>QMCPACK is distributed with examples illustrating different
+capabilities. Most of the examples are designed to run quickly with
+modest resources. We’ll run a short diffusion Monte Carlo calculation of
+a water molecule:</p>
+<ol class="arabic">
+<li><p>Go to the appropriate example directory: <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">../examples/molecules/H2O.</span></code></p></li>
+<li><div class="line-block">
+<div class="line">(Optional) Put the QMCPACK binary on your path: <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PATH=\$PATH:location-of-qmcpack/build/bin</span></code></div>
+</div>
+</li>
+<li><p>Run QMCPACK: <code class="docutils literal notranslate"><span class="pre">../../../build/bin/qmcpack</span> <span class="pre">simple-H2O.xml</span></code> or <code class="docutils literal notranslate"><span class="pre">qmcpack</span> <span class="pre">simple-H2O.xml</span></code> if you followed the step above.</p></li>
+<li><p>The run will output to the screen and generate a number of files:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ls H2O*
+H2O.HF.wfs.xml      H2O.s001.scalar.dat H2O.s002.cont.xml
+H2O.s002.qmc.xml    H2O.s002.stat.h5    H2O.s001.qmc.xml
+H2O.s001.stat.h5    H2O.s002.dmc.dat    H2O.s002.scalar.dat
+</pre></div>
+</div>
+</li>
+<li><p>Partially summarized results are in the standard text files with the
+suffixes scalar.dat and dmc.dat. They are viewable with any standard
+editor.</p></li>
+</ol>
+<p>If you have Python and matplotlib installed, you can use the analysis
+utility to produce statistics and plots of the data. See
+<span class="xref std std-ref">analyzing</span> for information on
+analyzing QMCPACK data.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export PATH=$PATH:location-of-qmcpack/nexus/bin
+export PYTHONPATH=$PYTHONPATH:location-of-qmcpack/nexus/library
+qmca H2O.s002.scalar.dat         # For statistical analysis of the DMC data
+qmca -t -q e H2O.s002.scalar.dat # Graphical plot of DMC energy
+</pre></div>
+</div>
+<p>The last command will produce a graph as per
+<a class="reference internal" href="#fig1"><span class="std std-numref">Fig. 1</span></a>. This
+shows the average energy of the DMC walkers at each timestep. In a real
+simulation we would have to check equilibration, convergence with walker
+population, time step, etc.</p>
+<p>Congratulations, you have completed a DMC calculation with QMCPACK!</p>
+<div class="figure align-center" id="id3">
+<span id="fig1"></span><a class="reference internal image-reference" href="_images/quick_qmca_dmc_trace.png"><img alt="_images/quick_qmca_dmc_trace.png" src="_images/quick_qmca_dmc_trace.png" style="width: 400px;" /></a>
+<p class="caption"><span class="caption-number">Fig. 1 </span><span class="caption-text">Trace of walker energies produced by the qmca tool for a simple water
+molecule example.</span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+</div>
+</div>
+<div class="section" id="authors-and-history">
+<span id="history"></span><h2>Authors and History<a class="headerlink" href="#authors-and-history" title="Permalink to this headline">¶</a></h2>
+<p>QMCPACK was initially written by Jeongnim Kim while in the group of
+Professor David Ceperley at the University of Illinois at
+Urbana-Champaign, with later contributations being made at Oak Ridge
+National Laboratory (ORNL). Over the years, many others have
+contributed, particularly students and researchers in the groups of
+Professor David Ceperley and Professor Richard M. Martin, as well as
+staff at Lawrence Livermore National Laboratory, Sandia National
+Laboratories, Argonne National Laboratory, and ORNL.</p>
+<p>Additional developers, contributors, and advisors include Anouar Benali,
+Mark A. Berrill, David M. Ceperley, Simone Chiesa, Raymond C. III Clay,
+Bryan Clark, Kris T. Delaney, Kenneth P. Esler, Paul R. C. Kent, Jaron
+T. Krogel, Ying Wai Li, Ye Luo, Jeremy McMinis, Miguel A. Morales,
+William D. Parker, Nichols A. Romero, Luke Shulenburger, Norman M.
+Tubman, and Jordan E. Vincent.</p>
+<p>If you should be added to this list, please let us know.</p>
+<p>Development of QMCPACK has been supported financially by several grants,
+including the following:</p>
+<ul class="simple">
+<li><p>“Network for ab initio many-body methods: development, education and
+training” supported through the Predictive Theory and Modeling for
+Materials and Chemical Science program by the U.S. Department of
+Energy Office of Science, Basic Energy Sciences</p></li>
+<li><p>“QMC Endstation,” supported by Accelerating Delivery of Petascale
+Computing Environment at the DOE Leadership Computing Facility at
+ORNL</p></li>
+<li><p>PetaApps, supported by the US National Science Foundation</p></li>
+<li><p>Materials Computation Center (MCC), supported by the US National
+Science Foundation</p></li>
+</ul>
+</div>
+<div class="section" id="support-and-contacting-the-developers">
+<span id="sec-support"></span><h2>Support and Contacting the Developers<a class="headerlink" href="#support-and-contacting-the-developers" title="Permalink to this headline">¶</a></h2>
+<p>Questions about installing, applying, or extending QMCPACK can be posted
+on the QMCPACK Google group at
+<a class="reference external" href="https://groups.google.com/forum/#!forum/qmcpack">https://groups.google.com/forum/#!forum/qmcpack</a>. You may also email any
+of the developers, but we recommend checking the group first. Particular
+attention is given to any problem reports.</p>
+</div>
+<div class="section" id="performance">
+<span id="id2"></span><h2>Performance<a class="headerlink" href="#performance" title="Permalink to this headline">¶</a></h2>
+<p>QMCPACK implements modern Monte Carlo (MC) algorithms, is highly
+parallel, and is written using very efficient code for high per-CPU or
+on-node performance. In particular, the code is highly vectorizable,
+giving high performance on modern central processing units (CPUs) and
+GPUs. We believe QMCPACK delivers performance either comparable to or
+better than other QMC codes when similar calculations are run,
+particularly for the most common QMC methods and for large systems. If
+you find a calculation where this is not the case, or you simply find
+performance slower than expected, please post on the Google group or
+contact one of the developers. These reports are valuable. If your
+calculation is sufficiently mainstream we will optimize QMCPACK to
+improve the performance.</p>
+</div>
+<div class="section" id="open-source-license">
+<span id="license"></span><h2>Open Source License<a class="headerlink" href="#open-source-license" title="Permalink to this headline">¶</a></h2>
+<p>QMCPACK is distributed under the University of Illinois at
+Urbana-Champaign/National Center for Supercomputing Applications
+(UIUC/NCSA) Open Source License.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>          University of Illinois/NCSA Open Source License
+
+Copyright (c) 2003, University of Illinois Board of Trustees.
+All rights reserved.
+
+Developed by:
+  Jeongnim Kim
+  Condensed Matter Physics,
+  National Center for Supercomputing Applications, University of Illinois
+  Materials computation Center, University of Illinois
+  http://www.mcc.uiuc.edu/qmc/
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+``Software&#39;&#39;), to deal with the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+        * Redistributions of source code must retain the above copyright
+          notice, this list of conditions and the following disclaimers.
+        * Redistributions in binary form must reproduce the above copyright
+          notice, this list of conditions and the following disclaimers in
+          the documentation and/or other materials provided with the
+          distribution.
+        * Neither the names of the NCSA, the MCC, the University of Illinois,
+          nor the names of its contributors may be used to endorse or promote
+          products derived from this Software without specific prior written
+          permission.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS WITH THE SOFTWARE.
+</pre></div>
+</div>
+<p>Copyright is generally believed to remain with the authors of the
+individual sections of code. See the various notations in the source
+code as well as the code history.</p>
+</div>
+<div class="section" id="contributing-to-qmcpack">
+<span id="contributing"></span><h2>Contributing to QMCPACK<a class="headerlink" href="#contributing-to-qmcpack" title="Permalink to this headline">¶</a></h2>
+<p>QMCPACK is fully open source, and we welcome contributions. If you are
+planning a development, early discussions are encouraged. Please post on
+the QMCPACK Google group or contact the developers. We can tell you
+whether anyone else is working on a similar feature or whether any
+related work has been done in the past. Credit for your contribution can
+be obtained, for example, through citation of a paper or by becoming one
+of the authors on the next version of the standard QMCPACK reference
+citation.</p>
+<p>A guide to developing for QMCPACK, including instructions on how to work
+with GitHub and make pull requests (contributions) to the main source
+are listed on the QMCPACK GitHub wiki:
+<a class="reference external" href="https://github.com/QMCPACK/qmcpack/wiki">https://github.com/QMCPACK/qmcpack/wiki</a>.</p>
+<p>Contributions are made under the same license as QMCPACK, the UIUC/NCSA
+open source license. If this is problematic, please discuss with a
+developer.</p>
+<p>Please note the following guidelines for contributions:</p>
+<ul class="simple">
+<li><p>Additions should be fully synchronized with the latest release
+version and ideally the latest develop branch on github. Merging of
+code developed on older versions is error prone.</p></li>
+<li><p>Code should be cleanly formatted, commented, portable, and accessible
+to other programmers. That is, if you need to use any clever tricks,
+add a comment to note this, why the trick is needed, how it works,
+etc. Although we like high performance, ease of maintenance and
+accessibility are also considerations.</p></li>
+<li><p>Comment your code. You are not only writing it for the compiler for
+also for other humans! (We know this is a repeat of the previous
+point, but it is important enough to repeat.)</p></li>
+<li><p>Write a brief description of the method, algorithms, and inputs and
+outputs suitable for inclusion in this manual.</p></li>
+<li><p>Develop some short tests that exercise the functionality that can be
+used for validation and for examples. We can help with this and their
+integration into the test system.</p></li>
+</ul>
+</div>
+<div class="section" id="qmcpack-roadmap">
+<span id="roadmap"></span><h2>QMCPACK Roadmap<a class="headerlink" href="#qmcpack-roadmap" title="Permalink to this headline">¶</a></h2>
+<p>A general outline of the QMCPACK roadmap is given in the following sections. Suggestions for improvements are welcome, particularly those
+that would facilitate new scientific applications. For example, if an
+interface to a particular quantum chemical or density functional code
+would help, this would be given strong consideration.</p>
+<div class="section" id="code">
+<h3>Code<a class="headerlink" href="#code" title="Permalink to this headline">¶</a></h3>
+<p>We will continue to improve the accessibility and usability of QMCPACK
+through combinations of more convenient input parameters, improved
+workflow, integration with more quantum chemical and density functional
+codes, and a wider range of examples.</p>
+<p>In terms of methodological development, we expect to significantly
+increase the range of QMC algorithms in QMCPACK in the near future.</p>
+<p>Computationally, we are porting QMCPACK to the next generation of
+supercomputer systems. The internal changes required to run efficiently
+on these systems are expected to benefit <em>all</em> platforms due to improved
+vectorization, cache utilization, and memory performance.</p>
+</div>
+<div class="section" id="documentation">
+<h3>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h3>
+<p>This manual describes the core features of QMCPACK that are required for
+routine research calculations, i.e., the VMC and DMC methods, how to
+obtain and optimize trial wavefunctions, and simple observables. Over
+time this manual will be expanded to include a broader introduction to
+QMC methods and to describe more features of the code.</p>
+<p>Because of its history as a research code, QMCPACK contains a variety of
+additional QMC methods, trial wavefunction forms, potentials, etc.,
+that, although not critical, might be very useful for specialized
+calculations or particular material or chemical systems. These “secret
+features” (every code has these) are not actually secret but simply lack
+descriptions, example inputs, and tests. You are encouraged to browse
+and read the source code to find them. New descriptions will be added
+over time but can also be prioritized and added on request (e.g., if a
+specialized Jastrow factor would help or a historical Jastrow form is
+needed for benchmarking).
+</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="features.html" class="btn btn-neutral float-right" title="Features of QMCPACK" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="User’s Guide and Developer’s Manual for" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, John Batson
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

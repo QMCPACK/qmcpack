@@ -1,0 +1,393 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Features of QMCPACK &mdash; QMC Manual 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Obtaining, installing, and validating QMCPACK" href="installation.html" />
+    <link rel="prev" title="Introduction" href="introduction.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> QMC Manual
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Features of QMCPACK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#production-level-features">Production-level features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#soa-optimizations-and-improved-algorithms">SoA optimizations and improved algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#supported-gpu-features">Supported GPU features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#beta-test-features">Beta test features</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#auxiliary-field-quantum-monte-carlo">Auxiliary-Field Quantum Monte Carlo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sharing-of-spline-data-across-multiple-gpus">Sharing of spline data across multiple GPUs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Obtaining, installing, and validating QMCPACK</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulationcell.html">Specifying the Simulation Cell</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">QMC Manual</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Features of QMCPACK</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/features.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="features-of-qmcpack">
+<span id="chap-features"></span><h1>Features of QMCPACK<a class="headerlink" href="#features-of-qmcpack" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="production-level-features">
+<h2>Production-level features<a class="headerlink" href="#production-level-features" title="Permalink to this headline">¶</a></h2>
+<p>The following list contains the main production-level features of
+QMCPACK. If you do not see a specific feature that you are interested
+in, see the remainder of this manual and ask whether that specific
+feature is available or can be quickly brought to the full production
+level.</p>
+<ul class="simple">
+<li><p>Variational Monte Carlo (VMC)</p></li>
+<li><p>Diffusion Monte Carlo (DMC)</p></li>
+<li><p>Reptation Monte Carlo</p></li>
+<li><p>Single and multideterminant Slater Jastrow wavefunctions</p></li>
+<li><p>Wavefunction updates using optimized multideterminant algorithm of
+Clark et al.</p></li>
+<li><p>Backflow wavefunctions</p></li>
+<li><p>One, two, and three-body Jastrow factors</p></li>
+<li><p>Excited state calculations via flexible occupancy assignment of
+Slater determinants</p></li>
+<li><p>All electron and nonlocal pseudopotential calculations</p></li>
+<li><p>Casula T-moves for variational evaluation of nonlocal
+pseudopotentials (non-size-consistent and size-consistent variants)</p></li>
+<li><p>Wavefunction optimization using the “linear method” of Umrigar and
+coworkers, with arbitrary mix of variance and energy in the objective
+function</p></li>
+<li><p>Blocked, low memory adaptive shift optimizer of Zhao and Neuscamman</p></li>
+<li><p>Gaussian, Slater, plane-wave, and real-space spline basis sets for
+orbitals</p></li>
+<li><p>Interface and conversion utilities for plane-wave wavefunctions from
+Quantum Espresso (Plane-Wave Self-Consistent Field package [PWSCF])</p></li>
+<li><p>Interface and conversion utilities for Gaussian-basis wavefunctions
+from GAMESS</p></li>
+<li><p>Easy extension and interfacing to other electronic structure codes
+via standardized XML and HDF5 inputs</p></li>
+<li><p>MPI parallelism</p></li>
+<li><p>Fully threaded using OpenMP</p></li>
+<li><p>GPU (NVIDIA CUDA) implementation (limited functionality)</p></li>
+<li><p>HDF5 input/output for large data</p></li>
+<li><p>Nexus: advanced workflow tool to automate all aspects of QMC
+calculation from initial DFT calculations through to final analysis</p></li>
+<li><p>Analysis tools for minimal environments (Perl only) through to
+Python-based environments with graphs produced via matplotlib
+(included with Nexus)</p></li>
+</ul>
+</div>
+<div class="section" id="soa-optimizations-and-improved-algorithms">
+<h2>SoA optimizations and improved algorithms<a class="headerlink" href="#soa-optimizations-and-improved-algorithms" title="Permalink to this headline">¶</a></h2>
+<p>The Structure-of-Arrays (SoA) optimizations
+<a class="bibtex reference internal" href="#ipcc-sc17" id="id1">[MLC+17]</a> are a set of improved data layouts
+facilitating vectorization on modern CPUs with wide SIMD units. <strong>For
+many calculations and architectures, the SoA implementation more than
+doubles the speed of the code.</strong> This so-called SoA implementation
+replaces the older, less efficient Array-of-Structures (AoS) code and
+can be enabled or disabled at compile time. The memory footprint is also
+reduced in the SoA implementation by better algorithms, enabling more
+systems to be run.</p>
+<p>The SoA build was made the default for QMCPACK v3.7.0. As described in <span class="xref std std-ref">cmakeoptions</span>, the SoA
+implementation can be disabled by configuring with <code class="docutils literal notranslate"><span class="pre">-DENABLE_SOA=0</span></code>.</p>
+<p>The SoA code path currently does <em>not</em> support:</p>
+<ul class="simple">
+<li><p>Backflow wavefunctions</p></li>
+<li><p>Many observables</p></li>
+</ul>
+<p>The code should abort with a message referring to AoS vs SoA features if
+any unsupported feature is invoked. In this case the AoS build should be
+used by configuring with <code class="docutils literal notranslate"><span class="pre">-DENABLE_SOA=0</span></code>. In addition, please inform the developers via
+GitHub or Google Groups so that porting these features can be
+prioritized.</p>
+<p>Core features are heavily tested in both SoA and AoS versions. If using
+untested and noncore features in the SoA code, please compare the AoS
+and SoA results carefully.</p>
+</div>
+<div class="section" id="supported-gpu-features">
+<h2>Supported GPU features<a class="headerlink" href="#supported-gpu-features" title="Permalink to this headline">¶</a></h2>
+<p>The GPU implementation supports multiple GPUs per node, with MPI tasks
+assigned in a round-robin order to the GPUs. Currently, for large runs,
+1 MPI task should be used per GPU per node. For smaller calculations,
+use of multiple MPI tasks per GPU might yield improved performance.
+Supported GPU features:</p>
+<ul class="simple">
+<li><p>VMC, wavefunction optimization, DMC.</p></li>
+<li><p>Periodic and open boundary conditions. Mixed boundary conditions are
+not yet supported.</p></li>
+<li><p>Wavefunctions:</p>
+<ol class="arabic simple">
+<li><p>Single Slater determinants with 3D B-spline orbitals.
+Twist-averaged boundary conditions and complex wavefunctions are
+fully supported. Gaussian type orbitals are not yet supported.</p></li>
+<li><p>Hybrid mixed basis representation in which orbitals are
+represented as 1D splines times spherical harmonics in spherical
+regions (muffin tins) around atoms and 3D B-splines in the
+interstitial region.</p></li>
+<li><p>One-body and two-body Jastrows represented as 1D B-splines.
+Three-body Jastrow functions are not yet supported.</p></li>
+</ol>
+</li>
+<li><p>Semilocal (nonlocal and local) pseudopotentials, Coulomb interaction
+(electron-electron, electron-ion), and model periodic Coulomb (MPC)
+interaction.</p></li>
+</ul>
+</div>
+<div class="section" id="beta-test-features">
+<h2>Beta test features<a class="headerlink" href="#beta-test-features" title="Permalink to this headline">¶</a></h2>
+<p>This section describes developmental features in QMCPACK that might be
+ready for production but that require additional testing, features, or
+documentation to be ready for general use. We describe them here because
+they offer significant benefits and are well tested in specific cases.</p>
+<div class="section" id="auxiliary-field-quantum-monte-carlo">
+<h3>Auxiliary-Field Quantum Monte Carlo<a class="headerlink" href="#auxiliary-field-quantum-monte-carlo" title="Permalink to this headline">¶</a></h3>
+<p>The orbital-space Auxiliary-Field Quantum Monte Carlo (AFMQC) method is
+now available in QMCPACK. The main input for the code is the matrix
+elements of the Hamiltonian in a given single particle basis set, which
+must be produced from mean-field calculations such as Hartree-Fock or
+density functional theory. The code and many features are in
+development. Check the latest version of QMCPACK for an up-to-date
+description of available features. A partial list of the current
+capabilities of the code follows. For a detailed description of the
+available features, see  <span class="xref std std-ref">afqmc</span>.</p>
+<ul class="simple">
+<li><p>Phaseless AFQMC algorithm of Zhang et al. (S. Zhang and H. Krakauer.
+2003. “Quantum Monte Carlo Method using Phase-Free Random Walks with
+Slater Determinants.” <em>PRL</em> 90: 136401).</p></li>
+<li><p>“Hybrid” and “local energy” propagation schemes.</p></li>
+<li><p>Hamiltonian matrix elements from (1) Molpro’s FCIDUMP format (which
+can be produced by Molpro, PySCF, and VASP) and (2) internal HDF5
+format produced by PySCF (see AFQMC section below).</p></li>
+<li><p>AFQMC calculations with RHF (closed-shell doubly occupied), ROHF
+(open-shell doubly occupied), and UHF (spin polarized broken
+symmetry) symmetry.</p></li>
+<li><p>Single and multideterminant trial wavefunctions. Multideterminant
+expansions with either orthogonal or nonorthogonal determinants.</p></li>
+<li><p>Fast update scheme for orthogonal multideterminant expansions.</p></li>
+<li><p>Distributed propagation algorithms for large systems. Enables
+calculations where data structures do not fit on a single node.</p></li>
+<li><p>Complex implementation for PBC calculations with complex integrals.</p></li>
+<li><p>Sparse representation of large matrices for reduced memory usage.</p></li>
+<li><p>Mixed and back-propagated estimators.</p></li>
+<li><p>Specialized implementation for solids with k-point symmetry (e.g.
+primitive unit cells with kpoints).</p></li>
+<li><p>Efficient GPU implementation (currently limited to solids with
+k-point symmetry).</p></li>
+</ul>
+</div>
+<div class="section" id="sharing-of-spline-data-across-multiple-gpus">
+<h3>Sharing of spline data across multiple GPUs<a class="headerlink" href="#sharing-of-spline-data-across-multiple-gpus" title="Permalink to this headline">¶</a></h3>
+<p>Sharing of GPU spline data enables distribution of the data across
+multiple GPUs on a given computational node. For example, on a
+two-GPU-per-node system, each GPU would have half of the orbitals. This
+allows use of larger overall spline tables than would fit in the memory
+of individual GPUs and potentially up to the total GPU memory on a node.
+To obtain high performance, large electron counts or a high-performing
+CPU-GPU interconnect is required.</p>
+<p>To use this feature, the following needs to be done:</p>
+<ul class="simple">
+<li><p>The CUDA Multi-Process Service (MPS) needs to be used (e.g., on OLCF
+Summit/SummitDev use “-alloc_flags gpumps” for bsub). If MPI is not
+detected, sharing will be disabled.</p></li>
+<li><p>CUDA_VISIBLE_DEVICES needs to be properly set to control each rank’s
+visible CUDA devices (e.g., on OLCF Summit/SummitDev create a
+resource set containing all GPUs with the respective number of ranks
+with “jsrun –task-per-rs Ngpus -g Ngpus”).</p></li>
+<li><p>In the determinant set definition of the &lt;wavefunction&gt; section, the
+“gpusharing” parameter needs to be set (i.e., &lt;determinantset
+gpusharing=“yes”&gt;). See
+<span class="xref std std-ref">spo_spline</span>.</p></li>
+</ul>
+<p id="bibtex-bibliography-features-0"><dl class="citation">
+<dt class="bibtex label" id="ipcc-sc17"><span class="brackets"><a class="fn-backref" href="#id1">MLC+17</a></span></dt>
+<dd><p>Amrita Mathuriya, Ye Luo, Raymond C. Clay, III, Anouar Benali, Luke Shulenburger, and Jeongnim Kim. Embracing a new era of highly efficient and productive quantum monte carlo simulations. In <em>Proceedings of the International Conference for High Performance Computing, Networking, Storage and Analysis</em>, SC ‘17, 38:1–38:12. New York, NY, USA, 2017. ACM. URL: <a class="reference external" href="http://doi.acm.org/10.1145/3126908.3126952">http://doi.acm.org/10.1145/3126908.3126952</a>, <a class="reference external" href="https://doi.org/10.1145/3126908.3126952">doi:10.1145/3126908.3126952</a>.</p>
+</dd>
+<dt class="bibtex label" id="natoli1995"><span class="brackets">NC95</span></dt>
+<dd><p>Vincent Natoli and David M. Ceperley. An optimized method for treating long-range potentials. <em>Journal of Computational Physics</em>, 117(1):171 – 178, 1995. URL: <a class="reference external" href="http://www.sciencedirect.com/science/article/pii/S0021999185710546">http://www.sciencedirect.com/science/article/pii/S0021999185710546</a>, <a class="reference external" href="https://doi.org/http://dx.doi.org/10.1006/jcph.1995.1054">doi:http://dx.doi.org/10.1006/jcph.1995.1054</a>.</p>
+</dd>
+</dl>
+</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="installation.html" class="btn btn-neutral float-right" title="Obtaining, installing, and validating QMCPACK" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="introduction.html" class="btn btn-neutral float-left" title="Introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, John Batson
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
