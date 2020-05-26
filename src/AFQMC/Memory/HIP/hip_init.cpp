@@ -25,8 +25,6 @@ extern hipblasHandle_t afqmc_blas_handle;
 extern hipsparseHandle_t afqmc_sparse_handle;
 #ifdef ENABLE_ROCM
 extern rocsolver_handle afqmc_solver_handle;
-#elif ENABLE_HIP && ENABLE_CUDA
-extern cusolverDnHandle_t afqmc_solver_handle;
 #endif
 extern hiprandGenerator_t afqmc_rand_generator;
 

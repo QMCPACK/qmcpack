@@ -26,9 +26,6 @@
 #include "hipsparse.h"
 #ifdef ENABLE_ROCM
 #include "rocsolver.h"
-#elif ENABLE_HIP && ENABLE_CUDA
-#warning "ENABLE_ROCM not defined"
-#include "cusolver.h"
 #endif
 #include "hiprand.h"
 

@@ -28,9 +28,6 @@
 #include "cusolverDn.h"
 #ifdef ENABLE_ROCM
 #include "rocsolver.h"
-#elif ENABLE_HIP && ENABLE_CUDA
-#warning "ENABLE_ROCM not defined"
-#include "cusolver.h"
 #endif
 #include "hiprand.hpp"
 
@@ -46,8 +43,6 @@ namespace arch {
     hiprandGenerator_t* rand_generator;
 #ifdef ENABLE_ROCM
     rocsolver_handle solver_handle;
-#elif ENABLE_HIP && ENABLE_CUDA
-    cusolverDnHandle_t* solver_handle;
 #endif
     bool operator==(device_handles const& other) const {
       return (blas_handle==other.blas_handle &&
