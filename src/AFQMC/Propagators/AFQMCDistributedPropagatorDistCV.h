@@ -109,7 +109,7 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
     AFQMCDistributedPropagatorDistCV(AFQMCDistributedPropagatorDistCV const& other) = delete;
     AFQMCDistributedPropagatorDistCV& operator=(AFQMCDistributedPropagatorDistCV const& other) = delete;
     AFQMCDistributedPropagatorDistCV(AFQMCDistributedPropagatorDistCV&& other) = default;
-    AFQMCDistributedPropagatorDistCV& operator=(AFQMCDistributedPropagatorDistCV&& other) = default;
+    AFQMCDistributedPropagatorDistCV& operator=(AFQMCDistributedPropagatorDistCV&& other) = delete;
 
     template<class WlkSet>
     void Propagate(int steps, WlkSet& wset, RealType E1,

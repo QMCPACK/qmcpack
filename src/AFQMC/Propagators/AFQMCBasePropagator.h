@@ -123,7 +123,7 @@ class AFQMCBasePropagator: public AFQMCInfo
     AFQMCBasePropagator(AFQMCBasePropagator const& other) = delete;
     AFQMCBasePropagator& operator=(AFQMCBasePropagator const& other) = delete;
     AFQMCBasePropagator(AFQMCBasePropagator&& other) = default;
-    AFQMCBasePropagator& operator=(AFQMCBasePropagator&& other) = default;
+    AFQMCBasePropagator& operator=(AFQMCBasePropagator&& other) = delete;
 
     template<class WlkSet>
     void Propagate(int steps, WlkSet& wset, RealType E1,

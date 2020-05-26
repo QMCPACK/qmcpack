@@ -206,7 +206,7 @@ class NOMSD: public AFQMCInfo
     NOMSD(NOMSD const& other) = delete;
     NOMSD& operator=(NOMSD const& other) = delete;
     NOMSD(NOMSD&& other) = default;
-    NOMSD& operator=(NOMSD&& other) = default;
+    NOMSD& operator=(NOMSD&& other) = delete;
 
     int local_number_of_cholesky_vectors() const 
     { return HamOp.local_number_of_cholesky_vectors(); }

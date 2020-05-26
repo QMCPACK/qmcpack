@@ -107,7 +107,7 @@ class WalkerSetBase: public AFQMCInfo
   WalkerSetBase(WalkerSetBase const& other) = delete;
   WalkerSetBase(WalkerSetBase&& other) = default;
   WalkerSetBase& operator=(WalkerSetBase const& other) = delete;
-  WalkerSetBase& operator=(WalkerSetBase&& other) = default;
+  WalkerSetBase& operator=(WalkerSetBase&& other) = delete;
 
   /*
    * Returns the current number of walkers in the set.
