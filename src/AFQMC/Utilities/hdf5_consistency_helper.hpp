@@ -37,7 +37,7 @@ namespace afqmc
  * @return true if successful. false indiciates name not found in dump.
  */
 template<typename T>
-int readComplexOrReal(hdf_archive& dump, std::string name, std::vector<T>& out)
+bool readComplexOrReal(hdf_archive& dump, std::string name, std::vector<T>& out)
 {
   std::vector<int> shape;
   int ndim = 1; // vector
@@ -59,11 +59,13 @@ int readComplexOrReal(hdf_archive& dump, std::string name, std::vector<T>& out)
   } else {
     app_log() << " Error reading " << name << " dataspace. Shape mismatch.\n";
     APP_ABORT("");
+    return false;
   }
 #else
   if(shape.size() == ndim+1) {
     app_log() << " Error: Found complex integrals with QMC_COMPLEX=0.\n";
     APP_ABORT(" Please recompile with QMC_COMPLEX=1 or generate real integrals if appropriate.\n");
+    return false;
   } else {
     dump.readEntry(out, name);
     return true;
@@ -94,11 +96,13 @@ bool readComplexOrReal(hdf_archive& dump, std::string name, boost::multi::array<
   } else {
     app_log() << " Error reading " << name << " dataspace. Shape mismatch.\n";
     APP_ABORT("");
+    return false;
   }
 #else
   if(shape.size() == ndim+1) {
     app_log() << " Error: Found complex integrals with QMC_COMPLEX=0.\n";
     APP_ABORT(" Please recompile with QMC_COMPLEX=1 or generate real integrals if appropriate.\n");
+    return false;
   } else {
     dump.readEntry(out, name);
     return true;

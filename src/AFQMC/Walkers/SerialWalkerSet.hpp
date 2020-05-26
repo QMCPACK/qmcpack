@@ -65,7 +65,7 @@ class SerialWalkerSet: public WalkerSetBase<device_allocator<ComplexType>,
   SerialWalkerSet(SerialWalkerSet const& other) = delete;
   SerialWalkerSet(SerialWalkerSet&& other) = default;
   SerialWalkerSet& operator=(SerialWalkerSet const& other) = delete;
-  SerialWalkerSet& operator=(SerialWalkerSet&& other) = default;
+  SerialWalkerSet& operator=(SerialWalkerSet&& other) = delete;
 
 };
 

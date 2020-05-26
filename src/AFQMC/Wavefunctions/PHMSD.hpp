@@ -222,7 +222,7 @@ class PHMSD: public AFQMCInfo
     PHMSD(PHMSD const& other) = delete;
     PHMSD& operator=(PHMSD const& other) = delete;
     PHMSD(PHMSD&& other) = default;
-    PHMSD& operator=(PHMSD&& other) = default;
+    PHMSD& operator=(PHMSD&& other) = delete;
 
     int local_number_of_cholesky_vectors() const 
     { return HamOp.local_number_of_cholesky_vectors(); }

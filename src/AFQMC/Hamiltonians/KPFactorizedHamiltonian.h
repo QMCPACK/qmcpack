@@ -63,7 +63,7 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
   KPFactorizedHamiltonian(KPFactorizedHamiltonian const& other) = delete;
   KPFactorizedHamiltonian(KPFactorizedHamiltonian && other) = default;
   KPFactorizedHamiltonian& operator=(KPFactorizedHamiltonian const& other) = delete;
-  KPFactorizedHamiltonian& operator=(KPFactorizedHamiltonian && other) = default;
+  KPFactorizedHamiltonian& operator=(KPFactorizedHamiltonian && other) = delete;
 
   ValueType getNuclearCoulombEnergy() const { return OneBodyHamiltonian::NuclearCoulombEnergy; }
 

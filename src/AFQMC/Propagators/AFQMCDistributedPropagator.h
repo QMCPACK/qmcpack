@@ -75,7 +75,7 @@ class AFQMCDistributedPropagator: public AFQMCBasePropagator
       // move constructor for communicator seems broken
       core_comm = std::move(TG.TG().split(TG.getLocalTGRank(),TG.TG().rank()));  
     }
-    AFQMCDistributedPropagator& operator=(AFQMCDistributedPropagator&& other) = default;
+    AFQMCDistributedPropagator& operator=(AFQMCDistributedPropagator&& other) = delete;
 
     template<class WlkSet>
     void Propagate(int steps, WlkSet& wset, RealType E1,
