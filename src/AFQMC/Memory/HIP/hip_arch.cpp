@@ -26,11 +26,10 @@
 #include "hipblas.h"
 //#include "cublasXt.h"
 #include "hipsparse.h"
-#ifdef ENABLE_ROCM
+#ifdef defined(ENABLE_ROCM) && defined(ENABLE_HIP)
 #include "rocsolver.h"
-#elif ENABLE_HIP && ENABLE_CUDA
-#warning "ENABLE_ROCM not defined"
-#include "cusolver.h"
+#else
+#error "ENABLE_ROCM not defined"
 #endif
 #include "hiprand.hpp"
 
@@ -46,11 +45,7 @@ namespace arch {
   hipblasHandle_t afqmc_blas_handle;
 //  cublasXtHandle_t afqmc_cublasXt_handle;
   hipsparseHandle_t afqmc_sparse_handle;
-#ifdef ENABLE_ROCM
   rocsolver_handle afqmc_solver_handle;
-#elif ENABLE_HIP && ENABLE_CUDA
-  cusolverDnHandle_t afqmc_solver_handle;
-#endif
   hiprandGenerator_t afqmc_rand_generator;
 
   hipMemcpyKind tohipMemcpyKind(MEMCOPYKIND v) {
