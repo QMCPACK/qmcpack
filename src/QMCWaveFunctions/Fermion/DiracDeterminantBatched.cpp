@@ -24,7 +24,9 @@ namespace qmcplusplus
  */
 template<typename DET_ENGINE_TYPE>
 DiracDeterminantBatched<DET_ENGINE_TYPE>::DiracDeterminantBatched(SPOSetPtr const spos, int first)
-    : DiracDeterminantBase(spos, first), ndelay(1)
+    : DiracDeterminantBase(spos, first), ndelay(1),
+      D2HTimer(*TimerManager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
+      H2DTimer(*TimerManager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
 {
   ClassName = "DiracDeterminantBatched";
 }
@@ -209,7 +211,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
                                                                     const std::vector<bool>& isAccepted,
                                                                     bool safe_to_delay)
 {
-  UpdateTimer.start();
+  ScopedTimer update(&UpdateTimer);
 
   const int nw = WFC_list.size();
   int count    = 0;
@@ -248,8 +250,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
 
   if (!safe_to_delay)
     det_engine_.mw_updateInvMat(engine_list);
-
-  UpdateTimer.stop();
 }
 
 /** move was rejected. copy the real container to the temporary to move on
@@ -263,16 +263,13 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::restore(int iat)
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::completeUpdates()
 {
-  UpdateTimer.start();
+  ScopedTimer update(&UpdateTimer);
   /// no action here because single walker code path keep Ainv, dpsiM, d2psiM up to date on the host.
-  UpdateTimer.stop();
 }
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list)
 {
-  UpdateTimer.start();
-
   RefVector<DET_ENGINE_TYPE> engine_list;
   engine_list.reserve(WFC_list.size());
   for (int iw = 0; iw < WFC_list.size(); iw++)
@@ -281,17 +278,23 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_completeUpdates(const RefVecto
     engine_list.push_back(det.det_engine_);
   }
 
-  det_engine_.mw_updateInvMat(engine_list);
-  det_engine_.mw_transferAinv_D2H(engine_list);
-
-  for (int iw = 0; iw < WFC_list.size(); iw++)
   {
-    auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-    auto& my_psiM_vgl = det.psiM_vgl;
-    auto* psiM_vgl_ptr = my_psiM_vgl.data();
-    PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4])")
+    ScopedTimer update(&UpdateTimer);
+    det_engine_.mw_updateInvMat(engine_list);
   }
-  UpdateTimer.stop();
+
+  {
+    ScopedTimer d2h(&D2HTimer);
+    det_engine_.mw_transferAinv_D2H(engine_list);
+
+    for (int iw = 0; iw < WFC_list.size(); iw++)
+    {
+      auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+      auto& my_psiM_vgl = det.psiM_vgl;
+      auto* psiM_vgl_ptr = my_psiM_vgl.data();
+      PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4])")
+    }
+  }
 }
 
 template<typename DET_ENGINE_TYPE>

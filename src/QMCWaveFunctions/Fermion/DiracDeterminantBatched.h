@@ -226,6 +226,8 @@ private:
   /// Resize multi walker scratch spaces
   void resizeMultiWalkerScratch(int norb, int nw);
 
+  /// timers
+  NewTimer &D2HTimer, &H2DTimer;
 protected:
   int ndelay;
 };
