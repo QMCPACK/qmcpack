@@ -24,7 +24,7 @@ IF (QMC_COMPLEX)
    SUBDIRS("diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD")
    SUBDIRS("Al-1x1x1-Gaussian_pp_ShiftedTwist")
 ENDIF()
-IF (BUILD_AFQMC AND QMC_COMPLEX)
+IF (BUILD_AFQMC AND QMC_COMPLEX AND NOT ENABLE_CUDA)
    SUBDIRS("diamondC_afqmc_1x1x1_complex")
 ENDIF()
 
