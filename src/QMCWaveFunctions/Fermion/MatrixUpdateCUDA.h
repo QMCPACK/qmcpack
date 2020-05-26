@@ -128,8 +128,11 @@ class MatrixUpdateCUDA
 
   void resizeGradsArray(size_t nw, size_t ndim)
   {
-    grads_value_v.resize(nw, ndim);
-    grads_value_dev_ptr = getOffloadDevicePtr(grads_value_v.data());
+    if (grads_value_v.rows() != nw || grads_value_v.cols() != ndim)
+    {
+      grads_value_v.resize(nw, ndim);
+      grads_value_dev_ptr = getOffloadDevicePtr(grads_value_v.data());
+    }
   }
 
 public:
@@ -203,7 +206,6 @@ public:
     cudaErrorCheck(cudaMemcpyAsync(grads_value_v.data(), grads_value_dev_ptr, grads_value_v.size() * sizeof(T),
                                    cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync grads_value_v failed!");
-
     waitStream();
 
     for (int iw = 0; iw < nw; iw++)

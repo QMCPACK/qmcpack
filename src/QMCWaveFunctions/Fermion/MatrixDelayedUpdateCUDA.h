@@ -218,8 +218,11 @@ class MatrixDelayedUpdateCUDA
 
   void resizeGradsArray(size_t nw, size_t ndim)
   {
-    grads_value_v.resize(nw, ndim);
-    grads_value_dev_ptr = getOffloadDevicePtr(grads_value_v.data());
+    if (grads_value_v.rows() != nw || grads_value_v.cols() != ndim)
+    {
+      grads_value_v.resize(nw, ndim);
+      grads_value_dev_ptr = getOffloadDevicePtr(grads_value_v.data());
+    }
   }
 
   /** compute the row of up-to-date Ainv
