@@ -5,11 +5,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef AFQMC_DEVICE_KERNELS_HPP
@@ -18,7 +18,7 @@
 
 #if defined(ENABLE_CUDA)
 
-#include "AFQMC/Numerics/detail/CUDA/Kernels/determinant.cuh" 
+#include "AFQMC/Numerics/detail/CUDA/Kernels/determinant.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/adotpby.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/fill_n.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/uninitialized_fill_n.cuh"
@@ -33,8 +33,8 @@
 #include "AFQMC/Numerics/detail/CUDA/Kernels/batchedDot.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/copy_n_cast.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/inplace_cast.cuh"
-#include "AFQMC/Numerics/detail/CUDA/Kernels/ajw_to_waj.cuh" 
-#include "AFQMC/Numerics/detail/CUDA/Kernels/vKKwij_to_vwKiKj.cuh" 
+#include "AFQMC/Numerics/detail/CUDA/Kernels/ajw_to_waj.cuh"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/vKKwij_to_vwKiKj.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_QKajw.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/vbias_from_v1.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/KaKjw_to_KKwaj.cuh"
@@ -50,6 +50,41 @@
 #include "AFQMC/Numerics/detail/CUDA/Kernels/Auwn_Bun_Cuw.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/inplace_product.cuh"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/get_diagonal.cuh"
+
+#elif defined(ENABLE_HIP)
+
+#include "AFQMC/Numerics/detail/HIP/Kernels/determinant.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/adotpby.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/fill_n.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/uninitialized_fill_n.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/uninitialized_copy_n.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/axty.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/adiagApy.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/sum.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/acAxpbB.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/print.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/setIdentity.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/zero_complex_part.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/batchedDot.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/copy_n_cast.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/inplace_cast.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/ajw_to_waj.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/vKKwij_to_vwKiKj.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/KaKjw_to_QKajw.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/vbias_from_v1.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/KaKjw_to_KKwaj.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/batched_dot_wabn_wban.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/batched_Tab_to_Klr.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/dot_wabn.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/Tab_to_Kl.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/sampleGaussianRNG.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/construct_X.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/reference_operations.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/term_by_term_matrix_vec.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/axpyBatched.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/Auwn_Bun_Cuw.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/inplace_product.cuh"
+#include "AFQMC/Numerics/detail/HIP/Kernels/get_diagonal.cuh"
 
 #endif
 

@@ -16,7 +16,7 @@
 #define AFQMC_NUMERICS_HELPERS_HPP
 
 #include<cassert>
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
 #include "AFQMC/Memory/custom_pointers.hpp"
 #include "AFQMC/Numerics/device_kernels.hpp"
 #endif
@@ -135,7 +135,7 @@ namespace ma
 
 }
 
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
 namespace device{
   // using thrust for now to avoid kernels!!!
   template<class T>

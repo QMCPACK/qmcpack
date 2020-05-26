@@ -67,7 +67,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
 
   // distribute work over equivalent nodes in TGprop.TG() accross TG.Global()  
   auto Qcomm(TG.Global().split(TGprop.getLocalGroupNumber(),TG.Global().rank()));
-#ifdef ENABLE_CUDA
+#ifdef defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   auto distNode(TG.Node().split(TGprop.getLocalGroupNumber(),TG.Node().rank()));
 #else
   auto distNode(TG.Node().split(0,TG.Node().rank()));

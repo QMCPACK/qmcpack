@@ -80,7 +80,7 @@ class SlaterDetOperations_serial :
     // C must live in shared memory for this routine to work as expected
     template<class MatA, class MatB, class MatC>
     T MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, communicator& comm, bool compact=false, bool herm=true) {
-#ifdef ENABLE_CUDA
+#ifdef defined(ENABLE_CUDA) || defined(ENABLE_HIP)
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
       return Base::MixedDensityMatrix(hermA,B,C,LogOverlapFactor,compact);
@@ -89,7 +89,7 @@ class SlaterDetOperations_serial :
     template<class integer, class MatA, class MatB, class MatC, class MatQ>
     T MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, 
                                     integer* ref, MatQ&& QQ0, communicator& comm, bool compact=false) {
-#ifdef ENABLE_CUDA
+#ifdef defined(ENABLE_CUDA) || defined(ENABLE_HIP)
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
       return Base::MixedDensityMatrixForWoodbury(hermA,B,std::forward<MatC>(C),LogOverlapFactor,ref,std::forward<MatQ>(QQ0),
@@ -106,7 +106,7 @@ class SlaterDetOperations_serial :
 
     template<typename integer, class MatA, class MatB, class MatC>
     T OverlapForWoodbury(const MatA& hermA, const MatB& B, T LogOverlapFactor, integer* ref, MatC&& QQ0, communicator& comm) {
-#ifdef ENABLE_CUDA
+#ifdef defined(ENABLE_CUDA) || defined(ENABLE_HIP)
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
       return Base::OverlapForWoodbury(hermA,B,LogOverlapFactor,ref,std::forward<MatC>(QQ0));
@@ -114,7 +114,7 @@ class SlaterDetOperations_serial :
 
     template<class Mat, class MatP1, class MatV>
     void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, int order=6, char TA='N') {
-#ifdef ENABLE_CUDA
+#ifdef defined(ENABLE_CUDA) || defined(ENABLE_HIP)
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
       Base::Propagate(std::forward<Mat>(A),P1,V,order,TA);
@@ -228,7 +228,7 @@ class SlaterDetOperations_serial :
     template<class MatA, class PTR>
     void BatchedOrthogonalize(std::vector<MatA> &Ai, T LogOverlapFactor, PTR detR) {
       static_assert(pointedType<MatA>::dimensionality == 2, "Wrong dimensionality");
-#ifdef ENABLE_CUDA
+#ifdef defined(ENABLE_CUDA) || defined(ENABLE_HIP)
       // QR on the transpose
       if(Ai.size()==0) return;
       int NMO = (*Ai[0]).size(0);
@@ -262,7 +262,7 @@ class SlaterDetOperations_serial :
 
     template<class MatA>
     void BatchedOrthogonalize(std::vector<MatA> &Ai, T LogOverlapFactor) {
-#ifdef ENABLE_CUDA
+#ifdef defined(ENABLE_CUDA) || defined(ENABLE_HIP)
       // QR on the transpose
       if(Ai.size()==0) return;
       int NMO = (*Ai[0]).size(0);
