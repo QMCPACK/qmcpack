@@ -32,9 +32,13 @@
 namespace qmc_hip {
 
 //  extern hiprandGenerator_t afqmc_curand_generator;
-  extern hipsparseMatDescr_t afqmc_cusparse_matrix_descr;
+  extern hipsparseMatDescr_t afqmc_sparse_matrix_descr;
 
   extern std::vector<hipStream_t> afqmc_hip_streams;
+
+  // FDM: Temprorary hack to allow for easier grepping.
+  typedef rocsolver_status = rocsolverStatus_t;
+  typedef rocsolver_handle = rocsolverHandle_t;
 
   void hip_check_error();
   void hip_check(hipError_t sucess, std::string message="");
