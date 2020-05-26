@@ -19,7 +19,7 @@
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels 
 {
@@ -37,8 +37,8 @@ void zero_complex_part(int n, std::complex<double> * x)
   int block_dim = 256;
   int grid_dim = (n + block_dim - 1)/block_dim;
   hipLaunchKernelGGL(kernel_zero_complex_part, dim3(grid_dim), dim3(block_dim), 0, 0, n,reinterpret_cast<thrust::complex<double>*>(x));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void zero_complex_part(int n, std::complex<float> * x)
@@ -46,8 +46,8 @@ void zero_complex_part(int n, std::complex<float> * x)
   int block_dim = 256;
   int grid_dim = (n + block_dim - 1)/block_dim;
   hipLaunchKernelGGL(kernel_zero_complex_part, dim3(grid_dim), dim3(block_dim), 0, 0, n,reinterpret_cast<thrust::complex<float>*>(x));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void zero_complex_part(int n, double * x)

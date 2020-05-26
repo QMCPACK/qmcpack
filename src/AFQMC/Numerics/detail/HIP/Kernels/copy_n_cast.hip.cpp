@@ -19,7 +19,7 @@
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels 
 {
@@ -45,16 +45,16 @@ void copy_n_cast(double const* A, int n, float* B)
   int block_dim = 256;
   int grid_dim = (n + block_dim - 1)/block_dim;
   hipLaunchKernelGGL(kernel_copy_n_cast, dim3(grid_dim), dim3(block_dim), 0, 0, A,n,B);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void copy_n_cast(float const* A, int n, double* B)
 {
   int block_dim = 256;
   int grid_dim = (n + block_dim - 1)/block_dim;
   hipLaunchKernelGGL(kernel_copy_n_cast, dim3(grid_dim), dim3(block_dim), 0, 0, A,n,B);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void copy_n_cast(std::complex<double> const* A, int n, std::complex<float>* B)
 {
@@ -62,8 +62,8 @@ void copy_n_cast(std::complex<double> const* A, int n, std::complex<float>* B)
   int grid_dim = (n + block_dim - 1)/block_dim;
   hipLaunchKernelGGL(kernel_copy_n_cast, dim3(grid_dim), dim3(block_dim), 0, 0, reinterpret_cast<thrust::complex<double> const*>(A),n,
                                               reinterpret_cast<thrust::complex<float> *>(B));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void copy_n_cast(std::complex<float> const* A, int n, std::complex<double>* B)
 {
@@ -71,8 +71,8 @@ void copy_n_cast(std::complex<float> const* A, int n, std::complex<double>* B)
   int grid_dim = (n + block_dim - 1)/block_dim;
   hipLaunchKernelGGL(kernel_copy_n_cast, dim3(grid_dim), dim3(block_dim), 0, 0, reinterpret_cast<thrust::complex<float> const*>(A),n,
                                               reinterpret_cast<thrust::complex<double> *>(B));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 }

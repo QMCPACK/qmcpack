@@ -16,7 +16,7 @@
 namespace kernels
 {
 
-// Taken from https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html
+// Taken from https://docs.nvidia.com/hip/hip-c-programming-guide/index.html
 __device__ double myAtomicAdd(double* address, double val)
 {
     unsigned long long int* address_as_ull =

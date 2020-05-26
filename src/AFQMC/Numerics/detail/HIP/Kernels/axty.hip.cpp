@@ -19,7 +19,7 @@
 #include <thrust/transform.h>
 #include <thrust/functional.h>
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels 
 {
@@ -60,27 +60,27 @@ inline static void kernel_axty(int n,
 
 void axty(int n, float alpha, float const* x, float *y) {  
   kernel_axty(n,alpha,x,y); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void axty(int n, double alpha, double const* x, double *y) {  
   kernel_axty(n,alpha,x,y); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void axty(int n, std::complex<float> alpha, 
                  std::complex<float> const* x, std::complex<float> *y) 
 {  
   kernel_axty(n,alpha,x,y); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void axty(int n, std::complex<double> alpha, 
                  std::complex<double> const* x, std::complex<double> *y) 
 {  
   kernel_axty(n,alpha,x,y); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 

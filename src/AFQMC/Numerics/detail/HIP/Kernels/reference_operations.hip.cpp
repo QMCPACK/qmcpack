@@ -16,7 +16,7 @@
 #include <complex>
 #include <thrust/complex.h>
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels
 {
@@ -84,89 +84,89 @@ __global__ void op_div__(thrust::complex<T> * x, thrust::complex<T> inc)
 // +=
 void op_plus(double *x, double inc) { 
   hipLaunchKernelGGL(op_plus__, dim3(1), dim3(1), 0, 0, x,inc); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void op_plus(float *x, float inc) { 
   hipLaunchKernelGGL(op_plus__, dim3(1), dim3(1), 0, 0, x,inc); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void op_plus(std::complex<double> *x, std::complex<double> inc) { 
   hipLaunchKernelGGL(op_plus__, dim3(1), dim3(1), 0, 0, reinterpret_cast<thrust::complex<double>*>(x),static_cast<thrust::complex<double>>(inc)); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void op_plus(std::complex<float> *x, std::complex<float> inc) { 
   hipLaunchKernelGGL(op_plus__, dim3(1), dim3(1), 0, 0, reinterpret_cast<thrust::complex<float>*>(x),static_cast<thrust::complex<float>>(inc)); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 // -=
 void op_minus(double *x, double inc) { 
   hipLaunchKernelGGL(op_minus__, dim3(1), dim3(1), 0, 0, x,inc); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void op_minus(float *x, float inc) { 
   hipLaunchKernelGGL(op_minus__, dim3(1), dim3(1), 0, 0, x,inc); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void op_minus(std::complex<double> *x, std::complex<double> inc) {
   hipLaunchKernelGGL(op_minus__, dim3(1), dim3(1), 0, 0, reinterpret_cast<thrust::complex<double>*>(x),static_cast<thrust::complex<double>>(inc)); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void op_minus(std::complex<float> *x, std::complex<float> inc) {
   hipLaunchKernelGGL(op_minus__, dim3(1), dim3(1), 0, 0, reinterpret_cast<thrust::complex<float>*>(x),static_cast<thrust::complex<float>>(inc));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 // *=
 void op_times(double *x, double inc) { 
   hipLaunchKernelGGL(op_times__, dim3(1), dim3(1), 0, 0, x,inc); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void op_times(float *x, float inc) { 
   hipLaunchKernelGGL(op_times__, dim3(1), dim3(1), 0, 0, x,inc); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void op_times(std::complex<double> *x, std::complex<double> inc) {
   hipLaunchKernelGGL(op_times__, dim3(1), dim3(1), 0, 0, reinterpret_cast<thrust::complex<double>*>(x),static_cast<thrust::complex<double>>(inc)); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void op_times(std::complex<float> *x, std::complex<float> inc) {
   hipLaunchKernelGGL(op_times__, dim3(1), dim3(1), 0, 0, reinterpret_cast<thrust::complex<float>*>(x),static_cast<thrust::complex<float>>(inc));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 // /=
 void op_div(double *x, double inc) { 
   hipLaunchKernelGGL(op_div__, dim3(1), dim3(1), 0, 0, x,inc); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void op_div(float *x, float inc) { 
   hipLaunchKernelGGL(op_div__, dim3(1), dim3(1), 0, 0, x,inc); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void op_div(std::complex<double> *x, std::complex<double> inc) {
   hipLaunchKernelGGL(op_div__, dim3(1), dim3(1), 0, 0, reinterpret_cast<thrust::complex<double>*>(x),static_cast<thrust::complex<double>>(inc)); 
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void op_div(std::complex<float> *x, std::complex<float> inc) {
   hipLaunchKernelGGL(op_div__, dim3(1), dim3(1), 0, 0, reinterpret_cast<thrust::complex<float>*>(x),static_cast<thrust::complex<float>>(inc));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 

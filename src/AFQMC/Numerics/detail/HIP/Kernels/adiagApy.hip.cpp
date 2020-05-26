@@ -19,7 +19,7 @@
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels 
 {
@@ -47,8 +47,8 @@ void adiagApy(int N, double const alpha, double const* A, int lda, double *y, in
   int block_dim = 256;
   int grid_dim = (N + block_dim - 1)/block_dim;
   hipLaunchKernelGGL(kernel_adiagApy, dim3(grid_dim), dim3(block_dim), 0, 0, N,alpha,A,lda,y,incy);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void adiagApy(int N, std::complex<double> const alpha, std::complex<double> const* A, int lda, 
@@ -59,8 +59,8 @@ void adiagApy(int N, std::complex<double> const alpha, std::complex<double> cons
   hipLaunchKernelGGL(kernel_adiagApy, dim3(grid_dim), dim3(block_dim), 0, 0, N,static_cast<thrust::complex<double> const>(alpha),
                             reinterpret_cast<thrust::complex<double> const*>(A),lda,
                             reinterpret_cast<thrust::complex<double> *>(y),incy );
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void adiagApy(int N, float const alpha, float const* A, int lda, float *y, int incy)
@@ -68,8 +68,8 @@ void adiagApy(int N, float const alpha, float const* A, int lda, float *y, int i
   int block_dim = 256;
   int grid_dim = (N + block_dim - 1)/block_dim;
   hipLaunchKernelGGL(kernel_adiagApy, dim3(grid_dim), dim3(block_dim), 0, 0, N,alpha,A,lda,y,incy);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void adiagApy(int N, std::complex<float> const alpha, std::complex<float> const* A, int lda,
@@ -80,8 +80,8 @@ void adiagApy(int N, std::complex<float> const alpha, std::complex<float> const*
   hipLaunchKernelGGL(kernel_adiagApy, dim3(grid_dim), dim3(block_dim), 0, 0, N,static_cast<thrust::complex<float> const>(alpha),
                             reinterpret_cast<thrust::complex<float> const*>(A),lda,
                             reinterpret_cast<thrust::complex<float> *>(y),incy );
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 }

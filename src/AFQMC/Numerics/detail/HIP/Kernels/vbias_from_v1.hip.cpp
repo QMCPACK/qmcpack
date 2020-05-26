@@ -18,9 +18,9 @@
 #include<hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
-#include "AFQMC/Numerics/detail/HIP/Kernels/cuda_settings.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels
 {
@@ -94,8 +94,8 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
                 static_cast<thrust::complex<double> const >(alpha),
                 reinterpret_cast<thrust::complex<double> const*>(v1),
                 reinterpret_cast<thrust::complex<double> *>(vb));
-  qmc_cuda::cuda_check(hipGetLastError(),"vbias_from_v1");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"vbias_from_v1");
+  qmc_hip::hip_check(hipGetLastError(),"vbias_from_v1");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"vbias_from_v1");
 }
 
 void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
@@ -110,8 +110,8 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
                 static_cast<thrust::complex<float> const >(alpha),
                 reinterpret_cast<thrust::complex<float> const*>(v1),
                 reinterpret_cast<thrust::complex<float> *>(vb));
-  qmc_cuda::cuda_check(hipGetLastError(),"vbias_from_v1");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"vbias_from_v1");
+  qmc_hip::hip_check(hipGetLastError(),"vbias_from_v1");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"vbias_from_v1");
 }
 
 void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
@@ -126,8 +126,8 @@ void vbias_from_v1( int nwalk, int nkpts, int nchol_max, int* Qsym, int* kminus,
                 static_cast<thrust::complex<double> const >(alpha),
                 reinterpret_cast<thrust::complex<float> const*>(v1),
                 reinterpret_cast<thrust::complex<double> *>(vb));
-  qmc_cuda::cuda_check(hipGetLastError(),"vbias_from_v1");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"vbias_from_v1");
+  qmc_hip::hip_check(hipGetLastError(),"vbias_from_v1");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"vbias_from_v1");
 }
 
 }

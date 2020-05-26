@@ -18,9 +18,9 @@
 #include<hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
-#include "AFQMC/Numerics/detail/HIP/Kernels/cuda_settings.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels
 {
@@ -94,8 +94,8 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
   dim3 grid_dim(nkpts,nkpts,1);
   hipLaunchKernelGGL(kernel_KaKjw_to_QKajw, dim3(grid_dim), dim3(block_dim), 0, 0, nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                                  nmo,nmo0,nocc,nocc0,QKtok2,A,B);
-  qmc_cuda::cuda_check(hipGetLastError(),"KaKjw_to_QKajw");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"KaKjw_to_QKajw");
+  qmc_hip::hip_check(hipGetLastError(),"KaKjw_to_QKajw");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -109,8 +109,8 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
   dim3 grid_dim(nkpts,nkpts,1);
   hipLaunchKernelGGL(kernel_KaKjw_to_QKajw, dim3(grid_dim), dim3(block_dim), 0, 0, nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                                  nmo,nmo0,nocc,nocc0,QKtok2,A,B);
-  qmc_cuda::cuda_check(hipGetLastError(),"KaKjw_to_QKajw");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"KaKjw_to_QKajw");
+  qmc_hip::hip_check(hipGetLastError(),"KaKjw_to_QKajw");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -124,8 +124,8 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
   dim3 grid_dim(nkpts,nkpts,1);
   hipLaunchKernelGGL(kernel_KaKjw_to_QKajw, dim3(grid_dim), dim3(block_dim), 0, 0, nwalk,nkpts,nmo_max,nmo_tot,nocc_max,
                                                  nmo,nmo0,nocc,nocc0,QKtok2,A,B);
-  qmc_cuda::cuda_check(hipGetLastError(),"KaKjw_to_QKajw");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"KaKjw_to_QKajw");
+  qmc_hip::hip_check(hipGetLastError(),"KaKjw_to_QKajw");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -141,8 +141,8 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                                                  nmo,nmo0,nocc,nocc0,QKtok2,
                 reinterpret_cast<thrust::complex<float> const*>(A),
                 reinterpret_cast<thrust::complex<float> *>(B));
-  qmc_cuda::cuda_check(hipGetLastError(),"KaKjw_to_QKajw");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"KaKjw_to_QKajw");
+  qmc_hip::hip_check(hipGetLastError(),"KaKjw_to_QKajw");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -158,8 +158,8 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                                                  nmo,nmo0,nocc,nocc0,QKtok2,
                 reinterpret_cast<thrust::complex<double> const*>(A),
                 reinterpret_cast<thrust::complex<double> *>(B));
-  qmc_cuda::cuda_check(hipGetLastError(),"KaKjw_to_QKajw");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"KaKjw_to_QKajw");
+  qmc_hip::hip_check(hipGetLastError(),"KaKjw_to_QKajw");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
@@ -175,8 +175,8 @@ void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                                                  nmo,nmo0,nocc,nocc0,QKtok2,
                 reinterpret_cast<thrust::complex<double> const*>(A),
                 reinterpret_cast<thrust::complex<float> *>(B));
-  qmc_cuda::cuda_check(hipGetLastError(),"KaKjw_to_QKajw");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"KaKjw_to_QKajw");
+  qmc_hip::hip_check(hipGetLastError(),"KaKjw_to_QKajw");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"KaKjw_to_QKajw");
 }
 
 }

@@ -18,9 +18,9 @@
 #include<hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
-#include "AFQMC/Numerics/detail/HIP/Kernels/cuda_settings.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels 
 {
@@ -83,8 +83,8 @@ void ajw_to_waj(int na, int nj, int nw, int inca,
                 double * B) 
 {
   hipLaunchKernelGGL(kernel_ajw_to_waj, dim3(na), dim3(128), 0, 0, na,nj,nw,inca,A,B);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void ajw_to_waj(int na, int nj, int nw, int inca,
@@ -92,8 +92,8 @@ void ajw_to_waj(int na, int nj, int nw, int inca,
                 float * B)
 {
   hipLaunchKernelGGL(kernel_ajw_to_waj, dim3(na), dim3(128), 0, 0, na,nj,nw,inca,A,B);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void ajw_to_waj(int na, int nj, int nw, int inca,
@@ -103,8 +103,8 @@ void ajw_to_waj(int na, int nj, int nw, int inca,
   hipLaunchKernelGGL(kernel_ajw_to_waj, dim3(na), dim3(128), 0, 0, na,nj,nw,inca,
                 reinterpret_cast<thrust::complex<double> const*>(A),
                 reinterpret_cast<thrust::complex<double> *>(B));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void ajw_to_waj(int na, int nj, int nw, int inca,
@@ -114,8 +114,8 @@ void ajw_to_waj(int na, int nj, int nw, int inca,
   hipLaunchKernelGGL(kernel_ajw_to_waj, dim3(na), dim3(128), 0, 0, na,nj,nw,inca,
                 reinterpret_cast<thrust::complex<float> const*>(A),
                 reinterpret_cast<thrust::complex<float> *>(B));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, 
@@ -125,8 +125,8 @@ void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol,
   hipLaunchKernelGGL(kernel_transpose_wabn_to_wban, dim3(grid_dim), dim3(32), 0, 0, nwalk,na,nb,nchol,
                 reinterpret_cast<thrust::complex<double> const*>(Tab),
                 reinterpret_cast<thrust::complex<double> *>(Tba));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, 
@@ -136,8 +136,8 @@ void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol,
   hipLaunchKernelGGL(kernel_transpose_wabn_to_wban, dim3(grid_dim), dim3(32), 0, 0, nwalk,na,nb,nchol,
                 reinterpret_cast<thrust::complex<float> const*>(Tab),
                 reinterpret_cast<thrust::complex<float> *>(Tba));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, 
@@ -147,8 +147,8 @@ void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol,
   hipLaunchKernelGGL(kernel_transpose_wabn_to_wban, dim3(grid_dim), dim3(32), 0, 0, nwalk,na,nb,nchol,
                 reinterpret_cast<thrust::complex<double> const*>(Tab),
                 reinterpret_cast<thrust::complex<float> *>(Tba));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, 
@@ -158,8 +158,8 @@ void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol,
   hipLaunchKernelGGL(kernel_transpose_wabn_to_wban, dim3(grid_dim), dim3(32), 0, 0, nwalk,na,nb,nchol,
                 reinterpret_cast<thrust::complex<float> const*>(Tab),
                 reinterpret_cast<thrust::complex<double> *>(Tba));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 }

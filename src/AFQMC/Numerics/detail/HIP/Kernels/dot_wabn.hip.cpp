@@ -18,9 +18,9 @@
 #include<hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
-#include "AFQMC/Numerics/detail/HIP/Kernels/cuda_settings.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 #if __HIP_ARCH__ < 600
 #include "AFQMC/Numerics/detail/HIP/Kernels/myAtomicAdd.cu"
 #endif
@@ -213,8 +213,8 @@ void dot_wabn( int nwalk, int nocc, int nchol,
                                    static_cast<thrust::complex<double> const>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
-  qmc_cuda::cuda_check(hipGetLastError(),"dot_wabn");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"dot_wabn");
+  qmc_hip::hip_check(hipGetLastError(),"dot_wabn");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wabn");
 }
 
 void dot_wabn( int nwalk, int nocc, int nchol,                         
@@ -227,8 +227,8 @@ void dot_wabn( int nwalk, int nocc, int nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<float> *>(y),incy);
-  qmc_cuda::cuda_check(hipGetLastError(),"dot_wabn");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"dot_wabn");
+  qmc_hip::hip_check(hipGetLastError(),"dot_wabn");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wabn");
 }
 
 void dot_wabn( int nwalk, int nocc, int nchol,                         
@@ -241,8 +241,8 @@ void dot_wabn( int nwalk, int nocc, int nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
-  qmc_cuda::cuda_check(hipGetLastError(),"dot_wabn");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"dot_wabn");
+  qmc_hip::hip_check(hipGetLastError(),"dot_wabn");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wabn");
 }
 
 // v2
@@ -261,8 +261,8 @@ void dot_wanb( int nwalk, int nocc, int nchol,
                                    static_cast<thrust::complex<double> const>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
-  qmc_cuda::cuda_check(hipGetLastError(),"dot_wanb");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"dot_wanb");
+  qmc_hip::hip_check(hipGetLastError(),"dot_wanb");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wanb");
 }
 
 void dot_wanb( int nwalk, int nocc, int nchol,
@@ -280,8 +280,8 @@ void dot_wanb( int nwalk, int nocc, int nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<float> *>(y),incy);
-  qmc_cuda::cuda_check(hipGetLastError(),"dot_wanb");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"dot_wanb");
+  qmc_hip::hip_check(hipGetLastError(),"dot_wanb");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wanb");
 }
 
 void dot_wanb( int nwalk, int nocc, int nchol,
@@ -299,8 +299,8 @@ void dot_wanb( int nwalk, int nocc, int nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
-  qmc_cuda::cuda_check(hipGetLastError(),"dot_wanb");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"dot_wanb");
+  qmc_hip::hip_check(hipGetLastError(),"dot_wanb");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wanb");
 }
 
 /*
@@ -315,8 +315,8 @@ void dot_wanb( int nwalk, int nocc, int nchol,
                                    static_cast<thrust::complex<double> const>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
-  qmc_cuda::cuda_check(hipGetLastError(),"dot_wanb");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"dot_wanb");
+  qmc_hip::hip_check(hipGetLastError(),"dot_wanb");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wanb");
 }
 
 void dot_wanb( int nwalk, int nocc, int nchol, 
@@ -329,8 +329,8 @@ void dot_wanb( int nwalk, int nocc, int nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<float> *>(y),incy);
-  qmc_cuda::cuda_check(hipGetLastError(),"dot_wanb");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"dot_wanb");
+  qmc_hip::hip_check(hipGetLastError(),"dot_wanb");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wanb");
 }
 
 void dot_wanb( int nwalk, int nocc, int nchol, 
@@ -343,8 +343,8 @@ void dot_wanb( int nwalk, int nocc, int nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
-  qmc_cuda::cuda_check(hipGetLastError(),"dot_wanb");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"dot_wanb");
+  qmc_hip::hip_check(hipGetLastError(),"dot_wanb");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wanb");
 }
 */
 
@@ -357,8 +357,8 @@ void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
                                    static_cast<thrust::complex<double> const>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(F));
-  qmc_cuda::cuda_check(hipGetLastError(),"dot_wpan_waqn_Fwpq");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"dot_wpan_waqn_Fwpq");
+  qmc_hip::hip_check(hipGetLastError(),"dot_wpan_waqn_Fwpq");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wpan_waqn_Fwpq");
 }
 
 void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
@@ -370,8 +370,8 @@ void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<float> *>(F));
-  qmc_cuda::cuda_check(hipGetLastError(),"dot_wpan_waqn_Fwpq");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"dot_wpan_waqn_Fwpq");
+  qmc_hip::hip_check(hipGetLastError(),"dot_wpan_waqn_Fwpq");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wpan_waqn_Fwpq");
 }
 
 
@@ -385,8 +385,8 @@ void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(F));
-  qmc_cuda::cuda_check(hipGetLastError(),"dot_wpan_waqn_Fwpq");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"dot_wpan_waqn_Fwpq");
+  qmc_hip::hip_check(hipGetLastError(),"dot_wpan_waqn_Fwpq");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wpan_waqn_Fwpq");
 }
 
 

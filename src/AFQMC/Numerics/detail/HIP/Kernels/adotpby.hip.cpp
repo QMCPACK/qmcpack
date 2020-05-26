@@ -19,7 +19,7 @@
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels 
 {
@@ -90,8 +90,8 @@ void adotpby(int N, double const alpha, double const* x, int const incx,
                     double const beta, double* res) 
 {
   hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), 0, 0, N,alpha,x,incx,y,incy,beta,res);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void adotpby(int N, std::complex<double> const alpha, 
@@ -105,8 +105,8 @@ void adotpby(int N, std::complex<double> const alpha,
                             reinterpret_cast<thrust::complex<double> const*>(y),incy,
                             static_cast<thrust::complex<double> const>(beta),
                             reinterpret_cast<thrust::complex<double> *>(res));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void adotpby(int N, float const alpha, float const* x, int const incx,
@@ -114,8 +114,8 @@ void adotpby(int N, float const alpha, float const* x, int const incx,
                     float const beta, float* res)
 {
   hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), 0, 0, N,alpha,x,incx,y,incy,beta,res);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void adotpby(int N, std::complex<float> const alpha, 
@@ -129,8 +129,8 @@ void adotpby(int N, std::complex<float> const alpha,
                             reinterpret_cast<thrust::complex<float> const*>(y),incy,
                             static_cast<thrust::complex<float> const>(beta),
                             reinterpret_cast<thrust::complex<float> *>(res));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void adotpby(int N, float const alpha, float const* x, int const incx,
@@ -138,8 +138,8 @@ void adotpby(int N, float const alpha, float const* x, int const incx,
                     double const beta, double* res)
 {
   hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), 0, 0, N,alpha,x,incx,y,incy,beta,res);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void adotpby(int N, std::complex<float> const alpha,
@@ -153,8 +153,8 @@ void adotpby(int N, std::complex<float> const alpha,
                             reinterpret_cast<thrust::complex<float> const*>(y),incy,
                             static_cast<thrust::complex<double> const>(beta),
                             reinterpret_cast<thrust::complex<double> *>(res));
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 }

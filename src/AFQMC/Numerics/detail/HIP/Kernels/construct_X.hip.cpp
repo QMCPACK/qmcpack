@@ -18,9 +18,9 @@
 #include<hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
-#include "AFQMC/Numerics/detail/HIP/Kernels/cuda_settings.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels
 {
@@ -147,8 +147,8 @@ void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
                         reinterpret_cast<thrust::complex<double> *>(HW),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<double> *>(X));
-  qmc_cuda::cuda_check(hipGetLastError(),"construct_X");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"construct_X");
+  qmc_hip::hip_check(hipGetLastError(),"construct_X");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"construct_X");
 }
 void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
                         double sqrtdt, double vbound,
@@ -172,8 +172,8 @@ void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
                         reinterpret_cast<thrust::complex<double> *>(HW),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<float> *>(X));
-  qmc_cuda::cuda_check(hipGetLastError(),"construct_X");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"construct_X");
+  qmc_hip::hip_check(hipGetLastError(),"construct_X");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"construct_X");
 }
 void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
                         double sqrtdt, double vbound,
@@ -197,8 +197,8 @@ void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
                         reinterpret_cast<thrust::complex<double> *>(HW),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<float> *>(X));
-  qmc_cuda::cuda_check(hipGetLastError(),"construct_X");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"construct_X");
+  qmc_hip::hip_check(hipGetLastError(),"construct_X");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"construct_X");
 }
 void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
                         double sqrtdt, double vbound,
@@ -222,8 +222,8 @@ void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
                         reinterpret_cast<thrust::complex<double> *>(HW),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<double> *>(X));
-  qmc_cuda::cuda_check(hipGetLastError(),"construct_X");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"construct_X");
+  qmc_hip::hip_check(hipGetLastError(),"construct_X");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"construct_X");
 }
 
 }

@@ -18,9 +18,9 @@
 #include<hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
-#include "AFQMC/Numerics/detail/HIP/Kernels/cuda_settings.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels 
 {
@@ -73,8 +73,8 @@ void Tab_to_Kl(int nwalk, int nocc, int nchol,std::complex<double> const* Tab,
   hipLaunchKernelGGL(kernel_Tab_to_Kl, dim3(grid_dim), dim3(nthr), 0, 0, nwalk,nocc,nchol,
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(Kl));
-  qmc_cuda::cuda_check(hipGetLastError(),"Tab_to_Kl");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"Tab_to_Kl");
+  qmc_hip::hip_check(hipGetLastError(),"Tab_to_Kl");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"Tab_to_Kl");
 }
 
 void Tab_to_Kl(int nwalk, int nocc, int nchol,std::complex<float> const* Tab,
@@ -85,8 +85,8 @@ void Tab_to_Kl(int nwalk, int nocc, int nchol,std::complex<float> const* Tab,
   hipLaunchKernelGGL(kernel_Tab_to_Kl, dim3(grid_dim), dim3(nthr), 0, 0, nwalk,nocc,nchol,
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<float> *>(Kl));
-  qmc_cuda::cuda_check(hipGetLastError(),"Tab_to_Kl");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"Tab_to_Kl");
+  qmc_hip::hip_check(hipGetLastError(),"Tab_to_Kl");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"Tab_to_Kl");
 }
 
 
@@ -98,8 +98,8 @@ void Tanb_to_Kl(int nwalk, int nocc, int nchol, int nchol_tot,
   hipLaunchKernelGGL(kernel_Tanb_to_Kl, dim3(grid_dim), dim3(nthr), 0, 0, nwalk,nocc,nchol,nchol_tot,
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(Kl));
-  qmc_cuda::cuda_check(hipGetLastError(),"Tab_to_Kl");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"Tab_to_Kl");
+  qmc_hip::hip_check(hipGetLastError(),"Tab_to_Kl");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"Tab_to_Kl");
 }
 
 void Tanb_to_Kl(int nwalk, int nocc, int nchol, int nchol_tot,
@@ -110,8 +110,8 @@ void Tanb_to_Kl(int nwalk, int nocc, int nchol, int nchol_tot,
   hipLaunchKernelGGL(kernel_Tanb_to_Kl, dim3(grid_dim), dim3(nthr), 0, 0, nwalk,nocc,nchol,nchol_tot,
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<float> *>(Kl));
-  qmc_cuda::cuda_check(hipGetLastError(),"Tab_to_Kl");
-  qmc_cuda::cuda_check(hipDeviceSynchronize(),"Tab_to_Kl");
+  qmc_hip::hip_check(hipGetLastError(),"Tab_to_Kl");
+  qmc_hip::hip_check(hipDeviceSynchronize(),"Tab_to_Kl");
 }
 
 }

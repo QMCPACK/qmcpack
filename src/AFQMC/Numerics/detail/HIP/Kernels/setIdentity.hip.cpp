@@ -19,7 +19,7 @@
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels 
 {
@@ -86,8 +86,8 @@ void set_identity(int m, int n, double * A, int lda)
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,ygrid_dim); 
   hipLaunchKernelGGL(kernel_setIdentity, dim3(grid_dim), dim3(block_dim), 0, 0, m,n,A,lda);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void set_identity(int m, int n, float * A, int lda)
@@ -98,8 +98,8 @@ void set_identity(int m, int n, float * A, int lda)
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,ygrid_dim);
   hipLaunchKernelGGL(kernel_setIdentity, dim3(grid_dim), dim3(block_dim), 0, 0, m,n,A,lda);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void set_identity(int m, int n, std::complex<double> * A, int lda)
@@ -110,8 +110,8 @@ void set_identity(int m, int n, std::complex<double> * A, int lda)
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,ygrid_dim);
   hipLaunchKernelGGL(kernel_setIdentity, dim3(grid_dim), dim3(block_dim), 0, 0, m,n,reinterpret_cast<thrust::complex<double> *>(A),lda);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void set_identity(int m, int n, std::complex<float> * A, int lda)
@@ -122,8 +122,8 @@ void set_identity(int m, int n, std::complex<float> * A, int lda)
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,ygrid_dim);
   hipLaunchKernelGGL(kernel_setIdentity, dim3(grid_dim), dim3(block_dim), 0, 0, m,n,reinterpret_cast<thrust::complex<float> *>(A),lda);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void set_identity_strided(int nbatch, int stride, int m, int n, double * A, int lda)
@@ -134,8 +134,8 @@ void set_identity_strided(int nbatch, int stride, int m, int n, double * A, int 
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,ygrid_dim,nbatch);
   hipLaunchKernelGGL(kernel_setIdentity_strided, dim3(grid_dim), dim3(block_dim), 0, 0, nbatch,stride,m,n,A,lda);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void set_identity_strided(int nbatch, int stride, int m, int n, float * A, int lda)
@@ -146,8 +146,8 @@ void set_identity_strided(int nbatch, int stride, int m, int n, float * A, int l
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,ygrid_dim,nbatch);
   hipLaunchKernelGGL(kernel_setIdentity_strided, dim3(grid_dim), dim3(block_dim), 0, 0, nbatch,stride,m,n,A,lda);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void set_identity_strided(int nbatch, int stride, int m, int n, std::complex<double> * A, int lda)
@@ -158,8 +158,8 @@ void set_identity_strided(int nbatch, int stride, int m, int n, std::complex<dou
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,ygrid_dim,nbatch);
   hipLaunchKernelGGL(kernel_setIdentity_strided, dim3(grid_dim), dim3(block_dim), 0, 0, nbatch,stride,m,n,reinterpret_cast<thrust::complex<double> *>(A),lda);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void set_identity_strided(int nbatch, int stride, int m, int n, std::complex<float> * A, int lda)
@@ -170,8 +170,8 @@ void set_identity_strided(int nbatch, int stride, int m, int n, std::complex<flo
   dim3 block_dim(xblock_dim,xblock_dim);
   dim3 grid_dim(xgrid_dim,ygrid_dim,nbatch);
   hipLaunchKernelGGL(kernel_setIdentity_strided, dim3(grid_dim), dim3(block_dim), 0, 0, nbatch,stride,m,n,reinterpret_cast<thrust::complex<float> *>(A),lda);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 }

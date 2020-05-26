@@ -19,7 +19,7 @@
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels 
 {
@@ -63,8 +63,8 @@ void acAxpbB(int m, int n, double const alpha, double const* A, int lda,
   dim3 block_dim(xblock_dim,yblock_dim);
   dim3 grid_dim(xgrid_dim,ygrid_dim); 
   hipLaunchKernelGGL(kernel_acAxpbB, dim3(grid_dim), dim3(block_dim), 0, 0, m,n,alpha,A,lda,x,incx,beta,B,ldb);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void acAxpbB(int m, int n, float const alpha, float const* A, int lda,
@@ -78,8 +78,8 @@ void acAxpbB(int m, int n, float const alpha, float const* A, int lda,
   dim3 block_dim(xblock_dim,yblock_dim);
   dim3 grid_dim(xgrid_dim,ygrid_dim);
   hipLaunchKernelGGL(kernel_acAxpbB, dim3(grid_dim), dim3(block_dim), 0, 0, m,n,alpha,A,lda,x,incx,beta,B,ldb);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void acAxpbB(int m, int n, std::complex<double> const alpha, 
@@ -100,8 +100,8 @@ void acAxpbB(int m, int n, std::complex<double> const alpha,
                             reinterpret_cast<thrust::complex<double> const*>(x),incx,
                             static_cast<thrust::complex<double> const>(beta),
                             reinterpret_cast<thrust::complex<double> *>(B),ldb);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void acAxpbB(int m, int n, std::complex<float> const alpha,
@@ -122,8 +122,8 @@ void acAxpbB(int m, int n, std::complex<float> const alpha,
                             reinterpret_cast<thrust::complex<float> const*>(x),incx,
                             static_cast<thrust::complex<float> const>(beta),
                             reinterpret_cast<thrust::complex<float> *>(B),ldb);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 

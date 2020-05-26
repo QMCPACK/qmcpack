@@ -18,9 +18,9 @@
 #include<hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
-#include "AFQMC/Numerics/detail/HIP/Kernels/cuda_settings.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels 
 {
@@ -111,8 +111,8 @@ void term_by_term_mat_vec_plus( int dim, int nrow, int ncol, std::complex<double
   hipLaunchKernelGGL(kernel_tbt_mv_plus, dim3(1), dim3(block_dim), 0, 0, dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
                                       reinterpret_cast<thrust::complex<double> const*>(x),incx);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void term_by_term_mat_vec_minus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
@@ -124,8 +124,8 @@ void term_by_term_mat_vec_minus( int dim, int nrow, int ncol, std::complex<doubl
   hipLaunchKernelGGL(kernel_tbt_mv_minus, dim3(1), dim3(block_dim), 0, 0, dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
                                       reinterpret_cast<thrust::complex<double> const*>(x),incx);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void term_by_term_mat_vec_mult( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
@@ -137,8 +137,8 @@ void term_by_term_mat_vec_mult( int dim, int nrow, int ncol, std::complex<double
   hipLaunchKernelGGL(kernel_tbt_mv_mult, dim3(1), dim3(block_dim), 0, 0, dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
                                       reinterpret_cast<thrust::complex<double> const*>(x),incx);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void term_by_term_mat_vec_div( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
@@ -150,8 +150,8 @@ void term_by_term_mat_vec_div( int dim, int nrow, int ncol, std::complex<double>
   hipLaunchKernelGGL(kernel_tbt_mv_div, dim3(1), dim3(block_dim), 0, 0, dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
                                       reinterpret_cast<thrust::complex<double> const*>(x),incx);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void term_by_term_mat_vec_plus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
@@ -163,8 +163,8 @@ void term_by_term_mat_vec_plus( int dim, int nrow, int ncol, std::complex<double
   hipLaunchKernelGGL(kernel_tbt_mv_plus, dim3(1), dim3(block_dim), 0, 0, dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
                                       x,incx);  
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void term_by_term_mat_vec_minus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
@@ -176,8 +176,8 @@ void term_by_term_mat_vec_minus( int dim, int nrow, int ncol, std::complex<doubl
   hipLaunchKernelGGL(kernel_tbt_mv_minus, dim3(1), dim3(block_dim), 0, 0, dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
                                       x,incx);  
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void term_by_term_mat_vec_mult( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
@@ -189,8 +189,8 @@ void term_by_term_mat_vec_mult( int dim, int nrow, int ncol, std::complex<double
   hipLaunchKernelGGL(kernel_tbt_mv_mult, dim3(1), dim3(block_dim), 0, 0, dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
                                       x,incx);  
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void term_by_term_mat_vec_div( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
@@ -202,8 +202,8 @@ void term_by_term_mat_vec_div( int dim, int nrow, int ncol, std::complex<double>
   hipLaunchKernelGGL(kernel_tbt_mv_div, dim3(1), dim3(block_dim), 0, 0, dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
                                       x,incx);  
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 

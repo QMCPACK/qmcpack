@@ -18,9 +18,9 @@
 #include<hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
-#include "AFQMC/Numerics/detail/HIP/Kernels/cuda_settings.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #define ENABLE_HIP 1
-#include "AFQMC/Memory/HIP/cuda_utilities.h"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels 
 {
@@ -80,8 +80,8 @@ void batchedDot(int m, int n, double const alpha, double const* A, int lda,
                               double const beta, double *y, int incy) 
 {
   hipLaunchKernelGGL(kernel_dot, dim3(m), dim3(DOT_BLOCK_SIZE), 0, 0, n,alpha,A,lda,B,ldb,beta,y,incy);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void batchedDot(int m, int n, float const alpha, float const* A, int lda,
@@ -89,8 +89,8 @@ void batchedDot(int m, int n, float const alpha, float const* A, int lda,
                               float const beta, float *y, int incy)
 {
   hipLaunchKernelGGL(kernel_dot, dim3(m), dim3(DOT_BLOCK_SIZE), 0, 0, n,alpha,A,lda,B,ldb,beta,y,incy);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void batchedDot(int m, int n, std::complex<double> const alpha, std::complex<double> const* A, int lda,
@@ -103,8 +103,8 @@ void batchedDot(int m, int n, std::complex<double> const alpha, std::complex<dou
                                    reinterpret_cast<thrust::complex<double> const*>(B),ldb,
                                    static_cast<thrust::complex<double> const>(beta),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void batchedDot(int m, int n, std::complex<float> const alpha, std::complex<float> const* A, int lda,
@@ -117,8 +117,8 @@ void batchedDot(int m, int n, std::complex<float> const alpha, std::complex<floa
                                    reinterpret_cast<thrust::complex<float> const*>(B),ldb,
                                    static_cast<thrust::complex<float> const>(beta),
                                    reinterpret_cast<thrust::complex<float> *>(y),incy);
-  qmc_cuda::cuda_check(hipGetLastError());
-  qmc_cuda::cuda_check(hipDeviceSynchronize());
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 
