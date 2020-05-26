@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -26,7 +26,7 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 // Meant to be run with 1 block
@@ -54,9 +54,9 @@ __global__ void kernel_determinant_from_getrf(int N, T const* m, int lda, int co
    // not optimal but ok for now
    if (threadIdx.x == 0) {
      int imax = (N > blockDim.x)?blockDim.x:N;
-     for(int i=1; i<imax; i++) { 
+     for(int i=1; i<imax; i++) {
        tmp[0] += tmp[i];
-       sg[0] *= sg[i]; 
+       sg[0] *= sg[i];
       }
      *det = sg[0]*exp(tmp[0]-LogOverlapFactor);
    }
@@ -128,7 +128,7 @@ __global__ void kernel_strided_determinant_from_getrf(int N, T const* m, int lda
 }
 
 template<class T>
-__global__ void kernel_strided_determinant_from_getrf(int N, thrust::complex<T> const* m, int lda, int mstride, int const* piv, int pstride, thrust::complex<T> LogOverlapFactor, thrust::complex<T> *det, int nbatch) 
+__global__ void kernel_strided_determinant_from_getrf(int N, thrust::complex<T> const* m, int lda, int mstride, int const* piv, int pstride, thrust::complex<T> LogOverlapFactor, thrust::complex<T> *det, int nbatch)
 {
 
    __shared__ thrust::complex<T> tmp[64];
@@ -286,7 +286,7 @@ __global__ void kernel_determinant_from_geqrf(int N, thrust::complex<T> *m, int 
 }
 
 template<typename T>
-__global__ void kernel_determinant_from_geqrf(int N, T *m, int lda, T* buff) 
+__global__ void kernel_determinant_from_geqrf(int N, T *m, int lda, T* buff)
 {
    for(int ip=threadIdx.x; ip<N; ip+=blockDim.x)
    {
@@ -298,7 +298,7 @@ __global__ void kernel_determinant_from_geqrf(int N, T *m, int lda, T* buff)
 }
 
 template<typename T>
-__global__ void kernel_determinant_from_geqrf(int N, thrust::complex<T> *m, int lda, thrust::complex<T>* buff) 
+__global__ void kernel_determinant_from_geqrf(int N, thrust::complex<T> *m, int lda, thrust::complex<T>* buff)
 {
    for(int ip=threadIdx.x; ip<N; ip+=blockDim.x)
    {
@@ -387,7 +387,7 @@ std::complex<double> determinant_from_geqrf_gpu(int N, std::complex<double> *m, 
   thrust::device_ptr<thrust::complex<double>> d_ptr = thrust::device_malloc<thrust::complex<double>>(1);
   hipLaunchKernelGGL(kernel_determinant_from_geqrf, dim3(1), dim3(256), 0, 0, N,
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,
-                                    reinterpret_cast<thrust::complex<double> *>(buff), 
+                                    reinterpret_cast<thrust::complex<double> *>(buff),
                                     static_cast<thrust::complex<double>>(LogOverlapFactor),
                                     thrust::raw_pointer_cast(d_ptr));
   qmc_hip::hip_check(hipGetLastError());

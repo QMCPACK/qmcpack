@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -35,18 +35,18 @@ __global__ void kernel_inplace_cast(Size n, thrust::complex<T>* A, thrust::compl
 // will it???
     for(Size i=0; i<n; i+=nb, ni+=nb) {
       if(ni<n) Bi = static_cast<thrust::complex<Q>>(*(A+ni));
-      __syncthreads();   
+      __syncthreads();
       if(ni<n) *(B+ni) = Bi;
-//      __syncthreads();  
+//      __syncthreads();
     }
   } else if(sizeof(T) < sizeof(Q)) {
     assert( sizeof(T)*2 <= sizeof(Q));
     ni = n-1-ni;
     for(Size i=0; i<n; i+=nb, ni-=nb) {
       if(ni>=0) Bi = static_cast<thrust::complex<Q>>(*(A+ni));
-      __syncthreads();   
+      __syncthreads();
       if(ni>=0) *(B+ni) = Bi;
-//      __syncthreads();  
+//      __syncthreads();
     }
   }
 

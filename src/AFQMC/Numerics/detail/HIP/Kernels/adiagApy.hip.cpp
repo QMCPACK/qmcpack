@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -21,11 +21,11 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 template<typename T>
-__global__ void kernel_adiagApy(int N, T const alpha, T const* A, int lda, T* y, int incy) 
+__global__ void kernel_adiagApy(int N, T const alpha, T const* A, int lda, T* y, int incy)
 {
    int i = threadIdx.x + blockDim.x*blockIdx.x;
    if (i<N) {
@@ -42,7 +42,7 @@ __global__ void kernel_adiagApy(int N, thrust::complex<T> const alpha, thrust::c
    }
 }
 
-void adiagApy(int N, double const alpha, double const* A, int lda, double *y, int incy) 
+void adiagApy(int N, double const alpha, double const* A, int lda, double *y, int incy)
 {
   int block_dim = 256;
   int grid_dim = (N + block_dim - 1)/block_dim;
@@ -51,8 +51,8 @@ void adiagApy(int N, double const alpha, double const* A, int lda, double *y, in
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
-void adiagApy(int N, std::complex<double> const alpha, std::complex<double> const* A, int lda, 
-             std::complex<double> *y, int incy) 
+void adiagApy(int N, std::complex<double> const alpha, std::complex<double> const* A, int lda,
+             std::complex<double> *y, int incy)
 {
   int block_dim = 256;
   int grid_dim = (N + block_dim - 1)/block_dim;

@@ -5,11 +5,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef AFQMC_TAB_TO_KL_H
@@ -18,7 +18,7 @@
 #include<cassert>
 #include <complex>
 
-namespace kernels 
+namespace kernels
 {
 
 void Tab_to_Kl(int nwalk, int nocc, int nchol, std::complex<float> const* Tab,

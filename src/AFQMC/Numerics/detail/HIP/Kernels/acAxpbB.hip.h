@@ -29,10 +29,10 @@ void acAxpbB(int m, int n, float const alpha, float const* A, int lda,
                            float const* x, int incx,
                            float const beta, float * B, int ldb);
 
-void acAxpbB(int m, int n, std::complex<double> const alpha, 
+void acAxpbB(int m, int n, std::complex<double> const alpha,
                            std::complex<double> const* A, int lda,
                            std::complex<double> const* x, int incx,
-                           std::complex<double> const beta, 
+                           std::complex<double> const beta,
                            std::complex<double> * B, int ldb);
 
 void acAxpbB(int m, int n, std::complex<float> const alpha,

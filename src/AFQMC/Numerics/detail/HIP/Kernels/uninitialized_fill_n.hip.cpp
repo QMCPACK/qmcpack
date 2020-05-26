@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -26,17 +26,17 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 template<typename T, typename Size>
-__global__ void kernel_uninitialized_fill_n(Size N, T* x, T const a) 
+__global__ void kernel_uninitialized_fill_n(Size N, T* x, T const a)
 {
    Size nloop = Size((N+blockDim.x-1)/blockDim.x);
    for(Size i=0, ip=Size(threadIdx.x); i<nloop; i++, ip+=Size(blockDim.x))
     if(ip < N)
     {
-      x[ip] = a; 
+      x[ip] = a;
     }
    __syncthreads();
 }
@@ -49,7 +49,7 @@ void uninitialized_fill_n(bool * first, int N, bool const value)
 }
 
 void uninitialized_fill_n(int * first, int N, int const value)
-{ 
+{
   hipLaunchKernelGGL(kernel_uninitialized_fill_n, dim3(1), dim3(256), 0, 0, N,first,value);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
@@ -77,14 +77,14 @@ void uninitialized_fill_n(std::complex<float> * first, int N, std::complex<float
 }
 
 void uninitialized_fill_n(std::complex<double> * first, int N, std::complex<double> const value)
-{ 
+{
   hipLaunchKernelGGL(kernel_uninitialized_fill_n, dim3(1), dim3(256), 0, 0, N,first,value);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
-} 
+}
 
 void uninitialized_fill_n(double2 * first, int N, double2 const value)
-{ 
+{
   hipLaunchKernelGGL(kernel_uninitialized_fill_n, dim3(1), dim3(256), 0, 0, N,first,value);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());

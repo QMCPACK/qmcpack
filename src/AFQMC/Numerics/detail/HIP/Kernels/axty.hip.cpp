@@ -5,11 +5,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -21,7 +21,7 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 template<typename T>
@@ -33,7 +33,7 @@ struct axty_functor
 
   __host__ __device__
   T operator()(const T& x, const T& y) const
-  { 
+  {
     return a * x * y;
   }
 };
@@ -41,7 +41,7 @@ struct axty_functor
 template<typename T>
 inline static void kernel_axty(int n,
                                T const alpha,
-                               T const* x, T * y) 
+                               T const* x, T * y)
 {
   thrust::device_ptr<T const> x_(x);
   thrust::device_ptr<T> y_(y);
@@ -54,31 +54,31 @@ inline static void kernel_axty(int n,
 {
   thrust::device_ptr<thrust::complex<T> const> x_(reinterpret_cast<thrust::complex<T> const*>(x));
   thrust::device_ptr<thrust::complex<T> > y_(reinterpret_cast<thrust::complex<T> *>(y));
-  thrust::transform(x_, x_+n, y_, y_, 
+  thrust::transform(x_, x_+n, y_, y_,
                     axty_functor<thrust::complex<T> >(static_cast<thrust::complex<T> >(alpha)));
 }
 
-void axty(int n, float alpha, float const* x, float *y) {  
-  kernel_axty(n,alpha,x,y); 
+void axty(int n, float alpha, float const* x, float *y) {
+  kernel_axty(n,alpha,x,y);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
-void axty(int n, double alpha, double const* x, double *y) {  
-  kernel_axty(n,alpha,x,y); 
+void axty(int n, double alpha, double const* x, double *y) {
+  kernel_axty(n,alpha,x,y);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
-void axty(int n, std::complex<float> alpha, 
-                 std::complex<float> const* x, std::complex<float> *y) 
-{  
-  kernel_axty(n,alpha,x,y); 
+void axty(int n, std::complex<float> alpha,
+                 std::complex<float> const* x, std::complex<float> *y)
+{
+  kernel_axty(n,alpha,x,y);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
-void axty(int n, std::complex<double> alpha, 
-                 std::complex<double> const* x, std::complex<double> *y) 
-{  
-  kernel_axty(n,alpha,x,y); 
+void axty(int n, std::complex<double> alpha,
+                 std::complex<double> const* x, std::complex<double> *y)
+{
+  kernel_axty(n,alpha,x,y);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }

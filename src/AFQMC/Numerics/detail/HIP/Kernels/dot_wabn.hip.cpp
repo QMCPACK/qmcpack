@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -25,13 +25,13 @@
 #include "AFQMC/Numerics/detail/HIP/Kernels/myAtomicAdd.cu"
 #endif
 
-namespace kernels 
+namespace kernels
 {
 
 // Tab nwalk][nocc][nocc][nchol]
 template<typename T, typename T2>
 __global__ void kernel_dot_wabn(int nwalk, int nocc, int nchol,
-                    thrust::complex<T2> const alpha, thrust::complex<T2> const* Tab, 
+                    thrust::complex<T2> const alpha, thrust::complex<T2> const* Tab,
                     thrust::complex<T>* y, int incy)
 {
     if( blockIdx.x >= nwalk*nocc*nocc ) return;
@@ -50,7 +50,7 @@ __global__ void kernel_dot_wabn(int nwalk, int nocc, int nchol,
         i += blockDim.x;
     }
     __syncthreads(); // required because later on the current thread is accessing
-                     // data written by another thread    
+                     // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
         if( threadIdx.x < i ) cache[ threadIdx.x ] += cache[ threadIdx.x + i ];
@@ -62,17 +62,17 @@ __global__ void kernel_dot_wabn(int nwalk, int nocc, int nchol,
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(y+w*incy);
 #if __HIP_ARCH__ < 600
-        myAtomicAdd(re_,re); 
-        myAtomicAdd(re_+1,im); 
+        myAtomicAdd(re_,re);
+        myAtomicAdd(re_+1,im);
 #else
-        atomicAdd(re_,re); 
-        atomicAdd(re_+1,im); 
+        atomicAdd(re_,re);
+        atomicAdd(re_+1,im);
 #endif
     }
 }
 
 template<typename T, typename T2>
-__global__ void kernel_dot_wanb(int nt, int nwalk, int nocc, int nchol, 
+__global__ void kernel_dot_wanb(int nt, int nwalk, int nocc, int nchol,
                     thrust::complex<T2> const alpha, thrust::complex<T2> const* Tab,
                     thrust::complex<T>* y, int incy)
 {
@@ -98,7 +98,7 @@ __global__ void kernel_dot_wanb(int nt, int nwalk, int nocc, int nchol,
     }
 
     __syncthreads(); // required because later on the current thread is accessing
-                     // data written by another thread    
+                     // data written by another thread
     int i = nid / 2;
     while( i > 0 ) {
         if( id < i ) cache[ id ] += cache[ id + i ];
@@ -120,7 +120,7 @@ __global__ void kernel_dot_wanb(int nt, int nwalk, int nocc, int nchol,
 }
 
 template<typename T, typename T2>
-__global__ void kernel_dot_wanb2(int nwalk, int nocc, int nchol, 
+__global__ void kernel_dot_wanb2(int nwalk, int nocc, int nchol,
                     thrust::complex<T2> const alpha, thrust::complex<T2> const* Tab,
                     thrust::complex<T>* y, int incy)
 {
@@ -140,7 +140,7 @@ __global__ void kernel_dot_wanb2(int nwalk, int nocc, int nchol,
         i += blockDim.x;
     }
     __syncthreads(); // required because later on the current thread is accessing
-                     // data written by another thread    
+                     // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
         if( threadIdx.x < i ) cache[ threadIdx.x ] += cache[ threadIdx.x + i ];
@@ -181,7 +181,7 @@ __global__ void kernel_dot_wpan_waqn_Fwpq(int nwalk, int nmo, int nchol,
         i += blockDim.x;
     }
     __syncthreads(); // required because later on the current thread is accessing
-                     // data written by another thread    
+                     // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
         if( threadIdx.x < i ) cache[ threadIdx.x ] += cache[ threadIdx.x + i ];
@@ -203,8 +203,8 @@ __global__ void kernel_dot_wpan_waqn_Fwpq(int nwalk, int nmo, int nchol,
   }
 }
 
-void dot_wabn( int nwalk, int nocc, int nchol, 
-               std::complex<double> const alpha, std::complex<double> const* Tab, 
+void dot_wabn( int nwalk, int nocc, int nchol,
+               std::complex<double> const alpha, std::complex<double> const* Tab,
                std::complex<double>* y, int incy)
 {
   int n_=nwalk*nocc*nocc;
@@ -217,8 +217,8 @@ void dot_wabn( int nwalk, int nocc, int nchol,
   qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wabn");
 }
 
-void dot_wabn( int nwalk, int nocc, int nchol,                         
-               std::complex<float> const alpha, std::complex<float> const* Tab,      
+void dot_wabn( int nwalk, int nocc, int nchol,
+               std::complex<float> const alpha, std::complex<float> const* Tab,
                std::complex<float>* y, int incy)
 {
   int n_=nwalk*nocc*nocc;
@@ -231,8 +231,8 @@ void dot_wabn( int nwalk, int nocc, int nchol,
   qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wabn");
 }
 
-void dot_wabn( int nwalk, int nocc, int nchol,                         
-               std::complex<float> const alpha, std::complex<float> const* Tab,      
+void dot_wabn( int nwalk, int nocc, int nchol,
+               std::complex<float> const alpha, std::complex<float> const* Tab,
                std::complex<double>* y, int incy)
 {
   int n_=nwalk*nocc*nocc;
@@ -249,8 +249,8 @@ void dot_wabn( int nwalk, int nocc, int nchol,
 void dot_wanb( int nwalk, int nocc, int nchol,
                std::complex<double> const alpha, std::complex<double> const* Tab,
                std::complex<double>* y, int incy)
-{ 
-  int a_(8); 
+{
+  int a_(8);
   int nf(8);
   int b_ = 1024/a_;
   int na = (nocc-1)/a_+1;
@@ -305,7 +305,7 @@ void dot_wanb( int nwalk, int nocc, int nchol,
 
 /*
 // v2
-void dot_wanb( int nwalk, int nocc, int nchol, 
+void dot_wanb( int nwalk, int nocc, int nchol,
                std::complex<double> const alpha, std::complex<double> const* Tab,
                std::complex<double>* y, int incy)
 {
@@ -319,7 +319,7 @@ void dot_wanb( int nwalk, int nocc, int nchol,
   qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wanb");
 }
 
-void dot_wanb( int nwalk, int nocc, int nchol, 
+void dot_wanb( int nwalk, int nocc, int nchol,
                std::complex<float> const alpha, std::complex<float> const* Tab,
                std::complex<float>* y, int incy)
 {
@@ -333,7 +333,7 @@ void dot_wanb( int nwalk, int nocc, int nchol,
   qmc_hip::hip_check(hipDeviceSynchronize(),"dot_wanb");
 }
 
-void dot_wanb( int nwalk, int nocc, int nchol, 
+void dot_wanb( int nwalk, int nocc, int nchol,
                std::complex<float> const alpha, std::complex<float> const* Tab,
                std::complex<double>* y, int incy)
 {
@@ -378,7 +378,7 @@ void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
 
 void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
                std::complex<float> const alpha, std::complex<float> const* Tab,
-               std::complex<double>* F) 
+               std::complex<double>* F)
 {
   dim3 grid_dim(nmo,nmo,nmo);
   hipLaunchKernelGGL(kernel_dot_wpan_waqn_Fwpq, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), 0, 0, nwalk,nmo,nchol,

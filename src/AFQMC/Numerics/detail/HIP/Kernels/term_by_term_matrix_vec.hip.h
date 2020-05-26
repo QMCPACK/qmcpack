@@ -5,11 +5,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef KERNELS_TERM_BY_TERM_OPERATIONS_H
@@ -18,7 +18,7 @@
 #include<cassert>
 #include <complex>
 
-namespace kernels 
+namespace kernels
 {
 
 void term_by_term_mat_vec_plus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,

@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -22,12 +22,12 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 template<typename T>
 __global__ void kernel_dot( int n, T const alpha, T const* A, int lda,
-                            T const* B, int ldb, T const beta, T* y, int incy) 
+                            T const* B, int ldb, T const beta, T* y, int incy)
 {
     __shared__ T cache[ DOT_BLOCK_SIZE ];
     int i = threadIdx.x;
@@ -38,7 +38,7 @@ __global__ void kernel_dot( int n, T const alpha, T const* A, int lda,
         i += blockDim.x;
     }
     __syncthreads(); // required because later on the current thread is accessing
-                     // data written by another thread    
+                     // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
         if( threadIdx.x < i ) cache[ threadIdx.x ] += cache[ threadIdx.x + i ];
@@ -51,7 +51,7 @@ __global__ void kernel_dot( int n, T const alpha, T const* A, int lda,
 
 template<typename T>
 __global__ void kernel_dot( int n, thrust::complex<T> const alpha, thrust::complex<T> const* A, int lda,
-                            thrust::complex<T> const* B, int ldb, thrust::complex<T> const beta, 
+                            thrust::complex<T> const* B, int ldb, thrust::complex<T> const beta,
                             thrust::complex<T>* y, int incy)
 {
     __shared__ thrust::complex<T> cache[ DOT_BLOCK_SIZE ];
@@ -63,7 +63,7 @@ __global__ void kernel_dot( int n, thrust::complex<T> const alpha, thrust::compl
         i += blockDim.x;
     }
     __syncthreads(); // required because later on the current thread is accessing
-                     // data written by another thread    
+                     // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
         if( threadIdx.x < i ) cache[ threadIdx.x ] += cache[ threadIdx.x + i ];
@@ -76,8 +76,8 @@ __global__ void kernel_dot( int n, thrust::complex<T> const alpha, thrust::compl
 
 // y[i] = beta * y[i] + sum_k alpha * A[k,i] * B[k,i]
 void batchedDot(int m, int n, double const alpha, double const* A, int lda,
-                              double const* B, int ldb, 
-                              double const beta, double *y, int incy) 
+                              double const* B, int ldb,
+                              double const beta, double *y, int incy)
 {
   hipLaunchKernelGGL(kernel_dot, dim3(m), dim3(DOT_BLOCK_SIZE), 0, 0, n,alpha,A,lda,B,ldb,beta,y,incy);
   qmc_hip::hip_check(hipGetLastError());

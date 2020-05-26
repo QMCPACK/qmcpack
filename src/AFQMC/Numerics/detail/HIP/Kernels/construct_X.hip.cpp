@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -26,36 +26,36 @@ namespace kernels
 {
 
 // X[m,ni,iw] = rand[m,ni,iw] + im * ( vbias[m,iw] - vMF[m]  )
-// HW[ni,iw] = sum_m [ im * ( vMF[m] - vbias[m,iw] ) * 
-//                     ( rand[m,ni,iw] + halfim * ( vbias[m,iw] - vMF[m] ) ) ] 
-//           = sum_m [ im * ( vMF[m] - vbias[m,iw] ) * 
-//                     ( X[m,ni,iw] - halfim * ( vbias[m,iw] - vMF[m] ) ) ] 
-// MF[ni,iw] = sum_m ( im * X[m,ni,iw] * vMF[m] ) 
+// HW[ni,iw] = sum_m [ im * ( vMF[m] - vbias[m,iw] ) *
+//                     ( rand[m,ni,iw] + halfim * ( vbias[m,iw] - vMF[m] ) ) ]
+//           = sum_m [ im * ( vMF[m] - vbias[m,iw] ) *
+//                     ( X[m,ni,iw] - halfim * ( vbias[m,iw] - vMF[m] ) ) ]
+// MF[ni,iw] = sum_m ( im * X[m,ni,iw] * vMF[m] )
 template<typename T, typename T2, typename T3>
-__global__ void kernel_construct_X( int nCV, int nsteps, int nwalk, 
+__global__ void kernel_construct_X( int nCV, int nsteps, int nwalk,
                         T sqrtdt, T vbound,
-                        thrust::complex<T> const* vMF, 
-                        thrust::complex<T2> const* vbias,   
-                        thrust::complex<T>* HW,   
-                        thrust::complex<T>* MF,   
-                        thrust::complex<T3>* X ) 
+                        thrust::complex<T> const* vMF,
+                        thrust::complex<T2> const* vbias,
+                        thrust::complex<T>* HW,
+                        thrust::complex<T>* MF,
+                        thrust::complex<T3>* X )
 {
-  int ni = blockIdx.x;  
-  int iw = blockIdx.y;  
-  if(ni >= nsteps || iw >= nwalk) return;  
+  int ni = blockIdx.x;
+  int iw = blockIdx.y;
+  if(ni >= nsteps || iw >= nwalk) return;
   __shared__ thrust::complex<T> cache[ 2*REDUCE_BLOCK_SIZE ];
   cache[ 2*threadIdx.x ] = thrust::complex<T>(0.0);
   cache[ 2*threadIdx.x+1 ] = thrust::complex<T>(0.0);
 
   thrust::complex<T> im(0.0,1.0);
-  thrust::complex<T> const* vmf_(vMF); 
-  thrust::complex<T2> const* vb_(vbias + iw); 
-  thrust::complex<T3> * X_(X + ni*nwalk + iw); 
+  thrust::complex<T> const* vmf_(vMF);
+  thrust::complex<T2> const* vb_(vbias + iw);
+  thrust::complex<T3> * X_(X + ni*nwalk + iw);
   int dvb_ = nwalk;
-  int dX = nsteps*nwalk; 
+  int dX = nsteps*nwalk;
 
-  thrust::complex<T> vmf_t; 
-  thrust::complex<T> vb_t; 
+  thrust::complex<T> vmf_t;
+  thrust::complex<T> vb_t;
   for(int m=threadIdx.x; m<nCV; m+=blockDim.x) {
 
     if( abs(vmf_[m]) > vbound )
@@ -74,7 +74,7 @@ __global__ void kernel_construct_X( int nCV, int nsteps, int nwalk,
   }
 
   __syncthreads(); // required because later on the current thread is accessing
-                     // data written by another thread    
+                     // data written by another thread
   int i = REDUCE_BLOCK_SIZE / 2;
   while( i > 0 ) {
       if( threadIdx.x < i ) {
@@ -85,47 +85,47 @@ __global__ void kernel_construct_X( int nCV, int nsteps, int nwalk,
       i /= 2; //not sure bitwise operations are actually faster
   }
   if( threadIdx.x == 0 ) {
-    HW[ni*nwalk + iw] = cache[0]; 
-    MF[ni*nwalk + iw] = cache[1]; 
+    HW[ni*nwalk + iw] = cache[0];
+    MF[ni*nwalk + iw] = cache[1];
   }
 }
 
 template<typename T, typename T1>
-__global__ void kernel_construct_X_free_projection( int nCV, int nsteps, int nwalk, 
+__global__ void kernel_construct_X_free_projection( int nCV, int nsteps, int nwalk,
                         T sqrtdt,
-                        thrust::complex<T> const* vMF, 
-                        thrust::complex<T>* MF,   
-                        thrust::complex<T1>* X ) 
+                        thrust::complex<T> const* vMF,
+                        thrust::complex<T>* MF,
+                        thrust::complex<T1>* X )
 {
-  int ni = blockIdx.x;  
-  int iw = blockIdx.y;  
-  if(ni >= nsteps || iw >= nwalk) return;  
+  int ni = blockIdx.x;
+  int iw = blockIdx.y;
+  if(ni >= nsteps || iw >= nwalk) return;
   __shared__ thrust::complex<T> cache[ REDUCE_BLOCK_SIZE ];
   cache[ threadIdx.x ] = thrust::complex<T>(0.0);
 
   thrust::complex<T> im(0.0,1.0);
-  thrust::complex<T> const* vmf_(vMF); 
-  thrust::complex<T1> * X_(X + ni*nwalk + iw); 
-  int dX = nsteps*nwalk; 
+  thrust::complex<T> const* vmf_(vMF);
+  thrust::complex<T1> * X_(X + ni*nwalk + iw);
+  int dX = nsteps*nwalk;
 
-  for(int m=threadIdx.x; m<nCV; m+=blockDim.x) 
+  for(int m=threadIdx.x; m<nCV; m+=blockDim.x)
     cache[ threadIdx.x ] += im * static_cast<thrust::complex<T>>(X_[m*dX]) * vmf_[m] * sqrtdt;
 
   __syncthreads(); // required because later on the current thread is accessing
-                     // data written by another thread    
+                     // data written by another thread
   int i = REDUCE_BLOCK_SIZE / 2;
   while( i > 0 ) {
-      if( threadIdx.x < i ) 
+      if( threadIdx.x < i )
         cache[ threadIdx.x ] += cache[ threadIdx.x + i ];
       __syncthreads();
       i /= 2; //not sure bitwise operations are actually faster
   }
   if( threadIdx.x == 0 ) {
-    MF[ni*nwalk + iw] = cache[0]; 
+    MF[ni*nwalk + iw] = cache[0];
   }
 }
 
-void construct_X( int nCV, int nsteps, int nwalk, bool free_projection, 
+void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
                         double sqrtdt, double vbound,
                         std::complex<double> const* vMF,
                         std::complex<double> const* vbias,

@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -22,7 +22,7 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 // Tab [nbatch][nwalk][nocc][nocc][nchol]
@@ -30,9 +30,9 @@ namespace kernels
 template<typename T>
 __global__ void kernel_batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
                     int nchol_tot, int ncholQ, int ncholQ0, int* kdiag,
-                    thrust::complex<T> const* Tab, 
-                    thrust::complex<T> * Kl, 
-                    thrust::complex<T> * Kr) 
+                    thrust::complex<T> const* Tab,
+                    thrust::complex<T> * Kl,
+                    thrust::complex<T> * Kr)
 {
     int w = blockIdx.x;
     if(blockIdx.y == 0) {
@@ -40,7 +40,7 @@ __global__ void kernel_batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int n
             int batch = kdiag[k];
             if(w < nwalk) {
                 for(int a=0; a<nocc; a++) {
-                    thrust::complex<T> const* Tba_(Tab + batch*nwalk*nocc*nocc*nchol_max 
+                    thrust::complex<T> const* Tba_(Tab + batch*nwalk*nocc*nocc*nchol_max
                                                    + ((w*nocc+a)*nocc + a)*nchol_max);
                     thrust::complex<T> * Kr_(Kr + w*nchol_tot + ncholQ0);
                     int c = threadIdx.x;
@@ -48,15 +48,15 @@ __global__ void kernel_batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int n
                         Kr_[c] += Tba_[c];
                         c += blockDim.x;
                     }
-                } 
-            }  
+                }
+            }
         }
-    } else if(blockIdx.y == 1) {    
+    } else if(blockIdx.y == 1) {
         for( int k=0; k<nterms; k++) {
             int batch = kdiag[k];
             if(w < nwalk) {
                 for(int a=0; a<nocc; a++) {
-                    thrust::complex<T> const* Tab_(Tab + (batch+1)*nwalk*nocc*nocc*nchol_max 
+                    thrust::complex<T> const* Tab_(Tab + (batch+1)*nwalk*nocc*nocc*nchol_max
                                                    + ((w*nocc+a)*nocc + a)*nchol_max);
                     thrust::complex<T> * Kl_(Kl + w*nchol_tot + ncholQ0);
                     int c = threadIdx.x;
@@ -120,8 +120,8 @@ void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
                     std::complex<double> * Kr)
 {
   dim3 grid_dim(nwalk,2,1);
-  int nthr = std::min(256,ncholQ); // is this needed? 
-  hipLaunchKernelGGL(kernel_batched_Tab_to_Klr, dim3(grid_dim), dim3(nthr), 0, 0, nterms,nwalk,nocc,nchol_max,nchol_tot,ncholQ, 
+  int nthr = std::min(256,ncholQ); // is this needed?
+  hipLaunchKernelGGL(kernel_batched_Tab_to_Klr, dim3(grid_dim), dim3(nthr), 0, 0, nterms,nwalk,nocc,nchol_max,nchol_tot,ncholQ,
                                      ncholQ0,kdiag,
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(Kl),
@@ -137,7 +137,7 @@ void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
                     std::complex<float> * Kr)
 {
   dim3 grid_dim(nwalk,2,1);
-  int nthr = std::min(256,ncholQ); // is this needed? 
+  int nthr = std::min(256,ncholQ); // is this needed?
   hipLaunchKernelGGL(kernel_batched_Tab_to_Klr, dim3(grid_dim), dim3(nthr), 0, 0, nterms,nwalk,nocc,nchol_max,nchol_tot,ncholQ,
                                      ncholQ0,kdiag,
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
@@ -154,7 +154,7 @@ void batched_Tanb_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
                     std::complex<double> * Kr)
 {
   dim3 grid_dim(nwalk,2,1);
-  int nthr = std::min(256,ncholQ); // is this needed? 
+  int nthr = std::min(256,ncholQ); // is this needed?
   hipLaunchKernelGGL(kernel_batched_Tanb_to_Klr, dim3(grid_dim), dim3(nthr), 0, 0, nterms,nwalk,nocc,nchol_max,nchol_tot,ncholQ,
                                      ncholQ0,kdiag,
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
@@ -171,7 +171,7 @@ void batched_Tanb_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
                     std::complex<float> * Kr)
 {
   dim3 grid_dim(nwalk,2,1);
-  int nthr = std::min(256,ncholQ); // is this needed? 
+  int nthr = std::min(256,ncholQ); // is this needed?
   hipLaunchKernelGGL(kernel_batched_Tanb_to_Klr, dim3(grid_dim), dim3(nthr), 0, 0, nterms,nwalk,nocc,nchol_max,nchol_tot,ncholQ,
                                      ncholQ0,kdiag,
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),

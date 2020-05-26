@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -22,22 +22,22 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 // very sloppy, needs improvement!!!!
 template<typename T, typename T2>
 __global__ void kernel_ajw_to_waj( int na, int nj, int nw, int inca, T const* A,
-                                    T2 * B) 
+                                    T2 * B)
 {
     int a = blockIdx.x;
     if( a >= na ) return;
-    T const* A_(A+inca*a);    
+    T const* A_(A+inca*a);
     int i = threadIdx.x;
     int njw = nj*nw;
     while( i < njw ) {
         int j = i/nw;
-        int w = i%nw; 
+        int w = i%nw;
         B[ (w*na+a)*nj+j ] = static_cast<T2>(A_[i]);
         i += blockDim.x;
     }
@@ -78,9 +78,9 @@ __global__ void kernel_transpose_wabn_to_wban(int nwalk, int na, int nb, int nch
     }
 }
 
-void ajw_to_waj(int na, int nj, int nw, int inca,  
-                double const* A, 
-                double * B) 
+void ajw_to_waj(int na, int nj, int nw, int inca,
+                double const* A,
+                double * B)
 {
   hipLaunchKernelGGL(kernel_ajw_to_waj, dim3(na), dim3(128), 0, 0, na,nj,nw,inca,A,B);
   qmc_hip::hip_check(hipGetLastError());
@@ -118,7 +118,7 @@ void ajw_to_waj(int na, int nj, int nw, int inca,
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
-void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, 
+void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol,
                 std::complex<double> const* Tab, std::complex<double>* Tba)
 {
   dim3 grid_dim(nwalk,na,nb);
@@ -129,7 +129,7 @@ void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol,
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
-void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, 
+void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol,
                 std::complex<float> const* Tab, std::complex<float>* Tba)
 {
   dim3 grid_dim(nwalk,na,nb);
@@ -140,7 +140,7 @@ void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol,
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
-void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, 
+void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol,
                 std::complex<double> const* Tab, std::complex<float>* Tba)
 {
   dim3 grid_dim(nwalk,na,nb);
@@ -151,7 +151,7 @@ void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol,
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
-void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, 
+void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol,
                 std::complex<float> const* Tab, std::complex<double>* Tba)
 {
   dim3 grid_dim(nwalk,na,nb);

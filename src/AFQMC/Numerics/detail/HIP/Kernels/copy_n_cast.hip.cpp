@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -21,7 +21,7 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 
@@ -30,7 +30,7 @@ template<typename T, typename Q>
 __global__ void kernel_copy_n_cast(T const* A, int n, Q * B)
 {
   int i = threadIdx.x + blockDim.x*blockIdx.x;
-  if( i < n ) B[i] = static_cast<Q>(A[i]); 
+  if( i < n ) B[i] = static_cast<Q>(A[i]);
 }
 
 template<typename T, typename Q>

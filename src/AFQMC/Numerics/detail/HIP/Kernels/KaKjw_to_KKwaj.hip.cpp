@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -29,35 +29,35 @@ namespace kernels
 // A[nocc_tot][nmo_tot][nwalk]
 // B[Ka][Kj][nwalk][nocc_max][nmo_max]
 template<typename T, typename T2>
-__global__ void kernel_KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot, 
-                                       int nocc_max, int* nmo, int* nmo0, 
-                                       int* nocc, int* nocc0, 
+__global__ void kernel_KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
+                                       int nocc_max, int* nmo, int* nmo0,
+                                       int* nocc, int* nocc0,
                                        T const* A, T2 * B)
 {
-  int Ka = blockIdx.x;  
-  int Kj = blockIdx.y;  
-  if(Ka >= nkpts || Kj >= nkpts) return;  
-  int na0 = nocc0[Ka]; 
-  int nj0 = nmo0[Kj]; 
-  int na = nocc[Ka]; 
+  int Ka = blockIdx.x;
+  int Kj = blockIdx.y;
+  if(Ka >= nkpts || Kj >= nkpts) return;
+  int na0 = nocc0[Ka];
+  int nj0 = nmo0[Kj];
+  int na = nocc[Ka];
   int nj = nmo[Kj];
-  
-  T const* A_(A + ( na0*nmo_tot + nj0 )*nwalk); 
+
+  T const* A_(A + ( na0*nmo_tot + nj0 )*nwalk);
   T2* B_(B + ( (Ka*nkpts + Kj)*nocc_max )*nmo_max*nwalk);
 
-  if(threadIdx.x >= nj) return; 
-  if(threadIdx.y >= nwalk) return; 
-  
-  for(int a=0, a1=0; a<na; a++, a1+=nmo_tot*nwalk) 
-    for(int j=threadIdx.x; j<nj; j+=blockDim.x) 
-      for(int n=threadIdx.y; n<nwalk; n+=blockDim.y) 
+  if(threadIdx.x >= nj) return;
+  if(threadIdx.y >= nwalk) return;
+
+  for(int a=0, a1=0; a<na; a++, a1+=nmo_tot*nwalk)
+    for(int j=threadIdx.x; j<nj; j+=blockDim.x)
+      for(int n=threadIdx.y; n<nwalk; n+=blockDim.y)
         B_[ n*nocc_max*nmo_max + a*nmo_max + j ] = static_cast<T2>(A_[ a1 + j*nwalk + n ]);
 }
 
 template<typename T, typename T2>
-__global__ void kernel_KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot, 
+__global__ void kernel_KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
                                        int nocc_max, int* nmo, int* nmo0,
-                                       int* nocc, int* nocc0, 
+                                       int* nocc, int* nocc0,
                                        thrust::complex<T> const* A, thrust::complex<T2> * B)
 {
   int Ka = blockIdx.x;
@@ -74,15 +74,15 @@ __global__ void kernel_KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nm
   if(threadIdx.x >= nj) return;
   if(threadIdx.y >= nwalk) return;
 
-  for(int a=0, a1=0; a<na; a++, a1+=nmo_tot*nwalk)                         
+  for(int a=0, a1=0; a<na; a++, a1+=nmo_tot*nwalk)
     for(int j=threadIdx.x; j<nj; j+=blockDim.x)
       for(int n=threadIdx.y; n<nwalk; n+=blockDim.y)
         B_[ n*nocc_max*nmo_max + a*nmo_max + j ] = static_cast<thrust::complex<T2>>(A_[ a1 + j*nwalk + n ]);
 }
 
 
-void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot, 
-                     int nocc_max, int* nmo, int* nmo0, 
+void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
+                     int nocc_max, int* nmo, int* nmo0,
                      int* nocc, int* nocc0,
                      double const* A, double * B)
 {

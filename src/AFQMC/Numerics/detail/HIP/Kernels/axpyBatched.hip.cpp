@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -21,14 +21,14 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 template<typename T>
 __global__ void kernel_axpy_batched(int n, thrust::complex<T>* x, thrust::complex<T>** a, int inca, thrust::complex<T>** b, int incb, int batchSize)
 {
   int batch = blockIdx.x;
-  if( batch >= batchSize ) return;  
+  if( batch >= batchSize ) return;
 
   thrust::complex<T> * a_(a[batch]);
   thrust::complex<T> * b_(b[batch]);
@@ -37,7 +37,7 @@ __global__ void kernel_axpy_batched(int n, thrust::complex<T>* x, thrust::comple
   int i = threadIdx.x;
   while( i < n )
   {
-    b_[i*incb] = b_[i*incb] + x_ * a_[i*inca]; 
+    b_[i*incb] = b_[i*incb] + x_ * a_[i*inca];
     i += blockDim.x;
   }
 }

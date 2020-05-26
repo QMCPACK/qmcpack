@@ -5,11 +5,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef AFQMC_DETERMINANT_KERNELS_HPP
@@ -18,7 +18,7 @@
 #include<cassert>
 #include <complex>
 
-namespace kernels 
+namespace kernels
 {
 
 double determinant_from_getrf_gpu(int N, double *m, int lda, int *piv, double LogOverlapFactor);

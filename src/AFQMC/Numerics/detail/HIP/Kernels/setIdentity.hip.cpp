@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -21,7 +21,7 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 
@@ -31,10 +31,10 @@ __global__ void kernel_setIdentity(int m, int n, T * A, int lda)
 {
   int i = threadIdx.x + blockDim.x*blockIdx.x;
   int j = threadIdx.y + blockDim.y*blockIdx.y;
-  if( (i < m) && (j < n) ) 
+  if( (i < m) && (j < n) )
     if(i==j) {
-      A[i*lda+i] = T(1.0); 
-    } else {  
+      A[i*lda+i] = T(1.0);
+    } else {
       A[j*lda+i] = T(0.0);
     }
 }
@@ -84,7 +84,7 @@ void set_identity(int m, int n, double * A, int lda)
   int xgrid_dim = (m + xblock_dim - 1)/xblock_dim;
   int ygrid_dim = (n + xblock_dim - 1)/xblock_dim;
   dim3 block_dim(xblock_dim,xblock_dim);
-  dim3 grid_dim(xgrid_dim,ygrid_dim); 
+  dim3 grid_dim(xgrid_dim,ygrid_dim);
   hipLaunchKernelGGL(kernel_setIdentity, dim3(grid_dim), dim3(block_dim), 0, 0, m,n,A,lda);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());

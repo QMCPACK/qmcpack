@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -19,7 +19,7 @@
 #include <thrust/device_ptr.h>
 #include <thrust/fill.h>
 
-namespace kernels 
+namespace kernels
 {
 
 template<typename T>
@@ -55,7 +55,7 @@ __global__ void kernel_print( size_t const* p, int n)
 }
 
 template<typename T>
-__global__ void kernel_print( thrust::complex<T> const* p, int n) 
+__global__ void kernel_print( thrust::complex<T> const* p, int n)
 {
   printf("Z: %d ",n);
   for(int i=0; i<n; i++)
@@ -64,7 +64,7 @@ __global__ void kernel_print( thrust::complex<T> const* p, int n)
 
 void print(std::string str, double const* p, int n)
 {
-  std::cout<<str <<"D n: " <<n <<" "; 
+  std::cout<<str <<"D n: " <<n <<" ";
   hipLaunchKernelGGL(kernel_print, dim3(1), dim3(1), 0, 0, p, n);
   hipDeviceSynchronize ();
   std::cout<<std::endl;
@@ -72,7 +72,7 @@ void print(std::string str, double const* p, int n)
 
 void print(std::string str, int const* p, int n)
 {
-  std::cout<<str <<"I n: " <<n <<" "; 
+  std::cout<<str <<"I n: " <<n <<" ";
   hipLaunchKernelGGL(kernel_print, dim3(1), dim3(1), 0, 0, p, n);
   hipDeviceSynchronize ();
   std::cout<<std::endl;
@@ -96,7 +96,7 @@ void print(std::string str, long const* p, int n)
 
 void print(std::string str, std::complex<double> const* p, int n)
 {
-  std::cout<<str <<" Z n: " <<n <<" "; 
+  std::cout<<str <<" Z n: " <<n <<" ";
   hipLaunchKernelGGL(kernel_print, dim3(1), dim3(1), 0, 0,  reinterpret_cast<thrust::complex<double> const*>(p), n);
   hipDeviceSynchronize ();
   std::cout<<std::endl;

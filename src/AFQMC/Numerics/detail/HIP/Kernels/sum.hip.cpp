@@ -5,11 +5,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <complex>
@@ -61,7 +61,7 @@ float sum(int n, float const* x, int incx)
  float res = thrust::reduce(strided.begin(),strided.end());
  qmc_hip::hip_check(hipGetLastError());
  qmc_hip::hip_check(hipDeviceSynchronize());
- return res; 
+ return res;
 }
 
 std::complex<float> sum(int n, std::complex<float> const* x, int incx)
@@ -89,7 +89,7 @@ double sum(int m, int n, double const* x, int lda)
 std::complex<double> sum(int m, int n, std::complex<double> const* x, int lda)
 {
   std::complex<double> res;
-  for(int i=0; i<m; i++) 
+  for(int i=0; i<m; i++)
     res += sum(n,x+i,lda);
  qmc_hip::hip_check(hipGetLastError());
  qmc_hip::hip_check(hipDeviceSynchronize());

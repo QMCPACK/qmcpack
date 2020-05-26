@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #define BOOST_NO_AUTO_PTR
@@ -20,13 +20,13 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 template<typename Size, typename Size1, typename T>
 __global__ void kernel_fill_n(Size N, T* x, Size1 incx, T const a)
 {
- if(threadIdx.x >= N) return; 
+ if(threadIdx.x >= N) return;
  for(Size ip=Size(threadIdx.x); ip<N; ip+=Size(blockDim.x))
   {
     x[ip*Size(incx)] = a;
@@ -45,31 +45,31 @@ __global__ void kernel_fill2D_n(Size N, Size M, T* y, Size lda, T const a)
 
 
 void fill_n(int * first, int N, int incx, int const value)
-{ 
+{
   hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,incx,value);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void fill_n(float * first, int N, int incx, float const value)
-{ 
+{
   hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,incx,value);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void fill_n(double * first, int N, int incx, double const value)
-{ 
+{
   hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,incx,value);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void fill_n(std::complex<float> * first, int N, int incx, std::complex<float> const value)
-{ 
+{
   hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,incx,value);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void fill_n(std::complex<double> * first, int N, int incx, std::complex<double> const value)
-{ 
+{
   hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,incx,value);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
@@ -88,31 +88,31 @@ void fill_n(long unsigned int * first, long unsigned int N, const long unsigned 
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void fill_n(int * first, int N, int const value)
-{ 
+{
   hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,1,value);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void fill_n(float * first, int N, float const value)
-{ 
+{
   hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,1,value);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void fill_n(double * first, int N, double const value)
-{ 
+{
   hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,1,value);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void fill_n(std::complex<float> * first, int N, std::complex<float> const value)
-{ 
+{
   hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,1,value);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 void fill_n(std::complex<double> * first, int N, std::complex<double> const value)
-{ 
+{
   hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,1,value);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());

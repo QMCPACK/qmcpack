@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -21,7 +21,7 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 template<typename T>
@@ -34,8 +34,8 @@ __global__ void kernel_acAxpbB(int m, int n,
 {
   int i = threadIdx.x + blockDim.x*blockIdx.x;
   int j = threadIdx.y + blockDim.y*blockIdx.y;
-  if( (i < m) && (j < n) ) 
-    B[j*ldb+i] = beta*B[j*ldb+i] + alpha * A[j*lda+i] * x[i*incx];                     
+  if( (i < m) && (j < n) )
+    B[j*ldb+i] = beta*B[j*ldb+i] + alpha * A[j*lda+i] * x[i*incx];
 }
 
 template<typename T>
@@ -49,7 +49,7 @@ __global__ void kernel_acAxpbB(int m, int n,
   int i = threadIdx.x + blockDim.x*blockIdx.x;
   int j = threadIdx.y + blockDim.y*blockIdx.y;
   if( (i < m) && (j < n) )
-    B[j*ldb+i] = beta*B[j*ldb+i] + alpha * conj(A[j*lda+i]) * x[i*incx];  
+    B[j*ldb+i] = beta*B[j*ldb+i] + alpha * conj(A[j*lda+i]) * x[i*incx];
 }
 
 void acAxpbB(int m, int n, double const alpha, double const* A, int lda,
@@ -61,7 +61,7 @@ void acAxpbB(int m, int n, double const alpha, double const* A, int lda,
   int yblock_dim = 16;
   int ygrid_dim = (n + yblock_dim - 1)/yblock_dim;
   dim3 block_dim(xblock_dim,yblock_dim);
-  dim3 grid_dim(xgrid_dim,ygrid_dim); 
+  dim3 grid_dim(xgrid_dim,ygrid_dim);
   hipLaunchKernelGGL(kernel_acAxpbB, dim3(grid_dim), dim3(block_dim), 0, 0, m,n,alpha,A,lda,x,incx,beta,B,ldb);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
@@ -82,10 +82,10 @@ void acAxpbB(int m, int n, float const alpha, float const* A, int lda,
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
-void acAxpbB(int m, int n, std::complex<double> const alpha, 
+void acAxpbB(int m, int n, std::complex<double> const alpha,
                            std::complex<double> const* A, int lda,
                            std::complex<double> const* x, int incx,
-                           std::complex<double> const beta, 
+                           std::complex<double> const beta,
                            std::complex<double> * B, int ldb)
 {
   int xblock_dim = 16;

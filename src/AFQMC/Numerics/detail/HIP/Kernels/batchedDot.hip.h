@@ -22,8 +22,8 @@ namespace kernels
 
 // y[i] = beta * y[i] + sum_k alpha * A[k,i] * B[k,i]
 void batchedDot(int m, int n, double const alpha, double const* A, int lda,
-                              double const* B, int ldb, 
-                              double const beta, double *y, int incy); 
+                              double const* B, int ldb,
+                              double const beta, double *y, int incy);
 void batchedDot(int m, int n, float const alpha, float const* A, int lda,
                               float const* B, int ldb,
                               float const beta, float *y, int incy);

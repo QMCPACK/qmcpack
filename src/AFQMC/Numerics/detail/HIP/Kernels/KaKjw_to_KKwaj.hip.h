@@ -5,11 +5,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef AFQMC_KAKJW_to_KKWAJ_H
@@ -22,8 +22,8 @@
 namespace kernels
 {
 
-void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot, 
-                     int nocc_max, int* nmo, int* nmo0, 
+void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,
+                     int nocc_max, int* nmo, int* nmo0,
                      int* nocc, int* nocc0,
                      double const* A, double * B);
 void KaKjw_to_KKwaj( int nwalk, int nkpts, int nmo_max, int nmo_tot,

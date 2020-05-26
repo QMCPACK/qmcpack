@@ -46,7 +46,7 @@ class strided_2Drange
         {
             int j = n/nrows;
             int i = n%nrows;
-            return j*stride + i; 
+            return j*stride + i;
         }
     };
 
@@ -70,7 +70,7 @@ class strided_2Drange
     {
         int j = (last - first)/stride;
         int i = (last - first)%stride;
-        return begin() + j*nrows + i; 
+        return begin() + j*nrows + i;
     }
 
     protected:

@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -22,22 +22,22 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 // many ways to do this! sloppy for now!
 template<typename T, typename T2>
-__global__ void kernel_tbt_mv_plus( int dim, int nrow, int ncol, T* A, int lda, 
-                    T2 const* x, int incx) 
+__global__ void kernel_tbt_mv_plus( int dim, int nrow, int ncol, T* A, int lda,
+                    T2 const* x, int incx)
 {
   // assuming a single block
   if( blockIdx.x > 0 || blockIdx.y > 0 || blockIdx.z > 0) return;
-  if( threadIdx.x > nrow ) return;  
-  if( threadIdx.y > ncol ) return;  
+  if( threadIdx.x > nrow ) return;
+  if( threadIdx.y > ncol ) return;
   if(dim == 0) {
-    for(int i=threadIdx.x; i<nrow; i+=blockDim.x) 
-      for(int j=threadIdx.y; j<ncol; j+=blockDim.y) 
-        A[ i*lda+j ] += x[i*incx]; 
+    for(int i=threadIdx.x; i<nrow; i+=blockDim.x)
+      for(int j=threadIdx.y; j<ncol; j+=blockDim.y)
+        A[ i*lda+j ] += x[i*incx];
   } else {
     for(int i=threadIdx.x; i<nrow; i+=blockDim.x)
       for(int j=threadIdx.y; j<ncol; j+=blockDim.y)
@@ -103,7 +103,7 @@ __global__ void kernel_tbt_mv_div( int dim, int nrow, int ncol, T* A, int lda,
 }
 
 void term_by_term_mat_vec_plus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
-                    std::complex<double>* x, int incx) 
+                    std::complex<double>* x, int incx)
 {
   int xblock_dim = std::min(nrow,32);
   int yblock_dim = std::min(ncol,32);
@@ -155,14 +155,14 @@ void term_by_term_mat_vec_div( int dim, int nrow, int ncol, std::complex<double>
 }
 
 void term_by_term_mat_vec_plus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
-                    double* x, int incx) 
+                    double* x, int incx)
 {
   int xblock_dim = std::min(nrow,32);
   int yblock_dim = std::min(ncol,32);
   dim3 block_dim(xblock_dim,yblock_dim,1);
   hipLaunchKernelGGL(kernel_tbt_mv_plus, dim3(1), dim3(block_dim), 0, 0, dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
-                                      x,incx);  
+                                      x,incx);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
@@ -175,7 +175,7 @@ void term_by_term_mat_vec_minus( int dim, int nrow, int ncol, std::complex<doubl
   dim3 block_dim(xblock_dim,yblock_dim,1);
   hipLaunchKernelGGL(kernel_tbt_mv_minus, dim3(1), dim3(block_dim), 0, 0, dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
-                                      x,incx);  
+                                      x,incx);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
@@ -188,7 +188,7 @@ void term_by_term_mat_vec_mult( int dim, int nrow, int ncol, std::complex<double
   dim3 block_dim(xblock_dim,yblock_dim,1);
   hipLaunchKernelGGL(kernel_tbt_mv_mult, dim3(1), dim3(block_dim), 0, 0, dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
-                                      x,incx);  
+                                      x,incx);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
@@ -201,7 +201,7 @@ void term_by_term_mat_vec_div( int dim, int nrow, int ncol, std::complex<double>
   dim3 block_dim(xblock_dim,yblock_dim,1);
   hipLaunchKernelGGL(kernel_tbt_mv_div, dim3(1), dim3(block_dim), 0, 0, dim,nrow,ncol,
                                       reinterpret_cast<thrust::complex<double>*>(A),lda,
-                                      x,incx);  
+                                      x,incx);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }

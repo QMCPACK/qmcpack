@@ -5,11 +5,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef AFQMC_SAMPLEGAUSSIANRNG_H
@@ -22,9 +22,9 @@
 namespace kernels
 {
 
-void sampleGaussianRNG( double* V, int n, hiprandGenerator_t & gen); 
-void sampleGaussianRNG( float* V, int n, hiprandGenerator_t & gen); 
-void sampleGaussianRNG( std::complex<double>* V, int n, hiprandGenerator_t & gen); 
+void sampleGaussianRNG( double* V, int n, hiprandGenerator_t & gen);
+void sampleGaussianRNG( float* V, int n, hiprandGenerator_t & gen);
+void sampleGaussianRNG( std::complex<double>* V, int n, hiprandGenerator_t & gen);
 void sampleGaussianRNG( std::complex<float>* V, int n, hiprandGenerator_t & gen);
 
 }

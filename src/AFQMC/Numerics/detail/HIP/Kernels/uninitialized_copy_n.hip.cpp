@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -21,7 +21,7 @@
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 //#include "AFQMC/Numerics/detail/HIP/Kernels/strided_range.hpp"
 
-namespace kernels 
+namespace kernels
 {
 
 template<typename T, typename Size>

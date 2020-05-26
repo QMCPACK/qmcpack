@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -25,13 +25,13 @@
 #include "AFQMC/Numerics/detail/HIP/Kernels/myAtomicAdd.cu"
 #endif
 
-namespace kernels 
+namespace kernels
 {
 
 // Tab [nbatch][nwalk][nocc][nocc][nchol]
 template<typename T, typename T2>
 __global__ void kernel_batched_dot_wabn_wban(int nbatch, int nwalk, int nocc, int nchol,
-                    thrust::complex<T2> const* alpha, thrust::complex<T2> const* Tab, 
+                    thrust::complex<T2> const* alpha, thrust::complex<T2> const* Tab,
                     thrust::complex<T>* y, int incy)
 {
     int batch = blockIdx.x;
@@ -52,7 +52,7 @@ __global__ void kernel_batched_dot_wabn_wban(int nbatch, int nwalk, int nocc, in
         i += blockDim.x;
     }
     __syncthreads(); // required because later on the current thread is accessing
-                     // data written by another thread    
+                     // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
         if( threadIdx.x < i ) cache[ threadIdx.x ] += cache[ threadIdx.x + i ];
@@ -65,11 +65,11 @@ __global__ void kernel_batched_dot_wabn_wban(int nbatch, int nwalk, int nocc, in
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(y+w*incy);
 #if __HIP_ARCH__ < 600
-        myAtomicAdd(re_,re); 
-        myAtomicAdd(re_+1,im); 
+        myAtomicAdd(re_,re);
+        myAtomicAdd(re_+1,im);
 #else
-        atomicAdd(re_,re); 
-        atomicAdd(re_+1,im); 
+        atomicAdd(re_,re);
+        atomicAdd(re_+1,im);
 #endif
     }
 }
@@ -97,7 +97,7 @@ __global__ void kernel_batched_dot_wanb_wbna(int nbatch, int nwalk, int nocc, in
         i += blockDim.x;
     }
     __syncthreads(); // required because later on the current thread is accessing
-                     // data written by another thread    
+                     // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
         if( threadIdx.x < i ) cache[ threadIdx.x ] += cache[ threadIdx.x + i ];
@@ -119,8 +119,8 @@ __global__ void kernel_batched_dot_wanb_wbna(int nbatch, int nwalk, int nocc, in
     }
 }
 
-void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol, 
-                    std::complex<double> const* alpha, std::complex<double> const* Tab, 
+void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
+                    std::complex<double> const* alpha, std::complex<double> const* Tab,
                     std::complex<double>* y, int incy)
 {
   int n_=nwalk*nocc*nocc;
@@ -133,7 +133,7 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
   qmc_hip::hip_check(hipDeviceSynchronize(),"batched_dot_wabn_wban");
 }
 
-void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol, 
+void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
                     std::complex<float> const* alpha, std::complex<float> const* Tab,
                     std::complex<float>* y, int incy)
 {
@@ -147,7 +147,7 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
   qmc_hip::hip_check(hipDeviceSynchronize(),"batched_dot_wabn_wban");
 }
 
-void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol, 
+void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
                     std::complex<float> const* alpha, std::complex<float> const* Tab,
                     std::complex<double>* y, int incy)
 {

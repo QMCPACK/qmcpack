@@ -6,11 +6,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #include<cassert>
@@ -22,15 +22,15 @@
 #define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
-namespace kernels 
+namespace kernels
 {
 
 // Tab [nbatch][nwalk][nocc][nocc][nchol]
 // Klr [nwalk][2*nchol_tot]
 template<typename T>
 __global__ void kernel_Tab_to_Kl(int nwalk, int nocc, int nchol,
-                    thrust::complex<T> const* Tab, 
-                    thrust::complex<T> * Kl) 
+                    thrust::complex<T> const* Tab,
+                    thrust::complex<T> * Kl)
 {
     int w = blockIdx.x;
     if(w < nwalk) {
@@ -69,7 +69,7 @@ void Tab_to_Kl(int nwalk, int nocc, int nchol,std::complex<double> const* Tab,
                     std::complex<double> * Kl)
 {
   dim3 grid_dim(nwalk,1,1);
-  int nthr = std::min(256,nchol); 
+  int nthr = std::min(256,nchol);
   hipLaunchKernelGGL(kernel_Tab_to_Kl, dim3(grid_dim), dim3(nthr), 0, 0, nwalk,nocc,nchol,
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(Kl));
@@ -79,7 +79,7 @@ void Tab_to_Kl(int nwalk, int nocc, int nchol,std::complex<double> const* Tab,
 
 void Tab_to_Kl(int nwalk, int nocc, int nchol,std::complex<float> const* Tab,
                     std::complex<float> * Kl)
-{ 
+{
   dim3 grid_dim(nwalk,1,1);
   int nthr = std::min(256,nchol);
   hipLaunchKernelGGL(kernel_Tab_to_Kl, dim3(grid_dim), dim3(nthr), 0, 0, nwalk,nocc,nchol,
@@ -90,7 +90,7 @@ void Tab_to_Kl(int nwalk, int nocc, int nchol,std::complex<float> const* Tab,
 }
 
 
-void Tanb_to_Kl(int nwalk, int nocc, int nchol, int nchol_tot, 
+void Tanb_to_Kl(int nwalk, int nocc, int nchol, int nchol_tot,
                     std::complex<double> const* Tab, std::complex<double> * Kl)
 {
   dim3 grid_dim(nwalk,1,1);
