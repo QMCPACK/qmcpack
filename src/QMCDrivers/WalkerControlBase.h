@@ -318,7 +318,7 @@ private:
 
   static void updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data,
                                           WalkerAdjustmentCriteria wac,
-                                          PopulationAdjustment& adjustment,
+                                          PopulationAdjustment& adjust,
                                           MCPopulation& pop);
   /**}@*/
 };

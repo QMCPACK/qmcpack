@@ -595,7 +595,7 @@ auto WalkerControlBase::walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustme
   return wac;
 }
 
-auto WalkerControlBase::addReleaseNodeWalkers(PopulationAdjustment& adjustment,
+auto WalkerControlBase::addReleaseNodeWalkers(PopulationAdjustment& adjust,
                                               WalkerAdjustmentCriteria& wac,
                                               RefVector<MCPWalker>& good_walkers_rn,
                                               std::vector<int>& copies_to_make_rn)
@@ -608,27 +608,27 @@ auto WalkerControlBase::addReleaseNodeWalkers(PopulationAdjustment& adjustment,
     // I'm just going to preserve this logic but there has to be a simpler way to express
     // whatever the point of this is.
     MCPWalker& walker   = good_walkers_rn[iw];
-    auto walker_present = adjustment.good_walkers.begin();
-    for (; walker_present < adjustment.good_walkers.end(); ++walker_present)
+    auto walker_present = adjust.good_walkers.begin();
+    for (; walker_present < adjust.good_walkers.end(); ++walker_present)
       if (&(walker_present->get()) == &walker)
         break;
-    if (walker_present != adjustment.good_walkers.end())
+    if (walker_present != adjust.good_walkers.end())
     {
-      auto index               = walker_present - adjustment.good_walkers.begin();
-      auto copies_to_make_here = adjustment.copies_to_make.begin() + index;
+      auto index               = walker_present - adjust.good_walkers.begin();
+      auto copies_to_make_here = adjust.copies_to_make.begin() + index;
       *copies_to_make_here += copies_to_make_rn[iw];
     }
     else
     {
-      adjustment.good_walkers.push_back(walker);
-      adjustment.copies_to_make.push_back(copies_to_make_rn[iw]);
+      adjust.good_walkers.push_back(walker);
+      adjust.copies_to_make.push_back(copies_to_make_rn[iw]);
     }
   }
 }
 
 void WalkerControlBase::updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data,
                                                     WalkerAdjustmentCriteria wac,
-                                                    PopulationAdjustment& adjustment,
+                                                    PopulationAdjustment& adjust,
                                                     MCPopulation& pop)
 {
   std::fill(data.begin(), data.end(), 0);
@@ -640,7 +640,7 @@ void WalkerControlBase::updateCurDataWithCalcAdjust(std::vector<FullPrecRealType
   data[EREF_INDEX]       = wac.ecum;
   data[R2ACCEPTED_INDEX] = wac.r2_accepted;
   data[R2PROPOSED_INDEX] = wac.r2_proposed;
-  data[FNSIZE_INDEX]     = adjustment.good_walkers.size();
+  data[FNSIZE_INDEX]     = adjust.good_walkers.size();
   data[RNONESIZE_INDEX]  = wac.ncr;
   data[RNSIZE_INDEX]     = wac.nrn;
   data[B_ENERGY_INDEX]   = wac.besum;
@@ -658,7 +658,7 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
 {
   // every living walker on this rank.
   UPtrVector<MCPWalker>& walkers = pop.get_walkers();
-  PopulationAdjustment adjustment;
+  PopulationAdjustment adjust;
 
   // these are equivalent to the good_rn and ncopy_rn in the legacy code
   RefVector<MCPWalker> good_walkers_rn;
@@ -679,8 +679,8 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
 
     if ((wac.nc) && (inFN))
     {
-      adjustment.good_walkers.push_back(*walker);
-      adjustment.copies_to_make.push_back(wac.nc - 1);
+      adjust.good_walkers.push_back(*walker);
+      adjust.copies_to_make.push_back(wac.nc - 1);
     }
     else if (wac.nc) // this is actually the more specialized path and untested.
     {
@@ -692,16 +692,22 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
     }
     else
     {
-      adjustment.bad_walkers.push_back(*walker);
+      adjust.bad_walkers.push_back(*walker);
     }
   }
 
-  updateCurDataWithCalcAdjust(curData, wac, adjustment, pop);
+  // something goes wrong with the adjust state sequenece for a reused population in DMCbatch
+  // adjust.num_walkers == 0 regardless of how many are acutally good and havoc ensues.
+  // \todo why did this become a problem where should it be updated?
+  //       is this ever different from adjust.good_walkers.size()?
+  adjust.num_walkers = adjust.good_walkers.size();
+  
+  updateCurDataWithCalcAdjust(curData, wac, adjust, pop);
 
   if (write_release_nodes_)
-    addReleaseNodeWalkers(adjustment, wac, good_walkers_rn, copies_to_make_rn);
+    addReleaseNodeWalkers(adjust, wac, good_walkers_rn, copies_to_make_rn);
 
-  return adjustment;
+  return adjust;
 }
 
 /** legacy population limiting
