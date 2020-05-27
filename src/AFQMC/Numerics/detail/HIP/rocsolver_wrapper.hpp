@@ -17,7 +17,9 @@
 
 #include<cassert>
 #include <hip/hip_runtime.h>
+#if defined(ENABLE_ROCM)
 #include "rocsolver.h"
+#endif
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 // Abusing hip/rocm names

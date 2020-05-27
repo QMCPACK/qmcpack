@@ -17,7 +17,7 @@
 
 #include<cassert>
 #include "AFQMC/Utilities/type_conversion.hpp"
-#include "AFQMC/Memory/hipstom_pointers.hpp"
+#include "AFQMC/Memory/custom_pointers.hpp"
 #include "AFQMC/Numerics/detail/HIP/hipblas_wrapper.hpp"
 #include "AFQMC/Numerics/detail/HIP/rocsolver_wrapper.hpp"
 #include "AFQMC/Numerics/detail/HIP/Kernels/setIdentity.hiph"
@@ -53,7 +53,7 @@ namespace device
     rocsolverStatus_t status = rocsolver::rocsolver_getrf(*a.handles.rocsolverDn_handle, n, m,
                      to_address(a), lda, to_address(work), to_address(piv), to_address(piv)+n);
     hipMemcpy(&st,to_address(piv)+n,sizeof(int),hipMemcpyDeviceToHost);
-    if(CUSOLVER_STATUS_SUCCESS != status) {
+    if(ROCSOLVER_STATUS_SUCCESS != status) {
       std::cerr<<" hipblas_getrf status, info: " <<status <<" " <<st <<std::endl; std::cerr.flush();
       throw std::runtime_error("Error: hipblas_getrf returned error code.");
     }
@@ -102,7 +102,7 @@ namespace device
     }
 
     kernels::set_identity(n,n,to_address(work),n);
-    if(CUSOLVER_STATUS_SUCCESS != rocsolver::rocsolver_getrs(*a.handles.rocsolverDn_handle, HIPBLAS_OP_N, n, n,
+    if(ROCSOLVER_STATUS_SUCCESS != rocsolver::rocsolver_getrs(*a.handles.rocsolverDn_handle, HIPBLAS_OP_N, n, n,
                    to_address(a), lda, to_address(piv), to_address(work), n, info))
       throw std::runtime_error("Error: rocsolver_getrs returned error code.");
     hipMemcpy(to_address(a),to_address(work),n*n*sizeof(T),hipMemcpyDeviceToDevice);
@@ -167,7 +167,7 @@ namespace device
   template<typename T>
   inline static void geqrf_bufferSize (int m, int n, device_pointer<T> a, int lda, int& lwork)
   {
-    if(CUSOLVER_STATUS_SUCCESS != rocsolver::rocsolver_geqrf_bufferSize(*a.handles.rocsolverDn_handle,
+    if(ROCSOLVER_STATUS_SUCCESS != rocsolver::rocsolver_geqrf_bufferSize(*a.handles.rocsolverDn_handle,
                 m, n, to_address(a), lda, &lwork))
       throw std::runtime_error("Error: rocsolver_geqrf_bufferSize returned error code.");
   }
@@ -185,7 +185,7 @@ namespace device
     rocsolverStatus_t status = rocsolver::rocsolver_geqrf(*A.handles.rocsolverDn_handle, M, N,
                    to_address(A), LDA, to_address(TAU), to_address(WORK), LWORK, piv);
     hipMemcpy(&INFO,piv,sizeof(int),hipMemcpyDeviceToHost);
-    if(CUSOLVER_STATUS_SUCCESS != status) {
+    if(ROCSOLVER_STATUS_SUCCESS != status) {
       int st;
       std::cerr<<" hipblas_geqrf status, info: " <<status <<" " <<INFO <<std::endl; std::cerr.flush();
       throw std::runtime_error("Error: hipblas_geqrf returned error code.");
@@ -210,7 +210,7 @@ namespace device
   template<typename T>
   static void gqr_bufferSize (int m, int n, int k, device_pointer<T> a, int lda, int& lwork)
   {
-    if(CUSOLVER_STATUS_SUCCESS != rocsolver::rocsolver_gqr_bufferSize(*a.handles.rocsolverDn_handle,
+    if(ROCSOLVER_STATUS_SUCCESS != rocsolver::rocsolver_gqr_bufferSize(*a.handles.rocsolverDn_handle,
                                             m,n,k,to_address(a),lda,&lwork))
       throw std::runtime_error("Error: rocsolver_gqr_bufferSize returned error code.");
   }
@@ -228,7 +228,7 @@ namespace device
     rocsolverStatus_t status = rocsolver::rocsolver_gqr(*A.handles.rocsolverDn_handle, M, N, K,
                    to_address(A), LDA, to_address(TAU), to_address(WORK), LWORK, piv);
     hipMemcpy(&INFO,piv,sizeof(int),hipMemcpyDeviceToHost);
-    if(CUSOLVER_STATUS_SUCCESS != status) {
+    if(ROCSOLVER_STATUS_SUCCESS != status) {
       int st;
       std::cerr<<" hipblas_gqr status, info: " <<status <<" " <<INFO <<std::endl; std::cerr.flush();
       throw std::runtime_error("Error: hipblas_gqr returned error code.");
@@ -242,7 +242,7 @@ namespace device
     rocsolverStatus_t status = rocsolver::rocsolver_gqr_strided(*A.handles.rocsolverDn_handle, M, N, K,
                     to_address(A), LDA, Astride, to_address(TAU), Tstride, to_address(WORK), LWORK,
                     to_address(info), batchSize);
-    if(CUSOLVER_STATUS_SUCCESS != status) {
+    if(ROCSOLVER_STATUS_SUCCESS != status) {
       std::cerr<<" hipblas_gqr_strided status: " <<status <<std::endl; std::cerr.flush();
       throw std::runtime_error("Error: hipblas_gqr_strided returned error code.");
     }
@@ -350,7 +350,7 @@ namespace device
                     to_address(U), ldu, to_address(VT), ldvt, to_address(W), lw,
                     devSt);
     hipMemcpy(&st,devSt,sizeof(int),hipMemcpyDeviceToHost);
-    if(CUSOLVER_STATUS_SUCCESS != status) {
+    if(ROCSOLVER_STATUS_SUCCESS != status) {
       std::cerr<<" hipblas_gesvd status, info: " <<status <<" " <<st <<std::endl; std::cerr.flush();
       throw std::runtime_error("Error: hipblas_gesvd returned error code.");
     }
@@ -373,7 +373,7 @@ namespace device
                     to_address(U), ldu, to_address(VT), ldvt, to_address(W), lw,
                     devSt);
     hipMemcpy(&st,devSt,sizeof(int),hipMemcpyDeviceToHost);
-    if(CUSOLVER_STATUS_SUCCESS != status) {
+    if(ROCSOLVER_STATUS_SUCCESS != status) {
       std::cerr<<" hipblas_gesvd status, info: " <<status <<" " <<st <<std::endl; std::cerr.flush();
       throw std::runtime_error("Error: hipblas_gesvd returned error code.");
     }
