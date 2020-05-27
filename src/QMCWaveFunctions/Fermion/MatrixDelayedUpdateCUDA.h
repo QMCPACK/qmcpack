@@ -22,7 +22,7 @@
 #include "Platforms/OpenMP/ompReduction.hpp"
 #include <cuda_runtime_api.h>
 #include "Numerics/CUDA/cuBLAS.hpp"
-#include "Platforms/CUDA/cuBLAS_inhouse.hpp"
+#include "Platforms/CUDA/cuBLAS_missing_functions.hpp"
 #include "QMCWaveFunctions/Fermion/matrix_update_helper.hpp"
 #include "CUDA/CUDAallocator.hpp"
 
@@ -264,21 +264,21 @@ class MatrixDelayedUpdateCUDA
 
     // save Ainv[rowchanged] to invRow
     //std::copy_n(Ainv[rowchanged], norb, invRow.data());
-    cudaErrorCheck(cuBLAS_inhouse::copy_batched(hstream, norb, oldRow_mw_ptr, 1, invRow_mw_ptr, 1, nw),
-                   "cuBLAS_inhouse::copy_batched failed!");
+    cudaErrorCheck(cuBLAS_MFs::copy_batched(hstream, norb, oldRow_mw_ptr, 1, invRow_mw_ptr, 1, nw),
+                   "cuBLAS_MFs::copy_batched failed!");
     // multiply V (NxK) Binv(KxK) U(KxN) invRow right to the left
     //BLAS::gemv('T', norb, delay_count, cone, U_gpu.data(), norb, invRow.data(), 1, czero, p_gpu.data(), 1);
     //BLAS::gemv('N', delay_count, delay_count, -cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
     //BLAS::gemv('N', norb, delay_count, cone, V.data(), norb, Binv[delay_count], 1, cone, invRow.data(), 1);
-    cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, delay_count, cone_dev_ptr, U_mw_ptr, norb,
-                                                invRow_mw_ptr, 1, czero_dev_ptr, p_mw_ptr, 1, nw),
-                   "cuBLAS_inhouse::gemv_batched failed!");
-    cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'N', delay_count, delay_count, cminusone_dev_ptr, Binv_mw_ptr,
-                                                lda_Binv, p_mw_ptr, 1, czero_dev_ptr, BinvRow_mw_ptr, 1, nw),
-                   "cuBLAS_inhouse::gemv_batched failed!");
-    cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'N', norb, delay_count, cone_dev_ptr, V_mw_ptr, norb,
-                                                BinvRow_mw_ptr, 1, cone_dev_ptr, invRow_mw_ptr, 1, nw),
-                   "cuBLAS_inhouse::gemv_batched failed!");
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, delay_count, cone_dev_ptr, U_mw_ptr, norb,
+                                            invRow_mw_ptr, 1, czero_dev_ptr, p_mw_ptr, 1, nw),
+                   "cuBLAS_MFs::gemv_batched failed!");
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'N', delay_count, delay_count, cminusone_dev_ptr, Binv_mw_ptr,
+                                            lda_Binv, p_mw_ptr, 1, czero_dev_ptr, BinvRow_mw_ptr, 1, nw),
+                   "cuBLAS_MFs::gemv_batched failed!");
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'N', norb, delay_count, cone_dev_ptr, V_mw_ptr, norb,
+                                            BinvRow_mw_ptr, 1, cone_dev_ptr, invRow_mw_ptr, 1, nw),
+                   "cuBLAS_MFs::gemv_batched failed!");
     // mark row prepared
     invRow_id = rowchanged;
   }
@@ -340,9 +340,9 @@ class MatrixDelayedUpdateCUDA
       T* ratio_inv_mw   = reinterpret_cast<T*>(updateRow_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 8);
 
       // invoke the Fahy's variant of Sherman-Morrison update.
-      cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, norb, cone_dev_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr,
-                                                  1, czero_dev_ptr, temp_mw_ptr, 1, n_accepted),
-                     "cuBLAS_inhouse::gemv_batched failed!");
+      cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, norb, cone_dev_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr, 1,
+                                              czero_dev_ptr, temp_mw_ptr, 1, n_accepted),
+                     "cuBLAS_MFs::gemv_batched failed!");
 
       cudaErrorCheck(CUDA::copyAinvRow_saveGL_cuda(hstream, rowchanged, norb, Ainv_mw_ptr, lda, temp_mw_ptr,
                                                    rcopy_mw_ptr, dpsiM_mw_in, d2psiM_mw_in, dpsiM_mw_out, d2psiM_mw_out,
@@ -350,9 +350,9 @@ class MatrixDelayedUpdateCUDA
                      "CUDA::copyAinvRow_saveGL_cuda failed!");
 
 
-      cudaErrorCheck(cuBLAS_inhouse::ger_batched(hstream, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
-                                                 Ainv_mw_ptr, lda, n_accepted),
-                     "cuBLAS_inhouse::ger_batched failed!");
+      cudaErrorCheck(cuBLAS_MFs::ger_batched(hstream, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
+                                             Ainv_mw_ptr, lda, n_accepted),
+                     "cuBLAS_MFs::ger_batched failed!");
     }
   }
 
@@ -568,27 +568,26 @@ public:
     T* ratio_inv_mw_ptr     = reinterpret_cast<T*>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 14);
 
     //std::copy_n(Ainv[rowchanged], norb, V[delay_count]);
-    cudaErrorCheck(cuBLAS_inhouse::copy_batched(hstream, norb, invRow_mw_ptr, 1, V_row_mw_ptr, 1, nw),
-                   "cuBLAS_inhouse::copy_batched failed!");
+    cudaErrorCheck(cuBLAS_MFs::copy_batched(hstream, norb, invRow_mw_ptr, 1, V_row_mw_ptr, 1, nw),
+                   "cuBLAS_MFs::copy_batched failed!");
     // handle accepted walkers
     // the new Binv is [[X Y] [Z y]]
     //BLAS::gemv('T', norb, delay_count + 1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
-    cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, delay_count, cminusone_dev_ptr, V_mw_ptr, norb,
-                                                phiV_mw_ptr, 1, czero_dev_ptr, p_mw_ptr, 1, n_accepted),
-                   "cuBLAS_inhouse::gemv_batched failed!");
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, delay_count, cminusone_dev_ptr, V_mw_ptr, norb,
+                                            phiV_mw_ptr, 1, czero_dev_ptr, p_mw_ptr, 1, n_accepted),
+                   "cuBLAS_MFs::gemv_batched failed!");
     // Y
     //BLAS::gemv('T', delay_count, delay_count, y, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data() + delay_count,
     //           lda_Binv);
-    cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', delay_count, delay_count, ratio_inv_mw_ptr, Binv_mw_ptr,
-                                                lda_Binv, p_mw_ptr, 1, czero_dev_ptr, BinvCol_mw_ptr, lda_Binv,
-                                                n_accepted),
-                   "cuBLAS_inhouse::gemv_batched failed!");
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', delay_count, delay_count, ratio_inv_mw_ptr, Binv_mw_ptr,
+                                            lda_Binv, p_mw_ptr, 1, czero_dev_ptr, BinvCol_mw_ptr, lda_Binv, n_accepted),
+                   "cuBLAS_MFs::gemv_batched failed!");
     // X
     //BLAS::ger(delay_count, delay_count, cone, Binv[delay_count], 1, Binv.data() + delay_count, lda_Binv,
     //          Binv.data(), lda_Binv);
-    cudaErrorCheck(cuBLAS_inhouse::ger_batched(hstream, delay_count, delay_count, cone_dev_ptr, BinvRow_mw_ptr, 1,
-                                               BinvCol_mw_ptr, lda_Binv, Binv_mw_ptr, lda_Binv, n_accepted),
-                   "cuBLAS_inhouse::ger_batched failed!");
+    cudaErrorCheck(cuBLAS_MFs::ger_batched(hstream, delay_count, delay_count, cone_dev_ptr, BinvRow_mw_ptr, 1,
+                                           BinvCol_mw_ptr, lda_Binv, Binv_mw_ptr, lda_Binv, n_accepted),
+                   "cuBLAS_MFs::ger_batched failed!");
     // y and Z
     cudaErrorCheck(CUDA::add_delay_list_save_y_VGL_batched(hstream, delay_list_mw_ptr, rowchanged, delay_count,
                                                            Binv_mw_ptr, lda_Binv, ratio_inv_mw_ptr, phiV_mw_ptr,
@@ -653,18 +652,15 @@ public:
       const int lda_Binv = Binv_gpu.cols();
       constexpr T cone(1), czero(0), cminusone(-1);
       cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone,
-                                            U_mw_ptr, norb, Ainv_mw_ptr, lda, &czero, tempMat_mw_ptr, lda_Binv,
-                                            nw),
+                                            U_mw_ptr, norb, Ainv_mw_ptr, lda, &czero, tempMat_mw_ptr, lda_Binv, nw),
                        "cuBLAS::gemm_batched failed!");
       cudaErrorCheck(CUDA::applyW_batched(hstream, delay_list_mw_ptr, delay_count, tempMat_mw_ptr, lda_Binv, nw),
                      "CUDA::applyW_batched failed!");
-      cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count,
-                                            &cone, V_mw_ptr, norb, Binv_mw_ptr, lda_Binv, &czero,
-                                            U_mw_ptr, norb, nw),
+      cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone,
+                                            V_mw_ptr, norb, Binv_mw_ptr, lda_Binv, &czero, U_mw_ptr, norb, nw),
                        "cuBLAS::gemm_batched failed!");
-      cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count,
-                                            &cminusone, U_mw_ptr, norb, tempMat_mw_ptr, lda_Binv, &cone,
-                                            Ainv_mw_ptr, lda, nw),
+      cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone,
+                                            U_mw_ptr, norb, tempMat_mw_ptr, lda_Binv, &cone, Ainv_mw_ptr, lda, nw),
                        "cuBLAS::gemm_batched failed!");
     }
     delay_count = 0;
@@ -690,13 +686,12 @@ public:
   {
     if (isSM1())
       waitStream();
-    else
-      if (invRow_id != row_id)
-      {
-        // this can be skipped if mw_evalGrad gets called already.
-        mw_prepareInvRow(engines, row_id);
-        waitStream();
-      }
+    else if (invRow_id != row_id)
+    {
+      // this can be skipped if mw_evalGrad gets called already.
+      mw_prepareInvRow(engines, row_id);
+      waitStream();
+    }
 
     const size_t nw = engines.size();
     std::vector<const T*> row_ptr_list;

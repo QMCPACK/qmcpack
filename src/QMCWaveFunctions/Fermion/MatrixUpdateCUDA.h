@@ -22,7 +22,7 @@
 #include "Platforms/OpenMP/ompReduction.hpp"
 #include <cuda_runtime_api.h>
 #include "Numerics/CUDA/cuBLAS.hpp"
-#include "Platforms/CUDA/cuBLAS_inhouse.hpp"
+#include "Platforms/CUDA/cuBLAS_missing_functions.hpp"
 #include "QMCWaveFunctions/Fermion/matrix_update_helper.hpp"
 
 namespace qmcplusplus
@@ -191,8 +191,8 @@ public:
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
     }
 
-    cudaErrorCheck(cudaMemcpyAsync(evalGrad_buffer_H2D_dev_ptr, evalGrad_buffer_H2D.data(), evalGrad_buffer_H2D.size(), cudaMemcpyHostToDevice,
-                                   hstream),
+    cudaErrorCheck(cudaMemcpyAsync(evalGrad_buffer_H2D_dev_ptr, evalGrad_buffer_H2D.data(), evalGrad_buffer_H2D.size(),
+                                   cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync evalGrad_buffer_H2D failed!");
 
     resizeGradsArray(nw, GT::Size);
@@ -283,8 +283,8 @@ public:
     // update the inverse matrix
     resize_fill_constant_arrays(n_accepted);
 
-    cudaErrorCheck(cudaMemcpyAsync(update_buffer_H2D_dev_ptr, update_buffer_H2D.data(), update_buffer_H2D.size(), cudaMemcpyHostToDevice,
-                                   hstream),
+    cudaErrorCheck(cudaMemcpyAsync(update_buffer_H2D_dev_ptr, update_buffer_H2D.data(), update_buffer_H2D.size(),
+                                   cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync update_buffer_H2D failed!");
 
     {
@@ -299,9 +299,9 @@ public:
       T* ratio_inv_mw   = reinterpret_cast<T*>(update_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 8);
 
       // invoke the Fahy's variant of Sherman-Morrison update.
-      cudaErrorCheck(cuBLAS_inhouse::gemv_batched(hstream, 'T', norb, norb, cone_dev_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr,
-                                                  1, czero_dev_ptr, temp_mw_ptr, 1, n_accepted),
-                     "cuBLAS_inhouse::gemv_batched failed!");
+      cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, norb, cone_dev_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr, 1,
+                                              czero_dev_ptr, temp_mw_ptr, 1, n_accepted),
+                     "cuBLAS_MFs::gemv_batched failed!");
 
       cudaErrorCheck(CUDA::copyAinvRow_saveGL_cuda(hstream, rowchanged, norb, Ainv_mw_ptr, lda, temp_mw_ptr,
                                                    rcopy_mw_ptr, dpsiM_mw_in, d2psiM_mw_in, dpsiM_mw_out, d2psiM_mw_out,
@@ -309,9 +309,9 @@ public:
                      "CUDA::copyAinvRow_saveGL_cuda failed!");
 
 
-      cudaErrorCheck(cuBLAS_inhouse::ger_batched(hstream, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
-                                                 Ainv_mw_ptr, lda, n_accepted),
-                     "cuBLAS_inhouse::ger_batched failed!");
+      cudaErrorCheck(cuBLAS_MFs::ger_batched(hstream, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
+                                             Ainv_mw_ptr, lda, n_accepted),
+                     "cuBLAS_MFs::ger_batched failed!");
     }
   }
 
