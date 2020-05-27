@@ -359,7 +359,7 @@ namespace afqmc
       for(int iw=0; iw<nw; ++iw) {
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
         Ov[iw] = SDetOp.MixedDensityMatrix(OrbMats[nd],A[iw],G2D_,LogOverlapFactor,true);
-        if(walker_type==CLOSED) Ov[iw] *= ComplexType(Ov[iw]);
+        if(walker_type==CLOSED) Ov[iw] *= Ov[iw];
         if(transposed_G_for_E_) 
           G[iw] = G1D_; 
         else
@@ -459,7 +459,7 @@ namespace afqmc
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
         Ov[iw] = SDetOp.MixedDensityMatrix(RefA,*wset[iw].SlaterMatrix(Alpha),G2D_,
                                              LogOverlapFactor,compact,herm);
-        if(walker_type==CLOSED) Ov[iw] *= ComplexType(Ov[iw]);
+        if(walker_type==CLOSED) Ov[iw] *= Ov[iw];
         if(transposed) 
           G[iw] = G1D_; 
         else
@@ -2162,17 +2162,20 @@ namespace afqmc
               TG.TG_local().all_reduce_in_place_n(to_address(eloc2.origin()),3,std::plus<>());
             if(TG.TG_local().root()) {
               if(idet != jdet) {
-                H[idet][jdet] = ov_[0]*(eloc2[0][0]+eloc2[0][1]+eloc2[0][2]);
-                S[idet][jdet] = ov_[0];
+                //ComplexType ovij = static_cast<ComplexType>(ov_[0]);
+                H[idet][jdet] = ComplexType(ov_[0]*(eloc2[0][0]+eloc2[0][1]+eloc2[0][2]));
+                S[idet][jdet] = ComplexType(ov_[0]);
+                S[idet][jdet] = static_cast<ComplexType>(ov_[0]);
                 H[jdet][idet] = ma::conj(H[idet][jdet]);   
-                S[jdet][idet] = ma::conj(ov_[0]);   
+                S[jdet][idet] = ma::conj(S[idet][jdet]);   
                 energy[0] += ma::conj(cidet)*cjdet*H[idet][jdet] +
                              ma::conj(cjdet)*cidet*H[jdet][idet];
                 energy[1] += ma::conj(cidet)*cjdet*S[idet][jdet] +
                              ma::conj(cjdet)*cidet*S[jdet][idet];
               } else { 
-                H[idet][idet] = ComplexType(real(ov_[0])*real(eloc2[0][0]+eloc2[0][1]+eloc2[0][2]),0.0);
-                S[idet][idet] = ComplexType(real(ov_[0]),0.0);
+                H[idet][idet] = ComplexType(real(static_cast<ComplexType>(ov_[0]))*
+                    real(eloc2[0][0]+eloc2[0][1]+eloc2[0][2]),0.0);
+                S[idet][idet] = ComplexType(real(static_cast<ComplexType>(ov_[0])),0.0);
                 energy[0] += ma::conj(cidet)*cjdet*H[idet][jdet]; 
                 energy[1] += ma::conj(cidet)*cjdet*S[idet][jdet]; 
               } 

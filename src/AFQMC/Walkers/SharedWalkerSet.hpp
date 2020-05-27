@@ -64,7 +64,7 @@ class SharedWalkerSet: public WalkerSetBase<shared_allocator<ComplexType>,Comple
   SharedWalkerSet(SharedWalkerSet const& other) = delete;
   SharedWalkerSet(SharedWalkerSet&& other) = default;
   SharedWalkerSet& operator=(SharedWalkerSet const& other) = delete;
-  SharedWalkerSet& operator=(SharedWalkerSet&& other) = default;
+  SharedWalkerSet& operator=(SharedWalkerSet&& other) = delete;
 
 };
 

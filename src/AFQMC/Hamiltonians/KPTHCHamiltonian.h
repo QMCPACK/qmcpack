@@ -54,7 +54,7 @@ class KPTHCHamiltonian: public OneBodyHamiltonian
   KPTHCHamiltonian(KPTHCHamiltonian const& other) = delete;
   KPTHCHamiltonian(KPTHCHamiltonian && other) = default;
   KPTHCHamiltonian& operator=(KPTHCHamiltonian const& other) = delete;
-  KPTHCHamiltonian& operator=(KPTHCHamiltonian && other) = default;
+  KPTHCHamiltonian& operator=(KPTHCHamiltonian && other) = delete;
 
   ValueType getNuclearCoulombEnergy() const { return OneBodyHamiltonian::NuclearCoulombEnergy; }
 

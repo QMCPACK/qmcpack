@@ -24,7 +24,20 @@
 namespace ma
 {
 
-// Tab [nbatch][nwalk][nocc][nocc][nchol]
+/** Contract 3D tensor over for use in exchange calculation.
+ * E_x[w] ~ sum_{labn} T1[l,w,a,b,n] T2[l,w,b,a,n]
+ * l is the batching parameter (like Q vectors in k-point code)
+ *
+ * \param[in]     nbatch Number of tensors to batch over.
+ * \param[in]     nwalk  Number of walkers.
+ * \param[in]     nocc   Number of electrons.
+ * \param[in]     nchol  Number of Cholesky vectors.
+ * \param[in]     alpha  Pointer to array of nbatch scaling factors.
+ * \param[in]     Tab    Pointer to packed tensors {T1[l0,w0,a,b,n],T2[[l0,w0,a,b,n]...}.
+ *                       Should be allocated on device.
+ * \param[in,out] y      Pointer to accumulator array. Typically E[w].
+ * \param[in]     incy   Stride for y.
+*/
 template<typename T, typename Q>
 void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
                     std::complex<Q> const* alpha, std::complex<Q> const* Tab,
@@ -82,6 +95,16 @@ void dot_wabn( int nwalk, int nocc, int nchol,
   }
 }
 
+/** Construct generalized Fock matrix.
+ *
+ * \param[in]     nwalk  Number of walkers.
+ * \param[in]     nmo    Number of basis functions.
+ * \param[in]     nchol  Number of Cholesky vectors.
+ * \param[in]     alpha  Scale factor.
+ * \param[in]     Tab    Pointer to packed tensors {T1[w0,a,b,n],T2[[w0,a,b,n]...}.
+ *                       Should be allocated on device.
+ * \param[out]    F      Pointer to buffer for generalised Fock matrix.
+*/
 template<typename T, typename Q>
 void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
                     std::complex<Q> alpha, std::complex<Q> const* Tab,
@@ -116,6 +139,20 @@ void dot_wanb( int nwalk, int nocc, int nchol,
 }
 
 
+/** .
+ *
+ * \param[in]     nters      Number terms batching over.
+ * \param[in]     nwalk      Number of walkers.
+ * \param[in]     nocc       Number of electrons.
+ * \param[in]     nchol_max  Max number of Cholesky vectors per kpoint.
+ * \param[in]     nchol_tot  Total number of Cholesky.
+ * \param[in]     ncholQ     Number of Cholesky for Q vector.
+ * \param[in]     ncholQ0    Number of Cholesky for Q vector.
+ * \param[in]     kdiag      Pointer to array of number of k point pairs for each batch.
+ * \param[in]     Tab        Pointer to buffer containing Tab, packed.
+ * \param[out]    Kl         Pointer to buffer containing Kl.
+ * \param[out]    Kr         Pointer to buffer containing Kr.
+*/
 template<typename T, typename Q>
 void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
                     int nchol_tot, int ncholQ, int ncholQ0, int* kdiag,
@@ -145,6 +182,7 @@ void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
   }
 }
 
+// Not used.
 template<typename T, typename Q>
 void batched_Tanb_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
                     int nchol_tot, int ncholQ, int ncholQ0, int* kdiag,
@@ -361,7 +399,7 @@ template<typename T, typename Q>
 void Awiu_Biu_Cuw(int nu, int nw, int ni, T alpha, T const* A, Q const* B, int ldb, T* C, int ldc){
   for(int w=0; w<nw; ++w) {
     for(int i=0; i<ni; ++i) {
-      auto Ci(C + w); 
+      auto Ci(C + w);
       auto Bi(B + i*ldb);
       for(int u=0; u<nu; ++u,++A,++Bi,Ci+=ldc)
         *Ci += alpha*(*A)*static_cast<T>(*Bi);
@@ -397,6 +435,7 @@ void viwj_vwij(int nw, int ni, int i0, int iN, T const* B, T1* A){
 }
 
 // Ckij = transA(Aij) * Bjk 
+//        conj(Aij)?
 template<typename T>
 void element_wise_Aij_Bjk_Ckij(char transA, int ni, int nj, int nk, T const* A, int lda, 
         T const* B, int ldb, T* C, int ldc1, int ldc2)
@@ -437,6 +476,7 @@ void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk, T1 const* A, int lda,
     }
 }
 
+// A[n][i][j] * = B[i][j]
 template<typename T, typename T1>
 void inplace_product(int nbatch, int n, int m, T1 const* B, int ldb, std::complex<T> *A, int lda)
 {
@@ -465,6 +505,7 @@ void batched_Tab_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
                              to_address(Kl), to_address(Kr));
 }
 
+// Not used.
 template<typename T, typename Q>
 void batched_Tanb_to_Klr(int nterms, int nwalk, int nocc, int nchol_max,
                     int nchol_tot, int ncholQ, int ncholQ0, device_pointer<int> kdiag,
@@ -515,6 +556,7 @@ void dot_wabn( int nwalk, int nocc, int nchol, R alpha, device_pointer<Q> Tab,
   kernels::dot_wabn(nwalk,nocc,nchol,alpha,to_address(Tab),y,incy);
 }
 
+// Not used.
 template<typename T, typename Q, typename R>
 void dot_wpan_waqn_Fwpq( int nwalk, int nocc, int nchol, R alpha, device_pointer<Q> Tab,
                     device_pointer<T> F)
@@ -601,7 +643,7 @@ void batched_ab_ba( device_pointer<I> n, device_pointer<Q>* A, int lda,
                            T1 alpha, device_pointer<T>* y, int batchSize )
 {
 //  kernels::batched_dot(TA,TB,N,M,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(y),incy);
-    APP_ABORT(" Error: batched_dot not yet available in gpu.\n");
+    APP_ABORT(" Error: batched_ab_ba not yet available in gpu.\n");
 }
 
 template<typename I, typename T, typename Q>
@@ -609,7 +651,7 @@ void batched_diagonal_sum( device_pointer<I> n, device_pointer<Q>* A, int lda,
                            T alpha, device_pointer<T>* y, int batchSize )
 {
 //  kernels::batched_dot(TA,TB,N,M,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(y),incy);
-    APP_ABORT(" Error: batched_dot not yet available in gpu.\n");
+    APP_ABORT(" Error: batched_diagonal_sum not yet available in gpu.\n");
 }
 
 }

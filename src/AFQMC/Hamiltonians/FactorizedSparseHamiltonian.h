@@ -91,7 +91,7 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
   FactorizedSparseHamiltonian(FactorizedSparseHamiltonian const& other) = delete;
   FactorizedSparseHamiltonian(FactorizedSparseHamiltonian && other) = default;
   FactorizedSparseHamiltonian& operator=(FactorizedSparseHamiltonian const& other) = delete;
-  FactorizedSparseHamiltonian& operator=(FactorizedSparseHamiltonian && other) = default;
+  FactorizedSparseHamiltonian& operator=(FactorizedSparseHamiltonian && other) = delete;
 
   boost::multi::array<ValueType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
 
