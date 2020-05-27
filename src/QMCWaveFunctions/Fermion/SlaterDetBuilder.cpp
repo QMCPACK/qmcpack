@@ -511,16 +511,8 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
       if (useGPU == "yes")
       {
-        if (delay_rank > 1)
-        {
-          app_log() << "  Using DiracDeterminantBatched with MatrixDelayedUpdateCUDA engine" << std::endl;
-          adet = new DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
-        }
-        else
-        {
-          app_log() << "  Using DiracDeterminantBatched with MatrixUpdateCUDA engine" << std::endl;
-          adet = new DiracDeterminantBatched<MatrixUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
-        }
+        app_log() << "  Using DiracDeterminantBatched with MatrixDelayedUpdateCUDA engine" << std::endl;
+        adet = new DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
       }
       else
 #endif

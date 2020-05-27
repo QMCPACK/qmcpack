@@ -748,7 +748,6 @@ DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYP
 
 template class DiracDeterminantBatched<>;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-template class DiracDeterminantBatched<MatrixUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 template class DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
