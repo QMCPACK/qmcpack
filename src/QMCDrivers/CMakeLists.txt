@@ -36,6 +36,8 @@ SET(QMCDRIVERS
   WFOpt/QMCCorrelatedSamplingLinearOptimize.cpp
   WFOpt/QMCFixedSampleLinearOptimize.cpp
   WFOpt/QMCWFOptFactoryNew.cpp
+  WFOpt/QMCLinearOptimizeBatched.cpp
+  WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
   Optimizers/DescentEngine.cpp
   Optimizers/HybridEngine.cpp
   WFOpt/QMCCostFunctionBase.cpp
