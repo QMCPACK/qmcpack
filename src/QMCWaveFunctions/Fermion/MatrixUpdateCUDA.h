@@ -216,8 +216,7 @@ public:
   inline void updateRow(Matrix<T, OMPALLOC>& Ainv, int rowchanged, const VVT& phiV, RATIOT c_ratio_in)
   {
     // update the inverse matrix
-    constexpr T cone(1);
-    constexpr T czero(0);
+    constexpr T cone(1), czero(0);
     const int norb = Ainv.rows();
     const int lda  = Ainv.cols();
     resize_updateRow_scratch_arrays(norb, 1);

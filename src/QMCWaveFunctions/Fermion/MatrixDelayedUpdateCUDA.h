@@ -362,7 +362,6 @@ public:
   {
     cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
     cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
-    cublasSetPointerMode(h_cublas, CUBLAS_POINTER_MODE_DEVICE);
     cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
   }
 
@@ -454,8 +453,7 @@ public:
   {
     guard_no_delay();
     // update the inverse matrix
-    constexpr T cone(1);
-    constexpr T czero(0);
+    constexpr T cone(1), czero(0);
     const int norb = Ainv.rows();
     const int lda  = Ainv.cols();
     resize_updateRow_scratch_arrays(norb, 1);
@@ -653,18 +651,19 @@ public:
 */
     {
       const int lda_Binv = Binv_gpu.cols();
-      cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, cone_dev_ptr,
-                                            U_mw_ptr, norb, Ainv_mw_ptr, lda, czero_dev_ptr, tempMat_mw_ptr, lda_Binv,
+      constexpr T cone(1), czero(0), cminusone(-1);
+      cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone,
+                                            U_mw_ptr, norb, Ainv_mw_ptr, lda, &czero, tempMat_mw_ptr, lda_Binv,
                                             nw),
                        "cuBLAS::gemm_batched failed!");
       cudaErrorCheck(CUDA::applyW_batched(hstream, delay_list_mw_ptr, delay_count, tempMat_mw_ptr, lda_Binv, nw),
                      "CUDA::applyW_batched failed!");
       cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count,
-                                            cone_dev_ptr, V_mw_ptr, norb, Binv_mw_ptr, lda_Binv, czero_dev_ptr,
+                                            &cone, V_mw_ptr, norb, Binv_mw_ptr, lda_Binv, &czero,
                                             U_mw_ptr, norb, nw),
                        "cuBLAS::gemm_batched failed!");
       cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count,
-                                            cminusone_dev_ptr, U_mw_ptr, norb, tempMat_mw_ptr, lda_Binv, cone_dev_ptr,
+                                            &cminusone, U_mw_ptr, norb, tempMat_mw_ptr, lda_Binv, &cone,
                                             Ainv_mw_ptr, lda, nw),
                        "cuBLAS::gemm_batched failed!");
     }
