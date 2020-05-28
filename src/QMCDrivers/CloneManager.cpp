@@ -231,6 +231,27 @@ CloneManager::RealType CloneManager::acceptRatio() const
     nAcceptTot += Movers[ip]->nAccept;
     nRejectTot += Movers[ip]->nReject;
   }
+#if defined(__GNUC__) || !defined(NDEBUG)
+  IndexType nAcceptTot_debug = 0;
+  IndexType nRejectTot_debug = 0;
+  std::vector<int> vec(NumThreads);
+  for (int ip = 0; ip < NumThreads; ip++)
+  {
+    vec[ip] = Movers[ip]->nAccept;
+    nAcceptTot_debug += vec[ip];
+    vec[ip] = Movers[ip]->nReject;
+    nRejectTot_debug += vec[ip];
+  }
+  if (nAcceptTot != nAcceptTot_debug || nRejectTot != nRejectTot_debug)
+  {
+    app_warning() << "a potential compiler bug detected!"
+                  << " Overwriting nAcceptTot wrong value " << nAcceptTot << " with correct value " << nAcceptTot_debug << "."
+                  << " Overwriting nAcceptTot wrong value " << nRejectTot << " with correct value " << nRejectTot_debug << "."
+                  << std::endl;
+    nAcceptTot = nAcceptTot_debug;
+    nRejectTot = nRejectTot_debug;
+  }
+#endif
   return static_cast<RealType>(nAcceptTot) / static_cast<RealType>(nAcceptTot + nRejectTot);
 }
 
