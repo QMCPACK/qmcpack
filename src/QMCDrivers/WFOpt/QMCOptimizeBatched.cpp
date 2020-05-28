@@ -150,6 +150,8 @@ void QMCOptimizeBatched::generateSamples()
   h5FileRoot = RootName;
 }
 
+void QMCOptimizeBatched::endSection() { vmcEngine->endSection(); }
+
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
  * @param q current xmlNode
  * @return true if successful
