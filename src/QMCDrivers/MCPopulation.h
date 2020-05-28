@@ -22,9 +22,11 @@
 #include "ParticleBase/ParticleAttrib.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/Walker.h"
+#include "Particle/WalkerElements.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+
 
 namespace qmcplusplus
 {
@@ -116,7 +118,7 @@ public:
    *   * createWalkers must have been called
    *  @{
    */
-  MCPWalker* spawnWalker();
+  WalkerElements spawnWalker();
   void killWalker(MCPWalker&);
   void killLastWalker();
   void createWalkerInplace(UPtr<MCPWalker>& walker_ptr);
@@ -234,6 +236,26 @@ public:
   UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
   UPtrVector<QMCHamiltonian>& get_dead_hamiltonians() { return dead_walker_hamiltonians_; }
 
+  UPtrVector<TrialWaveFunction>& get_twfs() { return walker_trial_wavefunctions_; }
+  UPtrVector<TrialWaveFunction>& get_dead_twfs() { return dead_walker_trial_wavefunctions_; }
+
+  /** Non threadsafe access to walkers and their elements
+   *  
+   *  Prefer to distribute the walker elements and access
+   *  through a crowd to support the concurrency design.
+   *
+   *  You should not use this unless absolutely necessary.
+   *  That doesn't include that you would rather just use
+   *  omp parallel and ignore concurrency.
+   */
+  WalkerElements operator[](const size_t walker_index);
+
+  /** As long as walker WalkerElements is used we need this for unit tests
+   *
+   *  As operator[] don't use it to ignore the concurrency design.
+   */
+  std::vector<WalkerElements> get_walker_elements();
+  
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }

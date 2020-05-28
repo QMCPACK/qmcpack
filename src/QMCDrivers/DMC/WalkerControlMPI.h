@@ -17,7 +17,7 @@
 #define QMCPLUSPLUS_WALKER_CONTROL_MPI_H
 
 #include "QMCDrivers/WalkerControlBase.h"
-
+#include "Particle/WalkerElements.h"
 
 namespace qmcplusplus
 {
@@ -33,22 +33,22 @@ class UnifiedDriverWalkerControlMPITest;
  */
 struct WalkerMessage
 {
-  WalkerControlBase::MCPWalker& walker;
+  WalkerElements walker_elements;
   // i.e. MPI rank
   const int source_rank;
   const int target_rank;
-  WalkerMessage(WalkerControlBase::MCPWalker& walk, const int source, const int target)
-      : walker(walk), source_rank(source), target_rank(target)
+  WalkerMessage(WalkerElements w_elem, const int source, const int target)
+      : walker_elements(w_elem), source_rank(source), target_rank(target)
   {}
 };
 
 /** needed for repressing duplicate messages, this optimization is currently unimplemented.
  */
-inline bool isRepeatedMessage(const WalkerMessage& A, const WalkerMessage& B)
-{
-  // since all the walker references are to one queue of unique_ptrs in MCPopulation
-  return (&A.walker == &B.walker) && (A.target_rank == B.target_rank);
-}
+/* inline bool isRepeatedMessage(const WalkerMessage& A, const WalkerMessage& B) */
+/* { */
+/*   // since all the walker references are to one queue of unique_ptrs in MCPopulation */
+/*   return (&A.walker == &B.walker) && (A.target_rank == B.target_rank); */
+/* } */
 
 /** Class to handle walker controls with simple global sum
  *

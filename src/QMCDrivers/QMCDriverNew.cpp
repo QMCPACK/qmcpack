@@ -393,18 +393,25 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   for (ParticleSet& pset : walker_elecs)
     pset.update();
 
-  // Added to match legacy.
+  // Unfortunately we reuse the DataSet over sections so this state manipulation is needed.
   auto cleanDataSet = [](MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& twf) {
     if (walker.DataSet.size())
-      walker.DataSet.clear();
-    walker.DataSet.rewind();
-    walker.registerData();
-    twf.registerData(pset, walker.DataSet);
-    walker.DataSet.allocate();
+    {
+      //walker.DataSet.zero();
+      //walker.DataSet.rewind();
+    }
+    else
+    {
+      walker.registerData();
+      twf.registerData(pset, walker.DataSet);
+      walker.DataSet.allocate();
+    }
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     cleanDataSet(walkers[iw], walker_elecs[iw], walker_twfs[iw]);
 
+  // this I'm sure causes a problem since perhaps the rewind shouldn't happen.
+  
   auto copyFrom = [](TrialWaveFunction& twf, ParticleSet& pset, WFBuffer& wfb) { twf.copyFromBuffer(pset, wfb); };
   for (int iw = 0; iw < crowd.size(); ++iw)
     copyFrom(walker_twfs[iw], walker_elecs[iw], mcp_buffers[iw]);

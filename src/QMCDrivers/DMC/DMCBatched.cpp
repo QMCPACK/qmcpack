@@ -265,8 +265,10 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
       for (int iw = 0; iw < num_walkers; ++iw)
       {
+        // Allows the rng to be scrutinized easily in debugger
+        auto the_rng = step_context.get_random_gen()();
         if ((!rejects[iw]) && prob[iw] >= std::numeric_limits<RealType>::epsilon() &&
-            step_context.get_random_gen()() < prob[iw])
+            the_rng < prob[iw])
         {
           did_walker_move[iw] += 1;
           crowd.incAccept();
@@ -387,6 +389,7 @@ DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& d
   {
     if (did_walker_move[iw] > 0)
     {
+      assert(refs.rr_accepted[iw] > 0);
       these.moved.walkers.push_back(refs.walkers[iw]);
       these.moved.walker_twfs.push_back(refs.walker_twfs[iw]);
       these.moved.walker_hamiltonians.push_back(refs.walker_hamiltonians[iw]);
@@ -400,6 +403,7 @@ DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& d
     }
     else
     {
+      assert(refs.rr_accepted[iw] == 0.0);
       these.stalled.walkers.push_back(refs.walkers[iw]);
       these.stalled.walker_twfs.push_back(refs.walker_twfs[iw]);
       these.stalled.walker_hamiltonians.push_back(refs.walker_hamiltonians[iw]);

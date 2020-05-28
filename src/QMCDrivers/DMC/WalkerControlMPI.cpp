@@ -182,8 +182,6 @@ QMCTraits::FullPrecRealType WalkerControlMPI::branch(int iter, MCPopulation& pop
   WalkerControlBase::onRankKill(pop, adjust);
   WalkerControlBase::onRankSpawn(pop, adjust);
 
-  assert(pop.get_num_local_walkers() == num_per_node[MyContext]);
-
   if (adjust.num_walkers != num_per_node[MyContext])
   {
     std::ostringstream error_message;
@@ -216,7 +214,6 @@ void WalkerControlMPI::determineNewWalkerPopulation(int cur_pop,
                                                     std::vector<int>& minus,
                                                     std::vector<int>& plus)
 {
-
   FairDivideLow(cur_pop, num_contexts, fair_offset);
   for (int ip = 0; ip < num_contexts; ip++)
   {
@@ -503,23 +500,30 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   //if (plus.size() == 0)
   //  return 0;
 
-
+  // local struct for sort vector
+  // std::sort requires reference_wrapper for w_elem
+  struct CopiesAndWE
+  {
+    int copies;
+    std::reference_wrapper<WalkerElements> w_elem;
+  };
   // sort good walkers by the number of copies
-  std::vector<std::pair<int, MCPWalker&>> sorted_good_walkers;
+  std::vector<CopiesAndWE> sorted_good_walkers;
   for (int iw = 0; iw < adjust.copies_to_make.size(); iw++)
-    sorted_good_walkers.push_back(std::make_pair(adjust.copies_to_make[iw], adjust.good_walkers[iw]));
+    sorted_good_walkers.push_back(CopiesAndWE{adjust.copies_to_make[iw], adjust.good_walkers[iw]});
 
   // Sort only on the number of copies
-  std::sort(sorted_good_walkers.begin(), sorted_good_walkers.end(), [](auto& a, auto& b) { return a.first < b.first; });
+  std::sort(sorted_good_walkers.begin(), sorted_good_walkers.end(),
+            [](CopiesAndWE& a, CopiesAndWE& b) { return a.copies < b.copies; });
 
   int nswap = plus.size();
 
   std::vector<WalkerMessage> send_message_list;
   // overallocated by number of duplicate messages but message isn't big.
   std::vector<WalkerMessage> recv_message_list;
-  RefVector<MCPWalker> new_walkers;
+  std::vector<WalkerElements> new_walkers;
   // Their data needs to not get written over until we are done.
-  RefVector<MCPWalker> zombies;
+  RefVector<WalkerElements> zombies;
   for (int ic = 0; ic < nswap; ic++)
   {
     if (minus[ic] == MyContext)
@@ -527,13 +531,13 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
       // always send the last good walker or if we're out send the first zombie
       if (!sorted_good_walkers.empty())
       {
-        send_message_list.push_back(WalkerMessage{sorted_good_walkers.back().second, minus[ic], plus[ic]});
-        --(sorted_good_walkers.back().first);
-        if (sorted_good_walkers.back().first < 0)
+        send_message_list.push_back(WalkerMessage{sorted_good_walkers.back().w_elem, minus[ic], plus[ic]});
+        --(sorted_good_walkers.back().copies);
+        if (sorted_good_walkers.back().copies < 0)
         {
           // Danger possible race condition if this dead walker ends up back in the pool
           // so temporary refvector for those to be killed.
-          zombies.push_back(sorted_good_walkers.back().second);
+          zombies.push_back(sorted_good_walkers.back().w_elem);
           sorted_good_walkers.pop_back();
         }
       }
@@ -547,12 +551,10 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
     {
       if (adjust.bad_walkers.size() > 0)
       {
-        pop.killWalker(adjust.bad_walkers.back());
+        pop.killWalker(adjust.bad_walkers.back().walker);
         adjust.bad_walkers.pop_back();
       }
-      MCPWalker& spawned_walker = *(pop.spawnWalker());
-      new_walkers.push_back(spawned_walker);
-
+      new_walkers.push_back(pop.spawnWalker());
       recv_message_list.push_back(WalkerMessage{new_walkers.back(), minus[ic], plus[ic]});
     }
   }
@@ -563,10 +565,14 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   if (send_message_list.size() > 0)
   {
     std::for_each(send_message_list.begin(), send_message_list.end(), [&send_requests, this](WalkerMessage& message) {
-      MCPWalker& this_walker = message.walker;
+      MCPWalker& this_walker = message.walker_elements.walker;
       this_walker.updateBuffer();
-      send_requests.emplace_back(
-          myComm->comm.isend_n(message.walker.DataSet.data(), message.walker.DataSet.size(), message.target_rank));
+      ParticleSet& this_pset      = message.walker_elements.pset;
+      TrialWaveFunction& this_twf = message.walker_elements.twf;
+      this_twf.updateBuffer(this_pset, this_walker.DataSet);
+      send_requests.emplace_back(myComm->comm.isend_n(message.walker_elements.walker.DataSet.data(),
+                                                      message.walker_elements.walker.DataSet.size(),
+                                                      message.target_rank));
       //std::cout << "DataSet size: " << message.walker.DataSet.size() << '\n';
     });
   }
@@ -577,10 +583,11 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   {
     std::for_each(recv_message_list.begin(), recv_message_list.end(), [&recv_requests, this](WalkerMessage& message) {
       //MCPWalker& walker = message.walker;
-      recv_requests.emplace_back(
-          myComm->comm.ireceive_n(message.walker.DataSet.data(), message.walker.DataSet.size(), message.source_rank));
-      size_t dsize = message.walker.DataSet.size();
-      //std::cout << "DataSet size: " << dsize << '\n';
+      recv_requests.emplace_back(myComm->comm.ireceive_n(message.walker_elements.walker.DataSet.data(),
+                                                         message.walker_elements.walker.DataSet.size(),
+                                                         message.source_rank));
+      size_t dsize = message.walker_elements.walker.DataSet.size();
+      std::cout << "DataSet size: " << dsize << '\n';
     });
   }
 
@@ -602,11 +609,17 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
 
         if (!recv_completed[im] && recv_requests[im].completed())
         {
-          MCPWalker& this_walker = recv_message_list[im].walker;
+          MCPWalker& this_walker = recv_message_list[im].walker_elements.walker;
           this_walker.copyFromBuffer();
-          #ifndef NDEBUG
+#ifndef NDEBUG
           this_walker.set_has_been_on_wire(true);
-          #endif
+#endif
+          ParticleSet& this_pset      = recv_message_list[im].walker_elements.pset;
+          this_pset.loadWalker(this_walker, true);
+          TrialWaveFunction& this_twf = recv_message_list[im].walker_elements.twf;
+          this_twf.copyFromBuffer(this_pset, this_walker.DataSet);
+          this_twf.evaluateLog(this_pset);
+          this_twf.updateBuffer(this_pset, this_walker.DataSet);
           recv_completed[im] = 1;
         }
       }
@@ -640,18 +653,18 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   }
 
 
-  std::for_each(zombies.begin(), zombies.end(), [&pop](MCPWalker& zombie) { pop.killWalker(zombie); });
+  std::for_each(zombies.begin(), zombies.end(), [&pop](WalkerElements& zombie) { pop.killWalker(zombie.walker); });
   adjust.good_walkers.clear();
   adjust.copies_to_make.clear();
   for (int iw = 0; iw < sorted_good_walkers.size(); ++iw)
   {
-    assert(sorted_good_walkers[iw].first >= 0);
-    adjust.good_walkers.push_back(sorted_good_walkers[iw].second);
-    adjust.copies_to_make.push_back(sorted_good_walkers[iw].first);
+    assert(sorted_good_walkers[iw].copies >= 0);
+    adjust.good_walkers.push_back(sorted_good_walkers[iw].w_elem);
+    adjust.copies_to_make.push_back(sorted_good_walkers[iw].copies);
   }
   for (int iw = 0; iw < new_walkers.size(); ++iw)
   {
-    assert(new_walkers[iw].get().get_has_been_on_wire());
+    assert(new_walkers[iw].walker.get_has_been_on_wire());
     adjust.good_walkers.push_back(new_walkers[iw]);
     adjust.copies_to_make.push_back(0);
   }

@@ -89,12 +89,11 @@ public:
   void accumulate(int global_walkers, RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets)
   {
     block_weight_ += walkers.size();
-    RealType norm             = 1.0 / global_walkers;
+    //Don't normalize we only divide once after reduction.
+    //RealType norm             = 1.0 / global_walkers;
     int num_scalar_estimators = scalar_estimators_.size();
-    // This seems like it should really be a pset per walker but so far its just used for
-    // things that should be a POD argument
     for (int i = 0; i < num_scalar_estimators; ++i)
-      scalar_estimators_[i]->accumulate(global_walkers, walkers, norm);
+      scalar_estimators_[i]->accumulate(global_walkers, walkers, 1);
   }
 
   RefVector<EstimatorType> get_scalar_estimators() { return convertPtrToRefVector(scalar_estimators_); }

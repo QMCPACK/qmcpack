@@ -247,7 +247,6 @@ struct WaveFunctionComponent : public QMCTraits
                            int iat,
                            std::vector<GradType>& grad_now)
   {
-#pragma omp parallel for
     for (int iw = 0; iw < WFC_list.size(); iw++)
       grad_now[iw] = WFC_list[iw].get().evalGrad(P_list[iw].get(), iat);
   }

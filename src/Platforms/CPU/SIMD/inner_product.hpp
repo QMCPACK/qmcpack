@@ -157,6 +157,26 @@ inline TinyVector<T, D> dot(const T* a, const TinyVector<T, D>* b, int n)
   return res;
 }
 
+#ifndef NDEBUG
+/** x*y dot product of two vectors using the same argument list for blas::dot
+     * @param n size
+     * @param x starting address of x 
+     * @param incx stride of x
+     * @param y starting address of y 
+     * @param incx stride of y
+     * @param return \f$\sum_i x[i+=incx]*y[i+=incy]\f$
+     */
+template<typename T>
+T dot(int n, const T* restrict x, int incx, const T* restrict y, int incy)
+{
+  const int xmax = incx * n;
+  T res          = 0.0;
+  for (int ic = 0, jc = 0; ic < xmax; ic += incx, jc += incy)
+    res += x[ic] * y[jc];
+  return res;
+}
+
+#else
 /** x*y dot product of two vectors using the same argument list for blas::dot
      * @param n size
      * @param x starting address of x 
@@ -174,6 +194,7 @@ inline T dot(int n, const T* restrict x, int incx, const T* restrict y, int incy
     res += x[ic] * y[jc];
   return res;
 }
+#endif
 
 template<typename T>
 inline void accumulate_phases(const int& n,

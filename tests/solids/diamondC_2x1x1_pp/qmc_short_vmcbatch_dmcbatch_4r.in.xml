@@ -96,6 +96,7 @@
    <qmc method="dmc_batch" move="pbyp" checkpoint="-1">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="total_walkers"> 256 </parameter>
+     <parameter name="reserve"> 2.0 </parameter>
      <parameter name="reconfiguration">   no </parameter>
      <parameter name="warmupSteps">  100 </parameter>
      <parameter name="timestep">  0.005 </parameter>

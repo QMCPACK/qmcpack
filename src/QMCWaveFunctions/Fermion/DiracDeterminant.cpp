@@ -15,6 +15,8 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <stdexcept>
+#include <complex>
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "Numerics/DeterminantOperators.h"
@@ -61,9 +63,12 @@ void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMa
 
 
 ///reset the size: with the number of particles and number of orbtials
+/// Reusing a Diracdeterminant in this fashion should not be allowed.
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
 {
+  if (Bytes_in_WFBuffer > 0)
+    throw std::runtime_error("DiracDeterimnant just went out of sync with buffer");
   int norb = morb;
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
@@ -94,6 +99,14 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   RatioTimer.stop();
+#ifndef NDEBUG
+  ValueType g_norm = simd::dot(g.data(), g.data(), g.Size);
+  if (g_norm < std::numeric_limits<QMCTraits::ValueType>::epsilon())
+  {
+    std::cerr << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
+    throw std::runtime_error("gradient of zero");
+  }
+#endif
   return g;
 }
 
@@ -306,6 +319,7 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
   }
   else
   {
+    throw std::runtime_error("You really should know whether you have registered this objects data previously!");
     buf.forward(Bytes_in_WFBuffer);
   }
   buf.add(LogValue);

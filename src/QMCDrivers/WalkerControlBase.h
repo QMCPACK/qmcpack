@@ -20,6 +20,7 @@
 
 #include "Configuration.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "Particle/WalkerElements.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
@@ -86,9 +87,9 @@ public:
   struct PopulationAdjustment
   {
     int num_walkers{0}; // This is the number of walkers we are adjusting to
-    RefVector<MCPWalker> good_walkers;
+    std::vector<WalkerElements> good_walkers;
     std::vector<int> copies_to_make;
-    RefVector<MCPWalker> bad_walkers;
+    std::vector<WalkerElements> bad_walkers;
   };
 
   struct WalkerAdjustmentCriteria
@@ -303,18 +304,18 @@ private:
   /** unified: Refactoring possibly dead releaseNodesCode out
    * @{
    */
-  static auto rn_walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustmentCriteria wac);
+  static auto rn_walkerCalcAdjust(MCPWalker* walker, WalkerAdjustmentCriteria wac);
 
   static auto addReleaseNodeWalkers(PopulationAdjustment& adjust,
                                     WalkerAdjustmentCriteria& wac,
-                                    RefVector<MCPWalker>& good_walkers_rn,
+                                    std::vector<WalkerElements>& good_walkers_rn,
                                     std::vector<int>& copies_to_make_rn);
   /**}@*/
 
   /** unified: CalcAdjust segmenting
    * @{
    */
-  static auto walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustmentCriteria wac);
+  static auto walkerCalcAdjust(MCPWalker* walker, WalkerAdjustmentCriteria wac);
 
   static void updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data,
                                           WalkerAdjustmentCriteria wac,
