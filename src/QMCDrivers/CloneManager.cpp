@@ -246,7 +246,7 @@ CloneManager::RealType CloneManager::acceptRatio() const
   {
     app_warning() << "a potential compiler bug detected!"
                   << " Overwriting nAcceptTot wrong value " << nAcceptTot << " with correct value " << nAcceptTot_debug << "."
-                  << " Overwriting nAcceptTot wrong value " << nRejectTot << " with correct value " << nRejectTot_debug << "."
+                  << " Overwriting nRejectTot wrong value " << nRejectTot << " with correct value " << nRejectTot_debug << "."
                   << std::endl;
     nAcceptTot = nAcceptTot_debug;
     nRejectTot = nRejectTot_debug;
