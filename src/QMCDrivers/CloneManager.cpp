@@ -232,6 +232,8 @@ CloneManager::RealType CloneManager::acceptRatio() const
     nRejectTot += Movers[ip]->nReject;
   }
 #if defined(__GNUC__) || !defined(NDEBUG)
+// Attempt to detect compiler vectorization errors by computing
+// acceptance ratio in a different way to the above loop
   IndexType nAcceptTot_debug = 0;
   IndexType nRejectTot_debug = 0;
   std::vector<int> vec(NumThreads);
@@ -244,7 +246,7 @@ CloneManager::RealType CloneManager::acceptRatio() const
   }
   if (nAcceptTot != nAcceptTot_debug || nRejectTot != nRejectTot_debug)
   {
-    app_warning() << "a potential compiler bug detected!"
+    app_warning() << " Potential compiler bug detected!"
                   << " Overwriting nAcceptTot wrong value " << nAcceptTot << " with correct value " << nAcceptTot_debug << "."
                   << " Overwriting nRejectTot wrong value " << nRejectTot << " with correct value " << nRejectTot_debug << "."
                   << std::endl;
