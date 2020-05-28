@@ -149,7 +149,7 @@ class Real3IndexFactorization_batched_v2
     Real3IndexFactorization_batched_v2(const Real3IndexFactorization_batched_v2& other) = delete;
     Real3IndexFactorization_batched_v2& operator=(const Real3IndexFactorization_batched_v2& other) = delete;
     Real3IndexFactorization_batched_v2(Real3IndexFactorization_batched_v2&& other) = default;
-    Real3IndexFactorization_batched_v2& operator=(Real3IndexFactorization_batched_v2&& other) = default;
+    Real3IndexFactorization_batched_v2& operator=(Real3IndexFactorization_batched_v2&& other) = delete;
 
     boost::multi::array<ComplexType,2> getOneBodyPropagatorMatrix(TaskGroup_& TG, boost::multi::array<ComplexType,1> const& vMF) 
     {

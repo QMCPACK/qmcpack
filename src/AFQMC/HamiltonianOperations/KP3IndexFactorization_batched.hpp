@@ -164,7 +164,7 @@ class KP3IndexFactorization_batched
         //LQKank(std::move(move_vector<LQKankMatrix>(std::move(vak),TG.Node()))),
         LQKank(std::move(move_vector<LQKankMatrix>(std::move(vak)))),
         //needs_copy(true),
-        needs_copy(not std::is_same<decltype(make_device_ptr(LQKank[0].origin())),
+        needs_copy(not std::is_same<decltype(ma::pointer_dispatch(LQKank[0].origin())),
                                 sp_pointer>::value),
         LQKakn(std::move(move_vector<shmSpMatrix>(std::move(vakn)))),
         LQKbnl(std::move(move_vector<shmSpMatrix>(std::move(vbl)))),
