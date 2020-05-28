@@ -81,6 +81,9 @@ void QMCOptimizeBatched::addConfiguration(const std::string& a)
  */
 bool QMCOptimizeBatched::run()
 {
+  QMCCostFunction* cost = dynamic_cast<QMCCostFunction*>(optTarget.get());
+  cost->makeClones(W, Psi, H);
+
   //generate samples
   generateSamples();
 
