@@ -24,10 +24,6 @@
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
 #include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
-#if defined(QMC_CUDA)
-#include "QMCDrivers/VMC/VMC_CUDA.h"
-#include "QMCDrivers/WFOpt/QMCCostFunctionCUDA.h"
-#endif
 #include "QMCHamiltonians/HamiltonianPool.h"
 
 namespace qmcplusplus
@@ -191,12 +187,7 @@ bool QMCOptimizeBatched::put(xmlNodePtr q)
   //create VMC engine
   if (vmcEngine == 0)
   {
-#if defined(QMC_CUDA)
-    if (useGPU == "yes")
-      vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
-    else
-#endif
-      vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
+    vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
   vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);
@@ -237,12 +228,7 @@ bool QMCOptimizeBatched::put(xmlNodePtr q)
     optSolver->put(optNode);
   bool success = true;
   //allways reset optTarget
-#if defined(QMC_CUDA)
-  if (useGPU == "yes")
-    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
-  else
-#endif
-    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
   optTarget->setStream(&app_log());
   success = optTarget->put(q);
 
