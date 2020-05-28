@@ -22,19 +22,22 @@
 #include "Optimize/CGOptimization.h"
 #include "Optimize/testDerivOptimization.h"
 #include "Optimize/DampedDynamics.h"
-//#include "QMCDrivers/QMCCostFunctionSingle.h"
-#include "QMCDrivers/VMC/VMC.h"
+#include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
 
 namespace qmcplusplus
 {
 QMCOptimizeBatched::QMCOptimizeBatched(MCWalkerConfiguration& w,
-                         TrialWaveFunction& psi,
-                         QMCHamiltonian& h,
-                         HamiltonianPool& hpool,
-                         WaveFunctionPool& ppool,
-                         Communicate* comm)
+                                       TrialWaveFunction& psi,
+                                       QMCHamiltonian& h,
+                                       HamiltonianPool& hpool,
+                                       WaveFunctionPool& ppool,
+                                       QMCDriverInput&& qmcdriver_input,
+                                       VMCDriverInput&& vmcdriver_input,
+                                       MCPopulation& population,
+                                       SampleStack& samples,
+                                       Communicate* comm)
     : QMCDriver(w, psi, h, ppool, comm),
       PartID(0),
       NumParts(1),
@@ -42,7 +45,11 @@ QMCOptimizeBatched::QMCOptimizeBatched(MCWalkerConfiguration& w,
       optSolver(0),
       vmcEngine(0),
       wfNode(NULL),
-      optNode(NULL)
+      optNode(NULL),
+      qmcdriver_input_(qmcdriver_input),
+      vmcdriver_input_(vmcdriver_input),
+      population_(population),
+      samples_(samples)
 {
   IsQMCDriver = false;
   //set the optimization flag
@@ -122,11 +129,12 @@ void QMCOptimizeBatched::generateSamples()
   Timer t1;
   app_log() << "<optimization-report>" << std::endl;
 
-  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 1);
-  vmcEngine->qmc_driver_mode.set(QMC_OPTIMIZE, 1);
-  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 0);
+  vmcEngine->qmc_driver_mode_.set(QMC_WARMUP, 1);
+  vmcEngine->qmc_driver_mode_.set(QMC_OPTIMIZE, 1);
+  vmcEngine->qmc_driver_mode_.set(QMC_WARMUP, 0);
 
-  vmcEngine->setValue("current", 0); //reset CurrentStep
+  // TODO - understand what this does
+  //vmcEngine->setValue("current", 0); //reset CurrentStep
   app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << std::endl;
   t1.restart();
   branchEngine->flush(0);
@@ -135,8 +143,10 @@ void QMCOptimizeBatched::generateSamples()
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "</vmc>" << std::endl;
   //write parameter history and energies to the parameter file in the trial wave function through opttarget
-  FullPrecRealType e, w, var;
-  vmcEngine->Estimators->getEnergyAndWeight(e, w, var);
+  // TODO - understand what this does - values are not used, but the side effects may be important?
+  //FullPrecRealType e, w, var;
+  //vmcEngine->Estimators->getEnergyAndWeight(e, w, var);
+
 
   h5FileRoot = RootName;
 }
@@ -181,7 +191,11 @@ bool QMCOptimizeBatched::put(xmlNodePtr q)
   //create VMC engine
   if (vmcEngine == 0)
   {
-    vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
+    QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
+    VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
+    vmcEngine = new VMCBatched(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy), population_, Psi, H,
+                               psiPool, samples_, myComm);
+
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
   vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);

@@ -14,20 +14,25 @@
 
 
 /** @file QMCOptimizeBatched.h
- * @brief Definition of QMCDriver which performs VMC and optimization.
+ * @brief Definition of QMCDriver which performs VMC (using batched driver) and optimization.
  */
 #ifndef QMCPLUSPLUS_QMCOPTIMIZATION_BATCH_H
 #define QMCPLUSPLUS_QMCOPTIMIZATION_BATCH_H
 
 #include <memory>
 #include "QMCDrivers/QMCDriver.h"
+#include "QMCDrivers/QMCDriverNew.h"
+#include "QMCDrivers/QMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "Optimize/OptimizeBase.h"
+
 
 namespace qmcplusplus
 {
 ///forward declaration of a cost function
 class QMCCostFunctionBase;
 class HamiltonianPool;
+class MCPopulation;
 
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
@@ -41,11 +46,15 @@ class QMCOptimizeBatched : public QMCDriver
 public:
   ///Constructor.
   QMCOptimizeBatched(MCWalkerConfiguration& w,
-              TrialWaveFunction& psi,
-              QMCHamiltonian& h,
-              HamiltonianPool& hpool,
-              WaveFunctionPool& ppool,
-              Communicate* comm);
+                     TrialWaveFunction& psi,
+                     QMCHamiltonian& h,
+                     HamiltonianPool& hpool,
+                     WaveFunctionPool& ppool,
+                     QMCDriverInput&& qmcdriver_input,
+                     VMCDriverInput&& vmcdriver_input,
+                     MCPopulation& population,
+                     SampleStack& samples,
+                     Communicate* comm);
 
   ///Destructor
   ~QMCOptimizeBatched();
@@ -77,7 +86,7 @@ private:
   ///solver
   MinimizerBase<RealType>* optSolver;
   ///vmc engine
-  QMCDriver* vmcEngine;
+  QMCDriverNew* vmcEngine;
   ///xml node to be dumped
   xmlNodePtr wfNode;
   ///xml node for optimizer
@@ -92,6 +101,12 @@ private:
   QMCOptimizeBatched& operator=(const QMCOptimizeBatched&) = delete;
 
   void generateSamples();
+
+  QMCDriverInput qmcdriver_input_;
+  VMCDriverInput vmcdriver_input_;
+  MCPopulation& population_;
+  SampleStack& samples_;
+
 };
 } // namespace qmcplusplus
 #endif
