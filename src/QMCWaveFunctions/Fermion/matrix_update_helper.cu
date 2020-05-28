@@ -182,19 +182,19 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
 
 template<typename T, int COLBS>
 __global__ void add_delay_list_save_y_VGL_kernel(int* const delay_list[],
-                                                const int rowchanged,
-                                                const int delay_count,
-                                                T* const binv[],
-                                                const int binv_lda,
-                                                const T* const ratio_inv,
-                                                const T* const phi_in[],
-                                                const T* const dphi_in[],
-                                                const T* const d2phi_in[],
-                                                T* const phi_out[],
-                                                T* const dphi_out[],
-                                                T* const d2phi_out[],
-                                                const int norb,
-                                                const int n_accepted)
+                                                 const int rowchanged,
+                                                 const int delay_count,
+                                                 T* const binv[],
+                                                 const int binv_lda,
+                                                 const T* const ratio_inv,
+                                                 const T* const phi_in[],
+                                                 const T* const dphi_in[],
+                                                 const T* const d2phi_in[],
+                                                 T* const phi_out[],
+                                                 T* const dphi_out[],
+                                                 T* const d2phi_out[],
+                                                 const int norb,
+                                                 const int n_accepted)
 {
   const int tid = threadIdx.x;
   const int iw  = blockIdx.x;

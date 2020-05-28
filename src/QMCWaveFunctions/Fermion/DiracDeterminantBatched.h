@@ -227,13 +227,15 @@ private:
 
   /// timers
   NewTimer &D2HTimer, &H2DTimer;
+
 protected:
   int ndelay;
 };
 
 extern template class DiracDeterminantBatched<>;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-extern template class DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+extern template class DiracDeterminantBatched<
+    MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus
