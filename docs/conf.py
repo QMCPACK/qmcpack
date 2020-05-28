@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'QMC Manual'
-copyright = '2020, John Batson'
-author = 'John Batson'
+copyright = '2020, QMCPACK Developers'
+author = 'QMCPACK Developers'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0.1'
