@@ -188,6 +188,15 @@ int main(int argc, char** argv)
     Communicate* qmcComm = OHMMS::Controller;
     if (inputs.size() > 1)
     {
+      if (inputs.size() > OHMMS::Controller->size())
+      {
+        std::ostringstream msg;
+        msg << "main(). Current " << OHMMS::Controller->size() << " MPI ranks cannot accommodate all the "
+            << inputs.size() << " individual calculations in the ensemble. "
+            << "Increase the number of MPI ranks or reduce the number of calculations."
+            << std::endl;
+        OHMMS::Controller->barrier_and_abort(msg.str());
+      }
       qmcComm               = new Communicate(*OHMMS::Controller, inputs.size());
       qmc_common.mpi_groups = inputs.size();
     }
