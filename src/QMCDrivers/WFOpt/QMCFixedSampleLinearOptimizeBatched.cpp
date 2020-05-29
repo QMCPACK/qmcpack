@@ -28,10 +28,6 @@
 #include "Numerics/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include <cassert>
-#if defined(QMC_CUDA)
-#include "QMCDrivers/VMC/VMC_CUDA.h"
-#include "QMCDrivers/WFOpt/QMCCostFunctionCUDA.h"
-#endif
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/random.h"
@@ -550,12 +546,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml, cons
   // create VMC engine
   // if (vmcEngine == 0)
   // {
-#if defined(QMC_CUDA)
-  if (useGPU)
-    vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
-  else
-#endif
-    vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
+  vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   // }
 
@@ -565,12 +556,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml, cons
 
   bool success = true;
   //allways reset optTarget
-#if defined(QMC_CUDA)
-  if (useGPU)
-    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
-  else
-#endif
-    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
   optTarget->setStream(&app_log());
   if (reportH5)
     optTarget->reportH5 = true;
@@ -1198,11 +1184,6 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   parameterDirections.assign(N, 0.0);
 
   // compute the initial cost
-#ifdef QMC_CUDA
-  // Ye : can't call computedCost directly, internal data was not correct for ham,ovl matrices.
-  // more investiation is needed.
-  const RealType initCost = optTarget->Cost(true);
-#else
   const RealType initCost = optTarget->computedCost();
 #endif
 

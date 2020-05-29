@@ -29,10 +29,6 @@
 #include "Numerics/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include <cassert>
-#if defined(QMC_CUDA)
-#include "QMCDrivers/VMC/VMC_CUDA.h"
-#include "QMCDrivers/WFOpt/QMCCostFunctionCUDA.h"
-#endif
 #include "Numerics/LinearFit.h"
 #include <iostream>
 #include <fstream>
@@ -655,24 +651,14 @@ bool QMCLinearOptimizeBatched::put(xmlNodePtr q)
   NumOfVMCWalkers = W.getActiveWalkers();
   bool success    = true;
   //allways reset optTarget
-#if defined(QMC_CUDA)
-  if (useGPU == "yes")
-    optTarget = std::make_unique<QMCCostFunctionCUDA>(W, Psi, H, myComm);
-  else
-#endif
-    optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
   optTarget->setStream(&app_log());
   success = optTarget->put(q);
 
   //create VMC engine
   if (vmcEngine == 0)
   {
-#if defined(QMC_CUDA)
-    if (useGPU == "yes")
-      vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
-    else
-#endif
-      vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
+    vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
 
