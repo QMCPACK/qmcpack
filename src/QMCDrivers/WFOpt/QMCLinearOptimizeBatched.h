@@ -91,7 +91,7 @@ public:
   ///Dimension of matrix and number of parameters
   int N, numParams;
   ///vmc engine
-  std::unique_ptr<QMCDriver> vmcEngine;
+  std::unique_ptr<QMCDriverNew> vmcEngine;
   ///xml node to be dumped
   xmlNodePtr wfNode;
   ///xml node for optimizer

@@ -20,7 +20,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 //#if defined(ENABLE_OPENMP)
-#include "QMCDrivers/VMC/VMC.h"
+#include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 //#endif
 //#include "QMCDrivers/VMC/VMCSingle.h"
@@ -176,10 +176,12 @@ void QMCLinearOptimizeBatched::finish()
 void QMCLinearOptimizeBatched::generateSamples()
 {
   app_log() << "<optimization-report>" << std::endl;
-  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 1);
-  vmcEngine->qmc_driver_mode.set(QMC_OPTIMIZE, 1);
-  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 0);
-  vmcEngine->setValue("current", 0); //reset CurrentStep
+  vmcEngine->qmc_driver_mode_.set(QMC_WARMUP, 1);
+  vmcEngine->qmc_driver_mode_.set(QMC_OPTIMIZE, 1);
+  vmcEngine->qmc_driver_mode_.set(QMC_WARMUP, 0);
+
+  // TODO - understand what this does
+  //vmcEngine->setValue("current", 0); //reset CurrentStep
   app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << std::endl;
   t1.restart();
   branchEngine->flush(0);
@@ -188,8 +190,9 @@ void QMCLinearOptimizeBatched::generateSamples()
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "</vmc>" << std::endl;
   //write parameter history and energies to the parameter file in the trial wave function through opttarget
-  FullPrecRealType e, w, var;
-  vmcEngine->Estimators->getEnergyAndWeight(e, w, var);
+  // TODO - understand what this does - values are not used, but the side effects may be important?
+  //FullPrecRealType e, w, var;
+  //vmcEngine->Estimators->getEnergyAndWeight(e, w, var);
   h5FileRoot = RootName;
 }
 
@@ -649,7 +652,10 @@ bool QMCLinearOptimizeBatched::put(xmlNodePtr q)
   //create VMC engine
   if (vmcEngine == 0)
   {
-    vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
+    QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
+    VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
+    vmcEngine = std::make_unique<VMCBatched>(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy), population_, Psi, H, psiPool, samples_, myComm);
+
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
 

@@ -22,7 +22,7 @@
 #include "Message/CommOperators.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
-#include "QMCDrivers/VMC/VMC.h"
+#include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "Numerics/Blasf.h"
@@ -559,8 +559,11 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml, cons
   // create VMC engine
   // if (vmcEngine == 0)
   // {
-  vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
+  QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
+  VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
+  vmcEngine = std::make_unique<VMCBatched>(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy), population_, Psi, H, psiPool, samples_, myComm);
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
+
   // }
 
 
