@@ -177,24 +177,11 @@ void QMCLinearOptimizeBatched::generateSamples()
 {
   app_log() << "<optimization-report>" << std::endl;
   vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 1);
-  //  vmcEngine->run();
-  //  vmcEngine->setValue("blocks",nBlocks);
-  //  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
-  //  app_log() << "</vmc>" << std::endl;
-  //}
-  //     if (W.getActiveWalkers()>NumOfVMCWalkers)
-  //     {
-  //         W.destroyWalkers(W.getActiveWalkers()-NumOfVMCWalkers);
-  //         app_log() << "  QMCLinearOptimizeBatched::generateSamples removed walkers." << std::endl;
-  //         app_log() << "  Number of Walkers per node " << W.getActiveWalkers() << std::endl;
-  //     }
   vmcEngine->qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 0);
-  //vmcEngine->setValue("recordWalkers",1);//set record
   vmcEngine->setValue("current", 0); //reset CurrentStep
   app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << std::endl;
   t1.restart();
-  //     W.reset();
   branchEngine->flush(0);
   branchEngine->reset();
   vmcEngine->run();
@@ -203,10 +190,6 @@ void QMCLinearOptimizeBatched::generateSamples()
   //write parameter history and energies to the parameter file in the trial wave function through opttarget
   FullPrecRealType e, w, var;
   vmcEngine->Estimators->getEnergyAndWeight(e, w, var);
-  //     NumOfVMCWalkers=W.getActiveWalkers();
-  //branchEngine->Eref=vmcEngine->getBranchEngine()->Eref;
-  //         branchEngine->setTrialEnergy(vmcEngine->getBranchEngine()->getEref());
-  //set the h5File to the current RootName
   h5FileRoot = RootName;
 }
 
