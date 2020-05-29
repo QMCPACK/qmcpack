@@ -13,11 +13,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file QMCLinearOptimize.h
+/** @file QMCLinearOptimizeBatched.h
  * @brief Definition of QMCDriver which performs VMC and optimization.
  */
-#ifndef QMCPLUSPLUS_QMCLINEAROPTIMIZATION_VMCSINGLE_H
-#define QMCPLUSPLUS_QMCLINEAROPTIMIZATION_VMCSINGLE_H
+#ifndef QMCPLUSPLUS_QMCLINEAROPTIMIZATION_BATCHED_H
+#define QMCPLUSPLUS_QMCLINEAROPTIMIZATION_BATCHED_H
 
 #include <memory>
 #include "QMCDrivers/QMCDriver.h"
@@ -45,11 +45,11 @@ class HamiltonianPool;
  * generated from VMC.
  */
 
-class QMCLinearOptimize : public QMCDriver
+class QMCLinearOptimizeBatched : public QMCDriver
 {
 public:
   ///Constructor.
-  QMCLinearOptimize(MCWalkerConfiguration& w,
+  QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
                     TrialWaveFunction& psi,
                     QMCHamiltonian& h,
                     HamiltonianPool& hpool,
@@ -57,7 +57,7 @@ public:
                     Communicate* comm);
 
   ///Destructor
-  virtual ~QMCLinearOptimize() = default;
+  virtual ~QMCLinearOptimizeBatched() = default;
 
   ///Run the Optimization algorithm.
   virtual bool run() = 0;

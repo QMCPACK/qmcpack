@@ -11,13 +11,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file QMCFixedSampleLinearOptimize.h
+/** @file QMCFixedSampleLinearOptimizeBatched.h
  * @brief Definition of QMCDriver which performs VMC and optimization.
  */
-#ifndef QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_VMCSINGLE_H
-#define QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_VMCSINGLE_H
+#ifndef QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_BATCHED_H
+#define QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_BATCHED_H
 
-#include "QMCDrivers/WFOpt/QMCLinearOptimize.h"
+#include "QMCDrivers/WFOpt/QMCLinearOptimizeBatched.h"
 #include "Optimize/NRCOptimization.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
@@ -35,11 +35,11 @@ namespace qmcplusplus
  * generated from VMC.
  */
 
-class QMCFixedSampleLinearOptimize : public QMCLinearOptimize, private NRCOptimization<QMCTraits::RealType>
+class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched, private NRCOptimization<QMCTraits::RealType>
 {
 public:
   ///Constructor.
-  QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
+  QMCFixedSampleLinearOptimizeBatched(MCWalkerConfiguration& w,
                                TrialWaveFunction& psi,
                                QMCHamiltonian& h,
                                HamiltonianPool& hpool,
@@ -47,7 +47,7 @@ public:
                                Communicate* comm);
 
   ///Destructor
-  ~QMCFixedSampleLinearOptimize();
+  ~QMCFixedSampleLinearOptimizeBatched();
 
   ///Run the Optimization algorithm.
   bool run();

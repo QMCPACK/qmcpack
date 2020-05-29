@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimize.h"
+#include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimizeBatched.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
@@ -47,13 +47,13 @@ namespace qmcplusplus
 using MatrixOperators::product;
 
 
-QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
+QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalkerConfiguration& w,
                                                            TrialWaveFunction& psi,
                                                            QMCHamiltonian& h,
                                                            HamiltonianPool& hpool,
                                                            WaveFunctionPool& ppool,
                                                            Communicate* comm)
-    : QMCLinearOptimize(w, psi, h, hpool, ppool, comm),
+    : QMCLinearOptimizeBatched(w, psi, h, hpool, ppool, comm),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
 #endif
@@ -99,7 +99,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
-  QMCType  = "QMCFixedSampleLinearOptimize";
+  QMCType  = "QMCFixedSampleLinearOptimizeBatched";
   m_param.add(Max_iterations, "max_its", "int");
   m_param.add(nstabilizers, "nstabilizers", "int");
   m_param.add(stabilizerScale, "stabilizerscale", "double");
@@ -123,7 +123,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
 
 
 #ifdef HAVE_LMY_ENGINE
-  //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
+  //app_log() << "construct QMCFixedSampleLinearOptimizeBatched" << endl;
   std::vector<double> shift_scales(3, 1.0);
   EngineObj = new cqmc::engine::LMYEngine<ValueType>(&vdeps,
                                           false, // exact sampling
@@ -178,25 +178,25 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
 }
 
 /** Clean up the vector */
-QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize()
+QMCFixedSampleLinearOptimizeBatched::~QMCFixedSampleLinearOptimizeBatched()
 {
 #ifdef HAVE_LMY_ENGINE
   delete EngineObj;
 #endif
 }
 
-QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealType dl)
+QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::Func(RealType dl)
 {
   for (int i = 0; i < optparm.size(); i++)
     optTarget->Params(i) = optparm[i] + dl * optdir[i];
-  QMCLinearOptimize::RealType c = optTarget->Cost(false);
+  QMCLinearOptimizeBatched::RealType c = optTarget->Cost(false);
   //only allow this to go false if it was true. If false, stay false
   //    if (validFuncVal)
   validFuncVal = optTarget->IsValid;
   return c;
 }
 
-bool QMCFixedSampleLinearOptimize::run()
+bool QMCFixedSampleLinearOptimizeBatched::run()
 {
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
@@ -417,7 +417,7 @@ bool QMCFixedSampleLinearOptimize::run()
       app_error().flush();
       if (failedTries > 20)
         break;
-      //APP_ABORT("QMCFixedSampleLinearOptimize::run TOO MANY FAILURES");
+      //APP_ABORT("QMCFixedSampleLinearOptimizeBatched::run TOO MANY FAILURES");
     }
 
     if (acceptedOneMove)
@@ -445,7 +445,7 @@ bool QMCFixedSampleLinearOptimize::run()
 * @param q current xmlNode
 * @return true if successful
 */
-bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
+bool QMCFixedSampleLinearOptimizeBatched::put(xmlNodePtr q)
 {
   std::string useGPU("yes");
   std::string vmcMove("pbyp");
@@ -472,7 +472,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     return processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
 }
 
-bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5, bool useGPU)
+bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5, bool useGPU)
 {
   m_param.put(opt_xml);
   tolower(targetExcitedStr);
@@ -504,21 +504,21 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
 
   // check parameter change sanity
   if (max_param_change <= 0.0)
-    throw std::runtime_error("max_param_change must be positive in QMCFixedSampleLinearOptimize::put");
+    throw std::runtime_error("max_param_change must be positive in QMCFixedSampleLinearOptimizeBatched::put");
 
   // check cost change sanity
   if (max_relative_cost_change <= 0.0)
-    throw std::runtime_error("max_relative_cost_change must be positive in QMCFixedSampleLinearOptimize::put");
+    throw std::runtime_error("max_relative_cost_change must be positive in QMCFixedSampleLinearOptimizeBatched::put");
 
   // check shift sanity
   if (shift_i_input <= 0.0)
-    throw std::runtime_error("shift_i must be positive in QMCFixedSampleLinearOptimize::put");
+    throw std::runtime_error("shift_i must be positive in QMCFixedSampleLinearOptimizeBatched::put");
   if (shift_s_input <= 0.0)
-    throw std::runtime_error("shift_s must be positive in QMCFixedSampleLinearOptimize::put");
+    throw std::runtime_error("shift_s must be positive in QMCFixedSampleLinearOptimizeBatched::put");
 
   // check cost increase tolerance sanity
   if (cost_increase_tol < 0.0)
-    throw std::runtime_error("cost_increase_tol must be non-negative in QMCFixedSampleLinearOptimize::put");
+    throw std::runtime_error("cost_increase_tol must be non-negative in QMCFixedSampleLinearOptimizeBatched::put");
 
   // if this is the first time this function has been called, set the initial shifts
   if (bestShift_i < 0.0 && (current_optimizer_type_ == OptimizerType::ADAPTIVE || doHybrid))
@@ -584,13 +584,13 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
 /// \param[in]      central_shift  the central shift
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<double> QMCFixedSampleLinearOptimize::prepare_shifts(const double central_shift) const
+std::vector<double> QMCFixedSampleLinearOptimizeBatched::prepare_shifts(const double central_shift) const
 {
   std::vector<double> retval(num_shifts);
 
   // check to see whether the number of shifts is odd
   if (num_shifts % 2 == 0)
-    throw std::runtime_error("number of shifts must be odd in QMCFixedSampleLinearOptimize::prepare_shifts");
+    throw std::runtime_error("number of shifts must be odd in QMCFixedSampleLinearOptimizeBatched::prepare_shifts");
 
   // decide the central shift index
   int central_index = num_shifts / 2;
@@ -615,7 +615,7 @@ std::vector<double> QMCFixedSampleLinearOptimize::prepare_shifts(const double ce
 /// \brief  prints a header for the summary of each shift's result
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void QMCFixedSampleLinearOptimize::print_cost_summary_header()
+void QMCFixedSampleLinearOptimizeBatched::print_cost_summary_header()
 {
   app_log() << "   " << std::right << std::setw(12) << "shift_i";
   app_log() << "   " << std::right << std::setw(12) << "shift_s";
@@ -641,7 +641,7 @@ void QMCFixedSampleLinearOptimize::print_cost_summary_header()
 /// \param[in]      gu             flag telling whether it was a good update
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void QMCFixedSampleLinearOptimize::print_cost_summary(const double si,
+void QMCFixedSampleLinearOptimizeBatched::print_cost_summary(const double si,
                                                       const double ss,
                                                       const RealType mc,
                                                       const RealType cv,
@@ -690,7 +690,7 @@ void QMCFixedSampleLinearOptimize::print_cost_summary(const double si,
 /// \param[in]      ic             the initial cost
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-bool QMCFixedSampleLinearOptimize::is_best_cost(const int ii,
+bool QMCFixedSampleLinearOptimizeBatched::is_best_cost(const int ii,
                                                 const std::vector<RealType>& cv,
                                                 const std::vector<double>& sh,
                                                 const RealType ic) const
@@ -764,7 +764,7 @@ bool QMCFixedSampleLinearOptimize::is_best_cost(const int ii,
 /// \param[out]     parameterDirections   on exit, the update directions for the different shifts
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
+void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
                                                                const std::vector<double>& shifts_s,
                                                                std::vector<std::vector<RealType>>& parameterDirections)
 {
@@ -869,7 +869,7 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_LMY_ENGINE
-bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
+bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 {
   // remember what the cost function grads flag was
   const bool saved_grads_flag = optTarget->getneedGrads();
@@ -1171,7 +1171,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 }
 #endif
 
-bool QMCFixedSampleLinearOptimize::one_shift_run()
+bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 {
   // ensure the cost function is set to compute derivative vectors
   optTarget->setneedGrads(true);
@@ -1329,7 +1329,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 
 #ifdef HAVE_LMY_ENGINE
 //Function for optimizing using gradient descent
-bool QMCFixedSampleLinearOptimize::descent_run()
+bool QMCFixedSampleLinearOptimizeBatched::descent_run()
 {
   start();
 
@@ -1374,7 +1374,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 
 //Function for controlling the alternation between sections of descent optimization and BLM optimization.
 #ifdef HAVE_LMY_ENGINE
-bool QMCFixedSampleLinearOptimize::hybrid_run()
+bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
 {
   app_log() << "This is methodName: " << MinMethod << std::endl;
 
