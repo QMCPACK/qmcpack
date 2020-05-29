@@ -193,7 +193,7 @@ public:
   RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   void generateSamples();
 
-  virtual QMCRunType getRunType() { return QMCRunType::LINEAR_OPTIMIZE; }
+  virtual QMCRunType getRunType() { return QMCRunType::LINEAR_OPTIMIZE_BATCH; }
 
   QMCDriverInput qmcdriver_input_;
   VMCDriverInput vmcdriver_input_;
