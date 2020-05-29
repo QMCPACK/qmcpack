@@ -13,6 +13,8 @@
 #include "QMCWaveFunctions/Fermion/matrix_update_helper.hpp"
 #include <cuComplex.h>
 #include "subtractOne.cuh"
+#include <thrust/complex.h>
+#include <thrust/system/cuda/detail/core/util.h>
 
 namespace qmcplusplus
 {
@@ -20,6 +22,9 @@ namespace qmcplusplus
  */
 namespace CUDA
 {
+
+using namespace thrust::cuda_cub::core;
+
 template<typename T, int COLBS>
 __global__ void copyAinvRow_saveGL_kernel(const int rowchanged,
                                           const int n,
@@ -169,10 +174,11 @@ __global__ void calcGradients_kernel(const int n,
   const T* __restrict__ invRow    = Ainvrow[iw];
   const T* __restrict__ dpsiM_row = dpsiMrow[iw];
 
-  __shared__ T sum[DIM][COLBS];
+  constexpr int SUM_SIZE = DIM * COLBS;
+  __shared__ uninitialized_array<T, SUM_SIZE> sum;
   const int tid = threadIdx.x;
   for (int idim = 0; idim < DIM; idim++)
-    sum[idim][tid] = T(0);
+    sum[idim * COLBS + tid] = T(0);
 
   const int num_col_blocks = (n + COLBS - 1) / COLBS;
   for (int ib = 0; ib < num_col_blocks; ib++)
@@ -180,7 +186,7 @@ __global__ void calcGradients_kernel(const int n,
     const int col_id = ib * COLBS + tid;
     for (int idim = 0; idim < DIM; idim++)
       if (col_id < n)
-        sum[idim][tid] += invRow[col_id] * dpsiM_row[col_id * DIM + idim];
+        sum[idim * COLBS + tid] += invRow[col_id] * dpsiM_row[col_id * DIM + idim];
   }
 
   for (int iend = COLBS / 2; iend > 0; iend /= 2)
@@ -188,12 +194,12 @@ __global__ void calcGradients_kernel(const int n,
     __syncthreads();
     for (int idim = 0; idim < DIM; idim++)
       if (tid < iend)
-        sum[idim][tid] += sum[idim][tid + iend];
+        sum[idim * COLBS + tid] += sum[idim * COLBS + tid + iend];
   }
 
   if (tid == 0)
     for (int idim = 0; idim < DIM; idim++)
-      grads_now[iw * DIM + idim] = sum[idim][0];
+      grads_now[iw * DIM + idim] = sum[idim * COLBS];
 }
 
 cudaError_t calcGradients_cuda(cudaStream_t& hstream,
@@ -227,6 +233,40 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
   calcGradients_kernel<double, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(n, Ainvrow, dpsiMrow, grads_now);
+  return cudaPeekAtLastError();
+}
+
+cudaError_t calcGradients_cuda(cudaStream_t& hstream,
+                               const int n,
+                               const std::complex<float>* const Ainvrow[],
+                               const std::complex<float>* const dpsiMrow[],
+                               std::complex<float>* const grads_now,
+                               const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 64;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  calcGradients_kernel<thrust::complex<float>, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(n, (const thrust::complex<float>**)Ainvrow, (const thrust::complex<float>**)dpsiMrow, (thrust::complex<float>*)grads_now);
+  return cudaPeekAtLastError();
+}
+
+cudaError_t calcGradients_cuda(cudaStream_t& hstream,
+                               const int n,
+                               const std::complex<double>* const Ainvrow[],
+                               const std::complex<double>* const dpsiMrow[],
+                               std::complex<double>* const grads_now,
+                               const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 64;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  calcGradients_kernel<thrust::complex<double>, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(n, (const thrust::complex<double>**)Ainvrow, (const thrust::complex<double>**)dpsiMrow, (thrust::complex<double>*)grads_now);
   return cudaPeekAtLastError();
 }
 
@@ -378,6 +418,66 @@ cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
   return cudaPeekAtLastError();
 }
 
+cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
+                                              int* const delay_list[],
+                                              const int rowchanged,
+                                              const int delay_count,
+                                              std::complex<float>* const binv[],
+                                              const int binv_lda,
+                                              const std::complex<float>* const ratio_inv,
+                                              const std::complex<float>* const phi_in[],
+                                              const std::complex<float>* const dphi_in[],
+                                              const std::complex<float>* const d2phi_in[],
+                                              std::complex<float>* const phi_out[],
+                                              std::complex<float>* const dphi_out[],
+                                              std::complex<float>* const d2phi_out[],
+                                              const int norb,
+                                              const int n_accepted,
+                                              const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 64;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  add_delay_list_save_y_VGL_kernel<thrust::complex<float>, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, (thrust::complex<float>**)binv, binv_lda, (const thrust::complex<float>*)ratio_inv,
+                                          (const thrust::complex<float>**)phi_in, (const thrust::complex<float>**)dphi_in, (const thrust::complex<float>**)d2phi_in,
+                                          (thrust::complex<float>**)phi_out, (thrust::complex<float>**)dphi_out, (thrust::complex<float>**)d2phi_out, norb, n_accepted);
+  return cudaPeekAtLastError();
+}
+
+cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
+                                              int* const delay_list[],
+                                              const int rowchanged,
+                                              const int delay_count,
+                                              std::complex<double>* const binv[],
+                                              const int binv_lda,
+                                              const std::complex<double>* const ratio_inv,
+                                              const std::complex<double>* const phi_in[],
+                                              const std::complex<double>* const dphi_in[],
+                                              const std::complex<double>* const d2phi_in[],
+                                              std::complex<double>* const phi_out[],
+                                              std::complex<double>* const dphi_out[],
+                                              std::complex<double>* const d2phi_out[],
+                                              const int norb,
+                                              const int n_accepted,
+                                              const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 64;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  add_delay_list_save_y_VGL_kernel<thrust::complex<double>, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, (thrust::complex<double>**)binv, binv_lda, (const thrust::complex<double>*)ratio_inv,
+                                          (const thrust::complex<double>**)phi_in, (const thrust::complex<double>**)dphi_in, (const thrust::complex<double>**)d2phi_in,
+                                          (thrust::complex<double>**)phi_out, (thrust::complex<double>**)dphi_out, (thrust::complex<double>**)d2phi_out, norb, n_accepted);
+  return cudaPeekAtLastError();
+}
+
 template<typename T, int COLBS>
 __global__ void applyW_kernel(const int* const delay_list[], const int delay_count, T* const tempMat[], const int lda)
 {
@@ -393,9 +493,8 @@ __global__ void applyW_kernel(const int* const delay_list[], const int delay_cou
     if (col_id < delay_count)
     {
       const int row_id = delay_list_iw[col_id];
-      //printf("check applyW %d %d\n", col_id, delay_list_iw[col_id]);
       if (row_id >= 0)
-        tempMat_iw[row_id * lda + col_id] -= T(1);
+        tempMat_iw[row_id * lda + col_id] = subtractOne<T>(tempMat_iw[row_id * lda + col_id]);
     }
   }
 }
@@ -409,8 +508,6 @@ cudaError_t applyW_batched(cudaStream_t& hstream,
 {
   if (batch_count == 0)
     return cudaSuccess;
-
-  //printf("YYdebug batch_count %d\n", batch_count);
 
   const int COLBS = 32;
   dim3 dimBlock(COLBS);
@@ -433,6 +530,40 @@ cudaError_t applyW_batched(cudaStream_t& hstream,
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
   applyW_kernel<double, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, tempMat, lda);
+  return cudaPeekAtLastError();
+}
+
+cudaError_t applyW_batched(cudaStream_t& hstream,
+                           const int* const delay_list[],
+                           const int delay_count,
+                           std::complex<float>* const tempMat[],
+                           const int lda,
+                           const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 32;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  applyW_kernel<cuComplex, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, (cuComplex**)tempMat, lda);
+  return cudaPeekAtLastError();
+}
+
+cudaError_t applyW_batched(cudaStream_t& hstream,
+                           const int* const delay_list[],
+                           const int delay_count,
+                           std::complex<double>* const tempMat[],
+                           const int lda,
+                           const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 32;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  applyW_kernel<cuDoubleComplex, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, (cuDoubleComplex**)tempMat, lda);
   return cudaPeekAtLastError();
 }
 

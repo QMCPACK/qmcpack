@@ -14,12 +14,14 @@
 #include <stdexcept>
 #include <cuComplex.h>
 #include <thrust/complex.h>
-#include <CUDA/uninitialized_array.hpp>
+#include <thrust/system/cuda/detail/core/util.h>
 
 namespace qmcplusplus
 {
 namespace cuBLAS_MFs
 {
+using namespace thrust::cuda_cub::core;
+
 template<typename T, int ROWBS, int COLBS>
 __global__ void gemvT_batched_kernel(const int m, // number of columns in row major A
                                      const int n, // number of rows in row major A
