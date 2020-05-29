@@ -67,6 +67,8 @@ public:
   ///Destructor
   virtual ~QMCLinearOptimizeBatched() = default;
 
+  virtual void endSection();
+
   ///Run the Optimization algorithm.
   virtual bool run() = 0;
   ///process xml node
