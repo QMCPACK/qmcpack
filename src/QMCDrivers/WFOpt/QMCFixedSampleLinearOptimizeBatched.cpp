@@ -45,12 +45,25 @@ using MatrixOperators::product;
 
 
 QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalkerConfiguration& w,
-                                                           TrialWaveFunction& psi,
-                                                           QMCHamiltonian& h,
-                                                           HamiltonianPool& hpool,
-                                                           WaveFunctionPool& ppool,
-                                                           Communicate* comm)
-    : QMCLinearOptimizeBatched(w, psi, h, hpool, ppool, comm),
+                                                                         TrialWaveFunction& psi,
+                                                                         QMCHamiltonian& h,
+                                                                         HamiltonianPool& hpool,
+                                                                         WaveFunctionPool& ppool,
+                                                                         QMCDriverInput&& qmcdriver_input,
+                                                                         VMCDriverInput&& vmcdriver_input,
+                                                                         MCPopulation& population,
+                                                                         SampleStack& samples,
+                                                                         Communicate* comm)
+    : QMCLinearOptimizeBatched(w,
+                               psi,
+                               h,
+                               hpool,
+                               ppool,
+                               std::move(qmcdriver_input),
+                               std::move(vmcdriver_input),
+                               population,
+                               samples,
+                               comm),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
 #endif
@@ -1185,7 +1198,6 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 
   // compute the initial cost
   const RealType initCost = optTarget->computedCost();
-#endif
 
   // say what we are doing
   app_log() << std::endl

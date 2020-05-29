@@ -22,6 +22,9 @@
 
 #include <memory>
 #include "QMCDrivers/QMCDriver.h"
+#include "QMCDrivers/QMCDriverNew.h"
+#include "QMCDrivers/QMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "Optimize/OptimizeBase.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "Numerics/LinearFit.h"
@@ -51,11 +54,15 @@ class QMCLinearOptimizeBatched : public QMCDriver
 public:
   ///Constructor.
   QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
-                    TrialWaveFunction& psi,
-                    QMCHamiltonian& h,
-                    HamiltonianPool& hpool,
-                    WaveFunctionPool& ppool,
-                    Communicate* comm);
+                           TrialWaveFunction& psi,
+                           QMCHamiltonian& h,
+                           HamiltonianPool& hpool,
+                           WaveFunctionPool& ppool,
+                           QMCDriverInput&& qmcdriver_input,
+                           VMCDriverInput&& vmcdriver_input,
+                           MCPopulation& population,
+                           SampleStack& samples,
+                           Communicate* comm);
 
   ///Destructor
   virtual ~QMCLinearOptimizeBatched() = default;
@@ -185,6 +192,12 @@ public:
   void generateSamples();
 
   virtual QMCRunType getRunType() { return QMCRunType::LINEAR_OPTIMIZE; }
+
+  QMCDriverInput qmcdriver_input_;
+  VMCDriverInput vmcdriver_input_;
+  MCPopulation& population_;
+  SampleStack& samples_;
+
   NewTimer& generate_samples_timer_;
   NewTimer& initialize_timer_;
   NewTimer& eigenvalue_timer_;

@@ -41,11 +41,15 @@ class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched, pri
 public:
   ///Constructor.
   QMCFixedSampleLinearOptimizeBatched(MCWalkerConfiguration& w,
-                               TrialWaveFunction& psi,
-                               QMCHamiltonian& h,
-                               HamiltonianPool& hpool,
-                               WaveFunctionPool& ppool,
-                               Communicate* comm);
+                                      TrialWaveFunction& psi,
+                                      QMCHamiltonian& h,
+                                      HamiltonianPool& hpool,
+                                      WaveFunctionPool& ppool,
+                                      QMCDriverInput&& qmcdriver_input,
+                                      VMCDriverInput&& vmcdriver_input,
+                                      MCPopulation& population,
+                                      SampleStack& samples,
+                                      Communicate* comm);
 
   ///Destructor
   ~QMCFixedSampleLinearOptimizeBatched();
