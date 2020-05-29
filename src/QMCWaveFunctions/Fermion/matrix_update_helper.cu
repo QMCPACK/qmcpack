@@ -11,6 +11,8 @@
 
 
 #include "QMCWaveFunctions/Fermion/matrix_update_helper.hpp"
+#include <cuComplex.h>
+#include "subtractOne.cuh"
 
 namespace qmcplusplus
 {
@@ -41,7 +43,7 @@ __global__ void copyAinvRow_saveGL_kernel(const int rowchanged,
 
   const int tid = threadIdx.x;
   if (tid == 0)
-    temp_iw[rowchanged] -= T(1);
+    temp_iw[rowchanged] = subtractOne<T>(temp_iw[rowchanged]);
 
   const int num_col_blocks = (n + COLBS - 1) / COLBS;
   for (int ib = 0; ib < num_col_blocks; ib++)
@@ -106,6 +108,54 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
   dim3 dimGrid(batch_count);
   copyAinvRow_saveGL_kernel<double, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(rowchanged, n, Ainv, lda, temp, rcopy,
                                                                               dphi_in, d2phi_in, dphi_out, d2phi_out);
+  return cudaPeekAtLastError();
+}
+
+cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
+                                    const int rowchanged,
+                                    const int n,
+                                    const std::complex<float>* const Ainv[],
+                                    const int lda,
+                                    std::complex<float>* const temp[],
+                                    std::complex<float>* const rcopy[],
+                                    const std::complex<float>* const dphi_in[],
+                                    const std::complex<float>* const d2phi_in[],
+                                    std::complex<float>* const dphi_out[],
+                                    std::complex<float>* const d2phi_out[],
+                                    const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 64;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  copyAinvRow_saveGL_kernel<cuComplex, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(rowchanged, n, (const cuComplex**)Ainv, lda, (cuComplex**)temp, (cuComplex**)rcopy,
+                                                                             (const cuComplex**)dphi_in, (const cuComplex**)d2phi_in, (cuComplex**)dphi_out, (cuComplex**)d2phi_out);
+  return cudaPeekAtLastError();
+}
+
+cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
+                                    const int rowchanged,
+                                    const int n,
+                                    const std::complex<double>* const Ainv[],
+                                    const int lda,
+                                    std::complex<double>* const temp[],
+                                    std::complex<double>* const rcopy[],
+                                    const std::complex<double>* const dphi_in[],
+                                    const std::complex<double>* const d2phi_in[],
+                                    std::complex<double>* const dphi_out[],
+                                    std::complex<double>* const d2phi_out[],
+                                    const int batch_count)
+{
+  if (batch_count == 0)
+    return cudaSuccess;
+
+  const int COLBS = 64;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_count);
+  copyAinvRow_saveGL_kernel<cuDoubleComplex, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(rowchanged, n, (const cuDoubleComplex**)Ainv, lda, (cuDoubleComplex**)temp, (cuDoubleComplex**)rcopy,
+                                                                              (const cuDoubleComplex**)dphi_in, (const cuDoubleComplex**)d2phi_in, (cuDoubleComplex**)dphi_out, (cuDoubleComplex**)d2phi_out);
   return cudaPeekAtLastError();
 }
 

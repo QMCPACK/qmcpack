@@ -13,6 +13,8 @@
 #include "Platforms/CUDA/cuBLAS_missing_functions.hpp"
 #include <stdexcept>
 #include <cuComplex.h>
+#include <thrust/complex.h>
+#include <CUDA/uninitialized_array.hpp>
 
 namespace qmcplusplus
 {
@@ -32,12 +34,13 @@ __global__ void gemvT_batched_kernel(const int m, // number of columns in row ma
 {
   static_assert(ROWBS <= COLBS, "Row block size must not be larger than column block size!");
 
-  __shared__ T sum[ROWBS][COLBS];
-  __shared__ T x_part[COLBS];
+  constexpr int SUM_SIZE = ROWBS * COLBS;
+  __shared__ uninitialized_array<T, SUM_SIZE> sum;
+  __shared__ uninitialized_array<T, COLBS> x_part;
 
   const int tid = threadIdx.x;
   for (int i = 0; i < ROWBS; i++)
-    sum[i][tid] = T(0.0);
+    sum[i * COLBS + tid] = T(0.0);
 
   const T* __restrict__ A_iw = A[blockIdx.x];
   const T* __restrict__ x_iw = x[blockIdx.x];
@@ -53,7 +56,7 @@ __global__ void gemvT_batched_kernel(const int m, // number of columns in row ma
       x_part[tid] = x_iw[col_id * incx];
     for (int row_id = row_begin; row_id < row_begin + row_max; row_id++)
       if (col_id < m)
-        sum[row_id - row_begin][tid] += x_part[tid] * A_iw[row_id * lda + col_id];
+        sum[(row_id - row_begin) * COLBS + tid] += x_part[tid] * A_iw[row_id * lda + col_id];
   }
 
   for (int iend = COLBS / 2; iend > 0; iend /= 2)
@@ -61,14 +64,14 @@ __global__ void gemvT_batched_kernel(const int m, // number of columns in row ma
     __syncthreads();
     for (int irow = 0; irow < row_max; irow++)
       if (tid < iend)
-        sum[irow][tid] += sum[irow][tid + iend];
+        sum[irow * COLBS + tid] += sum[irow * COLBS + tid + iend];
   }
 
   __syncthreads();
   T* __restrict__ y_iw = y[blockIdx.x];
   if (tid < row_max)
     y_iw[(row_begin + tid) * incy] =
-        alpha[blockIdx.x] * sum[tid][0] + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
+        alpha[blockIdx.x] * sum[tid * COLBS] + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
 }
 
 template<typename T, int ROWBS>
@@ -186,8 +189,7 @@ cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
                                const int incy,
                                const int batch_count)
 {
-  //return gemv_batched_impl(handle, trans, m, n, (const cuComplex*)alpha, (const cuComplex* const*)A, lda, (const cuComplex* const*)x, incx, (const cuComplex*)beta, (cuComplex* const*)y, incy, batch_count);
-  return cudaSuccess;
+  return gemv_batched_impl(handle, trans, m, n, (const thrust::complex<float>*)alpha, (const thrust::complex<float>**)A, lda, (const thrust::complex<float>**)x, incx, (const thrust::complex<float>*)beta, (thrust::complex<float>**)y, incy, batch_count);
 }
 
 cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
@@ -204,8 +206,7 @@ cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
                                const int incy,
                                const int batch_count)
 {
-  //return gemv_batched_impl(handle, trans, m, n, (const cuDoubleComplex*)alpha, (const cuDoubleComplex* const*)A, lda, (const cuDoubleComplex* const*)x, incx, (const cuDoubleComplex*)beta, (cuDoubleComplex* const*)y, incy, batch_count);
-  return cudaSuccess;
+  return gemv_batched_impl(handle, trans, m, n, (const thrust::complex<double>*)alpha, (const thrust::complex<double>**)A, lda, (const thrust::complex<double>**)x, incx, (const thrust::complex<double>*)beta, (thrust::complex<double>**)y, incy, batch_count);
 }
 
 
@@ -230,7 +231,7 @@ __global__ void ger_batched_kernel(const int m, // number of columns in row majo
   const int tid       = threadIdx.x;
   const int col_id    = blockIdx.z * COLBS + tid;
 
-  __shared__ T x_part[COLBS];
+  __shared__ uninitialized_array<T, COLBS> x_part;
   if (col_id < m)
     x_part[tid] = x_iw[col_id * incx];
 
@@ -307,8 +308,7 @@ cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
                               const int lda,
                               const int batch_count)
 {
-  //return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
-  return cudaSuccess;
+  return ger_batched_impl(handle, m, n, (const thrust::complex<float>*)alpha, (const thrust::complex<float>**)x, incx, (const thrust::complex<float>**)y, incy, (thrust::complex<float>**)A, lda, batch_count);
 }
 
 cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
@@ -323,8 +323,7 @@ cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
                               const int lda,
                               const int batch_count)
 {
-  //return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
-  return cudaSuccess;
+  return ger_batched_impl(handle, m, n, (const thrust::complex<double>*)alpha, (const thrust::complex<double>**)x, incx, (const thrust::complex<double>**)y, incy, (thrust::complex<double>**)A, lda, batch_count);
 }
 
 template<typename T, int COLBS>
@@ -397,8 +396,7 @@ cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
                                const int incy,
                                const int batch_count)
 {
-  //return copy_batched_impl(hstream, n, in, incx, out, incy, batch_count);
-  return cudaSuccess;
+  return copy_batched_impl(hstream, n, (const cuComplex**)in, incx, (cuComplex**)out, incy, batch_count);
 }
 
 cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
@@ -409,8 +407,7 @@ cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
                                const int incy,
                                const int batch_count)
 {
-  //return copy_batched_impl(hstream, n, in, incx, out, incy, batch_count);
-  return cudaSuccess;
+  return copy_batched_impl(hstream, n, (const cuDoubleComplex**)in, incx, (cuDoubleComplex**)out, incy, batch_count);
 }
 
 } // namespace cuBLAS_MFs

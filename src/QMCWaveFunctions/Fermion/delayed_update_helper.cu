@@ -10,26 +10,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "delayed_update_helper.h"
 #include <cuComplex.h>
-#include "determinant_update.h"
-
-template<typename T>
-__host__ __device__ __inline__ T subtractOne(T x)
-{
-  return x+T(-1);
-}
-
-template<>
-__host__ __device__ __inline__ cuComplex subtractOne<cuComplex>(cuComplex x)
-{
-  return make_cuComplex(cuCrealf(x)-1.0f, cuCimagf(x));
-}
-
-template<>
-__host__ __device__ __inline__ cuDoubleComplex subtractOne<cuDoubleComplex>(cuDoubleComplex x)
-{
-  return make_cuDoubleComplex(cuCreal(x)-1.0, cuCimag(x));
-}
+#include "subtractOne.cuh"
 
 /** helper kernel for delayed update algorithm
  * W matrix is applied and copy selected rows of Ainv into V
