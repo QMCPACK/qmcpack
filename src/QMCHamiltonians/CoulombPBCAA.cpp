@@ -71,25 +71,25 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     app_log() << "Checking ion-ion Ewald energy against reference..." << std::endl;
     if (Vdiff_per_atom > Ps.Lattice.LR_tol)
     {
-      app_log() << std::setprecision(14);
-      app_log() << std::endl;
-      app_log() << "Error in ion-ion Ewald energy exceeds " << Ps.Lattice.LR_tol << " Ha/atom tolerance." << std::endl;
-      app_log() << std::endl;
-      app_log() << "  Reference ion-ion energy: " << Vii_ref << std::endl;
-      app_log() << "  QMCPACK   ion-ion energy: " << Value << std::endl;
-      app_log() << "            ion-ion diff  : " << Value - Vii_ref << std::endl;
-      app_log() << "            diff/atom     : " << (Value - Vii_ref) / NumCenters << std::endl;
-      app_log() << "            tolerance     : " << Ps.Lattice.LR_tol << std::endl;
-      app_log() << std::endl;
-      app_log() << "Please try increasing the LR_dim_cutoff parameter in the <simulationcell/>" << std::endl;
-      app_log() << "input.  Alternatively, the tolerance can be increased by setting the" << std::endl;
-      app_log() << "LR_tol parameter in <simulationcell/> to a value greater than " << Ps.Lattice.LR_tol << ". "
+      std::ostringstream msg;
+      msg << std::setprecision(14);
+      msg << "in ion-ion Ewald energy exceeds " << Ps.Lattice.LR_tol << " Ha/atom tolerance." << std::endl;
+      msg << std::endl;
+      msg << "  Reference ion-ion energy: " << Vii_ref << std::endl;
+      msg << "  QMCPACK   ion-ion energy: " << Value << std::endl;
+      msg << "            ion-ion diff  : " << Value - Vii_ref << std::endl;
+      msg << "            diff/atom     : " << (Value - Vii_ref) / NumCenters << std::endl;
+      msg << "            tolerance     : " << Ps.Lattice.LR_tol << std::endl;
+      msg << std::endl;
+      msg << "Please try increasing the LR_dim_cutoff parameter in the <simulationcell/>" << std::endl;
+      msg << "input.  Alternatively, the tolerance can be increased by setting the" << std::endl;
+      msg << "LR_tol parameter in <simulationcell/> to a value greater than " << Ps.Lattice.LR_tol << ". "
                 << std::endl;
-      app_log() << "If you increase the tolerance, please perform careful checks of energy" << std::endl;
-      app_log() << "differences to ensure this error is controlled for your application." << std::endl;
-      app_log() << std::endl;
+      msg << "If you increase the tolerance, please perform careful checks of energy" << std::endl;
+      msg << "differences to ensure this error is controlled for your application." << std::endl;
+      msg << std::endl;
 
-      APP_ABORT("ion-ion check failed")
+      throw std::runtime_error(msg.str());
     }
     else
     {
