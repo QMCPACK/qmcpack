@@ -237,7 +237,9 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   ParticleSet ions3;
   ions3.setName("ion");
   ions3.create(3);
-  ions3.R = 0.0;
+  ions3.R[0] = {0, 0, 0};
+  ions3.R[1] = {1, 1, 1};
+  ions3.R[2] = {2, 2, 2};
   SpeciesSet& ion3_species           = ions3.getSpeciesSet();
   int p3Idx                          = ion3_species.addSpecies("H");
   int p3ChargeIdx                    = ion3_species.addAttribute("charge");
