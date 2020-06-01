@@ -21,8 +21,8 @@
 
 #include <Configuration.h>
 #include "ParticleTags.h"
-#include "Particle/DynamicCoordinates.h"
-#include "Particle/Walker.h"
+#include "DynamicCoordinates.h"
+#include "Walker.h"
 #include <Utilities/SpeciesSet.h>
 #include <Utilities/PooledData.h>
 #include <OhmmsPETE/OhmmsArray.h>
