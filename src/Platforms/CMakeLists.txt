@@ -10,8 +10,6 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-SUBDIRS(OpenMP)
-
 SET(HOST_SRCS
     sysutil.cpp
     Host/InfoStream.cpp
@@ -25,7 +23,11 @@ SET(DEVICE_SRCS
 ADD_LIBRARY(platform_host ${HOST_SRCS})
 
 ADD_LIBRARY(platform_device ${DEVICE_SRCS})
-TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_omp message)
+TARGET_INCLUDE_DIRECTORIES(platform_device INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+TARGET_LINK_LIBRARIES(platform_device PUBLIC message)
+
+SUBDIRS(OpenMP)
+TARGET_LINK_LIBRARIES(platform_device PRIVATE platform_omp)
 
 IF(ENABLE_CUDA)
   SUBDIRS(CUDA)
