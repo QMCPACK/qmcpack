@@ -11,7 +11,7 @@
 
 
 ####################################
-# create libqmcbase
+# create libqmcparticle
 ####################################
 SET(PARTICLE ${PARTICLE}
   InitMolecularSystem.cpp
@@ -58,10 +58,10 @@ IF(OHMMS_DIM MATCHES 3)
   SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
 ENDIF(OHMMS_DIM MATCHES 3)
 
-ADD_LIBRARY(qmcbase ${PARTICLE} ${PARTICLEIO})
-TARGET_INCLUDE_DIRECTORIES(qmcbase PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-TARGET_LINK_LIBRARIES(qmcbase PRIVATE qmcminimalcontainers Math::BLAS_LAPACK Math::scalar_vector_functions)
-TARGET_LINK_LIBRARIES(qmcbase PUBLIC qmcutil)
+ADD_LIBRARY(qmcparticle ${PARTICLE} ${PARTICLEIO})
+TARGET_INCLUDE_DIRECTORIES(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+TARGET_LINK_LIBRARIES(qmcparticle PRIVATE qmcminimalcontainers Math::BLAS_LAPACK Math::scalar_vector_functions)
+TARGET_LINK_LIBRARIES(qmcparticle PUBLIC qmcutil)
 
 IF(BUILD_UNIT_TESTS)
   SUBDIRS(tests)
