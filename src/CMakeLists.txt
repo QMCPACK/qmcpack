@@ -182,11 +182,11 @@ ENDIF()
   )
   ADD_LIBRARY(qmcfakerng ${UNIT_TEST_UTILITIES})
 
-  SUBDIRS(Particle)
   SUBDIRS(einspline)
   SUBDIRS(MinimalContainers)
   SUBDIRS(Message)
   SUBDIRS(Platforms)
+  SUBDIRS(Particle)
 
 if(QMC_BUILD_SANDBOX_ONLY)
 
@@ -239,7 +239,6 @@ else() #{{{
     SUBDIRS(QMCApp/tests)
     SUBDIRS(Message/tests)
     SUBDIRS(CUDA/tests)
-    SUBDIRS(OpenMP/tests)
     SUBDIRS(Optimize/tests)
     SUBDIRS(MinimalContainers/tests)
     SUBDIRS(QMCTools/tests)
