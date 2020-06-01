@@ -12,6 +12,7 @@
 #include<mpi.h>
 #endif
 
+#include <boost/version.hpp>
 #include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 
