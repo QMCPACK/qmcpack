@@ -4636,6 +4636,7 @@ def generate_determinantset_old(type           = 'bspline',
                                 twistnum       = None, 
                                 twist          = None,
                                 spin_polarized = False,
+                                hybridrep      = None,
                                 source         = 'ion0',
                                 href           = 'MISSING.h5',
                                 excitation     = None,
@@ -4683,6 +4684,13 @@ def generate_determinantset_old(type           = 'bspline',
         dset.twistnum = 0
     else:
         dset.twistnum = None
+    #end if
+    if hybridrep is not None:
+        if hybridrep=='yes' or hybridrep=='no':
+            dset.hybridrep = hybridrep
+        else:
+            dset.hybridrep = yesno_dict[hybridrep]
+        #end if
     #end if
     if excitation is not None:
         format_failed = False
@@ -6414,6 +6422,7 @@ def generate_basic_input(**kwargs):
             twistnum       = kw.twistnum,
             meshfactor     = kw.meshfactor,
             precision      = kw.precision,
+            hybridrep      = kw.hybridrep,
             href           = kw.orbitals_h5,
             spin_polarized = kw.spin_polarized,
             excitation     = kw.excitation,
