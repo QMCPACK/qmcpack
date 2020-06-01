@@ -12,18 +12,6 @@
 #include<mpi.h>
 #endif
 
-#include "OhmmsPETE/TinyVector.h"
-#include "ParticleBase/ParticleAttrib.h"
-#include "type_traits/scalar_traits.h"
-#include <Platforms/sysutil.h>
-#include "OhmmsData/libxmldefs.h"
-#include "OhmmsData/AttributeSet.h"
-#include "OhmmsData/ParameterSet.h"
-#include "Utilities/SimpleParser.h"
-#include "Configuration.h"
-#include "io/hdf_archive.h"
-#include "Message/CommOperators.h"
-
 #include "AFQMC/config.h"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 
