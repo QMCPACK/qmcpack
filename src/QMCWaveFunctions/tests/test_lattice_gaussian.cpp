@@ -15,6 +15,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/LatticeGaussianProduct.h"
 #include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"

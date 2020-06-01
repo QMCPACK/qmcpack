@@ -210,42 +210,5 @@ void wrapAroundBox(const PL& lat, const PV& pin, PV& pout)
   }
 }
 
-/////////////////////////////////////////////////////////////////
-/*\fn template<class T, unsigned D>
- *    T Dot(const ParticleAttrib<TinyVector<T, D> >& pa,
- *      const ParticleAttrib<TinyVector<T, D> >& pb)
- * \return a dot product of an array
- */
-/////////////////////////////////////////////////////////////////
-template<typename T, unsigned D>
-inline T Dot(const ParticleAttrib<TinyVector<T, D>>& pa, const ParticleAttrib<TinyVector<T, D>>& pb)
-{
-  T sum = 0;
-  for (int i = 0; i < pa.size(); i++)
-  {
-    sum += dot(pa[i], pb[i]);
-  }
-  return sum;
-}
-
-template<typename T>
-inline T Sum(const ParticleAttrib<T>& pa)
-{
-  T sum = 0;
-  for (int i = 0; i < pa.size(); i++)
-  {
-    sum += pa[i];
-  }
-  return sum;
-}
-
-template<class T, unsigned D>
-void normalize(ParticleAttrib<TinyVector<T, D>>& pa)
-{
-  T factor = Dot(pa, pa);
-  factor   = 1.0 / sqrt(factor);
-  pa *= factor;
-}
-
 } // namespace qmcplusplus
 #endif

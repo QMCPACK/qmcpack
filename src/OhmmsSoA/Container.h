@@ -19,7 +19,6 @@
 #include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/Tensor.h>
 #include <simd/allocator.hpp>
-#include <ParticleBase/ParticleAttrib.h>
 #include <OhmmsSoA/PosTransformer.h>
 #include <OhmmsSoA/VectorSoaContainer.h>
 //#include <OhmmsSoA/TensorSoaContainer.h>

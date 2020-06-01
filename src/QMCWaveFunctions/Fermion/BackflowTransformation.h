@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "Particle/ParticleSet.h"
+#include "Particle/ParticleBase/ParticleAttribOps.h"
 #include "Configuration.h"
 #include <map>
 #include <cmath>

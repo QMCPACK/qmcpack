@@ -34,7 +34,7 @@
 #ifndef OHMMS_PARTICLEATTRIB_OPS_H
 #define OHMMS_PARTICLEATTRIB_OPS_H
 
-#include "ParticleBase/ParticleUtility.h"
+#include "ParticleUtility.h"
 
 namespace qmcplusplus
 {
@@ -103,6 +103,32 @@ struct OTCDot_CC<T1, T2, 3>
   }
 };
 
+template<class T, unsigned D>
+void normalize(ParticleAttrib<TinyVector<T, D>>& pa)
+{
+  T factor = Dot(pa, pa);
+  factor   = 1.0 / sqrt(factor);
+  pa *= factor;
+}
+
+/////////////////////////////////////////////////////////////////
+/*\fn template<class T, unsigned D>
+ *    T Dot(const ParticleAttrib<TinyVector<T, D> >& pa,
+ *      const ParticleAttrib<TinyVector<T, D> >& pb)
+ * \return a dot product of an array
+ */
+/////////////////////////////////////////////////////////////////
+template<typename T, unsigned D>
+inline T Dot(const ParticleAttrib<TinyVector<T, D>>& pa, const ParticleAttrib<TinyVector<T, D>>& pb)
+{
+  T sum = 0;
+  for (int i = 0; i < pa.size(); i++)
+  {
+    sum += dot(pa[i], pb[i]);
+  }
+  return sum;
+}
+
 template<typename T, unsigned D>
 inline T Dot(const ParticleAttrib<TinyVector<std::complex<T>, D>>& pa,
              const ParticleAttrib<TinyVector<std::complex<T>, D>>& pb)
@@ -136,6 +162,17 @@ inline double Dot_CC(const ParticleAttrib<TinyVector<std::complex<double>, D>>& 
   for (int i = 0; i < pa.size(); i++)
   {
     sum += OTCDot_CC<double, double, D>::apply(pa[i], pb[i]);
+  }
+  return sum;
+}
+
+template<typename T>
+inline T Sum(const ParticleAttrib<T>& pa)
+{
+  T sum = 0;
+  for (int i = 0; i < pa.size(); i++)
+  {
+    sum += pa[i];
   }
   return sum;
 }
