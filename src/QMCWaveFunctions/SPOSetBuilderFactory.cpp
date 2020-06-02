@@ -20,16 +20,7 @@
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
 #if OHMMS_DIM == 3
-#if defined(ENABLE_SOA)
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
-#else
-#if !defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/MolecularSPOBuilder.h"
-#endif
-#endif
 
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/RotatedSPOs.h"
@@ -215,29 +206,7 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
       PRE.error("Missing basisset/@source.", true);
     else
       ions = (*pit).second;
-#if defined(ENABLE_SOA)
     bb = new LCAOrbitalBuilder(targetPtcl, *ions, myComm, rootNode);
-#else
-#if defined(QMC_COMPLEX)
-    PRE.error("Complex molecular orbitals not supported by AoS builds!", true);
-#else
-    if (transformOpt == "yes")
-    {
-      app_log() << "Using MolecularSPOBuilder<NGOBuilder>" << std::endl;
-      bb = new MolecularSPOBuilder<NGOBuilder>(targetPtcl, *ions, myComm, cuspC == "yes", cuspInfo, MOH5Ref);
-    }
-    else
-    {
-      if (cuspC == "yes")
-        app_log() << " ****** Cusp Correction algorithm is only implemented in combination with numerical radial "
-                     "orbitals. Use transform=yes to enable this option. \n";
-      if (keyOpt == "GTO")
-        bb = new MolecularSPOBuilder<GTOBuilder>(targetPtcl, *ions, myComm);
-      else if (keyOpt == "STO")
-        bb = new MolecularSPOBuilder<STOBuilder>(targetPtcl, *ions, myComm);
-    }
-#endif //QMC_COMPLEX
-#endif
   }
 #endif //OHMMS_DIM==3
   PRE.flush();

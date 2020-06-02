@@ -5,7 +5,7 @@
 ##   on Blue Waters, University of Illinois Urbana-Champaign  ##
 ##   highly similar to OLCF Titan build script                ##
 ##                                                            ##
-## Last modified: Jan 31, 2020                                ##
+## Last modified: 19 May 2020                                 ##
 ################################################################
 
 # Load required modules (assuming default settings have not been modified)
@@ -86,7 +86,7 @@ echo ""
 echo "building qmcpack for cpu real"
 mkdir build$suffix
 cd build$suffix
-cmake $CMAKE_FLAGS -D ENABLE_SOA=1 ..
+cmake $CMAKE_FLAGS ..
 make -j 32 $target
 cd ..
 ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix
@@ -98,30 +98,7 @@ echo ""
 echo "building qmcpack for cpu complex"
 mkdir build$suffix
 cd build$suffix
-cmake $CMAKE_FLAGS -D QMC_COMPLEX=1 -D ENABLE_SOA=1 ..
-make -j 32 $target
-cd ..
-ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix
-
-# Configure and build cpu Array-of-Structure (AoS) version for more features
-suffix=_cpu_real_AoS
-echo ""
-echo ""
-echo "building AoS qmcpack for cpu real"
-mkdir build$suffix
-cd build$suffix
-cmake $CMAKE_FLAGS -D ENABLE_SOA=0 ..
-make -j 32 $target
-cd ..
-ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix
-
-suffix=_cpu_comp_AoS
-echo ""
-echo ""
-echo "building AoS qmcpack for cpu complex"
-mkdir build$suffix
-cd build$suffix
-cmake $CMAKE_FLAGS -D QMC_COMPLEX=1 -D ENABLE_SOA=0 ..
+cmake $CMAKE_FLAGS -D QMC_COMPLEX=1 ..
 make -j 32 $target
 cd ..
 ln -s ./build$suffix/bin/qmcpack ./qmcpack$suffix

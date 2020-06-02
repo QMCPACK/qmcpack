@@ -21,18 +21,11 @@
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
-#include "QMCHamiltonians/StressPBC.h"
-//#include "QMCHamiltonians/StressPBCAA.h"
-//#include "QMCHamiltonians/StressPBCAB.h"
-//#include "QMCHamiltonians/StressKinetic.h"
 #if OHMMS_DIM == 3
-#include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "QMCHamiltonians/ECPotentialBuilder.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 
-#include "QMCHamiltonians/PulayForce.h"
-#include "QMCHamiltonians/ZeroVarianceForce.h"
 #include "QMCHamiltonians/ACForce.h"
 #if defined(HAVE_LIBFFTW)
 #include "QMCHamiltonians/MPC.h"
@@ -152,31 +145,6 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   }
 }
 
-// void
-// HamiltonianFactory::addPulayForce (xmlNodePtr cur) {
-//   std::string a("ion0"),targetName("e"),title("Pulay");
-//   OhmmsAttributeSet hAttrib;
-//   hAttrib.add(a,"source");
-//   hAttrib.add(targetName,"target");
-
-//   PtclPoolType::iterator pit(ptclPool.find(a));
-//   if(pit == ptclPool.end()) {
-//     ERRORMSG("Missing source ParticleSet" << a)
-//     return;
-//   }
-
-//   ParticleSet* source = (*pit).second;
-//   pit = ptclPool.find(targetName);
-//   if(pit == ptclPool.end()) {
-//     ERRORMSG("Missing target ParticleSet" << targetName)
-//     return;
-//   }
-//   ParticleSet* target = (*pit).second;
-
-//   targetH->addOperator(new PulayForce(*source, *target), title, false);
-
-// }
-
 void HamiltonianFactory::addForceHam(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
@@ -233,27 +201,6 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
       targetH->addOperator(force_cep, title, false);
     }
   }
-  else if (mode == "pulay")
-  {
-    OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
-    if (psi_it == psiPool.end())
-    {
-      APP_ABORT("Unknown psi \"" + PsiName + "\" for Pulay force.");
-    }
-    TrialWaveFunction& psi = *psi_it->second->targetPsi;
-    targetH->addOperator(new PulayForce(*source, *target, psi), "PulayForce", false);
-  }
-  else if (mode == "zero_variance")
-  {
-    app_log() << "Adding zero-variance force term.\n";
-    OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
-    if (psi_it == psiPool.end())
-    {
-      APP_ABORT("Unknown psi \"" + PsiName + "\" for zero-variance force.");
-    }
-    TrialWaveFunction& psi = *psi_it->second->targetPsi;
-    targetH->addOperator(new ZeroVarianceForce(*source, *target, psi), "ZVForce", false);
-  }
   else if (mode == "acforce")
   {
     app_log() << "Adding Assaraf-Caffarel total force.\n";
@@ -266,46 +213,6 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
     ACForce* acforce       = new ACForce(*source, *target, psi, *targetH);
     targetH->addOperator(acforce, title, false);
   }
-
-  else if (mode == "stress")
-  {
-    OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
-    if (psi_it == psiPool.end())
-    {
-      APP_ABORT("Unknown psi \"" + PsiName + "\" for Stress tensor.");
-    }
-    TrialWaveFunction& psi = *psi_it->second->targetPsi;
-
-    StressPBC* stress_ham = new StressPBC(*source, *target, psi);
-    stress_ham->put(cur);
-    targetH->addOperator(stress_ham, title, false);
-    //  if(source==target)
-    //  {
-    //    StressPBCAA* stress_ham = new StressPBCAA(*source, quantum);
-    //    stress_ham->put(cur);
-    //    targetH->addOperator(stress_ham, title, false);
-    //  }
-    //  else
-    //  {
-    //	StressPBCAB* stress_ham = new StressPBCAB(*source, *target, quantum);
-    //    stress_ham->put(cur);
-    //    targetH->addOperator(stress_ham, title, false);
-    //  }
-  }
-  /*
-  else if(mode=="stresskin")
-  {
-	  OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
-      if(psi_it == psiPool.end())
-      {
-       APP_ABORT("Unknown psi \""+PsiName+"\" for Stress tensor.");
-      }
-      TrialWaveFunction &psi = *psi_it->second->targetPsi;
-	  
-		StressKinetic* stress_ham = new StressKinetic(*target, psi);
-        stress_ham->put(cur);
-        targetH->addOperator(stress_ham, title, false);
-  }*/
   else
   {
     ERRORMSG("Failed to recognize Force mode " << mode);
@@ -359,29 +266,6 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   ecp.put(cur);
 #else
   APP_ABORT("HamiltonianFactory::addPseudoPotential\n pairpot@type=\"pseudo\" is invalid if DIM != 3");
-#endif
-}
-
-void HamiltonianFactory::addCorePolPotential(xmlNodePtr cur)
-{
-#if OHMMS_DIM == 3
-  std::string src("i"), title("CorePol");
-  OhmmsAttributeSet pAttrib;
-  pAttrib.add(title, "name");
-  pAttrib.add(src, "source");
-  pAttrib.put(cur);
-  PtclPoolType::iterator pit(ptclPool.find(src));
-  if (pit == ptclPool.end())
-  {
-    ERRORMSG("Missing source ParticleSet" << src)
-    return;
-  }
-  ParticleSet* ion        = (*pit).second;
-  OperatorBase* cpp = (new LocalCorePolPotential(*ion, *targetPtcl));
-  cpp->put(cur);
-  targetH->addOperator(cpp, title);
-#else
-  APP_ABORT("HamiltonianFactory::addCorePolPotential\n pairpot@type=\"cpp\" is invalid if DIM != 3");
 #endif
 }
 

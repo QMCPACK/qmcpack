@@ -92,11 +92,7 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-#ifdef ENABLE_SOA
   const int tid = electrons.addTable(ions, DT_SOA);
-#else
-  const int tid = electrons.addTable(ions, DT_AOS);
-#endif
   electrons.update();
 
   // get target particle set's distance table data
@@ -116,38 +112,20 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
       // int tid = target_pset.addTable(source_pset, DT_AOS);
       // const auto& dtable = target_pset.getDistTable(tid);
       // dtable.loc(source_ptcl_idx,target_ptcl_idx) !! source first target second !?
-#ifdef ENABLE_SOA
       double dist = dtable.getDistRow(jat)[iat];
-#else
-      double dist = dtable.r(dtable.loc(iat, jat));
-#endif
       REQUIRE(dist == Approx(expect[idx]));
     }
   }
 
-#ifdef ENABLE_SOA
   TinyVector<double, 3> displ1 = dtable.getDisplacements()[0][0];
   REQUIRE(displ1[0] == Approx(0.0));
   REQUIRE(displ1[1] == Approx(0.0));
   REQUIRE(displ1[2] == Approx(-0.2));
-#else
-  TinyVector<double, 3> displ1 = dtable.displacement(0, 0);
-  REQUIRE(displ1[0] == Approx(0.0));
-  REQUIRE(displ1[1] == Approx(0.0));
-  REQUIRE(displ1[2] == Approx(0.2));
-#endif
 
-#ifdef ENABLE_SOA
   TinyVector<double, 3> displ2 = dtable.getDisplacements()[0][1];
   REQUIRE(displ2[0] == Approx(0.0));
   REQUIRE(displ2[1] == Approx(0.0));
   REQUIRE(displ2[2] == Approx(0.3));
-#else
-  TinyVector<double, 3> displ2 = dtable.displacement(1, 0);
-  REQUIRE(displ2[0] == Approx(0.0));
-  REQUIRE(displ2[1] == Approx(0.0));
-  REQUIRE(displ2[2] == Approx(-0.3));
-#endif
 
   // get distance between target="e" group="u" iat=0 and source="ion0" group="H" jat=1
 
@@ -217,11 +195,7 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
   REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-#ifdef ENABLE_SOA
   const int tid = electrons.addTable(ions, DT_SOA);
-#else
-  const int tid = electrons.addTable(ions, DT_AOS);
-#endif
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
@@ -243,11 +217,7 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
   {
     for (int jat = 0; jat < dtable.targets(); jat++, idx++)
     {
-#ifdef ENABLE_SOA
       double dist = dtable.getDistRow(jat)[iat];
-#else
-      double dist = dtable.r(dtable.loc(iat, jat));
-#endif
       REQUIRE(dist == Approx(expect[idx]));
     }
   }
@@ -320,11 +290,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
   REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-#ifdef ENABLE_SOA
   const int tid = electrons.addTable(ions, DT_SOA);
-#else
-  const int tid = electrons.addTable(ions, DT_AOS);
-#endif
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
@@ -353,11 +319,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
         continue;
 
       // calculate distance from lattice site iat
-#ifdef ENABLE_SOA
       double dist = dtable.getDistRow(jat)[iat];
-#else
-      double dist = dtable.r(dtable.loc(iat, jat));
-#endif
       latdev2 += std::pow(dist, 2); // !? pow(x,2) does what?
       REQUIRE(dist == Approx(expect[idx]));
       cur_jat = jat;
@@ -467,11 +429,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-#ifdef ENABLE_SOA
   const int ei_tid = electrons.addTable(ions, DT_SOA);
-#else
-  const int ei_tid = electrons.addTable(ions, DT_AOS);
-#endif
   electrons.update();
   ions.update();
 
@@ -491,11 +449,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   {
     for (int jat = 0; jat < num_tar; jat++, idx++)
     {
-#ifdef ENABLE_SOA
       double dist = ei_dtable.getDistRow(jat)[iat];
-#else
-      double dist = ei_dtable.r(ei_dtable.loc(iat, jat));
-#endif
       expect[idx] = dist;
     }
   }
@@ -520,16 +474,11 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   {
     for (int jat = 0; jat < num_tar; jat++, idx++)
     {
-#ifdef ENABLE_SOA
       double dist = ei_dtable.getDistRow(jat)[iat];
-#else
-      double dist = ei_dtable.r(ei_dtable.loc(iat, jat));
-#endif
       REQUIRE(expect[idx] == Approx(dist));
     }
   }
 
-#ifdef ENABLE_SOA
   const int ee_tid = electrons.addTable(electrons, DT_SOA);
   // get target particle set's distance table data
   const auto& ee_dtable = electrons.getDistTable(ee_tid);
@@ -575,7 +524,6 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   REQUIRE(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.7));
   REQUIRE(ee_dtable.getDisplRow(1)[0][1] == Approx(0.3));
   REQUIRE(ee_dtable.getDisplRow(1)[0][2] == Approx(0.2));
-#endif
 } // TEST_CASE distance_pbc_z
 
 } // namespace qmcplusplus

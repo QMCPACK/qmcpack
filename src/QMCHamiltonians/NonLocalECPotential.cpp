@@ -182,57 +182,26 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
   }
   else
   {
-    if (myTable.DTType == DT_SOA)
+    for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
-      for (int jel = 0; jel < P.getTotalNum(); jel++)
-      {
-        const auto& dist               = myTable.getDistRow(jel);
-        const auto& displ              = myTable.getDisplRow(jel);
-        std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-        for (int iat = 0; iat < NumIons; iat++)
-          if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-          {
-            RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], use_DLA);
-            if (Tmove)
-              PP[iat]->contributeTxy(jel, Txy);
-            Value += pairpot;
-            NeighborIons.push_back(iat);
-            IonNeighborElecs.getNeighborList(iat).push_back(jel);
-            if (streaming_particles)
-            {
-              Ve_samp(jel) = 0.5 * pairpot;
-              Vi_samp(iat) = 0.5 * pairpot;
-            }
-          }
-      }
-    }
-    else
-    {
-#ifndef ENABLE_SOA
+      const auto& dist               = myTable.getDistRow(jel);
+      const auto& displ              = myTable.getDisplRow(jel);
+      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
       for (int iat = 0; iat < NumIons; iat++)
-      {
-        if (PP[iat] == nullptr)
-          continue;
-        std::vector<int>& NeighborElecs = IonNeighborElecs.getNeighborList(iat);
-        for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
+        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
-          const RealType r(myTable.r(nn));
-          if (r > PP[iat]->getRmax())
-            continue;
-          RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, iel, r, myTable.dr(nn), use_DLA);
+          RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], use_DLA);
           if (Tmove)
-            PP[iat]->contributeTxy(iel, Txy);
+            PP[iat]->contributeTxy(jel, Txy);
           Value += pairpot;
-          NeighborElecs.push_back(iel);
-          ElecNeighborIons.getNeighborList(iel).push_back(iat);
+          NeighborIons.push_back(iat);
+          IonNeighborElecs.getNeighborList(iat).push_back(jel);
           if (streaming_particles)
           {
-            Ve_samp(iel) = 0.5 * pairpot;
+            Ve_samp(jel) = 0.5 * pairpot;
             Vi_samp(iat) = 0.5 * pairpot;
           }
         }
-      }
-#endif
     }
   }
 
@@ -442,28 +411,13 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
   const auto& myTable                  = P.getDistTable(myTableIndex);
   const std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(ref_elec);
 
-  if (myTable.DTType == DT_SOA)
+  const auto& dist  = myTable.getDistRow(ref_elec);
+  const auto& displ = myTable.getDisplRow(ref_elec);
+  for (int atom_index = 0; atom_index < NeighborIons.size(); atom_index++)
   {
-    const auto& dist  = myTable.getDistRow(ref_elec);
-    const auto& displ = myTable.getDisplRow(ref_elec);
-    for (int atom_index = 0; atom_index < NeighborIons.size(); atom_index++)
-    {
-      const int iat = NeighborIons[atom_index];
-      PP[iat]->evaluateOne(P, iat, Psi, ref_elec, dist[iat], -displ[iat], use_DLA);
-      PP[iat]->contributeTxy(ref_elec, Txy);
-    }
-  }
-  else
-  {
-#ifndef ENABLE_SOA
-    for (int atom_index = 0; atom_index < NeighborIons.size(); atom_index++)
-    {
-      const int iat = NeighborIons[atom_index];
-      int nn        = myTable.M[iat] + ref_elec;
-      PP[iat]->evaluateOne(P, iat, Psi, ref_elec, myTable.r(nn), myTable.dr(nn), use_DLA);
-      PP[iat]->contributeTxy(ref_elec, Txy);
-    }
-#endif
+    const int iat = NeighborIons[atom_index];
+    PP[iat]->evaluateOne(P, iat, Psi, ref_elec, dist[iat], -displ[iat], use_DLA);
+    PP[iat]->contributeTxy(ref_elec, Txy);
   }
 }
 
@@ -557,18 +511,8 @@ void NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, in
       continue;
     RealType old_distance = 0.0;
     RealType new_distance = 0.0;
-    if (myTable.DTType == DT_SOA)
-    {
-      old_distance = myTable.getDistRow(iel)[iat];
-      new_distance = myTable.getTempDists()[iat];
-    }
-    else
-    {
-#ifndef ENABLE_SOA
-      old_distance = myTable.r(myTable.M[iat] + iel);
-      new_distance = myTable.Temp[iat].r1;
-#endif
-    }
+    old_distance = myTable.getDistRow(iel)[iat];
+    new_distance = myTable.getTempDists()[iat];
     bool moved = false;
     // move out
     if (old_distance < PP[iat]->getRmax() && new_distance >= PP[iat]->getRmax())

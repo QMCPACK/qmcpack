@@ -79,7 +79,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
         copy_n(b.data(),b.size(),B.origin());
 	REQUIRE(B.num_elements() == b.size());
 
-	array<double, 2, Allocator> C({4,4}, alloc);
+	array<double, 2, Allocator> C({4,4}, 0.0, alloc);
 	REQUIRE(C.num_elements() == 16);
 
 	ma::product(A, B, C); // C = A*B

@@ -58,7 +58,9 @@ IF(ENABLE_CUDA)
     Numerics/detail/CUDA/Kernels/reference_operations.cu
     Numerics/detail/CUDA/Kernels/term_by_term_matrix_vec.cu
     Numerics/detail/CUDA/Kernels/axpyBatched.cu
-#    Numerics/detail/CUDA/Kernels/myAtomicAdd.cu
+    Numerics/detail/CUDA/Kernels/Auwn_Bun_Cuw.cu
+    Numerics/detail/CUDA/Kernels/inplace_product.cu
+    Numerics/detail/CUDA/Kernels/get_diagonal.cu
   )
 ENDIF(ENABLE_CUDA)
 

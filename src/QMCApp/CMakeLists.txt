@@ -26,7 +26,7 @@ SET(QMCAPPDIR
     CoupledMC.cpp
 )
 ADD_LIBRARY(qmc ${QMCAPPDIR})
-TARGET_LINK_LIBRARIES(qmc PUBLIC qmcutil platform_device)
+TARGET_LINK_LIBRARIES(qmc PUBLIC qmcparticle qmcutil platform_device)
 
 ####################################
 # QMCPACK application

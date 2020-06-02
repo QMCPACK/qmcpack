@@ -43,22 +43,23 @@ ENDIF()
 IF ( NOT Python3_FOUND )
   MESSAGE( FATAL_ERROR "Could not find required python3" )
 ENDIF ( NOT Python3_FOUND )
+
+######################################################################
+# Check is PySCF is availabile within Python
+######################################################################
+TEST_PYTHON_MODULE(pyscf HAVE_PYSCF)
+IF (NOT HAVE_PYSCF)
+  MESSAGE( STATUS "Unable to import PySCF python module. PySCF tests will not be run." )
+ELSE()
+  MESSAGE( STATUS "Successfully imported PySCF python module." )
+ENDIF()
+  
 ######################################################################
 # Verify QE executables present if QE_BIN specified
 ######################################################################
 IF ( DEFINED QE_BIN )
   INCLUDE(CMake/run_qe.cmake)
   VERIFY_QE_PRESENT( ${QE_BIN} )
-ENDIF()
-
-######################################################################
-# Verify PYSCF package is present
-######################################################################
-IF ( DEFINED PYSCF_BIN )
-  TEST_PYTHON_MODULE(pyscf HAVE_PYSCF)
-  IF (NOT HAVE_PYSCF)
-    MESSAGE( FATAL_ERROR "PYSCF_BIN was specified but could not import pyscf." )
-  ENDIF()
 ENDIF()
 
 ######################################################################
@@ -703,7 +704,7 @@ IF(QMC_CUDA OR ENABLE_CUDA)
     MESSAGE(STATUS "Setting CUDA FLAGS=${CUDA_NVCC_FLAGS}")
   else(CUDA_NVCC_FLAGS MATCHES "arch")
     # Automatically set the default NVCC flags
-    SET(CUDA_NVCC_FLAGS "-Drestrict=__restrict__;-DNO_CUDA_MAIN")
+    SET(CUDA_NVCC_FLAGS "-Drestrict=__restrict__;-DNO_CUDA_MAIN;-std=c++14")
     if (QMC_COMPLEX)
       SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX")
     endif()

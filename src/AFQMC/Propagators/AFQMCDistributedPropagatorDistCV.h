@@ -72,7 +72,7 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
 
       std::string str("no");
       ParameterSet m_param;
-      m_param.add(str,"low_memory","double");
+      m_param.add(str,"low_memory","std::string");
       m_param.put(cur);
 
       std::transform(str.begin(),str.end(),str.begin(),(int (*)(int)) tolower);
@@ -109,7 +109,7 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
     AFQMCDistributedPropagatorDistCV(AFQMCDistributedPropagatorDistCV const& other) = delete;
     AFQMCDistributedPropagatorDistCV& operator=(AFQMCDistributedPropagatorDistCV const& other) = delete;
     AFQMCDistributedPropagatorDistCV(AFQMCDistributedPropagatorDistCV&& other) = default;
-    AFQMCDistributedPropagatorDistCV& operator=(AFQMCDistributedPropagatorDistCV&& other) = default;
+    AFQMCDistributedPropagatorDistCV& operator=(AFQMCDistributedPropagatorDistCV&& other) = delete;
 
     template<class WlkSet>
     void Propagate(int steps, WlkSet& wset, RealType E1,

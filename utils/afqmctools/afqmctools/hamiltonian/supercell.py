@@ -276,6 +276,9 @@ def write_info(h5grp, cell, v2cnts, h1size, nmo_tot, numv,
     dims = numpy.array([h1size, h2size, v2cnts.size,
                         nmo_tot, nup, ndown, 0, numv])
     h5grp.create_dataset("dims", data=dims)
+    h5grp.create_dataset("ComplexIntegrals",
+                         data=numpy.array([1]),
+                         dtype=numpy.int32)
 
     if ortho_ao:
         occ = numpy.arange(0,nup+ndown)

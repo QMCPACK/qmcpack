@@ -44,20 +44,13 @@ namespace afqmc
 
 
 // Some code duplication with THCHamiltonian class.
-template<typename T>
-THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2)
+inline THCOps loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2)
 {
 
-#if defined(MIXED_PRECISION)
-  using SpT = typename to_single_precision<T>::value_type;
-  using SpC = typename to_single_precision<ComplexType>::value_type;
-#else
-  using SpT = T;
-  using SpC = ComplexType;
-#endif
-
-  using shmVmatrix = boost::multi::array<ValueType,2,shared_allocator<ValueType>>;
-  using shmCmatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+  using shmVMatrix = boost::multi::array<ValueType,2,shared_allocator<ValueType>>;
+  using shmCMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+  using shmSPVMatrix = boost::multi::array<SPValueType,2,shared_allocator<SPValueType>>;
+  using shmSPCMatrix = boost::multi::array<SPComplexType,2,shared_allocator<SPComplexType>>;
 
   if(type==COLLINEAR)
     assert(PsiT.size()%2 == 0);
@@ -141,28 +134,28 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
     nmu = nmuN-nmu0;
   }
 
-  // read 1-body hamiltonian and exchange potential (v0)
-  boost::multi::array<ValueType,2> H1({NMO,NMO});
-  boost::multi::array<ComplexType,2> v0({NMO,NMO});
-  if(TGwfn.Global().root()) {
-    if(!dump.readEntry(H1,"H1")) {
+  // read 1-body hamiltonian and exchange potential (vn0)
+  shmCMatrix H1({NMO,NMO},shared_allocator<ComplexType>{TGwfn.Node()});
+  shmCMatrix vn0({NMO,NMO},shared_allocator<ComplexType>{TGwfn.Node()});
+  if(TGwfn.Node().root()) {
+    boost::multi::array<ValueType,2> H1_({NMO,NMO});
+    if(!dump.readEntry(H1_,"H1")) {
       app_error()<<" Error in loadTHCOps: Problems reading dataset. \n";
       APP_ABORT("");
     }
-    if(!dump.readEntry(v0,"v0")) {
+    copy_n_cast(H1_.origin(),NMO*NMO,to_address(H1.origin()));
+    if(!dump.readEntry(vn0,"v0")) {
       app_error()<<" Error in loadTHCOps: Problems reading dataset. \n";
       APP_ABORT("");
     }
   }
-  TGwfn.Global().broadcast_n(H1.origin(),H1.num_elements());
-  TGwfn.Global().broadcast_n(v0.origin(),v0.num_elements());
 
   // Until I figure something else, rotPiu and rotcPua are not distributed because a full copy is needed
   size_t nel_ = ((type==CLOSED)?NAEA:(NAEA+NAEB));
-  shmVmatrix rotMuv({rotnmu,grotnmu},shared_allocator<ValueType>{TGwfn.Node()});
-  shmCmatrix rotPiu({size_t(NMO),grotnmu},shared_allocator<ComplexType>{TGwfn.Node()});
-  shmCmatrix Piu({size_t(NMO),nmu},shared_allocator<ComplexType>{TGwfn.Node()});
-  shmVmatrix Luv({nmu,gnmu},shared_allocator<ValueType>{TGwfn.Node()});
+  shmSPVMatrix rotMuv({rotnmu,grotnmu},shared_allocator<SPValueType>{TGwfn.Node()});
+  shmSPVMatrix rotPiu({size_t(NMO),grotnmu},shared_allocator<SPValueType>{TGwfn.Node()});
+  shmSPVMatrix Piu({size_t(NMO),nmu},shared_allocator<SPValueType>{TGwfn.Node()});
+  shmSPVMatrix Luv({nmu,gnmu},shared_allocator<SPValueType>{TGwfn.Node()});
 
   // read Half transformed first
   if(TGwfn.Node().root()) {
@@ -173,7 +166,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
       APP_ABORT("");
     }
     /***************************************/
-    hyperslab_proxy<shmVmatrix,2> hslab(rotMuv,
+    hyperslab_proxy<shmSPVMatrix,2> hslab(rotMuv,
             std::array<size_t,2>{grotnmu,grotnmu},
             std::array<size_t,2>{rotnmu,grotnmu},
             std::array<size_t,2>{rotnmu0,0});
@@ -183,7 +176,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
       APP_ABORT("");
     }
     /***************************************/
-    hyperslab_proxy<shmCmatrix,2> hslab2(Piu,
+    hyperslab_proxy<shmSPVMatrix,2> hslab2(Piu,
             std::array<size_t,2>{size_t(NMO),gnmu},
             std::array<size_t,2>{size_t(NMO),nmu},
             std::array<size_t,2>{0,nmu0});                 
@@ -193,7 +186,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
       APP_ABORT("");
     }
     /***************************************/
-    hyperslab_proxy<shmVmatrix,2> hslab3(Luv,
+    hyperslab_proxy<shmSPVMatrix,2> hslab3(Luv,
             std::array<size_t,2>{gnmu,gnmu},
             std::array<size_t,2>{nmu,gnmu},
             std::array<size_t,2>{nmu0,0});
@@ -207,20 +200,20 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   TGwfn.global_barrier();
 
   // half-rotated Pia
-  std::vector<shmCmatrix> rotcPua;
+  std::vector<shmSPCMatrix> rotcPua;
   rotcPua.reserve(ndet);
   for(int i=0; i<ndet; i++)
-    rotcPua.emplace_back(shmCmatrix({grotnmu,nel_},shared_allocator<ComplexType>{TGwfn.Node()}));
-  std::vector<shmCmatrix> cPua;
+    rotcPua.emplace_back(shmSPCMatrix({grotnmu,nel_},shared_allocator<SPComplexType>{TGwfn.Node()}));
+  std::vector<shmSPCMatrix> cPua;
   cPua.reserve(ndet);
   for(int i=0; i<ndet; i++)
-    cPua.emplace_back(shmCmatrix({nmu,nel_},shared_allocator<ComplexType>{TGwfn.Node()}));
+    cPua.emplace_back(shmSPCMatrix({nmu,nel_},shared_allocator<SPComplexType>{TGwfn.Node()}));
   if(TGwfn.Node().root()) {
     // simple
     using ma::H;
     if(type==COLLINEAR) {
-      boost::multi::array<ComplexType,2> A({NMO,NAEA});
-      boost::multi::array<ComplexType,2> B({NMO,NAEB});
+      boost::multi::array<SPComplexType,2> A({NMO,NAEA});
+      boost::multi::array<SPComplexType,2> B({NMO,NAEB});
       for(int i=0; i<ndet; i++) {
         // cPua = H(Piu) * conj(A)
         ma::Matrix2MA('T',PsiT[2*i],A);
@@ -231,7 +224,7 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
         ma::product(H(rotPiu),B,rotcPua[i](cPua[i].extension(0),{NAEA,NAEA+NAEB}));
       }
     } else {
-      boost::multi::array<ComplexType,2> A({PsiT[0].size(1),PsiT[0].size(0)});
+      boost::multi::array<SPComplexType,2> A({PsiT[0].size(1),PsiT[0].size(0)});
       for(int i=0; i<ndet; i++) {
         ma::Matrix2MA('T',PsiT[i],A);
         // cPua = H(Piu) * conj(A)
@@ -243,32 +236,35 @@ THCOps<T> loadTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, in
   TGwfn.node_barrier();
 
   // rotated 1 body hamiltonians
-  std::vector<boost::multi::array<ComplexType,1>> hij;
-  hij.reserve(ndet);
-  int skp=((type==COLLINEAR)?1:0);
-  for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
-    check_wavefunction_consistency(type,&PsiT[nd],&PsiT[nd+skp],NMO,NAEA,NAEB);
-    hij.emplace_back(rotateHij(type,&PsiT[nd],&PsiT[nd+skp],H1));
+  shmCMatrix hij({ndet,(NAEA+NAEB)*NMO},shared_allocator<ComplexType>{TGwfn.Node()});
+  if (TGwfn.Node().root() ) {
+    int skp=((type==COLLINEAR)?1:0);
+    for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
+      check_wavefunction_consistency(type,&PsiT[nd],&PsiT[nd+skp],NMO,NAEA,NAEB);
+      auto hij_(rotateHij(type,&PsiT[nd],&PsiT[nd+skp],H1));
+      std::copy_n(hij_.origin(),hij_.num_elements(),to_address(hij[n].origin()));
+    }
   }
+  TGwfn.Node().barrier();
 
-  return THCOps<T>(TGwfn.TG_local(),NMO,NAEA,NAEB,type,nmu0,rotnmu0,std::move(H1),
+  return THCOps(TGwfn.TG_local(),NMO,NAEA,NAEB,type,nmu0,rotnmu0,std::move(H1),
                                       std::move(hij),std::move(rotMuv),std::move(rotPiu),
                                       std::move(rotcPua),std::move(Luv),
-                                      std::move(Piu),std::move(cPua),std::move(v0),E0);
+                                      std::move(Piu),std::move(cPua),std::move(vn0),E0);
 }
 
 // single writer right now
-template<class shmVmatrix,
-         class shmCmatrix>
+template<class shmVMatrix,
+         class shmCMatrix>
 inline void writeTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, 
                               size_t nmu0, size_t rotnmu0, int ndet,
                               TaskGroup_& TGprop, TaskGroup_& TGwfn,
-                              boost::multi::array<ValueType,2> & H1,
-                              shmCmatrix & rotPiu,
-                              shmVmatrix & rotMuv,
-                              shmCmatrix & Piu,
-                              shmVmatrix & Luv,
-                              boost::multi::array<ComplexType,2> & v0,
+                              shmCMatrix & H1,
+                              shmVMatrix & rotPiu,
+                              shmVMatrix & rotMuv,
+                              shmVMatrix & Piu,
+                              shmVMatrix & Luv,
+                              shmCMatrix & vn0,
                               ValueType E0)
 {
 
@@ -282,22 +278,22 @@ inline void writeTHCOps(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA,
     std::vector<ValueType> et{E0};
     dump.write(et,"E0");
     dump.write(H1,"H1");
-    dump.write(v0,"v0");
+    dump.write(vn0,"v0");
     dump.write(rotPiu,"HalfTransformedFullOrbitals");
-    ma_hdf5::write_distributed_MA(rotMuv,{grotnmu,grotnmu},{rotnmu0,0},
+    ma_hdf5::write_distributed_MA(rotMuv,{rotnmu0,0},{grotnmu,grotnmu},
                                   dump,"HalfTransformedMuv",TGwfn);
-    ma_hdf5::write_distributed_MA(Piu,{size_t(NMO),gnmu},{0,nmu0},
+    ma_hdf5::write_distributed_MA(Piu,{0,nmu0},{size_t(NMO),gnmu},
                                   dump,"Orbitals",TGprop);
-    ma_hdf5::write_distributed_MA(Luv,{gnmu,gnmu},{nmu0,0},
+    ma_hdf5::write_distributed_MA(Luv,{nmu0,0},{gnmu,gnmu},
                                   dump,"Luv",TGprop);
     dump.pop();
     dump.pop();
   } else {
-    ma_hdf5::write_distributed_MA(rotMuv,{grotnmu,grotnmu},{rotnmu0,0},
+    ma_hdf5::write_distributed_MA(rotMuv,{rotnmu0,0},{grotnmu,grotnmu},
                                   dump,"HalfTransformedMuv",TGwfn);
-    ma_hdf5::write_distributed_MA(Piu,{size_t(NMO),gnmu},{0,nmu0},
+    ma_hdf5::write_distributed_MA(Piu,{0,nmu0},{size_t(NMO),gnmu},
                                   dump,"Orbitals",TGprop);
-    ma_hdf5::write_distributed_MA(Luv,{gnmu,gnmu},{nmu0,0},
+    ma_hdf5::write_distributed_MA(Luv,{nmu0,0},{gnmu,gnmu},
                                   dump,"Luv",TGprop);
   }
   TGwfn.Global().barrier();

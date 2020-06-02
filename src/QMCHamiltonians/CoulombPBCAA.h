@@ -112,11 +112,6 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   virtual void delete_particle_quantities();
 #endif
 
-  Return_t evalConsts_orig(bool report = true);
-  Return_t evalSR_old(ParticleSet& P);
-  Return_t evalLR_old(ParticleSet& P);
-  Return_t evalConsts_old(bool report = true);
-
   Return_t evalSR(ParticleSet& P);
   Return_t evalLR(ParticleSet& P);
   Return_t evalSRwithForces(ParticleSet& P);

@@ -82,12 +82,12 @@ void uninitialized_fill_n(std::complex<double> * first, int N, std::complex<doub
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 } 
 
-void uninitialized_fill_n(double2 * first, int N, double2 const value)
-{ 
-  kernel_uninitialized_fill_n<<<1,256>>>(N,first,value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
+/*void uninitialized_fill_n(double2 * first, int N, double2 const value)*/
+/*{ */
+  /*kernel_uninitialized_fill_n<<<1,256>>>(N,first,value);*/
+  /*qmc_cuda::cuda_check(cudaGetLastError());*/
+  /*qmc_cuda::cuda_check(cudaDeviceSynchronize());*/
+/*}*/
 
 void uninitialized_fill_n(bool * first, long N, bool const value)
 {
@@ -131,12 +131,12 @@ void uninitialized_fill_n(std::complex<double> * first, long N, std::complex<dou
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
-void uninitialized_fill_n(double2 * first, long N, double2 const value)
-{
-  kernel_uninitialized_fill_n<<<1,256>>>(N,first,value);
-  qmc_cuda::cuda_check(cudaGetLastError());
-  qmc_cuda::cuda_check(cudaDeviceSynchronize());
-}
+/*void uninitialized_fill_n(double2 * first, long N, double2 const value)*/
+/*{*/
+  /*kernel_uninitialized_fill_n<<<1,256>>>(N,first,value);*/
+  /*qmc_cuda::cuda_check(cudaGetLastError());*/
+  /*qmc_cuda::cuda_check(cudaDeviceSynchronize());*/
+/*}*/
 
 
 }

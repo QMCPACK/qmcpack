@@ -61,7 +61,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
   int norb = morb;
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
-  psiMinv.resize(nel, norb);
+  psiMinv.resize(nel, getAlignedSize<ValueType>(norb));
   psiMinv_dev_ptr = getOffloadDevicePtr(psiMinv.data());
   psiM_vgl.resize(nel * norb);
   psiM_vgl_dev_ptr = getOffloadDevicePtr(psiM_vgl.data());
@@ -86,7 +86,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
 {
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  GradType g = simd::dot(psiMinv[WorkingIndex], dpsiM[WorkingIndex], psiMinv.rows());
+  GradType g = simd::dot(psiMinv[WorkingIndex], dpsiM[WorkingIndex], NumOrbitals);
   RatioTimer.stop();
   return g;
 }
@@ -107,7 +107,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVector<WaveF
   for (int iw = 0; iw < nw; iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-    invRow_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
+    invRow_list[iw] = det.psiMinv_dev_ptr + psiMinv.cols() * WorkingIndex;
     dpsiM_row_list[iw] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
   }
 
@@ -130,9 +130,9 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
 
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  curRatio               = simd::dot(psiMinv[WorkingIndex], psiV.data(), psiV.size());
+  curRatio               = simd::dot(psiMinv[WorkingIndex], psiV.data(), NumOrbitals);
   grad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
-      simd::dot(psiMinv[WorkingIndex], dpsiV.data(), psiMinv.rows());
+      simd::dot(psiMinv[WorkingIndex], dpsiV.data(), NumOrbitals);
   RatioTimer.stop();
   return curRatio;
 }
@@ -156,16 +156,16 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVector<Wave
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     phi_list.push_back(*det.Phi);
     if (Phi->isOMPoffload())
-      psiMinv_row_dev_ptr_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
+      psiMinv_row_dev_ptr_list[iw] = det.psiMinv_dev_ptr + psiMinv.cols() * WorkingIndex;
     else
     {
-      psiMinv_row_dev_ptr_list[iw] = det.psiMinv.data() + NumOrbitals * WorkingIndex;
+      psiMinv_row_dev_ptr_list[iw] = det.psiMinv.data() + psiMinv.cols() * WorkingIndex;
       auto* Ainv_ptr = det.psiMinv.data();
-      PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[NumOrbitals*WorkingIndex:NumOrbitals])")
+      PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[psiMinv.cols()*WorkingIndex:NumOrbitals])")
     }
   }
 
-  resizeMultiWalkerScratch(psiMinv.cols(), WFC_list.size());
+  resizeMultiWalkerScratch(NumOrbitals, WFC_list.size());
   ratios_local.resize(WFC_list.size());
   grad_new_local.resize(WFC_list.size());
 
@@ -242,7 +242,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
     PRAGMA_OFFLOAD("omp target update to(phi_vgl_v_ptr[:phi_vgl_v.capacity()*5])")
   }
 
-  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, psiMinv.rows(), WorkingIndex, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_v.capacity(), ratios_local);
+  det_engine_.mw_updateRow(psiMinv_dev_ptr_list, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, NumOrbitals, psiMinv.cols(), WorkingIndex, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_v.capacity(), ratios_local);
 
   UpdateTimer.stop();
 }
@@ -267,12 +267,22 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list)
 {
   UpdateTimer.start();
+
+  const int nw = WFC_list.size();
+  std::vector<ValueType*> Ainv_ptr_list(nw, nullptr), Ainv_dev_ptr_list(nw, nullptr);
+
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-    auto* Ainv_ptr = det.psiMinv.data();
-    PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[:psiMinv.size()])")
+    Ainv_ptr_list[iw] = det.psiMinv.data();
+    Ainv_dev_ptr_list[iw] = det.psiMinv_dev_ptr;
+  }
 
+  det_engine_.mw_transferAinv_D2H(Ainv_ptr_list, Ainv_dev_ptr_list, psiMinv.size());
+
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+  {
+    auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     auto& my_psiM_vgl = det.psiM_vgl;
     auto* psiM_vgl_ptr = my_psiM_vgl.data();
     PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4])")
@@ -315,6 +325,9 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::updateAfterSweep(ParticleSet& P,
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
 {
+  buf.add(psiMinv.first_address(), psiMinv.last_address());
+  buf.add(dpsiM.first_address(), dpsiM.last_address());
+  buf.add(d2psiM.first_address(), d2psiM.last_address());
   buf.add(LogValue);
 }
 
@@ -333,6 +346,9 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
     updateAfterSweep(P, P.G, P.L);
   }
   BufferTimer.start();
+  buf.put(psiMinv.first_address(), psiMinv.last_address());
+  buf.put(dpsiM.first_address(), dpsiM.last_address());
+  buf.put(d2psiM.first_address(), d2psiM.last_address());
   buf.put(LogValue);
   BufferTimer.stop();
   return LogValue;
@@ -342,7 +358,14 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
-  recompute(P);
+  buf.get(psiMinv.first_address(), psiMinv.last_address());
+  buf.get(dpsiM.first_address(), dpsiM.last_address());
+  buf.get(d2psiM.first_address(), d2psiM.last_address());
+  auto* psiMinv_ptr = psiMinv.data();
+  PRAGMA_OFFLOAD("omp target update to(psiMinv_ptr[:psiMinv.size()])")
+  auto* psiM_vgl_ptr = psiM_vgl.data();
+  const size_t psiM_vgl_stride = psiM_vgl.capacity();
+  PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl_stride:psiM_vgl_stride*4])")
   buf.get(LogValue);
   BufferTimer.stop();
 }
@@ -362,7 +385,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
   Phi->evaluateValue(P, iat, psiV_host_view);
   SPOVTimer.stop();
   RatioTimer.start();
-  curRatio = simd::dot(psiMinv[WorkingIndex], psiV.data(), psiV.size());
+  curRatio = simd::dot(psiMinv[WorkingIndex], psiV.data(), NumOrbitals);
   RatioTimer.stop();
   return curRatio;
 }
@@ -384,21 +407,22 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     phi_list.push_back(*det.Phi);
     if (Phi->isOMPoffload())
-      psiMinv_row_dev_ptr_list[iw] = det.psiMinv_dev_ptr + NumOrbitals * WorkingIndex;
+      psiMinv_row_dev_ptr_list[iw] = det.psiMinv_dev_ptr + psiMinv.cols() * WorkingIndex;
     else
     {
-      psiMinv_row_dev_ptr_list[iw] = det.psiMinv.data() + NumOrbitals * WorkingIndex;
+      psiMinv_row_dev_ptr_list[iw] = det.psiMinv.data() + psiMinv.cols() * WorkingIndex;
       auto* Ainv_ptr = det.psiMinv.data();
       PRAGMA_OFFLOAD("omp target update from(Ainv_ptr[NumOrbitals*WorkingIndex:NumOrbitals])")
     }
   }
 
-  resizeMultiWalkerScratch(psiMinv.cols(), WFC_list.size());
+  resizeMultiWalkerScratch(NumOrbitals, WFC_list.size());
   ratios_local.resize(WFC_list.size());
   grad_new_local.resize(WFC_list.size());
 
   VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
 
+  det_engine_.mw_getInvRowReady(WorkingIndex, false);
   // calling Phi->mw_evaluateVGLandDetRatioGrads is a temporary workaround.
   // We may implement mw_evaluateVandDetRatio in the future.
   Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v_view, ratios_local,
@@ -465,7 +489,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatiosAlltoOne(ParticleSe
   SPOVTimer.start();
   Phi->evaluateValue(P, -1, psiV_host_view);
   SPOVTimer.stop();
-  ValueMatrix_t psiMinv_host_view(psiMinv.data(), psiMinv.rows(), psiMinv.cols());
+  ValueMatrix_t psiMinv_host_view(psiMinv.data(), psiMinv.rows(), NumOrbitals);
+  //FIXME due to padding in psiMinv
   MatrixOperators::product(psiMinv_host_view, psiV.data(), &ratios[FirstIndex]);
 }
 
@@ -504,6 +529,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
   {
     resizeScratchObjectsForIonDerivs();
     Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
+    // FIXME due padding of psiMinv
     g = simd::dot(psiMinv.data(), grad_source_psiM.data(), psiMinv.size());
   }
 
@@ -514,7 +540,7 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
   // Hessian is not often used, so only resize/allocate if used
-  grad_grad_source_psiM.resize(psiMinv.rows(), psiMinv.cols());
+  grad_grad_source_psiM.resize(psiMinv.rows(), NumOrbitals);
   //IM A HACK.  Assumes evaluateLog has already been executed.
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, grad_grad_source_psiM);
   invertPsiM(psiM_temp, psiMinv);
@@ -720,8 +746,8 @@ DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYP
 }
 
 template class DiracDeterminantBatched<>;
-#if defined(ENABLE_CUDA)
-//template class DiracDeterminantBatched<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+template class DiracDeterminantBatched<MatrixUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus

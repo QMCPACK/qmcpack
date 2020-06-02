@@ -31,7 +31,7 @@ class OneBodyHamiltonian: public AFQMCInfo
   OneBodyHamiltonian(OneBodyHamiltonian const& other) = delete;
   OneBodyHamiltonian(OneBodyHamiltonian && other) = default;
   OneBodyHamiltonian& operator=(OneBodyHamiltonian const& other) = delete;
-  OneBodyHamiltonian& operator=(OneBodyHamiltonian && other) = default;
+  OneBodyHamiltonian& operator=(OneBodyHamiltonian && other) = delete;
 
   ~OneBodyHamiltonian() {}
 
@@ -54,6 +54,7 @@ class OneBodyHamiltonian: public AFQMCInfo
 
   protected:
 
+  // this should be in shared memory, no need for all the copies!!! 
   boost::multi::array<ValueType,2> H1;
 
   // nuclear coulomb term

@@ -162,13 +162,6 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///Creates the long-range handlers, then splines and stores it by particle and species for quick evaluation.
   void initBreakup(ParticleSet& P);
 
-  //Do these functions need to be kept?
-  Return_t evalConsts_orig(bool report = true);
-  Return_t evalSR_old(ParticleSet& P);
-  Return_t evalLR_old(ParticleSet& P);
-  Return_t evalConsts_old(bool report = true);
-  //
-
   ///Computes the short-range contribution to the coulomb energy.
   Return_t evalSR(ParticleSet& P);
   ///Computes the long-range contribution to the coulomb energy.

@@ -12,18 +12,9 @@
 #include<mpi.h>
 #endif
 
-#include "OhmmsPETE/TinyVector.h"
-#include "ParticleBase/ParticleAttrib.h"
-#include "type_traits/scalar_traits.h"
-#include <Platforms/sysutil.h>
-#include "OhmmsData/libxmldefs.h"
-#include "OhmmsData/AttributeSet.h"
-#include "OhmmsData/ParameterSet.h"
-#include "Utilities/SimpleParser.h"
-#include "Configuration.h"
+#include <boost/version.hpp>
 #include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
-#include "Message/CommOperators.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
@@ -43,6 +34,7 @@
 #include "AFQMC/Matrix/csr_matrix.hpp"
 
 #include "AFQMC/Matrix/hdf5_readers.hpp"
+#include "AFQMC/Utilities/hdf5_consistency_helper.hpp"
 #include "AFQMC/Matrix/array_partition.hpp"
 
 namespace qmcplusplus
@@ -120,6 +112,28 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       htype = HamiltonianTypes(htype_);
     }
 
+    int complex_integrals;
+    // Hamiltonian file may not contain flag.
+    bool have_complex_flag = true;
+    if(head) {
+      if(!dump.readEntry(complex_integrals, "ComplexIntegrals")) {
+        have_complex_flag = false;
+      }
+    }
+    TG.Global().broadcast_n(&have_complex_flag, 1, 0);
+    if(have_complex_flag && head) {
+#ifdef QMC_COMPLEX
+      if(!complex_integrals)
+        app_log() << " Note: Found real integrals with QMC_COMPLEX=1.\n";
+#else
+      if(complex_integrals) {
+        app_error() << " Error in HamiltonianFactory::fromHDF5(): Found complex integrals but QMC_COMPLEX=0.\n";
+        app_error() << " Please build QMCPACK with complex support or write real integrals if appropriate.\n";
+        APP_ABORT("");
+      }
+#endif
+    }
+
     int int_blocks,nvecs;
     std::vector<int> Idata(8);
     if(head)
@@ -181,10 +195,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 #endif
         // nothing to do, H1 is read during construction of HamiltonianOperations object.
       } else {
-        if(dump.readEntry(H1,"hcore")) {
-          foundH1 = true;
+        if(readComplexOrReal(dump, "hcore", H1)) {
         } else {
-
+          app_log() << " Reading one-body Hamiltonian in sparse format.\n";
           H1.reextent({NMO,NMO});
           if(Idata[0] < 1) {
             app_error()<<" Error in HamiltonianFactory::fromHDF5(): Dimensions of H1 < 1.  \n";
@@ -197,7 +210,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
             APP_ABORT(" ");
           }
           std::vector<ValueType> vvec(Idata[0]);
-          if(!dump.readEntry(vvec,"H1")) {
+          if(!readComplexOrReal(dump,"H1", vvec)) {
             app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1.  \n";
             APP_ABORT(" ");
           }
@@ -213,6 +226,8 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
             }
           }
         }
+        app_log() << " Successfully read one-body Hamiltonian.\n";
+        app_log() << " Shape of one-body Hamiltonian: (" << NMO << ", " << NMO << ")." << std::endl;
       }
     }
     TG.Global().broadcast_n(to_address(H1.origin()),H1.num_elements(),0);

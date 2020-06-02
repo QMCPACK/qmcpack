@@ -137,11 +137,7 @@ void ForceBase::setParticleSetStress(QMCTraits::PropertySetType& plist, int offs
 
 BareForce::BareForce(ParticleSet& ions, ParticleSet& elns)
   : ForceBase(ions, elns),
-#ifdef ENABLE_SOA
   d_ei_ID(elns.addTable(ions, DT_SOA))
-#else
-  d_ei_ID(elns.addTable(ions, DT_AOS))
-#endif
 {
   myName = "HF_Force_Base";
   prefix = "HFBase";
@@ -164,7 +160,6 @@ BareForce::Return_t BareForce::evaluate(ParticleSet& P)
   const ParticleSet::Scalar_t* restrict Zat = Ions.Z.first_address();
   const ParticleSet::Scalar_t* restrict Qat = P.Z.first_address();
   //Loop over distinct eln-ion pairs
-#ifdef ENABLE_SOA
   for (int jat = 0; jat < d_ab.targets(); jat++)
   {
     const auto& ab_dist  = d_ab.getDistRow(jat);
@@ -176,17 +171,6 @@ BareForce::Return_t BareForce::evaluate(ParticleSet& P)
       forces[iat] += r3zz * ab_displ[iat];
     }
   }
-#else
-  for (int iat = 0; iat < Nnuc; iat++)
-  {
-    for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; nn++, jat++)
-    {
-      real_type rinv = d_ab.rinv(nn);
-      real_type r3zz = Qat[jat] * Zat[iat] * rinv * rinv * rinv;
-      forces[iat] -= r3zz * d_ab.dr(nn);
-    }
-  }
-#endif
   tries++;
   return 0.0;
 }

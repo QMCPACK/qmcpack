@@ -24,14 +24,7 @@
 #include "Numerics/OneDimGridBase.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/GaussianBasisSet.h"
-#ifdef ENABLE_SOA
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
-#else
-#include "QMCWaveFunctions/MolecularOrbitals/LocalizedBasisSet.h"
-#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSet.h"
-#include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
-#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-#endif
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus
@@ -88,11 +81,7 @@ void test_C_diamond()
     elec.Lattice.R(2, 2) = 3.37316115;
     elec.Lattice.reset();
 
-#ifdef ENABLE_SOA
     elec.addTable(ions, DT_SOA);
-#else
-    elec.addTable(ions, DT_AOS);
-#endif
     elec.update();
 
     Libxml2Document doc2;

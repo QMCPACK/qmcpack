@@ -68,7 +68,8 @@ inline void check_wavefunction_consistency(WALKER_TYPES type, PsiT_Type *A, PsiT
     }
 }
 
-inline boost::multi::array<ComplexType,1> rotateHij(WALKER_TYPES walker_type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, const boost::multi::array<ComplexType,2>& H1)
+template<class Mat>
+inline boost::multi::array<ComplexType,1> rotateHij(WALKER_TYPES walker_type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, Mat const& H1)
 {
   assert(Alpha!=nullptr);
   int NAEA = Alpha->size(0);

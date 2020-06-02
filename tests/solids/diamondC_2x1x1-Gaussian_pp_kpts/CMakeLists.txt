@@ -2,7 +2,6 @@
 # Reference VMC run in qmc_ref_long.s000.scalar.dat
 # VMC short run with No Jastrow. Compare directly to Hartree Fock Energy of: E=-21.20673553792076
 #Data generated using utils/make_ref_data.sh DIAMOND qmc_short.s000.scalar.dat ../qmc-ref/qmc_ref_long.s000.scalar.dat
-IF(ENABLE_SOA)
 LIST(APPEND DIAMOND_SCALARS "HartreeFock" "-21.20673553792076 0.0")
 LIST(APPEND DIAMOND_SCALARS "totenergy" "-21.207748159198 0.034802492057")
 LIST(APPEND DIAMOND_SCALARS "variance" "4.489893400599 0.215879917849")
@@ -66,6 +65,3 @@ LIST(APPEND LONG_DIAMOND_DMC_SCALARS "ionion" "-25.551326757000 0.001000000000")
                     1 LONG_DIAMOND_DMC_SCALARS # DMC
                     )
 
-ELSE()
-  MESSAGE("Skipping all tests since PBC gaussians only enabled with SOA")
-ENDIF()

@@ -123,7 +123,7 @@ class AFQMCBasePropagator: public AFQMCInfo
     AFQMCBasePropagator(AFQMCBasePropagator const& other) = delete;
     AFQMCBasePropagator& operator=(AFQMCBasePropagator const& other) = delete;
     AFQMCBasePropagator(AFQMCBasePropagator&& other) = default;
-    AFQMCBasePropagator& operator=(AFQMCBasePropagator&& other) = default;
+    AFQMCBasePropagator& operator=(AFQMCBasePropagator&& other) = delete;
 
     template<class WlkSet>
     void Propagate(int steps, WlkSet& wset, RealType E1,
@@ -220,6 +220,12 @@ class AFQMCBasePropagator: public AFQMCInfo
     // intead of doing this, should use TBuff to transpose vHS3D and only have propagation 
     // with vHD3D[nwalk*nsteps,...]
     CMatrix local_vHS;  
+
+    CVector new_overlaps;  
+    CMatrix new_energies;  
+
+    CMatrix MFfactor;  
+    CMatrix hybrid_weight;  
 
     boost::multi::array<ComplexType,2> work; 
  

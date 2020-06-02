@@ -71,25 +71,25 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     app_log() << "Checking ion-ion Ewald energy against reference..." << std::endl;
     if (Vdiff_per_atom > Ps.Lattice.LR_tol)
     {
-      app_log() << std::setprecision(14);
-      app_log() << std::endl;
-      app_log() << "Error in ion-ion Ewald energy exceeds " << Ps.Lattice.LR_tol << " Ha/atom tolerance." << std::endl;
-      app_log() << std::endl;
-      app_log() << "  Reference ion-ion energy: " << Vii_ref << std::endl;
-      app_log() << "  QMCPACK   ion-ion energy: " << Value << std::endl;
-      app_log() << "            ion-ion diff  : " << Value - Vii_ref << std::endl;
-      app_log() << "            diff/atom     : " << (Value - Vii_ref) / NumCenters << std::endl;
-      app_log() << "            tolerance     : " << Ps.Lattice.LR_tol << std::endl;
-      app_log() << std::endl;
-      app_log() << "Please try increasing the LR_dim_cutoff parameter in the <simulationcell/>" << std::endl;
-      app_log() << "input.  Alternatively, the tolerance can be increased by setting the" << std::endl;
-      app_log() << "LR_tol parameter in <simulationcell/> to a value greater than " << Ps.Lattice.LR_tol << ". "
+      std::ostringstream msg;
+      msg << std::setprecision(14);
+      msg << "in ion-ion Ewald energy exceeds " << Ps.Lattice.LR_tol << " Ha/atom tolerance." << std::endl;
+      msg << std::endl;
+      msg << "  Reference ion-ion energy: " << Vii_ref << std::endl;
+      msg << "  QMCPACK   ion-ion energy: " << Value << std::endl;
+      msg << "            ion-ion diff  : " << Value - Vii_ref << std::endl;
+      msg << "            diff/atom     : " << (Value - Vii_ref) / NumCenters << std::endl;
+      msg << "            tolerance     : " << Ps.Lattice.LR_tol << std::endl;
+      msg << std::endl;
+      msg << "Please try increasing the LR_dim_cutoff parameter in the <simulationcell/>" << std::endl;
+      msg << "input.  Alternatively, the tolerance can be increased by setting the" << std::endl;
+      msg << "LR_tol parameter in <simulationcell/> to a value greater than " << Ps.Lattice.LR_tol << ". "
                 << std::endl;
-      app_log() << "If you increase the tolerance, please perform careful checks of energy" << std::endl;
-      app_log() << "differences to ensure this error is controlled for your application." << std::endl;
-      app_log() << std::endl;
+      msg << "If you increase the tolerance, please perform careful checks of energy" << std::endl;
+      msg << "differences to ensure this error is controlled for your application." << std::endl;
+      msg << std::endl;
 
-      APP_ABORT("ion-ion check failed")
+      throw std::runtime_error(msg.str());
     }
     else
     {
@@ -199,36 +199,17 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
     //SR
     const DistanceTableData& d_aa(P.getDistTable(d_aa_ID));
     RealType z;
-    if (d_aa.DTType == DT_SOA)
+    for (int ipart = 1; ipart < NumCenters; ipart++)
     {
-      for (int ipart = 1; ipart < NumCenters; ipart++)
+      z                = .5 * Zat[ipart];
+      const auto& dist = d_aa.getDistRow(ipart);
+      for (int jpart = 0; jpart < ipart; ++jpart)
       {
-        z                = .5 * Zat[ipart];
-        const auto& dist = d_aa.getDistRow(ipart);
-        for (int jpart = 0; jpart < ipart; ++jpart)
-        {
-          RealType pairpot = z * Zat[jpart] * rVs->splint(dist[jpart]) / dist[jpart];
-          V_samp(ipart) += pairpot;
-          V_samp(jpart) += pairpot;
-          Vsr += pairpot;
-        }
+        RealType pairpot = z * Zat[jpart] * rVs->splint(dist[jpart]) / dist[jpart];
+        V_samp(ipart) += pairpot;
+        V_samp(jpart) += pairpot;
+        Vsr += pairpot;
       }
-    }
-    else
-    {
-#ifndef ENABLE_SOA
-      for (int ipart = 0; ipart < NumCenters; ipart++)
-      {
-        z = .5 * Zat[ipart];
-        for (int nn = d_aa.M[ipart], jpart = ipart + 1; nn < d_aa.M[ipart + 1]; nn++, jpart++)
-        {
-          RealType pairpot = z * Zat[jpart] * d_aa.rinv(nn) * rVs->splint(d_aa.r(nn));
-          V_samp(ipart) += pairpot;
-          V_samp(jpart) += pairpot;
-          Vsr += pairpot;
-        }
-      }
-#endif
     }
     Vsr *= 2.0;
   }
@@ -273,10 +254,6 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
   RealType Vnow   = Vlrnow + Vsrnow + Vcnow;
   RealType Vsum   = V_samp.sum();
   RealType Vcsum  = V_const.sum();
-  RealType Vsrold = evalSR_old(P);
-  RealType Vlrold = evalLR_old(P);
-  RealType Vcold  = evalConsts_old(false);
-  RealType Vcorig = evalConsts_orig(false);
   if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
   {
     app_log() << "accumtest: CoulombPBCAA::evaluate()" << std::endl;
@@ -289,28 +266,6 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
     app_log() << "accumtest: CoulombPBCAA::evalConsts()" << std::endl;
     app_log() << "accumtest:   tot:" << Vcnow << std::endl;
     app_log() << "accumtest:   sum:" << Vcsum << std::endl;
-    APP_ABORT("Trace check failed");
-  }
-  if (std::abs(Vsrold - Vsrnow) > TraceManager::trace_tol)
-  {
-    app_log() << "versiontest: CoulombPBCAA::evalSR()" << std::endl;
-    app_log() << "versiontest:    old:" << Vsrold << std::endl;
-    app_log() << "versiontest:    mod:" << Vsrnow << std::endl;
-    APP_ABORT("Trace check failed");
-  }
-  if (std::abs(Vlrold - Vlrnow) > TraceManager::trace_tol)
-  {
-    app_log() << "versiontest: CoulombPBCAA::evalLR()" << std::endl;
-    app_log() << "versiontest:    old:" << Vlrold << std::endl;
-    app_log() << "versiontest:    mod:" << Vlrnow << std::endl;
-    APP_ABORT("Trace check failed");
-  }
-  if (std::abs(Vcold - Vcorig) > TraceManager::trace_tol || std::abs(Vcnow - Vcorig) > TraceManager::trace_tol)
-  {
-    app_log() << "versiontest: CoulombPBCAA::evalConsts()" << std::endl;
-    app_log() << "versiontest:    old:" << Vcold << std::endl;
-    app_log() << "versiontest:   orig:" << Vcorig << std::endl;
-    app_log() << "versiontest:    mod:" << Vcnow << std::endl;
     APP_ABORT("Trace check failed");
   }
 #endif
@@ -390,69 +345,45 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
 {
   const DistanceTableData& d_aa(P.getDistTable(d_aa_ID));
   mRealType SR = 0.0;
-  if (d_aa.DTType == DT_SOA)
+  for (size_t ipart = 1; ipart < (NumCenters / 2 + 1); ipart++)
   {
-    for (size_t ipart = 1; ipart < (NumCenters / 2 + 1); ipart++)
+    mRealType esum   = 0.0;
+    const auto& dist = d_aa.getDistRow(ipart);
+    const auto& dr   = d_aa.getDisplRow(ipart);
+    for (size_t j = 0; j < ipart; ++j)
     {
-      mRealType esum   = 0.0;
-      const auto& dist = d_aa.getDistRow(ipart);
-      const auto& dr   = d_aa.getDisplRow(ipart);
-      for (size_t j = 0; j < ipart; ++j)
-      {
-        RealType V, rV, d_rV_dr, d2_rV_dr2;
-        RealType rinv = 1.0 / dist[j];
-        rV            = rVsforce->splint(dist[j], d_rV_dr, d2_rV_dr2);
-        V             = rV * rinv;
-        esum += Zat[j] * rVs->splint(dist[j]) * rinv;
+      RealType V, rV, d_rV_dr, d2_rV_dr2;
+      RealType rinv = 1.0 / dist[j];
+      rV            = rVsforce->splint(dist[j], d_rV_dr, d2_rV_dr2);
+      V             = rV * rinv;
+      esum += Zat[j] * rVs->splint(dist[j]) * rinv;
 
-        PosType grad = Zat[j] * Zat[ipart] * (d_rV_dr - V) * rinv * rinv * dr[j];
-        forces[ipart] += grad;
-        forces[j] -= grad;
-      }
-      SR += Zat[ipart] * esum;
-
-      const size_t ipart_reverse = NumCenters - ipart;
-      if (ipart == ipart_reverse)
-        continue;
-
-      esum              = 0.0;
-      const auto& dist2 = d_aa.getDistRow(ipart_reverse);
-      const auto& dr2   = d_aa.getDisplRow(ipart_reverse);
-      for (size_t j = 0; j < ipart_reverse; ++j)
-      {
-        RealType V, rV, d_rV_dr, d2_rV_dr2;
-        RealType rinv = 1.0 / dist2[j];
-        rV            = rVsforce->splint(dist2[j], d_rV_dr, d2_rV_dr2);
-        V             = rV * rinv;
-        esum += Zat[j] * rVs->splint(dist2[j]) * rinv;
-
-        PosType grad = Zat[j] * Zat[ipart_reverse] * (d_rV_dr - V) * rinv * rinv * dr2[j];
-        forces[ipart_reverse] += grad;
-        forces[j] -= grad;
-      }
-      SR += Zat[ipart_reverse] * esum;
+      PosType grad = Zat[j] * Zat[ipart] * (d_rV_dr - V) * rinv * rinv * dr[j];
+      forces[ipart] += grad;
+      forces[j] -= grad;
     }
-  }
-  else
-  {
-#ifndef ENABLE_SOA
-    for (int ipart = 0; ipart < NumCenters; ipart++)
+    SR += Zat[ipart] * esum;
+
+    const size_t ipart_reverse = NumCenters - ipart;
+    if (ipart == ipart_reverse)
+      continue;
+
+    esum              = 0.0;
+    const auto& dist2 = d_aa.getDistRow(ipart_reverse);
+    const auto& dr2   = d_aa.getDisplRow(ipart_reverse);
+    for (size_t j = 0; j < ipart_reverse; ++j)
     {
-      mRealType esum = 0.0;
-      for (int nn = d_aa.M[ipart], jpart = ipart + 1; nn < d_aa.M[ipart + 1]; nn++, jpart++)
-      {
-        RealType rV, d_rV_dr, d2_rV_dr2;
-        rV         = rVsforce->splint(d_aa.r(nn), d_rV_dr, d2_rV_dr2);
-        RealType V = rV * d_aa.rinv(nn);
-        esum += Zat[jpart] * d_aa.rinv(nn) * rV;
-        PosType grad = Zat[jpart] * Zat[ipart] * (d_rV_dr - V) * d_aa.rinv(nn) * d_aa.rinv(nn) * d_aa.dr(nn);
-        forces[ipart] += grad;
-        forces[jpart] -= grad;
-      }
-      //Accumulate pair sums...species charge for atom i.
-      SR += Zat[ipart] * esum;
+      RealType V, rV, d_rV_dr, d2_rV_dr2;
+      RealType rinv = 1.0 / dist2[j];
+      rV            = rVsforce->splint(dist2[j], d_rV_dr, d2_rV_dr2);
+      V             = rV * rinv;
+      esum += Zat[j] * rVs->splint(dist2[j]) * rinv;
+
+      PosType grad = Zat[j] * Zat[ipart_reverse] * (d_rV_dr - V) * rinv * rinv * dr2[j];
+      forces[ipart_reverse] += grad;
+      forces[j] -= grad;
     }
-#endif
+    SR += Zat[ipart_reverse] * esum;
   }
   return SR;
 }
@@ -516,44 +447,24 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSR(ParticleSet& P)
 {
   const DistanceTableData& d_aa(P.getDistTable(d_aa_ID));
   mRealType SR = 0.0;
-  if (d_aa.DTType == DT_SOA)
-  {
 #pragma omp parallel for reduction(+ : SR)
-    for (size_t ipart = 1; ipart < (NumCenters / 2 + 1); ipart++)
-    {
-      mRealType esum   = 0.0;
-      const auto& dist = d_aa.getDistRow(ipart);
-      for (size_t j = 0; j < ipart; ++j)
-        esum += Zat[j] * rVs->splint(dist[j]) / dist[j];
-      SR += Zat[ipart] * esum;
+  for (size_t ipart = 1; ipart < (NumCenters / 2 + 1); ipart++)
+  {
+    mRealType esum   = 0.0;
+    const auto& dist = d_aa.getDistRow(ipart);
+    for (size_t j = 0; j < ipart; ++j)
+      esum += Zat[j] * rVs->splint(dist[j]) / dist[j];
+    SR += Zat[ipart] * esum;
 
-      const size_t ipart_reverse = NumCenters - ipart;
-      if (ipart == ipart_reverse)
-        continue;
+    const size_t ipart_reverse = NumCenters - ipart;
+    if (ipart == ipart_reverse)
+      continue;
 
-      esum              = 0.0;
-      const auto& dist2 = d_aa.getDistRow(ipart_reverse);
-      for (size_t j = 0; j < ipart_reverse; ++j)
-        esum += Zat[j] * rVs->splint(dist2[j]) / dist2[j];
-      SR += Zat[ipart_reverse] * esum;
-    }
-  }
-  else
-  { //this will be removed
-#ifndef ENABLE_SOA
-    for (int ipart = 0; ipart < NumCenters; ipart++)
-    {
-      mRealType esum = 0.0;
-      for (int nn = d_aa.M[ipart], jpart = ipart + 1; nn < d_aa.M[ipart + 1]; nn++, jpart++)
-      {
-        //if(d_aa.r(nn)>=myRcut) continue;
-        //esum += Zat[jpart]*AA->evaluate(d_aa.r(nn),d_aa.rinv(nn));
-        esum += Zat[jpart] * d_aa.rinv(nn) * rVs->splint(d_aa.r(nn));
-      }
-      //Accumulate pair sums...species charge for atom i.
-      SR += Zat[ipart] * esum;
-    }
-#endif
+    esum              = 0.0;
+    const auto& dist2 = d_aa.getDistRow(ipart_reverse);
+    for (size_t j = 0; j < ipart_reverse; ++j)
+      esum += Zat[j] * rVs->splint(dist2[j]) / dist2[j];
+    SR += Zat[ipart_reverse] * esum;
   }
   return SR;
 }
@@ -617,140 +528,6 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
     }   //spec1
   }
   return res;
-}
-
-
-CoulombPBCAA::Return_t CoulombPBCAA::evalConsts_orig(bool report)
-{
-  //LRHandlerType::BreakupBasisType &Basis(AA->Basis);
-  //const Vector<RealType> &coefs(AA->coefs);
-  RealType Consts = 0.0; // constant term
-  //v_l(r=0) including correction due to the non-periodic direction
-  RealType vl_r0 = AA->evaluateLR_r0();
-  for (int spec = 0; spec < NumSpecies; spec++)
-  {
-    RealType z = Zspec[spec];
-    RealType n = NofSpecies[spec];
-    Consts -= 0.5 * vl_r0 * z * z * n;
-  }
-  if (report)
-    app_log() << "   PBCAA self-interaction term " << Consts << std::endl;
-  //Compute Madelung constant: this is not correct for general cases
-  MC0 = 0.0;
-  for (int i = 0; i < AA->Fk.size(); i++)
-    MC0 += AA->Fk[i];
-  MC0 = 0.5 * (MC0 - vl_r0);
-  //Neutraling background term
-  RealType vs_k0 = AA->evaluateSR_k0(); //v_s(k=0)
-  for (int speca = 0; speca < NumSpecies; speca++)
-  {
-    RealType za = Zspec[speca];
-    RealType na = NofSpecies[speca];
-    Consts -= 0.5 * vs_k0 * za * na * za * na;
-    for (int specb = speca + 1; specb < NumSpecies; specb++)
-    {
-      RealType zb = Zspec[specb];
-      int nb      = NofSpecies[specb];
-      Consts -= vs_k0 * za * zb * na * nb;
-    }
-  }
-  if (report)
-    app_log() << "   PBCAA total constant " << Consts << std::endl;
-  //app_log() << "   MC0 of PBCAA " << MC0 << std::endl;
-  return Consts;
-}
-
-
-CoulombPBCAA::Return_t CoulombPBCAA::evalSR_old(ParticleSet& P)
-{
-  const auto& d_aa = P.getDistTable(d_aa_ID);
-  RealType SR      = 0.0;
-#ifndef ENABLE_SOA
-  for (int ipart = 0; ipart < NumCenters; ipart++)
-  {
-    RealType esum = 0.0;
-    for (int nn = d_aa.M[ipart], jpart = ipart + 1; nn < d_aa.M[ipart + 1]; nn++, jpart++)
-    {
-      //if(d_aa.r(nn)>=myRcut) continue;
-      //esum += Zat[jpart]*AA->evaluate(d_aa.r(nn),d_aa.rinv(nn));
-      esum += Zat[jpart] * d_aa.rinv(nn) * rVs->splint(d_aa.r(nn));
-    }
-    //Accumulate pair sums...species charge for atom i.
-    SR += Zat[ipart] * esum;
-  }
-#endif
-  return SR;
-}
-
-CoulombPBCAA::Return_t CoulombPBCAA::evalLR_old(ParticleSet& P)
-{
-  RealType LR = 0.0;
-  const StructFact& PtclRhoK(*(P.SK));
-  for (int spec1 = 0; spec1 < NumSpecies; spec1++)
-  {
-    RealType Z1 = Zspec[spec1];
-    for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
-    {
-      RealType Z2 = Zspec[spec2];
-#if defined(USE_REAL_STRUCT_FACTOR)
-      RealType temp = AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
-                                   PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
-#else
-      RealType temp = AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
-#endif
-      if (spec2 == spec1)
-        LR += 0.5 * Z1 * Z2 * temp;
-      else
-        LR += Z1 * Z2 * temp;
-    } //spec2
-  }   //spec1
-  //LR*=0.5;
-  return LR;
-}
-
-CoulombPBCAA::Return_t CoulombPBCAA::evalConsts_old(bool report)
-{
-  //LRHandlerType::BreakupBasisType &Basis(AA->Basis);
-  //const Vector<RealType> &coefs(AA->coefs);
-  RealType Consts = 0.0, V0 = 0.0;
-  //for(int n=0; n<coefs.size(); n++)
-  //  V0 += coefs[n]*Basis.h(n,0.0); //For charge q1=q2=1
-  V0 = AA->evaluateLR_r0();
-  for (int spec = 0; spec < NumSpecies; spec++)
-  {
-    RealType z = Zspec[spec];
-    RealType n = NofSpecies[spec];
-    Consts += -V0 * 0.5 * z * z * n;
-  }
-  //V0 = Basis.get_rc()*Basis.get_rc()*0.5;
-  //for(int n=0; n<Basis.NumBasisElem(); n++)
-  //  V0 -= coefs[n]*Basis.hintr2(n);
-  //V0 *= 2.0*TWOPI/Basis.get_CellVolume(); //For charge q1=q2=1
-  V0 = AA->evaluateSR_k0();
-  for (int spec = 0; spec < NumSpecies; spec++)
-  {
-    RealType z = Zspec[spec];
-    int n      = NofSpecies[spec];
-    Consts += -V0 * z * z * 0.5 * n * n;
-  }
-  //If we have more than one species in this particleset then there is also a
-  //single AB term that should be added to the last constant...
-  //=-Na*Nb*V0*Za*Zb
-  //This accounts for the partitioning of the neutralizing background...
-  for (int speca = 0; speca < NumSpecies; speca++)
-  {
-    RealType za = Zspec[speca];
-    int na      = NofSpecies[speca];
-    for (int specb = speca + 1; specb < NumSpecies; specb++)
-    {
-      RealType zb = Zspec[specb];
-      int nb      = NofSpecies[specb];
-      Consts += -V0 * za * zb * na * nb;
-    }
-  }
-  if (report)
-    app_log() << "   Constant of PBCAA " << Consts << std::endl;
-  return Consts;
 }
 
 
