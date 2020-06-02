@@ -38,8 +38,12 @@ using ValueType    = QMCTraits::ValueType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 using PsiValueType = QMCTraits::QTFull::ValueType;
 
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_CUDA)
 typedef DiracDeterminantBatched<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>> DetType;
+#else
+typedef DiracDeterminantBatched<MatrixUpdateOMP<ValueType, QMCTraits::QTFull::ValueType>> DetType;
+#endif
 #else
 typedef DiracDeterminantBatched<> DetType;
 #endif
