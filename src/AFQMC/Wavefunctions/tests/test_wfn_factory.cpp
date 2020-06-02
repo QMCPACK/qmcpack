@@ -19,7 +19,6 @@
 #include "OhmmsApp/ProjectData.h"
 #include "io/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
-#include "Utilities/SimpleRandom.h"
 #include <Utilities/NewTimer.h>
 #include "Utilities/Timer.h"
 #include "Platforms/Host/OutputManager.h"
