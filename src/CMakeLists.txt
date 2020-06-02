@@ -182,77 +182,11 @@ ENDIF()
   )
   ADD_LIBRARY(qmcfakerng ${UNIT_TEST_UTILITIES})
 
-  #IF(QMC_BUILD_STATIC)
-  #  ADD_LIBRARY(qmcutil STATIC ${UTILITIES})
-  #ELSE(QMC_BUILD_STATIC)
-  #  ADD_LIBRARY(qmcutil SHARED ${UTILITIES})
-  #ENDIF(QMC_BUILD_STATIC)
-
-  ####################################
-  # create libqmcbase
-  ####################################
-  SET(PARTICLE ${PARTICLE}
-    Particle/InitMolecularSystem.cpp
-    Particle/ParticleSetPool.cpp
-    Particle/ParticleSet.cpp
-    Particle/VirtualParticleSet.cpp
-    Particle/ParticleSet.BC.cpp
-    Particle/DynamicCoordinatesBuilder.cpp
-    Particle/MCWalkerConfiguration.cpp
-    Particle/SampleStack.cpp
-    Particle/createDistanceTableAA.cpp
-    Particle/createDistanceTableAB.cpp
-    Particle/HDFWalkerInputManager.cpp
-    LongRange/KContainer.cpp
-    LongRange/StructFact.cpp
-    LongRange/LPQHIBasis.cpp
-    LongRange/LPQHISRCoulombBasis.cpp
-    LongRange/EwaldHandler.cpp
-    LongRange/EwaldHandler3D.cpp
-    LongRange/LRCoulombSingleton.cpp
-    )
-
-  IF(ENABLE_OFFLOAD)
-    SET(PARTICLE ${PARTICLE}
-      Particle/createDistanceTableABOMP.cpp
-      )
-  ENDIF(ENABLE_OFFLOAD)
-
-  IF(OHMMS_DIM MATCHES 2)
-    SET(PARTICLE ${PARTICLE} LongRange/TwoDEwaldHandler.cpp)
-  ENDIF(OHMMS_DIM MATCHES 2)
-
-
-  SET(PARTICLEIO
-    ParticleTags.cpp
-    ParticleIO/ParticleLayoutIO.cpp
-    ParticleIO/XMLParticleIO.cpp
-    ParticleIO/ParticleIOUtility.cpp
-    Particle/HDFWalkerOutput.cpp
-    Particle/HDFWalkerInput_0_0.cpp
-    Particle/HDFWalkerInput_0_4.cpp
-    )
-
-  IF(OHMMS_DIM MATCHES 3)
-    SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
-  ENDIF(OHMMS_DIM MATCHES 3)
-
-  #Need to add this if nothing else but miniapps is compiled
-  IF(QMC_BUILD_SANDBOX_ONLY)
-    SET(PARTICLE ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
-  ENDIF(QMC_BUILD_SANDBOX_ONLY)
-
-  ADD_LIBRARY(qmcbase ${PARTICLE} ${PARTICLEIO})
-
-  TARGET_LINK_LIBRARIES(qmcbase PRIVATE qmcminimalcontainers Math::BLAS_LAPACK Math::scalar_vector_functions)
-  TARGET_LINK_LIBRARIES(qmcbase PRIVATE platform_device)
-
-  TARGET_LINK_LIBRARIES(qmcbase PUBLIC qmcutil)
-
   SUBDIRS(einspline)
   SUBDIRS(MinimalContainers)
   SUBDIRS(Message)
   SUBDIRS(Platforms)
+  SUBDIRS(Particle)
 
 if(QMC_BUILD_SANDBOX_ONLY)
 
@@ -284,7 +218,7 @@ else() #{{{
   SUBDIRS(QMCTools)
   #ENDIF(BUILD_QMCTOOLS)
 
-  if (BUILD_UNIT_TESTS) #{
+  IF (BUILD_UNIT_TESTS) #{
     #Unit test directories
     INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
     INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
@@ -297,14 +231,9 @@ else() #{{{
     SUBDIRS(Concurrency/tests)
     SUBDIRS(OhmmsData/tests)
     SUBDIRS(io/tests)
-    SUBDIRS(Lattice/tests)
-    SUBDIRS(LongRange/tests)
-    SUBDIRS(Particle/tests)
-    SUBDIRS(ParticleIO/tests)
     SUBDIRS(QMCWaveFunctions/tests)
     SUBDIRS(QMCHamiltonians/tests)
     SUBDIRS(type_traits/tests)
-    SUBDIRS(ParticleBase/tests)
     SUBDIRS(Estimators/tests)
     SUBDIRS(QMCDrivers/tests)
     SUBDIRS(QMCApp/tests)
@@ -313,6 +242,6 @@ else() #{{{
     SUBDIRS(Optimize/tests)
     SUBDIRS(MinimalContainers/tests)
     SUBDIRS(QMCTools/tests)
-  endif() #}
+  ENDIF() #}
 
 endif() #}}}

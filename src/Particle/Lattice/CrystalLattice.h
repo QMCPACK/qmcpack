@@ -26,7 +26,7 @@
 #include <config/stdlib/math.hpp>
 #include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/Tensor.h>
-#include <Lattice/LRBreakupParameters.h>
+#include "LRBreakupParameters.h"
 
 namespace qmcplusplus
 {
@@ -42,25 +42,6 @@ enum
   SUPERCELL_BULK = 7, /*!< ppp */
   SOA_OFFSET     = 32 /*!< const to differentiate AoS and SoA */
 };
-
-/** enum class to assist copy and unit conversion operations on position vectors
-*/
-enum class PosUnit
-{
-  Cartesian = 0, /*!< indicates that the values are in Cartesian units*/
-  Lattice        /*!< indicates that the values are in Lattice units*/
-};
-/** write unit type in human readable format
- *
- *  This could break tools if they rely on parsing log.
- */
-std::ostream& operator<<(std::ostream& o_stream, PosUnit pos_unit);
-/** Read unit type recorded in int
- *
- *  This should really be human readable
- *  TODO: support both until going to string only.
- */
-std::istream& operator>>(std::istream& i_stream, PosUnit& pos_unit);
 
 /** a class that defines a supercell in D-dimensional Euclean space.
  *
@@ -307,6 +288,6 @@ struct CrystalLattice : public LRBreakupParameters<T, D>
 
 } // namespace qmcplusplus
 //including the definitions of the member functions
-#include "Lattice/CrystalLattice.cpp"
+#include "CrystalLattice.cpp"
 
 #endif

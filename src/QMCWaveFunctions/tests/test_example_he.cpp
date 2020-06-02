@@ -14,6 +14,7 @@
 
 #include "Configuration.h"
 #include "Message/Communicate.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/ExampleHeComponent.h"

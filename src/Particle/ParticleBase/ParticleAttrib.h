@@ -18,9 +18,10 @@
 #ifndef OHMMS_NEW_PARTICLEATTRIB_PEPE_H
 #define OHMMS_NEW_PARTICLEATTRIB_PEPE_H
 
+#include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/OhmmsVector.h>
 #include "Utilities/OhmmsObject.h"
-#include "Lattice/CrystalLattice.h"
+#include "PosUnit.h"
 
 namespace qmcplusplus
 {
@@ -103,6 +104,6 @@ inline T* get_last_address(ParticleAttrib<TinyVector<T, D>>& a)
 
 } // namespace qmcplusplus
 
-#include "ParticleBase/ParticleAttrib.cpp"
+#include "ParticleAttrib.cpp"
 
 #endif // OHMMS_PARTICLEATTRIB_PEPE_H
