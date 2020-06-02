@@ -58,17 +58,15 @@ struct device_reference {
     return *this;
   }
 
-  friend class device_reference<typename std::decay<T>::type>;
-  operator device_reference<T const>() const{return device_reference<T const>{impl_}; } 
+  template<class>
+  friend class device_reference;
+  //friend class device_reference<typename std::decay<T>::type>;
+  operator device_reference<T const>() const& {return device_reference<T const>{impl_}; } 
 
-  operator value_type() const { return this->val(); }
+  operator decay_value_type() const & { return this->val(); }
 
   // try getting rid of this
-  operator value_type&() 
-  {
-    arch::memcopy(std::addressof(host_impl_),impl_,sizeof(T));
-    return host_impl_;
-  }
+//  operator decay_value_type&() & = delete; 
 
   pointer operator& () const { return pointer{impl_}; }
 
@@ -200,8 +198,6 @@ struct device_reference {
   private:
   device_reference(T* ptr) : impl_(ptr) {}
   value_type* impl_;
-  //value_type host_impl_;
-  decay_value_type host_impl_;
 
   value_type val() const {
     decay_value_type res;
@@ -432,11 +428,13 @@ F for_each(device_pointer<T> first, device_pointer<T> last, F f){
 }
 */
 /**************** copy_n *****************/
+/*
 template<typename T, typename Size>
 device_pointer<T> copy_n(device_pointer<T const> const A, Size n, device_pointer<T> B) {
   arch::memcopy(to_address(B),to_address(A),n*sizeof(T)); 
   return B+n;
 }
+*/
 
 template<typename T, typename ForwardIt, typename Size>
 device_pointer<T> copy_n(ForwardIt A, Size n, device_pointer<T> B) {
@@ -444,61 +442,70 @@ device_pointer<T> copy_n(ForwardIt A, Size n, device_pointer<T> B) {
   return B+n;
 }
 
-template<typename T, typename Size>
-device_pointer<T> copy_n(T const* const A, Size n, device_pointer<T> B) {
-  arch::memcopy(to_address(B),A,n*sizeof(T));
-  return B+n;
-}
-
+/*
+// MAM: removing this to force copy to other pointers from the other ptr point of view
 template<typename T, typename ForwardIt, typename Size>
 ForwardIt copy_n(device_pointer<T const> const A, Size n, ForwardIt B) {
   arch::memcopy(to_address(B),to_address(A),n*sizeof(T));
   return B+n;
 }
+*/
 
-template<typename T, typename Size>
-T* copy_n(device_pointer<T const> const A, Size n, T* B) {
+template<typename Q, typename T, typename Size>
+device_pointer<T> copy_n(Q* const A, Size n, device_pointer<T> B) {
+  static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
+  arch::memcopy(to_address(B),A,n*sizeof(T));
+  return B+n;
+}
+
+template<typename T, typename Q, typename Size>
+T* copy_n(device_pointer<Q> const A, Size n, T* B) {
+  static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
   arch::memcopy(B,to_address(A),n*sizeof(T));  
   return B+n;
 }
 
 /**************** copy *****************/
+/*
 template<typename T>
 device_pointer<T> copy(device_pointer<T const> const Abeg, 
                        device_pointer<T const> const Aend, 
                        device_pointer<T> B) {
   return copy_n(Abeg,std::distance(Abeg,Aend),B);
 }
-
-template<typename T>
-device_pointer<T> copy(T const* const Abeg, T const* const Aend, device_pointer<T> B) {
-  return copy_n(Abeg,std::distance(Abeg,Aend),B);
-}
-
-template<typename T>
-T* copy(device_pointer<T const> const Abeg, device_pointer<T const> const Aend, T* B) {
-  return copy_n(Abeg,std::distance(Abeg,Aend),B);
-}
+*/
 
 template<typename T, typename ForwardIt>
 device_pointer<T> copy(ForwardIt const Abeg, ForwardIt const Aend, device_pointer<T> B) {
-  return copy_n(to_address(Abeg),std::distance(Abeg,Aend),B);
+  return copy_n(Abeg,std::distance(Abeg,Aend),B);
 }
 
+template<typename T, typename Q>
+device_pointer<T> copy(Q* const Abeg, Q* const Aend, device_pointer<T> B) {
+  static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
+  return copy_n(Abeg,std::distance(Abeg,Aend),B);
+}
+
+template<typename T, typename Q>
+T* copy(device_pointer<Q> const Abeg, device_pointer<Q> const Aend, T* B) {
+  static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
+  return copy_n(Abeg,std::distance(Abeg,Aend),B);
+}
+
+/*
 template<typename T, typename ForwardIt>
 ForwardIt copy(device_pointer<T const> const Abeg, device_pointer<T const> const Aend, ForwardIt B) {
   copy_n(Abeg,std::distance(Abeg,Aend),to_address(B));
   return B + std::distance(Abeg,Aend);  
 }
+*/
 
 /**************** copy_n_cast *****************/
 // NOTE: Eliminate this routine, merge with copy_n and dispatch to kernel call
 // if types of pointers are not the same (without cv qualifiers)!!!
 template<typename T, typename Q, typename Size>
 device_pointer<Q> copy_n_cast(device_pointer<T> const A, Size n, device_pointer<Q> B) {
-//  if constexpr (std::is_same<std::decay_t<T>,Q>::value) copy_n(A,n,B); 
-//  else 
-    kernels::copy_n_cast(to_address(A),n,to_address(B));
+  kernels::copy_n_cast(to_address(A),n,to_address(B));
   return B+n;
 }
 
@@ -509,7 +516,7 @@ device_pointer<T> copy_n_cast(device_pointer<T> const A, Size n, device_pointer<
 
 template<typename T, typename Q, typename Size>
 device_pointer<Q> copy_n_cast(T* const A, Size n, device_pointer<Q> B) {
-  throw std::runtime_error(" Error: copy_n_cast(gpu_ptr,n,T*) is disabled.");
+  throw std::runtime_error(" Error: copy_n_cast(T*,n,gpu_ptr) is disabled.");
   return B+n;
 }
 
@@ -535,58 +542,58 @@ void inplace_cast(device_pointer<T> A, Size n) {
 //  return first + n;
 //}
 
-template<typename T, typename Size>
-device_pointer<T> fill_n(device_pointer<T> first, Size n, T const& val){
+template<typename T, typename Size, typename Q>
+device_pointer<T> fill_n(device_pointer<T> first, Size n, Q const& val){
   if(n == 0) return first;
-  kernels::fill_n(to_address(first), n, val);
+  kernels::fill_n(to_address(first), n, T(val));
   return first + n;
 }
 
-template<typename T>
-device_pointer<T> fill(device_pointer<T> first, device_pointer<T> last, T const& val){
-  return fill_n(first,std::distance(first,last),val); 
+template<typename T, typename Q>
+device_pointer<T> fill(device_pointer<T> first, device_pointer<T> last, Q const& val){
+  return fill_n(first,std::distance(first,last),T(val)); 
 }
 
 
 /**************** uninitialized_fill_n *****************/
 
-template<typename T, typename Size>
-device_pointer<T> uninitialized_fill_n(device_pointer<T> first, Size n, T const& val){
+template<typename T, typename Size, typename Q>
+device_pointer<T> uninitialized_fill_n(device_pointer<T> first, Size n, Q const& val){
   if(n == 0) return first;
   //kernels::uninitialized_fill_n(to_address(first), n, val);
-  kernels::fill_n(to_address(first), n, val);
+  kernels::fill_n(to_address(first), n, T(val));
   return first + n;
 }
 
-template<typename T>
-device_pointer<T> uninitialized_fill(device_pointer<T> first, device_pointer<T> last, T const& val){
-  return uninitialized_fill_n(first,std::distance(first,last),val);
+template<typename T, typename Q>
+device_pointer<T> uninitialized_fill(device_pointer<T> first, device_pointer<T> last, Q const& val){
+  return uninitialized_fill_n(first,std::distance(first,last),T(val));
 }
 
-template<class Alloc, typename T, typename Size>
-device_pointer<T> uninitialized_fill_n(Alloc &a, device_pointer<T> first, Size n, T const& val){
+template<class Alloc, typename T, typename Size, typename Q>
+device_pointer<T> uninitialized_fill_n(Alloc &a, device_pointer<T> first, Size n, Q const& val){
   if(n == 0) return first;
   //kernels::uninitialized_fill_n(to_address(first), n, val);
-  kernels::fill_n(to_address(first), n, val);
+  kernels::fill_n(to_address(first), n, T(val));
   return first + n;
 }
 
-template<class Alloc, typename T>
-device_pointer<T> uninitialized_fill(Alloc &a, device_pointer<T> first, device_pointer<T> last, T const& val){
-  return uninitialized_fill_n(a, first,std::distance(first,last),val);
+template<class Alloc, typename T, typename Q>
+device_pointer<T> uninitialized_fill(Alloc &a, device_pointer<T> first, device_pointer<T> last, Q const& val){
+  return uninitialized_fill_n(a, first,std::distance(first,last),T(val));
 }
 
-template<class Alloc, typename T, typename Size>
-device_pointer<T> alloc_uninitialized_fill_n(Alloc &a, device_pointer<T> first, Size n, T const& val){
+template<class Alloc, typename T, typename Size, typename Q>
+device_pointer<T> alloc_uninitialized_fill_n(Alloc &a, device_pointer<T> first, Size n, Q const& val){
   if(n == 0) return first;
   //kernels::uninitialized_fill_n(to_address(first), n, val);
-  kernels::fill_n(to_address(first), n, val);
+  kernels::fill_n(to_address(first), n, T(val));
   return first + n;
 }
 
-template<class Alloc, typename T>
-device_pointer<T> alloc_uninitialized_fill(Alloc &a, device_pointer<T> first, device_pointer<T> last, T const& val){
-  return uninitialized_fill_n(a, first,std::distance(first,last),val);
+template<class Alloc, typename T, typename Q>
+device_pointer<T> alloc_uninitialized_fill(Alloc &a, device_pointer<T> first, device_pointer<T> last, Q const& val){
+  return uninitialized_fill_n(a, first,std::distance(first,last),T(val));
 }
 
 /******************/
@@ -806,10 +813,10 @@ void print(std::string str, device_pointer<T> p, int n) {
   kernels::print(str,to_address(p),n);
 }
 
-template<typename T>
-void fill2D(int n, int m, device::device_pointer<T> first, int lda, T const& val) { 
+template<typename T, typename Q>
+void fill2D(int n, int m, device::device_pointer<T> first, int lda, Q const& val) { 
   assert(lda >= m);  
-  kernels::fill2D_n(n,m,to_address(first),lda,val);
+  kernels::fill2D_n(n,m,to_address(first),lda,T(val));
 }
 
 }
@@ -821,6 +828,25 @@ namespace multi{
 
 /**************** copy *****************/
 // Can always call cudaMemcopy2D like you do in the blas backend
+
+template<typename T, typename Size>
+multi::array_iterator<T, 1, device::device_pointer<T>> fill_n(
+                    multi::array_iterator<T, 1, device::device_pointer<T>> first,
+                    Size n, T const& val){
+  if(n == 0) return first;
+  kernels::fill_n(to_address(base(first)), n, stride(first), val);
+  return first + n;
+}
+
+template<typename T, typename Size>
+multi::array_iterator<T, 1, device::device_pointer<T>> fill(
+                    multi::array_iterator<T, 1, device::device_pointer<T>> first,
+                    multi::array_iterator<T, 1, device::device_pointer<T>> last, T const& val){
+  assert( stride(first) == stride(last) );
+  if(std::distance(first,last) == 0 ) return first;
+  kernels::fill_n(to_address(base(first)), std::distance(first,last), stride(first), val);
+  return first + std::distance(first,last);
+}
 
 template<class Alloc, typename T, typename Size>
 multi::array_iterator<T, 1, device::device_pointer<T>> uninitialized_fill_n(

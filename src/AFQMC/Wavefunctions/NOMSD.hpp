@@ -124,11 +124,7 @@ class NOMSD: public AFQMCInfo
                 NuclearCoulombEnergy(nce),
                 last_number_extra_tasks(-1),last_task_index(-1),
                 local_group_comm(),
-                shmbuff_for_G(nullptr),
-                req_Gsend(MPI_REQUEST_NULL),
-                req_Grecv(MPI_REQUEST_NULL),
-                req_SMsend(MPI_REQUEST_NULL),
-                req_SMrecv(MPI_REQUEST_NULL)
+                shmbuff_for_G(nullptr)
     {
       compact_G_for_vbias = (ci.size()==1); // this should be input, since it is determined by HOps 
       transposed_G_for_vbias_ = HamOp.transposed_G_for_vbias();  
@@ -205,21 +201,12 @@ class NOMSD: public AFQMCInfo
          recompute_ci();
     }
 
-    ~NOMSD() {
-        if(req_SMrecv!=MPI_REQUEST_NULL)
-            MPI_Request_free(&req_SMrecv);
-        if(req_SMsend!=MPI_REQUEST_NULL)
-            MPI_Request_free(&req_SMsend);
-        if(req_Grecv!=MPI_REQUEST_NULL)
-            MPI_Request_free(&req_Grecv);
-        if(req_Gsend!=MPI_REQUEST_NULL)
-            MPI_Request_free(&req_Gsend);
-    }
+    ~NOMSD() {}
 
     NOMSD(NOMSD const& other) = delete;
     NOMSD& operator=(NOMSD const& other) = delete;
     NOMSD(NOMSD&& other) = default;
-    NOMSD& operator=(NOMSD&& other) = default;
+    NOMSD& operator=(NOMSD&& other) = delete;
 
     int local_number_of_cholesky_vectors() const 
     { return HamOp.local_number_of_cholesky_vectors(); }
@@ -593,9 +580,6 @@ class NOMSD: public AFQMCInfo
     CMatrix extendedMatBeta;
     std::pair<int,int> maxOccupExtendedMat;
     std::pair<int,int> numExcitations; 
-
-    MPI_Request req_Gsend, req_Grecv;
-    MPI_Request req_SMsend, req_SMrecv;
 
     void recompute_ci();
 

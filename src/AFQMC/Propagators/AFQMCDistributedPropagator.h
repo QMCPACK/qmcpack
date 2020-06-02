@@ -75,7 +75,7 @@ class AFQMCDistributedPropagator: public AFQMCBasePropagator
       // move constructor for communicator seems broken
       core_comm = std::move(TG.TG().split(TG.getLocalTGRank(),TG.TG().rank()));  
     }
-    AFQMCDistributedPropagator& operator=(AFQMCDistributedPropagator&& other) = default;
+    AFQMCDistributedPropagator& operator=(AFQMCDistributedPropagator&& other) = delete;
 
     template<class WlkSet>
     void Propagate(int steps, WlkSet& wset, RealType E1,
@@ -102,6 +102,10 @@ class AFQMCDistributedPropagator: public AFQMCBasePropagator
     // new communicator over similar cores in a TG
     // every core communicates a segment to increase effective bandwidth
     boost::mpi3::communicator core_comm;
+
+    // additional dimension for temporary computation
+    C3Tensor MFfactor;
+    C3Tensor hybrid_weight;
 
     template<class WlkSet>
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);

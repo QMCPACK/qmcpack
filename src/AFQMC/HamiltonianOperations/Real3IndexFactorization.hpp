@@ -128,7 +128,7 @@ class Real3IndexFactorization
     Real3IndexFactorization(const Real3IndexFactorization& other) = delete;
     Real3IndexFactorization& operator=(const Real3IndexFactorization& other) = delete;
     Real3IndexFactorization(Real3IndexFactorization&& other) = default;
-    Real3IndexFactorization& operator=(Real3IndexFactorization&& other) = default;
+    Real3IndexFactorization& operator=(Real3IndexFactorization&& other) = delete;
 
     CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, boost::multi::array<ComplexType,1> const& vMF) 
     {

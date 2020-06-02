@@ -248,12 +248,12 @@ class SparseTensor
             if(getKl) {
               auto Kli = (*Kl)[wi];
               for(int ki=0, qi = SpvnT_view[k].local_origin()[0]; ki<_v_.size(); ki++, qi++)
-                Kli[qi] = static_cast<ComplexType>(_v_[ki]);
+                Kli[qi] = static_cast<SPComplexType>(_v_[ki]);
             }
             if(getKr) {
               auto Kri = (*Kr)[wi];
               for(int ki=0, qi = SpvnT_view[k].local_origin()[0]; ki<_v_.size(); ki++, qi++)
-                Kri[qi] = static_cast<ComplexType>(_v_[ki]);
+                Kri[qi] = static_cast<SPComplexType>(_v_[ki]);
             }
           }
         }
@@ -491,8 +491,7 @@ class SparseTensor
       if(SM_TMats.num_elements() < N) {
         SM_TMats.reextent(iextensions<1u>{N});
         using std::fill_n;
-        if(comm->root()) 
-          fill_n(to_address(SM_TMats.origin()),N,SPComplexType(0.0));
+        fill_n(SM_TMats.origin(),N,SPComplexType(0.0));
         comm->barrier();
       }
     }

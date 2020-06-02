@@ -36,7 +36,7 @@ SET(MOSRCS
 
 # create libmocommon 
 ADD_LIBRARY(mocommon ${MOSRCS})
-TARGET_LINK_LIBRARIES(mocommon PUBLIC qmcbase)
+TARGET_LINK_LIBRARIES(mocommon PUBLIC qmcparticle)
 
 set(QTOOLS convert4qmc qmc-extract-eshdf-kvectors)
 FOREACH(p ${QTOOLS})
@@ -76,7 +76,7 @@ SET(FSSRCS
 )
 
 ADD_LIBRARY(fstool ${FSSRCS})
-TARGET_LINK_LIBRARIES(fstool PUBLIC qmc qmcbase qmcwfs)
+TARGET_LINK_LIBRARIES(fstool PUBLIC qmc qmcparticle qmcwfs)
 
 ADD_EXECUTABLE(qmcfinitesize qmcfinitesize.cpp)
 TARGET_LINK_LIBRARIES(qmcfinitesize PRIVATE fstool)

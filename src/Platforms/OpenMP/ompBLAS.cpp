@@ -10,10 +10,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Platforms/OpenMP/ompBLAS.hpp"
+#include "ompBLAS.hpp"
 #include <stdexcept>
 #include "config.h"
-#include "Platforms/OpenMP/ompReduction.hpp"
+#include "ompReduction.hpp"
 
 namespace qmcplusplus
 {

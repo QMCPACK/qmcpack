@@ -57,7 +57,7 @@ class RealDenseHamiltonian: public OneBodyHamiltonian
   RealDenseHamiltonian(RealDenseHamiltonian const& other) = delete;
   RealDenseHamiltonian(RealDenseHamiltonian && other) = default;
   RealDenseHamiltonian& operator=(RealDenseHamiltonian const& other) = delete;
-  RealDenseHamiltonian& operator=(RealDenseHamiltonian && other) = default;
+  RealDenseHamiltonian& operator=(RealDenseHamiltonian && other) = delete;
 
   ValueType getNuclearCoulombEnergy() const { return OneBodyHamiltonian::NuclearCoulombEnergy; }
 

@@ -120,6 +120,4 @@ void batchedDot(int m, int n, std::complex<float> const alpha, std::complex<floa
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 
-
-
 }
