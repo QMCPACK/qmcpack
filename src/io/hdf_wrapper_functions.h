@@ -267,9 +267,7 @@ bool h5d_read(hid_t grp,
 
   hid_t dataspace = H5Dget_space(h1);
   if (ndims != H5Sget_simple_extent_ndims(dataspace))
-  {
-    APP_ABORT(aname + " dataspace does not match ");
-  }
+    throw std::runtime_error(aname + " dataspace does not match ");
   // check gcounts???
   herr_t ret = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
 

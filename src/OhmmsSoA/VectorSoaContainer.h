@@ -21,7 +21,7 @@
 #include "simd/allocator.hpp"
 #include "simd/algorithm.hpp"
 #include "OhmmsSoA/PosTransformer.h"
-#include "ParticleBase/ParticleAttrib.h"
+#include "Particle/ParticleBase/ParticleAttrib.h"
 
 namespace qmcplusplus
 {

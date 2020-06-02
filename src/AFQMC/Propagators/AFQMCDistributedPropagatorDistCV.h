@@ -72,7 +72,7 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
 
       std::string str("no");
       ParameterSet m_param;
-      m_param.add(str,"low_memory","double");
+      m_param.add(str,"low_memory","std::string");
       m_param.put(cur);
 
       std::transform(str.begin(),str.end(),str.begin(),(int (*)(int)) tolower);
