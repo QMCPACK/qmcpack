@@ -12,13 +12,15 @@
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef HIPBLAS_FUNCTIONDEFS_H
-#define HIPBLAS_FUNCTIONDEFS_H
+#ifndef AFQMC_HIPBLAS_FUNCTIONDEFS_H
+#define AFQMC_HIPBLAS_FUNCTIONDEFS_H
 
 #include<cassert>
 #include <hip_runtime.h>
 #include "hipblas.h"
+#include "rocsolver.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hipblas_utils.h"
 
 namespace hipblas {
 
@@ -29,84 +31,84 @@ namespace hipblas {
                            float *x, int incx,
                            float *y, int incy)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasScopy(handle,n,x,incx,y,incy);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_copy(hipblasHandle_t handle, int n,
                            double *x, int incx,
                            double *y, int incy)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasDcopy(handle,n,x,incx,y,incy);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_copy(hipblasHandle_t handle, int n,
                            std::complex<float> *x, int incx,
                            std::complex<float> *y, int incy)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasCcopy(handle,n,
-                        reinterpret_cast<hipComplex *>(x),incx,
-                        reinterpret_cast<hipComplex *>(y),incy);
+                        reinterpret_cast<hipblasComplex *>(x),incx,
+                        reinterpret_cast<hipblasComplex *>(y),incy);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_copy(hipblasHandle_t handle, int n,
                            std::complex<double> *x, int incx,
                            std::complex<double> *y, int incy)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasZcopy(handle,n,
-                        reinterpret_cast<hipDoubleComplex *>(x),incx,
-                        reinterpret_cast<hipDoubleComplex *>(y),incy);
+                        reinterpret_cast<hipblasDoubleComplex *>(x),incx,
+                        reinterpret_cast<hipblasDoubleComplex *>(y),incy);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_scal(hipblasHandle_t handle, int n,
                            const float alpha, float *x, int incx)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasSscal(handle,n,&alpha,x,incx);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_scal(hipblasHandle_t handle, int n,
                            const double alpha, double *x, int incx)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasDscal(handle,n,&alpha,x,incx);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_scal(hipblasHandle_t handle, int n,
                            const std::complex<float> alpha, std::complex<float> *x, int incx)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasCscal(handle,n,
-                                reinterpret_cast<hipComplex const*>(&alpha),
-                                reinterpret_cast<hipComplex *>(x),incx);
+                                reinterpret_cast<hipblasComplex const*>(&alpha),
+                                reinterpret_cast<hipblasComplex *>(x),incx);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_scal(hipblasHandle_t handle, int n,
                            const std::complex<double> alpha, std::complex<double> *x, int incx)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasZscal(handle,n,
-                                reinterpret_cast<hipDoubleComplex const*>(&alpha),
-                                reinterpret_cast<hipDoubleComplex *>(x),incx);
+                                reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
+                                reinterpret_cast<hipblasDoubleComplex *>(x),incx);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline float hipblas_dot(hipblasHandle_t handle, int n,
@@ -114,9 +116,9 @@ namespace hipblas {
                            const float *y, int incy)
   {
     float result;
-    hipblasStatus_t sucess = hipblasSdot(handle,n,x,incx,y,incy,&result);
+    hipblasStatus_t success = hipblasSdot(handle,n,x,incx,y,incy,&result);
     hipDeviceSynchronize ();
-    if(HIPBLAS_STATUS_SUCCESS != sucess)
+    if(HIPBLAS_STATUS_SUCCESS != success)
       throw std::runtime_error("Error: hipblas_dot returned error code.");
     return result;
   }
@@ -126,9 +128,9 @@ namespace hipblas {
                            const double *y, int incy)
   {
     double result;
-    hipblasStatus_t sucess = hipblasDdot(handle,n,x,incx,y,incy,&result);
+    hipblasStatus_t success = hipblasDdot(handle,n,x,incx,y,incy,&result);
     hipDeviceSynchronize ();
-    if(HIPBLAS_STATUS_SUCCESS != sucess)
+    if(HIPBLAS_STATUS_SUCCESS != success)
       throw std::runtime_error("Error: hipblas_dot returned error code.");
     return result;
   }
@@ -138,12 +140,12 @@ namespace hipblas {
                            const std::complex<float> *y, int incy)
   {
     std::complex<float> result;
-    hipblasStatus_t sucess = hipblasCdotu(handle,n,
-                                reinterpret_cast<hipComplex const*>(x),incx,
-                                reinterpret_cast<hipComplex const*>(y),incy,
-                                reinterpret_cast<hipComplex *>(&result));
+    hipblasStatus_t success = hipblasCdotu(handle,n,
+                                reinterpret_cast<hipblasComplex const*>(x),incx,
+                                reinterpret_cast<hipblasComplex const*>(y),incy,
+                                reinterpret_cast<hipblasComplex *>(&result));
     hipDeviceSynchronize ();
-    if(HIPBLAS_STATUS_SUCCESS != sucess)
+    if(HIPBLAS_STATUS_SUCCESS != success)
       throw std::runtime_error("Error: hipblas_dot returned error code.");
     return result;
   }
@@ -153,12 +155,12 @@ namespace hipblas {
                            const std::complex<double> *y, int incy)
   {
     std::complex<double> result;
-    hipblasStatus_t sucess = hipblasZdotu(handle,n,
-                                reinterpret_cast<hipDoubleComplex const*>(x),incx,
-                                reinterpret_cast<hipDoubleComplex const*>(y),incy,
-                                reinterpret_cast<hipDoubleComplex *>(&result));
+    hipblasStatus_t success = hipblasZdotu(handle,n,
+                                reinterpret_cast<hipblasDoubleComplex const*>(x),incx,
+                                reinterpret_cast<hipblasDoubleComplex const*>(y),incy,
+                                reinterpret_cast<hipblasDoubleComplex *>(&result));
     hipDeviceSynchronize ();
-    if(HIPBLAS_STATUS_SUCCESS != sucess)
+    if(HIPBLAS_STATUS_SUCCESS != success)
       throw std::runtime_error("Error: hipblas_dot returned error code.");
     return result;
   }
@@ -171,13 +173,13 @@ namespace hipblas {
     const double* y_ = reinterpret_cast<const double*>(y);
     const double* y1_ = y_+1;
     double resR, resI;
-    hipblasStatus_t sucess = hipblasDdot(handle,n,x,incx,y_,incy_,&resR);
+    hipblasStatus_t success = hipblasDdot(handle,n,x,incx,y_,incy_,&resR);
     hipDeviceSynchronize ();
-    if(HIPBLAS_STATUS_SUCCESS != sucess)
+    if(HIPBLAS_STATUS_SUCCESS != success)
       throw std::runtime_error("Error: hipblas_dot returned error code.");
-    sucess = hipblasDdot(handle,n,x,incx,y1_,incy_,&resI);
+    success = hipblasDdot(handle,n,x,incx,y1_,incy_,&resI);
     hipDeviceSynchronize ();
-    if(HIPBLAS_STATUS_SUCCESS != sucess)
+    if(HIPBLAS_STATUS_SUCCESS != success)
       throw std::runtime_error("Error: hipblas_dot returned error code.");
     return std::complex<double>{resR,resI};
   }
@@ -190,13 +192,13 @@ namespace hipblas {
     const double* x_ = reinterpret_cast<const double*>(x);
     const double* x1_ = x_+1;
     double resR, resI;
-    hipblasStatus_t sucess = hipblasDdot(handle,n,x_,incx_,y,incy,&resR);
+    hipblasStatus_t success = hipblasDdot(handle,n,x_,incx_,y,incy,&resR);
     hipDeviceSynchronize ();
-    if(HIPBLAS_STATUS_SUCCESS != sucess)
+    if(HIPBLAS_STATUS_SUCCESS != success)
       throw std::runtime_error("Error: hipblas_dot returned error code.");
-    sucess = hipblasDdot(handle,n,x1_,incx_,y,incy,&resI);
+    success = hipblasDdot(handle,n,x1_,incx_,y,incy,&resI);
     hipDeviceSynchronize ();
-    if(HIPBLAS_STATUS_SUCCESS != sucess)
+    if(HIPBLAS_STATUS_SUCCESS != success)
       throw std::runtime_error("Error: hipblas_dot returned error code.");
     return std::complex<double>{resR,resI};
   }
@@ -205,46 +207,46 @@ namespace hipblas {
                            const float alpha, const float *x, int incx,
                            float *y, int incy)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasSaxpy(handle,n,&alpha,x,incx,y,incy);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_axpy(hipblasHandle_t handle, int n,
                            const double alpha, const double *x, int incx,
                            double *y, int incy)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasDaxpy(handle,n,&alpha,x,incx,y,incy);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_axpy(hipblasHandle_t handle, int n,
                            const std::complex<float> alpha, const std::complex<float> *x, int incx,
                            std::complex<float> *y, int incy)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasCaxpy(handle,n,
-                                reinterpret_cast<hipComplex const*>(&alpha),
-                                reinterpret_cast<hipComplex const*>(x),incx,
-                                reinterpret_cast<hipComplex *>(y),incy);
+                                reinterpret_cast<hipblasComplex const*>(&alpha),
+                                reinterpret_cast<hipblasComplex const*>(x),incx,
+                                reinterpret_cast<hipblasComplex *>(y),incy);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_axpy(hipblasHandle_t handle, int n,
                            const std::complex<double> alpha, const std::complex<double> *x, int incx,
                            std::complex<double> *y, int incy)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasZaxpy(handle,n,
-                                reinterpret_cast<hipDoubleComplex const*>(&alpha),
-                                reinterpret_cast<hipDoubleComplex const*>(x),incx,
-                                reinterpret_cast<hipDoubleComplex *>(y),incy);
+                                reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
+                                reinterpret_cast<hipblasDoubleComplex const*>(x),incx,
+                                reinterpret_cast<hipblasDoubleComplex *>(y),incy);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   // Level-2
@@ -256,11 +258,11 @@ namespace hipblas {
                           const float beta,
                           float * y, int incy)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasSgemv(handle,hipblasOperation(Atrans),
                            M,N,&alpha,A,lda,x,incx,&beta,y,incy);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemv(hipblasHandle_t handle,
@@ -271,11 +273,11 @@ namespace hipblas {
                           const double beta,
                           double * y, int incy)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasDgemv(handle,hipblasOperation(Atrans),
                            M,N,&alpha,A,lda,x,incx,&beta,y,incy);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemv(hipblasHandle_t handle,
@@ -286,13 +288,13 @@ namespace hipblas {
                           const std::complex<float> beta,
                           std::complex<float> *y, int incy)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasCgemv(handle,hipblasOperation(Atrans),M,N,
-                           reinterpret_cast<hipComplex const*>(&alpha),reinterpret_cast<hipComplex const*>(A),lda,
-                           reinterpret_cast<hipComplex const*>(x),incx,reinterpret_cast<hipComplex const*>(&beta),
-                           reinterpret_cast<hipComplex *>(y),incy);
+                           reinterpret_cast<hipblasComplex const*>(&alpha),reinterpret_cast<hipblasComplex const*>(A),lda,
+                           reinterpret_cast<hipblasComplex const*>(x),incx,reinterpret_cast<hipblasComplex const*>(&beta),
+                           reinterpret_cast<hipblasComplex *>(y),incy);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemv(hipblasHandle_t handle,
@@ -303,15 +305,15 @@ namespace hipblas {
                           const std::complex<double> beta,
                           std::complex<double> * y, int incy)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasZgemv(handle,hipblasOperation(Atrans),M,N,
-                           reinterpret_cast<hipDoubleComplex const*>(&alpha),
-                           reinterpret_cast<hipDoubleComplex const*>(A),lda,
-                           reinterpret_cast<hipDoubleComplex const*>(x),incx,
-                           reinterpret_cast<hipDoubleComplex const*>(&beta),
-                           reinterpret_cast<hipDoubleComplex *>(y),incy);
+                           reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
+                           reinterpret_cast<hipblasDoubleComplex const*>(A),lda,
+                           reinterpret_cast<hipblasDoubleComplex const*>(x),incx,
+                           reinterpret_cast<hipblasDoubleComplex const*>(&beta),
+                           reinterpret_cast<hipblasDoubleComplex *>(y),incy);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemv(hipblasHandle_t handle,
@@ -322,23 +324,23 @@ namespace hipblas {
                           const float beta,
                           std::complex<float> *y, int incy)
   {
-    hipblasStatus_t sucess;
+    hipblasStatus_t success;
     char Nt('N');
     char Tt('T');
     if(Atrans == 'n' || Atrans == 'N')
-      sucess = hipblasSgemm(handle,hipblasOperation(Nt),hipblasOperation(Tt),2,M,N,&alpha,
+      success = hipblasSgemm(handle,hipblasOperation(Nt),hipblasOperation(Tt),2,M,N,&alpha,
                            reinterpret_cast<float const*>(x),2*incx,
                            A,lda,&beta,
                            reinterpret_cast<float *>(y),2*incy);
     else if(Atrans == 't' || Atrans == 'T')
-      sucess = hipblasSgemm(handle,hipblasOperation(Nt),hipblasOperation(Nt),2,N,M,&alpha,
+      success = hipblasSgemm(handle,hipblasOperation(Nt),hipblasOperation(Nt),2,N,M,&alpha,
                            reinterpret_cast<float const*>(x),2*incx,
                            A,lda,&beta,
                            reinterpret_cast<float *>(y),2*incy);
     else
       assert(0);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemv(hipblasHandle_t handle,
@@ -349,23 +351,23 @@ namespace hipblas {
                           const double beta,
                           std::complex<double> * y, int incy)
   {
-    hipblasStatus_t sucess;
+    hipblasStatus_t success;
     char Nt('N');
     char Tt('T');
     if(Atrans == 'n' || Atrans == 'N')
-      sucess = hipblasDgemm(handle,hipblasOperation(Nt),hipblasOperation(Tt),2,M,N,&alpha,
+      success = hipblasDgemm(handle,hipblasOperation(Nt),hipblasOperation(Tt),2,M,N,&alpha,
                            reinterpret_cast<double const*>(x),2*incx,
                            A,lda,&beta,
                            reinterpret_cast<double *>(y),2*incy);
     else if(Atrans == 't' || Atrans == 'T')
-      sucess = hipblasDgemm(handle,hipblasOperation(Nt),hipblasOperation(Nt),2,N,M,&alpha,
+      success = hipblasDgemm(handle,hipblasOperation(Nt),hipblasOperation(Nt),2,N,M,&alpha,
                            reinterpret_cast<double const*>(x),2*incx,
                            A,lda,&beta,
                            reinterpret_cast<double *>(y),2*incy);
     else
       assert(0);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
 
@@ -378,12 +380,12 @@ namespace hipblas {
                           const float beta,
                           float * C, int ldc)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasSgemm(handle,
                            hipblasOperation(Atrans),hipblasOperation(Btrans),
                            M,N,K,&alpha,A,lda,B,ldb,&beta,C,ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemm(hipblasHandle_t handle,
@@ -394,12 +396,12 @@ namespace hipblas {
                           const double beta,
                           double * C, int ldc)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasDgemm(handle,
                            hipblasOperation(Atrans),hipblasOperation(Btrans),
                            M,N,K,&alpha,A,lda,B,ldb,&beta,C,ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemm(hipblasHandle_t handle,
@@ -410,16 +412,16 @@ namespace hipblas {
                           const std::complex<float> beta,
                           std::complex<float> * C, int ldc)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasCgemm(handle,
                            hipblasOperation(Atrans),hipblasOperation(Btrans),M,N,K,
-                           reinterpret_cast<hipComplex const*>(&alpha),
-                           reinterpret_cast<hipComplex const*>(A),lda,
-                           reinterpret_cast<hipComplex const*>(B),ldb,
-                           reinterpret_cast<hipComplex const*>(&beta),
-                           reinterpret_cast<hipComplex *>(C),ldc);
+                           reinterpret_cast<hipblasComplex const*>(&alpha),
+                           reinterpret_cast<hipblasComplex const*>(A),lda,
+                           reinterpret_cast<hipblasComplex const*>(B),ldb,
+                           reinterpret_cast<hipblasComplex const*>(&beta),
+                           reinterpret_cast<hipblasComplex *>(C),ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemm(hipblasHandle_t handle,
@@ -430,16 +432,16 @@ namespace hipblas {
                           const std::complex<double> beta,
                           std::complex<double> * C, int ldc)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasZgemm(handle,
                            hipblasOperation(Atrans),hipblasOperation(Btrans),M,N,K,
-                           reinterpret_cast<hipDoubleComplex const*>(&alpha),
-                           reinterpret_cast<hipDoubleComplex const*>(A),lda,
-                           reinterpret_cast<hipDoubleComplex const*>(B),ldb,
-                           reinterpret_cast<hipDoubleComplex const*>(&beta),
-                           reinterpret_cast<hipDoubleComplex *>(C),ldc);
+                           reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
+                           reinterpret_cast<hipblasDoubleComplex const*>(A),lda,
+                           reinterpret_cast<hipblasDoubleComplex const*>(B),ldb,
+                           reinterpret_cast<hipblasDoubleComplex const*>(&beta),
+                           reinterpret_cast<hipblasDoubleComplex *>(C),ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemm(hipblasHandle_t handle,
@@ -451,14 +453,14 @@ namespace hipblas {
                           std::complex<float> * C, int ldc)
   {
     assert(Atrans=='n' || Atrans=='N');
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasSgemm(handle,
                            hipblasOperation(Atrans),hipblasOperation(Btrans),2*M,N,K,&alpha,
                            reinterpret_cast<float const*>(A),2*lda,
                            B,ldb,&beta,
                            reinterpret_cast<float *>(C),2*ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemm(hipblasHandle_t handle,
@@ -470,33 +472,34 @@ namespace hipblas {
                           std::complex<double> * C, int ldc)
   {
     assert(Atrans=='n' || Atrans=='N');
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasDgemm(handle,
                            hipblasOperation(Atrans),hipblasOperation(Btrans),2*M,N,K,&alpha,
                            reinterpret_cast<double const*>(A),2*lda,
                            B,ldb,&beta,
                            reinterpret_cast<double *>(C),2*ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemm(hipblasHandle_t handle,
                           char Atrans, char Btrans, int M, int N, int K,
-                          const hipDoubleComplex alpha,
-                          const hipDoubleComplex * A, int lda,
-                          const hipDoubleComplex * B, int ldb,
-                          const hipDoubleComplex beta,
-                          hipDoubleComplex * C, int ldc)
+                          const hipblasDoubleComplex alpha,
+                          const hipblasDoubleComplex * A, int lda,
+                          const hipblasDoubleComplex * B, int ldb,
+                          const hipblasDoubleComplex beta,
+                          hipblasDoubleComplex * C, int ldc)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasZgemm(handle,
                            hipblasOperation(Atrans),hipblasOperation(Btrans),
                            M,N,K,&alpha,A,lda,B,ldb,&beta,C,ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   // Extensions
+  // TODO: getrf extensions don't yet exist in hipblas
   inline hipblasStatus_t hipblas_getrfBatched(hipblasHandle_t handle,
                                    int n,
                                    float **Aarray,
@@ -505,12 +508,15 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    hipblasStatus_t sucess =
-              hipblasSgetrfBatched(handle,n,Aarray,lda,PivotArray,infoArray,batchSize);
+    //hipblasStatus_t success =
+              //hipblasSgetrfBatched(handle,n,Aarray,lda,PivotArray,infoArray,batchSize);
+    hipblasStatus_t success =
+              rocBLASStatusToHIPStatusAFQMC(rocsolver_sgetrf_batched((rocblas_handle)handle,n,n,Aarray,lda,PivotArray,n,infoArray,batchSize));
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
+  // TODO: Update to hipblas call when this gets merged upstream.
   inline hipblasStatus_t hipblas_getrfBatched(hipblasHandle_t handle,
                                    int n,
                                    double **Aarray,
@@ -520,10 +526,11 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    hipblasStatus_t sucess =
-              hipblasDgetrfBatched(handle,n,Aarray,lda,PivotArray,infoArray,batchSize);
+    hipblasStatus_t success =
+              rocBLASStatusToHIPStatusAFQMC(rocsolver_dgetrf_batched((rocblas_handle)handle,n,n,Aarray,lda,PivotArray,n,infoArray,batchSize));
+    //throw std::runtime_error("Error: hipblas_dot returned error code.");
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_getrfBatched(hipblasHandle_t handle,
@@ -534,12 +541,18 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    hipblasStatus_t sucess =
-              hipblasZgetrfBatched(handle,n,
-                            reinterpret_cast<hipDoubleComplex *const *>(Aarray),lda,PivotArray,
-                            infoArray,batchSize);
+    //hipblasStatus_t success =
+              //hipblasZgetrfBatched(handle,n,
+                            //reinterpret_cast<hipblasDoubleComplex *const *>(Aarray),lda,PivotArray,
+                            //infoArray,batchSize);
+    //throw std::runtime_error("Error: hipblas_dot returned error code.");
+    hipblasStatus_t success = rocBLASStatusToHIPStatusAFQMC(
+              rocsolver_zgetrf_batched((rocblas_handle)handle,n,n,
+                                       reinterpret_cast<rocblas_double_complex* const* >(Aarray),
+                                       lda,PivotArray,n,infoArray,batchSize)
+              );
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_getrfBatched(hipblasHandle_t handle,
@@ -550,12 +563,14 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    hipblasStatus_t sucess =
-              hipblasCgetrfBatched(handle,n,
-                            reinterpret_cast<hipComplex *const *>(Aarray),lda,PivotArray,
-                            infoArray,batchSize);
+    hipblasStatus_t success = rocBLASStatusToHIPStatusAFQMC(
+              rocsolver_cgetrf_batched((rocblas_handle)handle,n,n,
+                                       reinterpret_cast<rocblas_float_complex* const* >(Aarray),
+                                       lda,PivotArray,n,infoArray,batchSize)
+              );
+    //throw std::runtime_error("Error: hipblas_dot returned error code.");
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
@@ -568,10 +583,12 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    hipblasStatus_t sucess =
-              hipblasSgetriBatched(handle,n,Aarray,lda,PivotArray,Carray,ldc,infoArray,batchSize);
+    //hipblasStatus_t success =
+              //hipblasSgetriBatched(handle,n,Aarray,lda,PivotArray,Carray,ldc,infoArray,batchSize);
+    throw std::runtime_error("Error: getri doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    hipblasStatus_t success;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
@@ -584,10 +601,12 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    hipblasStatus_t sucess =
-              hipblasDgetriBatched(handle,n,Aarray,lda,PivotArray,Carray,ldc,infoArray,batchSize);
+    //hipblasStatus_t success =
+              //hipblasDgetriBatched(handle,n,Aarray,lda,PivotArray,Carray,ldc,infoArray,batchSize);
+    hipblasStatus_t success;
+    throw std::runtime_error("Error: getri doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
@@ -600,12 +619,14 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    hipblasStatus_t sucess =
-              hipblasZgetriBatched(handle,n,
-                            reinterpret_cast<const hipDoubleComplex *const *>(Aarray),lda,PivotArray,
-                            reinterpret_cast<hipDoubleComplex *const *>(Carray),ldc,infoArray,batchSize);
+    //hipblasStatus_t success =
+              //hipblasZgetriBatched(handle,n,
+                            //reinterpret_cast<const hipblasDoubleComplex *const *>(Aarray),lda,PivotArray,
+                            //reinterpret_cast<hipblasDoubleComplex *const *>(Carray),ldc,infoArray,batchSize);
+    throw std::runtime_error("Error: getri doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    hipblasStatus_t success;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
@@ -618,12 +639,14 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    hipblasStatus_t sucess =
-              hipblasCgetriBatched(handle,n,
-                            reinterpret_cast<const hipComplex *const *>(Aarray),lda,PivotArray,
-                            reinterpret_cast<hipComplex *const *>(Carray),ldc,infoArray,batchSize);
+    //hipblasStatus_t success =
+              //hipblasCgetriBatched(handle,n,
+                            //reinterpret_cast<const hipblasComplex *const *>(Aarray),lda,PivotArray,
+                            //reinterpret_cast<hipblasComplex *const *>(Carray),ldc,infoArray,batchSize);
+    throw std::runtime_error("Error: getri doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    hipblasStatus_t success;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_matinvBatched(hipblasHandle_t handle,
@@ -635,10 +658,12 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    hipblasStatus_t sucess =
-              hipblasSmatinvBatched(handle,n,Aarray,lda,Carray,ldc,infoArray,batchSize);
+    //hipblasStatus_t success =
+              //hipblasSmatinvBatched(handle,n,Aarray,lda,Carray,ldc,infoArray,batchSize);
+    throw std::runtime_error("Error: matinvBatched doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    hipblasStatus_t success;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_matinvBatched(hipblasHandle_t handle,
@@ -650,10 +675,12 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    hipblasStatus_t sucess =
-              hipblasDmatinvBatched(handle,n,Aarray,lda,Carray,ldc,infoArray,batchSize);
+    //hipblasStatus_t success =
+              //hipblasDmatinvBatched(handle,n,Aarray,lda,Carray,ldc,infoArray,batchSize);
+    throw std::runtime_error("Error: matinvBatched doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    hipblasStatus_t success;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_matinvBatched(hipblasHandle_t handle,
@@ -665,13 +692,15 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    hipblasStatus_t sucess =
-              hipblasCmatinvBatched(handle,n,
-                        reinterpret_cast<const hipComplex * const*>(Aarray),lda,
-                        reinterpret_cast<hipComplex **>(Carray),ldc,
-                        infoArray,batchSize);
+    //hipblasStatus_t success =
+              //hipblasCmatinvBatched(handle,n,
+                        //reinterpret_cast<const hipblasComplex * const*>(Aarray),lda,
+                        //reinterpret_cast<hipblasComplex **>(Carray),ldc,
+                        //infoArray,batchSize);
+    throw std::runtime_error("Error: matinvBatched doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    hipblasStatus_t success;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_matinvBatched(hipblasHandle_t handle,
@@ -683,13 +712,15 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    hipblasStatus_t sucess =
-              hipblasZmatinvBatched(handle,n,
-                        reinterpret_cast<const hipDoubleComplex *const*>(Aarray),lda,
-                        reinterpret_cast<hipDoubleComplex **>(Carray),ldc,
-                        infoArray,batchSize);
+    //hipblasStatus_t success =
+              //hipblasZmatinvBatched(handle,n,
+                        //reinterpret_cast<const hipblasDoubleComplex *const*>(Aarray),lda,
+                        //reinterpret_cast<hipblasDoubleComplex **>(Carray),ldc,
+                        //infoArray,batchSize);
+    throw std::runtime_error("Error: matinvBatched doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    hipblasStatus_t success;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_geam(hipblasHandle_t handle, char Atrans, char Btrans, int M, int N,
@@ -699,11 +730,13 @@ namespace hipblas {
                          float const* B, int ldb,
                          float *C, int ldc)
   {
-    hipblasStatus_t sucess =
-                hipblasSgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),
-                           M,N,&alpha,A,lda,&beta,B,ldb,C,ldc);
+    //hipblasStatus_t success =
+                //hipblasSgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),
+                           //M,N,&alpha,A,lda,&beta,B,ldb,C,ldc);
+    throw std::runtime_error("Error: hipblas_dot returned error code.");
+    hipblasStatus_t success;
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_geam(hipblasHandle_t handle, char Atrans, char Btrans, int M, int N,
@@ -713,11 +746,13 @@ namespace hipblas {
                          double const* B, int ldb,
                          double *C, int ldc)
   {
-    hipblasStatus_t sucess =
-                hipblasDgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),
-                           M,N,&alpha,A,lda,&beta,B,ldb,C,ldc);
+    //hipblasStatus_t success =
+                //hipblasDgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),
+                           //M,N,&alpha,A,lda,&beta,B,ldb,C,ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    throw std::runtime_error("Error: hipblas_dot returned error code.");
+    hipblasStatus_t success;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_geam(hipblasHandle_t handle, char Atrans, char Btrans, int M, int N,
@@ -727,15 +762,17 @@ namespace hipblas {
                          std::complex<float> const* B, int ldb,
                          std::complex<float> *C, int ldc)
   {
-    hipblasStatus_t sucess =
-                hipblasCgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),M,N,
-                           reinterpret_cast<hipComplex const*>(&alpha),
-                           reinterpret_cast<hipComplex const*>(A),lda,
-                           reinterpret_cast<hipComplex const*>(&beta),
-                           reinterpret_cast<hipComplex const*>(B),ldb,
-                           reinterpret_cast<hipComplex *>(C),ldc);
+    //hipblasStatus_t success =
+                //hipblasCgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),M,N,
+                           //reinterpret_cast<hipblasComplex const*>(&alpha),
+                           //reinterpret_cast<hipblasComplex const*>(A),lda,
+                           //reinterpret_cast<hipblasComplex const*>(&beta),
+                           //reinterpret_cast<hipblasComplex const*>(B),ldb,
+                           //reinterpret_cast<hipblasComplex *>(C),ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    throw std::runtime_error("Error: hipblas_dot returned error code.");
+    hipblasStatus_t success;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_geam(hipblasHandle_t handle, char Atrans, char Btrans, int M, int N,
@@ -745,15 +782,17 @@ namespace hipblas {
                          std::complex<double> const* B, int ldb,
                          std::complex<double> *C, int ldc)
   {
-    hipblasStatus_t sucess =
-                hipblasZgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),M,N,
-                           reinterpret_cast<hipDoubleComplex const*>(&alpha),
-                           reinterpret_cast<hipDoubleComplex const*>(A),lda,
-                           reinterpret_cast<hipDoubleComplex const*>(&beta),
-                           reinterpret_cast<hipDoubleComplex const*>(B),ldb,
-                           reinterpret_cast<hipDoubleComplex *>(C),ldc);
+    //hipblasStatus_t success =
+                //hipblasZgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),M,N,
+                           //reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
+                           //reinterpret_cast<hipblasDoubleComplex const*>(A),lda,
+                           //reinterpret_cast<hipblasDoubleComplex const*>(&beta),
+                           //reinterpret_cast<hipblasDoubleComplex const*>(B),ldb,
+                           //reinterpret_cast<hipblasDoubleComplex *>(C),ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    throw std::runtime_error("Error: hipblas_dot returned error code.");
+    hipblasStatus_t success;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemmStridedBatched(hipblasHandle_t handle,
@@ -764,12 +803,12 @@ namespace hipblas {
                           const float beta,
                           float * C, int ldc, int strideC, int batchSize)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasSgemmStridedBatched(handle,
                            hipblasOperation(Atrans),hipblasOperation(Btrans),
                            M,N,K,&alpha,A,lda,strideA,B,ldb,strideB,&beta,C,ldc,strideC,batchSize);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemmStridedBatched(hipblasHandle_t handle,
@@ -780,12 +819,12 @@ namespace hipblas {
                           const double beta,
                           double * C, int ldc, int strideC, int batchSize)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasDgemmStridedBatched(handle,
                            hipblasOperation(Atrans),hipblasOperation(Btrans),
                            M,N,K,&alpha,A,lda,strideA,B,ldb,strideB,&beta,C,ldc,strideC,batchSize);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemmStridedBatched(hipblasHandle_t handle,
@@ -796,17 +835,17 @@ namespace hipblas {
                           const std::complex<float> beta,
                           std::complex<float> * C, int ldc, int strideC, int batchSize)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasCgemmStridedBatched(handle,
                            hipblasOperation(Atrans),hipblasOperation(Btrans),
                            M,N,K,
-                           reinterpret_cast<hipComplex const*>(&alpha),
-                           reinterpret_cast<hipComplex const*>(A),lda,strideA,
-                           reinterpret_cast<hipComplex const*>(B),ldb,strideB,
-                           reinterpret_cast<hipComplex const*>(&beta),
-                           reinterpret_cast<hipComplex *>(C),ldc,strideC,batchSize);
+                           reinterpret_cast<hipblasComplex const*>(&alpha),
+                           reinterpret_cast<hipblasComplex const*>(A),lda,strideA,
+                           reinterpret_cast<hipblasComplex const*>(B),ldb,strideB,
+                           reinterpret_cast<hipblasComplex const*>(&beta),
+                           reinterpret_cast<hipblasComplex *>(C),ldc,strideC,batchSize);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemmStridedBatched(hipblasHandle_t handle,
@@ -817,17 +856,17 @@ namespace hipblas {
                           const std::complex<double> beta,
                           std::complex<double> * C, int ldc, int strideC, int batchSize)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasZgemmStridedBatched(handle,
                            hipblasOperation(Atrans),hipblasOperation(Btrans),
                            M,N,K,
-                           reinterpret_cast<hipDoubleComplex const*>(&alpha),
-                           reinterpret_cast<hipDoubleComplex const*>(A),lda,strideA,
-                           reinterpret_cast<hipDoubleComplex const*>(B),ldb,strideB,
-                           reinterpret_cast<hipDoubleComplex const*>(&beta),
-                           reinterpret_cast<hipDoubleComplex *>(C),ldc,strideC,batchSize);
+                           reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
+                           reinterpret_cast<hipblasDoubleComplex const*>(A),lda,strideA,
+                           reinterpret_cast<hipblasDoubleComplex const*>(B),ldb,strideB,
+                           reinterpret_cast<hipblasDoubleComplex const*>(&beta),
+                           reinterpret_cast<hipblasDoubleComplex *>(C),ldc,strideC,batchSize);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemmBatched(hipblasHandle_t handle,
@@ -838,12 +877,12 @@ namespace hipblas {
                           float beta,
                           float ** C, int ldc, int batchSize)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasSgemmBatched(handle,
                            hipblasOperation(Atrans),hipblasOperation(Btrans),
                            M,N,K,&alpha,A,lda,B,ldb,&beta,C,ldc,batchSize);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemmBatched(hipblasHandle_t handle,
@@ -854,12 +893,12 @@ namespace hipblas {
                           double beta,
                           double ** C, int ldc, int batchSize)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasDgemmBatched(handle,
                            hipblasOperation(Atrans),hipblasOperation(Btrans),
                            M,N,K,&alpha,A,lda,B,ldb,&beta,C,ldc,batchSize);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemmBatched(hipblasHandle_t handle,
@@ -870,16 +909,16 @@ namespace hipblas {
                           std::complex<float> beta,
                           std::complex<float> ** C, int ldc, int batchSize)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasCgemmBatched(handle,
                         hipblasOperation(Atrans),hipblasOperation(Btrans),M,N,K,
-                        reinterpret_cast<hipComplex *>(&alpha),
-                        reinterpret_cast<hipComplex **>(A),lda,
-                        reinterpret_cast<hipComplex **>(B),ldb,
-                        reinterpret_cast<hipComplex *>(&beta),
-                        reinterpret_cast<hipComplex **>(C),ldc,batchSize);
+                        reinterpret_cast<hipblasComplex *>(&alpha),
+                        reinterpret_cast<hipblasComplex **>(A),lda,
+                        reinterpret_cast<hipblasComplex **>(B),ldb,
+                        reinterpret_cast<hipblasComplex *>(&beta),
+                        reinterpret_cast<hipblasComplex **>(C),ldc,batchSize);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemmBatched(hipblasHandle_t handle,
@@ -890,16 +929,16 @@ namespace hipblas {
                           std::complex<double> beta,
                           std::complex<double> ** C, int ldc, int batchSize)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasZgemmBatched(handle,
                         hipblasOperation(Atrans),hipblasOperation(Btrans),M,N,K,
-                        reinterpret_cast<hipDoubleComplex *>(&alpha),
-                        reinterpret_cast<hipDoubleComplex **>(A),lda,
-                        reinterpret_cast<hipDoubleComplex **>(B),ldb,
-                        reinterpret_cast<hipDoubleComplex *>(&beta),
-                        reinterpret_cast<hipDoubleComplex **>(C),ldc,batchSize);
+                        reinterpret_cast<hipblasDoubleComplex *>(&alpha),
+                        reinterpret_cast<hipblasDoubleComplex **>(A),lda,
+                        reinterpret_cast<hipblasDoubleComplex **>(B),ldb,
+                        reinterpret_cast<hipblasDoubleComplex *>(&beta),
+                        reinterpret_cast<hipblasDoubleComplex **>(C),ldc,batchSize);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemmBatched(hipblasHandle_t handle,
@@ -910,7 +949,7 @@ namespace hipblas {
                           float beta,
                           std::complex<float> ** C, int ldc, int batchSize)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasSgemmBatched(handle,
                         hipblasOperation(Atrans),hipblasOperation(Btrans),2*M,N,K,
                         &alpha,
@@ -918,7 +957,7 @@ namespace hipblas {
                         B, ldb, &beta,
                         reinterpret_cast<float **>(C),2*ldc,batchSize);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_gemmBatched(hipblasHandle_t handle,
@@ -929,7 +968,7 @@ namespace hipblas {
                           double beta,
                           std::complex<double> ** C, int ldc, int batchSize)
   {
-    hipblasStatus_t sucess =
+    hipblasStatus_t success =
                 hipblasDgemmBatched(handle,
                         hipblasOperation(Atrans),hipblasOperation(Btrans),2*M,N,K,
                         &alpha,
@@ -937,21 +976,23 @@ namespace hipblas {
                         B, ldb, &beta,
                         reinterpret_cast<double **>(C),2*ldc,batchSize);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
-  inline hipblasStatus_t hipblas_geqrfBatched( hipblasHandle_t handle,
-                                    int m,
+  inline hipblasStatus_t hipblas_geqrfBatched( hipblasHandle_t handle, 
+                                    int m, 
                                     int n,
-                                    double **Aarray,
-                                    int lda,
-                                    double **TauArray,
+                                    double **Aarray,  
+                                    int lda, 
+                                    double **TauArray,                                                         
                                     int *info,
-                                    int batchSize)
+                                    int batchSize) 
   {
-    hipblasStatus_t sucess = hipblasDgeqrfBatched(handle,m,n,Aarray,lda,TauArray,info,batchSize);
+    //hipblasStatus_t success = hipblasDgeqrfBatched(handle,m,n,Aarray,lda,TauArray,info,batchSize);
+    hipblasStatus_t success;
+    throw std::runtime_error("Error: geqrfBatched doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_geqrfBatched( hipblasHandle_t handle,
@@ -963,26 +1004,30 @@ namespace hipblas {
                                     int *info,
                                     int batchSize)
   {
-    hipblasStatus_t sucess = hipblasSgeqrfBatched(handle,m,n,Aarray,lda,TauArray,info,batchSize);
+    //hipblasStatus_t success = hipblasSgeqrfBatched(handle,m,n,Aarray,lda,TauArray,info,batchSize);
+    hipblasStatus_t success;
+    throw std::runtime_error("Error: geqrfBatched doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
 
   inline hipblasStatus_t hipblas_geqrfBatched( hipblasHandle_t handle,
                                     int m,
                                     int n,
-                                    std::complex<double> **Aarray,
+                                    std::complex<double> **Aarray, 
                                     int lda,
-                                    std::complex<double> **TauArray,
+                                    std::complex<double> **TauArray, 
                                     int *info,
-                                    int batchSize)
+                                    int batchSize) 
   {
-     hipblasStatus_t sucess = hipblasZgeqrfBatched(handle,m,n,
-                        reinterpret_cast<hipDoubleComplex **>(Aarray),lda,
-                        reinterpret_cast<hipDoubleComplex **>(TauArray),info,batchSize);
+     //hipblasStatus_t success = hipblasZgeqrfBatched(handle,m,n,
+                        //reinterpret_cast<hipDoubleComplex **>(Aarray),lda,
+                        //reinterpret_cast<hipDoubleComplex **>(TauArray),info,batchSize);
+    hipblasStatus_t success;
+    throw std::runtime_error("Error: geqrfBatched doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipblasStatus_t hipblas_geqrfBatched( hipblasHandle_t handle,
@@ -994,11 +1039,13 @@ namespace hipblas {
                                     int *info,
                                     int batchSize)
   {
-     hipblasStatus_t sucess = hipblasCgeqrfBatched(handle,m,n,
-                        reinterpret_cast<hipComplex **>(Aarray),lda,
-                        reinterpret_cast<hipComplex **>(TauArray),info,batchSize);
+     //hipblasStatus_t success = hipblasCgeqrfBatched(handle,m,n,
+                        //reinterpret_cast<hipComplex **>(Aarray),lda,
+                        //reinterpret_cast<hipComplex **>(TauArray),info,batchSize);
+    hipblasStatus_t success;
+    throw std::runtime_error("Error: geqrfBatched doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
 }
