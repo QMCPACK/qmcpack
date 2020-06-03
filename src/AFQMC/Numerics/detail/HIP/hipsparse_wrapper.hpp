@@ -12,8 +12,8 @@
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef HIPSPARSE_FUNCTIONDEFS_H
-#define HIPSPARSE_FUNCTIONDEFS_H
+#ifndef AFQMC_HIPSPARSE_FUNCTIONDEFS_H
+#define AFQMC_HIPSPARSE_FUNCTIONDEFS_H
 
 #include<cassert>
 #include <hip/hip_runtime.h>
@@ -33,11 +33,11 @@ namespace hipsparse {
                const double *x, const double beta, double *y)
 
   {
-    hipsparseStatus_t sucess =
+    hipsparseStatus_t success =
                 hipsparseDcsrmv(handle,hipsparseOperation(Atrans),m,n,nnz,&alpha,
                                descrA,csrValA,csrRowPtrA,csrColIndA,x,&beta,y);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipsparseStatus_t hipsparse_csrmv(hipsparseHandle_t handle, char Atrans,
@@ -48,11 +48,11 @@ namespace hipsparse {
                const float *x, const float beta, float *y)
 
   {
-    hipsparseStatus_t sucess =
+    hipsparseStatus_t success =
                 hipsparseScsrmv(handle,hipsparseOperation(Atrans),m,n,nnz,&alpha,
                                descrA,csrValA,csrRowPtrA,csrColIndA,x,&beta,y);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipsparseStatus_t hipsparse_csrmv(hipsparseHandle_t handle, char Atrans,
@@ -64,7 +64,7 @@ namespace hipsparse {
                std::complex<double> *y)
 
   {
-    hipsparseStatus_t sucess =
+    hipsparseStatus_t success =
                 hipsparseZcsrmv(handle,hipsparseOperation(Atrans),m,n,nnz,
                                reinterpret_cast<hipDoubleComplex const*>(&alpha),
                                descrA,
@@ -74,7 +74,7 @@ namespace hipsparse {
                                reinterpret_cast<hipDoubleComplex const*>(&beta),
                                reinterpret_cast<hipDoubleComplex *>(y));
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
 
@@ -86,7 +86,7 @@ namespace hipsparse {
                const std::complex<float> *x, const std::complex<float> beta,
                std::complex<float> *y)
   {
-    hipsparseStatus_t sucess =
+    hipsparseStatus_t success =
                 hipsparseCcsrmv(handle,hipsparseOperation(Atrans),m,n,nnz,
                                reinterpret_cast<hipComplex const*>(&alpha),
                                descrA,
@@ -96,7 +96,7 @@ namespace hipsparse {
                                reinterpret_cast<hipComplex const*>(&beta),
                                reinterpret_cast<hipComplex *>(y));
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
 
@@ -110,12 +110,12 @@ namespace hipsparse {
                double *C, const int ldc)
 
   {
-    hipsparseStatus_t sucess =
+    hipsparseStatus_t success =
                 hipsparseDcsrmm(handle,hipsparseOperation(Atrans),
                                m,n,k,nnz,&alpha,descrA,csrValA,csrRowPtrA,csrColIndA,
                                B,ldb,&beta,C,ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipsparseStatus_t hipsparse_csrmm(hipsparseHandle_t handle, char Atrans,
@@ -128,12 +128,12 @@ namespace hipsparse {
                float *C, const int ldc)
 
   {
-    hipsparseStatus_t sucess =
+    hipsparseStatus_t success =
                 hipsparseScsrmm(handle,hipsparseOperation(Atrans),
                                m,n,k,nnz,&alpha,descrA,csrValA,csrRowPtrA,csrColIndA,
                                B,ldb,&beta,C,ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipsparseStatus_t hipsparse_csrmm(hipsparseHandle_t handle, char Atrans,
@@ -146,7 +146,7 @@ namespace hipsparse {
                std::complex<double> *C, const int ldc)
 
   {
-    hipsparseStatus_t sucess =
+    hipsparseStatus_t success =
                 hipsparseZcsrmm(handle,hipsparseOperation(Atrans),
                                m,n,k,nnz,
                                reinterpret_cast<hipDoubleComplex const*>(&alpha),
@@ -157,7 +157,7 @@ namespace hipsparse {
                                reinterpret_cast<hipDoubleComplex const*>(&beta),
                                reinterpret_cast<hipDoubleComplex *>(C),ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipsparseStatus_t hipsparse_csrmm(hipsparseHandle_t handle, char Atrans,
@@ -170,7 +170,7 @@ namespace hipsparse {
                std::complex<float> *C, const int ldc)
 
   {
-    hipsparseStatus_t sucess =
+    hipsparseStatus_t success =
                 hipsparseCcsrmm(handle,hipsparseOperation(Atrans),
                                m,n,k,nnz,
                                reinterpret_cast<hipComplex const*>(&alpha),
@@ -181,7 +181,7 @@ namespace hipsparse {
                                reinterpret_cast<hipComplex const*>(&beta),
                                reinterpret_cast<hipComplex *>(C),ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipsparseStatus_t hipsparse_csrmm2(hipsparseHandle_t handle, char Atrans,
@@ -194,12 +194,12 @@ namespace hipsparse {
                double *C, const int ldc)
 
   {
-    hipsparseStatus_t sucess =
+    hipsparseStatus_t success =
                 hipsparseDcsrmm2(handle,hipsparseOperation(Atrans),hipsparseOperation(Btrans),
                                m,n,k,nnz,&alpha,descrA,csrValA,csrRowPtrA,csrColIndA,
                                B,ldb,&beta,C,ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipsparseStatus_t hipsparse_csrmm2(hipsparseHandle_t handle, char Atrans,
@@ -212,12 +212,12 @@ namespace hipsparse {
                float *C, const int ldc)
 
   {
-    hipsparseStatus_t sucess =
+    hipsparseStatus_t success =
                 hipsparseScsrmm2(handle,hipsparseOperation(Atrans),hipsparseOperation(Btrans),
                                m,n,k,nnz,&alpha,descrA,csrValA,csrRowPtrA,csrColIndA,
                                B,ldb,&beta,C,ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipsparseStatus_t hipsparse_csrmm2(hipsparseHandle_t handle, char Atrans,
@@ -230,7 +230,7 @@ namespace hipsparse {
                std::complex<double> *C, const int ldc)
 
   {
-    hipsparseStatus_t sucess =
+    hipsparseStatus_t success =
                 hipsparseZcsrmm2(handle,hipsparseOperation(Atrans),hipsparseOperation(Btrans),
                                m,n,k,nnz,
                                reinterpret_cast<hipDoubleComplex const*>(&alpha),
@@ -241,7 +241,7 @@ namespace hipsparse {
                                reinterpret_cast<hipDoubleComplex const*>(&beta),
                                reinterpret_cast<hipDoubleComplex *>(C),ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipsparseStatus_t hipsparse_csrmm2(hipsparseHandle_t handle, char Atrans,
@@ -254,7 +254,7 @@ namespace hipsparse {
                std::complex<float> *C, const int ldc)
 
   {
-    hipsparseStatus_t sucess =
+    hipsparseStatus_t success =
                 hipsparseCcsrmm2(handle,hipsparseOperation(Atrans),hipsparseOperation(Btrans),
                                m,n,k,nnz,
                                reinterpret_cast<hipComplex const*>(&alpha),
@@ -265,7 +265,7 @@ namespace hipsparse {
                                reinterpret_cast<hipComplex const*>(&beta),
                                reinterpret_cast<hipComplex *>(C),ldc);
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   // TODO: FDM Not implemnted.
@@ -278,11 +278,13 @@ namespace hipsparse {
                double *C, const int ldc)
 
   {
-    hipsparseStatus_t sucess =
-                hipsparseDgemmi(handle,m,n,k,nnz,&alpha,A,lda,cscValB,
-                               cscColPtrB,cscRowIndB,&beta,C,ldc);
+    //hipsparseStatus_t success =
+                //hipsparseDgemmi(handle,m,n,k,nnz,&alpha,A,lda,cscValB,
+                               //cscColPtrB,cscRowIndB,&beta,C,ldc);
+    hipsparseStatus_t success;
+    throw std::runtime_error("Error: hipsparseDgemmi doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipsparseStatus_t hipsparse_gemmi(hipsparseHandle_t handle,
@@ -294,11 +296,13 @@ namespace hipsparse {
                float *C, const int ldc)
 
   {
-    hipsparseStatus_t sucess =
-                hipsparseSgemmi(handle,m,n,k,nnz,&alpha,A,lda,cscValB,
-                               cscColPtrB,cscRowIndB,&beta,C,ldc);
+    //hipsparseStatus_t success =
+                //hipsparseSgemmi(handle,m,n,k,nnz,&alpha,A,lda,cscValB,
+                               //cscColPtrB,cscRowIndB,&beta,C,ldc);
+    hipsparseStatus_t success;
+    throw std::runtime_error("Error: hipsparseDgemmi doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipsparseStatus_t hipsparse_gemmi(hipsparseHandle_t handle,
@@ -310,16 +314,18 @@ namespace hipsparse {
                std::complex<double> *C, const int ldc)
 
   {
-    hipsparseStatus_t sucess =
-                hipsparseZgemmi(handle,m,n,k,nnz,
-                               reinterpret_cast<hipDoubleComplex const*>(&alpha),
-                               reinterpret_cast<hipDoubleComplex const*>(A),lda,
-                               reinterpret_cast<hipDoubleComplex const*>(cscValB),
-                               cscColPtrB,cscRowIndB,
-                               reinterpret_cast<hipDoubleComplex const*>(&beta),
-                               reinterpret_cast<hipDoubleComplex *>(C),ldc);
+    //hipsparseStatus_t success =
+                //hipsparseZgemmi(handle,m,n,k,nnz,
+                               //reinterpret_cast<hipDoubleComplex const*>(&alpha),
+                               //reinterpret_cast<hipDoubleComplex const*>(A),lda,
+                               //reinterpret_cast<hipDoubleComplex const*>(cscValB),
+                               //cscColPtrB,cscRowIndB,
+                               //reinterpret_cast<hipDoubleComplex const*>(&beta),
+                               //reinterpret_cast<hipDoubleComplex *>(C),ldc);
+    hipsparseStatus_t success;
+    throw std::runtime_error("Error: hipsparseDgemmi doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
   inline hipsparseStatus_t hipsparse_gemmi(hipsparseHandle_t handle,
@@ -331,16 +337,18 @@ namespace hipsparse {
                std::complex<float> *C, const int ldc)
 
   {
-    hipsparseStatus_t sucess =
-                hipsparseCgemmi(handle,m,n,k,nnz,
-                               reinterpret_cast<hipComplex const*>(&alpha),
-                               reinterpret_cast<hipComplex const*>(A),lda,
-                               reinterpret_cast<hipComplex const*>(cscValB),
-                               cscColPtrB,cscRowIndB,
-                               reinterpret_cast<hipComplex const*>(&beta),
-                               reinterpret_cast<hipComplex *>(C),ldc);
+    //hipsparseStatus_t success =
+                //hipsparseCgemmi(handle,m,n,k,nnz,
+                               //reinterpret_cast<hipComplex const*>(&alpha),
+                               //reinterpret_cast<hipComplex const*>(A),lda,
+                               //reinterpret_cast<hipComplex const*>(cscValB),
+                               //cscColPtrB,cscRowIndB,
+                               //reinterpret_cast<hipComplex const*>(&beta),
+                               //reinterpret_cast<hipComplex *>(C),ldc);
+    hipsparseStatus_t success;
+    throw std::runtime_error("Error: hipsparseDgemmi doesn't exist.");
     hipDeviceSynchronize ();
-    return sucess;
+    return success;
   }
 
 }
