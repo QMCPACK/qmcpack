@@ -33,8 +33,6 @@ std::string WaveFunctionComponentBuilder::dtable_tag = "distancetable";
 
 std::string WaveFunctionComponentBuilder::jastrow_tag = "jastrow";
 
-std::string WaveFunctionComponentBuilder::fdlrwfn_tag = "fdlrwfn";
-
 std::string WaveFunctionComponentBuilder::detset_tag = "determinantset";
 
 std::string WaveFunctionComponentBuilder::sd_tag = "slaterdeterminant";
