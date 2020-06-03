@@ -499,7 +499,6 @@ namespace hipblas {
   }
 
   // Extensions
-  // TODO: getrf extensions don't yet exist in hipblas
   inline hipblasStatus_t hipblas_getrfBatched(hipblasHandle_t handle,
                                    int n,
                                    float **Aarray,
@@ -573,6 +572,7 @@ namespace hipblas {
     return success;
   }
 
+  // TODO: Not implemented
   inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
                                    int n,
                                    float **Aarray,
@@ -649,6 +649,7 @@ namespace hipblas {
     return success;
   }
 
+  // TODO: Not implemented
   inline hipblasStatus_t hipblas_matinvBatched(hipblasHandle_t handle,
                                    int n,
                                    float **Aarray,
