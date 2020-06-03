@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 //////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source
 // License.  See LICENSE file in top directory for details.
@@ -17,7 +16,6 @@
 #include<cassert>
 #include <complex>
 #include <type_traits>
-#define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels
@@ -43,7 +41,12 @@ __global__ void kernel_fill2D_n(Size N, Size M, T* y, Size lda, T const a)
     }
 }
 
-
+void fill_n(char * first, int N, int incx, char const value)
+{
+  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,incx,value);
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
+}
 void fill_n(int * first, int N, int incx, int const value)
 {
   hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,incx,value);
@@ -75,6 +78,12 @@ void fill_n(std::complex<double> * first, int N, int incx, std::complex<double> 
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
+void fill_n(char * first, int N, char const value)
+{
+  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,1,value);
+  qmc_hip::hip_check(hipGetLastError());
+  qmc_hip::hip_check(hipDeviceSynchronize());
+}
 void fill_n(long int * first, long unsigned int N, const long int value)
 {
   hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N,first,1,value);

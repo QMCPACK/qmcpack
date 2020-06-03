@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 //////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source
 // License.  See LICENSE file in top directory for details.
@@ -18,7 +17,6 @@
 #include<hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
-#define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels
@@ -31,12 +29,13 @@ __global__ void kernel_setIdentity(int m, int n, T * A, int lda)
 {
   int i = threadIdx.x + blockDim.x*blockIdx.x;
   int j = threadIdx.y + blockDim.y*blockIdx.y;
-  if( (i < m) && (j < n) )
+  if( (i < m) && (j < n) ) {
     if(i==j) {
       A[i*lda+i] = T(1.0);
     } else {
       A[j*lda+i] = T(0.0);
     }
+  }
 }
 
 template<typename T>
@@ -44,12 +43,13 @@ __global__ void kernel_setIdentity(int m, int n, thrust::complex<T> * A, int lda
 {
   int i = threadIdx.x + blockDim.x*blockIdx.x;
   int j = threadIdx.y + blockDim.y*blockIdx.y;
-  if( (i < m) && (j < n) )
+  if( (i < m) && (j < n) ) {
     if(i==j) {
       A[i*lda+i] = thrust::complex<T>(1.0,0.0);
     } else {
       A[j*lda+i] = thrust::complex<T>(0.0,0.0);
     }
+  }
 }
 
 template<typename T>
@@ -57,12 +57,13 @@ __global__ void kernel_setIdentity_strided(int nbatch, int stride, int m, int n,
 {
   int i = threadIdx.x + blockDim.x*blockIdx.x;
   int j = threadIdx.y + blockDim.y*blockIdx.y;
-  if( (i < m) && (j < n) && (blockIdx.z < nbatch) )
+  if( (i < m) && (j < n) && (blockIdx.z < nbatch) ) {
     if(i==j) {
       A[blockIdx.z*stride+i*lda+i] = T(1.0);
     } else {
       A[blockIdx.z*stride+j*lda+i] = T(0.0);
     }
+  }
 }
 
 template<typename T>
@@ -70,12 +71,13 @@ __global__ void kernel_setIdentity_strided(int nbatch, int stride, int m, int n,
 {
   int i = threadIdx.x + blockDim.x*blockIdx.x;
   int j = threadIdx.y + blockDim.y*blockIdx.y;
-  if( (i < m) && (j < n) && (blockIdx.z < nbatch) )
+  if( (i < m) && (j < n) && (blockIdx.z < nbatch) ) {
     if(i==j) {
       A[blockIdx.z*stride+i*lda+i] = thrust::complex<T>(1.0,0.0);
     } else {
       A[blockIdx.z*stride+j*lda+i] = thrust::complex<T>(0.0,0.0);
     }
+  }
 }
 
 void set_identity(int m, int n, double * A, int lda)

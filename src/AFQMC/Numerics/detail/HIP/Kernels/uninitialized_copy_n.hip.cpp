@@ -17,7 +17,6 @@
 #include <complex>
 #include <type_traits>
 #include <thrust/complex.h>
-#define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 //#include "AFQMC/Numerics/detail/HIP/Kernels/strided_range.hpp"
 

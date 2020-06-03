@@ -23,7 +23,6 @@
 #include <thrust/host_vector.h>
 #include <thrust/uninitialized_fill.h>
 */
-#define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels

@@ -19,11 +19,7 @@
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
-#define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
-#if __HIP_ARCH__ < 600
-#include "AFQMC/Numerics/detail/HIP/Kernels/myAtomicAdd.cu"
-#endif
 
 namespace kernels
 {
@@ -64,13 +60,8 @@ __global__ void kernel_batched_dot_wabn_wban(int nbatch, int nwalk, int nocc, in
         T re = (alp * cache[ 0 ]).real();
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(y+w*incy);
-#if __HIP_ARCH__ < 600
-        myAtomicAdd(re_,re);
-        myAtomicAdd(re_+1,im);
-#else
         atomicAdd(re_,re);
         atomicAdd(re_+1,im);
-#endif
     }
 }
 
@@ -109,13 +100,8 @@ __global__ void kernel_batched_dot_wanb_wbna(int nbatch, int nwalk, int nocc, in
         T re = (alp * cache[ 0 ]).real();
         T im = (alp * cache[ 0 ]).imag();
         T* re_ = reinterpret_cast<T*>(y+w*incy);
-#if __HIP_ARCH__ < 600
-        myAtomicAdd(re_,re);
-        myAtomicAdd(re_+1,im);
-#else
         atomicAdd(re_,re);
         atomicAdd(re_+1,im);
-#endif
     }
 }
 

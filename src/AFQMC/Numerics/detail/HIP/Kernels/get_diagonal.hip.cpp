@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 //////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source
 // License.  See LICENSE file in top directory for details.
@@ -13,11 +12,12 @@
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
-#include<cassert>
+#include <cassert>
 #include <complex>
-#include<hip.h>
+#include <hip/hip_runtime.h>
 #include <thrust/complex.h>
-#include<hip_runtime.h>
+//#include "hip_settings.h"
+//#include "hip_utilities.h"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 

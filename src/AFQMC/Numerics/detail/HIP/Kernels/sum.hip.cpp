@@ -18,7 +18,6 @@
 #include <thrust/device_ptr.h>
 #include "AFQMC/Numerics/detail/HIP/Kernels/strided_range.hpp"
 #include "AFQMC/Numerics/detail/HIP/Kernels/strided_2Drange.hpp"
-#define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels

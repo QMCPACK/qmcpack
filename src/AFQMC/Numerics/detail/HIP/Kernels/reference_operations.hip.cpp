@@ -15,7 +15,6 @@
 
 #include <complex>
 #include <thrust/complex.h>
-#define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels

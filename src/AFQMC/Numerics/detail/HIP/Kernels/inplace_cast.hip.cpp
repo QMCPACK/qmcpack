@@ -40,7 +40,8 @@ __global__ void kernel_inplace_cast(Size n, thrust::complex<T>* A, thrust::compl
 //      __syncthreads();
     }
   } else if(sizeof(T) < sizeof(Q)) {
-    assert( sizeof(T)*2 <= sizeof(Q));
+    // hipcc complains
+    //assert( sizeof(T)*2 <= sizeof(Q));
     ni = n-1-ni;
     for(Size i=0; i<n; i+=nb, ni-=nb) {
       if(ni>=0) Bi = static_cast<thrust::complex<Q>>(*(A+ni));

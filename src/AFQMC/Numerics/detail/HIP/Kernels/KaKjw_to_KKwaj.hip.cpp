@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 //////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source
 // License.  See LICENSE file in top directory for details.
@@ -19,7 +18,6 @@
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
-#define ENABLE_HIP 1
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels

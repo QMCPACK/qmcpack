@@ -12,20 +12,19 @@
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef AFQMC_SAMPLEGAUSSIANRNG_H
-#define AFQMC_SAMPLEGAUSSIANRNG_H
+#ifndef AFQMC_INPLACE_PRODUCT_KERNELS_HPP
+#define AFQMC_INPLACE_PRODUCT_KERNELS_HPP
 
 #include<cassert>
 #include <complex>
-#include "rocrand/rocrand.h"
 
 namespace kernels
 {
 
-void sampleGaussianRNG(double* V, int n, rocrand_generator& gen);
-void sampleGaussianRNG(float* V, int n, rocrand_generator& gen);
-void sampleGaussianRNG(std::complex<double>* V, int n, rocrand_generator& gen);
-void sampleGaussianRNG(std::complex<float>* V, int n, rocrand_generator& gen);
+void inplace_product(int nbatch, int n, int m, double const* B, int ldb, std::complex<double> *A, int lda);
+void inplace_product(int nbatch, int n, int m, float const* B, int ldb, std::complex<float> *A, int lda);
+void inplace_product(int nbatch, int n, int m, std::complex<double> const* B, int ldb, std::complex<double> *A, int lda);
+void inplace_product(int nbatch, int n, int m, std::complex<float> const* B, int ldb, std::complex<float> *A, int lda);
 
 }
 
