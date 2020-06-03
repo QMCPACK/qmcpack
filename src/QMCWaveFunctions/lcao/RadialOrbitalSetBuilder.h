@@ -308,7 +308,7 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbital(xmlNodePtr cur,
   }
   else
   {
-    APP_ABORT("Purely numerical atomic orbitals are not supported any longer.");
+    myComm->barrier_and_abort("Purely numerical atomic orbitals are not supported any longer.");
   }
   return true;
 }

@@ -142,7 +142,7 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
 
   // Numerical basis is a special case
   if (basisType == "Numerical")
-    APP_ABORT("Purely numerical atomic orbitals are not supported any longer.");
+    myComm->barrier_and_abort("Purely numerical atomic orbitals are not supported any longer.");
 
   return true;
 }
