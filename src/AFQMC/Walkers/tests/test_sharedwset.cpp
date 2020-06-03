@@ -22,7 +22,6 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "Utilities/RandomGenerator.h"
-#include "Utilities/SimpleRandom.h"
 #include "OhmmsApp/ProjectData.h"
 
 #include "io/hdf_multi.h"
@@ -110,7 +109,6 @@ void test_basic_walker_features(bool serial)
   boost::multi::array<Type,2> initB({NMO,NAEB});
   for(int i=0; i<NAEA; i++) initA[i][i] = Type(0.22);
   for(int i=0; i<NAEB; i++) initB[i][i] = Type(0.22);
-  //SimpleRandom<MTRand> rng;
   RandomGenerator_t rng;
 
 const char *xml_block =
@@ -386,7 +384,6 @@ void test_walker_io()
   boost::multi::array<Type,2> initB({NMO,NAEB});
   for(int i=0; i<NAEA; i++) initA[i][i] = Type(1.0);
   for(int i=0; i<NAEB; i++) initB[i][i] = Type(1.0);
-  //SimpleRandom<MTRand> rng;
   RandomGenerator_t rng;
 
 const char *xml_block =

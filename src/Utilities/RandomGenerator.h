@@ -93,21 +93,8 @@ typedef BoostRandom<OHMMS_PRECISION_FULL> RandomGenerator_t;
 } // namespace qmcplusplus
 #else
 
-#ifdef USE_SPRNG
-#include "Utilities/SprngRandom.h"
-namespace qmcplusplus
-{
-typedef SprngRandom<0> RandomGenerator_t;
+#error -DHAVE_LIBBOOST is missing in the compile line. A cmake dependency fix is needed.
 
-} // namespace qmcplusplus
-#else
-#include "Utilities/SimpleRandom.h"
-namespace qmcplusplus
-{
-typedef SimpleRandom<MTRand> RandomGenerator_t;
-
-} // namespace qmcplusplus
-#endif
 #endif
 #endif
 
