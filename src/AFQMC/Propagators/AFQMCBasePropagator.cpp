@@ -8,7 +8,7 @@
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
 // TODO: Remove this
-#ifdef defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA)
 #include "AFQMC/Numerics/detail/CUDA/Kernels/construct_X.cuh"
 #endif
 
