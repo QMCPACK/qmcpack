@@ -9,26 +9,24 @@
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file SkPot.h
  * @brief Declare SkPot
  */
 #ifndef QMCPLUSPLUS_SK_POT_H
 #define QMCPLUSPLUS_SK_POT_H
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <LongRange/StructFact.h>
 namespace qmcplusplus
 {
-
 /** SkPot evaluate the structure factor of the target particleset
  *
  * <estimator name="sk" type="sk" debug="no"/>
  */
-class SkPot: public QMCHamiltonianBase
+class SkPot : public OperatorBase
 {
 public:
-
   SkPot(ParticleSet& elns);
 
   void resetTargetParticleSet(ParticleSet& P);
@@ -37,22 +35,22 @@ public:
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   inline void FillFk()
   {
-    for(int ki=0; ki<NumK; ki++)
+    for (int ki = 0; ki < NumK; ki++)
     {
-      RealType k=dot(sourcePtcl->SK->KLists.kpts_cart[ki],sourcePtcl->SK->KLists.kpts_cart[ki]);
-      k= std::sqrt(k) - K_0;
-      Fk[ki] = OneOverN*V_0*std::exp(-k*k);
-//         app_log()<<ki<<": "<<Fk[ki] << std::endl;
+      RealType k = dot(sourcePtcl->SK->KLists.kpts_cart[ki], sourcePtcl->SK->KLists.kpts_cart[ki]);
+      k          = std::sqrt(k) - K_0;
+      Fk[ki]     = OneOverN * V_0 * std::exp(-k * k);
+      //         app_log()<<ki<<": "<<Fk[ki] << std::endl;
     }
   }
 
 
 protected:
-  ParticleSet *sourcePtcl;
+  ParticleSet* sourcePtcl;
   /** number of species */
   int NumSpecies;
   /** number of kpoints */
@@ -80,6 +78,5 @@ protected:
   bool hdf5_out;
 };
 
-}
+} // namespace qmcplusplus
 #endif
-

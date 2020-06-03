@@ -11,14 +11,14 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_CONSERVEDENERGY_H
 #define QMCPLUSPLUS_CONSERVEDENERGY_H
 
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
@@ -26,7 +26,8 @@
 
 namespace qmcplusplus
 {
-
+using WP = WalkerProperties::Indexes;
+  
 /** A fake Hamiltonian to check the sampling of the trial function.
  *
  * Integrating the expression
@@ -69,33 +70,28 @@ namespace qmcplusplus
  \f[\Psi\f] in terms of \f[\ln \Psi\] should use normal complex
  multiplication.
 */
-struct ConservedEnergy: public QMCHamiltonianBase
+struct ConservedEnergy : public OperatorBase
 {
-
   ConservedEnergy() {}
-  ~ConservedEnergy() { }
+  ~ConservedEnergy() {}
 
-  void resetTargetParticleSet(ParticleSet& P) { }
+  void resetTargetParticleSet(ParticleSet& P) {}
 
-  Return_t
-  evaluate(ParticleSet& P)
+  Return_t evaluate(ParticleSet& P)
   {
-    RealType gradsq = Dot(P.G,P.G);
-    RealType lap = Sum(P.L);
+    RealType gradsq = Dot(P.G, P.G);
+    RealType lap    = Sum(P.L);
 #ifdef QMC_COMPLEX
-    RealType gradsq_cc = Dot_CC(P.G,P.G);
-    Value = lap + gradsq + gradsq_cc;
+    RealType gradsq_cc = Dot_CC(P.G, P.G);
+    Value              = lap + gradsq + gradsq_cc;
 #else
-    Value = lap + 2*gradsq;
+    Value = lap + 2 * gradsq;
 #endif
     return 0.0;
   }
 
   /** Do nothing */
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) { return true; }
 
   bool get(std::ostream& os) const
   {
@@ -103,40 +99,33 @@ struct ConservedEnergy: public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
-  {
-    return new ConservedEnergy;
-  }
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new ConservedEnergy; }
 
 #ifdef QMC_CUDA
   ////////////////////////////////
   // Vectorized version for GPU //
   ////////////////////////////////
   // Nothing is done on GPU here, just copy into vector
-  void addEnergy(MCWalkerConfiguration &W,
-                 std::vector<RealType> &LocalEnergy)
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
   {
     // Value of LocalEnergy is not used in caller because this is auxiliary H.
-    std::vector<Walker_t*> &walkers = W.WalkerList;
-    for (int iw=0; iw<walkers.size(); iw++)
+    std::vector<Walker_t*>& walkers = W.WalkerList;
+    for (int iw = 0; iw < walkers.size(); iw++)
     {
-      Walker_t &w = *(walkers[iw]);
+      Walker_t& w = *(walkers[iw]);
       RealType flux;
-      RealType gradsq = Dot(w.G,w.G);
-      RealType lap = Sum(w.L);
+      RealType gradsq = Dot(w.G, w.G);
+      RealType lap    = Sum(w.L);
 #ifdef QMC_COMPLEX
-      RealType gradsq_cc = Dot_CC(w.G,w.G);
-      flux = lap + gradsq + gradsq_cc;
+      RealType gradsq_cc = Dot_CC(w.G, w.G);
+      flux               = lap + gradsq + gradsq_cc;
 #else
-      flux = lap + 2*gradsq;
+      flux = lap + 2 * gradsq;
 #endif
-      w.getPropertyBase()[NUMPROPERTIES+myIndex] = flux;
+      w.getPropertyBase()[WP::NUMPROPERTIES + myIndex] = flux;
     }
   }
 #endif
-
 };
-}
+} // namespace qmcplusplus
 #endif
-
-

@@ -23,15 +23,11 @@
 #include <string>
 
 
-
 namespace qmcplusplus
 {
-
 TEST_CASE("RandomNumberControl make_seeds", "[ohmmsapp]")
 {
-
-  Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c;
   c = OHMMS::Controller;
 
   RandomNumberControl::make_seeds();
@@ -41,11 +37,10 @@ TEST_CASE("RandomNumberControl make_seeds", "[ohmmsapp]")
 
 TEST_CASE("RandomNumberControl no random in xml", "[ohmmsapp]")
 {
-  Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c;
   c = OHMMS::Controller;
 
-  const char *xml_input="<tmp></tmp>";
+  const char* xml_input = "<tmp></tmp>";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(xml_input);
@@ -59,11 +54,10 @@ TEST_CASE("RandomNumberControl no random in xml", "[ohmmsapp]")
 
 TEST_CASE("RandomNumberControl random in xml", "[ohmmsapp]")
 {
-  Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c;
   c = OHMMS::Controller;
 
-  const char *xml_input="<tmp><random seed='0'></random></tmp>";
+  const char* xml_input = "<tmp><random seed='0'></random></tmp>";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(xml_input);
@@ -75,11 +69,10 @@ TEST_CASE("RandomNumberControl random in xml", "[ohmmsapp]")
   rnc.initialize(context);
 
 
-  rnc.write("rng_out",c);
+  rnc.write("rng_out", c);
 
   RandomNumberControl rnc2;
-  rnc2.read("rng_out",c);
+  rnc2.read("rng_out", c);
   // not sure what to test here - for now make sure it doesn't crash.
 }
-}
-
+} // namespace qmcplusplus

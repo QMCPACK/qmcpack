@@ -19,9 +19,8 @@
 #include <string>
 #include <vector>
 
-namespace qmcplusplus {
-
-
+namespace qmcplusplus
+{
 // Used by fake_cpu_clock in Clock.h if USE_FAKE_CLOCK is defined
 extern double fake_cpu_clock_increment;
 extern double fake_cpu_clock_value;
@@ -51,7 +50,7 @@ TEST_CASE("test_loop_timer", "[utilities]")
   loop.start();
   loop.stop();
   it_time = loop.get_time_per_iteration();
-  REQUIRE(it_time == Approx(1.5));  // 2 iterations
+  REQUIRE(it_time == Approx(1.5)); // 2 iterations
   // restore value
   fake_cpu_clock_increment = 1.0;
 }
@@ -64,25 +63,25 @@ TEST_CASE("test_loop_control", "[utilities]")
   RunTimeManagerClass rm; // fake clock = 1
   RunTimeControl rc(rm, max_cpu_secs);
   rc.runtime_padding(1.0);
-  bool enough_time = rc.enough_time_for_next_iteration(loop);  // fake clock = 2
+  bool enough_time = rc.enough_time_for_next_iteration(loop); // fake clock = 2
   REQUIRE(enough_time);
-  loop.start();   // fake clock = 3
-  loop.stop();    // fake clock = 4
+  loop.start();                                          // fake clock = 3
+  loop.stop();                                           // fake clock = 4
   enough_time = rc.enough_time_for_next_iteration(loop); // fake clock = 5
-    // estimated time with margin and padding =  1.0 sec/it * 1.1 + 1.0 (pad) = 2.1 
-    // remaining = 9 - 4.0 = 5.0  enough time for another loop.
+      // estimated time with margin and padding =  1.0 sec/it * 1.1 + 1.0 (pad) = 2.1
+      // remaining = 9 - 4.0 = 5.0  enough time for another loop.
   REQUIRE(enough_time);
 
-  loop.start();  // fake clock = 6
-  loop.stop();   // fake clock = 7
-  enough_time = rc.enough_time_for_next_iteration(loop);  // fake clock = 8
-   // estimated time with margin and padding = 1.0 sec/it * 1.1 + 1.0 = 2.1
-   // remaining = 9 - 8.0 = 1.0  not enough time for another loop
+  loop.start();                                          // fake clock = 6
+  loop.stop();                                           // fake clock = 7
+  enough_time = rc.enough_time_for_next_iteration(loop); // fake clock = 8
+      // estimated time with margin and padding = 1.0 sec/it * 1.1 + 1.0 = 2.1
+      // remaining = 9 - 8.0 = 1.0  not enough time for another loop
   REQUIRE(!enough_time);
 
-  std::string msg = rc.time_limit_message("QMC",2);
+  std::string msg = rc.time_limit_message("QMC", 2);
   REQUIRE(msg.size() > 0);
 }
 
 
-}
+} // namespace qmcplusplus

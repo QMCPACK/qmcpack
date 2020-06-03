@@ -10,18 +10,16 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <complex>
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 #include "type_traits/CUDATypes.h"
 
 
 namespace qmcplusplus
 {
-
 template<typename P, typename V>
 class TestDeviceCUDA
 {
-  using CTS = CUDATypes<P,V,3>;
+  using CTS = CUDATypes<P, V, 3>;
   typename CTS::RealType testReal;
   typename CTS::ComplexType testComplex;
 };
@@ -39,4 +37,4 @@ TEST_CASE("CUDA_Type_Aliases", "[type_traits][CUDA]")
   //REQUIRE(floatTest);
 }
 
-}
+} // namespace qmcplusplus

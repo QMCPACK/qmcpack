@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_DMC_UPDATE_PARTICLEBYPARTCLE_H
@@ -21,15 +19,14 @@
 #include "Utilities/NewTimer.h"
 namespace qmcplusplus
 {
-
-class DMCUpdatePbyPWithRejectionFast: public QMCUpdateBase
+class DMCUpdatePbyPWithRejectionFast : public QMCUpdateBase
 {
-
 public:
-
   /// Constructor.
-  DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                                 QMCHamiltonian& h, RandomGenerator_t& rg);
+  DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
+                                 TrialWaveFunction& psi,
+                                 QMCHamiltonian& h,
+                                 RandomGenerator_t& rg);
   ///destructor
   ~DMCUpdatePbyPWithRejectionFast();
 
@@ -52,6 +49,6 @@ enum DMCTimers
 extern TimerNameList_t<DMCTimers> DMCTimerNames;
 
 
-}
+} // namespace qmcplusplus
 
 #endif

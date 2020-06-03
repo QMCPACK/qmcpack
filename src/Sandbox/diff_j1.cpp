@@ -14,7 +14,6 @@
  */
 #include <Configuration.h>
 #include <Particle/ParticleSet.h>
-#include <Particle/DistanceTable.h>
 #include <OhmmsSoA/VectorSoaContainer.h>
 #include <Utilities/PrimeNumberSet.h>
 #include <random/random.hpp>
@@ -103,7 +102,7 @@ int main(int argc, char** argv)
     RandomGenerator<RealType> random_th(myPrimes[ip]);
 
     tile_cell(ions,tmat,scale);
-    ions.RSoA=ions.R; //fill the SoA
+    ions.setCoordinates(ions.R); //fill the SoA
 
     const int nions=ions.getTotalNum();
     const int nels=count_electrons(ions);
@@ -113,21 +112,17 @@ int main(int argc, char** argv)
     nptcl=nels;
 
     {//create up/down electrons
-      els.Lattice.BoxBConds=1;   els.Lattice.set(ions.Lattice);
+      els.Lattice.BoxBConds=1;
+      els.Lattice = ions.Lattice;
       vector<int> ud(2); ud[0]=nels/2; ud[1]=nels-ud[0];
       els.create(ud);
-      els.R.InUnit=1;
+      els.R.InUnit = PosUnit::Lattice;
       random_th.generate_uniform(&els.R[0][0],nels3);
       els.convert2Cart(els.R); // convert to Cartiesian
-      els.RSoA=els.R;
+      els.setCoordinates(els.R);
     }
 
     ParticleSet els_aos(els);
-
-    //create tables
-    DistanceTableData* d_ee=DistanceTable::add(els,DT_SOA);
-
-    DistanceTableData* d_ee_aos=DistanceTable::add(els_aos,DT_AOS);
 
     ParticlePos_t delta(nels);
 
@@ -140,7 +135,7 @@ int main(int argc, char** argv)
     J1OrbitalSoA<BsplineFunctor<RealType> > J(ions,els);
     OneBodyJastrowOrbital<BsplineFunctor<RealType> > J_aos(ions,els_aos);
 
-    DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
+    const auto& d_ie = els.getDistTable(els.addTable(ions, DT_SOA));
 
     RealType r1_cut=std::min(RealType(6.4),els.Lattice.WignerSeitzRadius);
 
@@ -169,7 +164,7 @@ int main(int argc, char** argv)
 
 
       cout << "Check values " << J.LogValue << " " << els.G[0] << " " << els.L[0] << endl;
-      cout << "evaluateLog::V Error = " << (J.LogValue-J_aos.LogValue)/nels << endl;
+      cout << "evaluateLog::V Error = " << std::real(J.LogValue-J_aos.LogValue)/nels << endl;
       {
         double g_err=0.0;
         for(int iel=0; iel<nels; ++iel)
@@ -197,10 +192,8 @@ int main(int argc, char** argv)
       int naccepted=0;
       for(int iel=0; iel<nels; ++iel)
       {
-        els.setActive(iel);
         PosType grad_soa=J.evalGrad(els,iel);
 
-        els_aos.setActive(iel);
         PosType grad_aos=J_aos.evalGrad(els_aos,iel)-grad_soa;
 
         g_eval+=sqrt(dot(grad_aos,grad_aos));
@@ -278,7 +271,7 @@ int main(int argc, char** argv)
       int nsphere=0;
       for(int jel=0; jel<nels; ++jel)
       {
-        const auto &dist = d_ie->Distances[jel];
+        const auto& dist = d_ie.getDistRow(jel);
         for(int iat=0; iat<nions; ++iat)
           if(dist[iat]<Rmax)
           {
@@ -286,11 +279,11 @@ int main(int argc, char** argv)
             random_th.generate_uniform(&delta[0][0],nknots*3);
             for(int k=0; k<nknots;++k)
             {
-              els.makeMoveOnSphere(jel,delta[k]);
+              els.makeMove(jel,delta[k]);
               RealType r_soa=J.ratio(els,jel);
               els.rejectMove(jel);
 
-              els_aos.makeMoveOnSphere(jel,delta[k]);
+              els_aos.makeMove(jel,delta[k]);
               RealType r_aos=J_aos.ratio(els_aos,jel);
               els_aos.rejectMove(jel);
               r_ratio += abs(r_soa/r_aos-1);

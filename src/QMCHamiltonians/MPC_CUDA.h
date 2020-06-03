@@ -11,8 +11,8 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_MPC_CUDA_H
 #define QMCPLUSPLUS_MPC_CUDA_H
 
@@ -21,34 +21,30 @@
 
 namespace qmcplusplus
 {
-
-class MPC_CUDA: public MPC
+class MPC_CUDA : public MPC
 {
 protected:
   //////////////////////////////////
   // Vectorized evaluation on GPU //
   //////////////////////////////////
   //// Short-range part
-  UBspline_3d_s_cuda *CudaSpline;
+  UBspline_3d_s_cuda* CudaSpline;
   std::vector<int> IonFirst, IonLast;
   std::vector<ParticleSet*> myPtcl;
   // This is indexed by the ion species
-  gpu::device_vector<CUDA_PRECISION>  SumGPU;
-  gpu::host_vector<CUDA_PRECISION>  SumHost;
-  gpu::device_vector<CUDA_PRECISION>  L, Linv;
+  gpu::device_vector<CUDA_PRECISION> SumGPU;
+  gpu::host_vector<CUDA_PRECISION> SumHost;
+  gpu::device_vector<CUDA_PRECISION> L, Linv;
 
   void initBreakup();
 
 public:
-  GPU_XRAY_TRACE MPC_CUDA(ParticleSet& ref, double cutoff);
+  MPC_CUDA(ParticleSet& ref, double cutoff);
 
-  GPU_XRAY_TRACE QMCHamiltonianBase* makeClone(ParticleSet& qp,
-					       TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-  GPU_XRAY_TRACE void addEnergy(MCWalkerConfiguration &W,
-				std::vector<RealType> &LocalEnergy);
-
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 };
-}
+} // namespace qmcplusplus
 
 #endif

@@ -25,6 +25,7 @@
 #include "AFQMC/Matrix/csr_hdf5_readers.hpp"
 
 #include "AFQMC/HamiltonianOperations/SparseTensor.hpp"
+#include "AFQMC/Hamiltonians/rotateHamiltonian.hpp"
 
 namespace qmcplusplus
 {
@@ -35,7 +36,7 @@ template<typename T1, typename T2>
 SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB, std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2)
 {
 
-#if defined(AFQMC_SP)
+#if defined(MIXED_PRECISION)
   using SpT1 = typename to_single_precision<T1>::value_type;
   using SpT2 = typename to_single_precision<T2>::value_type;
 #else
@@ -45,10 +46,10 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
 
   // NEEDS TO BE FIXED FOR SP CASE
   using T1_shm_csr_matrix = ma::sparse::csr_matrix<SpT1,int,std::size_t,
-                                boost::mpi3::intranode::allocator<SpT1>,
+                                shared_allocator<SpT1>,
                                 ma::sparse::is_root>;
   using T2_shm_csr_matrix = ma::sparse::csr_matrix<SpT2,int,std::size_t,
-                                boost::mpi3::intranode::allocator<SpT2>,
+                                shared_allocator<SpT2>,
                                 ma::sparse::is_root>;
 
   std::vector<int> dims(10);
@@ -117,10 +118,12 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   boost::multi::array<ComplexType,2> H1({NMO,NMO});
   boost::multi::array<ComplexType,2> v0({NMO,NMO});
   if(TGwfn.Global().root()) {
-    if(!dump.readEntry(H1,"H1")) {
+    boost::multi::array<ValueType,2> H1_({NMO,NMO});
+    if(!dump.readEntry(H1_,"H1")) {
       app_error()<<" Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");
     }
+    copy_n_cast(H1_.origin(),NMO*NMO,to_address(H1.origin()));
     if(!dump.readEntry(v0,"v0")) {
       app_error()<<" Error in loadSparseTensor: Problems reading dataset. \n";
       APP_ABORT("");
@@ -153,7 +156,7 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   dump.pop();
 
   // rotated 1 body hamiltonians
-  std::vector<boost::multi::array<SpT1,1>> hij;
+  std::vector<boost::multi::array<ComplexType,1>> hij;
   hij.reserve(ndet);
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
@@ -171,28 +174,36 @@ SparseTensor<T1,T2> loadSparseTensor(hdf_archive& dump, WALKER_TYPES type, int N
   auto Spvnview(csr::shm::local_balanced_partition(Spvn,TGprop));
 
   if(ndet==1) {
-    std::vector<SpCType_shm_csr_matrix> SpvnT;
-    using matrix_view = typename SpCType_shm_csr_matrix::template matrix_view<int>;
+    std::vector<T2_shm_csr_matrix> SpvnT;
+// MAM: chech that T2 is SpComplexType
+    //std::vector<SpCType_shm_csr_matrix> SpvnT;
+    using matrix_view = typename T2_shm_csr_matrix::template matrix_view<int>;
     std::vector<matrix_view> SpvnTview;
-    SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias(type,TGprop,
-                              &PsiT[0],((type==COLLINEAR)?(&PsiT[1]):(&PsiT[0])),
+#if MIXED_PRECISION
+    auto PsiTsp(csr::shm::CSRvector_to_single_precision<PsiT_Matrix_t<SPComplexType>>(PsiT));
+#else
+    auto& PsiTsp(PsiT);
+#endif
+    SpvnT.emplace_back(sparse_rotate::halfRotateCholeskyMatrixForBias<T2>(type,TGprop,
+                              &PsiTsp[0],((type==COLLINEAR)?(&PsiTsp[1]):(&PsiTsp[0])),
                               Spvn,cutv2));
     SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
 
-    return SparseTensor<T1,T2>(type,std::move(H1),std::move(hij),std::move(V2),
+    return SparseTensor<T1,T2>(TGwfn.TG_local(),type,std::move(H1),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),
             std::move(v0),std::move(SpvnT),std::move(SpvnTview),E0,Spvn_ncols);
   } else {
     // problem here!!!!!
     // don't know how to tell if this is NOMSD or PHMSD!!!
     // whether to rotate or not! That's the question!
-    std::vector<SpVType_shm_csr_matrix> SpvnT;
-    using matrix_view = typename SpVType_shm_csr_matrix::template matrix_view<int>;
+    std::vector<T2_shm_csr_matrix> SpvnT;
+    //std::vector<SpVType_shm_csr_matrix> SpvnT;
+    using matrix_view = typename T2_shm_csr_matrix::template matrix_view<int>;
     std::vector<matrix_view> SpvnTview;
-    SpvnT.emplace_back(csr::shm::transpose(Spvn));
+    SpvnT.emplace_back(csr::shm::transpose<T2_shm_csr_matrix>(Spvn));
     SpvnTview.emplace_back(csr::shm::local_balanced_partition(SpvnT[0],TGprop));
 
-    return SparseTensor<T1,T2>(type,std::move(H1),std::move(hij),std::move(V2),
+    return SparseTensor<T1,T2>(TGwfn.TG_local(),type,std::move(H1),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),
             std::move(v0),std::move(SpvnT),std::move(SpvnTview),E0,global_ncvecs);
   }
@@ -203,7 +214,7 @@ template<class shm_mat1,
          class shm_mat2>
 inline void writeSparseTensor(hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB,
                               TaskGroup_& TGprop, TaskGroup_& TGwfn,
-                              boost::multi::array<ComplexType,2> & H1,
+                              boost::multi::array<ValueType,2> & H1,
                               std::vector<shm_mat1> const& v2,
                               shm_mat2 const& Spvn,
                               boost::multi::array<ComplexType,2> & v0,
@@ -215,7 +226,7 @@ inline void writeSparseTensor(hdf_archive& dump, WALKER_TYPES type, int NMO, int
     dump.push("HamiltonianOperations");
     dump.push("SparseTensor");
     std::vector<int> dims{NMO,NAEA,NAEB,int(v2.size()),type,
-                          int(v2[0].shape()[0]),int(v2[0].shape()[1]),int(Spvn.shape()[0]),gncv};
+                          int(v2[0].size(0)),int(v2[0].size(1)),int(Spvn.size(0)),gncv};
     dump.write(dims,"dims");
     std::vector<int> dm{code};
     dump.write(dm,"type");

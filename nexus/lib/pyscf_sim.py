@@ -33,7 +33,7 @@ class Pyscf(Simulation):
     infile_extension   = '.py'
     application        = 'python'
     application_properties = set(['serial','mpi'])
-    application_results    = set(['orbitals'])
+    application_results    = set(['orbitals','wavefunction'])
 
 
     def check_result(self,result_name,sim):
@@ -42,6 +42,8 @@ class Pyscf(Simulation):
             conv_requested  = self.input.save_qmc
             prefix_provided = self.input.prefix is not None
             calculating_result = conv_requested and prefix_provided
+        elif result_name=='wavefunction':
+            calculating_result = self.input.checkpoint
         #end if
         return calculating_result
     #end def check_result
@@ -52,6 +54,8 @@ class Pyscf(Simulation):
         if result_name=='orbitals':
             h5_file = self.input.prefix+'.h5'
             result.h5_file = os.path.join(self.locdir,h5_file)
+        elif result_name=='wavefunction':
+            result.chkfile = os.path.join(self.locdir,self.input.chkfile)
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if

@@ -34,108 +34,116 @@
 BZ_NAMESPACE(blitz)
 
 template<int N>
-class IndexPlaceholder 
+class IndexPlaceholder
 #ifdef BZ_NEW_EXPRESSION_TEMPLATES
-  : public ETBase<IndexPlaceholder<N> > 
+    : public ETBase<IndexPlaceholder<N>>
 #endif
 {
 public:
-    IndexPlaceholder()
-    { }
+  IndexPlaceholder() {}
 
 #ifdef BZ_NEW_EXPRESSION_TEMPLATES
-    IndexPlaceholder(const IndexPlaceholder<N>& x)
-        : ETBase< IndexPlaceholder<N> >(x)
-    { }
+  IndexPlaceholder(const IndexPlaceholder<N>& x) : ETBase<IndexPlaceholder<N>>(x) {}
 #else
-    IndexPlaceholder(const IndexPlaceholder<N>&)
-    { }
+  IndexPlaceholder(const IndexPlaceholder<N>&) {}
 #endif
 
-    ~IndexPlaceholder()
-    { }
+  ~IndexPlaceholder() {}
 
-    void operator=(const IndexPlaceholder<N>&)
-    { }
+  void operator=(const IndexPlaceholder<N>&) {}
 
-    typedef int T_numtype;
-    typedef int T_ctorArg1;     // Dummy; not used
-    typedef int T_ctorArg2;     // Ditto
+  typedef int T_numtype;
+  typedef int T_ctorArg1; // Dummy; not used
+  typedef int T_ctorArg2; // Ditto
 
-    static const int 
-        numArrayOperands = 0, 
-        numIndexPlaceholders = 1,
-        rank = N+1;
+  static const int numArrayOperands = 0, numIndexPlaceholders = 1, rank = N + 1;
 
-    // If you have a precondition failure on this routine, it means
-    // you are trying to use stack iteration mode on an expression
-    // which contains an index placeholder.  You must use index 
-    // iteration mode instead.
-    int operator*() { 
-        BZPRECONDITION(0); 
-        return 0;
-    }
+  // If you have a precondition failure on this routine, it means
+  // you are trying to use stack iteration mode on an expression
+  // which contains an index placeholder.  You must use index
+  // iteration mode instead.
+  int operator*()
+  {
+    BZPRECONDITION(0);
+    return 0;
+  }
 
 #ifdef BZ_ARRAY_EXPR_PASS_INDEX_BY_VALUE
-    template<int N_rank>
-    T_numtype operator()(TinyVector<int, N_rank> i) { return i[N]; }
+  template<int N_rank>
+  T_numtype operator()(TinyVector<int, N_rank> i)
+  {
+    return i[N];
+  }
 #else
-    template<int N_rank>
-    T_numtype operator()(const TinyVector<int, N_rank>& i) { return i[N]; }
+  template<int N_rank>
+  T_numtype operator()(const TinyVector<int, N_rank>& i)
+  {
+    return i[N];
+  }
 #endif
 
-    int ascending(int) const { return INT_MIN; }
-    int ordering(int)  const { return INT_MIN; }
-    int lbound(int)    const { return INT_MIN; }  // tiny(int());
-    int ubound(int)    const { return INT_MAX; }  // huge(int()); 
+  int ascending(int) const { return INT_MIN; }
+  int ordering(int) const { return INT_MIN; }
+  int lbound(int) const { return INT_MIN; } // tiny(int());
+  int ubound(int) const { return INT_MAX; } // huge(int());
 
-    // See operator*() note
+  // See operator*() note
 
-    void push(int)       { BZPRECONDITION(0); }
-    void pop(int)        { BZPRECONDITION(0); }
-    void advance()       { BZPRECONDITION(0); }
-    void advance(int)    { BZPRECONDITION(0); }
-    void loadStride(int) { BZPRECONDITION(0); }
+  void push(int) { BZPRECONDITION(0); }
+  void pop(int) { BZPRECONDITION(0); }
+  void advance() { BZPRECONDITION(0); }
+  void advance(int) { BZPRECONDITION(0); }
+  void loadStride(int) { BZPRECONDITION(0); }
 
-    bool isUnitStride(int) const { 
-        BZPRECONDITION(0);
-        return false;
-    }
+  bool isUnitStride(int) const
+  {
+    BZPRECONDITION(0);
+    return false;
+  }
 
-    void advanceUnitStride() { BZPRECONDITION(0); }
+  void advanceUnitStride() { BZPRECONDITION(0); }
 
-    bool canCollapse(int,int) const {   
-        BZPRECONDITION(0); 
-        return false; 
-    }
+  bool canCollapse(int, int) const
+  {
+    BZPRECONDITION(0);
+    return false;
+  }
 
-    T_numtype operator[](int) {
-        BZPRECONDITION(0);
-        return T_numtype();
-    }
+  T_numtype operator[](int)
+  {
+    BZPRECONDITION(0);
+    return T_numtype();
+  }
 
-    T_numtype fastRead(int) {
-        BZPRECONDITION(0);
-        return T_numtype();
-    }
+  T_numtype fastRead(int)
+  {
+    BZPRECONDITION(0);
+    return T_numtype();
+  }
 
-    int suggestStride(int) const {
-        BZPRECONDITION(0);
-        return 0;
-    }
+  int suggestStride(int) const
+  {
+    BZPRECONDITION(0);
+    return 0;
+  }
 
-    bool isStride(int,int) const {
-        BZPRECONDITION(0);
-        return true;
-    }
+  bool isStride(int, int) const
+  {
+    BZPRECONDITION(0);
+    return true;
+  }
 
-    void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat&) const {
-        // NEEDS_WORK-- do real formatting for reductions
-        str += "index-expr[NEEDS_WORK]";
-    }
+  void prettyPrint(BZ_STD_SCOPE(std::string) & str, prettyPrintFormat&) const
+  {
+    // NEEDS_WORK-- do real formatting for reductions
+    str += "index-expr[NEEDS_WORK]";
+  }
 
-    template<typename T_shape>
-    bool shapeCheck(const T_shape&) const { return true; }
+  template<typename T_shape>
+  bool shapeCheck(const T_shape&) const
+  {
+    return true;
+  }
 };
 
 typedef IndexPlaceholder<0> firstIndex;
@@ -153,23 +161,22 @@ typedef IndexPlaceholder<10> eleventhIndex;
 #ifndef BZ_NO_TENSOR_INDEX_OBJECTS
 
 BZ_NAMESPACE(tensor)
-    _bz_global blitz::IndexPlaceholder<0> i;
-    _bz_global blitz::IndexPlaceholder<1> j;
-    _bz_global blitz::IndexPlaceholder<2> k;
-    _bz_global blitz::IndexPlaceholder<3> l;
-    _bz_global blitz::IndexPlaceholder<4> m;
-    _bz_global blitz::IndexPlaceholder<5> n;
-    _bz_global blitz::IndexPlaceholder<6> o;
-    _bz_global blitz::IndexPlaceholder<7> p;
-    _bz_global blitz::IndexPlaceholder<8> q;
-    _bz_global blitz::IndexPlaceholder<9> r;
-    _bz_global blitz::IndexPlaceholder<10> s;
-    _bz_global blitz::IndexPlaceholder<11> t;
+_bz_global blitz::IndexPlaceholder<0> i;
+_bz_global blitz::IndexPlaceholder<1> j;
+_bz_global blitz::IndexPlaceholder<2> k;
+_bz_global blitz::IndexPlaceholder<3> l;
+_bz_global blitz::IndexPlaceholder<4> m;
+_bz_global blitz::IndexPlaceholder<5> n;
+_bz_global blitz::IndexPlaceholder<6> o;
+_bz_global blitz::IndexPlaceholder<7> p;
+_bz_global blitz::IndexPlaceholder<8> q;
+_bz_global blitz::IndexPlaceholder<9> r;
+_bz_global blitz::IndexPlaceholder<10> s;
+_bz_global blitz::IndexPlaceholder<11> t;
 BZ_NAMESPACE_END // tensor
 
 #endif
 
-BZ_NAMESPACE_END
+    BZ_NAMESPACE_END
 
 #endif // BZ_INDEXEXPR_H
-

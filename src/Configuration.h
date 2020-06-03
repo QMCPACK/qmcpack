@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_TRAITS_H
@@ -24,15 +22,9 @@
 #include <type_traits/QMCTypes.h>
 #include <OhmmsData/OhmmsElementBase.h>
 #include <OhmmsData/RecordProperty.h>
-#if OHMMS_DIM==3
-#include <Lattice/Uniform3DGridLayout.h>
-#elif OHMMS_DIM==2
-#include <Lattice/Uniform2DGridLayout.h>
-#else
-#error "Only 2D and 3D are implemented.\n"
-#endif
-#include <ParticleBase/ParticleAttrib.h>
-#include <Utilities/OutputManager.h>
+#include <Particle/Lattice/CrystalLattice.h>
+#include <Particle/ParticleBase/ParticleAttrib.h>
+#include <Platforms/Host/OutputManager.h>
 #include <Message/Communicate.h>
 
 //define empty DEBUG_MEMORY
@@ -41,72 +33,67 @@
 //#define DEBUG_MEMORY(msg) std::cerr << "<<<< " << msg << std::endl;
 
 #if defined(DEBUG_PSIBUFFER_ON)
-#define DEBUG_PSIBUFFER(who,msg) std::cerr << "PSIBUFFER " << who << " " << msg << std::endl; std::cerr.flush();
+#define DEBUG_PSIBUFFER(who, msg)                              \
+  std::cerr << "PSIBUFFER " << who << " " << msg << std::endl; \
+  std::cerr.flush();
 #else
-#define DEBUG_PSIBUFFER(who,msg)
-#endif
-
-#if defined(GPU_XRAY_TRACE_ON)
-#define GPU_XRAY_TRACE [[clang::xray_always_instrument]]
-#else
-#define GPU_XRAY_TRACE
+#define DEBUG_PSIBUFFER(who, msg)
 #endif
 
 namespace qmcplusplus
 {
-
 /** traits for QMC variables
  *
  *typedefs for the QMC data types
  */
 struct QMCTraits
 {
-  enum {DIM = OHMMS_DIM};
+  enum
+  {
+    DIM = OHMMS_DIM
+  };
   using QTBase = QMCTypes<OHMMS_PRECISION, DIM>;
   using QTFull = QMCTypes<OHMMS_PRECISION_FULL, DIM>;
-  typedef QTBase::RealType            RealType;
-  typedef QTBase::ComplexType         ComplexType;
-  typedef QTBase::ValueType           ValueType;
-  typedef QTBase::PosType             PosType;
-  typedef QTBase::GradType            GradType;
-  typedef QTBase::TensorType          TensorType;
+  typedef QTBase::RealType RealType;
+  typedef QTBase::ComplexType ComplexType;
+  typedef QTBase::ValueType ValueType;
+  typedef QTBase::PosType PosType;
+  typedef QTBase::GradType GradType;
+  typedef QTBase::TensorType TensorType;
   ///define other types
-  typedef OHMMS_INDEXTYPE             IndexType;
-  typedef QTFull::RealType            EstimatorRealType;
+  typedef OHMMS_INDEXTYPE IndexType;
+  typedef QTFull::RealType FullPrecRealType;
+  typedef QTFull::ValueType FullPrecValueType;
   ///define PropertyList_t
-  typedef RecordNamedProperty<EstimatorRealType>    PropertySetType;
+  typedef RecordNamedProperty<FullPrecRealType> PropertySetType;
+
+  // Type for particle group index pairs
+  using PtclGrpIndexes = std::vector<std::pair<int,int>>;
 };
 
 /** Particle traits to use UniformGridLayout for the ParticleLayout.
  */
 struct PtclOnLatticeTraits
 {
-#if OHMMS_DIM==3
-  typedef Uniform3DGridLayout                          ParticleLayout_t;
-#elif OHMMS_DIM==2
-  typedef Uniform2DGridLayout                          ParticleLayout_t;
-#else
-  typedef UniformGridLayout<OHMMS_PRECISION,OHMMS_DIM> ParticleLayout_t;
-#endif
-
+  using ParticleLayout_t = CrystalLattice<OHMMS_PRECISION, OHMMS_DIM>;
   using QTFull = QMCTraits::QTFull;
 
-  typedef int                                          Index_t;
-  typedef QTFull::RealType                             Scalar_t;
-  typedef QTFull::ComplexType                          Complex_t;
+  typedef int Index_t;
+  typedef QTFull::RealType Scalar_t;
+  typedef QTFull::ComplexType Complex_t;
 
-  typedef ParticleLayout_t::SingleParticleIndex_t      SingleParticleIndex_t;
-  typedef ParticleLayout_t::SingleParticlePos_t        SingleParticlePos_t;
-  typedef ParticleLayout_t::Tensor_t                   Tensor_t;
+  typedef ParticleLayout_t::SingleParticleIndex_t SingleParticleIndex_t;
+  typedef ParticleLayout_t::SingleParticlePos_t SingleParticlePos_t;
+  typedef ParticleLayout_t::Tensor_t Tensor_t;
 
-  typedef ParticleAttrib<Index_t>                      ParticleIndex_t;
-  typedef ParticleAttrib<Scalar_t>                     ParticleScalar_t;
-  typedef ParticleAttrib<SingleParticlePos_t>          ParticlePos_t;
-  typedef ParticleAttrib<Tensor_t>                     ParticleTensor_t;
+  typedef ParticleAttrib<Index_t> ParticleIndex_t;
+  typedef ParticleAttrib<Scalar_t> ParticleScalar_t;
+  typedef ParticleAttrib<SingleParticlePos_t> ParticlePos_t;
+  typedef ParticleAttrib<Tensor_t> ParticleTensor_t;
 
-  typedef ParticleAttrib<QTFull::GradType>           ParticleGradient_t;
-  typedef ParticleAttrib<QTFull::ValueType>            ParticleLaplacian_t;
-  typedef QTFull::ValueType                            SingleParticleValue_t;
+  typedef ParticleAttrib<QTFull::GradType> ParticleGradient_t;
+  typedef ParticleAttrib<QTFull::ValueType> ParticleLaplacian_t;
+  typedef QTFull::ValueType SingleParticleValue_t;
 };
 
 
@@ -120,6 +107,6 @@ typedef Approx ValueApprox;
 #endif
 #endif
 
-}
+} // namespace qmcplusplus
 
 #endif

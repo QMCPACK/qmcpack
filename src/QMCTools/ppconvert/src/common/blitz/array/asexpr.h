@@ -25,7 +25,7 @@
 #define BZ_ARRAYASEXPR_H
 
 #ifndef BZ_ARRAY_H
- #error <blitz/array/asexpr.h> must be included via <blitz/array.h>
+#error <blitz/array/asexpr.h> must be included via <blitz/array.h>
 #endif
 
 BZ_NAMESPACE(blitz)
@@ -35,67 +35,71 @@ BZ_NAMESPACE(blitz)
 
 //  Default to scalar.
 
-template <typename T>
-struct asExpr {
-    typedef _bz_ArrayExprConstant<T> T_expr;
-    static T_expr getExpr(const T& x) { return T_expr(x); }
+template<typename T>
+struct asExpr
+{
+  typedef _bz_ArrayExprConstant<T> T_expr;
+  static T_expr getExpr(const T& x) { return T_expr(x); }
 };
 
 //  Already an expression template term
 
-template <typename T>
-struct asExpr<_bz_ArrayExpr<T> > {
-    typedef _bz_ArrayExpr<T> T_expr;
-    static const T_expr& getExpr(const T_expr& x) { return x; }
+template<typename T>
+struct asExpr<_bz_ArrayExpr<T>>
+{
+  typedef _bz_ArrayExpr<T> T_expr;
+  static const T_expr& getExpr(const T_expr& x) { return x; }
 };
 
 //  An array operand
 
-template <typename T,int N>
-struct asExpr<Array<T,N> > {
-    typedef FastArrayIterator<T,N> T_expr;
-    static T_expr getExpr(const Array<T,N>& x) { return x.beginFast(); }
+template<typename T, int N>
+struct asExpr<Array<T, N>>
+{
+  typedef FastArrayIterator<T, N> T_expr;
+  static T_expr getExpr(const Array<T, N>& x) { return x.beginFast(); }
 };
 
 //  Index placeholder
 
-template <int N>
-struct asExpr<IndexPlaceholder<N> > {
-    typedef IndexPlaceholder<N> T_expr;
-    static T_expr getExpr(T_expr x) { return x; }
+template<int N>
+struct asExpr<IndexPlaceholder<N>>
+{
+  typedef IndexPlaceholder<N> T_expr;
+  static T_expr getExpr(T_expr x) { return x; }
 };
 
 #ifdef BZ_HAVE_TEMPLATES_AS_TEMPLATE_ARGUMENTS
 
 //  A traits class that provides the return type of a binary operation.
 
-template <template <typename T1> class OP, typename O1>
-struct BzUnaryExprResult {
-    typedef _bz_ArrayExpr<_bz_ArrayExprUnaryOp<
-        typename asExpr<O1>::T_expr,
-        OP<typename asExpr<O1>::T_expr::T_numtype> > > T_result;
+template<template<typename T1> class OP, typename O1>
+struct BzUnaryExprResult
+{
+  typedef _bz_ArrayExpr<_bz_ArrayExprUnaryOp<typename asExpr<O1>::T_expr, OP<typename asExpr<O1>::T_expr::T_numtype>>>
+      T_result;
 };
 
-template <template <typename T1, typename T2> class OP,
-          typename O1, typename O2>
-struct BzBinaryExprResult {
-    typedef _bz_ArrayExpr<_bz_ArrayExprBinaryOp<
-        typename asExpr<O1>::T_expr,
-        typename asExpr<O2>::T_expr,
-        OP<typename asExpr<O1>::T_expr::T_numtype,
-           typename asExpr<O2>::T_expr::T_numtype> > > T_result;
+template<template<typename T1, typename T2> class OP, typename O1, typename O2>
+struct BzBinaryExprResult
+{
+  typedef _bz_ArrayExpr<
+      _bz_ArrayExprBinaryOp<typename asExpr<O1>::T_expr,
+                            typename asExpr<O2>::T_expr,
+                            OP<typename asExpr<O1>::T_expr::T_numtype, typename asExpr<O2>::T_expr::T_numtype>>>
+      T_result;
 };
 
-template <template <typename T1, typename T2, typename T3> class OP,
-          typename O1, typename O2, typename O3>
-struct BzTernaryExprResult {
-    typedef _bz_ArrayExpr<_bz_ArrayExprTernaryOp<
-        typename asExpr<O1>::T_expr,
-        typename asExpr<O2>::T_expr,
-        typename asExpr<O3>::T_expr,
-        OP<typename asExpr<O1>::T_expr::T_numtype,
-           typename asExpr<O2>::T_expr::T_numtype,
-           typename asExpr<O3>::T_expr::T_numtype> > > T_result;
+template<template<typename T1, typename T2, typename T3> class OP, typename O1, typename O2, typename O3>
+struct BzTernaryExprResult
+{
+  typedef _bz_ArrayExpr<_bz_ArrayExprTernaryOp<typename asExpr<O1>::T_expr,
+                                               typename asExpr<O2>::T_expr,
+                                               typename asExpr<O3>::T_expr,
+                                               OP<typename asExpr<O1>::T_expr::T_numtype,
+                                                  typename asExpr<O2>::T_expr::T_numtype,
+                                                  typename asExpr<O3>::T_expr::T_numtype>>>
+      T_result;
 };
 
 #endif /* BZ_HAVE_TEMPLATES_AS_TEMPLATE_ARGUMENTS */

@@ -20,11 +20,12 @@
 
 using std::string;
 using std::vector;
-namespace qmcplusplus {
-
-void print_vector(vector<int> &out)
+namespace qmcplusplus
 {
-  for (int i = 0; i < out.size(); i++) {
+void print_vector(vector<int>& out)
+{
+  for (int i = 0; i < out.size(); i++)
+  {
     std::cout << out[i] << " ";
   }
   std::cout << std::endl;
@@ -33,7 +34,7 @@ void print_vector(vector<int> &out)
 TEST_CASE("FairDivideLow_one", "[utilities]")
 {
   std::vector<int> out;
-  FairDivideLow(1,1,out);
+  FairDivideLow(1, 1, out);
   REQUIRE(out.size() == 2);
   REQUIRE(out[0] == 0);
   REQUIRE(out[1] == 1);
@@ -42,12 +43,12 @@ TEST_CASE("FairDivideLow_one", "[utilities]")
 TEST_CASE("FairDivideLow_two", "[utilities]")
 {
   std::vector<int> out;
-  FairDivideLow(2,1,out);
+  FairDivideLow(2, 1, out);
   REQUIRE(out.size() == 2);
   REQUIRE(out[0] == 0);
   REQUIRE(out[1] == 2);
 
-  FairDivideLow(2,2,out);
+  FairDivideLow(2, 2, out);
   REQUIRE(out.size() == 3);
   REQUIRE(out[0] == 0);
   REQUIRE(out[1] == 1);
@@ -57,18 +58,18 @@ TEST_CASE("FairDivideLow_two", "[utilities]")
 TEST_CASE("FairDivideLow_three", "[utilities]")
 {
   std::vector<int> out;
-  FairDivideLow(3,1,out);
+  FairDivideLow(3, 1, out);
   REQUIRE(out.size() == 2);
   REQUIRE(out[0] == 0);
   REQUIRE(out[1] == 3);
 
-  FairDivideLow(3,2,out);
+  FairDivideLow(3, 2, out);
   REQUIRE(out.size() == 3);
   REQUIRE(out[0] == 0);
   REQUIRE(out[1] == 1);
   REQUIRE(out[2] == 3);
 
-  FairDivideLow(3,3,out);
+  FairDivideLow(3, 3, out);
   REQUIRE(out.size() == 4);
   REQUIRE(out[0] == 0);
   REQUIRE(out[1] == 1);
@@ -79,7 +80,7 @@ TEST_CASE("FairDivideLow_three", "[utilities]")
 TEST_CASE("FairDivideLow_four", "[utilities]")
 {
   std::vector<int> out;
-  FairDivideLow(4,2,out);
+  FairDivideLow(4, 2, out);
   REQUIRE(out.size() == 3);
   REQUIRE(out[0] == 0);
   REQUIRE(out[1] == 2);
@@ -90,17 +91,17 @@ TEST_CASE("FairDivideAligned", "[utilities]")
 {
   int first, last;
 
-  FairDivideAligned(37,6,5,2,first,last);
+  FairDivideAligned(37, 6, 5, 2, first, last);
   REQUIRE(first == 24);
-  REQUIRE(last  == 36);
+  REQUIRE(last == 36);
 
-  FairDivideAligned(37,6,5,4,first,last);
+  FairDivideAligned(37, 6, 5, 4, first, last);
   REQUIRE(first == 37);
-  REQUIRE(last  == 37);
+  REQUIRE(last == 37);
 
-  FairDivideAligned(37,6,1,0,first,last);
+  FairDivideAligned(37, 6, 1, 0, first, last);
   REQUIRE(first == 0);
-  REQUIRE(last  == 37);
+  REQUIRE(last == 37);
 }
 
-}
+} // namespace qmcplusplus

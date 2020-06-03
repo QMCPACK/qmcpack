@@ -11,8 +11,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /**@file WaveFunctionFactory.h
  *@brief Declaration of a WaveFunctionFactory
  */
@@ -25,19 +25,17 @@
 #include "Message/MPIObjectBase.h"
 namespace qmcplusplus
 {
-
 /** Factory class to build a many-body wavefunction
  */
-struct WaveFunctionFactory: public MPIObjectBase
+struct WaveFunctionFactory : public MPIObjectBase
 {
-
-  typedef std::map<std::string,ParticleSet*> PtclPoolType;
+  typedef std::map<std::string, ParticleSet*> PtclPoolType;
   ///target ParticleSet
   ParticleSet* targetPtcl;
+  ///reference to the PtclPoolType
+  PtclPoolType& ptclPool;
   ///many-body wavefunction object
   TrialWaveFunction* targetPsi;
-  ///reference to the PtclPoolType
-  PtclPoolType&  ptclPool;
   ///input node for a many-body wavefunction
   xmlNodePtr myNode;
   ///builder tree
@@ -62,7 +60,7 @@ struct WaveFunctionFactory: public MPIObjectBase
 
   /** process xmlNode to populate targetPsi
    */
-  bool build(xmlNodePtr cur, bool buildtree=true);
+  bool build(xmlNodePtr cur, bool buildtree = true);
 
   /** add Fermion wavefunction term */
   bool addFermionTerm(xmlNodePtr cur);
@@ -84,5 +82,5 @@ struct WaveFunctionFactory: public MPIObjectBase
   std::vector<WaveFunctionFactory*> myClones;
 };
 
-}
+} // namespace qmcplusplus
 #endif

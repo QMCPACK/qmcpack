@@ -12,27 +12,26 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_LOCALECPPOTENTIAL_H
 #define QMCPLUSPLUS_LOCALECPPOTENTIAL_H
 #include "Particle/ParticleSet.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
+#include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
-
 /** @ingroup hamiltonian
  * \brief Evaluate the local potentials (either pseudo or full core) around each ion.
  */
 
-struct LocalECPotential: public QMCHamiltonianBase
+struct LocalECPotential : public OperatorBase
 {
-
   typedef OneDimGridBase<RealType> GridType;
   typedef OneDimCubicSpline<RealType> RadialPotentialType;
 
@@ -56,8 +55,10 @@ struct LocalECPotential: public QMCHamiltonianBase
   Vector<RealType> PPart;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
-  Array<TraceReal,1>* Ve_sample;
-  Array<TraceReal,1>* Vi_sample;
+  Array<TraceReal, 1> Ve_samp_tmp;
+  Array<TraceReal, 1> Vi_samp_tmp;
+  Array<TraceReal, 1>* Ve_sample;
+  Array<TraceReal, 1>* Vi_sample;
 #endif
   const ParticleSet& Peln;
   const ParticleSet& Pion;
@@ -77,12 +78,16 @@ struct LocalECPotential: public QMCHamiltonianBase
 
   Return_t evaluate(ParticleSet& P);
 
+  Return_t evaluateWithIonDerivs(ParticleSet& P,
+                                 ParticleSet& ions,
+                                 TrialWaveFunction& psi,
+                                 ParticleSet::ParticlePos_t& hf_terms,
+                                 ParticleSet::ParticlePos_t& pulay_terms);
+
+
   Return_t evaluate_orig(ParticleSet& P);
 
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) { return true; }
 
   bool get(std::ostream& os) const
   {
@@ -90,7 +95,7 @@ struct LocalECPotential: public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   /** Add a RadialPotentialType of a species
    * @param groupID index of the ion species
@@ -99,7 +104,5 @@ struct LocalECPotential: public QMCHamiltonianBase
    */
   void add(int groupID, RadialPotentialType* ppot, RealType z);
 };
-}
+} // namespace qmcplusplus
 #endif
-
-

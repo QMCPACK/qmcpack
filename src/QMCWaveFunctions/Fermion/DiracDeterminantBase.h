@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -23,31 +23,34 @@
 
 namespace qmcplusplus
 {
-
-class DiracDeterminantBase: public WaveFunctionComponent
+class DiracDeterminantBase : public WaveFunctionComponent
 {
 public:
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantBase(SPOSetPtr const spos, int first=0)
-    : Phi(spos), FirstIndex(first), LastIndex(first+spos->size()),
-    NumPtcls(spos->size()), NumOrbitals(spos->size()),
-    UpdateTimer("DiracDeterminantBase::update",timer_level_fine),
-    RatioTimer("DiracDeterminantBase::ratio",timer_level_fine),
-    InverseTimer("DiracDeterminantBase::inverse",timer_level_fine),
-    BufferTimer("DiracDeterminantBase::buffer",timer_level_fine),
-    SPOVTimer("DiracDeterminantBase::spoval",timer_level_fine),
-    SPOVGLTimer("DiracDeterminantBase::spovgl",timer_level_fine)
+  DiracDeterminantBase(SPOSetPtr const spos, int first = 0)
+      : UpdateTimer(*TimerManager.createTimer("DiracDeterminantBase::update", timer_level_fine)),
+        RatioTimer(*TimerManager.createTimer("DiracDeterminantBase::ratio", timer_level_fine)),
+        InverseTimer(*TimerManager.createTimer("DiracDeterminantBase::inverse", timer_level_fine)),
+        BufferTimer(*TimerManager.createTimer("DiracDeterminantBase::buffer", timer_level_fine)),
+        SPOVTimer(*TimerManager.createTimer("DiracDeterminantBase::spoval", timer_level_fine)),
+        SPOVGLTimer(*TimerManager.createTimer("DiracDeterminantBase::spovgl", timer_level_fine)),
+        Phi(spos),
+        FirstIndex(first),
+        LastIndex(first + spos->size()),
+        NumOrbitals(spos->size()),
+        NumPtcls(spos->size())
   {
-    Optimizable = Phi->Optimizable;
-    ClassName = "DiracDeterminantBase";
+    Optimizable  = Phi->isOptimizable();
+    is_fermionic = true;
+    ClassName    = "DiracDeterminantBase";
     registerTimers();
   }
 
   ///default destructor
-  virtual ~DiracDeterminantBase() { }
+  virtual ~DiracDeterminantBase() {}
 
   // copy constructor and assign operator disabled
   DiracDeterminantBase(const DiracDeterminantBase& s) = delete;
@@ -64,74 +67,83 @@ public:
    *@param first index of first particle
    *@param nel number of particles in the determinant
    */
-  virtual void set(int first, int nel, int delay=1) { };
+  virtual void set(int first, int nel, int delay = 1){};
 
   ///set BF pointers
   virtual void setBF(BackflowTransformation* BFTrans) {}
 
   ///optimizations  are disabled
-  virtual inline void checkInVariables(opt_variables_type& active)
-  {
-    Phi->checkInVariables(active);
-    Phi->checkInVariables(myVars);
-  }
+  virtual inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
 
-  virtual inline void checkOutVariables(const opt_variables_type& active)
-  {
-    Phi->checkOutVariables(active);
-    myVars.clear();
-    myVars.insertFrom(Phi->myVars);
-    myVars.getIndex(active);
-  }
+  virtual inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
 
-  virtual void resetParameters(const opt_variables_type& active)
-  {
-    Phi->resetParameters(active);
-    for(int i=0; i<myVars.size(); ++i)
-    {
-      int ii=myVars.Index[i];
-      if(ii>=0)
-        myVars[i]= active[ii];
-    }
-  }
+  virtual void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
 
   // To be removed with AoS
-  void resetTargetParticleSet(ParticleSet& P) final
+  void resetTargetParticleSet(ParticleSet& P) override final
   {
     Phi->resetTargetParticleSet(P);
     targetPtcl = &P;
   }
 
-  inline void reportStatus(std::ostream& os) final { }
+  inline void reportStatus(std::ostream& os) override final {}
 
   // expose CPU interfaces
   using WaveFunctionComponent::evaluateDerivatives;
   using WaveFunctionComponent::evaluateLog;
+  using WaveFunctionComponent::mw_evaluateLog;
   using WaveFunctionComponent::recompute;
 
+  using WaveFunctionComponent::copyFromBuffer;
   using WaveFunctionComponent::registerData;
   using WaveFunctionComponent::updateBuffer;
-  using WaveFunctionComponent::copyFromBuffer;
 
+  using WaveFunctionComponent::acceptMove;
+  using WaveFunctionComponent::completeUpdates;
+  using WaveFunctionComponent::evalGrad;
+  using WaveFunctionComponent::mw_accept_rejectMove;
+  using WaveFunctionComponent::mw_calcRatio;
+  using WaveFunctionComponent::mw_completeUpdates;
+  using WaveFunctionComponent::mw_evalGrad;
+  using WaveFunctionComponent::mw_ratioGrad;
   using WaveFunctionComponent::ratio;
   using WaveFunctionComponent::ratioGrad;
-  using WaveFunctionComponent::evalGrad;
-  using WaveFunctionComponent::acceptMove;
   using WaveFunctionComponent::restore;
-  using WaveFunctionComponent::completeUpdates;
 
   using WaveFunctionComponent::evalGradSource;
+  using WaveFunctionComponent::evaluateHessian;
   using WaveFunctionComponent::evaluateRatios;
   using WaveFunctionComponent::evaluateRatiosAlltoOne;
-  using WaveFunctionComponent::evaluateHessian;
+  using WaveFunctionComponent::mw_evaluateRatios;
+
+  // used by DiracDeterminantWithBackflow
+  virtual void evaluateDerivatives(ParticleSet& P,
+                                   const opt_variables_type& active,
+                                   int offset,
+                                   Matrix<RealType>& dlogpsi,
+                                   Array<GradType, 3>& dG,
+                                   Matrix<RealType>& dL)
+  {
+    APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::evaluateDerivatives");
+  }
 
   // Stop makeClone
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const final
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override final
   {
     APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
     return 0;
   }
 
+  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
+  {
+    APP_ABORT("  DiracDeterminantBase::ratioGradWithSpins():  Implementation required\n");
+    return 0.0;
+  }
+  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
+  {
+    APP_ABORT("  DiracDeterminantBase::evalGradWithSpins():  Implementation required\n");
+    return GradType();
+  }
   /** cloning function
    * @param tqp target particleset
    * @param spo spo set
@@ -144,22 +156,22 @@ public:
 #ifdef QMC_CUDA
   // expose GPU interfaces
   //using WaveFunctionComponent::recompute;
-  using WaveFunctionComponent::reserve;
   using WaveFunctionComponent::addLog;
+  using WaveFunctionComponent::reserve;
   //using WaveFunctionComponent::ratio;
-  using WaveFunctionComponent::addRatio;
-  using WaveFunctionComponent::calcRatio;
   using WaveFunctionComponent::addGradient;
+  using WaveFunctionComponent::addRatio;
   using WaveFunctionComponent::calcGradient;
+  using WaveFunctionComponent::calcRatio;
   using WaveFunctionComponent::det_lookahead;
-  using WaveFunctionComponent::update;
   using WaveFunctionComponent::gradLapl;
   using WaveFunctionComponent::NLratios;
+  using WaveFunctionComponent::update;
 #endif
 
-  protected:
+protected:
   /// Timers
-  NewTimer UpdateTimer, RatioTimer, InverseTimer, BufferTimer, SPOVTimer, SPOVGLTimer;
+  NewTimer &UpdateTimer, &RatioTimer, &InverseTimer, &BufferTimer, &SPOVTimer, &SPOVGLTimer;
   /// a set of single-particle orbitals used to fill in the  values of the matrix
   SPOSetPtr const Phi;
   ///index of the first particle with respect to the particle set
@@ -171,22 +183,15 @@ public:
   ///number of particles which belong to this Dirac determinant
   int NumPtcls;
   /// targetPtcl pointer. YE: to be removed.
-  ParticleSet *targetPtcl;
+  ParticleSet* targetPtcl;
 
   /// register all the timers
   void registerTimers()
   {
     UpdateTimer.reset();
     RatioTimer.reset();
-    TimerManager.addTimer (&UpdateTimer);
-    TimerManager.addTimer (&RatioTimer);
-    TimerManager.addTimer (&InverseTimer);
-    TimerManager.addTimer (&BufferTimer);
-    TimerManager.addTimer (&SPOVTimer);
-    TimerManager.addTimer (&SPOVGLTimer);
   }
-
 };
 
-}
+} // namespace qmcplusplus
 #endif

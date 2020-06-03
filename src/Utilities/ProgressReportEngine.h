@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /** @file ProgressReportEngine.h
@@ -21,7 +19,7 @@
 #ifndef QMCPLUSPLUS_PROGRESSREPORTENGINE_H
 #define QMCPLUSPLUS_PROGRESSREPORTENGINE_H
 
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 #include "Message/Communicate.h"
 #include "Utilities/Timer.h"
 #include "OhmmsData/OhmmsElementBase.h"
@@ -35,11 +33,11 @@ namespace qmcplusplus
 class ReportEngine
 {
 public:
-
-  inline ReportEngine(const std::string& cname, const std::string& fname, int atype=1):
-    ReportType(atype),ClassName(cname), LogBuffer(infoDebug), FuncName(fname)
+  inline ReportEngine(const std::string& cname, const std::string& fname, int atype = 1)
+      : ReportType(atype), ClassName(cname), FuncName(fname), LogBuffer(infoDebug)
   {
-    if (DoOutput) {
+    if (DoOutput)
+    {
       LogBuffer << "  " << ClassName << "::" << FuncName << "\n";
       // If there is structured output it should go to another file, not the stdout stream
       //if(ReportType)
@@ -68,24 +66,18 @@ public:
     }
   }
 
-  inline void warning(const std::string& msg)
+  inline void warning(const std::string& msg) { LogBuffer << ("WARNING: " + msg + "\n"); }
+
+  inline void error(const std::string& msg, bool fatal = false)
   {
-    LogBuffer << ("WARNING: "+msg+"\n");
+    app_error() << ("ERROR: " + msg + "\n");
+    if (fatal)
+      APP_ABORT(ClassName + "::" + FuncName);
   }
 
-  inline void error(const std::string& msg, bool fatal=false)
-  {
-    app_error() << ("ERROR: "+msg+"\n");
-    if(fatal)
-      APP_ABORT(ClassName+"::"+FuncName);
-  }
+  void echo(xmlNodePtr cur, bool recursive = false);
 
-  void echo(xmlNodePtr cur, bool recursive=false);
-
-  static void enableOutput()
-  {
-    DoOutput = true;
-  }
+  static void enableOutput() { DoOutput = true; }
 
 private:
   ///type of report
@@ -103,19 +95,17 @@ private:
    */
   InfoStream& LogBuffer;
   //disable copy constructor
-  ReportEngine(const ReportEngine& a):LogBuffer(infoDebug) {}
+  ReportEngine(const ReportEngine& a) : LogBuffer(infoDebug) {}
 
   static bool DoOutput;
-
 };
 
 // templated version of operator<< for Inform objects
 template<class T>
-inline
-ReportEngine& operator<<(ReportEngine& o, const T& val)
+inline ReportEngine& operator<<(ReportEngine& o, const T& val)
 {
   app_debug() << val;
   return o;
 }
-}
+} // namespace qmcplusplus
 #endif // QMCPLUSPLUS_MPIOBJECTBASE_H

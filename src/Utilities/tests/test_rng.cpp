@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
 #include "Utilities/RandomGenerator.h"
@@ -21,8 +20,8 @@
 
 using std::string;
 using std::vector;
-namespace qmcplusplus {
-
+namespace qmcplusplus
+{
 #ifdef HAVE_LIBBOOST
 TEST_CASE("boost", "[utilities]")
 {
@@ -31,14 +30,15 @@ TEST_CASE("boost", "[utilities]")
   REQUIRE(d < 1.0);
 }
 
-TEST_CASE("boost_mt19937_determinism","[utilities]")
+TEST_CASE("boost_mt19937_determinism", "[utilities]")
 {
   // Verify BoostRandom (MT19937 internally) generates a fixed sequence given an fixed initial seed
   // This is not guaranteed by Boost but appears to be the case
   BoostRandom<OHMMS_PRECISION_FULL> our_rng(13);
-  std::vector<OHMMS_PRECISION_FULL> expected={0.7777024102,0.6073413305,0.237541216};
-  for (auto i = 0; i < expected.size(); ++i) {
-    REQUIRE(our_rng()==Approx(expected[i]));
+  std::vector<OHMMS_PRECISION_FULL> expected = {0.7777024102, 0.6073413305, 0.237541216};
+  for (auto i = 0; i < expected.size(); ++i)
+  {
+    REQUIRE(our_rng() == Approx(expected[i]));
   }
 }
 
@@ -52,8 +52,8 @@ TEST_CASE("make_seed", "[utilities]")
   //  give different seeds.
   unsigned int seed1 = make_seed(0, 0);
   unsigned int seed2 = make_seed(1, 1);
-  
+
   REQUIRE(seed1 != seed2);
 }
 
-}
+} // namespace qmcplusplus

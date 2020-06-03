@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_COLLECTABLES_ESTIMATOR_H
@@ -22,10 +19,9 @@
 
 namespace qmcplusplus
 {
-
 /** Handle an ensemble average of Hamiltonian components
 */
-class CollectablesEstimator: public ScalarEstimatorBase
+class CollectablesEstimator : public ScalarEstimatorBase
 {
   ///save the reference hamiltonian
   const QMCHamiltonian& refH;
@@ -44,16 +40,16 @@ public:
   void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid);
   void add2Record(RecordListType& record);
   /** do nothing with accumulate */
-  void accumulate(const MCWalkerConfiguration& W
-                  , WalkerIterator first, WalkerIterator last , RealType wgt)
-  { }
+  void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) {}
+
+  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt) {}
+  
   /** accumulate the collectables */
-  inline void accumulate_all(const MCWalkerConfiguration::Buffer_t& data
-                             , RealType wgt)
+  inline void accumulate_all(const MCWalkerConfiguration::Buffer_t& data, RealType wgt)
   {
-    for(int i=0; i<data.size(); ++i)
-      scalars[i](data[i],wgt);
+    for (int i = 0; i < data.size(); ++i)
+      scalars[i](data[i], wgt);
   }
 };
-}
+} // namespace qmcplusplus
 #endif

@@ -12,39 +12,34 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /**@file WaveFunctionComponentBuilder.h
  *@brief declaration of the base class for many-body wavefunction.
  */
 #ifndef QMCPLUSPLUS_TRIALORBITALBUILDERBASE_H
 #define QMCPLUSPLUS_TRIALORBITALBUILDERBASE_H
 
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include <map>
+#include "Message/MPIObjectBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 
 /**@defgroup WFSBuilder Orbital builder group
- * @brief Builder classes to add WaveFunctionComponent to a TrialWaveFunction
+ * @brief Builder classes to build WaveFunctionComponent
  */
 namespace qmcplusplus
 {
-
-/**@ingroup WFSBuilder
+/**@ingroup WFCBuilder
  * @brief An abstract class for wave function builders
  */
-class WaveFunctionComponentBuilder: public MPIObjectBase
+class WaveFunctionComponentBuilder : public MPIObjectBase
 {
-
 public:
-
-  typedef TrialWaveFunction::RealType  RealType;
-  typedef TrialWaveFunction::ValueType ValueType;
-  typedef TrialWaveFunction::PosType   PosType;
-  typedef TrialWaveFunction::GradType  GradType;
-  typedef std::map<std::string,ParticleSet*> PtclPoolType;
-
-  /////level of printing
-  //static int print_level;
+  typedef WaveFunctionComponent::RealType RealType;
+  typedef WaveFunctionComponent::ValueType ValueType;
+  typedef WaveFunctionComponent::PosType PosType;
+  typedef WaveFunctionComponent::GradType GradType;
+  typedef std::map<std::string, ParticleSet*> PtclPoolType;
 
   /** \ingroup XMLTags
    *@{
@@ -74,10 +69,6 @@ public:
   static std::string sposet_tag;
   /// the element name for the basis set: basis set contains multiple basis elements
   static std::string basisset_tag;
-  /// the element name for a group of basis functions: basis contains multiple basisfunc elements
-  static std::string basis_tag;
-  /// the element name for a basis function
-  static std::string basisfunc_tag;
   /// the element name for an ion wavefunction
   static std::string ionorb_tag;
   /// the element name for a backflow transformation
@@ -90,32 +81,26 @@ public:
   //@}
 
   /** constructor
+   * @param comm communicator
    * @param p target particle set
-   * @param psi target many-body wavefunction
    *
-   * Each builder class adds an object to compose a many-body wavefunction
-   * targetPsi. The position of targetPtcl is related to targetPsi's
-   * capability to return a value and derivatives \f$\Psi[\{R\}]\f$ .
+   * Each builder class builds an object for composing a many-body wavefunction.
    */
-  WaveFunctionComponentBuilder(ParticleSet& p, TrialWaveFunction& psi);
+  WaveFunctionComponentBuilder(Communicate* comm, ParticleSet& p)
+      : MPIObjectBase(comm), targetPtcl(p), myNode(NULL)
+  {}
 
-  virtual ~WaveFunctionComponentBuilder();
+  virtual ~WaveFunctionComponentBuilder() = default;
   /// process a xml node at cur
-  virtual bool put(xmlNodePtr cur) = 0;
+  virtual WaveFunctionComponent* buildComponent(xmlNodePtr cur) = 0;
 
 protected:
   /// reference to the particle set on which targetPsi is defined
   ParticleSet& targetPtcl;
 
-  /// reference to the many-body wavefunction to which each derived class add a term
-  TrialWaveFunction& targetPsi;
-
   /// xmlNode operated by this object
   xmlNodePtr myNode;
-
-  /// child builder
-  std::vector<WaveFunctionComponentBuilder*> Children;
 };
 
-}
+} // namespace qmcplusplus
 #endif

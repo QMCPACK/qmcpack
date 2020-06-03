@@ -9,8 +9,6 @@
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #include "QMCDrivers/RMC/RMCFactory.h"
@@ -19,25 +17,25 @@
 
 namespace qmcplusplus
 {
-
-
-  QMCDriver *RMCFactory::create (MCWalkerConfiguration & w,
-				 TrialWaveFunction & psi, QMCHamiltonian & h,
-				 ParticleSetPool & ptclpool,
-				 HamiltonianPool & hpool,
-				 WaveFunctionPool & ppool, Communicate* comm)
-  {
-    int np = omp_get_max_threads ();
-    //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
-    QMCDriver *qmc = 0;
+QMCDriver* RMCFactory::create(MCWalkerConfiguration& w,
+                              TrialWaveFunction& psi,
+                              QMCHamiltonian& h,
+                              ParticleSetPool& ptclpool,
+                              HamiltonianPool& hpool,
+                              WaveFunctionPool& ppool,
+                              Communicate* comm)
+{
+  int np = omp_get_max_threads();
+  //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
+  QMCDriver* qmc = 0;
 #ifdef QMC_CUDA
-    APP_ABORT("RMCFactory::create. RMC is not supported on GPU.\n");
+  APP_ABORT("RMCFactory::create. RMC is not supported on GPU.\n");
 #endif
 
-    if (RMCMode == 0 || RMCMode == 1)	//(0,0,0) (0,0,1) pbyp and all electron
-      {
-	qmc = new RMC (w, psi, h, ppool, comm);
-      }
+  if (RMCMode == 0 || RMCMode == 1) //(0,0,0) (0,0,1) pbyp and all electron
+  {
+    qmc = new RMC(w, psi, h, ppool, comm);
+  }
 #if defined(QMC_BUILD_COMPLETE)
 //else if(RMCMode == 2) //(0,1,0)
 //{
@@ -62,7 +60,7 @@ namespace qmcplusplus
 // }
 // #endif
 #endif
-    qmc->setUpdateMode (RMCMode & 1);
-    return qmc;
-  }
+  qmc->setUpdateMode(RMCMode & 1);
+  return qmc;
 }
+} // namespace qmcplusplus

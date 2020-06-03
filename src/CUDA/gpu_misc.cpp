@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #include "config.h"
@@ -34,21 +32,20 @@ cublasHandle_t cublasHandle;
 
 size_t MaxGPUSpineSizeMB;
 int rank;
-int relative_rank; // relative rank number on the node the rank is on, counting starts at zero
-int device_group_size; // size of the lists below
-bool cudamps; // is set to true if Cuda MPS service is running
+int relative_rank;                     // relative rank number on the node the rank is on, counting starts at zero
+int device_group_size;                 // size of the lists below
+bool cudamps;                          // is set to true if Cuda MPS service is running
 std::vector<int> device_group_numbers; // on node list of GPU device numbers with respect to relative rank number
-std::vector<int> device_rank_numbers; // on node list of MPI rank numbers (absolute) with respect to relative rank number
+std::vector<int>
+    device_rank_numbers; // on node list of MPI rank numbers (absolute) with respect to relative rank number
 
-void
-initCUDAStreams()
+void initCUDAStreams()
 {
   cudaStreamCreate(&kernelStream);
   cudaStreamCreate(&memoryStream);
 }
 
-void
-initCUDAEvents()
+void initCUDAEvents()
 {
   cudaEventCreateWithFlags(&syncEvent, cudaEventDisableTiming);
   cudaEventCreateWithFlags(&gradientSyncDiracEvent, cudaEventDisableTiming);
@@ -59,21 +56,15 @@ initCUDAEvents()
   cudaEventCreateWithFlags(&ratioSyncTwoBodyEvent, cudaEventDisableTiming);
 }
 
-void
-initCublas()
-{
-  cublasCreate(&cublasHandle);
-}
+void initCublas() { cublasCreate(&cublasHandle); }
 
-void
-finalizeCUDAStreams()
+void finalizeCUDAStreams()
 {
   cudaStreamDestroy(kernelStream);
   cudaStreamDestroy(memoryStream);
 }
 
-void
-finalizeCUDAEvents()
+void finalizeCUDAEvents()
 {
   cudaEventDestroy(syncEvent);
   cudaEventDestroy(gradientSyncDiracEvent);
@@ -84,22 +75,10 @@ finalizeCUDAEvents()
   cudaEventDestroy(ratioSyncTwoBodyEvent);
 }
 
-void
-finalizeCublas()
-{
-  cublasDestroy(cublasHandle);
-}
+void finalizeCublas() { cublasDestroy(cublasHandle); }
 
-void
-synchronize()
-{
-  cudaDeviceSynchronize();
-}
+void synchronize() { cudaDeviceSynchronize(); }
 
-void
-streamsSynchronize()
-{
-  cudaEventRecord(syncEvent, 0);
-}
+void streamsSynchronize() { cudaEventRecord(syncEvent, 0); }
 
-}
+} // namespace gpu

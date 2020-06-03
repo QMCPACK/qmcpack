@@ -11,8 +11,8 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_COULOMB_POTENTIAL_CUDA_H
 #define QMCPLUSPLUS_COULOMB_POTENTIAL_CUDA_H
 #include "QMCHamiltonians/CoulombPotential.h"
@@ -21,7 +21,6 @@
 
 namespace qmcplusplus
 {
-
 class MCWalkerConfiguration;
 
 /** CoulombPotential for el-el
@@ -31,14 +30,13 @@ class MCWalkerConfiguration;
 struct CoulombPotentialAA_CUDA : public CoulombPotential<OHMMS_PRECISION>
 {
   int NumElecs;
-  CoulombPotentialAA_CUDA(ParticleSet* s, bool quantum);
+  CoulombPotentialAA_CUDA(ParticleSet& s, bool quantum);
 
   gpu::device_vector<CUDA_PRECISION> SumGPU;
-  gpu::host_vector<CUDA_PRECISION>  SumHost;
-  void addEnergy(MCWalkerConfiguration &W,
-                 std::vector<RealType> &LocalEnergy);
+  gpu::host_vector<CUDA_PRECISION> SumHost;
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 };
 
 /** CoulombPotential for ion-el
@@ -51,18 +49,17 @@ struct CoulombPotentialAB_CUDA : public CoulombPotential<OHMMS_PRECISION>
   std::vector<int> IonFirst, IonLast;
   std::vector<PosType> SortedIons;
 
-  CoulombPotentialAB_CUDA(ParticleSet* s, ParticleSet* t);
+  CoulombPotentialAB_CUDA(ParticleSet& s, ParticleSet& t);
 
-  gpu::host_vector<CUDA_PRECISION>   SumHost;
-  gpu::device_vector<CUDA_PRECISION>  SumGPU;
+  gpu::host_vector<CUDA_PRECISION> SumHost;
+  gpu::device_vector<CUDA_PRECISION> SumGPU;
   gpu::device_vector<CUDA_PRECISION> ZionGPU;
-  gpu::device_vector<CUDA_PRECISION>    IGPU;
+  gpu::device_vector<CUDA_PRECISION> IGPU;
 
-  void addEnergy(MCWalkerConfiguration &W,
-                 std::vector<RealType> &LocalEnergy);
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 };
 
-}
+} // namespace qmcplusplus
 #endif

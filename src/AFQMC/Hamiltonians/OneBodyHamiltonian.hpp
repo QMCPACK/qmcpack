@@ -20,7 +20,7 @@ class OneBodyHamiltonian: public AFQMCInfo
 
   public:
 
-  OneBodyHamiltonian(const AFQMCInfo& info, boost::multi::array<ComplexType,2>&& h,
+  OneBodyHamiltonian(const AFQMCInfo& info, boost::multi::array<ValueType,2>&& h,
                      ValueType nuc=0, ValueType frz=0):
                             AFQMCInfo(info), H1(h),
                             NuclearCoulombEnergy(nuc),FrozenCoreEnergy(frz)
@@ -31,13 +31,14 @@ class OneBodyHamiltonian: public AFQMCInfo
   OneBodyHamiltonian(OneBodyHamiltonian const& other) = delete;
   OneBodyHamiltonian(OneBodyHamiltonian && other) = default;
   OneBodyHamiltonian& operator=(OneBodyHamiltonian const& other) = delete;
-  OneBodyHamiltonian& operator=(OneBodyHamiltonian && other) = default;
+  OneBodyHamiltonian& operator=(OneBodyHamiltonian && other) = delete;
 
   ~OneBodyHamiltonian() {}
 
-  boost::multi::array<ComplexType,2> getH1() const
+  boost::multi::array<ValueType,2> getH1() const
   {
-    return H1;
+    boost::multi::array<ValueType,2> H_(H1);
+    return H_;
   }
 
   // this should never be used outside initialization routines.
@@ -45,14 +46,16 @@ class OneBodyHamiltonian: public AFQMCInfo
     if( (I>=NMO && J<NMO) || (I<NMO && J>=NMO) ) return ValueType(0);
     I = (I>=NMO)?(I-NMO):(I);
     J = (J>=NMO)?(J-NMO):(J);
-    return H1[I][J];
+    //return ValueType(0.0);
+    return ValueType(H1[I][J]);
   }
 
   ValueType getNuclearCoulombEnergy() const { return NuclearCoulombEnergy; }
 
   protected:
 
-  boost::multi::array<ComplexType,2> H1;
+  // this should be in shared memory, no need for all the copies!!! 
+  boost::multi::array<ValueType,2> H1;
 
   // nuclear coulomb term
   ValueType NuclearCoulombEnergy;

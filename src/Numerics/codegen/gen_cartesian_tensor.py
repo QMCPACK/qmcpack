@@ -723,6 +723,130 @@ void SoaCartesianTensor<T>::evaluateVGH(T x, T y, T z)
 
   return out_str%body_str
 
+def gen_soa_evaluate_vghgh():
+  out_str = """
+template<class T>
+void SoaCartesianTensor<T>::evaluateVGHGH(T x, T y, T z)
+{
+  constexpr T czero(0);
+  cXYZ=czero;
+
+  const T x2=x*x, y2=y*y, z2=z*z;
+  const T x3=x2*x, y3=y2*y, z3=z2*z;
+  const T x4=x3*x, y4=y3*y, z4=z3*z;
+  const T x5=x4*x, y5=y4*y, z5=z4*z;
+
+  T* restrict XYZ   = cXYZ.data(0);
+  T* restrict gr0   = cXYZ.data(1);
+  T* restrict gr1   = cXYZ.data(2);
+  T* restrict gr2   = cXYZ.data(3);
+  T* restrict h00   = cXYZ.data(4);
+  T* restrict h01   = cXYZ.data(5);
+  T* restrict h02   = cXYZ.data(6);
+  T* restrict h11   = cXYZ.data(7);
+  T* restrict h12   = cXYZ.data(8);
+  T* restrict h22   = cXYZ.data(9);
+  T* restrict gh000 = cXYZ.data(10);
+  T* restrict gh001 = cXYZ.data(11);
+  T* restrict gh002 = cXYZ.data(12);
+  T* restrict gh011 = cXYZ.data(13);
+  T* restrict gh012 = cXYZ.data(14);
+  T* restrict gh022 = cXYZ.data(15);
+  T* restrict gh111 = cXYZ.data(16);
+  T* restrict gh112 = cXYZ.data(17);
+  T* restrict gh122 = cXYZ.data(18);
+  T* restrict gh222 = cXYZ.data(19);
+
+  switch(Lmax)
+  {
+%s
+  }
+
+  const size_t ntot=cXYZ.size();
+  for(size_t i=0; i<ntot; ++i)
+  {
+    XYZ[i]   *= NormFactor[i];
+    gr0[i]   *= NormFactor[i];
+    gr1[i]   *= NormFactor[i];
+    gr2[i]   *= NormFactor[i];
+    h00[i]   *= NormFactor[i];
+    h01[i]   *= NormFactor[i];
+    h02[i]   *= NormFactor[i];
+    h11[i]   *= NormFactor[i];
+    h12[i]   *= NormFactor[i];
+    h22[i]   *= NormFactor[i];
+    gh000[i] *= NormFactor[i];
+    gh001[i] *= NormFactor[i];
+    gh002[i] *= NormFactor[i];
+    gh011[i] *= NormFactor[i];
+    gh012[i] *= NormFactor[i];
+    gh022[i] *= NormFactor[i];
+    gh111[i] *= NormFactor[i];
+    gh112[i] *= NormFactor[i];
+    gh122[i] *= NormFactor[i];
+    gh222[i] *= NormFactor[i];
+  }
+
+}
+"""
+
+  gto_s = create_gto_symbolic()
+  # just the 'angular' part
+  gto_s = gto_s.subs(Symbol('alpha'),0)
+
+  ijk_with_lmax = gen_lmax(get_ijk())
+  body_str = ''
+  curr_lmax = -1
+  ijk_l = [(idx,c) for idx,c in enumerate(ijk_with_lmax)]
+
+  x,y,z = symbols('x y z')
+
+  for idx, (i,j,k,s,lmax) in reversed(ijk_l):
+    if lmax != curr_lmax:
+      curr_lmax = lmax
+      body_str += "  case %d:\n"%curr_lmax
+
+    slist = {Symbol('i'):i, Symbol('j'):j, Symbol('k'):k}
+
+    # Compute derivatives symbolically
+    dx = diff(gto_s, x)
+    dy = diff(gto_s, y)
+    dz = diff(gto_s, z)
+
+    val = replace_common_subexpressions(gto_s, slist)
+    body_str += "    XYZ[%d] = %s;     // %s\n"%(idx,val,s)
+
+    gx = replace_common_subexpressions(dx, slist)
+    gy = replace_common_subexpressions(dy, slist)
+    gz = replace_common_subexpressions(dz, slist)
+    if gx != 0:
+      body_str += "    gr0[%d] = %s;\n"%(idx,gx)
+    if gy != 0:
+      body_str += "    gr1[%d] = %s;\n"%(idx,gy)
+    if gz != 0:
+      body_str += "    gr2[%d] = %s;\n"%(idx,gz)
+
+    axis_syms = [Symbol('x'), Symbol('y'), Symbol('z')]
+    for ii,si in enumerate(axis_syms):
+      for jj,sj in enumerate(axis_syms):
+        if ii <= jj:
+          # Compute Hessian elements symbolically
+          h_s = diff(diff(gto_s, si), sj)
+          hess_val = replace_common_subexpressions(h_s, slist)
+          if hess_val != 0 :
+            body_str += "    h%d%d[%d] = %s;\n"%(ii,jj,idx,hess_val)
+
+    for ii,si in enumerate(axis_syms):
+      for jj,sj in enumerate(axis_syms):
+         for kk,sk in enumerate(axis_syms):
+           if ii <= jj and jj <= kk:
+           # Compute Grad Hessian elements symbolically
+             ghess_s = diff(diff(diff(gto_s, si), sj),sk)
+             ghess_val = replace_common_subexpressions(ghess_s, slist)
+             if ghess_val != 0 :
+               body_str += "    gh%d%d%d[%d] = %s;\n"%(ii,jj,kk,idx,ghess_val)
+
+  return out_str%body_str
 
 # A simple template replacement engine.
 # Template items to be replaced start on a line with '%'.
@@ -769,6 +893,7 @@ def create_soa_cartesian_tensor_h():
   bodies['evaluate_bare'] = gen_soa_evaluate_bare()
   bodies['evaluate_vgl'] = gen_soa_evaluate_vgl()
   bodies['evaluate_vgh'] = gen_soa_evaluate_vgh()
+  bodies['evaluate_vghgh'] = gen_soa_evaluate_vghgh()
   fname_in= 'SoaCartesianTensor.h.in'
   fname_out = 'SoaCartesianTensor.h'
 

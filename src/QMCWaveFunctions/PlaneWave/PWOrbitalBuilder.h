@@ -9,9 +9,9 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-/** @file PWOribitalBuilder.h
+
+
+/** @file
  * @brief Declaration of a builder class for PWOrbitalSet
  *
  */
@@ -25,26 +25,23 @@
 #endif
 namespace qmcplusplus
 {
-
 class PWParameterSet;
 class SlaterDet;
 
 /** OrbitalBuilder for Slater determinants in PW basis
 */
-class PWOrbitalBuilder: public WaveFunctionComponentBuilder
+class PWOrbitalBuilder : public WaveFunctionComponentBuilder
 {
-
 private:
-
 #if defined(QMC_COMPLEX)
-  typedef PWOrbitalSet             SPOSetType;
+  typedef PWOrbitalSet SPOSetType;
   typedef PWOrbitalSet::PWBasisPtr PWBasisPtr;
 #else
-  typedef PWRealOrbitalSet             SPOSetType;
+  typedef PWRealOrbitalSet SPOSetType;
   typedef PWRealOrbitalSet::PWBasisPtr PWBasisPtr;
 #endif
 
-  std::map<std::string,SPOSetPtr> spomap;
+  std::map<std::string, SPOSetPtr> spomap;
   PtclPoolType& ptclPool;
 
   ///Read routine for HDF wavefunction file version 0.10
@@ -63,22 +60,21 @@ private:
   ////Storage for the orbitals and basis is created in PWOSet.
   //std::map<std::string,SPOSetPtr> PWOSet;
 public:
-
   ///constructor
-  PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs, PtclPoolType& psets);
+  PWOrbitalBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& psets);
   ~PWOrbitalBuilder();
 
   ///implement vritual function
-  bool put(xmlNodePtr cur);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 private:
   hid_t getH5(xmlNodePtr cur, const char* aname);
-  bool putSlaterDet(xmlNodePtr cur);
+  WaveFunctionComponent* putSlaterDet(xmlNodePtr cur);
   bool createPWBasis(xmlNodePtr cur);
   SPOSet* createPW(xmlNodePtr cur, int spinIndex);
 #if defined(QMC_COMPLEX)
   void transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc);
 #endif
 };
-}
+} // namespace qmcplusplus
 #endif

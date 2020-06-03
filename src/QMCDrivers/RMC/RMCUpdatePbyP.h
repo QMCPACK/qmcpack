@@ -10,9 +10,6 @@
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_RMC_PARTICLEBYPARTICLE_UPDATE_H
@@ -21,51 +18,59 @@
 
 namespace qmcplusplus
 {
-
 /** @ingroup QMCDrivers  ParticleByParticle
  *@brief Implements the RMC algorithm using all electron moves
  */
-  class RMCUpdatePbyPWithDrift:public QMCUpdateBase
+class RMCUpdatePbyPWithDrift : public QMCUpdateBase
+{
+public:
+  /// Constructor.
+  RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w,
+                         TrialWaveFunction& psi,
+                         QMCHamiltonian& h,
+                         RandomGenerator_t& rg,
+                         std::vector<int> act,
+                         std::vector<int> tp);
+  ~RMCUpdatePbyPWithDrift();
+
+  enum
   {
-  public:
-    /// Constructor.
-    RMCUpdatePbyPWithDrift (MCWalkerConfiguration & w,
-			    TrialWaveFunction & psi, QMCHamiltonian & h,
-			    RandomGenerator_t & rg, std::vector < int >act,
-			    std::vector < int >tp);
-     ~RMCUpdatePbyPWithDrift ();
-
-    enum
-    { SYM_ACTION, DMC_ACTION };
-
-    void advanceWalkersVMC ();
-    void advanceWalkersRMC ();
-    void advanceWalker (Walker_t& thisWalker, bool recompute);
-    void advanceWalkers (WalkerIter_t it, WalkerIter_t it_end, bool measure);
-    void initWalkersForPbyP (WalkerIter_t it, WalkerIter_t it_end);
-    void initWalkers (WalkerIter_t it, WalkerIter_t it_end);
-    void accumulate (WalkerIter_t it, WalkerIter_t it_end);
-
-    bool put (xmlNodePtr cur);
-  private:
-    /// Copy Constructor (disabled)
-    RMCUpdatePbyPWithDrift(const RMCUpdatePbyPWithDrift &) = delete;
-    /// Copy operator (disabled).
-    RMCUpdatePbyPWithDrift & operator=(const RMCUpdatePbyPWithDrift &) = delete;
-
-    std::vector < int >Action, TransProb;
-    bool scaleDrift;
-    IndexType actionType;
-
-    std::vector< NewTimer * >myTimers;
-
-    IndexType vmcSteps;
-    IndexType equilSteps;
-    IndexType vmcToDoSteps;
-    IndexType equilToDoSteps;
+    SYM_ACTION,
+    DMC_ACTION
   };
 
+  void advanceWalkersVMC();
+  void advanceWalkersRMC();
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
+  void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
+  void accumulate(WalkerIter_t it, WalkerIter_t it_end);
 
-}
+  bool put(xmlNodePtr cur);
+
+private:
+  /// Copy Constructor (disabled)
+  RMCUpdatePbyPWithDrift(const RMCUpdatePbyPWithDrift&) = delete;
+  /// Copy operator (disabled).
+  RMCUpdatePbyPWithDrift& operator=(const RMCUpdatePbyPWithDrift&) = delete;
+
+  std::vector<int> Action, TransProb;
+  bool scaleDrift;
+  IndexType actionType;
+
+  NewTimer& advance_timer_;
+  NewTimer& movepbyp_timer_;
+  NewTimer& update_mbo_timer_;
+  NewTimer& energy_timer_;
+
+  IndexType vmcSteps;
+  IndexType equilSteps;
+  IndexType vmcToDoSteps;
+  IndexType equilToDoSteps;
+};
+
+
+} // namespace qmcplusplus
 
 #endif

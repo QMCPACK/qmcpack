@@ -12,9 +12,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_GRID_FUNCTOR_CUBIC_SPLINE_H
@@ -25,7 +22,6 @@
 
 namespace qmcplusplus
 {
-
 /**Perform One-Dimensional Cubic Spline Interpolation using M-relation.
  *
  Given a function evaluated on a grid \f$ \{x_i\},
@@ -110,7 +106,7 @@ namespace qmcplusplus
  *
 */
 
-template <class T>
+template<class T>
 class CubicSplineEvaluator
 {
 private:
@@ -128,52 +124,47 @@ private:
 public:
   CubicSplineEvaluator(T dist, T dL)
   {
-    dLinv = 1.0/dL;
-    cL = dist*dLinv;
-    cR = (dL - dist)*dLinv;
-    h6 = dL/6.0;
-    q1 = cR*(cR*cR-1.0)*h6*dL;
-    q2 = cL*(cL*cL-1.0)*h6*dL;
-    dq1 = h6*(1.0-3.0*cR*cR);
-    dq2 = h6*(3.0*cL*cL-1.0);
+    dLinv = 1.0 / dL;
+    cL    = dist * dLinv;
+    cR    = (dL - dist) * dLinv;
+    h6    = dL / 6.0;
+    q1    = cR * (cR * cR - 1.0) * h6 * dL;
+    q2    = cL * (cL * cL - 1.0) * h6 * dL;
+    dq1   = h6 * (1.0 - 3.0 * cR * cR);
+    dq2   = h6 * (3.0 * cL * cL - 1.0);
   }
 
-  template <typename T1>
+  template<typename T1>
   inline T1 cubicInterpolate(T1 y1, T1 y2, T1 d2y1, T1 d2y2) const
   {
-    return cR*y1+cL*y2+q1*d2y1+q2*d2y2;
+    return cR * y1 + cL * y2 + q1 * d2y1 + q2 * d2y2;
   }
 
-  template <typename T1>
+  template<typename T1>
   inline T1 cubicInterpolateSecondDeriv(T1 y1, T1 y2, T1 d2y1, T1 d2y2, T1& du, T1& d2u) const
   {
-    du = dLinv*(y2-y1)+dq1*d2y1+dq2*d2y2;
-    d2u = cR*d2y1+cL*d2y2;
-    return cR*y1+cL*y2+q1*d2y1+q2*d2y2;
+    du  = dLinv * (y2 - y1) + dq1 * d2y1 + dq2 * d2y2;
+    d2u = cR * d2y1 + cL * d2y2;
+    return cR * y1 + cL * y2 + q1 * d2y1 + q2 * d2y2;
   }
 };
 
-template <class Td,
-         class Tg = Td,
-         class CTd= Vector<Td>,
-         class CTg= Vector<Tg> >
-class OneDimCubicSpline: public OneDimGridFunctor<Td,Tg,CTd,CTg>
+template<class Td, class Tg = Td, class CTd = Vector<Td>, class CTg = Vector<Tg>>
+class OneDimCubicSpline : public OneDimGridFunctor<Td, Tg, CTd, CTg>
 {
-
 public:
-
-  typedef OneDimGridFunctor<Td,Tg,CTd,CTg> base_type;
-  typedef typename base_type::value_type  value_type;
-  typedef typename base_type::point_type  point_type;
+  typedef OneDimGridFunctor<Td, Tg, CTd, CTg> base_type;
+  typedef typename base_type::value_type value_type;
+  typedef typename base_type::point_type point_type;
   typedef typename base_type::data_type data_type;
   typedef typename base_type::grid_type grid_type;
 
+  using base_type::d2Y;
+  using base_type::dY;
   using base_type::GridManager;
   using base_type::m_grid;
-  using base_type::Y;
-  using base_type::dY;
-  using base_type::d2Y;
   using base_type::m_Y;
+  using base_type::Y;
   //using base_type::FirstAddress;
 
   data_type m_Y2;
@@ -190,24 +181,20 @@ public:
   //  base_type(rhs), m_Y2(rhs.m_Y2)
   //  { }
 
-  OneDimCubicSpline(grid_type* gt = 0):base_type(gt) { }
+  OneDimCubicSpline(grid_type* gt = 0) : base_type(gt) {}
 
   template<class VV>
-  OneDimCubicSpline(grid_type* gt, const VV& nv):
-    base_type(gt),first_deriv(0.0),last_deriv(0.0)
+  OneDimCubicSpline(grid_type* gt, const VV& nv) : base_type(gt), first_deriv(0.0), last_deriv(0.0)
   {
     m_Y.resize(nv.size());
     m_Y2.resize(nv.size());
     copy(nv.begin(), nv.end(), m_Y.data());
   }
 
-  OneDimCubicSpline<Td,Tg,CTd,CTg>* makeClone() const
-  {
-    return new OneDimCubicSpline<Td,Tg,CTd,CTg>(*this);
-  }
+  OneDimCubicSpline<Td, Tg, CTd, CTg>* makeClone() const { return new OneDimCubicSpline<Td, Tg, CTd, CTg>(*this); }
 
-  OneDimCubicSpline<Td,Tg,CTd,CTg>(const OneDimCubicSpline<Td,Tg,CTd,CTg>& a)
-    : OneDimGridFunctor<Td,Tg,CTd,CTg>(a)
+  OneDimCubicSpline<Td, Tg, CTd, CTg>(const OneDimCubicSpline<Td, Tg, CTd, CTg>& a)
+      : OneDimGridFunctor<Td, Tg, CTd, CTg>(a)
   {
     m_Y2.resize(a.m_Y2.size());
     m_Y2        = a.m_Y2;
@@ -218,27 +205,26 @@ public:
     last_deriv  = a.last_deriv;
   }
 
-  const OneDimCubicSpline<Td,Tg,CTd,CTg>&
-  operator=(const OneDimCubicSpline<Td,Tg,CTd,CTg>& a)
+  const OneDimCubicSpline<Td, Tg, CTd, CTg>& operator=(const OneDimCubicSpline<Td, Tg, CTd, CTg>& a)
   {
     shallow_copy(a);
     return *this;
   }
 
-  void shallow_copy(const OneDimCubicSpline<Td,Tg,CTd,CTg>& a)
+  void shallow_copy(const OneDimCubicSpline<Td, Tg, CTd, CTg>& a)
   {
     this->GridManager = a.GridManager;
-    this->OwnGrid=false;
-    m_grid = a.m_grid;
+    this->OwnGrid     = false;
+    m_grid            = a.m_grid;
     m_Y.resize(a.m_Y.size());
     m_Y2.resize(a.m_Y2.size());
-    m_Y=a.m_Y;
-    m_Y2=a.m_Y2;
-    ConstValue = a.ConstValue;
-    r_min = a.r_min;
-    r_max = a.r_max;
+    m_Y         = a.m_Y;
+    m_Y2        = a.m_Y2;
+    ConstValue  = a.ConstValue;
+    r_min       = a.r_min;
+    r_max       = a.r_max;
     first_deriv = a.first_deriv;
-    last_deriv = a.last_deriv;
+    last_deriv  = a.last_deriv;
   }
 
   //void setgrid(point_type r) {
@@ -247,21 +233,20 @@ public:
 
   inline value_type splint(point_type r) const
   {
-    if(r<r_min)
+    if (r < r_min)
     {
-      return m_Y[0]+first_deriv*(r-r_min);
+      return m_Y[0] + first_deriv * (r - r_min);
     }
-    else
-      if(r>=r_max)
-      {
-        return ConstValue;
-      }
+    else if (r >= r_max)
+    {
+      return ConstValue;
+    }
 
     value_type dist;
-    int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, dist);
+    int Loc       = m_grid->getIndexAndDistanceFromGridPoint(r, dist);
     value_type dL = m_grid->dr(Loc);
     CubicSplineEvaluator<value_type> eval(dist, dL);
-    return eval.cubicInterpolate(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1]);
+    return eval.cubicInterpolate(m_Y[Loc], m_Y[Loc + 1], m_Y2[Loc], m_Y2[Loc + 1]);
   }
 
   /** Interpolation to evaluate the function and itsderivatives.
@@ -270,28 +255,26 @@ public:
    *@param d2u return the 2nd derivative
    *@return the value of the function
   */
-  inline value_type
-  splint(point_type r, value_type& du, value_type& d2u) const
+  inline value_type splint(point_type r, value_type& du, value_type& d2u) const
   {
-    if(r<r_min)
-      //linear-extrapolation returns y[0]+y'*(r-r[0])
+    if (r < r_min)
+    //linear-extrapolation returns y[0]+y'*(r-r[0])
     {
-      du = first_deriv;
+      du  = first_deriv;
       d2u = 0.0;
-      return m_Y[0]+first_deriv*(r-r_min);
+      return m_Y[0] + first_deriv * (r - r_min);
     }
-    else
-      if(r>=r_max)
-      {
-        du = 0.0;
-        d2u = 0.0;
-        return ConstValue;
-      }
+    else if (r >= r_max)
+    {
+      du  = 0.0;
+      d2u = 0.0;
+      return ConstValue;
+    }
     value_type dist;
-    int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, dist);
+    int Loc       = m_grid->getIndexAndDistanceFromGridPoint(r, dist);
     value_type dL = m_grid->dr(Loc);
     CubicSplineEvaluator<value_type> eval(dist, dL);
-    return eval.cubicInterpolateSecondDeriv(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1],du,d2u);
+    return eval.cubicInterpolateSecondDeriv(m_Y[Loc], m_Y[Loc + 1], m_Y2[Loc], m_Y2[Loc + 1], du, d2u);
   }
 
   /** Interpolation to evaluate the function and itsderivatives.
@@ -301,31 +284,29 @@ public:
    *@param d3u return the 3nd derivative
    *@return the value of the function
   */
-  inline value_type
-  splint(point_type r, value_type& du, value_type& d2u, value_type& d3u) const
+  inline value_type splint(point_type r, value_type& du, value_type& d2u, value_type& d3u) const
   {
-    if(r<r_min)
-      //linear-extrapolation returns y[0]+y'*(r-r[0])
+    if (r < r_min)
+    //linear-extrapolation returns y[0]+y'*(r-r[0])
     {
-      du = first_deriv;
+      du  = first_deriv;
       d2u = 0.0;
-      return m_Y[0]+first_deriv*(r-r_min);
+      return m_Y[0] + first_deriv * (r - r_min);
     }
-    else
-      if(r>=r_max)
-      {
-        du = 0.0;
-        d2u = 0.0;
-        return ConstValue;
-      }
+    else if (r >= r_max)
+    {
+      du  = 0.0;
+      d2u = 0.0;
+      return ConstValue;
+    }
     // no third derivatives yet, only for templating purposes
     d3u = 0.0;
 
     value_type dist;
-    int Loc = m_grid->getIndexAndDistanceFromGridPoint(r, dist);
+    int Loc       = m_grid->getIndexAndDistanceFromGridPoint(r, dist);
     value_type dL = m_grid->dr(Loc);
     CubicSplineEvaluator<value_type> eval(dist, dL);
-    return eval.cubicInterpolateSecondDeriv(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1],du,d2u);
+    return eval.cubicInterpolateSecondDeriv(m_Y[Loc], m_Y[Loc + 1], m_Y2[Loc], m_Y2[Loc + 1], du, d2u);
   }
   /** Evaluate the 2nd derivative on the grid points
    *\param imin the index of the first valid data point
@@ -337,30 +318,24 @@ public:
    *and each object can have its own range of valid grid points.
    *r_min and r_max are used to specify the range.
    */
-  inline
-  void spline(int imin, value_type yp1, int imax, value_type ypn)
+  inline void spline(int imin, value_type yp1, int imax, value_type ypn)
   {
     first_deriv = yp1;
-    last_deriv = ypn;
-    r_min = m_grid->r(imin);
-    r_max = m_grid->r(imax);
+    last_deriv  = ypn;
+    r_min       = m_grid->r(imin);
+    r_max       = m_grid->r(imax);
     int npts(this->size());
     m_Y2.resize(npts);
     m_Y2 = 0.0;
-    CubicSplineSolve(m_grid->data()+imin, m_Y.data()+imin,
-                  npts-imin, yp1, ypn, m_Y2.data()+imin);
-    ConstValue=m_Y[imax];
+    CubicSplineSolve(m_grid->data() + imin, m_Y.data() + imin, npts - imin, yp1, ypn, m_Y2.data() + imin);
+    ConstValue = m_Y[imax];
     //FirstAddress[0]=m_Y.data()+imin;
     //FirstAddress[2]=m_Y2.data()+imin;
   }
 
-  inline
-  void spline()
-  {
-    spline(0,0.0,m_grid->size()-1,0.0);
-  }
+  inline void spline() { spline(0, 0.0, m_grid->size() - 1, 0.0); }
 };
 
 
-}
+} // namespace qmcplusplus
 #endif

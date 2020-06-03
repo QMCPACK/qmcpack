@@ -11,11 +11,11 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_MPC_H
 #define QMCPLUSPLUS_MPC_H
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <LongRange/LRCoulombSingleton.h>
 
 #if defined(HAVE_EINSPLINE)
@@ -25,28 +25,29 @@ class UBspline_3d_d;
 #endif
 namespace qmcplusplus
 {
-
 /** @ingroup hamiltonian
  *\brief Calculates the Model Periodic Coulomb potential using PBCs
  */
 
-class MPC: public QMCHamiltonianBase
+class MPC : public OperatorBase
 {
 protected:
   UBspline_3d_d *VlongSpline, *DensitySpline;
   double Vconst;
-  void compute_g_G(double &g_0_N, std::vector<double> &g_G_N, int N);
+  void compute_g_G(double& g_0_N, std::vector<double>& g_G_N, int N);
   void init_gvecs();
   void init_f_G();
   void init_spline();
   double Ecut;
-  std::vector<TinyVector<int,OHMMS_DIM> > Gints;
+  std::vector<TinyVector<int, OHMMS_DIM>> Gints;
   std::vector<PosType> Gvecs;
   std::vector<ComplexType> Rho_G;
-  TinyVector<int,OHMMS_DIM> SplineDim;
+  TinyVector<int, OHMMS_DIM> SplineDim;
   int MaxDim;
   Return_t evalSR(ParticleSet& P) const;
   Return_t evalLR(ParticleSet& P) const;
+  // AA table ID
+  const int d_aa_ID;
 
 public:
   ParticleSet* PtclRef;
@@ -63,7 +64,7 @@ public:
   int NParticles;
   RealType myConst;
   RealType myRcut;
-  std::vector<RealType> Zat,Zspec;
+  std::vector<RealType> Zat, Zspec;
   std::vector<int> NofSpecies;
 
   MPC(ParticleSet& ref, double cutoff);
@@ -78,7 +79,7 @@ public:
   Return_t evaluate(ParticleSet& P);
 
   /** implement all-walker stuff */
-  virtual void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
+  virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 
   /** Do nothing */
   bool put(xmlNodePtr cur);
@@ -89,12 +90,10 @@ public:
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void initBreakup();
 };
 
-}
+} // namespace qmcplusplus
 #endif
-
-

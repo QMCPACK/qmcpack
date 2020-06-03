@@ -10,8 +10,8 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_SK_ESTIMATOR_CUDA_H
 #define QMCPLUSPLUS_SK_ESTIMATOR_CUDA_H
 #include "QMCHamiltonians/SkEstimator.h"
@@ -21,9 +21,9 @@ namespace qmcplusplus
 class SkEstimator_CUDA : public SkEstimator
 {
 public:
-  GPU_XRAY_TRACE SkEstimator_CUDA(ParticleSet& elns) : SkEstimator(elns) {}
-  GPU_XRAY_TRACE void addEnergy(MCWalkerConfiguration &W,  std::vector<RealType> &LocalEnergy);
+  SkEstimator_CUDA(ParticleSet& elns) : SkEstimator(elns) {}
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 };
-}
+} // namespace qmcplusplus
 
 #endif

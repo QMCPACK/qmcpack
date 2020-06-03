@@ -12,8 +12,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /**
@@ -28,9 +26,12 @@
 #include "Utilities/PooledData.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
+#include "QMCDrivers/DriverTraits.h"
+#include "QMCDrivers/QMCDriverInterface.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 class Communicate;
@@ -65,25 +66,28 @@ class TraceManager;
  * @{
  * @brief abstract base class for QMC engines
  */
-class QMCDriver: public QMCTraits, public MPIObjectBase
+class QMCDriver : public QMCDriverInterface, public QMCTraits, public MPIObjectBase
 {
-
 public:
-
   /** enumeration coupled with QMCMode */
-  enum {QMC_UPDATE_MODE, QMC_MULTIPLE, QMC_OPTIMIZE, QMC_WARMUP};
+  enum
+  {
+    QMC_UPDATE_MODE,
+    QMC_MULTIPLE,
+    QMC_OPTIMIZE,
+    QMC_WARMUP
+  };
 
   typedef MCWalkerConfiguration::Walker_t Walker_t;
-  typedef Walker_t::Buffer_t              Buffer_t;
-  typedef SimpleFixedNodeBranch           BranchEngineType;
+  typedef Walker_t::Buffer_t Buffer_t;
 
   /** bits to classify QMCDriver
    *
-   * - QMCDriverMode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
-   * - QMCDriverMode[QMC_MULTIPLE]? multiple H/Psi : single H/Psi
-   * - QMCDriverMode[QMC_OPTIMIZE]? optimization : vmc/dmc/rmc
+   * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
+   * - qmc_driver_mode[QMC_MULTIPLE]? multiple H/Psi : single H/Psi
+   * - qmc_driver_mode[QMC_OPTIMIZE]? optimization : vmc/dmc/rmc
    */
-  std::bitset<4> QMCDriverMode;
+  std::bitset<QMC_MODE_MAX> qmc_driver_mode;
 
   /// whether to allow traces
   bool allow_traces;
@@ -91,28 +95,26 @@ public:
   xmlNodePtr traces_xml;
 
   /// Constructor.
-  QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm);
+  QMCDriver(MCWalkerConfiguration& w,
+            TrialWaveFunction& psi,
+            QMCHamiltonian& h,
+            WaveFunctionPool& ppool,
+            Communicate* comm);
 
   virtual ~QMCDriver();
 
   ///return current step
-  inline int current() const
-  {
-    return CurrentStep;
-  }
+  inline int current() const { return CurrentStep; }
 
   /** set the update mode
    * @param pbyp if true, use particle-by-particle update
    */
-  inline void setUpdateMode(bool pbyp)
-  {
-    QMCDriverMode[QMC_UPDATE_MODE]=pbyp;
-  }
+  inline void setUpdateMode(bool pbyp) { qmc_driver_mode[QMC_UPDATE_MODE] = pbyp; }
 
   /** Set the status of the QMCDriver
    * @param aname the root file name
    * @param h5name root name of the master hdf5 file containing previous qmcrun
-   * @param append if ture, the run is a continuation of the previous qmc
+   * @param append if true, the run is a continuation of the previous qmc
    *
    * All output files will be of
    * the form "aname.s00X.suffix", where "X" is number
@@ -139,67 +141,38 @@ public:
 
   void putWalkers(std::vector<xmlNodePtr>& wset);
 
-  inline void putTraces(xmlNodePtr txml)
-  {
-    traces_xml=txml;
-  };
+  inline void putTraces(xmlNodePtr txml) { traces_xml = txml; }
 
-  virtual bool run() = 0;
+  inline void requestTraces(bool traces) { allow_traces = traces; }
 
-  virtual bool put(xmlNodePtr cur) = 0;
-
-  inline std::string getEngineName() const
-  {
-    return  QMCType;
-  }
+  std::string getEngineName() { return QMCType; }
 
   template<class PDT>
   void setValue(const std::string& aname, PDT x)
   {
-    m_param.setValue(aname,x);
+    m_param.setValue(aname, x);
   }
 
   ///set the BranchEngineType
-  void setBranchEngine(BranchEngineType* be)
-  {
-    branchEngine=be;
-  }
+  void setBranchEngine(BranchEngineType* be) { branchEngine = be; }
 
   ///return BranchEngineType*
-  BranchEngineType* getBranchEngine()
-  {
-    return branchEngine;
-  }
+  BranchEngineType* getBranchEngine() { return branchEngine; }
 
   int addObservable(const std::string& aname)
   {
-    if(Estimators)
+    if (Estimators)
       return Estimators->addObservable(aname.c_str());
     else
       return -1;
   }
 
-  RealType getObservable(int i)
-  {
-    return Estimators->getObservable(i);
-  }
+  RealType getObservable(int i) { return Estimators->getObservable(i); }
 
-  void setTau(RealType i)
-  {
-    Tau=i;
-  }
-
-  ///resetComponents for next run if reusing a driver.
-  virtual void resetComponents(xmlNodePtr cur)
-  {
-    qmcNode=cur;
-    m_param.put(cur);
-  }
+  void setTau(RealType i) { Tau = i; }
 
   ///set global offsets of the walkers
   void setWalkerOffsets();
-
-  //virtual std::vector<RandomGenerator_t*>& getRng() {}
 
   ///Observables manager
   EstimatorManagerBase* Estimators;
@@ -208,29 +181,24 @@ public:
   TraceManager* Traces;
 
   ///return the random generators
-  inline std::vector<RandomGenerator_t*>& getRng()
-  {
-    return Rng;
-  }
+  inline std::vector<RandomGenerator_t*>& getRng() { return Rng; }
 
   ///return the i-th random generator
-  inline RandomGenerator_t& getRng(int i)
-  {
-    return (*Rng[i]);
-  }
+  inline RandomGenerator_t& getRng(int i) { return (*Rng[i]); }
+
+  unsigned long getDriverMode() { return qmc_driver_mode.to_ulong(); }
 
 protected:
-
   ///branch engine
-  BranchEngineType *branchEngine;
+  BranchEngineType* branchEngine;
+  ///drift modifer
+  DriftModifierBase* DriftModifier;
   ///randomize it
   bool ResetRandom;
   ///flag to append or restart the run
   bool AppendRun;
   ///flag to turn off dumping configurations
   bool DumpConfig;
-  ///true, if the size of population is fixed.
-  bool ConstPopulation;
   ///true, if it is a real QMC engine
   bool IsQMCDriver;
   /** the number of times this QMCDriver is executed
@@ -304,6 +272,7 @@ protected:
   ///target population
   RealType nTargetPopulation;
 
+
   ///timestep
   RealType Tau;
 
@@ -328,18 +297,19 @@ protected:
   ///store any parameter that has to be read from a file
   ParameterSet m_param;
 
-  ///record engine for walkers
-  HDFWalkerOutput* wOut;
   ///walker ensemble
   MCWalkerConfiguration& W;
 
   ///trial function
   TrialWaveFunction& Psi;
 
-  WaveFunctionPool& psiPool;
-
   ///Hamiltonian
   QMCHamiltonian& H;
+
+  WaveFunctionPool& psiPool;
+
+  ///record engine for walkers
+  HDFWalkerOutput* wOut;
 
   ///a list of TrialWaveFunctions for multiple method
   std::vector<TrialWaveFunction*> Psi1;
@@ -353,24 +323,20 @@ protected:
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
 
-  ///a list of timers
-  std::vector<NewTimer*> myTimers;
-
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
 
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
-  ///temporary buffer to accumulate data
-  //ostrstream log_buffer;
-
-  //PooledData<RealType> HamPool;
+  ///turn on spin moves
+  std::string SpinMoves;
+  RealType SpinMass;
 
   ///Copy Constructor (disabled).
-  QMCDriver(const QMCDriver &) = delete;
+  QMCDriver(const QMCDriver&) = delete;
   ///Copy operator (disabled).
-  QMCDriver & operator=(const QMCDriver &) = delete;
+  QMCDriver& operator=(const QMCDriver&) = delete;
 
   bool putQMCInfo(xmlNodePtr cur);
 
@@ -390,18 +356,15 @@ protected:
    * Accumulate energy and weight is written to a hdf5 file.
    * Finialize the estimators
    */
-  bool finalize(int block, bool dumpwalkers=true);
+  bool finalize(int block, bool dumpwalkers = true);
 
   int rotation;
-  void adiosCheckpoint(int block);
-  void adiosCheckpointFinal(int block, bool dumpwalkers);
-  std::string getRotationName( std::string RootName);
-  std::string getLastRotationName( std::string RootName);
-
-  NewTimer *checkpointTimer;
-
+  std::string getRotationName(std::string RootName);
+  std::string getLastRotationName(std::string RootName);
+  const std::string& get_root_name() const { return RootName; }
+  NewTimer* checkpointTimer;
 };
 /**@}*/
-}
+} // namespace qmcplusplus
 
 #endif

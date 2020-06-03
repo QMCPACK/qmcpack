@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /**@file CSUpdateBase.h
@@ -25,13 +23,13 @@
 
 namespace qmcplusplus
 {
-
 class CSEnergyEstimator;
-class CSUpdateBase: public QMCUpdateBase
+class CSUpdateBase : public QMCUpdateBase
 {
 public:
-
-  CSUpdateBase(MCWalkerConfiguration& w, std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& h,
+  CSUpdateBase(MCWalkerConfiguration& w,
+               std::vector<TrialWaveFunction*>& psi,
+               std::vector<QMCHamiltonian*>& h,
                RandomGenerator_t& rg);
 
   virtual ~CSUpdateBase();
@@ -53,10 +51,10 @@ public:
   Matrix<RealType> RatioIJ;
   ///multiple estimator
   CSEnergyEstimator* multiEstimator;
-  ///a list of TrialWaveFunctions for multiple method
-  std::vector<TrialWaveFunction*> Psi1;
   ///a list of QMCHamiltonians for multiple method
   std::vector<QMCHamiltonian*> H1;
+  ///a list of TrialWaveFunctions for multiple method
+  std::vector<TrialWaveFunction*> Psi1;
 
   std::vector<ParticleSet::ParticleGradient_t*> G1;
   std::vector<ParticleSet::ParticleLaplacian_t*> L1;
@@ -64,26 +62,24 @@ public:
   //a list of single particle gradients for multiple wavefunctions;
   std::vector<GradType> g1_old;
   std::vector<GradType> g1_new;
-  
+
   //The following are utility functiosn for computing sumratio
-  //when using pbyp moves.  
+  //when using pbyp moves.
   //
   //Using psi and <w> (logpsi and avgnorm), this computes
-  // \Sum_i |\frac{\Psi_i}{\Psi_j}|^2 for all j.  
-  void computeSumRatio(const std::vector<RealType>& logpsi, 
+  // \Sum_i |\frac{\Psi_i}{\Psi_j}|^2 for all j.
+  void computeSumRatio(const std::vector<RealType>& logpsi,
                        const std::vector<RealType>& avgNorm,
-                             std::vector<RealType>& sumratio);
-                        
-  void computeSumRatio(const Matrix<RealType>& ratioij, 
-                             std::vector<RealType>& sumratio);
-                        
-  void computeSumRatio(const std::vector<RealType>& logpsi, 
+                       std::vector<RealType>& sumratio);
+
+  void computeSumRatio(const Matrix<RealType>& ratioij, std::vector<RealType>& sumratio);
+
+  void computeSumRatio(const std::vector<RealType>& logpsi,
                        const std::vector<RealType>& avgNorm,
-                             Matrix<RealType> & ratioij,
-                             std::vector<RealType>& sumratio);
-  
-  void updateRatioMatrix(const std::vector<RealType>& ratio_pbyp,
-                           Matrix<RealType> & ratioij);  
+                       Matrix<RealType>& ratioij,
+                       std::vector<RealType>& sumratio);
+
+  void updateRatioMatrix(const std::vector<RealType>& ratio_pbyp, Matrix<RealType>& ratioij);
 
   void resizeWorkSpace(int nw, int nptcls);
   void updateNorms();
@@ -92,6 +88,6 @@ public:
   void initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end, bool resetNorms);
   void updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end);
 };
-}
+} // namespace qmcplusplus
 
 #endif

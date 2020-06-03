@@ -23,7 +23,6 @@ using std::string;
 bool pass = true;
 namespace qmcplusplus
 {
-
 template<unsigned int D>
 void test_tiny_vector()
 {
@@ -31,22 +30,25 @@ void test_tiny_vector()
 
   vec_t v1;
   // default constructor sets elements to zero
-  for (int i = 0; i < D; i++) {
+  for (int i = 0; i < D; i++)
+  {
     REQUIRE(v1[i] == Approx(0.0));
   }
 
   vec_t v2(1.0);
   // single constructor sets all the elements to that value
-  for (int i = 0; i < D; i++) {
+  for (int i = 0; i < D; i++)
+  {
     REQUIRE(v2[i] == Approx(1.0));
   }
 
   // TODO: add optional bounds checks to element access methods
   vec_t v4;
   double sum = 0;
-  for (int i = 0; i < D; i++) {
-    sum += 1.0*i;
-    v4[i] = 1.0*i;
+  for (int i = 0; i < D; i++)
+  {
+    sum += 1.0 * i;
+    v4[i] = 1.0 * i;
   }
 
   // Dot product
@@ -54,11 +56,11 @@ void test_tiny_vector()
   REQUIRE(sum == Approx(dotp));
 
   // Multiply add
-  v1 += 2.0*v4;
-  REQUIRE(2.0*sum == dot(v2, v1));
+  v1 += 2.0 * v4;
+  REQUIRE(2.0 * sum == dot(v2, v1));
 }
 
-template <unsigned int D>
+template<unsigned int D>
 void test_tiny_vector_size_two()
 {
   typedef TinyVector<double, D> vec_t;
@@ -80,4 +82,4 @@ TEST_CASE("tiny vector", "[OhmmsPETE]")
   test_tiny_vector_size_two<4>();
 }
 
-}
+} // namespace qmcplusplus

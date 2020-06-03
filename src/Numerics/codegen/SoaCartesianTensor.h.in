@@ -40,11 +40,8 @@ struct SoaCartesianTensor
   ///normalization factor
   aligned_vector<T> NormFactor;
   ///composite V,Gx,Gy,Gz,[L | H00, H01, H02, H11, H12, H12]
-  VectorSoaContainer<T,10> cXYZ;
-  ///third derivative: keep the TinyyVector<Tensor<T,3>,3> and AoS for now
-  std::vector<ggg_type> gggXYZ;
-  //std::vector<ggg_type> gggXYZ;
-  //VectorSoAContainer<T,18> gggXYZ;
+  //   {GH000, GH001, GH002, GH011, GH012, GH022, GH111, GH112, GH122, GH222
+  VectorSoaContainer<T,20> cXYZ;
 
   /** constructor
    * @param l_max maximum angular momentum
@@ -83,6 +80,7 @@ struct SoaCartesianTensor
 
   void evaluateVGH(T x, T y, T z);
 
+  void evaluateVGHGH(T x, T y, T z);
   ///returns dummy: this is not used
   inline int index(int l, int m) const
   {
@@ -92,12 +90,13 @@ struct SoaCartesianTensor
   /** return the starting address of the component
    *
    * component=0(V), 1(dx), 2(dy), 3(dz), 4(Lap)
+   * See comment at VectorSoAContainer<T,20> cXYZ declaration.
    */
   inline const T* operator[](size_t component) const
   {
     return cXYZ.data(component);
   }
-
+ 
   inline size_t size() const
   {
     return cXYZ.size();
@@ -159,7 +158,7 @@ SoaCartesianTensor<T>::SoaCartesianTensor(const int l_max, bool addsign) : Lmax(
 
 %evaluate_vgh
 
-// Third derivatives not implemented yet for SoA
+%evaluate_vghgh
 
 // generated from read_order.py
 template<class T>

@@ -27,15 +27,12 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("distance_open_z", "[distance_table][xml]")
 {
   // test that particle distances are properly calculated
 
-  OHMMS::Controller->initialize(0, NULL);
 
-const char *particles =
-"<tmp> \
+  const char* particles = "<tmp> \
 <particleset name=\"e\" random=\"yes\"> \
    <group name=\"u\" size=\"1\" mass=\"1.0\">\
       <parameter name=\"charge\"              >    -1                    </parameter>\
@@ -76,9 +73,9 @@ const char *particles =
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
   Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0,0) = 1;
-  tmat(1,1) = 1;
-  tmat(2,2) = 1;
+  tmat(0, 0) = 1;
+  tmat(1, 1) = 1;
+  tmat(2, 2) = 1;
 
   // read particle set
   ParticleSet ions, electrons;
@@ -89,32 +86,46 @@ const char *particles =
   XMLParticleParser parse_ions(ions, tmat);
   parse_ions.put(part2);
 
-  REQUIRE( electrons.getName() == "e" );
-  REQUIRE( ions.getName() == "ion0"   );
-  REQUIRE( ions.SameMass      );
-  REQUIRE( electrons.SameMass );
+  REQUIRE(electrons.getName() == "e");
+  REQUIRE(ions.getName() == "ion0");
+  REQUIRE(ions.SameMass);
+  REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-  electrons.addTable(ions,DT_AOS);
+  const int tid = electrons.addTable(ions, DT_SOA);
   electrons.update();
 
   // get target particle set's distance table data
-  int tid = electrons.getTable(ions); //this is bad
-  DistanceTableData* dtable = electrons.DistTables[tid];
-  REQUIRE(dtable->getName() == "ion0_e");
+  const auto& dtable = electrons.getDistTable(tid);
+  REQUIRE(dtable.getName() == "ion0_e");
 
-  double expect[] = {0.2,0.2,0.3,0.7};
+  REQUIRE(dtable.sources() == ions.getTotalNum());
+  REQUIRE(dtable.targets() == electrons.getTotalNum());
+
+  double expect[] = {0.2, 0.2, 0.3, 0.7};
   int idx(0);
-  for (int iat=0;iat<ions.getTotalNum();iat++){
-    for (int jat=0;jat<electrons.getTotalNum();jat++,idx++){
+  for (int iat = 0; iat < dtable.sources(); iat++)
+  {
+    for (int jat = 0; jat < dtable.targets(); jat++, idx++)
+    {
       // note: target particle set is special (electrons in this case)
-      // int tid = target_pset.getTable(source_pset)
-      // DistanceTableData* dtable = target_pset.DistTables[tid] 
-      // dtable->loc(source_ptcl_idx,target_ptcl_idx) !! source first target second !?
-      double dist = dtable->r(dtable->loc(iat,jat));
-      REQUIRE( dist == Approx(expect[idx]) );
+      // int tid = target_pset.addTable(source_pset, DT_AOS);
+      // const auto& dtable = target_pset.getDistTable(tid);
+      // dtable.loc(source_ptcl_idx,target_ptcl_idx) !! source first target second !?
+      double dist = dtable.getDistRow(jat)[iat];
+      REQUIRE(dist == Approx(expect[idx]));
     }
   }
+
+  TinyVector<double, 3> displ1 = dtable.getDisplacements()[0][0];
+  REQUIRE(displ1[0] == Approx(0.0));
+  REQUIRE(displ1[1] == Approx(0.0));
+  REQUIRE(displ1[2] == Approx(-0.2));
+
+  TinyVector<double, 3> displ2 = dtable.getDisplacements()[0][1];
+  REQUIRE(displ2[0] == Approx(0.0));
+  REQUIRE(displ2[1] == Approx(0.0));
+  REQUIRE(displ2[2] == Approx(0.3));
 
   // get distance between target="e" group="u" iat=0 and source="ion0" group="H" jat=1
 
@@ -123,10 +134,7 @@ const char *particles =
 TEST_CASE("distance_open_xy", "[distance_table][xml]")
 {
 
-  OHMMS::Controller->initialize(0, NULL);
-
-const char *particles =
-"<tmp> \
+  const char* particles = "<tmp> \
 <particleset name=\"e\" random=\"yes\"> \
    <group name=\"u\" size=\"2\" mass=\"1.0\">\
       <parameter name=\"charge\"              >    -1                    </parameter>\
@@ -168,9 +176,9 @@ const char *particles =
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
   Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0,0) = 1;
-  tmat(1,1) = 1;
-  tmat(2,2) = 1;
+  tmat(0, 0) = 1;
+  tmat(1, 1) = 1;
+  tmat(2, 2) = 1;
 
   // read particle set
   ParticleSet ions, electrons;
@@ -181,19 +189,21 @@ const char *particles =
   XMLParticleParser parse_ions(ions, tmat);
   parse_ions.put(part2);
 
-  REQUIRE( electrons.getName() == "e" );
-  REQUIRE( ions.getName() == "ion0"   );
-  REQUIRE( ions.SameMass      );
-  REQUIRE( electrons.SameMass );
+  REQUIRE(electrons.getName() == "e");
+  REQUIRE(ions.getName() == "ion0");
+  REQUIRE(ions.SameMass);
+  REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-  electrons.addTable(ions,DT_AOS);
+  const int tid = electrons.addTable(ions, DT_SOA);
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
-  int tid = electrons.getTable(ions);
-  DistanceTableData* dtable = electrons.DistTables[tid];
-  REQUIRE(dtable->getName() == "ion0_e");
+  const auto& dtable = electrons.getDistTable(tid);
+  REQUIRE(dtable.getName() == "ion0_e");
+
+  REQUIRE(dtable.sources() == ions.getTotalNum());
+  REQUIRE(dtable.targets() == electrons.getTotalNum());
 
   // calculate distance, one source particle at a time i.e.
   // H0 - e0: 0.7
@@ -201,15 +211,14 @@ const char *particles =
   // H0 - e2: 0.9
   // H1 - e0: 0.3
   // etc.
-  double expect[] = {
-    0.7,1.0,0.9
-   ,0.3,std::sqrt(2),1.9
-  };
+  double expect[] = {0.7, 1.0, 0.9, 0.3, std::sqrt(2), 1.9};
   int idx(0);
-  for (int iat=0;iat<ions.getTotalNum();iat++){
-    for (int jat=0;jat<electrons.getTotalNum();jat++,idx++){
-      double dist = dtable->r(dtable->loc(iat,jat));
-      REQUIRE( dist == Approx(expect[idx]) );
+  for (int iat = 0; iat < dtable.sources(); iat++)
+  {
+    for (int jat = 0; jat < dtable.targets(); jat++, idx++)
+    {
+      double dist = dtable.getDistRow(jat)[iat];
+      REQUIRE(dist == Approx(expect[idx]));
     }
   }
 
@@ -219,10 +228,8 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
 {
   // pull out distances between specific species
 
-  OHMMS::Controller->initialize(0, NULL);
 
-const char *particles =
-"<tmp> \
+  const char* particles = "<tmp> \
 <particleset name=\"e\" random=\"yes\"> \
    <group name=\"u\" size=\"2\" mass=\"1.0\">\
       <parameter name=\"charge\"              >    -1                    </parameter>\
@@ -264,9 +271,9 @@ const char *particles =
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
   Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0,0) = 1;
-  tmat(1,1) = 1;
-  tmat(2,2) = 1;
+  tmat(0, 0) = 1;
+  tmat(1, 1) = 1;
+  tmat(2, 2) = 1;
 
   // read particle set
   ParticleSet ions, electrons;
@@ -277,44 +284,49 @@ const char *particles =
   XMLParticleParser parse_ions(ions, tmat);
   parse_ions.put(part2);
 
-  REQUIRE( electrons.getName() == "e" );
-  REQUIRE( ions.getName() == "ion0"   );
-  REQUIRE( ions.SameMass      );
-  REQUIRE( electrons.SameMass );
+  REQUIRE(electrons.getName() == "e");
+  REQUIRE(ions.getName() == "ion0");
+  REQUIRE(ions.SameMass);
+  REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-  electrons.addTable(ions,DT_AOS);
+  const int tid = electrons.addTable(ions, DT_SOA);
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
-  int tid = electrons.getTable(ions);
-  DistanceTableData* dtable = electrons.DistTables[tid];
-  REQUIRE(dtable->getName() == "ion0_e");
+  const auto& dtable = electrons.getDistTable(tid);
+  REQUIRE(dtable.getName() == "ion0_e");
 
   // get the electron species set
   SpeciesSet& especies(electrons.getSpeciesSet());
 
+  REQUIRE(dtable.sources() == ions.getTotalNum());
+  REQUIRE(dtable.targets() == electrons.getTotalNum());
+
   // !! assume "u" and "H" groups have the same number of particles
   double latdev2 = 0.0; // mean-squared deviation from lattice
-  int cur_jat(-1); // keep an index to the last found target particle
-  double expect[] = {0.7,std::sqrt(2)};
+  int cur_jat(-1);      // keep an index to the last found target particle
+  double expect[] = {0.7, std::sqrt(2)};
   int idx(0);
-  for (int iat=0;iat<ions.getTotalNum();iat++,idx++){
-    for (int jat=cur_jat+1;jat<electrons.getTotalNum();jat++,idx++){
+  for (int iat = 0; iat < dtable.sources(); iat++, idx++)
+  {
+    for (int jat = cur_jat + 1; jat < dtable.targets(); jat++, idx++)
+    {
       // find next "u"
-      int species_id = electrons.GroupID[jat];
+      int species_id      = electrons.GroupID[jat];
       string species_name = especies.speciesName[species_id];
-      if (species_name != "u") continue;
+      if (species_name != "u")
+        continue;
 
       // calculate distance from lattice site iat
-      double dist = dtable->r(dtable->loc(iat,jat));
-      latdev2 += std::pow(dist,2); // !? pow(x,2) does what?
-      REQUIRE( dist == Approx(expect[idx]) );
+      double dist = dtable.getDistRow(jat)[iat];
+      latdev2 += std::pow(dist, 2); // !? pow(x,2) does what?
+      REQUIRE(dist == Approx(expect[idx]));
       cur_jat = jat;
       break;
     }
   }
-  REQUIRE( latdev2/ions.getTotalNum() == Approx(1.245) );
+  REQUIRE(latdev2 / ions.getTotalNum() == Approx(1.245));
 
 } // TEST_CASE distance_open_species_deviation
 
@@ -323,10 +335,8 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   // test that particle distances are properly calculated under periodic boundary condition
   // There are many details in this example, but the main idea is simple: When a particle is moved by a full lattice vector, no distance should change.
 
-  OHMMS::Controller->initialize(0, NULL);
 
-const char *particles =
-"<tmp> \
+  const char* particles = "<tmp> \
   <simulationcell>\
      <parameter name=\"lattice\" units=\"bohr\">\
               6.00000000        0.00000000        0.00000000\
@@ -391,17 +401,21 @@ const char *particles =
   xmlNodePtr part3 = xmlNextElementSibling(part2);
 
   // read lattice
-  ParticleSet::ParticleLayout_t* SimulationCell = new ParticleSet::ParticleLayout_t;
-  LatticeParser lp(*SimulationCell);
+  ParticleSet::ParticleLayout_t SimulationCell;
+  LatticeParser lp(SimulationCell);
   lp.put(part1);
-  SimulationCell->print(app_log(), 0);
+  SimulationCell.print(app_log(), 0);
 
   // read particle set
   ParticleSet ions, electrons;
   Tensor<int, 3> tmat; // assuming OHMMSDIM==3
-  tmat(0,0) = 1;
-  tmat(1,1) = 1;
-  tmat(2,2) = 1;
+  tmat(0, 0) = 1;
+  tmat(1, 1) = 1;
+  tmat(2, 2) = 1;
+
+  // enforce global Lattice on ions and electrons
+  ions.Lattice      = SimulationCell;
+  electrons.Lattice = SimulationCell;
 
   XMLParticleParser parse_electrons(electrons, tmat);
   parse_electrons.put(part2);
@@ -409,58 +423,107 @@ const char *particles =
   XMLParticleParser parse_ions(ions, tmat);
   parse_ions.put(part3);
 
-  REQUIRE( electrons.getName() == "e" );
-  REQUIRE( ions.getName() == "ion0"   );
-  REQUIRE( ions.SameMass      );
-  REQUIRE( electrons.SameMass );
+  REQUIRE(electrons.getName() == "e");
+  REQUIRE(ions.getName() == "ion0");
+  REQUIRE(ions.SameMass);
+  REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-  electrons.Lattice.copy(*SimulationCell);
-  ions.Lattice.copy(*SimulationCell); // is this applied in qmcpack executable?
-  // better be, electron-proton distances used in PairCorrelation estimator
-  electrons.addTable(ions,DT_AOS);
+  const int ei_tid = electrons.addTable(ions, DT_SOA);
   electrons.update();
+  ions.update();
 
   // get target particle set's distance table data
-  int tid = electrons.getTable(ions);
-  DistanceTableData* dtable = electrons.DistTables[tid];
-  REQUIRE(dtable->getName() == "ion0_e");
+  const auto& ei_dtable = electrons.getDistTable(ei_tid);
+  REQUIRE(ei_dtable.getName() == "ion0_e");
+
+  REQUIRE(ei_dtable.sources() == ions.getTotalNum());
+  REQUIRE(ei_dtable.targets() == electrons.getTotalNum());
 
   int num_src = ions.getTotalNum();
   int num_tar = electrons.getTotalNum();
   std::vector<double> expect;
-  expect.resize(num_src*num_tar);
+  expect.resize(num_src * num_tar);
   int idx(0);
-  for (int iat=0;iat<num_src;iat++){
-    for (int jat=0;jat<num_tar;jat++,idx++){
-      double dist = dtable->r(dtable->loc(iat,jat));
-      expect[idx] = dist; 
+  for (int iat = 0; iat < num_src; iat++)
+  {
+    for (int jat = 0; jat < num_tar; jat++, idx++)
+    {
+      double dist = ei_dtable.getDistRow(jat)[iat];
+      expect[idx] = dist;
     }
   }
 
   // move a particle by a lattice vector
-  ParticleSet::SingleParticlePos_t disp(6.0,0,0);
-  electrons.makeMove(0,disp); // temporary change written in distance table
-  electrons.acceptMove(0);    // update distance table with temporary change
-  
+  ParticleSet::SingleParticlePos_t disp(6.0, 0, 0);
+  electrons.makeMove(0, disp); // temporary change written in distance table
+  electrons.acceptMove(0);     // update distance table with temporary change
+
   // move some more
   disp[1] = -6.0;
-  electrons.makeMove(1,disp);
-  electrons.acceptMove(1);   
+  electrons.makeMove(1, disp);
+  electrons.acceptMove(1);
 
   // move some more more
   disp[2] = 12.0;
-  electrons.makeMove(3,disp);
-  electrons.acceptMove(3);   
+  electrons.makeMove(3, disp);
+  electrons.acceptMove(3);
 
   idx = 0;
-  for (int iat=0;iat<num_src;iat++){
-    for (int jat=0;jat<num_tar;jat++,idx++){
-      double dist = dtable->r(dtable->loc(iat,jat));
-      REQUIRE( expect[idx] == Approx(dist) );
+  for (int iat = 0; iat < num_src; iat++)
+  {
+    for (int jat = 0; jat < num_tar; jat++, idx++)
+    {
+      double dist = ei_dtable.getDistRow(jat)[iat];
+      REQUIRE(expect[idx] == Approx(dist));
     }
   }
 
+  const int ee_tid = electrons.addTable(electrons, DT_SOA);
+  // get target particle set's distance table data
+  const auto& ee_dtable = electrons.getDistTable(ee_tid);
+  REQUIRE(ee_dtable.getName() == "e_e");
+  electrons.update();
+
+  // shift electron 0 a bit to avoid box edges.
+  ParticleSet::SingleParticlePos_t shift(0.1, 0.2, -0.1);
+  electrons.makeMove(0, shift);
+  electrons.acceptMove(0);
+
+  disp[0] = 0.2;
+  disp[1] = 0.1;
+  disp[2] = 0.3;
+
+  electrons.makeMove(0, disp, false);
+  REQUIRE(ee_dtable.getTempDists()[1] == Approx(2.7239676944));
+  REQUIRE(ee_dtable.getTempDispls()[1][0] == Approx(2.7));
+  REQUIRE(ee_dtable.getTempDispls()[1][1] == Approx(-0.3));
+  REQUIRE(ee_dtable.getTempDispls()[1][2] == Approx(-0.2));
+  REQUIRE(ee_dtable.getDistRow(1)[0] == Approx(2.908607914));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.9));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][1] == Approx(0.2));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][2] == Approx(-0.1));
+  electrons.rejectMove(0);
+
+  electrons.makeMove(0, disp);
+  REQUIRE(ee_dtable.getTempDists()[1] == Approx(2.7239676944));
+  REQUIRE(ee_dtable.getTempDispls()[1][0] == Approx(2.7));
+  REQUIRE(ee_dtable.getTempDispls()[1][1] == Approx(-0.3));
+  REQUIRE(ee_dtable.getTempDispls()[1][2] == Approx(-0.2));
+  REQUIRE(ee_dtable.getOldDists()[1] == Approx(2.908607914));
+  REQUIRE(ee_dtable.getOldDispls()[1][0] == Approx(2.9));
+  REQUIRE(ee_dtable.getOldDispls()[1][1] == Approx(-0.2));
+  REQUIRE(ee_dtable.getOldDispls()[1][2] == Approx(0.1));
+  REQUIRE(ee_dtable.getDistRow(1)[0] == Approx(2.908607914));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.9));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][1] == Approx(0.2));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][2] == Approx(-0.1));
+  electrons.acceptMove(0);
+
+  REQUIRE(ee_dtable.getDistRow(1)[0] == Approx(2.7239676944));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.7));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][1] == Approx(0.3));
+  REQUIRE(ee_dtable.getDisplRow(1)[0][2] == Approx(0.2));
 } // TEST_CASE distance_pbc_z
 
 } // namespace qmcplusplus

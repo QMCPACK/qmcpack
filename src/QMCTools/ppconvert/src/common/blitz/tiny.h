@@ -28,15 +28,14 @@
 #define BZ_TINY_H
 
 #ifndef BZ_BLITZ_H
- #include <blitz/blitz.h>
+#include <blitz/blitz.h>
 #endif
 
 BZ_NAMESPACE(blitz)
 
-class _bz_tinyBase {
-};
+class _bz_tinyBase
+{};
 
 BZ_NAMESPACE_END
 
 #endif
-

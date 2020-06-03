@@ -12,8 +12,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_WALKER_CONTROL_BASE_H
@@ -21,6 +19,7 @@
 
 #include "Configuration.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "QMCDrivers/MCPopulation.h"
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
 // #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
@@ -29,6 +28,11 @@
 
 namespace qmcplusplus
 {
+namespace testing
+{
+class UnifiedDriverWalkerControlMPITest;
+}
+
 
 /** Base class to control the walkers for DMC simulations.
  *
@@ -44,93 +48,72 @@ namespace qmcplusplus
  * - 2007/11/07
  * -- added functions to dump dmc histograms
  */
-class WalkerControlBase: public MPIObjectBase
+class WalkerControlBase : public MPIObjectBase
 {
-
 public:
   ///typedef of Walker_t
-  typedef MCWalkerConfiguration::Walker_t  Walker_t;
-  ///typedef of RealType
-  typedef QMCTraits::EstimatorRealType     RealType;
+  typedef MCWalkerConfiguration::Walker_t Walker_t;
+  /// distinct type for "new" walker, currently same as Walker_t
+  using MCPWalker = MCPopulation::MCPWalker;
+  ///typedef of FullPrecRealType
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///typedef of IndexType
-  typedef QMCTraits::IndexType             IndexType;
+  typedef QMCTraits::IndexType IndexType;
 
-  ///@enum enumeration to access curData and accumData for reduction
-  enum {ENERGY_INDEX=0
-        , ENERGY_SQ_INDEX
-        , WALKERSIZE_INDEX
-        , WEIGHT_INDEX
-        , EREF_INDEX
-        , R2ACCEPTED_INDEX
-        , R2PROPOSED_INDEX
-        , FNSIZE_INDEX
-        , RNONESIZE_INDEX
-        , RNSIZE_INDEX
-        , B_ENERGY_INDEX
-        , B_WGT_INDEX
-        , SENTWALKERS_INDEX
-        , LE_MAX
-       };
+  /** An enum to access curData and accumData for reduction
+   *
+   * curData is larger than this //LE_MAX + n_node * T
+   */
+  enum
+  {
+    ENERGY_INDEX = 0,
+    ENERGY_SQ_INDEX,
+    WALKERSIZE_INDEX,
+    WEIGHT_INDEX,
+    EREF_INDEX,
+    R2ACCEPTED_INDEX,
+    R2PROPOSED_INDEX,
+    FNSIZE_INDEX,
+    RNONESIZE_INDEX,
+    RNSIZE_INDEX,
+    B_ENERGY_INDEX,
+    B_WGT_INDEX,
+    SENTWALKERS_INDEX,
+    LE_MAX
+  };
 
-  ///id for the method
-  IndexType MyMethod;
-  ///context id
-  IndexType MyContext;
-  ///number of contexts
-  IndexType NumContexts;
-  ///0 is default
-  IndexType SwapMode;
-  ///minimum number of walkers
-  IndexType Nmin;
-  ///maximum number of walkers
-  IndexType Nmax;
-  ///maximum copy per walker
-  IndexType MaxCopy;
-  ///current number of walkers per processor
-  IndexType NumWalkers;
-  ///Number of walkers created by this node
-  IndexType NumWalkersCreated;
-  ///Number of walkers sent during the exchange
-  IndexType NumWalkersSent;
-  ///trial energy energy
-  RealType trialEnergy;
-  ///target sigma to limit fluctuations of the trial energy
-  RealType targetSigma;
-  ///number of particle per node
-  std::vector<int> NumPerNode;
-  ///offset of the particle index
-  std::vector<int> OffSet;
-  ///offset of the particle index for a fair distribution
-  std::vector<int> FairOffSet;
+  struct PopulationAdjustment
+  {
+    int num_walkers{0}; // This is the number of walkers we are adjusting to
+    RefVector<MCPWalker> good_walkers;
+    std::vector<int> copies_to_make;
+    RefVector<MCPWalker> bad_walkers;
+  };
 
-  ///ensenble properties
-  MCDataType<RealType> EnsembleProperty;
+  struct WalkerAdjustmentCriteria
+  {
+    FullPrecRealType esum{0.0};
+    FullPrecRealType e2sum{0.0};
+    FullPrecRealType wsum{0.0};
+    FullPrecRealType ecum{0.0};
+    FullPrecRealType w2sum{0.0};
+    FullPrecRealType besum{0.0};
+    FullPrecRealType bwgtsum{0.0};
+    FullPrecRealType r2_accepted{0.0};
+    FullPrecRealType r2_proposed{0.0};
+    int nfn{0};
+    int nrn{0};
+    int ngoodfn{0};
+    int ncr{0};
+    int nc{0};
+  };
 
-  ///filename for dmc.dat
-  std::string dmcFname;
-  ///file to save energy histogram
-  std::ofstream* dmcStream;
-  ///archive
-  //boost::archive::binary_oarchive *oa;
-
-  ///any accumulated data over a block
-  std::vector<RealType> accumData;
-  ///any temporary data
-  std::vector<RealType> curData;
-  ///temporary storage for good and bad walkers
-  std::vector<Walker_t*> good_w, bad_w;
-  ///temporary storage for copy counters
-  std::vector<int> ncopy_w;
-  ///Add released-node fields to .dmc.dat file
-  bool WriteRN;
-  ///Use non-blocking isend/irecv
-  bool use_nonblocking;
 
   /** default constructor
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControlBase(Communicate* c, bool rn=false);
+  WalkerControlBase(Communicate* c, bool rn = false);
 
   /** empty destructor to clean up the derived classes */
   virtual ~WalkerControlBase();
@@ -141,46 +124,69 @@ public:
   /** start controller  and initialize the IDs of walkers*/
   void setWalkerID(MCWalkerConfiguration& walkers);
 
+  /** start controller
+   *
+   *  WalkerID's are initialized by MCPopulation, SOC
+   */
+  void setWalkerID(MCPopulation& population);
+
   /** take averages and writes to a file */
   void measureProperties(int iter);
 
   /** set the trial energy
    */
-  inline void setTrialEnergy(RealType et)
-  {
-    trialEnergy=et;
-  }
+  inline void setTrialEnergy(FullPrecRealType et) { trialEnergy = et; }
 
   /** return a value accumulated during a block
    * @param i index of the data
    *
    * use enum for i, see DMCEnergyEstimator
    */
-  inline RealType getValue(int i)
-  {
-    return accumData[i];
-  }
+  inline FullPrecRealType getValue(int i) { return accumData[i]; }
 
   /** return a current value
    * @param i index of the data
    *
    * use enum for i, see DMCEnergyEstimator
    */
-  inline RealType getCurrentValue(int i)
-  {
-    return curData[i];
-  }
+  inline FullPrecRealType getCurrentValue(int i) { return curData[i]; }
 
-  /** update properties without branching */
+  /** return global population
+   *  update properties without branching 
+   *
+   */
   int doNotBranch(int iter, MCWalkerConfiguration& W);
 
+  /** return global population
+   *  update properties without branching
+   */
+  int doNotBranch(int iter, MCPopulation& pop);
+
   /** sort Walkers between good and bad and prepare branching
+   *
+   *  not a sort changes internal state of walkers to copy and how many of each copy
    */
   int sortWalkers(MCWalkerConfiguration& W);
 
+  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
+
+  /** create data structure needed to do population adjustment
+   *
+   *  refactored sortWalkers
+   *  This data structure contains what was updated in the state.
+   */
+  PopulationAdjustment calcPopulationAdjustment(MCPopulation& pop);
+
+  /** do the actual adjustment
+   *
+   *  unfortunately right now this requires knowledge of the global context, seems unecessary
+   *  but this is why MCPopulation is handed in.
+   */
+  int adjustPopulation(PopulationAdjustment& adjust);
+
   /** apply per node limit Nmax and Nmin
    */
-  int applyNmaxNmin();
+  int applyNmaxNmin(int current_population);
 
   /** copy good walkers to W
    */
@@ -191,120 +197,114 @@ public:
   /** reset to accumulate data */
   virtual void reset();
 
-  /** perform branch and swap walkers as required */
-  virtual int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
+  /** perform branch and swap walkers as required 
+   *
+   *  \return global population
+   */
+  virtual int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
 
-  virtual RealType getFeedBackParameter(int ngen, RealType tau)
+  /** perform branch and swap walkers as required 
+   *
+   *  \return global population
+   */
+  virtual int branch(int iter, MCPopulation& pop, FullPrecRealType trigger);
+
+  virtual FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau)
   {
-    return 1.0/(static_cast<RealType>(ngen)*tau);
+    return 1.0 / (static_cast<FullPrecRealType>(ngen) * tau);
   }
 
   bool put(xmlNodePtr cur);
 
   void setMinMax(int nw_in, int nmax_in);
 
-//     struct ForwardWalkingData
-//     {
-//       typedef TinyVector<float,DIM>       StoredPosType;
-//       typedef ParticleAttrib<StoredPosType>       StoredPosVector;
-//       long ID;
-//       long ParentID;
-//       StoredPosVector Pos;
-//
-//       inline ForwardWalkingData()
-//       {
-//       }
-//
-//       inline ForwardWalkingData(const Walker_t& a)
-//       {
-//         Pos.resize(a.R.size());
-//         Pos = a.R;
-//         ID = a.ID;
-//         ParentID = a.ParentID;
-//       }
-//
-//       inline ForwardWalkingData(const ForwardWalkingData& a)
-//       {
-//         Pos.resize(a.Pos.size());
-//         Pos = a.Pos;
-//         ID = a.ID;
-//         ParentID = a.ParentID;
-//       }
-//
-//       inline ForwardWalkingData(const int a)
-//       {
-//         Pos.resize(a);
-//       }
-//
-//       inline ForwardWalkingData& operator=(const Walker_t& a) {
-//         Pos.resize(a.R.size());
-//         Pos = a.R;
-//         ID = a.ID;
-//         ParentID = a.ParentID;
-//         return *this;
-//       }
-//
-//       inline ForwardWalkingData& operator=(const ForwardWalkingData& a)
-//       {
-//         Pos.resize(a.Pos.size());
-//         Pos = a.Pos;
-//         ID = a.ID;
-//         ParentID = a.ParentID;
-//         return *this;
-//       }
-//
-//       inline int SizeOf()
-//       {
-//         return sizeof(long)*2 + Pos.size()*DIM*sizeof(float);
-//       }
-//
-//     };
+  int get_n_max() const { return n_max_; }
+  int get_n_min() const { return n_min_; }
+  FullPrecRealType get_target_sigma() const { return target_sigma_; }
+  MCDataType<FullPrecRealType>& get_ensemble_property() { return ensemble_property_; }
+  void set_ensemble_property(MCDataType<FullPrecRealType>& ensemble_property)
+  {
+    ensemble_property_ = ensemble_property;
+  }
+  IndexType get_num_contexts() const { return num_contexts_; }
+  void set_write_release_nodes(bool write_release_nodes) { write_release_nodes_ = write_release_nodes; }
+  IndexType get_method() const { return method_; }
+  void set_method(IndexType method) { method_ = method; }
+
+protected:
+  /** makes adjustments to local population based on adjust
+   *
+   * \param[inout] pop the local population
+   * \param[in]    the population adjustment, it is not updated to reflect local state and is now invalid.
+   */
+  static void onRankSpawnKill(MCPopulation& pop, PopulationAdjustment& adjust);
 
 
+  ///id for the method
+  IndexType method_;
+  ///minimum number of walkers
+  IndexType n_min_;
+  ///maximum number of walkers
+  IndexType n_max_;
+  ///maximum copy per walker
+  IndexType MaxCopy;
+  ///current number of walkers per processor
+  IndexType NumWalkers;
+  ///trial energy energy
+  FullPrecRealType trialEnergy;
+  ///target sigma to limit fluctuations of the trial energy
+  FullPrecRealType target_sigma_;
+  ///number of particle per node
+  std::vector<int> NumPerNode;
+  ///offset of the particle index
+  std::vector<int> OffSet;
+  ///offset of the particle index for a fair distribution
+  std::vector<int> FairOffSet;
 
-//     typedef std::vector<ForwardWalkingData> ForwardWalkingConfiguration;
-//     std::vector<ForwardWalkingConfiguration> ForwardWalkingHistory;
-//     inline void storeConfigsForForwardWalking(MCWalkerConfiguration& W)
-//     {
-//       std::vector<ForwardWalkingData> ForwardWalkingHere;
-//
-//       for(std::vector<Walker_t*>::iterator Wit(W.begin()); Wit != W.end(); Wit++ )
-//       {
-//         ForwardWalkingData fwhere( *(*Wit) );
-//         ForwardWalkingHere.push_back(fwhere);
-//       }
-//
-//       ForwardWalkingHistory.push_back(ForwardWalkingHere);
-//     }
-//
-//     inline void clearConfigsForForwardWalking()
-//     {
-//       ForwardWalkingHistory.clear();
-//     }
-//
-//     inline int sizeOfConfigsForForwardWalking()
-//     {
-//       int szeFW(0);
-//       int singleSize = ForwardWalkingHistory[0][0].SizeOf();
-//       for(int i=0;i<ForwardWalkingHistory.size();i++) szeFW += ForwardWalkingHistory[i].size() * singleSize;
-//       return szeFW;
-//     }
-//
-//     inline void layoutOfConfigsForForwardWalking(std::vector<int>& returnVal)
-//     {
-//       returnVal.resize(ForwardWalkingHistory.size()+1,0);
-//       returnVal[0]=0;
-//       for(int i=0;i<ForwardWalkingHistory.size();i++) returnVal[i+1]=ForwardWalkingHistory[i].size();
-//     }
+  ///filename for dmc.dat
+  std::string dmcFname;
+  ///file to save energy histogram
+  std::ofstream* dmcStream;
+  ///Number of walkers created by this node
+  IndexType NumWalkersCreated;
+  ///context id
+  IndexType MyContext;
+  ///number of contexts
+  IndexType num_contexts_;
+  ///0 is default
+  IndexType SwapMode;
+  ///any accumulated data over a block
+  std::vector<FullPrecRealType> accumData;
+  ///any temporary data includes many ridiculous conversions of integral types to and from fp
+  std::vector<FullPrecRealType> curData;
+  ///temporary storage for good and bad walkers
+  std::vector<Walker_t*> good_w, bad_w;
+  ///temporary storage for copy counters
+  std::vector<int> ncopy_w;
+  ///Add released-node fields to .dmc.dat file
+  bool write_release_nodes_;
+  ///Use non-blocking isend/irecv
+  bool use_nonblocking;
 
+  ///ensemble properties
+  MCDataType<FullPrecRealType> ensemble_property_;
 
+  friend class qmcplusplus::testing::UnifiedDriverWalkerControlMPITest;
+private:
+  /** Refactoring possibly dead releaseNodesCode out
+   * @{
+   */
+  static auto rn_walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustmentCriteria wac);
 
+  static auto addReleaseNodeWalkers(PopulationAdjustment& adjust,
+                                    WalkerAdjustmentCriteria& wac,
+                                    RefVector<MCPWalker>& good_walkers_rn,
+                                    std::vector<int>& copies_to_make_rn);
+  /**}@*/
+  static auto walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustmentCriteria wac);
+
+  static void updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data, WalkerAdjustmentCriteria wac, PopulationAdjustment& adjustment, MCPopulation& pop);
 };
 
-
-;
-
-
-}
+} // namespace qmcplusplus
 #endif
-

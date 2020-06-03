@@ -8,21 +8,15 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
 
 #include "catch.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
-#include "Particle/SymmetricDistanceTableData.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 
@@ -34,12 +28,9 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 {
-
-  Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c;
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -69,40 +60,37 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   elec.R[1][2] = 0.0;
 
 
-  // BCC H 
-  elec.Lattice.R(0,0) = 3.77945227;
-  elec.Lattice.R(0,1) = 0.0;
-  elec.Lattice.R(0,2) = 0.0;
-  elec.Lattice.R(1,0) = 0.0;
-  elec.Lattice.R(1,1) = 3.77945227;
-  elec.Lattice.R(1,2) = 0.0;
-  elec.Lattice.R(2,0) = 0.0;
-  elec.Lattice.R(2,1) = 0.0;
-  elec.Lattice.R(2,2) = 3.77945227;
+  // BCC H
+  elec.Lattice.R(0, 0) = 3.77945227;
+  elec.Lattice.R(0, 1) = 0.0;
+  elec.Lattice.R(0, 2) = 0.0;
+  elec.Lattice.R(1, 0) = 0.0;
+  elec.Lattice.R(1, 1) = 3.77945227;
+  elec.Lattice.R(1, 2) = 0.0;
+  elec.Lattice.R(2, 0) = 0.0;
+  elec.Lattice.R(2, 1) = 0.0;
+  elec.Lattice.R(2, 2) = 3.77945227;
   elec.Lattice.reset();
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int chargeIdx = tspecies.addAttribute("charge");
-  tspecies(chargeIdx, upIdx) = -1;
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  elec.addTable(ions,DT_AOS);
+  elec.addTable(ions, DT_SOA);
   elec.resetGroups();
   elec.update();
 
-
-  TrialWaveFunction psi = TrialWaveFunction(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.addParticleSet(&elec);
   ptcl.addParticleSet(&ions);
 
-//diamondC_1x1x1
-const char *particles = 
-"<tmp> \
+  //diamondC_1x1x1
+  const char* particles = "<tmp> \
 <determinantset type=\"PW\" href=\"bccH.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\"> \
    <slaterdeterminant> \
      <determinant id=\"updet\" size=\"1\"> \
@@ -125,12 +113,9 @@ const char *particles =
   xmlNodePtr pw1 = xmlFirstElementChild(root);
 
 
-  PWOrbitalBuilder pw_builder(elec, psi, ptcl.getPool());
-  pw_builder.put(pw1);
-
-  REQUIRE(psi.getOrbitals().size() == 1);
-  WaveFunctionComponent *orb = psi.getOrbitals()[0];
-  SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
+  PWOrbitalBuilder pw_builder(c, elec, ptcl.getPool());
+  WaveFunctionComponent* orb = pw_builder.buildComponent(pw1);
+  SlaterDet* sd = dynamic_cast<SlaterDet*>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
   SPOSetPtr spo = sd->mySPOSet.begin()->second;
@@ -138,12 +123,12 @@ const char *particles =
   //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);
 
-  int orbSize= spo->getOrbitalSetSize();
+  int orbSize = spo->getOrbitalSetSize();
   elec.update();
   SPOSet::ValueVector_t orbs(orbSize);
-  spo->evaluate(elec, 0, orbs);
+  spo->evaluateValue(elec, 0, orbs);
 
-  REQUIRE(orbs[0] == ComplexApprox(-1.2473558998).compare_real_only());
+  REQUIRE(std::real(orbs[0]) == Approx(-1.2473558998));
 
 #if 0
   // Dump values of the orbitals
@@ -164,7 +149,7 @@ const char *particles =
         elec.R[0][2] = z;
         elec.update();
         SPOSet::ValueVector_t orbs(orbSize);
-        spo->evaluate(elec, 0, orbs);
+        spo->evaluateValue(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
 #ifdef QMC_COMPLEX
@@ -179,15 +164,12 @@ const char *particles =
   }
   fclose(fspo);
 #endif
-
 }
 
 
 TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 {
-
-  Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c;
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -224,39 +206,36 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 
 
   // LiH
-  elec.Lattice.R(0,0) = -3.55;
-  elec.Lattice.R(0,1) = 0.0;
-  elec.Lattice.R(0,2) = 3.55;
-  elec.Lattice.R(1,0) = 0.0;
-  elec.Lattice.R(1,1) = 3.55;
-  elec.Lattice.R(1,2) = 3.55;
-  elec.Lattice.R(2,0) = -3.55;
-  elec.Lattice.R(2,1) = 3.55;
-  elec.Lattice.R(2,2) = 0.0;
+  elec.Lattice.R(0, 0) = -3.55;
+  elec.Lattice.R(0, 1) = 0.0;
+  elec.Lattice.R(0, 2) = 3.55;
+  elec.Lattice.R(1, 0) = 0.0;
+  elec.Lattice.R(1, 1) = 3.55;
+  elec.Lattice.R(1, 2) = 3.55;
+  elec.Lattice.R(2, 0) = -3.55;
+  elec.Lattice.R(2, 1) = 3.55;
+  elec.Lattice.R(2, 2) = 0.0;
   elec.Lattice.reset();
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int chargeIdx = tspecies.addAttribute("charge");
-  tspecies(chargeIdx, upIdx) = -1;
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  elec.addTable(ions,DT_AOS);
+  elec.addTable(ions, DT_SOA);
   elec.resetGroups();
   elec.update();
 
-
-  TrialWaveFunction psi = TrialWaveFunction(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.addParticleSet(&elec);
   ptcl.addParticleSet(&ions);
 
-//diamondC_1x1x1
-const char *particles = 
-"<tmp> \
+  //diamondC_1x1x1
+  const char* particles = "<tmp> \
 <determinantset type=\"PW\" href=\"LiH-arb.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\"> \
    <slaterdeterminant> \
      <determinant id=\"updet\" size=\"2\"> \
@@ -279,12 +258,9 @@ const char *particles =
   xmlNodePtr pw1 = xmlFirstElementChild(root);
 
 
-  PWOrbitalBuilder pw_builder(elec, psi, ptcl.getPool());
-  pw_builder.put(pw1);
-
-  REQUIRE(psi.getOrbitals().size() == 1);
-  WaveFunctionComponent *orb = psi.getOrbitals()[0];
-  SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
+  PWOrbitalBuilder pw_builder(c, elec, ptcl.getPool());
+  WaveFunctionComponent* orb = pw_builder.buildComponent(pw1);
+  SlaterDet* sd = dynamic_cast<SlaterDet*>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
   SPOSetPtr spo = sd->mySPOSet.begin()->second;
@@ -292,12 +268,12 @@ const char *particles =
   //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);
 
-  int orbSize= spo->getOrbitalSetSize();
+  int orbSize = spo->getOrbitalSetSize();
   elec.update();
   SPOSet::ValueVector_t orbs(orbSize);
-  spo->evaluate(elec, 0, orbs);
+  spo->evaluateValue(elec, 0, orbs);
 
-  REQUIRE(orbs[0] == ComplexApprox(-14.3744302974).compare_real_only());
+  REQUIRE(std::real(orbs[0]) == Approx(-14.3744302974));
 
 #if 0
   // Dump values of the orbitals
@@ -318,7 +294,7 @@ const char *particles =
         elec.R[0][2] = z;
         elec.update();
         SPOSet::ValueVector_t orbs(orbSize);
-        spo->evaluate(elec, 0, orbs);
+        spo->evaluateValue(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
 #ifdef QMC_COMPLEX
@@ -333,7 +309,5 @@ const char *particles =
   }
   fclose(fspo);
 #endif
-
 }
-}
-
+} // namespace qmcplusplus

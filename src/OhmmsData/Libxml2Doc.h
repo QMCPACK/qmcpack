@@ -11,19 +11,19 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef LIBXML2_DOCUMENT_H
 #define LIBXML2_DOCUMENT_H
-#include "OhmmsData/libxmldefs.h"
+
+#include <libxml/xpath.h>
 #include <string>
+#include "OhmmsData/libxmldefs.h"
+
 /** class to handle xmlXPathObject
- */ 
+ */
 struct OhmmsXPathObject
 {
-
   //default constructor
   OhmmsXPathObject();
 
@@ -49,19 +49,13 @@ struct OhmmsXPathObject
    */
   void put(const char* expression, xmlXPathContextPtr context);
 
-  inline bool empty()
-  {
-    return NumObjects == 0;
-  }
+  inline bool empty() { return NumObjects == 0; }
 
-  inline int size()
-  {
-    return NumObjects;
-  }
+  inline int size() { return NumObjects; }
 
   inline xmlNodePtr operator[](int i)
   {
-    if(result != NULL && i < NumObjects)
+    if (result != NULL && i < NumObjects)
     {
       return result->nodesetval->nodeTab[i];
     }
@@ -80,24 +74,17 @@ struct OhmmsXPathObject
  */
 struct Libxml2Document
 {
-
   Libxml2Document();
   Libxml2Document(const std::string& fname);
   ~Libxml2Document();
 
-  void newDoc(const std::string &rootName);
+  void newDoc(const std::string& rootName);
 
   bool parse(const std::string& fname);
   bool parseFromString(const std::string& data);
 
-  inline xmlDocPtr getDocument()
-  {
-    return m_doc;
-  }
-  inline xmlNodePtr getRoot()
-  {
-    return m_root;
-  }
+  inline xmlDocPtr getDocument() { return m_doc; }
+  inline xmlNodePtr getRoot() { return m_root; }
   xmlXPathContextPtr getXPathContext();
 
   void dump(const std::string& newxml);
@@ -106,18 +93,18 @@ struct Libxml2Document
   void addChild(const std::string& expression, xmlNodePtr newnode);
 
 
-  xmlNodePtr addChild(xmlNodePtr parent, const std::string &nodeName);
+  xmlNodePtr addChild(xmlNodePtr parent, const std::string& nodeName);
 
-  xmlNodePtr addChild(xmlNodePtr parent, const std::string &nodeName, const bool &value)
-  { 
-    std::string s = value ? "true" : "false";
+  xmlNodePtr addChild(xmlNodePtr parent, const std::string& nodeName, const bool& value)
+  {
+    std::string s   = value ? "true" : "false";
     xmlNodePtr node = xmlNewChild(parent, NULL, BAD_CAST nodeName.c_str(), BAD_CAST s.c_str());
     return node;
   }
 
   template<typename T>
-  xmlNodePtr addChild(xmlNodePtr parent, const std::string &nodeName, const T &value)
-  { 
+  xmlNodePtr addChild(xmlNodePtr parent, const std::string& nodeName, const T& value)
+  {
     std::stringstream s;
     s << value;
     xmlNodePtr node = xmlNewChild(parent, NULL, BAD_CAST nodeName.c_str(), BAD_CAST s.str().c_str());

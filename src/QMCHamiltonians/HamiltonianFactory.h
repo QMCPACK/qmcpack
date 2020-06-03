@@ -12,8 +12,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /**@file HamiltonianFactory.h
  *@brief Declaration of a HamiltonianFactory
  */
@@ -24,14 +24,13 @@
 #include <QMCWaveFunctions/WaveFunctionFactory.h>
 namespace qmcplusplus
 {
-
 /** Factory class to build a many-body wavefunction
  */
-class HamiltonianFactory: public MPIObjectBase
+class HamiltonianFactory : public MPIObjectBase
 {
-  public:
-  typedef std::map<std::string,ParticleSet*> PtclPoolType;
-  typedef std::map<std::string,WaveFunctionFactory*> OrbitalPoolType;
+public:
+  typedef std::map<std::string, ParticleSet*> PtclPoolType;
+  typedef std::map<std::string, WaveFunctionFactory*> OrbitalPoolType;
 
   ///type of the lattice. 0=non-periodic, 1=periodic
   int PBCType;
@@ -40,9 +39,9 @@ class HamiltonianFactory: public MPIObjectBase
   ///many-body wavefunction object
   QMCHamiltonian* targetH;
   ///reference to the PtclPoolType
-  PtclPoolType&  ptclPool;
+  PtclPoolType& ptclPool;
   ///reference to the WaveFunctionFactory Pool
-  OrbitalPoolType&  psiPool;
+  OrbitalPoolType& psiPool;
   ///input node for a many-body wavefunction
   xmlNodePtr myNode;
 
@@ -50,11 +49,10 @@ class HamiltonianFactory: public MPIObjectBase
   std::string psiName;
 
   ///list of the old to new name
-  std::map<std::string,std::string> RenamedProperty;
+  std::map<std::string, std::string> RenamedProperty;
 
   ///constructor
-  HamiltonianFactory(ParticleSet* qp, PtclPoolType& pset, OrbitalPoolType& oset,
-                     Communicate* c);
+  HamiltonianFactory(ParticleSet* qp, PtclPoolType& pset, OrbitalPoolType& oset, Communicate* c);
 
   ///destructor
   ~HamiltonianFactory();
@@ -76,16 +74,15 @@ class HamiltonianFactory: public MPIObjectBase
    *
    * If a is found among the RenamedProperty, a is replaced,
    */
-  void renameProperty( std::string& a);
+  void renameProperty(std::string& a);
 
   void setCloneSize(int np);
 
-  HamiltonianFactory* clone(ParticleSet* qp, TrialWaveFunction* psi,
-                            int ip, const std::string& aname);
+  HamiltonianFactory* clone(ParticleSet* qp, TrialWaveFunction* psi, int ip, const std::string& aname);
 
   std::vector<HamiltonianFactory*> myClones;
 
-  private:
+private:
   /** process xmlNode to populate targetPsi
    */
   bool build(xmlNodePtr cur, bool buildtree);
@@ -93,9 +90,7 @@ class HamiltonianFactory: public MPIObjectBase
   void addCoulombPotential(xmlNodePtr cur);
   void addForceHam(xmlNodePtr cur);
   void addPseudoPotential(xmlNodePtr cur);
-  void addCorePolPotential(xmlNodePtr cur);
-  void addMPCPotential(xmlNodePtr cur, bool physical=false);
-
+  void addMPCPotential(xmlNodePtr cur, bool physical = false);
 };
-}
+} // namespace qmcplusplus
 #endif

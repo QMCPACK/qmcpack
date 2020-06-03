@@ -9,8 +9,8 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_EEI_JASTROW_BUILDER_H
 #define QMCPLUSPLUS_EEI_JASTROW_BUILDER_H
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
@@ -20,20 +20,21 @@ namespace qmcplusplus
 //forward declaration
 class ParticleSet;
 
-struct eeI_JastrowBuilder: public WaveFunctionComponentBuilder
+struct eeI_JastrowBuilder : public WaveFunctionComponentBuilder
 {
-  ParticleSet *sourcePtcl;
+  ParticleSet* sourcePtcl;
   // Two-body constructor
-  eeI_JastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
-                     ParticleSet& source) :
-    WaveFunctionComponentBuilder(target,psi), sourcePtcl(&source)
+  eeI_JastrowBuilder(Communicate *comm, ParticleSet& target, ParticleSet& source)
+      : WaveFunctionComponentBuilder(comm, target), sourcePtcl(&source)
   {
-    ClassName="eeI_JastrowBuilder";
+    ClassName = "eeI_JastrowBuilder";
   }
 
-  bool put(xmlNodePtr cur);
-  template<typename J3type>  bool putkids (xmlNodePtr kids, J3type &J3);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+
+  template<typename J3type>
+  bool putkids(xmlNodePtr kids, J3type& J3);
 };
 
-}
+} // namespace qmcplusplus
 #endif

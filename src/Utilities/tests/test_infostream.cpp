@@ -12,7 +12,7 @@
 
 #include "catch.hpp"
 
-#include "Utilities/InfoStream.h"
+#include "Platforms/Host/InfoStream.h"
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -55,10 +55,10 @@ TEST_CASE("InfoStream redirect to new stream", "[utilities]")
 TEST_CASE("InfoStream redirect to file", "[utilities]")
 {
   std::ostringstream out;
-  InfoStream *info = new InfoStream(&out);
+  InfoStream* info = new InfoStream(&out);
   info->redirectToFile("test_infostream.log");
   info->getStream() << "test";
-  delete(info);
+  delete (info);
 
   std::ifstream in("test_infostream.log");
   std::string s;
@@ -95,5 +95,4 @@ TEST_CASE("InfoStream operator", "[utilities]")
   info << "test";
   info << 1;
   REQUIRE(out.str() == "test1");
-
 }

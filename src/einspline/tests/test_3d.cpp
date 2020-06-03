@@ -1,13 +1,14 @@
-#//////////////////////////////////////////////////////////////////////////////////////
-#// This file is distributed under the University of Illinois/NCSA Open Source License.
-#// See LICENSE file in top directory for details.
-#//
-#// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
-#//
-#// File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
-#//
-#// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
-#//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2019 QMCPACK developers.
+//
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+//                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-hampaign
+//
+// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//////////////////////////////////////////////////////////////////////////////////////
 
 
 #include "catch.hpp"
@@ -20,10 +21,8 @@
 #include "einspline/multi_bspline_create.h"
 
 #include <stdio.h>
-#include <string>
 #include <limits>
-
-using std::string;
+#include "config/stdlib/Constants.h"
 
 TEST_CASE("double_3d_natural","[einspline]")
 {
@@ -52,7 +51,8 @@ TEST_CASE("double_3d_natural","[einspline]")
   double val;
   eval_UBspline_3d_d(s, 1.0, 1.0, 1.0, &val);
   REQUIRE(val == Approx(2.0));
-
+  
+  //This puts the value right below the limit
   double pos=10.0-5*std::numeric_limits<double>::epsilon();
   eval_UBspline_3d_d(s, pos, pos, pos, &val);
   REQUIRE(val == Approx(9.0));
@@ -65,7 +65,7 @@ TEST_CASE("double_3d_periodic","[einspline]")
   Ugrid grid;
   grid.start = 0.0;
   grid.end = 1.0;
-  int N = 5;
+  constexpr int N = 5;
   grid.num = N;
   double delta = (grid.end - grid.start)/grid.num;
 
@@ -91,6 +91,10 @@ TEST_CASE("double_3d_periodic","[einspline]")
 
   double val;
   eval_UBspline_3d_d(s, 0.0, 0.0, 0.0, &val);
+  REQUIRE(val == Approx(0.0));
+
+  double pos=0.99999999;
+  eval_UBspline_3d_d(s, pos, pos, pos, &val);
   REQUIRE(val == Approx(0.0));
 
   eval_UBspline_3d_d(s, delta, delta, delta, &val);

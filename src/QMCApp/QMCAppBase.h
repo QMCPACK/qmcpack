@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_QMCAPPLICATIONBASE_H
@@ -31,15 +28,12 @@
  */
 namespace qmcplusplus
 {
-
 /** @ingroup qmcapp
  * @brief Base class for QMC applications and utilities
  */
 class QMCAppBase
 {
-
 public:
-
   ///constructor
   QMCAppBase();
 
@@ -63,10 +57,9 @@ public:
   /** execute the main function */
   virtual bool execute() = 0;
 
-  std::string &getTitle();
+  std::string& getTitle();
 
 protected:
-
   ///stack of xml document
   std::stack<Libxml2Document*> XmlDocStack;
 
@@ -81,5 +74,5 @@ protected:
   ///close the current document
   void popDocument();
 };
-}
+} // namespace qmcplusplus
 #endif

@@ -1,4 +1,4 @@
- //////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
@@ -19,7 +19,6 @@
 
 namespace qmcplusplus
 {
-
 /** \brief Provides consistent set of CUDA types 
  * 
  *  Multiple classes need to share the same set of types
@@ -61,32 +60,32 @@ class CUDATypes;
 // Partial Specializations
 // Real
 template<typename P, int DIM>
-class CUDATypes<P, P, DIM>  final
+class CUDATypes<P, P, DIM> final
 {
 public:
-  using RealType = P;
+  using RealType    = P;
   using ComplexType = std::complex<P>;
-  using GradType = TinyVector<P,DIM>;
-  using ValueType = P;
-  using PosType = TinyVector<P,DIM>;
+  using GradType    = TinyVector<P, DIM>;
+  using ValueType   = P;
+  using PosType     = TinyVector<P, DIM>;
 };
 
 // Complex
 template<typename P, int DIM>
-class CUDATypes<P, std::complex<P>, DIM>  final
+class CUDATypes<P, std::complex<P>, DIM> final
 {
 public:
-  using RealType = P;
+  using RealType    = P;
   using ComplexType = std::complex<P>;
-  using GradType = TinyVector<std::complex<P>,DIM>;
-  using ValueType = std::complex<P>;
-  using PosType = TinyVector<P,DIM>;
+  using GradType    = TinyVector<std::complex<P>, DIM>;
+  using ValueType   = std::complex<P>;
+  using PosType     = TinyVector<P, DIM>;
 };
 
 // Right now we build only one CUDA precision at a time.
 // This was set once in QMCTraits then inherited everywhere
 // The CUDAGlobalTypes reproduces this behavior
 using CUDAGlobalTypes = QMCTypes<CUDA_PRECISION, OHMMS_DIM>;
- 
-}
+
+} // namespace qmcplusplus
 #endif

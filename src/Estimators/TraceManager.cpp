@@ -9,9 +9,6 @@
 //
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #if !defined(DISABLE_TRACEMANAGER)
@@ -22,11 +19,9 @@
 
 namespace qmcplusplus
 {
-
 double TraceManager::trace_tol = 1e-8;
 
 }
 
 
 #endif
-

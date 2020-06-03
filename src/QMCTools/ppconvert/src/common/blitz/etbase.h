@@ -30,20 +30,18 @@
 BZ_NAMESPACE(blitz)
 
 template<typename T>
-class ETBase { 
+class ETBase
+{
 public:
-    ETBase() 
-    { }
+  ETBase() {}
 
-    ETBase(const ETBase<T>&)
-    { }
-    
-    T& unwrap() { return static_cast<T&>(*this); }
-    
-    const T& unwrap() const { return static_cast<const T&>(*this); }
+  ETBase(const ETBase<T>&) {}
+
+  T& unwrap() { return static_cast<T&>(*this); }
+
+  const T& unwrap() const { return static_cast<const T&>(*this); }
 };
 
 BZ_NAMESPACE_END
 
 #endif // BZ_ETBASE_H
-

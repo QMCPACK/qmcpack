@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -16,243 +16,249 @@
  */
 #ifndef QMCPLUSPLUS_VECTOR_SOA_H
 #define QMCPLUSPLUS_VECTOR_SOA_H
-#include <simd/allocator.hpp>
-#include <simd/algorithm.hpp>
-#include <ParticleBase/ParticleAttrib.h>
+
+#include <type_traits>
+#include "simd/allocator.hpp"
+#include "simd/algorithm.hpp"
+#include "OhmmsSoA/PosTransformer.h"
+#include "Particle/ParticleBase/ParticleAttrib.h"
 
 namespace qmcplusplus
 {
-  /** SoA adaptor class for ParticleAttrib<TinyVector<T,D> >
-   * @tparm T data type, float, double, complex<float>, complex<double>
-   * @tparm Alloc memory allocator
+/** SoA adaptor class for ParticleAttrib<TinyVector<T,D> >
+ * @tparm T data type, float, double, complex<float>, complex<double>
+ * @tparm Alloc memory allocator
+ */
+template<typename T, unsigned D, typename Alloc = aligned_allocator<T>>
+struct VectorSoaContainer
+{
+  using AoSElement_t = TinyVector<T, D>;
+  using Element_t    = T;
+
+  ///default constructor
+  VectorSoaContainer() : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr) {}
+
+  /** constructor for a view, attach to pre-allocated data
+   * @param ptr new myData
+   * @param n new nLocal
+   * @param n_padded new nGhosts
    */
-  template<typename T, unsigned D, size_t ALIGN = QMC_CLINE, typename Alloc=Mallocator<T, ALIGN>>
-    struct VectorSoaContainer
+  VectorSoaContainer(T* ptr, size_t n, size_t n_padded) : nLocal(n), nGhosts(n_padded), nAllocated(0), myData(ptr) {}
+
+  ///destructor
+  ~VectorSoaContainer() { free(); }
+
+  ///default copy constructor
+  VectorSoaContainer(const VectorSoaContainer& in) : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr)
+  {
+    resize(in.nLocal);
+    std::copy_n(in.myData, nGhosts * D, myData);
+  }
+
+  ///default copy operator
+  VectorSoaContainer& operator=(const VectorSoaContainer& in)
+  {
+    if (myData != in.myData)
     {
-      using Type_t   =TinyVector<T,D>;
-      using Element_t=T;
-      /////alias to ParticleAttrib<T1,D>
-      //template <class T1> using PosArray = ParticleAttrib<TinyVector<T1,D> >;
-      ///number of elements
-      size_t nLocal;
-      ///number of elements + padded
-      size_t nGhosts;
-      ///number of elements allocated by myAlloc
-      size_t nAllocated;
-      ///pointer: what type????
-      T* myData;
-      ///allocator
-      Alloc myAlloc;
-      ///default constructor
-      VectorSoaContainer() 
-      {
-        setDefaults();
-      }
-      ///destructor
-      ~VectorSoaContainer() 
-      { 
-        if(nAllocated>0) 
-          myAlloc.deallocate(myData,nAllocated);
-      }
+      resize(in.nLocal);
+      std::copy_n(in.myData, nGhosts * D, myData);
+    }
+    return *this;
+  }
 
-      ///default copy constructor
-      VectorSoaContainer(const VectorSoaContainer& in)
-      {
-        setDefaults();
-        resize(in.nLocal);
-        std::copy_n(in.myData,nGhosts*D,myData);
-      }
+  ///move constructor
+  VectorSoaContainer(VectorSoaContainer&& in)
+      : nLocal(in.nLocal), nGhosts(in.nGhosts), nAllocated(in.nAllocated), myData(std::move(in.myData))
+  {
+    in.myData     = nullptr;
+    in.nAllocated = 0;
+    in.nLocal     = 0;
+    in.nGhosts    = 0;
+  }
 
-      ///default copy operator
-      VectorSoaContainer& operator=(const VectorSoaContainer& in)
-      {
-        if(myData!=in.myData) 
-        {
-          resize(in.nLocal);
-          std::copy_n(in.myData,nGhosts*D,myData);
-        }
-        return *this;
-      }
+  /// constructor with size n without initialization
+  explicit VectorSoaContainer(size_t n) : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr) { resize(n); }
 
-      ///move constructor
-      VectorSoaContainer(VectorSoaContainer&& in): nLocal(in.nLocal),nGhosts(in.nGhosts)
-      { 
-        nAllocated=in.nAllocated;
-        myData=in.myData;
-        myAlloc=std::move(in.myAlloc);
-        in.myData=nullptr;
-        in.nAllocated=0;
-      }
+  /** constructor with ParticleAttrib<T1,D> */
+  template<typename T1>
+  VectorSoaContainer(const ParticleAttrib<TinyVector<T1, D>>& in)
+      : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr)
+  {
+    resize(in.size());
+    copyIn(in);
+  }
 
-      /** constructor with size n  without initialization
+  template<typename T1>
+  VectorSoaContainer& operator=(const ParticleAttrib<TinyVector<T1, D>>& in)
+  {
+    resize(in.size());
+    copyIn(in);
+    return *this;
+  }
+
+  /** need A=0.0;
        */
-      explicit VectorSoaContainer(size_t n)
-      { setDefaults(); resize(n); }
+  template<typename T1>
+  VectorSoaContainer& operator=(T1 in)
+  {
+    std::fill(myData, myData + nGhosts * D, static_cast<T>(in));
+    return *this;
+  }
 
-      /** constructor with ParticleAttrib<T1,D> */
-      template<typename T1>
-      VectorSoaContainer(const ParticleAttrib<TinyVector<T1,D> >& in)
-      {
-        setDefaults();
-        resize(in.size());
-        copyIn(in);
-      }
+  /** resize myData
+   * @param n nLocal
+   *
+   * nAllocated is used to ensure no memory leak
+   */
+  __forceinline void resize(size_t n)
+  {
+    static_assert(std::is_same<Element_t, typename Alloc::value_type>::value,
+                  "VectorSoaContainer and Alloc data types must agree!");
+    if (isRefAttached())
+      throw std::runtime_error("Resize not allowed on VectorSoaContainer constructed by initialized memory.");
 
-      template<typename T1>
-      VectorSoaContainer& operator=(const ParticleAttrib<TinyVector<T1,D> >& in)
-      {
-        if(nLocal!=in.size()) resize(in.size());
-        copyIn(in);
-        return *this;
-      }
+    size_t n_padded = getAlignedSize<T, Alloc::alignment>(n);
 
-      /** need A=0.0;
-       */
-      template<typename T1>
-      VectorSoaContainer& operator=(T1 in)
-      {
-        std::fill(myData,myData+nGhosts*D,static_cast<T>(in));
-        return *this;
-      }
+    if (n_padded * D > nAllocated)
+    {
+      if (nAllocated)
+        myAlloc.deallocate(myData, nAllocated);
+      nLocal     = n;
+      nGhosts    = n_padded;
+      nAllocated = nGhosts * D;
+      myData     = myAlloc.allocate(nAllocated);
+    }
+    else
+    {
+      nLocal  = n;
+      nGhosts = n_padded;
+    }
+  }
 
-      ///initialize the data members 
-      __forceinline void setDefaults()
-      {
-        nLocal=0; nGhosts=0;nAllocated=0;myData=nullptr;
-      }
+  ///clear
+  inline void clear()
+  {
+    nLocal  = 0;
+    nGhosts = 0;
+  }
 
-      /** resize myData
-       * @param n nLocal
-       *
-       * nAllocated is used to ensure no memory leak
-       */
-      __forceinline void resize(size_t n)
-      {
-        if(nAllocated) myAlloc.deallocate(myData,nAllocated);
-        nLocal=n;
-        nGhosts=getAlignedSize<T, ALIGN>(n);
-        nAllocated=nGhosts*D;
-        myData=myAlloc.allocate(nAllocated);
-      }
+  /// free allocated memory and clear status variables
+  __forceinline void free()
+  {
+    if (nAllocated)
+      myAlloc.deallocate(myData, nAllocated);
+    nLocal     = 0;
+    nGhosts    = 0;
+    nAllocated = 0;
+    myData     = nullptr;
+  }
 
-      /** free myData
-       */
-      __forceinline void free()
-      {
-        if(nAllocated) myAlloc.deallocate(myData,nAllocated);
-        nLocal=0;
-        nGhosts=0;
-        nAllocated=0;
-        myData=nullptr;
-      }
+  /** attach to pre-allocated data
+   * @param n new nLocal
+   * @param n_padded new nGhosts
+   * @param ptr new myData
+   *
+   * To attach to existing memory, currently owned memory must be freed before calling attachReference
+   */
+  __forceinline void attachReference(size_t n, size_t n_padded, T* ptr)
+  {
+    if (nAllocated)
+      throw std::runtime_error("Pointer attaching is not allowed on VectorSoaContainer with allocated memory.");
+    nLocal  = n;
+    nGhosts = n_padded;
+    myData  = ptr;
+  }
 
-      /** attach to pre-allocated data
-       * @param n new nLocal 
-       * @param n_padded new nGhosts
-       * @param ptr new myData
-       *
-       * Free existing memory and reset the internal variables
-       */
-      __forceinline void attachReference(size_t n, size_t n_padded, T* ptr)
-      {
-        if(nAllocated) throw std::runtime_error("Pointer attaching is not allowed on VectorSoaContainer with allocated memory.");
-        nAllocated=0;
-        nLocal=n;
-        nGhosts=n_padded;
-        myData=ptr;
-      }
+  ///return the physical size
+  __forceinline size_t size() const { return nLocal; }
+  ///return the physical size
+  __forceinline size_t capacity() const { return nGhosts; }
 
-      ///return the physical size
-      __forceinline size_t size() const { return nLocal;}
-      ///return the physical size
-      __forceinline size_t capacity() const { return nGhosts;}
-
-      /** AoS to SoA : copy from ParticleAttrib<>
+  /** AoS to SoA : copy from ParticleAttrib<>
        *
        * The same sizes are assumed.
        */
-      template<typename T1>
-      void copyIn(const ParticleAttrib<TinyVector<T1,D> >& in)
-      {
-        //if(nLocal!=in.size()) resize(in.size());
-        PosAoS2SoA(nLocal,D,reinterpret_cast<const T1*>(in.first_address()),D,myData,nGhosts);
-      }
+  template<typename T1>
+  void copyIn(const ParticleAttrib<TinyVector<T1, D>>& in)
+  {
+    //if(nLocal!=in.size()) resize(in.size());
+    PosAoS2SoA(nLocal, D, reinterpret_cast<const T1*>(in.first_address()), D, myData, nGhosts);
+  }
 
-      /** SoA to AoS : copy to ParticleAttrib<>
+  /** SoA to AoS : copy to ParticleAttrib<>
        *
        * The same sizes are assumed.
        */
-      template<typename T1>
-      void copyOut(ParticleAttrib<TinyVector<T1,D> >& out) const
-      {
-        PosSoA2AoS(nLocal,D,myData,nGhosts, reinterpret_cast<T1*>(out.first_address()),D);
-      }
+  template<typename T1>
+  void copyOut(ParticleAttrib<TinyVector<T1, D>>& out) const
+  {
+    PosSoA2AoS(nLocal, D, myData, nGhosts, reinterpret_cast<T1*>(out.first_address()), D);
+  }
 
-      /** return TinyVector<T,D>
+  /** return TinyVector<T,D>
        */
-      __forceinline const Type_t operator[](size_t i) const
-      {
-        return Type_t(myData+i,nGhosts); 
-      }
+  __forceinline const AoSElement_t operator[](size_t i) const { return AoSElement_t(myData + i, nGhosts); }
 
-      ///helper class for operator ()(size_t i) to assign a value
-      struct Accessor
-      {
-        size_t M;
-        T* _base;
-        __forceinline Accessor(T* a, size_t ng) : _base(a), M(ng){}
-        template<typename T1>
-        __forceinline Accessor& operator=(const TinyVector<T1,D>& rhs)
-        {
-          #pragma unroll
-          for(size_t i=0; i<D; ++i) *(_base+M*i)=rhs[i];
-          return *this;
-        }
+  ///helper class for operator ()(size_t i) to assign a value
+  struct Accessor
+  {
+    T* _base;
+    size_t M;
+    __forceinline Accessor(T* a, size_t ng) : _base(a), M(ng) {}
+    template<typename T1>
+    __forceinline Accessor& operator=(const TinyVector<T1, D>& rhs)
+    {
+#pragma unroll
+      for (size_t i = 0; i < D; ++i)
+        *(_base + M * i) = rhs[i];
+      return *this;
+    }
 
-        /** assign value */
-        template<typename T1>
-        __forceinline Accessor& operator=(T1 rhs)
-        {
-          #pragma unroll
-          for(size_t i=0; i<D; ++i) *(_base+M*i)=rhs;
-          return *this;
-        }
-      };
+    /** assign value */
+    template<typename T1>
+    __forceinline Accessor& operator=(T1 rhs)
+    {
+#pragma unroll
+      for (size_t i = 0; i < D; ++i)
+        *(_base + M * i) = rhs;
+      return *this;
+    }
+  };
 
-      /** access operator for assignment of the i-th value
+  /** access operator for assignment of the i-th value
        *
        * Use for (*this)[i]=TinyVector<T,D>;
        */
-      __forceinline Accessor operator()(size_t i) 
-      {
-        return Accessor(myData+i,nGhosts);
-      }
-      ///return the base
-      __forceinline T* data() { return myData;}
-      ///return the base
-      __forceinline const T* data() const { return myData;}
-      ///return the pointer of the i-th components
-      __forceinline T* restrict data(size_t i) { return myData+i*nGhosts;}
-      ///return the const pointer of the i-th components
-      __forceinline const T* restrict data(size_t i) const { return myData+i*nGhosts;}
-      ///return the end
-      __forceinline T* end() { return myData+D*nGhosts;}
-      ///return the end
-      __forceinline const T* end() const { return myData+D*nGhosts;}
+  __forceinline Accessor operator()(size_t i) { return Accessor(myData + i, nGhosts); }
+  ///return the base
+  __forceinline T* data() { return myData; }
+  ///return the base
+  __forceinline const T* data() const { return myData; }
+  ///return the pointer of the i-th components
+  __forceinline T* restrict data(size_t i) { return myData + i * nGhosts; }
+  ///return the const pointer of the i-th components
+  __forceinline const T* restrict data(size_t i) const { return myData + i * nGhosts; }
+  ///return the end
+  __forceinline T* end() { return myData + D * nGhosts; }
+  ///return the end
+  __forceinline const T* end() const { return myData + D * nGhosts; }
 
-      /** serialization function */
-      template<class Archive>
-        void serialize(Archive & ar, const unsigned int version)
-        {
-          //ar & m_data;
-          ar & nLocal & nGhosts & myData;
-        }
-    };
+private:
+  /// number of elements
+  size_t nLocal;
+  /// number of elements + padded
+  size_t nGhosts;
+  /// number of elements allocated by myAlloc
+  size_t nAllocated;
+  /// pointer: what type????
+  T* myData;
+  /// allocator
+  Alloc myAlloc;
 
-//Incorrect: provide wrapper class
-//BOOST_CLASS_TRACKING(Pos3DSoA<double,3>, boost::serialization::track_never)
-//BOOST_CLASS_TRACKING(Pos3DSoA<float,3>, boost::serialization::track_never)
-}
+  /// return true if memory is not owned by the container but from outside.
+  inline bool isRefAttached() const { return nGhosts * D > nAllocated; }
+};
+
+} // namespace qmcplusplus
 
 #endif
-

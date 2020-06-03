@@ -35,26 +35,17 @@
 /* Enable OpenMP parallelization. */
 #cmakedefine ENABLE_OPENMP @ENABLE_OPENMP@
 
-/* Define to 1 if you have the `hdf5' library (-lhdf5). */
-#cmakedefine HAVE_LIBHDF5 @HAVE_LIBHDF5@
+/* Enable OpenMP offload. */
+#cmakedefine ENABLE_OFFLOAD @ENABLE_OFFLOAD@
 
-/* Define to 1 if you want to use parallel hdf5 for frequent output */
-#cmakedefine ENABLE_PHDF5 @ENABLE_PHDF5@
-
-/* Define to 1 if you have the `boost' library */
-#cmakedefine HAVE_LIBBOOST @HAVE_LIBBOOST@
-
-/* Define to 1 if you have the `sprng' library (-lsprng). */
-#cmakedefine HAVE_LIBSPRNG @HAVE_LIBSPRNG@
+#ifdef ENABLE_OFFLOAD
+  #define PRAGMA_OFFLOAD(x) _Pragma(x)
+#else
+  #define PRAGMA_OFFLOAD(x)
+#endif
 
 /* Define to 1 if you have the `blitz' library */
 #cmakedefine HAVE_LIBBLITZ @HAVE_LIBBLITZ@
-
-/* Define to 1 if you have libxml2 */
-#cmakedefine HAVE_LIBXML2 @HAVE_LIBXML2@
-
-/* Define to 1 if you have fftw */
-#cmakedefine HAVE_LIBFFTW @HAVE_LIBFFTW@
 
 /* Define to 1 if you have libxml++ */
 #cmakedefine HAVE_LIBXMLPP @HAVE_LIBXMLPP@
@@ -64,9 +55,6 @@
 
 /* Define to 1 if you have MPI library */
 #cmakedefine HAVE_MPI @HAVE_MPI@
-
-/* Define to 1 if you have OOMPI library */
-#cmakedefine HAVE_OOMPI @HAVE_OOMPI@
 
 /* Define the physical dimension of appliation. */
 #cmakedefine OHMMS_DIM @OHMMS_DIM@
@@ -86,20 +74,8 @@
 /* Define to 1 if complex wavefunctions are used */
 #cmakedefine QMC_COMPLEX @QMC_COMPLEX@
 
-/* Define if the code is specialized for orthorhombic supercell */
-#define OHMMS_ORTHO @OHMMS_ORTHO@
-
-/* Define the index of the walker iterator. NOT USED */
-#cmakedefine QMC_FASTWALKER @QMC_FASTWALKER@
-
 /* Define if sincos function exists */
 #cmakedefine HAVE_SINCOS @HAVE_SINCOS@
-
-/* Define if iszero function exists */
-#cmakedefine HAVE_ISZERO @HAVE_ISZERO@
-
-/* Define if einspline lib exists */
-#cmakedefine HAVE_EINSPLINE @HAVE_EINSPLINE@
 
 /* Define if external einspline is found */
 #cmakedefine HAVE_EINSPLINE_EXT @HAVE_EINSPLINE_EXT@
@@ -136,34 +112,22 @@
 /* Define if unistd.h exists */
 #cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
-/* Define if c variable array support exists */
-#cmakedefine HAVE_C_VARARRAYS @HAVE_C_VARARRAYS@
-
-/* Prefetch loop lead distance  */
-#cmakedefine PREFETCH_AHEAD @PREFETCH_AHEAD@
-
-/* Use SSE prefetch  */
-#cmakedefine USE_PREFETCH @USE_PREFETCH@
-
-/* Define the alignment of SIMD in byte*/
-#cmakedefine SIMD_ALIGNMENT @SIMD_ALIGNMENT@
-
 #endif /* HAVE_EINSPLINE_EXT */
 
-/* Find mkl library */
-#cmakedefine HAVE_MKL @HAVE_MKL@
-
-/* Find mkl/vml library */
-#cmakedefine HAVE_MKL_VML @HAVE_MKL_VML@
-
-/* Find essl library */
+/* Find ESSL library */
 #cmakedefine HAVE_ESSL @HAVE_ESSL@
 
-/* Fund acml library */
+/* Find acml library */
 #cmakedefine HAVE_ACML @HAVE_ACML@
 
 /* Using CUDA for GPU execution */
 #cmakedefine QMC_CUDA @QMC_CUDA@
+
+/* Using CUDA for GPU execution, next generation */
+#cmakedefine ENABLE_CUDA @ENABLE_CUDA@
+
+/* Using boost::stacktrace */ 
+#cmakedefine ENABLE_STACKTRACE @ENABLE_STACKTRACE@
 
 /* Setting base precision for CUDA kernels */
 #cmakedefine CUDA_PRECISION @CUDA_PRECISION@
@@ -173,6 +137,9 @@
 
 /* For AFQMC compilation  */
 #cmakedefine BUILD_AFQMC @BUILD_AFQMC@
+
+/* For AFQMC compilation  */
+#cmakedefine BUILD_AFQMC_WITH_NCCL @BUILD_AFQMC_WITH_NCCL@
 
 /* For FCIQMC compilation  */
 #cmakedefine BUILD_FCIQMC @BUILD_FCIQMC@
@@ -186,7 +153,7 @@
 #cmakedefine REMOVE_TRACEMANAGER @REMOVE_TRACEMANAGER@
 
 /* Use SOA version of AA distance table */
-#cmakedefine ENABLE_SOA  @ENABLE_SOA@
+#cmakedefine ENABLE_SOA @ENABLE_SOA@
 
 #if defined(__cplusplus)
   #if defined(__INTEL_COMPILER)
@@ -227,6 +194,9 @@
   #define nullptr NULL
   #endif
 #endif
+
+/* Fixed Size Walker Properties */
+#cmakedefine WALKER_MAX_PROPERTIES @WALKER_MAX_PROPERTIES@
 
 /* Internal timers */
 #cmakedefine ENABLE_TIMERS @ENABLE_TIMERS@

@@ -53,7 +53,7 @@ namespace qmcplusplus
       aligned_vector<hContainer_type*> hess;
 
       ///default constructor
-      einspline_spo():nBlocks(0),nSplines(0),firstBlock(0),lastBlock(0), Owner(false){}
+      einspline_spo(): nBlocks(0), firstBlock(0), lastBlock(0), nSplines(0), Owner(false){}
       ///disable copy constructor 
       einspline_spo(const einspline_spo& in)=delete;
       ///disable copy operator
@@ -145,7 +145,6 @@ namespace qmcplusplus
         if(einsplines.empty())
         {
           Owner = true;
-          TinyVector<int,3> ng(nx,ny,nz);
           pos_type start(0);
           pos_type end(1);
           einsplines.resize(nBlocks);
@@ -153,14 +152,30 @@ namespace qmcplusplus
           Array<T,3> data(nx,ny,nz);
           std::fill(data.begin(),data.end(),T());
           myrandom.generate_uniform(data.data(),data.size());
+
+          // prepare spline grid specs
+          Ugrid grid[3];
+          grid[0].start = grid[1].start = grid[2].start = 0.0;
+          grid[0].end = grid[1].end = grid[2].end = 1.0;
+          grid[0].num   = nx;
+          grid[1].num   = ny;
+          grid[2].num   = nz;
+          typename bspline_traits<T, 3>::BCType BC[3];
+          BC[0].lCode = BC[0].rCode = PERIODIC;
+          BC[1].lCode = BC[1].rCode = PERIODIC;
+          BC[2].lCode = BC[2].rCode = PERIODIC;
+
+          BsplineAllocator<T> mAllocator;
+          UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], BC[0], BC[1], BC[2], data.data());
           for(int i=0; i<nBlocks; ++i)
           {
-            einsplines[i]=new spline_type;
-            einsplines[i]->create(start,end,ng,PERIODIC,nSplinesPerBlock);
+            einsplines[i] = new spline_type;
+            einsplines[i]->create(grid, BC, nSplinesPerBlock);
             if(init_random)
               for(int j=0; j < nSplinesPerBlock; ++j)
-                einsplines[i]->set(j,data);
+                einsplines[i]->copy_spline(aspline, j);
           }
+          mAllocator.destroy(aspline);
         }
         resize();
       }
@@ -170,7 +185,7 @@ namespace qmcplusplus
       {
         auto u=Lattice.toUnit(p);
         for(int i=0; i<nBlocks; ++i)
-          spline2::evaluate3d(einsplines[i]->spline_m,u,*psi[i]);
+          spline2::evaluate3d(einsplines[i]->getSplinePtr(), u, *psi[i]);
       }
 
       /** evaluate psi */
@@ -179,7 +194,7 @@ namespace qmcplusplus
         auto u=Lattice.toUnit(p);
 #pragma omp for nowait
         for(int i=0; i<nBlocks; ++i)
-          spline2::evaluate3d(einsplines[i]->spline_m,u,*psi[i]);
+          spline2::evaluate3d(einsplines[i]->getSplinePtr(), u, *psi[i]);
       }
 
 
@@ -188,7 +203,7 @@ namespace qmcplusplus
       {
         auto u=Lattice.toUnit(p);
         for(int i=0; i<nBlocks; ++i)
-          spline2::evaluate3d_vgl(einsplines[i]->spline_m,u,*psi[i],*grad[i],*hess[i]);
+          spline2::evaluate3d_vgl(einsplines[i]->getSplinePtr(), u, *psi[i], *grad[i], *hess[i]);
       }
 
       /** evaluate psi, grad and lap */
@@ -197,7 +212,7 @@ namespace qmcplusplus
         auto u=Lattice.toUnit(p);
 #pragma omp for nowait
         for(int i=0; i<nBlocks; ++i)
-          spline2::evaluate3d_vgl(einsplines[i]->spline_m,u,*psi[i],*grad[i],*hess[i]);
+          spline2::evaluate3d_vgl(einsplines[i]->getSplinePtr(),u,*psi[i],*grad[i],*hess[i]);
       }
 
       /** evaluate psi, grad and hess */
@@ -205,7 +220,7 @@ namespace qmcplusplus
       {
         auto u=Lattice.toUnit(p);
         for(int i=0; i<nBlocks; ++i)
-          spline2::evaluate3d_vgh(einsplines[i]->spline_m,u,*psi[i],*grad[i],*hess[i]);
+          spline2::evaluate3d_vgh(einsplines[i]->getSplinePtr(),u,*psi[i],*grad[i],*hess[i]);
       }
 
       /** evaluate psi, grad and hess */
@@ -214,7 +229,7 @@ namespace qmcplusplus
         auto u=Lattice.toUnit(p);
 #pragma omp for nowait
         for(int i=0; i<nBlocks; ++i)
-          spline2::evaluate3d_vgh(einsplines[i]->spline_m,u,*psi[i],*grad[i],*hess[i]);
+          spline2::evaluate3d_vgh(einsplines[i]->getSplinePtr(),u,*psi[i],*grad[i],*hess[i]);
       }
 
       void print(std::ostream& os)

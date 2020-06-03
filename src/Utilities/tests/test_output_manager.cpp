@@ -12,10 +12,10 @@
 
 #include "catch.hpp"
 
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 
-namespace qmcplusplus {
-
+namespace qmcplusplus
+{
 // redirect streams to stringstream for testing
 static std::ostringstream summary_out;
 static std::ostringstream app_out;
@@ -42,7 +42,6 @@ void init_string_output()
 
 TEST_CASE("OutputManager basic", "[utilities]")
 {
-
   OutputManagerClass om;
 
   // Low verbosity
@@ -63,7 +62,6 @@ TEST_CASE("OutputManager basic", "[utilities]")
 
 TEST_CASE("OutputManager output", "[utilities]")
 {
-
   init_string_output();
 
   // Low verbosity
@@ -147,4 +145,4 @@ TEST_CASE("OutputManager shutoff", "[utilities]")
   REQUIRE(debug_out.str() == "");
 }
 
-}
+} // namespace qmcplusplus

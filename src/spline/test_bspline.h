@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_TEST_SPLINE_H
@@ -27,21 +25,21 @@ namespace qmcplusplus
 template<typename T1, typename T2>
 bool is_same(int n, const T1* restrict a, const T1* restrict b, T2 eps)
 {
-  bool yes=true;
-  T2 diff=0.0;
-  for(int i=0; i<n; i++)
+  bool yes = true;
+  T2 diff  = 0.0;
+  for (int i = 0; i < n; i++)
   {
     //T2 x=std::abs((a[i]-b[i])/a[i]);
-    T2 x=std::abs(a[i]-b[i]);
-    diff=std::max(diff,x);
-    if(x>eps)
-      yes=false;
+    T2 x = std::abs(a[i] - b[i]);
+    diff = std::max(diff, x);
+    if (x > eps)
+      yes = false;
     //diff=std::max(diff,std::abs((a[i]-b[i])/a[i]));
     ////if(std::abs(a[i]-b[i])>eps) yes=false;
     //if(std::abs(1-b[i]/a[i])>eps) yes=false;
   }
-  for(int i=0; i< std::min(n,9); i++)
-    std::cout << i << " " << a[i] << " " << b[i] << " " << a[i]-b[i] << std::endl;
+  for (int i = 0; i < std::min(n, 9); i++)
+    std::cout << i << " " << a[i] << " " << b[i] << " " << a[i] - b[i] << std::endl;
   //cout << "Relative max diff = " << diff << std::endl;
   std::cout << "Absolute max diff = " << diff << std::endl;
   return yes;
@@ -86,47 +84,47 @@ bool is_same(int n, const T1* restrict a, const T1* restrict b, T2 eps)
 template<typename SPE1, typename SPE2>
 void test_bspline(ParticleSet& TargetPtcl, SPE1& a, SPE2& b)
 {
-  int N=a.OrbitalSetSize;
-  SPOSet::RealType eps=static_cast<SPOSet::RealType>(numeric_limits<float>::epsilon( ));
+  int N                = a.OrbitalSetSize;
+  SPOSet::RealType eps = static_cast<SPOSet::RealType>(numeric_limits<float>::epsilon());
   //SPOSet::RealType eps=1e-6;
   SPOSet::ValueVector_t psi_0(N);
   SPOSet::ValueVector_t psi_1(N);
-  SPOSet::GradVector_t  dpsi_0(N);
-  SPOSet::GradVector_t  dpsi_1(N);
+  SPOSet::GradVector_t dpsi_0(N);
+  SPOSet::GradVector_t dpsi_1(N);
   SPOSet::ValueVector_t d2psi_0(N);
   SPOSet::ValueVector_t d2psi_1(N);
-  a.evaluate(TargetPtcl,0,psi_0);
-  b.evaluate(TargetPtcl,0,psi_1);
+  a.evaluate(TargetPtcl, 0, psi_0);
+  b.evaluate(TargetPtcl, 0, psi_1);
   std::cout << "Check values " << std::endl;
-  if(is_same(N,psi_0.data(),psi_1.data(),eps))
+  if (is_same(N, psi_0.data(), psi_1.data(), eps))
     std::cout << "Value evaluation Success" << std::endl;
   else
     std::cout << "Value evaluation Failed" << std::endl;
   std::cout << std::endl << "Check VGL " << std::endl;
-  a.evaluate(TargetPtcl,0,psi_0,dpsi_0,d2psi_0);
-  b.evaluate(TargetPtcl,0,psi_1,dpsi_1,d2psi_1);
-  if(is_same(N,psi_0.data(),psi_1.data(),eps))
+  a.evaluate(TargetPtcl, 0, psi_0, dpsi_0, d2psi_0);
+  b.evaluate(TargetPtcl, 0, psi_1, dpsi_1, d2psi_1);
+  if (is_same(N, psi_0.data(), psi_1.data(), eps))
     std::cout << "VGL Value evaluation Success" << std::endl;
   else
     std::cout << "VGL Value evaluation Failed" << std::endl;
-  if(is_same(N*3,&(dpsi_0[0][0]),&(dpsi_1[0][0]),eps))
+  if (is_same(N * 3, &(dpsi_0[0][0]), &(dpsi_1[0][0]), eps))
     std::cout << "VGL Grad evaluation Success" << std::endl;
   else
     std::cout << "VGL Grad evaluation Failed" << std::endl;
-  if(is_same(N,d2psi_0.data(),d2psi_1.data(),eps))
+  if (is_same(N, d2psi_0.data(), d2psi_1.data(), eps))
     std::cout << "VGL Lap evaluation Success" << std::endl;
   else
     std::cout << "VGL Lap evaluation Failed" << std::endl;
-  SPOSet::ValueMatrix_t psiM_0(N,N);
-  SPOSet::ValueMatrix_t psiM_1(N,N);
-  SPOSet::GradMatrix_t  dpsiM_0(N,N);
-  SPOSet::GradMatrix_t  dpsiM_1(N,N);
-  SPOSet::ValueMatrix_t d2psiM_0(N,N);
-  SPOSet::ValueMatrix_t d2psiM_1(N,N);
+  SPOSet::ValueMatrix_t psiM_0(N, N);
+  SPOSet::ValueMatrix_t psiM_1(N, N);
+  SPOSet::GradMatrix_t dpsiM_0(N, N);
+  SPOSet::GradMatrix_t dpsiM_1(N, N);
+  SPOSet::ValueMatrix_t d2psiM_0(N, N);
+  SPOSet::ValueMatrix_t d2psiM_1(N, N);
   std::cout << std::endl << " evaluate_notranspose " << std::endl;
-  a.evaluate_notranspose(TargetPtcl,0,N,psiM_0,dpsiM_0,d2psiM_0);
-  b.evaluate_notranspose(TargetPtcl,0,N,psiM_1,dpsiM_1,d2psiM_1);
-  if(is_same(N*N,psiM_0.data(),psiM_1.data(),eps))
+  a.evaluate_notranspose(TargetPtcl, 0, N, psiM_0, dpsiM_0, d2psiM_0);
+  b.evaluate_notranspose(TargetPtcl, 0, N, psiM_1, dpsiM_1, d2psiM_1);
+  if (is_same(N * N, psiM_0.data(), psiM_1.data(), eps))
     std::cout << "Psi Success " << std::endl;
   else
     std::cout << "Psi Failed!!! " << std::endl;
@@ -134,39 +132,39 @@ void test_bspline(ParticleSet& TargetPtcl, SPE1& a, SPE2& b)
   //  std::cout << "dPsi Success " << std::endl;
   //else
   //  std::cout << "dPsi Failed!!! " << std::endl;
-  if(is_same(N*N,d2psiM_0.data(),d2psiM_1.data(),eps))
+  if (is_same(N * N, d2psiM_0.data(), d2psiM_1.data(), eps))
     std::cout << "d2Psi Success " << std::endl;
   else
     std::cout << "d2Psi Failed!!! " << std::endl;
   Timer t;
   t.restart();
-  for(int l=0; l<100; ++l)
-    for(int j=0; j<TargetPtcl.getTotalNum(); ++j)
-      a.evaluate(TargetPtcl,j,psi_0);
+  for (int l = 0; l < 100; ++l)
+    for (int j = 0; j < TargetPtcl.getTotalNum(); ++j)
+      a.evaluate(TargetPtcl, j, psi_0);
   std::cout << "ELAPSED VALUE DOUBLE = " << t.elapsed() << std::endl;
   t.restart();
-  for(int l=0; l<100; ++l)
-    for(int j=0; j<TargetPtcl.getTotalNum(); ++j)
-      b.evaluate(TargetPtcl,j,psi_0);
+  for (int l = 0; l < 100; ++l)
+    for (int j = 0; j < TargetPtcl.getTotalNum(); ++j)
+      b.evaluate(TargetPtcl, j, psi_0);
   std::cout << "ELAPSED VALUE NEW = " << t.elapsed() << std::endl;
   t.restart();
-  for(int l=0; l<100; ++l)
-    for(int j=0; j<TargetPtcl.getTotalNum(); ++j)
-      a.evaluate(TargetPtcl,j,psi_0,dpsi_0,d2psi_0);
+  for (int l = 0; l < 100; ++l)
+    for (int j = 0; j < TargetPtcl.getTotalNum(); ++j)
+      a.evaluate(TargetPtcl, j, psi_0, dpsi_0, d2psi_0);
   std::cout << "ELAPSED VGL DOUBLE = " << t.elapsed() << std::endl;
   t.restart();
-  for(int l=0; l<100; ++l)
-    for(int j=0; j<TargetPtcl.getTotalNum(); ++j)
-      b.evaluate(TargetPtcl,j,psi_1,dpsi_1,d2psi_1);
+  for (int l = 0; l < 100; ++l)
+    for (int j = 0; j < TargetPtcl.getTotalNum(); ++j)
+      b.evaluate(TargetPtcl, j, psi_1, dpsi_1, d2psi_1);
   std::cout << "ELAPSED VGL NEW = " << t.elapsed() << std::endl;
   t.restart();
-  for(int l=0; l<100; ++l)
-    a.evaluate_notranspose(TargetPtcl,0,N,psiM_0,dpsiM_0,d2psiM_0);
+  for (int l = 0; l < 100; ++l)
+    a.evaluate_notranspose(TargetPtcl, 0, N, psiM_0, dpsiM_0, d2psiM_0);
   std::cout << "ELAPSED NOTRANSPOSE = " << t.elapsed() << std::endl;
   t.restart();
-  for(int l=0; l<100; ++l)
-    b.evaluate_notranspose(TargetPtcl,0,N,psiM_0,dpsiM_0,d2psiM_0);
+  for (int l = 0; l < 100; ++l)
+    b.evaluate_notranspose(TargetPtcl, 0, N, psiM_0, dpsiM_0, d2psiM_0);
   std::cout << "ELAPSED NOTRANSPOSE NEW = " << t.elapsed() << std::endl;
 }
-}
+} // namespace qmcplusplus
 #endif

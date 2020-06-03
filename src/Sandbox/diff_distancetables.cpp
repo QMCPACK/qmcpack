@@ -15,7 +15,6 @@
  */
 #include <Configuration.h>
 #include <Particle/ParticleSet.h>
-#include <Particle/DistanceTable.h>
 #include <Particle/DistanceTableData.h>
 #include <OhmmsSoA/VectorSoaContainer.h>
 #include <random/random.hpp>
@@ -90,7 +89,7 @@ int main(int argc, char** argv)
   ions.Lattice.BoxBConds=1;
   ions.Lattice.LR_rc=5;
   tile_cell(ions,tmat,scale);
-  ions.RSoA=ions.R; //this needs to be handled internally
+  ions.setCoordinates(ions.R); //this needs to be handled internally
 
   const int nions=ions.getTotalNum();
   const int nels=count_electrons(ions);
@@ -99,13 +98,13 @@ int main(int argc, char** argv)
   {//create up/down electrons
     els.Lattice.BoxBConds=1;   
     els.Lattice.LR_rc=5;
-    els.Lattice.set(ions.Lattice);
+    els.Lattice = ions.Lattice;
     vector<int> ud(2); ud[0]=nels/2; ud[1]=nels-ud[0];
     els.create(ud);
-    els.R.InUnit=1;
+    els.R.InUnit = PosUnit::Lattice;
     random_th.generate_uniform(&els.R[0][0],nels3);
     els.convert2Cart(els.R); // convert to Cartiesian
-    els.RSoA=els.R; //this needs to be handled internally
+    els.setCoordinates(els.R); //this needs to be handled internally
     els.setName("e");
   }
 
@@ -117,13 +116,13 @@ int main(int argc, char** argv)
 
   ParticleSet::ParticlePos_t Rcopy(els.R);
 
-  DistanceTableData* d_ee=DistanceTable::add(els,DT_SOA);
-  DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
+  const auto& d_ee = els.getDistTable(els.addTable(els, DT_SOA));
+  const auto& d_ie = els.getDistTable(els.addTable(ions, DT_SOA));
 
   RealType Rsim=els.Lattice.WignerSeitzRadius;
 
-  DistanceTableData* d_ee_aos=DistanceTable::add(els_aos,DT_AOS);
-  DistanceTableData* d_ie_aos=DistanceTable::add(ions_aos,els_aos,DT_AOS);
+  const auto& d_ee_aos = els_aos.getDistTable(els_aos.addTable(els_aos, DT_AOS));
+  const auto& d_ie_aos = els_aos.getDistTable(els_aos.addTable(ions_aos, DT_AOS));
 
   //SoA version does not need update if PbyP
   els.update();
@@ -132,30 +131,22 @@ int main(int argc, char** argv)
   //SoA check symmetry
   double sym_err=0.0;
   double sym_all_err=0.0;
-  double sym_disp_err=0.0;
-  double sym_disp_all_err=0.0;
   int nn=0;
   for(int iel=0; iel<nels; ++iel)
     for(int jel=iel+1; jel<nels; ++jel)
     {
-      RealType dref=d_ee_aos->r(nn);
-      RealType dsym=std::abs(d_ee->Distances[jel][iel]-d_ee->Distances[iel][jel]);
-      PosType dr= d_ee->Displacements[jel][iel]+d_ee->Displacements[iel][jel];
-      RealType d2=sqrt(dot(dr,dr));
+      RealType dref=d_ee_aos.r(nn);
+      RealType dsym=std::abs(d_ee.getDistRow(jel)[iel]-d_ee.getDistRow(iel)[jel]);
       sym_all_err += dsym;
-      sym_disp_all_err+=d2;
       if(dref<Rsim)
       {
         sym_err += dsym;
-        sym_disp_err+=d2;
       }
       ++nn;
     }
   cout << "---------------------------------" << endl;
   cout << "AA SoA(upper) - SoA(lower) (ALL) distances     = " << sym_all_err/nn << endl;
-  cout << "AA SoA(upper) + SoA(lower) (ALL) displacements = " << sym_disp_all_err/nn << endl;
   cout << "AA SoA(upper) - SoA(lower) distances     = " << sym_err/nn << endl;
-  cout << "AA SoA(upper) + SoA(lower) displacements = " << sym_disp_err/nn << endl;
   
   ParticlePos_t delta(nels);
   
@@ -166,8 +157,6 @@ int main(int argc, char** argv)
     random_th.generate_normal(&delta[0][0],nels3);
     for(int iel=0; iel<nels; ++iel)
     {
-      els.setActive(iel);    
-      els_aos.setActive(iel);    
 
       PosType dr=sqrttau*delta[iel];
       bool valid_move=els.makeMoveAndCheck(iel,dr); 
@@ -207,7 +196,7 @@ int main(int argc, char** argv)
       RealType r=sqrt(dot(d,d));
       r_err += r;
       if(r > eps) 
-        cerr << "SoA-AoS error " << iat << " "  << els.RSoA[iat] << " " << els_aos.R[iat] << endl;
+        cerr << "SoA-AoS error " << iat << " "  << els.getCoordinates().getAllParticlePos()[iat] << " " << els_aos.R[iat] << endl;
     }
     cout << "Done with the sweep. |els.R-els_aos.R|^2/nels = " << r_err/nels << endl;
   }
@@ -221,9 +210,9 @@ int main(int argc, char** argv)
     for(int iel=0; iel<nels; ++iel)
       for(int jel=iel+1; jel<nels; ++jel)
       {
-        RealType dref=d_ee_aos->r(nn);
-        RealType d= std::abs(d_ee->Distances[jel][iel]-dref);
-        PosType dr= (d_ee->Displacements[jel][iel]+d_ee_aos->dr(nn));
+        RealType dref=d_ee_aos.r(nn);
+        RealType d= std::abs(d_ee.getDistRow(jel)[iel]-dref);
+        PosType dr= (d_ee.getDisplRow(jel)[iel]+d_ee_aos.dr(nn));
         RealType d2=sqrt(dot(dr,dr));
         dist_all_err+=d;
         disp_all_err += d2;
@@ -251,9 +240,9 @@ int main(int argc, char** argv)
     for(int i=0; i<nions; ++i)
       for(int j=0; j<nels; ++j)
       {
-        RealType dref=d_ie_aos->r(nn);
-        RealType d= std::abs(d_ie->Distances[j][i]-dref);
-        PosType dr= (d_ie->Displacements[j][i]+d_ie_aos->dr(nn));
+        RealType dref=d_ie_aos.r(nn);
+        RealType d= std::abs(d_ie.getDistRow(j)[i]-dref);
+        PosType dr= (d_ie.getDisplRow(j)[i]+d_ie_aos.dr(nn));
         RealType d2=sqrt(dot(dr,dr));
         dist_all_err += d;
         disp_all_err += d2;

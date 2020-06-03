@@ -9,9 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_TOOLS_GAUSSIAN_FCHK_H
@@ -24,12 +21,9 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
 
-class GaussianFCHKParser: public QMCGaussianParserBase,
-  public OhmmsAsciiParser
+class GaussianFCHKParser : public QMCGaussianParserBase, public OhmmsAsciiParser
 {
-
 public:
-
   GaussianFCHKParser();
 
   GaussianFCHKParser(int argc, char** argv);

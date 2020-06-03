@@ -9,8 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_SLOWMT_RANDOM_H
@@ -30,7 +28,6 @@
 template<typename ENG>
 class SimpleRandom
 {
-
 public:
   /// randmon number generator [0,max) where max depends on the generator type
   typedef ENG generator_type;
@@ -43,14 +40,12 @@ public:
   std::string EngineName;
 
   ///default constructor
-  explicit SimpleRandom(uint_type iseed=911, const std::string& aname="mtrand")
-    : ClassName("mtrand"), EngineName(aname),
-      myContext(0), nContexts(1), baseOffset(0), uni(iseed)
-  {
-  }
+  explicit SimpleRandom(uint_type iseed = 911, const std::string& aname = "mtrand")
+      : ClassName("mtrand"), EngineName(aname), myContext(0), nContexts(1), baseOffset(0), uni(iseed)
+  {}
 
 
-  inline ~SimpleRandom() { }
+  inline ~SimpleRandom() {}
 
   /** initialize the generator
    * @param i thread index
@@ -59,74 +54,44 @@ public:
    *
    * Initialize generator with the seed.
    */
-  inline void init(int i, int nstr, int iseed_in, uint_type offset=1)
+  inline void init(int i, int nstr, int iseed_in, uint_type offset = 1)
   {
-    uint_type baseSeed=iseed_in;
-    myContext=i;
-    nContexts=nstr;
-    if(iseed_in<=0)
-      baseSeed=make_seed(i,nstr);
-    baseOffset=offset;
+    uint_type baseSeed = iseed_in;
+    myContext          = i;
+    nContexts          = nstr;
+    if (iseed_in <= 0)
+      baseSeed = make_seed(i, nstr);
+    baseOffset = offset;
     uni.seed(baseSeed);
   }
 
   ///get baseOffset
-  inline int offset() const
-  {
-    return baseOffset;
-  }
+  inline int offset() const { return baseOffset; }
   ///assign baseOffset
-  inline int& offset()
-  {
-    return baseOffset;
-  }
+  inline int& offset() { return baseOffset; }
 
   ///assign seed
-  inline void seed(uint_type aseed)
-  {
-    uni.engine().seed(aseed);
-  }
+  inline void seed(uint_type aseed) { uni.engine().seed(aseed); }
 
   /** return a random number [0,1)
    */
-  inline result_type rand()
-  {
-    return uni.rand();
-  }
+  inline result_type rand() { return uni.rand(); }
 
   /** return a random number [0,1)
    */
-  inline result_type operator()()
-  {
-    return uni.rand();
-  }
+  inline result_type operator()() { return uni.rand(); }
 
   /** return a random integer [0,2^32-1]
    */
-  inline uint_type irand()
-  {
-    return uni.randInt();
-  }
+  inline uint_type irand() { return uni.randInt(); }
 
-  inline generator_type& engine()
-  {
-    return uni;
-  }
+  inline generator_type& engine() { return uni; }
 
-  inline int state_size() const
-  {
-    return uni.SAVE;
-  }
+  inline int state_size() const { return uni.SAVE; }
 
-  inline void read(std::istream& rin)
-  {
-    rin >> uni;
-  }
+  inline void read(std::istream& rin) { rin >> uni; }
 
-  inline void write(std::ostream& rout)
-  {
-    rout << uni;
-  }
+  inline void write(std::ostream& rout) { rout << uni; }
 
   inline void save(std::vector<uint_type>& curstate) const
   {
@@ -134,10 +99,7 @@ public:
     uni.save(&curstate[0]);
   }
 
-  inline void load(std::vector<uint_type>& newstate)
-  {
-    uni.load(&newstate[0]);
-  }
+  inline void load(std::vector<uint_type>& newstate) { uni.load(&newstate[0]); }
 
 private:
   ///context number
@@ -150,4 +112,3 @@ private:
   generator_type uni;
 };
 #endif
-

@@ -9,18 +9,15 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /**@file QMCMain.cpp
  * @brief Implments QMCMain operators.
  */
 #include "QMCApp/QMCMain.h"
-#include "QMCApp/ParticleSetPool.h"
-#include "QMCApp/WaveFunctionPool.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "Particle/ParticleSetPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -34,7 +31,6 @@
 
 namespace qmcplusplus
 {
-
 bool QMCMain::executeDebugSection(xmlNodePtr cur)
 {
   app_log() << "QMCMain::executeDebugSection " << std::endl;
@@ -45,15 +41,15 @@ bool QMCMain::executeDebugSection(xmlNodePtr cur)
 
 bool QMCMain::executeCMCSection(xmlNodePtr cur)
 {
-  bool success=true;
+  bool success = true;
   std::string target("ion0");
   OhmmsAttributeSet a;
-  a.add(target,"target");
+  a.add(target, "target");
   a.put(cur);
 
-  MCWalkerConfiguration *ions = ptclPool->getWalkerSet(target);
-  TrialWaveFunction* primaryPsi=psiPool->getPrimary();
-  QMCHamiltonian* primaryH=hamPool->getPrimary();
+  MCWalkerConfiguration* ions   = ptclPool->getWalkerSet(target);
+  TrialWaveFunction* primaryPsi = psiPool->getPrimary();
+  QMCHamiltonian* primaryH      = hamPool->getPrimary();
 
   app_log() << "QMCMain::executeCMCSection moving " << target << " by dummy move." << std::endl;
   //DummyIonMove dummy(*ions,*primaryPsi,*primaryH,*hamPool,*psiPool,qmcDriver);
@@ -62,7 +58,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
   int nat = ions->getTotalNum();
   ParticleSet::ParticlePos_t deltaR(nat);
 
-  makeGaussRandomWithEngine(deltaR,Random); //generate random displaement
+  makeGaussRandomWithEngine(deltaR, Random); //generate random displaement
 
   //update QMC system
   qmcSystem->update();
@@ -70,38 +66,38 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
   double logpsi1 = primaryPsi->evaluateLog(*qmcSystem);
   std::cout << "logpsi1 " << logpsi1 << std::endl;
 
-  double eloc1  = primaryH->evaluate(*qmcSystem);
+  double eloc1 = primaryH->evaluate(*qmcSystem);
   std::cout << "Local Energy " << eloc1 << std::endl;
 
-  for (int i=0; i<primaryH->sizeOfObservables(); i++)
+  for (int i = 0; i < primaryH->sizeOfObservables(); i++)
     app_log() << "  HamTest " << primaryH->getObservableName(i) << " " << primaryH->getObservable(i) << std::endl;
 
-  for(int iat=0; iat<nat; ++iat)
+  for (int iat = 0; iat < nat; ++iat)
   {
-    ions->R[iat]+=deltaR[iat];
+    ions->R[iat] += deltaR[iat];
 
-    ions->update(); //update position and distance table of itself 
+    ions->update(); //update position and distance table of itself
     primaryH->update_source(*ions);
 
     qmcSystem->update();
     double logpsi2 = primaryPsi->evaluateLog(*qmcSystem);
-    double eloc2  = primaryH->evaluate(*qmcSystem);
+    double eloc2   = primaryH->evaluate(*qmcSystem);
 
     std::cout << "\nION " << iat << " " << ions->R[iat] << std::endl;
     std::cout << "logpsi " << logpsi2 << std::endl;
     std::cout << "Local Energy " << eloc2 << std::endl;
-    for (int i=0; i<primaryH->sizeOfObservables(); i++)
+    for (int i = 0; i < primaryH->sizeOfObservables(); i++)
       app_log() << "  HamTest " << primaryH->getObservableName(i) << " " << primaryH->getObservable(i) << std::endl;
 
-    ions->R[iat]-=deltaR[iat];
-    ions->update(); //update position and distance table of itself 
+    ions->R[iat] -= deltaR[iat];
+    ions->update(); //update position and distance table of itself
     primaryH->update_source(*ions);
 
     qmcSystem->update();
     double logpsi3 = primaryPsi->evaluateLog(*qmcSystem);
-    double eloc3  = primaryH->evaluate(*qmcSystem);
+    double eloc3   = primaryH->evaluate(*qmcSystem);
 
-    if(std::abs(eloc1-eloc3)>1e-12)
+    if (std::abs(eloc1 - eloc3) > 1e-12)
     {
       std::cout << "ERROR Energies are different " << std::endl;
     }
@@ -118,4 +114,4 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
   return success;
 }
 
-}
+} // namespace qmcplusplus

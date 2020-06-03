@@ -10,6 +10,7 @@
 
 #include "Utilities/SimpleParser.h"
 
+#include "io/hdf_archive.h"
 #include "AFQMC/config.h"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
@@ -34,8 +35,19 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
         boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
         std::vector<PsiT_Matrix>& PsiT);
 
+void read_ph_wavefunction_hdf(hdf_archive& dump, std::vector<ComplexType>& ci_coeff, std::vector<int>& occs,
+        int& ndets, WALKER_TYPES walker_type,
+        boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
+        std::vector<PsiT_Matrix>& PsiT, std::string& type);
+
+ph_excitations<int,ComplexType> build_ph_struct(std::vector<ComplexType> ci_coeff, boost::multi::array_ref<int,2>& occs, int ndets,
+        boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB);
+
+void getCommonInput(hdf_archive& dump, int NMO, int NAEA, int NAEB, int& ndets_to_read,
+                    std::vector<ComplexType>& ci, WALKER_TYPES& walker_type, bool root);
 
 WALKER_TYPES getWalkerType(std::string filename);
+WALKER_TYPES getWalkerTypeHDF5(std::string filename, std::string type);
 
 std::string getWfnType(std::ifstream& in);
 

@@ -10,9 +10,9 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-/** @file ECPComponentBuilderBuilder.h
+
+
+/** @file
  * @brief Declaration of a builder class for an ECP component for an ionic type
  */
 #ifndef QMCPLUSPLUS_ECPCOMPONENT_BUILDER_H
@@ -20,31 +20,33 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCHamiltonians/SOECPComponent.h"
 #include "QMCHamiltonians/L2Potential.h"
 
 namespace qmcplusplus
 {
-
-struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
+struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
 {
-
   typedef LocalECPotential::GridType GridType;
   typedef ParticleSet::Scalar_t mRealType;
   typedef OneDimGridBase<mRealType> mGridType;
   typedef LocalECPotential::RadialPotentialType RadialPotentialType;
 
   int NumNonLocal;
-  int Lmax, Llocal, Nrule;
+  int Lmax, Llocal, Nrule, Srule;
+  int NumSO;  //The number of spin-orbit channels.
+  int LmaxSO; //The maximum angular momentum of spin-orbit channels.
   int AtomicNumber;
   RealType Zeff;
   RealType RcutMax;
   std::string Species;
-  mGridType *grid_global;
-  std::map<std::string,mGridType*> grid_inp;
+  mGridType* grid_global;
+  std::map<std::string, mGridType*> grid_inp;
   RadialPotentialType* pp_loc;
   NonLocalECPComponent* pp_nonloc;
+  SOECPComponent* pp_so; //Spin-orbit potential component.
   L2RadialPotential* pp_L2;
-  std::map<std::string,int> angMon;
+  std::map<std::string, int> angMon;
 
   ECPComponentBuilder(const std::string& aname, Communicate* c);
 
@@ -70,15 +72,33 @@ struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
   //  7          50         11
   void SetQuadratureRule(int rule);
 
-  mGridType* createGrid(xmlNodePtr cur, bool useLinear=false);
+  mGridType* createGrid(xmlNodePtr cur, bool useLinear = false);
   RadialPotentialType* createVrWithBasisGroup(xmlNodePtr cur, mGridType* agrid);
-  RadialPotentialType* createVrWithData(xmlNodePtr cur, mGridType* agrid, int rCorrection=0);
+  RadialPotentialType* createVrWithData(xmlNodePtr cur, mGridType* agrid, int rCorrection = 0);
 
-  void doBreakUp(const std::vector<int>& angList, const Matrix<mRealType>& vnn,
-                 RealType rmax, mRealType Vprefactor=1.0);
+  void doBreakUp(const std::vector<int>& angList,
+                 const Matrix<mRealType>& vnn,
+                 RealType rmax,
+                 mRealType Vprefactor = 1.0);
+
+  /** brief buildSO - takes the previously parsed angular momenta and spin-orbit tabulated potentials and uses
+  **     them to construct SOECPComponent* pp_so.  This is called in "doBreakUp". 
+  **
+  ** param std::vector<int>& angList  The angular momentum for each SO potential.
+  ** param Matrix<mRealType>& vnnso (npot x ngrid) matrix storing all tabulated SO potentials.
+  ** param RealType rmax  max r on the specified grid.
+  ** param mRealType Vprefactor  optional scale factor.
+  **
+  ** return void
+  **
+  **/
+  void buildSO(const std::vector<int>& angList,
+               const Matrix<mRealType>& vnnso,
+               RealType rmax,
+               mRealType Vprefactor = 1.0);
 
   void printECPTable();
-  bool read_pp_file(const std::string &fname);
+  bool read_pp_file(const std::string& fname);
 };
 
 // Read a file into a memory buffer.
@@ -86,26 +106,28 @@ struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
 
 class ReadFileBuffer
 {
-  char *cbuffer;
-  std::ifstream *fin;
-  Communicate *myComm;
-  int get_file_length(std::ifstream *f) const;
+  char* cbuffer;
+  std::ifstream* fin;
+  Communicate* myComm;
+  int get_file_length(std::ifstream* f) const;
 
 public:
   bool is_open;
   int length;
-  ReadFileBuffer(Communicate *c) : cbuffer(NULL), fin(NULL), myComm(c), is_open(false), length(0) {}
-  bool open_file(const std::string &fname);
+  ReadFileBuffer(Communicate* c) : cbuffer(NULL), fin(NULL), myComm(c), is_open(false), length(0) {}
+  bool open_file(const std::string& fname);
   bool read_contents();
-  char *contents() { return cbuffer; }
+  char* contents() { return cbuffer; }
   void reset();
 
-  ~ReadFileBuffer() {
-      delete[] cbuffer;
-      if (fin) delete fin;
-   }
+  ~ReadFileBuffer()
+  {
+    delete[] cbuffer;
+    if (fin)
+      delete fin;
+  }
 };
 
 
-}
+} // namespace qmcplusplus
 #endif

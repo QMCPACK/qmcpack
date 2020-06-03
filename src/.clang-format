@@ -17,7 +17,7 @@ AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: true
-BinPackArguments: false
+BinPackArguments: true
 BinPackParameters: false
 BraceWrapping:
   AfterClass:      true
@@ -111,4 +111,5 @@ Standard:        Cpp11
 TabWidth:        8
 UseTab:          Never
 ...
+
 

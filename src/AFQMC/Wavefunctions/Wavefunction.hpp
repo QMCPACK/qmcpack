@@ -21,6 +21,7 @@
 #include "AFQMC/config.h"
 #include "boost/variant.hpp"
 
+#include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Wavefunctions/NOMSD.hpp"
 #include "AFQMC/Wavefunctions/PHMSD.hpp"
 
@@ -56,6 +57,14 @@ class dummy_wavefunction
   int global_number_of_cholesky_vectors() const{
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
     return 0; 
+  }
+  int global_origin_cholesky_vector() const{
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");
+    return 0;
+  }
+  int number_of_references_for_back_propagation() const{
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");
+    return 0;
   }
   bool distribution_over_cholesky_vectors() const {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
@@ -120,18 +129,18 @@ class dummy_wavefunction
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
-  template<class WlkSet, class MatG>
-  void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, boost::multi::array<ComplexType,1>& denom, bool path_restoration=false, bool free_projection=false) {
+  template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+  void WalkerAveragedDensityMatrix(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection=false, boost::multi::array_ref<ComplexType,3>* Refs=nullptr, boost::multi::array<ComplexType,2>* detR=nullptr) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");
-  }
-
-  template<class MatA, class Wlk, class MatB>
-  void BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP) {
-    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
   template<class WlkSet, class MatG>
   void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G) {
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
+  }
+
+  template<class... Args>
+  void DensityMatrix(Args&&... args) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
@@ -150,18 +159,40 @@ class dummy_wavefunction
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
+  ComplexType getReferenceWeight(int i) {
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
+    return ComplexType(0.0,0.0);
+  }
+
+  template<class Mat>
+  void getReferencesForBackPropagation(Mat&& A) {
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
+  }
+
+  SlaterDetOperations SDet;
+  SlaterDetOperations* getSlaterDetOperations() {return std::addressof(SDet);}
+
+  HamiltonianOperations HOps;
+  HamiltonianOperations* getHamiltonianOperations() {return std::addressof(HOps);}
+
 };
 }
 
-class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
+class Wavefunction: public boost::variant<dummy::dummy_wavefunction,
+                                          NOMSD<devcsr_Matrix>,
+                                          NOMSD<ComplexMatrix<node_allocator<ComplexType>>>,
+                                          PHMSD>
 {
     public: 
 
     Wavefunction() { 
       APP_ABORT(" Error: Reached default constructor of Wavefunction. \n");  
     } 
-    explicit Wavefunction(NOMSD&& other) : variant(std::move(other)) {}
-    explicit Wavefunction(NOMSD const& other) = delete;
+    explicit Wavefunction(NOMSD<devcsr_Matrix>&& other) : variant(std::move(other)) {}
+    explicit Wavefunction(NOMSD<devcsr_Matrix> const& other) = delete;
+
+    explicit Wavefunction(NOMSD<ComplexMatrix<node_allocator<ComplexType>>>&& other) : variant(std::move(other)) {}
+    explicit Wavefunction(NOMSD<ComplexMatrix<node_allocator<ComplexType>>> const& other) = delete;
 
     explicit Wavefunction(PHMSD&& other) : variant(std::move(other)) {} 
     explicit Wavefunction(PHMSD const& other) = delete;
@@ -189,6 +220,20 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
     int global_number_of_cholesky_vectors() const{
         return boost::apply_visitor(
             [&](auto&& a){return a.global_number_of_cholesky_vectors();},
+            *this
+        );
+    }
+
+    int global_origin_cholesky_vector() const{
+        return boost::apply_visitor(
+            [&](auto&& a){return a.global_origin_cholesky_vector();},
+            *this
+        );
+    }
+
+    int number_of_references_for_back_propagation() const{
+        return boost::apply_visitor(
+            [&](auto&& a){return a.number_of_references_for_back_propagation();},
             *this
         );
     }
@@ -269,6 +314,14 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
     }
 
     template<class... Args>
+    void DensityMatrix(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.DensityMatrix(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
     void MixedDensityMatrix(Args&&... args) {
         boost::apply_visitor(
             [&](auto&& a){a.MixedDensityMatrix(std::forward<Args>(args)...);},
@@ -301,17 +354,39 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
     }
 
     template<class... Args>
-    void BackPropagatedDensityMatrix(Args&&... args) {
-        boost::apply_visitor(
-              [&](auto&& a){a.BackPropagatedDensityMatrix(std::forward<Args>(args)...);},
-              *this
+    ComplexType getReferenceWeight(Args&&... args) {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.getReferenceWeight(std::forward<Args>(args)...);},
+            *this
         );
     }
 
     template<class... Args>
-    void BackPropagateOrbMat(Args&&... args) {
+    void getReferencesForBackPropagation(Args&&... args) {
         boost::apply_visitor(
-              [&](auto&& a){a.BackPropagateOrbMat(std::forward<Args>(args)...);},
+            [&](auto&& a){a.getReferencesForBackPropagation(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
+    void WalkerAveragedDensityMatrix(Args&&... args) {
+        boost::apply_visitor(
+              [&](auto&& a){a.WalkerAveragedDensityMatrix(std::forward<Args>(args)...);},
+              *this
+        );
+    }
+
+    SlaterDetOperations* getSlaterDetOperations() {
+        return boost::apply_visitor(
+              [&](auto&& a){return a.getSlaterDetOperations();},
+              *this
+        );
+    }
+
+    HamiltonianOperations* getHamiltonianOperations() {
+        return boost::apply_visitor(
+              [&](auto&& a){return a.getHamiltonianOperations();},
               *this
         );
     }

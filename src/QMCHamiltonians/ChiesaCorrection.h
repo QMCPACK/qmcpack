@@ -10,34 +10,30 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_CHIESA_CORRECTION_H
 #define QMCPLUSPLUS_CHIESA_CORRECTION_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus
 {
-
-class ChiesaCorrection : public QMCHamiltonianBase
+class ChiesaCorrection : public OperatorBase
 {
 private:
-  const TrialWaveFunction &psi_ref;
-  ParticleSet &ptcl_ref;
+  const TrialWaveFunction& psi_ref;
+  ParticleSet& ptcl_ref;
 
 public:
-  ChiesaCorrection (ParticleSet& ptcl, const TrialWaveFunction &psi) :
-    psi_ref(psi), ptcl_ref(ptcl)
-  {
-  }
+  ChiesaCorrection(ParticleSet& ptcl, const TrialWaveFunction& psi) : psi_ref(psi), ptcl_ref(ptcl) {}
 
   void resetTargetParticleSet(ParticleSet& P);
 
   Return_t evaluate(ParticleSet& P);
 
 #ifdef QMC_CUDA
-  void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 #endif
 
   bool put(xmlNodePtr cur);
@@ -48,9 +44,9 @@ public:
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 };
 
-}
+} // namespace qmcplusplus
 
 #endif

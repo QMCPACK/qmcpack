@@ -18,36 +18,32 @@
 #include <string>
 #include <vector>
 
-namespace qmcplusplus {
+namespace qmcplusplus
+{
+
+
+void set_total_time(NewTimer *timer, double total_time_input)
+{
+  timer->total_time = total_time_input;
+}
+
+void set_num_calls(NewTimer *timer, long num_calls_input)
+{
+  timer->num_calls = num_calls_input;
+}
 
 
 // Used by fake_cpu_clock in Clock.h if USE_FAKE_CLOCK is defined
 double fake_cpu_clock_increment = 1.0;
-double fake_cpu_clock_value = 0.0;
+double fake_cpu_clock_value     = 0.0;
 
-class FakeTimer : public NewTimer
-{
-public:
-  FakeTimer(const std::string& myname) : NewTimer(myname) {}
-
-  void set_total_time(double my_total_time)
-  {
-    total_time = my_total_time;
-  }
-
-  void set_num_calls(long my_num_calls)
-  {
-    num_calls = my_num_calls;
-  }
-
-};
 
 TEST_CASE("test_timer_stack", "[utilities]")
 {
   // Use a local version rather than the global TimerManager, otherwise
   //  changes will persist from test to test.
   TimerManagerClass tm;
-  NewTimer *t1 = tm.createTimer("timer1", timer_level_coarse);
+  NewTimer* t1 = tm.createTimer("timer1", timer_level_coarse);
 #if ENABLE_TIMERS
 #ifdef USE_STACK_TIMERS
   t1->start();
@@ -61,7 +57,7 @@ TEST_CASE("test_timer_stack", "[utilities]")
 TEST_CASE("test_timer_scoped", "[utilities]")
 {
   TimerManagerClass tm;
-  NewTimer *t1 = tm.createTimer("timer1", timer_level_coarse);
+  NewTimer* t1 = tm.createTimer("timer1", timer_level_coarse);
   {
     ScopedTimer st(t1);
   }
@@ -69,15 +65,26 @@ TEST_CASE("test_timer_scoped", "[utilities]")
   REQUIRE(t1->get_total() == Approx(1.0));
   REQUIRE(t1->get_num_calls() == 1);
 #endif
+
+
+  const std::string prefix_str("Prefix::");
+  NewTimer& t2(*(tm.createTimer(prefix_str + "timer2", timer_level_coarse)));
+  {
+    ScopedTimer st(&t2);
+  }
+#if ENABLE_TIMERS
+  REQUIRE(t1->get_total() == Approx(1.0));
+  REQUIRE(t1->get_num_calls() == 1);
+#endif
+
 }
 
 TEST_CASE("test_timer_flat_profile", "[utilities]")
 {
   TimerManagerClass tm;
-  FakeTimer t1("timer1");
-  tm.addTimer(&t1);
-  t1.set_total_time(1.1);
-  t1.set_num_calls(2);
+  NewTimer* t1 = tm.createTimer("timer1");
+  set_total_time(t1, 1.1);
+  set_num_calls(t1, 2);
 
   TimerManagerClass::FlatProfileData p;
   tm.collate_flat_profile(NULL, p);
@@ -94,27 +101,24 @@ TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  FakeTimer t1("timer1");
-  tm.addTimer(&t1);
-  FakeTimer t2("timer2");
-  tm.addTimer(&t2);
-  FakeTimer t3("timer1");
-  tm.addTimer(&t3);
+  NewTimer* t1 = tm.createTimer("timer1");
+  NewTimer* t2 = tm.createTimer("timer2");
+  NewTimer* t3 = tm.createTimer("timer1");
 
   fake_cpu_clock_increment = 1.1;
-  t1.start();
-  t1.stop();
+  t1->start();
+  t1->stop();
   fake_cpu_clock_increment = 1.2;
   for (int i = 0; i < 3; i++)
   {
-    t2.start();
-    t2.stop();
+    t2->start();
+    t2->stop();
 
-    t3.start();
-    t3.stop();
+    t3->start();
+    t3->stop();
   }
-  t3.start();
-  t3.stop();
+  t3->start();
+  t3->stop();
 
   TimerManagerClass::FlatProfileData p;
 
@@ -138,16 +142,14 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  FakeTimer t1("timer1");
-  tm.addTimer(&t1);
-  FakeTimer t2("timer2");
-  tm.addTimer(&t2);
+  NewTimer* t1 = tm.createTimer("timer1");
+  NewTimer* t2 = tm.createTimer("timer2");
 
   fake_cpu_clock_increment = 1.1;
-  t1.start();
-  t2.start();
-  t2.stop();
-  t1.stop();
+  t1->start();
+  t2->start();
+  t2->stop();
+  t1->stop();
 
   TimerManagerClass::FlatProfileData p;
   tm.collate_flat_profile(NULL, p);
@@ -157,7 +159,7 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
   int idx1 = p.nameList.at("timer1");
   int idx2 = p.nameList.at("timer2");
   REQUIRE(p.timeList.size() == 2);
-  REQUIRE(p.timeList[idx1] == Approx(3*fake_cpu_clock_increment));
+  REQUIRE(p.timeList[idx1] == Approx(3 * fake_cpu_clock_increment));
   REQUIRE(p.timeList[idx2] == Approx(fake_cpu_clock_increment));
 #endif
 
@@ -170,34 +172,30 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
   idx2 = p2.nameList.at("timer1/timer2");
   REQUIRE(p2.timeList.size() == 2);
   REQUIRE(p2.timeExclList.size() == 2);
-  REQUIRE(p2.timeList[idx1] == Approx(3*fake_cpu_clock_increment));
+  REQUIRE(p2.timeList[idx1] == Approx(3 * fake_cpu_clock_increment));
   REQUIRE(p2.timeList[idx2] == Approx(fake_cpu_clock_increment));
 
   // Time in t1 minus time inside t2
-  REQUIRE(p2.timeExclList[idx1] == Approx(2*fake_cpu_clock_increment));
+  REQUIRE(p2.timeExclList[idx1] == Approx(2 * fake_cpu_clock_increment));
   REQUIRE(p2.timeExclList[idx2] == Approx(fake_cpu_clock_increment));
 #endif
-
 }
 
 TEST_CASE("test_timer_nested_profile_two_children", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  NewTimer t1("timer1");
-  tm.addTimer(&t1);
-  NewTimer t2("timer2");
-  tm.addTimer(&t2);
-  NewTimer t3("timer3");
-  tm.addTimer(&t3);
+  NewTimer* t1 = tm.createTimer("timer1");
+  NewTimer* t2 = tm.createTimer("timer2");
+  NewTimer* t3 = tm.createTimer("timer3");
 
   fake_cpu_clock_increment = 1.1;
-  t1.start();
-  t2.start();
-  t2.stop();
-  t3.start();
-  t3.stop();
-  t1.stop();
+  t1->start();
+  t2->start();
+  t2->stop();
+  t3->start();
+  t3->stop();
+  t1->stop();
 
   TimerManagerClass::StackProfileData p2;
   tm.collate_stack_profile(NULL, p2);
@@ -216,40 +214,34 @@ TEST_CASE("test_timer_nested_profile_two_children", "[utilities]")
   doc.dump("tmp.xml");
   // To really test this, should read the file in and inspect the contents.
   // For now, it makes for quick iterations on writing the file.
-
 }
 
 TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  NewTimer t1("timer1");
-  tm.addTimer(&t1);
-  NewTimer t2("timer2");
-  tm.addTimer(&t2);
-  NewTimer t3("timer3");
-  tm.addTimer(&t3);
-  NewTimer t4("timer4");
-  tm.addTimer(&t4);
-  NewTimer t5("timer5");
-  tm.addTimer(&t5);
+  NewTimer* t1 = tm.createTimer("timer1");
+  NewTimer* t2 = tm.createTimer("timer2");
+  NewTimer* t3 = tm.createTimer("timer3");
+  NewTimer* t4 = tm.createTimer("timer4");
+  NewTimer* t5 = tm.createTimer("timer5");
 
 
   fake_cpu_clock_increment = 1.1;
-  t1.start();
-    t2.start();
-      t3.start();
-        t4.start();
-        t4.stop();
-        t5.start();
-        t5.stop();
-      t3.stop();
-    t2.stop();
-    t3.start();
-      t4.start();
-      t4.stop();
-    t3.stop();
-  t1.stop();
+  t1->start();
+  t2->start();
+  t3->start();
+  t4->start();
+  t4->stop();
+  t5->start();
+  t5->stop();
+  t3->stop();
+  t2->stop();
+  t3->start();
+  t4->start();
+  t4->stop();
+  t3->stop();
+  t1->stop();
 
   TimerManagerClass::StackProfileData p2;
   tm.collate_stack_profile(NULL, p2);
@@ -280,35 +272,31 @@ TEST_CASE("test_timer_nested_profile_collate", "[utilities]")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  NewTimer t1("timer1");
-  tm.addTimer(&t1);
-  NewTimer t2("timer2");
-  tm.addTimer(&t2);
-  NewTimer t2b("timer2");
-  tm.addTimer(&t2b);
-  NewTimer t3("timer3");
-  tm.addTimer(&t3);
+  NewTimer* t1 = tm.createTimer("timer1");
+  NewTimer* t2 = tm.createTimer("timer2");
+  NewTimer* t2b = tm.createTimer("timer2");
+  NewTimer* t3 = tm.createTimer("timer3");
 
 
   fake_cpu_clock_increment = 1.1;
-  t1.start();
-    t2.start();
-      t3.start();
-      t3.stop();
-    t2.stop();
-    t2b.start();
-      t3.start();
-      t3.stop();
-    t2b.stop();
-    t2.start();
-      t3.start();
-      t3.stop();
-    t2.stop();
-    t2b.start();
-      t3.start();
-      t3.stop();
-    t2b.stop();
-  t1.stop();
+  t1->start();
+  t2->start();
+  t3->start();
+  t3->stop();
+  t2->stop();
+  t2b->start();
+  t3->start();
+  t3->stop();
+  t2b->stop();
+  t2->start();
+  t3->start();
+  t3->stop();
+  t2->stop();
+  t2b->start();
+  t3->start();
+  t3->stop();
+  t2b->stop();
+  t1->stop();
 
 
   TimerManagerClass::StackProfileData p2;
@@ -332,7 +320,7 @@ TEST_CASE("test stack key")
 {
   StackKey sk;
   REQUIRE(timer_max_level_exceeded == false);
-  for (int i = 0; i < StackKey::max_level+1; i++)
+  for (int i = 0; i < StackKey::max_level + 1; i++)
   {
     sk.add_id(1);
   }
@@ -343,20 +331,19 @@ TEST_CASE("test stack exceeded message")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  std::vector<NewTimer *> timer_list;
-  for (int i = 0; i < StackKey::max_level+1; i++)
+  std::vector<NewTimer*> timer_list;
+  for (int i = 0; i < StackKey::max_level + 1; i++)
   {
     std::ostringstream name;
     name << "timer" << i;
-    NewTimer *t = new NewTimer(name.str());
-    tm.addTimer(t);
+    NewTimer* t = tm.createTimer(name.str());
     timer_list.push_back(t);
   }
-  for (int i = 0; i < StackKey::max_level+1; i++)
+  for (int i = 0; i < StackKey::max_level + 1; i++)
   {
     timer_list[i]->start();
   }
-  for (int i = 0; i < StackKey::max_level+1; i++)
+  for (int i = 0; i < StackKey::max_level + 1; i++)
   {
     timer_list[i]->stop();
   }
@@ -374,13 +361,12 @@ TEST_CASE("test max exceeded message")
 {
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
-  std::vector<NewTimer *> timer_list;
-  for (int i = 0; i < std::numeric_limits<timer_id_t>::max()+1; i++)
+  std::vector<NewTimer*> timer_list;
+  for (int i = 0; i < std::numeric_limits<timer_id_t>::max() + 1; i++)
   {
     std::ostringstream name;
     name << "timer" << i;
-    NewTimer *t = new NewTimer(name.str());
-    tm.addTimer(t);
+    NewTimer* t = tm.createTimer(name.str());
     timer_list.push_back(t);
   }
 
@@ -400,13 +386,9 @@ enum TestTimer
 };
 
 // Next define a structure mapping the enum to a string name
-TimerNameList_t<TestTimer> TestTimerNames =
-{
-  {MyTimer1, "Timer name 1"},
-  {MyTimer2, "Timer name 2"}
-};
+TimerNameList_t<TestTimer> TestTimerNames = {{MyTimer1, "Timer name 1"}, {MyTimer2, "Timer name 2"}};
 
-TEST_CASE("test setup timers","[utilities]")
+TEST_CASE("test setup timers", "[utilities]")
 {
   TimerManagerClass tm;
   // Create  a list of timers and initialize it
@@ -423,4 +405,4 @@ TEST_CASE("test setup timers","[utilities]")
 #endif
 }
 
-}
+} // namespace qmcplusplus

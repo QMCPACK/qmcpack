@@ -28,6 +28,7 @@
 #include "AFQMC/Propagators/PropagatorFactory.h"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
 #include "AFQMC/Drivers/DriverFactory.h"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 #include"AFQMC/Utilities/myTimer.h"
 
@@ -43,11 +44,25 @@ TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames =
   {pseudo_energy_timer, "PseudoEnergy"},
   {energy_timer, "Energy"},
   {vHS_timer, "vHS"},
+  {assemble_X_timer, "X"},
   {vbias_timer, "vbias"},
   {G_for_vbias_timer,"G_for_vbias"},
   {propagate_timer, "Propagate"},
+  {back_propagate_timer, "BackPropagate"},
   {E_comm_overhead_timer, "Energy_comm_overhead"},
-  {vHS_comm_overhead_timer, "vHS_comm_overhead"}
+  {vHS_comm_overhead_timer, "vHS_comm_overhead"},
+  {popcont_timer, "population_control"},
+  {ortho_timer, "walker_orthogonalization"},
+  {setup_timer, "setup"},
+  {extra_timer, "extra"},
+  {T1_t, "T1_t"},
+  {T2_t, "T2_t"},
+  {T3_t, "T3_t"},
+  {T4_t, "T4_t"},
+  {T5_t, "T5_t"},
+  {T6_t, "T6_t"},
+  {T7_t, "T7_t"},
+  {T8_t, "T8_t"}
 };
 
 namespace afqmc
@@ -73,6 +88,11 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
     }
     cur=cur->next;
   }
+
+  // eventually read an inital buffer size from input
+  // they are initialized now with 10 MBs
+  // host_buffer_type->resize(buffer_size);
+  // device_buffer_type->resize(buffer_size);
 
   // first look only for AFQMCInfo
   // Careful here, since all factories have a reference to this map
@@ -142,8 +162,6 @@ bool AFQMCFactory::execute(xmlNodePtr cur)
   if(cur == NULL)
     return false;
 
-  int nproc = gTG.Global().size();
-  int nodeid = gTG.Global().rank();
   int groupid=0; //myComm->getGroupID();
   char fileroot[256];
 

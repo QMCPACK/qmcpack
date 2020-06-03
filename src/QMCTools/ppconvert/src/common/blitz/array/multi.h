@@ -25,7 +25,7 @@
 #define BZ_ARRAYMULTI_H
 
 #ifndef BZ_ARRAY_H
- #error <blitz/array/multi.h> must be included via <blitz/array.h>
+#error <blitz/array/multi.h> must be included via <blitz/array.h>
 #endif
 
 BZ_NAMESPACE(blitz)
@@ -43,37 +43,41 @@ BZ_NAMESPACE(blitz)
 
 // By default, produce a harmless component type, and zero components.
 template<typename T_component>
-struct multicomponent_traits {
-    typedef T_component T_element;
-    static const int numComponents = 0;
+struct multicomponent_traits
+{
+  typedef T_component T_element;
+  static const int numComponents = 0;
 };
 
 // TinyVector
 template<typename T_numtype, int N_rank>
-struct multicomponent_traits<TinyVector<T_numtype,N_rank> > {
-    typedef T_numtype T_element;
-    static const int numComponents = N_rank;
+struct multicomponent_traits<TinyVector<T_numtype, N_rank>>
+{
+  typedef T_numtype T_element;
+  static const int numComponents = N_rank;
 };
 
 #ifdef BZ_HAVE_COMPLEX
 // std::complex<T>
 template<typename T>
-struct multicomponent_traits<std::complex<T> > {
-    typedef T T_element;
-    static const int numComponents = 2;
+struct multicomponent_traits<std::complex<T>>
+{
+  typedef T T_element;
+  static const int numComponents = 2;
 };
 #endif
 
 // This macro is provided so that users can register their own
 // multicomponent types.
 
-#define BZ_DECLARE_MULTICOMPONENT_TYPE(T_tuple,T,N)          \
-  BZ_NAMESPACE(blitz)                                        \
-  template<>                                                 \
-  struct multicomponent_traits<T_tuple > {                   \
-    typedef T T_element;                                     \
-    static const int numComponents = N;                      \
-  };                                                         \
+#define BZ_DECLARE_MULTICOMPONENT_TYPE(T_tuple, T, N) \
+  BZ_NAMESPACE(blitz)                                 \
+  template<>                                          \
+  struct multicomponent_traits<T_tuple>               \
+  {                                                   \
+    typedef T T_element;                              \
+    static const int numComponents = N;               \
+  };                                                  \
   BZ_NAMESPACE_END
 
 BZ_NAMESPACE_END

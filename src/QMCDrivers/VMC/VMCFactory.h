@@ -9,8 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_VMC_FACTORY_H
@@ -24,16 +22,21 @@ class HamiltonianPool;
 
 class VMCFactory
 {
-  private:
-  int VMCMode;
+private:
+  unsigned long VMCMode;
   xmlNodePtr myNode;
 
-  public:
-  VMCFactory(int vmode, xmlNodePtr cur):VMCMode(vmode), myNode(cur) {}
+public:
+  VMCFactory(unsigned long vmode, xmlNodePtr cur) : VMCMode(vmode), myNode(cur) {}
 
-  QMCDriver* create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                    ParticleSetPool& ptclpool, HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm);
+  QMCDriverInterface* create(MCWalkerConfiguration& w,
+                             TrialWaveFunction& psi,
+                             QMCHamiltonian& h,
+                             ParticleSetPool& ptclpool,
+                             HamiltonianPool& hpool,
+                             WaveFunctionPool& ppool,
+                             Communicate* comm);
 };
-}
+} // namespace qmcplusplus
 
 #endif

@@ -25,6 +25,7 @@
 #include<AFQMC/Wavefunctions/WavefunctionFactory.h>
 #include<AFQMC/Propagators/PropagatorFactory.h>
 #include<AFQMC/Drivers/DriverFactory.h>
+#include<AFQMC/Memory/buffer_allocators.h>
 
 #include "OhmmsData/libxmldefs.h"
 
@@ -51,12 +52,27 @@ class AFQMCFactory
         PropFac(InfoMap),
         DriverFac(gTG,TGHandler,InfoMap,WSetFac,PropFac,WfnFac,HamFac)
     {
+#ifdef ENABLE_CUDA
+// taken from src/OhmmsApp/RandomNumberControl.cpp
+      int rank=gTG.Global().rank();
+      int nprocs=gTG.Global().size();
+      int baseoffset;
+      using uint_type = RandomNumberControl::uint_type;  
+      if(gTG.Global().root())  
+        baseoffset=static_cast<int>(static_cast<uint_type>(std::time(0))%1024);
+      gTG.Global().broadcast_value(baseoffset);  
+      std::vector<uint_type> myprimes;
+      RandomNumberControl::PrimeNumbers.get(baseoffset,nprocs,myprimes); 
+      arch::INIT(gTG.Node(),(unsigned long long int)(myprimes[rank]));
+#endif
       TimerManager.set_timer_threshold(timer_level_coarse);
       setup_timers(AFQMCTimers, AFQMCTimerNames,timer_level_coarse);
     }
 
     ///destructor
-    ~AFQMCFactory() {}
+    ~AFQMCFactory() {
+        destroy_shm_buffer_generators();
+    }
 
     /*
      *  Parses xml input and creates all non-executable objects.

@@ -10,8 +10,8 @@
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
@@ -32,15 +32,16 @@ DiffWaveFunctionComponentPtr DiffWaveFunctionComponent::makeClone(ParticleSet& t
   return 0;
 }
 
-void DiffWaveFunctionComponent::evaluateDerivRatios(ParticleSet& VP, const opt_variables_type& optvars,
-    Matrix<ValueType>& dratios)
+void DiffWaveFunctionComponent::evaluateDerivRatios(ParticleSet& VP,
+                                                    const opt_variables_type& optvars,
+                                                    Matrix<ValueType>& dratios)
 {
   APP_ABORT("Implement DiffWaveFunctionComponent::evaluateDerivRatios for this orbital");
 }
 
 void NumericalDiffOrbital::resetTargetParticleSet(ParticleSet& P)
 {
-  int nptcls=P.getTotalNum();
+  int nptcls = P.getTotalNum();
   dg_p.resize(nptcls);
   dl_p.resize(nptcls);
   dg_m.resize(nptcls);
@@ -61,48 +62,48 @@ void NumericalDiffOrbital::resetParameters(const opt_variables_type& optvars)
 
 
 void NumericalDiffOrbital::evaluateDerivatives(ParticleSet& P,
-    const opt_variables_type& optvars,
-    std::vector<RealType>& dlogpsi,
-    std::vector<RealType>& dhpsioverpsi)
+                                               const opt_variables_type& optvars,
+                                               std::vector<RealType>& dlogpsi,
+                                               std::vector<RealType>& dhpsioverpsi)
 {
   //
   if (refOrbital.empty())
     return;
   opt_variables_type v(optvars);
   //this should be modified later
-  const RealType delta=1e-4;
+  const RealType delta = 1e-4;
   const std::vector<int>& ind_map(refOrbital[0]->myVars.Index);
-  for (int j=0; j<ind_map.size(); ++j)
+  for (int j = 0; j < ind_map.size(); ++j)
   {
-    int jj=ind_map[j];
-    if (jj<0)
+    int jj = ind_map[j];
+    if (jj < 0)
       continue;
-    RealType plus=0.0;
-    RealType minus=0.0;
-    RealType curvar=optvars[jj];
+    LogValueType plus=0.0;
+    LogValueType minus=0.0;
+    RealType curvar=std::real(optvars[jj]);
     dg_p=0.0;
     dl_p=0.0;
     dg_m=0.0;
     dl_m=0.0;
     //accumulate plus and minus displacement
-    for (int i=0; i<refOrbital.size(); ++i)
+    for (int i = 0; i < refOrbital.size(); ++i)
     {
-      v[jj]=optvars[jj]+delta;
+      v[jj]=std::real(optvars[jj])+delta;
       refOrbital[i]->resetParameters(v);
       plus+=refOrbital[i]->evaluateLog(P,dg_p,dl_p);
-      v[jj]=optvars[jj]-delta;
+      v[jj]=std::real(optvars[jj])-delta;
       refOrbital[i]->resetParameters(v);
-      minus+=refOrbital[i]->evaluateLog(P,dg_m,dl_m);
+      minus += refOrbital[i]->evaluateLog(P, dg_m, dl_m);
       //restore the variable to the original state
-      v[jj]=curvar;
+      v[jj] = curvar;
       refOrbital[i]->resetParameters(v);
     }
-    const ParticleSet::Scalar_t dh=1.0/(2.0*delta);
-    gradLogPsi=dh*(dg_p-dg_m);
-    lapLogPsi=dh*(dl_p-dl_m);
-    RealType dLogPsi=dh*(plus-minus);
-    dlogpsi[jj]=dLogPsi;
-    dhpsioverpsi[jj]=-0.5*Sum(lapLogPsi)-Dot(P.G,gradLogPsi);
+    const ParticleSet::Scalar_t dh = 1.0 / (2.0 * delta);
+    gradLogPsi                     = dh * (dg_p - dg_m);
+    lapLogPsi                      = dh * (dl_p - dl_m);
+    RealType dLogPsi               = dh * std::real(plus - minus);
+    dlogpsi[jj]                    = dLogPsi;
+    dhpsioverpsi[jj]               = -0.5 * Sum(lapLogPsi) - Dot(P.G, gradLogPsi);
   }
 }
 //@}
@@ -110,20 +111,20 @@ void NumericalDiffOrbital::evaluateDerivatives(ParticleSet& P,
 //@{implementation of AnalyticDiffOrbital
 void AnalyticDiffOrbital::resetParameters(const opt_variables_type& optvars)
 {
-  if (MyIndex<0)
+  if (MyIndex < 0)
     return;
-  for (int i=0; i<refOrbital.size(); ++i)
+  for (int i = 0; i < refOrbital.size(); ++i)
     refOrbital[i]->resetParameters(optvars);
 }
 
 void AnalyticDiffOrbital::resetTargetParticleSet(ParticleSet& P)
 {
-  if (MyIndex<0)
+  if (MyIndex < 0)
     return;
-  for (int i=0; i<refOrbital.size(); ++i)
+  for (int i = 0; i < refOrbital.size(); ++i)
     refOrbital[i]->resetTargetParticleSet(P);
-  int nptcls=P.getTotalNum();
-  if (gradLogPsi.size()!=nptcls)
+  int nptcls = P.getTotalNum();
+  if (gradLogPsi.size() != nptcls)
   {
     gradLogPsi.resize(nptcls);
     lapLogPsi.resize(nptcls);
@@ -132,31 +133,30 @@ void AnalyticDiffOrbital::resetTargetParticleSet(ParticleSet& P)
 
 void AnalyticDiffOrbital::checkOutVariables(const opt_variables_type& optvars)
 {
-  MyIndex=-1;
+  MyIndex = -1;
   if (refOrbital.empty())
     return;
-  for (int i=0; i<refOrbital.size(); ++i)
+  for (int i = 0; i < refOrbital.size(); ++i)
     refOrbital[i]->checkOutVariables(optvars);
-  MyIndex=refOrbital[0]->myVars.Index[0];
+  MyIndex = refOrbital[0]->myVars.Index[0];
 }
 
 void AnalyticDiffOrbital::evaluateDerivatives(ParticleSet& P,
-    const opt_variables_type& optvars,
-    std::vector<RealType>& dlogpsi,
-    std::vector<RealType>& dhpsioverpsi)
+                                              const opt_variables_type& optvars,
+                                              std::vector<RealType>& dlogpsi,
+                                              std::vector<RealType>& dhpsioverpsi)
 {
-  if (MyIndex<0)
+  if (MyIndex < 0)
     return;
-  RealType dLogPsi=0.0;
-  gradLogPsi=0.0;
-  lapLogPsi=0.0;
-  for (int i=0; i<refOrbital.size(); ++i)
-    dLogPsi+=refOrbital[i]->evaluateLog(P,gradLogPsi,lapLogPsi);
-  dlogpsi[MyIndex]=dLogPsi;
-  dhpsioverpsi[MyIndex]=-0.5*Sum(lapLogPsi)-Dot(P.G,gradLogPsi);
+  RealType dLogPsi = 0.0;
+  gradLogPsi       = 0.0;
+  lapLogPsi        = 0.0;
+  for (int i = 0; i < refOrbital.size(); ++i)
+    dLogPsi += std::real(refOrbital[i]->evaluateLog(P, gradLogPsi, lapLogPsi));
+  dlogpsi[MyIndex]      = dLogPsi;
+  dhpsioverpsi[MyIndex] = -0.5 * Sum(lapLogPsi) - Dot(P.G, gradLogPsi);
   //optvars.setDeriv(FirstIndex,dLogPsi,-0.5*Sum(lapLogPsi)-Dot(P.G,gradLogPsi));
   //optvars.setDeriv(FirstIndex,dLogPsi,-0.5*Sum(lapLogPsi)-Dot(P.G,gradLogPsi)-dLogPsi*ke0);
 }
 //@}
-}
-
+} // namespace qmcplusplus

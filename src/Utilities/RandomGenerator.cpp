@@ -9,9 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #include "Utilities/RandomGenerator.h"
@@ -21,7 +18,7 @@
 //RandomGenerator_t
 //Random(CommCreate::get()->getNodeID(), CommCreate::get()->getNumNodes());
 
-qmcplusplus::RandomGenerator_t qmcplusplus::Random;
+qmcplusplus::RNGThreadSafe qmcplusplus::Random;
 
 // /**class GaussinRandomGenerator
 //  *\brief A filter class that converts random numbers [0,1) -> gaussian
@@ -72,4 +69,3 @@ qmcplusplus::RandomGenerator_t qmcplusplus::Random;
 //     Return_t gauss0, gauss1, Sigma2, Center;
 
 //   };
-

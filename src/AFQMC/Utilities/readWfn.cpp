@@ -13,6 +13,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Matrix/csr_matrix.hpp"
+#include "AFQMC/Matrix/csr_hdf5_readers.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 
 namespace qmcplusplus
@@ -182,6 +183,37 @@ WALKER_TYPES getWalkerType(std::string filename)
   else return UNDEFINED_WALKER_TYPE;
 }
 
+WALKER_TYPES getWalkerTypeHDF5(std::string filename, std::string type)
+{
+  hdf_archive dump;
+  if(!dump.open(filename,H5F_ACC_RDONLY)) {
+    std::cerr<<" Error opening wavefunction file in read_info_from_wfn. \n";
+    APP_ABORT("");
+  }
+  if(!dump.push("Wavefunction",false)) {
+    std::cerr<<" Error in getWalkerTypeHDF5: Group Wavefunction found. \n";
+    APP_ABORT("");
+  }
+  if(!dump.push(type,false)) {
+    std::cerr<<" Error in getWalkerTypeHDF5: Group "<< type <<" not found. \n";
+    APP_ABORT("");
+  }
+
+  std::vector<int> Idata(5);
+  if(!dump.readEntry(Idata,"dims")) {
+    std::cerr<<" Error in getWalkerTypeHDF5: Problems reading dims. \n";
+    APP_ABORT("");
+  }
+
+  dump.pop();
+  int wfn_type = Idata[3];
+
+  if(wfn_type == 1) return CLOSED;
+  else if(wfn_type == 2) return COLLINEAR;
+  else if(wfn_type == 3) return NONCOLLINEAR;
+  else return UNDEFINED_WALKER_TYPE;
+}
+
 std::string getWfnType(std::ifstream& in)
 {
   in.clear();
@@ -337,13 +369,13 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
   }
 
   assert(walker_type!=UNDEFINED_WALKER_TYPE);
-  std::string type;
   bool fullMOMat = false;
   bool Cstyle = true;
   int wfn_type=0;
   int ndet_in_file=-1;
   int NEL = NAEA;
   bool mixed=false;
+  std::string type;
   if(walker_type!=CLOSED) NEL+=NAEB;
 
   /*
@@ -492,7 +524,7 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
   // using int for now, but should move to short later when everything works well
   // ph_struct stores the reference configuration on the index [0]
   ph_excitations<int,ComplexType> ph_struct(ndets,NAEA,NAEB,counts_alpha,counts_beta,
-                                            boost::mpi3::intranode::allocator<int>(comm));
+                                            shared_allocator<int>(comm));
   
   if(comm.root()) {
     in.clear();
@@ -544,6 +576,248 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
   comm.barrier();
   return ph_struct;
 }
+
+void read_ph_wavefunction_hdf(hdf_archive& dump, std::vector<ComplexType>& ci_coeff, std::vector<int>& occs, 
+        int& ndets, WALKER_TYPES walker_type,
+        boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
+        std::vector<PsiT_Matrix>& PsiT, std::string& type)
+{
+
+  using Alloc = shared_allocator<ComplexType>;
+  assert(walker_type!=UNDEFINED_WALKER_TYPE);
+  int wfn_type = 0;
+  int NEL = NAEA;
+  bool mixed=false;
+  if(walker_type!=CLOSED) NEL+=NAEB;
+
+  /*
+   * Expected order of inputs and tags:
+   * Reference:
+   * Configurations:
+   */
+
+  /*
+   * type:
+   *   - occ: All determinants are specified with occupation numbers
+   *
+   * wfn_type:
+   *   - 0: excitations out of a RHF reference
+   *          NOTE: Does not mean perfect pairing, means excitations from a single reference
+   *   - 1: excitations out of a UHF reference
+   */
+  WALKER_TYPES wtype;  
+  getCommonInput(dump, NMO, NAEA, NAEB, ndets, ci_coeff, wtype, comm.root());
+  if(walker_type != wtype && NAEA != NAEB) 
+    APP_ABORT(" Error: When Different walker_type between hdf5 and xml inputs when NAEA!=NAEB (not allowed). \n");
+  if(walker_type != COLLINEAR)
+    APP_ABORT(" Error: walker_type!=COLLINEAR not yet implemented in read_ph_wavefunction.\n");
+
+  int type_;
+  if(!dump.readEntry(type_,"type")) {
+    app_error()<<" Error in WavefunctionFactory::fromHDF5(): Problems reading type. \n";
+    APP_ABORT("");
+  }
+  if(type_ == 0)
+    type = "occ";
+  else
+    type = "mixed";
+  if(type == "mixed") mixed = true;
+
+  if(mixed) { // read reference
+    int nmo_ = (walker_type==NONCOLLINEAR?2*NMO:NMO);
+    if(not comm.root()) nmo_=0; // only root reads matrices
+    PsiT.reserve((wfn_type!=1)?1:2);
+
+    if(!dump.push(std::string("PsiT_")+std::to_string(0),false)) {
+      app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";
+      APP_ABORT("");
+    }
+    PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix,Alloc>(dump,comm));
+    dump.pop();
+    if(wfn_type == 1) {
+      if(wtype == CLOSED) {
+        if(!dump.push(std::string("PsiT_")+std::to_string(0),false)) {
+          app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";
+          APP_ABORT("");
+        }
+      } else if(wtype == COLLINEAR) {
+        if(!dump.push(std::string("PsiT_")+std::to_string(1),false)) {
+          app_error()<<" Error in WavefunctionFactory: Group PsiT not found. \n";
+          APP_ABORT("");
+        }
+      } 
+      PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix,Alloc>(dump,comm));
+      dump.pop();
+    }
+  }
+  if(!dump.readEntry(occs, "occs"))
+    APP_ABORT("Error reading occs array.\n");
+  comm.barrier();
+}
+
+ph_excitations<int,ComplexType> build_ph_struct(std::vector<ComplexType> ci_coeff, boost::multi::array_ref<int,2>& occs, int ndets,
+        boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB)
+{
+
+  using Alloc = shared_allocator<ComplexType>;
+
+  ComplexType ci;
+  // count number of k-particle excitations
+  // counts[0] has special meaning, it must be equal to NAEA+NAEB.
+  std::vector<size_t> counts_alpha(NAEA+1);
+  std::vector<size_t> counts_beta(NAEB+1);
+  // ugly but need dynamic memory allocation
+  std::vector<std::vector<int>> unique_alpha(NAEA+1);
+  std::vector<std::vector<int>> unique_beta(NAEB+1);
+  // reference configuration, taken as the first one right now
+  std::vector<int> refa;
+  std::vector<int> refb;
+  // space to read configurations
+  std::vector<int> confg;
+  // space for excitation string identifying the current configuration
+  std::vector<int> exct;
+  // record file position to come back
+  std::vector<int> Iwork; // work arrays for permutation calculation
+  std::streampos start;
+  if(comm.root()) {
+    confg.reserve(NAEA);
+    Iwork.resize(2*NAEA);
+    exct.reserve(2*NAEA);
+    for(int i=0; i<ndets; i++) {
+      ci = ci_coeff[i];
+      // alpha
+      confg.clear();
+      for(int k=0, q=0; k<NAEA; k++) {
+        q = occs[i][k];
+        if(q < 0 || q >= NMO)
+          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file. \n");
+        confg.emplace_back(q);
+      }
+      if(i==0) {
+        refa=confg;
+      } else {
+        int np = get_excitation_number(true,refa,confg,exct,ci,Iwork);
+        push_excitation(exct,unique_alpha[np]);
+      }
+      // beta
+      confg.clear();
+      for(int k=0, q=0; k<NAEB; k++) {
+        q = occs[i][NAEA+k];
+        if(q < NMO || q >= 2*NMO)
+          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file. \n");
+        confg.emplace_back(q);
+      }
+      if(i==0) {
+        refb=confg;
+      } else {
+        int np = get_excitation_number(true,refb,confg,exct,ci,Iwork);
+        push_excitation(exct,unique_beta[np]);
+      }
+    }
+    // now that we have all unique configurations, count
+    for(int i=1; i<=NAEA; i++) counts_alpha[i] = unique_alpha[i].size();
+    for(int i=1; i<=NAEB; i++) counts_beta[i] = unique_beta[i].size();
+  }
+  comm.broadcast_n(counts_alpha.begin(),counts_alpha.size());
+  comm.broadcast_n(counts_beta.begin(),counts_beta.size());
+  // using int for now, but should move to short later when everything works well
+  // ph_struct stores the reference configuration on the index [0]
+  ph_excitations<int,ComplexType> ph_struct(ndets,NAEA,NAEB,counts_alpha,counts_beta,
+                                            shared_allocator<int>(comm));
+
+  if(comm.root()) {
+    std::map<int,int> refa2loc;
+    for(int i=0; i<NAEA; i++) refa2loc[refa[i]] = i;
+    std::map<int,int> refb2loc;
+    for(int i=0; i<NAEB; i++) refb2loc[refb[i]] = i;
+    // add reference
+    ph_struct.add_reference(refa,refb);
+    // add unique configurations
+    // alpha
+    for(int n=1; n<unique_alpha.size(); n++)
+      for(std::vector<int>::iterator it=unique_alpha[n].begin(); it<unique_alpha[n].end(); it+=(2*n) )
+        ph_struct.add_alpha(n,it);
+    // beta
+    for(int n=1; n<unique_beta.size(); n++)
+      for(std::vector<int>::iterator it=unique_beta[n].begin(); it<unique_beta[n].end(); it+=(2*n) )
+        ph_struct.add_beta(n,it);
+    // read configurations
+    int alpha_index;
+    int beta_index;
+    int np;
+    for(int i=0; i<ndets; i++) {
+      ci = ci_coeff[i];
+      confg.clear();
+      for(int k=0, q=0; k<NAEA; k++) {
+        q = occs[i][k];
+        if(q < 0 || q >= NMO)
+          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file. \n");
+        confg.emplace_back(q);
+      }
+      np = get_excitation_number(true,refa,confg,exct,ci,Iwork);
+      alpha_index = ((np==0)?(0):(find_excitation(exct,unique_alpha[np]) +
+                                  ph_struct.number_of_unique_smaller_than(np)[0]));
+      confg.clear();
+      for(int k=0, q=0; k<NAEB; k++) {
+        q = occs[i][NAEA+k];
+        if(q < NMO || q >= 2*NMO)
+          APP_ABORT("Error: Bad occupation number " << q << " in determinant " << i << " in wavefunction file. \n");
+        confg.emplace_back(q);
+      }
+      np = get_excitation_number(true,refb,confg,exct,ci,Iwork);
+      beta_index = ((np==0)?(0):(find_excitation(exct,unique_beta[np]) +
+                                  ph_struct.number_of_unique_smaller_than(np)[1]));
+      ph_struct.add_configuration(alpha_index,beta_index,ci);
+    }
+  }
+  comm.barrier();
+  return ph_struct;
+}
+
+/*
+ * Read trial wavefunction information from file.
+*/
+void getCommonInput(hdf_archive& dump, int NMO, int NAEA, int NAEB, int& ndets_to_read,
+                                         std::vector<ComplexType>& ci, WALKER_TYPES& walker_type, bool root)
+{
+  // check for consistency in parameters
+  std::vector<int> dims(5);
+  if(!dump.readEntry(dims,"dims")) {
+    app_error()<<" Error in getCommonInput(): Problems reading dims. \n";
+    APP_ABORT("");
+  }
+  if(NMO != dims[0]) {
+    app_error()<<" Error in getCommonInput(): Inconsistent NMO . \n";
+    APP_ABORT("");
+  }
+  if(NAEA != dims[1]) {
+    app_error()<<" Error in getCommonInput(): Inconsistent  NAEA. \n";
+    APP_ABORT("");
+  }
+  if(NAEB != dims[2]) {
+    app_error()<<" Error in getCommonInput(): Inconsistent  NAEB. \n";
+    APP_ABORT("");
+  }
+  walker_type = afqmc::initWALKER_TYPES(dims[3]);
+  // just read walker_type, to allow flexibility
+  //if(walker_type != dims[3]) {
+  //  app_error()<<" Error in getCommonInput(): Inconsistent  walker_type. \n";
+  //  APP_ABORT("");
+  //}
+  if(ndets_to_read < 1) ndets_to_read = dims[4];
+  app_log() << " - Number of determinants in trial wavefunction: " << ndets_to_read << "\n";
+  if(ndets_to_read > dims[4]) {
+    app_error()<<" Error in getCommonInput(): Inconsistent  ndets_to_read. \n";
+    APP_ABORT("");
+  }
+  ci.resize(ndets_to_read);
+  if(!dump.readEntry(ci, "ci_coeffs")) {
+    app_error()<<" Error in getCommonInput(): Problems reading ci_coeffs. \n";
+    APP_ABORT("");
+  }
+  app_log() << " - Coefficient of first determinant: " << ci[0] << "\n";
+}
+
 
 // modify for multideterminant case based on type
 int readWfn( std::string fileName, boost::multi::array<ComplexType,3>& OrbMat, int NMO, int NAEA, int NAEB, int det)

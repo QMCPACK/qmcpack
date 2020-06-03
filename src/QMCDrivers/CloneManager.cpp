@@ -13,12 +13,11 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
 
 #include "Platforms/sysutil.h"
 #include "QMCDrivers/CloneManager.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include "Utilities/IteratorUtility.h"
@@ -34,7 +33,6 @@ typedef int TraceManager;
 
 namespace qmcplusplus
 {
-
 //initialization of the static wClones
 std::vector<MCWalkerConfiguration*> CloneManager::wClones;
 //initialization of the static psiClones
@@ -46,52 +44,35 @@ std::vector<MCWalkerConfiguration*> CloneManager::wgClones;
 //initialization of the static hClones
 std::vector<QMCHamiltonian*> CloneManager::hClones;
 
-std::vector<std::vector<MCWalkerConfiguration*> > CloneManager::WPoolClones; 
-std::vector<std::vector<TrialWaveFunction*> > CloneManager::PsiPoolClones;
-std::vector<std::vector<QMCHamiltonian*> > CloneManager::HPoolClones;
+std::vector<std::vector<MCWalkerConfiguration*>> CloneManager::WPoolClones;
+std::vector<std::vector<TrialWaveFunction*>> CloneManager::PsiPoolClones;
+std::vector<std::vector<QMCHamiltonian*>> CloneManager::HPoolClones;
 
 
 // Clear the static clones so makeClones will work as expected.
 // For now only clearing wClones is strictly necessary.  The storage is not freed,
 // and this will leak memory.
 // Only for use in unit tests.
-void
-CloneManager::clear_for_unit_tests()
-{
-  wClones.clear();
-}
+void CloneManager::clear_for_unit_tests() { wClones.clear(); }
 
 /// Constructor.
-CloneManager::CloneManager()
-{
-  NumThreads=omp_get_max_threads();
-  wPerNode.resize(NumThreads+1,0);
-}
-
-void
-CloneManager::setup(int numThreads)
-{
-  NumThreads = numThreads;
-  wPerNode.resize(NumThreads+1, 0);
-}
-
+CloneManager::CloneManager() : NumThreads(omp_get_max_threads()) { wPerNode.resize(NumThreads + 1, 0); }
 
 ///cleanup non-static data members
 CloneManager::~CloneManager()
 {
   // delete_iter(CSMovers.begin(),CSMovers.end());
-  delete_iter(Movers.begin(),Movers.end());
-  delete_iter(estimatorClones.begin(),estimatorClones.end());
+  delete_iter(Movers.begin(), Movers.end());
+  delete_iter(estimatorClones.begin(), estimatorClones.end());
 
 #if !defined(REMOVE_TRACEMANAGER)
-  delete_iter(traceClones.begin(),traceClones.end());
+  delete_iter(traceClones.begin(), traceClones.end());
 #endif
 }
 
-void CloneManager::makeClones(MCWalkerConfiguration& w,
-                              TrialWaveFunction& psi, QMCHamiltonian& ham)
+void CloneManager::makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham)
 {
-  if(wClones.size())
+  if (wClones.size())
   {
     app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << std::endl;
     return;
@@ -99,27 +80,37 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   wClones.resize(NumThreads);
   psiClones.resize(NumThreads);
   hClones.resize(NumThreads);
-  wClones[0]=&w;
-  psiClones[0]=&psi;
-  hClones[0]=&ham;
-  if(NumThreads==1)
+  wClones[0]   = &w;
+  psiClones[0] = &psi;
+  hClones[0]   = &ham;
+  if (NumThreads == 1)
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." << std::endl;
   app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
   print_mem("Memory Usage before cloning", app_log());
   outputManager.pause();
-
-  #pragma omp parallel for shared(w,psi,ham)
-  for(int ip=1; ip<NumThreads; ++ip)
+  // clang-format off
+  #pragma omp parallel
   {
+    // check sizes
+    #pragma omp master
+    if (NumThreads != omp_get_num_threads())
+      throw std::runtime_error("CloneManager::makeClones Inconsist NumThreads and omp_get_num_threads()!\n");
+
+    const int ip = omp_get_thread_num();
+    // all the [ip] objects must be created on the ip threads to have first touch accurate.
+    if (ip > 0)
+    {
 #if defined(USE_PARTCILESET_CLONE)
-    wClones[ip]=dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
+      wClones[ip] = dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
 #else
-    wClones[ip]=new MCWalkerConfiguration(w);
+      wClones[ip] = new MCWalkerConfiguration(w);
 #endif
-    psiClones[ip]=psi.makeClone(*wClones[ip]);
-    hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
+      psiClones[ip] = psi.makeClone(*wClones[ip]);
+      hClones[ip]   = ham.makeClone(*wClones[ip], *psiClones[ip]);
+    }
   }
+  // clang-format on
   infoLog.resume();
   infoSummary.resume();
   print_mem("Memory Usage after cloning", app_log());
@@ -127,108 +118,143 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
 
 
 void CloneManager::makeClones(MCWalkerConfiguration& w,
-                              std::vector<TrialWaveFunction*>& psipool, std::vector<QMCHamiltonian*>& hampool)
+                              std::vector<TrialWaveFunction*>& psipool,
+                              std::vector<QMCHamiltonian*>& hampool)
 {
-  if(WPoolClones.size())
+  if (WPoolClones.size())
   {
     app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << std::endl;
     return;
   }
-  IndexType nPsi=psipool.size();
-  
+  IndexType nPsi = psipool.size();
+
   wClones.resize(NumThreads);
   PsiPoolClones.resize(NumThreads);
   HPoolClones.resize(NumThreads);
-  wClones[0]=&w;
-  PsiPoolClones[0]=psipool;
-  HPoolClones[0]=hampool;
-  
+  wClones[0]       = &w;
+  PsiPoolClones[0] = psipool;
+  HPoolClones[0]   = hampool;
 
-  if(NumThreads==1)
+
+  if (NumThreads == 1)
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H Pools." << std::endl;
   app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
   outputManager.pause();
 
-  bool io_node=qmc_common.io_node;
-  qmc_common.io_node=false;
+  bool io_node       = qmc_common.io_node;
+  qmc_common.io_node = false;
 
-  for(int ip=1; ip<NumThreads; ++ip)
+  for (int ip = 1; ip < NumThreads; ++ip)
   {
-	
-   // WPoolClones[ip].resize(nPsi,0);
+    // WPoolClones[ip].resize(nPsi,0);
     PsiPoolClones[ip].resize(nPsi);
     HPoolClones[ip].resize(nPsi);
-    for(int ipsi=0; ipsi<psipool.size(); ipsi++)
+    for (int ipsi = 0; ipsi < psipool.size(); ipsi++)
     {
-
-//#if defined(USE_PARTCILESET_CLONE)
-//      wClones[ip]=dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
-//#else
-      wClones[ip]=new MCWalkerConfiguration(w);
-//#endif
-      PsiPoolClones[ip][ipsi]=psipool[ipsi]->makeClone(w);
-      HPoolClones[ip][ipsi]=hampool[ipsi]->makeClone(w,*psipool[ipsi]);
+      //#if defined(USE_PARTCILESET_CLONE)
+      //      wClones[ip]=dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
+      //#else
+      wClones[ip] = new MCWalkerConfiguration(w);
+      //#endif
+      PsiPoolClones[ip][ipsi] = psipool[ipsi]->makeClone(w);
+      HPoolClones[ip][ipsi]   = hampool[ipsi]->makeClone(w, *psipool[ipsi]);
     }
   }
   infoSummary.resume();
   infoLog.resume();
-  qmc_common.io_node=io_node;
+  qmc_common.io_node = io_node;
 }
 
 
 void CloneManager::makeClones(TrialWaveFunction& guide)
 {
-  if(guideClones.size())
+  if (guideClones.size())
   {
     app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << std::endl;
     return;
   }
   else
   {
-    guideClones.resize(NumThreads,0);
+    guideClones.resize(NumThreads, 0);
   }
-  guideClones.resize(NumThreads,0);
-  guideClones[0]=&guide;
-  if(NumThreads==1)
+  guideClones.resize(NumThreads, 0);
+  guideClones[0] = &guide;
+  if (NumThreads == 1)
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
   outputManager.pause();
-  for(int ip=1; ip<NumThreads; ++ip)
+  for (int ip = 1; ip < NumThreads; ++ip)
   {
-    guideClones[ip]=guide.makeClone(*wClones[ip]);
+    guideClones[ip] = guide.makeClone(*wClones[ip]);
   }
   infoSummary.resume();
   infoLog.resume();
 }
+
+
 void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide)
 {
-  if(guideClones.size())
+  if (guideClones.size())
   {
     app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << std::endl;
     return;
   }
   else
   {
-    guideClones.resize(NumThreads,0);
-    wgClones.resize(NumThreads,0);
+    guideClones.resize(NumThreads, 0);
+    wgClones.resize(NumThreads, 0);
   }
-  guideClones.resize(NumThreads,0);
-  wgClones.resize(NumThreads,0);
-  guideClones[0]=&guide;
-  wgClones[0]=new MCWalkerConfiguration(wg);
-  if(NumThreads==1)
+  guideClones.resize(NumThreads, 0);
+  wgClones.resize(NumThreads, 0);
+  guideClones[0] = &guide;
+  wgClones[0]    = new MCWalkerConfiguration(wg);
+  if (NumThreads == 1)
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
   outputManager.pause();
-  for(int ip=1; ip<NumThreads; ++ip)
+  for (int ip = 1; ip < NumThreads; ++ip)
   {
-    wgClones[ip]=new MCWalkerConfiguration(wg);
-    guideClones[ip]=guide.makeClone(*wgClones[ip]);
+    wgClones[ip]    = new MCWalkerConfiguration(wg);
+    guideClones[ip] = guide.makeClone(*wgClones[ip]);
   }
   infoSummary.resume();
   infoLog.resume();
 }
 
+CloneManager::RealType CloneManager::acceptRatio() const
+{
+  IndexType nAcceptTot = 0;
+  IndexType nRejectTot = 0;
+  for (int ip = 0; ip < NumThreads; ip++)
+  {
+    nAcceptTot += Movers[ip]->nAccept;
+    nRejectTot += Movers[ip]->nReject;
+  }
+#if defined(__GNUC__) || !defined(NDEBUG)
+// Attempt to detect compiler vectorization errors by computing
+// acceptance ratio in a different way to the above loop
+  IndexType nAcceptTot_debug = 0;
+  IndexType nRejectTot_debug = 0;
+  std::vector<int> vec(NumThreads);
+  for (int ip = 0; ip < NumThreads; ip++)
+  {
+    vec[ip] = Movers[ip]->nAccept;
+    nAcceptTot_debug += vec[ip];
+    vec[ip] = Movers[ip]->nReject;
+    nRejectTot_debug += vec[ip];
+  }
+  if (nAcceptTot != nAcceptTot_debug || nRejectTot != nRejectTot_debug)
+  {
+    app_warning() << " Potential compiler bug detected!"
+                  << " Overwriting nAcceptTot wrong value " << nAcceptTot << " with correct value " << nAcceptTot_debug << "."
+                  << " Overwriting nRejectTot wrong value " << nRejectTot << " with correct value " << nRejectTot_debug << "."
+                  << std::endl;
+    nAcceptTot = nAcceptTot_debug;
+    nRejectTot = nRejectTot_debug;
+  }
+#endif
+  return static_cast<RealType>(nAcceptTot) / static_cast<RealType>(nAcceptTot + nRejectTot);
 }
 
+} // namespace qmcplusplus

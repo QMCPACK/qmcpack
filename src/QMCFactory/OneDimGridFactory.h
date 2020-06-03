@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_ONEDIMGRIDFACTORY_H
@@ -21,16 +19,14 @@
 
 namespace qmcplusplus
 {
-
 /** Factory class using Singleton pattern
  */
-struct OneDimGridFactory: public QMCTraits
+struct OneDimGridFactory : public QMCTraits
 {
-
   ///typedef of the one-dimensional grid
-  typedef OneDimGridBase<RealType>   GridType;
+  typedef OneDimGridBase<RealType> GridType;
   ///typedef of map( std::string,GridType*>
-  typedef std::map<std::string,GridType*> GridObjectMapType;
+  typedef std::map<std::string, GridType*> GridObjectMapType;
 
   ///container of one-dimensional grids
   static GridObjectMapType GridObjects;
@@ -42,5 +38,5 @@ struct OneDimGridFactory: public QMCTraits
 
   static RealType setSmoothCutoff(GridType* agrid, xmlNodePtr cur);
 };
-}
+} // namespace qmcplusplus
 #endif

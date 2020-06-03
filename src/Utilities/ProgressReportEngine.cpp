@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #include "Configuration.h"
@@ -22,14 +19,14 @@ namespace qmcplusplus
 {
 void ReportEngine::echo(xmlNodePtr cur, bool recursive)
 {
-  if(cur==NULL)
+  if (cur == NULL)
     return;
-  app_debug()<< "<input node=\""<<(const char*)(cur->name) << "\"";
+  app_debug() << "<input node=\"" << (const char*)(cur->name) << "\"";
   xmlAttrPtr att = cur->properties;
   char atext[1024];
-  while(att != NULL)
+  while (att != NULL)
   {
-    sprintf(atext,"  %s=\"%s\"",(const char*)(att->name),(const char*)(att->children->content));
+    sprintf(atext, "  %s=\"%s\"", (const char*)(att->name), (const char*)(att->children->content));
     app_debug() << atext;
     att = att->next;
   }
@@ -38,4 +35,4 @@ void ReportEngine::echo(xmlNodePtr cur, bool recursive)
 
 bool ReportEngine::DoOutput = false;
 
-}
+} // namespace qmcplusplus

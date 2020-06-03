@@ -11,9 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
@@ -22,14 +19,14 @@
 #include <OhmmsData/RecordProperty.h>
 #include <OhmmsData/HDFAttribIO.h>
 #include <Estimators/accumulators.h>
+#include "QMCDrivers/MCPopulation.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
 #endif
 
 namespace qmcplusplus
 {
-
-class observable_helper;
+struct observable_helper;
 
 /** Abstract class for an estimator of a scalar operator.
  *
@@ -41,11 +38,12 @@ class observable_helper;
  */
 struct ScalarEstimatorBase
 {
-  typedef QMCTraits::EstimatorRealType          RealType;
-  typedef accumulator_set<RealType>             accumulator_type;
-  typedef MCWalkerConfiguration::Walker_t       Walker_t;
+  typedef QMCTraits::FullPrecRealType RealType;
+  typedef accumulator_set<RealType> accumulator_type;
+  typedef MCWalkerConfiguration::Walker_t Walker_t;
+  using MCPWalker = MCPopulation::MCPWalker;
   typedef MCWalkerConfiguration::const_iterator WalkerIterator;
-  typedef RecordNamedProperty<RealType>         RecordListType;
+  typedef RecordNamedProperty<RealType> RecordListType;
 
   ///first index within an record of the first element handled by an object
   int FirstIndex;
@@ -55,38 +53,26 @@ struct ScalarEstimatorBase
   std::vector<accumulator_type> scalars;
   ///scalars saved
   std::vector<accumulator_type> scalars_saved;
-//     RealType NSTEPS;
+  //     RealType NSTEPS;
 
-  inline ScalarEstimatorBase(): FirstIndex(0), LastIndex(0) {}
+  inline ScalarEstimatorBase() : FirstIndex(0), LastIndex(0) {}
 
   virtual ~ScalarEstimatorBase() {}
 
   ///return average of the
-  inline RealType average(int i=0) const
-  {
-    return scalars_saved[i].mean();
-  }
+  inline RealType average(int i = 0) const { return scalars_saved[i].mean(); }
   ///return a variance
-  inline RealType variance(int i=0) const
-  {
-    return scalars_saved[i].variance();
-  }
+  inline RealType variance(int i = 0) const { return scalars_saved[i].variance(); }
   ///retrun mean and variance
-  inline std::pair<RealType,RealType> operator[](int i) const
-  {
-    return scalars[i].mean_and_variance();
-  }
+  inline std::pair<RealType, RealType> operator[](int i) const { return scalars[i].mean_and_variance(); }
 
   ///return the size of scalars it manages
-  inline int size() const
-  {
-    return scalars.size();
-  }
+  virtual inline int size() const { return scalars.size(); }
 
   ///clear the scalars to collect
   inline void clear()
   {
-    for(int i=0; i<scalars.size(); i++)
+    for (int i = 0; i < scalars.size(); i++)
       scalars[i].clear();
   }
 
@@ -95,10 +81,10 @@ struct ScalarEstimatorBase
   inline void takeBlockAverage(IT first)
   {
     first += FirstIndex;
-    for(int i=0; i<scalars.size(); i++)
+    for (int i = 0; i < scalars.size(); i++)
     {
-      *first++ = scalars[i].mean();
-      scalars_saved[i]=scalars[i]; //save current block
+      *first++         = scalars[i].mean();
+      scalars_saved[i] = scalars[i]; //save current block
       scalars[i].clear();
     }
   }
@@ -112,11 +98,11 @@ struct ScalarEstimatorBase
   {
     first += FirstIndex;
     first_sq += FirstIndex;
-    for(int i=0; i<scalars.size(); i++)
+    for (int i = 0; i < scalars.size(); i++)
     {
-      *first++ = scalars[i].mean();
-      *first_sq++ = scalars[i].mean2();
-      scalars_saved[i]=scalars[i]; //save current block
+      *first++         = scalars[i].mean();
+      *first_sq++      = scalars[i].mean2();
+      scalars_saved[i] = scalars[i]; //save current block
       scalars[i].clear();
     }
   }
@@ -129,8 +115,15 @@ struct ScalarEstimatorBase
    *
    * Pass W along with the iterators so that the properties of W can be utilized.
    */
-  virtual void accumulate(const MCWalkerConfiguration& W
-                          , WalkerIterator first, WalkerIterator last , RealType wgt) = 0;
+  virtual void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) = 0;
+
+   /** a virtual function to accumulate observables or collectables
+   * @param global_walkers_ walkers per ranks or walkers total?
+   * @param RefVector of MCPWalkers
+   * @param wgt weight or maybe norm
+   *
+   */
+  virtual void accumulate(const int global_walkers, RefVector<MCPWalker>&, RealType wgt) = 0;
 
   /** add the content of the scalar estimator to the record
    * @param record scalar data list
@@ -143,16 +136,16 @@ struct ScalarEstimatorBase
    * @param h5desc descriptor of a data stored in a h5 group
    * @param gid h5 group to which each statistical data will be stored
    */
-  virtual void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)=0;
+  virtual void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) = 0;
 
   ///clone the object
-  virtual ScalarEstimatorBase* clone()=0;
+  virtual ScalarEstimatorBase* clone() = 0;
 
   inline void setNumberOfBlocks(int nsamples)
   {
-//       NSTEPS=1.0/ static_cast<RealType>(nsamples);
+    //       NSTEPS=1.0/ static_cast<RealType>(nsamples);
   }
 };
-}
+} // namespace qmcplusplus
 
 #endif

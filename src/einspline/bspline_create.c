@@ -95,10 +95,9 @@ solve_deriv_interp_1d_s (float bands[], float coefs[],
 // cstride gives the stride between values in coefs.
 // On exit, coefs with contain interpolating B-spline coefs
 void 
-solve_periodic_interp_1d_s (float bands[], float coefs[],
-			    int M, size_t cstride) //int M, int cstride)
+solve_periodic_interp_1d_s (float bands[], float coefs[], float lastCol[],
+			    int M, size_t cstride)
 {
-  float lastCol[M];
   // Now solve:
   // First and last rows are different
   bands[4*(0)+2] /= bands[4*(0)+1];
@@ -152,13 +151,12 @@ solve_periodic_interp_1d_s (float bands[], float coefs[],
 // cstride gives the stride between values in coefs.
 // On exit, coefs with contain interpolating B-spline coefs
 void 
-solve_antiperiodic_interp_1d_s (float bands[], float coefs[],
-				int M, int cstride)
+solve_antiperiodic_interp_1d_s (float bands[], float coefs[], float lastCol[],
+				int M, size_t cstride)
 {
   bands[4*0+0]     *= -1.0;
   bands[4*(M-1)+2] *= -1.0;
 
-  float lastCol[M];
   // Now solve:
   // First and last rows are different
   bands[4*(0)+2] /= bands[4*(0)+1];
@@ -241,12 +239,11 @@ find_coefs_1d_s (Ugrid grid, BCtype_s bc,
 {
   size_t M = grid.num;
   float basis[4] = {1.0/6.0, 2.0/3.0, 1.0/6.0, 0.0};
-  if (bc.lCode == PERIODIC || bc.lCode == ANTIPERIODIC) {
-#ifdef HAVE_C_VARARRAYS
-    float bands[4*M];
-#else
-    float *bands = malloc(4*M*sizeof(float));
-#endif    
+  if (bc.lCode == PERIODIC || bc.lCode == ANTIPERIODIC)
+  {
+    float* bands =(float*) malloc(4*M*sizeof(float));
+    float* lastCol =(float*) malloc(M*sizeof(float));
+
     for (size_t i=0; i<M; i++) {
       bands[4*i+0] = basis[0];
       bands[4*i+1] = basis[1];
@@ -254,12 +251,12 @@ find_coefs_1d_s (Ugrid grid, BCtype_s bc,
       bands[4*i+3] = data[i*dstride];
     }
     if (bc.lCode == PERIODIC)
-      solve_periodic_interp_1d_s (bands, coefs, M, cstride);
+      solve_periodic_interp_1d_s (bands, coefs, lastCol, M, cstride);
     else
-      solve_antiperiodic_interp_1d_s (bands, coefs, M, cstride);
-#ifndef HAVE_C_VARARRAYS
+      solve_antiperiodic_interp_1d_s (bands, coefs, lastCol, M, cstride);
+
     free (bands);
-#endif
+    free (lastCol);
   }
   else {
     // Setup boundary conditions
@@ -295,11 +292,9 @@ find_coefs_1d_s (Ugrid grid, BCtype_s bc,
       abcd_right[2] = 1.0 *grid.delta_inv * grid.delta_inv;
       abcd_right[3] = bc.rVal;
     }
-#ifdef HAVE_C_VARARRAYS
-    float bands[4*(M+2)];
-#else
+
     float *bands = malloc ((M+2)*4*sizeof(float));
-#endif    
+
     for (int i=0; i<4; i++) {
       bands[4*( 0 )+i]   = abcd_left[i];
       bands[4*(M+1)+i] = abcd_right[i];
@@ -311,9 +306,8 @@ find_coefs_1d_s (Ugrid grid, BCtype_s bc,
     }   
     // Now, solve for coefficients
     solve_deriv_interp_1d_s (bands, coefs, M, cstride);
-#ifndef HAVE_C_VARARRAYS
+
     free (bands);
-#endif
   }
 }
 
@@ -1008,10 +1002,9 @@ solve_deriv_interp_1d_d (double bands[], double coefs[],
 // cstride gives the stride between values in coefs.
 // On exit, coefs with contain interpolating B-spline coefs
 void 
-solve_periodic_interp_1d_d (double bands[], double coefs[],
-			    int M, intptr_t cstride)
+solve_periodic_interp_1d_d (double bands[], double coefs[], double lastCol[],
+			    int M, size_t cstride)
 {
-  double lastCol[M];
   // Now solve:
   // First and last rows are different
   bands[4*(0)+2] /= bands[4*(0)+1];
@@ -1062,10 +1055,9 @@ solve_periodic_interp_1d_d (double bands[], double coefs[],
 // cstride gives the stride between values in coefs.
 // On exit, coefs with contain interpolating B-spline coefs
 void 
-solve_antiperiodic_interp_1d_d (double bands[], double coefs[],
-			    int M, int cstride)
+solve_antiperiodic_interp_1d_d (double bands[], double coefs[], double lastCol[],
+			    int M, size_t cstride)
 {
-  double lastCol[M];
   bands[4*0+0]     *= -1.0;
   bands[4*(M-1)+2] *= -1.0;
   // Now solve:
@@ -1120,27 +1112,25 @@ find_coefs_1d_d (Ugrid grid, BCtype_d bc,
 {
   int M = grid.num;
   double basis[4] = {1.0/6.0, 2.0/3.0, 1.0/6.0, 0.0};
-  if (bc.lCode == PERIODIC || bc.lCode == ANTIPERIODIC) {
-#ifdef HAVE_C_VARARRAYS
-    double bands[M*4];
-#else
-    double *bands = malloc (4*M*sizeof(double));
-#endif
+  if (bc.lCode == PERIODIC || bc.lCode == ANTIPERIODIC)
+  {
+    double *bands = (double*)malloc (4*M*sizeof(double));
+    double* lastCol = (double*) malloc(M*sizeof(double));
+
     for (int i=0; i<M; i++) {
       bands[4*i+0] = basis[0];
       bands[4*i+1] = basis[1];
       bands[4*i+2] = basis[2];
       bands[4*i+3] = data[i*dstride];
     }
+
     if (bc.lCode == ANTIPERIODIC) 
-      solve_antiperiodic_interp_1d_d (bands, coefs, M, cstride);
+      solve_antiperiodic_interp_1d_d (bands, coefs, lastCol, M, cstride);
     else
-      solve_periodic_interp_1d_d (bands, coefs, M, cstride);
+      solve_periodic_interp_1d_d (bands, coefs, lastCol, M, cstride);
 
-
-#ifndef HAVE_C_VARARRAYS
     free (bands);
-#endif
+    free (lastCol);
   }
   else {
     // Setup boundary conditions
@@ -1176,11 +1166,9 @@ find_coefs_1d_d (Ugrid grid, BCtype_d bc,
       abcd_right[2] = 1.0 *grid.delta_inv * grid.delta_inv;
       abcd_right[3] = bc.rVal;
     }
-#ifdef HAVE_C_VARARRAYS
-    double bands[(M+2)*4];
-#else
+
     double *bands = malloc ((M+2)*4*sizeof(double));
-#endif
+
     for (int i=0; i<4; i++) {
       bands[4*( 0 )+i] = abcd_left[i];
       bands[4*(M+1)+i] = abcd_right[i];
@@ -1192,9 +1180,8 @@ find_coefs_1d_d (Ugrid grid, BCtype_d bc,
     }   
     // Now, solve for coefficients
     solve_deriv_interp_1d_d (bands, coefs, M, cstride);
-#ifndef HAVE_C_VARARRAYS
+
     free (bands);
-#endif
   }
 }
 

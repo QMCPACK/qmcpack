@@ -9,9 +9,6 @@
 //
 // File created by: Anouar Benali, benali@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 //#ifndef QMCPLUSPLUS_TOOLS_GAMESS_OUT_H
@@ -26,23 +23,20 @@
 class Monomer;
 class IDmer;
 
-class GamesFMOParser: public QMCGaussianParserBase,
-  public OhmmsAsciiParser
+class GamesFMOParser : public QMCGaussianParserBase, public OhmmsAsciiParser
 {
-
 public:
-
   GamesFMOParser();
 
   GamesFMOParser(int argc, char** argv);
 
 
   std::streampos pivot_begin;
-  std::string psi_tag, ion_tag; 
+  std::string psi_tag, ion_tag;
   std::vector<std::string> tags;
-  std::string *IDMonomer; 
+  std::string* IDMonomer;
 
-  bool Mono; 
+  bool Mono;
   std::string MOtype;
 
 
@@ -55,50 +49,48 @@ public:
   int FMOMethod;
   int MonomerID;
 
-  Monomer * Tot_Monomer;
-  
+  Monomer* Tot_Monomer;
+
   void parse(const std::string& fname);
 
   void getGeometry(std::istream& is);
 
-  void getAllMonomer(std::istream& is,int Index);
+  void getAllMonomer(std::istream& is, int Index);
 
   void getMO(std::istream& is, std::string temp_tag);
 
-  void getMO_single_set(std::istream& is, Matrix<double> &CartMat, std::vector<value_type>& EigVal, std::string temp_tag);
+  void getMO_single_set(std::istream& is,
+                        Matrix<double>& CartMat,
+                        std::vector<value_type>& EigVal,
+                        std::string temp_tag);
 
   void getGaussianCenters(std::istream& is);
-
 };
 
 
-
-class Monomer: public QMCGaussianParserBase
+class Monomer : public QMCGaussianParserBase
 {
 private:
-     int test;
+  int test;
+
 public:
-      Monomer();
+  Monomer();
 
 
-  int q,AtomIndex;
   std::string tags;
-  double X, Y, Z,ESPq;
+  double X, Y, Z, ESPq;
+  int q, AtomIndex;
 
   void print_Geometry();
-  void parse(const std::string& fname){ };
-
-
+  void parse(const std::string& fname){};
 };
 
 class IDmer
 {
-
 public:
   IDmer();
   std::string MyId;
   int IndexI;
   int IndexJ;
   int IndexK;
-  
 };

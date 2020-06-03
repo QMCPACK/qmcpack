@@ -11,9 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /** @file OptimizableFunctorBase.h
@@ -53,7 +50,7 @@ struct OptimizableFunctorBase
   ///typedef for name-value lists
   typedef optimize::VariableSet::variable_map_type variable_map_type;
   ///maximum cutoff
-  real_type cutoff_radius;
+  real_type cutoff_radius = 0.0;
   ///set of variables to be optimized
   opt_variables_type myVars;
   ///default constructor
@@ -61,40 +58,37 @@ struct OptimizableFunctorBase
   ///virtual destrutor
   virtual ~OptimizableFunctorBase() {}
 
-  inline void getIndex(const opt_variables_type& active)
-  {
-    myVars.getIndex(active);
-  }
+  inline void getIndex(const opt_variables_type& active) { myVars.getIndex(active); }
 
-  virtual void checkInVariables(opt_variables_type& active)=0;
+  virtual void checkInVariables(opt_variables_type& active) = 0;
 
-  virtual void checkOutVariables(const opt_variables_type& active)=0;
+  virtual void checkOutVariables(const opt_variables_type& active) = 0;
 
   /** reset the optimizable variables
    * @param active list of active optimizable variables
    */
-  virtual void resetParameters(const opt_variables_type& active)=0;
+  virtual void resetParameters(const opt_variables_type& active) = 0;
   /** create a clone of this object
    */
-  virtual OptimizableFunctorBase* makeClone() const =0;
+  virtual OptimizableFunctorBase* makeClone() const = 0;
 
   /** reset function
    */
-  virtual void reset()=0;
+  virtual void reset() = 0;
 
   /** evaluate the value at r
    * @param r distance
    *
    * virtual function necessary for a transformation to a numerical functor
    */
-  virtual real_type f(real_type r)=0;
+  virtual real_type f(real_type r) = 0;
 
   /** evaluate the first derivative
    * @param r distance
    *
    * virtual function necessary for a transformation to a numerical functor
    */
-  virtual real_type df(real_type r)=0;
+  virtual real_type df(real_type r) = 0;
 
   /** process xmlnode and registers variables to optimize
    * @param cur xmlNode for a functor
@@ -103,29 +97,27 @@ struct OptimizableFunctorBase
 
   /** empty virtual function to help builder classes
   */
-  virtual void setDensity(real_type n) { }
+  virtual void setDensity(real_type n) {}
 
   /** empty virtual function to help builder classes
    */
-  virtual void setCusp(real_type cusp) { }
+  virtual void setCusp(real_type cusp) {}
 
   /** empty virtual function to help builder classes
    */
-  virtual void setPeriodic(bool periodic) { }
+  virtual void setPeriodic(bool periodic) {}
 
-  virtual inline bool evaluateDerivatives (real_type r, std::vector<qmcplusplus::TinyVector<real_type,3> >& derivs)
+  virtual inline bool evaluateDerivatives(real_type r, std::vector<qmcplusplus::TinyVector<real_type, 3>>& derivs)
   {
     return false;
   }
 
-// mmorales: don't know how to solve a template problem for cusp correction,
-//           so for now I do this
-  virtual void setGridManager(bool willmanage) { }
-
+  // mmorales: don't know how to solve a template problem for cusp correction,
+  //           so for now I do this
+  virtual void setGridManager(bool willmanage) {}
 };
 
 void print(OptimizableFunctorBase& func, std::ostream& os);
 
 
 #endif
-

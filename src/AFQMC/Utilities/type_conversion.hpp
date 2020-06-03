@@ -14,10 +14,15 @@
 #ifndef AFQMC_TYPE_CONVERSION_HPP 
 #define AFQMC_TYPE_CONVERSION_HPP 
 
+#include <type_traits> // decay_t
+
 namespace qmcplusplus
 {
 namespace afqmc
 {
+
+template<class MPtr>
+using pointedType = std::decay_t<decltype(*std::declval<MPtr&>())>;
 
 // convert to single precision
 template<typename T>
@@ -75,6 +80,52 @@ inline std::string type_to_string<int>() { return std::string("int"); }
 template<>
 inline std::string type_to_string<std::string>() { return std::string("std::string"); }
 
+// create std::vector<T> from std::vector<Q>
+template<class Q, class T>
+std::vector<Q> make_vector(std::vector<T> const& other)
+{
+  std::vector<Q> res;
+  res.reserve(other.size());
+  for(auto& v:other) res.emplace_back(v);
+  return res;
+}
+
+//   can use: return std::vector<Q>{std::make_move_iterator(other.begin()),
+//                                  std::make_move_iterator(other.end()));
+// and can replace move_vector with this outside
+template<class Q, class T>
+std::vector<Q> move_vector(std::vector<T> && other)
+{
+  std::vector<Q> res;
+  res.reserve(other.size());
+  for(auto& v:other) res.emplace_back(std::move(v));
+  return res;
+}
+
+template<class Q, class T, class Aux>
+std::vector<Q> move_vector(std::vector<T> && other, Aux param)
+{
+  std::vector<Q> res;
+  res.reserve(other.size());
+  for(auto& v:other) res.emplace_back(std::move(v),param);
+  return res;
+}
+/*
+// to bypass the lack of copy constructor of multi::array_refs/basic_arrays
+template<class VType, class MType,
+         typename = typename std::enable_if_t<MType::dimensionality == 2>
+        >
+void emplace_back_array_ref(VType& V, MType&& M, bool device=true) {
+  // noly makes sense for continguous arrays
+  assert(M.stride(0) == M.size(1));
+  assert(M.stride(1) == 1);
+  if(device) {  
+    V.emplace_back(make_device_ptr(M.origin()),iextensions<2u>{M.size(0),M.size(1)});
+  } else {
+    V.emplace_back(to_address(M.origin()),iextensions<2u>{M.size(0),M.size(1)});
+  }
+} 
+*/
 }
 
 }

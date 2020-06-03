@@ -1,0 +1,280 @@
+#INFO: **** input file is /p/lustre2/malone14/afqmc_test_data/unit/scf.py ****
+#! /usr/bin/env python3
+
+import numpy
+from pyscf.pbc import gto, scf
+from pyscf.pbc import tools as pbctools
+import h5py
+from pyscftools.integrals_from_chkfile import eri_to_h5
+from pyscftools.integrals_from_chkfile_kpfftdf import (
+        eri_to_h5, getOrthoAORotation
+)
+
+
+alat0 = 3.6
+
+cell = gto.Cell()
+cell.a = numpy.eye(3)*alat0
+cell.atom = [('He',0,0,0)]
+cell.basis = 'gth-dzv'
+cell.pseudo = 'gth-pade'
+cell.mesh = [71]*3
+cell.verbose = 5
+cell.build()
+
+nk = [2,2,2]
+kpts = cell.make_kpts(nk)
+
+mf = scf.KRHF(cell,kpts=kpts)
+mf.chkfile = 'scf.dump'
+ehf = mf.kernel()
+
+hcore = mf.get_hcore()
+fock = (hcore + mf.get_veff())
+X,nmo_per_kpt = getOrthoAORotation(cell,kpts,1e-8)
+with h5py.File(mf.chkfile) as fh5:
+  fh5['scf/hcore'] = hcore
+  fh5['scf/fock'] = fock
+  fh5['scf/orthoAORot'] = X
+  fh5['scf/nmo_per_kpt'] = nmo_per_kpt
+
+eri_to_h5("ham_chol_uc", "./scf.dump", orthoAO=True, gtol=1e-5)
+#INFO: ******************** input file end ********************
+
+
+System: ('Linux', 'quartz16', '3.10.0-957.1.3.1chaos.ch6.x86_64', '#1 SMP Thu Dec 6 11:45:08 PST 2018', 'x86_64', 'x86_64')  Threads 36
+Python 2.7.14 (default, Jan 17 2018, 10:04:29) 
+[GCC 4.9.3]
+numpy 1.13.3  scipy 1.0.0
+Date: Fri Mar 15 11:24:06 2019
+PySCF version 1.6
+PySCF path  /g/g90/malone14/projects/pyscf/pyscf
+GIT ORIG_HEAD cb6997be4e45fd7054f36881e68762c9ff03e59d
+GIT HEAD      ref: refs/heads/master
+GIT master branch  21ff7429fe24ac23041f885ea115257c07714ae5
+
+[CONFIG] conf_file None
+[INPUT] verbose = 5
+[INPUT] max_memory = 4000 
+[INPUT] num. atoms = 1
+[INPUT] num. electrons = 2
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT]  1 He     0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr
+[INPUT] ---------------- BASIS SET ---------------- 
+[INPUT] l, kappa, [nprim/nctr], expnt,             c_1 c_2 ...
+[INPUT] He
+[INPUT] 0    0    [5    /2   ]  13.1305278312     -0.0500802904    0
+                                4.197727515       -0.1474339352    0
+                                1.364772557       -0.3245281495    0
+                                0.4549715461      -0.4365284986    0
+                                0.1513197845      -0.2164629317    1
+
+Ewald components = 3.18934340453057e-190, -6.90727743820006, 6.07314790112118
+nuclear repulsion = -0.834129537078872
+number of shells = 1
+number of NR pGTOs = 5
+number of NR cGTOs = 2
+basis = gth-dzv
+ecp = {}
+CPU time:         1.70
+lattice vectors  a1 [6.803014048, 0.000000000, 0.000000000]
+                 a2 [0.000000000, 6.803014048, 0.000000000]
+                 a3 [0.000000000, 0.000000000, 6.803014048]
+dimension = 3
+low_dim_ft_type = None
+Cell volume = 314.85
+rcut = 16.3608633702 (nimgs = [3 3 3])
+lattice sum = 251 cells
+precision = 1e-08
+pseudo = gth-pade
+mesh = [71, 71, 71] (357911 PWs)
+    = ke_cutoff [ 537.50648897  537.50648897  537.50648897]
+ew_eta = 3.05976
+ew_cut = 2.29772120836 (nimgs = [1 1 1])
+
+
+******** <class 'pyscf.pbc.scf.khf.KRHF'> ********
+method = KRHF-KSCF-SCF
+initial guess = minao
+damping factor = 0
+level shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+DIIS start cycle = 1
+DIIS space = 8
+SCF tol = 1e-07
+SCF gradient tol = None
+max. SCF cycles = 50
+direct_scf = False
+chkfile to save SCF result = scf.dump
+max_memory 4000 MB (current use 54 MB)
+
+
+******** PBC SCF flags ********
+N kpts = 8
+kpts = [[ 0.          0.          0.        ]
+ [ 0.          0.          0.46179423]
+ [ 0.          0.46179423  0.        ]
+ [ 0.          0.46179423  0.46179423]
+ [ 0.46179423  0.          0.        ]
+ [ 0.46179423  0.          0.46179423]
+ [ 0.46179423  0.46179423  0.        ]
+ [ 0.46179423  0.46179423  0.46179423]]
+Exchange divergence treatment (exxdiv) = ewald
+Ewald components = 4.55784920027996e-259, -1.00704468837384, 0.902778496238974
+    madelung (= occupied orbital energy shift) = 0.20853238427
+    Total energy shift due to Ewald probe charge = -1/2 * Nelec*madelung = -0.20853238427
+DF object = <pyscf.pbc.df.fft.FFTDF object at 0x2aaac5b6f290>
+
+
+******** <class 'pyscf.pbc.df.fft.FFTDF'> ********
+mesh = [71, 71, 71] (357911 PWs)
+len(kpts) = 8
+Set gradient conv threshold to 0.000316228
+Big error detected in the electron number of initial guess density matrix (Ne/cell = 1.99978)!
+  This can cause huge error in Fock matrix and lead to instability in SCF for low-dimensional systems.
+  DM is normalized wrt the number of electrons 2.0
+cond(S) = [ 6.67058951  7.00901097  7.00901097  7.50722743  7.00901097  7.50722743
+  7.50722743  8.20964696]
+Ewald components = 4.55784920027996e-259, -1.00704468837384, 0.902778496238974
+    CPU time for vj and vk    145.95 sec, wall time      9.28 sec
+E1 = (-2.24858170951+6.53951786193e-34j)  E_coul = (0.220847725876+1.63936912466e-18j)
+Ewald components = 3.18934340453057e-190, -6.90727743820006, 6.07314790112118
+init E= -2.86186352071037
+    CPU time for initialize scf    152.28 sec, wall time     10.47 sec
+HOMO = -0.898698124481  LUMO = 0.413277035437
+     k-point                  mo_energy
+   0 ( 0.000  0.000  0.000)   [-0.90857201] [ 0.41327704]
+   1 ( 0.000  0.000  0.500)   [-0.90499568] [ 0.53245689]
+   2 ( 0.000  0.500  0.000)   [-0.90499568] [ 0.53245689]
+   3 ( 0.000  0.500  0.500)   [-0.90171907] [ 0.66686888]
+   4 ( 0.500  0.000  0.000)   [-0.90499568] [ 0.53245689]
+   5 ( 0.500  0.000  0.500)   [-0.90171907] [ 0.66686888]
+   6 ( 0.500  0.500  0.000)   [-0.90171907] [ 0.66686888]
+   7 ( 0.500  0.500  0.500)   [-0.89869812] [ 0.82193674]
+Ewald components = 4.55784920027996e-259, -1.00704468837384, 0.902778496238974
+    CPU time for vj and vk     84.31 sec, wall time      6.57 sec
+E1 = (-2.24767176566+6.74075480536e-34j)  E_coul = (0.219961777642+1.8650899741e-18j)
+Ewald components = 3.18934340453057e-190, -6.90727743820006, 6.07314790112118
+cycle= 1 E= -2.86183952509726  delta_E= 2.4e-05  |g|= 0.00116  |ddm|= 0.0363
+    CPU time for cycle= 1     84.35 sec, wall time      6.64 sec
+HOMO = -0.901318396471  LUMO = 0.413156567949
+     k-point                  mo_energy
+   0 ( 0.000  0.000  0.000)   [-0.90670823] [ 0.41315657]
+   1 ( 0.000  0.000  0.500)   [-0.90472014] [ 0.53231919]
+   2 ( 0.000  0.500  0.000)   [-0.90472014] [ 0.53231919]
+   3 ( 0.000  0.500  0.500)   [-0.90293533] [ 0.66670818]
+   4 ( 0.500  0.000  0.000)   [-0.90472014] [ 0.53231919]
+   5 ( 0.500  0.000  0.500)   [-0.90293533] [ 0.66670818]
+   6 ( 0.500  0.500  0.000)   [-0.90293533] [ 0.66670818]
+   7 ( 0.500  0.500  0.500)   [-0.9013184] [ 0.82174584]
+Ewald components = 4.55784920027996e-259, -1.00704468837384, 0.902778496238974
+    CPU time for vj and vk     84.44 sec, wall time      6.58 sec
+E1 = (-2.24756038337+5.77778983316e-34j)  E_coul = (0.219850337224+1.59871726706e-18j)
+Ewald components = 3.18934340453057e-190, -6.90727743820006, 6.07314790112118
+cycle= 2 E= -2.86183958322434  delta_E= -5.81e-08  |g|= 0.00014  |ddm|= 0.0025
+    CPU time for cycle= 2     84.48 sec, wall time      6.65 sec
+HOMO = -0.901374196494  LUMO = 0.413141343165
+     k-point                  mo_energy
+   0 ( 0.000  0.000  0.000)   [-0.90676387] [ 0.41314134]
+   1 ( 0.000  0.000  0.500)   [-0.90477582] [ 0.53230175]
+   2 ( 0.000  0.500  0.000)   [-0.90477582] [ 0.53230175]
+   3 ( 0.000  0.500  0.500)   [-0.9029911] [ 0.66668777]
+   4 ( 0.500  0.000  0.000)   [-0.90477582] [ 0.53230175]
+   5 ( 0.500  0.000  0.500)   [-0.9029911] [ 0.66668777]
+   6 ( 0.500  0.500  0.000)   [-0.9029911] [ 0.66668777]
+   7 ( 0.500  0.500  0.500)   [-0.9013742] [ 0.82172157]
+Ewald components = 4.55784920027996e-259, -1.00704468837384, 0.902778496238974
+    CPU time for vj and vk     84.77 sec, wall time      6.63 sec
+E1 = (-2.24754678775+5.77778983316e-34j)  E_coul = (0.219836740767+1.27878875509e-18j)
+Ewald components = 3.18934340453057e-190, -6.90727743820006, 6.07314790112118
+Extra cycle  E= -2.86183958406585  delta_E= -8.42e-10  |g|= 1.69e-05  |ddm|= 0.0003
+    CPU time for scf_cycle    405.93 sec, wall time     30.45 sec
+    CPU time for SCF    406.00 sec, wall time     30.52 sec
+converged SCF energy = -2.86183958406585
+Ewald components = 4.55784920027996e-259, -1.00704468837384, 0.902778496238974
+    CPU time for vj and vk    146.04 sec, wall time      9.38 sec
+Total number of orbitals:  16
+Ewald components = 3.18934340453057e-190, -6.90727743820006, 6.07314790112118
+Ewald components = 4.55784920027996e-259, -1.00704468837384, 0.902778496238974
+Adding ewald correction to the energy:  -0.20853238427
+Time to reach cholesky: 0.15
+ Approx. total memory required by pair densities:  0.341330528259  GB.
+Calculating factorization for momentum:  0
+Generating orbital products
+Time to generate orbital products:  17.46
+Time to generate diagonal (initial residual): 0.11
+0 0.0538267642486 0.0300000000001 0.0 0.0300000000001 0.0 0.0 0.0
+1 0.0126870922941 0.03 0.0 0.03 0.0 0.0 0.0
+2 0.00189050742831 0.03 0.0 0.03 0.0 0.0 0.0
+3 0.00170938561683 0.03 0.0 0.03 0.0 0.0 0.0
+4 0.00136587758464 0.0300000000001 0.0 0.0300000000001 0.0 0.0 0.0
+5 1.39696481696e-05 0.03 0.0 0.03 0.0 0.0 0.0
+6 1.07336726916e-05 0.03 0.0 0.03 0.0 0.0 0.0
+7 6.00159092478e-06 0.03 0.0 0.03 0.0 0.0 0.0
+Calculating factorization for momentum:  1
+Generating orbital products
+Time to generate orbital products:  18.74
+Time to generate diagonal (initial residual): 0.15
+0 0.0740594546476 0.4 0.0 0.4 0.0 0.0 0.0
+1 0.0458840373389 0.4 0.0 0.4 0.0 0.0 0.0
+2 0.00226025334563 0.4 0.0 0.4 0.0 0.0 0.0
+3 0.000963873143623 0.4 0.0 0.4 0.0 0.0 0.0
+4 2.46259907063e-05 0.41 -0.00999999999999 0.4 0.0 0.0 0.0
+5 4.1963142893e-06 0.4 0.0 0.4 0.0 0.0 0.0
+Calculating factorization for momentum:  2
+Generating orbital products
+Time to generate orbital products:  20.73
+Time to generate diagonal (initial residual): 0.12
+0 0.0740594546476 0.39 0.0 0.39 0.0 0.0 0.0
+1 0.0458840373389 0.4 -0.00999999999999 0.39 0.0 0.0 0.0
+2 0.00226025334565 0.4 0.0 0.4 0.0 0.0 0.0
+3 0.000963873143628 0.4 0.0 0.4 0.0 0.0 0.0
+4 2.46259907199e-05 0.39 0.0 0.39 0.0 0.0 0.0
+5 4.19631428397e-06 0.4 -0.00999999999999 0.39 0.0 0.0 0.0
+Calculating factorization for momentum:  3
+Generating orbital products
+Time to generate orbital products:  19.4
+Time to generate diagonal (initial residual): 0.12
+0 0.0584238844545 0.62 0.0 0.62 0.0 0.0 0.0
+1 0.0423345456787 0.6 0.0 0.6 0.0 0.0 0.0
+2 0.00134699691481 0.58 0.0 0.58 0.0 0.0 0.0
+3 1.10056772791e-05 0.59 -0.0100000000001 0.58 0.0 0.0 0.0
+4 3.85631661361e-06 0.58 0.0 0.58 0.0 0.0 0.0
+Calculating factorization for momentum:  4
+Generating orbital products
+Time to generate orbital products:  18.71
+Time to generate diagonal (initial residual): 0.11
+0 0.0740594546477 0.4 -0.0100000000001 0.39 0.0 0.0 0.0
+1 0.0458840373394 0.4 -0.00999999999999 0.39 0.0 0.0 0.0
+2 0.00226025334593 0.4 0.0 0.4 0.0 0.0 0.0
+3 0.000963873143734 0.39 0.0 0.39 0.0 0.0 0.0
+4 2.46259913066e-05 0.4 -0.00999999999999 0.39 0.0 0.0 0.0
+5 4.19631439876e-06 0.55 0.0 0.55 0.0 0.0 0.0
+Calculating factorization for momentum:  5
+Generating orbital products
+Time to generate orbital products:  20.82
+Time to generate diagonal (initial residual): 0.11
+0 0.0584238844545 0.59 -0.00999999999999 0.58 0.0 0.0 0.0
+1 0.0423345456787 0.6 0.0 0.6 0.0 0.0 0.0
+2 0.00134699691482 0.6 0.0 0.6 0.0 0.0 0.0
+3 1.10056773047e-05 0.58 0.0 0.58 0.0 0.0 0.0
+4 3.85631658581e-06 0.59 -0.00999999999999 0.58 0.0 0.0 0.0
+Calculating factorization for momentum:  6
+Generating orbital products
+Time to generate orbital products:  18.61
+Time to generate diagonal (initial residual): 0.12
+0 0.0584238844545 0.59 0.0 0.59 0.0 0.0 0.0
+1 0.0423345456787 0.58 0.0 0.58 0.0 0.0 0.0
+2 0.00134699691484 0.58 0.0 0.58 0.0 0.0 0.0
+3 1.10056773446e-05 0.58 0.0 0.58 0.0 0.0 0.0
+4 3.85631658655e-06 0.58 0.0 0.58 0.0 0.0 0.0
+Calculating factorization for momentum:  7
+Generating orbital products
+Time to generate orbital products:  20.3
+Time to generate diagonal (initial residual): 0.11
+0 0.0570554420398 0.67 0.0 0.67 0.0 0.0 0.0
+1 0.0303700828491 0.67 0.0 0.67 0.0 0.0 0.0
+2 4.91850743576e-06 0.67 0.0 0.67 0.0 0.0 0.0

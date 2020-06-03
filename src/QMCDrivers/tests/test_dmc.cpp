@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2017 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by:  Mark Dewing, mdewing@anl.gov, Argonne National Laboratory 
+// File developed by:  Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -15,13 +15,9 @@
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"
@@ -30,6 +26,7 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 
 
 #include <stdio.h>
@@ -40,12 +37,9 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][dmc]")
 {
-
-  Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c;
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -58,7 +52,6 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);
@@ -70,34 +63,27 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   elec.R[1][2] = 1.0;
   elec.createWalkers(1);
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int chargeIdx = tspecies.addAttribute("charge");
-  int massIdx = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx) = -1;
-  tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx) = 1.0;
-  tspecies(massIdx, downIdx) = 1.0;
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  int massIdx                  = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx)   = -1;
+  tspecies(massIdx, upIdx)     = 1.0;
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions,DT_SOA);
-#else
-  elec.addTable(ions,DT_AOS);
-#endif
+  elec.addTable(ions, DT_SOA);
   elec.update();
 
 
   TrialWaveFunction psi(c);
-  ConstantOrbital *orb = new ConstantOrbital;
-  psi.addOrbital(orb, "Constant");
+  ConstantOrbital* orb = new ConstantOrbital;
+  psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(new BareKineticEnergy<double>(elec),"Kinetic");
+  h.addOperator(new BareKineticEnergy<double>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -107,11 +93,12 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   double tau = 0.1;
   SimpleFixedNodeBranch branch(tau, 1);
   TraceManager TM;
-  dmc.resetRun(&branch, &EM, &TM);
+  DriftModifierUNR DM;
+  dmc.resetRun(&branch, &EM, &TM, &DM);
   dmc.startBlock(1);
 
   DMCUpdatePbyPWithRejectionFast::WalkerIter_t begin = elec.begin();
-  DMCUpdatePbyPWithRejectionFast::WalkerIter_t end = elec.end();
+  DMCUpdatePbyPWithRejectionFast::WalkerIter_t end   = elec.end();
   dmc.advanceWalkers(begin, end, true);
 
   // With the constant wavefunction, no moves should be rejected
@@ -142,15 +129,12 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   REQUIRE(dmc.nReject == 2);
   REQUIRE(dmc.nAccept == 2);
 #endif
-
 }
 
 TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dmc]")
 
 {
-
-  Communicate *c;
-  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c;
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -163,7 +147,6 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);
@@ -175,34 +158,27 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   elec.R[1][2] = 1.0;
   elec.createWalkers(1);
 
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int chargeIdx = tspecies.addAttribute("charge");
-  int massIdx = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx) = -1;
-  tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx) = 1.0;
-  tspecies(massIdx, downIdx) = 1.0;
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  int massIdx                  = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx)   = -1;
+  tspecies(massIdx, upIdx)     = 1.0;
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions,DT_SOA);
-#else
-  elec.addTable(ions,DT_AOS);
-#endif
+  elec.addTable(ions, DT_SOA);
   elec.update();
 
 
   TrialWaveFunction psi(c);
-  LinearOrbital *orb = new LinearOrbital;
-  psi.addOrbital(orb, "Linear");
+  LinearOrbital* orb = new LinearOrbital;
+  psi.addComponent(orb, "Linear");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(new BareKineticEnergy<double>(elec),"Kinetic");
+  h.addOperator(new BareKineticEnergy<double>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -212,11 +188,12 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   double tau = 0.1;
   SimpleFixedNodeBranch branch(tau, 1);
   TraceManager TM;
-  dmc.resetRun(&branch, &EM, &TM);
+  DriftModifierUNR DM;
+  dmc.resetRun(&branch, &EM, &TM, &DM);
   dmc.startBlock(1);
 
   DMCUpdatePbyPWithRejectionFast::WalkerIter_t begin = elec.begin();
-  DMCUpdatePbyPWithRejectionFast::WalkerIter_t end = elec.end();
+  DMCUpdatePbyPWithRejectionFast::WalkerIter_t end   = elec.end();
   dmc.advanceWalkers(begin, end, true);
 
   REQUIRE(dmc.nReject == 0);
@@ -232,7 +209,5 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   REQUIRE(elec.R[1][0] == Approx(0.0678113477829853));
   REQUIRE(elec.R[1][1] == Approx(-0.236707045539933));
   REQUIRE(elec.R[1][2] == Approx(1.20343404334896));
-
 }
-}
-
+} // namespace qmcplusplus

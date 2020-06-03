@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef OHMMS_COMMUNICATION_OPERATORS_H
@@ -29,4 +26,3 @@
 #include <Message/CommOperatorsSingle.h>
 #endif
 #endif
-

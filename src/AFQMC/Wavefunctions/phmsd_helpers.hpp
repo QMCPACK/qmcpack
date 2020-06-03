@@ -26,6 +26,10 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+// for GPU implementation, dispatch Kernels from here!
+// it is probably easier to have 2 types of kernels, one that loads the 
+// appropriate terms in the matrices and a second one that just computes determinants
+
 // using simple round-robin scheme for parallelization within TG_local
 // assumes that reference determinant is already on [0]
 template<class Array1D, 
@@ -84,14 +88,14 @@ inline void calculate_overlaps(int rank, int ngrp, int spin, PH_EXCT const& abij
     } else {
       boost::multi::array_ref<ComplexType,2> Qwork_(Qwork.origin(),{nex,nex});
       boost::multi::array_ref<ComplexType,1> Qwork2_(Qwork.origin()+Qwork_.num_elements(),
-                                                     extensions<1u>{nex*nex});
+                                                     iextensions<1u>{nex*nex});
       for(auto it = abij.unique_begin(nex)[spin]; it<abij.unique_end(nex)[spin]; ++it, ++nd) 
         if(nd%ngrp==rank) {
           auto exct = *it;
           for(int p=0; p<nex; p++)
             for(int q=0; q<nex; q++)
               Qwork_[p][q] = T[exct[p+nex]][exct[q]];
-          ov[nd] = ma::determinant(Qwork_,IWORK,Qwork2_);
+          ov[nd] = ma::determinant<ComplexType>(Qwork_,IWORK,Qwork2_,0.0);
         }
     }
   }
@@ -109,28 +113,28 @@ template<class Array1D,
 inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index_aos& couplings,
                         MatA&& T, MatB&& Qwork, Array1D&& ov, ComplexType ov0, MatC& R)
 {
-  using std::conj;
+  using ma::conj;
   using std::get;
   std::vector<int> IWORK(abij.maximum_excitation_number()[spin]);
   std::vector<ComplexType> WORK(abij.maximum_excitation_number()[spin]*abij.maximum_excitation_number()[spin]);
   auto confgs = abij.configurations_begin();  
   auto refc = abij.reference_configuration(spin);
-  for(int i=0; i<R.shape()[0]; i++)
-    std::fill_n(R[i].origin(),R.shape()[1],ComplexType(0));  
-  int NEL = T.shape()[1];
+  for(int i=0; i<R.size(0); i++)
+    std::fill_n(R[i].origin(),R.size(1),ComplexType(0));  
+  int NEL = T.size(1);
   std::vector<int> orbs(NEL);
   ComplexType ov_a;
   // add reference contribution!!!
   if(rank==0){
     ComplexType w(0.0);
-    auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(0));
-    auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(0));
+    auto it = to_address(couplings.values()) + (*couplings.pointers_begin(0));
+    auto ite = to_address(couplings.values()) + (*couplings.pointers_end(0));
     if(spin==0)
       for(; it<ite; ++it)
-        w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
+        w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
     else
       for(; it<ite; ++it)
-        w += conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
+        w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
     w *= ov0;
 // Wrong if NAEB < NAEA!!! FIX FIX FIX
     for(int i=0; i<NEL; ++i)
@@ -157,17 +161,17 @@ inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index
           for(int p=0; p<nex; p++)
             for(int q=0; q<nex; q++)
               Q[p][q] = T[e[p+nex]][e[q]];
-          ov_a = ma::invert(Q,IWORK,WORK);
+          ov_a = ma::invert<ComplexType>(Q,IWORK,WORK,0.0);
         }
         ComplexType w(0.0);
-        auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(nd));  
-        auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(nd));  
+        auto it = to_address(couplings.values()) + (*couplings.pointers_begin(nd));  
+        auto ite = to_address(couplings.values()) + (*couplings.pointers_end(nd));  
         if(spin==0) 
           for(; it<ite; ++it) 
-            w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
+            w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
         else
           for(; it<ite; ++it) 
-            w += conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
+            w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
         w *= ov_a*ov0;
         if(std::abs(w) > 1e-10) {
           // add term coming from identity
@@ -202,29 +206,29 @@ void calculate_ph_energies_v1(int spin, int rank, int size,
                      ph_excitations<int,ComplexType> const& abij,
                      std::array<index_aos,2> const& det_couplings) 
 {
-  using std::conj;
+  using ma::conj;
   using std::get;
 /*
   std::vector<int> IWORK(abij.maximum_excitation_number()[spin]);
   std::vector<ComplexType> WORK(abij.maximum_excitation_number()[spin]*abij.maximum_excitation_number()[spin]);
   auto confgs = abij.configurations_begin();
   auto refc = abij.reference_configuration(spin);
-  for(int i=0; i<R.shape()[0]; i++)
-    std::fill_n(R[i].origin(),R.shape()[1],ComplexType(0));
-  int NEL = T.shape()[1];
+  for(int i=0; i<R.size(0); i++)
+    std::fill_n(R[i].origin(),R.size(1),ComplexType(0));
+  int NEL = T.size(1);
   std::vector<int> orbs(NEL);
   ComplexType ov_a;
   // add reference contribution!!!
   if(rank==0){
     ComplexType w(0.0);
-    auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(0));
-    auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(0));
+    auto it = to_address(couplings.values()) + (*couplings.pointers_begin(0));
+    auto ite = to_address(couplings.values()) + (*couplings.pointers_end(0));
     if(spin==0)
       for(; it<ite; ++it)
-        w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
+        w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
     else
       for(; it<ite; ++it)
-        w += conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
+        w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
     w *= ov0;
 // Wrong if NAEB < NAEA!!! FIX FIX FIX
     for(int i=0; i<NEL; ++i)
@@ -251,17 +255,17 @@ void calculate_ph_energies_v1(int spin, int rank, int size,
           for(int p=0; p<nex; p++)
             for(int q=0; q<nex; q++)
               Q[p][q] = T[e[p+nex]][e[q]];
-          ov_a = ma::invert(Q,IWORK,WORK);
+          ov_a = ma::invert(Q,IWORK,WORK,0.0);
         }
         ComplexType w(0.0);
-        auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(nd));
-        auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(nd));
+        auto it = to_address(couplings.values()) + (*couplings.pointers_begin(nd));
+        auto ite = to_address(couplings.values()) + (*couplings.pointers_end(nd));
         if(spin==0)
           for(; it<ite; ++it)
-            w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
+            w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
         else
           for(; it<ite; ++it)
-            w += conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
+            w += ma::conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
         w *= ov_a*ov0;
         if(std::abs(w) > 1e-10) {
           // add term coming from identity

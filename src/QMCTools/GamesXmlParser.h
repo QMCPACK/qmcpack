@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #ifndef QMCPLUSPLUS_TOOLS_GAMESS_XML_PARSER_H
@@ -25,11 +22,8 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
 
-class GamesXmlParser: public QMCGaussianParserBase,
-  public OhmmsAsciiParser
+class GamesXmlParser : public QMCGaussianParserBase, public OhmmsAsciiParser
 {
-
-
   void getGeometry(std::vector<xmlNodePtr>&);
   void getGaussianCenters(std::vector<xmlNodePtr>&);
   void getEigVectors(std::vector<xmlNodePtr>&);
@@ -37,7 +31,6 @@ class GamesXmlParser: public QMCGaussianParserBase,
   void getControlParameters(xmlNodePtr);
 
 public:
-
   GamesXmlParser();
 
   GamesXmlParser(int argc, char** argv);

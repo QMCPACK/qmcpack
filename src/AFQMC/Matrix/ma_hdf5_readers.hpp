@@ -26,6 +26,8 @@
 #endif
 
 #include <Utilities/FairDivide.h>
+#include "type_traits/container_traits_multi.h"
+#include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 
 #include "AFQMC/config.0.h"
@@ -51,23 +53,30 @@ inline void write_distributed_MA(MultiArray & A, std::array<size_t,2> offset, st
 {
   using value_type = typename MultiArray::element;
 // serial hdf for now
-  if(TG.getNNodesPerTG() == 1) {
+  if(TG.getNGroupsPerTG() == 1) {
     if(TG.Global().root()) dump.write(A,name);
   } else {
-    size_t nnodes_per_TG = TG.getNNodesPerTG();
+    size_t nnodes_per_TG = TG.getNGroupsPerTG();
+    // data distribution depends on whether we have devices or not!
+    int TG_number(TG.getTGNumber());
+    int TG_local_rank(TG.TG_local().rank());
+    // assumes that Global.root() lives in TG_number
     if(TG.Global().root()) {
+      assert(TG_number==0);
       std::vector<size_t> ndim(4*nnodes_per_TG);
-      ndim[4*TG.Cores().rank()] = offset[0]; 
-      ndim[4*TG.Cores().rank()+1] = offset[1]; 
-      ndim[4*TG.Cores().rank()+2] = A.shape()[0];
-      ndim[4*TG.Cores().rank()+3] = A.shape()[1];
-      TG.Cores().all_reduce_in_place_n(ndim.begin(),ndim.size(),std::plus<>());
+      ndim[0] = offset[0]; 
+      ndim[1] = offset[1]; 
+      ndim[2] = A.size(0);
+      ndim[3] = A.size(1);
+      TG.TG_Cores().all_reduce_in_place_n(ndim.begin(),ndim.size(),std::plus<>());
 
       // write local piece
       {
-        hyperslab_proxy<typename std::decay<MultiArray>::type,2> slab(A,
+        using Mat_ref = boost::multi::array_ref<value_type,2>;
+        Mat_ref A_(to_address(A.origin()),A.extensions());
+        hyperslab_proxy<Mat_ref,2> slab(A_,
                                          gdim, 
-                                         std::array<size_t,2>{size_t(A.shape()[0]),size_t(A.shape()[1])},
+                                         std::array<size_t,2>{size_t(A.size(0)),size_t(A.size(1))},
                                          offset); 
         dump.write(slab,name); 
       }
@@ -76,7 +85,7 @@ inline void write_distributed_MA(MultiArray & A, std::array<size_t,2> offset, st
       for(size_t i=1; i<nnodes_per_TG; i++, it+=4) {
         using Mat = boost::multi::array<value_type,2>;
         Mat T({*(it+2),*(it+3)});
-        TG.Cores().receive_n(T.origin(),T.num_elements(),i,i);
+        TG.TG_Cores().receive_n(T.origin(),T.num_elements(),i,i);
         hyperslab_proxy<Mat,2> slab(T,
                                     gdim,  
                                     std::array<size_t,2>{*(it+2),*(it+3)}, 
@@ -84,17 +93,17 @@ inline void write_distributed_MA(MultiArray & A, std::array<size_t,2> offset, st
         dump.write(slab,name);  
       }  
 
-    } else if(TG.Node().root()) {
+    } else if( (TG_number==0) && (TG_local_rank==0) ) {
+
       std::vector<size_t> ndim(4*nnodes_per_TG);
-      if(TG.Cores().rank() < nnodes_per_TG) {
-        ndim[4*TG.Cores().rank()] = offset[0];
-        ndim[4*TG.Cores().rank()+1] = offset[1];
-        ndim[4*TG.Cores().rank()+2] = A.shape()[0];
-        ndim[4*TG.Cores().rank()+3] = A.shape()[1];
-      }
-      TG.Cores().all_reduce_in_place_n(ndim.begin(),ndim.size(),std::plus<>());
-      if(TG.Cores().rank() < nnodes_per_TG) 
-        TG.Cores().send_n(A.origin(),A.num_elements(),0,TG.Cores().rank());
+      assert(TG.TG_Cores().size() == nnodes_per_TG);
+      // all tasks on the TG have a section of the matrix
+      ndim[4*TG.TG_Cores().rank()] = offset[0];
+      ndim[4*TG.TG_Cores().rank()+1] = offset[1];
+      ndim[4*TG.TG_Cores().rank()+2] = A.size(0);
+      ndim[4*TG.TG_Cores().rank()+3] = A.size(1);
+      TG.TG_Cores().all_reduce_in_place_n(ndim.begin(),ndim.size(),std::plus<>());
+      TG.TG_Cores().send_n(to_address(A.origin()),A.num_elements(),0,TG.TG_Cores().rank());
     }
   }
   TG.Global().barrier();

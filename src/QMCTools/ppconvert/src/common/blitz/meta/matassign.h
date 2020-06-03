@@ -31,47 +31,49 @@
 BZ_NAMESPACE(blitz)
 
 template<int N_rows, int N_columns, int I, int J>
-class _bz_meta_matAssign2 {
+class _bz_meta_matAssign2
+{
 public:
-    static const int go = (J < N_columns - 1) ? 1 : 0;
+  static const int go = (J < N_columns - 1) ? 1 : 0;
 
-    template<typename T_matrix, typename T_expr, typename T_updater>
-    static inline void f(T_matrix& mat, T_expr expr, T_updater u)
-    {
-        u.update(mat(I,J), expr(I,J));
-        _bz_meta_matAssign2<N_rows * go, N_columns * go, I * go, (J+1) * go>
-            ::f(mat, expr, u);
-    }
+  template<typename T_matrix, typename T_expr, typename T_updater>
+  static inline void f(T_matrix& mat, T_expr expr, T_updater u)
+  {
+    u.update(mat(I, J), expr(I, J));
+    _bz_meta_matAssign2<N_rows * go, N_columns * go, I * go, (J + 1) * go>::f(mat, expr, u);
+  }
 };
 
 template<>
-class _bz_meta_matAssign2<0,0,0,0> {
+class _bz_meta_matAssign2<0, 0, 0, 0>
+{
 public:
-    template<typename T_matrix, typename T_expr, typename T_updater>
-    static inline void f(T_matrix&, T_expr, T_updater)
-    { }
+  template<typename T_matrix, typename T_expr, typename T_updater>
+  static inline void f(T_matrix&, T_expr, T_updater)
+  {}
 };
 
-template<int N_rows, int N_columns, int I> 
-class _bz_meta_matAssign {
+template<int N_rows, int N_columns, int I>
+class _bz_meta_matAssign
+{
 public:
-    static const int go = (I < N_rows-1) ? 1 : 0;
+  static const int go = (I < N_rows - 1) ? 1 : 0;
 
-    template<typename T_matrix, typename T_expr, typename T_updater>
-    static inline void f(T_matrix& mat, T_expr expr, T_updater u)
-    {
-        _bz_meta_matAssign2<N_rows, N_columns, I, 0>::f(mat, expr, u);
-        _bz_meta_matAssign<N_rows * go, N_columns * go, (I+1) * go>
-            ::f(mat, expr, u);
-    }
+  template<typename T_matrix, typename T_expr, typename T_updater>
+  static inline void f(T_matrix& mat, T_expr expr, T_updater u)
+  {
+    _bz_meta_matAssign2<N_rows, N_columns, I, 0>::f(mat, expr, u);
+    _bz_meta_matAssign<N_rows * go, N_columns * go, (I + 1) * go>::f(mat, expr, u);
+  }
 };
 
 template<>
-class _bz_meta_matAssign<0,0,0> {
+class _bz_meta_matAssign<0, 0, 0>
+{
 public:
-    template<typename T_matrix, typename T_expr, typename T_updater>
-    static inline void f(T_matrix&, T_expr, T_updater)
-    { }
+  template<typename T_matrix, typename T_expr, typename T_updater>
+  static inline void f(T_matrix&, T_expr, T_updater)
+  {}
 };
 
 

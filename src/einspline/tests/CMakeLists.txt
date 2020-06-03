@@ -17,7 +17,7 @@ SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 SET(SRCS test_one.cpp test_3d.cpp)
-IF(HAVE_CUDA)
+IF(QMC_CUDA)
   SET(SRCS ${SRCS}
       test_cuda.cu)
   CUDA_ADD_LIBRARY(cudatests test_cuda.cu)
@@ -25,7 +25,7 @@ IF(HAVE_CUDA)
 ENDIF()
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} ${CUDATESTLIB} einspline qmcutil)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main ${CUDATESTLIB} einspline qmcutil)
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST( ${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

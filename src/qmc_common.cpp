@@ -13,73 +13,69 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #include <qmc_common.h>
-#include <Platforms/sysutil.h>
+#include "config.h"
 #include "qmcpack_version.h"
+#include "Message/Communicate.h"
+#include "Platforms/Host/OutputManager.h"
 
 namespace qmcplusplus
 {
 QMCState::QMCState()
 {
-  is_restart=false;
-  use_density=false;
-  dryrun=false;
-  save_wfs=false;
-  io_node=true;
-  mpi_groups=1;
-  use_ewald=false;
-  qmc_counter=0;
-  memory_allocated=0;
-#if defined(QMC_CUDA)
-  compute_device=1;
-#else
-  compute_device=0;
-#endif
+  is_restart             = false;
+  use_density            = false;
+  dryrun                 = false;
+  io_node                = true;
+  mpi_groups             = 1;
+  use_ewald              = false;
+  qmc_counter            = 0;
+  memory_allocated       = 0;
+  default_accelerator_id = -1;
 }
 
-void QMCState::initialize(int argc, char **argv)
+void QMCState::initialize(int argc, char** argv)
 {
-  io_node = (OHMMS::Controller->rank()==0);
-  bool stopit=false;
+  io_node     = (OHMMS::Controller->rank() == 0);
+  bool stopit = false;
   //going to use better option library
-  int i=1;
-  while(i<argc)
+  int i = 1;
+  while (i < argc)
   {
     std::string c(argv[i]);
-    if(c.find("--dryrun") < c.size())
+    if (c.find("--dryrun") < c.size())
     {
-      dryrun=true;
+      dryrun = true;
     }
-    else if(c.find("--save_wfs") < c.size())
+    else if (c.find("--save_wfs") < c.size())
     {
-      if(io_node)
-        std::cerr << std::endl << "WARNING: command line option --save_wfs has been deprecated "
-                  << "and will be removed in the next release. "
+      if (io_node)
+        std::cerr << std::endl
+                  << "ERROR: command line option --save_wfs has been removed."
                   << "Use save_coefs input tag as described in the manual." << std::endl;
-      save_wfs=(c.find("no")>=c.size());
+      stopit = true;
     }
-    else if(c.find("--help")< c.size())
+    else if (c.find("--help") < c.size())
     {
-      stopit=true;
+      stopit = true;
     }
-    else if(c.find("--version")<c.size())
+    else if (c.find("--version") < c.size())
     {
-      stopit=true;
+      stopit = true;
     }
-    else if(c.find("--vacuum")<c.size())
+    else if (c.find("--vacuum") < c.size())
     {
-      if(io_node)
-        std::cerr << std::endl << "ERROR: command line option --vacuum has been removed. "
+      if (io_node)
+        std::cerr << std::endl
+                  << "ERROR: command line option --vacuum has been removed. "
                   << "Use vacuum input tag as described in the manual." << std::endl;
-      stopit=true;
+      stopit = true;
     }
-    else if(c.find("--noprint")<c.size())
-    {//do not print Jastrow or PP
-      io_node=false;
+    else if (c.find("--noprint") < c.size())
+    { //do not print Jastrow or PP
+      io_node = false;
     }
     //else if(c.find("--use_ewald")<c.size())
     //{
@@ -87,14 +83,15 @@ void QMCState::initialize(int argc, char **argv)
     //}
     ++i;
   }
-  if(stopit && io_node)
+  if (stopit && io_node)
   {
-    std::cerr << std::endl << "QMCPACK version "<< QMCPACK_VERSION_MAJOR <<"." << QMCPACK_VERSION_MINOR << "." << QMCPACK_VERSION_PATCH
-        << " built on " << __DATE__ << std::endl;
+    std::cerr << std::endl
+              << "QMCPACK version " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
+              << QMCPACK_VERSION_PATCH << " built on " << __DATE__ << std::endl;
     print_git_info_if_present(std::cerr);
-    std::cerr << std::endl << "Usage: qmcpack input [--dryrun --save_wfs[=no] --gpu]" << std::endl << std::endl;
+    std::cerr << std::endl << "Usage: qmcpack input [--dryrun --gpu]" << std::endl << std::endl;
   }
-  if(stopit)
+  if (stopit)
   {
     OHMMS::Controller->finalize();
     exit(1);
@@ -104,30 +101,28 @@ void QMCState::initialize(int argc, char **argv)
 void QMCState::print_options(std::ostream& os)
 {
   os << "  Global options " << std::endl;
-  if(dryrun)
+  if (dryrun)
     os << "  dryrun : qmc sections will be ignored." << std::endl;
-  if(save_wfs)
-    os << "  save_wfs=1 : save wavefunctions in hdf5. " << std::endl;
 }
 
 void QMCState::print_memory_change(const std::string& who, size_t before)
 {
-  before=memory_allocated-before;
-  app_log() << "MEMORY increase " << (before>>20) << " MB " << who << std::endl;
+  before = memory_allocated - before;
+  app_log() << "MEMORY increase " << (before >> 20) << " MB " << who << std::endl;
 }
 
 void QMCState::print_git_info_if_present(std::ostream& os)
 {
 #ifdef QMCPACK_GIT_BRANCH
-    os << std::endl;
-    os << "  Git branch: " << QMCPACK_GIT_BRANCH << std::endl;
-    os << "  Last git commit: " << QMCPACK_GIT_HASH << std::endl;
-    os << "  Last git commit date: " << QMCPACK_GIT_COMMIT_LAST_CHANGED << std::endl;
-    os << "  Last git commit subject: " << QMCPACK_GIT_COMMIT_SUBJECT << std::endl;
+  os << std::endl;
+  os << "  Git branch: " << QMCPACK_GIT_BRANCH << std::endl;
+  os << "  Last git commit: " << QMCPACK_GIT_HASH << std::endl;
+  os << "  Last git commit date: " << QMCPACK_GIT_COMMIT_LAST_CHANGED << std::endl;
+  os << "  Last git commit subject: " << QMCPACK_GIT_COMMIT_SUBJECT << std::endl;
 #endif
 }
 
 
 QMCState qmc_common;
 
-}
+} // namespace qmcplusplus

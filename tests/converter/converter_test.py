@@ -36,9 +36,9 @@ def compare(gold_file,test_file):
                     print('< diff truncated due to line limit >')
                     break
 
-	    return False
-	else:
-	    return True
+            return False
+        else:
+            return True
 
 
 def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, extra_cmd_args,code):
@@ -64,6 +64,9 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
 
+    # For Python 3
+    stderr = stderr.decode()
+
     ret = p.returncode
 
     if expect_fail:
@@ -85,10 +88,10 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
         if not os.path.exists(gold_file):
             print("Gold file missing")
             okay = False
-	else:
+        else:
             if (code != 'pyscf'): 
                 if '-hdf5' in extra_cmd_args:
-                   ret = os.system(h5diff_exe + ' gold.orbs.h5 test.orbs.h5')
+                   ret = os.system(h5diff_exe + ' -d 0.000001 gold.orbs.h5 test.orbs.h5')
                    if ret==0:
                       print("  pass")
                       return True

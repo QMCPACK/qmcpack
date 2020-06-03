@@ -31,32 +31,41 @@ BZ_NAMESPACE(blitz)
 
 // Null Operand
 
-class _bz_meta_nullOperand {
+class _bz_meta_nullOperand
+{
 public:
-    _bz_meta_nullOperand() { }
+  _bz_meta_nullOperand() {}
 };
 
-template<typename T> inline T operator+(const T& a, _bz_meta_nullOperand)
-{ return a; }
-template<typename T> inline T operator*(const T& a, _bz_meta_nullOperand)
-{ return a; }
+template<typename T>
+inline T operator+(const T& a, _bz_meta_nullOperand)
+{
+  return a;
+}
+template<typename T>
+inline T operator*(const T& a, _bz_meta_nullOperand)
+{
+  return a;
+}
 
 // MetaMax
 
 template<int N1, int N2>
-class _bz_meta_max {
+class _bz_meta_max
+{
 public:
-    static const int max = (N1 > N2) ? N1 : N2;
+  static const int max = (N1 > N2) ? N1 : N2;
 };
 
 // MetaMin
 
 template<int N1, int N2>
-class _bz_meta_min {
+class _bz_meta_min
+{
 public:
-    static const int min = (N1 < N2) ? N1 : N2;
+  static const int min = (N1 < N2) ? N1 : N2;
 };
 
-BZ_NAMESPACE_END 
+BZ_NAMESPACE_END
 
 #endif // BZ_META_METAPROG_H

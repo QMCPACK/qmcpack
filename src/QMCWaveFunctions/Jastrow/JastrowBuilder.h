@@ -11,58 +11,55 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_GENERALIZED_JASTROWBUILDER_H
 #define QMCPLUSPLUS_GENERALIZED_JASTROWBUILDER_H
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 
 namespace qmcplusplus
 {
-
 class OrbitalConstraintsBase;
 
 /** Jastrow Jastrow Builder with constraints
  */
-class JastrowBuilder: public WaveFunctionComponentBuilder
+class JastrowBuilder : public WaveFunctionComponentBuilder
 {
-
 public:
+  JastrowBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets);
 
-  JastrowBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets);
-
-  bool put(xmlNodePtr cur);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 private:
   ///particleset pool to get ParticleSet other than the target
   PtclPoolType& ptclPool;
   ///index for the jastrow type: 1, 2, 3
   int JastrowType;
-  ///jastrow/@name
+  /// \xmla{jastrow,name}
   std::string nameOpt;
-  ///jastrow/@type
+  /// \xmla{jastrow,type}
   std::string typeOpt;
-  ///jastrow/@function
+  /// \xmla{jastrow,function}
   std::string funcOpt;
-  ///jastrow/@spin
+  /// \xmla{jastrow,spin}
   std::string spinOpt;
-  ///jastrow/@transform
+  /// \xmla{jastrow,transform}
   std::string transformOpt;
-  ///jastrow/@source
+  /// \xmla{jastrow,source}
   std::string sourceOpt;
   ///reset the options
   void resetOptions();
-  ///add one-body term
-  bool addOneBody(xmlNodePtr cur);
-  ///add two-body term
-  bool addTwoBody(xmlNodePtr cur);
-  /// add electron-electron ion term
-  bool add_eeI (xmlNodePtr cur);
-  ///add k-Space term
-  bool addkSpace(xmlNodePtr cur);
-  // add number-counting term
-  bool addCounting(xmlNodePtr cur);
+  /// build one-body term
+  WaveFunctionComponent* buildOneBody(xmlNodePtr cur);
+  /// build two-body term
+  WaveFunctionComponent* buildTwoBody(xmlNodePtr cur);
+  /// build electron-electron ion term
+  WaveFunctionComponent* build_eeI(xmlNodePtr cur);
+  /// build k-Space term
+  WaveFunctionComponent* buildkSpace(xmlNodePtr cur);
+  /// build number-counting term
+  WaveFunctionComponent* buildCounting(xmlNodePtr cur);
 };
 
-}
+} // namespace qmcplusplus
 #endif

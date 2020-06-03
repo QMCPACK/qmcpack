@@ -1,0 +1,54 @@
+ ////////SPIN UP//////////
+   dpsiM_up[0][0][0]=ValueType(-1.7161563039e-01,1.7161482573e-01);   dpsiM_up[0][0][1]=ValueType(5.6693041325e-01,-5.6692999601e-01);   dpsiM_up[0][0][2]=ValueType(-4.5538558960e+00,4.5538554192e+00); 
+   dpsiM_up[0][1][0]=ValueType(-7.4953302741e-02,7.4952393770e-02);   dpsiM_up[0][1][1]=ValueType(2.4608184397e-01,-2.4608163536e-01);   dpsiM_up[0][1][2]=ValueType(-1.9720511436e+00,1.9720509052e+00); 
+   dpsiM_up[0][2][0]=ValueType(-4.2384520173e-02,4.2384237051e-02);   dpsiM_up[0][2][1]=ValueType(1.1735939980e-01,-1.1735984683e-01);   dpsiM_up[0][2][2]=ValueType(-3.1189033985e+00,3.1189031601e+00); 
+ 
+   dpsiM_up[1][0][0]=ValueType(1.9333077967e-01,-1.9333113730e-01);   dpsiM_up[1][0][1]=ValueType(-5.7470333576e-01,5.7470202446e-01);   dpsiM_up[1][0][2]=ValueType(-4.5568108559e+00,4.5568113327e+00); 
+   dpsiM_up[1][1][0]=ValueType(8.4540992975e-02,-8.4540143609e-02);   dpsiM_up[1][1][1]=ValueType(-2.4946013093e-01,2.4946044385e-01);   dpsiM_up[1][1][2]=ValueType(-1.9727530479e+00,1.9727528095e+00); 
+   dpsiM_up[1][2][0]=ValueType(3.1103719026e-02,-3.1103719026e-02);   dpsiM_up[1][2][1]=ValueType(-1.2540178001e-01,1.2540178001e-01);   dpsiM_up[1][2][2]=ValueType(-3.1043677330e+00,3.1043677330e+00); 
+ 
+   dpsiM_up[2][0][0]=ValueType(-8.8733488321e-01,8.8733488321e-01);   dpsiM_up[2][0][1]=ValueType(-1.7726477385e+00,1.7726477385e+00);   dpsiM_up[2][0][2]=ValueType(7.3728728294e-01,-7.3728692532e-01); 
+   dpsiM_up[2][1][0]=ValueType(-3.8018247485e-01,3.8018330932e-01);   dpsiM_up[2][1][1]=ValueType(-7.5880718231e-01,7.5880759954e-01);   dpsiM_up[2][1][2]=ValueType(2.7537062764e-01,-2.7537041903e-01); 
+   dpsiM_up[2][2][0]=ValueType(-9.5389984548e-02,9.5390148461e-02);   dpsiM_up[2][2][1]=ValueType(-1.8467208743e-01,1.8467210233e-01);   dpsiM_up[2][2][2]=ValueType(-2.4704084396e+00,2.4704084396e+00); 
+ 
+ ////////SPIN DOWN//////////
+   dpsiM_down[0][0][0]=ValueType(-7.1084961295e-02,7.1085616946e-02);   dpsiM_down[0][0][1]=ValueType(2.3483029008e-01,-2.3482969403e-01);   dpsiM_down[0][0][2]=ValueType(-1.8862648010e+00,1.8862643242e+00); 
+   dpsiM_down[0][1][0]=ValueType(1.8095153570e-01,-1.8095159531e-01);   dpsiM_down[0][1][1]=ValueType(-5.9409534931e-01,5.9409546852e-01);   dpsiM_down[0][1][2]=ValueType(4.7609643936e+00,-4.7609624863e+00); 
+   dpsiM_down[0][2][0]=ValueType(-1.7556600273e-02,1.7556769773e-02);   dpsiM_down[0][2][1]=ValueType(4.8611730337e-02,-4.8612065613e-02);   dpsiM_down[0][2][2]=ValueType(-1.2918885946e+00,1.2918891907e+00); 
+ 
+   dpsiM_down[1][0][0]=ValueType(8.0079451203e-02,-8.0079004169e-02);   dpsiM_down[1][0][1]=ValueType(-2.3804906011e-01,2.3804855347e-01);   dpsiM_down[1][0][2]=ValueType(-1.8874882460e+00,1.8874886036e+00); 
+   dpsiM_down[1][1][0]=ValueType(-2.0409825444e-01,2.0409949124e-01);   dpsiM_down[1][1][1]=ValueType(6.0225284100e-01,-6.0225236416e-01);   dpsiM_down[1][1][2]=ValueType(4.7626581192e+00,-4.7626576424e+00); 
+   dpsiM_down[1][2][0]=ValueType(1.2884057127e-02,-1.2884397991e-02);   dpsiM_down[1][2][1]=ValueType(-5.1943197846e-02,5.1943652332e-02);   dpsiM_down[1][2][2]=ValueType(-1.2858681679e+00,1.2858685255e+00); 
+ 
+   dpsiM_down[2][0][0]=ValueType(-3.6754500866e-01,3.6754477024e-01);   dpsiM_down[2][0][1]=ValueType(-7.3425340652e-01,7.3425388336e-01);   dpsiM_down[2][0][2]=ValueType(3.0539327860e-01,-3.0539402366e-01); 
+   dpsiM_down[2][1][0]=ValueType(9.1784656048e-01,-9.1784602404e-01);   dpsiM_down[2][1][1]=ValueType(1.8319253922e+00,-1.8319247961e+00);   dpsiM_down[2][1][2]=ValueType(-6.6480386257e-01,6.6480308771e-01); 
+   dpsiM_down[2][2][0]=ValueType(-3.9511863142e-02,3.9511814713e-02);   dpsiM_down[2][2][1]=ValueType(-7.6493337750e-02,7.6493576169e-02);   dpsiM_down[2][2][2]=ValueType(-1.0232743025e+00,1.0232743025e+00); 
+
+
+////CODE TO BE DROPPED INTO Line 118 of src/QMCWaveFunction/SpinorSet.cpp (evaluate_notranspose) ///////
+  app_log()<<"////////SPIN UP//////////\n";
+  for(int iat=0; iat<nelec; iat++)
+  {
+    for (int iorb=0; iorb<OrbitalSetSize; iorb++)
+    {
+      for(int di=0; di<3; di++)
+        app_log()<<"  dpsiM_up["<<iat<<"]["<<iorb<<"]["<<di<<"]=ValueType("<<dlogpsi_work_up[iat][iorb][di].real()<<","<<dlogpsi_work_up[iat][iorb][di].imag()<<"); ";
+      app_log()<<std::endl;
+    }
+      app_log()<<std::endl;
+  }
+
+
+  app_log()<<"////////SPIN DOWN//////////\n";
+  for(int iat=0; iat<nelec; iat++)
+  {
+    for (int iorb=0; iorb<OrbitalSetSize; iorb++)
+    {
+      for(int di=0; di<3; di++)
+        app_log()<<"  dpsiM_down["<<iat<<"]["<<iorb<<"]["<<di<<"]=ValueType("<<dlogpsi_work_down[iat][iorb][di].real()<<","<<dlogpsi_work_down[iat][iorb][di].imag()<<"); ";
+      app_log()<<std::endl;
+    }
+      app_log()<<std::endl;
+  }
+///// END CODE ////////////////
+

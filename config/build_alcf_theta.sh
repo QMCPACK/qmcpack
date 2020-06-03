@@ -1,5 +1,7 @@
 module unload cray-libsci
 module load cray-hdf5-parallel
+module load gcc
+module load cmake
 
 export CC=cc
 export CXX=CC
@@ -10,18 +12,20 @@ export CRAYPE_LINK_TYPE=dynamic
 TYPE=Release
 Compiler=Intel
 
-for name in real_SoA real_SoA_MP cplx_SoA cplx_SoA_MP \
+CURRENT_FOLDER=`pwd`
+
+for name in real_AoS_legacy real_MP_AoS_legacy cplx_AoS_legacy cplx_MP_AoS_legacy \
             real real_MP cplx cplx_MP
 do
 
-CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE"
+CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE -D MPIEXEC_EXECUTABLE=/bin/sh -D MPIEXEC_NUMPROC_FLAG=$CURRENT_FOLDER/tests/scripts/aprunhelper.sh"
 
 if [[ $name == *"cplx"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -D QMC_COMPLEX=1"
 fi
 
-if [[ $name == *"_SoA"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_SOA=1"
+if [[ $name == *"_AoS_legacy"* ]]; then
+  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_SOA=0"
 fi
 
 if [[ $name == *"_MP"* ]]; then

@@ -12,8 +12,8 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_COULOMBPBCAA_CUDA_H
 #define QMCPLUSPLUS_COULOMBPBCAA_CUDA_H
 #include "QMCHamiltonians/CoulombPBCAA.h"
@@ -27,32 +27,30 @@ struct CoulombPBCAA_CUDA : public CoulombPBCAA
   // Vectorized evaluation on GPU //
   //////////////////////////////////
 
-  CoulombPBCAA_CUDA(ParticleSet& ref, bool active, bool cloning=false);
+  CoulombPBCAA_CUDA(ParticleSet& ref, bool active, bool cloning = false);
 
-  ParticleSet &PtclRef;
+  ParticleSet& PtclRef;
   //// Short-range part
-  TextureSpline *SRSpline;
-  gpu::device_vector<CUDA_PRECISION_FULL>  SumGPU;
-  gpu::host_vector<CUDA_PRECISION_FULL>  SumHost;
-  gpu::device_vector<CUDA_PRECISION_FULL>  L, Linv;
+  TextureSpline* SRSpline;
+  gpu::device_vector<CUDA_PRECISION_FULL> SumGPU;
+  gpu::host_vector<CUDA_PRECISION_FULL> SumHost;
+  gpu::device_vector<CUDA_PRECISION_FULL> L, Linv;
   //// Long-range part
   int Numk;
   gpu::device_vector<CUDA_PRECISION_FULL> kpointsGPU;
-  gpu::device_vector<int>            kshellGPU;
+  gpu::device_vector<int> kshellGPU;
   // This has the same lengths as KshellGPU
   gpu::device_vector<CUDA_PRECISION_FULL> FkGPU;
   // The first vector index is the species number
   // Complex, stored as float2
-  std::vector<gpu::device_vector<CUDA_PRECISION_FULL*> > RhoklistsGPU;
-  std::vector<gpu::host_vector<CUDA_PRECISION_FULL*> > RhoklistsHost;
+  std::vector<gpu::device_vector<CUDA_PRECISION_FULL*>> RhoklistsGPU;
+  std::vector<gpu::host_vector<CUDA_PRECISION_FULL*>> RhoklistsHost;
   gpu::device_vector<CUDA_PRECISION_FULL> RhokGPU;
-  void setupLongRangeGPU(ParticleSet &P);
-  void addEnergy(MCWalkerConfiguration &W,
-                 std::vector<RealType> &LocalEnergy);
+  void setupLongRangeGPU(ParticleSet& P);
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 
   void initBreakup(ParticleSet& P, bool cloning);
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
-
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 };
-}
+} // namespace qmcplusplus
 #endif

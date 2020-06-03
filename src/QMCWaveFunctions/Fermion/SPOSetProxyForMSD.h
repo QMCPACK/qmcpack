@@ -9,8 +9,8 @@
 //
 // File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file SPOSetProxy.h
  * @brief declare a proxy class to a SPOSet for multi determinants
  */
@@ -20,15 +20,13 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 namespace qmcplusplus
 {
-
 /** proxy SPOSet
  *
  * This class owns a SPOSet for all the states to be evaluated
  * and will be owned by a DiracDeterminant object.
  */
-struct SPOSetProxyForMSD: public SPOSet
+struct SPOSetProxyForMSD : public SPOSet
 {
-
   ///pointer to the SPOSet which evaluate the single-particle states
   SPOSetPtr refPhi;
   ///container for the values
@@ -42,9 +40,9 @@ struct SPOSetProxyForMSD: public SPOSet
   ///container for the hessian
   HessVector_t grad_gradV;
   ///container for the GGGtypes
-  GGGMatrix_t  grad_grad_grad_psiM;
+  GGGMatrix_t grad_grad_grad_psiM;
   ///container for the GGGtypes
-  GGGVector_t  grad_grad_gradV;
+  GGGVector_t grad_grad_gradV;
   ///contatiner for the values for a particle
   ValueVector_t psiV;
   ///contatiner for the gradients for a particle
@@ -62,45 +60,60 @@ struct SPOSetProxyForMSD: public SPOSet
    * @param last the last particle index
    */
   SPOSetProxyForMSD(SPOSetPtr const& spos, int first, int last);
-  void resetParameters(const opt_variables_type& optVariables);
-  void resetTargetParticleSet(ParticleSet& P);
-  void setOrbitalSetSize(int norbs);
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-  void evaluate(const ParticleSet& P, int iat
-                , ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-  inline void
-  evaluate(const ParticleSet& P, int iat,
-           ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& d2psi)
-  {
-    APP_ABORT("Need specialization of evaluate(HessVector_t&) for grad_grad_grad_logdet. \n");
-  }
-  void evaluate(const ParticleSet& P, int first, int last
-                , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
-  void evaluate_notranspose(const ParticleSet& P, int first, int last
-                            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
-  void evaluate(const ParticleSet& P, int first, int last
-                , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
+  void resetParameters(const opt_variables_type& optVariables) override;
+  void resetTargetParticleSet(ParticleSet& P) override;
+  void setOrbitalSetSize(int norbs) override;
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override;
+  void evaluate(const ParticleSet& P,
+                int first,
+                int last,
+                ValueMatrix_t& logdet,
+                GradMatrix_t& dlogdet,
+                ValueMatrix_t& d2logdet);
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            ValueMatrix_t& d2logdet) override;
+  void evaluate(const ParticleSet& P,
+                int first,
+                int last,
+                ValueMatrix_t& logdet,
+                GradMatrix_t& dlogdet,
+                HessMatrix_t& grad_grad_logdet);
 
-  void evaluate(const ParticleSet& P, int first, int last
-                , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
+  void evaluate(const ParticleSet& P,
+                int first,
+                int last,
+                ValueMatrix_t& logdet,
+                GradMatrix_t& dlogdet,
+                HessMatrix_t& grad_grad_logdet,
+                GGGMatrix_t& grad_grad_grad_logdet);
 
-  void evaluate_notranspose(const ParticleSet& P, int first, int last
-                            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            HessMatrix_t& grad_grad_logdet) override;
 
-  void evaluate_notranspose(const ParticleSet& P, int first, int last
-                            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix_t& logdet,
+                            GradMatrix_t& dlogdet,
+                            HessMatrix_t& grad_grad_logdet,
+                            GGGMatrix_t& grad_grad_grad_logdet) override;
 
-  void prepareFor(int n)
-  {
-    workingSet = n;
-  }
+  void prepareFor(int n) { workingSet = n; }
 
   void evaluateForWalkerMove(const ParticleSet& P, int first, int last);
   void evaluateForWalkerMoveWithHessian(const ParticleSet& P, int first, int last);
   void evaluateForWalkerMoveWithThirdDeriv(const ParticleSet& P, int first, int last);
   void evaluateForPtclMove(const ParticleSet& P, int iat);
   void evaluateAllForPtclMove(const ParticleSet& P, int iat);
-
 };
-}
+} // namespace qmcplusplus
 #endif

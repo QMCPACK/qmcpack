@@ -12,8 +12,6 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #include "QMCDrivers/DMC/DMC_CUDA.h"
@@ -33,45 +31,46 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
 
 /// Constructor.
-DMCcuda::DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                 QMCHamiltonian& h,WaveFunctionPool& ppool, Communicate* comm):
-  QMCDriver(w,psi,h,ppool,comm), myWarmupSteps(0), Mover(0),
-  NLop(w.getTotalNum()),
-  ResizeTimer("DMCcuda::resize"),
-  DriftDiffuseTimer("DMCcuda::Drift_Diffuse"),
-  BranchTimer("DMCcuda::Branch"),
-  HTimer("DMCcuda::Hamiltonian")
+DMCcuda::DMCcuda(MCWalkerConfiguration& w,
+                 TrialWaveFunction& psi,
+                 QMCHamiltonian& h,
+                 WaveFunctionPool& ppool,
+                 Communicate* comm)
+    : QMCDriver(w, psi, h, ppool, comm),
+      myWarmupSteps(0),
+      Mover(0),
+      NLop(w.getTotalNum()),
+      ResizeTimer(*TimerManager.createTimer("DMCcuda::resize")),
+      DriftDiffuseTimer(*TimerManager.createTimer("DMCcuda::Drift_Diffuse")),
+      BranchTimer(*TimerManager.createTimer("DMCcuda::Branch")),
+      HTimer(*TimerManager.createTimer("DMCcuda::Hamiltonian"))
 {
   RootName = "dmc";
-  QMCType ="DMCcuda";
-  QMCDriverMode.set(QMC_UPDATE_MODE,1);
-  QMCDriverMode.set(QMC_WARMUP,0);
+  QMCType  = "DMCcuda";
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_WARMUP, 0);
   //m_param.add(myWarmupSteps,"warmupSteps","int");
   //m_param.add(nTargetSamples,"targetWalkers","int");
   m_param.add(ScaleWeight, "scaleweight", "string");
-  TimerManager.addTimer (&ResizeTimer);
-  TimerManager.addTimer (&DriftDiffuseTimer);
-  TimerManager.addTimer (&BranchTimer);
-  TimerManager.addTimer (&HTimer);
+
+  H.setRandomGenerator(&Random);
 }
 
-bool DMCcuda::checkBounds (const PosType &newpos)
+bool DMCcuda::checkBounds(const PosType& newpos)
 {
-  if (!W.UseBoundBox)
-    return true;
   PosType red = W.Lattice.toUnit(newpos);
   return W.Lattice.isValid(red);
 }
 
-void DMCcuda::checkBounds (std::vector<PosType> &newpos,
-                           std::vector<bool> &valid)
+void DMCcuda::checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid)
 {
-  for (int iw=0; iw<newpos.size(); iw++)
+  for (int iw = 0; iw < newpos.size(); iw++)
   {
     PosType red = W.Lattice.toUnit(newpos[iw]);
-    valid[iw] = W.Lattice.isValid(red);
+    valid[iw]   = W.Lattice.isValid(red);
   }
 }
 
@@ -85,28 +84,28 @@ bool DMCcuda::run()
   if (scaleweight)
     app_log() << "  Scaling weight per Umrigar/Nightingale.\n";
   resetRun();
-  Mover->MaxAge = 1;
-  IndexType block = 0;
+  Mover->MaxAge        = 1;
+  IndexType block      = 0;
   IndexType nAcceptTot = 0;
   IndexType nRejectTot = 0;
-  bool update_now=false;
-  int nat = W.getTotalNum();
-  int nw  = W.getActiveWalkers();
-  std::vector<RealType>  LocalEnergy(nw), LocalEnergyOld(nw);
-  std::vector<PosType>   delpos(nw);
-  std::vector<PosType>   newpos(nw);
+  bool update_now      = false;
+  int nat              = W.getTotalNum();
+  int nw               = W.getActiveWalkers();
+  std::vector<RealType> LocalEnergy(nw), LocalEnergyOld(nw);
+  std::vector<PosType> delpos(nw);
+  std::vector<PosType> newpos(nw);
   std::vector<ValueType> ratios(nw), rplus(nw), rminus(nw);
-  std::vector<RealType>  R2prop(nw), R2acc(nw);
+  std::vector<RealType> R2prop(nw), R2acc(nw);
 #ifdef QMC_COMPLEX
-  std::vector<RealType>  ratios_real(nw);
+  std::vector<RealType> ratios_real(nw);
 #endif
-  std::vector<GradType>  oldG(nw), newG(nw);
+  std::vector<GradType> oldG(nw), newG(nw);
   std::vector<ValueType> oldL(nw), newL(nw);
   std::vector<Walker_t*> accepted(nw);
   Matrix<ValueType> lapl(nw, nat);
-  Matrix<GradType>  grad(nw, nat);
-  std::vector<std::vector<NonLocalData> > Txy(nw);
-  for (int iw=0; iw<nw; iw++)
+  Matrix<GradType> grad(nw, nat);
+  std::vector<std::vector<NonLocalData>> Txy(nw);
+  for (int iw = 0; iw < nw; iw++)
     W[iw]->Weight = 1.0;
 
   LoopTimer dmc_loop;
@@ -140,31 +139,31 @@ bool DMCcuda::run()
       accepted.resize(nw);
       lapl.resize(nw, nat);
       grad.resize(nw, nat);
-      R2prop.resize(nw,0.0);
-      R2acc.resize(nw,0.0);
+      R2prop.resize(nw, 0.0);
+      R2acc.resize(nw, 0.0);
       W.updateLists_GPU();
       ResizeTimer.stop();
       if (UseTMove)
       {
         Txy.resize(nw);
-        for (int iw=0; iw<nw; iw++)
+        for (int iw = 0; iw < nw; iw++)
           Txy[iw].clear();
       }
-      for (int iw=0; iw<nw; iw++)
+      for (int iw = 0; iw < nw; iw++)
         W[iw]->Age++;
-      int k=0;
+      int k = 0;
       DriftDiffuseTimer.start();
-      for(int iat=0; iat<nat; iat++)
+      for (int iat = 0; iat < nat; iat++)
       {
-        Psi.calcGradient (W, iat, k, oldG);
+        Psi.calcGradient(W, iat, k, oldG);
         //create a 3N-Dimensional Gaussian with variance=1
-        makeGaussRandomWithEngine(delpos,Random);
+        makeGaussRandomWithEngine(delpos, Random);
         Psi.addGradient(W, iat, oldG);
-        for(int iw=0; iw<nw; iw++)
+        for (int iw = 0; iw < nw; iw++)
         {
           delpos[iw] *= m_sqrttau;
           PosType dr;
-          getScaledDrift(m_tauovermass,oldG[iw],dr);
+          DriftModifier->getDrift(m_tauovermass, oldG[iw], dr);
           newpos[iw] = W[iw]->R[iat] + delpos[iw] + dr;
           ratios[iw] = 1.0;
 #ifdef QMC_COMPLEX
@@ -174,45 +173,44 @@ bool DMCcuda::run()
         }
         W.proposeMove_GPU(newpos, iat);
         update_now = W.update_now(iat);
-        Psi.calcRatio(W,iat,ratios,newG, newL);
+        Psi.calcRatio(W, iat, ratios, newG, newL);
         accepted.clear();
         std::vector<bool> acc(nw, true);
-        if (W.UseBoundBox)
-          checkBounds (newpos, acc);
+        checkBounds(newpos, acc);
         if (kDelay)
-          Psi.det_lookahead (W, ratios, newG, newL, iat, k, W.getkblocksize(), nw);
+          Psi.det_lookahead(W, ratios, newG, newL, iat, k, W.getkblocksize(), nw);
         std::vector<RealType> logGf_v(nw);
         std::vector<RealType> rand_v(nw);
-        for(int iw=0; iw<nw; ++iw)
+        for (int iw = 0; iw < nw; ++iw)
         {
           logGf_v[iw] = -m_oneover2tau * dot(delpos[iw], delpos[iw]);
-          rand_v[iw] = Random();
+          rand_v[iw]  = Random();
         }
         Psi.addRatio(W, iat, k, ratios, newG, newL);
 #ifdef QMC_COMPLEX
         Psi.convertRatiosFromComplexToReal(ratios, ratios_real);
 #endif
-        for(int iw=0; iw<nw; ++iw)
+        for (int iw = 0; iw < nw; ++iw)
         {
           PosType drNew;
-          getScaledDrift(m_tauovermass,newG[iw],drNew);
+          DriftModifier->getDrift(m_tauovermass, newG[iw], drNew);
           drNew += newpos[iw] - W[iw]->R[iat];
           RealType logGb = -m_oneover2tau * dot(drNew, drNew);
-          RealType x = logGb - logGf_v[iw];
+          RealType x     = logGb - logGf_v[iw];
 
 #ifdef QMC_COMPLEX
-          RealType prob = ratios_real[iw]*ratios_real[iw]*std::exp(x);
-          if(acc[iw] && rand_v[iw] < prob && ratios_real[iw] > 0.0)
+          RealType prob = ratios_real[iw] * ratios_real[iw] * std::exp(x);
+          if (acc[iw] && rand_v[iw] < prob && ratios_real[iw] > 0.0)
 #else
-          RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
-          if(acc[iw] && rand_v[iw] < prob && ratios[iw] > 0.0)
+          RealType prob = ratios[iw] * ratios[iw] * std::exp(x);
+          if (acc[iw] && rand_v[iw] < prob && ratios[iw] > 0.0)
 #endif
           {
             accepted.push_back(W[iw]);
             nAccept++;
             W[iw]->R[iat] = newpos[iw];
-            W[iw]->Age = 0;
-            acc[iw] = true;
+            W[iw]->Age    = 0;
+            acc[iw]       = true;
             R2acc[iw] += dot(delpos[iw], delpos[iw]);
           }
           else
@@ -221,31 +219,31 @@ bool DMCcuda::run()
             nReject++;
           }
         }
-        W.acceptMove_GPU(acc,k);
-        if (accepted.size() || (kDelay>1))
-          Psi.update(&W,accepted,iat,&acc,k);
-        if(kDelay>1)
+        W.acceptMove_GPU(acc, k);
+        if (accepted.size() || (kDelay > 1))
+          Psi.update(&W, accepted, iat, &acc, k);
+        if (kDelay > 1)
           k++;
-        if(update_now)
-          k=0;
+        if (update_now)
+          k = 0;
       }
       DriftDiffuseTimer.stop();
       Psi.gradLapl(W, grad, lapl);
       HTimer.start();
       if (UseTMove)
-        H.evaluate (W, LocalEnergy, Txy);
+        H.evaluate(W, LocalEnergy, Txy);
       else
-        H.evaluate (W, LocalEnergy);
+        H.evaluate(W, LocalEnergy);
       HTimer.stop();
       if (CurrentStep == 1)
         LocalEnergyOld = LocalEnergy;
-      if (UseTMove==TMOVE_V0)
+      if (UseTMove == TMOVE_V0)
       {
         // Now, attempt nonlocal move
         accepted.clear();
         std::vector<int> iatList;
         std::vector<PosType> accPos;
-        for (int iw=0; iw<nw; iw++)
+        for (int iw = 0; iw < nw; iw++)
         {
           const NonLocalData* oneTMove = NLop.selectMove(Random(), Txy[iw]);
           if (oneTMove)
@@ -262,39 +260,40 @@ bool DMCcuda::run()
         }
         if (accepted.size())
         {
-          Psi.ratio(accepted,iatList, accPos, ratios, newG, newL);
-          Psi.update(accepted,iatList);
-          for (int i=0; i<accepted.size(); i++)
+          Psi.ratio(accepted, iatList, accPos, ratios, newG, newL);
+          Psi.update(accepted, iatList);
+          for (int i = 0; i < accepted.size(); i++)
             accepted[i]->R[iatList[i]] = accPos[i];
-          W.NLMove_GPU (accepted, accPos, iatList);
+          W.NLMove_GPU(accepted, accPos, iatList);
         }
       }
-      else if(UseTMove==TMOVE_V1||UseTMove==TMOVE_V3)
+      else if (UseTMove == TMOVE_V1 || UseTMove == TMOVE_V3)
       {
-        APP_ABORT("Tmove v1 and v3 have not been implemented on GPU.\n  please contact the developers if you need this feature");
+        APP_ABORT("Tmove v1 and v3 have not been implemented on GPU.\n  please contact the developers if you need this "
+                  "feature");
       }
       // Now branch
       BranchTimer.start();
-      for (int iw=0; iw<nw; iw++)
+      for (int iw = 0; iw < nw; iw++)
       {
-        RealType v2=0.0, v2bar=0.0;
-        for(int iat=0; iat<nat; iat++)
+        RealType v2 = 0.0, v2bar = 0.0;
+        for (int iat = 0; iat < nat; iat++)
         {
           PosType wG_scaled;
-          getScaledDrift(m_tauovermass,W.G[iat],wG_scaled);
-          v2bar += dot(wG_scaled,wG_scaled);
+          DriftModifier->getDrift(m_tauovermass, W.G[iat], wG_scaled);
+          v2bar += dot(wG_scaled, wG_scaled);
 #ifdef QMC_COMPLEX
           PosType wG_real;
-          convert(W.G[iat],wG_real);
-          v2 += dot(wG_real,wG_real);
+          convert(W.G[iat], wG_real);
+          v2 += dot(wG_real, wG_real);
 #else
           // should be removed when things work fine
-          v2 += dot(W.G[iat],W.G[iat]);
+          v2 += dot(W.G[iat], W.G[iat]);
 #endif
         }
-        RealType scNew = std::sqrt(v2bar/(v2*m_tauovermass*m_tauovermass));
-        RealType scOld = (CurrentStep == 1) ? scNew : W[iw]->getPropertyBase()[DRIFTSCALE];
-        W[iw]->getPropertyBase()[DRIFTSCALE] = scNew;
+        RealType scNew                       = std::sqrt(v2bar / (v2 * m_tauovermass * m_tauovermass));
+        RealType scOld                       = (CurrentStep == 1) ? scNew : W[iw]->getPropertyBase()[WP::DRIFTSCALE];
+        W[iw]->getPropertyBase()[WP::DRIFTSCALE] = scNew;
         // fprintf (stderr, "iw = %d  scNew = %1.8f  scOld = %1.8f\n", iw, scNew, scOld);
         RealType tauRatio = R2acc[iw] / R2prop[iw];
         //allow large time steps during warmup
@@ -302,25 +301,23 @@ bool DMCcuda::run()
         //  std::cerr << "  tauRatio = " << tauRatio << std::endl;
         RealType taueff = m_tauovermass * tauRatio;
         if (scaleweight)
-          W[iw]->Weight *= branchEngine->branchWeightTau
-                           (LocalEnergy[iw], LocalEnergyOld[iw], scNew, scOld, taueff);
+          W[iw]->Weight *= branchEngine->branchWeightTau(LocalEnergy[iw], LocalEnergyOld[iw], scNew, scOld, taueff);
         else
-          W[iw]->Weight *= branchEngine->branchWeight
-                           (LocalEnergy[iw], LocalEnergyOld[iw]);
-        W[iw]->getPropertyBase()[R2ACCEPTED] = R2acc[iw];
-        W[iw]->getPropertyBase()[R2PROPOSED] = R2prop[iw];
+          W[iw]->Weight *= branchEngine->branchWeight(LocalEnergy[iw], LocalEnergyOld[iw]);
+        W[iw]->getPropertyBase()[WP::R2ACCEPTED] = R2acc[iw];
+        W[iw]->getPropertyBase()[WP::R2PROPOSED] = R2prop[iw];
       }
       Mover->setMultiplicity(W.begin(), W.end());
-      branchEngine->branch(CurrentStep,W);
+      branchEngine->branch(CurrentStep, W);
       nw = W.getActiveWalkers();
       LocalEnergyOld.resize(nw);
-      for (int iw=0; iw<nw; iw++)
-        LocalEnergyOld[iw] = W[iw]->getPropertyBase()[LOCALENERGY];
+      for (int iw = 0; iw < nw; iw++)
+        LocalEnergyOld[iw] = W[iw]->getPropertyBase()[WP::LOCALENERGY];
       BranchTimer.stop();
-    }
-    while(step<nSteps);
-    if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 ) Psi.recompute(W, true);
-    double accept_ratio = (double)nAccept/(double)(nAccept+nReject);
+    } while (step < nSteps);
+    if (nBlocksBetweenRecompute && (1 + block) % nBlocksBetweenRecompute == 0)
+      Psi.recompute(W, true);
+    double accept_ratio = (double)nAccept / (double)(nAccept + nReject);
     Estimators->stopBlock(accept_ratio);
     nAcceptTot += nAccept;
     nRejectTot += nReject;
@@ -334,8 +331,7 @@ bool DMCcuda::run()
     {
       app_log() << runtimeControl.time_limit_message("DMC", block);
     }
-  }
-  while(block<nBlocks && enough_time_for_next_iteration);
+  } while (block < nBlocks && enough_time_for_next_iteration);
 #ifdef USE_NVTX_API
   nvtxRangePop();
 #endif
@@ -346,58 +342,54 @@ bool DMCcuda::run()
 
 void DMCcuda::resetUpdateEngine()
 {
-  if(Mover==0) //disable switching update modes for DMC in a run
+  if (Mover == 0) //disable switching update modes for DMC in a run
   {
     //load walkers if they were saved
     W.loadEnsemble();
-    branchEngine->initWalkerController(W,false,false);
-    Mover = new DMCUpdatePbyPWithRejectionFast(W,Psi,H,Random);
-    Mover->resetRun(branchEngine,Estimators);
+    branchEngine->initWalkerController(W, false, false);
+    Mover = new DMCUpdatePbyPWithRejectionFast(W, Psi, H, Random);
+    Mover->resetRun(branchEngine, Estimators, nullptr, DriftModifier);
     //Mover->initWalkersForPbyP(W.begin(),W.end());
   }
   else
   {
-    int nw_multi=branchEngine->resetRun(qmcNode);
-    if(nw_multi>1)
+    int nw_multi = branchEngine->resetRun(qmcNode);
+    if (nw_multi > 1)
     {
-      app_log() << " Current population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << std::endl;
+      app_log() << " Current population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers() << std::endl;
       app_log() << " The target population has changed. Multiply walkers by " << nw_multi << std::endl;
-      W.createWalkers((nw_multi-1)*W.getActiveWalkers());
+      W.createWalkers((nw_multi - 1) * W.getActiveWalkers());
       setWalkerOffsets();
-      app_log() << " New population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << std::endl;
+      app_log() << " New population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers() << std::endl;
     }
   }
 
   branchEngine->checkParameters(W);
 
-  Mover->MaxAge=1;
+  Mover->MaxAge = 1;
   app_log() << "  Steps per block = " << nSteps << std::endl;
   app_log() << "  Number of blocks = " << nBlocks << std::endl;
 }
-
 
 
 void DMCcuda::resetRun()
 {
   resetUpdateEngine();
   SpeciesSet tspecies(W.getSpeciesSet());
-  int massind=tspecies.addAttribute("mass");
-  RealType mass = tspecies(massind,0);
-  RealType oneovermass = 1.0/mass;
+  int massind              = tspecies.addAttribute("mass");
+  RealType mass            = tspecies(massind, 0);
+  RealType oneovermass     = 1.0 / mass;
   RealType oneoversqrtmass = std::sqrt(oneovermass);
-  m_oneover2tau = 0.5/Tau;
-  m_sqrttau = std::sqrt(Tau/mass);
-  m_tauovermass = Tau/mass;
+  m_oneover2tau            = 0.5 / Tau;
+  m_sqrttau                = std::sqrt(Tau / mass);
+  m_tauovermass            = Tau / mass;
   if (!myComm->rank())
     gpu::cuda_memory_manager.report();
   // Compute the size of data needed for each walker on the GPU card
-  PointerPool<Walker_t::cuda_Buffer_t > pool;
-  Psi.reserve (pool,false,W.getkblocksize());
-  app_log() << "Each walker requires "
-            << pool.getTotalSize() * sizeof(CTS::ValueType)
-            << " bytes in GPU memory.\n";
-  app_log() << "Preparing to allocate " << W.WalkerList.size()
-            << " walkers.\n";
+  PointerPool<Walker_t::cuda_Buffer_t> pool;
+  Psi.reserve(pool, false, W.getkblocksize());
+  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CTS::ValueType) << " bytes in GPU memory.\n";
+  app_log() << "Preparing to allocate " << W.WalkerList.size() << " walkers.\n";
   // Now allocate memory on the GPU card for each walker
   int cudaSize = pool.getTotalSize();
   // for (int iw=0; iw<W.WalkerList.size(); iw++) {
@@ -415,21 +407,19 @@ void DMCcuda::resetRun()
   Estimators->start(nBlocks, true);
 }
 
-bool
-DMCcuda::put(xmlNodePtr q)
+bool DMCcuda::put(xmlNodePtr q)
 {
   //nothing to add
   UseTMove = NLop.put(q);
 
-  BranchInterval=-1;
+  BranchInterval = -1;
   ParameterSet p;
-  p.add(BranchInterval,"branchInterval","string");
-  p.add(BranchInterval,"branchinterval","string");
-  p.add(BranchInterval,"substeps","int");
-  p.add(BranchInterval,"subSteps","int");
-  p.add(BranchInterval,"sub_steps","int");
+  p.add(BranchInterval, "branchInterval", "string");
+  p.add(BranchInterval, "branchinterval", "string");
+  p.add(BranchInterval, "substeps", "int");
+  p.add(BranchInterval, "subSteps", "int");
+  p.add(BranchInterval, "sub_steps", "int");
   p.put(q);
   return true;
 }
-}
-
+} // namespace qmcplusplus

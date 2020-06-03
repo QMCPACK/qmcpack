@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_OHMMSPARAMETER_H
@@ -45,9 +43,8 @@
  \endhtmlonly
  */
 template<class T>
-class OhmmsParameter: public OhmmsElementBase
+class OhmmsParameter : public OhmmsElementBase
 {
-
   //@{
   ///reference to a value of type T
   T& ref_;
@@ -58,14 +55,13 @@ class OhmmsParameter: public OhmmsElementBase
   //@}
 
 public:
-
   /*!\fn OhmmsParameter(T& a, const char* aname, const char* uname)
    *\param a the value to be referenced
    *\param aname the name of this object
    *\param uname the unit
    */
-  OhmmsParameter(T& a, const char* aname, const char* uname="none"):
-    OhmmsElementBase(aname), ref_(a), unit_(uname), node_(NULL)
+  OhmmsParameter(T& a, const char* aname, const char* uname = "none")
+      : OhmmsElementBase(aname), ref_(a), unit_(uname), node_(NULL)
   {
     tolower(unit_);
   }
@@ -73,9 +69,7 @@ public:
   ///print to an std::ostream
   inline bool get(std::ostream& os) const
   {
-    os << "<parameter name=\""<< myName << "\" condition=\""
-       << unit_ << "\">"
-       << ref_ << "</parameter>" << std::endl;
+    os << "<parameter name=\"" << myName << "\" condition=\"" << unit_ << "\">" << ref_ << "</parameter>" << std::endl;
     return true;
   }
 
@@ -85,7 +79,7 @@ public:
   inline bool put(xmlNodePtr cur)
   {
     node_ = cur;
-    putContent(ref_,cur);
+    putContent(ref_, cur);
     return true;
   }
 
@@ -105,36 +99,28 @@ public:
    */
   bool add(xmlNodePtr parent)
   {
-    if(!node_)
+    if (!node_)
     {
-      node_ =xmlNewChild(parent,parent->ns,(const xmlChar*)"parameter",NULL);
-      xmlNewProp(node_,(const xmlChar*)"name",(const xmlChar*)(myName.c_str()));
-      xmlNewProp(node_,(const xmlChar*)"condition",(const xmlChar*)(unit_.c_str()));
-      getContent(ref_,node_);
+      node_ = xmlNewChild(parent, parent->ns, (const xmlChar*)"parameter", NULL);
+      xmlNewProp(node_, (const xmlChar*)"name", (const xmlChar*)(myName.c_str()));
+      xmlNewProp(node_, (const xmlChar*)"condition", (const xmlChar*)(unit_.c_str()));
+      getContent(ref_, node_);
     }
     return true;
   }
 
-  inline void setValue(T x)
-  {
-    ref_=x;
-  }
+  inline void setValue(T x) { ref_ = x; }
 
   ///reset member data
-  inline void reset()
-  {
-    getContent(ref_,node_);
-  }
-
+  inline void reset() { getContent(ref_, node_); }
 };
 
 /*!\class OhmmsParameter<bool>
  *\brief A specialization of OhmmsParameter<T> for T = boolean.
  */
 template<>
-class OhmmsParameter<bool>: public OhmmsElementBase
+class OhmmsParameter<bool> : public OhmmsElementBase
 {
-
   //@{
   ///reference to a value of type T
   bool& ref_;
@@ -145,14 +131,13 @@ class OhmmsParameter<bool>: public OhmmsElementBase
   //@}
 
 public:
-
   /*!\fn OhmmsParameter(bool& a, const char* aname, const char* uname)
    *\param a the boolean to be referenced.
    *\param aname the name of this object
    *\param uname the unit
    */
-  OhmmsParameter(bool& a, const char* aname, const char* uname="none"):
-    OhmmsElementBase(aname), ref_(a), unit_(uname), node_(NULL)
+  OhmmsParameter(bool& a, const char* aname, const char* uname = "none")
+      : OhmmsElementBase(aname), ref_(a), unit_(uname), node_(NULL)
   {
     tolower(unit_);
   }
@@ -160,7 +145,7 @@ public:
   ///print to an std::ostream
   inline bool get(std::ostream& os) const
   {
-    os << "<parameter name=\""<< myName << "\">" << ref_ << "</parameter>" << std::endl;
+    os << "<parameter name=\"" << myName << "\">" << ref_ << "</parameter>" << std::endl;
     return true;
   }
 
@@ -172,9 +157,9 @@ public:
    */
   inline bool put(xmlNodePtr cur)
   {
-    node_ = cur;
-    const char* ac = (const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1));
-    if(ac)
+    node_          = cur;
+    const XMLNodeString ac(cur);
+    if (!ac.empty())
     {
       std::istringstream stream(ac);
       //return stream >> ref_;
@@ -183,23 +168,20 @@ public:
     }
     else
     {
-      ref_ = !ref_;//flip the bit
+      ref_ = !ref_; //flip the bit
       return true;
     }
   }
 
-  inline void setValue(bool x)
-  {
-    ref_=x;
-  }
+  inline void setValue(bool x) { ref_ = x; }
 
   ///read from std::istream
   inline bool put(std::istream& is)
   {
     std::string yes;
     is >> yes;
-    if(yes == "yes" || yes == "true" || yes == "1")
-      ref_=true;
+    if (yes == "yes" || yes == "true" || yes == "1")
+      ref_ = true;
     else
       ref_ = false;
     return true;
@@ -213,21 +195,17 @@ public:
    */
   bool add(xmlNodePtr parent)
   {
-    if(!node_)
+    if (!node_)
     {
-      node_ =xmlNewChild(parent,parent->ns,(const xmlChar*)"parameter",NULL);
-      xmlNewProp(node_,(const xmlChar*)"name",(const xmlChar*)(myName.c_str()));
-      xmlNewProp(node_,(const xmlChar*)"condition",(const xmlChar*)(unit_.c_str()));
-      getContent(ref_,node_);
+      node_ = xmlNewChild(parent, parent->ns, (const xmlChar*)"parameter", NULL);
+      xmlNewProp(node_, (const xmlChar*)"name", (const xmlChar*)(myName.c_str()));
+      xmlNewProp(node_, (const xmlChar*)"condition", (const xmlChar*)(unit_.c_str()));
+      getContent(ref_, node_);
     }
     return true;
   }
 
   ///reset member data
-  inline void reset()
-  {
-    getContent(ref_,node_);
-  }
-
+  inline void reset() { getContent(ref_, node_); }
 };
 #endif /*OHMMS_OHMMSPARAMETER_H*/

@@ -10,8 +10,6 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef POINTER_POOL_H
@@ -27,26 +25,19 @@ public:
   typedef typename CONT::pointer pointer;
 
   // Local data routines
-  pointer getPointer (int index, buffer_type &buffer)
-  {
-    return &(buffer[offsets[index]]);
-  }
+  pointer getPointer(int index, buffer_type& buffer) { return &(buffer[offsets[index]]); }
 
-  void allocate (buffer_type &buffer)
-  {
-    buffer.resize(totalSize);
-  }
+  void allocate(buffer_type& buffer) { buffer.resize(totalSize); }
 
   // Shared-data routines
 
   // Reserves size elements and returns the offset to the member
   // in the buffer
-  size_t reserve (size_t size)
+  size_t reserve(size_t size)
   {
     if (size % 32)
     {
-      std::cerr << "Unaligned reservation in PointerPool.  size = "
-           << size << std::endl;
+      std::cerr << "Unaligned reservation in PointerPool.  size = " << size << std::endl;
       size += 32 - (size % 32);
     }
     size_t off = totalSize;
@@ -61,18 +52,13 @@ public:
     totalSize = 0;
   }
 
-  size_t getTotalSize()
-  {
-    return totalSize;
-  }
+  size_t getTotalSize() { return totalSize; }
 
-  PointerPool() : totalSize(0)
-  { }
+  PointerPool() : totalSize(0) {}
 
 protected:
   size_t totalSize;
   std::vector<size_t> offsets;
-
 };
 
 #endif

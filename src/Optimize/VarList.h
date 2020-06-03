@@ -9,8 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_OPTIMIZE_VARREGISTRY_H
@@ -20,16 +18,15 @@
 /** Set of variables that can be modified during optimizations
  */
 template<class T>
-struct VarRegistry: public std::map<std::string,T>
+struct VarRegistry : public std::map<std::string, T>
 {
-
-  typedef typename std::map<std::string,T>::iterator iterator;
+  typedef typename std::map<std::string, T>::iterator iterator;
 
   void print(std::ostream& os)
   {
     iterator it(this->begin());
     os << "Optimizable variable list " << std::endl;
-    while(it != this->end())
+    while (it != this->end())
     {
       os << (*it).first << " " << (*it).second << std::endl;
       ++it;
@@ -39,9 +36,8 @@ struct VarRegistry: public std::map<std::string,T>
   //add an function not
   inline int addVariable(const std::string& vname, T val)
   {
-    this->operator[](vname)=val;
+    this->operator[](vname) = val;
     return this->size();
   }
-
 };
 #endif

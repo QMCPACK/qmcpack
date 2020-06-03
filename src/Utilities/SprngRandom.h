@@ -9,8 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /** @file SprngRandom.h
@@ -18,7 +16,7 @@
  */
 #ifndef OHMMS_SPRNGRANDOM_H
 #define OHMMS_SPRNGRANDOM_H
-#include <math.h>
+#include <cmath>
 #include <sprng.h>
 
 #define SRSEED 985456376
@@ -39,17 +37,16 @@
 template<int RNGT>
 class SprngRandom
 {
-
 public:
   typedef double Return_t;
 
   /** default constructor */
-  SprngRandom(): myContext(0), nContexts(1), myStream(0),baseSeed(SRSEED)  { }
+  SprngRandom() : myContext(0), nContexts(1), myStream(0), baseSeed(SRSEED) {}
 
   /** copyc constructor */
-  SprngRandom(const SprngRandom& rng): myStream(0),baseSeed(SRSEED)
+  SprngRandom(const SprngRandom& rng) : myStream(0), baseSeed(SRSEED)
   {
-    init(rng.myContext,rng.nContexts,(*rng.generator)());
+    init(rng.myContext, rng.nContexts, (*rng.generator)());
   }
 
   /** constructor
@@ -57,15 +54,11 @@ public:
    *@param nstr number of streams
    *@param iseed random number seed
    */
-  SprngRandom(int i, int nstr, int iseed):
-    myStream(0),baseSeed(SRSEED)
-  {
-    init(i,nstr,iseed);
-  }
+  SprngRandom(int i, int nstr, int iseed) : myStream(0), baseSeed(SRSEED) { init(i, nstr, iseed); }
 
   ~SprngRandom()
   {
-    if(myStream)
+    if (myStream)
       free_stream(myStream);
   }
 
@@ -79,25 +72,24 @@ public:
    */
   inline void init(int i, int nstr, int iseed)
   {
-    if(myStream)
+    if (myStream)
       free_stream(myStream);
     myContext = i;
     nContexts = nstr;
-    if(iseed < 0)
-      // generate a new seed
+    if (iseed < 0)
+    // generate a new seed
     {
       baseSeed = make_sprng_seed();
     }
-    else
-      if(iseed > 0)
-        // use input seed
-      {
-        baseSeed = iseed;
-      } // if iseed = 0, use SRSEED
+    else if (iseed > 0)
+    // use input seed
+    {
+      baseSeed = iseed;
+    } // if iseed = 0, use SRSEED
 #if SPRNG_VERSION == 1
-    myStream = init_sprng(RNGT,myContext,nContexts,baseSeed);
+    myStream = init_sprng(RNGT, myContext, nContexts, baseSeed);
 #elif SPRNG_VERSION == 2
-    myStream = init_sprng(RNGT,myContext,nContexts,baseSeed, SPRNG_DEFAULT);
+    myStream = init_sprng(RNGT, myContext, nContexts, baseSeed, SPRNG_DEFAULT);
 #else
 #error "Unsupported sprng library. Only versions 1 and 2 are supported."
 #endif
@@ -117,37 +109,33 @@ public:
   }
   inline void reset()
   {
-    if(myStream)
+    if (myStream)
       free_stream(myStream);
     baseSeed = make_sprng_seed();
 #if SPRNG_VERSION == 1
-    myStream = init_sprng(RNGT,myContext,nContexts,baseSeed);
+    myStream = init_sprng(RNGT, myContext, nContexts, baseSeed);
 #elif SPRNG_VERSION == 2
-    myStream = init_sprng(RNGT,myContext,nContexts,baseSeed, SPRNG_DEFAULT);
+    myStream = init_sprng(RNGT, myContext, nContexts, baseSeed, SPRNG_DEFAULT);
 #else
 #error "Unsupported sprng library. Only versions 1 and 2 are supported."
 #endif
   }
 
-  inline void read(std::istream& rin)
-  {
-  }
+  inline void read(std::istream& rin) {}
 
-  inline void write(std::ostream& rout) const
-  {
-  }
+  inline void write(std::ostream& rout) const {}
 
-// inline void bivariate(Return_t& g1, Return_t &g2) {
-//   Return_t v1, v2, r;
-//   do {
-//   v1 = 2.0e0*getRandom() - 1.0e0;
-//   v2 = 2.0e0*getRandom() - 1.0e0;
-//   r = v1*v1+v2*v2;
-//   } while(r > 1.0e0);
-//   Return_t fac = sqrt(-2.0e0*log(r)/r);
-//   g1 = v1*fac;
-//   g2 = v2*fac;
-// }
+  // inline void bivariate(Return_t& g1, Return_t &g2) {
+  //   Return_t v1, v2, r;
+  //   do {
+  //   v1 = 2.0e0*getRandom() - 1.0e0;
+  //   v2 = 2.0e0*getRandom() - 1.0e0;
+  //   r = v1*v1+v2*v2;
+  //   } while(r > 1.0e0);
+  //   Return_t fac = sqrt(-2.0e0*log(r)/r);
+  //   g1 = v1*fac;
+  //   g2 = v2*fac;
+  // }
 
 private:
   int myContext;
@@ -156,4 +144,3 @@ private:
   int* myStream;
 };
 #endif
-

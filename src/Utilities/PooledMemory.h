@@ -18,10 +18,10 @@
 #include <cstring>
 #include "simd/allocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
+#include <stdexcept>
 
 namespace qmcplusplus
 {
-
 /** Memory pool to manage arrays+scalars with alignment
  * @tparam T_scalar : type of the scalar data type, typically OHMMS_PRECISION_FULL
  * @tparam PageSize : page size in bytes, default=4096 (4K)
@@ -30,9 +30,8 @@ namespace qmcplusplus
  * The bulk part is accessed directly by address
  * The scalar part works as PooledData, all the values are static_cast to T_scalar.
  */
-template<typename T_scalar=OHMMS_PRECISION_FULL,
-         size_t PageSize=4096,
-         typename Alloc=Mallocator<char, PageSize> >
+#define DEFAULT_PAGE_SIZE 4096
+template<typename T_scalar = OHMMS_PRECISION_FULL, typename Alloc = aligned_allocator<char, DEFAULT_PAGE_SIZE>>
 struct PooledMemory
 {
   typedef char T;
@@ -41,66 +40,51 @@ struct PooledMemory
 
   const int scalar_multiplier;
   size_type Current, Current_scalar;
-  T_scalar *Scalar_ptr;
+  T_scalar* Scalar_ptr;
   Vector<T, Alloc> myData;
 
   ///default constructor
-  inline PooledMemory():
-    scalar_multiplier(sizeof(T_scalar)),
-    Current(0), Scalar_ptr(nullptr), Current_scalar(0)
-  {
-  }
+  inline PooledMemory() : scalar_multiplier(sizeof(T_scalar)), Current(0), Current_scalar(0), Scalar_ptr(nullptr) {}
 
   ///copy constructor
-  PooledMemory(const PooledMemory &in):
-    scalar_multiplier(in.scalar_multiplier),
-    myData(in.myData), Current(in.Current),
-    Current_scalar(in.Current_scalar)
+  PooledMemory(const PooledMemory& in)
+      : scalar_multiplier(in.scalar_multiplier),
+        Current(in.Current),
+        Current_scalar(in.Current_scalar),
+        myData(in.myData)
   {
-    Scalar_ptr = reinterpret_cast<T_scalar*>(myData.data()+in.scalar_offset());
+    Scalar_ptr = reinterpret_cast<T_scalar*>(myData.data() + in.scalar_offset());
   }
 
   ///copy assign operator
-  PooledMemory& operator=(const PooledMemory &in)
+  PooledMemory& operator=(const PooledMemory& in)
   {
-    myData = in.myData;
-    Current = in.Current;
+    myData         = in.myData;
+    Current        = in.Current;
     Current_scalar = in.Current_scalar;
-    Scalar_ptr = reinterpret_cast<T_scalar*>(myData.data()+in.scalar_offset());
+    Scalar_ptr     = reinterpret_cast<T_scalar*>(myData.data() + in.scalar_offset());
     return *this;
   }
 
   ///return the size of the data
-  inline size_type byteSize() const
-  {
-    return sizeof(T)*myData.size();
-  }
+  inline size_type byteSize() const { return sizeof(T) * myData.size(); }
 
   ///return the size of the data
-  inline size_type size() const
-  {
-    return myData.size();
-  }
+  inline size_type size() const { return myData.size(); }
 
   //return the cursor
-  inline size_type current() const
-  {
-    return Current;
-  }
+  inline size_type current() const { return Current; }
 
   //return the cursor of scalar
-  inline size_type current_scalar() const
-  {
-    return Current_scalar;
-  }
+  inline size_type current_scalar() const { return Current_scalar; }
 
   /** set the cursors
    * @param cur locator to which Current is assigned
    * @param cur_scalar locator to which Current_scalar is assigned
    */
-  inline void rewind(size_type cur=0, size_type cur_scalar=0)
+  inline void rewind(size_type cur = 0, size_type cur_scalar = 0)
   {
-    Current = cur;
+    Current        = cur;
     Current_scalar = cur_scalar;
   }
 
@@ -108,22 +92,24 @@ struct PooledMemory
   inline void clear()
   {
     myData.clear();
-    Current=0;
-    Scalar_ptr=nullptr;
-    Current_scalar=0;
+    Current        = 0;
+    Scalar_ptr     = nullptr;
+    Current_scalar = 0;
   }
 
   ///allocate the data
   inline void allocate()
   {
-    myData.resize(Current+Current_scalar*scalar_multiplier);
-    Scalar_ptr = reinterpret_cast<T_scalar*>(myData.data()+Current);
+    myData.resize(Current + Current_scalar * scalar_multiplier);
+    if ((size_t(myData.data())) & (QMC_CLINE - 1))
+      throw std::runtime_error("Unaligned memory allocated in PooledMemory");
+    Scalar_ptr = reinterpret_cast<T_scalar*>(myData.data() + Current);
   }
 
   template<typename T1>
   inline void add(std::complex<T1>& x)
   {
-    Current_scalar+=2;
+    Current_scalar += 2;
   }
 
   template<typename T1>
@@ -135,16 +121,15 @@ struct PooledMemory
   template<typename T1>
   inline void add(T1* first, T1* last)
   {
-    constexpr int multiplier=sizeof(T1);
-    Current += getAlignedSize<T>((last-first)*multiplier);
+    constexpr int multiplier = sizeof(T1);
+    Current += getAlignedSize<T>((last - first) * multiplier);
   }
 
   template<typename T1>
   inline void get(std::complex<T1>& x)
   {
-    x = std::complex<T1>(static_cast<T1>(Scalar_ptr[Current_scalar]),
-                         static_cast<T1>(Scalar_ptr[Current_scalar+1]));
-    Current_scalar+=2;
+    x = std::complex<T1>(static_cast<T1>(Scalar_ptr[Current_scalar]), static_cast<T1>(Scalar_ptr[Current_scalar + 1]));
+    Current_scalar += 2;
   }
 
   template<typename T1>
@@ -157,24 +142,21 @@ struct PooledMemory
   inline void get(T1* first, T1* last)
   {
     // for backward compatibility
-    const size_t nbytes=(last-first)*sizeof(T1);
-    std::memcpy(first, myData.data()+Current, nbytes);
+    const size_t nbytes = (last - first) * sizeof(T1);
+    std::memcpy(first, myData.data() + Current, nbytes);
     Current += getAlignedSize<T>(nbytes);
   }
 
   template<typename T1>
   inline T1* lendReference(size_type n)
   {
-    constexpr int multiplier=sizeof(T1);
-    T1 *ptr = reinterpret_cast<T1*>(myData.data()+Current);
-    Current += getAlignedSize<T>(n*multiplier);
+    constexpr int multiplier = sizeof(T1);
+    T1* ptr                  = reinterpret_cast<T1*>(myData.data() + Current);
+    Current += getAlignedSize<T>(n * multiplier);
     return ptr;
   }
 
-  inline void forward(size_type n)
-  {
-    Current += getAlignedSize<T>(n);
-  }
+  inline void forward(size_type n) { Current += getAlignedSize<T>(n); }
 
   template<typename T1>
   inline void put(std::complex<T1>& x)
@@ -193,52 +175,45 @@ struct PooledMemory
   inline void put(T1* first, T1* last)
   {
     // for backward compatibility
-    const size_t nbytes=(last-first)*sizeof(T1);
-    std::memcpy(myData.data()+Current, first, nbytes);
+    const size_t nbytes = (last - first) * sizeof(T1);
+    std::memcpy(myData.data() + Current, first, nbytes);
     Current += getAlignedSize<T>(nbytes);
   }
 
   /** return the address of the first element **/
-  inline T* data()
-  {
-    return myData.data();
-  }
+  inline T* data() { return myData.data(); }
 
   /** return the address offset of the first scalar element **/
-  inline size_type scalar_offset() const
-  {
-    return reinterpret_cast<T*>(Scalar_ptr) - myData.data();
-  }
+  inline size_type scalar_offset() const { return reinterpret_cast<T*>(Scalar_ptr) - myData.data(); }
 
   template<class Msg>
   inline Msg& putMessage(Msg& m)
   {
-    m.Pack(myData.data(),myData.size());
+    m.Pack(myData.data(), myData.size());
     return m;
   }
 
   template<class Msg>
   inline Msg& getMessage(Msg& m)
   {
-    m.Unpack(myData.data(),myData.size());
+    m.Unpack(myData.data(), myData.size());
     return m;
   }
 
   template<typename T1>
-  inline PooledMemory& operator<<(T1 &x)
+  inline PooledMemory& operator<<(T1& x)
   {
     put(x);
     return *this;
   }
 
   template<typename T1>
-  inline PooledMemory& operator>>(T1 &x)
+  inline PooledMemory& operator>>(T1& x)
   {
     get(x);
     return *this;
   }
-
 };
 
-}
+} // namespace qmcplusplus
 #endif

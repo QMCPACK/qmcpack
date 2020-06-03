@@ -10,7 +10,10 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
 //////////////////////////////////////////////////////////////////////////////////////
 
-
+/** @file
+ *  The CUDA bsplines implicitly support only periodic splines
+ *  with starts of 0.
+ */
 #include <stdio.h>
 
 #include "multi_bspline.h"

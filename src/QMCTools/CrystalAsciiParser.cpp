@@ -2,11 +2,11 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Cody Melton, camelto2@ncsu.edu, North Carolina State University
+// File developed by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //
-// File created by: Cody Melton, camelto2@ncsu.edu, North Carolina State University
+// File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCTools/CrystalAsciiParser.h"

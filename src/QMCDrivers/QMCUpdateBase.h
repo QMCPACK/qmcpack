@@ -12,11 +12,9 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
-/** @file QMCUpdateBase
+/** @file
  * @brief Declare QMCUpdateBase class
  */
 #ifndef QMCPLUSPLUS_QMCUPDATE_BASE_H
@@ -25,11 +23,12 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "Estimators/EstimatorManagerBase.h"
+
 namespace qmcplusplus
 {
-
 class TraceManager;
 /** @ingroup QMC
  * @brief Base class for update methods for each step
@@ -37,21 +36,14 @@ class TraceManager;
  * QMCUpdateBase provides the common functions to update all the walkers for each time step.
  * Derived classes should implement advanceWalkers to complete a step.
  */
-class QMCUpdateBase: public QMCTraits
+class QMCUpdateBase : public QMCTraits
 {
-
 public:
-
   typedef MCWalkerConfiguration::Walker_t Walker_t;
   typedef MCWalkerConfiguration::iterator WalkerIter_t;
-  typedef SimpleFixedNodeBranch           BranchEngineType;
-#ifdef MIXED_PRECISION
-  typedef TinyVector<OHMMS_PRECISION_FULL, DIM>         mPosType;
-#else
-  typedef PosType                         mPosType;
-#endif
+  typedef SimpleFixedNodeBranch BranchEngineType;
 
-  ///If true, terminate the simulation
+  ///If true, terminate the simulation, but it is never checked
   bool BadState;
   ///number of steps per measurement
   int nSubSteps;
@@ -69,21 +61,25 @@ public:
   IndexType NonLocalMoveAccepted;
   ///timestep
   RealType Tau;
+  ///spin mass
+  RealType spinMass;
   ///use Drift
   bool UseDrift;
 
   /// Constructor.
-  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                RandomGenerator_t& rg);
+  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
   ///Alt Constructor.
-  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h,
+  QMCUpdateBase(MCWalkerConfiguration& w,
+                TrialWaveFunction& psi,
+                TrialWaveFunction& guide,
+                QMCHamiltonian& h,
                 RandomGenerator_t& rg);
   ///destructor
   virtual ~QMCUpdateBase();
 
   inline RealType acceptRatio() const
   {
-    return static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject);
+    return static_cast<RealType>(nAccept) / static_cast<RealType>(nAccept + nReject);
   }
 
   /** reset the QMCUpdateBase parameters
@@ -91,9 +87,10 @@ public:
    *
    * Update time-step variables to move walkers
    */
-  void resetRun(BranchEngineType* brancher, EstimatorManagerBase* est);
-
-  void resetRun(BranchEngineType* brancher, EstimatorManagerBase* est, TraceManager* traces);
+  void resetRun(BranchEngineType* brancher,
+                EstimatorManagerBase* est,
+                TraceManager* traces,
+                const DriftModifierBase* driftmodifer);
 
   inline RealType getTau()
   {
@@ -111,25 +108,22 @@ public:
     //RealType mass = tspecies(massind,0);
     //RealType oneovermass = 1.0/mass;
     //RealType oneoversqrtmass = std::sqrt(oneovermass);
-//  //     Tau=brancher->getTau();
-//  //     assert (Tau==i);
+    //  //     Tau=brancher->getTau();
+    //  //     assert (Tau==i);
     //m_tauovermass = i/mass;
-    Tau=t;
-    m_tauovermass = t*MassInvS[0];
-    m_oneover2tau = 0.5/(m_tauovermass);
-    m_sqrttau = std::sqrt(m_tauovermass);
+    Tau           = t;
+    m_tauovermass = t * MassInvS[0];
+    m_oneover2tau = 0.5 / (m_tauovermass);
+    m_sqrttau     = std::sqrt(m_tauovermass);
   }
 
-  inline void getLogs(std::vector<RealType>& logs)
-  {
-    Psi.getLogs(logs);
-  }
+  inline RealType getSpinMass() { return spinMass; }
 
-  inline void set_step(int step)
-  {
-    W.current_step = step;
-  }
+  inline void setSpinMass(RealType m) { spinMass = m; }
 
+  inline void getLogs(std::vector<RealType>& logs) { Psi.getLogs(logs); }
+
+  inline void set_step(int step) { W.current_step = step; }
 
 
   ///** start a run */
@@ -145,7 +139,7 @@ public:
 
   /** stop a block
    */
-  void stopBlock(bool collectall=true);
+  void stopBlock(bool collectall = true);
 
   /** set the multiplicity of the walkers to branch */
   void setMultiplicity(WalkerIter_t it, WalkerIter_t it_end);
@@ -154,11 +148,11 @@ public:
   {
     constexpr RealType onehalf(0.5);
     constexpr RealType cone(1);
-    RealType M=awalker.Weight;
-    if (awalker.Age>MaxAge)
-      M = std::min(onehalf,M);
-    else
-      if (awalker.Age > 0) M = std::min(cone,M);
+    RealType M = awalker.Weight;
+    if (awalker.Age > MaxAge)
+      M = std::min(onehalf, M);
+    else if (awalker.Age > 0)
+      M = std::min(cone, M);
     awalker.Multiplicity = M + RandomGen();
   }
 
@@ -177,10 +171,7 @@ public:
    */
   virtual bool put(xmlNodePtr cur);
 
-  inline void accumulate(WalkerIter_t it, WalkerIter_t it_end)
-  {
-    Estimators->accumulate(W,it,it_end);
-  }
+  inline void accumulate(WalkerIter_t it, WalkerIter_t it_end) { Estimators->accumulate(W, it, it_end); }
 
   /** advance walkers executed at each step
    *
@@ -190,9 +181,13 @@ public:
   virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool recompute);
 
   ///move a walker
-  virtual void advanceWalker(Walker_t& thisWalker, bool recompute)=0;
+  virtual void advanceWalker(Walker_t& thisWalker, bool recompute) = 0;
 
-  virtual RealType advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
+  virtual RealType advanceWalkerForEE(Walker_t& w1,
+                                      std::vector<PosType>& dR,
+                                      std::vector<int>& iats,
+                                      std::vector<int>& rs,
+                                      std::vector<RealType>& ratios)
   {
     return 0.0;
   };
@@ -200,38 +195,36 @@ public:
   ///normalization offset for cs type runs.
   RealType csoffset;
 
-//       virtual void estimateNormWalkers(std::vector<TrialWaveFunction*>& pclone
-//     , std::vector<MCWalkerConfiguration*>& wclone
-//     , std::vector<QMCHamiltonian*>& hclone
-//     , std::vector<RandomGenerator_t*>& rng
-//     , std::vector<RealType>& ratio_i_0){};
+  //       virtual void estimateNormWalkers(std::vector<TrialWaveFunction*>& pclone
+  //     , std::vector<MCWalkerConfiguration*>& wclone
+  //     , std::vector<QMCHamiltonian*>& hclone
+  //     , std::vector<RandomGenerator_t*>& rng
+  //     , std::vector<RealType>& ratio_i_0){};
   int RMC_checkIndex(int N, int NMax)
   {
-    if(N<0)
-      return N+NMax;
+    if (N < 0)
+      return N + NMax;
+    else if (N >= NMax)
+      return N - NMax;
     else
-      if (N>=NMax)
-        return N-NMax;
-      else
-        return N;
+      return N;
   }
 
   void RMC_checkWalkerBounds(WalkerIter_t& it, WalkerIter_t first, WalkerIter_t last)
   {
-    if (it>=last)
-      it-=(last-first);
-    else
-      if (it<first)
-        it+=(last-first);
+    if (it >= last)
+      it -= (last - first);
+    else if (it < first)
+      it += (last - first);
   }
 
   inline RealType logBackwardGF(const ParticleSet::ParticlePos_t& displ)
   {
-    RealType logGb=0.0;
-    for(int iat=0; iat<W.getTotalNum(); ++iat)
+    RealType logGb = 0.0;
+    for (int iat = 0; iat < W.getTotalNum(); ++iat)
     {
-      RealType mass_over_tau = 1.0/(SqrtTauOverMass[iat]*SqrtTauOverMass[iat]);
-      logGb += 0.5*dot(displ[iat],displ[iat])*mass_over_tau;
+      RealType mass_over_tau = 1.0 / (SqrtTauOverMass[iat] * SqrtTauOverMass[iat]);
+      logGb += 0.5 * dot(displ[iat], displ[iat]) * mass_over_tau;
     }
     return -logGb;
   }
@@ -239,6 +232,7 @@ public:
 public:
   ///traces
   TraceManager* Traces;
+
 protected:
   ///update particle-by-particle
   bool UpdatePbyP;
@@ -262,8 +256,10 @@ protected:
   QMCHamiltonian& H;
   ///random number generator
   RandomGenerator_t& RandomGen;
-  ///branch engine
+  ///branch engine, stateless reference to the one in QMCDriver
   const BranchEngineType* branchEngine;
+  ///drift modifer, stateless reference to the one in QMCDriver
+  const DriftModifierBase* DriftModifier;
   ///estimator
   EstimatorManagerBase* Estimators;
   ///parameters
@@ -278,6 +274,8 @@ protected:
   ParticleSet::ParticlePos_t drift;
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
+  ///temporart storage for spin displacement
+  ParticleSet::ParticleScalar_t deltaS;
   ///storage for differential gradients for PbyP update
   ParticleSet::ParticleGradient_t G, dG;
   ///storage for differential laplacians for PbyP update
@@ -291,20 +289,16 @@ protected:
   RealType getNodeCorrection(const ParticleSet::ParticleGradient_t& g, ParticleSet::ParticlePos_t& gscaled);
 
   ///copy constructor (disabled)
-  QMCUpdateBase(const QMCUpdateBase &) = delete;
+  QMCUpdateBase(const QMCUpdateBase&) = delete;
 
 private:
-
   ///set default parameters
   void setDefaults();
   /// Copy operator (disabled).
-  QMCUpdateBase& operator=(const QMCUpdateBase&)
-  {
-    return *this;
-  }
+  QMCUpdateBase& operator=(const QMCUpdateBase&) { return *this; }
   ///
   NewTimer* InitWalkersTimer;
 };
-}
+} // namespace qmcplusplus
 
 #endif

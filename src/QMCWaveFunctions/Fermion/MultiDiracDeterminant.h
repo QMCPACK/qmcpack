@@ -12,8 +12,8 @@
 //
 // File created by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /**@file DiracDeterminant.h
  * @brief Declaration of DiracDeterminant with a S(ingle)P(article)O(rbital)Set
  */
@@ -30,34 +30,33 @@
 
 namespace qmcplusplus
 {
-
-class MultiDiracDeterminant: public WaveFunctionComponent
+class MultiDiracDeterminant : public WaveFunctionComponent
 {
-
 public:
   bool Optimizable;
   void registerTimers();
-  NewTimer UpdateTimer, RatioTimer, InverseTimer, buildTableTimer, readMatTimer, evalWTimer, evalOrbTimer,evalOrb1Timer;
-  NewTimer readMatGradTimer,buildTableGradTimer,ExtraStuffTimer;
+  NewTimer &UpdateTimer, &RatioTimer, &InverseTimer, &buildTableTimer, &readMatTimer, &evalWTimer, &evalOrbTimer,
+      &evalOrb1Timer;
+  NewTimer &readMatGradTimer, &buildTableGradTimer, &ExtraStuffTimer;
   // Optimizable parameters
   opt_variables_type myVars;
 
   typedef SPOSet::IndexVector_t IndexVector_t;
   typedef SPOSet::ValueVector_t ValueVector_t;
   typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t  GradVector_t;
-  typedef SPOSet::GradMatrix_t  GradMatrix_t;
-  typedef SPOSet::HessMatrix_t  HessMatrix_t;
-  typedef SPOSet::HessType      HessType;
+  typedef SPOSet::GradVector_t GradVector_t;
+  typedef SPOSet::GradMatrix_t GradMatrix_t;
+  typedef SPOSet::HessMatrix_t HessMatrix_t;
+  typedef SPOSet::HessType HessType;
 
   //lookup table mapping the unique determinants to their element position in C2_node vector
-  std::vector< std::vector<int> > lookup_tbl;
+  std::vector<std::vector<int>> lookup_tbl;
 
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  MultiDiracDeterminant(SPOSetPtr const &spos, int first=0);
+  MultiDiracDeterminant(SPOSetPtr const& spos, int first = 0);
 
   ///default destructor
   ~MultiDiracDeterminant();
@@ -76,20 +75,11 @@ public:
    */
   SPOSetPtr clonePhi() const;
 
-  SPOSetPtr getPhi()
-  {
-    return Phi;
-  };
+  SPOSetPtr getPhi() { return Phi; };
 
-  inline IndexType rows() const
-  {
-    return NumPtcls;
-  }
+  inline IndexType rows() const { return NumPtcls; }
 
-  inline IndexType cols() const
-  {
-    return NumOrbitals;
-  }
+  inline IndexType cols() const { return NumOrbitals; }
 
   /** set the index of the first particle in the determinant and reset the size of the determinant
    *@param first index of first particle
@@ -103,92 +93,105 @@ public:
   void setBF(BackflowTransformation* bf) {}
 
   ///optimizations  are disabled
-  inline void checkInVariables(opt_variables_type& active)
-  {
-    Phi->checkInVariables(active);
-  }
+  inline void checkInVariables(opt_variables_type& active) { Phi->checkInVariables(active); }
 
-  inline void checkOutVariables(const opt_variables_type& active)
-  {
-    Phi->checkOutVariables(active);
-  }
+  inline void checkOutVariables(const opt_variables_type& active) { Phi->checkOutVariables(active); }
 
   /// create optimizable orbital rotation parameters
   void buildOptVariables(std::vector<size_t>& C2node);
   ///helper function to buildOptVariables
   int build_occ_vec(const std::vector<int>& data, const size_t nel, const size_t nmo, std::vector<int>& occ_vec);
 
-  void resetParameters(const opt_variables_type& active)
-  {
-    Phi->resetParameters(active);
-  }
+  void resetParameters(const opt_variables_type& active) { Phi->resetParameters(active); }
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi,
                            const MultiDiracDeterminant& pseudo_dn,
                            const ValueType& psiCurrent,
-                           const std::vector<RealType>& Coeff,
+                           const std::vector<ValueType>& Coeff,
                            const std::vector<size_t>& C2node_up,
                            const std::vector<size_t>& C2node_dn)
   {
-    if(!Optimizable) return;
+    if (!Optimizable)
+      return;
 
-    const ValueVector_t&  detValues_up = detValues;
-    const ValueVector_t&  detValues_dn = pseudo_dn.detValues;
-    const GradMatrix_t&   grads_up     = grads;
-    const GradMatrix_t&   grads_dn     = pseudo_dn.grads;
-    const ValueMatrix_t&  lapls_up     = lapls;
-    const ValueMatrix_t&  lapls_dn     = pseudo_dn.lapls;
-    const ValueMatrix_t&  M_up         = psiM;
-    const ValueMatrix_t&  M_dn         = pseudo_dn.psiM;
-    const ValueMatrix_t&  Minv_up      = psiMinv;
-    const ValueMatrix_t&  Minv_dn      = pseudo_dn.psiMinv;
-    const GradMatrix_t&   B_grad       = dpsiM;
-    const ValueMatrix_t&  B_lapl       = d2psiM; 
+    const ValueVector_t& detValues_up = detValues;
+    const ValueVector_t& detValues_dn = pseudo_dn.detValues;
+    const GradMatrix_t& grads_up      = grads;
+    const GradMatrix_t& grads_dn      = pseudo_dn.grads;
+    const ValueMatrix_t& lapls_up     = lapls;
+    const ValueMatrix_t& lapls_dn     = pseudo_dn.lapls;
+    const ValueMatrix_t& M_up         = psiM;
+    const ValueMatrix_t& M_dn         = pseudo_dn.psiM;
+    const ValueMatrix_t& Minv_up      = psiMinv;
+    const ValueMatrix_t& Minv_dn      = pseudo_dn.psiMinv;
+    const GradMatrix_t& B_grad        = dpsiM;
+    const ValueMatrix_t& B_lapl       = d2psiM;
 
     const size_t N1  = FirstIndex;
     const size_t N2  = pseudo_dn.FirstIndex;
     const size_t NP1 = NumPtcls;
     const size_t NP2 = pseudo_dn.NumPtcls;
-    
-    Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, psiCurrent,
-                                                                Coeff,
-                                                                C2node_up, C2node_dn,
-                                                                detValues_up, detValues_dn,
-                                                                grads_up, grads_dn,
-                                                                lapls_up, lapls_dn,
-                                                                M_up, M_dn,
-                                                                Minv_up, Minv_dn,
-                                                                B_grad, B_lapl,
-                                                                *detData,
-                                                                N1, N2,
-                                                                NP1, NP2,
-                                                                lookup_tbl); 
+
+    Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up,
+                             detValues_dn, grads_up, grads_dn, lapls_up, lapls_dn, M_up, M_dn, Minv_up, Minv_dn, B_grad,
+                             B_lapl, *detData, N1, N2, NP1, NP2, lookup_tbl);
+  }
+
+  void evaluateDerivativesWF(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           const MultiDiracDeterminant& pseudo_dn,
+                           const PsiValueType& psiCurrent,
+                           const std::vector<ValueType>& Coeff,
+                           const std::vector<size_t>& C2node_up,
+                           const std::vector<size_t>& C2node_dn)
+  {
+    if (!Optimizable)
+      return;
+
+    const ValueVector_t& detValues_up = detValues;
+    const ValueVector_t& detValues_dn = pseudo_dn.detValues;
+    const ValueMatrix_t& M_up         = psiM;
+    const ValueMatrix_t& M_dn         = pseudo_dn.psiM;
+    const ValueMatrix_t& Minv_up      = psiMinv;
+    const ValueMatrix_t& Minv_dn      = pseudo_dn.psiMinv;
+
+    Phi->evaluateDerivativesWF(P,
+                                optvars, 
+                                dlogpsi, 
+                                psiCurrent, 
+                                Coeff, 
+                                C2node_up, 
+                                C2node_dn, 
+                                detValues_up,
+                                detValues_dn, 
+                                M_up, 
+                                M_dn, 
+                                Minv_up, 
+                                Minv_dn, 
+                                *detData, 
+                                lookup_tbl);
   }
 
 
-  inline void reportStatus(std::ostream& os)
-  {
-  }
-  void resetTargetParticleSet(ParticleSet& P)
-  {
-    Phi->resetTargetParticleSet(P);
-  }
+  inline void reportStatus(std::ostream& os) {}
+  void resetTargetParticleSet(ParticleSet& P) { Phi->resetTargetParticleSet(P); }
 
   ///reset the size: with the number of particles and number of orbtials
   virtual void resize(int nel, int morb);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   /** move was rejected. copy the real container to the temporary to move on
    */
@@ -200,10 +203,10 @@ public:
    * These functions should not be called.
    ***************************************************************************/
 
-  ValueType ratio(ParticleSet& P, int iat)
+  PsiValueType ratio(ParticleSet& P, int iat)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return ValueType();
+    return PsiValueType();
   }
 
   GradType evalGrad(ParticleSet& P, int iat)
@@ -212,23 +215,19 @@ public:
     return GradType();
   }
 
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return ValueType();
+    return PsiValueType();
   }
 
-  RealType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
+  ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return ValueType();
@@ -241,108 +240,133 @@ public:
 
   // create necessary structures used in the evaluation of the determinants
   // this works with confgList, which shouldn't change during a simulation
-  void createDetData(ci_configuration2& ref, std::vector<int>& data,
-                     std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign);
+  void createDetData(ci_configuration2& ref,
+                     std::vector<int>& data,
+                     std::vector<std::pair<int, int>>& pairs,
+                     std::vector<RealType>& sign);
 
   template<typename ITER>
   inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, ITER it)
   {
-    switch(n)
+    switch (n)
     {
-      case 0:
-        return 1.0;
-      case 1:
-        return dotProducts(*it,*(it+1));
-      case 2:
-        {
-          const int i=*it;
-          const int j=*(it+1);
-          const int a=*(it+2);
-          const int b=*(it+3);
-          return dotProducts(i,a)*dotProducts(j,b)-dotProducts(i,b)*dotProducts(j,a);
-        }
-      case 3:
-        {
-          const int i1=*it;
-          const int i2=*(it+1);
-          const int i3=*(it+2);
-          const int a1=*(it+3);
-          const int a2=*(it+4);
-          const int a3=*(it+5);
-          return DetCalculator.evaluate(
-              dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),
-              dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),
-              dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3));
-        }
-      case 4:
-        {
-          const int i1=*it;
-          const int i2=*(it+1);
-          const int i3=*(it+2);
-          const int i4=*(it+3);
-          const int a1=*(it+4);
-          const int a2=*(it+5);
-          const int a3=*(it+6);
-          const int a4=*(it+7);
-          return DetCalculator.evaluate(
-              dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),
-              dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),
-              dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),
-              dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4));
-        }
-      case 5:
-        {
-          const int i1=*it;
-          const int i2=*(it+1);
-          const int i3=*(it+2);
-          const int i4=*(it+3);
-          const int i5=*(it+4);
-          const int a1=*(it+5);
-          const int a2=*(it+6);
-          const int a3=*(it+7);
-          const int a4=*(it+8);
-          const int a5=*(it+9);
-          return DetCalculator.evaluate(
-              dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),dotProducts(i1,a5),
-              dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),dotProducts(i2,a5),
-              dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),dotProducts(i3,a5),
-              dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4),dotProducts(i4,a5),
-              dotProducts(i5,a1),dotProducts(i5,a2),dotProducts(i5,a3),dotProducts(i5,a4),dotProducts(i5,a5));
-        }
-      default:
-        return DetCalculator.evaluate(dotProducts,it,n);
+    case 0:
+      return 1.0;
+    case 1:
+      return dotProducts(*it, *(it + 1));
+    case 2: {
+      const int i = *it;
+      const int j = *(it + 1);
+      const int a = *(it + 2);
+      const int b = *(it + 3);
+      return dotProducts(i, a) * dotProducts(j, b) - dotProducts(i, b) * dotProducts(j, a);
+    }
+    case 3: {
+      const int i1 = *it;
+      const int i2 = *(it + 1);
+      const int i3 = *(it + 2);
+      const int a1 = *(it + 3);
+      const int a2 = *(it + 4);
+      const int a3 = *(it + 5);
+      return DetCalculator.evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i2, a1),
+                                    dotProducts(i2, a2), dotProducts(i2, a3), dotProducts(i3, a1), dotProducts(i3, a2),
+                                    dotProducts(i3, a3));
+    }
+    case 4: {
+      const int i1 = *it;
+      const int i2 = *(it + 1);
+      const int i3 = *(it + 2);
+      const int i4 = *(it + 3);
+      const int a1 = *(it + 4);
+      const int a2 = *(it + 5);
+      const int a3 = *(it + 6);
+      const int a4 = *(it + 7);
+      return DetCalculator.evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
+                                    dotProducts(i2, a1), dotProducts(i2, a2), dotProducts(i2, a3), dotProducts(i2, a4),
+                                    dotProducts(i3, a1), dotProducts(i3, a2), dotProducts(i3, a3), dotProducts(i3, a4),
+                                    dotProducts(i4, a1), dotProducts(i4, a2), dotProducts(i4, a3), dotProducts(i4, a4));
+    }
+    case 5: {
+      const int i1 = *it;
+      const int i2 = *(it + 1);
+      const int i3 = *(it + 2);
+      const int i4 = *(it + 3);
+      const int i5 = *(it + 4);
+      const int a1 = *(it + 5);
+      const int a2 = *(it + 6);
+      const int a3 = *(it + 7);
+      const int a4 = *(it + 8);
+      const int a5 = *(it + 9);
+      return DetCalculator.evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
+                                    dotProducts(i1, a5), dotProducts(i2, a1), dotProducts(i2, a2), dotProducts(i2, a3),
+                                    dotProducts(i2, a4), dotProducts(i2, a5), dotProducts(i3, a1), dotProducts(i3, a2),
+                                    dotProducts(i3, a3), dotProducts(i3, a4), dotProducts(i3, a5), dotProducts(i4, a1),
+                                    dotProducts(i4, a2), dotProducts(i4, a3), dotProducts(i4, a4), dotProducts(i4, a5),
+                                    dotProducts(i5, a1), dotProducts(i5, a2), dotProducts(i5, a3), dotProducts(i5, a4),
+                                    dotProducts(i5, a5));
+    }
+    default:
+      return DetCalculator.evaluate(dotProducts, it, n);
     }
     return 0.0;
   }
 
-  void BuildDotProductsAndCalculateRatios_impl(int ref, ValueType det0,
-      ValueType* restrict ratios, const ValueMatrix_t &psiinv, const ValueMatrix_t &psi, ValueMatrix_t& dotProducts, 
-      const std::vector<int>& data, const std::vector<std::pair<int,int> >& pairs,const std::vector<RealType>& sign);
+  void BuildDotProductsAndCalculateRatios_impl(int ref,
+                                               ValueType det0,
+                                               ValueType* restrict ratios,
+                                               const ValueMatrix_t& psiinv,
+                                               const ValueMatrix_t& psi,
+                                               ValueMatrix_t& dotProducts,
+                                               const std::vector<int>& data,
+                                               const std::vector<std::pair<int, int>>& pairs,
+                                               const std::vector<RealType>& sign);
 
-  void BuildDotProductsAndCalculateRatios(int ref, int iat, 
-      ValueVector_t& ratios, const ValueMatrix_t &psiinv, const ValueMatrix_t &psi, ValueMatrix_t& dotProducts, 
-      const std::vector<int>& data, const std::vector<std::pair<int,int> >& pairs,const std::vector<RealType>& sign);
+  void BuildDotProductsAndCalculateRatios(int ref,
+                                          int iat,
+                                          ValueVector_t& ratios,
+                                          const ValueMatrix_t& psiinv,
+                                          const ValueMatrix_t& psi,
+                                          ValueMatrix_t& dotProducts,
+                                          const std::vector<int>& data,
+                                          const std::vector<std::pair<int, int>>& pairs,
+                                          const std::vector<RealType>& sign);
 
-  void BuildDotProductsAndCalculateRatios(int ref, int iat, 
-      GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, 
-      std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign, int dx);
+  void BuildDotProductsAndCalculateRatios(int ref,
+                                          int iat,
+                                          GradMatrix_t& ratios,
+                                          ValueMatrix_t& psiinv,
+                                          ValueMatrix_t& psi,
+                                          ValueMatrix_t& dotProducts,
+                                          std::vector<int>& data,
+                                          std::vector<std::pair<int, int>>& pairs,
+                                          std::vector<RealType>& sign,
+                                          int dx);
 
-  void BuildDotProductsAndCalculateRatios(int ref, int iat, 
-      ValueMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, 
-      std::vector<int>& data,  std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign);
+  void BuildDotProductsAndCalculateRatios(int ref,
+                                          int iat,
+                                          ValueMatrix_t& ratios,
+                                          ValueMatrix_t& psiinv,
+                                          ValueMatrix_t& psi,
+                                          ValueMatrix_t& dotProducts,
+                                          std::vector<int>& data,
+                                          std::vector<std::pair<int, int>>& pairs,
+                                          std::vector<RealType>& sign);
 
-//   Finish this at some point
-  inline void InverseUpdateByColumn_GRAD(ValueMatrix_t& Minv
-                                         , GradVector_t& newcol, ValueVector_t& rvec
-                                         , ValueVector_t& rvecinv, int colchanged
-                                         , ValueType c_ratio, int dx)
+  //   Finish this at some point
+  inline void InverseUpdateByColumn_GRAD(ValueMatrix_t& Minv,
+                                         GradVector_t& newcol,
+                                         ValueVector_t& rvec,
+                                         ValueVector_t& rvecinv,
+                                         int colchanged,
+                                         ValueType c_ratio,
+                                         int dx)
   {
-    c_ratio=(RealType)1.0/c_ratio;
-    int m = Minv.rows();
-    BLAS::gemv('N', m, m, c_ratio, Minv.data(), m, newcol[0].data()+dx, 3, 0.0, rvec.data(), 1);
-    rvec[colchanged]=(RealType)1.0-c_ratio;
-    BLAS::copy(m,Minv.data()+colchanged,m,rvecinv.data(),1);
-    BLAS::ger(m,m,-1.0,rvec.data(),1,rvecinv.data(),1,Minv.data(),m);
+    c_ratio = (RealType)1.0 / c_ratio;
+    int m   = Minv.rows();
+    BLAS::gemv('N', m, m, c_ratio, Minv.data(), m, newcol[0].data() + dx, 3, 0.0, rvec.data(), 1);
+    rvec[colchanged] = (RealType)1.0 - c_ratio;
+    BLAS::copy(m, Minv.data() + colchanged, m, rvecinv.data(), 1);
+    BLAS::ger(m, m, -1.0, rvec.data(), 1, rvecinv.data(), 1, Minv.data(), m);
   }
   /*
       inline void InverseUpdateByColumn(ValueMatrix_t& Minv
@@ -365,7 +389,7 @@ public:
   void evaluateGrads(ParticleSet& P, int iat);
   void evaluateAllForPtclMove(ParticleSet& P, int iat);
   // full evaluation of all the structures from scratch, used in evaluateLog for example
-  void evaluateForWalkerMove(ParticleSet& P, bool fromScratch=true);
+  void evaluateForWalkerMove(ParticleSet& P, bool fromScratch = true);
 
   ///total number of particles
   int NP;
@@ -387,25 +411,25 @@ public:
   bool IsCloned;
   ///use shared_ptr
   std::vector<ci_configuration2>* ciConfigList;
-// the reference determinant never changes, so there is no need to store it.
-// if its value is zero, then use a data from backup, but always use this one
-// by default
+  // the reference determinant never changes, so there is no need to store it.
+  // if its value is zero, then use a data from backup, but always use this one
+  // by default
   int ReferenceDeterminant;
 
   /// store determinants (old and new)
   ValueVector_t detValues, new_detValues;
-  GradMatrix_t grads,new_grads;
-  ValueMatrix_t lapls,new_lapls;
+  GradMatrix_t grads, new_grads;
+  ValueMatrix_t lapls, new_lapls;
 
   /// psiM(i,j) \f$= \psi_j({\bf r}_i)\f$
   /// TpsiM(i,j) \f$= psiM(j,i) \f$
-  ValueMatrix_t psiM,psiM_temp, TpsiM, psiMinv, psiMinv_temp;
+  ValueMatrix_t psiM, psiM_temp, TpsiM, psiMinv, psiMinv_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-  GradMatrix_t  dpsiM,dpsiM_temp;
+  GradMatrix_t dpsiM, dpsiM_temp;
   // temporaty storage
   ValueMatrix_t dpsiMinv;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-  ValueMatrix_t d2psiM,d2psiM_temp;
+  ValueMatrix_t d2psiM, d2psiM_temp;
 
   /// value of single-particle orbital for particle-by-particle update
   ValueVector_t psiV, psiV_temp;
@@ -419,10 +443,10 @@ public:
   Vector<IndexType> Pivot;
 
   ValueType curRatio;
-  ValueType *FirstAddressOfGrads;
-  ValueType *LastAddressOfGrads;
-  ValueType *FirstAddressOfdpsiM;
-  ValueType *LastAddressOfdpsiM;
+  ValueType* FirstAddressOfGrads;
+  ValueType* LastAddressOfGrads;
+  ValueType* FirstAddressOfdpsiM;
+  ValueType* LastAddressOfdpsiM;
 
   /* mmorales:
    *  i decided to stored the excitation information of all determinants in the following
@@ -433,13 +457,11 @@ public:
    *     -a1,a2,...,an : excited states that replace the orbitals (these can be anything)
    */
   std::vector<int>* detData;
-  std::vector<std::pair<int,int> >* uniquePairs;
+  std::vector<std::pair<int, int>>* uniquePairs;
   std::vector<RealType>* DetSigns;
   MultiDiracDeterminantCalculator<ValueType> DetCalculator;
-
 };
 
 
-
-}
+} // namespace qmcplusplus
 #endif

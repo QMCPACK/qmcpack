@@ -28,36 +28,29 @@
 #define BZ_TINYMATEXPR_H
 
 #ifndef BZ_TINYMAT_H
- #error <blitz/tinymatexpr.h> must be included via <blitz/tinymat.h>
+#error <blitz/tinymatexpr.h> must be included via <blitz/tinymat.h>
 #endif
 
 BZ_NAMESPACE(blitz)
 
 template<typename T_expr>
-class _bz_tinyMatExpr {
+class _bz_tinyMatExpr
+{
 public:
-    typedef _bz_typename T_expr::T_numtype T_numtype;
+  typedef _bz_typename T_expr::T_numtype T_numtype;
 
-    static const int
-        rows = T_expr::rows,
-        columns = T_expr::columns;
+  static const int rows = T_expr::rows, columns = T_expr::columns;
 
-    _bz_tinyMatExpr(T_expr expr)
-        : expr_(expr)
-    { }
+  _bz_tinyMatExpr(T_expr expr) : expr_(expr) {}
 
-    _bz_tinyMatExpr(const _bz_tinyMatExpr<T_expr>& x)
-        : expr_(x.expr_)
-    { }
+  _bz_tinyMatExpr(const _bz_tinyMatExpr<T_expr>& x) : expr_(x.expr_) {}
 
-    T_numtype operator()(int i, int j) const
-    { return expr_(i,j); }
+  T_numtype operator()(int i, int j) const { return expr_(i, j); }
 
 protected:
-    T_expr expr_;
+  T_expr expr_;
 };
 
 BZ_NAMESPACE_END
 
 #endif // BZ_TINYMATEXPR_H
-

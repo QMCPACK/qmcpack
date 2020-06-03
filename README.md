@@ -1,29 +1,52 @@
 # Getting and building QMCPACK
 
- Obtain the latest release or development copy from http://www.qmcpack.org
+ Obtain the latest release from https://github.com/QMCPACK/qmcpack/releases or clone the development source from
+ https://github.com/QMCPACK/qmcpack. 
 
 # Prerequisites
 
- * C++ 14 and C99 capable compilers. e.g. gcc 5.0, Intel 2018, clang 3.5 or newer. 
- * CMake, build utility, http://www.cmake.org
- * BLAS/LAPACK, numerical library, use platform-optimized libraries
- * Libxml2, XML parser, http://xmlsoft.org/
+ * C++ 14 and C99 capable compilers. 
+ * CMake v3.10.0 or later, build utility, http://www.cmake.org
+ * BLAS/LAPACK, numerical library. Use platform-optimized libraries.
+ * LibXml2, XML parser, http://xmlsoft.org/
  * HDF5, portable I/O library, http://www.hdfgroup.org/HDF5/
- * BOOST, peer-reviewed portable C++ source libraries, http://www.boost.org , version 1.61.0 or higher.
+ * BOOST v1.61.0 or newer, peer-reviewed portable C++ source libraries, http://www.boost.org
  * FFTW, FFT library, http://www.fftw.org/
+ * MPI, parallel library. Optional, but a near requirement for production calculations.
+ * Python3. Older versions are not supported as of January 2020.
 
-See the manual for more detailed version requirements.
+We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions over
+two years old may work but is discouraged and untested. Proprietary compilers (Intel, PGI) are generally supported over the same
+period but may require use of an exact version. We also aim to support the standard software environments on Summit at OLCF, Theta
+at ALCF, and Cori at NERSC. Use of the most recently released compilers and library versions is particularly encouraged for highest
+performance and easiest configuration.
+
+Nightly testing currently includes the following software versions on x86:
+
+* Compilers
+  * GCC 9.2.0, 7.3.0
+  * Clang/LLVM 9.0.0, 5.0.1
+  * Intel 2019.1.0.166, 2019.0.5.281 configured to use C++ library from GCC 7.4.0 
+  * PGI 19.4 configured to use C++ library from GCC 8.3.0
+* Boost 1.70.0, 1.65.1
+* HDF5 1.10.5, 1.8.19
+* FFTW 3.3.8, 3.3.4
+* CMake 3.16.2, 3.10.2
+* MPI
+  * OpenMPI 4.0.2, 3.10.2
+  * Intel MPI 2019.1.0.166, 2019.0.5.281
+* CUDA 10.2.89
 
 # Building with CMake
 
- The build system for QMCPACK is based on CMake.  It will autoconfigure
+ The build system for QMCPACK is based on CMake.  It will auto-configure
  based on the detected compilers and libraries. Previously QMCPACK made
  extensive use of toolchains, but the system has since been updated to
  eliminate the use of toolchain files for most cases.  The build
  system works with GNU, Intel, and IBM XLC compilers.  Specific compile options
  can be specified either through specific environment or CMake
  variables.  When the libraries are installed in standard locations,
- e.g., /usr, /usr/local, there is no need to set environment or cmake
+ e.g., /usr, /usr/local, there is no need to set environment or CMake
  variables for the packages.
 
  See the manuals linked at https://www.qmcpack.org/documentation or buildable via
@@ -36,7 +59,7 @@ See the manual for more detailed version requirements.
 
  * Safest quick build option is to specify the C and C++ compilers
    through their MPI wrappers. Here we use Intel MPI and Intel
-   compilers. Move to the build directory, run cmake and make
+   compilers. Move to the build directory, run CMake and make
 ```
 cd build
 cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc ..
@@ -60,7 +83,7 @@ make -j 8
 ```
 
  The complexities of modern computer hardware and software systems are
- such that you should check that the autoconfiguration system has made
+ such that you should check that the auto-configuration system has made
  good choices and picked optimized libraries and compiler settings
  before doing significant production. i.e. Check the details below.
 
@@ -75,7 +98,6 @@ make -j 8
 |   CXX          |    C++ compiler |
 |   CC           |    C Compiler |
 |   MKL_ROOT     |    Path for MKL |
-|   LIBXML2_HOME |    Path for libxml2 |
 |   HDF5_ROOT    |    Path for HDF5 |
 |   BOOST_ROOT   |    Path for Boost |
 |   FFTW_HOME    |    Path for FFTW |
@@ -85,8 +107,8 @@ make -j 8
  In addition to reading the environment variables, CMake provides a
  number of optional variables that can be set to control the build and
  configure steps.  When passed to CMake, these variables will take
- precident over the environment and default variables.  To set them
- add -D FLAG=VALUE to the configure line between the cmake command and
+ precedent over the environment and default variables.  To set them
+ add -D FLAG=VALUE to the configure line between the CMake command and
  the path to the source directory.
 
  * General build options
@@ -126,30 +148,37 @@ make -j 8
      ENABLE_TIMERS       Enable fine-grained timers (1:yes, 0:no (default)).
                          Timers are off by default to avoid potential slowdown in small
                          systems. For large systems (100+ electrons) there is no risk.
-     ENABLE_SOA          (Experimental) Enable CPU optimization based on Structure-
-                         of-Array (SoA) datatypes (1:yes, 0:no (default)). ```
+     ENABLE_SOA          Enable CPU optimization based on Structure-
+                         of-Array (SoA) datatypes (1:yes (default), 0:no). ```
 ```
 
  * Additional QMC options
 
 ```
+     QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
+     QMC_DATA            Specify data directory for QMCPACK performance and integration tests
      QMC_INCLUDE         Add extra include paths
      QMC_EXTRA_LIBS      Add extra link libraries
      QMC_BUILD_STATIC    Add -static flags to build
-     QMC_DATA            Specify data directory for QMCPACK performance and integration tests
-     QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
+     QMC_SYMLINK_TEST_FILES Set to zero to require test files to be copied. Avoids space
+                            saving default use of symbolic links for test files. Useful
+                            if the build is on a separate filesystem from the source, as
+                            required on some HPC systems.
+     QMC_VERBOSE_CONFIGURATION Print additional information during cmake configuration
+                               including details of which tests are enabled.
 ```
 
   * libxml2 related
 
 ```
-     Libxml2_INCLUDE_DIRS  Specify include directories for libxml2
-     Libxml2_LIBRARY_DIRS  Specify library directories for libxml2
+     LIBXML2_INCLUDE_DIR Include directory for libxml2
+     LIBXML2_LIBRARY     Libxml2 library
 ```
 
 * HDF5 related
 ```
-     ENABLE_PHDF5        1(default)/0, enables/disable parallel collective IO.
+     HDF5_PREFER_PARALLEL 1(default for MPI build)/0, enables/disable parallel HDF5 library searching.
+     ENABLE_PHDF5         1(default for parallel HDF5 library)/0, enables/disable parallel collective I/O.
 
 ```
 
@@ -194,8 +223,8 @@ rm -rf CMake*
 
 cmake                                               \
   -D CMAKE_BUILD_TYPE=Debug                         \
-  -D Libxml2_INCLUDE_DIRS=/usr/include/libxml2      \
-  -D Libxml2_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu \
+  -D LIBXML2_INCLUDE_DIR=/usr/include/libxml2      \
+  -D LIBXML2_LIBRARY=/usr/lib/x86_64-linux-gnu/libxml2.so \
   -D FFTW_INCLUDE_DIRS=/usr/include                 \
   -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
   -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \
@@ -253,6 +282,14 @@ tests, they should not be used for any performance measurements. These
 should be made on problem sizes that are representative of actual
 research calculations. As described in the manual, performance tests
 are provided to aid in monitoring performance.
+
+## Run the unit tests
+
+From the build directory, invoke ctest specifying only the unit tests
+```
+ctest -R unit
+```
+All of these tests should pass.
 
 ## Run the deterministic tests
 

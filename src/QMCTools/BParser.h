@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /**@file BParser.h
@@ -35,22 +32,19 @@ struct AGPLambda
   int I;
   int J;
   double X;
-  AGPLambda(int i, int j, double x): I(i), J(j), X(x) {}
+  AGPLambda(int i, int j, double x) : I(i), J(j), X(x) {}
   AGPLambda(std::vector<std::string>& w)
   {
-    I=atoi(w[0].c_str());
-    J=atoi(w[1].c_str());
-    X=atof(w[2].c_str());
+    I = atoi(w[0].c_str());
+    J = atoi(w[1].c_str());
+    X = atof(w[2].c_str());
   }
   xmlNodePtr createNode();
 };
 
-class BParser: public QMCGaussianParserBase,
-  public OhmmsAsciiParser
+class BParser : public QMCGaussianParserBase, public OhmmsAsciiParser
 {
-
 public:
-
   int DetShells;
   int J3Shells;
   int J2Index;
@@ -65,9 +59,9 @@ public:
   /** Size of the basis set per atom for the three-body jastrow */
   std::vector<int> j3BasisPerAtom;
   /** Basis set per atom for the determinant*/
-  std::map<int,std::vector<BMakeFuncBase*>*> detBasisSet;
+  std::map<int, std::vector<BMakeFuncBase*>*> detBasisSet;
   /** Basis set per atom for the three-body jastrow*/
-  std::map<int,std::vector<BMakeFuncBase*>*> j3BasisSet;
+  std::map<int, std::vector<BMakeFuncBase*>*> j3BasisSet;
   /** Occupation mask for the expanded basis set for the determinant */
   std::vector<int> detOcc;
   /** Occupation mask for the expanded basis set for the three-body jastrow */
@@ -100,8 +94,9 @@ public:
 
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createJ3();
-  xmlNodePtr createBasisSet(std::map<int,std::vector<BMakeFuncBase*>*>& bset,
-                            std::vector<int>& basisPerAtom, std::vector<int>& occ,
+  xmlNodePtr createBasisSet(std::map<int, std::vector<BMakeFuncBase*>*>& bset,
+                            std::vector<int>& basisPerAtom,
+                            std::vector<int>& occ,
                             bool jastrow);
 };
 #endif

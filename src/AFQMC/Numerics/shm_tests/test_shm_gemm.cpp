@@ -13,7 +13,7 @@
 
 #undef NDEBUG
 
-//#include "Message/catch_mpi_main.hpp"
+//#include "catch.hpp"
 #include "Configuration.h"
 
 #include <vector>
@@ -39,7 +39,7 @@ void timing_shm_blas(int c)
 {
   using Type = double; 
   using communicator = boost::mpi3::communicator;
-  using shm_Alloc = boost::mpi3::intranode::allocator<Type>;
+  using shm_Alloc = shared_allocator<Type>;
   using Matrix = boost::multi::array_ref<Type,2>;
 
   myTimer Timer;
@@ -50,7 +50,7 @@ void timing_shm_blas(int c)
   auto node = world.split_shared();
 
   int memory_needs = nmax*(c*c*nmax + 2*c*nmax);
-  boost::multi::array<Type,1,shared_allocator<Type>> buff(extensions<1u>{memory_needs},
+  boost::multi::array<Type,1,shared_allocator<Type>> buff(iextensions<1u>{memory_needs},
                                     shared_allocator<Type>{node});
 
   std::vector<std::pair<int,int>> pairs;
@@ -105,7 +105,6 @@ void timing_shm_blas(int c)
 
 int main(int argc, char* argv[])
 {
-  OHMMS::Controller->initialize(0, NULL);
   boost::mpi3::communicator world{MPI_COMM_WORLD};
   auto world = boost::mpi3::environment::get_world_instance();
   int c=10;

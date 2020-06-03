@@ -28,35 +28,37 @@
 #define BZ_META_PRODUCT_H
 
 #ifndef BZ_PROMOTE_H
- #include <blitz/promote.h>
+#include <blitz/promote.h>
 #endif
 
 #ifndef BZ_METAPROG_H
- #include <blitz/meta/metaprog.h>
+#include <blitz/meta/metaprog.h>
 #endif
 
 BZ_NAMESPACE(blitz)
 
 template<int N, int I>
-class _bz_meta_vectorProduct {
+class _bz_meta_vectorProduct
+{
 public:
-    static const int loopFlag = (I < N-1) ? 1 : 0;
+  static const int loopFlag = (I < N - 1) ? 1 : 0;
 
-    template<typename T_expr1>
-    static inline BZ_SUMTYPE(_bz_typename T_expr1::T_numtype)
-    f(const T_expr1& a)
-    {
-        return a[I] * _bz_meta_vectorProduct<loopFlag * N, 
-            loopFlag * (I+1)>::f(a);
-    }
+  template<typename T_expr1>
+  static inline BZ_SUMTYPE(_bz_typename T_expr1::T_numtype) f(const T_expr1& a)
+  {
+    return a[I] * _bz_meta_vectorProduct<loopFlag * N, loopFlag*(I + 1)>::f(a);
+  }
 };
 
 template<>
-class _bz_meta_vectorProduct<0,0> {
+class _bz_meta_vectorProduct<0, 0>
+{
 public:
-    template<typename T_expr1>
-    static inline _bz_meta_nullOperand f(const T_expr1&)
-    { return _bz_meta_nullOperand(); }
+  template<typename T_expr1>
+  static inline _bz_meta_nullOperand f(const T_expr1&)
+  {
+    return _bz_meta_nullOperand();
+  }
 };
 
 BZ_NAMESPACE_END

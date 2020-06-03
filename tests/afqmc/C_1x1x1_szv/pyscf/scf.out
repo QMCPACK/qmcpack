@@ -1,0 +1,168 @@
+#INFO: **** input file is /g/g90/malone14/projects/qmcpack/tests/afqmc/thc_minimal/pyscf/scf.py ****
+#! /usr/bin/env python3
+
+import sys
+import os
+from pyscf.pbc import scf, gto, tools
+import numpy
+import time
+import h5py
+
+alat0 = 3.6
+nks = 1
+ngs = 12
+
+cell = gto.Cell()
+cell.a = (numpy.ones((3,3))-numpy.eye(3))*alat0/2.0
+cell.atom = (('C',0,0,0),('C',numpy.array([0.25,0.25,0.25])*alat0))
+cell.basis = 'gth-szv'
+cell.pseudo = 'gth-pade'
+cell.gs = [ngs]*3  # 10 grids on postive x direction, => 21^3 grids in total
+cell.verbose = 5
+cell.build()
+
+nk = numpy.array([nks,nks,nks])
+kpt = cell.make_kpts(nk)
+mf = scf.KRHF(cell,kpt)
+mf.chkfile = "scf.dump"
+ehf = mf.kernel()
+
+from qmctools import orthoAO
+hcore = mf.get_hcore(kpts=kpt)                                   # obtain and store core hamiltonian
+fock = (hcore + mf.get_veff(kpts=kpt))                           # store fock matrix (required with orthoAO)
+LINDEP = 1e-8
+X,nmo_per_kpt = orthoAO.getOrthoAORotation(cell,kpt,LINDEP)      # store rotation to orthogonal PAO basis
+with h5py.File(mf.chkfile) as fh5:
+  fh5['scf/hcore'] = hcore
+  fh5['scf/fock'] = fock
+  fh5['scf/orthoAORot'] = X
+  fh5['scf/nmo_per_kpt'] = nmo_per_kpt
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='quartz770', release='3.10.0-862.14.4.1chaos.ch6.x86_64', version='#1 SMP Wed Sep 26 12:27:08 PDT 2018', machine='x86_64', processor='x86_64')  Threads 1
+Python 3.6.4 (default, Jan 23 2018, 15:11:01) 
+[GCC 4.9.3]
+numpy 1.13.3  scipy 1.0.0
+Date: Wed Dec 19 14:08:05 2018
+PySCF version 1.5.4
+PySCF path  /g/g90/malone14/projects/pyscf/pyscf
+GIT ORIG_HEAD 00b878518d58a6085638359273a44f59928509d9
+GIT HEAD      ref: refs/heads/master
+GIT master branch  322458783fdde178d8c6983df2ab92bb5d12fda9
+
+[CONFIG] conf_file None
+[INPUT] verbose = 5
+[INPUT] max_memory = 4000 
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 8
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT]  1 C      0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr
+[INPUT]  2 C      0.900000000000   0.900000000000   0.900000000000 AA    1.700753512109   1.700753512109   1.700753512109 Bohr
+[INPUT] ---------------- BASIS SET ---------------- 
+[INPUT] l, kappa, [nprim/nctr], expnt,             c_1 c_2 ...
+[INPUT] C
+[INPUT] 0    0    [4    /1   ]  4.3362376436      0.1490797872
+                                1.2881838513      -0.0292640031
+                                0.4037767149      -0.688204051
+                                0.1187877657      -0.3964426906
+[INPUT] 1    0    [4    /1   ]  4.3362376436      -0.0878123619
+                                1.2881838513      -0.27755603
+                                0.4037767149      -0.4712295093
+                                0.1187877657      -0.4058039291
+
+Ewald components = 2.62511131804051e-13, -33.8075273415067, 21.1383239417488
+nuclear repulsion = -12.6692033997576
+number of shells = 4
+number of NR pGTOs = 32
+number of NR cGTOs = 8
+basis = gth-szv
+ecp = {}
+CPU time:         0.95
+lattice vectors  a1 [0.000000000, 3.401507024, 3.401507024]
+                 a2 [3.401507024, 0.000000000, 3.401507024]
+                 a3 [3.401507024, 3.401507024, 0.000000000]
+dimension = 3
+Cell volume = 78.7126
+rcut = 19.7932586752 (nimgs = [6 6 6])
+lattice sum = 911 cells
+precision = 1e-08
+pseudo = gth-pade
+mesh = [25, 25, 25] (15625 PWs)
+    = ke_cutoff [ 199.9255439  199.9255439  199.9255439]
+ew_eta = 1.85194
+ew_cut = 3.71268758401 (nimgs = [1 1 1])
+[[ 0.  0.  0.]]
+
+
+******** <class 'pyscf.pbc.scf.khf.KRHF'> flags ********
+method = KRHF-KSCF-SCF
+initial guess = minao
+damping factor = 0
+level shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+DIIS start cycle = 1
+DIIS space = 8
+SCF tol = 1e-07
+SCF gradient tol = None
+max. SCF cycles = 50
+direct_scf = False
+chkfile to save SCF result = scf.dump
+max_memory 4000 MB (current use 56 MB)
+
+
+******** PBC SCF flags ********
+N kpts = 1
+kpts = [[ 0.  0.  0.]]
+Exchange divergence treatment (exxdiv) = ewald
+Ewald components = 2.67370712379088e-36, -1.0506666138867, 0.713693763193702
+    madelung (= occupied orbital energy shift) = 0.673945701386
+    Total energy shift due to Ewald probe charge = -1/2 * Nelec*madelung/cell.vol = -2.69578280554
+DF object = <pyscf.pbc.df.fft.FFTDF object at 0x2aaac56cc390>
+
+
+******** <class 'pyscf.pbc.df.fft.FFTDF'> flags ********
+mesh = [25, 25, 25] (15625 PWs)
+len(kpts) = 1
+Set gradient conv threshold to 0.000316228
+cond(S) = [ 26.99407411]
+Ewald components = 2.67370712379088e-36, -1.0506666138867, 0.713693763193702
+    CPU time for vj and vk      1.90 sec, wall time      1.92 sec
+E1 = 3.29083607083  E_coul = -13.5829708256
+Ewald components = 2.62511131804051e-13, -33.8075273415067, 21.1383239417488
+init E= -22.961338154485
+    CPU time for initialize scf      2.56 sec, wall time      2.65 sec
+HOMO = 0.56029785538  LUMO = 0.851506150051
+     k-point                  mo_energy
+   0 ( 0.000  0.000  0.000)   [-2.87477232  0.56029786  0.56029786  0.56029786] [ 0.85150615  0.85150615  0.85150615  1.09892207]
+Ewald components = 2.67370712379088e-36, -1.0506666138867, 0.713693763193702
+    CPU time for vj and vk      1.76 sec, wall time      1.76 sec
+E1 = 4.58704911357  E_coul = -2.07634841019
+Ewald components = 2.62511131804051e-13, -33.8075273415067, 21.1383239417488
+cycle= 1 E= -10.1585026963737  delta_E= 12.8  |g|= 4.77e-12  |ddm|=  5.4
+    CPU time for cycle= 1      1.78 sec, wall time      1.79 sec
+HOMO = 0.276380968936  LUMO = 1.13494083469
+     k-point                  mo_energy
+   0 ( 0.000  0.000  0.000)   [-0.61196676  0.27638097  0.27638097  0.27638097] [ 1.13494083  1.13494083  1.13494083  1.4725551 ]
+Ewald components = 2.67370712379088e-36, -1.0506666138867, 0.713693763193702
+    CPU time for vj and vk      1.74 sec, wall time      1.74 sec
+E1 = 4.58704911357  E_coul = -2.07634841019
+Ewald components = 2.62511131804051e-13, -33.8075273415067, 21.1383239417488
+cycle= 2 E= -10.1585026963737  delta_E= 1.78e-15  |g|= 2.19e-12  |ddm|= 1.35e-11
+    CPU time for cycle= 2      1.76 sec, wall time      1.77 sec
+HOMO = 0.276380968936  LUMO = 1.13494083469
+     k-point                  mo_energy
+   0 ( 0.000  0.000  0.000)   [-0.61196676  0.27638097  0.27638097  0.27638097] [ 1.13494083  1.13494083  1.13494083  1.4725551 ]
+Ewald components = 2.67370712379088e-36, -1.0506666138867, 0.713693763193702
+    CPU time for vj and vk      1.78 sec, wall time      1.78 sec
+E1 = 4.58704911357  E_coul = -2.07634841019
+Ewald components = 2.62511131804051e-13, -33.8075273415067, 21.1383239417488
+Extra cycle  E= -10.1585026963737  delta_E= 5.33e-15  |g|= 9.84e-13  |ddm|= 6.04e-12
+    CPU time for scf_cycle      7.90 sec, wall time      8.02 sec
+    CPU time for SCF      7.91 sec, wall time      8.03 sec
+converged SCF energy = -10.1585026963737
+Ewald components = 2.67370712379088e-36, -1.0506666138867, 0.713693763193702
+    CPU time for vj and vk      2.04 sec, wall time      2.04 sec

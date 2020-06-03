@@ -26,6 +26,9 @@
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
 #include "AFQMC/HamiltonianOperations/SparseTensorIO.hpp"
 #include "AFQMC/HamiltonianOperations/THCOpsIO.hpp"
+//#ifdef QMC_COMPLEX
+//#include "AFQMC/HamiltonianOperations/KP3IndexFactorizationIO.hpp"
+//#endif
 
 namespace qmcplusplus
 {
@@ -44,6 +47,8 @@ HamiltonianOperations loadHamOps(hdf_archive& dump, WALKER_TYPES type, int NMO, 
     }
     if(dump.is_group( std::string("THCOps")))
       hops_type = 1;
+    else if(dump.is_group( std::string("KP3IndexFactorization"))) 
+      hops_type = 3; 
     else if(dump.is_group( std::string("SparseTensor"))) {
       dump.push("SparseTensor",false);
       std::vector<int> type;
@@ -65,7 +70,7 @@ HamiltonianOperations loadHamOps(hdf_archive& dump, WALKER_TYPES type, int NMO, 
       }
       dump.pop();
     } else {
-      app_error()<<" Error in loadHamOps: Missing dataset. \n";
+      app_error()<<" Error in loadHamOps: Unknown hdf5 format. \n";
       APP_ABORT("");
     }
     dump.pop();
@@ -74,7 +79,7 @@ HamiltonianOperations loadHamOps(hdf_archive& dump, WALKER_TYPES type, int NMO, 
   TGwfn.Global().broadcast_value(hops_type);
 
   if(hops_type==1)
-    return HamiltonianOperations(loadTHCOps<ValueType>(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
+    return HamiltonianOperations(loadTHCOps(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
   else if(hops_type==211)
     return HamiltonianOperations(loadSparseTensor<ValueType,ValueType>(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
   else if(hops_type==212)
@@ -83,10 +88,12 @@ HamiltonianOperations loadHamOps(hdf_archive& dump, WALKER_TYPES type, int NMO, 
     return HamiltonianOperations(loadSparseTensor<ComplexType,ValueType>(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
   else if(hops_type==222)
     return HamiltonianOperations(loadSparseTensor<ComplexType,ComplexType>(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
-  else {
-    app_error()<<" Error in loadHamOps: Unknown HOps type: " <<hops_type <<std::endl;;
-    APP_ABORT("");
-  }
+//  else if(hops_type == 3) 
+//    return  HamiltonianOperations(loadKP3IndexFactorization(dump,type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
+  
+  app_error()<<" Error in loadHamOps: Unknown HOps type: " <<hops_type <<std::endl;;
+  APP_ABORT("");
+  return HamiltonianOperations{};
 
 }
 

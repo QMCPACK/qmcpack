@@ -9,10 +9,10 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-#include<cstdlib>
-#include<tuple>
+
+
+#include <cstdlib>
+#include <tuple>
 
 #ifndef FAIRDIVIDE_H
 #define FAIRDIVIDE_H
@@ -31,14 +31,14 @@
  *
  */
 template<typename IType>
-inline std::tuple<IType,IType> FairDivideBoundary(IType me, IType ntot, IType npart)
+inline std::tuple<IType, IType> FairDivideBoundary(IType me, IType ntot, IType npart)
 {
-  IType bat=ntot/npart;
-  IType residue = ntot%npart;
-  if(me < residue)
-    return std::make_tuple( me*(bat+1), (me+1)*(bat+1) );
-  else 
-    return std::make_tuple( me*bat + residue, (me+1)*bat + residue );    
+  IType bat     = ntot / npart;
+  IType residue = ntot % npart;
+  if (me < residue)
+    return std::make_tuple(me * (bat + 1), (me + 1) * (bat + 1));
+  else
+    return std::make_tuple(me * bat + residue, (me + 1) * bat + residue);
 }
 
 /** Partition ntot over npart
@@ -55,19 +55,19 @@ inline std::tuple<IType,IType> FairDivideBoundary(IType me, IType ntot, IType np
 template<class IV>
 inline void FairDivide(int ntot, int npart, IV& adist)
 {
-  if(adist.size() != npart+1)
-    adist.resize(npart+1);
-  int bat=ntot/npart;
-  int residue = ntot%npart;
-  adist[0] = 0;
-  for(int i=1; i<npart; i++)
+  if (adist.size() != npart + 1)
+    adist.resize(npart + 1);
+  int bat     = ntot / npart;
+  int residue = ntot % npart;
+  adist[0]    = 0;
+  for (int i = 1; i < npart; i++)
   {
-    if(i<residue)
-      adist[i] = adist[i-1] + bat+1;
+    if (i < residue)
+      adist[i] = adist[i - 1] + bat + 1;
     else
-      adist[i] = adist[i-1] + bat;
+      adist[i] = adist[i - 1] + bat;
   }
-  adist[npart]=ntot;
+  adist[npart] = ntot;
 }
 
 /** Partition ntot over npart and the size of each partition is a multiple of base size
@@ -81,10 +81,11 @@ inline void FairDivide(int ntot, int npart, IV& adist)
  */
 inline void FairDivideAligned(const int ntot, const int base, const int npart, const int me, int& first, int& last)
 {
-  const int blocksize = (((ntot+npart-1)/npart+base-1)/base)*base;
-  first = me*blocksize;
-  last  = std::min((me+1)*blocksize,ntot);
-  if (first>last) first = last;
+  const int blocksize = (((ntot + npart - 1) / npart + base - 1) / base) * base;
+  first               = me * blocksize;
+  last                = std::min((me + 1) * blocksize, ntot);
+  if (first > last)
+    first = last;
 }
 
 /** partition ntot elements among npart
@@ -98,17 +99,17 @@ inline void FairDivideAligned(const int ntot, const int base, const int npart, c
 template<class IV>
 inline void FairDivideLow(int ntot, int npart, IV& adist)
 {
-  if(adist.size() != npart+1)
-    adist.resize(npart+1);
-  int bat=ntot/npart;
-  int residue = npart-ntot%npart;
-  adist[0] = 0;
-  for(int i=0; i<npart; i++)
+  if (adist.size() != npart + 1)
+    adist.resize(npart + 1);
+  int bat     = ntot / npart;
+  int residue = npart - ntot % npart;
+  adist[0]    = 0;
+  for (int i = 0; i < npart; i++)
   {
-    if(i<residue)
-      adist[i+1] = adist[i] + bat;
+    if (i < residue)
+      adist[i + 1] = adist[i] + bat;
     else
-      adist[i+1] = adist[i] + bat+1;
+      adist[i + 1] = adist[i] + bat + 1;
   }
 }
 
@@ -124,22 +125,22 @@ inline void FairDivideLow(int ntot, int npart, IV& adist)
 template<class IV>
 inline int FairDivideHigh(int me, int ntot, int npart, IV& adist)
 {
-  if(adist.size() != npart+1)
-    adist.resize(npart+1);
-  int bat=ntot/npart;
-  int residue = ntot%npart;
-  int mypart=0;
-  adist[0] = 0;
-  for(int i=1; i<npart; i++)
+  if (adist.size() != npart + 1)
+    adist.resize(npart + 1);
+  int bat     = ntot / npart;
+  int residue = ntot % npart;
+  int mypart  = 0;
+  adist[0]    = 0;
+  for (int i = 1; i < npart; i++)
   {
-    if(i<residue)
-      adist[i] = adist[i-1] + bat+1;
+    if (i < residue)
+      adist[i] = adist[i - 1] + bat + 1;
     else
-      adist[i] = adist[i-1] + bat;
-    if(me>= adist[i] && me<adist[i+1])
-      mypart=i;
+      adist[i] = adist[i - 1] + bat;
+    if (me >= adist[i] && me < adist[i + 1])
+      mypart = i;
   }
-  adist[npart]=ntot;
+  adist[npart] = ntot;
   return mypart;
 }
 
@@ -155,20 +156,20 @@ inline int FairDivideHigh(int me, int ntot, int npart, IV& adist)
 template<class IV>
 inline int FairDivideLow(int me, int ntot, int npart, IV& adist)
 {
-  if(adist.size() != npart+1)
-    adist.resize(npart+1);
-  int bat=ntot/npart;
-  int residue = npart-ntot%npart;
-  int mypart=0;
-  adist[0] = 0;
-  for(int i=0; i<npart; i++)
+  if (adist.size() != npart + 1)
+    adist.resize(npart + 1);
+  int bat     = ntot / npart;
+  int residue = npart - ntot % npart;
+  int mypart  = 0;
+  adist[0]    = 0;
+  for (int i = 0; i < npart; i++)
   {
-    if(i<residue)
-      adist[i+1] = adist[i] + bat;
+    if (i < residue)
+      adist[i + 1] = adist[i] + bat;
     else
-      adist[i+1] = adist[i] + bat+1;
-    if(me>= adist[i] && me<adist[i+1])
-      mypart=i;
+      adist[i + 1] = adist[i] + bat + 1;
+    if (me >= adist[i] && me < adist[i + 1])
+      mypart = i;
   }
   return mypart;
 }

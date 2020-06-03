@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /**@file ParticleSet.BC.cpp
@@ -25,7 +22,6 @@
 
 namespace qmcplusplus
 {
-
 /** Creating StructureFactor
  *
  * Currently testing only 1 component for PBCs.
@@ -70,195 +66,196 @@ void ParticleSet::createSK()
   //for(int ig=0; ig<mySpecies.size(); ++ig)
   //  SubPtcl[ig+1]=SubPtcl[ig]+mySpecies(membersize,ig);
 
-  if(UseBoundBox) convert2Cart(R); //make sure that R is in Cartesian coordinates
+  if (Lattice.explicitly_defined)
+    convert2Cart(R); //make sure that R is in Cartesian coordinates
 
-  if(Lattice.SuperCellEnum != SUPERCELL_OPEN)
+  if (Lattice.SuperCellEnum != SUPERCELL_OPEN)
   {
-    Lattice.SetLRCutoffs();
-    LRBox=Lattice;
+    Lattice.SetLRCutoffs(Lattice.Rv);
+    LRBox        = Lattice;
     bool changed = false;
-    if(Lattice.SuperCellEnum == SUPERCELL_SLAB && Lattice.VacuumScale != 1.0)
+    if (Lattice.SuperCellEnum == SUPERCELL_SLAB && Lattice.VacuumScale != 1.0)
     {
-      LRBox.R(2,0)*=Lattice.VacuumScale;
-      LRBox.R(2,1)*=Lattice.VacuumScale;
-      LRBox.R(2,2)*=Lattice.VacuumScale;
+      LRBox.R(2, 0) *= Lattice.VacuumScale;
+      LRBox.R(2, 1) *= Lattice.VacuumScale;
+      LRBox.R(2, 2) *= Lattice.VacuumScale;
       changed = true;
     }
-    else if(Lattice.SuperCellEnum == SUPERCELL_WIRE && Lattice.VacuumScale != 1.0)
+    else if (Lattice.SuperCellEnum == SUPERCELL_WIRE && Lattice.VacuumScale != 1.0)
     {
-      LRBox.R(1,0)*=Lattice.VacuumScale;
-      LRBox.R(1,1)*=Lattice.VacuumScale;
-      LRBox.R(1,2)*=Lattice.VacuumScale;
-      LRBox.R(2,0)*=Lattice.VacuumScale;
-      LRBox.R(2,1)*=Lattice.VacuumScale;
-      LRBox.R(2,2)*=Lattice.VacuumScale;
+      LRBox.R(1, 0) *= Lattice.VacuumScale;
+      LRBox.R(1, 1) *= Lattice.VacuumScale;
+      LRBox.R(1, 2) *= Lattice.VacuumScale;
+      LRBox.R(2, 0) *= Lattice.VacuumScale;
+      LRBox.R(2, 1) *= Lattice.VacuumScale;
+      LRBox.R(2, 2) *= Lattice.VacuumScale;
       changed = true;
     }
     LRBox.reset();
-    LRBox.SetLRCutoffs();
-    LRBox.printCutoffs();
+    LRBox.SetLRCutoffs(LRBox.Rv);
+    LRBox.printCutoffs(app_log());
 
-    if (changed) {
+    if (changed)
+    {
       app_summary() << "  Simulation box changed by vacuum supercell conditions" << std::endl;
       app_log() << "--------------------------------------- " << std::endl;
       LRBox.print(app_log());
       app_log() << "--------------------------------------- " << std::endl;
     }
 
-    if(SK)
+    if (SK)
     {
       app_log() << "\n  Structure Factor is reset by " << Lattice.LR_kc << std::endl;
-      SK->UpdateNewCell(*this,LRBox.LR_kc);
+      SK->UpdateNewCell(*this, LRBox.LR_kc);
     }
     else
     {
       app_log() << "\n  Creating Structure Factor for periodic systems " << LRBox.LR_kc << std::endl;
-      SK = new StructFact(*this,LRBox.LR_kc);
+      SK = new StructFact(*this, LRBox.LR_kc);
     }
     //Lattice.print(app_log());
     //This uses the copy constructor to avoid recomputing the data.
     //SKOld = new StructFact(*SK);
   }
   //set the mass array
-  int beforemass=mySpecies.numAttributes();
-  int massind= mySpecies.addAttribute("mass");
-  if(beforemass == massind)
+  int beforemass = mySpecies.numAttributes();
+  int massind    = mySpecies.addAttribute("mass");
+  if (beforemass == massind)
   {
     app_log() << "  ParticleSet::createSK setting mass of  " << getName() << " to 1.0" << std::endl;
-    for(int ig=0; ig<mySpecies.getTotalNum(); ++ig)
-      mySpecies(massind,ig)=1.0;
+    for (int ig = 0; ig < mySpecies.getTotalNum(); ++ig)
+      mySpecies(massind, ig) = 1.0;
   }
-  for(int iat=0; iat<GroupID.size(); iat++)
-    Mass[iat]=mySpecies(massind,GroupID[iat]);
+  for (int iat = 0; iat < GroupID.size(); iat++)
+    Mass[iat] = mySpecies(massind, GroupID[iat]);
 
-  RSoA=R;
+  coordinates_->setAllParticlePos(R);
 }
 
 void ParticleSet::turnOnPerParticleSK()
 {
-  if(SK)
+  if (SK)
     SK->turnOnStorePerParticle(*this);
   else
-    APP_ABORT("ParticleSet::turnOnPerParticleSK trying to turn on per particle storage in SK but SK has not been created.");
+    APP_ABORT(
+        "ParticleSet::turnOnPerParticleSK trying to turn on per particle storage in SK but SK has not been created.");
 }
 
 void ParticleSet::convert(const ParticlePos_t& pin, ParticlePos_t& pout)
 {
-  if(pin.getUnit() == pout.getUnit())
+  if (pin.getUnit() == pout.getUnit())
   {
     pout = pin;
     return;
   }
-  if(pin.getUnit() == PosUnit::LatticeUnit)
-    //convert to CartesianUnit
+  if (pin.getUnit() == PosUnit::Lattice)
+  //convert to CartesianUnit
   {
-    ConvertPosUnit<ParticlePos_t,Tensor_t,DIM,OHMMS_ORTHO>::apply(pin,Lattice.R,pout,0,pin.size());
+    ConvertPosUnit<ParticlePos_t, Tensor_t, DIM>::apply(pin, Lattice.R, pout, 0, pin.size());
   }
   else
-    //convert to LatticeUnit
+  //convert to LatticeUnit
   {
-    ConvertPosUnit<ParticlePos_t,Tensor_t,DIM,OHMMS_ORTHO>::apply(pin,Lattice.G,pout,0,pin.size());
+    ConvertPosUnit<ParticlePos_t, Tensor_t, DIM>::apply(pin, Lattice.G, pout, 0, pin.size());
   }
 }
 
 void ParticleSet::convert2Unit(const ParticlePos_t& pin, ParticlePos_t& pout)
 {
-  pout.setUnit(PosUnit::LatticeUnit);
-  if(pin.getUnit() == PosUnit::LatticeUnit)
+  pout.setUnit(PosUnit::Lattice);
+  if (pin.getUnit() == PosUnit::Lattice)
     pout = pin;
   else
-    ConvertPosUnit<ParticlePos_t,Tensor_t,DIM,OHMMS_ORTHO>::apply(pin,Lattice.G,pout,0,pin.size());
+    ConvertPosUnit<ParticlePos_t, Tensor_t, DIM>::apply(pin, Lattice.G, pout, 0, pin.size());
 }
 
 void ParticleSet::convert2Cart(const ParticlePos_t& pin, ParticlePos_t& pout)
 {
-  pout.setUnit(PosUnit::CartesianUnit);
-  if(pin.getUnit() == PosUnit::CartesianUnit)
+  pout.setUnit(PosUnit::Cartesian);
+  if (pin.getUnit() == PosUnit::Cartesian)
     pout = pin;
   else
-    ConvertPosUnit<ParticlePos_t,Tensor_t,DIM,OHMMS_ORTHO>::apply(pin,Lattice.R,pout,0,pin.size());
+    ConvertPosUnit<ParticlePos_t, Tensor_t, DIM>::apply(pin, Lattice.R, pout, 0, pin.size());
 }
 
 void ParticleSet::convert2Unit(ParticlePos_t& pinout)
 {
-  if(pinout.getUnit() == PosUnit::LatticeUnit)
+  if (pinout.getUnit() == PosUnit::Lattice)
     return;
   else
   {
-    pinout.setUnit(PosUnit::LatticeUnit);
-    ConvertPosUnit<ParticlePos_t,Tensor_t,DIM,OHMMS_ORTHO>::apply(pinout,Lattice.G,0,pinout.size());
+    pinout.setUnit(PosUnit::Lattice);
+    ConvertPosUnit<ParticlePos_t, Tensor_t, DIM>::apply(pinout, Lattice.G, 0, pinout.size());
   }
 }
 
 void ParticleSet::convert2Cart(ParticlePos_t& pinout)
 {
-  if(pinout.getUnit() == PosUnit::CartesianUnit)
+  if (pinout.getUnit() == PosUnit::Cartesian)
     return;
   else
   {
-    pinout.setUnit(PosUnit::CartesianUnit);
-    ConvertPosUnit<ParticlePos_t,Tensor_t,DIM,OHMMS_ORTHO>::apply(pinout,Lattice.R,0,pinout.size());
+    pinout.setUnit(PosUnit::Cartesian);
+    ConvertPosUnit<ParticlePos_t, Tensor_t, DIM>::apply(pinout, Lattice.R, 0, pinout.size());
   }
 }
 
-void ParticleSet::applyBC(const ParticlePos_t& pin, ParticlePos_t& pout)
-{
-  applyBC(pin,pout,0,pin.size());
-}
+void ParticleSet::applyBC(const ParticlePos_t& pin, ParticlePos_t& pout) { applyBC(pin, pout, 0, pin.size()); }
 
 void ParticleSet::applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last)
 {
-  const bool orthogonal = ParticleLayout_t::IsOrthogonal;
-  int mode = pin.getUnit()*2+pout.getUnit();
-  switch(mode)
+  if (pin.getUnit() == PosUnit::Cartesian)
   {
-  case(0):
-    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Cart2Cart(pin,Lattice.G,Lattice.R,pout,first,last);
-    break;
-  case(1):
-    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Cart2Unit(pin,Lattice.G,pout,first,last);
-    break;
-  case(2):
-    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Unit2Cart(pin,Lattice.R,pout,first,last);
-    break;
-  case(3):
-    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Unit2Unit(pin,pout,first,last);
-    break;
+    if (pout.getUnit() == PosUnit::Cartesian)
+      ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Cart2Cart(pin, Lattice.G, Lattice.R, pout, first, last);
+    else if (pout.getUnit() == PosUnit::Lattice)
+      ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Cart2Unit(pin, Lattice.G, pout, first, last);
+    else
+      throw std::runtime_error("Unknown unit conversion");
   }
+  else if (pin.getUnit() == PosUnit::Lattice)
+  {
+    if (pout.getUnit() == PosUnit::Cartesian)
+      ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Unit2Cart(pin, Lattice.R, pout, first, last);
+    else if (pout.getUnit() == PosUnit::Lattice)
+      ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Unit2Unit(pin, pout, first, last);
+    else
+      throw std::runtime_error("Unknown unit conversion");
+  }
+  else
+    throw std::runtime_error("Unknown unit conversion");
 }
 
 void ParticleSet::applyBC(ParticlePos_t& pos)
 {
-  const bool orthogonal = ParticleLayout_t::IsOrthogonal;
-  if(pos.getUnit()==PosUnit::LatticeUnit)
+  if (pos.getUnit() == PosUnit::Lattice)
   {
-    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Unit2Unit(pos,0,TotalNum);
+    ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Unit2Unit(pos, 0, TotalNum);
   }
   else
   {
-    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Cart2Cart(pos,Lattice.G,Lattice.R,0,TotalNum);
+    ApplyBConds<ParticlePos_t, Tensor_t, DIM>::Cart2Cart(pos, Lattice.G, Lattice.R, 0, TotalNum);
   }
 }
 
 void ParticleSet::applyMinimumImage(ParticlePos_t& pinout)
 {
-  if(Lattice.SuperCellEnum==SUPERCELL_OPEN)
+  if (Lattice.SuperCellEnum == SUPERCELL_OPEN)
     return;
-  for(int i=0; i<pinout.size(); ++i)
-    MinimumImageBConds<RealType,DIM>::apply(Lattice.R,Lattice.G,pinout[i]);
+  for (int i = 0; i < pinout.size(); ++i)
+    Lattice.applyMinimumImage(pinout[i]);
 }
 
 void ParticleSet::convert2UnitInBox(const ParticlePos_t& pin, ParticlePos_t& pout)
 {
-  pout.setUnit(PosUnit::LatticeUnit);
-  convert2Unit(pin,pout); // convert to crystalline unit
+  pout.setUnit(PosUnit::Lattice);
+  convert2Unit(pin, pout); // convert to crystalline unit
   put2box(pout);
 }
 
 void ParticleSet::convert2CartInBox(const ParticlePos_t& pin, ParticlePos_t& pout)
 {
-  convert2UnitInBox(pin,pout); // convert to crystalline unit
+  convert2UnitInBox(pin, pout); // convert to crystalline unit
   convert2Cart(pout);
 }
-}
-
+} // namespace qmcplusplus

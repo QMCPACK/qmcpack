@@ -25,7 +25,6 @@ using std::stringstream;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("double_1d_grid_functor", "[numerics]")
 {
   LinearGrid<double> grid;
@@ -38,12 +37,12 @@ TEST_CASE("double_1d_grid_functor", "[numerics]")
   REQUIRE(grid.rmax() == 1.0);
   REQUIRE(grid.dh() == Approx(0.5));
   REQUIRE(grid.dr(1) == Approx(0.5));
-
 }
 
 TEST_CASE("double_1d_grid_functor_vs_n", "[numerics]")
 {
-  for (int n = 2; n < 5; n++) {
+  for (int n = 2; n < 5; n++)
+  {
     stringstream sec_name;
     sec_name << "grid size " << n;
     SECTION(sec_name.str())
@@ -53,10 +52,10 @@ TEST_CASE("double_1d_grid_functor_vs_n", "[numerics]")
       REQUIRE(grid.size() == n);
       REQUIRE(grid.rmin() == 0.0);
       REQUIRE(grid.rmax() == 1.0);
-      REQUIRE(grid.dh() == Approx(1.0/(n-1)));
-      REQUIRE(grid.dr(0) == Approx(1.0/(n-1)));
+      REQUIRE(grid.dh() == Approx(1.0 / (n - 1)));
+      REQUIRE(grid.dr(0) == Approx(1.0 / (n - 1)));
     }
   }
 }
 
-}
+} // namespace qmcplusplus

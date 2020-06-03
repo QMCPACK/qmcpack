@@ -16,6 +16,7 @@
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
+#include "AFQMC/Walkers/WalkerConfig.hpp"
 
 namespace qmcplusplus
 {
@@ -29,10 +30,21 @@ class EnergyEstimator: public EstimatorBase
 
   EnergyEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo info, xmlNodePtr cur,
         Wavefunction& wfn, bool impsamp_=true, bool timer=true):
-            EstimatorBase(info),TG(tg_),wfn0(wfn),importanceSampling(impsamp_)
+            EstimatorBase(info),TG(tg_),wfn0(wfn),importanceSampling(impsamp_),energy_components(false)
   {
 
-    data.resize(2);
+    if(cur != NULL) {
+      ParameterSet m_param;
+      std::string print_components;
+      m_param.add(print_components, "print_components", "str::string");
+      m_param.put(cur);
+      if(print_components == "true" || print_components == "yes") {
+        energy_components = true;
+      } else {
+        energy_components = false;
+      }
+    }
+    data.resize(5);
   }
 
   ~EnergyEstimator() {}
@@ -43,27 +55,37 @@ class EnergyEstimator: public EstimatorBase
   {
     AFQMCTimers[energy_timer]->start();
     size_t nwalk = wset.size();
-    if(eloc.shape()[0] != nwalk || eloc.shape()[1] != 3)
+    if(eloc.size(0) != nwalk || eloc.size(1) != 3)
       eloc.reextent({nwalk,3});
-    if(ovlp.shape()[0] != nwalk)
-      ovlp.reextent(extensions<1u>{nwalk});
+    if(ovlp.size(0) != nwalk)
+      ovlp.reextent(iextensions<1u>{nwalk});
+    if(wprop.size(0) != 4 || wprop.size(1) != nwalk)
+      wprop.reextent({4,nwalk});
 
     ComplexType dum, et;
     wfn0.Energy(wset,eloc,ovlp);
+    // in case GPU 
+    ComplexMatrix<std::allocator<ComplexType>> eloc_(eloc);
+    ComplexVector<std::allocator<ComplexType>> ovlp_(ovlp);
     if(TG.TG_local().root()) {
-      data[0] = data[1] = std::complex<double>(0,0);
+      wset.getProperty(WEIGHT,wprop[0]);  
+      wset.getProperty(OVLP,wprop[1]);  
+      wset.getProperty(PHASE,wprop[2]);  
+      std::fill_n(data.begin(), data.size(), ComplexType(0.0));
       for(int i=0; i<nwalk; i++) {
-        auto wi = wset[i];
-        if(std::isnan(real(wi.weight()))) continue;
+        if(std::isnan(real(wprop[0][i]))) continue;
         if(importanceSampling) {
-          dum = wi.weight()*ovlp[i]/wi.overlap();
+          dum = (wprop[0][i])*ovlp_[i]/(wprop[1][i]);
         } else {
-          dum = wi.weight()*ovlp[i]*wi.phase();
+          dum = (wprop[0][i])*ovlp_[i]*(wprop[2][i]);
         }
-        et = eloc[i][0]+eloc[i][1]+eloc[i][2];
+        et = eloc_[i][0]+eloc_[i][1]+eloc_[i][2];
         if( (!std::isfinite(real(dum))) || (!std::isfinite(real(et*dum))) ) continue;
         data[1] += dum;
         data[0] += et*dum;
+        data[2] += eloc_[i][0]*dum;
+        data[3] += eloc_[i][1]*dum;
+        data[4] += eloc_[i][2]*dum;
       }
       TG.TG_heads().all_reduce_in_place_n(data.begin(),data.size(),std::plus<>());
     }
@@ -77,6 +99,11 @@ class EnergyEstimator: public EstimatorBase
       out<<"EnergyEstim_" <<name <<"_nume_real  EnergyEstim_" <<name <<"_nume_imag "
          <<"EnergyEstim_" <<name <<"_deno_real  EnergyEstim_" <<name <<"_deno_imag "
          <<"EnergyEstim_" <<name <<"_timer ";
+      if(energy_components) {
+        out<<"OneBodyEnergyEstim__nume_real "
+           <<"ECoulEnergyEstim__nume_real "
+           <<"EXXEnergyEstim__nume_real ";
+      }
     }
   }
 
@@ -87,6 +114,9 @@ class EnergyEstimator: public EstimatorBase
       out<< data[0].real()/n << " " << data[0].imag()/n << " "
          << data[1].real()/n << " " << data[1].imag()/n << " "
          <<AFQMCTimers[energy_timer]->get_total() <<" ";
+      if(energy_components) {
+        out<< data[2].real()/n << " " << data[3].real()/n << " " << data[4].real()/n << " ";
+      }
       AFQMCTimers[energy_timer]->reset();
     }
   }
@@ -99,12 +129,14 @@ class EnergyEstimator: public EstimatorBase
 
   Wavefunction& wfn0;
 
-  ComplexMatrix<std::allocator<ComplexType>> eloc;
-  ComplexVector<std::allocator<ComplexType>> ovlp;
+  ComplexMatrix<device_allocator<ComplexType>> eloc;
+  ComplexVector<device_allocator<ComplexType>> ovlp;
+  ComplexMatrix<std::allocator<ComplexType>> wprop;
 
   std::vector<std::complex<double> > data;
 
   bool importanceSampling;
+  bool energy_components;
 
 };
 }

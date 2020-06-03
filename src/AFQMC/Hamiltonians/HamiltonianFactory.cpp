@@ -12,18 +12,9 @@
 #include<mpi.h>
 #endif
 
-#include "OhmmsPETE/TinyVector.h"
-#include "ParticleBase/ParticleAttrib.h"
-#include "type_traits/scalar_traits.h"
-#include <Platforms/sysutil.h>
-#include "OhmmsData/libxmldefs.h"
-#include "OhmmsData/AttributeSet.h"
-#include "OhmmsData/ParameterSet.h"
-#include "Utilities/SimpleParser.h"
-#include "Configuration.h"
+#include <boost/version.hpp>
 #include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
-#include "Message/CommOperators.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
@@ -32,7 +23,9 @@
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
 #include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian.h"
 #include "AFQMC/Hamiltonians/KPFactorizedHamiltonian.h"
-#include "AFQMC/Hamiltonians/KPTHCHamiltonian.h"
+#include "AFQMC/Hamiltonians/RealDenseHamiltonian.h"
+#include "AFQMC/Hamiltonians/RealDenseHamiltonian_v2.h"
+//#include "AFQMC/Hamiltonians/KPTHCHamiltonian.h"
 
 #include "AFQMC/Utilities/readHeader.h"
 #include "AFQMC/Utilities/Utils.hpp"
@@ -41,6 +34,7 @@
 #include "AFQMC/Matrix/csr_matrix.hpp"
 
 #include "AFQMC/Matrix/hdf5_readers.hpp"
+#include "AFQMC/Utilities/hdf5_consistency_helper.hpp"
 #include "AFQMC/Matrix/array_partition.hpp"
 
 namespace qmcplusplus
@@ -70,57 +64,26 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     int NAEA = AFinfo.NAEA;
     int NAEB = AFinfo.NAEB;
 
-    xmlNodePtr curRoot=cur;
-
     // defaults
-    double cutoff1body = 1e-8;
     double cutoff1bar = 1e-8;
-    double cutoff_cholesky = 1e-6;
-    std::string hdf_write_type="";
-    std::string filetype = "undefined";
     std::string fileName = "";
-    std::string ascii_write_file = "";
-    std::string hdf_write_file = "";
     int number_of_TGs = 1;
     int n_reading_cores = -1;
-    bool orderStates=false;
+    std::string alt = "";
 
-    std::string order("no");
-    std::string str("no");
     ParameterSet m_param;
-    m_param.add(order,"orderStates","std::string");
-    m_param.add(cutoff1body,"cutoff_1body","double");
     m_param.add(cutoff1bar,"cutoff_1bar","double");
-    m_param.add(cutoff_cholesky,"cutoff_decomp","double");
-    m_param.add(cutoff_cholesky,"cutoff_decomposition","double");
-    m_param.add(cutoff_cholesky,"cutoff_factorization","double");
-    m_param.add(cutoff_cholesky,"cutoff_cholesky","double");
-    m_param.add(filetype,"filetype","std::string");
     m_param.add(fileName,"filename","std::string");
-    m_param.add(hdf_write_file,"hdf_write_file","std::string");
-    m_param.add(hdf_write_type,"hdf_write_type","std::string");
-    m_param.add(ascii_write_file,"ascii_write_file","std::string");
     m_param.add(number_of_TGs,"nblocks","int");
     m_param.add(n_reading_cores,"num_io_cores","int");
+    m_param.add(alt,"alternate","std::string");
     m_param.put(cur);
-
-    orderStates=false;
-    std::transform(order.begin(),order.end(),order.begin(),(int (*)(int))tolower);
-    std::transform(filetype.begin(),filetype.end(),filetype.begin(),(int (*)(int))tolower);
-    std::transform(hdf_write_type.begin(),hdf_write_type.end(),hdf_write_type.begin(),(int (*)(int))tolower);
-    std::transform(str.begin(),str.end(),str.begin(),(int (*)(int))tolower);
-
-    orderStates = (order == "yes" || order == "true");
-
-    Timer.reset("Generic");
-    Timer.start("Generic");
 
     // make or get TG
     number_of_TGs = std::max(1, std::min(number_of_TGs,gTG.getTotalNodes()));
     TaskGroup_& TG = getTG(gTG,number_of_TGs);
 
     // processor info
-    int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
     int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
     int nread = (n_reading_cores<=0)?(ncores):(std::min(n_reading_cores,ncores));
     int head = TG.getGlobalRank() == 0;
@@ -141,7 +104,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       }
     }
 
-    HamiltonianTypes htype;
+    HamiltonianTypes htype = UNKNOWN;
     if(head) htype = peekHamType(dump);
     {
       int htype_ = int(htype);
@@ -149,7 +112,29 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       htype = HamiltonianTypes(htype_);
     }
 
-    int int_blocks,nvecs,nkpts=-1;
+    int complex_integrals;
+    // Hamiltonian file may not contain flag.
+    bool have_complex_flag = true;
+    if(head) {
+      if(!dump.readEntry(complex_integrals, "ComplexIntegrals")) {
+        have_complex_flag = false;
+      }
+    }
+    TG.Global().broadcast_n(&have_complex_flag, 1, 0);
+    if(have_complex_flag && head) {
+#ifdef QMC_COMPLEX
+      if(!complex_integrals)
+        app_log() << " Note: Found real integrals with QMC_COMPLEX=1.\n";
+#else
+      if(complex_integrals) {
+        app_error() << " Error in HamiltonianFactory::fromHDF5(): Found complex integrals but QMC_COMPLEX=0.\n";
+        app_error() << " Please build QMCPACK with complex support or write real integrals if appropriate.\n";
+        APP_ABORT("");
+      }
+#endif
+    }
+
+    int int_blocks,nvecs;
     std::vector<int> Idata(8);
     if(head)
       if(!dump.readEntry(Idata,"dims")) {
@@ -172,7 +157,10 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 //      APP_ABORT(" ");
     }
     nvecs = Idata[7];
+#ifdef QMC_COMPLEX
+    int nkpts=-1;
     if(htype == KPFactorized || htype == KPTHC) nkpts=Idata[2];
+#endif
 
     // 1 body hamiltonian: Why isn't this in shared memory!!!
     boost::multi::array<ValueType,2> H1({NMO,NMO});
@@ -181,7 +169,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     ValueType FrozenCoreEnergy(0);
 
     if(head) {
-      std::vector<ValueType> Rdata(2);
+      std::vector<RealType> Rdata(2);
       if(!dump.readEntry(Rdata,"Energies")) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading  dataset. \n";
         APP_ABORT(" ");
@@ -197,49 +185,58 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
     if(head) {
 
-      using std::conj;
+      using ma::conj;
       using std::imag;
       bool foundH1=false;
-      if(nkpts > 0) {
+#ifdef QMC_COMPLEX
+      if(htype == KPFactorized || htype == KPTHC) {
+#else
+      if(htype == RealDenseFactorized) { 
+#endif
         // nothing to do, H1 is read during construction of HamiltonianOperations object.
-      } else if(dump.readEntry(H1,"hcore")) {
-        foundH1 = true;
       } else {
+        if(readComplexOrReal(dump, "hcore", H1)) {
+        } else {
+          app_log() << " Reading one-body Hamiltonian in sparse format.\n";
+          H1.reextent({NMO,NMO});
+          if(Idata[0] < 1) {
+            app_error()<<" Error in HamiltonianFactory::fromHDF5(): Dimensions of H1 < 1.  \n";
+            APP_ABORT(" ");
+          }
 
-        H1.reextent({NMO,NMO});
-        if(Idata[0] < 1) {
-          app_error()<<" Error in HamiltonianFactory::fromHDF5(): Dimensions of H1 < 1.  \n";
-          APP_ABORT(" ");
-        }
+          std::vector<OrbitalType> ivec(2*Idata[0]);
+          if(!dump.readEntry(ivec,"H1_indx")) {
+            app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1_indx. \n";
+            APP_ABORT(" ");
+          }
+          std::vector<ValueType> vvec(Idata[0]);
+          if(!readComplexOrReal(dump,"H1", vvec)) {
+            app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1.  \n";
+            APP_ABORT(" ");
+          }
 
-        std::vector<OrbitalType> ivec(2*Idata[0]);
-        if(!dump.readEntry(ivec,"H1_indx")) {
-          app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1_indx. \n";
-          APP_ABORT(" ");
-        }
-        std::vector<ValueType> vvec(Idata[0]);
-        if(!dump.readEntry(vvec,"H1")) {
-          app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading H1.  \n";
-          APP_ABORT(" ");
-        }
-
-        for(int i=0; i<Idata[0]; i++) {
-          // keep i<=j by default
-          if(ivec[i] <= ivec[i]) {
-              H1[ivec[2*i]][ivec[2*i+1]] = vvec[i]; 
-              H1[ivec[2*i+1]][ivec[2*i]] = conj(vvec[i]); 
-          } else {
-              H1[ivec[2*i]][ivec[2*i+1]] = conj(vvec[i]); 
-              H1[ivec[2*i+1]][ivec[2*i]] = vvec[i]; 
+          for(int i=0; i<Idata[0]; i++) {
+            // keep i<=j by default
+            if(ivec[i] <= ivec[i]) {
+                H1[ivec[2*i]][ivec[2*i+1]] = vvec[i]; 
+                H1[ivec[2*i+1]][ivec[2*i]] = ma::conj(vvec[i]); 
+            } else {
+                H1[ivec[2*i]][ivec[2*i+1]] = ma::conj(vvec[i]); 
+                H1[ivec[2*i+1]][ivec[2*i]] = vvec[i]; 
+            }
           }
         }
+        app_log() << " Successfully read one-body Hamiltonian.\n";
+        app_log() << " Shape of one-body Hamiltonian: (" << NMO << ", " << NMO << ")." << std::endl;
       }
     }
-    TG.Global().broadcast_n(std::addressof(*H1.origin()),H1.num_elements(),0);
+    TG.Global().broadcast_n(to_address(H1.origin()),H1.num_elements(),0);
 
     // now read the integrals
+#ifdef QMC_COMPLEX
     if(htype == KPTHC) {
 
+      APP_ABORT(" Error: KPTHC hamiltonian not yet working. \n");  
       if(coreid < nread && !dump.push("KPTHC",false)) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Group not KPTHC found. \n";
         APP_ABORT("");
@@ -250,8 +247,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
         dump.close();
       }
       TG.global_barrier();
-      return Hamiltonian(KPTHCHamiltonian(AFinfo,cur,std::move(H1),TG,
-                                        NuclearCoulombEnergy,FrozenCoreEnergy));
+      return Hamiltonian{};  
+//      return Hamiltonian(KPTHCHamiltonian(AFinfo,cur,std::move(H1),TG,
+//                                        NuclearCoulombEnergy,FrozenCoreEnergy));
 
     } else if(htype == KPFactorized) {
 
@@ -270,7 +268,37 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       return Hamiltonian(KPFactorizedHamiltonian(AFinfo,cur,std::move(H1),TG,
                                         NuclearCoulombEnergy,FrozenCoreEnergy));
 
-    } else if(htype == THC) {
+    } else 
+#else
+    if(htype == RealDenseFactorized) {
+
+      if(coreid < nread && !dump.push("DenseFactorized",false)) {
+        app_error()<<" Error in HamiltonianFactory::fromHDF5(): Group not DenseFactorized found. \n";
+        APP_ABORT("");
+      }
+      if( coreid < nread ) {
+        dump.pop();
+        dump.pop();
+        dump.close();
+      }
+      TG.global_barrier();
+      // KPFactorizedHamiltonian matrices are read by THCHamiltonian object when needed,
+      // since their ownership is passed to the HamOps object.
+#ifdef ENABLE_CUDA
+//      if(alt == "yes" || alt == "true")  
+//        return Hamiltonian(RealDenseHamiltonian(AFinfo,cur,std::move(H1),TG,
+//                                        NuclearCoulombEnergy,FrozenCoreEnergy));
+//      else  
+        return Hamiltonian(RealDenseHamiltonian_v2(AFinfo,cur,std::move(H1),TG,
+                                        NuclearCoulombEnergy,FrozenCoreEnergy));
+#else
+      return Hamiltonian(RealDenseHamiltonian(AFinfo,cur,std::move(H1),TG,
+                                        NuclearCoulombEnergy,FrozenCoreEnergy));
+#endif
+
+    } else
+#endif
+    if(htype == THC) {
 
       if(coreid < nread && !dump.push("THC",false)) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Group not THC found. \n";
@@ -299,12 +327,8 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
       FactorizedSparseHamiltonian::shm_csr_matrix V2_fact = read_V2fact(dump,TG,nread,NMO,nvecs,cutoff1bar,int_blocks);
 
-      Timer.stop("Generic1");
-      app_log()<<" -- Time to read move ucsr into csr matrix: "
-               <<Timer.average("Generic1") <<"\n";
-
       app_log()<<" Memory used by factorized 2-el integral table (on head node): "
-               <<(V2_fact.capacity()*(sizeof(ValueType)+sizeof(IndexType)) + V2_fact.shape()[0]*(2*sizeof(std::size_t)))/1024.0/1024.0 <<" MB. " <<std::endl;
+               <<(V2_fact.capacity()*(sizeof(ValueType)+sizeof(IndexType)) + V2_fact.size(0)*(2*sizeof(std::size_t)))/1024.0/1024.0 <<" MB. " <<std::endl;
 
       if( coreid < nread ) {
         dump.pop();
@@ -313,14 +337,13 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       }
       TG.global_barrier();
 
-      Timer.stop("Generic");
-      app_log()<<" -- Time to initialize Hamiltonian from h5 file: " <<Timer.average("Generic") <<"\n";
-
       return Hamiltonian(FactorizedSparseHamiltonian(AFinfo,cur,std::move(H1),std::move(V2_fact),TG,NuclearCoulombEnergy,FrozenCoreEnergy));
-    } else {
-      app_error()<<" Error in HamiltonianFactory::fromHDF5(): Unknown Hamiltonian Type. \n";
-      APP_ABORT("");
-    }
+    } 
+
+    app_error()<<" Error in HamiltonianFactory::fromHDF5(): Unknown Hamiltonian Type. \n";
+    APP_ABORT("");
+    return Hamiltonian{};
+   
 
 }
 }  // afqmc

@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_VMC_PARTICLEBYPARTICLE_UPDATE_H
@@ -21,25 +19,26 @@
 
 namespace qmcplusplus
 {
-
 /** @ingroup QMCDrivers  ParticleByParticle
  *@brief Implements the VMC algorithm using particle-by-particle move.
  */
-class VMCUpdatePbyP: public QMCUpdateBase
+class VMCUpdatePbyP : public QMCUpdateBase
 {
 public:
   /// Constructor.
-  VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                QMCHamiltonian& h, RandomGenerator_t& rg);
+  VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
 
   ~VMCUpdatePbyP();
 
   void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
-  std::vector<NewTimer*> myTimers;
+  NewTimer& buffer_timer_;
+  NewTimer& movepbyp_timer_;
+  NewTimer& hamiltonian_timer_;
+  NewTimer& collectables_timer_;
 };
 
-}
+} // namespace qmcplusplus
 
 #endif

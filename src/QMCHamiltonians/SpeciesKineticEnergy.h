@@ -13,22 +13,20 @@
 #define QMCPLUSPLUS_SPECIESKINETICENERGY_H
 
 #include "Particle/WalkerSetRef.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 
 namespace qmcplusplus
 {
-
 /** SpeciesKineticEnergy evaluate the kinetic energy of each species in the target
  * particle set separately instead of sum over every particle in the set such as BareKinetic
- *  <estimator type="specieskinetic" name="skinetic"/>
+ * <![CDATA][<estimator type="specieskinetic" name="skinetic"/>]]>
  * By default skinetic_u, skinetic_d, etc. columns will be added to scalar.dat.
  *  If hdf5="yes", then data will be added to stat.h5 as well.
  * The sum of every column that starts with skinetic should be equivalent to the Kinetic column.
  */
-class SpeciesKineticEnergy: public QMCHamiltonianBase
+class SpeciesKineticEnergy : public OperatorBase
 {
 public:
-
   SpeciesKineticEnergy(ParticleSet& P);
 
   bool put(xmlNodePtr cur);         // read input xml node, required
@@ -37,8 +35,8 @@ public:
   Return_t evaluate(ParticleSet& P);
 
   // pure virtual functions require overrider
-  void resetTargetParticleSet(ParticleSet& P) { }                         // required
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
+  void resetTargetParticleSet(ParticleSet& P) {}                          // required
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
 
   // allocate multiple columns in scalar.dat
   void addObservables(PropertySetType& plist, BufferType& collectables);
@@ -52,7 +50,7 @@ private:
   ParticleSet& tpset; // reference to target particle set
   int num_species;
   std::vector<std::string> species_names;
-  std::vector<RealType> species_kinetic,vec_minus_over_2m;
+  std::vector<RealType> species_kinetic, vec_minus_over_2m;
   bool hdf5_out;
   int h5_index; // index of this estimator in the collectables carried by target pset
   //  myIndex: the index of this estimator in the property list in target pset

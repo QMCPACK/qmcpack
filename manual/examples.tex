@@ -7,7 +7,7 @@ The following examples should run in serial on a modern workstation in a few hou
 
 \section{Using QMCPACK directly}
 
-In \ishell{examples/molecules}, there are the following examples.
+In \ishell{examples/molecules} are the following examples.
 Each directory also contains a \ishell{README} file with more details.
 
 \begin{tabular}{l l}
@@ -24,7 +24,7 @@ Directory  & Description \\
 For more information about Nexus, see the User Guide in \ishell{nexus/documentation}.
 
 For Python to find the Nexus library, the PYTHONPATH environment variable should be set to \ishell{<QMCPACK source>/nexus/library}.
-For these examples to work properly, the executables for Quantum ESPRESSO and QMCPACK either
+For these examples to work properly, the executables for QE and QMCPACK either
 need to be on the path, or the paths in the script should be adjusted.
 
 These examples can be found under the \ishell{nexus/examples/qmcpack} directory.
@@ -43,8 +43,8 @@ Directory  & Description \\
 \ishell{graphene} & Graphene sheet with DMC \\
 \ishell{c20} & C20 cage molecule \\
 \ishell{oxygen\_dimer} & Binding curve for O$_2$ molecule \\
-\ishell{H2O} & H$_2$O molecule with Quantum ESPRESSO orbitals \\
-\ishell{LiH} & LiH crystal with Quantum ESPRESSO orbitals \\
+\ishell{H2O} & H$_2$O molecule with QE orbitals \\
+\ishell{LiH} & LiH crystal with QE orbitals \\
 \end{tabular}
 
 
@@ -77,4 +77,4 @@ Directory  & Description \\
 %\subsection{LiH crystal with Quantum ESPRESSO orbitals}
 %The input files are in the directory \ishell{nexus/examples/qmcpack/LiH}.
 %
-%The \ishell{LiH.py} Nexus script uses CASINO-formatted Trail-Needs pseudopotentials (see Section \ref{subsec:CASINO}) for Li and H in a subdirectory named \ishell{pseudopotentials} (both UPF and CASINO  formats, named \ishell{Li.TN-DF.upf}, \ishell{Li.pp.data}, \ishell{H.TN-DF.upf}, and \ishell{H.pp.data}, respectively), generates the orbitals using Quantum ESPRESSO, then runs QMCPACK to optimize the Jastrow and run DMC for LiH with periodic boundary conditions.
+%The \ishell{LiH.py} Nexus script uses CASINO-formatted Trail-Needs pseudopotentials (see Section~\ref{subsec:CASINO}) for Li and H in a subdirectory named \ishell{pseudopotentials} (both UPF and CASINO  formats, named \ishell{Li.TN-DF.upf}, \ishell{Li.pp.data}, \ishell{H.TN-DF.upf}, and \ishell{H.pp.data}, respectively), generates the orbitals using Quantum ESPRESSO, then runs QMCPACK to optimize the Jastrow and run DMC for LiH with periodic boundary conditions.

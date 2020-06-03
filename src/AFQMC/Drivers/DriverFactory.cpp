@@ -10,6 +10,7 @@
 #include "AFQMC/Drivers/DriverFactory.h"
 #include "AFQMC/Drivers/AFQMCDriver.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 #include "AFQMC/Walkers/WalkerSetFactory.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
@@ -73,7 +74,6 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   }
   auto& AFinfo = InfoMap[info];
   int NMO = AFinfo.NMO;
-  int NAEA = AFinfo.NAEA;
   int NAEB = AFinfo.NAEB;
 
   std::string hdf_read_restart(""),str1("no");
@@ -190,17 +190,23 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   int nnodes_propg = std::max(1,get_parameter<int>(PropFac,prop_name,"nnodes",1));
   int nnodes_wfn = std::max(1,get_parameter<int>(WfnFac,wfn_name,"nnodes",1));
   RealType cutvn = get_parameter<RealType>(PropFac,prop_name,"cutoff",1e-6);
-  std::string wfn_filetype =  get_parameter<std::string>(WfnFac,wfn_name,"filetype","");
+  // Wavefunction and Hamiltonian Operations already stored in restart file.
+  std::string wfn_restart =  get_parameter<std::string>(WfnFac,wfn_name,"restart_file","");
 
   // setup task groups
   auto& TGprop = TGHandler.getTG(nnodes_propg);
   auto& TGwfn = TGHandler.getTG(nnodes_wfn);
 
+  // setting TG buffer generator here, as soon as localTG is available from any TG 
+  // defaults to 20MB. Read from input!!!
+  std::size_t buffer_size(20);
+  make_localTG_buffer_generator(TGwfn.TG_local(),buffer_size*1024L*1024L);
+
   // walker set and type
   WalkerSet& wset = WSetFac.getWalkerSet(TGHandler.getTG(1),wset_name,rng);
   WALKER_TYPES walker_type = wset.getWalkerType();
 
-  if(not WfnFac.is_constructed(wfn_name) && wfn_filetype != "hdf5") {
+  if(not WfnFac.is_constructed(wfn_name) && wfn_restart == "") {
 
     // hamiltonian
     Hamiltonian& ham0 = HamFac.getHamiltonian(gTG,ham_name);
@@ -227,10 +233,11 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
     wset.resize(nWalkers,initial_guess[0],
                          initial_guess[1]({0,NMO},{0,NAEB}));
     wfn0.Energy(wset);
-    app_log()<<" Energy of starting determinant - E1, EJ, EXX: "
-             <<std::setprecision(12) <<wset[0].E1() <<" "
-             <<wset[0].EJ() <<" "
-             <<wset[0].EXX() <<std::endl;
+    app_log()<<" Energy of starting determinant: \n"
+             <<"  - Total energy    : " << std::setprecision(12) << wset[0].energy() << "\n"
+             <<"  - One-body energy : " << *wset[0].E1() <<"\n"
+             <<"  - Coulomb energy  : " << *wset[0].EJ() <<"\n"
+             <<"  - Exchange energy : " << *wset[0].EXX() <<"\n";
     if(hybrid)
       Eshift=0.0;
     else
@@ -246,8 +253,8 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   bool addEnergyEstim = hybrid;
 
   // estimator setup
-  // FIX issue with Hamiltonian object expected by estimator handler
-  EstimatorHandler estim0(TGHandler,AFinfo,title,cur,WfnFac,wfn0,walker_type,HamFac,ham_name,addEnergyEstim,!free_proj);
+  EstimatorHandler estim0(TGHandler,AFinfo,title,cur,wset,WfnFac,wfn0,prop0,walker_type,
+                          HamFac,ham_name,dt,addEnergyEstim,!free_proj);
 
   app_log()<<"\n****************************************************\n"
            <<"****************************************************\n"

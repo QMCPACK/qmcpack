@@ -18,14 +18,15 @@
     
     
 SET(HAMSRCS
-  QMCHamiltonianBase.cpp
+  HamiltonianPool.cpp
+  ACForce.cpp
+  OperatorBase.cpp
   QMCHamiltonian.cpp
   CoulombPBCAA.cpp
   CoulombPBCAB.cpp
   NonLocalTOperator.cpp
   ForwardWalking.cpp
   PairCorrEstimator.cpp
-  LocalMomentEstimator.cpp
   DensityEstimator.cpp
   SkPot.cpp
   SkEstimator.cpp
@@ -35,6 +36,7 @@ SET(HAMSRCS
   HamiltonianFactory.cpp
   CoulombPotentialFactory.cpp
   HarmonicExternalPotential.cpp
+  GridExternalPotential.cpp
   StaticStructureFactor.cpp
   OrbitalImages.cpp
   SpinDensity.cpp
@@ -45,20 +47,15 @@ SET(HAMSRCS
 IF(OHMMS_DIM MATCHES 3)
   SET(HAMSRCS ${HAMSRCS}
     ChiesaCorrection.cpp
-    PulayForce.cpp
-    ZeroVarianceForce.cpp
     ForceCeperley.cpp
     ForceChiesaPBCAA.cpp
-#    StressPBCAA.cpp
-#    StressPBCAB.cpp
-#    StressKinetic.cpp
-    StressPBC.cpp
-    LocalCorePolPotential.cpp
     LocalECPotential.cpp
     NonLocalECPComponent.cpp
     NonLocalECPotential.deriv.cpp
     NonLocalECPotential.cpp
     L2Potential.cpp
+    SOECPComponent.cpp
+    SOECPotential.cpp
     ECPotentialBuilder.cpp
     ECPComponentBuilder.cpp
     ECPComponentBuilder.1.cpp
@@ -82,9 +79,11 @@ IF(OHMMS_DIM MATCHES 3)
   ENDIF(HAVE_LIBFFTW)
 
   IF(QMC_CUDA)
-    SET(HAMSRCS ${HAMSRCS}
+    SET(HAMSRCS_CUDA
       CudaCoulomb.cu 
       NLPP.cu
+    )
+    SET(HAMSRCS ${HAMSRCS}
       CoulombPBCAA_CUDA.cpp
       CoulombPBCAB_CUDA.cpp
       MPC_CUDA.cpp
@@ -97,12 +96,24 @@ IF(OHMMS_DIM MATCHES 3)
 
 ENDIF(OHMMS_DIM MATCHES 3)
 
+ADD_LIBRARY(qmcham ${HAMSRCS})
+ADD_LIBRARY(qmcham_unit ${HAMSRCS})
 IF(QMC_CUDA)
-  CUDA_ADD_LIBRARY(qmcham ${HAMSRCS})
-ELSE(QMC_CUDA)
-  ADD_LIBRARY(qmcham ${HAMSRCS})
+  CUDA_ADD_LIBRARY(qmcham_cuda ${HAMSRCS_CUDA})
+  TARGET_LINK_LIBRARIES(qmcham PRIVATE qmcham_cuda)
+  TARGET_LINK_LIBRARIES(qmcham_unit PRIVATE qmcham_cuda)
 ENDIF(QMC_CUDA)
 
+USE_FAKE_RNG(qmcham_unit)
+TARGET_LINK_LIBRARIES(qmcham_unit PUBLIC qmcfakerng)
+
+TARGET_LINK_LIBRARIES(qmcham PUBLIC qmcwfs)
+TARGET_LINK_LIBRARIES(qmcham_unit PUBLIC qmcwfs)
+
+TARGET_LINK_LIBRARIES(qmcham PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3)
+TARGET_LINK_LIBRARIES(qmcham_unit PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3)
+
+#IF(QMC_BUILD_STATIC)
 
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcham STATIC ${HAMSRCS})

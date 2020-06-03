@@ -3,14 +3,14 @@
 
 The two-body spline Jastrow function is the most commonly used two-body Jastrow for solids. This form 
 was first described and used in \cite{EslerKimCeperleyShulenburger2012}.  
-Here $u_{ab}$ is an interpolating 1D Bspline (tricublc spline on a linear grid) between 
-zero distance and $r_{cut}$. In 3D periodic systems 
-the default cutoff distance is the Wigner Seitz cell radius. For other periodicities including isolated 
-molecules the $r_{cut}$ must be specified.  $r_i$ and $r_j$ are typically electron positions.  The cusp 
+Here $u_{ab}$ is an interpolating 1D B-spline (tricublc spline on a linear grid) between 
+zero distance and $r_{cut}$. In 3D periodic systems, 
+the default cutoff distance is the Wigner Seitz cell radius. For other periodicities, including isolated 
+molecules, the $r_{cut}$ must be specified.  $r_i$ and $r_j$ are typically electron positions.  The cusp 
 condition as $r_i$ approaches $r_j$ is set by the relative spin of the electrons.
 
 \FloatBarrier
-\paragraph{Input Specification}
+\paragraph{Input specification}
 
 \FloatBarrier
 \begin{table}[h!]
@@ -19,15 +19,15 @@ condition as $r_i$ approaches $r_j$ is set by the relative spin of the electrons
 \hline
 \multicolumn{5}{l}{Correlation element} \\
 \hline
-\bfseries name & \bfseries datatype & \bfseries values & \bfseries defaults & \bfseries description \\
+\bfseries Name & \bfseries Datatype & \bfseries Values & \bfseries Defaults & \bfseries Description \\
 \hline
-speciesA & text & u or d & (required) & Quantum species target \\
-speciesB & text & u or d & (required) & Quantum species target \\
-size & integer & $> 0$ & (required) & number of coefficients \\
-rcut & real & $> 0$ & see below & distance at which the correlation goes to 0 \\
-spin & text & yes or no & no & spin dependent jastrow factor \\
+SpeciesA & Text & U or d & (Required) & Quantum species target \\
+SpeciesB & Text & U or d & (Required) & Quantum species target \\
+Size & Integer & $> 0$ & (Required) & Number of coefficients \\
+Rcut & Real & $> 0$ & See below & Distance at which the correlation goes to 0 \\
+Spin & Text & Yes or no & No & Spin-dependent Jastrow factor \\
 \hline
-\multicolumn{5}{l}{elements}\\ \hline
+\multicolumn{5}{l}{Elements}\\ \hline
 & Coefficients & & & \\ \hline
 \multicolumn{5}{l}{Contents}\\ \hline
 & (None)  & & &  \\ \hline
@@ -51,16 +51,16 @@ based on the charge of the quantum particles.
 \hline
 \multicolumn{5}{l}{Coefficients element} \\
 \hline
-\bfseries name & \bfseries datatype & \bfseries values & \bfseries defaults & \bfseries description \\
+\bfseries Name & \bfseries Datatype & \bfseries Values & \bfseries Defaults & \bfseries Description \\
 \hline
-id & text & & (required) & Unique identifier \\
-type & text & Array & (required) & \\
-optimize & text & yes or no & yes & if no, values are fixed in optimizations \\
+Id & Text & & (Required) & Unique identifier \\
+Type & Text & Array & (Required) & \\
+Optimize & Text & Yes or no & Yes & If no, values are fixed in optimizations \\
 \hline
-\multicolumn{5}{l}{elements}\\ \hline
+\multicolumn{5}{l}{Elements}\\ \hline
 (None) & & & \\ \hline
 \multicolumn{5}{l}{Contents}\\ \hline
- (no name) & real array & & zeros & Jastrow coefficients \\ \hline
+ (No name) & Real array & & Zeros & Jastrow coefficients \\ \hline
 \end{tabular}
 %\end{tabular*}
 \end{center}
@@ -69,7 +69,7 @@ optimize & text & yes or no & yes & if no, values are fixed in optimizations \\
 \paragraph{Example use cases}
 \label{sec:2bjsplineexamples}
 
-Specify a spin-dependent function with 4 parameters for each channel.  In this case, the cusp is set at 
+Specify a spin-dependent function with four parameters for each channel.  In this case, the cusp is set at 
 a radius of 4.0 bohr (rather than to the default of the Wigner Seitz cell radius).  Also, in this example,
 the coefficients are set to not be optimized during an optimization step.
 

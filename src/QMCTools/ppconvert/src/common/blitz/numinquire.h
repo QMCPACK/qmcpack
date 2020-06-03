@@ -40,17 +40,17 @@
 #define BZ_NUMINQUIRE_H
 
 #ifndef BZ_BLITZ_H
-  #include <blitz/blitz.h>
+#include <blitz/blitz.h>
 #endif
 
 #ifndef BZ_HAVE_NUMERIC_LIMITS
-  #include <blitz/limits-hack.h>
+#include <blitz/limits-hack.h>
 #else
-  #include <limits>
+#include <limits>
 #endif
 
 #ifndef BZ_RANGE_H
- #include <blitz/range.h>
+#include <blitz/range.h>
 #endif
 
 BZ_NAMESPACE(blitz)
@@ -63,32 +63,34 @@ BZ_NAMESPACE(blitz)
  */
 
 template<typename T_numtype>
-struct _bz_OneZeroTraits {
-    static inline T_numtype zero() { return 0; }
-    static inline T_numtype one()  { return 1; }
+struct _bz_OneZeroTraits
+{
+  static inline T_numtype zero() { return 0; }
+  static inline T_numtype one() { return 1; }
 };
 
 #ifdef BZ_HAVE_COMPLEX
 
 template<>
-struct _bz_OneZeroTraits<std::complex<float> > {
-    static inline std::complex<float> zero() { return std::complex<float>(0.0f,0.0f); }
-    static inline std::complex<float> one()  { return std::complex<float>(1.0f,0.0f); }
+struct _bz_OneZeroTraits<std::complex<float>>
+{
+  static inline std::complex<float> zero() { return std::complex<float>(0.0f, 0.0f); }
+  static inline std::complex<float> one() { return std::complex<float>(1.0f, 0.0f); }
 };
 
 template<>
-struct _bz_OneZeroTraits<std::complex<double> > {
-    static inline std::complex<double> zero() { return std::complex<double>(0.0,0.0); }
-    static inline std::complex<double> one()  { return std::complex<double>(1.0,0.0); }
+struct _bz_OneZeroTraits<std::complex<double>>
+{
+  static inline std::complex<double> zero() { return std::complex<double>(0.0, 0.0); }
+  static inline std::complex<double> one() { return std::complex<double>(1.0, 0.0); }
 };
 
 template<>
-struct _bz_OneZeroTraits<std::complex<long double> > {
-    static inline std::complex<long double> zero() 
-    { return std::complex<long double>(0.0,0.0); }
+struct _bz_OneZeroTraits<std::complex<long double>>
+{
+  static inline std::complex<long double> zero() { return std::complex<long double>(0.0, 0.0); }
 
-    static inline std::complex<long double> one()  
-    { return std::complex<long double>(1.0,0.0); }
+  static inline std::complex<long double> one() { return std::complex<long double>(1.0, 0.0); }
 };
 
 #endif // BZ_HAVE_COMPLEX
@@ -96,31 +98,31 @@ struct _bz_OneZeroTraits<std::complex<long double> > {
 template<typename T>
 inline T zero(T)
 {
-    return _bz_OneZeroTraits<T>::zero();
+  return _bz_OneZeroTraits<T>::zero();
 }
 
 template<typename T>
 inline T one(T)
 {
-    return _bz_OneZeroTraits<T>::one();
+  return _bz_OneZeroTraits<T>::one();
 }
 
 template<typename T>
 inline int digits(T)
 {
-    return std::numeric_limits<T>::digits;
+  return std::numeric_limits<T>::digits;
 }
 
 template<typename T>
 inline int digits10(T)
 {
-    return std::numeric_limits<T>::digits10;
+  return std::numeric_limits<T>::digits10;
 }
 
 template<typename T>
 inline T epsilon(T) BZ_THROW
 {
-    return std::numeric_limits<T>::epsilon();
+  return std::numeric_limits<T>::epsilon();
 }
 
 // neghuge() by Theodore Papadopoulo, to fix a problem with
@@ -128,179 +130,190 @@ inline T epsilon(T) BZ_THROW
 template<typename T>
 inline T neghuge(T) BZ_THROW
 {
-    return std::numeric_limits<T>::is_integer ?    std::numeric_limits<T>::min()
-                                         : - std::numeric_limits<T>::max();
+  return std::numeric_limits<T>::is_integer ? std::numeric_limits<T>::min() : -std::numeric_limits<T>::max();
 }
 
 template<typename T>
 inline T huge(T) BZ_THROW
 {
-    return std::numeric_limits<T>::max();
+  return std::numeric_limits<T>::max();
 }
 
 template<typename T>
 inline T tiny(T) BZ_THROW
 {
-    return std::numeric_limits<T>::min();
+  return std::numeric_limits<T>::min();
 }
 
 template<typename T>
 inline int max_exponent(T)
 {
-    return std::numeric_limits<T>::max_exponent;
+  return std::numeric_limits<T>::max_exponent;
 }
 
 template<typename T>
 inline int min_exponent(T)
 {
-    return std::numeric_limits<T>::min_exponent;
+  return std::numeric_limits<T>::min_exponent;
 }
 
 template<typename T>
 inline int min_exponent10(T)
 {
-    return std::numeric_limits<T>::min_exponent10;
+  return std::numeric_limits<T>::min_exponent10;
 }
 
 template<typename T>
 inline int max_exponent10(T)
 {
-    return std::numeric_limits<T>::max_exponent10;
+  return std::numeric_limits<T>::max_exponent10;
 }
 
 template<typename T>
 inline int precision(T)
 {
-    return std::numeric_limits<T>::digits10;
+  return std::numeric_limits<T>::digits10;
 }
 
 template<typename T>
 inline int radix(T)
 {
-    return std::numeric_limits<T>::radix;
+  return std::numeric_limits<T>::radix;
 }
 
 template<typename T>
 inline Range range(T)
 {
-    return Range(numeric_limits<T>::min_exponent10, 
-        std::numeric_limits<T>::max_exponent10);
+  return Range(numeric_limits<T>::min_exponent10, std::numeric_limits<T>::max_exponent10);
 }
 
 template<typename T>
-inline bool is_signed(T) {
-    return std::numeric_limits<T>::is_signed;
+inline bool is_signed(T)
+{
+  return std::numeric_limits<T>::is_signed;
 }
 
 template<typename T>
-inline bool is_integer(T) {
-    return std::numeric_limits<T>::is_integer;
+inline bool is_integer(T)
+{
+  return std::numeric_limits<T>::is_integer;
 }
 
 template<typename T>
-inline bool is_exact(T) {
-    return std::numeric_limits<T>::is_exact;
+inline bool is_exact(T)
+{
+  return std::numeric_limits<T>::is_exact;
 }
 
 template<typename T>
 inline T round_error(T) BZ_THROW
 {
-    return std::numeric_limits<T>::round_error();
+  return std::numeric_limits<T>::round_error();
 }
 
 template<typename T>
-inline bool has_infinity(T) {
-    return std::numeric_limits<T>::has_infinity;
+inline bool has_infinity(T)
+{
+  return std::numeric_limits<T>::has_infinity;
 }
 
 template<typename T>
-inline bool has_quiet_NaN(T) {
-    return std::numeric_limits<T>::has_quiet_NaN;
+inline bool has_quiet_NaN(T)
+{
+  return std::numeric_limits<T>::has_quiet_NaN;
 }
 
 template<typename T>
-inline bool has_signaling_NaN(T) {
-    return std::numeric_limits<T>::has_signaling_NaN;
+inline bool has_signaling_NaN(T)
+{
+  return std::numeric_limits<T>::has_signaling_NaN;
 }
 
 // Provided for non-US english users
 template<typename T>
-inline bool has_signalling_NaN(T) {
-    return std::numeric_limits<T>::has_signaling_NaN;
+inline bool has_signalling_NaN(T)
+{
+  return std::numeric_limits<T>::has_signaling_NaN;
 }
 
 template<typename T>
-inline bool has_denorm(T) {
-    return std::numeric_limits<T>::has_denorm;
+inline bool has_denorm(T)
+{
+  return std::numeric_limits<T>::has_denorm;
 }
 
 template<typename T>
-inline bool has_denorm_loss(T) {
-    return std::numeric_limits<T>::has_denorm_loss;
+inline bool has_denorm_loss(T)
+{
+  return std::numeric_limits<T>::has_denorm_loss;
 }
 
 template<typename T>
 inline T infinity(T) BZ_THROW
 {
-    return std::numeric_limits<T>::infinity();
+  return std::numeric_limits<T>::infinity();
 }
 
 template<typename T>
 inline T quiet_NaN(T) BZ_THROW
 {
-    return std::numeric_limits<T>::quiet_NaN();
+  return std::numeric_limits<T>::quiet_NaN();
 }
 
 template<typename T>
 inline T signaling_NaN(T) BZ_THROW
 {
-    return std::numeric_limits<T>::signaling_NaN();
+  return std::numeric_limits<T>::signaling_NaN();
 }
 
 template<typename T>
 inline T signalling_NaN(T) BZ_THROW
 {
-    return std::numeric_limits<T>::signaling_NaN();
+  return std::numeric_limits<T>::signaling_NaN();
 }
 
 template<typename T>
 inline T denorm_min(T) BZ_THROW
 {
-    return std::numeric_limits<T>::denorm_min();
+  return std::numeric_limits<T>::denorm_min();
 }
 
 template<typename T>
-inline bool is_iec559(T) {
-    return std::numeric_limits<T>::is_iec559;
+inline bool is_iec559(T)
+{
+  return std::numeric_limits<T>::is_iec559;
 }
 
 template<typename T>
-inline bool is_bounded(T) {
-    return std::numeric_limits<T>::is_bounded;
+inline bool is_bounded(T)
+{
+  return std::numeric_limits<T>::is_bounded;
 }
 
 template<typename T>
-inline bool is_modulo(T) {
-    return std::numeric_limits<T>::is_modulo;
+inline bool is_modulo(T)
+{
+  return std::numeric_limits<T>::is_modulo;
 }
 
 template<typename T>
-inline bool traps(T) {
-    return std::numeric_limits<T>::traps;
+inline bool traps(T)
+{
+  return std::numeric_limits<T>::traps;
 }
 
 template<typename T>
-inline bool tinyness_before(T) {
-    return std::numeric_limits<T>::tinyness_before;
+inline bool tinyness_before(T)
+{
+  return std::numeric_limits<T>::tinyness_before;
 }
 
 template<typename T>
 inline BZ_STD_SCOPE(float_round_style) round_style(T)
 {
-    return std::numeric_limits<T>::round_style;
+  return std::numeric_limits<T>::round_style;
 }
 
 BZ_NAMESPACE_END
 
 #endif // BZ_NUMINQUIRE_H
-

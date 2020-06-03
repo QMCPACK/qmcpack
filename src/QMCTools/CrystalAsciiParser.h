@@ -1,3 +1,14 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2020 QMCPACK developers.
+//
+// File developed by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
+//
+// File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
+//////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef QMCPLUSPLUS_TOOLS_CRYSTAL_OUT_H
 #define QMCPLUSPLUS_TOOLS_CRYSTAL_OUT_H
 #include "QMCTools/QMCGaussianParserBase.h"
@@ -61,6 +72,7 @@ private:
     std::vector<int> nshll;
     std::vector<std::vector<int> > ncoeffpershell;
     std::vector<std::vector<std::string> > shID;
+    std::vector<std::vector<double> > Kpoints_Coord;
     std::map<std::string,int> gsMap;
     std::vector< std::vector< std::vector< double> > > real_kmos;
     std::vector< std::vector< std::vector< std::complex<double> > > > complex_kmos;

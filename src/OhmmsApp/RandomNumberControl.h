@@ -14,16 +14,16 @@
 
 #ifndef OHMMS_RANDOMNUMBERCONTROL_H__
 #define OHMMS_RANDOMNUMBERCONTROL_H__
+#include <libxml/xpath.h>
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/PrimeNumberSet.h"
-#include <io/hdf_archive.h>
+#include "io/hdf_archive.h"
 
 class Communicate;
 
 namespace qmcplusplus
 {
-
 /**class RandomNumberControl
  *\brief Encapsulate data to initialize and save the status of the random number generator
  *
@@ -33,16 +33,14 @@ namespace qmcplusplus
  */
 class RandomNumberControl : public OhmmsElementBase
 {
-
 public:
-
   typedef RandomGenerator_t::uint_type uint_type;
   static PrimeNumberSet<uint_type> PrimeNumbers;
   //children random number generator
-  static std::vector<RandomGenerator_t*>  Children;
+  static std::vector<RandomGenerator_t*> Children;
 
   /// constructors and destructors
-  RandomNumberControl(const char* aname="random");
+  RandomNumberControl(const char* aname = "random");
 
   bool get(std::ostream& os) const;
   bool put(std::istream& is);
@@ -66,7 +64,7 @@ public:
    */
   static void write(const std::string& fname, Communicate* comm);
   /** read random state from a hdf file in parallel
-   * @param hdf_archive set to parallel
+   * @param hin hdf_archive set to parallel
    * @param comm communicator
    */
   static void read_parallel(hdf_archive& hin, Communicate* comm);
@@ -77,7 +75,7 @@ public:
   static void write_parallel(hdf_archive& hout, Communicate* comm);
   /** rank 0 reads random states from a hdf file
    * and distributes them to all the other ranks
-   * @param hdf_archive set to serial
+   * @param hin hdf_archive set to serial
    * @param comm communicator
    */
   static void read_rank_0(hdf_archive& hin, Communicate* comm);
@@ -87,23 +85,22 @@ public:
    * @param comm communicator
    */
   static void write_rank_0(hdf_archive& hout, Communicate* comm);
-   /** read random state from a xml file
+  /** read random state from a xml file
    * @param fname file name
    * @param comm communicator
    */
   static void read_old(const std::string& fname, Communicate* comm);
-   /** write random state to a xml file
+  /** write random state to a xml file
    * @param fname file name
    * @param comm communicator
    */
   static void write_old(const std::string& fname, Communicate* comm);
-private:
 
+private:
   bool NeverBeenInitialized;
   xmlNodePtr myCur;
   static uint_type Offset;
 };
-}
+} // namespace qmcplusplus
 
 #endif
-

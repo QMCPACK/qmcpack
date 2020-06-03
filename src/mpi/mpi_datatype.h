@@ -4,9 +4,9 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign   
+// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -25,7 +25,6 @@ namespace qmcplusplus
 {
 namespace mpi
 {
-
 typedef Communicate communicator;
 
 #if defined(HAVE_MPI)
@@ -33,19 +32,20 @@ typedef Communicate communicator;
 ///@typedef mpi::request
 typedef MPI_Request request;
 ///@typedef mpi::status
-typedef MPI_Status  status;
+typedef MPI_Status status;
 
-template <typename T>
-inline MPI_Datatype
-get_mpi_datatype(const T&)
+template<typename T>
+inline MPI_Datatype get_mpi_datatype(const T&)
 {
   return MPI_BYTE;
 }
 
-#define BOOSTSUB_MPI_DATATYPE(CppType, MPITYPE)                \
-template<>                                                     \
-inline MPI_Datatype                                             \
-get_mpi_datatype< CppType >(const CppType&) { return MPITYPE; }
+#define BOOSTSUB_MPI_DATATYPE(CppType, MPITYPE)                 \
+  template<>                                                    \
+  inline MPI_Datatype get_mpi_datatype<CppType>(const CppType&) \
+  {                                                             \
+    return MPITYPE;                                             \
+  }
 
 BOOSTSUB_MPI_DATATYPE(short, MPI_SHORT);
 
@@ -71,14 +71,14 @@ BOOSTSUB_MPI_DATATYPE(std::complex<double>, MPI_DOUBLE);
 
 BOOSTSUB_MPI_DATATYPE(std::complex<float>, MPI_FLOAT);
 
-template <typename T>
+template<typename T>
 void free_column_type(T& datatype)
 {
   MPI_Type_free(&datatype);
 }
 
-template <typename T>
-MPI_Datatype construct_column_type(const T *element, int nrow, int ncol)
+template<typename T>
+MPI_Datatype construct_column_type(const T* element, int nrow, int ncol)
 {
   MPI_Datatype column_type;
   MPI_Datatype column_type1;
@@ -91,28 +91,28 @@ MPI_Datatype construct_column_type(const T *element, int nrow, int ncol)
 }
 
 #else
-typedef int  status;
-typedef int  request;
+typedef int status;
+typedef int request;
 typedef int MPI_Datatype;
 
 //return a non-sense integer
-template <typename T>
+template<typename T>
 inline MPI_Datatype get_mpi_datatype(const T&)
 {
   return 0;
 }
 
-template <typename T>
-void free_column_type(T& datatype) { }
+template<typename T>
+void free_column_type(T& datatype)
+{}
 
-template <typename T>
-MPI_Datatype construct_column_type(const T *element, int nrow, int ncol)
+template<typename T>
+MPI_Datatype construct_column_type(const T* element, int nrow, int ncol)
 {
   return 0;
 }
 
 #endif
-}
-}//end of mpi
+} // namespace mpi
+} // namespace qmcplusplus
 #endif
-

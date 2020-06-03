@@ -12,8 +12,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /** @file CloneManager.h
@@ -26,7 +24,6 @@
 
 namespace qmcplusplus
 {
-
 class HamiltonianPool;
 
 /** Manager clones for threaded applications
@@ -34,7 +31,7 @@ class HamiltonianPool;
  * Clones for the ParticleSet, TrialWaveFunction and QMCHamiltonian
  * are static to ensure only one set of clones persist during a run.
  */
-class CloneManager: public QMCTraits
+class CloneManager : public QMCTraits
 {
 public:
   /// Constructor.
@@ -42,8 +39,6 @@ public:
   ///virtual destructor
   virtual ~CloneManager();
 
-  // Set up for a specific number of threads.  Used in unit testing.
-  void setup(int numThreads);
   // Clear static array so makeClones will populate properly
   // Only for using in unit testing.
   static void clear_for_unit_tests();
@@ -53,21 +48,11 @@ public:
   void makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide);
   void makeClones(TrialWaveFunction& guide);
 
-  inline RealType acceptRatio() const
-  {
-    IndexType nAcceptTot=0;
-    IndexType nRejectTot=0;
-    for(int ip=0; ip<NumThreads; ip++)
-    {
-      nAcceptTot+=Movers[ip]->nAccept;
-      nRejectTot+=Movers[ip]->nReject;
-    }
-    return static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot);
-  }
+  RealType acceptRatio() const;
 
 protected:
   ///number of threads
-  IndexType NumThreads;
+  const IndexType NumThreads;
   ///walkers
   static std::vector<MCWalkerConfiguration*> wClones;
   static std::vector<MCWalkerConfiguration*> wgClones;
@@ -83,15 +68,15 @@ protected:
   std::vector<EstimatorManagerBase*> estimatorClones;
   ///trace managers
   std::vector<TraceManager*> traceClones;
-  
+
   //for correlated sampling.
-  static std::vector<std::vector<MCWalkerConfiguration*> > WPoolClones; 
-  static std::vector<std::vector<TrialWaveFunction*> > PsiPoolClones;
-  static std::vector<std::vector<QMCHamiltonian*> > HPoolClones;
+  static std::vector<std::vector<MCWalkerConfiguration*>> WPoolClones;
+  static std::vector<std::vector<TrialWaveFunction*>> PsiPoolClones;
+  static std::vector<std::vector<QMCHamiltonian*>> HPoolClones;
   std::vector<CSUpdateBase*> CSMovers;
 
   ///Walkers per node
   std::vector<int> wPerNode;
 };
-}
+} // namespace qmcplusplus
 #endif

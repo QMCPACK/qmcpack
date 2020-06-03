@@ -20,13 +20,13 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 typedef OHMMS_PRECISION real_type;
 
 
 // Use gen_gto.py to generate the checks
 
-TEST_CASE("Cartesian Tensor", "[numerics]") {
+TEST_CASE("Cartesian Tensor", "[numerics]")
+{
   CartesianTensor<double, TinyVector<double, 3>> ct(6);
 
   TinyVector<double, 3> pt(1.3, 1.2, -0.5);
@@ -121,10 +121,10 @@ TEST_CASE("Cartesian Tensor", "[numerics]") {
   REQUIRE(ct.getYlm(81) == Approx(-3.91877832936));
   REQUIRE(ct.getYlm(82) == Approx(-3.61733384249));
   REQUIRE(ct.getYlm(83) == Approx(12.1418905657));
-
 }
 
-TEST_CASE("Cartesian Tensor evaluateAll subset", "[numerics]") {
+TEST_CASE("Cartesian Tensor evaluateAll subset", "[numerics]")
+{
   CartesianTensor<double, TinyVector<double, 3>> ct(6);
 
   TinyVector<double, 3> pt(1.3, 1.2, -0.5);
@@ -177,7 +177,8 @@ TEST_CASE("Cartesian Tensor evaluateAll subset", "[numerics]") {
   REQUIRE(ct.getLaplYlm(83) == Approx(128.367962683));
 }
 
-TEST_CASE("Cartesian Tensor evaluateWithHessian subset", "[numerics]") {
+TEST_CASE("Cartesian Tensor evaluateWithHessian subset", "[numerics]")
+{
   CartesianTensor<double, TinyVector<double, 3>> ct(6);
 
   TinyVector<double, 3> pt(1.3, 1.2, -0.5);
@@ -192,15 +193,15 @@ TEST_CASE("Cartesian Tensor evaluateWithHessian subset", "[numerics]") {
   REQUIRE(ct.getGradYlm(0)[1] == Approx(0));
   REQUIRE(ct.getGradYlm(0)[2] == Approx(0));
 
-  REQUIRE(ct.getHessYlm(0)(0,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(0)(0,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(0)(0,2) == Approx(0));
-  REQUIRE(ct.getHessYlm(0)(1,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(0)(1,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(0)(1,2) == Approx(0));
-  REQUIRE(ct.getHessYlm(0)(2,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(0)(2,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(0)(2,2) == Approx(0));
+  REQUIRE(ct.getHessYlm(0)(0, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(0)(0, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(0)(0, 2) == Approx(0));
+  REQUIRE(ct.getHessYlm(0)(1, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(0)(1, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(0)(1, 2) == Approx(0));
+  REQUIRE(ct.getHessYlm(0)(2, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(0)(2, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(0)(2, 2) == Approx(0));
 
 
   REQUIRE(ct.getYlm(1) == Approx(0.635183265474));
@@ -208,15 +209,15 @@ TEST_CASE("Cartesian Tensor evaluateWithHessian subset", "[numerics]") {
   REQUIRE(ct.getGradYlm(1)[1] == Approx(0));
   REQUIRE(ct.getGradYlm(1)[2] == Approx(0));
 
-  REQUIRE(ct.getHessYlm(1)(0,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(1)(0,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(1)(0,2) == Approx(0));
-  REQUIRE(ct.getHessYlm(1)(1,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(1)(1,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(1)(1,2) == Approx(0));
-  REQUIRE(ct.getHessYlm(1)(2,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(1)(2,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(1)(2,2) == Approx(0));
+  REQUIRE(ct.getHessYlm(1)(0, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(1)(0, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(1)(0, 2) == Approx(0));
+  REQUIRE(ct.getHessYlm(1)(1, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(1)(1, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(1)(1, 2) == Approx(0));
+  REQUIRE(ct.getHessYlm(1)(2, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(1)(2, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(1)(2, 2) == Approx(0));
 
 
   REQUIRE(ct.getYlm(15) == Approx(3.12417199136));
@@ -224,15 +225,15 @@ TEST_CASE("Cartesian Tensor evaluateWithHessian subset", "[numerics]") {
   REQUIRE(ct.getGradYlm(15)[1] == Approx(5.20695331894));
   REQUIRE(ct.getGradYlm(15)[2] == Approx(0));
 
-  REQUIRE(ct.getHessYlm(15)(0,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(15)(0,1) == Approx(4.00534870687));
-  REQUIRE(ct.getHessYlm(15)(0,2) == Approx(0));
-  REQUIRE(ct.getHessYlm(15)(1,0) == Approx(4.00534870687));
-  REQUIRE(ct.getHessYlm(15)(1,1) == Approx(4.33912776578));
-  REQUIRE(ct.getHessYlm(15)(1,2) == Approx(0));
-  REQUIRE(ct.getHessYlm(15)(2,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(15)(2,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(15)(2,2) == Approx(0));
+  REQUIRE(ct.getHessYlm(15)(0, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(15)(0, 1) == Approx(4.00534870687));
+  REQUIRE(ct.getHessYlm(15)(0, 2) == Approx(0));
+  REQUIRE(ct.getHessYlm(15)(1, 0) == Approx(4.00534870687));
+  REQUIRE(ct.getHessYlm(15)(1, 1) == Approx(4.33912776578));
+  REQUIRE(ct.getHessYlm(15)(1, 2) == Approx(0));
+  REQUIRE(ct.getHessYlm(15)(2, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(15)(2, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(15)(2, 2) == Approx(0));
 
 
   REQUIRE(ct.getYlm(32) == Approx(-5.07677948596));
@@ -240,15 +241,15 @@ TEST_CASE("Cartesian Tensor evaluateWithHessian subset", "[numerics]") {
   REQUIRE(ct.getGradYlm(32)[1] == Approx(-4.23064957164));
   REQUIRE(ct.getGradYlm(32)[2] == Approx(10.1535589719));
 
-  REQUIRE(ct.getHessYlm(32)(0,0) == Approx(-6.00802306031));
-  REQUIRE(ct.getHessYlm(32)(0,1) == Approx(-6.50869164867));
-  REQUIRE(ct.getHessYlm(32)(0,2) == Approx(15.6208599568));
-  REQUIRE(ct.getHessYlm(32)(1,0) == Approx(-6.50869164867));
-  REQUIRE(ct.getHessYlm(32)(1,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(32)(1,2) == Approx(8.46129914327));
-  REQUIRE(ct.getHessYlm(32)(2,0) == Approx(15.6208599568));
-  REQUIRE(ct.getHessYlm(32)(2,1) == Approx(8.46129914327));
-  REQUIRE(ct.getHessYlm(32)(2,2) == Approx(0));
+  REQUIRE(ct.getHessYlm(32)(0, 0) == Approx(-6.00802306031));
+  REQUIRE(ct.getHessYlm(32)(0, 1) == Approx(-6.50869164867));
+  REQUIRE(ct.getHessYlm(32)(0, 2) == Approx(15.6208599568));
+  REQUIRE(ct.getHessYlm(32)(1, 0) == Approx(-6.50869164867));
+  REQUIRE(ct.getHessYlm(32)(1, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(32)(1, 2) == Approx(8.46129914327));
+  REQUIRE(ct.getHessYlm(32)(2, 0) == Approx(15.6208599568));
+  REQUIRE(ct.getHessYlm(32)(2, 1) == Approx(8.46129914327));
+  REQUIRE(ct.getHessYlm(32)(2, 2) == Approx(0));
 
 
   REQUIRE(ct.getYlm(52) == Approx(-1.44809247474));
@@ -256,15 +257,15 @@ TEST_CASE("Cartesian Tensor evaluateWithHessian subset", "[numerics]") {
   REQUIRE(ct.getGradYlm(52)[1] == Approx(-1.20674372895));
   REQUIRE(ct.getGradYlm(52)[2] == Approx(8.68855484841));
 
-  REQUIRE(ct.getHessYlm(52)(0,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(52)(0,1) == Approx(-0.928264406882));
-  REQUIRE(ct.getHessYlm(52)(0,2) == Approx(6.68350372955));
-  REQUIRE(ct.getHessYlm(52)(1,0) == Approx(-0.928264406882));
-  REQUIRE(ct.getHessYlm(52)(1,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(52)(1,2) == Approx(7.24046237368));
-  REQUIRE(ct.getHessYlm(52)(2,0) == Approx(6.68350372955));
-  REQUIRE(ct.getHessYlm(52)(2,1) == Approx(7.24046237368));
-  REQUIRE(ct.getHessYlm(52)(2,2) == Approx(-34.7542193937));
+  REQUIRE(ct.getHessYlm(52)(0, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(52)(0, 1) == Approx(-0.928264406882));
+  REQUIRE(ct.getHessYlm(52)(0, 2) == Approx(6.68350372955));
+  REQUIRE(ct.getHessYlm(52)(1, 0) == Approx(-0.928264406882));
+  REQUIRE(ct.getHessYlm(52)(1, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(52)(1, 2) == Approx(7.24046237368));
+  REQUIRE(ct.getHessYlm(52)(2, 0) == Approx(6.68350372955));
+  REQUIRE(ct.getHessYlm(52)(2, 1) == Approx(7.24046237368));
+  REQUIRE(ct.getHessYlm(52)(2, 2) == Approx(-34.7542193937));
 
 
   REQUIRE(ct.getYlm(71) == Approx(-17.3423920977));
@@ -272,18 +273,19 @@ TEST_CASE("Cartesian Tensor evaluateWithHessian subset", "[numerics]") {
   REQUIRE(ct.getGradYlm(71)[1] == Approx(-14.4519934148));
   REQUIRE(ct.getGradYlm(71)[2] == Approx(34.6847841955));
 
-  REQUIRE(ct.getHessYlm(71)(0,0) == Approx(-123.141245664));
-  REQUIRE(ct.getHessYlm(71)(0,1) == Approx(-44.4676720455));
-  REQUIRE(ct.getHessYlm(71)(0,2) == Approx(106.722412909));
-  REQUIRE(ct.getHessYlm(71)(1,0) == Approx(-44.4676720455));
-  REQUIRE(ct.getHessYlm(71)(1,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(71)(1,2) == Approx(28.9039868295));
-  REQUIRE(ct.getHessYlm(71)(2,0) == Approx(106.722412909));
-  REQUIRE(ct.getHessYlm(71)(2,1) == Approx(28.9039868295));
-  REQUIRE(ct.getHessYlm(71)(2,2) == Approx(0));
+  REQUIRE(ct.getHessYlm(71)(0, 0) == Approx(-123.141245664));
+  REQUIRE(ct.getHessYlm(71)(0, 1) == Approx(-44.4676720455));
+  REQUIRE(ct.getHessYlm(71)(0, 2) == Approx(106.722412909));
+  REQUIRE(ct.getHessYlm(71)(1, 0) == Approx(-44.4676720455));
+  REQUIRE(ct.getHessYlm(71)(1, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(71)(1, 2) == Approx(28.9039868295));
+  REQUIRE(ct.getHessYlm(71)(2, 0) == Approx(106.722412909));
+  REQUIRE(ct.getHessYlm(71)(2, 1) == Approx(28.9039868295));
+  REQUIRE(ct.getHessYlm(71)(2, 2) == Approx(0));
 }
 
-TEST_CASE("Cartesian Tensor evaluateWithThirdDeriv subset", "[numerics]") {
+TEST_CASE("Cartesian Tensor evaluateWithThirdDeriv subset", "[numerics]")
+{
   CartesianTensor<double, TinyVector<double, 3>> ct(6);
 
   TinyVector<double, 3> pt(1.3, 1.2, -0.5);
@@ -302,44 +304,44 @@ TEST_CASE("Cartesian Tensor evaluateWithThirdDeriv subset", "[numerics]") {
   REQUIRE(ct.getGradYlm(27)[1] == Approx(0));
   REQUIRE(ct.getGradYlm(27)[2] == Approx(2.18308154565));
 
-  REQUIRE(ct.getHessYlm(27)(0,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(27)(0,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(27)(0,2) == Approx(1.67929349666));
-  REQUIRE(ct.getHessYlm(27)(1,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(27)(1,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(27)(1,2) == Approx(0));
-  REQUIRE(ct.getHessYlm(27)(2,0) == Approx(1.67929349666));
-  REQUIRE(ct.getHessYlm(27)(2,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(27)(2,2) == Approx(-8.73232618261));
+  REQUIRE(ct.getHessYlm(27)(0, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(27)(0, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(27)(0, 2) == Approx(1.67929349666));
+  REQUIRE(ct.getHessYlm(27)(1, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(27)(1, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(27)(1, 2) == Approx(0));
+  REQUIRE(ct.getHessYlm(27)(2, 0) == Approx(1.67929349666));
+  REQUIRE(ct.getHessYlm(27)(2, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(27)(2, 2) == Approx(-8.73232618261));
 
 
-  REQUIRE(ct.getGGGYlm(27)[0](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[0](0,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[0](0,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[0](1,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[0](1,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[0](1,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[0](2,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[0](2,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[0](2,2) == Approx(-6.71717398662));
-  REQUIRE(ct.getGGGYlm(27)[1](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[1](0,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[1](0,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[1](1,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[1](1,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[1](1,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[1](2,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[1](2,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[1](2,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[2](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[2](0,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[2](0,2) == Approx(-6.71717398662));
-  REQUIRE(ct.getGGGYlm(27)[2](1,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[2](1,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[2](1,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[2](2,0) == Approx(-6.71717398662));
-  REQUIRE(ct.getGGGYlm(27)[2](2,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(27)[2](2,2) == Approx(17.4646523652));
+  REQUIRE(ct.getGGGYlm(27)[0](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[0](0, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[0](0, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[0](1, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[0](1, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[0](1, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[0](2, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[0](2, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[0](2, 2) == Approx(-6.71717398662));
+  REQUIRE(ct.getGGGYlm(27)[1](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[1](0, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[1](0, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[1](1, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[1](1, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[1](1, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[1](2, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[1](2, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[1](2, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[2](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[2](0, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[2](0, 2) == Approx(-6.71717398662));
+  REQUIRE(ct.getGGGYlm(27)[2](1, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[2](1, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[2](1, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[2](2, 0) == Approx(-6.71717398662));
+  REQUIRE(ct.getGGGYlm(27)[2](2, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(27)[2](2, 2) == Approx(17.4646523652));
 
 
   REQUIRE(ct.getYlm(62) == Approx(-4.19700340252));
@@ -347,135 +349,136 @@ TEST_CASE("Cartesian Tensor evaluateWithThirdDeriv subset", "[numerics]") {
   REQUIRE(ct.getGradYlm(62)[1] == Approx(-17.4875141772));
   REQUIRE(ct.getGradYlm(62)[2] == Approx(8.39400680505));
 
-  REQUIRE(ct.getHessYlm(62)(0,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(62)(0,1) == Approx(0));
-  REQUIRE(ct.getHessYlm(62)(0,2) == Approx(0));
-  REQUIRE(ct.getHessYlm(62)(1,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(62)(1,1) == Approx(-58.291713924));
-  REQUIRE(ct.getHessYlm(62)(1,2) == Approx(34.9750283544));
-  REQUIRE(ct.getHessYlm(62)(2,0) == Approx(0));
-  REQUIRE(ct.getHessYlm(62)(2,1) == Approx(34.9750283544));
-  REQUIRE(ct.getHessYlm(62)(2,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[0](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[0](0,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[0](0,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[0](1,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[0](1,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[0](1,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[0](2,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[0](2,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[0](2,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[1](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[1](0,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[1](0,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[1](1,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[1](1,1) == Approx(-145.72928481));
-  REQUIRE(ct.getGGGYlm(62)[1](1,2) == Approx(116.583427848));
-  REQUIRE(ct.getGGGYlm(62)[1](2,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[1](2,1) == Approx(116.583427848));
-  REQUIRE(ct.getGGGYlm(62)[1](2,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[2](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[2](0,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[2](0,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[2](1,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[2](1,1) == Approx(116.583427848));
-  REQUIRE(ct.getGGGYlm(62)[2](1,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[2](2,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[2](2,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(62)[2](2,2) == Approx(0));
+  REQUIRE(ct.getHessYlm(62)(0, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(62)(0, 1) == Approx(0));
+  REQUIRE(ct.getHessYlm(62)(0, 2) == Approx(0));
+  REQUIRE(ct.getHessYlm(62)(1, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(62)(1, 1) == Approx(-58.291713924));
+  REQUIRE(ct.getHessYlm(62)(1, 2) == Approx(34.9750283544));
+  REQUIRE(ct.getHessYlm(62)(2, 0) == Approx(0));
+  REQUIRE(ct.getHessYlm(62)(2, 1) == Approx(34.9750283544));
+  REQUIRE(ct.getHessYlm(62)(2, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[0](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[0](0, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[0](0, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[0](1, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[0](1, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[0](1, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[0](2, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[0](2, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[0](2, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[1](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[1](0, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[1](0, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[1](1, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[1](1, 1) == Approx(-145.72928481));
+  REQUIRE(ct.getGGGYlm(62)[1](1, 2) == Approx(116.583427848));
+  REQUIRE(ct.getGGGYlm(62)[1](2, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[1](2, 1) == Approx(116.583427848));
+  REQUIRE(ct.getGGGYlm(62)[1](2, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[2](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[2](0, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[2](0, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[2](1, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[2](1, 1) == Approx(116.583427848));
+  REQUIRE(ct.getGGGYlm(62)[2](1, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[2](2, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[2](2, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(62)[2](2, 2) == Approx(0));
 }
 
 
-TEST_CASE("Cartesian Tensor evaluateThirdDerivOnly subset", "[numerics]") {
+TEST_CASE("Cartesian Tensor evaluateThirdDerivOnly subset", "[numerics]")
+{
   CartesianTensor<double, TinyVector<double, 3>> ct(6);
 
   TinyVector<double, 3> pt(1.3, 1.2, -0.5);
   ct.evaluateThirdDerivOnly(pt);
 
-  REQUIRE(ct.getGGGYlm(14)[0](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[0](0,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[0](0,2) == Approx(3.33779058906));
-  REQUIRE(ct.getGGGYlm(14)[0](1,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[0](1,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[0](1,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[0](2,0) == Approx(3.33779058906));
-  REQUIRE(ct.getGGGYlm(14)[0](2,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[0](2,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[1](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[1](0,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[1](0,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[1](1,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[1](1,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[1](1,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[1](2,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[1](2,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[1](2,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[2](0,0) == Approx(3.33779058906));
-  REQUIRE(ct.getGGGYlm(14)[2](0,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[2](0,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[2](1,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[2](1,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[2](1,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[2](2,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[2](2,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(14)[2](2,2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[0](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[0](0, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[0](0, 2) == Approx(3.33779058906));
+  REQUIRE(ct.getGGGYlm(14)[0](1, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[0](1, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[0](1, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[0](2, 0) == Approx(3.33779058906));
+  REQUIRE(ct.getGGGYlm(14)[0](2, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[0](2, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[1](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[1](0, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[1](0, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[1](1, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[1](1, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[1](1, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[1](2, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[1](2, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[1](2, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[2](0, 0) == Approx(3.33779058906));
+  REQUIRE(ct.getGGGYlm(14)[2](0, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[2](0, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[2](1, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[2](1, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[2](1, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[2](2, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[2](2, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(14)[2](2, 2) == Approx(0));
 
 
-  REQUIRE(ct.getGGGYlm(33)[0](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[0](0,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[0](0,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[0](1,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[0](1,1) == Approx(-5.00668588359));
-  REQUIRE(ct.getGGGYlm(33)[0](1,2) == Approx(12.0160461206));
-  REQUIRE(ct.getGGGYlm(33)[0](2,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[0](2,1) == Approx(12.0160461206));
-  REQUIRE(ct.getGGGYlm(33)[0](2,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[1](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[1](0,1) == Approx(-5.00668588359));
-  REQUIRE(ct.getGGGYlm(33)[1](0,2) == Approx(12.0160461206));
-  REQUIRE(ct.getGGGYlm(33)[1](1,0) == Approx(-5.00668588359));
-  REQUIRE(ct.getGGGYlm(33)[1](1,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[1](1,2) == Approx(13.0173832973));
-  REQUIRE(ct.getGGGYlm(33)[1](2,0) == Approx(12.0160461206));
-  REQUIRE(ct.getGGGYlm(33)[1](2,1) == Approx(13.0173832973));
-  REQUIRE(ct.getGGGYlm(33)[1](2,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[2](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[2](0,1) == Approx(12.0160461206));
-  REQUIRE(ct.getGGGYlm(33)[2](0,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[2](1,0) == Approx(12.0160461206));
-  REQUIRE(ct.getGGGYlm(33)[2](1,1) == Approx(13.0173832973));
-  REQUIRE(ct.getGGGYlm(33)[2](1,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[2](2,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[2](2,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(33)[2](2,2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[0](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[0](0, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[0](0, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[0](1, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[0](1, 1) == Approx(-5.00668588359));
+  REQUIRE(ct.getGGGYlm(33)[0](1, 2) == Approx(12.0160461206));
+  REQUIRE(ct.getGGGYlm(33)[0](2, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[0](2, 1) == Approx(12.0160461206));
+  REQUIRE(ct.getGGGYlm(33)[0](2, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[1](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[1](0, 1) == Approx(-5.00668588359));
+  REQUIRE(ct.getGGGYlm(33)[1](0, 2) == Approx(12.0160461206));
+  REQUIRE(ct.getGGGYlm(33)[1](1, 0) == Approx(-5.00668588359));
+  REQUIRE(ct.getGGGYlm(33)[1](1, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[1](1, 2) == Approx(13.0173832973));
+  REQUIRE(ct.getGGGYlm(33)[1](2, 0) == Approx(12.0160461206));
+  REQUIRE(ct.getGGGYlm(33)[1](2, 1) == Approx(13.0173832973));
+  REQUIRE(ct.getGGGYlm(33)[1](2, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[2](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[2](0, 1) == Approx(12.0160461206));
+  REQUIRE(ct.getGGGYlm(33)[2](0, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[2](1, 0) == Approx(12.0160461206));
+  REQUIRE(ct.getGGGYlm(33)[2](1, 1) == Approx(13.0173832973));
+  REQUIRE(ct.getGGGYlm(33)[2](1, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[2](2, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[2](2, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(33)[2](2, 2) == Approx(0));
 
 
-  REQUIRE(ct.getGGGYlm(80)[0](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(80)[0](0,1) == Approx(0));
-  REQUIRE(ct.getGGGYlm(80)[0](0,2) == Approx(0));
-  REQUIRE(ct.getGGGYlm(80)[0](1,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(80)[0](1,1) == Approx(27.8256449422));
-  REQUIRE(ct.getGGGYlm(80)[0](1,2) == Approx(-66.7815478613));
-  REQUIRE(ct.getGGGYlm(80)[0](2,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(80)[0](2,1) == Approx(-66.7815478613));
-  REQUIRE(ct.getGGGYlm(80)[0](2,2) == Approx(53.425238289));
-  REQUIRE(ct.getGGGYlm(80)[1](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(80)[1](0,1) == Approx(27.8256449422));
-  REQUIRE(ct.getGGGYlm(80)[1](0,2) == Approx(-66.7815478613));
-  REQUIRE(ct.getGGGYlm(80)[1](1,0) == Approx(27.8256449422));
-  REQUIRE(ct.getGGGYlm(80)[1](1,1) == Approx(30.1444486874));
-  REQUIRE(ct.getGGGYlm(80)[1](1,2) == Approx(-144.6933537));
-  REQUIRE(ct.getGGGYlm(80)[1](2,0) == Approx(-66.7815478613));
-  REQUIRE(ct.getGGGYlm(80)[1](2,1) == Approx(-144.6933537));
-  REQUIRE(ct.getGGGYlm(80)[1](2,2) == Approx(173.632024439));
-  REQUIRE(ct.getGGGYlm(80)[2](0,0) == Approx(0));
-  REQUIRE(ct.getGGGYlm(80)[2](0,1) == Approx(-66.7815478613));
-  REQUIRE(ct.getGGGYlm(80)[2](0,2) == Approx(53.425238289));
-  REQUIRE(ct.getGGGYlm(80)[2](1,0) == Approx(-66.7815478613));
-  REQUIRE(ct.getGGGYlm(80)[2](1,1) == Approx(-144.6933537));
-  REQUIRE(ct.getGGGYlm(80)[2](1,2) == Approx(173.632024439));
-  REQUIRE(ct.getGGGYlm(80)[2](2,0) == Approx(53.425238289));
-  REQUIRE(ct.getGGGYlm(80)[2](2,1) == Approx(173.632024439));
-  REQUIRE(ct.getGGGYlm(80)[2](2,2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(80)[0](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(80)[0](0, 1) == Approx(0));
+  REQUIRE(ct.getGGGYlm(80)[0](0, 2) == Approx(0));
+  REQUIRE(ct.getGGGYlm(80)[0](1, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(80)[0](1, 1) == Approx(27.8256449422));
+  REQUIRE(ct.getGGGYlm(80)[0](1, 2) == Approx(-66.7815478613));
+  REQUIRE(ct.getGGGYlm(80)[0](2, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(80)[0](2, 1) == Approx(-66.7815478613));
+  REQUIRE(ct.getGGGYlm(80)[0](2, 2) == Approx(53.425238289));
+  REQUIRE(ct.getGGGYlm(80)[1](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(80)[1](0, 1) == Approx(27.8256449422));
+  REQUIRE(ct.getGGGYlm(80)[1](0, 2) == Approx(-66.7815478613));
+  REQUIRE(ct.getGGGYlm(80)[1](1, 0) == Approx(27.8256449422));
+  REQUIRE(ct.getGGGYlm(80)[1](1, 1) == Approx(30.1444486874));
+  REQUIRE(ct.getGGGYlm(80)[1](1, 2) == Approx(-144.6933537));
+  REQUIRE(ct.getGGGYlm(80)[1](2, 0) == Approx(-66.7815478613));
+  REQUIRE(ct.getGGGYlm(80)[1](2, 1) == Approx(-144.6933537));
+  REQUIRE(ct.getGGGYlm(80)[1](2, 2) == Approx(173.632024439));
+  REQUIRE(ct.getGGGYlm(80)[2](0, 0) == Approx(0));
+  REQUIRE(ct.getGGGYlm(80)[2](0, 1) == Approx(-66.7815478613));
+  REQUIRE(ct.getGGGYlm(80)[2](0, 2) == Approx(53.425238289));
+  REQUIRE(ct.getGGGYlm(80)[2](1, 0) == Approx(-66.7815478613));
+  REQUIRE(ct.getGGGYlm(80)[2](1, 1) == Approx(-144.6933537));
+  REQUIRE(ct.getGGGYlm(80)[2](1, 2) == Approx(173.632024439));
+  REQUIRE(ct.getGGGYlm(80)[2](2, 0) == Approx(53.425238289));
+  REQUIRE(ct.getGGGYlm(80)[2](2, 1) == Approx(173.632024439));
+  REQUIRE(ct.getGGGYlm(80)[2](2, 2) == Approx(0));
 }
-}
+} // namespace qmcplusplus

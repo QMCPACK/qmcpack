@@ -5,9 +5,9 @@ The main purpose of pyscf in the group is in the generation of 2-electron integr
 
 For a detailed description of pyscf, please see the documentation by the authors.
 
-Examples of how to generate integrals are:
+Examples of how to generate integrals:
 \begin{itemize}
-\item Run a standard pyscf calculation, e.g. a HF or DFT calculation. Make sure you preserve the chkfile and make sure you store the core hamiltonian on the chkfile. An example of how to do this for a single k-point calculation is found below.
+\item Run a standard pyscf calculation, e.g., an HF or DFT calculation. Make sure you preserve the chkfile and make sure you store the core hamiltonian on the chkfile. An example of how to do this for a single k-point calculation follows.
 \begin{lstlisting}[style=Python,caption=The following is an example PySCF input file for single k-point calculations.]
 import numpy
 import h5py
@@ -46,7 +46,7 @@ with h5py.File(mf.chkfile) as fh5:
 \end{lstlisting}
 
 \item {For a calculation with k-points:
-Run a standard pyscf calculation, e.g. a HF or DFT calculation. Make sure you preserve the chkfile and make sure you store the core hamiltonian on the chkfile. An example of how to do this for a single k-point calculation is found below.}
+Run a standard pyscf calculation, e.g., an HF or DFT calculation. Make sure you preserve the chkfile and make sure you store the core hamiltonian on the chkfile. An example of how to do this for a single k-point calculation follows.}
 
 \begin{lstlisting}[style=Python,caption=The following is an example PySCF input file for calculations with k-points.]
 import numpy
@@ -89,7 +89,7 @@ with h5py.File(mf.chkfile) as fh5:
 \end{lstlisting}
 \end{itemize}
 
-Once the checkpoint file has been created, it is now possible to generate the integral file. The recommended approach is:
+Once the checkpoint file has been created, it is possible to generate the integral file. The recommended approach follows:
 
 \begin{lstlisting}[style=Python,caption=The following is an example input file for calculating the integrals.]
 from mpi4py import MPI
@@ -107,26 +107,26 @@ if rank==0:
     integrals_from_chkfile.combine_eri_h5("fcidump", nproc)
 \end{lstlisting}
 
-It is also possible to generated the Cholesky decomposed integrals in pyscf directly. This is typically faster and more appropriate. (the phfmol code expects integrals directly, but these can be generated from qmcpack with the Cholesky decomposed ones.) To generate them for a run with kpoints for example, the recommended approach is: (NOTE: for some reason, mpi4py must be imported first!!!)
+It is also possible to generated the Cholesky decomposed integrals in pyscf directly. This is typically faster and more appropriate. (The phfmol code expects integrals directly, but these can be generated from QMCPACK with the Cholesky decomposed ones.) To generate them for a run with k-points, for example, the recommended approach follows: (NOTE: for some reason, mpi4py must be imported first!!!)
 
 For calculations with kpoints (those generated with K...), use integrals\_from\_chkfile.eri\_to\_h5\_kpts(...).
 Additional arguments to eri\_to\_h5 are:
 
 \begin{itemize}
-\item \textbf{cholesky}. Determines whether 2-electron integrals or their cholesky factorization is calculated.
+\item \textbf{Cholesky}. Determines whether 2-electron integrals or their Cholesky factorization is calculated.
   Default: False
 \item \textbf{orthoAO}. If True, generates the integrals in the orthogonalized AO basis. If False, generates the integrals in the MO basis found on the checkpoint file. For UHF calculations, only orthoAO=True is allowed. If set to False, the fock matrix must be stored in the scf dump file.
   Default: False
 \item \textbf{LINDEP\_CUTOFF}.  Cutoff used to define linearly dependent basis functions.
   Default: 1e-9
-\item \textbf{gtol}. Cutoff applied during writing for 2-electron integrals. If cholesky=True, then this is the cutoff used in the iterative cholesky factorization. In this case, the resulting factorized hamiltonian will have a residual error smaller than the requested cutoff.
+\item \textbf{gtol}. Cutoff applied during writing for 2-electron integrals. If Cholesky=True, then this is the cutoff used in the iterative Cholesky factorization. In this case, the resulting factorized Hamiltonian will have a residual error smaller than the requested cutoff.
   Default: 1e-6
-\item \textbf{wfnName}. Name of the file with the wavefuntion. This is only generated  when orthoAO=True.
+\item \textbf{wfnName}. Name of the file with the wavefunction. This is generated only  when orthoAO=True.
   Default: ``wfn.dat''
 \item \textbf{wfnPHF}. Name of file with initial guess for phfmol code.
   Default: None (no file is generated)
-\item \textbf{MaxIntgs}. Maximum number of integrals  (or terms in cholesky matrix) per block in the hdf5 file. This controls the size of the hdf5 data sets.
+\item \textbf{MaxIntgs}. Maximum number of integrals  (or terms in Cholesky matrix) per block in the hdf5 file. This controls the size of the hdf5 datasets.
   Default: 2000000
-\item \textbf{maxvecs}. Represents the maximum number of Cholesky vectors allowed. The actual maximum number of cholesky vectors in the calculation is set to maxvecsnmo. So a value of 10 leads to an actual cutoff in the number of vectors of 10*nmo, where nmo is the total number of molecular orbitals in the calculation. The calculation will stop at the requested number of vectors even if the tolerance is not reached.
+\item \textbf{maxvecs}. Represents the maximum number of Cholesky vectors allowed. The actual maximum number of Cholesky vectors in the calculation is set to maxvecsnmo. So a value of 10 leads to an actual cutoff in the number of vectors of 10*nmo, where nmo is the total number of MOs in the calculation. The calculation will stop at the requested number of vectors even if the tolerance is not reached.
   Default: 20
 \end{itemize}

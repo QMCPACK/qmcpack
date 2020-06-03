@@ -10,7 +10,7 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
+
 #ifndef LOCAL_ECPOTENTIAL_CUDA_H
 #define LOCAL_ECPOTENTIAL_CUDA_H
 
@@ -32,23 +32,21 @@ struct LocalECPotential_CUDA : public LocalECPotential
   std::vector<int> IonFirst, IonLast;
   // This is indexed by the ion species
   std::vector<TextureSpline*> SRSplines;
-  TextureSpline *V0Spline;
-  gpu::device_vector<CUDA_PRECISION>  SumGPU;
-  gpu::host_vector<CUDA_PRECISION>    SumHost;
-  gpu::device_vector<CUDA_PRECISION>  IGPU;
-  gpu::device_vector<CUDA_PRECISION>  ZionGPU;
+  TextureSpline* V0Spline;
+  gpu::device_vector<CUDA_PRECISION> SumGPU;
+  gpu::host_vector<CUDA_PRECISION> SumHost;
+  gpu::device_vector<CUDA_PRECISION> IGPU;
+  gpu::device_vector<CUDA_PRECISION> ZionGPU;
 
   std::vector<PosType> SortedIons;
   void add(int groupID, RadialPotentialType* ppot, RealType zion);
 
-  void addEnergy(MCWalkerConfiguration &W,
-                 std::vector<RealType> &LocalEnergy);
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   LocalECPotential_CUDA(ParticleSet& ions, ParticleSet& elns);
-
 };
-}
+} // namespace qmcplusplus
 
 #endif

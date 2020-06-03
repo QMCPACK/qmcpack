@@ -11,7 +11,7 @@
 
 #undef NDEBUG
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include<algorithm> // std::sort
 #include<cassert>
@@ -20,9 +20,12 @@
 
 #include "mpi3/shared_window.hpp"
 #include "mpi3/shared_communicator.hpp"
-//#include "mpi3/shm/allocator.hpp"
+#include "AFQMC/Memory/SharedMemory/shm_ptr_with_raw_ptr_dispatch.hpp"
 
 #include "AFQMC/Matrix/csr_matrix.hpp"
+#ifdef ENABLE_CUDA
+#include "AFQMC/Memory/custom_pointers.hpp"
+#endif
 
 using std::endl;
 using std::cout;
@@ -64,7 +67,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 REQUIRE(small.num_non_zero_elements() == 4);
                 auto val = small.non_zero_values_data();
                 auto col = small.non_zero_indices2_data();
-                for(std::size_t i=0; i<small.shape()[0]; i++) {
+                for(std::size_t i=0; i<small.size(0); i++) {
                   for(auto it=small.pointers_begin()[i]; it!=small.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
@@ -89,7 +92,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 auto col = small.non_zero_indices2_data();
                 itv = v_.begin();
                 itc = c_.begin();
-                for(std::size_t i=0; i<small.shape()[0]; i++) {
+                for(std::size_t i=0; i<small.size(0); i++) {
                   for(auto it=small.pointers_begin()[i]; it!=small.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
@@ -114,7 +117,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 auto col = small.non_zero_indices2_data();
                 itv = v_.begin();
                 itc = c_.begin();
-                for(std::size_t i=0; i<small.shape()[0]; i++) {
+                for(std::size_t i=0; i<small.size(0); i++) {
                   for(auto it=small.pointers_begin()[i]; it!=small.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
@@ -140,7 +143,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 auto col = small.non_zero_indices2_data();
                 itv = v_.begin();
                 itc = c_.begin();
-                for(std::size_t i=0; i<small.shape()[0]; i++) {
+                for(std::size_t i=0; i<small.size(0); i++) {
                   for(auto it=small.pointers_begin()[i]; it!=small.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
@@ -164,7 +167,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 col = small0.non_zero_indices2_data();
                 itv = v_.begin();
                 itc = c_.begin();
-                for(std::size_t i=0; i<small0.shape()[0]; i++) {
+                for(std::size_t i=0; i<small0.size(0); i++) {
                   for(auto it=small0.pointers_begin()[i]; it!=small0.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
@@ -177,7 +180,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 col = small2.non_zero_indices2_data();
                 itv = v_.begin();
                 itc = c_.begin();
-                for(std::size_t i=0; i<small2.shape()[0]; i++) {
+                for(std::size_t i=0; i<small2.size(0); i++) {
                   for(auto it=small2.pointers_begin()[i]; it!=small2.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
@@ -193,8 +196,37 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 col = small3.non_zero_indices2_data();
                 itv = v_.begin();
                 itc = c_.begin();
-                for(std::size_t i=0; i<small3.shape()[0]; i++) {
+                for(std::size_t i=0; i<small3.size(0); i++) {
                   for(auto it=small3.pointers_begin()[i]; it!=small3.pointers_end()[i]; it++) {
+                    REQUIRE(val[it] == *(itv++));
+                    REQUIRE(col[it] == *(itc++));
+                  }
+                }
+
+
+                // copy assignment
+                small2 = small3;
+                REQUIRE(small2.num_non_zero_elements() == 4);
+                val = small2.non_zero_values_data();
+                col = small2.non_zero_indices2_data();
+                itv = v_.begin();
+                itc = c_.begin();
+                for(std::size_t i=0; i<small2.size(0); i++) {
+                  for(auto it=small2.pointers_begin()[i]; it!=small2.pointers_end()[i]; it++) {
+                    REQUIRE(val[it] == *(itv++));
+                    REQUIRE(col[it] == *(itc++));
+                  } 
+                }
+                
+                // copy constructor 
+                auto small9(small2);
+                REQUIRE(small9.num_non_zero_elements() == 4);
+                val = small9.non_zero_values_data();
+                col = small9.non_zero_indices2_data();
+                itv = v_.begin();
+                itc = c_.begin();
+                for(std::size_t i=0; i<small9.size(0); i++) {
+                  for(auto it=small9.pointers_begin()[i]; it!=small9.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
                   }
@@ -204,18 +236,66 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 // ordered
                 v_ = {10,9,3,1};
                 c_ = {1,2,1,3};
+
+                csr_matrix small10(small2);
+                REQUIRE(small10.num_non_zero_elements() == 4);
+                val = small10.non_zero_values_data();
+                col = small10.non_zero_indices2_data();
+                itv = v_.begin();
+                itc = c_.begin();
+                for(std::size_t i=0; i<small10.size(0); i++) {
+                  for(auto it=small10.pointers_begin()[i]; it!=small10.pointers_end()[i]; it++) {
+                    REQUIRE(val[it] == *(itv++));
+                    REQUIRE(col[it] == *(itc++));
+                  }
+                }
+
                 csr_matrix small4(std::move(small3));
                 REQUIRE(small4.num_non_zero_elements() == 4);
                 val = small4.non_zero_values_data();
                 col = small4.non_zero_indices2_data();
                 itv = v_.begin();
                 itc = c_.begin();
-                for(std::size_t i=0; i<small4.shape()[0]; i++) {
+                for(std::size_t i=0; i<small4.size(0); i++) {
                   for(auto it=small4.pointers_begin()[i]; it!=small4.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
                   }
                 }
+
+#ifdef ENABLE_CUDA
+                {
+                  using dev_csr_matrix = ma::sparse::csr_matrix<Type,IndxType,IntType,
+                                                              device::device_allocator<Type>>;
+                  dev_csr_matrix small11(small4);
+                  REQUIRE(small11.num_non_zero_elements() == 4);
+                  auto val_ = small11.non_zero_values_data();
+                  auto col_ = small11.non_zero_indices2_data();
+                  itv = v_.begin();
+                  itc = c_.begin();
+                  for(std::size_t i=0; i<small11.size(0); i++) {
+                    for(IntType it=small11.pointers_begin()[i]; it!=small11.pointers_end()[i]; it++) {
+                      REQUIRE(Type(val_[it]) == *(itv++));
+                      REQUIRE(col_[it] == *(itc++));
+                    }
+                  }
+
+                // this is not a move! just making sure it makes a copy, otherwise 
+                // it will fail below
+                  dev_csr_matrix small12(std::move(small4));
+                  REQUIRE(small12.num_non_zero_elements() == 4);
+                  val_ = small12.non_zero_values_data();
+                  col_ = small12.non_zero_indices2_data();
+                  itv = v_.begin();
+                  itc = c_.begin();
+                  for(std::size_t i=0; i<small12.size(0); i++) {
+                    for(IntType it=small12.pointers_begin()[i]; it!=small12.pointers_end()[i]; it++) {
+                      REQUIRE(val_[it] == *(itv++));
+                      REQUIRE(col_[it] == *(itc++));
+                    }
+                  }
+                }
+#endif
 
                 ucsr_matrix small5(tp_ul_ul{4,4}, tp_ul_ul{0,0}, non_zero_per_row, A);
                 if(serial || node.rank()==0) small5[3][3] = 1;
@@ -231,7 +311,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 col = small4.non_zero_indices2_data();
                 itv = v_.begin();
                 itc = c_.begin();
-                for(std::size_t i=0; i<small4.shape()[0]; i++) {
+                for(std::size_t i=0; i<small4.size(0); i++) {
                   for(auto it=small4.pointers_begin()[i]; it!=small4.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
@@ -252,7 +332,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 col = small4.non_zero_indices2_data();
                 itv = v_.begin();
                 itc = c_.begin();
-                for(std::size_t i=0; i<small4.shape()[0]; i++) {
+                for(std::size_t i=0; i<small4.size(0); i++) {
                   for(auto it=small4.pointers_begin()[i]; it!=small4.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
@@ -272,14 +352,43 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 col = small7.non_zero_indices2_data();
                 itv = v_.begin();
                 itc = c_.begin();
-                for(std::size_t i=0; i<small7.shape()[0]; i++) {
-                  if(i < small7.shape()[0]-1)
+                for(std::size_t i=0; i<small7.size(0); i++) {
+                  if(i < small7.size(0)-1)
                     REQUIRE(small7.pointers_end()[i]-small7.pointers_begin()[i] == small7.capacity(i));
                   for(auto it=small7.pointers_begin()[i]; it!=small7.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
                   }
                 }
+
+                // copy assignment
+                small7 = small4;
+                REQUIRE(small7.num_non_zero_elements() == 4);
+                val = small7.non_zero_values_data();
+                col = small7.non_zero_indices2_data();
+                itv = v_.begin();
+                itc = c_.begin();
+                for(std::size_t i=0; i<small7.size(0); i++) {
+                  for(auto it=small7.pointers_begin()[i]; it!=small7.pointers_end()[i]; it++) {
+                    REQUIRE(val[it] == *(itv++));
+                    REQUIRE(col[it] == *(itc++));
+                  }
+                }
+
+                // copy constructor 
+                auto small8(small4);
+                REQUIRE(small8.num_non_zero_elements() == 4);
+                val = small8.non_zero_values_data();
+                col = small8.non_zero_indices2_data();
+                itv = v_.begin();
+                itc = c_.begin();
+                for(std::size_t i=0; i<small8.size(0); i++) {
+                  for(auto it=small8.pointers_begin()[i]; it!=small8.pointers_end()[i]; it++) {
+                    REQUIRE(val[it] == *(itv++));
+                    REQUIRE(col[it] == *(itc++));
+                  }
+                }
+
         }
 
         // ordered
@@ -300,7 +409,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 auto col = small.non_zero_indices2_data();
                 itv = v_.begin();
                 itc = c_.begin();
-                for(std::size_t i=0; i<small.shape()[0]; i++) {
+                for(std::size_t i=0; i<small.size(0); i++) {
                   for(auto it=small.pointers_begin()[i]; it!=small.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
@@ -317,7 +426,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 itv = v_.begin();
                 itc = c_.begin();
                 auto i0 = small2.pointers_begin()[0];
-                for(std::size_t i=0; i<small2.shape()[0]; i++) {
+                for(std::size_t i=0; i<small2.size(0); i++) {
                   for(auto it=small2.pointers_begin()[i]; it!=small2.pointers_end()[i]; it++) {
                     REQUIRE(val[it-i0] == *(itv++));
                     REQUIRE(col[it-i0] == *(itc++));
@@ -332,7 +441,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 itv = v_.begin()+2;
                 itc = c_.begin()+2;
                 i0 = small3.pointers_begin()[0];
-                for(std::size_t i=0; i<small3.shape()[0]; i++) {
+                for(std::size_t i=0; i<small3.size(0); i++) {
                   for(auto it=small3.pointers_begin()[i]; it!=small3.pointers_end()[i]; it++) {
                     REQUIRE(val[it-i0] == *(itv++));
                     REQUIRE(col[it-i0] == *(itc++));
@@ -347,14 +456,14 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 std::array<IndxType,4> range2 = {0,3,0,2};
                 auto small4 = small[range2];
                 REQUIRE(small4.num_non_zero_elements() == 2);
-                REQUIRE(small4.shape()[0] == 3);
-                REQUIRE(small4.shape()[1] == 2);
+                REQUIRE(small4.size(0) == 3);
+                REQUIRE(small4.size(1) == 2);
                 val = small4.non_zero_values_data();
                 col = small4.non_zero_indices2_data();
                 itv = v__.begin();
                 itc = c__.begin();
                 auto i1 = small4.pointers_begin()[0];
-                for(std::size_t i=0; i<small4.shape()[0]; i++) {
+                for(std::size_t i=0; i<small4.size(0); i++) {
                   for(auto it=small4.pointers_begin()[i]; it!=small4.pointers_end()[i]; it++) {
                     REQUIRE(val[it-i1] == *(itv++));
                     REQUIRE(col[it-i1] == *(itc++));
@@ -369,14 +478,14 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 range2 = {0,4,2,4};
                 auto small5 = small[range2];
                 REQUIRE(small5.num_non_zero_elements() == 2);
-                REQUIRE(small5.shape()[0] == 4);
-                REQUIRE(small5.shape()[1] == 4);
+                REQUIRE(small5.size(0) == 4);
+                REQUIRE(small5.size(1) == 4);
                 val = small5.non_zero_values_data();
                 col = small5.non_zero_indices2_data();
                 itv = v__.begin();
                 itc = c__.begin();
                 i1 = small5.pointers_begin()[0];
-                for(std::size_t i=0; i<small5.shape()[0]; i++) {
+                for(std::size_t i=0; i<small5.size(0); i++) {
                   for(auto it=small5.pointers_begin()[i]; it!=small5.pointers_end()[i]; it++) {
                     REQUIRE(val[it-i1] == *(itv++));
                     REQUIRE(col[it-i1] == *(itc++));
@@ -398,7 +507,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 auto col = small.non_zero_indices2_data();
                 itv = v_.begin();
                 itc = c_.begin();
-                for(std::size_t i=0; i<small.shape()[0]; i++) {
+                for(std::size_t i=0; i<small.size(0); i++) {
                   for(auto it=small.pointers_begin()[i]; it!=small.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
@@ -423,7 +532,7 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
                 auto col = small.non_zero_indices2_data();
                 itv = v_.begin();
                 itc = c_.begin();
-                for(std::size_t i=0; i<small.shape()[0]; i++) {
+                for(std::size_t i=0; i<small.size(0); i++) {
                   for(auto it=small.pointers_begin()[i]; it!=small.pointers_end()[i]; it++) {
                     REQUIRE(val[it] == *(itv++));
                     REQUIRE(col[it] == *(itc++));
@@ -438,7 +547,6 @@ void test_csr_matrix_shm_allocator(Alloc A, bool serial)
 
 TEST_CASE("csr_matrix_serial", "[csr]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   // serial
   {
     using Type = double;
@@ -458,13 +566,12 @@ TEST_CASE("csr_matrix_serial", "[csr]")
 
 TEST_CASE("csr_matrix_shm", "[csr]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   mpi3::shared_communicator node(world.split_shared());
 
   {
     using Type = double;
-    using Alloc = boost::mpi3::intranode::allocator<Type>;
+    using Alloc = shm::allocator_shm_ptr_with_raw_ptr_dispatch<Type>;
     using is_root = ma::sparse::is_root;
     test_csr_matrix_shm_allocator<Type,int,std::size_t,Alloc,is_root>(Alloc(node),false);
     test_csr_matrix_shm_allocator<Type,int,int,Alloc,is_root>(Alloc(node),false);
@@ -472,7 +579,7 @@ TEST_CASE("csr_matrix_shm", "[csr]")
 
   {
     using Type = std::complex<double>;
-    using Alloc = boost::mpi3::intranode::allocator<Type>;
+    using Alloc = shm::allocator_shm_ptr_with_raw_ptr_dispatch<Type>;
     using is_root = ma::sparse::is_root;
     test_csr_matrix_shm_allocator<Type,int,std::size_t,Alloc,is_root>(Alloc(node),false);
     test_csr_matrix_shm_allocator<Type,int,int,Alloc,is_root>(Alloc(node),false);
@@ -485,12 +592,11 @@ TEST_CASE("csr_matrix_shm", "[csr]")
 #ifdef TEST_CSR_LARGE_MEMORY
 TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   auto world = boost::mpi3::environment::get_world_instance();
   mpi3::shared_communicator node(world.split_shared());
 
   using Type = std::complex<double>;
-  using Alloc = boost::mpi3::intranode::allocator<Type>;
+  using Alloc = shm::allocator_shm_ptr_with_raw_ptr_dispatch<Type>;
   using is_root = ma::sparse::is_root;
 
   using ucsr_matrix = ma::sparse::ucsr_matrix<Type,int,size_t,Alloc,is_root>;

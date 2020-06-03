@@ -70,20 +70,6 @@ FUNCTION(MAYBE_SYMLINK SRC_DIR DST_DIR)
 ENDFUNCTION()
 
 
-# Macro to add the dependencies and libraries to an executable
-MACRO( ADD_QMC_EXE_DEP EXE )
-    # Add the package dependencies
-    TARGET_LINK_LIBRARIES(${EXE} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil adios_config)
-    FOREACH(l ${QMC_UTIL_LIBS})
-        TARGET_LINK_LIBRARIES(${EXE} ${l})
-    ENDFOREACH(l ${QMC_UTIL_LIBS})
-    IF(MPI_LIBRARY)
-        TARGET_LINK_LIBRARIES(${EXE} ${MPI_LIBRARY})
-    ENDIF(MPI_LIBRARY)
-ENDMACRO()
-
-
-
 # Macro to create the test name
 MACRO( CREATE_TEST_NAME TEST ${ARGN} )
     SET( TESTNAME "${TEST}" )
@@ -100,12 +86,12 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
     MATH( EXPR TOT_PROCS "${PROCS} * ${THREADS}" )
     SET( QMC_APP "${qmcpack_BINARY_DIR}/bin/qmcpack" )
     SET( TEST_ADDED_TEMP FALSE )
-    IF ( USE_MPI )
+    IF ( HAVE_MPI )
         IF ( ${TOT_PROCS} GREATER ${TEST_MAX_PROCS} )
-            MESSAGE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
-        ELSEIF ( USE_MPI )
-            ADD_TEST( ${TESTNAME} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${QMC_APP} ${ARGN} )
-            SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" 
+            MESSAGE_VERBOSE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
+        ELSE()
+            ADD_TEST( ${TESTNAME} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS} ${QMC_APP} ${ARGN} )
+            SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}"
                 PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
             SET( TEST_ADDED_TEMP TRUE )
@@ -113,17 +99,17 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
     ELSE()
         IF ( ( ${PROCS} STREQUAL "1" ) )
             ADD_TEST( ${TESTNAME} ${QMC_APP} ${ARGN} )
-            SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" 
+            SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}"
                 PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
             SET( TEST_ADDED_TEMP TRUE )
         ELSE()
-            MESSAGE("Disabling test ${TESTNAME} (building without MPI)")
+            MESSAGE_VERBOSE("Disabling test ${TESTNAME} (building without MPI)")
         ENDIF()
     ENDIF()
     SET(TEST_LABELS_TEMP "")
     IF ( TEST_ADDED_TEMP )
-       ADD_TEST_LABELS( ${TESTNAME} TEST_LABELS_TEMP ) 
+       ADD_TEST_LABELS( ${TESTNAME} TEST_LABELS_TEMP )
     ENDIF()
     SET( ${TEST_ADDED} ${TEST_ADDED_TEMP} PARENT_SCOPE )
     SET( ${TEST_LABELS} ${TEST_LABELS_TEMP} PARENT_SCOPE )
@@ -139,6 +125,13 @@ FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED TEST_LABELS ${AR
     SET( ${TEST_ADDED} ${TEST_ADDED_TEMP} PARENT_SCOPE )
     SET( ${TEST_LABELS} ${TEST_LABELS_TEMP} PARENT_SCOPE )
 ENDFUNCTION()
+
+IF (QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  FUNCTION(QMC_RUN_AND_CHECK)
+  ENDFUNCTION()
+  FUNCTION(SIMPLE_RUN_AND_CHECK)
+  ENDFUNCTION()
+ELSE (QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
 
 # Add a test run and associated scalar checks
@@ -163,14 +156,14 @@ ENDFUNCTION()
 
 FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SHOULD_SUCCEED)
     # Map from name of check to appropriate flag for check_scalars.py
-    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "variance" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux" "kinetic_mixed" "kinetic_pure" "eeenergy_mixed" "eeenergy_pure" "potential_pure" "totenergy_A" "totenergy_B" "dtotenergy_AB" "ionion_A" "ionion_B" "dionion_AB" "eeenergy_A" "eeenergy_B" "deeenergy_AB" "Eloc" "ElocEstim" "latdev" "EnergyEstim__nume_real")
-    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"    "--va"    "--ee"     "--ts" "--lp"      "--ii"       "--lpp"    "--nlpp" "--fl" "--ke_m" "--ke_p" "--ee_m" "--ee_p" "--lp_p" "--le_A" "--le_B" "--dle_AB" "--ii_A" "--ii_B" "--dii_AB" "--ee_A" "--ee_B" "--dee_AB" "--eloc" "--elocest" "--latdev" "--enum_real")
+    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "variance" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux" "kinetic_mixed" "kinetic_pure" "eeenergy_mixed" "eeenergy_pure" "potential_pure" "totenergy_A" "totenergy_B" "dtotenergy_AB" "ionion_A" "ionion_B" "dionion_AB" "eeenergy_A" "eeenergy_B" "deeenergy_AB" "Eloc" "ElocEstim" "latdev" "EnergyEstim__nume_real" "kecorr" "mpc")
+    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"    "--va"    "--ee"     "--ts" "--lp"      "--ii"       "--lpp"    "--nlpp" "--fl" "--ke_m" "--ke_p" "--ee_m" "--ee_p" "--lp_p" "--le_A" "--le_B" "--dle_AB" "--ii_A" "--ii_B" "--dii_AB" "--ee_A" "--ee_B" "--dee_AB" "--eloc" "--elocest" "--latdev" "--el" "--kec" "--mpc")
 
 
     SET( TEST_ADDED FALSE )
     SET( TEST_LABELS "")
     SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
-    MESSAGE("Adding test ${FULL_NAME}")
+    MESSAGE_VERBOSE("Adding test ${FULL_NAME}")
     RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} TEST_ADDED TEST_LABELS ${INPUT_FILE})
     IF ( TEST_ADDED )
         SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY LABELS "QMCPACK")
@@ -203,7 +196,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
                         SET(SCALAR_VALUE_FOUND TRUE)
                         LIST(FIND SCALAR_CHECK_TYPE ${SCALAR_CHECK} IDX)
                         LIST(GET CHECK_SCALAR_FLAG ${IDX} FLAG)
-                
+
                         MATH( EXPR IDX2 "${IDX1} + 1")
                         LIST(GET ${SCALAR_VALUES} ${IDX2} VALUE)
 
@@ -236,7 +229,7 @@ ENDFUNCTION()
 
 
 function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_script)
-  
+
   # "simple run and check" function does 2 things:
   #  1. run qmcpack executable on $input_file located in $base_dir
   #  2. run $check_script located in the same folder ($base_dir)
@@ -244,7 +237,7 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
 
   # build test name
   set(full_name "${base_name}-${procs}-${threads}")
-  message("Adding test ${full_name}")
+  MESSAGE_VERBOSE("Adding test ${full_name}")
 
   # add run (task 1)
   set (test_added false)
@@ -281,6 +274,7 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
 
 endfunction()
 
+ENDIF(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
 FUNCTION( COVERAGE_RUN TESTNAME SRC_DIR PROCS THREADS ${ARGN} )
     SET( FULLNAME "coverage-${TESTNAME}")
@@ -301,5 +295,12 @@ FUNCTION( CPU_LIMIT_RUN TESTNAME SRC_DIR PROCS THREADS TIME ${ARGN} )
     IF (TEST_ADDED)
       SET_PROPERTY(TEST ${FULLNAME} APPEND PROPERTY TIMEOUT ${TIME})
       SET_PROPERTY(TEST ${FULLNAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
+    ENDIF()
+ENDFUNCTION()
+
+# Print THE_MESSAGE if verbose configuration is enabled
+FUNCTION ( MESSAGE_VERBOSE THE_MESSAGE )
+    IF ( QMC_VERBOSE_CONFIGURATION )
+      MESSAGE( ${THE_MESSAGE} )
     ENDIF()
 ENDFUNCTION()

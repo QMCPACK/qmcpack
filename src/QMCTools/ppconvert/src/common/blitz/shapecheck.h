@@ -40,33 +40,32 @@ BZ_NAMESPACE(blitz)
 template<typename T_shape1, typename T_shape2>
 inline bool areShapesConformable(const T_shape1&, const T_shape2&)
 {
-    // If the shape objects are different types, this means
-    // that the arrays are different ranks, or one is jagged
-    // edged, etc.  In this case the two arrays are not
-    // conformable.
-    return false;
+  // If the shape objects are different types, this means
+  // that the arrays are different ranks, or one is jagged
+  // edged, etc.  In this case the two arrays are not
+  // conformable.
+  return false;
 }
 
 template<typename T_shape>
 inline bool areShapesConformable(const T_shape& a, const T_shape& b)
 {
-    // The shape objects are the same type, so compare them.
+  // The shape objects are the same type, so compare them.
 
-    // NEEDS_WORK-- once the "all" reduction is implemented, should
-    // use it.
-    // return all(a == b);
+  // NEEDS_WORK-- once the "all" reduction is implemented, should
+  // use it.
+  // return all(a == b);
 
-    for (unsigned i=0; i < a.length(); ++i)
+  for (unsigned i = 0; i < a.length(); ++i)
+  {
+    if (a[i] != b[i])
     {
-        if (a[i] != b[i])
-        {
-            BZ_DEBUG_MESSAGE("Incompatible shapes detected: " << std::endl 
-                 << a << std::endl << b << std::endl);
-            return false;
-        }
+      BZ_DEBUG_MESSAGE("Incompatible shapes detected: " << std::endl << a << std::endl << b << std::endl);
+      return false;
     }
+  }
 
-    return true;
+  return true;
 }
 
 BZ_NAMESPACE_END

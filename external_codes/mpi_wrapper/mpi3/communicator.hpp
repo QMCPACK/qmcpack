@@ -17,6 +17,8 @@
 #include "../mpi3/status.hpp"
 #include "../mpi3/type.hpp"
 #include "../mpi3/error.hpp"
+#include "../mpi3/group.hpp"
+//#include "../mpi3/window.hpp"
 
 #include "../mpi3/detail/basic_communicator.hpp"
 #include "../mpi3/detail/buffer.hpp"
@@ -30,8 +32,8 @@
 #include<mpi.h>
 
 #include <boost/optional.hpp> // TODO replace by std::optional (c++17)
-#include <boost/static_assert.hpp>
-#include <boost/type_traits/is_array.hpp>
+//#include <boost/static_assert.hpp>
+//#include <boost/type_traits/is_array.hpp> 
 
 #define BOOST_PACKAGE_ARCHIVE_SOURCE
 
@@ -49,9 +51,12 @@
 
 #include <boost/mpl/placeholders.hpp>
 
+#include<boost/any.hpp> // or <any> in C++17
+
 // use this to avoid need for linking -lserialization
 #ifdef _MAKE_BOOST_SERIALIZATION_HEADER_ONLY
-#if BOOST_VERSION < 106600 and BOOST_VERSION > 106000
+//#include <boost/archive/detail/decl.hpp>
+#if BOOST_VERSION > 106000 && BOOST_VERSION < 106600
 #include "../mpi3/serialization_hack/singleton.cpp"
 #endif
 #if BOOST_VERSION < 105900
@@ -102,7 +107,7 @@ namespace mpi3{
 #endif
 
 enum class communicator_type : int{
-	node = OMPI_COMM_TYPE_NODE,
+	shared    = MPI_COMM_TYPE_SHARED   ,/*synomym*/ node = OMPI_COMM_TYPE_NODE,
 	hw_thread = OMPI_COMM_TYPE_HWTHREAD,
 	core = OMPI_COMM_TYPE_CORE,
 	l1_cache = OMPI_COMM_TYPE_L1CACHE,
@@ -117,6 +122,22 @@ enum class communicator_type : int{
 	cluster = OMPI_COMM_TYPE_CLUSTER 
 };
 
+enum constant{
+	undefined = MPI_UNDEFINED,
+	process_null = MPI_PROC_NULL,
+	any_source = MPI_ANY_SOURCE
+};
+
+enum key{ // for attributes
+	tag_ub = MPI_TAG_UB, 
+	host = MPI_HOST,
+	io = MPI_IO,
+	wtime_is_global = MPI_WTIME_IS_GLOBAL,
+	application_number = MPI_APPNUM,
+	universe_size = MPI_UNIVERSE_SIZE,
+	last_used_code = MPI_LASTUSEDCODE
+};
+
 template<int N = 10> struct overload_priority : overload_priority<N-1>{
 //	using overload_priority<N-1>::overload_priority;
 };
@@ -127,11 +148,7 @@ class group;
 
 using boost::optional;
 
-template<class T = void>
-struct window;
-
 struct error_handler;
-struct keyval;
 
 template<class T>
 struct shm_pointer;
@@ -142,7 +159,7 @@ struct pointer;
 using address = MPI_Aint;
 using intptr_t = MPI_Aint;
 using size_t = MPI_Aint;
-
+using ptrdiff_t = std::make_signed_t<size_t>;
 struct request;
 
 struct send_request;
@@ -163,8 +180,16 @@ struct message_header{
 struct graph_communicator;
 struct shared_communicator; // intracommunicator
 
+using boost::any;
+using boost::any_cast;
+
+//class communicator_ptr{};
+
+template<class T> struct window;
+
 class communicator : protected detail::basic_communicator{
 	friend struct detail::package;
+	friend struct window<void>;
 protected:
 	bool is_null() const{return MPI_COMM_NULL == impl_;}
 	friend class mpi3::environment;
@@ -174,9 +199,35 @@ protected:
 		return ret;
 	}
 public:
+	communicator(communicator const& o, group const& g);
+	communicator(group const& g, int tag);
+	communicator(group const& g);
 
-//	using detail::basic_communicator::send;
-//	using detail::basic_communicator::send_n;
+	explicit operator group() const;
+
+	template<class T = void*>
+	struct keyval{
+		static int delete_fn_(MPI_Comm /*comm*/, int /*keyval*/, void *attr_val, void */*extra_state*/){
+			delete (T*)attr_val; attr_val = nullptr;
+			return MPI_SUCCESS;
+		}
+		static int copy_fn_(
+			MPI_Comm /*oldcomm*/, int /*keyval*/,
+			void * /*extra_state*/, void *attribute_val_in,
+			void *attribute_val_out, int *flag
+		){
+			*(void**)attribute_val_out = (void*)new T{*((T const*)attribute_val_in)};
+			assert(flag); *flag = 1;
+			return MPI_SUCCESS;
+		}
+		using mapped_type = T;
+		int impl_;
+		keyval(){
+			MPI_Comm_create_keyval(copy_fn_, delete_fn_, &impl_, (void *)0);
+		}
+		keyval(keyval const&) = delete;
+		~keyval(){MPI_Comm_free_keyval(&impl_);}
+	};
 	using detail::basic_communicator::send_receive_n;
 	using detail::basic_communicator::matched_probe;
 	template<class It, typename Size>
@@ -187,12 +238,14 @@ public:
 		Size count,
 		int dest, int tag
 	){
-		int s = MPI_Send(
-			detail::data(first), count, 
-			detail::basic_datatype<typename std::iterator_traits<It>::value_type>{},
-			dest, tag, impl_
+		auto e = static_cast<enum error>(
+			MPI_Send(
+				detail::data(first), count, 
+				detail::basic_datatype<typename std::iterator_traits<It>::value_type>{},
+				dest, tag, impl_
+			)
 		);
-		if(s != MPI_SUCCESS) throw std::runtime_error("cannot send");
+		if(e != mpi3::error::success) throw std::system_error{e, "cannot send"};
 	}
 	template<class It, typename Size>
 	auto isend_n(
@@ -339,15 +392,19 @@ public:
 		return *this;
 	}
 	bool operator==(communicator const& other) const{
-		auto eq = compare(other);
-		return (eq == equality::identical) or (eq == equality::congruent);
+		return &*this==&other or compare(other)==equality::congruent;
+	//	auto eq = compare(other);
+	//	return (eq == equality::identical) or (eq == equality::congruent);
 	}
-	bool operator!=(communicator const& other) const{return not (*this == other);}
+	bool operator!=(communicator const& other) const{return not(*this==other);}
 	explicit operator bool() const{return not is_null();}
 	impl_t operator&() const{return impl_;}
+	auto get() const{return impl_;}
 	~communicator(){
 		if(impl_ != MPI_COMM_WORLD and impl_ != MPI_COMM_NULL and impl_ != MPI_COMM_SELF){
-			MPI_Comm_disconnect(&impl_); //	or MPI_Comm_free(&impl_);?
+		//	if(std::current_exception()) std::cerr << "exception during destruction" << std::endl; 
+		//	MPI_Comm_disconnect(&impl_); //this will wait for communications to finish communications, if it gets to this point is probably an error anyway
+			MPI_Comm_free(&impl_);
 		}
 	}
 	int size() const{
@@ -369,9 +426,14 @@ public:
 		int s = MPI_Comm_split(impl_, color, key, &ret.impl_);
 		if(s != MPI_SUCCESS) throw std::runtime_error("cannot split communicator");
 		if(ret) ret.name(name() + std::to_string(color));// + std::to_string(key));
+		if(ret) ret.attribute("color") = color;
 		return ret;
 	}
-	communicator split(int color = MPI_UNDEFINED) const{return split(color, rank());}
+	communicator split(int color = MPI_UNDEFINED) const{
+		return split(color, rank());
+	}
+	communicator keep(bool cond) const{return split(cond?0:mpi3::undefined);}
+
 	shared_communicator split_shared(int key = 0) const;
 	shared_communicator split_shared(communicator_type t, int key = 0) const;
 	int remote_size() const{
@@ -393,37 +455,26 @@ public:
 	int cartesian_map(std::vector<int> const& dimensions) const{
 		return cartesian_map(dimensions, std::vector<int>(dimensions.size(), 0));
 	}
-	template<class T>
-	window<T> make_window(mpi3::size_t n); // Win_allocate
-	template<class T = void>
-	window<T> make_window(T* base, mpi3::size_t n);
-	template<class T = void>
-	window<T> make_window();
-
 	pointer<void> malloc(MPI_Aint size) const;
-	template<class T = void>
-	void deallocate_shared(pointer<T> p);
-	template<class T = void>
-	void deallocate(pointer<T>& p, MPI_Aint size = 0);
+	template<class T = void> void deallocate_shared(pointer<T> p);
+	template<class T = void> void deallocate(pointer<T>& p, MPI_Aint size = 0);
 	void free(pointer<void>& p) const;
 
-	bool similar(communicator const& other) const{
-		return compare(other) == equality::similar;
-	}
+	bool similar(communicator const& o) const{return compare(o)==equality::similar;}
 	template<class Vector>//, typename = typename std::enable_if<std::is_same<decltype(Vector{}.data()), int*>{}>::type>
 	communicator subcomm(Vector const& v) const{
 		MPI_Group old_g;
 		MPI_Comm_group(impl_, &old_g);
 		MPI_Group new_g;
 		MPI_Group_incl(old_g, v.size(), v.data(), &new_g);
-		communicator ret;
-		MPI_Comm_create(impl_, new_g, &ret.impl_);
+		communicator ret; MPI_Comm_create(impl_, new_g, &ret.impl_);
+		MPI_Group_free(&new_g);
+		MPI_Group_free(&old_g);
 		return ret;
 	}
 	communicator subcomm(std::initializer_list<int> l) const{
 		return subcomm(std::vector<int>(l));
 	}
-
 	enum class topology{undefined = MPI_UNDEFINED, graph = MPI_GRAPH, cartesian = MPI_CART};
 //	topology topo() const{return static_cast<topology>(call<&MPI_Topo_test>());}
 	int rank() const{
@@ -452,35 +503,61 @@ public:
 		MPI_Comm_accept(p.name_.c_str(), MPI_INFO_NULL, root, impl_, &ret.impl_);
 		return ret;
 	}
-	void barrier() const{MPI_Barrier(impl_);}
+	void barrier() const{MPI3_CALL(MPI_Barrier)(impl_);}
 	communicator connect(port const& p, int root = 0) const{
 		communicator ret;
 		MPI_Comm_connect(p.name_.c_str(), MPI_INFO_NULL, root, impl_, &ret.impl_);
 		return ret;
 	}
-	bool root() const{return rank() == 0;}
+	bool root() const{return (not empty()) and (rank() == 0);}
 	void set_error_handler(error_handler const& eh);
 	error_handler get_error_handler() const;
-	template<typename T>
-	void set_attribute(keyval const& kv, int idx, T const& val);
-	void delete_attribute(keyval const& kv, int idx);
-	template<typename T>
-	void get_attribute(keyval const& kv, int idx, T& val);
-	template<typename T>
-	T const& get_attribute_as(keyval const& kv, int idx);
-	bool has_attribute(keyval const& kv, int idx);
+//	template<typename T>
+//	void set_attribute(keyval const& kv, int idx, T const& val);
+//	void delete_attribute(keyval const& kv, int idx);
+//	template<typename T>
+//	void get_attribute(keyval const& kv, int idx, T& val);
+//	template<typename T>
+//	T const& get_attribute_as(keyval const& kv, int idx);
+//	bool has_attribute(keyval const& kv, int idx);
 
 	process operator[](int i);
-
-	template<typename T>
-	T const& attribute_as(int TAG) const{
-		int flag = 0;
-		T* p = nullptr;
-		int status = MPI_Comm_get_attr(impl_, TAG, &p, &flag);
-		if(status != MPI_SUCCESS) throw std::runtime_error{"cannot get attr"};
-		assert(flag);
-		return *p;
+protected:
+	template<class T> void set_attribute(int kv_idx, T const& t){
+		MPI_Comm_set_attr(impl_, kv_idx, new T{t});
 	}
+	inline void delete_attribute(int kv_idx){
+		MPI_Comm_delete_attr(impl_, kv_idx);
+	}
+	void* get_attribute(int kvidx) const{
+		void* v = nullptr; int flag = 0;
+		MPI_Comm_get_attr(impl_, kvidx, &v, &flag);
+		if(not flag){assert(!v); return nullptr;}
+		return v;
+	}
+	bool has_attribute(int kvidx) const{
+		void* v = nullptr; int flag = 0;
+		MPI_Comm_get_attr(impl_, kvidx, &v, &flag);
+		if(not flag) return false;
+		return true;
+	}
+public:
+	template<class T, class TT = T> void
+	set_attribute(keyval<T> const& k, TT const& t = {}){set_attribute<T>(k.impl_, t);}
+	template<class T>
+	inline void delete_attribute(keyval<T> const& k){delete_attribute(k.impl_);}
+	template<class T>
+	T const& get_attribute(keyval<T> const& kv) const{return *(T*)get_attribute(kv.impl_);}
+	template<class T> 
+	T& get_attribute(keyval<T> const& kv){return *(T*)get_attribute(kv.impl_);}
+	template<class T>
+	bool has_attribute(keyval<T> const& kv) const{return has_attribute(kv.impl_);}
+	template<class T>
+	T& attribute(keyval<T> const& kv){
+		if(not has_attribute(kv)) set_attribute(kv);
+		return get_attribute(kv);
+	}
+	mpi3::any& attribute(std::string const& s);
 
 	void call_error_handler(int errorcode){
 		int status = MPI_Comm_call_errhandler(impl_, errorcode);
@@ -490,18 +567,32 @@ public:
 		int s = MPI_Comm_call_errhandler(impl_, static_cast<int>(e));
 		if(s != MPI_SUCCESS) throw std::runtime_error{"cannot call error handler"};
 	}
-
-
-//	mpi3::group group() const;
-	
+	communicator divide_low(int n) const{
+		return split(
+			(rank() < size()/n*(n-size()%n))?
+				rank()/(size()/n):
+				n-size()%n + (rank() - (n-size()%n)*(size()/n))/((size()/n)+1)
+		);
+	}
+	communicator divide_high(int n) const{
+		int bat=size()/n; int residue = size()%n;
+		int i = 0;
+		for(int last = 0; ; i++){
+			last += bat + ((i < residue)?1:0);
+			if(rank() < last) break;
+		}
+		return split(i);
+	}
 	communicator operator/(int n) const{
-		int color = rank()*n/size();
-		return split(color);
+		assert(n!=0);
+		if(n > 0) return divide_high(n);
+		return divide_low(n);
 	}
-	communicator operator%(int n) const{
-		int color = rank()%n;
-		return split(color);
+	communicator operator%(int n) const{return split(rank()%n);}
+	communicator divide_even(int n) const{
+		return split(2*(rank()%n) > n?mpi3::undefined:rank()/n);
 	}
+	communicator operator/(double nn) const{return divide_even(nn);}
 	communicator operator<(int n) const{return split((rank() < n)?0:MPI_UNDEFINED);}
 	communicator operator<=(int n) const{return split((rank() <= n)?0:MPI_UNDEFINED);}
 	communicator operator>(int n) const{return split((rank() > n)?0:MPI_UNDEFINED);}
@@ -516,57 +607,14 @@ public:
 	auto isend_value(T const& t, int dest, int tag = 0){
 		return isend(std::addressof(t), std::addressof(t) + 1, dest, tag);
 	}
-
 	template<class T, std::size_t N>
 	void send_value(T(&t)[N], int dest, int tag = 0){
 		send(std::addressof(t[0]), std::addressof(t[N-1]) + 1, dest, tag);
 	}
-
-//	template<class T>
-//	void receive_value(T& t, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG){
-//		return receive(std::addressof(t), std::addressof(t) + 1, source, tag);
-//	}
-//	template<class T>
-//	auto ireceive_value(T& t, int source = MPI_ANY_TAG, int tag = MPI_ANY_TAG){
-//		return ireceive(std::addressof(t), std::addressof(t) + 1, source, tag);
-//	}
-//	template<class T, std::size_t N>
-//	void receive_value(T(&t)[N], int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG){
-//		receive(std::addressof(t[0]), std::addressof(t[N]), source, tag);
-//	}
-#if 0
-	template<
-		class ContiguousIterator, 
-		typename Size, 
-		class datatype = detail::basic_datatype<typename std::iterator_traits<ContiguousIterator>::value_type>
-	//	, typename = std::enable_if_t<detail::iterator_stride<ContiguousIterator>==1>
-	> 
-	void send_n_aux(std::random_access_iterator_tag, ContiguousIterator it, Size count, int dest, int tag = 0) const{
-		MPI_Send(std::addressof(*it), count, datatype{}, dest, tag, impl_);
-	}
-	template<
-		class RandomAccessIterator, 
-		class Size, class value_type = typename std::iterator_traits<RandomAccessIterator>::value_type, 
-		class datatype = detail::basic_datatype<value_type>
-	>
-	void send_n_aux(std::random_access_iterator_tag, RandomAccessIterator I, Size count, int dest, int tag = 0) const{
-		MPI_Send(std::addressof(*I), count, datatype{}, dest, tag, impl_);
-	}
-	template<class InputIterator, class Size>
-	void send_n_aux(std::input_iterator_tag, InputIterator I, Size count, int dest, int tag = 0) const{
-		for(Size i = 0; i != count; ++i) send_value(*I++, dest, tag);
-	}
-	template<class InputIterator, class... A, class Category = typename std::iterator_traits<InputIterator>::iterator_category>
-	void send_n(InputIterator I, A&&... a) const{send_n_aux(Category(), I, std::forward<A>(a)...);}
-#endif
-
 	template<class ContIt, class Size>
-//	send_request 
 	request send_init_n(ContIt first, Size count, int dest, int tag = 0);
 	template<class ContIt>
-	request
-//	send_request 
-	send_init(ContIt first, ContIt last, int dest, int tag = 0);
+	request send_init(ContIt first, ContIt last, int dest, int tag = 0);
 
 	template<class ContIt, class Size>
 	receive_request receive_init_n(ContIt first, Size count, int source = MPI_ANY_SOURCE, int tag = MPI_ANY_TAG);
@@ -919,12 +967,14 @@ public:
 		int source, int tag
 	){
 		status sta;
-		int s = MPI_Recv(
-			detail::data(dest), count, 
-			detail::basic_datatype<typename std::iterator_traits<It>::value_type>{},
-			source, tag, impl_, &sta.impl_
+		auto e = static_cast<enum error>(
+			MPI_Recv(
+				detail::data(dest), count, 
+				detail::basic_datatype<typename std::iterator_traits<It>::value_type>{},
+				source, tag, impl_, &sta.impl_
+			)
 		);
-		if(s != MPI_SUCCESS) throw std::runtime_error("receive_n");
+		if(e != mpi3::error::success) throw std::system_error{e, "cannot receive"};
 		return dest + count;
 	}
 	template<class It, typename Size>
@@ -1332,6 +1382,7 @@ public:
 	auto send(CommunicationMode cm, BlockingMode bm, InputIterator It1, InputIterator It2, int dest, int tag = 0){
 		return send_category(cm, bm, category{}, It1, It2, dest, tag);
 	}
+	
 private:
 /*	{
 		auto it = mpi3::type::registered.find(typeid(V)); assert(it != boost::mpi3::type::registered.end());
@@ -1396,75 +1447,6 @@ private:
 		if(s != MPI_SUCCESS) throw std::runtime_error("cannot send random access iterators");
 		return r;
 	}
-
-#if 0
-public:
-	template<class It1, class It2>
-	auto all_gather(It1 first, It1 last, It2 d_first){
-		return all_gather_builtinQ(
-			std::integral_constant<bool, 
-				detail::is_builtin_type<typename std::iterator_traits<It1>::value_type>{} and
-				detail::is_builtin_type<typename std::iterator_traits<It2>::value_type>{}
-			>{}, first, last, d_first
-		);
-	}
-private:
-	template<class It1, class It2>
-	auto all_gather_builtinQ(std::true_type, It1 first, It1 last, It2 d_first){
-		return all_gather_builtin(
-			detail::iterator_category<It1>{}, 
-			detail::iterator_category<It2>{}, first, last, d_first
-		);
-	}
-	template<class It1, class It2, 
-		class sendtype = detail::basic_datatype<typename std::iterator_traits<It1>::value_type>,
-		class recvtype = detail::basic_datatype<typename std::iterator_traits<It2>::value_type>
-	>
-	auto all_gather_builtin(detail::contiguous_iterator_tag, detail::contiguous_iterator_tag, It1 first, It1 last, It2 d_first){
-		int s = MPI_Allgather( detail::data(first), std::distance(first, last), 
-			sendtype::value,
-			detail::data(d_first), std::distance(first, last),
-			recvtype::value,
-			impl_
-		);
-		if(s != MPI_SUCCESS) throw std::runtime_error("cannot scatter");
-	}
-	template<class Iterator1, class Iterator2>
-	auto all_gather_builtinQ(std::false_type, Iterator1 first, Iterator2 last, Iterator1 d_first)
-//	{ TODO implement }
-	;
-#endif
-
-#if 0
-public:
-	template<class InputIt, class OutputIt, class InputCategory = typename std::iterator_traits<OutputIt>::iterator_category, class OutputCategory = typename std::iterator_traits<OutputIt>::iterator_category >
-	auto all_gather(InputIt first, InputIt last, OutputIt d_first, OutputIt d_last){
-		return all_gather_category(InputCategory{}, OutputCategory{}, first, last, d_first, d_last);
-	}
-private:
-	template<class InputIt, class OutputIt>
-	auto all_gather_category(std::random_access_iterator_tag, std::random_access_iterator_tag, InputIt first, InputIt last, OutputIt d_first, OutputIt d_last){
-		return all_gather_n_randomaccess(first, std::distance(first, last), d_first, std::distance(d_first, d_last));
-	}
-	template<class RandomAccessIt1, class RandomAccessIt2, class Size>
-	auto all_gather_n_randomaccess(RandomAccessIt1 first, Size count, RandomAccessIt2 d_first, Size d_count){
-		return all_gather_n_randomaccess_contiguity(detail::is_contiguous<RandomAccessIt1>{}, detail::is_contiguous<RandomAccessIt2>{}, first, count, d_first, d_count);
-	}
-	template<class ContiguousIt1, class ContiguousIt2, class Size>
-	auto all_gather_n_randomaccess_contiguity(std::true_type, std::true_type, ContiguousIt1 first, Size count, ContiguousIt2 d_first, Size d_count){
-		return all_gather_n_randomaccess_contiguous_builtin(
-			detail::is_builtin_type<typename std::iterator_traits<ContiguousIt1>::value_type>{}, 
-			detail::is_builtin_type<typename std::iterator_traits<ContiguousIt2>::value_type>{}, 
-			first, count, d_first, d_count
-		);
-	}
-	template<class ContiguousIt1, class ContiguousIt2, class Size, class ValueType1 = typename std::iterator_traits<ContiguousIt1>::value_type, class ValueType2 = typename std::iterator_traits<ContiguousIt2>::value_type, class datatype1 = typename detail::basic_datatype<ValueType1>, class datatype2 = typename detail::basic_datatype<ValueType2> >
-	auto all_gather_n_randomaccess_contiguous_builtin(std::true_type, std::true_type, ContiguousIt1 first, Size count, ContiguousIt2 d_first, Size d_count){
-		int s = MPI_Allgather(detail::data(first), count, datatype1{}, detail::data(d_first), d_count, datatype2{}, impl_);
-		if(s != MPI_SUCCESS) throw std::runtime_error("cannot all gather");
-	}
-#endif
-
 private:
 	template<class It1, typename Size, class It2>
 	auto all_to_all_n(
@@ -1585,38 +1567,7 @@ private:
 	;
 public:
 	template<class T>
-	auto broadcast_value(T& t, int root = 0){
-		return broadcast_n(std::addressof(t), 1, root);
-	}
-#if 0
-public:
-	template<class T>
 	auto broadcast_value(T& t, int root = 0){return broadcast_n(std::addressof(t), 1, root);}
-	template<class InputIt>
-	auto broadcast(InputIt first, InputIt last, int root = 0){
-		return broadcast_category(typename std::iterator_traits<InputIt>::iterator_category{}, first, last, root);
-	}
-	template<class InputIt, typename Size>
-	auto broadcast_n(InputIt first, Size count, int root = 0){
-		return broadcast_n_category(typename detail::iterator_category<InputIt>{}, first, count, root);
-	}
-private:
-	template<class RandomAccessIt>
-	auto broadcast_category(std::random_access_iterator_tag, RandomAccessIt first, RandomAccessIt last, int root){
-		broadcast_n(first, std::distance(first, last), root);
-	}
-	template<class ContiguousIt, typename Size>
-	auto broadcast_n_category(detail::contiguous_iterator_tag, ContiguousIt first, Size count, int root){
-		return broadcast_n_contiguous_builtinQ(detail::is_basic<typename std::iterator_traits<ContiguousIt>::value_type>{}, first, count, root);
-	}
-	template<class ContiguousIt, typename Size, class sendtype = detail::basic_datatype<typename std::iterator_traits<ContiguousIt>::value_type>>
-	auto broadcast_n_contiguous_builtinQ(std::true_type, ContiguousIt first, Size count, int root){
-		int s = MPI_Bcast( detail::data(first), count, sendtype::value, root, impl_);
-		if(s != MPI_SUCCESS) throw std::runtime_error("cannot broadcast");
-	}
-	template<class ContiguousIt, typename Size>
-	void broadcast_n_contiguous_builtinQ(std::false_type, ContiguousIt first, Size count, int root);
-#endif
 	template<class It, typename Size>
 	auto ibroadcast_n(
 		It first, 
@@ -1635,7 +1586,7 @@ private:
 		return r;
 	}
 	template<class It, typename Size>
-	auto broadcast_n(
+	void broadcast_n(
 		It first, 
 			detail::contiguous_iterator_tag,
 			detail::basic_tag,
@@ -1648,8 +1599,7 @@ private:
 				detail::basic_datatype<typename std::iterator_traits<It>::value_type>{},
 			root, impl_)
 		);
-		if(e != boost::mpi3::error::success) throw std::system_error{e, "cannot broadcast"};
-		return first + count;
+		if(e != mpi3::error::success) throw std::system_error{e, "cannot broadcast"};
 	}
 	template<class It>
 	auto ibroadcast(
@@ -1662,15 +1612,11 @@ private:
 		);
 	}
 	template<class It>
-	auto broadcast(
+	void broadcast(
 		It first, It last, 
 			detail::random_access_iterator_tag,
 		int root
-	){
-		return broadcast_n(
-			first, std::distance(first, last), root
-		);
-	}
+	){broadcast_n(first, std::distance(first, last), root);}
 public:
 	template<class It, typename Size>
 	auto ibroadcast_n(It first, Size count, int root = 0){
@@ -1678,12 +1624,12 @@ public:
 			first,
 				detail::iterator_category_t<It>{},
 				detail::value_category_t<typename std::iterator_traits<It>::value_type>{},
-			count, 
+			count,
 			root
 		);
 	}
 	template<class It, typename Size>
-	auto broadcast_n(It first, Size count, int root = 0){
+	void broadcast_n(It first, Size count, int root = 0){
 		return broadcast_n(
 			first,
 				detail::iterator_category_t<It>{},
@@ -1701,7 +1647,7 @@ public:
 		);
 	}
 	template<class It>
-	auto broadcast(It first, It last, int root = 0){
+	void broadcast(It first, It last, int root = 0){
 		return broadcast(
 			first, last,
 				detail::iterator_category_t<It>{},
@@ -1718,39 +1664,8 @@ public:
 		reduce_value(t, ret, op, root); // if(rank() == root) return optional<T>(ret);
 		return ret;
 	}
-//	template<class It1, class It2, class Op>
-//	auto reduce(It1 first, It1 last, It2 d_first, Op op, int root){
-//		return reduce_n(first, std::distance(first, last), d_first, op, root);
-	//	return reduce_category(typename std::iterator_traits<It1>::iterator_category{}, first, last, d_first, op, root);
-//	}
-#if 0
-	template<
-		class It1, class Size, class It2, class Op, 
-		class V1 = typename std::iterator_traits<It1>::value_type, class V2 = typename std::iterator_traits<It2>::value_type,
-		class P1 = decltype(detail::data(It1{})), class P2 = decltype(detail::data(It2{})),
-		typename = std::enable_if_t<std::is_same<V1, V2>{}>,
-		class PredefinedOp = predefined_operation<Op>
-	>
-	auto reduce_n(It1 first, Size count, It2 d_first, Op /*op*/, int root){
-		int s = MPI_Reduce(detail::data(first), detail::data(d_first), count, detail::basic_datatype<V1>{}, PredefinedOp{}, root, impl_);
-		if(s != MPI_SUCCESS) throw std::runtime_error("cannot reduce n");
-	}
-#endif
-/*	template<class It1, class Size, class It2, class Op>
-	auto reduce_n(It1 first, Size count, It2 d_first, Op op, int root = 0){
-		return reduce_n(
-			first, 
-				detail::iterator_category_t<It1>{},
-				detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
-			count, 
-			d_first,
-				detail::iterator_category_t<It2>{},
-				detail::value_category_t<typename std::iterator_traits<It2>::value_type>{},
-			op, root
-		);			
-	}*/
 	template<class It1, class Size, class It2, class Op, class PredefinedOp>
-	auto reduce_n(
+	It2 reduce_n(
 		It1 first, 
 			detail::contiguous_iterator_tag,
 			detail::basic_tag,
@@ -1773,7 +1688,7 @@ public:
 	}
 			
 	template<class It1, class Size, class It2, class Op>
-	auto reduce_n(It1 first, Size count, It2 d_first, Op op, int root = 0){
+	It2 reduce_n(It1 first, Size count, It2 d_first, Op op, int root = 0){
 		return reduce_n(
 			first, 
 				detail::iterator_category_t<It1>{},
@@ -1787,11 +1702,13 @@ public:
 			root
 		);			
 	}
+protected:
 	template<class T, class Op = std::plus<> >
 	void all_reduce_value(T const& t, T& ret, Op op = {}){
-		all_reduce_n(std::addressof(t), 1, std::addressof(ret), op); 
+		auto e = all_reduce_n(std::addressof(t), 1, std::addressof(ret), op);
+		assert( e = std::addressof(ret) + 1 );
 	}
-	template<class T, class Op = std::plus<> >
+	template<class T, class Op = std::plus<>, typename = decltype(T{T(0)})>
 	auto all_reduce_value(T const& t, Op op = {}){
 		T ret = T(0);
 		all_reduce_value(t, ret, op); // if(rank() == root) return optional<T>(ret);
@@ -1806,7 +1723,7 @@ public:
 		class PredefinedOp = predefined_operation<Op>,
 		typename = decltype(predefined_operation<Op>::value)
 	>
-	auto all_reduce_n(It1 first, Size count, It2 d_first, Op /*op*/ = {}){
+	It2 all_reduce_n(It1 first, Size count, It2 d_first, Op /*op*/ = {}){
 		using detail::data;
 		int s = MPI_Allreduce(data(first), detail::data(d_first), count, detail::basic_datatype<V1>{}, PredefinedOp{}/*op*/, impl_);
 		if(s != MPI_SUCCESS) throw std::runtime_error("cannot reduce n");
@@ -1830,7 +1747,7 @@ public:
 		return d_first + count;
 	}
 	template<class It1, class Size, class It2, class Op = std::plus<>>
-	auto all_reduce_n(It1 first, Size count, It2 d_first, Op op = {}){
+	It2 all_reduce_n(It1 first, Size count, It2 d_first, Op op = {}){
 		return all_reduce_n(
 			first, 
 				detail::iterator_category_t<It1>{},
@@ -1844,14 +1761,13 @@ public:
 		);
 	}
 	template<typename It1, typename It2, class Op = std::plus<>>
-	auto all_reduce(It1 first, It1 last, It2 d_first, Op op = {}){
+	It2 all_reduce(It1 first, It1 last, It2 d_first, Op op = {}){
 		return all_reduce_n(first, std::distance(first, last), d_first, op);
 	}
 	template<class T> static auto data_(T&& t){
 		using detail::data;
 		return data(std::forward<T>(t));
 	}
-
 	template<
 		class It1, class Size, class Op, 
 		class V1 = typename std::iterator_traits<It1>::value_type, class P1 = decltype(data_(It1{})), 
@@ -1867,17 +1783,21 @@ public:
 		class PredefinedOp = predefined_operation<Op>,
 		typename = decltype(predefined_operation<Op>::value)
 	>
-	auto all_reduce_n(It1 first, Size count, Op op){
+	void all_reduce_n(It1 first, Size count, Op op){
 		return all_reduce_in_place_n(first, count, op);
 	}
-
 	template<
 		class It1, class Size, class Op, 
 		class V1 = typename std::iterator_traits<It1>::value_type, class P1 = decltype(data_(It1{})), 
 		class PredefinedOp = predefined_operation<Op>
 	>
 	auto reduce_in_place_n(It1 first, Size count, Op /*op*/, int root = 0){
-		int s = MPI_Reduce(MPI_IN_PLACE, data_(first), count, detail::basic_datatype<V1>{}, PredefinedOp{}, root, impl_);
+		int s = MPI_SUCCESS;
+		if (rank() == root) {
+			s = MPI_Reduce(MPI_IN_PLACE, data_(first), count, detail::basic_datatype<V1>{}, PredefinedOp{}, root, impl_);
+		} else {
+			s = MPI_Reduce(data_(first), NULL, count, detail::basic_datatype<V1>{}, PredefinedOp{}, root, impl_);
+		}
 		if(s != MPI_SUCCESS) throw std::runtime_error{"cannot reduce n"};
 	}
 	template<
@@ -1922,9 +1842,6 @@ private:
 	auto reduce_category(ReducePolicy rp, std::random_access_iterator_tag, RandomAccessIt1 first, RandomAccessIt1 last, It2 d_first, Op op, int root){
 		return reduce_n(rp, first, std::distance(first, last), d_first, op, root);
 	}
-//	template<class It1, class Size, class It2>
-//	auto reduce_n_category(detail::contiguous_iterator_tag, detail::contiguous_iterator_tag, It1 first, Size count, It2 d_first, Op op, int root){
-//	}
 	template<class It1, class Size, class It2, class Op, 
 		class V1 = typename std::iterator_traits<It1>::value_type, 
 		class V2 = typename std::iterator_traits<It2>::value_type 
@@ -1935,7 +1852,7 @@ private:
 			detail::data(d_first), count, detail::basic_datatype<V1>{},
 			op.impl_, impl_
 		);
-		if(s != MPI_SUCCESS) throw std::runtime_error("cannot scatter");
+		if(s != MPI_SUCCESS) throw std::runtime_error("cannot reduce");
 	}
 	template<class It1, class Size, class It2, class Op,
 		class V1 = typename std::iterator_traits<It1>::value_type, 
@@ -1965,8 +1882,8 @@ private:
 		if(s != MPI_SUCCESS) throw std::runtime_error("cannot scatter");
 		return ret;
 	}
-
 public:
+#if 0
 	template<class InputIt1, class Size, class InputIt2, 
 		class V1 = typename std::iterator_traits<InputIt1>::value_type, 
 		class V2 = typename std::iterator_traits<InputIt2>::value_type 
@@ -1994,6 +1911,48 @@ public:
 	template<class InputIt1, class InputIt2>
 	void scatter(InputIt1 first, InputIt1 last, InputIt2 d_first, int root = 0){
 		return scatter_category(typename std::iterator_traits<InputIt1>::iterator_category{}, first, last, d_first, root);
+	}
+	template<class It1, class OIt2>
+	auto scatter(It1 first, It1 last, It2 d_first, detail::output_iterator_tag, int root){
+		vector<typename detail::iterator_traits<It2>::value_type> buff(std::distance(first, last)/size());
+		auto e = scatter(first, last, typename detail::iterator_traits<It1>::iterator_category{}, buff.data()); assert( e == buff.data() + buff.size() );
+		return move(begin(buff), end(buff), d_first);
+	}
+	template<class It1, class T>
+	auto scatter(It1 first, It1 last, detail::input_iterator_tag, T const* d_first, int root){
+		vector<typename detail::iterator_traits<It1>::value_type> buff(first, last);
+		scatter_n(buff.data(), buff.size(),  
+		return scatter(first, last, typename detail::iterator_traits<It1>::iterator_category{}, d_first);
+	}
+	template<class In1, class Size, class It2>
+	auto scatter_n(In1 first, Size n, detail::input_iterator_tag, It2 d_first){
+		vector<typename detail::iterator_traits<In1>::value_type> buff; buff.reserve(n);
+		std::copy_n(first, n, begin(buff));
+		scatter_n(buff.data(), n, d_first, detail::iterator_traits<It2>::iterator_category{});
+	}
+	template<class In1, class Size, class It2>
+	auto scatter_n(In1 first, Size n, detail::input_iterator_tag, It2 d_first){
+		vector<typename detail::iterator_traits<In1>::value_type> buff; buff.reserve(n);
+		std::copy_n(first, n, begin(buff));
+		scatter_n(buff.data(), n, d_first, detail::iterator_traits<It2>::iterator_category{});
+	}
+	template<class It1, class Size, class It2>
+	auto scatter_n(It1 first, Size n, It2 d_first){
+		assert( n % size() == 0 );
+		return scatter_n(first, n, typename detail::iterator_traits<It1>::iterator_category, d_first);
+	}
+	template<class In1, class It2>
+	auto scatter(In1 first, In1 last, detail::input_iterator_tag, It2 d_first, int root){
+		vector<typename detail::iterator_traits<In1>::value_type> buff(first, last);
+		return scatter_n(buff.data(), buff.size(), d_first, root);
+	}
+	template<class It1, class It2>
+	auto scatter(It1 first, It1 last, It2 d_first, int root = 0){
+		return scatter(first, last, detail::iterator_traits<It1>::iterator_category{}, root);
+	}
+	template<class It1, class It2>
+	auto scatter(It1 first, It1 last, It2 d_first, int root = 0){
+		return scatter(first, last, d_first, detail::iterator_traits<It2>::iterator_category{}, root);
 	}
 	template<class InputIt1, class InputIt2>
 	void scatter_from(InputIt1 d_first, InputIt1 d_last, InputIt2 first, int root = 0){
@@ -2050,31 +2009,234 @@ private:
 		);
 		if(s != MPI_SUCCESS) throw std::runtime_error("cannot scatter");
 	}
-
-#if 0
-	template<class IContiguousIterator, class OContiguousIterator, 
-		class IT = typename std::iterator_traits<IContiguousIterator>::value_type,
-		class OT = typename std::iterator_traits<OContiguousIterator>::value_type
-	>
-	void scatter_n(
-		IContiguousIterator first , std::ptrdiff_t send_count, 
-		OContiguousIterator result, std::ptrdiff_t receive_count, 
-		int root = 0
-	) const{
-		// assumes: first, first + send_count is not aliased with result
-		assert(send_count%size() == 0);
-		assert(receive_count%size() == 0);
-		MPI_Scatter(
-			(void*)(&*first) , send_count/size()   , detail::basic_datatype<IT>::value, 
-			(void*)(&*result), receive_count/size(), detail::basic_datatype<OT>::value, 
+#endif
+//////////////////////////////
+	template<class CIt1, class Size, class CIt2>
+	auto scatter_n(
+		CIt1 first, Size n, detail::contiguous_iterator_tag, detail::basic_tag,
+		CIt2 d_first,       detail::contiguous_iterator_tag, detail::basic_tag,
+		int root
+	){
+		auto e = static_cast<enum error>( MPI_Scatter(
+			detail::data(first  ), n/size(), detail::basic_datatype<typename std::iterator_traits<CIt1>::value_type>{},
+			detail::data(d_first), n/size(), detail::basic_datatype<typename std::iterator_traits<CIt2>::value_type>{},
 			root, impl_
+		) );
+		if(e != mpi3::error::success) throw std::system_error{e, "cannot scatter"};
+		if(rank()==root) std::advance(d_first, n);
+		return d_first;
+	}
+	template<class In1, class Size, class It2, class Any2, class Any3>
+	It2 scatter_n(
+		In1 first, Size n, detail::input_iterator_tag, detail::basic_tag,
+		It2 d_first,       Any2                      , Any3,
+		int root
+	){
+		vector<typename std::iterator_traits<In1>::value_type> buff; buff.reserve(n);
+		using std::copy_n;
+		copy_n(first, n, std::back_inserter(buff));
+	//	auto e = 
+		scatter_n(buff.begin(), n, d_first, root);
+		std::advance(d_first, n/size());
+		return d_first;
+	}
+	template<class It1, class Size, class It2, class V1 = typename std::iterator_traits<It1>::value_type, class V2 = typename std::iterator_traits<It2>::value_type>
+	auto scatter_n(It1 first, Size n, It2 d_first, int root = 0){
+		return scatter_n(
+			first, n, detail::iterator_category_t<It1>{}, detail::value_category_t<V1>{},
+			d_first,  detail::iterator_category_t<It2>{}, detail::value_category_t<V2>{},
+			root
 		);
 	}
-#endif
-//	template<class IContiguousIterator, class OContiguousIterator>
-//	void scatter_n(IContiguousIterator first, std::ptrdiff_t send_count, OContiguousIterator result, int root = 0) const{
-//		scatter_n(first, send_count, result, send_count, root);
-//	}
+	template<class It1, class Size, class It2>
+	auto scatter_n_from(It2 d_first, Size n, It1 first, int root = 0){
+		return scatter_n(first, n*size(), d_first, root);
+	//	std::advance(d_first, n);
+	//	return d_first;
+	}
+	template<class RA1, class It2>
+	auto scatter(RA1 first, RA1 last, detail::random_access_iterator_tag, It2 d_first, int root){
+		return scatter_n(first, std::distance(first, last), d_first, root);
+	}
+	template<class It1, class It2>
+	auto scatter(It1 first, It1 last, It2 d_first, int root = 0){
+		return scatter(first, last, detail::iterator_category_t<It1>{}, d_first, root);
+	}
+	template<class RA2, class It1>
+	auto scatter_from(RA2 first, RA2 last, detail::random_access_iterator_tag, It1 d_first, int root){
+		return scatter_n_from(first, std::distance(first, last), d_first, root);
+	}
+	template<class V, class It1>
+	auto scatter_value_from(V& v, It1 first, int root = 0){
+		return scatter_n_from(std::addressof(v), 1, first, root); 
+	}
+	template<class It1, class V = typename std::iterator_traits<It1>::value_type>
+	V scatter(It1 first, It1 last, int root = 0){
+		if(rank()==root) assert(std::distance(first, last) == size());
+		V v;
+	//	auto e = 
+		scatter_value_from(v, first, root);
+	//	std::cerr << std::distance(e, last) << std::endl;
+	//	assert(e == last);
+		return v;
+	}
+	template<class It, class V = typename std::iterator_traits<It>::value_type>
+	V scatter(It first, int root = 0){
+		V v;  
+		scatter_value_from(v, first, root); 
+		return v;
+	}
+	template<class Container, class V = typename std::iterator_traits<typename Container::iterator>::value_type>
+	V scatter(Container c, int root = 0, void* = 0){
+		assert( (int)c.size() == (rank()==root?size():0) );
+		using std::begin;
+		return scatter(begin(c), root);
+	}
+
+	template<class It1, class It2>
+	auto scatter_from(It2 d_first, It2 d_last, It1 first, int root = 0){
+		return scatter_from(d_first, d_last, detail::iterator_category_t<It2>{}, first, root);
+	}
+////////////////////////////////////////////////////////////////////////////////
+	template<class CIt1, class Size, class CIt2>
+	void scatterv_n(
+		CIt1 first, int* counts, int* displs,
+		detail::contiguous_iterator_tag, detail::basic_tag,
+		CIt2 d_first, Size n, 
+		detail::contiguous_iterator_tag, detail::basic_tag,
+		int root = 0
+	){
+		auto e = static_cast<enum error>(
+			MPI_Scatterv( 
+				detail::data(first), counts, displs,
+				detail::basic_datatype<typename std::iterator_traits<CIt1>::value_type>{},
+				detail::data(d_first), n,
+				detail::basic_datatype<typename std::iterator_traits<CIt2>::value_type>{},
+				root, impl_
+			)
+		);
+		if(e != mpi3::error::success) throw std::system_error{e, "cannot scatter_n"};
+	}
+	template<class CItCIt1, class CItN, class CIt2>
+	auto scatterv_n(
+		CItCIt1 citcit1, CItN ns, detail::contiguous_iterator_tag, detail::basic_tag, 
+		CIt2 it2,                 detail::contiguous_iterator_tag, detail::basic_tag,
+		int root
+	){
+		std::vector<int> counts(ns, ns + size());
+		std::vector<int> displs(size());
+		for(int i = 0; i != size(); ++i) displs[i+1] = detail::data(citcit1[i+1]) - detail::data(citcit1[i]);//adjacent_difference doesn't work here becuase of type incompatibility
+	//	std::adjacent_difference(citcit1, citcit1 + size(), begin(displs) + 1, [](auto& a, auto& b){return detail::data(a) - detail::data(b);});
+		int n = scatter(counts.begin(), counts.end());
+		scatterv_n(
+			detail::data(*citcit1), counts.data(), displs.data(), detail::contiguous_iterator_tag{}, detail::basic_tag{},
+			it2, n                                              , detail::contiguous_iterator_tag{}, detail::basic_tag{},
+			root
+		);
+		return it2;
+	}
+	template<class CItIt1, class CItN, class It2>
+	auto scatterv_n(CItIt1 citit1, CItN ns, It2 it2, int root = 0){
+		scatterv_n(
+			citit1, ns, detail::iterator_category_t<typename std::iterator_traits<CItIt1>::value_type>{}, detail::basic_tag{},
+			it2       , detail::iterator_category_t<It2>{},                                               detail::basic_tag{},
+			root
+		);
+	}
+	template<class Container, class It2, typename = typename Container::iterator>
+	auto scatterv(Container const& c, It2 it2, int root = 0){
+		assert( (int)c.size() == ((rank()==root)?size():0) );
+		if(rank()==root){
+			std::cerr<< "in scatterv " << detail::data(c[1].begin()) - detail::data(c[0].begin()) << " " << detail::data(c[2].begin()) - detail::data(c[0].begin()) << std::endl;
+		}
+		
+		using std::begin; using std::end; 
+		std::vector<int> displs(c.size());
+		for(int i = 0; i!=(int)displs.size(); ++i){
+			std::ptrdiff_t d = detail::data(c[i].begin()) - detail::data(c[0].begin());
+			assert( d <= static_cast<std::ptrdiff_t>(std::numeric_limits<int>::max()) );
+			displs[i] = d;
+		}
+		if(rank()==root){
+			std::cerr<< "in scatterv 2 " << displs[0] << " " <<  displs[1] << " " <<  displs[2] << std::endl;
+		}
+		std::vector<int> counts(c.size());
+		std::transform(counts.begin(), counts.end(), begin(c), counts.begin(), [](auto&, auto& b){return std::distance(begin(b), end(b));}); 
+		int n = scatter(counts);
+		scatterv_n(
+			detail::data(begin(*begin(c))), counts.data(), displs.data(), detail::contiguous_iterator_tag{}, detail::basic_tag{}, 
+			detail::data(it2), n                                        , detail::contiguous_iterator_tag{}, detail::basic_tag{}, 
+			root
+		);
+		return it2 + n;
+	}
+	template<class It1, typename Size1, class It2, typename Size2>
+	auto gather_n(
+		It1 first, 
+			detail::contiguous_iterator_tag,
+			detail::basic_tag,
+		Size1 count,
+		It2 d_first,
+			detail::contiguous_iterator_tag,
+			detail::basic_tag,
+		Size2 d_count, 
+		int root
+	){
+		auto e = static_cast<enum error>(
+			MPI_Gather(
+				detail::data(first), count, 
+				detail::basic_datatype<typename std::iterator_traits<It1>::value_type>{},
+				detail::data(d_first), d_count,
+				detail::basic_datatype<typename std::iterator_traits<It2>::value_type>{},
+				root, impl_
+			)
+		);
+		if(e != mpi3::error::success) throw std::system_error{e, "cannot gather"};
+		return d_first += rank()==root?d_count*size():0;
+	}
+	template<class It1, class Size1, class It2, class Size2>
+	auto gather_n(It1 first, Size1 count, It2 d_first, Size2 d_count, int root){
+		return gather_n(
+			first, 
+				detail::iterator_category_t<It1>{},
+				detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
+			count, 
+			d_first,
+				detail::iterator_category_t<It2>{},
+				detail::value_category_t<typename std::iterator_traits<It2>::value_type>{},
+			d_count,
+			root
+		);
+	}
+	template<class It1, class Size1, class It2>
+	auto gather_n(It1 first, Size1 count, It2 d_first, int root){
+		return gather_n(first, count, d_first, count, root);
+	}
+	template<class It2, class Size, class It1>
+	auto scatterv_n_from(It2 d_first, Size n, It1 first, int root = 0){
+		std::vector<int> counts(size());//rank()==root?size():0);
+		int nn = n;
+		gather_n(std::addressof(nn), 1, counts.data(), root);
+		std::vector<int> displs(size());//rank()==root?size():0);
+		partial_sum(counts.begin(), counts.end(), displs.begin()+1);
+		scatterv_n(
+			first, counts.data(), displs.data(), 
+			detail::iterator_category_t<It1>{}, detail::value_category_t<typename std::iterator_traits<It1>::value_type>{}, 
+			d_first, n, 
+			detail::iterator_category_t<It2>{}, detail::value_category_t<typename std::iterator_traits<It2>::value_type>{}, 
+			root
+		);
+		std::advance(first, rank()==root?displs.back() + counts.back():0);
+		return first;
+	}
+	template<class RA2, class It1>
+	auto scatterv_from(RA2 d_first, RA2 d_last, detail::random_access_iterator_tag, It1 first, int root){
+		return scatterv_n_from(d_first, std::distance(d_first, d_last), first, root);
+	}
+	template<class It1, class It2>
+	auto scatterv_from(It2 d_first, It2 d_last, It1 first, int root = 0){
+		return scatterv_from(d_first, d_last, detail::iterator_category_t<It2>{}, first, root);
+	}
 public:
 	template<class T, class It> 
 	void all_gather_value(T const& t, It first){all_gather_n(std::addressof(t), 1, first);}
@@ -2132,21 +2294,6 @@ public:
 		return d_first;
 	}
 	public:
-/*	template<typename It1, typename Size, typename It2>
-	auto gather_n(It1 first, Size count, It2 d_first, Size d_count, int root){
-		return a_gather_n(
-			gather_mode{},
-			first, 
-				detail::iterator_category_t<It1>{},
-				detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
-			count, 
-			d_first, 
-				detail::iterator_category_t<It2>{},
-				detail::value_category_t<typename std::iterator_traits<It2>::value_type>{},
-			d_count,
-			root
-		);
-	}*/
 	template<typename It1, typename Size, typename It2>
 	auto all_gather_n(
 		It1 first  , Size count  , 
@@ -2156,12 +2303,14 @@ public:
 			detail::contiguous_iterator_tag,
 			detail::basic_tag
 	){
-		int s = MPI_Allgather(
-			detail::data(first)  , count  , detail::basic_datatype<typename std::iterator_traits<It1>::value_type>{},
-			detail::data(d_first), d_count, detail::basic_datatype<typename std::iterator_traits<It2>::value_type>{},
-			impl_
+		auto e = static_cast<enum error>(
+			MPI_Allgather(
+				detail::data(first)  , count  , detail::basic_datatype<typename std::iterator_traits<It1>::value_type>{},
+				detail::data(d_first), d_count, detail::basic_datatype<typename std::iterator_traits<It2>::value_type>{},
+				impl_
+			)
 		);
-		if(s != MPI_SUCCESS) throw std::runtime_error("cannot scatter");
+		if(e != mpi3::error::success) throw std::system_error{e, "cannot allgather, all_gather works if all sending sizes are equal"};
 		return d_first + d_count*size();
 	}
 	template<typename It1, typename Size, typename It2>
@@ -2175,15 +2324,51 @@ public:
 				detail::value_category_t<typename std::iterator_traits<It2>::value_type>{}
 		);
 	}
+	template<class It1, typename It2>
+	It2 all_gather(
+		It1 first, It1 last, 
+			detail::random_access_iterator_tag, 
+		It2 d_first
+	){return all_gather_n(first, std::distance(first, last), d_first);}
+	template<class It1, typename It2>
+	It2 all_gather(It1 first, It1 last, It2 d_first){
+		return all_gather(first, last, detail::iterator_category_t<It1>{}, d_first);
+	}
+	template<typename It1, typename Size, typename It2, typename CountsIt, typename DisplsIt>
+	auto all_gatherv_n(
+		It1 first, Size count, 
+		It2 d_first, 
+			detail::output_iterator_tag,
+		CountsIt counts, DisplsIt displs
+	){
+		auto s = std::accumulate(counts, counts + size(), typename std::iterator_traits<CountsIt>::value_type{0});
+		std::vector<typename std::iterator_traits<It1>::value_type> buff(s);
+		auto e = all_gatherv_n(first, count, buff.data(), counts, displs);
+		assert( e == buff.data() + buff.size() );
+		using std::move;
+		return move(buff.begin(), buff.end(), d_first);
+	}
+	template<typename It1, typename Size, typename It2, typename CountsIt, typename DisplsIt>
+	auto all_gatherv_n(
+		It1 first, Size count, 
+		It2 d_first, 
+			detail::forward_iterator_tag,
+		CountsIt counts, DisplsIt displs){
+		return all_gatherv_n(
+			first, count, 
+				detail::iterator_category_t<It1>{}, 
+				detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
+			d_first,
+				detail::iterator_category_t<It2>{},
+				detail::value_category_t<typename std::iterator_traits<It2>::value_type>{},
+			counts, displs); 
+	}
 	template<typename It1, typename Size, typename It2, typename CountsIt, typename DisplsIt>
 	auto all_gatherv_n(It1 first, Size count, It2 d_first, CountsIt counts, DisplsIt displs){
 		return all_gatherv_n(
 			first, count, 
-				detail::iterator_category_t<It1>{},
-				detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
 			d_first,
-				detail::iterator_category_t<It1>{},
-				detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
+				detail::iterator_category_t<It2>{},
 			counts, displs
 		);
 	}
@@ -2284,59 +2469,18 @@ public:
 		while(d_count--) pia >> *(d_first++);
 		return d_first;
 	}
-
-/*	template<typename It1, typename Size, typename It2>
-	auto all_gather_n(It1 first, Size count, It2 d_first){
-		return
-			a_gather_n(
-				all_gather_mode{},
-				first, 
-					detail::iterator_category_t<It1>{},
-					detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
-				count, 
-				d_first, 
-					detail::iterator_category_t<It2>{},
-					detail::value_category_t<typename std::iterator_traits<It2>::value_type>{}
-			);
-	}*/
-	public:
-/*
 	template<typename It1, typename It2>
-	auto all_gather(It1 first, It1 last, It2 d_first){
-		return
-			a_gather(
-				all_gather_mode{},
-				first, last,
-					detail::iterator_category_t<It1>{},
-				d_first 
-			);
-	}*/
-	protected:
-/*
-	template<typename GatherMode, typename It1, typename It2, typename... Root>
-	auto a_gather(
-		GatherMode gm, 
-		It1 first, It1 last, 
-			detail::random_access_iterator_tag,
-		It2 d_first, Root... root
-	){
-		return a_gather_n(
-			gm, 
-			first, 
+	auto all_gatherv(It1 first, It1 last, detail::random_access_iterator_tag, It2 d_first){
+		return all_gatherv_n(first, std::distance(first, last), d_first);
+	}
+	template<typename It1, typename It2>
+	auto all_gatherv(It1 first, It1 last, It2 d_first){
+		return all_gatherv(
+			first, last,
 				detail::iterator_category_t<It1>{},
-				detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
-			std::distance(first, last), 
-			d_first, 
-				detail::iterator_category_t<It2>{},
-				detail::value_category_t<typename std::iterator_traits<It2>::value_type>{},
-			root...
+			d_first
 		);
 	}
-*/
-//	auto gather_n_randomaccess_contiguous_builtin(std::true_type, std::true_type, ContiguousIt1 first, Size count, ContiguousIt2 d_first, Size d_count, int root){
-//		int s = MPI_Gather(detail::data(first), count, datatype1{}, detail::data(d_first), d_count, datatype2{}, root, impl_);
-//		if(s != MPI_SUCCESS) throw std::runtime_error("cannot gather");
-//	}
 public:
 	template<class It1, typename Size1, class It2, class Itc, class Itd>
 	auto gatherv_n(
@@ -2381,29 +2525,6 @@ public:
 		);
 	}
 	template<class It1, typename Size1, class It2, typename Size2>
-	auto gather_n(
-		It1 first, 
-			detail::contiguous_iterator_tag,
-			detail::basic_tag,
-		Size1 count,
-		It2 d_first,
-			detail::contiguous_iterator_tag,
-			detail::basic_tag,
-		Size2 d_count, 
-		int root
-	){
-		int s = MPI_Gather(
-			detail::data(first), count, 
-			detail::basic_datatype<typename std::iterator_traits<It1>::value_type>{},
-			detail::data(d_first), d_count,
-			detail::basic_datatype<typename std::iterator_traits<It2>::value_type>{},
-			root, impl_
-		);
-		if(s != MPI_SUCCESS) throw std::runtime_error("cannot gather");
-		if(rank() == root) d_first += d_count*size();
-		return d_first;
-	}
-	template<class It1, typename Size1, class It2, typename Size2>
 	auto igather_n(
 		It1 first, 
 			detail::contiguous_iterator_tag,
@@ -2444,20 +2565,6 @@ public:
 		if(s != MPI_SUCCESS) throw std::runtime_error("cannot Iallgather");
 		return ret;
 	}
-	template<class It1, class Size1, class It2, class Size2>
-	auto gather_n(It1 first, Size1 count, It2 d_first, Size2 d_count, int root){
-		return gather_n(
-			first, 
-				detail::iterator_category_t<It1>{},
-				detail::value_category_t<typename std::iterator_traits<It1>::value_type>{},
-			count, 
-			d_first,
-				detail::iterator_category_t<It2>{},
-				detail::value_category_t<typename std::iterator_traits<It2>::value_type>{},
-			d_count,
-			root
-		);
-	}
 	template<class It1, typename Size1, class It2, class Size2>
 	auto gather_n(
 		It1 first,
@@ -2475,8 +2582,8 @@ public:
 		while(count--) poa << *(first++);
 		int posize = po.size();
 		std::vector<int> sizes(rank()==root?size():0);
-		std::vector<int> displs(rank()==root?size():0);
 		gather_n(&posize, 1, sizes.begin(), 1, root);
+		std::vector<int> displs(rank()==root?size():0);
 		partial_sum(sizes.begin(), sizes.end(), displs.begin()+1);
 		detail::package pi(*this);
 		int total = std::accumulate(sizes.begin(), sizes.end(), 0);
@@ -2515,10 +2622,6 @@ public:
 				detail::value_category_t<typename std::iterator_traits<It2>::value_type>{},
 			d_count
 		);
-	}
-	template<class It1, class Size1, class It2>
-	auto gather_n(It1 first, Size1 count, It2 d_first, int root){
-		return gather_n(first, count, d_first, count, root);
 	}
 	template<class It1, class Size1, class It2>
 	auto igather_n(It1 first, Size1 count, It2 d_first, int root = 0){
@@ -2811,6 +2914,12 @@ inline std::string const& name(communicator::topology const& t){
 	return names.find(t)->second;
 }
 
+//template<class T>
+//friend auto operator,(communicator& comm, T const& t){
+//	std::vector<T> ret(comm.size());
+//	comm.all_gather_n(std::addressof(t), 1, first, root); 
+//}
+
 template<class T>
 friend T operator+=(communicator& comm, T const& t){
 	T val = comm.all_reduce_value(t, std::plus<>{});
@@ -2824,6 +2933,68 @@ friend communicator& operator<<(communicator& comm, T const& t){
 
 
 };
+
+inline void barrier(communicator const& self){self.barrier();}
+
+inline communicator::communicator(group const& g, int tag){
+        MPI3_CALL(MPI_Comm_create_group)(MPI_COMM_WORLD, &g, tag, &impl_);
+}
+
+inline communicator::communicator(group const& g){
+	auto e = static_cast<enum error>(MPI_Comm_create(MPI_COMM_WORLD, &g, &impl_));
+	if(e != mpi3::error::success) throw std::system_error{e, "cannot create"};
+}
+inline communicator::communicator(communicator const& o, group const& g){
+	auto e = static_cast<enum error>(MPI_Comm_create(o.impl_, &g, &impl_));
+	if(e != mpi3::error::success) throw std::system_error{e, "cannot create"};
+}
+
+inline communicator::operator group() const{
+	group ret;
+	auto e = static_cast<enum error>( MPI_Comm_group(impl_, &(&ret)) );
+	if(e != mpi3::error::success) throw std::system_error{e, "cannot group"};
+	return ret;
+}
+
+inline communicator communicator::create(group const& g) const{
+	communicator ret;
+	int s = MPI_Comm_create(impl_, &g, &ret.impl_);
+	if(s != MPI_SUCCESS) throw std::runtime_error{"cannot crate group"};
+	return ret;
+}
+
+inline communicator communicator::create_group(class group const& g, int tag = 0) const{
+	communicator ret;
+	int s = MPI_Comm_create_group(impl_, &g, tag, &ret.impl_);
+	if(s != MPI_SUCCESS) throw std::runtime_error{"cannot create_group"};
+	return ret;
+}
+
+template<class T>
+inline void communicator::deallocate_shared(pointer<T>){
+//	MPI_Free_mem(p.base_ptr(rank()));
+}
+
+template<class T>
+inline void communicator::deallocate(pointer<T>&, MPI_Aint){
+//	p.pimpl_->fence();
+//	MPI_Free_mem(p.local_ptr());
+//	MPI_Win_free(&p.pimpl_->impl_);
+//	delete p.pimpl_;
+//	p.pimpl_ == nullptr;
+}
+
+#if 0
+template<class T>
+inline window<T> communicator::make_window(mpi3::size_t size){
+	mpi3::info inf;
+	void* ptr;
+	window<T> ret;
+	int s = MPI_Win_allocate(size*sizeof(T), sizeof(T), inf.impl_, this->impl_, &ptr, &ret.impl_);
+	if(s != MPI_SUCCESS) throw std::runtime_error("cannot window_allocate");
+	return ret;
+}
+#endif
 
 struct strided_range{
 	int first;
@@ -2993,6 +3164,11 @@ public:
 };
 #endif
 
+template<class Range>
+auto operator/(Range const& r, communicator& self)
+	->decltype(self.scatter(begin(r), end(r))){
+		return self.scatter(begin(r), end(r));}
+
 //inline communicator::communicator(communicator const& other, struct group const& g, int tag) : communicator(){
 //	MPI_Comm_create_group(other.impl_, g.impl_, tag, &impl_);
 //}
@@ -3082,6 +3258,7 @@ class V{
 };
 
 int mpi3::main(int, char*[], mpi3::communicator world){
+	std::cout << mpi3::undefined << std::endl;
 
 	static_assert(std::is_nothrow_constructible<mpi3::communicator>::value, "MyType should be noexcept MoveConstructible");
 

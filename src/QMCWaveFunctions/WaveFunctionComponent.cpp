@@ -13,24 +13,23 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 
 namespace qmcplusplus
 {
-WaveFunctionComponent::WaveFunctionComponent():
-  IsOptimizing(false), Optimizable(true), UpdateMode(ORB_WALKER),
-  LogValue(1.0),PhaseValue(0.0),ClassName("WaveFunctionComponent"),
-  derivsDone(false), parameterType(0), Bytes_in_WFBuffer(0)
-#if !defined(ENABLE_SMARTPOINTER)
-  ,dPsi(0), ionDerivs(false)
-#endif
-{ 
-  ///store instead of computing
-  Need2Compute4PbyP=false;
-}
+WaveFunctionComponent::WaveFunctionComponent()
+    : IsOptimizing(false),
+      Optimizable(true),
+      is_fermionic(false),
+      UpdateMode(ORB_WALKER),
+      LogValue(0.0),
+      dPsi(nullptr),
+      ClassName("WaveFunctionComponent"),
+      Bytes_in_WFBuffer(0)
+{}
 
 // WaveFunctionComponent::WaveFunctionComponent(const WaveFunctionComponent& old):
 //   Optimizable(old.Optimizable), UseBuffer(old.UseBuffer),
@@ -44,60 +43,56 @@ WaveFunctionComponent::WaveFunctionComponent():
 // }
 
 
-void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d)
-{
-#if defined(ENABLE_SMARTPOINTER)
-  dPsi=DiffWaveFunctionComponentPtr(d);
-#else
-  dPsi=d;
-#endif
-}
+void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d) { dPsi = d; }
 
 void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
-                                      const opt_variables_type& active,
-                                      std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi)
+                                                const opt_variables_type& active,
+                                                std::vector<ValueType>& dlogpsi,
+                                                std::vector<ValueType>& dhpsioverpsi)
 {
-#if defined(ENABLE_SMARTPOINTER)
-  if (dPsi.get())
-#else
   if (dPsi)
-#endif
     dPsi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
+}
+
+void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
+                                                  const opt_variables_type& active,
+                                                  std::vector<ValueType>& dlogpsi)
+{
+  if (dPsi)
+    dPsi->evaluateDerivativesWF(P, active, dlogpsi);
 }
 
 /*@todo makeClone should be a pure virtual function
  */
 WaveFunctionComponentPtr WaveFunctionComponent::makeClone(ParticleSet& tpq) const
 {
-  APP_ABORT("Implement WaveFunctionComponent::makeClone "+ClassName+ " class.");
+  APP_ABORT("Implement WaveFunctionComponent::makeClone " + ClassName + " class.");
   return 0;
 }
 
-WaveFunctionComponent::RealType WaveFunctionComponent::KECorrection()
-{
-  return 0;
-}
+WaveFunctionComponent::RealType WaveFunctionComponent::KECorrection() { return 0; }
 
 void WaveFunctionComponent::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
-  assert(P.getTotalNum()==ratios.size());
-  for (int i=0; i<P.getTotalNum(); ++i)
-    ratios[i]=ratio(P,i);
+  assert(P.getTotalNum() == ratios.size());
+  for (int i = 0; i < P.getTotalNum(); ++i)
+    ratios[i] = ratio(P, i);
 }
 
-void WaveFunctionComponent::evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios)
+void WaveFunctionComponent::evaluateRatios(const VirtualParticleSet& P, std::vector<ValueType>& ratios)
 {
   std::ostringstream o;
   o << "WaveFunctionComponent::evaluateRatios is not implemented by " << ClassName;
   APP_ABORT(o.str());
 }
 
-void WaveFunctionComponent::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
-    std::vector<ValueType>& ratios, Matrix<ValueType>& dratios)
+void WaveFunctionComponent::evaluateDerivRatios(VirtualParticleSet& VP,
+                                                const opt_variables_type& optvars,
+                                                std::vector<ValueType>& ratios,
+                                                Matrix<ValueType>& dratios)
 {
   //default is only ratios and zero derivatives
-  evaluateRatios(VP,ratios);
+  evaluateRatios(VP, ratios);
 }
 
-}
-
+} // namespace qmcplusplus

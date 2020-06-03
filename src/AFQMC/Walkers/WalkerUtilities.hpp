@@ -17,6 +17,7 @@
 #include <mpi.h>
 #include<AFQMC/config.0.h>
 #include <Utilities/FairDivide.h>
+#include "AFQMC/Walkers/WalkerConfig.hpp"
 
 #include "mpi3/communicator.hpp"
 
@@ -26,6 +27,7 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+// This should use meaningful names from an enum instead of an implicit known order
 template<class WlkBucket, 
          class DVec = std::vector<ComplexType>
          >
@@ -36,18 +38,21 @@ inline void BasicWalkerData(WlkBucket& wlk, DVec& curData, communicator& comm)
   int nW = wlk.size();
   ComplexType enume = 0, edeno = 0;
   std::vector<double> data(8,0.);
-  RealType sumo=0.0;
-  int wi=0;
-  for(typename WlkBucket::iterator it=wlk.begin(); it!=wlk.end(); ++it) { 
-    auto w0 = *it;
-    ComplexType weight = w0.weight();
-    ComplexType ovlp = w0.overlap(); 
-    ComplexType eloc = w0.pseudo_energy();
+  boost::multi::array<ComplexType,2> w_data({nW,3});
+  wlk.getProperty(WEIGHT,w_data({0,nW},0));
+  wlk.getProperty(OVLP,w_data({0,nW},1));
+  wlk.getProperty(PSEUDO_ELOC_,w_data({0,nW},2));
+  bool modified=false;
+  for(int iw=0; iw<nW; iw++) {
+    ComplexType weight = w_data[iw][0]; 
+    ComplexType ovlp = w_data[iw][1]; 
+    ComplexType eloc = w_data[iw][2];;
     data[6]++;   // all walkers
     if( std::abs(weight) <= 1e-6 || (!std::isfinite( std::abs(ovlp) )) || (!std::isfinite( (weight*eloc).real() )) || (!std::isfinite( (weight*eloc).imag() )) ) {
-        w0.weight() = ComplexType(0.0,0.0);
-        w0.overlap() = ComplexType(1.0,0.0);
-        w0.pseudo_energy() = ComplexType(0.0,0.0);
+        w_data[iw][0] = ComplexType(0.0,0.0);
+        w_data[iw][1] = ComplexType(1.0,0.0);
+        w_data[iw][2] = ComplexType(0.0,0.0);
+        modified=true;
         continue;
     }
     data[0] += (weight*eloc).real();
@@ -66,6 +71,11 @@ inline void BasicWalkerData(WlkBucket& wlk, DVec& curData, communicator& comm)
   curData[4] = data[5]/data[6];
   curData[5] = data[6];
   curData[6] = data[7];
+  if(modified) {
+    wlk.setProperty(WEIGHT,w_data({0,nW},0));
+    wlk.setProperty(OVLP,w_data({0,nW},1));
+    wlk.setProperty(PSEUDO_ELOC_,w_data({0,nW},2));
+  }  
 }
 
 template<class WlkBucket,
@@ -85,14 +95,19 @@ inline void getGlobalListOfWalkerWeights(WlkBucket& wlk, std::vector<std::pair<d
 {
   using Type = std::pair<double,int>;
   int target = wlk.get_TG_target_population();
+  int nW = wlk.size();
   if(buffer.size() < target*comm.size())
     APP_ABORT(" Error in getGlobalListOfWalkerWeights(): Array dimensions.\n"); 
-  if(wlk.size() > target) 
+  if(nW > target) 
     APP_ABORT(" Error in getGlobalListOfWalkerWeights(): size > target.\n"); 
   std::vector<Type> blocal(target);
   std::vector<Type>::iterator itv = blocal.begin();
-  for(typename WlkBucket::iterator it=wlk.begin(); it!=wlk.end(); ++it, ++itv) 
-    *itv = {std::abs(it->weight()),1};
+  boost::multi::array<ComplexType,1> w_data(iextensions<1u>{nW});
+  wlk.getProperty(WEIGHT,w_data);
+//  for(typename WlkBucket::iterator it=wlk.begin(); it!=wlk.end(); ++it, ++itv) 
+//    *itv = {std::abs(*it->weight()),1};
+  for(int i=0; i<nW; ++i, ++itv)
+    *itv = {std::abs(w_data[i]),1};
   //comm.gather_n(blocal.data(),blocal.size(),buffer.data(),0);
   MPI_Allgather(blocal.data(), blocal.size()*sizeof(Type), MPI_CHAR, 
                   buffer.data(), blocal.size()*sizeof(Type), MPI_CHAR,

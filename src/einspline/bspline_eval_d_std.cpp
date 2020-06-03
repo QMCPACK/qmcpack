@@ -18,8 +18,8 @@
 //  Boston, MA  02110-1301  USA                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
+#include <cassert>
 #include "bspline_base.h"
 #include "bspline_structs.h"
 #include "bspline_eval_d.h"
@@ -28,43 +28,75 @@ extern const double* restrict   Ad;
 extern const double* restrict  dAd;
 extern const double* restrict d2Ad;
 
+/** get the i offset and the t remainder
+ *  for particular grid and boundary condition
+ *  if debug check bounds
+ */
+inline void coeff_offset_UBspline_d(const Ugrid * const restrict grid,const BCtype_d * const restrict BC,
+				   double x,
+				   int& i,
+				   double& t)
+{
+  x -= grid->start;
+  double u = x * grid->delta_inv;
+  double ipart;
+  t = modf (u, &ipart);
+  i = ipart;
+  #ifndef NDEBUG
+  assert( ipart >= 0 );
+  if (BC->lCode == NATURAL)
+  {
+    assert( ipart <= grid->num -2 );
+  }
+  else
+  {
+    assert( ipart <= grid->num -1 );
+  }
+  #endif
+}
+
+
 /************************************************************/
 /* 1D double-precision, real evaluation functions           */
 /************************************************************/
 
-/* Value only */
+
+/** Value only */
 void
 eval_UBspline_1d_d (UBspline_1d_d * restrict spline,
                     double x, double* restrict val)
 {
-  x -= spline->x_grid.start;
-  double u = x*spline->x_grid.delta_inv;
-  double ipart, t;
-  t = modf (u, &ipart);
-  int i = (int) ipart;
+  int i;
+  double t;
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				i,
+				t);
   double tp[4];
   tp[0] = t*t*t;
   tp[1] = t*t;
   tp[2] = t;
   tp[3] = 1.0;
   double* restrict coefs = spline->coefs;
-  *val =
-    (coefs[i+0]*(Ad[ 0]*tp[0] + Ad[ 1]*tp[1] + Ad[ 2]*tp[2] + Ad[ 3]*tp[3])+
-     coefs[i+1]*(Ad[ 4]*tp[0] + Ad[ 5]*tp[1] + Ad[ 6]*tp[2] + Ad[ 7]*tp[3])+
-     coefs[i+2]*(Ad[ 8]*tp[0] + Ad[ 9]*tp[1] + Ad[10]*tp[2] + Ad[11]*tp[3])+
-     coefs[i+3]*(Ad[12]*tp[0] + Ad[13]*tp[1] + Ad[14]*tp[2] + Ad[15]*tp[3]));
+  *val = coefs[i+0]*(Ad[ 0]*tp[0] + Ad[ 1]*tp[1] + Ad[ 2]*tp[2] + Ad[ 3]*tp[3]);
+  *val += coefs[i+1]*(Ad[ 4]*tp[0] + Ad[ 5]*tp[1] + Ad[ 6]*tp[2] + Ad[ 7]*tp[3]);
+  *val += coefs[i+2]*(Ad[ 8]*tp[0] + Ad[ 9]*tp[1] + Ad[10]*tp[2] + Ad[11]*tp[3]);
+  *val += coefs[i+3]*(Ad[12]*tp[0] + Ad[13]*tp[1] + Ad[14]*tp[2] + Ad[15]*tp[3]);
 }
 
-/* Value and first derivative */
+/** Value and first derivative */
 void
 eval_UBspline_1d_d_vg (UBspline_1d_d * restrict spline, double x,
                        double* restrict val, double* restrict grad)
 {
-  x -= spline->x_grid.start;
-  double u = x*spline->x_grid.delta_inv;
-  double ipart, t;
-  t = modf (u, &ipart);
-  int i = (int) ipart;
+  int i;
+  double t;
+    coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				i,
+				t);
   double tp[4];
   tp[0] = t*t*t;
   tp[1] = t*t;
@@ -88,11 +120,13 @@ eval_UBspline_1d_d_vgl (UBspline_1d_d * restrict spline, double x,
                         double* restrict val, double* restrict grad,
                         double* restrict lapl)
 {
-  x -= spline->x_grid.start;
-  double u = x*spline->x_grid.delta_inv;
-  double ipart, t;
-  t = modf (u, &ipart);
-  int i = (int) ipart;
+  int i;
+  double t;
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				i,
+				t);
   double tp[4];
   tp[0] = t*t*t;
   tp[1] = t*t;
@@ -134,15 +168,20 @@ void
 eval_UBspline_2d_d (UBspline_2d_d * restrict spline,
                     double x, double y, double* restrict val)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double ipartx, iparty, tx, ty;
-  tx = modf (ux, &ipartx);
-  ty = modf (uy, &iparty);
-  int ix = (int) ipartx;
-  int iy = (int) iparty;
+  int ix;
+  int iy;
+  double tx;
+  double ty;
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
   double tpx[4], tpy[4], a[4], b[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -177,15 +216,20 @@ eval_UBspline_2d_d_vg (UBspline_2d_d * restrict spline,
                        double x, double y,
                        double* restrict val, double* restrict grad)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double ipartx, iparty, tx, ty;
-  tx = modf (ux, &ipartx);
-  ty = modf (uy, &iparty);
-  int ix = (int) ipartx;
-  int iy = (int) iparty;
+  int ix;
+  int iy;
+  double tx;
+  double ty;
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -238,15 +282,20 @@ eval_UBspline_2d_d_vgl (UBspline_2d_d * restrict spline,
                         double x, double y, double* restrict val,
                         double* restrict grad, double* restrict lapl)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double ipartx, iparty, tx, ty;
-  tx = modf (ux, &ipartx);
-  ty = modf (uy, &iparty);
-  int ix = (int) ipartx;
-  int iy = (int) iparty;
+  int ix;
+  int iy;
+  double tx;
+  double ty;
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4], d2a[4], d2b[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -318,15 +367,20 @@ eval_UBspline_2d_d_vgh (UBspline_2d_d * restrict spline,
                         double x, double y, double* restrict val,
                         double* restrict grad, double* restrict hess)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double ipartx, iparty, tx, ty;
-  tx = modf (ux, &ipartx);
-  ty = modf (uy, &iparty);
-  int ix = (int) ipartx;
-  int iy = (int) iparty;
+  int ix;
+  int iy;
+  double tx;
+  double ty;
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
   double tpx[4], tpy[4], a[4], b[4], da[4], db[4], d2a[4], d2b[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -408,19 +462,27 @@ eval_UBspline_3d_d (UBspline_3d_d * restrict spline,
                     double x, double y, double z,
                     double* restrict val)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  z -= spline->z_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double uz = z*spline->z_grid.delta_inv;
-  double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);
-  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);
-  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);
-  int iz = (int) ipartz;
+  int ix;
+  int iy;
+  int iz;
+  double tx;
+  double ty;
+  double tz;
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
+  coeff_offset_UBspline_d(&(spline->z_grid),
+				&(spline->zBC),
+				z,
+				iz,
+				tz);
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4];
   tpx[0] = tx*tx*tx;
   tpx[1] = tx*tx;
@@ -475,19 +537,27 @@ eval_UBspline_3d_d_vg (UBspline_3d_d * restrict spline,
                        double x, double y, double z,
                        double* restrict val, double* restrict grad)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  z -= spline->z_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double uz = z*spline->z_grid.delta_inv;
-  double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);
-  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);
-  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);
-  int iz = (int) ipartz;
+  int ix;
+  int iy;
+  int iz;
+  double tx;
+  double ty;
+  double tz;
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
+  coeff_offset_UBspline_d(&(spline->z_grid),
+				&(spline->zBC),
+				z,
+				iz,
+				tz);
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], da[4], db[4], dc[4],
          cP[16], bcP[4], dbcP[4];
   tpx[0] = tx*tx*tx;
@@ -587,19 +657,27 @@ eval_UBspline_3d_d_vgl (UBspline_3d_d * restrict spline,
                         double x, double y, double z,
                         double* restrict val, double* restrict grad, double* restrict lapl)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  z -= spline->z_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double uz = z*spline->z_grid.delta_inv;
-  double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);
-  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);
-  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);
-  int iz = (int) ipartz;
+  int ix;
+  int iy;
+  int iz;
+  double tx;
+  double ty;
+  double tz;
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
+  coeff_offset_UBspline_d(&(spline->z_grid),
+				&(spline->zBC),
+				z,
+				iz,
+				tz);
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], da[4], db[4], dc[4],
          d2a[4], d2b[4], d2c[4], cP[16], dcP[16], bcP[4], dbcP[4], d2bcP[4], bdcP[4];
   tpx[0] = tx*tx*tx;
@@ -745,28 +823,27 @@ eval_UBspline_3d_d_vgh (UBspline_3d_d * restrict spline,
                         double x, double y, double z,
                         double* restrict val, double* restrict grad, double* restrict hess)
 {
-  x -= spline->x_grid.start;
-  y -= spline->y_grid.start;
-  z -= spline->z_grid.start;
-  double ux = x*spline->x_grid.delta_inv;
-  double uy = y*spline->y_grid.delta_inv;
-  double uz = z*spline->z_grid.delta_inv;
-  ux = fmin (ux, (double)(spline->x_grid.num)-1.0e-5);
-  uy = fmin (uy, (double)(spline->y_grid.num)-1.0e-5);
-  uz = fmin (uz, (double)(spline->z_grid.num)-1.0e-5);
-  double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);
-  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);
-  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);
-  int iz = (int) ipartz;
-//   if ((ix >= spline->x_grid.num))    x = spline->x_grid.num;
-//   if ((ix < 0))                      x = 0;
-//   if ((iy >= spline->y_grid.num))    y = spline->y_grid.num;
-//   if ((iy < 0))                      y = 0;
-//   if ((iz >= spline->z_grid.num))    z = spline->z_grid.num;
-//   if ((iz < 0))                      z = 0;
+  int ix;
+  int iy;
+  int iz;
+  double tx;
+  double ty;
+  double tz;
+  coeff_offset_UBspline_d(&(spline->x_grid),
+				&(spline->xBC),
+				x,
+				ix,
+				tx);
+  coeff_offset_UBspline_d(&(spline->y_grid),
+				&(spline->yBC),
+				y,
+				iy,
+				ty);
+  coeff_offset_UBspline_d(&(spline->z_grid),
+				&(spline->zBC),
+				z,
+				iz,
+				tz);
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], da[4], db[4], dc[4],
          d2a[4], d2b[4], d2c[4], cP[16], dcP[16], d2cP[16], bcP[4], dbcP[4],
          d2bcP[4], dbdcP[4], bd2cP[4], bdcP[4];

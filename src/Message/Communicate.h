@@ -13,8 +13,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_COMMUNICATE_H
@@ -28,38 +26,47 @@
 namespace mpi3 = boost::mpi3;
 #endif
 
-#ifdef HAVE_OOMPI
-#include "oompi.h"
+#ifdef HAVE_MPI
 struct CommunicatorTraits
 {
-  typedef MPI_Comm         mpi_comm_type;
-  typedef MPI_Status       status;
-  typedef MPI_Request      request;
-  typedef OOMPI_Intra_comm intra_comm_type;
+  typedef MPI_Comm mpi_comm_type;
+  typedef MPI_Status status;
+  typedef MPI_Request request;
 };
-#define APP_ABORT(msg) \
-{std::cerr << "Fatal Error. Aborting at " << msg << std::endl; MPI_Abort(MPI_COMM_WORLD, 1);}
+#define APP_ABORT(msg)                                            \
+  {                                                               \
+    std::cerr << "Fatal Error. Aborting at " << msg << std::endl; \
+    MPI_Abort(MPI_COMM_WORLD, 1);                                 \
+  }
 
-#define APP_ABORT_TRACE(f,l,msg) \
-{std::cerr << "Fatal Error. Aborting at " << l \
-  << "::" << f << "\n " <<  msg << std::endl; MPI_Abort(MPI_COMM_WORLD, 1);}
+#define APP_ABORT_TRACE(f, l, msg)                                                           \
+  {                                                                                          \
+    std::cerr << "Fatal Error. Aborting at " << l << "::" << f << "\n " << msg << std::endl; \
+    MPI_Abort(MPI_COMM_WORLD, 1);                                                            \
+  }
 
 #else
 struct CommunicatorTraits
 {
-  typedef int  mpi_comm_type;
-  typedef int  status;
-  typedef int  request;
-  typedef int  intra_comm_type;
+  typedef int mpi_comm_type;
+  typedef int status;
+  typedef int request;
+  static const int MPI_COMM_NULL    = 0;
   static const int MPI_REQUEST_NULL = 1;
 };
 
-#define APP_ABORT(msg) \
-{std::cerr << "Fatal Error. Aborting at " << msg << std::endl; std::cerr.flush(); exit(1);}
+#define APP_ABORT(msg)                                            \
+  {                                                               \
+    std::cerr << "Fatal Error. Aborting at " << msg << std::endl; \
+    std::cerr.flush();                                            \
+    exit(1);                                                      \
+  }
 
-#define APP_ABORT_TRACE(f,l,msg) \
-{std::cerr << "Fatal Error. Aborting at " << l \
-  << "::" << f << "\n " <<  msg << std::endl; exit(1);}
+#define APP_ABORT_TRACE(f, l, msg)                                                           \
+  {                                                                                          \
+    std::cerr << "Fatal Error. Aborting at " << l << "::" << f << "\n " << msg << std::endl; \
+    exit(1);                                                                                 \
+  }
 
 #endif
 
@@ -77,113 +84,73 @@ struct CommunicatorTraits
  *  is available (mutually exclusive).
  * @todo Possibly, make it a general manager class for mpi+openmp, mpi+mpi
  */
-class Communicate: public CommunicatorTraits
+class Communicate : public CommunicatorTraits
 {
-
 public:
-
   ///constructor
   Communicate();
 
   ///constructor from mpi3 environment
 #ifdef HAVE_MPI
-  Communicate(const mpi3::environment &env);
+  Communicate(const mpi3::environment& env);
+
+  ///constructor with communicator
+  Communicate(const mpi3::communicator& in_comm);
 #endif
 
   ///constructor with communicator
-  Communicate(const mpi_comm_type comm_input);
-
-  ///constructor with communicator
-  //Communicate(const intra_comm_type& c);
   Communicate(const Communicate& in_comm, int nparts);
 
   /**destructor
    * Call proper finalization of Communication library
    */
   virtual ~Communicate();
+
+  ///disable constructor
+  Communicate(const Communicate&) = delete;
+
   // Only for unit tests
-  void initialize(int argc, char **argv);
+  void initialize(int argc, char** argv);
 
 #ifdef HAVE_MPI
-  void initialize(const mpi3::environment &env);
+  void initialize(const mpi3::environment& env);
 #endif
+  /// initialize this as a node/shared-memory communicator
+  void initializeAsNodeComm(const Communicate& parent);
   void finalize();
-  void abort();
-  void abort(const char* msg);
+  void barrier() const;
+  void abort() const;
+  void barrier_and_abort(const std::string& msg) const;
   void set_world();
 
 #if defined(HAVE_MPI)
   ///operator for implicit conversion to MPI_Comm
-  inline operator MPI_Comm() const
-  {
-    return myMPI;
-  }
+  inline operator MPI_Comm() const { return myMPI; }
 #endif
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
-  inline mpi_comm_type getMPI() const
-  {
-    return myMPI;
-  }
-
-  inline intra_comm_type& getComm()
-  {
-    return myComm;
-  }
-  inline const intra_comm_type& getComm() const
-  {
-    return myComm;
-  }
+  inline mpi_comm_type getMPI() const { return myMPI; }
 
   ///return the rank
-  inline int rank() const
-  {
-    return d_mycontext;
-  }
+  inline int rank() const { return d_mycontext; }
   ///return the number of tasks
-  inline int size() const
-  {
-    return d_ncontexts;
-  }
+  inline int size() const { return d_ncontexts; }
 
   ///return the group id
-  inline int getGroupID() const
-  {
-    return d_groupid;
-  }
+  inline int getGroupID() const { return d_groupid; }
   ///return the number of intra_comms which belong to the same group
-  inline int getGroupSize() const
-  {
-    return d_ngroups;
-  }
+  inline int getNumGroups() const { return d_ngroups; }
   //inline bool master() const { return (d_mycontext == 0);}
   //intra_comm_type split(int n);
   void cleanupMessage(void*);
-  inline void setNodeID(int i)
-  {
-    d_mycontext = i;
-  }
-  inline void setNumNodes(int n)
-  {
-    d_ncontexts = n;
-  }
+  inline void setNodeID(int i) { d_mycontext = i; }
+  inline void setNumNodes(int n) { d_ncontexts = n; }
 
-  void barrier();
-
-  inline void setName(const std::string& aname)
-  {
-    myName=aname;
-  }
-  inline const std::string& getName() const
-  {
-    return myName;
-  }
+  inline void setName(const std::string& aname) { myName = aname; }
+  inline const std::string& getName() const { return myName; }
 
   ///return true if the current MPI rank is the group lead
-  inline bool isGroupLeader()
-  {
-    return d_mycontext==0;
-  }
+  inline bool isGroupLeader() { return d_mycontext == 0; }
 
   // MMORALES: leaving this here temprarily, but it doesn;t belong here.
   // MMORALES: FIX FIX FIX
@@ -196,17 +163,22 @@ public:
 #endif
 #endif
 
-  inline bool head_nodes(MPI_Comm& MPI_COMM_HEAD_OF_NODES) {
+  inline bool head_nodes(MPI_Comm& MPI_COMM_HEAD_OF_NODES)
+  {
     char hostname[HOST_NAME_MAX];
-    gethostname(hostname,HOST_NAME_MAX);
-    int myrank=rank(),nprocs=size();
-    char *dummy = new char[nprocs*HOST_NAME_MAX];
-    MPI_Allgather(hostname,HOST_NAME_MAX,MPI_CHAR,dummy,HOST_NAME_MAX,MPI_CHAR,myMPI);
-    bool head_of_node=true;
-    for(int i=0; i<myrank; i++)
-      if( strcmp(hostname,dummy+i*HOST_NAME_MAX)==0 ) { head_of_node=false; break;}
-    int key = head_of_node?0:10;
-    MPI_Comm_split(myMPI,key,myrank,&MPI_COMM_HEAD_OF_NODES);
+    gethostname(hostname, HOST_NAME_MAX);
+    int myrank = rank(), nprocs = size();
+    char* dummy = new char[nprocs * HOST_NAME_MAX];
+    MPI_Allgather(hostname, HOST_NAME_MAX, MPI_CHAR, dummy, HOST_NAME_MAX, MPI_CHAR, myMPI);
+    bool head_of_node = true;
+    for (int i = 0; i < myrank; i++)
+      if (strcmp(hostname, dummy + i * HOST_NAME_MAX) == 0)
+      {
+        head_of_node = false;
+        break;
+      }
+    int key = head_of_node ? 0 : 10;
+    MPI_Comm_split(myMPI, key, myrank, &MPI_COMM_HEAD_OF_NODES);
     delete[] dummy;
     return head_of_node;
   }
@@ -215,43 +187,66 @@ public:
   // MMORALES:
   // right now there is no easy way to use Communicate
   // for generic processor subgroups, so calling split on myMPI
-  // and managing the communicator directly  
+  // and managing the communicator directly
   // THIS MUST BE FIXED!!!
 #ifdef HAVE_MPI
-  inline void split_comm(int key, MPI_Comm& comm) {
-    int myrank=rank(),nprocs=size();
-    MPI_Comm_split(myMPI,key,myrank,&comm);
+  inline void split_comm(int key, MPI_Comm& comm)
+  {
+    int myrank = rank();
+    MPI_Comm_split(myMPI, key, myrank, &comm);
   }
 #endif
 
-  template<typename T> void allreduce(T&);
-  template<typename T> void reduce(T&);
-  template<typename T> void reduce(T* restrict, T* restrict, int n);
-  template<typename T> void reduce_in_place(T* restrict, int n);
-  template<typename T> void bcast(T&);
-  template<typename T> void bcast(T* restrict, int n);
-  template<typename T> void send(int dest, int tag, T&);
-  template<typename T> void gather(T& sb, T& rb, int dest=0);
-  template<typename T, typename IT> void gatherv(T& sb, T& rb, IT& counts, IT& displ, int dest=0);
-  template<typename T> void allgather(T& sb, T& rb, int count);
-  template<typename T, typename IT> void allgatherv(T& sb, T& rb, IT& counts, IT& displ);
-  template<typename T> void scatter(T& sb, T& rb, int dest=0);
-  template<typename T, typename IT> void scatterv(T& sb, T& rb, IT& counts, IT& displ, int source=0);
-  template<typename T> request irecv(int source, int tag, T&);
-  template<typename T> request isend(int dest, int tag, T&);
-  template<typename T> request irecv(int source, int tag, T*, int n);
-  template<typename T> request isend(int dest, int tag, T*, int n);
-  template<typename T, typename IT> void gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest=0);
-  template<typename T, typename TMPI, typename IT> void gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest=0);
-  template<typename T> void allgather(T* sb, T* rb, int count);
-  template<typename T> void gsum(T&);
+  template<typename T>
+  void allreduce(T&);
+  template<typename T>
+  void reduce(T&);
+  template<typename T>
+  void reduce(T* restrict, T* restrict, int n);
+  template<typename T>
+  void reduce_in_place(T* restrict, int n);
+  template<typename T>
+  void bcast(T&);
+  template<typename T>
+  void bcast(T* restrict, int n);
+  template<typename T>
+  void send(int dest, int tag, T&);
+  template<typename T>
+  void gather(T& sb, T& rb, int dest = 0);
+  template<typename T, typename IT>
+  void gatherv(T& sb, T& rb, IT& counts, IT& displ, int dest = 0);
+  template<typename T>
+  void allgather(T& sb, T& rb, int count);
+  template<typename T, typename IT>
+  void allgatherv(T& sb, T& rb, IT& counts, IT& displ);
+  template<typename T>
+  void scatter(T& sb, T& rb, int dest = 0);
+  template<typename T, typename IT>
+  void scatterv(T& sb, T& rb, IT& counts, IT& displ, int source = 0);
+  template<typename T>
+  request irecv(int source, int tag, T&);
+  template<typename T>
+  request isend(int dest, int tag, T&);
+  template<typename T>
+  request irecv(int source, int tag, T*, int n);
+  template<typename T>
+  request isend(int dest, int tag, T*, int n);
+  template<typename T, typename IT>
+  void gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest = 0);
+  template<typename T, typename TMPI, typename IT>
+  void gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest = 0);
+  template<typename T>
+  void allgather(T* sb, T* rb, int count);
+  template<typename T>
+  void gsum(T&);
 
 protected:
-
-  /// Raw communicator
+  /** Raw communicator
+   *
+   *  Currently it is only owned by Communicate which manages its creation and destruction
+   *  After switching to mpi3::communicator, myMPI is only a reference to the raw communicator owned by mpi3::communicator
+   */
   mpi_comm_type myMPI;
-  /// OOMPI communicator
-  intra_comm_type myComm;
   /// Communicator name
   std::string myName;
   /// Rank
@@ -265,10 +260,10 @@ protected:
 
 public:
   /// Group Lead Communicator
-  Communicate *GroupLeaderComm;
+  Communicate* GroupLeaderComm;
 
-  /// mpi3 communicator wrapper
 #ifdef HAVE_MPI
+  /// mpi3 communicator wrapper
   mpi3::communicator comm;
 #endif
 };
@@ -279,7 +274,7 @@ namespace OHMMS
 /** Global Communicator for a process
  */
 extern Communicate* Controller;
-}
+} // namespace OHMMS
 
 
 #endif // OHMMS_COMMUNICATE_H

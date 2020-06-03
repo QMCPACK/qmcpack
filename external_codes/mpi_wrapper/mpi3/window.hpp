@@ -1,12 +1,15 @@
 #if COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wfatal-errors -D_TEST_BOOST_MPI3_WINDOW $0x.cpp -o $0x.x && time mpirun -np 4 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++17 `#-Wfatal-errors` -Wall -Wextra -Wpedantic -D_TEST_BOOST_MPI3_WINDOW $0x.cpp -o $0x.x && time mpirun -np 4 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
 #endif
-//  (C) Copyright Alfredo A. Correa 2018.
+//  (C) Copyright Alfredo A. Correa 2019
 #ifndef BOOST_MPI3_WINDOW_HPP
 #define BOOST_MPI3_WINDOW_HPP
 
-#include "../mpi3/communicator.hpp"
+#include "../mpi3/error.hpp"
+#include "../mpi3/type.hpp"
 #include "../mpi3/detail/datatype.hpp"
+#include "../mpi3/detail/call.hpp"
+#include "../mpi3/communicator.hpp"
 
 #define OMPI_SKIP_MPICXX 1  // https://github.com/open-mpi/ompi/issues/5157
 #include<mpi.h>
@@ -14,51 +17,42 @@
 namespace boost{
 namespace mpi3{
 
-class group;
-
-template<class T = void>
-class panel;
-
-//template<class T = void> struct window;
-
-struct basic_window{
-protected:
-	basic_window() = default;
-	basic_window(MPI_Win w) : impl_{w}{}
-public:
-	MPI_Win impl_ = MPI_WIN_NULL;
-	MPI_Win& operator&(){return impl_;}
-	MPI_Win const& operator&() const{return impl_;}
+struct target{
+	int rank;
+	mpi3::size_t disp;
 };
 
+template<class T = void> class panel;
+
+template<class T = void> struct window;
+
 template<>
-struct window<void> : basic_window{
-	public:
-	window(){}
-	template<class T>
-	window(T* base, mpi3::size_t size, communicator& comm){
-		int s = MPI_Win_create(
-			(void*)base, size*sizeof(T), sizeof(T), MPI_INFO_NULL, 
-			&comm, &impl_
-		); // TODO probably need alignof
-		if(s != MPI_SUCCESS) throw std::runtime_error{"cannot create window"};
+struct window<void>{
+protected:
+	MPI_Win impl_ = MPI_WIN_NULL;
+public:
+	MPI_Win& operator&(){return impl_;}
+	MPI_Win const& operator&() const{return impl_;}
+	void clear(){
+		if(impl_ != MPI_WIN_NULL) MPI3_CALL(MPI_Win_free)(&impl_);
+		assert(impl_ == MPI_WIN_NULL);
 	}
-	window(void* base, mpi3::size_t size, communicator& comm){
-		int s = MPI_Win_create(base, size, 1, MPI_INFO_NULL, &comm, &impl_);
-		if(s != MPI_SUCCESS) throw std::runtime_error{"cannot create window"};
+protected:
+	window() = default;
+public:
+	template<class T, class Size = mpi3::size_t>
+	window(communicator const& c, T* b, Size n = 0){
+		MPI3_CALL(MPI_Win_create)(b, n*sizeof(T), alignof(T), MPI_INFO_NULL, c.get(), &impl_);
+		assert( alignof(T) == sizeof(T) ); // to see in what type it is different
 	}
-	window(communicator& comm) : window((void*)nullptr, 0, comm){}
-	window(window const&) = delete; // cannot be duplicated, see text before sec. 4.5 in Using Adv. MPI
-	window(window&& other) : basic_window{std::exchange(other.impl_, MPI_WIN_NULL)}{//is movable if null is not a correct state?
-//		other.impl_ = MPI_WIN_NULL;
+	window(window const&) = delete;// see text before §4.5 in Using Adv. MPI
+	window(window&& o) noexcept : impl_{std::exchange(o.impl_, MPI_WIN_NULL)}{}
+	window& operator=(window const&) = delete; // see cctor
+	window& operator=(window&& other){// self assignment is undefined
+		clear(); swap(*this, other); return *this;
 	}
-	window& operator=(window const&) = delete; // see comment in cctor
-	window& operator=(window&& other){ // guard self assignment? probably worthless
-		if(impl_ != MPI_WIN_NULL) MPI_Win_free(&impl_);
-		impl_ = std::exchange(other.impl_, MPI_WIN_NULL);
-		return *this;
-	}
-	~window(){if(impl_ != MPI_WIN_NULL) MPI_Win_free(&impl_);}
+	friend void swap(window& a, window& b){std::swap(a.impl_, b.impl_);}
+	~window(){clear();}
 	template<typename It1, typename Size, typename V = typename std::iterator_traits<It1>::value_type>
 	void accumulate_n(It1 first, Size count, int target_rank, int target_disp = 0){
 		using detail::data;
@@ -84,37 +78,40 @@ struct window<void> : basic_window{
 	void flush_local(){return flush_local_all();}
 	void* base() const{
 		void* base; int flag;
-		int s = MPI_Win_get_attr(impl_, MPI_WIN_BASE, &base, &flag);
-		if(s != MPI_SUCCESS) throw std::runtime_error("cannot get base");
+		MPI3_CALL(MPI_Win_get_attr)(impl_, MPI_WIN_BASE, &base, &flag);
 		assert(flag);
 		return base;
 	}
 	mpi3::size_t const& size() const{
 		MPI_Aint* size_p; int flag;
-		int s = MPI_Win_get_attr(impl_, MPI_WIN_SIZE, &size_p, &flag);
-		if(s != MPI_SUCCESS) throw std::runtime_error("cannot get base");
+		MPI3_CALL(MPI_Win_get_attr)(impl_, MPI_WIN_SIZE, &size_p, &flag);
 		assert(flag);
 		return *size_p;
 	}
 	int const& disp_unit() const{
 		int* disp_unit_p; int flag;
-		int s = MPI_Win_get_attr(impl_, MPI_WIN_DISP_UNIT, &disp_unit_p, &flag);
-		if(s != MPI_SUCCESS) throw std::runtime_error("cannot get base");
+		MPI3_CALL(MPI_Win_get_attr)(impl_, MPI_WIN_DISP_UNIT, &disp_unit_p, &flag);
 		assert(flag);
 		return *disp_unit_p;
 	}
 //	get_errhandler(...);
+	group get_group() const{
+		group ret;
+		MPI3_CALL(MPI_Win_get_group)(impl_, &(&ret));
+		return ret;
+	}
 //	group get_group(){use reinterpret_cast?}
 //	... get_info
 //	... get_name
+	// lock arguments are reversed
 	void lock(int rank, int lock_type = MPI_LOCK_EXCLUSIVE, int assert = MPI_MODE_NOCHECK){
-		MPI_Win_lock(lock_type, rank, assert, impl_);
+		MPI3_CALL(MPI_Win_lock)(lock_type, rank, assert, impl_);
 	}
 	void lock_exclusive(int rank, int assert = MPI_MODE_NOCHECK){
-		MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, assert, impl_);
+		MPI3_CALL(MPI_Win_lock)(MPI_LOCK_EXCLUSIVE, rank, assert, impl_);
 	}
 	void lock_shared(int rank, int assert = MPI_MODE_NOCHECK){
-		MPI_Win_lock(MPI_LOCK_SHARED, rank, assert, impl_);
+		MPI3_CALL(MPI_Win_lock)(MPI_LOCK_SHARED, rank, assert, impl_);
 	}
 	void lock_all(int assert = MPI_MODE_NOCHECK){MPI_Win_lock_all(assert, impl_);}
 //	void post(group const& g, int assert = MPI_MODE_NOCHECK) const{
@@ -133,39 +130,33 @@ struct window<void> : basic_window{
 	void unlock(int rank) const{MPI_Win_unlock(rank, impl_);}
 	void unlock_all(){MPI_Win_unlock_all(impl_);}
 	void wait() const{MPI_Win_wait(impl_);}
-
 //	void fetch_and_op(T const*  origin, T* target, int target_rank, int target_disp = 0) const{
 //		MPI_Fetch_and_op(origin, target, detail::datatype<T>{}, target_rank, target_disp, , impl_);
 //	}
-
 //	template<class T, class Op, class datatype = detail::datatype<T>, >
 //	void fetch_and_op(T const*  origin, T* target, int target_rank, int target_disp = 0) const{
 //		MPI_Fetch_and_op(origin, target, datatype{}, target_rank, target_disp, , impl_);
 //	}
-
 //	void fetch_exchange(T const*  origin, T* target, int target_rank, int target_disp = 0) const{
 //		MPI_Fetch_and_op(origin, target,detail::datatype<T>{}, target_rank, target_disp, MPI_REPLACE, impl_);
 //	}
-
 //	maybe this goes to a pointer impl
-
 	template<class T>
-	void fetch_sum_value(T const& origin, T& target, int target_rank, int target_disp = 0) const{
-		MPI_Fetch_and_op(&origin, &target, detail::basic_datatype<T>{}, target_rank, target_disp, MPI_SUM, impl_);
+	void fetch_sum_value(T const& origin, T& target, int target_rank, int target_disp=0) const{
+		MPI3_CALL(MPI_Fetch_and_op)(&origin, &target, detail::basic_datatype<T>{}, target_rank, target_disp, MPI_SUM, impl_);
 	}
 	template<class T>
 	void fetch_prod_value(T const& origin, T& target, int target_rank, int target_disp = 0) const{
-		MPI_Fetch_and_op(&origin, &target, detail::basic_datatype<T>{}, target_rank, target_disp, MPI_PROD, impl_);
+		MPI3_CALL(MPI_Fetch_and_op)(&origin, &target, detail::basic_datatype<T>{}, target_rank, target_disp, MPI_PROD, impl_);
 	}
 	template<class T>
 	void fetch_replace_value(T const&  origin, T& target, int target_rank, int target_disp = 0) const{
-		MPI_Fetch_and_op(&origin, &target, detail::basic_datatype<T>{}, target_rank, target_disp, MPI_REPLACE, impl_);
+		MPI3_CALL(MPI_Fetch_and_op)(&origin, &target, detail::basic_datatype<T>{}, target_rank, target_disp, MPI_REPLACE, impl_);
 	}
 	template<class CI1, class CI2, class datatype = detail::basic_datatype<typename std::iterator_traits<CI1>::value_type> >
 	void fetch_replace(CI1 it1, CI2 it2, int target_rank, int target_disp = 0) const{
-		MPI_Fetch_and_op(std::addressof(*it1), std::addressof(*it2), datatype{}, target_rank, target_disp, MPI_REPLACE, impl_); 
+		MPI3_CALL(MPI_Fetch_and_op)(std::addressof(*it1), std::addressof(*it2), datatype{}, target_rank, target_disp, MPI_REPLACE, impl_); 
 	}
-
 	template<class ContiguousIterator>
 	void blocking_put_n(ContiguousIterator it, int count, int target_rank, int target_offset = 0){
 		lock_shared(target_rank, 0);
@@ -175,7 +166,7 @@ struct window<void> : basic_window{
 	template<class ContiguousIterator>
 	void put_n(ContiguousIterator it, std::size_t n, int target_rank, int target_disp = 0) const{
 		using detail::data;
-		MPI_Put(
+		MPI3_CALL(MPI_Put)(
 			data(it), /* void* origin_address = a + i*/ 
 			n, /*int origin_count = 1 */
 			detail::basic_datatype<typename std::iterator_traits<ContiguousIterator>::value_type>{}, 
@@ -198,7 +189,7 @@ struct window<void> : basic_window{
 	template<typename ContiguousIterator, typename Size>
 	ContiguousIterator get_n(ContiguousIterator it, Size n, int target_rank, int target_disp = 0) const{
 		using detail::data;
-		int s = MPI_Get(
+		MPI3_CALL(MPI_Get)(
 			data(it), /* void* origin_address = b + i*/
 			n, /*int origin_count = 1 */
 			detail::basic_datatype<typename std::iterator_traits<ContiguousIterator>::value_type>{}, 
@@ -208,7 +199,6 @@ struct window<void> : basic_window{
 			detail::basic_datatype<typename std::iterator_traits<ContiguousIterator>::value_type>{}, 
 			impl_
 		);
-		if(s != MPI_SUCCESS) throw std::runtime_error("cannot get_n");
 		return it + n;
 	}
 	template<typename ContiguousIterator>
@@ -224,9 +214,12 @@ struct window<void> : basic_window{
 
 template<class T>
 struct window : window<void>{
+protected:
 	window() = default;
-	window(T* base, mpi3::size_t size, communicator& comm) : window<void>(static_cast<void*>(base), size*sizeof(T), comm){}
-	T* base() const{return window<void>::base();}
+public:
+	template<class Size = mpi3::size_t>
+	window(communicator const& c, T* b, Size n = 0) : window<void>{c, b, n}{}
+	T* base() const{return static_cast<T*>(window<void>::base());}
 	mpi3::size_t size() const{return window<void>::size()/sizeof(T);}
 };
 
@@ -237,16 +230,6 @@ class panel{
 	panel(window<T>& w, int rank) : w_(w), rank_(rank){}
 //	friend window;
 };
-
-template<class T /*=void*/>
-window<T> communicator::make_window(T* t, mpi3::size_t n){
-	return window<T>(t, n, *this);
-}
-
-template<class T /*=void*/>
-window<T> communicator::make_window(){
-	return make_window<T>((T*)nullptr, 0);
-}
 
 template<class T> struct reference;
 
@@ -293,30 +276,6 @@ shm_pointer<T> communicator::allocate_shared(MPI_Aint size) const
 }
 #endif 
 
-template<class T>
-void communicator::deallocate_shared(pointer<T>){
-//	MPI_Free_mem(p.base_ptr(rank()));
-}
-
-template<class T>
-void communicator::deallocate(pointer<T>&, MPI_Aint){
-//	p.pimpl_->fence();
-//	MPI_Free_mem(p.local_ptr());
-//	MPI_Win_free(&p.pimpl_->impl_);
-//	delete p.pimpl_;
-//	p.pimpl_ == nullptr;
-}
-
-template<class T>
-window<T> communicator::make_window(mpi3::size_t size){
-	mpi3::info inf;
-	void* ptr;
-	window<T> ret;
-	int s = MPI_Win_allocate(size*sizeof(T), sizeof(T), inf.impl_, this->impl_, &ptr, &ret.impl_);
-	if(s != MPI_SUCCESS) throw std::runtime_error("cannot window_allocate");
-	return ret;
-}
-
 }}
 
 #ifdef _TEST_BOOST_MPI3_WINDOW
@@ -329,21 +288,29 @@ using std::cout;
 
 int mpi3::main(int, char*[], mpi3::communicator world){
 
-	std::vector<double> darr(world.rank()?0:100);
-	mpi3::window<double> w = world.make_window(darr.data(), darr.size());
-	w.fence();
+	std::vector<double> darr(world.rank()?0:20);
+	std::iota(darr.begin(), darr.end(), 0);
+
+	mpi3::window<double> win{world, darr.data(), darr.size()};
+	if(world.rank() == 0){
+		std::cout << win.size() << std::endl;
+		assert( win.size() == 20 );
+		assert( win.base()[13] == 13 );
+	}else{
+		assert(win.size() == 0);
+		assert(win.base() == nullptr );
+	}
+	win.fence();
 	if(world.rank() == 0){
 		std::vector<double> a = {5., 6.};
-		w.put(a.begin(), a.end(), 0);
+		win.put(a.begin(), a.end(), 0);
 	}
-	world.barrier();
-	w.fence();
+	mpi3::communicator{win.get_group()}.barrier();
+	win.fence();
 	std::vector<double> b(2);
-	w.get(b.begin(), b.end(), 0);
-	w.fence();
-	assert( b[0] == 5.);
-	world.barrier();
-
+	win.get(b.begin(), b.end(), 0);
+	win.fence();
+	assert( b[0] == 5. and b[1] == 6. );
 	return 0;
 }
 

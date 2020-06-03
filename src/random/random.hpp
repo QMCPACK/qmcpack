@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -13,10 +13,9 @@
 
 inline uint32_t MakeSeed(int i, int n)
 {
-  const uint32_t u=1<<10;
-  return static_cast<uint32_t>(std::time(nullptr))%u+(i+1)*n+i;
+  const uint32_t u = 1 << 10;
+  return static_cast<uint32_t>(std::time(nullptr)) % u + (i + 1) * n + i;
 }
 
 #include <Utilities/RandomGenerator.h>
 #endif
-

@@ -11,28 +11,27 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBACKFLOW_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBACKFLOW_H
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#include<cmath>
+#include <cmath>
 
 namespace qmcplusplus
 {
-
-class SlaterDetWithBackflow: public SlaterDet
+class SlaterDetWithBackflow : public SlaterDet
 {
 public:
-  BackflowTransformation *BFTrans;
+  BackflowTransformation* BFTrans;
 
   /**  constructor
    * @param targetPtcl target Particleset
    * @param rn release node
    */
-  SlaterDetWithBackflow(ParticleSet& targetPtcl,BackflowTransformation *BF);
+  SlaterDetWithBackflow(ParticleSet& targetPtcl, BackflowTransformation* BF);
 
   ///destructor
   ~SlaterDetWithBackflow();
@@ -41,7 +40,7 @@ public:
   void setBF(BackflowTransformation* bf)
   {
     BFTrans = bf;
-    for(int i=0; i<Dets.size(); i++)
+    for (int i = 0; i < Dets.size(); i++)
       Dets[i]->setBF(BFTrans);
   }
 
@@ -49,10 +48,10 @@ public:
   void checkInVariables(opt_variables_type& active)
   {
     //if(Optimizable) {
-    if(BFTrans->isOptimizable())
+    if (BFTrans->isOptimizable())
     {
       BFTrans->checkInVariables(active);
-      for(int i=0; i<Dets.size(); i++)
+      for (int i = 0; i < Dets.size(); i++)
         Dets[i]->checkInVariables(active);
     }
   }
@@ -60,10 +59,10 @@ public:
   void checkOutVariables(const opt_variables_type& active)
   {
     //if(Optimizable) {
-    if(BFTrans->isOptimizable())
+    if (BFTrans->isOptimizable())
     {
       BFTrans->checkOutVariables(active);
-      for(int i=0; i<Dets.size(); i++)
+      for (int i = 0; i < Dets.size(); i++)
         Dets[i]->checkOutVariables(active);
     }
   }
@@ -72,97 +71,94 @@ public:
   void resetParameters(const opt_variables_type& active)
   {
     //if(Optimizable) {
-    if(BFTrans->isOptimizable())
+    if (BFTrans->isOptimizable())
     {
       BFTrans->resetParameters(active);
-      for(int i=0; i<Dets.size(); i++)
+      for (int i = 0; i < Dets.size(); i++)
         Dets[i]->resetParameters(active);
     }
   }
 
-  RealType evaluateLog(ParticleSet& P
-                       ,ParticleSet::ParticleGradient_t& G
-                       ,ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    BFTrans->evaluatePbyPWithGrad(P,iat);
+    BFTrans->evaluatePbyPWithGrad(P, iat);
     //BFTrans->evaluate(P);
-    ValueType psi=1.0;
-    for(int i=0; i<Dets.size(); ++i)
-      psi *= Dets[i]->ratioGrad(P,iat,grad_iat);
+    PsiValueType psi = 1.0;
+    for (int i = 0; i < Dets.size(); ++i)
+      psi *= Dets[i]->ratioGrad(P, iat, grad_iat);
     return psi;
   }
 
   GradType evalGrad(ParticleSet& P, int iat)
   {
     QMCTraits::GradType g;
-    for(int i=0; i<Dets.size(); ++i)
-      g += Dets[i]->evalGrad(P,iat);
+    for (int i = 0; i < Dets.size(); ++i)
+      g += Dets[i]->evalGrad(P, iat);
     return g;
   }
 
-  GradType evalGradSource(ParticleSet& P, ParticleSet &src, int iat)
+  GradType evalGradSource(ParticleSet& P, ParticleSet& src, int iat)
   {
     APP_ABORT("Need to implement SlaterDetWithBackflow::evalGradSource() \n");
     return ValueType();
   }
 
-  GradType evalGradSource (ParticleSet& P, ParticleSet& src, int iat,
-                           TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-                           TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
+  GradType evalGradSource(ParticleSet& P,
+                          ParticleSet& src,
+                          int iat,
+                          TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
+                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
   {
     APP_ABORT("Need to implement SlaterDetWithBackflow::evalGradSource() \n");
     return GradType();
   }
 
-  inline void acceptMove(ParticleSet& P, int iat)
+  inline void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false)
   {
-    BFTrans->acceptMove(P,iat);
-    for(int i=0; i<Dets.size(); i++)
-      Dets[i]->acceptMove(P,iat);
+    BFTrans->acceptMove(P, iat);
+    for (int i = 0; i < Dets.size(); i++)
+      Dets[i]->acceptMove(P, iat);
   }
 
   inline void restore(int iat)
   {
     BFTrans->restore(iat);
-    for(int i=0; i<Dets.size(); i++)
+    for (int i = 0; i < Dets.size(); i++)
       Dets[i]->restore(iat);
   }
 
 
-  inline ValueType ratio(ParticleSet& P, int iat)
+  inline PsiValueType ratio(ParticleSet& P, int iat)
   {
-    BFTrans->evaluatePbyP(P,iat);
+    BFTrans->evaluatePbyP(P, iat);
     //BFTrans->evaluate(P);
-    ValueType ratio=1.0;
-    for(int i=0; i<Dets.size(); ++i)
-      ratio*=Dets[i]->ratio(P,iat);
+    PsiValueType ratio = 1.0;
+    for (int i = 0; i < Dets.size(); ++i)
+      ratio *= Dets[i]->ratio(P, iat);
     return ratio;
   }
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  SPOSetPtr getPhi(int i=0)
-  {
-    return Dets[i]->getPhi();
-  }
+  SPOSetPtr getPhi(int i = 0) { return Dets[i]->getPhi(); }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi);
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi);
 
   void testDerivGL(ParticleSet& P);
 
   //private:
   //SlaterDetWithBackflow() {}
 };
-}
+} // namespace qmcplusplus
 #endif

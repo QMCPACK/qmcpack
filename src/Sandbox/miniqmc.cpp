@@ -17,7 +17,6 @@
  */
 #include <Configuration.h>
 #include <Particle/ParticleSet.h>
-#include <Particle/DistanceTable.h>
 #include <Utilities/PrimeNumberSet.h>
 #include <Utilities/Timer.h>
 #include <random/random.hpp>
@@ -192,10 +191,11 @@ int main(int argc, char** argv)
     nptcl=nels;
 
     {//create up/down electrons
-      els.Lattice.BoxBConds=1;   els.Lattice.set(ions.Lattice);
+      els.Lattice.BoxBConds = 1;
+      els.Lattice = ions.Lattice;
       vector<int> ud(2); ud[0]=nels/2; ud[1]=nels-ud[0];
       els.create(ud);
-      els.R.InUnit=1;
+      els.R.InUnit = PosUnit::Lattice;
       random_th.generate_uniform(&els.R[0][0],nels3);
       els.convert2Cart(els.R); // convert to Cartiesian
     }
@@ -206,6 +206,8 @@ int main(int argc, char** argv)
       Jastrow=new SoAWaveFunction(ions,els);
     else
       Jastrow=new AoSWaveFunction(ions,els);
+
+    const auto& d_ie = els.getDistTable(els.addTable(ions, DT_SOA));
 
     //create pseudopp
     NonLocalPP<OHMMS_PRECISION> ecp(random_th);
@@ -249,7 +251,6 @@ int main(int argc, char** argv)
         for(int iel=0; iel<nels; ++iel)
         {
           //compute G[iel] with the current position to make a move
-          els.setActive(iel);
           PosType grad_now=Jastrow->evalGrad(els,iel);
 
           //move iel el and compute the ratio
@@ -282,20 +283,19 @@ int main(int argc, char** argv)
       Jastrow->evaluateGL(els);
 
       ecp.randomize(rOnSphere); // pick random sphere
-      const DistanceTableData* d_ie=Jastrow->d_ie;
 
       clock_mc.restart();
       for(int jel=0; jel<nels; ++jel)
       {
-        const auto &dist  = d_ie->Distances[jel];
-        const auto &displ = d_ie->Displacements[jel];
+        const auto& dist = d_ie.getDistRow(jel);
+        const auto& displ = d_ie.getDisplRow(jel);
         for(int iat=0; iat<nions; ++iat)
           if(dist[iat]<Rmax)
           {
             for (int k=0; k < nknots ; k++)
             {
               PosType deltar(dist[iat]*rOnSphere[k]-displ[iat]);
-              els.makeMoveOnSphere(jel,deltar);
+              els.makeMove(jel,deltar);
               spo.evaluate_v(els.R[jel]);
               Jastrow->ratio(els,jel);
               els.rejectMove(jel);

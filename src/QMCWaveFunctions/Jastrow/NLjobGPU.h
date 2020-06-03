@@ -9,12 +9,12 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef NLJOB_GPU_H
 #define NLJOB_GPU_H
 
-template <typename S>
+template<typename S>
 struct NLjobGPU
 {
   int Elec, NumQuadPoints;

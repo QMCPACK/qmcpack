@@ -175,13 +175,14 @@ class array_of_sequences:
                 IsRoot r(Valloc_);
                 // calling barrier for safety right now
                 r.barrier();
+                size_type tot_sz = base::capacity();
                 if(r.root()){
-                        size_type tot_sz = base::capacity();
+/*
                         if(base::data_ && base::pointers_begin_ && base::pointers_end_) 
                                 for(size_type i = 0; i != base::size1_; ++i)
                                         for(auto p = base::data_ + base::pointers_begin_[i]; 
                                                  p != base::data_ + base::pointers_end_[i]; ++p)
-                                                Valloc_.destroy(std::addressof(*p));
+                                                Valloc_.destroy(to_address(p));
                         if(base::pointers_begin_ && base::pointers_end_) {
                                 for(size_type i = 0; i != base::size1_; ++i){
                                         Palloc_.destroy(std::addressof(base::pointers_begin_[i]));
@@ -189,13 +190,15 @@ class array_of_sequences:
                                 }
                                 Palloc_.destroy(std::addressof(base::pointers_begin_[base::size1_]));
                         }
-                        if(base::data_)   
-                                Valloc_.deallocate(base::data_, tot_sz);
-                        if(base::pointers_begin_)   
-                                Palloc_.deallocate(base::pointers_begin_, base::size1_+1);
-                        if(base::pointers_end_)   
-                                Palloc_.deallocate(base::pointers_end_  , base::size1_);
+*/
                 }
+                r.barrier();
+                if(base::data_)   
+                        Valloc_.deallocate(base::data_, tot_sz);
+                if(base::pointers_begin_)   
+                        Palloc_.deallocate(base::pointers_begin_, base::size1_+1);
+                if(base::pointers_end_)   
+                        Palloc_.deallocate(base::pointers_end_  , base::size1_);
                 base::reset();
                 r.barrier();
         }
@@ -220,11 +223,16 @@ class array_of_sequences:
 
 		IsRoot r(Valloc_);
 		if(r.root()){
+                        auto pb(to_address(base::pointers_begin_));
+                        auto pe(to_address(base::pointers_end_));
 			for(size_type i = 0; i != base::size1_; ++i){
-				Palloc_ts::construct(Palloc_, std::addressof(base::pointers_begin_[i]), i*nnzpr_unique);
-				Palloc_ts::construct(Palloc_, std::addressof(base::pointers_end_[i]), i*nnzpr_unique);
+                                *(pb+i) = i*nnzpr_unique;
+                                *(pe+i) = i*nnzpr_unique;
+				//Palloc_ts::construct(Palloc_, std::addressof(base::pointers_begin_[i]), i*nnzpr_unique);
+				//Palloc_ts::construct(Palloc_, std::addressof(base::pointers_end_[i]), i*nnzpr_unique);
 			}
-                        Palloc_ts::construct(Palloc_, std::addressof(base::pointers_begin_[base::size1_]), base::size1_*nnzpr_unique);
+                        *(pb+base::size1_) = base::size1_*nnzpr_unique;
+                        //Palloc_ts::construct(Palloc_, std::addressof(base::pointers_begin_[base::size1_]), base::size1_*nnzpr_unique);
 		}
 		r.barrier();
 	}
@@ -253,12 +261,17 @@ class array_of_sequences:
                 IsRoot r(Valloc_);
                 if(r.root()){
 			IntType cnter(0);
+                        auto pb(to_address(base::pointers_begin_));
+                        auto pe(to_address(base::pointers_end_));
                         for(size_type i = 0; i != base::size1_; ++i){
-                                Palloc_ts::construct(Palloc_, std::addressof(base::pointers_begin_[i]), cnter); 
-                                Palloc_ts::construct(Palloc_, std::addressof(base::pointers_end_[i]), cnter);
+                                *(pb+i) = cnter;
+                                *(pe+i) = cnter;
+                                //Palloc_ts::construct(Palloc_, std::addressof(base::pointers_begin_[i]), cnter); 
+                                //Palloc_ts::construct(Palloc_, std::addressof(base::pointers_end_[i]), cnter);
 				cnter += static_cast<IntType>(nnzpr[i]); 
                         }
-                        Palloc_ts::construct(Palloc_, std::addressof(base::pointers_begin_[base::size1_]), cnter);
+                        *(pb+base::size1_) = cnter;
+                        //Palloc_ts::construct(Palloc_, std::addressof(base::pointers_begin_[base::size1_]), cnter);
                 }
 		r.barrier();
         }
@@ -348,7 +361,8 @@ class array_of_sequences:
                 assert(index >= 0);
                 assert(index < base::size1_);
 		if(base::pointers_end_[index] < base::pointers_begin_[index+1]) { 
-			Valloc_ts::construct(Valloc_,std::addressof(base::data_[base::pointers_end_[index]]), std::forward<Args>(args)...);
+			//Valloc_ts::construct(Valloc_,std::addressof(base::data_[base::pointers_end_[index]]), std::forward<Args>(args)...);
+                        ::new (static_cast<void*>(std::addressof(base::data_[base::pointers_end_[index]]))) value_type(std::forward<Args>(args)...);
 			++base::pointers_end_[index];
 		} else   throw std::out_of_range("row size exceeded the maximum");
 	}

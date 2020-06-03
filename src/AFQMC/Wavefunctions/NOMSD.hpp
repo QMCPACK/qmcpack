@@ -22,10 +22,13 @@
 #include <iostream>
 #include <tuple>
 
+#include <Utilities/NewTimer.h>
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/config.h"
 #include "mpi3/shm/mutex.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
+#include "AFQMC/Walkers/WalkerConfig.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
@@ -37,6 +40,8 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
+extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
 
 /*
  * Class that implements a multi-Slater determinant trial wave-function.
@@ -45,36 +50,81 @@ namespace afqmc
  * Designed for non-orthogonal MSD expansions. 
  * For particle-hole orthogonal MSD wfns, use FastMSD.
  */  
+template<class devPsiT>
 class NOMSD: public AFQMCInfo
-{
+{ 
 
-  using CVector = boost::multi::array<ComplexType,1>;  
-  using CMatrix = boost::multi::array<ComplexType,2>;  
-  using CVector_ref = boost::multi::array_ref<ComplexType,1>;
-  using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;
-  using shmCVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;  
+// Note:
+// if number_of_devices > 0, nextra should always be 0, 
+// so code doesn't need to be portable in places guarded by if(nextra>0)
+
+  // allocators
+  using Allocator = device_allocator<ComplexType>;
+  using Allocator_shared = localTG_allocator<ComplexType>;
+
+  // type defs
+  using pointer = typename Allocator::pointer;
+  using const_pointer = typename Allocator::const_pointer;
+  using pointer_shared = typename Allocator_shared::pointer;
+  using const_pointer_shared = typename Allocator_shared::const_pointer;
+
+  using buffer_alloc_type = device_buffer_type<ComplexType>;
+  using shm_buffer_alloc_type = localTG_buffer_type<ComplexType>;
+
+  using CVector = boost::multi::array<ComplexType,1,Allocator>;  
+  using CMatrix = boost::multi::array<ComplexType,2,Allocator>;  
+  using CTensor = boost::multi::array<ComplexType,3,Allocator>;  
+  using CVector_ref = boost::multi::array_ref<ComplexType,1,pointer>;
+  using CMatrix_ref = boost::multi::array_ref<ComplexType,2,pointer>;
+  using CMatrix_ptr = boost::multi::array_ptr<ComplexType,2,pointer>;
+  using CMatrix_cref = boost::multi::array_ref<const ComplexType,2,const_pointer>;
+  using CTensor_ref = boost::multi::array_ref<ComplexType,3,pointer>;
+  using CTensor_cref = boost::multi::array_ref<const ComplexType,3,const_pointer>;
+  using shmCVector = boost::multi::array<ComplexType,1,Allocator_shared>;  
+  using shmCMatrix = boost::multi::array<ComplexType,2,Allocator_shared>;  
   using shared_mutex = boost::mpi3::shm::mutex;  
+
+  using stdCVector = boost::multi::array<ComplexType,1>;  
+  using stdCMatrix = boost::multi::array<ComplexType,2>;  
+  using stdCTensor = boost::multi::array<ComplexType,3>;  
+  using mpi3CVector = boost::multi::array<ComplexType,1,shared_allocator<ComplexType>>;  
+  using mpi3CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;  
+  using mpi3CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;  
+
+  using stdCMatrix_ref = boost::multi::array_ref<ComplexType,2>;  
+
+  using StaticVector = boost::multi::static_array<ComplexType,1,buffer_alloc_type>;
+  using StaticMatrix = boost::multi::static_array<ComplexType,2,buffer_alloc_type>;
+  using Static3Tensor = boost::multi::static_array<ComplexType,3,buffer_alloc_type>;
+
+  using StaticSHMVector = boost::multi::static_array<ComplexType,1,shm_buffer_alloc_type>;
+  using StaticSHMMatrix = boost::multi::static_array<ComplexType,2,shm_buffer_alloc_type>;
 
   public:
 
-    NOMSD(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, HamiltonianOperations&& hop_, 
-          std::vector<ComplexType>&& ci_, std::vector<PsiT_Matrix>&& orbs_, 
+    template<class MType>
+    NOMSD(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, 
+          SlaterDetOperations&& sdet_,  
+          HamiltonianOperations&& hop_, 
+          std::vector<ComplexType>&& ci_, std::vector<MType>&& orbs_, 
           WALKER_TYPES wlk, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
-                SDetOp(((wlk!=2)?(NMO):(2*NMO)),((wlk!=2)?(NAEA):(NAEA+NAEB))),
-                HamOp(std::move(hop_)),ci(std::move(ci_)),OrbMats(std::move(orbs_)),
-                walker_type(wlk),NuclearCoulombEnergy(nce),
-                shmbuff_for_E(nullptr),
+                buffer_allocator(device_buffer_generator.get()), 
+                shm_buffer_allocator(localTG_buffer_generator.get()),
+                alloc_(),  // right now device_allocator is default constructible 
+                alloc_shared_(make_localTG_allocator<ComplexType>(TG)),
+                SDetOp( std::move(sdet_) ), 
+                HamOp(std::move(hop_)),ci(std::move(ci_)),
+                OrbMats(move_vector<devPsiT>(std::move(orbs_))),
+                RefOrbMats({0,0},shared_allocator<ComplexType>{TG.Node()}),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
+                walker_type(wlk),
+                nspins((walker_type==COLLINEAR)?(2):(1)),
+                number_of_references(-1),
+                NuclearCoulombEnergy(nce),
                 last_number_extra_tasks(-1),last_task_index(-1),
-                //local_group_comm(nullptr),
-                //local_group_comm(std::make_unique<shared_communicator>(TG.TG_local().split(0))),
                 local_group_comm(),
-                shmbuff_for_G(nullptr),
-                req_Gsend(MPI_REQUEST_NULL),
-                req_Grecv(MPI_REQUEST_NULL),
-                req_SMsend(MPI_REQUEST_NULL),
-                req_SMrecv(MPI_REQUEST_NULL)
+                shmbuff_for_G(nullptr)
     {
       compact_G_for_vbias = (ci.size()==1); // this should be input, since it is determined by HOps 
       transposed_G_for_vbias_ = HamOp.transposed_G_for_vbias();  
@@ -82,14 +132,44 @@ class NOMSD: public AFQMCInfo
       transposed_vHS_ = HamOp.transposed_vHS();  
 
       excitedState = false;  
+      std::string rediag("");  
       std::string excited_file("");  
+      std::string svd_Gf("no");
+      std::string svd_O("no");
+      std::string svd_Gm("no");
       int i_=-1,a_=-1;  
+      nbatch = ((number_of_devices()>0)?-1:0);
+      nbatch_qr = ((number_of_devices()>0)?-1:0);
+      if(NMO > 1024 || NAEA > 512) nbatch_qr=0;
+
       ParameterSet m_param;
+      m_param.add(number_of_references,"number_of_references","int");
+      m_param.add(number_of_references,"nrefs","int");
       m_param.add(excited_file,"excited","std::string");
       // generalize this to multi-particle excitations, how do I read a list of integers???
       m_param.add(i_,"i","int");
       m_param.add(a_,"a","int");
+      m_param.add(rediag,"rediag","std::string");
+      m_param.add(svd_Gf,"svd_with_Gfull","std::string");
+      m_param.add(svd_Gm,"svd_with_Gmix","std::string");
+      m_param.add(svd_O,"svd_with_Ovlp","std::string");
+      if(TG.TG_local().size() == 1)
+        m_param.add(nbatch,"nbatch","int");
+      if(TG.TG_local().size() == 1)
+        m_param.add(nbatch_qr,"nbatch_qr","int");
       m_param.put(cur);
+
+      if(omp_get_num_threads() > 1 && (nbatch == 0)) {
+        app_log()<<" WARNING!!!: Found OMP_NUM_THREADS > 1 with nbatch=0.\n"
+             <<"             This will lead to low performance. Set nbatch. \n";
+      }
+      std::transform(svd_Gf.begin(),svd_Gf.end(),svd_Gf.begin(),(int (*)(int)) tolower);
+       if(svd_Gf=="yes" || svd_Gf=="true") useSVD_in_Gfull=true;
+      std::transform(svd_Gm.begin(),svd_Gm.end(),svd_Gm.begin(),(int (*)(int)) tolower);
+       if(svd_Gm=="yes" || svd_Gm=="true") useSVD_in_Gmix=true;
+      std::transform(svd_O.begin(),svd_O.end(),svd_O.begin(),(int (*)(int)) tolower);
+       if(svd_O=="yes" || svd_O=="true") useSVD_in_Ovlp=true;
+
 
       if(excited_file != "" && 
          i_ >= 0 &&
@@ -111,30 +191,29 @@ class NOMSD: public AFQMCInfo
         } else {
           APP_ABORT(" Errors: Inconsistent excited orbitals. \n");
         }    
-        readWfn(excited_file,excitedOrbMat,NMO,maxOccupExtendedMat.first,maxOccupExtendedMat.second);
+        stdCTensor excitedOrbMat_; 
+        readWfn(excited_file,excitedOrbMat_,NMO,maxOccupExtendedMat.first,maxOccupExtendedMat.second);
+        excitedOrbMat = excitedOrbMat_;
       }    
+
+      std::transform(rediag.begin(),rediag.end(),rediag.begin(),(int (*)(int)) tolower);
+      if(rediag == "yes" || rediag == "true") 
+         recompute_ci();
     }
 
-    ~NOMSD() {
-        if(req_SMrecv!=MPI_REQUEST_NULL)
-            MPI_Request_free(&req_SMrecv);
-        if(req_SMsend!=MPI_REQUEST_NULL)
-            MPI_Request_free(&req_SMsend);
-        if(req_Grecv!=MPI_REQUEST_NULL)
-            MPI_Request_free(&req_Grecv);
-        if(req_Gsend!=MPI_REQUEST_NULL)
-            MPI_Request_free(&req_Gsend);
-    }
+    ~NOMSD() {}
 
     NOMSD(NOMSD const& other) = delete;
     NOMSD& operator=(NOMSD const& other) = delete;
     NOMSD(NOMSD&& other) = default;
-    NOMSD& operator=(NOMSD&& other) = default;
+    NOMSD& operator=(NOMSD&& other) = delete;
 
     int local_number_of_cholesky_vectors() const 
     { return HamOp.local_number_of_cholesky_vectors(); }
     int global_number_of_cholesky_vectors() const 
     { return HamOp.global_number_of_cholesky_vectors(); }
+    int global_origin_cholesky_vector() const 
+    { return HamOp.global_origin_cholesky_vector(); }
     bool distribution_over_cholesky_vectors() const 
     { return HamOp.distribution_over_cholesky_vectors(); }
 
@@ -149,8 +228,11 @@ class NOMSD: public AFQMCInfo
     template<class Vec>
     void vMF(Vec&& v);
 
-    CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, CVector const& vMF)
-    { return HamOp.getOneBodyPropagatorMatrix(TG,vMF); }
+    stdCMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG_, stdCVector const& vMF)
+    { return HamOp.getOneBodyPropagatorMatrix(TG_,vMF); }
+
+    SlaterDetOperations* getSlaterDetOperations() {return std::addressof(SDetOp);} 
+    HamiltonianOperations* getHamiltonianOperations() { return std::addressof(HamOp);}
 
     /*
      * local contribution to vbias for the Green functions in G 
@@ -160,13 +242,13 @@ class NOMSD: public AFQMCInfo
     template<class MatG, class MatA>
     void vbias(const MatG& G, MatA&& v, double a=1.0) {
       if(transposed_G_for_vbias_) {
-        assert( G.shape()[0] == v.shape()[1] );
-        assert( G.shape()[1] == size_of_G_for_vbias() );
+        assert( G.size(0) == v.size(1) );
+        assert( G.size(1) == size_of_G_for_vbias() );
       } else {  
-        assert( G.shape()[0] == size_of_G_for_vbias() );
-        assert( G.shape()[1] == v.shape()[1] );
+        assert( G.size(0) == size_of_G_for_vbias() );
+        assert( G.size(1) == v.size(1) );
       }  
-      assert( v.shape()[0] == HamOp.local_number_of_cholesky_vectors());
+      assert( v.size(0) == HamOp.local_number_of_cholesky_vectors());
       if(ci.size()==1) {
         // HamOp expects a compact Gc with alpha/beta components 
         HamOp.vbias(G,std::forward<MatA>(v),a);
@@ -193,11 +275,11 @@ class NOMSD: public AFQMCInfo
      */
     template<class MatX, class MatA>
     void vHS(MatX&& X, MatA&& v, double a=1.0) {
-      assert( X.shape()[0] == HamOp.local_number_of_cholesky_vectors() );
-      if(transposed_G_for_vbias_)
-        assert( X.shape()[1] == v.shape()[0] );
+      assert( X.size(0) == HamOp.local_number_of_cholesky_vectors() );
+      if(transposed_vHS_)
+        assert( X.size(1) == v.size(0) );
       else    
-        assert( X.shape()[1] == v.shape()[1] );
+        assert( X.size(1) == v.size(1) );
       HamOp.vHS(std::forward<MatX>(X),std::forward<MatA>(v),a);
       TG.local_barrier();    
     }
@@ -209,20 +291,17 @@ class NOMSD: public AFQMCInfo
     template<class WlkSet>
     void Energy(WlkSet& wset) {
       int nw = wset.size();
-      if(ovlp.num_elements() != nw)
-        ovlp.reextent(extensions<1u>{nw});
-      if(eloc.shape()[0] != nw || eloc.shape()[1] != 3)
-        eloc.reextent({nw,3});
+      StaticVector ovlp(iextensions<1u>{nw},
+                        buffer_allocator->template get_allocator<ComplexType>());
+      StaticMatrix eloc({nw,3},
+                        buffer_allocator->template get_allocator<ComplexType>());  
       Energy(wset,eloc,ovlp);
       TG.local_barrier();
       if(TG.getLocalTGRank()==0) {
-	int p=0;
-	for(typename WlkSet::iterator it=wset.begin(); it!=wset.end(); ++it, ++p) {
-	  it->overlap() = ovlp[p];
-	  it->E1() = eloc[p][0];		
-	  it->EXX() = eloc[p][1];		
-	  it->EJ() = eloc[p][2];		
-	}
+        wset.setProperty(OVLP,ovlp);
+        wset.setProperty(E1_,eloc(eloc.extension(),0));
+        wset.setProperty(EXX_,eloc(eloc.extension(),1));
+        wset.setProperty(EJ_,eloc(eloc.extension(),2));
       }  
       TG.local_barrier();
     }
@@ -233,7 +312,7 @@ class NOMSD: public AFQMCInfo
      */
     template<class WlkSet, class Mat, class TVec> 
     void Energy(const WlkSet& wset, Mat&& E, TVec&& Ov) {
-      if(TG.getNNodesPerTG() > 1)
+      if(TG.getNGroupsPerTG() > 1)
         Energy_distributed(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
       else
         Energy_shared(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
@@ -248,27 +327,74 @@ class NOMSD: public AFQMCInfo
      *                 otherwise returns the transpose with Dim: [nW][XXX}
      */
     template<class WlkSet, class MatG>
-    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact=true, bool transpose=false) {
+    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, 
+                                            bool compact=true, bool transpose=false) 
+    {
       int nw = wset.size();
-      if(ovlp.num_elements() != nw)
-        ovlp.reextent(extensions<1u>{nw});
+      StaticVector ovlp(iextensions<1u>{nw},
+                        buffer_allocator->template get_allocator<ComplexType>());
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact,transpose);
     }
 
     template<class WlkSet, class MatG, class TVec>
-    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
+    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, 
+                                            bool compact=true, bool transpose=false) 
+    {
+      if(nbatch != 0)
+        MixedDensityMatrix_batched(wset,std::forward<MatG>(G),std::forward<TVec>(Ov),compact,transpose);
+      else
+        MixedDensityMatrix_shared(wset,std::forward<MatG>(G),std::forward<TVec>(Ov),compact,transpose);
+    }
 
     /*
-     * Calculates the back propagated density matrix for all walkers in the walker set.
+     * Calculates the density matrix with respect to a given Reference
+     * for all walkers in the walker set. 
+     */
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix(const WlkSet& wset, MatA&& RefA, MatB&& RefB, MatG&& G,
+                        TVec&& Ov, bool herm, bool compact, bool transposed) 
+    {
+      if(nbatch != 0)
+        DensityMatrix_batched(wset,std::forward<MatA>(RefA),std::forward<MatB>(RefB),
+                                std::forward<MatG>(G),std::forward<TVec>(Ov),
+                                herm,compact,transposed);
+      else
+        DensityMatrix_shared(wset,std::forward<MatA>(RefA),std::forward<MatB>(RefB),
+                                std::forward<MatG>(G),std::forward<TVec>(Ov),
+                                herm,compact,transposed);
+    }
+
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix(std::vector<MatA>& Left, std::vector<MatB>& Right, std::vector<MatG>& G,
+                        TVec&& Ov, double LogOverlapFactor, bool herm, bool compact)
+    {
+      if(nbatch != 0)
+        DensityMatrix_batched(Left,Right,G,std::forward<TVec>(Ov),LogOverlapFactor,
+                                herm,compact);
+      else
+        DensityMatrix_shared(Left,Right,G,std::forward<TVec>(Ov),LogOverlapFactor,
+                                herm,compact);
+    }
+
+    /*
+     * Calculates the walker averaged density matrix.
      * Options:
-     *  - path_restoration: If false (default), performs traditional back propagation
-     *                        algorithm without any path restoration, otherwise restores
-     *                        phases and cosine factors along path.
      *  - free_projection: If false (default), assumes using phaseless approximation
      *                       otherwise assumes using free projection.
      */
-    template<class WlkSet, class MatG>
-    void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVector& denom, bool path_restoration=false, bool free_projection=false);
+    template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+    void WalkerAveragedDensityMatrix(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection=false, boost::multi::array_ref<ComplexType,3>* Refs=nullptr, boost::multi::array<ComplexType,2>* detR=nullptr) {
+//      if(nbatch != 0)
+//        WalkerAveragedDensityMatrix_batched(wset,wgt,G,denom,free_projection,Refs,detR);
+//      else  
+        // having problems with underflow with large (back) projection times and multidets, 
+        // mainly from the normalization coming out of the orthonormalization (detR)
+        // writing specialized version for single det which doesn;t have this issues
+        if(ci.size()==1)
+          WalkerAveragedDensityMatrix_shared_single_det(wset,wgt,G,denom,Ovlp,DMsum,free_projection,Refs,detR);
+        else
+          WalkerAveragedDensityMatrix_shared(wset,wgt,G,denom,Ovlp,DMsum,free_projection,Refs,detR);
+    }
 
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
@@ -279,8 +405,8 @@ class NOMSD: public AFQMCInfo
     template<class WlkSet, class MatG>
     void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G) {
       int nw = wset.size();
-      if(ovlp.num_elements() != nw)
-        ovlp.reextent(extensions<1u>{nw});	
+      StaticVector ovlp(iextensions<1u>{nw},
+                        buffer_allocator->template get_allocator<ComplexType>());
       MixedDensityMatrix(wset,std::forward<MatG>(G),ovlp,compact_G_for_vbias,transposed_G_for_vbias_);
     }
 
@@ -288,7 +414,12 @@ class NOMSD: public AFQMCInfo
      * Calculates the overlaps of all walkers in the set. Returns values in arrays. 
      */
     template<class WlkSet, class TVec>
-    void Overlap(const WlkSet& wset, TVec&& Ov);
+    void Overlap(const WlkSet& wset, TVec&& Ov) {
+      if(nbatch != 0)
+        Overlap_batched(wset,std::forward<TVec>(Ov));
+      else
+        Overlap_shared(wset,std::forward<TVec>(Ov));
+    }
 
     /*
      * Calculates the overlaps of all walkers in the set. Updates values in wset. 
@@ -297,18 +428,15 @@ class NOMSD: public AFQMCInfo
     void Overlap(WlkSet& wset)
     {
       int nw = wset.size();
-      if(ovlp.num_elements() != nw)
-        ovlp.reextent(extensions<1u>{nw});
+      StaticVector ovlp(iextensions<1u>{nw},
+                        buffer_allocator->template get_allocator<ComplexType>());
       Overlap(wset,ovlp);
       TG.local_barrier();
       if(TG.getLocalTGRank()==0) {
-        int p=0;
-        for(typename WlkSet::iterator it=wset.begin(); it!=wset.end(); ++it, ++p) 
-          it->overlap() = ovlp[p];
+        wset.setProperty(OVLP,ovlp);
       }	 
       TG.local_barrier();
     }
-
 
     /*
      * Orthogonalizes the Slater matrices of all walkers in the set.  
@@ -318,41 +446,113 @@ class NOMSD: public AFQMCInfo
      *         If false, add the determinant of R to the weight of the walker. 
      */
     template<class WlkSet>
-    void Orthogonalize(WlkSet& wset, bool impSamp); 
+    void Orthogonalize(WlkSet& wset, bool impSamp)
+    {
+      if(not excitedState && (nbatch_qr != 0))
+        Orthogonalize_batched(wset,impSamp);
+      else
+        Orthogonalize_shared(wset,impSamp);
+    }
 
     /*
      * Orthogonalizes the Slater matrix of a walker in an excited state calculation.
      */
     template<class Mat>
-    void OrthogonalizeExcited(Mat&& A, SpinTypes spin);
+    void OrthogonalizeExcited(Mat&& A, SpinTypes spin, double LogOverlapFactor);
+
+    
+    /*
+     * Returns the number of reference Slater Matrices needed for back propagation.  
+     */
+    int number_of_references_for_back_propagation() const {
+      if(number_of_references>0)   
+        return number_of_references; 
+      else  
+        return ((walker_type==COLLINEAR)?OrbMats.size()/2:OrbMats.size());
+    }
+
+    ComplexType getReferenceWeight(int i) const { return ci[i]; }
 
     /*
-     * Back Propagates the trial wavefunction.
-    */
-    template<class MatA, class Wlk, class MatB>
-    ComplexType BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP);
+     * Returns the reference Slater Matrices needed for back propagation.  
+     */
+    template<class Mat, class Ptr=ComplexType*>
+    void getReferencesForBackPropagation(Mat&& A) {
+      static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
+      int ndet = number_of_references_for_back_propagation(); 
+      assert(A.size(0) == ndet); 
+      if(RefOrbMats.size(0) == 0) {
+        TG.Node().barrier(); // for safety
+        int nrow(NMO*((walker_type==NONCOLLINEAR)?2:1));
+        int ncol(NAEA+((walker_type==CLOSED)?0:NAEB));//careful here, spins are stored contiguously
+        RefOrbMats.reextent({ndet,nrow*ncol}); 
+        TG.Node().barrier(); // for safety
+        if(TG.Node().root()) {
+          if(walker_type!=COLLINEAR) {
+            for(int i=0; i<ndet; ++i) {
+              boost::multi::array_ref<ComplexType,2> A_(to_address(RefOrbMats[i].origin()),
+                                                        {nrow,ncol});  
+              ma::Matrix2MAREF('H',OrbMats[i],A_);
+            }
+          } else {
+            for(int i=0; i<ndet; ++i) {
+              boost::multi::array_ref<ComplexType,2> A_(to_address(RefOrbMats[i].origin()),
+                                                        {NMO,NAEA});  
+              ma::Matrix2MAREF('H',OrbMats[2*i],A_);
+              boost::multi::array_ref<ComplexType,2> B_(A_.origin()+A_.num_elements(),
+                                                        {NMO,NAEB});  
+              ma::Matrix2MAREF('H',OrbMats[2*i+1],B_);
+            }
+          }
+        } // TG.Node().root()
+        TG.Node().barrier(); // for safety
+      } 
+      assert(RefOrbMats.size(0) == ndet);
+      assert(RefOrbMats.size(1) == A.size(1));
+      auto&& RefOrbMats_(boost::multi::static_array_cast<ComplexType, ComplexType*>(RefOrbMats));  
+      auto&& A_(boost::multi::static_array_cast<ComplexType, Ptr>(A));  
+      using std::copy_n;
+      int n0,n1;
+      std::tie(n0,n1) = FairDivideBoundary(TG.getLocalTGRank(),int(A.size(1)),TG.getNCoresPerTG());
+      for(int i=0; i<ndet; i++) 
+        copy_n(RefOrbMats_[i].origin()+n0,n1-n0,A_[i].origin()+n0);
+      TG.TG_local().barrier();
+    }
 
   protected: 
 
     TaskGroup_& TG;
+
+    device_allocator_generator_type *buffer_allocator;
+    localTG_allocator_generator_type *shm_buffer_allocator;
+
+    Allocator alloc_; 
+    Allocator_shared alloc_shared_;
  
-    SlaterDetOperations<ComplexType> SDetOp;
+    //SlaterDetOperations_shared<ComplexType> SDetOp;
+    SlaterDetOperations SDetOp;
   
     HamiltonianOperations HamOp;
 
     std::vector<ComplexType> ci;
 
     // eventually switched from CMatrix to SMHSparseMatrix(node)
-    std::vector<PsiT_Matrix> OrbMats;
-    // Buffers for back propagation.
-    boost::multi::array<ComplexType, 2> T1ForBP, T2ForBP, T3ForBP;
-
-    std::unique_ptr<shmCVector> shmbuff_for_E;
+    std::vector<devPsiT> OrbMats;
+    mpi3CMatrix RefOrbMats;
 
     std::unique_ptr<shared_mutex> mutex;
 
     // in both cases below: closed_shell=0, UHF/ROHF=1, GHF=2
     WALKER_TYPES walker_type;
+    int nspins;
+
+    int number_of_references;
+
+    int nbatch;
+    int nbatch_qr;
+    bool useSVD_in_Ovlp=false;
+    bool useSVD_in_Gmix=false;
+    bool useSVD_in_Gfull=false;
 
     bool compact_G_for_vbias;
 
@@ -370,34 +570,44 @@ class NOMSD: public AFQMCInfo
     // shared_communicator for parallel work within TG_local()
     //std::unique_ptr<shared_communicator> local_group_comm; 
     shared_communicator local_group_comm; 
-    std::unique_ptr<shmCVector> shmbuff_for_G;
+    std::unique_ptr<mpi3CVector> shmbuff_for_G;
 
     // excited states
     bool excitedState;
     std::vector<std::pair<int,int>> excitations;
-    boost::multi::array<ComplexType,3> excitedOrbMat; 
+    CTensor excitedOrbMat; 
     CMatrix extendedMatAlpha;
     CMatrix extendedMatBeta;
     std::pair<int,int> maxOccupExtendedMat;
     std::pair<int,int> numExcitations; 
 
-    // buffers and work arrays, careful here!!!
-    CVector ovlp, localGbuff, ovlp2;
-    CMatrix eloc, eloc2, eloc3;
-
-    MPI_Request req_Gsend, req_Grecv;
-    MPI_Request req_SMsend, req_SMrecv;
+    void recompute_ci();
 
     /* 
-     * Computes the mixed density matrix of a single given determinant in the trial wave function.
+     * Computes the density matrix with respect to a given reference. 
      * Intended to be used in combination with the energy evaluation routine.
      * G and Ov are expected to be in shared memory.
      */
-    template<class WlkSet, class MatG, class TVec>
-    void MixedDensityMatrix_for_E(const WlkSet& wset, MatG&& G, TVec&& Ov, int nd);
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_shared(const WlkSet& wset, MatA&& RefsA, MatB&& RefsB, MatG&& G,
+                                TVec&& Ov, bool herm, bool compact, bool transposed);
+
+    template<class WlkSet, class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_batched(const WlkSet& wset, MatA&& RefsA, MatB&& RefsB, MatG&& G,
+                                TVec&& Ov, bool herm, bool compact, bool transposed);
+
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_shared(std::vector<MatA>& Left, std::vector<MatB>& Right, 
+                        std::vector<MatG>& G, TVec&& Ov, double LogOverlapFactor, 
+                        bool herm, bool compact);
+
+    template<class MatA, class MatB, class MatG, class TVec>
+    void DensityMatrix_batched(std::vector<MatA>& Left, std::vector<MatB>& Right, 
+                        std::vector<MatG>& G, TVec&& Ov, double LogOverlapFactor, 
+                        bool herm, bool compact);
 
     template<class MatSM, class MatG, class TVec>
-    void MixedDensityMatrix_for_E_from_SM(const MatSM& SM, MatG&& G, TVec&& Ov, int nd); 
+    void MixedDensityMatrix_for_E_from_SM(const MatSM& SM, MatG&& G, TVec&& Ov, int nd, double LogOverlapFactor); 
 
     /*
      * Calculates the local energy and overlaps of all the walkers in the set and 
@@ -405,6 +615,24 @@ class NOMSD: public AFQMCInfo
      */
     template<class WlkSet, class Mat, class TVec>
     void Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov);
+
+    template<class WlkSet, class MatG, class TVec>
+    void MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
+
+    template<class WlkSet, class MatG, class TVec>
+    void MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
+
+    template<class WlkSet, class TVec>
+    void Overlap_shared(const WlkSet& wset, TVec&& Ov);
+
+    template<class WlkSet, class TVec>
+    void Overlap_batched(const WlkSet& wset, TVec&& Ov);
+
+    template<class WlkSet>
+    void Orthogonalize_batched(WlkSet& wset, bool impSamp);
+
+    template<class WlkSet>
+    void Orthogonalize_shared(WlkSet& wset, bool impSamp);
 
     /*
      * Calculates the local energy and overlaps of all the walkers in the set and 
@@ -417,6 +645,15 @@ class NOMSD: public AFQMCInfo
       else
         Energy_distributed_multiDet(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
     }
+
+    template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+    void WalkerAveragedDensityMatrix_batched(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR); 
+
+    template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+    void WalkerAveragedDensityMatrix_shared(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR); 
+
+    template<class WlkSet, class MatG, class CVec1, class CVec2, class Mat1, class Mat2>
+    void WalkerAveragedDensityMatrix_shared_single_det(const WlkSet& wset, CVec1& wgt, MatG& G, CVec2& denom, Mat1 &&Ovlp, Mat2&& DMsum, bool free_projection, boost::multi::array_ref<ComplexType,3>* Refs, boost::multi::array<ComplexType,2>* detR); 
 
     template<class WlkSet, class Mat, class TVec>
     void Energy_distributed_singleDet(const WlkSet& wset, Mat&& E, TVec&& Ov);
@@ -458,8 +695,6 @@ class NOMSD: public AFQMCInfo
           return arr{-1,-1};
       }
     }
-
-
 
 };
 

@@ -12,9 +12,6 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #include "Estimators/CSEnergyEstimator.h"
@@ -24,127 +21,126 @@
 #include "Message/CommOperators.h"
 #include "QMCDrivers/DriftOperators.h"
 
-namespace qmcplusplus {
-
-  /** constructor
+namespace qmcplusplus
+{
+/** constructor
    * @param h QMCHamiltonian to define the components
    * @param hcopy number of copies of QMCHamiltonians
    */
-  CSEnergyEstimator::CSEnergyEstimator(QMCHamiltonian& h, int hcopy) 
-  {
-    int NumObservables = h.sizeOfObservables();
+CSEnergyEstimator::CSEnergyEstimator(QMCHamiltonian& h, int hcopy)
+{
+  int NumObservables = h.sizeOfObservables();
 
-    NumCopies=hcopy;
-    FirstHamiltonian = h.startIndex();
-    LastHamiltonian = FirstHamiltonian+NumObservables;
+  NumCopies        = hcopy;
+  FirstHamiltonian = h.startIndex();
+  LastHamiltonian  = FirstHamiltonian + NumObservables;
 
-    //add names
-    h_components.push_back("LocEne");
-    h_components.push_back("LocPot");
-    for(int i=0; i<NumObservables; ++i) 
-      h_components.push_back(h.getObservableName(i));
+  //add names
+  h_components.push_back("LocEne");
+  h_components.push_back("LocPot");
+  for (int i = 0; i < NumObservables; ++i)
+    h_components.push_back(h.getObservableName(i));
 
-    scalars.resize(NumCopies  + 
-		   h_components.size()*(NumCopies+NumCopies*(NumCopies-1)/2));
-    scalars_saved.resize(scalars.size());
-  }
+  scalars.resize(NumCopies + h_components.size() * (NumCopies + NumCopies * (NumCopies - 1) / 2));
+  scalars_saved.resize(scalars.size());
+}
 
-  ScalarEstimatorBase* CSEnergyEstimator::clone()
-  {
-    return new CSEnergyEstimator(*this);
-  }
+ScalarEstimatorBase* CSEnergyEstimator::clone() { return new CSEnergyEstimator(*this); }
 
-  /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
+/**  add the local energy, variance and all the Hamiltonian components to the scalar record container
    *@param record storage of scalar records (name,value)
    */
-  void 
-  CSEnergyEstimator::add2Record(RecordNamedProperty<RealType>& record) {
-    char aname[80];
-    FirstIndex = record.size();
-    
-    for(int i=0; i<NumCopies; ++i)
-    {
-      for(int k=0; k<h_components.size(); ++k)
-      {
-        sprintf(aname,"%s_%i",h_components[k].c_str(),i);   
-        int dummy=record.add(aname);
-      }
-    }
+void CSEnergyEstimator::add2Record(RecordNamedProperty<RealType>& record)
+{
+  char aname[80];
+  FirstIndex = record.size();
 
-    for(int i=0; i<NumCopies; ++i)
-    {
-      sprintf(aname,"wpsi_%i",i);   
-      int dummy=record.add(aname);
-    }
-
-    for(int i=0; i<NumCopies; i++) {
-      for(int j=i+1; j<NumCopies; j++) {
-        for(int k=0; k<h_components.size(); ++k)
-        {
-          sprintf(aname,"d%s_%d_%d",h_components[k].c_str(),i,j); 
-          int dummy=record.add(aname);
-        }
-      }
-    }
-
-
-    LastIndex=record.size();
-    tmp_data.resize(NumCopies,h_components.size());
-    uweights.resize(NumCopies);
-    clear();
-
-    //msg.add(d_data.begin(),d_data.end());
-  }
-
-  void CSEnergyEstimator::registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)
+  for (int i = 0; i < NumCopies; ++i)
   {
-    //NEED TO IMPLEMENT for hdf5
+    for (int k = 0; k < h_components.size(); ++k)
+    {
+      sprintf(aname, "%s_%i", h_components[k].c_str(), i);
+      int dummy = record.add(aname);
+    }
   }
 
-  void 
-  CSEnergyEstimator::accumulate(const Walker_t& awalker, RealType wgt) 
+  for (int i = 0; i < NumCopies; ++i)
   {
-	std::vector<double> weightaverage(NumCopies);
-    //first copy data to tmp_dat to calculate differences
-    for(int i=0; i<NumCopies; i++) 
-    {
-      const RealType* restrict prop=awalker.getPropertyBase(i);
-      RealType* restrict prop_saved=tmp_data[i];
-      uweights[i]=prop[UMBRELLAWEIGHT];
-      *prop_saved++=prop[LOCALENERGY];
-      *prop_saved++=prop[LOCALPOTENTIAL];
-      std::copy(prop+FirstHamiltonian,prop+LastHamiltonian,prop_saved);
-    }
+    sprintf(aname, "wpsi_%i", i);
+    int dummy = record.add(aname);
+  }
 
-    int ii=0;
-    const RealType *hptr=tmp_data.data();
-    for(int i=0; i<NumCopies; i++) 
+  for (int i = 0; i < NumCopies; i++)
+  {
+    for (int j = i + 1; j < NumCopies; j++)
     {
-      RealType uw=uweights[i];
-      for(int k=0; k<tmp_data.cols(); ++k) scalars[ii++](*hptr++,uw);
-    }
-
-    for(int i=0; i<NumCopies; i++) 
-    {
-      scalars[ii++](uweights[i],1.0);
-    }
-
-    int ii_i(0);  //index of observable ii for copy i
-    int ii_j(0);  //index of observable ii for copy j
-    for(int i=0; i<NumCopies; i++) 
-    {
-      for(int j=i+1; j<NumCopies; j++)
+      for (int k = 0; k < h_components.size(); ++k)
       {
-        for(int k=0; k<tmp_data.cols(); ++k)
-        {
-          ii_i=i*tmp_data.cols()+k;
-          ii_j=j*tmp_data.cols()+k; 
-	  
-          //reset is used here because we do no accumulating.  Just overwrite.
-          scalars[ii++].reset(scalars[ii_i].mean()-scalars[ii_j].mean(),1.0);
-	}
+        sprintf(aname, "d%s_%d_%d", h_components[k].c_str(), i, j);
+        int dummy = record.add(aname);
       }
     }
   }
 
+
+  LastIndex = record.size();
+  tmp_data.resize(NumCopies, h_components.size());
+  uweights.resize(NumCopies);
+  clear();
+
+  //msg.add(d_data.begin(),d_data.end());
 }
+
+void CSEnergyEstimator::registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)
+{
+  //NEED TO IMPLEMENT for hdf5
+}
+
+void CSEnergyEstimator::accumulate(const Walker_t& awalker, RealType wgt)
+{
+  using WP = WalkerProperties::Indexes;
+  std::vector<double> weightaverage(NumCopies);
+  //first copy data to tmp_dat to calculate differences
+  for (int i = 0; i < NumCopies; i++)
+  {
+    const RealType* restrict prop = awalker.getPropertyBase(i);
+    RealType* restrict prop_saved = tmp_data[i];
+    uweights[i]                   = prop[WP::UMBRELLAWEIGHT];
+    *prop_saved++                 = prop[WP::LOCALENERGY];
+    *prop_saved++                 = prop[WP::LOCALPOTENTIAL];
+    std::copy(prop + FirstHamiltonian, prop + LastHamiltonian, prop_saved);
+  }
+
+  int ii               = 0;
+  const RealType* hptr = tmp_data.data();
+  for (int i = 0; i < NumCopies; i++)
+  {
+    RealType uw = uweights[i];
+    for (int k = 0; k < tmp_data.cols(); ++k)
+      scalars[ii++](*hptr++, uw);
+  }
+
+  for (int i = 0; i < NumCopies; i++)
+  {
+    scalars[ii++](uweights[i], 1.0);
+  }
+
+  int ii_i(0); //index of observable ii for copy i
+  int ii_j(0); //index of observable ii for copy j
+  for (int i = 0; i < NumCopies; i++)
+  {
+    for (int j = i + 1; j < NumCopies; j++)
+    {
+      for (int k = 0; k < tmp_data.cols(); ++k)
+      {
+        ii_i = i * tmp_data.cols() + k;
+        ii_j = j * tmp_data.cols() + k;
+
+        //reset is used here because we do no accumulating.  Just overwrite.
+        scalars[ii++].reset(scalars[ii_i].mean() - scalars[ii_j].mean(), 1.0);
+      }
+    }
+  }
+}
+
+} // namespace qmcplusplus

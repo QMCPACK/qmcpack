@@ -24,53 +24,53 @@
 
 namespace qmcplusplus
 {
-
 /** JastrowBuilder using an analytic 1d functor
  * Should be able to eventually handle all one and two body jastrows
  * although spline based ones will come later
  */
 
 
-struct RadialJastrowBuilder: public WaveFunctionComponentBuilder
+struct RadialJastrowBuilder : public WaveFunctionComponentBuilder
 {
 public:
   // one body constructor
-  RadialJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi, ParticleSet& source);
+  RadialJastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source);
   // two body constructor
-  RadialJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi);
-  bool put(xmlNodePtr cur);
-  
- private:
-  ///jastrow/@name 
+  RadialJastrowBuilder(Communicate* comm, ParticleSet& target);
+
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+
+private:
+  /// \xmla{jastrow,name}
   std::string NameOpt;
-  ///jastrow/@type
+  /// \xmla{jastrow,type}
   std::string TypeOpt;
-  ///jastrow/@function
+  /// \xmla{jastrow,function}
   std::string Jastfunction;
-  ///jastrow/@source
-  std::string SourceOpt;
-  ///jastrow/@spin
+  /// \xmla{jastrow,spin}
   std::string SpinOpt;
   ///particle set for source particle
-  ParticleSet *SourcePtcl;
+  ParticleSet* SourcePtcl;
 
   // has a specialization for RPAFunctor in cpp file
   template<class RadFuncType>
-  bool createJ1(xmlNodePtr cur); 
+  WaveFunctionComponent* createJ1(xmlNodePtr cur);
 
   template<class RadFuncType>
-  bool createJ2(xmlNodePtr cur);
+  WaveFunctionComponent* createJ2(xmlNodePtr cur);
 
   template<class RadFuncType>
   void initTwoBodyFunctor(RadFuncType& functor, double fac);
+
+  template<class RadFuncType>
+  void computeJ2uk(const std::vector<RadFuncType*>& functors);
 
   void guardAgainstOBC();
   void guardAgainstPBC();
 
 private:
-
 };
 
-}
+} // namespace qmcplusplus
 
 #endif

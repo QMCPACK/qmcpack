@@ -21,9 +21,11 @@
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/coo_matrix.hpp"
 
-#include "mpi3/shared_window.hpp"
+//#include "mpi3/shared_window.hpp"
+#include "AFQMC/Memory/SharedMemory/shm_ptr_with_raw_ptr_dispatch.hpp"
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
+#include "multi/memory/fallback.hpp"
 
 #include "Utilities/NewTimer.h"
 #include "AFQMC/Utilities/myTimer.h"
@@ -38,11 +40,25 @@ namespace qmcplusplus
     pseudo_energy_timer,
     energy_timer,
     vHS_timer,
+    assemble_X_timer,
     vbias_timer,
     G_for_vbias_timer,
     propagate_timer,
+    back_propagate_timer,
     E_comm_overhead_timer,
-    vHS_comm_overhead_timer
+    vHS_comm_overhead_timer,
+    popcont_timer,    
+    ortho_timer,
+    setup_timer,
+    extra_timer,
+    T1_t,
+    T2_t,
+    T3_t,
+    T4_t,
+    T5_t,
+    T6_t,
+    T7_t,
+    T8_t
   };
   extern TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames;  
 
@@ -53,8 +69,16 @@ namespace afqmc
   using tp_ul_ul = std::tuple<std::size_t,std::size_t>;
 
   enum WALKER_TYPES {UNDEFINED_WALKER_TYPE, CLOSED, COLLINEAR, NONCOLLINEAR};
-  // when QMC_CUDA is not set, DEVICE and TG_LOCAL are the same
+  // when ENABLE_CUDA is not set, DEVICE and TG_LOCAL are the same
   enum ALLOCATOR_TYPES {STD,NODE,STD_DEVICE,SHARED_LOCAL_DEVICE,SHARED_DEVICE};
+
+  inline WALKER_TYPES initWALKER_TYPES(int i) {
+    if(i==0) return UNDEFINED_WALKER_TYPE;
+    else if(i==1) return CLOSED;
+    else if(i==2) return COLLINEAR;
+    else if(i==3) return NONCOLLINEAR;
+    return UNDEFINED_WALKER_TYPE;
+  }  
 
   template<typename T> using s1D = std::tuple<IndexType,T>;
   template<typename T> using s2D = std::tuple<IndexType,IndexType,T>;
@@ -65,39 +89,119 @@ namespace afqmc
 
   // allocators
   template<class T>
-  using shared_allocator = boost::mpi3::intranode::allocator<T>;
+  using shared_allocator = shm::allocator_shm_ptr_with_raw_ptr_dispatch<T>;
+  template<class T>
+  using shm_pointer = typename shared_allocator<T>::pointer; 
+
+#if defined(ENABLE_CUDA)
+  template<class T>  using device_allocator = device::device_allocator<T>;
+  template<class T>  using device_ptr = device::device_pointer<T>;
+  template<class T>  using localTG_allocator = device_allocator<T>;
+  template<class T>  using node_allocator = device_allocator<T>;
+  template<class T, class TG> 
+  localTG_allocator<T> make_localTG_allocator(TG&) {return localTG_allocator<T>{};}
+  template<class T, class TG> 
+  node_allocator<T> make_node_allocator(TG&) {return node_allocator<T>{};}
+/*   Temporary fix for the conflict problem between cpu and gpu pointers. Find proper fix */
+  template<class T> device_ptr<T> make_device_ptr(device_ptr<T> p) { return p; }
+  template<class T> device_ptr<T> make_device_ptr(T* p) 
+  {
+    print_stacktrace;
+    throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
+  }   
+  template<class T> device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p) 
+  { 
+    print_stacktrace;
+    throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
+  }   
+  template<class T> device_ptr<T> make_device_ptr(shm::shm_ptr_with_raw_ptr_dispatch<T> p) 
+  { 
+    print_stacktrace;
+    throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
+  }   
+
+  using device_memory_resource = device::memory_resource;
+  using shm_memory_resource = device::memory_resource;
+  template<class T> using device_constructor = device::constructor<T>;
+  template<class T> using shm_constructor = device::constructor<T>;
+
+#else
+  template<class T>  using device_allocator = std::allocator<T>;
+  template<class T>  using device_ptr = T*;
+  template<class T>  using localTG_allocator = shared_allocator<T>; 
+  template<class T>  using node_allocator = shared_allocator<T>;
+  template<class T, class TG> 
+  localTG_allocator<T> make_localTG_allocator(TG& t_) {return localTG_allocator<T>{t_.TG_local()};}
+  template<class T, class TG> 
+  node_allocator<T> make_node_allocator(TG& t_) {return node_allocator<T>{t_.Node()};}
+/*   Temporary fix for the conflict problem between cpu and gpu pointers. Find proper fix */
+  template<class T> device_ptr<T> make_device_ptr(T* p) { return p; }
+  template<class T> device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p) 
+  { //return device_ptr<T>{to_address(p)}; }
+    print_stacktrace;
+    throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
+  }  
+  template<class T> device_ptr<T> make_device_ptr(shm::shm_ptr_with_raw_ptr_dispatch<T> p) 
+  { return device_ptr<T>{to_address(p)}; }
+
+  using device_memory_resource = boost::multi::memory::resource<>; 
+  using shm_memory_resource = shm::memory_resource_shm_ptr_with_raw_ptr_dispatch; 
+  template<class T>  using device_constructor = device_allocator<T>; 
+  template<class T>  using shm_constructor = shared_allocator<T>;  
+
+#endif
+
+  template<class T>  using host_constructor = std::allocator<T>; 
+  using host_memory_resource = boost::multi::memory::resource<>; 
 
   // new types
   using SpCType_shm_csr_matrix = ma::sparse::csr_matrix<SPComplexType,int,std::size_t,
-                                boost::mpi3::intranode::allocator<SPComplexType>,
+                                shared_allocator<SPComplexType>,
                                 ma::sparse::is_root>;
   using SpVType_shm_csr_matrix = ma::sparse::csr_matrix<SPValueType,int,std::size_t,
-                                boost::mpi3::intranode::allocator<SPValueType>,
+                                shared_allocator<SPValueType>,
                                 ma::sparse::is_root>;
   using CType_shm_csr_matrix = ma::sparse::csr_matrix<ComplexType,int,std::size_t,
-                                boost::mpi3::intranode::allocator<ComplexType>,
+                                shared_allocator<ComplexType>,
                                 ma::sparse::is_root>;
   using VType_shm_csr_matrix = ma::sparse::csr_matrix<ValueType,int,std::size_t,
-                                boost::mpi3::intranode::allocator<ValueType>,
+                                shared_allocator<ValueType>,
                                 ma::sparse::is_root>;
 
-#ifdef PsiT_IN_SHM
-  using PsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
-                                boost::mpi3::intranode::allocator<ComplexType>,
+//#ifdef PsiT_IN_SHM
+  template<typename T>
+  using PsiT_Matrix_t = ma::sparse::csr_matrix<T,int,int,
+                                shared_allocator<T>,
                                 ma::sparse::is_root>;
+  using PsiT_Matrix = PsiT_Matrix_t<ComplexType>;
+#ifdef ENABLE_CUDA
+  using devcsr_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
+                                device_allocator<ComplexType>>; 
 #else
-  using PsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int>;
+  using devcsr_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
+                                shared_allocator<ComplexType>,
+                                ma::sparse::is_root>;
+#endif
+//#else
+//  using PsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int>;
+//  using devPsiT_Matrix = ma::sparse::csr_matrix<ComplexType,int,int>;
+//#endif
+
+
+#if defined(ENABLE_CUDA)
+  using P1Type = ma::sparse::csr_matrix<ComplexType,int,int,
+                                 localTG_allocator<ComplexType>>;
+#else
+  using P1Type = ma::sparse::csr_matrix<ComplexType,int,int,
+                                localTG_allocator<ComplexType>,
+                                ma::sparse::is_root>;
 #endif
 
-
-  using P1Type = ma::sparse::csr_matrix<ComplexType,int,int,
-                                boost::mpi3::intranode::allocator<ComplexType>,
-                                ma::sparse::is_root>;
-
-  enum HamiltonianTypes {Factorized,THC,KPTHC,KPFactorized,UNKNOWN};
+  enum HamiltonianTypes {Factorized,THC,KPTHC,KPFactorized,RealDenseFactorized,UNKNOWN};
 
   template<std::ptrdiff_t D> 
-  using extensions = typename boost::multi::layout_t<D>::extensions_type;
+  using iextensions = typename boost::multi::iextensions<D>;
+  //using extensions = typename boost::multi::layout_t<D>::extensions_type;  
 
   // general matrix definitions
   template< class Alloc = std::allocator<int> >
@@ -152,13 +256,13 @@ namespace afqmc
     // default constructor
     AFQMCInfo():
         name(""),NMO(-1),NMO_FULL(-1),NAEA(-1),NAEB(-1),NCA(0),NCB(0),NETOT(-1),
-        MS2(-99),spinRestricted(true),ISYM(-1)
+        MS2(-99),ISYM(-1),spinRestricted(true)
     {
     }
 
     AFQMCInfo(std::string nm, int nmo_, int naea_, int naeb_):
         name(nm),NMO(nmo_),NMO_FULL(nmo_),NAEA(naea_),NAEB(naeb_),NCA(0),NCB(0),
-        NETOT(-1),MS2(-99),spinRestricted(true),ISYM(-1)
+        NETOT(-1),MS2(-99),ISYM(-1),spinRestricted(true)
     {
     }
 
@@ -171,11 +275,11 @@ namespace afqmc
     // identifier
     std::string name;
 
-    // number of orbitals
-    int NMO_FULL;
-
     // number of active orbitals
     int NMO;
+
+    // number of orbitals
+    int NMO_FULL;
 
     // number of active electrons alpha/beta 
     int NAEA, NAEB;
@@ -236,7 +340,6 @@ namespace afqmc
       if(cur == NULL)
         return false;
 
-      xmlNodePtr curRoot=cur;
       OhmmsAttributeSet oAttrib;
       oAttrib.add(name,"name");
       oAttrib.put(cur);

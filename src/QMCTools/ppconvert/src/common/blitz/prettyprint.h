@@ -30,35 +30,28 @@
 
 BZ_NAMESPACE(blitz)
 
-class prettyPrintFormat {
-
+class prettyPrintFormat
+{
 public:
-    prettyPrintFormat(const bool terse = false)
-        : tersePrintingSelected_(terse) 
-    {
-        arrayOperandCounter_ = 0;
-        scalarOperandCounter_ = 0;
-        dumpArrayShapes_ = false;
-    }
+  prettyPrintFormat(const bool terse = false) : tersePrintingSelected_(terse)
+  {
+    arrayOperandCounter_  = 0;
+    scalarOperandCounter_ = 0;
+    dumpArrayShapes_      = false;
+  }
 
-    void setDumpArrayShapesMode()  { dumpArrayShapes_ = true; }
-    char nextArrayOperandSymbol()  
-    { 
-        return static_cast<char>('A' + ((arrayOperandCounter_++) % 26)); 
-    }
-    char nextScalarOperandSymbol() 
-    { 
-        return static_cast<char>('s' + ((scalarOperandCounter_++) % 26)); 
-    }
+  void setDumpArrayShapesMode() { dumpArrayShapes_ = true; }
+  char nextArrayOperandSymbol() { return static_cast<char>('A' + ((arrayOperandCounter_++) % 26)); }
+  char nextScalarOperandSymbol() { return static_cast<char>('s' + ((scalarOperandCounter_++) % 26)); }
 
-    bool tersePrintingSelected() const { return tersePrintingSelected_; }
-    bool dumpArrayShapesMode()   const { return dumpArrayShapes_; }
+  bool tersePrintingSelected() const { return tersePrintingSelected_; }
+  bool dumpArrayShapesMode() const { return dumpArrayShapes_; }
 
 private:
-    bool tersePrintingSelected_;
-    bool dumpArrayShapes_;
-    int arrayOperandCounter_;
-    int scalarOperandCounter_;
+  bool tersePrintingSelected_;
+  bool dumpArrayShapes_;
+  int arrayOperandCounter_;
+  int scalarOperandCounter_;
 };
 
 BZ_NAMESPACE_END

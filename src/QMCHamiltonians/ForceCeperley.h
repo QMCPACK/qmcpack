@@ -12,8 +12,8 @@
 //
 // File created by: John R. Gergely,  University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_FORCE_CEPERLEY_HAMILTONIAN_H
 #define QMCPLUSPLUS_FORCE_CEPERLEY_HAMILTONIAN_H
 #include "QMCHamiltonians/ForceBase.h"
@@ -24,16 +24,18 @@
 
 namespace qmcplusplus
 {
-
-struct ForceCeperley: public QMCHamiltonianBase, public ForceBase
+struct ForceCeperley : public OperatorBase, public ForceBase
 {
+private:
+  const int d_ei_ID;
 
-  double Rcut; // parameter: radial distance within which estimator is used
-  int m_exp; // parameter: exponent in polynomial fit
-  int N_basis; // parameter: size of polynomial basis set
-  Matrix<EstimatorRealType> Sinv; // terms in fitting polynomial
-  Vector<EstimatorRealType> h; // terms in fitting polynomial
-  Vector<EstimatorRealType> c; // polynomial coefficients
+public:
+  double Rcut;                    // parameter: radial distance within which estimator is used
+  int m_exp;                      // parameter: exponent in polynomial fit
+  int N_basis;                    // parameter: size of polynomial basis set
+  Matrix<FullPrecRealType> Sinv; // terms in fitting polynomial
+  Vector<FullPrecRealType> h;    // terms in fitting polynomial
+  Vector<FullPrecRealType> c;    // polynomial coefficients
   // container for short-range force estimator
 
   ParticleSet::ParticlePos_t forces_ShortRange;
@@ -46,40 +48,26 @@ struct ForceCeperley: public QMCHamiltonianBase, public ForceBase
 
   void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
   {
-    registerObservablesF(h5list,gid);
+    registerObservablesF(h5list, gid);
   }
 
-  void addObservables(PropertySetType& plist, BufferType& collectables)
-  {
-    addObservablesF(plist);
-  }
+  void addObservables(PropertySetType& plist, BufferType& collectables) { addObservablesF(plist); }
 
-  void setObservables(PropertySetType& plist)
-  {
-    setObservablesF(plist);
-  }
+  void setObservables(PropertySetType& plist) { setObservablesF(plist); }
 
-  void resetTargetParticleSet(ParticleSet& P)
-  {
-  }
+  void resetTargetParticleSet(ParticleSet& P) {}
 
-  void setParticlePropertyList(PropertySetType& plist, int offset)
-  {
-    setParticleSetF(plist, offset);
-  }
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  void setParticlePropertyList(PropertySetType& plist, int offset) { setParticleSetF(plist, offset); }
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-  bool put(xmlNodePtr cur) ;
+  bool put(xmlNodePtr cur);
 
   bool get(std::ostream& os) const
   {
     os << "Ceperley Force Estimator Hamiltonian: " << pairName;
     return true;
   }
-
 };
 
-}
+} // namespace qmcplusplus
 #endif
-
-

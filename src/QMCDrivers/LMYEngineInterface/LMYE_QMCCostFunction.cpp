@@ -10,7 +10,7 @@
 // File created by: Luning Zhao, zhaoln@berkeley.edu, University of California, Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCDrivers/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
@@ -19,40 +19,40 @@
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
 
-namespace qmcplusplus {
-
-int QMCCostFunction::total_samples() {
-
+namespace qmcplusplus
+{
+int QMCCostFunction::total_samples()
+{
   // for the unfamiliar, the [] starts a lambda function
-  return std::accumulate(wClones.begin(), wClones.begin()+NumThreads, 0, [] (int x, const MCWalkerConfiguration * p) { return x + p->numSamples(); });
-
+  return std::accumulate(wClones.begin(), wClones.begin() + NumThreads, 0,
+                         [](int x, const MCWalkerConfiguration* p) { return x + p->numSamples(); });
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Computes the cost function using the LMYEngine
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-QMCCostFunction::Return_t QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine * EngineObj) {
-
+QMCCostFunction::Return_rt QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine<ValueType>* EngineObj)
+{
   // get total number of samples
   const int m = this->total_samples();
 
-  // reset Engine object 
+  // reset Engine object
   EngineObj->reset();
 
-  // turn off wavefunction update mode 
+  // turn off wavefunction update mode
   EngineObj->turn_off_update();
 
   //for (int ip = 0, j = 0; ip < NumThreads; ip++) {
-# pragma omp parallel
+#pragma omp parallel
   {
-    int ip = omp_get_thread_num();     
+    int ip = omp_get_thread_num();
     // for each thread, loop over samples
     const int nw = wClones[ip]->numSamples();
-    for (int iw = 0; iw < nw; iw++) {
-
+    for (int iw = 0; iw < nw; iw++)
+    {
       // get a pointer to the record for this sample
-      const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+      const Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
 
       // record this sample's weight (normalized by division by the sum of weights I think...)
       //wgt_vec.at(j) = saved[REWEIGHT] / SumValue[SUM_WGT];
@@ -60,22 +60,21 @@ QMCCostFunction::Return_t QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LM
       // record the sample's local energy
       //lce_vec.at(j) = saved[ENERGY_NEW];
 
-      // take sample 
+      // take sample
       EngineObj->take_sample(saved[ENERGY_NEW], 1.0, saved[REWEIGHT] / SumValue[SUM_WGT]);
-
     }
   }
   //}
-  // finish taking sample 
+  // finish taking sample
   EngineObj->sample_finish();
 
-  // compute energy and target relevant quantities 
+  // compute energy and target relevant quantities
   EngineObj->energy_target_compute();
 
   // prepare variables to hold the output of the engine call
-  double energy_avg  = EngineObj->energy_mean(); 
-  double energy_sdev = EngineObj->energy_sdev(); 
-  double energy_serr = EngineObj->energy_statistical_err();  
+  double energy_avg  = EngineObj->energy_mean();
+  double energy_sdev = EngineObj->energy_sdev();
+  double energy_serr = EngineObj->energy_statistical_err();
   double target_avg  = EngineObj->target_value();
   double target_serr = EngineObj->target_statistical_err();
 
@@ -99,7 +98,6 @@ QMCCostFunction::Return_t QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LM
   // return the cost function value (target function if we are targeting excited states and energy if we are doing groud state calculations)
   double cost_value = (targetExcited ? target_avg : energy_avg);
   return cost_value;
-
 }
 
-}
+} // namespace qmcplusplus

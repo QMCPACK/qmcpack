@@ -11,8 +11,8 @@
 //
 // File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANTWITHBACKFLOW_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANTWITHBACKFLOW_ORBITAL_H
 #include <Configuration.h>
@@ -25,17 +25,17 @@
 
 namespace qmcplusplus
 {
-
 /** @ingroup WaveFunctionComponent
  *  @brief MultiSlaterDeterminantWithBackflow
  */
-class MultiSlaterDeterminantWithBackflow: public MultiSlaterDeterminant
+class MultiSlaterDeterminantWithBackflow : public MultiSlaterDeterminant
 {
-
 public:
-
   ///constructor
-  MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo, BackflowTransformation *tr);
+  MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl,
+                                     SPOSetProxyPtr upspo,
+                                     SPOSetProxyPtr dnspo,
+                                     BackflowTransformation* tr);
 
   ///destructor
   ~MultiSlaterDeterminantWithBackflow();
@@ -48,49 +48,46 @@ public:
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
   {
-    BFTrans=bf;
-    for(int i=0; i<dets_up.size(); i++)
+    BFTrans = bf;
+    for (int i = 0; i < dets_up.size(); i++)
       dets_up[i]->setBF(bf);
-    for(int i=0; i<dets_dn.size(); i++)
+    for (int i = 0; i < dets_dn.size(); i++)
       dets_dn[i]->setBF(bf);
   }
 
-  ValueType
-  evaluate(ParticleSet& P
-           ,ParticleSet::ParticleGradient_t& G
-           ,ParticleSet::ParticleLaplacian_t& L);
+  ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  RealType
-  evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
-              , ParticleSet::ParticleGradient_t& G
-              , ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
+                           ,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L);
 
   GradType evalGrad(ParticleSet& P, int iat);
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  ValueType ratio(ParticleSet& P, int iat);
-  void acceptMove(ParticleSet& P, int iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
   void restore(int iat);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi);
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi);
 
-  void resize(int,int);
+  void resize(int, int);
 
   // transformation
-  BackflowTransformation *BFTrans;
+  BackflowTransformation* BFTrans;
 
   // temporary storage for evaluateDerivatives
   Matrix<RealType> dpsia_up, dLa_up;
   Matrix<RealType> dpsia_dn, dLa_dn;
-  Array<GradType,3> dGa_up, dGa_dn;
+  Array<GradType, 3> dGa_up, dGa_dn;
 };
 
-}
+} // namespace qmcplusplus
 #endif

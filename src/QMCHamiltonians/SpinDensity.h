@@ -10,58 +10,55 @@
 //
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
 
 #ifndef QMCPLUSPLUS_SPIN_DENSITY_H
 #define QMCPLUSPLUS_SPIN_DENSITY_H
 
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 
 namespace qmcplusplus
 {
-
-class SpinDensity : public QMCHamiltonianBase
+class SpinDensity : public OperatorBase
 {
- public:
- 
+public:
   typedef ParticleSet::ParticleLayout_t Lattice_t;
   typedef std::vector<RealType> dens_t;
-  typedef std::vector<PosType>  pts_t;
+  typedef std::vector<PosType> pts_t;
 
   ParticleSet* Ptmp;
 
   //data members
   int nspecies;
-  std::vector<int>    species_size;
+  std::vector<int> species_size;
   std::vector<std::string> species_name;
   Lattice_t cell;
-  PosType   corner;
-  TinyVector<int,DIM> grid;
-  TinyVector<int,DIM> gdims;
+  PosType corner;
+  TinyVector<int, DIM> grid;
+  TinyVector<int, DIM> gdims;
   int npoints;
 
   //constructor/destructor
   SpinDensity(ParticleSet& P);
-  ~SpinDensity() { }
+  ~SpinDensity() {}
 
   //standard interface
-  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
 
   //required for Collectables interface
-  void addObservables(PropertySetType& plist,BufferType& olist);
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const ;
+  void addObservables(PropertySetType& plist, BufferType& olist);
+  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
 
   //should be empty for Collectables interface
-  void resetTargetParticleSet(ParticleSet& P)                      { }
-  void setObservables(PropertySetType& plist)                      { }
-  void setParticlePropertyList(PropertySetType& plist, int offset) { }
+  void resetTargetParticleSet(ParticleSet& P) {}
+  void setObservables(PropertySetType& plist) {}
+  void setParticlePropertyList(PropertySetType& plist, int offset) {}
 #if !defined(REMOVE_TRACEMANAGER)
-  void checkout_scalar_arrays(TraceManager& tm)                    { }
-  void collect_scalar_samples()                                    { }
-  void delete_scalar_arrays()                                      { }
+  void checkout_scalar_arrays(TraceManager& tm) {}
+  void collect_scalar_samples() {}
+  void delete_scalar_arrays() {}
 #endif
 
   //obsolete?
@@ -70,12 +67,11 @@ class SpinDensity : public QMCHamiltonianBase
   //local functions
   void reset();
   void report(const std::string& pad);
-  void test(int moves,ParticleSet& P);
-  Return_t test_evaluate(ParticleSet& P,int& pmin,int& pmax);
-  void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
-
+  void test(int moves, ParticleSet& P);
+  Return_t test_evaluate(ParticleSet& P, int& pmin, int& pmax);
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 };
 
-}
+} // namespace qmcplusplus
 
 #endif

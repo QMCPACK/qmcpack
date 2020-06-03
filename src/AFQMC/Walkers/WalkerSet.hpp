@@ -12,7 +12,8 @@
 #ifndef QMCPLUSPLUS_AFQMC_WALKERSET_HPP
 #define QMCPLUSPLUS_AFQMC_WALKERSET_HPP
 
-#include "AFQMC/Walkers/SharedWalkerSet.h"
+#include "AFQMC/Walkers/SharedWalkerSet.hpp"
+#include "AFQMC/Walkers/SerialWalkerSet.hpp"
 
 namespace qmcplusplus
 {
@@ -20,7 +21,11 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-using WalkerSet = SharedWalkerSet;
+#if defined(ENABLE_CUDA)
+  using WalkerSet = SerialWalkerSet;
+#else
+  using WalkerSet = SharedWalkerSet;
+#endif
 
 }
 

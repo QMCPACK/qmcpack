@@ -10,165 +10,135 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_MPI_CONTAINER_PROXY_H
 #define QMCPLUSPLUS_MPI_CONTAINER_PROXY_H
 
-#include <type_traits/scalar_traits.h>
-#include <OhmmsPETE/Tensor.h>
-#include <OhmmsPETE/OhmmsArray.h>
-#include <Utilities/PooledData.h>
-#if defined(HAVE_LIBBOOST)
-#include <boost/multi_array.hpp>
-#endif
+#include <stdexcept>
+
+#include "type_traits/scalar_traits.h"
+#include "OhmmsPETE/Tensor.h"
+#include "OhmmsPETE/OhmmsArray.h"
+#include "Utilities/PooledData.h"
 
 namespace qmcplusplus
 {
-
 template<typename T>
 struct container_proxy
 {
-  enum {DIM=scalar_traits<T>::DIM};
+  enum
+  {
+    DIM = scalar_traits<T>::DIM
+  };
   typedef typename scalar_traits<T>::real_type* pointer;
   T& ref;
-  inline container_proxy(T& a):ref(a) {}
-  inline size_t size() const
-  {
-    return DIM;
-  }
-  inline pointer data()
-  {
-    return scalar_traits<T>::get_address(&ref);
-  }
+  inline container_proxy(T& a) : ref(a) {}
+  inline size_t size() const { return DIM; }
+  inline pointer data() { return scalar_traits<T>::get_address(&ref); }
 };
 
 template<typename T, unsigned D>
-struct container_proxy<TinyVector<T,D> >
+struct container_proxy<TinyVector<T, D>>
 {
-  enum {DIM=scalar_traits<T>::DIM*D};
+  enum
+  {
+    DIM = scalar_traits<T>::DIM * D
+  };
   typedef typename scalar_traits<T>::real_type* pointer;
-  TinyVector<T,D>& ref;
-  inline container_proxy(TinyVector<T,D>& a):ref(a) { }
-  inline size_t size() const
-  {
-    return DIM;
-  }
-  inline pointer data()
-  {
-    return scalar_traits<T>::get_address(ref.data());
-  }
+  TinyVector<T, D>& ref;
+  inline container_proxy(TinyVector<T, D>& a) : ref(a) {}
+  inline size_t size() const { return DIM; }
+  inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
 };
 
 template<typename T, unsigned D>
-struct container_proxy<Tensor<T,D> >
+struct container_proxy<Tensor<T, D>>
 {
-  enum {DIM=scalar_traits<T>::DIM*D*D};
+  enum
+  {
+    DIM = scalar_traits<T>::DIM * D * D
+  };
   typedef typename scalar_traits<T>::real_type* pointer;
-  Tensor<T,D>& ref;
-  inline container_proxy(Tensor<T,D>& a):ref(a) {}
-  inline size_t size() const
-  {
-    return DIM;
-  }
-  inline pointer data()
-  {
-    return scalar_traits<T>::get_address(ref.data());
-  }
+  Tensor<T, D>& ref;
+  inline container_proxy(Tensor<T, D>& a) : ref(a) {}
+  inline size_t size() const { return DIM; }
+  inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
 };
 
 template<typename T>
-struct container_proxy<std::vector<T> >
+struct container_proxy<std::vector<T>>
 {
-  enum {DIM=scalar_traits<T>::DIM};
+  enum
+  {
+    DIM = scalar_traits<T>::DIM
+  };
   typedef typename container_proxy<T>::pointer pointer;
   std::vector<T>& ref;
-  inline container_proxy(std::vector<T>& a):ref(a) {}
-  inline size_t size() const
-  {
-    return ref.size()*container_proxy<T>::DIM;
-  }
-  inline pointer data()
-  {
-    return scalar_traits<T>::get_address(&ref[0]);
-  }
+  inline container_proxy(std::vector<T>& a) : ref(a) {}
+  inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
+  inline pointer data() { return scalar_traits<T>::get_address(&ref[0]); }
 
-  inline void resize(size_t n)
-  {
-    ref.resize(n);
-  }
+  inline void resize(size_t n) { ref.resize(n); }
 
   template<typename I>
   inline void resize(I* n, int d)
   {
-    size_t nt=n[0];
-    for(int i=1;i<d;++i) nt *=n[i];
+    size_t nt = n[0];
+    for (int i = 1; i < d; ++i)
+      nt *= n[i];
     ref.resize(nt);
   }
 };
 
 template<>
-struct container_proxy<std::vector<bool> >
+struct container_proxy<std::vector<bool>>
 {
-  enum {DIM=1};
+  enum
+  {
+    DIM = 1
+  };
   typedef int* pointer;
   std::vector<bool>& ref;
   std::vector<int> my_copy;
-  inline container_proxy(std::vector<bool>& a):ref(a)
+  inline container_proxy(std::vector<bool>& a) : ref(a)
   {
     my_copy.resize(a.size());
-    copy(a.begin(),a.end(),my_copy.begin());
+    copy(a.begin(), a.end(), my_copy.begin());
   }
-  ~container_proxy()
-  {
-    copy(my_copy.begin(),my_copy.end(),ref.begin());
-  }
-  inline size_t size() const
-  {
-    return my_copy.size();
-  }
-  inline pointer data()
-  {
-    return &my_copy[0];
-  }
+  ~container_proxy() { copy(my_copy.begin(), my_copy.end(), ref.begin()); }
+  inline size_t size() const { return my_copy.size(); }
+  inline pointer data() { return &my_copy[0]; }
 };
 
 template<typename T, unsigned D>
-struct container_proxy<std::vector<TinyVector<T,D> > >
+struct container_proxy<std::vector<TinyVector<T, D>>>
 {
-  enum {DIM=D*scalar_traits<T>::DIM};
+  enum
+  {
+    DIM = D * scalar_traits<T>::DIM
+  };
   typedef typename container_proxy<T>::pointer pointer;
-  typedef std::vector<TinyVector<T,D> > data_type;
+  typedef std::vector<TinyVector<T, D>> data_type;
   data_type& ref;
-  inline container_proxy(data_type& a):ref(a) { }
-  inline size_t size() const
-  {
-    return ref.size()*DIM;
-  }
-  inline pointer data()
-  {
-    return scalar_traits<T>::get_address(ref[0].data());
-  }
+  inline container_proxy(data_type& a) : ref(a) {}
+  inline size_t size() const { return ref.size() * DIM; }
+  inline pointer data() { return scalar_traits<T>::get_address(ref[0].data()); }
 };
 
 
 template<typename T>
-struct container_proxy<PooledData<T> >
+struct container_proxy<PooledData<T>>
 {
-  enum {DIM=1};
+  enum
+  {
+    DIM = 1
+  };
   typedef typename container_proxy<T>::pointer pointer;
   PooledData<T>& ref;
-  inline container_proxy(PooledData<T>& a):ref(a) {}
-  inline size_t size() const
-  {
-    return ref.size()*container_proxy<T>::DIM;
-  }
-  inline pointer data()
-  {
-    return ref.data();
-  }
+  inline container_proxy(PooledData<T>& a) : ref(a) {}
+  inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
+  inline pointer data() { return ref.data(); }
   template<typename I>
   inline void resize(I* n)
   {
@@ -177,20 +147,17 @@ struct container_proxy<PooledData<T> >
 };
 
 template<typename T>
-struct container_proxy<Vector<T> >
+struct container_proxy<Vector<T>>
 {
-  enum {DIM=scalar_traits<T>::DIM};
+  enum
+  {
+    DIM = scalar_traits<T>::DIM
+  };
   typedef typename container_proxy<T>::pointer pointer;
   Vector<T>& ref;
-  inline container_proxy(Vector<T>& a):ref(a) {}
-  inline size_t size() const
-  {
-    return ref.size()*container_proxy<T>::DIM;
-  }
-  inline pointer data()
-  {
-    return scalar_traits<T>::get_address(ref.data());
-  }
+  inline container_proxy(Vector<T>& a) : ref(a) {}
+  inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
+  inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
   template<typename I>
   inline void resize(I* n)
   {
@@ -198,98 +165,111 @@ struct container_proxy<Vector<T> >
   }
 };
 
-template<typename T, unsigned D>
-struct container_proxy<Vector<TinyVector<T,D> > >
-{
-  enum {DIM=D*scalar_traits<T>::DIM};
-  typedef typename container_proxy<T>::pointer pointer;
-  typedef Vector<TinyVector<T,D> > data_type;
-  data_type& ref;
-  inline container_proxy(data_type& a):ref(a) { }
-  inline size_t size() const
-  {
-    return ref.size()*DIM;
-  }
-  inline pointer data()
-  {
-    return scalar_traits<T>::get_address(ref[0].data());
-  }
-};
-
-template<typename T, unsigned D>
-struct container_proxy<Array<T,D> >
-{
-  typedef typename container_proxy<T>::pointer pointer;
-  Array<T,D>& ref;
-  inline container_proxy(Array<T,D>& a):ref(a) {}
-  inline size_t size() const
-  {
-    return ref.size()*container_proxy<T>::DIM;
-  }
-  inline pointer data()
-  {
-    return scalar_traits<T>::get_address(ref.data());
-  }
-};
-
-#if defined(HAVE_LIBBOOST)
 template<typename T>
-struct container_proxy<boost::multi_array<T,2> >
+struct container_proxy<Matrix<T>>
+{
+  enum
+  {
+    DIM = scalar_traits<T>::DIM
+  };
+  typedef typename container_proxy<T>::pointer pointer;
+  Matrix<T>& ref;
+  inline container_proxy(Matrix<T>& a) : ref(a) {}
+  inline size_t size() const { return ref.size(); }
+  inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
+  template<typename I>
+  inline void resize(I* n, int d)
+  {
+    if ( d != 2 )
+      throw std::runtime_error("OhmmsMatrix can only be resized with int[2].");
+    ref.resize(n[0],n[1]);
+  }
+};
+
+template<typename T, unsigned D>
+struct container_proxy<Vector<TinyVector<T, D>>>
+{
+  enum
+  {
+    DIM = D * scalar_traits<T>::DIM
+  };
+  typedef typename container_proxy<T>::pointer pointer;
+  typedef Vector<TinyVector<T, D>> data_type;
+  data_type& ref;
+  inline container_proxy(data_type& a) : ref(a) {}
+  inline size_t size() const { return ref.size() * DIM; }
+  inline pointer data() { return scalar_traits<T>::get_address(ref[0].data()); }
+};
+
+template<typename T, unsigned D>
+struct container_proxy<Array<T, D>>
+{
+  typedef typename container_proxy<T>::pointer pointer;
+  Array<T, D>& ref;
+  inline container_proxy(Array<T, D>& a) : ref(a) {}
+  inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
+  inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
+};
+/*
+template<typename T, class Alloc>
+struct container_proxy<boost::multi::array<T,2,Alloc> >
 {
   enum {DIM=scalar_traits<T>::DIM};
   typedef typename container_proxy<T>::pointer pointer;
-  boost::multi_array<T,2>& ref;
-  inline container_proxy(boost::multi_array<T,2>& a):ref(a) {}
+  boost::multi::array<T,2,Alloc>& ref;
+  inline container_proxy(boost::multi::array<T,2,Alloc>& a):ref(a) {}
   inline size_t size() const
   {
     return ref.num_elements()*DIM;
   }
   inline pointer data()
   {
-    return scalar_traits<T>::get_address(ref.origin());
+    //using detail::to_address;
+    //return scalar_traits<T>::get_address(to_address(ref.origin()));
+    return scalar_traits<T>::get_address(std::addressof(*ref.origin()));
   }
   inline void resize(size_t n)
   {
-    APP_ABORT(" Error: Can not resize container_proxy<boost::multi_array_ref<T,D> >. \n");
+    APP_ABORT(" Error: Can not resize container_proxy<boost::multi::array<T,D,Alloc> >. \n");
   }
   template<typename I>
   inline void resize(I* n, int d)
   {
     if(d < 2)
-      APP_ABORT(" Error: Inconsistent dimension in container_proxy<boost::multi_array_ref<T,D> >::resize(I*,int). \n");
-    ref.resize(boost::extents[n[0]][n[1]]);
+      APP_ABORT(" Error: Inconsistent dimension in container_proxy<boost::multi::array<T,D,Alloc> >::resize(I*,int). \n");
+    ref.reextent({n[0],n[1]});
   }
 };
 
 template<typename T>
-struct container_proxy<boost::multi_array_ref<T,2> >
+struct container_proxy<boost::multi::array_ref<T,2> >
 {
   enum {DIM=scalar_traits<T>::DIM};
   typedef typename container_proxy<T>::pointer pointer;
-  boost::multi_array_ref<T,2>& ref;
-  inline container_proxy(boost::multi_array_ref<T,2>& a):ref(a) {}
+  boost::multi::array_ref<T,2>& ref;
+  inline container_proxy(boost::multi::array_ref<T,2>& a):ref(a) {}
   inline size_t size() const
   {
     return ref.num_elements()*DIM;
   }
   inline pointer data()
   {
-    return scalar_traits<T>::get_address(ref.origin());
+    //using detail::to_address;
+    //return scalar_traits<T>::get_address(to_address(ref.origin()));
+    return scalar_traits<T>::get_address(std::addressof(*ref.origin()));
   }
   inline void resize(size_t n)
   {
-    APP_ABORT(" Error: Can not resize container_proxy<boost::multi_array_ref<T,D> >. \n");
+    APP_ABORT(" Error: Can not resize container_proxy<boost::multi::array_ref<T,D> >. \n");
   }
 
   template<typename I>
   inline void resize(I* n, int d)
   {
-    APP_ABORT(" Error: Can not resize container_proxy<boost::multi_array_ref<T,D> >. \n");
+    APP_ABORT(" Error: Can not resize container_proxy<boost::multi::array_ref<T,D> >. \n");
   }
 
 };
-#endif
-
-
-}
+*/
+} // namespace qmcplusplus
 #endif

@@ -9,17 +9,16 @@
 //
 // File created by: Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_ORBITAL_IMAGES_H
 #define QMCPLUSPLUS_ORBITAL_IMAGES_H
 
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <QMCHamiltonians/OperatorBase.h>
 #include <QMCWaveFunctions/SPOSet.h>
 
 namespace qmcplusplus
 {
-
 /** "Estimator" to produce files for orbital plotting.
  *  Orbitals are evaluated on a uniform grid and written to ascii files.
  *  Only format currently supported is xsf (XCrySDen).
@@ -104,29 +103,46 @@ namespace qmcplusplus
  *      </estimator>
  *
  */
-class OrbitalImages : public QMCHamiltonianBase
+class OrbitalImages : public OperatorBase
 {
- public:
-  enum{DIM=OHMMS_DIM};
+public:
+  enum
+  {
+    DIM = OHMMS_DIM
+  };
 
   typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::GradVector_t  GradVector_t;
+  typedef SPOSet::GradVector_t GradVector_t;
   typedef ParticleSet::ParticleLayout_t Lattice_t;
-  typedef std::map<std::string,ParticleSet*> PSPool;
+  typedef std::map<std::string, ParticleSet*> PSPool;
 
-  
+
   ///derivative types
-  enum derivative_types_enum{value_d=0,gradient_d,laplacian_d};
+  enum derivative_types_enum
+  {
+    value_d = 0,
+    gradient_d,
+    laplacian_d
+  };
 
 
   ///options for orbital value to write
-  enum value_types_enum {real_val=0,imag_val,abs_val,abs2_val};
+  enum value_types_enum
+  {
+    real_val = 0,
+    imag_val,
+    abs_val,
+    abs2_val
+  };
 
   ///options for orbital output file format
-  enum formats_enum {xsf=0};
+  enum formats_enum
+  {
+    xsf = 0
+  };
 
   ///at put() ion particleset is obtained from ParticleSetPool
-  PSPool&      psetpool;
+  PSPool& psetpool;
 
   ///electron particleset
   ParticleSet* Peln;
@@ -162,14 +178,14 @@ class OrbitalImages : public QMCHamiltonianBase
   ///cell bounding the evaluation grid, default is simulation cell
   Lattice_t cell;
 
-  ///location of cell corner, positions in the cell are corner+uvec*cell 
-  PosType   corner;
+  ///location of cell corner, positions in the cell are corner+uvec*cell
+  PosType corner;
 
   ///number of grid points in each direction (cell axis)
-  TinyVector<int,DIM> grid;
+  TinyVector<int, DIM> grid;
 
   ///stride to generate grid in arbitrary dimensions
-  TinyVector<int,DIM> gdims;
+  TinyVector<int, DIM> gdims;
 
   ///total number of grid points
   int npoints;
@@ -178,33 +194,33 @@ class OrbitalImages : public QMCHamiltonianBase
   int batch_size;
 
   ///temporary vector to hold values of all orbitals at a single point
-  ValueVector_t   spo_vtmp;
+  ValueVector_t spo_vtmp;
 
   ///temporary vector to hold gradients of all orbitals at a single point
-  GradVector_t    spo_gtmp;
+  GradVector_t spo_gtmp;
 
   ///temporary vector to hold laplacians of all orbitals at a single point
-  ValueVector_t   spo_ltmp;
+  ValueVector_t spo_ltmp;
 
   ///temporary array to hold values of a batch of orbitals at all grid points
-  Array<ValueType,2> batch_values;
+  Array<ValueType, 2> batch_values;
 
   ///temporary array to hold gradients of a batch of orbitals at all grid points
-  Array<GradType,2> batch_gradients;
+  Array<GradType, 2> batch_gradients;
 
   ///temporary array to hold laplacians of a batch of orbitals at all grid points
-  Array<ValueType,2> batch_laplacians;
+  Array<ValueType, 2> batch_laplacians;
 
   ///temporary array to hold values of a single orbital at all grid points
   std::vector<ValueType> orbital;
 
 
   //constructor/destructor
-  OrbitalImages(ParticleSet& P,PSPool& PSP, Communicate* mpicomm);
-  ~OrbitalImages() { };
+  OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm);
+  ~OrbitalImages(){};
 
   //standard interface
-  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
 
   ///read xml input
   bool put(xmlNodePtr cur);
@@ -217,17 +233,17 @@ class OrbitalImages : public QMCHamiltonianBase
   //void setRandomGenerator(RandomGenerator_t* rng);
 
   //required for Collectables interface
-  void addObservables(PropertySetType& plist,BufferType& olist)  { }
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const { }
+  void addObservables(PropertySetType& plist, BufferType& olist) {}
+  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const {}
 
   //should be empty for Collectables interface
-  void resetTargetParticleSet(ParticleSet& P)                      { }
-  void setObservables(PropertySetType& plist)                      { }
-  void setParticlePropertyList(PropertySetType& plist, int offset) { }
+  void resetTargetParticleSet(ParticleSet& P) {}
+  void setObservables(PropertySetType& plist) {}
+  void setParticlePropertyList(PropertySetType& plist, int offset) {}
 #if !defined(REMOVE_TRACEMANAGER)
-  void checkout_scalar_arrays(TraceManager& tm)                    { }
-  void collect_scalar_samples()                                    { }
-  void delete_scalar_arrays()                                      { }
+  void checkout_scalar_arrays(TraceManager& tm) {}
+  void collect_scalar_samples() {}
+  void delete_scalar_arrays() {}
 #endif
 
   //obsolete?
@@ -238,19 +254,22 @@ class OrbitalImages : public QMCHamiltonianBase
   void report(const std::string& pad);
 
   ///write a single orbital to file
-  void write_orbital(const std::string& sponame,int index,
-                     std::vector<ValueType>& orb,value_types_enum value_type,
-                     derivative_types_enum derivative_type=value_d,
-                     int dimension=0);
+  void write_orbital(const std::string& sponame,
+                     int index,
+                     std::vector<ValueType>& orb,
+                     value_types_enum value_type,
+                     derivative_types_enum derivative_type = value_d,
+                     int dimension                         = 0);
 
   ///write a single orbital to an xsf file
-  void write_orbital_xsf(const std::string& sponame,int index,
-                         std::vector<ValueType>& orb,value_types_enum value_type,
-                         derivative_types_enum derivative_type=value_d,
-                         int dimension=0);
-
+  void write_orbital_xsf(const std::string& sponame,
+                         int index,
+                         std::vector<ValueType>& orb,
+                         value_types_enum value_type,
+                         derivative_types_enum derivative_type = value_d,
+                         int dimension                         = 0);
 };
 
-}
+} // namespace qmcplusplus
 
 #endif

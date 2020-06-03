@@ -21,7 +21,7 @@
 #include "AFQMC/config.h"
 #include "boost/variant.hpp"
 
-#include "AFQMC/Propagators/AFQMCSharedPropagator.h"
+#include "AFQMC/Propagators/AFQMCBasePropagator.h"
 #include "AFQMC/Propagators/AFQMCDistributedPropagatorDistCV.h"
 #include "AFQMC/Propagators/AFQMCDistributedPropagator.h"
 
@@ -47,6 +47,11 @@ class dummy_Propagator
     throw std::runtime_error("calling visitor on dummy object");
   } 
 
+  template<class WlkSet, class CTens, class CMat>
+  void BackPropagate(int steps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR){
+    throw std::runtime_error("calling visitor on dummy object");
+  } 
+
   bool hybrid_propagation() { 
     throw std::runtime_error("calling visitor on dummy_Propagator object");
     return false;
@@ -57,10 +62,19 @@ class dummy_Propagator
     return false;
   }
 
+  int global_number_of_cholesky_vectors() const{
+    throw std::runtime_error("calling visitor on dummy_Propagator object");
+    return 0;
+  }
+
+  void generateP1(int,WALKER_TYPES) {
+    throw std::runtime_error("calling visitor on dummy_Propagator object");
+  }
+
 };
 }
 
-class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCSharedPropagator,
+class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCBasePropagator,
                                         AFQMCDistributedPropagatorDistCV,
                                         AFQMCDistributedPropagator>
 {
@@ -69,8 +83,8 @@ class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCSharedPropa
     Propagator() { 
       APP_ABORT(" Error: Reached default constructor of Propagator. \n");  
     } 
-    explicit Propagator(AFQMCSharedPropagator&& other) : variant(std::move(other)) {}
-    explicit Propagator(AFQMCSharedPropagator const& other) = delete;
+    explicit Propagator(AFQMCBasePropagator&& other) : variant(std::move(other)) {}
+    explicit Propagator(AFQMCBasePropagator const& other) = delete;
 
     explicit Propagator(AFQMCDistributedPropagatorDistCV&& other) : variant(std::move(other)) {}
     explicit Propagator(AFQMCDistributedPropagatorDistCV const& other) = delete;
@@ -92,6 +106,22 @@ class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCSharedPropa
         );
     }
 
+    template<class... Args>
+    void BackPropagate(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.BackPropagate(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
+    void generateP1(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.generateP1(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
     bool hybrid_propagation() {
         return boost::apply_visitor(
             [&](auto&& a){return a.hybrid_propagation();},
@@ -102,6 +132,13 @@ class Propagator: public boost::variant<dummy::dummy_Propagator,AFQMCSharedPropa
     bool free_propagation() {
         return boost::apply_visitor(
             [&](auto&& a){return a.free_propagation();},
+            *this
+        );
+    }
+
+    int global_number_of_cholesky_vectors() const{
+        return boost::apply_visitor(
+            [&](auto&& a){return a.global_number_of_cholesky_vectors();},
             *this
         );
     }

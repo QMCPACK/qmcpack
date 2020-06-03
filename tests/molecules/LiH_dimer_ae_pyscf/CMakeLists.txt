@@ -20,7 +20,7 @@ IF (NOT QMC_CUDA)
                     vmc_short_noj
                     vmc_short_noj.in.xml
                     1 16
-                    ${SOA_SUCCESS}
+                    TRUE
                     0 LIH_SHORT # VMC
                     )
 
@@ -33,15 +33,15 @@ IF (NOT QMC_CUDA)
                     vmc_long_noj
                     vmc_long_noj.in.xml
                     1 16
-                    ${SOA_SUCCESS}
+                    TRUE
                     0 LIH_LONG # VMC
                     )
 
 
  ELSE()
-    MESSAGE("Skipping LiH_dimer_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
+    MESSAGE_VERBOSE("Skipping LiH_dimer_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
  ENDIF()
 ELSE()
-    MESSAGE("Skipping LiH_dimer_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+   MESSAGE_VERBOSE("Skipping LiH_dimer_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
 

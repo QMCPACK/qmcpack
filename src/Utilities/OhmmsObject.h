@@ -9,8 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_OHMMSOBJECT_H
@@ -42,60 +40,37 @@
  *@todo This class should be integrated into OhmmsElementBase or
  *an equivalent base class.
  */
-class OhmmsObject: public OhmmsElementBase
+class OhmmsObject : public OhmmsElementBase
 {
 public:
-
   OhmmsObject();
   OhmmsObject(const std::string& tname, const std::string& oname);
   virtual ~OhmmsObject();
 
   ///return the ObjectID which is unique to each object
-  int id() const
-  {
-    return ObjectID;
-  }
+  int id() const { return ObjectID; }
 
   ///overwrite ObjectID
-  void setID(int i)
-  {
-    ObjectID=i;
-  }
+  void setID(int i) { ObjectID = i; }
 
   ///returns the byte size of the object
-  int elementByteSize() const
-  {
-    return ElementByteSize;
-  }
+  int elementByteSize() const { return ElementByteSize; }
 
   ///set the type name
-  void setTypeName(const std::string& tname)
-  {
-    TypeName = tname;
-  }
+  void setTypeName(const std::string& tname) { TypeName = tname; }
 
   ///set the object name
-  void setObjName(const std::string& oname)
-  {
-    myName = oname;
-  }
+  void setObjName(const std::string& oname) { myName = oname; }
 
   ///return the type name
-  const std::string& typeName() const
-  {
-    return TypeName;
-  }
+  const std::string& typeName() const { return TypeName; }
 
   ///return the object name
-  const std::string& objName() const
-  {
-    return myName;
-  }
+  const std::string& objName() const { return myName; }
 
   virtual OhmmsObject* makeClone() const = 0;
 
 protected:
-
   ///the type name of this object
   std::string TypeName;
 
@@ -109,4 +84,3 @@ private:
   //static int ObjectCounter;
 };
 #endif
-

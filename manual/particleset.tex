@@ -11,14 +11,14 @@ The \ixml{particleset} blocks specify the particles in the QMC simulations: thei
 \hline
 \multicolumn{6}{l}{\texttt{particleset} element} \\
 \hline
-\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{simulation}}\\
-\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{group, attrib}}\\
-\multicolumn{2}{l}{attribute      :} & \multicolumn{4}{l}{}\\
-   &   \bfseries name            & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{name}/\texttt{id}   &  text              &  \textit{any}    &  e                & Name of particle set  \\
-   &   \texttt{size}$^o$           &  integer           &  \textit{any}    &  0                & Number of particles in set \\
-   &   \texttt{random}$^o$         &  text              &  yes/no          &  no               & Randomize starting positions \\
-   &   \texttt{randomsrc}/         &  text     & \texttt{particleset.name} & \textit{none}     & Particle set to randomize  \\
+\multicolumn{2}{l}{Parent elements:} & \multicolumn{4}{l}{\texttt{simulation}}\\
+\multicolumn{2}{l}{Child  elements:} & \multicolumn{4}{l}{\texttt{group, attrib}}\\
+\multicolumn{2}{l}{Attribute:} & \multicolumn{4}{l}{}\\
+   &   \bfseries Name            & \bfseries Datatype & \bfseries Values & \bfseries Default   & \bfseries Description \\
+   &   \texttt{name}/\texttt{id}   &  Text              &  \textit{Any}    &  e                & Name of particle set  \\
+   &   \texttt{size}$^o$           &  Integer           &  \textit{Any}    &  0                & Number of particles in set \\
+   &   \texttt{random}$^o$         &  Text              &  Yes/no          &  No               & Randomize starting positions \\
+   &   \texttt{randomsrc}/         &  Text     & \texttt{particleset.name} & \textit{None}     & Particle set to randomize  \\
    &   \texttt{random\_source}$^o$ &                    &                  &                   &                       \\
 %   &   \texttt{role}     &  text              &  MC/none         &  none               & (obsolete)                       \\
   \hline
@@ -32,19 +32,19 @@ The \ixml{particleset} blocks specify the particles in the QMC simulations: thei
 \hline
 \multicolumn{6}{l}{\texttt{group} element} \\
 \hline
-\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{particleset}}\\
-\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{parameter, attrib}}\\
-\multicolumn{2}{l}{attribute      :} & \multicolumn{4}{l}{}\\
-   &   \bfseries name            & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{name}               &  text              &  \textit{any}    &  e                & Name of particle set  \\
-   &   \texttt{size}$^o$           &  integer           &  \textit{any}    &  0                & Number of particles in set \\
-   &   \texttt{mass}$^o$           &  real              &  \textit{any}    &  1                & Mass of particles in set \\
-   &   \texttt{unit}$^o$          &  text              &  au/amu          &  au               & Units for mass of particles \\
+\multicolumn{2}{l}{Parent elements:} & \multicolumn{4}{l}{\texttt{particleset}}\\
+\multicolumn{2}{l}{Child  elements:} & \multicolumn{4}{l}{\texttt{parameter, attrib}}\\
+\multicolumn{2}{l}{Attribute:} & \multicolumn{4}{l}{}\\
+   &   \bfseries Name            & \bfseries Datatype & \bfseries Values & \bfseries Default   & \bfseries Description \\
+   &   \texttt{name}               &  Text              &  \textit{Any}    &  e                & Name of particle set  \\
+   &   \texttt{size}$^o$           &  Integer           &  \textit{Any}    &  0                & Number of particles in set \\
+   &   \texttt{mass}$^o$           &  Real              &  \textit{Any}    &  1                & Mass of particles in set \\
+   &   \texttt{unit}$^o$          &  Text              &  au/amu          &  au               & Units for mass of particles \\
 \multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
-   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{charge}    &  real              &  \textit{any}    &  0                  & Charge of particles in set \\
-   &   \texttt{valence}   &  real              &  \textit{any}    &  0                  & Valence charge of particles in set \\
-   &   \texttt{atomicnumber} &  integer        &  \textit{any}    &  0                  & Atomic number of particles in set \\
+   &   \bfseries Name     & \bfseries Datatype & \bfseries Values & \bfseries Default   & \bfseries Description \\
+   &   \texttt{charge}    &  Real              &  \textit{Any}    &  0                  & Charge of particles in set \\
+   &   \texttt{valence}   &  Real              &  \textit{Any}    &  0                  & Valence charge of particles in set \\
+   &   \texttt{atomicnumber} &  Integer        &  \textit{Any}    &  0                  & Atomic number of particles in set \\
   \hline
   \hline
 \end{tabularx}
@@ -57,13 +57,13 @@ The \ixml{particleset} blocks specify the particles in the QMC simulations: thei
 \hline
 \multicolumn{6}{l}{\texttt{attrib} element} \\
 \hline
-\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{particleset,group}}\\
-\multicolumn{2}{l}{attribute      :} & \multicolumn{4}{l}{}\\
-   &   \bfseries name            & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{name}             &  string            &  \textit{any}    &  \textit{none}    & Name of attrib              \\
-   &   \texttt{datatype}         &  string            &  intArray, realArray, &  \textit{none} & Type of data in attrib \\
+\multicolumn{2}{l}{Parent elements:} & \multicolumn{4}{l}{\texttt{particleset,group}}\\
+\multicolumn{2}{l}{Attribute:} & \multicolumn{4}{l}{}\\
+   &   \bfseries Name            & \bfseries Datatype & \bfseries Values & \bfseries Default   & \bfseries Description \\
+   &   \texttt{name}             &  String            &  \textit{Any}    &  \textit{None}    & Name of attrib              \\
+   &   \texttt{datatype}         &  String            &  IntArray, realArray, &  \textit{None} & Type of data in attrib \\
    &                             &                    &  posArray, stringArray &             &                        \\
-   &   \texttt{size}$^o$         &  string            &  \textit{any}    &  \textit{none}    & Size of data in attrib \\
+   &   \texttt{size}$^o$         &  String            &  \textit{Any}    &  \textit{None}    & Size of data in attrib \\
   \hline
   \hline
 \end{tabularx}
@@ -72,20 +72,22 @@ The \ixml{particleset} blocks specify the particles in the QMC simulations: thei
 
 \subsection{Detailed attribute description}
 
-\subsubsection{particleset required attributes}
+\subsubsection{Required particleset attributes}
 
 \begin{itemize}
 \item \ixml{name}/\ixml{id} \\
 Unique name for the particle set. Default is ``e" for electrons. ``i" or ``ion0" is typically used for ions. 
+For special cases where an empty particle set is needed, the special name ``empty" can be used to bypass
+the zero-size error check.
 \end{itemize}
 % Line 192 in ParticleIO/XMLParticleIO.cpp
 % Lines 144-145 in QMCApp/ParticleSetPool.cpp
 
-\subsubsection{particleset optional attributes}
+\subsubsection{Optional particleset attributes}
 
 \begin{itemize}
 \item \ixml{size} \\
-Number of particles in set
+Number of particles in set.
 \end{itemize}
 % Line 191 in ParticleIO/XMLParticleIO.cpp
 
@@ -108,7 +110,7 @@ Specify source particle set around which to randomize the initial positions of t
 \end{itemize}
 % Lines 148-149 in QMCApp/ParticleSetPool.cpp
 
-\subsubsection{name required attributes}
+\subsubsection{Required name attributes}
 
 \begin{itemize}
 \item \ixml{name}/\ixml{id} \\
@@ -117,7 +119,7 @@ Unique name for the particle set group. Typically, element symbols are used for 
 % Line 192 in ParticleIO/XMLParticleIO.cpp
 % Lines 144-145 in QMCApp/ParticleSetPool.cpp
 
-\subsubsection{group optional attributes}
+\subsubsection{Optional group attributes}
 
 \begin{itemize}
 \item \ixml{mass} \\
@@ -139,7 +141,7 @@ Units for mass of particles in set (au[$m_e$ = 1] or amu[$\frac{1}{12}m_{\rm ^{1
 
 \subsection{Example use cases}
 \begin{minipage}{\linewidth}
-\begin{lstlisting}[style=QMCPXML,caption=particleset elements for ions and electrons randomizing electron start positions.]
+\begin{lstlisting}[style=QMCPXML,caption=Particleset elements for ions and electrons randomizing electron start positions.]
   <particleset name="i" size="2">
     <group name="Li">
       <parameter name="charge">3.000000</parameter>
@@ -171,7 +173,7 @@ Units for mass of particles in set (au[$m_e$ = 1] or amu[$\frac{1}{12}m_{\rm ^{1
 \end{minipage}
 
 \begin{minipage}{\linewidth}
-\begin{lstlisting}[style=QMCPXML,caption=particleset elements for ions and electrons specifying electron start positions]
+\begin{lstlisting}[style=QMCPXML,caption=Particleset elements for ions and electrons specifying electron start positions.]
   <particleset name="e">
     <group name="u" size="4">
       <parameter name="charge">-1</parameter>
@@ -216,7 +218,7 @@ Units for mass of particles in set (au[$m_e$ = 1] or amu[$\frac{1}{12}m_{\rm ^{1
 \end{minipage}
 
 \begin{minipage}{\linewidth}
-\begin{lstlisting}[style=QMCPXML,caption=particleset elements for ions specifying positions by ion type]
+\begin{lstlisting}[style=QMCPXML,caption=Particleset elements for ions specifying positions by ion type.]
   <particleset name="ion0">
     <group name="O" size="1">
       <parameter name="charge">6</parameter>

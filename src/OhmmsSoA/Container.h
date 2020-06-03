@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -19,7 +19,6 @@
 #include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/Tensor.h>
 #include <simd/allocator.hpp>
-#include <ParticleBase/ParticleAttrib.h>
 #include <OhmmsSoA/PosTransformer.h>
 #include <OhmmsSoA/VectorSoaContainer.h>
 //#include <OhmmsSoA/TensorSoaContainer.h>

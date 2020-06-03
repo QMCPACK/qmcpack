@@ -2,9 +2,9 @@
 #define BZ_WRAP_CLIMITS_H
 
 #ifdef BZ_HAVE_CLIMITS
- #include <climits>
+#include <climits>
 #else
- #include <limits.h>
+#include <limits.h>
 #endif
 
 #endif

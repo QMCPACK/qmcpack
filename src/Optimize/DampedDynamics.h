@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_STEEPESTDESCENT_OPTIMIZATION_H
@@ -21,11 +19,9 @@
 #include "OhmmsData/ParameterSet.h"
 
 template<class T>
-class DampedDynamics: public MinimizerBase<T>
+class DampedDynamics : public MinimizerBase<T>
 {
-
 public:
-
   typedef T Return_t;
   typedef typename MinimizerBase<T>::ObjectFuncType ObjectFuncType;
   using MinimizerBase<T>::msg_stream;
@@ -53,7 +49,7 @@ public:
   /** constructor
    * @param atarget target function to optimize
    */
-  DampedDynamics(ObjectFuncType* atarget=0);
+  DampedDynamics(ObjectFuncType* atarget = 0);
 
   /** destructor */
   ~DampedDynamics() {}
@@ -78,10 +74,10 @@ public:
   bool optimize();
 
   ///write to a std::ostream
-  bool get(std::ostream& ) const;
+  bool get(std::ostream&) const;
 
   ///read from std::istream
-  bool put(std::istream& );
+  bool put(std::istream&);
 
   ///read from an xmlNode
   bool put(xmlNodePtr cur);
@@ -90,7 +86,6 @@ public:
   void reset();
 
 protected:
-
   int NumParams;
   int CurStep;
 
@@ -112,26 +107,31 @@ protected:
 };
 
 template<class T>
-DampedDynamics<T>::DampedDynamics(ObjectFuncType* atarget):
-  TargetFunc(atarget), NumSteps(100),
-  Displacement(1e-6),Dt(1.0),Friction(0.5),Mass(10.),
-  CostTol(1.e-6),GradTol(1.e-6)
+DampedDynamics<T>::DampedDynamics(ObjectFuncType* atarget)
+    : TargetFunc(atarget),
+      NumSteps(100),
+      Displacement(1e-6),
+      Dt(1.0),
+      Friction(0.5),
+      Mass(10.),
+      CostTol(1.e-6),
+      GradTol(1.e-6)
 {
-  prevCost=1e6; //some large number
+  prevCost = 1e6; //some large number
 }
 
 template<class T>
 void DampedDynamics<T>::setTarget(ObjectFuncType* fn)
 {
-  TargetFunc=fn;
-  NumParams=TargetFunc->NumParams();
+  TargetFunc = fn;
+  NumParams  = TargetFunc->getNumParams();
   Y.resize(NumParams);
-  gY.resize(NumParams,0);
+  gY.resize(NumParams, 0);
   Y0.resize(NumParams);
-  for(int i=0; i<NumParams; i++)
+  for (int i = 0; i < NumParams; i++)
   {
-    Y[i]=TargetFunc->Params(i);
-    Y0[i]=Y[i];
+    Y[i]  = std::real(TargetFunc->Params(i));
+    Y0[i] = Y[i];
   }
 }
 
@@ -140,73 +140,71 @@ bool DampedDynamics<T>::optimize()
 {
   //T dt=1.0;
   //T friction=0.5;
-  T t=Friction*Dt*0.5;
-  T c0=2.0/(1+t);
-  T c1=1-c0;
-  T c2 =Dt*Dt/(1.0+t)/Mass;
-  CurStep=0;
+  T t     = Friction * Dt * 0.5;
+  T c0    = 2.0 / (1 + t);
+  T c1    = 1 - c0;
+  T c2    = Dt * Dt / (1.0 + t) / Mass;
+  CurStep = 0;
   do
   {
     evaluateGradients(gY);
-    for(int i=0; i<NumParams; i++)
+    for (int i = 0; i < NumParams; i++)
     {
-      T old=Y0[i];
-      Y0[i]=Y[i];
-      Y[i]=c0*Y0[i]+c1*old+c2*gY[i];
+      T old = Y0[i];
+      Y0[i] = Y[i];
+      Y[i]  = c0 * Y0[i] + c1 * old + c2 * gY[i];
     }
-    curCost = TargetFunc->Cost();
-    Return_t fx= std::abs(*(std::max_element(gY.begin(), gY.end())));
-    if(fx<GradTol)
+    curCost     = TargetFunc->Cost();
+    Return_t fx = std::abs(*(std::max_element(gY.begin(), gY.end())));
+    if (fx < GradTol)
     {
-      if(msg_stream)
+      if (msg_stream)
         *msg_stream << " CGOptimization  has reached gradient max|G| = " << fx << std::endl;
       return false;
     }
-    Return_t dx=std::abs((curCost-prevCost)/curCost);
-    if(dx <= CostTol)
+    Return_t dx = std::abs((curCost - prevCost) / curCost);
+    if (dx <= CostTol)
     {
-      if(msg_stream)
+      if (msg_stream)
         *msg_stream << " CGOptimization::Converged cost with " << dx << std::endl;
       return false;
     }
     CurStep++;
-    if(TargetFunc->IsValid)
+    if (TargetFunc->IsValid)
     {
       TargetFunc->Report();
     }
     else
     {
-      if(msg_stream)
+      if (msg_stream)
         *msg_stream << " DampedDynamics stopped due to invalid cost values " << std::endl;
       return false;
     }
-  }
-  while(CurStep<NumSteps);
-  if(msg_stream)
+  } while (CurStep < NumSteps);
+  if (msg_stream)
     *msg_stream << " Failed to converged after " << CurStep << " steps." << std::endl;
   return false;
 }
 
 template<class T>
-void
-DampedDynamics<T>::evaluateGradients(std::vector<Return_t>& grad)
+void DampedDynamics<T>::evaluateGradients(std::vector<Return_t>& grad)
 {
   TargetFunc->GradCost(grad, Y, Displacement);
-  for(int i=0; i<grad.size(); i++)
-    grad[i] *=-1.0;
-//   if (Displacement==0)  TargetFunc->GradCost(grad, Y, Displacement);
-//   else
-//   {
-//     Return_t dh=1.0/(2.0*Displacement);
-//     for(int i=0; i<TargetFunc->NumParams() ; i++) {
-//       for(int j=0; j<TargetFunc->NumParams(); j++) TargetFunc->Params(j)=Y[j];
-//       TargetFunc->Params(i) = Y[i]+ Displacement;
-//       Return_t CostPlus = TargetFunc->Cost();
-//       TargetFunc->Params(i) = Y[i]- Displacement;
-//       Return_t CostMinus = TargetFunc->Cost();
-//       grad[i]=(CostMinus-CostPlus)*dh;
-//     }
-//   }
+  for (int i = 0; i < grad.size(); i++)
+    grad[i] *= -1.0;
+  //   if (Displacement==0)  TargetFunc->GradCost(grad, Y, Displacement);
+  //   else
+  //   {
+  //     Return_t dh=1.0/(2.0*Displacement);
+  //     for(int i=0; i<TargetFunc->getNumParams() ; i++) {
+  //       for(int j=0; j<TargetFunc->getNumParams(); j++) TargetFunc->Params(j)=Y[j];
+  //       TargetFunc->Params(i) = Y[i]+ Displacement;
+  //       Return_t CostPlus = TargetFunc->Cost();
+  //       TargetFunc->Params(i) = Y[i]- Displacement;
+  //       Return_t CostMinus = TargetFunc->Cost();
+  //       grad[i]=(CostMinus-CostPlus)*dh;
+  //     }
+  //   }
 }
 
 //template<class T>
@@ -231,20 +229,19 @@ bool DampedDynamics<T>::put(std::istream& is)
 
 template<class T>
 void DampedDynamics<T>::reset()
-{
-}
+{}
 
 template<class T>
 bool DampedDynamics<T>::put(xmlNodePtr cur)
 {
   ParameterSet p;
-  p.add(NumSteps,"max_steps","int");
-  p.add(CostTol,"tolerance","scalar");
-  p.add(GradTol,"tolerance_g","scalar");
-  p.add(Displacement,"epsilon","scalar");
-  p.add(Dt,"stepsize","scalar");
-  p.add(Friction,"friction","scalar");
-  p.add(Mass,"mass","scalar");
+  p.add(NumSteps, "max_steps", "int");
+  p.add(CostTol, "tolerance", "scalar");
+  p.add(GradTol, "tolerance_g", "scalar");
+  p.add(Displacement, "epsilon", "scalar");
+  p.add(Dt, "stepsize", "scalar");
+  p.add(Friction, "friction", "scalar");
+  p.add(Mass, "mass", "scalar");
   p.put(cur);
   return true;
 }

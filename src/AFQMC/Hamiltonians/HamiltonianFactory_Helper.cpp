@@ -12,18 +12,6 @@
 #include<mpi.h>
 #endif
 
-#include "OhmmsPETE/TinyVector.h"
-#include "ParticleBase/ParticleAttrib.h"
-#include "type_traits/scalar_traits.h"
-#include <Platforms/sysutil.h>
-#include "OhmmsData/libxmldefs.h"
-#include "OhmmsData/AttributeSet.h"
-#include "OhmmsData/ParameterSet.h"
-#include "Utilities/SimpleParser.h"
-#include "Configuration.h"
-#include "io/hdf_archive.h"
-#include "Message/CommOperators.h"
-
 #include "AFQMC/config.h"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 
@@ -47,21 +35,19 @@ namespace afqmc
   FactorizedSparseHamiltonian::shm_csr_matrix read_V2fact(hdf_archive& dump, TaskGroup_& TG, int nread, int NMO, int nvecs, double cutoff1bar, int int_blocks)
   {
       using counter =  qmcplusplus::afqmc::sparse_matrix_element_counter;
-      using Alloc = boost::mpi3::intranode::allocator<ValueType>;
-      using ucsr_matrix = ma::sparse::ucsr_matrix<ValueType,int,std::size_t,
-                                boost::mpi3::intranode::allocator<ValueType>,
+      using Alloc = shared_allocator<SPValueType>;
+      using ucsr_matrix = ma::sparse::ucsr_matrix<SPValueType,int,std::size_t,
+                                shared_allocator<SPValueType>,
                                 ma::sparse::is_root>;
 
       int min_i = 0;
       int max_i = nvecs;
 
       int nrows = NMO*NMO;
-      bool distribute_Ham = (TG.getNNodesPerTG() < TG.getTotalNodes());
+      bool distribute_Ham = (TG.getNGroupsPerTG() < TG.getTotalNodes());
       std::vector<IndexType> row_counts(nrows);
 
-      Timer.reset("Generic1");
-      Timer.start("Generic1");
-
+      app_log() << " Reading sparse factorized two-electron integrals." << std::endl;
       // calculate column range that belong to this node
       if(distribute_Ham) {
         // count number of non-zero elements along each column (Chol Vec)
@@ -103,30 +89,15 @@ namespace afqmc
 
       }
 
-      Timer.stop("Generic1");
-      app_log()<<" -- Time to count elements in hdf5 read: "
-               <<Timer.average("Generic1") <<"\n";
-
       ucsr_matrix ucsr(tp_ul_ul{nrows,max_i-min_i},tp_ul_ul{0,min_i},row_counts,Alloc(TG.Node()));
       csr::matrix_emplace_wrapper<ucsr_matrix> csr_wrapper(ucsr,TG.Node());
 
-      Timer.reset("Generic1");
-      Timer.start("Generic1");
-
       using mat_map =  qmcplusplus::afqmc::matrix_map;
-      csr_hdf5::multiple_reader_hdf5_csr<ValueType,int>(csr_wrapper,
+      csr_hdf5::multiple_reader_hdf5_csr<SPValueType,int>(csr_wrapper,
                                   mat_map(false,true,nrows,nvecs,0,nrows,min_i,max_i,cutoff1bar),
                                   dump,TG,nread);
       csr_wrapper.push_buffer();
       TG.node_barrier();
-
-      Timer.stop("Generic1");
-      app_log()<<" -- Time to read into ucsr matrix: "
-               <<Timer.average("Generic1") <<"\n";
-
-      // careful here!!!
-      Timer.reset("Generic1");
-      Timer.start("Generic1");
 
       return FactorizedSparseHamiltonian::shm_csr_matrix(std::move(ucsr));
   }

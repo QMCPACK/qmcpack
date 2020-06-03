@@ -22,7 +22,6 @@
 
 namespace qmcplusplus
 {
-
 TEST_CASE("LogGridLight", "[wavefunction][lcao]")
 {
   LogGridLight<double> grid;
@@ -37,7 +36,7 @@ TEST_CASE("LogGridLight", "[wavefunction][lcao]")
   double t = grid(0);
   REQUIRE(t == Approx(0.1));
 
-  int idx3 = 0;
+  int idx3  = 0;
   double t2 = grid.getCLForQuintic(0.1, idx3);
   REQUIRE(idx3 == 0);
   REQUIRE(t2 == Approx(0.0));
@@ -87,12 +86,13 @@ TEST_CASE("MultiQuinticSpline", "[wavefunction][lcao]")
   double d2u[2];
   double d3u[2];
 
-  double u1,u2;
-  double du1,du2;
-  double d2u1,d2u2;
-  double d3u1,d3u2;
-  for (int i = 0; i < 10; i++) {
-    double r=0.08*i + 0.1;
+  double u1, u2;
+  double du1 = 0.0, du2 = 0.0;
+  double d2u1 = 0.0, d2u2 = 0.0;
+  double d3u1 = 0.0, d3u2 = 0.0;
+  for (int i = 0; i < 10; i++)
+  {
+    double r = 0.08 * i + 0.1;
     m_spline.evaluate(r, u, du, d2u);
 
     u1 = spline1.splint(r, du1, d2u1);
@@ -120,4 +120,4 @@ TEST_CASE("MultiQuinticSpline", "[wavefunction][lcao]")
   }
 }
 
-}
+} // namespace qmcplusplus

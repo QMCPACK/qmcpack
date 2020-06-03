@@ -15,15 +15,24 @@
 
 #include <numeric>
 #include <stack>
-#include<iostream>
-#include<fstream>
-#include<complex>
+#include <iostream>
+#include <fstream>
+#include <complex>
+#include <list>
 
+#include "Platforms/sysutil.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/config.0.h"
+
+#ifdef ENABLE_CUDA
+#include "AFQMC/Memory/device_pointers.hpp"
+#include "AFQMC/Memory/CUDA/cuda_arch.h"
+#include "AFQMC/Numerics/device_kernels.hpp"
+#include "cuda_runtime.h"
+#endif
 
 namespace qmcplusplus 
 { 
@@ -152,8 +161,6 @@ void balance_partition_ordered_set(integer N, IType const* indx, std::vector<ITy
     IType iN = N;
     while( *(indx + i0) == *(indx + i0 + 1) ) i0++;
     while( *(indx + iN - 1) == *(indx + iN) ) iN--;
-    int64_t avNpc = (iN-i0)/nsets;
-    int64_t extra = (iN-i0)%nsets;
     avg = static_cast<int64_t>(*(indx+iN)) - static_cast<int64_t>(*(indx+i0));
     avg /= nsets;
 
@@ -303,7 +310,7 @@ template<class Mat,
         >
 void sampleGaussianFields(Mat&& M, RandomNumberGenerator_& rng)
 {
-  for(int i=0, iend=M.shape()[0]; i<iend; ++i)
+  for(int i=0, iend=M.size(0); i<iend; ++i)
     sampleGaussianFields(M[i],rng);
 }
 
@@ -315,15 +322,36 @@ void sampleGaussianFields_n(T* V, int n, RandomNumberGenerator_& rng)
   {
     RealType temp1=1-0.9999999999*rng(), temp2=rng();
     RealType mag = std::sqrt(-2.0*std::log(temp1));
-    V[i]  =mag*std::cos(6.283185306*temp2);
-    V[i+1]=mag*std::sin(6.283185306*temp2);
+    V[i]  =T(mag*std::cos(6.283185306*temp2));
+    V[i+1]=T(mag*std::sin(6.283185306*temp2));
   }
   if (n%2==1)
   {
     RealType temp1=1-0.9999999999*rng(), temp2=rng();
-    V[n-1]=std::sqrt(-2.0*std::log(temp1))*std::cos(6.283185306*temp2);
+    V[n-1]=T(std::sqrt(-2.0*std::log(temp1))*std::cos(6.283185306*temp2));
   }
 }
+
+inline void memory_report()
+{
+  qmcplusplus::app_log()<<"\n --> CPU Memory Available: "
+                          <<freemem() <<std::endl;
+#ifdef ENABLE_CUDA
+  size_t free_,tot_;
+  cudaMemGetInfo(&free_,&tot_);
+  qmcplusplus::app_log()<<" --> GPU Memory Available,  Total in MB: "
+                          <<free_/1024.0/1024.0 <<" " <<tot_/1024.0/1024.0 <<"\n" <<std::endl;
+#endif
+}
+
+#ifdef ENABLE_CUDA
+template<class T,
+        class Dummy>
+void sampleGaussianFields_n(device::device_pointer<T> V, int n, Dummy &r) 
+{
+  kernels::sampleGaussianRNG(to_address(V),n,arch::afqmc_curand_generator);
+}
+#endif
 
 }
 

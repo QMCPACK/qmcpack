@@ -70,9 +70,14 @@ class SimulationBundle(Simulation):
             relative_paths = kwargs['relative']
             del kwargs['relative']
         #end if
+        serial_exec = False
+        if 'serial' in kwargs:
+            serial_exec = kwargs['serial']
+            del kwargs['serial']
+        #end if
 
         self.sims = sims
-        self.bundle_jobs(relative=relative_paths)
+        self.bundle_jobs(relative=relative_paths,serial=serial_exec)
         self.system = None
 
         if not 'path' in kwargs:
@@ -146,22 +151,29 @@ class SimulationBundle(Simulation):
     #end def bundle_dependencies
 
 
-    def bundle_jobs(self,relative=False):
-        jobs = []
-        job0 = self.sims[0].job
-        time    = Job.zero_time()
-        nodes   = 0
-        cores   = 0
-        thread_set = set()
-        queue_set  = set()
-        presub_set = set()
+    def bundle_jobs(self,relative=False,serial=False):
+        jobs        = []
+        job0        = self.sims[0].job
+        time        = Job.zero_time()
+        nodes       = 0
+        cores       = 0
+        constraint  = None
+        thread_set  = set()
+        queue_set   = set()
+        presub_set  = set()
         machine_set = set()
         for sim in self.sims:
             job = sim.job
-            nodes += job.nodes
-            cores += job.cores
-            time    = job.max_time(time)
-            machine = job.get_machine()
+            if serial:
+                nodes = job.nodes
+                cores = job.cores
+            else:
+                nodes += job.nodes
+                cores += job.cores
+            #end if
+            constraint = job.constraint
+            time       = job.max_time(time)
+            machine    = job.get_machine()
             machine_set.add(machine.name)
             thread_set.add(job.threads)
             queue_set.add(job.queue)
@@ -197,6 +209,8 @@ class SimulationBundle(Simulation):
             threads      = threads,
             machine      = machine,
             presub       = presub,
+            constraint   = constraint,
+            serial       = serial,
             **time
             )
     #end def bundle_jobs
@@ -221,7 +235,7 @@ class SimulationBundle(Simulation):
 
 
     def progress(self,dependency_id=None):
-        if dependency_id!=None and dependency_id in self.wait_ids:
+        if dependency_id is not None and dependency_id in self.wait_ids:
             self.wait_ids.remove(dependency_id)
         #end if
         if len(self.wait_ids)==0 and not self.block and not self.failed:

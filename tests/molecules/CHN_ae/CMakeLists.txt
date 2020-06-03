@@ -1,4 +1,3 @@
-IF(ENABLE_SOA)
  IF (NOT QMC_CUDA)
   IF (NOT QMC_COMPLEX)
 #
@@ -26,11 +25,8 @@ IF(ENABLE_SOA)
                     )
  
   ELSE()
-     MESSAGE("Skipping CuspCorrection tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
+    MESSAGE_VERBOSE("Skipping CuspCorrection tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   ENDIF()
  ELSE()
-     MESSAGE("Skipping CuspCorrection tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+    MESSAGE_VERBOSE("Skipping CuspCorrection tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
  ENDIF()
-ELSE()
-    MESSAGE("Skipping CuspCorrection tests for AOS build  (ENABLE_SOA=0)")
-ENDIF()

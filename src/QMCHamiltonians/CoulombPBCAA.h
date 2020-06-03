@@ -12,33 +12,38 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_COULOMBPBCAA_TEMP_H
 #define QMCPLUSPLUS_COULOMBPBCAA_TEMP_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
+#include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
-
 /** @ingroup hamiltonian
  *\brief Calculates the AA Coulomb potential using PBCs
  *
  * Functionally identical to CoulombPBCAA but uses a templated version of
  * LRHandler.
  */
-struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
+struct CoulombPBCAA : public OperatorBase, public ForceBase
 {
-
-  typedef LRCoulombSingleton::LRHandlerType  LRHandlerType;
-  typedef LRCoulombSingleton::GridType       GridType;
+  typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
+  typedef LRCoulombSingleton::GridType GridType;
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
-  typedef LRHandlerType::mRealType           mRealType;
+  typedef LRHandlerType::mRealType mRealType;
+
+  // energy-optimized
   LRHandlerType* AA;
   GridType* myGrid;
   RadFunctorType* rVs;
+  // force-optimized
+  LRHandlerType* dAA;
+  GridType* myGridforce;
+  RadFunctorType* rVsforce;
 
   bool is_active;
   bool FirstTime;
@@ -50,7 +55,7 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
   Return_t myConst;
   RealType myRcut;
   std::string PtclRefName;
-  std::vector<RealType> Zat,Zspec;
+  std::vector<RealType> Zat, Zspec;
   std::vector<int> NofSpecies;
   std::vector<int> SpeciesID;
 
@@ -59,20 +64,20 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
   Vector<ComplexType> del_eikr;
   /// Flag for whether to compute forces or not
   bool ComputeForces;
-//     madelung constant
+  //     madelung constant
   RealType MC0;
 
 #if !defined(REMOVE_TRACEMANAGER)
   //single particle trace sample
-  Array<TraceReal,1>* V_sample;
-  Array<TraceReal,1>  V_const;
+  Array<TraceReal, 1>* V_sample;
+  Array<TraceReal, 1> V_const;
+  Array<TraceReal, 1> V_samp_tmp;
 #endif
   ParticleSet& Ps;
 
 
   /** constructor */
-  CoulombPBCAA(ParticleSet& ref, bool active,
-               bool computeForces=false);
+  CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces = false);
 
   ~CoulombPBCAA();
 
@@ -80,13 +85,15 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
 
   Return_t evaluate(ParticleSet& P);
 
+  Return_t evaluateWithIonDerivs(ParticleSet& P,
+                                 ParticleSet& ions,
+                                 TrialWaveFunction& psi,
+                                 ParticleSet::ParticlePos_t& hf_terms,
+                                 ParticleSet::ParticlePos_t& pulay_terms);
   void update_source(ParticleSet& s);
 
   /** Do nothing */
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) { return true; }
 
   bool get(std::ostream& os) const
   {
@@ -94,7 +101,7 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void initBreakup(ParticleSet& P);
 
@@ -105,36 +112,32 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
   virtual void delete_particle_quantities();
 #endif
 
-  Return_t evalConsts_orig(bool report=true);
-  Return_t evalSR_old(ParticleSet& P);
-  Return_t evalLR_old(ParticleSet& P);
-  Return_t evalConsts_old(bool report=true);
-
   Return_t evalSR(ParticleSet& P);
   Return_t evalLR(ParticleSet& P);
   Return_t evalSRwithForces(ParticleSet& P);
   Return_t evalLRwithForces(ParticleSet& P);
-  Return_t evalConsts(bool report=true);
+  Return_t evalConsts(bool report = true);
 
   void addObservables(PropertySetType& plist, BufferType& collectables);
 
   void setObservables(PropertySetType& plist)
   {
-    QMCHamiltonianBase::setObservables(plist);
+    OperatorBase::setObservables(plist);
     if (ComputeForces)
       setObservablesF(plist);
   }
 
   void setParticlePropertyList(PropertySetType& plist, int offset)
   {
-    QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+    OperatorBase::setParticlePropertyList(plist, offset);
     if (ComputeForces)
       setParticleSetF(plist, offset);
   }
 
+private:
+  // AA table ID
+  const int d_aa_ID;
 };
 
-}
+} // namespace qmcplusplus
 #endif
-
-

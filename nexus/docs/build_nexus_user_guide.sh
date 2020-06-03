@@ -1,24 +1,23 @@
 #!/bin/sh
-if [ -z "$(command -v pdflatex)" ]; then
-  echo "Error: pdflatex is required for build_nexus_user_guide.sh"
+echo "----♦----♦----♦----♦----♦----♦----♦----♦----♦----♦----♦----♦----"
+echo "Building unicode/xelatex (XƎTEX) version of NEXUS User Guide."
+echo "----♦----♦----♦----♦----♦----♦----♦----♦----♦----♦----♦----♦----"
+echo "If you don't see diamonds and a backwards E in the banner"
+echo "your terminal and/or editor cannot display unicode characters"
+echo "If additionally you don't see a logical representation of the"
+echo "unicode code points above in your editor You should show caution"
+echo "editing such characters in the .tex files."
+echo
+if [ -z "$(command -v xelatex)" ]; then
+  echo "Error: xelatex is required for build_nexus_user_guide.sh"
   exit 1
 fi
 
-# From QMCPACK build_manual.sh, for eventual versioning
-#if [ $# -eq 1 ]; then
-#  QMCPACK_VER="$1"
-#  cp -p version.tex version.save.tex
-#  sed -i "s/Development Version/$QMCPACK_VER/" version.tex
-#fi
+# QMCPACK build_manual.sh has examples on versioning .tex and .pdf
+# NEXUS version is currently fixed
 
+xelatex -shell-escape nexus_user_guide.tex
+xelatex -shell-escape nexus_user_guide.tex
+xelatex -shell-escape nexus_user_guide.tex
 
-pdflatex -shell-escape nexus_user_guide.tex
-pdflatex -shell-escape nexus_user_guide.tex
-pdflatex -shell-escape nexus_user_guide.tex
-
-# From QMCPACK build_manual.sh, for eventual versioning
-#if [ ! -z "$QMCPACK_VER" ]; then
-#  mv version.save.tex version.tex
-#  echo Added QMCPACK version $QMCPACK_VER
-#fi
 exit 0

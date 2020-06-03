@@ -27,16 +27,12 @@
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
-#include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 
 namespace qmcplusplus
 {
 
 namespace afqmc
 {
-
-// keep a std::map<*AFQMCInfo,SlaterDetOperations> to construct Wfns, and route all determinant operations through this object in Wfn classes
-
 
 class WavefunctionFactory
 {
@@ -101,8 +97,8 @@ class WavefunctionFactory
     auto mat = initial_guess.find(ID);
     if(mat == initial_guess.end()) { 
       APP_ABORT(" Error: Missing initial guess in WavefunctionFactory. \n");
-    } else 
-      return mat->second;
+    }
+    return mat->second;
   }
 
   // adds a xml block from which a Wavefunction can be built
@@ -129,7 +125,7 @@ class WavefunctionFactory
     m_param.put(cur);
 
     app_log()<<"\n****************************************************\n"
-           <<"               Initializating Wavefunction \n"
+           <<"               Initializing Wavefunction \n"
            <<"****************************************************\n"
            <<std::endl;
 
@@ -137,18 +133,29 @@ class WavefunctionFactory
       assert(h!=nullptr);
       return fromASCII(TGprop,TGwfn,cur,walker_type,*h,cutvn,targetNW);
     } else if(type == "hdf5")
-      return fromHDF5(TGprop,TGwfn,cur,walker_type,cutvn,targetNW);
+      return fromHDF5(TGprop,TGwfn,cur,walker_type,*h,cutvn,targetNW);
     else {
       app_error()<<"Unknown Wavefunction filetype in WavefunctionFactory::buildWavefunction(): " <<type <<std::endl;
       APP_ABORT(" Error: Unknown Wavefunction filetype in WavefunctionFactory::buildWavefunction(). \n");
     }
+    return Wavefunction{};
   }
 
   Wavefunction fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwfn, xmlNodePtr cur, WALKER_TYPES walker_type,
                             Hamiltonian& h, RealType cutvn, int targetNW);
 
   Wavefunction fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn, xmlNodePtr cur, WALKER_TYPES walker_type, 
-                            RealType cutvn, int targetNW);
+                        Hamiltonian& h, RealType cutvn, int targetNW);
+  HamiltonianOperations getHamOps(bool read, hdf_archive& dump, WALKER_TYPES type, int NMO, int NAEA, int NAEB,
+                                  std::vector<PsiT_Matrix>& PsiT, TaskGroup_& TGprop, TaskGroup_& TGwfn, RealType cutvn, RealType cutv2,
+                                  int ndets_to_read, Hamiltonian& h);
+  void getInitialGuess(hdf_archive& dump, std::string& name, int NMO, int NAEA, int NAEB, WALKER_TYPES walker_type);
+  int getExcitation(boost::multi::array_ref<int,1>& deti, boost::multi::array_ref<int,1>& detj, std::vector<int>& excit, int& perm);
+  void computeVariationalEnergyPHMSD(TaskGroup_& TG, Hamiltonian& ham, boost::multi::array_ref<int,2>& occs, std::vector<ComplexType>& coeff, int ndets, int NAEA, int NAEB, int NMO, bool recomputeCI);
+  ComplexType slaterCondon0(Hamiltonian& ham, boost::multi::array_ref<int,1>& det, int NMO);
+  ComplexType slaterCondon1(Hamiltonian& ham, std::vector<int>& excit, boost::multi::array_ref<int,1>& det, int NMO);
+  ComplexType slaterCondon2(Hamiltonian& ham, std::vector<int>& excit, int NMO);
+
 
   // MAM: should I store a copy rather than a pointer???
   std::map<std::string,xmlNodePtr> xmlBlocks;
@@ -156,8 +163,6 @@ class WavefunctionFactory
   std::map<std::string,Wavefunction> wavefunctions;
 
   std::map<std::string,boost::multi::array<ComplexType,3>> initial_guess; 
-
-  //std::map<AFQMCInfo,SlaterDetOperations>
 
 };
 }

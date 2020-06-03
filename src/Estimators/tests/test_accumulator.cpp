@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -22,7 +22,6 @@
 
 namespace qmcplusplus
 {
-
 template<typename T>
 void test_real_accumulator_basic()
 {
@@ -52,17 +51,11 @@ void test_real_accumulator_basic()
   REQUIRE(a1.result2() == Approx(0.0));
 }
 
-TEST_CASE("accumulator basic float", "[estimators]")
-{
-  test_real_accumulator_basic<double>();
-}
+TEST_CASE("accumulator basic float", "[estimators]") { test_real_accumulator_basic<double>(); }
 
-TEST_CASE("accumulator basic double", "[estimators]")
-{
-  test_real_accumulator_basic<double>();
-}
+TEST_CASE("accumulator basic double", "[estimators]") { test_real_accumulator_basic<double>(); }
 
-template <typename T>
+template<typename T>
 void test_real_accumulator()
 {
   accumulator_set<T> a;
@@ -89,17 +82,11 @@ void test_real_accumulator()
   o << a;
 }
 
-TEST_CASE("accumulator some values float", "[estimators]")
-{
-  test_real_accumulator<float>();
-}
+TEST_CASE("accumulator some values float", "[estimators]") { test_real_accumulator<float>(); }
 
-TEST_CASE("accumulator some values double", "[estimators]")
-{
-  test_real_accumulator<double>();
-}
+TEST_CASE("accumulator some values double", "[estimators]") { test_real_accumulator<double>(); }
 
-template <typename T>
+template<typename T>
 void test_real_accumulator_weights()
 {
   accumulator_set<T> a;
@@ -120,14 +107,8 @@ void test_real_accumulator_weights()
   REQUIRE(mv.second == Approx(a.variance()));
 }
 
-TEST_CASE("accumulator with weights float", "[estimators]")
-{
-  test_real_accumulator_weights<float>();
-}
+TEST_CASE("accumulator with weights float", "[estimators]") { test_real_accumulator_weights<float>(); }
 
-TEST_CASE("accumulator with weights double", "[estimators]")
-{
-  test_real_accumulator_weights<double>();
-}
+TEST_CASE("accumulator with weights double", "[estimators]") { test_real_accumulator_weights<double>(); }
 
-}
+} // namespace qmcplusplus

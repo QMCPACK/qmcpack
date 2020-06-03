@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /** @file HDFWalkerInput_0_0.h
@@ -28,7 +25,6 @@
 
 namespace qmcplusplus
 {
-
 class MCWalkerConfiguration;
 
 /** Reads a set of walker configurations from an HDF5 file. */
@@ -41,6 +37,7 @@ class HDFWalkerInput_0_0
   MCWalkerConfiguration& targetW;
   ///name of hdf file
   std::string FileName;
+
 public:
   /** constructor
    * @param W reference configuration to fill in
@@ -65,8 +62,7 @@ public:
   // * @param restart if true, read the state
   // */
   //void getRandomState(bool restart);
-
 };
 
-}
+} // namespace qmcplusplus
 #endif

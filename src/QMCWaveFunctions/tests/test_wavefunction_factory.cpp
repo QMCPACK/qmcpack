@@ -19,13 +19,11 @@
 
 namespace qmcplusplus
 {
-
-TEST_CASE("WaveFunctionFactory","[wavefunction]")
+TEST_CASE("WaveFunctionFactory", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet *qp = new ParticleSet;
+  ParticleSet* qp = new ParticleSet;
   std::vector<int> agroup(1);
   agroup[0] = 2;
   qp->setName("e");
@@ -37,11 +35,11 @@ TEST_CASE("WaveFunctionFactory","[wavefunction]")
   qp->R[1][1] = 1.1;
   qp->R[1][2] = 2.2;
 
-  SpeciesSet &tspecies = qp->getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int massIdx = tspecies.addAttribute("mass");
-  tspecies(massIdx, upIdx) = 1.0;
+  SpeciesSet& tspecies       = qp->getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int downIdx                = tspecies.addSpecies("d");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
   qp->update();
@@ -52,8 +50,7 @@ TEST_CASE("WaveFunctionFactory","[wavefunction]")
 
   WaveFunctionFactory wff(qp, particle_set_map, c);
 
-  const char* wavefunction_xml = \
-"<wavefunction> \
+  const char* wavefunction_xml = "<wavefunction> \
          <jastrow type=\"Two-Body\" name=\"J2\" function=\"bspline\" print=\"yes\"> \
             <correlation speciesA=\"u\" speciesB=\"d\" size=\"8\" cutoff=\"10.0\"> \
                <coefficients id=\"ud\" type=\"Array\"> \
@@ -73,8 +70,7 @@ TEST_CASE("WaveFunctionFactory","[wavefunction]")
   REQUIRE(wff.targetPsi != NULL);
   REQUIRE(wff.targetPsi->size() == 1);
 
-  WaveFunctionComponent *j2_base = wff.targetPsi->getOrbitals()[0];
+  WaveFunctionComponent* j2_base = wff.targetPsi->getOrbitals()[0];
   REQUIRE(j2_base != NULL);
 }
-}
-
+} // namespace qmcplusplus

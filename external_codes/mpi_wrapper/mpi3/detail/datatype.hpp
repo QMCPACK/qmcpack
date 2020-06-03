@@ -40,7 +40,7 @@ using wchar = wchar_t;
 using byte = std::byte;
 #endif
 
-BOOST_STRONG_TYPEDEF(unsigned char, packed);
+BOOST_STRONG_TYPEDEF(unsigned char, packed)
 
 template<class T> struct basic_datatype;
 

@@ -16,11 +16,7 @@
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
@@ -35,12 +31,9 @@ using std::string;
 
 namespace qmcplusplus
 {
-
-
 TEST_CASE("Fixed node branch", "[drivers][walker_control]")
 {
-  OHMMS::Controller->initialize(0, NULL);
-  Communicate *c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
   EstimatorManagerBase emb(c);
 
@@ -60,4 +53,4 @@ TEST_CASE("Fixed node branch", "[drivers][walker_control]")
   //fnb.setBranchCutoff();
 }
 
-}
+} // namespace qmcplusplus

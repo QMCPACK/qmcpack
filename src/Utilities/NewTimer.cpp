@@ -12,8 +12,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-
-
 /** @file NewTimer.cpp
  * @brief Implements TimerManager
  */
@@ -32,14 +30,12 @@ TimerManagerClass TimerManager;
 
 bool timer_max_level_exceeded = false;
 
-void TimerManagerClass::addTimer(NewTimer* t)
+void TimerManagerClass::initializeTimer(NewTimer* t)
 {
-  #pragma omp critical
   {
     if (t->get_name().find(TIMER_STACK_SEPARATOR) != std::string::npos)
     {
-      app_log() << "Warning: Timer name (" << t->get_name()
-                << ") should not contain the character "
+      app_log() << "Warning: Timer name (" << t->get_name() << ") should not contain the character "
                 << TIMER_STACK_SEPARATOR << std::endl;
     }
 
@@ -47,13 +43,13 @@ void TimerManagerClass::addTimer(NewTimer* t)
     if (timer_name_to_id.find(t->get_name()) == timer_name_to_id.end())
     {
       t->set_id(max_timer_id);
-      timer_id_name[t->get_id()] = t->get_name();
+      timer_id_name[t->get_id()]      = t->get_name();
       timer_name_to_id[t->get_name()] = t->get_id();
       if (max_timer_id >= std::numeric_limits<timer_id_t>::max())
       {
         max_timers_exceeded = true;
         app_log() << "Number of timers exceeds limit (" << static_cast<int>(std::numeric_limits<timer_id_t>::max())
-                  << ").   Adjust timer_id_t in NewTimer.h and recompile."  << std::endl;
+                  << ").   Adjust timer_id_t in NewTimer.h and recompile." << std::endl;
       }
       else
       {
@@ -66,51 +62,55 @@ void TimerManagerClass::addTimer(NewTimer* t)
     }
     t->set_manager(this);
     t->set_active_by_timer_threshold(timer_threshold);
-    TimerList.push_back(t);
   }
 }
 
-NewTimer *TimerManagerClass::createTimer(const std::string& myname, timer_levels mytimer)
+NewTimer* TimerManagerClass::createTimer(const std::string& myname, timer_levels mytimer)
 {
-  NewTimer *t = new NewTimer(myname, mytimer);
-  addTimer(t);
+  NewTimer *t = nullptr;
+  #pragma omp critical
+  {
+    TimerList.push_back(std::make_unique<NewTimer>(myname, mytimer));
+    t = TimerList.back().get();
+    initializeTimer(t);
+  }
   return t;
 }
 
 
 void TimerManagerClass::reset()
 {
-  for (int i=0; i<TimerList.size(); i++)
+  for (int i = 0; i < TimerList.size(); i++)
     TimerList[i]->reset();
 }
 
 void TimerManagerClass::set_timer_threshold(const timer_levels threshold)
 {
   timer_threshold = threshold;
-  for (int i=0; i<TimerList.size(); i++)
+  for (int i = 0; i < TimerList.size(); i++)
   {
     TimerList[i]->set_active_by_timer_threshold(timer_threshold);
   }
 }
 
-void TimerManagerClass::collate_flat_profile(Communicate *comm, FlatProfileData &p)
+void TimerManagerClass::collate_flat_profile(Communicate* comm, FlatProfileData& p)
 {
-  for(int i=0; i<TimerList.size(); ++i)
+  for (int i = 0; i < TimerList.size(); ++i)
   {
-    NewTimer &timer = *TimerList[i];
+    NewTimer& timer = *TimerList[i];
     nameList_t::iterator it(p.nameList.find(timer.get_name()));
-    if(it == p.nameList.end())
+    if (it == p.nameList.end())
     {
-      int ind=p.nameList.size();
-      p.nameList[timer.get_name()]=ind;
+      int ind                      = p.nameList.size();
+      p.nameList[timer.get_name()] = ind;
       p.timeList.push_back(timer.get_total());
       p.callList.push_back(timer.get_num_calls());
     }
     else
     {
-      int ind=(*it).second;
-      p.timeList[ind]+=timer.get_total();
-      p.callList[ind]+=timer.get_num_calls();
+      int ind = (*it).second;
+      p.timeList[ind] += timer.get_total();
+      p.callList[ind] += timer.get_num_calls();
     }
   }
 
@@ -123,19 +123,18 @@ void TimerManagerClass::collate_flat_profile(Communicate *comm, FlatProfileData 
 
 struct ProfileData
 {
-    double time;
-    double calls;
+  double time;
+  double calls;
 
-    ProfileData &operator+=(const ProfileData &pd)
-    {
-        time += pd.time;
-        calls += pd.calls;
-        return *this;
-    }
+  ProfileData& operator+=(const ProfileData& pd)
+  {
+    time  += pd.time;
+    calls += pd.calls;
+    return *this;
+  }
 };
 
-int
-get_level(const std::string &stack_name)
+int get_level(const std::string& stack_name)
 {
   int level = 0;
   for (int i = 0; i < stack_name.length(); i++)
@@ -148,8 +147,7 @@ get_level(const std::string &stack_name)
   return level;
 }
 
-std::string
-get_leaf_name(const std::string &stack_name)
+std::string get_leaf_name(const std::string& stack_name)
 {
   int pos = stack_name.find_last_of(TIMER_STACK_SEPARATOR);
   if (pos == std::string::npos)
@@ -157,14 +155,16 @@ get_leaf_name(const std::string &stack_name)
     return stack_name;
   }
 
-  return stack_name.substr(pos+1, stack_name.length()-pos);
+  return stack_name.substr(pos + 1, stack_name.length() - pos);
 }
 
-void TimerManagerClass::get_stack_name_from_id(const StackKey &key, std::string &stack_name)
+void TimerManagerClass::get_stack_name_from_id(const StackKey& key, std::string& stack_name)
 {
-  for (int i = 0; i < StackKey::max_level; i++) {
-    std::string &timer_name = timer_id_name[key.get_id(i)];
-    if (key.get_id(i) == 0) break;
+  for (int i = 0; i < StackKey::max_level; i++)
+  {
+    std::string& timer_name = timer_id_name[key.get_id(i)];
+    if (key.get_id(i) == 0)
+      break;
     if (i > 0)
     {
       stack_name += TIMER_STACK_SEPARATOR;
@@ -173,7 +173,7 @@ void TimerManagerClass::get_stack_name_from_id(const StackKey &key, std::string 
   }
 }
 
-void TimerManagerClass::collate_stack_profile(Communicate *comm, StackProfileData &p)
+void TimerManagerClass::collate_stack_profile(Communicate* comm, StackProfileData& p)
 {
 #ifdef USE_STACK_TIMERS
   // Put stacks from all timers into one data structure
@@ -182,27 +182,27 @@ void TimerManagerClass::collate_stack_profile(Communicate *comm, StackProfileDat
   // The order in which sibling timers are encountered in the code is not
   // preserved. They will be ordered alphabetically instead.
   std::map<std::string, ProfileData> all_stacks;
-  for(int i=0; i<TimerList.size(); ++i)
+  for (int i = 0; i < TimerList.size(); ++i)
   {
-    NewTimer &timer = *TimerList[i];
-    std::map<StackKey,double>::iterator stack_id_it = timer.get_per_stack_total_time().begin();
+    NewTimer& timer                                  = *TimerList[i];
+    std::map<StackKey, double>::iterator stack_id_it = timer.get_per_stack_total_time().begin();
     for (; stack_id_it != timer.get_per_stack_total_time().end(); stack_id_it++)
     {
-        ProfileData pd;
-        const StackKey &key = stack_id_it->first;
-        std::string stack_name;
-        get_stack_name_from_id(key, stack_name);
-        pd.time = timer.get_total(key);
-        pd.calls = timer.get_num_calls(key);
+      ProfileData pd;
+      const StackKey& key = stack_id_it->first;
+      std::string stack_name;
+      get_stack_name_from_id(key, stack_name);
+      pd.time  = timer.get_total(key);
+      pd.calls = timer.get_num_calls(key);
 
-        all_stacks[stack_name] += pd;
+      all_stacks[stack_name] += pd;
     }
   }
 
   // Fill in the output data structure (but don't compute exclusive time yet)
   std::map<std::string, ProfileData>::iterator si = all_stacks.begin();
-  int idx = 0;
-  for(;si != all_stacks.end(); ++si)
+  int idx                                         = 0;
+  for (; si != all_stacks.end(); ++si)
   {
     std::string stack_name = si->first;
     p.nameList[stack_name] = idx;
@@ -217,10 +217,10 @@ void TimerManagerClass::collate_stack_profile(Communicate *comm, StackProfileDat
   for (idx = 0; idx < p.timeList.size(); idx++)
   {
     int start_level = get_level(p.names[idx]);
-    for (int i = idx+1; i < p.timeList.size(); i++)
+    for (int i = idx + 1; i < p.timeList.size(); i++)
     {
       int level = get_level(p.names[i]);
-      if (level == start_level+1)
+      if (level == start_level + 1)
       {
         p.timeExclList[idx] -= p.timeExclList[i];
       }
@@ -233,18 +233,17 @@ void TimerManagerClass::collate_stack_profile(Communicate *comm, StackProfileDat
 #endif
 }
 
-void
-TimerManagerClass::print(Communicate* comm)
+void TimerManagerClass::print(Communicate* comm)
 {
-#if ENABLE_TIMERS
+#ifdef ENABLE_TIMERS
 #ifdef USE_STACK_TIMERS
-  if(comm == NULL || comm->rank() == 0)
+  if (comm == NULL || comm->rank() == 0)
   {
     app_log() << "Stack timer profile" << std::endl;
   }
   print_stack(comm);
 #else
-  if(comm == NULL || comm->rank() == 0)
+  if (comm == NULL || comm->rank() == 0)
   {
     app_log() << "\nFlat profile" << std::endl;
   }
@@ -253,30 +252,28 @@ TimerManagerClass::print(Communicate* comm)
 #endif
 }
 
-void
-TimerManagerClass::print_flat(Communicate* comm)
+void TimerManagerClass::print_flat(Communicate* comm)
 {
-#if ENABLE_TIMERS
+#ifdef ENABLE_TIMERS
   FlatProfileData p;
 
   collate_flat_profile(comm, p);
 
-  if(comm == NULL || comm->rank() == 0)
+  if (comm == NULL || comm->rank() == 0)
   {
-    #pragma omp master
+#pragma omp master
     {
       const int bufsize = 256;
       char tmpout[bufsize];
-      std::map<std::string,int>::iterator it(p.nameList.begin()), it_end(p.nameList.end());
-      while(it != it_end)
+      std::map<std::string, int>::iterator it(p.nameList.begin()), it_end(p.nameList.end());
+      while (it != it_end)
       {
-        int i=(*it).second;
+        int i = (*it).second;
         //if(callList[i]) //skip zeros
-        snprintf (tmpout, bufsize, "%-40s  %9.4f  %13ld  %16.9f  %12.6f TIMER\n"
-        , (*it).first.c_str()
-        , p.timeList[i], p.callList[i]
-        , p.timeList[i]/(static_cast<double>(p.callList[i])+std::numeric_limits<double>::epsilon())
-        , p.timeList[i]/static_cast<double>(omp_get_max_threads()*comm->size()));
+        snprintf(tmpout, bufsize, "%-40s  %9.4f  %13ld  %16.9f  %12.6f TIMER\n", (*it).first.c_str(), p.timeList[i],
+                 p.callList[i],
+                 p.timeList[i] / (static_cast<double>(p.callList[i]) + std::numeric_limits<double>::epsilon()),
+                 p.timeList[i] / static_cast<double>(omp_get_max_threads() * comm->size()));
         app_log() << tmpout;
         ++it;
       }
@@ -286,39 +283,39 @@ TimerManagerClass::print_flat(Communicate* comm)
 }
 
 
-void pad_string(const std::string &in, std::string &out, int field_len)
+void pad_string(const std::string& in, std::string& out, int field_len)
 {
-    int len = in.size();
-    int pad_len = std::max(field_len - len, 0);
-    std::string pad_str(pad_len, ' ');
-    out = in + pad_str;
+  int len     = in.size();
+  int pad_len = std::max(field_len - len, 0);
+  std::string pad_str(pad_len, ' ');
+  out = in + pad_str;
 }
 
-void
-TimerManagerClass::print_stack(Communicate* comm)
+void TimerManagerClass::print_stack(Communicate* comm)
 {
-#if ENABLE_TIMERS
+#ifdef ENABLE_TIMERS
   StackProfileData p;
 
   collate_stack_profile(comm, p);
 
-  if(comm == NULL || comm->rank() == 0)
+  if (comm == NULL || comm->rank() == 0)
   {
     if (timer_max_level_exceeded)
     {
-      app_warning() << "Maximum stack level (" << StackKey::max_level << ") exceeded.  Results may be incorrect." << std::endl;
+      app_warning() << "Maximum stack level (" << StackKey::max_level << ") exceeded.  Results may be incorrect."
+                    << std::endl;
       app_warning() << "Adjust StackKey in NewTimer.h and recompile." << std::endl;
     }
 
-    int indent_len = 2;
+    int indent_len   = 2;
     int max_name_len = 0;
     for (int i = 0; i < p.names.size(); i++)
     {
       std::string stack_name = p.names[i];
-      int level = get_level(stack_name);
-      std::string name = get_leaf_name(stack_name);
-      int name_len = name.size()  + indent_len*level;
-      max_name_len = std::max(name_len, max_name_len);
+      int level              = get_level(stack_name);
+      std::string name       = get_leaf_name(stack_name);
+      int name_len           = name.size() + indent_len * level;
+      max_name_len           = std::max(name_len, max_name_len);
     }
 
     const int bufsize = 256;
@@ -326,44 +323,41 @@ TimerManagerClass::print_stack(Communicate* comm)
     std::string timer_name;
     pad_string("Timer", timer_name, max_name_len);
 
-    snprintf(tmpout, bufsize, "%s  %-9s  %-9s  %-10s  %-13s\n",timer_name.c_str(),"Inclusive_time","Exclusive_time","Calls","Time_per_call");
+    snprintf(tmpout, bufsize, "%s  %-9s  %-9s  %-10s  %-13s\n", timer_name.c_str(), "Inclusive_time", "Exclusive_time",
+             "Calls", "Time_per_call");
     app_log() << tmpout;
 
     for (int i = 0; i < p.names.size(); i++)
     {
       std::string stack_name = p.names[i];
-      int level = get_level(stack_name);
-      std::string name = get_leaf_name(stack_name);
-      std::string indent_str(indent_len*level, ' ');
+      int level              = get_level(stack_name);
+      std::string name       = get_leaf_name(stack_name);
+      std::string indent_str(indent_len * level, ' ');
       std::string indented_str = indent_str + name;
       std::string padded_name_str;
       pad_string(indented_str, padded_name_str, max_name_len);
-      snprintf (tmpout, bufsize, "%s  %9.4f  %9.4f  %13ld  %16.9f\n"
-              , padded_name_str.c_str()
-              , p.timeList[i]
-              , p.timeExclList[i]
-              , p.callList[i]
-              , p.timeList[i]/(static_cast<double>(p.callList[i])+std::numeric_limits<double>::epsilon()));
+      snprintf(tmpout, bufsize, "%s  %9.4f  %9.4f  %13ld  %16.9f\n", padded_name_str.c_str(), p.timeList[i],
+               p.timeExclList[i], p.callList[i],
+               p.timeList[i] / (static_cast<double>(p.callList[i]) + std::numeric_limits<double>::epsilon()));
       app_log() << tmpout;
     }
   }
 #endif
 }
 
-void
-TimerManagerClass::output_timing(Communicate *comm, Libxml2Document &doc, xmlNodePtr root)
+void TimerManagerClass::output_timing(Communicate* comm, Libxml2Document& doc, xmlNodePtr root)
 {
-#if ENABLE_TIMERS
+#ifdef ENABLE_TIMERS
 #ifdef USE_STACK_TIMERS
   StackProfileData p;
 
   collate_stack_profile(comm, p);
 
-  if(comm == NULL || comm->rank() == 0)
+  if (comm == NULL || comm->rank() == 0)
   {
     xmlNodePtr timing_root = doc.addChild(root, "timing");
-    doc.addChild(timing_root, "max_stack_level_exceeded", timer_max_level_exceeded?"yes":"no");
-    doc.addChild(timing_root, "max_timers_exceeded", max_timers_exceeded?"yes":"no");
+    doc.addChild(timing_root, "max_stack_level_exceeded", timer_max_level_exceeded ? "yes" : "no");
+    doc.addChild(timing_root, "max_timers_exceeded", max_timers_exceeded ? "yes" : "no");
     std::vector<xmlNodePtr> node_stack;
     node_stack.push_back(timing_root);
     xmlNodePtr current_root = timing_root;
@@ -371,10 +365,10 @@ TimerManagerClass::output_timing(Communicate *comm, Libxml2Document &doc, xmlNod
     for (int i = 0; i < p.names.size(); i++)
     {
       std::string stack_name = p.names[i];
-      int level = get_level(stack_name);
-      std::string name = get_leaf_name(stack_name);
+      int level              = get_level(stack_name);
+      std::string name       = get_leaf_name(stack_name);
 
-      std::string indent_str(2*level, ' ');
+      std::string indent_str(2 * level, ' ');
 
       xmlNodePtr timer = doc.addChild(current_root, "timer");
       doc.addChild(timer, "name", name);
@@ -383,9 +377,9 @@ TimerManagerClass::output_timing(Communicate *comm, Libxml2Document &doc, xmlNod
       doc.addChild(timer, "calls", p.callList[i]);
 
       int next_level = level;
-      if (i+1 < p.names.size())
+      if (i + 1 < p.names.size())
       {
-        next_level = get_level(p.names[i+1]);
+        next_level = get_level(p.names[i + 1]);
       }
 
       if (next_level > level)
@@ -396,7 +390,7 @@ TimerManagerClass::output_timing(Communicate *comm, Libxml2Document &doc, xmlNod
       }
       if (next_level < level)
       {
-        for (int j = 0; j < level-next_level; j++)
+        for (int j = 0; j < level - next_level; j++)
         {
           node_stack.pop_back();
           current_root = node_stack.back();
@@ -409,8 +403,7 @@ TimerManagerClass::output_timing(Communicate *comm, Libxml2Document &doc, xmlNod
 #endif
 }
 
-void
-NewTimer::set_active_by_timer_threshold(const timer_levels threshold)
+void NewTimer::set_active_by_timer_threshold(const timer_levels threshold)
 {
   if (timer_level <= threshold)
   {
@@ -420,7 +413,6 @@ NewTimer::set_active_by_timer_threshold(const timer_levels threshold)
   {
     active = false;
   }
-
 }
 
-}
+} // namespace qmcplusplus

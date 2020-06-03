@@ -10,8 +10,8 @@
 //
 // File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_BACKFLOW_BUILDER_H
 #define QMCPLUSPLUS_BACKFLOW_BUILDER_H
 //#include "Utilities/ProgressReportEngine.h"
@@ -36,31 +36,22 @@
 
 namespace qmcplusplus
 {
-
-class BackflowBuilder: public WaveFunctionComponentBuilder
+class BackflowBuilder
 {
-
-  typedef LRHandlerBase HandlerType;
-  typedef LinearGrid<RealType> GridType;
-  typedef std::map<std::string,ParticleSet*>   PtclPoolType;
+  using RealType = BackflowFunctionBase::RealType;
+  using HandlerType = LRHandlerBase;
+  using GridType = LinearGrid<RealType>;
+  using PtclPoolType = std::map<std::string, ParticleSet*>;
 
 public:
+  BackflowBuilder(ParticleSet& p, PtclPoolType& pool);
 
-  BackflowBuilder(ParticleSet& p, PtclPoolType& pool, TrialWaveFunction& psi);
-
-  ~BackflowBuilder();
-
-  bool put(xmlNodePtr cur);
-
-  BackflowTransformation* getBFTrans()
-  {
-    return BFTrans;
-  }
+  BackflowTransformation* buildBackflowTransformation(xmlNodePtr cur);
 
   RealType cutOff;
 
 private:
-
+  ParticleSet& targetPtcl;
   PtclPoolType& ptclPool;
   BackflowTransformation* BFTrans;
   bool IgnoreSpin;
@@ -82,13 +73,11 @@ private:
 
   void makeLongRange_oneBody();
 
-  void makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<BsplineFunctor<RealType> > *tbf, std::vector<int>& offsets);
+  void makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<BsplineFunctor<RealType>>* tbf, std::vector<int>& offsets);
 
-  void makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace *tbf, std::vector<int>& offsets);
-
-
+  void makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace* tbf, std::vector<int>& offsets);
 };
 
-}
+} // namespace qmcplusplus
 
 #endif

@@ -13,19 +13,15 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_WAVEFUNCTIONTEST_H
 #define QMCPLUSPLUS_WAVEFUNCTIONTEST_H
 
 #include "QMCDrivers/QMCDriver.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 namespace qmcplusplus
 {
-
-
 /** Information for output of relative error in wavefunction derivatives
   vs. finite difference delta.
 */
@@ -43,9 +39,12 @@ public:
 /** Test the correctness of TrialWaveFunction for the values,
     gradients and laplacians
 */
-class WaveFunctionTester: public QMCDriver
+class WaveFunctionTester : public QMCDriver
 {
 public:
+  /// type definition
+  using LogValueType = WaveFunctionComponent::LogValueType;
+
   /// Constructor.
   WaveFunctionTester(MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
@@ -60,7 +59,7 @@ public:
   bool put(xmlNodePtr q);
 
 private:
-  ParticleSetPool &PtclPool;
+  ParticleSetPool& PtclPool;
   ParticleSet::ParticlePos_t deltaR;
   std::string checkRatio, checkClone, checkHamPbyP, sourceName, wftricks, checkEloc;
   std::string checkBasic, checkRatioV;
@@ -71,11 +70,11 @@ private:
   bool checkSlaterDet; // flag to perform determinant-resolved test of SlaterDet
   std::string checkSlaterDetOption;
   FiniteDiffErrData DeltaVsError;
- 
+
   /// Copy Constructor (disabled)
-  WaveFunctionTester(const WaveFunctionTester &) = delete;
+  WaveFunctionTester(const WaveFunctionTester&) = delete;
   /// Copy Operator (disabled)
-  WaveFunctionTester & operator=(const WaveFunctionTester &) = delete;
+  WaveFunctionTester& operator=(const WaveFunctionTester&) = delete;
 
   /** basic tests for G and L */
   void runBasicTest();
@@ -97,24 +96,24 @@ private:
 
   // compute numerical gradient and laplacian
   void computeNumericalGrad(RealType delta,
-                            ParticleSet::ParticleGradient_t &G_fd,
-                            ParticleSet::ParticleLaplacian_t &L_fd);
+                            ParticleSet::ParticleGradient_t& G_fd,
+                            ParticleSet::ParticleLaplacian_t& L_fd);
 
-  bool checkGradients(int lower_iat, int upper_iat,
-                      ParticleSet::ParticleGradient_t &G,
-                      ParticleSet::ParticleLaplacian_t &L,
-                      ParticleSet::ParticleGradient_t &G_fd,
-                      ParticleSet::ParticleLaplacian_t &L_fd,
-                      std::stringstream &log,
-                      int indent=0);
+  bool checkGradients(int lower_iat,
+                      int upper_iat,
+                      ParticleSet::ParticleGradient_t& G,
+                      ParticleSet::ParticleLaplacian_t& L,
+                      ParticleSet::ParticleGradient_t& G_fd,
+                      ParticleSet::ParticleLaplacian_t& L_fd,
+                      std::stringstream& log,
+                      int indent = 0);
 
-  bool checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t* W1,
-                                    std::stringstream &fail_log,
-                                    bool &ignore);
+  bool checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t* W1, std::stringstream& fail_log, bool& ignore);
 
+  QMCRunType getRunType() { return QMCRunType::WF_TEST; }
   //vector<RealType> Mv3(std::vector<std::vector<RealType> >& M, std::vector<RealType>& v);
 
   std::ofstream fout;
 };
-}
+} // namespace qmcplusplus
 #endif

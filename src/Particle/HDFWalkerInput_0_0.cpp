@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 #include "Particle/HDFWalkerInput_0_0.h"
@@ -24,46 +21,44 @@
 #include "OhmmsData/FileUtility.h"
 namespace qmcplusplus
 {
-
-HDFWalkerInput_0_0::HDFWalkerInput_0_0(MCWalkerConfiguration& W, const std::string &aroot):
-  targetW(W), version(0,0)
+HDFWalkerInput_0_0::HDFWalkerInput_0_0(MCWalkerConfiguration& W, const std::string& aroot) : version(0, 0), targetW(W)
 {
-  FileName = aroot;
-  std::string ext=getExtension(aroot);
-  if(ext != "h5")
-    //if the filename does not h5 extension, add the extension
+  FileName        = aroot;
+  std::string ext = getExtension(aroot);
+  if (ext != "h5")
+  //if the filename does not h5 extension, add the extension
   {
     FileName.append(".config.h5");
   }
 }
 
-HDFWalkerInput_0_0::~HDFWalkerInput_0_0() { }
+HDFWalkerInput_0_0::~HDFWalkerInput_0_0() {}
 
-bool  HDFWalkerInput_0_0::put(xmlNodePtr cur)
+bool HDFWalkerInput_0_0::put(xmlNodePtr cur)
 {
-  hid_t h_file =  H5Fopen(FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-  hid_t h_config = H5Gopen(h_file,"config_collection");
-  if(h_config<0)
+  hid_t h_file   = H5Fopen(FileName.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+  hid_t h_config = H5Gopen(h_file, "config_collection");
+  if (h_config < 0)
   {
     app_error() << " HDFWalkerInput_0_0::put  config_collection is not found in " << FileName << "." << std::endl;
     H5Fclose(h_file);
     return false;
   }
-  int NumSets=0;
-  hid_t h1=H5Dopen(h_config,"NumOfConfigurations");
-  if(h1>-1)
+  int NumSets = 0;
+  hid_t h1    = H5Dopen(h_config, "NumOfConfigurations");
+  if (h1 > -1)
   {
-    H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(NumSets));
+    H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(NumSets));
     H5Dclose(h1);
   }
-  if(!NumSets)
+  if (!NumSets)
   {
     //resolve the integer and long problem with 64bit
     hsize_t nset;
-    H5Gget_num_objs(h_config,&nset);
-    NumSets=nset;
+    H5Gget_num_objs(h_config, &nset);
+    NumSets = nset;
   }
-  if(!NumSets)
+  if (!NumSets)
   {
     app_error() << " HDFWalkerInput_0_0::put  " << FileName << " does not contain walkers!" << std::endl;
     H5Gclose(h_config);
@@ -71,29 +66,29 @@ bool  HDFWalkerInput_0_0::put(xmlNodePtr cur)
     return false;
   }
   //select the last block
-  int selected=NumSets-1;
+  int selected = NumSets - 1;
   typedef MCWalkerConfiguration::PosType PosType;
   typedef MCWalkerConfiguration::PropertyContainer_t ProtertyContainer_t;
-  typedef Matrix<TinyVector<double, OHMMS_DIM> >  PosContainer_t;
+  typedef Matrix<TinyVector<double, OHMMS_DIM>> PosContainer_t;
   int nwt = 0;
   //2D array of PosTypes (x,y,z) indexed by (walker,particle)
   PosContainer_t Pos_temp;
   //open the group
   char GrpName[128];
-  sprintf(GrpName,"config%04d",selected);
-  hid_t group_id = H5Gopen(h_config,GrpName);
+  sprintf(GrpName, "config%04d", selected);
+  hid_t group_id = H5Gopen(h_config, GrpName);
   HDFAttribIO<PosContainer_t> Pos_in(Pos_temp);
   //read the dataset
-  Pos_in.read(group_id,"coord");
+  Pos_in.read(group_id, "coord");
   //close groups
   H5Gclose(group_id);
   H5Gclose(h_config);
   H5Fclose(h_file);
   /*check to see if the number of walkers and particles is  consistent with W */
-  int nptcl = Pos_temp.cols();
-  nwt = Pos_temp.rows();
+  int nptcl     = Pos_temp.cols();
+  nwt           = Pos_temp.rows();
   int curWalker = targetW.getActiveWalkers();
-  if(curWalker)
+  if (curWalker)
   {
     app_log() << "HDFWalkerInput_0_0::put Adding " << nwt << " walkers to " << curWalker << std::endl;
     targetW.createWalkers(nwt);
@@ -101,15 +96,15 @@ bool  HDFWalkerInput_0_0::put(xmlNodePtr cur)
   else
   {
     app_log() << "HDFWalkerInput_0_0::put Creating " << nwt << " walkers." << std::endl;
-    targetW.resize(nwt,nptcl);
+    targetW.resize(nwt, nptcl);
   }
   //assign configurations to W
-  int iw=0;
-  MCWalkerConfiguration::iterator it = targetW.begin()+curWalker;
+  int iw                                 = 0;
+  MCWalkerConfiguration::iterator it     = targetW.begin() + curWalker;
   MCWalkerConfiguration::iterator it_end = targetW.end();
-  while(it != it_end)
+  while (it != it_end)
   {
-    std::copy(Pos_temp[iw],Pos_temp[iw+1], (*it)->R.begin());
+    std::copy(Pos_temp[iw], Pos_temp[iw + 1], (*it)->R.begin());
     ++it;
     ++iw;
   }
@@ -177,4 +172,4 @@ bool  HDFWalkerInput_0_0::put(xmlNodePtr cur)
 //    }
 //  }
 //}
-}
+} // namespace qmcplusplus

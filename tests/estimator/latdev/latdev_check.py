@@ -1,15 +1,16 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
+
 import numpy as np
 import pandas as pd
 import h5py
 
 def print_fail_2d(a1_name, a1, a2_name, a2):
   close = np.isclose(a1, a2)
-  print '  Index  %s  %s  Difference'%(a1_name, a2_name)
+  print('  Index  %s  %s  Difference'%(a1_name, a2_name))
   for i in range(close.shape[0]):
     for j in range(close.shape[1]):
       if not close[i,j]:
-        print ' ',i,j,a1[i,j],a2[i,j],abs(a1[i,j]-a2[i,j])
+        print(' ',i,j,a1[i,j],a2[i,j],abs(a1[i,j]-a2[i,j]))
 
 
 if __name__ == '__main__':
@@ -37,7 +38,7 @@ if __name__ == '__main__':
     passed = True
     # check h5 against scalar.dat
     if not np.allclose(latdir,slatdir):
-        print "lattice deviation estimator test failed - the values in the HDF file do not match the values in the .scalar.dat file"
+        print("lattice deviation estimator test failed - the values in the HDF file do not match the values in the .scalar.dat file")
         print_fail_2d("h5 latdev",latdir,"scalar.dat latdev",slatdir)
         passed = False
 

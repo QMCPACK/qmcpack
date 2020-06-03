@@ -12,12 +12,10 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
 
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
-#include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/Timer.h"
 #include "Message/Communicate.h"
@@ -30,17 +28,15 @@
 
 namespace qmcplusplus
 {
-
-bool
-EinsplineSetBuilder::ReadOrbitalInfo()
+bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
 {
-  update_token(__FILE__,__LINE__,"ReadOrbitalInfo");
+  update_token(__FILE__, __LINE__, "ReadOrbitalInfo");
   // Handle failed file open gracefully by temporarily replacing error handler
-  H5E_auto_t old_efunc;
-  void *old_efunc_data;
-  H5Eget_auto(&old_efunc, &old_efunc_data);
-  H5Eset_auto(NULL, NULL);
-  H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+  H5E_auto2_t old_efunc;
+  void* old_efunc_data;
+  H5Eget_auto2(H5E_DEFAULT, &old_efunc, &old_efunc_data);
+  H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
+  H5FileID = H5Fopen(H5FileName.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   //  H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
   if (H5FileID < 0)
   {
@@ -48,88 +44,82 @@ EinsplineSetBuilder::ReadOrbitalInfo()
                 << "\" in EinsplineSetBuilder::ReadOrbitalInfo.  Aborting.\n";
     APP_ABORT("EinsplineSetBuilder::ReadOrbitalInfo");
   }
-  H5Eset_auto(old_efunc,old_efunc_data);
-  
+  H5Eset_auto2(H5E_DEFAULT, old_efunc, old_efunc_data);
+
   // Read format
   std::string format;
   HDFAttribIO<std::string> h_format(format);
   h_format.read(H5FileID, "/format");
-  HDFAttribIO<TinyVector<int,3> > h_Version(Version);
-  h_Version.read (H5FileID, "/version");
-  app_log() << "  HDF5 orbital file version "
-            << Version[0] << "." << Version[1] << "." << Version[2] << "\n";
-  if (format.find("ES")<format.size())
+  HDFAttribIO<TinyVector<int, 3>> h_Version(Version);
+  h_Version.read(H5FileID, "/version");
+  app_log() << "  HDF5 orbital file version " << Version[0] << "." << Version[1] << "." << Version[2] << "\n";
+  if (format.find("ES") < format.size())
   {
     Format = ESHDF;
-    return ReadOrbitalInfo_ESHDF();
+    return ReadOrbitalInfo_ESHDF(skipChecks);
   }
   //////////////////////////////////////////////////
   // Read basic parameters from the orbital file. //
   //////////////////////////////////////////////////
   // Check the version
-  if (Version[0]==0 && Version[1]== 11)
+  if (Version[0] == 0 && Version[1] == 11)
   {
-    parameterGroup  = "/parameters_0";
-    ionsGroup       = "/ions_2";
+    parameterGroup   = "/parameters_0";
+    ionsGroup        = "/ions_2";
     eigenstatesGroup = "/eigenstates_3";
   }
+  else if (Version[0] == 0 && Version[1] == 20)
+  {
+    parameterGroup   = "/parameters";
+    ionsGroup        = "/ions";
+    eigenstatesGroup = "/eigenstates";
+  }
   else
-    if (Version[0]==0 && Version[1]==20)
-    {
-      parameterGroup  = "/parameters";
-      ionsGroup       = "/ions";
-      eigenstatesGroup = "/eigenstates";
-    }
-    else
-    {
-      std::ostringstream o;
-      o << "Unknown HDF5 orbital file version " << Version[0] << "." << Version[1] << "." << Version[2] << "\n";
-      APP_ABORT(o.str());
-      //abort();
-    }
-  HDFAttribIO<Tensor<double,3> > h_Lattice(Lattice), h_RecipLattice(RecipLattice);
-  h_Lattice.read      (H5FileID, (parameterGroup+"/lattice").c_str());
-  h_RecipLattice.read (H5FileID, (parameterGroup+"/reciprocal_lattice").c_str());
+  {
+    std::ostringstream o;
+    o << "Unknown HDF5 orbital file version " << Version[0] << "." << Version[1] << "." << Version[2] << "\n";
+    APP_ABORT(o.str());
+    //abort();
+  }
+  HDFAttribIO<Tensor<double, 3>> h_Lattice(Lattice), h_RecipLattice(RecipLattice);
+  h_Lattice.read(H5FileID, (parameterGroup + "/lattice").c_str());
+  h_RecipLattice.read(H5FileID, (parameterGroup + "/reciprocal_lattice").c_str());
   SuperLattice = dot(TileMatrix, Lattice);
   char buff[1000];
-  snprintf (buff, 1000,
-            "  Lattice = \n    [ %8.5f %8.5f %8.5f\n"
-            "      %8.5f %8.5f %8.5f\n"
-            "      %8.5f %8.5f %8.5f ]\n",
-            Lattice(0,0), Lattice(0,1), Lattice(0,2),
-            Lattice(1,0), Lattice(1,1), Lattice(1,2),
-            Lattice(2,0), Lattice(2,1), Lattice(2,2));
+  snprintf(buff, 1000,
+           "  Lattice = \n    [ %8.5f %8.5f %8.5f\n"
+           "      %8.5f %8.5f %8.5f\n"
+           "      %8.5f %8.5f %8.5f ]\n",
+           Lattice(0, 0), Lattice(0, 1), Lattice(0, 2), Lattice(1, 0), Lattice(1, 1), Lattice(1, 2), Lattice(2, 0),
+           Lattice(2, 1), Lattice(2, 2));
   app_log() << buff;
-  snprintf (buff, 1000,
-            "  SuperLattice = \n    [ %13.12f %13.12f %13.12f\n"
-            "      %13.12f %13.12f %13.12f\n"
-            "      %13.12f %13.12f %13.12f ]\n",
-            SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2),
-            SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2),
-            SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
-  if (!CheckLattice()) APP_ABORT("CheckLattice failed");
+  snprintf(buff, 1000,
+           "  SuperLattice = \n    [ %13.12f %13.12f %13.12f\n"
+           "      %13.12f %13.12f %13.12f\n"
+           "      %13.12f %13.12f %13.12f ]\n",
+           SuperLattice(0, 0), SuperLattice(0, 1), SuperLattice(0, 2), SuperLattice(1, 0), SuperLattice(1, 1),
+           SuperLattice(1, 2), SuperLattice(2, 0), SuperLattice(2, 1), SuperLattice(2, 2));
+  if (!CheckLattice())
+    APP_ABORT("CheckLattice failed");
   app_log() << buff;
-  for (int i=0; i<3; i++)
-    for (int j=0; j<3; j++)
-      LatticeInv(i,j) = RecipLattice(i,j)/(2.0*M_PI);
-  HDFAttribIO<int> h_NumBands(NumBands), h_NumElectrons(NumElectrons),
-              h_NumSpins(NumSpins), h_NumTwists(NumTwists), h_NumCore(NumCoreStates),
-              h_NumMuffinTins(NumMuffinTins);
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < 3; j++)
+      LatticeInv(i, j) = RecipLattice(i, j) / (2.0 * M_PI);
+  HDFAttribIO<int> h_NumBands(NumBands), h_NumElectrons(NumElectrons), h_NumSpins(NumSpins), h_NumTwists(NumTwists),
+      h_NumCore(NumCoreStates), h_NumMuffinTins(NumMuffinTins);
   NumCoreStates = NumMuffinTins = 0;
-  h_NumBands.read      (H5FileID, (parameterGroup+"/num_bands").c_str());
-  h_NumCore.read       (H5FileID, (parameterGroup+"/num_core_states").c_str());
-  h_NumElectrons.read  (H5FileID, (parameterGroup+"/num_electrons").c_str());
-  h_NumSpins.read      (H5FileID, (parameterGroup+"/num_spins").c_str());
-  h_NumTwists.read     (H5FileID, (parameterGroup+"/num_twists").c_str());
-  h_NumMuffinTins.read (H5FileID, (parameterGroup+"/muffin_tins/num_tins").c_str());
-  app_log() << "bands=" << NumBands << ", elecs=" << NumElectrons
-            << ", spins=" << NumSpins << ", twists=" << NumTwists
+  h_NumBands.read(H5FileID, (parameterGroup + "/num_bands").c_str());
+  h_NumCore.read(H5FileID, (parameterGroup + "/num_core_states").c_str());
+  h_NumElectrons.read(H5FileID, (parameterGroup + "/num_electrons").c_str());
+  h_NumSpins.read(H5FileID, (parameterGroup + "/num_spins").c_str());
+  h_NumTwists.read(H5FileID, (parameterGroup + "/num_twists").c_str());
+  h_NumMuffinTins.read(H5FileID, (parameterGroup + "/muffin_tins/num_tins").c_str());
+  app_log() << "bands=" << NumBands << ", elecs=" << NumElectrons << ", spins=" << NumSpins << ", twists=" << NumTwists
             << ", muffin tins=" << NumMuffinTins << std::endl;
   // fprintf (stderr, "  bands = %d, elecs = %d, spins = %d, twists = %d\n",
   // 	     NumBands, NumElectrons, NumSpins, NumTwists);
-  if (TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1)
-    app_log() << "  Using a " << TileFactor[0] << "x" << TileFactor[1]
-              << "x" << TileFactor[2] << " tiling factor.\n";
+  if (TileFactor[0] != 1 || TileFactor[1] != 1 || TileFactor[2] != 1)
+    app_log() << "  Using a " << TileFactor[0] << "x" << TileFactor[1] << "x" << TileFactor[2] << " tiling factor.\n";
   /////////////////////////////////
   // Read muffin tin information //
   /////////////////////////////////
@@ -138,7 +128,7 @@ EinsplineSetBuilder::ReadOrbitalInfo()
   MT_APW_lmax.resize(NumMuffinTins);
   MT_APW_num_radial_points.resize(NumMuffinTins);
   MT_centers.resize(NumMuffinTins);
-  for (int tin=0; tin<NumMuffinTins; tin++)
+  for (int tin = 0; tin < NumMuffinTins; tin++)
   {
     std::ostringstream MTstream;
     if (NumMuffinTins > 1)
@@ -146,41 +136,40 @@ EinsplineSetBuilder::ReadOrbitalInfo()
     else
       MTstream << parameterGroup << "/muffin_tins/muffin_tin";
     std::string MTgroup = MTstream.str();
-    HDFAttribIO<int> h_lmax(MT_APW_lmax[tin]),
-                h_num_radial_points(MT_APW_num_radial_points[tin]);
-    HDFAttribIO<double> h_radius (MT_APW_radii[tin]);
-    HDFAttribIO<TinyVector<double, OHMMS_DIM> > h_center (MT_centers[tin]);
-    HDFAttribIO<Vector<double> > h_rgrid (MT_APW_rgrids[tin]);
-    h_lmax.read              (H5FileID, (MTgroup+"/lmax").c_str());
-    h_num_radial_points.read (H5FileID, (MTgroup+"/num_radial_points").c_str());
-    h_radius.read            (H5FileID, (MTgroup+"/radius").c_str());
-    h_center.read            (H5FileID, (MTgroup+"/center").c_str());
-    h_rgrid.read             (H5FileID, (MTgroup+"/r"     ).c_str());
+    HDFAttribIO<int> h_lmax(MT_APW_lmax[tin]), h_num_radial_points(MT_APW_num_radial_points[tin]);
+    HDFAttribIO<double> h_radius(MT_APW_radii[tin]);
+    HDFAttribIO<TinyVector<double, OHMMS_DIM>> h_center(MT_centers[tin]);
+    HDFAttribIO<Vector<double>> h_rgrid(MT_APW_rgrids[tin]);
+    h_lmax.read(H5FileID, (MTgroup + "/lmax").c_str());
+    h_num_radial_points.read(H5FileID, (MTgroup + "/num_radial_points").c_str());
+    h_radius.read(H5FileID, (MTgroup + "/radius").c_str());
+    h_center.read(H5FileID, (MTgroup + "/center").c_str());
+    h_rgrid.read(H5FileID, (MTgroup + "/r").c_str());
   }
   //////////////////////////////////
   // Read ion types and locations //
   //////////////////////////////////
-  HDFAttribIO<Vector<int> >                 h_IonTypes(IonTypes);
-  HDFAttribIO<Vector<TinyVector<double,3> > > h_IonPos(IonPos);
-  h_IonTypes.read (H5FileID, (ionsGroup+"/atom_types").c_str());
-  h_IonPos.read   (H5FileID, (ionsGroup+"/pos").c_str());
+  HDFAttribIO<Vector<int>> h_IonTypes(IonTypes);
+  HDFAttribIO<Vector<TinyVector<double, 3>>> h_IonPos(IonPos);
+  h_IonTypes.read(H5FileID, (ionsGroup + "/atom_types").c_str());
+  h_IonPos.read(H5FileID, (ionsGroup + "/pos").c_str());
   ///////////////////////////
   // Read the twist angles //
   ///////////////////////////
   TwistAngles.resize(NumTwists);
-  for (int ti=0; ti<NumTwists; ti++)
+  for (int ti = 0; ti < NumTwists; ti++)
   {
     std::ostringstream path;
-    if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
+    if ((Version[0] == 0 && Version[1] == 11) || NumTwists > 1)
       path << eigenstatesGroup << "/twist_" << ti << "/twist_angle";
     else
       path << eigenstatesGroup << "/twist/twist_angle";
     TinyVector<double, OHMMS_DIM> TwistAngles_DP;
-    HDFAttribIO<TinyVector<double, OHMMS_DIM> > h_Twist(TwistAngles_DP);
-    h_Twist.read (H5FileID, path.str().c_str());
+    HDFAttribIO<TinyVector<double, OHMMS_DIM>> h_Twist(TwistAngles_DP);
+    h_Twist.read(H5FileID, path.str().c_str());
     TwistAngles[ti] = TwistAngles_DP;
-    snprintf (buff, 1000, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n",
-              TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
+    snprintf(buff, 1000, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n", TwistAngles[ti][0], TwistAngles[ti][1],
+             TwistAngles[ti][2]);
     app_log() << buff;
   }
   //////////////////////////////////////////////////////////
@@ -190,26 +179,24 @@ EinsplineSetBuilder::ReadOrbitalInfo()
   //////////////////////////////////////////////////////////
   if (!TargetPtcl.Density_G.size())
   {
-    HDFAttribIO<std::vector<TinyVector<int,OHMMS_DIM> > >
-    h_reduced_gvecs(TargetPtcl.DensityReducedGvecs);
+    HDFAttribIO<std::vector<TinyVector<int, OHMMS_DIM>>> h_reduced_gvecs(TargetPtcl.DensityReducedGvecs);
     Array<double, OHMMS_DIM> Density_r_DP;
-    HDFAttribIO<Array<double, OHMMS_DIM> >  h_density_r (Density_r_DP);
-    h_reduced_gvecs.read (H5FileID, "/density/reduced_gvecs");
-    h_density_r.read (H5FileID,     "/density/rho_r");
+    HDFAttribIO<Array<double, OHMMS_DIM>> h_density_r(Density_r_DP);
+    h_reduced_gvecs.read(H5FileID, "/density/reduced_gvecs");
+    h_density_r.read(H5FileID, "/density/rho_r");
     TargetPtcl.Density_r = Density_r_DP;
-    int numG = TargetPtcl.DensityReducedGvecs.size();
+    int numG             = TargetPtcl.DensityReducedGvecs.size();
     // Convert primitive G-vectors to supercell G-vectors
-    for (int iG=0; iG < numG; iG++)
-      TargetPtcl.DensityReducedGvecs[iG] =
-        dot(TileMatrix, TargetPtcl.DensityReducedGvecs[iG]);
+    for (int iG = 0; iG < numG; iG++)
+      TargetPtcl.DensityReducedGvecs[iG] = dot(TileMatrix, TargetPtcl.DensityReducedGvecs[iG]);
     app_log() << "  Read " << numG << " density G-vectors.\n";
     if (TargetPtcl.DensityReducedGvecs.size())
     {
       app_log() << "  EinsplineSetBuilder found density in the HDF5 file.\n";
-      std::vector<std::complex<double> > Density_G_DP;
-      HDFAttribIO<std::vector<std::complex<double> > > h_density_G (Density_G_DP);
-      h_density_G.read (H5FileID, "/density/rho_G");
-      TargetPtcl.Density_G.assign(Density_G_DP.begin(),Density_G_DP.end());
+      std::vector<std::complex<double>> Density_G_DP;
+      HDFAttribIO<std::vector<std::complex<double>>> h_density_G(Density_G_DP);
+      h_density_G.read(H5FileID, "/density/rho_G");
+      TargetPtcl.Density_G.assign(Density_G_DP.begin(), Density_G_DP.end());
       if (!TargetPtcl.Density_G.size())
       {
         app_error() << "  Density reduced G-vectors defined, but not the"
@@ -222,56 +209,47 @@ EinsplineSetBuilder::ReadOrbitalInfo()
 }
 
 
-std::string
-EinsplineSetBuilder::OrbitalPath(int ti, int bi)
+std::string EinsplineSetBuilder::OrbitalPath(int ti, int bi)
 {
   std::string eigenstatesGroup;
-  if (Version[0]==0 && Version[1]== 11)
+  if (Version[0] == 0 && Version[1] == 11)
     eigenstatesGroup = "/eigenstates_3";
-  else
-    if (Version[0]==0 && Version[1]==20)
-      eigenstatesGroup = "/eigenstates";
+  else if (Version[0] == 0 && Version[1] == 20)
+    eigenstatesGroup = "/eigenstates";
   std::ostringstream groupPath;
-  if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
-    groupPath << eigenstatesGroup << "/twist_"
-              << ti << "/band_" << bi << "/";
+  if ((Version[0] == 0 && Version[1] == 11) || NumTwists > 1)
+    groupPath << eigenstatesGroup << "/twist_" << ti << "/band_" << bi << "/";
+  else if (NumBands > 1)
+    groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
   else
-    if (NumBands > 1)
-      groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
-    else
-      groupPath << eigenstatesGroup << "/twist/band/";
+    groupPath << eigenstatesGroup << "/twist/band/";
   return groupPath.str();
 }
 
-std::string
-EinsplineSetBuilder::CoreStatePath(int ti, int cs)
+std::string EinsplineSetBuilder::CoreStatePath(int ti, int cs)
 {
   std::string eigenstatesGroup;
-  if (Version[0]==0 && Version[1]== 11)
+  if (Version[0] == 0 && Version[1] == 11)
     eigenstatesGroup = "/eigenstates_3";
-  else
-    if (Version[0]==0 && Version[1]==20)
-      eigenstatesGroup = "/eigenstates";
+  else if (Version[0] == 0 && Version[1] == 20)
+    eigenstatesGroup = "/eigenstates";
   std::ostringstream groupPath;
-  if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
-    groupPath << eigenstatesGroup << "/twist_"
-              << ti << "/core_state_" << cs << "/";
+  if ((Version[0] == 0 && Version[1] == 11) || NumTwists > 1)
+    groupPath << eigenstatesGroup << "/twist_" << ti << "/core_state_" << cs << "/";
+  else if (NumBands > 1)
+    groupPath << eigenstatesGroup << "/twist/core_state_" << cs << "/";
   else
-    if (NumBands > 1)
-      groupPath << eigenstatesGroup << "/twist/core_state_" << cs << "/";
-    else
-      groupPath << eigenstatesGroup << "/twist/core_state/";
+    groupPath << eigenstatesGroup << "/twist/core_state/";
   return groupPath.str();
 }
 
-std::string
-EinsplineSetBuilder::MuffinTinPath(int ti, int bi, int tin)
+std::string EinsplineSetBuilder::MuffinTinPath(int ti, int bi, int tin)
 {
   std::ostringstream groupPath;
   if (NumMuffinTins > 0)
-    groupPath << OrbitalPath(ti,bi) << "muffin_tin_" << tin << "/";
+    groupPath << OrbitalPath(ti, bi) << "muffin_tin_" << tin << "/";
   else
-    groupPath << OrbitalPath(ti,bi) << "muffin_tin/";
+    groupPath << OrbitalPath(ti, bi) << "muffin_tin/";
   return groupPath.str();
 }
 
@@ -826,5 +804,4 @@ EinsplineSetBuilder::ReadBands
 }
 #endif
 
-}
-
+} // namespace qmcplusplus

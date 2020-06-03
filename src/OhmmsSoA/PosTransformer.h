@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -15,64 +15,21 @@
 #ifndef QMCPLUSPLUS_SOA_FAST_PARTICLE_OPERATORS_H
 #define QMCPLUSPLUS_SOA_FAST_PARTICLE_OPERATORS_H
 
-#include <simd/blas1.hpp>
-
 namespace qmcplusplus
 {
-  //Need to reorg
+//Need to reorg
 #if 0
   /** Dummy template class to be specialized
    *
    * - T1 the datatype to be transformed
    * - D dimension
-   * - ORTHO true, if only Diagonal Elements are used
    */
-  template<class T1, unsigned D, bool ORTHO> struct PosTransformer { };
+  template<class T1, unsigned D> struct PosTransformer { };
 
   /** Specialized PosTransformer<T,3,true> using only the diagonal elements
   */
   template<class T>
-    struct PosTransformer<T,3,true>
-    {
-      using Array_t=VectorSoaContainer<T,3>;
-      using Transformer_t=Tensor<T,3>;
-
-      //index for the tensor
-      enum {iXX=0, iXY=1, iXZ=2, iYX=3, iYY=4, iYZ=5, iZX=6, iZY=7, iZZ=8};
-
-      inline static void
-        apply(const Array_t& pin, const Transformer_t& X, Array_t& pout, int first, int last)
-        {
-          const int n=last-first;
-          blas::axpy(X[iXX],pin.data(0),pout.data(0),n);
-          blas::axpy(X[iYY],pin.data(1),pout.data(1),n);
-          blas::axpy(X[iZZ],pin.data(2),pout.data(2),n);
-        }
-
-      inline static void
-        apply(const Transformer_t& X, const Array_t& pin,  Array_t& pout, int first, int last)
-        {
-          ::apply(pin,X,pout,first,last);
-        }
-
-      inline static void
-        apply(Array_t& pinout, const Transformer_t& X,int first, int last)
-        {
-          const int n=last-first;
-          blas::scal(X[iXX],pinout.data(0),n);
-          blas::scal(X[iYY],pinout.data(1),n);
-          blas::scal(X[iZZ],pinout.data(2),n);
-        }
-
-      inline static void
-        apply(const Transformer_t& X, Array_t& pinout, int first, int last)
-        {
-          ::apply(pinout,X,first,last);
-        }
-    };
-
-  template<class T>
-    struct PosTransformer<T,3,false>
+    struct PosTransformer<T,3>
     {
       using Array_t=VectorSoaContainer<T,3>;
       using Transformer_t=Tensor<T,3>;
@@ -81,7 +38,7 @@ namespace qmcplusplus
         apply(const Array_t& pin, const Transformer_t& X, Array_t& pout, int first, int last)
         {
           const int n=last-first;
-          register T x00=X[0],x01=X[1],x02=X[2],
+          T x00=X[0],x01=X[1],x02=X[2],
                    x10=X[3],x11=X[4],x12=X[5],
                    x20=X[6],x21=X[7],x22=X[8];
           const T* restrict x_in=pin.data(0)+first; ASSUME_ALIGNED(x_in);
@@ -109,7 +66,7 @@ namespace qmcplusplus
         apply(Array_t& pinout, const Transformer_t& X,int first, int last)
         {
           const int n=last-first;
-          register T x00=X[0],x01=X[1],x02=X[2],
+          T x00=X[0],x01=X[1],x02=X[2],
                    x10=X[3],x11=X[4],x12=X[5],
                    x20=X[6],x21=X[7],x22=X[8];
           T* restrict x_inout=pinout.data(0)+first; ASSUME_ALIGNED(x_inout);
@@ -135,7 +92,7 @@ namespace qmcplusplus
     };
 #endif
 
-  /** General conversion function from AoS[nrows][ncols] to SoA[ncols][ldb]
+/** General conversion function from AoS[nrows][ncols] to SoA[ncols][ldb]
    * @param nrows the first dimension
    * @param ncols the second dimension
    * @param iptr input pointer
@@ -145,24 +102,24 @@ namespace qmcplusplus
    *
    * Modeled after blas/lapack for lda/ldb
    */
-  template<typename T1, typename T2>
-    void PosAoS2SoA(int nrows, int ncols, const T1* restrict iptr, int lda, T2* restrict out, int ldb)
-    { 
-      T2* restrict x=out      ;
-      T2* restrict y=out+  ldb;
-      T2* restrict z=out+2*ldb;
+template<typename T1, typename T2>
+void PosAoS2SoA(int nrows, int ncols, const T1* restrict iptr, int lda, T2* restrict out, int ldb)
+{
+  T2* restrict x = out;
+  T2* restrict y = out + ldb;
+  T2* restrict z = out + 2 * ldb;
 #if !defined(__ibmxl__)
-      #pragma omp simd aligned(x,y,z)
+#pragma omp simd aligned(x, y, z)
 #endif
-      for(int i=0; i<nrows;++i)
-      {
-        x[i]=iptr[i*ncols  ]; //x[i]=in[i][0];
-        y[i]=iptr[i*ncols+1]; //y[i]=in[i][1];
-        z[i]=iptr[i*ncols+2]; //z[i]=in[i][2];
-      }
-    }
+  for (int i = 0; i < nrows; ++i)
+  {
+    x[i] = iptr[i * ncols];     //x[i]=in[i][0];
+    y[i] = iptr[i * ncols + 1]; //y[i]=in[i][1];
+    z[i] = iptr[i * ncols + 2]; //z[i]=in[i][2];
+  }
+}
 
-  /** General conversion function from SoA[ncols][ldb] to AoS[nrows][ncols] 
+/** General conversion function from SoA[ncols][ldb] to AoS[nrows][ncols] 
    * @param nrows the first dimension
    * @param ncols the second dimension
    * @param iptr input pointer
@@ -172,22 +129,22 @@ namespace qmcplusplus
    *
    * Modeled after blas/lapack for lda/ldb
    */
-  template<typename T1, typename T2>
-    void PosSoA2AoS(int nrows, int ncols, const T1* restrict iptr, int lda, T2* restrict out, int ldb)
-    { 
-      const T1* restrict x=iptr      ;
-      const T1* restrict y=iptr+  lda;
-      const T1* restrict z=iptr+2*lda;
+template<typename T1, typename T2>
+void PosSoA2AoS(int nrows, int ncols, const T1* restrict iptr, int lda, T2* restrict out, int ldb)
+{
+  const T1* restrict x = iptr;
+  const T1* restrict y = iptr + lda;
+  const T1* restrict z = iptr + 2 * lda;
 #if !defined(__ibmxl__)
-      #pragma omp simd aligned(x,y,z)
+#pragma omp simd aligned(x, y, z)
 #endif
-      for(int i=0; i<nrows;++i)
-      {
-        out[i*ldb  ]=x[i]; //out[i][0]=x[i];
-        out[i*ldb+1]=y[i]; //out[i][1]=y[i];
-        out[i*ldb+2]=z[i]; //out[i][2]=z[i];
-      }
-    }
+  for (int i = 0; i < nrows; ++i)
+  {
+    out[i * ldb]     = x[i]; //out[i][0]=x[i];
+    out[i * ldb + 1] = y[i]; //out[i][1]=y[i];
+    out[i * ldb + 2] = z[i]; //out[i][2]=z[i];
+  }
+}
 
 #if 0
 //#if defined(HAVE_MKL)
@@ -225,5 +182,5 @@ namespace qmcplusplus
 #endif
 
 
-}
+} // namespace qmcplusplus
 #endif

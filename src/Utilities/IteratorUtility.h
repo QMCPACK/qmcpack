@@ -9,8 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_ITERATOR_UTILITIES_H
@@ -23,9 +21,9 @@ namespace qmcplusplus
 template<class IT>
 inline void delete_iter(IT first, IT last)
 {
-  while(first != last)
+  while (first != last)
   {
-    if(*first)
+    if (*first)
       delete *first;
     ++first;
   }
@@ -35,7 +33,7 @@ inline void delete_iter(IT first, IT last)
 template<typename IT1, typename IT2>
 inline void accumulate_elements(IT1 first, IT1 last, IT2 res)
 {
-  while(first != last)
+  while (first != last)
     *res++ += *first++;
 }
 
@@ -45,5 +43,5 @@ inline void accumulate_elements(IT1 first, IT1 last, IT2 res)
 //      for(;n>0; n--) *res++ += *first++;
 //    }
 
-}
+} // namespace qmcplusplus
 #endif

@@ -9,8 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /** @file Timer.h
@@ -26,18 +24,9 @@ namespace qmcplusplus
 struct Timer
 {
   double start_time;
-  inline Timer()
-  {
-    start_time=cpu_clock();
-  }
-  inline void restart()
-  {
-    start_time=cpu_clock();
-  }
-  inline double elapsed() const
-  {
-    return cpu_clock()-start_time;
-  }
+  inline Timer() { start_time = cpu_clock(); }
+  inline void restart() { start_time = cpu_clock(); }
+  inline double elapsed() const { return cpu_clock() - start_time; }
 };
-}
+} // namespace qmcplusplus
 #endif

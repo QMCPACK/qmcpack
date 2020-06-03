@@ -11,13 +11,12 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
 #define ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
 
 #include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/CudaSpline.h"
@@ -28,10 +27,8 @@
 
 namespace qmcplusplus
 {
-
 template<class FT>
-class OneBodyJastrowOrbitalBspline :
-  public J1OrbitalSoA<FT>
+class OneBodyJastrowOrbitalBspline : public J1OrbitalSoA<FT>
 {
 private:
   bool UsePBC;
@@ -41,17 +38,17 @@ private:
   // Mostly QMCTraits here
   using JBase = J1OrbitalSoA<FT>;
   // Duplication that should be removed
-  using RealType = typename JBase::RealType;
-  using ValueType = typename JBase::ValueType;
-  using GradType = typename JBase::GradType;
-  using PosType = typename JBase::PosType;
-  using GradMatrix_t = typename JBase::GradMatrix_t;
+  using RealType      = typename JBase::RealType;
+  using ValueType     = typename JBase::ValueType;
+  using GradType      = typename JBase::GradType;
+  using PosType       = typename JBase::PosType;
+  using GradMatrix_t  = typename JBase::GradMatrix_t;
   using ValueMatrix_t = typename JBase::ValueMatrix_t;
-  using RealMatrix_t = typename JBase::RealMatrix_t;
+  using RealMatrix_t  = typename JBase::RealMatrix_t;
 
   std::vector<CudaSpline<CTS::RealType>*> GPUSplines, UniqueSplines;
   int MaxCoefs;
-  ParticleSet &ElecRef;
+  ParticleSet& ElecRef;
   gpu::device_vector<CTS::RealType> L, Linv;
 
   // Holds center positions
@@ -71,133 +68,145 @@ private:
 
   gpu::host_vector<CTS::RealType*> NL_SplineCoefsListHost;
   gpu::device_vector<CTS::RealType*> NL_SplineCoefsListGPU;
-  gpu::host_vector<NLjobGPU<CTS::RealType> > NL_JobListHost;
-  gpu::device_vector<NLjobGPU<CTS::RealType> > NL_JobListGPU;
+  gpu::host_vector<NLjobGPU<CTS::RealType>> NL_JobListHost;
+  gpu::device_vector<NLjobGPU<CTS::RealType>> NL_JobListGPU;
   gpu::host_vector<int> NL_NumCoefsHost, NL_NumQuadPointsHost;
-  gpu::device_vector<int> NL_NumCoefsGPU,  NL_NumQuadPointsGPU;
+  gpu::device_vector<int> NL_NumCoefsGPU, NL_NumQuadPointsGPU;
   gpu::host_vector<CTS::RealType> NL_rMaxHost, NL_QuadPointsHost, NL_RatiosHost;
-  gpu::device_vector<CTS::RealType> NL_rMaxGPU,  NL_QuadPointsGPU,  NL_RatiosGPU;
+  gpu::device_vector<CTS::RealType> NL_rMaxGPU, NL_QuadPointsGPU, NL_RatiosGPU;
 
   int N;
+
 public:
-  typedef ParticleSet::Walker_t     Walker_t;
+  typedef ParticleSet::Walker_t Walker_t;
 
-  GPU_XRAY_TRACE void resetParameters(const opt_variables_type& active);
-  GPU_XRAY_TRACE void checkInVariables(opt_variables_type& active);
-  GPU_XRAY_TRACE void addFunc(int ig, FT* j, int jg=-1);
-  GPU_XRAY_TRACE void recompute(MCWalkerConfiguration &W, bool firstTime);
-  GPU_XRAY_TRACE void reserve (PointerPool<gpu::device_vector<CTS::RealType> > &pool);
-  GPU_XRAY_TRACE void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
-  GPU_XRAY_TRACE void update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k);
+  void resetParameters(const opt_variables_type& active);
+  void checkInVariables(opt_variables_type& active);
+  void addFunc(int ig, FT* j, int jg = -1);
+  void recompute(MCWalkerConfiguration& W, bool firstTime);
+  void reserve(PointerPool<gpu::device_vector<CTS::RealType>>& pool);
+  void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi);
+  void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k);
 
-  void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList)
+  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList)
   {
     /* This function doesn't really need to return the ratio */
   }
-  GPU_XRAY_TRACE void ratio (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-              std::vector<ValueType> &lapl);
-  GPU_XRAY_TRACE void calcRatio (MCWalkerConfiguration &W, int iat,
-                  std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-                  std::vector<ValueType> &lapl);
-  GPU_XRAY_TRACE void addRatio (MCWalkerConfiguration &W, int iat, int k,
-                 std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-                 std::vector<ValueType> &lapl);
-  GPU_XRAY_TRACE void ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
-              std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
-              std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
+  void ratio(MCWalkerConfiguration& W,
+             int iat,
+             std::vector<ValueType>& psi_ratios,
+             std::vector<GradType>& grad,
+             std::vector<ValueType>& lapl);
+  void calcRatio(MCWalkerConfiguration& W,
+                 int iat,
+                 std::vector<ValueType>& psi_ratios,
+                 std::vector<GradType>& grad,
+                 std::vector<ValueType>& lapl);
+  void addRatio(MCWalkerConfiguration& W,
+                int iat,
+                int k,
+                std::vector<ValueType>& psi_ratios,
+                std::vector<GradType>& grad,
+                std::vector<ValueType>& lapl);
+  void ratio(std::vector<Walker_t*>& walkers,
+             std::vector<int>& iatList,
+             std::vector<PosType>& rNew,
+             std::vector<ValueType>& psi_ratios,
+             std::vector<GradType>& grad,
+             std::vector<ValueType>& lapl)
   {
     /* This function doesn't really need to return the ratio */
   }
 
-  void det_lookahead (MCWalkerConfiguration &W,
-                      std::vector<ValueType> &psi_ratios,
-                      std::vector<GradType>  &grad,
-                      std::vector<ValueType> &lapl,
-                      int iat, int k, int kd, int nw)
+  void det_lookahead(MCWalkerConfiguration& W,
+                     std::vector<ValueType>& psi_ratios,
+                     std::vector<GradType>& grad,
+                     std::vector<ValueType>& lapl,
+                     int iat,
+                     int k,
+                     int kd,
+                     int nw)
   {
     /* The one-body jastrow can be calculated for the entire k-block, so this function doesn't need to return anything */
   }
 
-  GPU_XRAY_TRACE void calcGradient(MCWalkerConfiguration &W, int iat, int k,
-                   std::vector<GradType> &grad);
-  GPU_XRAY_TRACE void addGradient(MCWalkerConfiguration &W, int iat,
-                   std::vector<GradType> &grad);
-  GPU_XRAY_TRACE void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
-                 ValueMatrix_t &lapl);
-  GPU_XRAY_TRACE void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
-                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
-  GPU_XRAY_TRACE void evaluateDerivatives (MCWalkerConfiguration &W,
-                            const opt_variables_type& optvars,
-                            RealMatrix_t &dlogpsi,
-                            RealMatrix_t &dlapl_over_psi);
-  OneBodyJastrowOrbitalBspline(ParticleSet &centers, ParticleSet& elecs) :
-    J1OrbitalSoA<FT>(centers,elecs),
-    ElecRef(elecs),
-    L("OneBodyJastrowOrbitalBspline::L"),
-    Linv("OneBodyJastrowOrbitalBspline::Linv"),
-    C("OneBodyJastrowOrbitalBspline::C"),
-    UpdateListGPU("OneBodyJastrowOrbitalBspline::UpdateListGPU"),
-    SumGPU("OneBodyJastrowOrbitalBspline::SumGPU"),
-    GradLaplGPU("OneBodyJastrowOrbitalBspline::GradLaplGPU"),
-    OneGradGPU("OneBodyJastrowOrbitalBspline::OneGradGPU"),
-    SplineDerivsGPU("OneBodyJastrowOrbitalBspline::SplineDerivsGPU"),
-    DerivListGPU("OneBodyJastrowOrbitalBspline::DerivListGPU"),
-    NL_SplineCoefsListGPU("OneBodyJastrowOrbitalBspline::NL_SplineCoefsListGPU"),
-    NL_JobListGPU("OneBodyJastrowOrbitalBspline::NL_JobListGPU"),
-    NL_NumCoefsGPU("OneBodyJastrowOrbitalBspline::NL_NumCoefsGPU"),
-    NL_NumQuadPointsGPU("OneBodyJastrowOrbitalBspline::NL_NumQuadPointsGPU"),
-    NL_rMaxGPU("OneBodyJastrowOrbitalBspline::NL_rMaxGPU"),
-    NL_QuadPointsGPU("OneBodyJastrowOrbitalBspline::NL_QuadPointsGPU"),
-    NL_RatiosGPU("OneBodyJastrowOrbitalBspline::NL_RatiosGPU")
+  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad);
+  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl);
+  void NLratios(MCWalkerConfiguration& W,
+                std::vector<NLjob>& jobList,
+                std::vector<PosType>& quadPoints,
+                std::vector<ValueType>& psi_ratios);
+  void evaluateDerivatives(MCWalkerConfiguration& W,
+                           const opt_variables_type& optvars,
+                           RealMatrix_t& dlogpsi,
+                           RealMatrix_t& dlapl_over_psi);
+  OneBodyJastrowOrbitalBspline(ParticleSet& centers, ParticleSet& elecs)
+      : J1OrbitalSoA<FT>(centers, elecs),
+        ElecRef(elecs),
+        L("OneBodyJastrowOrbitalBspline::L"),
+        Linv("OneBodyJastrowOrbitalBspline::Linv"),
+        C("OneBodyJastrowOrbitalBspline::C"),
+        UpdateListGPU("OneBodyJastrowOrbitalBspline::UpdateListGPU"),
+        SumGPU("OneBodyJastrowOrbitalBspline::SumGPU"),
+        GradLaplGPU("OneBodyJastrowOrbitalBspline::GradLaplGPU"),
+        OneGradGPU("OneBodyJastrowOrbitalBspline::OneGradGPU"),
+        SplineDerivsGPU("OneBodyJastrowOrbitalBspline::SplineDerivsGPU"),
+        DerivListGPU("OneBodyJastrowOrbitalBspline::DerivListGPU"),
+        NL_SplineCoefsListGPU("OneBodyJastrowOrbitalBspline::NL_SplineCoefsListGPU"),
+        NL_JobListGPU("OneBodyJastrowOrbitalBspline::NL_JobListGPU"),
+        NL_NumCoefsGPU("OneBodyJastrowOrbitalBspline::NL_NumCoefsGPU"),
+        NL_NumQuadPointsGPU("OneBodyJastrowOrbitalBspline::NL_NumQuadPointsGPU"),
+        NL_rMaxGPU("OneBodyJastrowOrbitalBspline::NL_rMaxGPU"),
+        NL_QuadPointsGPU("OneBodyJastrowOrbitalBspline::NL_QuadPointsGPU"),
+        NL_RatiosGPU("OneBodyJastrowOrbitalBspline::NL_RatiosGPU")
   {
-    UsePBC = elecs.Lattice.SuperCellEnum;
-    NumElecGroups = elecs.groups();
-    SpeciesSet &sSet = centers.getSpeciesSet();
-    NumCenterGroups = sSet.getTotalNum();
+    UsePBC           = elecs.Lattice.SuperCellEnum;
+    NumElecGroups    = elecs.groups();
+    SpeciesSet& sSet = centers.getSpeciesSet();
+    NumCenterGroups  = sSet.getTotalNum();
     //      NumCenterGroups = centers.groups();
     // std::cerr << "NumCenterGroups = " << NumCenterGroups << std::endl;
-    GPUSplines.resize(NumCenterGroups,0);
+    GPUSplines.resize(NumCenterGroups, 0);
     if (UsePBC)
     {
-      gpu::host_vector<CTS::RealType> LHost(OHMMS_DIM*OHMMS_DIM),
-          LinvHost(OHMMS_DIM*OHMMS_DIM);
-      for (int i=0; i<OHMMS_DIM; i++)
-        for (int j=0; j<OHMMS_DIM; j++)
+      gpu::host_vector<CTS::RealType> LHost(OHMMS_DIM * OHMMS_DIM), LinvHost(OHMMS_DIM * OHMMS_DIM);
+      for (int i = 0; i < OHMMS_DIM; i++)
+        for (int j = 0; j < OHMMS_DIM; j++)
         {
-          LHost[OHMMS_DIM*i+j]    = (CTS::RealType)elecs.Lattice.a(i)[j];
-          LinvHost[OHMMS_DIM*i+j] = (CTS::RealType)elecs.Lattice.b(j)[i];
+          LHost[OHMMS_DIM * i + j]    = (CTS::RealType)elecs.Lattice.a(i)[j];
+          LinvHost[OHMMS_DIM * i + j] = (CTS::RealType)elecs.Lattice.b(j)[i];
         }
-      L = LHost;
+      L    = LHost;
       Linv = LinvHost;
     }
     N = elecs.getTotalNum();
     // Copy center positions to GPU, sorting by GroupID
-    gpu::host_vector<CTS::RealType> C_host(OHMMS_DIM*centers.getTotalNum());
-    int index=0;
-    for (int cgroup=0; cgroup<NumCenterGroups; cgroup++)
+    gpu::host_vector<CTS::RealType> C_host(OHMMS_DIM * centers.getTotalNum());
+    int index = 0;
+    for (int cgroup = 0; cgroup < NumCenterGroups; cgroup++)
     {
       CenterFirst.push_back(index);
-      for (int i=0; i<centers.getTotalNum(); i++)
+      for (int i = 0; i < centers.getTotalNum(); i++)
       {
         if (centers.GroupID[i] == cgroup)
         {
-          for (int dim=0; dim<OHMMS_DIM; dim++)
-            C_host[OHMMS_DIM*index+dim] = centers.R[i][dim];
+          for (int dim = 0; dim < OHMMS_DIM; dim++)
+            C_host[OHMMS_DIM * index + dim] = centers.R[i][dim];
           index++;
         }
       }
-      CenterLast.push_back(index-1);
+      CenterLast.push_back(index - 1);
     }
     // gpu::host_vector<CTS::RealType> C_host(OHMMS_DIM*centers.getTotalNum());
     // for (int i=0; i<centers.getTotalNum(); i++)
     // 	for (int dim=0; dim<OHMMS_DIM; dim++)
     // 	  C_host[OHMMS_DIM*i+dim] = centers.R[i][dim];
-    C = C_host;
+    C               = C_host;
     this->ClassName = "OneBodyJastrowOrbitalBspline";
   }
 };
-}
+} // namespace qmcplusplus
 
 
 #endif

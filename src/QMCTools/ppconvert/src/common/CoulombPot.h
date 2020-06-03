@@ -8,8 +8,8 @@
 //
 // File created by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 //           http://pathintegrals.info                     //
 /////////////////////////////////////////////////////////////
 
@@ -22,14 +22,14 @@ class CoulombPot : public Potential
 {
 public:
   double Z1Z2;
-  
-  double V      (double r);
-  double dVdr   (double r);
-  double d2Vdr2 (double r);
-  double X_k (double rcut, double k);
+
+  double V(double r);
+  double dVdr(double r);
+  double d2Vdr2(double r);
+  double X_k(double rcut, double k);
   bool NeedsRel();
-  void Write(IOSectionClass &out);
-  void Read (IOSectionClass &in);
+  void Write(IOSectionClass& out);
+  void Read(IOSectionClass& in);
 };
 
 #endif

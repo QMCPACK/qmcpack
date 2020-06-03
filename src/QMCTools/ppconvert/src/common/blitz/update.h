@@ -31,26 +31,25 @@
 
 BZ_NAMESPACE(blitz)
 
-class _bz_updater_base { };
+class _bz_updater_base
+{};
 
-#define BZ_DECL_UPDATER(name,op,symbol)                     \
-  template<typename X, typename Y>                          \
-  class name : public _bz_updater_base {                    \
-  public:                                                   \
-    static inline void update(X& restrict x, Y y)           \
-    { x op y; }                                             \
-    static void prettyPrint(BZ_STD_SCOPE( std::string) &str)      \
-    { str += symbol; }                                      \
+#define BZ_DECL_UPDATER(name, op, symbol)                                       \
+  template<typename X, typename Y>                                              \
+  class name : public _bz_updater_base                                          \
+  {                                                                             \
+  public:                                                                       \
+    static inline void update(X& restrict x, Y y) { x op y; }                   \
+    static void prettyPrint(BZ_STD_SCOPE(std::string) & str) { str += symbol; } \
   }
 
 template<typename X, typename Y>
-class _bz_update : public _bz_updater_base {
-  public:
-    static inline void update(X& restrict x, Y y)
-    { x = (X)y; }
+class _bz_update : public _bz_updater_base
+{
+public:
+  static inline void update(X& restrict x, Y y) { x = (X)y; }
 
-    static void prettyPrint(BZ_STD_SCOPE( std::string) &str)
-    { str += "="; }
+  static void prettyPrint(BZ_STD_SCOPE(std::string) & str) { str += "="; }
 };
 
 BZ_DECL_UPDATER(_bz_plus_update, +=, "+=");
@@ -67,4 +66,3 @@ BZ_DECL_UPDATER(_bz_shiftr_update, >>=, ">>=");
 BZ_NAMESPACE_END
 
 #endif // BZ_UPDATE_H
-

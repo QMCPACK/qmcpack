@@ -94,15 +94,13 @@ class HamiltonianFactory
   // generates a new Hamiltonian and returns the pointer to the base class
   Hamiltonian buildHamiltonian(GlobalTaskGroup& gTG, xmlNodePtr cur)
   {
-    std::string type;
-    std::string version("new");
+    std::string type("hdf5");
     ParameterSet m_param;
     m_param.add(type,"filetype","std::string");
-    m_param.add(version,"version","std::string");
     m_param.put(cur);
 
     app_log()<<"\n****************************************************\n"
-           <<"               Initializating Hamiltonian \n"
+           <<"               Initializing Hamiltonian \n"
            <<"****************************************************\n"
            <<std::endl;
 
@@ -112,6 +110,7 @@ class HamiltonianFactory
       app_error()<<"Unknown Hamiltonian filetype in HamiltonianFactory::buildHamiltonian(): " <<type <<std::endl;
       APP_ABORT(" Error: Unknown Hamiltonian filetype in HamiltonianFactory::buildHamiltonian(). \n");
     }
+    return Hamiltonian{};
   }
 
   Hamiltonian fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur);
@@ -142,6 +141,7 @@ class HamiltonianFactory
     if(dump.is_group( std::string("/Hamiltonian/KPTHC") )) return KPTHC;
     if(dump.is_group( std::string("/Hamiltonian/THC") )) return THC;
     if(dump.is_group( std::string("/Hamiltonian/KPFactorized") )) return KPFactorized;
+    if(dump.is_group( std::string("/Hamiltonian/DenseFactorized") )) return RealDenseFactorized;
     if(dump.is_group( std::string("/Hamiltonian/Factorized") )) return Factorized;
     APP_ABORT("  Error: Invalid hdf file format in peekHamType(hdf_archive). \n");
     return UNKNOWN;

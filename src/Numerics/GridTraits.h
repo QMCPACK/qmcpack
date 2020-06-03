@@ -9,9 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /** @file GridTraits.h
@@ -26,39 +23,52 @@
 
 /** enumeration of one-dimensional grid type
  */
-enum {LINEAR_1DGRID, LOG_1DGRID, LOGZERO_1DGRID, CUSTOM_1DGRID};
+enum
+{
+  LINEAR_1DGRID,
+  LOG_1DGRID,
+  LOGZERO_1DGRID,
+  CUSTOM_1DGRID
+};
 
 /** enumeration of boundary conditions
  */
-enum {PBC_CONSTRAINTS, FIRSTDERIV_CONSTRAINTS, NATURAL_CONSTRAINTS};
+enum
+{
+  PBC_CONSTRAINTS,
+  FIRSTDERIV_CONSTRAINTS,
+  NATURAL_CONSTRAINTS
+};
 
-template <class T> struct GridTraits {};
+template<class T>
+struct GridTraits
+{};
 
 template<>
 struct GridTraits<double>
 {
-  typedef double          point_type;
-  typedef double          value_type;
+  typedef double point_type;
+  typedef double value_type;
 };
 
 template<>
-struct GridTraits<std::complex<double> >
+struct GridTraits<std::complex<double>>
 {
-  typedef double               point_type;
+  typedef double point_type;
   typedef std::complex<double> value_type;
 };
 
 template<>
 struct GridTraits<float>
 {
-  typedef float          point_type;
-  typedef float          value_type;
+  typedef float point_type;
+  typedef float value_type;
 };
 
 template<>
-struct GridTraits<std::complex<float> >
+struct GridTraits<std::complex<float>>
 {
-  typedef float               point_type;
+  typedef float point_type;
   typedef std::complex<float> value_type;
 };
 #endif

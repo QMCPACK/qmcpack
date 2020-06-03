@@ -8,12 +8,12 @@
 //
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_L2POTENTIAL_H
 #define QMCPLUSPLUS_L2POTENTIAL_H
 #include "Particle/ParticleSet.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
@@ -22,8 +22,7 @@
 
 namespace qmcplusplus
 {
-
-struct L2RadialPotential: public QMCTraits
+struct L2RadialPotential : public QMCTraits
 {
   typedef OneDimGridBase<RealType> GridType;
   typedef OneDimCubicSpline<RealType> RadialPotentialType;
@@ -31,14 +30,11 @@ struct L2RadialPotential: public QMCTraits
   RadialPotentialType* vL2;
   RealType rcut;
 
-  RealType evaluate(RealType r)
-  {
-    return vL2->splint(r);
-  }
+  RealType evaluate(RealType r) { return vL2->splint(r); }
 
   RealType evaluate_guard(RealType r)
   {
-    if(r<rcut)
+    if (r < rcut)
       return vL2->splint(r);
     else
       return 0.0;
@@ -58,7 +54,7 @@ struct L2RadialPotential: public QMCTraits
  * \brief Evaluate the L2 potentials around each ion.
  */
 
-struct L2Potential: public QMCHamiltonianBase
+struct L2Potential : public OperatorBase
 {
   ///reference to the ionic configuration
   const ParticleSet& IonConfig;
@@ -81,10 +77,7 @@ struct L2Potential: public QMCHamiltonianBase
 
   Return_t evaluate(ParticleSet& P);
 
-  bool put(xmlNodePtr cur)
-  {
-    return true;
-  }
+  bool put(xmlNodePtr cur) { return true; }
 
   bool get(std::ostream& os) const
   {
@@ -92,7 +85,7 @@ struct L2Potential: public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   /** Add a RadialPotentialType of a species
    * @param groupID index of the ion species
@@ -100,7 +93,5 @@ struct L2Potential: public QMCHamiltonianBase
    */
   void add(int groupID, L2RadialPotential* ppot);
 };
-}
+} // namespace qmcplusplus
 #endif
-
-

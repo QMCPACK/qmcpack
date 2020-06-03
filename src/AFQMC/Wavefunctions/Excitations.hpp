@@ -57,6 +57,7 @@ size_t find_excitation(Vector const& abij, Vector& v)
   for(typename Vector::iterator it=v.begin(); it<v.end(); it+=n, loc++) 
     if( std::equal(abij.begin(),abij.end(),it) ) return loc;
   APP_ABORT("Error: Sequence not found in find_excitation.\n");
+  return 0;
 }
 
 template<class excitations>
@@ -165,8 +166,8 @@ inline std::vector<size_t> get_nnz(csr const& PsiT_MO, intT* refc, size_t N, siz
 // try putting this in shared memory later on
 template<class I = int,
 	 class VType = std::complex<double>,	
-         class Alloc = boost::mpi3::intranode::allocator<I>,
-         class is_root = boost::mpi3::intranode::is_root>
+         class Alloc = shared_allocator<I>,
+         class is_root = ma::sparse::is_root>
 struct ph_excitations
 {
   public:
@@ -382,25 +383,29 @@ struct ph_excitations
   }
 
   typename Excitation_Iterator::const_reference reference_configuration(int spin=0) const{
-    return std::addressof(*reference.values(0)) + (spin==0?0:NAEA);
+    return to_address(reference.values(0)) + (spin==0?0:NAEA);
   }
 
   typename Excitation_Iterator::reference reference_configuration(int spin=0) {
-    return std::addressof(*reference.values(0)) + (spin==0?0:NAEA);
+    return to_address(reference.values(0)) + (spin==0?0:NAEA);
   }
 
   configuration_type const* configurations_begin() const {
-    return std::addressof(*configurations.values(0));
+    return to_address(configurations.values(0));
   }
 
   configuration_type const* configurations_end() const {
-    return std::addressof(*configurations.values()) + (*configurations.pointers_end(0));
+    return to_address(configurations.values()) + (*configurations.pointers_end(0));
+  }
+
+  configuration_type const* configuration(int i) const {
+    return to_address(configurations.values()) + i; 
   }
 
   Excitation_Iterator alpha_begin(int n) {
     assert(n>0);
     if(n<unique_alpha.size()) {
-      return Excitation_Iterator(std::addressof(*unique_alpha.values(n)),n); 
+      return Excitation_Iterator(to_address(unique_alpha.values(n)),n); 
     } else
       return alpha_end(n); 
   }
@@ -408,17 +413,17 @@ struct ph_excitations
   Excitation_Iterator alpha_end(int n) {
     assert(n>0);
     if(n<unique_alpha.size())
-      return Excitation_Iterator(std::addressof(*unique_alpha.values())
+      return Excitation_Iterator(to_address(unique_alpha.values())
                                     +(*unique_alpha.pointers_end(n)),n);
     else
-      return Excitation_Iterator(std::addressof(*unique_alpha.values())
+      return Excitation_Iterator(to_address(unique_alpha.values())
                                     +(*unique_alpha.pointers_end(unique_alpha.size()-1)),1);
   }
 
   Excitation_const_Iterator alpha_begin(int n) const {
     assert(n>0);
     if(n<unique_alpha.size()) {
-      return Excitation_const_Iterator(std::addressof(*unique_alpha.values(n)),n);
+      return Excitation_const_Iterator(to_address(unique_alpha.values(n)),n);
     } else
       return alpha_end(n);
   }
@@ -426,17 +431,17 @@ struct ph_excitations
   Excitation_const_Iterator alpha_end(int n) const {
     assert(n>0);
     if(n<unique_alpha.size())
-      return Excitation_const_Iterator(std::addressof(*unique_alpha.values())
+      return Excitation_const_Iterator(to_address(unique_alpha.values())
                                     +(*unique_alpha.pointers_end(n)),n);
     else
-      return Excitation_const_Iterator(std::addressof(*unique_alpha.values())
+      return Excitation_const_Iterator(to_address(unique_alpha.values())
                                     +(*unique_alpha.pointers_end(unique_alpha.size()-1)),1);
   }
 
   Excitation_Iterator beta_begin(int n) {
     assert(n>0);
     if(n<unique_beta.size())
-      return Excitation_Iterator(std::addressof(*unique_beta.values(n)),n);
+      return Excitation_Iterator(to_address(unique_beta.values(n)),n);
     else
       return beta_end(n);
   }
@@ -444,17 +449,17 @@ struct ph_excitations
   Excitation_Iterator beta_end(int n) {
     assert(n>0);
     if(n<unique_beta.size())
-      return Excitation_Iterator(std::addressof(*unique_beta.values())
+      return Excitation_Iterator(to_address(unique_beta.values())
                                     +(*unique_beta.pointers_end(n)),n);
     else
-      return Excitation_Iterator(std::addressof(*unique_beta.values())
+      return Excitation_Iterator(to_address(unique_beta.values())
                                     +(*unique_beta.pointers_end(unique_beta.size()-1)),1);
   }
 
   Excitation_const_Iterator beta_begin(int n) const {
     assert(n>0);
     if(n<unique_beta.size())
-      return Excitation_const_Iterator(std::addressof(*unique_beta.values(n)),n);
+      return Excitation_const_Iterator(to_address(unique_beta.values(n)),n);
     else
       return beta_end(n);
   }
@@ -462,10 +467,10 @@ struct ph_excitations
   Excitation_const_Iterator beta_end(int n) const {
     assert(n>0);
     if(n<unique_beta.size())
-      return Excitation_const_Iterator(std::addressof(*unique_beta.values())
+      return Excitation_const_Iterator(to_address(unique_beta.values())
                                     +(*unique_beta.pointers_end(n)),n);
     else
-      return Excitation_const_Iterator(std::addressof(*unique_beta.values())
+      return Excitation_const_Iterator(to_address(unique_beta.values())
                                     +(*unique_beta.pointers_end(unique_beta.size()-1)),1);
   }
 
@@ -482,7 +487,7 @@ struct ph_excitations
   template<class Vector>
   void get_alpha_configuration(size_t index, Vector& confg) const{
     assert(confg.size() >= NAEA); 
-    std::copy_n(std::addressof(*reference.values(0)),NAEA,confg.data());
+    std::copy_n(to_address(reference.values(0)),NAEA,confg.data());
     if(index==0) return;
     // could use lower bound 
     for(int i=1; i<unique_alpha.size(); i++) {
@@ -500,12 +505,12 @@ struct ph_excitations
   template<class Vector>
   void get_beta_configuration(size_t index, Vector& confg) const{
     assert(confg.size() >= NAEB); 
-    std::copy_n(std::addressof(*reference.values(0))+NAEA,NAEB,confg.data());
+    std::copy_n(to_address(reference.values(0))+NAEA,NAEB,confg.data());
     if(index==0) return;
     // could use lower bound 
     for(int i=1; i<unique_beta.size(); i++) {
-      if(index >= sum_of_exct[i][0] && index < sum_of_exct[i+1][0]) {
-        size_t dn = index-sum_of_exct[i][0];
+      if(index >= sum_of_exct[i][1] && index < sum_of_exct[i+1][1]) {
+        size_t dn = index-sum_of_exct[i][1];
         auto exct = unique_beta.values(i) + 2*i*dn;
         for(int n=0; n<i; n++)
           confg[ exct[n] ] = exct[n+i];

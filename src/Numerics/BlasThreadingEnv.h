@@ -16,12 +16,11 @@
 #include "config.h"
 #include "Message/OpenMP.h"
 #ifdef HAVE_MKL
-#include<mkl_service.h>
+#include <mkl_service.h>
 #endif
 
 namespace qmcplusplus
 {
-
 /** service class for explicitly managing the threading of BLAS/LAPACK calls from OpenMP parallel region
  *
  * intended to use only locally around heavy calls.
@@ -30,7 +29,7 @@ class BlasThreadingEnv
 {
   int old_state;
 
-  public:
+public:
   /// Constructor, obtains the number of threads at the next level
   BlasThreadingEnv(int num_threads)
   {
@@ -56,5 +55,5 @@ class BlasThreadingEnv
   }
 };
 
-}
+} // namespace qmcplusplus
 #endif

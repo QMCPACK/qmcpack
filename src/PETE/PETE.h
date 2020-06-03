@@ -43,15 +43,15 @@
 
 #if PETE_MAKE_EMPTY_CONSTRUCTORS
 
-#define PETE_EMPTY_CONSTRUCTORS(CLASS)  \
-  CLASS() { }   \
-  CLASS(const CLASS &) { } \
-  CLASS &operator=(const CLASS &) { return *this; }
+#define PETE_EMPTY_CONSTRUCTORS(CLASS) \
+  CLASS() {}                           \
+  CLASS(const CLASS&) {}               \
+  CLASS& operator=(const CLASS&) { return *this; }
 
-#define PETE_EMPTY_CONSTRUCTORS_TEMPLATE(CLASS, ARG)  \
-  CLASS() { }   \
-  CLASS(const CLASS<ARG> &) { } \
-  CLASS &operator=(const CLASS<ARG> &) { return *this; }
+#define PETE_EMPTY_CONSTRUCTORS_TEMPLATE(CLASS, ARG) \
+  CLASS() {}                                         \
+  CLASS(const CLASS<ARG>&) {}                        \
+  CLASS& operator=(const CLASS<ARG>&) { return *this; }
 
 #else
 
@@ -71,13 +71,12 @@
 
 // Some useful PETE definitions.
 
-#define PETE_MAJOR_VERSION                 2
-#define PETE_MINOR_VERSION                 1
-#define PETE_PATCH_LEVEL                   1
-#define PETE_VERSION_STRING                "PETE 2.1.1"
-#define PETE_VERSION_NUM_STRING            "2.1.1"
+#define PETE_MAJOR_VERSION 2
+#define PETE_MINOR_VERSION 1
+#define PETE_PATCH_LEVEL 1
+#define PETE_VERSION_STRING "PETE 2.1.1"
+#define PETE_VERSION_NUM_STRING "2.1.1"
 
 #endif // PETE_PETE_PETE_H
 
 // ACL:rcsinfo
-

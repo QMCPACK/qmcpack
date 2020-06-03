@@ -28,11 +28,11 @@
 #include<formic/utils/lmyengine/spam_solver.h>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Get the beginning and end indices and the length for each block of variables
+/// \brief  Get the begining and end indices and the length for each block of variables
 ///
 /// \param[in]    nvar         the number of variables that will be divided into blocks
 /// \param[in]    nblock       the number of blocks
-/// \param[out]   block_beg    on exit, the length nblock vector of indices marking the beginning of each block
+/// \param[out]   block_beg    on exit, the length nblock vector of indices marking the begining of each block
 /// \param[out]   block_end    on exit, the length nblock vector of block lengths
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -343,9 +343,6 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs_davidson(const form
   formic::mpi::bcast(&nd, 1);
   //MPI_Bcast(&nd, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  // get the flag that whether we will use variable dependency system
-  const bool use_var_deps = ( dep_ptr->n_ind() != dep_ptr->n_tot() );
-
   // get the flag that whether the calculation is ground or targeted excited 
   bool ground = true;
   if ( my_rank == 0 ) 
@@ -377,30 +374,30 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs_davidson(const form
 
   // create eigensolver
   std::vector<double> vf_var;
-  boost::shared_ptr< cqmc::engine::EigenSolver > eigensolver(new cqmc::engine::DavidsonLMHD(dep_ptr,
-                                                                                            nd,
-                                                                                            60,
-                                                                                            1.0e-7,
-                                                                                            ovl_thresh,
-                                                                                            false, // var deps use?
-                                                                                            true,  // chase lowest
-                                                                                            false,  // chase closest
-                                                                                            ground,  // ground state? 
-                                                                                            false,  // variance correct
-                                                                                            true, // build matrix
-                                                                                            vf_var,
-                                                                                            init_cost, // initial energy
-                                                                                            0.0, // initial variance
-                                                                                            omega, // omega
-                                                                                            0.0, // var weight
-                                                                                            20.0, // maximun energy change
-                                                                                            0.0, // total weight
-                                                                                            0.0, // total weight
-                                                                                            hh,
-                                                                                            hh,
-                                                                                            m_hh,
-                                                                                            ss,
-                                                                                            ss));
+  boost::shared_ptr< cqmc::engine::EigenSolver<double> > eigensolver(new cqmc::engine::DavidsonLMHD<double>(dep_ptr,
+                                                                                                            nd,
+                                                                                                            60,
+                                                                                                            1.0e-7,
+                                                                                                            ovl_thresh,
+                                                                                                            false, // var deps use?
+                                                                                                            true,  // chase lowest
+                                                                                                            false,  // chase closest
+                                                                                                            ground,  // ground state? 
+                                                                                                            false,  // variance correct
+                                                                                                            true, // build matrix
+                                                                                                            vf_var,
+                                                                                                            init_cost, // initial energy
+                                                                                                            0.0, // initial variance
+                                                                                                            omega, // omega
+                                                                                                            0.0, // var weight
+                                                                                                            20.0, // maximun energy change
+                                                                                                            0.0, // total weight
+                                                                                                            0.0, // total weight
+                                                                                                            hh,
+                                                                                                            hh,
+                                                                                                            m_hh,
+                                                                                                            ss,
+                                                                                                            ss));
   
 
   // iteratively find the best nkeep directions CURRENTLY ONLY WORK FOR NKEEP=1!!!!!

@@ -27,7 +27,7 @@
 #define MKL_Complex16   std::complex<double>
 
 #undef APP_ABORT
-#define APP_ABORT(x) {std::cout << x; exit(0);}
+#define APP_ABORT(x) {std::cout << x; throw;}
 
 #include<iostream>
 #include<vector>
@@ -44,7 +44,7 @@ using boost::multi::array;
 using boost::multi::array_ref;
 using csr_matrix = ma::sparse::csr_matrix<double,int,int>;
 template<std::ptrdiff_t D>
-using extensions = typename boost::multi::layout_t<D>::extensions_type;
+using iextensions = typename boost::multi::iextensions<D>;
 
 namespace qmcplusplus
 {
@@ -105,28 +105,28 @@ void test_sparse_matrix_mult_native()
     // matrix-vector
     {
         vector<double> b = {1., 2., 1., 4.};
-        array_ref<double, 1> B(b.data(), extensions<1u>{4});
+        array_ref<double, 1> B(b.data(), iextensions<1u>{4});
         REQUIRE(B.num_elements() == b.size());
 
         vector<double> c(4);
-        array_ref<double, 1> C(c.data(), extensions<1u>{4});
+        array_ref<double, 1> C(c.data(), iextensions<1u>{4});
         REQUIRE(C.num_elements() == c.size());
 
         ma::product(A, B, C); // C = A*B
 
         vector<double> c2 = { 18., 0., 6., 4.};
-        array_ref<double, 1> C2(c2.data(), extensions<1u>{4});
+        array_ref<double, 1> C2(c2.data(), iextensions<1u>{4});
         REQUIRE(C2.num_elements() == c2.size());
         verify_approx(C, C2);
 
         vector<double> d(4);
-        array_ref<double, 1> D(d.data(), extensions<1u>{4});
+        array_ref<double, 1> D(d.data(), iextensions<1u>{4});
         REQUIRE(D.num_elements() == d.size());
 
         using ma::T;
         ma::product(T(A), B, D); // D = T(A)*B
         vector<double> d2 = { 0., 12., 0., 4.};
-        array_ref<double, 1> D2(d2.data(), extensions<1u>{4});
+        array_ref<double, 1> D2(d2.data(), iextensions<1u>{4});
         REQUIRE(D2.num_elements() == d2.size());
         verify_approx(D2, D);
    }

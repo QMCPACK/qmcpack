@@ -11,8 +11,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file LocalizedBasisSet.h
  * @brief A derived class from BasisSetBase
  *
@@ -23,11 +23,10 @@
 #define QMCPLUSPLUS_LOCALIZEDBASISSET_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "Particle/DistanceTable.h"
+#include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
-
 /** A localized basis set derived from BasisSetBase<typename COT::value_type>
  *
  * This class performs the evaluation of the basis functions and their
@@ -36,31 +35,31 @@ namespace qmcplusplus
  * a set of localized orbitals associated with a center.
  */
 template<class COT>
-struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
+struct LocalizedBasisSet : public BasisSetBase<typename COT::value_type>
 {
-  typedef COT                     ThisCOT_t;
-  typedef typename COT::RadialOrbital_t    ThisRadialOrbital_t;
+  typedef COT ThisCOT_t;
+  typedef typename COT::RadialOrbital_t ThisRadialOrbital_t;
   typedef BasisSetBase<typename COT::value_type> BasisSetType;
-  typedef typename BasisSetType::RealType      RealType;
-  typedef typename BasisSetType::ValueType     ValueType;
-  typedef typename BasisSetType::IndexType     IndexType;
+  typedef typename BasisSetType::RealType RealType;
+  typedef typename BasisSetType::ValueType ValueType;
+  typedef typename BasisSetType::IndexType IndexType;
   typedef typename BasisSetType::IndexVector_t IndexVector_t;
   typedef typename BasisSetType::ValueVector_t ValueVector_t;
   typedef typename BasisSetType::ValueMatrix_t ValueMatrix_t;
-  typedef typename BasisSetType::GradVector_t  GradVector_t;
-  typedef typename BasisSetType::GradMatrix_t  GradMatrix_t;
+  typedef typename BasisSetType::GradVector_t GradVector_t;
+  typedef typename BasisSetType::GradMatrix_t GradMatrix_t;
 
   using BasisSetType::ActivePtcl;
-  using BasisSetType::Counter;
   using BasisSetType::BasisSetSize;
-  using BasisSetType::Phi;
-  using BasisSetType::dPhi;
+  using BasisSetType::Counter;
   using BasisSetType::d2Phi;
-  using BasisSetType::grad_grad_Phi;
-  using BasisSetType::grad_grad_grad_Phi;
-  using BasisSetType::Y;
-  using BasisSetType::dY;
   using BasisSetType::d2Y;
+  using BasisSetType::dPhi;
+  using BasisSetType::dY;
+  using BasisSetType::grad_grad_grad_Phi;
+  using BasisSetType::grad_grad_Phi;
+  using BasisSetType::Phi;
+  using BasisSetType::Y;
   ///Reference to the center
   const ParticleSet& CenterSys;
   ///number of centers, e.g., ions
@@ -68,13 +67,13 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
   ///number of quantum particles
   int NumTargets;
   ///number of quantum particles
-  int myTableIndex;
+  const int myTableIndex;
 
   /** container to store the offsets of the basis functions
    *
    * the number of basis states for center J is BasisOffset[J+1]-Basis[J]
    */
-  std::vector<int>  BasisOffset;
+  std::vector<int> BasisOffset;
 
   /** container of the pointers to the Atomic Orbitals
    *
@@ -100,28 +99,27 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
    * @param ions ionic system
    * @param els electronic system
    */
-  LocalizedBasisSet(ParticleSet& ions, ParticleSet& els): CenterSys(ions), myTable(0)
+  LocalizedBasisSet(ParticleSet& ions, ParticleSet& els) : CenterSys(ions), myTableIndex(els.addTable(ions, DT_AOS))
   {
-    myTable = DistanceTable::add(ions,els,DT_AOS);
-    myTableIndex=myTable->ID;
-    NumCenters=CenterSys.getTotalNum();
-    NumTargets=els.getTotalNum();
-    LOBasis.resize(NumCenters,0);
-    LOBasisSet.resize(CenterSys.getSpeciesSet().getTotalNum(),0);
-    BasisOffset.resize(NumCenters+1);
+    myTable      = &els.getDistTable(myTableIndex);
+    NumCenters   = CenterSys.getTotalNum();
+    NumTargets   = els.getTotalNum();
+    LOBasis.resize(NumCenters, 0);
+    LOBasisSet.resize(CenterSys.getSpeciesSet().getTotalNum(), 0);
+    BasisOffset.resize(NumCenters + 1);
   }
 
   LocalizedBasisSet<COT>* makeClone() const
   {
     LocalizedBasisSet<COT>* myclone = new LocalizedBasisSet<COT>(*this);
-    for(int i=0; i<LOBasisSet.size(); ++i)
+    for (int i = 0; i < LOBasisSet.size(); ++i)
     {
-      COT* cc=LOBasisSet[i]->makeClone();
-      myclone->LOBasisSet[i]=cc;
-      for(int j=0; j<CenterSys.getTotalNum(); ++j)
+      COT* cc                = LOBasisSet[i]->makeClone();
+      myclone->LOBasisSet[i] = cc;
+      for (int j = 0; j < CenterSys.getTotalNum(); ++j)
       {
-        if(CenterSys.GroupID[j]==i)
-          myclone->LOBasis[j]=cc;
+        if (CenterSys.GroupID[j] == i)
+          myclone->LOBasis[j] = cc;
       }
     }
     return myclone;
@@ -134,19 +132,19 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
   */
   void setBasisSetSize(int nbs)
   {
-    if(nbs == BasisSetSize)
+    if (nbs == BasisSetSize)
       return;
-    if(myTable ==0)
+    if (myTable == 0)
     {
       app_error() << "LocalizedBasisSet cannot function without a distance table. Abort" << std::endl;
     }
     //reset the distance table for the atomic orbitals
-    for(int i=0; i<LOBasisSet.size(); i++)
+    for (int i = 0; i < LOBasisSet.size(); i++)
       LOBasisSet[i]->setTable(myTable);
     //evaluate the total basis dimension and offset for each center
     BasisOffset[0] = 0;
-    for(int c=0; c<NumCenters; c++)
-      BasisOffset[c+1] = BasisOffset[c]+LOBasis[c]->getBasisSetSize();
+    for (int c = 0; c < NumCenters; c++)
+      BasisOffset[c + 1] = BasisOffset[c] + LOBasis[c]->getBasisSetSize();
     BasisSetSize = BasisOffset[NumCenters];
     this->resize(NumTargets);
   }
@@ -154,7 +152,7 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
   void resetParameters(const opt_variables_type& active)
   {
     //reset each unique basis functions
-    for(int i=0; i<LOBasisSet.size(); i++)
+    for (int i = 0; i < LOBasisSet.size(); i++)
       LOBasisSet[i]->resetParameters(active);
   }
 
@@ -162,86 +160,77 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
    */
   void resetTargetParticleSet(ParticleSet& P)
   {
-    myTable = DistanceTable::add(CenterSys,P,DT_AOS);
-    for(int i=0; i<LOBasisSet.size(); i++)
+    myTable = &P.getDistTable(myTableIndex);
+    for (int i = 0; i < LOBasisSet.size(); i++)
       LOBasisSet[i]->setTable(myTable);
   }
 
-  inline void
-  evaluateWithHessian(const ParticleSet& P, int iat)
+  inline void evaluateWithHessian(const ParticleSet& P, int iat)
   {
-    for(int c=0; c<NumCenters; c++)
-      LOBasis[c]->evaluateForWalkerMove(c,iat,BasisOffset[c],Phi,dPhi,grad_grad_Phi);
+    for (int c = 0; c < NumCenters; c++)
+      LOBasis[c]->evaluateForWalkerMove(c, iat, BasisOffset[c], Phi, dPhi, grad_grad_Phi);
     Counter++; // increment a conter
   }
 
-  inline void
-  evaluateWithThirdDeriv(const ParticleSet& P, int iat)
+  inline void evaluateWithThirdDeriv(const ParticleSet& P, int iat)
   {
     // should only work for s,p
-    for(int c=0; c<NumCenters; c++)
-      LOBasis[c]->evaluateForWalkerMove(c,iat,BasisOffset[c],Phi,dPhi,grad_grad_Phi,grad_grad_grad_Phi);
+    for (int c = 0; c < NumCenters; c++)
+      LOBasis[c]->evaluateForWalkerMove(c, iat, BasisOffset[c], Phi, dPhi, grad_grad_Phi, grad_grad_grad_Phi);
     Counter++; // increment a conter
   }
 
-  inline void
-  evaluateThirdDerivOnly(const ParticleSet& P, int iat)
+  inline void evaluateThirdDerivOnly(const ParticleSet& P, int iat)
   {
     // should only work for s,p
-    for(int c=0; c<NumCenters; c++)
-      LOBasis[c]->evaluateThirdDerivOnly(c,iat,BasisOffset[c],grad_grad_grad_Phi);
+    for (int c = 0; c < NumCenters; c++)
+      LOBasis[c]->evaluateThirdDerivOnly(c, iat, BasisOffset[c], grad_grad_grad_Phi);
     Counter++; // increment a conter
   }
 
-  inline void
-  evaluateForWalkerMove(const ParticleSet& P)
+  inline void evaluateForWalkerMove(const ParticleSet& P)
   {
-    for(int c=0; c<NumCenters; c++)
-      LOBasis[c]->evaluateForWalkerMove(c,0,NumTargets,BasisOffset[c],Y,dY,d2Y);
+    for (int c = 0; c < NumCenters; c++)
+      LOBasis[c]->evaluateForWalkerMove(c, 0, NumTargets, BasisOffset[c], Y, dY, d2Y);
     Counter++; // increment a conter
   }
 
-  inline void
-  evaluateForWalkerMove(const ParticleSet& P, int iat)
+  inline void evaluateForWalkerMove(const ParticleSet& P, int iat)
   {
-    for(int c=0; c<NumCenters; c++)
-      LOBasis[c]->evaluateForWalkerMove(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
+    for (int c = 0; c < NumCenters; c++)
+      LOBasis[c]->evaluateForWalkerMove(c, iat, BasisOffset[c], Phi, dPhi, d2Phi);
     Counter++;
   }
 
-  inline void
-  evaluateForPtclMove(const ParticleSet& P, int iat)
+  inline void evaluateForPtclMove(const ParticleSet& P, int iat)
   {
-    for(int c=0; c<NumCenters; c++)
-      LOBasis[c]->evaluateForPtclMove(c,iat,BasisOffset[c],Phi);
+    for (int c = 0; c < NumCenters; c++)
+      LOBasis[c]->evaluateForPtclMove(c, iat, BasisOffset[c], Phi);
     Counter++;
-    ActivePtcl=iat;
+    ActivePtcl = iat;
   }
 
-  inline void
-  evaluateAllForPtclMove(const ParticleSet& P, int iat)
+  inline void evaluateAllForPtclMove(const ParticleSet& P, int iat)
   {
-    for(int c=0; c<NumCenters; c++)
-      LOBasis[c]->evaluateAllForPtclMove(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
+    for (int c = 0; c < NumCenters; c++)
+      LOBasis[c]->evaluateAllForPtclMove(c, iat, BasisOffset[c], Phi, dPhi, d2Phi);
     Counter++;
-    ActivePtcl=iat;
+    ActivePtcl = iat;
   }
 
-  inline void
-  evaluateForPtclMoveWithHessian(const ParticleSet& P, int iat)
+  inline void evaluateForPtclMoveWithHessian(const ParticleSet& P, int iat)
   {
-    for(int c=0; c<NumCenters; c++)
-      LOBasis[c]->evaluateAllForPtclMove(c,iat,BasisOffset[c],Phi,dPhi,grad_grad_Phi);
+    for (int c = 0; c < NumCenters; c++)
+      LOBasis[c]->evaluateAllForPtclMove(c, iat, BasisOffset[c], Phi, dPhi, grad_grad_Phi);
     Counter++;
-    ActivePtcl=iat;
+    ActivePtcl = iat;
   }
 
-  inline void
-  evaluateValues(const ParticleSet& P,ValueMatrix_t& phiM)
+  inline void evaluateValues(const ParticleSet& P, ValueMatrix_t& phiM)
   {
-    const DistanceTableData* dt=P.DistTables[myTableIndex];
-    for(int c=0; c<NumCenters; c++)
-      LOBasis[c]->evaluateValues(dt,c,BasisOffset[c],phiM);
+    const DistanceTableData* dt = &P.getDistTable(myTableIndex);
+    for (int c = 0; c < NumCenters; c++)
+      LOBasis[c]->evaluateValues(dt, c, BasisOffset[c], phiM);
   }
 
   /** add a new set of Centered Atomic Orbitals
@@ -251,15 +240,13 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
   void add(int icenter, COT* aos)
   {
     aos->setTable(myTable);
-    LOBasisSet[icenter]=aos;
-    for(int i=0; i<NumCenters; i++)
+    LOBasisSet[icenter] = aos;
+    for (int i = 0; i < NumCenters; i++)
     {
-      if(CenterSys.GroupID[i] == icenter)
-        LOBasis[i]=aos;
+      if (CenterSys.GroupID[i] == icenter)
+        LOBasis[i] = aos;
     }
   }
 };
-}
+} // namespace qmcplusplus
 #endif
-
-

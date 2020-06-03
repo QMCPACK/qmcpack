@@ -22,8 +22,6 @@
 PROJECT(qmctools)
 
 SET(MOSRCS
-  ../QMCApp/InitMolecularSystem.cpp
-  ../QMCApp/ParticleSetPool.cpp
   QMCGaussianParserBase.cpp
   GaussianFCHKParser.cpp
   GamesXmlParser.cpp
@@ -34,37 +32,58 @@ SET(MOSRCS
   GamesFMOParser.cpp
   QPParser.cpp
   CrystalAsciiParser.cpp
-  LCAOH5Parser.cpp
+  LCAOHDFParser.cpp
 )
 
 # create libmocommon 
 ADD_LIBRARY(mocommon ${MOSRCS})
+TARGET_LINK_LIBRARIES(mocommon PUBLIC qmcparticle)
 
 set(QTOOLS convert4qmc qmc-extract-eshdf-kvectors)
-ADD_EXECUTABLE(qmc-get-supercell getSupercell.cpp)
-INSTALL(TARGETS qmc-get-supercell
-        RUNTIME DESTINATION bin)
-ADD_EXECUTABLE(qmc-check-affinity check-affinity.cpp)
-INSTALL(TARGETS qmc-check-affinity
-        RUNTIME DESTINATION bin)
-
 FOREACH(p ${QTOOLS})
 
   ADD_EXECUTABLE(${p} ${p}.cpp)
-  TARGET_LINK_LIBRARIES(${p} mocommon qmcbase qmcutil)
+  TARGET_LINK_LIBRARIES(${p} PRIVATE mocommon)
 
   INSTALL(TARGETS ${p}
           RUNTIME DESTINATION bin)
 
-  FOREACH(l ${QMC_UTIL_LIBS})
-    TARGET_LINK_LIBRARIES(${p} ${l})
-  ENDFOREACH(l ${QMC_UTIL_LIBS})
-
-  IF(MPI_LIBRARY)
-    TARGET_LINK_LIBRARIES(${p} ${MPI_LIBRARY})
-  ENDIF(MPI_LIBRARY)
-
 ENDFOREACH(p ${QTOOLS})
+
+ADD_EXECUTABLE(qmc-get-supercell getSupercell.cpp)
+INSTALL(TARGETS qmc-get-supercell
+        RUNTIME DESTINATION bin)
+
+ADD_EXECUTABLE(qmc-check-affinity check-affinity.cpp)
+IF(HAVE_MPI)
+  TARGET_LINK_LIBRARIES(qmc-check-affinity PRIVATE MPI::MPI_CXX)
+ENDIF()
+
+INSTALL(TARGETS qmc-check-affinity
+        RUNTIME DESTINATION bin)
+
+ADD_EXECUTABLE(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
+TARGET_LINK_LIBRARIES(convertpw4qmc PRIVATE qmcutil Math::FFTW3)
+
+INSTALL(TARGETS convertpw4qmc
+        RUNTIME DESTINATION bin)
+
+SET(FSSRCS
+  QMCFiniteSize/QMCFiniteSize.cpp
+  QMCFiniteSize/SkParserBase.cpp
+  QMCFiniteSize/SkParserASCII.cpp
+  QMCFiniteSize/SkParserScalarDat.cpp
+  QMCFiniteSize/FSUtilities.cpp
+)
+
+ADD_LIBRARY(fstool ${FSSRCS})
+TARGET_LINK_LIBRARIES(fstool PUBLIC qmc qmcparticle qmcwfs)
+
+ADD_EXECUTABLE(qmcfinitesize qmcfinitesize.cpp)
+TARGET_LINK_LIBRARIES(qmcfinitesize PRIVATE fstool)
+
+INSTALL(TARGETS qmcfinitesize
+        RUNTIME DESTINATION bin)
 
 #ppconvert
 if( BUILD_PPCONVERT )

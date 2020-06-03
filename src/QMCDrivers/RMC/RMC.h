@@ -10,8 +10,6 @@
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_RMC_H
@@ -21,66 +19,63 @@
 #include "Particle/Reptile.h"
 namespace qmcplusplus
 {
-
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a RMC using threaded execution.
  */
-  class RMC:public QMCDriver, public CloneManager
+class RMC : public QMCDriver, public CloneManager
+{
+public:
+  /// Constructor.
+  typedef ParticleSet::ParticlePos_t ParticlePos_t;
+  typedef Reptile::ReptileConfig_t ReptileConfig_t;
+
+  RMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm);
+  bool run();
+  bool put(xmlNodePtr cur);
+  //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
+  virtual QMCRunType getRunType() { return QMCRunType::RMC; }
+
+private:
+  int prestepsVMC;
+  ///option to enable/disable drift equation for RMC
+  std::string rescaleDrift;
+  ///projection time of reptile
+  RealType beta;
+  ///period for walker dump
+  int myPeriod4WalkerDump;
+  ///number of beads on the reptile, beta/tau
+  int beads;
+  //number of reptiles.
+  int nReptiles;
+  ///rescale for time step studies. some int>2 and new beads are inserted in between the old ones.
+  int resizeReptile;
+
+  //Calculating the reptiles from scratch or from a previous VMC/DMC/RMC run.
+  bool fromScratch;
+  //       vector of indices for the action and transprob
+  std::vector<int> Action;
+  std::vector<int> TransProb;
+
+  ///check the run-time environments
+  inline void resetVars()
   {
-  public:
-    /// Constructor.
-    typedef ParticleSet::ParticlePos_t ParticlePos_t;
-    typedef Reptile::ReptileConfig_t ReptileConfig_t;
-
-    RMC(MCWalkerConfiguration & w, TrialWaveFunction & psi,
-                QMCHamiltonian & h, WaveFunctionPool & ppool, Communicate* comm);
-    bool run ();
-    bool put (xmlNodePtr cur);
-    //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
-  private:
-    ///period for walker dump
-    int myPeriod4WalkerDump;
-    ///option to enable/disable drift equation for RMC
-    std::string rescaleDrift;
-    ///number of beads on the reptile, beta/tau
-    int beads;
-    //number of reptiles.  
-    int nReptiles;
-    ///rescale for time step studies. some int>2 and new beads are inserted in between the old ones.
-    int resizeReptile;
-
-    //Calculating the reptiles from scratch or from a previous VMC/DMC/RMC run.
-    bool fromScratch;
-    ///projection time of reptile
-    RealType beta;
-//       vector of indices for the action and transprob
-      std::vector < int >Action;
-      std::vector < int >TransProb;
-
-    int prestepsVMC;
-    ///check the run-time environments
-    inline void resetVars ()
-    {
-      prestepsVMC = -1;
-      beads = -1;
-      beta = -1;
-      nReptiles = -1;
-    };
-    void resetRun ();
-    //This will resize the MCWalkerConfiguration and initialize the ReptileList.  Does not care for previous runs.  
-    void resetReptiles (int nReptiles, int nbeads, RealType tau);
-    //This will resize the MCWalkerConfiguration and initialize Reptile list.  It will then reinitialize the MCWC with a list of Reptile coordinates
-    void resetReptiles (std::vector< ReptileConfig_t > &reptile_samps,
-			RealType tau);
-    //For # of walker samples, create that many reptiles with nbeads each.  Initialize each reptile to have the value of the walker "seed".
-    void resetReptiles (std::vector< ParticlePos_t > &walker_samps, int nbeads,
-			RealType tau);
-    ///copy constructor (disabled)
-    RMC(const RMC &) = delete;
-    /// Copy operator (disabled).
-    RMC & operator=(const RMC &) = delete;
-
+    prestepsVMC = -1;
+    beads       = -1;
+    beta        = -1;
+    nReptiles   = -1;
   };
-}
+  void resetRun();
+  //This will resize the MCWalkerConfiguration and initialize the ReptileList.  Does not care for previous runs.
+  void resetReptiles(int nReptiles, int nbeads, RealType tau);
+  //This will resize the MCWalkerConfiguration and initialize Reptile list.  It will then reinitialize the MCWC with a list of Reptile coordinates
+  void resetReptiles(std::vector<ReptileConfig_t>& reptile_samps, RealType tau);
+  //For # of walker samples, create that many reptiles with nbeads each.  Initialize each reptile to have the value of the walker "seed".
+  void resetReptiles(std::vector<ParticlePos_t>& walker_samps, int nbeads, RealType tau);
+  ///copy constructor (disabled)
+  RMC(const RMC&) = delete;
+  /// Copy operator (disabled).
+  RMC& operator=(const RMC&) = delete;
+};
+} // namespace qmcplusplus
 
 #endif

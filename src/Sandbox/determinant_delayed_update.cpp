@@ -119,19 +119,18 @@ int main(int argc, char** argv)
     RandomGenerator<RealType> random_th(myPrimes[ip]);
 
     Matrix<ValueType> psiM(nels,nels),psiM_inv(nels,nels);
-    Vector<ValueType> psiV(nels), Ainv_row(nels);
+    Vector<ValueType> psiV(nels), invRow(nels);
 
     DiracMatrix<ValueType> detEng;
-    DelayedUpdate<ValueType> FahyEng;
-    DelayedUpdate<ValueType> delayedEng;
+    DelayedUpdate<ValueType, QMCTraits::QTFull::ValueType> FahyEng;
+    DelayedUpdate<ValueType, QMCTraits::QTFull::ValueType> delayedEng;
 
     FahyEng.resize(nels,1);
     delayedEng.resize(nels,delay);
 
     generate(random_th,psiM.data(),nels*nels);
-    simd::transpose(psiM.data(),nels,nels,psiM_inv.data(),nels,nels);
-    detEng.invert(psiM_inv,true);
-
+    std::complex<RealType> logdet;
+    detEng.invert_transpose(psiM, psiM_inv, logdet);
 
     if(debug)
     {
@@ -144,8 +143,10 @@ int main(int argc, char** argv)
       {
         clock_mc.restart();
         generate(random_th, psiV.data(), nels);
-        ratio_0=FahyEng.ratio(psiM0,iel, psiV);
-        ratio_1=delayedEng.ratio(psiM_inv,iel, psiV);
+        FahyEng.getInvRow(psiM0, iel, invRow);
+        ratio_0 = simd::dot(invRow.data(), psiV.data(), invRow.size());
+        delayedEng.getInvRow(psiM_inv, iel, invRow);
+        ratio_1 = simd::dot(invRow.data(), psiV.data(), invRow.size());
 
         err += std::abs(ratio_1-ratio_0);
         if(std::abs(ratio_0)>0.5*random_th())
@@ -168,7 +169,8 @@ int main(int argc, char** argv)
         {
           generate(random_th, psiV.data(), nels);
           clock_mc.restart();
-          ratio=delayedEng.ratio(psiM_inv, iel, psiV);
+          delayedEng.getInvRow(psiM_inv, iel, invRow);
+          ratio = simd::dot(invRow.data(), psiV.data(), invRow.size());
           t_ratio_loc+=clock_mc.elapsed();
 
           if(std::abs(ratio)>0.5*random_th())
@@ -179,7 +181,7 @@ int main(int argc, char** argv)
             t_accept_loc+=clock_mc.elapsed();
           }
         }
-        if(delayedEng.delay_count>0)
+        if(delayedEng.getDelayCount()>0)
         {
           clock_mc.restart();
           delayedEng.updateInvMat(psiM_inv);
@@ -196,7 +198,8 @@ int main(int argc, char** argv)
         {
           generate(random_th, psiV.data(), nels);
           clock_mc.restart();
-          ratio=FahyEng.ratio(psiM_inv, iel, psiV);
+          FahyEng.getInvRow(psiM_inv, iel, invRow);
+          ratio = simd::dot(invRow.data(), psiV.data(), invRow.size());
           t_ratio_loc+=clock_mc.elapsed();
           if(std::abs(ratio)>0.5*random_th())
           {

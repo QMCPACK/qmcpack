@@ -1,0 +1,105 @@
+#INFO: **** input file is
+#! /usr/bin/env python3
+
+import sys
+import os
+from pyscf import gto, scf, tools
+import numpy
+
+mol = gto.Mole(atom=[['Ne', (0,0,0)]],
+            basis='cc-pvdz',
+            unit='Angstrom',
+            verbose=4)
+mol.build()
+mf = scf.RHF(mol)
+mf.chkfile = 'neon.chk.h5'
+mf.kernel()
+hcore = mf.get_hcore()
+fock = mf.get_veff()
+# ascii fcidump is converted using fcidump_to_qmcpack.py.
+tools.fcidump.from_scf(mf, 'FCIDUMP')
+nmo = mf.mo_coeff.shape[-1]
+
+wfn_header = """&FCI
+UHF = 0
+CMajor
+NCI = 1
+TYPE = matrix
+/"""
+orbmat = numpy.identity(nmo,dtype=numpy.complex128)
+with open("wfn_rhf.dat", 'w') as f:
+    f.write(wfn_header+'\n')
+    f.write('Coefficients: 1.0\n')
+    f.write('Determinant: 1\n')
+    for i in range(0,mol.nelec[0]):
+        occ = '0.0 '*i + '1.0' + ' 0.0'*(nmo-i-1) + '\n'
+        f.write(occ)
+    # Alternatively add FullMO to the header above and replace for loop above
+    # with double loop below.
+    # for i in range(0,nmo):
+        # for j in range(0,nmo):
+            # val = orbmat[i,j]
+            # f.write('(%.10e,%.10e) '%(val.real, val.imag))
+        # f.write('\n')
+#INFO: ******************** input file end ********************
+
+
+System: ('Linux', 'quartz1916', '3.10.0-957.5.1.3chaos.ch6.x86_64', '#1 SMP Tue Feb 26 14:19:40 PST 2019', 'x86_64', 'x86_64')  Threads 1
+Python 2.7.14 (default, Jan 17 2018, 10:04:29) 
+[GCC 4.9.3]
+numpy 1.13.3  scipy 1.0.0
+Date: Wed Mar 27 10:09:29 2019
+PySCF version 1.6
+GIT ORIG_HEAD cb6997be4e45fd7054f36881e68762c9ff03e59d
+GIT HEAD      ref: refs/heads/master
+GIT master branch  21ff7429fe24ac23041f885ea115257c07714ae5
+
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 1
+[INPUT] num. electrons = 10
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = Angstrom
+[INPUT]  1 Ne     0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr
+
+nuclear repulsion = 5e-199
+number of shells = 5
+number of NR pGTOs = 26
+number of NR cGTOs = 14
+basis = cc-pvdz
+ecp = {}
+CPU time:         0.58
+
+
+******** <class 'pyscf.scf.hf.RHF'> ********
+method = RHF
+initial guess = minao
+damping factor = 0
+level shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+DIIS start cycle = 1
+DIIS space = 8
+SCF tol = 1e-09
+SCF gradient tol = None
+max. SCF cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = neon.chk.h5
+max_memory 4000 MB (current use 49 MB)
+Set gradient conv threshold to 3.16228e-05
+init E= -128.46774384084
+  HOMO = -0.768451602547543  LUMO = 1.7369243501428
+cycle= 1 E= -128.486157059642  delta_E= -0.0184  |g|= 0.147  |ddm|= 0.213
+  HOMO = -0.86196016148206  LUMO = 1.67388392231063
+cycle= 2 E= -128.488238284564  delta_E= -0.00208  |g|= 0.0664  |ddm|= 0.0922
+  HOMO = -0.832038473251899  LUMO = 1.69454656913468
+cycle= 3 E= -128.488775545822  delta_E= -0.000537  |g|= 0.000189  |ddm|= 0.0289
+  HOMO = -0.832104049753856  LUMO = 1.69456351331859
+cycle= 4 E= -128.488775551737  delta_E= -5.92e-09  |g|= 6.55e-06  |ddm|= 0.000139
+  HOMO = -0.832096728694546  LUMO = 1.69455721646104
+cycle= 5 E= -128.488775551741  delta_E= -3.44e-12  |g|= 3.64e-07  |ddm|= 3.1e-06
+  HOMO = -0.832097194715506  LUMO = 1.69455776783854
+Extra cycle  E= -128.488775551741  delta_E= -2.84e-14  |g|= 1.36e-07  |ddm|= 1.89e-07
+converged SCF energy = -128.488775551741

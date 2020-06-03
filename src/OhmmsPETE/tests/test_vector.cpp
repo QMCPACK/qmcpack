@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
 #include "OhmmsPETE/OhmmsVector.h"
@@ -22,8 +21,6 @@ using std::string;
 
 namespace qmcplusplus
 {
-
-
 TEST_CASE("vector", "[OhmmsPETE]")
 {
   typedef Vector<double> vec_t;
@@ -32,7 +29,8 @@ TEST_CASE("vector", "[OhmmsPETE]")
 
   // iterator
   vec_t::iterator ia = A.begin();
-  for (; ia != A.end(); ia++) {
+  for (; ia != A.end(); ia++)
+  {
     *ia = 1.0;
   }
 
@@ -46,7 +44,6 @@ TEST_CASE("vector", "[OhmmsPETE]")
   REQUIRE(B[0] == Approx(3.1));
   REQUIRE(B[1] == Approx(3.1));
   REQUIRE(B[2] == Approx(3.1));
-
 }
 
 TEST_CASE("VectorViewer", "[OhmmsPETE]")
@@ -71,7 +68,7 @@ TEST_CASE("VectorViewer", "[OhmmsPETE]")
   REQUIRE(a[1] == 42);
   REQUIRE(a[2] == -5);
 
- // TODO: add optional bounds checking to accesses via operator[]
+  // TODO: add optional bounds checking to accesses via operator[]
 }
 
-}
+} // namespace qmcplusplus

@@ -1,0 +1,85 @@
+compilers:
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules:
+    - gcc/8.3.0-fjpc5ys
+    operating_system: ubuntu18.04
+    paths:
+      cc: /nfs/gce/software/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/gcc-8.3.0-fjpc5ys/bin/gcc
+      cxx: /nfs/gce/software/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/gcc-8.3.0-fjpc5ys/bin/g++
+      f77: /nfs/gce/software/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/gcc-8.3.0-fjpc5ys/bin/gfortran
+      fc: /nfs/gce/software/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/gcc-8.3.0-fjpc5ys/bin/gfortran
+    spec: gcc@8.3.0
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules:
+    - intel/19.0
+    operating_system: ubuntu18.04
+    paths:
+      cc: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/intel/19.0/compilers_and_libraries_2019.3.199/linux/bin/intel64/icc
+      cxx: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/intel/19.0/compilers_and_libraries_2019.3.199/linux/bin/intel64/icpc
+      f77: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/intel/19.0/compilers_and_libraries_2019.3.199/linux/bin/intel64/ifort
+      fc: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/intel/19.0/compilers_and_libraries_2019.3.199/linux/bin/intel64/ifort
+    spec: intel@19.0.3.199
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules:
+    - pgi/19.7
+    operating_system: ubuntu18.04
+    paths:
+      cc: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/pgi/19.7/linux86-64/19.7/bin/pgcc
+      cxx: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/pgi/19.7/linux86-64/19.7/bin/pgc++
+      f77: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/pgi/19.7/linux86-64/19.7/bin/pgfortran
+      fc: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/pgi/19.7/linux86-64/19.7/bin/pgf90
+    spec: pgi@19.7
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags:
+      fflags: -module-suffix .f18.mod
+    modules:
+    - pgi/19.7
+    - flang-master-gcc-7.4.0-3evqiq2
+    operating_system: ubuntu18.04
+    paths:
+      cc: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/pgi/19.7/linux86-64/19.7/bin/pgcc
+      cxx: /nfs/gce/software/custom/linux-ubuntu18.04-x86_64/pgi/19.7/linux86-64/19.7/bin/pgc++
+      f77: /scratch/naromero/opt/spack/linux-ubuntu18.04-westmere/gcc-7.4.0/f18-master-yxbvzyykz5e5e5mwvwact3dukjyyyqjm/bin/f18
+      fc: /scratch/naromero/opt/spack/linux-ubuntu18.04-westmere/gcc-7.4.0/f18-master-yxbvzyykz5e5e5mwvwact3dukjyyyqjm/bin/fl8
+    spec: pgi@master
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules: []
+    operating_system: ubuntu18.04
+    paths:
+      cc: /scratch/naromero/opt/spack/linux-ubuntu18.04-westmere/gcc-8.3.0/llvm-9.0.0-qywwkxxjnrnmhv6yyswfjdcjjbj3zrij/bin/clang
+      cxx: /scratch/naromero/opt/spack/linux-ubuntu18.04-westmere/gcc-8.3.0/llvm-9.0.0-qywwkxxjnrnmhv6yyswfjdcjjbj3zrij/bin/clang++
+      f77: /nfs/gce/software/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/gcc-8.3.0-fjpc5ys/bin/gfortran
+      fc: /nfs/gce/software/spack/opt/spack/linux-ubuntu18.04-x86_64/gcc-7.3.0/gcc-8.3.0-fjpc5ys/bin/gfortran
+    spec: clang@9.0.0
+    target: x86_64
+- compiler:
+    spec: gcc@7.4.0
+    paths:
+      cc: /usr/bin/gcc-7
+      cxx: /usr/bin/g++-7
+      f77: /usr/bin/gfortran-7
+      fc: /usr/bin/gfortran-7
+    flags: {}
+    operating_system: ubuntu18.04
+    target: x86_64
+    modules: []
+    environment: {}
+    extra_rpaths: []

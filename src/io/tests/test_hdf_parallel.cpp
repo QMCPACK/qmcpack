@@ -24,10 +24,10 @@ using namespace qmcplusplus;
 
 TEST_CASE("hdf_archive_parallel", "[hdf]")
 {
-  Communicate *c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
   hdf_archive hd(c);
   hd.create("test_communicate.hdf");
-  int i = 23;
+  int i     = 23;
   bool okay = hd.writeEntry(i, "int");
   REQUIRE(okay);
 }
@@ -35,12 +35,11 @@ TEST_CASE("hdf_archive_parallel", "[hdf]")
 #ifdef HAVE_MPI
 TEST_CASE("hdf_archive_parallel_mpi3", "[hdf]")
 {
-  Communicate *c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
   hdf_archive hd(c->comm);
   hd.create("test_mpi3_communicator.hdf");
-  int i = 23;
+  int i     = 23;
   bool okay = hd.writeEntry(i, "int");
   REQUIRE(okay);
 }
 #endif
-

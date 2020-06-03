@@ -29,11 +29,11 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "mpi3/shm/mutex.hpp"
-#include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
+#include "AFQMC/Memory/buffer_allocators.h"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 
-#include "AFQMC/Propagators/AFQMCSharedPropagator.h"
+#include "AFQMC/Propagators/AFQMCBasePropagator.h"
 
 namespace qmcplusplus
 {
@@ -47,21 +47,40 @@ namespace afqmc
  *   - Specialized algorithm for case when vbias doesn't need to be reduced over 
  *     nodes in a TG.
  */
-class AFQMCDistributedPropagatorDistCV: public AFQMCSharedPropagator
+class AFQMCDistributedPropagatorDistCV: public AFQMCBasePropagator
 {
-  using base = AFQMCSharedPropagator;
+  using base = AFQMCBasePropagator;
   public:
 
     AFQMCDistributedPropagatorDistCV(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, 
-                          Wavefunction& wfn_, CMatrix&& h1_, CVector&& vmf_, 
+                          Wavefunction& wfn_, stdCMatrix&& h1_, CVector&& vmf_, 
                           RandomGenerator_t* r): 
-            AFQMCSharedPropagator(info,cur,tg_,wfn_,std::move(h1_),std::move(vmf_),r),
+            base(info,cur,tg_,wfn_,std::move(h1_),std::move(vmf_),r),
+            bpX(iextensions<1u>{1},shared_allocator<ComplexType>{TG.TG_local()}),
             req_Gsend(MPI_REQUEST_NULL),
             req_Grecv(MPI_REQUEST_NULL),
             req_vsend(MPI_REQUEST_NULL),
-            req_vrecv(MPI_REQUEST_NULL)
+            req_vrecv(MPI_REQUEST_NULL),
+            req_Xsend(MPI_REQUEST_NULL),
+            req_Xrecv(MPI_REQUEST_NULL),
+            req_X2send(MPI_REQUEST_NULL),
+            req_X2recv(MPI_REQUEST_NULL),
+            req_bpvsend(MPI_REQUEST_NULL),
+            req_bpvrecv(MPI_REQUEST_NULL)
     {
-      assert(TG.getNNodesPerTG() > 1);
+      assert(TG.getNGroupsPerTG() > 1);
+
+      std::string str("no");
+      ParameterSet m_param;
+      m_param.add(str,"low_memory","std::string");
+      m_param.put(cur);
+
+      std::transform(str.begin(),str.end(),str.begin(),(int (*)(int)) tolower);
+      if(str == "yes" || str == "true") low_memory_step = true;
+
+      if(low_memory_step)
+        app_log()<<" Using low memory distributed propagation. \n";
+
     }
 
     ~AFQMCDistributedPropagatorDistCV() {
@@ -73,32 +92,72 @@ class AFQMCDistributedPropagatorDistCV: public AFQMCSharedPropagator
           MPI_Request_free(&req_vrecv);
       if(req_vsend!=MPI_REQUEST_NULL)
           MPI_Request_free(&req_vsend);
+      if(req_X2recv!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_X2recv);
+      if(req_X2send!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_X2send);
+      if(req_Xrecv!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_Xrecv);
+      if(req_Xsend!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_Xsend);
+      if(req_bpvrecv!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_bpvrecv);
+      if(req_bpvsend!=MPI_REQUEST_NULL)
+          MPI_Request_free(&req_bpvsend);
     }
 
     AFQMCDistributedPropagatorDistCV(AFQMCDistributedPropagatorDistCV const& other) = delete;
     AFQMCDistributedPropagatorDistCV& operator=(AFQMCDistributedPropagatorDistCV const& other) = delete;
     AFQMCDistributedPropagatorDistCV(AFQMCDistributedPropagatorDistCV&& other) = default;
-    AFQMCDistributedPropagatorDistCV& operator=(AFQMCDistributedPropagatorDistCV&& other) = default;
+    AFQMCDistributedPropagatorDistCV& operator=(AFQMCDistributedPropagatorDistCV&& other) = delete;
 
     template<class WlkSet>
     void Propagate(int steps, WlkSet& wset, RealType E1,
                    RealType dt, int fix_bias=1) {
       int nblk = steps/fix_bias;
       int nextra = steps%fix_bias;
-      for(int i=0; i<nblk; i++)
-        step(fix_bias,wset,E1,dt);
-      if(nextra>0)
-        step(nextra,wset,E1,dt);
+      if(low_memory_step) {
+        for(int i=0; i<nblk; i++) {
+          step_collective(fix_bias,wset,E1,dt);
+          update_buffer_generators();
+        }  
+        if(nextra>0)
+          step_collective(nextra,wset,E1,dt);
+      } else {
+        for(int i=0; i<nblk; i++) {
+          step(fix_bias,wset,E1,dt);
+          update_buffer_generators();
+        }
+        if(nextra>0)
+          step(nextra,wset,E1,dt);
+      }
       TG.local_barrier();
     }
 
+    template<class WlkSet, class CTens, class CMat>
+    void BackPropagate(int steps, int nStabalize, WlkSet& wset, CTens&& Refs, CMat&& detR);
+
   protected: 
+
+    mpi3SPCVector bpX;
+    std::vector<int> bpx_counts, bpx_displ;
+
+    bool buffer_reallocated=false;
+    bool buffer_reallocated_bp=false;
+    bool low_memory_step=false;
 
     MPI_Request req_Gsend, req_Grecv;
     MPI_Request req_vsend, req_vrecv;
 
+    MPI_Request req_Xsend, req_Xrecv;
+    MPI_Request req_X2send, req_X2recv;
+    MPI_Request req_bpvsend, req_bpvrecv;
+
     template<class WlkSet>
     void step(int steps, WlkSet& wset, RealType E1, RealType dt);
+
+    template<class WlkSet>
+    void step_collective(int steps, WlkSet& wset, RealType E1, RealType dt);
 
 };
 

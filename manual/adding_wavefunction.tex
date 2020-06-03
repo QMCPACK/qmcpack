@@ -1,0 +1,167 @@
+\section{Adding a wavefunction}\label{sec:adding_wavefunction}
+
+The total wavefunction is stored in \texttt{TrialWaveFunction} as a product of all
+the components.  Each component derives from \texttt{WaveFunctionComponent}.
+The code contains an example of a wavefunction component for a Helium atom using a simple form and
+is described in Section~\ref{sec:helium_wavefunction_example}.
+
+
+\subsection{Mathematical preliminaries}
+
+The wavefunction evaluation functions compute the log of the wavefunction,
+the gradient and the Laplacian of the log of the wavefunction.
+Expanded, the gradient and Laplacian are
+\begin{eqnarray}
+G &=& \grad \log(\psi) = \frac{\grad \psi}{\psi} \\
+L &=& \lap \log(\psi) = \frac{\lap \psi}{\psi} - \frac{\grad \psi}{\psi} \cdot \frac{\grad \psi}{\psi} \\
+                &=& \frac{\lap \psi}{\psi} - G \cdot G
+\end{eqnarray}
+
+However, the local energy formula needs $\frac{\lap \psi}{\psi}$.  The conversion from the Laplacian of the log of the wavefunction to the local energy value is performed
+in \texttt{QMCHamiltonians/BareKineticEnergy.h} (i.e. $L + G \cdot G$.)
+
+
+\subsection{Wavefunction evaluation}
+
+The process for creating a new wavefunction component class is to derive
+from WaveFunctionComponent and implement a number pure virtual functions.
+To start most of them can be empty.
+
+The following four functions evaluate the wavefunction values and spatial derivatives:
+
+\begin{description}
+\item{\texttt{evaluateLog}} Computes the log of the wavefunction and the gradient
+and Laplacian (of the log of the wavefunction) for all particles.
+The input is the\texttt{ParticleSet}(\texttt{P}) (of the electrons).
+The return value is the log of wavefunction, and the gradient is in \texttt{G} and Laplacian in \texttt{L}.
+
+\item{\texttt{ratio}} Computes the wavefunction ratio (not the log) for a single particle move ($\psi_{new}/\psi_{old}$).
+The inputs are the \texttt{ParticleSet}(\texttt{P}) and the particle index (\texttt{iat}).
+
+\item{\texttt{evalGrad}} Computes the gradient for a given particle.
+The inputs are the \texttt{ParticleSet}(\texttt{P}) and the particle index (\texttt{iat}).
+
+\item{\texttt{ratioGrad}} Computes the wavefunction ratio and the gradient at the new position for a single particle move.
+The inputs are the \texttt{ParticleSet}(\texttt{P}) and the particle index (\texttt{iat}).
+The output gradient is in \texttt{grad\_iat};
+\end{description}
+
+The \texttt{updateBuffer} function needs to be implemented, but to start it can simply
+call \texttt{evaluateLog}.
+
+The \texttt{put} function should be implemented to read parameter specifics from the input XML file.
+
+\subsection{Function use}
+
+For debugging it can be helpful to know the under what conditions the various
+routines are called.
+
+The VMC and DMC loops initialize the walkers by calling \texttt{evaluateLog}.
+For all-electron moves, each timestep advance calls \texttt{evaluateLog}.
+If the \texttt{use\_drift} parameter is no, then only the wavefunction value is used for sampling.
+The gradient and Laplacian are used for computing the local energy.
+
+For particle-by-particle moves, each timestep advance
+\begin{enumerate}
+\item calls \texttt{evalGrad}
+\item computes a trial move
+\item calls \texttt{ratioGrad} for the wavefunction ratio and the gradient at the trial position.
+(If the \texttt{use\_drift} parameter is no, the \texttt{ratio} function is called instead.)
+\end{enumerate}
+
+
+The following example shows part of an input block for VMC with all-electron moves and drift.
+
+\begin{verbatim}
+<qmc method="vmc" target="e" move="alle">
+  <parameter name="use_drift">yes</parameter>
+</qmc>
+\end{verbatim}
+
+
+
+\subsection{Particle distances}
+
+The \texttt{ParticleSet} parameter in these functions refers to the electrons.
+The distance tables that store the inter-particle distances are stored as an array.
+
+To get the electron-ion distances, add the ion \texttt{ParticleSet} using \texttt{addTable}
+and save the returned index. Use that index to get the ion-electron distance table.
+\begin{verbatim}
+const int ei_id = elecs.addTable(ions, DT_SOA); // in the constructor only
+const auto& ei_table = elecs.getDistTable(ei_id); // when consuming a distance table
+\end{verbatim}
+Getting the electron-electron distances is very similar, just add the electron \texttt{ParticleSet} using \texttt{addTable}.
+
+Only the lower triangle for the electron-electron table should be used.
+It is the only part of the distance table valid throughout the run.
+During particle-by-particle move, there are extra restrictions.
+When a move of electron iel is proposed, only the lower triangle parts [0,iel)[0,iel) [iel, Nelec)[iel, Nelec) and the row [iel][0:Nelec) are valid.
+In fact, the current implementation of distance based two and three body Jastrow factors in QMCPACK only needs the row [iel][0:Nelec).
+
+In \texttt{ratioGrad}, the new distances are stored in the \texttt{Temp\_r} and \texttt{Temp\_dr}
+members of the distance tables.
+
+\subsection{Setup}
+
+A builder processes XML input, creates the wavefunction, and adds it to \texttt{targetPsi}.
+Builders derive from \texttt{WaveFunctionComponentBuilder}.
+
+The new builder hooks into the XML processing in \texttt{WaveFunctionFactory.cpp} in the \texttt{build} function.
+
+
+\subsection{Caching values}
+The \texttt{acceptMove} and \texttt{restore} methods are called on accepted and rejected moves for
+the component to update cached values.
+
+
+\subsection{Threading}
+The \texttt{makeClone} function needs to be implemented to work correctly with OpenMP threading.
+There will be one copy of the component created for each thread.
+If there is no extra storage, calling the copy constructor will be sufficient.
+If there are cached values, the clone call may need to create space.
+
+
+\subsection{Parameter optimization}
+
+The \texttt{checkInVariables}, \texttt{checkOutVariables}, and \texttt{resetParameters} functions manage the variational parameters.
+Optimizable variables also need to be registered when the XML is processed.
+
+Variational parameter derivatives are computed in the \texttt{evaluateDerivatives} function.
+The first output value is an array with parameter derivatives of log of the wavefunction.
+The second output values is an array with parameter derivatives of
+the Laplacian divided by the wavefunction (and not the Laplacian of the log of the wavefunction)
+The kinetic energy term contains a $-1/2m$ factor.
+The $1/m$ factor is applied in \texttt{TrialWaveFunction.cpp}, but the $-1/2$ is not and must be accounted for in this function.
+
+
+%See \texttt{QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h} for an
+%application.
+%Also note that it calls into the radial functions for derivatives, but
+%it expects the derivative of the logs.
+
+%The conversion is
+%\begin{equation}
+%\frac{\partial }{\partial B} = \frac{\partial}{\partial B} \lap \log(\psi) +
+%2 \frac{\grad \psi}{\psi} \frac{\partial}{\partial B} \frac{\grad \psi}{\psi}
+%\end{equation}
+
+\subsection{Helium Wavefunction Example}\label{sec:helium_wavefunction_example}
+The code contains an example of a wavefunction component for a Helium atom using STO orbitals and a Pade Jastrow.
+
+The wavefunction is
+\begin{equation}
+\psi = \frac{1}{\sqrt{\pi}} \exp(-Z r_1) \exp(-Z r_2) \exp(A / (1 + B r_{12}))
+\end{equation}
+where $Z = 2$ is the nuclear charge, $A=1/2$ is the electron-electron cusp, and $B$ is a variational parameter.
+The electron-ion distances are $r_1$ and $r_2$, and $r_{12}$ is the electron-electron distance.
+The wavefunction is the same as the one expressed with built-in components in \texttt{examples/molecules/He/he\_simple\_opt.xml}.
+
+The code is in \texttt{src/QMCWaveFunctions/ExampleHeComponent.cpp}.
+The builder is in \texttt{src/QMCWaveFunctions/ExampleHeBuilder.cpp}.
+The input file is in \texttt{examples/molecules/He/he\_example\_wf.xml}.
+A unit test compares results from the wavefunction evaluation functions for
+consistency in \texttt{src/QMCWaveFunctions/tests/test\_example\_he.cpp}.
+
+The recommended approach for creating a new wavefunction component is to copy the example and the unit test.
+Implement the evaluation functions and ensure the unit test passes.

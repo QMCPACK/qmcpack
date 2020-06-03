@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_PROJECTDATA_H__
@@ -26,7 +24,6 @@
 
 namespace qmcplusplus
 {
-
 /**class ProjectData
  *\brief Encapsulate data for a project
  *
@@ -34,14 +31,13 @@ namespace qmcplusplus
  * Should not modify the name, since composite types, such as MDRunData, use the name.
  *
  */
-struct ProjectData: public OhmmsElementBase
+struct ProjectData : public OhmmsElementBase
 {
-
   /// constructor
-  ProjectData(const char* aname=0);
+  ProjectData(const char* aname = 0);
 
   bool get(std::ostream& os) const;
-  bool put( std::istream& is);
+  bool put(std::istream& is);
   bool put(xmlNodePtr cur);
   void reset();
 
@@ -54,34 +50,25 @@ struct ProjectData: public OhmmsElementBase
   ///set the title
   inline void setTitle(const std::string& atitle)
   {
-    m_title=atitle;
+    m_title = atitle;
     reset();
   }
 
-  void  setCommunicator(Communicate* c);
+  void setCommunicator(Communicate* c);
 
   ///returns the name of the project
-  inline const char* CurrentMainRoot() const
-  {
-    return m_projectmain.c_str();
-  }
+  inline const char* CurrentMainRoot() const { return m_projectmain.c_str(); }
 
   ///returns the name of the project
-  inline const char* CurrentRoot() const
-  {
-    return m_projectroot.c_str();
-  }
+  inline const char* CurrentRoot() const { return m_projectroot.c_str(); }
 
   ///returns the name of the project
-  inline const char* NextRoot() const
-  {
-    return m_nextroot.c_str();
-  }
+  inline const char* NextRoot() const { return m_nextroot.c_str(); }
 
   /** return the root of the previous sequence
    * @param oldroot is composed by the m_title and m_series
    */
-  bool PreviousRoot( std::string& oldroot) const;
+  bool PreviousRoot(std::string& oldroot) const;
 
   ///title of the project
   std::string m_title;
@@ -110,6 +97,6 @@ struct ProjectData: public OhmmsElementBase
   ///the xml node for <Project/>
   xmlNodePtr m_cur;
 };
-}
+} // namespace qmcplusplus
 
 #endif

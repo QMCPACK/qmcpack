@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_DISTRIBUTEDINDEX_H
@@ -39,20 +37,19 @@
 
 struct DistributedIndex
 {
-
   typedef std::list<int> List_t;
   typedef std::list<int>::iterator iterator;
   typedef std::list<int>::const_iterator const_iterator;
 
-  std::map<int,List_t*> I;
+  std::map<int, List_t*> I;
   std::vector<int> M;
   int NumData;
 
-  inline DistributedIndex():NumData(0) { }
+  inline DistributedIndex() : NumData(0) {}
   inline ~DistributedIndex()
   {
-    std::map<int,List_t*>::iterator it=I.begin();
-    while(it != I.end())
+    std::map<int, List_t*>::iterator it = I.begin();
+    while (it != I.end())
     {
       delete (*it).second;
       ++it;
@@ -62,34 +59,33 @@ struct DistributedIndex
   void create(int npart)
   {
     ///first clean up
-    std::map<int,List_t*>::iterator it=I.begin();
-    while(it != I.end())
+    std::map<int, List_t*>::iterator it = I.begin();
+    while (it != I.end())
     {
       delete (*it).second;
       ++it;
     }
-    for(int i=0; i<npart; i++)
+    for (int i = 0; i < npart; i++)
     {
       I[i] = new std::list<int>;
     }
   }
 
-  template <class _InputIterator>
-  inline
-  void distribute(_InputIterator first, _InputIterator last)
+  template<class _InputIterator>
+  inline void distribute(_InputIterator first, _InputIterator last)
   {
-    int n=0,i=0;
+    int n = 0, i = 0;
     _InputIterator first_s = first;
-    while(first_s != last)
+    while (first_s != last)
     {
       n++;
       first_s++;
     }
-    M.resize(n+1);
+    M.resize(n + 1);
     M[0] = 0;
-    while(first != last)
+    while (first != last)
     {
-      M[i+1]=M[i]+(*first);
+      M[i + 1] = M[i] + (*first);
       first++;
     }
     NumData = M[n];
@@ -97,66 +93,42 @@ struct DistributedIndex
 
   inline void distribute(int ntot, int npart)
   {
-    FairDivide(ntot,npart,M);
+    FairDivide(ntot, npart, M);
     NumData = M[npart];
   }
 
-  inline int size() const
-  {
-    return NumData;
-  }
+  inline int size() const { return NumData; }
   inline int capacity() const
   {
-    if(I.empty())
+    if (I.empty())
     {
       return M[1];
     }
     else
     {
-      std::map<int,List_t*>::const_iterator it=I.begin();
-      std::list<int>::size_type n=0;
-      while(it != I.end())
+      std::map<int, List_t*>::const_iterator it = I.begin();
+      std::list<int>::size_type n               = 0;
+      while (it != I.end())
       {
-        n = std::max(n,(*it).second->size());
+        n = std::max(n, (*it).second->size());
         ++it;
       }
       return int(n);
     }
   }
 
-  inline int size(int i) const
-  {
-    return M[i+1]-M[i];
-  }
-  inline int first_data(int i) const
-  {
-    return M[i];
-  }
-  inline int last_data(int i) const
-  {
-    return M[i];
-  }
-  inline iterator begin(int i)
-  {
-    return I[i]->begin();
-  }
-  inline iterator end(int i)
-  {
-    return I[i]->end();
-  }
-  inline const_iterator begin(int i)
-  {
-    return I[i]->begin();
-  }
-  inline const_iterator end(int i)
-  {
-    return I[i]->end();
-  }
+  inline int size(int i) const { return M[i + 1] - M[i]; }
+  inline int first_data(int i) const { return M[i]; }
+  inline int last_data(int i) const { return M[i]; }
+  inline iterator begin(int i) { return I[i]->begin(); }
+  inline iterator end(int i) { return I[i]->end(); }
+  inline const_iterator begin(int i) { return I[i]->begin(); }
+  inline const_iterator end(int i) { return I[i]->end(); }
 
   inline void clear()
   {
-    std::map<int,List_t*>::iterator it=I.begin();
-    while(it != I.end())
+    std::map<int, List_t*>::iterator it = I.begin();
+    while (it != I.end())
     {
       (*it).second->clear();
       ++it;
@@ -169,13 +141,11 @@ struct DistributedIndex
     I[i]->push_back(d);
     NumData++;
   }
-
 };
 #else
 
 struct DistributedIndex
 {
-
   typedef std::list<int> List_t;
   typedef std::list<int>::iterator iterator;
   typedef std::list<int>::const_iterator const_iterator;
@@ -199,19 +169,18 @@ struct DistributedIndex
   int NumData;
 
   ///default constructor
-  inline DistributedIndex():NumData(0) { }
+  inline DistributedIndex() : NumData(0) {}
 
-  inline DistributedIndex(const DistributedIndex& old):
-    M(old.M),NumData(old.NumData)
+  inline DistributedIndex(const DistributedIndex& old) : M(old.M), NumData(old.NumData)
   {
-    for(int i=0; i<old.I.size(); ++i)
+    for (int i = 0; i < old.I.size(); ++i)
       I.push_back(new List_t(*I[i]));
   }
 
   ///destructor
   inline ~DistributedIndex()
   {
-    for(int i=0; i<I.size(); i++)
+    for (int i = 0; i < I.size(); i++)
       delete I[i];
   }
 
@@ -222,8 +191,8 @@ struct DistributedIndex
    */
   void create(int npart)
   {
-    int dn = npart-I.size();
-    while(dn)
+    int dn = npart - I.size();
+    while (dn)
     {
       I.push_back(new std::list<int>);
       --dn;
@@ -241,7 +210,7 @@ struct DistributedIndex
    */
   inline void distribute(int ntot, int npart)
   {
-    FairDivide(ntot,npart,M);
+    FairDivide(ntot, npart, M);
     NumData = M[npart];
   }
 
@@ -252,22 +221,21 @@ struct DistributedIndex
    *The number of groups are determined by last-first.
    *The containers to store data lists and aux counters are resized.
    */
-  template <class _InputIterator>
-  inline
-  void distribute(_InputIterator first, _InputIterator last)
+  template<class _InputIterator>
+  inline void distribute(_InputIterator first, _InputIterator last)
   {
-    int n=0,i=0;
+    int n = 0, i = 0;
     _InputIterator first_s = first;
-    while(first_s != last)
+    while (first_s != last)
     {
       n++;
       first_s++;
     }
-    M.resize(n+1);
+    M.resize(n + 1);
     M[0] = 0;
-    while(first != last)
+    while (first != last)
     {
-      M[i+1]=M[i]+(*first);
+      M[i + 1] = M[i] + (*first);
       first++;
       i++;
     }
@@ -277,91 +245,61 @@ struct DistributedIndex
   ///return the capacity of containers
   inline int capacity() const
   {
-    if(I.empty())
+    if (I.empty())
     {
       return M[1];
     }
     else
     {
-      std::list<int>::size_type n=0;
-      for(int i=0; i<I.size(); i++)
+      std::list<int>::size_type n = 0;
+      for (int i = 0; i < I.size(); i++)
       {
-        n = std::max(n,I[i]->size());
+        n = std::max(n, I[i]->size());
       }
       return int(n);
     }
   }
 
   ///return the size of groups
-  inline int getNumDataSets() const
-  {
-    return I.size();
-  }
+  inline int getNumDataSets() const { return I.size(); }
 
   ///return the size of the data
-  inline int getNumData() const
-  {
-    return NumData;
-  }
+  inline int getNumData() const { return NumData; }
 
   /**return the size of the group i
    *@param i the group index
    */
-  inline int getNumData(int i) const
-  {
-    return M[i+1]-M[i];
-  }
+  inline int getNumData(int i) const { return M[i + 1] - M[i]; }
 
   /**return the first data of the group i
    *@param i the group index
    */
-  inline int first_data(int i) const
-  {
-    return M[i];
-  }
+  inline int first_data(int i) const { return M[i]; }
 
   /**return the last data of the group i
    *@param i the group index
    */
-  inline int last_data(int i) const
-  {
-    return M[i+1];
-  }
+  inline int last_data(int i) const { return M[i + 1]; }
 
   ///return the size of the group i
-  inline int size(int i) const
-  {
-    return I[i]->size();
-  }
+  inline int size(int i) const { return I[i]->size(); }
   ///return the starting iterator of the group i
-  inline iterator begin(int i)
-  {
-    return I[i]->begin();
-  }
+  inline iterator begin(int i) { return I[i]->begin(); }
   ///return the ending iterator of the group i
-  inline iterator end(int i)
-  {
-    return I[i]->end();
-  }
+  inline iterator end(int i) { return I[i]->end(); }
   ///return the starting const_iterator of the group i
-  inline const_iterator begin(int i) const
-  {
-    return I[i]->begin();
-  }
+  inline const_iterator begin(int i) const { return I[i]->begin(); }
   ///return the ending const_iterator of the group i
-  inline const_iterator end(int i) const
-  {
-    return I[i]->end();
-  }
+  inline const_iterator end(int i) const { return I[i]->end(); }
 
   ///print groupings for test/debug
   inline void print(std::ostream& os) const
   {
-    os  << "The number of data sets " << I.size() << std::endl;
-    for(int ig=0; ig<I.size(); ig++)
+    os << "The number of data sets " << I.size() << std::endl;
+    for (int ig = 0; ig < I.size(); ig++)
     {
       os << "Data set " << ig << std::endl;
-      copy(I[ig]->begin(), I[ig]->end(),std::ostream_iterator<int>(os, " "));
+      copy(I[ig]->begin(), I[ig]->end(), std::ostream_iterator<int>(os, " "));
       os << std::endl;
     }
   }
@@ -373,7 +311,7 @@ struct DistributedIndex
    */
   inline void clear()
   {
-    for(int i=0; i<I.size(); i++)
+    for (int i = 0; i < I.size(); i++)
       I[i]->clear();
     NumData = 0;
   }
@@ -387,7 +325,6 @@ struct DistributedIndex
     I[i]->push_back(d);
     NumData++;
   }
-
 };
 #endif
 #endif

@@ -136,7 +136,7 @@ namespace afqmc
     if(  std::forward_as_tuple(std::get<2>(val),std::get<3>(val) ) < std::forward_as_tuple(std::get<0>(val),std::get<1>(val) )  ) {
       std::swap(std::get<0>(val),std::get<2>(val));
       std::swap(std::get<1>(val),std::get<3>(val));
-      std::get<4>(val) = std::conj(std::get<4>(val));
+      std::get<4>(val) = ma::conj(std::get<4>(val));
       // jl < ik again since ij<->kl swap occured
       if(  std::forward_as_tuple(std::get<1>(val),std::get<3>(val) ) < std::forward_as_tuple(std::get<0>(val),std::get<2>(val) )  ) {
         std::swap(std::get<0>(val),std::get<1>(val));
@@ -149,7 +149,7 @@ namespace afqmc
       if( std::forward_as_tuple(std::get<3>(val),std::get<2>(val) ) < std::forward_as_tuple(std::get<0>(val),std::get<1>(val) )  ) {
         std::swap(std::get<0>(val),std::get<3>(val));
         std::swap(std::get<2>(val),std::get<1>(val));
-        std::get<4>(val) = std::conj(std::get<4>(val));
+        std::get<4>(val) = ma::conj(std::get<4>(val));
         return true;
       }
       return false;

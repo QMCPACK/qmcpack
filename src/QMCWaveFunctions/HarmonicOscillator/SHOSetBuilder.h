@@ -9,8 +9,7 @@
 //
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
 
 #ifndef QMCPLUSPLUS_SHO_BASIS_BUILDER_H
 #define QMCPLUSPLUS_SHO_BASIS_BUILDER_H
@@ -21,44 +20,42 @@
 
 namespace qmcplusplus
 {
+struct SHOSetBuilder : public SPOSetBuilder
+{
+  //enum{DIM=OHMMS_DIM}
 
-  struct SHOSetBuilder : public SPOSetBuilder
-  {
+  ParticleSet& Ps;
 
-    //enum{DIM=OHMMS_DIM}
+  RealType length;
+  RealType mass;
+  RealType energy;
+  PosType center;
 
-    ParticleSet& Ps;
+  int nstates;
+  int nmax;
+  TinyVector<int, DIM> ind_dims;
 
-    RealType length;
-    RealType mass;
-    RealType energy;
-    PosType  center;
+  SPOSetInfoSimple<SHOState> basis_states;
 
-    int nstates;
-    int nmax;
-    TinyVector<int,DIM> ind_dims;
+  //construction/destruction
+  SHOSetBuilder(ParticleSet& P, Communicate* comm);
 
-    SPOSetInfoSimple<SHOState> basis_states;
+  ~SHOSetBuilder();
 
-    //construction/destruction
-    SHOSetBuilder(ParticleSet& P, Communicate *comm);
+  //reset parameters
+  void reset();
 
-    ~SHOSetBuilder();
+  //SPOSetBuilder interface
+  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
 
-    //reset parameters
-    void reset();
+  SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input);
 
-    //SPOSetBuilder interface
-    SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  //local functions
+  void update_basis_states(int smax);
+  void report(const std::string& pad = "");
+};
 
-    SPOSet* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
-    
-    //local functions
-    void update_basis_states(int smax);
-    void report(const std::string& pad="");
-  };
-
-}
+} // namespace qmcplusplus
 
 
 #endif

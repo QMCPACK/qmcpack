@@ -10,9 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /** @file CommUtilities.h
@@ -24,37 +21,39 @@
 #if defined(HAVE_MPI)
 namespace qmcplusplus
 {
-template<typename IT> inline void wait_all(IT first, IT last)
+template<typename IT>
+inline void wait_all(IT first, IT last)
 {
-  std::vector<Communicate::request> r(first,last);
+  std::vector<Communicate::request> r(first, last);
   std::vector<Communicate::status> st(r.size());
-  MPI_Waitall(r.size(),&(r[0]),&(st[0]));
+  MPI_Waitall(r.size(), &(r[0]), &(st[0]));
 }
 
-template<typename CT> inline void wait_all(CT& requests)
+template<typename CT>
+inline void wait_all(CT& requests)
 {
   std::vector<Communicate::status> st(requests.size());
-  MPI_Waitall(requests.size(),&(requests[0]),&(st[0]));
+  MPI_Waitall(requests.size(), &(requests[0]), &(st[0]));
 }
 
 
 inline void wait_all(int n, Communicate::request* pending)
 {
   std::vector<Communicate::status> st(n);
-  MPI_Waitall(n,pending,&(st[0]));
+  MPI_Waitall(n, pending, &(st[0]));
 }
 
 template<typename CT>
 inline void cancel(CT& r)
 {
-  for(int i=0; i<r.size(); i++)
+  for (int i = 0; i < r.size(); i++)
     MPI_Cancel(&r[i]);
 }
 
 template<typename IT>
 inline void cancel(IT first, IT last)
 {
-  while(first != last)
+  while (first != last)
   {
     MPI_Cancel(&(*first));
     ++first;
@@ -67,16 +66,17 @@ inline void bcast(T& a, Communicate* comm)
   comm->bcast(a);
 }
 
-}
+} // namespace qmcplusplus
 #else
 namespace qmcplusplus
 {
 template<typename CT>
-inline void cancel(CT& r) { }
+inline void cancel(CT& r)
+{}
 
 template<typename T>
-inline void bcast(T& a, Communicate* comm) { }
-}
+inline void bcast(T& a, Communicate* comm)
+{}
+} // namespace qmcplusplus
 #endif
 #endif
-
