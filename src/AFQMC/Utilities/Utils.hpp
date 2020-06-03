@@ -7,7 +7,7 @@
 // File developed by:
 //
 // File created by:
-// Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+// Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef AFQMC_UTILITIES_UTILS_HPP
@@ -34,15 +34,15 @@
 #include "cuda_runtime.h"
 #elif ENABLE_HIP
 #include "AFQMC/Memory/device_pointers.hpp"
-#include "AFQMC/Memory/HIP/cuda_arch.h"
+#include "AFQMC/Memory/HIP/hip_arch.h"
 #include "AFQMC/Numerics/device_kernels.hpp"
 #include "hip_runtime.h"
 #endif
 
-namespace qmcplusplus 
-{ 
+namespace qmcplusplus
+{
 
-namespace afqmc 
+namespace afqmc
 {
 
 inline bool file_exists (const std::string& name) {
@@ -63,7 +63,7 @@ T get_parameter(Factory& F, std::string const& obj_name, std::string const& pnam
     m_param.add(res,pname.c_str(),type_to_string<T>().c_str());
     m_param.put(cur);
     return res;
-  } 
+  }
 }
 
 template<class Iter, class Compare>
@@ -174,7 +174,7 @@ void balance_partition_ordered_set(integer N, IType const* indx, std::vector<ITy
 //    auto partition = [=] (IType i0, IType iN, int n, Iter vals) {
     auto partition = [=] (IType i0, IType iN, int n, typename std::list<IType>::iterator vals) {
 
-      // finds optimal position for subsets[i] 
+      // finds optimal position for subsets[i]
       auto step = [=] (IType i0, IType iN, IType& ik) {
         IType imin = ik;
         ik = i0+1;
@@ -271,7 +271,7 @@ void balance_partition_ordered_set(integer N, IType const* indx, std::vector<ITy
 template<typename IType>
 void balance_partition_ordered_set(std::vector<IType> const& indx, std::vector<IType>& subsets) {
   if(indx.size()<2 || subsets.size()<2) return;
-  balance_partition_ordered_set(indx.size()-1,indx.data(),subsets); 
+  balance_partition_ordered_set(indx.size()-1,indx.data(),subsets);
 }
 
 template<typename IType>
@@ -354,12 +354,20 @@ inline void memory_report()
 #endif
 }
 
-#ifdef defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+// TODO: FDM : why not use standard naming convention like arch::afqmc_rand_generator?
+#if defined(ENABLE_CUDA)
 template<class T,
         class Dummy>
-void sampleGaussianFields_n(device::device_pointer<T> V, int n, Dummy &r) 
+void sampleGaussianFields_n(device::device_pointer<T> V, int n, Dummy &r)
 {
   kernels::sampleGaussianRNG(to_address(V),n,arch::afqmc_curand_generator);
+}
+#elif defined(ENABLE_HIP)
+template<class T,
+        class Dummy>
+void sampleGaussianFields_n(device::device_pointer<T> V, int n, Dummy &r)
+{
+  kernels::sampleGaussianRNG(to_address(V),n,arch::afqmc_rocrand_generator);
 }
 #endif
 
