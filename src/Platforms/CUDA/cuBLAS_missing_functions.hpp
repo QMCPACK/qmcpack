@@ -18,7 +18,12 @@
 
 namespace qmcplusplus
 {
-/** interface to cuBLAS_MFs calls for different data types S/C/D/Z
+/** Implement selected batched BLAS1/2 calls using CUDA for different data types S/C/D/Z.
+ * cuBLAS_MFs stands for missing functions in cuBLAS.
+ * 1) column major just like the BLAS fortran API
+ * 2) all the functions are asynchronous
+ * 3) all the pointer arguments are expected as device pointers.
+ * 4) in batched APIs, alpha and beta are **not** scalars but pointers to array of batch size.
  */
 namespace cuBLAS_MFs
 {
@@ -26,7 +31,21 @@ typedef cudaError_t cuBLAS_MFs_status;
 typedef cudaStream_t cuBLAS_MFs_handle;
 
 // BLAS2
-// Xgemv_batched
+/** Xgemv batched API
+ * @param handle handle for asynchronous computation
+ * @param trans whether A matrices are transposed
+ * @param m number of rows in A
+ * @param n number of columns in A
+ * @param alpha the factor vector of A
+ * @param A device array of device pointers of matrices
+ * @param lda leading dimension of A
+ * @param x device array of device pointers of vector
+ * @param incx increment for the elements of x. It cannot be zero.
+ * @param beta the factor vector of vector y
+ * @param y device array of device pointers of vector
+ * @param incy increment for the elements of y. It cannot be zero.
+ * @param batch_count batch size
+ */
 cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
                                const char trans,
                                const int m,
@@ -83,7 +102,19 @@ cuBLAS_MFs_status gemv_batched(cuBLAS_MFs_handle& handle,
                                const int incy,
                                const int batch_count);
 
-// Xger_batched
+/** Xger batched API
+ * @param handle handle for asynchronous computation
+ * @param m number of rows in A
+ * @param n number of columns in A
+ * @param alpha the factor vector of A
+ * @param x device array of device pointers of vector
+ * @param incx increment for the elements of x. It cannot be zero.
+ * @param y device array of device pointers of vector
+ * @param incy increment for the elements of y. It cannot be zero.
+ * @param A device array of device pointers of matrices
+ * @param lda leading dimension of A
+ * @param batch_count batch size
+ */
 cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
                               const int m,
                               const int n,
@@ -133,7 +164,15 @@ cuBLAS_MFs_status ger_batched(cuBLAS_MFs_handle& handle,
                               const int batch_count);
 
 // BLAS1
-// Xcopy_batched
+/** Xcopy batched API
+ * @param handle handle for asynchronous computation
+ * @param n number of elements to be copied
+ * @param in device array of device pointers of vector
+ * @param incx increment for the elements of in. It cannot be zero.
+ * @param out device array of device pointers of vector
+ * @param incy increment for the elements of out. It cannot be zero.
+ * @param batch_count batch size
+ */
 cuBLAS_MFs_status copy_batched(cudaStream_t& hstream,
                                const int n,
                                const float* const in[],
