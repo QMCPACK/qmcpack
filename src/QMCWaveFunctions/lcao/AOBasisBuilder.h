@@ -142,7 +142,8 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
 
   // Numerical basis is a special case
   if (basisType == "Numerical")
-    radFuncBuilder.openNumericalBasisH5(cur);
+    APP_ABORT("Purely numerical atomic orbitals are not supported any longer.");
+
   return true;
 }
 
