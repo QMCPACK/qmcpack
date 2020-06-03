@@ -46,7 +46,7 @@ namespace device
   inline static void copy(int n, device_pointer<Q> x, int incx, device_pointer<T> y, int incy)
   {
     static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
-    if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_copy(*x.handles.blas_handle,n,to_address(x),incx,to_address(y),incy))
+    if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_copy(*x.handles.hipblas_handle,n,to_address(x),incx,to_address(y),incy))
       throw std::runtime_error("Error: hipblas_copy returned error code.");
   }
 
@@ -76,7 +76,7 @@ namespace device
   inline static void scal(int n, Q alpha, device_pointer<T> x, int incx=1)
   {
     static_assert(std::is_convertible<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
-    if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_scal(*x.handles.blas_handle,n,T(alpha),to_address(x),incx))
+    if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_scal(*x.handles.hipblas_handle,n,T(alpha),to_address(x),incx))
       throw std::runtime_error("Error: hipblas_scal returned error code.");
   }
 
@@ -87,7 +87,7 @@ namespace device
   {
     static_assert(std::is_same<typename std::decay<Q>::type,
                                typename std::decay<T>::type>::value,"Wrong dispatch.\n");
-    return hipblas::hipblas_dot(*x.handles.blas_handle,n,to_address(x),incx,to_address(y),incy);
+    return hipblas::hipblas_dot(*x.handles.hipblas_handle,n,to_address(x),incx,to_address(y),incy);
   }
 
   // axpy Specializations
@@ -97,7 +97,7 @@ namespace device
                           device_pointer<T> y, int incy)
   {
     static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
-    if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_axpy(*x.handles.blas_handle,n,a,
+    if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_axpy(*x.handles.hipblas_handle,n,a,
                                                     to_address(x),incx,to_address(y),incy))
       throw std::runtime_error("Error: hipblas_axpy returned error code.");
   }
@@ -113,7 +113,7 @@ namespace device
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T2>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
-    if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_gemv(*A.handles.blas_handle,Atrans,
+    if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_gemv(*A.handles.hipblas_handle,Atrans,
                                             M,N,alpha,to_address(A),lda,to_address(x),incx,
                                             beta,to_address(y),incy))
       throw std::runtime_error("Error: hipblas_gemv returned error code.");
@@ -131,7 +131,7 @@ namespace device
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T2>::value,"Wrong dispatch.\n");
-    if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_gemm(*A.handles.blas_handle,Atrans,Btrans,
+    if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_gemm(*A.handles.hipblas_handle,Atrans,Btrans,
                                             M,N,K,alpha,to_address(A),lda,to_address(B),ldb,beta,to_address(C),ldc))
       throw std::runtime_error("Error: hipblas_gemm returned error code.");
   }
@@ -148,7 +148,7 @@ namespace device
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
-    if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_geam(*A.handles.blas_handle,Atrans,Btrans,M,N,alpha,to_address(A),lda,
+    if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_geam(*A.handles.hipblas_handle,Atrans,Btrans,M,N,alpha,to_address(A),lda,
                                                     beta,to_address(B),ldb,to_address(C),ldc))
       throw std::runtime_error("Error: hipblas_geam returned error code.");
   }
@@ -266,7 +266,7 @@ namespace device
   {
     static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
     static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
-    hipblas::hipblas_gemmStridedBatched(*A.handles.blas_handle,Atrans,Btrans,M,N,K,
+    hipblas::hipblas_gemmStridedBatched(*A.handles.hipblas_handle,Atrans,Btrans,M,N,K,
                alpha,to_address(A),lda,strideA,to_address(B),ldb,strideB,
                beta,to_address(C),ldc,strideC,batchSize);
   }
@@ -301,7 +301,7 @@ namespace device
     hipMemcpy(A_d, A_h, batchSize*sizeof(*A_h), hipMemcpyHostToDevice);
     hipMemcpy(B_d, B_h, batchSize*sizeof(*B_h), hipMemcpyHostToDevice);
     hipMemcpy(C_d, C_h, batchSize*sizeof(*C_h), hipMemcpyHostToDevice);
-    hipblas::hipblas_gemmBatched(*(A[0]).handles.blas_handle,Atrans,Btrans,M,N,K,
+    hipblas::hipblas_gemmBatched(*(A[0]).handles.hipblas_handle,Atrans,Btrans,M,N,K,
                alpha,A_d,lda,B_d,ldb,beta,C_d,ldc,batchSize);
     hipFree(A_d);
     hipFree(B_d);
@@ -346,7 +346,7 @@ namespace device
     hipMemcpy(A_d, A_h, batchSize*sizeof(*A_h), hipMemcpyHostToDevice);
     hipMemcpy(B_d, B_h, batchSize*sizeof(*B_h), hipMemcpyHostToDevice);
     hipMemcpy(C_d, C_h, batchSize*sizeof(*C_h), hipMemcpyHostToDevice);
-    hipblas::hipblas_gemmBatched(*(A[0]).handles.blas_handle,Atrans,Btrans,M,N,K,
+    hipblas::hipblas_gemmBatched(*(A[0]).handles.hipblas_handle,Atrans,Btrans,M,N,K,
                alpha,A_d,lda,B_d,ldb,beta,C_d,ldc,batchSize);
     hipFree(A_d);
     hipFree(B_d);
