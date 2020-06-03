@@ -19,7 +19,7 @@
 #include<type_traits>
 #include<cassert>
 #include<vector>
-#include "AFQMC/Memory/hipstom_pointers.hpp"
+#include "AFQMC/Memory/custom_pointers.hpp"
 #include "AFQMC/Numerics/detail/HIP/hipsparse_wrapper.hpp"
 #include "AFQMC/Numerics/detail/HIP/hipblas_wrapper.hpp"
 #include<cassert>
