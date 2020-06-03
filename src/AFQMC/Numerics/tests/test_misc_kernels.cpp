@@ -25,8 +25,11 @@
 #include "AFQMC/Numerics/ma_blas.hpp"
 #include "AFQMC/Numerics/batched_operations.hpp"
 #include "AFQMC/Matrix/tests/matrix_helpers.h"
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_CUDA)
 #include "AFQMC/Numerics/detail/CUDA/blas_cuda_gpu_ptr.hpp"
+#include "AFQMC/Numerics/device_kernels.hpp"
+#elif defined(ENABLE_HIP)
+#include "AFQMC/Numerics/detail/HIP/blas_hip_gpu_ptr.hpp"
 #include "AFQMC/Numerics/device_kernels.hpp"
 #endif
 
