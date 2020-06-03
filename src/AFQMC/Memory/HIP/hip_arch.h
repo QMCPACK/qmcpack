@@ -7,8 +7,8 @@
 // File developed by:
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef AFQMC_HIP_ARCH_HPP
@@ -25,39 +25,35 @@
 #include "hipblas.h"
 //#include "cublasXt.h"
 #include "hipsparse.h"
-#include "cusolverDn.h"
-#ifdef ENABLE_ROCM
 #include "rocsolver.h"
-#endif
-#include "hiprand.hpp"
+#include "rocrand/rocrand.h"
 
 
 namespace arch {
 
-  extern hiprandGenerator_t afqmc_curand_generator;
+  extern rocrand_generator afqmc_rocrand_generator;
 
   struct device_handles {
-    hipblasHandle_t* blas_handle;
+    hipblasHandle_t* hipblas_handle;
 //    cublasXtHandle_t* cublasXt_handle;
-    hipsparseHandle_t* sparse_handle;
-    hiprandGenerator_t* rand_generator;
-#ifdef ENABLE_ROCM
-    rocsolver_handle solver_handle;
-#endif
+    hipsparseHandle_t* hipsparse_handle;
+    //hiprandGenerator_t* rand_generator;
+    rocsolver_handle* rocsolver_handle_;
+    rocrand_generator* rocrand_generator_;
     bool operator==(device_handles const& other) const {
-      return (blas_handle==other.blas_handle &&
+      return (hipblas_handle==other.hipblas_handle &&
 //              cublasXt_handle==other.cublasXt_handle &&
-              sparse_handle==other.sparse_handle &&
-              solver_handle==other.solver_handle &&
-              rand_generator==other.rand_generator);
+              hipsparse_handle==other.hipsparse_handle &&
+              rocsolver_handle_==other.rocsolver_handle_ &&
+              rocrand_generator_==other.rocrand_generator_);
     }
     bool operator!=(device_handles const& other) const { return not (*this == other); }
   };
 
 
-  enum MEMCOPYKIND { memcopyH2H = hipMemcpyHostToHost, 
-                     memcopyH2D = hipMemcpyHostToDevice, 
-                     memcopyD2H = hipMemcpyDeviceToHost, 
+  enum MEMCOPYKIND { memcopyH2H = hipMemcpyHostToHost,
+                     memcopyH2D = hipMemcpyHostToDevice,
+                     memcopyD2H = hipMemcpyDeviceToHost,
                      memcopyD2D = hipMemcpyDeviceToDevice,
                      memcopyDefault = hipMemcpyDefault };
 
@@ -65,11 +61,11 @@ namespace arch {
 
   void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed = 911ULL);
 
-  void memcopy(void* dst, const void* src, size_t count, 
+  void memcopy(void* dst, const void* src, size_t count,
                MEMCOPYKIND kind = memcopyDefault );
 
-  void memcopy2D( void* dst, size_t dpitch, const void* src, 
-                  size_t spitch, size_t width, size_t height, 
+  void memcopy2D( void* dst, size_t dpitch, const void* src,
+                  size_t spitch, size_t width, size_t height,
                   MEMCOPYKIND kind = memcopyDefault);
 
   void malloc(void** devPtr, size_t size);

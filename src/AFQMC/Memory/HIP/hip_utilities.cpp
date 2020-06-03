@@ -20,17 +20,13 @@
 #include<complex>
 #include<cstdlib>
 #include<stdexcept>
-#include "Platforms/Host/OutputManager.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
-#include "AFQMC/Memory/device_pointers.hpp"
 #include <hip/hip_runtime.h>
 #include "hipblas.h"
 //#include "cublasXt.h"
 #include "hipsparse.h"
-#ifdef ENABLE_ROCM
 #include "rocsolver.h"
-#endif
-#include "hiprand.h"
+#include "rocrand/rocrand.h"
 
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
@@ -74,16 +70,16 @@ namespace qmc_hip {
 
   void hiprand_check(hiprandStatus_t sucess, std::string message)
   {
-    if(HIPRAND_STATUS_SUCCESS != sucess) {
+    if(ROCRAND_STATUS_SUCCESS != sucess) {
       std::cerr<<message <<std::endl;
       std::cerr.flush();
       throw std::runtime_error(" Error code returned by hiprand. \n");
     }
   }
 
-  void hipsolver_check(cusolverStatus_t sucess, std::string message)
+  void hipsolver_check(hipsolverStatus_t sucess, std::string message)
   {
-    if(CUSOLVER_STATUS_SUCCESS != sucess) {
+    if(rocblas_status_success != sucess) {
       std::cerr<<message <<std::endl;
       std::cerr.flush();
       throw std::runtime_error(" Error code returned by hipsolver. \n");
@@ -97,6 +93,18 @@ namespace qmc_hip {
       return HIPBLAS_OP_T;
     else if(A=='C' or A=='c')
       return HIPBLAS_OP_C;
+    else {
+      throw std::runtime_error("unknown hipblasOperation option");
+    }
+  }
+
+  rocblasOperation_t rocblasOperation(char A) {
+    if(A=='N' or A=='n')
+      return rocblas_operation_none;
+    else if(A=='T' or A=='t')
+      return rocblas_operation_transpose;
+    else if(A=='C' or A=='c')
+      return rocblas_operation_conjugate_transpose;
     else {
       throw std::runtime_error("unknown hipblasOperation option");
     }

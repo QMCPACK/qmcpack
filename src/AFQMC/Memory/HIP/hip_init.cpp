@@ -20,13 +20,11 @@
 
 namespace arch {
 
-extern hipblasHandle_t afqmc_blas_handle;
+extern hipblasHandle_t afqmc_hipblas_handle;
 //extern  cublasXtHandle_t afqmc_cublasXt_handle;
-extern hipsparseHandle_t afqmc_sparse_handle;
-#ifdef ENABLE_ROCM
-extern rocsolver_handle afqmc_solver_handle;
-#endif
-extern hiprandGenerator_t afqmc_rand_generator;
+extern hipsparseHandle_t afqmc_hipsparse_handle;
+extern rocsolver_handle afqmc_rocsolver_handle;
+extern rocrand_generator afqmc_rocrand_generator;
 
 }
 
@@ -43,7 +41,7 @@ namespace device {
 namespace qmc_hip {
 
   extern bool afqmc_hip_handles_init;
-  extern hipsparseMatDescr_t afqmc_cusparse_matrix_descr;
+  extern hipsparseMatDescr_t afqmc_hipsparse_matrix_descr;
 
   extern std::vector<hipStream_t> afqmc_hip_streams;
 
@@ -76,24 +74,28 @@ namespace qmc_hip {
 
     hip_check(hipSetDevice(node.rank()),"hipSetDevice()");
 
-    hipblas_check(hipblasCreate (& arch::afqmc_blas_handle ), "hipblasCreate");
+    hipblas_check(hipblasCreate (& arch::afqmc_hipblas_handle ), "hipblasCreate");
 //    cublas_check(cublasXtCreate (& arch::afqmc_cublasXt_handle ), "cublasXtCreate");
     int devID[8] {0,1,2,3,4,5,6,7};
 //    cublas_check(cublasXtDeviceSelect(arch::afqmc_cublasXt_handle, 1, devID), "cublasXtDeviceSelect");
-//    cublas_check(cublasXtSetPinningMemMode(arch::afqmc_cublasXt_handle, CUBLASXT_PINNING_ENABLED), 
+//    cublas_check(cublasXtSetPinningMemMode(arch::afqmc_cublasXt_handle, CUBLASXT_PINNING_ENABLED),
 //                                            "cublasXtSetPinningMemMode");
-    hipsolver_check(cusolverDnCreate (& arch::afqmc_solver_handle ), "hipsolverDnCreate");
+    // Does not appear to necessary with rocsolver
+    //hipsolver_check(cusolverDnCreate (& arch::afqmc_rocsolver_handle ), "hipsolverDnCreate");
     //curand_check(hiprandCreateGenerator(&arch::afqmc_curand_generator, HIPRAND_RNG_PSEUDO_DEFAULT),
-    hiprand_check(hiprandCreateGenerator(&arch::afqmc_rand_generator, HIPRAND_RNG_PSEUDO_MT19937),
-                                            "hiprandCreateGenerator");
-    hiprand_check(hiprandSetPseudoRandomGeneratorSeed(arch::afqmc_rand_generator,iseed),
-                                            "hiprandSetPseudoRandomGeneratorSeed");
+    //hiprand_check(hiprandCreateGenerator(&arch::afqmc_rocrand_generator, HIPRAND_RNG_PSEUDO_MT19937),
+                                            //"hiprandCreateGenerator");
+    //hiprand_check(hiprandSetPseudoRandomGeneratorSeed(arch::afqmc_rocrand_generator,iseed),
+                                            //"hiprandSetPseudoRandomGeneratorSeed");
 
-    hipsparse_check(hipsparseCreate (& arch::afqmc_sparse_handle ), "hipsparseCreate");
-    hipsparse_check(hipsparseCreateMatDescr(&afqmc_hipsparse_matrix_descr), 
-            "hipsparseCreateMatDescr: Matrix descriptor initialization failed"); 
+    hiprand_check(rocrand_create_generator(&arch::afqmc_rocrand_generator, ROCRAND_RNG_PSEUDO_MTGP32),
+                  "rocrand_create_generator");
+    hiprand_check(rocrand_set_seed(arch::afqmc_rocrand_generator, iseed), "rocrand_set_seed");
+    hipsparse_check(hipsparseCreate(&arch::afqmc_hipsparse_handle), "hipsparseCreate");
+    hipsparse_check(hipsparseCreateMatDescr(&afqmc_hipsparse_matrix_descr),
+            "hipsparseCreateMatDescr: Matrix descriptor initialization failed");
     hipsparseSetMatType(afqmc_hipsparse_matrix_descr,HIPSPARSE_MATRIX_TYPE_GENERAL);
-    hipsparseSetMatIndexBase(afqmc_hipsparse_matrix_descr,HIPSPARSE_INDEX_BASE_ZERO); 
+    hipsparseSetMatIndexBase(afqmc_hipsparse_matrix_descr,HIPSPARSE_INDEX_BASE_ZERO);
 
 /*
     device::cusparse_buffer = new boost::multi::array<std::complex<double>,1,

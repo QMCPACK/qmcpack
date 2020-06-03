@@ -26,12 +26,9 @@
 #include "hipblas.h"
 //#include "cublasXt.h"
 #include "hipsparse.h"
-#ifdef defined(ENABLE_ROCM) && defined(ENABLE_HIP)
 #include "rocsolver.h"
-#else
-#error "ENABLE_ROCM not defined"
-#endif
-#include "hiprand.hpp"
+//#include "hiprand.hpp"
+#include "rocrand/rocrand.h"
 
 namespace qmcplusplus {
 namespace afqmc {
@@ -42,11 +39,12 @@ namespace afqmc {
 
 namespace arch {
 
-  hipblasHandle_t afqmc_blas_handle;
+  hipblasHandle_t afqmc_hipblas_handle;
 //  cublasXtHandle_t afqmc_cublasXt_handle;
-  hipsparseHandle_t afqmc_sparse_handle;
-  rocsolver_handle afqmc_solver_handle;
-  hiprandGenerator_t afqmc_rand_generator;
+  hipsparseHandle_t afqmc_hipsparse_handle;
+  rocsolver_handle afqmc_rocsolver_handle;
+  //hiprandGenerator_t afqmc_rand_generator;
+  rocrand_generator afqmc_rocrand_generator;
 
   hipMemcpyKind tohipMemcpyKind(MEMCOPYKIND v) {
     switch(v)
@@ -113,13 +111,13 @@ namespace arch {
 namespace device {
 
   boost::multi::array<std::complex<double>,1,device::device_allocator<std::complex<double>>>
-                            *cusparse_buffer(nullptr);
+                            *hipsparse_buffer(nullptr);
 
-  arch::device_handles base_device_pointer::handles{&arch::afqmc_blas_handle,
+  arch::device_handles base_device_pointer::handles{&arch::afqmc_hipblas_handle,
 //                                         &afqmc_cublasXt_handle,
-                                         &arch::afqmc_sparse_handle,
-                                         &arch::afqmc_solver_handle,
-                                         &arch::afqmc_rand_generator
+                                         &arch::afqmc_hipsparse_handle,
+                                         &arch::afqmc_rocsolver_handle,
+                                         &arch::afqmc_rocrand_generator
                                         };
 
 }
