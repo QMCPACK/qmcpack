@@ -138,16 +138,6 @@ IF (NOT QMC_CUDA)
     #
     # H4 starting from unoptimized CIS coefficients, targeting the first excited state, and using the adaptive linear method
     #
-    LIST(APPEND H4_FDLR_SCALARS "totenergy" "-1.82507816 0.001") # total energy
-
-    QMC_RUN_AND_CHECK(short-H4-FDLR
-                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
-                      H4
-                      H4_FDLR_CIS_opt.xml
-                      16 1
-                      ${MP_SUCCESS}
-                      8 H4_FDLR_SCALARS # Final VMC step
-                      TRUE)
 
     LIST(APPEND H4_CJS_SCALARS "totenergy" "-2.0438 0.0045") # total energy
 

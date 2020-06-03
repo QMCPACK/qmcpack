@@ -53,8 +53,6 @@ public:
   static std::string dtable_tag;
   /// the element name for jatrow
   static std::string jastrow_tag;
-  /// the element name for a finite-difference linear response wavefunction
-  static std::string fdlrwfn_tag;
   /// the element name for a set of Slater determinants, contains 1..* Slater determinants
   static std::string detset_tag;
   /// the element name for a Slater determinant, contains 1..* determinants
