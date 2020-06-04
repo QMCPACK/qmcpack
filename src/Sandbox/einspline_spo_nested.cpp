@@ -15,7 +15,7 @@
  */
 #include <Configuration.h>
 #include <Particle/ParticleSet.h>
-#include <random/random.hpp>
+#include "random.hpp"
 #include <mpi/collectives.h>
 #include <Sandbox/input.hpp>
 #include <Sandbox/pseudo.hpp>

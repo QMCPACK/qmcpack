@@ -20,6 +20,8 @@
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
   ${qmcpack_BINARY_DIR}/src/config.h)
 
+INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
+
 SET(GITREV_BARE_FILE git-rev.h)
 SET(GITREV_BARE_TMP git-rev-tmp.h)
 SET(GITREV_FILE ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_FILE})
@@ -220,8 +222,6 @@ else() #{{{
 
   IF (BUILD_UNIT_TESTS) #{
     #Unit test directories
-    INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
-    INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
     SUBDIRS(OhmmsPETE/tests)
     SUBDIRS(OhmmsSoA/tests)
     SUBDIRS(Numerics/tests)
