@@ -79,6 +79,7 @@ private:
     std::vector< std::vector< double > > eigvals;
     std::map<std::string,int> str_to_l;
     int spin;
+    std::vector<double> A,B,C; //reciprocal lattice
 };
 
 #endif

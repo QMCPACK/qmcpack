@@ -132,6 +132,9 @@ void CrystalAsciiParser::getCell(std::istream& is)
   X.resize(3);
   Y.resize(3);
   Z.resize(3);
+  A.resize(3);
+  B.resize(3);
+  C.resize(3);
 
   is.clear();
   is.seekg(pivot_begin);
@@ -142,18 +145,33 @@ void CrystalAsciiParser::getCell(std::istream& is)
   X[0] = atof(currentWords[0].c_str());
   X[1] = atof(currentWords[1].c_str());
   X[2] = atof(currentWords[2].c_str());
+  A[0] = atof(currentWords[3].c_str());
+  A[1] = atof(currentWords[4].c_str());
+  A[2] = atof(currentWords[5].c_str());
   getwords(currentWords, is);
   Y[0] = atof(currentWords[0].c_str());
   Y[1] = atof(currentWords[1].c_str());
   Y[2] = atof(currentWords[2].c_str());
+  B[0] = atof(currentWords[3].c_str());
+  B[1] = atof(currentWords[4].c_str());
+  B[2] = atof(currentWords[5].c_str());
   getwords(currentWords, is);
   Z[0] = atof(currentWords[0].c_str());
   Z[1] = atof(currentWords[1].c_str());
   Z[2] = atof(currentWords[2].c_str());
+  C[0] = atof(currentWords[3].c_str());
+  C[1] = atof(currentWords[4].c_str());
+  C[2] = atof(currentWords[5].c_str());
   std::cout << "Lattice parameters in Bohr:" << std::endl;
   std::cout << X[0] << "  " << X[1] << "  " << X[2] << std::endl;
   std::cout << Y[0] << "  " << Y[1] << "  " << Y[2] << std::endl;
   std::cout << Z[0] << "  " << Z[1] << "  " << Z[2] << std::endl;
+  std::cout << "Reciprocal Lattice parameters in Bohr:" << std::endl;
+  std::cout << A[0] << "  " << A[1] << "  " << A[2] << std::endl;
+  std::cout << B[0] << "  " << B[1] << "  " << B[2] << std::endl;
+  std::cout << C[0] << "  " << C[1] << "  " << C[2] << std::endl;
+
+
 }
 
 void CrystalAsciiParser::getKpts(std::istream& is)
@@ -988,10 +1006,10 @@ void CrystalAsciiParser::dumpHDF5(const std::string& fname)
     hout.push(str, true);
     if (PBC)
     {
+      //Transform from reduced to absolute kpoints
       Matrix<double> Tw(1,3);
-      Tw[0][0] = Kpoints_Coord[k][0];
-      Tw[0][1] = Kpoints_Coord[k][1];
-      Tw[0][2] = Kpoints_Coord[k][2];
+      for (int d = 0; d < 3; d++)
+        Tw[0][d] = Kpoints_Coord[k][0]*A[d] + Kpoints_Coord[k][1]*B[d] +Kpoints_Coord[k][2]*C[d] ;
       hout.write(Tw, "Coord");
     }
     if (IsComplex)
