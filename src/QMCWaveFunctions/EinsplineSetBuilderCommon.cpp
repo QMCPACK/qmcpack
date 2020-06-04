@@ -539,39 +539,31 @@ void EinsplineSetBuilder::AnalyzeTwists2()
   // Now check to see that each supercell twist has the right twists
   // to tile the primitive cell orbitals.
   int numTwistsNeeded = std::abs(det(TileMatrix));
-  for (int si = 0; si < numSuperTwists; si++)
+  // First make sure we have enough points
+  if (superSets[TwistNum].size() != numTwistsNeeded)
   {
-    // First make sure we have enough points
-    if (superSets[si].size() != numTwistsNeeded)
+    char buf[1000];
+    snprintf(buf, 1000, "Super twist %d should own %d k-points, but owns %d.\n", TwistNum, numTwistsNeeded,
+             static_cast<int>(superSets[TwistNum].size()));
+    app_error() << buf;
+    APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
+  }
+  // Now, make sure they are all distinct
+  int N = superSets[TwistNum].size();
+  for (int i = 0; i < N; i++)
+  {
+    PosType twistPrim_i  = TwistAngles[superSets[TwistNum][i]];
+    PosType twistSuper_i = dot(S, twistPrim_i);
+    PosType superInt_i   = IntPart(twistSuper_i);
+    for (int j = i + 1; j < N; j++)
     {
-      char buf[1000];
-      snprintf(buf, 1000, "Super twist %d should own %d k-points, but owns %d.\n", si, numTwistsNeeded,
-               static_cast<int>(superSets[si].size()));
-      app_error() << buf;
-      if (si == TwistNum)
+      PosType twistPrim_j  = TwistAngles[superSets[TwistNum][j]];
+      PosType twistSuper_j = dot(S, twistPrim_j);
+      PosType superInt_j   = IntPart(twistSuper_j);
+      if (dot(superInt_i - superInt_j, superInt_i - superInt_j) < 1.0e-6)
       {
-        APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
-      }
-      else
-        continue;
-    }
-    // Now, make sure they are all distinct
-    int N = superSets[si].size();
-    for (int i = 0; i < N; i++)
-    {
-      PosType twistPrim_i  = TwistAngles[superSets[si][i]];
-      PosType twistSuper_i = dot(S, twistPrim_i);
-      PosType superInt_i   = IntPart(twistSuper_i);
-      for (int j = i + 1; j < N; j++)
-      {
-        PosType twistPrim_j  = TwistAngles[superSets[si][j]];
-        PosType twistSuper_j = dot(S, twistPrim_j);
-        PosType superInt_j   = IntPart(twistSuper_j);
-        if (dot(superInt_i - superInt_j, superInt_i - superInt_j) < 1.0e-6)
-        {
-          app_error() << "Identical k-points detected in super twist set " << si << std::endl;
-          APP_ABORT_TRACE(__FILE__, __LINE__, "AnalyzeTwists2");
-        }
+        app_error() << "Identical k-points detected in super twist set " << TwistNum << std::endl;
+        APP_ABORT_TRACE(__FILE__, __LINE__, "AnalyzeTwists2");
       }
     }
   }
