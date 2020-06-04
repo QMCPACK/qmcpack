@@ -560,7 +560,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 
       // 2. bcast G 
       AFQMCTimers[vHS_comm_overhead_timer]->start();
-      if(k == TG.getLocalTGRank()) 
+      if(k == node_number) 
         copy_n(make_device_ptr(Gstore.origin())+Gak0,GakN-Gak0,
                make_device_ptr(Gwork.origin())+Gak0);
 #ifdef BUILD_AFQMC_WITH_NCCL
