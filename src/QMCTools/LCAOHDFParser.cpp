@@ -151,9 +151,7 @@ void LCAOHDFParser::parse(const std::string& fname)
   if (PBC)
   {
     getCell(fname);
-    std::cout << "got cell" << std::endl;
     getSuperTwist(fname);
-    std::cout << "got twist" << std::endl;
     if (debug)
     {
       getGaussianCenters(fname);
@@ -161,7 +159,6 @@ void LCAOHDFParser::parse(const std::string& fname)
     }
   }
   getGeometry(fname);
-  std::cout << "got geom" << std::endl;
 
   if (multideterminant)
   {
@@ -358,9 +355,7 @@ void LCAOHDFParser::getSuperTwist(const std::string& fname)
   }
   STwist_Coord.resize(3);
 
-  std::cout << "Trying to read" << std::endl;
   hin.read(MyVec,"Coord");
-  std::cout << "Read " << std::endl;
 
   hin.pop();
   STwist_Coord[0]=MyVec[0][0];
