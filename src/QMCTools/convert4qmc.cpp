@@ -124,12 +124,10 @@ int main(int argc, char** argv)
     else if (a == "-crystal")
     {
       parser = new CrystalAsciiParser(argc,argv);
-      in_file =argv[++iargc]; //crystal file    FILENAME.out
-      parser->parse(in_file); //generate HDF5 file from crystal FILENAME.h5
+      in_file =argv[++iargc]; 
+      parser->parse(in_file); 
       delete parser;
-      parser = new LCAOHDFParser(argc,argv);
-      in_file+=".h5";
-      allH5=true;
+      return 0;
     }
     else if(a == "-gamessFMO")
     {
