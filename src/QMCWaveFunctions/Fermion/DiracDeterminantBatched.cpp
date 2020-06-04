@@ -287,15 +287,18 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_completeUpdates(const RefVecto
 
   {
     ScopedTimer d2h(&D2HTimer);
-    det_engine_.mw_transferAinv_D2H(engine_list);
 
     for (int iw = 0; iw < WFC_list.size(); iw++)
     {
       auto& det          = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
       auto& my_psiM_vgl  = det.psiM_vgl;
       auto* psiM_vgl_ptr = my_psiM_vgl.data();
-      PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4])")
+      PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4]) nowait")
     }
+
+    det_engine_.mw_transferAinv_D2H(engine_list);
+
+    PRAGMA_OFFLOAD("omp taskwait")
   }
 }
 
