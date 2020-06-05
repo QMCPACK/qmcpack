@@ -29,6 +29,11 @@ TARGET_LINK_LIBRARIES(platform_device PUBLIC message)
 SUBDIRS(OpenMP)
 TARGET_LINK_LIBRARIES(platform_device PRIVATE platform_omp)
 
+IF(QMC_CUDA)
+  SUBDIRS(CUDA_legacy)
+  TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cuda_legacy)
+ENDIF(QMC_CUDA)
+
 IF(ENABLE_CUDA)
   SUBDIRS(CUDA)
   TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cuda)

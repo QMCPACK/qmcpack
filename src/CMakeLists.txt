@@ -148,25 +148,7 @@ IF (IS_GIT_PROJECT)
   SET(UTILITIES "${UTILITIES};${GITREV_TMP}")
 ENDIF()
 
-  IF(QMC_CUDA)
-    SET(UTILITIES ${UTILITIES}
-      Numerics/CUDA/cuda_inverse.cu
-      CUDA/gpu_vector.cpp
-      CUDA/gpu_misc.cpp
-      Particle/accept_kernel.cu)
-  ENDIF(QMC_CUDA)
-
-  IF(QMC_CUDA)
-    CUDA_ADD_LIBRARY(qmcutil ${UTILITIES})
-    CUDA_ADD_CUBLAS_TO_TARGET(qmcutil)
-  ELSE(QMC_CUDA)
-    ADD_LIBRARY(qmcutil ${UTILITIES})
-  ENDIF(QMC_CUDA)
-
-  IF(HAVE_CUDA)
-    TARGET_LINK_LIBRARIES(qmcutil PRIVATE ${CUDA_LIBRARIES})
-  ENDIF(HAVE_CUDA)
-
+  ADD_LIBRARY(qmcutil ${UTILITIES})
   TARGET_LINK_LIBRARIES(qmcutil PUBLIC message)
   TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 IO::HDF5 Boost::boost ${QMC_UTIL_LIBS})
 
