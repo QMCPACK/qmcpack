@@ -29,7 +29,7 @@
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #include "Utilities/PointerPool.h"
-#include "CUDA/gpu_vector.h"
+#include "CUDA_legacy/gpu_vector.h"
 #endif
 #include <assert.h>
 #include <deque>

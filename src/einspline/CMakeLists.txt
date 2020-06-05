@@ -40,6 +40,7 @@ IF(QMC_CUDA)
     bspline_create_cuda.cu
     )
   CUDA_ADD_LIBRARY(einspline ${SRCS})
+  TARGET_LINK_LIBRARIES(einspline PRIVATE platform_device)
 ELSE(QMC_CUDA)
   ADD_LIBRARY(einspline ${SRCS})
 ENDIF(QMC_CUDA)
