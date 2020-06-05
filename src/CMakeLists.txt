@@ -238,7 +238,6 @@ else() #{{{
     SUBDIRS(QMCDrivers/tests)
     SUBDIRS(QMCApp/tests)
     SUBDIRS(Message/tests)
-    SUBDIRS(CUDA/tests)
     SUBDIRS(Optimize/tests)
     SUBDIRS(MinimalContainers/tests)
     SUBDIRS(QMCTools/tests)

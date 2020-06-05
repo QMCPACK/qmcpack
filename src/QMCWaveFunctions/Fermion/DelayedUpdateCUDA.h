@@ -15,8 +15,8 @@
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include "CUDA/CUDAallocator.hpp"
-#include <Numerics/CUDA/cuBLAS.hpp>
-#include <Numerics/CUDA/cusolver.hpp>
+#include <CUDA/cuBLAS.hpp>
+#include <CUDA/cusolver.hpp>
 #include "QMCWaveFunctions/Fermion/delayed_update_helper.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include <cuda_runtime_api.h>

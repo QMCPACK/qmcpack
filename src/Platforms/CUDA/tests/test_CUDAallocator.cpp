@@ -14,8 +14,8 @@
 
 #include <memory>
 #include <iostream>
-#include "CUDA/cudaError.h"
-#include "CUDA/CUDAallocator.hpp"
+#include "cudaError.h"
+#include "CUDAallocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 
 namespace qmcplusplus
@@ -25,7 +25,7 @@ TEST_CASE("CUDA_allocators", "[CUDA]")
   { // CUDAManagedAllocator
     Vector<double, CUDAManagedAllocator<double>> vec(1024);
     cudaPointerAttributes attr;
-    cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()) , "cudaPointerGetAttributes failed!");
+    cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()), "cudaPointerGetAttributes failed!");
 #if (CUDART_VERSION >= 10000)
     REQUIRE(attr.type == cudaMemoryTypeManaged);
 #endif
@@ -33,9 +33,9 @@ TEST_CASE("CUDA_allocators", "[CUDA]")
   { // CUDAAllocator
     Vector<double, CUDAAllocator<double>> vec(1024);
     cudaPointerAttributes attr;
-    cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()) , "cudaPointerGetAttributes failed!");
+    cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()), "cudaPointerGetAttributes failed!");
 #if (CUDART_VERSION < 10000)
-    REQUIRE(attr.memoryType == cudaMemoryTypeDevice); 
+    REQUIRE(attr.memoryType == cudaMemoryTypeDevice);
 #else
     REQUIRE(attr.type == cudaMemoryTypeDevice);
 #endif
@@ -43,9 +43,9 @@ TEST_CASE("CUDA_allocators", "[CUDA]")
   { // CUDAHostAllocator
     Vector<double, CUDAHostAllocator<double>> vec(1024);
     cudaPointerAttributes attr;
-    cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()) , "cudaPointerGetAttributes failed!");
+    cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()), "cudaPointerGetAttributes failed!");
 #if (CUDART_VERSION < 10000)
-    REQUIRE(attr.memoryType == cudaMemoryTypeHost); 
+    REQUIRE(attr.memoryType == cudaMemoryTypeHost);
 #else
     REQUIRE(attr.type == cudaMemoryTypeHost);
 #endif
@@ -53,7 +53,7 @@ TEST_CASE("CUDA_allocators", "[CUDA]")
   { // CUDALockedPageAllocator
     Vector<double, CUDALockedPageAllocator<double>> vec(1024);
     cudaPointerAttributes attr;
-    cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()) , "cudaPointerGetAttributes failed!");
+    cudaErrorCheck(cudaPointerGetAttributes(&attr, vec.data()), "cudaPointerGetAttributes failed!");
 #if (CUDART_VERSION < 10000)
     REQUIRE(attr.memoryType == cudaMemoryTypeHost);
 #else
