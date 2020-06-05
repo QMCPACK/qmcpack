@@ -17,7 +17,7 @@
 #include <Configuration.h>
 #include <Utilities/PrimeNumberSet.h>
 #include <Utilities/Timer.h>
-#include <random/random.hpp>
+#include "random.hpp"
 #include <mpi/collectives.h>
 #include <getopt.h>
 using namespace std;
