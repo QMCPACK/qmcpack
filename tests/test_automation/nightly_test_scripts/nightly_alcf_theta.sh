@@ -60,7 +60,7 @@ cd $entry
 
 git checkout $branch
 
-for sys in Real-SoA Complex-SoA # Real-Mixed-SoA Complex-Mixed-SoA Real Real-Mixed Complex Complex-Mixed
+for sys in Real Complex # Real-Mixed Complex-Mixed
 do
 
 folder=build_$compiler_$sys
@@ -85,12 +85,6 @@ CTEST_FLAGS="-D CMAKE_C_COMPILER=$CC -D CMAKE_CXX_COMPILER=$CXX -D QMC_DATA=$QMC
 
 if [[ $sys == *"Complex"* ]]; then
   CTEST_FLAGS="$CTEST_FLAGS -D QMC_COMPLEX=1"
-fi
-
-if [[ $sys == *"-SoA"* ]]; then
-  CTEST_FLAGS="$CTEST_FLAGS -D ENABLE_SOA=1"
-else
-  CTEST_FLAGS="$CTEST_FLAGS -D ENABLE_SOA=0"
 fi
 
 if [[ $sys == *"-Mixed"* ]]; then
