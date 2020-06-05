@@ -473,6 +473,29 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   if (firstIndex == lastIndex)
     return true;
 
+  if (delay_rank < 0 || delay_rank > lastIndex - firstIndex)
+  {
+    std::ostringstream err_msg;
+    err_msg << "SlaterDetBuilder::putDeterminant delay_rank must be positive "
+            << "and no larger than the electron count within a determinant!\n"
+            << "Acceptable value [1," << lastIndex - firstIndex << "], "
+            << "user input " + std::to_string(delay_rank);
+    APP_ABORT(err_msg.str());
+  }
+  else if (delay_rank == 0)
+  {
+    app_log() << "  Setting delay_rank by default!" << std::endl;
+    if (lastIndex - firstIndex >= 192)
+      delay_rank = 32;
+    else
+      delay_rank = 1;
+  }
+
+  if (delay_rank > 1)
+    app_log() << "  Using rank-" << delay_rank << " delayed update" << std::endl;
+  else
+    app_log() << "  Using rank-1 Sherman-Morrison Fahy update" << std::endl;
+
   DiracDeterminantBase* adet = 0;
 
   //TODO: the switch logic should be improved as we refine the input tags.
@@ -488,8 +511,8 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
       if (useGPU == "yes")
       {
-        app_log() << "  Using DiracDeterminantBatched with MatrixUpdateCUDA engine" << std::endl;
-        adet = new DiracDeterminantBatched<MatrixUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
+        app_log() << "  Using DiracDeterminantBatched with MatrixDelayedUpdateCUDA engine" << std::endl;
+        adet = new DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
       }
       else
 #endif
@@ -516,28 +539,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   }
 #endif
 
-  if (delay_rank < 0 || delay_rank > lastIndex - firstIndex)
-  {
-    std::ostringstream err_msg;
-    err_msg << "SlaterDetBuilder::putDeterminant delay_rank must be positive "
-            << "and no larger than the electron count within a determinant!\n"
-            << "Acceptable value [1," << lastIndex - firstIndex << "], "
-            << "user input " + std::to_string(delay_rank);
-    APP_ABORT(err_msg.str());
-  }
-  else if (delay_rank == 0)
-  {
-    app_log() << "  Setting delay_rank by default!" << std::endl;
-    if (lastIndex - firstIndex >= 192)
-      delay_rank = 32;
-    else
-      delay_rank = 1;
-  }
-
-  if (delay_rank > 1)
-    app_log() << "  Using rank-" << delay_rank << " delayed update" << std::endl;
-  else
-    app_log() << "  Using rank-1 Sherman-Morrison Fahy update" << std::endl;
   adet->set(firstIndex, lastIndex - firstIndex, delay_rank);
 #ifdef QMC_CUDA
   targetPsi.setndelay(delay_rank);

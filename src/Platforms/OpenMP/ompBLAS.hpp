@@ -17,7 +17,11 @@
 
 namespace qmcplusplus
 {
-/** interface to ompBLAS calls for different data types S/C/D/Z
+/** Implement selected batched and non-batched BLAS2 calls using OpenMP offload for different data types S/C/D/Z
+ * 1) column major like the BLAS fortran API
+ * 2) all the functions are synchronous, expected to be changed to asynchronous in the future.
+ * 3) all the pointer arguments are expected as device pointers.
+ * 4) in batched APIs, alpha and beta are **not** scalars but pointers to array of batch size.
  */
 namespace ompBLAS
 {
