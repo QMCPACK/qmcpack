@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Platforms/CUDA/cuBLAS_missing_functions.hpp"
+#include "cuBLAS_missing_functions.hpp"
 #include <stdexcept>
 #include <cuComplex.h>
 #include <thrust/complex.h>

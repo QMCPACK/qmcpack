@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <config.h>
 #include "BsplineJastrowCudaPBC.h"
-#include "../../CUDA/gpu_misc.h"
+#include "CUDA_legacy/gpu_misc.h"
 
 
 bool AisInitializedPBC = false;
