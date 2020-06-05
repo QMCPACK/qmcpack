@@ -33,7 +33,7 @@
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
                     qmc_short_vmcbatch_4b.in.xml
-                    4 4
+                    1 4
                     TRUE
                     0 DIAMOND2_SCALARS # VMC
                     )
