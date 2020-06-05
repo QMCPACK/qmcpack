@@ -481,6 +481,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSe
                                                                       GradType& grad_iat,
                                                                       ComplexType& spingrad_iat)
 {
+  grad_iat = 0.0;
   spingrad_iat = 0.0;
   PsiValueType r(1.0);
   for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
