@@ -19,7 +19,7 @@ Sherman-Morrison rank-1 update uses BLAS2 GEMV and GER on $N \times N$ matrices.
 
 Delayed rank-K update uses
 \begin{itemize}
-  \item BLAS1 SCOPY, SCAL on $k$ and $N$ array.
+  \item BLAS1 SCOPY on $N$ array.
   \item BLAS2 GEMV, GER on $k \times N$ and $k \times k$ matrices. $k$ ranges from 1 to $K$ when updates are delayed and accumulated.
   \item BLAS3 GEMM at the final update.
     \begin{itemize}

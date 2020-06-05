@@ -18,23 +18,18 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
 namespace qmcplusplus
 {
-
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-using DiracDet = DiracDeterminantBatched<MatrixUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
-#else
-using DiracDet = DiracDeterminantBatched<MatrixUpdateOMP<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
-#endif
-
 using LogValueType = TrialWaveFunction::LogValueType;
 using PsiValueType = TrialWaveFunction::PsiValueType;
-using GradType = TrialWaveFunction::GradType;
+using GradType     = TrialWaveFunction::GradType;
 
-TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
+template<class DiracDet>
+void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 {
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
@@ -69,15 +64,15 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   elec_.R[3] = {1.0, 0.0, 1.0};
 
   // diamondC_2x1x1
-  elec_.Lattice.R(0, 0) = 6.7463223;
-  elec_.Lattice.R(0, 1) = 6.7463223;
-  elec_.Lattice.R(0, 2) = 0.0;
-  elec_.Lattice.R(1, 0) = 0.0;
-  elec_.Lattice.R(1, 1) = 3.37316115;
-  elec_.Lattice.R(1, 2) = 3.37316115;
-  elec_.Lattice.R(2, 0) = 3.37316115;
-  elec_.Lattice.R(2, 1) = 0.0;
-  elec_.Lattice.R(2, 2) = 3.37316115;
+  elec_.Lattice.R(0, 0)   = 6.7463223;
+  elec_.Lattice.R(0, 1)   = 6.7463223;
+  elec_.Lattice.R(0, 2)   = 0.0;
+  elec_.Lattice.R(1, 0)   = 0.0;
+  elec_.Lattice.R(1, 1)   = 3.37316115;
+  elec_.Lattice.R(1, 2)   = 3.37316115;
+  elec_.Lattice.R(2, 0)   = 3.37316115;
+  elec_.Lattice.R(2, 1)   = 0.0;
+  elec_.Lattice.R(2, 2)   = 3.37316115;
   elec_.Lattice.BoxBConds = {1, 1, 1};
   elec_.Lattice.reset();
 
@@ -110,16 +105,16 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   REQUIRE(okay);
 
   xmlNodePtr spo_root = doc.getRoot();
-  xmlNodePtr ein1 = xmlFirstElementChild(spo_root);
+  xmlNodePtr ein1     = xmlFirstElementChild(spo_root);
 
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
   SPOSet* spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 
   auto* det_up = new DiracDet(spo);
-  det_up->set(0, 2);
+  det_up->set(0, 2, ndelay);
   auto* det_dn = new DiracDet(spo);
-  det_dn->set(2, 2);
+  det_dn->set(2, 2, ndelay);
 
   auto* slater_det = new SlaterDet(elec_);
   slater_det->add(det_up, 0);
@@ -141,7 +136,7 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   REQUIRE(okay);
 
   xmlNodePtr jas_root = doc.getRoot();
-  xmlNodePtr jas1 = xmlFirstElementChild(jas_root);
+  xmlNodePtr jas1     = xmlFirstElementChild(jas_root);
 
   RadialJastrowBuilder jb(c, elec_);
   psi.addComponent(jb.buildComponent(jas1), "RadialJastrow");
@@ -151,7 +146,8 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   elec_.update();
   double logpsi = psi.evaluateLog(elec_);
 
-  std::cout << "debug before YYY logpsi " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()<< std::endl;
+  std::cout << "debug before YYY logpsi " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()
+            << std::endl;
 #if defined(QMC_COMPLEX)
   REQUIRE(logpsi == Approx(-4.546410485374186));
 #else
@@ -171,16 +167,16 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
 
   const int moved_elec_id = 0;
 
-  using PosType = QMCTraits::PosType;
-  using RealType = QMCTraits::RealType;
+  using PosType   = QMCTraits::PosType;
+  using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
   PosType delta(0.1, 0.1, 0.2);
 
   elec_.makeMove(moved_elec_id, delta);
 
-  ValueType r_all_val = psi.calcRatio(elec_, moved_elec_id);
+  ValueType r_all_val       = psi.calcRatio(elec_, moved_elec_id);
   ValueType r_fermionic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::FERMIONIC);
-  ValueType r_bosonic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::NONFERMIONIC);
+  ValueType r_bosonic_val   = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::NONFERMIONIC);
 
   std::cout << "YYY r_all_val " << std::setprecision(16) << r_all_val << std::endl;
   std::cout << "YYY r_fermionic_val " << std::setprecision(16) << r_fermionic_val << std::endl;
@@ -196,7 +192,8 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
 
   psi.acceptMove(elec_, moved_elec_id);
   elec_.acceptMove(moved_elec_id);
-  std::cout << "before YYY getLogPsi " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()<< std::endl;
+  std::cout << "before YYY getLogPsi " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()
+            << std::endl;
 #if defined(QMC_COMPLEX)
   REQUIRE(psi.getLogPsi() == Approx(-6.626861768296886).epsilon(5e-5));
 #else
@@ -220,21 +217,27 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   WF_list[0] = &psi;
   WF_list[1] = psi_clone;
 
-    //Temporary as switch to std::reference_wrapper proceeds
-// testing batched interfaces
-  RefVector<ParticleSet> p_ref_list{elec_,elec_clone};
+  //Temporary as switch to std::reference_wrapper proceeds
+  // testing batched interfaces
+  RefVector<ParticleSet> p_ref_list{elec_, elec_clone};
   RefVector<TrialWaveFunction> wf_ref_list{psi, *psi_clone};
 
   elec_.flex_update(p_ref_list);
   psi.flex_evaluateLog(wf_ref_list, p_ref_list);
-  std::cout << "before YYY [0] getLogPsi getPhase " << std::setprecision(16) << WF_list[0]->getLogPsi() << " " << WF_list[0]->getPhase()<< std::endl;
-  std::cout << "before YYY [1] getLogPsi getPhase " << std::setprecision(16) << WF_list[1]->getLogPsi() << " " << WF_list[1]->getPhase()<< std::endl;
+  std::cout << "before YYY [0] getLogPsi getPhase " << std::setprecision(16) << WF_list[0]->getLogPsi() << " "
+            << WF_list[0]->getPhase() << std::endl;
+  std::cout << "before YYY [1] getLogPsi getPhase " << std::setprecision(16) << WF_list[1]->getLogPsi() << " "
+            << WF_list[1]->getPhase() << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082042)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == LogComplexApprox(std::complex<RealType>(-4.546410485374186, -3.141586279080522)));
+  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+          LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082042)));
+  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+          LogComplexApprox(std::complex<RealType>(-4.546410485374186, -3.141586279080522)));
 #else
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == LogComplexApprox(std::complex<RealType>(-8.013162503965042, 6.283185307179586)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == LogComplexApprox(std::complex<RealType>(-5.932711221043984, 6.283185307179586)));
+  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+          LogComplexApprox(std::complex<RealType>(-8.013162503965042, 6.283185307179586)));
+  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+          LogComplexApprox(std::complex<RealType>(-5.932711221043984, 6.283185307179586)));
 #endif
 
 
@@ -243,20 +246,18 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   grad_old[0] = WF_list[0]->evalGrad(*P_list[0], moved_elec_id);
   grad_old[1] = WF_list[1]->evalGrad(*P_list[1], moved_elec_id);
 
-  std::cout << "evalGrad " << std::setprecision(14)
-            << grad_old[0][0] << " " << grad_old[0][1] << " " << grad_old[0][2] << " "
-            << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2]
-            << std::endl;  
-  
+  std::cout << "evalGrad " << std::setprecision(14) << grad_old[0][0] << " " << grad_old[0][1] << " " << grad_old[0][2]
+            << " " << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2] << std::endl;
+
   psi.flex_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
 
 #if defined(QMC_COMPLEX)
-  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(713.71203320653,0.020838031926441)).epsilon(8e-5));
-  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(713.71203320654,0.020838031928415)).epsilon(8e-5));
-  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(-768.42842826889,-0.020838032018344)).epsilon(8e-5));
-  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(118.02653358655,-0.0022419843505538)));
-  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(118.02653358655,-0.0022419843498631)));
-  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(-118.46325895634,0.0022419843493758)));
+  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(713.71203320653, 0.020838031926441)).epsilon(8e-5));
+  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(713.71203320654, 0.020838031928415)).epsilon(8e-5));
+  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(-768.42842826889, -0.020838032018344)).epsilon(8e-5));
+  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(118.02653358655, -0.0022419843505538)));
+  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(118.02653358655, -0.0022419843498631)));
+  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(-118.46325895634, 0.0022419843493758)));
 #else
   REQUIRE(grad_old[0][0] == Approx(713.69119517454).epsilon(2e-4));
   REQUIRE(grad_old[0][1] == Approx(713.69119517455).epsilon(2e-4));
@@ -273,16 +274,14 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   ValueType r_0 = wf_ref_list[0].get().calcRatio(p_ref_list[0].get(), moved_elec_id);
   GradType grad_temp;
   ValueType r_1 = wf_ref_list[1].get().calcRatioGrad(p_ref_list[1].get(), moved_elec_id, grad_temp);
-  std::cout << "calcRatio calcRatioGrad " << std::setprecision(14)
-            << r_0 << " " << r_1 << " "
-            << grad_temp[0] << " " << grad_temp[1] << " " << grad_temp[2]
-            << std::endl;
+  std::cout << "calcRatio calcRatioGrad " << std::setprecision(14) << r_0 << " " << r_1 << " " << grad_temp[0] << " "
+            << grad_temp[1] << " " << grad_temp[2] << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(r_0 == ComplexApprox(ValueType(253.71869245791,-0.00034808849808193)).epsilon(1e-4));
-  REQUIRE(r_1 == ComplexApprox(ValueType(36.915636007059,-6.4240180082292e-05)).epsilon(1e-5));
-  REQUIRE(grad_temp[0] == ComplexApprox(ValueType(1.4567170375539,0.00027263382943948)));
-  REQUIRE(grad_temp[1] == ComplexApprox(ValueType(1.4567170375539,0.00027263382945093)));
-  REQUIRE(grad_temp[2] == ComplexApprox(ValueType(-1.2930978490431,-0.00027378452214318)));
+  REQUIRE(r_0 == ComplexApprox(ValueType(253.71869245791, -0.00034808849808193)).epsilon(1e-4));
+  REQUIRE(r_1 == ComplexApprox(ValueType(36.915636007059, -6.4240180082292e-05)).epsilon(1e-5));
+  REQUIRE(grad_temp[0] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382943948)));
+  REQUIRE(grad_temp[1] == ComplexApprox(ValueType(1.4567170375539, 0.00027263382945093)));
+  REQUIRE(grad_temp[2] == ComplexApprox(ValueType(-1.2930978490431, -0.00027378452214318)));
 #else
   REQUIRE(r_0 == Approx(253.71904054638).epsilon(2e-4));
   REQUIRE(r_1 == Approx(36.915700247239));
@@ -313,30 +312,26 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   ratios[0] = WF_list[0]->calcRatioGrad(*P_list[0], moved_elec_id, grad_new[0]);
   ratios[1] = WF_list[1]->calcRatioGrad(*P_list[1], moved_elec_id, grad_new[1]);
 
-  std::cout << "calcRatioGrad " << std::setprecision(14)
-            << ratios[0] << " " << ratios[1] << std::endl
-            << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " "
-            << grad_new[1][0] << " " << grad_new[1][1] << " " << grad_new[1][2]
-            << std::endl;
+  std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
+            << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
+            << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
 
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
 
   psi.flex_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
-  std::cout << "flex_calcRatioGrad " << std::setprecision(14)
-            << ratios[0] << " " << ratios[1] << std::endl
-            << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " "
-            << grad_new[1][0] << " " << grad_new[1][1] << " " << grad_new[1][2]
-            << std::endl;
+  std::cout << "flex_calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
+            << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
+            << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
 #if defined(QMC_COMPLEX)
   REQUIRE(ratios[0] == ComplexApprox(ValueType(1, 0)).epsilon(5e-5));
-  REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(713.71203320653,0.020838031942702)).epsilon(8e-5));
-  REQUIRE(grad_new[0][1] == ComplexApprox(ValueType(713.71203320654,0.020838031944677)).epsilon(8e-5));
-  REQUIRE(grad_new[0][2] == ComplexApprox(ValueType(-768.42842826889,-0.020838032035842)).epsilon(8e-5));
+  REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(713.71203320653, 0.020838031942702)).epsilon(8e-5));
+  REQUIRE(grad_new[0][1] == ComplexApprox(ValueType(713.71203320654, 0.020838031944677)).epsilon(8e-5));
+  REQUIRE(grad_new[0][2] == ComplexApprox(ValueType(-768.42842826889, -0.020838032035842)).epsilon(8e-5));
   REQUIRE(ratios[1] == ComplexApprox(ValueType(0.12487384604679, 0)));
-  REQUIRE(grad_new[1][0] == ComplexApprox(ValueType(713.71203320656,0.020838031892613)).epsilon(8e-5));
-  REQUIRE(grad_new[1][1] == ComplexApprox(ValueType(713.71203320657,0.020838031894628)).epsilon(8e-5));
-  REQUIRE(grad_new[1][2] == ComplexApprox(ValueType(-768.42842826892,-0.020838031981896)).epsilon(8e-5));
+  REQUIRE(grad_new[1][0] == ComplexApprox(ValueType(713.71203320656, 0.020838031892613)).epsilon(8e-5));
+  REQUIRE(grad_new[1][1] == ComplexApprox(ValueType(713.71203320657, 0.020838031894628)).epsilon(8e-5));
+  REQUIRE(grad_new[1][2] == ComplexApprox(ValueType(-768.42842826892, -0.020838031981896)).epsilon(8e-5));
 #else
   REQUIRE(ratios[0] == Approx(1).epsilon(5e-5));
   REQUIRE(grad_new[0][0] == Approx(713.69119517463).epsilon(1e-4));
@@ -349,39 +344,113 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
 #endif
 
   std::vector<bool> isAccepted(2, true);
-  psi.flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted);
-  std::cout << "flex_acceptMove WF_list[0] getLogPsi getPhase " << std::setprecision(16) << WF_list[0]->getLogPsi() << " " << WF_list[0]->getPhase() << std::endl;
-  std::cout << "flex_acceptMove WF_list[1] getLogPsi getPhase " << std::setprecision(16) << WF_list[1]->getLogPsi() << " " << WF_list[1]->getPhase() << std::endl;
+  psi.flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted, true);
+  std::cout << "flex_acceptMove WF_list[0] getLogPsi getPhase " << std::setprecision(16) << WF_list[0]->getLogPsi()
+            << " " << WF_list[0]->getPhase() << std::endl;
+  std::cout << "flex_acceptMove WF_list[1] getLogPsi getPhase " << std::setprecision(16) << WF_list[1]->getLogPsi()
+            << " " << WF_list[1]->getPhase() << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082065)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == LogComplexApprox(std::complex<RealType>(-6.626861768296886, -3.141586279081995)));
+  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+          LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082065)));
+  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+          LogComplexApprox(std::complex<RealType>(-6.626861768296886, -3.141586279081995)));
 #else
-  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) == LogComplexApprox(std::complex<RealType>(-8.013162503965155, 6.283185307179586)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) == LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
+  REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
+          LogComplexApprox(std::complex<RealType>(-8.013162503965155, 6.283185307179586)));
+  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+          LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
 #endif
 
-  psi.flex_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
+  RefVector<ParticleSet> elec_accept_list;
+  for (int iw = 0; iw < isAccepted.size(); iw++)
+    elec_accept_list.push_back(p_ref_list[iw]);
+  ParticleSet::flex_acceptMove(elec_accept_list, moved_elec_id);
+
+  const int moved_elec_id_next = 1;
+  psi.flex_evalGrad(wf_ref_list, p_ref_list, moved_elec_id_next, grad_old);
+  std::cout << "evalGrad next electron " << std::setprecision(14) << grad_old[0][0] << " " << grad_old[0][1] << " "
+            << grad_old[0][2] << " " << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2] << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(713.71203320653,0.020838031942702)).epsilon(8e-5));
-  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(713.71203320654,0.020838031944677)).epsilon(8e-5));
-  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(-768.42842826889,-0.020838032035842)).epsilon(8e-5));
-  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(713.71203320656,0.020838031892613)).epsilon(8e-5));
-  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(713.71203320657,0.020838031894628)).epsilon(8e-5));
-  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(-768.42842826892,-0.020838031981896)).epsilon(8e-5));
+  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(8e-5));
+  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(8e-5));
+  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(8e-5));
+  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(8e-5));
+  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(8e-5));
+  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(8e-5));
 #else
-  REQUIRE(grad_old[0][0] == Approx(713.69119517463).epsilon(1e-4));
-  REQUIRE(grad_old[0][1] == Approx(713.69119517463).epsilon(1e-4));
-  REQUIRE(grad_old[0][2] == Approx(-768.40759023689).epsilon(1e-4));
-  REQUIRE(grad_old[1][0] == Approx(713.69119517467).epsilon(1e-4));
-  REQUIRE(grad_old[1][1] == Approx(713.69119517468).epsilon(1e-4));
-  REQUIRE(grad_old[1][2] == Approx(-768.40759023695).epsilon(1e-4));
+  REQUIRE(grad_old[0][0] == Approx(-114.82732467419).epsilon(1e-4));
+  REQUIRE(grad_old[0][1] == Approx(-93.98069637537).epsilon(1e-4));
+  REQUIRE(grad_old[0][2] == Approx(64.050727483593).epsilon(1e-4));
+  REQUIRE(grad_old[1][0] == Approx(-114.82732467419).epsilon(1e-4));
+  REQUIRE(grad_old[1][1] == Approx(-93.98069637537).epsilon(1e-4));
+  REQUIRE(grad_old[1][2] == Approx(64.050727483593).epsilon(1e-4));
 #endif
 
+  std::vector<PosType> displ(2);
+  displ[0] = displ[1] = {0.1, 0.2, 0.3};
+
+  ParticleSet::flex_makeMove(p_ref_list, moved_elec_id_next, displ);
+  TrialWaveFunction::flex_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id_next, ratios, grad_new);
+  std::cout << "ratioGrad next electron " << std::setprecision(14) << grad_new[0][0] << " " << grad_new[0][1] << " "
+            << grad_new[0][2] << " " << grad_new[1][0] << " " << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
+#if defined(QMC_COMPLEX)
+  REQUIRE(grad_new[0][0] == ComplexApprox(ValueType(9.6073058494562, -1.4375146770852e-05)).epsilon(8e-5));
+  REQUIRE(grad_new[0][1] == ComplexApprox(ValueType(6.3111018321898, -1.4375146510386e-05)).epsilon(8e-5));
+  REQUIRE(grad_new[0][2] == ComplexApprox(ValueType(-3.2027658046121, 1.4375146020225e-05)).epsilon(8e-5));
+  REQUIRE(grad_new[1][0] == ComplexApprox(ValueType(9.6073058494562, -1.4375146770852e-05)).epsilon(8e-5));
+  REQUIRE(grad_new[1][1] == ComplexApprox(ValueType(6.3111018321898, -1.4375146510386e-05)).epsilon(8e-5));
+  REQUIRE(grad_new[1][2] == ComplexApprox(ValueType(-3.2027658046121, 1.4375146020225e-05)).epsilon(8e-5));
+#else
+  REQUIRE(grad_new[0][0] == Approx(9.607320224603).epsilon(1e-4));
+  REQUIRE(grad_new[0][1] == Approx(6.3111162073363).epsilon(1e-4));
+  REQUIRE(grad_new[0][2] == Approx(-3.2027801797581).epsilon(1e-4));
+  REQUIRE(grad_new[1][0] == Approx(9.607320224603).epsilon(1e-4));
+  REQUIRE(grad_new[1][1] == Approx(6.3111162073363).epsilon(1e-4));
+  REQUIRE(grad_new[1][2] == Approx(-3.2027801797581).epsilon(1e-4));
+#endif
+
+  isAccepted[0] = true;
+  isAccepted[1] = false;
+  TrialWaveFunction::flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id_next, isAccepted, true);
+
+  elec_accept_list.clear();
+  for (int iw = 0; iw < isAccepted.size(); iw++)
+    elec_accept_list.push_back(p_ref_list[iw]);
+  ParticleSet::flex_acceptMove(elec_accept_list, moved_elec_id_next);
+  TrialWaveFunction::flex_completeUpdates(wf_ref_list);
+
+  std::cout << "invMat next electron " << std::setprecision(14) << det_up->getPsiMinv()[0][0] << " "
+            << det_up->getPsiMinv()[0][1] << " " << det_up->getPsiMinv()[1][0] << " " << det_up->getPsiMinv()[1][1]
+            << " " << std::endl;
+#if defined(QMC_COMPLEX)
+  REQUIRE(det_up->getPsiMinv()[0][0] == ComplexApprox(ValueType(38.503358805635, -38.503358805645)).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[0][1] == ComplexApprox(ValueType(-31.465077529568, 31.465077529576)).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[1][0] == ComplexApprox(ValueType(-27.188228530061, 27.188228530068)).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[1][1] == ComplexApprox(ValueType(22.759962501254, -22.75996250126)).epsilon(1e-4));
+#else
+  REQUIRE(det_up->getPsiMinv()[0][0] == Approx(77.0067176113).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[0][1] == Approx(-62.9301550592).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[1][0] == Approx(-54.376457060136).epsilon(1e-4));
+  REQUIRE(det_up->getPsiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
+#endif
 
   //FIXME more thinking and fix about ownership and schope are needed for exiting clean
   delete psi_clone;
 #endif
+}
 
+TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
+{
+  using VT   = QMCTraits::ValueType;
+  using FPVT = QMCTraits::QTFull::ValueType;
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(1);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(2);
+#endif
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMP<VT, FPVT>>>(1);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMP<VT, FPVT>>>(2);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(1);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(2);
 }
 
 } // namespace qmcplusplus

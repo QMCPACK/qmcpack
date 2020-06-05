@@ -11,7 +11,7 @@
 
 
 SET(CUDA_SRCS
-  cuBLAS_inhouse.cu
+  cuBLAS_missing_functions.cu
 )
 
 CUDA_ADD_LIBRARY(platform_cuda ${CUDA_SRCS})
