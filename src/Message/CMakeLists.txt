@@ -26,4 +26,5 @@ ENDIF()
 
 
 ADD_LIBRARY(catch_main catch_main.cpp)
+TARGET_INCLUDE_DIRECTORIES(catch_main PUBLIC "${PROJECT_SOURCE_DIR}/external_codes/catch")
 TARGET_LINK_LIBRARIES(catch_main message)
