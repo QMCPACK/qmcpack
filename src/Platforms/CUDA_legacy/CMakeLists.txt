@@ -10,15 +10,13 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-SET(CUDA_SRCS
-  cuBLAS_missing_functions.cu
+SET(CUDA_LEGACY_SRCS
+  cuda_inverse.cu
+  gpu_vector.cpp
+  gpu_misc.cpp
 )
 
-CUDA_ADD_LIBRARY(platform_cuda ${CUDA_SRCS})
-TARGET_INCLUDE_DIRECTORIES(platform_cuda INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
-CUDA_ADD_CUBLAS_TO_TARGET(platform_cuda)
-TARGET_LINK_LIBRARIES(platform_cuda PRIVATE ${CUDA_LIBRARIES} ${CUDA_cusolver_LIBRARY})
-
-IF (BUILD_UNIT_TESTS)
-  SUBDIRS(tests)
-ENDIF()
+CUDA_ADD_LIBRARY(platform_cuda_legacy ${CUDA_LEGACY_SRCS})
+TARGET_INCLUDE_DIRECTORIES(platform_cuda_legacy INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+CUDA_ADD_CUBLAS_TO_TARGET(platform_cuda_legacy)
+TARGET_LINK_LIBRARIES(platform_cuda_legacy PRIVATE ${CUDA_LIBRARIES})

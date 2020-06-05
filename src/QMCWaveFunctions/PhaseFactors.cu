@@ -454,7 +454,7 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
 #include <cstdio>
 #include <complex>
 #include <iostream>
-#include "../CUDA/gpu_misc.h"
+#include "CUDA_legacy/gpu_misc.h"
 
 void apply_phase_factors(float kPoints[], int makeTwoCopies[],
                          float pos[], float *phi_in[], float *phi_out[],

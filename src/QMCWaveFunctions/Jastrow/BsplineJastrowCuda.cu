@@ -18,7 +18,7 @@
 #define MAX_SPLINES 100
 #include <stdio.h>
 #include "BsplineJastrowCuda.h"
-#include "../../CUDA/gpu_misc.h"
+#include "CUDA_legacy/gpu_misc.h"
 
 bool AisInitialized = false;
 
