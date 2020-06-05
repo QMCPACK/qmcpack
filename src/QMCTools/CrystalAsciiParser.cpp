@@ -170,8 +170,6 @@ void CrystalAsciiParser::getCell(std::istream& is)
   std::cout << A[0] << "  " << A[1] << "  " << A[2] << std::endl;
   std::cout << B[0] << "  " << B[1] << "  " << B[2] << std::endl;
   std::cout << C[0] << "  " << C[1] << "  " << C[2] << std::endl;
-
-
 }
 
 void CrystalAsciiParser::getKpts(std::istream& is)
@@ -566,100 +564,110 @@ void CrystalAsciiParser::getGaussianCenters(std::istream& is)
 
 void CrystalAsciiParser::getKMO(std::istream& is, std::vector<std::vector<double>>& Mat)
 {
-  int currTot = Mat.size();
   getwords(currentWords, is);
   getwords(currentWords, is);
 
   std::vector<double> tmp;
+  for (int ao = 0; ao < SizeOfBasisSet; ao++)
+  {
+    Mat.push_back(tmp);
+    for (int mo = 0; mo < numMO; mo++)
+      Mat[ao].push_back(0.0);
+  }
 
+  int mocount = 0;
   while (true)
   {
     getwords(currentWords, is);
-    if (currentWords.size() == 0)
-    {
-      continue;
-    }
-    else if (Mat.size() == numMO)
+    if (mocount == numMO)
     {
       break;
+    }
+    else if (currentWords.size() == 0)
+    {
+      continue;
     }
     else
     {
       int nmo = currentWords.size();
-      getwords(currentWords, is); //empty line
-      for (int i = 0; i < nmo; i++)
-      {
-        Mat.push_back(tmp);
-      }
-      for (int i = 0; i < SizeOfBasisSet; i++)
+      for (int ao = 0; ao < SizeOfBasisSet; ao++)
       {
         getwords(currentWords, is);
-        for (int j = 0; j < nmo; j++)
+        if (currentWords.size() == 0)
         {
-          Mat[currTot + j].push_back(atof(currentWords[j + 1].c_str()));
+          ao--;
+          continue;
+        }
+        for (int mo = 0; mo < nmo; mo++)
+        {
+          Mat[ao][mocount + mo] = atof(currentWords[mo + 1].c_str());
         }
       }
-      currTot += nmo;
+      mocount += nmo;
     }
   }
 }
 
 void CrystalAsciiParser::getKMO(std::istream& is, std::vector<std::vector<std::complex<double>>>& CMat)
 {
-  int currTot = CMat.size();
   getwords(currentWords, is);
   getwords(currentWords, is);
 
   std::vector<std::complex<double>> tmp;
-
+  for (int ao = 0; ao < SizeOfBasisSet; ao++)
+  {
+    CMat.push_back(tmp);
+    for (int mo = 0; mo < numMO; mo++)
+    {
+      std::complex<double> x(0, 0);
+      CMat[ao].push_back(x);
+    }
+  }
+  int mocount = 0;
   while (true)
   {
     getwords(currentWords, is);
-    if (currentWords.size() == 0)
-    {
-      continue;
-    }
-    else if (CMat.size() == numMO)
-    {
+    if (mocount == numMO)
       break;
-    }
-    else if (currentWords[0] == currentWords[1])
-    { //actual complex kpoint
-      int nmo = currentWords.size() / 2;
-      getwords(currentWords, is);
-      for (int i = 0; i < nmo; i++)
-      {
-        CMat.push_back(tmp);
-      }
-      for (int i = 0; i < SizeOfBasisSet; i++)
+    else if (currentWords.size() == 0)
+      continue;
+    else if ((currentWords[0] == currentWords[1]) && (currentWords.size() % 2 == 0))
+    {
+      int nmo = currentWords.size() / 2; //real and complex MOcoeff in line
+      for (int ao = 0; ao < SizeOfBasisSet; ao++)
       {
         getwords(currentWords, is);
-        for (int j = 0; j < nmo; j++)
+        if (currentWords.size() == 0)
         {
-          std::complex<double> c(atof(currentWords[2 * j + 1].c_str()), atof(currentWords[2 * j + 2].c_str()));
-          CMat[currTot + j].push_back(c);
+          ao--;
+          continue;
+        }
+        for (int mo = 0; mo < nmo; mo++)
+        {
+          std::complex<double> c(atof(currentWords[2 * mo + 1].c_str()), atof(currentWords[2 * mo + 2].c_str()));
+          CMat[ao][mocount + mo] = c;
         }
       }
-      currTot += nmo;
+      mocount += nmo;
     }
     else
-    { //real kpoint, but storing in complex MO matrix
+    {
       int nmo = currentWords.size();
-      getwords(currentWords, is);
-      for (int i = 0; i < nmo; i++)
-      {
-        CMat.push_back(tmp);
-      }
-      for (int i = 0; i < SizeOfBasisSet; i++)
+      for (int ao = 0; ao < SizeOfBasisSet; ao++)
       {
         getwords(currentWords, is);
-        for (int j = 0; j < nmo; j++)
+        if (currentWords.size() == 0)
         {
-          std::complex<double> c(atof(currentWords[j + 1].c_str()), 0.0);
-          CMat[currTot + j].push_back(c);
+          ao--;
+          continue;
+        }
+        for (int mo = 0; mo < nmo; mo++)
+        {
+          std::complex<double> c(atof(currentWords[mo + 1].c_str()), 0.0);
+          CMat[ao][mocount + mo] = c;
         }
       }
-      currTot += nmo;
+      mocount += nmo;
     }
   }
 }
@@ -821,8 +829,8 @@ void CrystalAsciiParser::dumpHDF5(const std::string& fname)
   {
     STwist_Coord.resize(3);
     STwist_Coord = Kpoints_Coord[k];
-    std::cout << "Creating ESHDF file for SuperTwist " << k << ": " << Kpoints_Coord[k][0] << " " << Kpoints_Coord[k][1] << " "
-              << Kpoints_Coord[k][2] << std::endl;
+    std::cout << "Creating ESHDF file for SuperTwist " << k << ": " << Kpoints_Coord[k][0] << " " << Kpoints_Coord[k][1]
+              << " " << Kpoints_Coord[k][2] << std::endl;
     h5file = fname + "_" + std::to_string(k) + ".h5";
     hdf_archive hout;
     hout.create(h5file.c_str(), H5F_ACC_TRUNC);
@@ -1007,33 +1015,33 @@ void CrystalAsciiParser::dumpHDF5(const std::string& fname)
     if (PBC)
     {
       //Transform from reduced to absolute kpoints
-      Matrix<double> Tw(1,3);
+      Matrix<double> Tw(1, 3);
       for (int d = 0; d < 3; d++)
-        Tw[0][d] = Kpoints_Coord[k][0]*A[d] + Kpoints_Coord[k][1]*B[d] +Kpoints_Coord[k][2]*C[d] ;
+        Tw[0][d] = Kpoints_Coord[k][0] * A[d] + Kpoints_Coord[k][1] * B[d] + Kpoints_Coord[k][2] * C[d];
       hout.write(Tw, "Coord");
     }
     if (IsComplex)
     {
-      Matrix<double> real(SizeOfBasisSet, SizeOfBasisSet);
-      Matrix<double> imaj(SizeOfBasisSet, SizeOfBasisSet);
-      for (int i = 0; i < SizeOfBasisSet; i++)
+      Matrix<double> real(numMO, SizeOfBasisSet);
+      Matrix<double> imaj(numMO, SizeOfBasisSet);
+      for (int mo = 0; mo < numMO; mo++)
       {
-        for (int j = 0; j < SizeOfBasisSet; j++)
+        for (int ao = 0; ao < SizeOfBasisSet; ao++)
         {
-          real[i][j] = std::real(complex_kmos[k][i][j]);
-          imaj[i][j] = std::imag(complex_kmos[k][i][j]);
+          real[mo][ao] = std::real(complex_kmos[k][ao][mo]);
+          imaj[mo][ao] = std::imag(complex_kmos[k][ao][mo]);
         }
       }
       hout.write(real, "eigenset_0");
       hout.write(imaj, "eigenset_0_imag");
       if (!SpinRestricted)
       {
-        for (int i = 0; i < SizeOfBasisSet; i++)
+        for (int mo = 0; mo < numMO; mo++)
         {
-          for (int j = 0; j < SizeOfBasisSet; j++)
+          for (int ao = 0; ao < SizeOfBasisSet; ao++)
           {
-            real[i][j] = std::real(complex_kmos[k + NbKpts][i][j]);
-            imaj[i][j] = std::imag(complex_kmos[k + NbKpts][i][j]);
+            real[mo][ao] = std::real(complex_kmos[k + NbKpts][ao][mo]);
+            imaj[mo][ao] = std::imag(complex_kmos[k + NbKpts][ao][mo]);
           }
         }
         hout.write(real, "eigenset_1");
@@ -1043,21 +1051,21 @@ void CrystalAsciiParser::dumpHDF5(const std::string& fname)
     else
     {
       Matrix<double> real(SizeOfBasisSet, SizeOfBasisSet);
-      for (int i = 0; i < SizeOfBasisSet; i++)
+      for (int mo = 0; mo < numMO; mo++)
       {
-        for (int j = 0; j < SizeOfBasisSet; j++)
+        for (int ao = 0; ao < SizeOfBasisSet; ao++)
         {
-          real[i][j] = real_kmos[k][i][j];
+          real[mo][ao] = real_kmos[k][ao][mo];
         }
       }
       hout.write(real, "eigenset_0");
       if (!SpinRestricted)
       {
-        for (int i = 0; i < SizeOfBasisSet; i++)
+        for (int mo = 0; mo < numMO; mo++)
         {
-          for (int j = 0; j < SizeOfBasisSet; j++)
+          for (int ao = 0; ao < SizeOfBasisSet; ao++)
           {
-            real[i][j] = real_kmos[k + NbKpts][i][j];
+            real[mo][ao] = real_kmos[k + NbKpts][ao][mo];
           }
         }
         hout.write(real, "eigenset_1");
