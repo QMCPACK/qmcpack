@@ -27,7 +27,7 @@
 #include <Utilities/PooledData.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Utilities/NewTimer.h>
-#include <OhmmsSoA/Container.h>
+#include <OhmmsSoA/VectorSoaContainer.h>
 #include "type_traits/template_types.hpp"
 namespace qmcplusplus
 {
