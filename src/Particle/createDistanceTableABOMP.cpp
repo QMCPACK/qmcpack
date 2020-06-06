@@ -17,7 +17,7 @@
 #include "Particle/createDistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Lattice/ParticleBConds.h"
-#include "simd/algorithm.hpp"
+#include "CPU/SIMD/algorithm.hpp"
 #include "Lattice/ParticleBConds3DSoa.h"
 #include "Particle/SoaDistanceTableABOMP.h"
 namespace qmcplusplus

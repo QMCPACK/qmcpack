@@ -151,7 +151,7 @@ IF (IS_GIT_PROJECT)
 ENDIF()
 
   ADD_LIBRARY(qmcutil ${UTILITIES})
-  TARGET_LINK_LIBRARIES(qmcutil PUBLIC message)
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC message containers)
   TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 IO::HDF5 Boost::boost ${QMC_UTIL_LIBS})
 
   # For unit tests, enable use for the fake RNG
@@ -167,6 +167,7 @@ ENDIF()
   ADD_LIBRARY(qmcfakerng ${UNIT_TEST_UTILITIES})
 
   SUBDIRS(einspline)
+  SUBDIRS(Containers)
   SUBDIRS(MinimalContainers)
   SUBDIRS(Message)
   SUBDIRS(Platforms)

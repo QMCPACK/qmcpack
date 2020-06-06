@@ -155,46 +155,6 @@
 /* Use SOA version of AA distance table */
 #cmakedefine ENABLE_SOA @ENABLE_SOA@
 
-#if defined(__cplusplus)
-  #if defined(__INTEL_COMPILER)
-    #if defined(__AVX512F__)
-      #define QMC_CLINE 64
-      #define QMC_ALIGNAS alignas(64)
-      #define ASSUME_ALIGNED(x) __assume_aligned(x,64)
-    #else
-      #define QMC_CLINE 32
-      #define QMC_ALIGNAS alignas(32)
-      #define ASSUME_ALIGNED(x) __assume_aligned(x,32)
-    #endif
-  #elif defined(__GNUC__) && !defined(__ibmxl__)
-    #if defined(__AVX512F__)
-      #define QMC_CLINE 64
-      #define QMC_ALIGNAS alignas(64)
-      #define ASSUME_ALIGNED(x) (x) = (__typeof__(x)) __builtin_assume_aligned(x,64)
-    #else
-      #define QMC_CLINE 32
-      #define QMC_ALIGNAS alignas(32)
-      #define ASSUME_ALIGNED(x) (x) = (__typeof__(x)) __builtin_assume_aligned(x,32)
-    #endif
-  #else
-    #define QMC_CLINE 32
-    #define QMC_ALIGNAS alignas(32)
-    #define ASSUME_ALIGNED(x)
-  #endif
-
-#else //capture C
-  #if defined(__AVX512F__)
-    #define QMC_CLINE 64
-  #else
-    #define QMC_CLINE 32
-  #endif
-  #define QMC_ALIGNAS
-  #define ASSUME_ALIGNED(x)
-  #ifndef nullptr
-  #define nullptr NULL
-  #endif
-#endif
-
 /* Fixed Size Walker Properties */
 #cmakedefine WALKER_MAX_PROPERTIES @WALKER_MAX_PROPERTIES@
 

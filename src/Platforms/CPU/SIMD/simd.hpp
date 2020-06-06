@@ -20,6 +20,6 @@
 #ifndef QMCPLUSPLUS_MATH_SIMD_ADOPTORS_HPP
 #define QMCPLUSPLUS_MATH_SIMD_ADOPTORS_HPP
 
-#include <simd/inner_product.hpp>
-#include <simd/vmath.hpp>
+#include "inner_product.hpp"
+#include "vmath.hpp"
 #endif

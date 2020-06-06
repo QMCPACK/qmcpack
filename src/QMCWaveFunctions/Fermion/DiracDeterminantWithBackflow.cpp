@@ -19,7 +19,7 @@
 #include "Numerics/OhmmsBlas.h"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsPETE/Tensor.h"
-#include <simd/simd.hpp>
+#include <CPU/SIMD/simd.hpp>
 
 namespace qmcplusplus
 {

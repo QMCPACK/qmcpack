@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2019 QMCPACK developers.
+#// Copyright (c) 2020 QMCPACK developers.
 #//
 #// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//
@@ -10,13 +10,7 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+ADD_LIBRARY(containers INTERFACE)
 
-SET(SRC_DIR CUDA)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
-
-ADD_EXECUTABLE(${UTEST_EXE} test_CUDAallocator.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} platform_cuda containers catch_main)
-
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+TARGET_INCLUDE_DIRECTORIES(containers INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+TARGET_LINK_LIBRARIES(containers INTERFACE platform_device)
