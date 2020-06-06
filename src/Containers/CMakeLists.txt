@@ -10,12 +10,13 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-ADD_LIBRARY(containers INTERFACE)
+SET(CONTAINER_SRCS
+  MinimalContainers/ConstantSizeMatrix.cpp
+)
+ADD_LIBRARY(containers ${CONTAINER_SRCS})
 
-TARGET_INCLUDE_DIRECTORIES(containers INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
-TARGET_LINK_LIBRARIES(containers INTERFACE platform_device)
-
-SUBDIRS(MinimalContainers)
+TARGET_INCLUDE_DIRECTORIES(containers PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+TARGET_LINK_LIBRARIES(containers PUBLIC platform_device)
 
 IF (BUILD_UNIT_TESTS)
   SUBDIRS(OhmmsPETE/tests)
