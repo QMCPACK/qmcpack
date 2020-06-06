@@ -663,7 +663,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 
   if(type=="msd" || type=="nomsd") {
 
-    app_log()<<" Wavefunction type: NOMSD\n";
+    app_log()<<" Wavefunction type: NOMSD" << std::endl;
     if(!dump.push("NOMSD",false)) {
       app_error()<<" Error in WavefunctionFactory: Group NOMSD not found.\n";
       APP_ABORT("");
@@ -779,7 +779,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 
   } else if(type == "phmsd") {
 
-    app_log()<<" Wavefunction type: PHMSD\n";
+    app_log()<<" Wavefunction type: PHMSD" << std::endl;
 
     /* Implementation notes:
      *  - PsiT: [Nact, NMO] where Nact is the number of active space orbitals,
@@ -801,11 +801,14 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     std::vector<int> occbuff;
     std::vector<ComplexType> coeffs;
     // 1. Read occupancies and coefficients.
-    app_log() << " Reading PHMSD wavefunction from " << filename << "\n";
+    app_log() << " Reading PHMSD wavefunction from " << filename << std::endl;
     read_ph_wavefunction_hdf(dump, coeffs, occbuff, ndets_to_read, walker_type, TGwfn.Node(), NMO, NAEA, NAEB, PsiT_MO, wfn_type);
+    app_log() << " Finished reading PHMSD wavefunction " << std::endl;
     boost::multi::array_ref<int,2> occs(to_address(occbuff.data()), {ndets_to_read,NAEA+NAEB});
     // 2. Compute Variational Energy / update coefficients
+    app_log() << " Computing variational energy of trial wavefunction." << std::endl;
     computeVariationalEnergyPHMSD(TGwfn, h, occs, coeffs, ndets_to_read, NAEA, NAEB, NMO, recompute_ci);
+    app_log() << " Finished computing variational energy of trial wavefunction." << std::endl;
     // 3. Construct Structures.
     ph_excitations<int,ComplexType> abij = build_ph_struct(coeffs, occs, ndets_to_read, TGwfn.Node(), NMO, NAEA, NAEB);
     int N_ = (walker_type==NONCOLLINEAR)?2*NMO:NMO;
@@ -1076,7 +1079,7 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG, Hamilton
     }
   }
   TG.Node().barrier();
-  if(TG.Node().root())
+  if(TG.Node().root() && recompute_ci)
     TG.Cores().all_reduce_in_place_n(to_address(H.origin()),H.num_elements(),std::plus<>());
   TG.Global().all_reduce_in_place_n(energy.origin(),2,std::plus<>());
   app_log() << " - Variational energy of trial wavefunction: " << std::setprecision(16) << energy[0] / energy[1] << "\n";
