@@ -168,7 +168,6 @@ ENDIF()
 
   SUBDIRS(einspline)
   SUBDIRS(Containers)
-  SUBDIRS(MinimalContainers)
   SUBDIRS(Message)
   SUBDIRS(Platforms)
   SUBDIRS(Particle)
@@ -205,8 +204,6 @@ else() #{{{
 
   IF (BUILD_UNIT_TESTS) #{
     #Unit test directories
-    SUBDIRS(OhmmsPETE/tests)
-    SUBDIRS(OhmmsSoA/tests)
     SUBDIRS(Numerics/tests)
     SUBDIRS(Utilities/tests)
     SUBDIRS(einspline/tests)
@@ -222,7 +219,6 @@ else() #{{{
     SUBDIRS(QMCApp/tests)
     SUBDIRS(Message/tests)
     SUBDIRS(Optimize/tests)
-    SUBDIRS(MinimalContainers/tests)
     SUBDIRS(QMCTools/tests)
   ENDIF() #}
 

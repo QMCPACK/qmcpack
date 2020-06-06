@@ -14,3 +14,11 @@ ADD_LIBRARY(containers INTERFACE)
 
 TARGET_INCLUDE_DIRECTORIES(containers INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 TARGET_LINK_LIBRARIES(containers INTERFACE platform_device)
+
+SUBDIRS(MinimalContainers)
+
+IF (BUILD_UNIT_TESTS)
+  SUBDIRS(OhmmsPETE/tests)
+  SUBDIRS(OhmmsSoA/tests)
+  SUBDIRS(MinimalContainers/tests)
+ENDIF()

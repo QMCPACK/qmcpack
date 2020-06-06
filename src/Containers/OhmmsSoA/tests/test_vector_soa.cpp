@@ -24,7 +24,7 @@ namespace qmcplusplus
 {
 TEST_CASE("vector", "[OhmmsSoA]")
 {
-  typedef ParticleAttrib<TinyVector<double, 3>> vec_t;
+  typedef Vector<TinyVector<double, 3>> vec_t;
   typedef VectorSoaContainer<double, 3> vec_soa_t;
 
   vec_t R(4);
@@ -56,7 +56,7 @@ TEST_CASE("vector", "[OhmmsSoA]")
 
 TEST_CASE("VectorSoaContainer copy constructor", "[OhmmsSoA]")
 {
-  ParticleAttrib<TinyVector<double, 3>> R(4);
+  Vector<TinyVector<double, 3>> R(4);
   VectorSoaContainer<double, 3> RSoA(4);
 
   R[0] = TinyVector<double, 3>(0.00000000, 0.00000000, 0.00000000);
@@ -78,7 +78,7 @@ TEST_CASE("VectorSoaContainer copy constructor", "[OhmmsSoA]")
 
 TEST_CASE("VectorSoaContainer move constructor", "[OhmmsSoA]")
 {
-  ParticleAttrib<TinyVector<double, 3>> R(4);
+  Vector<TinyVector<double, 3>> R(4);
   VectorSoaContainer<double, 3> RSoA(4);
 
   R[0] = TinyVector<double, 3>(0.00000000, 0.00000000, 0.00000000);
@@ -100,7 +100,7 @@ TEST_CASE("VectorSoaContainer move constructor", "[OhmmsSoA]")
 
   TEST_CASE("VectorSoaContainer assignment", "[OhmmsSoA]")
   {
-  ParticleAttrib<TinyVector<double, 3>> R(4);
+  Vector<TinyVector<double, 3>> R(4);
   VectorSoaContainer<double, 3> RSoA(4);
 
   R[0] = TinyVector<double, 3>(0.00000000, 0.00000000, 0.00000000);
@@ -115,7 +115,7 @@ TEST_CASE("VectorSoaContainer move constructor", "[OhmmsSoA]")
   REQUIRE(rsoa_assign[3][1] == Approx(5.05974172));
   REQUIRE(rsoa_assign[3][2] == Approx(1.68658058));
 
-  ParticleAttrib<TinyVector<double, 3>> r_big(5);
+  Vector<TinyVector<double, 3>> r_big(5);
   VectorSoaContainer<double, 3> r_soa_big(5);
 
   r_big[0] = TinyVector<double, 3>(0.00000000, 0.00000000, 0.00000000);
