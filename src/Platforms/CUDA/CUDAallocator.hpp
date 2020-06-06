@@ -25,6 +25,7 @@
 #include "config.h"
 #include "cudaError.h"
 #include "allocator_traits.hpp"
+#include "CPU/SIMD/alignment.config.h"
 
 namespace qmcplusplus
 {
