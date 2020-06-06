@@ -16,7 +16,7 @@
 #define QMCPLUSPLUS_EINSPLINE_BSPLINE_ALLOCATOR_H
 
 #include "spline2/bspline_traits.hpp"
-#include "simd/allocator.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
 
 extern "C"
 {

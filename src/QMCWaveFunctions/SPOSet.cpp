@@ -19,7 +19,7 @@
 #include "Message/Communicate.h"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
-#include <simd/simd.hpp>
+#include <CPU/SIMD/simd.hpp>
 #include "Utilities/ProgressReportEngine.h"
 #include <io/hdf_archive.h>
 #include <limits>

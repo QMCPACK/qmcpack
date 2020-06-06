@@ -18,7 +18,7 @@
 #include <Particle/ParticleSet.h>
 #include <spline2/MultiBspline.hpp>
 #include <spline2/MultiBsplineEval.hpp>
-#include <simd/allocator.hpp>
+#include <CPU/SIMD/aligned_allocator.hpp>
 #include <iostream>
 
 namespace qmcplusplus

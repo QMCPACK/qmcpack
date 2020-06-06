@@ -16,7 +16,7 @@
 #include <LongRange/StructFact.h>
 #include <config/stdlib/math.hpp>
 #include <Numerics/e2iphi.h>
-#include <simd/vmath.hpp>
+#include <CPU/SIMD/vmath.hpp>
 #include <Numerics/OhmmsBlas.h>
 #include <qmc_common.h>
 

@@ -16,7 +16,7 @@
 
 #include <complex>
 #include <cstring>
-#include "simd/allocator.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include <stdexcept>
 

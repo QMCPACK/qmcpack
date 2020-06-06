@@ -24,7 +24,7 @@
 #include <cuda_runtime_api.h>
 #include "config.h"
 #include "cudaError.h"
-#include "simd/allocator_traits.hpp"
+#include "allocator_traits.hpp"
 
 namespace qmcplusplus
 {

@@ -18,8 +18,8 @@
 #define QMCPLUSPLUS_VECTOR_SOA_H
 
 #include <type_traits>
-#include "simd/allocator.hpp"
-#include "simd/algorithm.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
+#include "CPU/SIMD/algorithm.hpp"
 #include "OhmmsSoA/PosTransformer.h"
 #include "Particle/ParticleBase/ParticleAttrib.h"
 

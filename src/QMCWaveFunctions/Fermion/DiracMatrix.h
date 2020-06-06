@@ -16,7 +16,7 @@
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include "Numerics/BlasThreadingEnv.h"
 #include <type_traits/scalar_traits.h>
-#include "simd/simd.hpp"
+#include "CPU/SIMD/simd.hpp"
 
 namespace qmcplusplus
 {

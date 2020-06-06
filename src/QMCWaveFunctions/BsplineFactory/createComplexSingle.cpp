@@ -12,7 +12,7 @@
 
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
 #include "Numerics/e2iphi.h"
-#include "simd/vmath.hpp"
+#include "CPU/SIMD/vmath.hpp"
 #include <Utilities/ProgressReportEngine.h>
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"

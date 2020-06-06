@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_MATRIX_UPDATE_OMP_H
 #define QMCPLUSPLUS_MATRIX_UPDATE_OMP_H
 
-#include "simd/allocator.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "OpenMP/OMPallocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"

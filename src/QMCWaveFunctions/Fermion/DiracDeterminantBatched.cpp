@@ -14,7 +14,7 @@
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
 #include "Numerics/MatrixOperators.h"
-#include "simd/simd.hpp"
+#include "CPU/SIMD/simd.hpp"
 
 namespace qmcplusplus
 {
