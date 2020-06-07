@@ -30,7 +30,7 @@
 //#include "QMCDrivers/VMC/VMCSingle.h"
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
-#include "Numerics/Blasf.h"
+#include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #if defined(QMC_CUDA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"

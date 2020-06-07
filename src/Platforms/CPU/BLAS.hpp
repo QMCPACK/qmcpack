@@ -18,7 +18,7 @@
 #define QMCPLUSPLUS_NUMERIC_BLAS_H
 
 //generic header for blas routines
-#include "Numerics/Blasf.h"
+#include "Blasf.h"
 
 /** Interfaces to blas library
  *
