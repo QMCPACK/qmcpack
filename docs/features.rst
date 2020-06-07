@@ -214,4 +214,4 @@ To use this feature, the following needs to be done:
    gpusharing=“yes">). See
    :ref:`spo-spline`.
 
-.. bibliography:: bibliography.bib
+.. bibliography:: /bibs/features.bib

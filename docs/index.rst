@@ -23,6 +23,7 @@ User's Guide and Developer's Manual for
    input_overview
    simulationcell
    intro_wavefunction
+   hamiltonianobservable
 
 
 

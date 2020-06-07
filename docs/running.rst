@@ -230,3 +230,5 @@ with caution if this option has to be considered.  It is also possible
 to distribute the B-spline coefficients table between the host and GPU
 memory, see option Spline\_Size\_Limit\_MB in
 :ref:`spo-spline`.
+
+.. bibliography:: /bibs/running.bib

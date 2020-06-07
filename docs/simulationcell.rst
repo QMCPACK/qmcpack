@@ -375,4 +375,4 @@ Example use cases
        </group>
      </particleset>
 
-.. bibliography:: bibliography.bib
+.. bibliography:: /bibs/simulationcell.bib
