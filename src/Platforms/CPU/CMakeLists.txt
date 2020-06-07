@@ -15,7 +15,7 @@ SET(CPU_SRCS
 )
 
 ADD_LIBRARY(platform_cpu ${CPU_SRCS})
-TARGET_INCLUDE_DIRECTORIES(platform_cpu INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+TARGET_LINK_LIBRARIES(platform_cpu Math::BLAS_LAPACK Math::scalar_vector_functions)
 
 IF (BUILD_UNIT_TESTS)
   SUBDIRS(tests)

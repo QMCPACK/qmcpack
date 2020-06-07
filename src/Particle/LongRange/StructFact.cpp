@@ -15,7 +15,7 @@
 
 #include <LongRange/StructFact.h>
 #include <config/stdlib/math.hpp>
-#include <Numerics/e2iphi.h>
+#include <CPU/e2iphi.h>
 #include <CPU/SIMD/vmath.hpp>
 #include <CPU/BLAS.hpp>
 #include <qmc_common.h>
