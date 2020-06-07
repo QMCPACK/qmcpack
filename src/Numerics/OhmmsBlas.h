@@ -35,21 +35,22 @@
  *  which BLAS routines are actually used.
  *  Note that symv can be call in many ways.
  */
-struct BLAS
+namespace BLAS
 {
-  static const int INCX     = 1;
-  static const int INCY     = 1;
-  static const char UPLO    = 'L';
-  static const char TRANS   = 'T';
-  static const char NOTRANS = 'N';
-  static const float sone;
-  static const float szero;
-  static const double done;
-  static const double dzero;
-  static const std::complex<float> cone;
-  static const std::complex<float> czero;
-  static const std::complex<double> zone;
-  static const std::complex<double> zzero;
+  constexpr int INCX     = 1;
+  constexpr int INCY     = 1;
+  constexpr char UPLO    = 'L';
+  constexpr char TRANS   = 'T';
+  constexpr char NOTRANS = 'N';
+
+  constexpr float sone                 = 1.0e0;
+  constexpr float szero                = 0.0e0;
+  constexpr double done                = 1.0e0;
+  constexpr double dzero               = 0.0e0;
+  constexpr std::complex<float> cone   = 1.0e0;
+  constexpr std::complex<float> czero  = 0.0e0;
+  constexpr std::complex<double> zone  = 1.0e0;
+  constexpr std::complex<double> zzero = 0.0e0;
 
   inline static void axpy(int n, double x, const double* a, double* b) { daxpy(n, x, a, INCX, b, INCY); }
 
