@@ -111,8 +111,13 @@ SET(QMCDRIVERS ${QMCDRIVERS}
 ####################################
 # create libqmcdriver
 ####################################
-ADD_LIBRARY(qmcdriver ${QMCDRIVERS})
-ADD_LIBRARY(qmcdriver_unit ${QMCDRIVERS})
+IF(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmcdriver OBJECT ${QMCDRIVERS})
+  ADD_LIBRARY(qmcdriver_unit OBJECT ${QMCDRIVERS})
+ELSE()
+  ADD_LIBRARY(qmcdriver ${QMCDRIVERS})
+  ADD_LIBRARY(qmcdriver_unit ${QMCDRIVERS})
+ENDIF()
 USE_FAKE_RNG(qmcdriver_unit)
 
 TARGET_LINK_LIBRARIES(qmcdriver PUBLIC qmcham)

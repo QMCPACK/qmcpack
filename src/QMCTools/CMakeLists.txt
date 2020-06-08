@@ -42,7 +42,10 @@ set(QTOOLS convert4qmc qmc-extract-eshdf-kvectors)
 FOREACH(p ${QTOOLS})
 
   ADD_EXECUTABLE(${p} ${p}.cpp)
-  TARGET_LINK_LIBRARIES(${p} PRIVATE mocommon)
+  TARGET_LINK_LIBRARIES(${p} mocommon)
+  IF(USE_OBJECT_TARGET)
+    TARGET_LINK_LIBRARIES(${p} qmcparticle qmcutil)
+  ENDIF()
 
   INSTALL(TARGETS ${p}
           RUNTIME DESTINATION bin)
@@ -55,14 +58,14 @@ INSTALL(TARGETS qmc-get-supercell
 
 ADD_EXECUTABLE(qmc-check-affinity check-affinity.cpp)
 IF(HAVE_MPI)
-  TARGET_LINK_LIBRARIES(qmc-check-affinity PRIVATE MPI::MPI_CXX)
+  TARGET_LINK_LIBRARIES(qmc-check-affinity MPI::MPI_CXX)
 ENDIF()
 
 INSTALL(TARGETS qmc-check-affinity
         RUNTIME DESTINATION bin)
 
 ADD_EXECUTABLE(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
-TARGET_LINK_LIBRARIES(convertpw4qmc PRIVATE qmcutil Math::FFTW3)
+TARGET_LINK_LIBRARIES(convertpw4qmc qmcutil Math::FFTW3)
 
 INSTALL(TARGETS convertpw4qmc
         RUNTIME DESTINATION bin)
@@ -79,7 +82,11 @@ ADD_LIBRARY(fstool ${FSSRCS})
 TARGET_LINK_LIBRARIES(fstool PUBLIC qmc qmcparticle qmcwfs)
 
 ADD_EXECUTABLE(qmcfinitesize qmcfinitesize.cpp)
-TARGET_LINK_LIBRARIES(qmcfinitesize PRIVATE fstool)
+TARGET_LINK_LIBRARIES(qmcfinitesize fstool)
+IF(USE_OBJECT_TARGET)
+  TARGET_LINK_LIBRARIES(qmcfinitesize qmcparticle qmcutil)
+ENDIF()
+
 
 INSTALL(TARGETS qmcfinitesize
         RUNTIME DESTINATION bin)
