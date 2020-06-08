@@ -32,7 +32,7 @@ TARGET_INCLUDE_DIRECTORIES(platform_device PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 TARGET_LINK_LIBRARIES(platform_device PUBLIC message)
 
 SUBDIRS(CPU)
-TARGET_LINK_LIBRARIES(platform_device PRIVATE platform_cpu)
+TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cpu)
 
 SUBDIRS(OpenMP)
 TARGET_LINK_LIBRARIES(platform_device PRIVATE platform_omp)

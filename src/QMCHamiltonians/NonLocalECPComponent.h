@@ -22,7 +22,7 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
 {
