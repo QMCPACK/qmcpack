@@ -125,4 +125,4 @@ Entries in this offset list of prime numbers are then used as the seed for the r
 
 If checkpointing is enabled, the random number state is written to an HDF file at the end of each block (suffix: ``.random.h5``).
 This file will be read if the ``mcwalkerset`` tag is present to perform a restart.
-For more information, see the ``checkpoint`` element in the QMC methods :ref:`qmcmethods` and :ref:`checkpoint_files` on checkpoint and restart files.
+For more information, see the ``checkpoint`` element in the QMC methods :ref:`qmcmethods` and :ref:`checkpoint-files` on checkpoint and restart files.

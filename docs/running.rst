@@ -38,12 +38,12 @@ option is disabled:
 Input files
 -----------
 
-The input is one or more XML file(s), documented in :ref:`input_overview`.
+The input is one or more XML file(s), documented in :ref:`input-overview`.
 
 Output files
 ------------
 
-QMCPACK generates multiple files documented in :ref:`output_overview`.
+QMCPACK generates multiple files documented in :ref:`output-overview`.
 
 .. _parallelrunning:
 

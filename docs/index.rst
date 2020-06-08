@@ -24,6 +24,7 @@ User's Guide and Developer's Manual for
    simulationcell
    intro_wavefunction
    hamiltonianobservable
+   methods
 
 
 

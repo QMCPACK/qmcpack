@@ -1568,7 +1568,7 @@ In QMCPACK a slightly more restricted form is used:
 
   u_Y(r) = \frac{r_s}{r}\left(1-e^{-r/\sqrt{r_s}}\right)
 
-here ":math:`$r_s`" is understood to be a variational parameter.
+here ":math:`r_s`" is understood to be a variational parameter.
 
 The Gaskell RPA form---which contains correct short/long range limits
 and minimizes the total energy of the electron gas within the RPA---is
