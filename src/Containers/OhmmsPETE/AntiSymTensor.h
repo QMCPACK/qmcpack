@@ -33,8 +33,6 @@
 
 
 // include files
-//#include "Utility/PAssert.h"
-//#include "Message/Message.h"
 #include "PETE/PETE.h"
 #include "OhmmsPETE/OhmmsTinyMeta.h"
 #include "OhmmsPETE/Tensor.h"
