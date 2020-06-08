@@ -44,7 +44,7 @@ FOREACH(p ${QTOOLS})
   ADD_EXECUTABLE(${p} ${p}.cpp)
   TARGET_LINK_LIBRARIES(${p} mocommon)
   IF(USE_OBJECT_TARGET)
-    TARGET_LINK_LIBRARIES(${p} qmcparticle qmcutil)
+    TARGET_LINK_LIBRARIES(${p} qmcparticle qmcutil containers)
   ENDIF()
 
   INSTALL(TARGETS ${p}
@@ -84,7 +84,7 @@ TARGET_LINK_LIBRARIES(fstool PUBLIC qmc qmcparticle qmcwfs)
 ADD_EXECUTABLE(qmcfinitesize qmcfinitesize.cpp)
 TARGET_LINK_LIBRARIES(qmcfinitesize fstool)
 IF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(qmcfinitesize qmcparticle qmcutil)
+  TARGET_LINK_LIBRARIES(qmcfinitesize qmcparticle qmcutil containers)
 ENDIF()
 
 

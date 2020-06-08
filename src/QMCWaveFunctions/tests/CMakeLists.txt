@@ -57,7 +57,7 @@ ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp test_TrialWaveFunction.cpp FakeSPO.cpp t
                test_short_range_cusp_jastrow.cpp ${MO_SRCS})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcwfs Math::BLAS_LAPACK Math::scalar_vector_functions)
 IF(USE_OBJECT_TARGET)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle qmcutil platform_omp)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle qmcutil containers platform_omp)
 ENDIF()
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

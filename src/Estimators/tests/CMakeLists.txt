@@ -23,7 +23,7 @@ SET(SRCS test_accumulator.cpp test_local_energy_est.cpp test_manager.cpp test_tr
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcdriver_unit)
 IF(USE_OBJECT_TARGET)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcham_unit qmcwfs qmcparticle qmcutil platform_omp)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcham_unit qmcwfs qmcparticle qmcutil containers platform_omp)
 ENDIF()
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

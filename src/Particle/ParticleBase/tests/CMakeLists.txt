@@ -21,7 +21,7 @@ ADD_EXECUTABLE(${UTEST_EXE} test_particle_attrib.cpp test_random_seq.cpp test_at
 USE_FAKE_RNG(${UTEST_EXE})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcparticle qmcfakerng)
 IF(USE_OBJECT_TARGET)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil containers)
 ENDIF()
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
