@@ -18,7 +18,7 @@
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "Numerics/DeterminantOperators.h"
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 #include "Numerics/MatrixOperators.h"
 #include "CPU/SIMD/simd.hpp"
 

@@ -26,7 +26,7 @@
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantCalculator.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
-//#include "Numerics/OhmmsBlas.h"
+//#include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
 {

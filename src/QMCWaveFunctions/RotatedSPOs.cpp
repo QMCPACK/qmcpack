@@ -13,7 +13,7 @@
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #include <Numerics/MatrixOperators.h>
 #include "Numerics/DeterminantOperators.h"
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 
 
 namespace qmcplusplus

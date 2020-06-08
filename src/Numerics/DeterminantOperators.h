@@ -24,7 +24,7 @@
 #include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
-#include <Numerics/OhmmsBlas.h>
+#include <CPU/BLAS.hpp>
 #include <config/stdlib/math.hpp>
 #include "CPU/SIMD/inner_product.hpp"
 #include <Numerics/determinant_operators.h>

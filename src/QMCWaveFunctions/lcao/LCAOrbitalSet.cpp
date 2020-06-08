@@ -12,7 +12,7 @@
 
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
 #include <Numerics/MatrixOperators.h>
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
 {
