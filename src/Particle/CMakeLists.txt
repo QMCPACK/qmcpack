@@ -65,7 +65,7 @@ ELSE(USE_OBJECT_TARGET)
 ENDIF(USE_OBJECT_TARGET)
 
 TARGET_INCLUDE_DIRECTORIES(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-TARGET_LINK_LIBRARIES(qmcparticle PRIVATE qmcminimalcontainers Math::BLAS_LAPACK Math::scalar_vector_functions)
+TARGET_LINK_LIBRARIES(qmcparticle PRIVATE Math::BLAS_LAPACK Math::scalar_vector_functions)
 TARGET_LINK_LIBRARIES(qmcparticle PUBLIC qmcutil platform_device)
 
 IF(QMC_CUDA)

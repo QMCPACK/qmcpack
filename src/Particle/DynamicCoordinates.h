@@ -17,7 +17,7 @@
 
 #include <memory>
 #include "Configuration.h"
-#include "OhmmsSoA/Container.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
 
 namespace qmcplusplus
 {

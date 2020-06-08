@@ -16,7 +16,7 @@
 #define QMCPLUSPLUS_REALSPACE_POSITIONS_H
 
 #include "Particle/DynamicCoordinates.h"
-#include "OhmmsSoA/Container.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
 
 namespace qmcplusplus
 {

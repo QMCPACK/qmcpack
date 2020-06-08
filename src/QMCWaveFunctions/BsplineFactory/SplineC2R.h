@@ -23,7 +23,7 @@
 
 #include <memory>
 #include <QMCWaveFunctions/BsplineFactory/BsplineSet.h>
-#include <OhmmsSoA/Container.h>
+#include <OhmmsSoA/VectorSoaContainer.h>
 #include <spline2/MultiBspline.hpp>
 #include "Utilities/FairDivide.h"
 
