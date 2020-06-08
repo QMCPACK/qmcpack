@@ -17,8 +17,8 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #endif
 #include "Particle/DistanceTableData.h"
-#include <simd/allocator.hpp>
-#include <simd/algorithm.hpp>
+#include <CPU/SIMD/aligned_allocator.hpp>
+#include <CPU/SIMD/algorithm.hpp>
 #include <map>
 #include <numeric>
 

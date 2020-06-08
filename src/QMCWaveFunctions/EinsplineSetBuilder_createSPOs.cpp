@@ -18,7 +18,7 @@
 
 
 #include "Numerics/e2iphi.h"
-#include "simd/vmath.hpp"
+#include "CPU/SIMD/vmath.hpp"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"

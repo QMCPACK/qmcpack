@@ -15,8 +15,8 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include <qmc_common.h>
-#include <simd/allocator.hpp>
-#include <simd/algorithm.hpp>
+#include <CPU/SIMD/aligned_allocator.hpp>
+#include <CPU/SIMD/algorithm.hpp>
 #include <map>
 #include <numeric>
 

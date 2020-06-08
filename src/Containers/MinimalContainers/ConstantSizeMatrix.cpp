@@ -1,5 +1,5 @@
 
-#include "MinimalContainers/ConstantSizeMatrix.hpp"
+#include "ConstantSizeMatrix.hpp"
 
 namespace qmcplusplus
 {

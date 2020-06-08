@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2018 QMCPACK developers.
+#// Copyright (c) 2020 QMCPACK developers.
 #//
 #// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//
@@ -10,16 +10,12 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
+SET(CPU_SRCS
+)
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+ADD_LIBRARY(platform_cpu INTERFACE)
+TARGET_INCLUDE_DIRECTORIES(platform_cpu INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
-SET(SRC_DIR ohmmssoa)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
-
-
-ADD_EXECUTABLE(${UTEST_EXE} test_vector_soa.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcutil)
-
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-
+IF (BUILD_UNIT_TESTS)
+  SUBDIRS(tests)
+ENDIF()

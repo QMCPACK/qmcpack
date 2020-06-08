@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_DETERMINANT_MINIAPPS_H
 #define QMCPLUSPLUS_DETERMINANT_MINIAPPS_H
 #include <OhmmsPETE/OhmmsMatrix.h>
-#include <simd/allocator.hpp>
+#include <CPU/SIMD/aligned_allocator.hpp>
 #include <Numerics/DeterminantOperators.h>
 
 namespace qmcplusplus

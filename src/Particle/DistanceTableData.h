@@ -19,7 +19,7 @@
 #include "Particle/ParticleSet.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "simd/allocator.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
 #include <OhmmsSoA/VectorSoaContainer.h>
 #include <limits>
 #include <bitset>

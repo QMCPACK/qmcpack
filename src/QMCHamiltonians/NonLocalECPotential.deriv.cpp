@@ -13,8 +13,6 @@
 
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
-//#include "Particle/VirtualParticleSet.h"
-#include <simd/simd.hpp>
 #include <Utilities/Timer.h>
 
 namespace qmcplusplus

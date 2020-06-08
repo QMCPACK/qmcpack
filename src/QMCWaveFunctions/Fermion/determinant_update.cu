@@ -24,11 +24,11 @@
 #include <thrust/complex.h>
 //Prior to CUDA9.0, bulk::uninitialized_array was included with thrust library
 //#include <thrust/system/cuda/detail/bulk/uninitialized.hpp>
-#include "../../CUDA/uninitialized_array.hpp"
+#include "CUDA_legacy/uninitialized_array.hpp"
 #endif
 
 #include "determinant_update.h"
-#include "../../CUDA/gpu_misc.h"
+#include "CUDA_legacy/gpu_misc.h"
 
 template<typename T, int BS>
 __global__ void update_inverse_cuda1(updateJob* updateList, int N, int rowstride)

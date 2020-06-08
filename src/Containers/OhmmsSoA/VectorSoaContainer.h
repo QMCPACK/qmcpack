@@ -18,14 +18,15 @@
 #define QMCPLUSPLUS_VECTOR_SOA_H
 
 #include <type_traits>
-#include "simd/allocator.hpp"
-#include "simd/algorithm.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
+#include "CPU/SIMD/algorithm.hpp"
+#include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsSoA/PosTransformer.h"
-#include "Particle/ParticleBase/ParticleAttrib.h"
 
 namespace qmcplusplus
 {
-/** SoA adaptor class for ParticleAttrib<TinyVector<T,D> >
+/** SoA adaptor class for Vector<TinyVector<T,D> >
  * @tparm T data type, float, double, complex<float>, complex<double>
  * @tparm Alloc memory allocator
  */
@@ -79,9 +80,9 @@ struct VectorSoaContainer
   /// constructor with size n without initialization
   explicit VectorSoaContainer(size_t n) : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr) { resize(n); }
 
-  /** constructor with ParticleAttrib<T1,D> */
+  /** constructor with Vector<T1,D> */
   template<typename T1>
-  VectorSoaContainer(const ParticleAttrib<TinyVector<T1, D>>& in)
+  VectorSoaContainer(const Vector<TinyVector<T1, D>>& in)
       : nLocal(0), nGhosts(0), nAllocated(0), myData(nullptr)
   {
     resize(in.size());
@@ -89,7 +90,7 @@ struct VectorSoaContainer
   }
 
   template<typename T1>
-  VectorSoaContainer& operator=(const ParticleAttrib<TinyVector<T1, D>>& in)
+  VectorSoaContainer& operator=(const Vector<TinyVector<T1, D>>& in)
   {
     resize(in.size());
     copyIn(in);
@@ -174,23 +175,23 @@ struct VectorSoaContainer
   ///return the physical size
   __forceinline size_t capacity() const { return nGhosts; }
 
-  /** AoS to SoA : copy from ParticleAttrib<>
+  /** AoS to SoA : copy from Vector<TinyVector<>>
        *
        * The same sizes are assumed.
        */
   template<typename T1>
-  void copyIn(const ParticleAttrib<TinyVector<T1, D>>& in)
+  void copyIn(const Vector<TinyVector<T1, D>>& in)
   {
     //if(nLocal!=in.size()) resize(in.size());
     PosAoS2SoA(nLocal, D, reinterpret_cast<const T1*>(in.first_address()), D, myData, nGhosts);
   }
 
-  /** SoA to AoS : copy to ParticleAttrib<>
+  /** SoA to AoS : copy to Vector<TinyVector<>>
        *
        * The same sizes are assumed.
        */
   template<typename T1>
-  void copyOut(ParticleAttrib<TinyVector<T1, D>>& out) const
+  void copyOut(Vector<TinyVector<T1, D>>& out) const
   {
     PosSoA2AoS(nLocal, D, myData, nGhosts, reinterpret_cast<T1*>(out.first_address()), D);
   }

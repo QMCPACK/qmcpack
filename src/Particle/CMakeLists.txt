@@ -60,9 +60,14 @@ ENDIF(OHMMS_DIM MATCHES 3)
 
 ADD_LIBRARY(qmcparticle ${PARTICLE} ${PARTICLEIO})
 TARGET_INCLUDE_DIRECTORIES(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-TARGET_LINK_LIBRARIES(qmcparticle PRIVATE qmcminimalcontainers Math::BLAS_LAPACK Math::scalar_vector_functions)
-TARGET_LINK_LIBRARIES(qmcparticle PRIVATE platform_device)
-TARGET_LINK_LIBRARIES(qmcparticle PUBLIC qmcutil)
+TARGET_LINK_LIBRARIES(qmcparticle PRIVATE Math::BLAS_LAPACK Math::scalar_vector_functions)
+TARGET_LINK_LIBRARIES(qmcparticle PUBLIC qmcutil platform_device)
+
+IF(QMC_CUDA)
+  CUDA_ADD_LIBRARY(qmcparticle_cuda accept_kernel.cu)
+  TARGET_LINK_LIBRARIES(qmcparticle_cuda PRIVATE platform_device)
+  TARGET_LINK_LIBRARIES(qmcparticle PRIVATE qmcparticle_cuda)
+ENDIF(QMC_CUDA)
 
 IF(BUILD_UNIT_TESTS)
   SUBDIRS(tests)

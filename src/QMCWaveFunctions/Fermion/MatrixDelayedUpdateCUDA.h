@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_MATRIX_DELAYED_UPDATE_CUDA_H
 #define QMCPLUSPLUS_MATRIX_DELAYED_UPDATE_CUDA_H
 
-#include "simd/allocator.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "OpenMP/OMPallocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -21,8 +21,8 @@
 #include "Platforms/OpenMP/ompBLAS.hpp"
 #include "Platforms/OpenMP/ompReduction.hpp"
 #include <cuda_runtime_api.h>
-#include "Numerics/CUDA/cuBLAS.hpp"
-#include "Platforms/CUDA/cuBLAS_missing_functions.hpp"
+#include "CUDA/cuBLAS.hpp"
+#include "CUDA/cuBLAS_missing_functions.hpp"
 #include "QMCWaveFunctions/Fermion/matrix_update_helper.hpp"
 #include "CUDA/CUDAallocator.hpp"
 

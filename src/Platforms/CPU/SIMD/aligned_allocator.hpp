@@ -14,10 +14,10 @@
 #ifndef QMCPLUSPLUS_ALLOCATOR_H
 #define QMCPLUSPLUS_ALLOCATOR_H
 
-#include <config.h>
 #include <vector>
 #include <cstdlib>
-#include "simd/Mallocator.hpp"
+#include "alignment.config.h"
+#include "Mallocator.hpp"
 
 namespace qmcplusplus
 {

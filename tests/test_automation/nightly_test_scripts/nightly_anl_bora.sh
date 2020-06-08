@@ -63,8 +63,8 @@ cd $entry
 
 git checkout $branch
 
-for sys in Real-SoA Real-Mixed-SoA Complex-SoA Complex-Mixed-SoA Real Real-Mixed Complex Complex-Mixed \
-           Real-Mixed-SoA-CUDA2 Complex-Mixed-SoA-CUDA2
+for sys in Real Real-Mixed Complex Complex-Mixed \
+           Real-Mixed-CUDA2 Complex-Mixed-CUDA2 Real-Mixed-legacy-CUDA Complex-Mixed-legacy-CUDA
 do
 
 folder=build_$compiler_$sys
@@ -88,18 +88,14 @@ CTEST_FLAGS="-D QMC_DATA=$QMC_DATA -D ENABLE_TIMERS=1 -D C_FLAGS=-xCOMMON-AVX512
 
 if [[ $sys == *"-CUDA2"* ]]; then
   CTEST_FLAGS="$CTEST_FLAGS -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_61 -L 'deterministic|performance' -LE unstable"
+elif [[ $sys == *"-legacy-CUDA"* ]]; then
+  CTEST_FLAGS="$CTEST_FLAGS -D QMC_CUDA=1 -D CUDA_ARCH=sm_61 -L 'deterministic|performance' -LE unstable"
 else
   CTEST_FLAGS="$CTEST_FLAGS -D QE_BIN=$QE_BIN"
 fi
 
 if [[ $sys == *"Complex"* ]]; then
   CTEST_FLAGS="$CTEST_FLAGS -D QMC_COMPLEX=1"
-fi
-
-if [[ $sys == *"-SoA"* ]]; then
-  CTEST_FLAGS="$CTEST_FLAGS -D ENABLE_SOA=1"
-else
-  CTEST_FLAGS="$CTEST_FLAGS -D ENABLE_SOA=0"
 fi
 
 if [[ $sys == *"-Mixed"* ]]; then

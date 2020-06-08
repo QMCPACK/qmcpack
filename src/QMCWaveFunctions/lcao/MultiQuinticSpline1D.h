@@ -28,7 +28,7 @@
 #include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/SplineSolvers.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include <simd/allocator.hpp>
+#include <CPU/SIMD/aligned_allocator.hpp>
 
 namespace qmcplusplus
 {
