@@ -153,7 +153,8 @@ namespace device{
   template<class T>
   inline void batched_determinant_from_getrf(int n, device_pointer<T>* A, int lda, device_pointer<int> piv, int pstride, T LogOverlapFactor, T* res, int nbatch)
   {
-    throw std::runtime_error("Error: Calling cudaMalloc in batched_determinant_from_getrf in Numerics/determinant.hpp. Fix this. Not dispatching properly");
+    throw std::runtime_error("Error: Calling cudaMalloc in batched_determinant_from_getrf "
+                             "in Numerics/determinant.hpp. cudaMalloc needs to be moved a level lower.");
     //T **A_h = new T*[nbatch];
     //for(int i=0; i<nbatch; i++)
       //A_h[i] = to_address(A[i]);
