@@ -89,7 +89,7 @@ For small-to-medium problem sizes, using one thread per walker or for multiple w
 
 For large problems of at least 1,000 electrons, use of nested OpenMP threading can be enabled to reduce the time to solution further, although at some loss of efficiency. In this scheme multiple threads are used in the computations of each walker. This capability is implemented for some of the key computational kernels: the 3D spline orbital evaluation, certain portions of the distance tables, and implicitly the BLAS calls in the determinant update. Use of the batched nonlocal pseudopotential evaluation is also recommended.
 
-Nested threading is enabled by setting ``OMP\_NUM\_THREADS=AA,BB``, ``OMP\_MAX\_ACTIVE\_LEVELS=2`` and ``OMP\_NESTED=TRUE`` where the additional ``BB`` is the number of second-level threads.  Choosing the thread affinity is critical to the performance.
+Nested threading is enabled by setting ``OMP_NUM_THREADS=AA,BB``, ``OMP_MAX_ACTIVE_LEVELS=2`` and ``OMP_NESTED=TRUE`` where the additional ``BB`` is the number of second-level threads.  Choosing the thread affinity is critical to the performance.
 QMCPACK provides a tool qmc-check-affinity (source file src/QMCTools/check-affinity.cpp for details), which might help users investigate the affinity. Knowledge of how the operating system logical CPU cores (/prco/cpuinfo) are bound to the hardware is also needed.
 
 For example, on Blue Gene/Q with a Clang compiler, the best way to fully use the 16 cores each with 4 hardware threads is

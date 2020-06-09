@@ -975,7 +975,7 @@ attributes:
   +----------------------------+--------------+---------------------------+-------------+-------------------------------------------------------------------------------------------------+
   | ``hdf5``:math:`^o`         | boolean      | yes/no                    | no          | Output to ``stat.h5`` (yes) or ``scalar.dat`` (no)                                              |
   +----------------------------+--------------+---------------------------+-------------+-------------------------------------------------------------------------------------------------+
-  | ``writeionion``:math:`^o`  | boolean      | yes/no                    | no          | Writes file rhok\_IonIon.dat containing :math:`s(\mathbf{k})` for the ions                      |
+  | ``writeionion``:math:`^o`  | boolean      | yes/no                    | no          | Writes file rhok_IonIon.dat containing :math:`s(\mathbf{k})` for the ions                       |
   +----------------------------+--------------+---------------------------+-------------+-------------------------------------------------------------------------------------------------+
 
 Additional information:
@@ -1649,7 +1649,7 @@ Additional information:
   </estimator>
 
 .. code-block::
-  :caption: Example ``sposet`` initialization for density matrix use.  Occupied and virtual orbital sets are created separately, then joined (``basis="spo\_u spo\_uv"``).
+  :caption: Example ``sposet`` initialization for density matrix use.  Occupied and virtual orbital sets are created separately, then joined (``basis="spo_u spo_uv"``).
   :name: Listing 39
 
   <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" gpu="no" precision="single">

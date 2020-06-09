@@ -34,7 +34,7 @@ QMCPACK input looks like
      <parameter name="timestep">  0.4 </parameter>
   </qmc>
 
-XML elements start with ``<element\_name>``, end with ``</element\_name>}``, and can be nested within each other to denote substructure (the trial wavefunction is composed of a Slater determinant and a Jastrow factor, which are each further composed of :math:`...`).  ``id`` and ``series`` are attributes of the ``<project/>`` element.  XML attributes are generally used to represent simple values, like names, integers, or real values.  Similar functionality is also commonly provided by ``<parameter/>`` elements like those previously shown.
+XML elements start with ``<element_name>``, end with ``</element_name>}``, and can be nested within each other to denote substructure (the trial wavefunction is composed of a Slater determinant and a Jastrow factor, which are each further composed of :math:`...`).  ``id`` and ``series`` are attributes of the ``<project/>`` element.  XML attributes are generally used to represent simple values, like names, integers, or real values.  Similar functionality is also commonly provided by ``<parameter/>`` elements like those previously shown.
 
 The overall structure of the input file reflects different aspects of the QMC simulation: the simulation cell, particles, trial wavefunction, Hamiltonian, and QMC run parameters.  A condensed version of the actual input file is shown as follows:
 

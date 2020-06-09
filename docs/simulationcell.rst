@@ -272,7 +272,7 @@ Optional group attributes
 Example use cases
 ~~~~~~~~~~~~~~~~~
 
-.. _listing1
+.. _listing1:
 
 .. centered:: Particleset elements for ions and electrons randomizing electron start positions.
 

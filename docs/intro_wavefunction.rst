@@ -541,7 +541,7 @@ In the following, we give a more detailed description of all the options present
 
 .. _spo-hybrid:
 
-Hyrbid orbital representation
+Hybrid orbital representation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The hybrid representation of the single particle orbitals combines a localized atomic basis set around atomic cores and B-splines in the interstitial regions to reduce memory use while retaining high evaluation speed and either retaining or increasing overall accuracy. Full details are provided in :cite:`Luo2018hyb`, and **users of this feature are kindly requested to cite this paper**.
@@ -564,7 +564,7 @@ Orbitals in region C are computed as the regular B-spline basis described in :re
 .. math::
   :label: eq6
 
-  \phi^B_n(r) = S(r) \phi^A_n(r) + (1-S(r))\phi^C_n(r)
+  \phi^B_n({\bf r}) = S(r) \phi^A_n({\bf r}) + (1-S(r))\phi^C_n(r)
 
 .. math::
   :label: eq7
@@ -624,9 +624,9 @@ Attribute:
 
 - ``lmax`` is required if ``cutoff_radius`` :math:`>` 0.0. This value usually needs to be at least the highest angular momentum plus 2.
 
-- ``inner_cutoff`` is optional and set as ``cutof\_radius`` :math:`-0.3` by default, which is fine in most cases.
+- ``inner_cutoff`` is optional and set as ``cutoff_radius`` :math:`-0.3` by default, which is fine in most cases.
 
-- ``spline_radius} and ``spline_npoints`` are optional. By default, they are calculated based on ``cutoff_radius`` and a grid displacement 0.02 bohr.
+- ``spline_radius`` and ``spline_npoints`` are optional. By default, they are calculated based on ``cutoff_radius`` and a grid displacement 0.02 bohr.
   If users prefer inputing them, it is required that ``cutoff_radius`` <=  ``spline_radius`` :math:`-` 2 :math:`\times` ``spline_radius``/(``spline_npoints`` :math:`-` 1).
 
 In addition, the hybrid orbital representation allows extra optimization to speed up the nonlocal pseudopotential evaluation using the batched algorithm listed in :ref:`nlpp`.
