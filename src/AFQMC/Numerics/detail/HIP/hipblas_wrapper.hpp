@@ -731,11 +731,11 @@ namespace hipblas {
                          float const* B, int ldb,
                          float *C, int ldc)
   {
-    //hipblasStatus_t success =
-                //hipblasSgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),
-                           //M,N,&alpha,A,lda,&beta,B,ldb,C,ldc);
-    throw std::runtime_error("Error: hipblas_dot returned error code.");
-    hipblasStatus_t success;
+    hipblasStatus_t success =
+                hipblasSgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),
+                           M,N,&alpha,A,lda,&beta,B,ldb,C,ldc);
+    //throw std::runtime_error("Error: hipblas_geam returned error code.");
+    //hipblasStatus_t success;
     hipDeviceSynchronize ();
     return success;
   }
@@ -747,12 +747,10 @@ namespace hipblas {
                          double const* B, int ldb,
                          double *C, int ldc)
   {
-    //hipblasStatus_t success =
-                //hipblasDgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),
-                           //M,N,&alpha,A,lda,&beta,B,ldb,C,ldc);
+    hipblasStatus_t success =
+                hipblasDgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),
+                           M,N,&alpha,A,lda,&beta,B,ldb,C,ldc);
     hipDeviceSynchronize ();
-    throw std::runtime_error("Error: hipblas_dot returned error code.");
-    hipblasStatus_t success;
     return success;
   }
 
@@ -771,7 +769,7 @@ namespace hipblas {
                            //reinterpret_cast<hipblasComplex const*>(B),ldb,
                            //reinterpret_cast<hipblasComplex *>(C),ldc);
     hipDeviceSynchronize ();
-    throw std::runtime_error("Error: hipblas_dot returned error code.");
+    throw std::runtime_error("Error: hipblas_geam (c) not implemented.");
     hipblasStatus_t success;
     return success;
   }
@@ -791,7 +789,7 @@ namespace hipblas {
                            //reinterpret_cast<hipblasDoubleComplex const*>(B),ldb,
                            //reinterpret_cast<hipblasDoubleComplex *>(C),ldc);
     hipDeviceSynchronize ();
-    throw std::runtime_error("Error: hipblas_dot returned error code.");
+    throw std::runtime_error("Error: hipblas_geam (z) not implemented.");
     hipblasStatus_t success;
     return success;
   }
