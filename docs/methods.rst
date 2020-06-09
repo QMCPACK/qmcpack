@@ -1015,11 +1015,395 @@ parameters:
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------+
   | ``nonlocalmoves``              | string       | yes, no, v0, v1, v3     | no          | Run with T-moves                    |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------+
-  | ``branching_cutoff_scheme``    | string       | classic/DRV/ZSGMA/YL    | classic     | Branch cutoff scheme                |
+  | ``branching_cutoff_scheme``    |              |                         |             |                                     |
+  |                                |              |                         |             |                                     |
+  |                                | string       | classic/DRV/ZSGMA/YL    | classic     | Branch cutoff scheme                |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------+
   | ``maxcpusecs``                 | real         | :math:`\geq 0`          | 3.6e5       | Maximum allowed walltime in seconds |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------+
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency    |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------+
 
-.. centered:: Table 9 Main DMC input parameters
+.. centered:: Table 9 Main DMC input parameters.
+
+.. _table10:
+.. table::
+
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | **Name**                    | **Datatype** | **Values**              | **Default** | **Description**                         |
+  +=============================+==============+=========================+=============+=========================================+
+  | ``energyUpdateInterval``    | integer      | :math:`\geq 0`          | 0           | Trial energy update interval            |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``refEnergy``               | real         | all values              | dep.        | Reference energy in atomic units        |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``feedback``                | double       | :math:`\geq 0`          | 1.0         | Population feedback on the trial energy |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``sigmaBound``              | 10           | :math:`\geq 0`          | 10          | Parameter to cutoff large weights       |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``killnode``                | string       | yes/other               | no          | Kill or reject walkers that cross nodes |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``warmupByReconfiguration`` | option       | yes,no                  | 0           | Warm up with a fixed population         |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``reconfiguration``         | string       | yes/pure/other          | no          | Fixed population technique              |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``branchInterval``          | integer      | :math:`\geq 0`          | 1           | Branching interval                      |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``substeps``                | integer      | :math:`\geq 0`          | 1           | Branching interval                      |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``MaxAge``                  | double       | :math:`\geq 0`          | 10          | Kill persistent walkers                 |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``MaxCopy``                 | double       | :math:`\geq 0`          | 2           | Limit population growth                 |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``maxDisplSq``              | real         | all values              | -1          | Maximum particle move                   |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``scaleweight``             | string       | yes/other               | yes         | Scale weights (CUDA only)               |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``checkproperties``         | integer      | :math:`\geq 0`          | 100         | Number of steps between walker updates  |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``fastgrad``                | text         | yes/other               | yes         | Fast gradients                          |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``storeconfigs``            | integer      | all values              | 0           | Store configurations                    |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``use_nonblocking``         | string       | yes/no                  | yes         | Using nonblocking send/recv             |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+
+.. centered:: Table 10 Additional DMC input parameters.
+
+Additional information:
+
+-  ``targetwalkers``: A DMC run can be considered a restart run or a new
+   run. A restart run is considered to be any method block beyond the
+   first one, such as when a DMC method block follows a VMC block.
+   Alternatively, a user reading in configurations from disk would also
+   considered a restart run. In the case of a restart run, the DMC
+   driver will use the configurations from the previous run, and this
+   variable will not be used. For a new run, if the number of walkers is
+   less than the number of threads, then the number of walkers will be
+   set equal to the number of threads.
+
+-  ``blocks``: This is the number of blocks run during a DMC method
+   block. A block consists of a number of DMC steps (steps), after which
+   all the statistics accumulated in the block are written to disk.
+
+-  ``steps``: This is the number of DMC steps in a block.
+
+-  ``warmupsteps``: These are the steps at the beginning of a DMC run in
+   which the instantaneous average energy is used to update the trial
+   energy. During regular steps, E\ :math:`_{ref}` is used.
+
+-  ``timestep``: The ``timestep`` determines the accuracy of the
+   imaginary time propagator. Generally, multiple time steps are used to
+   extrapolate to the infinite time step limit. A good range of time
+   steps in which to perform time step extrapolation will typically have
+   a minimum of 99% acceptance probability for each step.
+
+-  ``checkproperties``: When using a particle-by-particle driver, this
+   variable specifies how often to reset all the variables kept in the
+   buffer.
+
+-  ``maxcpusecs``: The default is 100 hours. Once the specified time has
+   elapsed, the program will finalize the simulation even if all blocks
+   are not completed.
+
+-  ``energyUpdateInterval``: The default is to update the trial energy
+   at every step. Otherwise the trial energy is updated every
+   ``energyUpdateInterval`` step.
+
+.. math::
+
+  E_{\text{trial}}=
+  \textrm{refEnergy}+\textrm{feedback}\cdot(\ln\texttt{targetWalkers}-\ln N)\:,
+
+where :math:`N` is the current population.
+
+-  ``refEnergy``: The default reference energy is taken from the VMC run
+   that precedes the DMC run. This value is updated to the current mean
+   whenever branching happens.
+
+-  ``feedback``: This variable is used to determine how strong to react
+   to population fluctuations when doing population control. See the
+   equation in energyUpdateInterval for more details.
+
+-  ``useBareTau``: The same time step is used whether or not a move is
+   rejected. The default is to use an effective time step when a move is
+   rejected.
+
+-  ``warmupByReconfiguration``: Warmup DMC is done with a fixed
+   population.
+
+-  ``sigmaBound``: This determines the branch cutoff to limit wild
+   weights based on the sigma and ``sigmaBound``.
+
+-  ``killnode``: When running fixed-node, if a walker attempts to cross
+   a node, the move will normally be rejected. If ``killnode`` = “yes,"
+   then walkers are destroyed when they cross a node.
+
+-  ``reconfiguration``: If ``reconfiguration`` is “yes," then run with a
+   fixed walker population using the reconfiguration technique.
+
+-  ``branchInterval``: This is the number of steps between branching.
+   The total number of DMC steps in a block will be
+   ``BranchInterval``\ \*Steps.
+
+-  ``substeps``: This is the same as ``BranchInterval``.
+
+-  ``nonlocalmoves``: Evaluate pseudopotentials using one of the
+   nonlocal move algorithms such as T-moves.
+
+   -  no(default): Imposes the locality approximation.
+
+   -  yes/v0: Implements the algorithm in the 2006 Casula
+      paper :cite:`Casula2006`.
+
+   -  v1: Implements the v1 algorithm in the 2010 Casula
+      paper :cite:`Casula2010`.
+
+   -  v2: Is **not implemented** and is **skipped** to avoid any confusion
+      with the v2 algorithm in the 2010 Casula
+      paper :cite:`Casula2010`.
+
+   -  v3: (Experimental) Implements an algorithm similar to v1 but is much
+      faster. v1 computes the transition probability before each single
+      electron T-move selection because of the acceptance of previous
+      T-moves. v3 mostly reuses the transition probability computed during
+      the evaluation of nonlocal pseudopotentials for the local energy,
+      namely before accepting any T-moves, and only recomputes the
+      transition probability of the electrons within the same
+      pseudopotential region of any electrons touched by T-moves. This is
+      an approximation to v1 and results in a slightly different time step
+      error, but it significantly reduces the computational cost. v1 and v3
+      agree at zero time step. This faster algorithm is the topic of a
+      paper in preparation.
+
+      The v1 and v3 algorithms are size-consistent and are important advances over the previous v0 non-size-consistent algorithm. We highly recommend investigating the importance of size-consistency.
+
+
+-  ``scaleweight``: This is the scaling weight per Umrigar/Nightengale.
+   CUDA only.
+
+-  ``MaxAge``: Set the weight of a walker to min(currentweight,0.5)
+   after a walker has not moved for ``MaxAge`` steps. Needed if
+   persistent walkers appear during the course of a run.
+
+-  ``MaxCopy``: When determining the number of copies of a walker to
+   branch, set the number of copies equal to min(Multiplicity,MaxCopy).
+
+-  ``fastgrad``: This calculates gradients with either the fast version
+   or the full-ratio version.
+
+-  ``maxDisplSq``: When running a DMC calculation with particle by
+   particle, this sets the maximum displacement allowed for a single
+   particle move. All distance displacements larger than the max are
+   rejected. If initialized to a negative value, it becomes equal to
+   Lattice(LR/rc).
+
+-  ``sigmaBound``: This determines the branch cutoff to limit wild
+   weights based on the sigma and ``sigmaBound``.
+
+-  ``storeconfigs``: If ``storeconfigs`` is set to a nonzero value, then
+   electron configurations during the DMC run will be saved. This option
+   is disabled for the OpenMP version of DMC.
+
+-  ``blocks_between_recompute``: See details in :ref:`vmc`.
+
+-  ``branching_cutoff_scheme:`` Modifies how the branching factor is
+   computed so as to avoid divergences and stability problems near nodal
+   surfaces.
+
+   -  classic (default): The implementation found in QMCPACK v3.0.0 and
+      earlier.
+      :math:`E_{\rm cut}=\mathrm{min}(\mathrm{max}(\sigma^2 \times \mathrm{sigmaBound},\mathrm{maxSigma}),2.5/\tau)`,
+      where :math:`\sigma^2` is the variance and
+      :math:`\mathrm{maxSigma}` is set to 50 during warmup
+      (equilibration) and 10 thereafter. :math:`\mathrm{sigmaBound}` is
+      default to 10.
+
+   -  DRV: Implements the algorithm of DePasquale et al., Eq. 3 in
+      :cite:`DePasqualeReliable1988` or Eq. 9 of
+      :cite:`Umrigar1993`.
+      :math:`E_{\rm cut}=2.0/\sqrt{\tau}`.
+
+   -  ZSGMA: Implements the “ZSGMA” algorithm of
+      :cite:`ZenBoosting2016` with :math:`\alpha=0.2`.
+      The cutoff energy is modified by a factor including the electron
+      count, :math:`E_{\rm cut}=\alpha \sqrt{N/\tau}`, which greatly
+      improves size consistency over Eq. 39 of
+      :cite:`Umrigar1993`. See Eq. 6 in
+      :cite:`ZenBoosting2016` and for an application to
+      molecular crystals :cite:`ZenFast2018`.
+
+   -  YL: An unpublished algorithm due to Ye Luo.
+      :math:`E_{\rm cut}=\sigma\times\mathrm{min}(\mathrm{sigmaBound},\sqrt{1/\tau})`.
+      This option takes into account both size consistency and
+      wavefunction quality via the term :math:`\sigma`.
+      :math:`\mathrm{sigmaBound}` is default to 10.
+
+.. code-block::
+  :caption: The following is an example of a very simple DMC section.
+  :name: Listing 44
+
+  <qmc method="dmc" move="pbyp" target="e">
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">400</parameter>
+    <parameter name="timestep">0.010</parameter>
+    <parameter name="warmupsteps">100</parameter>
+  </qmc>
+
+The time step should be individually adjusted for each problem.  Please refer to the theory section
+on diffusion Monte Carlo.
+
+.. code-block::
+  :caption: The following is an example of running a simulation that can be restarted.
+  :name: Listing 45
+
+  <qmc method="dmc" move="pbyp"  checkpoint="0">
+    <parameter name="timestep">         0.004  </parameter>
+    <parameter name="blocks">           100   </parameter>
+    <parameter name="steps">            400    </parameter>
+  </qmc>
+
+The checkpoint flag instructs QMCPACK to output walker configurations.
+This also works in VMC. This will output an h5 file with the name
+``projectid.run-number.config.h5``. Check that this file exists before
+attempting a restart. To read in this file for a continuation run,
+specify the following:
+
+.. code-block::
+  :caption: Restart (read walkers from previous run).
+  :name: Listing 46
+
+  <mcwalkerset fileroot="BH.s002" version="0 6" collected="yes"/>
+
+BH is the project id, and s002 is the calculation number to read in the walkers from the previous run.
+
+Combining VMC and DMC in a single run (wavefunction optimization can be combined in this way too) is the standard way in which QMCPACK is typically run.   There is no need to run two separate jobs since method sections can be stacked and walkers are transferred between them.
+
+.. code-block::
+  :caption: Combined VMC and DMC run.
+  :name: Listing 47
+
+  <qmc method="vmc" move="pbyp" target="e">
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">4000</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="samples">1920</parameter>
+    <parameter name="walkers">1</parameter>
+    <parameter name="timestep">0.5</parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" target="e">
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">400</parameter>
+    <parameter name="timestep">0.010</parameter>
+    <parameter name="warmupsteps">100</parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" target="e">
+    <parameter name="warmupsteps">500</parameter>
+    <parameter name="blocks">50</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="timestep">0.005</parameter>
+  </qmc>
+
+.. _rmc:
+
+Reptation Monte Carlo
+---------------------
+
+Like DMC, RMC is a projector-based method that allows sampling of the
+fixed-node wavefunciton. However, by exploiting the path-integral
+formulation of Schrödinger’s equation, the RMC algorithm can offer some
+advantages over traditional DMC, such as sampling both the mixed and
+pure fixed-node distributions in polynomial time, as well as not having
+population fluctuations and biases. The current implementation does not
+work with T-moves.
+
+There are two adjustable parameters that affect the quality of the RMC
+projection: imaginary projection time :math:`\beta` of the sampling path
+(commonly called a “reptile") and the Trotter time step :math:`\tau`.
+:math:`\beta` must be chosen to be large enough such that
+:math:`e^{-\beta \hat{H}}|\Psi_T\rangle \approx |\Phi_0\rangle` for
+mixed observables, and
+:math:`e^{-\frac{\beta}{2} \hat{H}}|\Psi_T\rangle \approx |\Phi_0\rangle`
+for pure observables. The reptile is discretized into
+:math:`M=\beta/\tau` beads at the cost of an :math:`\mathcal{O}(\tau)`
+time-step error for observables arising from the Trotter-Suzuki breakup
+of the short-time propagator.
+
+The following table lists some of the more practical
+
+``vmc`` method:
+
+  parameters:
+
+  +-----------------+--------------+-------------------------+-------------+----------------------------------------------------------------+
+  | **Name**        | **Datatype** | **Values**              | **Default** | **Description**                                                |
+  +=================+==============+=========================+=============+================================================================+
+  | ``beta``        | real         | :math:`> 0`             | dep.        | Reptile project time :math:`\beta`                             |
+  +-----------------+--------------+-------------------------+-------------+----------------------------------------------------------------+
+  | ``timestep``    | real         | :math:`> 0`             | 0.1         | Trotter time step :math:`\tau` for each electron move          |
+  +-----------------+--------------+-------------------------+-------------+----------------------------------------------------------------+
+  | ``beads``       | int          | :math:`> 0`             | 1           | Number of reptile beads :math:`M=\beta/\tau`                   |
+  +-----------------+--------------+-------------------------+-------------+----------------------------------------------------------------+
+  | ``blocks``      | integer      | :math:`> 0`             | 1           | Number of blocks                                               |
+  +-----------------+--------------+-------------------------+-------------+----------------------------------------------------------------+
+  | ``steps``       | integer      | :math:`\geq 0`          | 1           | Number of steps per block                                      |
+  +-----------------+--------------+-------------------------+-------------+----------------------------------------------------------------+
+  | ``vmcpresteps`` | integer      | :math:`\geq 0`          | 0           | Propagates reptile using VMC for given number of steps         |
+  +-----------------+--------------+-------------------------+-------------+----------------------------------------------------------------+
+  | ``warmupsteps`` | integer      | :math:`\geq 0`          | 0           | Number of steps for warming up                                 |
+  +-----------------+--------------+-------------------------+-------------+----------------------------------------------------------------+
+  | ``maxAge``      | integer      | :math:`\geq 0`          | 0           | Force accept for stuck reptile if age exceeds ``maxAge``       |
+  +-----------------+--------------+-------------------------+-------------+----------------------------------------------------------------+
+
+Additional information:
+
+Because of the sampling differences between DMC ensembles of walkers and
+RMC reptiles, the RMC block should contain the following estimator
+declaration to ensure correct sampling:
+``<estimator name="RMC" hdf5="no">``.
+
+-  ``beta`` or ``beads``? One or the other can be specified, and from
+   the Trotter time step, the code will construct an appropriately sized
+   reptile. If both are given, ``beta`` overrides ``beads``.
+
+-  **Mixed vs. pure observables?** Configurations sampled by the
+   endpoints of the reptile are distributed according to the mixed
+   distribution
+   :math:`f(\mathbf{R})=\Psi_T(\mathbf{R})\Phi_0(\mathbf{R})`. Any
+   observable that is computable within DMC and is dumped to the
+   ``scalar.dat`` file will likewise be found in the ``scalar.dat`` file
+   generated by RMC, except there will be an appended ``_m`` to alert
+   the user that the observable was computed on the mixed distribution.
+   For pure observables, care must be taken in the interpretation. If
+   the observable is diagonal in the position basis (in layman’s terms,
+   if it is entirely computable from a single electron configuration
+   :math:`\mathbf{R}`, like the potential energy), and if the observable
+   does not have an explicit dependence on the trial wavefunction (e.g.,
+   the local energy has an explicit dependence on the trial wavefunction
+   from the kinetic energy term), then pure estimates will be correctly
+   computed. These observables will be found in either the
+   ``scalar.dat``, where they will be appended with a ``_p`` suffix, or
+   in the ``stat.h5`` file. No mixed estimators will be dumped to the h5
+   file.
+
+-  **Sampling**: For pure estimators, the traces of both pure and mixed
+   estimates should be checked. Ergodicity is a known problem in RMC.
+   Because we use the bounce algorithm, it is possible for the reptile
+   to bounce back and forth without changing the electron coordinates of
+   the central beads. This might not easily show up with mixed
+   estimators, since these are accumulated at constantly regrown ends,
+   but pure estimates are accumulated on these central beads and so can
+   exhibit strong autocorrelations in pure estimate traces.
+
+-  **Propagator**: Our implementation of RMC uses Moroni’s DMC link
+   action (symmetrized), with Umrigar’s scaled drift near nodes. In this
+   regard, the propagator is identical to the one QMCPACK uses in DMC.
+
+-  **Sampling**: We use Ceperley’s bounce algorithm. ``MaxAge`` is used
+   in case the reptile gets stuck, at which point the code forces move
+   acceptance, stops accumulating statistics, and requilibrates the
+   reptile. Very rarely will this be required. For move proposals, we
+   use particle-by-particle VMC a total of :math:`N_e` times to generate
+   a new all-electron configuration, at which point the action is
+   computed and the move is either accepted or rejected.
+
+.. bibliography:: /bibs/methods.bib

@@ -7,7 +7,7 @@ QMCPACK requires at least one xml input file, and is invoked via:
 
 ``qmcpack [command line options] <XML input file(s)>``
 
-.. _commandline
+.. _commandline:
 
 Command line options
 --------------------
