@@ -12,11 +12,9 @@
 
 #include "catch.hpp"
 
-#include "Numerics/e2iphi.h"
-
-
 #include <stdio.h>
 #include <string>
+#include "e2iphi.h"
 
 using std::string;
 

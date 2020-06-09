@@ -16,7 +16,7 @@
 #define QMCPLUSPLUS_REALSPACE_POSITIONS_OMP_H
 
 #include "Particle/DynamicCoordinates.h"
-#include "OhmmsSoA/Container.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
 #include "OpenMP/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 

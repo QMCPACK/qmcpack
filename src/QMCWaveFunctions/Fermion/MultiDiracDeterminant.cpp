@@ -18,7 +18,7 @@
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 #include "Numerics/MatrixOperators.h"
 #include <algorithm>
 #include <vector>
