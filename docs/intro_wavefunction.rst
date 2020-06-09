@@ -564,7 +564,7 @@ Orbitals in region C are computed as the regular B-spline basis described in :re
 .. math::
   :label: eq6
 
-  \phi^B_n({\bf r}) = S(r) \phi^A_n({\bf r}) + (1-S(r))\phi^C_n(r)
+  \phi^B_n({\bf r}) = S(r) \phi^A_n({\bf r}) + (1-S(r))\phi^C_n({\bf r})
 
 .. math::
   :label: eq7
