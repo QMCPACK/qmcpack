@@ -25,8 +25,12 @@ SET(QMCAPPDIR
     QMCMain.cpp
     CoupledMC.cpp
 )
-ADD_LIBRARY(qmc ${QMCAPPDIR})
-TARGET_LINK_LIBRARIES(qmc PUBLIC qmcparticle qmcutil platform_device)
+IF(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmc OBJECT ${QMCAPPDIR})
+ELSE()
+  ADD_LIBRARY(qmc ${QMCAPPDIR})
+ENDIF()
+TARGET_LINK_LIBRARIES(qmc PUBLIC qmcdriver)
 
 ####################################
 # QMCPACK application
@@ -39,6 +43,9 @@ ADD_CUSTOM_COMMAND(TARGET qmcpack
                    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP})
 
 TARGET_LINK_LIBRARIES(qmcpack qmc qmcdriver)
+IF(USE_OBJECT_TARGET)
+  TARGET_LINK_LIBRARIES(qmcpack qmcham qmcwfs qmcparticle qmcutil containers platform_device platform_omp)
+ENDIF()
 
 IF(BUILD_AFQMC)
   TARGET_LINK_LIBRARIES(qmcpack afqmc)

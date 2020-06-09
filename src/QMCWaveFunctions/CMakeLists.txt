@@ -214,7 +214,9 @@ ENDIF(USE_OBJECT_TARGET)
 
 IF(QMC_CUDA OR ENABLE_CUDA)
   CUDA_ADD_LIBRARY(qmcwfs_cuda ${WFSSRCS_CUDA})
-  TARGET_LINK_LIBRARIES(qmcwfs_cuda PUBLIC qmcparticle platform_device)
+  IF(QMC_CUDA)
+    TARGET_LINK_LIBRARIES(qmcwfs_cuda PUBLIC qmcparticle platform_device)
+  ENDIF()
   TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_cuda)
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
 

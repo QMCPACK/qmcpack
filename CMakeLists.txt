@@ -191,7 +191,11 @@ SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 SET(ENABLE_CUDA 0 CACHE BOOL "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)")
 SET(ENABLE_SOA 1 CACHE BOOL "Enable/disable SoA optimization")
 OPTION(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
-CMAKE_DEPENDENT_OPTION(USE_OBJECT_TARGET "USE CMake object target" OFF "ENABLE_OFFLOAD" OFF)
+# Use CMake object library targets to workaround clang linker not being able to handle fat
+# binary archives which contain both host and device codes, for example OpenMP offload regions.
+# CMake does not propagate indirect object files by design.
+# So the dependency must be explicitly specified with USE_OBJECT_TARGET.
+CMAKE_DEPENDENT_OPTION(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 
 IF(ENABLE_CUDA AND QMC_CUDA)
   MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
