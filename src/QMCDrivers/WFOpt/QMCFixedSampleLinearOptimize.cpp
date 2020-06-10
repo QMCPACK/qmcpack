@@ -24,7 +24,7 @@
 #include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
-#include "Numerics/Blasf.h"
+#include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include <cassert>
 #if defined(QMC_CUDA)

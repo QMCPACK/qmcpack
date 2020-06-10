@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <Numerics/e2iphi.h>
+#include <CPU/e2iphi.h>
 #include "QMCWaveFunctions/EinsplineSet.h"
 #include <einspline/multi_bspline.h>
 

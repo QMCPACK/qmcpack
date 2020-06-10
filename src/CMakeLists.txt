@@ -137,7 +137,6 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
     OhmmsData/Libxml2Doc.cpp
     OhmmsApp/ProjectData.cpp
     OhmmsApp/RandomNumberControl.cpp
-    Numerics/OhmmsBlas.cpp
     Numerics/OptimizableFunctorBase.cpp
     Numerics/SmoothFunctions.cpp
     QMCFactory/OneDimGridFactory.cpp
@@ -150,7 +149,11 @@ IF (IS_GIT_PROJECT)
   SET(UTILITIES "${UTILITIES};${GITREV_TMP}")
 ENDIF()
 
+IF(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmcutil OBJECT ${UTILITIES})
+ELSE(USE_OBJECT_TARGET)
   ADD_LIBRARY(qmcutil ${UTILITIES})
+ENDIF(USE_OBJECT_TARGET)
   TARGET_LINK_LIBRARIES(qmcutil PUBLIC message containers)
   TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 IO::HDF5 Boost::boost ${QMC_UTIL_LIBS})
 

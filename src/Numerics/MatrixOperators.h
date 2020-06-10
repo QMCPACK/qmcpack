@@ -21,7 +21,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 #include "CPU/SIMD/inner_product.hpp"
 
 namespace qmcplusplus

@@ -20,7 +20,7 @@
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "LongRange/KContainer.h"
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 #include <cassert>
 
 namespace qmcplusplus
