@@ -34,7 +34,7 @@ QMCPACK input looks like
      <parameter name="timestep">  0.4 </parameter>
   </qmc>
 
-XML elements start with ``<element\_name>``, end with ``</element\_name>}``, and can be nested within each other to denote substructure (the trial wavefunction is composed of a Slater determinant and a Jastrow factor, which are each further composed of :math:`...`).  ``id`` and ``series`` are attributes of the ``<project/>`` element.  XML attributes are generally used to represent simple values, like names, integers, or real values.  Similar functionality is also commonly provided by ``<parameter/>`` elements like those previously shown.
+XML elements start with ``<element_name>``, end with ``</element_name>}``, and can be nested within each other to denote substructure (the trial wavefunction is composed of a Slater determinant and a Jastrow factor, which are each further composed of :math:`...`).  ``id`` and ``series`` are attributes of the ``<project/>`` element.  XML attributes are generally used to represent simple values, like names, integers, or real values.  Similar functionality is also commonly provided by ``<parameter/>`` elements like those previously shown.
 
 The overall structure of the input file reflects different aspects of the QMC simulation: the simulation cell, particles, trial wavefunction, Hamiltonian, and QMC run parameters.  A condensed version of the actual input file is shown as follows:
 
@@ -125,4 +125,4 @@ Entries in this offset list of prime numbers are then used as the seed for the r
 
 If checkpointing is enabled, the random number state is written to an HDF file at the end of each block (suffix: ``.random.h5``).
 This file will be read if the ``mcwalkerset`` tag is present to perform a restart.
-For more information, see the ``checkpoint`` element in the QMC methods :ref:`qmcmethods` and :ref:`checkpoint_files` on checkpoint and restart files.
+For more information, see the ``checkpoint`` element in the QMC methods :ref:`qmcmethods` and :ref:`checkpoint-files` on checkpoint and restart files.
