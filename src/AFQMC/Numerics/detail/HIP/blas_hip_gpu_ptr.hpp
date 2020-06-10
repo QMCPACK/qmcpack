@@ -1,15 +1,12 @@
-//////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source
 // License.  See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by:
-//    Lawrence Livermore National Laboratory
+// File developed by: Fionn Malone, malone14@llnl.gov, LLNL
 //
-// File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov
-//    Lawrence Livermore National Laboratory
+// File created by: Fionn Malone, malone14@llnl.gov, LLNL
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef AFQMC_BLAS_HIP_GPU_PTR_HPP
@@ -18,11 +15,9 @@
 #include<type_traits>
 #include<cassert>
 #include<vector>
-//#include "AFQMC/Memory/HIP/hip_gpu_pointer.hpp"
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Memory/device_pointers.hpp"
 #include "AFQMC/Numerics/detail/HIP/hipblas_wrapper.hpp"
-//#include "AFQMC/Numerics/detail/HIP/hipblasXt_wrapper.hpp"
 // hand coded kernels for blas extensions
 #include "AFQMC/Numerics/detail/HIP/Kernels/adotpby.hip.h"
 #include "AFQMC/Numerics/detail/HIP/Kernels/setIdentity.hip.h"

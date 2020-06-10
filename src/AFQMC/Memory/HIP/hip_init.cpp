@@ -1,17 +1,14 @@
-//////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source
 // License.  See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+// File developed by: Fionn Malone, malone14@llnl.gov, LLNL
 //
-// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+// File created by: Fionn Malone, malone14@llnl.gov, LLNL
 ////////////////////////////////////////////////////////////////////////////////
 
-
-#include "AFQMC/Memory/HIP/hip_init.h"
-#include "AFQMC/Memory/HIP/hip_utilities.h"
 #include "AFQMC/Memory/device_pointers.hpp"
 #include "Platforms/Host/OutputManager.h"
 

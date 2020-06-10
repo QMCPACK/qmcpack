@@ -1,20 +1,13 @@
-//////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source
 // License.  See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by:
-//    Lawrence Livermore National Laboratory
+// File developed by: Fionn Malone, malone14@llnl.gov, LLNL
 //
-// File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov
-//    Lawrence Livermore National Laboratory
+// File created by: Fionn Malone, malone14@llnl.gov, LLNL
 ////////////////////////////////////////////////////////////////////////////////
-
-//#ifndef ENABLE_HIP
-//#error
-//#endif
 
 #include<cassert>
 #include<complex>
@@ -23,7 +16,6 @@
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 #include <hip/hip_runtime.h>
 #include "hipblas.h"
-//#include "cublasXt.h"
 #include "hipsparse.h"
 #include "rocsolver.h"
 #include "rocrand/rocrand.h"

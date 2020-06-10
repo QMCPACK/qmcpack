@@ -1,16 +1,13 @@
-//////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source
 // License.  See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+// File developed by: Fionn Malone, malone14@llnl.gov, LLNL
 //
-// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+// File created by: Fionn Malone, malone14@llnl.gov, LLNL
 ////////////////////////////////////////////////////////////////////////////////
-
-#ifndef AFQMC_HIP_INIT_HPP
-#define AFQMC_HIP_INIT_HPP
 
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"

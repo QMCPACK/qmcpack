@@ -1,16 +1,13 @@
-//////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source
 // License.  See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by:
+// File developed by: Fionn Malone, malone14@llnl.gov, LLNL
 //
-// File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov
-//    Lawrence Livermore National Laboratory
+// File created by: Fionn Malone, malone14@llnl.gov, LLNL
 ////////////////////////////////////////////////////////////////////////////////
-
 
 #include <cassert>
 #include <cstdlib>
@@ -24,10 +21,8 @@
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "hipblas.h"
-//#include "cublasXt.h"
 #include "hipsparse.h"
 #include "rocsolver.h"
-//#include "hiprand.hpp"
 #include "rocrand/rocrand.h"
 
 namespace qmcplusplus {
