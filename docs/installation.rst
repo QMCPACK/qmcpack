@@ -606,7 +606,7 @@ architecture. Using ``make VERBOSE=1`` is a useful way to check the
 final compilation options.  If on a Cray machine, selection of the
 appropriate programming environment should be sufficient.
 
-.. _installexamples
+.. _installexamples:
 
 Installation instructions for common workstations and supercomputers
 --------------------------------------------------------------------
@@ -621,7 +621,7 @@ to these recipes. See :ref:`buildperformance` for key
 points to check to obtain highest performance and
 :ref:`troubleshoot` for troubleshooting hints.
 
-.. _buildubuntu
+.. _buildubuntu:
 
 Installing on Ubuntu Linux or other apt-get--based distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1574,7 +1574,7 @@ The output should look similar to the following:
 Individual unit test executables can be found in ``build/tests/bin``.
 The source for the unit tests is located in the ``tests`` directory under each directory in ``src`` (e.g. ``src/QMCWavefunctions/tests``).
 
-See :ref:`unit_testing` for more details about unit tests.
+See :ref:`unit-testing` for more details about unit tests.
 
 .. _integtestqe:
 
@@ -1597,7 +1597,7 @@ You can test the whole ``pw > pw2qmcpack > qmcpack`` workflow by
 This provides a very solid test of the entire QMC
 toolchain for plane wave--generated wavefunctions.
 
-.. _perftests
+.. _perftests:
 
 Performance tests
 ~~~~~~~~~~~~~~~~~
@@ -1713,7 +1713,7 @@ atomic orbitals to be recomputed via a numerical density functional
 calculation if they need to be reconstructed for use in an
 electronic structure calculation.
 
-.. _fig2
+.. _fig2:
 .. figure:: QMCPACK_CDash_CTest_Results_20160129.png
   :width: 80%
   :align: center
