@@ -136,7 +136,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
     verify_approx(C,D2);
    }
 
-#if !defined(ENABLE_CUDA) || !defined(ENABLE_HIP)
+#if !defined(ENABLE_CUDA) && !defined(ENABLE_HIP)
     // test that everything is fine after this
     A.remove_empty_spaces();
     // matrix-matrix
