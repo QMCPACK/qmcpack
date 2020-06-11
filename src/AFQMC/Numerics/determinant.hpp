@@ -16,7 +16,7 @@
 #define AFQMC_NUMERICS_HELPERS_HPP
 
 #include<cassert>
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
 #include "AFQMC/Memory/custom_pointers.hpp"
 #include "AFQMC/Numerics/device_kernels.hpp"
 #endif
@@ -135,7 +135,7 @@ namespace ma
 
 }
 
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
 namespace device{
   // using thrust for now to avoid kernels!!!
   template<class T>
@@ -153,15 +153,17 @@ namespace device{
   template<class T>
   inline void batched_determinant_from_getrf(int n, device_pointer<T>* A, int lda, device_pointer<int> piv, int pstride, T LogOverlapFactor, T* res, int nbatch)
   {
-    T **A_h = new T*[nbatch];
-    for(int i=0; i<nbatch; i++)
-      A_h[i] = to_address(A[i]);
-    T **A_d;
-    cudaMalloc((void **)&A_d,  nbatch*sizeof(*A_h));
-    cudaMemcpy(A_d, A_h, nbatch*sizeof(*A_h), cudaMemcpyHostToDevice);
-    kernels::batched_determinant_from_getrf_gpu(n,A_d,lda,to_address(piv),pstride,LogOverlapFactor,res,nbatch);
-    cudaFree(A_d);
-    delete [] A_h;
+    throw std::runtime_error("Error: Calling cudaMalloc in batched_determinant_from_getrf "
+                             "in Numerics/determinant.hpp. cudaMalloc needs to be moved a level lower.");
+    //T **A_h = new T*[nbatch];
+    //for(int i=0; i<nbatch; i++)
+      //A_h[i] = to_address(A[i]);
+    //T **A_d;
+    //cudaMalloc((void **)&A_d,  nbatch*sizeof(*A_h));
+    //cudaMemcpy(A_d, A_h, nbatch*sizeof(*A_h), cudaMemcpyHostToDevice);
+    //kernels::batched_determinant_from_getrf_gpu(n,A_d,lda,to_address(piv),pstride,LogOverlapFactor,res,nbatch);
+    //cudaFree(A_d);
+    //delete [] A_h;
   }
 
   template<class T>

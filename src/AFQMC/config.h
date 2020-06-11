@@ -93,7 +93,7 @@ namespace afqmc
   template<class T>
   using shm_pointer = typename shared_allocator<T>::pointer; 
 
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   template<class T>  using device_allocator = device::device_allocator<T>;
   template<class T>  using device_ptr = device::device_pointer<T>;
   template<class T>  using localTG_allocator = device_allocator<T>;
@@ -174,7 +174,7 @@ namespace afqmc
                                 shared_allocator<T>,
                                 ma::sparse::is_root>;
   using PsiT_Matrix = PsiT_Matrix_t<ComplexType>;
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   using devcsr_Matrix = ma::sparse::csr_matrix<ComplexType,int,int,
                                 device_allocator<ComplexType>>; 
 #else
@@ -188,7 +188,7 @@ namespace afqmc
 //#endif
 
 
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   using P1Type = ma::sparse::csr_matrix<ComplexType,int,int,
                                  localTG_allocator<ComplexType>>;
 #else

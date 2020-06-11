@@ -662,7 +662,8 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtd
 
 // leaving compiler switch until I decide how to do this better
 // basically hide this decision somewhere based on the value of pointer!!!
-#ifdef ENABLE_CUDA
+// TODO: Move this
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   kernels::construct_X(nCV,nsteps,nwalk,free_projection,sqrtdt,vbias_bound,
                        to_address(vMF.origin()),
                        to_address(vbias.origin()),

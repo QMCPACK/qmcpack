@@ -52,7 +52,7 @@ class AFQMCFactory
         PropFac(InfoMap),
         DriverFac(gTG,TGHandler,InfoMap,WSetFac,PropFac,WfnFac,HamFac)
     {
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
 // taken from src/OhmmsApp/RandomNumberControl.cpp
       int rank=gTG.Global().rank();
       int nprocs=gTG.Global().size();

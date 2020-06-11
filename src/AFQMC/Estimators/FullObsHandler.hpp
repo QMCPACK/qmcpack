@@ -114,7 +114,7 @@ class FullObsHandler: public AFQMCInfo
       } else if(cname =="twordm") {
         properties.emplace_back(Observable(std::move(full2rdm(TG,info,cur,walker_type,nave,block_size))));
       } else if(cname =="n2r" || cname =="ontop2rdm") {
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
         std::string str("false");
         ParameterSet m_param;
         m_param.add(str, "use_host_memory", "std::string");
