@@ -1056,7 +1056,7 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   auto node = world.split_shared(world.rank());
 
   arch::INIT(node);
@@ -1075,7 +1075,7 @@ TEST_CASE("wfn_fac_distributed", "[wavefunction_factory]")
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   auto node = world.split_shared(world.rank());
   int ngrp(world.size());
 

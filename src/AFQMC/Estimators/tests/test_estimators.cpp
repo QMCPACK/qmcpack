@@ -249,7 +249,7 @@ TEST_CASE("reduced_density_matrix", "[estimators]")
   auto world = boost::mpi3::environment::get_world_instance();
   if(not world.root()) infoLog.pause();
 
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   auto node = world.split_shared(world.rank());
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;

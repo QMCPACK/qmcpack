@@ -16,7 +16,7 @@
 #define AFQMC_NUMERICS_HELPERS_BATCHED_OPERATIONS_HPP
 
 #include<cassert>
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
 #include "AFQMC/Memory/custom_pointers.hpp"
 #include "AFQMC/Numerics/device_kernels.hpp"
 #endif
@@ -491,7 +491,7 @@ void inplace_product(int nbatch, int n, int m, T1 const* B, int ldb, std::comple
 
 } // namespace ma
 
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
 namespace device{
 
 template<typename T, typename Q>

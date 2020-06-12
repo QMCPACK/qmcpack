@@ -532,7 +532,7 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
 
   // Batched
   // TODO fix CPU.
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   boost::multi::array<Type,3,Allocator> Gw({3,NMO,NMO},alloc);
   //std::vector<array_ptr> RA;
   std::vector<decltype(&Aref)> RA;
@@ -934,7 +934,7 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
   auto node = world.split_shared(world.rank());
 
 
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
   using gen_type = device_allocator_generator_type;  

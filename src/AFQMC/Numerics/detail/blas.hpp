@@ -5,11 +5,11 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef AFQMC_BLAS_OPTIONS_HPP
@@ -21,6 +21,9 @@
 #if defined(ENABLE_CUDA)
 #include "AFQMC/Numerics/detail/CUDA/blas_cuda_gpu_ptr.hpp"
 #include "AFQMC/Numerics/detail/CUDA/blas_cuda_catch_all.hpp"
+#elif defined(ENABLE_HIP)
+#include "AFQMC/Numerics/detail/HIP/blas_hip_gpu_ptr.hpp"
+#include "AFQMC/Numerics/detail/HIP/blas_hip_catch_all.hpp"
 #endif
 
 #endif

@@ -18,7 +18,7 @@
 #include "io/hdf_hyperslab.h"
 
 #ifdef BUILD_AFQMC
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
 #include "AFQMC/Memory/device_pointers.hpp"
 #endif
 #endif
@@ -146,7 +146,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, Ptr>> : public h5_space_type<T
 
 
 #ifdef BUILD_AFQMC
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
 // Specializations for cuda_gpu_allocator
 // Need buffered I/O and copies to gpu
 template<typename T>
