@@ -36,11 +36,11 @@ class HamiltonianPool;
  * generated from VMC.
  */
 
-class QMCOptimize : public QMCDriver
+class QMCOptimizeBatched : public QMCDriver
 {
 public:
   ///Constructor.
-  QMCOptimize(MCWalkerConfiguration& w,
+  QMCOptimizeBatched(MCWalkerConfiguration& w,
               TrialWaveFunction& psi,
               QMCHamiltonian& h,
               HamiltonianPool& hpool,
@@ -48,7 +48,7 @@ public:
               Communicate* comm);
 
   ///Destructor
-  ~QMCOptimize();
+  ~QMCOptimizeBatched();
 
   ///Run the Optimization algorithm.
   bool run();
@@ -85,9 +85,9 @@ private:
   ///list of files storing configurations
   std::vector<std::string> ConfigFile;
   ///Copy Constructor (disabled).
-  QMCOptimize(const QMCOptimize&) = delete;
+  QMCOptimizeBatched(const QMCOptimizeBatched&) = delete;
   ///Copy operator (disabled).
-  QMCOptimize& operator=(const QMCOptimize&) = delete;
+  QMCOptimizeBatched& operator=(const QMCOptimizeBatched&) = delete;
 
   void generateSamples();
 };
