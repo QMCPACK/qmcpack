@@ -25,11 +25,11 @@ SET (AFQMC_SRCS
   )
 
 IF(ENABLE_CUDA)
-  SET(AFQMC_SRCS ${AFQMC_SRCS} 
+  SET(AFQMC_SRCS ${AFQMC_SRCS}
     Memory/CUDA/cuda_arch.cpp
     Memory/CUDA/cuda_utilities.cpp
     Memory/CUDA/cuda_init.cpp
-    Numerics/detail/CUDA/Kernels/determinant.cu 
+    Numerics/detail/CUDA/Kernels/determinant.cu
     Numerics/detail/CUDA/Kernels/adotpby.cu
     Numerics/detail/CUDA/Kernels/fill_n.cu
     Numerics/detail/CUDA/Kernels/uninitialized_fill_n.cu
@@ -44,8 +44,8 @@ IF(ENABLE_CUDA)
     Numerics/detail/CUDA/Kernels/batchedDot.cu
     Numerics/detail/CUDA/Kernels/copy_n_cast.cu
     Numerics/detail/CUDA/Kernels/inplace_cast.cu
-    Numerics/detail/CUDA/Kernels/ajw_to_waj.cu 
-    Numerics/detail/CUDA/Kernels/vKKwij_to_vwKiKj.cu 
+    Numerics/detail/CUDA/Kernels/ajw_to_waj.cu
+    Numerics/detail/CUDA/Kernels/vKKwij_to_vwKiKj.cu
     Numerics/detail/CUDA/Kernels/KaKjw_to_QKajw.cu
     Numerics/detail/CUDA/Kernels/vbias_from_v1.cu
     Numerics/detail/CUDA/Kernels/KaKjw_to_KKwaj.cu
@@ -62,6 +62,48 @@ IF(ENABLE_CUDA)
     Numerics/detail/CUDA/Kernels/inplace_product.cu
     Numerics/detail/CUDA/Kernels/get_diagonal.cu
   )
+ELSEIF(ENABLE_HIP)
+  SET(AFQMC_HIP_SRCS
+    Numerics/detail/HIP/hip_kernel_utils.cpp
+    Numerics/detail/HIP/Kernels/determinant.hip.cpp
+    Numerics/detail/HIP/Kernels/adotpby.hip.cpp
+    Numerics/detail/HIP/Kernels/fill_n.hip.cpp
+    Numerics/detail/HIP/Kernels/uninitialized_fill_n.hip.cpp
+    Numerics/detail/HIP/Kernels/uninitialized_copy_n.hip.cpp
+    Numerics/detail/HIP/Kernels/axty.hip.cpp
+    Numerics/detail/HIP/Kernels/adiagApy.hip.cpp
+    Numerics/detail/HIP/Kernels/sum.hip.cpp
+    Numerics/detail/HIP/Kernels/acAxpbB.hip.cpp
+    Numerics/detail/HIP/Kernels/print.hip.cpp
+    Numerics/detail/HIP/Kernels/setIdentity.hip.cpp
+    Numerics/detail/HIP/Kernels/zero_complex_part.hip.cpp
+    Numerics/detail/HIP/Kernels/batchedDot.hip.cpp
+    Numerics/detail/HIP/Kernels/copy_n_cast.hip.cpp
+    Numerics/detail/HIP/Kernels/inplace_cast.hip.cpp
+    Numerics/detail/HIP/Kernels/ajw_to_waj.hip.cpp
+    Numerics/detail/HIP/Kernels/vKKwij_to_vwKiKj.hip.cpp
+    Numerics/detail/HIP/Kernels/KaKjw_to_QKajw.hip.cpp
+    Numerics/detail/HIP/Kernels/vbias_from_v1.hip.cpp
+    Numerics/detail/HIP/Kernels/KaKjw_to_KKwaj.hip.cpp
+    Numerics/detail/HIP/Kernels/batched_dot_wabn_wban.hip.cpp
+    Numerics/detail/HIP/Kernels/batched_Tab_to_Klr.hip.cpp
+    Numerics/detail/HIP/Kernels/dot_wabn.hip.cpp
+    Numerics/detail/HIP/Kernels/Tab_to_Kl.hip.cpp
+    Numerics/detail/HIP/Kernels/sampleGaussianRNG.hip.cpp
+    Numerics/detail/HIP/Kernels/construct_X.hip.cpp
+    Numerics/detail/HIP/Kernels/reference_operations.hip.cpp
+    Numerics/detail/HIP/Kernels/term_by_term_matrix_vec.hip.cpp
+    Numerics/detail/HIP/Kernels/axpyBatched.hip.cpp
+    Numerics/detail/HIP/Kernels/Auwn_Bun_Cuw.hip.cpp
+    Numerics/detail/HIP/Kernels/inplace_product.hip.cpp
+    Numerics/detail/HIP/Kernels/get_diagonal.hip.cpp
+  )
+  SET(AFQMC_SRCS ${AFQMC_SRCS}
+      Memory/HIP/hip_utilities.cpp
+      Numerics/detail/HIP/hipblas_utils.cpp
+      Memory/HIP/hip_arch.cpp
+      Memory/HIP/hip_init.cpp)
+ELSE(ENABLE_CUDA)
 ENDIF(ENABLE_CUDA)
 
 IF(ENABLE_CUDA)
@@ -70,6 +112,12 @@ IF(ENABLE_CUDA)
   TARGET_LINK_LIBRARIES( afqmc PRIVATE ${CUDA_cusparse_LIBRARY} )
   TARGET_LINK_LIBRARIES( afqmc PRIVATE ${CUDA_cusolver_LIBRARY} )
   TARGET_LINK_LIBRARIES( afqmc PRIVATE ${CUDA_curand_LIBRARY} )
+ELSEIF(ENABLE_HIP)
+  set_source_files_properties(${AFQMC_HIP_SRCS} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
+  set(MY_HIPCC_OPTIONS "-I${HIP_PATH} -I${ROCM_PATH}/include -std=c++14")
+  hip_add_library(afqmc_hip_lib ${AFQMC_HIP_SRCS} HIPCC_OPTIONS "${MY_HIPCC_OPTIONS}" HCC_OPTIONS "${MY_HCC_OPTIONS}" NVCC_OPTIONS "" SHARED)
+  ADD_LIBRARY(afqmc ${AFQMC_SRCS})
+  TARGET_LINK_LIBRARIES(afqmc PRIVATE afqmc_hip_lib)
 ELSE(ENABLE_CUDA)
   ADD_LIBRARY(afqmc ${AFQMC_SRCS})
 ENDIF(ENABLE_CUDA)
@@ -103,7 +151,7 @@ IF (BUILD_UNIT_TESTS)
       ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/wfn_rhf.dat
       )
   IF (QMC_COMPLEX)
-    IF (ENABLE_CUDA)
+    IF (ENABLE_CUDA OR ENABLE_HIP)
       SET(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_SYM})
     ELSE()
       SET(AFQMC_UNIT_TEST_INPUTS
