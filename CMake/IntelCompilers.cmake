@@ -44,7 +44,7 @@ ENDIF( INTEL_FTZ)
 #------------------------
 # Not on Cray's machine
 #------------------------
-IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+IF(CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
 
 SET(X_OPTION "^-x| -x")
 SET(AX_OPTION "^-ax| -ax")
@@ -68,4 +68,4 @@ else() #(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x")
   ENDIF(INTEL_CC_FLAGS)
 endif() #(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x")
 
-ENDIF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+ENDIF()

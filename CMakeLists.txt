@@ -324,9 +324,8 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #------------------------
   # On Cray's machine
   #------------------------
-  IF($ENV{CRAYPE_VERSION} MATCHES ".")
+  IF(CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     MESSAGE(STATUS "Running on a Cray machine.")
-    SET(CMAKE_SKIP_RPATH TRUE)
 
     IF(NOT $ENV{CRAYPE_LINK_TYPE} STREQUAL "dynamic")
       MESSAGE(WARNING "Cray Programming Environment uses static linking by default. "
@@ -341,28 +340,12 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
         FIND_PROGRAM(MPIEXEC_EXECUTABLE srun)
       ENDIF(NOT MPIEXEC_EXECUTABLE)
     ENDIF()
-
-    IF(QMC_CUDA)
-      IF(QMC_BUILD_STATIC)
-        MESSAGE(FATAL_ERROR "Static linking is not supported with CUDA build. Set QMC_BUILD_STATIC=0 (default)!")
-      ENDIF(QMC_BUILD_STATIC)
-      MESSAGE(STATUS "Building GPU code. Linking dynamically.")
-    ELSE(QMC_CUDA)
-      IF(QMC_BUILD_STATIC)
-        MESSAGE(STATUS "Building CPU code. Linking statically.")
-        SET(BUILD_SHARED_LIBS off)
-        SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
-        FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
-          SET(CMAKE_${type}_LINK_STATIC_C_FLAGS "-Wl,-Bstatic")
-          SET(CMAKE_${type}_LINK_DYNAMIC_C_FLAGS "-static")
-          SET(CMAKE_${type}_LINK_STATIC_CXX_FLAGS "-Wl,-Bstatic")
-          SET(CMAKE_${type}_LINK_DYNAMIC_CXX_FLAGS "-static")
-        ENDFOREACH(type)
-      ELSE(QMC_BUILD_STATIC)
-        MESSAGE(STATUS "Building CPU code. Linking dynamically.")
-      ENDIF(QMC_BUILD_STATIC)
-    ENDIF(QMC_CUDA)
-  ENDIF($ENV{CRAYPE_VERSION} MATCHES ".")
+  ELSE()
+    GET_FILENAME_COMPONENT(BASE_CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
+    IF(BASE_CXX_COMPILER_NAME STREQUAL "CC")
+      MESSAGE(FATAL_ERROR "Cray compiler wrapper detected. Empty the build folder and rerun cmake with -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment added.")
+    ENDIF()
+  ENDIF()
 
   #--------------------------------
   #  C++ 14 is the minimum standard
@@ -441,7 +424,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ENDIF(ENABLE_MKL)
   IF ( HAVE_MKL )
     # Skip adding Math::BLAS_LAPACK target which has been imported by FindMKL.
-  ELSEIF ( $ENV{CRAYPE_VERSION} MATCHES "." )
+  ELSEIF (CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     # Cray specific environment variable indicates we are on a cray. Assume libsci will be linked
     # preferable to attempt a compile/link
     MESSAGE(STATUS "Assuming Cray libsci or other BLAS/LAPACK will be linked by compiler wrappers")

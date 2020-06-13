@@ -10,7 +10,7 @@ SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -std=c99")
 # Enable OpenMP
 IF(QMC_OMP)
   SET(ENABLE_OPENMP 1)
-  IF(ENABLE_OFFLOAD)
+  IF(ENABLE_OFFLOAD AND NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     SET(OFFLOAD_TARGET "nvptx64-nvidia-cuda" CACHE STRING "Offload target architecture")
     IF(OFFLOAD_TARGET MATCHES "spir64")
       SET(OMP_FLAG "-fiopenmp")
@@ -49,7 +49,7 @@ SET( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fs
 #     arm: -mpcu
 #     default or cray: none
 #--------------------------------------
-IF($ENV{CRAYPE_VERSION} MATCHES ".")
+IF(CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
   # It's a cray machine. Don't do anything
 ELSEIF(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
   # the case for x86_64
