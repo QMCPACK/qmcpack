@@ -44,7 +44,7 @@ ENDIF( INTEL_FTZ)
 #------------------------
 # Not on Cray's machine
 #------------------------
-IF(CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
+IF(NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
 
 SET(X_OPTION "^-x| -x")
 SET(AX_OPTION "^-ax| -ax")

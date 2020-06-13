@@ -35,12 +35,6 @@ cd $folder
 cmake -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC \
       -DQMC_MIXED_PRECISION=1 -DENABLE_OFFLOAD=ON \
       -DENABLE_TIMERS=1 -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
-      ..
-# some cmake error, need to cmake twice. probably Cray PE related.
-# the above case works fine but not this case.
-cmake -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC \
-      -DQMC_MIXED_PRECISION=1 -DENABLE_OFFLOAD=ON \
-      -DENABLE_TIMERS=1 -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
       .. && make -j32
 cd ..
 module unload craype-accel-amd-gfx906
