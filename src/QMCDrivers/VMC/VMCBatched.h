@@ -68,6 +68,7 @@ public:
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
              WaveFunctionPool& ppool,
+             SampleStack& samples_,
              Communicate* comm);
 
   void process(xmlNodePtr node);
@@ -100,6 +101,9 @@ public:
 
   QMCDriverNew::AdjustedWalkerCounts calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const;
 
+  /// Compute the number of samples to collect and enable collecting samples during the VMC run
+  void enable_sample_collection();
+
 private:
   int prevSteps;
   int prevStepsBetweenSamples;
@@ -111,6 +115,11 @@ private:
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;
+
+  /// Storage for samples (later used in optimizer)
+  SampleStack& samples_;
+  /// Sample collection flag
+  bool collect_samples_;
 
   friend class qmcplusplus::testing::VMCBatchedTest;
   ;

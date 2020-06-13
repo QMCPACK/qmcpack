@@ -14,6 +14,7 @@
 #include "Concurrency/Info.hpp"
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "Particle/MCSample.h"
 
 namespace qmcplusplus
 {
@@ -25,8 +26,12 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        WaveFunctionPool& ppool,
+                       SampleStack& samples,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, ppool, "VMCBatched::", comm), vmcdriver_input_(input)
+    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, ppool, "VMCBatched::", comm),
+      vmcdriver_input_(input),
+      samples_(samples),
+      collect_samples_(false)
 {
   QMCType = "VMCBatched";
   // qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
@@ -285,6 +290,7 @@ void VMCBatched::process(xmlNodePtr node)
   makeLocalWalkers(awc.walkers_per_rank, awc.reserve_walkers,
                    ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 
+
   Base::process(node);
 }
 
@@ -347,6 +353,15 @@ bool VMCBatched::run()
       ScopedTimer local_timer(&(timers_.run_steps_timer));
       vmc_state.step = step;
       crowd_task(runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
+
+      if (collect_samples_)
+      {
+        auto& walkers = population_.get_walkers();
+        for (auto& walker : walkers)
+        {
+          samples_.appendSample(MCSample(*walker));
+        }
+      }
     }
 
     RefVector<ScalarEstimatorBase> all_scalar_estimators;
@@ -382,6 +397,16 @@ bool VMCBatched::run()
   // second argument was !wrotesample so if W.dumpEnsemble returns false or
   // dump_config is false from input then dump_walkers
   return finalize(num_blocks, true);
+}
+
+void VMCBatched::enable_sample_collection()
+{
+  int nblocks          = qmcdriver_input_.get_max_blocks();
+  int nsteps           = qmcdriver_input_.get_max_steps();
+  int samples_per_node = nblocks * nsteps * walkers_per_rank_;
+  samples_.setMaxSamples(samples_per_node);
+  collect_samples_ = true;
+  app_log() << "VMCBatched Driver collecting samples, samples_per_node = " << samples_per_node << '\n';
 }
 
 
