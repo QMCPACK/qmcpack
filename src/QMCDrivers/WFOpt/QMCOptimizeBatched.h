@@ -22,12 +22,18 @@
 #include <memory>
 #include "QMCDrivers/QMCDriver.h"
 #include "Optimize/OptimizeBase.h"
+#include "QMCDrivers/QMCDriverNew.h"
+#include "QMCDrivers/QMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCBatched.h"
+
 
 namespace qmcplusplus
 {
 ///forward declaration of a cost function
 class QMCCostFunctionBase;
 class HamiltonianPool;
+class MCPopulation;
 
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
@@ -45,6 +51,10 @@ public:
               QMCHamiltonian& h,
               HamiltonianPool& hpool,
               WaveFunctionPool& ppool,
+              QMCDriverInput&& qmcdriver_input,
+              VMCDriverInput&& vmcdriver_input,
+              MCPopulation& population,
+              SampleStack& samples,
               Communicate* comm);
 
   ///Destructor
@@ -75,7 +85,7 @@ private:
   ///solver
   MinimizerBase<RealType>* optSolver;
   ///vmc engine
-  QMCDriver* vmcEngine;
+  VMCBatched* vmcEngine;
   ///xml node to be dumped
   xmlNodePtr wfNode;
   ///xml node for optimizer
@@ -90,6 +100,18 @@ private:
   QMCOptimizeBatched& operator=(const QMCOptimizeBatched&) = delete;
 
   void generateSamples();
+
+  /// Generic QMC driver input
+  QMCDriverInput qmcdriver_input_;
+
+  /// VMC-specific driver input
+  VMCDriverInput vmcdriver_input_;
+
+  MCPopulation& population_;
+
+  /// Samples to use in optimizer
+  SampleStack& samples_;
+
 };
 } // namespace qmcplusplus
 #endif
