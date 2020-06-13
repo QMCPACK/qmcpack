@@ -58,7 +58,7 @@ public:
   void addConfiguration(const std::string& a);
 
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
-  QMCRunType getRunType() { return QMCRunType::OPTIMIZE; }
+  QMCRunType getRunType() { return QMCRunType::OPTIMIZE_BATCH; }
 
 private:
   ///index to denote the partition id
