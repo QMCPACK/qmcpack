@@ -9,6 +9,7 @@
 // File created by: Fionn Malone, malone14@llnl.gov, LLNL
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef AFQMC_HIP_ARCH_HPP
 #define AFQMC_HIP_ARCH_HPP
 
 #include<cassert>
@@ -71,4 +72,3 @@ namespace arch {
 }
 
 #endif
-

@@ -17,6 +17,7 @@
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
 #include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/buffer_helper.hip.h"
 
 namespace kernels
 {
@@ -52,13 +53,20 @@ __global__ void kernel_adotpby(int N, T const alpha, T const* x, int const incx,
    __syncthreads();
 }
 */
+//template <typename T>
+//__device__ T* shared_memory_proxy()
+//{
+    //// do we need an __align__() here? I don't think so...
+    //extern __shared__ unsigned char memory[];
+    //return reinterpret_cast<T*>(memory);
+//}
 
 template<typename T, typename Q>
 __global__ void kernel_adotpby(int N, T const alpha, T const* x, int const incx,
-                                      T const* y, int const incy, Q const beta, Q* res) {
+                               T const* y, int const incy, Q const beta, Q* res) {
    // assert(blockIdx.x==0 and blockIdx.y==0 and blockIdx.z==0)
 
-   __shared__ T tmp[256];
+   auto tmp = shared_memory_proxy<T>();
    int t = threadIdx.x;
 
    tmp[t]=T(0.0);
@@ -82,13 +90,43 @@ __global__ void kernel_adotpby(int N, T const alpha, T const* x, int const incx,
    __syncthreads();
 }
 
+//template <typename T, typename Q>
+//__global__ void kernel_adotpby(int N, thrust::complex<T> const alpha, thrust::complex<T> const* x, int const incx,
+                               //thrust::complex<T> const* y, int const incy, thrust::complex<Q> const beta, thrust::complex<Q>* res) {
+   //// assert(blockIdx.x==0 and blockIdx.y==0 and blockIdx.z==0)
+
+   //extern __shared__ thrust::complex<T> tmp[];
+   //int t = threadIdx.x;
+
+   //tmp[t]=thrust::complex<T>(0.0);
+   //int nloop = (N+blockDim.x-1)/blockDim.x;
+
+   //for(int i=0, ip=threadIdx.x; i<nloop; i++, ip+=blockDim.x)
+    //if(ip < N)
+    //{
+      //tmp[t] += x[ip*incx]*y[ip*incy];
+    //}
+   //tmp[t] *= alpha;
+   //__syncthreads();
+
+   //// not optimal but ok for now
+   //if (threadIdx.x == 0) {
+     //int imax = (N > blockDim.x)?blockDim.x:N;
+     //for(int i=1; i<imax; i++)
+       //tmp[0] += tmp[i];
+     //*res = static_cast<thrust::complex<Q>>(tmp[0]) + beta *(*res);
+   //}
+   //__syncthreads();
+//}
+
 template<typename T, typename Q>
 __global__ void kernel_strided_adotpby(int NB, int N, T const alpha, T const* x, int const ldx,
-                                      T const* y, int const ldy, Q const beta, Q* res, int inc) {
+                                       T const* y, int const ldy, Q const beta, Q* res, int inc) {
 
    int k = blockIdx.x;
    if( k < NB ) {
-     __shared__ T tmp[1024];
+     //extern __shared__ T tmp[];
+     auto tmp = shared_memory_proxy<T>();
      int t = threadIdx.x;
 
      tmp[t]=T(0.0);
@@ -118,7 +156,8 @@ void adotpby(int N, double const alpha, double const* x, int const incx,
                     double const* y, int const incy,
                     double const beta, double* res)
 {
-  hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), 0, 0, N,alpha,x,incx,y,incy,beta,res);
+  size_t shmem = 256;
+  hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), shmem, 0, N,alpha,x,incx,y,incy,beta,res);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
@@ -128,7 +167,8 @@ void adotpby(int N, std::complex<double> const alpha,
                     std::complex<double> const* y, int const incy,
                     std::complex<double> const beta, std::complex<double>* res)
 {
-  hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), 0, 0, N,
+  size_t shmem = 256;
+  hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), shmem, 0, N,
                             static_cast<thrust::complex<double> const >(alpha),
                             reinterpret_cast<thrust::complex<double> const*>(x),incx,
                             reinterpret_cast<thrust::complex<double> const*>(y),incy,
@@ -142,7 +182,8 @@ void adotpby(int N, float const alpha, float const* x, int const incx,
                     float const* y, int const incy,
                     float const beta, float* res)
 {
-  hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), 0, 0, N,alpha,x,incx,y,incy,beta,res);
+  size_t shmem = 256;
+  hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), shmem, 0, N,alpha,x,incx,y,incy,beta,res);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
@@ -152,7 +193,8 @@ void adotpby(int N, std::complex<float> const alpha,
                     std::complex<float> const* y, int const incy,
                     std::complex<float> const beta, std::complex<float>* res)
 {
-  hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), 0, 0, N,
+  size_t shmem = 256;
+  hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), shmem, 0, N,
                             static_cast<thrust::complex<float> const>(alpha),
                             reinterpret_cast<thrust::complex<float> const*>(x),incx,
                             reinterpret_cast<thrust::complex<float> const*>(y),incy,
@@ -166,7 +208,8 @@ void adotpby(int N, float const alpha, float const* x, int const incx,
                     float const* y, int const incy,
                     double const beta, double* res)
 {
-  hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), 0, 0, N,alpha,x,incx,y,incy,beta,res);
+  size_t shmem = 256;
+  hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), shmem, 0, N,alpha,x,incx,y,incy,beta,res);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
@@ -176,7 +219,8 @@ void adotpby(int N, std::complex<float> const alpha,
                     std::complex<float> const* y, int const incy,
                     std::complex<double> const beta, std::complex<double>* res)
 {
-  hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), 0, 0, N,
+  size_t shmem = 256;
+  hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(256), shmem, 0, N,
                             static_cast<thrust::complex<float> const>(alpha),
                             reinterpret_cast<thrust::complex<float> const*>(x),incx,
                             reinterpret_cast<thrust::complex<float> const*>(y),incy,
@@ -191,7 +235,8 @@ void strided_adotpby(int NB, int N, std::complex<double> const alpha,
                     std::complex<double> const* B, int const ldb,
                     std::complex<double> const beta, std::complex<double>* C, int ldc)
 {
-  hipLaunchKernelGGL(kernel_strided_adotpby, dim3(NB), dim3(1024), 0, 0, NB, N,
+  size_t shmem = 1024;
+  hipLaunchKernelGGL(kernel_strided_adotpby, dim3(NB), dim3(1024), shmem, 0, NB, N,
                             static_cast<thrust::complex<double> const>(alpha),
                             reinterpret_cast<thrust::complex<double> const*>(A),lda,
                             reinterpret_cast<thrust::complex<double> const*>(B),ldb,
@@ -206,7 +251,8 @@ void strided_adotpby(int NB, int N, std::complex<float> const alpha,
                     std::complex<float> const* B, int const ldb,
                     std::complex<double> const beta, std::complex<double>* C, int ldc)
 {
-  hipLaunchKernelGGL(kernel_strided_adotpby, dim3(NB), dim3(1024), 0, 0, NB, N,
+  size_t shmem = 1024;
+  hipLaunchKernelGGL(kernel_strided_adotpby, dim3(NB), dim3(1024), shmem, 0, NB, N,
                             static_cast<thrust::complex<float> const>(alpha),
                             reinterpret_cast<thrust::complex<float> const*>(A),lda,
                             reinterpret_cast<thrust::complex<float> const*>(B),ldb,

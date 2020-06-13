@@ -16,6 +16,7 @@
 #include <thrust/complex.h>
 #include<hip/hip_runtime.h>
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/buffer_helper.hip.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels
@@ -50,7 +51,7 @@ __global__ void kernel_dot( int n, thrust::complex<T> const alpha, thrust::compl
                             thrust::complex<T> const* B, int ldb, thrust::complex<T> const beta,
                             thrust::complex<T>* y, int incy)
 {
-    __shared__ thrust::complex<T> cache[ DOT_BLOCK_SIZE ];
+    auto cache = shared_memory_proxy<thrust::complex<T>>();
     int i = threadIdx.x;
     int j = blockIdx.x;
     cache[ threadIdx.x ] = thrust::complex<T>(0.0,0.0);
@@ -93,7 +94,8 @@ void batchedDot(int m, int n, std::complex<double> const alpha, std::complex<dou
                               std::complex<double> const* B, int ldb,
                               std::complex<double> const beta, std::complex<double> *y, int incy)
 {
-  hipLaunchKernelGGL(kernel_dot, dim3(m), dim3(DOT_BLOCK_SIZE), 0, 0, n,
+  size_t shmem = DOT_BLOCK_SIZE;
+  hipLaunchKernelGGL(kernel_dot, dim3(m), dim3(DOT_BLOCK_SIZE), shmem, 0, n,
                                    static_cast<thrust::complex<double> const>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(A),lda,
                                    reinterpret_cast<thrust::complex<double> const*>(B),ldb,
@@ -107,7 +109,8 @@ void batchedDot(int m, int n, std::complex<float> const alpha, std::complex<floa
                               std::complex<float> const* B, int ldb,
                               std::complex<float> const beta, std::complex<float> *y, int incy)
 {
-  hipLaunchKernelGGL(kernel_dot, dim3(m), dim3(DOT_BLOCK_SIZE), 0, 0, n,
+  size_t shmem = DOT_BLOCK_SIZE;
+  hipLaunchKernelGGL(kernel_dot, dim3(m), dim3(DOT_BLOCK_SIZE), shmem, 0, n,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(A),lda,
                                    reinterpret_cast<thrust::complex<float> const*>(B),ldb,

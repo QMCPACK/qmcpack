@@ -39,7 +39,7 @@ __global__ void kernel_construct_X( int nCV, int nsteps, int nwalk,
   int ni = blockIdx.x;
   int iw = blockIdx.y;
   if(ni >= nsteps || iw >= nwalk) return;
-  __shared__ thrust::complex<T> cache[ 2*REDUCE_BLOCK_SIZE ];
+  extern __shared__ thrust::complex<T> cache[];
   cache[ 2*threadIdx.x ] = thrust::complex<T>(0.0);
   cache[ 2*threadIdx.x+1 ] = thrust::complex<T>(0.0);
 
@@ -96,7 +96,7 @@ __global__ void kernel_construct_X_free_projection( int nCV, int nsteps, int nwa
   int ni = blockIdx.x;
   int iw = blockIdx.y;
   if(ni >= nsteps || iw >= nwalk) return;
-  __shared__ thrust::complex<T> cache[ REDUCE_BLOCK_SIZE ];
+  extern __shared__ thrust::complex<T> cache[];
   cache[ threadIdx.x ] = thrust::complex<T>(0.0);
 
   thrust::complex<T> im(0.0,1.0);
@@ -131,18 +131,21 @@ void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
 {
   dim3 block_dim(REDUCE_BLOCK_SIZE,1,1);
   dim3 grid_dim(nsteps,nwalk,1);
-  if(free_projection)
-    hipLaunchKernelGGL(kernel_construct_X_free_projection, dim3(grid_dim), dim3(block_dim), 0, 0, nCV,nsteps,nwalk,sqrtdt,
+  if(free_projection) {
+    size_t shmem = REDUCE_BLOCK_SIZE;
+    hipLaunchKernelGGL(kernel_construct_X_free_projection, dim3(grid_dim), dim3(block_dim), shmem, 0, nCV,nsteps,nwalk,sqrtdt,
                         reinterpret_cast<thrust::complex<double> const*>(vMF),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<double> *>(X));
-  else
-    hipLaunchKernelGGL(kernel_construct_X, dim3(grid_dim), dim3(block_dim), 0, 0, nCV,nsteps,nwalk,sqrtdt,vbound,
+  } else {
+    size_t shmem = 2 * REDUCE_BLOCK_SIZE;
+    hipLaunchKernelGGL(kernel_construct_X, dim3(grid_dim), dim3(block_dim), shmem, 0, nCV,nsteps,nwalk,sqrtdt,vbound,
                         reinterpret_cast<thrust::complex<double> const*>(vMF),
                         reinterpret_cast<thrust::complex<double> const*>(vbias),
                         reinterpret_cast<thrust::complex<double> *>(HW),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<double> *>(X));
+  }
   qmc_hip::hip_check(hipGetLastError(),"construct_X");
   qmc_hip::hip_check(hipDeviceSynchronize(),"construct_X");
 }
@@ -156,18 +159,21 @@ void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
 {
   dim3 block_dim(REDUCE_BLOCK_SIZE,1,1);
   dim3 grid_dim(nsteps,nwalk,1);
-  if(free_projection)
-    hipLaunchKernelGGL(kernel_construct_X_free_projection, dim3(grid_dim), dim3(block_dim), 0, 0, nCV,nsteps,nwalk,sqrtdt,
+  if(free_projection) {
+    size_t shmem = REDUCE_BLOCK_SIZE;
+    hipLaunchKernelGGL(kernel_construct_X_free_projection, dim3(grid_dim), dim3(block_dim), shmem, 0, nCV,nsteps,nwalk,sqrtdt,
                         reinterpret_cast<thrust::complex<double> const*>(vMF),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<float> *>(X));
-  else
-    hipLaunchKernelGGL(kernel_construct_X, dim3(grid_dim), dim3(block_dim), 0, 0, nCV,nsteps,nwalk,sqrtdt,vbound,
+  } else {
+    size_t shmem = 2 * REDUCE_BLOCK_SIZE;
+    hipLaunchKernelGGL(kernel_construct_X, dim3(grid_dim), dim3(block_dim), shmem, 0, nCV,nsteps,nwalk,sqrtdt,vbound,
                         reinterpret_cast<thrust::complex<double> const*>(vMF),
                         reinterpret_cast<thrust::complex<float> const*>(vbias),
                         reinterpret_cast<thrust::complex<double> *>(HW),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<float> *>(X));
+  }
   qmc_hip::hip_check(hipGetLastError(),"construct_X");
   qmc_hip::hip_check(hipDeviceSynchronize(),"construct_X");
 }
@@ -181,18 +187,21 @@ void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
 {
   dim3 block_dim(REDUCE_BLOCK_SIZE,1,1);
   dim3 grid_dim(nsteps,nwalk,1);
-  if(free_projection)
-    hipLaunchKernelGGL(kernel_construct_X_free_projection, dim3(grid_dim), dim3(block_dim), 0, 0, nCV,nsteps,nwalk,sqrtdt,
+  if(free_projection) {
+    size_t shmem = REDUCE_BLOCK_SIZE;
+    hipLaunchKernelGGL(kernel_construct_X_free_projection, dim3(grid_dim), dim3(block_dim), shmem, 0, nCV,nsteps,nwalk,sqrtdt,
                         reinterpret_cast<thrust::complex<double> const*>(vMF),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<float> *>(X));
-  else
-    hipLaunchKernelGGL(kernel_construct_X, dim3(grid_dim), dim3(block_dim), 0, 0, nCV,nsteps,nwalk,sqrtdt,vbound,
+  } else {
+    size_t shmem = 2 * REDUCE_BLOCK_SIZE;
+    hipLaunchKernelGGL(kernel_construct_X, dim3(grid_dim), dim3(block_dim), shmem, 0, nCV,nsteps,nwalk,sqrtdt,vbound,
                         reinterpret_cast<thrust::complex<double> const*>(vMF),
                         reinterpret_cast<thrust::complex<double> const*>(vbias),
                         reinterpret_cast<thrust::complex<double> *>(HW),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<float> *>(X));
+  }
   qmc_hip::hip_check(hipGetLastError(),"construct_X");
   qmc_hip::hip_check(hipDeviceSynchronize(),"construct_X");
 }
@@ -206,18 +215,21 @@ void construct_X( int nCV, int nsteps, int nwalk, bool free_projection,
 {
   dim3 block_dim(REDUCE_BLOCK_SIZE,1,1);
   dim3 grid_dim(nsteps,nwalk,1);
-  if(free_projection)
-    hipLaunchKernelGGL(kernel_construct_X_free_projection, dim3(grid_dim), dim3(block_dim), 0, 0, nCV,nsteps,nwalk,sqrtdt,
+  if(free_projection) {
+    size_t shmem = REDUCE_BLOCK_SIZE;
+    hipLaunchKernelGGL(kernel_construct_X_free_projection, dim3(grid_dim), dim3(block_dim), shmem, 0, nCV,nsteps,nwalk,sqrtdt,
                         reinterpret_cast<thrust::complex<double> const*>(vMF),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<double> *>(X));
-  else
-    hipLaunchKernelGGL(kernel_construct_X, dim3(grid_dim), dim3(block_dim), 0, 0, nCV,nsteps,nwalk,sqrtdt,vbound,
+  } else {
+    size_t shmem = 2 * REDUCE_BLOCK_SIZE;
+    hipLaunchKernelGGL(kernel_construct_X, dim3(grid_dim), dim3(block_dim), shmem, 0, nCV,nsteps,nwalk,sqrtdt,vbound,
                         reinterpret_cast<thrust::complex<double> const*>(vMF),
                         reinterpret_cast<thrust::complex<float> const*>(vbias),
                         reinterpret_cast<thrust::complex<double> *>(HW),
                         reinterpret_cast<thrust::complex<double> *>(MF),
                         reinterpret_cast<thrust::complex<double> *>(X));
+  }
   qmc_hip::hip_check(hipGetLastError(),"construct_X");
   qmc_hip::hip_check(hipDeviceSynchronize(),"construct_X");
 }
