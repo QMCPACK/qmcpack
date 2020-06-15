@@ -191,7 +191,7 @@ void dot_wabn( int nwalk, int nocc, int nchol,
 {
   int n_=nwalk*nocc*nocc;
   dim3 grid_dim(n_,1,1);
-  size_t shmem = DOT_BLOCK_SIZE;
+  size_t shmem = DOT_BLOCK_SIZE * sizeof(std::complex<double>);
   hipLaunchKernelGGL(kernel_dot_wabn, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nwalk,nocc,nchol,
                                    static_cast<thrust::complex<double> const>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
@@ -206,7 +206,7 @@ void dot_wabn( int nwalk, int nocc, int nchol,
 {
   int n_=nwalk*nocc*nocc;
   dim3 grid_dim(n_,1,1);
-  size_t shmem = DOT_BLOCK_SIZE;
+  size_t shmem = DOT_BLOCK_SIZE * sizeof(std::complex<float>);
   hipLaunchKernelGGL(kernel_dot_wabn, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nwalk,nocc,nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
@@ -221,7 +221,7 @@ void dot_wabn( int nwalk, int nocc, int nchol,
 {
   int n_=nwalk*nocc*nocc;
   dim3 grid_dim(n_,1,1);
-  size_t shmem = DOT_BLOCK_SIZE;
+  size_t shmem = DOT_BLOCK_SIZE * sizeof(std::complex<float>);
   hipLaunchKernelGGL(kernel_dot_wabn, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nwalk,nocc,nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
@@ -242,7 +242,7 @@ void dot_wanb( int nwalk, int nocc, int nchol,
   int nb = (nocc*nchol-1)/(b_*nf)+1;
   dim3 grid_dim(nwalk,na,nb);
   dim3 block_dim(a_,b_,1);
-  size_t shmem = 1024;
+  size_t shmem = 1024 * sizeof(std::complex<double>);
   hipLaunchKernelGGL(kernel_dot_wanb, dim3(grid_dim), dim3(block_dim), shmem, 0, nf,nwalk,nocc,nchol,
                                    static_cast<thrust::complex<double> const>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
@@ -262,7 +262,7 @@ void dot_wanb( int nwalk, int nocc, int nchol,
   int nb = (nocc*nchol-1)/(b_*nf)+1;
   dim3 grid_dim(nwalk,na,nb);
   dim3 block_dim(a_,b_,1);
-  size_t shmem = 1024;
+  size_t shmem = 1024 * sizeof(std::complex<float>);
   hipLaunchKernelGGL(kernel_dot_wanb, dim3(grid_dim), dim3(block_dim), shmem, 0, nf,nwalk,nocc,nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
@@ -340,7 +340,7 @@ void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
                std::complex<double>* F)
 {
   dim3 grid_dim(nmo,nmo,nmo);
-  size_t shmem = DOT_BLOCK_SIZE;
+  size_t shmem = DOT_BLOCK_SIZE * sizeof(std::complex<double>);
   hipLaunchKernelGGL(kernel_dot_wpan_waqn_Fwpq, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nwalk,nmo,nchol,
                                    static_cast<thrust::complex<double> const>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
@@ -354,7 +354,7 @@ void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
                std::complex<float>* F)
 {
   dim3 grid_dim(nmo,nmo,nmo);
-  size_t shmem = DOT_BLOCK_SIZE;
+  size_t shmem = DOT_BLOCK_SIZE * sizeof(std::complex<float>);
   hipLaunchKernelGGL(kernel_dot_wpan_waqn_Fwpq, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nwalk,nmo,nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
@@ -370,7 +370,7 @@ void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
                std::complex<double>* F)
 {
   dim3 grid_dim(nmo,nmo,nmo);
-  size_t shmem = DOT_BLOCK_SIZE;
+  size_t shmem = DOT_BLOCK_SIZE * sizeof(std::complex<float>);
   hipLaunchKernelGGL(kernel_dot_wpan_waqn_Fwpq, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nwalk,nmo,nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
