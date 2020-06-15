@@ -324,6 +324,12 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #------------------------
   # On Cray's machine
   #------------------------
+  GET_FILENAME_COMPONENT(BASE_CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
+  IF($ENV{CRAYPE_VERSION} MATCHES "." AND NOT BASE_CXX_COMPILER_NAME STREQUAL "CC")
+    MESSAGE(WARNING "Cray Programming Environment has been detected but C++ compiler wrapper CC is not used! "
+                    "Please use cc/CC as the C/C++ compiler to ensure correct cross-compiling for the compute nodes "
+                    "unless you understand cross-compiling and intend not to use Cray compiler wrappers.")
+  ENDIF()
   IF(CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     MESSAGE(STATUS "Running on a Cray machine.")
 
@@ -341,7 +347,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
       ENDIF(NOT MPIEXEC_EXECUTABLE)
     ENDIF()
   ELSE()
-    GET_FILENAME_COMPONENT(BASE_CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
     IF(BASE_CXX_COMPILER_NAME STREQUAL "CC")
       MESSAGE(FATAL_ERROR "Cray compiler wrapper detected. Empty the build folder and rerun cmake with -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment added.")
     ENDIF()
