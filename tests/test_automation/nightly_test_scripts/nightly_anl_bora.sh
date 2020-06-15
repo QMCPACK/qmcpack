@@ -12,28 +12,21 @@ if [ -d /scratch/packages/modulefiles ]; then
 fi
 
 module load cmake
-module load intel-mkl intel/18.4
-module load openmpi/4.0.2-intel
+module load intel-mkl
 module load cuda/10.1
 
 export TEST_SITE_NAME=bora.alcf.anl.gov
 export N_PROCS=16
 export N_PROCS_BUILD=16
-export N_CONCURRENT_TESTS=16
-export CC=mpicc
-export CXX=mpicxx
 
 # run on socket 1
-NUMA_ID=1
+NUMA_ID=0
 
 QE_BIN=/scratch/opt/qe-stable/qe-6.4.1/bin
 QMC_DATA=/scratch/opt/h5data
 
 #Must be an absolute path
 place=/scratch/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
-
-#define and load compiler
-compiler=Intel2018
 
 if [ ! -e $place ]; then
 mkdir $place
@@ -63,17 +56,10 @@ cd $entry
 
 git checkout $branch
 
-for sys in Real Real-Mixed Complex Complex-Mixed \
-           Real-Mixed-CUDA2 Complex-Mixed-CUDA2 Real-Mixed-legacy-CUDA Complex-Mixed-legacy-CUDA
+for sys in ClangDev-Offload-CUDA-Real ClangDev-Offload-CUDA-Complex ClangDev-Offload-CUDA-Real-Mixed ClangDev-Offload-CUDA-Complex-Mixed \
+           Intel18-Real Intel18-Real-Mixed Intel18-Complex Intel18-Complex-Mixed \
+           Intel18-Real-Mixed-CUDA2 Intel18-Complex-Mixed-CUDA2 Intel18-Real-Mixed-legacy-CUDA Intel18-Complex-Mixed-legacy-CUDA
 do
-
-folder=build_$compiler_$sys
-
-if [ -e $folder ]; then
-rm -r $folder
-fi
-mkdir $folder
-cd $folder
 
 echo --- Building for $sys `date`
 
@@ -84,28 +70,70 @@ then
   mkdir -p $place/log/$entry/$mydate
 fi
 
-CTEST_FLAGS="-D QMC_DATA=$QMC_DATA -D ENABLE_TIMERS=1 -D C_FLAGS=-xCOMMON-AVX512 -D CXX_FLAGS=-xCOMMON-AVX512"
+# options common to all cases
+CTEST_FLAGS="-DQMC_DATA=$QMC_DATA -DENABLE_TIMERS=1"
 
-if [[ $sys == *"-CUDA2"* ]]; then
-  CTEST_FLAGS="$CTEST_FLAGS -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_61 -L 'deterministic|performance' -LE unstable"
-elif [[ $sys == *"-legacy-CUDA"* ]]; then
-  CTEST_FLAGS="$CTEST_FLAGS -D QMC_CUDA=1 -D CUDA_ARCH=sm_61 -L 'deterministic|performance' -LE unstable"
-else
-  CTEST_FLAGS="$CTEST_FLAGS -D QE_BIN=$QE_BIN"
+# compiler dependent options
+if [[ $sys == *"ClangDev"* ]]; then
+  #define and load compiler
+  module load llvm/dev-latest
+  module load openmpi/4.0.2-llvm
+  export CC=mpicc
+  export CXX=mpicxx
+
+  CTEST_FLAGS="$CTEST_FLAGS -DCMAKE_C_FLAGS=-march=skylake -DCMAKE_CXX_FLAGS=-march=skylake -DENABLE_MKL=1"
+  if [[ $sys == *"Offload-CUDA"* ]]; then
+    CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DENABLE_OFFLOAD=ON;-DUSE_OBJECT_TARGET=ON;-DCUDA_HOST_COMPILER=`which gcc`;-DCUDA_PROPAGATE_HOST_FLAGS=OFF'"
+    CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=1 -DCUDA_ARCH=sm_61"
+    CTEST_LABLES="-L deterministic -LE unstable"
+    export N_CONCURRENT_TESTS=4
+  else
+    CTEST_FLAGS="$CTEST_FLAGS -DQE_BIN=$QE_BIN"
+    CTEST_LABLES="-L 'deterministic|performance' -LE unstable"
+    export N_CONCURRENT_TESTS=16
+  fi
+elif [[ $sys == *"Intel"* ]]; then
+  #define and load compiler
+  module load intel/18.4
+  module load openmpi/4.0.2-intel
+  export CC=mpicc
+  export CXX=mpicxx
+
+  CTEST_FLAGS="$CTEST_FLAGS -DCMAKE_C_FLAGS=-xCOMMON-AVX512 -DCMAKE_CXX_FLAGS=-xCOMMON-AVX512"
+  if [[ $sys == *"-CUDA2"* ]]; then
+    CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=1 -DCUDA_ARCH=sm_61"
+    CTEST_LABLES="-L 'deterministic|performance' -LE unstable"
+    export N_CONCURRENT_TESTS=4
+  elif [[ $sys == *"-legacy-CUDA"* ]]; then
+    CTEST_FLAGS="$CTEST_FLAGS -DQMC_CUDA=1 -DCUDA_ARCH=sm_61"
+    CTEST_LABLES="-L 'deterministic|performance' -LE unstable"
+    export N_CONCURRENT_TESTS=4
+  else
+    CTEST_FLAGS="$CTEST_FLAGS -DQE_BIN=$QE_BIN"
+    export N_CONCURRENT_TESTS=16
+  fi
 fi
 
-if [[ $sys == *"Complex"* ]]; then
-  CTEST_FLAGS="$CTEST_FLAGS -D QMC_COMPLEX=1"
+# compiler independent options
+if [[ $sys == *"-Complex"* ]]; then
+  CTEST_FLAGS="$CTEST_FLAGS -DQMC_COMPLEX=1"
 fi
 
 if [[ $sys == *"-Mixed"* ]]; then
-  CTEST_FLAGS="$CTEST_FLAGS -D QMC_MIXED_PRECISION=1"
+  CTEST_FLAGS="$CTEST_FLAGS -DQMC_MIXED_PRECISION=1"
 fi
 
-export QMCPACK_TEST_SUBMIT_NAME=${compiler}-${sys}-Release
+export QMCPACK_TEST_SUBMIT_NAME=${sys}-Release
+
+folder=build_${sys}
+if [ -e $folder ]; then
+rm -r $folder
+fi
+mkdir $folder
+cd $folder
 
 numactl -N $NUMA_ID \
-ctest $CTEST_FLAGS -S $PWD/../CMake/ctest_script.cmake,release -VV -E 'long' --timeout 800 &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
+ctest $CTEST_FLAGS $CTEST_LABLES -S $PWD/../CMake/ctest_script.cmake,release -VV -E 'long' --timeout 800 &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
 
 cd ..
 echo --- Finished $sys `date`
