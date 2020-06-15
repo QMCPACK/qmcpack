@@ -9,7 +9,6 @@ SkParserHDF5::~SkParserHDF5(){};
 
 void SkParserHDF5::parse(const string& fname)
 {
-  std::cout << "Here: " << fname << std::endl;
   bool result = statfile.open(fname);
   if (!result)
   {
