@@ -25,6 +25,7 @@
 #include "QMCTools/QMCFiniteSize/SkParserBase.h"
 #include "QMCTools/QMCFiniteSize/SkParserASCII.h"
 #include "QMCTools/QMCFiniteSize/SkParserScalarDat.h"
+#include "QMCTools/QMCFiniteSize/SkParserHDF5.h"
 
 #include "Numerics/OneDimGridBase.h"
 
@@ -62,7 +63,6 @@ int main(int argc, char** argv)
   {
     std::string a(argv[iargc]);
     std::string anxt(argv[iargc + 1]);
-    std::cout << " " << a << "  " << anxt << std::endl;
     if (a == "--ascii")
     {
       skparser = new SkParserASCII();
@@ -73,12 +73,18 @@ int main(int argc, char** argv)
       skparser = new SkParserScalarDat();
       skparser->parse(anxt);
     }
+    else if (a == "--hdf5")
+    {
+      skparser = new SkParserHDF5();
+      skparser->parse(anxt);
+    }
     else if (a == "--help")
     {
       std::cout << "Usage:  qmcfinitesize [main.xml] --[skformat] [SK_FILE]\n";
       std::cout << "  [skformat]\n";
       std::cout << "    --ascii:      S(k) given in kx ky kz sk sk_err format.  Header necessary.\n";
       std::cout << "    --scalardat:  File containing skall elements with energy.pl output format.\n";
+      std::cout << "    --hdf5:       stat.h5 file containing skall data.\n";
       return 0;
     }
     iargc++;

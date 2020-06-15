@@ -75,6 +75,7 @@ SET(FSSRCS
   QMCFiniteSize/SkParserBase.cpp
   QMCFiniteSize/SkParserASCII.cpp
   QMCFiniteSize/SkParserScalarDat.cpp
+  QMCFiniteSize/SkParserHDF5.cpp
   QMCFiniteSize/FSUtilities.cpp
 )
 
