@@ -153,17 +153,23 @@ namespace device{
   template<class T>
   inline void batched_determinant_from_getrf(int n, device_pointer<T>* A, int lda, device_pointer<int> piv, int pstride, T LogOverlapFactor, T* res, int nbatch)
   {
-    throw std::runtime_error("Error: Calling cudaMalloc in batched_determinant_from_getrf "
-                             "in Numerics/determinant.hpp. cudaMalloc needs to be moved a level lower.");
-    //T **A_h = new T*[nbatch];
-    //for(int i=0; i<nbatch; i++)
-      //A_h[i] = to_address(A[i]);
-    //T **A_d;
-    //cudaMalloc((void **)&A_d,  nbatch*sizeof(*A_h));
-    //cudaMemcpy(A_d, A_h, nbatch*sizeof(*A_h), cudaMemcpyHostToDevice);
-    //kernels::batched_determinant_from_getrf_gpu(n,A_d,lda,to_address(piv),pstride,LogOverlapFactor,res,nbatch);
-    //cudaFree(A_d);
-    //delete [] A_h;
+    // This shouldn't be here.
+    T **A_h = new T*[nbatch];
+    for(int i=0; i<nbatch; i++)
+      A_h[i] = to_address(A[i]);
+    T **A_d;
+#ifdef ENABLE_CUDA
+    cudaMalloc((void **)&A_d, nbatch*sizeof(*A_h));
+    cudaMemcpy(A_d, A_h, nbatch*sizeof(*A_h), cudaMemcpyHostToDevice);
+    kernels::batched_determinant_from_getrf_gpu(n,A_d,lda,to_address(piv),pstride,LogOverlapFactor,res,nbatch);
+    cudaFree(A_d);
+#elif ENABLE_HIP
+    hipMalloc((void **)&A_d, nbatch*sizeof(*A_h));
+    hipMemcpy(A_d, A_h, nbatch*sizeof(*A_h), hipMemcpyHostToDevice);
+    kernels::batched_determinant_from_getrf_gpu(n,A_d,lda,to_address(piv),pstride,LogOverlapFactor,res,nbatch);
+    hipFree(A_d);
+#endif
+    delete [] A_h;
   }
 
   template<class T>
