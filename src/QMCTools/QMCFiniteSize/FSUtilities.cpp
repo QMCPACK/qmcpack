@@ -28,9 +28,9 @@ void get_gridinfo_from_posgrid(const std::vector<PosType>& posgridlist,
   dx = (rx - lx) / RealType(Nx - 1);
 }
 
-void getStats(const std::vector<RealType>& vals, RealType& avg, RealType& err,int start)
+void getStats(const std::vector<RealType>& vals, RealType& avg, RealType& err, int start)
 {
-  avg = 0.0;
+  avg   = 0.0;
   int n = 0;
   for (int i = start; i < vals.size(); i++)
   {
@@ -49,16 +49,16 @@ void getStats(const std::vector<RealType>& vals, RealType& avg, RealType& err,in
 
 int estimateEquilibration(const std::vector<RealType>& vals, RealType frac)
 {
-  int idx = int(frac*vals.size());
-  RealType avg,err;
+  int idx = int(frac * vals.size());
+  RealType avg, err;
   getStats(vals, avg, err, idx);
-  int c3,c2,c1;
+  int c3, c2, c1;
   c3 = vals.size();
-  c2 = vals.size(); 
+  c2 = vals.size();
   c1 = vals.size();
-  for (int i = vals.size()-2; i>=0; i--)
+  for (int i = vals.size() - 2; i >= 0; i--)
   {
-    if ((vals[i]-avg)*(vals[i+1]-avg) < 0.0)
+    if ((vals[i] - avg) * (vals[i + 1] - avg) < 0.0)
     {
       c3 = c2;
       c2 = c1;
