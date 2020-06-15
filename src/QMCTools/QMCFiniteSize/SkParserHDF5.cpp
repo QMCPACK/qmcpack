@@ -16,6 +16,7 @@ void SkParserHDF5::parse(const string& fname)
     exit(1);
   }
 
+  //read the kpoints
   vector<int> readShape;
   statfile.getShape<int>("skall/kpoints/value", readShape);
   assert(readShape[1] == 3);
@@ -32,6 +33,7 @@ void SkParserHDF5::parse(const string& fname)
   }
   int nKpts = kgridraw.size();
 
+  //read the <rho_-k*rho_k> term
   statfile.getShape<int>("skall/rhok_e_e/value", readShape);
   assert(readShape[1] == nKpts);
   vector<RealType> rhok_e_tmp;
@@ -39,19 +41,7 @@ void SkParserHDF5::parse(const string& fname)
   statfile.readSlabReshaped(rhok_e_tmp, rhok_e_dims, "skall/rhok_e_e/value");
   int nBlocks = readShape[0];
 
-  vector<RealType> rhok_ee;
-  vector<RealType> rhok_ee_err;
-  for (int ik = 0; ik < nKpts; ik++)
-  {
-    vector<RealType> block_data;
-    for (int ib = 0; ib < nBlocks; ib++)
-      block_data.push_back(rhok_e_tmp[nKpts * ib + ik]);
-    RealType avg, err;
-    getStats(block_data, avg, err);
-    rhok_ee.push_back(avg);
-    rhok_ee_err.push_back(err);
-  }
-
+  //read the Im(rho_k) term
   statfile.getShape<int>("skall/rhok_e_i/value", readShape);
   vector<RealType> rhok_i_tmp;
   array<int, 2> rhok_i_dims{readShape[0], readShape[1]};
@@ -59,19 +49,7 @@ void SkParserHDF5::parse(const string& fname)
   assert(readShape[1] == nKpts);
   assert(readShape[1] == nBlocks);
 
-  vector<RealType> rhok_ei;
-  vector<RealType> rhok_ei_err;
-  for (int ik = 0; ik < nKpts; ik++)
-  {
-    vector<RealType> block_data;
-    for (int ib = 0; ib < nBlocks; ib++)
-      block_data.push_back(rhok_i_tmp[nKpts * ib + ik]);
-    RealType avg, err;
-    getStats(block_data, avg, err);
-    rhok_ei.push_back(avg);
-    rhok_ei_err.push_back(err);
-  }
-
+  //read the Re(rho_k)
   statfile.getShape<int>("skall/rhok_e_r/value", readShape);
   vector<RealType> rhok_r_tmp;
   array<int, 2> rhok_r_dims{readShape[0], readShape[1]};
@@ -79,32 +57,25 @@ void SkParserHDF5::parse(const string& fname)
   assert(readShape[1] == nKpts);
   assert(readShape[1] == nBlocks);
 
-  vector<RealType> rhok_er;
-  vector<RealType> rhok_er_err;
+  //For each k, evaluate the flucuating S(k) for all blocks.
+  //Then perform a simple equilibration estimate for this particular S(k) value
+  //Store the  average and error after throwing out the equilibration
   for (int ik = 0; ik < nKpts; ik++)
   {
     vector<RealType> block_data;
     for (int ib = 0; ib < nBlocks; ib++)
-      block_data.push_back(rhok_r_tmp[nKpts * ib + ik]);
+    {
+      RealType re, rr, ri;
+      re = rhok_e_tmp[nKpts * ib + ik];
+      rr = rhok_r_tmp[nKpts * ib + ik];
+      ri = rhok_i_tmp[nKpts * ib + ik];
+      block_data.push_back(re - (rr * rr + ri * ri));
+    }
+    int ieq = estimateEquilibration(block_data);
     RealType avg, err;
-    getStats(block_data, avg, err);
-    rhok_er.push_back(avg);
-    rhok_er_err.push_back(err);
-  }
-
-  for (int ik = 0; ik < nKpts; ik++)
-  {
-    RealType r_r(0.0);
-    RealType r_i(0.0);
-    //The 3.0 in the following statements is the standard deviation.
-    //  If function value is greater than 3standard deviations above error,
-    //  then we set it.  Otherwise default to zero.
-    if (rhok_er_err[ik] == 0 || std::abs(rhok_er[ik]) / rhok_er_err[ik] > 3.0)
-      r_r = rhok_er[ik];
-    if (rhok_ei_err[ik] == 0 || std::abs(rhok_ei[ik]) / rhok_ei_err[ik] > 3.0)
-      r_i = rhok_ei[ik];
-    skraw.push_back(rhok_ee[ik] - (r_r * r_r + r_i * r_i));
-    skerr_raw.push_back(rhok_ee_err[ik]);
+    getStats(block_data, avg, err, ieq);
+    skraw.push_back(avg);
+    skerr_raw.push_back(err);
   }
 
   hasGrid        = false;

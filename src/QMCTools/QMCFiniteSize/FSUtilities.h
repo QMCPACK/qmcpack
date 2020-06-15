@@ -17,7 +17,9 @@ void get_gridinfo_from_posgrid(const std::vector<PosType>& posgridlist, //list o
                                RealType& dx,                            // the grid spacing
                                IndexType& Nx);                          // the number of grid points
 
-void getStats(const std::vector<RealType>& vals, RealType& avg, RealType& err);
+void getStats(const std::vector<RealType>& vals, RealType& avg, RealType& err, int start=0);
+
+int estimateEquilibration(const std::vector<RealType>& vals, RealType frac=0.75);
 
 } // namespace qmcplusplus
 #endif
