@@ -78,6 +78,7 @@ class SlaterDetOperations_base
       //  7. svd( TNN )
       work_size = std::max(work_size, ma::gesvd_optimal_workspace_size(TNN) ); 
       work_size = std::max(work_size, NMO); 
+      std::cout << "work size : " << work_size << std::endl;
     }
 
     ~SlaterDetOperations_base() {}
@@ -175,6 +176,7 @@ class SlaterDetOperations_base
     template<class MatA, class MatB>
     T Overlap(const MatA& hermA, const MatB& B, T LogOverlapFactor, bool herm=true) {
       int NAEA = (herm?hermA.size(0):hermA.size(1));
+      std::cout << "CALLING OVERLAP" << std::endl;
       TMatrix TNN({NAEA,NAEA},buffer_generator->template get_allocator<T>());
       TMatrix TNN2({NAEA,NAEA},buffer_generator->template get_allocator<T>());
       IVector IWORK(iextensions<1u>{NAEA+1},buffer_generator->template get_allocator<int>());

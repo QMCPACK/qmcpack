@@ -419,13 +419,18 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
   array_ref Bref(B.origin(),{NMO,NEL});
 
   SlaterDetOperations SDet( SlaterDetOperations_serial<Type,buffer_generator>(NMO,NEL,bgen) );
+  std::cout << "done :" << std::endl;
 
   /**** Overlaps ****/
   Type ov_; 
   ov_=SDet.Overlap(A,B,0.0); myREQUIRE(ov_,ov);
+  std::cout << "a:" << std::endl;
   ov_=SDet.Overlap(Aref,B,0.0); myREQUIRE(ov_,ov);
+  std::cout << "b:" << std::endl;
   ov_=SDet.Overlap(A,Bref,0.0); myREQUIRE(ov_,ov);
+  std::cout << "c:" << std::endl;
   ov_=SDet.Overlap(Aref,Bref,0.0); myREQUIRE(ov_,ov);
+  std::cout << "d:" << std::endl;
 
   // Test array_view
   ov_=SDet.Overlap(A(A.extension(0),A.extension(1)),B,0.0); myREQUIRE(ov_,ov);
@@ -550,6 +555,7 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
   Type log_ovlp;
   Type ov_ref = -7.623325999999989+22.20453200000001i;
 
+  std::cout << "batched:" << std::endl;
   SDet.BatchedDensityMatrices(RA,RB,Gwv,log_ovlp,ovlp,false);
   for(int i = 0; i < 3; i++) {
     check(*Gwv[i],g_ref);
