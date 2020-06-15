@@ -733,8 +733,8 @@ ENDIF(QMC_CUDA OR ENABLE_CUDA)
 #  set up HIP compiler options and libraries
 #-------------------------------------------------------------------
 IF(ENABLE_HIP)
-  MESSAGE(STATUS "ROCM_PATH: ${ROCM_PATH}")
-  set(CMAKE_MODULE_PATH "${ROCM_PATH}/hip/cmake" ${CMAKE_MODULE_PATH})
+  MESSAGE(STATUS "ROCM_ROOT: ${ROCM_ROOT}")
+  set(CMAKE_MODULE_PATH "${ROCM_ROOT}/hip/cmake" ${CMAKE_MODULE_PATH})
   FIND_PACKAGE(HIP)
 ENDIF(ENABLE_HIP)
 
