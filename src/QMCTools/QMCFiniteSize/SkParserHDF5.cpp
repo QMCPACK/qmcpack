@@ -4,9 +4,6 @@
 
 namespace qmcplusplus
 {
-SkParserHDF5::SkParserHDF5(){};
-SkParserHDF5::~SkParserHDF5(){};
-
 void SkParserHDF5::parse(const string& fname)
 {
   bool result = statfile.open(fname);

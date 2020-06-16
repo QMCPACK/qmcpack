@@ -5,20 +5,18 @@
 #include "Configuration.h"
 #include <vector>
 
-// FORMAT OF S(K) ASCII:
-// 1 k_x k_y k_z S(k) err
-// 2 k0x k0y k0z S(k0) err
-// 3 k1x k1y k1z S(k1) err
-// ...
-//
 namespace qmcplusplus
 {
+/** Class to handle Sk parsing from scalar.dat
+ * This reads a processed scalar.dat from energy.pl
+ * format.  Data to be read must have 
+ * rhok_e_e val err
+ * rhok_e_r val err
+ * rhok_e_i val err
+ */
 class SkParserScalarDat : public SkParserBase
 {
 public:
-  SkParserScalarDat(){};
-  ~SkParserScalarDat(){};
-
   enum data_layout
   {
     KX,

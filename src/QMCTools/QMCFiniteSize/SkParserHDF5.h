@@ -8,11 +8,15 @@
 
 namespace qmcplusplus
 {
+/** Class to handle reading the S(k) directly from stat.h5 file
+ *
+ * This class parses the kgrid and fluctuation S(k) from skall estimator.
+ * In the parse function, it performs a simple equilibration estimate and 
+ * block average to create the S(k) to use for the corrections
+ */
 class SkParserHDF5 : public SkParserBase
 {
 public:
-  SkParserHDF5();
-  ~SkParserHDF5();
   void parse(const string& fname) override;
 
 private:
