@@ -42,7 +42,6 @@ MultiArray2D&& getrf(MultiArray2D&& m, Array1D& pivot, Buffer&& WORK){
         assert(pivot.size() >= std::min(m.size(1), m.size(0)+1));
 
         int status = -1;
-        std::cout << m.size(1) << " " << m.size(0) << " " << WORK.size() << " " << pivot.size() << std::endl;
         getrf(
                 m.size(1), m.size(0),  pointer_dispatch(m.origin()), m.stride(0),
                 pointer_dispatch(pivot.data()),

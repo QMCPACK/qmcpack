@@ -587,7 +587,6 @@ T determinant(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T LogOverla
         assert(m.size(0) == m.size(1));
         assert(pivot.size() >= m.size(0));
 
-        std::cout << pivot.size() << " " << WORK.num_elements() << std::endl;
         getrf(std::forward<MultiArray2D>(m), std::forward<MultiArray1D>(pivot), WORK);
         return determinant_from_getrf<T>(m.size(0), pointer_dispatch(m.origin()), m.stride(0), 
                 pointer_dispatch(pivot.data()),LogOverlapFactor);
