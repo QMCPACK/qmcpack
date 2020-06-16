@@ -123,6 +123,8 @@ make -j 8
                         Release (create a release/optimized build)
                         RelWithDebInfo (create a release/optimized build with debug info)
                         MinSizeRel (create an executable optimized for size)
+    CMAKE_SYSTEM_NAME   Set value to CrayLinuxEnvironment when cross-compiling
+                        in Cray Programming Environment.
     CMAKE_C_FLAGS       Set the C flags.  Note: to prevent default debug/release flags
                         from being used, set the CMAKE_BUILD_TYPE=None
                         Also supported: CMAKE_C_FLAGS_DEBUG, CMAKE_C_FLAGS_RELEASE,
