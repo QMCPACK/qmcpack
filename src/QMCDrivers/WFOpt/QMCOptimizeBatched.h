@@ -47,15 +47,15 @@ class QMCOptimizeBatched : public QMCDriver
 public:
   ///Constructor.
   QMCOptimizeBatched(MCWalkerConfiguration& w,
-              TrialWaveFunction& psi,
-              QMCHamiltonian& h,
-              HamiltonianPool& hpool,
-              WaveFunctionPool& ppool,
-              QMCDriverInput&& qmcdriver_input,
-              VMCDriverInput&& vmcdriver_input,
-              MCPopulation& population,
-              SampleStack& samples,
-              Communicate* comm);
+                     TrialWaveFunction& psi,
+                     QMCHamiltonian& h,
+                     HamiltonianPool& hpool,
+                     WaveFunctionPool& ppool,
+                     QMCDriverInput&& qmcdriver_input,
+                     VMCDriverInput&& vmcdriver_input,
+                     MCPopulation& population,
+                     SampleStack& samples,
+                     Communicate* comm);
 
   ///Destructor
   ~QMCOptimizeBatched();
@@ -111,7 +111,6 @@ private:
 
   /// Samples to use in optimizer
   SampleStack& samples_;
-
 };
 } // namespace qmcplusplus
 #endif
