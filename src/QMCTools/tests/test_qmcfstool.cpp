@@ -27,7 +27,7 @@ TEST_CASE("FS parse Sk file", "[tools]")
 {
   typedef QMCTraits::RealType RealType;
   typedef QMCTraits::PosType PosType;
-  SkParserBase* skparser = new SkParserASCII();
+  std::unique_ptr<SkParserBase> skparser = std::make_unique<SkParserASCII>();
   std::string filename   = "simple_Sk.dat";
   skparser->parse(filename);
   std::vector<RealType> sk    = skparser->get_sk_raw();
@@ -47,7 +47,6 @@ TEST_CASE("FS parse Sk file", "[tools]")
   REQUIRE(sk[last] == Approx(0.9999947116274186));
   REQUIRE(skerr[last] == Approx(0.01));
 
-  delete skparser;
 }
 
 TEST_CASE("FS evaluate", "[tools]")
@@ -55,11 +54,11 @@ TEST_CASE("FS evaluate", "[tools]")
   typedef QMCTraits::RealType RealType;
   typedef QMCTraits::PosType PosType;
 
-  SkParserBase* skparser = new SkParserASCII();
+  std::unique_ptr<SkParserBase> skparser = std::make_unique<SkParserASCII>();
   std::string filename   = "simple_Sk.dat";
   skparser->parse(filename);
 
-  QMCFiniteSize qfs(skparser);
+  QMCFiniteSize qfs(skparser.get());
   qfs.parse(std::string("simple_input.xml"));
   qfs.validateXML();
   qfs.initialize();
