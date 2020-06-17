@@ -72,7 +72,7 @@ namespace qmc_hip {
 
     hip_check(hipSetDevice(node.rank()),"hipSetDevice()");
 
-    hipblas_check(hipblasCreate (& arch::afqmc_hipblas_handle ), "hipblasCreate");
+    hipblas_check(hipblasCreate(&arch::afqmc_hipblas_handle), "hipblasCreate");
 //    cublas_check(cublasXtCreate (& arch::afqmc_cublasXt_handle ), "cublasXtCreate");
     int devID[8] {0,1,2,3,4,5,6,7};
 //    cublas_check(cublasXtDeviceSelect(arch::afqmc_cublasXt_handle, 1, devID), "cublasXtDeviceSelect");

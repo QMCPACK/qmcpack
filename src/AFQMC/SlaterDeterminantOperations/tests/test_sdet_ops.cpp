@@ -495,6 +495,7 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
   ov_=SDet.MixedDensityMatrix(Aref,B,G,0.0,false); check(G,g_ref);
   ov_=SDet.MixedDensityMatrix(A,Bref,G,0.0,false); check(G,g_ref);
   ov_=SDet.MixedDensityMatrix(Aref,Bref,G,0.0,false); check(G,g_ref); 
+  std::cout << "RDM" << std::endl;
 
   ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
                           B({0,3},{0,2}),
@@ -531,9 +532,11 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
   array Q=B;
 
   // Orthogonalize
+  std::cout << "DONE RDM" << std::endl;
   SDet.Orthogonalize(Q,0.0);
   ov_=SDet.Overlap_noHerm(Q,Q,0.0);
   myREQUIRE( ov_, std::complex<double>(1.,0.));
+  std::cout << "OVLP" << std::endl;
 
   // Batched
   // TODO fix CPU.
@@ -557,6 +560,7 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
 
   std::cout << "batched:" << std::endl;
   SDet.BatchedDensityMatrices(RA,RB,Gwv,log_ovlp,ovlp,false);
+  std::cout << "Batched" << std::endl;
   for(int i = 0; i < 3; i++) {
     check(*Gwv[i],g_ref);
     myREQUIRE(ovlp[i], ov_ref);

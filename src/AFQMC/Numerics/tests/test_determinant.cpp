@@ -23,6 +23,7 @@
 #include "AFQMC/config.h"
 #include "AFQMC/config.0.h"
 #include "AFQMC/Numerics/ma_blas.hpp"
+#include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/determinant.hpp"
 #include "AFQMC/Matrix/tests/matrix_helpers.h"
 
@@ -129,6 +130,46 @@ TEST_CASE("batched_determinant_from_getrf", "[Numerics][determinant]")
   REQUIRE(ovlps[0] == Approx(detx));
   REQUIRE(ovlps[1] == Approx(detx));
   REQUIRE(ovlps[2] == Approx(detx));
+}
+
+TEST_CASE("determinant", "[Numerics][determinant]")
+{
+  Alloc<std::complex<double>> alloc{};
+  Tensor1D<int> pivot = {0, 0, 0, 0};
+  Tensor2D<std::complex<double>> WORK({3,3},0.0,alloc);
+  double log_ovlp = 0.0;
+  // numpy.random.seed(8)
+  // x = numpy.random.random(9).reshape(3,3)
+  // z = x + 1j*x
+  // det = numpy.linalg.det(z)
+  using namespace std::complex_literals;
+  Tensor2D<std::complex<double>> matx = {{0.8734294027918162+0.8734294027918162i, 0.968540662820932+0.968540662820932i, 0.86919454021392+0.86919454021392i},
+                                         {0.530855691555599+0.530855691555599i, 0.2327283279772907+0.2327283279772907i, 0.011398804277429897+0.011398804277429897i},
+                                         {0.4304688182924905+0.4304688182924905i, 0.4023513600373648+0.4023513600373648i, 0.5226746713525696+0.5226746713525696i}};
+  //std::complex<double> ref(0.12634104339350705,-0.12634104339350705);
+  //Tensor2D<std::complex<double>> matx = {{0.8734294027918162+0.8734294027918162i, 0.968540662820932+0.968540662820932i},
+                                         //{0.530855691555599+0.530855691555599i, 0.2327283279772907+0.2327283279772907i}};
+  //Tensor2D<std::complex<double>> matx = {{0.1-0.2i,0.33},{0.1245-0.27i, -8.954+0.1i}};
+  std::complex<double> ref(0.12634104339350705,-0.12634104339350705);
+  using ma::getrf;
+  getrf(matx, pivot, WORK);
+  //for (int i = 0; i < 3; i++)
+    //for (int j = 0; j < 3; j++)
+      //std::cout << matx[i][j] << " ";
+    //std::cout << std::endl;
+  using ma::determinant;
+  using ma::determinant_from_getrf;
+  std::complex<double> lovlp = 0.0;
+  //std::complex<double> ovlp = determinant_from_getrf(matx.size(0), matx.origin(), matx.stride(0),
+                                       //pivot.origin(), lovlp);
+  //std::cout << ovlp << std::endl;
+  //Tensor2D<std::complex<double>> mat = {{0.1-0.2i,0.33},{0.1245-0.27i, -8.954+0.1i}};
+  Tensor2D<std::complex<double>> mat = {{0.8734294027918162+0.8734294027918162i, 0.968540662820932+0.968540662820932i, 0.86919454021392+0.86919454021392i},
+                                         {0.530855691555599+0.530855691555599i, 0.2327283279772907+0.2327283279772907i, 0.011398804277429897+0.011398804277429897i},
+                                         {0.4304688182924905+0.4304688182924905i, 0.4023513600373648+0.4023513600373648i, 0.5226746713525696+0.5226746713525696i}};
+  std::complex<double> ovlp = determinant(mat, pivot, WORK, lovlp);
+  REQUIRE(std::real(ovlp) == Approx(std::real(ref)));
+  REQUIRE(std::imag(ovlp) == Approx(std::imag(ref)));
 }
 
 }

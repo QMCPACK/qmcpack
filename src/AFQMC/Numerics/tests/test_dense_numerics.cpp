@@ -40,7 +40,7 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "AFQMC/Memory/custom_pointers.hpp"
@@ -392,12 +392,23 @@ TEST_CASE("dense_ma_operations", "[matrix_operations]")
   test_dense_matrix_mult();
 }
 
-#if defined(ENABLE_CUDA)
-template<class Allocator>
-void test_dense_matrix_mult_device(Allocator alloc)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+TEST_CASE("dense_ma_operations_device", "[matrix_operations]")
 {
+  auto world = boost::mpi3::environment::get_world_instance();
+  auto node = world.split_shared(world.rank());
+
+  arch::INIT(node);
+
+  //using T = std::complex<double>;
+  using T = double;
+  using Allocator = device::device_allocator<T>;
+
+  Allocator alloc{};
+
   using T = typename Allocator::value_type;
 
+  SECTION("mat_vec")
   { 
     vector<T> m = {
             9.,24.,30.,
@@ -424,6 +435,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
     verify_approx(MX, Y);
   } 
 
+  SECTION("mat_vec_rec")
   {
     vector<T> m = {
             9.,24.,30., 2.,
@@ -449,6 +461,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
     array_ref<T, 1> MX(mx.data(), iextensions<1u>{mx.size()});
     verify_approx( MX, Y );
   }
+  SECTION("mat_vec_trans")
   {
     vector<T> m = {
             9.,24.,30., 2.,
@@ -476,6 +489,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
   }
 
 
+  SECTION("mat_vec_add")
   {
     vector<T> m = {
     9.,24.,30., 9.,
@@ -503,6 +517,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
     verify_approx( Y, Y2 );
   }
 
+  SECTION("mat_herm")
   {
     vector<T> m = {
     1.,2.,1.,
@@ -515,6 +530,8 @@ void test_dense_matrix_mult_device(Allocator alloc)
 // not yet implemented in GPU
 //    REQUIRE( ma::is_hermitian(M) );
   }
+
+  SECTION("mat_herm_ref")
   {
     vector<T> m = {
     1.,2.,1.,
@@ -529,6 +546,8 @@ void test_dense_matrix_mult_device(Allocator alloc)
 // not yet implemented in GPU
 //    REQUIRE( ma::is_hermitian(Mref) );
   }
+
+  SECTION("mat_mat_op")
   {
     vector<T> a = {
     1.,0.,1.,
@@ -591,6 +610,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
 
   }
 
+  SECTION("mat_mat_op_inv")
   {
     vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
     vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
@@ -612,7 +632,9 @@ void test_dense_matrix_mult_device(Allocator alloc)
     array_ref<T, 2> Id2(id.data(),{3,3});
     verify_approx(I, Id2);
   }
-   {
+
+  SECTION("mat_gerf_gqr")
+  {
      vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
      vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
 
@@ -635,6 +657,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
      array_ref<T, 2> Id2(id.data(),{3,3});
      verify_approx(Id, Id2);
    }
+   SECTION("mat_gerf_gqr_product")
    {
      vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
      vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
@@ -658,6 +681,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
      array_ref<T, 2> Id2(id.data(),{3,3});
      verify_approx(Id, Id2);
    }
+   SECTION("mat_geqrf_strided")
    {
      vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
      vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
@@ -671,7 +695,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
                           ma::gqr_optimal_workspace_size(A[0]));
      array<T,1,Allocator> WORK(iextensions<1u>{sz},alloc);
      array<T,2,Allocator> Id({3,3},alloc);
-     using IAllocator = typename Allocator::template rebind<int>::other; 
+     using IAllocator = typename Allocator::template rebind<int>::other;
      array<int,1,IAllocator> info(iextensions<1u>{2},IAllocator{alloc});
      array<T,2,Allocator> TAU({2,4},alloc);
 
@@ -685,6 +709,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
        verify_approx(Id, Id2);
      }
    }
+   SECTION("mat_trans")
    {
      vector<T> a = {
              9.,24.,30., 45.,
@@ -707,25 +732,6 @@ void test_dense_matrix_mult_device(Allocator alloc)
      array_ref<T, 2> AT(at.data(),{4,2});
      verify_approx( AT, B );
    }
-
-}
-
-TEST_CASE("dense_ma_operations_device", "[matrix_operations]")
-{
-  auto world = boost::mpi3::environment::get_world_instance();
-  auto node = world.split_shared(world.rank());
-
-  arch::INIT(node);
-
-  {
-    //using T = std::complex<double>;
-    using T = double;
-    using Alloc = device::device_allocator<T>;
-
-    Alloc gpu_alloc{};
- 
-    test_dense_matrix_mult_device<Alloc>(gpu_alloc);
-  }
 }
 #endif
 
