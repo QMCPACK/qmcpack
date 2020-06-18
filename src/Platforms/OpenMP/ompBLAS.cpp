@@ -13,7 +13,9 @@
 #include "ompBLAS.hpp"
 #include <stdexcept>
 #include "config.h"
+#if !defined(OPENMP_NO_COMPLEX)
 #include "ompReduction.hpp"
+#endif
 
 namespace qmcplusplus
 {
@@ -89,6 +91,7 @@ ompBLAS_status gemv(ompBLAS_handle&     handle,
   return gemv_impl(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
 }
 
+#if !defined(OPENMP_NO_COMPLEX)
 ompBLAS_status gemv(ompBLAS_handle&                  handle,
                     const char                       trans,
                     const int                        m,
@@ -120,6 +123,7 @@ ompBLAS_status gemv(ompBLAS_handle&                   handle,
 {
   return gemv_impl(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
 }
+#endif
 
 
 template<typename T>
@@ -196,6 +200,7 @@ ompBLAS_status gemv_batched(ompBLAS_handle&     handle,
   return gemv_batched_impl(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
 }
 
+#if !defined(OPENMP_NO_COMPLEX)
 ompBLAS_status gemv_batched(ompBLAS_handle&                  handle,
                             const char                       trans,
                             const int                        m,
@@ -229,6 +234,7 @@ ompBLAS_status gemv_batched(ompBLAS_handle&                   handle,
 {
   return gemv_batched_impl(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy, batch_count);
 }
+#endif
 
 
 template<typename T>
@@ -282,6 +288,7 @@ ompBLAS_status ger(ompBLAS_handle&     handle,
   return ger_impl(handle, m, n, alpha, x, incx, y, incy, A, lda);
 }
 
+#if !defined(OPENMP_NO_COMPLEX)
 ompBLAS_status ger(ompBLAS_handle&                  handle,
                    const int                        m,
                    const int                        n,
@@ -309,6 +316,8 @@ ompBLAS_status ger(ompBLAS_handle&                   handle,
 {
   return ger_impl(handle, m, n, alpha, x, incx, y, incy, A, lda);
 }
+#endif
+
 
 template<typename T>
 ompBLAS_status ger_batched_impl(ompBLAS_handle& handle,
@@ -366,6 +375,7 @@ ompBLAS_status ger_batched(ompBLAS_handle&     handle,
   return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
 }
 
+#if !defined(OPENMP_NO_COMPLEX)
 ompBLAS_status ger_batched(ompBLAS_handle&                  handle,
                            const int                        m,
                            const int                        n,
@@ -395,5 +405,6 @@ ompBLAS_status ger_batched(ompBLAS_handle&                   handle,
 {
   return ger_batched_impl(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count);
 }
+#endif
 } // namespace ompBLAS
 } // namespace qmcplusplus
