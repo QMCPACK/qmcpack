@@ -5,20 +5,21 @@
 #include "Configuration.h"
 #include <vector>
 
-// FORMAT OF S(K) ASCII:
-// 1 k_x k_y k_z S(k) err
-// 2 k0x k0y k0z S(k0) err
-// 3 k1x k1y k1z S(k1) err
-// ...
-//
 namespace qmcplusplus
 {
+/** Class to handle parsing from ASCII file
+ *
+ * This assumes you have process your own S(k) file
+ * and has file format of
+ * # k_x k_y k_z S(k)  err
+ *   k0x k0y k0z S(k0) err
+ *   k1x k1y k1z S(k1) err
+ *   k2x k2y k2z S(k2) err
+ *   ...
+ */
 class SkParserASCII : public SkParserBase
 {
 public:
-  SkParserASCII(){};
-  ~SkParserASCII(){};
-
   enum data_layout
   {
     KX,
