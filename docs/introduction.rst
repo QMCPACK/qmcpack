@@ -115,7 +115,7 @@ Congratulations, you have completed a DMC calculation with QMCPACK!
 
 
 .. _fig1:
-.. figure:: quick_qmca_dmc_trace.png
+.. figure:: /figs/quick_qmca_dmc_trace.png
     :width: 400
     :align: center
 
