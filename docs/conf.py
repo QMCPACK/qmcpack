@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'QMC Manual'
+project = 'QMCPACK Manual'
 copyright = '2020, QMCPACK Developers'
 author = 'QMCPACK Developers'
 
