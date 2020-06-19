@@ -16,6 +16,7 @@
 #include <hip/hip_runtime.h>
 #include "rocsolver.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/CPU/lapack_cpu.hpp"
 
 // Abusing hip/rocm names
 namespace rocsolver {
@@ -462,6 +463,7 @@ namespace rocsolver {
     return success;
   }
 
+  // TODO: FDM use rocsolver_c/zungqr once available
   inline rocsolverStatus_t
   rocsolver_gqr(
     rocsolverHandle_t handle,
@@ -475,8 +477,17 @@ namespace rocsolver {
     
     //rocsolverStatus_t success = rocsolver_cungqr(handle,m,n,k,reinterpret_cast<rocblas_float_complex *>(A),lda,
                                                  //reinterpret_cast<rocblas_float_complex *>(ipiv));
-    rocsolverStatus_t success;
-    throw std::runtime_error("Error: rocsolver_cungqr not implemented in rocsolver.");
+    rocsolverStatus_t success = rocblas_status_success;
+    std::vector<std::complex<float>> Ah(m*n, 0.0);
+    std::vector<std::complex<float>> tau(k, 0.0);
+    arch::memcopy(Ah.data(), A, m*n*sizeof(std::complex<float>), arch::memcopyD2H);
+    arch::memcopy(tau.data(), ipiv, k*sizeof(std::complex<float>), arch::memcopyD2H);
+    int lwork, info;
+    ma::gqr_bufferSize(m, n, k, Ah.data(), lda, lwork);
+    std::vector<std::complex<float>> work(lwork, 0.0);
+    ma::gqr(m, n, k, Ah.data(), lda, tau.data(), work.data(), lwork, info);
+    arch::memcopy(A, Ah.data(), m*n*sizeof(std::complex<double>), arch::memcopyH2D);
+    arch::memcopy(ipiv, tau.data(), k*sizeof(std::complex<double>), arch::memcopyH2D);
     hipDeviceSynchronize ();
     return success;
   }
@@ -491,11 +502,20 @@ namespace rocsolver {
     int lda,
     std::complex<double> *ipiv)
   {
-    rocsolverStatus_t success;
-    throw std::runtime_error("Error: rocsolver_zungqr not implemented in rocsolver.");
+    rocsolverStatus_t success = rocblas_status_success;
     //rocsolverStatus_t success = rocsolver_zungqr(handle,m,n,k,reinterpret_cast<rocblas_double_complex *>(A),lda,
-                               //reinterpret_cast<rocblas_double_complex *>(ipiv));
+                                                 //reinterpret_cast<rocblas_double_complex *>(ipiv));
+    std::vector<std::complex<double>> Ah(m*n, 0.0);
+    std::vector<std::complex<double>> tau(k, 0.0);
+    int lwork, info;
+    ma::gqr_bufferSize(m, n, k, Ah.data(), lda, lwork);
+    std::vector<std::complex<double>> work(lwork, 0.0);
+    arch::memcopy(Ah.data(), A, m*n*sizeof(std::complex<double>), arch::memcopyD2H);
+    arch::memcopy(tau.data(), ipiv, k*sizeof(std::complex<double>), arch::memcopyD2H);
+    ma::gqr(m, n, k, Ah.data(), lda, tau.data(), work.data(), lwork, info);
     hipDeviceSynchronize ();
+    arch::memcopy(A, Ah.data(), m*n*sizeof(std::complex<double>), arch::memcopyH2D);
+    arch::memcopy(ipiv, tau.data(), k*sizeof(std::complex<double>), arch::memcopyH2D);
     return success;
   }
 
