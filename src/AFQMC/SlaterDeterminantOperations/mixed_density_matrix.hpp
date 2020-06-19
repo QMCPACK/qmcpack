@@ -565,8 +565,8 @@ Tp Overlap_noHerm(const MatA& A, const MatB& B, Tp LogOverlapFactor, Mat&& T1, I
   using ma::T;
   using ma::H;
 
-  // T(B)*conj(A) 
-  ma::product(H(A),B,std::forward<Mat>(T1));    
+  // T(B)*conj(A)
+  ma::product(H(A),B,std::forward<Mat>(T1));
 
   return ma::determinant(std::forward<Mat>(T1),IWORK,WORK,LogOverlapFactor);
 }
