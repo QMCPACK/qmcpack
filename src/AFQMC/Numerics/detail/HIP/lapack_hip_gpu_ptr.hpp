@@ -128,6 +128,7 @@ namespace device
     A_h = new T*[batchSize];
     C_h = new T*[batchSize];
     for(int i=0; i<batchSize; i++) {
+      kernels::set_identity(n,n,to_address(ainv[i]),lda);
       A_h[i] = to_address(a[i]);
       C_h[i] = to_address(ainv[i]);
     }
@@ -135,8 +136,10 @@ namespace device
     hipMalloc((void **)&C_d,  batchSize*sizeof(*C_h));
     hipMemcpy(A_d, A_h, batchSize*sizeof(*A_h), hipMemcpyHostToDevice);
     hipMemcpy(C_d, C_h, batchSize*sizeof(*C_h), hipMemcpyHostToDevice);
-    hipblasStatus_t status = hipblas::hipblas_getriBatched(*(a[0]).handles.hipblas_handle, n, A_d, lda,
-                                                        to_address(piv), C_d, ldc, to_address(info), batchSize);
+    hipblasStatus_t status = hipblas::hipblas_getriBatched(*(a[0]).handles.hipblas_handle, HIPBLAS_OP_N, n, n,
+                                                        A_d, lda,
+                                                        to_address(piv), C_d, ldc,
+                                                        to_address(info), batchSize);
     if(HIPBLAS_STATUS_SUCCESS != status)
       throw std::runtime_error("Error: hipblas_getri returned error code.");
     hipFree(A_d);
@@ -228,14 +231,8 @@ namespace device
   void static gqr(int M, int N, int K, device_pointer<T> A, const int LDA, device_pointer<T> TAU, device_pointer<T> WORK, int LWORK, int& INFO)
   {
     // allocating here for now
-    //int* piv;
-    //if(hipSuccess != hipMalloc ((void**)&piv,sizeof(int))) {
-      //std::cerr<<" Error gqr: Error allocating on GPU." <<std::endl;
-      //throw std::runtime_error("Error: hipMalloc returned error code.");
-    //}
     rocsolverStatus_t status = rocsolver::rocsolver_gqr(*A.handles.rocsolver_handle_, M, N, K,
                    to_address(A), LDA, to_address(TAU));
-    //hipMemcpy(&INFO,piv,sizeof(int),hipMemcpyDeviceToHost);
     if(rocblas_status_success != status) {
       int st;
       std::cerr<<" hipblas_gqr status, info: " <<status << std::endl; std::cerr.flush();
