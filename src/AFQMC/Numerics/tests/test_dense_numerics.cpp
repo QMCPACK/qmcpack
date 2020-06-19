@@ -733,6 +733,345 @@ TEST_CASE("dense_ma_operations_device", "[matrix_operations]")
      verify_approx( AT, B );
    }
 }
+
+TEST_CASE("dense_ma_operations_device_complex", "[matrix_operations]")
+{
+  auto world = boost::mpi3::environment::get_world_instance();
+  auto node = world.split_shared(world.rank());
+
+  arch::INIT(node);
+
+  //using T = std::complex<double>;
+  using T = std::complex<double>;
+  using Allocator = device::device_allocator<T>;
+
+  Allocator alloc{};
+
+  SECTION("mat_vec")
+  { 
+    vector<T> m = {
+            9.,24.,30.,
+            4.,10.,12.,
+            14.,16.,36.
+    };
+    vector<T> x = {1.,2.,3.};
+    vector<T> y(3);
+
+    array<T,2,Allocator> M({3,3},alloc);
+    array<T,1,Allocator> X(iextensions<1u>{x.size()},alloc);
+    array<T,1,Allocator> Y(iextensions<1u>{y.size()},alloc);
+
+    copy_n(m.data(),m.size(),M.origin());
+    REQUIRE(M.num_elements() == m.size());
+    copy_n(x.data(),x.size(),X.origin());
+    REQUIRE(X.num_elements() == x.size());
+    REQUIRE(Y.num_elements() == y.size());
+
+    ma::product(M, X, Y); // Y := M X
+
+    vector<T> mx = {147., 60.,154.};
+    array_ref<T, 1> MX(mx.data(), iextensions<1u>{mx.size()});
+    verify_approx(MX, Y);
+  } 
+
+  SECTION("mat_vec_rec")
+  {
+    vector<T> m = {
+            9.,24.,30., 2.,
+            4.,10.,12., 1.,
+            14.,16.,36., 20.
+    };
+    vector<T> x = {1.,2.,3., 4.};
+    vector<T> y(3);
+
+    array<T,2,Allocator> M({3,4},alloc);
+    array<T,1,Allocator> X(iextensions<1u>{x.size()},alloc);
+    array<T,1,Allocator> Y(iextensions<1u>{y.size()},alloc);
+
+    copy_n(m.data(),m.size(),M.origin());
+    REQUIRE(M.num_elements() == m.size());
+    copy_n(x.data(),x.size(),X.origin());
+    REQUIRE(X.num_elements() == x.size());
+    REQUIRE(Y.num_elements() == y.size());
+
+    ma::product(M, X, Y); // Y := M X
+
+    vector<T> mx = {155., 64.,234.};
+    array_ref<T, 1> MX(mx.data(), iextensions<1u>{mx.size()});
+    verify_approx( MX, Y );
+  }
+  SECTION("mat_vec_trans")
+  {
+    vector<T> m = {
+            9.,24.,30., 2.,
+            4.,10.,12., 1.,
+            14.,16.,36., 20.
+    };
+    vector<T> x = {1.,2.,3.};
+    vector<T> y(4);
+
+    array<T,2,Allocator> M({3,4},alloc);
+    array<T,1,Allocator> X(iextensions<1u>{x.size()},alloc);
+    array<T,1,Allocator> Y(iextensions<1u>{y.size()},alloc);
+
+    copy_n(m.data(),m.size(),M.origin());
+    REQUIRE(M.num_elements() == m.size());
+    copy_n(x.data(),x.size(),X.origin());
+    REQUIRE(X.num_elements() == x.size());
+    REQUIRE(Y.num_elements() == y.size());
+
+    ma::product(ma::T(M), X, Y); // Y := M X
+
+    vector<T> mx = {59., 92., 162., 64.};
+    array_ref<T, 1> MX(mx.data(), iextensions<1u>{mx.size()});
+    verify_approx( MX, Y );
+  }
+
+
+  SECTION("mat_vec_add")
+  {
+    vector<T> m = {
+    9.,24.,30., 9.,
+    4.,10.,12., 7.,
+    14.,16.,36., 1.
+    };
+    vector<T> x = {1.,2.,3., 4.};
+    vector<T> y = {4.,5.,6.};
+
+    array<T,2,Allocator> M({3,4},alloc);
+    copy_n(m.data(),m.size(),M.origin());
+    REQUIRE(M.num_elements() == m.size());
+
+    array<T,1,Allocator> X(iextensions<1u>{x.size()},alloc);
+    copy_n(x.data(),x.size(),X.origin()); 
+    REQUIRE(X.num_elements() == x.size());
+
+    array<T,1,Allocator> Y(iextensions<1u>{y.size()},alloc);
+    REQUIRE(Y.num_elements() == y.size());
+
+    ma::product(M, X, Y); // Y := M X
+
+    vector<T> y2 = {183., 88.,158.};
+    array_ref<T, 1> Y2(y2.data(), iextensions<1u>{y2.size()});
+    verify_approx( Y, Y2 );
+  }
+
+  SECTION("mat_herm")
+  {
+    vector<T> m = {
+    1.,2.,1.,
+    2.,5.,8.,
+    1.,8.,9.
+    };
+    array<T,2,Allocator> M({3,3},alloc);
+    copy_n(m.data(),m.size(),M.origin()); 
+    REQUIRE(M.num_elements() == m.size());
+// not yet implemented in GPU
+//    REQUIRE( ma::is_hermitian(M) );
+  }
+
+  SECTION("mat_herm_ref")
+  {
+    vector<T> m = {
+    1.,2.,1.,
+    2.,5.,8.,
+    1.,8.,9.
+    };
+    array<T,2,Allocator> M({3,3},alloc);
+    copy_n(m.data(),m.size(),M.origin());          
+    REQUIRE(M.num_elements() == m.size());
+
+    array_ref<T,2,typename Allocator::pointer> Mref(M.origin(),M.extensions());
+// not yet implemented in GPU
+//    REQUIRE( ma::is_hermitian(Mref) );
+  }
+
+  SECTION("mat_mat_op")
+  {
+    vector<T> a = {
+    1.,0.,1.,
+    3.,5.,8.,
+    4.,8.,9.
+    };
+    vector<T> b = {
+    6.,2.,8.,
+    9.,5.,5.,
+    1.,7.,9.
+    };
+
+    array<T,2,Allocator> A({3,3},alloc);
+    copy_n(a.data(),a.size(),A.origin());
+    REQUIRE(A.num_elements() == a.size());
+
+    array<T,2,Allocator> B({3,3},alloc);
+    copy_n(b.data(),b.size(),B.origin());
+    REQUIRE(B.num_elements() == b.size());
+
+    array<T,2,Allocator> D({3,3},alloc);
+
+    ma::product(A, B, D);
+
+    vector<T> ab = {
+    7., 9., 17.,
+    71., 87., 121.,
+    105., 111., 153.
+    };
+    array_ref<T, 2> AB(ab.data(), {3,3});
+    verify_approx(D, AB);
+
+    ma::product(ma::N(A), ma::N(B), D);
+    verify_approx(D, AB);
+
+    ma::product(ma::T(A), B, D);
+    vector<T> atb = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
+    array_ref<T, 2> AtB(atb.data(), {3,3});
+    verify_approx(D, AtB);
+
+    ma::product(A, ma::T(B), D);
+    vector<T> abt = {14., 14., 10., 92., 92., 110., 112., 121., 141.};
+    array_ref<T, 2> ABt(abt.data(), {3,3});
+    verify_approx(D, ABt);
+
+    ma::product(ma::T(A), ma::T(B), D);
+    vector<T> atbt = {44., 44., 58., 74., 65., 107., 94., 94., 138.};
+    array_ref<T, 2> AtBt(atbt.data(), {3,3});
+    verify_approx(D, AtBt);
+
+    ma::product(ma::H(A), ma::T(B), D);
+    vector<T> ahbt = {44., 44., 58., 74., 65., 107., 94., 94., 138.};
+    array_ref<T, 2> AhBt(ahbt.data(), {3,3});
+    verify_approx(D, AhBt);
+
+    ma::product(A, ma::H(B), D);
+    vector<T> abh = {14., 14., 10., 92., 92., 110., 112., 121., 141.};
+    array_ref<T, 2> ABh(abh.data(), {3,3});
+    verify_approx(D, ABh);
+
+  }
+
+  SECTION("mat_mat_op_inv")
+  {
+    vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
+    vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
+
+    array<T,2,Allocator> A({3,3},alloc);
+    copy_n(a.data(),a.size(),A.origin());
+    REQUIRE(A.num_elements() == a.size());
+
+    array<T,2,Allocator> B({3,3},alloc);
+    copy_n(a.data(),a.size(),B.origin());
+    REQUIRE(B.num_elements() == a.size());
+
+    array<T,2,Allocator> I({3,3},alloc);
+
+    ma::invert(B,0.0);
+
+    ma::product(A, B, I);
+
+    array_ref<T, 2> Id2(id.data(),{3,3});
+    verify_approx(I, Id2);
+  }
+
+  SECTION("mat_gerf_gqr")
+  {
+     vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
+     vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
+
+     array<T,2,Allocator> A({3,3},alloc);
+     copy_n(a.data(),a.size(),A.origin());
+     REQUIRE(A.num_elements() == a.size());
+
+     array<T,2,Allocator> Id({3,3},alloc);
+
+     size_t sz =  std::max(ma::geqrf_optimal_workspace_size(A),
+                          ma::gqr_optimal_workspace_size(A));
+     array<T,1,Allocator> WORK(iextensions<1u>{sz},alloc);
+     array<T,1,Allocator> TAU(iextensions<1u>{3},alloc);
+
+     ma::geqrf(A,TAU,WORK);
+     ma::gqr(A,TAU,WORK);
+
+     ma::product(ma::H(A), A, Id);
+
+     array_ref<T, 2> Id2(id.data(),{3,3});
+     verify_approx(Id, Id2);
+   }
+   SECTION("mat_gerf_gqr_product")
+   {
+     vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
+     vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
+
+     array<T,2,Allocator> A({3,4},alloc);
+     copy_n(a.data(),a.size(),A.origin());
+     REQUIRE(A.num_elements() == a.size());
+
+     array<T,2,Allocator> Id({3,3},alloc);
+
+     size_t sz =  std::max(ma::geqrf_optimal_workspace_size(A),
+                          ma::gqr_optimal_workspace_size(A));
+     array<T,1,Allocator> WORK(iextensions<1u>{sz},alloc);
+     array<T,1,Allocator> TAU(iextensions<1u>{3},alloc);
+
+     ma::geqrf(A,TAU,WORK);
+     ma::gqr(A,TAU,WORK);
+
+     ma::product(A, ma::H(A), Id);
+
+     array_ref<T, 2> Id2(id.data(),{3,3});
+     verify_approx(Id, Id2);
+   }
+   SECTION("mat_geqrf_strided")
+   {
+     vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
+     vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
+
+     array<T,3,Allocator> A({2,3,4},alloc);
+     copy_n(a.data(),a.size(),A[0].origin());
+     copy_n(a.data(),a.size(),A[1].origin());
+     REQUIRE(A.num_elements() == 2*a.size());
+
+     size_t sz =  std::max(ma::geqrf_optimal_workspace_size(A[0]),
+                          ma::gqr_optimal_workspace_size(A[0]));
+     array<T,1,Allocator> WORK(iextensions<1u>{sz},alloc);
+     array<T,2,Allocator> Id({3,3},alloc);
+     using IAllocator = typename Allocator::template rebind<int>::other;
+     array<int,1,IAllocator> info(iextensions<1u>{2},IAllocator{alloc});
+     array<T,2,Allocator> TAU({2,4},alloc);
+
+     geqrfStrided(4,3,A.origin(),4,12,TAU.origin(),4,info.origin(),2);
+     for(int i=0; i<2; i++) {
+       ma::gqr(A[i],TAU[i],WORK);
+
+       ma::product(A[i], ma::H(A[i]), Id);
+
+       array_ref<T, 2> Id2(id.data(),{3,3});
+       verify_approx(Id, Id2);
+     }
+   }
+   SECTION("mat_trans")
+   {
+     vector<T> a = {
+             9.,24.,30., 45.,
+             4.,10.,12., 12.
+     };
+     vector<T> at = {
+             9.,4.,
+             24.,10.,
+             30.,12.,
+             45.,12.
+     };
+
+     array<T,2,Allocator> A({2,4},alloc);
+     copy_n(a.data(),a.size(),A.origin());
+     REQUIRE(A.num_elements() == a.size());
+
+     array<T,2,Allocator> B({4,2},alloc);
+     ma::transpose(A,B);
+
+     array_ref<T, 2> AT(at.data(),{4,2});
+     verify_approx( AT, B );
+   }
+}
 #endif
 
 }
