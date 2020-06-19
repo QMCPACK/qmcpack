@@ -78,7 +78,6 @@ class SlaterDetOperations_base
       //  7. svd( TNN )
       work_size = std::max(work_size, ma::gesvd_optimal_workspace_size(TNN) ); 
       work_size = std::max(work_size, NMO); 
-      std::cout << "work size : " << work_size << std::endl;
     }
 
     ~SlaterDetOperations_base() {}
@@ -176,7 +175,6 @@ class SlaterDetOperations_base
     template<class MatA, class MatB>
     T Overlap(const MatA& hermA, const MatB& B, T LogOverlapFactor, bool herm=true) {
       int NAEA = (herm?hermA.size(0):hermA.size(1));
-      std::cout << "CALLING OVERLAP" << std::endl;
       TMatrix TNN({NAEA,NAEA},buffer_generator->template get_allocator<T>());
       TMatrix TNN2({NAEA,NAEA},buffer_generator->template get_allocator<T>());
       IVector IWORK(iextensions<1u>{NAEA+1},buffer_generator->template get_allocator<int>());
@@ -246,13 +244,13 @@ class SlaterDetOperations_base
       TVector TAU(iextensions<1u>{NMO},buffer_generator->template get_allocator<T>());
       TVector WORK(iextensions<1u>{work_size},buffer_generator->template get_allocator<T>());
       IVector IWORK(iextensions<1u>{NMO+1},buffer_generator->template get_allocator<int>());
-      ma::transpose(A,AT);   
+      ma::transpose(A,AT);
       ma::geqrf(AT,TAU,WORK);
       using ma::determinant_from_geqrf;
-      using ma::scale_columns;  
+      using ma::scale_columns;
       T res = determinant_from_geqrf(AT.size(0),AT.origin(),AT.stride(0),scl.origin(),LogOverlapFactor);
       ma::gqr(AT,TAU,WORK);
-      ma::transpose(AT,A);   
+      ma::transpose(AT,A);
       scale_columns(A.size(0),A.size(1),A.origin(),A.stride(0),scl.origin());
 #else
       int NMO = A.size(0);
