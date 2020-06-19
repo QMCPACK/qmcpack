@@ -574,8 +574,10 @@ namespace hipblas {
   }
 
   // TODO: Not implemented
-  inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
+  inline hipblasStatus_t hipblas_getrsBatched(hipblasHandle_t handle,
+                                   hipblasOperation_t op,
                                    int n,
+                                   int nrhs,
                                    float **Aarray,
                                    int lda,
                                    int *PivotArray,
@@ -584,16 +586,16 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    //hipblasStatus_t success =
-              //hipblasSgetriBatched(handle,n,Aarray,lda,PivotArray,Carray,ldc,infoArray,batchSize);
-    throw std::runtime_error("Error: getriBatched doesn't exist.");
+    hipblasStatus_t success =
+              hipblasSgetrsBatched(handle,op,n,nrhs,Aarray,lda,PivotArray,Carray,ldc,infoArray,batchSize);
     hipDeviceSynchronize ();
-    hipblasStatus_t success;
     return success;
   }
 
-  inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
+  inline hipblasStatus_t hipblas_getrsBatched(hipblasHandle_t handle,
+                                   hipblasOperation_t op,
                                    int n,
+                                   int nrhs,
                                    double **Aarray,
                                    int lda,
                                    int *PivotArray,
@@ -602,16 +604,16 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    //hipblasStatus_t success =
-              //hipblasDgetriBatched(handle,n,Aarray,lda,PivotArray,Carray,ldc,infoArray,batchSize);
-    hipblasStatus_t success;
-    throw std::runtime_error("Error: getriBatched doesn't exist.");
+    hipblasStatus_t success =
+              hipblasDgetrsBatched(handle,op,n,nrhs,Aarray,lda,PivotArray,Carray,ldc,infoArray,batchSize);
     hipDeviceSynchronize ();
     return success;
   }
 
   inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
+                                   hipblasOperation_t op,
                                    int n,
+                                   int nrhs,
                                    std::complex<double> **Aarray,
                                    int lda,
                                    int *PivotArray,
@@ -620,18 +622,18 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    //hipblasStatus_t success =
-              //hipblasZgetriBatched(handle,n,
-                            //reinterpret_cast<const hipblasDoubleComplex *const *>(Aarray),lda,PivotArray,
-                            //reinterpret_cast<hipblasDoubleComplex *const *>(Carray),ldc,infoArray,batchSize);
-    throw std::runtime_error("Error: getriBatched doesn't exist.");
+    hipblasStatus_t success =
+              hipblasZgetrsBatched(handle,op,n,n,
+                            reinterpret_cast<hipblasDoubleComplex *const *>(Aarray),lda,PivotArray,
+                            reinterpret_cast<hipblasDoubleComplex *const *>(Carray),ldc,infoArray,batchSize);
     hipDeviceSynchronize ();
-    hipblasStatus_t success;
     return success;
   }
 
   inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
+                                   hipblasOperation_t op,
                                    int n,
+                                   int nrhs,
                                    std::complex<float> **Aarray,
                                    int lda,
                                    int *PivotArray,
@@ -640,13 +642,12 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    //hipblasStatus_t success =
-              //hipblasCgetriBatched(handle,n,
-                            //reinterpret_cast<const hipblasComplex *const *>(Aarray),lda,PivotArray,
-                            //reinterpret_cast<hipblasComplex *const *>(Carray),ldc,infoArray,batchSize);
+    hipblasStatus_t success =
+              hipblasCgetrsBatched(handle,op,n,n,
+                            reinterpret_cast<hipblasComplex *const *>(Aarray),lda,PivotArray,
+                            reinterpret_cast<hipblasComplex *const *>(Carray),ldc,infoArray,batchSize);
     throw std::runtime_error("Error: getriBatched doesn't exist.");
     hipDeviceSynchronize ();
-    hipblasStatus_t success;
     return success;
   }
 
