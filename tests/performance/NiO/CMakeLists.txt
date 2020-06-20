@@ -4,7 +4,7 @@
 # Input variables
 # QMC_DATA - NiO subdirectory should contain the *.h5 files
 
-FUNCTION(ADD_NIO_TEST TEST_NAME TEST_DIR TEST_SOURCE_DIR INPUT_FILE H5_FILE ADJUST_INPUT)
+FUNCTION(ADD_NIO_TEST TEST_NAME PROCS THREADS TEST_DIR TEST_SOURCE_DIR INPUT_FILE H5_FILE ADJUST_INPUT)
   MESSAGE_VERBOSE("Adding test ${TEST_NAME}")
   SET (WDIR "${qmcpack_BINARY_DIR}/tests/performance/NiO/${TEST_DIR}")
   SET (SDIR "${CMAKE_SOURCE_DIR}/tests/performance/NiO/sample/${TEST_SOURCE_DIR}")
@@ -30,8 +30,7 @@ FUNCTION(ADD_NIO_TEST TEST_NAME TEST_DIR TEST_SOURCE_DIR INPUT_FILE H5_FILE ADJU
   EXECUTE_PROCESS(COMMAND python ${CMAKE_SOURCE_DIR}/tests/performance/adjust_qmcpack_input.py ${ADJUST_INPUT} ${TEST_DIR}/${INPUT_FILE}
                   WORKING_DIRECTORY "${qmcpack_BINARY_DIR}/tests/performance/NiO")
 
-  SET(PROCS 1)
-  SET(THREADS 16)
+  SET(TEST_NAME ${TEST_NAME}-${PROCS}-${THREADS})
   MATH(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
   IF (HAVE_MPI)
     ADD_TEST(NAME ${TEST_NAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS} ${QMC_APP} ${PERF_ARGS} ${INPUT_FILE})
@@ -90,14 +89,6 @@ ELSE()
     MESSAGE("NiO sizes to benchmark: ${NIO_SIZES}")
   ENDIF()
 
-  SET(ADJUST_INPUT "-i")
-  IF (QMC_CUDA)
-    SET(COMPUTE_TYPE gpu)
-    SET(ADJUST_INPUT "${ADJUST_INPUT} -w 32")
-  ELSE()
-    SET(COMPUTE_TYPE cpu)
-  ENDIF()
-
   FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/process_perf.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
   LIST(LENGTH NIO_SIZES LENGTH_MAX)
@@ -111,27 +102,42 @@ ELSE()
     SET(H5_FILE NiO-fcc-supertwist111-supershift000-S${SIZE}.h5)
     SET(H5_FULL_PATH "${QMC_DATA}/NiO/${H5_FILE}")
     IF (EXISTS ${H5_FULL_PATH})
-      SET(PERF_TEST performance-NiO-${COMPUTE_TYPE}-a${ATOM_COUNT}-e${ELECTRON_COUNT}-1-16)
-      SET(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${COMPUTE_TYPE})
-      ADD_NIO_TEST(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT}")
+      SET(ADJUST_INPUT "-i")
       IF (NOT QMC_CUDA)
-        # delayed update
+        # CPU driver
+        SET(DRIVER_TYPE cpu)
+        SET(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-SM1)
+        SET(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE})
+        ADD_NIO_TEST(${PERF_TEST} 1 16 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -d 1")
+        ## delayed update
         LIST(GET DELAY_RANKS ${INDEX} NDELAY)
-        SET(PERF_TEST performance-NiO-${COMPUTE_TYPE}-a${ATOM_COUNT}-e${ELECTRON_COUNT}-rank${NDELAY}_delayed-1-16)
-        SET(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${COMPUTE_TYPE}-rank${NDELAY}_delayed)
-        ADD_NIO_TEST(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -d ${NDELAY}")
-        # J3
-        SET(PERF_TEST performance-NiO-${COMPUTE_TYPE}-a${ATOM_COUNT}-e${ELECTRON_COUNT}-J3-1-16)
-        SET(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${COMPUTE_TYPE}-J3)
-        ADD_NIO_TEST(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -j ${TEST_DIR}/J123.xml")
+        SET(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-rank${NDELAY}_delayed)
+        SET(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-rank${NDELAY}_delayed)
+        ADD_NIO_TEST(${PERF_TEST} 1 16 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -d ${NDELAY}")
+        ## J3
+        SET(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-J3)
+        SET(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-J3)
+        ADD_NIO_TEST(${PERF_TEST} 1 16 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -j ${TEST_DIR}/J123.xml")
+        # Batched driver
+        SET(DRIVER_TYPE batched_driver)
+        ## delayed update
+        SET(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-rank${NDELAY}_delayed)
+        SET(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-rank${NDELAY}_delayed)
+        ADD_NIO_TEST(${PERF_TEST} 1 4 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -d ${NDELAY} -w 16 -u --detbatched")
+      ELSE (NOT QMC_CUDA)
+        # legacy CUDA driver
+        SET(DRIVER_TYPE gpu)
+        SET(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE})
+        SET(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE})
+        ADD_NIO_TEST(${PERF_TEST} 1 16 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w 32")
       ENDIF (NOT QMC_CUDA)
     ELSE()
-      MESSAGE("performance-NiO-${COMPUTE_TYPE}-a${ATOM_COUNT}-e${ELECTRON_COUNT} not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
+      MESSAGE("NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT} performance test not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
     ENDIF()
   ENDFOREACH()
 
-  # Example with SIZE and COMPUTE_TYPE expanded
-  #SET(PERF_TEST NiO-cpu-a32-e384-dmc)
+  # Example with SIZE and DRIVER_TYPE expanded
+  #SET(PERF_TEST NiO-cpu-a32-e384)
   #SET(TEST_DIR dmc-a32-e384-cpu)
   #SET(INPUT_FILE NiO-fcc-S8-dmc.xml)
   #SET(H5_FILE NiO-fcc-supertwist111-supershift000-S8.h5)
