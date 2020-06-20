@@ -494,7 +494,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   if (delay_rank > 1)
     app_log() << "  Using rank-" << delay_rank << " delayed update" << std::endl;
   else
-    app_log() << "  Using rank-1 Sherman-Morrison Fahy update" << std::endl;
+    app_log() << "  Using rank-1 Sherman-Morrison Fahy update (SM1)" << std::endl;
 
   DiracDeterminantBase* adet = 0;
 
@@ -517,7 +517,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       else
 #endif
       {
-        app_log() << "  Using DiracDeterminantBatched with MatrixUpdateOMP engine" << std::endl;
+        app_log() << "  Using DiracDeterminantBatched with MatrixUpdateOMP engine. Currently only support SM1." << std::endl;
         adet = new DiracDeterminantBatched<>(psi, firstIndex);
       }
     }
