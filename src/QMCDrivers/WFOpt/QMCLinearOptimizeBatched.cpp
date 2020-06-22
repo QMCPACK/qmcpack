@@ -19,7 +19,6 @@
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-#include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "CPU/Blasf.h"
@@ -37,6 +36,10 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
                                      QMCHamiltonian& h,
                                      HamiltonianPool& hpool,
                                      WaveFunctionPool& ppool,
+                                     QMCDriverInput&& qmcdriver_input,
+                                     VMCDriverInput&& vmcdriver_input,
+                                     MCPopulation& population,
+                                     SampleStack& samples,
                                      Communicate* comm)
     : QMCDriver(w, psi, h, ppool, comm),
       PartID(0),
@@ -45,6 +48,10 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
       wfNode(NULL),
       optNode(NULL),
       param_tol(1e-4),
+      qmcdriver_input_(qmcdriver_input),
+      vmcdriver_input_(vmcdriver_input),
+      population_(population),
+      samples_(samples),
       generate_samples_timer_(*TimerManager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
       initialize_timer_(*TimerManager.createTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
       eigenvalue_timer_(*TimerManager.createTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
@@ -163,22 +170,6 @@ void QMCLinearOptimizeBatched::finish()
 void QMCLinearOptimizeBatched::generateSamples()
 {
   app_log() << "<optimization-report>" << std::endl;
-  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 1);
-  //  vmcEngine->run();
-  //  vmcEngine->setValue("blocks",nBlocks);
-  //  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
-  //  app_log() << "</vmc>" << std::endl;
-  //}
-  //     if (W.getActiveWalkers()>NumOfVMCWalkers)
-  //     {
-  //         W.destroyWalkers(W.getActiveWalkers()-NumOfVMCWalkers);
-  //         app_log() << "  QMCLinearOptimizeBatched::generateSamples removed walkers." << std::endl;
-  //         app_log() << "  Number of Walkers per node " << W.getActiveWalkers() << std::endl;
-  //     }
-  vmcEngine->qmc_driver_mode.set(QMC_OPTIMIZE, 1);
-  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 0);
-  //vmcEngine->setValue("recordWalkers",1);//set record
-  vmcEngine->setValue("current", 0); //reset CurrentStep
   app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << std::endl;
   t1.restart();
   //     W.reset();
@@ -187,13 +178,6 @@ void QMCLinearOptimizeBatched::generateSamples()
   vmcEngine->run();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "</vmc>" << std::endl;
-  //write parameter history and energies to the parameter file in the trial wave function through opttarget
-  FullPrecRealType e, w, var;
-  vmcEngine->Estimators->getEnergyAndWeight(e, w, var);
-  //     NumOfVMCWalkers=W.getActiveWalkers();
-  //branchEngine->Eref=vmcEngine->getBranchEngine()->Eref;
-  //         branchEngine->setTrialEnergy(vmcEngine->getBranchEngine()->getEref());
-  //set the h5File to the current RootName
   h5FileRoot = RootName;
 }
 
@@ -653,12 +637,16 @@ bool QMCLinearOptimizeBatched::put(xmlNodePtr q)
   //create VMC engine
   if (vmcEngine == 0)
   {
-    vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
+    QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
+    VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
+    vmcEngine = std::make_unique<VMCBatched>(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy), population_, Psi, H, psiPool, samples_, myComm);
+
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
+    vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);
+    vmcEngine->process(optNode);
+    vmcEngine->enable_sample_collection();
   }
 
-  vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);
-  vmcEngine->process(optNode);
   return success;
 }
 

@@ -22,6 +22,9 @@
 
 #include <memory>
 #include "QMCDrivers/QMCDriver.h"
+#include "QMCDrivers/QMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCBatched.h"
 #include "Optimize/OptimizeBase.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "Numerics/LinearFit.h"
@@ -55,6 +58,10 @@ public:
                     QMCHamiltonian& h,
                     HamiltonianPool& hpool,
                     WaveFunctionPool& ppool,
+                    QMCDriverInput&& qmcdriver_input,
+                    VMCDriverInput&& vmcdriver_input,
+                    MCPopulation& population,
+                    SampleStack& samples,
                     Communicate* comm);
 
   ///Destructor
@@ -84,7 +91,7 @@ public:
   ///Dimension of matrix and number of parameters
   int N, numParams;
   ///vmc engine
-  std::unique_ptr<QMCDriver> vmcEngine;
+  std::unique_ptr<VMCBatched> vmcEngine;
   ///xml node to be dumped
   xmlNodePtr wfNode;
   ///xml node for optimizer
@@ -183,6 +190,11 @@ public:
   bool nonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   void generateSamples();
+
+  QMCDriverInput qmcdriver_input_;
+  VMCDriverInput vmcdriver_input_;
+  MCPopulation& population_;
+  SampleStack& samples_;
 
   virtual QMCRunType getRunType() { return QMCRunType::LINEAR_OPTIMIZE; }
   NewTimer& generate_samples_timer_;

@@ -45,6 +45,10 @@ public:
                                QMCHamiltonian& h,
                                HamiltonianPool& hpool,
                                WaveFunctionPool& ppool,
+                               QMCDriverInput&& qmcdriver_input,
+                               VMCDriverInput&& vmcdriver_input,
+                               MCPopulation& population,
+                               SampleStack& samples,
                                Communicate* comm);
 
   ///Destructor
