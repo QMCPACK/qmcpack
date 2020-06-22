@@ -517,7 +517,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       else
 #endif
       {
-        app_log() << "  Using DiracDeterminantBatched with MatrixUpdateOMP engine. Currently only support SM1." << std::endl;
+        app_log() << "  Using DiracDeterminantBatched with MatrixUpdateOMP engine. Only SM1 updates are supported." << std::endl;
         adet = new DiracDeterminantBatched<>(psi, firstIndex);
       }
     }
