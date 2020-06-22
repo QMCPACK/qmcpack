@@ -158,16 +158,11 @@ namespace device{
     for(int i=0; i<nbatch; i++)
       A_h[i] = to_address(A[i]);
     T **A_d;
-#ifdef ENABLE_CUDA
-    cudaMalloc((void **)&A_d, nbatch*sizeof(*A_h));
-    cudaMemcpy(A_d, A_h, nbatch*sizeof(*A_h), cudaMemcpyHostToDevice);
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+    arch::malloc((void **)&A_d, nbatch*sizeof(*A_h));
+    arch::memcopy(A_d, A_h, nbatch*sizeof(*A_h), arch::memcopyH2D);
     kernels::batched_determinant_from_getrf_gpu(n,A_d,lda,to_address(piv),pstride,LogOverlapFactor,res,nbatch);
-    cudaFree(A_d);
-#elif ENABLE_HIP
-    hipMalloc((void **)&A_d, nbatch*sizeof(*A_h));
-    hipMemcpy(A_d, A_h, nbatch*sizeof(*A_h), hipMemcpyHostToDevice);
-    kernels::batched_determinant_from_getrf_gpu(n,A_d,lda,to_address(piv),pstride,LogOverlapFactor,res,nbatch);
-    hipFree(A_d);
+    arch::free(A_d);
 #endif
     delete [] A_h;
   }
