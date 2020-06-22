@@ -326,7 +326,7 @@ void determinant_from_getrf_gpu(int N, double *m, int lda, int *piv, double LogO
 
 void determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *piv, std::complex<double> LogOverlapFactor, std::complex<double>* res)
 {
-  size_t shmem = 256;
+  size_t shmem = 256 * sizeof(std::complex<double>);
   hipLaunchKernelGGL(kernel_determinant_from_getrf, dim3(1), dim3(256), shmem, 0, N,
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,piv,
                                     static_cast<thrust::complex<double>>(LogOverlapFactor),
@@ -344,7 +344,7 @@ void strided_determinant_from_getrf_gpu(int N, double *m, int lda, int mstride, 
 
 void strided_determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int mstride, int *piv, int pstride, std::complex<double> LogOverlapFactor, std::complex<double>* res, int nbatch)
 {
-  size_t shmem = 64;
+  size_t shmem = 64 * sizeof(std::complex<double>);
   hipLaunchKernelGGL(kernel_strided_determinant_from_getrf, dim3(nbatch), dim3(64), shmem, 0, N,
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,mstride,piv,pstride,
                                     static_cast<thrust::complex<double>>(LogOverlapFactor),
@@ -362,7 +362,8 @@ void batched_determinant_from_getrf_gpu(int N, double **m, int lda, int *piv, in
 
 void batched_determinant_from_getrf_gpu(int N, std::complex<double> **m, int lda, int *piv, int pstride, std::complex<double> LogOverlapFactor, std::complex<double>* res, int nbatch)
 {
-  hipLaunchKernelGGL(kernel_batched_determinant_from_getrf, dim3(nbatch), dim3(64), 0, 0, N,
+  size_t shmem = 64 * sizeof(std::complex<double>);
+  hipLaunchKernelGGL(kernel_batched_determinant_from_getrf, dim3(nbatch), dim3(64), shmem, 0, N,
                                     reinterpret_cast<thrust::complex<double> **>(m),lda,piv,pstride,
                                     static_cast<thrust::complex<double>>(LogOverlapFactor),
                                     reinterpret_cast<thrust::complex<double> *>(res) , nbatch);
@@ -387,7 +388,7 @@ std::complex<double> determinant_from_geqrf_gpu(int N, double *m, int lda, doubl
 std::complex<double> determinant_from_geqrf_gpu(int N, std::complex<double> *m, int lda, std::complex<double> *buff, std::complex<double> LogOverlapFactor)
 {
   thrust::device_ptr<thrust::complex<double>> d_ptr = thrust::device_malloc<thrust::complex<double>>(1);
-  size_t shmem = 256;
+  size_t shmem = 256 * sizeof(std::complex<double>);
   hipLaunchKernelGGL(kernel_determinant_from_geqrf, dim3(1), dim3(256), shmem, 0, N,
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,
                                     reinterpret_cast<thrust::complex<double> *>(buff),
@@ -411,7 +412,7 @@ void determinant_from_geqrf_gpu(int N, double *m, int lda, double *buff)
 
 void determinant_from_geqrf_gpu(int N, std::complex<double> *m, int lda, std::complex<double> *buff)
 {
-  size_t shmem = 256;
+  size_t shmem = 256 * sizeof(std::complex<double>);
   hipLaunchKernelGGL(kernel_determinant_from_geqrf, dim3(1), dim3(256), shmem, 0, N,
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,
                                     reinterpret_cast<thrust::complex<double> *>(buff));
@@ -434,7 +435,7 @@ double determinant_from_getrf_gpu(int N, double *m, int lda, int *piv, double Lo
 std::complex<double> determinant_from_getrf_gpu(int N, std::complex<double> *m, int lda, int *piv, std::complex<double> LogOverlapFactor)
 {
   thrust::device_ptr<thrust::complex<double>> d_ptr = thrust::device_malloc<thrust::complex<double>>(1);
-  size_t shmem = 256;
+  size_t shmem = 256 * sizeof(std::complex<double>);
   hipLaunchKernelGGL(kernel_determinant_from_getrf, dim3(1), dim3(256), shmem, 0, N,
                                     reinterpret_cast<thrust::complex<double> *>(m),lda,piv,
                                     static_cast<thrust::complex<double>>(LogOverlapFactor),
