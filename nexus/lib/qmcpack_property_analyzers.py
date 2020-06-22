@@ -105,7 +105,7 @@ class Bspline(QAobject):
         d2v = zeros(r.shape)
         for p in range(len(r)):               
             ri = r[p]*odr
-            i = floor(ri)
+            i = int(floor(ri))
             if i<ni:
                 t = ri - i
                 tp[0,0] = t*t*t
