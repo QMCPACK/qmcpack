@@ -75,6 +75,17 @@ EOF
 # Use flash /scratch for builds
 	rm -r -f /scratch/$USER/spack_build_stage
 	mkdir /scratch/$USER/spack_build_stage
+	# Workaround linux-rhel8-cascadelake problem on sulfur for GCC in spack circa 202006
+#	cat >$HOME/.spack/packages.yaml<<EOF
+#packages:
+#  all:
+#    target: [skylake_avx512]
+#EOF
+	cat >$HOME/.spack/packages.yaml<<EOF
+packages:
+  all:
+    target: [x86_64]
+EOF
 	;;
     *)
 	echo "*** WARNING: Unknown host in initial ourhostname case statement. No custom onfiguration"
@@ -108,6 +119,14 @@ cd bin
 export SPACK_ROOT=$HOME/apps/spack
 export PATH=$SPACK_ROOT/bin:$PATH
 . $SPACK_ROOT/share/spack/setup-env.sh
+
+# IMPORTANT: Install+Use a GCC toolset on Red Hat systems to use
+# recent compilers with better architecture support.
+# e.g. yum install gcc-toolset-9
+if [ -e /opt/rh/gcc-toolset-9/root/bin/gcc ]; then
+    export PATH=/opt/rh/gcc-toolset-9/root/bin/:$PATH
+fi
+
 
 echo --- Spack list
 spack find

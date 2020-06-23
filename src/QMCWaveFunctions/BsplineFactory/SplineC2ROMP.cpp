@@ -380,7 +380,7 @@ void SplineC2ROMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
                                               ST(pos_scratch[iat * 6 + 5]), ix, iy, iz, a, b, c);
 
         TT sum(0);
-        PRAGMA_OFFLOAD("omp parallel")
+        PRAGMA_OFFLOAD("omp parallel firstprivate(first, last, first_cplx, last_cplx, first_real, last_real, offload_scratch_iat_ptr, psi_iat_ptr, pos_scratch, psiinv_ptr)")
         {
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
                                              last);
@@ -499,7 +499,7 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
                                               ST(pos_scratch[iat * 6 + 5]), ix, iy, iz, a, b, c);
 
         TT sum(0);
-        PRAGMA_OFFLOAD("omp parallel")
+        PRAGMA_OFFLOAD("omp parallel firstprivate(first, last, first_cplx, last_cplx, first_real, last_real, offload_scratch_iat_ptr, psi_iat_ptr, pos_scratch, psiinv_ptr)")
         {
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
                                              last);
