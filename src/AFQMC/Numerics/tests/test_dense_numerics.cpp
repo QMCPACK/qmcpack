@@ -1071,6 +1071,72 @@ TEST_CASE("dense_ma_operations_device_complex", "[matrix_operations]")
      array_ref<T, 2> AT(at.data(),{4,2});
      verify_approx( AT, B );
    }
+   SECTION("mat_geqrf_getri_batched")
+   {
+     vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
+     vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
+     array<T,3,Allocator> A({2,3,3}, 0.0, alloc), Ai({2,3,3}, 0.0, alloc);
+
+     //T** Aarray = new T*[2];
+     std::vector<Allocator::pointer> A_array, Ai_array;
+     for (int i = 0; i < 2; i++) {
+       copy_n(a.data(),a.size(),A[i].origin());
+       A_array.emplace_back(A[i].origin());
+       Ai_array.emplace_back(Ai[i].origin());
+     }
+
+     array<T,1,Allocator> WORK(iextensions<1u>{9},alloc);
+     array<T,2,Allocator> Id({3,3},alloc);
+     using IAllocator = typename Allocator::template rebind<int>::other;
+     array<int,1,IAllocator> info(iextensions<1u>{2},IAllocator{alloc});
+     array<int,1,IAllocator> piv(iextensions<1u>{2*3},IAllocator{alloc});
+     //array<T,1,Allocator> TAU(iextensions<1u>{2*3},alloc);
+     using ma::getrfBatched;
+     getrfBatched(3,A_array.data(),3,ma::pointer_dispatch(piv.origin()),
+                  ma::pointer_dispatch(info.origin()),2);
+     array<T,2,Allocator> B({3,3}, 0.0, alloc), Bi({3,3}, 0.0, alloc);
+     int status;
+     copy_n(a.data(),a.size(),B.origin());
+     array<int,1,IAllocator> spiv(iextensions<1u>{3},IAllocator{alloc});
+     getrf(3,3,ma::pointer_dispatch(B.origin()),3,ma::pointer_dispatch(spiv.data()),
+           status,ma::pointer_dispatch(WORK.data()));
+     SECTION("getrf_batched")
+     {
+       for (int i = 0; i < 2; i++) {
+          verify_approx(A[i], B);
+       }
+     }
+     getriBatched(3,A_array.data(),3,ma::pointer_dispatch(piv.origin()),
+                  Ai_array.data(), 3,
+                  ma::pointer_dispatch(info.origin()),2);
+     getri(3,B.origin(),3,ma::pointer_dispatch(spiv.origin()), ma::pointer_dispatch(WORK.origin()), 9, status);
+     SECTION("getri_batched")
+     {
+       for (int i = 0; i < 2; i++) {
+          verify_approx(Ai[i], B);
+       }
+     }
+     SECTION("mat_inv")
+     {
+       copy_n(B.origin(),B.num_elements(),Bi.origin());
+       copy_n(a.data(),a.size(),B.origin());
+       array<T,2,Allocator> out({3,3},0.0,alloc);
+       // note transpose to account for fortran ordering
+       array_ref<T, 2> Id2(id.data(),{3,3});
+       ma::product(ma::H(B), ma::H(Bi), out);
+       verify_approx(out, Id2);
+     }
+     SECTION("matrix_inv_batched")
+     {
+       for(int i=0; i<2; i++) {
+         copy_n(a.data(),a.size(),A[i].origin());
+         array<T,2,Allocator> out({3,3},alloc);
+         ma::product(ma::H(A[i]), ma::H(Ai[i]), out);
+         array_ref<T, 2> Id2(id.data(),{3,3});
+         verify_approx(out, Id2);
+       }
+     }
+   }
 }
 #endif
 
