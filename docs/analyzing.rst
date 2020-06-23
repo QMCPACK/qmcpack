@@ -132,7 +132,7 @@ variations around a flat line).  This property is important to verify
 by plotting the trace for each QMC run.
 
 If we exclude none of the equilibration data points, we get an
-erroneous estimate of $-45.870(2)$~Ha for the local energy:
+erroneous estimate of :math:`-45.870(2)` Ha for the local energy:
 
 ::
 
@@ -358,7 +358,7 @@ Of the included 200 blocks, fewer than 20 contribute to the estimated error
 bar, indicating that we cannot trust the reported error bar.
 This can also be demonstrated directly from the data.  If we halve the number
 of included samples to 100, we expect from Gaussian statistics
-that the error bar will grow by a factor of $\sqrt{2}$, but instead we
+that the error bar will grow by a factor of :math:`\sqrt{2}`, but instead we
 get
 
 ::
@@ -610,11 +610,11 @@ an “equation-of-state” calculation involving the 8-atom diamond cell we
 have used so far, we might be interested in the total energy for the
 various supercell volumes along the trajectory from compression to
 expansion. After checking the traces
-(``qmca -t -q e scale_/vmc/*scalar*``) to settle on a sensible
+(``qmca -t -q e scale_*/vmc/*scalar*``) to settle on a sensible
 equilibration cutoff as discussed in the preceding subsections, we can
 obtain the total energies all at once:
 
-::
+.. code-block:: python
 
   >qmca -q ev -e 40 scale_*/vmc/*scalar*
                               LocalEnergy               Variance           ratio
@@ -1245,7 +1245,7 @@ To use ``qdens``, Nexus must be installed along with NumPy and H5Py. A
 short list of example use cases are covered in the next section. Current
 input flags are:
 
-::
+.. code-block:: c
 
   >qdens
 
