@@ -30,23 +30,24 @@ QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
 }
 
 QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
-                                       const int qmc_counter,
-                                       MCWalkerConfiguration& w,
-                                       TrialWaveFunction& psi,
-                                       QMCHamiltonian& h,
-                                       HamiltonianPool& hpool,
-                                       WaveFunctionPool& wf_pool,
-                                       MCPopulation& pop,
-                                       SampleStack& samples,
-                                       Communicate* comm)
+                                                              const int qmc_counter,
+                                                              MCWalkerConfiguration& w,
+                                                              TrialWaveFunction& psi,
+                                                              QMCHamiltonian& h,
+                                                              HamiltonianPool& hpool,
+                                                              WaveFunctionPool& wf_pool,
+                                                              MCPopulation& pop,
+                                                              SampleStack& samples,
+                                                              Communicate* comm)
 {
   QMCDriverInput qmcdriver_input(qmc_counter);
   qmcdriver_input.readXML(cur);
   VMCDriverInput vmcdriver_input(qmc_counter);
   vmcdriver_input.readXML(cur);
 
-  QMCFixedSampleLinearOptimizeBatched* opt = new QMCFixedSampleLinearOptimizeBatched(w, psi, h, hpool, wf_pool, std::move(qmcdriver_input),
-                                                   std::move(vmcdriver_input), pop, samples, comm);
+  QMCFixedSampleLinearOptimizeBatched* opt =
+      new QMCFixedSampleLinearOptimizeBatched(w, psi, h, hpool, wf_pool, std::move(qmcdriver_input),
+                                              std::move(vmcdriver_input), pop, samples, comm);
   return opt;
 }
 
