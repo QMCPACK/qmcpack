@@ -19,7 +19,7 @@
 #include <cuda_runtime.h>
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #elif defined(ENABLE_HIP)
-#include <hip_runtime.h>
+#include <hip/hip_runtime.h>
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 #endif
 #include "Message/OpenMP.h"

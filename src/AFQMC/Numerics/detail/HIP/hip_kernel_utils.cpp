@@ -9,17 +9,18 @@
 // File created by: Fionn Malone, malone14@llnl.gov, LLNL
 ////////////////////////////////////////////////////////////////////////////////
 
-#include<cassert>
-#include<complex>
-#include<cstdlib>
-#include<stdexcept>
-#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
+#include "hip_kernel_utils.h"
+#include <cassert>
+#include <complex>
+#include <cstdlib>
+#include <stdexcept>
 #include <hip/hip_runtime.h>
 #include "hipblas.h"
 #include "hipsparse.h"
 #include "rocsolver.h"
 #include "rocrand/rocrand.h"
 
+#include <boost/version.hpp>
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 

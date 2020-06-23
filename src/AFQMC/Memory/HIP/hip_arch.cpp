@@ -9,13 +9,13 @@
 // File created by: Fionn Malone, malone14@llnl.gov, LLNL
 ////////////////////////////////////////////////////////////////////////////////
 
+
+#include "hip_arch.h"
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
 #include <hip/hip_runtime.h>
-#include "AFQMC/Memory/HIP/hip_init.h"
-#include "AFQMC/Memory/HIP/hip_arch.h"
 #include "AFQMC/Memory/device_pointers.hpp"
 #include "AFQMC/Memory/buffer_allocators.h"
 #include "mpi3/communicator.hpp"
