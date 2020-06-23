@@ -36,7 +36,7 @@
 #include "AFQMC/Memory/device_pointers.hpp"
 #include "AFQMC/Memory/HIP/hip_arch.h"
 #include "AFQMC/Numerics/device_kernels.hpp"
-#include "hip_runtime.h"
+#include "hip/hip_runtime.h"
 #endif
 
 namespace qmcplusplus
