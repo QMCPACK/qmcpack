@@ -182,7 +182,6 @@ namespace rocsolver {
            int ldb,
            int *devInfo )
   {
-    std::cout << "dev : " << *devInfo << std::endl;
     rocsolverStatus_t success =
               rocsolver_dgetrs(handle,trans,n,nrhs,A,lda,devIpiv,B,ldb);
     hipDeviceSynchronize ();
