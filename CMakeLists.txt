@@ -187,9 +187,11 @@ SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
 SET(QMC_COMPLEX 0 CACHE BOOL "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
-SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
-SET(ENABLE_CUDA 0 CACHE BOOL "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)")
 SET(ENABLE_SOA 1 CACHE BOOL "Enable/disable SoA optimization")
+SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
+OPTION(ENABLE_CUDA "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)" OFF)
+OPTION(ENABLE_HIP "Build with with GPU support through HIP" OFF)
+OPTION(ENABLE_ROCM "Build with with GPU support through ROCM" OFF)
 OPTION(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
@@ -719,15 +721,6 @@ ELSE(QMC_CUDA OR ENABLE_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
-#-------------------------------------------------------------------
-#  set up HIP compiler options and libraries
-#-------------------------------------------------------------------
-IF(ENABLE_HIP)
-  MESSAGE(STATUS "ROCM_ROOT: ${ROCM_ROOT}")
-  set(CMAKE_MODULE_PATH "${ROCM_ROOT}/hip/cmake" ${CMAKE_MODULE_PATH})
-  FIND_PACKAGE(HIP)
-ENDIF(ENABLE_HIP)
-
 SET(USE_NVTX_API 0 CACHE BOOL "Enable/disable NVTX regions in CUDA code.")
 IF(USE_NVTX_API)
   IF(HAVE_CUDA)
@@ -742,6 +735,34 @@ IF(USE_NVTX_API)
     LINK_LIBRARIES(${NVTX_API_LIB})
   ENDIF(HAVE_CUDA)
 ENDIF(USE_NVTX_API)
+
+#-------------------------------------------------------------------
+#  set up ROCM compiler options and libraries
+#-------------------------------------------------------------------
+IF(ENABLE_ROCM)
+  MESSAGE(STATUS "ROCM_ROOT: ${ROCM_ROOT}")
+  ADD_LIBRARY(ROCM::libraries INTERFACE IMPORTED)
+  # temporarily put rocsolver rocrand here for convenience, should be moved to Platforms.
+  SET_TARGET_PROPERTIES(ROCM::libraries PROPERTIES INTERFACE_INCLUDE_DIRECTORIES  "${ROCM_ROOT}/include"
+                                                   INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lrocsolver;-lrocrand")
+ENDIF(ENABLE_ROCM)
+
+#-------------------------------------------------------------------
+#  set up HIP compiler options
+#-------------------------------------------------------------------
+IF(ENABLE_HIP)
+  IF(NOT ENABLE_ROCM)
+    MESSAGE(FATAL_ERROR "ROCM is required to use HIP. Please set ENABLE_ROCM=ON.")
+  ENDIF()
+  SET(CMAKE_MODULE_PATH "${ROCM_ROOT}/hip/cmake" ${CMAKE_MODULE_PATH})
+  FIND_PACKAGE(HIP REQUIRED)
+
+  ADD_LIBRARY(HIP::HIP INTERFACE IMPORTED)
+  # temporarily put hipsparse hipblas here for convenience, should be moved to Platforms.
+  SET_TARGET_PROPERTIES(HIP::HIP PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${ROCM_ROOT}/hip/include/hip"
+                                            INTERFACE_COMPILE_DEFINITIONS "ENABLE_HIP;__HIP_PLATFORM_HCC__"
+                                            INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lhip_hcc")
+ENDIF(ENABLE_HIP)
 
 ######################################################
 # Add optional macros
