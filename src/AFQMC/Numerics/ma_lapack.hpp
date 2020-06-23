@@ -105,7 +105,6 @@ MultiArray2D&& geqrf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 		pointer_dispatch(WORK.data()), WORK.size(),
 		status
 	);
-  std::cout << status << std::endl;
 	assert(status==0);
 	return std::forward<MultiArray2D>(A);
 }
