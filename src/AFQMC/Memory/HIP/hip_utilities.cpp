@@ -9,11 +9,12 @@
 // File created by: Fionn Malone, malone14@llnl.gov, LLNL
 ////////////////////////////////////////////////////////////////////////////////
 
-#include<cassert>
-#include<complex>
-#include<cstdlib>
-#include<stdexcept>
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+
+#include "hip_utilities.h"
+#include <cassert>
+#include <complex>
+#include <cstdlib>
+#include <stdexcept>
 #include <hip/hip_runtime.h>
 #include "hipblas.h"
 #include "hipsparse.h"
