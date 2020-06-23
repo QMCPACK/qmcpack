@@ -9,6 +9,9 @@
 // File created by: Fionn Malone, malone14@llnl.gov, LLNL
 ////////////////////////////////////////////////////////////////////////////////
 
+
+#include "hip_init.h"
+#include "hip_utilities.h"
 #include "AFQMC/Memory/device_pointers.hpp"
 #include "Platforms/Host/OutputManager.h"
 

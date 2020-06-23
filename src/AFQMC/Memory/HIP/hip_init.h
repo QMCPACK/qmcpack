@@ -9,6 +9,9 @@
 // File created by: Fionn Malone, malone14@llnl.gov, LLNL
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef AFQMC_HIP_INIT_HPP
+#define AFQMC_HIP_INIT_HPP
+
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 
