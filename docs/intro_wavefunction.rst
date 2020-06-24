@@ -549,7 +549,7 @@ In practice, we have seen that using a meshfactor=0.5 is often possible and achi
 :numref:`fig3` illustrates how the regions are assigned.
 
 .. _fig3:
-.. figure:: hybrid_new.jpg
+.. figure:: /figs/hybrid_new.jpg
     :width: 400
     :align: center
 

@@ -887,18 +887,18 @@ software versions were present:
 
   build_cori_hsw> module list
   Currently Loaded Modulefiles:
-    1) modules/3.2.11.4                                 13) xpmem/2.2.20-7.0.1.1_4.8__g0475745.ari
-    2) nsg/1.2.0                                        14) job/2.2.4-7.0.1.1_3.34__g36b56f4.ari
-    3) altd/2.0                                         15) dvs/2.12_2.2.156-7.0.1.1_8.6__g5aab709e
-    4) darshan/3.1.7                                    16) alps/6.6.57-7.0.1.1_5.10__g1b735148.ari
-    5) intel/19.0.3.199                                 17) rca/2.2.20-7.0.1.1_4.42__g8e3fb5b.ari
-    6) craype-network-aries                             18) atp/2.1.3
-    7) craype/2.6.2                                     19) PrgEnv-intel/6.0.5
-    8) udreg/2.3.2-7.0.1.1_3.29__g8175d3d.ari           20) craype-haswell
-    9) ugni/6.0.14.0-7.0.1.1_7.32__ge78e5b0.ari         21) cray-mpich/7.7.10
-   10) pmi/5.0.14                                       22) craype-hugepages2M
-   11) dmapp/7.1.1-7.0.1.1_4.43__g38cf134.ari           23) gcc/8.3.0
-   12) gni-headers/5.0.12.0-7.0.1.1_6.27__g3b1768f.ari  24) cmake/3.14.4
+  1) modules/3.2.11.4                                 13) xpmem/2.2.20-7.0.1.1_4.8__g0475745.ari
+  2) nsg/1.2.0                                        14) job/2.2.4-7.0.1.1_3.34__g36b56f4.ari
+  3) altd/2.0                                         15) dvs/2.12_2.2.156-7.0.1.1_8.6__g5aab709e
+  4) darshan/3.1.7                                    16) alps/6.6.57-7.0.1.1_5.10__g1b735148.ari
+  5) intel/19.0.3.199                                 17) rca/2.2.20-7.0.1.1_4.42__g8e3fb5b.ari
+  6) craype-network-aries                             18) atp/2.1.3
+  7) craype/2.6.2                                     19) PrgEnv-intel/6.0.5
+  8) udreg/2.3.2-7.0.1.1_3.29__g8175d3d.ari           20) craype-haswell
+  9) ugni/6.0.14.0-7.0.1.1_7.32__ge78e5b0.ari         21) cray-mpich/7.7.10
+  10) pmi/5.0.14                                      22) craype-hugepages2M
+  11) dmapp/7.1.1-7.0.1.1_4.43__g38cf134.ari          23) gcc/8.3.0
+  12) gni-headers/5.0.12.0-7.0.1.1_6.27__g3b1768f.ari 24) cmake/3.14.4
 
 The following slurm job file can be used to run the tests:
 
@@ -944,7 +944,7 @@ software versions were present:
 ::
 
   build_cori_knl> module list
-  Currently Loaded Modulefiles:
+    Currently Loaded Modulefiles:
     1) modules/3.2.11.4                                 13) xpmem/2.2.20-7.0.1.1_4.8__g0475745.ari
     2) nsg/1.2.0                                        14) job/2.2.4-7.0.1.1_3.34__g36b56f4.ari
     3) altd/2.0                                         15) dvs/2.12_2.2.156-7.0.1.1_8.6__g5aab709e
@@ -986,7 +986,7 @@ Then using the following command:
       ..
   make -j 56
 
-Note that armclang is recognized as an `unknown' compiler by CMake v3.13* and below. In this case, we need to force it as clang to apply necessary flags. To do so, pass the following additionals option to CMake:
+Note that armclang is recognized as an 'unknown' compiler by CMake v3.13* and below. In this case, we need to force it as clang to apply necessary flags. To do so, pass the following additionals option to CMake:
 
 ::
 
@@ -1712,7 +1712,7 @@ calculation if they need to be reconstructed for use in an
 electronic structure calculation.
 
 .. _fig2:
-.. figure:: QMCPACK_CDash_CTest_Results_20160129.png
+.. figure:: /figs/QMCPACK_CDash_CTest_Results_20160129.png
   :width: 80%
   :align: center
 
