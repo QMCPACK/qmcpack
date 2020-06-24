@@ -43,6 +43,7 @@ namespace afqmc
   template<class WlkSet, class Mat, class TVec>
   void NOMSD<devPsiT>::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   {
+    std::cout << "shared" << std::endl;
     size_t nt = wset.size()*(1+dm_size(false));
     assert(E.dimensionality==2);
     assert(Ov.dimensionality==1);
@@ -74,10 +75,14 @@ namespace afqmc
     fill_n(E.origin(),3*nwalk,zero);
 
     for(int nd=0, nref=0; nd<ci.size(); nd++, nref+=nspins) {
+      std::cout << "dm init " << " " << ci.size() << std::endl;
       DensityMatrix(wset,OrbMats[nref],OrbMats[nref+nspins-1],
                         G,ov_,true,true,transposed_G_for_E_);
+      std::cout << "dm end" << std::endl;
       ma::axpy(ma::conj(ci[nd]),ov_,Ov);
+      //std::cout << "en init" << std::endl;
       HamOp.energy(eloc2,G,nd,TG.TG_local().root());  
+      //std::cout << "en end" << std::endl;
       //TG.TG_local().all_reduce_in_place_n(eloc2.origin(),3*nwalk,std::plus<>());
       for(int i=0; i<nwalk; ++i) 
         for(int k=0; k<3; ++k) 
@@ -107,6 +112,7 @@ namespace afqmc
     // 2.c wait for comms to finish
     //3. all reduce resulting energies    
 
+    //std::cout << "dist" << std::endl;
     using std::fill_n;
     using std::copy_n;
     // temporary runtime check for incompatible memory spaces
@@ -211,6 +217,7 @@ namespace afqmc
     // 2.c wait for comms to finish
     //3. all reduce resulting energies    
 
+    //std::cout << "dist md" << std::endl;
     using std::fill_n;
     using std::copy_n;
     // temporary runtime check for incompatible memory spaces
@@ -425,6 +432,7 @@ namespace afqmc
   void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset, MatA&& RefA, MatB&& RefB,
                             MatG&& G, TVec&& Ov, bool herm, bool compact, bool transposed) 
   {
+    std::cout << "shared dm " << std::endl;
     assert(G.stride(1)==1);
     assert(Ov.stride(0)==1);
     if(transposed) 
@@ -457,6 +465,7 @@ namespace afqmc
 
       for(int iw=0; iw<nw; ++iw) {
         if(iw%TG.TG_local().size() != TG.TG_local().rank()) continue;
+        std::cout << iw <<std::endl;
         Ov[iw] = SDetOp.MixedDensityMatrix(RefA,*wset[iw].SlaterMatrix(Alpha),G2D_,
                                              LogOverlapFactor,compact,herm);
         if(walker_type==CLOSED) Ov[iw] *= Ov[iw];
@@ -528,6 +537,7 @@ namespace afqmc
   {
     if(TG.TG_local().size() > 1)
       APP_ABORT(" Error: Batched routine called with TG.TG_local().size() > 1 \n");
+    std::cout << "dm batched " << " " << ci.size() << std::endl;
     using std::fill_n;
     using std::copy_n;
     // temporary runtime check for incompatible memory spaces
@@ -566,6 +576,7 @@ namespace afqmc
     std::vector<decltype(&RefA)> Oib;
     Oib.reserve(nw);
       
+    //std::cout << walker_type << std::endl;
     if(walker_type != COLLINEAR) {
 
       if(herm)
@@ -581,10 +592,12 @@ namespace afqmc
 
       for(int iw=0; iw<nw; iw+=nbatch__) {
         int nb = std::min(nbatch__,nw-iw);
+        std::cout << iw << " " << nb << std::endl;
         Ai.clear();
         for(int ni=0; ni<nb; ni++) Ai.emplace_back(wset[iw+ni].SlaterMatrix(Alpha));
         Oia.clear();
         for(int ni=0; ni<nb; ni++) Oia.emplace_back(&RefA);
+        std::cout << "batched_rdm " << std::endl;
         SDetOp.BatchedMixedDensityMatrix(Oia,Ai,
               G3D_.sliced(0,nb),LogOverlapFactor,ovlp2.sliced(0,nb),compact,herm);
         copy_n(ovlp2.origin(),nb,hvec.origin());

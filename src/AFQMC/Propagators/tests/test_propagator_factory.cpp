@@ -129,6 +129,7 @@ void propg_fac_shared(boost::mpi3::communicator & world)
       <parameter name=\"filetype\">ascii</parameter> \
       <parameter name=\"filename\">"+UTEST_WFN+"</parameter> \
       <parameter name=\"cutoff\">1e-6</parameter> \
+      <parameter name=\"dense_trial\">yes</parameter> \
       <parameter name=\"restart_file\">"+restart_file+"</parameter> \
   </Wavefunction> \
 ";
@@ -162,6 +163,7 @@ const char *propg_xml_block =
     Propagator& prop = PropgFac.getPropagator(TG,prop_name,wfn,&rng);
 
 std::cout<<setprecision(12);
+    std::cout << "energy " << std::endl;
     wfn.Energy(wset);
     {
       ComplexType eav=0,ov=0;
