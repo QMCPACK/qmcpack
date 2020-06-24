@@ -12,6 +12,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "catch.hpp"
+#include "complex_approx.hpp"
 #include "Configuration.h"
 
 #undef APP_ABORT
@@ -132,6 +133,35 @@ TEST_CASE("batched_determinant_from_getrf", "[Numerics][determinant]")
   REQUIRE(ovlps[2] == Approx(detx));
 }
 
+TEST_CASE("batched_determinant_from_getrf_complex", "[Numerics][determinant]")
+{
+  Alloc<std::complex<double>> alloc{};
+  // From scipy.linalg.lapack.dgetrf(x)
+  // C order
+  Tensor2D<std::complex<double>> x = {{0.8734294027918162, 0.968540662820932, 0.86919454021392},
+                        {0.530855691555599, 0.2327283279772907, 0.011398804277429897},
+                        {0.4304688182924905, 0.4023513600373648, 0.5226746713525696}};
+  // Fortran order
+  Tensor2D<std::complex<double>> lu = {{0.968540662820932, 0.2327283279772907, 0.4023513600373648},
+                         {0.9017994146450201, 0.32098142161436394, 0.06762859732916715},
+                         {0.897426998761559, -0.6151691884001227, 0.20319672719822834}};
+  std::vector<pointer<std::complex<double>>> lu_array;
+  using std::copy_n;
+  for (int i = 0; i < 3; i++)
+    lu_array.emplace_back(lu.origin());
+  Tensor2D<int> pivot = {{1, 1, 2},{1,1,2},{1,1,2}};
+  Tensor1D<std::complex<double>> ovlps = {0,0,0};
+  std::complex<double> log_factor = 0.0;
+  std::complex<double> detx = 0.06317052169675352;
+  using ma::batched_determinant_from_getrf;
+  batched_determinant_from_getrf(x.size(0), lu_array.data(), lu.size(1),
+                                 pivot.origin(), pivot.size(1),
+                                 log_factor, to_address(ovlps.origin()), lu_array.size());
+  REQUIRE(ovlps[0] == ComplexApprox(detx));
+  REQUIRE(ovlps[1] == ComplexApprox(detx));
+  REQUIRE(ovlps[2] == ComplexApprox(detx));
+}
+
 TEST_CASE("determinant", "[Numerics][determinant]")
 {
   Alloc<std::complex<double>> alloc{};
@@ -146,24 +176,11 @@ TEST_CASE("determinant", "[Numerics][determinant]")
   Tensor2D<std::complex<double>> matx = {{0.8734294027918162+0.8734294027918162i, 0.968540662820932+0.968540662820932i, 0.86919454021392+0.86919454021392i},
                                          {0.530855691555599+0.530855691555599i, 0.2327283279772907+0.2327283279772907i, 0.011398804277429897+0.011398804277429897i},
                                          {0.4304688182924905+0.4304688182924905i, 0.4023513600373648+0.4023513600373648i, 0.5226746713525696+0.5226746713525696i}};
-  //std::complex<double> ref(0.12634104339350705,-0.12634104339350705);
-  //Tensor2D<std::complex<double>> matx = {{0.8734294027918162+0.8734294027918162i, 0.968540662820932+0.968540662820932i},
-                                         //{0.530855691555599+0.530855691555599i, 0.2327283279772907+0.2327283279772907i}};
-  //Tensor2D<std::complex<double>> matx = {{0.1-0.2i,0.33},{0.1245-0.27i, -8.954+0.1i}};
   std::complex<double> ref(0.12634104339350705,-0.12634104339350705);
   using ma::getrf;
   getrf(matx, pivot, WORK);
-  //for (int i = 0; i < 3; i++)
-    //for (int j = 0; j < 3; j++)
-      //std::cout << matx[i][j] << " ";
-    //std::cout << std::endl;
   using ma::determinant;
-  using ma::determinant_from_getrf;
   std::complex<double> lovlp = 0.0;
-  //std::complex<double> ovlp = determinant_from_getrf(matx.size(0), matx.origin(), matx.stride(0),
-                                       //pivot.origin(), lovlp);
-  //std::cout << ovlp << std::endl;
-  //Tensor2D<std::complex<double>> mat = {{0.1-0.2i,0.33},{0.1245-0.27i, -8.954+0.1i}};
   Tensor2D<std::complex<double>> mat = {{0.8734294027918162+0.8734294027918162i, 0.968540662820932+0.968540662820932i, 0.86919454021392+0.86919454021392i},
                                          {0.530855691555599+0.530855691555599i, 0.2327283279772907+0.2327283279772907i, 0.011398804277429897+0.011398804277429897i},
                                          {0.4304688182924905+0.4304688182924905i, 0.4023513600373648+0.4023513600373648i, 0.5226746713525696+0.5226746713525696i}};
