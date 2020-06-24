@@ -646,7 +646,6 @@ namespace hipblas {
               hipblasCgetrsBatched(handle,op,n,n,
                             reinterpret_cast<hipblasComplex *const *>(Aarray),lda,PivotArray,
                             reinterpret_cast<hipblasComplex *const *>(Carray),ldc,infoArray,batchSize);
-    throw std::runtime_error("Error: getriBatched doesn't exist.");
     hipDeviceSynchronize ();
     return success;
   }
