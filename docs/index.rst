@@ -32,7 +32,11 @@ User's Guide and Developer's Manual for
    afqmc
    examples
    lab_qmc_statistics
-   lab_qmc_basics 
+   lab_qmc_basics
+   lab_advanced_molecules
+   lab_condensed_matter
+   lab_excited
+   additional_tools
 
 
 
