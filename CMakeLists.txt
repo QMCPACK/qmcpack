@@ -686,6 +686,9 @@ ENDIF()
 #-------------------------------------------------------------------
 SET(HAVE_CUDA 0)
 IF(QMC_CUDA OR ENABLE_CUDA)
+  # FindCUDA default CUDA_PROPAGATE_HOST_FLAGS to ON but we prefer OFF
+  # It happened -ffast-math from host caused numerical issue in CUDA kernels.
+  OPTION(CUDA_PROPAGATE_HOST_FLAGS "Propagate C/CXX_FLAGS and friends to the host compiler via -Xcompile" OFF)
   FIND_PACKAGE(CUDA REQUIRED)
   SET(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
   #set(CUDA_NVCC_FLAGS
