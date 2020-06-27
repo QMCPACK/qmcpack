@@ -24,7 +24,6 @@
 
 namespace qmcplusplus
 {
-
 /// helper class for the prefetched range of a vector
 class Range
 {
@@ -147,10 +146,11 @@ public:
     // Ainv_gpu reuses all or part of the memory of Mat2_gpu
     Ainv_gpu.attachReference(reinterpret_cast<T*>(Mat2_gpu.data()), norb, norb);
     // prepare cusolver auxiliary arrays
-    ipiv.resize(norb+1);
-    ipiv_gpu.resize(norb+1);
+    ipiv.resize(norb + 1);
+    ipiv_gpu.resize(norb + 1);
     int lwork;
-    cusolver::getrf_bufferSize(h_cusolver, norb, norb, Mat2_gpu.data(), norb, &lwork);
+    cusolverErrorCheck(cusolver::getrf_bufferSize(h_cusolver, norb, norb, Mat2_gpu.data(), norb, &lwork),
+                       "cusolver::getrf_bufferSize failed!");
     work_gpu.resize(lwork);
   }
 
@@ -163,35 +163,37 @@ public:
   {
     // safe mechanism
     delay_count = 0;
-    int norb = logdetT.rows();
+    int norb    = logdetT.rows();
 #if !defined(MIXED_PRECISION)
-    cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T),
-                                   cudaMemcpyHostToDevice, hstream),
+    cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T), cudaMemcpyHostToDevice,
+                                   hstream),
                    "cudaMemcpyAsync failed!");
-    cusolver::getrf(h_cusolver, norb, norb, Mat1_gpu.data(), norb,
-                    work_gpu.data(), ipiv_gpu.data()+1, ipiv_gpu.data());
+    cusolverErrorCheck(cusolver::getrf(h_cusolver, norb, norb, Mat1_gpu.data(), norb, work_gpu.data(),
+                                       ipiv_gpu.data() + 1, ipiv_gpu.data()),
+                       "cusolver::getrf failed!");
     cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int), cudaMemcpyDeviceToHost,
                                    hstream),
                    "cudaMemcpyAsync failed!");
     extract_matrix_diagonal_cuda(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(), hstream);
 #else
-    cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T),
-                                   cudaMemcpyHostToDevice, hstream),
+    cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T), cudaMemcpyHostToDevice,
+                                   hstream),
                    "cudaMemcpyAsync failed!");
     copy_matrix_cuda(norb, norb, (T*)Mat1_gpu.data(), norb, Mat2_gpu.data(), norb, hstream);
-    cusolver::getrf(h_cusolver, norb, norb, Mat2_gpu.data(), norb,
-                    work_gpu.data(), ipiv_gpu.data()+1, ipiv_gpu.data());
+    cusolverErrorCheck(cusolver::getrf(h_cusolver, norb, norb, Mat2_gpu.data(), norb, work_gpu.data(),
+                                       ipiv_gpu.data() + 1, ipiv_gpu.data()),
+                       "cusolver::getrf failed!");
     cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int), cudaMemcpyDeviceToHost,
                                    hstream),
                    "cudaMemcpyAsync failed!");
     extract_matrix_diagonal_cuda(norb, Mat2_gpu.data(), norb, LU_diag_gpu.data(), hstream);
 #endif
-    cudaErrorCheck(cudaMemcpyAsync(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP), cudaMemcpyDeviceToHost,
-                                   hstream),
+    cudaErrorCheck(cudaMemcpyAsync(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP),
+                                   cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync failed!");
     // check LU success
     waitStream();
-    if(ipiv[0]!=0)
+    if (ipiv[0] != 0)
     {
       std::ostringstream err;
       err << "cusolver::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
@@ -200,24 +202,25 @@ public:
     }
 #if !defined(MIXED_PRECISION)
     make_identity_matrix_cuda(norb, Mat2_gpu.data(), norb, hstream);
-    cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat1_gpu.data(), norb,
-                    ipiv_gpu.data()+1, Mat2_gpu.data(), norb, ipiv_gpu.data());
+    cusolverErrorCheck(cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat1_gpu.data(), norb, ipiv_gpu.data() + 1,
+                                       Mat2_gpu.data(), norb, ipiv_gpu.data()),
+                       "cusolver::getrs failed!");
 #else
     make_identity_matrix_cuda(norb, Mat1_gpu.data(), norb, hstream);
-    cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat2_gpu.data(), norb,
-                    ipiv_gpu.data()+1, Mat1_gpu.data(), norb, ipiv_gpu.data());
+    cusolverErrorCheck(cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat2_gpu.data(), norb, ipiv_gpu.data() + 1,
+                                       Mat1_gpu.data(), norb, ipiv_gpu.data()),
+                       "cusolver::getrs failed!");
     copy_matrix_cuda(norb, norb, Mat1_gpu.data(), norb, (T*)Mat2_gpu.data(), norb, hstream);
 #endif
-    cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost,
-                                   hstream),
+    cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync failed!");
-    computeLogDet(LU_diag.data(), norb, ipiv.data()+1, LogValue);
+    computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, LogValue);
     cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
                                    hstream),
                    "cudaMemcpyAsync failed!");
     // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
     //waitStream();
-    if(ipiv[0]!=0)
+    if (ipiv[0] != 0)
     {
       std::ostringstream err;
       err << "cusolver::getrs calculation failed with devInfo = " << ipiv[0] << std::endl;
@@ -327,8 +330,9 @@ public:
       cudaErrorCheck(cudaMemcpyAsync(U_gpu.data(), U.data(), norb * delay_count * sizeof(T), cudaMemcpyHostToDevice,
                                      hstream),
                      "cudaMemcpyAsync failed!");
-      cuBLAS::gemm(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone, U_gpu.data(), norb,
-                   Ainv_gpu.data(), norb, &czero, temp_gpu.data(), lda_Binv);
+      cublasErrorCheck(cuBLAS::gemm(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone, U_gpu.data(),
+                                    norb, Ainv_gpu.data(), norb, &czero, temp_gpu.data(), lda_Binv),
+                       "cuBLAS::gemm failed!");
       cudaErrorCheck(cudaMemcpyAsync(delay_list_gpu.data(), delay_list.data(), delay_count * sizeof(int),
                                      cudaMemcpyHostToDevice, hstream),
                      "cudaMemcpyAsync failed!");
@@ -337,10 +341,12 @@ public:
       cudaErrorCheck(cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T),
                                      cudaMemcpyHostToDevice, hstream),
                      "cudaMemcpyAsync failed!");
-      cuBLAS::gemm(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone, V_gpu.data(), norb,
-                   Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb);
-      cuBLAS::gemm(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone, U_gpu.data(), norb,
-                   temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb);
+      cublasErrorCheck(cuBLAS::gemm(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone,
+                                    V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb),
+                       "cuBLAS::gemm failed!");
+      cublasErrorCheck(cuBLAS::gemm(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone,
+                                    U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb),
+                       "cuBLAS::gemm failed!");
       delay_count = 0;
       // Ainv is invalid, reset range
       prefetched_range.clear();
