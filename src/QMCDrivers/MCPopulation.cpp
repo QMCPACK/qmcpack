@@ -289,6 +289,15 @@ void MCPopulation::syncWalkersPerNode(Communicate* comm)
   num_global_walkers_ = std::accumulate(num_local_walkers_per_node.begin(), num_local_walkers_per_node.end(), 0);
 }
 
+
+void MCPopulation::set_variational_parameters(const opt_variables_type& active)
+{
+  for (auto it_twfs = walker_trial_wavefunctions_.begin(); it_twfs != walker_trial_wavefunctions_.end(); ++it_twfs)
+  {
+    (*it_twfs).get()->resetParameters(active);
+  }
+}
+
 /** Creates walkers doing their first touch in their crowd (thread) context
  *
  *  This is basically premature optimization but I wanted to check if this sort of thing

@@ -99,7 +99,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(int curSerie
     else
       das.new_run_type = QMCRunType::LINEAR_OPTIMIZE;
   }
-  else if (qmc_mode.find("opt_batched") < nchars)
+  else if (qmc_mode.find("opt_batch") < nchars)
   {
     das.new_run_type = QMCRunType::OPTIMIZE_BATCH;
   }
