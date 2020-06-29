@@ -732,7 +732,7 @@ Calculating the efficiency
 The inverse of the product of CPU time and the variance measures the
 *efficiency* of an MC calculation. Use qmca to calculate efficiency by
 typing ``qmca -q eff *scalar.dat`` to see the efficiency of these two
-H\ :math:`_2` calculations:
+H :math:`_2` calculations:
 
 ::
 

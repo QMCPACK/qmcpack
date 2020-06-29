@@ -1,0 +1,491 @@
+.. _additional-tools:
+
+Additional Tools
+================
+
+QMCPACK provides a set of lightweight executables that address certain
+common problems in QMC workflow and analysis.  These range from conversion utilities between
+different file formats and QMCPACK (e.g., ``ppconvert`` and ``convert4qmc``),
+(qmc-extract-eshdf-kvectors) to postprocessing utilities (``trace-density`` and ``qmcfinitesize``) to many others.  In this section, we cover the use cases, syntax, and features of all additional tools provided with QMCPACK.
+
+Initialization
+--------------
+
+qmc-get-supercell
+~~~~~~~~~~~~~~~~~
+
+Postprocessing
+--------------
+
+qmca
+~~~~
+
+``qmca`` is a versatile tool to analyze and plot the raw data from QMCPACK ``*.scalar.dat`` files.
+It is a Python executable and part of the Nexus suite of tools.  It can be found in
+``qmcpack/nexus/executables``. For details, see :ref:`qmca`.
+
+qmc-fit
+~~~~~~~
+
+``qmc-fit`` is a curve fitting tool used to obtain statistical error bars on fitted parameters.
+It is useful for DMC time step extrapolation.  For details, see :ref:`qmcfit`.
+
+qdens
+~~~~~
+
+``qdens`` is a command line tool to produce density files from QMCPACK's ``stat.h5`` output files.  For details, see :ref:`qdens`.
+
+qmcfinitesize
+~~~~~~~~~~~~~
+
+``qmcfinitesize`` is a utility to compute many-body finite-size corrections to the energy.  It
+is a C++ executable that is built alongside the QMCPACK executable.  It can be found in
+``build/bin``.
+
+Converters
+----------
+
+.. _convert4qmc:
+
+convert4qmc
+~~~~~~~~~~~
+
+``Convert4qmc`` allows conversion of orbitals and wavefunctions from
+quantum chemistry output files to QMCPACK XML and HDF5 input files.
+It is a small C++ executable that is built alongside the QMCPACK
+executable and can be found in ``build/bin``.
+
+To date, ``convert4qmc`` supports the following codes:
+GAMESS :cite:`schmidt93`, PySCF :cite:`Sun2018`, QP :cite:`QP`
+and GAMESS-FMO :cite:`Fedorov2004,schmidt93`.
+
+General use
+^^^^^^^^^^^
+
+General use of ``convert4qmc`` can be prompted by running with no options:
+
+::
+
+  >convert4qmc
+
+  Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample
+
+   convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-QP|-pyscf|-orbitals]
+   filename
+  [-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]
+  [-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]
+  [-size npts -ci file.out -threshold cimin -TargetState state_number
+  -NaturalOrbitals NumToRead -optDetCoeffs]
+  Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required
+  -threshold 0.01 -TargetState 0 -prefix sample
+  When the input format is missing, the  extension of filename is used to determine
+  the format
+   *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.xml -> gamesxml
+
+As an example, to convert a GAMESS calculation using a single determinant, the following use is sufficient:
+
+::
+
+  convert4qmc -gamess MyGamessOutput.out
+
+By default, the converter will generate multiple files:
+
+  ``convert4qmc`` output:
+
+    +-------------------------+---------------+-------------+----------------------------------------------------+
+    | **output**              | **file type** | **default** | **description**                                    |
+    +=========================+===============+=============+====================================================+
+    | ``*.qmc.in-wfs.xml``    | XML           | default     | Main input file for QMCPACK                        |
+    +-------------------------+---------------+-------------+----------------------------------------------------+
+    | ``*.qmc.in-wfnoj.xml``  | XML           | default     | Main input file for QMCPACK                        |
+    +-------------------------+---------------+-------------+----------------------------------------------------+
+    | ``*.structure.xml``     | XML           | default     | File containing the structure of the system        |
+    +-------------------------+---------------+-------------+----------------------------------------------------+
+    | ``*.wfj.xml``           | XML           | default     | Wavefunction file with 1-, 2-, and 3-body Jastrows |
+    +-------------------------+---------------+-------------+----------------------------------------------------+
+    | ``*.wfnoj.xml``         | XML           | default     | Wavefunction file with no Jastrows                 |
+    +-------------------------+---------------+-------------+----------------------------------------------------+
+    | ``*.orbs.h5``           | HDF5          | with -hdf5  | HDF5 file containing all wavefunction data         |
+    +-------------------------+---------------+-------------+----------------------------------------------------+
+
+If no ``-prefix`` option is specified, the prefix is taken from
+the input file name. For instance, if the GAMESS output file is
+``Mysim``.out, the files generated by ``convert4qmc`` will use the
+prefix ``Mysim`` and output files will be
+``Mysim.qmc.in-wfs.xml``, ``Mysim.structure.xml``, and so on.
+
+- Files ``.in-wfs.xml`` and ``.in-wfnoj.xml``
+
+  These
+  are the input files for QMCPACK.  The geometry and the
+  wavefunction are stored in external files ``*.structure.xml``
+  and ``*.wfj.xml`` (referenced from ``*.in-wfs.xml``) or
+  ``*.qmc.wfnoj.xml`` (referenced from
+  ``*.qmc.in-wfnoj.xml``). The Hamiltonian section is included,
+  and the presence or lack of presence of an ECP is detected during the
+  conversion. If use of an ECP is detected, a default ECP name is
+  added (e.g., ``H.qmcpp.xml``), and it is the responsibility of
+  the user to modify the ECP name to match the one used to generate
+  the wavefunction.
+
+  ::
+
+      <?xml version="1.0"?>
+    <simulation>
+      <!--
+
+    Example QMCPACK input file produced by convert4qmc
+
+    It is recommend to start with only the initial VMC block and adjust
+    parameters based on the measured energies, variance, and statistics.
+
+    -->
+      <!--Name and Series number of the project.-->
+      <project id="gms" series="0"/>
+      <!--Link to the location of the Atomic Coordinates and the location of
+          the Wavefunction.-->
+      <include href="gms.structure.xml"/>
+      <include href="gms.wfnoj.xml"/>
+      <!--Hamiltonian of the system. Default ECP filenames are assumed.-->
+      <hamiltonian name="h0" type="generic" target="e">
+        <pairpot name="ElecElec" type="coulomb" source="e" target="e"
+                                                       physical="true"/>
+        <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+        <pairpot name="PseudoPot" type="pseudo" source="ion0" wavefunction="psi0"
+                                                               format="xml">
+          <pseudo elementType="H" href="H.qmcpp.xml"/>
+          <pseudo elementType="Li" href="Li.qmcpp.xml"/>
+        </pairpot>
+      </hamiltonian>
+
+    The ``qmc.in-wfnoj.xml`` file will have one VMC block with a
+    minimum number of blocks to reproduce the HF/DFT energy used to
+    generate the trial wavefunction.
+
+    ::
+
+        <qmc method="vmc" move="pbyp" checkpoint="-1">
+          <estimator name="LocalEnergy" hdf5="no"/>
+          <parameter name="warmupSteps">100</parameter>
+          <parameter name="blocks">20</parameter>
+          <parameter name="steps">50</parameter>
+          <parameter name="substeps">8</parameter>
+          <parameter name="timestep">0.5</parameter>
+          <parameter name="usedrift">no</parameter>
+        </qmc>
+      </simulation>
+
+  If the ``qmc.in-wfj.xml`` file is used, Jastrow optimization
+  blocks followed by a VMC and DMC block are included. These blocks
+  contain default values to allow the user to test the accuracy of a
+  system; however, they need to be updated and optimized for each
+  system. The initial values might only be suitable for a small molecule.
+
+  ::
+
+      <loop max="4">
+        <qmc method="linear" move="pbyp" checkpoint="-1">
+          <estimator name="LocalEnergy" hdf5="no"/>
+          <parameter name="warmupSteps">100</parameter>
+          <parameter name="blocks">20</parameter>
+          <parameter name="timestep">0.5</parameter>
+          <parameter name="walkers">1</parameter>
+          <parameter name="samples">16000</parameter>
+          <parameter name="substeps">4</parameter>
+          <parameter name="usedrift">no</parameter>
+          <parameter name="MinMethod">OneShiftOnly</parameter>
+          <parameter name="minwalkers">0.0001</parameter>
+        </qmc>
+      </loop>
+      <!--
+
+    Example follow-up VMC optimization using more samples for greater accuracy:
+
+    -->
+      <loop max="10">
+        <qmc method="linear" move="pbyp" checkpoint="-1">
+          <estimator name="LocalEnergy" hdf5="no"/>
+          <parameter name="warmupSteps">100</parameter>
+          <parameter name="blocks">20</parameter>
+          <parameter name="timestep">0.5</parameter>
+          <parameter name="walkers">1</parameter>
+          <parameter name="samples">64000</parameter>
+          <parameter name="substeps">4</parameter>
+          <parameter name="usedrift">no</parameter>
+          <parameter name="MinMethod">OneShiftOnly</parameter>
+          <parameter name="minwalkers">0.3</parameter>
+        </qmc>
+      </loop>
+      <!--
+
+    Production VMC and DMC:
+
+    Examine the results of the optimization before running these blocks.
+    For example, choose the best optimized jastrow from all obtained, put in the
+    wavefunction file, and do not reoptimize.
+
+    -->
+      <qmc method="vmc" move="pbyp" checkpoint="-1">
+        <estimator name="LocalEnergy" hdf5="no"/>
+        <parameter name="warmupSteps">100</parameter>
+        <parameter name="blocks">200</parameter>
+        <parameter name="steps">50</parameter>
+        <parameter name="substeps">8</parameter>
+        <parameter name="timestep">0.5</parameter>
+        <parameter name="usedrift">no</parameter>
+        <!--Sample count should match targetwalker count for
+          DMC. Will be obtained from all nodes.-->
+        <parameter name="samples">16000</parameter>
+      </qmc>
+      <qmc method="dmc" move="pbyp" checkpoint="20">
+        <estimator name="LocalEnergy" hdf5="no"/>
+        <parameter name="targetwalkers">16000</parameter>
+        <parameter name="reconfiguration">no</parameter>
+        <parameter name="warmupSteps">100</parameter>
+        <parameter name="timestep">0.005</parameter>
+        <parameter name="steps">100</parameter>
+        <parameter name="blocks">100</parameter>
+        <parameter name="nonlocalmoves">yes</parameter>
+      </qmc>
+    </simulation>
+
+- File ``.structure.xml``
+
+  This file will be referenced from the main QMCPACK input. It contains the geometry of the system, position of the atoms, number of atoms, atomic types and charges, and number of electrons.
+
+- Files ``.wfj.xml`` and ``.wfnoj.xml``
+
+  These files contain the basis set detail, orbital coefficients, and
+  the 1-, 2-, and 3-body Jastrow (in the case of ``.wfj.xml``). If the
+  wavefunction is multideterminant, the expansion will be at the end of
+  the file. We recommend using the option ``-hdf5`` when large molecules
+  are studied to store the data more compactly in an HDF5 file.
+
+- File ``.orbs.h5``
+  This file is generated only if the option ``-hdf5`` is added as
+  follows:
+
+  ::
+
+    convert4qmc -gamess MyGamessOutput.out -hdf5
+
+  In this case, the ``.wfj.xml`` or ``.wfnoj.xml`` files will point to
+  this HDF file. Information about the basis set, orbital coefficients,
+  and the multideterminant expansion is put in this file and removed from
+  the wavefunction files, making them smaller.
+
+``convert4qmc`` input type:
+
+  +-----------------+----------------------------------------------------------------------------+---------------------+
+  | **option name** | **description**                                                            |                     |
+  +=================+============================================================================+=====================+
+  | ``orbitals``    | Generic HDF5 input file. Mainly automatically generated from QP and PySCF. | Actively maintained |
+  +-----------------+----------------------------------------------------------------------------+---------------------+
+  | ``-pyscf``      | PySCF code                                                                 | Actively maintained |
+  +-----------------+----------------------------------------------------------------------------+---------------------+
+  | ``QP``          | QP code                                                                    | Actively maintained |
+  +-----------------+----------------------------------------------------------------------------+---------------------+
+  | ``-gamess``     | Gamess code                                                                | Maintained          |
+  +-----------------+----------------------------------------------------------------------------+---------------------+
+  | ``-gamesFMO``   | Gamess FMO                                                                 | Maintained          |
+  +-----------------+----------------------------------------------------------------------------+---------------------+
+  | ``-gaussian``   | Gaussian code                                                              | Obsolete/untested   |
+  +-----------------+----------------------------------------------------------------------------+---------------------+
+  | ``-casino``     | Casino code                                                                | Obsolete/untested   |
+  +-----------------+----------------------------------------------------------------------------+---------------------+
+  | ``-gamesxml``   | Gamess xml format code                                                     | Obsolete/untested   |
+  +-----------------+----------------------------------------------------------------------------+---------------------+
+
+Command line options
+^^^^^^^^^^^^^^^^^^^^
+
+  ``convert4qmc`` command line options:
+
+    +-----------------+-----------+-------------+--------------------------------------------------------------+
+    | **Option Name** | **Value** | **default** | **description**                                              |
+    +=================+===========+=============+==============================================================+
+    | ``-nojastrow``  | -         | -           | Force no Jastrow. ``qmc.in.wfj`` will not be generated       |
+    +-----------------+-----------+-------------+--------------------------------------------------------------+
+    | ``-hdf5``       | -         | -           | Force the wf to be in HDF5 format                            |
+    +-----------------+-----------+-------------+--------------------------------------------------------------+
+    | ``-prefix``     | string    | -           | All created files will have the name of the string           |
+    +-----------------+-----------+-------------+--------------------------------------------------------------+
+    | ``-multidet``   | string    | -           | HDF5 file containing a multideterminant expansion            |
+    +-----------------+-----------+-------------+--------------------------------------------------------------+
+    | ``-addCusp``    | -         | -           | Force to add orbital cusp correction (ONLY for all-electron) |
+    +-----------------+-----------+-------------+--------------------------------------------------------------+
+    | ``-production`` | -         | -           | Generates specific blocks in the input                       |
+    +-----------------+-----------+-------------+--------------------------------------------------------------+
+    | ``-psi_tag``    | string    | psi0        | Name of the electrons particles inside QMCPACK               |
+    +-----------------+-----------+-------------+--------------------------------------------------------------+
+    | ``-ion_tag``    | string    | ion0        | Name of the ion particles inside QMCPACK                     |
+    +-----------------+-----------+-------------+--------------------------------------------------------------+
+
+- ``-multidet``
+
+  This option is to be used when a multideterminant expansion (mainly a CI expansion) is present in an HDF5 file. The trial wavefunction file will not display the full list of multideterminants and will add a path to the HDF5 file as follows (full example for the C2 molecule in qmcpack/tests/molecules/C2_pp).
+
+  ::
+
+    <?xml version="1.0"?>
+    <qmcsystem>
+      <wavefunction name="psi0" target="e">
+        <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" href="C2.h5">
+          <sposet basisset="LCAOBSet" name="spo-up" size="58">
+            <occupation mode="ground"/>
+            <coefficient size="58" spindataset="0"/>
+          </sposet>
+          <sposet basisset="LCAOBSet" name="spo-dn" size="58">
+            <occupation mode="ground"/>
+            <coefficient size="58" spindataset="0"/>
+          </sposet>
+          <multideterminant optimize="no" spo_up="spo-up" spo_dn="spo-dn">
+            <detlist size="202" type="DETS" nca="0" ncb="0" nea="4" neb="4" nstates="58" cutoff="1e-20" href="C2.h5"/>
+          </multideterminant>
+        </determinantset>
+      </wavefunction>
+    </qmcsystem>
+
+  To generate such trial wavefunction, the converter has to be invoked as follows:
+
+  ::
+
+    > convert4qmc -orbitals C2.h5 -multidet C2.h5
+
+- ``-nojastrow``
+
+  This option generates only an input file, ``*.qmc.in.wfnoj.xml``, containing no Jastrow optimization blocks and references a wavefunction file, ``*.wfnoj.xml``, containing no Jastrow section.
+
+- ``-hdf5``
+
+  This option generates the ``*.orbs.h5`` HDF5 file containing the basis set and the orbital coefficients. If the wavefunction contains a multideterminant expansion from QP, it will also be stored in this file. This option minimizes the size of the ``*.wfj.xml`` file, which points to the HDF file, as in the following example:
+
+  ::
+
+      <?xml version="1.0"?>
+     <qmcsystem>
+       <wavefunction name="psi0" target="e">
+         <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0"
+            transform="yes" href="test.orbs.h5">
+           <slaterdeterminant>
+             <determinant id="updet" size="39">
+               <occupation mode="ground"/>
+               <coefficient size="411" spindataset="0"/>
+             </determinant>
+             <determinant id="downdet" size="35">
+               <occupation mode="ground"/>
+               <coefficient size="411" spindataset="0"/>
+             </determinant>
+           </slaterdeterminant>
+         </determinantset>
+       </wavefunction>
+     </qmcsystem>
+
+  Jastrow functions will be included if the option "-nojastrow" was
+  not specified. Note that when initially optimization a wavefunction, we recommend
+  temporarily removing/disabling the 3-body Jastrow.
+
+- **-prefix**
+
+  Sets the prefix for all output generated by ``convert4qmc``.
+  If not specified, ``convert4qmc`` will use the defaults for the
+  following:
+
+  -  **Gamess** If the Gamess output file is named “**Name**.out” or
+     “**Name**.output,” all files generated by ``convert4qmc`` will carry
+     **Name** as a prefix (i.e., **Name**.qmc.in.xml).
+
+  -  **PySCF** If the PySCF output file is named “**Name**.H5,” all files
+     generated by ``convert4qmc`` will carry **Name** as a prefix (i.e.,
+     **Name**.qmc.in.xml).
+
+  -  **QP** If the QP output file is named “**Name**.dump,” all files
+     generated by ``convert4qmc`` will carry **Name** as a prefix (i.e.,
+     **Name**.qmc.in.xml).
+
+  -  **Generic HDF5 input** If a generic HDF5 file (either from PySCF or
+     QP in the HDF5 format) is named “**Name**.H5,” all files generated by
+     ``convert4qmc`` will carry **Name** as a prefix (i.e.,
+     **Name**.qmc.in.xml).
+
+- **-addCusp**
+
+  This option is very important for all-electron (AE) calculations. In
+  this case, orbitals have to be corrected for the electron-nuclear
+  cusp. The cusp correction scheme follows the algorithm described by Ma
+  et al. :cite:`Ma2005` When this option is present, the
+  wavefunction file has a new set of tags:
+
+  ::
+
+    qmcsystem>
+     <wavefunction name="psi0" target="e">
+       <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0"
+         transform="yes" cuspCorrection="yes">
+         <basisset name="LCAOBSet">
+
+  The tag “cuspCorrection” in the ``wfj.xml`` (or ``wfnoj.xml``)
+  wavefunction file will force correction of the orbitals at the
+  beginning of the run.
+  In the “orbitals“ section of the wavefunction file, a new tag
+  “cuspInfo” will be added for orbitals spin-up and orbitals spin-down:
+
+  ::
+
+      <slaterdeterminant>
+           <determinant id="updet" size="2"
+               cuspInfo="../CuspCorrection/updet.cuspInfo.xml">
+             <occupation mode="ground"/>
+             <coefficient size="135" id="updetC">
+
+     <determinant id="downdet" size="2"
+              cuspInfo="../CuspCorrection/downdet.cuspInfo.xml">
+             <occupation mode="ground"/>
+             <coefficient size="135" id="downdetC">
+
+  These tags will point to the files ``updet.cuspInfo.xml`` and
+  ``downdet.cuspInfo.xml``. By default, the converter assumes that
+  the files are located in the relative path
+  ``../CuspCorrection/``. If the directory
+  ``../CuspCorrection`` does not exist, or if the files are not
+  present in that directory, QMCPACK will run the cusp correction
+  algorithm to generate both files.  If the files exist, then QMCPACK
+  will apply the corrections to the orbitals.
+
+  **Important notes:**
+
+  The cusp correction implementations has been parallelized and performance improved.  However, since the correction needs
+  to be applied for every ion and then for every orbital on that ion, this operation can be costly (slow) for large
+  systems. We recommend saving and reusing the computed cusp correction files ``updet.cuspInfo.xml`` and
+  ``downdet.cuspInfo.xml``, and transferring them between computer systems where relevant.
+
+- **-psi_tag**
+
+  QMCPACK builds the wavefunction as a named object. In the vast majority of cases, one wavefunction is simulated at a time, but there may be situations where we want to distinguish different parts of a wavefunction, or even use multiple wavefunctions. This option can change the name for these cases.
+
+  ::
+
+     <wavefunction name="psi0" target="e">
+
+- **-ion_tag**
+
+  Although similar to **-psi_tag**, this is used for the type of ions.
+
+  ::
+
+    <particleset name="ion0" size="2">
+
+- **-production**
+
+  Without this option, input files with standard optimization, VMC, and
+  DMC blocks are generated. When the "-production" option is
+  specified, an input file containing complex options that may be
+  more suitable for large runs at HPC centers is generated. This option
+  is for users who are already familiar with QMC and QMCPACK. We encourage feedback
+  on the standard and production sample inputs.
+
+The following options are specific to using MCSCF multideterminants from Gamess.
+
+  ``convert4qmc`` MCSCF arguments:
+
+  
