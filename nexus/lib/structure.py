@@ -6709,7 +6709,7 @@ def generate_crystal_structure(
             if not symm_kgrid:
                 s.add_kmesh(kgrid,kshift)
             else:
-                self.add_symmetrized_kmesh(kgrid,kshift)
+                s.add_symmetrized_kmesh(kgrid,kshift)
             #end if
         #end if
     #end if
