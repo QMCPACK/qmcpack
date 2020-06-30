@@ -356,6 +356,8 @@ void QMCDriverNew::createRngsStepContexts()
 
   Rng.resize(num_crowds_);
 
+  RngCompatibility.resize(num_crowds_);
+
   if (RandomNumberControl::Children.size() == 0)
   {
     app_warning() << "  Initializing global RandomNumberControl! "
@@ -370,6 +372,7 @@ void QMCDriverNew::createRngsStepContexts()
     RandomNumberControl::Children[i] = nullptr;
     step_contexts_[i] = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
                                                           population_.get_particle_group_indexes(), *(Rng[i]));
+    RngCompatibility[i] = Rng[i].get();
   }
 }
 

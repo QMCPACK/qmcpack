@@ -51,12 +51,18 @@ inline void cublasAssert(cublasStatus_t code, const std::string& cause, const ch
     case CUBLAS_STATUS_INTERNAL_ERROR:
       cublas_error = "CUBLAS_STATUS_INTERNAL_ERROR";
       break;
+    case CUBLAS_STATUS_NOT_SUPPORTED:
+      cublas_error = "CUBLAS_STATUS_NOT_SUPPORTED";
+      break;
+    case CUBLAS_STATUS_LICENSE_ERROR:
+      cublas_error = "CUBLAS_STATUS_LICENSE_ERROR";
+      break;
     default:
       cublas_error = "<unknown>";
     }
 
     std::ostringstream err;
-    err << "cublasAssert: " << cublas_error << ", file " << file << ", line " << line << std::endl
+    err << "cublasAssert: " << cublas_error << ", file " << file << " , line " << line << std::endl
         << cause << std::endl;
     std::cerr << err.str();
     //if (abort) exit(code);
@@ -70,83 +76,78 @@ namespace qmcplusplus
  */
 namespace cuBLAS
 {
-inline void gemm(cublasHandle_t& handle,
-                 const cublasOperation_t& transa,
-                 const cublasOperation_t& transb,
-                 int m,
-                 int n,
-                 int k,
-                 const float* alpha,
-                 const float* A,
-                 int lda,
-                 const float* B,
-                 int ldb,
-                 const float* beta,
-                 float* C,
-                 int ldc)
+inline cublasStatus_t gemm(cublasHandle_t& handle,
+                           const cublasOperation_t& transa,
+                           const cublasOperation_t& transb,
+                           int m,
+                           int n,
+                           int k,
+                           const float* alpha,
+                           const float* A,
+                           int lda,
+                           const float* B,
+                           int ldb,
+                           const float* beta,
+                           float* C,
+                           int ldc)
 {
-  cublasErrorCheck(cublasSgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc),
-                   "cublasSgemm failed!");
+  return cublasSgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
 }
 
-inline void gemm(cublasHandle_t& handle,
-                 const cublasOperation_t& transa,
-                 const cublasOperation_t& transb,
-                 int m,
-                 int n,
-                 int k,
-                 const std::complex<float>* alpha,
-                 const std::complex<float>* A,
-                 int lda,
-                 const std::complex<float>* B,
-                 int ldb,
-                 const std::complex<float>* beta,
-                 std::complex<float>* C,
-                 int ldc)
+inline cublasStatus_t gemm(cublasHandle_t& handle,
+                           const cublasOperation_t& transa,
+                           const cublasOperation_t& transb,
+                           int m,
+                           int n,
+                           int k,
+                           const std::complex<float>* alpha,
+                           const std::complex<float>* A,
+                           int lda,
+                           const std::complex<float>* B,
+                           int ldb,
+                           const std::complex<float>* beta,
+                           std::complex<float>* C,
+                           int ldc)
 {
-  cublasErrorCheck(cublasCgemm(handle, transa, transb, m, n, k, (const cuComplex*)alpha, (const cuComplex*)A, lda,
-                               (const cuComplex*)B, ldb, (const cuComplex*)beta, (cuComplex*)C, ldc),
-                   "cublasCgemm failed!");
+  return cublasCgemm(handle, transa, transb, m, n, k, (const cuComplex*)alpha, (const cuComplex*)A, lda,
+                     (const cuComplex*)B, ldb, (const cuComplex*)beta, (cuComplex*)C, ldc);
 }
 
-inline void gemm(cublasHandle_t& handle,
-                 const cublasOperation_t& transa,
-                 const cublasOperation_t& transb,
-                 int m,
-                 int n,
-                 int k,
-                 const double* alpha,
-                 const double* A,
-                 int lda,
-                 const double* B,
-                 int ldb,
-                 const double* beta,
-                 double* C,
-                 int ldc)
+inline cublasStatus_t gemm(cublasHandle_t& handle,
+                           const cublasOperation_t& transa,
+                           const cublasOperation_t& transb,
+                           int m,
+                           int n,
+                           int k,
+                           const double* alpha,
+                           const double* A,
+                           int lda,
+                           const double* B,
+                           int ldb,
+                           const double* beta,
+                           double* C,
+                           int ldc)
 {
-  cublasErrorCheck(cublasDgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc),
-                   "cublasDgemm failed!");
+  return cublasDgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
 }
 
-inline void gemm(cublasHandle_t& handle,
-                 const cublasOperation_t& transa,
-                 const cublasOperation_t& transb,
-                 int m,
-                 int n,
-                 int k,
-                 const std::complex<double>* alpha,
-                 const std::complex<double>* A,
-                 int lda,
-                 const std::complex<double>* B,
-                 int ldb,
-                 const std::complex<double>* beta,
-                 std::complex<double>* C,
-                 int ldc)
+inline cublasStatus_t gemm(cublasHandle_t& handle,
+                           const cublasOperation_t& transa,
+                           const cublasOperation_t& transb,
+                           int m,
+                           int n,
+                           int k,
+                           const std::complex<double>* alpha,
+                           const std::complex<double>* A,
+                           int lda,
+                           const std::complex<double>* B,
+                           int ldb,
+                           const std::complex<double>* beta,
+                           std::complex<double>* C,
+                           int ldc)
 {
-  cublasErrorCheck(cublasZgemm(handle, transa, transb, m, n, k, (const cuDoubleComplex*)alpha,
-                               (const cuDoubleComplex*)A, lda, (const cuDoubleComplex*)B, ldb,
-                               (const cuDoubleComplex*)beta, (cuDoubleComplex*)C, ldc),
-                   "cublasZgemm failed!");
+  return cublasZgemm(handle, transa, transb, m, n, k, (const cuDoubleComplex*)alpha, (const cuDoubleComplex*)A, lda,
+                     (const cuDoubleComplex*)B, ldb, (const cuDoubleComplex*)beta, (cuDoubleComplex*)C, ldc);
 }
 
 inline cublasStatus_t gemm_batched(cublasHandle_t& handle,

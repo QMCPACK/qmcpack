@@ -60,7 +60,7 @@ inline void cusolverAssert(cusolverStatus_t code,
     }
 
     std::ostringstream err;
-    err << "cusolverAssert: " << cusolver_error << ", file " << file << ", line " << line << std::endl
+    err << "cusolverAssert: " << cusolver_error << ", file " << file << " , line " << line << std::endl
         << cause << std::endl;
     std::cerr << err.str();
     //if (abort) exit(code);
@@ -72,79 +72,75 @@ namespace qmcplusplus
 {
 /** interface to cusolver calls for different data types S/C/D/Z
  */
-struct cusolver
+namespace cusolver
 {
-  static inline void getrf_bufferSize(cusolverDnHandle_t& handle, int m, int n, double* A, int lda, int* lwork)
-  {
-    cusolverErrorCheck(cusolverDnDgetrf_bufferSize(handle, m, n, A, lda, lwork), "cusolverDnDgetrf_bufferSize failed!");
-  }
+inline cusolverStatus_t getrf_bufferSize(cusolverDnHandle_t& handle, int m, int n, double* A, int lda, int* lwork)
+{
+  return cusolverDnDgetrf_bufferSize(handle, m, n, A, lda, lwork);
+}
 
-  static inline void getrf_bufferSize(cusolverDnHandle_t& handle,
-                                      int m,
-                                      int n,
-                                      std::complex<double>* A,
-                                      int lda,
-                                      int* lwork)
-  {
-    cusolverErrorCheck(cusolverDnZgetrf_bufferSize(handle, m, n, (cuDoubleComplex*)A, lda, lwork),
-                       "cusolverDnZgetrf_bufferSize failed!");
-  }
+inline cusolverStatus_t getrf_bufferSize(cusolverDnHandle_t& handle,
+                                         int m,
+                                         int n,
+                                         std::complex<double>* A,
+                                         int lda,
+                                         int* lwork)
+{
+  return cusolverDnZgetrf_bufferSize(handle, m, n, (cuDoubleComplex*)A, lda, lwork);
+}
 
-  static inline void getrf(cusolverDnHandle_t& handle,
-                           int m,
-                           int n,
-                           double* A,
-                           int lda,
-                           double* work,
-                           int* ipiv,
-                           int* info)
-  {
-    cusolverErrorCheck(cusolverDnDgetrf(handle, m, n, A, lda, work, ipiv, info), "cusolverDnDgetrf failed!");
-  }
+inline cusolverStatus_t getrf(cusolverDnHandle_t& handle,
+                              int m,
+                              int n,
+                              double* A,
+                              int lda,
+                              double* work,
+                              int* ipiv,
+                              int* info)
+{
+  return cusolverDnDgetrf(handle, m, n, A, lda, work, ipiv, info);
+}
 
-  static inline void getrf(cusolverDnHandle_t& handle,
-                           int m,
-                           int n,
-                           std::complex<double>* A,
-                           int lda,
-                           std::complex<double>* work,
-                           int* ipiv,
-                           int* info)
-  {
-    cusolverErrorCheck(cusolverDnZgetrf(handle, m, n, (cuDoubleComplex*)A, lda, (cuDoubleComplex*)work, ipiv, info),
-                       "cusolverDnZgetrf failed!");
-  }
+inline cusolverStatus_t getrf(cusolverDnHandle_t& handle,
+                              int m,
+                              int n,
+                              std::complex<double>* A,
+                              int lda,
+                              std::complex<double>* work,
+                              int* ipiv,
+                              int* info)
+{
+  return cusolverDnZgetrf(handle, m, n, (cuDoubleComplex*)A, lda, (cuDoubleComplex*)work, ipiv, info);
+}
 
-  static inline void getrs(cusolverDnHandle_t& handle,
-                           const cublasOperation_t& transa,
-                           int m,
-                           int n,
-                           const double* A,
-                           int lda,
-                           int* ipiv,
-                           double* B,
-                           int ldb,
-                           int* info)
-  {
-    cusolverErrorCheck(cusolverDnDgetrs(handle, transa, m, n, A, lda, ipiv, B, ldb, info), "cusolverDnDgetrs failed!");
-  }
+inline cusolverStatus_t getrs(cusolverDnHandle_t& handle,
+                              const cublasOperation_t& transa,
+                              int m,
+                              int n,
+                              const double* A,
+                              int lda,
+                              int* ipiv,
+                              double* B,
+                              int ldb,
+                              int* info)
+{
+  return cusolverDnDgetrs(handle, transa, m, n, A, lda, ipiv, B, ldb, info);
+}
 
-  static inline void getrs(cusolverDnHandle_t& handle,
-                           const cublasOperation_t& transa,
-                           int m,
-                           int n,
-                           const std::complex<double>* A,
-                           int lda,
-                           int* ipiv,
-                           std::complex<double>* B,
-                           int ldb,
-                           int* info)
-  {
-    cusolverErrorCheck(cusolverDnZgetrs(handle, transa, m, n, (const cuDoubleComplex*)A, lda, ipiv, (cuDoubleComplex*)B,
-                                        ldb, info),
-                       "cusolverDnZgetrs failed!");
-  }
-};
+inline cusolverStatus_t getrs(cusolverDnHandle_t& handle,
+                              const cublasOperation_t& transa,
+                              int m,
+                              int n,
+                              const std::complex<double>* A,
+                              int lda,
+                              int* ipiv,
+                              std::complex<double>* B,
+                              int ldb,
+                              int* info)
+{
+  return cusolverDnZgetrs(handle, transa, m, n, (const cuDoubleComplex*)A, lda, ipiv, (cuDoubleComplex*)B, ldb, info);
+}
+} // namespace cusolver
 
 } // namespace qmcplusplus
 #endif // QMCPLUSPLUS_CUSOLVER_H
