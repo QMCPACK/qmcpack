@@ -8,7 +8,7 @@ echo "----------------------- WARNING ------------------------------------"
 echo "Purging current module set"
 module purge
 echo "Loading QMCPACK dependency modules for summit"
-module load xl
+module load gcc/8.1.1
 module load spectrum-mpi
 module load cmake
 module load git
@@ -17,6 +17,8 @@ module load essl
 module load netlib-lapack
 module load hdf5
 module load python/3.6.6-anaconda3-5.3.0
+# private module until OLCF provides a new llvm build
+module load llvm/master-latest
 
 #the XL built fftw is buggy, use the gcc version
 #module load fftw
@@ -24,9 +26,9 @@ export FFTW_HOME=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/
 export BOOST_ROOT=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-6.4.0/boost-1.66.0-l3sghp3ggjzwi4vtvyb5yzsjm36npgrk
 
 TYPE=Release
-Compiler=XL
+Compiler=Clang
 
-for name in offload_real_MP offload_real # offload_cplx offload_cplx_MP
+for name in offload_real_MP offload_real offload_cplx offload_cplx_MP
 do
 
 CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D ENABLE_MASS=1 -D MASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1 -D MPIEXEC_EXECUTABLE=`which jsrun` -D MPIEXEC_NUMPROC_FLAG='-n' -D MPIEXEC_PREFLAGS='-c;16;-g;1;-b;packed:16'"
@@ -39,7 +41,7 @@ if [[ $name == *"_MP"* ]]; then
 fi
 
 if [[ $name == *"offload"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_OFFLOAD=1"
+  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_OFFLOAD=ON -D CUDA_HOST_COMPILER=`which gcc` -D USE_OBJECT_TARGET=ON"
 fi
 
 folder=build_summit_${Compiler}_${name}
@@ -50,10 +52,7 @@ echo "**********************************"
 mkdir $folder
 cd $folder
 if [ ! -f CMakeCache.txt ] ; then
-cmake $CMAKE_FLAGS -D CMAKE_C_COMPILER=mpixlc -D CMAKE_CXX_COMPILER=mpixlC -D CMAKE_C_FLAGS=-qarch=pwr9 \
-  -D CMAKE_CXX_FLAGS="-qarch=pwr9 -qxflag=disable__cplusplusOverride -isystem /sw/summit/gcc/6.4.0/include/c++/6.4.0/powerpc64le-none-linux-gnu -qgcc_cpp_stdinc=/sw/summit/gcc/6.4.0/include/c++/6.4.0" \
-  -D CMAKE_CXX_STANDARD_LIBRARIES=/sw/summit/gcc/6.4.0/lib64/libstdc++.a \
-  -D BLAS_essl_LIBRARY=$OLCF_ESSL_ROOT/lib64/libessl.so ..
+cmake $CMAKE_FLAGS -D CMAKE_C_COMPILER=mpicc -D CMAKE_CXX_COMPILER=mpicxx -D ENABLE_TIMERS=1 ..
 cmake ..
 fi
 make -j24
