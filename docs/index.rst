@@ -7,7 +7,7 @@
 
 User's Guide and Developer's Manual for
 =======================================
-.. image:: QMCPACK_logo.png
+.. image:: /figs/QMCPACK_logo.png
  :width: 80.0%
  :target: https://qmcpack.org/
 
@@ -26,6 +26,17 @@ User's Guide and Developer's Manual for
    hamiltonianobservable
    methods
    output_overview
+   analyzing
+   LCAO
+   sCI
+   afqmc
+   examples
+   lab_qmc_statistics
+   lab_qmc_basics
+   lab_advanced_molecules
+   lab_condensed_matter
+   lab_excited
+   additional_tools
 
 
 

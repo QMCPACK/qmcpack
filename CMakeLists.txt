@@ -187,9 +187,11 @@ SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
 SET(QMC_COMPLEX 0 CACHE BOOL "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
-SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
-SET(ENABLE_CUDA 0 CACHE BOOL "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)")
 SET(ENABLE_SOA 1 CACHE BOOL "Enable/disable SoA optimization")
+SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
+OPTION(ENABLE_CUDA "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)" OFF)
+OPTION(ENABLE_HIP "Build with with GPU support through HIP" OFF)
+OPTION(ENABLE_ROCM "Build with with GPU support through ROCM" OFF)
 OPTION(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
@@ -546,10 +548,10 @@ IF(ENABLE_MASS)
   INCLUDE(CMake/FindIBMMASS.cmake)
 ENDIF(ENABLE_MASS)
 
-IF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
+IF(NOT MASS_FOUND AND NOT HAVE_MKL_VML)
   MESSAGE(STATUS "No usable vector math library detected.")
   ADD_LIBRARY(Math::scalar_vector_functions INTERFACE IMPORTED)
-ENDIF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
+ENDIF(NOT MASS_FOUND AND NOT HAVE_MKL_VML)
 
 # CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
 IF(NOT SINCOS_INCLUDE)
@@ -684,11 +686,9 @@ ENDIF()
 #-------------------------------------------------------------------
 SET(HAVE_CUDA 0)
 IF(QMC_CUDA OR ENABLE_CUDA)
-  IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    SET(CUDA_PROPAGATE_HOST_FLAGS ON)
-  ELSE(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
-  ENDIF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  # FindCUDA default CUDA_PROPAGATE_HOST_FLAGS to ON but we prefer OFF
+  # It happened -ffast-math from host caused numerical issue in CUDA kernels.
+  OPTION(CUDA_PROPAGATE_HOST_FLAGS "Propagate C/CXX_FLAGS and friends to the host compiler via -Xcompile" OFF)
   FIND_PACKAGE(CUDA REQUIRED)
   SET(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
   #set(CUDA_NVCC_FLAGS
@@ -733,6 +733,34 @@ IF(USE_NVTX_API)
     LINK_LIBRARIES(${NVTX_API_LIB})
   ENDIF(HAVE_CUDA)
 ENDIF(USE_NVTX_API)
+
+#-------------------------------------------------------------------
+#  set up ROCM compiler options and libraries
+#-------------------------------------------------------------------
+IF(ENABLE_ROCM)
+  MESSAGE(STATUS "ROCM_ROOT: ${ROCM_ROOT}")
+  ADD_LIBRARY(ROCM::libraries INTERFACE IMPORTED)
+  # temporarily put rocsolver rocrand here for convenience, should be moved to Platforms.
+  SET_TARGET_PROPERTIES(ROCM::libraries PROPERTIES INTERFACE_INCLUDE_DIRECTORIES  "${ROCM_ROOT}/include"
+                                                   INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lrocsolver;-lrocrand")
+ENDIF(ENABLE_ROCM)
+
+#-------------------------------------------------------------------
+#  set up HIP compiler options
+#-------------------------------------------------------------------
+IF(ENABLE_HIP)
+  IF(NOT ENABLE_ROCM)
+    MESSAGE(FATAL_ERROR "ROCM is required to use HIP. Please set ENABLE_ROCM=ON.")
+  ENDIF()
+  SET(CMAKE_MODULE_PATH "${ROCM_ROOT}/hip/cmake" ${CMAKE_MODULE_PATH})
+  FIND_PACKAGE(HIP REQUIRED)
+
+  ADD_LIBRARY(HIP::HIP INTERFACE IMPORTED)
+  # temporarily put hipsparse hipblas here for convenience, should be moved to Platforms.
+  SET_TARGET_PROPERTIES(HIP::HIP PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${ROCM_ROOT}/include"
+                                            INTERFACE_COMPILE_DEFINITIONS "ENABLE_HIP;__HIP_PLATFORM_HCC__"
+                                            INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lhip_hcc")
+ENDIF(ENABLE_HIP)
 
 ######################################################
 # Add optional macros

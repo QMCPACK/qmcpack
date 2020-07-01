@@ -243,6 +243,10 @@ public:
   // TODO: the fact this is needed is sad remove need for its existence.
   QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }
   /** }@ */
+
+
+  /// Set variational parameters for the per-walker copies of the wavefunction.
+  void set_variational_parameters(const opt_variables_type& active);
 };
 
 } // namespace qmcplusplus

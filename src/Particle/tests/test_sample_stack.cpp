@@ -25,7 +25,6 @@ namespace qmcplusplus
 {
 TEST_CASE("SampleStack", "[particle]")
 {
-
   SampleStack samples;
 
   const int total_num = 2; // number of particles
@@ -34,6 +33,11 @@ TEST_CASE("SampleStack", "[particle]")
   // reserve storage
   samples.setMaxSamples(8);
   REQUIRE(samples.getMaxSamples() == 8);
+  REQUIRE(samples.getNumSamples() == 0);
+
+  // increase storage
+  samples.setMaxSamples(10);
+  REQUIRE(samples.getMaxSamples() == 10);
   REQUIRE(samples.getNumSamples() == 0);
 
   using Walker_t     = ParticleSet::Walker_t;
@@ -55,6 +59,13 @@ TEST_CASE("SampleStack", "[particle]")
   REQUIRE(w1.R[0][0] == Approx(1.1));
 
   // Should test that more members of the Walker are saved correctly
+
+  samples.resetSampleCount();
+  REQUIRE(samples.getNumSamples() == 0);
+
+  // clear storage
+  samples.clearEnsemble();
+  REQUIRE(samples.getNumSamples() == 0);
 }
 
 

@@ -282,6 +282,11 @@ void VMCBatched::process(xmlNodePtr node)
   walkers_per_crowd_ = awc.walkers_per_crowd;
   num_crowds_        = awc.num_crowds;
 
+  if (collect_samples_)
+  {
+    samples_.setMaxSamples(compute_samples_per_node());
+  }
+
   app_log() << "VMCBatched Driver running with total_walkers=" << awc.global_walkers << '\n'
             << "                               walkers_per_rank=" << walkers_per_rank_ << '\n'
             << "                               num_crowds=" << num_crowds_ << '\n';
@@ -293,6 +298,14 @@ void VMCBatched::process(xmlNodePtr node)
 
   Base::process(node);
 }
+
+int VMCBatched::compute_samples_per_node() const
+{
+  int nblocks = qmcdriver_input_.get_max_blocks();
+  int nsteps  = qmcdriver_input_.get_max_steps();
+  return nblocks * nsteps * walkers_per_rank_;
+}
+
 
 /** Runs the actual VMC section
  *
@@ -401,12 +414,9 @@ bool VMCBatched::run()
 
 void VMCBatched::enable_sample_collection()
 {
-  int nblocks          = qmcdriver_input_.get_max_blocks();
-  int nsteps           = qmcdriver_input_.get_max_steps();
-  int samples_per_node = nblocks * nsteps * walkers_per_rank_;
-  samples_.setMaxSamples(samples_per_node);
+  samples_.setMaxSamples(compute_samples_per_node());
   collect_samples_ = true;
-  app_log() << "VMCBatched Driver collecting samples, samples_per_node = " << samples_per_node << '\n';
+  app_log() << "VMCBatched Driver collecting samples, samples_per_node = " << compute_samples_per_node() << '\n';
 }
 
 

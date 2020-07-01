@@ -101,7 +101,7 @@ public:
 
   QMCDriverNew::AdjustedWalkerCounts calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const;
 
-  /// Compute the number of samples to collect and enable collecting samples during the VMC run
+  /// Enable collecting samples during the VMC run
   void enable_sample_collection();
 
 private:
@@ -116,10 +116,13 @@ private:
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;
 
+
   /// Storage for samples (later used in optimizer)
   SampleStack& samples_;
   /// Sample collection flag
   bool collect_samples_;
+  /// Number of samples to collect based on input parameters and walkers per node
+  int compute_samples_per_node() const;
 
   friend class qmcplusplus::testing::VMCBatchedTest;
   ;
