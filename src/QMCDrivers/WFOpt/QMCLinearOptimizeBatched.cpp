@@ -178,7 +178,8 @@ void QMCLinearOptimizeBatched::generateSamples()
   //     W.reset();
   branchEngine->flush(0);
   branchEngine->reset();
-  population_.reset_parameters(optTarget->getOptVariables());
+  samples_.resetSampleCount();
+  population_.set_variational_parameters(optTarget->getOptVariables());
 
   vmcEngine->run();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
