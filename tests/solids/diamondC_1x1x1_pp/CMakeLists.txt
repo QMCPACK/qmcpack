@@ -891,7 +891,7 @@ ENDIF()
       "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
       qmc_trace_scalars.in.xml
       1 1
-      check_traces.py -p qmc_trace_scalars -s '0,1' -m 'vmc,dmc' --dmc_steps_exclude=1 --mixed_precision
+      check_traces.py -p qmc_trace_scalars -s '0,1' -m 'vmc,dmc' --dmc_steps_exclude=1 --tol=1e-6
       )
    ELSE()     
     SIMPLE_RUN_AND_CHECK(
@@ -910,7 +910,7 @@ ENDIF()
       "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
       qmc_trace_scalars_selective.in.xml
       1 1
-      check_traces.py -p qmc_trace_scalars_selective -s '0,1' -m 'vmc,dmc' -q 'Kinetic,ElecElec' --dmc_steps_exclude=1 --mixed_precision
+      check_traces.py -p qmc_trace_scalars_selective -s '0,1' -m 'vmc,dmc' -q 'Kinetic,ElecElec' --dmc_steps_exclude=1 --tol=1e-6
       )
    ELSE()
     SIMPLE_RUN_AND_CHECK(

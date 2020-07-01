@@ -1274,9 +1274,9 @@ if __name__=='__main__':
                       default='0',
                       help='Exclude a number of DMC steps from being checked.  This option is temporary and will be removed once a bug in the DMC weights for the first step is fixed (default=%default).'
                       )
-    parser.add_option('--mixed_precision',dest='mixed_precision',
-                      action='store_true',default='False',
-                      help='Increase tolerance for mixed precision test (default=%default).'
+    parser.add_option('--tol',dest='tolerance',
+                      default='1e-8',
+                      help='Tolerance to check (default=%default).'
                       )
 
     opt,paths = parser.parse_args()
@@ -1294,10 +1294,7 @@ if __name__=='__main__':
         sys.exit(0)
     #end if
 
-    tol = 1e-8
-    if options.mixed_precision:
-        tol = 1e-6
-    #end if
+    tol = float(options.tolerance)
 
     if len(paths)==0:
         options.path = './'
