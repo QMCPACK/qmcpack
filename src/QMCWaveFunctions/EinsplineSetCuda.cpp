@@ -21,8 +21,8 @@
 #include <einspline/multi_bspline.h>
 #include <einspline/multi_bspline_eval_cuda.h>
 #include "Configuration.h"
-#include "AtomicOrbitalCuda.h"
-#include "PhaseFactors.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/AtomicOrbitalCuda.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/PhaseFactors.h"
 #ifdef HAVE_MKL
 #include <mkl_vml.h>
 #endif
