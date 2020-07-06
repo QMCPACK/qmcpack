@@ -300,7 +300,11 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
 #if defined(QMC_COMPLEX)
   REQUIRE(ratios[0] == ComplexApprox(PsiValueType(1, 0)).epsilon(5e-5));
+#if defined(MIXED_PRECISION)
+  REQUIRE(ratios[1] == ComplexApprox(PsiValueType(0.12487384604679, 0)).epsilon(2e-5));
+#else
   REQUIRE(ratios[1] == ComplexApprox(PsiValueType(0.12487384604679, 0)));
+#endif
 #else
   REQUIRE(ratios[0] == Approx(1).epsilon(5e-5));
   REQUIRE(ratios[1] == Approx(0.12487384604697));
@@ -370,6 +374,23 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   psi.flex_evalGrad(wf_ref_list, p_ref_list, moved_elec_id_next, grad_old);
   std::cout << "evalGrad next electron " << std::setprecision(14) << grad_old[0][0] << " " << grad_old[0][1] << " "
             << grad_old[0][2] << " " << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2] << std::endl;
+#if defined(MIXED_PRECISION)
+#if defined(QMC_COMPLEX)
+  REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(2e-4));
+  REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(2e-4));
+  REQUIRE(grad_old[0][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(2e-4));
+  REQUIRE(grad_old[1][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(8e-5));
+  REQUIRE(grad_old[1][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(8e-5));
+  REQUIRE(grad_old[1][2] == ComplexApprox(ValueType(64.050803536571, 7.6052975324197e-05)).epsilon(8e-5));
+#else
+  REQUIRE(grad_old[0][0] == Approx(-114.82732467419).epsilon(2e-4));
+  REQUIRE(grad_old[0][1] == Approx(-93.98069637537).epsilon(2e-4));
+  REQUIRE(grad_old[0][2] == Approx(64.050727483593).epsilon(2e-4));
+  REQUIRE(grad_old[1][0] == Approx(-114.82732467419).epsilon(1e-4));
+  REQUIRE(grad_old[1][1] == Approx(-93.98069637537).epsilon(1e-4));
+  REQUIRE(grad_old[1][2] == Approx(64.050727483593).epsilon(1e-4));
+#endif
+#else
 #if defined(QMC_COMPLEX)
   REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(8e-5));
   REQUIRE(grad_old[0][1] == ComplexApprox(ValueType(-93.980772428401, -7.605302517238e-05)).epsilon(8e-5));
@@ -384,6 +405,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(grad_old[1][0] == Approx(-114.82732467419).epsilon(1e-4));
   REQUIRE(grad_old[1][1] == Approx(-93.98069637537).epsilon(1e-4));
   REQUIRE(grad_old[1][2] == Approx(64.050727483593).epsilon(1e-4));
+#endif
 #endif
 
   std::vector<PosType> displ(2);
