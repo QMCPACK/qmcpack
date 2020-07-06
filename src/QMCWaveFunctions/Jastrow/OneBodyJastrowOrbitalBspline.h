@@ -20,8 +20,7 @@
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/CudaSpline.h"
-#include "QMCWaveFunctions/Jastrow/BsplineJastrowCuda.h"
-#include "QMCWaveFunctions/Jastrow/BsplineJastrowCudaPBC.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/NLjobGPU.h"
 #include "Configuration.h"
 #include "type_traits/CUDATypes.h"
 

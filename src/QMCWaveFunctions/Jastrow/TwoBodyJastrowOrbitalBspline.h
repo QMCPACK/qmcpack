@@ -21,7 +21,7 @@
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "Configuration.h"
 #include "QMCWaveFunctions/Jastrow/CudaSpline.h"
-#include "NLjobGPU.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/NLjobGPU.h"
 
 namespace qmcplusplus
 {
