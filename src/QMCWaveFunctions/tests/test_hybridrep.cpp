@@ -242,8 +242,8 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   ParticleSet::PosType dr;
   elec_.getDistTable(0).get_first_neighbor(0, r, dr, false);
   std::cout << std::setprecision(14) << "check r^2 against dr^2. "
-            << "r= " << r << " dr = " << dr << std::endl;
-  REQUIRE(r * r == dot(dr, dr));
+            << "r = " << r << " dr = " << dr << std::endl;
+  REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon());
 
   // for vgl
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
