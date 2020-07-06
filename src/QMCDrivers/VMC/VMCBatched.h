@@ -99,9 +99,12 @@ public:
    */
   auto getCDLW();
 
-  QMCDriverNew::AdjustedWalkerCounts calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const;
-
-  /// Enable collecting samples during the VMC run
+  /** Enable collecting samples during the VMC run
+   *
+   *  strong assumption that VMCBatched driver has passed through process phase of
+   *  initialization.
+   *  A side effect of VMCBatched::process is that MCPopulation has created local walkers.
+   */
   void enable_sample_collection();
 
 private:
@@ -121,11 +124,11 @@ private:
   SampleStack& samples_;
   /// Sample collection flag
   bool collect_samples_;
-  /// Number of samples to collect based on input parameters and walkers per node
-  int compute_samples_per_node() const;
+  /** function to calculate samples per node
+   */
+  static int compute_samples_per_node(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers);
 
   friend class qmcplusplus::testing::VMCBatchedTest;
-  ;
 };
 
 extern std::ostream& operator<<(std::ostream& o_stream, const VMCBatched& vmc_batched);

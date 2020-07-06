@@ -21,6 +21,19 @@ namespace qmcplusplus
 {
 QMCDriverInput::QMCDriverInput(int qmc_section_count) : qmc_section_count_(qmc_section_count) {}
 
+void QMCDriverInput::checkNumCrowdsLTNumThreads(const int num_crowds)
+{
+  int num_threads(Concurrency::maxThreads<>());
+  if (num_crowds > num_threads)
+  {
+    std::stringstream error_msg;
+    error_msg << "Bad Input: num_crowds (" << num_crowds << ") > num_threads (" << num_threads
+              << ")\n";
+    throw std::runtime_error(error_msg.str());
+  }
+}
+
+
 /** Reads qmc section xml node parameters
  *
  * All shared parameters are read here
@@ -52,11 +65,10 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(warmup_steps_, "warmupsteps", "int");
   parameter_set.add(warmup_steps_, "warmup_steps", "int");
   parameter_set.add(num_crowds_, "crowds", "int");
-  parameter_set.add(walkers_per_rank_, "walkers", "int");
+  parameter_set.add(walkers_per_rank_, "walkers_per_rank", "int");
   parameter_set.add(total_walkers_, "total_walkers", "int");
   parameter_set.add(steps_between_samples_, "stepsbetweensamples", "int");
   parameter_set.add(samples_per_thread_, "samplesperthread", "real");
-  parameter_set.add(samples_per_thread_, "dmcwalkersperthread", "real");
   parameter_set.add(requested_samples_, "samples", "real");
   parameter_set.add(tau_, "timestep", "AU");
   parameter_set.add(tau_, "time_step", "AU");
@@ -120,6 +132,8 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
 
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;
+
+  checkNumCrowdsLTNumThreads(num_crowds_);
 }
 
 } // namespace qmcplusplus

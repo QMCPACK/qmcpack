@@ -148,6 +148,8 @@ public:
 
   const std::string get_drift_modifier() const { return drift_modifier_; }
   RealType get_drift_modifier_unr_a() const { return drift_modifier_unr_a_; }
+private:
+  static void checkNumCrowdsLTNumThreads(const int num_crowds);
 };
 
 // These will cause a compiler error if the implicit move constructor has been broken

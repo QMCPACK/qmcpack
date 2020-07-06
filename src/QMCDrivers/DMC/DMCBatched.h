@@ -102,8 +102,6 @@ public:
 
   void setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian);
 
-  QMCDriverNew::AdjustedWalkerCounts calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const;
-
 private:
   DMCDriverInput dmcdriver_input_;
   /// Interval between branching

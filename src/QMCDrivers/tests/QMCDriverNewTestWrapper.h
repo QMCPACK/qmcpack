@@ -13,12 +13,16 @@
 #define QMCPLUSPLUS_QMCDRIVERNEWTESTWRAPPER_H
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/DriverTraits.h"
+#include "Particle/SampleStack.h"
 
 namespace qmcplusplus
 {
 /** Unit testing an impure virtual base class
  *  requires a absolute minimal subtype
  */
+namespace testing
+{
+
 class QMCDriverNewTestWrapper : public QMCDriverNew
 {
 public:
@@ -28,46 +32,68 @@ public:
                           TrialWaveFunction& psi,
                           QMCHamiltonian& h,
                           WaveFunctionPool& ppool,
+                          SampleStack samples,
                           Communicate* comm)
       : QMCDriverNew(std::move(input), population, psi, h, ppool, "QMCDriverTestWrapper::", comm)
-  {}
+  {
+    QMCType = "QMCTesting";
+  }
 
+  ~QMCDriverNewTestWrapper() {}
+  
   QMCRunType getRunType() { return QMCRunType::DUMMY; }
-
-  void set_calc_walker_answers(int walkers_per_crowd, int local_walkers_fake)
-  {
-    walkers_per_crowd_fake_ = walkers_per_crowd;
-    local_walkers_fake_     = local_walkers_fake;
-  }
-  // Notice that this is a crap method in that we have to fake all the side effects of the
-  // calculation in the child class.
-  QMCDriverNew::AdjustedWalkerCounts calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const
-  {
-    awc.walkers_per_crowd = walkers_per_crowd_fake_;
-    awc.walkers_per_rank  = local_walkers_fake_;
-    return awc;
-  }
 
   void process(xmlNodePtr node)
   {
     // We want to test the reserve ability as well
-    AdjustedWalkerCounts awc = adjustGlobalWalkerCount(myComm, 32,
-                                                       32, 1.5, get_num_crowds());
+    AdjustedWalkerCounts awc = adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
-    // side effect updates walkers_per_crowd_;
-    // I purposely don't update the base class state variables for walkers here since I suspect they are unecessary state.
-    makeLocalWalkers(awc.walkers_per_rank, awc.reserve_walkers,
-                     ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
-
-    Base::process(node);
+    Base::startup(node, awc);
   }
 
+  void testAdjustGlobalWalkerCount()
+  {
+    QMCDriverNew::AdjustedWalkerCounts awc = adjustGlobalWalkerCount(4,1,64,0,1.0,0);
+    CHECK(awc.global_walkers == 64);
+    CHECK(awc.walkers_per_crowd.size() == 8);
+    CHECK(awc.walkers_per_rank[0] == 16);
+    CHECK(awc.walkers_per_rank[3] == 16);
+    CHECK(awc.walkers_per_crowd[4] == 2);
+    CHECK(awc.walkers_per_crowd[7] == 2);
+
+     awc = adjustGlobalWalkerCount(4,1,63,0,1.0,4);
+    CHECK(awc.global_walkers == 63);
+    CHECK(awc.walkers_per_crowd.size() == 4);
+    CHECK(awc.walkers_per_rank[0] == 16);
+    CHECK(awc.walkers_per_rank[3] == 15);
+    CHECK(awc.walkers_per_crowd[0] == 4);
+    CHECK(awc.walkers_per_crowd[3] == 4);
+
+     awc = adjustGlobalWalkerCount(4,3,63,0,1.0,4);
+    CHECK(awc.global_walkers == 63);
+    CHECK(awc.walkers_per_crowd.size() == 4);
+    CHECK(awc.walkers_per_rank[0] == 16);
+    CHECK(awc.walkers_per_rank[3] == 15);
+    CHECK(awc.walkers_per_crowd[0] == 4);
+    CHECK(awc.walkers_per_crowd[3] == 3);
+
+     awc = adjustGlobalWalkerCount(4,3,0,32,1.0,4);
+    CHECK(awc.global_walkers == 128);
+    CHECK(awc.walkers_per_crowd.size() == 4);
+    CHECK(awc.walkers_per_rank[0] == 32);
+    CHECK(awc.walkers_per_rank[3] == 32);
+    CHECK(awc.walkers_per_crowd[0] == 8);
+    CHECK(awc.walkers_per_crowd[3] == 8);
+  }
+  
   bool run() { return false; }
 
+  int get_num_crowds() { return crowds_.size(); }
+  
 private:
-  int walkers_per_crowd_fake_ = 4;
-  int local_walkers_fake_     = 32;
+  
 };
 
+}
 } // namespace qmcplusplus
 #endif
