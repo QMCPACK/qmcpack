@@ -23,7 +23,7 @@
 #include <cuda_runtime_api.h>
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
-#include "QMCWaveFunctions/Fermion/matrix_update_helper.hpp"
+#include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
 #include "CUDA/CUDAallocator.hpp"
 
 namespace qmcplusplus
