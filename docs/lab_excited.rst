@@ -72,7 +72,7 @@ Following the explanation in the previous paragraph and :numref:`fig22`, the *qu
 .. math::
   :label: eq76
 
-  E_g=EA-IP=(E_{N+1}^{CBM}-E_{N}^{K'})-(E_{N}^{K'}-E_{N-1}^{VBM})=E_{N+1}^{CBM}+E_{N-1}^{VBM}-2*E_{N}^{K'}\label{eq:qp}\:,
+  E_g=EA-IP=(E_{N+1}^{CBM}-E_{N}^{K'})-(E_{N}^{K'}-E_{N-1}^{VBM})=E_{N+1}^{CBM}+E_{N-1}^{VBM}-2*E_{N}^{K'},
 
 where :math:`N` is the number of electrons in the neutral system and
 :math:`E_{N}` is the ground state energy of the neutral system. CBM and
@@ -99,7 +99,7 @@ optical gap can be formulated as follows:
 .. math::
   :label: eq77
 
-  E_g^{K_1 {\rightarrow} K_2}=E^{K_1 {\rightarrow} K_2}- E_{0}\label{eq:optical}\:,
+  E_g^{K_1 {\rightarrow} K_2}=E^{K_1 {\rightarrow} K_2}- E_{0},
 
 where :math:`E^{K_1 {\rightarrow} K_2}` is the energy of the system when
 a valence electron at wavevector :math:`K_1` is promoted to the
@@ -161,7 +161,7 @@ represented using periodic functions in the reciprocal space:
 .. math::
   :label: eq79
 
-  f({\bf R_n + r})= \sum_{m}f_me^{iG_m({\bf R_n+r})}\label{eqn:lab_ex_rec_real}\:,
+  f({\bf R_n + r})= \sum_{m}f_me^{iG_m({\bf R_n+r})},
 
 where :math:`G_m` are called as the reciprocal lattice vectors.
 :eq:`eq79` also satisfies the equality
@@ -661,4 +661,4 @@ Alternatively, the excitations within Nexus can be defined as shown in the ``opt
       ...
       )
 
-.. bibliography:: /bibs/lab_excited.bib 
+.. bibliography:: /bibs/lab_excited.bib

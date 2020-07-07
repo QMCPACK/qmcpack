@@ -4,12 +4,13 @@
    contain the root `toctree` directive.
 
 
+User's Guide and Developer's Manual
+===================================
 
-User's Guide and Developer's Manual for
-=======================================
 .. image:: /figs/QMCPACK_logo.png
  :width: 80.0%
  :target: https://qmcpack.org/
+
 
 .. toctree::
    :maxdepth: 2
@@ -37,7 +38,12 @@ User's Guide and Developer's Manual for
    lab_condensed_matter
    lab_excited
    additional_tools
-
+   external_tools
+   contributing
+   unit_testing
+   design_features
+   developing
+   appendices
 
 
 ::
