@@ -13,6 +13,7 @@
 #include <typeinfo>
 #include <cmath>
 #include <sstream>
+#include <numeric>
 
 #include "QMCDrivers/QMCDriverNew.h"
 #include "Concurrency/TasksOneToOne.hpp"
@@ -479,12 +480,22 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
   if (required_total != 0)
   {
     awc.walkers_per_rank = fairDivide(required_total, num_ranks);
+    if (walkers_per_rank != 0)
+    {
+      if (std::any_of(awc.walkers_per_rank.begin(), awc.walkers_per_rank.end(),
+                      [walkers_per_rank](IndexType num_walkers) { return num_walkers != walkers_per_rank; }))
+      {
+        std::ostringstream error;
+        error << "Running on " << num_ranks << " and the request of " << required_total << " walkers and "
+              << walkers_per_rank << " cannot be satisfied.";
+        throw std::runtime_error(error.str());
+      }
+    }
   }
   else if (walkers_per_rank != 0)
   {
     awc.walkers_per_rank = std::vector<IndexType>(num_ranks, walkers_per_rank);
   }
-  //This will be madness if for instance you are using std::thread
 
   // if we found a way to determine walkers per rank above
   if (awc.walkers_per_rank.size() > 0)

@@ -22,7 +22,7 @@ template<typename T>
 std::ostream& operator<<(std::ostream& out, const std::vector<T>& rhs)
 {
   out << "[";
-  copy(rhs.begin(), rhs.end(), std::ostream_iterator<double>(out, ", "));
+  copy(rhs.begin(), rhs.end(), std::ostream_iterator<T>(out, ", "));
   out << "]";
   out <<'\n';
   return out;
