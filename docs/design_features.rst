@@ -79,7 +79,7 @@ Reciprocal-space sums
 Heterologous terms
 ^^^^^^^^^^^^^^^^^^
 
-We begin with eq:`eq81`, starting with the heterologous terms (i.e., the terms involving particles of different species).  The
+We begin with :eq:`eq81`, starting with the heterologous terms (i.e., the terms involving particles of different species).  The
 short-range terms are trivial, so we neglect them here.
 
 .. math::
