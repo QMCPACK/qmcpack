@@ -4722,6 +4722,7 @@ class Structure(Sobj):
         axes = []
         pos  = []
         elem = []
+        constrain_relax = []
         unit_pos = False
         for line in lines:
             ls = line.strip()
@@ -4737,6 +4738,8 @@ class Structure(Sobj):
                 elif t0=='atom':
                     pos.append(tokens[1:4])
                     elem.append(tokens[4])
+                elif t0=='constrain_relaxation':
+                    constrain_relax.append(tokens[1])
                 elif t0.startswith('initial'):
                     None
                 else:
@@ -4748,13 +4751,19 @@ class Structure(Sobj):
         axes = array(axes,dtype=float)
         pos  = array(pos,dtype=float)
         if unit_pos:
-            pos  = dot(pos,axes)
+            pos = dot(pos,axes)
         #end if
         self.dim = 3
-        self.set_axes(axes)
+        if len(axes)>0:
+            self.set_axes(axes)
+        #end if
         self.set_elem(elem)
         self.pos   = pos
         self.units = 'A'
+        if len(constrain_relax)>0:
+            constrain_relax = array(constrain_relax)
+            self.freeze(list(range(self.size())),directions=constrain_relax=='.true.')
+        #end if
     #end def read_fhi_aims
 
 
