@@ -33,7 +33,7 @@ Each file should start with the header.
   // This file is distributed under the University of Illinois/NCSA Open Source License.
   // See LICENSE file in top directory for details.
   //
-  // Copyright (c) 2018 QMCPACK developers
+  // Copyright (c) 2020 QMCPACK developers
   //
   // File developed by: Name, email, affiliation
   //
@@ -62,8 +62,8 @@ Header files
 All header files should be self-contained (i.e., not dependent on following any other header when it is included). Nor should they include files that are not necessary for their use (i.e., headers needed only by the implementation). Implementation files should not include files only for the benefit of files they include.
 
 There are many header files that currently violate this.
-Each header must use ``\#define`` guards to prevent multiple inclusion.
-The symbol name of the ``\#define`` guards should be ``NAMESPACE(s)_CLASSNAME_H``.
+Each header must use ``#define`` guards to prevent multiple inclusion.
+The symbol name of the ``#define`` guards should be ``NAMESPACE(s)_CLASSNAME_H``.
 
 Includes
 ~~~~~~~~
@@ -236,7 +236,7 @@ If you modify a piece of code, also adapt the comments that belong to it if nece
 Formatting and "style"
 ----------------------
 
-Use the provided clang-format style in ``src/.clang-format}`` to format ``.h``, ``.hpp``, ``.cu``, and ``.cpp`` files. Many of the following rules will be applied to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
+Use the provided clang-format style in ``src/.clang-format`` to format ``.h``, ``.hpp``, ``.cu``, and ``.cpp`` files. Many of the following rules will be applied to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
 
 You should use clang-format support and the ``.clangformat`` file with your editor, use a Git precommit hook to run clang-format or run clang-format manually on every file you modify.  However, if you see numerous formatting updates outside of the code you have modified, first commit the formatting changes in a separate PR.
 

@@ -191,14 +191,3 @@ that is, when the available sampling period is less than twice the
 length of the equilibration period. The expected efficiency ratio and
 crossover point should be checked for the particular case under
 consideration to inform the choice between twist averaging methods.
-
-.. _appendixb:
-
-Appendix B: QMCPACK papers
---------------------------
-
-The following is a list of all papers, theses, and book chapters
-known to use QMCPACK. Please let the developers know if your paper
-is missing, you know of other works, or an entry is incorrect. We
-list papers whether or not they cite QMCPACK directly. This list
-will be placed on the http://www.qmcpack.org website.
