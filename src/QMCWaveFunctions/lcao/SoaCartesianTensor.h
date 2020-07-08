@@ -21,7 +21,7 @@
 #ifndef QMCPLUSPLUS_SOA_CARTESIAN_TENSOR_H
 #define QMCPLUSPLUS_SOA_CARTESIAN_TENSOR_H
 
-#include "OhmmsSoA/Container.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
 
 namespace qmcplusplus
 {

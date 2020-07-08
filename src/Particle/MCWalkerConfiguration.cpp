@@ -76,6 +76,7 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
       UpdateMode(Update_Walker),
       Polymer(0)
 {
+  samples.clearEnsemble();
   samples.setMaxSamples(mcw.getMaxSamples());
   GlobalNumWalkers = mcw.GlobalNumWalkers;
   WalkerOffsets    = mcw.WalkerOffsets;
@@ -353,7 +354,7 @@ void MCWalkerConfiguration::resizeWalkerHistories()
 /** allocate the SampleStack
  * @param n number of samples per thread
  */
-void MCWalkerConfiguration::setNumSamples(int n) { samples.setMaxSamples(n); }
+void MCWalkerConfiguration::setNumSamples(int n) { samples.clearEnsemble(); samples.setMaxSamples(n); }
 
 /** save the current walkers to SampleStack
  */

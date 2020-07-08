@@ -169,7 +169,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator & world)
 
     // Calculates Overlap, G
 // NOTE: Make small factory routine!
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     auto SDet( SlaterDetOperations_serial<ComplexType,device_allocator_generator_type>(
                 NMO,NAEA,afqmc::device_buffer_generator.get()) );
 #else
@@ -340,7 +340,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 {
   auto world = boost::mpi3::environment::get_world_instance();
 
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   auto node = world.split_shared(world.rank());
 
   arch::INIT(node);

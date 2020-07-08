@@ -11,7 +11,14 @@
 
 
 SET(CUDA_SRCS
-  cuBLAS_inhouse.cu
+  cuBLAS_missing_functions.cu
 )
 
 CUDA_ADD_LIBRARY(platform_cuda ${CUDA_SRCS})
+TARGET_INCLUDE_DIRECTORIES(platform_cuda INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+CUDA_ADD_CUBLAS_TO_TARGET(platform_cuda)
+TARGET_LINK_LIBRARIES(platform_cuda PRIVATE ${CUDA_LIBRARIES} ${CUDA_cusolver_LIBRARY})
+
+IF (BUILD_UNIT_TESTS)
+  SUBDIRS(tests)
+ENDIF()

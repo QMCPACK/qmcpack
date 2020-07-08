@@ -20,6 +20,9 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 ADD_EXECUTABLE(${UTEST_EXE} test_lrhandler.cpp test_ewald3d.cpp test_temp.cpp
   test_srcoul.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcparticle)
+IF(USE_OBJECT_TARGET)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil containers)
+ENDIF()
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

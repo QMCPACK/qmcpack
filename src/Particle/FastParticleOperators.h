@@ -18,7 +18,7 @@
 #ifndef OHMMS_FAST_PARTICLE_OPERATORS_H
 #define OHMMS_FAST_PARTICLE_OPERATORS_H
 
-#include <simd/simd.hpp>
+#include <CPU/SIMD/simd.hpp>
 
 namespace qmcplusplus
 {
@@ -326,7 +326,7 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T, 3>>, Tensor<T, 3>, 3>
 
 /** inout[i]=inout[i]-floor(inout[i])
  *
- * See simd/vmath.h and should be specialized for vector libraries, e.g., INTEL vml, IBM massv
+ * See CPU/SIMD/vmath.h and should be specialized for vector libraries, e.g., INTEL vml, IBM massv
  */
 template<typename T, unsigned D>
 inline void put2box(ParticleAttrib<TinyVector<T, D>>& inout)

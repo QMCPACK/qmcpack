@@ -7,8 +7,8 @@
 # GCC
 # Zen2 optimziations are only in gcc 9.1+, with improved scheduling in 9.2+
 # Dates at https://gcc.gnu.org/releases.html
-#gcc_vnew=10.1.0 # 2020-05-07
-gcc_vnew=9.3.0 # 2020-03-12
+gcc_vnew=10.1.0 # 2020-05-07
+#gcc_vnew=9.3.0 # 2020-03-12
 gcc_vold=7.3.0 # 2018-01-25
 
 #gcc_vcuda=8.2.1 #  For CUDA 10.2 compatibility  https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
@@ -24,6 +24,8 @@ llvm_vold=6.0.1 # 2018-07-05
 llvm_vcuda=8.0.0 # For CUDA 10.2 compatibility https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
 
 # HDF5
+# Dates at https://portal.hdfgroup.org/display/support/Downloads
+#hdf5_vnew=1.12.0 # Released 2020-02-28 . Not supported by py-h5py 2.10.0, latest in spack on 20200604
 hdf5_vnew=1.10.5 # Releeased 2019-02-28
 hdf5_vold=1.8.19 # Released 2017-06-16
 

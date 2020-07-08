@@ -312,10 +312,10 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     }
     // reduce MF and HWs
     if(TG.TG().size() > 1) {
-      TG.TG().all_reduce_in_place_n(to_address(MFfactor.origin()),MFfactor.num_elements(),
+      TG.TG().all_reduce_in_place_n(to_address(globalMFfactor.origin()),globalMFfactor.num_elements(),
                                   std::plus<>());
-      TG.TG().all_reduce_in_place_n(to_address(hybrid_weight.origin()),
-                                  hybrid_weight.num_elements(),std::plus<>());
+      TG.TG().all_reduce_in_place_n(to_address(globalhybrid_weight.origin()),
+                                  globalhybrid_weight.num_elements(),std::plus<>());
     }  
 
     // copy from global to local array
@@ -560,7 +560,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 
       // 2. bcast G 
       AFQMCTimers[vHS_comm_overhead_timer]->start();
-      if(k == TG.getLocalTGRank()) 
+      if(k == node_number) 
         copy_n(make_device_ptr(Gstore.origin())+Gak0,GakN-Gak0,
                make_device_ptr(Gwork.origin())+Gak0);
 #ifdef BUILD_AFQMC_WITH_NCCL
@@ -669,21 +669,21 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     if(TG.TG().size() > 1) {
 #ifdef BUILD_AFQMC_WITH_NCCL
 #ifdef ENABLE_CUDA
-      NCCLCHECK(ncclAllReduce((const void*)to_address(MFfactor.origin()),
-                    (void*)to_address(MFfactor.origin()), 2*MFfactor.num_elements(),
-                     ncclDouble, ncclSum,TG.ncclTG(),TG.ncclStream()));
-      NCCLCHECK(ncclAllReduce((const void*)to_address(hybrid_weight.origin()),
-                     (void*)to_address(hybrid_weight.origin()), 2*hybrid_weight.num_elements(),
-                     ncclDouble, ncclSum,TG.ncclTG(),TG.ncclStream()));
+      NCCLCHECK(ncclAllReduce((const void*)to_address(globalMFfactor.origin()),
+                (void*)to_address(globalMFfactor.origin()), 2*globalMFfactor.num_elements(),
+                 ncclDouble, ncclSum,TG.ncclTG(),TG.ncclStream()));
+      NCCLCHECK(ncclAllReduce((const void*)to_address(globalhybrid_weight.origin()),
+                 (void*)to_address(globalhybrid_weight.origin()), 2*globalhybrid_weight.num_elements(),
+                 ncclDouble, ncclSum,TG.ncclTG(),TG.ncclStream()));
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()),"cudaStreamSynchronize(s)");
 #else
 #error "BUILD_AFQMC_WITH_NCCL only with ENABLE_CUDA"
 #endif
 #else
-      TG.TG().all_reduce_in_place_n(to_address(MFfactor.origin()),MFfactor.num_elements(),
-                                  std::plus<>());
-      TG.TG().all_reduce_in_place_n(to_address(hybrid_weight.origin()),
-                                    hybrid_weight.num_elements(),std::plus<>());
+      TG.TG().all_reduce_in_place_n(to_address(globalMFfactor.origin()),globalMFfactor.num_elements(),
+                                std::plus<>());
+      TG.TG().all_reduce_in_place_n(to_address(globalhybrid_weight.origin()),
+                                globalhybrid_weight.num_elements(),std::plus<>());
 #endif
     }
     TG.local_barrier();

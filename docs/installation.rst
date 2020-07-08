@@ -318,6 +318,7 @@ the path to the source directory.
                          Release (create a release/optimized build)
                          RelWithDebInfo (create a release/optimized build with debug info)
                          MinSizeRel (create an executable optimized for size)
+    CMAKE_SYSTEM_NAME    Set value to CrayLinuxEnvironment when cross-compiling in Cray Programming Environment.
     CMAKE_C_COMPILER     Set the C compiler
     CMAKE_CXX_COMPILER   Set the C++ compiler
     CMAKE_C_FLAGS        Set the C flags.  Note: to prevent default
@@ -590,8 +591,8 @@ QMCPACK tried to do its best with CMake to facilitate cross compiling.
 
 - On a machine using a Cray programming environment, we rely on
   compiler wrappers provided by Cray to correctly set architecture-specific
-  flags. The CMake configure log should indicate that a
-  Cray machine was detected.
+  flags. Please also add ``-DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment`` to cmake.
+  The CMake configure log should indicate that a Cray machine was detected.
 
 - If not on a Cray machine, by default we assume building for
   the host architecture (e.g., -xHost is added for the Intel compiler
@@ -606,7 +607,7 @@ architecture. Using ``make VERBOSE=1`` is a useful way to check the
 final compilation options.  If on a Cray machine, selection of the
 appropriate programming environment should be sufficient.
 
-.. _installexamples
+.. _installexamples:
 
 Installation instructions for common workstations and supercomputers
 --------------------------------------------------------------------
@@ -621,7 +622,7 @@ to these recipes. See :ref:`buildperformance` for key
 points to check to obtain highest performance and
 :ref:`troubleshoot` for troubleshooting hints.
 
-.. _buildubuntu
+.. _buildubuntu:
 
 Installing on Ubuntu Linux or other apt-get--based distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -802,13 +803,12 @@ Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB 
 ::
 
   export CRAYPE_LINK_TYPE=dynamic
-  # Do not use cmake 3.9.1, it causes trouble with parallel HDF5.
-  module load cmake/3.11.4
+  module load cmake/3.16.2
   module unload cray-libsci
   module load cray-hdf5-parallel
   module load gcc   # Make C++ 14 standard library available to the Intel compiler
   export BOOST_ROOT=/soft/libraries/boost/1.64.0/intel
-  cmake ..
+  cmake -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment ..
   make -j 24
   ls -l bin/qmcpack
 
@@ -871,35 +871,34 @@ space.
   module unload cray-libsci
   module load boost/1.70.0
   module load cray-hdf5-parallel
-  module load cmake/3.14.0
-  module load gcc/7.3.0 # Make C++ 14 standard library available to the Intel compiler
+  module load cmake/3.14.4
+  module load gcc/8.3.0 # Make C++ 14 standard library available to the Intel compiler
   cd $SCRATCH
   mkdir build_cori_hsw
   cd build_cori_hsw
-  cmake -DQMC_SYMLINK_TEST_FILES=0 $HOME/qmc/git_QMCPACK/qmcpack/
+  cmake -DQMC_SYMLINK_TEST_FILES=0 -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment $HOME/qmc/git_QMCPACK/qmcpack/
   nice make -j 8
   ls -l bin/qmcpack
 
-When the preceding was tested on May 16, 2019, the following module and
+When the preceding was tested on June 15, 2020, the following module and
 software versions were present:
 
 ::
 
   build_cori_hsw> module list
   Currently Loaded Modulefiles:
-  1) modules/3.2.10.6                                   14) alps/6.6.43-6.0.7.1_5.45__ga796da32.ari
-  2) nsg/1.2.0                                          15) rca/2.2.18-6.0.7.1_5.47__g2aa4f39.ari
-  3) intel/18.0.1.163                                   16) atp/2.1.3
-  4) craype-network-aries                               17) PrgEnv-intel/6.0.4
-  5) craype/2.5.15                                      18) craype-haswell
-  6) udreg/2.3.2-6.0.7.1_5.13__g5196236.ari             19) cray-mpich/7.7.3
-  7) ugni/6.0.14.0-6.0.7.1_3.13__gea11d3d.ari           20) gcc/7.3.0
-  8) pmi/5.0.14                                         21) altd/2.0
-  9) dmapp/7.1.1-6.0.7.1_5.45__g5a674e0.ari             22) darshan/3.1.4
-  10) gni-headers/5.0.12.0-6.0.7.1_3.11__g3b1768f.ari   23) boost/1.70.0
-  11) xpmem/2.2.15-6.0.7.1_5.11__g7549d06.ari           24) cray-hdf5-parallel/1.10.2.0
-  12) job/2.2.3-6.0.7.1_5.43__g6c4e934.ari              25) cmake/3.14.0
-  13) dvs/2.7_2.2.118-6.0.7.1_10.1__g58b37a2
+  1) modules/3.2.11.4                                 13) xpmem/2.2.20-7.0.1.1_4.8__g0475745.ari
+  2) nsg/1.2.0                                        14) job/2.2.4-7.0.1.1_3.34__g36b56f4.ari
+  3) altd/2.0                                         15) dvs/2.12_2.2.156-7.0.1.1_8.6__g5aab709e
+  4) darshan/3.1.7                                    16) alps/6.6.57-7.0.1.1_5.10__g1b735148.ari
+  5) intel/19.0.3.199                                 17) rca/2.2.20-7.0.1.1_4.42__g8e3fb5b.ari
+  6) craype-network-aries                             18) atp/2.1.3
+  7) craype/2.6.2                                     19) PrgEnv-intel/6.0.5
+  8) udreg/2.3.2-7.0.1.1_3.29__g8175d3d.ari           20) craype-haswell
+  9) ugni/6.0.14.0-7.0.1.1_7.32__ge78e5b0.ari         21) cray-mpich/7.7.10
+  10) pmi/5.0.14                                      22) craype-hugepages2M
+  11) dmapp/7.1.1-7.0.1.1_4.43__g38cf134.ari          23) gcc/8.3.0
+  12) gni-headers/5.0.12.0-7.0.1.1_6.27__g3b1768f.ari 24) cmake/3.14.4
 
 The following slurm job file can be used to run the tests:
 
@@ -930,35 +929,34 @@ be in \$HOME/qmc/git\_QMCPACK/qmcpack as per the Haswell example.
   module unload cray-libsci
   module load boost/1.70.0
   module load cray-hdf5-parallel
-  module load cmake/3.14.0
-  module load gcc/7.3.0 # Make C++ 14 standard library available to the Intel compiler
+  module load cmake/3.14.4
+  module load gcc/8.3.0 # Make C++ 14 standard library available to the Intel compiler
   cd $SCRATCH
   mkdir build_cori_knl
   cd build_cori_knl
-  cmake -DQMC_SYMLINK_TEST_FILES=0 $HOME/git_QMCPACK/qmcpack/
+  cmake -DQMC_SYMLINK_TEST_FILES=0 -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment $HOME/qmc/git_QMCPACK/qmcpack/
   nice make -j 8
   ls -l bin/qmcpack
 
-When the preceding was tested on May 16, 2019, the following module and
+When the preceding was tested on June 15, 2020, the following module and
 software versions were present:
 
 ::
 
   build_cori_knl> module list
     Currently Loaded Modulefiles:
-    1) modules/3.2.10.6                                  14) alps/6.6.43-6.0.7.1_5.45__ga796da32.ari
-    2) nsg/1.2.0                                         15) rca/2.2.18-6.0.7.1_5.47__g2aa4f39.ari
-    3) intel/18.0.1.163                                  16) atp/2.1.3
-    4) craype-network-aries                              17) PrgEnv-intel/6.0.4
-    5) craype/2.5.15                                     18) craype-mic-knl
-    6) udreg/2.3.2-6.0.7.1_5.13__g5196236.ari            19) cray-mpich/7.7.3
-    7) ugni/6.0.14.0-6.0.7.1_3.13__gea11d3d.ari          20) gcc/7.3.0
-    8) pmi/5.0.14                                        21) altd/2.0
-    9) dmapp/7.1.1-6.0.7.1_5.45__g5a674e0.ari            22) darshan/3.1.4
-    10) gni-headers/5.0.12.0-6.0.7.1_3.11__g3b1768f.ari  23) boost/1.70.0
-    11) xpmem/2.2.15-6.0.7.1_5.11__g7549d06.ari          24) cray-hdf5-parallel/1.10.2.0
-    12) job/2.2.3-6.0.7.1_5.43__g6c4e934.ari             25) cmake/3.14.0
-    13) dvs/2.7_2.2.118-6.0.7.1_10.1__g58b37a2
+    1) modules/3.2.11.4                                 13) xpmem/2.2.20-7.0.1.1_4.8__g0475745.ari
+    2) nsg/1.2.0                                        14) job/2.2.4-7.0.1.1_3.34__g36b56f4.ari
+    3) altd/2.0                                         15) dvs/2.12_2.2.156-7.0.1.1_8.6__g5aab709e
+    4) darshan/3.1.7                                    16) alps/6.6.57-7.0.1.1_5.10__g1b735148.ari
+    5) intel/19.0.3.199                                 17) rca/2.2.20-7.0.1.1_4.42__g8e3fb5b.ari
+    6) craype-network-aries                             18) atp/2.1.3
+    7) craype/2.6.2                                     19) PrgEnv-intel/6.0.5
+    8) udreg/2.3.2-7.0.1.1_3.29__g8175d3d.ari           20) craype-mic-knl
+    9) ugni/6.0.14.0-7.0.1.1_7.32__ge78e5b0.ari         21) cray-mpich/7.7.10
+   10) pmi/5.0.14                                       22) craype-hugepages2M
+   11) dmapp/7.1.1-7.0.1.1_4.43__g38cf134.ari           23) gcc/8.3.0
+   12) gni-headers/5.0.12.0-7.0.1.1_6.27__g3b1768f.ari  24) cmake/3.14.4
 
 Installing on systems with ARMv8-based processors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -988,7 +986,7 @@ Then using the following command:
       ..
   make -j 56
 
-Note that armclang is recognized as an `unknown' compiler by CMake v3.13* and below. In this case, we need to force it as clang to apply necessary flags. To do so, pass the following additionals option to CMake:
+Note that armclang is recognized as an 'unknown' compiler by CMake v3.13* and below. In this case, we need to force it as clang to apply necessary flags. To do so, pass the following additionals option to CMake:
 
 ::
 
@@ -1574,7 +1572,7 @@ The output should look similar to the following:
 Individual unit test executables can be found in ``build/tests/bin``.
 The source for the unit tests is located in the ``tests`` directory under each directory in ``src`` (e.g. ``src/QMCWavefunctions/tests``).
 
-See :ref:`unit_testing` for more details about unit tests.
+See :ref:`unit-testing` for more details about unit tests.
 
 .. _integtestqe:
 
@@ -1597,7 +1595,7 @@ You can test the whole ``pw > pw2qmcpack > qmcpack`` workflow by
 This provides a very solid test of the entire QMC
 toolchain for plane wave--generated wavefunctions.
 
-.. _perftests
+.. _perftests:
 
 Performance tests
 ~~~~~~~~~~~~~~~~~
@@ -1713,8 +1711,8 @@ atomic orbitals to be recomputed via a numerical density functional
 calculation if they need to be reconstructed for use in an
 electronic structure calculation.
 
-.. _fig2
-.. figure:: QMCPACK_CDash_CTest_Results_20160129.png
+.. _fig2:
+.. figure:: /figs/QMCPACK_CDash_CTest_Results_20160129.png
   :width: 80%
   :align: center
 

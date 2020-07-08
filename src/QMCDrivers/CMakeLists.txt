@@ -31,9 +31,13 @@ SET(QMCDRIVERS
   QMCDriverInput.cpp
   QMCDriverNew.cpp
   WFOpt/QMCOptimize.cpp
+  WFOpt/QMCOptimizeBatched.cpp
+  WFOpt/QMCWFOptFactoryNew.cpp
   WFOpt/QMCLinearOptimize.cpp
+  WFOpt/QMCLinearOptimizeBatched.cpp
   WFOpt/QMCCorrelatedSamplingLinearOptimize.cpp
   WFOpt/QMCFixedSampleLinearOptimize.cpp
+  WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
   Optimizers/DescentEngine.cpp
   Optimizers/HybridEngine.cpp
   WFOpt/QMCCostFunctionBase.cpp
@@ -111,8 +115,13 @@ SET(QMCDRIVERS ${QMCDRIVERS}
 ####################################
 # create libqmcdriver
 ####################################
-ADD_LIBRARY(qmcdriver ${QMCDRIVERS})
-ADD_LIBRARY(qmcdriver_unit ${QMCDRIVERS})
+IF(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmcdriver OBJECT ${QMCDRIVERS})
+  ADD_LIBRARY(qmcdriver_unit OBJECT ${QMCDRIVERS})
+ELSE()
+  ADD_LIBRARY(qmcdriver ${QMCDRIVERS})
+  ADD_LIBRARY(qmcdriver_unit ${QMCDRIVERS})
+ENDIF()
 USE_FAKE_RNG(qmcdriver_unit)
 
 TARGET_LINK_LIBRARIES(qmcdriver PUBLIC qmcham)

@@ -473,49 +473,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   if (firstIndex == lastIndex)
     return true;
 
-  DiracDeterminantBase* adet = 0;
-
-  //TODO: the switch logic should be improved as we refine the input tags.
-#if defined(QMC_CUDA)
-  adet = new DiracDeterminantCUDA(psi, firstIndex);
-#else
-  if (UseBackflow)
-    adet = new DiracDeterminantWithBackflow(targetPtcl, psi, BFTrans, firstIndex);
-  else
-  {
-    if (use_batch == "yes")
-    {
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-      if (useGPU == "yes")
-      {
-        app_log() << "  Using DiracDeterminantBatched with MatrixUpdateCUDA engine" << std::endl;
-        adet = new DiracDeterminantBatched<MatrixUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
-      }
-      else
-#endif
-      {
-        app_log() << "  Using DiracDeterminantBatched with MatrixUpdateOMP engine" << std::endl;
-        adet = new DiracDeterminantBatched<>(psi, firstIndex);
-      }
-    }
-    else
-    {
-#if defined(ENABLE_CUDA)
-      if (useGPU == "yes")
-      {
-        app_log() << "  Using DiracDeterminant with DelayedUpdateCUDA engine" << std::endl;
-        adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
-      }
-      else
-#endif
-      {
-        app_log() << "  Using DiracDeterminant with DelayedUpdate engine" << std::endl;
-        adet = new DiracDeterminant<>(psi, firstIndex);
-      }
-    }
-  }
-#endif
-
   if (delay_rank < 0 || delay_rank > lastIndex - firstIndex)
   {
     std::ostringstream err_msg;
@@ -537,7 +494,51 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   if (delay_rank > 1)
     app_log() << "  Using rank-" << delay_rank << " delayed update" << std::endl;
   else
-    app_log() << "  Using rank-1 Sherman-Morrison Fahy update" << std::endl;
+    app_log() << "  Using rank-1 Sherman-Morrison Fahy update (SM1)" << std::endl;
+
+  DiracDeterminantBase* adet = 0;
+
+  //TODO: the switch logic should be improved as we refine the input tags.
+#if defined(QMC_CUDA)
+  adet = new DiracDeterminantCUDA(psi, firstIndex);
+#else
+  if (UseBackflow)
+    adet = new DiracDeterminantWithBackflow(targetPtcl, psi, BFTrans, firstIndex);
+  else
+  {
+    if (use_batch == "yes")
+    {
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+      if (useGPU == "yes")
+      {
+        app_log() << "  Using DiracDeterminantBatched with MatrixDelayedUpdateCUDA engine" << std::endl;
+        adet = new DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
+      }
+      else
+#endif
+      {
+        app_log() << "  Using DiracDeterminantBatched with MatrixUpdateOMP engine. Only SM1 updates are supported." << std::endl;
+        adet = new DiracDeterminantBatched<>(psi, firstIndex);
+      }
+    }
+    else
+    {
+#if defined(ENABLE_CUDA)
+      if (useGPU == "yes")
+      {
+        app_log() << "  Using DiracDeterminant with DelayedUpdateCUDA engine" << std::endl;
+        adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
+      }
+      else
+#endif
+      {
+        app_log() << "  Using DiracDeterminant with DelayedUpdate engine" << std::endl;
+        adet = new DiracDeterminant<>(psi, firstIndex);
+      }
+    }
+  }
+#endif
+
   adet->set(firstIndex, lastIndex - firstIndex, delay_rank);
 #ifdef QMC_CUDA
   targetPsi.setndelay(delay_rank);

@@ -19,10 +19,9 @@
  */
 
 #include "DiracDeterminantCUDA.h"
-#include "Numerics/CUDA/cuda_inverse.h"
-#include "QMCWaveFunctions/Fermion/determinant_update.h"
-#include "QMCWaveFunctions/Fermion/delayed_update.h"
-#include "Numerics/CUDA/cuda_inverse.h"
+#include "CUDA_legacy/cuda_inverse.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/determinant_update.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/delayed_update.h"
 #include "Numerics/DeterminantOperators.h"
 #include <unistd.h>
 

@@ -69,7 +69,7 @@ class Observable: public boost::variant<dummy::dummy_obs,full1rdm,diagonal2rdm,
                                         atomcentered_correlators,
                                         generalizedFockMatrix,
                                         n2r<shared_allocator<ComplexType>> 
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
                                         ,n2r<device_allocator<ComplexType>> 
 #endif
                                         > 
@@ -102,7 +102,7 @@ class Observable: public boost::variant<dummy::dummy_obs,full1rdm,diagonal2rdm,
     explicit Observable(n2r<shared_allocator<ComplexType>> && other) : variant(std::move(other)) {}
     explicit Observable(n2r<shared_allocator<ComplexType>> const& other) = delete;
 
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     explicit Observable(n2r<device_allocator<ComplexType>> && other) : variant(std::move(other)) {}
     explicit Observable(n2r<device_allocator<ComplexType>> const& other) = delete;
 #endif

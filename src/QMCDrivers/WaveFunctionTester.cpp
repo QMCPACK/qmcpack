@@ -29,7 +29,6 @@
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/SymmetryOperations.h"
-#include "Numerics/Blasf.h"
 #include <sstream>
 
 namespace qmcplusplus

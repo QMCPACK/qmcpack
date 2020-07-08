@@ -86,7 +86,7 @@ void test_basic_walker_features(bool serial)
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   arch::INIT(node);
 #endif
 
@@ -217,7 +217,7 @@ void test_hyperslab()
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
 
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   arch::INIT(node);
 #endif
 
@@ -363,7 +363,7 @@ void test_walker_io()
 
   using Type = std::complex<double>;
 
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   arch::INIT(node);
 #endif
 

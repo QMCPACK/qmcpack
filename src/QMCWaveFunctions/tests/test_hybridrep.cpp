@@ -130,7 +130,11 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   REQUIRE(std::real(dpsiM[0][1][2]) == Approx(-0.6386129856));
   // lapl
   REQUIRE(std::real(d2psiM[0][0]) == Approx(-4.1090884209));
+#if defined(MIXED_PRECISION) 
+  REQUIRE(std::real(d2psiM[0][1]) == Approx(22.3851032257).epsilon(3e-5));
+#else
   REQUIRE(std::real(d2psiM[0][1]) == Approx(22.3851032257));
+#endif
 
   // electron 1
   // value
@@ -233,6 +237,13 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 
   ions_.update();
   elec_.update();
+
+  ParticleSet::RealType r;
+  ParticleSet::PosType dr;
+  elec_.getDistTable(0).get_first_neighbor(0, r, dr, false);
+  std::cout << std::setprecision(14) << "check r^2 against dr^2. "
+            << "r = " << r << " dr = " << dr << std::endl;
+  REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon());
 
   // for vgl
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());

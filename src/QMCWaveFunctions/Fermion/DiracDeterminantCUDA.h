@@ -23,8 +23,7 @@
 #include <typeinfo>
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "QMCWaveFunctions/Fermion/determinant_update.h"
-#include "Numerics/CUDA/cuda_inverse.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/determinant_update.h"
 #include "Utilities/NewTimer.h"
 
 namespace qmcplusplus

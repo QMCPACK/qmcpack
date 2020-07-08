@@ -20,7 +20,7 @@
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include <mpi/collectives.h>
-#include <simd/simd.hpp>
+#include <CPU/SIMD/simd.hpp>
 
 namespace qmcplusplus
 {
@@ -356,7 +356,6 @@ inline void fix_phase_rotate(const Array<std::complex<T>, 3>& e2pi,
 {
   T rNorm = 0.0, iNorm = 0.0, riNorm = 0.0;
 
-  //defined in simd/inner_product.hpp
   simd::accumulate_phases(e2pi.size(), e2pi.data(), in.data(), rNorm, iNorm, riNorm);
 
   T x   = (rNorm - iNorm) / riNorm;

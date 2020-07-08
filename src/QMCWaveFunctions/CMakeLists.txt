@@ -39,7 +39,6 @@ SET(WFBASE_SRCS
 IF(NOT QMC_COMPLEX)
   SET(WFBASE_SRCS ${WFBASE_SRCS}
     RotatedSPOs.cpp
-    FDLRWfn.cpp
     )
 ENDIF(NOT QMC_COMPLEX)
 
@@ -97,23 +96,23 @@ IF(OHMMS_DIM MATCHES 3)
 
   IF(QMC_CUDA)
     SET(WFSSRCS_CUDA
-      Fermion/determinant_update.cu
-      Fermion/delayed_update.cu
+      detail/CUDA_legacy/determinant_update.cu
+      detail/CUDA_legacy/delayed_update.cu
       Fermion/DiracDeterminantCUDA.cpp
       Fermion/SlaterDetCUDA.cpp
       TrialWaveFunction_CUDA.cpp
       )
     SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
-      Jastrow/BsplineJastrowCuda.cu
-      Jastrow/BsplineJastrowCudaPBC.cu
+      detail/CUDA_legacy/BsplineJastrowCuda.cu
+      detail/CUDA_legacy/BsplineJastrowCudaPBC.cu
       Jastrow/OneBodyJastrowOrbitalBspline.cpp
       Jastrow/TwoBodyJastrowOrbitalBspline.cpp
       )
     IF(HAVE_EINSPLINE)
       SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
         EinsplineSetCuda.cpp
-        PhaseFactors.cu
-        AtomicOrbitalCuda.cu
+        detail/CUDA_legacy/PhaseFactors.cu
+        detail/CUDA_legacy/AtomicOrbitalCuda.cu
         )
     ENDIF(HAVE_EINSPLINE)
   ENDIF(QMC_CUDA)
@@ -199,8 +198,8 @@ SET(FERMION_SRCS ${FERMION_SRCS}
 
 IF(ENABLE_CUDA)
   SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
-      Fermion/delayed_update_helper.cu
-      Fermion/matrix_update_helper.cu
+      detail/CUDA/delayed_update_helper.cu
+      detail/CUDA/matrix_update_helper.cu
       )
 ENDIF(ENABLE_CUDA)
 
@@ -215,9 +214,10 @@ ENDIF(USE_OBJECT_TARGET)
 
 IF(QMC_CUDA OR ENABLE_CUDA)
   CUDA_ADD_LIBRARY(qmcwfs_cuda ${WFSSRCS_CUDA})
-  CUDA_ADD_CUBLAS_TO_TARGET(qmcwfs_cuda)
-  TARGET_LINK_LIBRARIES(qmcwfs_cuda PUBLIC qmcparticle)
-  TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_cuda ${CUDA_cusolver_LIBRARY})
+  IF(QMC_CUDA)
+    TARGET_LINK_LIBRARIES(qmcwfs_cuda PUBLIC qmcparticle platform_device)
+  ENDIF()
+  TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_cuda)
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
 TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcparticle platform_device)

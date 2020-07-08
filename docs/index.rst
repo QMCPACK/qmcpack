@@ -4,12 +4,13 @@
    contain the root `toctree` directive.
 
 
+User's Guide and Developer's Manual
+===================================
 
-User's Guide and Developer's Manual for
-=======================================
-.. image:: QMCPACK_logo.png
+.. image:: /figs/QMCPACK_logo.png
  :width: 80.0%
  :target: https://qmcpack.org/
+
 
 .. toctree::
    :maxdepth: 2
@@ -23,7 +24,26 @@ User's Guide and Developer's Manual for
    input_overview
    simulationcell
    intro_wavefunction
-
+   hamiltonianobservable
+   methods
+   output_overview
+   analyzing
+   LCAO
+   sCI
+   afqmc
+   examples
+   lab_qmc_statistics
+   lab_qmc_basics
+   lab_advanced_molecules
+   lab_condensed_matter
+   lab_excited
+   additional_tools
+   external_tools
+   contributing
+   unit_testing
+   design_features
+   developing
+   appendices
 
 
 ::

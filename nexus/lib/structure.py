@@ -3382,7 +3382,7 @@ class Structure(Sobj):
         #end if
         matrix_tiling = abs(tilemat-diag(diag(tilemat))).sum()>0.1
         if not matrix_tiling:
-            return self.tile_points_simple(points,axes,diag(tilemat))
+            return self.tile_points_simple(points,axes,diag(abs(tilemat)))
         else:
             if not isinstance(axes,ndarray):
                 axes = array(axes)
@@ -3444,6 +3444,9 @@ class Structure(Sobj):
             t = array(ceil(t),dtype=int)+1
         else:
             t = ti
+        #end if
+        if t.min()<0:
+            self.error('tiling vector cannot be negative\ntiling vector provided: {}'.format(t))
         #end if
         ntpoints = npoints*int(round( t.prod() ))
         if ntpoints==0:
@@ -3740,12 +3743,35 @@ class Structure(Sobj):
     #end def clear_kpoints
 
 
-    def add_kmesh(self,kgrid,kshift=None,unique=False):
+    def kgrid_from_kspacing(self,kspacing):
+        kgrid = []
+        for ka in self.kaxes:
+            km = np.linalg.norm(ka)
+            kg = int(np.ceil(km/kspacing))
+            kgrid.append(kg)
+        #end for
+        return tuple(kgrid)
+    #end def kgrid_from_kspacing
+
+
+    def add_kmesh(self,kgrid=None,kshift=None,unique=False,kspacing=None):
+        if kspacing is not None:
+            kgrid = self.kgrid_from_kspacing(kspacing)
+        elif kgrid is None:
+            self.error('kgrid input is required by add_kmesh')
+        #end if
         self.add_kpoints(kmesh(self.kaxes,kgrid,kshift),unique=unique)
     #end def add_kmesh
 
 
-    def add_symmetrized_kmesh(self,kgrid,kshift=(0,0,0)):
+    def add_symmetrized_kmesh(self,kgrid=None,kshift=(0,0,0),kspacing=None):
+        # find kgrid from kspacing, if requested
+        if kspacing is not None:
+            kgrid = self.kgrid_from_kspacing(kspacing)
+        elif kgrid is None:
+            self.error('kgrid input is required by add_kmesh')
+        #end if
+
         # get spglib cell data structure
         cell = self.spglib_cell()
 
@@ -6718,7 +6744,7 @@ def generate_crystal_structure(
             if not symm_kgrid:
                 s.add_kmesh(kgrid,kshift)
             else:
-                self.add_symmetrized_kmesh(kgrid,kshift)
+                s.add_symmetrized_kmesh(kgrid,kshift)
             #end if
         #end if
     #end if

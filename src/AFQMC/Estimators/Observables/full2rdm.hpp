@@ -306,7 +306,7 @@ class full2rdm: public AFQMCInfo
     StaticMatrix Gt( {NMO,NMO},
                 device_buffer_generator->template get_allocator<ComplexType>());
     CMatrix_ref GtC( Gt.origin() , {NMO*NMO,1});
-#if ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     if(Grot.size() < R.num_elements()) 
       Grot = std::move(stdCVector(iextensions<1u>(R.num_elements())));
 #endif
@@ -327,7 +327,7 @@ class full2rdm: public AFQMCInfo
 
         //  (a,a,a,a)
         ma::product( Gup.sliced(i0,iN), ma::T(Gup), R );
-#if ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
         using std::copy_n;
         copy_n(R.origin(),R.num_elements(),Grot.origin());
         ma::axpy( Xw[iw], Grot, 
@@ -343,7 +343,7 @@ class full2rdm: public AFQMCInfo
         for(int i=0; i<NMO; ++i) {
           ma::product( ComplexType(-1.0), GtC, G[iw][0].sliced(i,i+1), 
                        ComplexType(0.0), Q );
-#if ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
           using std::copy_n;
           copy_n(Q.origin(),Q.num_elements(),Grot.origin());
           ma::axpy( Xw[iw], Grot.sliced(0,Q.num_elements()), 
@@ -356,7 +356,7 @@ class full2rdm: public AFQMCInfo
 
         //  (a,a,b,b)
         ma::product( Gup.sliced(i0,iN), ma::T(Gdn), R );
-#if ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
         using std::copy_n;
         copy_n(R.origin(),R.num_elements(),Grot.origin());
         ma::axpy( Xw[iw], Grot, 
@@ -368,7 +368,7 @@ class full2rdm: public AFQMCInfo
 
         //  (b,b,b,b)
         ma::product( Gdn.sliced(i0,iN), ma::T(Gdn), R );
-#if ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
         using std::copy_n;
         copy_n(R.origin(),R.num_elements(),Grot.origin());
         ma::axpy( Xw[iw], Grot, 
@@ -384,7 +384,7 @@ class full2rdm: public AFQMCInfo
         for(int i=0; i<NMO; ++i) {
           ma::product( ComplexType(-1.0),  GtC, G[iw][1].sliced(i,i+1), 
                        ComplexType(0.0), Q );
-#if ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
           using std::copy_n;
           copy_n(Q.origin(),Q.num_elements(),Grot.origin());
           ma::axpy( Xw[iw], Grot.sliced(0,Q.num_elements()),

@@ -17,8 +17,8 @@
 #include "TwoBodyJastrowOrbitalBspline.h"
 #include "CudaSpline.h"
 #include "Lattice/ParticleBConds.h"
-#include "QMCWaveFunctions/Jastrow/BsplineJastrowCuda.h"
-#include "QMCWaveFunctions/Jastrow/BsplineJastrowCudaPBC.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/BsplineJastrowCuda.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/BsplineJastrowCudaPBC.h"
 #include <unistd.h>
 
 

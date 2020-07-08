@@ -20,6 +20,8 @@
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
   ${qmcpack_BINARY_DIR}/src/config.h)
 
+INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
+
 SET(GITREV_BARE_FILE git-rev.h)
 SET(GITREV_BARE_TMP git-rev-tmp.h)
 SET(GITREV_FILE ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_FILE})
@@ -135,7 +137,6 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
     OhmmsData/Libxml2Doc.cpp
     OhmmsApp/ProjectData.cpp
     OhmmsApp/RandomNumberControl.cpp
-    Numerics/OhmmsBlas.cpp
     Numerics/OptimizableFunctorBase.cpp
     Numerics/SmoothFunctions.cpp
     QMCFactory/OneDimGridFactory.cpp
@@ -148,26 +149,12 @@ IF (IS_GIT_PROJECT)
   SET(UTILITIES "${UTILITIES};${GITREV_TMP}")
 ENDIF()
 
-  IF(QMC_CUDA)
-    SET(UTILITIES ${UTILITIES}
-      Numerics/CUDA/cuda_inverse.cu
-      CUDA/gpu_vector.cpp
-      CUDA/gpu_misc.cpp
-      Particle/accept_kernel.cu)
-  ENDIF(QMC_CUDA)
-
-  IF(QMC_CUDA)
-    CUDA_ADD_LIBRARY(qmcutil ${UTILITIES})
-    CUDA_ADD_CUBLAS_TO_TARGET(qmcutil)
-  ELSE(QMC_CUDA)
-    ADD_LIBRARY(qmcutil ${UTILITIES})
-  ENDIF(QMC_CUDA)
-
-  IF(HAVE_CUDA)
-    TARGET_LINK_LIBRARIES(qmcutil PRIVATE ${CUDA_LIBRARIES})
-  ENDIF(HAVE_CUDA)
-
-  TARGET_LINK_LIBRARIES(qmcutil PUBLIC message)
+IF(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmcutil OBJECT ${UTILITIES})
+ELSE(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmcutil ${UTILITIES})
+ENDIF(USE_OBJECT_TARGET)
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC message containers)
   TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 IO::HDF5 Boost::boost ${QMC_UTIL_LIBS})
 
   # For unit tests, enable use for the fake RNG
@@ -183,7 +170,7 @@ ENDIF()
   ADD_LIBRARY(qmcfakerng ${UNIT_TEST_UTILITIES})
 
   SUBDIRS(einspline)
-  SUBDIRS(MinimalContainers)
+  SUBDIRS(Containers)
   SUBDIRS(Message)
   SUBDIRS(Platforms)
   SUBDIRS(Particle)
@@ -220,10 +207,6 @@ else() #{{{
 
   IF (BUILD_UNIT_TESTS) #{
     #Unit test directories
-    INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
-    INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
-    SUBDIRS(OhmmsPETE/tests)
-    SUBDIRS(OhmmsSoA/tests)
     SUBDIRS(Numerics/tests)
     SUBDIRS(Utilities/tests)
     SUBDIRS(einspline/tests)
@@ -238,9 +221,7 @@ else() #{{{
     SUBDIRS(QMCDrivers/tests)
     SUBDIRS(QMCApp/tests)
     SUBDIRS(Message/tests)
-    SUBDIRS(CUDA/tests)
     SUBDIRS(Optimize/tests)
-    SUBDIRS(MinimalContainers/tests)
     SUBDIRS(QMCTools/tests)
   ENDIF() #}
 

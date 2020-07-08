@@ -20,7 +20,7 @@
 
 #include "QMCWaveFunctions/PlaneWave/PWBasis.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
 {

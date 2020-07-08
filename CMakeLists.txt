@@ -187,11 +187,17 @@ SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
 SET(QMC_COMPLEX 0 CACHE BOOL "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
-SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
-SET(ENABLE_CUDA 0 CACHE BOOL "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)")
 SET(ENABLE_SOA 1 CACHE BOOL "Enable/disable SoA optimization")
+SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
+OPTION(ENABLE_CUDA "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)" OFF)
+OPTION(ENABLE_HIP "Build with with GPU support through HIP" OFF)
+OPTION(ENABLE_ROCM "Build with with GPU support through ROCM" OFF)
 OPTION(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
-CMAKE_DEPENDENT_OPTION(USE_OBJECT_TARGET "USE CMake object target" OFF "ENABLE_OFFLOAD" OFF)
+# Use CMake object library targets to workaround clang linker not being able to handle fat
+# binary archives which contain both host and device codes, for example OpenMP offload regions.
+# CMake does not propagate indirect object files by design.
+# So the dependency must be explicitly specified with USE_OBJECT_TARGET.
+CMAKE_DEPENDENT_OPTION(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 
 IF(ENABLE_CUDA AND QMC_CUDA)
   MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
@@ -320,9 +326,14 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #------------------------
   # On Cray's machine
   #------------------------
-  IF($ENV{CRAYPE_VERSION} MATCHES ".")
+  GET_FILENAME_COMPONENT(BASE_CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
+  IF($ENV{CRAYPE_VERSION} MATCHES "." AND NOT BASE_CXX_COMPILER_NAME STREQUAL "CC")
+    MESSAGE(WARNING "Cray Programming Environment has been detected but C++ compiler wrapper CC is not used! "
+                    "Please use cc/CC as the C/C++ compiler to ensure correct cross-compiling for the compute nodes "
+                    "unless you understand cross-compiling and intend not to use Cray compiler wrappers.")
+  ENDIF()
+  IF(CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     MESSAGE(STATUS "Running on a Cray machine.")
-    SET(CMAKE_SKIP_RPATH TRUE)
 
     IF(NOT $ENV{CRAYPE_LINK_TYPE} STREQUAL "dynamic")
       MESSAGE(WARNING "Cray Programming Environment uses static linking by default. "
@@ -337,28 +348,11 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
         FIND_PROGRAM(MPIEXEC_EXECUTABLE srun)
       ENDIF(NOT MPIEXEC_EXECUTABLE)
     ENDIF()
-
-    IF(QMC_CUDA)
-      IF(QMC_BUILD_STATIC)
-        MESSAGE(FATAL_ERROR "Static linking is not supported with CUDA build. Set QMC_BUILD_STATIC=0 (default)!")
-      ENDIF(QMC_BUILD_STATIC)
-      MESSAGE(STATUS "Building GPU code. Linking dynamically.")
-    ELSE(QMC_CUDA)
-      IF(QMC_BUILD_STATIC)
-        MESSAGE(STATUS "Building CPU code. Linking statically.")
-        SET(BUILD_SHARED_LIBS off)
-        SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
-        FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
-          SET(CMAKE_${type}_LINK_STATIC_C_FLAGS "-Wl,-Bstatic")
-          SET(CMAKE_${type}_LINK_DYNAMIC_C_FLAGS "-static")
-          SET(CMAKE_${type}_LINK_STATIC_CXX_FLAGS "-Wl,-Bstatic")
-          SET(CMAKE_${type}_LINK_DYNAMIC_CXX_FLAGS "-static")
-        ENDFOREACH(type)
-      ELSE(QMC_BUILD_STATIC)
-        MESSAGE(STATUS "Building CPU code. Linking dynamically.")
-      ENDIF(QMC_BUILD_STATIC)
-    ENDIF(QMC_CUDA)
-  ENDIF($ENV{CRAYPE_VERSION} MATCHES ".")
+  ELSE()
+    IF($ENV{CRAYPE_VERSION} MATCHES "." AND BASE_CXX_COMPILER_NAME STREQUAL "CC")
+      MESSAGE(FATAL_ERROR "Cray compiler wrapper detected. Empty the build folder and rerun cmake with -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment added.")
+    ENDIF()
+  ENDIF()
 
   #--------------------------------
   #  C++ 14 is the minimum standard
@@ -437,7 +431,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ENDIF(ENABLE_MKL)
   IF ( HAVE_MKL )
     # Skip adding Math::BLAS_LAPACK target which has been imported by FindMKL.
-  ELSEIF ( $ENV{CRAYPE_VERSION} MATCHES "." )
+  ELSEIF (CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     # Cray specific environment variable indicates we are on a cray. Assume libsci will be linked
     # preferable to attempt a compile/link
     MESSAGE(STATUS "Assuming Cray libsci or other BLAS/LAPACK will be linked by compiler wrappers")
@@ -482,7 +476,9 @@ IF(QMC_MPI)
     SET(MPIEXEC_EXECUTABLE ${MPIEXEC})
   ENDIF(DEFINED MPIEXEC AND NOT DEFINED MPIEXEC_EXECUTABLE)
   SET(MPI_CXX_SKIP_MPICXX TRUE)
-  SET(MPI_DETERMINE_LIBRARY_VERSION TRUE)
+  IF(NOT CMAKE_CROSSCOMPILING)
+    SET(MPI_DETERMINE_LIBRARY_VERSION TRUE)
+  ENDIF()
   FIND_PACKAGE(MPI COMPONENTS CXX)
 
   IF(NOT MPI_FOUND)
@@ -552,10 +548,10 @@ IF(ENABLE_MASS)
   INCLUDE(CMake/FindIBMMASS.cmake)
 ENDIF(ENABLE_MASS)
 
-IF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
+IF(NOT MASS_FOUND AND NOT HAVE_MKL_VML)
   MESSAGE(STATUS "No usable vector math library detected.")
   ADD_LIBRARY(Math::scalar_vector_functions INTERFACE IMPORTED)
-ENDIF(NOT HAVE_MASS AND NOT HAVE_MKL_VML)
+ENDIF(NOT MASS_FOUND AND NOT HAVE_MKL_VML)
 
 # CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
 IF(NOT SINCOS_INCLUDE)
@@ -690,11 +686,9 @@ ENDIF()
 #-------------------------------------------------------------------
 SET(HAVE_CUDA 0)
 IF(QMC_CUDA OR ENABLE_CUDA)
-  IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    SET(CUDA_PROPAGATE_HOST_FLAGS ON)
-  ELSE(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
-  ENDIF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  # FindCUDA default CUDA_PROPAGATE_HOST_FLAGS to ON but we prefer OFF
+  # It happened -ffast-math from host caused numerical issue in CUDA kernels.
+  OPTION(CUDA_PROPAGATE_HOST_FLAGS "Propagate C/CXX_FLAGS and friends to the host compiler via -Xcompile" OFF)
   FIND_PACKAGE(CUDA REQUIRED)
   SET(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
   #set(CUDA_NVCC_FLAGS
@@ -715,7 +709,7 @@ IF(QMC_CUDA OR ENABLE_CUDA)
       # SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3;-use_fast_math")
       SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3")
     ENDIF()
-    SET( CUDA_ARCH sm_35 CACHE STRING "CUDA architecture sm_XX")
+    SET( CUDA_ARCH sm_70 CACHE STRING "CUDA architecture sm_XX")
     SET(CUDA_NVCC_FLAGS "-arch=${CUDA_ARCH};${CUDA_NVCC_FLAGS}")
   endif(CUDA_NVCC_FLAGS MATCHES "arch")
   INCLUDE_DIRECTORIES(${CUDA_INCLUDE_DIRS})
@@ -739,6 +733,34 @@ IF(USE_NVTX_API)
     LINK_LIBRARIES(${NVTX_API_LIB})
   ENDIF(HAVE_CUDA)
 ENDIF(USE_NVTX_API)
+
+#-------------------------------------------------------------------
+#  set up ROCM compiler options and libraries
+#-------------------------------------------------------------------
+IF(ENABLE_ROCM)
+  MESSAGE(STATUS "ROCM_ROOT: ${ROCM_ROOT}")
+  ADD_LIBRARY(ROCM::libraries INTERFACE IMPORTED)
+  # temporarily put rocsolver rocrand here for convenience, should be moved to Platforms.
+  SET_TARGET_PROPERTIES(ROCM::libraries PROPERTIES INTERFACE_INCLUDE_DIRECTORIES  "${ROCM_ROOT}/include"
+                                                   INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lrocsolver;-lrocrand")
+ENDIF(ENABLE_ROCM)
+
+#-------------------------------------------------------------------
+#  set up HIP compiler options
+#-------------------------------------------------------------------
+IF(ENABLE_HIP)
+  IF(NOT ENABLE_ROCM)
+    MESSAGE(FATAL_ERROR "ROCM is required to use HIP. Please set ENABLE_ROCM=ON.")
+  ENDIF()
+  SET(CMAKE_MODULE_PATH "${ROCM_ROOT}/hip/cmake" ${CMAKE_MODULE_PATH})
+  FIND_PACKAGE(HIP REQUIRED)
+
+  ADD_LIBRARY(HIP::HIP INTERFACE IMPORTED)
+  # temporarily put hipsparse hipblas here for convenience, should be moved to Platforms.
+  SET_TARGET_PROPERTIES(HIP::HIP PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${ROCM_ROOT}/include"
+                                            INTERFACE_COMPILE_DEFINITIONS "ENABLE_HIP;__HIP_PLATFORM_HCC__"
+                                            INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lhip_hcc")
+ENDIF(ENABLE_HIP)
 
 ######################################################
 # Add optional macros

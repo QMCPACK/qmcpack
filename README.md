@@ -24,17 +24,17 @@ performance and easiest configuration.
 Nightly testing currently includes the following software versions on x86:
 
 * Compilers
-  * GCC 9.2.0, 7.3.0
-  * Clang/LLVM 9.0.0, 5.0.1
-  * Intel 2019.1.0.166, 2019.0.5.281 configured to use C++ library from GCC 7.4.0 
+  * GCC 10.1.0, 7.3.0
+  * Clang/LLVM 10.0.0, 6.0.1
+  * Intel 19.1.1.217 configured to use C++ library from GCC 8.3.0 
   * PGI 19.4 configured to use C++ library from GCC 8.3.0
-* Boost 1.70.0, 1.65.1
+* Boost 1.73.0, 1.67.0
 * HDF5 1.10.5, 1.8.19
 * FFTW 3.3.8, 3.3.4
-* CMake 3.16.2, 3.10.2
+* CMake 3.17.1, 3.10.2
 * MPI
-  * OpenMPI 4.0.2, 3.10.2
-  * Intel MPI 2019.1.0.166, 2019.0.5.281
+  * OpenMPI 4.0.3, 3.0.1
+  * Intel MPI 19.1.1.217
 * CUDA 10.2.89
 
 # Building with CMake
@@ -123,6 +123,8 @@ make -j 8
                         Release (create a release/optimized build)
                         RelWithDebInfo (create a release/optimized build with debug info)
                         MinSizeRel (create an executable optimized for size)
+    CMAKE_SYSTEM_NAME   Set value to CrayLinuxEnvironment when cross-compiling
+                        in Cray Programming Environment.
     CMAKE_C_FLAGS       Set the C flags.  Note: to prevent default debug/release flags
                         from being used, set the CMAKE_BUILD_TYPE=None
                         Also supported: CMAKE_C_FLAGS_DEBUG, CMAKE_C_FLAGS_RELEASE,

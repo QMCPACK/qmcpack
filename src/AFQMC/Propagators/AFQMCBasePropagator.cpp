@@ -7,7 +7,10 @@
 #include "AFQMC/Propagators/AFQMCBasePropagator.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
+// TODO: Remove this
+#if defined(ENABLE_CUDA)
 #include "AFQMC/Numerics/detail/CUDA/Kernels/construct_X.cuh"
+#endif
 
 namespace qmcplusplus 
 {
