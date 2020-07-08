@@ -141,6 +141,8 @@ public:
 
   void completeUpdates() override;
 
+  void cleanCompleteUpdates(ParticleSet& P) override;
+
   void mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list) override
   {
     for (int iw = 0; iw < WFC_list.size(); iw++)

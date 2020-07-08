@@ -617,7 +617,7 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
           ParticleSet& this_pset      = recv_message_list[im].walker_elements.pset;
           this_pset.loadWalker(this_walker, true);
           TrialWaveFunction& this_twf = recv_message_list[im].walker_elements.twf;
-          this_twf.copyFromBuffer(this_pset, this_walker.DataSet);
+          this_twf.copyFromBuffer(this_pset, this_walker.DataSet);          
           this_twf.evaluateLog(this_pset);
           this_twf.updateBuffer(this_pset, this_walker.DataSet);
           recv_completed[im] = 1;

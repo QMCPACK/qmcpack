@@ -127,7 +127,8 @@ public:
     {
       if (std::abs(*(invRow.data() + i)) < std::numeric_limits<QMCTraits::ValueType>::epsilon())
       {
-        throw std::runtime_error("invRow element strictly == 0, unlikely to occur in error");
+        std::cerr << "invRow element strictly == 0, unlikely to occur in error";
+        //throw std::runtime_error("invRow element strictly == 0, unlikely to occur in error");
       }
     }
 #endif

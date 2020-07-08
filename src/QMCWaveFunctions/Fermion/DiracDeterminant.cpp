@@ -93,6 +93,7 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad(ParticleSet& P, int iat)
 {
+  UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
   invRow_id              = WorkingIndex;
@@ -266,7 +267,24 @@ void DiracDeterminant<DU_TYPE>::completeUpdates()
   UpdateTimer.start();
   // invRow becomes invalid after updating the inverse matrix
   invRow_id = -1;
+  updateEng.updateInvMat(psiM);   
+  UpdateTimer.stop();
+}
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::cleanCompleteUpdates(ParticleSet& P)
+{
+  UpdateTimer.start();
+  // invRow becomes invalid after updating the inverse matrix
+  invRow_id = -1;
   updateEng.updateInvMat(psiM);
+  for(int ip = 0; ip < NumPtcls; ++ip)
+  {
+    int working_index = ip - FirstIndex;
+    Phi->evaluateVGL(P, ip, psiV, dpsiV, d2psiV);
+    simd::copy(dpsiM[working_index], dpsiV.data(), NumOrbitals);
+  }
+    
   UpdateTimer.stop();
 }
 
@@ -648,7 +666,14 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
   else
   {
     invertPsiM(psiM_temp, psiM);
+    for(int ip = 0; ip < NumPtcls; ++ip)
+    {
+      int working_index = ip - FirstIndex;
+      Phi->evaluateVGL(P, ip, psiV, dpsiV, d2psiV);
+      simd::copy(dpsiM[working_index], dpsiV.data(), NumOrbitals);
+    }
   }
+  
 }
 
 template<typename DU_TYPE>

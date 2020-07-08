@@ -55,6 +55,31 @@ UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpo
   }
 }
 
+/** Getting the "fat" walker valid enough to be MPI swapable
+ *  
+ *  By no means is this "valid" from the perspective of running QMC
+ *  See QMCDriverNew::initialLogEvaluation
+ *  A fat walker does not seem to be "valid" until all that is done.
+ */
+void UnifiedDriverWalkerControlMPITest::makeValidWalkers()
+{
+  auto walker_elements = pop_->get_walker_elements();
+  
+  for( auto we : walker_elements)
+  {
+    we.pset.update();
+    if (we.walker.DataSet.size() <= 0)
+    {
+      we.walker.registerData();
+      we.twf.registerData(we.pset, we.walker.DataSet);
+      we.walker.DataSet.allocate();
+    }
+    we.twf.copyFromBuffer(we.pset, we.walker.DataSet);
+    we.twf.evaluateLog(we.pset);
+    we.twf.updateBuffer(we.pset, we.walker.DataSet);
+  }
+}
+
 void UnifiedDriverWalkerControlMPITest::testMultiplicity(std::vector<int>& rank_counts_expanded,
                                                          std::vector<int>& rank_counts_after)
 {
@@ -167,6 +192,7 @@ TEST_CASE("MPI WalkerControl multiplicity swap walkers", "[drivers][walker_contr
     outputManager.pause();
     testing::UnifiedDriverWalkerControlMPITest test;
     outputManager.resume();
+    test.makeValidWalkers();
     SECTION("Simple")
     {
       std::vector<int> count_before{1, 1, 1};
