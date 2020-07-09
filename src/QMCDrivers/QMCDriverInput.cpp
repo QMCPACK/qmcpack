@@ -21,19 +21,6 @@ namespace qmcplusplus
 {
 QMCDriverInput::QMCDriverInput(int qmc_section_count) : qmc_section_count_(qmc_section_count) {}
 
-void QMCDriverInput::checkNumCrowdsLTNumThreads(const int num_crowds)
-{
-  int num_threads(Concurrency::maxThreads<>());
-  if (num_crowds > num_threads)
-  {
-    std::stringstream error_msg;
-    error_msg << "Bad Input: num_crowds (" << num_crowds << ") > num_threads (" << num_threads
-              << ")\n";
-    throw std::runtime_error(error_msg.str());
-  }
-}
-
-
 /** Reads qmc section xml node parameters
  *
  * All shared parameters are read here
@@ -132,8 +119,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
 
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;
-
-  checkNumCrowdsLTNumThreads(num_crowds_);
 }
 
 } // namespace qmcplusplus

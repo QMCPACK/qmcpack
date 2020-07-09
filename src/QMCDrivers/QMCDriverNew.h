@@ -243,6 +243,7 @@ protected:
                                                                     RealType reserve_walkers,
                                                                     int num_crowds);
 
+  static void checkNumCrowdsLTNumThreads(const int num_crowds);
 
   /** The timers for the driver.
    *

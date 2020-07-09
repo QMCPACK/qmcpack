@@ -93,6 +93,18 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
   Psi1.push_back(psi);
 }
 
+void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
+{
+  int num_threads(Concurrency::maxThreads<>());
+  if (num_crowds > num_threads)
+  {
+    std::stringstream error_msg;
+    error_msg << "Bad Input: num_crowds (" << num_crowds << ") > num_threads (" << num_threads
+              << ")\n";
+    throw std::runtime_error(error_msg.str());
+  }
+}
+
 /** process a <qmc/> element
  * @param cur xmlNode with qmc tag
  *
@@ -475,6 +487,8 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
                                                                          RealType reserve_walkers,
                                                                          int num_crowds)
 {
+  checkNumCrowdsLTNumThreads(num_crowds);
+
   AdjustedWalkerCounts awc{required_total, {}, {}, reserve_walkers};
 
   if (required_total != 0)
