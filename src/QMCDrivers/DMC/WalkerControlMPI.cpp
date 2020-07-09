@@ -573,7 +573,6 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
       send_requests.emplace_back(myComm->comm.isend_n(message.walker_elements.walker.DataSet.data(),
                                                       message.walker_elements.walker.DataSet.size(),
                                                       message.target_rank));
-      //std::cout << "DataSet size: " << message.walker.DataSet.size() << '\n';
     });
   }
 
@@ -582,12 +581,10 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   if (recv_message_list.size() > 0)
   {
     std::for_each(recv_message_list.begin(), recv_message_list.end(), [&recv_requests, this](WalkerMessage& message) {
-      //MCPWalker& walker = message.walker;
       recv_requests.emplace_back(myComm->comm.ireceive_n(message.walker_elements.walker.DataSet.data(),
                                                          message.walker_elements.walker.DataSet.size(),
                                                          message.source_rank));
       size_t dsize = message.walker_elements.walker.DataSet.size();
-      std::cout << "DataSet size: " << dsize << '\n';
     });
   }
 
