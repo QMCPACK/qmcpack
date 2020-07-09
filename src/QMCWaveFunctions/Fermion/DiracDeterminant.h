@@ -180,7 +180,7 @@ public:
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
   /// return  for testing
-  auto& getPsiMinv() const { return psiM; }
+  ValueMatrix_t& getPsiMinv() override { return psiM; }
 
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   ValueMatrix_t psiM_temp;

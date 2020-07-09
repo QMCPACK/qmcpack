@@ -94,7 +94,6 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTyp
   //Causes implicit conversion to FullPrecRealType
   curData[LE_MAX + MyContext] = NumWalkers;
   //myTimers[DMC_MPI_imbalance]->start();
-  //myComm->barrier();
   //myTimers[DMC_MPI_imbalance]->stop();
   myTimers[DMC_MPI_allreduce]->start();
   myComm->allreduce(curData);

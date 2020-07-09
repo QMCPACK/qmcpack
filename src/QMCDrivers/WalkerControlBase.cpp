@@ -704,10 +704,6 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
     }
   }
 
-  // something goes wrong with the adjust state sequenece for a reused population in DMCbatch
-  // adjust.num_walkers == 0 regardless of how many are acutally good and havoc ensues.
-  // \todo why did this become a problem where should it be updated?
-  //       is this ever different from adjust.good_walkers.size()?
   adjust.num_walkers = adjust.good_walkers.size();
 
   updateCurDataWithCalcAdjust(curData, wac, adjust, pop);

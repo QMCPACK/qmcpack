@@ -393,10 +393,11 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   for (ParticleSet& pset : walker_elecs)
     pset.update();
 
-  // Unfortunately we reuse the DataSet over sections so this state manipulation is needed.
+  // We reuse the DataSet.
   auto cleanDataSet = [](MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& twf) {
     if (walker.DataSet.size())
     {
+      // These appear to be uneeded and harmful.
       //walker.DataSet.zero();
       //walker.DataSet.rewind();
     }
@@ -410,8 +411,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   for (int iw = 0; iw < crowd.size(); ++iw)
     cleanDataSet(walkers[iw], walker_elecs[iw], walker_twfs[iw]);
 
-  // this I'm sure causes a problem since perhaps the rewind shouldn't happen.
-  
+  //This idiom is just to avoid many .get() calls
   auto copyFrom = [](TrialWaveFunction& twf, ParticleSet& pset, WFBuffer& wfb) { twf.copyFromBuffer(pset, wfb); };
   for (int iw = 0; iw < crowd.size(); ++iw)
     copyFrom(walker_twfs[iw], walker_elecs[iw], mcp_buffers[iw]);
@@ -428,7 +428,8 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
 
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
       QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
-  // This is actually only a partial reset of the walkers properties
+
+  // \todo rename these are sets not resets.
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy) {
     walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
   };
@@ -544,14 +545,10 @@ void QMCDriverNew::endBlock()
     total_accept_ratio += crowd->get_accept_ratio() * crowd->get_estimator_manager_crowd().get_block_weight();
     cpu_block_time += crowd->get_estimator_manager_crowd().get_cpu_block_time();
   }
-  // Note: that this is already averaged in crowds and then summed weighted by the walkers
-  // in each crowd (which can be different) and then as a result the average is over
-  // local walkers
-  total_accept_ratio /= total_block_weight; //population_.get_num_local_walkers();
+  total_accept_ratio /= total_block_weight;
   estimator_manager_->collectScalarEstimators(all_scalar_estimators);
   cpu_block_time /= crowds_.size();
 
-  // TODO: should be accept rate for block
   estimator_manager_->stopBlockNew(total_accept_ratio, total_block_weight, cpu_block_time);
 }
 

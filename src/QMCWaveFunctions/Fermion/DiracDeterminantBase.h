@@ -63,6 +63,7 @@ public:
   inline int getFirstIndex() const { return FirstIndex; }
   inline int getLastIndex() const { return LastIndex; }
 
+  virtual ValueMatrix_t& getPsiMinv() { return dummy_vmt; }
   /** set the index of the first particle in the determinant and reset the size of the determinant
    *@param first index of first particle
    *@param nel number of particles in the determinant
@@ -186,6 +187,8 @@ protected:
   /// targetPtcl pointer. YE: to be removed.
   ParticleSet* targetPtcl;
 
+  ValueMatrix_t dummy_vmt;
+  
   /// register all the timers
   void registerTimers()
   {

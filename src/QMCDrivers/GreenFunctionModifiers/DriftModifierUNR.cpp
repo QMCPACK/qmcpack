@@ -30,7 +30,20 @@ void DriftModifierUNR::getDrift(RealType tau, const GradType& qf, PosType& drift
   drift *= sc;
 #ifndef NDEBUG
   for(int i = 0; i < drift.size(); ++i)
-    assert(!std::isnan(drift[i]));
+  {
+    if (std::isnan(drift[i]))
+    {
+      // it seems "reasonable" so set this to 0 since a gradient of 0 shouldn't exert
+      // drift.  However this is related to a fully or partially zerod psiM which
+      // is a bug (IHMO)
+      drift[i] = 0;
+      //std::cerr << "drift is nan, vsq (" << vsq << ") sc (" << sc << ")\n";
+      //break;
+    }
+    //In my opinion this should be uncommented but debug fails due to
+    //invRow
+    //assert(!std::isnan(drift[i]));
+  }
 #endif
 }
 

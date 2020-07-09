@@ -100,18 +100,6 @@ public:
     {
       // Ainv is fresh, directly access Ainv
       std::copy_n(Ainv[rowchanged], invRow.size(), invRow.data());
-#ifndef NDEBUG
-      for (int i = 0; i < invRow.size(); ++i)
-      {
-        if (std::abs(*(invRow.data() + i)) < std::numeric_limits<QMCTraits::ValueType>::epsilon())
-        {
-          std::cerr << "invRow element strictly == 0, unlikely to occur in error";
-          break;
-          //throw std::runtime_error("invRow element strictly == 0, unlikely to occur in error");
-        }
-      }
-#endif
-
       return;
     }
     const T cone(1);
@@ -124,17 +112,6 @@ public:
     BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, invRow.data(), 1, czero, p.data(), 1);
     BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
     BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, Binv[delay_count], 1, cone, invRow.data(), 1);
-#ifndef NDEBUG
-    for (int i = 0; i < invRow.size(); ++i)
-    {
-      if (std::abs(*(invRow.data() + i)) < std::numeric_limits<QMCTraits::ValueType>::epsilon())
-      {
-        std::cerr << "invRow element strictly == 0, unlikely to occur in error";
-        break;
-        //throw std::runtime_error("invRow element strictly == 0, unlikely to occur in error");
-      }
-    }
-#endif
   }
 
   /** accept a move with the update delayed
