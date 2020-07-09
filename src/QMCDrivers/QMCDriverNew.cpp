@@ -193,23 +193,6 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
     h5_file_root_ = h5name;
 }
 
-// void QMCDriverNew::set_num_crowds(int num_crowds, const std::string& reason)
-// {
-//   num_crowds_ = num_crowds;
-//   app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << num_crowds << '\n';
-//   app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_num_crowds() << " because " << reason
-//                 << std::endl;
-// }
-
-// void QMCDriverNew::set_walkers_per_rank(int walkers_per_rank, const std::string& reason)
-// {
-//   walkers_per_rank_ = walkers_per_rank;
-//   app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << walkers_per_rank << '\n';
-//   app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_walkers_per_rank() << " because "
-//                 << reason << std::endl;
-// }
-
-
 /** Read walker configurations from *.config.h5 files
  * @param wset list of xml elements containing mcwalkerset
  *
@@ -496,8 +479,7 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
     awc.walkers_per_rank = fairDivide(required_total, num_ranks);
     if (walkers_per_rank != 0)
     {
-      if (std::any_of(awc.walkers_per_rank.begin(), awc.walkers_per_rank.end(),
-                      [walkers_per_rank](IndexType num_walkers) { return num_walkers != walkers_per_rank; }))
+      if ((required_total / walkers_per_rank) * walkers_per_rank == required_total)
       {
         std::ostringstream error;
         error << "Running on " << num_ranks << " and the request of " << required_total << " walkers and "

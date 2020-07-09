@@ -180,7 +180,7 @@ public:
 
   std::string getEngineName() { return QMCType; }
   unsigned long getDriverMode() { return qmc_driver_mode_.to_ulong(); }
-  //IndexType get_walkers_per_crowd() const { return walkers_per_crowd_; }
+
   IndexType get_living_walkers() const { return population_.get_walkers().size(); }
 
   /** @ingroup Legacy interface to be dropped
@@ -285,8 +285,6 @@ protected:
   /// the number of blocks between recomptePsi
   IndexType nBlocksBetweenRecompute;
 
-  //IndexType walkers_per_rank_;
-  //IndexType walkers_per_crowd_;
   /**}@*/
 
   std::vector<std::unique_ptr<Crowd>> crowds_;
@@ -408,7 +406,6 @@ public:
                         RealType reserve,
                         const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
 
-  // void set_walkers_per_rank(int walkers_per_rank, const std::string& reason);
   DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
 
   /** record the state of the block
@@ -442,7 +439,6 @@ private:
   friend class qmcplusplus::testing::VMCBatchedTest;
   friend class qmcplusplus::testing::DMCBatchedTest;
   friend class qmcplusplus::testing::QMCDriverNewTestWrapper;
-  ;
 };
 } // namespace qmcplusplus
 
