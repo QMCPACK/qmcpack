@@ -488,4 +488,530 @@ The following options are specific to using MCSCF multideterminants from Gamess.
 
   ``convert4qmc`` MCSCF arguments:
 
-  
+  +----------------------+-----------+-------------+----------------------------------------------+
+  | **Option Name**      | **Value** | **default** | **description**                              |
+  +======================+===========+=============+==============================================+
+  | ``-ci``              | String    | none        | Name of the file containing the CI expansion |
+  +----------------------+-----------+-------------+----------------------------------------------+
+  | ``-threshold``       | double    | 1e-20       | Cutoff of the weight of the determinants     |
+  +----------------------+-----------+-------------+----------------------------------------------+
+  | ``-TargetState``     | int       | none        | ?                                            |
+  +----------------------+-----------+-------------+----------------------------------------------+
+  | ``-NaturalOrbitals`` | int       | none        | ?                                            |
+  +----------------------+-----------+-------------+----------------------------------------------+
+  | ``-optDetCoeffs``    | -         | no          | Enables the optimization of CI coefficients  |
+  +----------------------+-----------+-------------+----------------------------------------------+
+
+-  keyword **-ci** Path/name of the file containing the CI expansion in
+   a Gamess Format.
+
+-  keyword **-threshold** The CI expansion contains coefficients
+   (weights) for each determinant. This option sets the maximum
+   coefficient to include in the QMC run. By default it is set to 1e-20
+   (meaning all determinants in an expansion are taken into account). At
+   the same time, if the threshold is set to a different value, for
+   example :math:`1e-5`, any determinant with a weight
+   :math:`|weight| < 1e-5` will be discarded and the determinant will
+   not be considered.
+
+-  keyword **-TargetState** ?
+
+-  keyword **-NaturalOrbitals** ?
+
+-  keyword **-optDetCoeffs** This flag enables optimization of the CI
+   expansion coefficients. By default, optimization of the coefficients
+   is disabled during wavefunction optimization runs.
+
+Examples and more thorough descriptions of these options can be found in the lab section of this manual: :ref:`lab-advanced-molecules`.
+
+Grid options
+^^^^^^^^^^^^
+
+These parameters control how the basis set is projected on a grid. The default parameters are chosen to be very efficient. Unless you have a very good reason, we do not recommend modifying them.
+
+=============== =============== =========== ===========================
+
+Tags
+  **keyword**   **Value**       **default** **description**
+  ``-gridtype`` log|log0|linear log         Grid type
+  ``-first``    double          1e-6        First point of the grid
+  ``-last``     double          100         Last point of the grid
+  ``-size``     int             1001        Number of point in the grid
+=============== =============== =========== ===========================
+
+-  **-gridtype** Grid type can be logarithmic, logarithmic base 10, or
+   linear
+
+-  **-first** First value of the grid
+
+-  **-last** Last value of the grid
+
+-  **-size** Number of points in the grid between “first” and “last.”
+
+Supported codes
+^^^^^^^^^^^^^^^
+
+- **PySCF**
+
+  PySCF :cite:`Sun2018` is an all-purpose quantum chemistry
+  code that can run calculations from simple Hartree-Fock to DFT, MCSCF,
+  and CCSD, and for both isolated systems and periodic boundary
+  conditions. PySCF can be downloaded from https://github.com/sunqm/pyscf.
+  Many examples and tutorials can be found on the PySCF website, and all
+  types of single determinants calculations are compatible with , thanks
+  to active support from the authors of PySCF. A few additional steps are
+  necessary to generate an output readable by ``convert4qmc``.
+
+  This example shows how to run a Hartree-Fock calculation for the :math:`LiH`
+  dimer molecule from PySCF and convert the wavefunction for QMCPACK.
+
+  - **Python path**
+
+    PySCF is a Python-based code. A Python module named **PyscfToQmcpack**
+    containing the function **savetoqmcpack** is provided by and is located
+    at ``qmcpack/src/QMCTools/PyscfToQmcpack.py``. To be accessible to the
+    PySCF script, this path must be added to the PYTHONPATH environment
+    variable. For the bash shell, this can be done as follows:
+
+    ::
+
+      export PYTHONPATH=/PATH_TO_QMCPACK/qmcpack/src/QMCTools:\$PYTHONPATH
+
+  - **PySCF Input File**
+
+    Copy and paste the following code in a file named LiH.py.
+
+    ::
+
+      #! /usr/bin/env python3
+      from pyscf import gto, scf, df
+      import numpy
+
+      cell = gto.M(
+         atom ='''
+      Li 0.0 0.0 0.0
+      H  0.0 0.0 3.0139239778''',
+         basis ='cc-pv5z',
+         unit="bohr",
+         spin=0,
+         verbose = 5,
+         cart=False,
+      )
+      mf = scf.ROHF(cell)
+      mf.kernel()
+
+      ###SPECIFIC TO QMCPACK###
+      title='LiH'
+      from PyscfToQmcpack import savetoqmcpack
+
+      savetoqmcpack(cell,mf,title)
+
+    The arguments to the function **savetoqmcpack** are:
+
+    -  **cell** This is the object returned from gto.M, containing the type
+       of atoms, geometry, basisset, spin, etc.
+
+    -  **mf** This is an object representing the PySCF level of theory, in
+       this example, ROHF. This object contains the orbital coefficients of
+       the calculations.
+
+    -  **title** The name of the output file generated by PySCF. By default,
+       the name of the generated file will be “default” if nothing is
+       specified.
+
+    |
+
+    By adding the three lines below the “SPECIFIC TO QMCPACK” comment in the
+    input file, the script will dump all the necessary data for QMCPACK into
+    an HDF5 file using the value of “title” as an output name. PySCF is run
+    as follows:
+
+    ::
+
+       >python LiH.py
+
+    The generated HDF5 can be read by ``convert4qmc`` to generate the
+    appropriate QMCPACK input files.
+
+  - **Generating input files**
+
+    As described in the previous section, generating input files for PySCF is as follows:
+
+    ::
+
+      > convert4qmc -pyscf LiH.h5
+
+    The HDF5 file produced by “savetoqmcpack” contains the wavefunction in a
+    form directly readable by QMCPACK. The wavefunction files from
+    ``convert4qmc`` reference this HDF file as if the “-hdf5" option were
+    specified (converting from PySCF implies the “-hdf5” option is always
+    present).
+
+An implementation of periodic boundary conditions with Gaussian orbitals from PySCF is under development.
+
+- **Quantum Package**
+
+  QP :cite:`QP` is a quantum chemistry code developed by the
+  LCPQ laboratory in Toulouse, France. It can be downloaded from
+  https://github.com/LCPQ/quantum_package, and the tutorial within is
+  quite extensive. The tutorial section of QP can guide you on how to
+  install and run the code.
+
+  After a QP calculation, the data needed for ``convert4qmc`` can be
+  generated through
+
+  ::
+
+    qp_run save_for_qmcpack Myrun.ezfio &> Myrun.dump
+
+  ``convert4qmc`` can read this format and generate QMCPACK input files in XML and HDF5 format.  For example:
+
+  ::
+
+    convert4qmc -QP Myrun.dump
+
+  The main reason to use QP is to access the CIPSI algorithm to generate a
+  multideterminant wavefunction. CIPSI is the preferred choice for
+  generating a selected CI trial wavefunction for QMCPACK. An example on
+  how to use QP for Hartree-Fock and selected CI can be found in
+  :ref:`cipsi` of this manual. The converter code is actively
+  maintained and codeveloped by both QMCPACK and QP developers.
+
+  We recommend using a trial wavefunction stored in HDF5 format to reduce the reading time when a multideterminant expansion is too large (more than 1K determinants). This can be done with two paths:
+
+  using the *-hdf5* option in the converter as follows:
+
+- **Using -hdf5 tag**
+
+  ::
+
+    convert4qmc -QP Myrun.dump -hdf5
+
+  This will read the multideterminant expansion in the ``Myrun.dump`` file
+  and store it in ``Myrun.dump.orbs.h5``. Note that this method will be
+  deprecated as QP automatically generates a compatible HDF5 file usable
+  by QMCPACK directly.
+
+- **Using h5 file**
+
+  QP version 2.0 (released in 2019) directly generates an HDF5 file that completely mimics the QMCPACK readable format. This file can be generated after a CIPSI, Hartree-Fock, or range-separated DFT in QP as follows:
+
+  ::
+
+    qp_run save_for_qmcpack Myrun.ezfio > Myrun.dump
+
+  In addition to ``Myrun.dump``, an HDF5 file always named ``QMC.h5`` is
+  created containing all relevant information to start a QMC run. Input
+  files can be generated as follows:
+
+  ::
+
+    convert4qmc -orbitals QMC.h5 -multidet QMC.h5
+
+  Note that the ``QMC.h5`` combined with the tags ``-orbitals`` and
+  ``-multidet`` allows the user to choose orbitals from a different code
+  such as PYSCF and the multideterminant section from QP. These two codes
+  are fully compatible, and this route is also the only possible route for
+  multideterminants for solids.
+
+- **GAMESS**
+
+  QMCPACK can use the output of GAMESS :cite:`schmidt93` for any type of single determinant calculation (HF or DFT) or multideterminant (MCSCF) calculation. A description with an example can be found in the Advanced Molecular Calculations Lab (:ref:`lab-advanced-molecules`).
+
+.. _pw2qmcpack:
+
+pw2qmcpack.x
+~~~~~~~~~~~~
+
+``pw2qmcpack.x`` is an executable that converts PWSCF wavefunctions to QMCPACK readable
+HDF5 format.  This utility is built alongside the QE postprocessing utilities.
+This utility is written in Fortran90 and is distributed as a patch of the QE
+source code.  The patch, as well as automated QE download and patch scripts, can be found in
+``qmcpack/external_codes/quantum_espresso``.
+
+pw2qmcpack can be used in serial in small systems and should be used in parallel with large systems for best performance. The K_POINT gamma optimization is not supported.
+
+.. code-block::
+  :caption: Sample ``pw2qmcpack.x`` input file ``p2q.in``
+  :name: Listing 66
+
+  &inputpp
+    prefix     = 'bulk_silicon'
+    outdir     = './'
+    write_psir = .false.
+  /
+
+This example will cause ``pw2qmcpack.x`` to convert wavefunctions saved from
+PWSCF with the prefix “bulk_silicon.” Perform the conversion via, for
+example:
+
+::
+
+  mpirun -np 1 pw2qmcpack.x < p2q.in>& p2q.out
+
+Because of the large plane-wave energy cutoffs in the pw.x calculation required by accurate PPs and the large system sizes of interest, one limitation of QE can be easily reached:
+that ``wf_collect=.true.`` results in problems of writing and loading correct plane-wave coefficients on disks by pw.x because of the 32 bit integer limits. Thus, ``pw2qmcpack.x`` fails to convert the orbitals for QMCPACK. Since the release of QE v5.3.0, the converter has been fully parallelized to overcome this limitation completely.
+
+By setting ``wf_collect=.false.`` (by default ``.false.`` in v6.1 and before and ``.true.`` since v6.2), pw.x does not collect the whole wavefunction into individual files for each k-point but instead writes one smaller file for each processor.
+By running ``pw2qmcpack.x`` in the same parallel setup (MPI tasks and k-pools) as the last scf/nscf calculation with pw.x,
+the orbitals distributed among processors will first be aggregated by the converter into individual temporal HDF5 files for each k-pool and then merged into the final file.
+In large calculations, users should benefit from a significant reduction of time in writing the wavefunction by pw.x thanks to avoiding the wavefunction collection.
+
+pw2qmcpack has been included in the test suite of QMCPACK (see instructions about how to activate the tests in :ref:`buildqe`).
+There are tests labeled "no-collect" running the pw.x with the setting ``wf_collect=.false.``
+The input files are stored at ``examples/solids/dft-inputs-polarized-no-collect``.
+The scf, nscf, and pw2qmcpack runs are performed on 16, 12, and 12 MPI tasks with 16, 2, and 2 k-pools respectively.
+
+convertpw4qmc
+~~~~~~~~~~~~~
+
+Convertpw4qmc is an executable that reads xml from a plane wave based DFT code and produces a QMCPACK readable
+HDF5 format wavefunction.  For the moment, this supports both QBox and Quantum Epresso
+
+In order to save the wavefunction from QBox so that convertpw4qmc can work on it, one needs to add a line to the
+QBox input like
+
+::
+
+  save -text -serial basename.sample
+
+after the end of a converged dft calculation.  This will write an ascii wavefunction file and will avoid
+QBox's optimized parallel IO (which is not currently supported).
+
+After the wavefunction file is written (basename.sample in this case) one can use convertpw4qmc as follows:
+
+::
+
+  convertpw4qmc basename.sample -o qmcpackWavefunction.h5
+
+This reads the Qbox wavefunction and performs the Fourier transform before saving to a QMCPACK eshdf format wavefunction.  Currently multiple k-points are supported, but due to difficulties with the qbox wavefunction file format, the single particle orbitals do not have their proper energies associated with them.  This means that when tiling from a primitive cell to a supercell, the lowest n single particle orbitals from all necessary k-points will be used.  This can be problematic in the case of a metal and this feature should be used with EXTREME caution.
+
+In the case of quantum espresso, QE must be compiled with HDF support.  If this is the case, then an eshdf file can be generated by targeting the data-file-schema.xml file
+generated in the output of quantum espresso.  For example, if one is running a calculation with outdir = 'out' and prefix='Pt' then the converter can be invoked as:
+
+::
+
+  convertpw4qmc out/Pt.save/data-file-schema.xml -o qmcpackWavefunction.h5
+
+Note that this method is insensitive to parallelization options given to quantum espresso.  Additionally, it supports noncollinear magnetism and can be used to generate
+wavefunctions suitable for qmcpack calculations with spin-orbit coupling.
+
+.. _ppconvert:
+
+ppconvert
+~~~~~~~~~
+
+``ppconvert`` is a utility to convert PPs between different commonly used formats.
+It is a stand-alone C++ executable that is not built by default but that is accessible via adding
+``-DBUILD_PPCONVERT=1`` to CMake and then typing ``make ppconvert``.
+Currently it converts CASINO, FHI, UPF (generated by OPIUM), BFD, and GAMESS formats to several other formats
+including XML (QMCPACK) and UPF (QE). See all the formats via ``ppconvert -h``.
+For output formats requiring Kleinman-Bylander projectors, the atom will be solved with DFT
+if the projectors are not provided in the input formats.
+
+This requires providing reference states and sometimes needs extra tuning for heavy elements.
+To avoid ghost states, the local channel can be changed via the ``--local_channel`` option. Ghost state considerations are similar to those of DFT calculations but could be worse if ghost states were not considered during the original PP construction.
+To make the self-consistent calculation converge, the density mixing parameter may need to be reduced
+via the ``--density_mix`` option.
+Note that the reference state should include only the valence electrons.
+One reference state should be included for each channel in the PP.
+
+For example, for a sodium atom with a neon core, the reference state would be "1s(1)."
+``--s_ref`` needs to include a 1s state, ``--p_ref`` needs to include a 2p state,
+``--d_ref`` needs to include a 3d state, etc. If not specified, a corresponding state with zero occupation is added.
+If the reference state is chosen as the neon core, setting empty reference states "" is technically correct.
+In practice, reasonable reference states should be picked with care.
+For PP with semi-core electrons in the valence, the reference state can be long.
+For example, Ti PP has 12 valence electrons. When using the neutral atom state,
+``--s_ref``, ``--p_ref``, and ``--d_ref`` are all set as "1s(2)2p(6)2s(2)3d(2)."
+When using an ionized state, the three reference states are all set as "1s(2)2p(6)2s(2)" or "1s(2)2p(6)2s(2)3d(0)."
+
+Unfortunately, if the generated UPF file is used in QE, the calculation may be incorrect because of the presence of "ghost" states. Potentially these can be removed by adjusting the local channel (e.g., by setting ``--local_channel 1``, which chooses the p channel as the local channel instead of d.
+For this reason, validation of UPF PPs is always required from the third row and is strongly encouraged in general. For example, check that the expected ionization potential and electron affinities are obtained for the atom and that dimer properties are consistent with those obtained by a quantum chemistry code or a plane-wave code that does not use the Kleinman-Bylander projectors.
+
+Obtaining pseudopotentials
+--------------------------
+
+Pseudopotentiallibrary.org
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An open website collecting community developed and tested
+pseudopotentials for QMC and other many-body calculations is being
+developed at https://pseudopotentiallibrary.org. This site
+includes potentials in QMCPACK format and an increasing range of
+electronic structure and quantum chemistry codes. We recommend using
+potentials from this site if available and suitable for your science
+application.
+
+.. _opium:
+
+Opium
+~~~~~
+
+Opium is a pseudopotential generation code available from the website http://opium.sourceforge.net/.  Opium can generate pseudopotentials with either Hartree-Fock or DFT methods.  Once you have a useable pseudopotential param file (for example, Li.param), generate pseudopotentials for use in Quantum ESPRESSO with the upf format as follows:
+
+.. code-block:
+  :caption: Generate UPF-formatted pseudopotential with Opium
+  :name: Listing 67
+
+  opium Li.param Li.log all upf
+
+This generates a UPF-formatted pseudopotential (``Li.upf``, in this case) for use in Quantum ESPRESSO.  The pseudopotential conversion tool ``ppconvert`` can then convert UPF to FSAtom xml format for use in QMCPACK:
+
+.. code-block::
+  :caption: Convert UPF-formatted pseudopotential to FSAtom xml format
+  :name: Listing 68
+
+  ppconvert --upf_pot Li.upf --xml Li.xml
+
+.. _bfd:
+
+Burkatzki-Filippi-Dolg
+~~~~~~~~~~~~~~~~~~~~~~
+
+Burkatzki *et al.* developed a set of energy-consistent pseudopotenitals
+for use in QMC :cite:`Burkatzki07,Burkatzki08`, available at
+http://www.burkatzki.com/pseudos/index.2.html. To convert for use in
+QMCPACK, select a pseudopotential (choice of basis set is irrelevant to
+conversion) in GAMESS format and copy the ending (pseudopotential) lines
+beginning with(element symbol)-QMC GEN:
+
+.. code-block::
+  :caption: BFD Li pseudopotential in GAMESS format
+  :name: Listing 69
+
+  Li-QMC GEN 2 1
+  3
+  1.00000000 1 5.41040609
+  5.41040609 3 2.70520138
+  -4.60151975 2 2.07005488
+  1
+  7.09172172 2 1.34319829
+
+Save these lines to a file (here, named ``Li.BFD.gamess``; the exact name may be anything as long as it is passed to ``ppconvert`` after --gamess_pot).  Then, convert using ``ppconvert`` with the following:
+
+.. code-block::
+  :caption: Convert GAMESS-formatted pseudopotential to FSAtom xml format
+  :name: Listing 70
+
+  ppconvert --gamess_pot Li.BFD.gamess --s_ref "2s(1)" --p_ref "2p(0)" --xml Li.BFD.xml
+
+.. code-block::
+  :caption: Convert GAMESS-formatted pseudopotential to Quantum ESPRESSO UPF format
+  :name: Listing 71
+
+  ppconvert --gamess_pot Li.BFD.gamess --s_ref "2s(1)" --p_ref "2p(0)" --log_grid --upf Li.BFD.upf
+
+.. _CASINO:
+
+CASINO
+~~~~~~
+
+The QMC code CASINO also makes available its pseudopotentials available at the website https://vallico.net/casinoqmc/pplib/. To use one in QMCPACK, select a pseudopotential and download its summary file (``summary.txt``), its tabulated form (``pp.data``), and (for ppconvert to construct the projectors to convert to Quantum ESPRESSO's UPF format) a CASINO atomic wavefunction for each angular momentum channel (``awfn.data_*``).  Then, to convert using ppconvert, issue the following command:
+
+.. code-block::
+  :caption: Convert CASINO-formatted pseudopotential to Quantum ESPRESSO UPF format
+  :name: Listing 72
+
+  ppconvert --casino_pot pp.data --casino_us awfn.data_s1_2S --casino_up awfn.data_p1_2P --casino_ud awfn.data_d1_2D --upf Li.TN-DF.upf
+
+QMCPACK can directly read in the CASINO-formated pseudopotential (``pp.data``), but four parameters found in the pseudopotential summary file must be specified in the pseudo element (``l-local``, ``lmax``, ``nrule``, ``cutoff``)[see :ref:`nlpp` for details]:
+
+.. code-block::
+  :caption: XML syntax to use CASINO-formatted pseudopotentials in QMCPACK
+  :name: Listing 73
+
+  <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+     <pseudo elementType="Li" href="Li.pp.data" format="casino" l-local="s" lmax="2" nrule="2" cutoff="2.19"/>
+     <pseudo elementType="H" href="H.pp.data" format="casino" l-local="s" lmax="2" nrule="2" cutoff="0.5"/>
+  </pairpot>
+
+.. _wftester:
+
+wftester
+~~~~~~~~
+
+While not really a stand-alone application, wftester (short for “Wave
+Function Tester") is a helpful tool for testing pre-existing and
+experimental estimators and observables. It provides the user with
+derived quantities from the Hamiltonian and wave function, but evaluated
+at a small set of configurations.
+
+The wftester is implemented as a QMCDriver, so one invokes QMCPACK in
+the normal manner with a correct input XML, the difference being the
+addition of an additional qmc input block. This is the main advantage of
+this tool–it allows testing of realistic systems and realistic
+combinations of observables. It can also be invoked before launching
+into optimization, VMC, or DMC runs, as it is a valid <qmc> block.
+
+As an example, the following code generates a random walker configuration and compares the trial wave function ratio computed in two different ways:
+
+.. code-block::
+  :caption: The following executes the wavefunction ratio test in "wftester"
+  :name: Listing 74
+
+  <qmc method="wftester">
+    <parameter name="ratio">    yes    </parameter>
+  </qmc>
+
+Here's a summary of some of the tests provided:
+
+-  Ratio Test. Invoked with
+
+   ::
+
+      <parameter name="ratio">yes</parameter>
+
+   This computes the implemented wave function ratio associated with a
+   single-particle move using two different methods.
+
+-  Clone Test. Invoked with
+
+   ::
+
+      <parameter name="clone">yes</parameter>
+
+   This checks the cloning of TrialWaveFunction, ParticleSet,
+   Hamiltonian, and Walkers.
+
+-  Elocal Test. Invoked with
+
+   ::
+
+      <parameter name="printEloc">yes</parameter>
+
+   For an input electron configuration (can be random), print the value
+   of TrialWaveFunction, LocalEnergy, and all local observables for this
+   configuration.
+
+-  Derivative Test. Invoked with
+
+   ::
+
+      <parameter name="ratio">deriv</parameter>}
+
+   Computes electron gradients, laplacians, and wave function parameter
+   derivatives using implemented calls and compares them to
+   finite-difference results.
+
+-  Ion Gradient Test. Invoked with
+
+   ::
+
+      <parameter name="source">ion0</parameter>
+
+   Calls the implemented evaluateGradSource functions and compares them
+   against finite-difference results.
+
+-  “Basic Test". Invoked with
+
+   ::
+
+      <parameter name="basic">yes</parameter>
+
+   Performs ratio, gradient, and laplacian tests against
+   finite-difference and direct computation of wave function values.
+
+The output of the various tests will be to standard out or "wftest.000" after successful execution of qmcpack.
+
+.. bibliography:: /bibs/additional_tools.bib
