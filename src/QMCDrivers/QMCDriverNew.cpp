@@ -493,18 +493,16 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
     awc.walkers_per_rank = std::vector<IndexType>(num_ranks, walkers_per_rank);
   }
 
+  if (num_crowds == 0)
+    num_crowds = Concurrency::maxThreads<>());
+
   // if we found a way to determine walkers per rank above
   if (awc.walkers_per_rank.size() > 0)
   {
-    if (num_crowds == 0)
-      num_crowds = std::min(static_cast<unsigned int>(awc.walkers_per_rank[rank_id]), Concurrency::maxThreads<>());
-    // might also consider not allowing empty crowds
     awc.walkers_per_crowd = fairDivide(walkers_per_rank, num_crowds);
   }
   else
   {
-    if (num_crowds == 0)
-      num_crowds = Concurrency::maxThreads<>();
     awc.walkers_per_rank  = std::vector<IndexType>(num_ranks, num_crowds);
     awc.walkers_per_crowd = std::vector<IndexType>(num_crowds, 1);
   }
@@ -518,6 +516,8 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
   if (awc.walkers_per_rank[rank_id] % num_crowds)
     app_warning() << "Walkers per rank (" << awc.walkers_per_rank[rank_id] << ") not divisible by number of crowds ("
                   << num_crowds << "). This will result in a loss of efficiency.\n";
+
+  // \todo some warning if unreasonable number of threads are being used.
 
   return awc;
 }
