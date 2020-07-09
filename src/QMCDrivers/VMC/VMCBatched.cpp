@@ -15,8 +15,6 @@
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/MCSample.h"
-#include "io/StlPrettyPrint.hpp"
-
 
 namespace qmcplusplus
 {

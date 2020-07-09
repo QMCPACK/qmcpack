@@ -29,7 +29,7 @@
 #include "qmc_common.h"
 #include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
-#include "io/StlPrettyPrint.hpp"
+#include "Utilities/StlPrettyPrint.hpp"
 
 namespace qmcplusplus
 {
