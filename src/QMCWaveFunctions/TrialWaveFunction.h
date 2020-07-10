@@ -28,6 +28,7 @@
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Utilities/NewTimer.h"
 #include "type_traits/template_types.hpp"
+#include "Containers/MinimalContainers/RecordArray.hpp"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
@@ -317,6 +318,12 @@ public:
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi,
                            bool project = false);
+
+  void flex_evaluateParameterDerivatives(const RefVector<TrialWaveFunction>& wf_list,
+                                         const RefVector<ParticleSet>& p_list,
+                                         const opt_variables_type& optvars,
+                                         RecordArray<ValueType>& dlogpsi,
+                                         RecordArray<ValueType>& dhpsioverpsi);
 
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, std::vector<ValueType>& dlogpsi);
 
