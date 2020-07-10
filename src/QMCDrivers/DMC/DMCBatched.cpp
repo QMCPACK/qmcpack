@@ -136,9 +136,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
   auto it_delta_r = step_context.deltaRsBegin();
 
-  std::vector<TrialWaveFunction::GradType> grads_now(num_walkers, 0.0);
-  std::vector<TrialWaveFunction::GradType> grads_new(num_walkers, 0.0);
-  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers, 0.0);
+  std::vector<TrialWaveFunction::GradType> grads_now(num_walkers, TrialWaveFunction::GradType(0.0));
+  std::vector<TrialWaveFunction::GradType> grads_new(num_walkers, TrialWaveFunction::GradType(0.0));
+  std::vector<TrialWaveFunction::PsiValueType> ratios(num_walkers, TrialWaveFunction::PsiValueType(0.0));
   std::vector<PosType> drifts(num_walkers, 0.0);
   std::vector<RealType> log_gf(num_walkers, 0.0);
   std::vector<RealType> log_gb(num_walkers, 0.0);

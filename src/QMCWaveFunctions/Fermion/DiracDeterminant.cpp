@@ -102,7 +102,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   RatioTimer.stop();
 #ifndef NDEBUG
   ValueType g_norm = simd::dot(g.data(), g.data(), g.Size);
-  if (g_norm < std::numeric_limits<QMCTraits::ValueType>::epsilon())
+  if (std::abs(g_norm) < std::abs(std::numeric_limits<QMCTraits::ValueType>::epsilon()))
   {
     //std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
     //throw std::runtime_error("gradient of zero");
