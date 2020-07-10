@@ -246,7 +246,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   std::cout << "abs(r^2 - dr^2) = " << std::abs(r * r - dot(dr, dr))
             << " epsilon = " << std::numeric_limits<double>::epsilon() << std::endl;
 #if defined(MIXED_PRECISION)
-  REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon() * 1e5);
+  REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon() * 1e8);
 #else
   REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon());
 #endif
