@@ -499,7 +499,7 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
   // if we found a way to determine walkers per rank above
   if (awc.walkers_per_rank.size() > 0)
   {
-    awc.walkers_per_crowd = fairDivide(walkers_per_rank, num_crowds);
+    awc.walkers_per_crowd = fairDivide(awc.walkers_per_rank[rank_id], num_crowds);
   }
   else
   {
