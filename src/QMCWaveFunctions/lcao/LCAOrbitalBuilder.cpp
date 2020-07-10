@@ -904,6 +904,13 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
 void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
                                                       std::vector<std::complex<RealType>>& LocPeriodicImagePhaseFactors)
 {
+  // For open boundary conditions
+  if (PBCImages[0] == 0 && PBCImages[1] == 0 && PBCImages[2] == 0) {
+    LocPeriodicImagePhaseFactors.resize(1);
+    LocPeriodicImagePhaseFactors[0] = 1.0;
+    return;
+  }
+
   ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
   if (h5_path != "")
   {
