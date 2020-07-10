@@ -494,7 +494,7 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
   }
 
   if (num_crowds == 0)
-    num_crowds = Concurrency::maxThreads<>());
+    num_crowds = Concurrency::maxThreads<>();
 
   // if we found a way to determine walkers per rank above
   if (awc.walkers_per_rank.size() > 0)
