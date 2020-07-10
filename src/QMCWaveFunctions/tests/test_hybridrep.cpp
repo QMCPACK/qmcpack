@@ -243,6 +243,8 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   elec_.getDistTable(0).get_first_neighbor(0, r, dr, false);
   std::cout << std::setprecision(14) << "check r^2 against dr^2. "
             << "r = " << r << " dr = " << dr << std::endl;
+  std::cout << "abs(r^2 - dr^2) = " << std::abs(r * r - dot(dr, dr))
+            << " epsilon = " << std::numeric_limits<double>::epsilon() << std::endl;
   REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon());
 
   // for vgl
