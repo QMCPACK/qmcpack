@@ -21,7 +21,7 @@ This section briefly describes how to contribute to the manual and is primarily 
 
 -  Instead of ``\begin{verbatim}`` environments, use the appropriate ``\begin{lstlisting}[style=<see qmcpack_listings.sty>]``.
 
--  ``\begin{shade} can be used in place of ``\begin{lstlisting}[style=SHELL]``.
+-  ``\begin{shade}`` can be used in place of ``\begin{lstlisting}[style=SHELL]``.
 
 -  Unicode rules
 
@@ -204,5 +204,3 @@ Template for shared information about “factory” elements.
   +---------------------------------+---------------+------------+-------------+-----------------+
   | ...                             |               |            |             |                 |
   +---------------------------------+---------------+------------+-------------+-----------------+
-
-  

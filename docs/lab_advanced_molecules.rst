@@ -98,7 +98,7 @@ From the top directory, go to “``ex1_first-run-hartree-fock/gms``.” This
 directory contains an input file for a HF calculation of a water
 molecule using BFD ECPs and the corresponding cc-pVTZ basis set. The
 input file should be named: “h2o.hf.inp.” Study the input file. See
-Section :ref:`lab-adv-mol-gamess`, “Appendix A: GAMESS input" for a
+Section :ref:`lab-adv-mol-gamess` for a
 more detailed description of the GAMESS input syntax. However, there
 will be a better time to do this soon, so we recommend continuing with
 the exercise at this point. After you are done, execute GAMESS with this
@@ -159,8 +159,7 @@ are ready. Notice that the location of the ECPs has been set for you; in
 your own calculations you have to make sure you obtain the ECPs from the
 appropriate libraries and convert them to QMCPACK format using
 ppconvert. While these calculations finish is a good time to study
-:ref:`lab-adv-mol-opt-appendix`, “Appendix C: Wavefunction
-optimization XML block," which contains a review of the main parameters
+:ref:`lab-adv-mol-opt-appendix`, which contains a review of the main parameters
 in the optimization XML block. The previous steps can be accomplished by
 the following commands:
 
@@ -227,8 +226,7 @@ The main steps needed to perform this exercise are:
   jobrun_vesta qmcpack dmc_ts.xml
 
 While these runs complete, go to
-:ref:`lab-adv-mol-vmcdmc-appendix`, “Appendix D: VMC and DMC
-XML block," and review the basic VMC and DMC input blocks. Notice that
+:ref:`lab-adv-mol-vmcdmc-appendix`  and review the basic VMC and DMC input blocks. Notice that
 in the current DMC blocks the time step is decreased as the number of
 blocks is increased. Why is this?
 
@@ -380,8 +378,7 @@ submission script and submit the run.
 
 Because these simulations will take several minutes to complete, this is
 an excellent opportunity to go to
-:ref:`lab-adv-mol-wf-appendix`, “Appendix E: Wavefunction XML
-block," and review the wavefunction XML block used by QMCPACK. When the
+:ref:`lab-adv-mol-wf-appendix` and review the wavefunction XML block used by QMCPACK. When the
 simulations are completed, use ``qmca`` to analyze the output files.
 Using your favorite plotting program (e.g., gnu plot), plot the energy
 and variance as a function of the Jastrow form.
@@ -467,8 +464,7 @@ unable to use CISD properly in GAMESS. Consequently, the output of the
 calculation is already provided in the directory.
 
 There will be time in the next step to study the GAMESS input files and
-the description in :ref:`lab-adv-mol-gamess`, “Appendix A:
-GAMESS input." Since the output is already provided, the only action
+the description in :ref:`lab-adv-mol-gamess`. Since the output is already provided, the only action
 needed is to use the converter to generate the appropriate QMCPACK
 files.
 
@@ -505,8 +501,7 @@ file that performs wavefunction optimization followed by VMC and DMC
 calculations. Submit the calculation.
 
 This is a good time to review the GAMESS input file description in
-:ref:`lab-adv-mol-gamess`, “Appendix A. GAMESS input." When
-the run is completed, go to the previous directory and make a new folder
+:ref:`lab-adv-mol-gamess`, go to the previous directory and make a new folder
 named ``thres0.0075``. Repeat the previous steps to optimize the
 wavefunction with a cutoff of 0.01, but use a cutoff of 0.0075 this
 time. This will increase the number of determinants used in the
@@ -569,7 +564,7 @@ In this section we provide a brief description of the GAMESS input needed to pro
 trial wavefunction for QMC calculations with QMCPACK. We assume basic familiarity
 with GAMESS input structure, particularly regarding the input of atomic coordinates and
 the definition of Gaussian basis sets. This section focuses on generation of the output
-files needed by the converter tool, ``convert4qmc``. For a description of the converter, see :ref:`lab-adv-mol-convert4qmc`, "Appendix B: convert4qmc."
+files needed by the converter tool, ``convert4qmc``. For a description of the converter, see :ref:`lab-adv-mol-convert4qmc`.
 
 Only a subset of the methods available in GAMESS can be used to generate
 wavefunctions for QMCPACK, and we restrict our description to these. For
