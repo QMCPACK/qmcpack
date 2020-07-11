@@ -969,7 +969,7 @@ the tag is not added coefficients will not be saved.
 
   The rest of the optimization block remains the same.
 
-When running the optimization, the new coefficients will be stored in a *.sXXX.opt.h5 file,  where XXX coressponds to the series number. The H5 file contains only the optimized coefficients. The corresponding *.sXXX.opt.xml  will be updated for each optimization block as follows:
+When running the optimization, the new coefficients will be stored in a *\**.sXXX.opt.h5 file,  where XXX coressponds to the series number. The H5 file contains only the optimized coefficients. The corresponding *\**.sXXX.opt.xml  will be updated for each optimization block as follows:
 
 ::
 

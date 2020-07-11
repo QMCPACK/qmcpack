@@ -254,7 +254,7 @@ cell.
 
 This file contains information related to the trial wavefunction. It is identical to the input file from an OBC calculation to the exception of the following tags:
 
-*.wfj.xml specific tags:
+*\**.wfj.xml specific tags:
 
   +---------------+--------------+-------------+--------------------------------------------------------------------+
   | **tag**       | **tag type** | **default** | **description**                                                    |
