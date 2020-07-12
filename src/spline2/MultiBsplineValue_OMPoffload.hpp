@@ -80,7 +80,7 @@ inline void evaluate_v_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>:
   const intptr_t zs = spline_m->z_stride;
 
 #ifdef ENABLE_OFFLOAD
-#pragma omp for simd
+#pragma omp for simd nowait
 #else
 #pragma omp simd aligned(vals)
 #endif

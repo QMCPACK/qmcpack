@@ -45,7 +45,7 @@ inline void assign_v(ST x,
   TT* restrict psi_s     = results_scratch_ptr;
 
 #ifdef ENABLE_OFFLOAD
-#pragma omp for simd
+#pragma omp for simd nowait
 #else
 #pragma omp simd
 #endif
@@ -113,7 +113,7 @@ inline void assign_vgl(ST x,
   TT* restrict dpsi  = results_scratch_ptr + orb_size;
   TT* restrict d2psi = results_scratch_ptr + orb_size * 4;
 #ifdef ENABLE_OFFLOAD
-#pragma omp for simd
+#pragma omp for simd nowait
 #else
 #pragma omp simd
 #endif
@@ -705,13 +705,12 @@ void SplineC2ROMP<ST>::evaluateVGL(const ParticleSet& P,
                             GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
       PRAGMA_OFFLOAD("omp parallel")
-      {
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                             offload_scratch_ptr + first, offload_scratch_ptr + padded_size + first,
-                                             offload_scratch_ptr + padded_size * 4 + first, padded_size, first, last);
-        C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, symGGt, G,
-                        myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local, first / 2, last / 2);
-      }
+      spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                           offload_scratch_ptr + first, offload_scratch_ptr + padded_size + first,
+                                           offload_scratch_ptr + padded_size * 4 + first, padded_size, first, last);
+      PRAGMA_OFFLOAD("omp parallel")
+      C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, symGGt, G,
+                      myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local, first / 2, last / 2);
     }
   }
 
@@ -785,16 +784,15 @@ void SplineC2ROMP<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocat
                               GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
         PRAGMA_OFFLOAD("omp parallel")
-        {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                               offload_scratch_iw_ptr + first,
-                                               offload_scratch_iw_ptr + padded_size + first,
-                                               offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
-                                               last);
-          C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr,
-                          orb_size, offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
-                          first_spo_local, nComplexBands_local, first / 2, last / 2);
-        }
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                             offload_scratch_iw_ptr + first,
+                                             offload_scratch_iw_ptr + padded_size + first,
+                                             offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
+                                             last);
+        PRAGMA_OFFLOAD("omp parallel")
+        C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr,
+                        orb_size, offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
+                        first_spo_local, nComplexBands_local, first / 2, last / 2);
       }
   }
 
@@ -935,16 +933,15 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
                               GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
         PRAGMA_OFFLOAD("omp parallel")
-        {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                               offload_scratch_iw_ptr + first,
-                                               offload_scratch_iw_ptr + padded_size + first,
-                                               offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
-                                               last);
-          C2R::assign_vgl(pos_iw_ptr[0], pos_iw_ptr[1], pos_iw_ptr[2], psi_iw_ptr, mKK_ptr, orb_size,
-                          offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
-                          first_spo_local, nComplexBands_local, first / 2, last / 2);
-        }
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                             offload_scratch_iw_ptr + first,
+                                             offload_scratch_iw_ptr + padded_size + first,
+                                             offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
+                                             last);
+        PRAGMA_OFFLOAD("omp parallel")
+        C2R::assign_vgl(pos_iw_ptr[0], pos_iw_ptr[1], pos_iw_ptr[2], psi_iw_ptr, mKK_ptr, orb_size,
+                        offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
+                        first_spo_local, nComplexBands_local, first / 2, last / 2);
 
         // FIXME :: copy results_scratch to phi_vgl_v  and do reduction
         ValueType* restrict psi   = psi_iw_ptr;
