@@ -45,7 +45,7 @@ inline void assign_v(ST x,
   TT* restrict psi_s     = results_scratch_ptr;
 
 #ifdef ENABLE_OFFLOAD
-#pragma omp for
+#pragma omp parallel for simd
 #else
 #pragma omp simd
 #endif
@@ -296,12 +296,9 @@ void SplineC2ROMP<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueV
         ST a[4], b[4], c[4];
         spline2::computeLocationAndFractional(spline_ptr, rux, ruy, ruz, ix, iy, iz, a, b, c);
 
-        PRAGMA_OFFLOAD("omp parallel")
-        {
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_ptr + first, first, last);
-          C2R::assign_v(x, y, z, psi_ptr, orb_size, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size,
-                        first_spo_local, nComplexBands_local, first / 2, last / 2);
-        }
+        spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_ptr + first, first, last);
+        C2R::assign_v(x, y, z, psi_ptr, orb_size, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size,
+                      first_spo_local, nComplexBands_local, first / 2, last / 2);
       }
     }
   }
@@ -379,19 +376,16 @@ void SplineC2ROMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
         spline2::computeLocationAndFractional(spline_ptr, ST(pos_scratch[iat * 6 + 3]), ST(pos_scratch[iat * 6 + 4]),
                                               ST(pos_scratch[iat * 6 + 5]), ix, iy, iz, a, b, c);
 
-        TT sum(0);
-        PRAGMA_OFFLOAD("omp parallel")
-        {
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
-                                             last);
-          C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
-                        psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
-                        first_spo_local, nComplexBands_local, first / 2, last / 2);
+        spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
+                                           last);
+        C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
+                      psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
+                      first_spo_local, nComplexBands_local, first / 2, last / 2);
 
-          PRAGMA_OFFLOAD("omp for reduction(+:sum)")
-          for (int i = first_real; i < last_real; i++)
-            sum += psi_iat_ptr[i] * psiinv_ptr[i];
-        }
+        TT sum(0);
+        PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
+        for (int i = first_real; i < last_real; i++)
+          sum += psi_iat_ptr[i] * psiinv_ptr[i];
         ratios_private_ptr[iat * NumTeams + team_id] = sum;
       }
   }
@@ -498,19 +492,16 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
         spline2::computeLocationAndFractional(spline_ptr, ST(pos_scratch[iat * 6 + 3]), ST(pos_scratch[iat * 6 + 4]),
                                               ST(pos_scratch[iat * 6 + 5]), ix, iy, iz, a, b, c);
 
-        TT sum(0);
-        PRAGMA_OFFLOAD("omp parallel")
-        {
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
-                                             last);
-          C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
-                        psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
-                        first_spo_local, nComplexBands_local, first / 2, last / 2);
+        spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
+                                           last);
+        C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
+                      psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
+                      first_spo_local, nComplexBands_local, first / 2, last / 2);
 
-          PRAGMA_OFFLOAD("omp for reduction(+:sum)")
-          for (int i = first_real; i < last_real; i++)
-            sum += psi_iat_ptr[i] * psiinv_ptr[i];
-        }
+        TT sum(0);
+        PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
+        for (int i = first_real; i < last_real; i++)
+          sum += psi_iat_ptr[i] * psiinv_ptr[i];
         ratios_private_ptr[iat * NumTeams + team_id] = sum;
       }
   }
