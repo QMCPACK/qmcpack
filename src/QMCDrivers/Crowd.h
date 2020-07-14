@@ -5,8 +5,6 @@
 // Copyright (c) 2019 developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
-//
-// File refactored from VMC.h
 //////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_CROWD_H
