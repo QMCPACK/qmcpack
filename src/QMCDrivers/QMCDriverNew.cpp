@@ -121,10 +121,10 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
  */
 void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts awc)
 {
-  app_log() << this->QMCType << " Driver running with target_walkers=" << awc.global_walkers << std::endl
-            << "                               walkers_per_rank=" << awc.walkers_per_rank[0] << std::endl
-            << "                               num_crowds=" << awc.walkers_per_crowd.size() << std::endl
-            << "                               walkers_per_crowd=" << awc.walkers_per_crowd << std::endl
+  app_log() << this->QMCType << " Driver running with target_walkers =" << awc.global_walkers << std::endl
+            << "                               walkers_per_rank =" << awc.walkers_per_rank << std::endl
+            << "                               num_crowds =" << awc.walkers_per_crowd.size() << std::endl
+            << "                    on rank 0, walkers_per_crowd =" << awc.walkers_per_crowd << std::endl
             << std::endl;
 
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers,
@@ -502,6 +502,10 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
 
   // Step 3. decide awc.walkers_per_crowd
   awc.walkers_per_crowd = fairDivide(awc.walkers_per_rank[rank_id], num_crowds);
+
+  if (awc.global_walkers % num_ranks)
+    app_warning() << "TotalWalkers (" << awc.global_walkers << ") not divisible by number of ranks (" << num_ranks
+                  << "). This will result in a loss of efficiency.\n";
 
   if (awc.walkers_per_rank[rank_id] % num_crowds)
     app_warning() << "Walkers per rank (" << awc.walkers_per_rank[rank_id] << ") not divisible by number of crowds ("
