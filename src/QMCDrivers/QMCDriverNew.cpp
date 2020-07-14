@@ -121,10 +121,11 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
  */
 void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts awc)
 {
-  app_log() << this->QMCType << " Driver running with target_walkers=" << awc.global_walkers << '\n'
-            << "                               walkers_per_rank=" << awc.walkers_per_rank[0] << '\n'
-            << "                               num_crowds=" << awc.walkers_per_crowd.size() << '\n'
-            << "                               walkers_per_crowd=" << awc.walkers_per_crowd << '\n';
+  app_log() << this->QMCType << " Driver running with target_walkers=" << awc.global_walkers << std::endl
+            << "                               walkers_per_rank=" << awc.walkers_per_rank[0] << std::endl
+            << "                               num_crowds=" << awc.walkers_per_crowd.size() << std::endl
+            << "                               walkers_per_crowd=" << awc.walkers_per_crowd << std::endl
+            << std::endl;
 
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers,
                    ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
