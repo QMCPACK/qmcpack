@@ -122,8 +122,9 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
 void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts awc)
 {
   app_log() << this->QMCType << " Driver running with target_walkers=" << awc.global_walkers << '\n'
-            << "                               walkers_per_rank=" << awc.walkers_per_rank << '\n'
-            << "                               num_crowds=" << awc.walkers_per_crowd.size() << '\n';
+            << "                               walkers_per_rank=" << awc.walkers_per_rank[0] << '\n'
+            << "                               num_crowds=" << awc.walkers_per_crowd.size() << '\n'
+            << "                               walkers_per_crowd=" << awc.walkers_per_crowd << '\n';
 
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers,
                    ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
@@ -481,11 +482,11 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
   {
     awc.global_walkers   = required_total;
     awc.walkers_per_rank = fairDivide(required_total, num_ranks);
-    if (walkers_per_rank != 0 && (required_total / walkers_per_rank) * walkers_per_rank == required_total)
+    if (walkers_per_rank != 0 && required_total != walkers_per_rank * num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " and the request of " << required_total << " walkers and "
-            << walkers_per_rank << " cannot be satisfied.";
+      error << "Running on " << num_ranks << " MPI ranks and the request of " << required_total
+            << " global walkers and " << walkers_per_rank << " walkers per rank cannot be satisfied!";
       throw std::runtime_error(error.str());
     }
   }
@@ -500,10 +501,6 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
 
   // Step 3. decide awc.walkers_per_crowd
   awc.walkers_per_crowd = fairDivide(awc.walkers_per_rank[rank_id], num_crowds);
-
-  if (awc.global_walkers % num_ranks)
-    app_warning() << "TotalWalkers (" << awc.global_walkers << ") not divisible by number of ranks (" << num_ranks
-                  << "). This will result in a loss of efficiency.\n";
 
   if (awc.walkers_per_rank[rank_id] % num_crowds)
     app_warning() << "Walkers per rank (" << awc.walkers_per_rank[rank_id] << ") not divisible by number of crowds ("
