@@ -25,7 +25,7 @@ multideterminantal expansions of the ground-state wavefunction
 .. math::
   :label: eq51
 
-  \sum_k c_k \sum_q d_{k,q}D_{k,q\uparrow } (r^{\uparrow})D_{k,q\downarrow}(r^{\downarrow})\:, 
+  \sum_k c_k \sum_q d_{k,q}D_{k,q\uparrow } (r^{\uparrow})D_{k,q\downarrow}(r^{\downarrow})\:,
 
 where each determinant corresponds to a given occupation by the
 :math:`N_{\alpha}` and :math:`N_{\beta}` electrons of

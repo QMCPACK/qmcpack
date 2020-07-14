@@ -259,13 +259,13 @@ Additional information:
    this feature, the following needs to be done:
 
      -  The CUDA Multi-Process Service (MPS) needs to be used (e.g., on
-     Summit/SummitDev use “-alloc_flags gpumps" for bsub). If MPS is not
-     detected, sharing will be disabled.
+        Summit/SummitDev use "-alloc_flags gpumps" for bsub). If MPS is not
+        detected, sharing will be disabled.
 
      -  CUDA_VISIBLE_DEVICES needs to be properly set to control each rank’s
-     visible CUDA devices (e.g., on OLCF Summit/SummitDev one needs to
-     create a resource set containing all GPUs with the respective number
-     of ranks with “jsrun –task-per-rs Ngpus -g Ngpus").
+        visible CUDA devices (e.g., on OLCF Summit/SummitDev one needs to
+        create a resource set containing all GPUs with the respective number
+        of ranks with "jsrun –task-per-rs Ngpus -g Ngpus").
 
 - ``Spline_Size_Limit_MB``. Allows distribution of the B-spline
   coefficient table between the host and GPU memory. The compute kernels
@@ -1233,8 +1233,8 @@ Correlation element:
 Additional information:
 
 - ``speciesA, speciesB`` The scale function u(r) is defined for species pairs uu and ud.
-There is no need to define ud or dd since uu=dd and ud=du.  The cusp condition is computed internally
-based on the charge of the quantum particles.
+  There is no need to define ud or dd since uu=dd and ud=du.  The cusp condition is computed internally
+  based on the charge of the quantum particles.
 
 Coefficients element:
 
