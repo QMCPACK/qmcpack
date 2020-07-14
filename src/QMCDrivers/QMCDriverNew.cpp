@@ -99,8 +99,7 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
   if (num_crowds > num_threads)
   {
     std::stringstream error_msg;
-    error_msg << "Bad Input: num_crowds (" << num_crowds << ") > num_threads (" << num_threads
-              << ")\n";
+    error_msg << "Bad Input: num_crowds (" << num_crowds << ") > num_threads (" << num_threads << ")\n";
     throw std::runtime_error(error_msg.str());
   }
 }
@@ -470,44 +469,37 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
                                                                          RealType reserve_walkers,
                                                                          int num_crowds)
 {
+  // Step 1. set num_crowds by input and Concurrency::maxThreads<>()
   checkNumCrowdsLTNumThreads(num_crowds);
-
-  AdjustedWalkerCounts awc{required_total, {}, {}, reserve_walkers};
-
-  if (required_total != 0)
-  {
-    awc.walkers_per_rank = fairDivide(required_total, num_ranks);
-    if (walkers_per_rank != 0)
-    {
-      if ((required_total / walkers_per_rank) * walkers_per_rank == required_total)
-      {
-        std::ostringstream error;
-        error << "Running on " << num_ranks << " and the request of " << required_total << " walkers and "
-              << walkers_per_rank << " cannot be satisfied.";
-        throw std::runtime_error(error.str());
-      }
-    }
-  }
-  else if (walkers_per_rank != 0)
-  {
-    awc.walkers_per_rank = std::vector<IndexType>(num_ranks, walkers_per_rank);
-  }
-
   if (num_crowds == 0)
     num_crowds = Concurrency::maxThreads<>();
 
-  // if we found a way to determine walkers per rank above
-  if (awc.walkers_per_rank.size() > 0)
+  AdjustedWalkerCounts awc{0, {}, {}, reserve_walkers};
+
+  // Step 2. decide awc.global_walkers and awc.walkers_per_rank based on input values
+  if (required_total != 0)
   {
-    awc.walkers_per_crowd = fairDivide(awc.walkers_per_rank[rank_id], num_crowds);
+    awc.global_walkers   = required_total;
+    awc.walkers_per_rank = fairDivide(required_total, num_ranks);
+    if (walkers_per_rank != 0 && (required_total / walkers_per_rank) * walkers_per_rank == required_total)
+    {
+      std::ostringstream error;
+      error << "Running on " << num_ranks << " and the request of " << required_total << " walkers and "
+            << walkers_per_rank << " cannot be satisfied.";
+      throw std::runtime_error(error.str());
+    }
   }
   else
   {
-    awc.walkers_per_rank  = std::vector<IndexType>(num_ranks, num_crowds);
-    awc.walkers_per_crowd = std::vector<IndexType>(num_crowds, 1);
+    if (walkers_per_rank != 0)
+      awc.walkers_per_rank = std::vector<IndexType>(num_ranks, walkers_per_rank);
+    else
+      awc.walkers_per_rank = std::vector<IndexType>(num_ranks, num_crowds);
+    awc.global_walkers = awc.walkers_per_rank[0] * num_ranks;
   }
 
-  awc.global_walkers = std::accumulate(awc.walkers_per_rank.begin(), awc.walkers_per_rank.end(), 0.0);
+  // Step 3. decide awc.walkers_per_crowd
+  awc.walkers_per_crowd = fairDivide(awc.walkers_per_rank[rank_id], num_crowds);
 
   if (awc.global_walkers % num_ranks)
     app_warning() << "TotalWalkers (" << awc.global_walkers << ") not divisible by number of ranks (" << num_ranks
