@@ -12,7 +12,6 @@
 #ifndef QMCPLUSPLUS_RECORDARRAY_H
 #define QMCPLUSPLUS_RECORDARRAY_H
 
-#include <stdio.h>
 #include <vector>
 
 // This is a data structure with two indices.  The data is a list of samples,
