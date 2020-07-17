@@ -30,6 +30,7 @@ SET(SRCS test_bare_kinetic.cpp
          test_coulomb_pbcAA_ewald.cpp
          test_force.cpp
          test_force_ewald.cpp
+         test_stress.cpp
          test_ecp.cpp
          test_hamiltonian_pool.cpp
          test_hamiltonian_factory.cpp
