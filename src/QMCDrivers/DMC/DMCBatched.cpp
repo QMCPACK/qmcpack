@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -28,7 +28,9 @@ using WP = WalkerProperties::Indexes;
 
 // clang-format off
 /** Constructor maintains proper ownership of input parameters
-   */
+ *
+ *  Note you must call the Base constructor before the derived class sets QMCType
+ */
 DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
                        DMCDriverInput&& input,
                        MCPopulation& pop,
@@ -44,26 +46,6 @@ DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
   QMCType = "DMCBatched";
 }
 // clang-format on
-
-QMCDriverNew::AdjustedWalkerCounts DMCBatched::calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const
-{
-  checkNumCrowdsLTNumThreads();
-  int num_threads(Concurrency::maxThreads<>());
-
-  int orig_walkers_per_rank = awc.walkers_per_rank;
-
-  if (awc.num_crowds == 0)
-    awc.num_crowds = std::min(num_threads, awc.walkers_per_rank);
-  awc.walkers_per_crowd = (awc.walkers_per_rank % awc.num_crowds) ? awc.walkers_per_rank / awc.num_crowds + 1
-                                                                  : awc.walkers_per_rank / awc.num_crowds;
-
-  awc.walkers_per_rank = awc.walkers_per_crowd * awc.num_crowds;
-  if (awc.walkers_per_rank != orig_walkers_per_rank)
-    app_warning() << "DMCBatched driver has adjusted walkers per rank to: " << awc.walkers_per_rank << '\n';
-
-  app_log() << "DMCBatched walkers per crowd " << awc.walkers_per_crowd << std::endl;
-  return awc;
-}
 
 void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
 {
@@ -519,22 +501,10 @@ void DMCBatched::runDMCStep(int crowd_id,
 void DMCBatched::process(xmlNodePtr node)
 {
   QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(myComm, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
-                              dmcdriver_input_.get_reserve(), get_num_crowds());
+      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
+                              dmcdriver_input_.get_reserve(), qmcdriver_input_.get_num_crowds());
 
-  walkers_per_rank_  = awc.walkers_per_rank;
-  walkers_per_crowd_ = awc.walkers_per_crowd;
-  num_crowds_        = awc.num_crowds;
-
-  app_log() << "DMCBatched Driver running with target_walkers=" << awc.global_walkers << '\n'
-            << "                               walkers_per_rank=" << walkers_per_rank_ << '\n'
-            << "                               num_crowds=" << num_crowds_ << '\n';
-
-  // side effect updates walkers_per_crowd_;
-  makeLocalWalkers(awc.walkers_per_rank, awc.reserve_walkers,
-                   ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
-  population_.syncWalkersPerNode(myComm);
-  Base::process(node);
+  Base::startup(node, awc);
 }
 
 bool DMCBatched::run()
@@ -553,11 +523,11 @@ bool DMCBatched::run()
 
   { // walker initialization
     ScopedTimer local_timer(&(timers_.init_walkers_timer));
-    TasksOneToOne<> section_start_task(num_crowds_);
+    TasksOneToOne<> section_start_task(crowds_.size());
     section_start_task(initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
 
-  TasksOneToOne<> crowd_task(num_crowds_);
+  TasksOneToOne<> crowd_task(crowds_.size());
 
   for (int block = 0; block < num_blocks; ++block)
   {
@@ -582,7 +552,8 @@ bool DMCBatched::run()
 
       for (UPtr<Crowd>& crowd_ptr : crowds_)
         crowd_ptr->clearWalkers();
-      population_.distributeWalkers(crowds_.begin(), crowds_.end(), walkers_per_crowd_);
+
+      population_.distributeWalkers(crowds_);
 
       // Accumulate on the whole population
       // But it is now visible in the algorithm not hidden in the BranchEngine::branch.

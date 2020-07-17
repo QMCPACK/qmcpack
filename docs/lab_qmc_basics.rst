@@ -1552,5 +1552,3 @@ Functions: ``def``, argument syntax
                            #   {'timestep': 0.02, 'blocks': 100, 'steps': 5}
 
 .. bibliography:: /bibs/labs_qmc_basics.bib
-
- 

@@ -17,7 +17,7 @@ Using CMake, set one of these flags for using the clang sanitizer libraries with
    -DLLVM_SANITIZE_ADDRESS    link with the Clang address sanitizer library
    -DLLVM_SANITIZE_MEMORY     link with the Clang memory sanitizer library
 
-These set the basic flags required to build with either of these sanitizer libraries. They require a build of clang with dynamic libraries somehow visible (i.e., through ``LD_FLAGS=-L/your/path/to/llvm/lib``). You must link through clang, which is generally the default when building with it. Depending on your system and linker, this may be incompatible with the "Release" build, so set ``-DCMAKE_BUILD_TYPE=Debug``. They have been tested with the default spack install of llvm@7.0.0 and been manually built with llvm 7.0.1. See the following links for additional information on use, run time, and build options of the sanitizers: https://clang.llvm.org/docs/AddressSanitizer.html & https://clang.llvm.org/docs/MemorySanitizer.html.
+These set the basic flags required to build with either of these sanitizer libraries. They require a build of clang with dynamic libraries somehow visible (i.e., through ``LD_FLAGS=-L/your/path/to/llvm/lib``). You must link through clang, which is generally the default when building with it. Depending on your system and linker, this may be incompatible with the "Release" build, so set ``-DCMAKE_BUILD_TYPE=Debug``. They have been tested with the default spack install of llvm 7.0.0 and been manually built with llvm 7.0.1. See the following links for additional information on use, run time, and build options of the sanitizers: https://clang.llvm.org/docs/AddressSanitizer.html & https://clang.llvm.org/docs/MemorySanitizer.html.
 
 In general, the address sanitizer libraries will catch most pointer-based errors. ASAN can also catch memory links but requires that additional options be set. MSAN will catch more subtle memory management errors but is difficult to use without a full set of MSAN-instrumented libraries.
 
@@ -86,5 +86,5 @@ from CMake, which the Understand project importer can read directly:
       -DQMC_MPI=0 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../qmcpack/
 
 #. Run Understand and create a new C++ project. At the import files
-   and settings dialog, import the \texttt{compile_commands.json} created by
+   and settings dialog, import the ``compile_commands.json`` created by
    CMake in the build directory.

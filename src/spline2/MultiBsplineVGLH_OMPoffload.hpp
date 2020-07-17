@@ -285,7 +285,7 @@ inline void evaluate_vgh_impl_v2(const typename qmcplusplus::bspline_traits<T, 3
   const intptr_t zs = spline_m->z_stride;
 
 #ifdef ENABLE_OFFLOAD
-#pragma omp for
+#pragma omp for simd nowait
 #else
 #pragma omp simd aligned(vals, grads, hess)
 #endif

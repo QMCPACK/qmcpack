@@ -1245,7 +1245,7 @@ To use ``qdens``, Nexus must be installed along with NumPy and H5Py. A
 short list of example use cases are covered in the next section. Current
 input flags are:
 
-.. code-block:: c
+.. code-block:: 
 
   >qdens
 

@@ -12,12 +12,15 @@
 #include <limits>
 #include <typeinfo>
 #include <cmath>
+#include <sstream>
+#include <numeric>
 
 #include "QMCDrivers/QMCDriverNew.h"
 #include "Concurrency/TasksOneToOne.hpp"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "Utilities/FairDivide.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -26,6 +29,7 @@
 #include "qmc_common.h"
 #include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
+#include "Utilities/StlPrettyPrint.hpp"
 
 namespace qmcplusplus
 {
@@ -44,7 +48,6 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            SetNonLocalMoveHandler snlm_handler)
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
-      walkers_per_crowd_(1),
       branch_engine_(nullptr),
       population_(population),
       Psi(psi),
@@ -54,16 +57,8 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       wOut(0),
       timers_(timer_prefix),
       setNonLocalMoveHandler_(snlm_handler)
-// num_crowds_(input.get_num_crowds())
 {
-  QMCType = "invalid";
-
-  // Avoids segmentation fault when RandomNumberControl::Children is too small, adds surprising behavior
-  if (Concurrency::maxThreads() < input.get_num_crowds())
-    set_num_crowds(Concurrency::maxThreads(), "RandomNumberControl's maximum children set to omp_get_max_threads()");
-  else
-    num_crowds_ = input.get_num_crowds();
-
+  QMCType  = "invalid";
   rotation = 0;
 
   // This needs to be done here to keep dependency on CrystalLattice out of the QMCDriverInput.
@@ -98,6 +93,17 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
   Psi1.push_back(psi);
 }
 
+void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
+{
+  int num_threads(Concurrency::maxThreads<>());
+  if (num_crowds > num_threads)
+  {
+    std::stringstream error_msg;
+    error_msg << "Bad Input: num_crowds (" << num_crowds << ") > num_threads (" << num_threads << ")\n";
+    throw std::runtime_error(error_msg.str());
+  }
+}
+
 /** process a <qmc/> element
  * @param cur xmlNode with qmc tag
  *
@@ -113,12 +119,16 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  * - initialize Estimators
  * - initialize Walkers
  */
-void QMCDriverNew::process(xmlNodePtr cur)
+void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts awc)
 {
-  // If you really want to persist the MCPopulation it is not the business of QMCDriver to reset it.
-  // It could tell it we are starting a new section but shouldn't be pulling internal strings.
-  //int numCopies = (H1.empty()) ? 1 : H1.size();
-  //W.resetWalkerProperty(numCopies);
+  app_log() << this->QMCType << " Driver running with target_walkers =" << awc.global_walkers << std::endl
+            << "                               walkers_per_rank =" << awc.walkers_per_rank << std::endl
+            << "                               num_crowds =" << awc.walkers_per_crowd.size() << std::endl
+            << "                    on rank 0, walkers_per_crowd =" << awc.walkers_per_crowd << std::endl
+            << std::endl;
+
+  makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers,
+                   ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 
   if (!branch_engine_)
   {
@@ -147,23 +157,19 @@ void QMCDriverNew::process(xmlNodePtr cur)
   branch_engine_->put(cur);
   estimator_manager_->put(H, cur);
 
-  crowds_.resize(num_crowds_);
+  crowds_.resize(awc.walkers_per_crowd.size());
+
   // at this point we can finally construct the Crowd objects.
-  // neglecting first touch for the moment
-  // because em cloning is not threadsafe
-  for (int i = 0; i < num_crowds_; ++i)
+  for (int i = 0; i < crowds_.size(); ++i)
   {
     crowds_[i].reset(new Crowd(*estimator_manager_));
-  } //  crowds_.push_back(
+  }
 
   //now give walkers references to their walkers
-  auto crowd_start = crowds_.begin();
-  auto crowd_end   = crowds_.end();
-  std::for_each(crowd_start, crowd_end, [this](std::unique_ptr<Crowd>& crowd) { crowd->reserve(walkers_per_crowd_); });
-  population_.distributeWalkers(crowd_start, crowd_end, walkers_per_crowd_);
+  population_.distributeWalkers(crowds_);
 
   // Once they are created move contexts can be created.
-  createRngsStepContexts();
+  createRngsStepContexts(crowds_.size());
 
   // if (wOut == 0)
   //   wOut = new HDFWalkerOutput(W, root_name_, myComm);
@@ -188,33 +194,6 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
     h5_file_root_ = h5name;
 }
 
-void QMCDriverNew::checkNumCrowdsLTNumThreads() const
-{
-  int num_threads(Concurrency::maxThreads<>());
-  if (num_crowds_ > num_threads)
-  {
-    std::stringstream error_msg;
-    error_msg << "Bad Input: num_crowds (" << qmcdriver_input_.get_num_crowds() << ") > num_threads (" << num_threads
-              << ")\n";
-    throw std::runtime_error(error_msg.str());
-  }
-}
-
-void QMCDriverNew::set_num_crowds(int num_crowds, const std::string& reason)
-{
-  num_crowds_ = num_crowds;
-  app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << num_crowds << '\n';
-  app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_num_crowds() << " because " << reason
-                << std::endl;
-}
-
-void QMCDriverNew::set_walkers_per_rank(int walkers_per_rank, const std::string& reason)
-{
-  walkers_per_rank_ = walkers_per_rank;
-  app_warning() << " [INPUT OVERIDDEN] The number of crowds has been set to :  " << walkers_per_rank << '\n';
-  app_warning() << " Overiding the input of value of " << qmcdriver_input_.get_walkers_per_rank() << " because "
-                << reason << std::endl;
-}
 /** Read walker configurations from *.config.h5 files
  * @param wset list of xml elements containing mcwalkerset
  *
@@ -348,15 +327,15 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
  *  This is used instead of actually passing number of threads/crowds
  *  controlling threads all over RandomNumberControl.
  */
-void QMCDriverNew::createRngsStepContexts()
+void QMCDriverNew::createRngsStepContexts(int num_crowds)
 {
-  step_contexts_.resize(num_crowds_);
+  step_contexts_.resize(num_crowds);
 
-  TasksOneToOne<> do_per_crowd(num_crowds_);
+  TasksOneToOne<> do_per_crowd(num_crowds);
 
-  Rng.resize(num_crowds_);
+  Rng.resize(num_crowds);
 
-  RngCompatibility.resize(num_crowds_);
+  RngCompatibility.resize(num_crowds);
 
   if (RandomNumberControl::Children.size() == 0)
   {
@@ -365,12 +344,12 @@ void QMCDriverNew::createRngsStepContexts()
     RandomNumberControl::make_seeds();
   }
 
-  for (int i = 0; i < num_crowds_; ++i)
+  for (int i = 0; i < num_crowds; ++i)
   {
     Rng[i].reset(RandomNumberControl::Children[i]);
     // Ye: RandomNumberControl::Children needs to be replaced with unique_ptr and use Rng[i].swap()
     RandomNumberControl::Children[i] = nullptr;
-    step_contexts_[i] = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
+    step_contexts_[i]   = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
                                                           population_.get_particle_group_indexes(), *(Rng[i]));
     RngCompatibility[i] = Rng[i].get();
   }
@@ -485,37 +464,61 @@ std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
 
 void QMCDriverNew::defaultSetNonLocalMoveHandler(QMCHamiltonian& ham) {}
 
-QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communicate* comm,
-                                                                         IndexType desired_count,
+QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num_ranks,
+                                                                         int rank_id,
+                                                                         IndexType required_total,
                                                                          IndexType walkers_per_rank,
                                                                          RealType reserve_walkers,
                                                                          int num_crowds)
 {
-  int ranks = myComm->size();
-  AdjustedWalkerCounts awc{0, 0, 0, 0};
-  awc.global_walkers   = desired_count;
-  awc.walkers_per_rank = walkers_per_rank;
-  awc.reserve_walkers  = reserve_walkers;
-  if (awc.global_walkers != 0)
+  // Step 1. set num_crowds by input and Concurrency::maxThreads<>()
+  checkNumCrowdsLTNumThreads(num_crowds);
+  if (num_crowds == 0)
+    num_crowds = Concurrency::maxThreads<>();
+
+  AdjustedWalkerCounts awc{0, {}, {}, reserve_walkers};
+
+  // Step 2. decide awc.global_walkers and awc.walkers_per_rank based on input values
+  if (required_total != 0)
   {
-    if (awc.global_walkers % ranks)
+    if (required_total < num_ranks)
     {
-      awc.walkers_per_rank = awc.global_walkers / ranks + 1;
-      awc.global_walkers   = awc.walkers_per_rank * ranks;
-      app_warning() << "TargetWalkers not divisible by number of ranks, TargetWalker increased to "
-                    << awc.global_walkers << '\n';
+      std::ostringstream error;
+      error << "Running on " << num_ranks << " MPI ranks and the request of " << required_total
+            << " global walkers cannot be satisfied! Need at least one walker per MPI rank.";
+      throw std::runtime_error(error.str());
     }
-    else
-      awc.walkers_per_rank = awc.global_walkers / ranks;
+    if (walkers_per_rank != 0 && required_total != walkers_per_rank * num_ranks)
+    {
+      std::ostringstream error;
+      error << "Running on " << num_ranks << " MPI ranks and the request of " << required_total
+            << " global walkers and " << walkers_per_rank << " walkers per rank cannot be satisfied!";
+      throw std::runtime_error(error.str());
+    }
+    awc.global_walkers   = required_total;
+    awc.walkers_per_rank = fairDivide(required_total, num_ranks);
   }
-
-  awc = this->calcDefaultLocalWalkers(awc);
-
-  if (awc.walkers_per_rank * ranks != awc.global_walkers)
+  else
   {
-    awc.global_walkers = awc.walkers_per_rank * ranks;
-    app_warning() << "Walkers per rank number of crowds, TargetWalker increased to " << awc.global_walkers << '\n';
+    if (walkers_per_rank != 0)
+      awc.walkers_per_rank = std::vector<IndexType>(num_ranks, walkers_per_rank);
+    else
+      awc.walkers_per_rank = std::vector<IndexType>(num_ranks, num_crowds);
+    awc.global_walkers = awc.walkers_per_rank[0] * num_ranks;
   }
+
+  // Step 3. decide awc.walkers_per_crowd
+  awc.walkers_per_crowd = fairDivide(awc.walkers_per_rank[rank_id], num_crowds);
+
+  if (awc.global_walkers % num_ranks)
+    app_warning() << "TotalWalkers (" << awc.global_walkers << ") not divisible by number of ranks (" << num_ranks
+                  << "). This will result in a loss of efficiency.\n";
+
+  if (awc.walkers_per_rank[rank_id] % num_crowds)
+    app_warning() << "Walkers per rank (" << awc.walkers_per_rank[rank_id] << ") not divisible by number of crowds ("
+                  << num_crowds << "). This will result in a loss of efficiency.\n";
+
+  // \todo some warning if unreasonable number of threads are being used.
 
   return awc;
 }
