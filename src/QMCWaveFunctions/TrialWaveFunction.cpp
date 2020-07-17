@@ -1002,6 +1002,8 @@ void TrialWaveFunction::flex_evaluateParameterDerivatives(const RefVector<TrialW
       else
         twf.Z[i]->evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
     }
+
+    RealType OneOverM = twf.getReciprocalMass();
     for (int i = 0; i < nparam; i++)
     {
       dlogpsi.setValue(i, iw, tmp_dlogpsi[i]);

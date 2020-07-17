@@ -319,7 +319,7 @@ public:
                            std::vector<ValueType>& dhpsioverpsi,
                            bool project = false);
 
-  void flex_evaluateParameterDerivatives(const RefVector<TrialWaveFunction>& wf_list,
+  static void flex_evaluateParameterDerivatives(const RefVector<TrialWaveFunction>& wf_list,
                                          const RefVector<ParticleSet>& p_list,
                                          const opt_variables_type& optvars,
                                          RecordArray<ValueType>& dlogpsi,
@@ -351,6 +351,8 @@ public:
     //RealType mass = tspecies(massind,0);
     //OneOverM = 1.0/mass;
   }
+
+  RealType getReciprocalMass() { return OneOverM; }
 
   /* flexible batched version of evaluateGL.
    * TODO: split the computation from updateBuffer to evaluateGL. Expected to be called by KE
