@@ -57,7 +57,8 @@ ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
       myTwist(0.0),
       ParentName("0"),
       TotalNum(0),
-      coordinates_(std::move(createDynamicCoordinates(kind)))
+      coordinates_(std::move(createDynamicCoordinates(kind))),
+      itableSelf(-1)
 {
   initPropertyList();
   setup_timers(myTimers, PSTimerNames, timer_level_fine);
@@ -356,8 +357,10 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_t
     std::ostringstream description;
     tid                = DistTables.size();
     int dt_type_in_use = (tid == 0 ? dt_type : DistTables[0]->DTType);
-    if (myName == psrc.getName())
+    if (myName == psrc.getName()){
+      itableSelf = tid;
       DistTables.push_back(createDistanceTable(*this, dt_type_in_use, description));
+    }
     else
       DistTables.push_back(createDistanceTable(psrc, *this, dt_type_in_use, description));
     distTableDescriptions.push_back(description.str());

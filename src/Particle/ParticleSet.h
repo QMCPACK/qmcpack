@@ -259,6 +259,10 @@ public:
   /** get a distance table by table_ID
    */
   inline const DistanceTableData& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
+  int itableSelf;
+  inline const DistanceTableData& getDistTableSelf() const {
+    if (itableSelf < 0) APP_ABORT("AA distance table not initialized");
+    return *DistTables[itableSelf]; }
 
   /** reset all the collectable quantities during a MC iteration
    */
