@@ -983,6 +983,37 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
   }
 }
 
+void TrialWaveFunction::flex_evaluateParameterDerivatives(const RefVector<TrialWaveFunction>& wf_list,
+                                                          const RefVector<ParticleSet>& p_list,
+                                                          const opt_variables_type& optvars,
+                                                          RecordArray<ValueType>& dlogpsi,
+                                                          RecordArray<ValueType>& dhpsioverpsi)
+{
+  int nparam = dlogpsi.nparam();
+  for (int iw = 0; iw < wf_list.size(); iw++)
+  {
+    std::vector<ValueType> tmp_dlogpsi(nparam);
+    std::vector<ValueType> tmp_dhpsioverpsi(nparam);
+    TrialWaveFunction& twf = wf_list[iw];
+    for (int i = 0; i < twf.Z.size(); i++)
+    {
+      if (twf.Z[i]->dPsi)
+        (twf.Z[i]->dPsi)->evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
+      else
+        twf.Z[i]->evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
+    }
+
+    RealType OneOverM = twf.getReciprocalMass();
+    for (int i = 0; i < nparam; i++)
+    {
+      dlogpsi.setValue(i, iw, tmp_dlogpsi[i]);
+      //orbitals do not know about mass of particle.
+      dhpsioverpsi.setValue(i, iw, tmp_dhpsioverpsi[i] * OneOverM);
+    }
+  }
+}
+
+
 void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
                                               const opt_variables_type& optvars,
                                               std::vector<ValueType>& dlogpsi)

@@ -28,6 +28,7 @@
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Utilities/NewTimer.h"
 #include "type_traits/template_types.hpp"
+#include "Containers/MinimalContainers/RecordArray.hpp"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
@@ -318,6 +319,12 @@ public:
                            std::vector<ValueType>& dhpsioverpsi,
                            bool project = false);
 
+  static void flex_evaluateParameterDerivatives(const RefVector<TrialWaveFunction>& wf_list,
+                                         const RefVector<ParticleSet>& p_list,
+                                         const opt_variables_type& optvars,
+                                         RecordArray<ValueType>& dlogpsi,
+                                         RecordArray<ValueType>& dhpsioverpsi);
+
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, std::vector<ValueType>& dlogpsi);
 
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi);
@@ -344,6 +351,8 @@ public:
     //RealType mass = tspecies(massind,0);
     //OneOverM = 1.0/mass;
   }
+
+  RealType getReciprocalMass() { return OneOverM; }
 
   /* flexible batched version of evaluateGL.
    * TODO: split the computation from updateBuffer to evaluateGL. Expected to be called by KE
