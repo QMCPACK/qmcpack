@@ -138,8 +138,10 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AB(ParticleSet& 
 }
 
 SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AA(ParticleSet& P)
-{
-  const auto& d_aa = P.getDistTableSelf();
+{ // !!!! HACK to obtain AA distance table using firstTimeStress
+  int itabSelf = ee_table_index;
+  if (firstTimeStress) itabSelf = ii_table_index;
+  const auto& d_aa = P.getDistTable(itabSelf);
 
   SymTensor<RealType, OHMMS_DIM> stress_aa;
   for (int ipart = 0; ipart < NptclB; ipart++)
