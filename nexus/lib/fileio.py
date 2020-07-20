@@ -950,6 +950,78 @@ class XsfFile(StandardFile):
         r,d = self.line_data(dim)
         savetxt(filepath,array(list(zip(r,d))))
     #end def line_plot
+
+    # test needed
+    def coordinatesToSlice(self,r1,r2,r3,dens,cell,corner,grid,meshsize=50,fill_value=0):
+    
+        # Construct crystal meshgrid for dens
+        da = 1./(grid[0]-1)
+        db = 1./(grid[1]-1)
+        dc = 1./(grid[2]-1)
+    
+        cry_corner = np.matmul(corner,np.linalg.inv(cell))
+        a0  = cry_corner[0]
+        b0  = cry_corner[1]
+        c0  = cry_corner[2]
+        
+        ra = np.arange(a0, grid[0]*da, da)
+        rb = np.arange(b0, grid[1]*db, db)
+        rc = np.arange(c0, grid[2]*dc, dc)
+    
+        [mra, mrb, mrc] = np.meshgrid(ra, rb, rc)
+    
+        # 3d Interpolation on crystal coordinates
+        from scipy.interpolate import RegularGridInterpolator
+        g = RegularGridInterpolator((ra,rb,rc), dens, bounds_error=False,fill_value=fill_value)
+    
+        # Construct cartesian meshgrid for dens
+        mrx,mry,mrz = np.array([mra,mrb,mrc]).T.dot(cell).T
+     
+        # First construct a basis (x'^,y'^,z'^) where z'^ is normal to the plane formed from ra, rb, and rc
+        zph = np.cross((r2-r3),(r1-r3))
+        zph = zph/np.linalg.norm(zph)
+        yph = r2-r3
+        yph = yph/np.linalg.norm(yph)
+        xph = np.cross(yph,zph)
+    
+        # Positions in (x'^,y'^,z'^) basis
+        rp1 = np.dot(r1,np.linalg.inv((xph,yph,zph))) 
+        rp2 = np.dot(r2,np.linalg.inv((xph,yph,zph))) 
+        rp3 = np.dot(r3,np.linalg.inv((xph,yph,zph)))  
+    
+        # Meshgrid in (x'^,y'^,z'^) basis
+        mrxp,mryp,mrzp = np.array([mrx,mry,mrz]).T.dot(np.linalg.inv([xph,yph,zph])).T
+    
+        # Generate mesh in (x'^,y'^,z'^) basis. Ensure all points are in cell.
+        xp_min = np.amin(mrxp)
+        xp_max = np.amax(mrxp)
+        yp_min = np.amin(mryp)
+        yp_max = np.amax(mryp)
+    
+    
+        rpx = np.arange(xp_min,xp_max,(xp_max-xp_min)/meshsize)
+        rpy = np.arange(yp_min,yp_max,(yp_max-yp_min)/meshsize)
+        mrpx, mrpy = np.meshgrid(rpx,rpy)
+    
+        slice_dens = []
+        for xpi in np.arange(xp_min,xp_max,(xp_max-xp_min)/meshsize):
+            yline = []
+            for ypi in np.arange(yp_min,yp_max,(yp_max-yp_min)/meshsize):
+                # xpi,ypi,rp1[2] to crystal coords
+                rcry = np.matmul( np.dot((xpi,ypi,rp1[2]),(xph,yph,zph)) , np.linalg.inv(cell))
+                yline.extend(g(rcry))
+                #end if
+            #end for
+            slice_dens.append(yline)
+        #end for
+        slice_dens = np.array(slice_dens).T
+       
+        # return the following...
+        # slice_dens: density on slice
+        # mrpx, mrpy: meshgrid for x',y' coordinates parallel to slice, i.e., (x'^,y'^) basis
+        # rp1, rp2, rp3: Input positions in (x'^,y'^,z'^) basis
+        return slice_dens, mrpx, mrpy, rp1, rp2, rp3
+    #end def coordinatesToSlice
 #end class XsfFile
 
 
