@@ -164,7 +164,11 @@ struct VectorSoaContainer
   __forceinline void attachReference(size_t n, size_t n_padded, T* ptr)
   {
     if (nAllocated)
-      throw std::runtime_error("Pointer attaching is not allowed on VectorSoaContainer with allocated memory.");
+    {
+      free();
+      std::cerr << "OhmmsVectorSoa attachReference called on previously allocated vector.\n" << std::endl;
+      // Nice idea but "default" constructed WFC elements in the batched driver make this a mess.
+    }
     nLocal  = n;
     nGhosts = n_padded;
     myData  = ptr;
