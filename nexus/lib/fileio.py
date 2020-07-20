@@ -952,30 +952,35 @@ class XsfFile(StandardFile):
     #end def line_plot
 
     # test needed
-    def interpolate_plane(self,r1,r2,r3,dens,cell,corner,grid,meshsize=50,fill_value=0):
-    
+    def interpolate_plane(self,r1,r2,r3,density=None,meshsize=50,fill_value=0):
+        if density is None:
+            density = self.get_density()
+        #end if
+   
+        dens_values = np.array(density.values)
+
         # Construct crystal meshgrid for dens
-        da = 1./(grid[0]-1)
-        db = 1./(grid[1]-1)
-        dc = 1./(grid[2]-1)
+        da = 1./(density.grid[0]-1)
+        db = 1./(density.grid[1]-1)
+        dc = 1./(density.grid[2]-1)
     
-        cry_corner = np.matmul(corner,np.linalg.inv(cell))
+        cry_corner = np.matmul(density.corner,np.linalg.inv(density.cell))
         a0  = cry_corner[0]
         b0  = cry_corner[1]
         c0  = cry_corner[2]
         
-        ra = np.arange(a0, grid[0]*da, da)
-        rb = np.arange(b0, grid[1]*db, db)
-        rc = np.arange(c0, grid[2]*dc, dc)
+        ra = np.arange(a0, density.grid[0]*da, da)
+        rb = np.arange(b0, density.grid[1]*db, db)
+        rc = np.arange(c0, density.grid[2]*dc, dc)
     
         [mra, mrb, mrc] = np.meshgrid(ra, rb, rc)
     
         # 3d Interpolation on crystal coordinates
         from scipy.interpolate import RegularGridInterpolator
-        g = RegularGridInterpolator((ra,rb,rc), dens, bounds_error=False,fill_value=fill_value)
+        g = RegularGridInterpolator((ra,rb,rc), dens_values, bounds_error=False,fill_value=fill_value)
     
         # Construct cartesian meshgrid for dens
-        mrx,mry,mrz = np.array([mra,mrb,mrc]).T.dot(cell).T
+        mrx,mry,mrz = np.array([mra,mrb,mrc]).T.dot(density.cell).T
      
         # First construct a basis (x'^,y'^,z'^) where z'^ is normal to the plane formed from ra, rb, and rc
         zph = np.cross((r2-r3),(r1-r3))
@@ -1008,7 +1013,7 @@ class XsfFile(StandardFile):
             yline = []
             for ypi in np.arange(yp_min,yp_max,(yp_max-yp_min)/meshsize):
                 # xpi,ypi,rp1[2] to crystal coords
-                rcry = np.matmul( np.dot((xpi,ypi,rp1[2]),(xph,yph,zph)) , np.linalg.inv(cell))
+                rcry = np.matmul( np.dot((xpi,ypi,rp1[2]),(xph,yph,zph)) , np.linalg.inv(density.cell))
                 yline.extend(g(rcry))
                 #end if
             #end for
