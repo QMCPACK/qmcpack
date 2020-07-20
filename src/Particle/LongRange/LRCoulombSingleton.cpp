@@ -28,8 +28,8 @@
 namespace qmcplusplus
 {
 //initialization of the static data
-LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::CoulombHandler      = 0;
-LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::CoulombDerivHandler = 0;
+std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::CoulombHandler;
+std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::CoulombDerivHandler;
 LRCoulombSingleton::lr_type LRCoulombSingleton::this_lr_type = ESLER;
 /** CoulombFunctor
  *
@@ -116,29 +116,29 @@ LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::getHandler(ParticleSet& r
     if (ref.SK->SuperCellEnum == SUPERCELL_SLAB)
     {
       app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
-      CoulombHandler = new EwaldHandler(ref);
+      CoulombHandler = std::make_unique<EwaldHandler>(ref);
     }
     else //if(ref.LRBox.SuperCellEnum == SUPERCELL_BULK)
     {
-      if(this_lr_type == ESLER)
-      {  
+      if (this_lr_type == ESLER)
+      {
         app_log() << "\n  Creating CoulombHandler with the Esler Optimized Breakup. " << std::endl;
-        CoulombHandler = new LRHandlerTemp<CoulombFunctor<mRealType>, LPQHIBasis>(ref);
+        CoulombHandler = std::make_unique<LRHandlerTemp<CoulombFunctor<mRealType>, LPQHIBasis>>(ref);
       }
       else if (this_lr_type == EWALD)
       {
         app_log() << "\n  Creating CoulombHandler with the 3D Ewald Breakup. " << std::endl;
-        CoulombHandler= new EwaldHandler3D(ref); 
+        CoulombHandler = std::make_unique<EwaldHandler3D>(ref);
       }
       else if (this_lr_type == NATOLI)
       {
         app_log() << "\n  Creating CoulombHandler with the Natoli Optimized Breakup. " << std::endl;
-        CoulombHandler = new LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>(ref);
+        CoulombHandler = std::make_unique<LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>>(ref);
       }
       else
       {
         APP_ABORT("\n  Long range breakup method not recognized.\n");
-      } 
+      }
     }
 //        else if(ref.LRBox.SuperCellEnum == SUPERCELL_SLAB)
 //        {
@@ -147,10 +147,10 @@ LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::getHandler(ParticleSet& r
 //        }
 #elif OHMMS_DIM == 2
     app_log() << "\n   Creating CoulombHandler using 2D Ewald method. " << std::endl;
-    CoulombHandler = new TwoDEwaldHandler(ref);
+    CoulombHandler = std::make_unique<TwoDEwaldHandler>(ref);
 #endif
     CoulombHandler->initBreakup(ref);
-    return CoulombHandler;
+    return CoulombHandler->makeClone(ref);
   }
   else
   {
@@ -169,16 +169,16 @@ LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::getDerivHandler(ParticleS
     if (this_lr_type == EWALD)
     {
       app_log() << "\n  Creating CoulombDerivHandler with the 3D Ewald Breakup. " << std::endl;
-      CoulombDerivHandler= new EwaldHandler3D(ref);
-    } 
+      CoulombDerivHandler = std::make_unique<EwaldHandler3D>(ref);
+    }
     else if (this_lr_type == NATOLI)
     {
       app_log() << "\n  Creating CoulombDerivHandler with the Natoli Optimized Breakup. " << std::endl;
-      CoulombDerivHandler = new LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>(ref);
-    } 
+      CoulombDerivHandler = std::make_unique<LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>>(ref);
+    }
     else if (this_lr_type == ESLER)
     {
-      APP_ABORT("\n  Derivatives are not supported with Esler Optimized Breakup.\n"); 
+      APP_ABORT("\n  Derivatives are not supported with Esler Optimized Breakup.\n");
     }
     else
     {
@@ -189,7 +189,7 @@ LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::getDerivHandler(ParticleS
     CoulombDerivHandler->initBreakup(ref);
     //return CoulombDerivHandler;
 
-    return CoulombDerivHandler;
+    return CoulombDerivHandler->makeClone(ref);
   }
   else
   {

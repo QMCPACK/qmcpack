@@ -19,6 +19,7 @@
 #ifndef QMCPLUSPLUS_LRCOULOMBSINGLETON_H
 #define QMCPLUSPLUS_LRCOULOMBSINGLETON_H
 
+#include <memory>
 #include <config.h>
 #include "LongRange/LRHandlerTemp.h"
 #include "LongRange/LRHandlerSRCoulomb.h"
@@ -37,12 +38,17 @@ struct LRCoulombSingleton
   typedef LinearGrid<pRealType> GridType;
   typedef OneDimCubicSpline<pRealType> RadFunctorType;
 
-  enum lr_type {ESLER=0, EWALD, NATOLI};
+  enum lr_type
+  {
+    ESLER = 0,
+    EWALD,
+    NATOLI
+  };
   static lr_type this_lr_type;
   ///Stores the energ optimized LR handler.
-  static LRHandlerType* CoulombHandler;
+  static std::unique_ptr<LRHandlerType> CoulombHandler;
   ///Stores the force/stress optimized LR handler.
-  static LRHandlerType* CoulombDerivHandler;
+  static std::unique_ptr<LRHandlerType> CoulombDerivHandler;
   ///This returns an energy optimized LR handler.  If non existent, it creates one.
   static LRHandlerType* getHandler(ParticleSet& ref);
   ///This returns a force/stress optimized LR handler.  If non existent, it creates one.
