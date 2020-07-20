@@ -952,7 +952,7 @@ class XsfFile(StandardFile):
     #end def line_plot
 
     # test needed
-    def coordinatesToSlice(self,r1,r2,r3,dens,cell,corner,grid,meshsize=50,fill_value=0):
+    def interpolate_plane(self,r1,r2,r3,dens,cell,corner,grid,meshsize=50,fill_value=0):
     
         # Construct crystal meshgrid for dens
         da = 1./(grid[0]-1)
