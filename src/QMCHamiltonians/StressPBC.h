@@ -65,7 +65,7 @@ struct StressPBC : public OperatorBase, public ForceBase
   bool firstTimeStress;
   StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Psi);
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   void initBreakup(ParticleSet& P);
 
@@ -78,22 +78,22 @@ struct StressPBC : public OperatorBase, public ForceBase
 
   SymTensor<RealType, OHMMS_DIM> evaluateKineticSymTensor(ParticleSet& P);
 
-  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
+  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const override
   {
     registerObservablesF(h5list, gid);
   }
 
-  void addObservables(PropertySetType& plist, BufferType& collectables) { addObservablesStress(plist); }
+  void addObservables(PropertySetType& plist, BufferType& collectables) override { addObservablesStress(plist); }
 
-  void setObservables(PropertySetType& plist) { setObservablesStress(plist); }
+  void setObservables(PropertySetType& plist) override { setObservablesStress(plist); }
 
-  void resetTargetParticleSet(ParticleSet& P) {}
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-  void setParticlePropertyList(PropertySetType& plist, int offset) { setParticleSetStress(plist, offset); }
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
-  bool put(xmlNodePtr cur);
+  void setParticlePropertyList(PropertySetType& plist, int offset) override { setParticleSetStress(plist, offset); }
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  bool put(xmlNodePtr cur) override;
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "Ceperley Force Estimator Hamiltonian: " << pairName;
     return true;
