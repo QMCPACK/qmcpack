@@ -50,9 +50,9 @@ struct LRCoulombSingleton
   ///Stores the force/stress optimized LR handler.
   static std::unique_ptr<LRHandlerType> CoulombDerivHandler;
   ///This returns an energy optimized LR handler.  If non existent, it creates one.
-  static LRHandlerType* getHandler(ParticleSet& ref);
+  static std::unique_ptr<LRHandlerType> getHandler(ParticleSet& ref);
   ///This returns a force/stress optimized LR handler.  If non existent, it creates one.
-  static LRHandlerType* getDerivHandler(ParticleSet& ref);
+  static std::unique_ptr<LRHandlerType> getDerivHandler(ParticleSet& ref);
 
   //The following two helper functions are provided to spline the short-range component
   //of the coulomb potential and its derivative.  This is much faster than evaluating

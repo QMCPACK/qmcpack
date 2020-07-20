@@ -108,7 +108,7 @@ struct PseudoCoulombFunctor
 };
 
 
-LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::getHandler(ParticleSet& ref)
+std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandler(ParticleSet& ref)
 {
   if (CoulombHandler == 0)
   {
@@ -150,15 +150,16 @@ LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::getHandler(ParticleSet& r
     CoulombHandler = std::make_unique<TwoDEwaldHandler>(ref);
 #endif
     CoulombHandler->initBreakup(ref);
-    return CoulombHandler->makeClone(ref);
+    return std::unique_ptr<LRHandlerType>(CoulombHandler->makeClone(ref));
   }
   else
   {
     app_log() << "  Clone CoulombHandler. " << std::endl;
-    return CoulombHandler->makeClone(ref);
+    return std::unique_ptr<LRHandlerType>(CoulombHandler->makeClone(ref));
   }
 }
-LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::getDerivHandler(ParticleSet& ref)
+
+std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getDerivHandler(ParticleSet& ref)
 {
 #if OHMMS_DIM != 3
   APP_ABORT("energy derivative implemented for 3D only");
@@ -184,18 +185,13 @@ LRCoulombSingleton::LRHandlerType* LRCoulombSingleton::getDerivHandler(ParticleS
     {
       APP_ABORT("\n  Long range breakup method for derivatives not recognized.\n");
     }
-    // CoulombDerivHandler = new LRDerivHandler<CoulombFunctor<mRealType>, LPQHIBasis> (ref);
-    //CoulombDerivHandler= new EwaldHandler(ref);
     CoulombDerivHandler->initBreakup(ref);
-    //return CoulombDerivHandler;
-
-    return CoulombDerivHandler->makeClone(ref);
+    return std::unique_ptr<LRHandlerType>(CoulombDerivHandler->makeClone(ref));
   }
   else
   {
     app_log() << "  Clone CoulombDerivHandler. " << std::endl;
-    return CoulombDerivHandler->makeClone(ref);
-    // return CoulombDerivHandler;
+    return std::unique_ptr<LRHandlerType>(CoulombDerivHandler->makeClone(ref));
   }
 }
 
