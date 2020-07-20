@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -16,6 +17,7 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <functional>
 
 #include "Particle/MCWalkerConfiguration.h"
 #include "Estimators/EstimatorManagerBase.h"
@@ -108,7 +110,7 @@ void EstimatorManagerBase::setCommunicator(Communicate* c)
     return;
   myComm = c ? c : OHMMS::Controller;
   //set the default options
-  // This is a flag to tell manager if there is more than one thread
+  // This is a flag to tell manager if there is more than one rank
   // running walkers, its discovered by smelly query of myComm.
   Options.set(COLLECT, myComm->size() > 1);
   Options.set(MANAGE, myComm->rank() == 0);
@@ -133,8 +135,12 @@ void EstimatorManagerBase::setCollectionMode(bool collect)
 
 /** reset names of the properties
  *
+ * \todo this should be in in constructor object shouldn't be reused
+ * Warning this is different from some "resets" in the code, it does not clear the object
+ * 
  * The number of estimators and their order can vary from the previous state.
- * Clear properties before setting up a new BlockAverage data list.
+ * reinitialized properties before setting up a new BlockAverage data list.
+ *
  */
 void EstimatorManagerBase::reset()
 {
@@ -180,6 +186,7 @@ void EstimatorManagerBase::start(int blocks, bool record)
   varAccumulator.clear();
   int nc = (Collectables) ? Collectables->size() : 0;
   BlockAverages.setValues(0.0);
+  // \todo Collectables should just have its own data structures not change the EMBS layout.
   AverageCache.resize(BlockAverages.size() + nc);
   SquaredAverageCache.resize(BlockAverages.size() + nc);
   PropertyCache.resize(BlockProperties.size());
@@ -298,54 +305,50 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
     collectBlockAverages();
 }
 
-void EstimatorManagerBase::stopBlockNew(RealType accept)
+void EstimatorManagerBase::stopBlockNew(RealType accept, RealType block_weight, double cpu_block_time)
 {
   //take block averages and update properties per block
-  PropertyCache[weightInd] = BlockWeight;
-  PropertyCache[cpuInd]    = MyTimer.elapsed();
+  PropertyCache[weightInd] = block_weight;
+  PropertyCache[cpuInd]    = cpu_block_time;
   PropertyCache[acceptInd] = accept;
 
-  collectBlockAverages();
+  makeBlockAverages();
 }
-
 
 
 /** Called at end of block in Unified Driver
  *
  */
-void EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimatorBase>& estimators,
-                                                   const int total_walkers,
-                                                   const RealType block_weight)
+QMCTraits::FullPrecRealType EstimatorManagerBase::collectScalarEstimators(
+    const RefVector<ScalarEstimatorBase>& estimators)
 {
-  // One scalar estimator can be accumulating many scalar values
-  int num_est      = estimators.size();
-  int num_scalars  = estimators[0].get().size();
   using ScalarType = ScalarEstimatorBase::RealType;
 
-  BlockWeight += block_weight;
-  
-  std::vector<ScalarType> averages_work(num_scalars, 0.0);
-  std::vector<ScalarType> averages_sum(num_scalars, 0.0);
+  AverageCache        = 0.0;
+  SquaredAverageCache = 0.0;
+
+  // One scalar estimator can be accumulating many scalar values
+  int num_scalars = estimators[0].get().size();
+  if (AverageCache.size() != num_scalars)
+    throw std::runtime_error(
+        "EstimatorManagerBase and Crowd ScalarManagers do not agree on number of scalars being estimated");
+  Vector<ScalarType> averages_work(num_scalars, 0.0);
+  Vector<ScalarType> sq_averages_work(num_scalars, 0.0);
 
   auto accumulateVectorsInPlace = [](auto& vec_a, const auto& vec_b) {
     for (int i = 0; i < vec_a.size(); ++i)
       vec_a[i] += vec_b[i];
   };
 
-  AverageCache = 0.0;
-  if (AverageCache.size() != num_scalars)
-    throw std::runtime_error(
-        "EstimatorManagerBase and Crowd ScalarManagers do not agree on number of scalars being estimated");
-  for (int i = 0; i < num_est; ++i)
+  RealType tot_weight = 0.0;
+  for (int i = 0; i < estimators.size(); ++i)
   {
-    estimators[i].get().takeBlockAverage(averages_work.begin());
+    RealType weight = estimators[i].get().takeBlockSumsGetWeight(averages_work.begin(), sq_averages_work.begin());
+    tot_weight += weight;
     accumulateVectorsInPlace(AverageCache, averages_work);
+    accumulateVectorsInPlace(SquaredAverageCache, sq_averages_work);
   }
-
-  RealType tnorm = 1.0 / num_est;
-
-  AverageCache *= tnorm;
-
+  return tot_weight;
 }
 
 void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)
@@ -370,7 +373,6 @@ void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& e
   //varAccumulator(est[i]->varAccumulator.mean());
   collectBlockAverages();
 }
-
 
 void EstimatorManagerBase::collectBlockAverages()
 {
@@ -419,6 +421,60 @@ void EstimatorManagerBase::collectBlockAverages()
   }
   RecordCount++;
 }
+
+void EstimatorManagerBase::makeBlockAverages()
+{
+  //there is only one EstimatormanagerBase per rank in the unified driver.
+  //copy cached data to RemoteData[0]
+  //we should not handle RemoteData elsewhere.
+  
+  int n1 = AverageCache.size();
+  int n2 = n1 + AverageCache.size();
+  int n3 = n2 + PropertyCache.size();
+
+  // This is a hack but it needs to be the correct size
+  
+  std::vector<double> send_buffer(n3,0.0);
+  std::vector<double> recv_buffer(n3,0.0);  
+  {
+    auto cur = send_buffer.begin();
+    copy(AverageCache.begin(), AverageCache.end(), cur);
+    copy(SquaredAverageCache.begin(), SquaredAverageCache.end(), cur + n1);
+    copy(PropertyCache.begin(), PropertyCache.end(), cur + n2);
+  }
+  myComm->comm.reduce_n(send_buffer.begin(), send_buffer.size(), recv_buffer.begin(), std::plus<>{}, 0);
+  if (myComm->rank() == 0)
+  {
+    auto cur = recv_buffer.begin();
+    copy(cur, cur + n1, AverageCache.begin());
+    copy(cur + n1, cur + n2, SquaredAverageCache.begin());
+    copy(cur + n2, cur + n3, PropertyCache.begin());
+    RealType invTotWgt = 1.0 / PropertyCache[weightInd];
+    AverageCache *= invTotWgt;
+    SquaredAverageCache *= invTotWgt;
+    //do not weight weightInd i.e. its index 0!
+    for (int i = 1; i < PropertyCache.size(); i++)
+      PropertyCache[i] *= invTotWgt;
+  }
+  //add the block average to summarize
+  energyAccumulator(AverageCache[0]);
+  varAccumulator(SquaredAverageCache[0] - AverageCache[0] * AverageCache[0]);
+  if (Archive)
+  {
+    *Archive << std::setw(10) << RecordCount;
+    int maxobjs = std::min(BlockAverages.size(), max4ascii);
+    for (int j = 0; j < maxobjs; j++)
+      *Archive << std::setw(FieldWidth) << AverageCache[j];
+    for (int j = 0; j < PropertyCache.size(); j++)
+      *Archive << std::setw(FieldWidth) << PropertyCache[j];
+    *Archive << std::endl;
+    for (int o = 0; o < h5desc.size(); ++o)
+      h5desc[o]->write(AverageCache.data(), SquaredAverageCache.data());
+    H5Fflush(h_file, H5F_SCOPE_LOCAL);
+  }
+  RecordCount++;
+}
+
 
 /** accumulate Local energies and collectables
  * @param W ensemble
@@ -480,7 +536,11 @@ void EstimatorManagerBase::getCurrentStatistics(MCWalkerConfiguration& W, RealTy
   var  = tmp[1] / tmp[2] - eavg * eavg;
 }
 
-void EstimatorManagerBase::getCurrentStatistics(const int global_walkers, RefVector<MCPWalker>& walkers, RealType& eavg, RealType& var, Communicate* comm)
+void EstimatorManagerBase::getCurrentStatistics(const int global_walkers,
+                                                RefVector<MCPWalker>& walkers,
+                                                RealType& eavg,
+                                                RealType& var,
+                                                Communicate* comm)
 {
   LocalEnergyOnlyEstimator energynow;
   energynow.clear();

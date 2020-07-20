@@ -31,9 +31,10 @@ struct observable_helper;
 /** Abstract class for an estimator of a scalar operator.
  *
  * ScalarEstimators derived from ScalarEstimatorBase  implement three main functions
- * - reset : reset the internal values so that observables can be accumulated
  * - accumulate : measure and accumulate its value and the square of the value
- * - report : evaluate the block average and variance
+ * - add2Record : \todo document this
+ * - registerObservables : \todo document this
+ * - clone : because all types must be erased
  * ScalarEstimatorBase and its derived classes do not perform any I/O function.
  */
 struct ScalarEstimatorBase
@@ -107,6 +108,23 @@ struct ScalarEstimatorBase
     }
   }
 
+  template<typename IT>
+  inline RealType takeBlockSumsGetWeight(IT first, IT first_sq)
+  {
+    first += FirstIndex;
+    first_sq += FirstIndex;
+    RealType weight = scalars[0].count();
+    for (int i = 0; i < scalars.size(); i++)
+    {
+      *first++         = scalars[i].result();
+      *first_sq++      = scalars[i].result2();
+      scalars_saved[i] = scalars[i]; //save current block
+      scalars[i].clear();
+    }
+    return weight;
+  }
+
+
   /** a virtual function to accumulate observables or collectables
    * @param W const MCWalkerConfiguration
    * @param first const_iterator for the first walker
@@ -117,7 +135,7 @@ struct ScalarEstimatorBase
    */
   virtual void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) = 0;
 
-   /** a virtual function to accumulate observables or collectables
+  /** a virtual function to accumulate observables or collectables
    * @param global_walkers_ walkers per ranks or walkers total?
    * @param RefVector of MCPWalkers
    * @param wgt weight or maybe norm

@@ -38,11 +38,19 @@ class MCWalkerConfiguration;
 class QMCHamiltonian;
 class CollectablesEstimator;
 
+namespace testing
+{
+class EstimatorManagerBaseTest;
+} // namespace testing
+
+
 /** Class to manage a set of ScalarEstimators */
 class EstimatorManagerBase : public EstimatorManagerInterface
 {
 public:
   typedef QMCTraits::FullPrecRealType RealType;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+
   typedef ScalarEstimatorBase EstimatorType;
   typedef std::vector<RealType> BufferType;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
@@ -168,14 +176,15 @@ public:
       Estimators[i]->setNumberOfBlocks(blocks);
   }
 
-  /** stop a block
+  /** unified: stop a block
    * @param accept acceptance rate of this block
-   * 
+   * \param[in] accept_ratio
+   * \param[in] block_weight
+   * \param[in] cpu_block_time Timer returns double so this is not altered by "mixed" precision
    */
-  void stopBlockNew(RealType accept);
+  void stopBlockNew(RealType accept_ratio, RealType block_weight, double cpu_block_time);
 
-  
-  /** stop a block
+  /** legacy: stop a block
    * @param accept acceptance rate of this block
    */
   void stopBlock(RealType accept, bool collectall = true);
@@ -188,9 +197,9 @@ public:
   /** At end of block collect the scalar estimators for the entire rank
    *   
    *  Each is currently accumulates on for crowd of 1 or more walkers
-   *  TODO: What is the correct normalization 
+   *  returns the total weight across all crowds. 
    */
-  void collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators, const int total_walkers, const RealType block_weight);
+  RealType collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
 
   /** accumulate the measurements
    * @param W walkers
@@ -223,8 +232,12 @@ public:
    *  from the previous section passed in
    *  rather than retaining the estimator manager to get them.
    */
-  static void getCurrentStatistics(const int global_walkers, RefVector<MCPWalker>& walkers, RealType& eavg, RealType& var, Communicate* comm);
-  
+  static void getCurrentStatistics(const int global_walkers,
+                                   RefVector<MCPWalker>& walkers,
+                                   RealType& eavg,
+                                   RealType& var,
+                                   Communicate* comm);
+
   template<class CT>
   void write(CT& anything, bool doappend)
   {
@@ -305,11 +318,17 @@ private:
   int max4ascii;
   //Data for communication
   std::vector<BufferType*> RemoteData;
-  ///collect data and write
+  /// legacy: collect data and write
   void collectBlockAverages();
+
+  /// unified: collect data and write
+  void makeBlockAverages();
+
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;
+
+  friend class qmcplusplus::testing::EstimatorManagerBaseTest;
 };
 } // namespace qmcplusplus
 #endif

@@ -100,6 +100,7 @@ public:
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
 protected:
+  void endBlock();
   /** This is a data structure strictly for QMCDriver and its derived classes
    *
    *  i.e. its nested in scope for a reason

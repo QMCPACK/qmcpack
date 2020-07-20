@@ -245,8 +245,8 @@ void VMCBatched::process(xmlNodePtr node)
   // \todo get total walkers should be coming from VMCDriverInput
 
   QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
-                              1.0, qmcdriver_input_.get_num_crowds());
+      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
+                              qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
   Base::startup(node, awc);
 }
 
@@ -327,27 +327,8 @@ bool VMCBatched::run()
         }
       }
     }
-
-    RefVector<ScalarEstimatorBase> all_scalar_estimators;
-    FullPrecRealType total_block_weight = 0.0;
-    FullPrecRealType total_accept_ratio = 0.0;
-    // Collect all the ScalarEstimatorsFrom EMCrowds
-    for (const UPtr<Crowd>& crowd : crowds_)
-    {
-      auto crowd_sc_est = crowd->get_estimator_manager_crowd().get_scalar_estimators();
-      all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
-                                   std::make_move_iterator(crowd_sc_est.end()));
-      total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
-      total_accept_ratio += crowd->get_accept_ratio();
-    }
-    // Should this be adjusted if crowds have different
-    total_accept_ratio /= crowds_.size();
-    estimator_manager_->collectScalarEstimators(all_scalar_estimators, population_.get_num_local_walkers(),
-                                                total_block_weight);
-    // TODO: should be accept rate for block
-    estimator_manager_->stopBlockNew(total_accept_ratio);
+    endBlock();
   }
-
   // This is confusing logic from VMC.cpp want this functionality write documentation of this
   // and clean it up
   // bool wrotesamples = qmcdriver_input_.get_dump_config();
@@ -368,7 +349,8 @@ void VMCBatched::enable_sample_collection()
   samples_.setMaxSamples(compute_samples_per_node(crowds_.size(), population_.get_num_local_walkers()));
   collect_samples_ = true;
 
-  app_log() << "VMCBatched Driver collecting samples, samples_per_node = " << compute_samples_per_node(crowds_.size(), population_.get_num_local_walkers()) << '\n';
+  app_log() << "VMCBatched Driver collecting samples, samples_per_node = "
+            << compute_samples_per_node(crowds_.size(), population_.get_num_local_walkers()) << '\n';
 }
 
 
