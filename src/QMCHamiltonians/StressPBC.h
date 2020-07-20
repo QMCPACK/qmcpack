@@ -71,7 +71,7 @@ struct StressPBC : public OperatorBase, public ForceBase
 
   SymTensor<RealType, OHMMS_DIM> evaluateLR_AB(ParticleSet& P);
   SymTensor<RealType, OHMMS_DIM> evaluateSR_AB(ParticleSet& P_target);
-  SymTensor<RealType, OHMMS_DIM> evaluateSR_AA(ParticleSet& P);
+  SymTensor<RealType, OHMMS_DIM> evaluateSR_AA(ParticleSet& P, int itabSelf);
   SymTensor<RealType, OHMMS_DIM> evaluateLR_AA(ParticleSet& P);
   SymTensor<RealType, OHMMS_DIM> evalConsts_AB();
   SymTensor<RealType, OHMMS_DIM> evalConsts_AA(ParticleSet& P);
@@ -87,7 +87,7 @@ struct StressPBC : public OperatorBase, public ForceBase
 
   void setObservables(PropertySetType& plist) override { setObservablesStress(plist); }
 
-  void resetTargetParticleSet(ParticleSet& P) override;
+  void resetTargetParticleSet(ParticleSet& P) override {}
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override { setParticleSetStress(plist, offset); }
   OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
@@ -101,7 +101,7 @@ struct StressPBC : public OperatorBase, public ForceBase
 
   void CalculateIonIonStress()
   {
-    stress_IonIon = evaluateSR_AA(PtclA) + evaluateLR_AA(PtclA) + evalConsts_AA(PtclA);
+    stress_IonIon = evaluateSR_AA(PtclA, ii_table_index) + evaluateLR_AA(PtclA) + evalConsts_AA(PtclA);
     stress_eI_const += evalConsts_AB();
     stress_ee_const += evalConsts_AA(PtclTarg);
   }
