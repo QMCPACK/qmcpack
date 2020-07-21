@@ -47,7 +47,7 @@ public:
 
   virtual Return_t Params(int i) const = 0;
 
-  virtual std::string getName(int i) const = 0;
+  virtual std::string getParamName(int i) const = 0;
 
   virtual Return_rt Cost(bool needGrad = true) = 0;
 

@@ -83,7 +83,7 @@ public:
       param_deriv_file_ << "# Index ";
       for (int i = 0; i < NumParams_; i++)
       {
-        param_deriv_file_ << " " << TargetFunc->getName(i);
+        param_deriv_file_ << " " << TargetFunc->getParamName(i);
       }
       param_deriv_file_ << std::endl;
       first_ = false;
@@ -156,7 +156,7 @@ public:
     app_log() << "Param_Name  Value    Numeric            Analytic       Percent" << std::endl;
     for (int k = 0; k < NumParams_; k++)
     {
-      std::string vname = TargetFunc->getName(k);
+      std::string vname = TargetFunc->getParamName(k);
       if (Dummy[k] != 0)
         app_log() << vname << " " << RT[k] << "  " << Dummy[k] << "  " << FG[k] << "  "
                   << 100 * (Dummy[k] - FG[k]) / Dummy[k] << std::endl;
