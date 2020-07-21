@@ -83,11 +83,11 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   dmcdriver.setStatus(root_name, prev_config_file, false);
   // We want to express out expectations of the QMCDriver state machine so we catch
   // changes to it over time.
-  CHECK(dmcdriver.getBranchEngine() == nullptr);
+  CHECK(dmcdriver.getNewBranchEngine() == nullptr);
   outputManager.resume();
 
   dmcdriver.process(node);
-  CHECK(dmcdriver.getBranchEngine() != nullptr);
+  CHECK(dmcdriver.getNewBranchEngine() != nullptr);
   CHECK(dmcdriver.get_living_walkers() == 32);
   CHECK(population.get_num_local_walkers() == 32);
   QMCTraits::IndexType reserved_walkers = population.get_num_local_walkers() + population.get_dead_walkers().size();

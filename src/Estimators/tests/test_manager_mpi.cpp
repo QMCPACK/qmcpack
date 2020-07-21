@@ -14,15 +14,15 @@
 
 #include "Platforms/Host/OutputManager.h"
 
-#include "Estimators/EstimatorManagerBase.h"
-#include "Estimators/tests/EstimatorManagerBaseTest.h"
+#include "Estimators/EstimatorManagerNew.h"
+#include "Estimators/tests/EstimatorManagerNewTest.h"
 
 namespace qmcplusplus
 {
 
 namespace testing {
 
-bool EstimatorManagerBaseTest::testMakeBlockAverages()
+bool EstimatorManagerNewTest::testMakeBlockAverages()
 {
   if(em.myComm->rank() == 1) {
     estimators_[1].scalars[0](3.0);
@@ -65,7 +65,7 @@ TEST_CASE("EstimatorManagerBase::makeBlockAverages()", "[estimators]")
 {
   Communicate* c = OHMMS::Controller;
   int num_ranks = c->size();
-  testing::EstimatorManagerBaseTest embt(c, num_ranks);
+  testing::EstimatorManagerNewTest embt(c, num_ranks);
 
   embt.fakeSomeScalarSamples();
   embt.testMakeBlockAverages();

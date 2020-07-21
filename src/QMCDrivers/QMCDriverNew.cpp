@@ -25,6 +25,7 @@
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "OhmmsApp/RandomNumberControl.h"
+#include "Estimators/EstimatorManagerNew.h"
 #include "HDFVersion.h"
 #include "qmc_common.h"
 #include "Concurrency/Info.hpp"
@@ -132,14 +133,14 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
 
   if (!branch_engine_)
   {
-    branch_engine_ = new SimpleFixedNodeBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
+    branch_engine_ = new SFNBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
   }
 
   //create and initialize estimator
   estimator_manager_ = branch_engine_->getEstimatorManager();
   if (!estimator_manager_)
   {
-    estimator_manager_ = new EstimatorManagerBase(myComm);
+    estimator_manager_ = new EstimatorManagerNew(myComm);
     // TODO: remove this when branch engine no longer depends on estimator_mamanger_
     branch_engine_->setEstimatorManager(estimator_manager_);
     // This used to get updated as a side effect of setStatus

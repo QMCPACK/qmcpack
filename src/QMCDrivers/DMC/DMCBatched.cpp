@@ -513,7 +513,6 @@ bool DMCBatched::run()
   resetUpdateEngines();
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
-  estimator_manager_->setCollectionMode(true);
   estimator_manager_->start(num_blocks);
   StateForThread dmc_state(qmcdriver_input_, dmcdriver_input_, *drift_modifier_, *branch_engine_, population_);
 

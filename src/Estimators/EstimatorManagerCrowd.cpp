@@ -14,7 +14,7 @@
 
 namespace qmcplusplus
 {
-EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerBase& em)
+EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
     : MainEstimatorName(em.MainEstimatorName),
       Options(em.Options),
       RecordCount(0),

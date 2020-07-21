@@ -1023,7 +1023,7 @@ void SimpleFixedNodeBranch::write(const std::string& fname, bool overwrite)
     //\since 2008-06-24
     vParam[SBVP::ACC_ENERGY]  = EnergyHist.result();
     vParam[SBVP::ACC_SAMPLES] = EnergyHist.count();
-    BranchIO hh(*this, MyEstimator->getCommunicator());
+    BranchIO<SimpleFixedNodeBranch> hh(*this, MyEstimator->getCommunicator());
     bool success = hh.write(fname);
   }
 }
@@ -1035,7 +1035,7 @@ void SimpleFixedNodeBranch::read(const std::string& fname)
     return;
   vParam[SBVP::ACC_ENERGY]  = EnergyHist.result();
   vParam[SBVP::ACC_SAMPLES] = EnergyHist.count();
-  BranchIO hh(*this, MyEstimator->getCommunicator());
+  BranchIO<SimpleFixedNodeBranch> hh(*this, MyEstimator->getCommunicator());
   BranchModeType bmode(BranchMode);
   bool success = hh.read(fname);
   if (success && R2Proposed.good() && bmode[B_POPCONTROL] == BranchMode[B_POPCONTROL])

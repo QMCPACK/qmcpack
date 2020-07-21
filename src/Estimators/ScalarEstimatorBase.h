@@ -19,7 +19,7 @@
 #include <OhmmsData/RecordProperty.h>
 #include <OhmmsData/HDFAttribIO.h>
 #include <Estimators/accumulators.h>
-#include "QMCDrivers/MCPopulation.h"
+#include "Particle/Walker.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
 #endif
@@ -42,7 +42,7 @@ struct ScalarEstimatorBase
   typedef QMCTraits::FullPrecRealType RealType;
   typedef accumulator_set<RealType> accumulator_type;
   typedef MCWalkerConfiguration::Walker_t Walker_t;
-  using MCPWalker = MCPopulation::MCPWalker;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
   typedef MCWalkerConfiguration::const_iterator WalkerIterator;
   typedef RecordNamedProperty<RealType> RecordListType;
 

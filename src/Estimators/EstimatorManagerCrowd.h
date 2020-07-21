@@ -19,8 +19,9 @@
 #include "Utilities/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
-#include "Estimators/EstimatorManagerBase.h"
+#include "Estimators/EstimatorManagerNew.h"
 #include "Estimators/EstimatorManagerInterface.h"
+#include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
 
@@ -38,7 +39,7 @@ class CollectablesEstimator;
 class EstimatorManagerCrowd : public EstimatorManagerInterface
 {
 public:
-  using MCPWalker = MCPopulation::MCPWalker;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
   //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
   ///name of the primary estimator name
@@ -50,7 +51,7 @@ public:
   ///default constructor
   EstimatorManagerCrowd() = delete;
   ///copy constructor
-  EstimatorManagerCrowd(EstimatorManagerBase& em);
+  EstimatorManagerCrowd(EstimatorManagerNew& em);
   ///destructor
   virtual ~EstimatorManagerCrowd(){};
 
