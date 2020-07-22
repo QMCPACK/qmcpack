@@ -191,9 +191,8 @@ UPtrVector<ParticleSet::ParticleGradient_t> create_particle_gradient(int nelec, 
 {
   UPtrVector<ParticleSet::ParticleGradient_t> G_list;
   for (int i = 0; i < nentry; i++)
-  {
     G_list.emplace_back(std::make_unique<ParticleSet::ParticleGradient_t>(nelec));
-  }
+
   return G_list;
 }
 
@@ -201,9 +200,8 @@ UPtrVector<ParticleSet::ParticleLaplacian_t> create_particle_laplacian(int nelec
 {
   UPtrVector<ParticleSet::ParticleLaplacian_t> L_list;
   for (int i = 0; i < nentry; i++)
-  {
     L_list.emplace_back(std::make_unique<ParticleSet::ParticleLaplacian_t>(nelec));
-  }
+
   return L_list;
 }
 
