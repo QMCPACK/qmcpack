@@ -31,6 +31,7 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
       Ratio1GradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratioGrad")),
       Ratio1AllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio(all)")),
       AccRejTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::Accept_Reject")),
+      CI_Optimizable(false),
       IsCloned(false),
       C2node_up(nullptr),
       C2node_dn(nullptr),
@@ -100,6 +101,8 @@ WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp)
   clone->Optimizable = Optimizable;
   clone->usingCSF    = usingCSF;
   clone->usingBF     = usingBF;
+
+  clone->CI_Optimizable = CI_Optimizable;
 
   if (usingCSF)
   {
