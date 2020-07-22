@@ -167,6 +167,14 @@ public:
                         ParticleSet::ParticleGradient_t& fixedG,
                         ParticleSet::ParticleLaplacian_t& fixedL);
 
+  static void flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>& wf_list,
+                             const RefVector<ParticleSet>& p_list,
+                             std::vector<RealType>& logpsi_fixed_list,
+                             std::vector<RealType>& logpsi_opt_list,
+                             RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
+                             RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list);
+
+
   /** compute psi(R_new) / psi(R_current) ratio
    * It returns a complex value if the wavefunction is complex.
    * @param P the active ParticleSet

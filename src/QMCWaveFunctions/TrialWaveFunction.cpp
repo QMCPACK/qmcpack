@@ -293,6 +293,57 @@ void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
   convert(logpsi_opt, logpsi_opt_r);
 }
 
+void TrialWaveFunction::flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>& wf_list,
+                                              const RefVector<ParticleSet>& p_list,
+                                              std::vector<RealType>& logpsi_fixed_list,
+                                              std::vector<RealType>& logpsi_opt_list,
+                                              RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
+                                              RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list)
+{
+  constexpr RealType czero(0);
+  int num_particles = p_list[0].get().getTotalNum();
+  const auto g_list(TrialWaveFunction::extractGRefList(wf_list));
+  const auto l_list(TrialWaveFunction::extractLRefList(wf_list));
+
+  auto initGandL = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad,
+                                          ParticleSet::ParticleLaplacian_t& lapl) {
+    grad.resize(num_particles);
+    lapl.resize(num_particles);
+    grad           = czero;
+    lapl           = czero;
+    twf.LogValue   = czero;
+    twf.PhaseValue = czero;
+  };
+  for (int iw = 0; iw < wf_list.size(); iw++)
+    initGandL(wf_list[iw], g_list[iw], l_list[iw]);
+  auto& wavefunction_components = wf_list[0].get().Z;
+  const int num_wfc             = wf_list[0].get().Z.size();
+  int ii                        = RECOMPUTE_TIMER;
+  for (int i = 0; i < num_wfc; ++i, ii += TIMER_SKIP)
+  {
+    ScopedTimer local_timer(wf_list[0].get().myTimers[ii]);
+    const auto wfc_list(extractWFCRefList(wf_list, i));
+    if (wavefunction_components[i]->Optimizable)
+    {
+      wavefunction_components[i]->mw_evaluateLog(wfc_list, p_list, g_list, l_list);
+
+      for (int iw = 0; iw < wf_list.size(); iw++)
+      {
+        logpsi_opt_list[iw] += std::real(wfc_list[iw].get().LogValue);
+      }
+    }
+    else
+    {
+      wavefunction_components[i]->mw_evaluateLog(wfc_list, p_list, fixedG_list, fixedL_list);
+      for (int iw = 0; iw < wf_list.size(); iw++)
+      {
+        logpsi_fixed_list[iw] += std::real(wfc_list[iw].get().LogValue);
+      }
+    }
+  }
+}
+
+
 /*void TrialWaveFunction::evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi)
 {
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
