@@ -249,20 +249,6 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
   return LogValue;
 }
 
-
-/** evaluate the sum of log value of optimizable many-body wavefunctions
-* @param P  input configuration containing N particles
-* @param logpsi_fixed log(std::abs(psi)) of the invariant orbitals
-* @param logpsi_opt log(std::abs(psi)) of the variable orbitals
-* @param fixedG gradients of log(psi) of the fixed wave functions
-* @param fixedL laplacians of log(psi) of the fixed wave functions
-*
-* This function is introduced for optimization only.
-* fixedG and fixedL save the terms coming from the wave functions
-* that are invarient during optimizations.
-* It is expected that evaluateDeltaLog(P,false) is called later
-* and the external object adds the varying G and L and the fixed terms.
-*/
 void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
                                          RealType& logpsi_fixed_r,
                                          RealType& logpsi_opt_r,
@@ -293,20 +279,6 @@ void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
   convert(logpsi_opt, logpsi_opt_r);
 }
 
-/** evaluate the sum of log value of optimizable many-body wavefunctions
-* @param wf_list vector of wavefunctions
-* @param p_list vector of input particle configurations
-* @param logpsi_fixed_list vector of log(std::abs(psi)) of the invariant orbitals
-* @param logpsi_opt_list vector of log(std::abs(psi)) of the variable orbitals
-* @param fixedG_list vector of gradients of log(psi) of the fixed wave functions
-* @param fixedL_list vector of laplacians of log(psi) of the fixed wave functions
-*
-* This function is introduced for optimization only.
-* fixedG and fixedL save the terms coming from the wave functions
-* that are invarient during optimizations.
-* It is expected that flex_evaluateDeltaLog(P,false) is called later
-* and the external object adds the varying G and L and the fixed terms.
-*/
 
 void TrialWaveFunction::flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>& wf_list,
                                               const RefVector<ParticleSet>& p_list,
