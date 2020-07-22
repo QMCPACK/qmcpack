@@ -187,28 +187,26 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 }
 
 
-RefVector<ParticleSet::ParticleGradient_t> create_particle_gradient(int nelec, int nentry)
+UPtrVector<ParticleSet::ParticleGradient_t> create_particle_gradient(int nelec, int nentry)
 {
-  RefVector<ParticleSet::ParticleGradient_t> fixedG_list;
+  UPtrVector<ParticleSet::ParticleGradient_t> G_list;
   for (int i = 0; i < nentry; i++)
   {
-    ParticleSet::ParticleGradient_t* G1 = new ParticleSet::ParticleGradient_t();
-    G1->resize(nelec);
-    fixedG_list.push_back(*G1);
+    G_list.push_back(std::make_unique<ParticleSet::ParticleGradient_t>());
+    G_list.back()->resize(nelec);
   }
-  return fixedG_list;
+  return G_list;
 }
 
-RefVector<ParticleSet::ParticleLaplacian_t> create_particle_laplacian(int nelec, int nentry)
+UPtrVector<ParticleSet::ParticleLaplacian_t> create_particle_laplacian(int nelec, int nentry)
 {
-  RefVector<ParticleSet::ParticleLaplacian_t> fixedL_list;
+  UPtrVector<ParticleSet::ParticleLaplacian_t> L_list;
   for (int i = 0; i < nentry; i++)
   {
-    ParticleSet::ParticleLaplacian_t* L1 = new ParticleSet::ParticleLaplacian_t();
-    L1->resize(nelec);
-    fixedL_list.push_back(*L1);
+    L_list.push_back(std::make_unique<ParticleSet::ParticleLaplacian_t>());
+    L_list.back()->resize(nelec);
   }
-  return fixedL_list;
+  return L_list;
 }
 
 TEST_CASE("TrialWaveFunction flex_evaluateDeltaLog", "[wavefunction]")
@@ -256,8 +254,10 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLog", "[wavefunction]")
   std::vector<RealType> logpsi_fixed_list(nentry);
   std::vector<RealType> logpsi_opt_list(nentry);
 
-  auto fixedG_list = create_particle_gradient(nelec, nentry);
-  auto fixedL_list = create_particle_laplacian(nelec, nentry);
+  auto fixedG_list_ptr = create_particle_gradient(nelec, nentry);
+  auto fixedL_list_ptr = create_particle_laplacian(nelec, nentry);
+  auto fixedG_list     = convertUPtrToRefVector(fixedG_list_ptr);
+  auto fixedL_list     = convertUPtrToRefVector(fixedL_list_ptr);
 
   psi.flex_evaluateDeltaLog(wf_list, p_list, logpsi_fixed_list, logpsi_opt_list, fixedG_list, fixedL_list);
 
@@ -310,8 +310,10 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLog", "[wavefunction]")
   CHECK(logpsi_fixed_r1 == Approx(logpsi_fixed_r1b));
   CHECK(logpsi_opt_r1 == Approx(logpsi_opt_r1b));
 
-  auto fixedG_list2 = create_particle_gradient(nelec, nentry);
-  auto fixedL_list2 = create_particle_laplacian(nelec, nentry);
+  auto fixedG_list2_ptr = create_particle_gradient(nelec, nentry);
+  auto fixedL_list2_ptr = create_particle_laplacian(nelec, nentry);
+  auto fixedG_list2     = convertUPtrToRefVector(fixedG_list2_ptr);
+  auto fixedL_list2     = convertUPtrToRefVector(fixedL_list2_ptr);
 
   psi2.flex_evaluateDeltaLog(wf_list, p_list, logpsi_fixed_list2, logpsi_opt_list2, fixedG_list2, fixedL_list2);
 
