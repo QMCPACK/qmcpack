@@ -62,31 +62,17 @@ except (ImportError,RuntimeError):
 
 
 # matplotlib imports
-success = False
+matplotlib_import_success = False
 try:
-    import matplotlib
-    gui_envs = ['GTKAgg','TKAgg','Qt4Agg','WXAgg']
-    for gui in gui_envs:
-        try:
-            matplotlib.use(gui,warn=False, force=True)
-            from matplotlib import pyplot
-            success = True
-            break
-        except:
-            continue
-        #end try
-    #end for
     import matplotlib.pyplot as plt
 
     params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
           'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
     plt.rcParams.update(params)
+    matplotlib_import_success = True
 except (ImportError,RuntimeError):
-    success = False
+    matplotlib_import_success = False
 #end try
-if not success:
-    plt = unavailable('matplotlib.pyplot')
-#end if
 
 
 
@@ -210,6 +196,13 @@ class QBase(DevBase):
         pad = n*'  '
         self._logfile.write(pad+text.replace('\n','\n'+pad)+'\n')
     #end def log
+
+
+    def check_matplotlib_import(self):
+        if not self.options.nowarn and not matplotlib_import_success:
+            self.warn('Python library matplotlib raised uncaught exceptions during import.  Plots may or may not work.')
+        #end if
+    #end def check_matplotlib_import
 #end class QBase
 
 
@@ -679,6 +672,7 @@ class DatAnalyzer(QBase):
 
 
     def plot_trace(self,quantity,style,prefix,shift):
+        self.check_matplotlib_import()
         if not quantity in self.data:
             self.error('quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath),'QMCA')
         #end if
@@ -945,6 +939,10 @@ QMCA examples:
         parser.add_option('--fp',dest='precision',
                           default=None,
                           help='Sets the floating point precision of displayed statistical results.  Must be a floating point format string such as 16.8f, 8.6e, or similar (default=%default).'
+                          )
+        parser.add_option('--nowarn',dest='nowarn',
+                          action='store_true',default=False,
+                          help='Suppress warning messages (default=%default).'
                           )
 
         unsupported = set('histogram image reblock report'.split())
@@ -1291,6 +1289,7 @@ QMCA examples:
             #end for
         #end if
         if plots:
+            self.check_matplotlib_import()
             color       = 'b'
             line        = '-'
             marker      = '.'
@@ -1419,7 +1418,6 @@ QMCA examples:
             plt.show()
         #end if
     #end def analyze_data
-
 #end class QMCA
 
 
