@@ -343,7 +343,7 @@ void SFNBranch::checkParameters(const int global_walkers, RefVector<MCPWalker>& 
   app_log().flush();
 }
 
-void SFNBranch::finalize(const int global_walkers, RefVector<MCPWalker>& walkers)
+void SFNBranch::finalize(Communicate& comm, const int global_walkers, RefVector<MCPWalker>& walkers)
 {
   std::ostringstream o;
   if (WalkerController)
@@ -398,7 +398,7 @@ void SFNBranch::finalize(const int global_walkers, RefVector<MCPWalker>& walkers
     o << "\n====================================================";
   }
   app_log() << o.str() << std::endl;
-  write(RootName, true);
+  write(comm, RootName, true);
 }
 
 /**  Parse the xml file for parameters
@@ -462,10 +462,10 @@ void SFNBranch::reset()
     std::cerr << "Calling reset with no WalkerController and therefore nothing to do. Why?\n";
 }
 
-void SFNBranch::write(const std::string& fname, bool overwrite)
+void SFNBranch::write(Communicate& comm, const std::string& fname, bool overwrite)
 {
   RootName = fname;
-  if (MyEstimator->is_manager())
+  if (comm.rank() == 0)
   {
     //\since 2008-06-24
     vParam[SBVP::ACC_ENERGY]  = EnergyHist.result();

@@ -424,7 +424,8 @@ struct SFNBranch : public QMCTraits
    * @param fname name of the configuration file
    * @param overwrite NOT USED
    */
-  void write(const std::string& fname, bool overwrite = true);
+  void write(Communicate& comm,
+             const std::string& fname, bool overwrite = true);
 
   void read(const std::string& fname);
 
@@ -434,7 +435,7 @@ struct SFNBranch : public QMCTraits
   ///start a run
   void start(const std::string& froot, bool append = false);
   ///finalize the simulation
-  void finalize(const int global_walkers, RefVector<MCPWalker>& walkers);
+  void finalize(Communicate& comm, const int global_walkers, RefVector<MCPWalker>& walkers);
 
   void setRN(bool rn);
 
