@@ -1474,44 +1474,4 @@ The following is an example use case.
 </estimator>
 \end{lstlisting}
 
-\section{Stress estimator} \label{sec:stress_est}
 
-QMCPACK takes the following parameters.
-\FloatBarrier
-\begin{table}[h]
-\begin{center}
-\begin{tabularx}{\textwidth}{l l l l l X }
-\hline
-\multicolumn{6}{l}{\texttt{estimator type=Force} element} \\
-\hline
-\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian}}\\
-\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
-   & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
-   &   \texttt{mode}$^r$      &  text              & \textit{See above}        & bare          & Select ``stress''\\
-   &   \texttt{type}$^r$      &  text              &  Force            &               & Must be ``Force"         \\
-   &   \texttt{name}$^o$      &  text              & \textit{anything}         & ForceBase     & Unique name for this estimator\\
-   &   \texttt{addionion}$^o$       &  boolean           & yes/no                    & no           & Add the ion-ion stress contribution to output stress estimate   \\
-  \hline
-\end{tabularx}
-\end{center}
-\end{table}
-\FloatBarrier
-
-Additional information:
-\begin{itemize}
-  \item{\textbf{Naming Convention}: The unique identifier \texttt{name} is appended with \texttt{name\_X\_Y} in the \texttt{scalar.dat} file, where \texttt{X} and \texttt{Y} are the component IDs (an integer with x=0, y=1, z=2).}
-  \item{\textbf{Long-range breakup}: With periodic boundary conditions, it is important to converge the lattice sum when calculating Coulomb contribution to the forces. As a quick test, increase the \texttt{LR\_dim\_cutoff} parameter until ion-ion stresses are converged. Check using QE ``Ewald contribution'' for example. The stress estimator is only implemented with the Ewald method.}
-\end{itemize}
-The following is an example use case.
-\begin{lstlisting}[style=QMCPXML]
-<simulationcell>
-  ...
-  <parameter name="LR_handler">  ewald  </parameter>
-  <parameter name="LR_dim_cutoff">  45  </parameter>
-</simulationcell>
-
-<hamiltonian>
-  ...
-  <estimator name="S" type="Force" mode="stress" source="ion0"/>
-<hamiltonian>
-\end{lstlisting}
