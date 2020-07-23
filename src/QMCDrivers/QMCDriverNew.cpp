@@ -127,6 +127,9 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
             << "                    on rank 0, walkers_per_crowd =" << awc.walkers_per_crowd << std::endl
             << std::endl;
 
+  // set num_global_walkers explicitly and then make local walkers.
+  population_.set_num_global_walkers(awc.global_walkers);
+
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers,
                    ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 
@@ -289,6 +292,7 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
                                     RealType reserve,
                                     const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
+  // ensure nwalkers local walkers in population_
   if (population_.get_walkers().size() == 0)
   {
     population_.createWalkers(nwalkers, reserve);

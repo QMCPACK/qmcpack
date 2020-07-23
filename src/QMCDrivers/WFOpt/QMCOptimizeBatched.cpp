@@ -223,8 +223,8 @@ bool QMCOptimizeBatched::put(xmlNodePtr q)
     }
     else if (optmethod == "test")
     {
-      app_log() << "Conjugate-gradient optimization using tester Optimization: " << std::endl;
-      optSolver = new testDerivOptimization<RealType>;
+      app_log() << "Test and output parameter derivatives (batched): " << std::endl;
+      optSolver = new testDerivOptimization<RealType>(RootName);
     }
     else
     {

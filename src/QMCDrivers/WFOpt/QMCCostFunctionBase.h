@@ -172,7 +172,7 @@ public:
   inline void setneedGrads(bool tf) { needGrads = tf; }
   inline void setDMC() { vmc_or_dmc = 1.0; }
 
-  inline std::string getName(int i) const { return OptVariables.name(i); }
+  inline std::string getParamName(int i) const { return OptVariables.name(i); }
 
   inline const opt_variables_type& getOptVariables() const { return OptVariables; }
 

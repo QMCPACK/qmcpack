@@ -82,7 +82,7 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   ParticleSetPool ptcl = ParticleSetPool(c);
 
 
-  CoulombPBCAB_CUDA cab = CoulombPBCAB_CUDA(ions, elec);
+  CoulombPBCAB_CUDA cab(ions, elec);
 
   // Background charge term
   double consts = cab.evalConsts();
@@ -158,7 +158,7 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   ParticleSetPool ptcl = ParticleSetPool(c);
 
 
-  CoulombPBCAB_CUDA cab = CoulombPBCAB_CUDA(ions, elec);
+  CoulombPBCAB_CUDA cab(ions, elec);
 
   // Background charge term
   double consts = cab.evalConsts();
@@ -227,7 +227,7 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   ions.updateLists_GPU();
 
 
-  CoulombPBCAA_CUDA caa = CoulombPBCAA_CUDA(ions, true);
+  CoulombPBCAA_CUDA caa(ions, true);
 
   // Background charge term
   double consts = caa.evalConsts();
