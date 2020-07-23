@@ -295,14 +295,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   int initWalkerController(MCWalkerConfiguration& mcwc, bool fixW, bool killwalker);
 
-  /** initialize  the WalkerController
-   * @param pop Population of Walkers
-   * @param fixW true, if reconfiguration with the fixed number of walkers is used
-   * @param killwalker 
-   * @return number of copies to make in case targetwalkers changed
-   */
-  int initWalkerController(MCPopulation& pop, bool fixW, bool killwalker);
-
   /** initialize reptile stats
    *
    *
@@ -312,10 +304,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** determine trial and reference energies
    */
   void checkParameters(MCWalkerConfiguration& w);
-
-  /** determine trial and reference energies
-   */
-  void checkParameters(const int global_walkers, RefVector<MCPWalker>& walkers);
 
   /** return the bare branch weight
    *
@@ -438,12 +426,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   void branch(int iter, MCWalkerConfiguration& w);
 
-  /** perform branching
-   * @param iter current step
-   * @param w Walker configuration
-   */
-  void branch(int iter, MCPopulation& population);
-
   /** update RMC counters and running averages.
    * @param iter the iteration
    * @param w the walker ensemble
@@ -482,8 +464,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
   void start(const std::string& froot, bool append = false);
   ///finalize the simulation
   void finalize(MCWalkerConfiguration& w);
-  ///finalize the simulation
-  void finalize(const int global_walkers, RefVector<MCPWalker>& walkers);
 
   void setRN(bool rn);
 

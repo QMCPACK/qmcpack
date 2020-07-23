@@ -401,64 +401,6 @@ void SFNBranch::finalize(const int global_walkers, RefVector<MCPWalker>& walkers
   write(RootName, true);
 }
 
-void SFNBranch::finalize(MCWalkerConfiguration& w)
-{
-  std::ostringstream o;
-  if (WalkerController)
-  {
-    o << "====================================================";
-    o << "\n  SFNBranch::finalize after a DMC block";
-    o << "\n    QMC counter                   = " << iParam[B_COUNTER];
-    o << "\n    time step                     = " << vParam[SBVP::TAU];
-    o << "\n    effective time step           = " << vParam[SBVP::TAUEFF];
-    o << "\n    trial energy                  = " << vParam[SBVP::ETRIAL];
-    o << "\n    reference energy              = " << vParam[SBVP::EREF];
-    o << "\n    reference variance            = " << vParam[SBVP::SIGMA2];
-    o << "\n    target walkers                = " << iParam[B_TARGETWALKERS];
-    o << "\n    branch cutoff                 = " << vParam[SBVP::BRANCHCUTOFF] << " " << vParam[SBVP::BRANCHMAX];
-    o << "\n    Max and minimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS];
-    o << "\n    Feedback                      = " << vParam[SBVP::FEEDBACK];
-    o << "\n    QMC Status (BranchMode)       = " << BranchMode;
-    o << "\n====================================================";
-  }
-  //running RMC
-  else if (BranchMode[B_RMC])
-  {
-    o << "====================================================";
-    o << "\n  SFNBranch::finalize after a RMC block";
-    o << "\n    QMC counter                   = " << iParam[B_COUNTER];
-    o << "\n    time step                     = " << vParam[SBVP::TAU];
-    o << "\n    effective time step           = " << vParam[SBVP::TAUEFF];
-    o << "\n    reference energy              = " << vParam[SBVP::EREF];
-    o << "\n    reference variance            = " << vParam[SBVP::SIGMA2];
-    o << "\n    cutoff energy                 = " << vParam[SBVP::BRANCHCUTOFF] << " " << vParam[SBVP::BRANCHMAX];
-    o << "\n    QMC Status (BranchMode)       = " << BranchMode;
-    o << "\n====================================================";
-  }
-  else
-  {
-    //running VMC
-    FullPrecRealType e, sigma2;
-    //MyEstimator->getEnergyAndWeight(e,w,sigma2);
-    MyEstimator->getCurrentStatistics(w, e, sigma2);
-    vParam[SBVP::ETRIAL] = vParam[SBVP::EREF] = e;
-    vParam[SBVP::SIGMA2]                  = sigma2;
-    //this is just to avoid diving by n-1  == 0
-    EnergyHist(vParam[SBVP::EREF]);
-    //add Eref to the DMCEnergyHistory
-    //DMCEnergyHist(vParam[SBVP::EREF]);
-    o << "====================================================";
-    o << "\n  SFNBranch::finalize after a VMC block";
-    o << "\n    QMC counter        = " << iParam[B_COUNTER];
-    o << "\n    time step          = " << vParam[SBVP::TAU];
-    o << "\n    reference energy   = " << vParam[SBVP::EREF];
-    o << "\n    reference variance = " << vParam[SBVP::SIGMA2];
-    o << "\n====================================================";
-  }
-  app_log() << o.str() << std::endl;
-  write(RootName, true);
-}
-
 /**  Parse the xml file for parameters
  *@param cur current xmlNode
  *

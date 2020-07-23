@@ -434,8 +434,6 @@ struct SFNBranch : public QMCTraits
   ///start a run
   void start(const std::string& froot, bool append = false);
   ///finalize the simulation
-  void finalize(MCWalkerConfiguration& w);
-  ///finalize the simulation
   void finalize(const int global_walkers, RefVector<MCPWalker>& walkers);
 
   void setRN(bool rn);
