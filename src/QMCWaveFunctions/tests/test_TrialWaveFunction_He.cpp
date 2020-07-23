@@ -186,4 +186,185 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   CHECK(dhpsioverpsi2[0] == ValueApprox(dhpsi_over_psi_list.getValue(0, 1)));
 }
 
+
+UPtrVector<ParticleSet::ParticleGradient_t> create_particle_gradient(int nelec, int nentry)
+{
+  UPtrVector<ParticleSet::ParticleGradient_t> G_list;
+  for (int i = 0; i < nentry; i++)
+    G_list.emplace_back(std::make_unique<ParticleSet::ParticleGradient_t>(nelec));
+
+  return G_list;
+}
+
+UPtrVector<ParticleSet::ParticleLaplacian_t> create_particle_laplacian(int nelec, int nentry)
+{
+  UPtrVector<ParticleSet::ParticleLaplacian_t> L_list;
+  for (int i = 0; i < nentry; i++)
+    L_list.emplace_back(std::make_unique<ParticleSet::ParticleLaplacian_t>(nelec));
+
+  return L_list;
+}
+
+TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
+{
+  using ValueType = QMCTraits::ValueType;
+  using RealType  = QMCTraits::RealType;
+
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c = OHMMS::Controller;
+  ParticleSet elec;
+  ParticleSet ions;
+  std::unique_ptr<WaveFunctionFactory> wff;
+  // This He wavefunction has two components
+  // The orbitals are fixed and have not optimizable parameters.
+  // The Jastrow factor does have an optimizable parameter.
+  setup_He_wavefunction(c, elec, ions, wff);
+  TrialWaveFunction& psi(*(wff->targetPsi));
+  ions.update();
+  elec.update();
+
+  ParticleSet elec2(elec);
+  elec2.R[0][0] = 0.9;
+  elec2.update();
+
+  TrialWaveFunction psi2(c);
+  WaveFunctionComponent* orb1 = psi.getOrbitals()[0]->makeClone(elec2);
+
+  psi2.addComponent(orb1, "orb1");
+  WaveFunctionComponent* orb2 = psi.getOrbitals()[1]->makeClone(elec2);
+  psi2.addComponent(orb2, "orb2");
+
+
+  // Prepare to compare using list with one wavefunction and particleset
+
+  int nentry = 1;
+  int nelec  = 2;
+
+  RefVector<TrialWaveFunction> wf_list;
+  RefVector<ParticleSet> p_list;
+  wf_list.push_back(psi);
+  p_list.push_back(elec);
+
+  // Evaluate new flex_evaluateDeltaLogSetup
+
+  std::vector<RealType> logpsi_fixed_list(nentry);
+  std::vector<RealType> logpsi_opt_list(nentry);
+
+  auto fixedG_list_ptr = create_particle_gradient(nelec, nentry);
+  auto fixedL_list_ptr = create_particle_laplacian(nelec, nentry);
+  auto fixedG_list     = convertUPtrToRefVector(fixedG_list_ptr);
+  auto fixedL_list     = convertUPtrToRefVector(fixedL_list_ptr);
+
+  psi.flex_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list, logpsi_opt_list, fixedG_list, fixedL_list);
+
+
+  // Evaluate old (single item) evaluateDeltaLog
+
+  RealType logpsi_fixed_r1;
+  RealType logpsi_opt_r1;
+  ParticleSet::ParticleGradient_t fixedG1;
+  ParticleSet::ParticleLaplacian_t fixedL1;
+  fixedG1.resize(nelec);
+  fixedL1.resize(nelec);
+
+  psi.evaluateDeltaLog(elec, logpsi_fixed_r1, logpsi_opt_r1, fixedG1, fixedL1);
+
+  CHECK(logpsi_fixed_r1 == Approx(logpsi_fixed_list[0]));
+  CHECK(logpsi_opt_r1 == Approx(logpsi_opt_list[0]));
+
+  CHECK(fixedG1[0][0] == ValueApprox(fixedG_list[0].get()[0][0]));
+  CHECK(fixedG1[0][1] == ValueApprox(fixedG_list[0].get()[0][1]));
+  CHECK(fixedG1[0][2] == ValueApprox(fixedG_list[0].get()[0][2]));
+  CHECK(fixedG1[1][0] == ValueApprox(fixedG_list[0].get()[1][0]));
+  CHECK(fixedG1[1][1] == ValueApprox(fixedG_list[0].get()[1][1]));
+  CHECK(fixedG1[1][2] == ValueApprox(fixedG_list[0].get()[1][2]));
+
+  CHECK(fixedL1[0] == ValueApprox(fixedL_list[0].get()[0]));
+  CHECK(fixedL1[1] == ValueApprox(fixedL_list[0].get()[1]));
+
+  // Prepare to compare using list with two wavefunctions and particlesets
+
+  nentry = 2;
+
+  wf_list.push_back(psi2);
+  p_list.push_back(elec2);
+
+  ParticleSet::ParticleGradient_t G2;
+  ParticleSet::ParticleLaplacian_t L2;
+  G2.resize(nelec);
+  L2.resize(nelec);
+  fixedG_list.push_back(G2);
+  fixedL_list.push_back(L2);
+
+  std::vector<RealType> logpsi_fixed_list2(nentry);
+  std::vector<RealType> logpsi_opt_list2(nentry);
+
+  RealType logpsi_fixed_r1b;
+  RealType logpsi_opt_r1b;
+  psi2.evaluateDeltaLog(elec, logpsi_fixed_r1b, logpsi_opt_r1b, fixedG1, fixedL1);
+
+  CHECK(logpsi_fixed_r1 == Approx(logpsi_fixed_r1b));
+  CHECK(logpsi_opt_r1 == Approx(logpsi_opt_r1b));
+
+  auto fixedG_list2_ptr = create_particle_gradient(nelec, nentry);
+  auto fixedL_list2_ptr = create_particle_laplacian(nelec, nentry);
+  auto fixedG_list2     = convertUPtrToRefVector(fixedG_list2_ptr);
+  auto fixedL_list2     = convertUPtrToRefVector(fixedL_list2_ptr);
+
+  psi2.flex_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list2, logpsi_opt_list2, fixedG_list2, fixedL_list2);
+
+  // Evaluate old (single item) evaluateDeltaLog corresponding to the second wavefunction/particleset
+
+  RealType logpsi_fixed_r2;
+  RealType logpsi_opt_r2;
+  ParticleSet::ParticleGradient_t fixedG2;
+  ParticleSet::ParticleLaplacian_t fixedL2;
+  fixedG2.resize(nelec);
+  fixedL2.resize(nelec);
+
+  psi2.setLogPsi(0.0);
+  psi2.evaluateDeltaLog(elec2, logpsi_fixed_r2, logpsi_opt_r2, fixedG2, fixedL2);
+
+
+  CHECK(logpsi_fixed_r1 == Approx(logpsi_fixed_r1b));
+
+  CHECK(logpsi_fixed_list[0] == Approx(logpsi_fixed_list2[0]));
+
+  CHECK(logpsi_fixed_r1 == Approx(logpsi_fixed_list2[0]));
+  CHECK(logpsi_opt_r1 == Approx(logpsi_opt_list2[0]));
+
+  CHECK(logpsi_fixed_r2 == Approx(logpsi_fixed_list2[1]));
+  CHECK(logpsi_opt_r2 == Approx(logpsi_opt_list2[1]));
+
+  // Laplacian for first entry in the wavefunction/particleset list
+  CHECK(fixedL1[0] == ValueApprox(fixedL_list2[0].get()[0]));
+  CHECK(fixedL1[1] == ValueApprox(fixedL_list2[0].get()[1]));
+  // Laplacian for second entry in the wavefunction/particleset list
+  CHECK(fixedL2[0] == ValueApprox(fixedL_list2[1].get()[0]));
+  CHECK(fixedL2[1] == ValueApprox(fixedL_list2[1].get()[1]));
+
+
+  // First entry wavefunction/particleset list
+  // Gradient for first electron
+  CHECK(fixedG1[0][0] == ValueApprox(fixedG_list2[0].get()[0][0]));
+  CHECK(fixedG1[0][1] == ValueApprox(fixedG_list2[0].get()[0][1]));
+  CHECK(fixedG1[0][2] == ValueApprox(fixedG_list2[0].get()[0][2]));
+  // Gradient for second electron
+  CHECK(fixedG1[1][0] == ValueApprox(fixedG_list2[0].get()[1][0]));
+  CHECK(fixedG1[1][1] == ValueApprox(fixedG_list2[0].get()[1][1]));
+  CHECK(fixedG1[1][2] == ValueApprox(fixedG_list2[0].get()[1][2]));
+
+
+  // Second entry wavefunction/particleset list
+  // Gradient for first electron
+  CHECK(fixedG2[0][0] == ValueApprox(fixedG_list2[1].get()[0][0]));
+  CHECK(fixedG2[0][1] == ValueApprox(fixedG_list2[1].get()[0][1]));
+  CHECK(fixedG2[0][2] == ValueApprox(fixedG_list2[1].get()[0][2]));
+  // Gradient for second electron
+  CHECK(fixedG2[1][0] == ValueApprox(fixedG_list2[1].get()[1][0]));
+  CHECK(fixedG2[1][1] == ValueApprox(fixedG_list2[1].get()[1][1]));
+  CHECK(fixedG2[1][2] == ValueApprox(fixedG_list2[1].get()[1][2]));
+}
+
+
 } // namespace qmcplusplus
