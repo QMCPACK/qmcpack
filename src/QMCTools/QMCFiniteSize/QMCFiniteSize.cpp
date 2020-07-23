@@ -171,7 +171,7 @@ void QMCFiniteSize::initBreakup()
   myRcut = AA->get_rc();
   if (rVs == 0)
   {
-    rVs = LRCoulombSingleton::createSpline4RbyVs(AA, myRcut, myGrid);
+    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid);
   }
 }
 
