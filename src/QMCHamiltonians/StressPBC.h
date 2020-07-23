@@ -34,7 +34,7 @@ struct StressPBC : public OperatorBase, public ForceBase
   ParticleSet& PtclTarg;
   ParticleSet& PtclA;
   ///long-range Handler
-  LRHandlerType* AA;
+  std::unique_ptr<LRHandlerType> AA;
   ///locator of the distance table
   const int ei_table_index;
   /// e-e table ID
