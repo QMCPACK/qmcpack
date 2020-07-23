@@ -210,77 +210,11 @@ void EstimatorManagerNew::start(int blocks, bool record)
   }
 }
 
-// void EstimatorManagerNew::stop(const std::vector<EstimatorManagerNew*> est)
-// {
-//   int num_threads = est.size();
-//   //normalize by the number of threads per node
-//   RealType tnorm = 1.0 / static_cast<RealType>(num_threads);
-//   //add averages and divide them by the number of threads
-//   AverageCache = est[0]->AverageCache;
-//   for (int i = 1; i < num_threads; i++)
-//     AverageCache += est[i]->AverageCache;
-//   AverageCache *= tnorm;
-//   SquaredAverageCache = est[0]->SquaredAverageCache;
-//   for (int i = 1; i < num_threads; i++)
-//     SquaredAverageCache += est[i]->SquaredAverageCache;
-//   SquaredAverageCache *= tnorm;
-//   //add properties and divide them by the number of threads except for the weight
-//   PropertyCache = est[0]->PropertyCache;
-//   for (int i = 1; i < num_threads; i++)
-//     PropertyCache += est[i]->PropertyCache;
-//   for (int i = 1; i < PropertyCache.size(); i++)
-//     PropertyCache[i] *= tnorm;
-//   stop();
-// }
-
-/** Stop a run
- *
- * Collect data in Cache and print out data into hdf5 and ascii file.
- * This should not be called in a OpenMP parallel region or should
- * be guarded by master/single.
- * Keep the ascii output for now
- */
-// void EstimatorManagerNew::stop()
-// {
-//   //close any open files
-//   if (Archive)
-//   {
-//     delete Archive;
-//     Archive = 0;
-//   }
-//   if (h_file != -1)
-//   {
-//     H5Fclose(h_file);
-//     h_file = -1;
-//   }
-// }
-
-
 void EstimatorManagerNew::startBlock(int steps)
 {
   MyTimer.restart();
   BlockWeight = 0.0;
 }
-
-// /** take statistics of a block
-//  * @param accept acceptance rate of this block
-//  * @param collectall if true, need to gather data over MPI tasks
-//  */
-// void EstimatorManagerNew::stopBlock(RealType accept, bool collectall)
-// {
-//   //take block averages and update properties per block
-//   PropertyCache[weightInd] = BlockWeight;
-//   PropertyCache[cpuInd]    = MyTimer.elapsed();
-//   PropertyCache[acceptInd] = accept;
-//   for (int i = 0; i < Estimators.size(); i++)
-//     Estimators[i]->takeBlockAverage(AverageCache.begin(), SquaredAverageCache.begin());
-//   if (Collectables)
-//   {
-//     Collectables->takeBlockAverage(AverageCache.begin(), SquaredAverageCache.begin());
-//   }
-//   if (collectall)
-//     collectBlockAverages();
-// }
 
 void EstimatorManagerNew::stopBlockNew(RealType accept, RealType block_weight, double cpu_block_time)
 {
@@ -327,77 +261,6 @@ QMCTraits::FullPrecRealType EstimatorManagerNew::collectScalarEstimators(
   }
   return tot_weight;
 }
-
-// void EstimatorManagerNew::stopBlock(const std::vector<EstimatorManagerNew*>& est)
-// {
-//   //normalized it by the thread
-//   int num_threads = est.size();
-//   RealType tnorm  = 1.0 / num_threads;
-//   AverageCache    = est[0]->AverageCache;
-//   for (int i = 1; i < num_threads; i++)
-//     AverageCache += est[i]->AverageCache;
-//   AverageCache *= tnorm;
-//   SquaredAverageCache = est[0]->SquaredAverageCache;
-//   for (int i = 1; i < num_threads; i++)
-//     SquaredAverageCache += est[i]->SquaredAverageCache;
-//   SquaredAverageCache *= tnorm;
-//   PropertyCache = est[0]->PropertyCache;
-//   for (int i = 1; i < num_threads; i++)
-//     PropertyCache += est[i]->PropertyCache;
-//   for (int i = 1; i < PropertyCache.size(); i++)
-//     PropertyCache[i] *= tnorm;
-//   //for(int i=0; i<num_threads; ++i)
-//   //varAccumulator(est[i]->varAccumulator.mean());
-//   collectBlockAverages();
-// }
-
-// void EstimatorManagerNew::collectBlockAverages()
-// {
-//   if (Options[COLLECT])
-//   {
-//     //copy cached data to RemoteData[0]
-//     int n1 = AverageCache.size();
-//     int n2 = n1 + AverageCache.size();
-//     int n3 = n2 + PropertyCache.size();
-//     {
-//       BufferType::iterator cur(RemoteData[0]->begin());
-//       copy(AverageCache.begin(), AverageCache.end(), cur);
-//       copy(SquaredAverageCache.begin(), SquaredAverageCache.end(), cur + n1);
-//       copy(PropertyCache.begin(), PropertyCache.end(), cur + n2);
-//     }
-//     myComm->reduce(*RemoteData[0]);
-//     if (Options[MANAGE])
-//     {
-//       BufferType::iterator cur(RemoteData[0]->begin());
-//       copy(cur, cur + n1, AverageCache.begin());
-//       copy(cur + n1, cur + n2, SquaredAverageCache.begin());
-//       copy(cur + n2, cur + n3, PropertyCache.begin());
-//       RealType nth = 1.0 / static_cast<RealType>(myComm->size());
-//       AverageCache *= nth;
-//       SquaredAverageCache *= nth;
-//       //do not weight weightInd
-//       for (int i = 1; i < PropertyCache.size(); i++)
-//         PropertyCache[i] *= nth;
-//     }
-//   }
-//   //add the block average to summarize
-//   energyAccumulator(AverageCache[0]);
-//   varAccumulator(SquaredAverageCache[0] - AverageCache[0] * AverageCache[0]);
-//   if (Archive)
-//   {
-//     *Archive << std::setw(10) << RecordCount;
-//     int maxobjs = std::min(BlockAverages.size(), max4ascii);
-//     for (int j = 0; j < maxobjs; j++)
-//       *Archive << std::setw(FieldWidth) << AverageCache[j];
-//     for (int j = 0; j < PropertyCache.size(); j++)
-//       *Archive << std::setw(FieldWidth) << PropertyCache[j];
-//     *Archive << std::endl;
-//     for (int o = 0; o < h5desc.size(); ++o)
-//       h5desc[o]->write(AverageCache.data(), SquaredAverageCache.data());
-//     H5Fflush(h_file, H5F_SCOPE_LOCAL);
-//   }
-//   RecordCount++;
-// }
 
 void EstimatorManagerNew::makeBlockAverages()
 {
@@ -491,14 +354,6 @@ void EstimatorManagerNew::getCurrentStatistics(const int global_walkers,
   var  = tmp[1] / tmp[2] - eavg * eavg;
 }
 
-
-EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getMainEstimator()
-{
-  if (MainEstimator == 0)
-    add(new LocalEnergyOnlyEstimator(), MainEstimatorName);
-  return MainEstimator;
-}
-
 EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std::string& a)
 {
   std::map<std::string, int>::iterator it = EstimatorMap.find(a);
@@ -508,7 +363,6 @@ EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std:
     return Estimators[(*it).second];
 }
 
-/** This should be moved to branch engine */
 bool EstimatorManagerNew::put(QMCHamiltonian& H, xmlNodePtr cur)
 {
   std::vector<std::string> extra;

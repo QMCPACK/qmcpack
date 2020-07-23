@@ -45,16 +45,12 @@ public:
   typedef std::vector<RealType> BufferType;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-  //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
-
   ///name of the primary estimator name
   std::string MainEstimatorName;
   ///the root file name
   std::string RootName;
   ///energy
   TinyVector<RealType, 4> RefEnergy;
-  // //Cummulative energy, weight and variance
-  // TinyVector<RealType,4>  EPSum;
   ///default constructor
   EstimatorManagerNew(Communicate* c = 0);
   ///copy constructor
@@ -101,7 +97,6 @@ public:
    * @return locator of newestimator
    */
   int add(EstimatorType* newestimator, const std::string& aname);
-  //int add(CompositeEstimatorBase* newestimator, const std::string& aname);
 
   /** add a main estimator
    * @param newestimator New Estimator
@@ -112,9 +107,6 @@ public:
   ///return a pointer to the estimator aname
   EstimatorType* getEstimator(const std::string& a);
 
-  ///return a pointer to the estimator
-  EstimatorType* getMainEstimator();
-
   ///return the average for estimator i
   inline RealType average(int i) const { return Estimators[i]->average(); }
 
@@ -122,7 +114,6 @@ public:
   inline RealType variance(int i) const { return Estimators[i]->variance(); }
 
   ///process xml tag associated with estimators
-  //bool put(xmlNodePtr cur);
   bool put(QMCHamiltonian& H, xmlNodePtr cur);
 
   /** reset the estimator
@@ -156,21 +147,12 @@ public:
    */
   void stopBlockNew(RealType accept_ratio, RealType block_weight, double cpu_block_time);
 
-  /** stop a block
-   * @param m list of estimator which has been collecting data independently
-   */
-  //void stopBlock(const std::vector<EstimatorManagerBase*>& m);
-
   /** At end of block collect the scalar estimators for the entire rank
    *   
    *  Each is currently accumulates on for crowd of 1 or more walkers
    *  returns the total weight across all crowds. 
    */
   RealType collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
-
-  //     /** accumulate the FW observables
-  //      */
-  //     void accumulate(HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, std::vector<int>& Dims);
 
   ///** set the cummulative energy and weight
   void getEnergyAndWeight(RealType& e, RealType& w, RealType& var);
