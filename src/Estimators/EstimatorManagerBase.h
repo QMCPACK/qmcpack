@@ -176,14 +176,6 @@ public:
       Estimators[i]->setNumberOfBlocks(blocks);
   }
 
-  /** unified: stop a block
-   * @param accept acceptance rate of this block
-   * \param[in] accept_ratio
-   * \param[in] block_weight
-   * \param[in] cpu_block_time Timer returns double so this is not altered by "mixed" precision
-   */
-  void stopBlockNew(RealType accept_ratio, RealType block_weight, double cpu_block_time);
-
   /** legacy: stop a block
    * @param accept acceptance rate of this block
    */
