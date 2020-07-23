@@ -393,26 +393,27 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
 
   RefVector<SPOSet> phi_list;
   RefVector<ValueVector_t> psiV_list;
-  RefVector<const ValueVector_t> invRow_list;
+  std::vector<const ValueType*> invRow_ptr_list;
   phi_list.reserve(nw);
   psiV_list.reserve(nw);
-  invRow_list.reserve(nw);
+  invRow_ptr_list.reserve(nw);
 
   for (size_t iw = 0; iw < nw; iw++)
   {
     auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc_list[iw].get());
     const VirtualParticleSet& vp(vp_list[iw]);
     const int WorkingIndex = vp.refPtcl - FirstIndex;
-    std::copy_n(det.psiM[WorkingIndex], det.invRow.size(), det.invRow.data());
     // build lists
     phi_list.push_back(*det.Phi);
     psiV_list.push_back(det.psiV);
-    invRow_list.push_back(det.invRow);
+    invRow_ptr_list.push_back(det.psiM[WorkingIndex]);
   }
   RatioTimer.stop();
 
   SPOVTimer.start();
-  Phi->mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_list, ratios);
+  if (Phi->isOMPoffload())
+    throw std::runtime_error("DiracDeterminant doesn't support calling mw_evaluateDetRatios of SPOSet with OpenMP offload used!");
+  Phi->mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_ptr_list, ratios);
   SPOVTimer.stop();
 }
 
