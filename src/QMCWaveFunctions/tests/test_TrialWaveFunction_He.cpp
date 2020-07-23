@@ -205,7 +205,7 @@ UPtrVector<ParticleSet::ParticleLaplacian_t> create_particle_laplacian(int nelec
   return L_list;
 }
 
-TEST_CASE("TrialWaveFunction flex_evaluateDeltaLog", "[wavefunction]")
+TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 {
   using ValueType = QMCTraits::ValueType;
   using RealType  = QMCTraits::RealType;
@@ -245,7 +245,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLog", "[wavefunction]")
   wf_list.push_back(psi);
   p_list.push_back(elec);
 
-  // Evaluate new flex_evaluateDeltaLog
+  // Evaluate new flex_evaluateDeltaLogSetup
 
   std::vector<RealType> logpsi_fixed_list(nentry);
   std::vector<RealType> logpsi_opt_list(nentry);
@@ -255,7 +255,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLog", "[wavefunction]")
   auto fixedG_list     = convertUPtrToRefVector(fixedG_list_ptr);
   auto fixedL_list     = convertUPtrToRefVector(fixedL_list_ptr);
 
-  psi.flex_evaluateDeltaLog(wf_list, p_list, logpsi_fixed_list, logpsi_opt_list, fixedG_list, fixedL_list);
+  psi.flex_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list, logpsi_opt_list, fixedG_list, fixedL_list);
 
 
   // Evaluate old (single item) evaluateDeltaLog
@@ -311,7 +311,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLog", "[wavefunction]")
   auto fixedG_list2     = convertUPtrToRefVector(fixedG_list2_ptr);
   auto fixedL_list2     = convertUPtrToRefVector(fixedL_list2_ptr);
 
-  psi2.flex_evaluateDeltaLog(wf_list, p_list, logpsi_fixed_list2, logpsi_opt_list2, fixedG_list2, fixedL_list2);
+  psi2.flex_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list2, logpsi_opt_list2, fixedG_list2, fixedL_list2);
 
   // Evaluate old (single item) evaluateDeltaLog corresponding to the second wavefunction/particleset
 

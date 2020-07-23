@@ -170,7 +170,7 @@ public:
    *
    * This function is introduced for optimization only.
    * fixedG and fixedL save the terms coming from the wave functions
-   * that are invarient during optimizations.
+   * that are invariant during optimizations.
    * It is expected that evaluateDeltaLog(P,false) is called later
    * and the external object adds the varying G and L and the fixed terms.
    */
@@ -188,18 +188,24 @@ public:
    * @param fixedG_list vector of gradients of log(psi) of the fixed wave functions
    * @param fixedL_list vector of laplacians of log(psi) of the fixed wave functions
    *
-   * This function is introduced for optimization only.
-   * fixedG and fixedL save the terms coming from the wave functions
-   * that are invarient during optimizations.
+   * For wavefunction optimization, it can speed evaluation to split the log value,
+   * the gradient, and the laplacian computed from wavefunction components with optimizable
+   * parameters from components that do not.  This function computes the log value of
+   * both parts, and the gradient and laplacian of the fixed components.
+   * During correlated sampling steps only the components with optimizable
+   * parameters need to have the gradient and laplacian re-evaluated.
+   *
+   * Parameters fixedG_list and fixedL_list save the terms coming from the components
+   * that do not have optimizable parameters.
    * It is expected that flex_evaluateDeltaLog(P,false) is called later
    * and the external object adds the varying G and L and the fixed terms.
    */
-  static void flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>& wf_list,
-                                    const RefVector<ParticleSet>& p_list,
-                                    std::vector<RealType>& logpsi_fixed_list,
-                                    std::vector<RealType>& logpsi_opt_list,
-                                    RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
-                                    RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list);
+  static void flex_evaluateDeltaLogSetup(const RefVector<TrialWaveFunction>& wf_list,
+                                         const RefVector<ParticleSet>& p_list,
+                                         std::vector<RealType>& logpsi_fixed_list,
+                                         std::vector<RealType>& logpsi_opt_list,
+                                         RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
+                                         RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list);
 
 
   /** compute psi(R_new) / psi(R_current) ratio

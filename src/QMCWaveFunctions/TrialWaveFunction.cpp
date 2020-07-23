@@ -280,12 +280,12 @@ void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
 }
 
 
-void TrialWaveFunction::flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>& wf_list,
-                                              const RefVector<ParticleSet>& p_list,
-                                              std::vector<RealType>& logpsi_fixed_list,
-                                              std::vector<RealType>& logpsi_opt_list,
-                                              RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
-                                              RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list)
+void TrialWaveFunction::flex_evaluateDeltaLogSetup(const RefVector<TrialWaveFunction>& wf_list,
+                                                   const RefVector<ParticleSet>& p_list,
+                                                   std::vector<RealType>& logpsi_fixed_list,
+                                                   std::vector<RealType>& logpsi_opt_list,
+                                                   RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
+                                                   RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list)
 {
   constexpr RealType czero(0);
   int num_particles = p_list[0].get().getTotalNum();
