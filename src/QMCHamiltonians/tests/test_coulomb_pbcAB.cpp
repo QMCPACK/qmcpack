@@ -85,7 +85,7 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
   ParticleSetPool ptcl = ParticleSetPool(c);
 
 
-  CoulombPBCAB cab = CoulombPBCAB(ions, elec);
+  CoulombPBCAB cab(ions, elec);
 
   // Self energy plus Background charge term
   double consts = cab.evalConsts();
@@ -167,7 +167,7 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
   ParticleSetPool ptcl = ParticleSetPool(c);
 
 
-  CoulombPBCAB cab = CoulombPBCAB(ions, elec);
+  CoulombPBCAB cab(ions, elec);
 
   // Background charge term
   double consts = cab.evalConsts();
