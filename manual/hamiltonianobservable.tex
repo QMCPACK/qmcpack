@@ -1437,6 +1437,7 @@ Here, $m$ is the weighting exponent, $f_z(r)$ is the unfiltered radial force den
 \multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
    & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
    &   \texttt{mode}$^o$      &  text              & \textit{See above}        & bare          & Select estimator type\\
+   &   \texttt{lrmethod}$^o$  &  text              & ewald or srcoul           & ewald         & Select long-range potential breakup method\\
    &   \texttt{type}$^r$      &  text              &  Force            &               & Must be ``Force"         \\
    &   \texttt{name}$^o$      &  text              & \textit{anything}         & ForceBase     & Unique name for this estimator\\
 %   &   \texttt{psi}$^o$       &  text              & \texttt{wavefunction.name}& psi0          & Identify wavefunction\\
@@ -1456,27 +1457,21 @@ Here, $m$ is the weighting exponent, $f_z(r)$ is the unfiltered radial force den
 Additional information:
 \begin{itemize}
   \item{\textbf{Naming Convention}:  The unique identifier \texttt{name} is appended with \texttt{name\_X\_Y} in the \texttt{scalar.dat} file, where \texttt{X} is the ion ID number and \texttt{Y} is the component ID (an integer with x=0, y=1, z=2).  All force components for all ions are computed and dumped to the \texttt{scalar.dat} file.}
-  \item{\textbf{Long-range breakup}: With periodic boundary conditions, it is important to converge the lattice sum when calculating Coulomb contribution to the forces. As a quick test, increase the \texttt{LR\_dim\_cutoff} parameter until ion-ion forces are converged. The Ewald method converges more slowly than optimized method, but the optimized method can break down in edge cases, eg. too large \texttt{LR\_dim\_cutoff}.}
+  \item{\textbf{Long-range breakup}: With periodic boundary conditions, it is important to converge the lattice sum when calculating Coulomb contribution to the forces. As a quick test, increase the \texttt{LR\_dim\_cutoff} parameter until ion-ion forces are converged. The Ewald method (\texttt{lrmethod}="ewald") converges more slowly than optimized method (\texttt{lrmethod}="srcoul").}
   \item{\textbf{Miscellaneous}: Usually, the default choice of \texttt{weightexp} is sufficient.  Different combinations of \texttt{rcut} and  \texttt{nbasis} should be tested though to minimize variance and bias.  There is, of course, a tradeoff, with larger \texttt{nbasis} and smaller \texttt{rcut} leading to smaller biases and larger variances.  }
 \end{itemize}
-
 
 The following is an example use case.  
 \begin{lstlisting}[style=QMCPXML]
 <simulationcell>
   ...
-  <parameter name="LR_handler">  opt_breakup_original  </parameter>
-  <parameter name="LR_dim_cutoff">  20  </parameter>
+  <parameter name="LR\_dim\_cutoff">  20  </parameter>
 </simulationcell>
-
-<hamiltonian>
-  ...
-  <estimator name="myforce" type="Force" mode="cep" addionion="yes">
+<estimator name="myforce" type="Force" mode="cep" addionion="yes" lrmethod="srcoul">
     <parameter name="rcut">0.1</parameter>
     <parameter name="nbasis">4</parameter>
     <parameter name="weightexp">2</parameter>
-  </estimator>
-<hamiltonian>
+</estimator>
 \end{lstlisting}
 
 \section{Stress estimator} \label{sec:stress_est}
@@ -1507,8 +1502,6 @@ Additional information:
   \item{\textbf{Naming Convention}: The unique identifier \texttt{name} is appended with \texttt{name\_X\_Y} in the \texttt{scalar.dat} file, where \texttt{X} and \texttt{Y} are the component IDs (an integer with x=0, y=1, z=2).}
   \item{\textbf{Long-range breakup}: With periodic boundary conditions, it is important to converge the lattice sum when calculating Coulomb contribution to the forces. As a quick test, increase the \texttt{LR\_dim\_cutoff} parameter until ion-ion stresses are converged. Check using QE ``Ewald contribution'' for example. The stress estimator is only implemented with the Ewald method.}
 \end{itemize}
-
-
 The following is an example use case.
 \begin{lstlisting}[style=QMCPXML]
 <simulationcell>
