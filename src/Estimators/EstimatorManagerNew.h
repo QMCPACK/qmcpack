@@ -69,10 +69,6 @@ public:
    */
   Communicate* getCommunicator() { return myComm; }
 
-  /** return true if the rank == 0
-   */
-  inline bool is_manager() const { return !myComm->rank(); }
-
   ///return the number of ScalarEstimators
   inline int size() const { return Estimators.size(); }
 
@@ -140,15 +136,6 @@ public:
    * Replace reportHeader and reset functon.
    */
   void start(int blocks, bool record = true);
-  /** stop a qmc run
-   *
-   * Replace finalize();
-   */
-  /* void stop(); */
-  /* /\** stop a qmc run */
-  /*  *\/ */
-  /* void stop(const std::vector<EstimatorManagerBase*> m); */
-
 
   /** start  a block
    * @param steps number of steps in a block
@@ -181,26 +168,12 @@ public:
    */
   RealType collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
 
-  /** accumulate the measurements
-   * @param W walkers
-   */
-  void accumulate(MCWalkerConfiguration& W);
-
-  /** accumulate the measurements for a subset of walkers [it,it_end)
-   * @param W walkers
-   * @param it first walker
-   * @param it_end last walker
-   */
-  void accumulate(MCWalkerConfiguration& W, MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end);
-
   //     /** accumulate the FW observables
   //      */
   //     void accumulate(HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, std::vector<int>& Dims);
 
   ///** set the cummulative energy and weight
   void getEnergyAndWeight(RealType& e, RealType& w, RealType& var);
-
-  void getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var);
 
   /** Unified walker variant of this method
    *

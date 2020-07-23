@@ -452,32 +452,6 @@ void EstimatorManagerNew::makeBlockAverages()
   RecordCount++;
 }
 
-
-/** accumulate Local energies and collectables
- * @param W ensemble
- */
-void EstimatorManagerNew::accumulate(MCWalkerConfiguration& W)
-{
-  BlockWeight += W.getActiveWalkers();
-  RealType norm = 1.0 / W.getGlobalNumWalkers();
-  for (int i = 0; i < Estimators.size(); i++)
-    Estimators[i]->accumulate(W, W.begin(), W.end(), norm);
-  if (Collectables) //collectables are normalized by QMC drivers
-    Collectables->accumulate_all(W.Collectables, 1.0);
-}
-
-void EstimatorManagerNew::accumulate(MCWalkerConfiguration& W,
-                                      MCWalkerConfiguration::iterator it,
-                                      MCWalkerConfiguration::iterator it_end)
-{
-  BlockWeight += it_end - it;
-  RealType norm = 1.0 / W.getGlobalNumWalkers();
-  for (int i = 0; i < Estimators.size(); i++)
-    Estimators[i]->accumulate(W, it, it_end, norm);
-  if (Collectables)
-    Collectables->accumulate_all(W.Collectables, 1.0);
-}
-
 void EstimatorManagerNew::getEnergyAndWeight(RealType& e, RealType& w, RealType& var)
 {
   if (Options[COLLECT]) //need to broadcast the value
@@ -497,20 +471,6 @@ void EstimatorManagerNew::getEnergyAndWeight(RealType& e, RealType& w, RealType&
     w   = energyAccumulator.count();
     var = varAccumulator.mean();
   }
-}
-
-void EstimatorManagerNew::getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var)
-{
-  LocalEnergyOnlyEstimator energynow;
-  energynow.clear();
-  energynow.accumulate(W, W.begin(), W.end(), 1.0);
-  std::vector<RealType> tmp(3);
-  tmp[0] = energynow.scalars[0].result();
-  tmp[1] = energynow.scalars[0].result2();
-  tmp[2] = energynow.scalars[0].count();
-  myComm->allreduce(tmp);
-  eavg = tmp[0] / tmp[2];
-  var  = tmp[1] / tmp[2] - eavg * eavg;
 }
 
 void EstimatorManagerNew::getCurrentStatistics(const int global_walkers,

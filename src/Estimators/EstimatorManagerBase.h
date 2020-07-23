@@ -194,13 +194,6 @@ public:
    */
   void stopBlock(const std::vector<EstimatorManagerBase*>& m);
 
-  /** At end of block collect the scalar estimators for the entire rank
-   *   
-   *  Each is currently accumulates on for crowd of 1 or more walkers
-   *  returns the total weight across all crowds. 
-   */
-  RealType collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
-
   /** accumulate the measurements
    * @param W walkers
    */
@@ -222,22 +215,6 @@ public:
 
   void getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var);
 
-  /** Unified walker variant of this method
-   *
-   *  This only makes sense to call on the whole population with the current DMC algorithm
-   *
-   *  This is about to be refactored out of EstimatorManagerBase
-   *
-   *  I think it would probably be cleaner and remove alot of reset issues to have the eavg and var
-   *  from the previous section passed in
-   *  rather than retaining the estimator manager to get them.
-   */
-  static void getCurrentStatistics(const int global_walkers,
-                                   RefVector<MCPWalker>& walkers,
-                                   RealType& eavg,
-                                   RealType& var,
-                                   Communicate* comm);
-
   template<class CT>
   void write(CT& anything, bool doappend)
   {
@@ -248,7 +225,6 @@ public:
   auto& get_SquaredAverageCache() { return SquaredAverageCache; }
 
 protected:
-  friend class EstimatorManagerCrowd;
   //  TODO: fix needless use of bitset instead of clearer more visible booleans
   std::bitset<8> Options;
   ///size of the message buffer
@@ -320,9 +296,6 @@ private:
   std::vector<BufferType*> RemoteData;
   /// legacy: collect data and write
   void collectBlockAverages();
-
-  /// unified: collect data and write
-  void makeBlockAverages();
 
   ///add header to an std::ostream
   void addHeader(std::ostream& o);

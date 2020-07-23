@@ -50,11 +50,5 @@ void EstimatorManagerBaseTest::fakeSomeScalarSamples()
   em.get_SquaredAverageCache().resize(4);
 }
 
-void EstimatorManagerBaseTest::collectScalarEstimators()
-{
-  RefVector<ScalarEstimatorBase> est_list = makeRefVector<ScalarEstimatorBase>(estimators_);
-  em.collectScalarEstimators(est_list);
-}
-
 }
 }

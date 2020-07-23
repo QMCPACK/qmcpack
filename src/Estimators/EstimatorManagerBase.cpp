@@ -135,9 +135,6 @@ void EstimatorManagerBase::setCollectionMode(bool collect)
 
 /** reset names of the properties
  *
- * \todo this should be in in constructor object shouldn't be reused
- * Warning this is different from some "resets" in the code, it does not clear the object
- * 
  * The number of estimators and their order can vary from the previous state.
  * reinitialized properties before setting up a new BlockAverage data list.
  *
@@ -305,52 +302,6 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
     collectBlockAverages();
 }
 
-void EstimatorManagerBase::stopBlockNew(RealType accept, RealType block_weight, double cpu_block_time)
-{
-  //take block averages and update properties per block
-  PropertyCache[weightInd] = block_weight;
-  PropertyCache[cpuInd]    = cpu_block_time;
-  PropertyCache[acceptInd] = accept;
-
-  makeBlockAverages();
-}
-
-
-/** Called at end of block in Unified Driver
- *
- */
-QMCTraits::FullPrecRealType EstimatorManagerBase::collectScalarEstimators(
-    const RefVector<ScalarEstimatorBase>& estimators)
-{
-  using ScalarType = ScalarEstimatorBase::RealType;
-
-  AverageCache        = 0.0;
-  SquaredAverageCache = 0.0;
-
-  // One scalar estimator can be accumulating many scalar values
-  int num_scalars = estimators[0].get().size();
-  if (AverageCache.size() != num_scalars)
-    throw std::runtime_error(
-        "EstimatorManagerBase and Crowd ScalarManagers do not agree on number of scalars being estimated");
-  Vector<ScalarType> averages_work(num_scalars, 0.0);
-  Vector<ScalarType> sq_averages_work(num_scalars, 0.0);
-
-  auto accumulateVectorsInPlace = [](auto& vec_a, const auto& vec_b) {
-    for (int i = 0; i < vec_a.size(); ++i)
-      vec_a[i] += vec_b[i];
-  };
-
-  RealType tot_weight = 0.0;
-  for (int i = 0; i < estimators.size(); ++i)
-  {
-    RealType weight = estimators[i].get().takeBlockSumsGetWeight(averages_work.begin(), sq_averages_work.begin());
-    tot_weight += weight;
-    accumulateVectorsInPlace(AverageCache, averages_work);
-    accumulateVectorsInPlace(SquaredAverageCache, sq_averages_work);
-  }
-  return tot_weight;
-}
-
 void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)
 {
   //normalized it by the thread
@@ -422,60 +373,6 @@ void EstimatorManagerBase::collectBlockAverages()
   RecordCount++;
 }
 
-void EstimatorManagerBase::makeBlockAverages()
-{
-  //there is only one EstimatormanagerBase per rank in the unified driver.
-  //copy cached data to RemoteData[0]
-  //we should not handle RemoteData elsewhere.
-  
-  int n1 = AverageCache.size();
-  int n2 = n1 + AverageCache.size();
-  int n3 = n2 + PropertyCache.size();
-
-  // This is a hack but it needs to be the correct size
-  
-  std::vector<double> send_buffer(n3,0.0);
-  std::vector<double> recv_buffer(n3,0.0);  
-  {
-    auto cur = send_buffer.begin();
-    copy(AverageCache.begin(), AverageCache.end(), cur);
-    copy(SquaredAverageCache.begin(), SquaredAverageCache.end(), cur + n1);
-    copy(PropertyCache.begin(), PropertyCache.end(), cur + n2);
-  }
-  myComm->comm.reduce_n(send_buffer.begin(), send_buffer.size(), recv_buffer.begin(), std::plus<>{}, 0);
-  if (myComm->rank() == 0)
-  {
-    auto cur = recv_buffer.begin();
-    copy(cur, cur + n1, AverageCache.begin());
-    copy(cur + n1, cur + n2, SquaredAverageCache.begin());
-    copy(cur + n2, cur + n3, PropertyCache.begin());
-    RealType invTotWgt = 1.0 / PropertyCache[weightInd];
-    AverageCache *= invTotWgt;
-    SquaredAverageCache *= invTotWgt;
-    //do not weight weightInd i.e. its index 0!
-    for (int i = 1; i < PropertyCache.size(); i++)
-      PropertyCache[i] *= invTotWgt;
-  }
-  //add the block average to summarize
-  energyAccumulator(AverageCache[0]);
-  varAccumulator(SquaredAverageCache[0] - AverageCache[0] * AverageCache[0]);
-  if (Archive)
-  {
-    *Archive << std::setw(10) << RecordCount;
-    int maxobjs = std::min(BlockAverages.size(), max4ascii);
-    for (int j = 0; j < maxobjs; j++)
-      *Archive << std::setw(FieldWidth) << AverageCache[j];
-    for (int j = 0; j < PropertyCache.size(); j++)
-      *Archive << std::setw(FieldWidth) << PropertyCache[j];
-    *Archive << std::endl;
-    for (int o = 0; o < h5desc.size(); ++o)
-      h5desc[o]->write(AverageCache.data(), SquaredAverageCache.data());
-    H5Fflush(h_file, H5F_SCOPE_LOCAL);
-  }
-  RecordCount++;
-}
-
-
 /** accumulate Local energies and collectables
  * @param W ensemble
  */
@@ -535,25 +432,6 @@ void EstimatorManagerBase::getCurrentStatistics(MCWalkerConfiguration& W, RealTy
   eavg = tmp[0] / tmp[2];
   var  = tmp[1] / tmp[2] - eavg * eavg;
 }
-
-void EstimatorManagerBase::getCurrentStatistics(const int global_walkers,
-                                                RefVector<MCPWalker>& walkers,
-                                                RealType& eavg,
-                                                RealType& var,
-                                                Communicate* comm)
-{
-  LocalEnergyOnlyEstimator energynow;
-  energynow.clear();
-  energynow.accumulate(global_walkers, walkers, 1.0);
-  std::vector<RealType> tmp(3);
-  tmp[0] = energynow.scalars[0].result();
-  tmp[1] = energynow.scalars[0].result2();
-  tmp[2] = energynow.scalars[0].count();
-  comm->allreduce(tmp);
-  eavg = tmp[0] / tmp[2];
-  var  = tmp[1] / tmp[2] - eavg * eavg;
-}
-
 
 EstimatorManagerBase::EstimatorType* EstimatorManagerBase::getMainEstimator()
 {
