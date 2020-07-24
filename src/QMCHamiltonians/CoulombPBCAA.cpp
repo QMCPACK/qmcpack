@@ -191,7 +191,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
   mRealType Vsr              = 0.0;
   mRealType Vlr              = 0.0;
   mRealType& Vc              = myConst;
-  Array<RealType, 1>& V_samp = V_samp_tmp;
+  Array<RealType, 1>& V_samp = *V_sample;
   V_samp                     = 0.0;
   {
     //SR
@@ -283,7 +283,6 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
 
 #if !defined(REMOVE_TRACEMANAGER)
   V_const.resize(NumCenters);
-  V_samp_tmp.resize(NumCenters);
 #endif
 
   Zat.resize(NumCenters);

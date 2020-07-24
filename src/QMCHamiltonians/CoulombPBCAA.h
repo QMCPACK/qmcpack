@@ -77,7 +77,6 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   //single particle trace sample
   Array<TraceReal, 1>* V_sample;
   Array<TraceReal, 1> V_const;
-  Array<TraceReal, 1> V_samp_tmp;
 #endif
   ParticleSet& Ps;
 

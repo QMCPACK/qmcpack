@@ -93,7 +93,7 @@
 
       </hamiltonian>
    </qmcsystem>
-
+   <traces array="yes" write="no"/>
    <qmc method="vmc" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="walkers">    256 </parameter>
