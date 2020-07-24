@@ -1839,8 +1839,9 @@ Additional information:
    important to converge the lattice sum when calculating Coulomb
    contribution to the forces. As a quick test, increase the
    ``LR_dim_cutoff`` parameter until ion-ion forces are converged. The
-   Ewald method (``lrmethod``\ ="ewald") converges more slowly than
-   optimized method (``lrmethod``\ ="srcoul").
+   Ewald method converges more slowly than optimized method, but the
+   optimized method can break down in edge cases, eg. too large
+   ``LR_dim_cutoff``.
 
 -  **Miscellaneous**: Usually, the default choice of ``weightexp`` is
    sufficient. Different combinations of ``rcut`` and ``nbasis`` should
@@ -1854,12 +1855,68 @@ The following is an example use case.
 
   <simulationcell>
     ...
-    <parameter name="LR\_dim\_cutoff">  20  </parameter>
+    <parameter name="LR_handler">  opt_breakup_original  </parameter>
+    <parameter name="LR_dim_cutoff">  20  </parameter>
   </simulationcell>
-  <estimator name="myforce" type="Force" mode="cep" addionion="yes" lrmethod="srcoul">
+  <hamiltonian>
+    <estimator name="F" type="Force" mode="cep" addionion="yes">
       <parameter name="rcut">0.1</parameter>
       <parameter name="nbasis">4</parameter>
       <parameter name="weightexp">2</parameter>
-  </estimator>
+    </estimator>
+  </hamiltonian>
+
+.. _stress-est:
+
+Stress estimators
+------------------
+
+QMCPACK takes the following parameters.
+
+  +------------------+----------------------+
+  | parent elements: | ``hamiltonian`` |
+  +------------------+----------------------+
+
+  attributes:
+
+    +--------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | **Name**                 | **Datatype** | **Values**      | **Default** | **Description**                                              |
+    +==========================+==============+=================+=============+==============================================================+
+    | ``mode``:math:`^r`       | text         | stress          | bare        | Must be "stress"                                             |
+    +--------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``type``:math:`^r`       | text         | Force           |             | Must be "Force"                                              |
+    +--------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``source``:math:`^r`     | text         | ion0            |             | Name of ion particleset                                      |
+    +--------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``name``:math:`^o`       | text         | *Anything*      | ForceBase   | Unique name for this estimator                               |
+    +--------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``addionion``:math:`^o`  | boolean      | yes/no          | no          | Add the ion-ion stress contribution to output                |
+    +--------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+
+Additional information:
+
+-  **Naming Convention**: The unique identifier ``name`` is appended
+   with ``name_X_Y`` in the ``scalar.dat`` file, where ``X`` and ``Y``
+   are the component IDs (an integer with x=0, y=1, z=2).
+
+-  **Long-range breakup**: With periodic boundary conditions, it is
+   important to converge the lattice sum when calculating Coulomb
+   contribution to the forces. As a quick test, increase the
+   ``LR_dim_cutoff`` parameter until ion-ion stresses are converged.
+   Check using QE "Ewald contribution", for example. The stress
+   estimator is implemented only with the Ewald method.
+
+The following is an example use case.
+
+::
+
+  <simulationcell>
+    ...
+    <parameter name="LR_handler">  ewald  </parameter>
+    <parameter name="LR_dim_cutoff">  45  </parameter>
+  </simulationcell>
+  <hamiltonian>
+    <estimator name="S" type="Force" mode="stress" source="ion0"/>
+  </hamiltonian>
 
 .. bibliography:: /bibs/hamiltonianobservable.bib
