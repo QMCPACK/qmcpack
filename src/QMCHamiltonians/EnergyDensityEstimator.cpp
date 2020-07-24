@@ -29,8 +29,10 @@ EnergyDensityEstimator::EnergyDensityEstimator(PSPool& PSP, const std::string& d
     : psetpool(PSP), Pdynamic(0), Pstatic(0), w_trace(0), Td_trace(0), Vd_trace(0), Vs_trace(0)
 {
   UpdateMode.set(COLLECTABLE, 1);
-  defKE    = defaultKE;
-  nsamples = 0;
+  defKE      = defaultKE;
+  nsamples   = 0;
+  ion_points = false;
+  nions      = -1;
   request.request_scalar("weight");
   request.request_array("Kinetic");
   request.request_array("LocalPotential");
@@ -55,14 +57,17 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   //initialize simple xml attributes
   myName = "EnergyDensity";
   std::string dyn, stat = "";
+  ion_points = false;
   OhmmsAttributeSet attrib;
   attrib.add(myName, "name");
   attrib.add(dyn, "dynamic");
   attrib.add(stat, "static");
+  attrib.add(ion_points,"ion_points");
   attrib.put(cur);
   //collect particle sets
   if (!Pdynamic)
     Pdynamic = get_particleset(dyn);
+  Pdynamic->turnOnPerParticleSK();
   nparticles = Pdynamic->getTotalNum();
   std::vector<ParticleSet*> Pref;
   if (stat == "")
@@ -73,14 +78,20 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   else
   {
     Pstatic      = get_particleset(stat);
+    Pstatic->turnOnPerParticleSK();
     dtable_index = Pdynamic->addTable(*Pstatic, DT_SOA);
     Pref.resize(1);
     Pref[0] = Pstatic;
-    nparticles += Pstatic->getTotalNum();
+    if (!ion_points)
+      nparticles += Pstatic->getTotalNum();
+    else
+      nions = Pstatic->getTotalNum();
   }
   //size arrays
   R.resize(nparticles);
   EDValues.resize(nparticles, nEDValues);
+  if (ion_points)
+    EDIonValues.resize(nions,nEDValues);
   particles_outside.resize(nparticles);
   fill(particles_outside.begin(), particles_outside.end(), true);
   //read xml element contents
