@@ -1,3 +1,4 @@
+#include "delayed_update.h"
 #include <cstdio>
 #include <unistd.h>
 #include <sstream>

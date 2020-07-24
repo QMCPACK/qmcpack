@@ -29,45 +29,6 @@ class DMCBatchedTest
 public:
   DMCBatchedTest() { up_dtest_ = std::make_unique<SetupDMCTest>(1); }
 
-  void testCalcDefaultLocalWalkers()
-  {
-    using namespace testing;
-    SetupDMCTest& dtest_ = get_dtest();
-
-    auto testWRTWalkersPerRank = [&dtest_](int walkers_per_rank) {
-      DMCBatched dmc_batched = dtest_();
-      dmc_batched.set_walkers_per_rank(walkers_per_rank, "testing");
-      if (dtest_.num_crowds < 8)
-        dmc_batched.set_num_crowds(Concurrency::maxThreads(), "Insufficient threads available to match test input");
-      QMCDriverNew::AdjustedWalkerCounts awc{0, 0, 0, 0};
-      awc.walkers_per_rank = walkers_per_rank;
-      awc.num_crowds       = dtest_.num_crowds;
-      // what we're testing is whether the awc is transformed to a valid set of walker counts
-      awc = dmc_batched.calcDefaultLocalWalkers(awc);
-
-      if (walkers_per_rank < dtest_.num_crowds)
-      {
-        CHECK(awc.walkers_per_crowd == 1);
-        CHECK(awc.num_crowds == awc.walkers_per_rank);
-        CHECK(awc.walkers_per_rank == awc.num_crowds);
-      }
-      else if (walkers_per_rank % dtest_.num_crowds)
-      {
-        CHECK(awc.walkers_per_crowd == walkers_per_rank / dtest_.num_crowds + 1);
-        CHECK(awc.walkers_per_rank == awc.walkers_per_crowd * awc.num_crowds);
-      }
-      else
-      {
-        CHECK(awc.walkers_per_rank == awc.walkers_per_crowd * awc.num_crowds);
-      }
-    };
-    testWRTWalkersPerRank(7);
-    testWRTWalkersPerRank(31);
-    testWRTWalkersPerRank(32);
-    testWRTWalkersPerRank(33);
-  }
-
-
   void testDependentObjectsValidAfterPopulationChange()
   {
     using namespace testing;
@@ -81,28 +42,59 @@ private:
 };
 } // namespace testing
 
-TEST_CASE("DMCBatched::calc_default_local_walkers", "[drivers]")
+/** Since we check the DMC only feature of reserve walkers perhaps this should be
+ *  a DMC integration test.
+ */
+TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
 {
   using namespace testing;
-
+  Concurrency::OverrideMaxThreads<> override(8);
+  Communicate* comm;
+  comm = OHMMS::Controller;
   outputManager.pause();
-  DMCBatchedTest dbt;
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
+  REQUIRE(okay);
+  xmlNodePtr node = doc.getRoot();
+  QMCDriverInput qmcdriver_input(3);
+  qmcdriver_input.readXML(node);
+  DMCDriverInput dmcdriver_input;
+  dmcdriver_input.readXML(node);
+  MinimalParticlePool mpp;
+  ParticleSetPool particle_pool = mpp(comm);
+  MinimalWaveFunctionPool wfp;
+  WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
+  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
+
+  MinimalHamiltonianPool mhp;
+  HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
+  MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
+                          hamiltonian_pool.getPrimary(), comm->rank());
+  SampleStack samples;
+  DMCBatched dmcdriver(std::move(qmcdriver_input), std::move(dmcdriver_input), population, *(wavefunction_pool.getPrimary()),
+                                    *(hamiltonian_pool.getPrimary()), wavefunction_pool, comm);
+
+  // setStatus must be called before process
+  std::string root_name{"Test"};
+  //For later sections this appears to contain important state.
+  std::string prev_config_file{""};
+
+  dmcdriver.setStatus(root_name, prev_config_file, false);
+  // We want to express out expectations of the QMCDriver state machine so we catch
+  // changes to it over time.
+  CHECK(dmcdriver.getBranchEngine() == nullptr);
   outputManager.resume();
 
-  // Its a bit tricky where this needs to be put. Your call needs to be a stack fram below it.
-  Concurrency::OverrideMaxThreads<> override(8);
-  dbt.testCalcDefaultLocalWalkers();
+  dmcdriver.process(node);
+  CHECK(dmcdriver.getBranchEngine() != nullptr);
+  CHECK(dmcdriver.get_living_walkers() == 32);
+  CHECK(population.get_num_global_walkers() == 32);
+  CHECK(population.get_num_local_walkers() == 32);
+  QMCTraits::IndexType reserved_walkers = population.get_num_local_walkers() + population.get_dead_walkers().size();
+  CHECK(reserved_walkers == 48);
+  // What else should we expect after process
 }
 
-TEST_CASE("DMCBatched change of walkers_per_crowd", "[drivers]")
-{
-  using namespace testing;
-
-  outputManager.pause();
-  DMCBatchedTest dbt;
-  outputManager.resume();
-
-  Concurrency::OverrideMaxThreads<> override(8);
-}
 
 } // namespace qmcplusplus

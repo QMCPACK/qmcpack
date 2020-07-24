@@ -27,7 +27,7 @@
 #include <spline/einspline_engine.hpp>
 #ifdef QMC_CUDA
 #include <einspline/multi_bspline_create_cuda.h>
-#include "QMCWaveFunctions/AtomicOrbitalCuda.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/AtomicOrbitalCuda.h"
 #endif
 
 namespace qmcplusplus

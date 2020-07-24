@@ -14,8 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#define DET_BLOCK_SIZE 8
-
+#include "determinant_update.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -26,9 +25,9 @@
 //#include <thrust/system/cuda/detail/bulk/uninitialized.hpp>
 #include "CUDA_legacy/uninitialized_array.hpp"
 #endif
-
-#include "determinant_update.h"
 #include "CUDA_legacy/gpu_misc.h"
+
+#define DET_BLOCK_SIZE 8
 
 template<typename T, int BS>
 __global__ void update_inverse_cuda1(updateJob* updateList, int N, int rowstride)

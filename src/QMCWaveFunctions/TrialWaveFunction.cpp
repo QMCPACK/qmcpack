@@ -249,20 +249,6 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
   return LogValue;
 }
 
-
-/** evalaute the sum of log value of optimizable many-body wavefunctions
-* @param P  input configuration containing N particles
-* @param logpsi_fixed log(std::abs(psi)) of the invariant orbitals
-* @param logpsi_opt log(std::abs(psi)) of the variable orbitals
-* @param fixedG gradients of log(psi) of the fixed wave functions
-* @param fixedL laplacians of log(psi) of the fixed wave functions
-*
-* This function is introduced for optimization only.
-* fixedG and fixedL save the terms coming from the wave functions
-* that are invarient during optimizations.
-* It is expected that evaluateLog(P,false) is called later
-* and the external object adds the varying G and L and the fixed terms.
-*/
 void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
                                          RealType& logpsi_fixed_r,
                                          RealType& logpsi_opt_r,
@@ -292,6 +278,52 @@ void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
   convert(logpsi_fixed, logpsi_fixed_r);
   convert(logpsi_opt, logpsi_opt_r);
 }
+
+
+void TrialWaveFunction::flex_evaluateDeltaLogSetup(const RefVector<TrialWaveFunction>& wf_list,
+                                                   const RefVector<ParticleSet>& p_list,
+                                                   std::vector<RealType>& logpsi_fixed_list,
+                                                   std::vector<RealType>& logpsi_opt_list,
+                                                   RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
+                                                   RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list)
+{
+  constexpr RealType czero(0);
+  int num_particles = p_list[0].get().getTotalNum();
+  const auto g_list(TrialWaveFunction::extractGRefList(wf_list));
+  const auto l_list(TrialWaveFunction::extractLRefList(wf_list));
+
+  auto initGandL = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad,
+                                          ParticleSet::ParticleLaplacian_t& lapl) {
+    grad.resize(num_particles);
+    lapl.resize(num_particles);
+    grad           = czero;
+    lapl           = czero;
+    twf.LogValue   = czero;
+    twf.PhaseValue = czero;
+  };
+  for (int iw = 0; iw < wf_list.size(); iw++)
+    initGandL(wf_list[iw], g_list[iw], l_list[iw]);
+  auto& wavefunction_components = wf_list[0].get().Z;
+  const int num_wfc             = wf_list[0].get().Z.size();
+  for (int i = 0, ii = RECOMPUTE_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
+  {
+    ScopedTimer local_timer(wf_list[0].get().myTimers[ii]);
+    const auto wfc_list(extractWFCRefList(wf_list, i));
+    if (wavefunction_components[i]->Optimizable)
+    {
+      wavefunction_components[i]->mw_evaluateLog(wfc_list, p_list, g_list, l_list);
+      for (int iw = 0; iw < wf_list.size(); iw++)
+        logpsi_opt_list[iw] += std::real(wfc_list[iw].get().LogValue);
+    }
+    else
+    {
+      wavefunction_components[i]->mw_evaluateLog(wfc_list, p_list, fixedG_list, fixedL_list);
+      for (int iw = 0; iw < wf_list.size(); iw++)
+        logpsi_fixed_list[iw] += std::real(wfc_list[iw].get().LogValue);
+    }
+  }
+}
+
 
 /*void TrialWaveFunction::evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi)
 {
@@ -982,6 +1014,37 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
       dlogpsi[i] *= psiValue;
   }
 }
+
+void TrialWaveFunction::flex_evaluateParameterDerivatives(const RefVector<TrialWaveFunction>& wf_list,
+                                                          const RefVector<ParticleSet>& p_list,
+                                                          const opt_variables_type& optvars,
+                                                          RecordArray<ValueType>& dlogpsi,
+                                                          RecordArray<ValueType>& dhpsioverpsi)
+{
+  int nparam = dlogpsi.nparam();
+  for (int iw = 0; iw < wf_list.size(); iw++)
+  {
+    std::vector<ValueType> tmp_dlogpsi(nparam);
+    std::vector<ValueType> tmp_dhpsioverpsi(nparam);
+    TrialWaveFunction& twf = wf_list[iw];
+    for (int i = 0; i < twf.Z.size(); i++)
+    {
+      if (twf.Z[i]->dPsi)
+        (twf.Z[i]->dPsi)->evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
+      else
+        twf.Z[i]->evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
+    }
+
+    RealType OneOverM = twf.getReciprocalMass();
+    for (int i = 0; i < nparam; i++)
+    {
+      dlogpsi.setValue(i, iw, tmp_dlogpsi[i]);
+      //orbitals do not know about mass of particle.
+      dhpsioverpsi.setValue(i, iw, tmp_dhpsioverpsi[i] * OneOverM);
+    }
+  }
+}
+
 
 void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
                                               const opt_variables_type& optvars,

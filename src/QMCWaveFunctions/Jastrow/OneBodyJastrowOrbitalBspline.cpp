@@ -17,6 +17,8 @@
 #include "OneBodyJastrowOrbitalBspline.h"
 #include "CudaSpline.h"
 #include "Lattice/ParticleBConds.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/BsplineJastrowCuda.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/BsplineJastrowCudaPBC.h"
 #include "Configuration.h"
 
 namespace qmcplusplus
