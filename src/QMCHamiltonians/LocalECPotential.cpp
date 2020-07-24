@@ -32,8 +32,6 @@ LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els) : 
   PP.resize(NumIons, nullptr);
   Zeff.resize(NumIons, 0.0);
   gZeff.resize(ions.getSpeciesSet().getTotalNum(), 0);
-  Vi_samp_tmp.resize(NumIons);
-  Ve_samp_tmp.resize(els.getTotalNum());
 }
 
 ///destructor
@@ -164,8 +162,8 @@ LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
 {
   const DistanceTableData& d_table(P.getDistTable(myTableIndex));
   Value                       = 0.0;
-  Array<RealType, 1>& Ve_samp = Ve_samp_tmp;
-  Array<RealType, 1>& Vi_samp = Vi_samp_tmp;
+  Array<RealType, 1>& Ve_samp = *Ve_sample;
+  Array<RealType, 1>& Vi_samp = *Vi_sample;
   Ve_samp                     = 0.0;
   Vi_samp                     = 0.0;
 

@@ -28,17 +28,12 @@ namespace qmcplusplus
 EnergyDensityEstimator::EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE)
     : psetpool(PSP), Pdynamic(0), Pstatic(0), w_trace(0), Td_trace(0), Vd_trace(0), Vs_trace(0)
 {
-  bool write = omp_get_thread_num() == 0;
-  if (write)
-    app_log() << "EnergyDensityEstimator::EnergyDensityEstimator" << std::endl;
   UpdateMode.set(COLLECTABLE, 1);
   defKE    = defaultKE;
   nsamples = 0;
   request.request_scalar("weight");
   request.request_array("Kinetic");
   request.request_array("LocalPotential");
-  if (write)
-    app_log() << "end EnergyDensityEstimator::EnergyDensityEstimator" << std::endl;
 }
 
 
@@ -78,7 +73,7 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   else
   {
     Pstatic      = get_particleset(stat);
-    dtable_index = Pdynamic->addTable(*Pstatic, DT_AOS);
+    dtable_index = Pdynamic->addTable(*Pstatic, DT_SOA);
     Pref.resize(1);
     Pref[0] = Pstatic;
     nparticles += Pstatic->getTotalNum();
@@ -192,6 +187,7 @@ ParticleSet* EnergyDensityEstimator::get_particleset(std::string& psname)
 
 void EnergyDensityEstimator::get_required_traces(TraceManager& tm)
 {
+  bool write = omp_get_thread_num() == 0;
   w_trace  = tm.get_real_trace("weight");
   Td_trace = tm.get_real_trace(*Pdynamic, "Kinetic");
   Vd_trace = tm.get_real_combined_trace(*Pdynamic, "LocalPotential");
@@ -320,6 +316,10 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     nsamples++;
 #if defined(ENERGYDENSITY_CHECK)
     int thread = omp_get_thread_num();
+    using WP = WalkerProperties::Indexes;
+    RealType Eref = P.PropertyList[WP::LOCALENERGY];
+    RealType Vref = P.PropertyList[WP::LOCALPOTENTIAL];
+    RealType Tref = Eref-Vref;
 #pragma omp critical(edcheck)
     {
       RealType Dsum = 0.0;
@@ -353,11 +353,14 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
       //app_log()<<"eval ES Dsum"<<cnt<<" "<<edvals[W]<< std::endl;
       app_log() << thread << " eval ES " << cnt << " " << edvals[T] << " " << edvals[V] << " " << edvals[T] + edvals[V]
                 << std::endl;
+      app_log() << thread << " ref  E  " << cnt << " " << Tref << " " << Vref << " " << Eref
+                << std::endl;
       cnt++;
     }
 #endif
     //APP_ABORT("EnergyDensityEstimator::evaluate");
   }
+
   return 0.0;
 }
 
@@ -448,17 +451,11 @@ void EnergyDensityEstimator::registerCollectables(std::vector<observable_helper*
 void EnergyDensityEstimator::setObservables(PropertySetType& plist)
 {
   //remains empty
-  //app_log() <<"EnergyDensityEstimator::setObservables"<< std::endl;
-  //app_log() <<"  jtk: should remain empty?"<< std::endl;
-  //app_log() <<"end EnergyDensityEstimator::setObservables"<< std::endl;
 }
 
 void EnergyDensityEstimator::setParticlePropertyList(PropertySetType& plist, int offset)
 {
   //remains empty
-  //app_log() <<"EnergyDensityEstimator::setParticlePropertyList"<< std::endl;
-  //app_log() <<"  jtk: should remain empty?"<< std::endl;
-  //app_log() <<"end EnergyDensityEstimator::setParticlePropertyList"<< std::endl;
 }
 
 

@@ -198,14 +198,14 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
           IonNeighborElecs.getNeighborList(iat).push_back(jel);
           if (streaming_particles)
           {
-            Ve_samp(jel) = 0.5 * pairpot;
-            Vi_samp(iat) = 0.5 * pairpot;
+            Ve_samp(jel) += 0.5 * pairpot;
+            Vi_samp(iat) += 0.5 * pairpot;
           }
         }
     }
   }
 
-#if defined(TRACE_CHECK)
+#if !defined(TRACE_CHECK)
   if (streaming_particles)
   {
     Return_t Vnow  = Value;
