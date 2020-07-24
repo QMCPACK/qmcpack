@@ -282,7 +282,13 @@ void EstimatorManagerNew::makeBlockAverages()
     copy(SquaredAverageCache.begin(), SquaredAverageCache.end(), cur + n1);
     copy(PropertyCache.begin(), PropertyCache.end(), cur + n2);
   }
-  myComm->comm.reduce_n(send_buffer.begin(), send_buffer.size(), recv_buffer.begin(), std::plus<>{}, 0);
+
+  // This is necessary to use mpi3's C++ style reduce
+#ifdef HAVE_MPI
+    myComm->comm.reduce_n(send_buffer.begin(), send_buffer.size(), recv_buffer.begin(), std::plus<>{}, 0);
+#else
+    recv_buffer = send_buffer;
+#endif  
   if (myComm->rank() == 0)
   {
     auto cur = recv_buffer.begin();
