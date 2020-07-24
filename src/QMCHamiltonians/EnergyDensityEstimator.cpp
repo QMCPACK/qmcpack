@@ -93,7 +93,13 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   R.resize(nparticles);
   EDValues.resize(nparticles, nEDValues);
   if (ion_points)
+  {
     EDIonValues.resize(nions,nEDValues);
+    Rion.resize(nions,DIM);
+    for (int i=0; i<nions; i++)
+      for (int d=0; d<DIM; d++)
+        Rion(i,d) = Pstatic->R[i][d];
+  }
   particles_outside.resize(nparticles);
   fill(particles_outside.begin(), particles_outside.end(), true);
   //read xml element contents
@@ -265,7 +271,7 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
         p++;
       }
     }
-    if (Pstatic)
+    if (Pstatic && !ion_points)
     {
       const ParticlePos_t& Rs = Pstatic->R;
       for (int i = 0; i < Rs.size(); i++)
@@ -297,13 +303,21 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
       Vs_trace->combine();
       const ParticleSet& Ps            = *Pstatic;
       const std::vector<TraceReal>& Vs = Vs_trace->sample;
-      for (int i = 0; i < Ps.getTotalNum(); i++)
-      {
-        EDValues(p, W) = w;
-        EDValues(p, T) = 0.0;
-        EDValues(p, V) = w * Vs[i];
-        p++;
-      }
+      if (!ion_points)
+        for (int i = 0; i < Ps.getTotalNum(); i++)
+        {
+          EDValues(p, W) = w;
+          EDValues(p, T) = 0.0;
+          EDValues(p, V) = w * Vs[i];
+          p++;
+        }
+      else
+        for (int i = 0; i < Ps.getTotalNum(); i++)
+        {
+          EDIonValues(i, W) = w;
+          EDIonValues(i, T) = 0.0;
+          EDIonValues(i, V) = w * Vs[i];
+        }
     }
     //Accumulate energy density in spacegrids
     const DistanceTableData& dtab(P.getDistTable(dtable_index));
@@ -326,6 +340,16 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
         }
       }
     }
+    if (ion_points)
+    {
+      // Accumulate energy density for ions at a point field
+      bi = ion_buffer_offset;
+      for (int i =0; i<nions; i++)
+        for (v=0; v<(int)nEDValues; v++, bi++)
+        {
+          P.Collectables[bi] += EDIonValues(i,v);
+        }
+    }
     nsamples++;
 #if defined(ENERGYDENSITY_CHECK)
     int thread = omp_get_thread_num();
@@ -345,6 +369,13 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
         Tsum += EDValues(p, T);
         Vsum += EDValues(p, V);
       }
+      if (ion_points)
+        for (int i = 0; i < nions; i++)
+        {
+          Dsum += EDIonValues(i, W);
+          Tsum += EDIonValues(i, T);
+          Vsum += EDIonValues(i, V);
+        }
       Esum           = Tsum + Vsum;
       static int cnt = 0;
       //app_log()<<"eval ED Dsum"<<cnt<<" "<<Dsum<< std::endl;
@@ -363,6 +394,12 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
       }
       for (int v = 0; v < nvals; v++)
         edvals[v] += P.Collectables[outside_buffer_offset + v];
+      if (ion_points)
+      {
+        for (int i = 0; i<nions; i++)
+          for (int v = 0; v < nvals; v++)
+            edvals[v] += P.Collectables[ion_buffer_offset + i*nvals + v];
+      }
       //app_log()<<"eval ES Dsum"<<cnt<<" "<<edvals[W]<< std::endl;
       app_log() << thread << " eval ES " << cnt << " " << edvals[T] << " " << edvals[V] << " " << edvals[T] + edvals[V]
                 << std::endl;
@@ -433,6 +470,13 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
   {
     spacegrids[i]->allocate_buffer_space(collectables);
   }
+  if (ion_points)
+  {
+    ion_buffer_offset = collectables.size();
+    nvalues = nions*((int)nEDValues);
+    std::vector<RealType> tmp2(nvalues);
+    collectables.add(tmp2.begin(), tmp2.end());
+  }
 }
 
 
@@ -446,6 +490,11 @@ void EnergyDensityEstimator::registerCollectables(std::vector<observable_helper*
   int nspacegrids = spacegrids.size();
   oh->addProperty(const_cast<int&>(nspacegrids), "nspacegrids");
   oh->addProperty(const_cast<int&>(nsamples), "nsamples");
+  if (ion_points)
+  {
+    oh->addProperty(const_cast<int&>(nions), "nions");
+    oh->addProperty(const_cast<Matrix<RealType>&>(Rion), "ion_positions");
+  }
   h5desc.push_back(oh);
   ref.save(h5desc, g);
   oh = new observable_helper("outside");
@@ -458,6 +507,16 @@ void EnergyDensityEstimator::registerCollectables(std::vector<observable_helper*
   {
     SpaceGrid& sg = *spacegrids[i];
     sg.registerCollectables(h5desc, g, i);
+  }
+  if (ion_points)
+  {
+    oh = new observable_helper("ions");
+    std::vector<int> ng2(2);
+    ng2[0] = nions;
+    ng2[1] = (int)nEDValues;
+    oh->set_dimensions(ng2, ion_buffer_offset);
+    oh->open(g);
+    h5desc.push_back(oh);
   }
 }
 
