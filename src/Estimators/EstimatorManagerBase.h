@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -176,7 +176,7 @@ public:
       Estimators[i]->setNumberOfBlocks(blocks);
   }
 
-  /** legacy: stop a block
+  /** stop a block
    * @param accept acceptance rate of this block
    */
   void stopBlock(RealType accept, bool collectall = true);
@@ -286,9 +286,8 @@ private:
   int max4ascii;
   //Data for communication
   std::vector<BufferType*> RemoteData;
-  /// legacy: collect data and write
+  ///collect data and write
   void collectBlockAverages();
-
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;
