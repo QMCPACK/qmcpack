@@ -67,7 +67,8 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   //collect particle sets
   if (!Pdynamic)
     Pdynamic = get_particleset(dyn);
-  Pdynamic->turnOnPerParticleSK();
+  if (Pdynamic->SK)
+    Pdynamic->turnOnPerParticleSK();
   nparticles = Pdynamic->getTotalNum();
   std::vector<ParticleSet*> Pref;
   if (stat == "")
@@ -78,7 +79,8 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   else
   {
     Pstatic      = get_particleset(stat);
-    Pstatic->turnOnPerParticleSK();
+    if (Pstatic->SK)
+      Pstatic->turnOnPerParticleSK();
     dtable_index = Pdynamic->addTable(*Pstatic, DT_SOA);
     Pref.resize(1);
     Pref[0] = Pstatic;
