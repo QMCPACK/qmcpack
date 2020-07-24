@@ -175,6 +175,11 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::newQMCDriver(std::unique_p
   // branchEngine has to be transferred to a new QMCDriver
   // but we also have to deal with it splitting into new and legacy classes
 
+  if (last_driver && last_driver->getRunType() == QMCRunType::DUMMY)
+  {
+    throw std::runtime_error("QMCDriverFactory::newQMCDriver\n Other qmc sections cannot come after <qmc method=\"test\">.\n");
+  }
+
   switch (das.new_run_type)
   {
   case QMCRunType::DUMMY:
@@ -191,10 +196,6 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::newQMCDriver(std::unique_p
     QMCDriver::BranchEngineType* branchEngine = nullptr;
     if (last_driver)
     {
-      if (last_driver->getRunType() == QMCRunType::DUMMY)
-      {
-        APP_ABORT("QMCDriverFactory::setQMCDriver\n Other qmc sections cannot come after <qmc method=\"test\">.\n");
-      }
       branchEngine = last_driver->getBranchEngine();
       branchEngine->resetRun(cur);
     }
@@ -213,14 +214,9 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::newQMCDriver(std::unique_p
       //Checking the QMCRunType gives us the type information
       QMCDriverNew& old_unified_driver = static_cast<QMCDriverNew&>(*last_driver);
 
-      if (last_driver->getRunType() == QMCRunType::DUMMY)
-      {
-        throw std::runtime_error("QMCDriverFactory::newQMCDriver\n Other qmc sections cannot come after <qmc method=\"test\">.\n");
-      }
-
       branchEngine = old_unified_driver.getNewBranchEngine();
-      //Someone helpful added a resetRun call here, that's a call from legacy CUDA that if it did help
-      // I guess it did something helpful (at least it matched the legacy results
+      // Someone helpful added a resetRun call here, a call from legacy CUDA that if it did help I need to know why.
+      // It did seem to fix an issue with legacy which is interesting....
     }
     if (branchEngine)
     {
