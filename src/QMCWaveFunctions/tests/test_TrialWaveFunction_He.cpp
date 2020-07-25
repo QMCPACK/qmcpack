@@ -28,7 +28,8 @@ namespace qmcplusplus
 void setup_He_wavefunction(Communicate* c,
                            ParticleSet& elec,
                            ParticleSet& ions,
-                           std::unique_ptr<WaveFunctionFactory>& wff)
+                           std::unique_ptr<WaveFunctionFactory>& wff,
+                           WaveFunctionFactory::PtclPoolType& particle_set_map)
 {
   std::vector<int> agroup(2);
   int nelec = 2;
@@ -56,7 +57,6 @@ void setup_He_wavefunction(Communicate* c,
   tspecies(e_chargeIdx, downIdx) = -1.0;
   elec.resetGroups();
 
-  WaveFunctionFactory::PtclPoolType particle_set_map;
   particle_set_map["e"] = &elec;
 
   ions.setName("ion0");
@@ -126,7 +126,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   ParticleSet elec;
   ParticleSet ions;
   std::unique_ptr<WaveFunctionFactory> wff;
-  setup_He_wavefunction(c, elec, ions, wff);
+  WaveFunctionFactory::PtclPoolType particle_set_map;
+  setup_He_wavefunction(c, elec, ions, wff, particle_set_map);
   TrialWaveFunction& psi(*(wff->targetPsi));
 
   ions.update();
@@ -184,6 +185,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 
   CHECK(dlogpsi2[0] == ValueApprox(dlogpsi_list.getValue(0, 1)));
   CHECK(dhpsioverpsi2[0] == ValueApprox(dhpsi_over_psi_list.getValue(0, 1)));
+
+  SPOSetBuilderFactory::clear();
 }
 
 
@@ -215,10 +218,11 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   ParticleSet elec;
   ParticleSet ions;
   std::unique_ptr<WaveFunctionFactory> wff;
+  WaveFunctionFactory::PtclPoolType particle_set_map;
   // This He wavefunction has two components
   // The orbitals are fixed and have not optimizable parameters.
   // The Jastrow factor does have an optimizable parameter.
-  setup_He_wavefunction(c, elec, ions, wff);
+  setup_He_wavefunction(c, elec, ions, wff, particle_set_map);
   TrialWaveFunction& psi(*(wff->targetPsi));
   ions.update();
   elec.update();
@@ -229,7 +233,6 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   TrialWaveFunction psi2(c);
   WaveFunctionComponent* orb1 = psi.getOrbitals()[0]->makeClone(elec2);
-
   psi2.addComponent(orb1, "orb1");
   WaveFunctionComponent* orb2 = psi.getOrbitals()[1]->makeClone(elec2);
   psi2.addComponent(orb2, "orb2");
@@ -364,6 +367,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   CHECK(fixedG2[1][0] == ValueApprox(fixedG_list2[1].get()[1][0]));
   CHECK(fixedG2[1][1] == ValueApprox(fixedG_list2[1].get()[1][1]));
   CHECK(fixedG2[1][2] == ValueApprox(fixedG_list2[1].get()[1][2]));
+
+  SPOSetBuilderFactory::clear();
 }
 
 
