@@ -29,7 +29,7 @@ void setup_He_wavefunction(Communicate* c,
                            ParticleSet& elec,
                            ParticleSet& ions,
                            std::unique_ptr<WaveFunctionFactory>& wff,
-                           std::unique_ptr<WaveFunctionFactory::PtclPoolType>& particle_set_map)
+                           WaveFunctionFactory::PtclPoolType& particle_set_map)
 {
   std::vector<int> agroup(2);
   int nelec = 2;
@@ -57,8 +57,7 @@ void setup_He_wavefunction(Communicate* c,
   tspecies(e_chargeIdx, downIdx) = -1.0;
   elec.resetGroups();
 
-  particle_set_map = std::make_unique<WaveFunctionFactory::PtclPoolType>();
-  (*particle_set_map)["e"] = &elec;
+  particle_set_map["e"] = &elec;
 
   ions.setName("ion0");
   ions.create(1);
@@ -71,11 +70,11 @@ void setup_He_wavefunction(Communicate* c,
   int chargeIdx               = he_species.addAttribute("charge");
   tspecies(chargeIdx, He_Idx) = 2.0;
   tspecies(massIdx, upIdx)    = 2.0;
-  (*particle_set_map)["ion0"]    = &ions;
+  particle_set_map["ion0"]    = &ions;
 
   elec.addTable(ions, DT_SOA);
 
-  wff = std::make_unique<WaveFunctionFactory>(&elec, *particle_set_map, c);
+  wff = std::make_unique<WaveFunctionFactory>(&elec, particle_set_map, c);
 
   const char* wavefunction_xml = "<wavefunction name=\"psi0\" target=\"e\">  \
      <jastrow name=\"Jee\" type=\"Two-Body\" function=\"pade\"> \
@@ -127,7 +126,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   ParticleSet elec;
   ParticleSet ions;
   std::unique_ptr<WaveFunctionFactory> wff;
-  std::unique_ptr<WaveFunctionFactory::PtclPoolType> particle_set_map;
+  WaveFunctionFactory::PtclPoolType particle_set_map;
   setup_He_wavefunction(c, elec, ions, wff, particle_set_map);
   TrialWaveFunction& psi(*(wff->targetPsi));
 
@@ -219,7 +218,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   ParticleSet elec;
   ParticleSet ions;
   std::unique_ptr<WaveFunctionFactory> wff;
-  std::unique_ptr<WaveFunctionFactory::PtclPoolType> particle_set_map;
+  WaveFunctionFactory::PtclPoolType particle_set_map;
   // This He wavefunction has two components
   // The orbitals are fixed and have not optimizable parameters.
   // The Jastrow factor does have an optimizable parameter.
