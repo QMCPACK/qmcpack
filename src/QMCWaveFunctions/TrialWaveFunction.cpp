@@ -322,6 +322,16 @@ void TrialWaveFunction::flex_evaluateDeltaLogSetup(const RefVector<TrialWaveFunc
         logpsi_fixed_list[iw] += std::real(wfc_list[iw].get().LogValue);
     }
   }
+
+  // Temporary workaround to have P.G/L always defined.
+  // remove when KineticEnergy use WF.G/L instead of P.G/L
+  auto addAndCopyToP = [](ParticleSet& pset, TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad,
+                          ParticleSet::ParticleLaplacian_t& lapl) {
+    pset.G = twf.G + grad;
+    pset.L = twf.L + lapl;
+  };
+  for (int iw = 0; iw < wf_list.size(); iw++)
+    addAndCopyToP(p_list[iw], wf_list[iw], fixedG_list[iw], fixedL_list[iw]);
 }
 
 
