@@ -215,21 +215,26 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
-  ParticleSet elec;
+  ParticleSet elec1;
   ParticleSet ions;
   std::unique_ptr<WaveFunctionFactory> wff;
   WaveFunctionFactory::PtclPoolType particle_set_map;
   // This He wavefunction has two components
   // The orbitals are fixed and have not optimizable parameters.
   // The Jastrow factor does have an optimizable parameter.
-  setup_He_wavefunction(c, elec, ions, wff, particle_set_map);
+  setup_He_wavefunction(c, elec1, ions, wff, particle_set_map);
   TrialWaveFunction& psi(*(wff->targetPsi));
   ions.update();
-  elec.update();
+  elec1.update();
 
-  ParticleSet elec2(elec);
+  ParticleSet elec1b(elec1);
+  elec1b.update();
+
+  ParticleSet elec2(elec1);
   elec2.R[0][0] = 0.9;
   elec2.update();
+  ParticleSet elec2b(elec2);
+  elec2b.update();
 
   TrialWaveFunction psi2(c);
   WaveFunctionComponent* orb1 = psi.getOrbitals()[0]->makeClone(elec2);
@@ -246,7 +251,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   RefVector<TrialWaveFunction> wf_list;
   RefVector<ParticleSet> p_list;
   wf_list.push_back(psi);
-  p_list.push_back(elec);
+  p_list.push_back(elec1b);
 
   // Evaluate new flex_evaluateDeltaLogSetup
 
@@ -270,7 +275,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   fixedG1.resize(nelec);
   fixedL1.resize(nelec);
 
-  psi.evaluateDeltaLog(elec, logpsi_fixed_r1, logpsi_opt_r1, fixedG1, fixedL1);
+  psi.evaluateDeltaLog(elec1, logpsi_fixed_r1, logpsi_opt_r1, fixedG1, fixedL1);
 
   CHECK(logpsi_fixed_r1 == Approx(logpsi_fixed_list[0]));
   CHECK(logpsi_opt_r1 == Approx(logpsi_opt_list[0]));
@@ -285,12 +290,20 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   CHECK(fixedL1[0] == ValueApprox(fixedL_list[0].get()[0]));
   CHECK(fixedL1[1] == ValueApprox(fixedL_list[0].get()[1]));
 
+  // Compare the ParticleSet gradient and laplacian storage
+  // This should be temporary until these get removed from ParticleSet
+  CHECK(elec1b.L[0] == ValueApprox(elec1.L[0]));
+  CHECK(elec1b.L[1] == ValueApprox(elec1.L[1]));
+
+  CHECK(elec1b.G[0][0] == ValueApprox(elec1.G[0][0]));
+  CHECK(elec1b.G[1][1] == ValueApprox(elec1.G[1][1]));
+
   // Prepare to compare using list with two wavefunctions and particlesets
 
   nentry = 2;
 
   wf_list.push_back(psi2);
-  p_list.push_back(elec2);
+  p_list.push_back(elec2b);
 
   ParticleSet::ParticleGradient_t G2;
   ParticleSet::ParticleLaplacian_t L2;
@@ -304,7 +317,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   RealType logpsi_fixed_r1b;
   RealType logpsi_opt_r1b;
-  psi2.evaluateDeltaLog(elec, logpsi_fixed_r1b, logpsi_opt_r1b, fixedG1, fixedL1);
+  psi2.evaluateDeltaLog(elec1, logpsi_fixed_r1b, logpsi_opt_r1b, fixedG1, fixedL1);
 
   CHECK(logpsi_fixed_r1 == Approx(logpsi_fixed_r1b));
   CHECK(logpsi_opt_r1 == Approx(logpsi_opt_r1b));
@@ -367,6 +380,16 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   CHECK(fixedG2[1][0] == ValueApprox(fixedG_list2[1].get()[1][0]));
   CHECK(fixedG2[1][1] == ValueApprox(fixedG_list2[1].get()[1][1]));
   CHECK(fixedG2[1][2] == ValueApprox(fixedG_list2[1].get()[1][2]));
+
+  // Compare the ParticleSet gradient and laplacian storage
+  // This should be temporary until these get removed from ParticleSet
+  CHECK(elec1b.L[0] == ValueApprox(elec1.L[0]));
+  CHECK(elec1b.L[1] == ValueApprox(elec1.L[1]));
+  CHECK(elec2b.L[0] == ValueApprox(elec2.L[0]));
+  CHECK(elec2b.L[1] == ValueApprox(elec2.L[1]));
+
+  CHECK(elec2b.G[0][0] == ValueApprox(elec2.G[0][0]));
+  CHECK(elec2b.G[1][1] == ValueApprox(elec2.G[1][1]));
 
   SPOSetBuilderFactory::clear();
 }
