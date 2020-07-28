@@ -121,6 +121,7 @@ ELSE()
         SET(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w16-J3)
         SET(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-J3)
         ADD_NIO_TEST(${PERF_TEST} 1 16 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w 16 -j ${TEST_DIR}/J123.xml")
+
         # Batched driver
         SET(DRIVER_TYPE batched_driver)
         ## delayed update
