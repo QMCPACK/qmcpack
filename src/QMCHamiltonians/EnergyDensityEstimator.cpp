@@ -133,6 +133,7 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
     stop               = stop || !ref_succeeded;
   }
   //initialize grids or other cell partitions
+  bool periodic = Pdynamic->Lattice.SuperCellEnum != SUPERCELL_OPEN;
   bool grid_succeeded;
   element     = cur->children;
   int nvalues = (int)nEDValues;
@@ -147,11 +148,11 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
       if (Pstatic)
       {
         set_ptcl();
-        grid_succeeded = sg->put(element, ref.points, Rptcl, Zptcl, Pdynamic->getTotalNum(), false);
+        grid_succeeded = sg->put(element, ref.points, Rptcl, Zptcl, Pdynamic->getTotalNum(), periodic, false);
         unset_ptcl();
       }
       else
-        grid_succeeded = sg->put(element, ref.points, false);
+        grid_succeeded = sg->put(element, ref.points, periodic, false);
       stop = stop || !grid_succeeded;
       ++i;
     }

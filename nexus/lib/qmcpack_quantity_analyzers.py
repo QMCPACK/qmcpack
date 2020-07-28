@@ -301,7 +301,7 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
         exclude = self.info.exclude
         self.data = QAHDFdata()
         for var in list(data.keys()):
-            if not var in exclude and not str(var)[0]=='_':
+            if not var in exclude and not str(var)[0]=='_' and not 'skall' in var.lower():
                 self.data[var] = data[var]
                 del data[var]
             #end if
@@ -551,13 +551,15 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
             ions.P.mean  = mean
             ions.P.error = error
 
-            self.ions.data = obj(
+            ions.data = obj(
                 D = value[iD,:],
                 T = value[iT,:],
                 V = value[iV,:],
                 E = E,
                 P = P
                 )
+
+            self.ions = ions
         #end if
 
         return
