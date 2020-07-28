@@ -80,6 +80,9 @@ def change_to_unified_drivers(tree):
   for qmc in qmc_nodes:
     replace_attribute(qmc, 'method', 'vmc', 'vmc_batch')
     replace_attribute(qmc, 'method', 'dmc', 'dmc_batch')
+    nodes = qmc.findall("./parameter[@name='walkers']")
+    if nodes:
+      add_or_change_attribute(nodes[0], 'name', 'walkers_per_rank')
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="Adjust QMCPACK input files")
@@ -122,11 +125,11 @@ if __name__ == '__main__':
     j3_tree = ET.parse(args.J123)
     change_jastrow(tree, j3_tree)
 
-  if args.unified:
-    change_to_unified_drivers(tree)
-
   if args.walker:
     change_number_of_walkers(tree,args.walker)
+
+  if args.unified:
+    change_to_unified_drivers(tree)
 
   if args.output:
     tree.write(args.output)
