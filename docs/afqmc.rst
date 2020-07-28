@@ -440,7 +440,7 @@ can approximate the orbital products entering the ERIs as
 .. math::
   :label: eq59
 
-  \varphi^{*}_p(\mathbf{r})\varphi_r(\mathbf{r}) \approx \sum_\mu^{N_\mu} \zeta_\mu(\mathbf{r}) \varphi^*_p(\mathbf{r}_\mu)\varphi_r(\mathbf{r}_\mu),\label{eq:orb_prod}
+  \varphi^{*}_p(\mathbf{r})\varphi_r(\mathbf{r}) \approx \sum_\mu^{N_\mu} \zeta_\mu(\mathbf{r}) \varphi^*_p(\mathbf{r}_\mu)\varphi_r(\mathbf{r}_\mu),
 
 where :math:`\varphi_p(\mathbf{r})` are the one-electron orbitals and
 :math:`\mathbf{r}_\mu` are a set of specially selected interpolating
@@ -451,14 +451,14 @@ product of rank-2 tensors
 .. math::
   :label: eq60
 
-  v_{pqrs} \approx \sum_{\mu\nu} \varphi^{*}_p(\mathbf{r}_\mu)\varphi_r(\mathbf{r}_\mu) M_{\mu\nu} \varphi^{*}_q(\mathbf{r}_\nu)\varphi_s(\mathbf{r}_\nu)\label{eq:4ix_thc},
+  v_{pqrs} \approx \sum_{\mu\nu} \varphi^{*}_p(\mathbf{r}_\mu)\varphi_r(\mathbf{r}_\mu) M_{\mu\nu} \varphi^{*}_q(\mathbf{r}_\nu)\varphi_s(\mathbf{r}_\nu),
 
 where
 
 .. math::
   :label: eq61
 
-  M_{\mu\nu} = \int d\mathbf{r}d\mathbf{r}' \zeta_\mu(\mathbf{r})\frac{1}{|\mathbf{r}-\mathbf{r}'|}\zeta^{*}_\nu(\mathbf{r}')\label{eq:mmat}.
+  M_{\mu\nu} = \int d\mathbf{r}d\mathbf{r}' \zeta_\mu(\mathbf{r})\frac{1}{|\mathbf{r}-\mathbf{r}'|}\zeta^{*}_\nu(\mathbf{r}').
 
 We also require the half-rotated versions of these quantities which live
 on a different set of :math:`\tilde{N}_\mu` interpolating points
@@ -530,7 +530,7 @@ Finally, we have implemented an explicitly :math:`k`-point dependent factorizati
 .. math::
   :label: eq62
 
-  v_{pqrs} = \sum_{\substack{n\textbf{Q}\textbf{k}\textbf{k}' \\ pqrs\sigma\sigma'}} L^{\textbf{Q},\textbf{k}}_{pr,n} {L^{\textbf{Q},\textbf{k}'}_{sq,n}}^{*}\label{eq:kp_h2}
+  v_{pqrs} = \sum_{\substack{n\textbf{Q}\textbf{k}\textbf{k}' \\ pqrs\sigma\sigma'}} L^{\textbf{Q},\textbf{k}}_{pr,n} {L^{\textbf{Q},\textbf{k}'}_{sq,n}}^{*}
 
 where :math:`\textbf{k}`, :math:`\textbf{k}'` and :math:`\textbf{Q}` are
 vectors in the first Brillouin zone. The one-body Hamiltonian is block

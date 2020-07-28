@@ -38,7 +38,7 @@ struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
   ///source particle set
   ParticleSet& PtclA;
   ///long-range Handler
-  LRHandlerType* dAB;
+  std::unique_ptr<LRHandlerType> dAB;
   ///number of species of A particle set
   int NumSpeciesA;
   ///number of species of B particle set

@@ -61,7 +61,7 @@ private:
   RealType h; //this is for finite differencing.
   vector<PosType> sphericalgrid;
   GridType* myGrid;
-  LRHandlerType* AA;
+  std::unique_ptr<LRHandlerType> AA;
   RadFunctorType* rVs;
   bool processPWH(xmlNodePtr cur);
   void wfnPut(xmlNodePtr cur);

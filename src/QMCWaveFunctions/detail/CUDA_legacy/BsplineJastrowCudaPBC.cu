@@ -14,12 +14,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#define MAX_SPLINES 100
 #include <stdio.h>
 #include <config.h>
 #include "BsplineJastrowCudaPBC.h"
 #include "CUDA_legacy/gpu_misc.h"
 
+#define MAX_SPLINES 100
 
 bool AisInitializedPBC = false;
 

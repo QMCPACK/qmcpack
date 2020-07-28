@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Fermion/matrix_update_helper.hpp"
+#include "matrix_update_helper.hpp"
 #include <cuComplex.h>
 #include "subtractOne.cuh"
 #include <thrust/complex.h>

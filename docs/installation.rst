@@ -3,7 +3,7 @@
 Obtaining, installing, and validating QMCPACK
 =============================================
 
-This chapter describes how to obtain, build, and validate QMCPACK. This
+This section describes how to obtain, build, and validate QMCPACK. This
 process is designed to be as simple as possible and should be no harder
 than building a modern plane-wave density functional theory code such as
 Quantum ESPRESSO, QBox, or VASP. Parallel builds enable a complete

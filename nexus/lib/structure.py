@@ -3382,7 +3382,7 @@ class Structure(Sobj):
         #end if
         matrix_tiling = abs(tilemat-diag(diag(tilemat))).sum()>0.1
         if not matrix_tiling:
-            return self.tile_points_simple(points,axes,diag(tilemat))
+            return self.tile_points_simple(points,axes,diag(abs(tilemat)))
         else:
             if not isinstance(axes,ndarray):
                 axes = array(axes)
@@ -3444,6 +3444,9 @@ class Structure(Sobj):
             t = array(ceil(t),dtype=int)+1
         else:
             t = ti
+        #end if
+        if t.min()<0:
+            self.error('tiling vector cannot be negative\ntiling vector provided: {}'.format(t))
         #end if
         ntpoints = npoints*int(round( t.prod() ))
         if ntpoints==0:
@@ -3740,12 +3743,35 @@ class Structure(Sobj):
     #end def clear_kpoints
 
 
-    def add_kmesh(self,kgrid,kshift=None,unique=False):
+    def kgrid_from_kspacing(self,kspacing):
+        kgrid = []
+        for ka in self.kaxes:
+            km = np.linalg.norm(ka)
+            kg = int(np.ceil(km/kspacing))
+            kgrid.append(kg)
+        #end for
+        return tuple(kgrid)
+    #end def kgrid_from_kspacing
+
+
+    def add_kmesh(self,kgrid=None,kshift=None,unique=False,kspacing=None):
+        if kspacing is not None:
+            kgrid = self.kgrid_from_kspacing(kspacing)
+        elif kgrid is None:
+            self.error('kgrid input is required by add_kmesh')
+        #end if
         self.add_kpoints(kmesh(self.kaxes,kgrid,kshift),unique=unique)
     #end def add_kmesh
 
 
-    def add_symmetrized_kmesh(self,kgrid,kshift=(0,0,0)):
+    def add_symmetrized_kmesh(self,kgrid=None,kshift=(0,0,0),kspacing=None):
+        # find kgrid from kspacing, if requested
+        if kspacing is not None:
+            kgrid = self.kgrid_from_kspacing(kspacing)
+        elif kgrid is None:
+            self.error('kgrid input is required by add_kmesh')
+        #end if
+
         # get spglib cell data structure
         cell = self.spglib_cell()
 
@@ -4722,6 +4748,7 @@ class Structure(Sobj):
         axes = []
         pos  = []
         elem = []
+        constrain_relax = []
         unit_pos = False
         for line in lines:
             ls = line.strip()
@@ -4737,6 +4764,8 @@ class Structure(Sobj):
                 elif t0=='atom':
                     pos.append(tokens[1:4])
                     elem.append(tokens[4])
+                elif t0=='constrain_relaxation':
+                    constrain_relax.append(tokens[1])
                 elif t0.startswith('initial'):
                     None
                 else:
@@ -4748,13 +4777,19 @@ class Structure(Sobj):
         axes = array(axes,dtype=float)
         pos  = array(pos,dtype=float)
         if unit_pos:
-            pos  = dot(pos,axes)
+            pos = dot(pos,axes)
         #end if
         self.dim = 3
-        self.set_axes(axes)
+        if len(axes)>0:
+            self.set_axes(axes)
+        #end if
         self.set_elem(elem)
         self.pos   = pos
         self.units = 'A'
+        if len(constrain_relax)>0:
+            constrain_relax = array(constrain_relax)
+            self.freeze(list(range(self.size())),directions=constrain_relax=='.true.')
+        #end if
     #end def read_fhi_aims
 
 

@@ -15,10 +15,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
+#include "AtomicOrbitalCuda.h"
 #include <cstdio>
 #include <vector>
 #include <complex>
-#include "AtomicOrbitalCuda.h"
 
 
 __constant__ float  Acuda[48];

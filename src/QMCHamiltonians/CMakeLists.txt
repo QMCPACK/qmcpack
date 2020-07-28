@@ -49,6 +49,7 @@ IF(OHMMS_DIM MATCHES 3)
     ChiesaCorrection.cpp
     ForceCeperley.cpp
     ForceChiesaPBCAA.cpp
+    StressPBC.cpp
     LocalECPotential.cpp
     NonLocalECPComponent.cpp
     NonLocalECPotential.deriv.cpp

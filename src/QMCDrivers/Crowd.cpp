@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -14,6 +14,7 @@ namespace qmcplusplus
 {
 void Crowd::clearWalkers()
 {
+  // We're clearing the refs to the objects not the referred to objects.
   mcp_walkers_.clear();
   mcp_wfbuffers_.clear();
   walker_elecs_.clear();

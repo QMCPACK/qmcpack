@@ -109,8 +109,12 @@ public:
   // Attach to pre-allocated memory
   inline void attachReference(T* ref, size_t n)
   {
-    if (nAllocated)
-      throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
+    if (nAllocated) {
+      free();
+      std::cerr << "Allocated OhmmsVector attachReference called.\n" << std::endl;
+      // Nice idea but "default" constructed WFC elements in the batched driver make this a mess.
+      //throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
+    }
     nLocal     = n;
     nAllocated = 0;
     X          = ref;

@@ -38,33 +38,6 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
   // qmc_driver_mode.set(QMC_WARMUP, 0);
 }
 
-QMCDriverNew::AdjustedWalkerCounts VMCBatched::calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const
-{
-  checkNumCrowdsLTNumThreads();
-  int num_threads(Concurrency::maxThreads<>());
-  if (awc.num_crowds == 0)
-    awc.num_crowds = std::min(num_threads, awc.walkers_per_rank);
-
-  if (awc.walkers_per_rank == awc.num_crowds)
-    awc.walkers_per_crowd = 1;
-  if (awc.walkers_per_rank < awc.num_crowds)
-    awc.walkers_per_rank = awc.num_crowds;
-  awc.walkers_per_crowd = (awc.walkers_per_rank % awc.num_crowds) ? awc.walkers_per_rank / awc.num_crowds + 1
-                                                                  : awc.walkers_per_rank / awc.num_crowds;
-  awc.walkers_per_rank = awc.walkers_per_crowd * awc.num_crowds;
-  if (awc.walkers_per_rank != qmcdriver_input_.get_walkers_per_rank())
-    app_warning() << "VMCBatched driver has adjusted walkers per rank to: " << awc.walkers_per_rank << '\n';
-
-  if (vmcdriver_input_.get_samples() >= 0 || vmcdriver_input_.get_samples_per_thread() >= 0 ||
-      vmcdriver_input_.get_steps_between_samples() >= 0)
-    app_warning() << "VMCBatched currently ignores samples and samplesperthread\n";
-
-  app_log() << "VMCBatched walkers per crowd " << awc.walkers_per_crowd << std::endl;
-  // TODO: Simplify samples, samples per thread etc in the unified driver
-  // see logic in original VMC.cpp
-  return awc;
-}
-
 void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 QMCDriverNew::DriverTimers& timers,
@@ -258,6 +231,7 @@ void VMCBatched::runVMCStep(int crowd_id,
   int max_steps = sft.qmcdrv_input.get_max_steps();
   bool is_recompute_block =
       sft.recomputing_blocks ? (1 + sft.block) % sft.qmcdrv_input.get_blocks_between_recompute() == 0 : false;
+  // \todo delete
   RealType cnorm = 1.0 / static_cast<RealType>(crowd.size());
   IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
@@ -271,39 +245,16 @@ void VMCBatched::process(xmlNodePtr node)
   // \todo get total walkers should be coming from VMCDriverInput
 
   QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(myComm, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
-                              1.0, get_num_crowds());
-
-  // This code bothers me now, most of the code bases this on what is actually there.
-  population_.set_num_local_walkers(awc.walkers_per_rank);
-  population_.set_num_global_walkers(awc.global_walkers);
-
-  walkers_per_rank_  = awc.walkers_per_rank;
-  walkers_per_crowd_ = awc.walkers_per_crowd;
-  num_crowds_        = awc.num_crowds;
-
-  if (collect_samples_)
-  {
-    samples_.setMaxSamples(compute_samples_per_node());
-  }
-
-  app_log() << "VMCBatched Driver running with total_walkers=" << awc.global_walkers << '\n'
-            << "                               walkers_per_rank=" << walkers_per_rank_ << '\n'
-            << "                               num_crowds=" << num_crowds_ << '\n';
-
-  // side effect updates walkers_per_crowd_;
-  makeLocalWalkers(awc.walkers_per_rank, awc.reserve_walkers,
-                   ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
-
-
-  Base::process(node);
+      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
+                              1.0, qmcdriver_input_.get_num_crowds());
+  Base::startup(node, awc);
 }
 
-int VMCBatched::compute_samples_per_node() const
+int VMCBatched::compute_samples_per_node(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers)
 {
-  int nblocks = qmcdriver_input_.get_max_blocks();
-  int nsteps  = qmcdriver_input_.get_max_steps();
-  return nblocks * nsteps * walkers_per_rank_;
+  int nblocks = qmcdriver_input.get_max_blocks();
+  int nsteps  = qmcdriver_input.get_max_steps();
+  return nblocks * nsteps * local_walkers;
 }
 
 
@@ -332,11 +283,11 @@ bool VMCBatched::run()
 
   { // walker initialization
     ScopedTimer local_timer(&(timers_.init_walkers_timer));
-    TasksOneToOne<> section_start_task(num_crowds_);
+    TasksOneToOne<> section_start_task(crowds_.size());
     section_start_task(initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
 
-  TasksOneToOne<> crowd_task(num_crowds_);
+  TasksOneToOne<> crowd_task(crowds_.size());
 
   auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
                           UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
@@ -414,9 +365,10 @@ bool VMCBatched::run()
 
 void VMCBatched::enable_sample_collection()
 {
-  samples_.setMaxSamples(compute_samples_per_node());
+  samples_.setMaxSamples(compute_samples_per_node(crowds_.size(), population_.get_num_local_walkers()));
   collect_samples_ = true;
-  app_log() << "VMCBatched Driver collecting samples, samples_per_node = " << compute_samples_per_node() << '\n';
+
+  app_log() << "VMCBatched Driver collecting samples, samples_per_node = " << compute_samples_per_node(crowds_.size(), population_.get_num_local_walkers()) << '\n';
 }
 
 

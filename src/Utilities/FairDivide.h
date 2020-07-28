@@ -13,6 +13,7 @@
 
 #include <cstdlib>
 #include <tuple>
+#include <algorithm>
 
 #ifndef FAIRDIVIDE_H
 #define FAIRDIVIDE_H
@@ -68,6 +69,19 @@ inline void FairDivide(int ntot, int npart, IV& adist)
       adist[i] = adist[i - 1] + bat;
   }
   adist[npart] = ntot;
+}
+
+/** return the occupation vector for ntot entities partitioned npart ways.
+ */
+template<class IV>
+std::vector<IV> fairDivide(IV ntot, IV npart)
+{
+  IV bat = ntot / npart;
+  IV residue = ntot % npart;
+  std::vector<IV> partitions(npart, 0);
+  std::fill_n(partitions.begin(), residue, bat + 1);
+  std::fill_n(partitions.begin() + residue, npart - residue, bat);
+  return partitions;
 }
 
 /** Partition ntot over npart and the size of each partition is a multiple of base size
