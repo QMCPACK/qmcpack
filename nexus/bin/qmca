@@ -946,7 +946,7 @@ QMCA examples:
                           )
         parser.add_option('--average_all',dest='average_all',
                           action='store_true',default=False,
-                          help='Suppress warning messages (default=%default).'
+                          help='Average over all files, ignoring differences in path (default=%default).'
                           )
 
         unsupported = set('histogram image reblock report'.split())
