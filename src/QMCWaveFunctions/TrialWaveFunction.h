@@ -159,6 +159,23 @@ public:
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
 
+  /** evaluate the log value of a many-body wave function
+   * @param P input configuration containing N particles
+   * @param recomputeall recompute all orbitals from scratch
+   * @return the value of \f$ \log( \Pi_i \Psi_i) \f$  many-body wave function
+   *
+   * @if recompute == true
+   *   all orbitals have "evaluateLog" called on them, including the non-optimized ones.
+   * @else
+   *   default value.  call evaluateLog only on optimizable orbitals.  OK if nonlocal pp's aren't used.
+   *
+   * To save time, logpsi, G, and L are only computed for orbitals that change over the course of the optimization.
+   * It is assumed that the fixed components are stored elsewhere.  See evaluateDeltaLog(P,logpsi_fixed_r,logpsi_opt,fixedG,fixedL)
+   * defined below.  Nonlocal pseudopotential evaluation requires temporary information like matrix inverses, so while
+   * the logpsi, G, and L don't change, evaluateLog is called anyways to compute these auxiliary quantities from scratch.
+   * logpsi, G, and L associated with these non-optimizable orbitals are discarded explicitly and with dummy variables.
+   */
+
   RealType evaluateDeltaLog(ParticleSet& P, bool recompute = false);
 
   /** evaluate the sum of log value of optimizable many-body wavefunctions
@@ -206,6 +223,36 @@ public:
                                          std::vector<RealType>& logpsi_opt_list,
                                          RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
                                          RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list);
+
+  /** evaluate the log value for optimizable parts of a many-body wave function
+   * @param wf_list vector of wavefunctions
+   * @param p_list vector of input particle configurations
+   * @param logpsi_list vector of log(std::abs(psi)) of the variable orbitals
+   * @param dummyG_list vector of gradients of log(psi) of the fixed wave functions.
+   * @param dummyL_list vector of laplacians of log(psi) of the fixed wave functions
+   *
+   * The dummyG_list and dummyL_list are only referenced if recompute is true.
+   * If recompute is false, the storage of these lists are needed, but the values can be discarded.
+   *
+   * @if recompute == true
+   *   all orbitals have "evaluateLog" called on them, including the non-optimized ones.
+   * @else
+   *   default value.  call evaluateLog only on optimizable orbitals.  OK if nonlocal pp's aren't used.
+   *
+   * To save time, logpsi, G, and L are only computed for orbitals that change over the course of the optimization.
+   * It is assumed that the fixed components are stored elsewhere.  See flex_evaluateDeltaLogSetup defined above.
+   * Nonlocal pseudopotential evaluation requires temporary information like matrix inverses, so while
+   * the logpsi, G, and L don't change, evaluateLog is called anyways to compute these auxiliary quantities from scratch.
+   * logpsi, G, and L associated with these non-optimizable orbitals are discarded explicitly and with dummy variables.
+   */
+
+
+  static void flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>& wf_list,
+                                    const RefVector<ParticleSet>& p_list,
+                                    std::vector<RealType>& logpsi_list,
+                                    RefVector<ParticleSet::ParticleGradient_t>& dummyG_list,
+                                    RefVector<ParticleSet::ParticleLaplacian_t>& dummyL_list,
+                                    bool recompute = false);
 
 
   /** compute psi(R_new) / psi(R_current) ratio
