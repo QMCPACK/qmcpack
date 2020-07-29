@@ -1178,23 +1178,26 @@ In QMCPACK, the energy density can be accumulated on piecewise uniform 3D grids 
 
 attributes:
 
-  +------------------------+--------------+----------------------+-------------+---------------------------+
-  | **Name**               | **Datatype** | **Values**           | **Default** | **Description**           |
-  +========================+==============+======================+=============+===========================+
-  | ``type``:math:`^r`     | text         | **EnergyDensity**    |             | Must be EnergyDensity     |
-  +------------------------+--------------+----------------------+-------------+---------------------------+
-  | ``name``:math:`^r`     | text         | *anything*           |             | Unique name for estimator |
-  +------------------------+--------------+----------------------+-------------+---------------------------+
-  | ``dynamic``:math:`^r`  | text         | ``particleset.name`` |             | Identify electrons        |
-  +------------------------+--------------+----------------------+-------------+---------------------------+
-  | ``static``:math:`^o`   | text         | ``particleset.name`` |             | Identify ions             |
-  +------------------------+--------------+----------------------+-------------+---------------------------+
+  +----------------------------+--------------+----------------------+-------------+----------------------------------------------+
+  | **Name**                   | **Datatype** | **Values**           | **Default** | **Description**                              |
+  +============================+==============+======================+=============+==============================================+
+  | ``type``:math:`^r`         | text         | **EnergyDensity**    |             | Must be EnergyDensity                        |
+  +----------------------------+--------------+----------------------+-------------+----------------------------------------------+
+  | ``name``:math:`^r`         | text         | *anything*           |             | Unique name for estimator                    |
+  +----------------------------+--------------+----------------------+-------------+----------------------------------------------+
+  | ``dynamic``:math:`^r`      | text         | ``particleset.name`` |             | Identify electrons                           |
+  +----------------------------+--------------+----------------------+-------------+----------------------------------------------+
+  | ``static``:math:`^o`       | text         | ``particleset.name`` |             | Identify ions                                |
+  +----------------------------+--------------+----------------------+-------------+----------------------------------------------+
+  | ``ion_points``:math:`^o`   | text         | yes/no               |  no         | Separate ion energy density onto point field |
+  +----------------------------+--------------+----------------------+-------------+----------------------------------------------+
 
 Additional information:
 
 -  ``name:`` Must be unique. A dataset with blocked statistical data for
    the energy density will appear in the ``stat.h5`` files labeled as
    ``name``.
+- **Important:** in order for the estimator to work, a traces XML input element (<traces array="yes" write="no"/>) must appear following the <qmcsystem/> element and prior to any <qmc/> element.
 
 .. code-block::
   :caption: Energy density estimator accumulated on a :math:`20 \times  10 \times 10` grid over the simulation cell.

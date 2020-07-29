@@ -1405,6 +1405,18 @@ class Simulation(NexusCore):
         #end if
     #end def execute
 
+
+    def show_input(self,exit=True):
+        print()
+        print(80*'=')
+        print('Input file for simulation "{}"\nDirectory: {}'.format(self.identifier,self.locdir))
+        print(80*'-')
+        print(self.input.write())
+        print(80*'=')
+        if exit:
+            exit_call()
+        #end if
+    #end def show_input
 #end class Simulation
 
 
