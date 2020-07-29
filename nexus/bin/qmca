@@ -948,6 +948,10 @@ QMCA examples:
                           action='store_true',default=False,
                           help='Average over all files, ignoring differences in path (default=%default).'
                           )
+        parser.add_option('--twist_info',dest='twist_info',
+                          default='use',
+                          help='Use twist weights in twist_info.dat files or not.  Options: "use", "ignore", "require".  "use" means use when present, "ignore" means do not use, "require" means must be used (default=%default).'
+                          )
 
         unsupported = set('histogram image reblock report'.split())
 
@@ -1036,6 +1040,10 @@ QMCA examples:
         #end if
         if opt.image=='None':
             opt.image=None
+        #end if
+        twist_info_options = ('use','ignore','require')
+        if opt.twist_info not in twist_info_options:
+            self.error('twist_info option is invalid\ntwist_info must be one of: {}\nyou provided: {}'.format(twist_info_options,opt.twist_info))
         #end if
         opt.all_quantities = False
         qabbr = self.quantity_abbreviations
@@ -1217,7 +1225,31 @@ QMCA examples:
                     prefixes = batch_prefixes[batch_prefix]
                     adata = obj()
                     ns=0
-                    weights = len(prefixes)*[1.0]
+                    uniform_weights = len(prefixes)*[1.0]
+                    if opt.twist_info=='ignore':
+                        weights = uniform_weights
+                    else:
+                        weights = []
+                        for prefix in sorted(prefixes):
+                            twist_info_file = prefix+'.twist_info.dat'
+                            if os.path.exists(twist_info_file):
+                                fobj = open(twist_info_file)
+                                try:
+                                    weight = float(fobj.read().strip().split()[0])
+                                    weights.append(weight)
+                                except:
+                                    None
+                                #end try
+                            #end if
+                        #end for
+                        if len(weights)!=len(prefixes):
+                            if opt.twist_info=='require':
+                                self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
+                            else:
+                                weights = uniform_weights
+                            #end if
+                        #end if
+                    #end if
                     for series in serieslist:
                         np = 0
                         for prefix in sorted(prefixes):
