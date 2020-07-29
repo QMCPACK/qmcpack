@@ -512,7 +512,7 @@ class Qmcpack(Simulation):
                 kpoints         = s.kpoints.copy()
                 kpoints_qmcpack = s.kpoints_qmcpack()
                 for file in input.filenames:
-                    if file.startswith('qmc.g'):
+                    if file.startswith(self.identifier+'.g'):
                         tokens = file.split('.')
                         twist_index = int(tokens[1].replace('g',''))
                         twist_filename = '{}.{}.twist_info.dat'.format(tokens[0],tokens[1])
