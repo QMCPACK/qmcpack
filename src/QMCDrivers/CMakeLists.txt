@@ -101,11 +101,6 @@ IF(BUILD_LMYENGINE_INTERFACE)
      )
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
-# SET(QMCDRIVERS ${QMCDRIVERS}
-#   ../Estimators/CSEnergyEstimator.cpp
-# )
-
-
 ####################################
 # create libqmcdriver
 ####################################
