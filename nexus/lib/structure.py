@@ -3182,11 +3182,11 @@ class Structure(Sobj):
     
     # test needed
     def recenter_k(self,kpoints=None,kaxes=None,kcenter=None,remove_duplicates=False):
-        use_self = kpoints==None
+        use_self = kpoints is None
         if use_self:
             kpoints=self.kpoints
         #end if
-        if kaxes==None:
+        if kaxes is None:
             kaxes=self.kaxes
         #end if
         if len(kpoints)>0:
@@ -3821,9 +3821,23 @@ class Structure(Sobj):
     #end def kpoints_unit
 
 
-    def kpoints_reduced(self):
-        return self.kpoints*self.scale/(2*pi)
+    def kpoints_reduced(self,kpoints=None):
+        if kpoints is None:
+            kpoints = self.kpoints
+        #end if
+        return kpoints*self.scale/(2*pi)
     #end def kpoints_reduced
+
+
+    def kpoints_qmcpack(self,kpoints=None):
+        if kpoints is None:
+            kpoints = self.kpoints.copy()
+        #end if
+        kpoints = self.recenter_k(kpoints,kcenter=(0,0,0))
+        kpoints = self.kpoints_unit(kpoints)
+        kpoints = -kpoints
+        return kpoints
+    #end def kpoints_qmcpack
 
 
     # test needed
