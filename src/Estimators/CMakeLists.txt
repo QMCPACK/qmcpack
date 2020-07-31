@@ -33,6 +33,7 @@ ENDIF()
 USE_FAKE_RNG(qmcestimators_unit)
 
 TARGET_INCLUDE_DIRECTORIES(qmcestimators PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+TARGET_INCLUDE_DIRECTORIES(qmcestimators_unit PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 TARGET_LINK_LIBRARIES(qmcestimators PUBLIC containers qmcham qmcparticle qmcutil)
 TARGET_LINK_LIBRARIES(qmcestimators_unit PUBLIC containers qmcham_unit qmcparticle qmcutil)
 

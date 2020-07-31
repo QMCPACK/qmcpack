@@ -109,6 +109,10 @@ struct ScalarEstimatorBase
     }
   }
 
+  /** take the block accumulated scalars and return the block weight
+   * @param first starting iterator of values
+   * @param first_sq starting iterator of squared values
+   */
   template<typename IT>
   inline RealType takeBlockSumsGetWeight(IT first, IT first_sq)
   {
