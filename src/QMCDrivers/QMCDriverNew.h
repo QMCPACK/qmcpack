@@ -34,12 +34,12 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Estimators/EstimatorManagerBase.h"
+#include "Estimators/EstimatorManagerNew.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/Crowd.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
-#include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "QMCDrivers/SFNBranch.h"
 #include "QMCDrivers/BranchIO.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/ContextForSteps.h"
@@ -51,6 +51,7 @@ namespace qmcplusplus
 //forward declarations: Do not include headers if not needed
 class HDFWalkerOutput;
 class TraceManager;
+struct SFNBranch;
 
 namespace testing
 {
@@ -74,7 +75,6 @@ public:
   using RealType         = QMCTraits::RealType;
   using IndexType        = QMCTraits::IndexType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-
   /** separate but similar to QMCModeEnum
    *  
    *  a code smell
@@ -100,6 +100,7 @@ public:
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
 protected:
+  void endBlock();
   /** This is a data structure strictly for QMCDriver and its derived classes
    *
    *  i.e. its nested in scope for a reason
@@ -155,11 +156,19 @@ public:
 
   void putWalkers(std::vector<xmlNodePtr>& wset);
 
-  ///set the BranchEngineType
-  void setBranchEngine(SimpleFixedNodeBranch* be) { branch_engine_ = be; }
+  /** placate the legacy base class interface
+   */
+  void setBranchEngine(SimpleFixedNodeBranch* be) { throw std::runtime_error("You can not use the legacy SimpleFixedNodeBranch class with QMCDriverNew"); }
 
+  ///set the BranchEngineType
+  void setNewBranchEngine(SFNBranch* be) { branch_engine_ = be; }
+
+  /** placate the legacy base class interface
+   */
+  SimpleFixedNodeBranch* getBranchEngine() { return nullptr; }
+  
   ///return BranchEngineType*
-  SimpleFixedNodeBranch* getBranchEngine() { return branch_engine_; }
+  SFNBranch* getNewBranchEngine() { return branch_engine_; }
 
   int addObservable(const std::string& aname);
 
@@ -293,7 +302,7 @@ protected:
   std::string h5_file_root_;
 
   ///branch engine
-  SimpleFixedNodeBranch* branch_engine_;
+  SFNBranch* branch_engine_;
   ///drift modifer
   std::unique_ptr<DriftModifierBase> drift_modifier_;
 
@@ -346,7 +355,7 @@ protected:
    *  Can be transfered via branch manager one driver to the next indefinitely
    *  TODO:  Modify Branch manager and others to clear this up.
    */
-  EstimatorManagerBase* estimator_manager_;
+  EstimatorManagerNew* estimator_manager_;
 
   ///record engine for walkers
   HDFWalkerOutput* wOut;

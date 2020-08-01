@@ -4,22 +4,13 @@
 //
 // Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
-//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File refactored from: EstimatorManagerBase.h
 //////////////////////////////////////////////////////////////////////////////////////
 
-
-/** @file EstimatorManagerBase.h
- * @brief Manager class of scalar estimators
- */
-#ifndef QMCPLUSPLUS_ESTIMATORMANAGERBASE_H
-#define QMCPLUSPLUS_ESTIMATORMANAGERBASE_H
+#ifndef QMCPLUSPLUS_ESTIMATORMANAGERNEW_H
+#define QMCPLUSPLUS_ESTIMATORMANAGERNEW_H
 
 #include "Configuration.h"
 #include "Utilities/Timer.h"
@@ -34,18 +25,17 @@
 
 namespace qmcplusplus
 {
-class MCWalkerConfiguration;
 class QMCHamiltonian;
 class CollectablesEstimator;
 
 namespace testing
 {
-class EstimatorManagerBaseTest;
+class EstimatorManagerNewTest;
 } // namespace testing
 
 
 /** Class to manage a set of ScalarEstimators */
-class EstimatorManagerBase : public EstimatorManagerInterface
+class EstimatorManagerNew
 {
 public:
   typedef QMCTraits::FullPrecRealType RealType;
@@ -55,22 +45,18 @@ public:
   typedef std::vector<RealType> BufferType;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-  //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
-
   ///name of the primary estimator name
   std::string MainEstimatorName;
   ///the root file name
   std::string RootName;
   ///energy
   TinyVector<RealType, 4> RefEnergy;
-  // //Cummulative energy, weight and variance
-  // TinyVector<RealType,4>  EPSum;
   ///default constructor
-  EstimatorManagerBase(Communicate* c = 0);
+  EstimatorManagerNew(Communicate* c = 0);
   ///copy constructor
-  EstimatorManagerBase(EstimatorManagerBase& em);
+  EstimatorManagerNew(EstimatorManagerNew& em);
   ///destructor
-  virtual ~EstimatorManagerBase();
+  virtual ~EstimatorManagerNew();
 
   /** set the communicator */
   void setCommunicator(Communicate* c);
@@ -78,10 +64,6 @@ public:
   /** return the communicator
    */
   Communicate* getCommunicator() { return myComm; }
-
-  /** return true if the rank == 0
-   */
-  inline bool is_manager() const { return !myComm->rank(); }
 
   ///return the number of ScalarEstimators
   inline int size() const { return Estimators.size(); }
@@ -115,7 +97,6 @@ public:
    * @return locator of newestimator
    */
   int add(EstimatorType* newestimator, const std::string& aname);
-  //int add(CompositeEstimatorBase* newestimator, const std::string& aname);
 
   /** add a main estimator
    * @param newestimator New Estimator
@@ -126,23 +107,14 @@ public:
   ///return a pointer to the estimator aname
   EstimatorType* getEstimator(const std::string& a);
 
-  ///return a pointer to the estimator
-  EstimatorType* getMainEstimator();
-
   ///return the average for estimator i
   inline RealType average(int i) const { return Estimators[i]->average(); }
 
   ///returns a variance for estimator i
   inline RealType variance(int i) const { return Estimators[i]->variance(); }
 
-  void setCollectionMode(bool collect);
-  //void setAccumulateMode (bool setAccum) {AccumulateBlocks = setAccum;};
-
   ///process xml tag associated with estimators
-  //bool put(xmlNodePtr cur);
   bool put(QMCHamiltonian& H, xmlNodePtr cur);
-
-  void resetTargetParticleSet(ParticleSet& p);
 
   /** reset the estimator
    */
@@ -155,15 +127,6 @@ public:
    * Replace reportHeader and reset functon.
    */
   void start(int blocks, bool record = true);
-  /** stop a qmc run
-   *
-   * Replace finalize();
-   */
-  void stop();
-  /** stop a qmc run
-   */
-  void stop(const std::vector<EstimatorManagerBase*> m);
-
 
   /** start  a block
    * @param steps number of steps in a block
@@ -176,36 +139,39 @@ public:
       Estimators[i]->setNumberOfBlocks(blocks);
   }
 
-  /** stop a block
+  /** unified: stop a block
    * @param accept acceptance rate of this block
+   * \param[in] accept_ratio
+   * \param[in] block_weight
+   * \param[in] cpu_block_time Timer returns double so this is not altered by "mixed" precision
    */
-  void stopBlock(RealType accept, bool collectall = true);
+  void stopBlockNew(RealType accept_ratio, RealType block_weight, double cpu_block_time);
 
-  /** stop a block
-   * @param m list of estimator which has been collecting data independently
+  /** At end of block collect the scalar estimators for the entire rank
+   *   
+   *  Each is currently accumulates on for crowd of 1 or more walkers
+   *  returns the total weight across all crowds. 
    */
-  void stopBlock(const std::vector<EstimatorManagerBase*>& m);
-
-  /** accumulate the measurements
-   * @param W walkers
-   */
-  void accumulate(MCWalkerConfiguration& W);
-
-  /** accumulate the measurements for a subset of walkers [it,it_end)
-   * @param W walkers
-   * @param it first walker
-   * @param it_end last walker
-   */
-  void accumulate(MCWalkerConfiguration& W, MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end);
-
-  //     /** accumulate the FW observables
-  //      */
-  //     void accumulate(HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, std::vector<int>& Dims);
+  RealType collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
 
   ///** set the cummulative energy and weight
   void getEnergyAndWeight(RealType& e, RealType& w, RealType& var);
 
-  void getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var);
+  /** Unified walker variant of this method
+   *
+   *  This only makes sense to call on the whole population with the current DMC algorithm
+   *
+   *  This is about to be refactored out of EstimatorManagerBase
+   *
+   *  I think it would probably be cleaner and remove alot of reset issues to have the eavg and var
+   *  from the previous section passed in
+   *  rather than retaining the estimator manager to get them.
+   */
+  static void getCurrentStatistics(const int global_walkers,
+                                   RefVector<MCPWalker>& walkers,
+                                   RealType& eavg,
+                                   RealType& var,
+                                   Communicate* comm);
 
   template<class CT>
   void write(CT& anything, bool doappend)
@@ -217,6 +183,7 @@ public:
   auto& get_SquaredAverageCache() { return SquaredAverageCache; }
 
 protected:
+  friend class EstimatorManagerCrowd;
   //  TODO: fix needless use of bitset instead of clearer more visible booleans
   std::bitset<8> Options;
   ///size of the message buffer
@@ -286,13 +253,15 @@ private:
   int max4ascii;
   //Data for communication
   std::vector<BufferType*> RemoteData;
-  ///collect data and write
-  void collectBlockAverages();
+
+  /// collect data and write
+  void makeBlockAverages();
+
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;
 
-  friend class qmcplusplus::testing::EstimatorManagerBaseTest;
+  friend class qmcplusplus::testing::EstimatorManagerNewTest;
 };
 } // namespace qmcplusplus
 #endif

@@ -501,8 +501,9 @@ void DMCBatched::runDMCStep(int crowd_id,
 void DMCBatched::process(xmlNodePtr node)
 {
   QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
-                              dmcdriver_input_.get_reserve(), qmcdriver_input_.get_num_crowds());
+      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
+                              qmcdriver_input_.get_walkers_per_rank(), dmcdriver_input_.get_reserve(),
+                              qmcdriver_input_.get_num_crowds());
 
   Base::startup(node, awc);
 }
@@ -512,7 +513,6 @@ bool DMCBatched::run()
   resetUpdateEngines();
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
-  estimator_manager_->setCollectionMode(true);
   estimator_manager_->start(num_blocks);
   StateForThread dmc_state(qmcdriver_input_, dmcdriver_input_, *drift_modifier_, *branch_engine_, population_);
 
@@ -560,29 +560,15 @@ bool DMCBatched::run()
       // \todo make task block
       // probably something smart can be done to include reduction over crowds below
       for (UPtr<Crowd>& crowd_ptr : crowds_)
-        crowd_ptr->accumulate(population_.get_num_global_walkers());
+      {
+        Crowd& crowd_ref = *crowd_ptr;
+        if (crowd_ref.size() > 0)
+          crowd_ref.accumulate(population_.get_num_global_walkers());
+      }
     }
-
-    RefVector<ScalarEstimatorBase> all_scalar_estimators;
-    FullPrecRealType total_block_weight = 0.0;
-    FullPrecRealType total_accept_ratio = 0.0;
-    // Collect all the ScalarEstimatorsFrom EMCrowds
-    for (const UPtr<Crowd>& crowd : crowds_)
-    {
-      auto crowd_sc_est = crowd->get_estimator_manager_crowd().get_scalar_estimators();
-      all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
-                                   std::make_move_iterator(crowd_sc_est.end()));
-      total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
-      total_accept_ratio += crowd->get_accept_ratio();
-    }
-    // Should this be adjusted if crowds have different
-    total_accept_ratio /= crowds_.size();
-    estimator_manager_->collectScalarEstimators(all_scalar_estimators, population_.get_num_local_walkers(),
-                                                total_block_weight);
-    // TODO: should be accept rate for block
-    estimator_manager_->stopBlockNew(total_accept_ratio);
+    endBlock();
   }
-  return false;
+  return finalize(num_blocks, true);
 }
 
 } // namespace qmcplusplus

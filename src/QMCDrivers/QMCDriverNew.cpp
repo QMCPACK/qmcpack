@@ -25,6 +25,7 @@
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "OhmmsApp/RandomNumberControl.h"
+#include "Estimators/EstimatorManagerNew.h"
 #include "HDFVersion.h"
 #include "qmc_common.h"
 #include "Concurrency/Info.hpp"
@@ -135,14 +136,14 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
 
   if (!branch_engine_)
   {
-    branch_engine_ = new SimpleFixedNodeBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
+    branch_engine_ = new SFNBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
   }
 
   //create and initialize estimator
   estimator_manager_ = branch_engine_->getEstimatorManager();
   if (!estimator_manager_)
   {
-    estimator_manager_ = new EstimatorManagerBase(myComm);
+    estimator_manager_ = new EstimatorManagerNew(myComm);
     // TODO: remove this when branch engine no longer depends on estimator_mamanger_
     branch_engine_->setEstimatorManager(estimator_manager_);
     // This used to get updated as a side effect of setStatus
@@ -177,7 +178,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   // if (wOut == 0)
   //   wOut = new HDFWalkerOutput(W, root_name_, myComm);
   branch_engine_->start(root_name_);
-  branch_engine_->write(root_name_);
+  branch_engine_->write(getCommRef(), root_name_);
 
   // PD: not really sure what the point of this is.  Seems to just go to output
   branch_engine_->advanceQMCCounter();
@@ -271,7 +272,7 @@ void QMCDriverNew::recordBlock(int block)
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
     timers_.checkpoint_timer.start();
-    branch_engine_->write(root_name_, true); //save energy_history
+    branch_engine_->write(getCommRef(), root_name_, true); //save energy_history
     RandomNumberControl::write(root_name_, myComm);
     timers_.checkpoint_timer.stop();
   }
@@ -280,7 +281,7 @@ void QMCDriverNew::recordBlock(int block)
 bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population_.get_walkers()));
-  branch_engine_->finalize(population_.get_num_global_walkers(), walkers);
+  branch_engine_->finalize(getCommRef(), population_.get_num_global_walkers(), walkers);
 
   if (qmcdriver_input_.get_dump_config())
     RandomNumberControl::write(root_name_, myComm);
@@ -525,6 +526,30 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
   // \todo some warning if unreasonable number of threads are being used.
 
   return awc;
+}
+
+void QMCDriverNew::endBlock()
+{
+  RefVector<ScalarEstimatorBase> all_scalar_estimators;
+  FullPrecRealType total_block_weight = 0.0;
+  FullPrecRealType total_accept_ratio = 0.0;
+  // Collect all the ScalarEstimatorsFrom EMCrowds
+  double cpu_block_time = 0.0;
+  for (const UPtr<Crowd>& crowd : crowds_)
+  {
+    crowd->stopBlock();
+    auto crowd_sc_est = crowd->get_estimator_manager_crowd().get_scalar_estimators();
+    all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
+                                 std::make_move_iterator(crowd_sc_est.end()));
+    total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
+    total_accept_ratio += crowd->get_accept_ratio() * crowd->get_estimator_manager_crowd().get_block_weight();
+    cpu_block_time += crowd->get_estimator_manager_crowd().get_cpu_block_time();
+  }
+  total_accept_ratio /= total_block_weight;
+  estimator_manager_->collectScalarEstimators(all_scalar_estimators);
+  cpu_block_time /= crowds_.size();
+
+  estimator_manager_->stopBlockNew(total_accept_ratio, total_block_weight, cpu_block_time);
 }
 
 } // namespace qmcplusplus

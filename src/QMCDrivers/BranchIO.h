@@ -13,23 +13,26 @@
 
 
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "QMCDrivers/SFNBranch.h"
+
 //#include <boost/archive/text_oarchive.hpp>
 
 #ifndef QMCPLUSPLUS_BRANCHIO_H
 #define QMCPLUSPLUS_BRANCHIO_H
 namespace qmcplusplus
 {
-struct BranchIO
+template<class SFNB>
+class BranchIO
 {
-  using SFNB = SimpleFixedNodeBranch;
-  using RealType = SFNB::RealType;
-  using BranchModeType = SFNB::BranchModeType;
-  using IParamType = SFNB::IParamType;
-  using VParamType = SFNB::VParamType;
+public:
+  using RealType = typename SFNB::RealType;
+  using BranchModeType = typename SFNB::BranchModeType;
+  using IParamType = typename SFNB::IParamType;
+  using VParamType = typename SFNB::VParamType;
 
-  SimpleFixedNodeBranch& ref;
+  SFNB& ref;
   Communicate* myComm;
-  BranchIO(SimpleFixedNodeBranch& source, Communicate* c) : ref(source), myComm(c) {}
+  BranchIO(SFNB& source, Communicate* c) : ref(source), myComm(c) {}
 
   bool write(const std::string& fname);
   bool read(const std::string& fname);
@@ -41,5 +44,9 @@ struct BranchIO
 
   static void initAttributes();
 };
+
+extern template class BranchIO<SimpleFixedNodeBranch>;
+extern template class BranchIO<SFNBranch>;
+
 } // namespace qmcplusplus
 #endif

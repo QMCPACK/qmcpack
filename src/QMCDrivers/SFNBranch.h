@@ -2,30 +2,20 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
-//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// Refactored from: SimpleFixedNodeBranch.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/**@file SimpleFixedNodeBranch.h
- * @brief declare a handler of DMC branching
- *
- */
-#ifndef QMCPLUSPLUS_SIMPLE_FIXEDNODE_BRANCHER_H
-#define QMCPLUSPLUS_SIMPLE_FIXEDNODE_BRANCHER_H
+#ifndef QMCPLUSPLUS_SIMPLE_FIXEDNODE_BRANCH_H
+#define QMCPLUSPLUS_SIMPLE_FIXEDNODE_BRANCH_H
 
 #include <array>
 #include <Configuration.h>
 #include <OhmmsData/ParameterSet.h>
-#include <Particle/MCWalkerConfiguration.h>
 #include <Estimators/BlockHistogram.h>
 #include <Estimators/accumulators.h>
 #include "type_traits/template_types.hpp"
@@ -37,7 +27,7 @@
 
 namespace qmcplusplus
 {
-class EstimatorManagerBase;
+class EstimatorManagerNew;
 
 /** Manages the state of QMC sections and handles population control for DMCs
  *
@@ -50,7 +40,7 @@ class EstimatorManagerBase;
  *       the parameter enums violate KISS and make debugging annoying
  * \todo: Remove as much state as possible.
  *
- * QMCDriver object owns a SimpleFixedNodeBranch to keep track of the
+ * QMCDriver object owns a SFNBranch to keep track of the
  * progress of a qmc section. It implements several methods to control the
  * population and trial energy during a DMC and evaluate the properties of
  * a population, e.g., energy, variance, population etc.
@@ -96,9 +86,9 @@ class EstimatorManagerBase;
  *   d. multiply walkers.Colelctables *= the inverse weight.
  *   f. call SFNB's estimator accumilator on MCWC
  */  
-struct SimpleFixedNodeBranch : public QMCTraits
+struct SFNBranch : public QMCTraits
 {
-  typedef SimpleFixedNodeBranch ThisType;
+  typedef SFNBranch ThisType;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   /*! enum for booleans
@@ -217,7 +207,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   std::unique_ptr<WalkerControlBase> BackupWalkerController;
   
   ///TODO: Should not be raw pointer 
-  EstimatorManagerBase* MyEstimator;
+  EstimatorManagerNew* MyEstimator;
   ///a simple accumulator for energy
   accumulator_set<FullPrecRealType> EnergyHist;
   ///a simple accumulator for variance
@@ -254,12 +244,12 @@ struct SimpleFixedNodeBranch : public QMCTraits
   bool RN;
 
   ///Constructor
-  SimpleFixedNodeBranch(RealType tau, int nideal);
+  SFNBranch(RealType tau, int nideal);
 
   ///copy constructor
-  SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch);
+  SFNBranch(const SFNBranch& abranch);
 
-  ~SimpleFixedNodeBranch() {}
+  ~SFNBranch() {}
 
   inline bool phaseChanged(RealType psi0) const
   {
@@ -279,31 +269,25 @@ struct SimpleFixedNodeBranch : public QMCTraits
   inline void regressQMCCounter() { iParam[B_COUNTER]--; }
 
   /** get the EstimatorManager */
-  EstimatorManagerBase* getEstimatorManager() { return MyEstimator; }
+  EstimatorManagerNew* getEstimatorManager() { return MyEstimator; }
 
   /** set the EstimatorManager
    * @param est estimator created by the first QMCDriver
    * this assumes estimator managers are reused section to section
    * */
-  void setEstimatorManager(EstimatorManagerBase* est) { MyEstimator = est; }
+  void setEstimatorManager(EstimatorManagerNew* est) { MyEstimator = est; }
 
   /** initialize  the WalkerController
-   * @param mcwc Walkers
+   * @param pop Population of Walkers
    * @param fixW true, if reconfiguration with the fixed number of walkers is used
    * @param killwalker 
    * @return number of copies to make in case targetwalkers changed
    */
-  int initWalkerController(MCWalkerConfiguration& mcwc, bool fixW, bool killwalker);
-
-  /** initialize reptile stats
-   *
-   *
-   */
-  void initReptile(MCWalkerConfiguration& w);
+  int initWalkerController(MCPopulation& pop, bool fixW, bool killwalker);
 
   /** determine trial and reference energies
    */
-  void checkParameters(MCWalkerConfiguration& w);
+  void checkParameters(const int global_walkers, RefVector<MCPWalker>& walkers);
 
   /** return the bare branch weight
    *
@@ -424,13 +408,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * @param iter current step
    * @param w Walker configuration
    */
-  void branch(int iter, MCWalkerConfiguration& w);
-
-  /** update RMC counters and running averages.
-   * @param iter the iteration
-   * @param w the walker ensemble
-   */
-  void collect(int iter, MCWalkerConfiguration& w);
+  void branch(int iter, MCPopulation& population);
 
   /** restart averaging
    * @param counter Counter to determine the cummulative average will be reset.
@@ -440,20 +418,14 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** reset the internal parameters */
   void reset();
 
-  /** reset the internal parameters
-   * @return new target population over old target population
-   *
-   * only used by CUDA legacy
-   */
-  int resetRun(xmlNodePtr cur);
-
   bool put(xmlNodePtr cur);
 
   /** write the state
    * @param fname name of the configuration file
    * @param overwrite NOT USED
    */
-  void write(const std::string& fname, bool overwrite = true);
+  void write(Communicate& comm,
+             const std::string& fname, bool overwrite = true);
 
   void read(const std::string& fname);
 
@@ -463,13 +435,13 @@ struct SimpleFixedNodeBranch : public QMCTraits
   ///start a run
   void start(const std::string& froot, bool append = false);
   ///finalize the simulation
-  void finalize(MCWalkerConfiguration& w);
+  void finalize(Communicate& comm, const int global_walkers, RefVector<MCPWalker>& walkers);
 
   void setRN(bool rn);
 
 private:
   ///default constructor (disabled)
-  SimpleFixedNodeBranch() {}
+  SFNBranch() {}
 
   ///set branch cutoff, max, filter
   void setBranchCutoff(FullPrecRealType variance,
@@ -478,7 +450,7 @@ private:
                        int Nelec = 0);
 };
 
-std::ostream& operator<<(std::ostream& os, SimpleFixedNodeBranch::VParamType& rhs);
+std::ostream& operator<<(std::ostream& os, SFNBranch::VParamType& rhs);
 
 } // namespace qmcplusplus
 #endif

@@ -4,22 +4,14 @@
 //
 // Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
-//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
-//                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
-//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File refactored from: EstimatorManagerBase.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <functional>
 
-#include "Particle/MCWalkerConfiguration.h"
-#include "Estimators/EstimatorManagerBase.h"
+#include "Estimators/EstimatorManagerNew.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -53,7 +45,7 @@ enum
 };
 
 //initialize the name of the primary estimator
-EstimatorManagerBase::EstimatorManagerBase(Communicate* c)
+EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
     : MainEstimatorName("LocalEnergy"),
       RecordCount(0),
       h_file(-1),
@@ -68,7 +60,7 @@ EstimatorManagerBase::EstimatorManagerBase(Communicate* c)
   setCommunicator(c);
 }
 
-EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
+EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerNew& em)
     : MainEstimatorName(em.MainEstimatorName),
       Options(em.Options),
       RecordCount(0),
@@ -85,7 +77,7 @@ EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
   //inherit communicator
   setCommunicator(em.myComm);
 
-  // Here Estimators are ScalarEstimatorBase
+  // Here Estimators are ScalarEstimatorNew
   for (int i = 0; i < em.Estimators.size(); i++)
     Estimators.push_back(em.Estimators[i]->clone());
   MainEstimator = Estimators[EstimatorMap[MainEstimatorName]];
@@ -93,7 +85,7 @@ EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
     Collectables = em.Collectables->clone();
 }
 
-EstimatorManagerBase::~EstimatorManagerBase()
+EstimatorManagerNew::~EstimatorManagerNew()
 {
   delete_iter(Estimators.begin(), Estimators.end());
   delete_iter(RemoteData.begin(), RemoteData.end());
@@ -102,7 +94,7 @@ EstimatorManagerBase::~EstimatorManagerBase()
     delete Collectables;
 }
 
-void EstimatorManagerBase::setCommunicator(Communicate* c)
+void EstimatorManagerNew::setCommunicator(Communicate* c)
 {
   // I think this is actually checking if this is the "Main Estimator"
   if (myComm && myComm == c)
@@ -120,25 +112,16 @@ void EstimatorManagerBase::setCommunicator(Communicate* c)
   }
 }
 
-/** set CollectSum
- * @param collect if true, global sum is done over the values
- */
-void EstimatorManagerBase::setCollectionMode(bool collect)
-{
-  if (!myComm)
-    setCommunicator(0);
-  Options.set(COLLECT, (myComm->size() == 1) ? false : collect);
-  //force to be false for serial runs
-  //CollectSum = (myComm->size() == 1)? false:collect;
-}
-
 /** reset names of the properties
  *
+ * \todo this should be in in constructor object shouldn't be reused
+ * Warning this is different from some "resets" in the code, it does not clear the object
+ * 
  * The number of estimators and their order can vary from the previous state.
  * reinitialized properties before setting up a new BlockAverage data list.
  *
  */
-void EstimatorManagerBase::reset()
+void EstimatorManagerNew::reset()
 {
   weightInd = BlockProperties.add("BlockWeight");
   cpuInd    = BlockProperties.add("BlockCPU");
@@ -151,9 +134,7 @@ void EstimatorManagerBase::reset()
     Collectables->add2Record(BlockAverages);
 }
 
-void EstimatorManagerBase::resetTargetParticleSet(ParticleSet& p) {}
-
-void EstimatorManagerBase::addHeader(std::ostream& o)
+void EstimatorManagerNew::addHeader(std::ostream& o)
 {
   o.setf(std::ios::scientific, std::ios::floatfield);
   o.setf(std::ios::left, std::ios::adjustfield);
@@ -172,7 +153,7 @@ void EstimatorManagerBase::addHeader(std::ostream& o)
   o.setf(std::ios::right, std::ios::adjustfield);
 }
 
-void EstimatorManagerBase::start(int blocks, bool record)
+void EstimatorManagerNew::start(int blocks, bool record)
 {
   for (int i = 0; i < Estimators.size(); i++)
     Estimators[i]->setNumberOfBlocks(blocks);
@@ -229,129 +210,97 @@ void EstimatorManagerBase::start(int blocks, bool record)
   }
 }
 
-void EstimatorManagerBase::stop(const std::vector<EstimatorManagerBase*> est)
-{
-  int num_threads = est.size();
-  //normalize by the number of threads per node
-  RealType tnorm = 1.0 / static_cast<RealType>(num_threads);
-  //add averages and divide them by the number of threads
-  AverageCache = est[0]->AverageCache;
-  for (int i = 1; i < num_threads; i++)
-    AverageCache += est[i]->AverageCache;
-  AverageCache *= tnorm;
-  SquaredAverageCache = est[0]->SquaredAverageCache;
-  for (int i = 1; i < num_threads; i++)
-    SquaredAverageCache += est[i]->SquaredAverageCache;
-  SquaredAverageCache *= tnorm;
-  //add properties and divide them by the number of threads except for the weight
-  PropertyCache = est[0]->PropertyCache;
-  for (int i = 1; i < num_threads; i++)
-    PropertyCache += est[i]->PropertyCache;
-  for (int i = 1; i < PropertyCache.size(); i++)
-    PropertyCache[i] *= tnorm;
-  stop();
-}
-
-/** Stop a run
- *
- * Collect data in Cache and print out data into hdf5 and ascii file.
- * This should not be called in a OpenMP parallel region or should
- * be guarded by master/single.
- * Keep the ascii output for now
- */
-void EstimatorManagerBase::stop()
-{
-  //close any open files
-  if (Archive)
-  {
-    delete Archive;
-    Archive = 0;
-  }
-  if (h_file != -1)
-  {
-    H5Fclose(h_file);
-    h_file = -1;
-  }
-}
-
-
-void EstimatorManagerBase::startBlock(int steps)
+void EstimatorManagerNew::startBlock(int steps)
 {
   MyTimer.restart();
   BlockWeight = 0.0;
 }
 
-/** take statistics of a block
- * @param accept acceptance rate of this block
- * @param collectall if true, need to gather data over MPI tasks
- */
-void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
+void EstimatorManagerNew::stopBlockNew(RealType accept, RealType block_weight, double cpu_block_time)
 {
   //take block averages and update properties per block
-  PropertyCache[weightInd] = BlockWeight;
-  PropertyCache[cpuInd]    = MyTimer.elapsed();
+  PropertyCache[weightInd] = block_weight;
+  PropertyCache[cpuInd]    = cpu_block_time;
   PropertyCache[acceptInd] = accept;
-  for (int i = 0; i < Estimators.size(); i++)
-    Estimators[i]->takeBlockAverage(AverageCache.begin(), SquaredAverageCache.begin());
-  if (Collectables)
+
+  makeBlockAverages();
+}
+
+
+/** Called at end of block in Unified Driver
+ *
+ */
+QMCTraits::FullPrecRealType EstimatorManagerNew::collectScalarEstimators(
+    const RefVector<ScalarEstimatorBase>& estimators)
+{
+  using ScalarType = ScalarEstimatorBase::RealType;
+
+  AverageCache        = 0.0;
+  SquaredAverageCache = 0.0;
+
+  // One scalar estimator can be accumulating many scalar values
+  int num_scalars = estimators[0].get().size();
+  if (AverageCache.size() != num_scalars)
+    throw std::runtime_error(
+        "EstimatorManagerNew and Crowd ScalarManagers do not agree on number of scalars being estimated");
+  Vector<ScalarType> averages_work(num_scalars, 0.0);
+  Vector<ScalarType> sq_averages_work(num_scalars, 0.0);
+
+  auto accumulateVectorsInPlace = [](auto& vec_a, const auto& vec_b) {
+    for (int i = 0; i < vec_a.size(); ++i)
+      vec_a[i] += vec_b[i];
+  };
+
+  RealType tot_weight = 0.0;
+  for (int i = 0; i < estimators.size(); ++i)
   {
-    Collectables->takeBlockAverage(AverageCache.begin(), SquaredAverageCache.begin());
+    RealType weight = estimators[i].get().takeBlockSumsGetWeight(averages_work.begin(), sq_averages_work.begin());
+    tot_weight += weight;
+    accumulateVectorsInPlace(AverageCache, averages_work);
+    accumulateVectorsInPlace(SquaredAverageCache, sq_averages_work);
   }
-  if (collectall)
-    collectBlockAverages();
+  return tot_weight;
 }
 
-void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)
+void EstimatorManagerNew::makeBlockAverages()
 {
-  //normalized it by the thread
-  int num_threads = est.size();
-  RealType tnorm  = 1.0 / num_threads;
-  AverageCache    = est[0]->AverageCache;
-  for (int i = 1; i < num_threads; i++)
-    AverageCache += est[i]->AverageCache;
-  AverageCache *= tnorm;
-  SquaredAverageCache = est[0]->SquaredAverageCache;
-  for (int i = 1; i < num_threads; i++)
-    SquaredAverageCache += est[i]->SquaredAverageCache;
-  SquaredAverageCache *= tnorm;
-  PropertyCache = est[0]->PropertyCache;
-  for (int i = 1; i < num_threads; i++)
-    PropertyCache += est[i]->PropertyCache;
-  for (int i = 1; i < PropertyCache.size(); i++)
-    PropertyCache[i] *= tnorm;
-  //for(int i=0; i<num_threads; ++i)
-  //varAccumulator(est[i]->varAccumulator.mean());
-  collectBlockAverages();
-}
+  //there is only one EstimatormanagerNew per rank in the unified driver.
+  //copy cached data to RemoteData[0]
+  //we should not handle RemoteData elsewhere.
+  
+  int n1 = AverageCache.size();
+  int n2 = n1 + AverageCache.size();
+  int n3 = n2 + PropertyCache.size();
 
-void EstimatorManagerBase::collectBlockAverages()
-{
-  if (Options[COLLECT])
+  // This is a hack but it needs to be the correct size
+  
+  std::vector<double> send_buffer(n3,0.0);
+  std::vector<double> recv_buffer(n3,0.0);  
   {
-    //copy cached data to RemoteData[0]
-    int n1 = AverageCache.size();
-    int n2 = n1 + AverageCache.size();
-    int n3 = n2 + PropertyCache.size();
-    {
-      BufferType::iterator cur(RemoteData[0]->begin());
-      copy(AverageCache.begin(), AverageCache.end(), cur);
-      copy(SquaredAverageCache.begin(), SquaredAverageCache.end(), cur + n1);
-      copy(PropertyCache.begin(), PropertyCache.end(), cur + n2);
-    }
-    myComm->reduce(*RemoteData[0]);
-    if (Options[MANAGE])
-    {
-      BufferType::iterator cur(RemoteData[0]->begin());
-      copy(cur, cur + n1, AverageCache.begin());
-      copy(cur + n1, cur + n2, SquaredAverageCache.begin());
-      copy(cur + n2, cur + n3, PropertyCache.begin());
-      RealType nth = 1.0 / static_cast<RealType>(myComm->size());
-      AverageCache *= nth;
-      SquaredAverageCache *= nth;
-      //do not weight weightInd
-      for (int i = 1; i < PropertyCache.size(); i++)
-        PropertyCache[i] *= nth;
-    }
+    auto cur = send_buffer.begin();
+    copy(AverageCache.begin(), AverageCache.end(), cur);
+    copy(SquaredAverageCache.begin(), SquaredAverageCache.end(), cur + n1);
+    copy(PropertyCache.begin(), PropertyCache.end(), cur + n2);
+  }
+
+  // This is necessary to use mpi3's C++ style reduce
+#ifdef HAVE_MPI
+    myComm->comm.reduce_n(send_buffer.begin(), send_buffer.size(), recv_buffer.begin(), std::plus<>{}, 0);
+#else
+    recv_buffer = send_buffer;
+#endif  
+  if (myComm->rank() == 0)
+  {
+    auto cur = recv_buffer.begin();
+    copy(cur, cur + n1, AverageCache.begin());
+    copy(cur + n1, cur + n2, SquaredAverageCache.begin());
+    copy(cur + n2, cur + n3, PropertyCache.begin());
+    RealType invTotWgt = 1.0 / PropertyCache[weightInd];
+    AverageCache *= invTotWgt;
+    SquaredAverageCache *= invTotWgt;
+    //do not weight weightInd i.e. its index 0!
+    for (int i = 1; i < PropertyCache.size(); i++)
+      PropertyCache[i] *= invTotWgt;
   }
   //add the block average to summarize
   energyAccumulator(AverageCache[0]);
@@ -372,32 +321,7 @@ void EstimatorManagerBase::collectBlockAverages()
   RecordCount++;
 }
 
-/** accumulate Local energies and collectables
- * @param W ensemble
- */
-void EstimatorManagerBase::accumulate(MCWalkerConfiguration& W)
-{
-  BlockWeight += W.getActiveWalkers();
-  RealType norm = 1.0 / W.getGlobalNumWalkers();
-  for (int i = 0; i < Estimators.size(); i++)
-    Estimators[i]->accumulate(W, W.begin(), W.end(), norm);
-  if (Collectables) //collectables are normalized by QMC drivers
-    Collectables->accumulate_all(W.Collectables, 1.0);
-}
-
-void EstimatorManagerBase::accumulate(MCWalkerConfiguration& W,
-                                      MCWalkerConfiguration::iterator it,
-                                      MCWalkerConfiguration::iterator it_end)
-{
-  BlockWeight += it_end - it;
-  RealType norm = 1.0 / W.getGlobalNumWalkers();
-  for (int i = 0; i < Estimators.size(); i++)
-    Estimators[i]->accumulate(W, it, it_end, norm);
-  if (Collectables)
-    Collectables->accumulate_all(W.Collectables, 1.0);
-}
-
-void EstimatorManagerBase::getEnergyAndWeight(RealType& e, RealType& w, RealType& var)
+void EstimatorManagerNew::getEnergyAndWeight(RealType& e, RealType& w, RealType& var)
 {
   if (Options[COLLECT]) //need to broadcast the value
   {
@@ -418,28 +342,25 @@ void EstimatorManagerBase::getEnergyAndWeight(RealType& e, RealType& w, RealType
   }
 }
 
-void EstimatorManagerBase::getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var)
+void EstimatorManagerNew::getCurrentStatistics(const int global_walkers,
+                                                RefVector<MCPWalker>& walkers,
+                                                RealType& eavg,
+                                                RealType& var,
+                                                Communicate* comm)
 {
   LocalEnergyOnlyEstimator energynow;
   energynow.clear();
-  energynow.accumulate(W, W.begin(), W.end(), 1.0);
+  energynow.accumulate(global_walkers, walkers, 1.0);
   std::vector<RealType> tmp(3);
   tmp[0] = energynow.scalars[0].result();
   tmp[1] = energynow.scalars[0].result2();
   tmp[2] = energynow.scalars[0].count();
-  myComm->allreduce(tmp);
+  comm->allreduce(tmp);
   eavg = tmp[0] / tmp[2];
   var  = tmp[1] / tmp[2] - eavg * eavg;
 }
 
-EstimatorManagerBase::EstimatorType* EstimatorManagerBase::getMainEstimator()
-{
-  if (MainEstimator == 0)
-    add(new LocalEnergyOnlyEstimator(), MainEstimatorName);
-  return MainEstimator;
-}
-
-EstimatorManagerBase::EstimatorType* EstimatorManagerBase::getEstimator(const std::string& a)
+EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std::string& a)
 {
   std::map<std::string, int>::iterator it = EstimatorMap.find(a);
   if (it == EstimatorMap.end())
@@ -448,8 +369,7 @@ EstimatorManagerBase::EstimatorType* EstimatorManagerBase::getEstimator(const st
     return Estimators[(*it).second];
 }
 
-/** This should be moved to branch engine */
-bool EstimatorManagerBase::put(QMCHamiltonian& H, xmlNodePtr cur)
+bool EstimatorManagerNew::put(QMCHamiltonian& H, xmlNodePtr cur)
 {
   std::vector<std::string> extra;
   cur = cur->children;
@@ -507,7 +427,7 @@ bool EstimatorManagerBase::put(QMCHamiltonian& H, xmlNodePtr cur)
   return true;
 }
 
-int EstimatorManagerBase::add(EstimatorType* newestimator, const std::string& aname)
+int EstimatorManagerNew::add(EstimatorType* newestimator, const std::string& aname)
 {
   std::map<std::string, int>::iterator it = EstimatorMap.find(aname);
   int n                                   = Estimators.size();
@@ -519,7 +439,7 @@ int EstimatorManagerBase::add(EstimatorType* newestimator, const std::string& an
   else
   {
     n = (*it).second;
-    app_log() << "  EstimatorManagerBase::add replace " << aname << " estimator." << std::endl;
+    app_log() << "  EstimatorManagerNew::add replace " << aname << " estimator." << std::endl;
     delete Estimators[n];
     Estimators[n] = newestimator;
   }
@@ -529,7 +449,7 @@ int EstimatorManagerBase::add(EstimatorType* newestimator, const std::string& an
   return n;
 }
 
-int EstimatorManagerBase::addObservable(const char* aname)
+int EstimatorManagerNew::addObservable(const char* aname)
 {
   int mine = BlockAverages.add(aname);
   int add  = TotalAverages.add(aname);
@@ -540,28 +460,12 @@ int EstimatorManagerBase::addObservable(const char* aname)
   return mine;
 }
 
-void EstimatorManagerBase::getData(int i, std::vector<RealType>& values)
+void EstimatorManagerNew::getData(int i, std::vector<RealType>& values)
 {
   int entries = TotalAveragesData.rows();
   values.resize(entries);
   for (int a = 0; a < entries; a++)
     values[a] = TotalAveragesData(a, Block2Total[i]);
 }
-
-//void EstimatorManagerBase::updateRefEnergy()
-//{
-//  CumEnergy[0]+=1.0;
-//  RealType et=AverageCache(RecordCount-1,0);
-//  CumEnergy[1]+=et;
-//  CumEnergy[2]+=et*et;
-//  CumEnergy[3]+=std::sqrt(MainEstimator->d_variance);
-
-//  RealType wgtnorm=1.0/CumEnergy[0];
-//  RefEnergy[0]=CumEnergy[1]*wgtnorm;
-//  RefEnergy[1]=CumEnergy[2]*wgtnorm-RefEnergy[0]*RefEnergy[0];
-//  if(CumEnergy[0]>1)
-//    RefEnergy[2]=std::sqrt(RefEnergy[1]*wgtnorm/(CumEnergy[0]-1.0));
-//  RefEnergy[3]=CumEnergy[3]*wgtnorm;//average block variance
-//}
 
 } // namespace qmcplusplus
