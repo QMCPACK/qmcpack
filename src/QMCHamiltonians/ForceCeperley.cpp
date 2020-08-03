@@ -36,6 +36,7 @@ ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns)
   m_exp   = 2;
   N_basis = 4;
   forces  = 0.0;
+  ions.update();
   evaluate_IonIon();
   ///////////////////////////////////////////////////////////////
 }
@@ -57,7 +58,6 @@ void ForceCeperley::evaluate_IonIon()
       forces_IonIon[ipart] -= r3zz * displ[jpart];
     }
   }
-std::cout << forces_IonIon << std::endl;
 }
 
 void ForceCeperley::InitMatrix()
