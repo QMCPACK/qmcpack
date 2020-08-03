@@ -861,8 +861,17 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   setname = name;
   readRealMatrixFromH5(hin, setname, Creal);
 
-  setname = std::string(name) + "_imag";
-  readRealMatrixFromH5(hin, setname, Ccmplx);
+  bool IsComplex = true;
+  hin.read(IsComplex, "/parameters/IsComplex");
+  if (IsComplex==false)
+  {
+    Ccmplx=0.0;
+  }
+  else
+  {
+    setname = std::string(name) + "_imag";
+    readRealMatrixFromH5(hin, setname, Ccmplx);
+  }
 
   for (int i = 0; i < Ctemp.rows(); i++)
     for (int j = 0; j < Ctemp.cols(); j++)
@@ -876,8 +885,7 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
                                             bool MultiDet)
 {
   bool IsComplex = false;
-  //FIXME: need to check the path to IsComplex in h5
-  hin.read(IsComplex, "IsComplex");
+  hin.read(IsComplex, "/parameters/IsComplex");
   if (IsComplex &&
       (std::abs(SuperTwist[0]) >= 1e-6 || std::abs(SuperTwist[1]) >= 1e-6 || std::abs(SuperTwist[2]) >= 1e-6))
   {
