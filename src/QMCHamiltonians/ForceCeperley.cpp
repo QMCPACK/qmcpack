@@ -26,7 +26,7 @@
 namespace qmcplusplus
 {
 ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns)
-  : ForceBase(ions, elns), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED))
+  : ForceBase(ions, elns), d_aa_ID(ions.addTable(ions, DT_SOA_PREFERRED)), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED))
 {
   ReportEngine PRE("ForceCeperley", "ForceCeperley");
   myName = "Ceperley_Force_Base";
@@ -36,9 +36,28 @@ ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns)
   m_exp   = 2;
   N_basis = 4;
   forces  = 0.0;
-  forces_ShortRange.resize(Nnuc);
-  forces_ShortRange = 0.0;
+  evaluate_IonIon();
   ///////////////////////////////////////////////////////////////
+}
+
+void ForceCeperley::evaluate_IonIon()
+{
+  forces_IonIon = 0.0;
+  const DistanceTableData& d_aa(Ions.getDistTable(d_aa_ID));
+  const ParticleScalar_t* restrict Zat = Ions.Z.first_address();
+  for (size_t ipart = 1; ipart < Nnuc; ipart++)
+  {
+    const auto& dist  = d_aa.getDistRow(ipart);
+    const auto& displ = d_aa.getDisplRow(ipart);
+    for (size_t jpart = 0; jpart < ipart; ++jpart)
+    {
+      RealType rinv = 1.0/dist[jpart];
+      RealType r3zz = Zat[jpart] * Zat[ipart] * rinv * rinv * rinv;
+      forces_IonIon[jpart] += r3zz * displ[jpart];
+      forces_IonIon[ipart] -= r3zz * displ[jpart];
+    }
+  }
+std::cout << forces_IonIon << std::endl;
 }
 
 void ForceCeperley::InitMatrix()
@@ -62,8 +81,11 @@ void ForceCeperley::InitMatrix()
 
 ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
 {
-  forces                               = forces_IonIon;
-  forces_ShortRange                    = forces_IonIon;
+  if (addionion == true)
+    forces = forces_IonIon;
+  else
+     forces = 0.0;
+  //forces                               = forces_IonIon;
   const auto& d_ab        = P.getDistTable(d_ei_ID);
   const ParticleScalar_t* restrict Zat = Ions.Z.first_address();
   const ParticleScalar_t* restrict Qat = P.Z.first_address();
@@ -90,7 +112,6 @@ ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
         g_q *= zoverr3;
         // negative sign accounts for definition of target as electrons
         forces[iat]            += g_q * displ[iat];
-        forces_ShortRange[iat] += g_q * displ[iat];
       }
     }
   }
