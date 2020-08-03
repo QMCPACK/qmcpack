@@ -35,6 +35,7 @@
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
 #include "Utilities/ProgressReportEngine.h"
+#include <config/stdlib/math.hpp>
 
 namespace qmcplusplus
 {
@@ -959,7 +960,7 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
         Val[2] = TransX * Lattice(0, 2) + TransY * Lattice(1, 2) + TransZ * Lattice(2, 2);
 
         phase = dot(SuperTwist, Val);
-        sincos(phase, &s, &c);
+        qmcplusplus::sincos(phase, &s, &c);
 
         LocPeriodicImagePhaseFactors.emplace_back(c, s);
       }
