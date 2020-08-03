@@ -132,12 +132,10 @@ namespace device
       A_h[i] = to_address(a[i]);
       C_h[i] = to_address(ainv[i]);
     }
-    std::cout << n << std::endl; 
     hipMalloc((void **)&A_d,  batchSize*sizeof(*A_h));
     hipMalloc((void **)&C_d,  batchSize*sizeof(*C_h));
     hipMemcpy(A_d, A_h, batchSize*sizeof(*A_h), hipMemcpyHostToDevice);
     hipMemcpy(C_d, C_h, batchSize*sizeof(*C_h), hipMemcpyHostToDevice);
-    std::cout << "CALLING " << std::endl;
     hipblasStatus_t status = hipblas::hipblas_getriBatched(*(a[0]).handles.hipblas_handle, HIPBLAS_OP_N, n, n,
                                                         A_d, lda,
                                                         to_address(piv), C_d, ldc,
@@ -246,7 +244,12 @@ namespace device
   }
 
   template<typename T, typename I>
-  void static gqrStrided(int M, int N, int K, device_pointer<T> A, const int LDA, const int Astride, device_pointer<T> TAU, const int Tstride, device_pointer<T> WORK, int LWORK, device_pointer<I> info, int batchSize )
+  void static gqrStrided(int M, int N, int K,
+                         device_pointer<T> A, const int LDA, const int Astride,
+                         device_pointer<T> TAU, const int Tstride,
+                         device_pointer<T> WORK, int LWORK,
+                         device_pointer<I> info,
+                         int batchSize )
   {
     rocsolverStatus_t status = rocsolver::rocsolver_gqr_strided(*A.handles.rocsolver_handle_, M, N, K,
                     to_address(A), LDA, Astride, to_address(TAU), Tstride, to_address(WORK), LWORK,

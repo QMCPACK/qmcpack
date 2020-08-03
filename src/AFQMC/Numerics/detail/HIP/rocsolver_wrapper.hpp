@@ -462,7 +462,6 @@ namespace rocsolver {
     return success;
   }
 
-  // TODO: FDM use rocsolver_c/zungqr once available
   inline rocsolverStatus_t
   rocsolver_gqr(
     rocsolverHandle_t handle,
@@ -473,20 +472,8 @@ namespace rocsolver {
     int lda,
     std::complex<float> *ipiv)
   {
-    
-    //rocsolverStatus_t success = rocsolver_cungqr(handle,m,n,k,reinterpret_cast<rocblas_float_complex *>(A),lda,
-                                                 //reinterpret_cast<rocblas_float_complex *>(ipiv));
-    rocsolverStatus_t success = rocblas_status_success;
-    std::vector<std::complex<float>> Ah(m*n, 0.0);
-    std::vector<std::complex<float>> tau(k, 0.0);
-    arch::memcopy(Ah.data(), A, m*n*sizeof(std::complex<float>), arch::memcopyD2H);
-    arch::memcopy(tau.data(), ipiv, k*sizeof(std::complex<float>), arch::memcopyD2H);
-    int lwork, info;
-    ma::gqr_bufferSize(m, n, k, Ah.data(), lda, lwork);
-    std::vector<std::complex<float>> work(lwork, 0.0);
-    ma::gqr(m, n, k, Ah.data(), lda, tau.data(), work.data(), lwork, info);
-    arch::memcopy(A, Ah.data(), m*n*sizeof(std::complex<double>), arch::memcopyH2D);
-    arch::memcopy(ipiv, tau.data(), k*sizeof(std::complex<double>), arch::memcopyH2D);
+    rocsolverStatus_t success = rocsolver_cungqr(handle,m,n,k,reinterpret_cast<rocblas_float_complex *>(A),lda,
+                                                 reinterpret_cast<rocblas_float_complex *>(ipiv));
     hipDeviceSynchronize ();
     return success;
   }
@@ -501,20 +488,9 @@ namespace rocsolver {
     int lda,
     std::complex<double> *ipiv)
   {
-    rocsolverStatus_t success = rocblas_status_success;
-    //rocsolverStatus_t success = rocsolver_zungqr(handle,m,n,k,reinterpret_cast<rocblas_double_complex *>(A),lda,
-                                                 //reinterpret_cast<rocblas_double_complex *>(ipiv));
-    std::vector<std::complex<double>> Ah(m*n, 0.0);
-    std::vector<std::complex<double>> tau(k, 0.0);
-    int lwork, info;
-    ma::gqr_bufferSize(m, n, k, Ah.data(), lda, lwork);
-    std::vector<std::complex<double>> work(lwork, 0.0);
-    arch::memcopy(Ah.data(), A, m*n*sizeof(std::complex<double>), arch::memcopyD2H);
-    arch::memcopy(tau.data(), ipiv, k*sizeof(std::complex<double>), arch::memcopyD2H);
-    ma::gqr(m, n, k, Ah.data(), lda, tau.data(), work.data(), lwork, info);
-    hipDeviceSynchronize ();
-    arch::memcopy(A, Ah.data(), m*n*sizeof(std::complex<double>), arch::memcopyH2D);
-    arch::memcopy(ipiv, tau.data(), k*sizeof(std::complex<double>), arch::memcopyH2D);
+    rocsolverStatus_t success = rocsolver_zungqr(handle,m,n,k,reinterpret_cast<rocblas_double_complex *>(A),lda,
+                                                 reinterpret_cast<rocblas_double_complex *>(ipiv));
+    hipDeviceSynchronize();
     return success;
   }
 
@@ -526,39 +502,45 @@ namespace rocsolver {
     std::complex<double> *A,
     const int lda,
     const int Astride,
-    const std::complex<double> *tau,
+    std::complex<double> *tau,
     const int tstride,
     std::complex<double> *work,
     int lwork,
     int *devInfo,
     int batchsize) {
 
-    using qmc_hip::afqmc_hip_streams;
-    if(afqmc_hip_streams.size() < batchsize) {
-      int n0=afqmc_hip_streams.size();
-      for(int n=n0; n<batchsize; n++) {
-        afqmc_hip_streams.emplace_back(hipStream_t{});
-        hipStreamCreate(&(afqmc_hip_streams.back()));
-      }
-    }
+    // TODO FDM: double free with emplace_back(hipStream_t)?
+    //using qmc_hip::afqmc_hip_streams;
+    //auto t = hipStream_t{};
+    //afqmc_hip_streams.push_back(hipStream_t{});
+    //hipStreamCreate(&(afqmc_hip_streams.back()));
+    //hipStreamDestroy(afqmc_hip_streams.back());
+    //if(afqmc_hip_streams.size() < batchsize) {
+      //int n0=afqmc_hip_streams.size();
+      //for(int n=n0; n<batchsize; n++) {
+        //auto t = hipStream_t{};
+        //afqmc_hip_streams.emplace_back(hipStream_t{});
+        //hipStreamCreate(&(afqmc_hip_streams.back()));
+      //}
+    //}
 
-    hipStream_t s0;
-    qmc_hip::hipsolver_check(rocsolver_get_stream(handle,&s0), "rocsolver_get_stream");
+    //hipStream_t s0;
+    //qmc_hip::hipsolver_check(rocsolver_get_stream(handle,&s0), "rocsolver_get_stream");
 
+    rocsolverStatus_t success = rocblas_status_success;
     for(int i=0; i<batchsize; i++) {
-      qmc_hip::hipsolver_check(rocsolver_set_stream(handle,afqmc_hip_streams[i]), "rocsolver_get_stream");
-      throw std::runtime_error("Error: rocsolver_gqr_strided_batched not implemented in rocsolver.");
-      rocsolverStatus_t success = rocblas_status_success;
-      //rocsolverStatus_t success =
-              //rocsolver_zungqr(handle,m,n,k,reinterpret_cast<rocblas_double_complex *>(A)+i*Astride,lda,
-                        //reinterpret_cast<rocblas_double_complex const *>(tau)+i*tstride,
-                        //reinterpret_cast<rocblas_double_complex *>(work)+i*lwork,lwork,devInfo+i);
+      //qmc_hip::hipsolver_check(rocsolver_set_stream(handle,afqmc_hip_streams[i]), "rocsolver_get_stream");
+      success = rocsolver_zungqr(handle,
+                                 m,n,k,
+                                 reinterpret_cast<rocblas_double_complex *>(A)+i*Astride,
+                                 lda,
+                                 reinterpret_cast<rocblas_double_complex *>(tau)+i*tstride);
+      qmc_hip::hip_check(hipDeviceSynchronize(),"rocsolver_gqr_strided");
       qmc_hip::hipsolver_check(success,"rocsolver_gqr_strided");
     }
-    rocsolverStatus_t success = rocblas_status_success;
-    qmc_hip::hip_check(hipDeviceSynchronize(),"rocsolver_gqr_strided");
+    //qmc_hip::hip_check(hipDeviceSynchronize(),"rocsolver_gqr_strided");
     qmc_hip::hip_check(hipGetLastError(),"rocsolver_gqr_strided");
-    qmc_hip::hipsolver_check(rocsolver_set_stream(handle,s0), "rocsolver_setStream");
+    //qmc_hip::hipsolver_check(rocsolver_set_stream(handle,s0), "rocsolver_setStream");
 
     return success;
 
