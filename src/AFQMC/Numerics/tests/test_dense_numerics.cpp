@@ -701,8 +701,12 @@ void test_dense_gerf_gqr_device(Allocator& alloc)
      array_ref<T, 2> Id2(id.data(),{3,3});
      verify_approx(Id, Id2);
    }
-   //SECTION("mat_geqrf_strided")
-   {
+}
+template<class Allocator>
+void test_dense_gerf_gqr_strided_device(Allocator& alloc)
+{
+  using T = typename Allocator::value_type;
+  {
      vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
      vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
 
@@ -719,16 +723,14 @@ void test_dense_gerf_gqr_device(Allocator& alloc)
      array<int,1,IAllocator> info(iextensions<1u>{2},IAllocator{alloc});
      array<T,2,Allocator> TAU({2,4},alloc);
 
-     geqrfStrided(4,3,A.origin(),4,12,TAU.origin(),4,info.origin(),2);
+     geqrfStrided(4,3,A.origin(),4,12,TAU.origin(),sz,info.origin(),2);
+     gqrStrided(4,3,3,A.origin(),4,12,TAU.origin(),4,WORK.origin(),sz,info.origin(),2);
      for(int i=0; i<2; i++) {
-       ma::gqr(A[i],TAU[i],WORK);
-
        ma::product(A[i], ma::H(A[i]), Id);
-
        array_ref<T, 2> Id2(id.data(),{3,3});
        verify_approx(Id, Id2);
      }
-   }
+  }
 }
 
 template<class Allocator>
@@ -800,7 +802,6 @@ void test_dense_geqrf_getri_batched_device(Allocator& alloc)
         copy_n(a.data(),a.size(),A[i].origin());
         array<T,2,Allocator> out({3,3},alloc);
         ma::product(ma::H(A[i]), ma::H(Ai[i]), out);
-        std::cout << std::endl;
         array_ref<T, 2> Id2(id.data(),{3,3});
         verify_approx(out, Id2);
       }
@@ -833,6 +834,7 @@ TEST_CASE("dense_ma_operations_device_complex", "[matrix_operations]")
     test_dense_mat_vec_device<Alloc>(alloc);
     test_dense_mat_mul_device<Alloc>(alloc);
     test_dense_gerf_gqr_device<Alloc>(alloc);
+    test_dense_gerf_gqr_strided_device<Alloc>(alloc);
     test_dense_geqrf_getri_batched_device<Alloc>(alloc);
   }
 
@@ -840,4 +842,3 @@ TEST_CASE("dense_ma_operations_device_complex", "[matrix_operations]")
 #endif
 
 }
-
