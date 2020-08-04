@@ -32,7 +32,7 @@ struct atBasisSet
   std::string grid_type  = "log";
   std::string expandYlm  = "Gamess";
   std::string elementType;
-  std::string angular = "spherical";
+  std::string angular = "cartesian";
   double grid_ri      = 1e-6;
   double grid_rf      = 100;
   int grid_npts       = 1001;
