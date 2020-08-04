@@ -23,6 +23,7 @@
 #include "Configuration.h"
 #include "QMCWaveFunctions/detail/CUDA_legacy/AtomicOrbitalCuda.h"
 #include "QMCWaveFunctions/detail/CUDA_legacy/PhaseFactors.h"
+#include <config/stdlib/math.hpp>
 #ifdef HAVE_MKL
 #include <mkl_vml.h>
 #endif
@@ -2292,7 +2293,7 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
           ck[n] = k[n];
         double s, c;
         double phase = -dot(newpos[iw], k);
-        sincos(phase, &s, &c);
+        qmcplusplus::sincos(phase, &s, &c);
         std::complex<double> e_mikr(c, s);
         CPUzvals[j] = e_mikr * u;
         CPUzgrad[j] = e_mikr * (-eye * u * ck + gradu);
