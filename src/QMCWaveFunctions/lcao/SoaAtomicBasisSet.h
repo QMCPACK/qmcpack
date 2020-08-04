@@ -14,6 +14,8 @@
 #ifndef QMCPLUSPLUS_SOA_SPHERICALORBITAL_BASISSET_H
 #define QMCPLUSPLUS_SOA_SPHERICALORBITAL_BASISSET_H
 
+#include <config/stdlib/math.hpp>
+
 namespace qmcplusplus
 {
 /* A basis set for a center type 
@@ -154,7 +156,7 @@ struct SoaAtomicBasisSet
 
     RealType phasearg = SuperTwist[0]*Tv[0]+SuperTwist[1]*Tv[1]+SuperTwist[2]*Tv[2]; 
     RealType s, c;
-    sincos(-phasearg,&s,&c);
+    qmcplusplus::sincos(-phasearg,&s,&c);
     const ValueType correctphase(c,s);
 #endif
 
@@ -615,7 +617,7 @@ struct SoaAtomicBasisSet
 
     RealType phasearg = SuperTwist[0]*Tv[0]+SuperTwist[1]*Tv[1]+SuperTwist[2]*Tv[2]; 
     RealType s, c;
-    sincos(-phasearg,&s,&c);
+    qmcplusplus::sincos(-phasearg,&s,&c);
     const ValueType correctphase(c,s);
 
 #endif

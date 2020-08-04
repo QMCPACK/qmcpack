@@ -1,4 +1,5 @@
 
+ IF (NOT QMC_CUDA)
 
 # Reference VMC run in qmc-ref "-21.70152 +/- 0.00042"
   LIST(APPEND DIAMOND_SCALARS "totenergy" "-21.70152 0.015")
@@ -49,3 +50,6 @@
                     1 LONG_DIAMOND_DMC_SCALARS # DMC
                     )
 
+  ELSE()
+    MESSAGE_VERBOSE("Skipping Periodic LCAO as not supported by CUDA build (QMC_CUDA=1)")
+  ENDIF()

@@ -47,8 +47,8 @@ T smoothing(smoothing_functions func_id, T x, T& dx, T& d2x)
     /// (1+cos(PI*(1-cos(PI*x))/2))/2
     const T chalf(0.5), cone(1), pihalf(M_PI * chalf), pipihalf(M_PI * M_PI * chalf);
     T s, c, scos, ccos;
-    sincos(T(M_PI) * x, &s, &c);
-    sincos(pihalf * (cone - c), &scos, &ccos);
+    qmcplusplus::sincos(T(M_PI) * x, &s, &c);
+    qmcplusplus::sincos(pihalf * (cone - c), &scos, &ccos);
 
     dx  = -chalf * pipihalf * scos * s;
     d2x = -pihalf * pipihalf * (ccos * pihalf * s * s + scos * c);

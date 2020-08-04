@@ -108,7 +108,7 @@ template<typename T>
 inline void eval_e2iphi(int n, const T* restrict phi, T* restrict phase_r, T* restrict phase_i)
 {
   for (int i = 0; i < n; i++)
-    sincos(phi[i], phase_i + i, phase_r + i);
+    qmcplusplus::sincos(phi[i], phase_i + i, phase_r + i);
 }
 template<typename T>
 inline void eval_e2iphi(int n, const T* restrict phi, std::complex<T>* restrict z)
@@ -116,7 +116,7 @@ inline void eval_e2iphi(int n, const T* restrict phi, std::complex<T>* restrict 
   T s, c;
   for (int i = 0; i < n; i++)
   {
-    sincos(phi[i], &s, &c);
+    qmcplusplus::sincos(phi[i], &s, &c);
     z[i] = std::complex<T>(c, s);
   }
 }
