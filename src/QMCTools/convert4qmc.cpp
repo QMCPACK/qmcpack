@@ -23,6 +23,7 @@
 #include "QMCTools/QPParser.h"
 #include "QMCTools/GamesFMOParser.h"
 #include "QMCTools/LCAOHDFParser.h"
+#include "QMCTools/DiracParser.h"
 #include "QMCTools/BParser.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/FileUtility.h"
@@ -136,6 +137,14 @@ int main(int argc, char** argv)
     {
       parser  = new BParser(argc, argv);
       in_file = argv[++iargc];
+    }
+    else if (a == "-dirac")
+    {
+      parser  = new DiracParser(argc, argv);
+      in_file = argv[++iargc];
+      parser->parse(in_file);
+      delete parser;
+      return 0;
     }
     else if (a == "-hdf5")
     {
@@ -334,11 +343,11 @@ int main(int argc, char** argv)
     if (prod)
     {
       parser->addJastrow = addJastrow;
-      parser->WFS_name = jastrow;
+      parser->WFS_name   = jastrow;
       if (parser->PBC)
       {
-        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0]
-                  << "  " << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
+                  << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
         parser->dumpPBC(psi_tag, ion_tag);
       }
       else
@@ -348,12 +357,12 @@ int main(int argc, char** argv)
     else
     {
       parser->addJastrow = false;
-      jastrow = "noj";
-      parser->WFS_name = jastrow;
+      jastrow            = "noj";
+      parser->WFS_name   = jastrow;
       if (parser->PBC)
       {
-        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0]
-                  << "  " << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
+                  << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
         parser->dumpPBC(psi_tag, ion_tag);
       }
       else
@@ -362,11 +371,11 @@ int main(int argc, char** argv)
 
       parser->addJastrow = true;
       jastrow            = "j";
-      parser->WFS_name = jastrow;
+      parser->WFS_name   = jastrow;
       if (parser->PBC)
       {
-        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0]
-                  << "  " << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
+                  << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
         parser->dumpPBC(psi_tag, ion_tag);
       }
       else

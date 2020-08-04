@@ -26,6 +26,7 @@ SET(MOSRCS
   GaussianFCHKParser.cpp
   GamesXmlParser.cpp
   GamesAsciiParser.cpp
+  DiracParser.cpp
   CasinoParser.cpp
   BParser.cpp
   BMakeFunc.cpp
