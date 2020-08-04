@@ -18,6 +18,7 @@
 #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerProperties.h"
+#include <config/stdlib/math.hpp>
 
 namespace qmcplusplus
 {
@@ -127,7 +128,7 @@ void CoulombPBCAB_CUDA::setupLongRangeGPU()
         PosType ipos   = SortedIons[ion];
         RealType phase = dot(k, ipos);
         double s, c;
-        sincos(phase, &s, &c);
+        qmcplusplus::sincos(phase, &s, &c);
         RhokIons_host[2 * ik + 0] += c;
         RhokIons_host[2 * ik + 1] += s;
       }
@@ -207,7 +208,7 @@ void CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   //     	PosType r = walkers[0]->R[ir];
   //     	double s, c;
   //     	double phase = dot(k,r);
-  //     	sincos(phase, &s, &c);
+  //     	qmcplusplus::sincos(phase, &s, &c);
   //     	rhok += std::complex<double>(c,s);
   //       }
   //       fprintf (stderr, "GPU:   %d   %14.6f  %14.6f\n",

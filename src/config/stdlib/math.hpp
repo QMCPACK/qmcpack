@@ -20,21 +20,30 @@
 #include <mass.h>
 #endif
 
+namespace qmcplusplus
+{
+
+/// sincos function wrapper
 #if __APPLE__
 
 inline void sincos(double a, double* s, double* c)
 {
-  __sincos(a,s,c);
+  ::__sincos(a,s,c);
 }
 
 inline void sincos(float a, float* s, float* c)
 {
-  __sincosf(a,s,c);
+  ::__sincosf(a,s,c);
 }
 
 #else // not __APPLE__
 
 #if defined(HAVE_SINCOS)
+
+inline void sincos(double a, double* s, double* c)
+{
+  ::sincos(a,s,c);
+}
 
 inline void sincos(float a, float* s, float* c)
 {
@@ -42,10 +51,10 @@ inline void sincos(float a, float* s, float* c)
   // there is no sincosf in libmass
   // libmass sincos is faster than libm sincosf
   double ds,dc;
-  sincos((double)a,&ds,&dc);
+  ::sincos((double)a,&ds,&dc);
   *s=ds; *c=dc;
 #else
-  sincosf(a,s,c);
+  ::sincosf(a,s,c);
 #endif
 }
 
@@ -62,8 +71,6 @@ inline void sincos(T a, T* restrict s, T*  restrict c)
 
 #endif // __APPLE__
 
-namespace qmcplusplus
-{
 /** return i^n
  *
  * std::pow(int,int) is not standard

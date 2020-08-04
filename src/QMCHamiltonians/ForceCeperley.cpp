@@ -43,7 +43,7 @@ ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns)
   evaluate_IonIon(forces_IonIon);
 }
 
-const void ForceCeperley::evaluate_IonIon(ParticleSet::ParticlePos_t& forces)
+void ForceCeperley::evaluate_IonIon(ParticleSet::ParticlePos_t& forces) const
 {
   forces = 0.0;
   const DistanceTableData& d_aa(Ions.getDistTable(d_aa_ID));
