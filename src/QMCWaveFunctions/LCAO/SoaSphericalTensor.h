@@ -74,7 +74,7 @@ struct SoaSphericalTensor
 
   ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to Lmax.
   void evaluateVGL(T x, T y, T z);
- 
+
   ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to Lmax.
   void evaluateVGH(T x, T y, T z);
 

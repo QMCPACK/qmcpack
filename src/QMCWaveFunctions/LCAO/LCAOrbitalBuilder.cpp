@@ -864,9 +864,9 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
 
   bool IsComplex = true;
   hin.read(IsComplex, "/parameters/IsComplex");
-  if (IsComplex==false)
+  if (IsComplex == false)
   {
-    Ccmplx=0.0;
+    Ccmplx = 0.0;
   }
   else
   {
