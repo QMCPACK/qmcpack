@@ -9,6 +9,7 @@
 #  2. Run create_cartesian_tensor.py
 #      A. Copy CartesianTensor.h up on directory (to src/Numerics)
 #      B. Copy SoaCartesianTensor.h up to src/QMCWaveFunctions/LCAO)
+#      C. Apply clang-format on modified source files.
 
 
 from collections import namedtuple, defaultdict
