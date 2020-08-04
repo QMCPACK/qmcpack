@@ -21,7 +21,7 @@
 #include "Message/MPIObjectBase.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
-#include "QMCWaveFunctions/lcao/RadialOrbitalSetBuilder.h"
+#include "QMCWaveFunctions/LCAO/RadialOrbitalSetBuilder.h"
 #include "io/hdf_archive.h"
 
 namespace qmcplusplus
@@ -255,7 +255,7 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
     {
       radGroup.push_back(cur1);
       const int l = std::stoi(XMLAttrString{cur1, "l"});
-      Lmax  = std::max(Lmax, l);
+      Lmax        = std::max(Lmax, l);
       //expect that only Rnl is given
       if (expandlm == CARTESIAN_EXPAND)
         num += (l + 1) * (l + 2) / 2;

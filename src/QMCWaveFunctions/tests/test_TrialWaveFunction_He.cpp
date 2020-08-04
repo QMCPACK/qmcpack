@@ -391,6 +391,37 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   CHECK(elec2b.G[0][0] == ValueApprox(elec2.G[0][0]));
   CHECK(elec2b.G[1][1] == ValueApprox(elec2.G[1][1]));
 
+
+  // these lists not used if 'recompute' is false
+  RefVector<ParticleSet::ParticleGradient_t> dummyG_list;
+  RefVector<ParticleSet::ParticleLaplacian_t> dummyL_list;
+
+  std::vector<RealType> logpsi_variable_list(nentry);
+  TrialWaveFunction::flex_evaluateDeltaLog(wf_list, p_list, logpsi_variable_list, dummyG_list, dummyL_list, false);
+
+  RealType logpsi1 = psi.evaluateDeltaLog(p_list[0], false);
+  CHECK(logpsi1 == Approx(logpsi_variable_list[0]));
+
+  RealType logpsi2 = psi2.evaluateDeltaLog(p_list[1], false);
+  CHECK(logpsi2 == Approx(logpsi_variable_list[1]));
+
+
+  // Now check with 'recompute = true'
+  auto dummyG_list2_ptr = create_particle_gradient(nelec, nentry);
+  auto dummyL_list2_ptr = create_particle_laplacian(nelec, nentry);
+  auto dummyG_list2     = convertUPtrToRefVector(dummyG_list2_ptr);
+  auto dummyL_list2     = convertUPtrToRefVector(dummyL_list2_ptr);
+
+  std::vector<RealType> logpsi_variable_list2(nentry);
+
+  TrialWaveFunction::flex_evaluateDeltaLog(wf_list, p_list, logpsi_variable_list2, dummyG_list2, dummyL_list2, true);
+
+  RealType logpsi1b = psi.evaluateDeltaLog(p_list[0], true);
+  CHECK(logpsi1b == Approx(logpsi_variable_list2[0]));
+
+  RealType logpsi2b = psi2.evaluateDeltaLog(p_list[1], true);
+  CHECK(logpsi2b == Approx(logpsi_variable_list2[1]));
+
   SPOSetBuilderFactory::clear();
 }
 

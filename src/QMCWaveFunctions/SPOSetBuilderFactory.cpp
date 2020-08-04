@@ -20,7 +20,7 @@
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
 #if OHMMS_DIM == 3
-#include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
 
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/RotatedSPOs.h"

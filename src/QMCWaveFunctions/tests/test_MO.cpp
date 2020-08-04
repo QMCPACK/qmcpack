@@ -17,7 +17,7 @@
 #include "Numerics/OneDimGridBase.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/GaussianBasisSet.h"
-#include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus

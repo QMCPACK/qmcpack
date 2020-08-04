@@ -127,19 +127,27 @@ public:
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 
-  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override;
+  void evaluateVGL(const ParticleSet& P,
+                   int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   ValueVector_t& d2psi) override;
 
   void evaluateDetRatios(const VirtualParticleSet& VP,
                          ValueVector_t& psi,
                          const ValueVector_t& psiinv,
                          std::vector<ValueType>& ratios) override;
 
-  void evaluateVGH(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi) override;
+  void evaluateVGH(const ParticleSet& P,
+                   int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   HessVector_t& grad_grad_psi) override;
 
-  void evaluateVGHGH(const ParticleSet& P, 
-                     int iat, 
-                     ValueVector_t& psi, 
-                     GradVector_t& dpsi, 
+  void evaluateVGHGH(const ParticleSet& P,
+                     int iat,
+                     ValueVector_t& psi,
+                     GradVector_t& dpsi,
                      HessVector_t& grad_grad_psi,
                      GGGVector_t& grad_grad_grad_psi) override;
 
@@ -165,34 +173,34 @@ public:
                             HessMatrix_t& grad_grad_logdet,
                             GGGMatrix_t& grad_grad_grad_logdet) override;
 
- //NOTE:  The data types get complicated here, so here's an overview of the 
- //       data types associated with ionic derivatives, and how to get their data.
- //
- //NOTE:  These data structures hold the data for one particular ion, and so the ID is implicit.
- //       It's up to the user to keep track of which ion these derivatives refer to.   
- //
- // 1.) GradMatrix_t grad_phi:  Holds the ionic derivatives of each SPO for each electron.  
- //            Example:  grad_phi[iel][iorb][idim].  iel  -- electron index.
- //                                                iorb -- orbital index.
- //                                                idim  -- cartesian index of ionic derivative.  
- //                                                        X=0, Y=1, Z=2.
- //                                                        
- // 2.) HessMatrix_t grad_grad_phi:  Holds the ionic derivatives of the electron gradient components 
- //                                   for each SPO and each electron.  
- //            Example:  grad_grad_phi[iel][iorb](idim,edim)  iel  -- electron index.
- //                                                           iorb -- orbital index. 
- //                                                           idim -- ionic derivative's cartesian index.
- //                                                              X=0, Y=1, Z=2
- //                                                           edim -- electron derivative's cartesian index.
- //                                                              x=0, y=1, z=2.
- //
- // 3.) GradMatrix_t grad_lapl_phi:  Holds the ionic derivatives of the electron laplacian for each SPO and each electron.                                                
- //            Example:  grad_lapl_phi[iel][iorb][idim].  iel  -- electron index.
- //                                                       iorb -- orbital index.
- //                                                       idim -- cartesian index of ionic derivative.  
- //                                                           X=0, Y=1, Z=2.
+  //NOTE:  The data types get complicated here, so here's an overview of the
+  //       data types associated with ionic derivatives, and how to get their data.
+  //
+  //NOTE:  These data structures hold the data for one particular ion, and so the ID is implicit.
+  //       It's up to the user to keep track of which ion these derivatives refer to.
+  //
+  // 1.) GradMatrix_t grad_phi:  Holds the ionic derivatives of each SPO for each electron.
+  //            Example:  grad_phi[iel][iorb][idim].  iel  -- electron index.
+  //                                                iorb -- orbital index.
+  //                                                idim  -- cartesian index of ionic derivative.
+  //                                                        X=0, Y=1, Z=2.
+  //
+  // 2.) HessMatrix_t grad_grad_phi:  Holds the ionic derivatives of the electron gradient components
+  //                                   for each SPO and each electron.
+  //            Example:  grad_grad_phi[iel][iorb](idim,edim)  iel  -- electron index.
+  //                                                           iorb -- orbital index.
+  //                                                           idim -- ionic derivative's cartesian index.
+  //                                                              X=0, Y=1, Z=2
+  //                                                           edim -- electron derivative's cartesian index.
+  //                                                              x=0, y=1, z=2.
+  //
+  // 3.) GradMatrix_t grad_lapl_phi:  Holds the ionic derivatives of the electron laplacian for each SPO and each electron.
+  //            Example:  grad_lapl_phi[iel][iorb][idim].  iel  -- electron index.
+  //                                                       iorb -- orbital index.
+  //                                                       idim -- cartesian index of ionic derivative.
+  //                                                           X=0, Y=1, Z=2.
 
- /**
+  /**
  * \brief Calculate ion derivatives of SPO's.
  *  
  *  @param P Electron particle set.
@@ -209,7 +217,7 @@ public:
                           int iat_src,
                           GradMatrix_t& grad_phi) override;
 
- /**
+  /**
  * \brief Calculate ion derivatives of SPO's, their gradients, and their laplacians.
  *  
  *  @param P Electron particle set.
@@ -252,35 +260,31 @@ private:
                          GradMatrix_t& dlogdet,
                          HessMatrix_t& dhlogdet) const;
   //Unpacks data in vghgh_type temp object into wavefunction friendly data structures for value, gradient, hessian
-  //and gradient hessian.  
-  void evaluate_vghgh_impl(const vghgh_type& temp, 
-                           ValueVector_t& psi, 
-                           GradVector_t& dpsi, 
+  //and gradient hessian.
+  void evaluate_vghgh_impl(const vghgh_type& temp,
+                           ValueVector_t& psi,
+                           GradVector_t& dpsi,
                            HessVector_t& d2psi,
                            GGGVector_t& dghpsi) const;
 
   void evaluate_vghgh_impl(const vghgh_type& temp,
-                         int i,
-                         ValueMatrix_t& logdet,
-                         GradMatrix_t& dlogdet,
-                         HessMatrix_t& dhlogdet,
-                         GGGMatrix_t& dghlogdet) const;
+                           int i,
+                           ValueMatrix_t& logdet,
+                           GradMatrix_t& dlogdet,
+                           HessMatrix_t& dhlogdet,
+                           GGGMatrix_t& dghlogdet) const;
 
 
-  //Unpacks data in vgl object and calculates/places ionic gradient result into dlogdet.   
-  void evaluate_ionderiv_v_impl(const vgl_type& temp,
-                         int i,
-                         GradMatrix_t& dlogdet) const;
-  
-  //Unpacks data in vgl object and calculates/places ionic gradient of value, 
-  //  electron gradient, and electron laplacian result into dlogdet, dglogdet, and dllogdet respectively.   
+  //Unpacks data in vgl object and calculates/places ionic gradient result into dlogdet.
+  void evaluate_ionderiv_v_impl(const vgl_type& temp, int i, GradMatrix_t& dlogdet) const;
+
+  //Unpacks data in vgl object and calculates/places ionic gradient of value,
+  //  electron gradient, and electron laplacian result into dlogdet, dglogdet, and dllogdet respectively.
   void evaluate_ionderiv_vgl_impl(const vghgh_type& temp,
-                         int i,
-                         GradMatrix_t& dlogdet,
-                         HessMatrix_t& dglogdet,
-                         GradMatrix_t& dllogdet) const;
-  
-
+                                  int i,
+                                  GradMatrix_t& dlogdet,
+                                  HessMatrix_t& dglogdet,
+                                  GradMatrix_t& dllogdet) const;
 };
 } // namespace qmcplusplus
 #endif

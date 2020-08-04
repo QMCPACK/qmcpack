@@ -192,22 +192,7 @@ void TrialWaveFunction::recompute(ParticleSet& P)
   }
 }
 
-/** evaluate the log value of a many-body wave function
- * @param P input configuration containing N particles
- * @param recomputeall recompute all orbitals from scratch
- * @return the value of \f$ \log( \Pi_i \Psi_i) \f$  many-body wave function
- *
- * @if recomputeall == true
- *   all orbitals have "evaluateLog" called on them, including the non-optimized ones.
- * @else
- *   default value.  call evaluateLog only on optimizable orbitals.  OK if nonlocal pp's aren't used.
- *
- * To save time, logpsi, G, and L are only computed for orbitals that change over the course of the optimization.
- * It is assumed that the fixed components are stored elsewhere.  See evaluateDeltaLog(P,logpsi_fixed_r,logpsi_opt,fixedG,fixedL)
- * defined below.  Nonlocal pseudopotential evaluation requires temporary information like matrix inverses, so while
- * the logpsi, G, and L don't change, evaluateLog is called anyways to compute these auxiliary quantities from scratch.
- * logpsi, G, and L associated with these non-optimizable orbitals are discarded explicitly and with dummy variables. 
- */
+
 TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, bool recomputeall)
 {
   P.G = 0.0;
@@ -333,6 +318,75 @@ void TrialWaveFunction::flex_evaluateDeltaLogSetup(const RefVector<TrialWaveFunc
   for (int iw = 0; iw < wf_list.size(); iw++)
     addAndCopyToP(p_list[iw], wf_list[iw], fixedG_list[iw], fixedL_list[iw]);
 }
+
+
+void TrialWaveFunction::flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>& wf_list,
+                                              const RefVector<ParticleSet>& p_list,
+                                              std::vector<RealType>& logpsi_list,
+                                              RefVector<ParticleSet::ParticleGradient_t>& dummyG_list,
+                                              RefVector<ParticleSet::ParticleLaplacian_t>& dummyL_list,
+                                              bool recompute)
+{
+  constexpr RealType czero(0);
+  int num_particles = p_list[0].get().getTotalNum();
+  const auto g_list(TrialWaveFunction::extractGRefList(wf_list));
+  const auto l_list(TrialWaveFunction::extractLRefList(wf_list));
+
+  // Initialize various members of the wavefunction, grad, and laplacian
+  auto initGandL = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad,
+                                          ParticleSet::ParticleLaplacian_t& lapl) {
+    grad.resize(num_particles);
+    lapl.resize(num_particles);
+    grad           = czero;
+    lapl           = czero;
+    twf.LogValue   = czero;
+    twf.PhaseValue = czero;
+  };
+  for (int iw = 0; iw < wf_list.size(); iw++)
+    initGandL(wf_list[iw], g_list[iw], l_list[iw]);
+
+  // Get wavefunction components (assumed the same for every WF in the list)
+  auto& wavefunction_components = wf_list[0].get().Z;
+  const int num_wfc             = wf_list[0].get().Z.size();
+
+  // Loop over the wavefunction components
+  for (int i = 0, ii = RECOMPUTE_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
+  {
+    ScopedTimer local_timer(wf_list[0].get().myTimers[ii]);
+    const auto wfc_list(extractWFCRefList(wf_list, i));
+    if (wavefunction_components[i]->Optimizable)
+    {
+      wavefunction_components[i]->mw_evaluateLog(wfc_list, p_list, g_list, l_list);
+      for (int iw = 0; iw < wf_list.size(); iw++)
+        logpsi_list[iw] += std::real(wfc_list[iw].get().LogValue);
+    }
+  }
+
+  // Temporary workaround to have P.G/L always defined.
+  // remove when KineticEnergy use WF.G/L instead of P.G/L
+  auto copyToP = [](ParticleSet& pset, TrialWaveFunction& twf) {
+    pset.G = twf.G;
+    pset.L = twf.L;
+  };
+  for (int iw = 0; iw < wf_list.size(); iw++)
+    copyToP(p_list[iw], wf_list[iw]);
+
+  // In cases where recompute is needed, ignore the logPsi contribution
+  // and ignore G and L.
+  if (recompute)
+  {
+    for (int i = 0, ii = RECOMPUTE_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
+    {
+      ScopedTimer local_timer(wf_list[0].get().myTimers[ii]);
+      const auto wfc_list(extractWFCRefList(wf_list, i));
+      if (wavefunction_components[i]->Optimizable)
+      {
+        wavefunction_components[i]->mw_evaluateLog(wfc_list, p_list, dummyG_list, dummyL_list);
+      }
+    }
+  }
+}
+
 
 
 /*void TrialWaveFunction::evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi)

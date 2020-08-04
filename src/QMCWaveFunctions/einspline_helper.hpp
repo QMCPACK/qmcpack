@@ -21,6 +21,7 @@
 #include <OhmmsPETE/OhmmsArray.h>
 #include <mpi/collectives.h>
 #include <CPU/SIMD/simd.hpp>
+#include <config/stdlib/math.hpp>
 
 namespace qmcplusplus
 {
@@ -88,7 +89,7 @@ inline void fix_phase_c2r(const Array<std::complex<T>, 3>& in, Array<T1, 3>& out
       for (int iz = 0; iz < nz; iz++)
       {
         T1 ruz = static_cast<T1>(iz) * nz_i;
-        sincos(two_pi * (rux + ruy + ruz), &s, &c);
+        qmcplusplus::sincos(two_pi * (rux + ruy + ruz), &s, &c);
         *out_ptr = static_cast<T1>(c * in_ptr->real() - s * in_ptr->imag());
         ++out_ptr;
         ++in_ptr;
@@ -105,7 +106,7 @@ inline void fix_phase_c2r(const Array<std::complex<T>, 3>& in, Array<T1, 3>& out
   //                ru[2] = (RealType)iz / (RealType)nz;
   //                double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
   //                double s, c;
-  //                sincos(phi, &s, &c);
+  //                qmcplusplus::sincos(phi, &s, &c);
   //                std::complex<double> phase(c,s);
   //                std::complex<double> z = phase*rawData(ix,iy,iz);
   //                splineData(ix,iy,iz) = z.real();
@@ -151,7 +152,7 @@ inline void fix_phase_rotate_c2r(Array<std::complex<T>, 3>& in,
       for (int iz = 0; iz < nz; iz++)
       {
         T ruz = static_cast<T>(iz) * nz_i * twist[2];
-        sincos(two_pi * (rux + ruy + ruz), &s, &c);
+        qmcplusplus::sincos(two_pi * (rux + ruy + ruz), &s, &c);
         std::complex<T> eikr(c, s);
         *in_ptr *= eikr;
         rNorm += in_ptr->real() * in_ptr->real();
@@ -287,7 +288,7 @@ inline void compute_phase(const Array<std::complex<T>, 3>& in, const TinyVector<
       for (size_t iz = 0; iz < nz; ++iz)
       {
         const T ruz = static_cast<T>(iz) * nz_i * twist[2];
-        sincos(two_pi * (rux + ruy + ruz), &s, &c);
+        qmcplusplus::sincos(two_pi * (rux + ruy + ruz), &s, &c);
         const T re = c * in_ptr[iz].real() - s * in_ptr[iz].imag();
         const T im = s * in_ptr[iz].real() + c * in_ptr[iz].imag();
         rsum += re * re;
@@ -337,7 +338,7 @@ inline void fix_phase_rotate(const Array<std::complex<T>, 3>& e2pi, Array<std::c
   {
     T arg = std::atan2(iNorm, rNorm);
     T phase_i, phase_r;
-    sincos(0.125 * M_PI - 0.5 * arg, &phase_i, &phase_r);
+    qmcplusplus::sincos(0.125 * M_PI - 0.5 * arg, &phase_i, &phase_r);
     //#pragma omp for
     for (int ix = 0; ix < nx; ix++)
     {

@@ -29,8 +29,8 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
       Psi(Psi0),
       PtclTarg(elns),
       PtclA(ions),
-      ee_table_index(elns.addTable(elns, DT_SOA_PREFERRED)),
       ei_table_index(elns.addTable(ions, DT_SOA_PREFERRED)),
+      ee_table_index(elns.addTable(elns, DT_SOA_PREFERRED)),
       ii_table_index(ions.addTable(ions, DT_SOA_PREFERRED)),
       firstTimeStress(true)
 {

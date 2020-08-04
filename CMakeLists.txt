@@ -485,9 +485,16 @@ IF(QMC_MPI)
     MESSAGE(FATAL_ERROR "MPI support not found! Provide MPI compiler wrappers or build without MPI by passing '-DQMC_MPI=0' to cmake.")
   ENDIF(NOT MPI_FOUND)
 
-  IF(${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "MVAPICH2" AND NOT ${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "disable-registration-cache")
-    MESSAGE(FATAL_ERROR "MVAPICH2 with registration cache enabled breaks QMCPACK. "
-                        "Use a different MPI library or build MVAPICH2 with --disable-registration-cache configure option.")
+  IF(${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "MVAPICH2")
+    STRING(REGEX REPLACE "\n" ";" ONE_LINE "${MPI_CXX_LIBRARY_VERSION_STRING}")
+    STRING(REGEX REPLACE " +|\t" ";" ONE_LINE "${ONE_LINE}")
+    LIST (GET ONE_LINE 3 MVAPICH2_VERSION)
+    MESSAGE(STATUS "MVAPICH2 version ${MVAPICH2_VERSION}")
+    IF(${MVAPICH2_VERSION} VERSION_LESS "2.4" AND NOT ${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "disable-registration-cache")
+        MESSAGE(FATAL_ERROR "MVAPICH2 (version < 2.4) with registration cache enabled breaks QMCPACK. "
+                            "Use a different MPI library or a MVAPICH2 >=2.4 "
+                            "or build MVAPICH2 with --disable-registration-cache configure option.")
+    ENDIF()
   ENDIF()
 
   IF(${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "Open MPI")
