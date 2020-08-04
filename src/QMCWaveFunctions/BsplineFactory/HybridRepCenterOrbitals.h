@@ -18,7 +18,7 @@
 #define QMCPLUSPLUS_HYBRIDREP_CENTER_ORBITALS_H
 
 #include <Particle/DistanceTableData.h>
-#include <QMCWaveFunctions/lcao/SoaSphericalTensor.h>
+#include <QMCWaveFunctions/LCAO/SoaSphericalTensor.h>
 #include <spline2/MultiBspline1D.hpp>
 #include <Numerics/SmoothFunctions.hpp>
 

@@ -10,12 +10,15 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/lcao/LCAOrbitalSetWithCorrection.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSetWithCorrection.h"
 #include <Numerics/MatrixOperators.h>
 
 namespace qmcplusplus
 {
-LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, basis_type* bs, bool optimize)
+LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(ParticleSet& ions,
+                                                         ParticleSet& els,
+                                                         basis_type* bs,
+                                                         bool optimize)
     : LCAOrbitalSet(bs, optimize), cusp(ions, els)
 {}
 

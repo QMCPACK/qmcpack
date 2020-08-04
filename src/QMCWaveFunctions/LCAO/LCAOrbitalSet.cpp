@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 #include <Numerics/MatrixOperators.h>
 #include "CPU/BLAS.hpp"
 
@@ -114,9 +114,9 @@ inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
 {
   const size_t output_size = psi.size();
   std::copy_n(temp.data(0), output_size, psi.data());
-  const ValueType* restrict gx = temp.data(1);
-  const ValueType* restrict gy = temp.data(2);
-  const ValueType* restrict gz = temp.data(3);
+  const ValueType* restrict gx  = temp.data(1);
+  const ValueType* restrict gy  = temp.data(2);
+  const ValueType* restrict gz  = temp.data(3);
   const ValueType* restrict hxx = temp.data(4);
   const ValueType* restrict hxy = temp.data(5);
   const ValueType* restrict hxz = temp.data(6);
@@ -129,34 +129,34 @@ inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
     dpsi[j][0] = gx[j];
     dpsi[j][1] = gy[j];
     dpsi[j][2] = gz[j];
-    
-    d2psi[j](0,0)                 = hxx[j]; 
-    d2psi[j](0,1) = d2psi[j](1,0) = hxy[j]; 
-    d2psi[j](0,2) = d2psi[j](2,0) = hxz[j]; 
-    d2psi[j](1,1)                 = hyy[j]; 
-    d2psi[j](2,1) = d2psi[j](1,2) = hyz[j]; 
-    d2psi[j](2,2)                 = hzz[j]; 
+
+    d2psi[j](0, 0) = hxx[j];
+    d2psi[j](0, 1) = d2psi[j](1, 0) = hxy[j];
+    d2psi[j](0, 2) = d2psi[j](2, 0) = hxz[j];
+    d2psi[j](1, 1)                  = hyy[j];
+    d2psi[j](2, 1) = d2psi[j](1, 2) = hyz[j];
+    d2psi[j](2, 2)                  = hzz[j];
   }
 }
 
 inline void LCAOrbitalSet::evaluate_vghgh_impl(const vghgh_type& temp,
-                                             int i,
-                                             ValueMatrix_t& psi,
-                                             GradMatrix_t& dpsi,
-                                             HessMatrix_t& d2psi,
-                                             GGGMatrix_t& dghpsi) const
+                                               int i,
+                                               ValueMatrix_t& psi,
+                                               GradMatrix_t& dpsi,
+                                               HessMatrix_t& d2psi,
+                                               GGGMatrix_t& dghpsi) const
 {
   const size_t output_size = psi.cols();
   std::copy_n(temp.data(0), output_size, psi[i]);
-  const ValueType* restrict gx = temp.data(1);
-  const ValueType* restrict gy = temp.data(2);
-  const ValueType* restrict gz = temp.data(3);
-  const ValueType* restrict hxx = temp.data(4);
-  const ValueType* restrict hxy = temp.data(5);
-  const ValueType* restrict hxz = temp.data(6);
-  const ValueType* restrict hyy = temp.data(7);
-  const ValueType* restrict hyz = temp.data(8);
-  const ValueType* restrict hzz = temp.data(9);
+  const ValueType* restrict gx     = temp.data(1);
+  const ValueType* restrict gy     = temp.data(2);
+  const ValueType* restrict gz     = temp.data(3);
+  const ValueType* restrict hxx    = temp.data(4);
+  const ValueType* restrict hxy    = temp.data(5);
+  const ValueType* restrict hxz    = temp.data(6);
+  const ValueType* restrict hyy    = temp.data(7);
+  const ValueType* restrict hyz    = temp.data(8);
+  const ValueType* restrict hzz    = temp.data(9);
   const ValueType* restrict gh_xxx = temp.data(10);
   const ValueType* restrict gh_xxy = temp.data(11);
   const ValueType* restrict gh_xxz = temp.data(12);
@@ -173,63 +173,63 @@ inline void LCAOrbitalSet::evaluate_vghgh_impl(const vghgh_type& temp,
     dpsi[i][j][0] = gx[j];
     dpsi[i][j][1] = gy[j];
     dpsi[i][j][2] = gz[j];
-    
-    d2psi[i][j](0,0)                 = hxx[j]; 
-    d2psi[i][j](0,1) = d2psi[i][j](1,0) = hxy[j]; 
-    d2psi[i][j](0,2) = d2psi[i][j](2,0) = hxz[j]; 
-    d2psi[i][j](1,1)                 = hyy[j]; 
-    d2psi[i][j](2,1) = d2psi[i][j](1,2) = hyz[j]; 
-    d2psi[i][j](2,2)                 = hzz[j]; 
-    
-    dghpsi[i][j][0](0,0) = gh_xxx[j];  //x|xx  
-    dghpsi[i][j][0](0,1) = gh_xxy[j];  //x|xy
-    dghpsi[i][j][0](0,2) = gh_xxz[j];  //x|xz
-    dghpsi[i][j][0](1,0) = gh_xxy[j];  //x|yx = xxy
-    dghpsi[i][j][0](1,1) = gh_xyy[j];  //x|yy
-    dghpsi[i][j][0](1,2) = gh_xyz[j];  //x|yz
-    dghpsi[i][j][0](2,0) = gh_xxz[j];  //x|zx = xxz
-    dghpsi[i][j][0](2,1) = gh_xyz[j];  //x|zy = xyz
-    dghpsi[i][j][0](2,2) = gh_xzz[j];  //x|zz
-    
-    dghpsi[i][j][1](0,0) = gh_xxy[j];  //y|xx = xxy
-    dghpsi[i][j][1](0,1) = gh_xyy[j];  //y|xy = xyy
-    dghpsi[i][j][1](0,2) = gh_xyz[j];  //y|xz = xyz
-    dghpsi[i][j][1](1,0) = gh_xyy[j];  //y|yx = xyy
-    dghpsi[i][j][1](1,1) = gh_yyy[j];  //y|yy
-    dghpsi[i][j][1](1,2) = gh_yyz[j];  //y|yz 
-    dghpsi[i][j][1](2,0) = gh_xyz[j];  //y|zx = xyz
-    dghpsi[i][j][1](2,1) = gh_yyz[j];  //y|zy = yyz
-    dghpsi[i][j][1](2,2) = gh_yzz[j];  //y|zz 
-   
-    dghpsi[i][j][2](0,0) = gh_xxz[j];  //z|xx = xxz
-    dghpsi[i][j][2](0,1) = gh_xyz[j];  //z|xy = xyz
-    dghpsi[i][j][2](0,2) = gh_xzz[j];  //z|xz = xzz
-    dghpsi[i][j][2](1,0) = gh_xyz[j];  //z|yx = xyz
-    dghpsi[i][j][2](1,1) = gh_yyz[j];  //z|yy = yyz
-    dghpsi[i][j][2](1,2) = gh_yzz[j];  //z|yz = yzz
-    dghpsi[i][j][2](2,0) = gh_xzz[j];  //z|zx = xzz
-    dghpsi[i][j][2](2,1) = gh_yzz[j];  //z|zy = yzz
-    dghpsi[i][j][2](2,2) = gh_zzz[j];  //z|zz  
+
+    d2psi[i][j](0, 0) = hxx[j];
+    d2psi[i][j](0, 1) = d2psi[i][j](1, 0) = hxy[j];
+    d2psi[i][j](0, 2) = d2psi[i][j](2, 0) = hxz[j];
+    d2psi[i][j](1, 1)                     = hyy[j];
+    d2psi[i][j](2, 1) = d2psi[i][j](1, 2) = hyz[j];
+    d2psi[i][j](2, 2)                     = hzz[j];
+
+    dghpsi[i][j][0](0, 0) = gh_xxx[j]; //x|xx
+    dghpsi[i][j][0](0, 1) = gh_xxy[j]; //x|xy
+    dghpsi[i][j][0](0, 2) = gh_xxz[j]; //x|xz
+    dghpsi[i][j][0](1, 0) = gh_xxy[j]; //x|yx = xxy
+    dghpsi[i][j][0](1, 1) = gh_xyy[j]; //x|yy
+    dghpsi[i][j][0](1, 2) = gh_xyz[j]; //x|yz
+    dghpsi[i][j][0](2, 0) = gh_xxz[j]; //x|zx = xxz
+    dghpsi[i][j][0](2, 1) = gh_xyz[j]; //x|zy = xyz
+    dghpsi[i][j][0](2, 2) = gh_xzz[j]; //x|zz
+
+    dghpsi[i][j][1](0, 0) = gh_xxy[j]; //y|xx = xxy
+    dghpsi[i][j][1](0, 1) = gh_xyy[j]; //y|xy = xyy
+    dghpsi[i][j][1](0, 2) = gh_xyz[j]; //y|xz = xyz
+    dghpsi[i][j][1](1, 0) = gh_xyy[j]; //y|yx = xyy
+    dghpsi[i][j][1](1, 1) = gh_yyy[j]; //y|yy
+    dghpsi[i][j][1](1, 2) = gh_yyz[j]; //y|yz
+    dghpsi[i][j][1](2, 0) = gh_xyz[j]; //y|zx = xyz
+    dghpsi[i][j][1](2, 1) = gh_yyz[j]; //y|zy = yyz
+    dghpsi[i][j][1](2, 2) = gh_yzz[j]; //y|zz
+
+    dghpsi[i][j][2](0, 0) = gh_xxz[j]; //z|xx = xxz
+    dghpsi[i][j][2](0, 1) = gh_xyz[j]; //z|xy = xyz
+    dghpsi[i][j][2](0, 2) = gh_xzz[j]; //z|xz = xzz
+    dghpsi[i][j][2](1, 0) = gh_xyz[j]; //z|yx = xyz
+    dghpsi[i][j][2](1, 1) = gh_yyz[j]; //z|yy = yyz
+    dghpsi[i][j][2](1, 2) = gh_yzz[j]; //z|yz = yzz
+    dghpsi[i][j][2](2, 0) = gh_xzz[j]; //z|zx = xzz
+    dghpsi[i][j][2](2, 1) = gh_yzz[j]; //z|zy = yzz
+    dghpsi[i][j][2](2, 2) = gh_zzz[j]; //z|zz
   }
 }
 
 inline void LCAOrbitalSet::evaluate_vghgh_impl(const vghgh_type& temp,
-                                             ValueVector_t& psi,
-                                             GradVector_t& dpsi,
-                                             HessVector_t& d2psi,
-                                             GGGVector_t& dghpsi) const
+                                               ValueVector_t& psi,
+                                               GradVector_t& dpsi,
+                                               HessVector_t& d2psi,
+                                               GGGVector_t& dghpsi) const
 {
   const size_t output_size = psi.size();
   std::copy_n(temp.data(0), output_size, psi.data());
-  const ValueType* restrict gx = temp.data(1);
-  const ValueType* restrict gy = temp.data(2);
-  const ValueType* restrict gz = temp.data(3);
-  const ValueType* restrict hxx = temp.data(4);
-  const ValueType* restrict hxy = temp.data(5);
-  const ValueType* restrict hxz = temp.data(6);
-  const ValueType* restrict hyy = temp.data(7);
-  const ValueType* restrict hyz = temp.data(8);
-  const ValueType* restrict hzz = temp.data(9);
+  const ValueType* restrict gx     = temp.data(1);
+  const ValueType* restrict gy     = temp.data(2);
+  const ValueType* restrict gz     = temp.data(3);
+  const ValueType* restrict hxx    = temp.data(4);
+  const ValueType* restrict hxy    = temp.data(5);
+  const ValueType* restrict hxz    = temp.data(6);
+  const ValueType* restrict hyy    = temp.data(7);
+  const ValueType* restrict hyz    = temp.data(8);
+  const ValueType* restrict hzz    = temp.data(9);
   const ValueType* restrict gh_xxx = temp.data(10);
   const ValueType* restrict gh_xxy = temp.data(11);
   const ValueType* restrict gh_xxz = temp.data(12);
@@ -246,43 +246,43 @@ inline void LCAOrbitalSet::evaluate_vghgh_impl(const vghgh_type& temp,
     dpsi[j][0] = gx[j];
     dpsi[j][1] = gy[j];
     dpsi[j][2] = gz[j];
-    
-    d2psi[j](0,0)                 = hxx[j]; 
-    d2psi[j](0,1) = d2psi[j](1,0) = hxy[j]; 
-    d2psi[j](0,2) = d2psi[j](2,0) = hxz[j]; 
-    d2psi[j](1,1)                 = hyy[j]; 
-    d2psi[j](2,1) = d2psi[j](1,2) = hyz[j]; 
-    d2psi[j](2,2)                 = hzz[j]; 
-    
-    dghpsi[j][0](0,0) = gh_xxx[j];  //x|xx  
-    dghpsi[j][0](0,1) = gh_xxy[j];  //x|xy
-    dghpsi[j][0](0,2) = gh_xxz[j];  //x|xz
-    dghpsi[j][0](1,0) = gh_xxy[j];  //x|yx = xxy
-    dghpsi[j][0](1,1) = gh_xyy[j];  //x|yy
-    dghpsi[j][0](1,2) = gh_xyz[j];  //x|yz
-    dghpsi[j][0](2,0) = gh_xxz[j];  //x|zx = xxz
-    dghpsi[j][0](2,1) = gh_xyz[j];  //x|zy = xyz
-    dghpsi[j][0](2,2) = gh_xzz[j];  //x|zz
-    
-    dghpsi[j][1](0,0) = gh_xxy[j];  //y|xx = xxy
-    dghpsi[j][1](0,1) = gh_xyy[j];  //y|xy = xyy
-    dghpsi[j][1](0,2) = gh_xyz[j];  //y|xz = xyz
-    dghpsi[j][1](1,0) = gh_xyy[j];  //y|yx = xyy
-    dghpsi[j][1](1,1) = gh_yyy[j];  //y|yy
-    dghpsi[j][1](1,2) = gh_yyz[j];  //y|yz 
-    dghpsi[j][1](2,0) = gh_xyz[j];  //y|zx = xyz
-    dghpsi[j][1](2,1) = gh_xyy[j];  //y|xy = xyy
-    dghpsi[j][1](2,2) = gh_yzz[j];  //y|zz 
-   
-    dghpsi[j][2](0,0) = gh_xzz[j];  //z|xx = xzz
-    dghpsi[j][2](0,1) = gh_xyz[j];  //z|xy = xyz
-    dghpsi[j][2](0,2) = gh_xzz[j];  //z|xz = xzz
-    dghpsi[j][2](1,0) = gh_xyz[j];  //z|yx = xyz
-    dghpsi[j][2](1,1) = gh_yyz[j];  //z|yy = yyz
-    dghpsi[j][2](1,2) = gh_yzz[j];  //z|yz = yzz
-    dghpsi[j][2](2,0) = gh_xzz[j];  //z|zx = xzz
-    dghpsi[j][2](2,1) = gh_yzz[j];  //z|zy = yzz
-    dghpsi[j][2](2,2) = gh_zzz[j];  //z|zz
+
+    d2psi[j](0, 0) = hxx[j];
+    d2psi[j](0, 1) = d2psi[j](1, 0) = hxy[j];
+    d2psi[j](0, 2) = d2psi[j](2, 0) = hxz[j];
+    d2psi[j](1, 1)                  = hyy[j];
+    d2psi[j](2, 1) = d2psi[j](1, 2) = hyz[j];
+    d2psi[j](2, 2)                  = hzz[j];
+
+    dghpsi[j][0](0, 0) = gh_xxx[j]; //x|xx
+    dghpsi[j][0](0, 1) = gh_xxy[j]; //x|xy
+    dghpsi[j][0](0, 2) = gh_xxz[j]; //x|xz
+    dghpsi[j][0](1, 0) = gh_xxy[j]; //x|yx = xxy
+    dghpsi[j][0](1, 1) = gh_xyy[j]; //x|yy
+    dghpsi[j][0](1, 2) = gh_xyz[j]; //x|yz
+    dghpsi[j][0](2, 0) = gh_xxz[j]; //x|zx = xxz
+    dghpsi[j][0](2, 1) = gh_xyz[j]; //x|zy = xyz
+    dghpsi[j][0](2, 2) = gh_xzz[j]; //x|zz
+
+    dghpsi[j][1](0, 0) = gh_xxy[j]; //y|xx = xxy
+    dghpsi[j][1](0, 1) = gh_xyy[j]; //y|xy = xyy
+    dghpsi[j][1](0, 2) = gh_xyz[j]; //y|xz = xyz
+    dghpsi[j][1](1, 0) = gh_xyy[j]; //y|yx = xyy
+    dghpsi[j][1](1, 1) = gh_yyy[j]; //y|yy
+    dghpsi[j][1](1, 2) = gh_yyz[j]; //y|yz
+    dghpsi[j][1](2, 0) = gh_xyz[j]; //y|zx = xyz
+    dghpsi[j][1](2, 1) = gh_xyy[j]; //y|xy = xyy
+    dghpsi[j][1](2, 2) = gh_yzz[j]; //y|zz
+
+    dghpsi[j][2](0, 0) = gh_xzz[j]; //z|xx = xzz
+    dghpsi[j][2](0, 1) = gh_xyz[j]; //z|xy = xyz
+    dghpsi[j][2](0, 2) = gh_xzz[j]; //z|xz = xzz
+    dghpsi[j][2](1, 0) = gh_xyz[j]; //z|yx = xyz
+    dghpsi[j][2](1, 1) = gh_yyz[j]; //z|yy = yyz
+    dghpsi[j][2](1, 2) = gh_yzz[j]; //z|yz = yzz
+    dghpsi[j][2](2, 0) = gh_xzz[j]; //z|zx = xzz
+    dghpsi[j][2](2, 1) = gh_yzz[j]; //z|zy = yzz
+    dghpsi[j][2](2, 2) = gh_zzz[j]; //z|zz
   }
 }
 
@@ -349,8 +349,8 @@ void LCAOrbitalSet::evaluateVGHGH(const ParticleSet& P,
                                   HessVector_t& dhpsi,
                                   GGGVector_t& dghpsi)
 {
-// APP_ABORT("LCAORbitalSet::evaluate(psi,gpsi,hpsi,ghpsi) not implemented\n");
-  
+  // APP_ABORT("LCAORbitalSet::evaluate(psi,gpsi,hpsi,ghpsi) not implemented\n");
+
   //TAKE CARE OF IDENTITY
   myBasisSet->evaluateVGHGH(P, iat, Tempgh);
   if (Identity)
@@ -393,9 +393,9 @@ inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
 {
   const size_t output_size = psi.cols();
   std::copy_n(temp.data(0), output_size, psi[i]);
-  const ValueType* restrict gx = temp.data(1);
-  const ValueType* restrict gy = temp.data(2);
-  const ValueType* restrict gz = temp.data(3);
+  const ValueType* restrict gx  = temp.data(1);
+  const ValueType* restrict gy  = temp.data(2);
+  const ValueType* restrict gz  = temp.data(3);
   const ValueType* restrict hxx = temp.data(4);
   const ValueType* restrict hxy = temp.data(5);
   const ValueType* restrict hxz = temp.data(6);
@@ -408,21 +408,19 @@ inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
     dpsi[i][j][0] = gx[j];
     dpsi[i][j][1] = gy[j];
     dpsi[i][j][2] = gz[j];
-    
-    d2psi[i][j](0,0)                 = hxx[j]; 
-    d2psi[i][j](0,1) = d2psi[i][j](1,0) = hxy[j]; 
-    d2psi[i][j](0,2) = d2psi[i][j](2,0) = hxz[j]; 
-    d2psi[i][j](1,1)                 = hyy[j]; 
-    d2psi[i][j](2,1) = d2psi[i][j](1,2) = hyz[j]; 
-    d2psi[i][j](2,2)                 = hzz[j]; 
+
+    d2psi[i][j](0, 0) = hxx[j];
+    d2psi[i][j](0, 1) = d2psi[i][j](1, 0) = hxy[j];
+    d2psi[i][j](0, 2) = d2psi[i][j](2, 0) = hxz[j];
+    d2psi[i][j](1, 1)                     = hyy[j];
+    d2psi[i][j](2, 1) = d2psi[i][j](1, 2) = hyz[j];
+    d2psi[i][j](2, 2)                     = hzz[j];
   }
 }
 
-inline void LCAOrbitalSet::evaluate_ionderiv_v_impl(const vgl_type& temp,
-                                             int i,
-                                             GradMatrix_t& dpsi) const
+inline void LCAOrbitalSet::evaluate_ionderiv_v_impl(const vgl_type& temp, int i, GradMatrix_t& dpsi) const
 {
-  const size_t output_size = dpsi.cols();
+  const size_t output_size     = dpsi.cols();
   const ValueType* restrict gx = temp.data(1);
   const ValueType* restrict gy = temp.data(2);
   const ValueType* restrict gz = temp.data(3);
@@ -439,21 +437,21 @@ inline void LCAOrbitalSet::evaluate_ionderiv_v_impl(const vgl_type& temp,
 }
 
 inline void LCAOrbitalSet::evaluate_ionderiv_vgl_impl(const vghgh_type& temp,
-                                             int i,
-                                             GradMatrix_t& dpsi,
-                                             HessMatrix_t& dgpsi,
-                                             GradMatrix_t& dlpsi) const
+                                                      int i,
+                                                      GradMatrix_t& dpsi,
+                                                      HessMatrix_t& dgpsi,
+                                                      GradMatrix_t& dlpsi) const
 {
-  const size_t output_size = dpsi.cols();
-  const ValueType* restrict gx = temp.data(1);
-  const ValueType* restrict gy = temp.data(2);
-  const ValueType* restrict gz = temp.data(3);
-  const ValueType* restrict hxx = temp.data(4);
-  const ValueType* restrict hxy = temp.data(5);
-  const ValueType* restrict hxz = temp.data(6);
-  const ValueType* restrict hyy = temp.data(7);
-  const ValueType* restrict hyz = temp.data(8);
-  const ValueType* restrict hzz = temp.data(9);
+  const size_t output_size         = dpsi.cols();
+  const ValueType* restrict gx     = temp.data(1);
+  const ValueType* restrict gy     = temp.data(2);
+  const ValueType* restrict gz     = temp.data(3);
+  const ValueType* restrict hxx    = temp.data(4);
+  const ValueType* restrict hxy    = temp.data(5);
+  const ValueType* restrict hxz    = temp.data(6);
+  const ValueType* restrict hyy    = temp.data(7);
+  const ValueType* restrict hyz    = temp.data(8);
+  const ValueType* restrict hzz    = temp.data(9);
   const ValueType* restrict gh_xxx = temp.data(10);
   const ValueType* restrict gh_xxy = temp.data(11);
   const ValueType* restrict gh_xxz = temp.data(12);
@@ -472,18 +470,18 @@ inline void LCAOrbitalSet::evaluate_ionderiv_vgl_impl(const vghgh_type& temp,
     dpsi[i][j][0] = -gx[j];
     dpsi[i][j][1] = -gy[j];
     dpsi[i][j][2] = -gz[j];
-    
-    dgpsi[i][j](0,0)                 = -hxx[j]; 
-    dgpsi[i][j](0,1) = dgpsi[i][j](1,0) = -hxy[j]; 
-    dgpsi[i][j](0,2) = dgpsi[i][j](2,0) = -hxz[j]; 
-    dgpsi[i][j](1,1)                 = -hyy[j]; 
-    dgpsi[i][j](2,1) = dgpsi[i][j](1,2) = -hyz[j]; 
-    dgpsi[i][j](2,2)                 = -hzz[j]; 
-   
+
+    dgpsi[i][j](0, 0) = -hxx[j];
+    dgpsi[i][j](0, 1) = dgpsi[i][j](1, 0) = -hxy[j];
+    dgpsi[i][j](0, 2) = dgpsi[i][j](2, 0) = -hxz[j];
+    dgpsi[i][j](1, 1)                     = -hyy[j];
+    dgpsi[i][j](2, 1) = dgpsi[i][j](1, 2) = -hyz[j];
+    dgpsi[i][j](2, 2)                     = -hzz[j];
+
     //Since this returns the ion gradient of the laplacian, we have to trace the grad hessian vector.
-    dlpsi[i][j][0] = -(gh_xxx[j]+gh_xyy[j]+gh_xzz[j]);
-    dlpsi[i][j][1] = -(gh_xxy[j]+gh_yyy[j]+gh_yzz[j]);
-    dlpsi[i][j][2] = -(gh_xxz[j]+gh_yyz[j]+gh_zzz[j]);
+    dlpsi[i][j][0] = -(gh_xxx[j] + gh_xyy[j] + gh_xzz[j]);
+    dlpsi[i][j][1] = -(gh_xxy[j] + gh_yyy[j] + gh_yzz[j]);
+    dlpsi[i][j][2] = -(gh_xxz[j] + gh_yyz[j] + gh_zzz[j]);
   }
 }
 
@@ -572,8 +570,11 @@ void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P,
   }
 }
 
-void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P, int first, int last, 
-                                       const ParticleSet& source, int iat_src, 
+void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P,
+                                       int first,
+                                       int last,
+                                       const ParticleSet& source,
+                                       int iat_src,
                                        GradMatrix_t& gradphi)
 {
   if (Identity)
@@ -595,12 +596,15 @@ void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P, int first, int last
   }
 }
 
-void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P, int first, int last,
-                                       const ParticleSet& source, int iat_src,
-                                       GradMatrix_t& grad_phi, HessMatrix_t& grad_grad_phi, 
+void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P,
+                                       int first,
+                                       int last,
+                                       const ParticleSet& source,
+                                       int iat_src,
+                                       GradMatrix_t& grad_phi,
+                                       HessMatrix_t& grad_grad_phi,
                                        GradMatrix_t& grad_lapl_phi)
 {
-
   if (Identity)
   {
     for (size_t i = 0, iat = first; iat < last; i++, iat++)
@@ -616,7 +620,7 @@ void LCAOrbitalSet::evaluateGradSource(const ParticleSet& P, int first, int last
       myBasisSet->evaluateGradSourceVGL(P, iat, source, iat_src, Tempgh);
       Product_ABt(Tempgh, *C, Tempghv);
       evaluate_ionderiv_vgl_impl(Tempghv, i, grad_phi, grad_grad_phi, grad_lapl_phi);
-    //  evaluate_vghgh_impl(Tempghv, i, logdet, dlogdet, grad_grad_logdet, grad_grad_grad_logdet);
+      //  evaluate_vghgh_impl(Tempghv, i, logdet, dlogdet, grad_grad_logdet, grad_grad_grad_logdet);
     }
   }
 }
@@ -628,10 +632,11 @@ void LCAOrbitalSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last
 
 void LCAOrbitalSet::applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy)
 {
-  if (!use_stored_copy) C_copy = *C;
+  if (!use_stored_copy)
+    C_copy = *C;
   //gemm is out-of-place
-  BLAS::gemm('N', 'T', BasisSetSize, OrbitalSetSize, OrbitalSetSize, RealType(1.0), C_copy.data(),
-             BasisSetSize, rot_mat.data(), OrbitalSetSize, RealType(0.0), C->data(), BasisSetSize);
+  BLAS::gemm('N', 'T', BasisSetSize, OrbitalSetSize, OrbitalSetSize, RealType(1.0), C_copy.data(), BasisSetSize,
+             rot_mat.data(), OrbitalSetSize, RealType(0.0), C->data(), BasisSetSize);
 
   /* debugging code
   app_log() << "PRINTING MO COEFFICIENTS AFTER ROTATION " << objectName << std::endl;

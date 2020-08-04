@@ -18,7 +18,7 @@
 #include <assert.h>
 #include "Numerics/Ylm.h"
 #include "type_traits/scalar_traits.h"
-#include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
+#include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
 
 namespace qmcplusplus
 {

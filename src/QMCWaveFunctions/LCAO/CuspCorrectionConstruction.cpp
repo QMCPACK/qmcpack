@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/lcao/CuspCorrectionConstruction.h"
+#include "QMCWaveFunctions/LCAO/CuspCorrectionConstruction.h"
 #include "Message/Communicate.h"
 #include "Utilities/FairDivide.h"
 
@@ -245,7 +245,7 @@ void generateCuspInfo(int orbital_set_size,
       local_eta.C          = nullptr;
       local_eta.setIdentity(false);
 
-      #pragma omp critical
+#pragma omp critical
       app_log() << "   Working on MO: " << mo_idx << " Center: " << center_idx << std::endl;
 
       splitPhiEtaTimer->start();
