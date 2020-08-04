@@ -16,7 +16,7 @@
 namespace qmcplusplus {
 namespace testing {
 
-EstimatorManagerNewTest::EstimatorManagerNewTest(Communicate* comm, int ranks) : comm_(comm), em(comm)
+EstimatorManagerNewTest::EstimatorManagerNewTest(Communicate* comm, int ranks) : em(comm), comm_(comm)
 {
   int num_ranks = comm_->size();
   if (num_ranks != ranks)

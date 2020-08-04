@@ -26,13 +26,13 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/ParticleSet.h"
 #include "OhmmsData/OhmmsElementBase.h"
-#include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "QMCWaveFunctions/lcao/SoaLocalizedBasisSet.h"
-#include "QMCWaveFunctions/lcao/SoaAtomicBasisSet.h"
-#include "QMCWaveFunctions/lcao/MultiQuinticSpline1D.h"
-#include "QMCWaveFunctions/lcao/SoaCartesianTensor.h"
-#include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
+#include "QMCWaveFunctions/LCAO/SoaLocalizedBasisSet.h"
+#include "QMCWaveFunctions/LCAO/SoaAtomicBasisSet.h"
+#include "QMCWaveFunctions/LCAO/MultiQuinticSpline1D.h"
+#include "QMCWaveFunctions/LCAO/SoaCartesianTensor.h"
+#include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
 
 
 class Communicate;

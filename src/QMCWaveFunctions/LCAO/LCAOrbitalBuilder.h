@@ -19,7 +19,7 @@
 #define QMCPLUSPLUS_SOA_LCAO_ORBITAL_BUILDER_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 
 namespace qmcplusplus

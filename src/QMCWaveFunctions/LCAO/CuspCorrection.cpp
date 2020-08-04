@@ -14,10 +14,10 @@
 
 #include "Configuration.h"
 #include "CuspCorrection.h"
-#include "QMCWaveFunctions/lcao/SoaLocalizedBasisSet.h"
-#include "QMCWaveFunctions/lcao/SoaAtomicBasisSet.h"
-#include "QMCWaveFunctions/lcao/MultiQuinticSpline1D.h"
-#include "QMCWaveFunctions/lcao/SoaCartesianTensor.h"
+#include "QMCWaveFunctions/LCAO/SoaLocalizedBasisSet.h"
+#include "QMCWaveFunctions/LCAO/SoaAtomicBasisSet.h"
+#include "QMCWaveFunctions/LCAO/MultiQuinticSpline1D.h"
+#include "QMCWaveFunctions/LCAO/SoaCartesianTensor.h"
 #include "Numerics/MinimizeOneDim.h"
 
 
