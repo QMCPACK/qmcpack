@@ -15,7 +15,7 @@
 
 #include "catch.hpp"
 #include "Message/Communicate.h"
-#include "QMCWaveFunctions/lcao/SoaCartesianTensor.h"
+#include "QMCWaveFunctions/LCAO/SoaCartesianTensor.h"
 
 #include <stdio.h>
 #include <string>

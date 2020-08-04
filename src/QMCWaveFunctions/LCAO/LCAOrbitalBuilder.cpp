@@ -17,20 +17,20 @@
 
 #include "OhmmsData/AttributeSet.h"
 #include <QMCWaveFunctions/SPOSet.h>
-#include <QMCWaveFunctions/lcao/NGFunctor.h>
-#include <QMCWaveFunctions/lcao/MultiQuinticSpline1D.h>
-#include "QMCWaveFunctions/lcao/SoaCartesianTensor.h"
-#include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
-#include "QMCWaveFunctions/lcao/SoaAtomicBasisSet.h"
-#include "QMCWaveFunctions/lcao/SoaLocalizedBasisSet.h"
-#include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
-//#include "QMCWaveFunctions/lcao/RadialOrbitalSetBuilder.h"
-#include "QMCWaveFunctions/lcao/AOBasisBuilder.h"
-#include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
-#include "QMCWaveFunctions/lcao/MultiFunctorAdapter.h"
+#include <QMCWaveFunctions/LCAO/NGFunctor.h>
+#include <QMCWaveFunctions/LCAO/MultiQuinticSpline1D.h>
+#include "QMCWaveFunctions/LCAO/SoaCartesianTensor.h"
+#include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
+#include "QMCWaveFunctions/LCAO/SoaAtomicBasisSet.h"
+#include "QMCWaveFunctions/LCAO/SoaLocalizedBasisSet.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
+//#include "QMCWaveFunctions/LCAO/RadialOrbitalSetBuilder.h"
+#include "QMCWaveFunctions/LCAO/AOBasisBuilder.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
+#include "QMCWaveFunctions/LCAO/MultiFunctorAdapter.h"
 #if !defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/lcao/LCAOrbitalSetWithCorrection.h"
-#include "QMCWaveFunctions/lcao/CuspCorrectionConstruction.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSetWithCorrection.h"
+#include "QMCWaveFunctions/LCAO/CuspCorrectionConstruction.h"
 #endif
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"

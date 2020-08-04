@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/lcao/LCAOrbitalSetWithCorrection.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSetWithCorrection.h"
 #include <Numerics/MatrixOperators.h>
 
 namespace qmcplusplus

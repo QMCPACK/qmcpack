@@ -8,7 +8,7 @@
 #      C. Repeat B for a version of get_ABC to be pasted into SoaCartesianTensor.h.in
 #  2. Run create_cartesian_tensor.py
 #      A. Copy CartesianTensor.h up on directory (to src/Numerics)
-#      B. Copy SoaCartesianTensor.h up to src/QMCWaveFunctions/lcao)
+#      B. Copy SoaCartesianTensor.h up to src/QMCWaveFunctions/LCAO)
 
 
 from collections import namedtuple, defaultdict
