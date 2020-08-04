@@ -21,7 +21,6 @@
 
 namespace qmcplusplus
 {
-
 /** Lattice is defined but Open BC is also used.
  */
 TEST_CASE("LRBreakupParameters", "[lattice]")
@@ -45,7 +44,6 @@ TEST_CASE("LRBreakupParameters", "[lattice]")
   myLR.SetLRCutoffs(R);
 
   REQUIRE(myLR.LR_kc == Approx(15.0));
-
 }
 
 } // namespace qmcplusplus

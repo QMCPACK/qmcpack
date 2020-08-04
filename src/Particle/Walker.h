@@ -149,7 +149,7 @@ public:
   bool get_has_been_on_wire() const { return has_been_on_wire_; }
   void set_has_been_on_wire(bool tf) { has_been_on_wire_ = tf; }
 #endif
-  
+
   /// Data for GPU-vectorized versions
 #ifdef QMC_CUDA
   static int cuda_DataSize;

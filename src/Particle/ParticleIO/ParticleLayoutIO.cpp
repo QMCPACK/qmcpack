@@ -107,19 +107,18 @@ bool LatticeParser::put(xmlNodePtr cur)
       {
         putContent(ref_.LR_dim_cutoff, cur);
       }
-      else if ( aname == "LR_handler" )
+      else if (aname == "LR_handler")
       {
         putContent(handler_type, cur);
         tolower(handler_type);
-        if(handler_type=="ewald")
+        if (handler_type == "ewald")
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::EWALD;
-        else if (handler_type=="opt_breakup")
+        else if (handler_type == "opt_breakup")
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
-        else if (handler_type=="opt_breakup_original")
+        else if (handler_type == "opt_breakup_original")
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::NATOLI;
         else
           APP_ABORT("\n  Long range breakup handler not recognized.\n");
-         
       }
       else if (aname == "LR_tol")
       {
@@ -151,11 +150,10 @@ bool LatticeParser::put(xmlNodePtr cur)
       ref_.BoxBConds = true;
     }
   }
+  else if (boxsum == 0)
+    app_log() << "  Lattice is not specified for the Open BC. Add a huge box." << std::endl;
   else
-    if (boxsum == 0)
-      app_log() << "  Lattice is not specified for the Open BC. Add a huge box." << std::endl;
-    else
-      APP_ABORT(" LatticeParser::put \n   Mixed boundary is supported only when a lattice is specified!");
+    APP_ABORT(" LatticeParser::put \n   Mixed boundary is supported only when a lattice is specified!");
   //special heg processing
   if (rs > 0.0)
   {
@@ -193,7 +191,7 @@ bool LatticeParser::put(xmlNodePtr cur)
     a0 = 1.0;
   }
 
-  if(lattice_defined)
+  if (lattice_defined)
   {
     lattice_in *= a0;
     ref_.set(lattice_in);

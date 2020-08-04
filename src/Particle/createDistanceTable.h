@@ -44,9 +44,15 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream
 
 ///free function create a distable table of s-t
 DistanceTableData* createDistanceTableAB(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description);
-DistanceTableData* createDistanceTableABOMP(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description);
+DistanceTableData* createDistanceTableABOMP(const ParticleSet& s,
+                                            ParticleSet& t,
+                                            int dt_type,
+                                            std::ostream& description);
 
-inline DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description)
+inline DistanceTableData* createDistanceTable(const ParticleSet& s,
+                                              ParticleSet& t,
+                                              int dt_type,
+                                              std::ostream& description)
 {
   // during P-by-P move, the cost of single particle evaluation of distance tables
   // is determined by the number of source particles.
