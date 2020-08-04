@@ -290,10 +290,13 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   ParticleSet elec;
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create(2);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
+  ions.R[1][0] = 2.0;
+  ions.R[1][1] = 0.0;
+  ions.R[1][2] = 0.0;
 
   elec.setName("elec");
   elec.create(2);
@@ -304,14 +307,12 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   elec.R[1][1] = 0.3;
   elec.R[1][2] = 0.0;
 
-  SpeciesSet& tspecies = elec.getSpeciesSet();
-  int upIdx            = tspecies.addSpecies("u");
+  SpeciesSet& tspecies          = elec.getSpeciesSet();
+  int upIdx                     = tspecies.addSpecies("u");
   int massIdx                   = tspecies.addAttribute("mass");
   int eChargeIdx                = tspecies.addAttribute("charge");
   tspecies(eChargeIdx, upIdx)   = -1.0;
-  tspecies(massIdx, upIdx)   = 1.0;
-
-
+  tspecies(massIdx, upIdx)      = 1.0;
   //elec.Lattice = Lattice;
   //elec.createSK();
 
@@ -343,11 +344,16 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   ions.update();
   elec.update();
 
+  force.addionion = true; // is true by default
   force.evaluate(elec);
+  std::cout << " Force ionion = " << force.forces_IonIon << std::endl;
   std::cout << " Force = " << force.forces << std::endl;
-  REQUIRE(force.forces[0][0] == Approx(9.24061106));
+  REQUIRE(force.forces[0][0] == Approx(8.99061106));
   REQUIRE(force.forces[0][1] == Approx(14.86091659));
   REQUIRE(force.forces[0][2] == Approx(0.0));
+  REQUIRE(force.forces[1][0] == Approx(-0.2250998297));
+  REQUIRE(force.forces[1][1] == Approx(0.1388117844));
+  REQUIRE(force.forces[1][2] == Approx(0.0));
 
   force.N_basis = 6;
   force.Rcut    = 0.8;
