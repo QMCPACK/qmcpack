@@ -466,26 +466,28 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateRatios(const RefVector
 
   RefVector<SPOSet> phi_list;
   RefVector<ValueVector_t> psiV_list;
-  RefVector<const ValueVector_t> invRow_list;
+  std::vector<const ValueType*> invRow_ptr_list;
   phi_list.reserve(nw);
   psiV_list.reserve(nw);
-  invRow_list.reserve(nw);
+  invRow_ptr_list.reserve(nw);
 
   for (size_t iw = 0; iw < nw; iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(wfc_list[iw].get());
     const VirtualParticleSet& vp(vp_list[iw]);
     const int WorkingIndex = vp.refPtcl - FirstIndex;
-    std::copy_n(det.psiMinv[WorkingIndex], det.d2psiV.size(), det.d2psiV.data());
     // build lists
     phi_list.push_back(*det.Phi);
     psiV_list.push_back(det.psiV_host_view);
-    invRow_list.push_back(det.d2psiV);
+    if (Phi->isOMPoffload())
+      invRow_ptr_list.push_back(det.det_engine_.getRow_psiMinv_offload(WorkingIndex));
+    else
+      invRow_ptr_list.push_back(det.psiMinv[WorkingIndex]);
   }
   RatioTimer.stop();
 
   SPOVTimer.start();
-  Phi->mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_list, ratios);
+  Phi->mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_ptr_list, ratios);
   SPOVTimer.stop();
 }
 
