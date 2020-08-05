@@ -21,6 +21,7 @@ namespace qmcplusplus
 {
 /** create DynamicCoordinates based on kind
  */
-std::unique_ptr<DynamicCoordinates> createDynamicCoordinates(const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
+std::unique_ptr<DynamicCoordinates> createDynamicCoordinates(
+    const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 } // namespace qmcplusplus
 #endif

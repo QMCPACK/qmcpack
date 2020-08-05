@@ -64,9 +64,9 @@ struct DTD_BConds<T, 3, SUPERCELL_OPEN + SOA_OFFSET>
                                int last,
                                int flip_ind = 0)
   {
-    const T x0           = pos[0];
-    const T y0           = pos[1];
-    const T z0           = pos[2];
+    const T x0 = pos[0];
+    const T y0 = pos[1];
+    const T z0 = pos[2];
 
     const T* restrict px = R0;
     const T* restrict py = R0 + padded_size;
@@ -145,9 +145,9 @@ struct DTD_BConds<T, 3, PPPO + SOA_OFFSET>
                                int last,
                                int flip_ind = 0)
   {
-    const T x0           = pos[0];
-    const T y0           = pos[1];
-    const T z0           = pos[2];
+    const T x0 = pos[0];
+    const T y0 = pos[1];
+    const T z0 = pos[2];
 
     const T* restrict px = R0;
     const T* restrict py = R0 + padded_size;
@@ -693,9 +693,9 @@ struct DTD_BConds<T, 3, PPNO + SOA_OFFSET>
                                int last,
                                int flip_ind = 0)
   {
-    const T x0           = pos[0];
-    const T y0           = pos[1];
-    const T z0           = pos[2];
+    const T x0 = pos[0];
+    const T y0 = pos[1];
+    const T z0 = pos[2];
 
     const T* restrict px = R0;
     const T* restrict py = R0 + padded_size;
@@ -841,17 +841,17 @@ struct DTD_BConds<T, 3, SUPERCELL_WIRE + SOA_OFFSET>
                         int last,
                         int flip_ind = 0)
   {
-    const T x0           = pos[0];
-    const T y0           = pos[1];
-    const T z0           = pos[2];
+    const T x0 = pos[0];
+    const T y0 = pos[1];
+    const T z0 = pos[2];
 
     const T* restrict px = R0.data(0);
     const T* restrict py = R0.data(1);
     const T* restrict pz = R0.data(2);
 
-    T* restrict dx       = temp_dr.data(0);
-    T* restrict dy       = temp_dr.data(1);
-    T* restrict dz       = temp_dr.data(2);
+    T* restrict dx = temp_dr.data(0);
+    T* restrict dy = temp_dr.data(1);
+    T* restrict dz = temp_dr.data(2);
 
 #pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz)
     for (int iat = first; iat < last; ++iat)
@@ -873,9 +873,9 @@ struct DTD_BConds<T, 3, SUPERCELL_WIRE + SOA_OFFSET>
                                int last,
                                int flip_ind = 0)
   {
-    const T x0           = pos[0];
-    const T y0           = pos[1];
-    const T z0           = pos[2];
+    const T x0 = pos[0];
+    const T y0 = pos[1];
+    const T z0 = pos[2];
 
     const T* restrict px = R0;
     const T* restrict py = R0 + padded_size;

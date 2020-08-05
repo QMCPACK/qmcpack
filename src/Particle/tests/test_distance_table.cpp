@@ -133,7 +133,6 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
 
 TEST_CASE("distance_open_xy", "[distance_table][xml]")
 {
-
   const char* particles = "<tmp> \
 <particleset name=\"e\" random=\"yes\"> \
    <group name=\"u\" size=\"2\" mass=\"1.0\">\

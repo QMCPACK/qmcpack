@@ -354,7 +354,11 @@ void MCWalkerConfiguration::resizeWalkerHistories()
 /** allocate the SampleStack
  * @param n number of samples per thread
  */
-void MCWalkerConfiguration::setNumSamples(int n) { samples.clearEnsemble(); samples.setMaxSamples(n); }
+void MCWalkerConfiguration::setNumSamples(int n)
+{
+  samples.clearEnsemble();
+  samples.setMaxSamples(n);
+}
 
 /** save the current walkers to SampleStack
  */

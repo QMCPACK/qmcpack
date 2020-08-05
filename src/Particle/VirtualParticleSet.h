@@ -69,7 +69,6 @@ public:
                              const RefVector<const std::vector<PosType>>& deltaV_list,
                              const RefVector<const NLPPJob<RealType>>& joblist,
                              bool sphere);
-
 };
 } // namespace qmcplusplus
 #endif

@@ -41,7 +41,7 @@ public:
   ParticleSetPool(Communicate* c, const char* aname = "particleset");
 
   ParticleSetPool(ParticleSetPool&& pset);
-  
+
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
   void reset();
