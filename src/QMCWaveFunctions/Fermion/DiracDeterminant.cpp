@@ -411,9 +411,16 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
   RatioTimer.stop();
 
   SPOVTimer.start();
+  // Phi->isOMPoffload() requires device invRow pointers for mw_evaluateDetRatios.
+  // evaluateDetRatios only requires host invRow pointers.
   if (Phi->isOMPoffload())
-    throw std::runtime_error("DiracDeterminant doesn't support calling mw_evaluateDetRatios of SPOSet with OpenMP offload used!");
-  Phi->mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_ptr_list, ratios);
+    for (int iw = 0; iw < phi_list.size(); iw++)
+    {
+      Vector<ValueType> invRow(const_cast<ValueType*>(invRow_ptr_list[iw]), psiV_list[iw].get().size());
+      phi_list[iw].get().evaluateDetRatios(vp_list[iw], psiV_list[iw], invRow, ratios[iw]);
+    }
+  else
+    Phi->mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_ptr_list, ratios);
   SPOVTimer.stop();
 }
 
