@@ -976,7 +976,7 @@ void TrialWaveFunction::flex_evaluateRatios(const RefVector<TrialWaveFunction>& 
 {
   if (wf_list.size() > 1)
   {
-    auto& wavefunction_components = wf_list[0].get().Z;
+    auto& wavefunction_components = Z;
     std::vector<std::vector<ValueType>> t(ratios_list.size());
     for (int iw = 0; iw < wf_list.size(); iw++)
     {

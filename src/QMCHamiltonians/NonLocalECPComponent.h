@@ -184,6 +184,7 @@ public:
                                const RefVector<ParticleSet>& p_list,
                                const RefVector<TrialWaveFunction>& psi_list,
                                const RefVector<const NLPPJob<RealType>>& joblist,
+                               TrialWaveFunction& psi_leader,
                                std::vector<RealType>& pairpots,
                                bool use_DLA);
 
