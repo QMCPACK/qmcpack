@@ -18,7 +18,6 @@
 #include "Configuration.h"
 #include "Particle/VirtualParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "Particle/createDistanceTable.h"
 #include "QMCHamiltonians/NLPPJob.h"
 

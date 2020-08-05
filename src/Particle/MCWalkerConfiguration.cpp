@@ -26,7 +26,6 @@
 #include "LongRange/StructFact.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/MCSample.h"
-#include "QMCDrivers/QMCDriver.h"
 #include <io/hdf_hyperslab.h>
 #include "HDFVersion.h"
 #include <map>
