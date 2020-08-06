@@ -84,13 +84,8 @@ inline void assign_vgl(ST x,
                        size_t myKcart_padded_size,
                        size_t first_spo,
                        int nComplexBands,
-                       int first,
-                       int last)
+                       int index)
 {
-  // protect last
-  if (last > orb_size)
-    last = orb_size;
-
   constexpr ST two(2);
   const ST &g00 = G[0], &g01 = G[1], &g02 = G[2], &g10 = G[3], &g11 = G[4], &g12 = G[5], &g20 = G[6], &g21 = G[7],
            &g22 = G[8];
@@ -113,19 +108,13 @@ inline void assign_vgl(ST x,
   TT* restrict psi   = results_scratch_ptr;
   TT* restrict dpsi  = results_scratch_ptr + orb_size;
   TT* restrict d2psi = results_scratch_ptr + orb_size * 4;
-#ifdef ENABLE_OFFLOAD
-#pragma omp for simd nowait
-#else
-#pragma omp simd
-#endif
-  for (size_t j = first; j < last; j++)
-  {
-    const size_t jr = j << 1;
+
+    const size_t jr = index << 1;
     const size_t ji = jr + 1;
 
-    const ST kX    = k0[j];
-    const ST kY    = k1[j];
-    const ST kZ    = k2[j];
+    const ST kX    = k0[index];
+    const ST kY    = k1[index];
+    const ST kZ    = k2[index];
     const ST val_r = val[jr];
     const ST val_i = val[ji];
 
@@ -152,10 +141,10 @@ inline void assign_vgl(ST x,
 
     const ST lcart_r = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGGt);
     const ST lcart_i = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGGt);
-    const ST lap_r   = lcart_r + mKK_ptr[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
-    const ST lap_i   = lcart_i + mKK_ptr[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
+    const ST lap_r   = lcart_r + mKK_ptr[index] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
+    const ST lap_i   = lcart_i + mKK_ptr[index] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
-    const size_t psiIndex = first_spo + j + (j < nComplexBands ? j : nComplexBands);
+    const size_t psiIndex = first_spo + index + (index < nComplexBands ? index : nComplexBands);
     //this will be fixed later
     psi[psiIndex]   = c * val_r - s * val_i;
     d2psi[psiIndex] = c * lap_r - s * lap_i;
@@ -164,7 +153,7 @@ inline void assign_vgl(ST x,
     dpsi[psiIndex * 3 + 1] = c * gY_r - s * gY_i;
     dpsi[psiIndex * 3 + 2] = c * gZ_r - s * gZ_i;
 
-    if (j < nComplexBands)
+    if (index < nComplexBands)
     {
       psi[psiIndex + 1]      = c * val_i + s * val_r;
       d2psi[psiIndex + 1]    = c * lap_i + s * lap_r;
@@ -172,7 +161,6 @@ inline void assign_vgl(ST x,
       dpsi[psiIndex * 3 + 4] = c * gY_i + s * gY_r;
       dpsi[psiIndex * 3 + 5] = c * gZ_i + s * gZ_r;
     }
-  }
 }
 } // namespace C2R
 
@@ -709,13 +697,16 @@ void SplineC2ROMP<ST>::evaluateVGL(const ParticleSet& P,
       const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
                             GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
-      PRAGMA_OFFLOAD("omp parallel")
-      spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                           offload_scratch_ptr + first, offload_scratch_ptr + padded_size + first,
-                                           offload_scratch_ptr + padded_size * 4 + first, padded_size, first, last);
-      PRAGMA_OFFLOAD("omp parallel")
-      C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, symGGt, G,
-                      myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local, first / 2, last / 2);
+      PRAGMA_OFFLOAD("omp parallel for")
+      for (int index = 0; index < last - first; index++)
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                             offload_scratch_ptr + first, offload_scratch_ptr + padded_size + first,
+                                             offload_scratch_ptr + padded_size * 4 + first, padded_size, first, index);
+      const int last_index = last / 2 < orb_size ? last / 2 : orb_size;
+      PRAGMA_OFFLOAD("omp parallel for")
+      for (int index = first / 2; index < last_index; index++)
+        C2R::assign_vgl(x, y, z, results_scratch_ptr, mKK_ptr, orb_size, offload_scratch_ptr, padded_size, symGGt, G,
+                        myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local, index);
     }
   }
 
@@ -788,16 +779,19 @@ void SplineC2ROMP<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocat
         const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
                               GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
-        PRAGMA_OFFLOAD("omp parallel")
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                             offload_scratch_iw_ptr + first,
-                                             offload_scratch_iw_ptr + padded_size + first,
-                                             offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
-                                             last);
-        PRAGMA_OFFLOAD("omp parallel")
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = 0; index < last - first; index++)
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                               offload_scratch_iw_ptr + first,
+                                               offload_scratch_iw_ptr + padded_size + first,
+                                               offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
+                                               index);
+        const int last_index = last / 2 < orb_size ? last / 2 : orb_size;
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = first / 2; index < last_index; index++)
         C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr,
                         orb_size, offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
-                        first_spo_local, nComplexBands_local, first / 2, last / 2);
+                        first_spo_local, nComplexBands_local, index);
       }
   }
 
@@ -938,18 +932,20 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
         const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
                               GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
 
-        PRAGMA_OFFLOAD("omp parallel")
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                             offload_scratch_iw_ptr + first,
-                                             offload_scratch_iw_ptr + padded_size + first,
-                                             offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
-                                             last);
-        PRAGMA_OFFLOAD("omp parallel")
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = 0; index < last - first; index++)
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                               offload_scratch_iw_ptr + first,
+                                               offload_scratch_iw_ptr + padded_size + first,
+                                               offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
+                                               index);
+        const int last_index = last / 2 < orb_size ? last / 2 : orb_size;
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = first / 2; index < last_index; index++)
         C2R::assign_vgl(pos_iw_ptr[0], pos_iw_ptr[1], pos_iw_ptr[2], psi_iw_ptr, mKK_ptr, orb_size,
                         offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
-                        first_spo_local, nComplexBands_local, first / 2, last / 2);
+                        first_spo_local, nComplexBands_local, index);
 
-        // FIXME :: copy results_scratch to phi_vgl_v  and do reduction
         ValueType* restrict psi   = psi_iw_ptr;
         ValueType* restrict dpsi  = psi_iw_ptr + orb_size;
         ValueType* restrict d2psi = psi_iw_ptr + orb_size * 4;
