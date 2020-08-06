@@ -297,8 +297,10 @@ void SplineC2ROMP<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueV
         ST a[4], b[4], c[4];
         spline2::computeLocationAndFractional(spline_ptr, rux, ruy, ruz, ix, iy, iz, a, b, c);
 
-        PRAGMA_OFFLOAD("omp parallel")
-        spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_ptr + first, first, last);
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = 0; index < last - first; index++)
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_ptr + first, first,
+                                             index);
         PRAGMA_OFFLOAD("omp parallel")
         C2R::assign_v(x, y, z, psi_ptr, orb_size, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size,
                       first_spo_local, nComplexBands_local, first / 2, last / 2);
@@ -379,13 +381,14 @@ void SplineC2ROMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
         spline2::computeLocationAndFractional(spline_ptr, ST(pos_scratch[iat * 6 + 3]), ST(pos_scratch[iat * 6 + 4]),
                                               ST(pos_scratch[iat * 6 + 5]), ix, iy, iz, a, b, c);
 
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = 0; index < last - first; index++)
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
+                                             index);
         PRAGMA_OFFLOAD("omp parallel")
-        spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
-                                           last);
-        PRAGMA_OFFLOAD("omp parallel")
-        C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
-                      psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
-                      first_spo_local, nComplexBands_local, first / 2, last / 2);
+        C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]), psi_iat_ptr,
+                      orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size, first_spo_local,
+                      nComplexBands_local, first / 2, last / 2);
 
         TT sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
@@ -429,7 +432,8 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
 
   // pack particle positions
   auto* pos_ptr = reinterpret_cast<TT*>(det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*));
-  auto* ref_id_ptr = reinterpret_cast<int*>(det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
+  auto* ref_id_ptr =
+      reinterpret_cast<int*>(det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
   size_t iVP = 0;
   for (size_t iw = 0; iw < nw; iw++)
   {
@@ -437,7 +441,7 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
     assert(ratios_list[iw].size() == VP.getTotalNum());
     for (size_t iat = 0; iat < VP.getTotalNum(); ++iat, ++iVP)
     {
-      ref_id_ptr[iVP]     = iw;
+      ref_id_ptr[iVP]    = iw;
       const PointType& r = VP.activeR(iat);
       PointType ru(PrimLattice.toUnit_floor(r));
       pos_ptr[0] = r[0];
@@ -487,22 +491,23 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
         const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
         auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
-        auto* ref_id_ptr                       = reinterpret_cast<int*>(buffer_H2D_ptr + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
-        auto* restrict psiinv_ptr              = reinterpret_cast<const ValueType**>(buffer_H2D_ptr)[ref_id_ptr[iat]];
-        auto* restrict pos_scratch             = reinterpret_cast<TT*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
+        auto* ref_id_ptr = reinterpret_cast<int*>(buffer_H2D_ptr + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
+        auto* restrict psiinv_ptr  = reinterpret_cast<const ValueType**>(buffer_H2D_ptr)[ref_id_ptr[iat]];
+        auto* restrict pos_scratch = reinterpret_cast<TT*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
 
         int ix, iy, iz;
         ST a[4], b[4], c[4];
         spline2::computeLocationAndFractional(spline_ptr, ST(pos_scratch[iat * 6 + 3]), ST(pos_scratch[iat * 6 + 4]),
                                               ST(pos_scratch[iat * 6 + 5]), ix, iy, iz, a, b, c);
 
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = 0; index < last - first; index++)
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
+                                             index);
         PRAGMA_OFFLOAD("omp parallel")
-        spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
-                                           last);
-        PRAGMA_OFFLOAD("omp parallel")
-        C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
-                      psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
-                      first_spo_local, nComplexBands_local, first / 2, last / 2);
+        C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]), psi_iat_ptr,
+                      orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size, first_spo_local,
+                      nComplexBands_local, first / 2, last / 2);
 
         TT sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
@@ -867,7 +872,7 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
     pos_copy[5] = ru[2];
 
     auto& invRow_ptr = *reinterpret_cast<const ValueType**>(buffer_H2D[iw] + sizeof(ST) * 6);
-    invRow_ptr = invRow_ptr_list[iw];
+    invRow_ptr       = invRow_ptr_list[iw];
   }
 
   const size_t num_pos       = nwalkers;
@@ -919,12 +924,13 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
         auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
         auto* restrict psi_iw_ptr             = results_scratch_ptr + orb_size * iw * 5;
         const auto* restrict pos_iw_ptr       = reinterpret_cast<ST*>(buffer_H2D_ptr + buffer_H2D_stride * iw);
-        const auto* restrict invRow_iw_ptr    = *reinterpret_cast<ValueType**>(buffer_H2D_ptr + buffer_H2D_stride * iw + sizeof(ST) * 6);
+        const auto* restrict invRow_iw_ptr =
+            *reinterpret_cast<ValueType**>(buffer_H2D_ptr + buffer_H2D_stride * iw + sizeof(ST) * 6);
 
         int ix, iy, iz;
         ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
-        spline2::computeLocationAndFractional(spline_ptr, pos_iw_ptr[3], pos_iw_ptr[4], pos_iw_ptr[5],
-                                              ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
+        spline2::computeLocationAndFractional(spline_ptr, pos_iw_ptr[3], pos_iw_ptr[4], pos_iw_ptr[5], ix, iy, iz, a, b,
+                                              c, da, db, dc, d2a, d2b, d2c);
 
         const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
                          PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
@@ -954,7 +960,7 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
 
         ValueType ratio(0), grad_x(0), grad_y(0), grad_z(0);
         PRAGMA_OFFLOAD("omp parallel for reduction(+: ratio, grad_x, grad_y, grad_z)")
-        for (size_t j = first/2; j < (last/2 > orb_size ? orb_size : last/2); j++)
+        for (size_t j = first / 2; j < (last / 2 > orb_size ? orb_size : last / 2); j++)
         {
           const size_t psiIndex = first_spo_local + j + (j < nComplexBands_local ? j : nComplexBands_local);
 
@@ -964,8 +970,8 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
           out_phi_g[psiIndex * 3 + 1] = dpsi[psiIndex * 3 + 1];
           out_phi_g[psiIndex * 3 + 2] = dpsi[psiIndex * 3 + 2];
 
-          ratio  += psi[psiIndex] * invRow_iw_ptr[psiIndex];
-          grad_x += dpsi[psiIndex * 3    ] * invRow_iw_ptr[psiIndex];
+          ratio += psi[psiIndex] * invRow_iw_ptr[psiIndex];
+          grad_x += dpsi[psiIndex * 3] * invRow_iw_ptr[psiIndex];
           grad_y += dpsi[psiIndex * 3 + 1] * invRow_iw_ptr[psiIndex];
           grad_z += dpsi[psiIndex * 3 + 2] * invRow_iw_ptr[psiIndex];
 
@@ -977,14 +983,14 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
             out_phi_g[psiIndex * 3 + 4] = dpsi[psiIndex * 3 + 4];
             out_phi_g[psiIndex * 3 + 5] = dpsi[psiIndex * 3 + 5];
 
-            ratio  += psi[psiIndex + 1] * invRow_iw_ptr[psiIndex + 1];
+            ratio += psi[psiIndex + 1] * invRow_iw_ptr[psiIndex + 1];
             grad_x += dpsi[psiIndex * 3 + 3] * invRow_iw_ptr[psiIndex + 1];
             grad_y += dpsi[psiIndex * 3 + 4] * invRow_iw_ptr[psiIndex + 1];
             grad_z += dpsi[psiIndex * 3 + 5] * invRow_iw_ptr[psiIndex + 1];
           }
         }
 
-        rg_private_ptr[(iw * NumTeams + team_id) * 4    ] = ratio;
+        rg_private_ptr[(iw * NumTeams + team_id) * 4]     = ratio;
         rg_private_ptr[(iw * NumTeams + team_id) * 4 + 1] = grad_x;
         rg_private_ptr[(iw * NumTeams + team_id) * 4 + 2] = grad_y;
         rg_private_ptr[(iw * NumTeams + team_id) * 4 + 3] = grad_z;
