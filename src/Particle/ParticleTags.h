@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_PARTICLETAGS_H
@@ -31,19 +29,20 @@
  */
 struct ParticleTags
 {
-
   /** enumeraton for datatypes for particle attributes
    *
    *Each attribute of type T is stored in a container ParticleAttrib<T>.
    *ParticleBase::AttribTypeMap is used to map the std::string and the enumeration.
    */
-  enum {PA_IndexType=0, /*!< index (int) type */
-        PA_ScalarType,  /*!< scalar (float|double) type */
-        PA_StringType,  /*!< std::string type */
-        PA_PositionType,/*!< position (D-dim vector) type */
-        PA_TensorType, /*!< tensor type */
-        PA_UnkownType /*!< not known type */
-       };
+  enum
+  {
+    PA_IndexType = 0, /*!< index (int) type */
+    PA_ScalarType,    /*!< scalar (float|double) type */
+    PA_StringType,    /*!< std::string type */
+    PA_PositionType,  /*!< position (D-dim vector) type */
+    PA_TensorType,    /*!< tensor type */
+    PA_UnkownType     /*!< not known type */
+  };
 
   /** @ingroup XMLTags
    *@{
@@ -83,7 +82,7 @@ struct ParticleTags
    */
   ///the name for position attribute
   static std::string position_tag;
-  
+
   ///the name for spins attribute
   static std::string spins_tag;
 

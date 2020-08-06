@@ -408,46 +408,45 @@ template<typename ST>
 void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
                                             const RefVector<const VirtualParticleSet>& vp_list,
                                             const RefVector<ValueVector_t>& psi_list,
-                                            const RefVector<const ValueVector_t>& psiinv_list,
+                                            const std::vector<const ValueType*>& invRow_ptr_list,
                                             std::vector<std::vector<ValueType>>& ratios_list)
 {
   const size_t nw       = spo_list.size();
-  const size_t orb_size = psiinv_list[0].get().size();
+  const size_t orb_size = psi_list[0].get().size();
 
   size_t mw_nVP = 0;
   for (const VirtualParticleSet& VP : vp_list)
     mw_nVP += VP.getTotalNum();
 
-  if (mw_psiinv_pos_copy.size() < nw * orb_size + mw_nVP * 6)
-    mw_psiinv_pos_copy.resize(nw * orb_size + mw_nVP * 6);
+  const size_t packed_size = nw * sizeof(ValueType*) + mw_nVP * (6 * sizeof(TT) + sizeof(int));
+  if (det_ratios_buffer_H2D.size() < packed_size)
+    det_ratios_buffer_H2D.resize(packed_size);
 
-  // stage psiinv_list to mw_psiinv_pos_copy
-  auto* restrict scratch_ptr = mw_psiinv_pos_copy.data();
+  // pack invRow_ptr_list to det_ratios_buffer_H2D
+  Vector<const ValueType*> ptr_buffer(reinterpret_cast<const ValueType**>(det_ratios_buffer_H2D.data()), nw);
   for (size_t iw = 0; iw < nw; iw++)
-  {
-    const ValueVector_t& psiinv = psiinv_list[iw];
-    std::copy_n(psiinv.data(), psiinv.size(), scratch_ptr);
-    scratch_ptr += psiinv.size();
-  }
-  mw_ref_id.resize(mw_nVP);
-  size_t iVP = 0;
+    ptr_buffer[iw] = invRow_ptr_list[iw];
+
   // pack particle positions
+  auto* pos_ptr = reinterpret_cast<TT*>(det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*));
+  auto* ref_id_ptr = reinterpret_cast<int*>(det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
+  size_t iVP = 0;
   for (size_t iw = 0; iw < nw; iw++)
   {
     const VirtualParticleSet& VP = vp_list[iw];
     assert(ratios_list[iw].size() == VP.getTotalNum());
     for (size_t iat = 0; iat < VP.getTotalNum(); ++iat, ++iVP)
     {
-      mw_ref_id[iVP]     = iw;
+      ref_id_ptr[iVP]     = iw;
       const PointType& r = VP.activeR(iat);
       PointType ru(PrimLattice.toUnit_floor(r));
-      scratch_ptr[0] = r[0];
-      scratch_ptr[1] = r[1];
-      scratch_ptr[2] = r[2];
-      scratch_ptr[3] = ru[0];
-      scratch_ptr[4] = ru[1];
-      scratch_ptr[5] = ru[2];
-      scratch_ptr += 6;
+      pos_ptr[0] = r[0];
+      pos_ptr[1] = r[1];
+      pos_ptr[2] = r[2];
+      pos_ptr[3] = ru[0];
+      pos_ptr[4] = ru[1];
+      pos_ptr[5] = ru[2];
+      pos_ptr += 6;
     }
   }
 
@@ -467,16 +466,15 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
   auto* results_scratch_ptr      = results_scratch.data();
   const auto myKcart_padded_size = myKcart->capacity();
   auto* myKcart_ptr              = myKcart->data();
-  auto* mw_psiinv_ptr            = mw_psiinv_pos_copy.data();
+  auto* buffer_H2D_ptr           = det_ratios_buffer_H2D.data();
   auto* ratios_private_ptr       = ratios_private.data();
-  auto* ref_id_ptr               = mw_ref_id.data();
   const size_t first_spo_local   = first_spo;
   const int nComplexBands_local  = nComplexBands;
 
   {
     ScopedTimer offload(&offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
-                map(always, to: mw_psiinv_ptr[0:mw_psiinv_pos_copy.size()], ref_id_ptr[0:mw_nVP]) \
+                map(always, to: buffer_H2D_ptr[0:det_ratios_buffer_H2D.size()]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
     for (int iat = 0; iat < mw_nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
@@ -489,8 +487,9 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
         const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
         auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
-        auto* restrict pos_scratch             = mw_psiinv_ptr + orb_size * nw;
-        auto* restrict psiinv_ptr              = mw_psiinv_ptr + ref_id_ptr[iat] * orb_size;
+        auto* ref_id_ptr                       = reinterpret_cast<int*>(buffer_H2D_ptr + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
+        auto* restrict psiinv_ptr              = reinterpret_cast<const ValueType**>(buffer_H2D_ptr)[ref_id_ptr[iat]];
+        auto* restrict pos_scratch             = reinterpret_cast<TT*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
 
         int ix, iy, iz;
         ST a[4], b[4], c[4];

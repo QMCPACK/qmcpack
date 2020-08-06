@@ -326,7 +326,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
         }
       }
 
-      NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, psi_list, batch_list, pairpots, use_DLA);
+      NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, psi_list, batch_list, Psi, pairpots, use_DLA);
 
       for (size_t j = 0; j < ecp_potential_list.size(); j++)
       {

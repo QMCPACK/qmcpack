@@ -253,13 +253,13 @@ void KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
   //create the map: use simple integer with resolution of 0.00000001 in ksq
   for (int ik = 0; ik < numk; ik++)
   {
-    #ifdef MIXED_PRECISION
+#ifdef MIXED_PRECISION
     long long k_ind = static_cast<long long>(ksq_tmp[ik] * 1000);
-    #else
+#else
     //This is a workaround for ewald bug (Issue #2105) for FULL PRECISION ONLY.  Basically, 1e-7 is the resolution of |k|^2 for doubles,
-    //so we jack up the tolerance to match that.   
+    //so we jack up the tolerance to match that.
     long long k_ind = static_cast<long long>(ksq_tmp[ik] * 10000000);
-    #endif
+#endif
     std::map<long long, std::vector<int>*>::iterator it(kpts_sorted.find(k_ind));
     if (it == kpts_sorted.end())
     {
@@ -312,10 +312,10 @@ void KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
   //Now fill the array that returns the index of -k when given the index of k.
   minusk.resize(numk);
 
-  //Assigns a unique hash value to each kpoint. 
-  auto getHashOfVec = [](const auto& inpv, int hashparam)->long long{
+  //Assigns a unique hash value to each kpoint.
+  auto getHashOfVec = [](const auto& inpv, int hashparam) -> long long {
     long long hash = 0; // this will cause integral promotion below
-    for(int i = 0; i < inpv.Size; ++i)
+    for (int i = 0; i < inpv.Size; ++i)
       hash += inpv[i] + hash * hashparam;
     return hash;
   };
