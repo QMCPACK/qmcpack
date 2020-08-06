@@ -31,13 +31,8 @@ inline void assign_v(ST x,
                      size_t myKcart_padded_size,
                      size_t first_spo,
                      int nComplexBands,
-                     int first,
-                     int last)
+                     int index)
 {
-  // protect last
-  if (last > orb_size)
-    last = orb_size;
-
   const ST* restrict kx = myKcart_ptr;
   const ST* restrict ky = myKcart_ptr + myKcart_padded_size;
   const ST* restrict kz = myKcart_ptr + myKcart_padded_size * 2;
@@ -45,26 +40,18 @@ inline void assign_v(ST x,
   const ST* restrict val = offload_scratch_ptr;
   TT* restrict psi_s     = results_scratch_ptr;
 
-#ifdef ENABLE_OFFLOAD
-#pragma omp for simd nowait
-#else
-#pragma omp simd
-#endif
-  for (size_t j = first; j < last; j++)
-  {
-    const size_t jr = j << 1;
-    const size_t ji = jr + 1;
-    //phase
-    ST s, c, p = -(x * kx[j] + y * ky[j] + z * kz[j]);
-    qmcplusplus::sincos(p, &s, &c);
+  const size_t jr = index << 1;
+  const size_t ji = jr + 1;
+  //phase
+  ST s, c, p = -(x * kx[index] + y * ky[index] + z * kz[index]);
+  qmcplusplus::sincos(p, &s, &c);
 
-    const ST val_r        = val[jr];
-    const ST val_i        = val[ji];
-    const size_t psiIndex = first_spo + j + (j < nComplexBands ? j : nComplexBands);
-    psi_s[psiIndex]       = val_r * c - val_i * s;
-    if (j < nComplexBands)
-      psi_s[psiIndex + 1] = val_i * c + val_r * s;
-  }
+  const ST val_r        = val[jr];
+  const ST val_i        = val[ji];
+  const size_t psiIndex = first_spo + index + (index < nComplexBands ? index : nComplexBands);
+  psi_s[psiIndex]       = val_r * c - val_i * s;
+  if (index < nComplexBands)
+    psi_s[psiIndex + 1] = val_i * c + val_r * s;
 }
 
 /** assign_vgl
@@ -109,58 +96,58 @@ inline void assign_vgl(ST x,
   TT* restrict dpsi  = results_scratch_ptr + orb_size;
   TT* restrict d2psi = results_scratch_ptr + orb_size * 4;
 
-    const size_t jr = index << 1;
-    const size_t ji = jr + 1;
+  const size_t jr = index << 1;
+  const size_t ji = jr + 1;
 
-    const ST kX    = k0[index];
-    const ST kY    = k1[index];
-    const ST kZ    = k2[index];
-    const ST val_r = val[jr];
-    const ST val_i = val[ji];
+  const ST kX    = k0[index];
+  const ST kY    = k1[index];
+  const ST kZ    = k2[index];
+  const ST val_r = val[jr];
+  const ST val_i = val[ji];
 
-    //phase
-    ST s, c, p = -(x * kX + y * kY + z * kZ);
-    qmcplusplus::sincos(p, &s, &c);
+  //phase
+  ST s, c, p = -(x * kX + y * kY + z * kZ);
+  qmcplusplus::sincos(p, &s, &c);
 
-    //dot(PrimLattice.G,myG[j])
-    const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
-    const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
-    const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
+  //dot(PrimLattice.G,myG[j])
+  const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
+  const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
+  const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
 
-    const ST dX_i = g00 * g0[ji] + g01 * g1[ji] + g02 * g2[ji];
-    const ST dY_i = g10 * g0[ji] + g11 * g1[ji] + g12 * g2[ji];
-    const ST dZ_i = g20 * g0[ji] + g21 * g1[ji] + g22 * g2[ji];
+  const ST dX_i = g00 * g0[ji] + g01 * g1[ji] + g02 * g2[ji];
+  const ST dY_i = g10 * g0[ji] + g11 * g1[ji] + g12 * g2[ji];
+  const ST dZ_i = g20 * g0[ji] + g21 * g1[ji] + g22 * g2[ji];
 
-    // \f$\nabla \psi_r + {\bf k}\psi_i\f$
-    const ST gX_r = dX_r + val_i * kX;
-    const ST gY_r = dY_r + val_i * kY;
-    const ST gZ_r = dZ_r + val_i * kZ;
-    const ST gX_i = dX_i - val_r * kX;
-    const ST gY_i = dY_i - val_r * kY;
-    const ST gZ_i = dZ_i - val_r * kZ;
+  // \f$\nabla \psi_r + {\bf k}\psi_i\f$
+  const ST gX_r = dX_r + val_i * kX;
+  const ST gY_r = dY_r + val_i * kY;
+  const ST gZ_r = dZ_r + val_i * kZ;
+  const ST gX_i = dX_i - val_r * kX;
+  const ST gY_i = dY_i - val_r * kY;
+  const ST gZ_i = dZ_i - val_r * kZ;
 
-    const ST lcart_r = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGGt);
-    const ST lcart_i = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGGt);
-    const ST lap_r   = lcart_r + mKK_ptr[index] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
-    const ST lap_i   = lcart_i + mKK_ptr[index] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
+  const ST lcart_r = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGGt);
+  const ST lcart_i = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGGt);
+  const ST lap_r   = lcart_r + mKK_ptr[index] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
+  const ST lap_i   = lcart_i + mKK_ptr[index] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
-    const size_t psiIndex = first_spo + index + (index < nComplexBands ? index : nComplexBands);
-    //this will be fixed later
-    psi[psiIndex]   = c * val_r - s * val_i;
-    d2psi[psiIndex] = c * lap_r - s * lap_i;
-    //this will go way with Determinant
-    dpsi[psiIndex * 3]     = c * gX_r - s * gX_i;
-    dpsi[psiIndex * 3 + 1] = c * gY_r - s * gY_i;
-    dpsi[psiIndex * 3 + 2] = c * gZ_r - s * gZ_i;
+  const size_t psiIndex = first_spo + index + (index < nComplexBands ? index : nComplexBands);
+  //this will be fixed later
+  psi[psiIndex]   = c * val_r - s * val_i;
+  d2psi[psiIndex] = c * lap_r - s * lap_i;
+  //this will go way with Determinant
+  dpsi[psiIndex * 3]     = c * gX_r - s * gX_i;
+  dpsi[psiIndex * 3 + 1] = c * gY_r - s * gY_i;
+  dpsi[psiIndex * 3 + 2] = c * gZ_r - s * gZ_i;
 
-    if (index < nComplexBands)
-    {
-      psi[psiIndex + 1]      = c * val_i + s * val_r;
-      d2psi[psiIndex + 1]    = c * lap_i + s * lap_r;
-      dpsi[psiIndex * 3 + 3] = c * gX_i + s * gX_r;
-      dpsi[psiIndex * 3 + 4] = c * gY_i + s * gY_r;
-      dpsi[psiIndex * 3 + 5] = c * gZ_i + s * gZ_r;
-    }
+  if (index < nComplexBands)
+  {
+    psi[psiIndex + 1]      = c * val_i + s * val_r;
+    d2psi[psiIndex + 1]    = c * lap_i + s * lap_r;
+    dpsi[psiIndex * 3 + 3] = c * gX_i + s * gX_r;
+    dpsi[psiIndex * 3 + 4] = c * gY_i + s * gY_r;
+    dpsi[psiIndex * 3 + 5] = c * gZ_i + s * gZ_r;
+  }
 }
 } // namespace C2R
 
@@ -289,9 +276,11 @@ void SplineC2ROMP<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueV
         for (int index = 0; index < last - first; index++)
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_ptr + first, first,
                                              index);
-        PRAGMA_OFFLOAD("omp parallel")
-        C2R::assign_v(x, y, z, psi_ptr, orb_size, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size,
-                      first_spo_local, nComplexBands_local, first / 2, last / 2);
+        const int last_index = last / 2 < orb_size ? last / 2 : orb_size;
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = first / 2; index < last_index; index++)
+          C2R::assign_v(x, y, z, psi_ptr, orb_size, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size,
+                        first_spo_local, nComplexBands_local, index);
       }
     }
   }
@@ -373,10 +362,12 @@ void SplineC2ROMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
         for (int index = 0; index < last - first; index++)
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
                                              index);
-        PRAGMA_OFFLOAD("omp parallel")
-        C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]), psi_iat_ptr,
-                      orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size, first_spo_local,
-                      nComplexBands_local, first / 2, last / 2);
+        const int last_index = last / 2 < orb_size ? last / 2 : orb_size;
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = first / 2; index < last_index; index++)
+          C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
+                        psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
+                        first_spo_local, nComplexBands_local, index);
 
         TT sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
@@ -492,10 +483,12 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
         for (int index = 0; index < last - first; index++)
           spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
                                              index);
-        PRAGMA_OFFLOAD("omp parallel")
-        C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]), psi_iat_ptr,
-                      orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size, first_spo_local,
-                      nComplexBands_local, first / 2, last / 2);
+        const int last_index = last / 2 < orb_size ? last / 2 : orb_size;
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = first / 2; index < last_index; index++)
+          C2R::assign_v(ST(pos_scratch[iat * 6]), ST(pos_scratch[iat * 6 + 1]), ST(pos_scratch[iat * 6 + 2]),
+                        psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
+                        first_spo_local, nComplexBands_local, index);
 
         TT sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
@@ -789,9 +782,9 @@ void SplineC2ROMP<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocat
         const int last_index = last / 2 < orb_size ? last / 2 : orb_size;
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first / 2; index < last_index; index++)
-        C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr,
-                        orb_size, offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
-                        first_spo_local, nComplexBands_local, index);
+          C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr, mKK_ptr,
+                          orb_size, offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
+                          first_spo_local, nComplexBands_local, index);
       }
   }
 
@@ -942,9 +935,9 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
         const int last_index = last / 2 < orb_size ? last / 2 : orb_size;
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first / 2; index < last_index; index++)
-        C2R::assign_vgl(pos_iw_ptr[0], pos_iw_ptr[1], pos_iw_ptr[2], psi_iw_ptr, mKK_ptr, orb_size,
-                        offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
-                        first_spo_local, nComplexBands_local, index);
+          C2R::assign_vgl(pos_iw_ptr[0], pos_iw_ptr[1], pos_iw_ptr[2], psi_iw_ptr, mKK_ptr, orb_size,
+                          offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
+                          first_spo_local, nComplexBands_local, index);
 
         ValueType* restrict psi   = psi_iw_ptr;
         ValueType* restrict dpsi  = psi_iw_ptr + orb_size;
