@@ -30,7 +30,7 @@ from collections import namedtuple
 Determinants = namedtuple('Determinants', ['alpha', 'beta'])
 CSF = namedtuple('CSF', ['double', 'single'])
 
-def sanitize_numpy(det_spin, bit_kind_size):
+def sanitize(det_spin, bit_kind_size):
      '''
      This function transform signed numpy variable to native "positive" python number
      In the case of :
