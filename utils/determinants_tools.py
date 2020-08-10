@@ -30,8 +30,22 @@ from collections import namedtuple
 Determinants = namedtuple('Determinants', ['alpha', 'beta'])
 CSF = namedtuple('CSF', ['double', 'single'])
 
-def sanitize(det_spin, bit_kind_size):
-     return [s + (1 << bit_kind_size) if s < 0  else s for s in det_spin]
+def sanitize_numpy(det_spin, bit_kind_size):
+     '''
+     This function transform signed numpy variable to native "positive" python number
+     In the case of :
+        -positive Numpy number, we just cast it to Python data-type
+        -negative Numpy number, we do the two-compelement trick. 
+                                Because this value cannot fit on the initial Numpy datatype, 
+                                it will silently casted to int.
+
+     >>> import numpy as np
+     >>> sanitize_numpy([np.int8(1)], 8)
+     [1]
+     >>> sanitize_numpy([np.int8(-1)], 8)
+     [255]
+     '''
+     return [ (s + (1 << bit_kind_size)) if s < 0 else int(s) for s in det_spin]
 
 def int_to_bitmask(s, bit_kind_size):
     '''
