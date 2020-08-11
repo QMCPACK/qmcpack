@@ -177,7 +177,6 @@ class SlaterDetOperations_serial :
       TTensor TNN3D({nbatch,NAEA,NAEA},buffer_generator->template get_allocator<T>());
       TTensor TNM3D({n1,n2,n3},buffer_generator->template get_allocator<T>());
       IVector IWORK(iextensions<1u>{nbatch*(NMO+1)},buffer_generator->template get_allocator<int>());
-      std::cout << "inside batched " << std::endl;
       SlaterDeterminantOperations::batched::MixedDensityMatrix(hermA,Bi,
                 std::forward<MatC>(C),LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,compact,herm);
     }
@@ -204,7 +203,6 @@ class SlaterDetOperations_serial :
       TTensor TNN3D({nbatch,NAEA,NAEA},buffer_generator->template get_allocator<T>());
       TTensor TNM3D({n1,n2,n3},buffer_generator->template get_allocator<T>());
       IVector IWORK(iextensions<1u>{nbatch*(NMO+1)},buffer_generator->template get_allocator<int>());
-      std::cout << "inside batched dm " << std::endl;
       SlaterDeterminantOperations::batched::DensityMatrices(Left,Right,G,
                 LogOverlapFactor,std::forward<TVec>(ovlp),TNN3D,TNM3D,IWORK,compact,herm);
     }
