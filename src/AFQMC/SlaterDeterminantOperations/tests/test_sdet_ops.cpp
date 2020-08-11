@@ -421,7 +421,7 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
   SlaterDetOperations SDet( SlaterDetOperations_serial<Type,buffer_generator>(NMO,NEL,bgen) );
 
   /**** Overlaps ****/
-  SECTION("Overlaps")
+  //SECTION("Overlaps")
   {
     Type ov_; 
     ov_=SDet.Overlap(A,B,0.0); myREQUIRE(ov_,ov);
@@ -431,7 +431,7 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
   }
 
   // Test array_view
-  SECTION("array_view")
+  //SECTION("array_view")
   {
     Type ov_; 
     ov_=SDet.Overlap(A(A.extension(0),A.extension(1)),B,0.0); myREQUIRE(ov_,ov);
@@ -439,7 +439,7 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
   }
 
 // copy not yet working with device_pointer
-  SECTION("copy_overlap")
+  //SECTION("copy_overlap")
   {
     array A_ = A({0,2},{0,3});
     array B_ = B({0,3},{0,2});
@@ -497,7 +497,7 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
 
   array G({NMO,NMO},alloc);
   array Gc({NEL,NMO},alloc);
-  SECTION("density_matrices")
+  //SECTION("density_matrices")
   {
     Type ov_;
     array A_ = A({0,2},{0,3});
@@ -524,6 +524,7 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
     ov_=SDet.MixedDensityMatrix(Aref,B,Gc,0.0,true); check(Gc,gc_ref);
     ov_=SDet.MixedDensityMatrix(A,Bref,Gc,0.0,true); check(Gc,gc_ref);
     ov_=SDet.MixedDensityMatrix(Aref,Bref,Gc,0.0,true); check(Gc,gc_ref);
+    myREQUIRE(ov_, ov);
 
     ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
                             B({0,3},{0,2}),
@@ -539,7 +540,7 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
     check(Gc({0,2},{0,3}),gc_ref_2);
   }
   // Orthogonalize
-  SECTION("orthogonalize")
+  //SECTION("orthogonalize")
   {
     array Q=B;
     SDet.Orthogonalize(Q,0.0);
@@ -550,7 +551,7 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
   // Batched
   // TODO fix CPU.
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  SECTION("batched_density_matrix")
+  //SECTION("batched_density_matrix")
   {
     boost::multi::array<Type,3,Allocator> Gw({3,NMO,NMO},alloc);
     //std::vector<array_ptr> RA;
@@ -570,16 +571,57 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
     Type ov_ref = -7.623325999999989+22.20453200000001i;
 
     SDet.BatchedDensityMatrices(RA,RB,Gwv,log_ovlp,ovlp,false);
-    SECTION("greens_function")
+    //SECTION("greens_function")
     {
       for(int i = 0; i < 3; i++) {
         check(*Gwv[i],g_ref);
       }
     }
-    SECTION("overlap")
+    //SECTION("overlap")
     {
       for(int i = 0; i < 3; i++) {
         myREQUIRE(ovlp[i], ov_ref);
+      }
+    }
+    SDet.BatchedMixedDensityMatrix(RA,RB,Gw,log_ovlp,ovlp,false);
+    {
+      for(int i = 0; i < 3; i++) {
+        myREQUIRE(ovlp[i], ov_ref);
+      }
+    }
+    {
+      for(int i = 0; i < 3; i++) {
+        check(Gw[i],g_ref);
+      }
+    }
+  }
+  //SECTION("batched_mixed_density_matrix")
+  {
+    boost::multi::array<Type,3,Allocator> Gw({3,NEL,NMO},alloc);
+    //std::vector<array_ptr> RA;
+    std::vector<decltype(&Aref)> RA;
+    std::vector<decltype(&Bref)> RB;
+    RA.reserve(3);
+    RB.reserve(3);
+    boost::multi::array<Type,1,Allocator> ovlp(iextensions<1u>{3});
+    for(int i = 0; i < 3; i++) {
+      RA.emplace_back(&Aref);
+      RB.emplace_back(&Bref);
+    }
+    Type log_ovlp;
+    Type ov_ref = -7.623325999999989+22.20453200000001i;
+
+    SDet.BatchedMixedDensityMatrix(RA,RB,Gw,log_ovlp,ovlp,true);
+    //SECTION("greens_function")
+    //SECTION("overlap")
+    {
+      for(int i = 0; i < 3; i++) {
+        myREQUIRE(ovlp[i], ov_ref);
+      }
+    }
+    {
+      for(int i = 0; i < 3; i++) {
+        check(Gw[i],gc_ref);
       }
     }
   }
