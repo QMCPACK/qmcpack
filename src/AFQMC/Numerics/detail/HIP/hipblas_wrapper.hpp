@@ -624,8 +624,11 @@ namespace hipblas {
   {
     hipblasStatus_t success =
               hipblasZgetrsBatched(handle,op,n,n,
-                            reinterpret_cast<hipblasDoubleComplex *const *>(Aarray),lda,PivotArray,
-                            reinterpret_cast<hipblasDoubleComplex *const *>(Carray),ldc,infoArray,batchSize);
+                            reinterpret_cast<hipblasDoubleComplex *const *>(Aarray),lda,
+                            PivotArray,
+                            reinterpret_cast<hipblasDoubleComplex *const *>(Carray),ldc,
+                            infoArray,
+                            batchSize);
     hipDeviceSynchronize ();
     return success;
   }
