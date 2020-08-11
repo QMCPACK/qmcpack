@@ -96,7 +96,7 @@ namespace device
     if(n1 < n*n)
       throw std::runtime_error("Error: getri<GPU_MEMORY_POINTER_TYPE> required buffer space of n*n.");
     if(lda != n)
-      throw std::runtime_error("Error: getri<GPU_MEMORY_POINTER_TYPE> required lda = 1.");
+      throw std::runtime_error("Error: getri<GPU_MEMORY_POINTER_TYPE> required lda = n.");
 
     // info isn't returned from ?getrs.
     int* info;
@@ -128,7 +128,7 @@ namespace device
     A_h = new T*[batchSize];
     C_h = new T*[batchSize];
     for(int i=0; i<batchSize; i++) {
-      kernels::set_identity(n,n,to_address(ainv[i]),lda);
+      kernels::set_identity(n,n,to_address(ainv[i]),ldc);
       A_h[i] = to_address(a[i]);
       C_h[i] = to_address(ainv[i]);
     }
@@ -137,9 +137,9 @@ namespace device
     hipMemcpy(A_d, A_h, batchSize*sizeof(*A_h), hipMemcpyHostToDevice);
     hipMemcpy(C_d, C_h, batchSize*sizeof(*C_h), hipMemcpyHostToDevice);
     hipblasStatus_t status = hipblas::hipblas_getriBatched(*(a[0]).handles.hipblas_handle, HIPBLAS_OP_N, n, n,
-                                                        A_d, lda,
-                                                        to_address(piv), C_d, ldc,
-                                                        to_address(info), batchSize);
+                                                           A_d, lda,
+                                                           to_address(piv), C_d, ldc,
+                                                           to_address(info), batchSize);
     if(HIPBLAS_STATUS_SUCCESS != status)
       throw std::runtime_error("Error: hipblas_getri returned error code.");
     hipFree(A_d);
