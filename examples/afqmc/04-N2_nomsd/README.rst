@@ -1,5 +1,5 @@
 Example 4: NOMSD Trial
-======================
+----------------------
 
 In this example we will show how to format trial different wavefunctions in such a way
 that qmcpack can read them.

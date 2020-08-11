@@ -1,5 +1,5 @@
 Example 6: Back Propagation
-===========================
+---------------------------
 
 .. note::
     matplotlib is required to generate the figure in this example.
@@ -45,7 +45,7 @@ reduced density matrix (1RDM), given as
 
 .. math::
 
-    P^{\sigma}_{ij} = \langle c_{\sigma i}^{\dagger} c_{\sigma j} \rangle
+    P^{\sigma}_{ij} = \langle c_{i\sigma}^{\dagger} c_{j\sigma} \rangle
 
 Before we analyse the output we should question why we chose a back propagation time of 2
 au.  The back propagation time represents yet another parameter which must be carefully

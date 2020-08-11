@@ -714,56 +714,6 @@ The following is a growing list of useful advice for new users, followed by a sa
       <parameter name="ortho">5</parameter>
     </execute>
 
-.. _pyscf:
-
-Using PySCF to generate integrals for AFQMC
--------------------------------------------
-
-
-PySCF (https://github.com/sunqm/pyscf) is a collection of electronic structure programs powered by Python. It is the recommended program for the generation of input for AFQMC calculations in QMCPACK. We refer the reader to the documentation of the code (http://sunqm.github.io/pyscf/) for a detailed description of the features and the functionality of the code. While the notes below are not meant to replace a detailed study of the PySCF documentation, these notes describe useful knowledge and tips in the use of pyscf for the generation of input for QMCPACK.
-
-For molecular systems or periodic calculations at the Gamma point, PySCF provides a routine that generates the integral file in Molpro's FCIDUMP format, which contains all the information needed to run AFQMC with a single determinant trial wave-function. Below is an example using this routine to generate the FCIDUMP file for an 8-atom unit cell of carbon in the diamond structure with HF orbitals. For a detailed description, see PySCF's documentation.
-
-.. code-block::
-  :caption: Simple example showing how to generate FCIDUMP files with PySCF
-  :name: Listing 57
-
-  import numpy
-  from pyscf.tools import fcidump
-  from pyscf.pbc import gto, scf, tools
-
-  cell = gto.Cell()
-  cell.a = '''
-    3.5668 0 0
-    0 3.5668 0
-    0 0 3.5668'''
-  cell.atom = '''
-    C 0. 0. 0.
-    C 0.8917 0.8917 0.8917
-    C 1.7834 1.7834 0.
-    C 2.6751 2.6751 0.8917
-    C 1.7834 0. 1.7834
-    C 2.6751 0.8917 2.6751
-    C 0. 1.7834 1.7834
-    C 0.8917 2.6751 2.6751'''
-  cell.basis = 'gth-szv'
-  cell.pseudo = 'gth-pade'
-  cell.gs = [10]*3 # for testing purposes, must be increased for converged results
-  cell.verbose = 4
-  cell.build()
-
-  mf = scf.RHF(cell)
-  ehf = mf.kernel()
-  print("HF energy (per unit cell) = %.17g" % ehf)
-
-  c = mf.mo_coeff
-  h1e = reduce(numpy.dot, (c.T, mf.get_hcore(), c))
-  eri = mf.with_df.ao2mo(c,compact=True)
-
-  # nuclear energy + electronic ewald
-  e0 = cell.energy_nuc() + tools.pbc.madelung(cell, numpy.zeros(3))*cell.nelectron * -.5
-  fcidump.from_integrals('fcidump.dat', h1e, eri, c.shape[1],cell.nelectron, ms=0, tol=1e-8, nuc=e0)
-
 .. centered:: ``afqmc`` method
 
 parameters in ``AFQMCInfo``
@@ -856,5 +806,11 @@ parameters in ``execute``
 +--------------+--------------+-------------------------+-------------+---------------------------------------------------+
 | ``ortho``    | integer      | :math:`> 0`             | 1           | Number of steps between walker orthogonalization. |
 +--------------+--------------+-------------------------+-------------+---------------------------------------------------+
+
+
+.. _pyscf:
+
+Using PySCF to generate integrals and trial wavefunctions for AFQMC
+------------------------------------------------------------------
 
 .. bibliography:: /bibs/afqmc.bib
