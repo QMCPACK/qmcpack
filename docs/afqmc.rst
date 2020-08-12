@@ -530,7 +530,7 @@ Finally, we have implemented an explicitly :math:`k`-point dependent factorizati
 .. math::
   :label: eq62
 
-  v_{pqrs} = \sum_{\substack{n\textbf{Q}\textbf{k}\textbf{k}' \\ pqrs\sigma\sigma'}} L^{\textbf{Q},\textbf{k}}_{pr,n} {L^{\textbf{Q},\textbf{k}'}_{sq,n}}^{*}
+  (\textbf{k}_p p \textbf{k}_r r| \textbf{k}_q q \textbf{k}_s s) = L^{\textbf{Q},\textbf{k}}_{pr,n} {L^{\textbf{Q},\textbf{k}'}_{sq,n}}^{*}
 
 where :math:`\textbf{k}`, :math:`\textbf{k}'` and :math:`\textbf{Q}` are
 vectors in the first Brillouin zone. The one-body Hamiltonian is block
@@ -810,7 +810,237 @@ parameters in ``execute``
 
 .. _pyscf:
 
-Using PySCF to generate integrals and trial wavefunctions for AFQMC
-------------------------------------------------------------------
+AFQMCTOOLS
+----------
+
+The ``afqmctools`` library found in ``qmcpack/utils/afqmctools`` provides a number of
+tools to interface electronic structure codes with AFQMC in QMCPACK. Currently PYSCF is
+the best supported package and is capable of generating both molecular and solid state
+input for AFQMC.
+
+In what follows we will document the most useful routines from a user's perspective.
+
+afqmctools has to be in your PYTHONPATH.
+
+pyscf_to_afqmc.py
+~~~~~~~~~~~~~~~~~
+
+This is the main script to convert PYSCF output into QMCPACK input. The command line
+options are as follows:
+
+.. code-block:: text
+
+    > pyscf_to_afqmc.py -h
+
+    usage: pyscf_to_afqmc.py [-h] [-i CHK_FILE] [-o HAMIL_FILE] [-w WFN_FILE]
+                             [-q QMC_INPUT] [-t THRESH] [-k] [--density-fit] [-a]
+                             [-c CAS] [-d] [-n NDET_MAX] [-r] [-p]
+                             [--low LOW_THRESH] [--high HIGH_THRESH] [--dense]
+                             [-v]
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -i CHK_FILE, --input CHK_FILE
+                            Input pyscf .chk file.
+      -o HAMIL_FILE, --output HAMIL_FILE
+                            Output file name for QMCPACK hamiltonian.
+      -w WFN_FILE, --wavefunction WFN_FILE
+                            Output file name for QMCPACK wavefunction. By default
+                            will write to hamil_file.
+      -q QMC_INPUT, --qmcpack-input QMC_INPUT
+                            Generate skeleton QMCPACK input xml file.
+      -t THRESH, --cholesky-threshold THRESH
+                            Cholesky convergence threshold.
+      -k, --kpoint          Generate explicit kpoint dependent integrals.
+      --density-fit         Use density fitting integrals stored in input pyscf
+                            chkpoint file.
+      -a, --ao, --ortho-ao  Transform to ortho AO basis. Default assumes we work
+                            in MO basis
+      -c CAS, --cas CAS     Specify a CAS in the form of N,M.
+      -d, --disable-ham     Disable hamiltonian generation.
+      -n NDET_MAX, --num-dets NDET_MAX
+                            Set upper limit on number of determinants to generate.
+      -r, --real-ham        Write integrals as real numbers.
+      -p, --phdf            Use parallel hdf5.
+      --low LOW_THRESH      Lower threshold for non-integer occupanciesto include
+                            in multi-determinant exansion.
+      --high HIGH_THRESH    Upper threshold for non-integer occupanciesto include
+                            in multi-determinant exansion.
+      --dense               Write dense Hamiltonian.
+      -v, --verbose         Verbose output.
+
+examples on how to generate AFQMC input from PYSCF simulations are available in :ref:`lab-afqmc`
+
+afqmc_to_fcidump.py
+~~~~~~~~~~~~~~~~~~~
+
+This script is useful for converting AFQMC hamiltonians to the FCIDUMP format.
+
+.. code-block:: text
+
+	> afqmc_to_fcidump.py
+
+	usage: afqmc_to_fcidump.py [-h] [-i INPUT_FILE] [-o OUTPUT_FILE] [-s SYMM]
+							   [-t TOL] [-c] [--complex-paren] [-v]
+
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  -i INPUT_FILE, --input INPUT_FILE
+							Input AFQMC hamiltonian file.
+	  -o OUTPUT_FILE, --output OUTPUT_FILE
+							Output file for FCIDUMP.
+	  -s SYMM, --symmetry SYMM
+							Symmetry of integral file (1,4,8).
+	  -t TOL, --tol TOL     Cutoff for integrals.
+	  -c, --complex         Whether to write integrals as complex numbers.
+	  --complex-paren       Whether to write FORTRAN format complex numbers.
+	  -v, --verbose         Verbose output.
+
+fcidump_to_afqmc.py
+~~~~~~~~~~~~~~~~~~~
+
+This script is useful for converting Hamiltonians in the FCIDUMP format to the AFQMC file format.
+
+.. code-block:: text
+
+	> fcidump_to_afqmc.py -h
+
+	usage: fcidump_to_afqmc.py [-h] [-i INPUT_FILE] [-o OUTPUT_FILE]
+							   [--write-complex] [-t THRESH] [-s SYMM] [-v]
+
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  -i INPUT_FILE, --input INPUT_FILE
+							Input FCIDUMP file.
+	  -o OUTPUT_FILE, --output OUTPUT_FILE
+							Output file name for PAUXY data.
+	  --write-complex       Output integrals in complex format.
+	  -t THRESH, --cholesky-threshold THRESH
+							Cholesky convergence threshold.
+	  -s SYMM, --symmetry SYMM
+							Symmetry of integral file (1,4,8).
+	  -v, --verbose         Verbose output.
+
+Writing a Hamiltonian
+~~~~~~~~~~~~~~~~~~~~~
+
+``write_qmcpack_sparse`` and ``write_qmcpack_dense`` can be used to write either sparse or
+dense qmcpack Hamiltonians.
+
+.. code-block:: python
+
+   import numpy
+   from afqmctools.hamiltonian.io import write_qmcpack_sparse, write_qmcpack_dense
+
+   nmo = 50
+   nchol = 37
+   nelec = (3,3)
+   enuc = -108.3
+   # hcore and eri should obey the proper symmetry in real applications
+   # h_ij
+   hcore = numpy.random.random((nmo,nmo))
+   # L_{(ik),n}
+   chol = numpy.random.random((nmo*nmo, nchol))
+   write_qmcpack_dense(hcore, chol, nelec, nmo, enuc,
+                       real_chol=True,
+                       filename='hamil_dense.h5')
+   write_qmcpack_sparse(hcore, chol, nelec, nmo, enuc,
+                       real_chol=True,
+                       filename='hamil_sparse.h5')
+
+Note the ``real_chol`` parameter controls whether the integrals are written as real or
+complex numbers. complex numbers should be used if ``-DENABLE_QMC_COMPLEX=1``, while the
+dense Hamiltonian is only available for real builds.
+
+Writing a wavefunction
+~~~~~~~~~~~~~~~~~~~~~~
+
+``write_qmcpack_wfn`` can be used to write either NOMSD or PHMSD wavefunctions:
+
+.. code-block:: python
+
+   import numpy
+   from afqmctools.wavefunction.mol import write_qmcpack_wfn
+
+   # NOMSD
+   ndet = 100
+   nmo = 50
+   nelec = (3, 7)
+   wfn = numpy.array(numpy.random.random((ndet, nmo, sum(nelec))), dtype=numpy.complex128)
+   coeffs = numpy.array(numpy.random.random((ndet)), dtype=numpy.complex128)
+   uhf = True
+   write_qmcpack_wfn('wfn.h5', (coeffs, wfn), uhf, nelec, nmo)
+
+By default the first term in the expansion will be used as the initial walker
+wavefunction. To use another wavefunction we can pass a value to the ``init`` parameter:
+
+.. code-block:: python
+
+   init = numpy.array(numpy.random.random((nmo,sum(nelec)), dtype=numpy.complex128)
+   write_qmcpack_wfn('wfn.h5', (coeffs, wfn), uhf, nelec, nmo, init=init)
+
+Particle-hole wavefunction (PHMSD) from SHCI or CASSCF calculations are also written using
+the same function:
+
+.. code-block:: python
+
+    import numpy
+    from afqmctools.wavefunction.mol import write_qmcpack_wfn
+
+    # PHMSD
+    ndet = 2
+    nmo = 4
+    nelec = (2,2)
+    uhf = True
+    # |psi_T> = |0,1>|0,1> + |0,1>|0,2>
+    coeffs = numpy.array([0.707,0.707], dtype=numpy.complex128)
+    occa = numpy.array([(0,1), (0,1)])
+    occb = numpy.array([(0,1), (0,2)])
+    write_qmcpack_wfn('wfn.h5', (coeffs, occa, occb), uhf, nelec, nmo)
+
+
+Analyzing Estimators
+~~~~~~~~~~~~~~~~~~~~
+
+The ``afqmctools.analysis.average`` module can be used to perform simple error analysis
+for estimators computed with AFQMC.
+
+.. Warning:: Autocorrelation is not accounted for. Use with caution.
+
+average_one_rdm
+    Returns P[s,i,j] = :math:`\langle c_{is}^{\dagger} c_{js}\rangle` as a (nspin, M, M) dimensional array.
+average_two_rdm
+    Gamma[s1s2,i,k,j,l] = :math:`\langle c_{i}^{\dagger} c_{j}^{\dagger} c_{l} c_{k} \rangle`.
+    For closed shell systems, returns [(a,a,a,a),(a,a,b,b)].
+    For collinear systems, returns [(a,a,a,a),(a,a,b,b),(b,b,b,b)].
+average_diag_two_rdm
+    Returns :math:`\langle c_{is}^+ c_{jt}^+ c_{jt} c_{is}\rangle` as a (2M,2M) dimensional array.
+average_on_top_pdm
+    Returns :math:`n_2(\mathbf{r},\mathbf{r})` for a given real space grid.
+average_realspace_correlations
+    Returns :math:`\langle C(\mathbf{r}_1)C(\mathbf{r}_2) \rangle` and
+    :math:`\langle S(\mathbf{r}_1)S(\mathbf{r}_2) \rangle` for a given set of points in real space.
+    :math:`\hat{C} = (\hat{n}_\uparrow+ \hat{n}_\downarrow)`, :math:`\hat{S}=(\hat{n}_\uparrow-\hat{n}_\downarrow)`
+average_atom_correlations
+    Returns :math:`\langle C(I) \rangle`, :math:`\langle S(I) \rangle`,
+    :math:`\langle C(I) C(J) \rangle`, :math:`\langle S(I) S(J) \rangle`
+    for a given set of atomic sites :math:`I,J`.
+    :math:`\hat{C} = (\hat{n}_\uparrow+ \hat{n}_\downarrow)`, :math:`\hat{S}=(\hat{n}_\uparrow-\hat{n}_\downarrow)`
+average_gen_fock
+    Returns generalized Fock matrix :math:`F_{\pm}`.
+    The parameter ``fock_type`` is used to specify :math:`F_{+}` (``fock_type='plus'``) or
+    :math:`F_{-}` (``fock_type='minus'``)
+get_noons
+    Get natural orbital occupation numbers from one-rdm.
+
+
+As an example the following will extract the back propagated one rdm for the maximum
+propagation time, and skip 10 blocks as the equilibration phase.
+
+.. code-block:: python
+
+    from afqmctools.analysis.average import average_one_rdm
+
+    P, Perr = average_one_rdm('qmc.s000.stat.h5', estimator='back_propagated', eqlb=10)
 
 .. bibliography:: /bibs/afqmc.bib
