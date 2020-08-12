@@ -13,8 +13,8 @@
 #include <complex>
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
+#include "Platforms/CUDA_legacy/uninitialized_array.hpp"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
-#include "AFQMC/Numerics/detail/HIP/Kernels/buffer_helper.hip.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels
@@ -85,7 +85,7 @@ template<typename T, typename T1>
 __global__ void kernel_Aijk_Bkj_Cik(int ni, int nj, int nk, thrust::complex<T> const* A, int lda, int stride,
                             T1 const* B, int ldb, thrust::complex<T>* C, int ldc)
 {
-    auto cache = shared_memory_proxy<thrust::complex<T>>();
+    __shared__ uninitialized_array<thrust::complex<T>, 32> cache;
     int k = blockIdx.x;
     int i = blockIdx.y;
     if( (i<ni) && (k<nk) ) {
@@ -167,13 +167,10 @@ __global__ void kernel_element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk,
             thrust::complex<T>* C, int ldc, int stride)
 {
     // hard-coded to TILE_DIM=32
-    auto cache = shared_memory_proxy<T2>();
-    // Seems super dangerous.
-    T2 *Acache = cache;
-    thrust::complex<T> *Bcache = (thrust::complex<T>*)&Acache[32*32];
-    //auto Bcache = shared_memory_proxy<thrust::complex<T>>();
-
     int TILE_DIM = 32;
+    __shared__ uninitialized_array<T2, 32*32> Acache;
+    __shared__ uninitialized_array<thrust::complex<T>, 32> Bcache;
+
     int k = blockIdx.z;
     int j = blockIdx.x*TILE_DIM + threadIdx.x;
     int i = blockIdx.y*TILE_DIM + threadIdx.y;
@@ -181,7 +178,7 @@ __global__ void kernel_element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk,
     if( (k<nk) && (j<nj)) {
       int n(threadIdx.y);
       while( (i<ni) && (n<TILE_DIM) ) {
-        Acache[n*TILE_DIM+threadIdx.x] = A[i*lda+j];
+        Acache[n*32+threadIdx.x] = A[i*lda+j];
         n+=blockDim.y;
         i+=blockDim.y;
       }
@@ -197,7 +194,7 @@ __global__ void kernel_element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk,
     if( (k<nk) && (i<ni)) {
       int n(threadIdx.y);
       while( (j<nj) && (n<TILE_DIM) ) {
-        C[ k*stride + j*ldc + i] = static_cast<thrust::complex<T>>(Acache[threadIdx.x*TILE_DIM+n]) *
+        C[ k*stride + j*ldc + i] = static_cast<thrust::complex<T>>(Acache[threadIdx.x*32+n]) *
                                 Bcache[n];
         n+=blockDim.y;
         j+=blockDim.y;
@@ -319,8 +316,7 @@ void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<double> const* A, int lda
 {
   // expect nk >> ni,nj
   dim3 grid_dim(nk,ni,1);
-  size_t shmem = 32 * sizeof(std::complex<double>);
-  hipLaunchKernelGGL(kernel_Aijk_Bkj_Cik, dim3(grid_dim), dim3(32), shmem, 0, ni,nj,nk,
+  hipLaunchKernelGGL(kernel_Aijk_Bkj_Cik, dim3(grid_dim), dim3(32), 0, 0, ni,nj,nk,
                                    reinterpret_cast<thrust::complex<double> const*>(A),lda, stride,
                                    reinterpret_cast<thrust::complex<double> const*>(B),ldb,
                                    reinterpret_cast<thrust::complex<double> *>(C),ldc);
@@ -333,8 +329,7 @@ void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<double> const* A, int lda
 {
   // expect nk >> ni,nj
   dim3 grid_dim(nk,ni,1);
-  size_t shmem = 32 * sizeof(std::complex<double>);
-  hipLaunchKernelGGL(kernel_Aijk_Bkj_Cik, dim3(grid_dim), dim3(32), shmem, 0, ni,nj,nk,
+  hipLaunchKernelGGL(kernel_Aijk_Bkj_Cik, dim3(grid_dim), dim3(32), 0, 0, ni,nj,nk,
                                    reinterpret_cast<thrust::complex<double> const*>(A),lda, stride,
                                    B,ldb,
                                    reinterpret_cast<thrust::complex<double> *>(C),ldc);
@@ -347,7 +342,6 @@ void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<float> const* A, int lda,
 {
   // expect nk >> ni,nj
   dim3 grid_dim(nk,ni,1);
-  size_t shmem = 32 * sizeof(std::complex<float>);
   hipLaunchKernelGGL(kernel_Aijk_Bkj_Cik, dim3(grid_dim), dim3(32), 0, 0, ni,nj,nk,
                                    reinterpret_cast<thrust::complex<float> const*>(A),lda, stride,
                                    reinterpret_cast<thrust::complex<float> const*>(B),ldb,
@@ -361,8 +355,7 @@ void Aijk_Bkj_Cik(int ni, int nj, int nk, std::complex<float> const* A, int lda,
 {
   // expect nk >> ni,nj
   dim3 grid_dim(nk,ni,1);
-  size_t shmem = 32 * sizeof(std::complex<float>);
-  hipLaunchKernelGGL(kernel_Aijk_Bkj_Cik, dim3(grid_dim), dim3(32), shmem, 0, ni,nj,nk,
+  hipLaunchKernelGGL(kernel_Aijk_Bkj_Cik, dim3(grid_dim), dim3(32), 0, 0, ni,nj,nk,
                                    reinterpret_cast<thrust::complex<float> const*>(A),lda, stride,
                                    B,ldb,
                                    reinterpret_cast<thrust::complex<float> *>(C),ldc);
@@ -489,8 +482,7 @@ void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk,
   size_t jb = (nj + nthr - 1)/nthr;
   dim3 grid_dim(jb,ib,nk);
   dim3 block_dim(nthr,nthrj,1);
-  size_t shmem = nthr*nthr*(sizeof(double)) + nthr*sizeof(std::complex<double>);
-  hipLaunchKernelGGL(kernel_element_wise_Aij_Bjk_Ckji, dim3(grid_dim), dim3(block_dim), shmem, 0, ni,nj,nk,
+  hipLaunchKernelGGL(kernel_element_wise_Aij_Bjk_Ckji, dim3(grid_dim), dim3(block_dim), 0, 0, ni,nj,nk,
                                    A,lda,
                                    reinterpret_cast<thrust::complex<double> const*>(B),ldb,
                                    reinterpret_cast<thrust::complex<double> *>(C),ldc,stride);
@@ -510,8 +502,7 @@ void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk,
   // jb goes along x since this is the fast index in Aij, needed for better memory access patterns
   dim3 grid_dim(jb,ib,nk);
   dim3 block_dim(nthr,nthrj,1);
-  size_t shmem = nthr*nthr*sizeof(std::complex<double>) + nthr*sizeof(std::complex<double>);
-  hipLaunchKernelGGL(kernel_element_wise_Aij_Bjk_Ckji, dim3(grid_dim), dim3(block_dim), shmem, 0, ni,nj,nk,
+  hipLaunchKernelGGL(kernel_element_wise_Aij_Bjk_Ckji, dim3(grid_dim), dim3(block_dim), 0, 0, ni,nj,nk,
                                    reinterpret_cast<thrust::complex<double> const*>(A),lda,
                                    reinterpret_cast<thrust::complex<double> const*>(B),ldb,
                                    reinterpret_cast<thrust::complex<double> *>(C),ldc,stride);
@@ -530,8 +521,7 @@ void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk,
   size_t jb = (nj + nthr - 1)/nthr;
   dim3 grid_dim(jb,ib,nk);
   dim3 block_dim(nthr,nthrj,1);
-  size_t shmem = nthr*nthr*sizeof(float) + nthr*sizeof(std::complex<float>);
-  hipLaunchKernelGGL(kernel_element_wise_Aij_Bjk_Ckji, dim3(grid_dim), dim3(block_dim), shmem, 0, ni,nj,nk,
+  hipLaunchKernelGGL(kernel_element_wise_Aij_Bjk_Ckji, dim3(grid_dim), dim3(block_dim), 0, 0, ni,nj,nk,
                                    A,lda,
                                    reinterpret_cast<thrust::complex<float> const*>(B),ldb,
                                    reinterpret_cast<thrust::complex<float> *>(C),ldc,stride);
@@ -550,8 +540,7 @@ void element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk,
   size_t jb = (nj + nthr - 1)/nthr;
   dim3 grid_dim(jb,ib,nk);
   dim3 block_dim(nthr,nthrj,1);
-  size_t shmem = nthr*nthr*sizeof(std::complex<float>) + nthr*sizeof(std::complex<float>);
-  hipLaunchKernelGGL(kernel_element_wise_Aij_Bjk_Ckji, dim3(grid_dim), dim3(block_dim), shmem, 0, ni,nj,nk,
+  hipLaunchKernelGGL(kernel_element_wise_Aij_Bjk_Ckji, dim3(grid_dim), dim3(block_dim), 0, 0, ni,nj,nk,
                                    reinterpret_cast<thrust::complex<float> const*>(A),lda,
                                    reinterpret_cast<thrust::complex<float> const*>(B),ldb,
                                    reinterpret_cast<thrust::complex<float> *>(C),ldc,stride);

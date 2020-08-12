@@ -9,14 +9,11 @@
 // File created by: Fionn Malone, malone14@llnl.gov, LLNL
 ////////////////////////////////////////////////////////////////////////////////
 
-
-#include<cassert>
 #include <complex>
-#include<hip/hip_runtime.h>
 #include <thrust/complex.h>
-#include<hip/hip_runtime.h>
+#include <hip/hip_runtime.h>
+#include "Platforms/CUDA_legacy/uninitialized_array.hpp"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
-#include "AFQMC/Numerics/detail/HIP/Kernels/buffer_helper.hip.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels
@@ -29,9 +26,7 @@ __global__ void kernel_dot_wabn(int nwalk, int nocc, int nchol,
                     thrust::complex<T>* y, int incy)
 {
     if( blockIdx.x >= nwalk*nocc*nocc ) return;
-    // DOT_BLOCK_SIZE
-    //extern __shared__ thrust::complex<T> cache[];
-    auto cache = shared_memory_proxy<thrust::complex<T>>();
+    __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
     int nocc2 = nocc*nocc;
     int w = blockIdx.x/(nocc2);
     int a = (blockIdx.x%(nocc2))/nocc;
@@ -45,7 +40,7 @@ __global__ void kernel_dot_wabn(int nwalk, int nocc, int nchol,
         cache[ threadIdx.x ] += static_cast<thrust::complex<T>>(A_[ i ] * B_[ i ]);
         i += blockDim.x;
     }
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
@@ -72,9 +67,7 @@ __global__ void kernel_dot_wanb(int nt, int nwalk, int nocc, int nchol,
     int a = blockIdx.y*blockDim.x + threadIdx.x;
     int nb = blockIdx.z*blockDim.y*nt + threadIdx.y;
 
-    // 1024
-    //extern __shared__ thrust::complex<T> cache[];
-    auto cache = shared_memory_proxy<thrust::complex<T>>();
+    __shared__ uninitialized_array<thrust::complex<T>, 1024> cache;
 
     int nid = blockDim.x*blockDim.y*blockDim.z;
     int id = (threadIdx.x * blockDim.y + threadIdx.y) *blockDim.z + threadIdx.z;
@@ -90,7 +83,7 @@ __global__ void kernel_dot_wanb(int nt, int nwalk, int nocc, int nchol,
                     A_[(b*nchol + i)*nocc + a]);
     }
 
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     int i = nid / 2;
     while( i > 0 ) {
@@ -113,9 +106,7 @@ __global__ void kernel_dot_wanb2(int nwalk, int nocc, int nchol,
                     thrust::complex<T>* y, int incy)
 {
     if( blockIdx.x >= nwalk*nocc*nocc ) return;
-    // DOT_BLOCK_SIZE
-    //extern __shared__ thrust::complex<T> cache[];
-    auto cache = shared_memory_proxy<thrust::complex<T>>();
+    __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
     int nocc2 = nocc*nocc;
     int w = blockIdx.x/(nocc2);
     int a = (blockIdx.x%(nocc2))/nocc;
@@ -129,7 +120,7 @@ __global__ void kernel_dot_wanb2(int nwalk, int nocc, int nchol,
         cache[ threadIdx.x ] += static_cast<thrust::complex<T>>(A_[ i*nocc ] * B_[ i*nocc ]);
         i += blockDim.x;
     }
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
@@ -151,9 +142,7 @@ __global__ void kernel_dot_wpan_waqn_Fwpq(int nwalk, int nmo, int nchol,
                     thrust::complex<T2> const alpha, thrust::complex<T2> const* Tab,
                     thrust::complex<T>* F)
 {
-  // DOT_BLOCK_SIZE
-  //extern __shared__ thrust::complex<T> cache[];
-  auto cache = shared_memory_proxy<thrust::complex<T>>();
+  __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
   int p = blockIdx.x;
   int q = blockIdx.y;
   int a = blockIdx.z;
@@ -167,7 +156,7 @@ __global__ void kernel_dot_wpan_waqn_Fwpq(int nwalk, int nmo, int nchol,
         cache[ threadIdx.x ] += static_cast<thrust::complex<T>>(A_[ i ] * B_[ i ]);
         i += blockDim.x;
     }
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
@@ -191,8 +180,7 @@ void dot_wabn( int nwalk, int nocc, int nchol,
 {
   int n_=nwalk*nocc*nocc;
   dim3 grid_dim(n_,1,1);
-  size_t shmem = DOT_BLOCK_SIZE * sizeof(std::complex<double>);
-  hipLaunchKernelGGL(kernel_dot_wabn, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nwalk,nocc,nchol,
+  hipLaunchKernelGGL(kernel_dot_wabn, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), 0, 0, nwalk,nocc,nchol,
                                    static_cast<thrust::complex<double> const>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
@@ -206,8 +194,7 @@ void dot_wabn( int nwalk, int nocc, int nchol,
 {
   int n_=nwalk*nocc*nocc;
   dim3 grid_dim(n_,1,1);
-  size_t shmem = DOT_BLOCK_SIZE * sizeof(std::complex<float>);
-  hipLaunchKernelGGL(kernel_dot_wabn, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nwalk,nocc,nchol,
+  hipLaunchKernelGGL(kernel_dot_wabn, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), 0, 0, nwalk,nocc,nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<float> *>(y),incy);
@@ -221,8 +208,7 @@ void dot_wabn( int nwalk, int nocc, int nchol,
 {
   int n_=nwalk*nocc*nocc;
   dim3 grid_dim(n_,1,1);
-  size_t shmem = DOT_BLOCK_SIZE * sizeof(std::complex<float>);
-  hipLaunchKernelGGL(kernel_dot_wabn, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nwalk,nocc,nchol,
+  hipLaunchKernelGGL(kernel_dot_wabn, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), 0, 0, nwalk,nocc,nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
@@ -242,8 +228,7 @@ void dot_wanb( int nwalk, int nocc, int nchol,
   int nb = (nocc*nchol-1)/(b_*nf)+1;
   dim3 grid_dim(nwalk,na,nb);
   dim3 block_dim(a_,b_,1);
-  size_t shmem = 1024 * sizeof(std::complex<double>);
-  hipLaunchKernelGGL(kernel_dot_wanb, dim3(grid_dim), dim3(block_dim), shmem, 0, nf,nwalk,nocc,nchol,
+  hipLaunchKernelGGL(kernel_dot_wanb, dim3(grid_dim), dim3(block_dim), 0, 0, nf,nwalk,nocc,nchol,
                                    static_cast<thrust::complex<double> const>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
@@ -262,8 +247,7 @@ void dot_wanb( int nwalk, int nocc, int nchol,
   int nb = (nocc*nchol-1)/(b_*nf)+1;
   dim3 grid_dim(nwalk,na,nb);
   dim3 block_dim(a_,b_,1);
-  size_t shmem = 1024 * sizeof(std::complex<float>);
-  hipLaunchKernelGGL(kernel_dot_wanb, dim3(grid_dim), dim3(block_dim), shmem, 0, nf,nwalk,nocc,nchol,
+  hipLaunchKernelGGL(kernel_dot_wanb, dim3(grid_dim), dim3(block_dim), 0, 0, nf,nwalk,nocc,nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<float> *>(y),incy);
@@ -340,8 +324,7 @@ void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
                std::complex<double>* F)
 {
   dim3 grid_dim(nmo,nmo,nmo);
-  size_t shmem = DOT_BLOCK_SIZE * sizeof(std::complex<double>);
-  hipLaunchKernelGGL(kernel_dot_wpan_waqn_Fwpq, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nwalk,nmo,nchol,
+  hipLaunchKernelGGL(kernel_dot_wpan_waqn_Fwpq, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), 0, 0, nwalk,nmo,nchol,
                                    static_cast<thrust::complex<double> const>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(F));
@@ -354,8 +337,7 @@ void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
                std::complex<float>* F)
 {
   dim3 grid_dim(nmo,nmo,nmo);
-  size_t shmem = DOT_BLOCK_SIZE * sizeof(std::complex<float>);
-  hipLaunchKernelGGL(kernel_dot_wpan_waqn_Fwpq, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nwalk,nmo,nchol,
+  hipLaunchKernelGGL(kernel_dot_wpan_waqn_Fwpq, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), 0, 0, nwalk,nmo,nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<float> *>(F));
@@ -370,8 +352,7 @@ void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
                std::complex<double>* F)
 {
   dim3 grid_dim(nmo,nmo,nmo);
-  size_t shmem = DOT_BLOCK_SIZE * sizeof(std::complex<float>);
-  hipLaunchKernelGGL(kernel_dot_wpan_waqn_Fwpq, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nwalk,nmo,nchol,
+  hipLaunchKernelGGL(kernel_dot_wpan_waqn_Fwpq, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), 0, 0, nwalk,nmo,nchol,
                                    static_cast<thrust::complex<float> const>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(F));

@@ -10,13 +10,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#include<cassert>
+#include <cassert>
 #include <complex>
-#include<hip/hip_runtime.h>
+#include <hip/hip_runtime.h>
 #include <thrust/complex.h>
-#include<hip/hip_runtime.h>
+#include "Platforms/CUDA_legacy/uninitialized_array.hpp"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
-#include "AFQMC/Numerics/detail/HIP/Kernels/buffer_helper.hip.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels
@@ -31,7 +30,7 @@ __global__ void kernel_batched_dot_wabn_wban(int nbatch, int nwalk, int nocc, in
     int batch = blockIdx.x;
     if( batch >= nbatch ) return;
     if( blockIdx.y >= nwalk*nocc*nocc ) return;
-    auto cache = shared_memory_proxy<thrust::complex<T>>();
+    __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
     int nocc2 = nocc*nocc;
     int w = blockIdx.y/(nocc2);
     int a = (blockIdx.y%(nocc2))/nocc;
@@ -45,7 +44,7 @@ __global__ void kernel_batched_dot_wabn_wban(int nbatch, int nwalk, int nocc, in
         cache[ threadIdx.x ] += static_cast<thrust::complex<T>>(A_[ i ] * B_[ i ]);
         i += blockDim.x;
     }
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
@@ -71,7 +70,7 @@ __global__ void kernel_batched_dot_wanb_wbna(int nbatch, int nwalk, int nocc, in
     int batch = blockIdx.x;
     if( batch >= nbatch ) return;
     if( blockIdx.y >= nwalk*nocc*nocc ) return;
-    auto cache = shared_memory_proxy<thrust::complex<T>>();
+    __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
     int nocc2 = nocc*nocc;
     int w = blockIdx.y/(nocc2);
     int a = (blockIdx.y%(nocc2))/nocc;
@@ -85,7 +84,7 @@ __global__ void kernel_batched_dot_wanb_wbna(int nbatch, int nwalk, int nocc, in
         cache[ threadIdx.x ] += static_cast<thrust::complex<T>>(A_[ i*nocc ] * B_[ i*nocc ]);
         i += blockDim.x;
     }
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
@@ -109,8 +108,7 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
 {
   int n_=nwalk*nocc*nocc;
   dim3 grid_dim(nbatch,n_,1);
-  size_t shmem = DOT_BLOCK_SIZE;
-  hipLaunchKernelGGL(kernel_batched_dot_wabn_wban, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nbatch,nwalk,nocc,nchol,
+  hipLaunchKernelGGL(kernel_batched_dot_wabn_wban, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), 0, 0, nbatch,nwalk,nocc,nchol,
                                    reinterpret_cast<thrust::complex<double> const*>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
@@ -124,8 +122,7 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
 {
   int n_=nwalk*nocc*nocc;
   dim3 grid_dim(nbatch,n_,1);
-  size_t shmem = DOT_BLOCK_SIZE;
-  hipLaunchKernelGGL(kernel_batched_dot_wabn_wban, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nbatch,nwalk,nocc,nchol,
+  hipLaunchKernelGGL(kernel_batched_dot_wabn_wban, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), 0, 0, nbatch,nwalk,nocc,nchol,
                                    reinterpret_cast<thrust::complex<float> const*>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<float> *>(y),incy);
@@ -139,8 +136,7 @@ void batched_dot_wabn_wban( int nbatch, int nwalk, int nocc, int nchol,
 {
   int n_=nwalk*nocc*nocc;
   dim3 grid_dim(nbatch,n_,1);
-  size_t shmem = DOT_BLOCK_SIZE;
-  hipLaunchKernelGGL(kernel_batched_dot_wabn_wban, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nbatch,nwalk,nocc,nchol,
+  hipLaunchKernelGGL(kernel_batched_dot_wabn_wban, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), 0, 0, nbatch,nwalk,nocc,nchol,
                                    reinterpret_cast<thrust::complex<float> const*>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
@@ -155,8 +151,7 @@ void batched_dot_wanb_wbna( int nbatch, int nwalk, int nocc, int nchol,
 {
   int n_=nwalk*nocc*nocc;
   dim3 grid_dim(nbatch,n_,1);
-  size_t shmem = DOT_BLOCK_SIZE;
-  hipLaunchKernelGGL(kernel_batched_dot_wanb_wbna, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nbatch,nwalk,nocc,nchol,
+  hipLaunchKernelGGL(kernel_batched_dot_wanb_wbna, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), 0, 0, nbatch,nwalk,nocc,nchol,
                                    reinterpret_cast<thrust::complex<double> const*>(alpha),
                                    reinterpret_cast<thrust::complex<double> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
@@ -170,8 +165,7 @@ void batched_dot_wanb_wbna( int nbatch, int nwalk, int nocc, int nchol,
 {
   int n_=nwalk*nocc*nocc;
   dim3 grid_dim(nbatch,n_,1);
-  size_t shmem = DOT_BLOCK_SIZE;
-  hipLaunchKernelGGL(kernel_batched_dot_wanb_wbna, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nbatch,nwalk,nocc,nchol,
+  hipLaunchKernelGGL(kernel_batched_dot_wanb_wbna, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), 0, 0, nbatch,nwalk,nocc,nchol,
                                    reinterpret_cast<thrust::complex<float> const*>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<float> *>(y),incy);
@@ -185,8 +179,7 @@ void batched_dot_wanb_wbna( int nbatch, int nwalk, int nocc, int nchol,
 {
   int n_=nwalk*nocc*nocc;
   dim3 grid_dim(nbatch,n_,1);
-  size_t shmem = DOT_BLOCK_SIZE;
-  hipLaunchKernelGGL(kernel_batched_dot_wanb_wbna, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), shmem, 0, nbatch,nwalk,nocc,nchol,
+  hipLaunchKernelGGL(kernel_batched_dot_wanb_wbna, dim3(grid_dim), dim3(DOT_BLOCK_SIZE), 0, 0, nbatch,nwalk,nocc,nchol,
                                    reinterpret_cast<thrust::complex<float> const*>(alpha),
                                    reinterpret_cast<thrust::complex<float> const*>(Tab),
                                    reinterpret_cast<thrust::complex<double> *>(y),incy);
