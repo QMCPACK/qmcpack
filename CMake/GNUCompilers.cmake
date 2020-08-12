@@ -48,7 +48,7 @@ SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fomit-fr
 #     arm: -mpcu
 #     default or cray: none
 #--------------------------------------
-IF($ENV{CRAYPE_VERSION} MATCHES ".")
+IF(CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
   # It's a cray machine. Don't do anything
 ELSEIF(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
   # the case for x86_64

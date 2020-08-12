@@ -42,9 +42,9 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///source particle set
   ParticleSet& PtclA;
   ///long-range Handler
-  LRHandlerType* AB;
+  std::unique_ptr<LRHandlerType> AB;
   ///long-range derivative handler
-  LRHandlerType* dAB;
+  std::unique_ptr<LRHandlerType> dAB;
   ///locator of the distance table
   const int myTableIndex;
   ///number of species of A particle set
@@ -115,8 +115,6 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   //particle trace samples
   Array<TraceReal, 1>* Ve_sample;
   Array<TraceReal, 1>* Vi_sample;
-  Array<TraceReal, 1> Ve_samp_tmp;
-  Array<TraceReal, 1> Vi_samp_tmp;
   Array<TraceReal, 1> Ve_const;
   Array<TraceReal, 1> Vi_const;
 #endif

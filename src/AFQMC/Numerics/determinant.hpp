@@ -153,17 +153,14 @@ namespace device{
   template<class T>
   inline void batched_determinant_from_getrf(int n, device_pointer<T>* A, int lda, device_pointer<int> piv, int pstride, T LogOverlapFactor, T* res, int nbatch)
   {
-    // This shouldn't be here.
     T **A_h = new T*[nbatch];
     for(int i=0; i<nbatch; i++)
       A_h[i] = to_address(A[i]);
     T **A_d;
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-    arch::malloc((void **)&A_d, nbatch*sizeof(*A_h));
+    arch::malloc((void **)&A_d,  nbatch*sizeof(*A_h));
     arch::memcopy(A_d, A_h, nbatch*sizeof(*A_h), arch::memcopyH2D);
     kernels::batched_determinant_from_getrf_gpu(n,A_d,lda,to_address(piv),pstride,LogOverlapFactor,res,nbatch);
     arch::free(A_d);
-#endif
     delete [] A_h;
   }
 

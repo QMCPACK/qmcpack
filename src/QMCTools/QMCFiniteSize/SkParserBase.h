@@ -12,6 +12,12 @@ namespace qmcplusplus
 {
 using namespace std;
 
+/** Base class for Sk parser
+ *
+ * parse is the only pure virtual function that must be overridden
+ * holds various information about S(k) and access functions used by
+ * qmcfinitesize
+ */
 class SkParserBase : public QMCTraits
 {
 public:

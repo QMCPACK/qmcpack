@@ -358,4 +358,5 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
 }
 
+
 } // namespace qmcplusplus

@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
+#include <config/stdlib/math.hpp>
 
 
 namespace qmcplusplus
@@ -45,7 +46,7 @@ struct EGOSet : public SPOSet
     RealType sinkr, coskr;
     for (int ik = 0; ik < KptMax; ik++)
     {
-      sincos(dot(K[ik], r), &sinkr, &coskr);
+      qmcplusplus::sincos(dot(K[ik], r), &sinkr, &coskr);
       psi[ik] = ValueType(coskr, sinkr);
     }
   }
@@ -63,7 +64,7 @@ struct EGOSet : public SPOSet
     RealType sinkr, coskr;
     for (int ik = 0; ik < KptMax; ik++)
     {
-      sincos(dot(K[ik], r), &sinkr, &coskr);
+      qmcplusplus::sincos(dot(K[ik], r), &sinkr, &coskr);
       psi[ik]   = ValueType(coskr, sinkr);
       dpsi[ik]  = ValueType(-sinkr, coskr) * K[ik];
       d2psi[ik] = ValueType(mK2[ik] * coskr, mK2[ik] * sinkr);

@@ -13,7 +13,7 @@
 #define AFQMC_HIPBLAS_FUNCTIONDEFS_H
 
 #include<cassert>
-#include <hip_runtime.h>
+#include <hip/hip_runtime.h>
 #include "hipblas.h"
 #include "rocsolver.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"

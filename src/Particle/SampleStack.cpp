@@ -24,7 +24,6 @@ SampleStack::SampleStack() : total_num_(0), max_samples_(10), current_sample_cou
  */
 void SampleStack::setMaxSamples(int n)
 {
-  clearEnsemble();
   max_samples_ = n;
   //do not add anything
   if (n == 0)
@@ -55,7 +54,7 @@ void SampleStack::saveEnsemble(std::vector<MCSample>& walker_list)
   }
 }
 
-void SampleStack::appendSample(MCSample &&sample)
+void SampleStack::appendSample(MCSample&& sample)
 {
   // Ignore samples in excess of the expected number of samples
   if (current_sample_count_ < max_samples_)
@@ -97,6 +96,8 @@ void SampleStack::clearEnsemble()
   max_samples_          = 0;
   current_sample_count_ = 0;
 }
+
+void SampleStack::resetSampleCount() { current_sample_count_ = 0; }
 
 
 } // namespace qmcplusplus

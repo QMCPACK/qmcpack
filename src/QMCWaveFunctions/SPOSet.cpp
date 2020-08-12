@@ -67,12 +67,15 @@ void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
 void SPOSet::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
                                   const RefVector<const VirtualParticleSet>& vp_list,
                                   const RefVector<ValueVector_t>& psi_list,
-                                  const RefVector<const ValueVector_t>& psiinv_list,
+                                  const std::vector<const ValueType*>& invRow_ptr_list,
                                   std::vector<std::vector<ValueType>>& ratios_list)
 {
 #pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
-    spo_list[iw].get().evaluateDetRatios(vp_list[iw], psi_list[iw], psiinv_list[iw], ratios_list[iw]);
+  {
+    Vector<ValueType> invRow(const_cast<ValueType*>(invRow_ptr_list[iw]), psi_list[iw].get().size());
+    spo_list[iw].get().evaluateDetRatios(vp_list[iw], psi_list[iw], invRow, ratios_list[iw]);
+  }
 }
 
 void SPOSet::mw_evaluateVGL(const RefVector<SPOSet>& spo_list,

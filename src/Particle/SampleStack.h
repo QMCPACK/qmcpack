@@ -58,6 +58,8 @@ public:
   ///clear the ensemble
   void clearEnsemble();
   //@}
+  ///  Set the sample count to zero but preserve the storage
+  void resetSampleCount();
 
 private:
   int total_num_;

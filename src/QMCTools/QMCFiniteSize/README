@@ -18,7 +18,7 @@ Using the structure factor, this code computes:
      range Jastrow.
 
 Using qmcfinitesize:
-qmcfinitesize qmcinput.xml --ascii|--scalardat skfile.dat
+qmcfinitesize qmcinput.xml --ascii|--scalardat|--hdf5 skfile.dat
 
 qmcinput.xml is the same file used in the initial QMCPACK run.  This is required to reconstruct
 the unit cell volume, obtain the number of particles, and do the long range breakup.
@@ -43,6 +43,12 @@ skfile.dat is the file containing the S(k) data.  The two options are as follows
               changed from how it appears in the scalar.dat file.  The relevant
               entries are "rho_e_X_#", where X=e for the <rho_-k*rho_k> piece, X=i for Im(rho_k), and
               X=r for Re(rho_k).  
+
+--hdf5: If the estiator "skall" is used during the run along with the hdf5="yes" option, then this utility will build 
+        the flucuation structure factor from the particular stat.h5 file which includes S(k) at each block. 
+        A simple equilibration estimate is performed for each k value, and then the block averaged S(k) is stored after
+        throwing out the equilibration blocks. If one is interested in twist averaged data, simply run this utility 
+        for the stat.h5 files for each twist, and twist average the results.
 
 ---Output---
 2-body Potential Energy Corrections:

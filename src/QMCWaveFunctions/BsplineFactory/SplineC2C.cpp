@@ -15,6 +15,7 @@
 #include <QMCWaveFunctions/BsplineFactory/SplineC2C.h>
 #include <spline2/MultiBsplineEval.hpp>
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
+#include <config/stdlib/math.hpp>
 
 namespace qmcplusplus
 {
@@ -67,7 +68,7 @@ inline void SplineC2C<ST>::assign_v(const PointType& r,
     ST s, c;
     const ST val_r = myV[2 * j];
     const ST val_i = myV[2 * j + 1];
-    sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
+    qmcplusplus::sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
     psi[j + first_spo] = ComplexT(val_r * c - val_i * s, val_i * c + val_r * s);
   }
 }
@@ -180,7 +181,7 @@ inline void SplineC2C<ST>::assign_vgl(const PointType& r,
 
     //phase
     ST s, c;
-    sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -246,7 +247,7 @@ inline void SplineC2C<ST>::assign_vgl_from_l(const PointType& r,
 
     //phase
     ST s, c;
-    sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g0[jr];
@@ -341,7 +342,7 @@ void SplineC2C<ST>::assign_vgh(const PointType& r,
 
     //phase
     ST s, c;
-    sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -493,7 +494,7 @@ void SplineC2C<ST>::assign_vghgh(const PointType& r,
 
     //phase
     ST s, c;
-    sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];

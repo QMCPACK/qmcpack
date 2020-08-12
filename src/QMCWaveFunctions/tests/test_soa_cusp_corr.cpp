@@ -20,8 +20,8 @@
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/GaussianBasisSet.h"
 
-#include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
-#include "QMCWaveFunctions/lcao/CuspCorrection.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
+#include "QMCWaveFunctions/LCAO/CuspCorrection.h"
 
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 

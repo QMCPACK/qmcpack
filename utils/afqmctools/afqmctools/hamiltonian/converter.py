@@ -495,6 +495,8 @@ def read_qmcpack_dense(filename):
                                             (nmo*nmo,nchol))
             except KeyError:
                 print("Error Hamiltonian/DenseFactorized/L")
+    assert chol.shape == (nmo*nmo, nchol)
+    assert hcore.shape == (nmo, nmo)
     return hcore, chol, enuc
 
 def read_common_input(filename, get_hcore=True):

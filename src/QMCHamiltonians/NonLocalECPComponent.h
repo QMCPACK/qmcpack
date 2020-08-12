@@ -169,11 +169,9 @@ public:
    *
    * @param ecp_component_list a list of ECP components
    * @param p_list a list of electron particle set.
-   * @param iat_list a list of ion indices.
    * @param psi_list a list of trial wave function object
-   * @param iel_list a list of electron indices
-   * @param r_list a list of the distances between ion iat and electron iel.
-   * @param dr_list a list of displacements from ion iat to electron iel.
+   * @param joblist a list of ion-electron pairs
+   * @param psi_leader the batch leader of psi_list
    * @param pairpots a list of contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    * @param use_DLA if ture, use determinant localization approximation (DLA).
    *
@@ -184,6 +182,7 @@ public:
                                const RefVector<ParticleSet>& p_list,
                                const RefVector<TrialWaveFunction>& psi_list,
                                const RefVector<const NLPPJob<RealType>>& joblist,
+                               TrialWaveFunction& psi_leader,
                                std::vector<RealType>& pairpots,
                                bool use_DLA);
 

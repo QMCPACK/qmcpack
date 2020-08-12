@@ -17,6 +17,7 @@
 #include "QMCDrivers/DMC/DMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/ContextForSteps.h"
+#include "QMCDrivers/SFNBranch.h"
 
 namespace qmcplusplus
 {
@@ -47,7 +48,7 @@ public:
     const DMCDriverInput& dmcdrv_input;
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
-    BranchEngineType& branch_engine;
+    SFNBranch& branch_engine;
     IndexType recalculate_properties_period;
     IndexType step;
     int block;
@@ -55,7 +56,7 @@ public:
     StateForThread(QMCDriverInput& qmci,
                    DMCDriverInput& dmci,
                    DriftModifierBase& drift_mod,
-                   BranchEngineType& branch_eng,
+                   SFNBranch& branch_eng,
                    MCPopulation& pop)
         : qmcdrv_input(qmci), dmcdrv_input(dmci), drift_modifier(drift_mod), population(pop), branch_engine(branch_eng)
     {}
@@ -101,8 +102,6 @@ public:
   QMCRunType getRunType() { return QMCRunType::DMC_BATCH; }
 
   void setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian);
-
-  QMCDriverNew::AdjustedWalkerCounts calcDefaultLocalWalkers(QMCDriverNew::AdjustedWalkerCounts awc) const;
 
 private:
   DMCDriverInput dmcdriver_input_;

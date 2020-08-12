@@ -133,7 +133,7 @@ struct BasisSetBase : public OrbitalSetTraits<T>
 /** Base for real basis set
  *
  * Equivalent to BasisSetBase with minimum requirements
- * Used by lcao
+ * Used by LCAO
  */
 template<typename T>
 struct SoaBasisSetBase

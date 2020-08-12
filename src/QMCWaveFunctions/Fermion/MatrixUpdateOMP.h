@@ -105,6 +105,8 @@ public:
 
   OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
 
+  inline T* getRow_psiMinv_offload(int row_id) { return psiMinv_dev_ptr + row_id * psiMinv.cols(); }
+
   /** compute the inverse of the transpose of matrix A
    * @param logdetT orbital value matrix
    * @param Ainv inverse matrix

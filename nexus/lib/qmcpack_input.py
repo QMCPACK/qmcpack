@@ -2158,9 +2158,10 @@ class localenergy(QIxml):
 
 class energydensity(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','dynamic','static']
-    elements   = ['reference_points','spacegrid']
-    identifier = 'name'
+    attributes  = ['type','name','dynamic','static','ion_points']
+    elements    = ['reference_points','spacegrid']
+    identifier  = 'name'
+    write_types = obj(ion_points=yesno)
 #end class energydensity
 
 class reference_points(QIxml):
@@ -2802,7 +2803,7 @@ spindensity.defaults.set(
     type='spindensity',name='SpinDensity'
     )
 skall.defaults.set(
-    type='skall',name='skall'
+    type='skall',name='skall',source='ion0',target='e',hdf5=True
     )
 force.defaults.set(
     type='Force',name='force'
@@ -4922,6 +4923,8 @@ def generate_hamiltonian(name         = 'h0',
                     est = chiesa(name='KEcorr',type='chiesa',source=ename,psi=wfname)
                 elif estname=='localenergy':
                     est = localenergy(name='LocalEnergy')
+                elif estname=='skall':
+                    est = skall(name='SkAll',type='skall',source=iname,target=ename,hdf5=True)
                 elif estname=='energydensity':
                     est = energydensity(
                         type='EnergyDensity',name='EDvoronoi',dynamic=ename,static=iname,

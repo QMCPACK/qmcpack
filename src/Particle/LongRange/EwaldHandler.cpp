@@ -100,7 +100,7 @@ void EwaldHandler::fillFk(KContainer& KList)
       while (ki < KList.kshell[ks + 1] && ki < Fk.size())
         Fk[ki++] = uk;
     }
-    PreFactors[3]    = 0.0;
+    PreFactors[3] = 0.0;
 #endif
   }
   app_log().flush();

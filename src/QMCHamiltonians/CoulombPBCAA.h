@@ -36,12 +36,18 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
   typedef LRHandlerType::mRealType mRealType;
 
+  // using shared_ptr on AA, dAA is a compromise
+  // When ion-ion is_active = false, makeClone calls the copy constructor.
+  // AA, dAA are shared between clones.
+  // When elec-elec is_active = true, makeClone calls the constructor
+  // AA, dAA are not shared between clones and behave more like unique_ptr
+
   // energy-optimized
-  LRHandlerType* AA;
+  std::shared_ptr<LRHandlerType> AA;
   GridType* myGrid;
   RadFunctorType* rVs;
   // force-optimized
-  LRHandlerType* dAA;
+  std::shared_ptr<LRHandlerType> dAA;
   GridType* myGridforce;
   RadFunctorType* rVsforce;
 
@@ -71,7 +77,6 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   //single particle trace sample
   Array<TraceReal, 1>* V_sample;
   Array<TraceReal, 1> V_const;
-  Array<TraceReal, 1> V_samp_tmp;
 #endif
   ParticleSet& Ps;
 

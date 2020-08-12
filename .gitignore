@@ -7,4 +7,5 @@ qmcpack_manual.out
 qmcpack_manual.toc
 qmcpack_manual.pdf
 .DS_Store
-build_*
+/build_*/
+docs/_build

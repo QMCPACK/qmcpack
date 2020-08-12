@@ -17,7 +17,7 @@
 #include<iostream>
 #include<stdexcept>
 #include <hip/hip_runtime.h>
-#include "AFQMC/Memory/HIP/hip_init.h"
+#include "hip_init.h"
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "hipblas.h"

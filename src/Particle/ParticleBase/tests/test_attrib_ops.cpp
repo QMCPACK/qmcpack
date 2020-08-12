@@ -50,7 +50,6 @@ void double_test_case()
 
 TEST_CASE("particle_attrib_ops_double", "[particle_base]")
 {
-
   SECTION("dim = 1") { double_test_case<1>(); }
   SECTION("dim = 2") { double_test_case<2>(); }
   SECTION("dim = 3") { double_test_case<3>(); }
@@ -86,7 +85,6 @@ void complex_test_case()
 
 TEST_CASE("particle_attrib_ops_complex", "[particle_base]")
 {
-
   SECTION("dim = 1") { complex_test_case<1>(); }
   SECTION("dim = 2") { complex_test_case<2>(); }
   SECTION("dim = 3") { complex_test_case<3>(); }

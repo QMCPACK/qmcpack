@@ -184,6 +184,7 @@ else() #{{{
 
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
+  SUBDIRS(Estimators)
   SUBDIRS(QMCDrivers)
 
   IF(BUILD_LMYENGINE_INTERFACE)
@@ -217,7 +218,6 @@ else() #{{{
     SUBDIRS(QMCWaveFunctions/tests)
     SUBDIRS(QMCHamiltonians/tests)
     SUBDIRS(type_traits/tests)
-    SUBDIRS(Estimators/tests)
     SUBDIRS(QMCDrivers/tests)
     SUBDIRS(QMCApp/tests)
     SUBDIRS(Message/tests)

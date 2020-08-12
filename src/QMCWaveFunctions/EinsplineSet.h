@@ -27,7 +27,7 @@
 #include <spline/einspline_engine.hpp>
 #ifdef QMC_CUDA
 #include <einspline/multi_bspline_create_cuda.h>
-#include "QMCWaveFunctions/AtomicOrbitalCuda.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/AtomicOrbitalCuda.h"
 #endif
 
 namespace qmcplusplus
@@ -662,7 +662,7 @@ public:
 ////    double s, c;
 ////    for (int i=0; i<kPoints.size(); i++) {
 ////      phase[i] = -dot(r, kPoints[i]);
-////      sincos (phase[i], &s, &c);
+////      qmcplusplus::sincos (phase[i], &s, &c);
 ////      eikr[i] = std::complex<double>(c,s);
 ////    }
 ////#endif

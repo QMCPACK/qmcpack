@@ -177,8 +177,8 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   // Step 3. Handle more than neutral electrons
   //extra electrons around the geometric center
   RealType cnorm = 1.0 / static_cast<RealType>(Centers);
-  RealType sep = rmin * 2;
-  cm = cnorm * cm;
+  RealType sep   = rmin * 2;
+  cm             = cnorm * cm;
   if (nup_tot < numUp)
     while (nup_tot < numUp)
       els->R[nup_tot++] = cm + sep * chi[random_number_counter++];

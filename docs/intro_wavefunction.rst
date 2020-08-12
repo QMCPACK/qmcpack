@@ -1,7 +1,7 @@
 .. _intro_wavefunction:
 
-Trial wavefunction specificaion
-===============================
+Trial wavefunction specification
+================================
 
 .. _trial-intro:
 
@@ -259,13 +259,13 @@ Additional information:
    this feature, the following needs to be done:
 
      -  The CUDA Multi-Process Service (MPS) needs to be used (e.g., on
-     Summit/SummitDev use “-alloc_flags gpumps" for bsub). If MPS is not
-     detected, sharing will be disabled.
+        Summit/SummitDev use "-alloc_flags gpumps" for bsub). If MPS is not
+        detected, sharing will be disabled.
 
      -  CUDA_VISIBLE_DEVICES needs to be properly set to control each rank’s
-     visible CUDA devices (e.g., on OLCF Summit/SummitDev one needs to
-     create a resource set containing all GPUs with the respective number
-     of ranks with “jsrun –task-per-rs Ngpus -g Ngpus").
+        visible CUDA devices (e.g., on OLCF Summit/SummitDev one needs to
+        create a resource set containing all GPUs with the respective number
+        of ranks with "jsrun –task-per-rs Ngpus -g Ngpus").
 
 - ``Spline_Size_Limit_MB``. Allows distribution of the B-spline
   coefficient table between the host and GPU memory. The compute kernels
@@ -549,7 +549,7 @@ In practice, we have seen that using a meshfactor=0.5 is often possible and achi
 :numref:`fig3` illustrates how the regions are assigned.
 
 .. _fig3:
-.. figure:: hybrid_new.jpg
+.. figure:: /figs/hybrid_new.jpg
     :width: 400
     :align: center
 
@@ -1233,8 +1233,8 @@ Correlation element:
 Additional information:
 
 - ``speciesA, speciesB`` The scale function u(r) is defined for species pairs uu and ud.
-There is no need to define ud or dd since uu=dd and ud=du.  The cusp condition is computed internally
-based on the charge of the quantum particles.
+  There is no need to define ud or dd since uu=dd and ud=du.  The cusp condition is computed internally
+  based on the charge of the quantum particles.
 
 Coefficients element:
 
@@ -1925,142 +1925,6 @@ The following modifications are worth a try in the optimization block:
 Note that the new adaptive shift optimizer has not yet been tried with
 backflow wavefunctions. It should perform better than the older
 optimizers, but a considered optimization process is still recommended.
-
-.. _fdlr:
-
-Finite-difference linear response wave functions
-------------------------------------------------
-
-The finite-difference linear response wavefunction (FDLR) is an
-experimental wavefunction type described in detail in
-:cite:`blunt_charge-transfer_2017`. In this method, the wavefunction is formed as the linear response of some existing trial wavefunction in QMCPACK. This derivatives of this linear response are
-approximated by a simple finite difference.
-
-Forming a wavefunction within the linear response space of an existing ansatz can be very powerful. For example, a configuration interaction singles (CIS) wavefunction can be formed as a linear combination of the first derivatives of a Slater determinant (with respect to its orbital rotation parameters). Thus, in this sense, CIS is the linear response of Hartree--Fock theory.
-
-Forming a CIS wavefunction as the linear response of an optimizable Slater determinant is where all testing of this wavefunction has been performed. In theory, the implementation is flexible and can be used with other trial wavefunctions in QMCPACK, but this has not been tested; the FDLR trial wavefunction is experimental.
-
-Mathematically, the FDLR wavefunction has the form
-
-.. math::
-  :label: eq25
-
-  \Psi_{\textrm{FDLR}} (\mathbf{\mu}, \mathbf{X}) = \Psi (\mathbf{X} + \mathbf{\mu}) - \Psi (\mathbf{X} - \mathbf{\mu})\: ,
-
-where :math:`\Psi(\mathbf{P})` is some trial wavefunction in QMCPACK,
-and :math:`\mathbf{P}` is its optimizable parameters. :math:`\mathbf{X}`
-is the “base” parameters about which the finite difference is performed
-(for example, an overall orbital rotation). :math:`\mathbf{\mu}` is the
-“finite-difference” parameters, which define the direction of the
-derivative, and whose magnitude determines the magnitude of the finite
-difference. In the limit that the magnitude of :math:`\mathbf{mu}` goes
-to :math:`0`, the :math:`\Psi_{\textrm{FDLR}}` object just defined
-becomes equivalent to
-
-.. math::
-  :label: eq26
-
-  \Psi_{\textrm{FDLR}} (\mathbf{\mu}, \mathbf{X}) = \sum_{pq} \mu_{pq} \: \frac{\partial \Psi_{\textrm{det}} (\mathbf{X}) }{\partial X_{pq}}\: ,
-
-which is the desired linear response wavefunction we are approximating.
-In the case that :math:`\Psi(\mathbf{P})` is a determinant with orbital
-rotation parameters :math:`\mathbf{P}`, the previous equation is a CIS
-wavefunction with CIS expansion coefficients :math:`\mathbf{\mu}` and
-orbital rotation :math:`\mathbf{X}`.
-
-Input specifications
-~~~~~~~~~~~~~~~~~~~~
-
-An FDLR wavefunction is specified within a ``<fdlr> ... </fdlr>`` block.
-
-To fully specify an FDLR wavefunction as done previously, we require the
-initial parameters for both :math:`\mathbf{X}` and :math:`\mathbf{\mu}`
-to be input. This therefore requires two trial wavefunctions to be
-provided on input. Each of these is best specified in its own XML file.
-The names of these two files are provided in an ``<include>`` tag via
-``<include wfn_x_href=“ ... ” wfn_d_href=“ ... ”>``. ``wfn_x_href``
-specifies the file that will hold the :math:`\mathbf{X}` parameters.
-``wfn_d_href`` specifies the file that will hold the
-:math:`\mathbf{\mu}` parameters.
-
-Other options inside the ``<include>`` tag are ``opt_x`` and ``opt_d``,
-which specify whether or not :math:`\mathbf{X}` and :math:`\mathbf{\mu}`
-parameters are optimizable, respectively.
-
-Example Use Case
-~~~~~~~~~~~~~~~~
-
-::
-
-  <fdlrwfn name="FDLR">
-    <include wfn_x_href="h2.wfn_x.xml" wfn_d_href="h2.wfn_d.xml" opt_x="yes" opt_d="yes"/>
-  </fdlrwfn>
-
-with the ``h2.wfn_x.xml`` file containing one of the wavefunctions and
-corresponding set of :math:`\mathbf{X}` parameters, such as:
-
-::
-
-  <?xml version="1.0"?>
-  <wfn_x>
-      <determinantset name="LCAOBSet" type="MolecularOrbital" transform="yes" source="ion0">
-        <basisset name="LCAOBSet">
-          <atomicBasisSet name="Gaussian-G2" angular="cartesian" type="Gaussian" elementType="H" normalized="no">
-            <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
-            <basisGroup rid="H00" n="0" l="0" type="Gaussian">
-              <radfunc exponent="1.923840000000e+01" contraction="3.282799101900e-02"/>
-              <radfunc exponent="2.898720000000e+00" contraction="2.312039367510e-01"/>
-              <radfunc exponent="6.534720000000e-01" contraction="8.172257764360e-01"/>
-            </basisGroup>
-            <basisGroup rid="H10" n="1" l="0" type="Gaussian">
-              <radfunc exponent="1.630642000000e-01" contraction="1.000000000000e+00"/>
-            </basisGroup>
-          </atomicBasisSet>
-        </basisset>
-
-      <slaterdeterminant optimize="yes">
-        <determinant id="det_up" sposet="spo-up">
-          <opt_vars size="3">
-            0.0 0.0 0.0
-          </opt_vars>
-        </determinant>
-
-        <determinant id="det_down" sposet="spo-dn">
-          <opt_vars size="3">
-            0.0 0.0 0.0
-          </opt_vars>
-        </determinant>
-      </slaterdeterminant>
-
-        <sposet basisset="LCAOBSet" name="spo-up" size="4" optimize="yes">
-          <occupation mode="ground"/>
-          <coefficient size="4" id="updetC">
-    2.83630000000000e-01  3.35683000000000e-01  2.83630000000000e-01  3.35683000000000e-01
-    1.66206000000000e-01  1.22367400000000e+00 -1.66206000000000e-01 -1.22367400000000e+00
-    8.68279000000000e-01 -6.95081000000000e-01  8.68279000000000e-01 -6.95081000000000e-01
-   -9.77898000000000e-01  1.19682400000000e+00  9.77898000000000e-01 -1.19682400000000e+00
-  </coefficient>
-        </sposet>
-        <sposet basisset="LCAOBSet" name="spo-dn" size="4" optimize="yes">
-          <occupation mode="ground"/>
-          <coefficient size="4" id="downdetC">
-    2.83630000000000e-01  3.35683000000000e-01  2.83630000000000e-01  3.35683000000000e-01
-    1.66206000000000e-01  1.22367400000000e+00 -1.66206000000000e-01 -1.22367400000000e+00
-    8.68279000000000e-01 -6.95081000000000e-01  8.68279000000000e-01 -6.95081000000000e-01
-   -9.77898000000000e-01  1.19682400000000e+00  9.77898000000000e-01 -1.19682400000000e+00
-  </coefficient>
-        </sposet>
-
-      </determinantset>
-  </wfn_x>
-
-and similarly for the ``h2.wfn_d.xml`` file, which will hold the initial
-:math:`\mathbf{\mu}` parameters.
-
-This use case is a wavefunction file for an optimizable determinant
-wavefunction for H\ :math:`_2`, in a double zeta valence basis set.
-Thus, the FDLR wavefunction here would perform CIS on H\ :math:`_2` in a
-double zeta basis set.
 
 .. _ionwf:
 

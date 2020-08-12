@@ -16,7 +16,7 @@
 #include "QMCDrivers/Crowd.h"
 #include "type_traits/template_types.hpp"
 #include "Estimators/tests/FakeEstimator.h"
-
+#include "Estimators/EstimatorManagerNew.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
@@ -32,7 +32,7 @@ class CrowdWithWalkers
 public:
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-  EstimatorManagerBase em;
+  EstimatorManagerNew em;
   UPtr<Crowd> crowd_ptr;
   Crowd& get_crowd() { return *crowd_ptr; }
   UPtrVector<MCPWalker> walkers;
@@ -81,7 +81,7 @@ TEST_CASE("Crowd integration", "[drivers]")
 {
   Communicate* comm = OHMMS::Controller;
 
-  EstimatorManagerBase em(comm);
+  EstimatorManagerNew em(comm);
 
   FakeEstimator* fake_est = new FakeEstimator;
 

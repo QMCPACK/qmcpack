@@ -69,33 +69,30 @@ inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::Sp
 
 template<typename T>
 inline void evaluate_v_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
-                               int ix, int iy, int iz,
-                               const T a[4], const T b[4], const T c[4],
+                               int ix,
+                               int iy,
+                               int iz,
+                               const T a[4],
+                               const T b[4],
+                               const T c[4],
                                T* restrict vals,
                                const int first,
-                               const int last)
+                               const int index)
 {
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
   const intptr_t zs = spline_m->z_stride;
 
-#ifdef ENABLE_OFFLOAD
-#pragma omp for
-#else
-#pragma omp simd aligned(vals)
-#endif
-  for (int n = 0; n < last - first; n++)
-  {
-    T val = T();
-    for (int i = 0; i < 4; i++)
-      for (int j = 0; j < 4; j++)
-      {
-        const T* restrict coefs = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
-        val += a[i] * b[j] *
-            (c[0] * coefs[n] + c[1] * coefs[n + zs] + c[2] * coefs[n + zs * 2] + c[3] * coefs[n + zs * 3]);
-      }
-    vals[n] = val;
-  }
+  T val = T();
+  for (int i = 0; i < 4; i++)
+    for (int j = 0; j < 4; j++)
+    {
+      const T* restrict coefs = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
+      val += a[i] * b[j] *
+          (c[0] * coefs[index] + c[1] * coefs[index + zs] + c[2] * coefs[index + zs * 2] +
+           c[3] * coefs[index + zs * 3]);
+    }
+  vals[index] = val;
 }
 
 } // namespace spline2offload

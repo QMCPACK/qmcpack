@@ -18,18 +18,17 @@
 
 namespace qmcplusplus
 {
-
 using mRealType = LRHandlerBase::mRealType;
 
 struct EslerCoulomb3D_ForSRCOUL
 { // stripped down version of LRCoulombSingleton::CoulombFunctor for 3D
   double norm;
-  inline double operator()(double r, double rinv) {return rinv;}
-  inline double Vk(double k) {return 1./(k*k);}
-  inline double dVk_dk(double k) {return -2*norm/(k*k*k);}
-  void reset(ParticleSet& ref) {norm=4.0*M_PI/ref.LRBox.Volume;}
-  void reset(ParticleSet& ref, double rs) {reset(ref);} // ignore rs
-  inline double df(double r) {return -1./(r*r);}
+  inline double operator()(double r, double rinv) { return rinv; }
+  inline double Vk(double k) { return 1. / (k * k); }
+  inline double dVk_dk(double k) { return -2 * norm / (k * k * k); }
+  void reset(ParticleSet& ref) { norm = 4.0 * M_PI / ref.LRBox.Volume; }
+  void reset(ParticleSet& ref, double rs) { reset(ref); } // ignore rs
+  inline double df(double r) { return -1. / (r * r); }
 };
 
 /** evalaute bare Coulomb in 3D
@@ -37,7 +36,7 @@ struct EslerCoulomb3D_ForSRCOUL
 TEST_CASE("srcoul", "[lrhandler]")
 {
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true;
+  Lattice.BoxBConds     = true;
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
   Lattice.reset();
@@ -47,11 +46,11 @@ TEST_CASE("srcoul", "[lrhandler]")
   REQUIRE(Approx(Lattice.LR_rc) == 2.5);
   REQUIRE(Approx(Lattice.LR_kc) == 12);
 
-  ParticleSet ref; // handler needs ref.SK.KLists
-  ref.Lattice = Lattice;  // !!!! crucial for access to Volume
-  ref.LRBox = Lattice;  // !!!! crucial for S(k) update
-  StructFact *SK = new StructFact(ref, Lattice.LR_kc);
-  ref.SK = SK;
+  ParticleSet ref;          // handler needs ref.SK.KLists
+  ref.Lattice    = Lattice; // !!!! crucial for access to Volume
+  ref.LRBox      = Lattice; // !!!! crucial for S(k) update
+  StructFact* SK = new StructFact(ref, Lattice.LR_kc);
+  ref.SK         = SK;
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);
@@ -62,14 +61,15 @@ TEST_CASE("srcoul", "[lrhandler]")
   mRealType r, dr, rinv;
   mRealType vsr;
   int nr = 101;
-  dr = 5.0/nr;  // L/[# of grid points]
-  for (int ir=1;ir<nr;ir++)
+  dr     = 5.0 / nr; // L/[# of grid points]
+  for (int ir = 1; ir < nr; ir++)
   {
-    r = ir*dr;
-    rinv = 1./r;
-    vsr = handler.evaluate(r, rinv);
+    r    = ir * dr;
+    rinv = 1. / r;
+    vsr  = handler.evaluate(r, rinv);
     // short-range part must vanish after rcut
-    if (r>2.5) REQUIRE(vsr == Approx(0.0));
+    if (r > 2.5)
+      REQUIRE(vsr == Approx(0.0));
     //// !!!! SR values not validated, see "srcoul df" test
     //REQUIRE(vsr == Approx(rinv));
   }
@@ -80,7 +80,7 @@ TEST_CASE("srcoul", "[lrhandler]")
 TEST_CASE("srcoul df", "[lrhandler]")
 {
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true;
+  Lattice.BoxBConds     = true;
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
   Lattice.reset();
@@ -90,11 +90,11 @@ TEST_CASE("srcoul df", "[lrhandler]")
   REQUIRE(Approx(Lattice.LR_rc) == 2.5);
   REQUIRE(Approx(Lattice.LR_kc) == 12);
 
-  ParticleSet ref; // handler needs ref.SK.KLists
-  ref.Lattice = Lattice;  // !!!! crucial for access to Volume
-  ref.LRBox = Lattice;  // !!!! crucial for S(k) update
-  StructFact *SK = new StructFact(ref, Lattice.LR_kc);
-  ref.SK = SK;
+  ParticleSet ref;          // handler needs ref.SK.KLists
+  ref.Lattice    = Lattice; // !!!! crucial for access to Volume
+  ref.LRBox      = Lattice; // !!!! crucial for S(k) update
+  StructFact* SK = new StructFact(ref, Lattice.LR_kc);
+  ref.SK         = SK;
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);
@@ -107,28 +107,28 @@ TEST_CASE("srcoul df", "[lrhandler]")
   mRealType r, dr, rinv;
   mRealType rm, rp; // minus (m), plus (p)
   mRealType vsrm, vsrp, dvsr, vlrm, vlrp, dvlr;
-  dr = 0.00001; // finite difference step
-  std::vector<mRealType> rlist={0.1, 0.5, 1.0, 2.0, 2.5};
-  for (auto it=rlist.begin(); it!=rlist.end(); ++it)
+  dr                           = 0.00001; // finite difference step
+  std::vector<mRealType> rlist = {0.1, 0.5, 1.0, 2.0, 2.5};
+  for (auto it = rlist.begin(); it != rlist.end(); ++it)
   {
     r = *it;
     // test short-range piece
-    rm = r-dr;
-    rinv = 1./rm;
+    rm   = r - dr;
+    rinv = 1. / rm;
     vsrm = handler.evaluate(rm, rinv);
     vlrm = handler.evaluateLR(rm);
-    rp = r+dr;
-    rinv = 1./rp;
+    rp   = r + dr;
+    rinv = 1. / rp;
     vsrp = handler.evaluate(rp, rinv);
     vlrp = handler.evaluateLR(rp);
-    dvsr = (vsrp-vsrm)/(2*dr);
-    rinv = 1./r;
+    dvsr = (vsrp - vsrm) / (2 * dr);
+    rinv = 1. / r;
     REQUIRE(handler.srDf(r, rinv) == Approx(dvsr));
     // test long-range piece
-    dvlr = (vlrp-vlrm)/(2*dr);
+    dvlr = (vlrp - vlrm) / (2 * dr);
     REQUIRE(handler.lrDf(r) == Approx(dvlr));
     // test total derivative
-    REQUIRE(dvsr+dvlr == Approx(fref.df(r)));
+    REQUIRE(dvsr + dvlr == Approx(fref.df(r)));
   }
 }
 

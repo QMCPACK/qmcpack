@@ -198,14 +198,14 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
           IonNeighborElecs.getNeighborList(iat).push_back(jel);
           if (streaming_particles)
           {
-            Ve_samp(jel) = 0.5 * pairpot;
-            Vi_samp(iat) = 0.5 * pairpot;
+            Ve_samp(jel) += 0.5 * pairpot;
+            Vi_samp(iat) += 0.5 * pairpot;
           }
         }
     }
   }
 
-#if defined(TRACE_CHECK)
+#if !defined(TRACE_CHECK)
   if (streaming_particles)
   {
     Return_t Vnow  = Value;
@@ -326,7 +326,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
         }
       }
 
-      NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, psi_list, batch_list, pairpots, use_DLA);
+      NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, psi_list, batch_list, Psi, pairpots, use_DLA);
 
       for (size_t j = 0; j < ecp_potential_list.size(); j++)
       {
