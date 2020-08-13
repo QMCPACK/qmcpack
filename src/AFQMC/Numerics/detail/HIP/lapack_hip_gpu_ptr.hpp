@@ -304,25 +304,17 @@ namespace device
   inline static void geqrfStrided(int M, int N, device_pointer<T> A, const int LDA, const int Astride, device_pointer<T> TAU, const int Tstride, device_pointer<I> info, int batchSize)
   {
     T **A_h = new T*[batchSize];
-    //T **T_h = new T*[batchSize];
     for(int i=0; i<batchSize; i++)
       A_h[i] = to_address(A)+i*Astride;
-    //for(int i=0; i<batchSize; i++)
-      //T_h[i] = to_address(TAU)+i*Tstride;
-    //T **A_d, **T_d;
     T **A_d;
     hipMalloc((void **)&A_d,  batchSize*sizeof(*A_h));
     hipMemcpy(A_d, A_h, batchSize*sizeof(*A_h), hipMemcpyHostToDevice);
-    //hipMalloc((void **)&T_d,  batchSize*sizeof(*T_h));
-    //hipMemcpy(T_d, T_h, batchSize*sizeof(*T_h), hipMemcpyHostToDevice);
     rocsolverStatus_t status = rocsolver::rocsolver_geqrf_batched(
         *A.handles.rocsolver_handle_, M, N, A_d, LDA, to_address(TAU), Tstride, batchSize);
     if(rocblas_status_success != status)
       throw std::runtime_error("Error: hipblas_geqrfStrided returned error code.");
     hipFree(A_d);
     delete [] A_h;
-    //hipFree(T_d);
-    //delete [] T_h;
   }
 
   // gesvd_bufferSize

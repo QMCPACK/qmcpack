@@ -524,9 +524,6 @@ namespace hipblas {
     hipblasStatus_t success =
               hipblasDgetrfBatched(handle,n, Aarray,lda,PivotArray,
                                    infoArray,batchSize);
-    //hipblasStatus_t success =
-              //rocBLASStatusToHIPStatusAFQMC(rocsolver_dgetrf_batched((rocblas_handle)handle,n,n,Aarray,lda,PivotArray,n,infoArray,batchSize));
-    //throw std::runtime_error("Error: hipblas_dot returned error code.");
     hipDeviceSynchronize ();
     return success;
   }
@@ -542,11 +539,6 @@ namespace hipblas {
     hipblasStatus_t success = hipblasZgetrfBatched(handle,n,
                             reinterpret_cast<hipblasDoubleComplex *const *>(Aarray),lda,PivotArray,
                             infoArray,batchSize);
-    //throw std::runtime_error("Error: hipblas_dot returned error code.");
-    //hipblasStatus_t success = rocBLASStatusToHIPStatusAFQMC(
-              //rocsolver_zgetrf_batched((rocblas_handle)handle,n,n,
-                                       //reinterpret_cast<rocblas_double_complex* const* >(Aarray),
-                                       //lda,PivotArray,n,infoArray,batchSize));
     hipDeviceSynchronize ();
     return success;
   }
@@ -563,17 +555,10 @@ namespace hipblas {
               hipblasCgetrfBatched(handle,n,
                             reinterpret_cast<hipblasComplex *const *>(Aarray),lda,PivotArray,
                             infoArray,batchSize);
-    //hipblasStatus_t success = rocBLASStatusToHIPStatusAFQMC(
-              //rocsolver_cgetrf_batched((rocblas_handle)handle,n,n,
-                                       //reinterpret_cast<rocblas_float_complex* const* >(Aarray),
-                                       //lda,PivotArray,n,infoArray,batchSize)
-              //);
-    //throw std::runtime_error("Error: hipblas_dot returned error code.");
     hipDeviceSynchronize ();
     return success;
   }
 
-  // TODO: Not implemented
   inline hipblasStatus_t hipblas_getrsBatched(hipblasHandle_t handle,
                                    hipblasOperation_t op,
                                    int n,
