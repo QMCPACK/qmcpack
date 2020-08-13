@@ -15,14 +15,14 @@
 #include "rocrand/rocrand.h"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #include "AFQMC/Numerics/detail/HIP/Kernels/zero_complex_part.hip.h"
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
 
 void sampleGaussianRNG(double* V, int n, rocrand_generator& gen)
 {
-  qmc_hip::hiprand_check(rocrand_generate_normal_double(gen,V,n,0.0,1.0),
+  qmc_hip::rocrand_check(rocrand_generate_normal_double(gen,V,n,0.0,1.0),
                          "rocrand_generate_normal_double");
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
@@ -31,7 +31,7 @@ void sampleGaussianRNG(double* V, int n, rocrand_generator& gen)
  // Convert to double if really necessary
 void sampleGaussianRNG(float* V, int n, rocrand_generator& gen)
 {
-  qmc_hip::hiprand_check(rocrand_generate_normal(gen,V,n,float(0.0),float(1.0)),
+  qmc_hip::rocrand_check(rocrand_generate_normal(gen,V,n,float(0.0),float(1.0)),
                                                         "rocrand_generate_normal");
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
@@ -39,7 +39,7 @@ void sampleGaussianRNG(float* V, int n, rocrand_generator& gen)
 
 void sampleGaussianRNG(std::complex<double>* V, int n, rocrand_generator& gen)
 {
-  qmc_hip::hiprand_check(rocrand_generate_normal_double(gen,
+  qmc_hip::rocrand_check(rocrand_generate_normal_double(gen,
                         reinterpret_cast<double*>(V),2*n,0.0,1.0),
                                           "rocrand_generate_normal_double");
   qmc_hip::hip_check(hipGetLastError());
@@ -52,7 +52,7 @@ void sampleGaussianRNG(std::complex<double>* V, int n, rocrand_generator& gen)
 
 void sampleGaussianRNG( std::complex<float>* V, int n, rocrand_generator & gen)
 {
-  qmc_hip::hiprand_check(rocrand_generate_normal(gen,
+  qmc_hip::rocrand_check(rocrand_generate_normal(gen,
                         reinterpret_cast<float*>(V),2*n,float(0.0),float(1.0)),
                                           "rocrand_generate_normal");
   qmc_hip::hip_check(hipGetLastError());
