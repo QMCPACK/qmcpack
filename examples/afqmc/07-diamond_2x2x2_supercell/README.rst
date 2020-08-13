@@ -1,5 +1,5 @@
 Example 7: 2x2x2 Diamond supercell
-==================================
+----------------------------------
 
 In this example we will show how to generate the AFQMC input from a pbc pyscf calculation
 for a 2x2x2 supercell of diamond using a RHF trial wavefunction.

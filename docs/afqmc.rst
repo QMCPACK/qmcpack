@@ -5,11 +5,6 @@ Auxiliary-Field Quantum Monte Carlo
 
 The AFQMC method is an orbital-space formulation of the imaginary-time propagation algorithm. We refer the reader to one of the review articles on the method :cite:`AFQMC_review,PhysRevLett.90.136401,PhysRevE.70.056702` for a detailed description of the algorithm. It uses the Hubbard-Stratonovich transformation to express the imaginary-time propagator, which is inherently a 2-body operator, as an integral over 1-body propagators, which can be efficiently applied to an arbitrary Slater determinant. This transformation allows us to represent the interacting many-body system as an average over a noninteracting system (e.g., Slater determinants) in a time-dependent fluctuating external field (the Auxiliary fields). The walkers in this case represent nonorthogonal Slater determinants, whose time average represents the desired quantum state. QMCPACK currently implements the phaseless AFQMC algorithm of Zhang and Krakauer :cite:`PhysRevLett.90.136401`, where a trial wavefunction is used to project the simulation to the real axis, controlling the fermionic sign problem at the expense of a bias. This approximation is similar in spirit to the fixed-node approximation in real-space DMC but applied in the Hilbert space where the AFQMC random walk occurs.
 
-Theoretical Background
-----------------------
-
-... coming soon ...
-
 Input
 -----
 
@@ -48,12 +43,12 @@ one passed to “execute” as ham.
     </AFQMCInfo>
 
     <Hamiltonian name="ham0" info="info0">
-      <parameter name="filename">../fcidump.h5</parameter>
+      <parameter name="filename">fcidump.h5</parameter>
     </Hamiltonian>
 
     <Wavefunction name="wfn0" type="MSD" info="info0">
-      <parameter name="filetype">ascii</parameter>
-      <parameter name="filename">wfn.dat</parameter>
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">wfn.h5</parameter>
     </Wavefunction>
 
     <WalkerSet name="wset0">
@@ -67,6 +62,18 @@ one passed to “execute” as ham.
       <parameter name="timestep">0.005</parameter>
       <parameter name="blocks">10000</parameter>
       <parameter name="nWalkers">20</parameter>
+      <Estimator name="back_propagation">
+        <parameter name="naverages">4</parameter>
+        <parameter name="nsteps">400</parameter>
+        <parameter name="path_restoration">true</parameter>
+        <onerdm/>
+        <diag2rdm/>
+        <twordm/>
+        <ontop2rdm/>
+        <realspace_correlators/>
+        <correlators/>
+        <genfock/>
+      </Estimator>
     </execute>
 
   </simulation>
@@ -140,24 +147,7 @@ trial wavefunctions for various roles.
 
 -  **nnodes**. Defines the parallelization of the local energy
    evaluation and the distribution of the ``Hamiltonian`` matrix (not to
-   be confused with the list of 2-electron integrals managed by
-   ``Hamiltonian``. These are not the same.) If nnodes :math:`>` 1, the
-   nodes in the simulation are split into groups of nnodes, each group
-   works collectively in the evaluation of the local energy of their
-   walkers. This helps distribute the effort involved in the evaluation
-   of the local energy among the nodes in the group, but also
-   distributes the memory associated with the wavefunction among the
-   nodes in the group. Default: No distribution
-
--  **ndet**. Number of determinants to read from file. Default: Read all
-   determinants.
-
--  **cutoff**. For sparse hamiltoniants, this defines the cutoff applied
-   to the half-rotated 2-electron integrals. Default: 0.0
-
--  **nbatch**. This turns on(>=1)/off(==0) batched calculation of
-   density matrices and overlaps. -1 means all the walkers in the batch.
-   Default: 0 (CPU) / -1 (GPU)
+   GPU)
 
 -  **nbatch_qr**. This turns on(>=1)/off(==0) batched QR calculation. -1
    means all the walkers in the batch. Default: 0 (CPU) / -1 (GPU)
@@ -242,7 +232,7 @@ trial wavefunctions for various roles.
 ``<execute wset="wset0" ham="ham0" wfn="wfn0" prop="prop0" info="info0">``
 
 - **nWalkers**. Initial number of walkers per core group (see
-  ncores). This sets the number of walkers for a given gorup of
+  ncores). This sets the number of walkers for a given group of
   “ncores" on a node; the total number of walkers in the simulation
   depends on the total number of nodes and on the total number of
   cores on a node in the following way:
@@ -310,8 +300,25 @@ The back_propagation estimator has the following parameters:
 -  **nskip**. Number of blocks to skip at the start of the calculation
    for equilibration purposes. Default: 0
 
-File formats
-------------
+-  **path_restoration**. Use full path restoration. Can result in better back propagated
+   results. Default false.
+
+The following observables can be computed with the back_propagated estimator
+
+- **onerdm**. One-particle reduced density matrix.
+- **twordm**. Full Two-particle reduced density matrix.
+- **diag2rdm**. Diagonal part of the two-particle reduced density matrix.
+- **ontop2rdm**. On top two-particle reduced density matrix.
+- **realspace_correlators**. Charge-Charge, and spin-spin correlation functions in real
+  space.
+- **correlators**. Charge-Charge, and spin-spin correlation functions in real
+  space centered about atomic sites.
+- **genfock**. Generalized Fock matrix.
+
+Real space correlation functions require a real space grid. Details coming soon..
+
+Hamiltonian File formats
+------------------------
 
 QMCPACK offers three factorization approaches which are appropriate in different settings. The most generic approach implemented
 is based on the modified-Cholesky
@@ -339,7 +346,7 @@ format is given as follows:
 
 .. code-block::
   :caption: Sample Dense Cholesky QMCPACK Hamtiltonian.
-  :name: Listing 52
+  :name:  
 
   $ h5dump -n afqmc.h5
   HDF5 "afqmc.h5" {
@@ -530,7 +537,7 @@ Finally, we have implemented an explicitly :math:`k`-point dependent factorizati
 .. math::
   :label: eq62
 
-  v_{pqrs} = \sum_{\substack{n\textbf{Q}\textbf{k}\textbf{k}' \\ pqrs\sigma\sigma'}} L^{\textbf{Q},\textbf{k}}_{pr,n} {L^{\textbf{Q},\textbf{k}'}_{sq,n}}^{*}
+  (\textbf{k}_p p \textbf{k}_r r| \textbf{k}_q q \textbf{k}_s s) = \sum_n L^{\textbf{Q},\textbf{k}}_{pr,n} {L^{\textbf{Q},\textbf{k}'}_{sq,n}}^{*}
 
 where :math:`\textbf{k}`, :math:`\textbf{k}'` and :math:`\textbf{Q}` are
 vectors in the first Brillouin zone. The one-body Hamiltonian is block
@@ -654,6 +661,140 @@ Complex integrals should be written as an array with an additional dimension, e.
 
 Finally, if using external tools to generate this file format, we provide a sanity checker script in ``utils/afqmctools/bin/test_afqmc_input.py`` which will raise errors if the format does not conform to what is being used internally.
 
+Wavefunction File formats
+-------------------------
+
+AFQMC allows for two types of multi-determinant trial wavefunctions: non-orthogonal multi
+Slater determinants (NOMSD) or SHCI/CASSCF style particle-hole multi Slater determinants
+(PHMSD).
+
+The file formats are described below
+
+NOMSD
+~~~~~
+
+.. code-block:: text
+
+    h5dump -n wfn.h5
+
+    HDF5 "wfn.h5" {
+        FILE_CONTENTS {
+            group      /
+            group      /Wavefunction
+            group      /Wavefunction/NOMSD
+            dataset    /Wavefunction/NOMSD/Psi0_alpha
+            dataset    /Wavefunction/NOMSD/Psi0_beta
+            group      /Wavefunction/NOMSD/PsiT_0
+            dataset    /Wavefunction/NOMSD/PsiT_0/data_
+            dataset    /Wavefunction/NOMSD/PsiT_0/dims
+            dataset    /Wavefunction/NOMSD/PsiT_0/jdata_
+            dataset    /Wavefunction/NOMSD/PsiT_0/pointers_begin_
+            dataset    /Wavefunction/NOMSD/PsiT_0/pointers_end_
+            group      /Wavefunction/NOMSD/PsiT_1
+            dataset    /Wavefunction/NOMSD/PsiT_1/data_
+            dataset    /Wavefunction/NOMSD/PsiT_1/dims
+            dataset    /Wavefunction/NOMSD/PsiT_1/jdata_
+            dataset    /Wavefunction/NOMSD/PsiT_1/pointers_begin_
+            dataset    /Wavefunction/NOMSD/PsiT_1/pointers_end_
+            dataset    /Wavefunction/NOMSD/ci_coeffs
+            dataset    /Wavefunction/NOMSD/dims
+        }
+    }
+
+Note that the :math:`\alpha` components of the trial wavefunction are stored under
+``PsiT_{2n}`` and the :math:`\beta` components are stored under ``PsiT_{2n+1}``.
+
+-  ``/Wavefunction/NOMSD/Psi0_alpha`` :math:`[M,N_\alpha]` dimensional array :math:`\alpha`
+   component of initial walker wavefunction.
+-  ``/Wavefunction/NOMSD/Psi0_beta`` :math:`[M,N_\beta]` dimensional array for :math:`\beta`
+   initial walker wavefunction.
+-  ``/Wavefunction/NOMSD/PsiT_{2n}/data_`` Array of length :math:`nnz` containing non-zero
+   elements of :math:`n`-th :math:`\alpha` component of trial wavefunction walker
+   wavefunction. Note the **conjugate transpose** of the Slater matrix is stored.
+-  ``/Wavefunction/NOMSD/PsiT_{2n}/dims`` Array of length 3 containing
+   :math:`[M,N_{\alpha},nnz]` where :math:`nnz` is the number of non-zero elements of this
+   Slater matrix
+-  ``/Wavefunction/NOMSD/PsiT_{2n}/jdata_`` CSR indices array.
+-  ``/Wavefunction/NOMSD/PsiT_{2n}/pointers_begin_`` CSR format begin index pointer array.
+-  ``/Wavefunction/NOMSD/PsiT_{2n}/pointers_end_`` CSR format end index pointer array.
+-  ``/Wavefunction/NOMSD/ci_coeffs`` :math:`N_D` length array of ci coefficients. Stored
+   as complex numbers.
+-  ``/Wavefunction/NOMSD/dims`` Integer array of length 5 containing
+   :math:`[M,N_\alpha,N_\beta,` walker_type :math:`,N_D]`
+
+PHMSD
+~~~~~
+
+.. code-block:: text
+
+    h5dump -n wfn.h5
+
+    HDF5 "wfn.h5" {
+        FILE_CONTENTS {
+            group      /
+            group      /Wavefunction
+            group      /Wavefunction/PHMSD
+            dataset    /Wavefunction/PHMSD/Psi0_alpha
+            dataset    /Wavefunction/PHMSD/Psi0_beta
+            dataset    /Wavefunction/PHMSD/ci_coeffs
+            dataset    /Wavefunction/PHMSD/dims
+            dataset    /Wavefunction/PHMSD/occs
+            dataset    /Wavefunction/PHMSD/type
+        }
+    }
+
+-  ``/Wavefunction/NOMSD/Psi0_alpha`` :math:`[M,N_\alpha]` dimensional array :math:`\alpha`
+   component of initial walker wavefunction.
+-  ``/Wavefunction/NOMSD/Psi0_beta`` :math:`[M,N_\beta]` dimensional array for :math:`\beta`
+   initial walker wavefunction.
+-  ``/Wavefunction/PHMSD/ci_coeffs`` :math:`N_D` length array of ci coefficients. Stored
+   as complex numbers.
+-  ``/Wavefunction/PHMSD/dims`` Integer array of length 5 containing
+   :math:`[M,N_\alpha,N_\beta,` walker_type :math:`,N_D]`
+-  ``/Wavefunction/PHMSD/occs`` Integer array of length :math:`(N_\alpha+N_\beta)*N_D`
+   describing the determinant occupancies. For example if :math:`(N_\alpha=N_\beta=2)` and
+   :math:`N_D=2`, :math:`M=4`, and if :math:`|\Psi_T\rangle = |0,1\rangle|0,1\rangle + |0,1\rangle|0,2\rangle>` then
+   occs = :math:`[0, 1, 4, 5, 0, 1, 4, 6]`. Note that :math:`\beta` occupancies are
+   displacd by :math:`M`.
+-  ``/Wavefunction/PHMSD/type`` integer 0/1. 1 implies trial wavefunction is written in
+   different basis than the underlying basis used for the integrals. If so a matrix of
+   orbital coefficients is required to be written in the NOMSD format. If 0 then assume
+   wavefunction is in same basis as integrals.
+
+
+Current Feature Implementation Status
+-------------------------------------
+
+The current status of features available in QMCPACK is as follows:
+
+.. table:: Code features available on CPU
+
+    +-------------+-------------+-------------+-------------+-------------+---------------+
+    | Hamiltonian | SD          | NOMSD       | PHMSD       | Real Build  | Complex Build |
+    +=============+=============+=============+=============+=============+===============+
+    | Sparse      | Yes         | Yes         | Yes         | Yes         | Yes           |
+    +-------------+-------------+-------------+-------------+-------------+---------------+
+    | Dense       | Yes         | Yes         | No          | Yes         | No            |
+    +-------------+-------------+-------------+-------------+-------------+---------------+
+    | k-point     | Yes         | No          | No          | No          | Yes           |
+    +-------------+-------------+-------------+-------------+-------------+---------------+
+    | THC         | Yes         | No          | No          | Yes         | Yes           |
+    +-------------+-------------+-------------+-------------+-------------+---------------+
+
+.. table:: Code features available on GPU
+
+    +-------------+-------------+-------------+-------------+-------------+--------------+
+    | Hamiltonian | SD          | NOMSD       | PHMSD       | Real Build  | Complex Build|
+    +=============+=============+=============+=============+=============+==============+
+    | Sparse      | No          | No          | No          | No          | No           |
+    +-------------+-------------+-------------+-------------+-------------+--------------+
+    | Dense       | Yes         | No          | No          | Yes         | No           |
+    +-------------+-------------+-------------+-------------+-------------+--------------+
+    | k-point     | Yes         | No          | No          | No          | Yes          |
+    +-------------+-------------+-------------+-------------+-------------+--------------+
+    | THC         | Yes         | No          | No          | Yes         | Yes          |
+    +-------------+-------------+-------------+-------------+-------------+--------------+
+
 Advice/Useful Information
 -------------------------
 
@@ -713,56 +854,6 @@ The following is a growing list of useful advice for new users, followed by a sa
       <parameter name="nWalkers">8</parameter>
       <parameter name="ortho">5</parameter>
     </execute>
-
-.. _pyscf:
-
-Using PySCF to generate integrals for AFQMC
--------------------------------------------
-
-
-PySCF (https://github.com/sunqm/pyscf) is a collection of electronic structure programs powered by Python. It is the recommended program for the generation of input for AFQMC calculations in QMCPACK. We refer the reader to the documentation of the code (http://sunqm.github.io/pyscf/) for a detailed description of the features and the functionality of the code. While the notes below are not meant to replace a detailed study of the PySCF documentation, these notes describe useful knowledge and tips in the use of pyscf for the generation of input for QMCPACK.
-
-For molecular systems or periodic calculations at the Gamma point, PySCF provides a routine that generates the integral file in Molpro's FCIDUMP format, which contains all the information needed to run AFQMC with a single determinant trial wave-function. Below is an example using this routine to generate the FCIDUMP file for an 8-atom unit cell of carbon in the diamond structure with HF orbitals. For a detailed description, see PySCF's documentation.
-
-.. code-block::
-  :caption: Simple example showing how to generate FCIDUMP files with PySCF
-  :name: Listing 57
-
-  import numpy
-  from pyscf.tools import fcidump
-  from pyscf.pbc import gto, scf, tools
-
-  cell = gto.Cell()
-  cell.a = '''
-    3.5668 0 0
-    0 3.5668 0
-    0 0 3.5668'''
-  cell.atom = '''
-    C 0. 0. 0.
-    C 0.8917 0.8917 0.8917
-    C 1.7834 1.7834 0.
-    C 2.6751 2.6751 0.8917
-    C 1.7834 0. 1.7834
-    C 2.6751 0.8917 2.6751
-    C 0. 1.7834 1.7834
-    C 0.8917 2.6751 2.6751'''
-  cell.basis = 'gth-szv'
-  cell.pseudo = 'gth-pade'
-  cell.gs = [10]*3 # for testing purposes, must be increased for converged results
-  cell.verbose = 4
-  cell.build()
-
-  mf = scf.RHF(cell)
-  ehf = mf.kernel()
-  print("HF energy (per unit cell) = %.17g" % ehf)
-
-  c = mf.mo_coeff
-  h1e = reduce(numpy.dot, (c.T, mf.get_hcore(), c))
-  eri = mf.with_df.ao2mo(c,compact=True)
-
-  # nuclear energy + electronic ewald
-  e0 = cell.energy_nuc() + tools.pbc.madelung(cell, numpy.zeros(3))*cell.nelectron * -.5
-  fcidump.from_integrals('fcidump.dat', h1e, eri, c.shape[1],cell.nelectron, ms=0, tol=1e-8, nuc=e0)
 
 .. centered:: ``afqmc`` method
 
@@ -856,5 +947,241 @@ parameters in ``execute``
 +--------------+--------------+-------------------------+-------------+---------------------------------------------------+
 | ``ortho``    | integer      | :math:`> 0`             | 1           | Number of steps between walker orthogonalization. |
 +--------------+--------------+-------------------------+-------------+---------------------------------------------------+
+
+
+.. _pyscf:
+
+AFQMCTOOLS
+----------
+
+The ``afqmctools`` library found in ``qmcpack/utils/afqmctools`` provides a number of
+tools to interface electronic structure codes with AFQMC in QMCPACK. Currently PYSCF is
+the best supported package and is capable of generating both molecular and solid state
+input for AFQMC.
+
+In what follows we will document the most useful routines from a user's perspective.
+
+afqmctools has to be in your PYTHONPATH.
+
+pyscf_to_afqmc.py
+~~~~~~~~~~~~~~~~~
+
+This is the main script to convert PYSCF output into QMCPACK input. The command line
+options are as follows:
+
+.. code-block:: text
+
+    > pyscf_to_afqmc.py -h
+
+    usage: pyscf_to_afqmc.py [-h] [-i CHK_FILE] [-o HAMIL_FILE] [-w WFN_FILE]
+                             [-q QMC_INPUT] [-t THRESH] [-k] [--density-fit] [-a]
+                             [-c CAS] [-d] [-n NDET_MAX] [-r] [-p]
+                             [--low LOW_THRESH] [--high HIGH_THRESH] [--dense]
+                             [-v]
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -i CHK_FILE, --input CHK_FILE
+                            Input pyscf .chk file.
+      -o HAMIL_FILE, --output HAMIL_FILE
+                            Output file name for QMCPACK hamiltonian.
+      -w WFN_FILE, --wavefunction WFN_FILE
+                            Output file name for QMCPACK wavefunction. By default
+                            will write to hamil_file.
+      -q QMC_INPUT, --qmcpack-input QMC_INPUT
+                            Generate skeleton QMCPACK input xml file.
+      -t THRESH, --cholesky-threshold THRESH
+                            Cholesky convergence threshold.
+      -k, --kpoint          Generate explicit kpoint dependent integrals.
+      --density-fit         Use density fitting integrals stored in input pyscf
+                            chkpoint file.
+      -a, --ao, --ortho-ao  Transform to ortho AO basis. Default assumes we work
+                            in MO basis
+      -c CAS, --cas CAS     Specify a CAS in the form of N,M.
+      -d, --disable-ham     Disable hamiltonian generation.
+      -n NDET_MAX, --num-dets NDET_MAX
+                            Set upper limit on number of determinants to generate.
+      -r, --real-ham        Write integrals as real numbers.
+      -p, --phdf            Use parallel hdf5.
+      --low LOW_THRESH      Lower threshold for non-integer occupanciesto include
+                            in multi-determinant exansion.
+      --high HIGH_THRESH    Upper threshold for non-integer occupanciesto include
+                            in multi-determinant exansion.
+      --dense               Write dense Hamiltonian.
+      -v, --verbose         Verbose output.
+
+examples on how to generate AFQMC input from PYSCF simulations are available in :ref:`lab-afqmc`
+
+afqmc_to_fcidump.py
+~~~~~~~~~~~~~~~~~~~
+
+This script is useful for converting AFQMC hamiltonians to the FCIDUMP format.
+
+.. code-block:: text
+
+	> afqmc_to_fcidump.py
+
+	usage: afqmc_to_fcidump.py [-h] [-i INPUT_FILE] [-o OUTPUT_FILE] [-s SYMM]
+							   [-t TOL] [-c] [--complex-paren] [-v]
+
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  -i INPUT_FILE, --input INPUT_FILE
+							Input AFQMC hamiltonian file.
+	  -o OUTPUT_FILE, --output OUTPUT_FILE
+							Output file for FCIDUMP.
+	  -s SYMM, --symmetry SYMM
+							Symmetry of integral file (1,4,8).
+	  -t TOL, --tol TOL     Cutoff for integrals.
+	  -c, --complex         Whether to write integrals as complex numbers.
+	  --complex-paren       Whether to write FORTRAN format complex numbers.
+	  -v, --verbose         Verbose output.
+
+fcidump_to_afqmc.py
+~~~~~~~~~~~~~~~~~~~
+
+This script is useful for converting Hamiltonians in the FCIDUMP format to the AFQMC file format.
+
+.. code-block:: text
+
+	> fcidump_to_afqmc.py -h
+
+	usage: fcidump_to_afqmc.py [-h] [-i INPUT_FILE] [-o OUTPUT_FILE]
+							   [--write-complex] [-t THRESH] [-s SYMM] [-v]
+
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  -i INPUT_FILE, --input INPUT_FILE
+							Input FCIDUMP file.
+	  -o OUTPUT_FILE, --output OUTPUT_FILE
+							Output file name for PAUXY data.
+	  --write-complex       Output integrals in complex format.
+	  -t THRESH, --cholesky-threshold THRESH
+							Cholesky convergence threshold.
+	  -s SYMM, --symmetry SYMM
+							Symmetry of integral file (1,4,8).
+	  -v, --verbose         Verbose output.
+
+Writing a Hamiltonian
+~~~~~~~~~~~~~~~~~~~~~
+
+``write_qmcpack_sparse`` and ``write_qmcpack_dense`` can be used to write either sparse or
+dense qmcpack Hamiltonians.
+
+.. code-block:: python
+
+   import numpy
+   from afqmctools.hamiltonian.io import write_qmcpack_sparse, write_qmcpack_dense
+
+   nmo = 50
+   nchol = 37
+   nelec = (3,3)
+   enuc = -108.3
+   # hcore and eri should obey the proper symmetry in real applications
+   # h_ij
+   hcore = numpy.random.random((nmo,nmo))
+   # L_{(ik),n}
+   chol = numpy.random.random((nmo*nmo, nchol))
+   write_qmcpack_dense(hcore, chol, nelec, nmo, enuc,
+                       real_chol=True,
+                       filename='hamil_dense.h5')
+   write_qmcpack_sparse(hcore, chol, nelec, nmo, enuc,
+                       real_chol=True,
+                       filename='hamil_sparse.h5')
+
+Note the ``real_chol`` parameter controls whether the integrals are written as real or
+complex numbers. Complex numbers should be used if ``-DENABLE_QMC_COMPLEX=1``, while the
+dense Hamiltonian is only available for real builds.
+
+Writing a wavefunction
+~~~~~~~~~~~~~~~~~~~~~~
+
+``write_qmcpack_wfn`` can be used to write either NOMSD or PHMSD wavefunctions:
+
+.. code-block:: python
+
+   import numpy
+   from afqmctools.wavefunction.mol import write_qmcpack_wfn
+
+   # NOMSD
+   ndet = 100
+   nmo = 50
+   nelec = (3, 7)
+   wfn = numpy.array(numpy.random.random((ndet, nmo, sum(nelec))), dtype=numpy.complex128)
+   coeffs = numpy.array(numpy.random.random((ndet)), dtype=numpy.complex128)
+   uhf = True
+   write_qmcpack_wfn('wfn.h5', (coeffs, wfn), uhf, nelec, nmo)
+
+By default the first term in the expansion will be used as the initial walker
+wavefunction. To use another wavefunction we can pass a value to the ``init`` parameter:
+
+.. code-block:: python
+
+   init = numpy.array(numpy.random.random((nmo,sum(nelec)), dtype=numpy.complex128)
+   write_qmcpack_wfn('wfn.h5', (coeffs, wfn), uhf, nelec, nmo, init=[init,init])
+
+Particle-hole wavefunction (PHMSD) from SHCI or CASSCF calculations are also written using
+the same function:
+
+.. code-block:: python
+
+    import numpy
+    from afqmctools.wavefunction.mol import write_qmcpack_wfn
+
+    # PHMSD
+    ndet = 2
+    nmo = 4
+    nelec = (2,2)
+    uhf = True
+    # |psi_T> = 1/sqrt(2)(|0,1>|0,1> + |0,1>|0,2>)
+    coeffs = numpy.array([0.707,0.707], dtype=numpy.complex128)
+    occa = numpy.array([(0,1), (0,1)])
+    occb = numpy.array([(0,1), (0,2)])
+    write_qmcpack_wfn('wfn.h5', (coeffs, occa, occb), uhf, nelec, nmo)
+
+
+Analyzing Estimators
+~~~~~~~~~~~~~~~~~~~~
+
+The ``afqmctools.analysis.average`` module can be used to perform simple error analysis
+for estimators computed with AFQMC.
+
+.. Warning:: Autocorrelation is not accounted for. Use with caution.
+
+average_one_rdm
+    Returns P[s,i,j] = :math:`\langle c_{is}^{\dagger} c_{js}\rangle` as a (nspin, M, M) dimensional array.
+average_two_rdm
+    Gamma[s1s2,i,k,j,l] = :math:`\langle c_{i}^{\dagger} c_{j}^{\dagger} c_{l} c_{k} \rangle`.
+    For closed shell systems, returns [(a,a,a,a),(a,a,b,b)].
+    For collinear systems, returns [(a,a,a,a),(a,a,b,b),(b,b,b,b)].
+average_diag_two_rdm
+    Returns :math:`\langle c_{is}^+ c_{jt}^+ c_{jt} c_{is}\rangle` as a (2M,2M) dimensional array.
+average_on_top_pdm
+    Returns :math:`n_2(\mathbf{r},\mathbf{r})` for a given real space grid.
+average_realspace_correlations
+    Returns :math:`\langle C(\mathbf{r}_1)C(\mathbf{r}_2) \rangle` and
+    :math:`\langle S(\mathbf{r}_1)S(\mathbf{r}_2) \rangle` for a given set of points in real space.
+    :math:`\hat{C} = (\hat{n}_\uparrow+ \hat{n}_\downarrow)`, :math:`\hat{S}=(\hat{n}_\uparrow-\hat{n}_\downarrow)`
+average_atom_correlations
+    Returns :math:`\langle C(I) \rangle`, :math:`\langle S(I) \rangle`,
+    :math:`\langle C(I) C(J) \rangle`, :math:`\langle S(I) S(J) \rangle`
+    for a given set of atomic sites :math:`I,J`.
+    :math:`\hat{C} = (\hat{n}_\uparrow+ \hat{n}_\downarrow)`, :math:`\hat{S}=(\hat{n}_\uparrow-\hat{n}_\downarrow)`
+average_gen_fock
+    Returns generalized Fock matrix :math:`F_{\pm}`.
+    The parameter ``fock_type`` is used to specify :math:`F_{+}` (``fock_type='plus'``) or
+    :math:`F_{-}` (``fock_type='minus'``)
+get_noons
+    Get natural orbital occupation numbers from one-rdm.
+
+
+As an example the following will extract the back propagated one rdm for the maximum
+propagation time, and skip 10 blocks as the equilibration phase.
+
+.. code-block:: python
+
+    from afqmctools.analysis.average import average_one_rdm
+
+    P, Perr = average_one_rdm('qmc.s000.stat.h5', estimator='back_propagated', eqlb=10)
 
 .. bibliography:: /bibs/afqmc.bib
