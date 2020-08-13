@@ -128,19 +128,20 @@ def read_orbitals():
 
 def get_occupied(det, nel, nmo):
     nset = 0
-    pos = numpy.int64(0)
+    pos = numpy.uint64(0)
     occs = []
     shift = 0
+    one = numpy.uint64(1)
     all_found = False
     for d in det:
         while pos < min(nmo,64):
-            if d & (1<<pos):
+            if d & (one<<pos):
                 nset += 1
-                occs.append(pos+shift)
+                occs.append(int(pos+shift))
             if nset == nel:
                 all_found = True
                 break
-            pos += 1
+            pos += numpy.uint64(1)
         # Assuming 64 bit integers
         pos = 0
         if all_found:
@@ -151,19 +152,31 @@ def get_occupied(det, nel, nmo):
 def read_dmc_ci_wavefunction(input_file, nelec, nmo, ndets=None):
     if ndets is None:
         ndets = -1
-    na, nb = nelec
     with h5py.File(input_file) as fh5:
         try:
-            nmo = fh5['parameters/numMO'][:][0]
+            nmo_read = fh5['parameters/numMO'][:][0]
             na = fh5['parameters/NbAlpha'][:][0]
             nb = fh5['parameters/NbBeta'][:][0]
+            if nelec is not None:
+                assert na == nelec[0]
+                assert nb == nelec[1]
+            if nmo is not None:
+                assert nmo_read == nmo
+            else:
+                nmo = nmo_read
+            nelec = (na, nb)
         except KeyError:
             pass
-        ci_a = fh5['MultiDet/CI_Alpha'][:]
-        ci_b = fh5['MultiDet/CI_Beta'][:]
+        assert nelec is not None
+        assert nmo is not None
+        ci_a = numpy.array(fh5['MultiDet/CI_Alpha'][:], dtype=numpy.uint64)
+        ci_b = numpy.array(fh5['MultiDet/CI_Beta'][:], dtype=numpy.uint64)
         nbs = fh5['MultiDet/Nbits'][()]
         coeffs = fh5['MultiDet/Coeff'][:][:ndets]
-        coeffs_imag = fh5['MultiDet/Coeff_imag'][:][:ndets]
+        try:
+            coeffs_imag = fh5['MultiDet/Coeff_imag'][:][:ndets]
+        except KeyError:
+            coeffs_imag = 0j
         coeffs = coeffs + 1j*coeffs_imag
         occa = []
         occb = []
