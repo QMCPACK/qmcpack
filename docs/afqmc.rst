@@ -5,11 +5,6 @@ Auxiliary-Field Quantum Monte Carlo
 
 The AFQMC method is an orbital-space formulation of the imaginary-time propagation algorithm. We refer the reader to one of the review articles on the method :cite:`AFQMC_review,PhysRevLett.90.136401,PhysRevE.70.056702` for a detailed description of the algorithm. It uses the Hubbard-Stratonovich transformation to express the imaginary-time propagator, which is inherently a 2-body operator, as an integral over 1-body propagators, which can be efficiently applied to an arbitrary Slater determinant. This transformation allows us to represent the interacting many-body system as an average over a noninteracting system (e.g., Slater determinants) in a time-dependent fluctuating external field (the Auxiliary fields). The walkers in this case represent nonorthogonal Slater determinants, whose time average represents the desired quantum state. QMCPACK currently implements the phaseless AFQMC algorithm of Zhang and Krakauer :cite:`PhysRevLett.90.136401`, where a trial wavefunction is used to project the simulation to the real axis, controlling the fermionic sign problem at the expense of a bias. This approximation is similar in spirit to the fixed-node approximation in real-space DMC but applied in the Hilbert space where the AFQMC random walk occurs.
 
-Theoretical Background
-----------------------
-
-... coming soon ...
-
 Input
 -----
 
@@ -48,12 +43,12 @@ one passed to “execute” as ham.
     </AFQMCInfo>
 
     <Hamiltonian name="ham0" info="info0">
-      <parameter name="filename">../fcidump.h5</parameter>
+      <parameter name="filename">fcidump.h5</parameter>
     </Hamiltonian>
 
     <Wavefunction name="wfn0" type="MSD" info="info0">
-      <parameter name="filetype">ascii</parameter>
-      <parameter name="filename">wfn.dat</parameter>
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">wfn.h5</parameter>
     </Wavefunction>
 
     <WalkerSet name="wset0">
@@ -67,6 +62,18 @@ one passed to “execute” as ham.
       <parameter name="timestep">0.005</parameter>
       <parameter name="blocks">10000</parameter>
       <parameter name="nWalkers">20</parameter>
+      <Estimator name="back_propagation">
+        <parameter name="naverages">4</parameter>
+        <parameter name="nsteps">400</parameter>
+        <parameter name="path_restoration">true</parameter>
+        <onerdm/>
+        <diag2rdm/>
+        <twordm/>
+        <ontop2rdm/>
+        <realspace_correlators/>
+        <correlators/>
+        <genfock/>
+      </Estimator>
     </execute>
 
   </simulation>
@@ -140,24 +147,7 @@ trial wavefunctions for various roles.
 
 -  **nnodes**. Defines the parallelization of the local energy
    evaluation and the distribution of the ``Hamiltonian`` matrix (not to
-   be confused with the list of 2-electron integrals managed by
-   ``Hamiltonian``. These are not the same.) If nnodes :math:`>` 1, the
-   nodes in the simulation are split into groups of nnodes, each group
-   works collectively in the evaluation of the local energy of their
-   walkers. This helps distribute the effort involved in the evaluation
-   of the local energy among the nodes in the group, but also
-   distributes the memory associated with the wavefunction among the
-   nodes in the group. Default: No distribution
-
--  **ndet**. Number of determinants to read from file. Default: Read all
-   determinants.
-
--  **cutoff**. For sparse hamiltoniants, this defines the cutoff applied
-   to the half-rotated 2-electron integrals. Default: 0.0
-
--  **nbatch**. This turns on(>=1)/off(==0) batched calculation of
-   density matrices and overlaps. -1 means all the walkers in the batch.
-   Default: 0 (CPU) / -1 (GPU)
+   GPU)
 
 -  **nbatch_qr**. This turns on(>=1)/off(==0) batched QR calculation. -1
    means all the walkers in the batch. Default: 0 (CPU) / -1 (GPU)
@@ -242,7 +232,7 @@ trial wavefunctions for various roles.
 ``<execute wset="wset0" ham="ham0" wfn="wfn0" prop="prop0" info="info0">``
 
 - **nWalkers**. Initial number of walkers per core group (see
-  ncores). This sets the number of walkers for a given gorup of
+  ncores). This sets the number of walkers for a given group of
   “ncores" on a node; the total number of walkers in the simulation
   depends on the total number of nodes and on the total number of
   cores on a node in the following way:
@@ -309,6 +299,23 @@ The back_propagation estimator has the following parameters:
 
 -  **nskip**. Number of blocks to skip at the start of the calculation
    for equilibration purposes. Default: 0
+
+-  **path_restoration**. Use full path restoration. Can result in better back propagated
+   results. Default false.
+
+The following observables can be computed with the back_propagated estimator
+
+- **onerdm**. One-particle reduced density matrix.
+- **twordm**. Full Two-particle reduced density matrix.
+- **diag2rdm**. Diagonal part of the two-particle reduced density matrix.
+- **ontop2rdm**. On top two-particle reduced density matrix.
+- **realspace_correlators**. Charge-Charge, and spin-spin correlation functions in real
+  space.
+- **correlators**. Charge-Charge, and spin-spin correlation functions in real
+  space centered about atomic sites.
+- **genfock**. Generalized Fock matrix.
+
+Real space correlation functions require a real space grid. Details coming soon..
 
 Hamiltonian File formats
 ------------------------
@@ -530,7 +537,7 @@ Finally, we have implemented an explicitly :math:`k`-point dependent factorizati
 .. math::
   :label: eq62
 
-  (\textbf{k}_p p \textbf{k}_r r| \textbf{k}_q q \textbf{k}_s s) = L^{\textbf{Q},\textbf{k}}_{pr,n} {L^{\textbf{Q},\textbf{k}'}_{sq,n}}^{*}
+  (\textbf{k}_p p \textbf{k}_r r| \textbf{k}_q q \textbf{k}_s s) = \sum_n L^{\textbf{Q},\textbf{k}}_{pr,n} {L^{\textbf{Q},\textbf{k}'}_{sq,n}}^{*}
 
 where :math:`\textbf{k}`, :math:`\textbf{k}'` and :math:`\textbf{Q}` are
 vectors in the first Brillouin zone. The one-body Hamiltonian is block
@@ -657,11 +664,14 @@ Finally, if using external tools to generate this file format, we provide a sani
 Wavefunction File formats
 -------------------------
 
-AFQMC allows for two types of multi-determiant trial wavefunctions: non-orthogonal multi
-Slater determiants (NOMSD) or SHCI/CASSCF style particle-hole multi Slater determinants
+AFQMC allows for two types of multi-determinant trial wavefunctions: non-orthogonal multi
+Slater determinants (NOMSD) or SHCI/CASSCF style particle-hole multi Slater determinants
 (PHMSD).
 
 The file formats are described below
+
+NOMSD
+~~~~~
 
 .. code-block:: text
 
@@ -694,23 +704,26 @@ The file formats are described below
 Note that the :math:`\alpha` components of the trial wavefunction are stored under
 ``PsiT_{2n}`` and the :math:`\beta` components are stored under ``PsiT_{2n+1}``.
 
--  ``/Wavefunction/NOMSD/Psi0_alpha`` :math:`[M,N_\alpha]` dimensional array for initial
-  walker wavefunction.
--  ``/Wavefunction/NOMSD/Psi0_beta`` :math:`[M,N_\beta]` dimensional array for initial
-  walker wavefunction.
+-  ``/Wavefunction/NOMSD/Psi0_alpha`` :math:`[M,N_\alpha]` dimensional array :math:`\alpha`
+   component of initial walker wavefunction.
+-  ``/Wavefunction/NOMSD/Psi0_beta`` :math:`[M,N_\beta]` dimensional array for :math:`\beta`
+   initial walker wavefunction.
 -  ``/Wavefunction/NOMSD/PsiT_{2n}/data_`` Array of length :math:`nnz` containing non-zero
-  elements of :math:`n`-th :math:`\alpha` component of trial wavefunction walker
-  wavefunction. Note the **conjugate transpose** of the Slater matrix is stored.
+   elements of :math:`n`-th :math:`\alpha` component of trial wavefunction walker
+   wavefunction. Note the **conjugate transpose** of the Slater matrix is stored.
 -  ``/Wavefunction/NOMSD/PsiT_{2n}/dims`` Array of length 3 containing
-  :math:`[M,N_{\alpha},nnz]` where :math:`nnz` is the number of non-zero elements of this
-  Slater matrix
+   :math:`[M,N_{\alpha},nnz]` where :math:`nnz` is the number of non-zero elements of this
+   Slater matrix
 -  ``/Wavefunction/NOMSD/PsiT_{2n}/jdata_`` CSR indices array.
 -  ``/Wavefunction/NOMSD/PsiT_{2n}/pointers_begin_`` CSR format begin index pointer array.
 -  ``/Wavefunction/NOMSD/PsiT_{2n}/pointers_end_`` CSR format end index pointer array.
 -  ``/Wavefunction/NOMSD/ci_coeffs`` :math:`N_D` length array of ci coefficients. Stored
-  as complex numbers.
+   as complex numbers.
 -  ``/Wavefunction/NOMSD/dims`` Integer array of length 5 containing
-  :math:`[M,N_\alpha,N_\beta,` walker_type :math:`,N_D]`
+   :math:`[M,N_\alpha,N_\beta,` walker_type :math:`,N_D]`
+
+PHMSD
+~~~~~
 
 .. code-block:: text
 
@@ -730,23 +743,57 @@ Note that the :math:`\alpha` components of the trial wavefunction are stored und
         }
     }
 
--  ``/Wavefunction/PHMSD/Psi0_alpha`` :math:`[M,N_\alpha]` dimensional array for initial
-  walker wavefunction.
--  ``/Wavefunction/PHMSD/Psi0_beta`` :math:`[M,N_\beta]` dimensional array for initial
-  walker wavefunction.
+-  ``/Wavefunction/NOMSD/Psi0_alpha`` :math:`[M,N_\alpha]` dimensional array :math:`\alpha`
+   component of initial walker wavefunction.
+-  ``/Wavefunction/NOMSD/Psi0_beta`` :math:`[M,N_\beta]` dimensional array for :math:`\beta`
+   initial walker wavefunction.
 -  ``/Wavefunction/PHMSD/ci_coeffs`` :math:`N_D` length array of ci coefficients. Stored
-  as complex numbers.
+   as complex numbers.
 -  ``/Wavefunction/PHMSD/dims`` Integer array of length 5 containing
-  :math:`[M,N_\alpha,N_\beta,` walker_type :math:`,N_D]`
+   :math:`[M,N_\alpha,N_\beta,` walker_type :math:`,N_D]`
 -  ``/Wavefunction/PHMSD/occs`` Integer array of length :math:`(N_\alpha+N_\beta)*N_D`
-  describing the determinant occupancies. For example if :math:`(N_\alpha=N_\beta=2)` and
-  :math:`N_D=2`, :math:`M=4`, and if :math:`|\Psi_T\rangle = |0,1\rangle|0,1\rangle + |0,1\rangle|0,2\rangle>` then
-  occs = :math:`[0, 1, 4, 5, 0, 1, 4, 6]`. Note that :math:`\beta` occupancies are
-  displacd by :math:`M`.
+   describing the determinant occupancies. For example if :math:`(N_\alpha=N_\beta=2)` and
+   :math:`N_D=2`, :math:`M=4`, and if :math:`|\Psi_T\rangle = |0,1\rangle|0,1\rangle + |0,1\rangle|0,2\rangle>` then
+   occs = :math:`[0, 1, 4, 5, 0, 1, 4, 6]`. Note that :math:`\beta` occupancies are
+   displacd by :math:`M`.
 -  ``/Wavefunction/PHMSD/type`` integer 0/1. 1 implies trial wavefunction is written in
-  different basis than the underlying basis used for the integrals. If so a matrix of
-  orbital coefficients is required to be written in the NOMSD format. If 0 then assume
-  wavefunction is in same basis as integrals.
+   different basis than the underlying basis used for the integrals. If so a matrix of
+   orbital coefficients is required to be written in the NOMSD format. If 0 then assume
+   wavefunction is in same basis as integrals.
+
+
+Current Feature Implementation Status
+-------------------------------------
+
+The current status of features available in QMCPACK is as follows:
+
+.. table:: Code features available on CPU
+
+    +-------------+-------------+-------------+-------------+-------------+---------------+
+    | Hamiltonian | SD          | NOMSD       | PHMSD       | Real Build  | Complex Build |
+    +=============+=============+=============+=============+=============+===============+
+    | Sparse      | Yes         | Yes         | Yes         | Yes         | Yes           |
+    +-------------+-------------+-------------+-------------+-------------+---------------+
+    | Dense       | Yes         | Yes         | No          | Yes         | No            |
+    +-------------+-------------+-------------+-------------+-------------+---------------+
+    | k-point     | Yes         | No          | No          | No          | Yes           |
+    +-------------+-------------+-------------+-------------+-------------+---------------+
+    | THC         | Yes         | No          | No          | Yes         | Yes           |
+    +-------------+-------------+-------------+-------------+-------------+---------------+
+
+.. table:: Code features available on GPU
+
+    +-------------+-------------+-------------+-------------+-------------+--------------+
+    | Hamiltonian | SD          | NOMSD       | PHMSD       | Real Build  | Complex Build|
+    +=============+=============+=============+=============+=============+==============+
+    | Sparse      | No          | No          | No          | No          | No           |
+    +-------------+-------------+-------------+-------------+-------------+--------------+
+    | Dense       | Yes         | No          | No          | Yes         | No           |
+    +-------------+-------------+-------------+-------------+-------------+--------------+
+    | k-point     | Yes         | No          | No          | No          | Yes          |
+    +-------------+-------------+-------------+-------------+-------------+--------------+
+    | THC         | Yes         | No          | No          | Yes         | Yes          |
+    +-------------+-------------+-------------+-------------+-------------+--------------+
 
 Advice/Useful Information
 -------------------------
@@ -1043,7 +1090,7 @@ dense qmcpack Hamiltonians.
                        filename='hamil_sparse.h5')
 
 Note the ``real_chol`` parameter controls whether the integrals are written as real or
-complex numbers. complex numbers should be used if ``-DENABLE_QMC_COMPLEX=1``, while the
+complex numbers. Complex numbers should be used if ``-DENABLE_QMC_COMPLEX=1``, while the
 dense Hamiltonian is only available for real builds.
 
 Writing a wavefunction
@@ -1071,7 +1118,7 @@ wavefunction. To use another wavefunction we can pass a value to the ``init`` pa
 .. code-block:: python
 
    init = numpy.array(numpy.random.random((nmo,sum(nelec)), dtype=numpy.complex128)
-   write_qmcpack_wfn('wfn.h5', (coeffs, wfn), uhf, nelec, nmo, init=init)
+   write_qmcpack_wfn('wfn.h5', (coeffs, wfn), uhf, nelec, nmo, init=[init,init])
 
 Particle-hole wavefunction (PHMSD) from SHCI or CASSCF calculations are also written using
 the same function:
@@ -1086,7 +1133,7 @@ the same function:
     nmo = 4
     nelec = (2,2)
     uhf = True
-    # |psi_T> = |0,1>|0,1> + |0,1>|0,2>
+    # |psi_T> = 1/sqrt(2)(|0,1>|0,1> + |0,1>|0,2>)
     coeffs = numpy.array([0.707,0.707], dtype=numpy.complex128)
     occa = numpy.array([(0,1), (0,1)])
     occb = numpy.array([(0,1), (0,2)])
