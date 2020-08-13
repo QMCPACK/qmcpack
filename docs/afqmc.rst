@@ -310,8 +310,8 @@ The back_propagation estimator has the following parameters:
 -  **nskip**. Number of blocks to skip at the start of the calculation
    for equilibration purposes. Default: 0
 
-File formats
-------------
+Hamiltonian File formats
+------------------------
 
 QMCPACK offers three factorization approaches which are appropriate in different settings. The most generic approach implemented
 is based on the modified-Cholesky
@@ -339,7 +339,7 @@ format is given as follows:
 
 .. code-block::
   :caption: Sample Dense Cholesky QMCPACK Hamtiltonian.
-  :name: Listing 52
+  :name:  
 
   $ h5dump -n afqmc.h5
   HDF5 "afqmc.h5" {
@@ -653,6 +653,100 @@ fewer symmetry inequivalent momentum transfer vectors than there are
 Complex integrals should be written as an array with an additional dimension, e.g., a 1D array should be written as a 2D array with ``array_hdf5[:,0]=real(1d_array)`` and ``array_hdf5[:,1]=imag(1d_array)``. The functions ``afqmctools.utils.misc.from_qmcpack_complex`` and ``afqmctools.utils.misc.to_qmcpack_complex`` can be used to transform qmcpack format to complex valued numpy arrays of the appropriate shape and vice versa.
 
 Finally, if using external tools to generate this file format, we provide a sanity checker script in ``utils/afqmctools/bin/test_afqmc_input.py`` which will raise errors if the format does not conform to what is being used internally.
+
+Wavefunction File formats
+-------------------------
+
+AFQMC allows for two types of multi-determiant trial wavefunctions: non-orthogonal multi
+Slater determiants (NOMSD) or SHCI/CASSCF style particle-hole multi Slater determinants
+(PHMSD).
+
+The file formats are described below
+
+.. code-block:: text
+
+    h5dump -n wfn.h5
+
+    HDF5 "wfn.h5" {
+        FILE_CONTENTS {
+            group      /
+            group      /Wavefunction
+            group      /Wavefunction/NOMSD
+            dataset    /Wavefunction/NOMSD/Psi0_alpha
+            dataset    /Wavefunction/NOMSD/Psi0_beta
+            group      /Wavefunction/NOMSD/PsiT_0
+            dataset    /Wavefunction/NOMSD/PsiT_0/data_
+            dataset    /Wavefunction/NOMSD/PsiT_0/dims
+            dataset    /Wavefunction/NOMSD/PsiT_0/jdata_
+            dataset    /Wavefunction/NOMSD/PsiT_0/pointers_begin_
+            dataset    /Wavefunction/NOMSD/PsiT_0/pointers_end_
+            group      /Wavefunction/NOMSD/PsiT_1
+            dataset    /Wavefunction/NOMSD/PsiT_1/data_
+            dataset    /Wavefunction/NOMSD/PsiT_1/dims
+            dataset    /Wavefunction/NOMSD/PsiT_1/jdata_
+            dataset    /Wavefunction/NOMSD/PsiT_1/pointers_begin_
+            dataset    /Wavefunction/NOMSD/PsiT_1/pointers_end_
+            dataset    /Wavefunction/NOMSD/ci_coeffs
+            dataset    /Wavefunction/NOMSD/dims
+        }
+    }
+
+Note that the :math:`\alpha` components of the trial wavefunction are stored under
+``PsiT_{2n}`` and the :math:`\beta` components are stored under ``PsiT_{2n+1}``.
+
+-  ``/Wavefunction/NOMSD/Psi0_alpha`` :math:`[M,N_\alpha]` dimensional array for initial
+  walker wavefunction.
+-  ``/Wavefunction/NOMSD/Psi0_beta`` :math:`[M,N_\beta]` dimensional array for initial
+  walker wavefunction.
+-  ``/Wavefunction/NOMSD/PsiT_{2n}/data_`` Array of length :math:`nnz` containing non-zero
+  elements of :math:`n`-th :math:`\alpha` component of trial wavefunction walker
+  wavefunction. Note the **conjugate transpose** of the Slater matrix is stored.
+-  ``/Wavefunction/NOMSD/PsiT_{2n}/dims`` Array of length 3 containing
+  :math:`[M,N_{\alpha},nnz]` where :math:`nnz` is the number of non-zero elements of this
+  Slater matrix
+-  ``/Wavefunction/NOMSD/PsiT_{2n}/jdata_`` CSR indices array.
+-  ``/Wavefunction/NOMSD/PsiT_{2n}/pointers_begin_`` CSR format begin index pointer array.
+-  ``/Wavefunction/NOMSD/PsiT_{2n}/pointers_end_`` CSR format end index pointer array.
+-  ``/Wavefunction/NOMSD/ci_coeffs`` :math:`N_D` length array of ci coefficients. Stored
+  as complex numbers.
+-  ``/Wavefunction/NOMSD/dims`` Integer array of length 5 containing
+  :math:`[M,N_\alpha,N_\beta,` walker_type :math:`,N_D]`
+
+.. code-block:: text
+
+    h5dump -n wfn.h5
+
+    HDF5 "wfn.h5" {
+        FILE_CONTENTS {
+            group      /
+            group      /Wavefunction
+            group      /Wavefunction/PHMSD
+            dataset    /Wavefunction/PHMSD/Psi0_alpha
+            dataset    /Wavefunction/PHMSD/Psi0_beta
+            dataset    /Wavefunction/PHMSD/ci_coeffs
+            dataset    /Wavefunction/PHMSD/dims
+            dataset    /Wavefunction/PHMSD/occs
+            dataset    /Wavefunction/PHMSD/type
+        }
+    }
+
+-  ``/Wavefunction/PHMSD/Psi0_alpha`` :math:`[M,N_\alpha]` dimensional array for initial
+  walker wavefunction.
+-  ``/Wavefunction/PHMSD/Psi0_beta`` :math:`[M,N_\beta]` dimensional array for initial
+  walker wavefunction.
+-  ``/Wavefunction/PHMSD/ci_coeffs`` :math:`N_D` length array of ci coefficients. Stored
+  as complex numbers.
+-  ``/Wavefunction/PHMSD/dims`` Integer array of length 5 containing
+  :math:`[M,N_\alpha,N_\beta,` walker_type :math:`,N_D]`
+-  ``/Wavefunction/PHMSD/occs`` Integer array of length :math:`(N_\alpha+N_\beta)*N_D`
+  describing the determinant occupancies. For example if :math:`(N_\alpha=N_\beta=2)` and
+  :math:`N_D=2`, :math:`M=4`, and if :math:`|\Psi_T\rangle = |0,1\rangle|0,1\rangle + |0,1\rangle|0,2\rangle>` then
+  occs = :math:`[0, 1, 4, 5, 0, 1, 4, 6]`. Note that :math:`\beta` occupancies are
+  displacd by :math:`M`.
+-  ``/Wavefunction/PHMSD/type`` integer 0/1. 1 implies trial wavefunction is written in
+  different basis than the underlying basis used for the integrals. If so a matrix of
+  orbital coefficients is required to be written in the NOMSD format. If 0 then assume
+  wavefunction is in same basis as integrals.
 
 Advice/Useful Information
 -------------------------
