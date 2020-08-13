@@ -22,7 +22,7 @@
 #include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
 #include<cuda_runtime.h>
-#include "Platforms/CUDA_legacy/uninitialized_array.hpp"
+#include <thrust/system/cuda/detail/core/util.h>
 #define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
@@ -33,8 +33,8 @@ namespace kernels
 template<class T>
 __global__ void kernel_determinant_from_getrf(int N, T const* m, int lda, int const* piv, T LogOverlapFactor, T *det) {
 
-   __shared__ uninitialized_array<T, 256> tmp;
-   __shared__ uninitialized_array<T, 256> sg;
+   __shared__ thrust::cuda_cub::core::uninitialized_array<T, 256> tmp;
+   __shared__ thrust::cuda_cub::core::uninitialized_array<T, 256> sg;
    int t = threadIdx.x;
 
    tmp[t]=T(0.0);
@@ -66,7 +66,7 @@ __global__ void kernel_determinant_from_getrf(int N, T const* m, int lda, int co
 template<class T>
 __global__ void kernel_determinant_from_getrf(int N, thrust::complex<T> const* m, int lda, int const* piv, thrust::complex<T> LogOverlapFactor, thrust::complex<T> *det) {
 
-   __shared__ uninitialized_array<thrust::complex<T>, 256> tmp;
+   __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, 256> tmp;
    int t = threadIdx.x;
 
    tmp[t]=thrust::complex<T>(0.0);
@@ -92,8 +92,8 @@ __global__ void kernel_determinant_from_getrf(int N, thrust::complex<T> const* m
 template<class T>
 __global__ void kernel_strided_determinant_from_getrf(int N, T const* m, int lda, int mstride, int const* piv, int pstride, T LogOverlapFactor, T *det, int nbatch) {
 
-   __shared__ uninitialized_array<T, 64> tmp;
-   __shared__ uninitialized_array<T, 64> sg;
+   __shared__ thrust::cuda_cub::core::uninitialized_array<T, 64> tmp;
+   __shared__ thrust::cuda_cub::core::uninitialized_array<T, 64> sg;
    int t = threadIdx.x;
    int batch = blockIdx.x;
    if( batch >= nbatch ) return;
@@ -131,7 +131,7 @@ template<class T>
 __global__ void kernel_strided_determinant_from_getrf(int N, thrust::complex<T> const* m, int lda, int mstride, int const* piv, int pstride, thrust::complex<T> LogOverlapFactor, thrust::complex<T> *det, int nbatch) 
 {
 
-   __shared__ uninitialized_array<thrust::complex<T>, 64> tmp;
+   __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, 64> tmp;
    int batch = blockIdx.x;
    if( batch >= nbatch ) return;
    int t = threadIdx.x;
@@ -162,8 +162,8 @@ __global__ void kernel_strided_determinant_from_getrf(int N, thrust::complex<T> 
 template<class T>
 __global__ void kernel_batched_determinant_from_getrf(int N, T *const* m, int lda, int const* piv, int pstride, T LogOverlapFactor, T *det, int nbatch) {
 
-   __shared__ uninitialized_array<T, 64> tmp;
-   __shared__ uninitialized_array<T, 64> sg;
+   __shared__ thrust::cuda_cub::core::uninitialized_array<T, 64> tmp;
+   __shared__ thrust::cuda_cub::core::uninitialized_array<T, 64> sg;
    int t = threadIdx.x;
    int batch = blockIdx.x;
    if( batch >= nbatch ) return;
@@ -201,7 +201,7 @@ template<class T>
 __global__ void kernel_batched_determinant_from_getrf(int N, thrust::complex<T> *const* m, int lda, int const* piv, int pstride, thrust::complex<T> LogOverlapFactor, thrust::complex<T> *det, int nbatch)
 {
 
-   __shared__ uninitialized_array<thrust::complex<T>, 64> tmp;
+   __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, 64> tmp;
    int batch = blockIdx.x;
    if( batch >= nbatch ) return;
    int t = threadIdx.x;
@@ -232,7 +232,7 @@ __global__ void kernel_batched_determinant_from_getrf(int N, thrust::complex<T> 
 template<typename T>
 __global__ void kernel_determinant_from_geqrf(int N, T *m, int lda, T* buff, T LogOverlapFactor, thrust::complex<T> *det) {
 
-   __shared__ uninitialized_array<T, 256> tmp;
+   __shared__ thrust::cuda_cub::core::uninitialized_array<T, 256> tmp;
    int t = threadIdx.x;
 
    tmp[t]=T(0.0);
@@ -260,7 +260,7 @@ __global__ void kernel_determinant_from_geqrf(int N, T *m, int lda, T* buff, T L
 template<typename T>
 __global__ void kernel_determinant_from_geqrf(int N, thrust::complex<T> *m, int lda, thrust::complex<T>* buff, thrust::complex<T> LogOverlapFactor, thrust::complex<T> *det) {
 
-   __shared__ uninitialized_array<thrust::complex<T>, 256> tmp;
+   __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, 256> tmp;
    int t = threadIdx.x;
 
    tmp[t]=thrust::complex<T>(0.0);

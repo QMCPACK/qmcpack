@@ -17,7 +17,7 @@
 #include<cuda.h>
 #include <thrust/complex.h>
 #include<cuda_runtime.h>
-#include "Platforms/CUDA_legacy/uninitialized_array.hpp"
+#include <thrust/system/cuda/detail/core/util.h>
 #include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
 #define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
@@ -37,7 +37,7 @@ __global__ void kernel_batched_dot_wabn_wban(int nbatch, int nwalk, int nocc, in
     int batch = blockIdx.x;
     if( batch >= nbatch ) return;
     if( blockIdx.y >= nwalk*nocc*nocc ) return;
-    __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
+    __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
     int nocc2 = nocc*nocc;
     int w = blockIdx.y/(nocc2);
     int a = (blockIdx.y%(nocc2))/nocc;
@@ -77,7 +77,7 @@ __global__ void kernel_batched_dot_wanb_wbna(int nbatch, int nwalk, int nocc, in
     int batch = blockIdx.x;
     if( batch >= nbatch ) return;
     if( blockIdx.y >= nwalk*nocc*nocc ) return;
-    __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
+    __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
     int nocc2 = nocc*nocc;
     int w = blockIdx.y/(nocc2);
     int a = (blockIdx.y%(nocc2))/nocc;

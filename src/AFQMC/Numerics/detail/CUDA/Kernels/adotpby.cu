@@ -17,7 +17,7 @@
 #include<cuda.h>
 #include <thrust/complex.h>
 #include<cuda_runtime.h>
-#include "Platforms/CUDA_legacy/uninitialized_array.hpp"
+#include <thrust/system/cuda/detail/core/util.h>
 #define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 
@@ -61,7 +61,7 @@ __global__ void kernel_adotpby(int N, T const alpha, T const* x, int const incx,
                                       T const* y, int const incy, Q const beta, Q* res) {
    // assert(blockIdx.x==0 and blockIdx.y==0 and blockIdx.z==0)
 
-   __shared__ uninitialized_array<T, 1024> tmp;
+   __shared__ thrust::cuda_cub::core::uninitialized_array<T, 1024> tmp;
    int t = threadIdx.x;
 
    tmp[t]=T(0.0);
@@ -91,7 +91,7 @@ __global__ void kernel_strided_adotpby(int NB, int N, T const alpha, T const* x,
 
    int k = blockIdx.x; 
    if( k < NB ) { 
-     __shared__ uninitialized_array<T, 1024> tmp;
+     __shared__ thrust::cuda_cub::core::uninitialized_array<T, 1024> tmp;
      int t = threadIdx.x;
 
      tmp[t]=T(0.0);
