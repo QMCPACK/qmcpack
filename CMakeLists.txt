@@ -726,15 +726,6 @@ ELSE(QMC_CUDA OR ENABLE_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
-#-------------------------------------------------------------------
-#  set up HIP compiler options and libraries
-#-------------------------------------------------------------------
-IF(ENABLE_HIP)
-  MESSAGE(STATUS "ROCM_ROOT: ${ROCM_ROOT}")
-  set(CMAKE_MODULE_PATH "${ROCM_ROOT}/hip/cmake" ${CMAKE_MODULE_PATH})
-  FIND_PACKAGE(HIP)
-ENDIF(ENABLE_HIP)
-
 SET(USE_NVTX_API 0 CACHE BOOL "Enable/disable NVTX regions in CUDA code.")
 IF(USE_NVTX_API)
   IF(HAVE_CUDA)
