@@ -66,7 +66,7 @@ which returns a dict containing the RDM metadata,
 .. code-block:: python
 
     from afqmctools.analysis.average import average_one_rdm
-    rdm_av, rdm_errs = average_one_rdm(f, name='BackPropagated/FullOneRDM/Average_0', eqlb=3, ix=2)
+    rdm_av, rdm_errs = average_one_rdm(f, name='back_propagated', eqlb=3, ix=2)
 
 which computes the average of the 1RDM, where 'i' specifies the index for the length of
 back propagation time desired (e.g. :math:`i=2 \rightarrow \tau_{BP} = 1.5` au). `eqlb` is
