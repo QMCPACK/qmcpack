@@ -37,6 +37,7 @@ User's Guide and Developer's Manual
    lab_advanced_molecules
    lab_condensed_matter
    lab_excited
+   lab_afqmc
    additional_tools
    external_tools
    contributing
