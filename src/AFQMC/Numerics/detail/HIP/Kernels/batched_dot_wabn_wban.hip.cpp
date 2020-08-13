@@ -10,11 +10,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#include<cassert>
+#include <cassert>
 #include <complex>
-#include<hip/hip_runtime.h>
+#include <hip/hip_runtime.h>
 #include <thrust/complex.h>
-#include<hip/hip_runtime.h>
+#include "Platforms/CUDA_legacy/uninitialized_array.hpp"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
@@ -30,7 +30,7 @@ __global__ void kernel_batched_dot_wabn_wban(int nbatch, int nwalk, int nocc, in
     int batch = blockIdx.x;
     if( batch >= nbatch ) return;
     if( blockIdx.y >= nwalk*nocc*nocc ) return;
-    __shared__ thrust::complex<T> cache[ DOT_BLOCK_SIZE ];
+    __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
     int nocc2 = nocc*nocc;
     int w = blockIdx.y/(nocc2);
     int a = (blockIdx.y%(nocc2))/nocc;
@@ -44,7 +44,7 @@ __global__ void kernel_batched_dot_wabn_wban(int nbatch, int nwalk, int nocc, in
         cache[ threadIdx.x ] += static_cast<thrust::complex<T>>(A_[ i ] * B_[ i ]);
         i += blockDim.x;
     }
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
@@ -70,7 +70,7 @@ __global__ void kernel_batched_dot_wanb_wbna(int nbatch, int nwalk, int nocc, in
     int batch = blockIdx.x;
     if( batch >= nbatch ) return;
     if( blockIdx.y >= nwalk*nocc*nocc ) return;
-    __shared__ thrust::complex<T> cache[ DOT_BLOCK_SIZE ];
+    __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
     int nocc2 = nocc*nocc;
     int w = blockIdx.y/(nocc2);
     int a = (blockIdx.y%(nocc2))/nocc;
@@ -84,7 +84,7 @@ __global__ void kernel_batched_dot_wanb_wbna(int nbatch, int nwalk, int nocc, in
         cache[ threadIdx.x ] += static_cast<thrust::complex<T>>(A_[ i*nocc ] * B_[ i*nocc ]);
         i += blockDim.x;
     }
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {

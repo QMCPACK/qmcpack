@@ -234,16 +234,14 @@ TEST_CASE("dot_wanb", "[Numerics][batched_operations]")
   int nocc = 7;
   int nchol = 13;
   std::vector<ComplexType> buffer(nwalk*nocc*nocc*nchol);
+  // T = numpy.arange(nw*nocc*nocc*nchol).reshape(nw,nocc,nchol,nocc) / 100.0
   create_data(buffer, ComplexType(100));
   Tensor4D<ComplexType> Twanb({nwalk, nocc, nchol, nocc}, alloc);
   copy_n(buffer.data(), buffer.size(), Twanb.origin());
-  array<ComplexType,1,Alloc<ComplexType>> out(iextensions<1u>{nwalk}, alloc);
+  array<ComplexType,1,Alloc<ComplexType>> out(iextensions<1u>{nwalk}, 0.0, alloc);
   using ma::dot_wanb;
+  // out = numpy.einsum('wanb,wbna->w', Twanb, Twanb)
   dot_wanb(nwalk, nocc, nchol, ComplexType(1.0), Twanb.origin(), to_address(out.origin()), 1);
-  //std::cout << "{";
-  //for (auto i : out)
-    //std::cout << "ComplexType(" << real(i) << ")," << std::endl;
-  //std::cout << "};" << std::endl;;
   array<ComplexType,1,Alloc<ComplexType>> ref = {ComplexType(6531.67), ComplexType(58186.1), ComplexType(161535)};
   verify_approx(out, ref);
 }
@@ -353,36 +351,32 @@ TEST_CASE("element_wise_Aij_Bjk_Ckij", "[Numerics][batched_operations]")
   }
 }
 
-TEST_CASE("element_wise_Aij_Bjk_Ckji", "[Numerics][batched_operations]")
+template <typename T1, typename T2>
+void test_Aij_Bjk_Ckji()
 {
-  Alloc<ComplexType> alloc{};
-  Alloc<double> dalloc{};
+  Alloc<T1> alloc_a{};
+  Alloc<T2> alloc_b{};
   int ni = 3;
   int nj = 2;
   int nk = 2;
   using ma::element_wise_Aij_Bjk_Ckji;
-  {
-    Tensor2D<ComplexType> A({ni, nj}, -3.0, alloc);
-    Tensor2D<ComplexType> B({nj, nk}, ComplexType(1.0,2.0), alloc);
-    Tensor3D<ComplexType> C({nk, nj, ni}, 0.0, alloc);
-    element_wise_Aij_Bjk_Ckji(ni, nj, nk,
-                              A.origin(), A.stride(0),
-                              B.origin(), B.stride(0),
-                              C.origin(), C.size(2), C.stride(0));
-    Tensor3D<ComplexType> ref({nk, nj, ni}, ComplexType(-3.0, -6.0), alloc);
-    verify_approx(C, ref);
-  }
-  {
-    Tensor2D<double> A({ni, nj}, -3.0, dalloc);
-    Tensor2D<ComplexType> B({nj, nk}, ComplexType(1.0,2.0), alloc);
-    Tensor3D<ComplexType> C({nk, nj, ni}, 0.0, alloc);
-    element_wise_Aij_Bjk_Ckji(ni, nj, nk,
-                              A.origin(), A.stride(0),
-                              B.origin(), B.stride(0),
-                              C.origin(), C.size(2), C.stride(0));
-    Tensor3D<ComplexType> ref({nk, nj, ni}, ComplexType(-3.0, -6.0), alloc);
-    verify_approx(C, ref);
-  }
+  Tensor2D<T1> A({ni, nj}, -3.0, alloc_a);
+  Tensor2D<T2> B({nj, nk}, T2(1.0,2.0), alloc_b);
+  Tensor3D<T2> C({nk, nj, ni}, 0.0, alloc_b);
+  element_wise_Aij_Bjk_Ckji(ni, nj, nk,
+                            A.origin(), A.stride(0),
+                            B.origin(), B.stride(0),
+                            C.origin(), C.size(2), C.stride(0));
+  Tensor3D<T2> ref({nk, nj, ni}, T2(-3.0, -6.0), alloc_b);
+  verify_approx(C, ref);
+}
+
+TEST_CASE("element_wise_Aij_Bjk_Ckji", "[Numerics][batched_operations]")
+{
+  test_Aij_Bjk_Ckji<double,std::complex<double>>();
+  test_Aij_Bjk_Ckji<float,std::complex<float>>();
+  test_Aij_Bjk_Ckji<std::complex<double>,std::complex<double>>();
+  test_Aij_Bjk_Ckji<std::complex<float>,std::complex<float>>();
 }
 
 TEST_CASE("inplace_product", "[Numerics][batched_operations]")

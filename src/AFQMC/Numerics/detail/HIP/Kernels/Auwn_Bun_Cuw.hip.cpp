@@ -13,6 +13,7 @@
 #include <complex>
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
+#include "Platforms/CUDA_legacy/uninitialized_array.hpp"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
@@ -84,7 +85,7 @@ template<typename T, typename T1>
 __global__ void kernel_Aijk_Bkj_Cik(int ni, int nj, int nk, thrust::complex<T> const* A, int lda, int stride,
                             T1 const* B, int ldb, thrust::complex<T>* C, int ldc)
 {
-    __shared__ thrust::complex<T> cache[ 32 ];
+    __shared__ uninitialized_array<thrust::complex<T>, 32> cache;
     int k = blockIdx.x;
     int i = blockIdx.y;
     if( (i<ni) && (k<nk) ) {
@@ -166,10 +167,10 @@ __global__ void kernel_element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk,
             thrust::complex<T>* C, int ldc, int stride)
 {
     // hard-coded to TILE_DIM=32
-    __shared__ T2 Acache[32][33];
-    __shared__ thrust::complex<T> Bcache[32];
-
     int TILE_DIM = 32;
+    __shared__ uninitialized_array<T2, 32*32> Acache;
+    __shared__ uninitialized_array<thrust::complex<T>, 32> Bcache;
+
     int k = blockIdx.z;
     int j = blockIdx.x*TILE_DIM + threadIdx.x;
     int i = blockIdx.y*TILE_DIM + threadIdx.y;
@@ -177,7 +178,7 @@ __global__ void kernel_element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk,
     if( (k<nk) && (j<nj)) {
       int n(threadIdx.y);
       while( (i<ni) && (n<TILE_DIM) ) {
-        Acache[n][threadIdx.x] = A[i*lda+j];
+        Acache[n*32+threadIdx.x] = A[i*lda+j];
         n+=blockDim.y;
         i+=blockDim.y;
       }
@@ -193,7 +194,7 @@ __global__ void kernel_element_wise_Aij_Bjk_Ckji(int ni, int nj, int nk,
     if( (k<nk) && (i<ni)) {
       int n(threadIdx.y);
       while( (j<nj) && (n<TILE_DIM) ) {
-        C[ k*stride + j*ldc + i] = static_cast<thrust::complex<T>>(Acache[threadIdx.x][n]) *
+        C[ k*stride + j*ldc + i] = static_cast<thrust::complex<T>>(Acache[threadIdx.x*32+n]) *
                                 Bcache[n];
         n+=blockDim.y;
         j+=blockDim.y;

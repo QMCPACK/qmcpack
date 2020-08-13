@@ -10,11 +10,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#include<cassert>
+#include <cassert>
 #include <complex>
-#include<hip/hip_runtime.h>
+#include <hip/hip_runtime.h>
 #include <thrust/complex.h>
-#include<hip/hip_runtime.h>
+#include "Platforms/CUDA_legacy/uninitialized_array.hpp"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
@@ -25,7 +25,7 @@ template<typename T>
 __global__ void kernel_dot( int n, T const alpha, T const* A, int lda,
                             T const* B, int ldb, T const beta, T* y, int incy)
 {
-    __shared__ T cache[ DOT_BLOCK_SIZE ];
+    __shared__ uninitialized_array<T, DOT_BLOCK_SIZE> cache;
     int i = threadIdx.x;
     int j = blockIdx.x;
     cache[ threadIdx.x ] = T(0.0);
@@ -33,7 +33,7 @@ __global__ void kernel_dot( int n, T const alpha, T const* A, int lda,
         cache[ threadIdx.x ] += A[ j*lda + i ] * B[ j*ldb + i ];
         i += blockDim.x;
     }
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
@@ -50,7 +50,7 @@ __global__ void kernel_dot( int n, thrust::complex<T> const alpha, thrust::compl
                             thrust::complex<T> const* B, int ldb, thrust::complex<T> const beta,
                             thrust::complex<T>* y, int incy)
 {
-    __shared__ thrust::complex<T> cache[ DOT_BLOCK_SIZE ];
+    __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
     int i = threadIdx.x;
     int j = blockIdx.x;
     cache[ threadIdx.x ] = thrust::complex<T>(0.0,0.0);
@@ -58,7 +58,7 @@ __global__ void kernel_dot( int n, thrust::complex<T> const alpha, thrust::compl
         cache[ threadIdx.x ] += A[ j*lda + i ] * B[ j*ldb + i ];
         i += blockDim.x;
     }
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
@@ -116,7 +116,5 @@ void batchedDot(int m, int n, std::complex<float> const alpha, std::complex<floa
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
-
-
 
 }

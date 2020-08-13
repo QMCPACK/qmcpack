@@ -10,7 +10,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#include "hip_utilities.h"
 #include <cassert>
 #include <complex>
 #include <cstdlib>
@@ -20,6 +19,7 @@
 #include "hipsparse.h"
 #include "rocsolver.h"
 #include "rocrand/rocrand.h"
+#include "hip_utilities.h"
 
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"

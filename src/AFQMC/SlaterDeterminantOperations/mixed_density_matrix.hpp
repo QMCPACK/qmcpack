@@ -565,8 +565,8 @@ Tp Overlap_noHerm(const MatA& A, const MatB& B, Tp LogOverlapFactor, Mat&& T1, I
   using ma::T;
   using ma::H;
 
-  // T(B)*conj(A) 
-  ma::product(H(A),B,std::forward<Mat>(T1));    
+  // T(B)*conj(A)
+  ma::product(H(A),B,std::forward<Mat>(T1));
 
   return ma::determinant(std::forward<Mat>(T1),IWORK,WORK,LogOverlapFactor);
 }
@@ -1001,7 +1001,7 @@ void MixedDensityMatrix( std::vector<MatA>& hermA, std::vector<MatB> &Bi, MatC&&
   // using C for temporary storage, since getriBatched is out-of-place
   std::vector<decltype(&C[0]({0,NEL},{0,NEL}))> Ct;
   Ct.reserve(nbatch);
-  for(int i=0; i<nbatch; i++) 
+  for(int i=0; i<nbatch; i++)
     Ct.emplace_back(&C[i]({0,NEL},{0,NEL}));
 
   //T(conj(A))*B 
@@ -1019,10 +1019,10 @@ void MixedDensityMatrix( std::vector<MatA>& hermA, std::vector<MatB> &Bi, MatC&&
                                  ma::pointer_dispatch(IWORK.origin()),NEL,LogOverlapFactor,
                                  to_address(ovlp.origin()), nbatch);
 
-  getriBatched(NEL,Carray.data(),ldC, 
-                   ma::pointer_dispatch(IWORK.origin()), 
-                   NNarray.data(), ldN, 
-                   ma::pointer_dispatch(IWORK.origin())+nbatch*NEL, nbatch);
+  getriBatched(NEL,Carray.data(), ldC,
+               ma::pointer_dispatch(IWORK.origin()),
+               NNarray.data(), ldN,
+               ma::pointer_dispatch(IWORK.origin())+nbatch*NEL, nbatch);
 
 
   if(compact) {
@@ -1161,17 +1161,17 @@ void DensityMatrices(std::vector<MatA> const& Left, std::vector<MatB> const& Rig
 
   // T1 = T1^(-1)
   // Invert
-  getrfBatched(NEL,Garray.data(),NEL, 
-                 ma::pointer_dispatch(IWORK.origin()), 
-                 ma::pointer_dispatch(IWORK.origin())+nbatch*NEL, nbatch);
+  getrfBatched(NEL,Garray.data(),NEL,
+               ma::pointer_dispatch(IWORK.origin()),
+               ma::pointer_dispatch(IWORK.origin())+nbatch*NEL, nbatch);
 
-  batched_determinant_from_getrf(NEL, Garray.data(), NEL, 
+  batched_determinant_from_getrf(NEL, Garray.data(), NEL,
                                    IWORK.origin(),NEL,LogOverlapFactor,
                                    to_address(ovlp.origin()), nbatch);
 
-  getriBatched(NEL,Garray.data(),NEL, 
-                 ma::pointer_dispatch(IWORK.origin()), ma::pointer_dispatch(NNarray.data()), 
-                 ldN, ma::pointer_dispatch(IWORK.origin())+nbatch*NEL, nbatch);
+  getriBatched(NEL,Garray.data(),NEL,
+               ma::pointer_dispatch(IWORK.origin()), ma::pointer_dispatch(NNarray.data()),
+               ldN, ma::pointer_dispatch(IWORK.origin())+nbatch*NEL, nbatch);
 
     if(compact) {
 

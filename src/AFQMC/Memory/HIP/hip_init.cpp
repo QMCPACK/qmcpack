@@ -13,6 +13,7 @@
 #include "hip_init.h"
 #include "hip_utilities.h"
 #include "AFQMC/Memory/device_pointers.hpp"
+#include "AFQMC/Memory/HIP/hip_utilities.h"
 #include "Platforms/Host/OutputManager.h"
 
 #include "multi/array.hpp"
@@ -74,20 +75,20 @@ namespace qmc_hip {
 
     hip_check(hipSetDevice(node.rank()),"hipSetDevice()");
 
-    hipblas_check(hipblasCreate (& arch::afqmc_hipblas_handle ), "hipblasCreate");
+    hipblas_check(hipblasCreate(&arch::afqmc_hipblas_handle), "hipblasCreate");
 //    cublas_check(cublasXtCreate (& arch::afqmc_cublasXt_handle ), "cublasXtCreate");
     int devID[8] {0,1,2,3,4,5,6,7};
 //    cublas_check(cublasXtDeviceSelect(arch::afqmc_cublasXt_handle, 1, devID), "cublasXtDeviceSelect");
 //    cublas_check(cublasXtSetPinningMemMode(arch::afqmc_cublasXt_handle, CUBLASXT_PINNING_ENABLED),
 //                                            "cublasXtSetPinningMemMode");
     // Does not appear to necessary with rocsolver
-    //hipsolver_check(cusolverDnCreate (& arch::afqmc_rocsolver_handle ), "hipsolverDnCreate");
     //curand_check(hiprandCreateGenerator(&arch::afqmc_curand_generator, HIPRAND_RNG_PSEUDO_DEFAULT),
     //hiprand_check(hiprandCreateGenerator(&arch::afqmc_rocrand_generator, HIPRAND_RNG_PSEUDO_MT19937),
                                             //"hiprandCreateGenerator");
     //hiprand_check(hiprandSetPseudoRandomGeneratorSeed(arch::afqmc_rocrand_generator,iseed),
                                             //"hiprandSetPseudoRandomGeneratorSeed");
 
+    hipsolver_check(rocsolver_create_handle(&arch::afqmc_rocsolver_handle), "rocsolver_create_handle");
     hiprand_check(rocrand_create_generator(&arch::afqmc_rocrand_generator, ROCRAND_RNG_PSEUDO_MTGP32),
                   "rocrand_create_generator");
     hiprand_check(rocrand_set_seed(arch::afqmc_rocrand_generator, iseed), "rocrand_set_seed");

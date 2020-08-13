@@ -47,18 +47,24 @@ namespace device
   inline static void getrf (const int n, const int m, device_pointer<T> && a, int lda,
                             device_pointer<I> && piv, int &st, device_pointer<R> work)
   {
+    //rocsolver_handle handle;
+    //rocsolver_create_handle(&handle);
+    //std::cout << (*a.handles.rocsolver_handle_)->device_arch_id() << std::endl;
     rocsolverStatus_t status = rocsolver::rocsolver_getrf(*a.handles.rocsolver_handle_, n, m,
                      to_address(a), lda, to_address(work), to_address(piv), to_address(piv)+n);
+    //rocsolverStatus_t status = rocsolver::rocsolver_getrf(handle, n, m,
+                     //to_address(a), lda, to_address(work), to_address(piv), to_address(piv)+n);
     hipMemcpy(&st,to_address(piv)+n,sizeof(int),hipMemcpyDeviceToHost);
     if(rocblas_status_success != status) {
       std::cerr<<" hipblas_getrf status, info: " <<status <<" " <<st <<std::endl; std::cerr.flush();
       throw std::runtime_error("Error: hipblas_getrf returned error code.");
     }
+    //rocsolver_destroy_handle(handle);
   }
 
   // getrfBatched
   template<typename T, typename I>
-  inline static void getrfBatched (const int n, device_pointer<T> * a, int lda, device_pointer<I> piv, device_pointer<I> info, int batchSize)
+  inline static void getrfBatched(const int n, device_pointer<T> * a, int lda, device_pointer<I> piv, device_pointer<I> info, int batchSize)
   {
     T **A_d;
     T **A_h;
@@ -90,8 +96,9 @@ namespace device
     if(n1 < n*n)
       throw std::runtime_error("Error: getri<GPU_MEMORY_POINTER_TYPE> required buffer space of n*n.");
     if(lda != n)
-      throw std::runtime_error("Error: getri<GPU_MEMORY_POINTER_TYPE> required lda = 1.");
+      throw std::runtime_error("Error: getri<GPU_MEMORY_POINTER_TYPE> required lda = n.");
 
+    // info isn't returned from ?getrs.
     int* info;
     if(hipSuccess != hipMalloc ((void**)&info,sizeof(int))) {
       std::cerr<<" Error getri: Error allocating on GPU." <<std::endl;
@@ -99,13 +106,15 @@ namespace device
     }
 
     kernels::set_identity(n,n,to_address(work),n);
+    //std::cout << (*work).num_elements() << " " << (*a).num_elements() << std::endl;
     if(rocblas_status_success != rocsolver::rocsolver_getrs(*a.handles.rocsolver_handle_, rocblas_operation_none, n, n,
                                                             to_address(a), lda,
                                                             to_address(piv),
                                                             to_address(work), n, info))
       throw std::runtime_error("Error: rocsolver_getrs returned error code.");
     hipMemcpy(to_address(a),to_address(work),n*n*sizeof(T),hipMemcpyDeviceToDevice);
-    hipMemcpy(&status,info,sizeof(int),hipMemcpyDeviceToHost);
+    //hipMemcpy(&status,info,sizeof(int),hipMemcpyDeviceToHost);
+    status = 0;
     hipFree(info);
 
   }
@@ -119,6 +128,7 @@ namespace device
     A_h = new T*[batchSize];
     C_h = new T*[batchSize];
     for(int i=0; i<batchSize; i++) {
+      kernels::set_identity(n,n,to_address(ainv[i]),ldc);
       A_h[i] = to_address(a[i]);
       C_h[i] = to_address(ainv[i]);
     }
@@ -126,8 +136,10 @@ namespace device
     hipMalloc((void **)&C_d,  batchSize*sizeof(*C_h));
     hipMemcpy(A_d, A_h, batchSize*sizeof(*A_h), hipMemcpyHostToDevice);
     hipMemcpy(C_d, C_h, batchSize*sizeof(*C_h), hipMemcpyHostToDevice);
-    hipblasStatus_t status = hipblas::hipblas_getriBatched(*(a[0]).handles.hipblas_handle, n, A_d, lda,
-                                                        to_address(piv), C_d, ldc, to_address(info), batchSize);
+    hipblasStatus_t status = hipblas::hipblas_getriBatched(*(a[0]).handles.hipblas_handle, HIPBLAS_OP_N, n, n,
+                                                           A_d, lda,
+                                                           to_address(piv), C_d, ldc,
+                                                           to_address(info), batchSize);
     if(HIPBLAS_STATUS_SUCCESS != status)
       throw std::runtime_error("Error: hipblas_getri returned error code.");
     hipFree(A_d);
@@ -175,21 +187,22 @@ namespace device
   inline static void geqrf(int M, int N, device_pointer<T> A, const int LDA, device_pointer<T> TAU, device_pointer<T> WORK, int LWORK, int& INFO)
   {
     // allocating here for now
-    int* piv;
-    if(hipSuccess != hipMalloc ((void**)&piv,sizeof(int))) {
-      std::cerr<<" Error geqrf: Error allocating on GPU." <<std::endl;
-      throw std::runtime_error("Error: hipMalloc returned error code.");
-    }
-
+    //size_t dim = std::min(M,N);
+    //std::vector<T> piv(dim,0.0);
+    //T* dpiv;
+    //if(hipSuccess != hipMalloc(&dpiv,sizeof(T)*dim)) {
+      //std::cerr << " Error gqr: Error allocating piv on GPU." << std::endl;
+      //throw std::runtime_error("Error: hipMalloc returned error code.");
+    //}
     rocsolverStatus_t status = rocsolver::rocsolver_geqrf(*A.handles.rocsolver_handle_, M, N,
-                   to_address(A), LDA, to_address(TAU), to_address(WORK), LWORK, piv);
-    hipMemcpy(&INFO,piv,sizeof(int),hipMemcpyDeviceToHost);
+                                                          to_address(A), LDA, to_address(TAU));
+    //hipMemcpy(piv.data(),dpiv,sizeof(T)*dim,hipMemcpyDeviceToHost);
     if(rocblas_status_success != status) {
-      int st;
-      std::cerr<<" hipblas_geqrf status, info: " <<status <<" " <<INFO <<std::endl; std::cerr.flush();
+      std::cerr<<" hipblas_geqrf status, info: " <<status << std::endl; std::cerr.flush();
       throw std::runtime_error("Error: hipblas_geqrf returned error code.");
     }
-    hipFree(piv);
+    //hipFree(dpiv);
+    INFO = 0;
   }
 
   // gelqf
@@ -218,25 +231,25 @@ namespace device
   void static gqr(int M, int N, int K, device_pointer<T> A, const int LDA, device_pointer<T> TAU, device_pointer<T> WORK, int LWORK, int& INFO)
   {
     // allocating here for now
-    int* piv;
-    if(hipSuccess != hipMalloc ((void**)&piv,sizeof(int))) {
-      std::cerr<<" Error gqr: Error allocating on GPU." <<std::endl;
-      throw std::runtime_error("Error: hipMalloc returned error code.");
-    }
-
     rocsolverStatus_t status = rocsolver::rocsolver_gqr(*A.handles.rocsolver_handle_, M, N, K,
-                   to_address(A), LDA, to_address(TAU), to_address(WORK), LWORK, piv);
-    hipMemcpy(&INFO,piv,sizeof(int),hipMemcpyDeviceToHost);
+                   to_address(A), LDA, to_address(TAU));
     if(rocblas_status_success != status) {
       int st;
-      std::cerr<<" hipblas_gqr status, info: " <<status <<" " <<INFO <<std::endl; std::cerr.flush();
+      std::cerr<<" hipblas_gqr status, info: " <<status << std::endl; std::cerr.flush();
       throw std::runtime_error("Error: hipblas_gqr returned error code.");
     }
-    hipFree(piv);
+    // Not returned from rocm
+    INFO = 0;
+    //hipFree(piv);
   }
 
   template<typename T, typename I>
-  void static gqrStrided(int M, int N, int K, device_pointer<T> A, const int LDA, const int Astride, device_pointer<T> TAU, const int Tstride, device_pointer<T> WORK, int LWORK, device_pointer<I> info, int batchSize )
+  void static gqrStrided(int M, int N, int K,
+                         device_pointer<T> A, const int LDA, const int Astride,
+                         device_pointer<T> TAU, const int Tstride,
+                         device_pointer<T> WORK, int LWORK,
+                         device_pointer<I> info,
+                         int batchSize )
   {
     rocsolverStatus_t status = rocsolver::rocsolver_gqr_strided(*A.handles.rocsolver_handle_, M, N, K,
                     to_address(A), LDA, Astride, to_address(TAU), Tstride, to_address(WORK), LWORK,
@@ -261,70 +274,47 @@ namespace device
   }
 
   // batched geqrf
-  template<typename T, typename I>
-  inline static void geqrfBatched(int M, int N, device_pointer<T> *A, const int LDA, device_pointer<T>* TAU, device_pointer<I> info, int batchSize)
-  {
-    T **B_h = new T*[2*batchSize];
-    T **A_h(B_h);
-    T **T_h(B_h+batchSize);
-    for(int i=0; i<batchSize; i++)
-      A_h[i] = to_address(A[i]);
-    for(int i=0; i<batchSize; i++)
-      T_h[i] = to_address(TAU[i]);
-    T **B_d;
-    std::vector<int> inf(batchSize);
-    hipMalloc((void **)&B_d,  2*batchSize*sizeof(*B_h));
-    hipMemcpy(B_d, B_h, 2*batchSize*sizeof(*B_h), hipMemcpyHostToDevice);
-    T **A_d(B_d);
-    T **T_d(B_d+batchSize);
-    hipblasStatus_t status = hipblas::hipblas_geqrfBatched(*(A[0]).handles.hipblas_handle, M, N, A_d, LDA,
-                                                        T_d, to_address(inf.data()), batchSize);
-    if(HIPBLAS_STATUS_SUCCESS!= status)
-      throw std::runtime_error("Error: hipblas_geqrfBatched returned error code.");
-    hipFree(B_d);
-    delete [] B_h;
-  }
+  //template<typename T, typename I>
+  //inline static void geqrfBatched(int M, int N, device_pointer<T> *A, const int LDA, device_pointer<T>* TAU, device_pointer<I> info, int batchSize)
+  //{
+    //T **B_h = new T*[2*batchSize];
+    //T **A_h(B_h);
+    //T **T_h(B_h+batchSize);
+    //for(int i=0; i<batchSize; i++)
+      //A_h[i] = to_address(A[i]);
+    //for(int i=0; i<batchSize; i++)
+      //T_h[i] = to_address(TAU[i]);
+    //T **B_d;
+    //std::vector<int> inf(batchSize);
+    //hipMalloc((void **)&B_d,  2*batchSize*sizeof(*B_h));
+    //hipMemcpy(B_d, B_h, 2*batchSize*sizeof(*B_h), hipMemcpyHostToDevice);
+    //T **A_d(B_d);
+    //T **T_d(B_d+batchSize);
+    //int pstride = std::min(M,N);
+    //rocsolverStatus_t status = rocsolver::rocsolver_geqrf_batched(
+        //*(A[0]).handles.rocsolver_handle_, M, N, A_d, LDA, T_d,
+        //pstride, batchSize);
+    //if(rocblas_status_success != status)
+      //throw std::runtime_error("Error: hipblas_geqrfBatched returned error code.");
+    //hipFree(B_d);
+    //delete [] B_h;
+  //}
 
   template<typename T, typename I>
   inline static void geqrfStrided(int M, int N, device_pointer<T> A, const int LDA, const int Astride, device_pointer<T> TAU, const int Tstride, device_pointer<I> info, int batchSize)
   {
-/*
-    T **B_h = new T*[2*batchSize];
-    T **A_h(B_h);
-    T **T_h(B_h+batchSize);
-    for(int i=0; i<batchSize; i++)
-      A_h[i] = to_address(A)+i*Astride;
-    for(int i=0; i<batchSize; i++)
-      T_h[i] = to_address(TAU)+i*Tstride;
-    T **B_d;
-    hipMalloc((void **)&B_d,  2*batchSize*sizeof(*B_h));
-    hipMemcpy(B_d, B_h, 2*batchSize*sizeof(*B_h), hipMemcpyHostToDevice);
-    T **A_d(B_d);
-    T **T_d(B_d+batchSize);
-*/
-
-    std::vector<int> inf(batchSize);
     T **A_h = new T*[batchSize];
-    T **T_h = new T*[batchSize];
     for(int i=0; i<batchSize; i++)
       A_h[i] = to_address(A)+i*Astride;
-    for(int i=0; i<batchSize; i++)
-      T_h[i] = to_address(TAU)+i*Tstride;
-    T **A_d, **T_d;
+    T **A_d;
     hipMalloc((void **)&A_d,  batchSize*sizeof(*A_h));
     hipMemcpy(A_d, A_h, batchSize*sizeof(*A_h), hipMemcpyHostToDevice);
-    hipMalloc((void **)&T_d,  batchSize*sizeof(*T_h));
-    hipMemcpy(T_d, T_h, batchSize*sizeof(*T_h), hipMemcpyHostToDevice);
-    hipblasStatus_t status = hipblas::hipblas_geqrfBatched(*A.handles.hipblas_handle, M, N, A_d, LDA,
-                                                        T_d, to_address(inf.data()), batchSize);
-    for(int i=0; i<batchSize; i++)
-      assert(inf[i]==0);
-    if(HIPBLAS_STATUS_SUCCESS != status)
-      throw std::runtime_error("Error: hipblas_geqrfBatched returned error code.");
+    rocsolverStatus_t status = rocsolver::rocsolver_geqrf_batched(
+        *A.handles.rocsolver_handle_, M, N, A_d, LDA, to_address(TAU), Tstride, batchSize);
+    if(rocblas_status_success != status)
+      throw std::runtime_error("Error: hipblas_geqrfStrided returned error code.");
     hipFree(A_d);
     delete [] A_h;
-    hipFree(T_d);
-    delete [] T_h;
   }
 
   // gesvd_bufferSize

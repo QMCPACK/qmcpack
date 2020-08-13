@@ -75,9 +75,7 @@ namespace device
             to_address(A),to_address(pntrb),to_address(indx),
             beta,to_address(C),ldc))
         throw std::runtime_error("Error: hipsparse_csrmm(gemmi) returned error code.");
-// */
-// replace this with call to gemmi!!!
-// /*
+*/
       char transb('T');
       // setup work space for column major matrix C
       if(hipsparse_buffer == nullptr) {
@@ -90,18 +88,30 @@ namespace device
       device_pointer<T> C_(hipsparse_buffer->origin().pointer_cast<T>());
 
       // if beta != 0, transpose C into C_
-      if( std::abs(beta) > 1e-12 )
-        if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_geam(*A.handles.hipblas_handle,
-                transb,transa,M,N,T(1),to_address(C),ldc,
-                T(0),to_address(C_),M,to_address(C_),M))
+      if( std::abs(beta) > 1e-12 ) {
+        auto status = hipblas::hipblas_geam(
+                        *A.handles.hipblas_handle,
+                        transb,transa,M,N,T(1),to_address(C),ldc,
+                        T(0),to_address(C_),M,to_address(C_),M
+                        );
+        if(HIPBLAS_STATUS_SUCCESS != status) {
+          std::cerr << "ERROR STATUS : " << status << std::endl;
           throw std::runtime_error("Error: hipblas_geam returned error code.");
+        }
+      }
 
       // call csrmm2 on C_
-      if(HIPSPARSE_STATUS_SUCCESS != hipsparse::hipsparse_csrmm2(*A.handles.hipsparse_handle,transa,
-            transb,M,N,K,nnz,alpha,qmc_hip::afqmc_hipsparse_matrix_descr,
-            to_address(A),to_address(pntrb),to_address(indx),
-            to_address(B),ldb,beta,to_address(C_),M))
+      auto status = hipsparse::hipsparse_csrmm2(
+                      *A.handles.hipsparse_handle,transa,
+                      transb,M,N,K,nnz,alpha,qmc_hip::afqmc_hipsparse_matrix_descr,
+                      to_address(A),to_address(pntrb),to_address(indx),
+                      to_address(B),ldb,beta,to_address(C_),M
+                      );
+      if(HIPSPARSE_STATUS_SUCCESS != status) {
+        std::cout << "THIS" << std::endl;
+        std::cerr << "ERROR STATUS : " << status << std::endl;
         throw std::runtime_error("Error: hipsparse_csrmm returned error code.");
+      }
 
       // transpose work matrix to row major on result C
       if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_geam(*A.handles.hipblas_handle,
@@ -135,17 +145,20 @@ namespace device
                 T(0),to_address(C_),K,to_address(C_),K))
           throw std::runtime_error("Error: hipblas_geam returned error code. C");
 
-      if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_geam(*A.handles.hipblas_handle,
+      auto st = hipblas::hipblas_geam(*A.handles.hipblas_handle,
               transT,transN,M,N,T(1),to_address(B),ldb,
-              T(0),to_address(B_),M,to_address(B_),M))
+              T(0),to_address(B_),M,to_address(B_),M);
+      if (st != HIPBLAS_STATUS_SUCCESS)
         throw std::runtime_error("Error: hipblas_geam returned error code. B");
 
       // call csrmm2 on C_
-      if(HIPSPARSE_STATUS_SUCCESS != hipsparse::hipsparse_csrmm(*A.handles.hipsparse_handle,transa,
+      auto status = hipsparse::hipsparse_csrmm(*A.handles.hipsparse_handle,transa,
             M,N,K,nnz,alpha,qmc_hip::afqmc_hipsparse_matrix_descr,
             to_address(A),to_address(pntrb),to_address(indx),
-            to_address(B_),M,beta,to_address(C_),K))
+            to_address(B_),M,beta,to_address(C_),K);
+      if(status != HIPSPARSE_STATUS_SUCCESS) {
         throw std::runtime_error("Error: hipsparse_csrmm returned error code.");
+      }
 
       // transpose work matrix to row major on result C
       if(HIPBLAS_STATUS_SUCCESS != hipblas::hipblas_geam(*A.handles.hipblas_handle,

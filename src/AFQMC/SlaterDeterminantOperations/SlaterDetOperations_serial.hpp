@@ -98,7 +98,7 @@ class SlaterDetOperations_serial :
 
     template<class MatA, class MatB>
     T Overlap(const MatA& hermA, const MatB& B, T LogOverlapFactor, communicator& comm, bool herm=true) { 
-#if ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
       APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
       return Base::Overlap(hermA,B,LogOverlapFactor);

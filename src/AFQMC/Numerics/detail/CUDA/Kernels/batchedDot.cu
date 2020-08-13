@@ -17,6 +17,7 @@
 #include<cuda.h>
 #include <thrust/complex.h>
 #include<cuda_runtime.h>
+#include <thrust/system/cuda/detail/core/util.h>
 #include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
 #define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
@@ -28,7 +29,7 @@ template<typename T>
 __global__ void kernel_dot( int n, T const alpha, T const* A, int lda,
                             T const* B, int ldb, T const beta, T* y, int incy) 
 {
-    __shared__ T cache[ DOT_BLOCK_SIZE ];
+    __shared__ thrust::cuda_cub::core::uninitialized_array<T, DOT_BLOCK_SIZE> cache;
     int i = threadIdx.x;
     int j = blockIdx.x;
     cache[ threadIdx.x ] = T(0.0);
@@ -53,7 +54,7 @@ __global__ void kernel_dot( int n, thrust::complex<T> const alpha, thrust::compl
                             thrust::complex<T> const* B, int ldb, thrust::complex<T> const beta, 
                             thrust::complex<T>* y, int incy)
 {
-    __shared__ thrust::complex<T> cache[ DOT_BLOCK_SIZE ];
+    __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
     int i = threadIdx.x;
     int j = blockIdx.x;
     cache[ threadIdx.x ] = thrust::complex<T>(0.0,0.0);
