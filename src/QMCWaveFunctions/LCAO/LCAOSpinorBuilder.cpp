@@ -29,7 +29,6 @@ LCAOSpinorBuilder::LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Commun
 
 SPOSet* LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  app_log() << "INSIDE LCAOSpinorBuilder" << std::endl;
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
   std::string spo_name(""), optimize("no");
   OhmmsAttributeSet spoAttrib;
@@ -52,10 +51,6 @@ SPOSet* LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::shared_ptr<SPOSet> upspo = std::static_pointer_cast<SPOSet>(up);
   std::shared_ptr<SPOSet> dnspo = std::static_pointer_cast<SPOSet>(dn);
 
-  
-  std::cout << *up->C << std::endl;
-  std::cout << *dn->C << std::endl;
-
   //create spinor and register up/dn
   SpinorSet* spinor_set = new SpinorSet();
   spinor_set->set_spos(upspo, dnspo);
@@ -68,8 +63,10 @@ bool LCAOSpinorBuilder::loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr 
 {
   bool PBC = false;
   int norb = up.getBasisSetSize();
+  std::string debugc("no");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norb, "size");
+  aAttrib.add(debugc, "debug");
   aAttrib.put(cur);
 
   up.setOrbitalSetSize(norb);
@@ -80,6 +77,7 @@ bool LCAOSpinorBuilder::loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr 
     APP_ABORT("LCAOrbitalBuilder::loadMO detected ZERO BasisSetSize");
     return false;
   }
+
   assert(up.getBasisSetSize() == dn.getBasisSetSize());
   Occ.resize(std::max(up.getBasisSetSize(), up.getOrbitalSetSize()));
   Occ = 0.0;
@@ -103,12 +101,15 @@ bool LCAOSpinorBuilder::loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr 
   bool success = putFromH5(up, dn);
 
 
+  if (debugc == "yes")
+  {
     app_log() << "UP:  Single-particle orbital coefficients dims=" << up.C->rows() << " x " << up.C->cols()
               << std::endl;
     app_log() << *up.C << std::endl;
     app_log() << "DN:  Single-particle orbital coefficients dims=" << dn.C->rows() << " x " << dn.C->cols()
               << std::endl;
     app_log() << *dn.C << std::endl;
+  }
   return success;
 }
 
@@ -141,7 +142,6 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn)
       for (int j = 0; j < upTemp.cols(); j++)
       {
         upTemp[i][j] = ValueType(upReal[i][j], upImag[i][j]);
-        std::cout << i << " " << j << " " << upTemp[i][j] << std::endl;
       }
     }
 
@@ -158,7 +158,6 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn)
       for (int j = 0; j < dnTemp.cols(); j++)
       {
         dnTemp[i][j] = ValueType(dnReal[i][j], dnImag[i][j]);
-        std::cout << i << " " << j << " " << dnTemp[i][j] << std::endl;
       }
     }
 
