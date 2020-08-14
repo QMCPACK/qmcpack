@@ -34,7 +34,7 @@ MAYBE_SYMLINK(${UTEST_HDF_INPUT4} ${UTEST_DIR}/o2_45deg_spins.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT5} ${UTEST_DIR}/C_diamond-twist-third.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT6} ${UTEST_DIR}/lcao_spinor.h5)
 
-SET(FILES_TO_COPY he_sto3g.wfj.xml he_sto3g_spinor.wfj.xml ne_def2_svp.wfnoj.xml hcn.structure.xml hcn.wfnoj.xml hcn_downdet.cuspInfo.xml hcn_updet.cuspInfo.xml
+SET(FILES_TO_COPY he_sto3g.wfj.xml ne_def2_svp.wfnoj.xml hcn.structure.xml hcn.wfnoj.xml hcn_downdet.cuspInfo.xml hcn_updet.cuspInfo.xml
     ethanol.structure.xml ethanol.wfnoj.xml ethanol_updet.cuspInfo.xml ethanol_downdet.cuspInfo.xml C_diamond-twist-third.structure.xml C_diamond-twist-third.wfj.xml)
 
 FOREACH(fname ${FILES_TO_COPY})
