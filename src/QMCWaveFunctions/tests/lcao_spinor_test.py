@@ -184,11 +184,13 @@ def get_reference_values():
     spdy  = (cs + 1j*ss)*updy  + (cs - 1j*ss)*dndy
     spdz  = (cs + 1j*ss)*updz  + (cs - 1j*ss)*dndz
     splap = (cs + 1j*ss)*uplap + (cs - 1j*ss)*dnlap
+    spds  = (-ss + 1j*cs)*upval + (-ss - 1j*cs)*dnval
 
     print("Spinor:")
-    print("  Val : {}".format(spval))
-    print("  Grad: {} {} {}".format(spdx,spdy,spdz))
-    print("  Lap : {}".format(splap))
+    print("  Val     : {}".format(spval))
+    print("  Grad    : {} {} {}".format(spdx,spdy,spdz))
+    print("  Lap     : {}".format(splap))
+    print("  SpinGrad: {}".format(spds))
 
 write_h5_file()
 get_reference_values()
