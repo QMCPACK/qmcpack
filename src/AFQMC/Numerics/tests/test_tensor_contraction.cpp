@@ -15,10 +15,14 @@
 #include "Configuration.h"
 
 #undef APP_ABORT
-#define APP_ABORT(x) {std::cout << x; throw;}
+#define APP_ABORT(x) \
+  {                  \
+    std::cout << x;  \
+    throw;           \
+  }
 
 #include <vector>
-#include<iostream>
+#include <iostream>
 
 
 #include "AFQMC/Matrix/tests/matrix_helpers.h"
@@ -27,35 +31,28 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
-using std::vector;
 using boost::multi::array;
 using boost::multi::array_ref;
+using std::vector;
 template<std::ptrdiff_t D>
 using iextensions = typename boost::multi::iextensions<D>;
 
 namespace qmcplusplus
 {
-
 void ma_tensor_tests()
 {
-
-	vector<double> v = {1.,2.,3.};
-	{
-		array_ref<double, 1> V(v.data(), iextensions<1u>{v.size()});
-		ma::scal(2., V);
-		{
-			vector<double> v2 = {2.,4.,6.};
-			array_ref<double, 1> V2(v2.data(), iextensions<1u>{v2.size()});
-			verify_approx( V, V2 );
-		}
-	}
-
+  vector<double> v = {1., 2., 3.};
+  {
+    array_ref<double, 1> V(v.data(), iextensions<1u>{v.size()});
+    ma::scal(2., V);
+    {
+      vector<double> v2 = {2., 4., 6.};
+      array_ref<double, 1> V2(v2.data(), iextensions<1u>{v2.size()});
+      verify_approx(V, V2);
+    }
+  }
 }
 
-TEST_CASE("test_tensor", "[tensor_operations]")
-{
-  ma_tensor_tests();
-}
+TEST_CASE("test_tensor", "[tensor_operations]") { ma_tensor_tests(); }
 
-}
-
+} // namespace qmcplusplus

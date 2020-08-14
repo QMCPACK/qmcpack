@@ -16,21 +16,48 @@
 
 namespace kernels
 {
-
 // y[i] = beta * y[i] + sum_k alpha * A[k,i] * B[k,i]
-void batchedDot(int m, int n, double const alpha, double const* A, int lda,
-                              double const* B, int ldb,
-                              double const beta, double *y, int incy);
-void batchedDot(int m, int n, float const alpha, float const* A, int lda,
-                              float const* B, int ldb,
-                              float const beta, float *y, int incy);
-void batchedDot(int m, int n, std::complex<double> const alpha, std::complex<double> const* A, int lda,
-                              std::complex<double> const* B, int ldb,
-                              std::complex<double> const beta, std::complex<double> *y, int incy);
-void batchedDot(int m, int n, std::complex<float> const alpha, std::complex<float> const* A, int lda,
-                              std::complex<float> const* B, int ldb,
-                              std::complex<float> const beta, std::complex<float> *y, int incy);
+void batchedDot(int m,
+                int n,
+                double const alpha,
+                double const* A,
+                int lda,
+                double const* B,
+                int ldb,
+                double const beta,
+                double* y,
+                int incy);
+void batchedDot(int m,
+                int n,
+                float const alpha,
+                float const* A,
+                int lda,
+                float const* B,
+                int ldb,
+                float const beta,
+                float* y,
+                int incy);
+void batchedDot(int m,
+                int n,
+                std::complex<double> const alpha,
+                std::complex<double> const* A,
+                int lda,
+                std::complex<double> const* B,
+                int ldb,
+                std::complex<double> const beta,
+                std::complex<double>* y,
+                int incy);
+void batchedDot(int m,
+                int n,
+                std::complex<float> const alpha,
+                std::complex<float> const* A,
+                int lda,
+                std::complex<float> const* B,
+                int ldb,
+                std::complex<float> const beta,
+                std::complex<float>* y,
+                int incy);
 
-}
+} // namespace kernels
 
 #endif

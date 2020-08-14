@@ -19,48 +19,43 @@
 
 namespace kernels
 {
-
 void sampleGaussianRNG(double* V, int n, rocrand_generator& gen)
 {
-  qmc_hip::rocrand_check(rocrand_generate_normal_double(gen,V,n,0.0,1.0),
-                         "rocrand_generate_normal_double");
+  qmc_hip::rocrand_check(rocrand_generate_normal_double(gen, V, n, 0.0, 1.0), "rocrand_generate_normal_double");
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
- // Convert to double if really necessary
+// Convert to double if really necessary
 void sampleGaussianRNG(float* V, int n, rocrand_generator& gen)
 {
-  qmc_hip::rocrand_check(rocrand_generate_normal(gen,V,n,float(0.0),float(1.0)),
-                                                        "rocrand_generate_normal");
+  qmc_hip::rocrand_check(rocrand_generate_normal(gen, V, n, float(0.0), float(1.0)), "rocrand_generate_normal");
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
 void sampleGaussianRNG(std::complex<double>* V, int n, rocrand_generator& gen)
 {
-  qmc_hip::rocrand_check(rocrand_generate_normal_double(gen,
-                        reinterpret_cast<double*>(V),2*n,0.0,1.0),
-                                          "rocrand_generate_normal_double");
+  qmc_hip::rocrand_check(rocrand_generate_normal_double(gen, reinterpret_cast<double*>(V), 2 * n, 0.0, 1.0),
+                         "rocrand_generate_normal_double");
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
   // hack hack hack!!!
-  kernels::zero_complex_part(n,V);
+  kernels::zero_complex_part(n, V);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
-void sampleGaussianRNG( std::complex<float>* V, int n, rocrand_generator & gen)
+void sampleGaussianRNG(std::complex<float>* V, int n, rocrand_generator& gen)
 {
-  qmc_hip::rocrand_check(rocrand_generate_normal(gen,
-                        reinterpret_cast<float*>(V),2*n,float(0.0),float(1.0)),
-                                          "rocrand_generate_normal");
+  qmc_hip::rocrand_check(rocrand_generate_normal(gen, reinterpret_cast<float*>(V), 2 * n, float(0.0), float(1.0)),
+                         "rocrand_generate_normal");
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
   // hack hack hack!!!
-  kernels::zero_complex_part(n,V);
+  kernels::zero_complex_part(n, V);
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
-}
+} // namespace kernels
