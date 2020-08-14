@@ -20,7 +20,7 @@ def write_h5_file():
     atnum  = np.array([1])
     charge = np.array([1])
     core   = np.array([1])
-    name = "Li"
+    name = "H"
     mylen = "S"+str(len(name))
     strList = [name]
     asciiList = [n.encode("ascii", "ignore") for n in strList]
