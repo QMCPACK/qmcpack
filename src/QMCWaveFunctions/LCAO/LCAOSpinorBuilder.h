@@ -30,9 +30,12 @@ public:
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
-  LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
-      : LCAOrbitalBuilder(els, ions, comm, cur){};
+  LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur);
   SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+
+private:
+  bool loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr cur);
+  bool putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn);
 };
 } // namespace qmcplusplus
 #endif

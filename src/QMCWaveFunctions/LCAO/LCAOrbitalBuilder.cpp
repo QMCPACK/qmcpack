@@ -918,7 +918,7 @@ void LCAOrbitalBuilder::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
   bool usesOpenBC = PBCImages[0] == 0 && PBCImages[1] == 0 && PBCImages[2] == 0;
 
   ///Exp(ik.g) where i is imaginary, k is the supertwist and g is the translation vector PBCImage.
-  if (h5_path != "")
+  if (h5_path != "" && !usesOpenBC)
   {
     hdf_archive hin(myComm);
     if (myComm->rank() == 0)

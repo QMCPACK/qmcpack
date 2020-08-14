@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2029 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //
@@ -10,18 +10,30 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCWaveFunctions/LCAO/LCAOSpinorBuilder.h"
+#include "QMCWaveFunctions/SpinorSet.h"
+#include "OhmmsData/AttributeSet.h"
+#include "Utilities/ProgressReportEngine.h"
+#include "io/hdf_archive.h"
+#include "Message/CommOperators.h"
 
 namespace qmcplusplus
 {
+LCAOSpinorBuilder::LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
+    : LCAOrbitalBuilder(els, ions, comm, cur)
+{
+  if (h5_path == "")
+  {
+    APP_ABORT("LCAOSpinorBuilder only works with href");
+  }
+}
+
 SPOSet* LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  /*
+  app_log() << "INSIDE LCAOSpinorBuilder" << std::endl;
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
-  std::string spo_name(""), id, cusp_file(""), optimize("no");
+  std::string spo_name(""), optimize("no");
   OhmmsAttributeSet spoAttrib;
   spoAttrib.add(spo_name, "name");
-  spoAttrib.add(id, "id");
-  spoAttrib.add(cusp_file, "cuspInfo");
   spoAttrib.add(optimize, "optimize");
   spoAttrib.put(cur);
 
@@ -31,59 +43,154 @@ SPOSet* LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (optimize == "yes")
     app_log() << "  SPOSet " << spo_name << " is optimizable\n";
 
-  LCAOrbitalSet* lcos = nullptr;
-#if !defined(QMC_COMPLEX)
-  LCAOrbitalSetWithCorrection* lcwc = nullptr;
-  if (doCuspCorrection)
-    lcos = lcwc = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, optimize == "yes");
-  else
-    lcos = new LCAOrbitalSet(myBasisSet, optimize == "yes");
-#else
-  lcos = new LCAOrbitalSet(myBasisSet, optimize == "yes");
-#endif
-  loadMO(*lcos, cur);
+  std::shared_ptr<LCAOrbitalSet> up = std::make_shared<LCAOrbitalSet>(myBasisSet, optimize == "yes");
+  std::shared_ptr<LCAOrbitalSet> dn = std::make_shared<LCAOrbitalSet>(myBasisSet, optimize == "yes");
 
-#if !defined(QMC_COMPLEX)
-  if (doCuspCorrection)
+  loadMO(*up, *dn, cur);
+
+  //cast to SPOSet type
+  std::shared_ptr<SPOSet> upspo = std::static_pointer_cast<SPOSet>(up);
+  std::shared_ptr<SPOSet> dnspo = std::static_pointer_cast<SPOSet>(dn);
+
+  
+  std::cout << *up->C << std::endl;
+  std::cout << *dn->C << std::endl;
+
+  //create spinor and register up/dn
+  SpinorSet* spinor_set = new SpinorSet();
+  spinor_set->set_spos(upspo, dnspo);
+
+
+  return spinor_set;
+}
+
+bool LCAOSpinorBuilder::loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr cur)
+{
+  bool PBC = false;
+  int norb = up.getBasisSetSize();
+  OhmmsAttributeSet aAttrib;
+  aAttrib.add(norb, "size");
+  aAttrib.put(cur);
+
+  up.setOrbitalSetSize(norb);
+  dn.setOrbitalSetSize(norb);
+
+  if (up.getBasisSetSize() == 0 || dn.getBasisSetSize() == 0)
   {
-    int num_centers = sourcePtcl.getTotalNum();
+    APP_ABORT("LCAOrbitalBuilder::loadMO detected ZERO BasisSetSize");
+    return false;
+  }
+  assert(up.getBasisSetSize() == dn.getBasisSetSize());
+  Occ.resize(std::max(up.getBasisSetSize(), up.getOrbitalSetSize()));
+  Occ = 0.0;
+  for (int i = 0; i < up.getOrbitalSetSize(); i++)
+    Occ[i] = 1.0;
 
-    // Sometimes sposet attribute is 'name' and sometimes it is 'id'
-    if (id == "")
-      id = spo_name;
+  hdf_archive hin(myComm);
+  if (myComm->rank() == 0)
+  {
+    if (!hin.open(h5_path, H5F_ACC_RDONLY))
+      APP_ABORT("LCAOSpinorBuilder::loadMO missing or incorrect path to H5 file.");
+    hin.push("PBC");
+    PBC = false;
+    hin.read(PBC, "PBC");
+    hin.close();
+  }
+  myComm->bcast(PBC);
+  if (PBC)
+    APP_ABORT("LCAOSpinorBuilder::loadMO lcao spinors not implemented in PBC");
 
-    int orbital_set_size = lcos->getOrbitalSetSize();
-    Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
+  bool success = putFromH5(up, dn);
 
-    bool valid = false;
-    if (myComm->rank() == 0)
+
+    app_log() << "UP:  Single-particle orbital coefficients dims=" << up.C->rows() << " x " << up.C->cols()
+              << std::endl;
+    app_log() << *up.C << std::endl;
+    app_log() << "DN:  Single-particle orbital coefficients dims=" << dn.C->rows() << " x " << dn.C->cols()
+              << std::endl;
+    app_log() << *dn.C << std::endl;
+  return success;
+}
+
+bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn)
+{
+#ifdef QMC_COMPLEX
+#if defined(HAVE_LIBHDF5)
+  up.setIdentity(false);
+  dn.setIdentity(false);
+
+  int norbs = up.getOrbitalSetSize();
+
+  hdf_archive hin(myComm);
+  if (myComm->rank() == 0)
+  {
+    if (!hin.open(h5_path, H5F_ACC_RDONLY))
+      APP_ABORT("LCAOSpinorBuilder::putFromH5 missing or incorrect path to H5 file");
+
+    std::string setname;
+    Matrix<RealType> upReal(up.getOrbitalSetSize(), up.getBasisSetSize());
+    Matrix<RealType> upImag(up.getOrbitalSetSize(), up.getBasisSetSize());
+    setname = "/KPTS_0/eigenset_0";
+    readRealMatrixFromH5(hin, setname, upReal);
+    setname = "/KPTS_0/eigenset_0_imag";
+    readRealMatrixFromH5(hin, setname, upImag);
+
+    Matrix<ValueType> upTemp(up.getOrbitalSetSize(), up.getBasisSetSize());
+    for (int i = 0; i < upTemp.rows(); i++)
     {
-      valid = readCuspInfo(cusp_file, id, orbital_set_size, info);
-    }
-#ifdef HAVE_MPI
-    myComm->comm.broadcast_value(valid);
-    if (valid)
-    {
-      for (int orb_idx = 0; orb_idx < orbital_set_size; orb_idx++)
+      for (int j = 0; j < upTemp.cols(); j++)
       {
-        for (int center_idx = 0; center_idx < num_centers; center_idx++)
-        {
-          broadcastCuspInfo(info(center_idx, orb_idx), *myComm, 0);
-        }
+        upTemp[i][j] = ValueType(upReal[i][j], upImag[i][j]);
+        std::cout << i << " " << j << " " << upTemp[i][j] << std::endl;
       }
     }
-#endif
-    if (!valid)
+
+    Matrix<RealType> dnReal(dn.getOrbitalSetSize(), dn.getBasisSetSize());
+    Matrix<RealType> dnImag(dn.getOrbitalSetSize(), dn.getBasisSetSize());
+    setname = "/KPTS_0/eigenset_1";
+    readRealMatrixFromH5(hin, setname, dnReal);
+    setname = "/KPTS_0/eigenset_1_imag";
+    readRealMatrixFromH5(hin, setname, dnImag);
+
+    Matrix<ValueType> dnTemp(dn.getOrbitalSetSize(), dn.getBasisSetSize());
+    for (int i = 0; i < dnTemp.rows(); i++)
     {
-      generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, *lcwc, id, *myComm);
+      for (int j = 0; j < dnTemp.cols(); j++)
+      {
+        dnTemp[i][j] = ValueType(dnReal[i][j], dnImag[i][j]);
+        std::cout << i << " " << j << " " << dnTemp[i][j] << std::endl;
+      }
     }
 
-    applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
+    int n = 0, i = 0;
+    while (i < norbs)
+    {
+      if (Occ[n] > 0.0)
+      {
+        std::copy(upTemp[n], upTemp[n + 1], (*up.C)[i]);
+        std::copy(dnTemp[n], dnTemp[n + 1], (*dn.C)[i]);
+        i++;
+      }
+      n++;
+    }
+
+    hin.close();
   }
+
+#ifdef HAVE_MPI
+  myComm->comm.broadcast_n(up.C->data(), up.C->size());
+  myComm->comm.broadcast_n(dn.C->data(), dn.C->size());
 #endif
 
-  return lcos;
-  */
+#else
+  APP_ABORT("LCAOSpinorBuilder::putFromH5 HDF5 is disabled");
+#endif
+
+#else
+  APP_ABORT("LCAOSpinorBuilder::putFromH5 Must build with QMC_COMPLEX");
+#endif
+
+  return true;
 }
 
 } // namespace qmcplusplus

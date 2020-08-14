@@ -96,5 +96,8 @@ protected:
   void EvalPeriodicImagePhaseFactors(PosType SuperTwist,
                                      std::vector<std::complex<RealType>>& LocPeriodicImagePhaseFactors);
 };
+
+
+void readRealMatrixFromH5(hdf_archive& hin, const std::string& setname, Matrix<LCAOrbitalBuilder::RealType>& Creal);
 } // namespace qmcplusplus
 #endif
