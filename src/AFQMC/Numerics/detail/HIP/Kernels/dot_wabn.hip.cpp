@@ -9,12 +9,10 @@
 // File created by: Fionn Malone, malone14@llnl.gov, LLNL
 ////////////////////////////////////////////////////////////////////////////////
 
-
-#include<cassert>
 #include <complex>
-#include<hip/hip_runtime.h>
 #include <thrust/complex.h>
-#include<hip/hip_runtime.h>
+#include <hip/hip_runtime.h>
+#include "Platforms/CUDA_legacy/uninitialized_array.hpp"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
@@ -28,7 +26,7 @@ __global__ void kernel_dot_wabn(int nwalk, int nocc, int nchol,
                     thrust::complex<T>* y, int incy)
 {
     if( blockIdx.x >= nwalk*nocc*nocc ) return;
-    __shared__ thrust::complex<T> cache[ DOT_BLOCK_SIZE ];
+    __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
     int nocc2 = nocc*nocc;
     int w = blockIdx.x/(nocc2);
     int a = (blockIdx.x%(nocc2))/nocc;
@@ -42,7 +40,7 @@ __global__ void kernel_dot_wabn(int nwalk, int nocc, int nchol,
         cache[ threadIdx.x ] += static_cast<thrust::complex<T>>(A_[ i ] * B_[ i ]);
         i += blockDim.x;
     }
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
@@ -69,7 +67,7 @@ __global__ void kernel_dot_wanb(int nt, int nwalk, int nocc, int nchol,
     int a = blockIdx.y*blockDim.x + threadIdx.x;
     int nb = blockIdx.z*blockDim.y*nt + threadIdx.y;
 
-    __shared__ thrust::complex<T> cache[ 1024 ];
+    __shared__ uninitialized_array<thrust::complex<T>, 1024> cache;
 
     int nid = blockDim.x*blockDim.y*blockDim.z;
     int id = (threadIdx.x * blockDim.y + threadIdx.y) *blockDim.z + threadIdx.z;
@@ -85,7 +83,7 @@ __global__ void kernel_dot_wanb(int nt, int nwalk, int nocc, int nchol,
                     A_[(b*nchol + i)*nocc + a]);
     }
 
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     int i = nid / 2;
     while( i > 0 ) {
@@ -108,7 +106,7 @@ __global__ void kernel_dot_wanb2(int nwalk, int nocc, int nchol,
                     thrust::complex<T>* y, int incy)
 {
     if( blockIdx.x >= nwalk*nocc*nocc ) return;
-    __shared__ thrust::complex<T> cache[ DOT_BLOCK_SIZE ];
+    __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
     int nocc2 = nocc*nocc;
     int w = blockIdx.x/(nocc2);
     int a = (blockIdx.x%(nocc2))/nocc;
@@ -122,7 +120,7 @@ __global__ void kernel_dot_wanb2(int nwalk, int nocc, int nchol,
         cache[ threadIdx.x ] += static_cast<thrust::complex<T>>(A_[ i*nocc ] * B_[ i*nocc ]);
         i += blockDim.x;
     }
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {
@@ -144,7 +142,7 @@ __global__ void kernel_dot_wpan_waqn_Fwpq(int nwalk, int nmo, int nchol,
                     thrust::complex<T2> const alpha, thrust::complex<T2> const* Tab,
                     thrust::complex<T>* F)
 {
-  __shared__ thrust::complex<T> cache[ DOT_BLOCK_SIZE ];
+  __shared__ uninitialized_array<thrust::complex<T>, DOT_BLOCK_SIZE> cache;
   int p = blockIdx.x;
   int q = blockIdx.y;
   int a = blockIdx.z;
@@ -158,7 +156,7 @@ __global__ void kernel_dot_wpan_waqn_Fwpq(int nwalk, int nmo, int nchol,
         cache[ threadIdx.x ] += static_cast<thrust::complex<T>>(A_[ i ] * B_[ i ]);
         i += blockDim.x;
     }
-    __syncthreads(); // required because later on the current thread is accessing
+    __syncthreads(); // required because later on the hiprrent thread is accessing
                      // data written by another thread
     i = DOT_BLOCK_SIZE / 2;
     while( i > 0 ) {

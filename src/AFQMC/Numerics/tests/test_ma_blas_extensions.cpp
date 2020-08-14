@@ -70,15 +70,42 @@ void create_data(std::vector<T>& buffer, T scale)
 TEST_CASE("adotpby", "[Numerics][ma_blas_extensions]")
 {
 
-  Alloc<double> alloc{};
-  Tensor1D<double> y = {1.0};
-  Tensor1D<double> a = {2.0, 8.0, 5.4, 7.33};
-  Tensor1D<double> b = {0.1, 5.2, 88.4, 0.001};
-  double alpha = 3.33;
-  double beta = 0.33;
-  using ma::adotpby;
-  adotpby(alpha, a, b, beta, y.origin());
-  REQUIRE(y[0] == Approx(1729.1572089000003));
+  size_t n = 1025;
+  SECTION("double")
+  {
+    Alloc<double> alloc{};
+    Tensor1D<double> y = {0.0};
+    Tensor1D<double> a(n);
+    Tensor1D<double> b(n);
+    double alpha = 0.5;
+    double beta = 0.0;
+    for (int i = 0; i < a.size(); i++) {
+      a[i] = 0.1;
+      b[i] = 0.1;
+    }
+    using ma::adotpby;
+    adotpby(alpha, a, b, beta, y.origin());
+    REQUIRE(y[0] == Approx(0.5*a.size()*0.01));
+  }
+  SECTION("complex")
+  {
+    Alloc<std::complex<double>> alloc{};
+    Tensor1D<std::complex<double>> y = {0.0};
+    Tensor1D<std::complex<double>> a(n);
+    Tensor1D<std::complex<double>> b(n);
+    std::complex<double> alpha = 0.5;
+    std::complex<double> beta = 0.0;
+    std::vector<std::complex<double>> y_cpu(1);
+    for (int i = 0; i < a.size(); i++) {
+      a[i] = ComplexType(0.1,0.1);
+      b[i] = ComplexType(0.1,-0.1);
+    }
+    using ma::adotpby;
+    adotpby(alpha, a, b, beta, y.origin());
+    copy_n(y.data(), y.size(), y_cpu.data());
+    REQUIRE(std::real(y_cpu[0]) == Approx(a.size()*0.01));
+    REQUIRE(std::imag(y_cpu[0]) == Approx(0.00));
+  }
 
 }
 

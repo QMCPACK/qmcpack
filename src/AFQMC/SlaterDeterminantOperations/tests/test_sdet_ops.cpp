@@ -421,22 +421,33 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
   SlaterDetOperations SDet( SlaterDetOperations_serial<Type,buffer_generator>(NMO,NEL,bgen) );
 
   /**** Overlaps ****/
-  Type ov_; 
-  ov_=SDet.Overlap(A,B,0.0); myREQUIRE(ov_,ov);
-  ov_=SDet.Overlap(Aref,B,0.0); myREQUIRE(ov_,ov);
-  ov_=SDet.Overlap(A,Bref,0.0); myREQUIRE(ov_,ov);
-  ov_=SDet.Overlap(Aref,Bref,0.0); myREQUIRE(ov_,ov);
+  //SECTION("Overlaps")
+  {
+    Type ov_; 
+    ov_=SDet.Overlap(A,B,0.0); myREQUIRE(ov_,ov);
+    ov_=SDet.Overlap(Aref,B,0.0); myREQUIRE(ov_,ov);
+    ov_=SDet.Overlap(A,Bref,0.0); myREQUIRE(ov_,ov);
+    ov_=SDet.Overlap(Aref,Bref,0.0); myREQUIRE(ov_,ov);
+  }
 
   // Test array_view
-  ov_=SDet.Overlap(A(A.extension(0),A.extension(1)),B,0.0); myREQUIRE(ov_,ov);
-  ov_=SDet.Overlap(A,B(B.extension(0),B.extension(1)),0.0); myREQUIRE(ov_,ov);
+  //SECTION("array_view")
+  {
+    Type ov_; 
+    ov_=SDet.Overlap(A(A.extension(0),A.extension(1)),B,0.0); myREQUIRE(ov_,ov);
+    ov_=SDet.Overlap(A,B(B.extension(0),B.extension(1)),0.0); myREQUIRE(ov_,ov);
+  }
 
 // copy not yet working with device_pointer
-  array A_ = A({0,2},{0,3});
-  array B_ = B({0,3},{0,2});
-  ov_=SDet.Overlap(A({0,2},{0,3}),B({0,3},{0,2}),0.0); myREQUIRE(ov_,ov2);
-  ov_=SDet.Overlap(A({0,2},{0,3}),B_,0.0); myREQUIRE(ov_,ov2);
-  ov_=SDet.Overlap(A_,B({0,3},{0,2}),0.0); myREQUIRE(ov_,ov2);
+  //SECTION("copy_overlap")
+  {
+    array A_ = A({0,2},{0,3});
+    array B_ = B({0,3},{0,2});
+    Type ov_;
+    ov_=SDet.Overlap(A({0,2},{0,3}),B({0,3},{0,2}),0.0); myREQUIRE(ov_,ov2);
+    ov_=SDet.Overlap(A({0,2},{0,3}),B_,0.0); myREQUIRE(ov_,ov2);
+    ov_=SDet.Overlap(A_,B({0,3},{0,2}),0.0); myREQUIRE(ov_,ov2);
+  }
 
   /**** Density Matrices *****/
   vector v_ref = {
@@ -486,74 +497,133 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
 
   array G({NMO,NMO},alloc);
   array Gc({NEL,NMO},alloc);
-  ov_=SDet.MixedDensityMatrix(A,B,G,0.0,false); check(G,g_ref);
-  ov_=SDet.MixedDensityMatrix(Aref,B,G,0.0,false); check(G,g_ref);
-  ov_=SDet.MixedDensityMatrix(A,Bref,G,0.0,false); check(G,g_ref);
-  ov_=SDet.MixedDensityMatrix(Aref,Bref,G,0.0,false); check(G,g_ref); 
+  //SECTION("density_matrices")
+  {
+    Type ov_;
+    array A_ = A({0,2},{0,3});
+    array B_ = B({0,3},{0,2});
+    ov_=SDet.MixedDensityMatrix(A,B,G,0.0,false); check(G,g_ref);
+    ov_=SDet.MixedDensityMatrix(Aref,B,G,0.0,false); check(G,g_ref);
+    ov_=SDet.MixedDensityMatrix(A,Bref,G,0.0,false); check(G,g_ref);
+    ov_=SDet.MixedDensityMatrix(Aref,Bref,G,0.0,false); check(G,g_ref); 
 
-  ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                          B({0,3},{0,2}),
-                          G({0,3},{0,3}),0.0,false);
-  check(G({0,3},{0,3}),g_ref_2);
-  ov_=SDet.MixedDensityMatrix(A_,
-                          B({0,3},{0,2}),
-                          G({0,3},{0,3}),0.0,false);
-  check(G({0,3},{0,3}),g_ref_2);
-  ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                          B_,
-                          G({0,3},{0,3}),0.0,false);
-  check(G({0,3},{0,3}),g_ref_2);
+    ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                            B({0,3},{0,2}),
+                            G({0,3},{0,3}),0.0,false);
+    check(G({0,3},{0,3}),g_ref_2);
+    ov_=SDet.MixedDensityMatrix(A_,
+                            B({0,3},{0,2}),
+                            G({0,3},{0,3}),0.0,false);
+    check(G({0,3},{0,3}),g_ref_2);
+    ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                            B_,
+                            G({0,3},{0,3}),0.0,false);
+    check(G({0,3},{0,3}),g_ref_2);
 
-  ov_=SDet.MixedDensityMatrix(A,B,Gc,0.0,true); check(Gc,gc_ref); 
-  ov_=SDet.MixedDensityMatrix(Aref,B,Gc,0.0,true); check(Gc,gc_ref);
-  ov_=SDet.MixedDensityMatrix(A,Bref,Gc,0.0,true); check(Gc,gc_ref);
-  ov_=SDet.MixedDensityMatrix(Aref,Bref,Gc,0.0,true); check(Gc,gc_ref);
+    ov_=SDet.MixedDensityMatrix(A,B,Gc,0.0,true); check(Gc,gc_ref); 
+    ov_=SDet.MixedDensityMatrix(Aref,B,Gc,0.0,true); check(Gc,gc_ref);
+    ov_=SDet.MixedDensityMatrix(A,Bref,Gc,0.0,true); check(Gc,gc_ref);
+    ov_=SDet.MixedDensityMatrix(Aref,Bref,Gc,0.0,true); check(Gc,gc_ref);
+    myREQUIRE(ov_, ov);
 
-  ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                          B({0,3},{0,2}),
-                          Gc({0,2},{0,3}),0.0,true);
-  check(Gc({0,2},{0,3}),gc_ref_2);
-  ov_=SDet.MixedDensityMatrix(A_,
-                          B({0,3},{0,2}),
-                          Gc({0,2},{0,3}),0.0,true);
-  check(Gc({0,2},{0,3}),gc_ref_2);
-  ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                          B_,
-                          Gc({0,2},{0,3}),0.0,true);
-  check(Gc({0,2},{0,3}),gc_ref_2);
-
-
-  array Q=B;
-
+    ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                            B({0,3},{0,2}),
+                            Gc({0,2},{0,3}),0.0,true);
+    check(Gc({0,2},{0,3}),gc_ref_2);
+    ov_=SDet.MixedDensityMatrix(A_,
+                            B({0,3},{0,2}),
+                            Gc({0,2},{0,3}),0.0,true);
+    check(Gc({0,2},{0,3}),gc_ref_2);
+    ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
+                            B_,
+                            Gc({0,2},{0,3}),0.0,true);
+    check(Gc({0,2},{0,3}),gc_ref_2);
+  }
   // Orthogonalize
-  SDet.Orthogonalize(Q,0.0);
-  ov_=SDet.Overlap_noHerm(Q,Q,0.0);
-  myREQUIRE( ov_, std::complex<double>(1.,0.));
+  //SECTION("orthogonalize")
+  {
+    array Q=B;
+    SDet.Orthogonalize(Q,0.0);
+    Type ov_=SDet.Overlap_noHerm(Q,Q,0.0);
+    myREQUIRE( ov_, std::complex<double>(1.,0.));
+  }
 
   // Batched
   // TODO fix CPU.
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  boost::multi::array<Type,3,Allocator> Gw({3,NMO,NMO},alloc);
-  //std::vector<array_ptr> RA;
-  std::vector<decltype(&Aref)> RA;
-  std::vector<decltype(&Bref)> RB;
-  std::vector<decltype(&Gw[0])> Gwv;
-  RA.reserve(3);
-  RB.reserve(3);
-  Gwv.reserve(3);
-  boost::multi::array<Type,1,Allocator> ovlp(iextensions<1u>{3});
-  for(int i = 0; i < 3; i++) {
-    RA.emplace_back(&Aref);
-    RB.emplace_back(&Bref);
-    Gwv.emplace_back(&Gw[i]);
-  }
-  Type log_ovlp;
-  Type ov_ref = -7.623325999999989+22.20453200000001i;
+  //SECTION("batched_density_matrix")
+  {
+    boost::multi::array<Type,3,Allocator> Gw({3,NMO,NMO},alloc);
+    //std::vector<array_ptr> RA;
+    std::vector<decltype(&Aref)> RA;
+    std::vector<decltype(&Bref)> RB;
+    std::vector<decltype(&Gw[0])> Gwv;
+    RA.reserve(3);
+    RB.reserve(3);
+    Gwv.reserve(3);
+    boost::multi::array<Type,1,Allocator> ovlp(iextensions<1u>{3});
+    for(int i = 0; i < 3; i++) {
+      RA.emplace_back(&Aref);
+      RB.emplace_back(&Bref);
+      Gwv.emplace_back(&Gw[i]);
+    }
+    Type log_ovlp;
+    Type ov_ref = -7.623325999999989+22.20453200000001i;
 
-  SDet.BatchedDensityMatrices(RA,RB,Gwv,log_ovlp,ovlp,false);
-  for(int i = 0; i < 3; i++) {
-    check(*Gwv[i],g_ref);
-    myREQUIRE(ovlp[i], ov_ref);
+    SDet.BatchedDensityMatrices(RA,RB,Gwv,log_ovlp,ovlp,false);
+    //SECTION("greens_function")
+    {
+      for(int i = 0; i < 3; i++) {
+        check(*Gwv[i],g_ref);
+      }
+    }
+    //SECTION("overlap")
+    {
+      for(int i = 0; i < 3; i++) {
+        myREQUIRE(ovlp[i], ov_ref);
+      }
+    }
+    SDet.BatchedMixedDensityMatrix(RA,RB,Gw,log_ovlp,ovlp,false);
+    {
+      for(int i = 0; i < 3; i++) {
+        myREQUIRE(ovlp[i], ov_ref);
+      }
+    }
+    {
+      for(int i = 0; i < 3; i++) {
+        check(Gw[i],g_ref);
+      }
+    }
+  }
+  //SECTION("batched_mixed_density_matrix")
+  {
+    boost::multi::array<Type,3,Allocator> Gw({3,NEL,NMO},alloc);
+    //std::vector<array_ptr> RA;
+    std::vector<decltype(&Aref)> RA;
+    std::vector<decltype(&Bref)> RB;
+    RA.reserve(3);
+    RB.reserve(3);
+    boost::multi::array<Type,1,Allocator> ovlp(iextensions<1u>{3});
+    for(int i = 0; i < 3; i++) {
+      RA.emplace_back(&Aref);
+      RB.emplace_back(&Bref);
+    }
+    Type log_ovlp;
+    Type ov_ref = -7.623325999999989+22.20453200000001i;
+
+    SDet.BatchedMixedDensityMatrix(RA,RB,Gw,log_ovlp,ovlp,true);
+    //SECTION("greens_function")
+    //SECTION("overlap")
+    {
+      for(int i = 0; i < 3; i++) {
+        myREQUIRE(ovlp[i], ov_ref);
+      }
+    }
+    {
+      for(int i = 0; i < 3; i++) {
+        check(Gw[i],gc_ref);
+      }
+    }
   }
 #endif
 

@@ -22,6 +22,7 @@
 namespace hipblas {
 
   using qmc_hip::hipblasOperation;
+  using qmc_hip::rocblasOperation;
 
   // Level-1
   inline hipblasStatus_t hipblas_copy(hipblasHandle_t handle, int n,
@@ -504,10 +505,8 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
+    hipblasStatus_t success = hipblasSgetrfBatched(handle,n, Aarray,lda,PivotArray, infoArray,batchSize);
     //hipblasStatus_t success =
-              //hipblasSgetrfBatched(handle,n,Aarray,lda,PivotArray,infoArray,batchSize);
-    hipblasStatus_t success =
-              rocBLASStatusToHIPStatusAFQMC(rocsolver_sgetrf_batched((rocblas_handle)handle,n,n,Aarray,lda,PivotArray,n,infoArray,batchSize));
     hipDeviceSynchronize ();
     return success;
   }
@@ -523,8 +522,8 @@ namespace hipblas {
                                    int batchSize)
   {
     hipblasStatus_t success =
-              rocBLASStatusToHIPStatusAFQMC(rocsolver_dgetrf_batched((rocblas_handle)handle,n,n,Aarray,lda,PivotArray,n,infoArray,batchSize));
-    //throw std::runtime_error("Error: hipblas_dot returned error code.");
+              hipblasDgetrfBatched(handle,n, Aarray,lda,PivotArray,
+                                   infoArray,batchSize);
     hipDeviceSynchronize ();
     return success;
   }
@@ -537,16 +536,9 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    //hipblasStatus_t success =
-              //hipblasZgetrfBatched(handle,n,
-                            //reinterpret_cast<hipblasDoubleComplex *const *>(Aarray),lda,PivotArray,
-                            //infoArray,batchSize);
-    //throw std::runtime_error("Error: hipblas_dot returned error code.");
-    hipblasStatus_t success = rocBLASStatusToHIPStatusAFQMC(
-              rocsolver_zgetrf_batched((rocblas_handle)handle,n,n,
-                                       reinterpret_cast<rocblas_double_complex* const* >(Aarray),
-                                       lda,PivotArray,n,infoArray,batchSize)
-              );
+    hipblasStatus_t success = hipblasZgetrfBatched(handle,n,
+                            reinterpret_cast<hipblasDoubleComplex *const *>(Aarray),lda,PivotArray,
+                            infoArray,batchSize);
     hipDeviceSynchronize ();
     return success;
   }
@@ -559,19 +551,18 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    hipblasStatus_t success = rocBLASStatusToHIPStatusAFQMC(
-              rocsolver_cgetrf_batched((rocblas_handle)handle,n,n,
-                                       reinterpret_cast<rocblas_float_complex* const* >(Aarray),
-                                       lda,PivotArray,n,infoArray,batchSize)
-              );
-    //throw std::runtime_error("Error: hipblas_dot returned error code.");
+    hipblasStatus_t success =
+              hipblasCgetrfBatched(handle,n,
+                            reinterpret_cast<hipblasComplex *const *>(Aarray),lda,PivotArray,
+                            infoArray,batchSize);
     hipDeviceSynchronize ();
     return success;
   }
 
-  // TODO: Not implemented
-  inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
+  inline hipblasStatus_t hipblas_getrsBatched(hipblasHandle_t handle,
+                                   hipblasOperation_t op,
                                    int n,
+                                   int nrhs,
                                    float **Aarray,
                                    int lda,
                                    int *PivotArray,
@@ -580,16 +571,16 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    //hipblasStatus_t success =
-              //hipblasSgetriBatched(handle,n,Aarray,lda,PivotArray,Carray,ldc,infoArray,batchSize);
-    throw std::runtime_error("Error: getri doesn't exist.");
+    hipblasStatus_t success =
+              hipblasSgetrsBatched(handle,op,n,nrhs,Aarray,lda,PivotArray,Carray,ldc,infoArray,batchSize);
     hipDeviceSynchronize ();
-    hipblasStatus_t success;
     return success;
   }
 
-  inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
+  inline hipblasStatus_t hipblas_getrsBatched(hipblasHandle_t handle,
+                                   hipblasOperation_t op,
                                    int n,
+                                   int nrhs,
                                    double **Aarray,
                                    int lda,
                                    int *PivotArray,
@@ -598,16 +589,16 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    //hipblasStatus_t success =
-              //hipblasDgetriBatched(handle,n,Aarray,lda,PivotArray,Carray,ldc,infoArray,batchSize);
-    hipblasStatus_t success;
-    throw std::runtime_error("Error: getri doesn't exist.");
+    hipblasStatus_t success =
+              hipblasDgetrsBatched(handle,op,n,nrhs,Aarray,lda,PivotArray,Carray,ldc,infoArray,batchSize);
     hipDeviceSynchronize ();
     return success;
   }
 
   inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
+                                   hipblasOperation_t op,
                                    int n,
+                                   int nrhs,
                                    std::complex<double> **Aarray,
                                    int lda,
                                    int *PivotArray,
@@ -616,18 +607,21 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    //hipblasStatus_t success =
-              //hipblasZgetriBatched(handle,n,
-                            //reinterpret_cast<const hipblasDoubleComplex *const *>(Aarray),lda,PivotArray,
-                            //reinterpret_cast<hipblasDoubleComplex *const *>(Carray),ldc,infoArray,batchSize);
-    throw std::runtime_error("Error: getri doesn't exist.");
+    hipblasStatus_t success =
+              hipblasZgetrsBatched(handle,op,n,n,
+                            reinterpret_cast<hipblasDoubleComplex *const *>(Aarray),lda,
+                            PivotArray,
+                            reinterpret_cast<hipblasDoubleComplex *const *>(Carray),ldc,
+                            infoArray,
+                            batchSize);
     hipDeviceSynchronize ();
-    hipblasStatus_t success;
     return success;
   }
 
   inline hipblasStatus_t hipblas_getriBatched(hipblasHandle_t handle,
+                                   hipblasOperation_t op,
                                    int n,
+                                   int nrhs,
                                    std::complex<float> **Aarray,
                                    int lda,
                                    int *PivotArray,
@@ -636,13 +630,11 @@ namespace hipblas {
                                    int *infoArray,
                                    int batchSize)
   {
-    //hipblasStatus_t success =
-              //hipblasCgetriBatched(handle,n,
-                            //reinterpret_cast<const hipblasComplex *const *>(Aarray),lda,PivotArray,
-                            //reinterpret_cast<hipblasComplex *const *>(Carray),ldc,infoArray,batchSize);
-    throw std::runtime_error("Error: getri doesn't exist.");
+    hipblasStatus_t success =
+              hipblasCgetrsBatched(handle,op,n,n,
+                            reinterpret_cast<hipblasComplex *const *>(Aarray),lda,PivotArray,
+                            reinterpret_cast<hipblasComplex *const *>(Carray),ldc,infoArray,batchSize);
     hipDeviceSynchronize ();
-    hipblasStatus_t success;
     return success;
   }
 
@@ -731,8 +723,6 @@ namespace hipblas {
     hipblasStatus_t success =
                 hipblasSgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),
                            M,N,&alpha,A,lda,&beta,B,ldb,C,ldc);
-    //throw std::runtime_error("Error: hipblas_geam returned error code.");
-    //hipblasStatus_t success;
     hipDeviceSynchronize ();
     return success;
   }
@@ -747,7 +737,7 @@ namespace hipblas {
     hipblasStatus_t success =
                 hipblasDgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),
                            M,N,&alpha,A,lda,&beta,B,ldb,C,ldc);
-    hipDeviceSynchronize ();
+    hipDeviceSynchronize();
     return success;
   }
 
@@ -758,16 +748,15 @@ namespace hipblas {
                          std::complex<float> const* B, int ldb,
                          std::complex<float> *C, int ldc)
   {
-    //hipblasStatus_t success =
-                //hipblasCgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),M,N,
-                           //reinterpret_cast<hipblasComplex const*>(&alpha),
-                           //reinterpret_cast<hipblasComplex const*>(A),lda,
-                           //reinterpret_cast<hipblasComplex const*>(&beta),
-                           //reinterpret_cast<hipblasComplex const*>(B),ldb,
-                           //reinterpret_cast<hipblasComplex *>(C),ldc);
+    hipblasStatus_t success = rocBLASStatusToHIPStatusAFQMC(
+        rocblas_cgeam((rocblas_handle)handle,rocblasOperation(Atrans),rocblasOperation(Btrans),M,N,
+            reinterpret_cast<rocblas_float_complex const*>(&alpha),
+            reinterpret_cast<rocblas_float_complex const*>(A),lda,
+            reinterpret_cast<rocblas_float_complex const*>(&beta),
+            reinterpret_cast<rocblas_float_complex const*>(B),ldb,
+            reinterpret_cast<rocblas_float_complex *>(C),ldc)
+        );
     hipDeviceSynchronize ();
-    throw std::runtime_error("Error: hipblas_geam (c) not implemented.");
-    hipblasStatus_t success;
     return success;
   }
 
@@ -778,16 +767,15 @@ namespace hipblas {
                          std::complex<double> const* B, int ldb,
                          std::complex<double> *C, int ldc)
   {
-    //hipblasStatus_t success =
-                //hipblasZgeam(handle,hipblasOperation(Atrans),hipblasOperation(Btrans),M,N,
-                           //reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
-                           //reinterpret_cast<hipblasDoubleComplex const*>(A),lda,
-                           //reinterpret_cast<hipblasDoubleComplex const*>(&beta),
-                           //reinterpret_cast<hipblasDoubleComplex const*>(B),ldb,
-                           //reinterpret_cast<hipblasDoubleComplex *>(C),ldc);
+    hipblasStatus_t success = rocBLASStatusToHIPStatusAFQMC(
+                rocblas_zgeam((rocblas_handle)handle,rocblasOperation(Atrans),rocblasOperation(Btrans),M,N,
+                           reinterpret_cast<rocblas_double_complex const*>(&alpha),
+                           reinterpret_cast<rocblas_double_complex const*>(A),lda,
+                           reinterpret_cast<rocblas_double_complex const*>(&beta),
+                           reinterpret_cast<rocblas_double_complex const*>(B),ldb,
+                           reinterpret_cast<rocblas_double_complex *>(C),ldc)
+        );
     hipDeviceSynchronize ();
-    throw std::runtime_error("Error: hipblas_geam (z) not implemented.");
-    hipblasStatus_t success;
     return success;
   }
 

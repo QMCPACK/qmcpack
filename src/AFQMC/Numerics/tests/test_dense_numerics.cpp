@@ -40,7 +40,7 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "AFQMC/Memory/custom_pointers.hpp"
@@ -392,13 +392,14 @@ TEST_CASE("dense_ma_operations", "[matrix_operations]")
   test_dense_matrix_mult();
 }
 
-#if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
 template<class Allocator>
-void test_dense_matrix_mult_device(Allocator alloc)
+void test_dense_mat_vec_device(Allocator& alloc)
 {
   using T = typename Allocator::value_type;
 
-  { 
+  //SECTION("mat_vec")
+  {
     vector<T> m = {
             9.,24.,30.,
             4.,10.,12.,
@@ -417,13 +418,15 @@ void test_dense_matrix_mult_device(Allocator alloc)
     REQUIRE(X.num_elements() == x.size());
     REQUIRE(Y.num_elements() == y.size());
 
+    using ma::product;
     ma::product(M, X, Y); // Y := M X
 
     vector<T> mx = {147., 60.,154.};
     array_ref<T, 1> MX(mx.data(), iextensions<1u>{mx.size()});
     verify_approx(MX, Y);
-  } 
+  }
 
+  //SECTION("mat_vec_rec")
   {
     vector<T> m = {
             9.,24.,30., 2.,
@@ -449,6 +452,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
     array_ref<T, 1> MX(mx.data(), iextensions<1u>{mx.size()});
     verify_approx( MX, Y );
   }
+  //SECTION("mat_vec_trans")
   {
     vector<T> m = {
             9.,24.,30., 2.,
@@ -474,8 +478,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
     array_ref<T, 1> MX(mx.data(), iextensions<1u>{mx.size()});
     verify_approx( MX, Y );
   }
-
-
+  //SECTION("mat_vec_add")
   {
     vector<T> m = {
     9.,24.,30., 9.,
@@ -490,7 +493,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
     REQUIRE(M.num_elements() == m.size());
 
     array<T,1,Allocator> X(iextensions<1u>{x.size()},alloc);
-    copy_n(x.data(),x.size(),X.origin()); 
+    copy_n(x.data(),x.size(),X.origin());
     REQUIRE(X.num_elements() == x.size());
 
     array<T,1,Allocator> Y(iextensions<1u>{y.size()},alloc);
@@ -502,7 +505,13 @@ void test_dense_matrix_mult_device(Allocator alloc)
     array_ref<T, 1> Y2(y2.data(), iextensions<1u>{y2.size()});
     verify_approx( Y, Y2 );
   }
+}
 
+template<class Allocator>
+void test_dense_mat_mul_device(Allocator& alloc)
+{
+  using T = typename Allocator::value_type;
+  //SECTION("mat_herm")
   {
     vector<T> m = {
     1.,2.,1.,
@@ -510,11 +519,12 @@ void test_dense_matrix_mult_device(Allocator alloc)
     1.,8.,9.
     };
     array<T,2,Allocator> M({3,3},alloc);
-    copy_n(m.data(),m.size(),M.origin()); 
+    copy_n(m.data(),m.size(),M.origin());
     REQUIRE(M.num_elements() == m.size());
-// not yet implemented in GPU
-//    REQUIRE( ma::is_hermitian(M) );
+//  REQUIRE( ma::is_hermitian(M) );
   }
+
+  //SECTION("mat_herm_ref")
   {
     vector<T> m = {
     1.,2.,1.,
@@ -522,23 +532,25 @@ void test_dense_matrix_mult_device(Allocator alloc)
     1.,8.,9.
     };
     array<T,2,Allocator> M({3,3},alloc);
-    copy_n(m.data(),m.size(),M.origin());          
+    copy_n(m.data(),m.size(),M.origin());
     REQUIRE(M.num_elements() == m.size());
 
     array_ref<T,2,typename Allocator::pointer> Mref(M.origin(),M.extensions());
 // not yet implemented in GPU
 //    REQUIRE( ma::is_hermitian(Mref) );
   }
+
+  //SECTION("mat_mat_op")
   {
     vector<T> a = {
-    1.,0.,1.,
-    3.,5.,8.,
-    4.,8.,9.
+      1.,0.,1.,
+      3.,5.,8.,
+      4.,8.,9.
     };
     vector<T> b = {
-    6.,2.,8.,
-    9.,5.,5.,
-    1.,7.,9.
+      6.,2.,8.,
+      9.,5.,5.,
+      1.,7.,9.
     };
 
     array<T,2,Allocator> A({3,3},alloc);
@@ -554,9 +566,9 @@ void test_dense_matrix_mult_device(Allocator alloc)
     ma::product(A, B, D);
 
     vector<T> ab = {
-    7., 9., 17.,
-    71., 87., 121.,
-    105., 111., 153.
+      7., 9., 17.,
+      71., 87., 121.,
+      105., 111., 153.
     };
     array_ref<T, 2> AB(ab.data(), {3,3});
     verify_approx(D, AB);
@@ -591,6 +603,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
 
   }
 
+  //SECTION("mat_mat_op_inv")
   {
     vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
     vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
@@ -612,7 +625,36 @@ void test_dense_matrix_mult_device(Allocator alloc)
     array_ref<T, 2> Id2(id.data(),{3,3});
     verify_approx(I, Id2);
   }
-   {
+  //SECTION("mat_trans")
+  {
+    vector<T> a = {
+            9.,24.,30., 45.,
+            4.,10.,12., 12.
+    };
+    vector<T> at = {
+            9.,4.,
+            24.,10.,
+            30.,12.,
+            45.,12.
+    };
+    array<T,2,Allocator> A({2,4},alloc);
+    copy_n(a.data(),a.size(),A.origin());
+    REQUIRE(A.num_elements() == a.size());
+
+    array<T,2,Allocator> B({4,2},alloc);
+    ma::transpose(A,B);
+
+    array_ref<T, 2> AT(at.data(),{4,2});
+    verify_approx( AT, B );
+  }
+}
+
+template<class Allocator>
+void test_dense_gerf_gqr_device(Allocator& alloc)
+{
+  ////SECTION("mat_gerf_gqr")
+  using T = typename Allocator::value_type;
+  {
      vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
      vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
 
@@ -635,6 +677,7 @@ void test_dense_matrix_mult_device(Allocator alloc)
      array_ref<T, 2> Id2(id.data(),{3,3});
      verify_approx(Id, Id2);
    }
+   //SECTION("mat_gerf_gqr_product")
    {
      vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
      vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
@@ -658,7 +701,12 @@ void test_dense_matrix_mult_device(Allocator alloc)
      array_ref<T, 2> Id2(id.data(),{3,3});
      verify_approx(Id, Id2);
    }
-   {
+}
+template<class Allocator>
+void test_dense_gerf_gqr_strided_device(Allocator& alloc)
+{
+  using T = typename Allocator::value_type;
+  {
      vector<T> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.,10.,23.,35.};
      vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
 
@@ -671,63 +719,125 @@ void test_dense_matrix_mult_device(Allocator alloc)
                           ma::gqr_optimal_workspace_size(A[0]));
      array<T,1,Allocator> WORK(iextensions<1u>{sz},alloc);
      array<T,2,Allocator> Id({3,3},alloc);
-     using IAllocator = typename Allocator::template rebind<int>::other; 
+     using IAllocator = typename Allocator::template rebind<int>::other;
      array<int,1,IAllocator> info(iextensions<1u>{2},IAllocator{alloc});
      array<T,2,Allocator> TAU({2,4},alloc);
 
-     geqrfStrided(4,3,A.origin(),4,12,TAU.origin(),4,info.origin(),2);
+     geqrfStrided(4,3,A.origin(),4,12,TAU.origin(),sz,info.origin(),2);
+     gqrStrided(4,3,3,A.origin(),4,12,TAU.origin(),4,WORK.origin(),sz,info.origin(),2);
      for(int i=0; i<2; i++) {
-       ma::gqr(A[i],TAU[i],WORK);
-
        ma::product(A[i], ma::H(A[i]), Id);
-
        array_ref<T, 2> Id2(id.data(),{3,3});
        verify_approx(Id, Id2);
      }
-   }
-   {
-     vector<T> a = {
-             9.,24.,30., 45.,
-             4.,10.,12., 12.
-     };
-     vector<T> at = {
-             9.,4.,
-             24.,10.,
-             30.,12.,
-             45.,12.
-     };
-
-     array<T,2,Allocator> A({2,4},alloc);
-     copy_n(a.data(),a.size(),A.origin());
-     REQUIRE(A.num_elements() == a.size());
-
-     array<T,2,Allocator> B({4,2},alloc);
-     ma::transpose(A,B);
-
-     array_ref<T, 2> AT(at.data(),{4,2});
-     verify_approx( AT, B );
-   }
-
+  }
 }
 
-TEST_CASE("dense_ma_operations_device", "[matrix_operations]")
+template<class Allocator>
+void test_dense_geqrf_getri_batched_device(Allocator& alloc)
+{
+  using T = typename Allocator::value_type;
+  using pointer = typename Allocator::pointer;
+  // Test non packed data lda > M
+  vector<T> a = {37., 45., 59., 0, 53., 81., 97., 0.0, 87., 105., 129., 0.0};
+  vector<T> a2 = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
+  vector<T> id = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
+  array<T,3,Allocator> A({2,3,4}, 0.0, alloc), Ai({2,3,3}, 0.0, alloc);
+
+  std::vector<pointer> A_array, Ai_array;
+  for (int i = 0; i < 2; i++) {
+    copy_n(a.data(),a.size(),A[i].origin());
+    A_array.emplace_back(A[i].origin());
+    Ai_array.emplace_back(Ai[i].origin());
+  }
+
+  array<T,1,Allocator> WORK(iextensions<1u>{9},alloc);
+  array<T,2,Allocator> Id({3,3},alloc);
+  using IAllocator = typename Allocator::template rebind<int>::other;
+  array<int,1,IAllocator> info(iextensions<1u>{2},IAllocator{alloc});
+  array<int,1,IAllocator> piv(iextensions<1u>{2*(3+1)},IAllocator{alloc});
+  array<T,2,Allocator> B({3,3}, 0.0, alloc), Bi({3,3}, 0.0, alloc);
+  array<int,1,IAllocator> spiv(iextensions<1u>{4},IAllocator{alloc});
+  int status;
+  //SECTION("getrf_batched")
+  {
+    using ma::getrfBatched;
+    getrfBatched(3,A_array.data(),4,ma::pointer_dispatch(piv.origin()),
+                 ma::pointer_dispatch(info.origin()),2);
+    copy_n(a2.data(),a2.size(),B.origin());
+    using ma::getrf;
+    getrf(3,3,ma::pointer_dispatch(B.origin()),3,ma::pointer_dispatch(spiv.data()),
+          status,ma::pointer_dispatch(WORK.data()));
+  }
+  //SECTION("getri_batched")
+  {
+    using ma::getriBatched;
+    getriBatched(3,A_array.data(),4,ma::pointer_dispatch(piv.origin()),
+                 Ai_array.data(),3,
+                 ma::pointer_dispatch(info.origin()),2);
+    //SECTION("getri")
+    {
+      getri(3, ma::pointer_dispatch(B.origin()), 3,
+            ma::pointer_dispatch(piv.origin()),
+            ma::pointer_dispatch(WORK.origin()), 9, status);
+      for (int i = 0; i < 2; i++) {
+        verify_approx(Ai[i], B);
+      }
+    }
+  }
+  //SECTION("mat_inv")
+  {
+    using std::copy_n;
+    copy_n(B.origin(),B.num_elements(),Bi.origin());
+    copy_n(a2.data(),a2.size(),B.origin());
+    array<T,2,Allocator> out({3,3},0.0,alloc);
+    // note transpose to account for fortran ordering
+    array_ref<T, 2> Id2(id.data(),{3,3});
+    ma::product(ma::H(B), ma::H(Bi), out);
+    verify_approx(out, Id2);
+  }
+  //SECTION("matrix_inv_batched")
+  {
+    for(int i=0; i<2; i++) {
+      copy_n(a.data(),a.size(),A[i].origin());
+      array<T,2,Allocator> out({3,3},alloc);
+      ma::product(ma::H(A[i]({0,3},{0,3})), ma::H(Ai[i]), out);
+      array_ref<T, 2> Id2(id.data(),{3,3});
+      verify_approx(out, Id2);
+    }
+  }
+}
+
+TEST_CASE("dense_ma_operations_device_double", "[matrix_operations]")
 {
   auto world = boost::mpi3::environment::get_world_instance();
   auto node = world.split_shared(world.rank());
-
   arch::INIT(node);
-
   {
-    //using T = std::complex<double>;
-    using T = double;
-    using Alloc = device::device_allocator<T>;
-
-    Alloc gpu_alloc{};
- 
-    test_dense_matrix_mult_device<Alloc>(gpu_alloc);
+    using Alloc = device::device_allocator<double>;
+    Alloc alloc{};
+    test_dense_mat_vec_device<Alloc>(alloc);
+    test_dense_mat_mul_device<Alloc>(alloc);
+    test_dense_gerf_gqr_device<Alloc>(alloc);
   }
+
+}
+TEST_CASE("dense_ma_operations_device_complex", "[matrix_operations]")
+{
+  auto world = boost::mpi3::environment::get_world_instance();
+  auto node = world.split_shared(world.rank());
+  arch::INIT(node);
+  {
+    using Alloc = device::device_allocator<std::complex<double>>;
+    Alloc alloc{};
+    test_dense_mat_vec_device<Alloc>(alloc);
+    test_dense_mat_mul_device<Alloc>(alloc);
+    test_dense_gerf_gqr_device<Alloc>(alloc);
+    test_dense_gerf_gqr_strided_device<Alloc>(alloc);
+    test_dense_geqrf_getri_batched_device<Alloc>(alloc);
+  }
+
 }
 #endif
 
 }
-

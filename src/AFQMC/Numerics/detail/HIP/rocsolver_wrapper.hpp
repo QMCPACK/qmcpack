@@ -16,6 +16,7 @@
 #include <hip/hip_runtime.h>
 #include "rocsolver.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/CPU/lapack_cpu.hpp"
 
 // Abusing hip/rocm names
 namespace rocsolver {
@@ -33,9 +34,9 @@ namespace rocsolver {
                       int lda,
                       int *Lwork )
   {
-    //rocsolverStatus_t success =
-              //rocsolver_sgetrf_bufferSize(handle,m,n,A,lda,Lwork);
     rocsolverStatus_t success;
+    success = rocblas_status_success;
+    *Lwork = 0;
     hipDeviceSynchronize ();
     return success;
   }
@@ -48,11 +49,9 @@ namespace rocsolver {
                       int lda,
                       int *Lwork )
   {
-    //rocsolverStatus_t success =
-              //rocsolver_cgetrf_bufferSize(handle,m,n,
-                                          //reinterpret_cast<rocblas_float_complex *>(A),lda,Lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: hipblas_dot returned error code.");
+    success = rocblas_status_success;
+    *Lwork = 0;
     hipDeviceSynchronize ();
     return success;
   }
@@ -65,10 +64,9 @@ namespace rocsolver {
                       int lda,
                       int *Lwork )
   {
-    //rocsolverStatus_t success =
-              //rocsolver_dgetrf_bufferSize(handle,m,n,A,lda,Lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: hipblas_dot returned error code.");
+    success = rocblas_status_success;
+    *Lwork = 0;
     hipDeviceSynchronize ();
     return success;
   }
@@ -81,11 +79,9 @@ namespace rocsolver {
                       int lda,
                       int *Lwork )
   {
-    //rocsolverStatus_t success =
-              //rocsolver_zgetrf_bufferSize(handle,m,n,
-                                          //reinterpret_cast<rocblas_double_complex *>(A),lda,Lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: hipblas_dot returned error code.");
+    success = rocblas_status_success;
+    *Lwork = 0;
     hipDeviceSynchronize ();
     return success;
   }
@@ -169,8 +165,7 @@ namespace rocsolver {
            int ldb,
            int *devInfo)
   {
-    rocsolverStatus_t success =
-              rocsolver_sgetrs(handle,trans,n,nrhs,A,lda,devIpiv,B,ldb);
+    rocsolverStatus_t success = rocsolver_sgetrs(handle,trans,n,nrhs,A,lda,devIpiv,B,ldb);
     hipDeviceSynchronize ();
     return success;
   }
@@ -209,6 +204,7 @@ namespace rocsolver {
               rocsolver_cgetrs(handle,trans,n,nrhs,
                                reinterpret_cast<rocblas_float_complex *>(A),lda,devIpiv,
                                reinterpret_cast<rocblas_float_complex *>(B),ldb);
+    // Info isn't returned from ?getrs.
     hipDeviceSynchronize ();
     return success;
   }
@@ -243,7 +239,9 @@ namespace rocsolver {
                       int *Lwork )
   {
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: geqrf_bufferSize does not exist.");
+    //throw std::runtime_error("Error: geqrf_bufferSize does not exist.");
+    *Lwork = 0;
+    success = rocblas_status_success;
     hipDeviceSynchronize ();
     return success;
   }
@@ -259,7 +257,9 @@ namespace rocsolver {
     //rocsolverStatus_t success =
               //rocsolver_dgeqrf_bufferSize(handle,m,n,A,lda,Lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: geqrf_bufferSize does not exist.");
+    success = rocblas_status_success;
+    *Lwork = 0;
+    //throw std::runtime_error("Error: geqrf_bufferSize does not exist.");
     hipDeviceSynchronize ();
     return success;
   }
@@ -275,7 +275,9 @@ namespace rocsolver {
     //rocsolverStatus_t success =
               //rocsolver_cgeqrf_bufferSize(handle,m,n,reinterpret_cast<rocblas_float_complex *>(A),lda,Lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: geqrf_bufferSize does not exist.");
+    success = rocblas_status_success;
+    *Lwork = 0;
+    //throw std::runtime_error("Error: geqrf_bufferSize does not exist.");
     hipDeviceSynchronize ();
     return success;
   }
@@ -291,7 +293,9 @@ namespace rocsolver {
     //rocsolverStatus_t success =
               //rocsolver_zgeqrf_bufferSize(handle,m,n,reinterpret_cast<rocblas_double_complex *>(A),lda,Lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: geqrf_bufferSize does not exist.");
+    success = rocblas_status_success;
+    *Lwork = 0;
+    //throw std::runtime_error("Error: geqrf_bufferSize does not exist.");
     hipDeviceSynchronize ();
     return success;
   }
@@ -329,16 +333,11 @@ namespace rocsolver {
            int n,
            std::complex<float> *A,
            int lda,
-           std::complex<float> *TAU,
-           std::complex<float> *Workspace,
-           int Lwork,
-           int *devInfo )
+           std::complex<float> *ipiv)
   {
-    //rocsolverStatus_t success =
-              //rocsolver_cgeqrf(handle,m,n,reinterpret_cast<rocblas_float_complex *>(A),lda,
-                               //reinterpret_cast<rocblas_float_complex *>(TAU),reinterpret_cast<rocblas_float_complex *>(Workspace),Lwork,devInfo);
-    rocsolverStatus_t success;
-    throw std::runtime_error("Error: cgeqrf not implemented in rocsolver.");
+    rocsolverStatus_t success = rocsolver_cgeqrf(handle,m,n,
+        reinterpret_cast<rocblas_float_complex*>(A),lda,
+        reinterpret_cast<rocblas_float_complex*>(ipiv));
     hipDeviceSynchronize ();
     return success;
   }
@@ -349,16 +348,11 @@ namespace rocsolver {
            int n,
            std::complex<double> *A,
            int lda,
-           std::complex<double> *TAU,
-           std::complex<double> *Workspace,
-           int Lwork,
-           int *devInfo )
+           std::complex<double> *ipiv)
   {
-    //rocsolverStatus_t success =
-              //rocsolver_zgeqrf(handle,m,n,reinterpret_cast<rocblas_double_complex *>(A),lda,
-                               //reinterpret_cast<rocblas_double_complex *>(TAU),reinterpret_cast<rocblas_double_complex *>(Workspace),Lwork,devInfo);
-    rocsolverStatus_t success;
-    throw std::runtime_error("Error: cgeqrf not implemented in rocsolver.");
+    rocsolverStatus_t success = rocsolver_zgeqrf(handle,m,n,
+        reinterpret_cast<rocblas_double_complex*>(A),lda,
+        reinterpret_cast<rocblas_double_complex*>(ipiv));
     hipDeviceSynchronize ();
     return success;
   }
@@ -377,10 +371,9 @@ namespace rocsolver {
     int lda,
     int *lwork)
   {
-    //rocsolverStatus_t success =
-              //rocsolver_sorgqr_bufferSize(handle,m,n,k,A,lda,A,lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: rocsolver_gqr_bufferSize not implemented in rocsolver.");
+    success = rocblas_status_success;
+    *lwork = m;
     hipDeviceSynchronize ();
     return success;
   }
@@ -398,7 +391,8 @@ namespace rocsolver {
     //rocsolverStatus_t success =
               //rocsolver_dorgqr_bufferSize(handle,m,n,k,A,lda,A,lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: rocsolver_gqr_bufferSize not implemented in rocsolver.");
+    *lwork = m;
+    success = rocblas_status_success;
     hipDeviceSynchronize ();
     return success;
   }
@@ -413,13 +407,9 @@ namespace rocsolver {
     int lda,
     int *lwork)
   {
-    //rocsolverStatus_t success =
-              //rocsolver_cungqr_bufferSize(handle,m,n,k,reinterpret_cast<rocblas_float_complex const *>(A),lda,
-                                          //reinterpret_cast<rocblas_float_complex const *>(A),lwork);
-//// HACK
-////                                          lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: rocsolver_gqr_bufferSize not implemented in rocsolver.");
+    success = rocblas_status_success;
+    *lwork = m;
     hipDeviceSynchronize ();
     return success;
   }
@@ -434,13 +424,9 @@ namespace rocsolver {
     int lda,
     int *lwork)
   {
-    //rocsolverStatus_t success =
-              //rocsolver_zungqr_bufferSize(handle,m,n,k,reinterpret_cast<rocblas_double_complex const*>(A),lda,
-                                          //reinterpret_cast<rocblas_double_complex const*>(A),lwork);
-//// HACK
-////                                          lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: rocsolver_gqr_bufferSize not implemented in rocsolver.");
+    success = rocblas_status_success;
+    *lwork = m;
     hipDeviceSynchronize ();
     return success;
   }
@@ -484,16 +470,10 @@ namespace rocsolver {
     int k,
     std::complex<float> *A,
     int lda,
-    const std::complex<float> *tau,
-    std::complex<float> *work,
-    int lwork,
-    int *devInfo)
+    std::complex<float> *ipiv)
   {
-    //rocsolverStatus_t success =
-              //rocsolver_cungqr(handle,m,n,k,reinterpret_cast<rocblas_float_complex *>(A),lda,
-                               //reinterpret_cast<rocblas_float_complex const *>(tau),reinterpret_cast<rocblas_float_complex *>(work),lwork,devInfo);
-    rocsolverStatus_t success;
-    throw std::runtime_error("Error: rocsolver_cungqr not implemented in rocsolver.");
+    rocsolverStatus_t success = rocsolver_cungqr(handle,m,n,k,reinterpret_cast<rocblas_float_complex *>(A),lda,
+                                                 reinterpret_cast<rocblas_float_complex *>(ipiv));
     hipDeviceSynchronize ();
     return success;
   }
@@ -506,17 +486,11 @@ namespace rocsolver {
     int k,
     std::complex<double> *A,
     int lda,
-    const std::complex<double> *tau,
-    std::complex<double> *work,
-    int lwork,
-    int *devInfo)
+    std::complex<double> *ipiv)
   {
-    //rocsolverStatus_t success =
-              //rocsolver_zungqr(handle,m,n,k,reinterpret_cast<rocblas_double_complex *>(A),lda,
-                               //reinterpret_cast<rocblas_double_complex const *>(tau),reinterpret_cast<rocblas_double_complex *>(work),lwork,devInfo);
-    rocsolverStatus_t success;
-    throw std::runtime_error("Error: rocsolver_cungqr not implemented in rocsolver.");
-    hipDeviceSynchronize ();
+    rocsolverStatus_t success = rocsolver_zungqr(handle,m,n,k,reinterpret_cast<rocblas_double_complex *>(A),lda,
+                                                 reinterpret_cast<rocblas_double_complex *>(ipiv));
+    hipDeviceSynchronize();
     return success;
   }
 
@@ -528,41 +502,126 @@ namespace rocsolver {
     std::complex<double> *A,
     const int lda,
     const int Astride,
-    const std::complex<double> *tau,
+    std::complex<double> *tau,
     const int tstride,
     std::complex<double> *work,
     int lwork,
     int *devInfo,
     int batchsize) {
 
-    using qmc_hip::afqmc_hip_streams;
+    // TODO FDM: double free with emplace_back(hipStream_t)?
+    //using qmc_hip::afqmc_hip_streams;
+    //auto t = hipStream_t{};
+    //afqmc_hip_streams.push_back(hipStream_t{});
+    //hipStreamCreate(&(afqmc_hip_streams.back()));
+    //hipStreamDestroy(afqmc_hip_streams.back());
     //if(afqmc_hip_streams.size() < batchsize) {
       //int n0=afqmc_hip_streams.size();
       //for(int n=n0; n<batchsize; n++) {
+        //auto t = hipStream_t{};
         //afqmc_hip_streams.emplace_back(hipStream_t{});
         //hipStreamCreate(&(afqmc_hip_streams.back()));
       //}
     //}
 
     //hipStream_t s0;
-    //qmc_hip::rocsolver_check(rocsolverGetStream(handle,&s0), "rocsolverGetStream");
+    //qmc_hip::hipsolver_check(rocsolver_get_stream(handle,&s0), "rocsolver_get_stream");
 
-    //for(int i=0; i<batchsize; i++) {
-      //qmc_hip::rocsolver_check(rocsolver_setStream(handle,afqmc_hip_streams[i]), "rocsolver_setStream");
-      //rocsolverStatus_t success =
-              //rocsolver_zungqr(handle,m,n,k,reinterpret_cast<rocblas_double_complex *>(A)+i*Astride,lda,
-                        //reinterpret_cast<rocblas_double_complex const *>(tau)+i*tstride,
-                        //reinterpret_cast<rocblas_double_complex *>(work)+i*lwork,lwork,devInfo+i);
-      //qmc_hip::rocsolver_check(success,"rocsolver_gqr_strided");
-    //}
+    rocsolverStatus_t success = rocblas_status_success;
+    for(int i=0; i<batchsize; i++) {
+      //qmc_hip::hipsolver_check(rocsolver_set_stream(handle,afqmc_hip_streams[i]), "rocsolver_get_stream");
+      success = rocsolver_zungqr(handle,
+                                 m,n,k,
+                                 reinterpret_cast<rocblas_double_complex *>(A)+i*Astride,
+                                 lda,
+                                 reinterpret_cast<rocblas_double_complex *>(tau)+i*tstride);
+      qmc_hip::hip_check(hipDeviceSynchronize(),"rocsolver_gqr_strided");
+      qmc_hip::hipsolver_check(success,"rocsolver_gqr_strided");
+    }
     //qmc_hip::hip_check(hipDeviceSynchronize(),"rocsolver_gqr_strided");
-    //qmc_hip::hip_check(hipGetLastError(),"rocsolver_gqr_strided");
-    //qmc_hip::rocsolver_check(rocsolver_setStream(handle,s0), "rocsolver_setStream");
+    qmc_hip::hip_check(hipGetLastError(),"rocsolver_gqr_strided");
+    //qmc_hip::hipsolver_check(rocsolver_set_stream(handle,s0), "rocsolver_setStream");
 
-    rocsolverStatus_t success;
-    throw std::runtime_error("Error: rocsolver_gqr_strided not implemented in rocsolver.");
     return success;
 
+  }
+
+  // geqrf_batched
+  inline rocsolverStatus_t
+  rocsolver_geqrf_batched(
+    rocsolverHandle_t handle,
+    int m,
+    int n,
+    std::complex<double> **A,
+    int lda,
+    std::complex<double> *ipiv,
+    int strideP,
+    int batch_count
+    )
+  {
+    rocsolverStatus_t success = rocsolver_zgeqrf_batched(handle,m,n,
+        reinterpret_cast<rocblas_double_complex* const*>(A),lda,
+        reinterpret_cast<rocblas_double_complex*>(ipiv),
+        strideP,batch_count);
+    hipDeviceSynchronize ();
+    return success;
+  }
+  inline rocsolverStatus_t
+  rocsolver_geqrf_batched(
+    rocsolverHandle_t handle,
+    int m,
+    int n,
+    std::complex<float> **A,
+    int lda,
+    std::complex<float> *ipiv,
+    int strideP,
+    int batch_count
+    )
+  {
+    rocsolverStatus_t success = rocsolver_cgeqrf_batched(handle,m,n,
+        reinterpret_cast<rocblas_float_complex* const*>(A),lda,
+        reinterpret_cast<rocblas_float_complex*>(ipiv),
+        strideP,batch_count);
+    hipDeviceSynchronize ();
+    return success;
+  }
+  inline rocsolverStatus_t
+  rocsolver_geqrf_batched(
+    rocsolverHandle_t handle,
+    int m,
+    int n,
+    float **A,
+    int lda,
+    float *ipiv,
+    int strideP,
+    int batch_count
+    )
+  {
+    rocsolverStatus_t success = rocsolver_sgeqrf_batched(handle,m,n,
+          A, lda,
+          ipiv, strideP,
+          batch_count);
+    hipDeviceSynchronize ();
+    return success;
+  }
+  inline rocsolverStatus_t
+  rocsolver_geqrf_batched(
+    rocsolverHandle_t handle,
+    int m,
+    int n,
+    double **A,
+    int lda,
+    double *ipiv,
+    int strideP,
+    int batch_count
+    )
+  {
+    rocsolverStatus_t success = rocsolver_dgeqrf_batched(handle,m,n,
+          A, lda,
+          ipiv, strideP,
+          batch_count);
+    hipDeviceSynchronize ();
+    return success;
   }
 
   //gesvd_bufferSize
@@ -576,7 +635,9 @@ namespace rocsolver {
     //rocsolverStatus_t success =
               //rocsolver_sgesvd_bufferSize(handle,m,n,Lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: rocsolver_gesvd_bufferSize not implemented in rocsolver.");
+    success = rocblas_status_success;
+    *Lwork = 0;
+    //throw std::runtime_error("Error: rocsolver_gesvd_bufferSize not implemented in rocsolver.");
     hipDeviceSynchronize ();
     return success;
   }
@@ -591,7 +652,9 @@ namespace rocsolver {
     //rocsolverStatus_t success =
               //rocsolver_dgesvd_bufferSize(handle,m,n,Lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: rocsolver_gesvd_bufferSize not implemented in rocsolver.");
+    //throw std::runtime_error("Error: rocsolver_gesvd_bufferSize not implemented in rocsolver.");
+    success = rocblas_status_success;
+    *Lwork = 0;
     hipDeviceSynchronize ();
     return success;
   }
@@ -606,7 +669,9 @@ namespace rocsolver {
     //rocsolverStatus_t success =
               //rocsolver_cgesvd_bufferSize(handle,m,n,Lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: rocsolver_gesvd_bufferSize not implemented in rocsolver.");
+    //throw std::runtime_error("Error: rocsolver_gesvd_bufferSize not implemented in rocsolver.");
+    success = rocblas_status_success;
+    *Lwork = 0;
     hipDeviceSynchronize ();
     return success;
   }
@@ -621,7 +686,9 @@ namespace rocsolver {
     //rocsolverStatus_t success =
               //rocsolver_zgesvd_bufferSize(handle,m,n,Lwork);
     rocsolverStatus_t success;
-    throw std::runtime_error("Error: rocsolver_gesvd_bufferSize not implemented in rocsolver.");
+    //throw std::runtime_error("Error: rocsolver_gesvd_bufferSize not implemented in rocsolver.");
+    success = rocblas_status_success;
+    *Lwork = 0;
     hipDeviceSynchronize ();
     return success;
   }

@@ -1,5 +1,5 @@
 Example 1: Neon atom
-====================
+--------------------
 
 In this example we will go through the basic steps necessary to
 generate AFQMC input from a pyscf scf calculation on a simple closed

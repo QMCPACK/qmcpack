@@ -82,11 +82,11 @@ MultiArray2D&& getri(MultiArray2D&& A, MultiArray1D const& IPIV, Buffer&& WORK){
 template<class MultiArray2D>
 int geqrf_optimal_workspace_size(MultiArray2D && A){
 	assert(A.stride(0) > 0);
-	assert(A.stride(1) == 1);
+  assert(A.stride(1) == 1);
 
-        int res;
-        geqrf_bufferSize(A.size(1), A.size(0), pointer_dispatch(A.origin()),A.stride(0),res);
-        return res;
+  int res;
+  geqrf_bufferSize(A.size(1), A.size(0), pointer_dispatch(A.origin()),A.stride(0),res);
+  return res;
 }
 
 template<class MultiArray2D, class Array1D, class Buffer>
@@ -141,13 +141,13 @@ MultiArray2D&& gelqf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK){
 template<class MultiArray2D>
 int gqr_optimal_workspace_size(MultiArray2D && A){
 	assert(A.stride(0) > 0);
-	assert(A.stride(1) == 1);
+  assert(A.stride(1) == 1);
 
-        int res;
-        gqr_bufferSize(A.size(1), A.size(0),
-                       std::max(std::size_t(1), size_t(std::min(A.size(0), A.size(1)))),
-                        pointer_dispatch(A.origin()),A.stride(0),res);
-        return res;
+  int res;
+  gqr_bufferSize(A.size(1), A.size(0),
+      std::max(std::size_t(1), size_t(std::min(A.size(0), A.size(1)))),
+      pointer_dispatch(A.origin()),A.stride(0),res);
+  return res;
 }
 
 template<class MultiArray2D, class Array1D, class Buffer>
