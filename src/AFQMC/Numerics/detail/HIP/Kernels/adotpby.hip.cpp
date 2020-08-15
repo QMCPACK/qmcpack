@@ -14,7 +14,7 @@
 #include <complex>
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
-#include "Platforms/CUDA_legacy/uninitialized_array.hpp"
+#include "uninitialized_array.hpp"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels
