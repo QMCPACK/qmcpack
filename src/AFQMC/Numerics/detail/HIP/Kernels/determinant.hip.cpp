@@ -18,7 +18,7 @@
 #include <thrust/device_ptr.h>
 #include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
-#include "Platforms/CUDA_legacy/uninitialized_array.hpp"
+#include "uninitialized_array.hpp"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels
