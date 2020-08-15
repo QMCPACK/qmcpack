@@ -12,19 +12,16 @@
 #ifndef AFQMC_AXTY_KERNELS_HPP
 #define AFQMC_AXTY_KERNELS_HPP
 
-#include<cassert>
+#include <cassert>
 #include <complex>
 
 namespace kernels
 {
+void axty(int n, float alpha, float const* x, float* y);
+void axty(int n, double alpha, double const* x, double* y);
+void axty(int n, std::complex<float> alpha, std::complex<float> const* x, std::complex<float>* y);
+void axty(int n, std::complex<double> alpha, std::complex<double> const* x, std::complex<double>* y);
 
-void axty(int n, float alpha, float const* x, float *y);
-void axty(int n, double alpha, double const* x, double *y);
-void axty(int n, std::complex<float> alpha,
-                 std::complex<float> const* x, std::complex<float> *y);
-void axty(int n, std::complex<double> alpha,
-                 std::complex<double> const* x, std::complex<double> *y);
-
-}
+} // namespace kernels
 
 #endif

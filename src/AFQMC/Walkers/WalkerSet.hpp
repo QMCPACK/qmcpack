@@ -6,7 +6,7 @@
 //
 // File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //
-// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_WALKERSET_HPP
@@ -17,18 +17,16 @@
 
 namespace qmcplusplus
 {
-
 namespace afqmc
 {
-
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  using WalkerSet = SerialWalkerSet;
+using WalkerSet = SerialWalkerSet;
 #else
-  using WalkerSet = SharedWalkerSet;
+using WalkerSet = SharedWalkerSet;
 #endif
 
-}
+} // namespace afqmc
 
-}
+} // namespace qmcplusplus
 
 #endif

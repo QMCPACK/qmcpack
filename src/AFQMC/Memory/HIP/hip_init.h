@@ -14,8 +14,8 @@
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 
-namespace qmc_hip {
-
+namespace qmc_hip
+{
 void HIP_INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed = 911ULL);
 
 }

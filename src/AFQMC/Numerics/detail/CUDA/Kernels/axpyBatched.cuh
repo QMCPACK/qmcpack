@@ -15,16 +15,29 @@
 #ifndef AFQMC_AXPY_BATCHED_GPU_KERNELS_HPP
 #define AFQMC_AXPY_BATCHED_GPU_KERNELS_HPP
 
-#include<cassert>
+#include <cassert>
 #include <complex>
 
 namespace kernels
 {
+void axpy_batched_gpu(int n,
+                      std::complex<double>* x,
+                      const std::complex<double>** a,
+                      int inca,
+                      std::complex<double>** b,
+                      int incb,
+                      int batchSize);
 
-void axpy_batched_gpu(int n, std::complex<double>* x, const std::complex<double>** a, int inca, std::complex<double>** b, int incb, int batchSize);
+void sumGw_batched_gpu(int n,
+                       std::complex<double>* x,
+                       const std::complex<double>** a,
+                       int inca,
+                       std::complex<double>** b,
+                       int incb,
+                       int b0,
+                       int bw,
+                       int batchSize);
 
-void sumGw_batched_gpu(int n, std::complex<double>* x, const std::complex<double>** a, int inca, std::complex<double>** b, int incb, int b0, int bw, int batchSize);
-
-}
+} // namespace kernels
 
 #endif

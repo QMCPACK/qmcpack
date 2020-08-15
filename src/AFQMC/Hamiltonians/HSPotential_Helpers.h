@@ -23,17 +23,26 @@ namespace afqmc
 {
 namespace HamHelper
 {
-
 std::vector<std::size_t> count_nnz_per_cholvec(double cut, TaskGroup_& TG, SpVType_shm_csr_matrix& V2, int NMO);
 
-std::vector<std::size_t> count_nnz_per_ik(double cut, TaskGroup_& TG, SpVType_shm_csr_matrix& V2, int NMO, int cv0, int cvN);
+std::vector<std::size_t> count_nnz_per_ik(double cut,
+                                          TaskGroup_& TG,
+                                          SpVType_shm_csr_matrix& V2,
+                                          int NMO,
+                                          int cv0,
+                                          int cvN);
 
-void generateHSPotential(SpVType_shm_csr_matrix& vn, std::vector<int> const& map_, double cut, TaskGroup_& TG, SpVType_shm_csr_matrix& V2, int NMO, int cv0, int cvN);
+void generateHSPotential(SpVType_shm_csr_matrix& vn,
+                         std::vector<int> const& map_,
+                         double cut,
+                         TaskGroup_& TG,
+                         SpVType_shm_csr_matrix& V2,
+                         int NMO,
+                         int cv0,
+                         int cvN);
 
-}
+} // namespace HamHelper
 
-}
-}
+} // namespace afqmc
+} // namespace qmcplusplus
 #endif
-
-

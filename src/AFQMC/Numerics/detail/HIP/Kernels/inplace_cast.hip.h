@@ -12,17 +12,16 @@
 #ifndef AFQMC_INPLACE_CAST_KERNELS_HPP
 #define AFQMC_INPLACE_CAST_KERNELS_HPP
 
-#include<cassert>
+#include <cassert>
 #include <complex>
 
 namespace kernels
 {
-
 void inplace_cast(unsigned long n, std::complex<float>* A, std::complex<double>* B);
 void inplace_cast(unsigned long n, std::complex<double>* A, std::complex<float>* B);
 void inplace_cast(long n, std::complex<float>* A, std::complex<double>* B);
 void inplace_cast(long n, std::complex<double>* A, std::complex<float>* B);
 
-}
+} // namespace kernels
 
 #endif

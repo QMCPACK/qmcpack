@@ -12,29 +12,44 @@
 #ifndef KERNELS_TERM_BY_TERM_OPERATIONS_H
 #define KERNELS_TERM_BY_TERM_OPERATIONS_H
 
-#include<cassert>
+#include <cassert>
 #include <complex>
 
 namespace kernels
 {
+void term_by_term_mat_vec_plus(int dim,
+                               int nrow,
+                               int ncol,
+                               std::complex<double>* A,
+                               int lda,
+                               std::complex<double>* x,
+                               int incx);
+void term_by_term_mat_vec_minus(int dim,
+                                int nrow,
+                                int ncol,
+                                std::complex<double>* A,
+                                int lda,
+                                std::complex<double>* x,
+                                int incx);
+void term_by_term_mat_vec_mult(int dim,
+                               int nrow,
+                               int ncol,
+                               std::complex<double>* A,
+                               int lda,
+                               std::complex<double>* x,
+                               int incx);
+void term_by_term_mat_vec_div(int dim,
+                              int nrow,
+                              int ncol,
+                              std::complex<double>* A,
+                              int lda,
+                              std::complex<double>* x,
+                              int incx);
+void term_by_term_mat_vec_plus(int dim, int nrow, int ncol, std::complex<double>* A, int lda, double* x, int incx);
+void term_by_term_mat_vec_minus(int dim, int nrow, int ncol, std::complex<double>* A, int lda, double* x, int incx);
+void term_by_term_mat_vec_mult(int dim, int nrow, int ncol, std::complex<double>* A, int lda, double* x, int incx);
+void term_by_term_mat_vec_div(int dim, int nrow, int ncol, std::complex<double>* A, int lda, double* x, int incx);
 
-void term_by_term_mat_vec_plus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
-                    std::complex<double>* x, int incx);
-void term_by_term_mat_vec_minus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
-                    std::complex<double>* x, int incx);
-void term_by_term_mat_vec_mult( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
-                    std::complex<double>* x, int incx);
-void term_by_term_mat_vec_div( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
-                    std::complex<double>* x, int incx);
-void term_by_term_mat_vec_plus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
-                    double* x, int incx);
-void term_by_term_mat_vec_minus( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
-                    double* x, int incx);
-void term_by_term_mat_vec_mult( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
-                    double* x, int incx);
-void term_by_term_mat_vec_div( int dim, int nrow, int ncol, std::complex<double>* A, int lda,
-                    double* x, int incx);
-
-}
+} // namespace kernels
 
 #endif
