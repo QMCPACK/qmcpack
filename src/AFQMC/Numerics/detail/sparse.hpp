@@ -15,7 +15,7 @@
 #ifndef AFQMC_SPARSE_OPTIONS_HPP
 #define AFQMC_SPARSE_OPTIONS_HPP
 
-#include<cassert>
+#include <cassert>
 #include "AFQMC/Numerics/detail/utilities.hpp"
 #include "AFQMC/Numerics/detail/CPU/sparse_cpu.hpp"
 #if defined(ENABLE_CUDA)

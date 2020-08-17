@@ -23,7 +23,7 @@
 #include <thrust/complex.h>
 //Prior to CUDA9.0, bulk::uninitialized_array was included with thrust library
 //#include <thrust/system/cuda/detail/bulk/uninitialized.hpp>
-#include "CUDA_legacy/uninitialized_array.hpp"
+#include "uninitialized_array.hpp"
 #endif
 #include "CUDA_legacy/gpu_misc.h"
 

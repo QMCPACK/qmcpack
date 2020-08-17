@@ -12,37 +12,84 @@
 #ifndef AFQMC_KAKJW_to_QKAJW_H
 #define AFQMC_KAKJW_to_QKAJW_H
 
-#include<cassert>
+#include <cassert>
 #include <complex>
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 
 namespace kernels
 {
-
-void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                     int nocc_max, int* nmo, int* nmo0,
-                     int* nocc, int* nocc0, int* QKtok2,
-                     double const* A, double * B);
-void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                     int nocc_max, int* nmo, int* nmo0,
-                     int* nocc, int* nocc0, int* QKtok2,
-                     float const* A, float * B);
-void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                     int nocc_max, int* nmo, int* nmo0,
-                     int* nocc, int* nocc0, int* QKtok2,
-                     double const* A, float * B);
-void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                     int nocc_max, int* nmo, int* nmo0,
-                     int* nocc, int* nocc0, int* QKtok2,
-                     std::complex<float> const* A, std::complex<float> * B);
-void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                     int nocc_max, int* nmo, int* nmo0,
-                     int* nocc, int* nocc0, int* QKtok2,
-                     std::complex<double> const* A, std::complex<double> * B);
-void KaKjw_to_QKajw( int nwalk, int nkpts, int nmo_max, int nmo_tot,
-                     int nocc_max, int* nmo, int* nmo0,
-                     int* nocc, int* nocc0, int* QKtok2,
-                     std::complex<double> const* A, std::complex<float> * B);
-}
+void KaKjw_to_QKajw(int nwalk,
+                    int nkpts,
+                    int nmo_max,
+                    int nmo_tot,
+                    int nocc_max,
+                    int* nmo,
+                    int* nmo0,
+                    int* nocc,
+                    int* nocc0,
+                    int* QKtok2,
+                    double const* A,
+                    double* B);
+void KaKjw_to_QKajw(int nwalk,
+                    int nkpts,
+                    int nmo_max,
+                    int nmo_tot,
+                    int nocc_max,
+                    int* nmo,
+                    int* nmo0,
+                    int* nocc,
+                    int* nocc0,
+                    int* QKtok2,
+                    float const* A,
+                    float* B);
+void KaKjw_to_QKajw(int nwalk,
+                    int nkpts,
+                    int nmo_max,
+                    int nmo_tot,
+                    int nocc_max,
+                    int* nmo,
+                    int* nmo0,
+                    int* nocc,
+                    int* nocc0,
+                    int* QKtok2,
+                    double const* A,
+                    float* B);
+void KaKjw_to_QKajw(int nwalk,
+                    int nkpts,
+                    int nmo_max,
+                    int nmo_tot,
+                    int nocc_max,
+                    int* nmo,
+                    int* nmo0,
+                    int* nocc,
+                    int* nocc0,
+                    int* QKtok2,
+                    std::complex<float> const* A,
+                    std::complex<float>* B);
+void KaKjw_to_QKajw(int nwalk,
+                    int nkpts,
+                    int nmo_max,
+                    int nmo_tot,
+                    int nocc_max,
+                    int* nmo,
+                    int* nmo0,
+                    int* nocc,
+                    int* nocc0,
+                    int* QKtok2,
+                    std::complex<double> const* A,
+                    std::complex<double>* B);
+void KaKjw_to_QKajw(int nwalk,
+                    int nkpts,
+                    int nmo_max,
+                    int nmo_tot,
+                    int nocc_max,
+                    int* nmo,
+                    int* nmo0,
+                    int* nocc,
+                    int* nocc0,
+                    int* QKtok2,
+                    std::complex<double> const* A,
+                    std::complex<float>* B);
+} // namespace kernels
 
 #endif

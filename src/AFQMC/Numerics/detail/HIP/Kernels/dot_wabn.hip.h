@@ -12,45 +12,77 @@
 #ifndef AFQMC_DOT_WABN_H
 #define AFQMC_DOT_WABN_H
 
-#include<cassert>
+#include <cassert>
 #include <complex>
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 
 namespace kernels
 {
+void dot_wabn(int nwalk,
+              int nocc,
+              int nchol,
+              std::complex<double> const alpha,
+              std::complex<double> const* Tab,
+              std::complex<double>* y,
+              int incy);
+void dot_wabn(int nwalk,
+              int nocc,
+              int nchol,
+              std::complex<float> const alpha,
+              std::complex<float> const* Tab,
+              std::complex<float>* y,
+              int incy);
+void dot_wabn(int nwalk,
+              int nocc,
+              int nchol,
+              std::complex<float> const alpha,
+              std::complex<float> const* Tab,
+              std::complex<double>* y,
+              int incy);
 
-void dot_wabn( int nwalk, int nocc, int nchol,
-               std::complex<double> const alpha, std::complex<double> const* Tab,
-               std::complex<double>* y, int incy);
-void dot_wabn( int nwalk, int nocc, int nchol,
-               std::complex<float> const alpha, std::complex<float> const* Tab,
-               std::complex<float>* y, int incy);
-void dot_wabn( int nwalk, int nocc, int nchol,
-               std::complex<float> const alpha, std::complex<float> const* Tab,
-               std::complex<double>* y, int incy);
+
+void dot_wanb(int nwalk,
+              int nocc,
+              int nchol,
+              std::complex<double> const alpha,
+              std::complex<double> const* Tab,
+              std::complex<double>* y,
+              int incy);
+void dot_wanb(int nwalk,
+              int nocc,
+              int nchol,
+              std::complex<float> const alpha,
+              std::complex<float> const* Tab,
+              std::complex<float>* y,
+              int incy);
+void dot_wanb(int nwalk,
+              int nocc,
+              int nchol,
+              std::complex<float> const alpha,
+              std::complex<float> const* Tab,
+              std::complex<double>* y,
+              int incy);
 
 
-void dot_wanb( int nwalk, int nocc, int nchol,
-               std::complex<double> const alpha, std::complex<double> const* Tab,
-               std::complex<double>* y, int incy);
-void dot_wanb( int nwalk, int nocc, int nchol,
-               std::complex<float> const alpha, std::complex<float> const* Tab,
-               std::complex<float>* y, int incy);
-void dot_wanb( int nwalk, int nocc, int nchol,
-               std::complex<float> const alpha, std::complex<float> const* Tab,
-               std::complex<double>* y, int incy);
+void dot_wpan_waqn_Fwpq(int nwalk,
+                        int nmo,
+                        int nchol,
+                        std::complex<double> const alpha,
+                        std::complex<double> const* Tab,
+                        std::complex<double>* F);
+void dot_wpan_waqn_Fwpq(int nwalk,
+                        int nmo,
+                        int nchol,
+                        std::complex<float> const alpha,
+                        std::complex<float> const* Tab,
+                        std::complex<double>* F);
+void dot_wpan_waqn_Fwpq(int nwalk,
+                        int nmo,
+                        int nchol,
+                        std::complex<float> const alpha,
+                        std::complex<float> const* Tab,
+                        std::complex<float>* F);
 
-
-void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
-               std::complex<double> const alpha, std::complex<double> const* Tab,
-               std::complex<double>* F);
-void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
-               std::complex<float> const alpha, std::complex<float> const* Tab,
-               std::complex<double>* F);
-void dot_wpan_waqn_Fwpq( int nwalk, int nmo, int nchol,
-               std::complex<float> const alpha, std::complex<float> const* Tab,
-               std::complex<float>* F);
-
-}
+} // namespace kernels
 
 #endif

@@ -1,7 +1,7 @@
 #ifndef QMCPLUSPLUS_AFQMC_DRIVER_H
 #define QMCPLUSPLUS_AFQMC_DRIVER_H
 
-#include<Message/MPIObjectBase.h>
+#include <Message/MPIObjectBase.h>
 #include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 
@@ -15,97 +15,109 @@
 
 namespace qmcplusplus
 {
-
-class Driver: public MPIObjectBase, public AFQMCInfo
+class Driver : public MPIObjectBase, public AFQMCInfo
 {
+public:
+  typedef HamiltonianBase* HamPtr;
+  typedef WavefunctionHandler* WfnPtr;
+  typedef PropagatorBase* PropPtr;
+  typedef WalkerHandlerBase* WSetPtr;
+  typedef AFQMCInfo* InfoPtr;
 
-  public:
-
-    typedef HamiltonianBase* HamPtr;
-    typedef WavefunctionHandler* WfnPtr;
-    typedef PropagatorBase* PropPtr;
-    typedef WalkerHandlerBase* WSetPtr;
-    typedef AFQMCInfo* InfoPtr;
-
-    Driver(Communicate *c):MPIObjectBase(c),TG(c,"DriverTG"),
-        nBlock(100),nStep(1),nSubstep(1),
-        nStabalize(1),nPopulationControl(1),nloadBalance(1),dt(0.01),name(""),
-        nCheckpoint(-1),block0(0),step0(0),restarted(false),
-        hdf_write_restart(""),hdf_read_restart(""),nWalkers(5),
-        hdf_write_tag(""),hdf_read_tag(""),project_title(""),m_series(0),
+  Driver(Communicate* c)
+      : MPIObjectBase(c),
+        TG(c, "DriverTG"),
+        nBlock(100),
+        nStep(1),
+        nSubstep(1),
+        nStabalize(1),
+        nPopulationControl(1),
+        nloadBalance(1),
+        dt(0.01),
+        name(""),
+        nCheckpoint(-1),
+        block0(0),
+        step0(0),
+        restarted(false),
+        hdf_write_restart(""),
+        hdf_read_restart(""),
+        nWalkers(5),
+        hdf_write_tag(""),
+        hdf_read_tag(""),
+        project_title(""),
+        m_series(0),
         ncores_per_TG(1)
-    {}
+  {}
 
-    ~Driver() {}
+  ~Driver() {}
 
-    virtual bool run()=0;
+  virtual bool run() = 0;
 
-    void setTitle(std::string& title, int cnt) {
-      project_title=title;
-      m_series=cnt;
-    }
+  void setTitle(std::string& title, int cnt)
+  {
+    project_title = title;
+    m_series      = cnt;
+  }
 
-    virtual bool parse(xmlNodePtr)=0;
+  virtual bool parse(xmlNodePtr) = 0;
 
-    virtual bool setup(HamPtr,WSetPtr,PropPtr,WfnPtr)=0;
+  virtual bool setup(HamPtr, WSetPtr, PropPtr, WfnPtr) = 0;
 
-    virtual bool checkpoint(int,int)=0;
+  virtual bool checkpoint(int, int) = 0;
 
-    virtual bool restart(hdf_archive&)=0;
+  virtual bool restart(hdf_archive&) = 0;
 
-    virtual bool clear()=0;
+  virtual bool clear() = 0;
 
-    std::string name;
+  std::string name;
 
-  protected:
+protected:
+  int m_series;
+  std::string project_title;
 
-    int m_series;
-    std::string project_title;
+  myTimer LocalTimer;
 
-    myTimer LocalTimer;
+  std::string hdf_read_restart;
+  std::string hdf_write_restart;
+  std::string hdf_read_tag;
+  std::string hdf_write_tag;
 
-    std::string hdf_read_restart;
-    std::string hdf_write_restart;
-    std::string hdf_read_tag;
-    std::string hdf_write_tag;
+  bool restarted;
 
-    bool restarted;
+  int nBlock;
+  int nStep;
+  int nSubstep;
 
-    int nBlock;
-    int nStep;
-    int nSubstep;
+  afqmc::TaskGroup TG;
 
-    afqmc::TaskGroup TG;
+  int ncores_per_TG;
 
-    int ncores_per_TG;
+  int nWalkers;
 
-    int nWalkers;
+  int nCheckpoint;
+  int nStabalize;
+  int nPopulationControl;
+  int nloadBalance;
+  RealType dt;
+  int block0, step0;
 
-    int nCheckpoint;
-    int nStabalize;
-    int nPopulationControl;
-    int nloadBalance;
-    RealType dt;
-    int block0, step0;
+  HamPtr ham0;
 
-    HamPtr ham0;
+  WfnPtr wfn0;
 
-    WfnPtr wfn0;
+  WSetPtr wlkBucket;
 
-    WSetPtr wlkBucket;
+  PropPtr prop0;
 
-    PropPtr prop0;
+  EstimatorHandler* estim0;
 
-    EstimatorHandler* estim0;
+  SPComplexSMVector CommBuffer;
 
-    SPComplexSMVector CommBuffer;
-
-    MPI_Comm MPI_COMM_HEAD_OF_NODES;
-    MPI_Comm MPI_COMM_NODE_LOCAL;
-    MPI_Comm MPI_COMM_TG_LOCAL;
-    MPI_Comm MPI_COMM_TG_LOCAL_HEADS;
-
+  MPI_Comm MPI_COMM_HEAD_OF_NODES;
+  MPI_Comm MPI_COMM_NODE_LOCAL;
+  MPI_Comm MPI_COMM_TG_LOCAL;
+  MPI_Comm MPI_COMM_TG_LOCAL_HEADS;
 };
-}
+} // namespace qmcplusplus
 
 #endif

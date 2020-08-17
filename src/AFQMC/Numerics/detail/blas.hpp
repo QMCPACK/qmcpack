@@ -15,7 +15,7 @@
 #ifndef AFQMC_BLAS_OPTIONS_HPP
 #define AFQMC_BLAS_OPTIONS_HPP
 
-#include<cassert>
+#include <cassert>
 #include "AFQMC/Numerics/detail/utilities.hpp"
 #include "AFQMC/Numerics/detail/CPU/blas_cpu.hpp"
 #if defined(ENABLE_CUDA)

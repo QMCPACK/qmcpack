@@ -25,95 +25,105 @@
 #include "multi/array_ref.hpp"
 
 
-namespace qmc_hip {
+namespace qmc_hip
+{
+bool afqmc_hip_handles_init = false;
+hipsparseMatDescr_t afqmc_hipsparse_matrix_descr;
 
-  bool afqmc_hip_handles_init = false;
-  hipsparseMatDescr_t afqmc_hipsparse_matrix_descr;
+std::vector<hipStream_t> afqmc_hip_streams;
 
-  std::vector<hipStream_t> afqmc_hip_streams;
-
-  void hip_check(hipError_t sucess, std::string message)
+void hip_check(hipError_t sucess, std::string message)
+{
+  if (hipSuccess != sucess)
   {
-    if(hipSuccess != sucess) {
-      std::cerr<<message <<std::endl;
-      std::cerr<<" hipGetErrorName: " <<hipGetErrorName(sucess) <<std::endl;
-      std::cerr<<" hipGetErrorString: " <<hipGetErrorString(sucess) <<std::endl;
-      std::cerr.flush();
-      throw std::runtime_error(" Error code returned by hip. \n");
-    }
+    std::cerr << message << std::endl;
+    std::cerr << " hipGetErrorName: " << hipGetErrorName(sucess) << std::endl;
+    std::cerr << " hipGetErrorString: " << hipGetErrorString(sucess) << std::endl;
+    std::cerr.flush();
+    throw std::runtime_error(" Error code returned by hip. \n");
   }
-
-  void hipblas_check(hipblasStatus_t sucess, std::string message)
-  {
-    if(HIPBLAS_STATUS_SUCCESS != sucess) {
-      std::cerr<<message <<std::endl;
-      std::cerr.flush();
-      throw std::runtime_error(" Error code returned by cublas. \n");
-    }
-  }
-
-  void hipsparse_check(hipsparseStatus_t sucess, std::string message)
-  {
-    if(HIPSPARSE_STATUS_SUCCESS != sucess) {
-      std::cerr<<message <<std::endl;
-      std::cerr.flush();
-      throw std::runtime_error(" Error code returned by cusparse. \n");
-    }
-  }
-
-  void hiprand_check(hiprandStatus_t sucess, std::string message)
-  {
-    if(ROCRAND_STATUS_SUCCESS != sucess) {
-      std::cerr<<message <<std::endl;
-      std::cerr.flush();
-      throw std::runtime_error(" Error code returned by hiprand. \n");
-    }
-  }
-
-  void hipsolver_check(hipsolverStatus_t sucess, std::string message)
-  {
-    if(rocblas_status_success != sucess) {
-      std::cerr<<message <<std::endl;
-      std::cerr.flush();
-      throw std::runtime_error(" Error code returned by hipsolver. \n");
-    }
-  }
-
-  hipblasOperation_t hipblasOperation(char A) {
-    if(A=='N' or A=='n')
-      return HIPBLAS_OP_N;
-    else if(A=='T' or A=='t')
-      return HIPBLAS_OP_T;
-    else if(A=='C' or A=='c')
-      return HIPBLAS_OP_C;
-    else {
-      throw std::runtime_error("unknown hipblasOperation option");
-    }
-  }
-
-  rocblasOperation_t rocblasOperation(char A) {
-    if(A=='N' or A=='n')
-      return rocblas_operation_none;
-    else if(A=='T' or A=='t')
-      return rocblas_operation_transpose;
-    else if(A=='C' or A=='c')
-      return rocblas_operation_conjugate_transpose;
-    else {
-      throw std::runtime_error("unknown hipblasOperation option");
-    }
-  }
-
-  hipsparseOperation_t hipsparseOperation(char A) {
-    if(A=='N' or A=='n')
-      return HIPSPARSE_OPERATION_NON_TRANSPOSE;
-    else if(A=='T' or A=='t')
-      return HIPSPARSE_OPERATION_TRANSPOSE;
-    else if(A=='C' or A=='c')
-      return HIPSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
-    else {
-      throw std::runtime_error("unknown hipsparseOperation option");
-    }
-  }
-
 }
 
+void hipblas_check(hipblasStatus_t sucess, std::string message)
+{
+  if (HIPBLAS_STATUS_SUCCESS != sucess)
+  {
+    std::cerr << message << std::endl;
+    std::cerr.flush();
+    throw std::runtime_error(" Error code returned by cublas. \n");
+  }
+}
+
+void hipsparse_check(hipsparseStatus_t sucess, std::string message)
+{
+  if (HIPSPARSE_STATUS_SUCCESS != sucess)
+  {
+    std::cerr << message << std::endl;
+    std::cerr.flush();
+    throw std::runtime_error(" Error code returned by cusparse. \n");
+  }
+}
+
+void hiprand_check(hiprandStatus_t sucess, std::string message)
+{
+  if (ROCRAND_STATUS_SUCCESS != sucess)
+  {
+    std::cerr << message << std::endl;
+    std::cerr.flush();
+    throw std::runtime_error(" Error code returned by hiprand. \n");
+  }
+}
+
+void hipsolver_check(hipsolverStatus_t sucess, std::string message)
+{
+  if (rocblas_status_success != sucess)
+  {
+    std::cerr << message << std::endl;
+    std::cerr.flush();
+    throw std::runtime_error(" Error code returned by hipsolver. \n");
+  }
+}
+
+hipblasOperation_t hipblasOperation(char A)
+{
+  if (A == 'N' or A == 'n')
+    return HIPBLAS_OP_N;
+  else if (A == 'T' or A == 't')
+    return HIPBLAS_OP_T;
+  else if (A == 'C' or A == 'c')
+    return HIPBLAS_OP_C;
+  else
+  {
+    throw std::runtime_error("unknown hipblasOperation option");
+  }
+}
+
+rocblasOperation_t rocblasOperation(char A)
+{
+  if (A == 'N' or A == 'n')
+    return rocblas_operation_none;
+  else if (A == 'T' or A == 't')
+    return rocblas_operation_transpose;
+  else if (A == 'C' or A == 'c')
+    return rocblas_operation_conjugate_transpose;
+  else
+  {
+    throw std::runtime_error("unknown hipblasOperation option");
+  }
+}
+
+hipsparseOperation_t hipsparseOperation(char A)
+{
+  if (A == 'N' or A == 'n')
+    return HIPSPARSE_OPERATION_NON_TRANSPOSE;
+  else if (A == 'T' or A == 't')
+    return HIPSPARSE_OPERATION_TRANSPOSE;
+  else if (A == 'C' or A == 'c')
+    return HIPSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
+  else
+  {
+    throw std::runtime_error("unknown hipsparseOperation option");
+  }
+}
+
+} // namespace qmc_hip
