@@ -42,19 +42,14 @@ SPOSet* LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (optimize == "yes")
     app_log() << "  SPOSet " << spo_name << " is optimizable\n";
 
-  std::shared_ptr<LCAOrbitalSet> up = std::make_shared<LCAOrbitalSet>(myBasisSet, optimize == "yes");
-  std::shared_ptr<LCAOrbitalSet> dn = std::make_shared<LCAOrbitalSet>(myBasisSet, optimize == "yes");
+  std::unique_ptr<LCAOrbitalSet> upspo = std::make_unique<LCAOrbitalSet>(myBasisSet, optimize == "yes");
+  std::unique_ptr<LCAOrbitalSet> dnspo = std::make_unique<LCAOrbitalSet>(myBasisSet, optimize == "yes");
 
-  loadMO(*up, *dn, cur);
-
-  //cast to SPOSet type
-  std::shared_ptr<SPOSet> upspo = std::static_pointer_cast<SPOSet>(up);
-  std::shared_ptr<SPOSet> dnspo = std::static_pointer_cast<SPOSet>(dn);
+  loadMO(*upspo, *dnspo, cur);
 
   //create spinor and register up/dn
   SpinorSet* spinor_set = new SpinorSet();
-  spinor_set->set_spos(upspo, dnspo);
-
+  spinor_set->set_spos(std::move(upspo), std::move(dnspo));
 
   return spinor_set;
 }
