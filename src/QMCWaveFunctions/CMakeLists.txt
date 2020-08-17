@@ -84,7 +84,7 @@ IF(OHMMS_DIM MATCHES 3)
     Jastrow/CountingJastrowBuilder.cpp
     )
 
-  SET(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOrbitalSet.cpp LCAO/LCAOrbitalBuilder.cpp)
+  SET(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOrbitalSet.cpp LCAO/LCAOrbitalBuilder.cpp LCAO/LCAOSpinorBuilder.cpp)
   IF(NOT QMC_COMPLEX)
     #LCAO cusp correction is not ready for complex
     SET(FERMION_SRCS ${FERMION_SRCS}
