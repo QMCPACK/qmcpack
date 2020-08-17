@@ -59,7 +59,7 @@ private:
   ///transfer property
   hid_t xfer_plist;
   ///error type
-  H5E_auto_t err_func;
+  H5E_auto2_t err_func;
   ///error handling
   void* client_data;
   ///FILO to handle H5Group
@@ -78,14 +78,14 @@ public:
   template<class Comm = Communicate*>
   hdf_archive(Comm c, bool request_pio = false) : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
   {
-    H5Eget_auto(&err_func, &client_data);
-    H5Eset_auto(NULL, NULL);
+    H5Eget_auto2(H5E_DEFAULT, &err_func, &client_data);
+    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     set_access_plist(request_pio, c);
   }
   hdf_archive() : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
   {
-    H5Eget_auto(&err_func, &client_data);
-    H5Eset_auto(NULL, NULL);
+    H5Eget_auto2(H5E_DEFAULT, &err_func, &client_data);
+    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
     set_access_plist();
   }
   ///destructor
@@ -142,8 +142,8 @@ public:
   inline hid_t top() const { return group_id.empty() ? is_closed : group_id.top(); }
 
   /** check if any groups are open
-      group stack will have entries if so
-      @return true if any groups are open
+   *  group stack will have entries if so
+   *  @return true if any groups are open
    */
   inline bool open_groups() { return group_id.empty(); }
 
@@ -162,9 +162,24 @@ public:
     H5Gclose(g);
   }
 
-  /* write the data to the group aname and return status
-     use write() for inbuilt error checking
-     @return true if successful
+  /** read the shape of multidimensional filespace from the group aname
+   * this function can be used to query dataset for preparing containers.
+   * The dimensions contributed by T is excluded.
+   * See how exactly user dimensions are calculated in getDataShape function definition.
+   * @return true if successful
+   */
+  template<typename T>
+  bool getShape(const std::string& aname, std::vector<int>& sizes_out)
+  {
+    if (Mode[NOIO])
+      return true;
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    return getDataShape<T>(p, aname, sizes_out);
+  }
+
+  /** write the data to the group aname and return status
+   * use write() for inbuilt error checking
+   * @return true if successful
    */
   template<typename T>
   bool writeEntry(T& data, const std::string& aname)
@@ -178,8 +193,8 @@ public:
     return e.write(p, aname, xfer_plist);
   }
 
-  /* write the data to the group aname and check status
-     runtime error is issued on I/O error
+  /** write the data to the group aname and check status
+   * runtime error is issued on I/O error
    */
   template<typename T>
   void write(T& data, const std::string& aname)
@@ -190,9 +205,30 @@ public:
     }
   }
 
-  /* read the data from the group aname and return status
-     use read() for inbuilt error checking
-     @return true if successful
+  /** write the container data with a specific shape and check status
+   * @param data container, linear storage required.
+   * @param shape shape on the hdf file
+   * @param aname dataset name in the file
+   * runtime error is issued on I/O error
+   */
+  template<typename T, typename IT, std::size_t RANK>
+  void writeSlabReshaped(T& data, const std::array<IT, RANK>& shape, const std::string& aname)
+  {
+    std::array<hsize_t, RANK> globals, counts, offsets;
+    for(int dim = 0; dim < RANK; dim++)
+    {
+      globals[dim] = static_cast<hsize_t>(shape[dim]);
+      counts[dim] = static_cast<hsize_t>(shape[dim]);
+      offsets[dim] = 0;
+    }
+
+    hyperslab_proxy<T, RANK> pxy(data, globals, counts, offsets);
+    write(pxy, aname);
+  }
+
+  /** read the data from the group aname and return status
+   * use read() for inbuilt error checking
+   * @return true if successful
    */
   template<typename T>
   bool readEntry(T& data, const std::string& aname)
@@ -204,29 +240,8 @@ public:
     return e.read(p, aname, xfer_plist);
   }
 
-  /* read the data from the group aname and return status
-     use read() for inbuilt error checking
-     @return true if successful
-
-     This is using slicing of the dataspace described in the corresponding 
-     version of read
-  */
-  template<typename T, typename IC>
-  bool readHyperslabEntry(T& data, const IC& readSpec, const std::string& aname)
-  {
-    if (Mode[NOIO])
-      return true;
-    hid_t p = group_id.empty() ? file_id : group_id.top();
-    std::vector<hsize_t> offset(readSpec.size());
-    std::vector<hsize_t> count(readSpec.size());
-    int numElements;
-    getOffsets(p, aname, readSpec, offset, count, numElements);
-    hyperslab_proxy<T,7> pxy(data, count, count, offset);
-    return readEntry(pxy, aname);
-  }
-
-  /* read the data from the group aname and check status
-     runtime error is issued on I/O error
+  /** read the data from the group aname and check status
+   * runtime error is issued on I/O error
    */
   template<typename T>
   void read(T& data, const std::string& aname)
@@ -237,24 +252,58 @@ public:
     }
   }
 
-  /* read a portion of the data from the group aname and check status
-     runtime error is issued on I/O error
-
-     note the vector must have dimensionality corresponding to the dataset,
-     values for a dimension must be [0,num_entries-1] for that dimension to specify
-     which value to hold and a -1 to grab all elements from that dimension
-     for example, if the dataset was [5,2,6] and the vector contained (2,1,-1),
-     this would grab 6 elements corresponding to [2,1,:]
-  */
-  template<typename T, typename IC>
-  void readHyperslab(T& data, const IC& readSpec, const std::string& aname)
+  /** read file dataset with a specific shape into a container and check status
+   * @param data container, linear storage required.
+   * @param shape shape on the hdf file
+   * @param aname dataset name in the file
+   * runtime error is issued on I/O error
+   */
+  template<typename T, typename IT, std::size_t RANK>
+  void readSlabReshaped(T& data, const std::array<IT, RANK>& shape, const std::string& aname)
   {
-    if (!readHyperslabEntry(data, readSpec, aname))
+    std::array<hsize_t, RANK> globals, counts, offsets;
+    for(int dim = 0; dim < RANK; dim++)
     {
-      std::runtime_error("HDF5 read failure in hdf_archive::readHyperslab " + aname);
+      globals[dim] = static_cast<hsize_t>(shape[dim]);
+      counts[dim] = static_cast<hsize_t>(shape[dim]);
+      offsets[dim] = 0;
     }
+
+    hyperslab_proxy<T, RANK> pxy(data, globals, counts, offsets);
+    read(pxy, aname);
   }
 
+  /** read a portion of the data from the group aname and check status
+   * runtime error is issued on I/O error
+   *
+   * note the readSpec array must have dimensionality corresponding to the dataset,
+   * values for a dimension must be [0,num_entries-1] for that dimension to specify
+   * which value to hold and a -1 to grab all elements from that dimension
+   * for example, if the dataset was [5,2,6] and the vector contained (2,1,-1),
+   * this would grab 6 elements corresponding to [2,1,:]
+   */
+  template<typename T, typename IT, std::size_t RANK>
+  void readSlabSelection(T& data, const std::array<IT, RANK>& readSpec, const std::string& aname)
+  {
+    std::array<hsize_t, RANK> globals, counts, offsets;
+    for(int dim = 0; dim < RANK; dim++)
+    {
+      globals[dim] = 0;
+      if (readSpec[dim] < 0)
+      {
+        counts[dim] = 0;
+        offsets[dim] = 0;
+      }
+      else
+      {
+        counts[dim] = 1;
+        offsets[dim] = static_cast<hsize_t>(readSpec[dim]);
+      }
+    }
+
+    hyperslab_proxy<T, RANK> pxy(data, globals, counts, offsets);
+    read(pxy, aname);
+  }
 
   inline void unlink(const std::string& aname)
   {

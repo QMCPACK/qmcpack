@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -76,11 +76,13 @@ protected:
   int recalculate_properties_period_ = 100;
   /// period of recording walker positions and IDs for forward walking afterwards
   input::PeriodStride config_dump_period_;
-  IndexType starting_step_              = 0;
-  IndexType requested_walkers_per_rank_ = 0;
-  IndexType num_crowds_                 = 0;
-  IndexType requested_samples_          = 0;
-  IndexType sub_steps_                  = 1;
+  IndexType starting_step_ = 0;
+  IndexType num_crowds_    = 0;
+  // This is the global walkers it is a hard limit for VMC and the target for DMC
+  IndexType total_walkers_     = 0;
+  IndexType walkers_per_rank_  = 0;
+  IndexType requested_samples_ = 0;
+  IndexType sub_steps_         = 1;
   // max unecessary in this context
   IndexType max_blocks_               = 1;
   IndexType max_steps_                = 1;
@@ -103,6 +105,9 @@ protected:
   IndexType k_delay_ = 0;
   bool reset_random_ = false;
 
+  // from QMCUpdateBase
+  RealType max_disp_sq_ = -1.0;
+
   // for drift modifer
   std::string drift_modifier_{"UNR"};
   RealType drift_modifier_unr_a_ = 1.0;
@@ -118,8 +123,11 @@ public:
   input::PeriodStride get_config_dump_period() const { return config_dump_period_; }
   IndexType get_starting_step() const { return starting_step_; }
   IndexType get_num_crowds() const { return num_crowds_; }
+  IndexType get_walkers_per_rank() const { return walkers_per_rank_; }
+  IndexType get_total_walkers() const { return total_walkers_; }
   IndexType get_requested_samples() const { return requested_samples_; }
   IndexType get_sub_steps() const { return sub_steps_; }
+  RealType get_max_disp_sq() const { return max_disp_sq_; }
   IndexType get_max_blocks() const { return max_blocks_; }
   IndexType get_max_steps() const { return max_steps_; }
   IndexType get_warmup_steps() const { return warmup_steps_; }

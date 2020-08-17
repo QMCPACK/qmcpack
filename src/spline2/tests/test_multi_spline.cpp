@@ -10,10 +10,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include <OhmmsSoA/Container.h>
+#include <OhmmsSoA/VectorSoaContainer.h>
 #include "spline2/MultiBspline.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
@@ -196,8 +195,6 @@ struct test_splines : public test_splines_base<T, GRID_SIZE, NUM_SPLINES>
     bs.create(grid, bc, npad);
 
     REQUIRE(bs.num_splines() == npad);
-
-    double tpi = 2 * M_PI;
 
     BsplineAllocator<double> mAllocator;
     UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], data.data());

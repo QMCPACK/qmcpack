@@ -22,9 +22,9 @@
 #include <type_traits/QMCTypes.h>
 #include <OhmmsData/OhmmsElementBase.h>
 #include <OhmmsData/RecordProperty.h>
-#include <Lattice/CrystalLattice.h>
-#include <ParticleBase/ParticleAttrib.h>
-#include <Utilities/OutputManager.h>
+#include <Particle/Lattice/CrystalLattice.h>
+#include <Particle/ParticleBase/ParticleAttrib.h>
+#include <Platforms/Host/OutputManager.h>
 #include <Message/Communicate.h>
 
 //define empty DEBUG_MEMORY
@@ -66,6 +66,9 @@ struct QMCTraits
   typedef QTFull::ValueType FullPrecValueType;
   ///define PropertyList_t
   typedef RecordNamedProperty<FullPrecRealType> PropertySetType;
+
+  // Type for particle group index pairs
+  using PtclGrpIndexes = std::vector<std::pair<int,int>>;
 };
 
 /** Particle traits to use UniformGridLayout for the ParticleLayout.

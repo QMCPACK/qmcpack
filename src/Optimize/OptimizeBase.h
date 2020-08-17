@@ -16,7 +16,6 @@
 #define QMCPLUSPLUS_OPTIMIZATIONFUNCION_BASE_H
 
 #include "OhmmsData/OhmmsElementBase.h"
-#include "Optimize/LeastSquaredFit.h"
 #include "Configuration.h"
 
 /** Base class for any cost function
@@ -42,11 +41,13 @@ public:
 
   virtual ~CostFunctionBase() {}
 
-  virtual int NumParams() = 0;
+  virtual int getNumParams() const = 0;
 
   virtual Return_t& Params(int i) = 0;
 
   virtual Return_t Params(int i) const = 0;
+
+  virtual std::string getParamName(int i) const = 0;
 
   virtual Return_rt Cost(bool needGrad = true) = 0;
 

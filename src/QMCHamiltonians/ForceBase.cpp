@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 ForceBase::ForceBase(ParticleSet& ions, ParticleSet& elns)
-  : FirstForceIndex(-1), tries(0), Ions(ions), addionion(true)
+  : FirstForceIndex(-1), tries(0), addionion(true), Ions(ions)
 {
   ReportEngine PRE("ForceBase", "ForceBase");
   FirstTime    = true;
@@ -137,11 +137,7 @@ void ForceBase::setParticleSetStress(QMCTraits::PropertySetType& plist, int offs
 
 BareForce::BareForce(ParticleSet& ions, ParticleSet& elns)
   : ForceBase(ions, elns),
-#ifdef ENABLE_SOA
   d_ei_ID(elns.addTable(ions, DT_SOA))
-#else
-  d_ei_ID(elns.addTable(ions, DT_AOS))
-#endif
 {
   myName = "HF_Force_Base";
   prefix = "HFBase";
@@ -149,7 +145,7 @@ BareForce::BareForce(ParticleSet& ions, ParticleSet& elns)
 
 void BareForce::resetTargetParticleSet(ParticleSet& P) {}
 
-QMCHamiltonianBase* BareForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new BareForce(*this); }
+OperatorBase* BareForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new BareForce(*this); }
 
 void BareForce::addObservables(PropertySetType& plist, BufferType& collectables)
 {
@@ -164,26 +160,17 @@ BareForce::Return_t BareForce::evaluate(ParticleSet& P)
   const ParticleSet::Scalar_t* restrict Zat = Ions.Z.first_address();
   const ParticleSet::Scalar_t* restrict Qat = P.Z.first_address();
   //Loop over distinct eln-ion pairs
-#ifdef ENABLE_SOA
-  for (int iat = 0; iat < d_ab.sources(); iat++)
+  for (int jat = 0; jat < d_ab.targets(); jat++)
   {
-      for (int jat = 0; jat < d_ab.targets(); jat++) {
-        real_type rinv = 1.0/d_ab.Distances(jat,iat);
-        real_type r3zz = Qat[jat] * Zat[iat] * rinv * rinv * rinv;
-        forces[iat] += r3zz * d_ab.Displacements[jat][iat];
-      }
-  }
-#else
-  for (int iat = 0; iat < Nnuc; iat++)
-  {
-    for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; nn++, jat++)
+    const auto& ab_dist  = d_ab.getDistRow(jat);
+    const auto& ab_displ = d_ab.getDisplRow(jat);
+    for (int iat = 0; iat < d_ab.sources(); iat++)
     {
-      real_type rinv = d_ab.rinv(nn);
+      real_type rinv = 1.0/ab_dist[iat];
       real_type r3zz = Qat[jat] * Zat[iat] * rinv * rinv * rinv;
-      forces[iat] -= r3zz * d_ab.dr(nn);
+      forces[iat] += r3zz * ab_displ[iat];
     }
   }
-#endif
   tries++;
   return 0.0;
 }

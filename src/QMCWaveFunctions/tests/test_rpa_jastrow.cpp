@@ -14,11 +14,8 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "ParticleIO/ParticleLayoutIO.h"
@@ -34,7 +31,6 @@ namespace qmcplusplus
 TEST_CASE("RPA Jastrow", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -50,7 +46,7 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   ions_.R[1][2] = 0.0;
   SpeciesSet& source_species(ions_.getSpeciesSet());
   source_species.addSpecies("O");
-  ions_.RSoA = ions_.R;
+  ions_.setCoordinates(ions_.R);
   //ions_.resetGroups();
 
   elec_.setName("elec");
@@ -107,8 +103,6 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   // initialize SK
   elec_.createSK();
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
-
   xmltext = "<tmp> \
   <jastrow name=\"Jee\" type=\"Two-Body\" function=\"rpa\"/>\
 </tmp> ";
@@ -119,15 +113,13 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
 
   xmlNodePtr jas_node = xmlFirstElementChild(root);
   bool is_manager=false;
-  RPAJastrow* jas = new RPAJastrow(elec_, is_manager);
+  auto jas = std::make_unique<RPAJastrow>(elec_, is_manager);
   jas->put(root);
-
-  psi.addComponent(jas, "Jee");
 
   // update all distance tables
   elec_.update();
 
-  double logpsi = psi.evaluateLog(elec_);
-  REQUIRE(logpsi == Approx(-1.3327837613)); // note: number not validated
+  double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
+  REQUIRE(logpsi_real == Approx(-1.3327837613)); // note: number not validated
 }
 } // namespace qmcplusplus

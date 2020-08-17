@@ -6,7 +6,7 @@
 //
 // File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //
-// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_SHAREDWALKERSET_H
@@ -31,46 +31,40 @@
 
 namespace qmcplusplus
 {
-
 namespace afqmc
 {
-
 /*
  * Class that contains and handles walkers.
  * Implements communication, load balancing, and I/O operations.   
  * Walkers are always accessed through the handler.
  */
-class SharedWalkerSet: public WalkerSetBase<shared_allocator<ComplexType>,ComplexType*
-                                           > 
+class SharedWalkerSet : public WalkerSetBase<shared_allocator<ComplexType>, ComplexType*>
 {
-
-  public:
-
-  using Base = WalkerSetBase<shared_allocator<ComplexType>,ComplexType*
-                            >;
+public:
+  using Base = WalkerSetBase<shared_allocator<ComplexType>, ComplexType*>;
 
   /// constructor
-  SharedWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, 
-        RandomGenerator_t* r):
-                Base(tg_,cur,info,r,
-                     shared_allocator<ComplexType>{tg_.TG_local()},
-                     shared_allocator<ComplexType>{tg_.TG_local()})
-  {
-  }
+  SharedWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, RandomGenerator_t* r)
+      : Base(tg_,
+             cur,
+             info,
+             r,
+             shared_allocator<ComplexType>{tg_.TG_local()},
+             shared_allocator<ComplexType>{tg_.TG_local()})
+  {}
 
   /// destructor
   ~SharedWalkerSet() {}
 
   SharedWalkerSet(SharedWalkerSet const& other) = delete;
-  SharedWalkerSet(SharedWalkerSet&& other) = default;
+  SharedWalkerSet(SharedWalkerSet&& other)      = default;
   SharedWalkerSet& operator=(SharedWalkerSet const& other) = delete;
-  SharedWalkerSet& operator=(SharedWalkerSet&& other) = default;
-
+  SharedWalkerSet& operator=(SharedWalkerSet&& other) = delete;
 };
 
-}
+} // namespace afqmc
 
-}
+} // namespace qmcplusplus
 
 //#include "AFQMC/Walkers/SharedWalkerSet.icc"
 

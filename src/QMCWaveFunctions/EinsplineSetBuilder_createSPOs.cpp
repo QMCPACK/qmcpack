@@ -17,8 +17,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Numerics/e2iphi.h"
-#include "simd/vmath.hpp"
+#include "CPU/e2iphi.h"
+#include "CPU/SIMD/vmath.hpp"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
@@ -31,12 +31,12 @@
 #include <Utilities/ProgressReportEngine.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
 
 namespace qmcplusplus
 {
-void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
+void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks)
 {
   // 1. set a lot of internal parameters in the EinsplineSetBuilder class
   //  e.g. TileMatrix, UseRealOrbitals, DistinctTwists, MakeTwoCopies.
@@ -80,7 +80,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
   // orbitals themselves.                                        //
   /////////////////////////////////////////////////////////////////
   if (myComm->rank() == 0)
-    if (!ReadOrbitalInfo())
+    if (!ReadOrbitalInfo(skipChecks))
     {
       app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
       APP_ABORT("EinsplineSetBuilder::createSPOSet");
@@ -352,7 +352,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
       //set the flags for anti periodic boundary conditions
-      temp_OrbitalSet->HalfG = dynamic_cast<SplineAdoptorBase<double, 3>*>(OrbitalSet)->HalfG;
+      temp_OrbitalSet->HalfG = dynamic_cast<BsplineSet*>(OrbitalSet)->getHalfG();
       new_OrbitalSet         = temp_OrbitalSet;
     }
     else

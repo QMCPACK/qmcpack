@@ -3,13 +3,15 @@ import math
 import numpy
 import sys
 import time
+import os
 from pyscf import lib
 from pyscf.pbc import tools, df
 from afqmctools.hamiltonian.supercell import generate_grid_shifts, Partition
 from afqmctools.utils.parallel import bisect, fair_share
 from afqmctools.utils.io import (
         format_fixed_width_floats,
-        format_fixed_width_strings
+        format_fixed_width_strings,
+        to_qmcpack_complex
         )
 from afqmctools.utils.pyscf_utils import load_from_pyscf_chk
 
@@ -43,9 +45,11 @@ def alloc_helper(shape, dtype=numpy.float64, name='array', verbose=False):
         sys.exit()
 
 
+
 def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
                         verbose=True, cas=None, max_vecs=20,
-                        ortho_ao=False, exxdiv='ewald', nelec=None):
+                        ortho_ao=False, exxdiv='ewald', nelec=None,
+                        phdf=False):
     tstart = time.clock()
 
     # Unpack pyscf data.
@@ -65,7 +69,9 @@ def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
     qk_to_k2, kminus = construct_qk_maps(cell, kpts)
 
 
-    h5file = FileHandler(comm,hamil_file)
+    h5file = FileHandler(comm,hamil_file,"w",phdf)
+    h5file.grp = h5file.h5f.create_group("Hamiltonian")
+    h5file.grp_v2 = h5file.h5f.create_group("Hamiltonian/KPFactorized")
     if h5file.error:
         sys.exit()
     write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk,
@@ -83,22 +89,126 @@ def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
     if comm.rank == 0 and verbose:
         print(" # Time to perform Cholesky: {:13.8e} s.".format(time.clock()-tstart))
         sys.stdout.flush()
-    h5file.close()
+
+    comm.barrier()
+    if not phdf and comm.rank==0:
+        comm.barrier()
+        nkpts = len(kpts)
+        for rk in range(1,comm.size):
+            h5f2 = FileHandler(comm,"rank"+str(rk)+"_"+hamil_file,"r",False)
+            for Q in range(nkpts):
+                if Q > kminus[Q]:
+                    continue
+                Ldim = h5f2.h5f["/Hamiltonian/KPFactorized/Ldim"+str(Q)][:]
+                nkk = Ldim[0]
+                nij = Ldim[1]
+                kk0 = Ldim[2]
+                ij0 = Ldim[3]
+                ijN = Ldim[4]
+                numv = Ldim[5]
+                LQ2 = h5f2.h5f["/Hamiltonian/KPFactorized/L"+str(Q)][:]
+                LQ2 = numpy.reshape(LQ2,(nkk,nij*numv,2))
+                h5file.grp_v2["L"+str(Q)][kk0:kk0+nkk,ij0*numv:ijN*numv,:] = LQ2[:,:,:]
+            h5f2.close()
+            os.remove("rank"+str(rk)+"_"+hamil_file)
+        h5file.close()
+    else:
+        h5file.close()
+        comm.barrier()
+
+    comm.barrier()
+
+def write_rhoG_kpoints(comm, scf_data, hdf_file, Gcut,
+                        verbose=True, 
+                        ortho_ao=False, phdf=False):
+    tstart = time.clock()
+
+    # Unpack pyscf data.
+    # 1. core (1-body) Hamiltonian.
+    hcore = scf_data['hcore']
+    # 2. Rotation matrix to orthogonalised basis.
+    X = scf_data['X']
+    # 3. Pyscf cell object.
+    cell = scf_data['cell']
+    # 4. kpoints
+    kpts = scf_data['kpts']
+    # 5. MO occupancies.
+    Xocc = scf_data['Xocc']
+    # 6. Number of MOs per kpoint.
+    nmo_pk = scf_data['nmo_pk']
+    nao = cell.nao_nr()
+    qk_to_k2, kminus = construct_qk_maps(cell, kpts)
+
+
+    h5file = FileHandler(comm,hdf_file,"w",phdf)
+    h5file.grp = h5file.h5f.create_group("rhoG")
+    if h5file.error:
+        sys.exit()
+    write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk,
+                qk_to_k2, kminus, verbose=verbose, nelec=nelec)
+
+    solver = KPCholesky(comm, cell, kpts, 0, nmo_pk,
+                        qk_to_k2, kminus, gtol_chol=0,
+                        verbose=verbose)
+#    solver.run(comm, X, h5file)
+
+    comm.barrier()
+    if not phdf and comm.rank==0:
+        comm.barrier()
+        nkpts = len(kpts)
+        for rk in range(1,comm.size):
+            h5f2 = FileHandler(comm,"rank"+str(rk)+"_"+hdf_file,"r",False)
+            for Q in range(nkpts):
+                if Q > kminus[Q]:
+                    continue
+                Ldim = h5f2.h5f["/rhoG/dim"+str(Q)][:]
+                nkk = Ldim[0]
+                nij = Ldim[1]
+                kk0 = Ldim[2]
+                ij0 = Ldim[3]
+                ijN = Ldim[4]
+                numG = Ldim[5]
+                LQ2 = h5f2.h5f["/rhoG/rho"+str(Q)][:]
+#                LQ2 = numpy.reshape(LQ2,(nkk,nij*numv,2))
+#                h5file.grp["rho"+str(Q)][kk0:kk0+nkk,ij0*numv:ijN*numv,:] = LQ2[:,:,:]
+            h5f2.close()
+            os.remove("rank"+str(rk)+"_"+hdf_file)
+        h5file.close()
+    else:
+        h5file.close()
+        comm.barrier()
+
+    comm.barrier()
 
 
 class FileHandler:
-    def __init__(self, comm, filename):
-        try:
-            self.h5f = h5py.File(filename, "w",
-                               driver='mpio', comm=comm)
-            self.h5f.atomic = False
-            self.error = 0
-        except:
-            if comm.rank == 0:
-                print("Parallel hdf5 required.")
-            self.error= 1
-        self.grp = self.h5f.create_group("Hamiltonian")
-        self.grp_v2 = self.h5f.create_group("Hamiltonian/KPFactorized")
+    def __init__(self, comm, filename,ftype="w",phdf=False,
+                g1="Hamiltonian",g2="KPFactorized"):
+        self.phdf=phdf
+        if phdf:
+            try:
+                self.h5f = h5py.File(filename, ftype,
+                                   driver='mpio', comm=comm)
+                self.h5f.atomic = False
+                self.error = 0
+            except:
+                if comm.rank == 0:
+                    print("Parallel hdf5 required.")
+                self.error= 1
+        else:
+            try:
+                if comm.rank == 0:
+                    self.h5f = h5py.File(filename, ftype)
+                else:
+                    self.h5f = h5py.File("rank"+str(comm.rank)+"_"+filename, ftype)
+                self.error = 0
+            except:
+                if comm.rank == 0:
+                    print("Error creating hdf5 file.")
+                self.error= 1
+#        if ftype=="w":
+#            self.grp = self.h5f.create_group(g1)
+#            self.grp_v2 = self.h5f.create_group(g1+"/"+g2)
 
     def close(self):
         self.h5f.close()
@@ -118,18 +228,22 @@ def write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk, qk_to_k2, kminus,
 
     # zero electron energies, including madelung term
     if comm.rank == 0:
-        e0 = cell.energy_nuc()
+        e0 = nkpts * cell.energy_nuc()
         if exxdiv == 'ewald':
             madelung = tools.pbc.madelung(cell, kpts)
             emad = -0.5*nelectron*madelung
             e0 += emad
             if verbose:
-                print(" # Adding ewald correction to the energy: {}".format(emad))
+                print(" # Adding ewald correction to the energy:"
+                      " {}".format(emad))
         sys.stdout.flush()
 
     comm.barrier()
 
     dims_ = h5file.grp.create_dataset("dims", (8,), dtype=numpy.int32)
+    h5file.grp.create_dataset("ComplexIntegrals",
+                              data=numpy.array([1]),
+                              dtype=numpy.int32)
     et_ = h5file.grp.create_dataset("Energies", (2,), dtype=numpy.float64)
     kp_ = h5file.grp.create_dataset("KPoints", (nkpts,3), dtype=numpy.float64)
     nmo_pk_ = h5file.grp.create_dataset("NMOPerKP", (nkpts,), dtype=numpy.int32)
@@ -137,7 +251,7 @@ def write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk, qk_to_k2, kminus,
     kminus_ = h5file.grp.create_dataset("MinusK", (nkpts,), dtype=numpy.int32)
     if comm.rank == 0:
         dims_[:] = numpy.array([0, 0, nkpts, nmo_tot, nup, ndown, 0, 0])
-        et_[:] = numpy.array([e0*nkpts, 0])
+        et_[:] = numpy.array([e0, 0])
         kp_[:,:] = kpts[:,:]
         nmo_pk_[:] = nmo_pk[:]
         kminus_[:] = kminus[:]
@@ -477,17 +591,29 @@ class KPCholesky(object):
             comm.barrier()
             num_cholvecs[Q] = numv
 
-            LQ = h5file.grp_v2.create_dataset("L"+str(Q),
+            if h5file.phdf or comm.rank==0:
+                LQ = h5file.grp_v2.create_dataset("L"+str(Q),
                                               (nkpts,nmo_max*nmo_max*numv,2),
                                               dtype=numpy.float64)
-            # cholvecs[nkk,nij,maxvecs]
-            for kk in range(part.nkk):
-                T_ = cholvecs[kk,:,0:numv].real.copy()
-                T_ = numpy.reshape(T_,(-1))/math.sqrt(nkpts*1.0)
-                LQ[kk+part.kk0,part.ij0*numv:part.ijN*numv,0] = T_
-                T_ = cholvecs[kk,:,0:numv].imag.copy()
-                T_ = numpy.reshape(T_,(-1))/math.sqrt(nkpts*1.0)
-                LQ[kk+part.kk0,part.ij0*numv:part.ijN*numv,1] = T_
+                # cholvecs[nkk,nij,maxvecs]
+                for kk in range(part.nkk):
+                    T_ = to_qmcpack_complex(cholvecs[kk,:,0:numv].copy())
+                    T_ = numpy.reshape(T_,(-1,2))/math.sqrt(nkpts*1.0)
+                    LQ[kk+part.kk0,part.ij0*numv:part.ijN*numv,:] = T_
+                    T_ = None
+            else:
+                Ldim = h5file.grp_v2.create_dataset("Ldim"+str(Q),
+                                data=numpy.array([part.nkk,part.nij,part.kk0,
+                                                part.ij0,part.ijN,numv],dtype=numpy.int32))
+                LQ = h5file.grp_v2.create_dataset("L"+str(Q),
+                                              (part.nkk,part.nij*numv,2),
+                                              dtype=numpy.float64)
+                # cholvecs[nkk,nij,maxvecs]
+                for kk in range(part.nkk):
+                    T_ = to_qmcpack_complex(cholvecs[kk,:,0:numv].copy())
+                    T_ = numpy.reshape(T_,(-1,2))/math.sqrt(nkpts*1.0)
+                    LQ[kk,:,:] = T_
+                    T_ = None
             comm.barrier()
 
         h5file.grp.create_dataset("NCholPerKP", data=num_cholvecs)

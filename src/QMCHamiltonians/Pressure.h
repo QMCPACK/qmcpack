@@ -16,7 +16,8 @@
 #define QMCPLUSPLUS_BAREPRESSURE_H
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCDrivers/WalkerProperties.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "OhmmsData/ParameterSet.h"
 
@@ -29,8 +30,9 @@ namespace qmcplusplus
  where d is the dimension of space and /Omega is the volume.
 **/
 
-struct Pressure : public QMCHamiltonianBase
+struct Pressure : public OperatorBase
 {
+  using WP = WalkerProperties::Indexes;
   double pNorm;
   //     bool ZV;
   //     bool ZB;
@@ -51,7 +53,7 @@ struct Pressure : public QMCHamiltonianBase
 
   inline Return_t evaluate(ParticleSet& P)
   {
-    Value = 2.0 * P.PropertyList[LOCALENERGY] - P.PropertyList[LOCALPOTENTIAL];
+    Value = 2.0 * P.PropertyList[WP::LOCALENERGY] - P.PropertyList[WP::LOCALPOTENTIAL];
     Value *= pNorm;
     return 0.0;
   }
@@ -127,7 +129,7 @@ struct Pressure : public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new Pressure(qp); }
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new Pressure(qp); }
 };
 } // namespace qmcplusplus
 #endif

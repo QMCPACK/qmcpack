@@ -1,58 +1,68 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && clang++ `#-DNDEBUG` -O3 -std=c++14 -Wall -Wextra -Wpedantic -Wfatal-errors -D_TEST_MULTI_ADAPTORS_BLAS_SCAL -DADD_ $0x.cpp -o $0x.x -lblas && time $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// Alfredo A. Correa 2019 ©
+// © Alfredo A. Correa 2019-2020
 
-#ifndef MULTI_ADAPTORS_BLAS_DOT_HPP
-#define MULTI_ADAPTORS_BLAS_DOT_HPP
+#ifndef MULTI_ADAPTORS_BLAS_SCAL_HPP
+#define MULTI_ADAPTORS_BLAS_SCAL_HPP
 
 #include "../blas/core.hpp"
+#include "../../config/NODISCARD.hpp"
 
-namespace boost{
-namespace multi{
+namespace boost{namespace multi{
 namespace blas{
 
-template<class T, class It>
-void scal(T a, It first, It last){
-	assert(stride(first) == stride(last));
-	scal(std::distance(first, last), a, base(first), stride(first));
-}
+using core::scal;
 
-template<class T, class X1D>
-X1D&& scal(T a, X1D&& m){
-	assert( offset(m) == 0 );
-	scal(a, begin(m), end(m));
-	return std::forward<X1D>(m);
+template<class X1D, typename Elem = typename std::decay_t<X1D>::element_type>
+auto scal(Elem a, X1D&& m)
+->decltype(scal(size(m), &a, base(m), stride(m)), std::forward<X1D>(m)){
+	return scal(size(m), &a, base(m), stride(m)), std::forward<X1D>(m);}
+
+template<class X1D, typename Elem = typename X1D::element_type>
+NODISCARD("because last argument is const")
+auto scal(Elem a, X1D const& m){
+	return scal(a, m.decay());
 }
 
 }}}
 
-#if _TEST_MULTI_ADAPTORS_BLAS_SCAL
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_SCAL
+
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS scal"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
 
 #include "../../array.hpp"
-#include "../../utility.hpp"
 
-#include<complex>
-#include<cassert>
-#include<iostream>
-#include<numeric>
-#include<algorithm>
-
-using std::cout;
 namespace multi = boost::multi;
+namespace blas = multi::blas;
 
-int main(){
-	multi::array<double, 2> A = {
-		{1.,  2.,  3.,  4.},
-		{5.,  6.,  7.,  8.},
-		{9., 10., 11., 12.}
-	};
+BOOST_AUTO_TEST_CASE(multi_blas_scal_real){
+	{
+		multi::array<double, 2> A = {
+			{1.,  2.,  3.,  4.},
+			{5.,  6.,  7.,  8.},
+			{9., 10., 11., 12.}
+		};
 
-	using multi::blas::scal;
-	auto&& S = scal(2., A.rotated(1)[1]);
+		using blas::scal;
+		auto S = scal(2., rotated(A)[1]);
 
-	assert( A[2][1] == 20. );
-	assert( S[0] == 4. );
+		BOOST_REQUIRE( A[2][1] == 20 );
+		BOOST_REQUIRE( S[0] == 4 );
+	}
+	{
+		multi::array<double, 2> const A = {
+			{1.,  2.,  3.,  4.},
+			{5.,  6.,  7.,  8.},
+			{9., 10., 11., 12.}
+		};
+		using multi::blas::scal;
+		auto rA1_scaled = scal(2., A[1]);
+		BOOST_REQUIRE( size(rA1_scaled) == 4 );
+		BOOST_REQUIRE( rA1_scaled[1] == 12 );
+	}
 
 }
 

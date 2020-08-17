@@ -12,7 +12,7 @@
 
 #include "catch.hpp"
 
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 
 namespace qmcplusplus
 {

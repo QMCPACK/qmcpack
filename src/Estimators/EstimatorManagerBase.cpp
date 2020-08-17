@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -16,6 +16,7 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <functional>
 
 #include "Particle/MCWalkerConfiguration.h"
 #include "Estimators/EstimatorManagerBase.h"
@@ -28,6 +29,7 @@
 #include "Estimators/RMCLocalEnergyEstimator.h"
 #include "Estimators/CollectablesEstimator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "QMCDrivers/WalkerProperties.h"
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
@@ -52,36 +54,38 @@ enum
 
 //initialize the name of the primary estimator
 EstimatorManagerBase::EstimatorManagerBase(Communicate* c)
-    : RecordCount(0),
+    : MainEstimatorName("LocalEnergy"),
+      RecordCount(0),
       h_file(-1),
-      FieldWidth(20),
-      MainEstimatorName("LocalEnergy"),
       Archive(0),
       DebugArchive(0),
       myComm(0),
       MainEstimator(0),
       Collectables(0),
-      max4ascii(8)
+      max4ascii(8),
+      FieldWidth(20)
 {
   setCommunicator(c);
 }
 
 EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
-    : RecordCount(0),
-      h_file(-1),
-      FieldWidth(20),
-      MainEstimatorName(em.MainEstimatorName),
+    : MainEstimatorName(em.MainEstimatorName),
       Options(em.Options),
+      RecordCount(0),
+      h_file(-1),
       Archive(0),
       DebugArchive(0),
       myComm(0),
       MainEstimator(0),
       Collectables(0),
       EstimatorMap(em.EstimatorMap),
-      max4ascii(em.max4ascii)
+      max4ascii(em.max4ascii),
+      FieldWidth(20)
 {
   //inherit communicator
   setCommunicator(em.myComm);
+
+  // Here Estimators are ScalarEstimatorBase
   for (int i = 0; i < em.Estimators.size(); i++)
     Estimators.push_back(em.Estimators[i]->clone());
   MainEstimator = Estimators[EstimatorMap[MainEstimatorName]];
@@ -100,10 +104,13 @@ EstimatorManagerBase::~EstimatorManagerBase()
 
 void EstimatorManagerBase::setCommunicator(Communicate* c)
 {
+  // I think this is actually checking if this is the "Main Estimator"
   if (myComm && myComm == c)
     return;
   myComm = c ? c : OHMMS::Controller;
   //set the default options
+  // This is a flag to tell manager if there is more than one rank
+  // running walkers, its discovered by smelly query of myComm.
   Options.set(COLLECT, myComm->size() > 1);
   Options.set(MANAGE, myComm->rank() == 0);
   if (RemoteData.empty())
@@ -128,7 +135,8 @@ void EstimatorManagerBase::setCollectionMode(bool collect)
 /** reset names of the properties
  *
  * The number of estimators and their order can vary from the previous state.
- * Clear properties before setting up a new BlockAverage data list.
+ * reinitialized properties before setting up a new BlockAverage data list.
+ *
  */
 void EstimatorManagerBase::reset()
 {
@@ -174,6 +182,7 @@ void EstimatorManagerBase::start(int blocks, bool record)
   varAccumulator.clear();
   int nc = (Collectables) ? Collectables->size() : 0;
   BlockAverages.setValues(0.0);
+  // \todo Collectables should just have its own data structures not change the EMBS layout.
   AverageCache.resize(BlockAverages.size() + nc);
   SquaredAverageCache.resize(BlockAverages.size() + nc);
   PropertyCache.resize(BlockProperties.size());
@@ -289,7 +298,7 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
     Collectables->takeBlockAverage(AverageCache.begin(), SquaredAverageCache.begin());
   }
   if (collectall)
-    collectBlockAverages(1);
+    collectBlockAverages();
 }
 
 void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)
@@ -312,11 +321,10 @@ void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& e
     PropertyCache[i] *= tnorm;
   //for(int i=0; i<num_threads; ++i)
   //varAccumulator(est[i]->varAccumulator.mean());
-  collectBlockAverages(num_threads);
+  collectBlockAverages();
 }
 
-
-void EstimatorManagerBase::collectBlockAverages(int num_threads)
+void EstimatorManagerBase::collectBlockAverages()
 {
   if (Options[COLLECT])
   {

@@ -22,6 +22,7 @@
 #include <omp.h>
 
 #include "Concurrency/TasksOneToOne.hpp"
+#include "Platforms/Host/OutputManager.h"
 
 namespace qmcplusplus
 {
@@ -38,8 +39,9 @@ void TasksOneToOne<Threading::OPENMP>::operator()(F&& f, Args&&... args)
   const std::string nesting_error{"TasksOneToOne should not be used for nested openmp threading\n"};
   if (omp_get_level() > 0)
       throw std::runtime_error(nesting_error);
+  int nested_throw_count = 0;
   int throw_count = 0;
-#pragma omp parallel num_threads(num_threads_) reduction(+ : throw_count)
+#pragma omp parallel num_threads(num_threads_) reduction(+ : nested_throw_count, throw_count)
   {
     try
     {
@@ -48,13 +50,22 @@ void TasksOneToOne<Threading::OPENMP>::operator()(F&& f, Args&&... args)
     catch (const std::runtime_error& re)
     {
       if(nesting_error == re.what())
-          throw_count++;
+          ++nested_throw_count;
       else
-          throw(re);
+      {
+        app_warning() << re.what();
+        ++throw_count;
+      }
+    }
+    catch (...)
+    {
+      ++throw_count;
     }
   }
   if (throw_count > 0)
-    throw std::runtime_error("TasksOneToOne should not be used for nested openmp threading\n");
+    throw std::runtime_error("Unexpected exception thrown in threaded section");
+  else if (nested_throw_count > 0)
+    throw std::runtime_error(nesting_error);
 }
 
 } // namespace qmcplusplus

@@ -29,11 +29,12 @@
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/SymmetryOperations.h"
-#include "Numerics/Blasf.h"
 #include <sstream>
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
@@ -41,10 +42,10 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        WaveFunctionPool& ppool,
                                        Communicate* comm)
     : QMCDriver(w, psi, h, ppool, comm),
+      PtclPool(ptclPool),
       checkRatio("no"),
       checkClone("no"),
       checkHamPbyP("no"),
-      PtclPool(ptclPool),
       wftricks("no"),
       checkEloc("no"),
       checkBasic("yes"),
@@ -100,6 +101,10 @@ bool WaveFunctionTester::run()
   app_log() << "Starting a Wavefunction tester.  Additional information in " << fname << std::endl;
 
   put(qmcNode);
+
+  RandomGenerator_t* Rng1        = new RandomGenerator_t();
+  H.setRandomGenerator(Rng1);
+
   if (checkSlaterDetOption == "no")
     checkSlaterDet = false;
   if (checkRatio == "yes")
@@ -152,7 +157,7 @@ void WaveFunctionTester::runCloneTest()
     QMCHamiltonian* h_clone      = H.makeClone(*w_clone, *psi_clone);
     h_clone->setPrimary(false);
     int nat = W.getTotalNum();
-    MCWalkerConfiguration::PropertyContainer_t Properties;
+    MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);
     //pick the first walker
     MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
     //copy the properties of the working walker
@@ -215,7 +220,7 @@ void WaveFunctionTester::printEloc()
   //    std::cout <<"0: " <<source.R[0] << std::endl;
   //    std::cout <<"1: " <<source.R[1] << std::endl;
   //    std::cout <<"2: " <<source.R[2] << std::endl;
-  MCWalkerConfiguration::PropertyContainer_t Properties;
+  MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
   //copy the properties of the working walker
@@ -776,7 +781,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
 
 
-    RealType logpsi1 = orb->evaluateLog(W, G, L);
+    LogValueType logpsi1 = orb->evaluateLog(W, G, L);
 
     fail_log << "WaveFunctionComponent " << iorb << " " << orb->ClassName << " log psi = " << logpsi1 << std::endl;
 
@@ -790,12 +795,11 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       ParticleSet::SingleParticlePos_t zeroR;
       W.makeMove(it->index, zeroR);
 
-      RealType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
+      LogValueType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
 #if defined(QMC_COMPLEX)
-      RealType phase0  = orb->PhaseValue;
-      ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0, phase0);
+      ValueType logpsi(logpsi0.real(), logpsi0.imag());
 #else
-      ValueType logpsi = logpsi0;
+      ValueType logpsi = std::real(logpsi0);
 #endif
       logpsi_vals.push_back(logpsi);
       W.rejectMove(it->index);
@@ -823,12 +827,12 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
         ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
         ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
         DiracDeterminantBase* det = sd->Dets[isd];
-        RealType logpsi2          = det->evaluateLog(W, G, L); // this won't work with backflow
+        LogValueType logpsi2          = det->evaluateLog(W, G, L); // this won't work with backflow
         fail_log << "  Slater Determiant " << isd << " (for particles " << det->getFirstIndex() << " to "
                  << det->getLastIndex() << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
         // For now, just ignore values that too small.
-        if (logpsi2 < -40.0)
+        if (std::real(logpsi2) < -40.0)
         {
           ignore = true;
         }
@@ -840,12 +844,11 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           W.R[it->index] = it->r;
           W.update();
 
-          RealType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
+          LogValueType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
 #if defined(QMC_COMPLEX)
-          RealType phase0  = det->PhaseValue;
-          ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0, phase0);
+          ValueType logpsi(logpsi0.real(), logpsi0.imag());
 #else
-          ValueType logpsi = logpsi0;
+          ValueType logpsi = std::real(logpsi0);
 #endif
           logpsi_vals.push_back(logpsi);
 
@@ -1024,7 +1027,7 @@ void WaveFunctionTester::runBasicTest()
     RealType phase_p = Psi.getPhase();
     W.makeMove(iat, deltaR[iat]);
     //W.update();
-    RealType aratio    = Psi.ratio(W, iat);
+    ValueType aratio   = Psi.calcRatio(W, iat);
     RealType phaseDiff = Psi.getPhaseDiff();
     W.rejectMove(iat);
     Psi.rejectMove(iat);
@@ -1047,10 +1050,8 @@ void WaveFunctionTester::runBasicTest()
       dphase -= 2.0 * M_PI;
     ValueType ratDiff = std::complex<OHMMS_PRECISION>(ratioMag * std::cos(dphase), ratioMag * std::sin(dphase));
     // TODO - test complex ratio against a tolerance
-    fout << iat << " " << aratio * std::complex<OHMMS_PRECISION>(std::cos(phaseDiff), std::sin(phaseDiff)) / ratDiff
-         << " " << ratDiff << " " << aratio * std::complex<OHMMS_PRECISION>(std::cos(phaseDiff), std::sin(phaseDiff))
-         << std::endl;
-    fout << "     ratioMag " << aratio / ratioMag << " " << ratioMag << std::endl;
+    fout << iat << " " << aratio / ratDiff << " " << ratDiff << " " << aratio << std::endl;
+    fout << "     ratioMag " << std::abs(aratio) / ratioMag << " " << ratioMag << std::endl;
     fout << "     PhaseDiff " << phaseDiff / dphase << " " << phaseDiff << " " << dphase << std::endl;
 #else
     RealType ratDiff = std::exp(psi_m - psi_p) * std::cos(phase_m - phase_p);
@@ -1113,7 +1114,7 @@ void WaveFunctionTester::runRatioTest()
       Psi.copyFromBuffer(W,w_buffer);
       H.copyFromBuffer(W,w_buffer);
 //             Psi.evaluateLog(W);
-      RealType eold(thisWalker.Properties(LOCALENERGY));
+      RealType eold(thisWalker.Properties(WP::LOCALENERGY));
       RealType logpsi(thisWalker.Properties(LOGPSI));
       RealType emixed(eold), enew(eold);
       makeGaussRandom(deltaR);
@@ -1196,7 +1197,7 @@ void WaveFunctionTester::runRatioTest()
       Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
       //Psi.updateBuffer(W,w_buffer,true);
       Psi.copyFromBuffer(W,w_buffer);
-      RealType eold(thisWalker.Properties(LOCALENERGY));
+      RealType eold(thisWalker.Properties(WP::LOCALENERGY));
       RealType logpsi(thisWalker.Properties(LOGPSI));
       RealType emixed(eold), enew(eold);
       //mave a move
@@ -1303,8 +1304,8 @@ void WaveFunctionTester::runRatioTest2()
       W.loadWalker(thisWalker, true);
       Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
       Psi.copyFromBuffer(W, w_buffer);
-      RealType eold(thisWalker.Properties(LOCALENERGY));
-      RealType logpsi(thisWalker.Properties(LOGPSI));
+      RealType eold(thisWalker.Properties(WP::LOCALENERGY));
+      RealType logpsi(thisWalker.Properties(WP::LOGPSI));
       Psi.evaluateLog(W);
       ParticleSet::ParticleGradient_t realGrad(W.G);
       makeGaussRandom(deltaR);
@@ -1317,11 +1318,11 @@ void WaveFunctionTester::runRatioTest2()
           fout << realGrad[iat][sds] - grad_now[sds] << " ";
         PosType dr(Tau * deltaR[iat]);
         W.makeMove(iat, dr);
-        RealType ratio2 = Psi.ratioGrad(W, iat, grad_new);
+        ValueType ratio2 = Psi.calcRatioGrad(W, iat, grad_new);
         W.rejectMove(iat);
         Psi.rejectMove(iat);
         W.makeMove(iat, dr);
-        RealType ratio1 = Psi.ratio(W, iat);
+        ValueType ratio1 = Psi.calcRatio(W, iat);
         //Psi.rejectMove(iat);
         W.rejectMove(iat);
         fout << "  ratio1 = " << ratio1 << " ration2 = " << ratio2 << std::endl;
@@ -1381,7 +1382,7 @@ void WaveFunctionTester::runRatioV()
     {
       for(int nn=dt_ie->M[iat],iel=0; nn<dt_ie->M[iat+1]; nn++,iel++)
       {
-        register RealType r(dt_ie->r(nn));
+        RealType r(dt_ie->r(nn));
         if(r>Rmax) continue;
         randomize(sphere,(RealType)0.5);
         
@@ -1412,6 +1413,7 @@ void WaveFunctionTester::runRatioV()
 
 void WaveFunctionTester::runGradSourceTest()
 {
+   
   app_log() << " ===== runGradSourceTest =====\n";
   ParticleSetPool::PoolType::iterator p;
   for (p = PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
@@ -1427,7 +1429,7 @@ void WaveFunctionTester::runGradSourceTest()
   ValueType c2        = 1.0 / delta / delta;
   int nat             = W.getTotalNum();
   ParticleSet::ParticlePos_t deltaR(nat);
-  MCWalkerConfiguration::PropertyContainer_t Properties;
+  MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
   //copy the properties of the working walker
@@ -1575,7 +1577,7 @@ void WaveFunctionTester::runZeroVarianceTest()
   ParticleSet& source = *((*pit).second);
   int nat             = W.getTotalNum();
   ParticleSet::ParticlePos_t deltaR(nat);
-  MCWalkerConfiguration::PropertyContainer_t Properties;
+  MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
   //copy the properties of the working walker
@@ -1682,7 +1684,7 @@ void WaveFunctionTester::runDerivTest()
   app_log() << " ===== runDerivTest =====\n";
   app_log() << " Testing derivatives" << std::endl;
   int nat = W.getTotalNum();
-  MCWalkerConfiguration::PropertyContainer_t Properties;
+  MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
   //copy the properties of the working walker
@@ -1791,7 +1793,7 @@ void WaveFunctionTester::runDerivNLPPTest()
 
   app_log() << " Testing derivatives" << std::endl;
   int nat = W.getTotalNum();
-  MCWalkerConfiguration::PropertyContainer_t Properties;
+  MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
   //copy the properties of the working walker
@@ -2333,7 +2335,7 @@ void WaveFunctionTester::runNodePlot()
         W.convert2Cart(R_unit, R_cart);
         PosType dr(R_cart[0] - W.R[iat]);
         W.makeMove(iat, dr);
-        RealType aratio = Psi.ratio(W, iat);
+        ValueType aratio = Psi.calcRatio(W, iat);
         W.rejectMove(iat);
         Psi.rejectMove(iat);
         plot_out << aratio << ", ";

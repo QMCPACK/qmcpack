@@ -1,0 +1,112 @@
+\section{Specifying the simulation cell}
+\label{chap:simulationcell}
+
+The \ixml{simulationcell} block specifies the geometry of the cell, how the boundary conditions should be handled, and how ewald summation should be broken up.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l X }
+\hline
+\multicolumn{6}{l}{\texttt{simulationcell} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{qmcsystem}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{None}\\
+\multicolumn{2}{l}{attribute      :} & \multicolumn{4}{l}{}\\
+   &   \bfseries parameter name            & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+\hline
+   &   \texttt{lattice}  & 9 floats & any float & Must be specified & Specification of \\
+   &                     &        &             &                   & lattice vectors. \\
+   &   \texttt{bconds}   & string & ``p'' or ``n''  & ``n n n'' & Boundary conditions \\
+   &                     &        &             &           & for each axis. \\
+   &   \texttt{vacuum} & float & $\ge 1.0$ & 1.0        & Vacuum scale. \\
+   &   \texttt{LR\_dim\_cutoff} & float & float & 15        & Ewald breakup distance. \\
+   &   \texttt{LR\_tol} & float & float & 3e-4        & Tolerance in Ha for Ewald ion-ion energy per atom. \\
+\hline
+\end{tabularx}
+\end{center}
+\end{table}
+
+An example of a \ixml{simulationcell} block is given below:
+\begin{lstlisting}[style=QMCPXML]
+  <simulationcell>
+    <parameter name="lattice">
+      3.8       0.0       0.0
+      0.0       3.8       0.0
+      0.0       0.0       3.8
+    </parameter>
+    <parameter name="bconds">
+       p p p
+    </parameter>
+    <parameter name="LR_dim_cutoff"> 20 </parameter>
+  </simulationcell>
+\end{lstlisting}
+
+Here, a cubic cell 3.8 bohr on a side will be used.
+This simulation will use periodic boundary conditions, and the maximum
+$k$ vector will be $20/r_{wigner-seitz}$ of the cell.
+
+
+\subsection{Lattice}
+The cell is specified using 3 lattice vectors.
+
+
+\subsection{Boundary conditions}
+QMCPACK offers the capability to use a mixture of open and periodic boundary conditions.
+The \ixml{bconds} parameter expects a single string of three characters separated by
+spaces, \textit{e.g.} ``p p p'' for purely periodic boundary conditions. These characters control
+the behavior of the $x$, $y$, and $z$, axes, respectively. Non periodic directions must be placed after the periodic ones.
+Examples of valid \ixml{bconds} include:
+
+\begin{description}
+\item[``p p p''] Periodic boundary conditions. Corresponds to a 3D crystal.
+\item[``p p n''] Slab geometry. Corresponds to a 2D crystal.
+\item[``p n n''] Wire geometry. Corresponds to a 1D crystal.
+\item[``n n n''] Open boundary conditions. Corresponds to an isolated molecule in a vacuum.
+\end{description}
+
+\subsection{Vacuum}
+The vacuum option allows adding a vacuum region in slab or wire boundary conditions
+(\ixml{bconds= p p n} or \ixml{bconds= p n n}, respectively). The main use is
+to save memory with spline or plane-wave basis trial wavefunctions, because no basis
+functions are required inside the vacuum region. For example, a large vacuum region
+can be added above and below a graphene sheet without having to generate the trial
+wavefunction in such a large box or to have as many splines as would otherwise
+be required. Note that the trial wavefunction must still be generated in a
+large enough box to sufficiently reduce periodic interactions in the underlying
+electronic structure calculation.
+
+With the vacuum option, the box used for Ewald summation increases along the axis labeled \ixml{n} by a factor of \ixml{vacuum}.
+Note that all the particles remain in the original box without altering their positions. i.e. Bond lengths are not changed by this option.
+The default value is 1, no change to the specified axes.
+
+An example of a \ixml{simulationcell} block using \ixml{vacuum} is given below.
+The size of the box along the z-axis increases from 12 to 18 by the vacuum scale of 1.5.
+\begin{lstlisting}[style=QMCPXML]
+  <simulationcell>
+    <parameter name="lattice">
+      3.8       0.0       0.0
+      0.0       3.8       0.0
+      0.0       0.0      12.0
+    </parameter>
+    <parameter name="bconds">
+       p p n
+    </parameter>
+    <parameter name="vacuum"> 1.5 </parameter>
+    <parameter name="LR_dim_cutoff"> 20 </parameter>
+  </simulationcell>
+\end{lstlisting}
+
+\subsection{LR\_dim\_cutoff}
+When using periodic boundary conditions direct calculation of the Coulomb energy is
+not well behaved. As a result, QMCPACK uses an optimized Ewald summation technique
+to compute the Coulomb interaction.\cite{Natoli1995}
+
+In the Ewald summation, the energy is broken into short- and long-ranged terms.
+The short-ranged term is computed directly in real space, while the long-ranged term is computed in reciprocal space.
+\ixml{LR_dim_cutoff} controls where the short-ranged term ends and the long-ranged term begins.
+The real-space cutoff, reciprocal-space cutoff, and \ixml{LR_dim_cutoff} are related via:
+\begin{equation}
+\mathrm{LR\_dim\_cutoff} = r_{c} \times k_{c}
+\end{equation}
+where $r_{c}$ is the Wigner-Seitz radius, and $k_{c}$ is the length of the maximum $k$-vector used in the long-ranged term. Larger
+values of \ixml{LR_dim_cutoff} increase the accuracy of the evaluation. A value of 15 tends to be conservative.

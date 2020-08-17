@@ -24,7 +24,6 @@
   */
 namespace qmcplusplus
 {
-//int WaveFunctionComponentBuilder::print_level=1;
 
 std::string WaveFunctionComponentBuilder::wfs_tag = "wavefunction";
 
@@ -33,8 +32,6 @@ std::string WaveFunctionComponentBuilder::param_tag = "parameter";
 std::string WaveFunctionComponentBuilder::dtable_tag = "distancetable";
 
 std::string WaveFunctionComponentBuilder::jastrow_tag = "jastrow";
-
-std::string WaveFunctionComponentBuilder::fdlrwfn_tag = "fdlrwfn";
 
 std::string WaveFunctionComponentBuilder::detset_tag = "determinantset";
 
@@ -50,10 +47,6 @@ std::string WaveFunctionComponentBuilder::sposet_tag = "sposet";
 
 std::string WaveFunctionComponentBuilder::basisset_tag = "basisset";
 
-std::string WaveFunctionComponentBuilder::basis_tag = "basis";
-
-std::string WaveFunctionComponentBuilder::basisfunc_tag = "phi";
-
 std::string WaveFunctionComponentBuilder::ionorb_tag = "ionwf";
 
 std::string WaveFunctionComponentBuilder::backflow_tag = "backflow";
@@ -62,9 +55,4 @@ std::string WaveFunctionComponentBuilder::multisd_tag = "multideterminant";
 
 std::string WaveFunctionComponentBuilder::sposcanner_tag = "spo_scanner";
 
-WaveFunctionComponentBuilder::WaveFunctionComponentBuilder(ParticleSet& p, TrialWaveFunction& psi)
-    : MPIObjectBase(psi.getCommunicator()), targetPtcl(p), targetPsi(psi), myNode(NULL)
-{}
-
-WaveFunctionComponentBuilder::~WaveFunctionComponentBuilder() {}
 } // namespace qmcplusplus

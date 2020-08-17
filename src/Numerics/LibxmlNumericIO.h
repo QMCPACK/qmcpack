@@ -21,7 +21,7 @@
 /** assign std::vector<T> from a node. Create a temporary vector and make assignment.
  *\param a reference std::vector<T>
  *\param cur current node to which a content is copied
- *\return ture if successful
+ *\return true if successful
  */
 template<class T>
 inline bool putContent(qmcplusplus::Vector<T>& a, xmlNodePtr cur)

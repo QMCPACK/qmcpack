@@ -10,7 +10,7 @@
 // File created by: Luning Zhao, zhaoln@berkeley.edu, University of California, Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCDrivers/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
@@ -32,7 +32,7 @@ int QMCCostFunction::total_samples()
 /// \brief  Computes the cost function using the LMYEngine
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-QMCCostFunction::Return_rt QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj)
+QMCCostFunction::Return_rt QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine<ValueType>* EngineObj)
 {
   // get total number of samples
   const int m = this->total_samples();

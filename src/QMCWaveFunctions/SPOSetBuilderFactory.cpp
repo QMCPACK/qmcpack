@@ -20,15 +20,14 @@
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
 #if OHMMS_DIM == 3
-#if defined(ENABLE_SOA)
-#include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
-#else
+#include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
+
 #if !defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/MolecularSPOBuilder.h"
+#include "QMCWaveFunctions/RotatedSPOs.h"
 #endif
+
+#if defined(QMC_COMPLEX)
+#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
 #endif
 
 #if defined(HAVE_EINSPLINE)
@@ -36,7 +35,6 @@
 #endif
 #endif
 #include "QMCWaveFunctions/CompositeSPOSet.h"
-#include "QMCWaveFunctions/OptimizableSPOBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
@@ -109,15 +107,13 @@ void write_spo_builders(const std::string& pad)
  * \param psi reference to the wavefunction
  * \param ions reference to the ions
  */
-SPOSetBuilderFactory::SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
-    : WaveFunctionComponentBuilder(els, psi), ptclPool(psets)
+SPOSetBuilderFactory::SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, PtclPoolType& psets)
+    : MPIObjectBase(comm), targetPtcl(els), ptclPool(psets)
 {
   ClassName = "SPOSetBuilderFactory";
 }
 
 SPOSetBuilderFactory::~SPOSetBuilderFactory() { DEBUG_MEMORY("SPOSetBuilderFactory::~SPOSetBuilderFactory"); }
-
-bool SPOSetBuilderFactory::put(xmlNodePtr cur) { return true; }
 
 SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 {
@@ -181,12 +177,16 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     app_log() << "Harmonic Oscillator SPO set" << std::endl;
     bb = new SHOSetBuilder(targetPtcl, myComm);
   }
-  else if (type == "linearopt")
-  {
-    //app_log()<<"Optimizable SPO set"<< std::endl;
-    bb = new OptimizableSPOBuilder(targetPtcl, ptclPool, myComm, rootNode);
-  }
 #if OHMMS_DIM == 3
+  else if (type == "spinorbspline")
+  {
+    #ifdef QMC_COMPLEX
+    app_log() << "Einspline Spinor Set\n";
+    bb = new EinsplineSpinorSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
+    #else
+    PRE.error("Use of einspline spinors requires QMC_COMPLEX=1.  Rebuild with this option");
+    #endif
+  }
   else if (type.find("spline") < type.size())
   {
     name = type_in;
@@ -206,29 +206,7 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
       PRE.error("Missing basisset/@source.", true);
     else
       ions = (*pit).second;
-#if defined(ENABLE_SOA)
     bb = new LCAOrbitalBuilder(targetPtcl, *ions, myComm, rootNode);
-#else
-#if defined(QMC_COMPLEX)
-    PRE.error("Complex molecular orbitals not supported by AoS builds!", true);
-#else
-    if (transformOpt == "yes")
-    {
-      app_log() << "Using MolecularSPOBuilder<NGOBuilder>" << std::endl;
-      bb = new MolecularSPOBuilder<NGOBuilder>(targetPtcl, *ions, myComm, cuspC == "yes", cuspInfo, MOH5Ref);
-    }
-    else
-    {
-      if (cuspC == "yes")
-        app_log() << " ****** Cusp Correction algorithm is only implemented in combination with numerical radial "
-                     "orbitals. Use transform=yes to enable this option. \n";
-      if (keyOpt == "GTO")
-        bb = new MolecularSPOBuilder<GTOBuilder>(targetPtcl, *ions, myComm);
-      else if (keyOpt == "STO")
-        bb = new MolecularSPOBuilder<STOBuilder>(targetPtcl, *ions, myComm);
-    }
-#endif //QMC_COMPLEX
-#endif
   }
 #endif //OHMMS_DIM==3
   PRE.flush();
@@ -254,10 +232,12 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   std::string bname("");
   std::string sname("");
   std::string type("");
+  std::string rotation("no");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(bname, "basisset");
   aAttrib.add(sname, "name");
   aAttrib.add(type, "type");
+  aAttrib.add(rotation, "optimize");
   //aAttrib.put(rcur);
   aAttrib.put(cur);
 
@@ -287,7 +267,31 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   if (bb)
   {
     app_log() << "  Building SPOSet '" << sname << "' with '" << bname << "' basis set." << std::endl;
-    return bb->createSPOSet(cur);
+    SPOSet* spo     = bb->createSPOSet(cur);
+    spo->objectName = sname;
+    if (rotation == "yes")
+    {
+#ifdef QMC_COMPLEX
+      app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
+      abort();
+#else
+      auto* rot_spo   = new RotatedSPOs(spo);
+      xmlNodePtr tcur = cur->xmlChildrenNode;
+      while (tcur != NULL)
+      {
+        std::string cname((const char*)(tcur->name));
+        if (cname == "opt_vars")
+        {
+          rot_spo->params_supplied = true;
+          putContent(rot_spo->params, tcur);
+        }
+        tcur = tcur->next;
+      }
+      spo = rot_spo;
+      spo->objectName = sname;
+#endif
+    }
+    return spo;
   }
   else
   {
@@ -331,5 +335,6 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
     APP_ABORT("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
 }
 
+std::string SPOSetBuilderFactory::basisset_tag = "basisset";
 
 } // namespace qmcplusplus

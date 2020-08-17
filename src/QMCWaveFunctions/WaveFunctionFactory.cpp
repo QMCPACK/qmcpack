@@ -22,12 +22,8 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
-#include "QMCWaveFunctions/IonOrbitalBuilder.h"
+#include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"
 #include "QMCWaveFunctions/ExampleHeBuilder.h"
-
-#if !defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/FDLRWfn.h"
-#endif
 
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
@@ -88,8 +84,8 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     std::string cname((const char*)(cur->name));
     if (cname == "sposet_builder")
     {
-      SPOSetBuilderFactory basisFactory(*targetPtcl, *targetPsi, ptclPool);
-      basisFactory.build_sposet_collection(cur);
+      SPOSetBuilderFactory factory(myComm, *targetPtcl, ptclPool);
+      factory.build_sposet_collection(cur);
     }
     else if (cname == WaveFunctionComponentBuilder::detset_tag)
     {
@@ -123,39 +119,40 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     }
     else if (cname == WaveFunctionComponentBuilder::jastrow_tag)
     {
-      WaveFunctionComponentBuilder* jbuilder = new JastrowBuilder(*targetPtcl, *targetPsi, ptclPool);
-      success                                = jbuilder->put(cur);
+      WaveFunctionComponentBuilder* jbuilder = new JastrowBuilder(myComm, *targetPtcl, ptclPool);
+      targetPsi->addComponent(jbuilder->buildComponent(cur), WaveFunctionComponentBuilder::jastrow_tag);
+      success = true;
       addNode(jbuilder, cur);
     }
-    else if (cname == WaveFunctionComponentBuilder::fdlrwfn_tag)
+    else if (cname == "fdlrwfn")
     {
-#ifdef QMC_COMPLEX
-      APP_ABORT("FDLR wave functions are not implemented with QMC_COMPLEX enabled.");
-#else
-      success = addFDLRTerm(cur);
-#endif
+      APP_ABORT("FDLR wave functions are not currently supported.");
     }
     else if (cname == WaveFunctionComponentBuilder::ionorb_tag)
     {
-      IonOrbitalBuilder* builder = new IonOrbitalBuilder(*targetPtcl, *targetPsi, ptclPool);
-      success                    = builder->put(cur);
+      LatticeGaussianProductBuilder* builder = new LatticeGaussianProductBuilder(myComm, *targetPtcl, ptclPool);
+      targetPsi->addComponent(builder->buildComponent(cur), WaveFunctionComponentBuilder::ionorb_tag);
+      success = true;
       addNode(builder, cur);
     }
     else if ((cname == "Molecular") || (cname == "molecular"))
     {
       APP_ABORT("  Removed Helium Molecular terms from qmcpack ");
+      success = false;
     }
     else if (cname == "example_he")
     {
-      WaveFunctionComponentBuilder* exampleHe_builder = new ExampleHeBuilder(*targetPtcl, *targetPsi, ptclPool);
-      success                                         = exampleHe_builder->put(cur);
+      WaveFunctionComponentBuilder* exampleHe_builder = new ExampleHeBuilder(myComm, *targetPtcl, ptclPool);
+      targetPsi->addComponent(exampleHe_builder->buildComponent(cur), "example_he");
+      success = true;
       addNode(exampleHe_builder, cur);
     }
 #if !defined(QMC_COMPLEX) && OHMMS_DIM == 3
     else if (cname == "agp")
     {
-      AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(*targetPtcl, *targetPsi, ptclPool);
-      success                           = agpbuilder->put(cur);
+      AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(myComm, *targetPtcl, ptclPool);
+      targetPsi->addComponent(agpbuilder->buildComponent(cur), "agp");
+      success = true;
       addNode(agpbuilder, cur);
     }
 #endif
@@ -190,110 +187,22 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
   if (orbtype == "electron-gas")
   {
 #if defined(QMC_COMPLEX)
-    detbuilder = new ElectronGasComplexOrbitalBuilder(*targetPtcl, *targetPsi);
+    detbuilder = new ElectronGasComplexOrbitalBuilder(myComm, *targetPtcl);
 #else
-    detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl, *targetPsi);
+    detbuilder = new ElectronGasOrbitalBuilder(myComm, *targetPtcl);
 #endif
   }
   else if (orbtype == "PWBasis" || orbtype == "PW" || orbtype == "pw")
   {
-    detbuilder = new PWOrbitalBuilder(*targetPtcl, *targetPsi, ptclPool);
+    detbuilder = new PWOrbitalBuilder(myComm, *targetPtcl, ptclPool);
   }
   else
-    detbuilder = new SlaterDetBuilder(*targetPtcl, *targetPsi, ptclPool);
-  detbuilder->put(cur);
+    detbuilder = new SlaterDetBuilder(myComm, *targetPtcl, *targetPsi, ptclPool);
+  targetPsi->addComponent(detbuilder->buildComponent(cur), "SlaterDet");
   addNode(detbuilder, cur);
   return true;
 }
 
-#ifndef QMC_COMPLEX
-bool WaveFunctionFactory::addFDLRTerm(xmlNodePtr cur)
-{
-  bool opt_x = false, opt_d = false, singlet = false, triplet = false;
-
-  // Loop over all XML child tags. These should contain filenames for XML
-  // files which specify the "x" and "d" parts of the FDLR wave function.
-  for (xmlNodePtr cur_child = cur->children; cur_child != NULL; cur_child = cur_child->next)
-  {
-    std::string cname_child((const char*)cur_child->name);
-    if (cname_child == "include")
-    {
-      // Find the names of the files, specified with the "wfn_x_href" and
-      // "wfn_d_href" variables in the tag.
-      const XMLAttrString wfn_x(cur_child, "wfn_x_href");
-      const XMLAttrString wfn_d(cur_child, "wfn_d_href");
-
-      if (wfn_x.empty())
-        throw std::runtime_error("wfn_x not provided for FDLR wave function.");
-      if (wfn_d.empty())
-        throw std::runtime_error("wfn_d not provided for FDLR wave function.");
-
-      // Lookup optional input options.
-      OhmmsAttributeSet a;
-      std::string opt_x_str, opt_d_str;
-      std::string singlet_str, triplet_str;
-
-      a.add(opt_x_str, "opt_x");
-      a.add(opt_d_str, "opt_d");
-      a.add(singlet_str, "singlet");
-      a.add(triplet_str, "triplet");
-      a.put(cur_child);
-
-      if (opt_x_str == "yes")
-        opt_x = true;
-      if (opt_d_str == "yes")
-        opt_d = true;
-      if (singlet_str == "yes")
-        singlet = true;
-      if (triplet_str == "yes")
-        triplet = true;
-
-      if (triplet && singlet)
-        throw std::runtime_error("Both singlet and triplet symmetry requested simultaneously.");
-
-      // Objects for the new XML files.
-      Libxml2Document* doc_x = new Libxml2Document();
-      Libxml2Document* doc_d = new Libxml2Document();
-      // Try parsing the files...
-      bool success_read_x = doc_x->parse(wfn_x);
-      if (!success_read_x)
-        throw std::runtime_error("File provided for wfn_x in invalid.");
-      bool success_read_d = doc_d->parse(wfn_d);
-      if (!success_read_d)
-        throw std::runtime_error("File provided for wfn_d in invalid.");
-
-      // Create a new WaveFunctionfactory objects, for building the parts
-      // of the FDLR wave function's two TrialWaveFunction objects.
-      WaveFunctionFactory* psiFactoryWfn_x = new WaveFunctionFactory(targetPtcl, ptclPool, myComm);
-      psiFactoryWfn_x->setName("psi_wfn_x");
-      WaveFunctionFactory* psiFactoryWfn_d = new WaveFunctionFactory(targetPtcl, ptclPool, myComm);
-      psiFactoryWfn_d->setName("psi_wfn_d");
-
-      // Try building the TrialWaveFunction objects themselves.
-      app_log() << " Creating WavefunctionFactory for " << psiFactoryWfn_x->getName() << std::endl;
-      bool success_fac_x = psiFactoryWfn_x->put(doc_x->getRoot());
-      app_log() << " Creating WavefunctionFactory for " << psiFactoryWfn_d->getName() << std::endl;
-      bool success_fac_d = psiFactoryWfn_d->put(doc_d->getRoot());
-
-      if (!success_fac_x)
-        throw std::runtime_error("Creation of FDLR wavefunction for x was unsuccessful.");
-      if (!success_fac_d)
-        throw std::runtime_error("Creation of FDLR wavefunction for d was unsuccessful.");
-
-      // Create the FDLR wave function object, which holds the above created
-      // TrialWaveFunction objects.
-      FDLRWfn* fdlr_wfn = new FDLRWfn(psiFactoryWfn_d->targetPsi, psiFactoryWfn_x->targetPsi, *targetPtcl, opt_x, opt_d,
-                                      singlet, triplet);
-      targetPsi->addComponent(fdlr_wfn, "FDLRWfn");
-
-      delete doc_x;
-      delete doc_d;
-    } // if subtag's name is "include"
-  }   // Over all subtags of fdlrwfn_tag
-
-  return true;
-}
-#endif
 
 bool WaveFunctionFactory::addNode(WaveFunctionComponentBuilder* b, xmlNodePtr cur)
 {

@@ -12,7 +12,7 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_DTDIMPL_AA_H
 #define QMCPLUSPLUS_DTDIMPL_AA_H
-#include "simd/algorithm.hpp"
+#include "CPU/SIMD/algorithm.hpp"
 
 namespace qmcplusplus
 {
@@ -22,7 +22,17 @@ namespace qmcplusplus
 template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableData
 {
+  ///number of targets with padding
   int Ntargets_padded;
+
+  ///actual memory for displacements_
+  aligned_vector<RealType> memory_pool_displs_;
+
+  /// old distances
+  DistRow old_r_;
+
+  /// old displacements
+  DisplRow old_dr_;
 
   SoaDistanceTableAA(ParticleSet& target) : DTD_BConds<T, D, SC>(target.Lattice), DistanceTableData(target, target)
   {
@@ -43,41 +53,64 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   void resize(int n)
   {
     N_sources = N_targets = n;
-    Ntargets_padded                             = getAlignedSize<T>(n);
-    Distances.resize(N_targets, Ntargets_padded);
-    const size_t total_size = compute_size(N_targets);
-    memoryPool.resize(total_size * D);
-    Displacements.resize(N_targets);
-    for (int i = 0; i < N_targets; ++i)
-      Displacements[i].attachReference(i, total_size, memoryPool.data() + compute_size(i));
 
-    // The padding of Temp_r and Temp_dr is necessary for the memory copy in the update function
-    // Temp_r is padded explicitly while Temp_dr is padded internally
-    Temp_r.resize(Ntargets_padded);
-    Temp_dr.resize(N_targets);
+    // initialize memory containers and views
+    Ntargets_padded         = getAlignedSize<T>(n);
+    const size_t total_size = compute_size(N_targets);
+    memory_pool_displs_.resize(total_size * D);
+    distances_.resize(N_targets);
+    displacements_.resize(N_targets);
+    for (int i = 0; i < N_targets; ++i)
+    {
+      distances_[i].resize(Ntargets_padded);
+      displacements_[i].attachReference(i, total_size, memory_pool_displs_.data() + compute_size(i));
+    }
+
+    old_r_.resize(N_targets);
+    old_dr_.resize(N_targets);
+    // The padding of temp_r_ and temp_dr_ is necessary for the memory copy in the update function
+    // temp_r_ is padded explicitly while temp_dr_ is padded internally
+    temp_r_.resize(Ntargets_padded);
+    temp_dr_.resize(N_targets);
   }
+
+  const DistRow& getOldDists() const { return old_r_; }
+  const DisplRow& getOldDispls() const { return old_dr_; }
 
   inline void evaluate(ParticleSet& P)
   {
     constexpr T BigR = std::numeric_limits<T>::max();
-    //P.RSoA.copyIn(P.R);
     for (int iat = 0; iat < N_targets; ++iat)
     {
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.RSoA, Distances[iat], Displacements[iat], 0, N_targets, iat);
-      Distances[iat][iat] = BigR; //assign big distance
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), distances_[iat].data(),
+                                             displacements_[iat], 0, N_targets, iat);
+      distances_[iat][iat] = BigR; //assign big distance
     }
   }
 
-  inline void evaluate(ParticleSet& P, IndexType jat)
-  {
-    DTD_BConds<T, D, SC>::computeDistances(P.R[jat], P.RSoA, Distances[jat], Displacements[jat], 0, N_targets, jat);
-    Distances[jat][jat] = std::numeric_limits<T>::max(); //assign a big number
-  }
-
   ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew)
+  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
-    DTD_BConds<T, D, SC>::computeDistances(rnew, P.RSoA, Temp_r.data(), Temp_dr, 0, N_targets, P.activePtcl);
+    DTD_BConds<T, D, SC>::computeDistances(rnew, P.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
+                                           N_targets, P.activePtcl);
+    // set up old_r_ and old_dr_ for moves may get accepted.
+    if (prepare_old)
+    {
+      //recompute from scratch
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), old_r_.data(), old_dr_,
+                                             0, N_targets, iat);
+      old_r_[iat] = std::numeric_limits<T>::max(); //assign a big number
+
+      // If the full table is not ready all the time, overwrite the current value.
+      // If this step is missing, DT values can be undefined in case a move is rejected.
+      if (!need_full_table_)
+      {
+        //copy row
+        std::copy_n(old_r_.data(), iat, distances_[iat].data());
+        for (int idim = 0; idim < D; ++idim)
+          std::copy_n(old_dr_.data(idim), iat, displacements_[iat].data(idim));
+      }
+    }
   }
 
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
@@ -87,43 +120,52 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     if (newpos)
     {
       for (int jat = 0; jat < N_targets; ++jat)
-        if (Temp_r[jat] < min_dist && jat != iat)
+        if (temp_r_[jat] < min_dist && jat != iat)
         {
-          min_dist = Temp_r[jat];
+          min_dist = temp_r_[jat];
           index    = jat;
         }
       if (index >= 0)
-        dr = Temp_dr[index];
+        dr = temp_dr_[index];
     }
     else
     {
       for (int jat = 0; jat < N_targets; ++jat)
-        if (Distances[iat][jat] < min_dist && jat != iat)
+        if (distances_[iat][jat] < min_dist && jat != iat)
         {
-          min_dist = Distances[iat][jat];
+          min_dist = distances_[iat][jat];
           index    = jat;
         }
       if (index >= 0)
-        dr = Displacements[iat][index];
+        dr = displacements_[iat][index];
     }
     r = min_dist;
     return index;
   }
 
-  /** After accepting the iat-th particle, update the iat-th row of Distances and Displacements.
+  /** After accepting the iat-th particle, update the iat-th row of distances_ and displacements_.
    * Since the upper triangle is not needed in the later computation,
    * only the [0,iat-1) columns need to save the new values.
    * The memory copy goes up to the padded size only for better performance.
    */
-  inline void update(IndexType iat)
+  inline void update(IndexType iat, bool partial_update)
   {
-    if (iat == 0)
-      return;
     //update by a cache line
     const int nupdate = getAlignedSize<T>(iat);
-    std::copy_n(Temp_r.data(), nupdate, Distances[iat]);
+    //copy row
+    std::copy_n(temp_r_.data(), nupdate, distances_[iat].data());
     for (int idim = 0; idim < D; ++idim)
-      std::copy_n(Temp_dr.data(idim), nupdate, Displacements[iat].data(idim));
+      std::copy_n(temp_dr_.data(idim), nupdate, displacements_[iat].data(idim));
+    // This is an optimization to reduce update >iat rows during p-by-p forward move when no consumer needs full table.
+    if (need_full_table_ || !partial_update)
+    {
+      //copy column
+      for (size_t i = iat + 1; i < N_targets; ++i)
+      {
+        distances_[i][iat]     = temp_r_[i];
+        displacements_[i](iat) = -temp_dr_[i];
+      }
+    }
   }
 };
 } // namespace qmcplusplus

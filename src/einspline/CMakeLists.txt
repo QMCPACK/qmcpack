@@ -40,9 +40,12 @@ IF(QMC_CUDA)
     bspline_create_cuda.cu
     )
   CUDA_ADD_LIBRARY(einspline ${SRCS})
-  ELSE()
+  TARGET_LINK_LIBRARIES(einspline PRIVATE platform_device)
+ELSE(QMC_CUDA)
   ADD_LIBRARY(einspline ${SRCS})
-ENDIF()
+ENDIF(QMC_CUDA)
+
+TARGET_COMPILE_DEFINITIONS(einspline INTERFACE "HAVE_EINSPLINE")
 
 #ADD_EXECUTABLE(time_multi time_multi_new.c)
 #target_link_libraries(time_multi einspline)

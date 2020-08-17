@@ -15,6 +15,7 @@
 
 #include "Platforms/sysutil.h"
 #include "QMCDrivers/CorrelatedSampling/CSUpdateBase.h"
+#include "QMCDrivers/WalkerProperties.h"
 #include "Estimators/CSEnergyEstimator.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "Utilities/IteratorUtility.h"
@@ -22,6 +23,9 @@
 
 namespace qmcplusplus
 {
+
+using WP = WalkerProperties::Indexes;
+
 CSUpdateBase::CSUpdateBase(MCWalkerConfiguration& w,
                            std::vector<TrialWaveFunction*>& psipool,
                            std::vector<QMCHamiltonian*>& hpool,
@@ -200,8 +204,8 @@ void CSUpdateBase::initCSWalkers(WalkerIter_t it, WalkerIter_t it_end, bool rese
     {
       logpsi[ipsi]                        = Psi1[ipsi]->evaluateLog(W);
       Psi1[ipsi]->G                       = W.G;
-      thisWalker.Properties(ipsi, LOGPSI) = logpsi[ipsi];
-      RealType e = thisWalker.Properties(ipsi, LOCALENERGY) = H1[ipsi]->evaluate(W);
+      thisWalker.Properties(ipsi, WP::LOGPSI) = logpsi[ipsi];
+      RealType e = thisWalker.Properties(ipsi, WP::LOCALENERGY) = H1[ipsi]->evaluate(W);
       H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
       sumratio[ipsi] = 1.0;
     }
@@ -223,7 +227,7 @@ void CSUpdateBase::initCSWalkers(WalkerIter_t it, WalkerIter_t it_end, bool rese
     thisWalker.Multiplicity = sumratio[0];
     for (int ipsi = 0; ipsi < nPsi; ipsi++)
     {
-      thisWalker.Properties(ipsi, UMBRELLAWEIGHT) = invsumratio[ipsi] = 1.0 / sumratio[ipsi];
+      thisWalker.Properties(ipsi, WP::UMBRELLAWEIGHT) = invsumratio[ipsi] = 1.0 / sumratio[ipsi];
       cumNorm[ipsi] += 1.0 / sumratio[ipsi];
     }
     //DON't forget DRIFT!!!
@@ -281,8 +285,8 @@ void CSUpdateBase::initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end, bo
       Psi1[ipsi]->L = W.L;
       *L1[ipsi]     = W.L;
 
-      awalker.Properties(ipsi, LOGPSI)      = logpsi[ipsi];
-      awalker.Properties(ipsi, LOCALENERGY) = H1[ipsi]->evaluate(W);
+      awalker.Properties(ipsi, WP::LOGPSI)      = logpsi[ipsi];
+      awalker.Properties(ipsi, WP::LOCALENERGY) = H1[ipsi]->evaluate(W);
       H1[ipsi]->saveProperty(awalker.getPropertyBase(ipsi));
       sumratio[ipsi] = 1.0;
     }
@@ -307,7 +311,7 @@ void CSUpdateBase::initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end, bo
     awalker.Multiplicity = sumratio[0];
     for (int ipsi = 0; ipsi < nPsi; ipsi++)
     {
-      awalker.Properties(ipsi, UMBRELLAWEIGHT) = invsumratio[ipsi] = 1.0 / sumratio[ipsi];
+      awalker.Properties(ipsi, WP::UMBRELLAWEIGHT) = invsumratio[ipsi] = 1.0 / sumratio[ipsi];
       cumNorm[ipsi] += 1.0 / sumratio[ipsi];
     }
   }
@@ -331,8 +335,8 @@ void CSUpdateBase::updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end)
       //Need to modify the return value of WaveFunctionComponent::registerData
       logpsi[ipsi]                             = Psi1[ipsi]->updateBuffer(W, (*it)->DataSet);
       Psi1[ipsi]->G                            = W.G;
-      thisWalker.Properties(ipsi, LOGPSI)      = logpsi[ipsi];
-      thisWalker.Properties(ipsi, LOCALENERGY) = H1[ipsi]->evaluate(W);
+      thisWalker.Properties(ipsi, WP::LOGPSI)      = logpsi[ipsi];
+      thisWalker.Properties(ipsi, WP::LOCALENERGY) = H1[ipsi]->evaluate(W);
       H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
       sumratio[ipsi] = 1.0;
     }
@@ -352,7 +356,7 @@ void CSUpdateBase::updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end)
     thisWalker.Multiplicity = sumratio[0];
     for (int ipsi = 0; ipsi < nPsi; ipsi++)
     {
-      thisWalker.Properties(ipsi, UMBRELLAWEIGHT) = invsumratio[ipsi] = 1.0 / sumratio[ipsi];
+      thisWalker.Properties(ipsi, WP::UMBRELLAWEIGHT) = invsumratio[ipsi] = 1.0 / sumratio[ipsi];
     }
     //DON't forget DRIFT!!!
     ///    thisWalker.Drift=0.0;

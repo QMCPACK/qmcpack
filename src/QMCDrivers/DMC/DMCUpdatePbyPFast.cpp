@@ -29,6 +29,8 @@ typedef int TraceManager;
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 TimerNameList_t<DMCTimers> DMCTimerNames = {{DMC_buffer, "DMCUpdatePbyP::Buffer"},
                                             {DMC_movePbyP, "DMCUpdatePbyP::movePbyP"},
                                             {DMC_hamiltonian, "DMCUpdatePbyP::Hamiltonian"},
@@ -61,7 +63,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   int nAcceptTemp(0);
   int nRejectTemp(0);
   //copy the old energy and scale factor of drift
-  FullPrecRealType eold(thisWalker.Properties(LOCALENERGY));
+  FullPrecRealType eold(thisWalker.Properties(WP::LOCALENERGY));
   FullPrecRealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
@@ -74,22 +76,20 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     RealType sqrttau     = std::sqrt(tauovermass);
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
     {
-      W.setActive(iat);
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
       PosType dr;
       DriftModifier->getDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
+      bool is_valid = W.makeMoveAndCheck(iat, dr);
       RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
-      if (rr > m_r2max)
+      if (!is_valid || rr > m_r2max)
       {
         ++nRejectTemp;
         continue;
       }
-      if (!W.makeMoveAndCheck(iat, dr))
-        continue;
-      RealType ratio = Psi.ratioGrad(W, iat, grad_iat);
+      ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
@@ -105,12 +105,12 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
         dr                     = W.R[iat] - W.activePos - dr;
         FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
-        RealType prob          = ratio * ratio * std::exp(logGb - logGf);
+        RealType prob          = std::norm(ratio) * std::exp(logGb - logGf);
         if (RandomGen() < prob)
         {
           ++nAcceptTemp;
-          Psi.acceptMove(W, iat);
-          W.acceptMove(iat);
+          Psi.acceptMove(W, iat, true);
+          W.acceptMove(iat, true);
           rr_accepted += rr;
           gf_acc *= prob; //accumulate the ratio
         }
@@ -149,7 +149,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   {
     //all moves are rejected: does not happen normally with reasonable wavefunctions
     thisWalker.Age++;
-    thisWalker.Properties(R2ACCEPTED) = 0.0;
+    thisWalker.Properties(WP::R2ACCEPTED) = 0.0;
     //weight is set to 0 for traces
     // consistent w/ no evaluate/auxHevaluate
     RealType wtmp     = thisWalker.Weight;

@@ -16,19 +16,23 @@
 
 #include "QMCHamiltonians/CoulombPBCAA_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "QMCDrivers/WalkerProperties.h"
+#include <config/stdlib/math.hpp>
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 CoulombPBCAA_CUDA::CoulombPBCAA_CUDA(ParticleSet& ref, bool active, bool cloning)
     : CoulombPBCAA(ref, active, cloning),
       PtclRef(ref),
       SumGPU("CoulombPBCAATemp::SumGPU"),
+      L("CoulombPBCAATemp::L"),
+      Linv("CoulombPBCAATemp::Linv"),
       kpointsGPU("CoulombPBCAATemp::kpointsGPU"),
       kshellGPU("CoulombPBCAATemp::kshellGPU"),
       FkGPU("CoulombPBCAATemp::FkGPU"),
-      RhokGPU("CoulombPBCAATemp::RhokGPU"),
-      L("CoulombPBCAATemp::L"),
-      Linv("CoulombPBCAATemp::Linv")
+      RhokGPU("CoulombPBCAATemp::RhokGPU")
 {
 #ifdef QMC_CUDA
   gpu::host_vector<CUDA_PRECISION_FULL> LHost(9), LinvHost(9);
@@ -56,7 +60,7 @@ void CoulombPBCAA_CUDA::initBreakup(ParticleSet& P, bool cloning)
 #endif
 }
 
-QMCHamiltonianBase* CoulombPBCAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* CoulombPBCAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   CoulombPBCAA_CUDA* myclone;
   if (is_active)
@@ -93,7 +97,7 @@ void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   {
     for (int iw = 0; iw < walkers.size(); iw++)
     {
-      walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = Value;
+      walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = Value;
       LocalEnergy[iw] += Value;
     }
     return;
@@ -144,7 +148,7 @@ void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
       PosType r = walkers[0]->R[ir];
       double s, c;
       double phase = dot(k, r);
-      sincos(phase, &s, &c);
+      qmcplusplus::sincos(phase, &s, &c);
       rhok += std::complex<double>(c, s);
     }
     fprintf(stderr, "GPU:   %d   %14.6f  %14.6f\n", ik, RhokHost[2 * ik + 0], RhokHost[2 * ik + 1]);
@@ -158,7 +162,7 @@ void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
   for (int iw = 0; iw < walkers.size(); iw++)
   {
     // fprintf (stderr, "Energy = %18.6f\n", SumHost[iw]);
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = SumHost[iw] + myConst;
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = SumHost[iw] + myConst;
     LocalEnergy[iw] += SumHost[iw] + myConst;
   }
 }

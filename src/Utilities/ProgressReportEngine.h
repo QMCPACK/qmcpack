@@ -19,7 +19,7 @@
 #ifndef QMCPLUSPLUS_PROGRESSREPORTENGINE_H
 #define QMCPLUSPLUS_PROGRESSREPORTENGINE_H
 
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 #include "Message/Communicate.h"
 #include "Utilities/Timer.h"
 #include "OhmmsData/OhmmsElementBase.h"
@@ -34,7 +34,7 @@ class ReportEngine
 {
 public:
   inline ReportEngine(const std::string& cname, const std::string& fname, int atype = 1)
-      : ReportType(atype), ClassName(cname), LogBuffer(infoDebug), FuncName(fname)
+      : ReportType(atype), ClassName(cname), FuncName(fname), LogBuffer(infoDebug)
   {
     if (DoOutput)
     {

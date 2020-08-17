@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -23,7 +23,11 @@ public:
   using RealType = QMCTraits::RealType;
   using PosType  = QMCTraits::PosType;
 
+  void getDrifts(RealType tau, const std::vector<GradType>& qf, std::vector<PosType>&) const final;
+
   void getDrift(RealType tau, const GradType& qf, PosType& drift) const final;
+
+  void getDrift(RealType tau, const ComplexType& qf, ParticleSet::Scalar_t& drift) const final;
 
   bool parseXML(xmlNodePtr cur) final;
 

@@ -237,73 +237,38 @@ public:
         (*lapLogPsi[p]) = 0.0;
       std::vector<TinyVector<RealType, 3>> derivs(NumVars);
       const auto& d_table = P.getDistTable(my_table_ID_);
-      if (d_table.DTType == DT_SOA)
+      constexpr RealType cone(1);
+      constexpr RealType lapfac(OHMMS_DIM - cone);
+      const size_t n  = d_table.sources();
+      const size_t ng = P.groups();
+      for (size_t i = 1; i < n; ++i)
       {
-        constexpr RealType cone(1);
-        constexpr RealType lapfac(OHMMS_DIM - cone);
-        const size_t n  = d_table.sources();
-        const size_t ng = P.groups();
-        for (size_t i = 1; i < n; ++i)
+        const size_t ig      = P.GroupID[i] * ng;
+        const auto& dist = d_table.getDistRow(i);
+        const auto& displ    = d_table.getDisplRow(i);
+        for (size_t j = 0; j < i; ++j)
         {
-          const size_t ig      = P.GroupID[i] * ng;
-          const RealType* dist = d_table.Distances[i];
-          const auto& displ    = d_table.Displacements[i];
-          for (size_t j = 0; j < i; ++j)
+          const size_t ptype = ig + P.GroupID[j];
+          if (RecalcSwitch[ptype])
           {
-            const size_t ptype = ig + P.GroupID[j];
-            if (RecalcSwitch[ptype])
+            std::fill(derivs.begin(), derivs.end(), 0.0);
+            if (!F[ptype]->evaluateDerivatives(dist[j], derivs))
+              continue;
+            RealType rinv(cone / dist[j]);
+            PosType dr(displ[j]);
+            for (int p = OffSet[ptype].first, ip = 0; p < OffSet[ptype].second; ++p, ++ip)
             {
-              std::fill(derivs.begin(), derivs.end(), 0.0);
-              if (!F[ptype]->evaluateDerivatives(dist[j], derivs))
-                continue;
-              RealType rinv(cone / dist[j]);
-              PosType dr(displ[j]);
-              for (int p = OffSet[ptype].first, ip = 0; p < OffSet[ptype].second; ++p, ++ip)
-              {
-                RealType dudr(rinv * derivs[ip][1]);
-                RealType lap(derivs[ip][2] + lapfac * dudr);
-                //RealType lap(derivs[ip][2]+(OHMMS_DIM-1.0)*dudr);
-                PosType gr(dudr * dr);
-                dLogPsi[p] -= derivs[ip][0];
-                (*gradLogPsi[p])[i] += gr;
-                (*gradLogPsi[p])[j] -= gr;
-                (*lapLogPsi[p])[i]  -= lap;
-                (*lapLogPsi[p])[j]  -= lap;
-              }
+              RealType dudr(rinv * derivs[ip][1]);
+              RealType lap(derivs[ip][2] + lapfac * dudr);
+              //RealType lap(derivs[ip][2]+(OHMMS_DIM-1.0)*dudr);
+              PosType gr(dudr * dr);
+              dLogPsi[p] -= derivs[ip][0];
+              (*gradLogPsi[p])[i] += gr;
+              (*gradLogPsi[p])[j] -= gr;
+              (*lapLogPsi[p])[i]  -= lap;
+              (*lapLogPsi[p])[j]  -= lap;
             }
           }
-        }
-      }
-      else
-      {
-        for (int i = 0; i < d_table.sources(); ++i)
-        {
-#ifndef ENABLE_SOA
-          for (int nn = d_table.M[i]; nn < d_table.M[i + 1]; ++nn)
-          {
-            int ptype = d_table.PairID[nn];
-            if (RecalcSwitch[ptype])
-            {
-              std::fill(derivs.begin(), derivs.end(), 0.0);
-              if (!F[ptype]->evaluateDerivatives(d_table.r(nn), derivs))
-                continue;
-              int j = d_table.J[nn];
-              RealType rinv(d_table.rinv(nn));
-              PosType dr(d_table.dr(nn));
-              for (int p = OffSet[ptype].first, ip = 0; p < OffSet[ptype].second; ++p, ++ip)
-              {
-                RealType dudr(rinv * derivs[ip][1]);
-                RealType lap(derivs[ip][2] + (OHMMS_DIM - 1.0) * dudr);
-                PosType gr(dudr * dr);
-                dLogPsi[p] -= derivs[ip][0];
-                (*gradLogPsi[p])[i] += gr;
-                (*gradLogPsi[p])[j] -= gr;
-                (*lapLogPsi[p])[i]  -= lap;
-                (*lapLogPsi[p])[j]  -= lap;
-              }
-            }
-          }
-#endif
         }
       }
       for (int k = 0; k < myVars.size(); ++k)

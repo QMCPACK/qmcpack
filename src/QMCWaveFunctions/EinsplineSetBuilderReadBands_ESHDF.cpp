@@ -631,7 +631,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<double>
 //			ru[2] = (RealType)iz / (RealType)nz;
 //			double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
 //			double s, c;
-//			sincos(phi, &s, &c);
+//			qmcplusplus::sincos(phi, &s, &c);
 //			complex<double> phase(c,s);
 //			complex<double> z = phase*rawData(ix,iy,iz);
 //			splineData(ix,iy,iz) = z.real();
@@ -673,16 +673,6 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
   //this is always ugly
   MeshSize    = 0;
   int hasPsig = 1;
-#if defined(__bgp__) || (__bgq__)
-  if (root)
-  {
-    hid_t gid = H5Dopen(H5FileID, "/electrons/kpoint_0/spin_0/state_0/psi_g");
-    if (gid < 0)
-      hasPsig = 0;
-    H5Dclose(gid);
-  }
-  myComm->bcast(hasPsig);
-#else
   if (root)
   {
     HDFAttribIO<TinyVector<int, 3>> h_mesh(MeshSize);
@@ -691,7 +681,6 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
   }
   myComm->bcast(MeshSize);
   hasPsig = (MeshSize[0] == 0);
-#endif
   if (hasPsig)
   {
     int nallowed  = 257;

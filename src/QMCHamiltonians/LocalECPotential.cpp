@@ -15,7 +15,7 @@
 
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "Utilities/IteratorUtility.h"
 
@@ -101,35 +101,15 @@ LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
   {
     const DistanceTableData& d_table(P.getDistTable(myTableIndex));
     Value = 0.0;
-    if (d_table.DTType == DT_SOA)
+    const size_t Nelec = P.getTotalNum();
+    for (size_t iel = 0; iel < Nelec; ++iel)
     {
-      const size_t Nelec = P.getTotalNum();
-      for (size_t iel = 0; iel < Nelec; ++iel)
-      {
-        const RealType* restrict dist = d_table.Distances[iel];
-        Return_t esum(0);
-        for (size_t iat = 0; iat < NumIons; ++iat)
-          if (PP[iat] != nullptr)
-            esum += PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
-        Value -= esum;
-      }
-    }
-    else
-    {
-#ifndef ENABLE_SOA
-      //loop over all the ions
-      for (int iat = 0; iat < NumIons; iat++)
-      {
-        RadialPotentialType* ppot(PP[iat]);
-        if (ppot == nullptr)
-          continue;
-        Return_t esum(0);
-        for (int nn = d_table.M[iat]; nn < d_table.M[iat + 1]; ++nn)
-          esum += ppot->splint(d_table.r(nn)) * d_table.rinv(nn);
-        //count the sign and effective charge
-        Value -= esum * Zeff[iat];
-      }
-#endif
+      const auto& dist = d_table.getDistRow(iel);
+      Return_t esum(0);
+      for (size_t iat = 0; iat < NumIons; ++iat)
+        if (PP[iat] != nullptr)
+          esum += PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
+      Value -= esum;
     }
   }
   return Value;
@@ -148,8 +128,8 @@ LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& 
     const size_t Nelec = P.getTotalNum();
     for (size_t iel = 0; iel < Nelec; ++iel)
     {
-      const RealType* restrict dist = d_table.Distances[iel];
-      const RowContainerType dr     = d_table.Displacements[iel];
+      const auto& dist = d_table.getDistRow(iel);
+      const auto& dr   = d_table.getDisplRow(iel);
       Return_t esum(0);
       //value, radial derivative, and 2nd derivative of spline r*V.
       RealType v(0.0), dv(0.0), d2v(0.0);
@@ -186,26 +166,24 @@ LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
   Array<RealType, 1>& Vi_samp = *Vi_sample;
   Ve_samp                     = 0.0;
   Vi_samp                     = 0.0;
-  //loop over all the ions
-  for (int iat = 0; iat < NumIons; iat++)
+
+  const size_t Nelec = P.getTotalNum();
+  for (size_t iel = 0; iel < Nelec; ++iel)
   {
-    RadialPotentialType* ppot(PP[iat]);
-    if (ppot == 0)
-      continue;
-    Return_t esum(0.0), pairpot;
-#ifndef ENABLE_SOA
-    //loop over all the electrons
-    for (int nn = d_table.M[iat], iel = 0; nn < d_table.M[iat + 1]; ++nn, iel++)
-    {
-      pairpot = -.5 * Zeff[iat] * ppot->splint(d_table.r(nn)) * d_table.rinv(nn);
-      Vi_samp(iat) += pairpot;
-      Ve_samp(iel) += pairpot;
-      esum         += pairpot;
-    }
-#endif
+    const auto& dist = d_table.getDistRow(iel);
+    Return_t esum(0), pairpot;
+    for (size_t iat = 0; iat < NumIons; ++iat)
+      if (PP[iat] != nullptr)
+      {
+        pairpot = -0.5 * PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
+        Vi_samp(iat) += pairpot;
+        Ve_samp(iel) += pairpot;
+        esum         += pairpot;
+      }
     Value += esum;
   }
   Value *= 2.0;
+
 #if defined(TRACE_CHECK)
   RealType Vnow  = Value;
   RealType Visum = Vi_samp.sum();
@@ -243,24 +221,20 @@ LocalECPotential::Return_t LocalECPotential::evaluate_orig(ParticleSet& P)
 {
   const DistanceTableData& d_table(P.getDistTable(myTableIndex));
   Value = 0.0;
-  //loop over all the ions
-  for (int iat = 0; iat < NumIons; iat++)
+  const size_t Nelec = P.getTotalNum();
+  for (size_t iel = 0; iel < Nelec; ++iel)
   {
-    RadialPotentialType* ppot(PP[iat]);
-    if (ppot == 0)
-      continue;
-    Return_t esum(0.0);
-#ifndef ENABLE_SOA
-    for (int nn = d_table.M[iat]; nn < d_table.M[iat + 1]; ++nn)
-      esum += ppot->splint(d_table.r(nn)) * d_table.rinv(nn);
-#endif
-    //count the sign and effective charge
-    Value -= esum * Zeff[iat];
+    const auto& dist = d_table.getDistRow(iel);
+    Return_t esum(0);
+    for (size_t iat = 0; iat < NumIons; ++iat)
+      if (PP[iat] != nullptr)
+        esum += PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
+    Value -= esum;
   }
   return Value;
 }
 
-QMCHamiltonianBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   LocalECPotential* myclone = new LocalECPotential(IonConfig, qp);
   for (int ig = 0; ig < PPset.size(); ++ig)

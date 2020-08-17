@@ -15,8 +15,8 @@
 
 #include <QMCHamiltonians/MomentumEstimator.h>
 #include <QMCWaveFunctions/TrialWaveFunction.h>
-#include <Numerics/e2iphi.h>
-#include <Numerics/OhmmsBlas.h>
+#include <CPU/e2iphi.h>
+#include <CPU/BLAS.hpp>
 #include <OhmmsData/AttributeSet.h>
 #include <Utilities/SimpleParser.h>
 #include <Particle/DistanceTableData.h>
@@ -421,7 +421,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
 
 bool MomentumEstimator::get(std::ostream& os) const { return true; }
 
-QMCHamiltonianBase* MomentumEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* MomentumEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   MomentumEstimator* myclone = new MomentumEstimator(qp, psi);
   myclone->resize(kPoints, M);

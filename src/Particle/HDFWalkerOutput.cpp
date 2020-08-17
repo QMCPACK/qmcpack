@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file HDFWalkerOuput.cpp
+/** @file
  * @brief definition  of HDFWalkerOuput  and other support class and functions
  */
 #include "Particle/HDFWalkerOutput.h"
@@ -27,10 +27,6 @@
 #include <Message/Communicate.h>
 #include <mpi/collectives.h>
 #include <io/hdf_hyperslab.h>
-#if defined(HAVE_ADIOS) && defined(ADIOS_VERIFY)
-#include <adios.h>
-#include "ADIOS/ADIOS_verify.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -57,10 +53,10 @@ namespace qmcplusplus
 HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const std::string& aroot, Communicate* c)
     : appended_blocks(0),
       number_of_walkers(0),
-      currentConfigNumber(0),
       number_of_backups(0),
       max_number_of_backups(4),
       myComm(c),
+      currentConfigNumber(0),
       RootName(aroot)
 //       , fw_out(myComm)
 {
@@ -86,69 +82,6 @@ HDFWalkerOutput::~HDFWalkerOutput()
   //     fw_out.close();
   delete_iter(RemoteData.begin(), RemoteData.end());
 }
-
-#ifdef HAVE_ADIOS
-uint64_t HDFWalkerOutput::get_group_size(MCWalkerConfiguration& W)
-{
-  int walker_num   = W.getActiveWalkers();
-  int particle_num = number_of_particles;
-  return sizeof(int) * 4 + sizeof(OHMMS_PRECISION) * walker_num * particle_num * OHMMS_DIM;
-}
-
-bool HDFWalkerOutput::adios_checkpoint(MCWalkerConfiguration& W, int64_t adios_handle, int nblock)
-{
-  //Need 4 * 3 bytes for storing integers and then storage
-  //for all the walkers
-  if (RemoteData.empty())
-    RemoteData.push_back(new BufferType);
-  int walker_num     = W.getActiveWalkers();
-  int particle_num   = number_of_particles;
-  int walker_dim_num = OHMMS_DIM;
-  if (nblock > block)
-  {
-    //This is just another wrapper for vector
-    RemoteData[0]->resize(walker_num * particle_num * walker_dim_num);
-    //Copy over all the walkers into one chunk of contigous memory
-    W.putConfigurations(RemoteData[0]->begin());
-    block = nblock;
-  }
-  void* walkers = RemoteData[0]->data();
-  uint64_t adios_groupsize, adios_totalsize;
-  adios_groupsize = sizeof(int) * 3 + sizeof(*(RemoteData[0]->data()));
-  adios_group_size(adios_handle, adios_groupsize, &adios_totalsize);
-  adios_write(adios_handle, "walker_num", &walker_num);
-  adios_write(adios_handle, "particle_num", &particle_num);
-  int walker_size = walker_num * particle_num * walker_dim_num;
-  adios_write(adios_handle, "walker_size", &walker_size);
-  adios_write(adios_handle, "walkers", walkers);
-  return true;
-}
-
-#ifdef ADIOS_VERIFY
-
-void HDFWalkerOutput::adios_checkpoint_verify(MCWalkerConfiguration& W, ADIOS_FILE* fp)
-{
-  if (RemoteData.empty())
-  {
-    APP_ABORT_TRACE(__FILE__, __LINE__, "empty RemoteData. Not possible");
-  }
-
-  //RemoteData.push_back(new BufferType);
-  int walker_num     = W.getActiveWalkers();
-  int particle_num   = number_of_particles;
-  int walker_dim_num = OHMMS_DIM;
-  //RemoteData[0]->resize(walker_num * particle_num * walker_dim_num);
-  //W.putConfigurations(RemoteData[0]->begin());
-  void* walkers = RemoteData[0]->data();
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "walker_num", &walker_num);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "particle_num", &particle_num);
-  int walker_size = walker_num * particle_num * walker_dim_num;
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "walker_size", &walker_size);
-  IO_VERIFY::adios_checkpoint_verify_local_variables(fp, "walkers", (OHMMS_PRECISION*)walkers);
-}
-#endif
-#endif
-
 
 /** Write the set of walker configurations to the HDF5 file.
  * @param W set of walker configurations
@@ -201,15 +134,15 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
   number_of_walkers = W.WalkerOffsets[myComm->size()];
   hout.write(number_of_walkers, hdf::num_walkers);
 
-  TinyVector<int, 3> gcounts(number_of_walkers, number_of_particles, OHMMS_DIM);
+  std::array<int, 3> gcounts{number_of_walkers, number_of_particles, OHMMS_DIM};
 
   if (hout.is_parallel())
   {
     { // write walker offset.
       // Though it is a small array, it needs to be written collectively in large scale runs.
-      TinyVector<int, 1> gcounts(myComm->size() + 1);
-      TinyVector<int, 1> counts;
-      TinyVector<int, 1> offsets(myComm->rank());
+      std::array<int, 1> gcounts{myComm->size() + 1};
+      std::array<int, 1> counts{0};
+      std::array<int, 1> offsets{myComm->rank()};
       std::vector<int> myWalkerOffset;
       if (myComm->size() - 1 == myComm->rank())
       {
@@ -226,8 +159,8 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
       hout.write(slab, "walker_partition");
     }
     { // write walker configuration
-      TinyVector<int, 3> counts(W.getActiveWalkers(), number_of_particles, OHMMS_DIM);
-      TinyVector<int, 3> offsets(W.WalkerOffsets[myComm->rank()], 0, 0);
+      std::array<int, 3> counts{static_cast<int>(W.getActiveWalkers()), number_of_particles, OHMMS_DIM};
+      std::array<int, 3> offsets{W.WalkerOffsets[myComm->rank()], 0, 0};
       hyperslab_proxy<BufferType, 3> slab(*RemoteData[0], gcounts, counts, offsets);
       hout.write(slab, hdf::walkers);
     }
@@ -248,8 +181,7 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
       mpi::gatherv(*myComm, *RemoteData[0], *RemoteData[1], counts, displ);
     }
     int buffer_id = (myComm->size() > 1) ? 1 : 0;
-    hyperslab_proxy<BufferType, 3> slab(*RemoteData[buffer_id], gcounts);
-    hout.write(slab, hdf::walkers);
+    hout.writeSlabReshaped(*RemoteData[buffer_id], gcounts, hdf::walkers);
   }
 }
 

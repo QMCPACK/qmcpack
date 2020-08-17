@@ -28,18 +28,32 @@ if((NOT ${TEST_MAX_PROCS}) OR (${TEST_MAX_PROCS} STREQUAL ""))
     set(QMCAPP_ERR "${QMCAPP_ERR}  TEST_MAX_PROCS not set: '${TEST_MAX_PROCS}'\n")
 endif()
 
-IF(ENABLE_SOA)
-  SET(SOA_SUCCESS TRUE)
-ELSE()
-  SET(SOA_SUCCESS FALSE)
-ENDIF()
-
 IF(MIXED_PRECISION)
   SET(MP_SUCCESS FALSE)
 ELSE()
   SET(MP_SUCCESS TRUE)
 ENDIF()
 
+IF(BUILD_AFQMC)
+  INCLUDE("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
+  SET(afqmctools_python_reqs numpy;h5py;mpi4py;scipy;pyscf)
+  CHECK_PYTHON_REQS(afqmctools_python_reqs afqmc_workflow add_tests)
+  IF(add_tests)
+    message("Adding tests for AFQMC workflow.")
+    SUBDIRS("afqmc/workflow")
+  ENDIF()
+ENDIF()
+
+IF(NOT QMC_COMPLEX)
+  INCLUDE("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
+  SET(pyscf_python_reqs numpy;h5py;pyscf;PyscfToQmcpack;PyscfToQmcpack_Spline)
+  CHECK_PYTHON_REQS(pyscf_python_reqs pyscf_workflow add_tests)
+
+  IF(add_tests)
+    message("Adding tests for Pyscf workflow")
+    SUBDIRS("pyscf")
+  ENDIF()
+ENDIF()
 #
 #
 if(NOT ${QMCAPP_ERR} STREQUAL "")

@@ -25,17 +25,18 @@
 #include "OhmmsData/HDFStringAttrib.h"
 #include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include <config/stdlib/math.hpp>
 
 namespace qmcplusplus
 {
-bool EinsplineSetBuilder::ReadOrbitalInfo()
+bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
 {
   update_token(__FILE__, __LINE__, "ReadOrbitalInfo");
   // Handle failed file open gracefully by temporarily replacing error handler
-  H5E_auto_t old_efunc;
+  H5E_auto2_t old_efunc;
   void* old_efunc_data;
-  H5Eget_auto(&old_efunc, &old_efunc_data);
-  H5Eset_auto(NULL, NULL);
+  H5Eget_auto2(H5E_DEFAULT, &old_efunc, &old_efunc_data);
+  H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
   H5FileID = H5Fopen(H5FileName.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   //  H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
   if (H5FileID < 0)
@@ -44,7 +45,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo()
                 << "\" in EinsplineSetBuilder::ReadOrbitalInfo.  Aborting.\n";
     APP_ABORT("EinsplineSetBuilder::ReadOrbitalInfo");
   }
-  H5Eset_auto(old_efunc, old_efunc_data);
+  H5Eset_auto2(H5E_DEFAULT, old_efunc, old_efunc_data);
 
   // Read format
   std::string format;
@@ -56,7 +57,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo()
   if (format.find("ES") < format.size())
   {
     Format = ESHDF;
-    return ReadOrbitalInfo_ESHDF();
+    return ReadOrbitalInfo_ESHDF(skipChecks);
   }
   //////////////////////////////////////////////////
   // Read basic parameters from the orbital file. //
@@ -585,7 +586,7 @@ EinsplineSetBuilder::ReadBands
           ru[2] = (RealType)iz / (RealType)(nz-1);
           double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
           double s, c;
-          sincos(phi, &s, &c);
+          qmcplusplus::sincos(phi, &s, &c);
           std::complex<double> phase(c,s);
           std::complex<double> z = phase*rawData(ix,iy,iz);
           splineData(ix,iy,iz) = z.imag();
@@ -756,7 +757,7 @@ EinsplineSetBuilder::ReadBands
               ru[2] = (RealType)iz / (RealType)(nz-1);
               double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
               double s, c;
-              sincos(phi, &s, &c);
+              qmcplusplus::sincos(phi, &s, &c);
               std::complex<double> phase(c,s);
               std::complex<double> z = phase*rawData(ix,iy,iz);
               splineData(ix,iy,iz) = z.real();

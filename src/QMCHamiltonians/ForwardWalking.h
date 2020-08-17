@@ -17,13 +17,12 @@
  */
 #ifndef QMCPLUSPLUS_FORWARDWALKING_H
 #define QMCPLUSPLUS_FORWARDWALKING_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
-
+#include "QMCHamiltonians/OperatorBase.h"
 namespace qmcplusplus
 {
 class QMCHamiltonian;
 
-struct ForwardWalking : public QMCHamiltonianBase
+struct ForwardWalking : public OperatorBase
 {
   std::vector<int> Hindices;
   std::vector<int> Pindices;
@@ -96,7 +95,7 @@ struct ForwardWalking : public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void addObservables(PropertySetType& plist);
 

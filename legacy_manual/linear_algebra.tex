@@ -1,0 +1,53 @@
+\section{Linear algebra}
+
+Like in many methods which solve the Schr\"odinger equation, linear algebra plays a critical role in QMC algorithms and thus is crucial to the performance of QMCPACK.
+There are a few components in QMCPACK use BLAS/LAPACK with their own characteristics.
+
+\subsection{Real space QMC}
+\subsubsection{Single particle orbitals}
+Spline evaluation as commonly used in solid-state simulations does not use any dense linear algebra library calls.
+LCAO evaluation as commonly used in molecular calculations relies on BLAS2 GEMV to compute SPOs from a basis set.
+
+\subsubsection{Slater determinants}
+Slater determinants are calculated on $N \times N$ Slater matrices. $N$ is the number of electrons for a given spin.
+In the actually implementation, operations on the inverse matrix of Slater matrix for each walker dominate the computation.
+To initialize it, DGETRF and DGETRI from LAPACK are called. The inverse matrix can be stored out of place.
+During random walking, inverse matrices are updated by either Sherman-Morrison rank-1 update or delayed update.
+Update algorithms heavily relies on BLAS. All the BLAS operations require S,C,D,Z cases.
+
+Sherman-Morrison rank-1 update uses BLAS2 GEMV and GER on $N \times N$ matrices.
+
+Delayed rank-K update uses
+\begin{itemize}
+  \item BLAS1 SCOPY on $N$ array.
+  \item BLAS2 GEMV, GER on $k \times N$ and $k \times k$ matrices. $k$ ranges from 1 to $K$ when updates are delayed and accumulated.
+  \item BLAS3 GEMM at the final update.
+    \begin{itemize}
+       \item 'T', 'N', K, N, N
+       \item 'N', 'N', N, K, K
+       \item 'N', 'N', N, N, K
+    \end{itemize}
+\end{itemize}
+The optimal K depends on the hardware but it usually ranges from 32 to 256.
+
+QMCPACK solves systems with a few to thousands of electrons. To make all the BLAS/LAPACK operation efficient on accelerators.
+Batching is needed and optimized for $N < 2000$. Non-batched functions needs to be optimized for $N > 500$.
+Note: 2000 and 500 are only rough estimates.
+
+\subsubsection{Wavefunction optimizer}
+to be added.
+
+\subsection{Auxiliary field QMC}
+
+The AFQMC implementation in QMCPACK relies heavily on linear algebra operations from BLAS/LAPACK. The performance of the code is netirely dependent on the performance of these libraries. See below for a detailed list of the main routines used from BLAS/LAPACK. Since the AFQMC code can work with both single and double precision builds, all 4 versions of these routines (S,C,D,Z) are generally needed, for this reason we omit the data type label.
+
+\begin{itemize}
+ \item BLAS1: SCAL, COPY, DOT, AXPY
+ \item BLAS2: GEMV, GER
+ \item BLAS3: GEMM
+ \item LAPACK: GETRF, GETRI, GELQF, UNGLQ, ORGLQ, GESVD, HEEVR, HEGVX
+\end{itemize}
+
+While the dimensions of the matrix operations will depend entirely on the details of the calculation, typical matrix dimensions range from the 100s, for small system sizes, to over 20000 for the largest calculations attempted so far.
+For builds with GPU accelerators, we make use of batched and strided implementations of these routines. Batched implementations of GEMM, GETRF, GETRI, GELQF and UNGLQ are particularly important for the performance of the GPU build on small to medium size problems. Batched implementations of DOT, AXPY and GEMV would also be quite useful, but they are not yet generally available.
+On GPU builds, the code uses batched implementations of these routines when available by default.

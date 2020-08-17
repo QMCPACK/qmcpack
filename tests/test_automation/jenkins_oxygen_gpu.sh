@@ -29,11 +29,21 @@ echo ""
 mkdir -p /dev/shm/${BUILD_TAG}-build
 cd /dev/shm/${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_CUDA=1 /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_CUDA=1 -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
+if [[ $? -ne 0 ]] ; then
+  rm -rf /dev/shm/${BUILD_TAG}-build
+  rm -rf /dev/shm/${BUILD_TAG}-src
+  exit 1
+fi
 
 make -j 8
-ctest -L unit --output-on-failure
+if [[ $? -ne 0 ]] ; then
+  rm -rf /dev/shm/${BUILD_TAG}-build
+  rm -rf /dev/shm/${BUILD_TAG}-src
+  exit 1
+fi
 
+ctest -L unit --output-on-failure --timeout 120
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
   exit_code=${ret}
@@ -51,11 +61,21 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_CUDA=1 /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_CUDA=1 -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
+if [[ $? -ne 0 ]] ; then
+  rm -rf /dev/shm/${BUILD_TAG}-build
+  rm -rf /dev/shm/${BUILD_TAG}-src
+  exit 1
+fi
 
 make -j 8
-ctest -L unit --output-on-failure
+if [[ $? -ne 0 ]] ; then
+  rm -rf /dev/shm/${BUILD_TAG}-build
+  rm -rf /dev/shm/${BUILD_TAG}-src
+  exit 1
+fi
 
+ctest -L unit --output-on-failure --timeout 120
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
   exit_code=${ret}
@@ -73,11 +93,21 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_CUDA=1 /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DENABLE_SOA=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_CUDA=1 -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
+if [[ $? -ne 0 ]] ; then
+  rm -rf /dev/shm/${BUILD_TAG}-build
+  rm -rf /dev/shm/${BUILD_TAG}-src
+  exit 1
+fi
 
 make -j 8
-ctest -L unit --output-on-failure
+if [[ $? -ne 0 ]] ; then
+  rm -rf /dev/shm/${BUILD_TAG}-build
+  rm -rf /dev/shm/${BUILD_TAG}-src
+  exit 1
+fi
 
+ctest -L unit --output-on-failure --timeout 120
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
   exit_code=${ret}
@@ -95,11 +125,21 @@ rm -rf ./${BUILD_TAG}-build
 mkdir -p ${BUILD_TAG}-build
 cd ${BUILD_TAG}-build
 
-time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_CUDA=1 /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
+time cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DQMC_CUDA=1 -DQMC_NO_SLOW_CUSTOM_TESTING_COMMANDS=1 /dev/shm/${BUILD_TAG}-src 2>&1 | tee cmake.out
+if [[ $? -ne 0 ]] ; then
+  rm -rf /dev/shm/${BUILD_TAG}-build
+  rm -rf /dev/shm/${BUILD_TAG}-src
+  exit 1
+fi
 
 make -j 8
-ctest -L unit --output-on-failure
+if [[ $? -ne 0 ]] ; then
+  rm -rf /dev/shm/${BUILD_TAG}-build
+  rm -rf /dev/shm/${BUILD_TAG}-src
+  exit 1
+fi
 
+ctest -L unit --output-on-failure --timeout 120
 ret=$?
 if [[ ${ret} -ne 0 ]] ; then
   exit_code=${ret}

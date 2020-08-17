@@ -38,9 +38,9 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w,
     : QMCDriver(w, psi, h, ppool, comm),
       UseDrift("yes"),
       myPeriod4WalkerDump(0),
-      GEVtype("mixed"),
-      w_alpha(0.0),
       w_beta(0.0),
+      w_alpha(0.0),
+      GEVtype("mixed"),
       forOpt(false)
 {
   RootName = "vmc";
@@ -53,6 +53,8 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w,
   m_param.add(w_beta, "beta", "double");
   m_param.add(w_alpha, "alpha", "double");
   m_param.add(GEVtype, "GEVMethod", "string");
+
+  H.setRandomGenerator(&Random);
 }
 
 bool VMCcuda::checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid)

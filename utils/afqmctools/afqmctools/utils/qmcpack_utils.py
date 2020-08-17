@@ -1,8 +1,8 @@
 import h5py
 import xml.etree.ElementTree as et
-from afqmctools.wavefunction.mol import read_qmcpack_wfn
 
-def write_xml_input(qmc_in, hamil_file, wfn_file, series=0, options=None):
+def write_xml_input(qmc_in, hamil_file, wfn_file, id_name='qmc', series=0,
+                    rng_seed=None, options=None):
     """Generate template input file from hamiltonian and wavefunction.
 
     Parameters
@@ -13,6 +13,8 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0, options=None):
         HDF5 file containing Hamiltonian.
     wfn_file : string
         HDF5 file containing Wavefunction.
+    id_name : string
+        xml id for output files. Optional. Default "qmc".
     series : int
         Simulation series number. Optional. Default 0.
     options : dict
@@ -28,7 +30,11 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0, options=None):
                             'ortho': 1,
                             'nskip': 8,
                             'block_size': 100,
-                            'nsteps': 1000
+                            'nsteps': 1000,
+                            'obs': {
+                                'OneRDM': {}
+                                }
+                            }
                         }
                     }
                 },
@@ -57,8 +63,11 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0, options=None):
         walker_type = walker_types[dims[3]]
 
     base = '''<simulation method="afqmc">
-    <project id="qmc" series="{:d}"/>
-    <AFQMCInfo name="info0">
+    <project id="{:s}" series="{:d}"/>
+    '''.format(id_name, series)
+    if rng_seed is not None:
+        base += '''<random seed="{:d}"/>'''.format(rng_seed)
+    base += '''<AFQMCInfo name="info0">
         <parameter name="NMO">{:d}</parameter>
         <parameter name="NAEA">{:d}</parameter>
         <parameter name="NAEB">{:d}</parameter>
@@ -80,7 +89,7 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0, options=None):
     </Propagator>
     <execute wset="wset0" ham="ham0" wfn="wfn0" prop="prop0" info="info0">
    </execute>
-</simulation>'''.format(series, nmo, nalpha, nbeta,
+</simulation>'''.format(nmo, nalpha, nbeta,
                         hamil_file, wfn_type, wfn_file,
                         walker_type)
     basic = {
@@ -89,7 +98,7 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0, options=None):
             'timestep': 0.005,
             'blocks': 10000,
             'steps': 10,
-            'nWalkers': 10
+            'nWalkers': 10,
             }
         }
     if options is not None:
@@ -113,16 +122,31 @@ def write_xml_input(qmc_in, hamil_file, wfn_file, series=0, options=None):
 
 def add_param(root, block, name, val):
     node = root.find(block)
+    assert node is not None, "{} not found.".format(block)
     param = et.Element('parameter', name=name)
     param.text = str(val)
     node.append(param)
 
-def add_estimator(root, name, vals):
-    node = root.find('execute')
-    param = et.Element('Estimator', name=name)
+def add_estimator(root, name, vals, block='execute', est_name='Estimator'):
+    node = root.find(block)
+    if est_name == 'Estimator':
+        param = et.Element(est_name, name=name)
+    else:
+        param = et.Element(est_name)
+    base_name = "execute/Estimator[@name='{:s}']".format(name)
     node.append(param)
     for k, v in vals.items():
-        add_param(root, 'execute/Estimator', k, v)
+        # Add list of observables
+        if k == 'obs':
+            for o, p in v.items():
+                add_estimator(root, name, p,
+                              block=base_name,
+                              est_name=o)
+        else:
+            if est_name != 'Estimator':
+                add_param(root, base_name+'/'+est_name, k, v)
+            else:
+                add_param(root, base_name, k, v)
 
 def indent(elem, ilevel=0):
     # Stackoverflow.

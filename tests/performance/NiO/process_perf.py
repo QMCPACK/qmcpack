@@ -32,8 +32,8 @@ def get_performance_info(info_fname):
   # Alternative with XPath syntax to find a particular timer
   # vmc_timers = timing.findall(".//timer[name='VMCSingleOMP']")
 
-  vmc_time = get_incl_time(timers, ['VMC', 'VMCSingleOMP', 'VMCcuda'])
-  dmc_time = get_incl_time(timers, ['DMC', 'DMCOMP', 'DMCcuda'])
+  vmc_time = get_incl_time(timers, ['VMC', 'VMCBatched', 'VMCSingleOMP', 'VMCcuda'])
+  dmc_time = get_incl_time(timers, ['DMC', 'DMCBatched', 'DMCOMP', 'DMCcuda'])
 
   return {'VMC Time': vmc_time, 'DMC Time': dmc_time}
 
@@ -42,7 +42,7 @@ def get_performance_info(info_fname):
 # Format found in this email:
 #   https://cmake.org/pipermail/cmake/2010-April/036574.html
 def print_for_cdash(vals):
-  for k, v in vals.iteritems():
+  for k, v in vals.items():
     print('<DartMeasurement name="%s" type="numeric/double">%g</DartMeasurement>' % (k, v))
 
 

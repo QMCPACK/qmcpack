@@ -20,7 +20,7 @@
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/ForceBase.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include <numeric>
 
 namespace qmcplusplus
@@ -31,18 +31,20 @@ namespace qmcplusplus
  * Hamiltonian operator for the Coulomb interaction for both AA and AB type for open systems.
  */
 template<typename T>
-struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
+struct CoulombPotential : public OperatorBase, public ForceBase
 {
-  ///true, if CoulombAA for quantum particleset
-  bool is_active;
-  ///distance table index
-  const int myTableIndex;
-  ///number of centers
-  int nCenters;
   ///source particle set
   ParticleSet& Pa;
+  ///target particle set
+  ParticleSet& Pb;
+  ///distance table index
+  const int myTableIndex;
   ///true if the table is AA
   const bool is_AA;
+  ///true, if CoulombAA for quantum particleset
+  bool is_active;
+  ///number of centers
+  int nCenters;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
   Array<TraceReal, 1>* Va_sample;
@@ -58,7 +60,13 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
    * @param computeForces if true, computes forces between inactive species
    */
   inline CoulombPotential(ParticleSet& s, bool active, bool computeForces, bool copy = false)
-      : Pa(s), myTableIndex(s.addTable(s, DT_SOA_PREFERRED)), is_AA(true), is_active(active), ComputeForces(computeForces), ForceBase(s, s)
+      : ForceBase(s, s),
+        Pa(s),
+        Pb(s),
+        myTableIndex(s.addTable(s, DT_SOA_PREFERRED)),
+        is_AA(true),
+        is_active(active),
+        ComputeForces(computeForces)
   {
     set_energy_domain(potential);
     two_body_quantum_domain(s, s);
@@ -82,7 +90,13 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
    * @param ComputeForces is not implemented for AB
    */
   inline CoulombPotential(ParticleSet& s, ParticleSet& t, bool active, bool copy = false)
-      : Pa(s), myTableIndex(t.addTable(s, DT_SOA_PREFERRED)), is_AA(false), is_active(active), ComputeForces(false), ForceBase(s, t)
+      : ForceBase(s, t),
+        Pa(s),
+        Pb(t),
+        myTableIndex(t.addTable(s, DT_SOA_PREFERRED)),
+        is_AA(false),
+        is_active(active),
+        ComputeForces(false)
   {
     set_energy_domain(potential);
     two_body_quantum_domain(s, t);
@@ -100,9 +114,7 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
       Va_sample = tm.checkout_real<1>(myName, Pa);
       if (!is_AA)
       {
-        // Ye: the following line is intentionally made broken
-        //Vb_sample = tm.checkout_real<1>(myName, *Pb);
-        throw std::runtime_error("checkout_particle_quantities AB case need a fix");
+        Vb_sample = tm.checkout_real<1>(myName, Pb);
       }
       else if (!is_active)
         evaluate_spAA(Pa.getDistTable(myTableIndex), Pa.Z.first_address());
@@ -136,31 +148,13 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
       res = evaluate_spAA(d, Z);
     else
 #endif
-    {
-      if (d.DTType == DT_SOA)
+      for (size_t iat = 1; iat < nCenters; ++iat)
       {
-        for (size_t iat = 1; iat < nCenters; ++iat)
-        {
-          const RealType* restrict dist = d.Distances[iat];
-          T q                           = Z[iat];
-          for (size_t j = 0; j < iat; ++j)
-            res += q * Z[j] / dist[j];
-        }
+        const auto& dist = d.getDistRow(iat);
+        T q                           = Z[iat];
+        for (size_t j = 0; j < iat; ++j)
+          res += q * Z[j] / dist[j];
       }
-      else
-      {
-#ifndef ENABLE_SOA
-        const int* restrict M = d.M.data();
-        const int* restrict J = d.J.data();
-        for (int iat = 0; iat < nCenters; ++iat)
-        {
-          T q = Z[iat];
-          for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
-            res += q * Z[J[nn]] * d.rinv(nn);
-        }
-#endif
-      }
-    }
     return res;
   }
 
@@ -169,34 +163,16 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
   inline void evaluateAAForces(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
   {
     forces = 0.0;
-    if (d.DTType == DT_SOA)
+    for (size_t iat = 1; iat < nCenters; ++iat)
     {
-      for (size_t iat = 1; iat < nCenters; ++iat)
+      const auto& dist = d.getDistRow(iat);
+      const auto& displ = d.getDisplRow(iat);
+      T q                           = Z[iat];
+      for (size_t j = 0; j < iat; ++j)
       {
-        const RealType* restrict dist = d.Distances[iat];
-        T q                           = Z[iat];
-        for (size_t j = 0; j < iat; ++j)
-        {
-          forces[iat] += -q * Z[j] * d.Displacements[iat][j] / dist[j] / dist[j] / dist[j];;
-          forces[j]   -= -q * Z[j] * d.Displacements[iat][j] / dist[j] / dist[j] / dist[j];
-        }
+        forces[iat] += -q * Z[j] * displ[j] / (dist[j] * dist[j] * dist[j]);
+        forces[j]   -= -q * Z[j] * displ[j] / (dist[j] * dist[j] * dist[j]);
       }
-    }
-    else
-    {
-#ifndef ENABLE_SOA
-      const int* restrict M = d.M.data();
-      const int* restrict J = d.J.data();
-      for (int iat = 0; iat < nCenters; ++iat)
-      {
-        T q = Z[iat];
-        for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
-        {
-          forces[iat] += -q * Z[J[nn]] * d.dr(nn) * d.rinv(nn) * d.rinv(nn) * d.rinv(nn);
-          forces[nn]  -= -q * Z[J[nn]] * d.dr(nn) * d.rinv(nn) * d.rinv(nn) * d.rinv(nn);
-        }
-      }
-#endif
     }
   }
 
@@ -214,30 +190,14 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
     else
 #endif
     {
-      if (d.DTType == DT_SOA)
-      { //SoA
-        const size_t nTargets = d.targets();
-        for (size_t b = 0; b < nTargets; ++b)
-        {
-          const RealType* restrict dist = d.Distances[b];
-          T e                           = czero;
-          for (size_t a = 0; a < nCenters; ++a)
-            e += Za[a] / dist[a];
-          res += e * Zb[b];
-        }
-      }
-      else
+      const size_t nTargets = d.targets();
+      for (size_t b = 0; b < nTargets; ++b)
       {
-#ifndef ENABLE_SOA
-        const int* restrict M = d.M.data();
-        const int* restrict J = d.J.data();
-        for (int iat = 0; iat < nCenters; ++iat)
-        {
-          T q = Za[iat];
-          for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
-            res += q * Zb[J[nn]] * d.rinv(nn);
-        }
-#endif
+        const auto& dist = d.getDistRow(b);
+        T e                           = czero;
+        for (size_t a = 0; a < nCenters; ++a)
+          e += Za[a] / dist[a];
+        res += e * Zb[b];
       }
     }
     return res;
@@ -249,35 +209,28 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
   inline T evaluate_spAA(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
   {
     T res                 = 0.0;
-#ifndef ENABLE_SOA
-    const int* restrict M = d.M.data();
-    const int* restrict J = d.J.data();
     T pairpot;
     Array<RealType, 1>& Va_samp = *Va_sample;
     Va_samp                     = 0.0;
-    for (int iat = 0; iat < nCenters; ++iat)
+    for (size_t iat = 1; iat < nCenters; ++iat)
     {
-      T q = Z[iat];
-      for (int nn = M[iat], it = 0; nn < M[iat + 1]; ++nn, it++)
+      const auto& dist = d.getDistRow(iat);
+      T q                           = Z[iat];
+      for (size_t j = 0; j < iat; ++j)
       {
-        pairpot = .5 * q * Z[J[nn]] * d.rinv(nn);
+        pairpot = 0.5*q * Z[j] / dist[j];
         Va_samp(iat) += pairpot;
-        Va_samp(it)  += pairpot;
-        res          += 2.0 * pairpot;
+        Va_samp(j)   += pairpot;
+        res          += pairpot;
       }
     }
-#endif
+    res *= 2.0;
 #if defined(TRACE_CHECK)
+    auto sptmp = streaming_particles;
+    streaming_particles = false;
     T Vnow  = res;
     T Vsum  = Va_samp.sum();
-    T Vorig = evaluateAA_orig(d, Z);
-    if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
-    {
-      app_log() << "accumtest: CoulombPotential::evaluateAA()" << std::endl;
-      app_log() << "accumtest:   tot:" << Vnow << std::endl;
-      app_log() << "accumtest:   sum:" << Vsum << std::endl;
-      APP_ABORT("Trace check failed");
-    }
+    T Vorig = evaluateAA(d, Z);
     if (std::abs(Vorig - Vnow) > TraceManager::trace_tol)
     {
       app_log() << "versiontest: CoulombPotential::evaluateAA()" << std::endl;
@@ -285,6 +238,14 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
       app_log() << "versiontest:    mod:" << Vnow << std::endl;
       APP_ABORT("Trace check failed");
     }
+    if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
+    {
+      app_log() << "accumtest: CoulombPotential::evaluateAA()" << std::endl;
+      app_log() << "accumtest:   tot:" << Vnow << std::endl;
+      app_log() << "accumtest:   sum:" << Vsum << std::endl;
+      APP_ABORT("Trace check failed");
+    }
+    streaming_particles = sptmp;
 #endif
     return res;
   }
@@ -295,32 +256,41 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
                          const ParticleScalar_t* restrict Zb)
   {
     T res                 = 0.0;
-#ifndef ENABLE_SOA
-    const int* restrict M = d.M.data();
-    const int* restrict J = d.J.data();
     T pairpot;
     Array<RealType, 1>& Va_samp = *Va_sample;
     Array<RealType, 1>& Vb_samp = *Vb_sample;
     Va_samp                     = 0.0;
     Vb_samp                     = 0.0;
-    for (int iat = 0; iat < nCenters; ++iat)
+    const size_t nTargets = d.targets();
+    for (size_t b = 0; b < nTargets; ++b)
     {
-      T q = Za[iat];
-      for (int nn = M[iat], it = 0; nn < M[iat + 1]; ++nn, it++)
+      const auto& dist = d.getDistRow(b);
+      T z = 0.5*Zb[b];
+      for (size_t a = 0; a < nCenters; ++a)
       {
-        pairpot = .5 * q * Zb[J[nn]] * d.rinv(nn);
-        Va_samp(iat) += pairpot;
-        Vb_samp(it)  += pairpot;
-        res          += 2.0 * pairpot;
+        pairpot = z*Za[a] / dist[a];
+        Va_samp(a) += pairpot;
+        Vb_samp(b) += pairpot;
+        res        += pairpot;
       }
     }
-#endif
+    res *= 2.0;
+
 #if defined(TRACE_CHECK)
+    auto sptmp = streaming_particles;
+    streaming_particles = false;
     T Vnow  = res;
     T Vasum = Va_samp.sum();
     T Vbsum = Vb_samp.sum();
     T Vsum  = Vasum + Vbsum;
-    T Vorig = evaluateAB_orig(d, Za, Zb);
+    T Vorig = evaluateAB(d, Za, Zb);
+    if (std::abs(Vorig - Vnow) > TraceManager::trace_tol)
+    {
+      app_log() << "versiontest: CoulombPotential::evaluateAB()" << std::endl;
+      app_log() << "versiontest:   orig:" << Vorig << std::endl;
+      app_log() << "versiontest:    mod:" << Vnow << std::endl;
+      APP_ABORT("Trace check failed");
+    }
     if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
     {
       app_log() << "accumtest: CoulombPotential::evaluateAB()" << std::endl;
@@ -335,54 +305,11 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
       app_log() << "sharetest:   b share:" << Vbsum << std::endl;
       APP_ABORT("Trace check failed");
     }
-    if (std::abs(Vorig - Vnow) > TraceManager::trace_tol)
-    {
-      app_log() << "versiontest: CoulombPotential::evaluateAB()" << std::endl;
-      app_log() << "versiontest:   orig:" << Vorig << std::endl;
-      app_log() << "versiontest:    mod:" << Vnow << std::endl;
-      APP_ABORT("Trace check failed");
-    }
+    streaming_particles = sptmp;
 #endif
     return res;
   }
 #endif
-
-
-  /** evaluate AA-type interactions */
-  inline T evaluateAA_orig(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
-  {
-    T res                 = 0.0;
-#ifndef ENABLE_SOA
-    const int* restrict M = d.M.data();
-    const int* restrict J = d.J.data();
-    for (int iat = 0; iat < nCenters; ++iat)
-    {
-      T q = Z[iat];
-      for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
-        res += q * Z[J[nn]] * d.rinv(nn);
-    }
-#endif
-    return res;
-  }
-
-
-  inline T evaluateAB_orig(const DistanceTableData& d,
-                           const ParticleScalar_t* restrict Za,
-                           const ParticleScalar_t* restrict Zb)
-  {
-    T res                 = 0.0;
-#ifndef ENABLE_SOA
-    const int* restrict M = d.M.data();
-    const int* restrict J = d.J.data();
-    for (int iat = 0; iat < nCenters; ++iat)
-    {
-      T q = Za[iat];
-      for (int nn = M[iat]; nn < M[iat + 1]; ++nn)
-        res += q * Zb[J[nn]] * d.rinv(nn);
-    }
-#endif
-    return res;
-  }
 
 
   void resetTargetParticleSet(ParticleSet& P)
@@ -438,19 +365,19 @@ struct CoulombPotential : public QMCHamiltonianBase, public ForceBase
 
   void setObservables(PropertySetType& plist)
   {
-    QMCHamiltonianBase::setObservables(plist);
+    OperatorBase::setObservables(plist);
     if (ComputeForces)
       setObservablesF(plist);
   }
 
   void setParticlePropertyList(PropertySetType& plist, int offset)
   {
-    QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+    OperatorBase::setParticlePropertyList(plist, offset);
     if (ComputeForces)
       setParticleSetF(plist, offset);
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
     if (is_AA)
     {

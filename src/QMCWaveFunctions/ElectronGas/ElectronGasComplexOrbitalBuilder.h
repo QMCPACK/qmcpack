@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
+#include <config/stdlib/math.hpp>
 
 
 namespace qmcplusplus
@@ -33,19 +34,19 @@ struct EGOSet : public SPOSet
   EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2);
   EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, const std::vector<int>& d);
 
-  SPOSet* makeClone() const { return new EGOSet(*this); }
+  SPOSet* makeClone() const override { return new EGOSet(*this); }
 
-  void resetParameters(const opt_variables_type& optVariables) {}
-  inline void resetTargetParticleSet(ParticleSet& P) {}
-  void setOrbitalSetSize(int norbs) {}
+  void resetParameters(const opt_variables_type& optVariables) override {}
+  inline void resetTargetParticleSet(ParticleSet& P) override {}
+  void setOrbitalSetSize(int norbs) override {}
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  inline void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override
   {
     const PosType& r = P.activeR(iat);
     RealType sinkr, coskr;
     for (int ik = 0; ik < KptMax; ik++)
     {
-      sincos(dot(K[ik], r), &sinkr, &coskr);
+      qmcplusplus::sincos(dot(K[ik], r), &sinkr, &coskr);
       psi[ik] = ValueType(coskr, sinkr);
     }
   }
@@ -57,13 +58,13 @@ struct EGOSet : public SPOSet
    * @param dpsi gradient row
    * @param d2psi laplacian row
    */
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  inline void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
   {
     const PosType& r = P.activeR(iat);
     RealType sinkr, coskr;
     for (int ik = 0; ik < KptMax; ik++)
     {
-      sincos(dot(K[ik], r), &sinkr, &coskr);
+      qmcplusplus::sincos(dot(K[ik], r), &sinkr, &coskr);
       psi[ik]   = ValueType(coskr, sinkr);
       dpsi[ik]  = ValueType(-sinkr, coskr) * K[ik];
       d2psi[ik] = ValueType(mK2[ik] * coskr, mK2[ik] * sinkr);
@@ -75,14 +76,14 @@ struct EGOSet : public SPOSet
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet)
+                            ValueMatrix_t& d2logdet) override
   {
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
       ValueVector_t v(logdet[i], OrbitalSetSize);
       GradVector_t g(dlogdet[i], OrbitalSetSize);
       ValueVector_t l(d2logdet[i], OrbitalSetSize);
-      evaluate(P, iat, v, g, l);
+      evaluateVGL(P, iat, v, g, l);
     }
   }
   void evaluate_notranspose(const ParticleSet& P,
@@ -91,7 +92,7 @@ struct EGOSet : public SPOSet
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
                             HessMatrix_t& grad_grad_logdet,
-                            GGGMatrix_t& grad_grad_grad_logdet)
+                            GGGMatrix_t& grad_grad_grad_logdet) override
   {
     APP_ABORT(
         "Incomplete implementation EGOSet::evaluate(P,first,last,lodget,dlodet,grad_grad_logdet,grad_grad_grad_logdet");
@@ -105,11 +106,11 @@ class ElectronGasComplexOrbitalBuilder : public WaveFunctionComponentBuilder
 {
 public:
   ///constructor
-  ElectronGasComplexOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs);
+  ElectronGasComplexOrbitalBuilder(Communicate* comm, ParticleSet& els);
   //typedef VarRegistry<RealType> OptimizableSetType;
 
   ///implement vritual function
-  bool put(xmlNodePtr cur);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 };
 
 /** OrbitalBuilder for Slater determinants of electron-gas

@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -21,24 +22,33 @@
 #ifndef QMCPLUSPLUS_SIMPLE_FIXEDNODE_BRANCHER_H
 #define QMCPLUSPLUS_SIMPLE_FIXEDNODE_BRANCHER_H
 
+#include <array>
 #include <Configuration.h>
 #include <OhmmsData/ParameterSet.h>
 #include <Particle/MCWalkerConfiguration.h>
 #include <Estimators/BlockHistogram.h>
 #include <Estimators/accumulators.h>
+#include "type_traits/template_types.hpp"
+#include "Particle/Walker.h"
 #include "QMCDrivers/WalkerControlBase.h"
+#include "QMCDrivers/Crowd.h"
 #include <Utilities/NewTimer.h>
 #include <bitset>
-
-#ifdef HAVE_ADIOS
-#include <adios.h>
-#endif
 
 namespace qmcplusplus
 {
 class EstimatorManagerBase;
 
 /** Manages the state of QMC sections and handles population control for DMCs
+ *
+ * \todo: Remove Estimator dependency, only has come dependency. Express accumulate in
+ *       the actual DMC algorithm (i.e. in DMCBatched.cpp)
+ * \todo: Remove duplicate reading of Driver XML section with own copies of input
+ *       parameters.
+ * \todo: Rename, it is the only branching class so its name is too much
+ * \todo: Use normal types for data members, don't be clever,
+ *       the parameter enums violate KISS and make debugging annoying
+ * \todo: Remove as much state as possible.
  *
  * QMCDriver object owns a SimpleFixedNodeBranch to keep track of the
  * progress of a qmc section. It implements several methods to control the
@@ -48,10 +58,48 @@ class EstimatorManagerBase;
  * manages the population (killing and duplicating walkers) and
  * load balancing among multiple MPI tasks.
  * \see {http://qmcpack.cmscc.org/qmc-basics}
- */
+ *
+ * Steps in 'Legacy' SFNB states machine
+ * 1. Construction (gets global walker number (rank or section wide?)
+ * 2. setEstimatorManager (also makes bootstrapping SFNB state dependent on valid Communicate*)
+ * 3. put(reads driver XML node yet again)
+ * 4. setWalkerController (Maybe a WalkerController pointer is passed in)
+ * 5. InitWalkerController 
+ *   a. Creates walkercontroller if WalkerController is a nullptr
+ *   b. If TargetWalkers isn't known
+ *      aa. allreduce and updates MCMW globalWalkers.
+ *      bb. resets walker offsets
+ *      cc. sets target walkers to whatever current total active walkers is.
+ *   c. resets WalkerController
+ *   d. If not a restart
+ *      aa. saves fixW and killWalker to internal params, otherwise just discards.
+ *      bb. updates SFNB copy of MAX/MINWALKRS from walker controller, 
+ *          these were set in constructer but I guess thats ony if this is a restart
+ *   e. setWalkerId
+ *      aa. call start()
+ *         1. Which calls reset which crucially calculates and update logN state.
+ *      bb. updates all the walker id's of walkers in MCWC.
+ * 6. checkParameters
+ *   a. getCurrentStatistics from SFNB's estimator
+ *   b. set ETrial, EREF, SIGMA2 from estimator
+ *   c. clear EnergyHist and VarianceHist
+ *
+ * Finally branch can be called! It will be called once each step.
+ *
+ * 7. call branch (iter and MCMW)
+ *   a. Not first iter during warmup then call WalkerController branch.
+ *      else call WC doNotBranch, returns pop_now
+ *   b. copy a bunch a state from WC to SFNB (should be with respect to pop_now - number of released nodes)
+ *   c. If using taueff update that based on acceptance ration and current tau.
+ *   d. If not warmup calculate ETRIAL based on EREF and feedback * log(TargetWalkers) - log(pop_now) 
+ *   e. set WC's TrialEnergy
+ *   d. multiply walkers.Colelctables *= the inverse weight.
+ *   f. call SFNB's estimator accumilator on MCWC
+ */  
 struct SimpleFixedNodeBranch : public QMCTraits
 {
   typedef SimpleFixedNodeBranch ThisType;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   /*! enum for booleans
    * \since 2008-05-05
@@ -89,6 +137,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * \since 2008-05-05
    *
    * When introducing a new iParam, check if B_IPARAM_MAX is sufficiently large. Use multiples of 8
+   * Why?  Much easier to use bool flags.  Are these ever serialized?
    */
   enum
   {
@@ -115,30 +164,42 @@ struct SimpleFixedNodeBranch : public QMCTraits
   typedef TinyVector<int, B_IPARAM_MAX> IParamType;
   IParamType iParam;
 
-  /*! enum for vParam */
-  enum
+  /** enum for vParam 
+   *
+   *  Easy serialization is a relatively minor concern compared to the 
+   *  annoyance this causes elsewhere.
+   */
+  enum class SimpleBranchVectorParameter
   {
-    B_TAU = 0,
-    B_TAUEFF,
-    B_ETRIAL,
-    B_EREF,
-    B_ENOW,
-    B_BRANCHMAX,
-    B_BRANCHCUTOFF,
-    B_BRANCHFILTER,
-    B_SIGMA2,
-    B_ACC_ENERGY,
-    B_ACC_SAMPLES,
-    B_FEEDBACK,
-    B_FILTERSCALE,
-    B_VPARAM_MAX = 17
+    TAU = 0,
+    TAUEFF,
+    ETRIAL,
+    EREF,
+    ENOW,
+    BRANCHMAX,
+    BRANCHCUTOFF,
+    BRANCHFILTER,
+    SIGMA2,
+    ACC_ENERGY,
+    ACC_SAMPLES,
+    FEEDBACK,
+    FILTERSCALE,
+    VPARAM_MAX = 17 // four extra, why? Sloppy or undocumented hack?
   };
-
-  /** controlling parameters of real type
+  using SBVP = SimpleBranchVectorParameter;
+  
+  /** controlling parameters of full precision real type
    *
    * Mostly internal
    */
-  typedef TinyVector<FullPrecRealType, B_VPARAM_MAX> VParamType;
+  template<typename PAR_ENUM>
+  struct VParams : public std::array<FullPrecRealType, static_cast<size_t>(PAR_ENUM::VPARAM_MAX)>
+  {
+    using Base = std::array<FullPrecRealType, static_cast<size_t>(PAR_ENUM::VPARAM_MAX)>;
+    FullPrecRealType& operator[](PAR_ENUM sbvp) { return Base::operator[](static_cast<size_t>(sbvp)); }
+    const FullPrecRealType& operator[](PAR_ENUM sbvp) const { return Base::operator[](static_cast<size_t>(sbvp)); }
+  };
+  using VParamType = VParams<SBVP>;
   VParamType vParam;
 
   /** number of remaning steps for a specific tasks
@@ -154,7 +215,8 @@ struct SimpleFixedNodeBranch : public QMCTraits
   std::unique_ptr<WalkerControlBase> WalkerController;
   ///Backup WalkerController for mixed DMC
   std::unique_ptr<WalkerControlBase> BackupWalkerController;
-  ///EstimatorManager
+  
+  ///TODO: Should not be raw pointer 
   EstimatorManagerBase* MyEstimator;
   ///a simple accumulator for energy
   accumulator_set<FullPrecRealType> EnergyHist;
@@ -201,6 +263,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   inline bool phaseChanged(RealType psi0) const
   {
+// TODO: remove ifdef
 #if defined(QMC_COMPLEX)
     return false;
 #else
@@ -220,17 +283,17 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   /** set the EstimatorManager
    * @param est estimator created by the first QMCDriver
+   * this assumes estimator managers are reused section to section
    * */
   void setEstimatorManager(EstimatorManagerBase* est) { MyEstimator = est; }
 
   /** initialize  the WalkerController
-   * @param w Walkers
-   * @param tau timestep
+   * @param mcwc Walkers
    * @param fixW true, if reconfiguration with the fixed number of walkers is used
+   * @param killwalker 
    * @return number of copies to make in case targetwalkers changed
    */
-  int initWalkerController(MCWalkerConfiguration& w, bool fixW, bool killwalker);
-  //void initWalkerController(MCWalkerConfiguration& w, RealType tau, bool fixW=false, bool killwalker=false);
+  int initWalkerController(MCWalkerConfiguration& mcwc, bool fixW, bool killwalker);
 
   /** initialize reptile stats
    *
@@ -248,13 +311,13 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeightBare(RealType enew, RealType eold) const
   {
-    return std::exp(vParam[B_TAUEFF] * (vParam[B_ETRIAL] - 0.5 * (enew + eold)));
+    return std::exp(vParam[SBVP::TAUEFF] * (vParam[SBVP::ETRIAL] - 0.5 * (enew + eold)));
   }
 
   inline RealType branchWeightReleasedNode(RealType enew, RealType eold, RealType eref) const
   {
     if (BranchMode[B_DMCSTAGE])
-      return std::exp(vParam[B_TAU] * (eref - 0.5 * (enew + eold)));
+      return std::exp(vParam[SBVP::TAU] * (eref - 0.5 * (enew + eold)));
     else
       return 1.0;
   }
@@ -265,25 +328,25 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeight(FullPrecRealType enew, FullPrecRealType eold) const
   {
-    FullPrecRealType taueff_ = vParam[B_TAUEFF] * 0.5;
-    FullPrecRealType x       = std::max(vParam[B_EREF] - enew, vParam[B_EREF] - eold);
-    if (x > vParam[B_BRANCHMAX])
+    FullPrecRealType taueff_ = vParam[SBVP::TAUEFF] * 0.5;
+    FullPrecRealType x       = std::max(vParam[SBVP::EREF] - enew, vParam[SBVP::EREF] - eold);
+    if (x > vParam[SBVP::BRANCHMAX])
       taueff_ = 0.0;
-    else if (x > vParam[B_BRANCHCUTOFF])
-      taueff_ *= (1.0 - (x - vParam[B_BRANCHCUTOFF]) * vParam[B_BRANCHFILTER]);
-    return std::exp(taueff_ * (vParam[B_ETRIAL] * 2.0 - enew - eold));
+    else if (x > vParam[SBVP::BRANCHCUTOFF])
+      taueff_ *= (1.0 - (x - vParam[SBVP::BRANCHCUTOFF]) * vParam[SBVP::BRANCHFILTER]);
+    return std::exp(taueff_ * (vParam[SBVP::ETRIAL] * 2.0 - enew - eold));
   }
 
   inline RealType symLinkAction(RealType logGf, RealType logGb, RealType enew, RealType eold) const
   {
     RealType driftaction = -0.5 * (logGf + logGb);
     //RealType energyaction =
-    RealType taueff_ = vParam[B_TAUEFF] * 0.5;
-    RealType x       = std::max(vParam[B_EREF] - enew, vParam[B_EREF] - eold);
-    if (x > vParam[B_BRANCHMAX])
+    RealType taueff_ = vParam[SBVP::TAUEFF] * 0.5;
+    RealType x       = std::max(vParam[SBVP::EREF] - enew, vParam[SBVP::EREF] - eold);
+    if (x > vParam[SBVP::BRANCHMAX])
       taueff_ = 0.0;
-    else if (x > vParam[B_BRANCHCUTOFF])
-      taueff_ *= (1.0 - (x - vParam[B_BRANCHCUTOFF]) * vParam[B_BRANCHFILTER]);
+    else if (x > vParam[SBVP::BRANCHCUTOFF])
+      taueff_ *= (1.0 - (x - vParam[SBVP::BRANCHCUTOFF]) * vParam[SBVP::BRANCHFILTER]);
     RealType energyaction = taueff_ * (enew + eold);
     return driftaction + energyaction;
   }
@@ -291,7 +354,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   inline RealType symLinkActionBare(RealType logGf, RealType logGb, RealType enew, RealType eold) const
   {
     RealType driftaction  = -0.5 * (logGf + logGb);
-    RealType taueff_      = vParam[B_TAUEFF] * 0.5;
+    RealType taueff_      = vParam[SBVP::TAUEFF] * 0.5;
     RealType energyaction = taueff_ * (enew + eold);
     // RealType wavefunctionaction= -psinew + psiold;
     return driftaction + energyaction;
@@ -299,12 +362,12 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   inline RealType DMCLinkAction(RealType enew, RealType eold) const
   {
-    RealType taueff_ = vParam[B_TAUEFF] * 0.5;
-    RealType x       = std::max(vParam[B_EREF] - enew, vParam[B_EREF] - eold);
-    if (x > vParam[B_BRANCHMAX])
+    RealType taueff_ = vParam[SBVP::TAUEFF] * 0.5;
+    RealType x       = std::max(vParam[SBVP::EREF] - enew, vParam[SBVP::EREF] - eold);
+    if (x > vParam[SBVP::BRANCHMAX])
       taueff_ = 0.0;
-    else if (x > vParam[B_BRANCHCUTOFF])
-      taueff_ *= (1.0 - (x - vParam[B_BRANCHCUTOFF]) * vParam[B_BRANCHFILTER]);
+    else if (x > vParam[SBVP::BRANCHCUTOFF])
+      taueff_ *= (1.0 - (x - vParam[SBVP::BRANCHCUTOFF]) * vParam[SBVP::BRANCHFILTER]);
     return taueff_ * (enew + eold);
   }
   /** return the branch weight according to JCP1993 Umrigar et al. Appendix A p=1, q=0
@@ -315,9 +378,9 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeight(RealType enew, RealType eold, RealType scnew, RealType scold) const
   {
-    FullPrecRealType s1 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - enew) * scnew;
-    FullPrecRealType s0 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - eold) * scold;
-    return std::exp(vParam[B_TAUEFF] * 0.5 * (s1 + s0));
+    FullPrecRealType s1 = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - enew) * scnew;
+    FullPrecRealType s0 = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - eold) * scold;
+    return std::exp(vParam[SBVP::TAUEFF] * 0.5 * (s1 + s0));
   }
 
   /** return the branch weight according to JCP1993 Umrigar et al. Appendix A
@@ -329,9 +392,9 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   inline RealType branchWeight(RealType enew, RealType eold, RealType scnew, RealType scold, RealType p) const
   {
-    FullPrecRealType s1 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - enew) * scnew;
-    FullPrecRealType s0 = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - eold) * scold;
-    return std::exp(vParam[B_TAUEFF] * (p * 0.5 * (s1 - s0) + s0));
+    FullPrecRealType s1 = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - enew) * scnew;
+    FullPrecRealType s0 = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - eold) * scold;
+    return std::exp(vParam[SBVP::TAUEFF] * (p * 0.5 * (s1 - s0) + s0));
     //return std::exp(TauEff*(p*0.5*(sp-sq)+sq));
   }
 
@@ -340,21 +403,22 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * @param eold old energy
    * @param scnew  \f$ V_{sc}(R_{new})/V(R_{new}) \f$
    * @param scold  \f$ V_{sc}(R_{old})/V(R_{old}) \f$
+   * @param taueff
    */
   inline RealType branchWeightTau(RealType enew, RealType eold, RealType scnew, RealType scold, RealType taueff)
   {
     ScaleSum += scnew + scold;
     ScaleNum += 2;
     FullPrecRealType scavg = (ScaleNum > 10000) ? ScaleSum / (RealType)ScaleNum : 1.0;
-    FullPrecRealType s1    = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - enew) * scnew / scavg;
-    FullPrecRealType s0    = (vParam[B_ETRIAL] - vParam[B_EREF]) + (vParam[B_EREF] - eold) * scold / scavg;
+    FullPrecRealType s1    = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - enew) * scnew / scavg;
+    FullPrecRealType s0    = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - eold) * scold / scavg;
     return std::exp(taueff * 0.5 * (s1 + s0));
   }
 
-  inline RealType getEref() const { return vParam[B_EREF]; }
-  inline RealType getEtrial() const { return vParam[B_ETRIAL]; }
-  inline RealType getTau() const { return vParam[B_TAU]; }
-  inline RealType getTauEff() const { return vParam[B_TAUEFF]; }
+  inline RealType getEref() const { return vParam[SBVP::EREF]; }
+  inline RealType getEtrial() const { return vParam[SBVP::ETRIAL]; }
+  inline RealType getTau() const { return vParam[SBVP::TAU]; }
+  inline RealType getTauEff() const { return vParam[SBVP::TAUEFF]; }
 
   /** perform branching
    * @param iter current step
@@ -365,7 +429,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** update RMC counters and running averages.
    * @param iter the iteration
    * @param w the walker ensemble
-   * @param clones of the branch engine for OpenMP threads
    */
   void collect(int iter, MCWalkerConfiguration& w);
 
@@ -379,6 +442,8 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   /** reset the internal parameters
    * @return new target population over old target population
+   *
+   * only used by CUDA legacy
    */
   int resetRun(xmlNodePtr cur);
 
@@ -389,10 +454,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
    * @param overwrite NOT USED
    */
   void write(const std::string& fname, bool overwrite = true);
-
-#ifdef HAVE_ADIOS
-  void save_energy();
-#endif
 
   void read(const std::string& fname);
 
@@ -406,22 +467,9 @@ struct SimpleFixedNodeBranch : public QMCTraits
 
   void setRN(bool rn);
 
-
-  //     void storeConfigsForForwardWalking(MCWalkerConfiguration& w);
-  //     void clearConfigsForForwardWalking( );
-  //     void debugFWconfig();
-  //     WalkerControlBase* getWalkerController()
-  //     {
-  //       return WalkerController;
-  //     }
-
 private:
   ///default constructor (disabled)
   SimpleFixedNodeBranch() {}
-
-  ///disable use by external users
-  //void write(hid_t grp, bool append=false);
-  //void read(hid_t grp);
 
   ///set branch cutoff, max, filter
   void setBranchCutoff(FullPrecRealType variance,
@@ -429,6 +477,8 @@ private:
                        FullPrecRealType maxSigma,
                        int Nelec = 0);
 };
+
+std::ostream& operator<<(std::ostream& os, SimpleFixedNodeBranch::VParamType& rhs);
 
 } // namespace qmcplusplus
 #endif

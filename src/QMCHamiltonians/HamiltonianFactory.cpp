@@ -32,10 +32,10 @@
 #include "QMCHamiltonians/Pressure.h"
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
-#include "QMCHamiltonians/LocalMomentEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
 #include "QMCHamiltonians/HarmonicExternalPotential.h"
+#include "QMCHamiltonians/GridExternalPotential.h"
 #include "QMCHamiltonians/StaticStructureFactor.h"
 #include "QMCHamiltonians/SpinDensity.h"
 #include "QMCHamiltonians/OrbitalImages.h"
@@ -166,12 +166,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         addMPCPotential(cur);
       else if (potType == "pseudo")
         addPseudoPotential(cur);
-#if !defined(QMC_CUDA)
-      else if (potType == "cpp")
-      {
-        addCorePolPotential(cur);
-      }
-#endif
 #endif
     }
     else if (cname == "constant")
@@ -187,6 +181,12 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         HarmonicExternalPotential* hs = new HarmonicExternalPotential(*targetPtcl);
         hs->put(cur);
         targetH->addOperator(hs, "HarmonicExt", true);
+      }
+      if (potType == "grid")
+      {
+        GridExternalPotential* hs = new GridExternalPotential(*targetPtcl);
+        hs->put(cur);
+        targetH->addOperator(hs, "Grid", true);
       }
     }
     else if (cname == "estimator")
@@ -241,22 +241,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
-      else if (potType == "localmoment")
-      {
-        std::string SourceName = "ion0";
-        OhmmsAttributeSet hAttrib;
-        hAttrib.add(SourceName, "source");
-        hAttrib.put(cur);
-        PtclPoolType::iterator pit(ptclPool.find(SourceName));
-        if (pit == ptclPool.end())
-        {
-          APP_ABORT("Unknown source \"" + SourceName + "\" for LocalMoment.");
-        }
-        ParticleSet* source        = (*pit).second;
-        LocalMomentEstimator* apot = new LocalMomentEstimator(*targetPtcl, *source);
-        apot->put(cur);
-        targetH->addOperator(apot, potName, false);
-      }
       else if (potType == "density")
       {
         //          if(PBCType)//only if perioidic
@@ -303,9 +287,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         attrib.add(source, "source");
         attrib.put(cur);
         PtclPoolType::iterator pit(ptclPool.find(source));
-        ParticleSet* Pc;
+        ParticleSet* Pc = nullptr;
         if (source == "")
-          Pc = NULL;
+          Pc = nullptr;
         else if (pit != ptclPool.end())
           Pc = pit->second;
         else
@@ -337,10 +321,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
 #if OHMMS_DIM == 3
       else if (potType == "chiesa")
       {
-#ifdef ENABLE_SOA
-        app_warning() << "Skip Chiesa estimator due to the lack of support with SoA."
-                      << " Access the correction via AoS at the moment." << std::endl;
-#else
         std::string PsiName    = "psi0";
         std::string SourceName = "e";
         OhmmsAttributeSet hAttrib;
@@ -361,7 +341,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         const TrialWaveFunction& psi = *psi_it->second->targetPsi;
         ChiesaCorrection* chiesa     = new ChiesaCorrection(source, psi);
         targetH->addOperator(chiesa, "KEcorr", false);
-#endif
       }
       else if (potType == "skall")
       {
@@ -373,7 +352,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         PtclPoolType::iterator pit(ptclPool.find(SourceName));
         if (pit == ptclPool.end())
         {
-          APP_ABORT("Unknown source \"" + SourceName + "\" for LocalMoment.");
+          APP_ABORT("Unknown source \"" + SourceName + "\" for SkAll.");
         }
         ParticleSet* source = (*pit).second;
 

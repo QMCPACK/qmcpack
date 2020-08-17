@@ -16,13 +16,7 @@
 
 #include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
-#include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
-#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
-#ifndef ENABLE_SOA
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#endif
-#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
 
@@ -34,7 +28,6 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
   std::string jname = "JeeI";
   SpeciesSet& iSet  = sourcePtcl->getSpeciesSet();
   SpeciesSet& eSet  = targetPtcl.getSpeciesSet();
-  int numiSpecies   = iSet.getTotalNum();
   //read in xml
   while (kids != NULL)
   {
@@ -112,12 +105,11 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
   }
   //check that each ion species has up and down components
   J3.check_complete();
-  targetPsi.addComponent(&J3, jname.c_str());
   J3.setOptimizable(true);
   return true;
 }
 
-bool eeI_JastrowBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* eeI_JastrowBuilder::buildComponent(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   xmlNodePtr kids = cur->xmlChildrenNode;
@@ -129,27 +121,24 @@ bool eeI_JastrowBuilder::put(xmlNodePtr cur)
     tAttrib.add(ftype, "function");
     tAttrib.put(cur);
     SpeciesSet& iSet = sourcePtcl->getSpeciesSet();
-    SpeciesSet& eSet = targetPtcl.getSpeciesSet();
-    int numiSpecies  = iSet.getTotalNum();
     if (ftype == "polynomial")
     {
-#ifdef ENABLE_SOA
       typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
-#else
-      typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
-#endif
-      J3Type& J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
-      putkids(kids, J3);
+      J3Type* J3 = new J3Type(*sourcePtcl, targetPtcl, true);
+      putkids(kids, *J3);
+      return J3;
     }
     else
     {
-      app_error() << "Unknown function \"" << ftype << "\" in"
-                  << " eeI_JastrowBuilder.  Aborting.\n";
-      abort();
+      std::ostringstream err_msg;
+      err_msg << "Unknown function \"" << ftype << "\" in"
+              << " eeI_JastrowBuilder.  Aborting.\n";
+      APP_ABORT(err_msg.str());
     }
   }
   else
-    app_error() << "You must specify the \"source\" particleset for a three-body Jastrow.\n";
-  return true;
+    APP_ABORT("You must specify the \"source\" particleset for a three-body Jastrow.\n");
+  return nullptr;
 }
+
 } // namespace qmcplusplus

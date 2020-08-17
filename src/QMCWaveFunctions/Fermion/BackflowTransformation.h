@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "Particle/ParticleSet.h"
+#include "Particle/ParticleBase/ParticleAttribOps.h"
 #include "Configuration.h"
 #include <map>
 #include <cmath>
@@ -69,9 +70,6 @@ public:
   /// quasiparticle coordinates
   ParticleSet QP;
 
-  /// Distance Table
-  const int myTableIndex_;
-
   // number of variational parameters
   int numParams;
 
@@ -97,8 +95,8 @@ public:
   // pos of first optimizable variable in global array
   int numVarBefore;
 
-  ParticleSet& targetPtcl;
-  //    PtclPoolType& ptclPool;
+  /// Distance Table
+  const int myTableIndex_;
 
   // matrix of laplacians
   // /vec{B(i)} = sum_{k} /grad_{k}^2 /vec{x_i}
@@ -151,12 +149,9 @@ public:
   opt_variables_type myVars;
 
   BackflowTransformation(ParticleSet& els)
-    : targetPtcl(els), QP(els), cutOff(0.0),
-#ifdef ENABLE_SOA
-      myTableIndex_(els.addTable(els, DT_SOA))
-#else
-      myTableIndex_(els.addTable(els, DT_AOS))
-#endif
+      : QP(els),
+        cutOff(0.0),
+        myTableIndex_(els.addTable(els, DT_SOA))
   {
     NumTargets = els.getTotalNum();
     Bmat.resize(NumTargets);
@@ -170,14 +165,14 @@ public:
     numVarBefore = 0;
   }
 
-  void copyFrom(BackflowTransformation& tr)
+  void copyFrom(const BackflowTransformation& tr, ParticleSet& targetPtcl)
   {
     cutOff       = tr.cutOff;
     numParams    = tr.numParams;
     numVarBefore = tr.numVarBefore;
     optIndexMap  = tr.optIndexMap;
-    bfFuns.resize((tr.bfFuns).size());
-    std::vector<BackflowFunctionBase*>::iterator it((tr.bfFuns).begin());
+    bfFuns.resize(tr.bfFuns.size());
+    auto it(tr.bfFuns.begin());
     for (int i = 0; i < (tr.bfFuns).size(); i++, it++)
       bfFuns[i] = (*it)->makeClone(targetPtcl);
   }
@@ -186,7 +181,7 @@ public:
   BackflowTransformation* makeClone(ParticleSet& tqp)
   {
     BackflowTransformation* clone = new BackflowTransformation(tqp);
-    clone->copyFrom(*this);
+    clone->copyFrom(*this, tqp);
     //       std::vector<BackflowFunctionBase*>::iterator it((bfFuns).begin());
     //       for(int i=0; i<(bfFuns).size() ; i++,it++)
     //       {
@@ -259,14 +254,6 @@ public:
         return true;
     return false;
   }
-
-  /** reset the distance table with a new target P
-   */
-  void resetTargetParticleSet(ParticleSet& P)
-  {
-    targetPtcl = P;
-  }
-
 
   void resetParameters(const opt_variables_type& active)
   {
@@ -353,11 +340,7 @@ public:
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
     const auto& myTable = P.getDistTable(myTableIndex_);
-#ifdef ENABLE_SOA
-    newQP[iat] -= myTable.Temp_dr[iat];
-#else
-    newQP[iat] += myTable.Temp[iat].dr1;
-#endif
+    newQP[iat] -= myTable.getTempDispls()[iat];
     indexQP.clear();
     for (int i = 0; i < bfFuns.size(); i++)
       bfFuns[i]->evaluatePbyP(P, iat, newQP);
@@ -404,11 +387,7 @@ public:
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
     const auto& myTable = P.getDistTable(myTableIndex_);
-#ifdef ENABLE_SOA
-    newQP[iat] -= myTable.Temp_dr[iat];
-#else
-    newQP[iat] += myTable.Temp[iat].dr1;
-#endif
+    newQP[iat] -= myTable.getTempDispls()[iat];
     indexQP.clear();
     std::copy(FirstOfA, LastOfA, FirstOfA_temp);
     for (int i = 0; i < bfFuns.size(); i++)
@@ -433,9 +412,10 @@ public:
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
     const auto& myTable = P.getDistTable(myTableIndex_);
-#ifndef ENABLE_SOA
-    newQP[iat] += myTable.Temp[iat].dr1;
-#endif
+
+    // this is from AoS, is it needed or not?
+    //newQP[iat] += myTable.Temp[iat].dr1;
+
     indexQP.clear();
     std::copy(FirstOfA, LastOfA, FirstOfA_temp);
     std::copy(FirstOfB, LastOfB, FirstOfB_temp);
@@ -741,12 +721,12 @@ public:
       dr[2] = -0.3;
       P.makeMove(iat, dr);
       const auto& myTable = P.getDistTable(myTableIndex_);
-#ifndef ENABLE_SOA
-      app_log() << "Move: " << myTable.Temp[iat].dr1 << std::endl;
-      app_log() << "cutOff: " << cutOff << std::endl;
-      for (int jat = 0; jat < NumTargets; jat++)
-        app_log() << jat << "  " << myTable.Temp[jat].r1 << std::endl;
-#endif
+
+      //app_log() << "Move: " << myTable.Temp[iat].dr1 << std::endl;
+      //app_log() << "cutOff: " << cutOff << std::endl;
+      //for (int jat = 0; jat < NumTargets; jat++)
+      //  app_log() << jat << "  " << myTable.Temp[jat].r1 << std::endl;
+
       //evaluatePbyP(P,iat);
       evaluatePbyPWithGrad(P, iat);
       app_log() << "Moving: ";

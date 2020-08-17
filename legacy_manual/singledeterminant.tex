@@ -1,0 +1,54 @@
+\section{Single determinant wavefunctions}
+\label{sec:singledeterminant}
+Placing a single determinant for each spin is the most used ansatz for the antisymmetric part of a trial wavefunction.
+The input xml block for \texttt{slaterdeterminant} is give in Listing~\ref{listing:singledet}. A list of options is given in
+Table~\ref{table:singledet}.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l X }
+\hline
+\multicolumn{6}{l}{\texttt{slaterdeterminant} element} \\
+\hline
+\multicolumn{2}{l}{Parent elements:} & \multicolumn{4}{l}{\texttt{determinantset}}\\
+\multicolumn{2}{l}{Child  elements:} & \multicolumn{4}{l}{\texttt{determinant}}\\
+\multicolumn{2}{l}{Attribute:} & \multicolumn{4}{l}{}\\
+   &   \bfseries Name       & \bfseries Datatype & \bfseries Values & \bfseries Default & \bfseries Description \\
+   &   \texttt{delay\_rank} &  Integer           &  >=0             & 1           &  Number of delayed updates. \\
+   &   \texttt{optimize}    &  Text              &  yes/no          & yes         &  Enable orbital optimization. \\
+  \hline
+\end{tabularx}
+\end{center}
+\caption{Options for the \texttt{slaterdeterminant} xml-block.}
+\label{table:singledet}
+\end{table}
+
+\begin{lstlisting}[style=QMCPXML,caption=Slaterdeterminant set XML element.\label{listing:singledet}]
+  <slaterdeterminant delay_rank="32">
+    <determinant id="updet" size="208">
+      <occupation mode="ground" spindataset="0">
+      </occupation>
+    </determinant>
+    <determinant id="downdet" size="208">
+      <occupation mode="ground" spindataset="0">
+      </occupation>
+    </determinant>
+  </slaterdeterminant>
+\end{lstlisting}
+
+Additional information:
+\begin{itemize}
+\item \ixml{delay\_rank}. This option enables delayed updates of the Slater matrix inverse when particle-by-particle move is used.
+By default or if \ixml{delay\_rank=0} given in the input file, QMCPACK sets 1 for Slater matrices with a leading dimension $<192$ and 32 otherwise.
+\ixml{delay\_rank=1} uses the Fahy's variant~\cite{Fahy1990} of the Sherman-Morrison rank-1 update, which is mostly using memory bandwidth-bound BLAS-2 calls.
+With \ixml{delay\_rank>1}, the delayed update algorithm~\cite{Luo2018delayedupdate,McDaniel2017} turns most of the computation to compute bound BLAS-3 calls.
+Tuning this parameter is highly recommended to gain the best performance on medium-to-large problem sizes ($>200$ electrons).
+We have seen up to an order of magnitude speedup on large problem sizes.
+When studying the performance of QMCPACK, a scan of this parameter is required and we recommend starting from 32.
+The best \ixml{delay\_rank} giving the maximal speedup depends on the problem size.
+Usually the larger \ixml{delay\_rank} corresponds to a larger problem size.
+On CPUs, \ixml{delay\_rank} must be chosen as a multiple of SIMD vector length for good performance of BLAS libraries.
+The best \ixml{delay\_rank} depends on the processor microarchitecture.
+GPU support is under development.
+\end{itemize}
+

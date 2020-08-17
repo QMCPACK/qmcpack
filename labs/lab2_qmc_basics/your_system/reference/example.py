@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # import project suite functions
 from project import settings,Job,run_project,get_machine

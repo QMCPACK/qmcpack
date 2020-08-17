@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 import argparse
 import h5py
@@ -35,20 +35,22 @@ def parse_args(args, comm):
                             help='Output file name for QMCPACK hamiltonian.')
         parser.add_argument('-w', '--wavefunction', dest='wfn_file',
                             type=str, default=None,
-                            help='Output file name for QMCPACK hamiltonian.')
+                            help='Output file name for QMCPACK wavefunction. '
+                                 'By default will write to hamil_file.')
         parser.add_argument('-q', '--qmcpack-input', dest='qmc_input',
                             type=str, default=None,
-                            help='Generate skeleton QMCPACK input file.')
+                            help='Generate skeleton QMCPACK input xml file.')
         parser.add_argument('-t', '--cholesky-threshold', dest='thresh',
                             type=float, default=1e-5,
                             help='Cholesky convergence threshold.')
         parser.add_argument('-k', '--kpoint', dest='kpoint_sym',
                             action='store_true', default=False,
                             help='Generate explicit kpoint dependent integrals.')
-        parser.add_argument('-g', '--gdf', dest='gdf',
+        parser.add_argument('--density-fit', dest='df',
                             action='store_true', default=False,
-                            help='Use Gaussian density fitting.')
-        parser.add_argument('-a', '--ao', dest='ortho_ao',
+                            help='Use density fitting integrals stored in '
+                            'input pyscf chkpoint file.')
+        parser.add_argument('-a', '--ao', '--ortho-ao', dest='ortho_ao',
                             action='store_true', default=False,
                             help='Transform to ortho AO basis. Default assumes '
                             'we work in MO basis')
@@ -60,12 +62,26 @@ def parse_args(args, comm):
                             action='store_true', default=False,
                             help='Disable hamiltonian generation.')
         parser.add_argument('-n', '--num-dets', dest='ndet_max',
-                            type=int, default=None,
+                            type=int, default=1,
                             help='Set upper limit on number of determinants to '
                             'generate.')
         parser.add_argument('-r', '--real-ham', dest='real_chol',
-                            type=int, default=None,
-                            help='Write integrals as real numbers')
+                            action='store_true', default=False,
+                            help='Write integrals as real numbers.')
+        parser.add_argument('-p', '--phdf', dest='phdf',
+                            action='store_true', default=False,
+                            help='Use parallel hdf5.')
+        parser.add_argument('--low', dest='low_thresh',
+                            type=float, default=0.1,
+                            help='Lower threshold for non-integer occupancies'
+                            'to include in multi-determinant exansion.')
+        parser.add_argument('--high', dest='high_thresh',
+                            type=float, default=0.95,
+                            help='Upper threshold for non-integer occupancies'
+                            'to include in multi-determinant exansion.')
+        parser.add_argument('--dense', dest='dense',
+                            action='store_true', default=False,
+                            help='Write dense Hamiltonian.')
         parser.add_argument('-v', '--verbose', action='count', default=0,
                             help='Verbose output.')
 
@@ -121,17 +137,25 @@ def main(args):
             options.wfn_file = 'wfn.dat'
         else:
             options.wfn_file = options.hamil_file
-    write_qmcpack(comm, options.chk_file, options.hamil_file,
-                  options.thresh, ortho_ao=options.ortho_ao,
-                  kpoint=options.kpoint_sym, gdf=options.gdf,
+    write_qmcpack(options.chk_file, options.hamil_file, options.thresh,
+                  comm=comm,
+                  ortho_ao=options.ortho_ao,
+                  kpoint=options.kpoint_sym, df=options.df,
                   verbose=options.verbose, cas=options.cas,
                   qmc_input=options.qmc_input,
                   wfn_file=options.wfn_file,
                   write_hamil=(not options.disable_ham),
                   ndet_max=options.ndet_max,
-                  real_chol=options.real_chol)
+                  real_chol=options.real_chol,
+                  phdf=options.phdf,
+                  low=options.low_thresh,
+                  high=options.high_thresh,
+                  dense=options.dense)
     if comm.rank == 0:
         write_metadata(options, sha1, cwd, date_time)
+
+    if comm.rank == 0:
+        print("\n # Finished.")
 
 if __name__ == '__main__':
 

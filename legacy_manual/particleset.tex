@@ -1,0 +1,242 @@
+\section{Specifying the particle set}
+\label{sec:particleset}
+
+
+The \ixml{particleset} blocks specify the particles in the QMC simulations: their types, attributes (mass, charge, valence), and positions.   
+
+\subsection{Input specification}
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l X }
+\hline
+\multicolumn{6}{l}{\texttt{particleset} element} \\
+\hline
+\multicolumn{2}{l}{Parent elements:} & \multicolumn{4}{l}{\texttt{simulation}}\\
+\multicolumn{2}{l}{Child  elements:} & \multicolumn{4}{l}{\texttt{group, attrib}}\\
+\multicolumn{2}{l}{Attribute:} & \multicolumn{4}{l}{}\\
+   &   \bfseries Name            & \bfseries Datatype & \bfseries Values & \bfseries Default   & \bfseries Description \\
+   &   \texttt{name}/\texttt{id}   &  Text              &  \textit{Any}    &  e                & Name of particle set  \\
+   &   \texttt{size}$^o$           &  Integer           &  \textit{Any}    &  0                & Number of particles in set \\
+   &   \texttt{random}$^o$         &  Text              &  Yes/no          &  No               & Randomize starting positions \\
+   &   \texttt{randomsrc}/         &  Text     & \texttt{particleset.name} & \textit{None}     & Particle set to randomize  \\
+   &   \texttt{random\_source}$^o$ &                    &                  &                   &                       \\
+%   &   \texttt{role}     &  text              &  MC/none         &  none               & (obsolete)                       \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l X }
+\hline
+\multicolumn{6}{l}{\texttt{group} element} \\
+\hline
+\multicolumn{2}{l}{Parent elements:} & \multicolumn{4}{l}{\texttt{particleset}}\\
+\multicolumn{2}{l}{Child  elements:} & \multicolumn{4}{l}{\texttt{parameter, attrib}}\\
+\multicolumn{2}{l}{Attribute:} & \multicolumn{4}{l}{}\\
+   &   \bfseries Name            & \bfseries Datatype & \bfseries Values & \bfseries Default   & \bfseries Description \\
+   &   \texttt{name}               &  Text              &  \textit{Any}    &  e                & Name of particle set  \\
+   &   \texttt{size}$^o$           &  Integer           &  \textit{Any}    &  0                & Number of particles in set \\
+   &   \texttt{mass}$^o$           &  Real              &  \textit{Any}    &  1                & Mass of particles in set \\
+   &   \texttt{unit}$^o$          &  Text              &  au/amu          &  au               & Units for mass of particles \\
+\multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
+   &   \bfseries Name     & \bfseries Datatype & \bfseries Values & \bfseries Default   & \bfseries Description \\
+   &   \texttt{charge}    &  Real              &  \textit{Any}    &  0                  & Charge of particles in set \\
+   &   \texttt{valence}   &  Real              &  \textit{Any}    &  0                  & Valence charge of particles in set \\
+   &   \texttt{atomicnumber} &  Integer        &  \textit{Any}    &  0                  & Atomic number of particles in set \\
+  \hline
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l X }
+\hline
+\multicolumn{6}{l}{\texttt{attrib} element} \\
+\hline
+\multicolumn{2}{l}{Parent elements:} & \multicolumn{4}{l}{\texttt{particleset,group}}\\
+\multicolumn{2}{l}{Attribute:} & \multicolumn{4}{l}{}\\
+   &   \bfseries Name            & \bfseries Datatype & \bfseries Values & \bfseries Default   & \bfseries Description \\
+   &   \texttt{name}             &  String            &  \textit{Any}    &  \textit{None}    & Name of attrib              \\
+   &   \texttt{datatype}         &  String            &  IntArray, realArray, &  \textit{None} & Type of data in attrib \\
+   &                             &                    &  posArray, stringArray &             &                        \\
+   &   \texttt{size}$^o$         &  String            &  \textit{Any}    &  \textit{None}    & Size of data in attrib \\
+  \hline
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+
+\subsection{Detailed attribute description}
+
+\subsubsection{Required particleset attributes}
+
+\begin{itemize}
+\item \ixml{name}/\ixml{id} \\
+Unique name for the particle set. Default is ``e" for electrons. ``i" or ``ion0" is typically used for ions. 
+For special cases where an empty particle set is needed, the special name ``empty" can be used to bypass
+the zero-size error check.
+\end{itemize}
+% Line 192 in ParticleIO/XMLParticleIO.cpp
+% Lines 144-145 in QMCApp/ParticleSetPool.cpp
+
+\subsubsection{Optional particleset attributes}
+
+\begin{itemize}
+\item \ixml{size} \\
+Number of particles in set.
+\end{itemize}
+% Line 191 in ParticleIO/XMLParticleIO.cpp
+
+%\begin{itemize}
+%\item \ixml{role} \\
+%What the particles do in the simulation
+%\end{itemize}
+% Line 146 in QMCApp/ParticleSetPool.cpp
+
+\begin{itemize}
+\item \ixml{random} \\
+Randomize starting positions of particles. Each component of each particle's position is randomized independently in the range of the simulation cell in that component's direction. 
+\end{itemize}
+% Line 190 in ParticleIO/XMLParticleIO.cpp
+% Line 147 in QMCApp/ParticleSetPool.cpp
+
+\begin{itemize}
+\item \ixml{randomsrc}/\ixml{random_source} \\
+Specify source particle set around which to randomize the initial positions of this particle set.
+\end{itemize}
+% Lines 148-149 in QMCApp/ParticleSetPool.cpp
+
+\subsubsection{Required name attributes}
+
+\begin{itemize}
+\item \ixml{name}/\ixml{id} \\
+Unique name for the particle set group. Typically, element symbols are used for ions and ``u" or ``d" for spin-up and spin-down electron groups, respectively. 
+\end{itemize}
+% Line 192 in ParticleIO/XMLParticleIO.cpp
+% Lines 144-145 in QMCApp/ParticleSetPool.cpp
+
+\subsubsection{Optional group attributes}
+
+\begin{itemize}
+\item \ixml{mass} \\
+Mass of particles in set.
+\end{itemize}
+% Line 190 in Particle/ParticleSet.cpp
+
+\begin{itemize}
+\item \ixml{unit} \\
+Units for mass of particles in set (au[$m_e$ = 1] or amu[$\frac{1}{12}m_{\rm ^{12}C}$ = 1]).
+\end{itemize}
+% Line 66 in ParticleIO/XMLParticleIO.cpp
+
+
+%condition appears to be future functionality for different unit types on the position array
+%condition must be an integer
+% Line 407 in ParticleIO/XMLParticleIO.cpp (reads condition in)
+% Line 402 in ParticleIO/XMLParticleIO.cpp (declares utype integer)
+
+\subsection{Example use cases}
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[style=QMCPXML,caption=Particleset elements for ions and electrons randomizing electron start positions.]
+  <particleset name="i" size="2">
+    <group name="Li">
+      <parameter name="charge">3.000000</parameter>
+      <parameter name="valence">3.000000</parameter>
+      <parameter name="atomicnumber">3.000000</parameter>
+    </group>
+    <group name="H">
+      <parameter name="charge">1.000000</parameter>
+      <parameter name="valence">1.000000</parameter>
+      <parameter name="atomicnumber">1.000000</parameter>
+    </group>
+    <attrib name="position" datatype="posArray" condition="1">
+    0.0   0.0   0.0
+    0.5   0.5   0.5
+    </attrib>
+    <attrib name="ionid" datatype="stringArray">
+       Li H
+    </attrib>
+  </particleset>
+  <particleset name="e" random="yes" randomsrc="i">
+    <group name="u" size="2">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="2">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>                 
+\end{lstlisting}
+\end{minipage}
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[style=QMCPXML,caption=Particleset elements for ions and electrons specifying electron start positions.]
+  <particleset name="e">
+    <group name="u" size="4">
+      <parameter name="charge">-1</parameter>
+      <attrib name="position" datatype="posArray">
+	2.9151687332e-01 -6.5123272502e-01 -1.2188463918e-01
+	5.8423636048e-01  4.2730406357e-01 -4.5964306231e-03
+	3.5228575807e-01 -3.5027014639e-01  5.2644808295e-01
+       -5.1686250912e-01 -1.6648002292e+00  6.5837023441e-01
+      </attrib>
+    </group>
+    <group name="d" size="4">
+      <parameter name="charge">-1</parameter>
+      <attrib name="position" datatype="posArray">
+	3.1443445436e-01  6.5068682609e-01 -4.0983449009e-02
+       -3.8686061749e-01 -9.3744432997e-02 -6.0456005388e-01
+	2.4978241724e-02 -3.2862514649e-02 -7.2266047173e-01
+       -4.0352404772e-01  1.1927734805e+00  5.5610824921e-01
+      </attrib>
+    </group>
+  </particleset>
+  <particleset name="ion0" size="3">
+    <group name="O">
+      <parameter name="charge">6</parameter>
+      <parameter name="valence">4</parameter>
+      <parameter name="atomicnumber">8</parameter>
+    </group>
+    <group name="H">
+      <parameter name="charge">1</parameter>
+      <parameter name="valence">1</parameter>
+      <parameter name="atomicnumber">1</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">
+      0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+      0.0000000000e+00 -1.4308249289e+00  1.1078707576e+00
+      0.0000000000e+00  1.4308249289e+00  1.1078707576e+00
+    </attrib>
+    <attrib name="ionid" datatype="stringArray">
+      O H H 
+    </attrib>
+  </particleset>
+\end{lstlisting}
+\end{minipage}
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[style=QMCPXML,caption=Particleset elements for ions specifying positions by ion type.]
+  <particleset name="ion0">
+    <group name="O" size="1">
+      <parameter name="charge">6</parameter>
+      <parameter name="valence">4</parameter>
+      <parameter name="atomicnumber">8</parameter>
+      <attrib name="position" datatype="posArray">
+        0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+      </attrib>
+    </group>
+    <group name="H" size="2">
+      <parameter name="charge">1</parameter>
+      <parameter name="valence">1</parameter>
+      <parameter name="atomicnumber">1</parameter>
+      <attrib name="position" datatype="posArray">
+        0.0000000000e+00 -1.4308249289e+00  1.1078707576e+00
+        0.0000000000e+00  1.4308249289e+00  1.1078707576e+00
+      </attrib>
+    </group>
+  </particleset>
+\end{lstlisting}
+\end{minipage}

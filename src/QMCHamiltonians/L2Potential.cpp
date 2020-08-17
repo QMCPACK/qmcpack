@@ -68,71 +68,37 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
   // compute v_L2(r)*L^2 for all electron-ion pairs
   const DistanceTableData& d_table(P.getDistTable(myTableIndex));
   Value = 0.0;
-  if (d_table.DTType == DT_SOA)
+  const size_t Nelec = P.getTotalNum();
+  for (size_t iel = 0; iel < Nelec; ++iel)
   {
-    const size_t Nelec = P.getTotalNum();
-    for (size_t iel = 0; iel < Nelec; ++iel)
+    const auto Le    = P.L[iel];
+    const auto& ge   = P.G[iel];
+    const auto& D2e  = D2[iel];
+    const auto& dist = d_table.getDistRow(iel);
+    const auto& disp = d_table.getDisplRow(iel);
+    Return_t esum    = 0.0;
+    for (size_t iat = 0; iat < NumIons; ++iat)
     {
-      const auto Le                 = P.L[iel];
-      const auto& ge                = P.G[iel];
-      const auto& D2e               = D2[iel];
-      const RealType* restrict dist = d_table.Distances[iel];
-      const auto& disp              = d_table.Displacements[iel];
-      Return_t esum                 = 0.0;
-      for (size_t iat = 0; iat < NumIons; ++iat)
+      RealType r = dist[iat];
+      if (PP[iat] != nullptr && r < PP[iat]->rcut)
       {
-        RealType r = dist[iat];
-        if (PP[iat] != nullptr && r < PP[iat]->rcut)
-        {
-          PosType rv = disp[iat]; //SoA rv is r_I-r_e
-          RealType v = -r * r * std::real(Le);
-          for (int i = 0; i < DIM; ++i)
-            v += -r * r * std::real(ge[i] * ge[i]) - 2 * rv[i] * std::real(ge[i]);
-          for (int i = 0; i < DIM; ++i)
-            for (int j = 0; j < DIM; ++j)
-              v += rv[i] * std::real(D2e(i, j)) * rv[j];
-          esum += v * PP[iat]->evaluate(dist[iat]);
-        }
+        PosType rv = disp[iat]; //SoA rv is r_I-r_e
+        RealType v = -r * r * std::real(Le);
+        for (int i = 0; i < DIM; ++i)
+          v += -r * r * std::real(ge[i] * ge[i]) - 2 * rv[i] * std::real(ge[i]);
+        for (int i = 0; i < DIM; ++i)
+          for (int j = 0; j < DIM; ++j)
+            v += rv[i] * std::real(D2e(i, j)) * rv[j];
+        esum += v * PP[iat]->evaluate(dist[iat]);
       }
-      Value += esum;
     }
-  }
-  else
-  {
-#ifndef ENABLE_SOA
-    for (int iat = 0; iat < NumIons; iat++)
-    {
-      L2RadialPotential* ppot = PP[iat];
-      if (ppot == nullptr)
-        continue;
-      Return_t esum = 0.0;
-      for (int nn = d_table.M[iat], n = 0; nn < d_table.M[iat + 1]; ++nn, ++n)
-      {
-        RealType r = d_table.r(nn);
-        if (r < ppot->rcut)
-        {
-          PosType rv      = d_table.dr(nn); //AoS rv is r_e-r_I
-          const auto Le   = P.L[n];
-          const auto& ge  = P.G[n];
-          const auto& D2e = D2[n];
-          RealType v      = -r * r * std::real(Le);
-          for (int i = 0; i < DIM; ++i)
-            v += -r * r * std::real(ge[i] * ge[i]) + 2 * rv[i] * std::real(ge[i]);
-          for (int i = 0; i < DIM; ++i)
-            for (int j = 0; j < DIM; ++j)
-              v += rv[i] * std::real(D2e(i, j)) * rv[j];
-          esum += v * ppot->evaluate(r);
-        }
-      }
-      Value += esum;
-    }
-#endif
+    Value += esum;
   }
   return Value;
 }
 
 
-QMCHamiltonianBase* L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   L2Potential* myclone = new L2Potential(IonConfig, qp, psi);
   for (int ig = 0; ig < PPset.size(); ++ig)

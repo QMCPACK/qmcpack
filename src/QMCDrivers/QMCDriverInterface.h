@@ -22,7 +22,7 @@ namespace qmcplusplus
 {
 class QMCHamiltonian;
 class TrialWaveFunction;
-class SimpleFixedNodeBranch;
+struct SimpleFixedNodeBranch;
 
 /** Creates a common base class pointer for QMCDriver and QMCDriverNew
  *  to share.
@@ -39,7 +39,7 @@ public:
   virtual void recordBlock(int block) = 0;
 
   ///return the random generators
-  virtual std::vector<RandomGenerator_t*>& getRng() = 0;
+  //virtual std::vector<RandomGenerator_t*>& getRng() = 0;
 
   ///return the i-th random generator
   virtual RandomGenerator_t& getRng(int i) = 0;

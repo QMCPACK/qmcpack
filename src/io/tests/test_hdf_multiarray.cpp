@@ -13,10 +13,11 @@
 
 #include "catch.hpp"
 
-#include "io/hdf_archive.h"
-#include "io/hdf_multi.h"
+#include "boost/version.hpp"
 #include <vector>
 #include "multi/array.hpp"
+#include "io/hdf_archive.h"
+#include "io/hdf_multi.h"
 
 
 using std::vector;

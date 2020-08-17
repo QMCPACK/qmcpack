@@ -24,7 +24,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/LinearFit.h"
-#include "simd/allocator.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
 #include <cstdio>
 
 namespace qmcplusplus
@@ -675,9 +675,7 @@ inline void BsplineFunctor<T>::evaluateVGL(const int iat,
                                            int* restrict distIndices) const
 {
   real_type dSquareDeltaRinv = DeltaRInv * DeltaRInv;
-  constexpr real_type cZero(0);
   constexpr real_type cOne(1);
-  constexpr real_type cMOne(-1);
 
   //    START_MARK_FIRST();
 

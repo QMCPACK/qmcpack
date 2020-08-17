@@ -20,17 +20,13 @@ LatticeDeviationEstimator::LatticeDeviationEstimator(ParticleSet& P,
                                                      const std::string& sgroup_in)
     : tspecies(P.getSpeciesSet()),
       sspecies(sP.getSpeciesSet()),
-      spset(sP),
       tpset(P),
+      spset(sP),
       tgroup(tgroup_in),
       sgroup(sgroup_in),
-#ifdef ENABLE_SOA
-      myTableID_(P.addTable(sP, DT_SOA)),
-#else
-      myTableID_(P.addTable(sP, DT_AOS)),
-#endif
       hdf5_out(false),
-      per_xyz(false)
+      per_xyz(false),
+      myTableID_(P.addTable(sP, DT_SOA))
 {
   // calculate number of source particles to use as lattice sites
   int src_species_id = sspecies.findSpecies(sgroup);
@@ -106,12 +102,11 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
   const auto& d_table = P.getDistTable(myTableID_);
 
   // temp variables
-  RealType r2;
+  RealType r, r2;
   PosType dr;
 
   int nsite(0);    // site index
   int cur_jat(-1); // target particle index
-#ifndef ENABLE_SOA
   for (int iat = 0; iat < spset.getTotalNum(); iat++)
   { // for each desired source particle
     if (sspecies.speciesName[spset.GroupID[iat]] == sgroup)
@@ -121,8 +116,8 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
         if (tspecies.speciesName[tpset.GroupID[jat]] == tgroup)
         {
           // distance between particle iat in source pset, and jat in target pset
-          int nn = d_table.loc(iat, jat); // location where distance is stored
-          r2     = std::pow(d_table.r(nn), 2);
+          r = d_table.getDistRow(jat)[iat];
+          r2 = r*r;
           Value += r2;
 
           if (hdf5_out & !per_xyz)
@@ -132,7 +127,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
 
           if (per_xyz)
           {
-            dr = d_table.dr(nn);
+            dr = d_table.getDisplRow(jat)[iat];
             for (int idir = 0; idir < OHMMS_DIM; idir++)
             {
               RealType dir2 = dr[idir] * dr[idir];
@@ -151,7 +146,6 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
       nsite += 1; // count the number of sites, for checking only
     }             // found desired species (source particle)
   }
-#endif
 
   if (nsite != num_sites)
   {
@@ -184,7 +178,7 @@ void LatticeDeviationEstimator::addObservables(PropertySetType& plist, BufferTyp
   }
   else
   {
-    myIndex = plist.add(myName); // same as QMCHamiltonianBase::addObservables
+    myIndex = plist.add(myName); // same as OperatorBase::addObservables
   }
 
   // get h5_index for stat.h5
@@ -218,7 +212,7 @@ void LatticeDeviationEstimator::setObservables(PropertySetType& plist)
 
 void LatticeDeviationEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
-QMCHamiltonianBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // default constructor does not work with threads
   //LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(*this);

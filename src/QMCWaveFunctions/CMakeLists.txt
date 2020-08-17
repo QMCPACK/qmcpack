@@ -20,6 +20,7 @@
     
     
 SET(WFBASE_SRCS
+  WaveFunctionPool.cpp
   WaveFunctionComponent.cpp
   DiffWaveFunctionComponent.cpp
   WaveFunctionComponentBuilder.cpp
@@ -28,7 +29,6 @@ SET(WFBASE_SRCS
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
   SPOSet.cpp
-  OptimizableSPOSet.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
   HarmonicOscillator/SHOSetBuilder.cpp
@@ -38,11 +38,15 @@ SET(WFBASE_SRCS
 
 IF(NOT QMC_COMPLEX)
   SET(WFBASE_SRCS ${WFBASE_SRCS}
-    FDLRWfn.cpp
+    RotatedSPOs.cpp
     )
 ENDIF(NOT QMC_COMPLEX)
 
-
+IF(QMC_COMPLEX)
+  SET(WFBASE_SRCS ${WFBASE_SRCS}
+    SpinorSet.cpp
+  )
+ENDIF(QMC_COMPLEX)
 ########################
 # build jastrows
 ########################
@@ -51,12 +55,11 @@ SET(JASTROW_SRCS
   Jastrow/JastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
   Jastrow/kSpaceJastrowBuilder.cpp
-  Jastrow/RPAJastrow.cpp
   Jastrow/RadialJastrowBuilder.cpp
   Jastrow/CountingJastrowBuilder.cpp
-  IonOrbital.cpp
-  IonOrbitalBuilder.cpp
-  OptimizableSPOBuilder.cpp
+  Jastrow/RPAJastrow.cpp
+  LatticeGaussianProduct.cpp
+  LatticeGaussianProductBuilder.cpp
   Fermion/SPOSetProxy.cpp
   Fermion/SPOSetProxyForMSD.cpp
   )
@@ -81,54 +84,35 @@ IF(OHMMS_DIM MATCHES 3)
     Jastrow/CountingJastrowBuilder.cpp
     )
 
-  IF(ENABLE_SOA)
-    SET(FERMION_SRCS ${FERMION_SRCS} lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp)
-    IF(NOT QMC_COMPLEX)
-      #lcao cusp correction is not ready for complex
-      SET(FERMION_SRCS ${FERMION_SRCS}
-        lcao/CuspCorrection.cpp
-        lcao/LCAOrbitalSetWithCorrection.cpp
-        lcao/CuspCorrectionConstruction.cpp
-        )
-    ENDIF(NOT QMC_COMPLEX)
-  ELSE(ENABLE_SOA)
-    IF(NOT QMC_COMPLEX)
-      SET(FERMION_SRCS ${FERMION_SRCS}
-        MolecularOrbitals/STOBuilder.cpp
-        MolecularOrbitals/GTOBuilder.cpp
-        MolecularOrbitals/NGOBuilder.cpp
-        )
-    ENDIF(NOT QMC_COMPLEX)
-  ENDIF(ENABLE_SOA)
+  SET(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOrbitalSet.cpp LCAO/LCAOrbitalBuilder.cpp)
+  IF(NOT QMC_COMPLEX)
+    #LCAO cusp correction is not ready for complex
+    SET(FERMION_SRCS ${FERMION_SRCS}
+      LCAO/CuspCorrection.cpp
+      LCAO/LCAOrbitalSetWithCorrection.cpp
+      LCAO/CuspCorrectionConstruction.cpp
+      )
+  ENDIF(NOT QMC_COMPLEX)
 
   IF(QMC_CUDA)
-    SET(FERMION_SRCS ${FERMION_SRCS}
-      Fermion/determinant_update.cu
-      Fermion/delayed_update.cu
+    SET(WFSSRCS_CUDA
+      detail/CUDA_legacy/determinant_update.cu
+      detail/CUDA_legacy/delayed_update.cu
       Fermion/DiracDeterminantCUDA.cpp
       Fermion/SlaterDetCUDA.cpp
       TrialWaveFunction_CUDA.cpp
       )
-    IF(ENABLE_SOA)
-      SET(JASTROW_SRCS ${JASTROW_SRCS}
-        Jastrow/BsplineJastrowCuda.cu
-        Jastrow/BsplineJastrowCudaPBC.cu
-        Jastrow/OneBodyJastrowOrbitalBspline.cpp
-        Jastrow/TwoBodyJastrowOrbitalBspline.cpp
-        )
-    ELSE(ENABLE_SOA)
-      SET(JASTROW_SRCS ${JASTROW_SRCS}
-        Jastrow/BsplineJastrowCuda.cu
-        Jastrow/BsplineJastrowCudaPBC.cu
-        Jastrow/OneBodyJastrowOrbitalBsplineAoS.cpp
-        Jastrow/TwoBodyJastrowOrbitalBsplineAoS.cpp
-        )
-    ENDIF(ENABLE_SOA)
+    SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
+      detail/CUDA_legacy/BsplineJastrowCuda.cu
+      detail/CUDA_legacy/BsplineJastrowCudaPBC.cu
+      Jastrow/OneBodyJastrowOrbitalBspline.cpp
+      Jastrow/TwoBodyJastrowOrbitalBspline.cpp
+      )
     IF(HAVE_EINSPLINE)
-      SET(FERMION_SRCS ${FERMION_SRCS}
+      SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
         EinsplineSetCuda.cpp
-        PhaseFactors.cu
-        AtomicOrbitalCuda.cu
+        detail/CUDA_legacy/PhaseFactors.cu
+        detail/CUDA_legacy/AtomicOrbitalCuda.cu
         )
     ENDIF(HAVE_EINSPLINE)
   ENDIF(QMC_CUDA)
@@ -150,13 +134,23 @@ IF(OHMMS_DIM MATCHES 3)
       BandInfo.cpp
       BsplineFactory/BsplineReaderBase.cpp
       )
-
+    IF(QMC_COMPLEX)
+      SET(FERMION_SRCS ${FERMION_SRCS}
+        EinsplineSpinorSetBuilder.cpp
+        BsplineFactory/SplineC2C.cpp
+      )
+    ENDIF(QMC_COMPLEX)
     IF(NOT QMC_COMPLEX)
       SET(FERMION_SRCS ${FERMION_SRCS}
         BsplineFactory/createRealSingle.cpp
         BsplineFactory/createRealDouble.cpp
+        BsplineFactory/SplineC2R.cpp
+        BsplineFactory/SplineR2R.cpp
         )
-    ENDIF()
+      IF(ENABLE_OFFLOAD)
+        SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2ROMP.cpp)
+      ENDIF(ENABLE_OFFLOAD)
+    ENDIF(NOT QMC_COMPLEX)
 
   ENDIF(HAVE_EINSPLINE)
 
@@ -186,6 +180,7 @@ ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminant.cpp
+  Fermion/DiracDeterminantBatched.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
   Fermion/MultiSlaterDeterminant.cpp
@@ -202,28 +197,32 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   )
 
 IF(ENABLE_CUDA)
-  SET(FERMION_SRCS ${FERMION_SRCS} Fermion/delayed_update_helper.cu)
+  SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
+      detail/CUDA/delayed_update_helper.cu
+      detail/CUDA/matrix_update_helper.cu
+      )
 ENDIF(ENABLE_CUDA)
-
-IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
-  SET(FERMION_SRCS ${FERMION_SRCS}
-    Fermion/SlaterDetOpt.cpp
-    )
-ENDIF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
 
 ####################################
 # create libqmcwfs
 ####################################
-IF(QMC_CUDA OR ENABLE_CUDA)
-  CUDA_ADD_LIBRARY(qmcwfs ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
-ELSE(QMC_CUDA OR ENABLE_CUDA)
+IF(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmcwfs OBJECT ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
+ELSE(USE_OBJECT_TARGET)
   ADD_LIBRARY(qmcwfs ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
+ENDIF(USE_OBJECT_TARGET)
+
+IF(QMC_CUDA OR ENABLE_CUDA)
+  CUDA_ADD_LIBRARY(qmcwfs_cuda ${WFSSRCS_CUDA})
+  IF(QMC_CUDA)
+    TARGET_INCLUDE_DIRECTORIES(qmcwfs_cuda PUBLIC ${PROJECT_SOURCE_DIR}/external_codes/thrust)
+    TARGET_LINK_LIBRARIES(qmcwfs_cuda PUBLIC qmcparticle platform_device)
+  ENDIF()
+  TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_cuda)
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
-IF(HAVE_CUDA)
-  CUDA_ADD_CUBLAS_TO_TARGET(qmcwfs)
-  TARGET_LINK_LIBRARIES( qmcwfs ${CUDA_cusolver_LIBRARY} )
-ENDIF(HAVE_CUDA)
+TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcparticle platform_device)
+TARGET_LINK_LIBRARIES(qmcwfs PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3 Math::scalar_vector_functions)
 
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcwfs STATIC ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})

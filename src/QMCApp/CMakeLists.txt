@@ -14,71 +14,46 @@
 #//
 #// File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
-    
-    
-PROJECT(qmcapp)
-# formic dependencies
-#FIND_PATH(LMYENGINE_INCLUDE_DIR formic/fqmc/engine/var_dependencies.h)
-#MESSAGE("-- LMYENGINE_INCLUDE_DIR=${LMYENGINE_INCLUDE_DIR}")
-#INCLUDE_DIRECTORIES(${LMYENGINE_INCLUDE_DIR})
+
 
 ####################################
-# create libqmc 
+# create libqmc
 ####################################
-SET(QMCAPPDIR 
-    ParticleSetPool.cpp
-    WaveFunctionPool.cpp
-    HamiltonianPool.cpp
-    InitMolecularSystem.cpp
+SET(QMCAPPDIR
     QMCAppBase.cpp
     QMCMainState.cpp
-    QMCDriverFactory.cpp
     QMCMain.cpp
     CoupledMC.cpp
 )
-ADD_LIBRARY(qmc ${QMCAPPDIR})
-
-####################################
-# list of QMC applications
-####################################
-SET(QMCSRCS qmcpack)
-
-FOREACH(p ${QMCSRCS})
-
-# QMCPACK historically called qmcapp, and still built from qmcapp.cpp
-# Override source name for executable in this case, otherwise
-# executablename.cpp used for main()
- IF ( ${p} STREQUAL "qmcpack" )
-  ADD_EXECUTABLE(${p} qmcapp.cpp) 
+IF(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmc OBJECT ${QMCAPPDIR})
 ELSE()
-  ADD_EXECUTABLE(${p} ${p}.cpp) 
+  ADD_LIBRARY(qmc ${QMCAPPDIR})
 ENDIF()
+TARGET_LINK_LIBRARIES(qmc PUBLIC qmcdriver)
+
+####################################
+# QMCPACK application
+####################################
+ADD_EXECUTABLE(qmcpack qmcapp.cpp)
 
 # Clean up git-rev-tmp.h after the build is finished
 ADD_CUSTOM_COMMAND(TARGET qmcpack
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP})
 
-  TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil adios_config)
+TARGET_LINK_LIBRARIES(qmcpack qmc qmcdriver)
+IF(USE_OBJECT_TARGET)
+  TARGET_LINK_LIBRARIES(qmcpack qmcestimators qmcham qmcwfs qmcparticle qmcutil containers platform_device platform_omp)
+ENDIF()
 
-  IF(BUILD_AFQMC)
-    TARGET_LINK_LIBRARIES(${p} afqmc)
-  ENDIF(BUILD_AFQMC)
+IF(BUILD_AFQMC)
+  TARGET_LINK_LIBRARIES(qmcpack afqmc)
+ENDIF(BUILD_AFQMC)
 
-  IF(BUILD_FCIQMC)
-    TARGET_LINK_LIBRARIES(${p} fciqmc)
-  ENDIF(BUILD_FCIQMC)
-
-  FOREACH(l ${QMC_UTIL_LIBS})
-    TARGET_LINK_LIBRARIES(${p} ${l})
-  ENDFOREACH(l ${QMC_UTIL_LIBS})
-
-  IF(MPI_LIBRARY)
-    TARGET_LINK_LIBRARIES(${p} ${MPI_LIBRARY})
-  ENDIF(MPI_LIBRARY)
-
-ENDFOREACH(p ${QMCSRCS})
+IF(BUILD_FCIQMC)
+  TARGET_LINK_LIBRARIES(qmcpack fciqmc)
+ENDIF(BUILD_FCIQMC)
 
 INSTALL(TARGETS qmcpack
         RUNTIME DESTINATION bin)
-

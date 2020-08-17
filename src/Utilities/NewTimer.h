@@ -18,13 +18,15 @@
 #ifndef QMCPLUSPLUS_NEW_TIMER_H
 #define QMCPLUSPLUS_NEW_TIMER_H
 
-#include <Utilities/Clock.h>
-#include <OhmmsData/Libxml2Doc.h>
 #include <vector>
 #include <string>
 #include <algorithm>
 #include <map>
 #include <iostream>
+#include "config.h"
+#include "Utilities/Clock.h"
+#include "OhmmsData/Libxml2Doc.h"
+
 #ifdef USE_VTUNE_TASKS
 #include <ittnotify.h>
 #endif
@@ -247,7 +249,7 @@ protected:
   __itt_string_handle* task_name;
 #endif
 public:
-#if not(ENABLE_TIMERS)
+#ifndef ENABLE_TIMERS
   inline void start() {}
   inline void stop() {}
 #else

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import sys
 import traceback
@@ -549,6 +549,29 @@ except:
 try:
     if test.startswith('deterministic'):
         labels.append('deterministic')
+    #end if
+except:
+    error()
+#end try
+
+
+try:
+    if test.startswith('qe-'):
+        labels.append('converter')
+    #end if
+except:
+    error()
+#end try
+
+
+# mark all statistical tests as unstable
+#   some of these work well, and others do not
+#   cause of intermittent statistical failures needs further investiagion
+try: 
+    if test.startswith('short-') or test.startswith('long-') or test.startswith('estimator-'):
+        if 'unstable' not in labels:
+            labels.append('unstable')
+        #end if
     #end if
 except:
     error()

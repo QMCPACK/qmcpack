@@ -1,5 +1,5 @@
 #INFO: **** input file is /home/abenali/Work/Applications/Anatol/QM9_AMONS_NI_LE_5/ALL_Runs/frag_00005/B3LYP/frag00005.py ****
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 from pyscf import gto
 from pyscf import scf, dft, df

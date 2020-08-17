@@ -20,7 +20,7 @@
 
 #include "QMCWaveFunctions/PlaneWave/PWBasis.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
 {
@@ -28,11 +28,7 @@ class PWOrbitalSet : public SPOSet
 {
 public:
   typedef PWBasis BasisSet_t;
-#if defined(ENABLE_SMARTPOINTER)
-  typedef boost::shared_ptr<PWBasis> PWBasisPtr;
-#else
   typedef PWBasis* PWBasisPtr;
-#endif
 
   /** inherit the enum of BasisSet_t */
   enum
@@ -47,7 +43,7 @@ public:
 
   /** default constructor
   */
-  PWOrbitalSet() : OwnBasisSet(false), BasisSetSize(0), IsCloned(false), myBasisSet(nullptr), C(nullptr) 
+  PWOrbitalSet() : OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0), C(nullptr), IsCloned(false)
   {
     className = "PWOrbitalSet";
   }
@@ -58,7 +54,7 @@ public:
    */
   ~PWOrbitalSet();
 
-  SPOSet* makeClone() const;
+  SPOSet* makeClone() const override;
   /** resize  the orbital base
    * @param bset PWBasis
    * @param nbands number of bands
@@ -71,11 +67,11 @@ public:
   void addVector(const std::vector<ComplexType>& coefs, int jorb);
   void addVector(const std::vector<RealType>& coefs, int jorb);
 
-  void resetParameters(const opt_variables_type& optVariables);
+  void resetParameters(const opt_variables_type& optVariables) override;
 
-  void setOrbitalSetSize(int norbs);
+  void setOrbitalSetSize(int norbs) override;
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
   inline ValueType evaluate(int ib, const PosType& pos)
   {
@@ -83,16 +79,16 @@ public:
     return BLAS::dot(BasisSetSize, (*C)[ib], myBasisSet->Zv.data());
   }
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet);
+                            ValueMatrix_t& d2logdet) override;
 
   /** boolean
    *

@@ -17,7 +17,7 @@
 
 #ifndef QMCPLUSPLUS_FORCE_BASE_HAMILTONIAN_H
 #define QMCPLUSPLUS_FORCE_BASE_HAMILTONIAN_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 
 namespace qmcplusplus
 {
@@ -37,7 +37,7 @@ struct ForceBase
   ParticleSet::ParticlePos_t forces;
   ParticleSet::ParticlePos_t forces_IonIon;
   SymTensor<real_type, OHMMS_DIM> stress_IonIon;
-  SymTensor<real_type, OHMMS_DIM> stress_ee;
+  SymTensor<real_type, OHMMS_DIM> stress_ee, stress_ei, stress_kin;
   SymTensor<real_type, OHMMS_DIM> stress;
 
   std::string prefix;
@@ -81,7 +81,7 @@ struct ForceBase
   void setParticleSetStress(QMCTraits::PropertySetType& plist, int offset);
 };
 
-struct BareForce : public QMCHamiltonianBase, public ForceBase
+struct BareForce : public OperatorBase, public ForceBase
 {
 private:
   const int d_ei_ID;
@@ -116,7 +116,7 @@ public:
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 };
 
 } // namespace qmcplusplus

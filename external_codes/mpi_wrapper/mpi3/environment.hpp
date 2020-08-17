@@ -113,13 +113,37 @@ inline std::string get_processor_name(){return detail::call<&MPI_Get_processor_n
 
 class environment{
 	public:
-	environment(){initialize();}
+	environment(){
+		initialize();
+	//	color_key_p = new communicator::keyval<int>;
+		named_attributes_key_f() = new communicator::keyval<std::map<std::string, mpi3::any>>;
+	}
 	environment(thread_level required){initialize_thread(required);}
-	environment(int argc, char** argv){initialize(argc, argv);}
+	environment(int argc, char** argv){
+		initialize(argc, argv);
+	//	color_key_p = new communicator::keyval<int>;
+		named_attributes_key_f() = new communicator::keyval<std::map<std::string, mpi3::any>>;
+	}
 	environment(int argc, char** argv, thread_level required){initialize_thread(argc, argv, required);}
 	environment(environment const&) = delete;
 	environment& operator=(environment const&) = delete;
-	~environment(){finalize();}
+	~environment(){
+		delete named_attributes_key_f();
+	//	delete color_key_p;
+		finalize();
+	}
+//	static /*inline*/ communicator::keyval<int> const* color_key_p;
+//	static communicator::keyval<int> const& color_key(){return *color_key_p;}
+//	static /*inline*/ communicator::keyval<std::map<std::string, mpi3::any>> const* named_attributes_key_p;
+	static communicator::keyval<std::map<std::string, mpi3::any>> const*& named_attributes_key_f(){
+		static communicator::keyval<std::map<std::string, mpi3::any>> const* named_attributes_key_p;
+		return named_attributes_key_p;
+	}
+	static communicator::keyval<std::map<std::string, mpi3::any>> const& named_attributes_key(){
+	//	static communicator::keyval<std::map<std::string, mpi3::any>> const named_attributes_key_p;
+	//	return named_attributes_key_p;
+		return *named_attributes_key_f();
+	}
 
 	static inline void initialize(){mpi3::initialize();}
 	static inline void initialize(thread_level required){mpi3::initialize_thread(required);}
@@ -136,7 +160,7 @@ class environment{
 	thread_level query_thread() const{return mpi3::query_thread();}
 
 //	communicator& null() const{return mpi3::communicator::null;}
-	communicator self() const{ // returns a copy!
+	static communicator self(){ // returns a copy!
 		MPI_Comm_set_errhandler(MPI_COMM_SELF, MPI_ERRORS_RETURN);
 		return communicator{MPI_COMM_SELF};
 	}
@@ -166,6 +190,10 @@ class environment{
 	template<class Duration = wall_clock::duration>
 	static auto wall_sleep_for(Duration d){return mpi3::wall_sleep_for(d);}
 };
+
+inline mpi3::any& communicator::attribute(std::string const& s){
+	return attribute(environment::named_attributes_key())[s];
+}
 
 }}
 

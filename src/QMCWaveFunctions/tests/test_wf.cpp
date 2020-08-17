@@ -10,16 +10,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
@@ -47,7 +44,6 @@ TEST_CASE("Pade functor", "[wavefunction]")
 TEST_CASE("Pade Jastrow", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -78,7 +74,6 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -101,13 +96,13 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
 
   // cusp = -0.25
   // r_ee = 3.42050023755
-  RadialJastrowBuilder jastrow(elec_, psi);
-  jastrow.put(jas1);
+  RadialJastrowBuilder jastrow(c, elec_);
+  std::unique_ptr<WaveFunctionComponent> jas(jastrow.buildComponent(jas1));
 
   // update all distance tables
   elec_.update();
 
-  double logpsi = psi.evaluateLog(elec_);
-  REQUIRE(logpsi == Approx(-1.862821769493147));
+  double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
+  REQUIRE(logpsi_real == Approx(-1.862821769493147));
 }
 } // namespace qmcplusplus

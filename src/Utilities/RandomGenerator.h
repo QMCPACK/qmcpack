@@ -78,7 +78,7 @@ inline uint32_t make_seed(int i, int n) { return static_cast<uint32_t>(std::time
 namespace qmcplusplus
 {
 typedef FakeRandom RandomGenerator_t;
-extern RandomGenerator_t Random;
+
 } // namespace qmcplusplus
 #else
 
@@ -90,25 +90,56 @@ namespace qmcplusplus
 template<class T>
 using RandomGenerator = BoostRandom<T>;
 typedef BoostRandom<OHMMS_PRECISION_FULL> RandomGenerator_t;
-extern RandomGenerator_t Random;
 } // namespace qmcplusplus
 #else
 
-#ifdef USE_SPRNG
-#include "Utilities/SprngRandom.h"
+#error -DHAVE_LIBBOOST is missing in the compile line. A cmake dependency fix is needed.
+
+#endif
+#endif
+
+
 namespace qmcplusplus
 {
-typedef SprngRandom<0> RandomGenerator_t;
-extern RandomGenerator_t Random;
-} // namespace qmcplusplus
-#else
-#include "Utilities/SimpleRandom.h"
-namespace qmcplusplus
+
+class RNGThreadSafe : public RandomGenerator_t
 {
-typedef SimpleRandom<MTRand> RandomGenerator_t;
-extern RandomGenerator_t Random;
-} // namespace qmcplusplus
-#endif
-#endif
-#endif
+public:
+  inline RandomGenerator_t::result_type rand()
+  {
+    result_type result;
+    // This should be a named section but at least clang 9 doesn't seem to support
+    // and warns of extra tokens.
+    #pragma omp critical
+    {
+      result = RandomGenerator_t::rand();
+    }
+    return result;
+  }
+
+  /** return a random number [0,1)
+   */
+  inline RandomGenerator_t::result_type operator()() { result_type result;
+    #pragma omp critical
+    {
+      result = RandomGenerator_t::rand();
+    }
+    return result;}
+
+  /** generate a series of random numbers */
+  template<typename T1>
+  inline void generate_uniform(T1* restrict d, int n)
+  {
+    #pragma omp critical
+    {
+    for (int i = 0; i < n; ++i)
+      d[i] = RandomGenerator_t::rand();
+    }
+  }
+};
+
+extern RNGThreadSafe Random;
+
+}
+
 #endif

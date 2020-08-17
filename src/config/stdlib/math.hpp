@@ -16,33 +16,45 @@
 #include <cmath>
 #include <type_traits>
 #include "config/stdlib/Constants.h"
+#if defined(HAVE_MASS)
+#include <mass.h>
+#endif
 
+namespace qmcplusplus
+{
+
+/// sincos function wrapper
 #if __APPLE__
 
 inline void sincos(double a, double* s, double* c)
 {
-  __sincos(a,s,c);
+  ::__sincos(a,s,c);
 }
 
 inline void sincos(float a, float* s, float* c)
 {
-  __sincosf(a,s,c);
+  ::__sincosf(a,s,c);
 }
 
 #else // not __APPLE__
 
 #if defined(HAVE_SINCOS)
 
+inline void sincos(double a, double* s, double* c)
+{
+  ::sincos(a,s,c);
+}
+
 inline void sincos(float a, float* s, float* c)
 {
-#ifdef __bgq__
-  // BGQ has no sincosf in libmass
+#if defined(HAVE_MASS)
+  // there is no sincosf in libmass
   // libmass sincos is faster than libm sincosf
   double ds,dc;
-  sincos((double)a,&ds,&dc);
+  ::sincos((double)a,&ds,&dc);
   *s=ds; *c=dc;
 #else
-  sincosf(a,s,c);
+  ::sincosf(a,s,c);
 #endif
 }
 
@@ -59,8 +71,6 @@ inline void sincos(T a, T* restrict s, T*  restrict c)
 
 #endif // __APPLE__
 
-namespace qmcplusplus
-{
 /** return i^n
  *
  * std::pow(int,int) is not standard

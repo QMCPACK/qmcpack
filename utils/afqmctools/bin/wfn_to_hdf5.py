@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 import argparse
 import scipy.sparse
@@ -7,7 +7,7 @@ import time
 from afqmctools.wavefunction.mol import write_qmcpack_wfn
 from afqmctools.wavefunction.converter import (
         read_qmcpack_ascii_wavefunction,
-        read_qmcpack_ci_wavefunction
+        read_dmc_ci_wavefunction
         )
 
 
@@ -72,7 +72,7 @@ def main(args):
     nelec = (nalpha, nbeta)
     if options.qmcpack:
         wfn, walker_type, nmo, nelec = (
-                read_qmcpack_ci_wavefunction(input_file, options.ndets)
+                read_dmc_ci_wavefunction(input_file, nelec, nmo, options.ndets)
                 )
     else:
         wfn, walker_type = read_qmcpack_ascii_wavefunction(input_file, nmo, nelec)

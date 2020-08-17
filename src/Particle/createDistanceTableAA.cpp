@@ -17,9 +17,6 @@
 #include "Particle/createDistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Lattice/ParticleBConds.h"
-#ifndef ENABLE_SOA
-#include "Particle/SymmetricDistanceTableData.h"
-#endif
 #include "Lattice/ParticleBConds3DSoa.h"
 #include "Particle/SoaDistanceTableAA.h"
 namespace qmcplusplus
@@ -38,63 +35,28 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream
   int sc                = s.Lattice.SuperCellEnum;
   DistanceTableData* dt = 0;
   std::ostringstream o;
-  bool useSoA = (dt_type == DT_SOA || dt_type == DT_SOA_PREFERRED);
   o << "  Distance table for similar particles (A-A):" << std::endl;
   o << "    source/target: " << s.getName() << std::endl;
-  if (useSoA)
-  {
-    o << "    Using structure-of-arrays (SoA) data layout" << std::endl;
-  }
-  else
-  {
-    o << "    Using array-of-structure (AoS) data layout (less efficient than SoA)" << std::endl;
-  }
+  o << "    Using structure-of-arrays (SoA) data layout" << std::endl;
 
   if (sc == SUPERCELL_BULK)
   {
     if (s.Lattice.DiagonalOnly)
     {
       o << "    Distance computations use orthorhombic periodic cell in 3D." << std::endl;
-      if (useSoA)
-      {
-        dt = new SoaDistanceTableAA<RealType, DIM, PPPO + SOA_OFFSET>(s);
-      }
-      else
-      {
-#ifndef ENABLE_SOA
-        dt = new SymmetricDTD<RealType, DIM, PPPO>(s, s);
-#endif
-      }
+      dt = new SoaDistanceTableAA<RealType, DIM, PPPO + SOA_OFFSET>(s);
     }
     else
     {
       if (s.Lattice.WignerSeitzRadius > s.Lattice.SimulationCellRadius)
       {
         o << "    Distance computations use general periodic cell in 3D with corner image checks." << std::endl;
-        if (useSoA)
-        {
-          dt = new SoaDistanceTableAA<RealType, DIM, PPPG + SOA_OFFSET>(s);
-        }
-        else
-        {
-#ifndef ENABLE_SOA
-          dt = new SymmetricDTD<RealType, DIM, PPPG>(s, s);
-#endif
-        }
+        dt = new SoaDistanceTableAA<RealType, DIM, PPPG + SOA_OFFSET>(s);
       }
       else
       {
         o << "    Distance computations use general periodic cell in 3D without corner image checks." << std::endl;
-        if (useSoA)
-        {
-          dt = new SoaDistanceTableAA<RealType, DIM, PPPS + SOA_OFFSET>(s);
-        }
-        else
-        {
-#ifndef ENABLE_SOA
-          dt = new SymmetricDTD<RealType, DIM, PPPS>(s, s);
-#endif
-        }
+        dt = new SoaDistanceTableAA<RealType, DIM, PPPS + SOA_OFFSET>(s);
       }
     }
   }
@@ -103,86 +65,39 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream
     if (s.Lattice.DiagonalOnly)
     {
       o << "    Distance computations use orthorhombic code for periodic cell in 2D." << std::endl;
-      if (useSoA)
-      {
-        dt = new SoaDistanceTableAA<RealType, DIM, PPNO + SOA_OFFSET>(s);
-      }
-      else
-      {
-#ifndef ENABLE_SOA
-        dt = new SymmetricDTD<RealType, DIM, PPNO>(s, s);
-#endif
-      }
+      dt = new SoaDistanceTableAA<RealType, DIM, PPNO + SOA_OFFSET>(s);
     }
     else
     {
       if (s.Lattice.WignerSeitzRadius > s.Lattice.SimulationCellRadius)
       {
-        if (useSoA)
-        {
-          o << "    Distance computations use general periodic cell in 2D with corner image checks." << std::endl;
-          dt = new SoaDistanceTableAA<RealType, DIM, PPNG + SOA_OFFSET>(s);
-        }
-        else
-        {
-          o << "    Distance computations use general periodic cell in 2D with all surrounding image checks."
-            << std::endl;
-#ifndef ENABLE_SOA
-          dt = new SymmetricDTD<RealType, DIM, PPNX>(s, s);
-#endif
-        }
+        o << "    Distance computations use general periodic cell in 2D with corner image checks." << std::endl;
+        dt = new SoaDistanceTableAA<RealType, DIM, PPNG + SOA_OFFSET>(s);
       }
       else
       {
         o << "    Distance computations use general periodic cell in 2D without corner image checks." << std::endl;
-        if (useSoA)
-        {
-          dt = new SoaDistanceTableAA<RealType, DIM, PPNS + SOA_OFFSET>(s);
-        }
-        else
-        {
-#ifndef ENABLE_SOA
-          dt = new SymmetricDTD<RealType, DIM, PPNS>(s, s);
-#endif
-        }
+        dt = new SoaDistanceTableAA<RealType, DIM, PPNS + SOA_OFFSET>(s);
       }
     }
   }
   else if (sc == SUPERCELL_WIRE)
   {
     o << "    Distance computations use periodic cell in one dimension." << std::endl;
-    if (useSoA)
-    {
-      dt = new SoaDistanceTableAA<RealType, DIM, SUPERCELL_WIRE + SOA_OFFSET>(s);
-    }
-    else
-    {
-#ifndef ENABLE_SOA
-      dt = new SymmetricDTD<RealType, DIM, SUPERCELL_WIRE>(s, s);
-#endif
-    }
+    dt = new SoaDistanceTableAA<RealType, DIM, SUPERCELL_WIRE + SOA_OFFSET>(s);
   }
   else //open boundary condition
   {
     o << "    Distance computations use open boundary conditions in 3D." << std::endl;
-    if (useSoA)
-    {
-      dt = new SoaDistanceTableAA<RealType, DIM, SUPERCELL_OPEN + SOA_OFFSET>(s);
-    }
-    else
-    {
-#ifndef ENABLE_SOA
-      dt = new SymmetricDTD<RealType, DIM, SUPERCELL_OPEN>(s, s);
-#endif
-    }
+    dt = new SoaDistanceTableAA<RealType, DIM, SUPERCELL_OPEN + SOA_OFFSET>(s);
   }
 
 
   //set dt properties
-  dt->DTType   = (useSoA) ? DT_SOA : DT_AOS;
+  dt->DTType = DT_SOA;
   std::ostringstream p;
   p << s.getName() << "_" << s.getName();
-  dt->Name = p.str(); //assign the table name
+  dt->setName(p.str()); //assign the table name
 
   description << o.str() << std::endl;
 

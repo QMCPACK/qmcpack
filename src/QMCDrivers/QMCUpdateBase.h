@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file QMCUpdateBase
+/** @file
  * @brief Declare QMCUpdateBase class
  */
 #ifndef QMCPLUSPLUS_QMCUPDATE_BASE_H
@@ -43,7 +43,7 @@ public:
   typedef MCWalkerConfiguration::iterator WalkerIter_t;
   typedef SimpleFixedNodeBranch BranchEngineType;
 
-  ///If true, terminate the simulation
+  ///If true, terminate the simulation, but it is never checked
   bool BadState;
   ///number of steps per measurement
   int nSubSteps;
@@ -61,6 +61,8 @@ public:
   IndexType NonLocalMoveAccepted;
   ///timestep
   RealType Tau;
+  ///spin mass
+  RealType spinMass;
   ///use Drift
   bool UseDrift;
 
@@ -114,6 +116,10 @@ public:
     m_oneover2tau = 0.5 / (m_tauovermass);
     m_sqrttau     = std::sqrt(m_tauovermass);
   }
+
+  inline RealType getSpinMass() { return spinMass; }
+
+  inline void setSpinMass(RealType m) { spinMass = m; }
 
   inline void getLogs(std::vector<RealType>& logs) { Psi.getLogs(logs); }
 
@@ -268,6 +274,8 @@ protected:
   ParticleSet::ParticlePos_t drift;
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
+  ///temporart storage for spin displacement
+  ParticleSet::ParticleScalar_t deltaS;
   ///storage for differential gradients for PbyP update
   ParticleSet::ParticleGradient_t G, dG;
   ///storage for differential laplacians for PbyP update

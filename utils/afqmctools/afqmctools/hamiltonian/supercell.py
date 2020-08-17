@@ -68,7 +68,6 @@ def write_hamil_supercell(comm, scf_data, hamil_file, chol_cut,
     tstart = time.clock()
 
     # Setup parallel partition of work.
-    maxvecs = maxvecs * nmo_tot
     part = Partition(comm, maxvecs, nmo_tot, nmo_max, nkpts)
     if comm.rank == 0 and verbose:
         print(" # Each kpoint is distributed accross {} mpi tasks."
@@ -112,30 +111,91 @@ def write_hamil_supercell(comm, scf_data, hamil_file, chol_cut,
                    ik2n, exxdiv, nelec=nelec)
         h5file.close()
 
+def write_rhoG_supercell(comm, scf_data, hdf_file, Gcut,
+                        verbose=True,
+                        ortho_ao=False, write_real=False, phdf=False):
+
+    nproc = comm.size
+    rank = comm.rank
+
+    tstart = time.clock()
+
+    # Unpack pyscf data.
+    # 1. Rotation matrix to orthogonalised basis.
+    X = scf_data['X']
+    # 2. Pyscf cell object.
+    cell = scf_data['cell']
+    # 3. kpoints
+    kpts = scf_data['kpts']
+    # 4. Number of MOs per kpoint.
+    nmo_pk = scf_data['nmo_pk']
+    nkpts = len(kpts)
+    nao = cell.nao_nr()
+
+    quit()
+
+    # Update for GDF
+    mydf = df.FFTDF(cell, kpts)
+    nmo_max = numpy.max(nmo_pk)
+    assert(nmo_max is not None)
+
+    kconserv = tools.get_kconserv(cell, kpts)
+    ik2n, nmo_tot = setup_basis_map(Xocc, nmo_max, nkpts, nmo_pk, ortho_ao)
+    if comm.rank == 0:
+        h5file = h5py.File(hamil_file, "w")
+        h5grp = h5file.create_group("rhoG")
+    else:
+        h5file = None
+
+    numv = 0
+
+    # Setup parallel partition of work.
+    part = Partition(comm, 0, nmo_tot, nmo_max, nkpts)
+    if comm.rank == 0 and verbose:
+        print(" # Each kpoint is distributed accross {} mpi tasks."
+              .format(part.nproc_pk))
+        sys.stdout.flush()
+    # Set up mapping for shifted FFT grid.
+    if rank == 0 and verbose:
+        app_mem = (nmo_max*nmo_max*ngs*16) / 1024.0**3
+        print(" # Approx. local memory required: {:.2e} GB.".format(app_mem))
+        sys.stdout.flush()
+
+    if rank == 0 and verbose:
+        print(" # Generating orbital products.")
+        sys.stdout.flush()
+
+    for k in range(part.nkk):
+        k1 = part.n2k1[k]
+        k2 = part.n2k2[k]
+        i0 = part.ij0 // nmo_pk[k2]
+        iN = part.ijN // nmo_pk[k2]
+        if part.ijN % nmo_pk[k2] != 0:
+            iN += 1
+        if iN > nmo_pk[k1]:
+            iN = nmo_pk[k1]
+        pij = part.ij0 % nmo_pk[k2]
+        n_ = min(part.ijN, nmo_pk[k1]*nmo_pk[k2]) - part.ij0
+        X_t = X[k1][:,i0:iN].copy()
+        Xaoik[k,:,0:n_] = mydf.get_mo_pairs_G((X_t,X[k2]),
+                                            (kpts[k1],kpts[k2]),
+                                            kpts[k2]-kpts[k1],
+                                            compact=False)[:,pij:pij+n_]
+        X_t = None
+        Xaolj[k,:,:] = Xaoik[k,:,:]
+        coulG = tools.get_coulG(cell, kpts[k2]-kpts[k1], mesh=mydf.mesh)
+        Xaoik[k,:,:] *= (coulG*cell.vol/ngs**2).reshape(-1,1)
 
 def setup_basis_map(Xocc, nmo_max, nkpts, nmo_pk, ortho_ao):
     # setup basic mapping, use eigenvalues later
     ik2n = -1*numpy.ones((nmo_max,nkpts), dtype=numpy.int32)
     # ik2n[:,:]=-1
     cnt = 0
-    if ortho_ao:
-        for ki in range(nkpts):
-            for i in range(nmo_pk[ki]):
-                ik2n[i,ki] = cnt
-                cnt += 1
-    else:
-        # can safely assume isUHF==False
-        # Why are there two loops
-        for ki in range(nkpts):
-            for i in range(nmo_pk[ki]):
-                if Xocc[ki][i] > 0.9:
-                    ik2n[i,ki] = cnt
-                    cnt += 1
-        for ki in range(nkpts):
-            for i in range(nmo_pk[ki]):
-                if Xocc[ki][i] < 0.9:
-                    ik2n[i,ki] = cnt
-                    cnt += 1
+    # if ortho_ao:
+    for ki in range(nkpts):
+        for i in range(nmo_pk[ki]):
+            ik2n[i,ki] = cnt
+            cnt += 1
     nmo_tot = cnt
     return ik2n, nmo_tot
 
@@ -216,6 +276,9 @@ def write_info(h5grp, cell, v2cnts, h1size, nmo_tot, numv,
     dims = numpy.array([h1size, h2size, v2cnts.size,
                         nmo_tot, nup, ndown, 0, numv])
     h5grp.create_dataset("dims", data=dims)
+    h5grp.create_dataset("ComplexIntegrals",
+                         data=numpy.array([1]),
+                         dtype=numpy.int32)
 
     if ortho_ao:
         occ = numpy.arange(0,nup+ndown)
@@ -245,13 +308,13 @@ def write_info(h5grp, cell, v2cnts, h1size, nmo_tot, numv,
     h5grp.create_dataset("occups", data=occ)
 
     # zero electron energies, including madelung term
-    e0 = cell.energy_nuc()
+    e0 = nkpts * cell.energy_nuc()
     if exxdiv=='ewald':
         madelung = tools.pbc.madelung(cell, kpts)
         e0 += madelung*nelectron * -.5
         print(" # Adding ewald correction to the energy: "
               "{:13.8e}".format(-0.5*madelung*nelectron))
-    h5grp.create_dataset("Energies", data=numpy.array([e0*nkpts, 0]))
+    h5grp.create_dataset("Energies", data=numpy.array([e0, 0]))
 
 
 def generate_grid_shifts(cell):

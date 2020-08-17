@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 
 #include "OhmmsData/Libxml2Doc.h"
@@ -29,7 +29,6 @@ namespace qmcplusplus
 TEST_CASE("ProjectData", "[ohmmsapp]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
 
@@ -56,7 +55,6 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
 TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ProjectData proj("test");
@@ -75,7 +73,6 @@ TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
 TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ProjectData proj("test");

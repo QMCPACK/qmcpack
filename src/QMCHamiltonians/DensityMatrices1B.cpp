@@ -28,14 +28,14 @@ using MatrixOperators::product_AtB;
 
 
 DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl)
-    : Lattice(P.Lattice), Pq(P), Psi(psi), Pc(Pcl)
+    : Lattice(P.Lattice), Psi(psi), Pq(P), Pc(Pcl)
 {
   reset();
 }
 
 
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
-    : QMCHamiltonianBase(master), Lattice(P.Lattice), Pq(P), Psi(psi), Pc(master.Pc)
+    : OperatorBase(master), Lattice(P.Lattice), Psi(psi), Pq(P), Pc(master.Pc)
 {
   reset();
   set_state(master);
@@ -53,7 +53,7 @@ DensityMatrices1B::~DensityMatrices1B()
 }
 
 
-QMCHamiltonianBase* DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+OperatorBase* DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
 {
   return new DensityMatrices1B(*this, P, psi);
 }
@@ -1065,7 +1065,7 @@ inline void DensityMatrices1B::density_drift(const PosType& r, RealType& dens, P
     Value_t bc       = qmcplusplus::conj(b);
     dens += std::abs(bc * b);
     for (int d = 0; d < DIM; ++d)
-      drift[d] += prod_real(bc, bg[d]);
+      drift[d] += std::real(bc * bg[d]);
   }
   drift *= timestep / dens;
   dens /= basis_size;
@@ -1216,7 +1216,7 @@ inline void DensityMatrices1B::integrate(ParticleSet& P, int n)
 inline void DensityMatrices1B::update_basis(const PosType& r)
 {
   Pq.makeMove(0, r - Pq.R[0]);
-  basis_functions.evaluate(Pq, 0, basis_values);
+  basis_functions.evaluateValue(Pq, 0, basis_values);
   Pq.rejectMove(0);
   for (int i = 0; i < basis_size; ++i)
     basis_values[i] *= basis_norms[i];
@@ -1226,7 +1226,7 @@ inline void DensityMatrices1B::update_basis(const PosType& r)
 inline void DensityMatrices1B::update_basis_d012(const PosType& r)
 {
   Pq.makeMove(0, r - Pq.R[0]);
-  basis_functions.evaluate(Pq, 0, basis_values, basis_gradients, basis_laplacians);
+  basis_functions.evaluateVGL(Pq, 0, basis_values, basis_gradients, basis_laplacians);
   Pq.rejectMove(0);
   for (int i = 0; i < basis_size; ++i)
     basis_values[i] *= basis_norms[i];

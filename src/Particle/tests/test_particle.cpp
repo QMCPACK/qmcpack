@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/TinyVector.h"
@@ -27,11 +27,8 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("ParticleSet distance table management", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
-
   ParticleSet ions;
   ParticleSet elecs;
 
@@ -40,8 +37,8 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
 
   const int ii_table_id = ions.addTable(ions, DT_SOA);
   const int ie_table_id = ions.addTable(elecs, DT_SOA);
-  const int ei_table_id = elecs.addTable(ions, DT_SOA, true);
-  const int ee_table_id = elecs.addTable(elecs, DT_SOA, false);
+  const int ei_table_id = elecs.addTable(ions, DT_SOA);
+  const int ee_table_id = elecs.addTable(elecs, DT_SOA);
 
   REQUIRE(ii_table_id == 0);
   REQUIRE(ie_table_id == 1);
@@ -51,8 +48,8 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   // second query
   const int ii_table_id2 = ions.addTable(ions, DT_SOA);
   const int ie_table_id2 = ions.addTable(elecs, DT_SOA);
-  const int ei_table_id2 = elecs.addTable(ions, DT_SOA, false);
-  const int ee_table_id2 = elecs.addTable(elecs, DT_SOA, true);
+  const int ei_table_id2 = elecs.addTable(ions, DT_SOA);
+  const int ee_table_id2 = elecs.addTable(elecs, DT_SOA);
 
   REQUIRE(ii_table_id2 == 0);
   REQUIRE(ie_table_id2 == 1);
@@ -67,14 +64,10 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   ParticleSet elecs_copy(elecs);
   REQUIRE(elecs_copy.getDistTable(ei_table_id2).origin().getName() == "ions");
   REQUIRE(elecs_copy.getDistTable(ee_table_id2).origin().getName() == "electrons");
-  REQUIRE(elecs_copy.getDistTable(ei_table_id2).Need_full_table_loadWalker == true);
-  REQUIRE(elecs_copy.getDistTable(ee_table_id2).Need_full_table_loadWalker == true);
 }
 
 TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
-
   ParticleSet source;
 
   source.setName("electrons");
@@ -88,34 +81,34 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
   source.R[1][2] = 3.2;
 
   source.update();
-  /// make sure RSoA is updated no matter SoA or AoS.
-  REQUIRE(source.RSoA[0][1] == Approx(1.0));
-  REQUIRE(source.RSoA[1][2] == Approx(3.2));
+  /// make sure getCoordinates().getAllParticlePos() is updated no matter SoA or AoS.
+  REQUIRE(source.getCoordinates().getAllParticlePos()[0][1] == Approx(1.0));
+  REQUIRE(source.getCoordinates().getAllParticlePos()[1][2] == Approx(3.2));
 
   const int TableID = source.addTable(source, DT_SOA);
   source.update();
-  const auto& d_aa = source.getDistTable(TableID);
+  const auto& d_aa      = source.getDistTable(TableID);
+  const auto& aa_dists  = d_aa.getDistances();
+  const auto& aa_displs = d_aa.getDisplacements();
 
-  REQUIRE(d_aa.Distances[0][1] == Approx(1.62788206));
-  REQUIRE(d_aa.Distances[1][0] == Approx(1.62788206));
-  REQUIRE(d_aa.Displacements[0][1][0] == Approx(1.1));
-  REQUIRE(d_aa.Displacements[0][1][1] == Approx(0.0));
-  REQUIRE(d_aa.Displacements[0][1][2] == Approx(1.2));
-  REQUIRE(d_aa.Displacements[1][0][0] == Approx(-1.1));
-  REQUIRE(d_aa.Displacements[1][0][1] == Approx(0.0));
-  REQUIRE(d_aa.Displacements[1][0][2] == Approx(-1.2));
+  REQUIRE(aa_dists[0][1] == Approx(1.62788206));
+  REQUIRE(aa_dists[1][0] == Approx(1.62788206));
+  REQUIRE(aa_displs[0][1][0] == Approx(1.1));
+  REQUIRE(aa_displs[0][1][1] == Approx(0.0));
+  REQUIRE(aa_displs[0][1][2] == Approx(1.2));
+  REQUIRE(aa_displs[1][0][0] == Approx(-1.1));
+  REQUIRE(aa_displs[1][0][1] == Approx(0.0));
+  REQUIRE(aa_displs[1][0][2] == Approx(-1.2));
 }
 
 TEST_CASE("symmetric_distance_table PBC", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
-
   ParticleSet source;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R = ParticleSet::Tensor_t(6.74632230, 6.74632230, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
-                                 0.00000000, 3.37316115);
+                                    0.00000000, 3.37316115);
   Lattice.reset();
 
   source.setName("electrons");
@@ -129,22 +122,22 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 
   const int TableID = source.addTable(source, DT_SOA);
   source.update();
-  const auto& d_aa = source.getDistTable(TableID);
+  const auto& d_aa      = source.getDistTable(TableID);
+  const auto& aa_dists  = d_aa.getDistances();
+  const auto& aa_displs = d_aa.getDisplacements();
 
-  REQUIRE(d_aa.Distances[1][2] == Approx(2.9212432441));
-  REQUIRE(d_aa.Distances[2][1] == Approx(2.9212432441));
-  REQUIRE(d_aa.Displacements[1][2][0] == Approx(1.68658057));
-  REQUIRE(d_aa.Displacements[1][2][1] == Approx(1.68658057));
-  REQUIRE(d_aa.Displacements[1][2][2] == Approx(-1.68658058));
-  REQUIRE(d_aa.Displacements[2][1][0] == Approx(-1.68658057));
-  REQUIRE(d_aa.Displacements[2][1][1] == Approx(-1.68658057));
-  REQUIRE(d_aa.Displacements[2][1][2] == Approx(1.68658057));
+  REQUIRE(aa_dists[1][2] == Approx(2.9212432441));
+  REQUIRE(aa_dists[2][1] == Approx(2.9212432441));
+  REQUIRE(aa_displs[1][2][0] == Approx(1.68658057));
+  REQUIRE(aa_displs[1][2][1] == Approx(1.68658057));
+  REQUIRE(aa_displs[1][2][2] == Approx(-1.68658058));
+  REQUIRE(aa_displs[2][1][0] == Approx(-1.68658057));
+  REQUIRE(aa_displs[2][1][1] == Approx(-1.68658057));
+  REQUIRE(aa_displs[2][1][2] == Approx(1.68658057));
 }
 
 TEST_CASE("particle set lattice with vacuum", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
-
   ParticleSet source;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;

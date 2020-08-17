@@ -42,7 +42,6 @@ ParticleSet* createElectronParticleSet()
 TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet* qp = createElectronParticleSet();
@@ -89,7 +88,6 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet* qp = createElectronParticleSet();

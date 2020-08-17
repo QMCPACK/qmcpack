@@ -17,14 +17,13 @@
 #include "QMCHamiltonians/MPC_CUDA.h"
 #include "QMCHamiltonians/CudaCoulomb.h"
 #include "Particle/MCWalkerConfiguration.h"
-// #include "Lattice/ParticleBConds.h"
-// #include "OhmmsPETE/OhmmsArray.h"
-// #include "OhmmsData/AttributeSet.h"
-// #include "Particle/DistanceTableData.h"
-
+#include "QMCDrivers/WalkerProperties.h"
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
+
 MPC_CUDA::MPC_CUDA(ParticleSet& ptcl, double cutoff)
     : MPC(ptcl, cutoff), SumGPU("MPC::SumGPU"), L("MPC::L"), Linv("MPC::Linv")
 {
@@ -53,7 +52,7 @@ void MPC_CUDA::initBreakup()
   //  app_log() << "    Finished copying MPC spline to GPU memory.\n";
 }
 
-QMCHamiltonianBase* MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // return new MPC(qp, Ecut);
   MPC_CUDA* newMPC = new MPC_CUDA(*this);
@@ -132,7 +131,7 @@ void MPC_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalE
   for (int iw = 0; iw < nw; iw++)
   {
     double e                                                = esum[iw] + SumHost[iw] + Vconst;
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = e;
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = e;
     LocalEnergy[iw] += e;
   }
 }

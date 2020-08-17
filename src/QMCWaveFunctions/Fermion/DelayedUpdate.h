@@ -14,9 +14,9 @@
 
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
-#include "Numerics/OhmmsBlas.h"
+#include <CPU/BLAS.hpp>
+#include <CPU/BlasThreadingEnv.h>
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "Numerics/BlasThreadingEnv.h"
 #include "config.h"
 
 namespace qmcplusplus
@@ -29,8 +29,6 @@ namespace qmcplusplus
 template<typename T, typename T_FP>
 class DelayedUpdate
 {
-  /// define real type
-  using real_type = typename scalar_traits<T>::real_type;
   /// orbital values of delayed electrons
   Matrix<T> U;
   /// rows of Ainv corresponding to delayed electrons
@@ -48,7 +46,7 @@ class DelayedUpdate
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
   /// matrix inversion engine
-  DiracMatrix<T_FP, T> detEng;
+  DiracMatrix<T_FP> detEng;
 
 public:
   /// default constructor
@@ -73,9 +71,10 @@ public:
    * @param logdetT orbital value matrix
    * @param Ainv inverse matrix
    */
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, real_type& LogValue, real_type& PhaseValue)
+  template<typename TREAL>
+  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& LogValue)
   {
-    detEng.invert_transpose(logdetT, Ainv, LogValue, PhaseValue);
+    detEng.invert_transpose(logdetT, Ainv, LogValue);
     // safe mechanism
     delay_count = 0;
   }

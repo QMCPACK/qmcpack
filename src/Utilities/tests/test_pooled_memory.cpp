@@ -34,7 +34,7 @@ TEST_CASE("pack scalar", "[utilities]")
 {
   PooledMemory<double> p;
   int i0    = 1;
-  long i1   = (1L << 31) - 1;
+  long i1   = (1L << 30) + (1L << 29);
   float i2  = 0.33;
   double i3 = 0.23;
   complex<float> i4(0.23, 0.33);
