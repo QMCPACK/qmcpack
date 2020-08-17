@@ -95,16 +95,16 @@ protected:
   void EvalPeriodicImagePhaseFactors(PosType SuperTwist, std::vector<RealType>& LocPeriodicImagePhaseFactors);
   void EvalPeriodicImagePhaseFactors(PosType SuperTwist,
                                      std::vector<std::complex<RealType>>& LocPeriodicImagePhaseFactors);
+  /** read matrix from h5 file
+   * \param[in] hin: hdf5 arhive to be read from
+   * \param setname: where to read from in hdf5 archive
+   * \param[out] Creal: matrix read from h5
+   *
+   * added in header to allow use from derived class LCAOSpinorBuilder as well
+   */
+  void readRealMatrixFromH5(hdf_archive& hin, const std::string& setname, Matrix<LCAOrbitalBuilder::RealType>& Creal) const;
 };
 
 
-/** read matrix from h5 file
- * \param[in] hin: hdf5 arhive to be read from
- * \param setname: where to read from in hdf5 archive
- * \param[out] Creal: matrix read from h5
- *
- * added in header to allow use from derived class LCAOSpinorBuilder as well
- */
-void readRealMatrixFromH5(hdf_archive& hin, const std::string& setname, Matrix<LCAOrbitalBuilder::RealType>& Creal);
 } // namespace qmcplusplus
 #endif
