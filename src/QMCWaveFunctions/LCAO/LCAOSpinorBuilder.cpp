@@ -23,7 +23,7 @@ LCAOSpinorBuilder::LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Commun
 {
   if (h5_path == "")
   {
-    APP_ABORT("LCAOSpinorBuilder only works with href");
+    myComm->barrier_and_abort("LCAOSpinorBuilder only works with href");
   }
 }
 
@@ -74,7 +74,7 @@ bool LCAOSpinorBuilder::loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr 
 
   if (up.getBasisSetSize() == 0 || dn.getBasisSetSize() == 0)
   {
-    APP_ABORT("LCAOrbitalBuilder::loadMO detected ZERO BasisSetSize");
+    myComm->barrier_and_abort("LCASpinorBuilder::loadMO  detected ZERO BasisSetSize");
     return false;
   }
 
@@ -88,7 +88,7 @@ bool LCAOSpinorBuilder::loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr 
   if (myComm->rank() == 0)
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
-      APP_ABORT("LCAOSpinorBuilder::loadMO missing or incorrect path to H5 file.");
+      myComm->barrier_and_abort("LCAOSpinorBuilder::loadMO missing or incorrect path to H5 file.");
     hin.push("PBC");
     PBC = false;
     hin.read(PBC, "PBC");
@@ -96,7 +96,7 @@ bool LCAOSpinorBuilder::loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr 
   }
   myComm->bcast(PBC);
   if (PBC)
-    APP_ABORT("LCAOSpinorBuilder::loadMO lcao spinors not implemented in PBC");
+    myComm->barrier_and_abort("LCAOSpinorBuilder::loadMO lcao spinors not implemented in PBC");
 
   bool success = putFromH5(up, dn);
 
@@ -126,7 +126,7 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn)
   if (myComm->rank() == 0)
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
-      APP_ABORT("LCAOSpinorBuilder::putFromH5 missing or incorrect path to H5 file");
+      myComm->barrier_and_abort("LCAOSpinorBuilder::putFromH5 missing or incorrect path to H5 file");
 
     std::string setname;
     Matrix<RealType> upReal(up.getOrbitalSetSize(), up.getBasisSetSize());
@@ -182,11 +182,11 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn)
 #endif
 
 #else
-  APP_ABORT("LCAOSpinorBuilder::putFromH5 HDF5 is disabled");
+  myComm->barrier_and_abort("LCAOSpinorBuilder::putFromH5 HDF5 is disabled");
 #endif
 
 #else
-  APP_ABORT("LCAOSpinorBuilder::putFromH5 Must build with QMC_COMPLEX");
+  myComm->barrier_and_abort("LCAOSpinorBuilder::putFromH5 Must build with QMC_COMPLEX");
 #endif
 
   return true;
