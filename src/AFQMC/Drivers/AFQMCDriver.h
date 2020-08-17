@@ -14,86 +14,88 @@
 
 namespace qmcplusplus
 {
-
 namespace afqmc
 {
-
-class AFQMCDriver: public AFQMCInfo
+class AFQMCDriver : public AFQMCInfo
 {
+public:
+  AFQMCDriver(boost::mpi3::communicator& comm,
+              AFQMCInfo& info,
+              std::string& title,
+              int mser,
+              int blk0,
+              int stp0,
+              double eshft_,
+              xmlNodePtr cur,
+              Wavefunction& wfn_,
+              Propagator& prpg_,
+              EstimatorHandler& estim_)
+      : AFQMCInfo(info),
+        globalComm(comm),
+        m_series(mser),
+        project_title(title),
+        block0(blk0),
+        step0(stp0),
+        wfn0(wfn_),
+        prop0(prpg_),
+        estim0(estim_),
+        weight_reset_period(0.0),
+        Eshift(eshft_)
+  {
+    name = "AFQMCDriver";
 
-  public:
+    // read options from xml block
+    parse(cur);
+  }
 
-    AFQMCDriver(boost::mpi3::communicator& comm, AFQMCInfo& info,
-        std::string& title, int mser, int blk0, int stp0, double eshft_, xmlNodePtr cur,
-        Wavefunction& wfn_, Propagator& prpg_, EstimatorHandler& estim_):
-                AFQMCInfo(info),
-		globalComm(comm),
-		m_series(mser),
-		project_title(title),
-                block0(blk0),
-		step0(stp0),
-                wfn0(wfn_),
-		prop0(prpg_),
-		estim0(estim_),
-                weight_reset_period(0.0),
-		Eshift(eshft_)
-    {
-      name = "AFQMCDriver";
+  ~AFQMCDriver() {}
 
-      // read options from xml block
-      parse(cur);
-    }
+  bool run(WalkerSet&);
 
-    ~AFQMCDriver() {}
+  bool parse(xmlNodePtr);
 
-    bool run(WalkerSet&);
+  bool checkpoint(WalkerSet&, int, int);
 
-    bool parse(xmlNodePtr);
+  bool clear();
 
-    bool checkpoint(WalkerSet&,int,int);
+protected:
+  boost::mpi3::communicator& globalComm;
 
-    bool clear();
+  std::string name;
 
-  protected:
+  int m_series;
+  std::string project_title;
 
-    boost::mpi3::communicator& globalComm;
+  std::string hdf_write_restart;
 
-    std::string name;
+  int nBlock;
+  int nStep;
+  int nSubstep;
+  int fix_bias;
 
-    int m_series;
-    std::string project_title;
+  int nCheckpoint;
+  int nStabilize;
+  RealType dt;
+  int block0, step0;
 
-    std::string hdf_write_restart;
+  Wavefunction& wfn0;
 
-    int nBlock;
-    int nStep;
-    int nSubstep;
-    int fix_bias;
+  Propagator& prop0;
 
-    int nCheckpoint;
-    int nStabilize;
-    RealType dt;
-    int block0, step0;
+  EstimatorHandler& estim0;
 
-    Wavefunction& wfn0;
+  bool writeSamples(WalkerSet&);
 
-    Propagator& prop0;
+  int samplePeriod;
 
-    EstimatorHandler& estim0;
+  double weight_reset_period;
 
-    bool writeSamples(WalkerSet&);
-
-    int samplePeriod;
-
-    double weight_reset_period;
-
-    RealType dShift;
-    RealType Eshift;
-    RealType Etav;
-
+  RealType dShift;
+  RealType Eshift;
+  RealType Etav;
 };
 
-}
-}
+} // namespace afqmc
+} // namespace qmcplusplus
 
 #endif

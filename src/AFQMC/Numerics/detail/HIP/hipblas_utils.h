@@ -18,11 +18,11 @@
 #include "hipblas.h"
 #include "rocblas.h"
 
-namespace hipblas {
+namespace hipblas
+{
+// TODO: Temporary hack waiting for upstream version of hipblas
+hipblasStatus_t rocBLASStatusToHIPStatusAFQMC(rocblas_status_ error);
 
-  // TODO: Temporary hack waiting for upstream version of hipblas
-  hipblasStatus_t rocBLASStatusToHIPStatusAFQMC(rocblas_status_ error);
-
-}
+} // namespace hipblas
 
 #endif

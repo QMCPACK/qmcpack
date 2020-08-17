@@ -16,10 +16,10 @@
 #ifndef QMCPLUSPLUS_AFQMC_THCHAMILTONIAN_H
 #define QMCPLUSPLUS_AFQMC_THCHAMILTONIAN_H
 
-#include<iostream>
-#include<vector>
-#include<map>
-#include<fstream>
+#include <iostream>
+#include <vector>
+#include <map>
+#include <fstream>
 
 #include "io/hdf_archive.h"
 
@@ -32,44 +32,48 @@
 
 namespace qmcplusplus
 {
-
 namespace afqmc
 {
-
-class THCHamiltonian: public OneBodyHamiltonian
+class THCHamiltonian : public OneBodyHamiltonian
 {
-
-  public:
-
-  THCHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, boost::multi::array<ValueType,2>&& h,
-                 TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
-                            OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
-                            TG(tg_),cutoff_cholesky(1e-6),fileName("")
+public:
+  THCHamiltonian(AFQMCInfo const& info,
+                 xmlNodePtr cur,
+                 boost::multi::array<ValueType, 2>&& h,
+                 TaskGroup_& tg_,
+                 ValueType nucE = 0,
+                 ValueType fzcE = 0)
+      : OneBodyHamiltonian(info, std::move(h), nucE, fzcE), TG(tg_), cutoff_cholesky(1e-6), fileName("")
   {
     std::string str("yes");
     ParameterSet m_param;
-    m_param.add(cutoff_cholesky,"cutoff_cholesky","double");
-    m_param.add(fileName,"filename","std::string");
+    m_param.add(cutoff_cholesky, "cutoff_cholesky", "double");
+    m_param.add(fileName, "filename", "std::string");
     m_param.put(cur);
   }
 
   ~THCHamiltonian() {}
 
   THCHamiltonian(THCHamiltonian const& other) = delete;
-  THCHamiltonian(THCHamiltonian && other) = default;
+  THCHamiltonian(THCHamiltonian&& other)      = default;
   THCHamiltonian& operator=(THCHamiltonian const& other) = delete;
-  THCHamiltonian& operator=(THCHamiltonian && other) = delete;
+  THCHamiltonian& operator=(THCHamiltonian&& other) = delete;
 
   ValueType getNuclearCoulombEnergy() const { return OneBodyHamiltonian::NuclearCoulombEnergy; }
 
-  boost::multi::array<ValueType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
+  boost::multi::array<ValueType, 2> getH1() const { return OneBodyHamiltonian::getH1(); }
 
-  HamiltonianOperations getHamiltonianOperations(bool pureSD, bool addCoulomb, WALKER_TYPES type,
-            std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
-            TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump);
+  HamiltonianOperations getHamiltonianOperations(bool pureSD,
+                                                 bool addCoulomb,
+                                                 WALKER_TYPES type,
+                                                 std::vector<PsiT_Matrix>& PsiT,
+                                                 double cutvn,
+                                                 double cutv2,
+                                                 TaskGroup_& TGprop,
+                                                 TaskGroup_& TGwfn,
+                                                 hdf_archive& dump);
 
-  ValueType H(IndexType I, IndexType J) const
-  {  return OneBodyHamiltonian::H(I,J); }
+  ValueType H(IndexType I, IndexType J) const { return OneBodyHamiltonian::H(I, J); }
 
   ValueType H(IndexType I, IndexType J, IndexType K, IndexType L) const
   {
@@ -77,18 +81,16 @@ class THCHamiltonian: public OneBodyHamiltonian
     return ValueType(0.0);
   }
 
-  protected:
-
+protected:
   TaskGroup_& TG;
 
   RealType cutoff_cholesky;
 
   std::string fileName;
-
 };
 
-}
+} // namespace afqmc
 
-}
+} // namespace qmcplusplus
 
 #endif

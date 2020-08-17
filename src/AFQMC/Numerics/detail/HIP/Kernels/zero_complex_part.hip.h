@@ -16,12 +16,11 @@
 
 namespace kernels
 {
+void zero_complex_part(int n, std::complex<double>* x);
+void zero_complex_part(int n, std::complex<float>* x);
+void zero_complex_part(int n, double* x);
+void zero_complex_part(int n, float* x);
 
-void zero_complex_part(int n, std::complex<double> * x);
-void zero_complex_part(int n, std::complex<float> * x);
-void zero_complex_part(int n, double * x);
-void zero_complex_part(int n, float * x);
-
-}
+} // namespace kernels
 
 #endif

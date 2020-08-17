@@ -1,5 +1,5 @@
 Example 3: UHF Trial
-====================
+--------------------
 
 In this example we show how to use a unrestricted Hartree--Fock (UHF) style wavefunction
 to find the ph-AFQMC (triplet) ground state energy of the carbon atom (cc-pvtz). Again we

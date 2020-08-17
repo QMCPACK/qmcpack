@@ -1,5 +1,5 @@
 Example 8: 2x2x2 Diamond k-point symmetry
-==========================================
+-----------------------------------------
 
 In this example we will show how to run an AFQMC simulation that exploits k-point symmetry
 which is much more efficient that running in the supercell way discussed in the previous
