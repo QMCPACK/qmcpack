@@ -358,6 +358,11 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual void completeUpdates() {}
 
+
+  /** complete all the delayed updates, must be called after each substep or step during pbyp move
+   */
+  virtual void cleanCompleteUpdates(ParticleSet& P) {}
+
   /** complete all the delayed updates for all the walkers in a batch
    * must be called after each substep or step during pbyp move
    */

@@ -68,6 +68,13 @@ FakeSPO::FakeSPO()
   v2(2, 1) = 5.4;
   v2(2, 2) = 4.9;
   v2(2, 3) = 2.2;
+
+  gv.resize(4);
+  gv[0] = TinyVector<ValueType, DIM>(1.0,0.0,0.1);
+  gv[1] = TinyVector<ValueType, DIM>(1.0,2.0,0.1);
+  gv[2] = TinyVector<ValueType, DIM>(2.0,1.0,0.1);
+  gv[3] = TinyVector<ValueType, DIM>(0.4,0.3,0.1);
+      
 }
 
 void FakeSPO::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; }
@@ -97,6 +104,7 @@ void FakeSPO::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, Gra
     for (int i = 0; i < 3; i++)
     {
       psi[i] = v[i];
+      dpsi[i] = gv[i];
     }
   }
   else if (OrbitalSetSize == 4)
@@ -104,6 +112,7 @@ void FakeSPO::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, Gra
     for (int i = 0; i < 4; i++)
     {
       psi[i] = v2(iat, i);
+      dpsi[i] = gv[i];
     }
   }
 }

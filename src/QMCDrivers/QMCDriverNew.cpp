@@ -377,17 +377,14 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   for (ParticleSet& pset : walker_elecs)
     pset.update();
 
-  // Added to match legacy.
-  auto cleanDataSet = [](MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& twf) {
-    if (walker.DataSet.size())
-      walker.DataSet.clear();
-    walker.DataSet.rewind();
-    walker.registerData();
-    twf.registerData(pset, walker.DataSet);
-    walker.DataSet.allocate();
-  };
+  // We reuse the DataSet if it exists, it is harmful to mess with it here.
   for (int iw = 0; iw < crowd.size(); ++iw)
-    cleanDataSet(walkers[iw], walker_elecs[iw], walker_twfs[iw]);
+    if (!walker.DataSet.size())
+    {
+      walker.registerData();
+      twf.registerData(pset, walker.DataSet);
+      walker.DataSet.allocate();
+    }
 
   auto copyFrom = [](TrialWaveFunction& twf, ParticleSet& pset, WFBuffer& wfb) { twf.copyFromBuffer(pset, wfb); };
   for (int iw = 0; iw < crowd.size(); ++iw)
@@ -405,7 +402,8 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
 
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
       QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
-  // This is actually only a partial reset of the walkers properties
+
+  // \todo rename these are sets not resets.
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy) {
     walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
   };

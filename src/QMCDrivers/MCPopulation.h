@@ -22,6 +22,7 @@
 #include "ParticleBase/ParticleAttrib.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/Walker.h"
+#include "Particle/WalkerElements.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -117,13 +118,14 @@ public:
    *   * createWalkers must have been called
    *  @{
    */
-  MCPWalker* spawnWalker();
+  WalkerElements spawnWalker();
   void killWalker(MCPWalker&);
   void killLastWalker();
   void createWalkerInplace(UPtr<MCPWalker>& walker_ptr);
   void allocateWalkerStuffInplace(int walker_index);
   /** }@ */
 
+  void createWalkers();
   /** Creates walkers with a clone of the golden electron particle set and golden trial wavefunction
    *
    *  \param[in] num_walkers number of living walkers in initial population
@@ -146,22 +148,51 @@ public:
    *  walkers are distributed one by one to crowds.
    *
    */
-  template<typename WTTV>
-  void distributeWalkers(WTTV& walker_consumer)
+  template<typename ITER, typename = RequireInputIterator<ITER>>
+  void distributeWalkers(ITER it_group_start, ITER group_end, int walkers_per_group)
   {
-    auto walkers_per_crowd = fairDivide(walkers_.size(), walker_consumer.size());
+    auto it_group               = it_group_start;
+    auto it_walkers             = walkers_.begin();
+    auto it_walker_elecs        = walker_elec_particle_sets_.begin();
+    auto it_walker_twfs         = walker_trial_wavefunctions_.begin();
+    auto it_walker_hamiltonians = walker_hamiltonians_.begin();
 
-    auto walker_index = 0;
-    for (int i = 0; i < walker_consumer.size(); ++i)
+    assert((group_end - it_group < walkers_.size()) || walkers_per_group == 1);
+
+    // while (it_group != group_end)
+    // {
+    //   for (int i = 0; i < walkers_per_group; ++i)
+    //   {
+    //     // possible that walkers_all < walkers_per_group * group_size
+    //     if (it_walkers == walkers_.end())
+    //       break;
+    //     (**it_group).addWalker(**it_walkers, **it_walker_elecs, **it_walker_twfs, **it_walker_hamiltonians);
+    //     ++it_walkers;
+    //     ++it_walker_elecs;
+    //     ++it_walker_twfs;
+    //     ++it_walker_hamiltonians;
+    //   }
+    //   ++it_group;
+    // }
+
+    // For now ignore the requesting walkers_per_group
+
+    while (it_walkers != walkers_.end())
     {
-      for(int j = 0; j < walkers_per_crowd[i]; ++j)
+      it_group = it_group_start;
+      while (it_group != group_end)
       {
-        walker_consumer[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index], *walker_trial_wavefunctions_[walker_index], *walker_hamiltonians_[walker_index]);
-        ++walker_index;
+        if (it_walkers == walkers_.end())
+          break;
+        (**it_group).addWalker(**it_walkers, **it_walker_elecs, **it_walker_twfs, **it_walker_hamiltonians);
+        ++it_walkers;
+        ++it_walker_elecs;
+        ++it_walker_twfs;
+        ++it_walker_hamiltonians;
+        ++it_group;
       }
     }
   }
-
   /**@ingroup Accessors
    * @{
    */
@@ -205,6 +236,26 @@ public:
   UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
   UPtrVector<QMCHamiltonian>& get_dead_hamiltonians() { return dead_walker_hamiltonians_; }
 
+  UPtrVector<TrialWaveFunction>& get_twfs() { return walker_trial_wavefunctions_; }
+  UPtrVector<TrialWaveFunction>& get_dead_twfs() { return dead_walker_trial_wavefunctions_; }
+
+  /** Non threadsafe access to walkers and their elements
+   *  
+   *  Prefer to distribute the walker elements and access
+   *  through a crowd to support the concurrency design.
+   *
+   *  You should not use this unless absolutely necessary.
+   *  That doesn't include that you would rather just use
+   *  omp parallel and ignore concurrency.
+   */
+  WalkerElements operator[](const size_t walker_index);
+
+  /** As long as walker WalkerElements is used we need this for unit tests
+   *
+   *  As operator[] don't use it to ignore the concurrency design.
+   */
+  std::vector<WalkerElements> get_walker_elements();
+  
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }

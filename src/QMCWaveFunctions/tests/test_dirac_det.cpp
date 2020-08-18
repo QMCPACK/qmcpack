@@ -325,10 +325,14 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 0, true);
   // force update Ainv in ddc using SM-1 code path
-  ddc.completeUpdates();
+  // also force population of dpsiM or you will have invalid grad below
+  ddc.cleanCompleteUpdates(elec);
 
   check_matrix(a_update1, ddc.psiM);
 
+  //ddc.Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
+  // simd::copy(dpsiM[WorkingIndex], dpsiV.data(), NumOrbitals);  
+  
   grad                    = ddc.evalGrad(elec, 1);
   PsiValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),

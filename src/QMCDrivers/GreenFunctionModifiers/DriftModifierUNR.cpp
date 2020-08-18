@@ -19,12 +19,32 @@ void DriftModifierUNR::getDrift(RealType tau, const GradType& qf, PosType& drift
 {
   // convert the complex WF gradient to real
   convert(qf, drift);
+#ifndef NDEBUG
+  PosType debug_drift = drift;
+#endif
   RealType vsq = dot(drift, drift);
-  RealType sc  = (vsq < std::numeric_limits<RealType>::epsilon())
+  RealType sc  = (std::isnan(vsq) || vsq < std::numeric_limits<RealType>::epsilon())
       ? tau
       : ((-1.0 + std::sqrt(1.0 + 2.0 * a_ * tau * vsq)) / (a_ * vsq));
   //Apply the umrigar scaling to drift.
   drift *= sc;
+#ifndef NDEBUG
+  for(int i = 0; i < drift.size(); ++i)
+  {
+    if (std::isnan(drift[i]))
+    {
+      // it seems "reasonable" so set this to 0 since a gradient of 0 shouldn't exert
+      // drift.  However this is related to a fully or partially zerod psiM which
+      // is a bug (IHMO)
+      drift[i] = 0;
+      //std::cerr << "drift is nan, vsq (" << vsq << ") sc (" << sc << ")\n";
+      //break;
+    }
+    //In my opinion this should be uncommented but debug fails due to
+    //invRow
+    //assert(!std::isnan(drift[i]));
+  }
+#endif
 }
 
 void DriftModifierUNR::getDrift(RealType tau, const ComplexType& qf, ParticleSet::Scalar_t& drift) const
@@ -32,7 +52,7 @@ void DriftModifierUNR::getDrift(RealType tau, const ComplexType& qf, ParticleSet
   // convert the complex WF gradient to real
   convert(qf, drift);
   RealType vsq = drift * drift;
-  RealType sc  = (vsq < std::numeric_limits<RealType>::epsilon())
+  RealType sc  = (std::isnan(vsq) || vsq < std::numeric_limits<RealType>::epsilon())
       ? tau
       : ((-1.0 + std::sqrt(1.0 + 2.0 * a_ * tau * vsq)) / (a_ * vsq));
   //Apply the umrigar scaling to drift.

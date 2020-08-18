@@ -41,7 +41,8 @@ DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
     : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, wf_pool,
                    "DMCBatched::", comm,
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
-      dmcdriver_input_(input)
+      dmcdriver_input_(input),
+      dmc_timers_("DMCBatched::")
 {
   QMCType = "DMCBatched";
 }
@@ -86,7 +87,7 @@ void DMCBatched::resetUpdateEngines()
 void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 DriverTimers& timers,
-                                //                                DMCTimers& dmc_timers,
+                                DMCTimers& dmc_timers,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
@@ -297,44 +298,56 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   handleMovedWalkers(these.moved, sft, timers);
   handleStalledWalkers(these.stalled, sft);
 
-  //myTimers[DMC_tmoves]->start();
-  std::vector<int> walker_non_local_moves_accepted(
-      QMCHamiltonian::flex_makeNonLocalMoves(walker_hamiltonians, walker_elecs));
-
-
-  // could be premature optimization
-  int num_moved_nonlocal   = 0;
-  int total_moved_nonlocal = 0;
-  for (int iw = 0; iw < walkers.size(); ++iw)
+  try
   {
-    if (walker_non_local_moves_accepted[iw] > 0)
-    {
-      num_moved_nonlocal++;
-      total_moved_nonlocal += walker_non_local_moves_accepted[iw];
-      crowd.incNonlocalAccept();
-    }
-  }
+    dmc_timers.tmove_timer.start();
+    std::vector<int> walker_non_local_moves_accepted(
+        QMCHamiltonian::flex_makeNonLocalMoves(crowd.get_walker_hamiltonians(), crowd.get_walker_elecs()));
 
-  if (num_moved_nonlocal > 0)
-  {
-    DMCPerWalkerRefs moved_nonlocal(num_moved_nonlocal);
-
-    for (int iw = 0; iw < these.moved.walkers.size(); ++iw)
+    //could be premature optimization
+    int num_moved_nonlocal   = 0;
+    int total_moved_nonlocal = 0;
+    for (int iw = 0; iw < walkers.size(); ++iw)
     {
       if (walker_non_local_moves_accepted[iw] > 0)
       {
-        moved_nonlocal.walkers.push_back(walkers[iw]);
-        moved_nonlocal.walker_twfs.push_back(walker_twfs[iw]);
-        moved_nonlocal.walker_elecs.push_back(walker_elecs[iw]);
-        moved_nonlocal.walker_hamiltonians.push_back(walker_hamiltonians[iw]);
-        moved_nonlocal.walker_mcp_wfbuffers.push_back(walker_mcp_wfbuffers[iw]);
+        num_moved_nonlocal++;
+        total_moved_nonlocal += walker_non_local_moves_accepted[iw];
+        crowd.incNonlocalAccept();
       }
     }
 
-    TrialWaveFunction::flex_updateBuffer(moved_nonlocal.walker_twfs, moved_nonlocal.walker_elecs,
-                                         moved_nonlocal.walker_mcp_wfbuffers);
-    ParticleSet::flex_saveWalker(moved_nonlocal.walker_elecs, moved_nonlocal.walkers);
+    if (num_moved_nonlocal > 0)
+    {
+      DMCPerWalkerRefs moved_nonlocal(num_moved_nonlocal);
+
+      for (int iw = 0; iw < these.moved.walkers.size(); ++iw)
+      {
+        if (walker_non_local_moves_accepted[iw] > 0)
+        {
+          moved_nonlocal.walkers.push_back(walkers[iw]);
+          moved_nonlocal.walker_twfs.push_back(walker_twfs[iw]);
+          moved_nonlocal.walker_elecs.push_back(walker_elecs[iw]);
+          moved_nonlocal.walker_hamiltonians.push_back(walker_hamiltonians[iw]);
+          moved_nonlocal.walker_mcp_wfbuffers.push_back(walker_mcp_wfbuffers[iw]);
+        }
+      }
+      TrialWaveFunction::flex_updateBuffer(moved_nonlocal.walker_twfs, moved_nonlocal.walker_elecs,
+                                           moved_nonlocal.walker_mcp_wfbuffers);
+      ParticleSet::flex_saveWalker(moved_nonlocal.walker_elecs, moved_nonlocal.walkers);
+    }
   }
+  catch (const std::out_of_range& exc)
+  {
+    std::cout << "Out of range error in non local move updates: " << exc.what() << std::endl;
+  }
+  catch (const std::exception& exc)
+  {
+    std::cout << "Serious issue in flex_make_NonLocalMoves(): " << exc.what() << std::endl;
+  }
+
+  dmc_timers.tmove_timer.stop();
+
   setMultiplicities(sft.dmcdrv_input, walkers, step_context.get_random_gen());
 }
 
@@ -354,6 +367,7 @@ DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& d
   {
     if (did_walker_move[iw] > 0)
     {
+      assert(refs.rr_accepted[iw] > 0);
       these.moved.walkers.push_back(refs.walkers[iw]);
       these.moved.walker_twfs.push_back(refs.walker_twfs[iw]);
       these.moved.walker_hamiltonians.push_back(refs.walker_hamiltonians[iw]);
@@ -367,6 +381,7 @@ DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& d
     }
     else
     {
+      assert(refs.rr_accepted[iw] == 0.0);
       these.stalled.walkers.push_back(refs.walkers[iw]);
       these.stalled.walker_twfs.push_back(refs.walker_twfs[iw]);
       these.stalled.walker_hamiltonians.push_back(refs.walker_hamiltonians[iw]);
@@ -479,7 +494,7 @@ void DMCBatched::setMultiplicities(const DMCDriverInput& dmcdriver_input,
 void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
-                            //                            DMCTimers& dmc_timers,
+                            DMCTimers& dmc_timers,
                             UPtrVector<ContextForSteps>& context_for_steps,
                             UPtrVector<Crowd>& crowds)
 {
@@ -495,7 +510,7 @@ void DMCBatched::runDMCStep(int crowd_id,
       sft.recomputing_blocks ? (1 + sft.block) % sft.qmcdrv_input.get_blocks_between_recompute() == 0 : false;
   IndexType step           = sft.step;
   bool recompute_this_step = (is_recompute_block && (step + 1) == max_steps);
-  advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step);
+  advanceWalkers(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step);
 }
 
 void DMCBatched::process(xmlNodePtr node)
@@ -546,7 +561,7 @@ bool DMCBatched::run()
     {
       ScopedTimer local_timer(&(timers_.run_steps_timer));
       dmc_state.step = step;
-      crowd_task(runDMCStep, dmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
+      crowd_task(runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_), std::ref(crowds_));
 
       branch_engine_->branch(step, population_);
 
