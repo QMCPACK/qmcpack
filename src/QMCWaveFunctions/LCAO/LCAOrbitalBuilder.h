@@ -102,7 +102,9 @@ protected:
    *
    * added in header to allow use from derived class LCAOSpinorBuilder as well
    */
-  void readRealMatrixFromH5(hdf_archive& hin, const std::string& setname, Matrix<LCAOrbitalBuilder::RealType>& Creal) const;
+  void readRealMatrixFromH5(hdf_archive& hin,
+                            const std::string& setname,
+                            Matrix<LCAOrbitalBuilder::RealType>& Creal) const;
 };
 
 
