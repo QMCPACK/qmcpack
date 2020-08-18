@@ -237,7 +237,7 @@ void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to
   assert(WorkingIndex >= 0);
   LogValue += convertValueToLog(curRatio);
   UpdateTimer.start();
-  updateEng.acceptRow(psiM, WorkingIndex, psiV);
+  updateEng.acceptRow(psiM, WorkingIndex, psiV, curRatio);
   if (!safe_to_delay)
     updateEng.updateInvMat(psiM);
   // invRow becomes invalid after accepting a move
