@@ -50,7 +50,6 @@ struct QMCGaussianParserBase
   bool addJastrow;
   bool addJastrow3Body;
   bool ECP;
-  bool spinors;
   bool debug;
   bool Structure;
   bool multidetH5;

@@ -20,7 +20,6 @@ DiracParser::DiracParser(int argc, char** argv) : QMCGaussianParserBase(argc, ar
   ECP      = false;
   BohrUnit = true;
   PBC      = false;
-  spinors  = true;
 }
 
 void DiracParser::parse(const std::string& fname)
@@ -359,7 +358,6 @@ void DiracParser::dumpHDF5(const std::string& fname)
   }
   str = "KPTS_0";
   hout.push(str, true);
-  hout.write(spinors, "has_spinors");
   hout.write(up_real, "eigenset_0");
   hout.write(up_imag, "eigenset_0_imag");
   hout.write(dn_real, "eigenset_1");
