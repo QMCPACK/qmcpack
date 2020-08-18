@@ -827,7 +827,9 @@ bool LCAOrbitalBuilder::putOccupation(LCAOrbitalSet& spo, xmlNodePtr occ_ptr)
   return true;
 }
 
-void LCAOrbitalBuilder::readRealMatrixFromH5(hdf_archive& hin, const std::string& setname, Matrix<LCAOrbitalBuilder::RealType>& Creal) const
+void LCAOrbitalBuilder::readRealMatrixFromH5(hdf_archive& hin,
+                                             const std::string& setname,
+                                             Matrix<LCAOrbitalBuilder::RealType>& Creal) const
 {
   if (!hin.readEntry(Creal, setname))
   {
