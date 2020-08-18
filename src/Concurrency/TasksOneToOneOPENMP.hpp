@@ -41,11 +41,12 @@ void TasksOneToOne<Threading::OPENMP>::operator()(F&& f, Args&&... args)
       throw std::runtime_error(nesting_error);
   int nested_throw_count = 0;
   int throw_count = 0;
-#pragma omp parallel num_threads(num_threads_) reduction(+ : nested_throw_count, throw_count)
+#pragma omp parallel for reduction(+ : nested_throw_count, throw_count)
+  for (int task_id = 0; task_id < num_tasks_; ++task_id)
   {
     try
     {
-      f(omp_get_thread_num(), std::forward<Args>(args)...);
+      f(task_id, std::forward<Args>(args)...);
     }
     catch (const std::runtime_error& re)
     {

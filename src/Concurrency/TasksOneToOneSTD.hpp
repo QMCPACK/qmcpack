@@ -47,14 +47,14 @@ template<>
 template<typename F, typename... Args>
 void TasksOneToOne<Threading::STD>::operator()(F&& f, Args&&... args)
 {
-  std::vector<std::thread> threads(num_threads_);
+  std::vector<std::thread> threads(num_tasks_);
 
-  for (int task_id = 0; task_id < num_threads_; ++task_id)
+  for (int task_id = 0; task_id < num_tasks_; ++task_id)
   {
     threads[task_id] = std::thread(TaskWrapper<F>{std::forward<F>(f)}, task_id, std::forward<Args>(args)...);
   }
 
-  for (int task_id = 0; task_id < num_threads_; ++task_id)
+  for (int task_id = 0; task_id < num_tasks_; ++task_id)
   {
     threads[task_id].join();
   }
