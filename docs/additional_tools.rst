@@ -829,6 +829,43 @@ When using an ionized state, the three reference states are all set as "1s(2)2p(
 Unfortunately, if the generated UPF file is used in QE, the calculation may be incorrect because of the presence of "ghost" states. Potentially these can be removed by adjusting the local channel (e.g., by setting ``--local_channel 1``, which chooses the p channel as the local channel instead of d.
 For this reason, validation of UPF PPs is always required from the third row and is strongly encouraged in general. For example, check that the expected ionization potential and electron affinities are obtained for the atom and that dimer properties are consistent with those obtained by a quantum chemistry code or a plane-wave code that does not use the Kleinman-Bylander projectors.
 
+.. _molden2qmc:
+
+molden2qmc
+~~~~~~~~~~~
+
+``molden2qmc`` is a tool used to convert molden files into an HDF5 file with the QMCPACK format.
+Molden2qmc is a single program that can use multiple different quantum chemistry codes.
+It is python code developed by Vladimir Konjkov originally for the CASINO code but then extended to qmcpack.
+This can be found under ``build/bin``.
+
+Using molden2qmc
+^^^^^^^^^^^^^^^^
+
+General use of ``molden2qmc`` can be prompted by running ``molden2qmc.py`` and entering the corresponding quantum chemistry code number and the molden file name:
+
+::
+
+   number corresponding to the quantum chemistry code used to produce this MOLDEN file:
+            0 -- TURBOMOLE
+            1 -- PSI4
+            2 -- CFOUR 2.0beta
+            3 -- ORCA 3.X - 4.X
+            4 -- DALTON2016
+            5 -- MOLPRO
+            6 -- NWCHEM
+            7 -- QCHEM 4.X
+            
+::
+            
+Use the qmcpack flag to create the file as an hdf5 file, suitable for qmcpack.
+
+Without the qmcpack flag, the file will become a gwfn file for CASINO.
+            
+Example:
+
+>molden2qmc.py 5 n4.molden --qmcpack
+
 Obtaining pseudopotentials
 --------------------------
 
