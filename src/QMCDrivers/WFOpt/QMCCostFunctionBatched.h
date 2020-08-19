@@ -31,7 +31,7 @@ class QMCCostFunctionBatched : public QMCCostFunctionBase, public CloneManager
 {
 public:
   ///Constructor.
-  QMCCostFunctionBatched(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
+  QMCCostFunctionBatched(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, SampleStack &samples, Communicate* comm);
 
   ///Destructor
   ~QMCCostFunctionBatched();
@@ -60,6 +60,8 @@ protected:
   Return_rt CSWeight;
 
   Return_rt correlatedSampling(bool needGrad = true);
+
+  SampleStack& samples_;
 
 #ifdef HAVE_LMY_ENGINE
   int total_samples();

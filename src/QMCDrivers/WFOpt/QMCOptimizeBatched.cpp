@@ -239,7 +239,7 @@ bool QMCOptimizeBatched::put(xmlNodePtr q)
     optSolver->put(optNode);
   bool success = true;
   //allways reset optTarget
-  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, myComm);
+  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, samples_, myComm);
   optTarget->setStream(&app_log());
   success = optTarget->put(q);
 

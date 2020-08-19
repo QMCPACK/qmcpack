@@ -25,8 +25,8 @@
 
 namespace qmcplusplus
 {
-QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
-    : QMCCostFunctionBase(w, psi, h, comm)
+QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, SampleStack& samples, Communicate* comm)
+    : QMCCostFunctionBase(w, psi, h, comm),samples_(samples)
 {
   CSWeight = 1.0;
   app_log() << " Using QMCCostFunctionBatched::QMCCostFunctionBatched" << std::endl;
@@ -188,7 +188,6 @@ void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
 
   app_log() << "  Using Nonlocal PP in Opt: " << includeNonlocalH << std::endl;
   outputManager.pause();
-  //#pragma omp parallel for
   for (int ip = 0; ip < NumThreads; ++ip)
   {
     if (H_KE_Node[ip] == 0)
@@ -241,9 +240,8 @@ void QMCCostFunctionBatched::checkConfigurations()
 {
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
-#pragma omp parallel reduction(+ : et_tot, e2_tot)
   {
-    int ip = omp_get_thread_num();
+    int ip = 0;
     MCWalkerConfiguration& wRef(*wClones[ip]);
     if (RecordsOnNode[ip] == 0)
     {
@@ -521,7 +519,6 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
       OptVariablesForPsi[i] = OptVariables[i];
   if (final_reset)
   {
-#pragma omp parallel for
     for (int i = 0; i < psiClones.size(); ++i)
       psiClones[i]->stopOptimization();
   }
@@ -546,10 +543,11 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   Return_rt wgt_tot       = 0.0;
   Return_rt wgt_tot2      = 0.0;
   Return_rt inv_n_samples = 1.0 / NumSamples;
-#pragma omp parallel reduction(+ : wgt_tot, wgt_tot2)
   {
-    int ip                        = omp_get_thread_num();
+    int ip                        = 0;
     bool compute_nlpp             = useNLPPDeriv && (includeNonlocalH != "no");
+    if (compute_nlpp)
+      APP_ABORT("Batched optimizer does not has support for NLPP yet");
     bool compute_all_from_scratch = (includeNonlocalH != "no"); //true if we have nlpp
 
     MCWalkerConfiguration& wRef(*wClones[ip]);
