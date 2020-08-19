@@ -63,6 +63,10 @@ protected:
 
   SampleStack& samples_;
 
+  std::vector<Return_rt> log_psi_fixed_;
+  std::vector<Return_rt> log_psi_opt_;
+
+
 #ifdef HAVE_LMY_ENGINE
   int total_samples();
   Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj);

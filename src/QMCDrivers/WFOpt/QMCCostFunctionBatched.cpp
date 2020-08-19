@@ -248,6 +248,11 @@ void QMCCostFunctionBatched::checkConfigurations()
   {
     int ip = 0;
     MCWalkerConfiguration& wRef(*wClones[ip]);
+    if (log_psi_fixed_.size() != samples_.getNumSamples()) {
+      log_psi_fixed_.resize(samples_.getNumSamples());
+      log_psi_opt_.resize(samples_.getNumSamples());
+    }
+
     if (RecordsOnNode[ip] == 0)
     {
       RecordsOnNode[ip] = new Matrix<Return_rt>;
@@ -280,50 +285,62 @@ void QMCCostFunctionBatched::checkConfigurations()
     Return_rt e0 = 0.0;
     //       Return_t ef=0.0;
     Return_rt e2 = 0.0;
-    for (int iw = 0, iwg = wPerNode[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
-    {
-      wRef.loadSample(wRef.R, iw);
-      wRef.update();
-      Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
-      psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
-      saved[REWEIGHT] = 1.0;
-      Return_rt etmp;
-      if (needGrads)
-      {
-        //allocate vector
-        std::vector<Return_rt> rDsaved(NumOptimizables, 0.0);
-        std::vector<Return_rt> rHDsaved(NumOptimizables, 0.0);
-
-        std::vector<Return_t> Dsaved(NumOptimizables, 0.0);
-        std::vector<Return_t> HDsaved(NumOptimizables, 0.0);
-
-        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
-        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
 
 
-        //FIXME the ifdef should be removed after the optimizer is made compatible with complex coefficients
-        for (int i = 0; i < NumOptimizables; i++)
-        {
-          rDsaved[i]  = std::real(Dsaved[i]);
-          rHDsaved[i] = std::real(HDsaved[i]);
-        }
-        copy(rDsaved.begin(), rDsaved.end(), (*DerivRecords[ip])[iw]);
-        copy(rHDsaved.begin(), rHDsaved.end(), (*HDerivRecords[ip])[iw]);
-      }
-      else
-        etmp = hClones[ip]->evaluate(wRef);
+    auto ref_dLogPsi = convertPtrToRefVector(dLogPsi);
+    auto ref_d2LogPsi = convertPtrToRefVector(d2LogPsi);
 
-      e0 += saved[ENERGY_TOT] = saved[ENERGY_NEW] = etmp;
-      e2 += etmp * etmp;
-      saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
-      if (nlpp)
-        saved[ENERGY_FIXED] -= nlpp->Value;
+    std::vector<TrialWaveFunction *> wf_list1;
+    std::vector<ParticleSet *> p_list1;
+    std::vector<QMCHamiltonian *> h_list1;
+
+    outputManager.pause();
+    for (int iw = 0; iw < samples_.getNumSamples(); iw++) {
+      MCWalkerConfiguration *wRef = new MCWalkerConfiguration(*wClones[0]);
+      samples_.loadSample(wRef->R, iw);
+      wRef->update();
+      p_list1.push_back(wRef);
+      wf_list1.push_back(psiClones[0]->makeClone(*wRef));
+      h_list1.push_back(hClones[0]->makeClone(*wRef, *wf_list1[iw]));
     }
+    outputManager.resume();
+
+    RefVector<TrialWaveFunction> wf_list = convertPtrToRefVector(wf_list1);
+    RefVector<ParticleSet> p_list = convertPtrToRefVector(p_list1);
+    RefVector<QMCHamiltonian> h_list = convertPtrToRefVector(h_list1);
+
+    TrialWaveFunction::flex_evaluateDeltaLogSetup(wf_list, p_list, log_psi_fixed_, log_psi_opt_, ref_dLogPsi, ref_d2LogPsi);
+
+    int nparam = getNumParams();
+    RecordArray<Return_t> dlogpsi_array(nparam, samples_.getNumSamples());
+    RecordArray<Return_t> dhpsioverpsi_array(nparam, samples_.getNumSamples());
+    TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, OptVariablesForPsi, dlogpsi_array, dhpsioverpsi_array );
+
+    for (int iw = 0; iw < samples_.getNumSamples(); iw++) {
+      for (int j = 0; j < nparam; j++) {
+        (*DerivRecords[0])[iw][j] = std::real(dlogpsi_array.getValue(j,iw));
+        (*HDerivRecords[0])[iw][j] = std::real(dhpsioverpsi_array.getValue(j,iw));
+      }
+      (*RecordsOnNode[0])[iw][LOGPSI_FIXED] = log_psi_fixed_[iw];
+      (*RecordsOnNode[0])[iw][LOGPSI_FREE] = log_psi_opt_[iw];
+    }
+
+    auto energy_list = QMCHamiltonian::flex_evaluate(h_list, p_list);
+
+    for (int i = 0; i < samples_.getNumSamples(); i++) {
+      auto etmp = energy_list[i];
+      e0 += etmp;
+      e2 += etmp * etmp;
+
+      (*RecordsOnNode[0])[i][ENERGY_NEW] = etmp;
+      (*RecordsOnNode[0])[i][ENERGY_TOT] = etmp;
+      (*RecordsOnNode[0])[i][ENERGY_FIXED] = h_list[i].get().getLocalPotential();
+      (*RecordsOnNode[0])[i][REWEIGHT] = 1.0;
+    }
+
     //add them all using reduction
     et_tot += e0;
     e2_tot += e2;
-    // #pragma omp atomic
-    //       eft_tot+=ef;
   }
   OptVariablesForPsi.setComputed();
   //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << std::endl;
