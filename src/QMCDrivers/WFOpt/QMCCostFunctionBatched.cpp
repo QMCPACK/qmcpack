@@ -210,6 +210,7 @@ void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
 
   //load samples from SampleStack
   outputManager.resume();
+#if 0
   app_log() << "   Number of samples loaded to each thread : ";
   wPerNode[0] = 0;
   for (int ip = 0; ip < NumThreads; ++ip)
@@ -219,6 +220,10 @@ void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
   }
   app_log() << std::endl;
   app_log().flush();
+#endif
+  app_log() << "   Number of samples : " << samples_.getNumSamples() << std::endl;
+  wPerNode[0] = 0;
+  wPerNode[1] = samples_.getNumSamples();
 
   if (dLogPsi.size() != wPerNode[NumThreads])
   {
