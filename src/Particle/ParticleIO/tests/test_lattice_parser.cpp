@@ -27,7 +27,6 @@ namespace qmcplusplus
 {
 TEST_CASE("read_lattice_xml", "[particle_io][xml]")
 {
-
   const char* particles = "<tmp> \
  <parameter name=\"lattice\" units=\"bohr\"> \
                  3.80000000       0.00000000       0.00000000 \

@@ -26,7 +26,6 @@
 
 namespace qmcplusplus
 {
-
 /** enumerator for DistanceTableData::DTType
  *
  * - DT_AOS Use original AoS type
@@ -186,7 +185,7 @@ public:
   virtual void evaluate(ParticleSet& P) = 0;
   virtual void mw_evaluate(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
   {
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       dt_list[iw].get().evaluate(p_list[iw]);
   }
@@ -262,10 +261,7 @@ public:
    * responsible to call this function for memory allocation and any
    * change in the indices N.
    */
-  void resize(int npairs, int nw)
-  {
-    N_walkers = nw;
-  }
+  void resize(int npairs, int nw) { N_walkers = nw; }
 };
 } // namespace qmcplusplus
 #endif

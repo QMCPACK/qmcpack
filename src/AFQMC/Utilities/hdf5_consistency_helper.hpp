@@ -26,7 +26,6 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-
 // Helper functions for reading integral data from HDF5 files.
 // Currently only read one-dimensional integrals into std::vector<ValueType> and two-dimensional
 // integrals into boost::multi::array<ValueType,2>, so only handle these overloads.
@@ -41,32 +40,41 @@ bool readComplexOrReal(hdf_archive& dump, std::string name, std::vector<T>& out)
 {
   std::vector<int> shape;
   int ndim = 1; // vector
-  if(!dump.getShape<std::vector<T>>(name, shape)) {
+  if (!dump.getShape<std::vector<T>>(name, shape))
+  {
     // name not found in dump.
     return false;
   }
 #ifdef QMC_COMPLEX
-  if(shape.size() == ndim+1) {
+  if (shape.size() == ndim + 1)
+  {
     // Nothing.
     dump.readEntry(out, name);
     return true;
-  } else if (shape.size() == ndim) {
+  }
+  else if (shape.size() == ndim)
+  {
     // Real integrals.
     std::vector<RealType> out_real(out.size());
     dump.readEntry(out_real, name);
     std::copy_n(out_real.begin(), out_real.size(), out.begin());
     return true;
-  } else {
+  }
+  else
+  {
     app_log() << " Error reading " << name << " dataspace. Shape mismatch.\n";
     APP_ABORT("");
     return false;
   }
 #else
-  if(shape.size() == ndim+1) {
+  if (shape.size() == ndim + 1)
+  {
     app_log() << " Error: Found complex integrals with QMC_COMPLEX=0.\n";
     APP_ABORT(" Please recompile with QMC_COMPLEX=1 or generate real integrals if appropriate.\n");
     return false;
-  } else {
+  }
+  else
+  {
     dump.readEntry(out, name);
     return true;
   }
@@ -74,43 +82,52 @@ bool readComplexOrReal(hdf_archive& dump, std::string name, std::vector<T>& out)
 }
 
 template<typename T>
-bool readComplexOrReal(hdf_archive& dump, std::string name, boost::multi::array<T,2>& out)
+bool readComplexOrReal(hdf_archive& dump, std::string name, boost::multi::array<T, 2>& out)
 {
   std::vector<int> shape;
   int ndim = 2; // matrix
-  if(!dump.getShape<boost::multi::array<T,2>>(name, shape)) {
+  if (!dump.getShape<boost::multi::array<T, 2>>(name, shape))
+  {
     // name not found in dump.
     return false;
   }
 #ifdef QMC_COMPLEX
-  if(shape.size() == ndim+1) {
+  if (shape.size() == ndim + 1)
+  {
     // Nothing.
     dump.readEntry(out, name);
     return true;
-  } else if (shape.size() == ndim) {
+  }
+  else if (shape.size() == ndim)
+  {
     // Real integrals.
-    boost::multi::array<RealType,2> out_real({shape[0],shape[1]});
+    boost::multi::array<RealType, 2> out_real({shape[0], shape[1]});
     dump.readEntry(out_real, name);
     std::copy_n(out_real.origin(), out_real.num_elements(), out.origin());
     return true;
-  } else {
+  }
+  else
+  {
     app_log() << " Error reading " << name << " dataspace. Shape mismatch.\n";
     APP_ABORT("");
     return false;
   }
 #else
-  if(shape.size() == ndim+1) {
+  if (shape.size() == ndim + 1)
+  {
     app_log() << " Error: Found complex integrals with QMC_COMPLEX=0.\n";
     APP_ABORT(" Please recompile with QMC_COMPLEX=1 or generate real integrals if appropriate.\n");
     return false;
-  } else {
+  }
+  else
+  {
     dump.readEntry(out, name);
     return true;
   }
 #endif
 }
 
-}
-}
+} // namespace afqmc
+} // namespace qmcplusplus
 
 #endif

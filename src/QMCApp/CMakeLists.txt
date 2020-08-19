@@ -44,7 +44,7 @@ ADD_CUSTOM_COMMAND(TARGET qmcpack
 
 TARGET_LINK_LIBRARIES(qmcpack qmc qmcdriver)
 IF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(qmcpack qmcham qmcwfs qmcparticle qmcutil containers platform_device platform_omp)
+  TARGET_LINK_LIBRARIES(qmcpack qmcestimators qmcham qmcwfs qmcparticle qmcutil containers platform_device platform_omp)
 ENDIF()
 
 IF(BUILD_AFQMC)

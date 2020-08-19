@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -38,11 +38,19 @@ class MCWalkerConfiguration;
 class QMCHamiltonian;
 class CollectablesEstimator;
 
+namespace testing
+{
+class EstimatorManagerBaseTest;
+} // namespace testing
+
+
 /** Class to manage a set of ScalarEstimators */
 class EstimatorManagerBase : public EstimatorManagerInterface
 {
 public:
   typedef QMCTraits::FullPrecRealType RealType;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+
   typedef ScalarEstimatorBase EstimatorType;
   typedef std::vector<RealType> BufferType;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
@@ -170,13 +178,6 @@ public:
 
   /** stop a block
    * @param accept acceptance rate of this block
-   * 
-   */
-  void stopBlockNew(RealType accept);
-
-  
-  /** stop a block
-   * @param accept acceptance rate of this block
    */
   void stopBlock(RealType accept, bool collectall = true);
 
@@ -184,13 +185,6 @@ public:
    * @param m list of estimator which has been collecting data independently
    */
   void stopBlock(const std::vector<EstimatorManagerBase*>& m);
-
-  /** At end of block collect the scalar estimators for the entire rank
-   *   
-   *  Each is currently accumulates on for crowd of 1 or more walkers
-   *  TODO: What is the correct normalization 
-   */
-  void collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators, const int total_walkers, const RealType block_weight);
 
   /** accumulate the measurements
    * @param W walkers
@@ -213,18 +207,6 @@ public:
 
   void getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var);
 
-  /** Unified walker variant of this method
-   *
-   *  This only makes sense to call on the whole population with the current DMC algorithm
-   *
-   *  This is about to be refactored out of EstimatorManagerBase
-   *
-   *  I think it would probably be cleaner and remove alot of reset issues to have the eavg and var
-   *  from the previous section passed in
-   *  rather than retaining the estimator manager to get them.
-   */
-  static void getCurrentStatistics(const int global_walkers, RefVector<MCPWalker>& walkers, RealType& eavg, RealType& var, Communicate* comm);
-  
   template<class CT>
   void write(CT& anything, bool doappend)
   {
@@ -235,7 +217,6 @@ public:
   auto& get_SquaredAverageCache() { return SquaredAverageCache; }
 
 protected:
-  friend class EstimatorManagerCrowd;
   //  TODO: fix needless use of bitset instead of clearer more visible booleans
   std::bitset<8> Options;
   ///size of the message buffer
@@ -310,6 +291,8 @@ private:
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;
+
+  friend class qmcplusplus::testing::EstimatorManagerBaseTest;
 };
 } // namespace qmcplusplus
 #endif

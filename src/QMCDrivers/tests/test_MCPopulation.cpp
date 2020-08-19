@@ -79,14 +79,15 @@ TEST_CASE("MCPopulation::distributeWalkers", "[particle][population]")
   std::vector<std::unique_ptr<WalkerConsumer>> walker_consumers(8);
   std::for_each(walker_consumers.begin(), walker_consumers.end(),
                 [](std::unique_ptr<WalkerConsumer>& wc) { wc.reset(new WalkerConsumer()); });
-  population.distributeWalkers(walker_consumers.begin(), walker_consumers.end(), 3);
+  population.distributeWalkers(walker_consumers);
+  
   REQUIRE((*walker_consumers[0]).walkers.size() == 3);
 
   std::vector<std::unique_ptr<WalkerConsumer>> walker_consumers_incommensurate(5);
   std::for_each(walker_consumers_incommensurate.begin(), walker_consumers_incommensurate.end(),
                 [](std::unique_ptr<WalkerConsumer>& wc) { wc.reset(new WalkerConsumer()); });
 
-  population.distributeWalkers(walker_consumers_incommensurate.begin(), walker_consumers_incommensurate.end(), 5);
+  population.distributeWalkers(walker_consumers_incommensurate);
   REQUIRE((*walker_consumers_incommensurate[0]).walkers.size() == 5);
   REQUIRE((*walker_consumers_incommensurate[4]).walkers.size() == 4);
 }

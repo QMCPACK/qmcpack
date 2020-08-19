@@ -12040,6 +12040,7 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
 
       </hamiltonian>
    </qmcsystem>
+   <traces array="yes" write="no"/>
    <qmc method="vmc" move="pbyp">
       <parameter name="walkers"             >    1               </parameter>
       <parameter name="blocks"              >    2000            </parameter>

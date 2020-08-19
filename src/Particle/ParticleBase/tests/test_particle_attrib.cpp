@@ -27,7 +27,6 @@ namespace qmcplusplus
 {
 TEST_CASE("particle_attrib_scalar", "[particle_base]")
 {
-
   ParticleAttrib<double> PA1;
   REQUIRE(PA1.size() == 0);
 
@@ -52,7 +51,6 @@ TEST_CASE("particle_attrib_scalar", "[particle_base]")
 
 TEST_CASE("particle_attrib_vector", "[particle_base]")
 {
-
   ParticleAttrib<TinyVector<double, 2>> PA1;
   REQUIRE(PA1.size() == 0);
 

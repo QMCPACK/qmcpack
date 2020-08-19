@@ -28,6 +28,7 @@
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Utilities/NewTimer.h"
 #include "type_traits/template_types.hpp"
+#include "Containers/MinimalContainers/RecordArray.hpp"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
@@ -158,13 +159,101 @@ public:
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
 
+  /** evaluate the log value of a many-body wave function
+   * @param P input configuration containing N particles
+   * @param recomputeall recompute all orbitals from scratch
+   * @return the value of \f$ \log( \Pi_i \Psi_i) \f$  many-body wave function
+   *
+   * @if recompute == true
+   *   all orbitals have "evaluateLog" called on them, including the non-optimized ones.
+   * @else
+   *   default value.  call evaluateLog only on optimizable orbitals.  OK if nonlocal pp's aren't used.
+   *
+   * To save time, logpsi, G, and L are only computed for orbitals that change over the course of the optimization.
+   * It is assumed that the fixed components are stored elsewhere.  See evaluateDeltaLog(P,logpsi_fixed_r,logpsi_opt,fixedG,fixedL)
+   * defined below.  Nonlocal pseudopotential evaluation requires temporary information like matrix inverses, so while
+   * the logpsi, G, and L don't change, evaluateLog is called anyways to compute these auxiliary quantities from scratch.
+   * logpsi, G, and L associated with these non-optimizable orbitals are discarded explicitly and with dummy variables.
+   */
+
   RealType evaluateDeltaLog(ParticleSet& P, bool recompute = false);
 
+  /** evaluate the sum of log value of optimizable many-body wavefunctions
+   * @param P  input configuration containing N particles
+   * @param logpsi_fixed log(std::abs(psi)) of the invariant orbitals
+   * @param logpsi_opt log(std::abs(psi)) of the variable orbitals
+   * @param fixedG gradients of log(psi) of the fixed wave functions
+   * @param fixedL laplacians of log(psi) of the fixed wave functions
+   *
+   * This function is introduced for optimization only.
+   * fixedG and fixedL save the terms coming from the wave functions
+   * that are invariant during optimizations.
+   * It is expected that evaluateDeltaLog(P,false) is called later
+   * and the external object adds the varying G and L and the fixed terms.
+   */
   void evaluateDeltaLog(ParticleSet& P,
                         RealType& logpsi_fixed,
                         RealType& logpsi_opt,
                         ParticleSet::ParticleGradient_t& fixedG,
                         ParticleSet::ParticleLaplacian_t& fixedL);
+
+  /** evaluate the sum of log value of optimizable many-body wavefunctions
+   * @param wf_list vector of wavefunctions
+   * @param p_list vector of input particle configurations
+   * @param logpsi_fixed_list vector of log(std::abs(psi)) of the invariant orbitals
+   * @param logpsi_opt_list vector of log(std::abs(psi)) of the variable orbitals
+   * @param fixedG_list vector of gradients of log(psi) of the fixed wave functions
+   * @param fixedL_list vector of laplacians of log(psi) of the fixed wave functions
+   *
+   * For wavefunction optimization, it can speed evaluation to split the log value,
+   * the gradient, and the laplacian computed from wavefunction components with optimizable
+   * parameters from components that do not.  This function computes the log value of
+   * both parts, and the gradient and laplacian of the fixed components.
+   * During correlated sampling steps only the components with optimizable
+   * parameters need to have the gradient and laplacian re-evaluated.
+   *
+   * Parameters fixedG_list and fixedL_list save the terms coming from the components
+   * that do not have optimizable parameters.
+   * It is expected that flex_evaluateDeltaLog(P,false) is called later
+   * and the external object adds the varying G and L and the fixed terms.
+   */
+  static void flex_evaluateDeltaLogSetup(const RefVector<TrialWaveFunction>& wf_list,
+                                         const RefVector<ParticleSet>& p_list,
+                                         std::vector<RealType>& logpsi_fixed_list,
+                                         std::vector<RealType>& logpsi_opt_list,
+                                         RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
+                                         RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list);
+
+  /** evaluate the log value for optimizable parts of a many-body wave function
+   * @param wf_list vector of wavefunctions
+   * @param p_list vector of input particle configurations
+   * @param logpsi_list vector of log(std::abs(psi)) of the variable orbitals
+   * @param dummyG_list vector of gradients of log(psi) of the fixed wave functions.
+   * @param dummyL_list vector of laplacians of log(psi) of the fixed wave functions
+   *
+   * The dummyG_list and dummyL_list are only referenced if recompute is true.
+   * If recompute is false, the storage of these lists are needed, but the values can be discarded.
+   *
+   * @if recompute == true
+   *   all orbitals have "evaluateLog" called on them, including the non-optimized ones.
+   * @else
+   *   default value.  call evaluateLog only on optimizable orbitals.  OK if nonlocal pp's aren't used.
+   *
+   * To save time, logpsi, G, and L are only computed for orbitals that change over the course of the optimization.
+   * It is assumed that the fixed components are stored elsewhere.  See flex_evaluateDeltaLogSetup defined above.
+   * Nonlocal pseudopotential evaluation requires temporary information like matrix inverses, so while
+   * the logpsi, G, and L don't change, evaluateLog is called anyways to compute these auxiliary quantities from scratch.
+   * logpsi, G, and L associated with these non-optimizable orbitals are discarded explicitly and with dummy variables.
+   */
+
+
+  static void flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>& wf_list,
+                                    const RefVector<ParticleSet>& p_list,
+                                    std::vector<RealType>& logpsi_list,
+                                    RefVector<ParticleSet::ParticleGradient_t>& dummyG_list,
+                                    RefVector<ParticleSet::ParticleLaplacian_t>& dummyL_list,
+                                    bool recompute = false);
+
 
   /** compute psi(R_new) / psi(R_current) ratio
    * It returns a complex value if the wavefunction is complex.
@@ -185,10 +274,13 @@ public:
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct = ComputeType::ALL);
-  static void flex_evaluateRatios(const RefVector<TrialWaveFunction>& WF_list,
-                                  const RefVector<const VirtualParticleSet>& VP_list,
-                                  const RefVector<std::vector<ValueType>>& ratios_list,
-                                  ComputeType ct = ComputeType::ALL);
+  /** batched verison of evaluateRatios
+   * Note: unlike other flex_ static functions, *this is the batch leader instead of WF_list[0].
+   */
+  void flex_evaluateRatios(const RefVector<TrialWaveFunction>& WF_list,
+                           const RefVector<const VirtualParticleSet>& VP_list,
+                           const RefVector<std::vector<ValueType>>& ratios_list,
+                           ComputeType ct = ComputeType::ALL);
 
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P,
@@ -318,6 +410,12 @@ public:
                            std::vector<ValueType>& dhpsioverpsi,
                            bool project = false);
 
+  static void flex_evaluateParameterDerivatives(const RefVector<TrialWaveFunction>& wf_list,
+                                         const RefVector<ParticleSet>& p_list,
+                                         const opt_variables_type& optvars,
+                                         RecordArray<ValueType>& dlogpsi,
+                                         RecordArray<ValueType>& dhpsioverpsi);
+
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, std::vector<ValueType>& dlogpsi);
 
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi);
@@ -344,6 +442,8 @@ public:
     //RealType mass = tspecies(massind,0);
     //OneOverM = 1.0/mass;
   }
+
+  RealType getReciprocalMass() { return OneOverM; }
 
   /* flexible batched version of evaluateGL.
    * TODO: split the computation from updateBuffer to evaluateGL. Expected to be called by KE

@@ -29,14 +29,11 @@ class RealSpacePositionsOMP : public DynamicCoordinates
 public:
   RealSpacePositionsOMP() : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA_device_ptr(nullptr) {}
   RealSpacePositionsOMP(const RealSpacePositionsOMP& in)
-    : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA(in.RSoA)
+      : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA(in.RSoA)
   {
     RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
     auto* pos_ptr = RSoA.data();
-    PRAGMA_OFFLOAD("omp target data use_device_ptr(pos_ptr)")
-    {
-      RSoA_device_ptr = pos_ptr;
-    }
+    PRAGMA_OFFLOAD("omp target data use_device_ptr(pos_ptr)") { RSoA_device_ptr = pos_ptr; }
     updateH2D();
   }
 
@@ -49,10 +46,7 @@ public:
       RSoA.resize(n);
       RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
       auto* pos_ptr = RSoA.data();
-      PRAGMA_OFFLOAD("omp target data use_device_ptr(pos_ptr)")
-      {
-        RSoA_device_ptr = pos_ptr;
-      }
+      PRAGMA_OFFLOAD("omp target data use_device_ptr(pos_ptr)") { RSoA_device_ptr = pos_ptr; }
     }
   }
 
@@ -90,6 +84,7 @@ public:
   void donePbyP() override { updateH2D(); }
 
   RealType* getDevicePtr() const { return RSoA_device_ptr; }
+
 private:
   ///particle positions in SoA layout
   VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> RSoA;

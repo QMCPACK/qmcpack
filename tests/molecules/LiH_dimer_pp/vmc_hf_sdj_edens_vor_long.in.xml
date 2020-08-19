@@ -21,7 +21,7 @@
    </hamiltonian>
 <init source="ion0" target="e"/>
 
-
+   <traces array="yes" write="no"/>
    <qmc method="vmc" move="pbyp">
       <parameter name="walkers"             >    1               </parameter>
       <parameter name="blocks"              >    2000            </parameter>

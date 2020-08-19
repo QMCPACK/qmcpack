@@ -198,8 +198,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   RealType Vsr                = 0.0;
   RealType Vlr                = 0.0;
   mRealType& Vc               = myConst;
-  Array<RealType, 1>& Ve_samp = Ve_samp_tmp;
-  Array<RealType, 1>& Vi_samp = Vi_samp_tmp;
+  Array<RealType, 1>& Ve_samp = *Ve_sample;
+  Array<RealType, 1>& Vi_samp = *Vi_sample;
   Ve_samp                     = 0.0;
   Vi_samp                     = 0.0;
   {
@@ -307,6 +307,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
     app_log() << "sharetest:   e share:" << Vecsum << std::endl;
     app_log() << "sharetest:   i share:" << Vicsum << std::endl;
   }
+
 #endif
   return Value;
 }
@@ -323,8 +324,6 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalConsts(bool report)
   int nelns = Peln.getTotalNum();
   int nions = Pion.getTotalNum();
 #if !defined(REMOVE_TRACEMANAGER)
-  Ve_samp_tmp.resize(nelns);
-  Vi_samp_tmp.resize(nions);
   Ve_const.resize(nelns);
   Vi_const.resize(nions);
   Ve_const = 0.0;
@@ -470,7 +469,7 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   // create the spline function for the short-range part assuming pure potential
   if (V0 == nullptr)
   {
-    V0 = LRCoulombSingleton::createSpline4RbyVs(AB, myRcut, myGrid);
+    V0 = LRCoulombSingleton::createSpline4RbyVs(AB.get(), myRcut, myGrid);
     if (Vat.size())
     {
       APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
@@ -484,9 +483,9 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   {
     dAB = LRCoulombSingleton::getDerivHandler(P);
     if (fV0 == nullptr)
-      fV0 = LRCoulombSingleton::createSpline4RbyVs(dAB, myRcut, myGrid);
+      fV0 = LRCoulombSingleton::createSpline4RbyVs(dAB.get(), myRcut, myGrid);
     if (dfV0 == nullptr)
-      dfV0 = LRCoulombSingleton::createSpline4RbyVsDeriv(dAB, myRcut, myGrid);
+      dfV0 = LRCoulombSingleton::createSpline4RbyVsDeriv(dAB.get(), myRcut, myGrid);
     if (fVat.size())
     {
       APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");

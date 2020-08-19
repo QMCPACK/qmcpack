@@ -97,10 +97,10 @@ private:
   Vector<TT, OffloadPinnedAllocator<TT>> mw_psiinv_pos_copy;
   ///position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<ST, OffloadPinnedAllocator<ST>> multi_pos_copy;
-  ///reference particle id of all the quadrature points
-  Vector<int, OffloadPinnedAllocator<int>> mw_ref_id;
-  ///multi purpose H2D buffer
+  ///multi purpose H2D buffer for mw_evaluateVGLandDetRatioGrads
   Matrix<char, OffloadPinnedAllocator<char>> buffer_H2D;
+  ///multi purpose H2D buffer for mw_evaluateDetRatios
+  Vector<char, OffloadPinnedAllocator<char>> det_ratios_buffer_H2D;
 
   void evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos_copy,
                            const RefVector<ValueVector_t>& psi_v_list,
@@ -233,7 +233,7 @@ public:
   virtual void mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
                                     const RefVector<const VirtualParticleSet>& vp_list,
                                     const RefVector<ValueVector_t>& psi_list,
-                                    const RefVector<const ValueVector_t>& psiinv_list,
+                                    const std::vector<const ValueType*>& invRow_ptr_list,
                                     std::vector<std::vector<ValueType>>& ratios_list) override;
 
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian

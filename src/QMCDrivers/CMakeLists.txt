@@ -25,15 +25,20 @@
 SET(QMCDRIVERS 
   QMCDriverFactory.cpp
   SimpleFixedNodeBranch.cpp
+  SFNBranch.cpp
   BranchIO.cpp
   MCPopulation.cpp
   QMCDriver.cpp
   QMCDriverInput.cpp
   QMCDriverNew.cpp
   WFOpt/QMCOptimize.cpp
+  WFOpt/QMCOptimizeBatched.cpp
+  WFOpt/QMCWFOptFactoryNew.cpp
   WFOpt/QMCLinearOptimize.cpp
+  WFOpt/QMCLinearOptimizeBatched.cpp
   WFOpt/QMCCorrelatedSamplingLinearOptimize.cpp
   WFOpt/QMCFixedSampleLinearOptimize.cpp
+  WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
   Optimizers/DescentEngine.cpp
   Optimizers/HybridEngine.cpp
   WFOpt/QMCCostFunctionBase.cpp
@@ -68,14 +73,7 @@ SET(QMCDRIVERS
   CorrelatedSampling/CSVMC.cpp
   CorrelatedSampling/CSVMCUpdateAll.cpp
   CorrelatedSampling/CSVMCUpdatePbyP.cpp
-  CorrelatedSampling/CSUpdateBase.cpp
-  ../Estimators/CSEnergyEstimator.cpp
-  ../Estimators/LocalEnergyEstimator.cpp
-  ../Estimators/RMCLocalEnergyEstimator.cpp
-  ../Estimators/EstimatorManagerBase.cpp
-  ../Estimators/EstimatorManagerCrowd.cpp
-  ../Estimators/CollectablesEstimator.cpp
-)
+  CorrelatedSampling/CSUpdateBase.cpp)
 
 IF(QMC_CUDA)
    SET(QMCDRIVERS ${QMCDRIVERS}
@@ -103,11 +101,6 @@ IF(BUILD_LMYENGINE_INTERFACE)
      )
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
-SET(QMCDRIVERS ${QMCDRIVERS}
-  ../Estimators/CSEnergyEstimator.cpp
-)
-
-
 ####################################
 # create libqmcdriver
 ####################################
@@ -121,7 +114,9 @@ ENDIF()
 USE_FAKE_RNG(qmcdriver_unit)
 
 TARGET_LINK_LIBRARIES(qmcdriver PUBLIC qmcham)
+TARGET_LINK_LIBRARIES(qmcdriver PUBLIC qmcestimators)
 TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcham_unit)
+TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcestimators_unit)
 TARGET_LINK_LIBRARIES(qmcdriver PRIVATE Math::BLAS_LAPACK)
 TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE Math::BLAS_LAPACK)
 IF(BUILD_LMYENGINE_INTERFACE)

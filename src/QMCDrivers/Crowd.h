@@ -5,8 +5,6 @@
 // Copyright (c) 2019 developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
-//
-// File refactored from VMC.h
 //////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_CROWD_H
@@ -42,7 +40,7 @@ public:
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   /** This is the data structure for walkers within a crowd
    */
-  Crowd(EstimatorManagerBase& emb) : estimator_manager_crowd_(emb) {}
+  Crowd(EstimatorManagerNew& emb) : estimator_manager_crowd_(emb) {}
 
   /** Because so many vectors allocate them upfront.
    *

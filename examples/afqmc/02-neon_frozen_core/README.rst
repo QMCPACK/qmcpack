@@ -1,5 +1,5 @@
 Example 2: Frozen Core
-======================
+----------------------
 
 In this example we show how to perform a frozen core calculation, which only affects the
 integral generation step. We will use the the previous Neon example and freeze 2 core

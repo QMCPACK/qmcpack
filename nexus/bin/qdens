@@ -759,7 +759,10 @@ class QMCDensityProcessor(QDBase):
                           action='store_true',default=False,
                           help='Do not show plots interactively (default=%default).'
                           )
-
+        parser.add_option('--twist_info',dest='twist_info',
+                          default='use',
+                          help='Use twist weights in twist_info.dat files or not.  Options: "use", "ignore", "require".  "use" means use when present, "ignore" means do not use, "require" means must be used (default=%default).'
+                          )
         
         
         options,files_in = parser.parse_args()
@@ -973,6 +976,12 @@ class QMCDensityProcessor(QDBase):
             opt.lineplot = int(opt.lineplot)
         #end if
 
+        #   --twist_info option
+        twist_info_options = ('use','ignore','require')
+        if opt.twist_info not in twist_info_options:
+            self.error('twist_info option is invalid\ntwist_info must be one of: {}\nyou provided: {}'.format(twist_info_options,opt.twist_info))
+        #end if
+
         if opt.verbose and opt.grids is not None:
             self.log('grids found:')
             for name,grid in opt.grids.items():
@@ -1054,7 +1063,31 @@ class QMCDensityProcessor(QDBase):
                     sfiles = stat_files[series]
                     if len(sfiles)>1:
                         if opt.weights is None:
-                            weights = np.ones((len(sfiles),),dtype=float)
+                            uniform_weights = np.ones((len(sfiles),),dtype=float)
+                            if opt.twist_info=='ignore':
+                                weights = uniform_weights
+                            else:
+                                weights = []
+                                for group in sorted(sfiles.keys()):
+                                    twist_info_file = '{}.g{}.twist_info.dat'.format(batch_prefix,str(group).zfill(3))
+                                    if os.path.exists(twist_info_file):
+                                        fobj = open(twist_info_file)
+                                        try:
+                                            weight = float(fobj.read().strip().split()[0])
+                                            weights.append(weight)
+                                        except:
+                                            None
+                                        #end try
+                                    #end if
+                                #end for
+                                if len(weights)!=len(sfiles):
+                                    if opt.twist_info=='require':
+                                        self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
+                                    else:
+                                        weights = uniform_weights
+                                    #end if
+                                #end if
+                            #end if
                         else:
                             if len(sfiles)!=len(opt.weights):
                                 self.error('weights provided do not match number of files in series {0}\nnumber of weights provided: {1}\nnumber of files in series {0}: {2}\nfiles in series {0}:\n{3}'.format(series,len(opt.weights),len(sfiles),sfiles))

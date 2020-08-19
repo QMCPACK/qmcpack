@@ -506,6 +506,25 @@ class Qmcpack(Simulation):
                 self.infile = input.filenames[-1]
                 self.input  = input
                 self.job.app_command = self.app_command()
+                # write twist info files
+                s = self.system.structure
+                kweights        = s.kweights.copy()
+                kpoints         = s.kpoints.copy()
+                kpoints_qmcpack = s.kpoints_qmcpack()
+                for file in input.filenames:
+                    if file.startswith(self.identifier+'.g'):
+                        tokens = file.split('.')
+                        twist_index = int(tokens[1].replace('g',''))
+                        twist_filename = '{}.{}.twist_info.dat'.format(tokens[0],tokens[1])
+                        kw  = kweights[twist_index]
+                        kp  = kpoints[twist_index]
+                        kpq = kpoints_qmcpack[twist_index]
+                        contents = ' {: 16.6f}  {: 16.12f} {: 16.12f} {: 16.12f}  {: 16.12f} {: 16.12f} {: 16.12f}\n'.format(kw,*kp,*kpq)
+                        fobj = open(os.path.join(self.locdir,twist_filename),'w')
+                        fobj.write(contents)
+                        fobj.close()
+                    #end if
+                #end for
             #end if
         #end if
     #end def write_prep

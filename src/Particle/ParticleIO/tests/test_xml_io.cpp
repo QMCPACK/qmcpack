@@ -27,7 +27,6 @@ namespace qmcplusplus
 {
 TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 {
-
   const char* particles = "<tmp> \
 <particleset name=\"ion0\" size=\"1\"> \
   <group name=\"He\"> \
@@ -93,7 +92,6 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 }
 TEST_CASE("read_dynamic_spin_eset_xml", "[particle_io][xml]")
 {
-
   const char* particles = "<tmp> \
 <particleset name=\"e\"> \
   <group name=\"e\" size=\"3\"> \

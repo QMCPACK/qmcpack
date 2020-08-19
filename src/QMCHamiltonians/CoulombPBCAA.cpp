@@ -24,10 +24,8 @@ namespace qmcplusplus
 {
 CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     : ForceBase(ref, ref),
-      AA(0),
       myGrid(0),
       rVs(0),
-      dAA(0),
       myGridforce(0),
       rVsforce(0),
       is_active(active),
@@ -193,7 +191,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluate_sp(ParticleSet& P)
   mRealType Vsr              = 0.0;
   mRealType Vlr              = 0.0;
   mRealType& Vc              = myConst;
-  Array<RealType, 1>& V_samp = V_samp_tmp;
+  Array<RealType, 1>& V_samp = *V_sample;
   V_samp                     = 0.0;
   {
     //SR
@@ -285,7 +283,6 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
 
 #if !defined(REMOVE_TRACEMANAGER)
   V_const.resize(NumCenters);
-  V_samp_tmp.resize(NumCenters);
 #endif
 
   Zat.resize(NumCenters);
@@ -308,14 +305,14 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   myRcut  = AA->get_rc(); //Basis.get_rc();
   if (rVs == 0)
   {
-    rVs = LRCoulombSingleton::createSpline4RbyVs(AA, myRcut, myGrid);
+    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid);
   }
   if (ComputeForces)
   {
     dAA = LRCoulombSingleton::getDerivHandler(P);
     if (rVsforce == 0)
     {
-      rVsforce = LRCoulombSingleton::createSpline4RbyVs(dAA, myRcut, myGridforce);
+      rVsforce = LRCoulombSingleton::createSpline4RbyVs(dAA.get(), myRcut, myGridforce);
     }
   }
 

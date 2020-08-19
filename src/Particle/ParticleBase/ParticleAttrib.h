@@ -25,7 +25,6 @@
 
 namespace qmcplusplus
 {
-
 /** Attaches a unit to a Vector for IO
  *
  *  Makes Vect

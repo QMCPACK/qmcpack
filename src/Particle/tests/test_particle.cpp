@@ -27,10 +27,8 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("ParticleSet distance table management", "[particle]")
 {
-
   ParticleSet ions;
   ParticleSet elecs;
 
@@ -70,7 +68,6 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
 
 TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 {
-
   ParticleSet source;
 
   source.setName("electrons");
@@ -90,8 +87,8 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 
   const int TableID = source.addTable(source, DT_SOA);
   source.update();
-  const auto& d_aa = source.getDistTable(TableID);
-  const auto& aa_dists = d_aa.getDistances();
+  const auto& d_aa      = source.getDistTable(TableID);
+  const auto& aa_dists  = d_aa.getDistances();
   const auto& aa_displs = d_aa.getDisplacements();
 
   REQUIRE(aa_dists[0][1] == Approx(1.62788206));
@@ -106,13 +103,12 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 
 TEST_CASE("symmetric_distance_table PBC", "[particle]")
 {
-
   ParticleSet source;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R = ParticleSet::Tensor_t(6.74632230, 6.74632230, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
-                                 0.00000000, 3.37316115);
+                                    0.00000000, 3.37316115);
   Lattice.reset();
 
   source.setName("electrons");
@@ -126,8 +122,8 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 
   const int TableID = source.addTable(source, DT_SOA);
   source.update();
-  const auto& d_aa = source.getDistTable(TableID);
-  const auto& aa_dists = d_aa.getDistances();
+  const auto& d_aa      = source.getDistTable(TableID);
+  const auto& aa_dists  = d_aa.getDistances();
   const auto& aa_displs = d_aa.getDisplacements();
 
   REQUIRE(aa_dists[1][2] == Approx(2.9212432441));
@@ -142,7 +138,6 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 
 TEST_CASE("particle set lattice with vacuum", "[particle]")
 {
-
   ParticleSet source;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;

@@ -14,7 +14,7 @@ SET(SRC_DIR MinimalContainers)
 SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRCS test_ConstantSizeMatrix.cpp)
+SET(SRCS test_ConstantSizeMatrix.cpp test_RecordArray.cpp)
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
 

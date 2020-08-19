@@ -240,13 +240,13 @@ public:
    * @param spo_list the list of SPOSet pointers in a walker batch
    * @param vp_list a list of virtual particle sets in a walker batch
    * @param psi_list a list of values of the SPO, used as a scratch space if needed
-   * @param psiinv_list a list of the row of inverse slater matrix corresponding to the particle moved virtually
+   * @param invRow_ptr_list a list of pointers to the rows of inverse slater matrix corresponding to the particles moved virtually
    * @param ratios_list a list of returning determinant ratios
    */
   virtual void mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
                                     const RefVector<const VirtualParticleSet>& vp_list,
                                     const RefVector<ValueVector_t>& psi_list,
-                                    const RefVector<const ValueVector_t>& psiinv_list,
+                                    const std::vector<const ValueType*>& invRow_ptr_list,
                                     std::vector<std::vector<ValueType>>& ratios_list);
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set

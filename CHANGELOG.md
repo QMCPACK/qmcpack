@@ -2,6 +2,11 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [Unreleased]
+
+* The default CUDA architecture is set to sm_70 (Volta).
+* AoS builds are no longer supported. The code has been removed.
+
 ## [3.9.2] - 2020-04-29
 
 ### Notes

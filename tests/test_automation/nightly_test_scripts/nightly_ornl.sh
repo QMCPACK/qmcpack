@@ -198,8 +198,8 @@ if [ ! -e ${QE_BIN}/pw.x ]; then
     spack load fftw@${fftw_vnew}
     ./configure CC=mpicc MPIF90=mpif90 F77=mpif90 BLAS_LIBS=-lblis LAPACK_LIBS=-llapack  --with-scalapack=no --with-hdf5=`spack location -i hdf5@1.10.5`
     ## GCC10 fortran will abort on argument mismatches in QE MPI unless -fallow-argument-mismatch specified
-    #cp make.inc make.inc_orig
-    #sed -i -E 's/(^FFLAGS.*= )/\1 -fallow-argument-mismatch /g' make.inc
+    cp make.inc make.inc_orig
+    sed -i -E 's/(^FFLAGS.*= )/\1 -fallow-argument-mismatch /g' make.inc
     make -j 48 pwall # Parallel build tested OK for pwall with QE 6.4.1. Parallel build of all does NOT work due to broken dependencies
 )
     echo -- New QE executable `ls -l bin/pw.x`
@@ -507,6 +507,18 @@ CTCFG="$CTCFG -DQE_BIN=${QE_BIN}"
 fi
 
 fi
+# On sulfur with gcc builds, workaround presumed AVX512 bug
+case "$ourhostname" in
+    sulfur )
+	echo "Using GCC broadwell architecture override on $ourhostname"
+	CTXCFG="-DCMAKE_CXX_FLAGS='-march=broadwell -O3 -DNDEBUG -fomit-frame-pointer -ffast-math';-DCMAKE_C_FLAGS='-march=broadwell -O3 -DNDEBUG -fomit-frame-pointer -ffast-math'"
+    ;;
+    *)
+	echo "No GCC workaround used on this host"
+	CTXCFG=""
+	;;
+esac
+echo $CTXCFG
 fi
 
 #Clang/LLVM
@@ -638,7 +650,7 @@ echo $QMCPACK_TEST_SUBMIT_NAME
 echo $CTCFG
 if [[ $localonly == "yes" ]]; then
 echo --- START cmake `date` 
-cmake ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 ../qmcpack/ 
+cmake ${CTCFG} ${GLOBALTCFG} "$CTXCFG" -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 ../qmcpack/ 
 echo --- END cmake `date`
 echo --- START make `date` 
 make -j 16
@@ -656,14 +668,15 @@ esac
 echo --- END ctest `date`
 else
 echo --- START ctest `date` 
-echo ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
+echo ctest ${CTCFG} ${GLOBALTCFG} "$CTXCFG" -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
 #Workaround CUDA concurrency problems
 case "$sys" in
     *cuda*)
-	ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS} -DN_CONCURRENT_TESTS=1
+	ctest ${CTCFG} ${GLOBALTCFG} "$CTXCFG" -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS} -DN_CONCURRENT_TESTS=1
 	;;
     *)
-	ctest ${CTCFG} ${GLOBALTCFG} -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
+	echo HELLO
+	ctest ${CTCFG} ${GLOBALTCFG} "$CTXCFG" -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
 	;;
 esac
 echo --- END ctest `date`

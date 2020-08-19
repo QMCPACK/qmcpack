@@ -17,6 +17,7 @@
 
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
 #include "LongRange/StructFact.h"
+#include <config/stdlib/math.hpp>
 #include "CPU/e2iphi.h"
 #include <sstream>
 #include <algorithm>
@@ -365,7 +366,7 @@ void kSpaceJastrow::resetTargetParticleSet(ParticleSet& P)
     {
       RealType phase, s, c;
       phase = dot(TwoBodyGvecs[i], P.R[iat]);
-      sincos(phase, &s, &c);
+      qmcplusplus::sincos(phase, &s, &c);
       TwoBody_rhoG[i] += ComplexType(c, s);
     }
   }

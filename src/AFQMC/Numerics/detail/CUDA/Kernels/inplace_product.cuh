@@ -15,17 +15,22 @@
 #ifndef AFQMC_INPLACE_PRODUCT_KERNELS_HPP
 #define AFQMC_INPLACE_PRODUCT_KERNELS_HPP
 
-#include<cassert>
+#include <cassert>
 #include <complex>
 
 namespace kernels
 {
+void inplace_product(int nbatch, int n, int m, double const* B, int ldb, std::complex<double>* A, int lda);
+void inplace_product(int nbatch, int n, int m, float const* B, int ldb, std::complex<float>* A, int lda);
+void inplace_product(int nbatch,
+                     int n,
+                     int m,
+                     std::complex<double> const* B,
+                     int ldb,
+                     std::complex<double>* A,
+                     int lda);
+void inplace_product(int nbatch, int n, int m, std::complex<float> const* B, int ldb, std::complex<float>* A, int lda);
 
-void inplace_product(int nbatch, int n, int m, double const* B, int ldb, std::complex<double> *A, int lda);
-void inplace_product(int nbatch, int n, int m, float const* B, int ldb, std::complex<float> *A, int lda);
-void inplace_product(int nbatch, int n, int m, std::complex<double> const* B, int ldb, std::complex<double> *A, int lda);
-void inplace_product(int nbatch, int n, int m, std::complex<float> const* B, int ldb, std::complex<float> *A, int lda);
-
-}
+} // namespace kernels
 
 #endif

@@ -23,7 +23,7 @@
 #include <cuda_runtime_api.h>
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
-#include "QMCWaveFunctions/Fermion/matrix_update_helper.hpp"
+#include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
 #include "CUDA/CUDAallocator.hpp"
 
 namespace qmcplusplus
@@ -391,6 +391,8 @@ public:
   }
 
   inline OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
+
+  inline T* getRow_psiMinv_offload(int row_id) { return psiMinv_dev_ptr + row_id * psiMinv.cols(); }
 
   /** compute the inverse of the transpose of matrix A
    * @param logdetT orbital value matrix

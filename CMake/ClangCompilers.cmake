@@ -10,7 +10,7 @@ SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -std=c99")
 # Enable OpenMP
 IF(QMC_OMP)
   SET(ENABLE_OPENMP 1)
-  IF(ENABLE_OFFLOAD)
+  IF(ENABLE_OFFLOAD AND NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     SET(OFFLOAD_TARGET "nvptx64-nvidia-cuda" CACHE STRING "Offload target architecture")
     IF(OFFLOAD_TARGET MATCHES "spir64")
       SET(OMP_FLAG "-fiopenmp")
@@ -49,7 +49,7 @@ SET( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fs
 #     arm: -mpcu
 #     default or cray: none
 #--------------------------------------
-IF($ENV{CRAYPE_VERSION} MATCHES ".")
+IF(CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
   # It's a cray machine. Don't do anything
 ELSEIF(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
   # the case for x86_64
@@ -79,6 +79,15 @@ ELSEIF(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64" OR CMAKE_SYSTEM_PROCESSOR MATCHES 
     SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -mcpu=native")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mcpu=native")
   endif() #(CMAKE_CXX_FLAGS MATCHES "-mcpu=" OR CMAKE_C_FLAGS MATCHES "-mcpu=")
+
+  IF(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64")
+  # Ensure PowerPC builds include optimization flags in release and release-with-debug builds
+  # Otherwise these are missing (2020-06-22)
+    SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -O3 -DNDEBUG" )
+    SET( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG" )
+    SET( CMAKE_C_FLAGS_RELWITHDEBINFO     "${CMAKE_C_FLAGS_RELWITHDEBINFO} -O3 -DNDEBUG" )
+    SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -O3 -DNDEBUG" )
+  ENDIF()
 ENDIF()
 
 # Add static flags if necessary

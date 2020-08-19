@@ -64,7 +64,8 @@ public:
   void printCutoffs(std::ostream& out)
   {
     out << "  Long-range breakup parameters:" << std::endl;
-    out << "    rc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc <<  "; tol = " << LR_tol << std::endl;
+    out << "    rc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << "; tol = " << LR_tol
+        << std::endl;
   }
 };
 } // namespace qmcplusplus

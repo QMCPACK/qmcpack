@@ -35,6 +35,8 @@ struct CoulombPotential : public OperatorBase, public ForceBase
 {
   ///source particle set
   ParticleSet& Pa;
+  ///target particle set
+  ParticleSet& Pb;
   ///distance table index
   const int myTableIndex;
   ///true if the table is AA
@@ -45,8 +47,6 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   int nCenters;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
-  Array<TraceReal, 1> Va_samp_tmp;
-  Array<TraceReal, 1> Vb_samp_tmp;
   Array<TraceReal, 1>* Va_sample;
   Array<TraceReal, 1>* Vb_sample;
 #endif
@@ -62,6 +62,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   inline CoulombPotential(ParticleSet& s, bool active, bool computeForces, bool copy = false)
       : ForceBase(s, s),
         Pa(s),
+        Pb(s),
         myTableIndex(s.addTable(s, DT_SOA_PREFERRED)),
         is_AA(true),
         is_active(active),
@@ -71,8 +72,6 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     two_body_quantum_domain(s, s);
     nCenters = s.getTotalNum();
     prefix = "F_AA";
-
-    Va_samp_tmp.resize(s.getTotalNum());
 
     if (!is_active) //precompute the value
     {
@@ -93,6 +92,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   inline CoulombPotential(ParticleSet& s, ParticleSet& t, bool active, bool copy = false)
       : ForceBase(s, t),
         Pa(s),
+        Pb(t),
         myTableIndex(t.addTable(s, DT_SOA_PREFERRED)),
         is_AA(false),
         is_active(active),
@@ -101,8 +101,6 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     set_energy_domain(potential);
     two_body_quantum_domain(s, t);
     nCenters = s.getTotalNum();
-    Va_samp_tmp.resize(s.getTotalNum());
-    Vb_samp_tmp.resize(t.getTotalNum());
   }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -116,9 +114,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       Va_sample = tm.checkout_real<1>(myName, Pa);
       if (!is_AA)
       {
-        // Ye: the following line is intentionally made broken
-        //Vb_sample = tm.checkout_real<1>(myName, *Pb);
-        throw std::runtime_error("checkout_particle_quantities AB case need a fix");
+        Vb_sample = tm.checkout_real<1>(myName, Pb);
       }
       else if (!is_active)
         evaluate_spAA(Pa.getDistTable(myTableIndex), Pa.Z.first_address());
@@ -214,7 +210,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   {
     T res                 = 0.0;
     T pairpot;
-    Array<RealType, 1>& Va_samp = Va_samp_tmp;
+    Array<RealType, 1>& Va_samp = *Va_sample;
     Va_samp                     = 0.0;
     for (size_t iat = 1; iat < nCenters; ++iat)
     {
@@ -227,19 +223,14 @@ struct CoulombPotential : public OperatorBase, public ForceBase
         Va_samp(j)   += pairpot;
         res          += pairpot;
       }
-      res *= 2.0;
     }
+    res *= 2.0;
 #if defined(TRACE_CHECK)
+    auto sptmp = streaming_particles;
+    streaming_particles = false;
     T Vnow  = res;
     T Vsum  = Va_samp.sum();
-    T Vorig = evaluateAA_orig(d, Z);
-    if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
-    {
-      app_log() << "accumtest: CoulombPotential::evaluateAA()" << std::endl;
-      app_log() << "accumtest:   tot:" << Vnow << std::endl;
-      app_log() << "accumtest:   sum:" << Vsum << std::endl;
-      APP_ABORT("Trace check failed");
-    }
+    T Vorig = evaluateAA(d, Z);
     if (std::abs(Vorig - Vnow) > TraceManager::trace_tol)
     {
       app_log() << "versiontest: CoulombPotential::evaluateAA()" << std::endl;
@@ -247,6 +238,14 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       app_log() << "versiontest:    mod:" << Vnow << std::endl;
       APP_ABORT("Trace check failed");
     }
+    if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
+    {
+      app_log() << "accumtest: CoulombPotential::evaluateAA()" << std::endl;
+      app_log() << "accumtest:   tot:" << Vnow << std::endl;
+      app_log() << "accumtest:   sum:" << Vsum << std::endl;
+      APP_ABORT("Trace check failed");
+    }
+    streaming_particles = sptmp;
 #endif
     return res;
   }
@@ -258,8 +257,8 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   {
     T res                 = 0.0;
     T pairpot;
-    Array<RealType, 1>& Va_samp = Va_samp_tmp;
-    Array<RealType, 1>& Vb_samp = Vb_samp_tmp;
+    Array<RealType, 1>& Va_samp = *Va_sample;
+    Array<RealType, 1>& Vb_samp = *Vb_sample;
     Va_samp                     = 0.0;
     Vb_samp                     = 0.0;
     const size_t nTargets = d.targets();
@@ -278,11 +277,20 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     res *= 2.0;
 
 #if defined(TRACE_CHECK)
+    auto sptmp = streaming_particles;
+    streaming_particles = false;
     T Vnow  = res;
     T Vasum = Va_samp.sum();
     T Vbsum = Vb_samp.sum();
     T Vsum  = Vasum + Vbsum;
-    T Vorig = evaluateAB_orig(d, Za, Zb);
+    T Vorig = evaluateAB(d, Za, Zb);
+    if (std::abs(Vorig - Vnow) > TraceManager::trace_tol)
+    {
+      app_log() << "versiontest: CoulombPotential::evaluateAB()" << std::endl;
+      app_log() << "versiontest:   orig:" << Vorig << std::endl;
+      app_log() << "versiontest:    mod:" << Vnow << std::endl;
+      APP_ABORT("Trace check failed");
+    }
     if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
     {
       app_log() << "accumtest: CoulombPotential::evaluateAB()" << std::endl;
@@ -297,13 +305,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       app_log() << "sharetest:   b share:" << Vbsum << std::endl;
       APP_ABORT("Trace check failed");
     }
-    if (std::abs(Vorig - Vnow) > TraceManager::trace_tol)
-    {
-      app_log() << "versiontest: CoulombPotential::evaluateAB()" << std::endl;
-      app_log() << "versiontest:   orig:" << Vorig << std::endl;
-      app_log() << "versiontest:    mod:" << Vnow << std::endl;
-      APP_ABORT("Trace check failed");
-    }
+    streaming_particles = sptmp;
 #endif
     return res;
   }

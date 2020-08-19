@@ -10,6 +10,13 @@
 
 namespace qmcplusplus
 {
+/** Class to handle FS corrections
+ *
+ * Implements finite size corrections from Holzmann et al., PRB (2016)
+ * Currently implements Eqn. (30), using a long-rang break up of the 
+ * Coulomb interaction and a spline representation of S(k). 
+ * S(k) is obtained from SkParserBase
+ */
 class QMCFiniteSize : public QMCAppBase, QMCTraits
 {
 public:
@@ -54,7 +61,7 @@ private:
   RealType h; //this is for finite differencing.
   vector<PosType> sphericalgrid;
   GridType* myGrid;
-  LRHandlerType* AA;
+  std::unique_ptr<LRHandlerType> AA;
   RadFunctorType* rVs;
   bool processPWH(xmlNodePtr cur);
   void wfnPut(xmlNodePtr cur);

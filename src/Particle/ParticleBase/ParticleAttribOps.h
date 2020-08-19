@@ -50,12 +50,12 @@ struct OTCDot
     return res;
   }
 
-  inline static std::complex<Type_t>
-  cplx_apply(const TinyVector<std::complex<T1>,D>& lhs, const TinyVector<std::complex<T2>,D>& rhs)
+  inline static std::complex<Type_t> cplx_apply(const TinyVector<std::complex<T1>, D>& lhs,
+                                                const TinyVector<std::complex<T2>, D>& rhs)
   {
     std::complex<Type_t> res = lhs[0] * rhs[0];
-    for (unsigned d=1; d<D; ++d)
-      res += lhs[d]*rhs[d];
+    for (unsigned d = 1; d < D; ++d)
+      res += lhs[d] * rhs[d];
     return res;
   }
 };
@@ -84,10 +84,10 @@ struct OTCDot<T1, T2, 3>
         lhs[1].imag() * rhs[1].imag() + lhs[2].real() * rhs[2].real() - lhs[2].imag() * rhs[2].imag();
   }
 
-  inline static std::complex<Type_t> 
-  cplx_apply(const TinyVector<std::complex<T1>,3>& lhs, const TinyVector<std::complex<T2>,3>& rhs)
+  inline static std::complex<Type_t> cplx_apply(const TinyVector<std::complex<T1>, 3>& lhs,
+                                                const TinyVector<std::complex<T2>, 3>& rhs)
   {
-    return lhs[0]*rhs[0] + lhs[1]*rhs[1] + lhs[2]*rhs[2];
+    return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2];
   }
 };
 
@@ -142,13 +142,13 @@ inline T Dot(const ParticleAttrib<TinyVector<std::complex<T>, D>>& pa,
 }
 
 template<typename T, unsigned D>
-inline std::complex<T> CplxDot(const ParticleAttrib<TinyVector<std::complex<T>, D> >& pa,
-                               const ParticleAttrib<TinyVector<std::complex<T>, D> >& pb)
+inline std::complex<T> CplxDot(const ParticleAttrib<TinyVector<std::complex<T>, D>>& pa,
+                               const ParticleAttrib<TinyVector<std::complex<T>, D>>& pb)
 {
   std::complex<T> sum(0.0, 0.0);
-  for(int i=0; i<pa.size(); i++)
+  for (int i = 0; i < pa.size(); i++)
   {
-    sum += OTCDot<T,T,D>::cplx_apply(pa[i],pb[i]);
+    sum += OTCDot<T, T, D>::cplx_apply(pa[i], pb[i]);
   }
   return sum;
 }
@@ -189,10 +189,10 @@ inline T Sum(const ParticleAttrib<std::complex<T>>& pa)
 }
 
 template<typename T>
-inline std::complex<T> CplxSum(const ParticleAttrib<std::complex<T> >& pa)
+inline std::complex<T> CplxSum(const ParticleAttrib<std::complex<T>>& pa)
 {
   std::complex<T> sum(0.0, 0.0);
-  for (int i=0; i<pa.size(); i++)
+  for (int i = 0; i < pa.size(); i++)
   {
     sum += pa[i];
   }
