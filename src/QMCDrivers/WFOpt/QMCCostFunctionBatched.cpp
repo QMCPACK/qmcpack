@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/WFOpt/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
@@ -25,16 +25,16 @@
 
 namespace qmcplusplus
 {
-QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
+QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
     : QMCCostFunctionBase(w, psi, h, comm)
 {
   CSWeight = 1.0;
-  app_log() << " Using QMCCostFunction::QMCCostFunction" << std::endl;
+  app_log() << " Using QMCCostFunctionBatched::QMCCostFunctionBatched" << std::endl;
 }
 
 
 /** Clean up the vector */
-QMCCostFunction::~QMCCostFunction()
+QMCCostFunctionBatched::~QMCCostFunctionBatched()
 {
   delete_iter(H_KE_Node.begin(), H_KE_Node.end());
   delete_iter(RngSaved.begin(), RngSaved.end());
@@ -43,7 +43,7 @@ QMCCostFunction::~QMCCostFunction()
   delete_iter(HDerivRecords.begin(), HDerivRecords.end());
 }
 
-void QMCCostFunction::GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_rt FiniteDiff)
+void QMCCostFunctionBatched::GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_rt FiniteDiff)
 {
   if (FiniteDiff > 0)
   {
@@ -173,12 +173,12 @@ void QMCCostFunction::GradCost(std::vector<Return_t>& PGradient, const std::vect
 }
 
 
-void QMCCostFunction::getConfigurations(const std::string& aroot)
+void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
 {
   //makeClones(W,Psi,H);
   if (H_KE_Node.empty())
   {
-    app_log() << "  QMCCostFunction is created with " << NumThreads << " threads." << std::endl;
+    app_log() << "  QMCCostFunctionBatched is created with " << NumThreads << " threads." << std::endl;
     //make H_KE_Node
     H_KE_Node.resize(NumThreads, 0);
     RecordsOnNode.resize(NumThreads, 0);
@@ -237,7 +237,7 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
 }
 
 /** evaluate everything before optimization */
-void QMCCostFunction::checkConfigurations()
+void QMCCostFunctionBatched::checkConfigurations()
 {
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
@@ -354,7 +354,7 @@ void QMCCostFunction::checkConfigurations()
 /** evaluate everything before optimization
  *In future, both the LM and descent engines should be children of some parent engine base class.
  * */
-void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
+void QMCCostFunctionBatched::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                                  DescentEngine& descentEngineObj,
                                                  const std::string& MinMethod)
 {
@@ -511,7 +511,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 #endif
 
 
-void QMCCostFunction::resetPsi(bool final_reset)
+void QMCCostFunctionBatched::resetPsi(bool final_reset)
 {
   if (OptVariables.size() < OptVariablesForPsi.size())
     for (int i = 0; i < equalVarMap.size(); ++i)
@@ -525,7 +525,7 @@ void QMCCostFunction::resetPsi(bool final_reset)
     for (int i = 0; i < psiClones.size(); ++i)
       psiClones[i]->stopOptimization();
   }
-  //cout << "######### QMCCostFunction::resetPsi " << std::endl;
+  //cout << "######### QMCCostFunctionBatched::resetPsi " << std::endl;
   //OptVariablesForPsi.print(std::cout);
   //cout << "-------------------------------------- " << std::endl;
   Psi.resetParameters(OptVariablesForPsi);
@@ -533,7 +533,7 @@ void QMCCostFunction::resetPsi(bool final_reset)
     psiClones[i]->resetParameters(OptVariablesForPsi);
 }
 
-QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
+QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(bool needGrad)
 {
   for (int ip = 0; ip < NumThreads; ++ip)
   {
@@ -669,7 +669,7 @@ QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
 }
 
 
-QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left,
+QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left,
                                                                            Matrix<Return_rt>& Right)
 {
   RealType b1, b2;

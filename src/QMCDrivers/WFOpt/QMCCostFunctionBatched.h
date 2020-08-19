@@ -27,14 +27,14 @@ namespace qmcplusplus
  * Optimization by correlated sampling method with configurations
  * generated from VMC running on a single thread.
  */
-class QMCCostFunction : public QMCCostFunctionBase, public CloneManager
+class QMCCostFunctionBatched : public QMCCostFunctionBase, public CloneManager
 {
 public:
   ///Constructor.
-  QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
+  QMCCostFunctionBatched(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
-  ~QMCCostFunction();
+  ~QMCCostFunctionBatched();
 
   void getConfigurations(const std::string& aroot);
   void checkConfigurations();
