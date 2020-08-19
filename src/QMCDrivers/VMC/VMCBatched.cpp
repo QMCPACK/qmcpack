@@ -346,11 +346,11 @@ bool VMCBatched::run()
 
 void VMCBatched::enable_sample_collection()
 {
-  samples_.setMaxSamples(compute_samples_per_node(crowds_.size(), population_.get_num_local_walkers()));
+  samples_.setMaxSamples(compute_samples_per_node(qmcdriver_input_, population_.get_num_local_walkers()));
   collect_samples_ = true;
 
   app_log() << "VMCBatched Driver collecting samples, samples_per_node = "
-            << compute_samples_per_node(crowds_.size(), population_.get_num_local_walkers()) << '\n';
+            << compute_samples_per_node(qmcdriver_input_, population_.get_num_local_walkers()) << '\n';
 }
 
 
