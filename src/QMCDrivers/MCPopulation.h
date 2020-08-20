@@ -148,48 +148,19 @@ public:
    *  walkers are distributed one by one to crowds.
    *
    */
-  template<typename ITER, typename = RequireInputIterator<ITER>>
-  void distributeWalkers(ITER it_group_start, ITER group_end, int walkers_per_group)
+  template<typename WTTV>
+  void distributeWalkers(WTTV& walker_consumer)
   {
-    auto it_group               = it_group_start;
-    auto it_walkers             = walkers_.begin();
-    auto it_walker_elecs        = walker_elec_particle_sets_.begin();
-    auto it_walker_twfs         = walker_trial_wavefunctions_.begin();
-    auto it_walker_hamiltonians = walker_hamiltonians_.begin();
-
-    assert((group_end - it_group < walkers_.size()) || walkers_per_group == 1);
-
-    // while (it_group != group_end)
-    // {
-    //   for (int i = 0; i < walkers_per_group; ++i)
-    //   {
-    //     // possible that walkers_all < walkers_per_group * group_size
-    //     if (it_walkers == walkers_.end())
-    //       break;
-    //     (**it_group).addWalker(**it_walkers, **it_walker_elecs, **it_walker_twfs, **it_walker_hamiltonians);
-    //     ++it_walkers;
-    //     ++it_walker_elecs;
-    //     ++it_walker_twfs;
-    //     ++it_walker_hamiltonians;
-    //   }
-    //   ++it_group;
-    // }
+    auto walkers_per_crowd = fairDivide(walkers_.size(), walker_consumer.size());
 
     // For now ignore the requesting walkers_per_group
-
-    while (it_walkers != walkers_.end())
+    auto walker_index = 0;
+    for (int i = 0; i < walker_consumer.size(); ++i)
     {
-      it_group = it_group_start;
-      while (it_group != group_end)
+      for(int j = 0; j < walkers_per_crowd[i]; ++j)
       {
-        if (it_walkers == walkers_.end())
-          break;
-        (**it_group).addWalker(**it_walkers, **it_walker_elecs, **it_walker_twfs, **it_walker_hamiltonians);
-        ++it_walkers;
-        ++it_walker_elecs;
-        ++it_walker_twfs;
-        ++it_walker_hamiltonians;
-        ++it_group;
+        walker_consumer[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index], *walker_trial_wavefunctions_[walker_index], *walker_hamiltonians_[walker_index]);
+        ++walker_index;
       }
     }
   }

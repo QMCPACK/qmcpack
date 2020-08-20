@@ -217,7 +217,7 @@ void SFNBranch::branch(int iter, MCPopulation& population)
 
   FullPrecRealType pop_now;
   if (BranchMode[B_DMCSTAGE] || iter)
-    pop_now = WalkerController->branch(iter, population, 0.1);
+    pop_now = WalkerController->branch(iter, population);
   else
     pop_now = WalkerController->doNotBranch(iter, population); //do not branch for the first step of a warmup
 

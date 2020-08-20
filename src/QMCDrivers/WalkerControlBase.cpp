@@ -559,21 +559,21 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   return NumWalkers;
 }
 
-auto WalkerControlBase::rn_walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustmentCriteria wac)
+auto WalkerControlBase::rn_walkerCalcAdjust(MCPWalker& walker, WalkerAdjustmentCriteria wac)
 {
-  if (walker->ReleasedNodeAge == 1)
+  if (walker.ReleasedNodeAge == 1)
     wac.ncr += 1;
-  else if (walker->ReleasedNodeAge == 0)
+  else if (walker.ReleasedNodeAge == 0)
   {
     wac.nfn += 1;
     wac.ngoodfn += wac.nc;
   }
-  wac.r2_accepted += walker->Properties(WP::R2ACCEPTED);
-  wac.r2_proposed += walker->Properties(WP::R2PROPOSED);
-  FullPrecRealType local_energy(walker->Properties(WP::LOCALENERGY));
-  FullPrecRealType alternate_energy(walker->Properties(WP::ALTERNATEENERGY));
-  FullPrecRealType wgt   = walker->Weight;
-  FullPrecRealType rnwgt = walker->ReleasedNodeWeight;
+  wac.r2_accepted += walker.Properties(WP::R2ACCEPTED);
+  wac.r2_proposed += walker.Properties(WP::R2PROPOSED);
+  FullPrecRealType local_energy(walker.Properties(WP::LOCALENERGY));
+  FullPrecRealType alternate_energy(walker.Properties(WP::ALTERNATEENERGY));
+  FullPrecRealType wgt   = walker.Weight;
+  FullPrecRealType rnwgt = walker.ReleasedNodeWeight;
   wac.esum += wgt * rnwgt * local_energy;
   wac.e2sum += wgt * rnwgt * local_energy * local_energy;
   wac.wsum += rnwgt * wgt;
@@ -584,16 +584,16 @@ auto WalkerControlBase::rn_walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjus
   return wac;
 }
 
-auto WalkerControlBase::walkerCalcAdjust(UPtr<MCPWalker>& walker, WalkerAdjustmentCriteria wac)
+auto WalkerControlBase::walkerCalcAdjust(MCPWalker& walker, WalkerAdjustmentCriteria wac)
 {
   if (wac.nc > 0)
     wac.nfn++;
   else
     wac.ncr++;
-  wac.r2_accepted += walker->Properties(WP::R2ACCEPTED);
-  wac.r2_proposed += walker->Properties(WP::R2PROPOSED);
-  FullPrecRealType local_energy(walker->Properties(WP::LOCALENERGY));
-  FullPrecRealType wgt = walker->Weight;
+  wac.r2_accepted += walker.Properties(WP::R2ACCEPTED);
+  wac.r2_proposed += walker.Properties(WP::R2PROPOSED);
+  FullPrecRealType local_energy(walker.Properties(WP::LOCALENERGY));
+  FullPrecRealType wgt = walker.Weight;
   wac.esum += wgt * local_energy;
   wac.e2sum += wgt * local_energy * local_energy;
   wac.wsum += wgt;
@@ -627,7 +627,7 @@ auto WalkerControlBase::addReleaseNodeWalkers(PopulationAdjustment& adjustment,
     }
     else
     {
-      adjustment.good_walkers.push_back(walker);
+      adjustment.good_walkers.push_back(good_walkers_rn[iw]);
       adjustment.copies_to_make.push_back(copies_to_make_rn[iw]);
     }
   }
@@ -661,7 +661,6 @@ void WalkerControlBase::updateCurDataWithCalcAdjust(std::vector<FullPrecRealType
 WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustment(MCPopulation& pop)
 {
   // every living walker on this rank.
-  UPtrVector<MCPWalker>& walkers = pop.get_walkers();
   PopulationAdjustment adjustment;
 
   // these are equivalent to the good_rn and ncopy_rn in the legacy code
@@ -672,11 +671,11 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
   for (int iw = 0; iw < pop.get_num_local_walkers(); ++iw)
   {
     WalkerElements walker_elements = pop[iw];
-    MCPWalker* walker              = &(walker_elements.walker);
-    bool inFN                      = (walker->ReleasedNodeAge == 0);
+    MCPWalker& walker = walker_elements.walker;
+    bool inFN                      = (walker.ReleasedNodeAge == 0);
 
-    assert(walker->Multiplicity > 0);
-    wac.nc = std::min(static_cast<int>(walker->Multiplicity), MaxCopy);
+    assert(walker.Multiplicity > 0);
+    wac.nc = std::min(static_cast<int>(walker.Multiplicity), MaxCopy);
 
     if (write_release_nodes_)
       wac = rn_walkerCalcAdjust(walker, wac);
@@ -685,8 +684,8 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
 
     if ((wac.nc) && (inFN))
     {
-      adjust.good_walkers.push_back(walker_elements);
-      adjust.copies_to_make.push_back(wac.nc - 1);
+      adjustment.good_walkers.push_back(walker_elements);
+      adjustment.copies_to_make.push_back(wac.nc - 1);
     }
     else if (wac.nc) // this is actually the more specialized path and untested.
     {
@@ -702,9 +701,9 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
     }
   }
 
-  adjust.num_walkers = adjust.good_walkers.size();
+  adjustment.num_walkers = adjustment.good_walkers.size();
 
-  updateCurDataWithCalcAdjust(curData, wac, adjust, pop);
+  updateCurDataWithCalcAdjust(curData, wac, adjustment, pop);
 
   if (write_release_nodes_)
     addReleaseNodeWalkers(adjustment, wac, good_walkers_rn, copies_to_make_rn);
@@ -1002,8 +1001,6 @@ void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
                 << "Improve the trial wavefunction or adjust the simulation parameters." << std::endl;
     APP_ABORT("WalkerControlBase::adjustPopulation");
   }
-
-  return current_population;
 }
 
 

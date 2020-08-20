@@ -303,7 +303,7 @@ private:
   /** unified: Refactoring possibly dead releaseNodesCode out
    * @{
    */
-  static auto rn_walkerCalcAdjust(MCPWalker* walker, WalkerAdjustmentCriteria wac);
+  static auto rn_walkerCalcAdjust(MCPWalker& walker, WalkerAdjustmentCriteria wac);
 
   static auto addReleaseNodeWalkers(PopulationAdjustment& adjust,
                                     WalkerAdjustmentCriteria& wac,
@@ -314,7 +314,7 @@ private:
   /** unified: CalcAdjust segmenting
    * @{
    */
-  static auto walkerCalcAdjust(MCPWalker* walker, WalkerAdjustmentCriteria wac);
+  static auto walkerCalcAdjust(MCPWalker& walker, WalkerAdjustmentCriteria wac);
 
   static void updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data,
                                           WalkerAdjustmentCriteria wac,

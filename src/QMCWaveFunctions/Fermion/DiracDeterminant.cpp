@@ -92,7 +92,6 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad(ParticleSet& P, int iat)
 {
-  UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
   invRow_id              = WorkingIndex;
@@ -438,7 +437,7 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
     // build lists
     phi_list.push_back(*det.Phi);
     psiV_list.push_back(det.psiV);
-    invRow_list.push_back(det.invRow);
+    invRow_ptr_list.push_back(det.psiM[WorkingIndex]);
   }
   RatioTimer.stop();
 

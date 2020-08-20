@@ -377,14 +377,17 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   for (ParticleSet& pset : walker_elecs)
     pset.update();
 
-  // We reuse the DataSet if it exists, it is harmful to mess with it here.
+  // Added to match legacy.
+  auto cleanDataSet = [](MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& twf) {
+    if (walker.DataSet.size())
+      walker.DataSet.clear();
+    walker.DataSet.rewind();
+    walker.registerData();
+    twf.registerData(pset, walker.DataSet);
+    walker.DataSet.allocate();
+  };
   for (int iw = 0; iw < crowd.size(); ++iw)
-    if (!walker.DataSet.size())
-    {
-      walker.registerData();
-      twf.registerData(pset, walker.DataSet);
-      walker.DataSet.allocate();
-    }
+    cleanDataSet(walkers[iw], walker_elecs[iw], walker_twfs[iw]);
 
   auto copyFrom = [](TrialWaveFunction& twf, ParticleSet& pset, WFBuffer& wfb) { twf.copyFromBuffer(pset, wfb); };
   for (int iw = 0; iw < crowd.size(); ++iw)
