@@ -31,7 +31,11 @@ class QMCCostFunctionBatched : public QMCCostFunctionBase, public CloneManager
 {
 public:
   ///Constructor.
-  QMCCostFunctionBatched(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, SampleStack &samples, Communicate* comm);
+  QMCCostFunctionBatched(MCWalkerConfiguration& w,
+                         TrialWaveFunction& psi,
+                         QMCHamiltonian& h,
+                         SampleStack& samples,
+                         Communicate* comm);
 
   ///Destructor
   ~QMCCostFunctionBatched();
@@ -65,6 +69,11 @@ protected:
 
   std::vector<Return_rt> log_psi_fixed_;
   std::vector<Return_rt> log_psi_opt_;
+
+  std::vector<TrialWaveFunction*> wf_ptr_list_;
+  std::vector<ParticleSet*> p_ptr_list_;
+  std::vector<QMCHamiltonian*> h_ptr_list_;
+  std::vector<QMCHamiltonian*> h0_ptr_list_;
 
 
 #ifdef HAVE_LMY_ENGINE
