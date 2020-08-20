@@ -61,6 +61,8 @@ public:
   ///  Set the sample count to zero but preserve the storage
   void resetSampleCount();
 
+  ~SampleStack();
+
 private:
   int total_num_;
   int max_samples_;
