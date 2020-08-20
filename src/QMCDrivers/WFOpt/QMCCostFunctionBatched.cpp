@@ -619,6 +619,9 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
     {
       wf_list[iw].get().G += *dLogPsi[iw];
       wf_list[iw].get().L += *d2LogPsi[iw];
+      // This is needed to get the KE correct in QMCHamiltonian::flex_evaluate below
+      p_list[iw].get().G += *dLogPsi[iw];
+      p_list[iw].get().L += *d2LogPsi[iw];
       Return_rt weight                  = vmc_or_dmc * (log_psi_opt_[iw] - (*RecordsOnNode[0])[iw][LOGPSI_FREE]);
       (*RecordsOnNode[0])[iw][REWEIGHT] = weight;
       wgt_tot  += inv_n_samples * weight;
