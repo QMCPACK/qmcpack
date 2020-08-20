@@ -52,13 +52,13 @@ QMCCostFunctionBatched::~QMCCostFunctionBatched()
   delete_iter(h0_ptr_list_.begin(), h0_ptr_list_.end());
 }
 
-void QMCCostFunctionBatched::GradCost(std::vector<Return_t>& PGradient,
-                                      const std::vector<Return_t>& PM,
+void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
+                                      const std::vector<Return_rt>& PM,
                                       Return_rt FiniteDiff)
 {
   if (FiniteDiff > 0)
   {
-    QMCTraits::ValueType dh = 1.0 / (2.0 * FiniteDiff);
+    QMCTraits::RealType dh = 1.0 / (2.0 * FiniteDiff);
     for (int i = 0; i < NumOptimizables; i++)
     {
       for (int j = 0; j < NumOptimizables; j++)
@@ -247,8 +247,6 @@ void QMCCostFunctionBatched::checkConfigurations()
   {
     int ip         = 0;
     int numSamples = samples_.getNumSamples();
-    std::cout << "checkCOnfigurations numSamples = " << numSamples << std::endl;
-    //MCWalkerConfiguration& wRef(*wClones[ip]);
     if (log_psi_fixed_.size() != samples_.getNumSamples())
     {
       log_psi_fixed_.resize(samples_.getNumSamples());
