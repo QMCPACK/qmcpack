@@ -54,7 +54,7 @@ FakeSPO::FakeSPO()
   a2(3, 2) = 3.2;
   a2(3, 3) = 1.1;
 
-  v2.resize(3, 4);
+  v2.resize(4, 4);
 
   v2(0, 0) = 3.2;
   v2(0, 1) = 0.5;
@@ -68,13 +68,15 @@ FakeSPO::FakeSPO()
   v2(2, 1) = 5.4;
   v2(2, 2) = 4.9;
   v2(2, 3) = 2.2;
+  v2(3, 1) = 5.4;
+  v2(3, 2) = 4.9;
+  v2(3, 3) = 2.2;
 
   gv.resize(4);
   gv[0] = TinyVector<ValueType, DIM>(1.0,0.0,0.1);
   gv[1] = TinyVector<ValueType, DIM>(1.0,2.0,0.1);
   gv[2] = TinyVector<ValueType, DIM>(2.0,1.0,0.1);
-  gv[3] = TinyVector<ValueType, DIM>(0.4,0.3,0.1);
-      
+  gv[3] = TinyVector<ValueType, DIM>(0.4,0.3,0.1);      
 }
 
 void FakeSPO::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; }

@@ -94,6 +94,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 {
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0);
   invRow_id              = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
@@ -117,6 +118,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0);
   invRow_id              = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g         = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
@@ -145,7 +147,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-
+  assert(WorkingIndex >= 0);
   // This is an optimization.
   // check invRow_id against WorkingIndex to see if getInvRow() has been called already
   // Some code paths call evalGrad before calling ratioGrad.
@@ -175,7 +177,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-
+  assert(WorkingIndex >= 0);
   // This is an optimization.
   // check invRow_id against WorkingIndex to see if getInvRow() has been called already
   // Some code paths call evalGrad before calling ratioGrad.
@@ -235,6 +237,7 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0);
   LogValue += convertValueToLog(curRatio);
   UpdateTimer.start();
   updateEng.acceptRow(psiM, WorkingIndex, psiV);
@@ -283,6 +286,24 @@ void DiracDeterminant<DU_TYPE>::cleanCompleteUpdates(ParticleSet& P)
     simd::copy(dpsiM[working_index], dpsiV.data(), NumOrbitals);
   }
     
+  UpdateTimer.stop();
+}
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::cleanCompleteUpdates(ParticleSet& P)
+{
+  UpdateTimer.start();
+  // invRow becomes invalid after updating the inverse matrix
+  invRow_id = -1;
+  updateEng.updateInvMat(psiM);
+  for(int ip = 0; ip < NumPtcls; ++ip)
+  {
+    int working_index = ip - FirstIndex;
+    if (working_index < 0)
+      continue;
+    Phi->evaluateVGL(P, ip, psiV, dpsiV, d2psiV);
+    simd::copy(dpsiM[working_index], dpsiV.data(), NumOrbitals);
+  }
   UpdateTimer.stop();
 }
 
@@ -384,6 +405,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
 {
   UpdateMode             = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0);
   SPOVTimer.start();
   Phi->evaluateValue(P, iat, psiV);
   SPOVTimer.stop();
@@ -406,6 +428,7 @@ void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std
 {
   RatioTimer.start();
   const int WorkingIndex = VP.refPtcl - FirstIndex;
+  assert(WorkingIndex >= 0);
   std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
   RatioTimer.stop();
   SPOVTimer.start();
@@ -433,6 +456,10 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
     auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc_list[iw].get());
     const VirtualParticleSet& vp(vp_list[iw]);
     const int WorkingIndex = vp.refPtcl - FirstIndex;
+<<<<<<< HEAD
+=======
+    assert(WorkingIndex >= 0);
+>>>>>>> a8651d02f... more fixes including some heap overflows and checks for new ones
     std::copy_n(det.psiM[WorkingIndex], det.invRow.size(), det.invRow.data());
     // build lists
     phi_list.push_back(*det.Phi);
@@ -676,6 +703,8 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
     for(int ip = 0; ip < NumPtcls; ++ip)
     {
       int working_index = ip - FirstIndex;
+      if (working_index < 0)
+        continue;
       Phi->evaluateVGL(P, ip, psiV, dpsiV, d2psiV);
       simd::copy(dpsiM[working_index], dpsiV.data(), NumOrbitals);
     }
