@@ -415,8 +415,8 @@ The following compilers has been verfied.
 
   Clang and its downstream compilers support two extra options
   ::
-    OFFLOAD_TARGET for the offload target.
-    OFFLOAD_ARCH for the target architecture if not using the default.
+    OFFLOAD_TARGET for the offload target. default nvptx64-nvidia-cuda.
+    OFFLOAD_ARCH for the target architecture if not using the compiler default.
 
 - IBM XL 16.1. Support NVIDIA GPUs.
   ::
