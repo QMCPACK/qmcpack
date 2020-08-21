@@ -88,8 +88,8 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     std::vector<Return_rt> HD_avg(NumOptimizables, 0.0);
     Return_rt wgtinv   = 1.0 / SumValue[SUM_WGT];
     Return_rt delE_bar = 0;
-    for (int ip = 0; ip < NumThreads; ip++)
     {
+      int ip = 0;
       int nw = wClones[ip]->numSamples();
       for (int iw = 0; iw < nw; iw++)
       {
@@ -106,8 +106,8 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     myComm->allreduce(delE_bar);
     for (int pm = 0; pm < NumOptimizables; pm++)
       HD_avg[pm] *= 1.0 / static_cast<Return_rt>(NumSamples);
-    for (int ip = 0; ip < NumThreads; ip++)
     {
+      int ip = 0;
       int nw = wClones[ip]->numSamples();
       for (int iw = 0; iw < nw; iw++)
       {
@@ -137,8 +137,8 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     myComm->allreduce(EDtotals_w);
     myComm->allreduce(URV);
     Return_rt smpinv = 1.0 / static_cast<Return_rt>(NumSamples);
-    for (int ip = 0; ip < NumThreads; ip++)
     {
+      int ip = 0;
       int nw = wClones[ip]->numSamples();
       for (int iw = 0; iw < nw; iw++)
       {
@@ -199,8 +199,8 @@ void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
 
   app_log() << "  Using Nonlocal PP in Opt: " << includeNonlocalH << std::endl;
   outputManager.pause();
-  for (int ip = 0; ip < NumThreads; ++ip)
   {
+    int ip = 0;
     if (H_KE_Node[ip] == 0)
     {
       H_KE_Node[ip] = new QMCHamiltonian;
@@ -414,8 +414,8 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
 
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(bool needGrad)
 {
-  for (int ip = 0; ip < NumThreads; ++ip)
   {
+    int ip = 0;
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
@@ -612,8 +612,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
   RealType V_avg = curAvg2_w - curAvg_w * curAvg_w;
   std::vector<Return_rt> D_avg(getNumParams(), 0.0);
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
-  for (int ip = 0; ip < NumThreads; ip++)
   {
+    int ip = 0;
     int nw = wClones[ip]->numSamples();
     for (int iw = 0; iw < nw; iw++)
     {
@@ -629,8 +629,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
 
   myComm->allreduce(D_avg);
 
-  for (int ip = 0; ip < NumThreads; ip++)
   {
+    int ip = 0;
     int nw = wClones[ip]->numSamples();
     for (int iw = 0; iw < nw; iw++)
     {
@@ -639,7 +639,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
       Return_rt eloc_new              = saved[ENERGY_NEW];
       const Return_rt* Dsaved         = (*DerivRecords[ip])[iw];
       const Return_rt* HDsaved        = (*HDerivRecords[ip])[iw];
-#pragma omp parallel for
       for (int pm = 0; pm < getNumParams(); pm++)
       {
         Return_rt wfe = (HDsaved[pm] + (Dsaved[pm] - D_avg[pm]) * eloc_new) * weight;
