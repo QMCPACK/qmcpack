@@ -413,15 +413,18 @@ The following compilers has been verfied.
   ::
     -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON
 
+  Clang and its downstream compilers support two extra options
+  ::
+    OFFLOAD_TARGET for the offload target.
+    OFFLOAD_ARCH for the target architecture if not using the default.
+
 - IBM XL 16.1. Support NVIDIA GPUs.
   ::
     -D ENABLE_OFFLOAD=ON
 
 - AMD AOMP Clang 11.8. Support AMD GPUs.
   ::
-    -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=amdgcn-amd-amdhsa \
-    -D CMAKE_C_FLAGS="-march=native" \
-    -D CMAKE_CXX_FLAGS="-march=native -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx906"
+    -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=amdgcn-amd-amdhsa -D OFFLOAD_ARCH=gfx906
 
 - Intel oneAPI beta08. Support Intel GPUs.
   ::
