@@ -291,20 +291,21 @@ the path to the source directory.
 
   ::
 
-    QMC_CUDA              Enable CUDA and GPU acceleration (1:yes, 0:no)
+    QMC_CUDA              Enable legacy CUDA code path for NVIDIA GPU acceleration (1:yes, 0:no)
     QMC_COMPLEX           Build the complex (general twist/k-point) version (1:yes, 0:no)
     QMC_MIXED_PRECISION   Build the mixed precision (mixing double/float) version
-                          (1:yes (GPU default), 0:no (CPU default)).
+                          (1:yes (QMC_CUDA=1 default), 0:no (QMC_CUDA=0 default)).
                           The CPU support is experimental.
                           Use float and double for base and full precision.
-                          The GPU support is quite mature.
+                          The legacy GPU support is quite mature.
                           Use always double for host side base and full precision
                           and use float and double for CUDA base and full precision.
-    ENABLE_SOA            Enable data layout and algorithm optimizations using
-                          Structure-of-Array (SoA) datatypes (1:yes (default), 0:no).
-    ENABLE_TIMERS         Enable fine-grained timers (1:yes, 0:no (default)).
-                          Timers are off by default to avoid potential slowdown in small
-                          systems. For large systems (100+ electrons) there is no risk.
+    ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
+                          Production quality for AFQMC. Pre-production quality for real-space.
+    ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
+    ENABLE_TIMERS         ON/OFF(default). Enable fine-grained timers. Timers are off by default
+                          to avoid potential slowdown in small systems.
+                          For large systems (100+ electrons) there is no risk.
 
 - General build options
 
@@ -340,7 +341,7 @@ the path to the source directory.
     QMC_DATA                  Specify data directory for QMCPACK performance and integration tests
     QMC_INCLUDE               Add extra include paths
     QMC_EXTRA_LIBS            Add extra link libraries
-    QMC_BUILD_STATIC          Add -static flags to build
+    QMC_BUILD_STATIC          ON/OFF(default). Add -static flags to build
     QMC_SYMLINK_TEST_FILES    Set to zero to require test files to be copied. Avoids space
                               saving default use of symbolic links for test files. Useful
                               if the build is on a separate filesystem from the source, as
@@ -401,6 +402,40 @@ the path to the source directory.
 `Clang memory sanitizer library <https://clang.llvm.org/docs/MemorySanitizer.html>`_
 
 See :ref:`LLVM-Sanitizer-Libraries` for more information.
+
+Notes for OpenMP target offload to accellerators (experimental)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+An increasing number of QMCPACK key features are being ported with OpenMP target offload which are performance portable
+across GPUs from different vendors. Open-source and vendor compilers are rapidly improving their OpenMP target offload support.
+The following compilers has been verfied.
+
+- LLVM Clang 11. Support NVIDIA GPUs.
+  ::
+    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON
+
+- IBM XL 16.1. Support NVIDIA GPUs.
+  ::
+    -D ENABLE_OFFLOAD=ON
+
+- AMD AOMP Clang 11.8. Support AMD GPUs.
+  ::
+    -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=amdgcn-amd-amdhsa \
+    -D CMAKE_C_FLAGS="-march=native" \
+    -D CMAKE_CXX_FLAGS="-march=native -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx906"
+
+- Intel oneAPI beta08. Support Intel GPUs.
+  ::
+    -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=spir64
+
+- HPE Cray 11. Support NVIDIA and AMD GPUs.
+  ::
+    -D ENABLE_OFFLOAD=ON
+
+OpenMP offload features can be used together with vendor specific code paths to maximize QMCPACK performance.
+For example, using Clang 11 on Summit.
+  ::
+    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`
+
 
 Installation from CMake
 ~~~~~~~~~~~~~~~~~~~~~~~
