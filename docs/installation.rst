@@ -295,11 +295,9 @@ the path to the source directory.
     QMC_COMPLEX           Build the complex (general twist/k-point) version (1:yes, 0:no)
     QMC_MIXED_PRECISION   Build the mixed precision (mixing double/float) version
                           (1:yes (QMC_CUDA=1 default), 0:no (QMC_CUDA=0 default)).
-                          The CPU support is experimental.
-                          Use float and double for base and full precision.
-                          The legacy GPU support is quite mature.
-                          Use always double for host side base and full precision
-                          and use float and double for CUDA base and full precision.
+                          Mixed precision calculations can be signifiantly faster but should be
+                          carefully checked validated against full double precision runs,
+                          particularly for large electron counts.
     ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
                           Production quality for AFQMC. Pre-production quality for real-space.
     ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
@@ -403,11 +401,13 @@ the path to the source directory.
 
 See :ref:`LLVM-Sanitizer-Libraries` for more information.
 
-Notes for OpenMP target offload to accellerators (experimental)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-An increasing number of QMCPACK key features are being ported with OpenMP target offload which are performance portable
-across GPUs from different vendors. Open-source and vendor compilers are rapidly improving their OpenMP target offload support.
-The following compilers has been verfied.
+Notes for OpenMP target offload to accelerators (experimental)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+QMCPACK is currently being updated to support OpenMP target offload and obtain performance
+portability across GPUs from different vendors. This is currently an experimental feature
+and is not suitable for production. Additional implementation in QMCPACK as
+well as improvements in open-source and vendor compilers is required for production status 
+to be reached. The following compilers have been verified:
 
 - LLVM Clang 11. Support NVIDIA GPUs.
   ::
@@ -435,6 +435,7 @@ The following compilers has been verfied.
     -D ENABLE_OFFLOAD=ON
 
 OpenMP offload features can be used together with vendor specific code paths to maximize QMCPACK performance.
+Some new CUDA functionality has been implemented to improve efficiency on NVIDIA GPUs in conjunction with the Offload code paths:
 For example, using Clang 11 on Summit.
   ::
     -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`
@@ -452,15 +453,12 @@ Specify the ``CMAKE_INSTALL_PREFIX`` CMake variable during configuration to set 
 Role of QMC\_DATA
 ~~~~~~~~~~~~~~~~~
 
-QMCPACK includes a variety of optional performance and integration
-tests that use research quality wavefunctions to obtain meaningful
-performance and to more thoroughly test the code. The necessarily
-large input files are stored in the location pointed to by QMC\_DATA (e.g., scratch or long-lived project space on a supercomputer). These
-files are not included in the source code distribution to minimize
-size. The tests are activated if CMake detects the files when
-configured. See tests/performance/NiO/README,
-tests/solids/NiO\_afqmc/README, tests/performance/C-graphite/README, and tests/performance/C-molecule/README
-for details of the current tests and input files and to download them.
+QMCPACK includes a variety of optional performance and integration tests that use research quality wavefunctions to obtain
+meaningful performance and to more thoroughly test the code. The necessarily large input files are stored in the location pointed
+to by QMC\_DATA (e.g., scratch or long-lived project space on a supercomputer). These multi-gigabyte files are not included in the
+source code distribution to minimize size. The tests are activated if CMake detects the files when configured. See
+tests/performance/NiO/README, tests/solids/NiO\_afqmc/README, tests/performance/C-graphite/README, and
+tests/performance/C-molecule/README for details of the current tests and input files and to download them.
 
 Currently the files must be downloaded via https://anl.box.com/s/yxz1ic4kxtdtgpva5hcmlom9ixfl3v3c.
 
