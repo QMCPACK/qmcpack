@@ -262,9 +262,9 @@ SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
 #SET(BUILD_QMCTOOLS 1)
 #SET(MPIP_PROFILE 0)
-SET(QMC_BUILD_STATIC 0 CACHE BOOL "Link to static libraries")
-SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
-SET(ENABLE_STACKTRACE 0 CACHE BOOL "Enable use of boost::stacktrace")
+OPTION(QMC_BUILD_STATIC "Link to static libraries" OFF)
+OPTION(ENABLE_TIMERS "Enable internal timers" OFF)
+OPTION(ENABLE_STACKTRACE "Enable use of boost::stacktrace" OFF)
 
 ######################################################################
 # Install options
@@ -778,7 +778,7 @@ INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
 
 IF (USE_VTUNE_TASKS)
   IF (NOT ENABLE_TIMERS)
-    MESSAGE(FATAL_ERROR "USE_VTUNE_TASKS is set, but timers are not enabled.  Set ENABLE_TIMERS=1.")
+    MESSAGE(FATAL_ERROR "USE_VTUNE_TASKS is set, but timers are not enabled.  Set ENABLE_TIMERS=ON.")
   ENDIF()
   SET(USE_VTUNE_API 1)
 ENDIF()
