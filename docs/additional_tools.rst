@@ -858,9 +858,9 @@ General use of ``molden2qmc`` can be prompted by running ``molden2qmc.py`` and e
             
 ::
             
-Use the qmcpack flag to create the file as an hdf5 file, suitable for QMCPACK.
+Use the ``--qmcpack`` flag to create the file as an hdf5 file, suitable for QMCPACK.
 
-Without the qmcpack flag, the file will become a gwfn file for CASINO.
+Without the ``--qmcpack`` flag, the file will become a gwfn file for CASINO.
             
 Example:
 
