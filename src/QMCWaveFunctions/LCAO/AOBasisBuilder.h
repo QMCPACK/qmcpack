@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -129,7 +129,7 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
     addsignforM = 1;
     if (sph != "spherical")
     {
-      APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
+      myComm->barrier_and_abort(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
 
@@ -145,7 +145,7 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
     addsignforM = 0;
     if (sph != "cartesian")
     {
-      APP_ABORT(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
+      myComm->barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
     }
   }
 
@@ -206,7 +206,7 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
     addsignforM = 1;
     if (sph != "spherical")
     {
-      APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
+      myComm->barrier_and_abort(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
 
@@ -222,7 +222,7 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
     addsignforM = 0;
     if (sph != "cartesian")
     {
-      APP_ABORT(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
+      myComm->barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
     }
   }
 
@@ -346,7 +346,7 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   }
 
   if (expandYlm(aos, all_nl, expandlm) != num)
-    APP_ABORT("expandYlm doesn't match the number of basis.");
+    myComm->barrier_and_abort("expandYlm doesn't match the number of basis.");
   radFuncBuilder.finalize();
   //aos->Rmax can be set small
   //aos->setRmax(0);
@@ -468,7 +468,7 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
   }
 
   if (expandYlm(aos, all_nl, expandlm) != num)
-    APP_ABORT("expandYlm doesn't match the number of basis.");
+    myComm->barrier_and_abort("expandYlm doesn't match the number of basis.");
   radFuncBuilder.finalize();
   //aos->Rmax can be set small
   //aos->setRmax(0);
@@ -867,7 +867,7 @@ int AOBasisBuilder<COT>::expandYlm(COT* aos, std::vector<int>& all_nl, int expan
         num++;
         break;
       default:
-        APP_ABORT("Cartesian Tensor only defined up to Lmax=6. Aborting\n");
+        myComm->barrier_and_abort("Cartesian Tensor only defined up to Lmax=6. Aborting\n");
         break;
       }
     }
