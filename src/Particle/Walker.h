@@ -293,7 +293,7 @@ public:
     ReleasedNodeAge    = a.ReleasedNodeAge;
     if (R.size() != a.R.size())
       resize(a.R.size());
-    R     = a.R;
+    R = a.R;
     if (spins.size() != a.spins.size())
       resize(a.spins.size());
     spins = a.spins;
