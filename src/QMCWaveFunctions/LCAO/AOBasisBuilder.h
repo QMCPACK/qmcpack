@@ -42,7 +42,7 @@ public:
     NATURAL_EXPAND,
     CARTESIAN_EXPAND,
     MOD_NATURAL_EXPAND,
-    DIRAC_EXPAND
+    DIRAC_CARTESIAN_EXPAND
   };
 
 private:
@@ -141,7 +141,12 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
 
   if (Morder == "Dirac")
   {
-    expandlm = DIRAC_EXPAND;
+    expandlm    = DIRAC_CARTESIAN_EXPAND;
+    addsignforM = 0;
+    if (sph != "cartesian")
+    {
+      APP_ABORT(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
+    }
   }
 
   radFuncBuilder.Normalized = (Normalized == "yes");
@@ -213,7 +218,12 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
 
   if (Morder == "Dirac")
   {
-    expandlm = DIRAC_EXPAND;
+    expandlm    = DIRAC_CARTESIAN_EXPAND;
+    addsignforM = 0;
+    if (sph != "cartesian")
+    {
+      APP_ABORT(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
+    }
   }
 
   radFuncBuilder.Normalized = (Normalized == "yes");
@@ -248,7 +258,7 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   case (CARTESIAN_EXPAND):
     app_log() << "   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess" << std::endl;
     break;
-  case (DIRAC_EXPAND):
+  case (DIRAC_CARTESIAN_EXPAND):
     app_log() << "   Angular momentum expanded in cartesian functions in DIRAC ordering" << std::endl;
     break;
   default:
@@ -271,7 +281,7 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
       const int l = std::stoi(XMLAttrString{cur1, "l"});
       Lmax        = std::max(Lmax, l);
       //expect that only Rnl is given
-      if (expandlm == CARTESIAN_EXPAND || DIRAC_EXPAND)
+      if (expandlm == CARTESIAN_EXPAND || expandlm == DIRAC_CARTESIAN_EXPAND)
         num += (l + 1) * (l + 2) / 2;
       else if (expandlm)
         num += 2 * l + 1;
@@ -375,7 +385,7 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
   case (CARTESIAN_EXPAND):
     app_log() << "   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess" << std::endl;
     break;
-  case (DIRAC_EXPAND):
+  case (DIRAC_CARTESIAN_EXPAND):
     app_log() << "   Angular momentum expanded in cartesian functions in DIRAC ordering" << std::endl;
     break;
   default:
@@ -409,7 +419,7 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
 
     Lmax = std::max(Lmax, l);
     //expect that only Rnl is given
-    if (expandlm == CARTESIAN_EXPAND || expandlm == CARTESIAN_EXPAND)
+    if (expandlm == CARTESIAN_EXPAND || expandlm == DIRAC_CARTESIAN_EXPAND)
       num += (l + 1) * (l + 2) / 2;
     else if (expandlm)
       num += 2 * l + 1;
@@ -578,13 +588,13 @@ int AOBasisBuilder<COT>::expandYlm(COT* aos, std::vector<int>& all_nl, int expan
       }
     }
   }
-  else if (expandlm == DIRAC_EXPAND)
+  else if (expandlm == DIRAC_CARTESIAN_EXPAND)
   {
     app_log() << "Expanding Ylm (angular function) according to DIRAC using cartesian gaussians" << std::endl;
     for (int nl = 0; nl < aos->RnlID.size(); nl++)
     {
       int l = aos->RnlID[nl][q_l];
-      app_log() << "Adding " << (l + 1) * (l + 2) / 2 << " cartesian gaussina orbitals for l= " << l << std::endl;
+      app_log() << "Adding " << (l + 1) * (l + 2) / 2 << " cartesian gaussian orbitals for l= " << l << std::endl;
       int nbefore = 0;
       for (int i = 0; i < l; i++)
         nbefore += (i + 1) * (i + 2) / 2;
