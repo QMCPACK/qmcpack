@@ -226,7 +226,8 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
   for (; it != it_end; ++it)
   {
     Walker_t& awalker(**it);
-    W.R = awalker.R;
+    W.R     = awalker.R;
+    W.spins = awalker.spins;
     W.update();
     if (awalker.DataSet.size())
       awalker.DataSet.clear();
