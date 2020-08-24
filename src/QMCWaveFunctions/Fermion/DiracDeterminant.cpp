@@ -282,23 +282,6 @@ void DiracDeterminant<DU_TYPE>::cleanCompleteUpdates(ParticleSet& P)
   for(int ip = 0; ip < NumPtcls; ++ip)
   {
     int working_index = ip - FirstIndex;
-    Phi->evaluateVGL(P, ip, psiV, dpsiV, d2psiV);
-    simd::copy(dpsiM[working_index], dpsiV.data(), NumOrbitals);
-  }
-    
-  UpdateTimer.stop();
-}
-
-template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::cleanCompleteUpdates(ParticleSet& P)
-{
-  UpdateTimer.start();
-  // invRow becomes invalid after updating the inverse matrix
-  invRow_id = -1;
-  updateEng.updateInvMat(psiM);
-  for(int ip = 0; ip < NumPtcls; ++ip)
-  {
-    int working_index = ip - FirstIndex;
     if (working_index < 0)
       continue;
     Phi->evaluateVGL(P, ip, psiV, dpsiV, d2psiV);
@@ -356,8 +339,10 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
   }
   else
   {
-    throw std::runtime_error("You really should know whether you have registered this objects data previously!");
     buf.forward(Bytes_in_WFBuffer);
+#ifndef NDEBUG
+    std::cerr << ("You really should know whether you have registered this objects data previously!, consider this an error in the unified code");
+#endif
   }
   buf.add(LogValue);
 }
@@ -456,10 +441,7 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
     auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc_list[iw].get());
     const VirtualParticleSet& vp(vp_list[iw]);
     const int WorkingIndex = vp.refPtcl - FirstIndex;
-<<<<<<< HEAD
-=======
     assert(WorkingIndex >= 0);
->>>>>>> a8651d02f... more fixes including some heap overflows and checks for new ones
     std::copy_n(det.psiM[WorkingIndex], det.invRow.size(), det.invRow.data());
     // build lists
     phi_list.push_back(*det.Phi);
