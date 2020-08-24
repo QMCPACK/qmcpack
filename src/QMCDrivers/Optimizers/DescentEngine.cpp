@@ -24,6 +24,8 @@ namespace qmcplusplus
 DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
     : my_comm_(comm),
       engine_target_excited_(false),
+      target_excited_closest_(false),
+      use_clipping_(false),
       num_params_(0),
       flavor_("RMSprop"),
       tjf_2body_eta_(.01),
@@ -34,7 +36,11 @@ DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
       orb_eta_(.001),
       ramp_eta_(false),
       ramp_num_(30),
-      store_num_(5)
+      store_num_(5),
+      omega_(0.0),
+      update_omega_iter_(-1),
+      collection_step_(-1),
+      compute_step_(-1)
 {
   descent_num_ = 0;
   store_count_ = 0;
@@ -46,9 +52,15 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
 {
   std::string excited("no");
   std::string ramp_eta_str("no");
+  std::string excited_closest("no");
+  std::string clip_le("no");
 
   ParameterSet m_param;
   m_param.add(excited, "targetExcited", "string");
+  m_param.add(excited_closest, "target_excited_closest", "string");
+  m_param.add(omega_, "omega", "double");
+  app_log() << "Omega from input file: " << omega_ << std::endl;
+  m_param.add(clip_le, "Clip_le", "string");
   //Type of descent method being used
   m_param.add(flavor_, "flavor", "string");
   m_param.add(tjf_2body_eta_, "TJF_2Body_eta", "double");
@@ -60,9 +72,27 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
   m_param.add(ramp_eta_str, "Ramp_eta", "string");
   m_param.add(ramp_num_, "Ramp_num", "int");
   m_param.add(store_num_, "Stored_Vectors", "int");
+
+  app_log() << "Current collection step: " << collection_step_ << std::endl;
+  m_param.add(collection_step_,"collection_step","int");
+  m_param.add(compute_step_,"compute_step","int");
+
+  //Use -1 as a default value when you don't collect history. Would want to collect only during the descent finalization section
+  if(collection_step_ != -1)
+  {
+      app_log() << "On descent finalization, have collect_count as true" << std::endl;
+    collect_count_ = true;
+  }
+
+  m_param.add(update_omega_iter_,"update_omega_iter","int");
+  m_param.add(update_omega_steps_,"update_omega_steps","int");
   m_param.put(cur);
 
   engine_target_excited_ = (excited == "yes");
+
+  target_excited_closest_ = (excited_closest == "yes");
+
+  use_clipping_ = (clip_le == "yes");
 
   ramp_eta_ = (ramp_eta_str == "yes");
 
@@ -73,6 +103,35 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
 //Prepare for taking samples to compute averaged derivatives
 void DescentEngine::prepareStorage(const int num_replicas, const int num_optimizables)
 {
+
+    if(engine_target_excited_)
+    {
+
+   replica_numer_der_samp_.resize(num_replicas);
+  replica_denom_der_samp_.resize(num_replicas); 
+
+
+      avg_numer_der_samp_.resize(num_optimizables);
+      avg_denom_der_samp_.resize(num_optimizables);
+
+
+    
+    std::fill(avg_numer_der_samp_.begin(), avg_numer_der_samp_.end(), 0.0);
+    std::fill(avg_denom_der_samp_.begin(), avg_denom_der_samp_.end(), 0.0);
+
+    for(int i = 0; i < num_replicas; i++)
+    {
+
+        replica_numer_der_samp_[i].resize(num_optimizables);
+        replica_denom_der_samp_[i].resize(num_optimizables);
+
+        std::fill(replica_numer_der_samp_[i].begin(), replica_numer_der_samp_[i].end(), 0.0);
+        std::fill(replica_denom_der_samp_[i].begin(), replica_denom_der_samp_[i].end(), 0.0);
+
+    }
+    
+    }
+
   avg_le_der_samp_.resize(num_optimizables);
   avg_der_rat_samp_.resize(num_optimizables);
   lderivs_.resize(num_optimizables);
@@ -84,6 +143,7 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
 
   replica_le_der_samp_.resize(num_replicas);
   replica_der_rat_samp_.resize(num_replicas);
+  
 
   for (int i = 0; i < num_replicas; i++)
   {
@@ -92,6 +152,7 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
 
     replica_der_rat_samp_[i].resize(num_optimizables);
     std::fill(replica_der_rat_samp_[i].begin(), replica_der_rat_samp_[i].end(), 0.0);
+
   }
 
   w_sum_        = 0;
@@ -99,6 +160,37 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
   e_sum_        = 0;
   e_square_sum_ = 0;
   e_square_avg_ = 0;
+
+  sf_ = 0;
+  sg_ = 0;
+  mf_ = 0;
+  mg_ = 0;
+  mp_ = 0;
+  ns_ = 0;
+  vf_ = 0;
+  vg_ = 0;
+  cv_ = 0;
+  other_avg_ = 0;
+  other_var_ = 0;
+
+  tsf_ = 0;
+  tsg_ = 0;
+  tmf_ = 0;
+  tmg_ = 0;
+  tmp_ = 0;
+  tns_ = 0;
+  tvf_ = 0;
+  tvg_ = 0;
+  tcv_ = 0;
+  other_target_ = 0;
+  other_target_var_ = 0;
+
+  numer_sum_ = 0;
+  denom_sum_ = 0;
+  numer_avg_ = 0;
+  denom_avg_ = 0;
+  target_val_ = 0;
+
 }
 
 //Sets the value of the averaged local energy
@@ -110,13 +202,37 @@ void DescentEngine::setEtemp(const std::vector<FullPrecRealType>& etemp)
   e_avg_        = e_sum_ / w_sum_;
   e_square_avg_ = e_square_sum_ / w_sum_;
 
-  app_log() << "e_sum: " << e_sum_ << std::endl;
-  app_log() << "w_sum: " << w_sum_ << std::endl;
-  app_log() << "e_avg: " << e_avg_ << std::endl;
-  app_log() << "e_square_sum: " << e_square_sum_ << std::endl;
-  app_log() << "e_square_avg: " << e_square_avg_ << std::endl;
-  app_log() << "e_var: " << e_square_avg_ - e_avg_ * e_avg_ << std::endl;
+  e_var_ = e_square_avg_ - e_avg_ * e_avg_;
+  e_sd_ = std::sqrt(e_var_);
+
+  app_log() << "e_sum: " << std::setprecision(9) << e_sum_ << std::endl;
+  app_log() << "w_sum: " << std::setprecision(9) << w_sum_ << std::endl;
+  app_log() << "e_avg: " << std::setprecision(9) << e_avg_ << std::endl;
+  app_log() << "e_square_sum: " << std::setprecision(9) << e_square_sum_ << std::endl;
+  app_log() << "e_square_avg: " << std::setprecision(9) << e_square_avg_ << std::endl;
+  app_log() << "e_var: " << std::setprecision(9) << e_var_ << std::endl;
+  app_log() << "e_sd: " << std::setprecision(9) << e_sd_ << std::endl;
+
+
 }
+
+//Sets value of target function, needs to be called after setEtemp has been inside engine_checkConfigurations so that w_sum_ has been set
+void DescentEngine::setTarget(const std::vector<FullPrecRealType>& targetSums)
+{
+    numer_sum_ = targetSums[0];
+    denom_sum_  = targetSums[1];
+    numer_avg_ = numer_sum_/w_sum_;
+    denom_avg_ = denom_sum_/w_sum_;
+    target_val_ = numer_avg_/denom_avg_;
+
+    app_log() << "numer_sum_: " << std::setprecision(9) << numer_sum_ << std::endl;
+    app_log() << "denom_sum_: " << std::setprecision(9) << denom_sum_ << std::endl;
+    app_log() << "numer_avg_: " << std::setprecision(9) << numer_avg_ << std::endl;
+    app_log() << "denom_avg_: " << std::setprecision(9) << denom_avg_ << std::endl;
+    app_log() << "target_val_: " << std::setprecision(9) << target_val_ << std::endl;
+
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Function that Take Sample Data from the Host Code
@@ -135,13 +251,83 @@ void DescentEngine::takeSample(const int replica_id,
                                FullPrecValueType vgs_samp,
                                FullPrecValueType weight_samp)
 {
-  const size_t num_optimizables = der_rat_samp.size() - 1;
+
+  
+  
+    const size_t num_optimizables = der_rat_samp.size() - 1;
+
+  ValueType etmp = le_der_samp.at(0);
+
+
+  vgs_samp = static_cast<ValueType>(vgs_samp);
+  //app_log() << "This is etmp: " << etmp << " and vgs_samp: " << vgs_samp << " and weight_samp: " << weight_samp << std::endl;
+
+    sf_ += etmp*etmp*vgs_samp*vgs_samp;
+    sg_ += vgs_samp*vgs_samp;
+    mf_ +=etmp*vgs_samp;
+    mg_ +=vgs_samp;
+    mp_ += etmp*vgs_samp*vgs_samp;
+    ns_ += weight_samp;
+
+    
+if(final_descent_num_ > collection_step_ && collect_count_ )
+{
+    
+    _lev_history.push_back(etmp*vgs_samp);
+    _vg_history.push_back(vgs_samp);
+    _w_history.push_back(1.0);
+}
+
+  if(engine_target_excited_)
+  {
+      ValueType n = 0;
+      ValueType d = 0;
+
+      if(target_excited_closest_)
+      {
+          n = (omega_*omega_ - static_cast<ValueType>(2)*omega_*etmp + etmp*etmp)*vgs_samp;
+          d = vgs_samp;
+          
+      
+      }
+      else
+      {
+            n = (omega_ - etmp)*vgs_samp;
+            d = (omega_*omega_ - static_cast<ValueType>(2)*omega_*etmp + etmp*etmp)*vgs_samp;
+
+      }
+
+      if(final_descent_num_ > collection_step_ && collect_count_)
+      {
+            _tnv_history.push_back(n);
+            _tdv_history.push_back(d);
+      
+      }
+
+    tsf_ += n*n;
+    tsg_ += d*d;
+    tmf_ +=n;
+    tmg_ +=d;
+    tmp_ += n*d;
+    tns_ += weight_samp;
+
+
+    for(int i = 0; i < num_optimizables; i++)
+    {
+        replica_numer_der_samp_[replica_id].at(i) += static_cast<ValueType>(2)*(omega_*der_rat_samp.at(i+1) -le_der_samp.at(i+1))*vgs_samp;
+        replica_denom_der_samp_[replica_id].at(i) += static_cast<ValueType>(2)*((omega_*der_rat_samp.at(i+1) -le_der_samp.at(i+1))*(omega_*der_rat_samp.at(0) -le_der_samp.at(0)))*vgs_samp;
+
+    }
+ }
 
   for (int i = 0; i < num_optimizables; i++)
   {
-    replica_le_der_samp_[replica_id].at(i) += le_der_samp.at(i + 1);
-    replica_der_rat_samp_[replica_id].at(i) += der_rat_samp.at(i + 1);
+    //replica_le_der_samp_[replica_id].at(i) += le_der_samp.at(i + 1)*vgs_samp*weight_samp;
+    replica_le_der_samp_[replica_id].at(i) += le_der_samp.at(i + 1)*vgs_samp;
+    //replica_der_rat_samp_[replica_id].at(i) += der_rat_samp.at(i + 1)*vgs_samp*weight_samp;
+    replica_der_rat_samp_[replica_id].at(i) += der_rat_samp.at(i + 1)*vgs_samp;
   }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -152,7 +338,7 @@ void DescentEngine::takeSample(const int replica_id,
 /// \param[in]  weight_samp    weight for this sample
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescentEngine::takeSample(FullPrecValueType local_en, FullPrecValueType vgs_samp, FullPrecValueType weight_samp) {}
+//void DescentEngine::takeSample(RealType local_en, RealType vgs_samp, RealType weight_samp) {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Function that reduces all vector information from all processors to the root
@@ -161,6 +347,93 @@ void DescentEngine::takeSample(FullPrecValueType local_en, FullPrecValueType vgs
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DescentEngine::sample_finish()
 {
+
+    std::vector<ValueType> tempAvgs(6);
+
+    tempAvgs[0] = sf_;
+    tempAvgs[1] = sg_;
+    tempAvgs[2] = mf_;
+    tempAvgs[3] = mg_;
+    tempAvgs[4] = mp_;
+    tempAvgs[5] = ns_;
+
+    //app_log() << "Before reduction: " << sf <<" , " << sg << " , " << mf <<" , " << mg << " , " << mp << " , " << ns << std::endl;
+    my_comm_->allreduce(tempAvgs);
+
+    sf_ = tempAvgs[0]/tempAvgs[5];
+    sg_ = tempAvgs[1]/tempAvgs[5];
+    mf_ = tempAvgs[2]/tempAvgs[5];
+    mg_ = tempAvgs[3]/tempAvgs[5];
+    mp_ = tempAvgs[4]/tempAvgs[5];
+
+    ns_ = tempAvgs[5];
+
+    //app_log() << "After reduction: " << sf <<" , " << sg << " , " << mf <<" , " << mg << " , " << mp << " , " << ns << std::endl;
+    vf_ = (sf_ - mf_*mf_)*ns_/(ns_-1.0);
+    vg_ = (sg_ - mg_*mg_)*ns_/(ns_-1.0);
+    cv_ = (mp_ - mf_*mg_)*ns_/(ns_ -1.0);
+
+    other_avg_ = ( mf_ / mg_ ) / ( 1.0 + ( vg_ / mg_ / mg_ - cv_ / mf_ / mg_ ) / ns_ );
+    other_var_ = ( mf_ * mf_ / mg_ / mg_ ) * ( vf_ / mf_ / mf_ + vg_ / mg_ / mg_ - 2.0 * cv_ / mf_ / mg_ ); 
+
+    //other_target = (numer_sum_/denom_sum_) / ( 1.0 + ( vg / mg / mg - cv / mf / mg ) / ns );
+
+    app_log() << "More accurate energy average: " << std::setprecision(9) << other_avg_ << std::endl;
+    app_log() << "More accurate energy variance: " << std::setprecision(9) << other_var_ << std::endl;
+    //app_log() << "other_target: " << std::setprecision(9) << other_target << std::endl;
+
+    if(engine_target_excited_)
+    {
+
+        std::vector<ValueType> tempTargetAvgs(6);
+        tempTargetAvgs[0] = tsf_;
+        tempTargetAvgs[1] = tsg_;
+        tempTargetAvgs[2] = tmf_;
+        tempTargetAvgs[3] = tmg_;
+        tempTargetAvgs[4] = tmp_;
+        tempTargetAvgs[5] = tns_;
+
+      //  app_log() << "Before target reduction: " << tsf <<" , " << tsg << " , " << tmf <<" , " << tmg << " , " << tmp << " , " << tns << std::endl;
+        my_comm_->allreduce(tempTargetAvgs);
+
+        tsf_ = tempTargetAvgs[0]/tempTargetAvgs[5];
+        tsg_ = tempTargetAvgs[1]/tempTargetAvgs[5];
+        tmf_ = tempTargetAvgs[2]/tempTargetAvgs[5];
+        tmg_ = tempTargetAvgs[3]/tempTargetAvgs[5];
+        tmp_ = tempTargetAvgs[4]/tempTargetAvgs[5];
+
+        tns_ = tempTargetAvgs[5];
+
+       // app_log() << "After target reduction: " << tsf <<" , " << tsg << " , " << tmf <<" , " << tmg << " , " << tmp << " , " << tns << std::endl;
+
+        tvf_ = (tsf_ - tmf_*tmf_)*tns_/(tns_-1.0);
+        tvg_ = (tsg_ - tmg_*tmg_)*tns_/(tns_-1.0);
+        tcv_ = (tmp_ - tmf_*tmg_)*tns_/(tns_ -1.0);
+
+        other_target_ = ( tmf_ / tmg_ ) / ( 1.0 + ( tvg_ / tmg_ / tmg_ - tcv_ / tmf_ / tmg_ ) / tns_ );
+        other_target_var_ = ( tmf_ * tmf_ / tmg_ / tmg_ ) * ( tvf_ / tmf_ / tmf_ + tvg_ / tmg_ / tmg_ - 2.0 * tcv_ / tmf_ / tmg_ ); 
+        
+        app_log() << "More accurate target function: " << std::setprecision(9) << other_target_ << std::endl;
+        app_log() << "More accurate target function variance: " << std::setprecision(9) << other_target_var_ << std::endl;
+
+        for(int i = 0; i < replica_numer_der_samp_.size(); i++)
+        {
+          for (int j = 0; j < lderivs_.size(); j++)
+          {
+          
+          avg_numer_der_samp_[j] += replica_numer_der_samp_[i].at(j);
+          avg_denom_der_samp_[j] += replica_denom_der_samp_[i].at(j);
+          } 
+        }   
+
+  
+  my_comm_->allreduce(avg_numer_der_samp_);
+  my_comm_->allreduce(avg_denom_der_samp_);
+  
+    
+    }
+
+    
   for (int i = 0; i < replica_le_der_samp_.size(); i++)
   {
     for (int j = 0; j < lderivs_.size(); j++)
@@ -174,20 +447,71 @@ void DescentEngine::sample_finish()
   my_comm_->allreduce(avg_le_der_samp_);
   my_comm_->allreduce(avg_der_rat_samp_);
 
+  int num_optimizables = lderivs_.size();
+
+  //Vectors for parts of excited state functional derivatives
+  std::vector<ValueType> numer_term1(num_optimizables,0.0);
+  std::vector<ValueType> numer_term2(num_optimizables,0.0);
+  std::vector<ValueType> denom(num_optimizables,0.0);
+
+  ValueType gradNorm = 0.0;
+
   for (int i = 0; i < lderivs_.size(); i++)
   {
     avg_le_der_samp_.at(i)  = avg_le_der_samp_.at(i) / w_sum_;
     avg_der_rat_samp_.at(i) = avg_der_rat_samp_.at(i) / w_sum_;
 
-    app_log() << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp_.at(i) << std::endl;
-    app_log() << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp_.at(i) << std::endl;
+
+//    app_log() << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp_.at(i) << std::endl;
+  //  app_log() << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp_.at(i) << std::endl;
 
     //Computation of averaged derivatives for excited state functional will be added in future
     if (!engine_target_excited_)
     {
       lderivs_.at(i) = 2.0 * (avg_le_der_samp_.at(i) - e_avg_ * avg_der_rat_samp_.at(i));
+    //  app_log() << "Derivative for param # " << i << " : " << lderivs_.at(i) << std::endl;
     }
+   
+    else
+    {
+        
+
+    avg_numer_der_samp_.at(i) = avg_numer_der_samp_.at(i)/w_sum_;
+    avg_denom_der_samp_.at(i) = avg_denom_der_samp_.at(i)/w_sum_;
+
+   // app_log() << "Parameter # " << i << "Numer Deriv: " << avg_numer_der_samp_.at(i) << std::endl;
+   // app_log()  << "Parameter # " << i << "Denom Deriv: " << avg_denom_der_samp_.at(i) << std::endl;
+        if(target_excited_closest_)
+        {
+            //Target closest excited state functional is same as the denominator in the target above functional divided by psi squared
+
+            lderivs_.at(i) = avg_denom_der_samp_.at(i) - denom_avg_*static_cast<ValueType>(2)*avg_der_rat_samp_.at(i);
+     //         app_log() << "Derivative for param # " << i << " : " << lderivs_.at(i) << std::endl;
+        }
+        
+        else
+        { 
+
+            numer_term1.at(i) = avg_numer_der_samp_.at(i)*denom_avg_;
+        
+        
+           numer_term2.at(i) = avg_denom_der_samp_.at(i)*numer_avg_;
+
+      
+           denom.at(i) = denom_avg_*denom_avg_;
+       
+            lderivs_.at(i) = (numer_term1.at(i) - numer_term2.at(i))/denom.at(i);
+        
+        }
+        
+        
+    } 
+  
+    gradNorm += lderivs_.at(i)*lderivs_.at(i);  
   }
+
+  gradNorm = std::sqrt(gradNorm);
+    app_log() << "Norm of gradient vector is: " << gradNorm << std::endl;
 }
 
 
@@ -195,6 +519,13 @@ void DescentEngine::sample_finish()
 void DescentEngine::updateParameters()
 {
   app_log() << "Number of Parameters: " << num_params_ << std::endl;
+app_log() << "Descent Number: " << descent_num_ << std::endl;
+
+app_log() << "Finalization Descent Num (should be zero if not on last section): " << final_descent_num_ << std::endl;
+if (final_descent_num_ > collection_step_ && collect_count_)
+{
+    app_log() << "Should be storing history, length of history on one process is: " << _lev_history.size() << std::endl;
+}
 
   app_log() << "Parameter Type step sizes: "
             << " TJF_2Body_eta=" << tjf_2body_eta_ << " TJF_1Body_eta=" << tjf_1body_eta_ << " F_eta=" << f_eta_
@@ -237,6 +568,7 @@ void DescentEngine::updateParameters()
     // small value of d corresponds to quick damping and effectively using
     // steepest descent
     ValueType d            = 100;
+    //ValueType d            = .00001;
     ValueType decay_factor = std::exp(-(static_cast<ValueType>(1.0) / d) * (static_cast<ValueType>(descent_num_)));
     gamma                  = gamma * decay_factor;
 
@@ -261,6 +593,7 @@ void DescentEngine::updateParameters()
 
       //The numerator of the step size is set according to parameter type based on input choices
       type_eta = this->setStepSize(i);
+      //app_log() << "Type eta for parameter #" << i << ": " << type_eta << std::endl;
       tau      = type_eta / denom;
 
       // Include an additional factor to cause step size to eventually decrease to 0 as number of steps taken increases
@@ -269,7 +602,7 @@ void DescentEngine::updateParameters()
       ValueType step_decay_denom = static_cast<ValueType>(1.0) + step_lambda * static_cast<ValueType>(descent_num_);
       tau                        = tau / step_decay_denom;
 
-
+       //  app_log() << "Final step size for parameter #" << i <<" is: " << tau << std::endl;
       //Update parameter values
       //If case corresponds to being after the first descent step
       if (taus_.size() >= num_params_)
@@ -436,6 +769,14 @@ void DescentEngine::updateParameters()
 
 
   descent_num_++;
+  if(collect_count_)
+  {
+    final_descent_num_++;
+    if(final_descent_num_ >= compute_step_)
+    {
+        this->computeFromHistory();
+    }
+  }
 }
 
 // Helper method for setting step size according parameter type.
@@ -483,9 +824,10 @@ DescentEngine::ValueType DescentEngine::setStepSize(int i)
     type_eta = .001;
   }
 
+  
   if (ramp_eta_ && descent_num_ < ramp_num_)
   {
-    type_eta = type_eta *static_cast<ValueType>((descent_num_ + 1) /ramp_num_);
+    type_eta = type_eta *static_cast<ValueType>((descent_num_ + 1) /(double) ramp_num_);
   }
 
   return type_eta;
@@ -494,14 +836,21 @@ DescentEngine::ValueType DescentEngine::setStepSize(int i)
 //Method for retrieving parameter values, names, and types from the VariableSet before the first descent optimization step
 void DescentEngine::setupUpdate(const optimize::VariableSet& my_vars)
 {
+    //omega_ = omega_input;
+
   num_params_ = my_vars.size();
+  app_log() << "This is num_params_: " << num_params_ << std::endl;
   for (int i = 0; i < num_params_; i++)
   {
+    //  app_log() << "Variable #" << i << ": " << my_vars[i] << " with index val: " << my_vars.where(i) << std::endl;
+    if(my_vars.where(i) != -1)
+    {
     engine_param_names_.push_back(my_vars.name(i));
     engine_param_types_.push_back(my_vars.getType(i));
     params_copy_.push_back(my_vars[i]);
     current_params_.push_back(my_vars[i]);
     params_for_diff_.push_back(my_vars[i]);
+    }
   }
 }
 
@@ -531,7 +880,8 @@ void DescentEngine::storeVectors(std::vector<ValueType>& current_params)
   {
     hybrid_blm_input_.push_back(row_vec);
   }
-/*
+
+  /*
   for (int i = 0; i < hybrid_blm_input_.size(); i++)
   {
     std::string entry = "";
@@ -542,7 +892,299 @@ void DescentEngine::storeVectors(std::vector<ValueType>& current_params)
     app_log() << "Stored Vector: " << entry << std::endl;
   }
   */
+
   store_count_++;
+}
+
+void DescentEngine::changeOmega()
+{
+    app_log() << "Using adaptive omega with value: " << omega_ << std::endl;
+
+    ValueType omega_ideal = e_avg_ - e_sd_;
+
+    if(update_omega_iter_ < descent_num_ && descent_num_ < (update_omega_iter_ + update_omega_steps_) )
+    {
+    
+         ValueType scale = ((ValueType) (descent_num_ - update_omega_iter_)) / ((ValueType) update_omega_steps_);
+        omega_ = omega_ + (omega_ideal - omega_)*scale;
+         app_log() << "New omega value from shift phase: " << omega_ << std::endl;
+
+    }
+    else if(descent_num_ >= (update_omega_iter_ + update_omega_steps_))
+    {
+        omega_ = omega_ideal;
+        app_log() << "New omega value from post-shift phase: " << omega_ << std::endl;        
+            
+    }
+
+}
+
+void DescentEngine::computeFromHistory()
+{
+
+    //Upon further thought, computing the mean from the whole history would be inaccurate.
+    //Still want the history to get an estimate of error as the ~30,000 on an inidividual step wouldn't be that meaningful?
+
+    
+  /*  
+   //Make copies of input vectors to do recursive blocking for error estimates
+    std::vector<ValueType> wtv(_w_history);
+    std::vector<ValueType> nmv(_lev_history);
+    std::vector<ValueType> dnv(_vg_history);
+
+
+//Reproduce LM's crude way of estimating uncertainty in the variance
+    int n = nmv.size();
+    int blocks = 100;
+   int section_len = n/100;
+
+   app_log() << "Section length: " << section_len << std::endl;
+    std::vector<ValueType> bbvars(blocks);
+ValueType bbv = 0.0;
+ValueType bbv2 = 0.0;
+
+    for(int i = 0; i < blocks; i++)
+    {
+        std::vector<ValueType> sub_wtv(section_len);
+        std::vector<ValueType> sub_nmv(section_len);
+        std::vector<ValueType> sub_dnv(section_len);
+
+        ValueType temp_e, temp_v;
+        std::copy(wtv.begin() + i*section_len,wtv.begin() + (i+1)*section_len,sub_wtv.begin());
+        std::copy(nmv.begin() + i*section_len,nmv.begin() + (i+1)*section_len,sub_nmv.begin());
+        std::copy(dnv.begin() + i*section_len,dnv.begin() + (i+1)*section_len,sub_dnv.begin());
+
+//    app_log() << "First elements: " << sub_wtv[0] << " , " << sub_nmv[0] << " , " << sub_dnv[0] << std::endl;    
+        ValueType var = this->helperHistoryCompute(sub_wtv,sub_nmv,sub_dnv,false);
+        bbvars[i] = var;
+
+        bbv += bbvars.at(i) / blocks;
+        bbv2 += bbvars.at(i) * bbvars.at(i) / blocks;
+        sub_wtv.clear();
+        sub_nmv.clear();
+        sub_dnv.clear();
+
+    }
+
+    const ValueType bbvov = bbv2 - bbv * bbv;
+    ValueType var_uncertainty = std::sqrt( std::abs(bbvov) / blocks);
+    app_log() << "Uncertainty in the variance: " << var_uncertainty << std::endl;
+
+
+while(n > 128)
+{
+    ValueType err = this->helperErrorCompute(wtv,nmv,dnv);
+
+    app_log() << "Blocking analysis energy error for length " << n << " is: " << err << std::endl; 
+    int new_len;
+    if(n % 2 == 0)
+    {
+        new_len = n/2;
+    }
+    else
+    {
+        new_len = n/2 +1;
+    }
+
+    std::vector<ValueType> tmp1,tmp2,tmp3;
+
+    for(int i = 0; i < n; i +=2)
+    {
+        ValueType avgW = (wtv[i]+wtv[i+1])/2.0;
+        ValueType avgNumer = (nmv[i]+nmv[i+1])/2.0;
+        ValueType avgDenom = (dnv[i]+dnv[i+1])/2.0;
+
+        tmp1.push_back(avgW);
+        tmp2.push_back(avgNumer);
+        tmp3.push_back(avgDenom);
+
+    }
+    wtv = tmp1;
+    nmv = tmp2;
+    dnv = tmp3;
+    n = nmv.size();
+}
+
+if(engine_target_excited_)
+   {
+    
+//       this->helperHistoryCompute(_w_history,_tnv_history,_tdv_history,true);
+
+   //Do same procedure for target function
+    std::vector<ValueType> wtv(_w_history);
+    std::vector<ValueType> nmv(_tnv_history);
+    std::vector<ValueType> dnv(_tdv_history);
+
+int n = nmv.size();
+
+while(n > 128)
+{
+    ValueType err = this->helperErrorCompute(wtv,nmv,dnv);
+
+    app_log() << "Blocking analysis target error for length " << n << " is: " << err << std::endl; 
+    int new_len;
+    if(n % 2 == 0)
+    {
+        new_len = n/2;
+    }
+    else
+    {
+        new_len = n/2 +1;
+    }
+
+    std::vector<ValueType> tmp1,tmp2,tmp3;
+
+    for(int i = 0; i < n; i +=2)
+    {
+        ValueType avgW = (wtv[i]+wtv[i+1])/2.0;
+        ValueType avgNumer = (nmv[i]+nmv[i+1])/2.0;
+        ValueType avgDenom = (dnv[i]+dnv[i+1])/2.0;
+
+        tmp1.push_back(avgW);
+        tmp2.push_back(avgNumer);
+        tmp3.push_back(avgDenom);
+
+    }
+    wtv = tmp1;
+    nmv = tmp2;
+    dnv = tmp3;
+    n = nmv.size();
+}
+
+
+   }
+
+*/
+
+}
+
+DescentEngine::ValueType DescentEngine::helperHistoryCompute(std::vector<FullPrecRealType>& weights, std::vector<FullPrecRealType>& numerator, std::vector<FullPrecRealType>& denominator,bool computing_target)
+{
+/*
+    int n = numerator.size();
+//    app_log() << "Length of history: " << n << std::endl;
+    std::vector<RealType> y(7);
+    y[0] = 0.0; // normalization constant
+    y[1] = 0.0; // mean of numerator
+    y[2] = 0.0; // mean of denominator
+    y[3] = 0.0; // mean of the square of the numerator terms
+    y[4] = 0.0; // mean of the square of the denominator terms
+    y[5] = 0.0; // mean of the product of numerator times denominator
+    y[6] = ValueType(n); // number of samples
+
+    for(int i = 0; i < n ; i ++)
+    {
+
+        ValueType n = numerator[i];
+        ValueType d = denominator[i];
+        ValueType weight = weights[i];
+
+        y[0] += weight;
+        y[1] += weight*n;
+        y[2] += d;
+        y[3] += weight*n*n;
+        y[4] += weight*d*d;
+        y[5] += weight*n*d;
+
+    }
+
+    my_comm_->allreduce(y);
+
+    const ValueType mf = y[1] / y[0]; // mean of numerator
+    const ValueType mg = y[2] / y[0]; // mean of denominator
+    const ValueType sf = y[3] / y[0]; // mean of the square of the numerator terms
+    const ValueType sg = y[4] / y[0]; // mean of the square of the denominator terms
+    const ValueType mp = y[5] / y[0]; // mean of the product of numerator times denominator
+    const ValueType ns = y[6];        // number of samples
+
+  //  app_log() << "Total number of samples: " << ns << std::endl;
+
+   const ValueType vf = ( sf - mf * mf ) * ns / ( ns - 1.0 );
+  const ValueType vg = ( sg - mg * mg ) * ns / ( ns - 1.0 );
+ const ValueType cv = ( mp - mf * mg ) * ns / ( ns - 1.0 );
+
+    ValueType r = ( mf / mg ) / ( 1.0 + ( vg / mg / mg - cv / mf / mg ) / ns ); 
+    ValueType v = ( mf * mf / mg / mg ) * ( vf / mf / mf + vg / mg / mg - 2.0 * cv / mf / mg );
+   
+    app_log() << "Variance on this section is: " << v << std::endl;
+    return v;
+   */
+    /* 
+    if(computing_target)
+    {
+        app_log() << "Computed mean target function from history so far: " << r << std::endl;
+        app_log() << "Computed target function variance from history so far: " << v << std::endl;
+    
+    }
+    else
+    {
+        app_log() << "Computed mean energy from history so far: " << r << std::endl;
+        app_log() << "Compute variance from history so far: " << v << std::endl;
+    }
+*/
+
+
+    return 0.0;
+}
+
+
+DescentEngine::ValueType DescentEngine::helperErrorCompute(std::vector<FullPrecRealType>& weights, std::vector<FullPrecRealType>& numerator, std::vector<FullPrecRealType>& denominator)
+{
+    /*
+    int n = numerator.size();
+  //  app_log() << "Length of history: " << n << std::endl;
+    std::vector<RealType> y(7);
+    y[0] = 0.0; // normalization constant
+    y[1] = 0.0; // mean of numerator
+    y[2] = 0.0; // mean of denominator
+    y[3] = 0.0; // mean of the square of the numerator terms
+    y[4] = 0.0; // mean of the square of the denominator terms
+    y[5] = 0.0; // mean of the product of numerator times denominator
+    y[6] = ValueType(n); // number of samples
+
+    for(int i = 0; i < n ; i ++)
+    {
+
+        ValueType n = numerator[i];
+        ValueType d = denominator[i];
+        ValueType weight = weights[i];
+
+        y[0] += weight;
+        y[1] += weight*n;
+        y[2] += d;
+        y[3] += weight*n*n;
+        y[4] += weight*d*d;
+        y[5] += weight*n*d;
+
+    }
+
+    my_comm_->allreduce(y);
+
+    const ValueType mf = y[1] / y[0]; // mean of numerator
+    const ValueType mg = y[2] / y[0]; // mean of denominator
+    const ValueType sf = y[3] / y[0]; // mean of the square of the numerator terms
+    const ValueType sg = y[4] / y[0]; // mean of the square of the denominator terms
+    const ValueType mp = y[5] / y[0]; // mean of the product of numerator times denominator
+    const ValueType ns = y[6];        // number of samples
+
+//    app_log() << "Total number of samples: " << ns << std::endl;
+
+   const ValueType vf = ( sf - mf * mf ) * ns / ( ns - 1.0 );
+  const ValueType vg = ( sg - mg * mg ) * ns / ( ns - 1.0 );
+ const ValueType cv = ( mp - mf * mg ) * ns / ( ns - 1.0 );
+
+    ValueType r = ( mf / mg ) / ( 1.0 + ( vg / mg / mg - cv / mf / mg ) / ns ); 
+    ValueType v = ( mf * mf / mg / mg ) * ( vf / mf / mf + vg / mg / mg - 2.0 * cv / mf / mg );
+    
+    ValueType err = std::sqrt(v/ns);
+    
+    return err;
+*/
+    return 0.0;
+    
+
+
+
 }
 
 } // namespace qmcplusplus

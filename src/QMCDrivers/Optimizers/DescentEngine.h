@@ -37,11 +37,94 @@ private:
   std::vector<FullPrecValueType> avg_der_rat_samp_;
   std::vector<std::vector<FullPrecValueType>> replica_der_rat_samp_;
 
-  FullPrecValueType w_sum_;
-  FullPrecValueType e_avg_;
-  FullPrecValueType e_sum_;
-  FullPrecValueType e_square_sum_;
-  FullPrecValueType e_square_avg_;
+  std::vector<FullPrecValueType> avg_numer_der_samp_;
+  std::vector<std::vector<FullPrecValueType>> replica_numer_der_samp_;
+
+  std::vector<FullPrecValueType> avg_denom_der_samp_;
+  std::vector<std::vector<FullPrecValueType>> replica_denom_der_samp_;
+
+  ValueType w_sum_;
+  ValueType e_avg_;
+  ValueType e_sum_;
+  ValueType e_square_sum_;
+  ValueType e_square_avg_;
+
+
+  ValueType e_var_;
+  ValueType e_sd_;
+
+  ValueType numer_sum_;
+  ValueType denom_sum_;
+  ValueType numer_avg_;
+  ValueType denom_avg_;
+  ValueType target_val_;
+
+  ValueType sf_; 
+  ValueType sg_; 
+  ValueType mf_; 
+  ValueType mg_; 
+  ValueType mp_; 
+  ValueType ns_; 
+  ValueType vf_; 
+  ValueType vg_; 
+  ValueType cv_; 
+  ValueType other_avg_;
+  ValueType other_var_;
+
+  ValueType tsf_;
+  ValueType tsg_;
+  ValueType tmf_;
+  ValueType tmg_;
+  ValueType tmp_;
+  ValueType tns_;
+  ValueType tvf_;
+  ValueType tvg_;
+  ValueType tcv_;
+  ValueType other_target_;
+  ValueType other_target_var_;
+
+
+
+//Iteration to start collecting samples for final average and error blocking analysis
+    int collection_step_;
+
+      int compute_step_;
+
+      bool collect_count_ = false;
+
+      int final_descent_num_ = 0;
+
+    /// \brief [in] history of sampled local energies 
+    std::vector<ValueType> _le_history;
+
+    /// \brief [in] history of sampled |value/guiding|^2 ratios 
+    std::vector<ValueType> _vg_history;
+
+    /// \brief [in] history of sampled configuration weight 
+    std::vector<ValueType> _w_history;
+
+    /// \brief a history of sampled local energies times the |value/guiding|^2 raitos
+    std::vector<ValueType> _lev_history;
+
+    /// \brief a history of sampled target function numerator
+    std::vector<ValueType> _tn_history;
+
+    /// \brief a history of target function numerator times the |value/guiding|^2 ratios
+    std::vector<ValueType> _tnv_history;
+
+    /// \brief a history of target function denominator
+    std::vector<ValueType> _td_history;
+
+    /// \brief a history of target function denominator times the |value/guiding|^2 ratios
+    std::vector<ValueType> _tdv_history;
+
+    /// \brief a history of sampled local energy square 
+    std::vector<ValueType> _les_history;
+
+    /// \brief a history of sampled local energy square times |value/guiding|^2 ratios 
+    std::vector<ValueType> _lesv_history;
+
+
 
   //Vector that stores the final averaged derivatives of the cost function
   std::vector<ValueType> lderivs_;
@@ -52,6 +135,12 @@ private:
   //Whether to target excited state
   //Currently only ground state optimization is implemented
   bool engine_target_excited_;
+
+//Whether to use <(omega - H)^2> for targeting excited state,default is to use target above functional instead
+  bool target_excited_closest_;
+
+ //Whether to clip samples with local energy outliers
+  bool use_clipping_;
 
   //Number of optimizable parameters
   int num_params_;
@@ -100,6 +189,13 @@ private:
   //Number of steps over which to ramp up step size
   int ramp_num_;
 
+  //Value of omega in excited state functional
+  ValueType omega_;
+
+  //the iteration where the omega_shift parameter starts being updated
+  int update_omega_iter_;
+//the number of iterations over which omega_shift is updated
+  int update_omega_steps_;
 
   //Number of parameter difference vectors stored when descent is used in a hybrid optimization
   int store_num_;
@@ -131,6 +227,8 @@ public:
   //Sets value of average local energy
   void setEtemp(const std::vector<FullPrecRealType>& etemp);
 
+void setTarget(const std::vector<FullPrecRealType>& targetSums);
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that Take Sample Data from the Host Code
   ///
@@ -156,7 +254,7 @@ public:
   /// \param[in]  weight_samp    weight for this sample
   ///
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void takeSample(FullPrecValueType local_en, FullPrecValueType vgs_samp, FullPrecValueType weight_samp);
+  //void takeSample(FullPrecValueType local_en, FullPrecValueType vgs_samp, FullPrecValueType weight_samp);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that reduces all vector information from all processors to the root
@@ -183,6 +281,17 @@ public:
   //Store a vector of parameter differences to be used by the BLM in a hybrid optimization
   void storeVectors(std::vector<ValueType>& current_params);
 
+ //Adjust omega during target above functional calculation
+  void changeOmega();
+
+  //Compute final averages for energy and variance over a history of samples from a set of iterations
+  void computeFromHistory();
+
+ValueType helperHistoryCompute(std::vector<FullPrecRealType>& weights, std::vector<FullPrecRealType>& numerator, std::vector<FullPrecRealType>& denominator,bool computing_target);
+
+ValueType helperErrorCompute(std::vector<FullPrecRealType>& weights, std::vector<FullPrecRealType>& numerator, std::vector<FullPrecRealType>& denominator);
+
+
   //Returns number of times a parameter difference vector will be stored in the optimization
   int retrieveStoreFrequency() const { return store_num_; }
 
@@ -195,8 +304,35 @@ public:
   //Returns number of optimization steps that have been taken with descent
   int getDescentNum() const { return descent_num_; }
 
+//Returns whether clipping is being used
+  bool getClipping() const {return use_clipping_;}
+
+  //Returns current value of omega
+  ValueType getOmega() const {return omega_;}
+
+  //Returns value of average energy
+  ValueType getEnergy() const {return e_avg_;}
+
+  //Returns variance of the energy
+  ValueType getVariance() const {return e_var_;}
+
+  //Returns standard deviation of energy
+  ValueType getSD() const {return e_sd_;}
+
+  //Returns whether an excited state is being targeted
+  bool targetingExcited() const {return engine_target_excited_;}
+
+  //Returns whether an adaptive omega is being used
+  bool varyingOmega() const {return update_omega_iter_ > -1;}
+
+  int getFinalDescentNum() const {return final_descent_num_;}
+
   ///Function for setting averaged derivatives, currently only used as part of a unit test of the engine's parameter update
   void setDerivs(std::vector<ValueType>& test_derivs) { lderivs_ = test_derivs; }
+
+//Function for setting parameter value, used to keep descent parameter values up to date with changes that occur on BLM steps of hybrid method
+  void setParamVal(int index, ValueType value) {current_params_[index] = value;}
+
 };
 
 } // namespace qmcplusplus
