@@ -836,7 +836,7 @@ molden2qmc
 
 ``molden2qmc`` is a tool used to convert molden files into an HDF5 file with the QMCPACK format.
 Molden2qmc is a single program that can use multiple different quantum chemistry codes.
-It is python code developed by Vladimir Konjkov originally for the CASINO code but then extended to qmcpack.
+It is python code developed by Vladimir Konjkov originally for the CASINO code but then extended to QMCPACK.
 This tool can be found at https://github.com/gjohnson3/molden2qmc.git.
 
 Using molden2qmc
@@ -858,7 +858,7 @@ General use of ``molden2qmc`` can be prompted by running ``molden2qmc.py`` and e
             
 ::
             
-Use the qmcpack flag to create the file as an hdf5 file, suitable for qmcpack.
+Use the qmcpack flag to create the file as an hdf5 file, suitable for QMCPACK.
 
 Without the qmcpack flag, the file will become a gwfn file for CASINO.
             
