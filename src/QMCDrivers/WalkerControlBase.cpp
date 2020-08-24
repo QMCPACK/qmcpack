@@ -856,16 +856,18 @@ void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
       {
         // this seems suspect, a function with unit test is needed
         int n_remove = std::min(nsub, num_per_node[inode] - n_max_);
-
+        std::cerr << "remove " << n_remove << " from node : " << inode << "\n";
         num_per_node[inode] -= n_remove;
         nsub -= n_remove;
 
+        std::cerr << "MyContext: " << MyContext << '\n';
         if (inode == MyContext)
         {
           // prone to error function with unit test better
           for (int iw = 0; iw < adjust.copies_to_make.size(); iw++)
           {
             int n_remove_walker = std::min(adjust.copies_to_make[iw], n_remove);
+            std::cerr << "Walker: " << iw << " losing " << n_remove_walker << " copies.\n";
             adjust.copies_to_make[iw] -= n_remove_walker;
             n_remove -= n_remove_walker;
             if (n_remove == 0)
@@ -916,7 +918,7 @@ void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
       }
     }
     if (nsub)
-      throw std::runtime_error("WalkerControlBase::applyNmaxNmin can not remove"
+      throw std::runtime_error("WalkerControlBase::limitPopulation can not remove"
                                " sufficient walkers overall!");
   }
 
@@ -988,11 +990,9 @@ void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
       app_warning() << "WalkerControlBase::adjustPopulation not able to add sufficient walkers overall!" << std::endl;
   }
 
-  // check current population
-  current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
-
+  // check future current population
   adjust.num_walkers =
-      std::accumulate(adjust.copies_to_make.begin(), adjust.copies_to_make.end(), 0) + adjust.copies_to_make.size();
+      std::accumulate(adjust.copies_to_make.begin(), adjust.copies_to_make.end(), adjust.copies_to_make.size());
 
   // require at least one walker per rank after load-balancing
   if (adjust.num_walkers / num_contexts_ == 0)
