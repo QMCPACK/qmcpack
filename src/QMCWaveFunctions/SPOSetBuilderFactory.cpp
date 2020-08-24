@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -28,6 +28,7 @@
 
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include "QMCWaveFunctions/LCAO/LCAOSpinorBuilder.h"
 #endif
 
 #if defined(HAVE_EINSPLINE)
@@ -180,12 +181,12 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 #if OHMMS_DIM == 3
   else if (type == "spinorbspline")
   {
-    #ifdef QMC_COMPLEX
+#ifdef QMC_COMPLEX
     app_log() << "Einspline Spinor Set\n";
     bb = new EinsplineSpinorSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
-    #else
+#else
     PRE.error("Use of einspline spinors requires QMC_COMPLEX=1.  Rebuild with this option");
-    #endif
+#endif
   }
   else if (type.find("spline") < type.size())
   {
@@ -207,6 +208,21 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     else
       ions = (*pit).second;
     bb = new LCAOrbitalBuilder(targetPtcl, *ions, myComm, rootNode);
+  }
+  else if (type == "molecularspinor")
+  {
+#ifdef QMC_COMPLEX
+    ParticleSet* ions = 0;
+    //initialize with the source tag
+    PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
+    if (pit == ptclPool.end())
+      PRE.error("Missing basisset/@source.", true);
+    else
+      ions = (*pit).second;
+    bb = new LCAOSpinorBuilder(targetPtcl, *ions, myComm, rootNode);
+#else
+    PRE.error("Use of lcao spinors requires QMC_COMPLEX=1.  Rebuild with this option");
+#endif
   }
 #endif //OHMMS_DIM==3
   PRE.flush();
@@ -287,7 +303,7 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
         }
         tcur = tcur->next;
       }
-      spo = rot_spo;
+      spo             = rot_spo;
       spo->objectName = sname;
 #endif
     }

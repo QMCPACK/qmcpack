@@ -12,18 +12,17 @@
 #ifndef AFQMC_SAMPLEGAUSSIANRNG_H
 #define AFQMC_SAMPLEGAUSSIANRNG_H
 
-#include<cassert>
+#include <cassert>
 #include <complex>
 #include "rocrand/rocrand.h"
 
 namespace kernels
 {
-
 void sampleGaussianRNG(double* V, int n, rocrand_generator& gen);
 void sampleGaussianRNG(float* V, int n, rocrand_generator& gen);
 void sampleGaussianRNG(std::complex<double>* V, int n, rocrand_generator& gen);
 void sampleGaussianRNG(std::complex<float>* V, int n, rocrand_generator& gen);
 
-}
+} // namespace kernels
 
 #endif

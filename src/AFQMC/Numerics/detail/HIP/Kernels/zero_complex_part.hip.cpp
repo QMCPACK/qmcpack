@@ -10,50 +10,45 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#include<cassert>
+#include <cassert>
 #include <complex>
-#include<hip/hip_runtime.h>
+#include <hip/hip_runtime.h>
 #include <thrust/complex.h>
-#include<hip/hip_runtime.h>
+#include <hip/hip_runtime.h>
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace kernels
 {
-
 template<typename T>
-__global__ void kernel_zero_complex_part(int n, thrust::complex<T> * x)
+__global__ void kernel_zero_complex_part(int n, thrust::complex<T>* x)
 {
-  int i = threadIdx.x + blockDim.x*blockIdx.x;
-  if(i<n)
-    x[i] = thrust::complex<T>(x[i].real(),0.0);
+  int i = threadIdx.x + blockDim.x * blockIdx.x;
+  if (i < n)
+    x[i] = thrust::complex<T>(x[i].real(), 0.0);
 }
 
-void zero_complex_part(int n, std::complex<double> * x)
+void zero_complex_part(int n, std::complex<double>* x)
 {
   int block_dim = 256;
-  int grid_dim = (n + block_dim - 1)/block_dim;
-  hipLaunchKernelGGL(kernel_zero_complex_part, dim3(grid_dim), dim3(block_dim), 0, 0, n,reinterpret_cast<thrust::complex<double>*>(x));
+  int grid_dim  = (n + block_dim - 1) / block_dim;
+  hipLaunchKernelGGL(kernel_zero_complex_part, dim3(grid_dim), dim3(block_dim), 0, 0, n,
+                     reinterpret_cast<thrust::complex<double>*>(x));
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
-void zero_complex_part(int n, std::complex<float> * x)
+void zero_complex_part(int n, std::complex<float>* x)
 {
   int block_dim = 256;
-  int grid_dim = (n + block_dim - 1)/block_dim;
-  hipLaunchKernelGGL(kernel_zero_complex_part, dim3(grid_dim), dim3(block_dim), 0, 0, n,reinterpret_cast<thrust::complex<float>*>(x));
+  int grid_dim  = (n + block_dim - 1) / block_dim;
+  hipLaunchKernelGGL(kernel_zero_complex_part, dim3(grid_dim), dim3(block_dim), 0, 0, n,
+                     reinterpret_cast<thrust::complex<float>*>(x));
   qmc_hip::hip_check(hipGetLastError());
   qmc_hip::hip_check(hipDeviceSynchronize());
 }
 
-void zero_complex_part(int n, double * x)
-{
-  return;
-}
+void zero_complex_part(int n, double* x) { return; }
 
-void zero_complex_part(int n, float * x)
-{
-  return;
-}
+void zero_complex_part(int n, float* x) { return; }
 
-}
+} // namespace kernels

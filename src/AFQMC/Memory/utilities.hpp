@@ -25,24 +25,26 @@
 #include "Message/OpenMP.h"
 
 #if defined(ENABLE_CUDA)
-namespace qmc_cuda {
+namespace qmc_cuda
+{
 extern bool afqmc_cuda_handles_init;
 }
 #elif defined(ENABLE_HIP)
-namespace qmc_hip {
+namespace qmc_hip
+{
 extern bool afqmc_hip_handles_init;
 }
 #endif
 
 inline int number_of_devices()
 {
-  int num_devices=0;
+  int num_devices = 0;
 #if defined(ENABLE_CUDA)
-  if(not qmc_cuda::afqmc_cuda_handles_init)
+  if (not qmc_cuda::afqmc_cuda_handles_init)
     throw std::runtime_error(" Error: Uninitialized CUDA environment.");
   cudaGetDeviceCount(&num_devices);
 #elif defined(ENABLE_HIP)
-  if(not qmc_hip::afqmc_hip_handles_init)
+  if (not qmc_hip::afqmc_hip_handles_init)
     throw std::runtime_error(" Error: Uninitialized HIP environment.");
   hipGetDeviceCount(&num_devices);
 #endif

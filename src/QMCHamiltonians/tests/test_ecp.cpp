@@ -514,15 +514,15 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   k2dn.resize(nelec);
   k2dn[0] = -dot(kdn[0], kdn[0]);
 
-  std::shared_ptr<EGOSet> spo_up(new EGOSet(kup, k2up));
-  std::shared_ptr<EGOSet> spo_dn(new EGOSet(kdn, k2dn));
+  auto spo_up = std::make_unique<EGOSet>(kup, k2up);
+  auto spo_dn = std::make_unique<EGOSet>(kdn, k2dn);
 
   SpinorSet* spinor_set = new SpinorSet();
-  spinor_set->set_spos(spo_up, spo_dn);
+  spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
+  QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
+  REQUIRE(norb == 1);
 
   DiracDeterminant<>* dd    = new DiracDeterminant<>(spinor_set);
-  QMCTraits::IndexType norb = spo_up->size();
-  REQUIRE(norb == 1);
   dd->resize(nelec, norb);
 
   psi.addComponent(dd, "spinor");

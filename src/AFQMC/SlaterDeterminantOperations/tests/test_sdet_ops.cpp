@@ -20,7 +20,11 @@
 
 // Avoid the need to link with other libraries just to get APP_ABORT
 #undef APP_ABORT
-#define APP_ABORT(x) {std::cout << x <<std::endl; throw;}
+#define APP_ABORT(x)             \
+  {                              \
+    std::cout << x << std::endl; \
+    throw;                       \
+  }
 
 #include <stdio.h>
 #include <string>
@@ -38,20 +42,16 @@
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/mixed_density_matrix.hpp"
 
-using std::string;
 using std::complex;
 using std::cout;
 using std::endl;
+using std::string;
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-
-void myREQUIRE(const double& a, const double& b)
-{
-  REQUIRE(a == Approx(b));
-}
+void myREQUIRE(const double& a, const double& b) { REQUIRE(a == Approx(b)); }
 
 void myREQUIRE(const std::complex<double>& a, const std::complex<double>& b)
 {
@@ -64,9 +64,9 @@ void check(M1&& A, M2& B)
 {
   REQUIRE(A.size(0) == B.size(0));
   REQUIRE(A.size(1) == B.size(1));
-  for(int i=0; i<A.size(0); i++)
-    for(int j=0; j<A.size(1); j++)
-      myREQUIRE(A[i][j],B[i][j]);
+  for (int i = 0; i < A.size(0); i++)
+    for (int j = 0; j < A.size(1); j++)
+      myREQUIRE(A[i][j], B[i][j]);
 }
 
 using namespace afqmc;
@@ -382,170 +382,161 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
 template<class Allocator, class buffer_generator>
 void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
 {
-  static_assert(std::is_same<typename Allocator::value_type, ComplexType>::value,"Incorrect type.\n");
+  static_assert(std::is_same<typename Allocator::value_type, ComplexType>::value, "Incorrect type.\n");
 
   const int NMO = 4;
   const int NEL = 3;
 
-  using Type = ComplexType; 
-  using vector = std::vector<Type>;
-  using array = boost::multi::array<Type,2,Allocator>;
-  using array_ref = boost::multi::array_ref<Type,2,typename Allocator::pointer>;
-  using array_ptr = boost::multi::array_ptr<Type,2,typename Allocator::pointer>;
+  using Type      = ComplexType;
+  using vector    = std::vector<Type>;
+  using array     = boost::multi::array<Type, 2, Allocator>;
+  using array_ref = boost::multi::array_ref<Type, 2, typename Allocator::pointer>;
+  using array_ptr = boost::multi::array_ptr<Type, 2, typename Allocator::pointer>;
   using namespace std::complex_literals;
 
-  const Type ov = -7.62332599999999 + 22.20453200000000i;
-  const Type ov2 = -10.37150000000000 -  7.15750000000000i;
+  const Type ov  = -7.62332599999999 + 22.20453200000000i;
+  const Type ov2 = -10.37150000000000 - 7.15750000000000i;
 
   // some arbitrary matrices
-  vector m_a = {
-    0.90000 +0.10000i , 0.40000 + 0.40000i, 1.40000 + 0.20000i , 0.40000 + 0.50000i,
-    2.40000 +0.20000i , 1.00000 + 0.50000i, 1.60000 + 0.30000i , 0.20000 + 0.10000i,
-    3.00000 +0.30000i , 1.20000 + 0.10000i, 3.60000 + 0.40000i , 0.10000 + 0.20000i
-  };
-  vector m_b = {
-   1.90000 + 0.60000i,   1.40000 + 0.70000i,   0.40000 + 0.80000i,
-   1.40000 + 0.90000i,   0.20000 + 0.50000i,   2.20000 + 0.60000i,
-   0.40000 + 0.70000i,   2.60000 + 0.80000i,   0.60000 + 0.90000i,
-   1.10000 + 0.50000i,   0.30000 + 0.60000i,   0.90000 + 0.70000i
-  };
+  vector m_a = {0.90000 + 0.10000i, 0.40000 + 0.40000i, 1.40000 + 0.20000i, 0.40000 + 0.50000i,
+                2.40000 + 0.20000i, 1.00000 + 0.50000i, 1.60000 + 0.30000i, 0.20000 + 0.10000i,
+                3.00000 + 0.30000i, 1.20000 + 0.10000i, 3.60000 + 0.40000i, 0.10000 + 0.20000i};
+  vector m_b = {1.90000 + 0.60000i, 1.40000 + 0.70000i, 0.40000 + 0.80000i, 1.40000 + 0.90000i,
+                0.20000 + 0.50000i, 2.20000 + 0.60000i, 0.40000 + 0.70000i, 2.60000 + 0.80000i,
+                0.60000 + 0.90000i, 1.10000 + 0.50000i, 0.30000 + 0.60000i, 0.90000 + 0.70000i};
 
-  array A({NEL,NMO},alloc);
-  copy_n(m_a.data(),m_a.size(),A.origin());
-  array B({NMO,NEL},alloc);
-  copy_n(m_b.data(),m_b.size(),B.origin());
+  array A({NEL, NMO}, alloc);
+  copy_n(m_a.data(), m_a.size(), A.origin());
+  array B({NMO, NEL}, alloc);
+  copy_n(m_b.data(), m_b.size(), B.origin());
 
-  array_ref Aref(A.origin(),{NEL,NMO});
-  array_ref Bref(B.origin(),{NMO,NEL});
+  array_ref Aref(A.origin(), {NEL, NMO});
+  array_ref Bref(B.origin(), {NMO, NEL});
 
-  SlaterDetOperations SDet( SlaterDetOperations_serial<Type,buffer_generator>(NMO,NEL,bgen) );
+  SlaterDetOperations SDet(SlaterDetOperations_serial<Type, buffer_generator>(NMO, NEL, bgen));
 
   /**** Overlaps ****/
   //SECTION("Overlaps")
   {
-    Type ov_; 
-    ov_=SDet.Overlap(A,B,0.0); myREQUIRE(ov_,ov);
-    ov_=SDet.Overlap(Aref,B,0.0); myREQUIRE(ov_,ov);
-    ov_=SDet.Overlap(A,Bref,0.0); myREQUIRE(ov_,ov);
-    ov_=SDet.Overlap(Aref,Bref,0.0); myREQUIRE(ov_,ov);
+    Type ov_;
+    ov_ = SDet.Overlap(A, B, 0.0);
+    myREQUIRE(ov_, ov);
+    ov_ = SDet.Overlap(Aref, B, 0.0);
+    myREQUIRE(ov_, ov);
+    ov_ = SDet.Overlap(A, Bref, 0.0);
+    myREQUIRE(ov_, ov);
+    ov_ = SDet.Overlap(Aref, Bref, 0.0);
+    myREQUIRE(ov_, ov);
   }
 
   // Test array_view
   //SECTION("array_view")
   {
-    Type ov_; 
-    ov_=SDet.Overlap(A(A.extension(0),A.extension(1)),B,0.0); myREQUIRE(ov_,ov);
-    ov_=SDet.Overlap(A,B(B.extension(0),B.extension(1)),0.0); myREQUIRE(ov_,ov);
+    Type ov_;
+    ov_ = SDet.Overlap(A(A.extension(0), A.extension(1)), B, 0.0);
+    myREQUIRE(ov_, ov);
+    ov_ = SDet.Overlap(A, B(B.extension(0), B.extension(1)), 0.0);
+    myREQUIRE(ov_, ov);
   }
 
-// copy not yet working with device_pointer
+  // copy not yet working with device_pointer
   //SECTION("copy_overlap")
   {
-    array A_ = A({0,2},{0,3});
-    array B_ = B({0,3},{0,2});
+    array A_ = A({0, 2}, {0, 3});
+    array B_ = B({0, 3}, {0, 2});
     Type ov_;
-    ov_=SDet.Overlap(A({0,2},{0,3}),B({0,3},{0,2}),0.0); myREQUIRE(ov_,ov2);
-    ov_=SDet.Overlap(A({0,2},{0,3}),B_,0.0); myREQUIRE(ov_,ov2);
-    ov_=SDet.Overlap(A_,B({0,3},{0,2}),0.0); myREQUIRE(ov_,ov2);
+    ov_ = SDet.Overlap(A({0, 2}, {0, 3}), B({0, 3}, {0, 2}), 0.0);
+    myREQUIRE(ov_, ov2);
+    ov_ = SDet.Overlap(A({0, 2}, {0, 3}), B_, 0.0);
+    myREQUIRE(ov_, ov2);
+    ov_ = SDet.Overlap(A_, B({0, 3}, {0, 2}), 0.0);
+    myREQUIRE(ov_, ov2);
   }
 
   /**** Density Matrices *****/
-  vector v_ref = {
-   1.17573619385025996 - 0.01580426445014660i,  -0.25295981756593167 + 0.28594469607401085i,
-  -0.07724502823533341 - 0.09687959052155870i,   0.30512858581808422 - 0.04506898328729603i,
+  vector v_ref    = {1.17573619385025996 - 0.01580426445014660i,  -0.25295981756593167 + 0.28594469607401085i,
+                  -0.07724502823533341 - 0.09687959052155870i, 0.30512858581808422 - 0.04506898328729603i,
 
-   0.17912592806889663 + 0.08374315906672802i,   0.59381451118048767 + 0.13438888951771200i,
-  -0.02021475320201610 - 0.13737561982083193i,   0.32095003919745313 + 0.12832750636154097i,
+                  0.17912592806889663 + 0.08374315906672802i,  0.59381451118048767 + 0.13438888951771200i,
+                  -0.02021475320201610 - 0.13737561982083193i, 0.32095003919745313 + 0.12832750636154097i,
 
-  -0.04919549564646425 + 0.05402065222741825i,  -0.00286990878355775 - 0.15806420733175885i,
-   1.05069081188635494 + 0.00793429988912356i,  -0.08048239150997794 + 0.09917405634760490i,
+                  -0.04919549564646425 + 0.05402065222741825i, -0.00286990878355775 - 0.15806420733175885i,
+                  1.05069081188635494 + 0.00793429988912356i,  -0.08048239150997794 + 0.09917405634760490i,
 
-  -0.46434598219794548 - 0.09896890422706731i,   0.87746748807670427 - 0.53417787485950319i,
-   0.12162735438647077 + 0.31042401735800573i,   0.17975848308289613 - 0.12651892495668898i
-  };
-  vector vc_ref = {
-  -0.8721879971495297 + 0.6787593377585239i,   0.3244278932250768 - 1.8083537898275881i,
-   0.6130713546530860 + 0.0399736955598931i,   0.0132562806444336 - 0.2882495766584950i,
+                  -0.46434598219794548 - 0.09896890422706731i, 0.87746748807670427 - 0.53417787485950319i,
+                  0.12162735438647077 + 0.31042401735800573i,  0.17975848308289613 - 0.12651892495668898i};
+  vector vc_ref   = {-0.8721879971495297 + 0.6787593377585239i, 0.3244278932250768 - 1.8083537898275881i,
+                   0.6130713546530860 + 0.0399736955598931i,  0.0132562806444336 - 0.2882495766584950i,
 
-   0.8853626557603183 + 0.0978868569224204i,  -0.0598704127345155 - 0.0470889603064014i,
-  -0.7392693424168300 - 0.0715317395994149i,   0.3721269544963505 - 0.1797896522886788i,
+                   0.8853626557603183 + 0.0978868569224204i,  -0.0598704127345155 - 0.0470889603064014i,
+                   -0.7392693424168300 - 0.0715317395994149i, 0.3721269544963505 - 0.1797896522886788i,
 
-  -0.0567190307022984 - 0.3114847157576828i,  -0.1290126440468128 + 0.6815705660308808i,
-   0.3787012855335005 + 0.0039188686237135i,  -0.2005543456941538 + 0.2100886953142371i
-  };
-  vector v_ref_2 = {
-   0.7361983496013835 - 0.0956505507662245i,   0.6467449689807925 + 0.2297471806893873i,
-   0.0189270005620390 - 0.1727975708935829i,
+                   -0.0567190307022984 - 0.3114847157576828i, -0.1290126440468128 + 0.6815705660308808i,
+                   0.3787012855335005 + 0.0039188686237135i,  -0.2005543456941538 + 0.2100886953142371i};
+  vector v_ref_2  = {0.7361983496013835 - 0.0956505507662245i, 0.6467449689807925 + 0.2297471806893873i,
+                    0.0189270005620390 - 0.1727975708935829i,
 
-   0.2986893588843604 - 0.0099955730815030i,   0.2696068479051557 + 0.0292039710860386i,
-   0.0497734835066391 + 0.1783200397050796i,
+                    0.2986893588843604 - 0.0099955730815030i, 0.2696068479051557 + 0.0292039710860386i,
+                    0.0497734835066391 + 0.1783200397050796i,
 
-   0.1020030246826092 + 0.0344707468383766i,  -0.2500340021988402 - 0.0826863644855427i,
-   0.9941948024934623 + 0.0664465796801866i
-  };
-  vector vc_ref_2 = {
-  -0.489369975192701 + 0.103038673040713i,  -0.858850485405126 - 0.275734238124941i,
-   1.219791948842170 + 0.118626922447301i,
-   0.486337033653898 - 0.098631569047656i,   0.595497821653010 + 0.185288949671560i,
-  -0.455373025165330 - 0.129360996228044i
-  };
+                    0.1020030246826092 + 0.0344707468383766i, -0.2500340021988402 - 0.0826863644855427i,
+                    0.9941948024934623 + 0.0664465796801866i};
+  vector vc_ref_2 = {-0.489369975192701 + 0.103038673040713i, -0.858850485405126 - 0.275734238124941i,
+                     1.219791948842170 + 0.118626922447301i,  0.486337033653898 - 0.098631569047656i,
+                     0.595497821653010 + 0.185288949671560i,  -0.455373025165330 - 0.129360996228044i};
 
-  boost::multi::array_ref<Type,2> g_ref(v_ref.data(),{NMO,NMO});
-  boost::multi::array_ref<Type,2> gc_ref(vc_ref.data(),{NEL,NMO});
-  boost::multi::array_ref<Type,2> g_ref_2(v_ref_2.data(),{3,3});
-  boost::multi::array_ref<Type,2> gc_ref_2(vc_ref_2.data(),{2,3});
+  boost::multi::array_ref<Type, 2> g_ref(v_ref.data(), {NMO, NMO});
+  boost::multi::array_ref<Type, 2> gc_ref(vc_ref.data(), {NEL, NMO});
+  boost::multi::array_ref<Type, 2> g_ref_2(v_ref_2.data(), {3, 3});
+  boost::multi::array_ref<Type, 2> gc_ref_2(vc_ref_2.data(), {2, 3});
 
-  array G({NMO,NMO},alloc);
-  array Gc({NEL,NMO},alloc);
+  array G({NMO, NMO}, alloc);
+  array Gc({NEL, NMO}, alloc);
   //SECTION("density_matrices")
   {
     Type ov_;
-    array A_ = A({0,2},{0,3});
-    array B_ = B({0,3},{0,2});
-    ov_=SDet.MixedDensityMatrix(A,B,G,0.0,false); check(G,g_ref);
-    ov_=SDet.MixedDensityMatrix(Aref,B,G,0.0,false); check(G,g_ref);
-    ov_=SDet.MixedDensityMatrix(A,Bref,G,0.0,false); check(G,g_ref);
-    ov_=SDet.MixedDensityMatrix(Aref,Bref,G,0.0,false); check(G,g_ref); 
+    array A_ = A({0, 2}, {0, 3});
+    array B_ = B({0, 3}, {0, 2});
+    ov_      = SDet.MixedDensityMatrix(A, B, G, 0.0, false);
+    check(G, g_ref);
+    ov_ = SDet.MixedDensityMatrix(Aref, B, G, 0.0, false);
+    check(G, g_ref);
+    ov_ = SDet.MixedDensityMatrix(A, Bref, G, 0.0, false);
+    check(G, g_ref);
+    ov_ = SDet.MixedDensityMatrix(Aref, Bref, G, 0.0, false);
+    check(G, g_ref);
 
-    ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                            B({0,3},{0,2}),
-                            G({0,3},{0,3}),0.0,false);
-    check(G({0,3},{0,3}),g_ref_2);
-    ov_=SDet.MixedDensityMatrix(A_,
-                            B({0,3},{0,2}),
-                            G({0,3},{0,3}),0.0,false);
-    check(G({0,3},{0,3}),g_ref_2);
-    ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                            B_,
-                            G({0,3},{0,3}),0.0,false);
-    check(G({0,3},{0,3}),g_ref_2);
+    ov_ = SDet.MixedDensityMatrix(A({0, 2}, {0, 3}), B({0, 3}, {0, 2}), G({0, 3}, {0, 3}), 0.0, false);
+    check(G({0, 3}, {0, 3}), g_ref_2);
+    ov_ = SDet.MixedDensityMatrix(A_, B({0, 3}, {0, 2}), G({0, 3}, {0, 3}), 0.0, false);
+    check(G({0, 3}, {0, 3}), g_ref_2);
+    ov_ = SDet.MixedDensityMatrix(A({0, 2}, {0, 3}), B_, G({0, 3}, {0, 3}), 0.0, false);
+    check(G({0, 3}, {0, 3}), g_ref_2);
 
-    ov_=SDet.MixedDensityMatrix(A,B,Gc,0.0,true); check(Gc,gc_ref); 
-    ov_=SDet.MixedDensityMatrix(Aref,B,Gc,0.0,true); check(Gc,gc_ref);
-    ov_=SDet.MixedDensityMatrix(A,Bref,Gc,0.0,true); check(Gc,gc_ref);
-    ov_=SDet.MixedDensityMatrix(Aref,Bref,Gc,0.0,true); check(Gc,gc_ref);
+    ov_ = SDet.MixedDensityMatrix(A, B, Gc, 0.0, true);
+    check(Gc, gc_ref);
+    ov_ = SDet.MixedDensityMatrix(Aref, B, Gc, 0.0, true);
+    check(Gc, gc_ref);
+    ov_ = SDet.MixedDensityMatrix(A, Bref, Gc, 0.0, true);
+    check(Gc, gc_ref);
+    ov_ = SDet.MixedDensityMatrix(Aref, Bref, Gc, 0.0, true);
+    check(Gc, gc_ref);
     myREQUIRE(ov_, ov);
 
-    ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                            B({0,3},{0,2}),
-                            Gc({0,2},{0,3}),0.0,true);
-    check(Gc({0,2},{0,3}),gc_ref_2);
-    ov_=SDet.MixedDensityMatrix(A_,
-                            B({0,3},{0,2}),
-                            Gc({0,2},{0,3}),0.0,true);
-    check(Gc({0,2},{0,3}),gc_ref_2);
-    ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                            B_,
-                            Gc({0,2},{0,3}),0.0,true);
-    check(Gc({0,2},{0,3}),gc_ref_2);
+    ov_ = SDet.MixedDensityMatrix(A({0, 2}, {0, 3}), B({0, 3}, {0, 2}), Gc({0, 2}, {0, 3}), 0.0, true);
+    check(Gc({0, 2}, {0, 3}), gc_ref_2);
+    ov_ = SDet.MixedDensityMatrix(A_, B({0, 3}, {0, 2}), Gc({0, 2}, {0, 3}), 0.0, true);
+    check(Gc({0, 2}, {0, 3}), gc_ref_2);
+    ov_ = SDet.MixedDensityMatrix(A({0, 2}, {0, 3}), B_, Gc({0, 2}, {0, 3}), 0.0, true);
+    check(Gc({0, 2}, {0, 3}), gc_ref_2);
   }
   // Orthogonalize
   //SECTION("orthogonalize")
   {
-    array Q=B;
-    SDet.Orthogonalize(Q,0.0);
-    Type ov_=SDet.Overlap_noHerm(Q,Q,0.0);
-    myREQUIRE( ov_, std::complex<double>(1.,0.));
+    array Q = B;
+    SDet.Orthogonalize(Q, 0.0);
+    Type ov_ = SDet.Overlap_noHerm(Q, Q, 0.0);
+    myREQUIRE(ov_, std::complex<double>(1., 0.));
   }
 
   // Batched
@@ -553,7 +544,7 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   //SECTION("batched_density_matrix")
   {
-    boost::multi::array<Type,3,Allocator> Gw({3,NMO,NMO},alloc);
+    boost::multi::array<Type, 3, Allocator> Gw({3, NMO, NMO}, alloc);
     //std::vector<array_ptr> RA;
     std::vector<decltype(&Aref)> RA;
     std::vector<decltype(&Bref)> RB;
@@ -561,425 +552,405 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
     RA.reserve(3);
     RB.reserve(3);
     Gwv.reserve(3);
-    boost::multi::array<Type,1,Allocator> ovlp(iextensions<1u>{3});
-    for(int i = 0; i < 3; i++) {
+    boost::multi::array<Type, 1, Allocator> ovlp(iextensions<1u>{3});
+    for (int i = 0; i < 3; i++)
+    {
       RA.emplace_back(&Aref);
       RB.emplace_back(&Bref);
       Gwv.emplace_back(&Gw[i]);
     }
     Type log_ovlp;
-    Type ov_ref = -7.623325999999989+22.20453200000001i;
+    Type ov_ref = -7.623325999999989 + 22.20453200000001i;
 
-    SDet.BatchedDensityMatrices(RA,RB,Gwv,log_ovlp,ovlp,false);
+    SDet.BatchedDensityMatrices(RA, RB, Gwv, log_ovlp, ovlp, false);
     //SECTION("greens_function")
     {
-      for(int i = 0; i < 3; i++) {
-        check(*Gwv[i],g_ref);
+      for (int i = 0; i < 3; i++)
+      {
+        check(*Gwv[i], g_ref);
       }
     }
     //SECTION("overlap")
     {
-      for(int i = 0; i < 3; i++) {
+      for (int i = 0; i < 3; i++)
+      {
         myREQUIRE(ovlp[i], ov_ref);
       }
     }
-    SDet.BatchedMixedDensityMatrix(RA,RB,Gw,log_ovlp,ovlp,false);
+    SDet.BatchedMixedDensityMatrix(RA, RB, Gw, log_ovlp, ovlp, false);
     {
-      for(int i = 0; i < 3; i++) {
+      for (int i = 0; i < 3; i++)
+      {
         myREQUIRE(ovlp[i], ov_ref);
       }
     }
     {
-      for(int i = 0; i < 3; i++) {
-        check(Gw[i],g_ref);
+      for (int i = 0; i < 3; i++)
+      {
+        check(Gw[i], g_ref);
       }
     }
   }
   //SECTION("batched_mixed_density_matrix")
   {
-    boost::multi::array<Type,3,Allocator> Gw({3,NEL,NMO},alloc);
+    boost::multi::array<Type, 3, Allocator> Gw({3, NEL, NMO}, alloc);
     //std::vector<array_ptr> RA;
     std::vector<decltype(&Aref)> RA;
     std::vector<decltype(&Bref)> RB;
     RA.reserve(3);
     RB.reserve(3);
-    boost::multi::array<Type,1,Allocator> ovlp(iextensions<1u>{3});
-    for(int i = 0; i < 3; i++) {
+    boost::multi::array<Type, 1, Allocator> ovlp(iextensions<1u>{3});
+    for (int i = 0; i < 3; i++)
+    {
       RA.emplace_back(&Aref);
       RB.emplace_back(&Bref);
     }
     Type log_ovlp;
-    Type ov_ref = -7.623325999999989+22.20453200000001i;
+    Type ov_ref = -7.623325999999989 + 22.20453200000001i;
 
-    SDet.BatchedMixedDensityMatrix(RA,RB,Gw,log_ovlp,ovlp,true);
+    SDet.BatchedMixedDensityMatrix(RA, RB, Gw, log_ovlp, ovlp, true);
     //SECTION("greens_function")
     //SECTION("overlap")
     {
-      for(int i = 0; i < 3; i++) {
+      for (int i = 0; i < 3; i++)
+      {
         myREQUIRE(ovlp[i], ov_ref);
       }
     }
     {
-      for(int i = 0; i < 3; i++) {
-        check(Gw[i],gc_ref);
+      for (int i = 0; i < 3; i++)
+      {
+        check(Gw[i], gc_ref);
       }
     }
   }
 #endif
-
 }
 
 TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
 {
-
-  Communicate *c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
   using boost::mpi3::shared_communicator;
-  auto world = boost::mpi3::environment::get_world_instance();
+  auto world               = boost::mpi3::environment::get_world_instance();
   shared_communicator node = world.split_shared(world.rank());
 
   const int NMO = 4;
   const int NEL = 3;
 
-  using Type = ComplexType; 
-  using vector = std::vector<Type>;
-  using array = boost::multi::array<Type,2>;
-  using array_ref = boost::multi::array_ref<Type,2>;
+  using Type      = ComplexType;
+  using vector    = std::vector<Type>;
+  using array     = boost::multi::array<Type, 2>;
+  using array_ref = boost::multi::array_ref<Type, 2>;
   using namespace std::complex_literals;
 
-  const Type ov = -7.62332599999999 + 22.20453200000000i;
-  const Type ov2 = -10.37150000000000 -  7.15750000000000i;
+  const Type ov  = -7.62332599999999 + 22.20453200000000i;
+  const Type ov2 = -10.37150000000000 - 7.15750000000000i;
 
   // some arbitrary matrices
-  vector m_a = {
-//   0.90000 + 0.10000i,   2.40000 + 0.20000i,   3.00000 + 0.30000i,
-//   0.40000 + 0.40000i,   1.00000 + 0.50000i,   1.20000 + 0.10000i,
-//   1.40000 + 0.20000i,   1.60000 + 0.30000i,   3.60000 + 0.40000i,
-//   0.40000 + 0.50000i,   0.20000 + 0.10000i,   0.10000 + 0.20000i
-    0.90000 +0.10000i , 0.40000 + 0.40000i, 1.40000 + 0.20000i , 0.40000 + 0.50000i,
-    2.40000 +0.20000i , 1.00000 + 0.50000i, 1.60000 + 0.30000i , 0.20000 + 0.10000i,
-    3.00000 +0.30000i , 1.20000 + 0.10000i, 3.60000 + 0.40000i , 0.10000 + 0.20000i
-  };
-  vector m_b = {
-   1.90000 + 0.60000i,   1.40000 + 0.70000i,   0.40000 + 0.80000i,
-   1.40000 + 0.90000i,   0.20000 + 0.50000i,   2.20000 + 0.60000i,
-   0.40000 + 0.70000i,   2.60000 + 0.80000i,   0.60000 + 0.90000i,
-   1.10000 + 0.50000i,   0.30000 + 0.60000i,   0.90000 + 0.70000i
-  };
+  vector m_a = {//   0.90000 + 0.10000i,   2.40000 + 0.20000i,   3.00000 + 0.30000i,
+                //   0.40000 + 0.40000i,   1.00000 + 0.50000i,   1.20000 + 0.10000i,
+                //   1.40000 + 0.20000i,   1.60000 + 0.30000i,   3.60000 + 0.40000i,
+                //   0.40000 + 0.50000i,   0.20000 + 0.10000i,   0.10000 + 0.20000i
+                0.90000 + 0.10000i, 0.40000 + 0.40000i, 1.40000 + 0.20000i, 0.40000 + 0.50000i,
+                2.40000 + 0.20000i, 1.00000 + 0.50000i, 1.60000 + 0.30000i, 0.20000 + 0.10000i,
+                3.00000 + 0.30000i, 1.20000 + 0.10000i, 3.60000 + 0.40000i, 0.10000 + 0.20000i};
+  vector m_b = {1.90000 + 0.60000i, 1.40000 + 0.70000i, 0.40000 + 0.80000i, 1.40000 + 0.90000i,
+                0.20000 + 0.50000i, 2.20000 + 0.60000i, 0.40000 + 0.70000i, 2.60000 + 0.80000i,
+                0.60000 + 0.90000i, 1.10000 + 0.50000i, 0.30000 + 0.60000i, 0.90000 + 0.70000i};
 
-  array A({NEL,NMO});
-  array B({NMO,NEL});
+  array A({NEL, NMO});
+  array B({NMO, NEL});
 
-  for(int i=0, k=0; i<A.size(0); i++)
-    for(int j=0; j<A.size(1); j++,k++)
-       A[i][j] = m_a[k];
+  for (int i = 0, k = 0; i < A.size(0); i++)
+    for (int j = 0; j < A.size(1); j++, k++)
+      A[i][j] = m_a[k];
 
-  for(int i=0, k=0; i<B.size(0); i++)
-    for(int j=0; j<B.size(1); j++,k++)
-       B[i][j] = m_b[k];
+  for (int i = 0, k = 0; i < B.size(0); i++)
+    for (int j = 0; j < B.size(1); j++, k++)
+      B[i][j] = m_b[k];
 
-  array_ref Aref(m_a.data(),{NEL,NMO});
-  array_ref Bref(m_b.data(),{NMO,NEL});
+  array_ref Aref(m_a.data(), {NEL, NMO});
+  array_ref Bref(m_b.data(), {NMO, NEL});
 
   //SlaterDetOperations SDet( SlaterDetOperations_shared<Type>(NMO,NEL) );
-  SlaterDetOperations_shared<ComplexType> SDet(NMO,NEL);
+  SlaterDetOperations_shared<ComplexType> SDet(NMO, NEL);
 
   /**** Overlaps ****/
   Type ov_;
-  ov_=SDet.Overlap(A,B,0.0,node); myREQUIRE(ov_,ov);
-  ov_=SDet.Overlap(Aref,B,0.0,node); myREQUIRE(ov_,ov);
-  ov_=SDet.Overlap(A,Bref,0.0,node); myREQUIRE(ov_,ov);
-  ov_=SDet.Overlap(Aref,Bref,0.0,node); myREQUIRE(ov_,ov);
+  ov_ = SDet.Overlap(A, B, 0.0, node);
+  myREQUIRE(ov_, ov);
+  ov_ = SDet.Overlap(Aref, B, 0.0, node);
+  myREQUIRE(ov_, ov);
+  ov_ = SDet.Overlap(A, Bref, 0.0, node);
+  myREQUIRE(ov_, ov);
+  ov_ = SDet.Overlap(Aref, Bref, 0.0, node);
+  myREQUIRE(ov_, ov);
 
   // Test array_view
-  ov_=SDet.Overlap(A(A.extension(0),A.extension(1)),B,0.0,node); myREQUIRE(ov_,ov);
-  ov_=SDet.Overlap(A,B(B.extension(0),B.extension(1)),0.0,node); myREQUIRE(ov_,ov);
+  ov_ = SDet.Overlap(A(A.extension(0), A.extension(1)), B, 0.0, node);
+  myREQUIRE(ov_, ov);
+  ov_ = SDet.Overlap(A, B(B.extension(0), B.extension(1)), 0.0, node);
+  myREQUIRE(ov_, ov);
 
-  array A_ = A({0,2},{0,3});
-  array B_ = B({0,3},{0,2});
-  ov_=SDet.Overlap(A({0,2},{0,3}),
-                       B({0,3},{0,2}),0.0,node); myREQUIRE(ov_,ov2);
-  ov_=SDet.Overlap(A({0,2},{0,3}),B_,0.0); myREQUIRE(ov_,ov2);
-  ov_=SDet.Overlap(A_,B({0,3},{0,2}),0.0,node); myREQUIRE(ov_,ov2);
+  array A_ = A({0, 2}, {0, 3});
+  array B_ = B({0, 3}, {0, 2});
+  ov_      = SDet.Overlap(A({0, 2}, {0, 3}), B({0, 3}, {0, 2}), 0.0, node);
+  myREQUIRE(ov_, ov2);
+  ov_ = SDet.Overlap(A({0, 2}, {0, 3}), B_, 0.0);
+  myREQUIRE(ov_, ov2);
+  ov_ = SDet.Overlap(A_, B({0, 3}, {0, 2}), 0.0, node);
+  myREQUIRE(ov_, ov2);
 
-  shared_communicator node_ = node.split(node.rank()%2,node.rank());
-  ov_=SDet.Overlap(A,B,0.0,node_); myREQUIRE(ov_,ov);
-  ov_=SDet.Overlap(A({0,2},{0,3}),
-                       B({0,3},{0,2}),0.0,node_); myREQUIRE(ov_,ov2);
+  shared_communicator node_ = node.split(node.rank() % 2, node.rank());
+  ov_                       = SDet.Overlap(A, B, 0.0, node_);
+  myREQUIRE(ov_, ov);
+  ov_ = SDet.Overlap(A({0, 2}, {0, 3}), B({0, 3}, {0, 2}), 0.0, node_);
+  myREQUIRE(ov_, ov2);
 
   /**** Density Matrices *****/
-  vector v_ref = {
-   1.17573619385025996 - 0.01580426445014660i,  -0.25295981756593167 + 0.28594469607401085i,
-  -0.07724502823533341 - 0.09687959052155870i,   0.30512858581808422 - 0.04506898328729603i,
+  vector v_ref    = {1.17573619385025996 - 0.01580426445014660i,  -0.25295981756593167 + 0.28594469607401085i,
+                  -0.07724502823533341 - 0.09687959052155870i, 0.30512858581808422 - 0.04506898328729603i,
 
-   0.17912592806889663 + 0.08374315906672802i,   0.59381451118048767 + 0.13438888951771200i,
-  -0.02021475320201610 - 0.13737561982083193i,   0.32095003919745313 + 0.12832750636154097i,
+                  0.17912592806889663 + 0.08374315906672802i,  0.59381451118048767 + 0.13438888951771200i,
+                  -0.02021475320201610 - 0.13737561982083193i, 0.32095003919745313 + 0.12832750636154097i,
 
-  -0.04919549564646425 + 0.05402065222741825i,  -0.00286990878355775 - 0.15806420733175885i,
-   1.05069081188635494 + 0.00793429988912356i,  -0.08048239150997794 + 0.09917405634760490i,
+                  -0.04919549564646425 + 0.05402065222741825i, -0.00286990878355775 - 0.15806420733175885i,
+                  1.05069081188635494 + 0.00793429988912356i,  -0.08048239150997794 + 0.09917405634760490i,
 
-  -0.46434598219794548 - 0.09896890422706731i,   0.87746748807670427 - 0.53417787485950319i,
-   0.12162735438647077 + 0.31042401735800573i,   0.17975848308289613 - 0.12651892495668898i
-  };
-  vector vc_ref = {
-  -0.8721879971495297 + 0.6787593377585239i,   0.3244278932250768 - 1.8083537898275881i,
-   0.6130713546530860 + 0.0399736955598931i,   0.0132562806444336 - 0.2882495766584950i,
+                  -0.46434598219794548 - 0.09896890422706731i, 0.87746748807670427 - 0.53417787485950319i,
+                  0.12162735438647077 + 0.31042401735800573i,  0.17975848308289613 - 0.12651892495668898i};
+  vector vc_ref   = {-0.8721879971495297 + 0.6787593377585239i, 0.3244278932250768 - 1.8083537898275881i,
+                   0.6130713546530860 + 0.0399736955598931i,  0.0132562806444336 - 0.2882495766584950i,
 
-   0.8853626557603183 + 0.0978868569224204i,  -0.0598704127345155 - 0.0470889603064014i,
-  -0.7392693424168300 - 0.0715317395994149i,   0.3721269544963505 - 0.1797896522886788i,
+                   0.8853626557603183 + 0.0978868569224204i,  -0.0598704127345155 - 0.0470889603064014i,
+                   -0.7392693424168300 - 0.0715317395994149i, 0.3721269544963505 - 0.1797896522886788i,
 
-  -0.0567190307022984 - 0.3114847157576828i,  -0.1290126440468128 + 0.6815705660308808i,
-   0.3787012855335005 + 0.0039188686237135i,  -0.2005543456941538 + 0.2100886953142371i
-  };
-  vector v_ref_2 = {
-   0.7361983496013835 - 0.0956505507662245i,   0.6467449689807925 + 0.2297471806893873i,
-   0.0189270005620390 - 0.1727975708935829i,
+                   -0.0567190307022984 - 0.3114847157576828i, -0.1290126440468128 + 0.6815705660308808i,
+                   0.3787012855335005 + 0.0039188686237135i,  -0.2005543456941538 + 0.2100886953142371i};
+  vector v_ref_2  = {0.7361983496013835 - 0.0956505507662245i, 0.6467449689807925 + 0.2297471806893873i,
+                    0.0189270005620390 - 0.1727975708935829i,
 
-   0.2986893588843604 - 0.0099955730815030i,   0.2696068479051557 + 0.0292039710860386i,
-   0.0497734835066391 + 0.1783200397050796i,
+                    0.2986893588843604 - 0.0099955730815030i, 0.2696068479051557 + 0.0292039710860386i,
+                    0.0497734835066391 + 0.1783200397050796i,
 
-   0.1020030246826092 + 0.0344707468383766i,  -0.2500340021988402 - 0.0826863644855427i,
-   0.9941948024934623 + 0.0664465796801866i
-  };
-  vector vc_ref_2 = {
-  -0.489369975192701 + 0.103038673040713i,  -0.858850485405126 - 0.275734238124941i,
-   1.219791948842170 + 0.118626922447301i,
-   0.486337033653898 - 0.098631569047656i,   0.595497821653010 + 0.185288949671560i,
-  -0.455373025165330 - 0.129360996228044i
-  };
+                    0.1020030246826092 + 0.0344707468383766i, -0.2500340021988402 - 0.0826863644855427i,
+                    0.9941948024934623 + 0.0664465796801866i};
+  vector vc_ref_2 = {-0.489369975192701 + 0.103038673040713i, -0.858850485405126 - 0.275734238124941i,
+                     1.219791948842170 + 0.118626922447301i,  0.486337033653898 - 0.098631569047656i,
+                     0.595497821653010 + 0.185288949671560i,  -0.455373025165330 - 0.129360996228044i};
 
-  boost::multi::array_ref<Type,2> g_ref(v_ref.data(),{NMO,NMO});
-  boost::multi::array_ref<Type,2> gc_ref(vc_ref.data(),{NEL,NMO});
-  boost::multi::array_ref<Type,2> g_ref_2(v_ref_2.data(),{3,3});
-  boost::multi::array_ref<Type,2> gc_ref_2(vc_ref_2.data(),{2,3});
+  boost::multi::array_ref<Type, 2> g_ref(v_ref.data(), {NMO, NMO});
+  boost::multi::array_ref<Type, 2> gc_ref(vc_ref.data(), {NEL, NMO});
+  boost::multi::array_ref<Type, 2> g_ref_2(v_ref_2.data(), {3, 3});
+  boost::multi::array_ref<Type, 2> gc_ref_2(vc_ref_2.data(), {2, 3});
 
-  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(iextensions<1u>{NMO*(NMO+NEL)},
-                                                            shared_allocator<Type>{node});
+  boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff(iextensions<1u>{NMO * (NMO + NEL)},
+                                                              shared_allocator<Type>{node});
 
-  array_ref G(to_address(SMbuff.origin()),{NMO,NMO});
-  array_ref Gc(to_address(SMbuff.origin())+NMO*NMO,{NEL,NMO});
+  array_ref G(to_address(SMbuff.origin()), {NMO, NMO});
+  array_ref Gc(to_address(SMbuff.origin()) + NMO * NMO, {NEL, NMO});
 
-  ov_=SDet.MixedDensityMatrix(A,B,G,0.0,node,false); check(G,g_ref);
-  ov_=SDet.MixedDensityMatrix(Aref,B,G,0.0,node,false); check(G,g_ref);
-  ov_=SDet.MixedDensityMatrix(A,Bref,G,0.0,node,false); check(G,g_ref);
-  ov_=SDet.MixedDensityMatrix(Aref,Bref,G,0.0,node,false); check(G,g_ref);
+  ov_ = SDet.MixedDensityMatrix(A, B, G, 0.0, node, false);
+  check(G, g_ref);
+  ov_ = SDet.MixedDensityMatrix(Aref, B, G, 0.0, node, false);
+  check(G, g_ref);
+  ov_ = SDet.MixedDensityMatrix(A, Bref, G, 0.0, node, false);
+  check(G, g_ref);
+  ov_ = SDet.MixedDensityMatrix(Aref, Bref, G, 0.0, node, false);
+  check(G, g_ref);
 
-  ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                          B({0,3},{0,2}),
-                          G({0,3},{0,3}),0.0,node,false);
-  check(G({0,3},{0,3}),g_ref_2);
-  ov_=SDet.MixedDensityMatrix(A_,
-                          B({0,3},{0,2}),
-                          G({0,3},{0,3}),0.0,node,false);
-  check(G({0,3},{0,3}),g_ref_2);
-  ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                          B_,
-                          G({0,3},{0,3}),0.0,node,false);
-  check(G({0,3},{0,3}),g_ref_2);
+  ov_ = SDet.MixedDensityMatrix(A({0, 2}, {0, 3}), B({0, 3}, {0, 2}), G({0, 3}, {0, 3}), 0.0, node, false);
+  check(G({0, 3}, {0, 3}), g_ref_2);
+  ov_ = SDet.MixedDensityMatrix(A_, B({0, 3}, {0, 2}), G({0, 3}, {0, 3}), 0.0, node, false);
+  check(G({0, 3}, {0, 3}), g_ref_2);
+  ov_ = SDet.MixedDensityMatrix(A({0, 2}, {0, 3}), B_, G({0, 3}, {0, 3}), 0.0, node, false);
+  check(G({0, 3}, {0, 3}), g_ref_2);
 
-  ov_=SDet.MixedDensityMatrix(A,B,Gc,0.0,node,true); check(Gc,gc_ref);
-  ov_=SDet.MixedDensityMatrix(Aref,B,Gc,0.0,node,true); check(Gc,gc_ref);
-  ov_=SDet.MixedDensityMatrix(A,Bref,Gc,0.0,node,true); check(Gc,gc_ref);
-  ov_=SDet.MixedDensityMatrix(Aref,Bref,Gc,0.0,node,true); check(Gc,gc_ref);
+  ov_ = SDet.MixedDensityMatrix(A, B, Gc, 0.0, node, true);
+  check(Gc, gc_ref);
+  ov_ = SDet.MixedDensityMatrix(Aref, B, Gc, 0.0, node, true);
+  check(Gc, gc_ref);
+  ov_ = SDet.MixedDensityMatrix(A, Bref, Gc, 0.0, node, true);
+  check(Gc, gc_ref);
+  ov_ = SDet.MixedDensityMatrix(Aref, Bref, Gc, 0.0, node, true);
+  check(Gc, gc_ref);
 
-  ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                          B({0,3},{0,2}),
-                          Gc({0,2},{0,3}),0.0,node,true);
-  check(Gc({0,2},{0,3}),gc_ref_2);
-  ov_=SDet.MixedDensityMatrix(A_,
-                          B({0,3},{0,2}),
-                          Gc({0,2},{0,3}),0.0,node,true);
-  check(Gc({0,2},{0,3}),gc_ref_2);
-  ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                          B_,
-                          Gc({0,2},{0,3}),0.0,node,true);
-  check(Gc({0,2},{0,3}),gc_ref_2);
+  ov_ = SDet.MixedDensityMatrix(A({0, 2}, {0, 3}), B({0, 3}, {0, 2}), Gc({0, 2}, {0, 3}), 0.0, node, true);
+  check(Gc({0, 2}, {0, 3}), gc_ref_2);
+  ov_ = SDet.MixedDensityMatrix(A_, B({0, 3}, {0, 2}), Gc({0, 2}, {0, 3}), 0.0, node, true);
+  check(Gc({0, 2}, {0, 3}), gc_ref_2);
+  ov_ = SDet.MixedDensityMatrix(A({0, 2}, {0, 3}), B_, Gc({0, 2}, {0, 3}), 0.0, node, true);
+  check(Gc({0, 2}, {0, 3}), gc_ref_2);
 
-  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO*(NMO+NEL)},
-                                                            shared_allocator<Type>{node_});
+  boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO * (NMO + NEL)},
+                                                               shared_allocator<Type>{node_});
 
-  array_ref G2(to_address(SMbuff2.origin()),{NMO,NMO});
-  array_ref Gc2(to_address(SMbuff2.origin())+NMO*NMO,{NEL,NMO});
+  array_ref G2(to_address(SMbuff2.origin()), {NMO, NMO});
+  array_ref Gc2(to_address(SMbuff2.origin()) + NMO * NMO, {NEL, NMO});
 
   // switch comm
-  ov_=SDet.MixedDensityMatrix(A,B,G2,0.0,node_,false); check(G2,g_ref);
-  ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                          B({0,3},{0,2}),
-                          G2({0,3},{0,3}),0.0,node_,false);
-  check(G2({0,3},{0,3}),g_ref_2);
-  ov_=SDet.MixedDensityMatrix(A,B,Gc2,0.0,node_,true); check(Gc2,gc_ref);
-  ov_=SDet.MixedDensityMatrix(A({0,2},{0,3}),
-                          B({0,3},{0,2}),
-                          Gc2({0,2},{0,3}),0.0,node_,true);
-  check(Gc2({0,2},{0,3}),gc_ref_2);
-
+  ov_ = SDet.MixedDensityMatrix(A, B, G2, 0.0, node_, false);
+  check(G2, g_ref);
+  ov_ = SDet.MixedDensityMatrix(A({0, 2}, {0, 3}), B({0, 3}, {0, 2}), G2({0, 3}, {0, 3}), 0.0, node_, false);
+  check(G2({0, 3}, {0, 3}), g_ref_2);
+  ov_ = SDet.MixedDensityMatrix(A, B, Gc2, 0.0, node_, true);
+  check(Gc2, gc_ref);
+  ov_ = SDet.MixedDensityMatrix(A({0, 2}, {0, 3}), B({0, 3}, {0, 2}), Gc2({0, 2}, {0, 3}), 0.0, node_, true);
+  check(Gc2({0, 2}, {0, 3}), gc_ref_2);
 }
 
 TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 {
-
-  Communicate *c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
   using boost::mpi3::shared_communicator;
 
-  auto world = boost::mpi3::environment::get_world_instance();
+  auto world               = boost::mpi3::environment::get_world_instance();
   shared_communicator node = world.split_shared(world.rank());
 
   const int NMO = 4;
   const int NEL = 3;
 
-  using Type = std::complex<double>;
-  using vector = std::vector<Type>;
-  using array = boost::multi::array<Type,2>;
-  using array_ref = boost::multi::array_ref<Type,2>;
+  using Type      = std::complex<double>;
+  using vector    = std::vector<Type>;
+  using array     = boost::multi::array<Type, 2>;
+  using array_ref = boost::multi::array_ref<Type, 2>;
   using namespace std::complex_literals;
-  using csr_matrix = ma::sparse::csr_matrix<Type,int,int,
-                                shared_allocator<Type>,
-                                ma::sparse::is_root>;
+  using csr_matrix = ma::sparse::csr_matrix<Type, int, int, shared_allocator<Type>, ma::sparse::is_root>;
 
-  const Type ov = -7.62332599999999 + 22.20453200000000i;
-  const Type ov2 = -10.37150000000000 -  7.15750000000000i;
+  const Type ov  = -7.62332599999999 + 22.20453200000000i;
+  const Type ov2 = -10.37150000000000 - 7.15750000000000i;
 
   // some arbitrary matrices
-  vector m_a = {
-   0.90000 + 0.10000i,   2.40000 + 0.20000i,   3.00000 + 0.30000i,
-   0.40000 + 0.40000i,   1.00000 + 0.50000i,   1.20000 + 0.10000i,
-   1.40000 + 0.20000i,   1.60000 + 0.30000i,   3.60000 + 0.40000i,
-   0.40000 + 0.50000i,   0.20000 + 0.10000i,   0.10000 + 0.20000i
-  };
-  vector m_b = {
-   1.90000 + 0.60000i,   1.40000 + 0.70000i,   0.40000 + 0.80000i,
-   1.40000 + 0.90000i,   0.20000 + 0.50000i,   2.20000 + 0.60000i,
-   0.40000 + 0.70000i,   2.60000 + 0.80000i,   0.60000 + 0.90000i,
-   1.10000 + 0.50000i,   0.30000 + 0.60000i,   0.90000 + 0.70000i
-  };
+  vector m_a = {0.90000 + 0.10000i, 2.40000 + 0.20000i, 3.00000 + 0.30000i, 0.40000 + 0.40000i,
+                1.00000 + 0.50000i, 1.20000 + 0.10000i, 1.40000 + 0.20000i, 1.60000 + 0.30000i,
+                3.60000 + 0.40000i, 0.40000 + 0.50000i, 0.20000 + 0.10000i, 0.10000 + 0.20000i};
+  vector m_b = {1.90000 + 0.60000i, 1.40000 + 0.70000i, 0.40000 + 0.80000i, 1.40000 + 0.90000i,
+                0.20000 + 0.50000i, 2.20000 + 0.60000i, 0.40000 + 0.70000i, 2.60000 + 0.80000i,
+                0.60000 + 0.90000i, 1.10000 + 0.50000i, 0.30000 + 0.60000i, 0.90000 + 0.70000i};
 
-  array A({NMO,NEL}); // Will be transposed when Acsr is built
-  array B({NMO,NEL});
+  array A({NMO, NEL}); // Will be transposed when Acsr is built
+  array B({NMO, NEL});
 
-  for(int i=0, k=0; i<A.size(0); i++)
-    for(int j=0; j<A.size(1); j++,k++)
-       A[i][j] = m_a[k];
+  for (int i = 0, k = 0; i < A.size(0); i++)
+    for (int j = 0; j < A.size(1); j++, k++)
+      A[i][j] = m_a[k];
 
-  for(int i=0, k=0; i<B.size(0); i++)
-    for(int j=0; j<B.size(1); j++,k++)
-       B[i][j] = m_b[k];
+  for (int i = 0, k = 0; i < B.size(0); i++)
+    for (int j = 0; j < B.size(1); j++, k++)
+      B[i][j] = m_b[k];
 
-  boost::multi::array_ref<Type,2> Bref(m_b.data(),{NMO,NEL});
+  boost::multi::array_ref<Type, 2> Bref(m_b.data(), {NMO, NEL});
 
-  csr_matrix Acsr(csr::shm::construct_csr_matrix_single_input<csr_matrix>(A,0.0,'T',node));
+  csr_matrix Acsr(csr::shm::construct_csr_matrix_single_input<csr_matrix>(A, 0.0, 'T', node));
 
   //SlaterDetOperations SDet( SlaterDetOperations_shared<Type>(NMO,NEL) );
-  SlaterDetOperations_shared<ComplexType> SDet(NMO,NEL);
+  SlaterDetOperations_shared<ComplexType> SDet(NMO, NEL);
 
   /**** Overlaps ****/
   Type ov_;
-  ov_=SDet.Overlap(Acsr,B,0.0,node); myREQUIRE(ov_,ov);
-  ov_=SDet.Overlap(Acsr,Bref,0.0,node); myREQUIRE(ov_,ov);
+  ov_ = SDet.Overlap(Acsr, B, 0.0, node);
+  myREQUIRE(ov_, ov);
+  ov_ = SDet.Overlap(Acsr, Bref, 0.0, node);
+  myREQUIRE(ov_, ov);
 
-  ov_=SDet.Overlap(Acsr,B,0.0); myREQUIRE(ov_,ov);
-  ov_=SDet.Overlap(Acsr,Bref,0.0); myREQUIRE(ov_,ov);
+  ov_ = SDet.Overlap(Acsr, B, 0.0);
+  myREQUIRE(ov_, ov);
+  ov_ = SDet.Overlap(Acsr, Bref, 0.0);
+  myREQUIRE(ov_, ov);
 
   // Test array_view
-  ov_=SDet.Overlap(Acsr,B(B.extension(0),B.extension(1)),0.0,node); myREQUIRE(ov_,ov);
-  ov_=SDet.Overlap(Acsr,B(B.extension(0),B.extension(1)),0.0); myREQUIRE(ov_,ov);
+  ov_ = SDet.Overlap(Acsr, B(B.extension(0), B.extension(1)), 0.0, node);
+  myREQUIRE(ov_, ov);
+  ov_ = SDet.Overlap(Acsr, B(B.extension(0), B.extension(1)), 0.0);
+  myREQUIRE(ov_, ov);
 
-  shared_communicator node_ = node.split(node.rank()%2,node.rank());
-  ov_=SDet.Overlap(Acsr,B,0.0,node_); myREQUIRE(ov_,ov);
+  shared_communicator node_ = node.split(node.rank() % 2, node.rank());
+  ov_                       = SDet.Overlap(Acsr, B, 0.0, node_);
+  myREQUIRE(ov_, ov);
 
-  array B_ = B({0,3},{0,2});
+  array B_ = B({0, 3}, {0, 2});
 
-  ov_=SDet.Overlap(Acsr[{0,2,0,3}],B_,0.0); myREQUIRE(ov_,ov2);
+  ov_ = SDet.Overlap(Acsr[{0, 2, 0, 3}], B_, 0.0);
+  myREQUIRE(ov_, ov2);
 
   /**** Density Matrices *****/
-  vector v_ref = {
-   1.17573619385025996 - 0.01580426445014660i,  -0.25295981756593167 + 0.28594469607401085i,
-  -0.07724502823533341 - 0.09687959052155870i,   0.30512858581808422 - 0.04506898328729603i,
+  vector v_ref    = {1.17573619385025996 - 0.01580426445014660i,  -0.25295981756593167 + 0.28594469607401085i,
+                  -0.07724502823533341 - 0.09687959052155870i, 0.30512858581808422 - 0.04506898328729603i,
 
-   0.17912592806889663 + 0.08374315906672802i,   0.59381451118048767 + 0.13438888951771200i,
-  -0.02021475320201610 - 0.13737561982083193i,   0.32095003919745313 + 0.12832750636154097i,
+                  0.17912592806889663 + 0.08374315906672802i,  0.59381451118048767 + 0.13438888951771200i,
+                  -0.02021475320201610 - 0.13737561982083193i, 0.32095003919745313 + 0.12832750636154097i,
 
-  -0.04919549564646425 + 0.05402065222741825i,  -0.00286990878355775 - 0.15806420733175885i,
-   1.05069081188635494 + 0.00793429988912356i,  -0.08048239150997794 + 0.09917405634760490i,
+                  -0.04919549564646425 + 0.05402065222741825i, -0.00286990878355775 - 0.15806420733175885i,
+                  1.05069081188635494 + 0.00793429988912356i,  -0.08048239150997794 + 0.09917405634760490i,
 
-  -0.46434598219794548 - 0.09896890422706731i,   0.87746748807670427 - 0.53417787485950319i,
-   0.12162735438647077 + 0.31042401735800573i,   0.17975848308289613 - 0.12651892495668898i
-  };
-  vector vc_ref = {
-  -0.8721879971495297 + 0.6787593377585239i,   0.3244278932250768 - 1.8083537898275881i,
-   0.6130713546530860 + 0.0399736955598931i,   0.0132562806444336 - 0.2882495766584950i,
+                  -0.46434598219794548 - 0.09896890422706731i, 0.87746748807670427 - 0.53417787485950319i,
+                  0.12162735438647077 + 0.31042401735800573i,  0.17975848308289613 - 0.12651892495668898i};
+  vector vc_ref   = {-0.8721879971495297 + 0.6787593377585239i, 0.3244278932250768 - 1.8083537898275881i,
+                   0.6130713546530860 + 0.0399736955598931i,  0.0132562806444336 - 0.2882495766584950i,
 
-   0.8853626557603183 + 0.0978868569224204i,  -0.0598704127345155 - 0.0470889603064014i,
-  -0.7392693424168300 - 0.0715317395994149i,   0.3721269544963505 - 0.1797896522886788i,
+                   0.8853626557603183 + 0.0978868569224204i,  -0.0598704127345155 - 0.0470889603064014i,
+                   -0.7392693424168300 - 0.0715317395994149i, 0.3721269544963505 - 0.1797896522886788i,
 
-  -0.0567190307022984 - 0.3114847157576828i,  -0.1290126440468128 + 0.6815705660308808i,
-   0.3787012855335005 + 0.0039188686237135i,  -0.2005543456941538 + 0.2100886953142371i
-  };
-  vector v_ref_2 = {
-   0.7361983496013835 - 0.0956505507662245i,   0.6467449689807925 + 0.2297471806893873i,
-   0.0189270005620390 - 0.1727975708935829i,
+                   -0.0567190307022984 - 0.3114847157576828i, -0.1290126440468128 + 0.6815705660308808i,
+                   0.3787012855335005 + 0.0039188686237135i,  -0.2005543456941538 + 0.2100886953142371i};
+  vector v_ref_2  = {0.7361983496013835 - 0.0956505507662245i, 0.6467449689807925 + 0.2297471806893873i,
+                    0.0189270005620390 - 0.1727975708935829i,
 
-   0.2986893588843604 - 0.0099955730815030i,   0.2696068479051557 + 0.0292039710860386i,
-   0.0497734835066391 + 0.1783200397050796i,
+                    0.2986893588843604 - 0.0099955730815030i, 0.2696068479051557 + 0.0292039710860386i,
+                    0.0497734835066391 + 0.1783200397050796i,
 
-   0.1020030246826092 + 0.0344707468383766i,  -0.2500340021988402 - 0.0826863644855427i,
-   0.9941948024934623 + 0.0664465796801866i
-  };
-  vector vc_ref_2 = {
-  -0.489369975192701 + 0.103038673040713i,  -0.858850485405126 - 0.275734238124941i,
-   1.219791948842170 + 0.118626922447301i,
-   0.486337033653898 - 0.098631569047656i,   0.595497821653010 + 0.185288949671560i,
-  -0.455373025165330 - 0.129360996228044i
-  };
+                    0.1020030246826092 + 0.0344707468383766i, -0.2500340021988402 - 0.0826863644855427i,
+                    0.9941948024934623 + 0.0664465796801866i};
+  vector vc_ref_2 = {-0.489369975192701 + 0.103038673040713i, -0.858850485405126 - 0.275734238124941i,
+                     1.219791948842170 + 0.118626922447301i,  0.486337033653898 - 0.098631569047656i,
+                     0.595497821653010 + 0.185288949671560i,  -0.455373025165330 - 0.129360996228044i};
 
-  boost::multi::array_ref<Type,2> g_ref(v_ref.data(),{NMO,NMO});
-  boost::multi::array_ref<Type,2> gc_ref(vc_ref.data(),{NEL,NMO});
-  boost::multi::array_ref<Type,2> g_ref_2(v_ref_2.data(),{3,3});
-  boost::multi::array_ref<Type,2> gc_ref_2(vc_ref_2.data(),{2,3});
+  boost::multi::array_ref<Type, 2> g_ref(v_ref.data(), {NMO, NMO});
+  boost::multi::array_ref<Type, 2> gc_ref(vc_ref.data(), {NEL, NMO});
+  boost::multi::array_ref<Type, 2> g_ref_2(v_ref_2.data(), {3, 3});
+  boost::multi::array_ref<Type, 2> gc_ref_2(vc_ref_2.data(), {2, 3});
 
-  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(iextensions<1u>{NMO*(NMO+NEL)},
-                                                            shared_allocator<Type>{node});
+  boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff(iextensions<1u>{NMO * (NMO + NEL)},
+                                                              shared_allocator<Type>{node});
 
-  array_ref G(to_address(SMbuff.origin()),{NMO,NMO});
-  array_ref Gc(to_address(SMbuff.origin())+NMO*NMO,{NEL,NMO});
+  array_ref G(to_address(SMbuff.origin()), {NMO, NMO});
+  array_ref Gc(to_address(SMbuff.origin()) + NMO * NMO, {NEL, NMO});
 
-  ov_=SDet.MixedDensityMatrix(Acsr,B,G,0.0,node,false); check(G,g_ref);
-  ov_=SDet.MixedDensityMatrix(Acsr,Bref,G,0.0,node,false); check(G,g_ref);
+  ov_ = SDet.MixedDensityMatrix(Acsr, B, G, 0.0, node, false);
+  check(G, g_ref);
+  ov_ = SDet.MixedDensityMatrix(Acsr, Bref, G, 0.0, node, false);
+  check(G, g_ref);
 
-  ov_=SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
-                          B({0,3},{0,2}),
-                          G({0,3},{0,3}),0.0,node,false);
-  check(G({0,3},{0,3}),g_ref_2);
-  ov_=SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
-                          B_,
-                          G({0,3},{0,3}),0.0,node,false);
-  check(G({0,3},{0,3}),g_ref_2);
+  ov_ = SDet.MixedDensityMatrix(Acsr[{0, 2, 0, 3}], B({0, 3}, {0, 2}), G({0, 3}, {0, 3}), 0.0, node, false);
+  check(G({0, 3}, {0, 3}), g_ref_2);
+  ov_ = SDet.MixedDensityMatrix(Acsr[{0, 2, 0, 3}], B_, G({0, 3}, {0, 3}), 0.0, node, false);
+  check(G({0, 3}, {0, 3}), g_ref_2);
 
-  ov_=SDet.MixedDensityMatrix(Acsr,B,Gc,0.0,node,true); check(Gc,gc_ref);
-  ov_=SDet.MixedDensityMatrix(Acsr,Bref,Gc,0.0,node,true); check(Gc,gc_ref);
+  ov_ = SDet.MixedDensityMatrix(Acsr, B, Gc, 0.0, node, true);
+  check(Gc, gc_ref);
+  ov_ = SDet.MixedDensityMatrix(Acsr, Bref, Gc, 0.0, node, true);
+  check(Gc, gc_ref);
 
-  ov_=SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
-                          B({0,3},{0,2}),
-                          Gc({0,2},{0,3}),0.0,node,true);
-  check(Gc({0,2},{0,3}),gc_ref_2);
-  ov_=SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
-                          B_,
-                          Gc({0,2},{0,3}),0.0,node,true);
-  check(Gc({0,2},{0,3}),gc_ref_2);
+  ov_ = SDet.MixedDensityMatrix(Acsr[{0, 2, 0, 3}], B({0, 3}, {0, 2}), Gc({0, 2}, {0, 3}), 0.0, node, true);
+  check(Gc({0, 2}, {0, 3}), gc_ref_2);
+  ov_ = SDet.MixedDensityMatrix(Acsr[{0, 2, 0, 3}], B_, Gc({0, 2}, {0, 3}), 0.0, node, true);
+  check(Gc({0, 2}, {0, 3}), gc_ref_2);
 
-  boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO*(NMO+NEL)},
-                                                            shared_allocator<Type>{node_});
+  boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO * (NMO + NEL)},
+                                                               shared_allocator<Type>{node_});
 
-  array_ref G2(to_address(SMbuff2.origin()),{NMO,NMO});
-  array_ref Gc2(to_address(SMbuff2.origin())+NMO*NMO,{NEL,NMO});
+  array_ref G2(to_address(SMbuff2.origin()), {NMO, NMO});
+  array_ref Gc2(to_address(SMbuff2.origin()) + NMO * NMO, {NEL, NMO});
 
   // switch comm
 
-//MAM
-// turning off this test, somehow failing in rhea with gcc5.3
-// not sure why!!! Will fix soon!
-// This is probably a bug in the native implementation of csrmm!!!
-/*
+  //MAM
+  // turning off this test, somehow failing in rhea with gcc5.3
+  // not sure why!!! Will fix soon!
+  // This is probably a bug in the native implementation of csrmm!!!
+  /*
   ov_=SDet.MixedDensityMatrix(Acsr,B,G2,0.0,node_,false); 
   check(G2,g_ref);
   ov_=SDet.MixedDensityMatrix(Acsr[{0,2,0,3}],
@@ -992,7 +963,6 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
                           Gc2({0,2},{0,3}),0.0,node_,true);
   check(Gc2({0,2},{0,3}),gc_ref_2);
 */
-
 }
 
 extern std::shared_ptr<host_allocator_generator_type> host_buffer_generator;
@@ -1001,21 +971,20 @@ extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
 TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
 {
   auto world = boost::mpi3::environment::get_world_instance();
-  auto node = world.split_shared(world.rank());
+  auto node  = world.split_shared(world.rank());
 
 
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   arch::INIT(node);
-  using Alloc = device::device_allocator<ComplexType>;
-  using gen_type = device_allocator_generator_type;  
+  using Alloc    = device::device_allocator<ComplexType>;
+  using gen_type = device_allocator_generator_type;
   auto gptr(device_buffer_generator.get());
 #else
-  using Alloc = std::allocator<ComplexType>;
-  using gen_type = host_allocator_generator_type;  
+  using Alloc    = std::allocator<ComplexType>;
+  using gen_type = host_allocator_generator_type;
   auto gptr(host_buffer_generator.get());
 #endif
-  SDetOps_complex_serial<Alloc,gen_type>(Alloc{},gptr);
-
+  SDetOps_complex_serial<Alloc, gen_type>(Alloc{}, gptr);
 }
 
 /*
@@ -1030,5 +999,5 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 
 }
 */
-}
-}
+} // namespace afqmc
+} // namespace qmcplusplus
