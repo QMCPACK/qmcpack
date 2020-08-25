@@ -82,17 +82,17 @@ private:
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
   ///team private ratios for reduction, numVP x numTeams
-  Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
+  Matrix<ComplexT, OffloadPinnedAllocator<ComplexT>> ratios_private;
   ///team private ratios and grads for reduction, numVP x numTeams
-  Matrix<TT, OffloadPinnedAllocator<TT>> rg_private;
+  Matrix<ComplexT, OffloadPinnedAllocator<ComplexT>> rg_private;
   ///offload scratch space, dynamically resized to the maximal need
   Vector<ST, OffloadPinnedAllocator<ST>> offload_scratch;
   ///result scratch space, dynamically resized to the maximal need
-  Vector<TT, OffloadPinnedAllocator<TT>> results_scratch;
+  Vector<ComplexT, OffloadPinnedAllocator<ComplexT>> results_scratch;
   ///psiinv and position scratch space, used to avoid allocation on the fly and faster transfer
-  Vector<TT, OffloadPinnedAllocator<TT>> psiinv_pos_copy;
+  Vector<ComplexT, OffloadPinnedAllocator<ComplexT>> psiinv_pos_copy;
   ///psiinv and position scratch space of multiple walkers, used to avoid allocation on the fly and faster transfer
-  Vector<TT, OffloadPinnedAllocator<TT>> mw_psiinv_pos_copy;
+  Vector<ComplexT, OffloadPinnedAllocator<ComplexT>> mw_psiinv_pos_copy;
   ///position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<ST, OffloadPinnedAllocator<ST>> multi_pos_copy;
   ///multi purpose H2D buffer for mw_evaluateVGLandDetRatioGrads
@@ -221,13 +221,15 @@ public:
   virtual void evaluateDetRatios(const VirtualParticleSet& VP,
                                  ValueVector_t& psi,
                                  const ValueVector_t& psiinv,
-                                 std::vector<ComplexT>& ratios) override;
+                                 std::vector<ValueType>& ratios) override;
 
   virtual void mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
                                     const RefVector<const VirtualParticleSet>& vp_list,
                                     const RefVector<ValueVector_t>& psi_list,
                                     const std::vector<const ValueType*>& invRow_ptr_list,
-                                    std::vector<std::vector<ValueType>>& ratios_list) override;
+                                    std::vector<std::vector<ValueType>>& ratios_list) override
+  {
+  }
 
   /** assign_vgl
    */
@@ -249,7 +251,9 @@ public:
                               int iat,
                               const RefVector<ValueVector_t>& psi_v_list,
                               const RefVector<GradVector_t>& dpsi_v_list,
-                              const RefVector<ValueVector_t>& d2psi_v_list) override;
+                              const RefVector<ValueVector_t>& d2psi_v_list) override
+  {
+  }
 
   virtual void mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
                                               const RefVector<ParticleSet>& P_list,
@@ -257,7 +261,9 @@ public:
                                               const std::vector<const ValueType*>& invRow_ptr_list,
                                               VGLVector_t& phi_vgl_v,
                                               std::vector<ValueType>& ratios,
-                                              std::vector<GradType>& grads) override;
+                                              std::vector<GradType>& grads) override
+  {
+  }
 
   void assign_vgh(const PointType& r,
                   ValueVector_t& psi,
@@ -292,7 +298,9 @@ public:
                                     int last,
                                     ValueMatrix_t& logdet,
                                     GradMatrix_t& dlogdet,
-                                    ValueMatrix_t& d2logdet) override;
+                                    ValueMatrix_t& d2logdet) override
+  {
+  }
   template<class BSPLINESPO>
   friend class SplineSetReader;
   friend class BsplineReaderBase;

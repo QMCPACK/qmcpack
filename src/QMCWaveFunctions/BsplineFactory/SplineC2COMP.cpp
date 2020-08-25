@@ -58,9 +58,9 @@ inline void SplineC2COMP<ST>::assign_v(const PointType& r,
   last = last > kPoints.size() ? kPoints.size() : last;
 
   const ST x = r[0], y = r[1], z = r[2];
-  const ST* restrict kx = myKcart.data(0);
-  const ST* restrict ky = myKcart.data(1);
-  const ST* restrict kz = myKcart.data(2);
+  const ST* restrict kx = myKcart->data(0);
+  const ST* restrict ky = myKcart->data(1);
+  const ST* restrict kz = myKcart->data(2);
 #pragma omp simd
   for (size_t j = first; j < last; ++j)
   {
@@ -92,7 +92,7 @@ template<typename ST>
 void SplineC2COMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
                                       ValueVector_t& psi,
                                       const ValueVector_t& psiinv,
-                                      std::vector<ComplexT>& ratios)
+                                      std::vector<ValueType>& ratios)
 {
   const bool need_resize = ratios_private.rows() < VP.getTotalNum();
 
@@ -152,9 +152,9 @@ inline void SplineC2COMP<ST>::assign_vgl(const PointType& r,
   const ST x = r[0], y = r[1], z = r[2];
   const ST symGG[6] = {GGt[0], GGt[1] + GGt[3], GGt[2] + GGt[6], GGt[4], GGt[5] + GGt[7], GGt[8]};
 
-  const ST* restrict k0 = myKcart.data(0);
-  const ST* restrict k1 = myKcart.data(1);
-  const ST* restrict k2 = myKcart.data(2);
+  const ST* restrict k0 = myKcart->data(0);
+  const ST* restrict k1 = myKcart->data(1);
+  const ST* restrict k2 = myKcart->data(2);
 
   const ST* restrict g0  = myG.data(0);
   const ST* restrict g1  = myG.data(1);
@@ -201,8 +201,8 @@ inline void SplineC2COMP<ST>::assign_vgl(const PointType& r,
 
     const ST lcart_r      = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGG);
     const ST lcart_i      = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGG);
-    const ST lap_r        = lcart_r + mKK[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
-    const ST lap_i        = lcart_i + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
+    const ST lap_r        = lcart_r + (*mKK)[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
+    const ST lap_i        = lcart_i + (*mKK)[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
     const size_t psiIndex = j + first_spo;
     psi[psiIndex]         = ComplexT(c * val_r - s * val_i, c * val_i + s * val_r);
     dpsi[psiIndex][0]     = ComplexT(c * gX_r - s * gX_i, c * gX_i + s * gX_r);
@@ -223,9 +223,9 @@ inline void SplineC2COMP<ST>::assign_vgl_from_l(const PointType& r,
   constexpr ST two(2);
   const ST x = r[0], y = r[1], z = r[2];
 
-  const ST* restrict k0 = myKcart.data(0);
-  const ST* restrict k1 = myKcart.data(1);
-  const ST* restrict k2 = myKcart.data(2);
+  const ST* restrict k0 = myKcart->data(0);
+  const ST* restrict k1 = myKcart->data(1);
+  const ST* restrict k2 = myKcart->data(2);
 
   const ST* restrict g0 = myG.data(0);
   const ST* restrict g1 = myG.data(1);
@@ -265,8 +265,8 @@ inline void SplineC2COMP<ST>::assign_vgl_from_l(const PointType& r,
     const ST gY_i = dY_i - val_r * kY;
     const ST gZ_i = dZ_i - val_r * kZ;
 
-    const ST lap_r = myL[jr] + mKK[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
-    const ST lap_i = myL[ji] + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
+    const ST lap_r = myL[jr] + (*mKK)[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
+    const ST lap_i = myL[ji] + (*mKK)[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
     const size_t psiIndex = j + first_spo;
     psi[psiIndex]         = ComplexT(c * val_r - s * val_i, c * val_i + s * val_r);
@@ -313,9 +313,9 @@ void SplineC2COMP<ST>::assign_vgh(const PointType& r,
            g22 = PrimLattice.G(8);
   const ST x = r[0], y = r[1], z = r[2];
 
-  const ST* restrict k0 = myKcart.data(0);
-  const ST* restrict k1 = myKcart.data(1);
-  const ST* restrict k2 = myKcart.data(2);
+  const ST* restrict k0 = myKcart->data(0);
+  const ST* restrict k1 = myKcart->data(1);
+  const ST* restrict k2 = myKcart->data(2);
 
   const ST* restrict g0  = myG.data(0);
   const ST* restrict g1  = myG.data(1);
@@ -453,9 +453,9 @@ void SplineC2COMP<ST>::assign_vghgh(const PointType& r,
            g22 = PrimLattice.G(8);
   const ST x = r[0], y = r[1], z = r[2];
 
-  const ST* restrict k0 = myKcart.data(0);
-  const ST* restrict k1 = myKcart.data(1);
-  const ST* restrict k2 = myKcart.data(2);
+  const ST* restrict k0 = myKcart->data(0);
+  const ST* restrict k1 = myKcart->data(1);
+  const ST* restrict k2 = myKcart->data(2);
 
   const ST* restrict g0  = myG.data(0);
   const ST* restrict g1  = myG.data(1);

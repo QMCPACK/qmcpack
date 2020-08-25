@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/BsplineFactory/SplineC2C.h"
 #if defined(ENABLE_OFFLOAD)
 #include "QMCWaveFunctions/BsplineFactory/SplineC2ROMP.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineC2COMP.h"
 #endif
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCplx.h"
 #include <fftw3.h>

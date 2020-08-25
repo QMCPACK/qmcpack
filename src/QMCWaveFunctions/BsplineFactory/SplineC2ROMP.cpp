@@ -345,10 +345,6 @@ void SplineC2ROMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
       {
         const int first      = ChunkSizePerTeam * team_id;
         const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-        const int first_cplx = first / 2;
-        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
-        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
         auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
         auto* restrict pos_scratch             = psiinv_ptr + orb_size;
@@ -369,6 +365,10 @@ void SplineC2ROMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
                         psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
                         first_spo_local, nComplexBands_local, index);
 
+        const int first_cplx = first / 2;
+        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
+        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
+        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
         TT sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
         for (int i = first_real; i < last_real; i++)
@@ -464,10 +464,6 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
       {
         const int first      = ChunkSizePerTeam * team_id;
         const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-        const int first_cplx = first / 2;
-        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
-        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
         auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
         auto* ref_id_ptr = reinterpret_cast<int*>(buffer_H2D_ptr + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
@@ -490,6 +486,10 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
                         psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
                         first_spo_local, nComplexBands_local, index);
 
+        const int first_cplx = first / 2;
+        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
+        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
+        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
         TT sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
         for (int i = first_real; i < last_real; i++)
@@ -754,10 +754,6 @@ void SplineC2ROMP<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocat
       {
         const int first      = ChunkSizePerTeam * team_id;
         const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-        const int first_cplx = first / 2;
-        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
-        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
         auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
         auto* restrict psi_iw_ptr             = results_scratch_ptr + orb_size * iw * 5;
 
@@ -904,10 +900,6 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
       {
         const int first      = ChunkSizePerTeam * team_id;
         const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-        const int first_cplx = first / 2;
-        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
-        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
         auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
         auto* restrict psi_iw_ptr             = results_scratch_ptr + orb_size * iw * 5;
         const auto* restrict pos_iw_ptr       = reinterpret_cast<ST*>(buffer_H2D_ptr + buffer_H2D_stride * iw);
