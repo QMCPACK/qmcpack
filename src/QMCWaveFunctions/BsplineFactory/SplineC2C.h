@@ -150,7 +150,7 @@ public:
   virtual void evaluateDetRatios(const VirtualParticleSet& VP,
                                  ValueVector_t& psi,
                                  const ValueVector_t& psiinv,
-                                 std::vector<ComplexT>& ratios) override;
+                                 std::vector<ValueType>& ratios) override;
 
   /** assign_vgl
    */
