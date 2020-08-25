@@ -2,7 +2,7 @@
 ===========================
 Energy density test details
 ===========================
-The tests include short/long VMC runs for a LiH dimer in open boundary 
+The tests include short/long VMC runs for a LiH molecule in open boundary 
 conditions with the energy density estimator enabled, using a voronoi 
 grid.  Reference data was generated using SVN revision 6259.
 

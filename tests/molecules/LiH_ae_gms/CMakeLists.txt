@@ -42,7 +42,7 @@ IF (NOT QMC_CUDA)
   CHECK_PYTHON_REQS(stat_python_reqs diamond-estimator add_tests)
   if (add_tests)
     SIMPLE_RUN_AND_CHECK(
-      short-LiH_dimer_ae-vmc_hf_noj_estimator_energydensity_voronoi
+      short-LiH_ae-vmc_hf_noj_estimator_energydensity_voronoi
       "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
       vmc_noj_edens_vor_short.in.xml
       4 4
@@ -50,7 +50,7 @@ IF (NOT QMC_CUDA)
       )
 
     SIMPLE_RUN_AND_CHECK(
-      long-LiH_dimer_ae-vmc_hf_noj_estimator_energydensity_voronoi
+      long-LiH_ae-vmc_hf_noj_estimator_energydensity_voronoi
       "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
       vmc_noj_edens_vor_long.in.xml
       4 4
