@@ -227,14 +227,7 @@ public:
                                     const RefVector<const VirtualParticleSet>& vp_list,
                                     const RefVector<ValueVector_t>& psi_list,
                                     const std::vector<const ValueType*>& invRow_ptr_list,
-                                    std::vector<std::vector<ValueType>>& ratios_list) override
-  {
-  }
-
-  /** assign_vgl
-   */
-  void assign_vgl(const PointType& r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi, int first, int last)
-      const;
+                                    std::vector<std::vector<ValueType>>& ratios_list) override;
 
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
@@ -251,9 +244,7 @@ public:
                               int iat,
                               const RefVector<ValueVector_t>& psi_v_list,
                               const RefVector<GradVector_t>& dpsi_v_list,
-                              const RefVector<ValueVector_t>& d2psi_v_list) override
-  {
-  }
+                              const RefVector<ValueVector_t>& d2psi_v_list) override;
 
   virtual void mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
                                               const RefVector<ParticleSet>& P_list,
@@ -261,9 +252,7 @@ public:
                                               const std::vector<const ValueType*>& invRow_ptr_list,
                                               VGLVector_t& phi_vgl_v,
                                               std::vector<ValueType>& ratios,
-                                              std::vector<GradType>& grads) override
-  {
-  }
+                                              std::vector<GradType>& grads) override;
 
   void assign_vgh(const PointType& r,
                   ValueVector_t& psi,
@@ -298,9 +287,8 @@ public:
                                     int last,
                                     ValueMatrix_t& logdet,
                                     GradMatrix_t& dlogdet,
-                                    ValueMatrix_t& d2logdet) override
-  {
-  }
+                                    ValueMatrix_t& d2logdet) override;
+
   template<class BSPLINESPO>
   friend class SplineSetReader;
   friend class BsplineReaderBase;
