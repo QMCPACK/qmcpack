@@ -131,9 +131,9 @@ inline void assign_vgl(ST x,
   const ST lap_r   = lcart_r + mKK_ptr[index] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
   const ST lap_i   = lcart_i + mKK_ptr[index] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
-  const size_t psiIndex = first_spo + index + (index < nComplexBands ? index : nComplexBands);
-  psi[psiIndex]   = c * val_r - s * val_i;
-  d2psi[psiIndex] = c * lap_r - s * lap_i;
+  const size_t psiIndex  = first_spo + index + (index < nComplexBands ? index : nComplexBands);
+  psi[psiIndex]          = c * val_r - s * val_i;
+  d2psi[psiIndex]        = c * lap_r - s * lap_i;
   dpsi[psiIndex * 3]     = c * gX_r - s * gX_i;
   dpsi[psiIndex * 3 + 1] = c * gY_r - s * gY_i;
   dpsi[psiIndex * 3 + 2] = c * gZ_r - s * gZ_i;
@@ -620,9 +620,9 @@ inline void SplineC2ROMP<ST>::assign_vgl_from_l(const PointType& r,
     const ST gZ_i         = dZ_i - val_r * kZ;
     const size_t psiIndex = first_spo + nComplexBands + j;
     psi[psiIndex]         = c * val_r - s * val_i;
-    dpsi[psiIndex][0] = c * gX_r - s * gX_i;
-    dpsi[psiIndex][1] = c * gY_r - s * gY_i;
-    dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
+    dpsi[psiIndex][0]     = c * gX_r - s * gX_i;
+    dpsi[psiIndex][1]     = c * gY_r - s * gY_i;
+    dpsi[psiIndex][2]     = c * gZ_r - s * gZ_i;
 
     const ST lap_r  = myL[jr] + (*mKK)[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
     const ST lap_i  = myL[ji] + (*mKK)[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
