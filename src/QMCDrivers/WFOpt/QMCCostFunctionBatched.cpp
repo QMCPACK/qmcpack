@@ -102,7 +102,6 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     for (int pm = 0; pm < NumOptimizables; pm++)
       HD_avg[pm] *= 1.0 / static_cast<Return_rt>(NumSamples);
     {
-      int ip = 0;
       for (int iw = 0; iw < numSamples; iw++)
       {
         const Return_rt* restrict saved = RecordsOnNode[iw];
@@ -132,7 +131,6 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     myComm->allreduce(URV);
     Return_rt smpinv = 1.0 / static_cast<Return_rt>(NumSamples);
     {
-      int ip = 0;
       for (int iw = 0; iw < numSamples; iw++)
       {
         const Return_rt* restrict saved = RecordsOnNode[iw];
@@ -176,28 +174,34 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
   }
 }
 
+std::unique_ptr<QMCHamiltonian> QMCCostFunctionBatched::extractFixedHamiltonianComponents()
+{
+  auto KE_Ham = std::make_unique<QMCHamiltonian>();
+  KE_Ham->addOperator(H.getHamiltonian("Kinetic"), "Kinetic");
+  if (includeNonlocalH != "no")
+  {
+    OperatorBase* a = H.getHamiltonian(includeNonlocalH);
+    if (a)
+    {
+      app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
+      KE_Ham->addOperator(a, includeNonlocalH);
+    }
+    else
+      app_log() << " Did not find non-local Hamiltonian element named " << includeNonlocalH << std::endl;
+  }
+  return KE_Ham;
+}
+
+
 
 void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
 {
   app_log() << "  Using Nonlocal PP in Opt: " << includeNonlocalH << std::endl;
   outputManager.pause();
   {
-    int ip = 0;
     if (H_KE_Node == nullptr)
     {
-      H_KE_Node = std::make_unique<QMCHamiltonian>();
-      H_KE_Node->addOperator(H.getHamiltonian("Kinetic"), "Kinetic");
-      if (includeNonlocalH != "no")
-      {
-        OperatorBase* a = H.getHamiltonian(includeNonlocalH);
-        if (a)
-        {
-          app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
-          H_KE_Node->addOperator(a, includeNonlocalH);
-        }
-        else
-          app_log() << " Did not find non-local Hamiltonian element named " << includeNonlocalH << std::endl;
-      }
+      H_KE_Node = extractFixedHamiltonianComponents();
     }
   }
 
@@ -226,7 +230,6 @@ void QMCCostFunctionBatched::checkConfigurations()
   RealType e2_tot = 0.0;
   int numSamples = samples_.getNumSamples();
   {
-    int ip         = 0;
     if (log_psi_fixed_.size() != numSamples)
     {
       log_psi_fixed_.resize(numSamples);
@@ -263,8 +266,8 @@ void QMCCostFunctionBatched::checkConfigurations()
     //set the optimization mode for the trial wavefunction
     Psi.startOptimization();
     //    synchronize the random number generator with the node
-    (*MoverRng[ip]) = (*RngSaved[ip]);
-    H.setRandomGenerator(MoverRng[ip]);
+    (*MoverRng[0]) = (*RngSaved[0]);
+    H.setRandomGenerator(MoverRng[0]);
     //int nat = wRef.getTotalNum();
     Return_rt e0 = 0.0;
     //       Return_t ef=0.0;
@@ -389,10 +392,9 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(bool needGrad)
 {
   {
-    int ip = 0;
     //    synchronize the random number generator with the node
-    (*MoverRng[ip]) = (*RngSaved[ip]);
-    H.setRandomGenerator(MoverRng[ip]);
+    (*MoverRng[0]) = (*RngSaved[0]);
+    H.setRandomGenerator(MoverRng[0]);
   }
 
   //Return_rt wgt_node = 0.0, wgt_node2 = 0.0;
@@ -402,7 +404,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   int numSamples = samples_.getNumSamples();
   Return_rt inv_n_samples = 1.0 / numSamples;
   {
-    int ip                        = 0;
     bool compute_nlpp             = useNLPPDeriv && (includeNonlocalH != "no");
     bool compute_all_from_scratch = (includeNonlocalH != "no"); //true if we have nlpp
     if (compute_all_from_scratch)
@@ -499,7 +500,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   Return_rt wgtnorm = (wgt_tot == 0) ? 0 : wgt_tot;
   wgt_tot           = 0.0;
   {
-    int ip = 0;
     for (int iw = 0; iw < numSamples; iw++)
     {
       Return_rt* restrict saved = RecordsOnNode[iw];
@@ -513,7 +513,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   wgtnorm = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
   wgt_tot = 0.0;
   {
-    int ip = 0;
     for (int iw = 0; iw < numSamples; iw++)
     {
       Return_rt* restrict saved = RecordsOnNode[iw];
@@ -527,7 +526,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
     SumValue[i] = 0.0;
   CSWeight = wgt_tot = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
   {
-    int ip = 0;
     for (int iw = 0; iw < numSamples; iw++)
     {
       const Return_rt* restrict saved = RecordsOnNode[iw];
@@ -586,7 +584,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
   Return_rt wgtinv = 1.0 / SumValue[SUM_WGT];
   int numSamples = samples_.getNumSamples();
   {
-    int ip = 0;
     for (int iw = 0; iw < numSamples; iw++)
     {
       const Return_rt* restrict saved = RecordsOnNode[iw];
@@ -602,7 +599,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
   myComm->allreduce(D_avg);
 
   {
-    int ip = 0;
     for (int iw = 0; iw < numSamples; iw++)
     {
       const Return_rt* restrict saved = RecordsOnNode[iw];

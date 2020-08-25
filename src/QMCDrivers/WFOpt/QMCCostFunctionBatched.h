@@ -55,6 +55,8 @@ public:
 
 protected:
   std::unique_ptr<QMCHamiltonian> H_KE_Node;
+  std::unique_ptr<QMCHamiltonian> extractFixedHamiltonianComponents();
+
   Matrix<Return_rt> RecordsOnNode;
 
   /** Temp derivative properties and Hderivative properties of all the walkers
