@@ -193,10 +193,10 @@ void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
     if (H_KE_Node == nullptr)
     {
       H_KE_Node = std::make_unique<QMCHamiltonian>();
-      H_KE_Node->addOperator(hClones[ip]->getHamiltonian("Kinetic"), "Kinetic");
+      H_KE_Node->addOperator(H.getHamiltonian("Kinetic"), "Kinetic");
       if (includeNonlocalH != "no")
       {
-        OperatorBase* a = hClones[ip]->getHamiltonian(includeNonlocalH);
+        OperatorBase* a = H.getHamiltonian(includeNonlocalH);
         if (a)
         {
           app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
@@ -265,13 +265,13 @@ void QMCCostFunctionBatched::checkConfigurations()
         HDerivRecords.resize(numSamples, NumOptimizables);
       }
     }
-    OperatorBase* nlpp = (includeNonlocalH == "no") ? 0 : hClones[ip]->getHamiltonian(includeNonlocalH);
+    OperatorBase* nlpp = (includeNonlocalH == "no") ? 0 : H.getHamiltonian(includeNonlocalH);
     bool compute_nlpp  = useNLPPDeriv && nlpp;
     //set the optimization mode for the trial wavefunction
-    psiClones[ip]->startOptimization();
+    Psi.startOptimization();
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
-    hClones[ip]->setRandomGenerator(MoverRng[ip]);
+    H.setRandomGenerator(MoverRng[ip]);
     //int nat = wRef.getTotalNum();
     Return_rt e0 = 0.0;
     //       Return_t ef=0.0;
@@ -285,12 +285,12 @@ void QMCCostFunctionBatched::checkConfigurations()
     outputManager.pause();
     for (int iw = 0; iw < numSamples; iw++)
     {
-      ParticleSet* wRef = new ParticleSet(*wClones[0]);
+      ParticleSet* wRef = new ParticleSet(W);
       samples_.loadSample(wRef->R, iw);
       wRef->update();
       p_ptr_list_[iw]  = wRef;
-      wf_ptr_list_[iw] = psiClones[0]->makeClone(*wRef);
-      h_ptr_list_[iw]  = hClones[0]->makeClone(*wRef, *wf_ptr_list_[iw]);
+      wf_ptr_list_[iw] = Psi.makeClone(*wRef);
+      h_ptr_list_[iw]  = H.makeClone(*wRef, *wf_ptr_list_[iw]);
       h0_ptr_list_[iw] = H_KE_Node->makeClone(*wRef, *wf_ptr_list_[iw]);
     }
     outputManager.resume();
@@ -385,15 +385,12 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
       OptVariablesForPsi[i] = OptVariables[i];
   if (final_reset)
   {
-    for (int i = 0; i < psiClones.size(); ++i)
-      psiClones[i]->stopOptimization();
+    Psi.stopOptimization();
   }
   //cout << "######### QMCCostFunctionBatched::resetPsi " << std::endl;
   //OptVariablesForPsi.print(std::cout);
   //cout << "-------------------------------------- " << std::endl;
   Psi.resetParameters(OptVariablesForPsi);
-  for (int i = 0; i < psiClones.size(); ++i)
-    psiClones[i]->resetParameters(OptVariablesForPsi);
 }
 
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(bool needGrad)
@@ -402,7 +399,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
     int ip = 0;
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
-    hClones[ip]->setRandomGenerator(MoverRng[ip]);
+    H.setRandomGenerator(MoverRng[ip]);
   }
 
   //Return_rt wgt_node = 0.0, wgt_node2 = 0.0;
@@ -429,7 +426,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       samples_.loadSample(wRef->R, iw);
       wRef->update(true);
       // TrialWaveFunction needs to be re-created.  Not sure why.
-      wf_ptr_list_[iw] = psiClones[0]->makeClone(*wRef);
+      wf_ptr_list_[iw] = Psi.makeClone(*wRef);
     }
     outputManager.resume();
 
