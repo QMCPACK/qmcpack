@@ -27,7 +27,7 @@ namespace qmcplusplus
  * Optimization by correlated sampling method with configurations
  * generated from VMC running on a single thread.
  */
-class QMCCostFunctionBatched : public QMCCostFunctionBase, public CloneManager
+class QMCCostFunctionBatched : public QMCCostFunctionBase, public QMCTraits
 {
 public:
   ///Constructor.

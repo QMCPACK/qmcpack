@@ -179,13 +179,6 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
 
 void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
 {
-  //makeClones(W,Psi,H);
-  if (H_KE_Node == nullptr)
-  {
-    app_log() << "  QMCCostFunctionBatched is created with " << NumThreads << " threads." << std::endl;
-    //make H_KE_Node
-  }
-
   app_log() << "  Using Nonlocal PP in Opt: " << includeNonlocalH << std::endl;
   outputManager.pause();
   {
