@@ -343,8 +343,8 @@ void SplineC2ROMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
     for (int iat = 0; iat < nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int first      = ChunkSizePerTeam * team_id;
-        const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const int first = ChunkSizePerTeam * team_id;
+        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
         auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
         auto* restrict pos_scratch             = psiinv_ptr + orb_size;
@@ -462,8 +462,8 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
     for (int iat = 0; iat < mw_nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int first      = ChunkSizePerTeam * team_id;
-        const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const int first = ChunkSizePerTeam * team_id;
+        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
         auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
         auto* ref_id_ptr = reinterpret_cast<int*>(buffer_H2D_ptr + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
@@ -752,8 +752,8 @@ void SplineC2ROMP<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocat
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int first      = ChunkSizePerTeam * team_id;
-        const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const int first = ChunkSizePerTeam * team_id;
+        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
         auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
         auto* restrict psi_iw_ptr             = results_scratch_ptr + orb_size * iw * 5;
 
@@ -898,8 +898,8 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int first      = ChunkSizePerTeam * team_id;
-        const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
+        const int first = ChunkSizePerTeam * team_id;
+        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
         auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
         auto* restrict psi_iw_ptr             = results_scratch_ptr + orb_size * iw * 5;
         const auto* restrict pos_iw_ptr       = reinterpret_cast<ST*>(buffer_H2D_ptr + buffer_H2D_stride * iw);

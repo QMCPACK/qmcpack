@@ -199,8 +199,8 @@ public:
   inline void resize_kpoints()
   {
     const size_t nk = kPoints.size();
-    mKK     = std::make_shared<OffloadVector<ST>>(nk);
-    myKcart = std::make_shared<OffloadPosVector<ST>>(nk);
+    mKK             = std::make_shared<OffloadVector<ST>>(nk);
+    myKcart         = std::make_shared<OffloadPosVector<ST>>(nk);
     for (size_t i = 0; i < nk; ++i)
     {
       (*mKK)[i]     = -dot(kPoints[i], kPoints[i]);
