@@ -42,7 +42,9 @@ BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybri
   {
     if (hybrid_rep)
     {
-      APP_ABORT("OpenMP offload has not been enabled with hybrid orbital representation!");
+      app_log() << "OpenMP offload has not been enabled with hybrid orbital representation!"
+                << " Running on the host." << std::endl;
+      aReader = new HybridRepSetReader<HybridRepCplx<SplineC2C<float>>>(e);
     }
     else
       aReader = new SplineSetReader<SplineC2COMP<float>>(e);
@@ -61,7 +63,9 @@ BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybri
   {
     if (hybrid_rep)
     {
-      APP_ABORT("OpenMP offload has not been enabled with hybrid orbital representation!");
+      app_log() << "OpenMP offload has not been enabled with hybrid orbital representation!"
+                << " Running on the host." << std::endl;
+      aReader = new HybridRepSetReader<HybridRepCplx<SplineC2R<float>>>(e);
     }
     else
       aReader = new SplineSetReader<SplineC2ROMP<float>>(e);
