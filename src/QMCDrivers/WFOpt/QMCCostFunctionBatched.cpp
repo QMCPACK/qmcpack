@@ -40,11 +40,7 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
 /** Clean up the vector */
 QMCCostFunctionBatched::~QMCCostFunctionBatched()
 {
-  delete_iter(H_KE_Node.begin(), H_KE_Node.end());
   delete_iter(RngSaved.begin(), RngSaved.end());
-  delete_iter(RecordsOnNode.begin(), RecordsOnNode.end());
-  delete_iter(DerivRecords.begin(), DerivRecords.end());
-  delete_iter(HDerivRecords.begin(), HDerivRecords.end());
 
   delete_iter(wf_ptr_list_.begin(), wf_ptr_list_.end());
   delete_iter(p_ptr_list_.begin(), p_ptr_list_.end());
@@ -90,14 +86,13 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     Return_rt delE_bar = 0;
     int numSamples = samples_.getNumSamples();
     {
-      int ip = 0;
       for (int iw = 0; iw < numSamples; iw++)
       {
-        const Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
+        const Return_rt* restrict saved = RecordsOnNode[iw];
         Return_rt weight                = saved[REWEIGHT] * wgtinv;
         Return_rt eloc_new              = saved[ENERGY_NEW];
         delE_bar += weight * std::pow(std::abs(eloc_new - EtargetEff), PowerE);
-        const Return_rt* HDsaved = (*HDerivRecords[ip])[iw];
+        const Return_rt* HDsaved = HDerivRecords[iw];
         for (int pm = 0; pm < NumOptimizables; pm++)
           HD_avg[pm] += HDsaved[pm];
       }
@@ -110,7 +105,7 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
       int ip = 0;
       for (int iw = 0; iw < numSamples; iw++)
       {
-        const Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
+        const Return_rt* restrict saved = RecordsOnNode[iw];
         Return_rt weight                = saved[REWEIGHT] * wgtinv;
         Return_rt eloc_new              = saved[ENERGY_NEW];
         Return_rt delta_l               = (eloc_new - curAvg_w);
@@ -119,8 +114,8 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
           ltz = false;
         Return_rt delE           = std::pow(std::abs(eloc_new - EtargetEff), PowerE);
         Return_rt ddelE          = PowerE * std::pow(std::abs(eloc_new - EtargetEff), PowerE - 1);
-        const Return_rt* Dsaved  = (*DerivRecords[ip])[iw];
-        const Return_rt* HDsaved = (*HDerivRecords[ip])[iw];
+        const Return_rt* Dsaved  = DerivRecords[iw];
+        const Return_rt* HDsaved = HDerivRecords[iw];
         for (int pm = 0; pm < NumOptimizables; pm++)
         {
           EDtotals_w[pm] += weight * (HDsaved[pm] + 2.0 * Dsaved[pm] * delta_l);
@@ -140,13 +135,13 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
       int ip = 0;
       for (int iw = 0; iw < numSamples; iw++)
       {
-        const Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
+        const Return_rt* restrict saved = RecordsOnNode[iw];
         Return_rt weight                = saved[REWEIGHT] * wgtinv;
         Return_rt eloc_new              = saved[ENERGY_NEW];
         Return_rt delta_l               = (eloc_new - curAvg_w);
         Return_rt sigma_l               = delta_l * delta_l;
-        const Return_rt* Dsaved         = (*DerivRecords[ip])[iw];
-        const Return_rt* HDsaved        = (*HDerivRecords[ip])[iw];
+        const Return_rt* Dsaved         = DerivRecords[iw];
+        const Return_rt* HDsaved        = HDerivRecords[iw];
         for (int pm = 0; pm < NumOptimizables; pm++)
         {
           E2Dtotals_w[pm] +=
@@ -185,31 +180,27 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
 void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
 {
   //makeClones(W,Psi,H);
-  if (H_KE_Node.empty())
+  if (H_KE_Node == nullptr)
   {
     app_log() << "  QMCCostFunctionBatched is created with " << NumThreads << " threads." << std::endl;
     //make H_KE_Node
-    H_KE_Node.resize(NumThreads, 0);
-    RecordsOnNode.resize(NumThreads, 0);
-    DerivRecords.resize(NumThreads, 0);
-    HDerivRecords.resize(NumThreads, 0);
   }
 
   app_log() << "  Using Nonlocal PP in Opt: " << includeNonlocalH << std::endl;
   outputManager.pause();
   {
     int ip = 0;
-    if (H_KE_Node[ip] == 0)
+    if (H_KE_Node == nullptr)
     {
-      H_KE_Node[ip] = new QMCHamiltonian;
-      H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"), "Kinetic");
+      H_KE_Node = std::make_unique<QMCHamiltonian>();
+      H_KE_Node->addOperator(hClones[ip]->getHamiltonian("Kinetic"), "Kinetic");
       if (includeNonlocalH != "no")
       {
         OperatorBase* a = hClones[ip]->getHamiltonian(includeNonlocalH);
         if (a)
         {
           app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
-          H_KE_Node[ip]->addOperator(a, includeNonlocalH);
+          H_KE_Node->addOperator(a, includeNonlocalH);
         }
         else
           app_log() << " Did not find non-local Hamiltonian element named " << includeNonlocalH << std::endl;
@@ -256,25 +247,22 @@ void QMCCostFunctionBatched::checkConfigurations()
       h0_ptr_list_.resize(numSamples);
     }
 
-    if (RecordsOnNode[ip] == 0)
+    if (RecordsOnNode.size1() == 0)
     {
-      RecordsOnNode[ip] = new Matrix<Return_rt>;
-      RecordsOnNode[ip]->resize(numSamples, SUM_INDEX_SIZE);
+      RecordsOnNode.resize(numSamples, SUM_INDEX_SIZE);
       if (needGrads)
       {
-        DerivRecords[ip] = new Matrix<Return_rt>;
-        DerivRecords[ip]->resize(numSamples, NumOptimizables);
-        HDerivRecords[ip] = new Matrix<Return_rt>;
-        HDerivRecords[ip]->resize(numSamples, NumOptimizables);
+        DerivRecords.resize(numSamples, NumOptimizables);
+        HDerivRecords.resize(numSamples, NumOptimizables);
       }
     }
-    else if (RecordsOnNode[ip]->size1() != numSamples)
+    else if (RecordsOnNode.size1() != numSamples)
     {
-      RecordsOnNode[ip]->resize(numSamples, SUM_INDEX_SIZE);
+      RecordsOnNode.resize(numSamples, SUM_INDEX_SIZE);
       if (needGrads)
       {
-        DerivRecords[ip]->resize(numSamples, NumOptimizables);
-        HDerivRecords[ip]->resize(numSamples, NumOptimizables);
+        DerivRecords.resize(numSamples, NumOptimizables);
+        HDerivRecords.resize(numSamples, NumOptimizables);
       }
     }
     OperatorBase* nlpp = (includeNonlocalH == "no") ? 0 : hClones[ip]->getHamiltonian(includeNonlocalH);
@@ -303,7 +291,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       p_ptr_list_[iw]  = wRef;
       wf_ptr_list_[iw] = psiClones[0]->makeClone(*wRef);
       h_ptr_list_[iw]  = hClones[0]->makeClone(*wRef, *wf_ptr_list_[iw]);
-      h0_ptr_list_[iw] = H_KE_Node[0]->makeClone(*wRef, *wf_ptr_list_[iw]);
+      h0_ptr_list_[iw] = H_KE_Node->makeClone(*wRef, *wf_ptr_list_[iw]);
     }
     outputManager.resume();
 
@@ -324,11 +312,11 @@ void QMCCostFunctionBatched::checkConfigurations()
     {
       for (int j = 0; j < nparam; j++)
       {
-        (*DerivRecords[0])[iw][j]  = std::real(dlogpsi_array.getValue(j, iw));
-        (*HDerivRecords[0])[iw][j] = std::real(dhpsioverpsi_array.getValue(j, iw));
+        DerivRecords[iw][j]  = std::real(dlogpsi_array.getValue(j, iw));
+        HDerivRecords[iw][j] = std::real(dhpsioverpsi_array.getValue(j, iw));
       }
-      (*RecordsOnNode[0])[iw][LOGPSI_FIXED] = log_psi_fixed_[iw];
-      (*RecordsOnNode[0])[iw][LOGPSI_FREE]  = log_psi_opt_[iw];
+      RecordsOnNode[iw][LOGPSI_FIXED] = log_psi_fixed_[iw];
+      RecordsOnNode[iw][LOGPSI_FREE]  = log_psi_opt_[iw];
     }
 
     auto energy_list = QMCHamiltonian::flex_evaluate(h_list, p_list);
@@ -339,10 +327,10 @@ void QMCCostFunctionBatched::checkConfigurations()
       e0 += etmp;
       e2 += etmp * etmp;
 
-      (*RecordsOnNode[0])[iw][ENERGY_NEW]   = etmp;
-      (*RecordsOnNode[0])[iw][ENERGY_TOT]   = etmp;
-      (*RecordsOnNode[0])[iw][ENERGY_FIXED] = h_list[iw].get().getLocalPotential();
-      (*RecordsOnNode[0])[iw][REWEIGHT]     = 1.0;
+      RecordsOnNode[iw][ENERGY_NEW]   = etmp;
+      RecordsOnNode[iw][ENERGY_TOT]   = etmp;
+      RecordsOnNode[iw][ENERGY_FIXED] = h_list[iw].get().getLocalPotential();
+      RecordsOnNode[iw][REWEIGHT]     = 1.0;
     }
 
     //add them all using reduction
@@ -468,8 +456,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       // This is needed to get the KE correct in QMCHamiltonian::flex_evaluate below
       p_list[iw].get().G += *dLogPsi[iw];
       p_list[iw].get().L += *d2LogPsi[iw];
-      Return_rt weight                  = vmc_or_dmc * (log_psi_opt_[iw] - (*RecordsOnNode[0])[iw][LOGPSI_FREE]);
-      (*RecordsOnNode[0])[iw][REWEIGHT] = weight;
+      Return_rt weight                  = vmc_or_dmc * (log_psi_opt_[iw] - RecordsOnNode[iw][LOGPSI_FREE]);
+      RecordsOnNode[iw][REWEIGHT] = weight;
       wgt_tot  += inv_n_samples * weight;
       wgt_tot2 += inv_n_samples * weight * weight;
     }
@@ -489,8 +477,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
         {
           if (OptVariablesForPsi.recompute(j))
           {
-            (*DerivRecords[0])[iw][j]  = std::real(dlogpsi_array.getValue(j, iw));
-            (*HDerivRecords[0])[iw][j] = std::real(dhpsioverpsi_array.getValue(j, iw));
+            DerivRecords[iw][j]  = std::real(dlogpsi_array.getValue(j, iw));
+            HDerivRecords[iw][j] = std::real(dhpsioverpsi_array.getValue(j, iw));
           }
         }
       }
@@ -498,7 +486,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       for (int iw = 0; iw < numSamples; iw++)
       {
         auto etmp                           = energy_list[iw];
-        (*RecordsOnNode[0])[iw][ENERGY_NEW] = etmp + (*RecordsOnNode[0])[iw][ENERGY_FIXED];
+        RecordsOnNode[iw][ENERGY_NEW] = etmp + RecordsOnNode[iw][ENERGY_FIXED];
       }
     }
     else
@@ -507,7 +495,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       for (int iw = 0; iw < numSamples; iw++)
       {
         auto etmp                           = energy_list[iw];
-        (*RecordsOnNode[0])[iw][ENERGY_NEW] = etmp + (*RecordsOnNode[0])[iw][ENERGY_FIXED];
+        RecordsOnNode[iw][ENERGY_NEW] = etmp + RecordsOnNode[iw][ENERGY_FIXED];
       }
     }
   }
@@ -524,7 +512,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
     int ip = 0;
     for (int iw = 0; iw < numSamples; iw++)
     {
-      Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
+      Return_rt* restrict saved = RecordsOnNode[iw];
       saved[REWEIGHT] =
           std::min(std::exp(saved[REWEIGHT] - wgtnorm), std::numeric_limits<Return_rt>::max() * (RealType)0.1);
       wgt_tot += inv_n_samples * saved[REWEIGHT];
@@ -538,7 +526,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
     int ip = 0;
     for (int iw = 0; iw < numSamples; iw++)
     {
-      Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
+      Return_rt* restrict saved = RecordsOnNode[iw];
       saved[REWEIGHT]           = std::min(saved[REWEIGHT] * wgtnorm, MaxWeight);
       wgt_tot += inv_n_samples * saved[REWEIGHT];
     }
@@ -552,7 +540,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
     int ip = 0;
     for (int iw = 0; iw < numSamples; iw++)
     {
-      const Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
+      const Return_rt* restrict saved = RecordsOnNode[iw];
       //      Return_t weight=saved[REWEIGHT]*wgt_tot;
       Return_rt eloc_new = saved[ENERGY_NEW];
       Return_rt delE     = std::pow(std::abs(eloc_new - EtargetEff), PowerE);
@@ -611,9 +599,9 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
     int ip = 0;
     for (int iw = 0; iw < numSamples; iw++)
     {
-      const Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
+      const Return_rt* restrict saved = RecordsOnNode[iw];
       Return_rt weight                = saved[REWEIGHT] * wgtinv;
-      const Return_rt* Dsaved         = (*DerivRecords[ip])[iw];
+      const Return_rt* Dsaved         = DerivRecords[iw];
       for (int pm = 0; pm < getNumParams(); pm++)
       {
         D_avg[pm] += Dsaved[pm] * weight;
@@ -627,11 +615,11 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
     int ip = 0;
     for (int iw = 0; iw < numSamples; iw++)
     {
-      const Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
+      const Return_rt* restrict saved = RecordsOnNode[iw];
       Return_rt weight                = saved[REWEIGHT] * wgtinv;
       Return_rt eloc_new              = saved[ENERGY_NEW];
-      const Return_rt* Dsaved         = (*DerivRecords[ip])[iw];
-      const Return_rt* HDsaved        = (*HDerivRecords[ip])[iw];
+      const Return_rt* Dsaved         = DerivRecords[iw];
+      const Return_rt* HDsaved        = HDerivRecords[iw];
       for (int pm = 0; pm < getNumParams(); pm++)
       {
         Return_rt wfe = (HDsaved[pm] + (Dsaved[pm] - D_avg[pm]) * eloc_new) * weight;

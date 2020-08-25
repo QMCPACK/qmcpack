@@ -54,13 +54,13 @@ public:
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);
 
 protected:
-  std::vector<QMCHamiltonian*> H_KE_Node;
-  std::vector<Matrix<Return_rt>*> RecordsOnNode;
+  std::unique_ptr<QMCHamiltonian> H_KE_Node;
+  Matrix<Return_rt> RecordsOnNode;
 
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
-  std::vector<Matrix<Return_rt>*> DerivRecords;
-  std::vector<Matrix<Return_rt>*> HDerivRecords;
+  Matrix<Return_rt> DerivRecords;
+  Matrix<Return_rt> HDerivRecords;
   Return_rt CSWeight;
 
   Return_rt correlatedSampling(bool needGrad = true);
