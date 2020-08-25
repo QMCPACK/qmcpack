@@ -161,6 +161,7 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
   e_square_sum_ = 0;
   e_square_avg_ = 0;
 
+  /*
   sf_ = 0;
   sg_ = 0;
   mf_ = 0;
@@ -184,18 +185,21 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
   tcv_ = 0;
   other_target_ = 0;
   other_target_var_ = 0;
+    */
 
   numer_sum_ = 0;
   denom_sum_ = 0;
   numer_avg_ = 0;
   denom_avg_ = 0;
-  target_val_ = 0;
+  target_avg_ = 0;
+  target_var_ = 0;
 
 }
 
 //Sets the value of the averaged local energy
 void DescentEngine::setEtemp(const std::vector<FullPrecRealType>& etemp)
 {
+    /*
   e_sum_        = etemp[0];
   w_sum_        = etemp[1];
   e_square_sum_ = etemp[2];
@@ -212,13 +216,14 @@ void DescentEngine::setEtemp(const std::vector<FullPrecRealType>& etemp)
   app_log() << "e_square_avg: " << std::setprecision(9) << e_square_avg_ << std::endl;
   app_log() << "e_var: " << std::setprecision(9) << e_var_ << std::endl;
   app_log() << "e_sd: " << std::setprecision(9) << e_sd_ << std::endl;
-
+*/
 
 }
 
 //Sets value of target function, needs to be called after setEtemp has been inside engine_checkConfigurations so that w_sum_ has been set
 void DescentEngine::setTarget(const std::vector<FullPrecRealType>& targetSums)
 {
+    /*
     numer_sum_ = targetSums[0];
     denom_sum_  = targetSums[1];
     numer_avg_ = numer_sum_/w_sum_;
@@ -230,7 +235,7 @@ void DescentEngine::setTarget(const std::vector<FullPrecRealType>& targetSums)
     app_log() << "numer_avg_: " << std::setprecision(9) << numer_avg_ << std::endl;
     app_log() << "denom_avg_: " << std::setprecision(9) << denom_avg_ << std::endl;
     app_log() << "target_val_: " << std::setprecision(9) << target_val_ << std::endl;
-
+*/
 }
 
 
@@ -262,26 +267,32 @@ void DescentEngine::takeSample(const int replica_id,
   vgs_samp = static_cast<ValueType>(vgs_samp);
   //app_log() << "This is etmp: " << etmp << " and vgs_samp: " << vgs_samp << " and weight_samp: " << weight_samp << std::endl;
 
+    /*
     sf_ += etmp*etmp*vgs_samp*vgs_samp;
     sg_ += vgs_samp*vgs_samp;
     mf_ +=etmp*vgs_samp;
     mg_ +=vgs_samp;
     mp_ += etmp*vgs_samp*vgs_samp;
     ns_ += weight_samp;
+    */
 
-    
+
+    lev_history_.push_back(etmp*vgs_samp);
+    vg_history_.push_back(vgs_samp);
+    w_history_.push_back(static_cast<ValueType>(1.0));
+
 if(final_descent_num_ > collection_step_ && collect_count_ )
 {
     
-    _lev_history.push_back(etmp*vgs_samp);
-    _vg_history.push_back(vgs_samp);
-    _w_history.push_back(1.0);
+    final_lev_history_.push_back(etmp*vgs_samp);
+    final_vg_history_.push_back(vgs_samp);
+    final_w_history_.push_back(1.0);
 }
 
   if(engine_target_excited_)
   {
-      ValueType n = 0;
-      ValueType d = 0;
+      ValueType n;
+      ValueType d;
 
       if(target_excited_closest_)
       {
@@ -299,18 +310,22 @@ if(final_descent_num_ > collection_step_ && collect_count_ )
 
       if(final_descent_num_ > collection_step_ && collect_count_)
       {
-            _tnv_history.push_back(n);
-            _tdv_history.push_back(d);
+            final_tnv_history_.push_back(n);
+            final_tdv_history_.push_back(d);
       
       }
 
+    tnv_history_.push_back(n);
+    tdv_history_.push_back(d);
+
+    /*
     tsf_ += n*n;
     tsg_ += d*d;
     tmf_ +=n;
     tmg_ +=d;
     tmp_ += n*d;
     tns_ += weight_samp;
-
+    */
 
     for(int i = 0; i < num_optimizables; i++)
     {
@@ -348,6 +363,7 @@ if(final_descent_num_ > collection_step_ && collect_count_ )
 void DescentEngine::sample_finish()
 {
 
+    /*
     std::vector<ValueType> tempAvgs(6);
 
     tempAvgs[0] = sf_;
@@ -381,10 +397,19 @@ void DescentEngine::sample_finish()
     app_log() << "More accurate energy average: " << std::setprecision(9) << other_avg_ << std::endl;
     app_log() << "More accurate energy variance: " << std::setprecision(9) << other_var_ << std::endl;
     //app_log() << "other_target: " << std::setprecision(9) << other_target << std::endl;
+*/
+  
+    int numSamples = lev_history_.size();
+
+    this->mpi_unbiased_ratio_of_means(numSamples,w_history_,lev_history_,vg_history_,e_avg_,e_var_);
+
+    app_log() << "Energy Average: " << std::setprecision(9) << e_avg_ << std::endl;
+    app_log() << "Energy Variance: " << std::setprecision(9) << e_var_ << std::endl;
 
     if(engine_target_excited_)
     {
 
+        /*
         std::vector<ValueType> tempTargetAvgs(6);
         tempTargetAvgs[0] = tsf_;
         tempTargetAvgs[1] = tsg_;
@@ -415,6 +440,11 @@ void DescentEngine::sample_finish()
         
         app_log() << "More accurate target function: " << std::setprecision(9) << other_target_ << std::endl;
         app_log() << "More accurate target function variance: " << std::setprecision(9) << other_target_var_ << std::endl;
+*/
+        this->mpi_unbiased_ratio_of_means(numSamples,w_history_,tnv_history_,tdv_history_,target_avg_,target_var_);
+        
+        app_log() << "Target Function Average: " << std::setprecision(9) << target_avg_ << std::endl;
+        app_log() << "Target Function Variance: " << std::setprecision(9) << target_var_ << std::endl;
 
         for(int i = 0; i < replica_numer_der_samp_.size(); i++)
         {
@@ -515,6 +545,57 @@ void DescentEngine::sample_finish()
 }
 
 
+void DescentEngine::mpi_unbiased_ratio_of_means(int numSamples, std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples, ValueType& mean, ValueType& variance)
+{
+    //int n = numerator.size();
+//    app_log() << "Length of history: " << n << std::endl;
+    std::vector<ValueType> y(7);
+    y[0] = 0.0; // normalization constant
+    y[1] = 0.0; // mean of numerator
+    y[2] = 0.0; // mean of denominator
+    y[3] = 0.0; // mean of the square of the numerator terms
+    y[4] = 0.0; // mean of the square of the denominator terms
+    y[5] = 0.0; // mean of the product of numerator times denominator
+    y[6] = ValueType(numSamples); // number of samples
+
+    for(int i = 0; i < numSamples ; i ++)
+    {
+
+        ValueType n = numerSamples[i];
+        ValueType d = denomSamples[i];
+        ValueType weight = weights[i];
+
+        y[0] += weight;
+        y[1] += weight*n;
+        y[2] += d;
+        y[3] += weight*n*n;
+        y[4] += weight*d*d;
+        y[5] += weight*n*d;
+
+    }
+
+    my_comm_->allreduce(y);
+
+    ValueType mf = y[1] / y[0]; // mean of numerator
+    ValueType mg = y[2] / y[0]; // mean of denominator
+    ValueType sf = y[3] / y[0]; // mean of the square of the numerator terms
+    ValueType sg = y[4] / y[0]; // mean of the square of the denominator terms
+    ValueType mp = y[5] / y[0]; // mean of the product of numerator times denominator
+    ValueType ns = y[6];        // number of samples
+
+  //  app_log() << "Total number of samples: " << ns << std::endl;
+
+    ValueType vf = ( sf - mf * mf ) * ns / ( ns - 1.0 );
+    ValueType vg = ( sg - mg * mg ) * ns / ( ns - 1.0 );
+    ValueType cv = ( mp - mf * mg ) * ns / ( ns - 1.0 );
+
+    mean = ( mf / mg ) / ( 1.0 + ( vg / mg / mg - cv / mf / mg ) / ns ); 
+    variance = ( mf * mf / mg / mg ) * ( vf / mf / mf + vg / mg / mg - 2.0 * cv / mf / mg );
+
+
+}
+
+
 //Function for updating parameters during descent optimization
 void DescentEngine::updateParameters()
 {
@@ -524,7 +605,7 @@ app_log() << "Descent Number: " << descent_num_ << std::endl;
 app_log() << "Finalization Descent Num (should be zero if not on last section): " << final_descent_num_ << std::endl;
 if (final_descent_num_ > collection_step_ && collect_count_)
 {
-    app_log() << "Should be storing history, length of history on one process is: " << _lev_history.size() << std::endl;
+    app_log() << "Should be storing history, length of history on one process is: " << final_lev_history_.size() << std::endl;
 }
 
   app_log() << "Parameter Type step sizes: "

@@ -57,8 +57,10 @@ private:
   ValueType denom_sum_;
   ValueType numer_avg_;
   ValueType denom_avg_;
-  ValueType target_val_;
+  ValueType target_avg_;
+  ValueType target_var_;
 
+  /*
   ValueType sf_; 
   ValueType sg_; 
   ValueType mf_; 
@@ -82,7 +84,7 @@ private:
   ValueType tcv_;
   ValueType other_target_;
   ValueType other_target_var_;
-
+*/
 
 
 //Iteration to start collecting samples for final average and error blocking analysis
@@ -95,34 +97,41 @@ private:
       int final_descent_num_ = 0;
 
     /// \brief [in] history of sampled local energies 
-    std::vector<ValueType> _le_history;
+    //std::vector<ValueType> _le_history;
 
     /// \brief [in] history of sampled |value/guiding|^2 ratios 
-    std::vector<ValueType> _vg_history;
+    std::vector<ValueType> vg_history_;
+    std::vector<ValueType> final_vg_history_;
 
     /// \brief [in] history of sampled configuration weight 
-    std::vector<ValueType> _w_history;
+    std::vector<ValueType> w_history_;
+    std::vector<ValueType> final_w_history_;
 
     /// \brief a history of sampled local energies times the |value/guiding|^2 raitos
-    std::vector<ValueType> _lev_history;
+    std::vector<ValueType> lev_history_;
+    
+    std::vector<ValueType> final_lev_history_;
 
     /// \brief a history of sampled target function numerator
-    std::vector<ValueType> _tn_history;
+    //std::vector<ValueType> _tn_history;
 
     /// \brief a history of target function numerator times the |value/guiding|^2 ratios
-    std::vector<ValueType> _tnv_history;
+    std::vector<ValueType> tnv_history_;
+    std::vector<ValueType> final_tnv_history_;
 
     /// \brief a history of target function denominator
-    std::vector<ValueType> _td_history;
+    //std::vector<ValueType> _td_history;
 
     /// \brief a history of target function denominator times the |value/guiding|^2 ratios
-    std::vector<ValueType> _tdv_history;
+    std::vector<ValueType> tdv_history_;
+    
+    std::vector<ValueType> final_tdv_history_;
 
     /// \brief a history of sampled local energy square 
-    std::vector<ValueType> _les_history;
+    //std::vector<ValueType> _les_history;
 
     /// \brief a history of sampled local energy square times |value/guiding|^2 ratios 
-    std::vector<ValueType> _lesv_history;
+    //std::vector<ValueType> _lesv_history;
 
 
 
@@ -262,6 +271,9 @@ void setTarget(const std::vector<FullPrecRealType>& targetSums);
   ///
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   void sample_finish();
+
+
+  void mpi_unbiased_ratio_of_means(int numSamples, std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples, ValueType& mean, ValueType& variance);
 
   //Returns the derivatives of the cost function we are minimizing
   const std::vector<ValueType>& getAveragedDerivatives() const { return lderivs_; }
