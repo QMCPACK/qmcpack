@@ -32,7 +32,6 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
                                                Communicate* comm)
     : QMCCostFunctionBase(w, psi, h, comm), samples_(samples)
 {
-  CSWeight = 1.0;
   app_log() << " Using QMCCostFunctionBatched::QMCCostFunctionBatched" << std::endl;
 }
 
@@ -163,7 +162,6 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
         PGradient[j] += w_abs * EDtotals[j];
     }
     IsValid = true;
-    //         if ((CSWeight/wgtinv) < MinNumWalkers)
     if (NumWalkersEff < MinNumWalkers * NumSamples)
     {
       ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
@@ -524,7 +522,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   //    app_log()<<"After Purge"<<wgt_tot<<" "<< std::endl;
   for (int i = 0; i < SumValue.size(); i++)
     SumValue[i] = 0.0;
-  CSWeight = wgt_tot = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
   {
     for (int iw = 0; iw < numSamples; iw++)
     {

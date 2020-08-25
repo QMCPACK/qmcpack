@@ -63,7 +63,6 @@ protected:
   */
   Matrix<Return_rt> DerivRecords;
   Matrix<Return_rt> HDerivRecords;
-  Return_rt CSWeight;
 
   Return_rt correlatedSampling(bool needGrad = true);
 
