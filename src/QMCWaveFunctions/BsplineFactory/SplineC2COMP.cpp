@@ -830,7 +830,7 @@ void SplineC2COMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
       grad_y += rg_private[iw][team_id * 4 + 2];
       grad_z += rg_private[iw][team_id * 4 + 3];
     }
-    grads[iw] = {grad_x / ratio, grad_y / ratio, grad_z / ratio};
+    grads[iw] = GradType{grad_x / ratio, grad_y / ratio, grad_z / ratio};
   }
 }
 template<typename ST>
