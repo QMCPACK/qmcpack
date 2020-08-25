@@ -125,10 +125,8 @@ inline void assign_vgl(ST x,
   const ST lap_i   = lcart_i + mKK_ptr[index] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
   const size_t psiIndex = first_spo + index;
-  //this will be fixed later
   psi[psiIndex]   = TT(c * val_r - s * val_i, c * val_i + s * val_r);
   d2psi[psiIndex] = TT(c * lap_r - s * lap_i, c * lap_i + s * lap_r);
-  //this will go way with Determinant
   dpsi[psiIndex * 3]     = TT(c * gX_r - s * gX_i, c * gX_i + s * gX_r);
   dpsi[psiIndex * 3 + 1] = TT(c * gY_r - s * gY_i, c * gY_i + s * gY_r);
   dpsi[psiIndex * 3 + 2] = TT(c * gZ_r - s * gZ_i, c * gZ_i + s * gZ_r);
