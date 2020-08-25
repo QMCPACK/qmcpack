@@ -76,7 +76,7 @@ CTEST_FLAGS="-DQMC_DATA=$QMC_DATA -DENABLE_TIMERS=1"
 # compiler dependent options
 if [[ $sys == *"ClangDev"* ]]; then
   #define and load compiler
-  module load llvm/dev-latest
+  module load llvm/master-latest
   module load openmpi/4.0.2-llvm
   export CC=mpicc
   export CXX=mpicxx
@@ -85,11 +85,11 @@ if [[ $sys == *"ClangDev"* ]]; then
   if [[ $sys == *"Offload-CUDA"* ]]; then
     CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DENABLE_OFFLOAD=ON;-DUSE_OBJECT_TARGET=ON;-DCUDA_HOST_COMPILER=`which gcc`;-DCUDA_PROPAGATE_HOST_FLAGS=OFF;-DQMC_NIO_MAX_SIZE=16'"
     CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=1 -DCUDA_ARCH=sm_61"
-    CTEST_LABLES="-L deterministic -LE unstable"
-    export N_CONCURRENT_TESTS=4
+    CTEST_LABELS="-L deterministic -LE unstable"
+    export N_CONCURRENT_TESTS=1
   else
     CTEST_FLAGS="$CTEST_FLAGS -DQE_BIN=$QE_BIN"
-    CTEST_LABLES="-L 'deterministic|performance' -LE unstable"
+    CTEST_LABELS="-L 'deterministic|performance' -LE unstable"
     export N_CONCURRENT_TESTS=16
   fi
 elif [[ $sys == *"Intel"* ]]; then
@@ -102,12 +102,12 @@ elif [[ $sys == *"Intel"* ]]; then
   CTEST_FLAGS="$CTEST_FLAGS -DCMAKE_C_FLAGS=-xCOMMON-AVX512 -DCMAKE_CXX_FLAGS=-xCOMMON-AVX512"
   if [[ $sys == *"-CUDA2"* ]]; then
     CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=1 -DCUDA_ARCH=sm_61 -DQMC_OPTIONS='-DQMC_NIO_MAX_SIZE=16'"
-    CTEST_LABLES="-L 'deterministic|performance' -LE unstable"
-    export N_CONCURRENT_TESTS=4
+    CTEST_LABELS="-L 'deterministic|performance' -LE unstable"
+    export N_CONCURRENT_TESTS=1
   elif [[ $sys == *"-legacy-CUDA"* ]]; then
     CTEST_FLAGS="$CTEST_FLAGS -DQMC_CUDA=1 -DCUDA_ARCH=sm_61 -DQMC_OPTIONS='-DQMC_NIO_MAX_SIZE=16'"
-    CTEST_LABLES="-L 'deterministic|performance' -LE unstable"
-    export N_CONCURRENT_TESTS=4
+    CTEST_LABELS="-L 'deterministic|performance' -LE unstable"
+    export N_CONCURRENT_TESTS=1
   else
     CTEST_FLAGS="$CTEST_FLAGS -DQE_BIN=$QE_BIN"
     export N_CONCURRENT_TESTS=16
@@ -133,7 +133,7 @@ mkdir $folder
 cd $folder
 
 numactl -N $NUMA_ID \
-ctest $CTEST_FLAGS $CTEST_LABLES -S $PWD/../CMake/ctest_script.cmake,release -VV -E 'long' --timeout 800 &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
+ctest $CTEST_FLAGS $CTEST_LABELS -S $PWD/../CMake/ctest_script.cmake,release -VV -E 'long' --timeout 800 &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
 
 cd ..
 echo --- Finished $sys `date`
