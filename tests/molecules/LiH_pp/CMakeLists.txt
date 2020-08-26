@@ -89,6 +89,19 @@ IF (NOT QMC_CUDA)
                     0 LIH_PP_XML_SCALARS # VMC
                     )
 
+#
+# LiH molecule pseudopotential tests with Jastrow from OLD HDF5
+#
+
+  QMC_RUN_AND_CHECK(short-LiH_pp-vmc_hf_sdj_old_hdf5
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+                    vmc_hf_sdj_old-hdf5
+                    vmc_hf_sdj_old-hdf5.xml
+                    1 16
+                    TRUE
+                    0 LIH_PP_XML_SCALARS # VMC
+                    )
+
 
 #
 # Deterministic tests
