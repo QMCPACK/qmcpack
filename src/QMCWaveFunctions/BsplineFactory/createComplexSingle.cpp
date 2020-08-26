@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/BsplineFactory/SplineC2C.h"
 #if defined(ENABLE_OFFLOAD)
 #include "QMCWaveFunctions/BsplineFactory/SplineC2ROMP.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineC2COMP.h"
 #endif
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCplx.h"
 #include <fftw3.h>
@@ -36,17 +37,35 @@ BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybri
   BsplineReaderBase* aReader = nullptr;
 
 #if defined(QMC_COMPLEX)
-  if (hybrid_rep)
-    aReader = new HybridRepSetReader<HybridRepCplx<SplineC2C<float>>>(e);
+#if defined(ENABLE_OFFLOAD)
+  if (useGPU == "yes")
+  {
+    if (hybrid_rep)
+    {
+      app_log() << "OpenMP offload has not been enabled with hybrid orbital representation!"
+                << " Running on the host." << std::endl;
+      aReader = new HybridRepSetReader<HybridRepCplx<SplineC2C<float>>>(e);
+    }
+    else
+      aReader = new SplineSetReader<SplineC2COMP<float>>(e);
+  }
   else
-    aReader = new SplineSetReader<SplineC2C<float>>(e);
+#endif
+  {
+    if (hybrid_rep)
+      aReader = new HybridRepSetReader<HybridRepCplx<SplineC2C<float>>>(e);
+    else
+      aReader = new SplineSetReader<SplineC2C<float>>(e);
+  }
 #else //QMC_COMPLEX
 #if defined(ENABLE_OFFLOAD)
   if (useGPU == "yes")
   {
     if (hybrid_rep)
     {
-      APP_ABORT("OpenMP offload has not been enabled with hybrid orbital representation!");
+      app_log() << "OpenMP offload has not been enabled with hybrid orbital representation!"
+                << " Running on the host." << std::endl;
+      aReader = new HybridRepSetReader<HybridRepCplx<SplineC2R<float>>>(e);
     }
     else
       aReader = new SplineSetReader<SplineC2ROMP<float>>(e);
