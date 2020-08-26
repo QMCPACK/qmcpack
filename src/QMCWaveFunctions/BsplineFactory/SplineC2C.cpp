@@ -93,7 +93,7 @@ template<typename ST>
 void SplineC2C<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
                                       ValueVector_t& psi,
                                       const ValueVector_t& psiinv,
-                                      std::vector<ComplexT>& ratios)
+                                      std::vector<ValueType>& ratios)
 {
   const bool need_resize = ratios_private.rows() < VP.getTotalNum();
 
