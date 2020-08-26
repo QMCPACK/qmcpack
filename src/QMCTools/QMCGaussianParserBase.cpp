@@ -248,7 +248,6 @@ void QMCGaussianParserBase::setOccupationNumbers()
   if (!SpinRestricted)
   //UHF
   {
-
     std::multimap<value_type, int> e;
     for (int i = 0; i < numMO; i++)
       e.insert(std::pair<value_type, int>(EigVal_alpha[i], 0));
@@ -1603,11 +1602,10 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
   std::cout << " QMCGaussianParserBase::dump " << std::endl;
   if (!Structure)
   {
-    
     //if (UseHDF5 || multidetH5)
-    if (UseHDF5 )
+    if (UseHDF5)
     {
-      bool IsComplex=false;
+      bool IsComplex = false;
       hdf_archive hout;
       hout.create(h5file.c_str(), H5F_ACC_TRUNC);
       hout.push("PBC", true);
@@ -1620,7 +1618,7 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
       hout.pop();
       hout.push("parameters", true);
       hout.write(ECP, "ECP");
-      //Assumes MO-Coeff always real as this path is only for molecules and for generating stand alone H5file. 
+      //Assumes MO-Coeff always real as this path is only for molecules and for generating stand alone H5file.
       hout.write(IsComplex, "IsComplex");
       hout.write(multideterminant, "Multidet");
       hout.write(NumberOfAlpha, "NbAlpha");
@@ -1793,7 +1791,8 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::strin
       xmlNewProp(detPtr, (const xmlChar*)"transform", (const xmlChar*)"yes");
 
       std::stringstream ss;
-      ss << std::setprecision(10)<<STwist_Coord[0] << "  " <<std::setprecision(10)<<  STwist_Coord[1] << "  " <<std::setprecision(10)<<  STwist_Coord[2];
+      ss << std::setprecision(10) << STwist_Coord[0] << "  " << std::setprecision(10) << STwist_Coord[1] << "  "
+         << std::setprecision(10) << STwist_Coord[2];
       xmlNewProp(detPtr, (const xmlChar*)"twist", (const xmlChar*)(ss.str()).c_str());
 
       if (DoCusp == true)

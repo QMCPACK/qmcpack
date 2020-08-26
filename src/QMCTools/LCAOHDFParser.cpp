@@ -95,10 +95,10 @@ void LCAOHDFParser::parse(const std::string& fname)
   hin.read(NumberOfEls, "NbTotElec");
   int ds;
   hin.read(ds, "spin");
-  if (CodeName =="PySCF")
+  if (CodeName == "PySCF")
     SpinMultiplicity = ds + 1;
   else
-    SpinMultiplicity = ds; 
+    SpinMultiplicity = ds;
 
   std::cout << "Number of alpha electrons: " << NumberOfAlpha << std::endl;
   std::cout << "Number of beta electrons: " << NumberOfBeta << std::endl;
@@ -117,15 +117,15 @@ void LCAOHDFParser::parse(const std::string& fname)
 
   hin.push("Super_Twist");
   hin.read(myvec, "eigenval_0");
-  for (int i=0;i<numMO;i++)
-     EigVal_alpha[i]=myvec[0][i];
+  for (int i = 0; i < numMO; i++)
+    EigVal_alpha[i] = myvec[0][i];
 
   //Reading Eigenvals for Spin unRestricted calculation. This section is needed to set the occupation numbers
-  if (!SpinRestricted) 
+  if (!SpinRestricted)
   {
     hin.read(myvec, "eigenval_1");
-    for (int i=0;i<numMO;i++)
-       EigVal_beta[i]=myvec[0][i];
+    for (int i = 0; i < numMO; i++)
+      EigVal_beta[i] = myvec[0][i];
   }
 
   hin.close();
@@ -333,20 +333,20 @@ void LCAOHDFParser::getSuperTwist(const std::string& fname)
     abort();
   }
 
-  if(!hin.push("Super_Twist"))
+  if (!hin.push("Super_Twist"))
   {
     std::cerr << "Could not find Super Twist" << std::endl;
     abort();
   }
   STwist_Coord.resize(3);
 
-  hin.read(MyVec,"Coord");
+  hin.read(MyVec, "Coord");
 
   hin.pop();
-  STwist_Coord[0]=MyVec[0][0];
-  STwist_Coord[1]=MyVec[0][1];
-  STwist_Coord[2]=MyVec[0][2];
-  
+  STwist_Coord[0] = MyVec[0][0];
+  STwist_Coord[1] = MyVec[0][1];
+  STwist_Coord[2] = MyVec[0][2];
+
   hin.close();
 }
 
@@ -388,19 +388,19 @@ void LCAOHDFParser::getMO(const std::string& fname)
 
   if (!SpinRestricted)
   {
-      sprintf(name, "%s", "/Super_Twist/eigenset_1");
-      setname = name;
-      if (!hin.readEntry(CartMat, setname))
-      {
-        setname = "SPOSet::putFromH5 Missing " + setname + " from HDF5 File.";
-        APP_ABORT(setname.c_str());
-      }
-      sprintf(name, "%s", "/Super_Twist/eigenval_1");
-      if (!hin.readEntry(EigVal_beta, setname))
-      {
-        setname = "SPOSet::putFromH5 Missing " + setname + " from HDF5 File.";
-        APP_ABORT(setname.c_str());
-      }
+    sprintf(name, "%s", "/Super_Twist/eigenset_1");
+    setname = name;
+    if (!hin.readEntry(CartMat, setname))
+    {
+      setname = "SPOSet::putFromH5 Missing " + setname + " from HDF5 File.";
+      APP_ABORT(setname.c_str());
+    }
+    sprintf(name, "%s", "/Super_Twist/eigenval_1");
+    if (!hin.readEntry(EigVal_beta, setname))
+    {
+      setname = "SPOSet::putFromH5 Missing " + setname + " from HDF5 File.";
+      APP_ABORT(setname.c_str());
+    }
   }
 
 
