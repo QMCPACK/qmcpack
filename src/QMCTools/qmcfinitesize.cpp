@@ -57,38 +57,43 @@ int main(int argc, char** argv)
   std::cout.precision(12);
 
   std::unique_ptr<SkParserBase> skparser(nullptr);
-  int iargc = 2;
 
-  while (iargc + 1 < argc)
+  if (argc<4)
   {
-    std::string a(argv[iargc]);
-    std::string anxt(argv[iargc + 1]);
-    if (a == "--ascii")
-    {
-      skparser = std::make_unique<SkParserASCII>();
-      skparser->parse(anxt);
-    }
-    else if (a == "--scalardat")
-    {
-      skparser = std::make_unique<SkParserScalarDat>();
-      skparser->parse(anxt);
-    }
-    else if (a == "--hdf5")
-    {
-      skparser = std::make_unique<SkParserHDF5>();
-      skparser->parse(anxt);
-    }
-    else if (a == "--help")
-    {
       std::cout << "Usage:  qmcfinitesize [main.xml] --[skformat] [SK_FILE]\n";
       std::cout << "  [skformat]\n";
       std::cout << "    --ascii:      S(k) given in kx ky kz sk sk_err format.  Header necessary.\n";
       std::cout << "    --scalardat:  File containing skall elements with energy.pl output format.\n";
       std::cout << "    --hdf5:       stat.h5 file containing skall data.\n";
       return 0;
-    }
-    iargc++;
   }
+  else
+  {
+    int iargc = 2;
+    while (iargc + 1 < argc)
+    {
+      std::string a(argv[iargc]);
+      std::string anxt(argv[iargc + 1]);
+      if (a == "--ascii")
+      {
+        skparser = std::make_unique<SkParserASCII>();
+        skparser->parse(anxt);
+      }
+      else if (a == "--scalardat")
+      {
+        skparser = std::make_unique<SkParserScalarDat>();
+        skparser->parse(anxt);
+      }
+      else if (a == "--hdf5")
+      {
+        skparser = std::make_unique<SkParserHDF5>();
+        skparser->parse(anxt);
+      }
+      iargc++;
+    }
+  }
+
+
 
   if (skparser == NULL)
   {
