@@ -58,14 +58,18 @@ int main(int argc, char** argv)
 
   std::unique_ptr<SkParserBase> skparser(nullptr);
 
-  if (argc<4)
+  /* For a successful execution of the code, atleast 3 arguments will need to be
+   * provided along with the exectuable. Therefore, print usage information if
+   * argc is less than 4.
+   */
+  if (argc < 4)
   {
-      std::cout << "Usage:  qmcfinitesize [main.xml] --[skformat] [SK_FILE]\n";
-      std::cout << "  [skformat]\n";
-      std::cout << "    --ascii:      S(k) given in kx ky kz sk sk_err format.  Header necessary.\n";
-      std::cout << "    --scalardat:  File containing skall elements with energy.pl output format.\n";
-      std::cout << "    --hdf5:       stat.h5 file containing skall data.\n";
-      return 0;
+    std::cout << "Usage:  qmcfinitesize [main.xml] --[skformat] [SK_FILE]\n";
+    std::cout << "  [skformat]\n";
+    std::cout << "    --ascii:      S(k) given in kx ky kz sk sk_err format.  Header necessary.\n";
+    std::cout << "    --scalardat:  File containing skall elements with energy.pl output format.\n";
+    std::cout << "    --hdf5:       stat.h5 file containing skall data.\n";
+    return 0;
   }
   else
   {
@@ -92,7 +96,6 @@ int main(int argc, char** argv)
       iargc++;
     }
   }
-
 
 
   if (skparser == NULL)
