@@ -43,7 +43,7 @@ ENDFOREACH()
 
 IF ((NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA))
   IF (NOT QMC_COMPLEX)
-    SET(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp test_soa_cusp_corr.cpp test_ao.cpp)
+    SET(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp test_soa_cusp_corr.cpp test_ao_order.cpp)
   ELSE()
       SET(MO_SRCS test_pyscf_complex_MO.cpp test_MO_spinor.cpp)
   ENDIF()
