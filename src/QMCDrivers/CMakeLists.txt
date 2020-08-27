@@ -86,7 +86,8 @@ SET(QMCDRIVERS ${QMCDRIVERS}
     VMC/VMC.cpp
     VMC/VMCBatched.cpp
     VMC/VMCLinearOpt.cpp
-    WFOpt/QMCCostFunction.cpp)
+    WFOpt/QMCCostFunction.cpp
+    WFOpt/QMCCostFunctionBatched.cpp)
 
 IF(HAVE_MPI) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
