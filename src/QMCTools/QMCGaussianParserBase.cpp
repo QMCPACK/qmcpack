@@ -538,7 +538,7 @@ xmlNodePtr QMCGaussianParserBase::createDeterminantSetWithHDF5()
 
   hdf_archive hout;
   hout.open(h5file.c_str(), H5F_ACC_RDWR);
-  hout.push("KPTS_0", true);
+  hout.push("Super_Twist", true);
 
   Matrix<double> Ctemp(numMO, SizeOfBasisSet);
 
@@ -567,7 +567,7 @@ xmlNodePtr QMCGaussianParserBase::createDeterminantSetWithHDF5()
     xmlSetProp(ddet, (const xmlChar*)"id", (const xmlChar*)"downdet");
     xmlSetProp(ddet, (const xmlChar*)"size", (const xmlChar*)down_size.str().c_str());
     if (DoCusp == true)
-      xmlNewProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
+      xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
     xmlNodePtr o = xmlAddChild(ddet, xmlCopyNode(occ_data, 1));
     xmlNodePtr c = xmlCopyNode(coeff_data, 1);
     xmlSetProp(c, (const xmlChar*)"spindataset", (const xmlChar*)"1");
@@ -631,7 +631,7 @@ xmlNodePtr QMCGaussianParserBase::PrepareDeterminantSetFromHDF5()
     xmlSetProp(ddet, (const xmlChar*)"id", (const xmlChar*)"downdet");
     xmlSetProp(ddet, (const xmlChar*)"size", (const xmlChar*)down_size.str().c_str());
     if (DoCusp == true)
-      xmlNewProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
+      xmlSetProp(ddet, (const xmlChar*)"cuspInfo", (const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
     xmlNodePtr o = xmlAddChild(ddet, xmlCopyNode(occ_data, 1));
     xmlNodePtr c = xmlCopyNode(coeff_data, 1);
     xmlSetProp(c, (const xmlChar*)"spindataset", (const xmlChar*)"1");
@@ -807,7 +807,7 @@ void QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
   int n = 0;
   hdf_archive hout;
   hout.open(h5file.c_str(), H5F_ACC_RDWR);
-  hout.push("KPTS_0", true);
+  hout.push("Super_Twist", true);
 
   std::ostringstream up_size, down_size, b_size, occ, nstates_alpha, nstates_beta;
   up_size << NumberOfAlpha;
@@ -1602,14 +1602,12 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
   std::cout << " QMCGaussianParserBase::dump " << std::endl;
   if (!Structure)
   {
-    if (UseHDF5 || multidetH5)
+    //if (UseHDF5 || multidetH5)
+    if (UseHDF5)
     {
+      bool IsComplex = false;
       hdf_archive hout;
       hout.create(h5file.c_str(), H5F_ACC_TRUNC);
-      hout.push("Nb_KPTS", true);
-      int NbKpts = 1;
-      hout.write(NbKpts, "Nbkpts");
-      hout.pop();
       hout.push("PBC", true);
       hout.write(PBC, "PBC");
       hout.pop();
@@ -1617,6 +1615,20 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
       std::string CodeName("generic");
       hout.push("application", true);
       hout.write(CodeName, "code");
+      hout.pop();
+      hout.push("parameters", true);
+      hout.write(ECP, "ECP");
+      //Assumes MO-Coeff always real as this path is only for molecules and for generating stand alone H5file.
+      hout.write(IsComplex, "IsComplex");
+      hout.write(multideterminant, "Multidet");
+      hout.write(NumberOfAlpha, "NbAlpha");
+      hout.write(NumberOfBeta, "NbBeta");
+      hout.write(NumberOfEls, "NbTotElec");
+      hout.write(SpinRestricted, "SpinRestricted");
+      hout.write(BohrUnit, "Unit");
+      hout.write(numMO, "numAO");
+      hout.write(numMO, "numMO");
+      hout.write(SpinMultiplicity, "spin");
       hout.pop();
       hout.close();
     }
@@ -1779,7 +1791,8 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::strin
       xmlNewProp(detPtr, (const xmlChar*)"transform", (const xmlChar*)"yes");
 
       std::stringstream ss;
-      ss << std::setprecision(10)<<STwist_Coord[0] << "  " <<std::setprecision(10)<<  STwist_Coord[1] << "  " <<std::setprecision(10)<<  STwist_Coord[2];
+      ss << std::setprecision(10) << STwist_Coord[0] << "  " << std::setprecision(10) << STwist_Coord[1] << "  "
+         << std::setprecision(10) << STwist_Coord[2];
       xmlNewProp(detPtr, (const xmlChar*)"twist", (const xmlChar*)(ss.str()).c_str());
 
       if (DoCusp == true)
@@ -1925,11 +1938,11 @@ void QMCGaussianParserBase::dumpStdInputProd(const std::string& psi_tag, const s
         xmlAddChild(initopt, parameter(initopt, "warmupSteps", "2"));
         xmlAddChild(initopt, parameter(initopt, "timestep", "0.5"));
         xmlAddChild(initopt, parameter(initopt, "walkers", "1"));
-        xmlAddChild(initopt, parameter(initopt, "samples", "8000"));
+        xmlAddChild(initopt, parameter(initopt, "samples", "80000"));
         xmlAddChild(initopt, parameter(initopt, "substeps", "5"));
         xmlAddChild(initopt, parameter(initopt, "usedrift", "no"));
         xmlAddChild(initopt, parameter(initopt, "MinMethod", "OneShiftOnly"));
-        xmlAddChild(initopt, parameter(initopt, "minwalkers", "0.0001"));
+        xmlAddChild(initopt, parameter(initopt, "minwalkers", "0.1"));
       }
       xmlAddChild(loopopt1, initopt);
     }
@@ -1954,7 +1967,7 @@ void QMCGaussianParserBase::dumpStdInputProd(const std::string& psi_tag, const s
         xmlAddChild(initopt, parameter(initopt, "warmupSteps", "5"));
         xmlAddChild(initopt, parameter(initopt, "timestep", "0.5"));
         xmlAddChild(initopt, parameter(initopt, "walkers", "1"));
-        xmlAddChild(initopt, parameter(initopt, "samples", "16000"));
+        xmlAddChild(initopt, parameter(initopt, "samples", "160000"));
         xmlAddChild(initopt, parameter(initopt, "substeps", "5"));
         xmlAddChild(initopt, parameter(initopt, "usedrift", "no"));
         xmlAddChild(initopt, parameter(initopt, "MinMethod", "OneShiftOnly"));
@@ -2004,10 +2017,10 @@ void QMCGaussianParserBase::dumpStdInputProd(const std::string& psi_tag, const s
     xmlAddChild(dmc, parameter(dmc, "targetwalkers", "16000"));
     xmlAddChild(dmc, parameter(dmc, "reconfiguration", "no"));
     xmlAddChild(dmc, parameter(dmc, "warmupSteps", "100"));
-    xmlAddChild(dmc, parameter(dmc, "timestep", "0.001"));
-    xmlAddChild(dmc, parameter(dmc, "steps", "20"));
+    xmlAddChild(dmc, parameter(dmc, "timestep", "0.0005"));
+    xmlAddChild(dmc, parameter(dmc, "steps", "30"));
     xmlAddChild(dmc, parameter(dmc, "blocks", "1000"));
-    xmlAddChild(dmc, parameter(dmc, "nonlocalmoves", "yes"));
+    xmlAddChild(dmc, parameter(dmc, "nonlocalmoves", "v3"));
   }
   xmlAddChild(qm_root_input, dmc);
 
@@ -2234,10 +2247,10 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag, const std::
       xmlAddChild(dmc, parameter(dmc, "targetwalkers", "16000"));
       xmlAddChild(dmc, parameter(dmc, "reconfiguration", "no"));
       xmlAddChild(dmc, parameter(dmc, "warmupSteps", "100"));
-      xmlAddChild(dmc, parameter(dmc, "timestep", "0.005"));
-      xmlAddChild(dmc, parameter(dmc, "steps", "100"));
-      xmlAddChild(dmc, parameter(dmc, "blocks", "100"));
-      xmlAddChild(dmc, parameter(dmc, "nonlocalmoves", "yes"));
+      xmlAddChild(dmc, parameter(dmc, "timestep", "0.0005"));
+      xmlAddChild(dmc, parameter(dmc, "steps", "30"));
+      xmlAddChild(dmc, parameter(dmc, "blocks", "1000"));
+      xmlAddChild(dmc, parameter(dmc, "nonlocalmoves", "v3"));
     }
     xmlAddChild(qm_root_input, dmc);
   }

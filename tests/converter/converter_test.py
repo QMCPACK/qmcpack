@@ -48,12 +48,10 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
     #convert4qmc -nojastrow -prefix gold -gamessAscii be.out
 
     cmd = c4q_exe.split()
-    if code=='pyscf':
-        cmd.extend(['-nojastrow', '-prefix', 'test', '-pyscf', conv_inp])
-    if code=='qp':
-        cmd.extend(['-nojastrow', '-prefix', 'test', '-QP',  conv_inp])
+    if code=='generic':
+        cmd.extend(['-nojastrow', '-prefix', 'test', '-orbitals', conv_inp])
     if code=='gamess':
-        cmd.extend(['-nojastrow', '-prefix', 'test', '-gamessAscii', conv_inp])
+        cmd.extend(['-nojastrow', '-prefix', 'test', '-gamess', conv_inp])
 
     for ex_arg in extra_cmd_args:
         if ex_arg == '-ci':
@@ -89,7 +87,7 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
             print("Gold file missing")
             okay = False
         else:
-            if (code != 'pyscf'): 
+            if (code != 'generic'): 
                 if '-hdf5' in extra_cmd_args:
                    ret = os.system(h5diff_exe + ' -d 0.000001 gold.orbs.h5 test.orbs.h5')
                    if ret==0:
@@ -123,21 +121,16 @@ def read_extra_args():
 
 def run_one_converter_test(c4q_exe, h5diff_exe):
     code='gamess'
-    if os.path.exists('pyscf'):
-       code='pyscf'
-    if os.path.exists('quantum_package'):
-       code='qp'
+    if os.path.exists('orbitals'):
+       code='generic'
     
     test_name = os.path.split(os.getcwd())[-1]
     
     if code=='gamess': 
        conv_input_files = glob.glob('*.out')
 
-    if code=='pyscf': 
+    if code=='generic': 
        conv_input_files = glob.glob('*.h5')
-
-    if code=='qp': 
-       conv_input_files = glob.glob('*.dump')
 
     if len(conv_input_files) != 1:
         print("Unexpected number of inputs files (should be 1): ",

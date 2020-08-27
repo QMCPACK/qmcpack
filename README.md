@@ -138,7 +138,7 @@ make -j 8
  * Key QMC build options
 
 ```
-     QMC_CUDA            Enable CUDA and GPU acceleration (1:yes, 0:no)
+     QMC_CUDA            Enable legacy CUDA code path for NVIDIA GPU acceleration (1:yes, 0:no)
      QMC_COMPLEX         Build the complex (general twist/k-point) version (1:yes, 0:no)
      QMC_MIXED_PRECISION Build the mixed precision (mixing double/float) version
                          (1:yes (GPU default), 0:no (CPU default)).
@@ -147,11 +147,13 @@ make -j 8
                          The GPU support is quite mature.
                          Use always double for host side base and full precision
                          and use float and double for CUDA base and full precision.
-     ENABLE_TIMERS       Enable fine-grained timers (1:yes, 0:no (default)).
-                         Timers are off by default to avoid potential slowdown in small
-                         systems. For large systems (100+ electrons) there is no risk.
-     ENABLE_SOA          Enable CPU optimization based on Structure-
-                         of-Array (SoA) datatypes (1:yes (default), 0:no). ```
+     ENABLE_CUDA         ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
+                         Production quality for AFQMC. Pre-production quality for real-space.
+                         Use CUDA_ARCH, default sm_70, to set the actual GPU architecture.
+     ENABLE_OFFLOAD      ON/OFF(default). Experimental feature. Enable OpenMP target offload for GPU acceleration.
+     ENABLE_TIMERS       ON/OFF(default). Enable fine-grained timers. Timers are off by default
+                         to avoid potential slowdown in small systems.
+                         For large systems (100+ electrons) there is no risk.
 ```
 
  * Additional QMC options
@@ -161,7 +163,7 @@ make -j 8
      QMC_DATA            Specify data directory for QMCPACK performance and integration tests
      QMC_INCLUDE         Add extra include paths
      QMC_EXTRA_LIBS      Add extra link libraries
-     QMC_BUILD_STATIC    Add -static flags to build
+     QMC_BUILD_STATIC    ON/OFF(default). Add -static flags to build
      QMC_SYMLINK_TEST_FILES Set to zero to require test files to be copied. Avoids space
                             saving default use of symbolic links for test files. Useful
                             if the build is on a separate filesystem from the source, as

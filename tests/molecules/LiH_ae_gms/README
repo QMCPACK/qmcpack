@@ -1,0 +1,43 @@
+
+===========================
+Energy density test details
+===========================
+The tests include short/long VMC runs for a LiH molecule in open boundary 
+conditions with the energy density estimator enabled, using a voronoi 
+grid.  Reference data was generated using SVN revision 6259.
+
+These tests check the correctness of Traces data streaming from the
+evaluate_sp function in the following QMCPACK classes:
+
+Kinetic, CoulombPotential(AA), CoulombPotential(AB)
+
+Reference runs were performed with 10x more blocks and 10x more steps
+than the target short test runs.  From the reference stat.h5 output
+files, reduced reference data was produced using check_stats.py.
+
+A summary of the reference files is given below.  The per block or
+"stat_trace" data was actually produced from a reference run with
+the same number of blocks and 100x more steps than the target short
+test runs to reduce the file size.  These stat_trace files are
+identical in format to scalar.dat files, but for the reduced full and
+partial sums performed on the grid data.
+
+In addition to checking the statistical correctness of full and
+partial data sums, check_stats.py also checks that energy density
+data written each block sums to match the relevant total, kinetic,
+and potential energies written to the scalar.dat file for VMC.
+
+---------------------------------------------------
+Reference files for VMC voronoi grid energy density
+---------------------------------------------------
+# reference input file
+vmc_noj_edens_vor.in.xml
+
+# command run
+check_stats.py -v -s 0 -q 'energydensity,EDvoronoi' -e 20 -c 8 -m '0 10 100' -p vmc_noj_edens_vor
+
+# files produced
+vmc_noj_edens_vor_ref.s000.stat_ref_energydensity.dat    # reference mean/error bar (-m 0)
+vmc_noj_edens_vor_ref.s000.stat_trace_energydensity.dat  # reference per block data (-m 0)
+vmc_noj_edens_vor_long.s000.stat_ref_energydensity.dat   # reference mean/error bar for long runs (-m 10)
+vmc_noj_edens_vor_short.s000.stat_ref_energydensity.dat  # reference mean/error bar for short runs (-m 100)
