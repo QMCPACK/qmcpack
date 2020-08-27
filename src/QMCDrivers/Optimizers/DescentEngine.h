@@ -53,10 +53,13 @@ private:
   ValueType e_var_;
   ValueType e_sd_;
 
-  ValueType numer_sum_;
-  ValueType denom_sum_;
+  //ValueType numer_sum_;
+  //ValueType denom_sum_;
+
   ValueType numer_avg_;
+  ValueType numer_var_;
   ValueType denom_avg_;
+  ValueType denom_var_;
   ValueType target_avg_;
   ValueType target_var_;
 
@@ -146,7 +149,7 @@ private:
   bool engine_target_excited_;
 
 //Whether to use <(omega - H)^2> for targeting excited state,default is to use target above functional instead
-  bool target_excited_closest_;
+ // bool target_excited_closest_;
 
  //Whether to clip samples with local energy outliers
   bool use_clipping_;
@@ -202,9 +205,9 @@ private:
   ValueType omega_;
 
   //the iteration where the omega_shift parameter starts being updated
-  int update_omega_iter_;
+ // int update_omega_iter_;
 //the number of iterations over which omega_shift is updated
-  int update_omega_steps_;
+ // int update_omega_steps_;
 
   //Number of parameter difference vectors stored when descent is used in a hybrid optimization
   int store_num_;
@@ -294,7 +297,7 @@ void setTarget(const std::vector<FullPrecRealType>& targetSums);
   void storeVectors(std::vector<ValueType>& current_params);
 
  //Adjust omega during target above functional calculation
-  void changeOmega();
+ // void changeOmega();
 
   //Compute final averages for energy and variance over a history of samples from a set of iterations
   void computeFromHistory();
@@ -335,11 +338,14 @@ ValueType helperErrorCompute(std::vector<FullPrecRealType>& weights, std::vector
   bool targetingExcited() const {return engine_target_excited_;}
 
   //Returns whether an adaptive omega is being used
-  bool varyingOmega() const {return update_omega_iter_ > -1;}
+//  bool varyingOmega() const {return update_omega_iter_ > -1;}
 
   int getFinalDescentNum() const {return final_descent_num_;}
 
-  ///Function for setting averaged derivatives, currently only used as part of a unit test of the engine's parameter update
+  //Resets the number of vectors stored to 0 for next hybrid method macro-iteration
+  void resetStorageCount() {store_count_ = 0;}
+
+  //Function for setting averaged derivatives, currently only used as part of a unit test of the engine's parameter update
   void setDerivs(std::vector<ValueType>& test_derivs) { lderivs_ = test_derivs; }
 
 //Function for setting parameter value, used to keep descent parameter values up to date with changes that occur on BLM steps of hybrid method

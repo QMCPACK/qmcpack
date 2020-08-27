@@ -498,7 +498,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
   }
   else if (MinMethod == "descent")
   {
-    descentEngineObj.setEtemp(etemp);
+    //descentEngineObj.setEtemp(etemp);
     descentEngineObj.sample_finish();
   }
 #endif

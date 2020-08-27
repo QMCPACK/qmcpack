@@ -24,7 +24,7 @@ namespace qmcplusplus
 DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
     : my_comm_(comm),
       engine_target_excited_(false),
-      target_excited_closest_(false),
+      //target_excited_closest_(false),
       use_clipping_(false),
       num_params_(0),
       flavor_("RMSprop"),
@@ -38,7 +38,7 @@ DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
       ramp_num_(30),
       store_num_(5),
       omega_(0.0),
-      update_omega_iter_(-1),
+  //    update_omega_iter_(-1),
       collection_step_(-1),
       compute_step_(-1)
 {
@@ -52,12 +52,12 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
 {
   std::string excited("no");
   std::string ramp_eta_str("no");
-  std::string excited_closest("no");
+  //std::string excited_closest("no");
   std::string clip_le("no");
 
   ParameterSet m_param;
   m_param.add(excited, "targetExcited", "string");
-  m_param.add(excited_closest, "target_excited_closest", "string");
+  //m_param.add(excited_closest, "target_excited_closest", "string");
   m_param.add(omega_, "omega", "double");
   app_log() << "Omega from input file: " << omega_ << std::endl;
   m_param.add(clip_le, "Clip_le", "string");
@@ -84,13 +84,13 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
     collect_count_ = true;
   }
 
-  m_param.add(update_omega_iter_,"update_omega_iter","int");
-  m_param.add(update_omega_steps_,"update_omega_steps","int");
+//  m_param.add(update_omega_iter_,"update_omega_iter","int");
+ // m_param.add(update_omega_steps_,"update_omega_steps","int");
   m_param.put(cur);
 
   engine_target_excited_ = (excited == "yes");
 
-  target_excited_closest_ = (excited_closest == "yes");
+  //target_excited_closest_ = (excited_closest == "yes");
 
   use_clipping_ = (clip_le == "yes");
 
@@ -187,10 +187,12 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
   other_target_var_ = 0;
     */
 
-  numer_sum_ = 0;
-  denom_sum_ = 0;
+  //numer_sum_ = 0;
+  //denom_sum_ = 0;
   numer_avg_ = 0;
+  numer_var_ = 0;
   denom_avg_ = 0;
+  denom_var_ = 0;
   target_avg_ = 0;
   target_var_ = 0;
 
@@ -294,6 +296,7 @@ if(final_descent_num_ > collection_step_ && collect_count_ )
       ValueType n;
       ValueType d;
 
+      /*
       if(target_excited_closest_)
       {
           n = (omega_*omega_ - static_cast<ValueType>(2)*omega_*etmp + etmp*etmp)*vgs_samp;
@@ -307,6 +310,9 @@ if(final_descent_num_ > collection_step_ && collect_count_ )
             d = (omega_*omega_ - static_cast<ValueType>(2)*omega_*etmp + etmp*etmp)*vgs_samp;
 
       }
+      */
+        n = (omega_ - etmp)*vgs_samp;
+        d = (omega_*omega_ - static_cast<ValueType>(2)*omega_*etmp + etmp*etmp)*vgs_samp;
 
       if(final_descent_num_ > collection_step_ && collect_count_)
       {
@@ -405,6 +411,7 @@ void DescentEngine::sample_finish()
 
     app_log() << "Energy Average: " << std::setprecision(9) << e_avg_ << std::endl;
     app_log() << "Energy Variance: " << std::setprecision(9) << e_var_ << std::endl;
+    app_log() << "Weight Total: " << std::setprecision(9) << w_sum_ << std::endl;
 
     if(engine_target_excited_)
     {
@@ -441,6 +448,11 @@ void DescentEngine::sample_finish()
         app_log() << "More accurate target function: " << std::setprecision(9) << other_target_ << std::endl;
         app_log() << "More accurate target function variance: " << std::setprecision(9) << other_target_var_ << std::endl;
 */
+ 
+        this->mpi_unbiased_ratio_of_means(numSamples,w_history_,tnv_history_,vg_history_,numer_avg_,numer_var_);
+        
+        this->mpi_unbiased_ratio_of_means(numSamples,w_history_,tdv_history_,vg_history_,denom_avg_,denom_var_);
+        
         this->mpi_unbiased_ratio_of_means(numSamples,w_history_,tnv_history_,tdv_history_,target_avg_,target_var_);
         
         app_log() << "Target Function Average: " << std::setprecision(9) << target_avg_ << std::endl;
@@ -492,8 +504,8 @@ void DescentEngine::sample_finish()
     avg_der_rat_samp_.at(i) = avg_der_rat_samp_.at(i) / w_sum_;
 
 
-//    app_log() << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp_.at(i) << std::endl;
-  //  app_log() << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp_.at(i) << std::endl;
+    app_log() << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp_.at(i) << std::endl;
+    app_log() << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp_.at(i) << std::endl;
 
     //Computation of averaged derivatives for excited state functional will be added in future
     if (!engine_target_excited_)
@@ -509,8 +521,10 @@ void DescentEngine::sample_finish()
     avg_numer_der_samp_.at(i) = avg_numer_der_samp_.at(i)/w_sum_;
     avg_denom_der_samp_.at(i) = avg_denom_der_samp_.at(i)/w_sum_;
 
-   // app_log() << "Parameter # " << i << "Numer Deriv: " << avg_numer_der_samp_.at(i) << std::endl;
-   // app_log()  << "Parameter # " << i << "Denom Deriv: " << avg_denom_der_samp_.at(i) << std::endl;
+    app_log() << "Parameter # " << i << " Numer Deriv: " << avg_numer_der_samp_.at(i) << std::endl;
+    app_log()  << "Parameter # " << i << " Denom Deriv: " << avg_denom_der_samp_.at(i) << std::endl;
+        
+    /*
         if(target_excited_closest_)
         {
             //Target closest excited state functional is same as the denominator in the target above functional divided by psi squared
@@ -533,7 +547,18 @@ void DescentEngine::sample_finish()
             lderivs_.at(i) = (numer_term1.at(i) - numer_term2.at(i))/denom.at(i);
         
         }
+        */
+
+        numer_term1.at(i) = avg_numer_der_samp_.at(i)*denom_avg_;
         
+        
+           numer_term2.at(i) = avg_denom_der_samp_.at(i)*numer_avg_;
+
+      
+           denom.at(i) = denom_avg_*denom_avg_;
+       
+            lderivs_.at(i) = (numer_term1.at(i) - numer_term2.at(i))/denom.at(i);
+
         
     } 
   
@@ -542,6 +567,19 @@ void DescentEngine::sample_finish()
 
   gradNorm = std::sqrt(gradNorm);
     app_log() << "Norm of gradient vector is: " << gradNorm << std::endl;
+
+
+    //Clear the history vectors for next iteration once sample_finish is done
+    lev_history_.clear();
+    vg_history_.clear();
+    w_history_.clear();
+    
+    if(engine_target_excited_)
+    {
+        tnv_history_.clear();
+        tdv_history_.clear();
+    }
+
 }
 
 
@@ -589,6 +627,7 @@ void DescentEngine::mpi_unbiased_ratio_of_means(int numSamples, std::vector<Valu
     ValueType vg = ( sg - mg * mg ) * ns / ( ns - 1.0 );
     ValueType cv = ( mp - mf * mg ) * ns / ( ns - 1.0 );
 
+    w_sum_ = y[0];
     mean = ( mf / mg ) / ( 1.0 + ( vg / mg / mg - cv / mf / mg ) / ns ); 
     variance = ( mf * mf / mg / mg ) * ( vf / mf / mf + vg / mg / mg - 2.0 * cv / mf / mg );
 
@@ -962,7 +1001,6 @@ void DescentEngine::storeVectors(std::vector<ValueType>& current_params)
     hybrid_blm_input_.push_back(row_vec);
   }
 
-  /*
   for (int i = 0; i < hybrid_blm_input_.size(); i++)
   {
     std::string entry = "";
@@ -972,11 +1010,11 @@ void DescentEngine::storeVectors(std::vector<ValueType>& current_params)
     }
     app_log() << "Stored Vector: " << entry << std::endl;
   }
-  */
 
   store_count_++;
 }
 
+/*
 void DescentEngine::changeOmega()
 {
     app_log() << "Using adaptive omega with value: " << omega_ << std::endl;
@@ -999,6 +1037,8 @@ void DescentEngine::changeOmega()
     }
 
 }
+*/
+
 
 void DescentEngine::computeFromHistory()
 {
