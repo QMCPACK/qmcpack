@@ -35,7 +35,7 @@ MAYBE_SYMLINK(${UTEST_HDF_INPUT5} ${UTEST_DIR}/C_diamond-twist-third.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT6} ${UTEST_DIR}/lcao_spinor.h5)
 
 SET(FILES_TO_COPY he_sto3g.wfj.xml ne_def2_svp.wfnoj.xml hcn.structure.xml hcn.wfnoj.xml hcn_downdet.cuspInfo.xml hcn_updet.cuspInfo.xml
-    ethanol.structure.xml ethanol.wfnoj.xml ethanol_updet.cuspInfo.xml ethanol_downdet.cuspInfo.xml C_diamond-twist-third.structure.xml C_diamond-twist-third.wfj.xml)
+    ethanol.structure.xml ethanol.wfnoj.xml ethanol_updet.cuspInfo.xml ethanol_downdet.cuspInfo.xml C_diamond-twist-third.structure.xml C_diamond-twist-third.wfj.xml cartesian_order.wfnoj.xml dirac_order.wfnoj.xml )
 
 FOREACH(fname ${FILES_TO_COPY})
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${fname}" ${UTEST_DIR})
@@ -43,7 +43,7 @@ ENDFOREACH()
 
 IF ((NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA))
   IF (NOT QMC_COMPLEX)
-    SET(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp test_soa_cusp_corr.cpp)
+    SET(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp test_soa_cusp_corr.cpp test_cartesian_ao.cpp)
   ELSE()
       SET(MO_SRCS test_pyscf_complex_MO.cpp test_MO_spinor.cpp)
   ENDIF()
