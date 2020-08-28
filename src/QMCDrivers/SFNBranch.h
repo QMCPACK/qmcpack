@@ -22,7 +22,6 @@
 #include "Particle/Walker.h"
 #include "QMCDrivers/WalkerControlBase.h"
 #include "QMCDrivers/Crowd.h"
-#include <Utilities/NewTimer.h>
 #include <bitset>
 
 namespace qmcplusplus

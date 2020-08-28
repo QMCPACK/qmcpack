@@ -27,7 +27,7 @@
 #include "multi/array_ref.hpp"
 #include "multi/memory/fallback.hpp"
 
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "AFQMC/Utilities/myTimer.h"
 extern myTimer Timer;
 

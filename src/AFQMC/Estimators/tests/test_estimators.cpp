@@ -15,6 +15,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsApp/ProjectData.h"
+#include <Utilities/TimerManager.h>
 #include "io/hdf_archive.h"
 
 #undef APP_ABORT
@@ -66,7 +67,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
   }
   else
   {
-    TimerManager.set_timer_threshold(timer_level_coarse);
+    timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
 
     // Global Task Group

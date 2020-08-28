@@ -17,7 +17,7 @@
 #include <CPU/BLAS.hpp>
 #include <CPU/BlasThreadingEnv.h>
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "config.h"
+#include <Message/OpenMP.h>
 
 namespace qmcplusplus
 {

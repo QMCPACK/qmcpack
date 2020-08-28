@@ -26,10 +26,10 @@
 #include <Estimators/TraceManager.h>
 #endif
 #include <QMCWaveFunctions/OrbitalSetTraits.h>
+
 namespace qmcplusplus
 {
 class MCWalkerConfiguration;
-class NewTimer;
 class HamiltonianFactory;
 class NonLocalECPotential;
 
@@ -281,9 +281,9 @@ public:
   void setNonLocalMoves(xmlNodePtr cur);
 
   void setNonLocalMoves(const std::string& non_local_move_option,
-                                        const double tau,
-                                        const double alpha,
-                                        const double gamma);
+                        const double tau,
+                        const double alpha,
+                        const double gamma);
 
   /** make non local moves
    * @param P particle set
@@ -324,7 +324,7 @@ public:
 
   static void updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
   static void updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
-  
+
   /** return a clone */
   QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 

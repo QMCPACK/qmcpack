@@ -18,7 +18,7 @@
 
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
@@ -31,12 +31,12 @@ public:
    *@param first index of the first particle
    */
   DiracDeterminantBase(SPOSetPtr const spos, int first = 0)
-      : UpdateTimer(*TimerManager.createTimer("DiracDeterminantBase::update", timer_level_fine)),
-        RatioTimer(*TimerManager.createTimer("DiracDeterminantBase::ratio", timer_level_fine)),
-        InverseTimer(*TimerManager.createTimer("DiracDeterminantBase::inverse", timer_level_fine)),
-        BufferTimer(*TimerManager.createTimer("DiracDeterminantBase::buffer", timer_level_fine)),
-        SPOVTimer(*TimerManager.createTimer("DiracDeterminantBase::spoval", timer_level_fine)),
-        SPOVGLTimer(*TimerManager.createTimer("DiracDeterminantBase::spovgl", timer_level_fine)),
+      : UpdateTimer(*timer_manager.createTimer("DiracDeterminantBase::update", timer_level_fine)),
+        RatioTimer(*timer_manager.createTimer("DiracDeterminantBase::ratio", timer_level_fine)),
+        InverseTimer(*timer_manager.createTimer("DiracDeterminantBase::inverse", timer_level_fine)),
+        BufferTimer(*timer_manager.createTimer("DiracDeterminantBase::buffer", timer_level_fine)),
+        SPOVTimer(*timer_manager.createTimer("DiracDeterminantBase::spoval", timer_level_fine)),
+        SPOVGLTimer(*timer_manager.createTimer("DiracDeterminantBase::spovgl", timer_level_fine)),
         Phi(spos),
         FirstIndex(first),
         LastIndex(first + spos->size()),
