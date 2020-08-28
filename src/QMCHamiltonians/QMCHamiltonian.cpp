@@ -21,7 +21,7 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif

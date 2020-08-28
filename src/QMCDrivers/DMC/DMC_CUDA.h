@@ -17,7 +17,7 @@
 #define QMCPLUSPLUS_DMC_CUDA_H
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "type_traits/CUDATypes.h"
 
 namespace qmcplusplus

@@ -29,7 +29,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Platforms/Host/OutputManager.h"
 #include "Utilities/Timer.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "Particle/HDFWalkerIO.h"
 #include "Particle/InitMolecularSystem.h"
 #include "QMCDrivers/QMCDriver.h"

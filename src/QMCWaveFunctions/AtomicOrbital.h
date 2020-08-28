@@ -23,7 +23,7 @@
 #include <QMCWaveFunctions/SPOSet.h>
 #include <Lattice/CrystalLattice.h>
 #include <Configuration.h>
-#include <Utilities/NewTimer.h>
+#include <Utilities/TimerManager.h>
 
 
 namespace qmcplusplus

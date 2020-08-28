@@ -13,7 +13,6 @@
 #include "catch.hpp"
 
 #define USE_FAKE_CLOCK
-#include "Utilities/NewTimer.h"
 #include "Utilities/RunTimeManager.h"
 #include <stdio.h>
 #include <string>

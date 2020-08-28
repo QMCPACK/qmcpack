@@ -28,8 +28,7 @@
 #include "Configuration.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
-#include "Utilities/NewTimer.h"
-
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {

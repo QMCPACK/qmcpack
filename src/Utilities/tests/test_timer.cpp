@@ -12,11 +12,10 @@
 
 #include "catch.hpp"
 
-#define USE_FAKE_CLOCK
-#include "Utilities/NewTimer.h"
-#include <stdio.h>
 #include <string>
 #include <vector>
+#define USE_FAKE_CLOCK
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {
