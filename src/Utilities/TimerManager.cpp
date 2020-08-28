@@ -31,39 +31,31 @@ TimerManagerClass<NewTimer> TimerManager;
 const char TIMER_STACK_SEPARATOR = '/';
 
 template<class TIMER>
-void TimerManagerClass<TIMER>::initializeTimer(TIMER* t)
+void TimerManagerClass<TIMER>::initializeTimer(TIMER& t)
 {
+  if (t.get_name().find(TIMER_STACK_SEPARATOR) != std::string::npos)
+    app_log() << "Warning: Timer name (" << t.get_name() << ") should not contain the character "
+              << TIMER_STACK_SEPARATOR << std::endl;
+
+  if (timer_name_to_id.find(t.get_name()) == timer_name_to_id.end())
   {
-    if (t->get_name().find(TIMER_STACK_SEPARATOR) != std::string::npos)
+    t.set_id(max_timer_id);
+    timer_id_name[t.get_id()]      = t.get_name();
+    timer_name_to_id[t.get_name()] = t.get_id();
+    if (max_timer_id >= std::numeric_limits<timer_id_t>::max())
     {
-      app_log() << "Warning: Timer name (" << t->get_name() << ") should not contain the character "
-                << TIMER_STACK_SEPARATOR << std::endl;
-    }
-
-
-    if (timer_name_to_id.find(t->get_name()) == timer_name_to_id.end())
-    {
-      t->set_id(max_timer_id);
-      timer_id_name[t->get_id()]      = t->get_name();
-      timer_name_to_id[t->get_name()] = t->get_id();
-      if (max_timer_id >= std::numeric_limits<timer_id_t>::max())
-      {
-        max_timers_exceeded = true;
-        app_log() << "Number of timers exceeds limit (" << static_cast<int>(std::numeric_limits<timer_id_t>::max())
-                  << ").   Adjust timer_id_t in TIMER.h and recompile." << std::endl;
-      }
-      else
-      {
-        max_timer_id++;
-      }
+      max_timers_exceeded = true;
+      app_log() << "Number of timers exceeds limit (" << static_cast<int>(std::numeric_limits<timer_id_t>::max())
+                << ").   Adjust timer_id_t in TIMER.h and recompile." << std::endl;
     }
     else
-    {
-      t->set_id(timer_name_to_id[t->get_name()]);
-    }
-    t->set_manager(this);
-    t->set_active_by_timer_threshold(timer_threshold);
+      max_timer_id++;
   }
+  else
+    t.set_id(timer_name_to_id[t.get_name()]);
+
+  t.set_manager(this);
+  t.set_active_by_timer_threshold(timer_threshold);
 }
 
 template<class TIMER>
@@ -74,7 +66,7 @@ TIMER* TimerManagerClass<TIMER>::createTimer(const std::string& myname, timer_le
   {
     TimerList.push_back(std::make_unique<TIMER>(myname, mytimer));
     t = TimerList.back().get();
-    initializeTimer(t);
+    initializeTimer(*t);
   }
   return t;
 }
@@ -92,9 +84,7 @@ void TimerManagerClass<TIMER>::set_timer_threshold(const timer_levels threshold)
 {
   timer_threshold = threshold;
   for (int i = 0; i < TimerList.size(); i++)
-  {
     TimerList[i]->set_active_by_timer_threshold(timer_threshold);
-  }
 }
 
 template<class TIMER>
@@ -143,12 +133,9 @@ int get_level(const std::string& stack_name)
 {
   int level = 0;
   for (int i = 0; i < stack_name.length(); i++)
-  {
     if (stack_name[i] == TIMER_STACK_SEPARATOR)
-    {
       level++;
-    }
-  }
+
   return level;
 }
 
@@ -156,9 +143,7 @@ std::string get_leaf_name(const std::string& stack_name)
 {
   int pos = stack_name.find_last_of(TIMER_STACK_SEPARATOR);
   if (pos == std::string::npos)
-  {
     return stack_name;
-  }
 
   return stack_name.substr(pos + 1, stack_name.length() - pos);
 }
@@ -172,9 +157,8 @@ void TimerManagerClass<TIMER>::get_stack_name_from_id(const StackKey& key, std::
     if (key.get_id(i) == 0)
       break;
     if (i > 0)
-    {
       stack_name += TIMER_STACK_SEPARATOR;
-    }
+
     stack_name += timer_name;
   }
 }
@@ -228,13 +212,10 @@ void TimerManagerClass<TIMER>::collate_stack_profile(Communicate* comm, StackPro
     {
       int level = get_level(p.names[i]);
       if (level == start_level + 1)
-      {
         p.timeExclList[idx] -= p.timeExclList[i];
-      }
+
       if (level == start_level)
-      {
         break;
-      }
     }
   }
 #endif
@@ -245,16 +226,12 @@ void TimerManagerClass<TIMER>::print(Communicate* comm)
 {
 #ifdef ENABLE_TIMERS
 #ifdef USE_STACK_TIMERS
-  if (comm == NULL || comm->rank() == 0)
-  {
+  if (comm == nullptr || comm->rank() == 0)
     app_log() << "Stack timer profile" << std::endl;
-  }
   print_stack(comm);
 #else
-  if (comm == NULL || comm->rank() == 0)
-  {
+  if (comm == nullptr || comm->rank() == 0)
     app_log() << "\nFlat profile" << std::endl;
-  }
   print_flat(comm);
 #endif
 #endif
@@ -268,7 +245,7 @@ void TimerManagerClass<TIMER>::print_flat(Communicate* comm)
 
   collate_flat_profile(comm, p);
 
-  if (comm == NULL || comm->rank() == 0)
+  if (comm == nullptr || comm->rank() == 0)
   {
 #pragma omp master
     {
@@ -308,7 +285,7 @@ void TimerManagerClass<TIMER>::print_stack(Communicate* comm)
 
   collate_stack_profile(comm, p);
 
-  if (comm == NULL || comm->rank() == 0)
+  if (comm == nullptr || comm->rank() == 0)
   {
     if (timer_max_level_exceeded)
     {
@@ -358,13 +335,12 @@ void TimerManagerClass<TIMER>::print_stack(Communicate* comm)
 template<class TIMER>
 void TimerManagerClass<TIMER>::output_timing(Communicate* comm, Libxml2Document& doc, xmlNodePtr root)
 {
-#ifdef ENABLE_TIMERS
-#ifdef USE_STACK_TIMERS
+#if defined(ENABLE_TIMERS) && defined(USE_STACK_TIMERS)
   StackProfileData p;
 
   collate_stack_profile(comm, p);
 
-  if (comm == NULL || comm->rank() == 0)
+  if (comm == nullptr || comm->rank() == 0)
   {
     xmlNodePtr timing_root = doc.addChild(root, "timing");
     doc.addChild(timing_root, "max_stack_level_exceeded", timer_max_level_exceeded ? "yes" : "no");
@@ -389,9 +365,7 @@ void TimerManagerClass<TIMER>::output_timing(Communicate* comm, Libxml2Document&
 
       int next_level = level;
       if (i + 1 < p.names.size())
-      {
         next_level = get_level(p.names[i + 1]);
-      }
 
       if (next_level > level)
       {
@@ -400,17 +374,14 @@ void TimerManagerClass<TIMER>::output_timing(Communicate* comm, Libxml2Document&
         current_root = next_node;
       }
       if (next_level < level)
-      {
         for (int j = 0; j < level - next_level; j++)
         {
           node_stack.pop_back();
           current_root = node_stack.back();
         }
-      }
     }
   }
 
-#endif
 #endif
 }
 

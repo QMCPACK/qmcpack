@@ -66,7 +66,7 @@ void TimerType<CLOCK>::start()
             current_stack_key.add_id(timer_id);
           }
         }
-        if (parent == NULL)
+        if (parent == nullptr)
         {
           current_stack_key = StackKey();
           current_stack_key.add_id(timer_id);
@@ -109,7 +109,7 @@ void TimerType<CLOCK>::stop()
 
       if (manager)
       {
-        manager->current_timer()->set_parent(NULL);
+        manager->current_timer()->set_parent(nullptr);
         manager->pop_timer();
       }
 #endif

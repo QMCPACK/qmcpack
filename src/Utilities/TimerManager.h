@@ -46,7 +46,7 @@ protected:
   std::map<timer_id_t, std::string> timer_id_name;
   std::map<std::string, timer_id_t> timer_name_to_id;
 
-  void initializeTimer(TIMER* t);
+  void initializeTimer(TIMER& t);
 
 public:
 #ifdef USE_VTUNE_TASKS
@@ -62,27 +62,16 @@ public:
 
   TIMER* createTimer(const std::string& myname, timer_levels mytimer = timer_level_fine);
 
-  void push_timer(TIMER* t)
-  {
-    {
-      CurrentTimerStack.push_back(t);
-    }
-  }
+  void push_timer(TIMER* t) { CurrentTimerStack.push_back(t); }
 
-  void pop_timer()
-  {
-    {
-      CurrentTimerStack.pop_back();
-    }
-  }
+  void pop_timer() { CurrentTimerStack.pop_back(); }
 
   TIMER* current_timer()
   {
-    TIMER* current = NULL;
+    TIMER* current = nullptr;
     if (CurrentTimerStack.size() > 0)
-    {
       current = CurrentTimerStack.back();
-    }
+
     return current;
   }
 
@@ -153,9 +142,7 @@ void setup_timers(std::vector<TIMER*>& timers,
 {
   timers.resize(timer_list.size());
   for (int i = 0; i < timer_list.size(); i++)
-  {
     timers[timer_list[i].id] = manager->createTimer(timer_list[i].name, timer_level);
-  }
 }
 
 } // namespace qmcplusplus

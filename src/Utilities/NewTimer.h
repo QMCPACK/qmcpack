@@ -191,8 +191,8 @@ public:
         timer_id(0)
 #ifdef USE_STACK_TIMERS
         ,
-        manager(NULL),
-        parent(NULL)
+        manager(nullptr),
+        parent(nullptr)
 #endif
   {
 #ifdef USE_VTUNE_TASKS
