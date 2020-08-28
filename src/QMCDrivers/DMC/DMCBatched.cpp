@@ -246,8 +246,10 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
       for (int iw = 0; iw < num_walkers; ++iw)
       {
+        // Allows the rng to be scrutinized easily in debugger
+        auto the_rng = step_context.get_random_gen()();
         if ((!rejects[iw]) && prob[iw] >= std::numeric_limits<RealType>::epsilon() &&
-            step_context.get_random_gen()() < prob[iw])
+            the_rng < prob[iw])
         {
           did_walker_move[iw] += 1;
           crowd.incAccept();
