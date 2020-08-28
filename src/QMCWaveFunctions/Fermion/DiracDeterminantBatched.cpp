@@ -26,8 +26,8 @@ template<typename DET_ENGINE_TYPE>
 DiracDeterminantBatched<DET_ENGINE_TYPE>::DiracDeterminantBatched(SPOSetPtr const spos, int first)
     : DiracDeterminantBase(spos, first),
       ndelay(1),
-      D2HTimer(*TimerManager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
-      H2DTimer(*TimerManager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
+      D2HTimer(*timer_manager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
+      H2DTimer(*timer_manager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
 {
   ClassName = "DiracDeterminantBatched";
 }

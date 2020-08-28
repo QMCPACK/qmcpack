@@ -21,7 +21,7 @@ namespace qmcplusplus
 {
 TEST_CASE("test_runtime_manager", "[utilities]")
 {
-  // Use a local version rather than the global TimerManager, otherwise
+  // Use a local version rather than the global timer_manager, otherwise
   //  changes will persist from test to test.
   RunTimeManagerClass<fake_cpu_clock> rm;
   double e = rm.elapsed();

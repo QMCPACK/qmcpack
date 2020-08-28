@@ -89,7 +89,7 @@ void QMCUpdateBase::setDefaults()
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       MassInvP[iat] = MassInvS[ig];
 
-  InitWalkersTimer = TimerManager.createTimer("QMCUpdateBase::WalkerInit", timer_level_medium);
+  InitWalkersTimer = timer_manager.createTimer("QMCUpdateBase::WalkerInit", timer_level_medium);
 }
 
 bool QMCUpdateBase::put(xmlNodePtr cur)

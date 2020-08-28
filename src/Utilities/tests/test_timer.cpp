@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-using FakeTimerManager = TimerManagerClass<FakeTimer>;
+using FakeTimerManager = TimerManager<FakeTimer>;
 
 template<class CLOCK>
 void set_total_time(TimerType<CLOCK>* timer, double total_time_input)
@@ -35,7 +35,7 @@ void set_num_calls(TimerType<CLOCK>* timer, long num_calls_input)
 
 TEST_CASE("test_timer_stack", "[utilities]")
 {
-  // Use a local version rather than the global TimerManager, otherwise
+  // Use a local version rather than the global timer_manager, otherwise
   //  changes will persist from test to test.
   FakeTimerManager tm;
   FakeTimer* t1 = tm.createTimer("timer1", timer_level_coarse);

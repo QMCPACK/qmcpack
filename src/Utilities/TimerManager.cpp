@@ -13,7 +13,7 @@
 
 
 /** @file NewTimer.cpp
- * @brief Implements TimerManager
+ * @brief Implements timer_manager
  */
 #include "TimerManager.h"
 #include <limits>
@@ -26,12 +26,12 @@
 
 namespace qmcplusplus
 {
-TimerManagerClass<NewTimer> TimerManager;
+TimerManager<NewTimer> timer_manager;
 
 const char TIMER_STACK_SEPARATOR = '/';
 
 template<class TIMER>
-void TimerManagerClass<TIMER>::initializeTimer(TIMER& t)
+void TimerManager<TIMER>::initializeTimer(TIMER& t)
 {
   if (t.get_name().find(TIMER_STACK_SEPARATOR) != std::string::npos)
     app_log() << "Warning: Timer name (" << t.get_name() << ") should not contain the character "
@@ -59,7 +59,7 @@ void TimerManagerClass<TIMER>::initializeTimer(TIMER& t)
 }
 
 template<class TIMER>
-TIMER* TimerManagerClass<TIMER>::createTimer(const std::string& myname, timer_levels mytimer)
+TIMER* TimerManager<TIMER>::createTimer(const std::string& myname, timer_levels mytimer)
 {
   TIMER* t = nullptr;
 #pragma omp critical
@@ -73,14 +73,14 @@ TIMER* TimerManagerClass<TIMER>::createTimer(const std::string& myname, timer_le
 
 
 template<class TIMER>
-void TimerManagerClass<TIMER>::reset()
+void TimerManager<TIMER>::reset()
 {
   for (int i = 0; i < TimerList.size(); i++)
     TimerList[i]->reset();
 }
 
 template<class TIMER>
-void TimerManagerClass<TIMER>::set_timer_threshold(const timer_levels threshold)
+void TimerManager<TIMER>::set_timer_threshold(const timer_levels threshold)
 {
   timer_threshold = threshold;
   for (int i = 0; i < TimerList.size(); i++)
@@ -88,7 +88,7 @@ void TimerManagerClass<TIMER>::set_timer_threshold(const timer_levels threshold)
 }
 
 template<class TIMER>
-void TimerManagerClass<TIMER>::collate_flat_profile(Communicate* comm, FlatProfileData& p)
+void TimerManager<TIMER>::collate_flat_profile(Communicate* comm, FlatProfileData& p)
 {
   for (int i = 0; i < TimerList.size(); ++i)
   {
@@ -149,7 +149,7 @@ std::string get_leaf_name(const std::string& stack_name)
 }
 
 template<class TIMER>
-void TimerManagerClass<TIMER>::get_stack_name_from_id(const StackKey& key, std::string& stack_name)
+void TimerManager<TIMER>::get_stack_name_from_id(const StackKey& key, std::string& stack_name)
 {
   for (int i = 0; i < StackKey::max_level; i++)
   {
@@ -164,7 +164,7 @@ void TimerManagerClass<TIMER>::get_stack_name_from_id(const StackKey& key, std::
 }
 
 template<class TIMER>
-void TimerManagerClass<TIMER>::collate_stack_profile(Communicate* comm, StackProfileData& p)
+void TimerManager<TIMER>::collate_stack_profile(Communicate* comm, StackProfileData& p)
 {
 #ifdef USE_STACK_TIMERS
   // Put stacks from all timers into one data structure
@@ -222,7 +222,7 @@ void TimerManagerClass<TIMER>::collate_stack_profile(Communicate* comm, StackPro
 }
 
 template<class TIMER>
-void TimerManagerClass<TIMER>::print(Communicate* comm)
+void TimerManager<TIMER>::print(Communicate* comm)
 {
 #ifdef ENABLE_TIMERS
 #ifdef USE_STACK_TIMERS
@@ -238,7 +238,7 @@ void TimerManagerClass<TIMER>::print(Communicate* comm)
 }
 
 template<class TIMER>
-void TimerManagerClass<TIMER>::print_flat(Communicate* comm)
+void TimerManager<TIMER>::print_flat(Communicate* comm)
 {
 #ifdef ENABLE_TIMERS
   FlatProfileData p;
@@ -278,7 +278,7 @@ void pad_string(const std::string& in, std::string& out, int field_len)
 }
 
 template<class TIMER>
-void TimerManagerClass<TIMER>::print_stack(Communicate* comm)
+void TimerManager<TIMER>::print_stack(Communicate* comm)
 {
 #ifdef ENABLE_TIMERS
   StackProfileData p;
@@ -333,7 +333,7 @@ void TimerManagerClass<TIMER>::print_stack(Communicate* comm)
 }
 
 template<class TIMER>
-void TimerManagerClass<TIMER>::output_timing(Communicate* comm, Libxml2Document& doc, xmlNodePtr root)
+void TimerManager<TIMER>::output_timing(Communicate* comm, Libxml2Document& doc, xmlNodePtr root)
 {
 #if defined(ENABLE_TIMERS) && defined(USE_STACK_TIMERS)
   StackProfileData p;
@@ -385,7 +385,7 @@ void TimerManagerClass<TIMER>::output_timing(Communicate* comm, Libxml2Document&
 #endif
 }
 
-template class TimerManagerClass<NewTimer>;
-template class TimerManagerClass<FakeTimer>;
+template class TimerManager<NewTimer>;
+template class TimerManager<FakeTimer>;
 
 } // namespace qmcplusplus

@@ -33,7 +33,7 @@
 namespace qmcplusplus
 {
 template<class TIMER>
-class TimerManagerClass;
+class TimerManager;
 
 enum timer_levels
 {
@@ -136,7 +136,7 @@ protected:
   timer_levels timer_level;
   timer_id_t timer_id;
 #ifdef USE_STACK_TIMERS
-  TimerManagerClass<TimerType<CLOCK>>* manager;
+  TimerManager<TimerType<CLOCK>>* manager;
   TimerType* parent;
   StackKey current_stack_key;
 
@@ -208,7 +208,7 @@ public:
 
   void set_active_by_timer_threshold(const timer_levels threshold);
 
-  void set_manager(TimerManagerClass<TimerType<CLOCK>>* mymanager)
+  void set_manager(TimerManager<TimerType<CLOCK>>* mymanager)
   {
 #ifdef USE_STACK_TIMERS
     manager = mymanager;

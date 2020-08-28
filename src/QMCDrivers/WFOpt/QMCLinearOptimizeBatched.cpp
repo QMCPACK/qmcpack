@@ -52,11 +52,12 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
       vmcdriver_input_(vmcdriver_input),
       population_(population),
       samples_(samples),
-      generate_samples_timer_(*TimerManager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
-      initialize_timer_(*TimerManager.createTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
-      eigenvalue_timer_(*TimerManager.createTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
-      line_min_timer_(*TimerManager.createTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
-      cost_function_timer_(*TimerManager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium))
+      generate_samples_timer_(
+          *timer_manager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
+      initialize_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
+      eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
+      line_min_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
+      cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium))
 {
   IsQMCDriver = false;
   //     //set the optimization flag
@@ -111,8 +112,8 @@ void QMCLinearOptimizeBatched::start()
 
 #ifdef HAVE_LMY_ENGINE
 void QMCLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
-                                     DescentEngine& descentEngineObj,
-                                     std::string MinMethod)
+                                            DescentEngine& descentEngineObj,
+                                            std::string MinMethod)
 {
   app_log() << "entering engine_start function" << std::endl;
 
@@ -188,8 +189,8 @@ void QMCLinearOptimizeBatched::generateSamples()
 }
 
 QMCLinearOptimizeBatched::RealType QMCLinearOptimizeBatched::getLowestEigenvector(Matrix<RealType>& A,
-                                                                    Matrix<RealType>& B,
-                                                                    std::vector<RealType>& ev)
+                                                                                  Matrix<RealType>& B,
+                                                                                  std::vector<RealType>& ev)
 {
   int Nl(ev.size());
   //Tested the single eigenvalue speed and It was no faster.
@@ -350,7 +351,8 @@ QMCLinearOptimizeBatched::RealType QMCLinearOptimizeBatched::getLowestEigenvecto
 }
 
 
-QMCLinearOptimizeBatched::RealType QMCLinearOptimizeBatched::getLowestEigenvector(Matrix<RealType>& A, std::vector<RealType>& ev)
+QMCLinearOptimizeBatched::RealType QMCLinearOptimizeBatched::getLowestEigenvector(Matrix<RealType>& A,
+                                                                                  std::vector<RealType>& ev)
 {
   int Nl(ev.size());
   //Tested the single eigenvalue speed and It was no faster.
@@ -549,7 +551,8 @@ void QMCLinearOptimizeBatched::getNonLinearRange(int& first, int& last)
   //    app_log()<<"line params: "<<first<<" "<<last<< std::endl;
 }
 
-QMCLinearOptimizeBatched::RealType QMCLinearOptimizeBatched::getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S)
+QMCLinearOptimizeBatched::RealType QMCLinearOptimizeBatched::getNonLinearRescale(std::vector<RealType>& dP,
+                                                                                 Matrix<RealType>& S)
 {
   int first(0), last(0);
   getNonLinearRange(first, last);
@@ -658,9 +661,9 @@ bool QMCLinearOptimizeBatched::put(xmlNodePtr q)
 }
 
 bool QMCLinearOptimizeBatched::fitMappedStabilizers(std::vector<std::pair<RealType, RealType>>& mappedStabilizers,
-                                             RealType& XS,
-                                             RealType& val,
-                                             RealType tooBig)
+                                                    RealType& XS,
+                                                    RealType& val,
+                                                    RealType tooBig)
 {
   int nms(0);
   for (int i = 0; i < mappedStabilizers.size(); i++)

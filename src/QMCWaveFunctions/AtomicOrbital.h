@@ -153,9 +153,9 @@ public:
 
   AtomicOrbital()
       : RadialSpline(NULL),
-        YlmTimer(*TimerManager.createTimer("AtomicOrbital::CalcYlm")),
-        SplineTimer(*TimerManager.createTimer("AtomicOrbital::1D spline")),
-        SumTimer(*TimerManager.createTimer("AtomicOrbital::Summation")),
+        YlmTimer(*timer_manager.createTimer("AtomicOrbital::CalcYlm")),
+        SplineTimer(*timer_manager.createTimer("AtomicOrbital::1D spline")),
+        SumTimer(*timer_manager.createTimer("AtomicOrbital::Summation")),
         rmagLast(std::numeric_limits<RealType>::max())
   {
     // Nothing else for now

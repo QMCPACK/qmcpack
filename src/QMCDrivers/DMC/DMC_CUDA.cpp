@@ -43,10 +43,10 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
       myWarmupSteps(0),
       Mover(0),
       NLop(w.getTotalNum()),
-      ResizeTimer(*TimerManager.createTimer("DMCcuda::resize")),
-      DriftDiffuseTimer(*TimerManager.createTimer("DMCcuda::Drift_Diffuse")),
-      BranchTimer(*TimerManager.createTimer("DMCcuda::Branch")),
-      HTimer(*TimerManager.createTimer("DMCcuda::Hamiltonian"))
+      ResizeTimer(*timer_manager.createTimer("DMCcuda::resize")),
+      DriftDiffuseTimer(*timer_manager.createTimer("DMCcuda::Drift_Diffuse")),
+      BranchTimer(*timer_manager.createTimer("DMCcuda::Branch")),
+      HTimer(*timer_manager.createTimer("DMCcuda::Hamiltonian"))
 {
   RootName = "dmc";
   QMCType  = "DMCcuda";

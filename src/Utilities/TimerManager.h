@@ -13,7 +13,7 @@
 
 
 /** @file TimerManager.h
- * @brief TimerManager class.
+ * @brief timer_manager class.
  */
 #ifndef QMCPLUSPLUS_TIMER_MANAGER_H
 #define QMCPLUSPLUS_TIMER_MANAGER_H
@@ -35,7 +35,7 @@ class Communicate;
 namespace qmcplusplus
 {
 template<class TIMER>
-class TimerManagerClass
+class TimerManager
 {
 protected:
   std::vector<std::unique_ptr<TIMER>> TimerList;
@@ -53,7 +53,7 @@ public:
   __itt_domain* task_domain;
 #endif
 
-  TimerManagerClass() : timer_threshold(timer_level_coarse), max_timer_id(1), max_timers_exceeded(false)
+  TimerManager() : timer_threshold(timer_level_coarse), max_timer_id(1), max_timers_exceeded(false)
   {
 #ifdef USE_VTUNE_TASKS
     task_domain = __itt_domain_create("QMCPACK");
@@ -114,10 +114,10 @@ public:
   void get_stack_name_from_id(const StackKey& key, std::string& name);
 };
 
-extern template class TimerManagerClass<NewTimer>;
-extern template class TimerManagerClass<FakeTimer>;
+extern template class TimerManager<NewTimer>;
+extern template class TimerManager<FakeTimer>;
 
-extern TimerManagerClass<NewTimer> TimerManager;
+extern TimerManager<NewTimer> timer_manager;
 
 // Helpers to make it easier to define a set of timers
 // See tests/test_timer.cpp for an example
@@ -137,8 +137,8 @@ using TimerNameList_t = std::vector<TimerIDName_t<T>>;
 template<class T, class TIMER>
 void setup_timers(std::vector<TIMER*>& timers,
                   TimerNameList_t<T> timer_list,
-                  timer_levels timer_level          = timer_level_fine,
-                  TimerManagerClass<TIMER>* manager = &TimerManager)
+                  timer_levels timer_level     = timer_level_fine,
+                  TimerManager<TIMER>* manager = &timer_manager)
 {
   timers.resize(timer_list.size());
   for (int i = 0; i < timer_list.size(); i++)

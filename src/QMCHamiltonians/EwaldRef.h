@@ -249,7 +249,7 @@ real_t gridSum(T& function, bool zero = true, real_t tol = 1e-11)
  *  to determine the radius.
  *
  *  @param volume: Volume of the real space cell.
- */ 
+ */
 real_t getKappaMadelung(real_t volume)
 {
   real_t radius = std::pow(3. * volume / (4 * M_PI), 1. / 3);
@@ -307,7 +307,7 @@ real_t madelungSum(const RealMat& a, real_t tol = 1e-10)
  *  to determine the radius.
  *
  *  @param volume: Volume of the real space cell.
- */ 
+ */
 real_t getKappaEwald(real_t volume)
 {
   real_t radius = std::pow(3. * volume / (4 * M_PI), 1. / 3);
@@ -373,7 +373,7 @@ real_t ewaldSum(const RealVec& r, const RealMat& a, real_t tol = 1e-10)
 real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, real_t tol = 1e-10)
 {
   // Timer for EwaldRef
-  ScopedTimer totalEwaldTimer(TimerManager.createTimer("EwaldRef"));
+  ScopedTimer totalEwaldTimer(timer_manager.createTimer("EwaldRef"));
 
   // Number of particles
   const size_t N = R.size();
@@ -383,7 +383,7 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
 
   {
     // Sum Madelung contributions
-    ScopedTimer totalMadelungTimer(TimerManager.createTimer("MadelungSum"));
+    ScopedTimer totalMadelungTimer(timer_manager.createTimer("MadelungSum"));
     // Maximum self-interaction charge product
     real_t qqmax = 0.0;
     for (size_t i = 0; i < N; ++i)
@@ -399,23 +399,23 @@ real_t ewaldEnergy(const RealMat& a, const PosArray& R, const ChargeArray& Q, re
 
   {
     // Sum the interaction terms for all particle pairs
-    ScopedTimer EwaldSumTimer(TimerManager.createTimer("EwaldSum"));
+    ScopedTimer EwaldSumTimer(timer_manager.createTimer("EwaldSum"));
 
-    int_t Npairs = (N*(N-1))/2;
+    int_t Npairs = (N * (N - 1)) / 2;
 
-    std::vector<real_t>  qq(Npairs);
-    for(size_t i=0,n=0; i<N; ++i)
-      for(size_t j=0; j<i; ++j,++n)
-        qq[n] = Q[i]*Q[j];
+    std::vector<real_t> qq(Npairs);
+    for (size_t i = 0, n = 0; i < N; ++i)
+      for (size_t j = 0; j < i; ++j, ++n)
+        qq[n] = Q[i] * Q[j];
 
     std::vector<RealVec> rr(Npairs);
-    for(size_t i=0,n=0; i<N; ++i)
-      for(size_t j=0; j<i; ++j,++n)
-        rr[n] = R[i]-R[j];
+    for (size_t i = 0, n = 0; i < N; ++i)
+      for (size_t j = 0; j < i; ++j, ++n)
+        rr[n] = R[i] - R[j];
 
 #pragma omp parallel for reduction(+ : ve)
-    for(size_t n=0; n<Npairs; ++n)
-      ve += qq[n]*ewaldSum(rr[n],a,tol/qq[n]);
+    for (size_t n = 0; n < Npairs; ++n)
+      ve += qq[n] * ewaldSum(rr[n], a, tol / qq[n]);
   }
 
   return ve;

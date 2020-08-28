@@ -53,11 +53,11 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
       wfNode(NULL),
       optNode(NULL),
       param_tol(1e-4),
-      generate_samples_timer_(*TimerManager.createTimer("QMCLinearOptimize::GenerateSamples", timer_level_medium)),
-      initialize_timer_(*TimerManager.createTimer("QMCLinearOptimize::Initialize", timer_level_medium)),
-      eigenvalue_timer_(*TimerManager.createTimer("QMCLinearOptimize::Eigenvalue", timer_level_medium)),
-      line_min_timer_(*TimerManager.createTimer("QMCLinearOptimize::Line_Minimization", timer_level_medium)),
-      cost_function_timer_(*TimerManager.createTimer("QMCLinearOptimize::CostFunction", timer_level_medium))
+      generate_samples_timer_(*timer_manager.createTimer("QMCLinearOptimize::GenerateSamples", timer_level_medium)),
+      initialize_timer_(*timer_manager.createTimer("QMCLinearOptimize::Initialize", timer_level_medium)),
+      eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimize::Eigenvalue", timer_level_medium)),
+      line_min_timer_(*timer_manager.createTimer("QMCLinearOptimize::Line_Minimization", timer_level_medium)),
+      cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimize::CostFunction", timer_level_medium))
 {
   IsQMCDriver = false;
   //     //set the optimization flag

@@ -158,7 +158,10 @@ public:
 
   /** placate the legacy base class interface
    */
-  void setBranchEngine(SimpleFixedNodeBranch* be) { throw std::runtime_error("You can not use the legacy SimpleFixedNodeBranch class with QMCDriverNew"); }
+  void setBranchEngine(SimpleFixedNodeBranch* be)
+  {
+    throw std::runtime_error("You can not use the legacy SimpleFixedNodeBranch class with QMCDriverNew");
+  }
 
   ///set the BranchEngineType
   void setNewBranchEngine(SFNBranch* be) { branch_engine_ = be; }
@@ -166,7 +169,7 @@ public:
   /** placate the legacy base class interface
    */
   SimpleFixedNodeBranch* getBranchEngine() { return nullptr; }
-  
+
   ///return BranchEngineType*
   SFNBranch* getNewBranchEngine() { return branch_engine_; }
 
@@ -269,13 +272,13 @@ protected:
     NewTimer& hamiltonian_timer;
     NewTimer& collectables_timer;
     DriverTimers(const std::string& prefix)
-        : checkpoint_timer(*TimerManager.createTimer(prefix + "CheckPoint", timer_level_medium)),
-          run_steps_timer(*TimerManager.createTimer(prefix + "RunSteps", timer_level_medium)),
-          init_walkers_timer(*TimerManager.createTimer(prefix + "InitWalkers", timer_level_medium)),
-          buffer_timer(*TimerManager.createTimer(prefix + "Buffer", timer_level_medium)),
-          movepbyp_timer(*TimerManager.createTimer(prefix + "MovePbyP", timer_level_medium)),
-          hamiltonian_timer(*TimerManager.createTimer(prefix + "Hamiltonian", timer_level_medium)),
-          collectables_timer(*TimerManager.createTimer(prefix + "Collectables", timer_level_medium))
+        : checkpoint_timer(*timer_manager.createTimer(prefix + "CheckPoint", timer_level_medium)),
+          run_steps_timer(*timer_manager.createTimer(prefix + "RunSteps", timer_level_medium)),
+          init_walkers_timer(*timer_manager.createTimer(prefix + "InitWalkers", timer_level_medium)),
+          buffer_timer(*timer_manager.createTimer(prefix + "Buffer", timer_level_medium)),
+          movepbyp_timer(*timer_manager.createTimer(prefix + "MovePbyP", timer_level_medium)),
+          hamiltonian_timer(*timer_manager.createTimer(prefix + "Hamiltonian", timer_level_medium)),
+          collectables_timer(*timer_manager.createTimer(prefix + "Collectables", timer_level_medium))
     {}
   };
 

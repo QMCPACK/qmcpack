@@ -29,7 +29,7 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
   typedef QMCTraits::RealType RealType;
 
   NewTimer* cuspApplyTimer =
-      TimerManager.createTimer("CuspCorrectionConstruction::applyCuspCorrection", timer_level_medium);
+      timer_manager.createTimer("CuspCorrectionConstruction::applyCuspCorrection", timer_level_medium);
 
   ScopedTimer cuspApplyTimerWrapper(cuspApplyTimer);
 
@@ -195,9 +195,9 @@ void generateCuspInfo(int orbital_set_size,
   typedef QMCTraits::RealType RealType;
 
   NewTimer* cuspCreateTimer =
-      TimerManager.createTimer("CuspCorrectionConstruction::createCuspParameters", timer_level_medium);
-  NewTimer* splitPhiEtaTimer = TimerManager.createTimer("CuspCorrectionConstruction::splitPhiEta", timer_level_fine);
-  NewTimer* computeTimer = TimerManager.createTimer("CuspCorrectionConstruction::computeCorrection", timer_level_fine);
+      timer_manager.createTimer("CuspCorrectionConstruction::createCuspParameters", timer_level_medium);
+  NewTimer* splitPhiEtaTimer = timer_manager.createTimer("CuspCorrectionConstruction::splitPhiEta", timer_level_fine);
+  NewTimer* computeTimer = timer_manager.createTimer("CuspCorrectionConstruction::computeCorrection", timer_level_fine);
 
   ScopedTimer createCuspTimerWrapper(cuspCreateTimer);
 
