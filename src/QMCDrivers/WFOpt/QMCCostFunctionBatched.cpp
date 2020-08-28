@@ -385,6 +385,9 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
   //OptVariablesForPsi.print(std::cout);
   //cout << "-------------------------------------- " << std::endl;
   Psi.resetParameters(OptVariablesForPsi);
+  for (int i = 0; i < wf_ptr_list_.size(); i++) {
+    wf_ptr_list_[i]->resetParameters(OptVariablesForPsi);
+  }
 }
 
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(bool needGrad)
@@ -411,15 +414,13 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
     auto ref_d2LogPsi = convertPtrToRefVector(d2LogPsi);
 
     outputManager.pause();
-    delete_iter(wf_ptr_list_.begin(), wf_ptr_list_.end());
     for (int iw = 0; iw < numSamples; iw++)
     {
       ParticleSet* wRef = p_ptr_list_[iw];
       samples_.loadSample(wRef->R, iw);
       wRef->update(true);
-      // TrialWaveFunction needs to be re-created.  Not sure why.
-      wf_ptr_list_[iw] = Psi.makeClone(*wRef);
     }
+
     outputManager.resume();
 
     RefVector<TrialWaveFunction> wf_list = convertPtrToRefVector(wf_ptr_list_);
