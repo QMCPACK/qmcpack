@@ -138,7 +138,7 @@ protected:
   long num_calls;
   /// name of this timer
   std::string name;
-  /// name of this timer
+  /// if false, timer start/stop becomes no-op.
   bool active;
   /// timer level
   timer_levels timer_level;
