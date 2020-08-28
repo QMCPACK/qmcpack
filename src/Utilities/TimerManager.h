@@ -34,16 +34,29 @@ class Communicate;
 
 namespace qmcplusplus
 {
+/** Manager creates timers and handle reports
+ * @tparam TIMER regular or fake timer
+ *
+ * TimerManager is generally not thread-safe.
+ * Thread-safe functions are noted below.
+ */
 template<class TIMER>
 class TimerManager
 {
 protected:
+  /// All the timers created by this manager
   std::vector<std::unique_ptr<TIMER>> TimerList;
+  /// The stack of nested active timers
   std::vector<TIMER*> CurrentTimerStack;
+  /// The threshold for active timers
   timer_levels timer_threshold;
+  /// The current maximal timer id
   timer_id_t max_timer_id;
+  /// status of maxmal timer id reached
   bool max_timers_exceeded;
+  /// timer id to name mapping
   std::map<timer_id_t, std::string> timer_id_name;
+  /// name to timer id mapping
   std::map<std::string, timer_id_t> timer_name_to_id;
 
   void initializeTimer(TIMER& t);
@@ -60,6 +73,7 @@ public:
 #endif
   }
 
+  /// Create a new timer object registred in this manager. This call is thread-safe.
   TIMER* createTimer(const std::string& myname, timer_levels mytimer = timer_level_fine);
 
   void push_timer(TIMER* t) { CurrentTimerStack.push_back(t); }

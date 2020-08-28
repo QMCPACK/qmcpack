@@ -46,7 +46,7 @@ void TimerManager<TIMER>::initializeTimer(TIMER& t)
     {
       max_timers_exceeded = true;
       app_log() << "Number of timers exceeds limit (" << static_cast<int>(std::numeric_limits<timer_id_t>::max())
-                << ").   Adjust timer_id_t in TIMER.h and recompile." << std::endl;
+                << ").   Adjust timer_id_t in NewTimer.h and recompile." << std::endl;
     }
     else
       max_timer_id++;
@@ -54,7 +54,6 @@ void TimerManager<TIMER>::initializeTimer(TIMER& t)
   else
     t.set_id(timer_name_to_id[t.get_name()]);
 
-  t.set_manager(this);
   t.set_active_by_timer_threshold(timer_threshold);
 }
 
@@ -64,7 +63,7 @@ TIMER* TimerManager<TIMER>::createTimer(const std::string& myname, timer_levels 
   TIMER* t = nullptr;
 #pragma omp critical
   {
-    TimerList.push_back(std::make_unique<TIMER>(myname, mytimer));
+    TimerList.push_back(std::make_unique<TIMER>(myname, this, mytimer));
     t = TimerList.back().get();
     initializeTimer(*t);
   }
@@ -291,7 +290,7 @@ void TimerManager<TIMER>::print_stack(Communicate* comm)
     {
       app_warning() << "Maximum stack level (" << StackKey::max_level << ") exceeded.  Results may be incorrect."
                     << std::endl;
-      app_warning() << "Adjust StackKey in TIMER.h and recompile." << std::endl;
+      app_warning() << "Adjust StackKey in NewTimer.h and recompile." << std::endl;
     }
 
     int indent_len   = 2;
