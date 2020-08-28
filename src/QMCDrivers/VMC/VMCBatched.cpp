@@ -278,8 +278,8 @@ bool VMCBatched::run()
 
   StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_);
 
-  LoopTimer vmc_loop;
-  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  LoopTimer<> vmc_loop;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
 
   { // walker initialization
     ScopedTimer local_timer(&(timers_.init_walkers_timer));

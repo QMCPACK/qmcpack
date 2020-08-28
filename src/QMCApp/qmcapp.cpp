@@ -87,19 +87,19 @@ int main(int argc, char** argv)
             std::string timer_level = c.substr(pos + 1);
             if (timer_level == "none")
             {
-              TimerManager.set_timer_threshold(timer_level_none);
+              timer_manager.set_timer_threshold(timer_level_none);
             }
             else if (timer_level == "coarse")
             {
-              TimerManager.set_timer_threshold(timer_level_coarse);
+              timer_manager.set_timer_threshold(timer_level_coarse);
             }
             else if (timer_level == "medium")
             {
-              TimerManager.set_timer_threshold(timer_level_medium);
+              timer_manager.set_timer_threshold(timer_level_medium);
             }
             else if (timer_level == "fine")
             {
-              TimerManager.set_timer_threshold(timer_level_fine);
+              timer_manager.set_timer_threshold(timer_level_fine);
             }
             else
             {
@@ -193,8 +193,7 @@ int main(int argc, char** argv)
         std::ostringstream msg;
         msg << "main(). Current " << OHMMS::Controller->size() << " MPI ranks cannot accommodate all the "
             << inputs.size() << " individual calculations in the ensemble. "
-            << "Increase the number of MPI ranks or reduce the number of calculations."
-            << std::endl;
+            << "Increase the number of MPI ranks or reduce the number of calculations." << std::endl;
         OHMMS::Controller->barrier_and_abort(msg.str());
       }
       qmcComm               = new Communicate(*OHMMS::Controller, inputs.size());
@@ -243,13 +242,13 @@ int main(int argc, char** argv)
     Libxml2Document timingDoc;
     timingDoc.newDoc("resources");
     output_hardware_info(qmcComm, timingDoc, timingDoc.getRoot());
-    TimerManager.output_timing(qmcComm, timingDoc, timingDoc.getRoot());
+    timer_manager.output_timing(qmcComm, timingDoc, timingDoc.getRoot());
     qmc->ptclPool->output_particleset_info(timingDoc, timingDoc.getRoot());
     if (OHMMS::Controller->rank() == 0)
     {
       timingDoc.dump(qmc->getTitle() + ".info.xml");
     }
-    TimerManager.print(qmcComm);
+    timer_manager.print(qmcComm);
     if (qmc)
       delete qmc;
     if (useGPU)

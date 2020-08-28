@@ -24,7 +24,6 @@
 #include "io/hdf_multi.h"
 #include "io/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
-#include "Utilities/NewTimer.h"
 #include "Utilities/Timer.h"
 
 #include "AFQMC/Walkers/WalkerSet.hpp"

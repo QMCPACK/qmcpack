@@ -29,7 +29,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Platforms/Host/OutputManager.h"
 #include "Utilities/Timer.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "Particle/HDFWalkerIO.h"
 #include "Particle/InitMolecularSystem.h"
 #include "QMCDrivers/QMCDriver.h"
@@ -114,8 +114,7 @@ QMCMain::QMCMain(Communicate* c)
                 << "\n  CUDA base precision = " << GET_MACRO_VAL(CUDA_PRECISION)
                 << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
 #endif
-                << "\n\n  Structure-of-arrays (SoA) optimization enabled"
-                << std::endl;
+                << "\n\n  Structure-of-arrays (SoA) optimization enabled" << std::endl;
   app_summary() << std::endl;
   app_summary().flush();
 }
@@ -146,7 +145,7 @@ bool QMCMain::execute()
 #ifdef BUILD_AFQMC
   if (simulationType == "afqmc")
   {
-    NewTimer* t2 = TimerManager.createTimer("Total", timer_level_coarse);
+    NewTimer* t2 = timer_manager.createTimer("Total", timer_level_coarse);
     ScopedTimer t2_scope(t2);
     app_log() << std::endl
               << "/*************************************************\n"
@@ -177,10 +176,10 @@ bool QMCMain::execute()
 #endif
 
 
-  NewTimer* t2 = TimerManager.createTimer("Total", timer_level_coarse);
+  NewTimer* t2 = timer_manager.createTimer("Total", timer_level_coarse);
   t2->start();
 
-  NewTimer* t3 = TimerManager.createTimer("Startup", timer_level_coarse);
+  NewTimer* t3 = timer_manager.createTimer("Startup", timer_level_coarse);
   t3->start();
 
   //validate the input file
@@ -542,11 +541,12 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 {
   std::unique_ptr<QMCDriverInterface> qmc_driver;
   std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
-  bool append_run = false;
+  bool append_run              = false;
 
-  if(!population_)
+  if (!population_)
   {
-    population_.reset(new MCPopulation(myComm->size(), *qmcSystem, ptclPool->getParticleSet("e"), psiPool->getPrimary(), hamPool->getPrimary(), myComm->rank()));
+    population_.reset(new MCPopulation(myComm->size(), *qmcSystem, ptclPool->getParticleSet("e"), psiPool->getPrimary(),
+                                       hamPool->getPrimary(), myComm->rank()));
   }
   if (reuse)
     qmc_driver = std::move(last_driver);
@@ -554,8 +554,8 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   {
     QMCDriverFactory driver_factory;
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
-    qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem, *ptclPool,
-                                             *psiPool, *hamPool, *population_, myComm);
+    qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem,
+                                             *ptclPool, *psiPool, *hamPool, *population_, myComm);
     append_run = das.append_run;
   }
 
@@ -565,7 +565,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if (!FirstQMC && !append_run)
       myProject.advance();
-    
+
     qmc_driver->setStatus(myProject.CurrentMainRoot(), prev_config_file, append_run);
     // PD:
     // Q: How does m_walkerset_in end up being non empty?
@@ -580,12 +580,12 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     infoSummary.flush();
     infoLog.flush();
     Timer qmcTimer;
-    NewTimer* t1 = TimerManager.createTimer(qmc_driver->getEngineName(), timer_level_coarse);
+    NewTimer* t1 = timer_manager.createTimer(qmc_driver->getEngineName(), timer_level_coarse);
     t1->start();
     qmc_driver->run();
     t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
-    last_driver    = std::move(qmc_driver);
+    last_driver = std::move(qmc_driver);
     return true;
   }
   else

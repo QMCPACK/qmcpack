@@ -22,7 +22,6 @@
 #include <iostream>
 #include <tuple>
 
-#include <Utilities/NewTimer.h>
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/config.h"
 #include "mpi3/shm/mutex.hpp"

@@ -73,8 +73,8 @@ bool RMC::run()
 #endif
   const bool has_collectables = W.Collectables.size();
 
-  LoopTimer rmc_loop;
-  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  LoopTimer<> rmc_loop;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
   for (int block = 0; block < nBlocks; ++block)
   {
     rmc_loop.start();

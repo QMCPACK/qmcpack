@@ -21,8 +21,6 @@
 #include <string>
 #include <vector>
 
-#include <Utilities/NewTimer.h>
-
 namespace qmcplusplus
 {
 EnergyDensityEstimator::EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE)

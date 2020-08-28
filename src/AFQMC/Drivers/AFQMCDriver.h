@@ -10,7 +10,6 @@
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Estimators/EstimatorHandler.h"
-#include "Utilities/NewTimer.h"
 
 namespace qmcplusplus
 {
