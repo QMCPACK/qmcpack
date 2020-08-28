@@ -13,7 +13,7 @@
 
 
 /** @file NewTimer.cpp
- * @brief Implements NewTimer memeber functions
+ * @brief Implements NewTimer member functions
  */
 #include "NewTimer.h"
 #include <iostream>
