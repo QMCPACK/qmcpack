@@ -23,19 +23,19 @@
 namespace qmcplusplus
 {
 template<class CLOCK = cpu_clock>
-class RunTimeManagerClass
+class RunTimeManager
 {
 public:
   void start() { start_time = CLOCK()(); }
   double elapsed() { return CLOCK()() - start_time; }
   // Initialize the start time at static class initialization time
-  RunTimeManagerClass() { start(); }
+  RunTimeManager() { start(); }
 
 private:
   double start_time;
 };
 
-extern RunTimeManagerClass<cpu_clock> RunTimeManager;
+extern RunTimeManager<cpu_clock> run_time_manager;
 
 template<class CLOCK = cpu_clock>
 class LoopTimer
@@ -69,10 +69,10 @@ class RunTimeControl
   double m_loop_time;
   double m_elapsed;
   double m_remaining;
-  RunTimeManagerClass<CLOCK>& runtimeManager;
+  RunTimeManager<CLOCK>& runtimeManager;
 
 public:
-  RunTimeControl(RunTimeManagerClass<CLOCK>& rm, int maxCPUSecs) : MaxCPUSecs(maxCPUSecs), runtimeManager(rm)
+  RunTimeControl(RunTimeManager<CLOCK>& rm, int maxCPUSecs) : MaxCPUSecs(maxCPUSecs), runtimeManager(rm)
   {
     m_runtime_safety_padding = 10.0; // 10 seconds - enough to shut down?
     m_loop_margin            = 1.1;  // 10% margin on average loop time?
@@ -85,8 +85,8 @@ public:
   std::string time_limit_message(const std::string& driverName, int block);
 };
 
-extern template class RunTimeManagerClass<cpu_clock>;
-extern template class RunTimeManagerClass<fake_cpu_clock>;
+extern template class RunTimeManager<cpu_clock>;
+extern template class RunTimeManager<fake_cpu_clock>;
 
 } // namespace qmcplusplus
 #endif

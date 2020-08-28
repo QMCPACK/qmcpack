@@ -67,7 +67,7 @@ bool VMC::run()
 #endif
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(RunTimeManager, MaxCPUSecs);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
   bool enough_time_for_next_iteration = true;
 
   const bool has_collectables = W.Collectables.size();

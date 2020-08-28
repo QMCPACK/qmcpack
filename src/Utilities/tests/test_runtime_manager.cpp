@@ -23,7 +23,7 @@ TEST_CASE("test_runtime_manager", "[utilities]")
 {
   // Use a local version rather than the global timer_manager, otherwise
   //  changes will persist from test to test.
-  RunTimeManagerClass<fake_cpu_clock> rm;
+  RunTimeManager<fake_cpu_clock> rm;
   double e = rm.elapsed();
   REQUIRE(e == Approx(1.0));
 }
@@ -53,7 +53,7 @@ TEST_CASE("test_loop_control", "[utilities]")
   // fake clock advances every time cpu_clock is called
   LoopTimer<fake_cpu_clock> loop;
   int max_cpu_secs = 9;
-  RunTimeManagerClass<fake_cpu_clock> rm; // fake clock = 1
+  RunTimeManager<fake_cpu_clock> rm; // fake clock = 1
   RunTimeControl<fake_cpu_clock> rc(rm, max_cpu_secs);
   rc.runtime_padding(1.0);
   bool enough_time = rc.enough_time_for_next_iteration(loop); // fake clock = 2

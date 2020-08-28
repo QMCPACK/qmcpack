@@ -20,7 +20,7 @@
 
 namespace qmcplusplus
 {
-RunTimeManagerClass<cpu_clock> RunTimeManager;
+RunTimeManager<cpu_clock> run_time_manager;
 
 template<class CLOCK>
 double LoopTimer<CLOCK>::get_time_per_iteration()

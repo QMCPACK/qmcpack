@@ -211,7 +211,7 @@ bool VMCcuda::run()
   double Esum;
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(RunTimeManager, MaxCPUSecs);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
   bool enough_time_for_next_iteration = true;
 
   // First do warmup steps

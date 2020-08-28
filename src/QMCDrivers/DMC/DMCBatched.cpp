@@ -519,7 +519,7 @@ bool DMCBatched::run()
   LoopTimer<> dmc_loop;
 
   int sample = 0;
-  RunTimeControl<> runtimeControl(RunTimeManager, MaxCPUSecs);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
 
   { // walker initialization
     ScopedTimer local_timer(&(timers_.init_walkers_timer));
