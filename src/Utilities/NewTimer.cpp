@@ -54,23 +54,21 @@ void TimerType<CLOCK>::start()
       if (manager)
       {
         if (this == manager->current_timer())
-        {
           std::cerr << "Timer loop: " << name << std::endl;
-        }
-        if (parent != manager->current_timer())
+
+        // compute current_stack_key
+        TimerType* parent = manager->current_timer();
+        if (parent)
         {
-          parent = manager->current_timer();
-          if (parent)
-          {
-            current_stack_key = parent->get_stack_key();
-            current_stack_key.add_id(timer_id);
-          }
+          current_stack_key = parent->get_stack_key();
+          current_stack_key.add_id(timer_id);
         }
-        if (parent == nullptr)
+        else
         {
           current_stack_key = StackKey();
           current_stack_key.add_id(timer_id);
         }
+
         manager->push_timer(this);
       }
       start_time = CLOCK()();
@@ -109,7 +107,10 @@ void TimerType<CLOCK>::stop()
 
       if (manager)
       {
-        manager->current_timer()->set_parent(nullptr);
+        if (this != manager->current_timer())
+          std::cerr << "Timer stack pop not matching push! "
+                    << "Expect \"" << name << "\" but \"" << manager->current_timer()->name << "\" on the top."
+                    << std::endl;
         manager->pop_timer();
       }
 #endif
@@ -122,13 +123,9 @@ template<class CLOCK>
 void TimerType<CLOCK>::set_active_by_timer_threshold(const timer_levels threshold)
 {
   if (timer_level <= threshold)
-  {
     active = true;
-  }
   else
-  {
     active = false;
-  }
 }
 
 template class TimerType<CPUClock>;
