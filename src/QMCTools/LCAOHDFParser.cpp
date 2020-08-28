@@ -76,42 +76,8 @@ void LCAOHDFParser::parse(const std::string& fname)
   std::cout.flush();
 
   hin.read(SpinRestricted, "SpinRestricted");
-  if (SpinRestricted)
-  {
-    hin.read(numAO, "numAO");
-    hin.read(numMO, "numMO");
-  }
-  else
-  {
-    int numAO_up, numAO_dn, numMO_up, numMO_dn;
-
-    hin.read(numAO_up, "numAO_up");
-    hin.read(numMO_up, "numMO_up");
-    hin.read(numAO_dn, "numAO_dn");
-    hin.read(numMO_dn, "numMO_dn");
-    if (numAO_up == numAO_dn)
-      numAO = numAO_up;
-    else
-    {
-      std::cout << "numAO_up=" << numAO_up << "  numAO_dn=" << numAO_dn << std::endl;
-
-      std::cerr << "The number of AO for the up Orbitals are different than the number of AOs for down orbitals. This "
-                   "is probably an error in your "
-                << CodeName << " input. Please contact QMCPACK developers" << std::endl;
-      abort();
-    }
-    if (numMO_up == numMO_dn)
-      numMO = numMO_up;
-    else
-    {
-      std::cout << "numMO_up=" << numMO_up << "  numMO_dn=" << numMO_dn << std::endl;
-
-      std::cerr << "The number of MO for the up Orbitals are different than the number of MOs for down orbitals. This "
-                   "is probably an error in your "
-                << CodeName << " input. Please contact QMCPACK developers" << std::endl;
-      abort();
-    }
-  }
+  hin.read(numAO, "numAO");
+  hin.read(numMO, "numMO");
 
 
   std::cout << "NUMBER OF AOs: " << numAO << std::endl;
@@ -129,7 +95,10 @@ void LCAOHDFParser::parse(const std::string& fname)
   hin.read(NumberOfEls, "NbTotElec");
   int ds;
   hin.read(ds, "spin");
-  SpinMultiplicity = ds + 1;
+  if (CodeName == "PySCF")
+    SpinMultiplicity = ds + 1;
+  else
+    SpinMultiplicity = ds;
 
   std::cout << "Number of alpha electrons: " << NumberOfAlpha << std::endl;
   std::cout << "Number of beta electrons: " << NumberOfBeta << std::endl;
@@ -140,7 +109,24 @@ void LCAOHDFParser::parse(const std::string& fname)
   hin.push("atoms");
   hin.read(NumberOfAtoms, "number_of_atoms");
   std::cout << "NUMBER OF ATOMS: " << NumberOfAtoms << std::endl;
+  hin.pop();
 
+  EigVal_alpha.resize(numMO);
+  EigVal_beta.resize(numMO);
+  Matrix<double> myvec(1, numMO);
+
+  hin.push("Super_Twist");
+  hin.read(myvec, "eigenval_0");
+  for (int i = 0; i < numMO; i++)
+    EigVal_alpha[i] = myvec[0][i];
+
+  //Reading Eigenvals for Spin unRestricted calculation. This section is needed to set the occupation numbers
+  if (!SpinRestricted)
+  {
+    hin.read(myvec, "eigenval_1");
+    for (int i = 0; i < numMO; i++)
+      EigVal_beta[i] = myvec[0][i];
+  }
 
   hin.close();
 
@@ -347,20 +333,20 @@ void LCAOHDFParser::getSuperTwist(const std::string& fname)
     abort();
   }
 
-  if(!hin.push("Super_Twist"))
+  if (!hin.push("Super_Twist"))
   {
     std::cerr << "Could not find Super Twist" << std::endl;
     abort();
   }
   STwist_Coord.resize(3);
 
-  hin.read(MyVec,"Coord");
+  hin.read(MyVec, "Coord");
 
   hin.pop();
-  STwist_Coord[0]=MyVec[0][0];
-  STwist_Coord[1]=MyVec[0][1];
-  STwist_Coord[2]=MyVec[0][2];
-  
+  STwist_Coord[0] = MyVec[0][0];
+  STwist_Coord[1] = MyVec[0][1];
+  STwist_Coord[2] = MyVec[0][2];
+
   hin.close();
 }
 
@@ -381,23 +367,53 @@ void LCAOHDFParser::getMO(const std::string& fname)
     abort();
   }
   char name[72];
-  sprintf(name, "%s", "/KPTS_0/eigenset_0");
+  sprintf(name, "%s", "/Super_Twist/eigenset_0");
   setname = name;
   if (!hin.readEntry(CartMat, setname))
   {
     setname = "SPOSet::putFromH5 Missing " + setname + " from HDF5 File.";
     APP_ABORT(setname.c_str());
   }
-  hin.close();
+  sprintf(name, "%s", "/Super_Twist/eigenval_0");
+  if (!hin.readEntry(EigVal_alpha, setname))
+  {
+    setname = "SPOSet::putFromH5 Missing " + setname + " from HDF5 File.";
+    APP_ABORT(setname.c_str());
+  }
+
   int cnt = 0;
   for (int i = 0; i < numMO; i++)
     for (int k = 0; k < SizeOfBasisSet; k++)
       EigVec[cnt++] = CartMat[i][k];
 
+  if (!SpinRestricted)
+  {
+    sprintf(name, "%s", "/Super_Twist/eigenset_1");
+    setname = name;
+    if (!hin.readEntry(CartMat, setname))
+    {
+      setname = "SPOSet::putFromH5 Missing " + setname + " from HDF5 File.";
+      APP_ABORT(setname.c_str());
+    }
+    sprintf(name, "%s", "/Super_Twist/eigenval_1");
+    if (!hin.readEntry(EigVal_beta, setname))
+    {
+      setname = "SPOSet::putFromH5 Missing " + setname + " from HDF5 File.";
+      APP_ABORT(setname.c_str());
+    }
+  }
+
+
+  for (int i = 0; i < numMO; i++)
+    for (int k = 0; k < SizeOfBasisSet; k++)
+      EigVec[cnt++] = CartMat[i][k];
+
+  hin.close();
   int btot = numMO * SizeOfBasisSet;
   int n = btot / 4, b = 0;
   int dn = btot - n * 4;
   std::ostringstream eig;
+
   eig.setf(std::ios::scientific, std::ios::floatfield);
   eig.setf(std::ios::right, std::ios::adjustfield);
   eig.precision(14);

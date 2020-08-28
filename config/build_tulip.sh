@@ -62,10 +62,8 @@ folder=build_MI60_AOMP_offload_real_MP
 mkdir $folder
 cd $folder
 cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
-      -DQMC_MPI=0 \
-      -DCMAKE_C_FLAGS="-march=native" \
-      -DCMAKE_CXX_FLAGS="-march=native -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx906" \
-      -DQMC_MIXED_PRECISION=1 -DENABLE_OFFLOAD=ON -DOFFLOAD_TARGET="amdgcn-amd-amdhsa" \
+      -DQMC_MPI=0 -DQMC_MIXED_PRECISION=1 \
+      -DENABLE_OFFLOAD=ON -DOFFLOAD_TARGET=amdgcn-amd-amdhsa -DOFFLOAD_ARCH=gfx906 \
       -DENABLE_TIMERS=1 \
       .. && make -j32
 cd ..

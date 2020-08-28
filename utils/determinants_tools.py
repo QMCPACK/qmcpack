@@ -40,9 +40,9 @@ def sanitize(det_spin, bit_kind_size):
                                 it will silently casted to int.
 
      >>> import numpy as np
-     >>> sanitize_numpy([np.int8(1)], 8)
+     >>> sanitize([np.int8(1)], 8)
      [1]
-     >>> sanitize_numpy([np.int8(-1)], 8)
+     >>> sanitize([np.int8(-1)], 8)
      [255]
      '''
      return [ (s + (1 << bit_kind_size)) if s < 0 else int(s) for s in det_spin]

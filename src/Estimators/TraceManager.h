@@ -31,6 +31,7 @@
 #include <Utilities/IteratorUtility.h>
 #include <Message/Communicate.h>
 #include <io/hdf_archive.h>
+#include <Message/OpenMP.h>
 #include <map>
 #include <set>
 #include <algorithm>

@@ -76,7 +76,7 @@ void GamesFMOParser::parse(const std::string& fname)
   std::string aline;
   int count;
 
-  IDmer* IDDimer = nullptr;
+  IDmer* IDDimer  = nullptr;
   IDmer* IDTrimer = nullptr;
 
 

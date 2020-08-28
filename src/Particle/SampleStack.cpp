@@ -97,6 +97,8 @@ void SampleStack::clearEnsemble()
   current_sample_count_ = 0;
 }
 
+SampleStack::~SampleStack() { clearEnsemble(); }
+
 void SampleStack::resetSampleCount() { current_sample_count_ = 0; }
 
 

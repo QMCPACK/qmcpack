@@ -99,6 +99,7 @@ void MCWalkerConfiguration::createWalkers(int n)
     {
       Walker_t* awalker = new Walker_t(TotalNum);
       awalker->R        = R;
+      awalker->spins    = spins;
       WalkerList.push_back(awalker);
       --n;
     }

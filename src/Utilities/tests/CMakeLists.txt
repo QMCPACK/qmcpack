@@ -16,7 +16,7 @@ SET(SRC_DIR utilities)
 SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-ADD_EXECUTABLE(${UTEST_EXE} test_rng.cpp test_parser.cpp test_timer.cpp
+ADD_EXECUTABLE(${UTEST_EXE} test_rng.cpp test_parser.cpp test_timer.cpp test_runtime_manager.cpp
                             test_prime_set.cpp test_partition.cpp test_pooled_memory.cpp
                             test_infostream.cpp test_output_manager.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcutil)

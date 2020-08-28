@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_SODMC_UPDATE_PARTICLEBYPARTCLE_H
 #define QMCPLUSPLUS_SODMC_UPDATE_PARTICLEBYPARTCLE_H
 #include "QMCDrivers/QMCUpdateBase.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 namespace qmcplusplus
 {
 class SODMCUpdatePbyPWithRejectionFast : public QMCUpdateBase
