@@ -67,7 +67,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
   }
   else
   {
-    TimerManager.set_timer_threshold(timer_level_coarse);
+    timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
 
     // Global Task Group

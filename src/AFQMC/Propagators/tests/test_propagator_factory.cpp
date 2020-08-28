@@ -70,7 +70,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
   }
   else
   {
-    TimerManager.set_timer_threshold(timer_level_coarse);
+    timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
 
     // Global Task Group
@@ -237,7 +237,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
       wfn.Orthogonalize(wset, true);
     }
 
-    TimerManager.print(nullptr);
+    timer_manager.print(nullptr);
 
     destroy_shm_buffer_generators();
   }
@@ -252,7 +252,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
   }
   else
   {
-    TimerManager.set_timer_threshold(timer_level_coarse);
+    timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
 
     // Global Task Group
@@ -424,7 +424,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
       app_log() << " -- " << i << " " << tot_time << " " << (eav / ov).real() << " Time: " << t1 << std::endl;
     }
 
-    TimerManager.print(nullptr);
+    timer_manager.print(nullptr);
 
     destroy_shm_buffer_generators();
   }
