@@ -123,24 +123,36 @@ public:
 // N = 2 gives 16 nesting levels
 typedef StackKeyParam<2> StackKey;
 
-/* Timer using omp_get_wtime  */
+/** Timer accumulates time and call counts
+ * @tparam CLOCK can be CPUClock or FakeCPUClock
+ */
 template<class CLOCK>
 class TimerType
 {
 protected:
+  /// start time of the current measurement
   double start_time;
+  /// total time accumulated of all the calls
   double total_time;
+  /// total call counts
   long num_calls;
+  /// name of this timer
   std::string name;
+  /// name of this timer
   bool active;
+  /// timer level
   timer_levels timer_level;
+  /// timer id in registered in the manager
   timer_id_t timer_id;
-#ifdef USE_STACK_TIMERS
+  /// timer manager which allocated this timer object. nullptr if USE_STACK_TIMERS is not used.
   TimerManager<TimerType<CLOCK>>* manager;
-  TimerType* parent;
+#ifdef USE_STACK_TIMERS
+  /// stack key of the current measurement
   StackKey current_stack_key;
 
+  /// total time accumulated per stack key
   std::map<StackKey, double> per_stack_total_time;
+  /// total call counts per stack key
   std::map<StackKey, long> per_stack_num_calls;
 #endif
 
@@ -159,14 +171,10 @@ public:
 
 
   inline double get_total() const { return total_time; }
-
-#ifdef USE_STACK_TIMERS
-  inline double get_total(const StackKey& key) { return per_stack_total_time[key]; }
-#endif
-
   inline long get_num_calls() const { return num_calls; }
 
 #ifdef USE_STACK_TIMERS
+  inline double get_total(const StackKey& key) { return per_stack_total_time[key]; }
   inline long get_num_calls(const StackKey& key) { return per_stack_num_calls[key]; }
 #endif
 
@@ -182,17 +190,19 @@ public:
     total_time = 0.0;
   }
 
-  TimerType(const std::string& myname, timer_levels mytimer = timer_level_fine)
+  TimerType(const std::string& myname,
+            TimerManager<TimerType<CLOCK>>* mymanager,
+            timer_levels mytimer = timer_level_fine)
       : total_time(0.0),
         num_calls(0),
         name(myname),
         active(true),
         timer_level(mytimer),
-        timer_id(0)
+        timer_id(0),
 #ifdef USE_STACK_TIMERS
-        ,
-        manager(nullptr),
-        parent(nullptr)
+        manager(mymanager)
+#else
+        manager(nullptr)
 #endif
   {
 #ifdef USE_VTUNE_TASKS
@@ -207,19 +217,6 @@ public:
   void set_active(const bool& is_active) { active = is_active; }
 
   void set_active_by_timer_threshold(const timer_levels threshold);
-
-  void set_manager(TimerManager<TimerType<CLOCK>>* mymanager)
-  {
-#ifdef USE_STACK_TIMERS
-    manager = mymanager;
-#endif
-  }
-
-#ifdef USE_STACK_TIMERS
-  TimerType* get_parent() { return parent; }
-
-  void set_parent(TimerType* new_parent) { parent = new_parent; }
-#endif
 
   // Functions for unit testing
   template<class CLOCK1>
