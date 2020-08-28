@@ -99,10 +99,10 @@ TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
   FakeTimer* t2 = tm.createTimer("timer2");
   FakeTimer* t3 = tm.createTimer("timer1");
 
-  fake_cpu_clock::fake_cpu_clock_increment = 1.1;
+  FakeCPUClock::fake_cpu_clock_increment = 1.1;
   t1->start();
   t1->stop();
-  fake_cpu_clock::fake_cpu_clock_increment = 1.2;
+  FakeCPUClock::fake_cpu_clock_increment = 1.2;
   for (int i = 0; i < 3; i++)
   {
     t2->start();
@@ -139,7 +139,7 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
   FakeTimer* t1 = tm.createTimer("timer1");
   FakeTimer* t2 = tm.createTimer("timer2");
 
-  fake_cpu_clock::fake_cpu_clock_increment = 1.1;
+  FakeCPUClock::fake_cpu_clock_increment = 1.1;
   t1->start();
   t2->start();
   t2->stop();
@@ -153,8 +153,8 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
   int idx1 = p.nameList.at("timer1");
   int idx2 = p.nameList.at("timer2");
   REQUIRE(p.timeList.size() == 2);
-  REQUIRE(p.timeList[idx1] == Approx(3 * fake_cpu_clock::fake_cpu_clock_increment));
-  REQUIRE(p.timeList[idx2] == Approx(fake_cpu_clock::fake_cpu_clock_increment));
+  REQUIRE(p.timeList[idx1] == Approx(3 * FakeCPUClock::fake_cpu_clock_increment));
+  REQUIRE(p.timeList[idx2] == Approx(FakeCPUClock::fake_cpu_clock_increment));
 #endif
 
   FakeTimerManager::StackProfileData p2;
@@ -166,12 +166,12 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
   idx2 = p2.nameList.at("timer1/timer2");
   REQUIRE(p2.timeList.size() == 2);
   REQUIRE(p2.timeExclList.size() == 2);
-  REQUIRE(p2.timeList[idx1] == Approx(3 * fake_cpu_clock::fake_cpu_clock_increment));
-  REQUIRE(p2.timeList[idx2] == Approx(fake_cpu_clock::fake_cpu_clock_increment));
+  REQUIRE(p2.timeList[idx1] == Approx(3 * FakeCPUClock::fake_cpu_clock_increment));
+  REQUIRE(p2.timeList[idx2] == Approx(FakeCPUClock::fake_cpu_clock_increment));
 
   // Time in t1 minus time inside t2
-  REQUIRE(p2.timeExclList[idx1] == Approx(2 * fake_cpu_clock::fake_cpu_clock_increment));
-  REQUIRE(p2.timeExclList[idx2] == Approx(fake_cpu_clock::fake_cpu_clock_increment));
+  REQUIRE(p2.timeExclList[idx1] == Approx(2 * FakeCPUClock::fake_cpu_clock_increment));
+  REQUIRE(p2.timeExclList[idx2] == Approx(FakeCPUClock::fake_cpu_clock_increment));
 #endif
 }
 
@@ -183,7 +183,7 @@ TEST_CASE("test_timer_nested_profile_two_children", "[utilities]")
   FakeTimer* t2 = tm.createTimer("timer2");
   FakeTimer* t3 = tm.createTimer("timer3");
 
-  fake_cpu_clock::fake_cpu_clock_increment = 1.1;
+  FakeCPUClock::fake_cpu_clock_increment = 1.1;
   t1->start();
   t2->start();
   t2->stop();
@@ -221,7 +221,7 @@ TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
   FakeTimer* t5 = tm.createTimer("timer5");
 
 
-  fake_cpu_clock::fake_cpu_clock_increment = 1.1;
+  FakeCPUClock::fake_cpu_clock_increment = 1.1;
   t1->start();
   t2->start();
   t3->start();
@@ -272,7 +272,7 @@ TEST_CASE("test_timer_nested_profile_collate", "[utilities]")
   FakeTimer* t3  = tm.createTimer("timer3");
 
 
-  fake_cpu_clock::fake_cpu_clock_increment = 1.1;
+  FakeCPUClock::fake_cpu_clock_increment = 1.1;
   t1->start();
   t2->start();
   t3->start();
@@ -389,7 +389,7 @@ TEST_CASE("test setup timers", "[utilities]")
   std::vector<FakeTimer*> Timers;
   setup_timers(Timers, TestTimerNames, timer_level_coarse, &tm);
 
-  fake_cpu_clock::fake_cpu_clock_increment = 1.0;
+  FakeCPUClock::fake_cpu_clock_increment = 1.0;
   Timers[MyTimer1]->start();
   Timers[MyTimer1]->stop();
 

@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-template<class CLOCK = cpu_clock>
+template<class CLOCK = CPUClock>
 class RunTimeManager
 {
 public:
@@ -35,9 +35,9 @@ private:
   double start_time;
 };
 
-extern RunTimeManager<cpu_clock> run_time_manager;
+extern RunTimeManager<CPUClock> run_time_manager;
 
-template<class CLOCK = cpu_clock>
+template<class CLOCK = CPUClock>
 class LoopTimer
 {
 public:
@@ -57,10 +57,10 @@ private:
   double total_time;
 };
 
-extern template class LoopTimer<cpu_clock>;
-extern template class LoopTimer<fake_cpu_clock>;
+extern template class LoopTimer<CPUClock>;
+extern template class LoopTimer<FakeCPUClock>;
 
-template<class CLOCK = cpu_clock>
+template<class CLOCK = CPUClock>
 class RunTimeControl
 {
   int MaxCPUSecs;
@@ -85,8 +85,8 @@ public:
   std::string time_limit_message(const std::string& driverName, int block);
 };
 
-extern template class RunTimeManager<cpu_clock>;
-extern template class RunTimeManager<fake_cpu_clock>;
+extern template class RunTimeManager<CPUClock>;
+extern template class RunTimeManager<FakeCPUClock>;
 
 } // namespace qmcplusplus
 #endif

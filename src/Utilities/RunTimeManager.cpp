@@ -20,7 +20,7 @@
 
 namespace qmcplusplus
 {
-RunTimeManager<cpu_clock> run_time_manager;
+RunTimeManager<CPUClock> run_time_manager;
 
 template<class CLOCK>
 double LoopTimer<CLOCK>::get_time_per_iteration()
@@ -32,8 +32,8 @@ double LoopTimer<CLOCK>::get_time_per_iteration()
   return 0.0;
 }
 
-template class LoopTimer<cpu_clock>;
-template class LoopTimer<fake_cpu_clock>;
+template class LoopTimer<CPUClock>;
+template class LoopTimer<FakeCPUClock>;
 
 template<class CLOCK>
 bool RunTimeControl<CLOCK>::enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer)
@@ -59,7 +59,7 @@ std::string RunTimeControl<CLOCK>::time_limit_message(const std::string& driverN
   return log.str();
 }
 
-template class RunTimeControl<cpu_clock>;
-template class RunTimeControl<fake_cpu_clock>;
+template class RunTimeControl<CPUClock>;
+template class RunTimeControl<FakeCPUClock>;
 
 } // namespace qmcplusplus

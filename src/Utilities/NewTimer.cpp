@@ -131,7 +131,7 @@ void TimerType<CLOCK>::set_active_by_timer_threshold(const timer_levels threshol
   }
 }
 
-template class TimerType<cpu_clock>;
-template class TimerType<fake_cpu_clock>;
+template class TimerType<CPUClock>;
+template class TimerType<FakeCPUClock>;
 
 } // namespace qmcplusplus

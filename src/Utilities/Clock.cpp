@@ -14,6 +14,6 @@
 
 namespace qmcplusplus
 {
-double fake_cpu_clock::fake_cpu_clock_value     = 0.0;
-double fake_cpu_clock::fake_cpu_clock_increment = 1.0;
+double FakeCPUClock::fake_cpu_clock_value     = 0.0;
+double FakeCPUClock::fake_cpu_clock_increment = 1.0;
 } // namespace qmcplusplus

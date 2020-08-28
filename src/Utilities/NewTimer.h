@@ -229,10 +229,10 @@ public:
   friend void set_num_calls(TimerType<CLOCK1>* timer, long num_calls_input);
 };
 
-using NewTimer  = TimerType<cpu_clock>;
-using FakeTimer = TimerType<fake_cpu_clock>;
-extern template class TimerType<cpu_clock>;
-extern template class TimerType<fake_cpu_clock>;
+using NewTimer  = TimerType<CPUClock>;
+using FakeTimer = TimerType<FakeCPUClock>;
+extern template class TimerType<CPUClock>;
+extern template class TimerType<FakeCPUClock>;
 
 // Wrapper for timer that starts on construction and stops on destruction
 template<class TIMER = NewTimer>
