@@ -28,14 +28,11 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
                        WaveFunctionPool& ppool,
                        SampleStack& samples,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, ppool, "VMCBatched::", comm),
+    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, ppool, "VMCBatched::", comm, "VMCBatched"),
       vmcdriver_input_(input),
       samples_(samples),
       collect_samples_(false)
 {
-  QMCType = "VMCBatched";
-  // qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
-  // qmc_driver_mode.set(QMC_WARMUP, 0);
 }
 
 void VMCBatched::advanceWalkers(const StateForThread& sft,
