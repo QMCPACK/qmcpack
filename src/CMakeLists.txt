@@ -130,6 +130,7 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
     Utilities/OhmmsObject.cpp
     Utilities/SpeciesSet.cpp
     Utilities/SimpleParser.cpp
+    Utilities/Clock.cpp
     Utilities/NewTimer.cpp
     Utilities/TimerManager.cpp
     Utilities/RunTimeManager.cpp

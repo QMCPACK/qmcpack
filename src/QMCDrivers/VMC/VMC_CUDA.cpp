@@ -210,8 +210,8 @@ bool VMCcuda::run()
   Matrix<GradType> grad(nw, nat);
   double Esum;
 
-  LoopTimer vmc_loop;
-  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  LoopTimer<> vmc_loop;
+  RunTimeControl<> runtimeControl(RunTimeManager, MaxCPUSecs);
   bool enough_time_for_next_iteration = true;
 
   // First do warmup steps

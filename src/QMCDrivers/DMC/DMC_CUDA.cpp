@@ -108,8 +108,8 @@ bool DMCcuda::run()
   for (int iw = 0; iw < nw; iw++)
     W[iw]->Weight = 1.0;
 
-  LoopTimer dmc_loop;
-  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  LoopTimer<> dmc_loop;
+  RunTimeControl<> runtimeControl(RunTimeManager, MaxCPUSecs);
   bool enough_time_for_next_iteration = true;
   do
   {
@@ -291,8 +291,8 @@ bool DMCcuda::run()
           v2 += dot(W.G[iat], W.G[iat]);
 #endif
         }
-        RealType scNew                       = std::sqrt(v2bar / (v2 * m_tauovermass * m_tauovermass));
-        RealType scOld                       = (CurrentStep == 1) ? scNew : W[iw]->getPropertyBase()[WP::DRIFTSCALE];
+        RealType scNew = std::sqrt(v2bar / (v2 * m_tauovermass * m_tauovermass));
+        RealType scOld = (CurrentStep == 1) ? scNew : W[iw]->getPropertyBase()[WP::DRIFTSCALE];
         W[iw]->getPropertyBase()[WP::DRIFTSCALE] = scNew;
         // fprintf (stderr, "iw = %d  scNew = %1.8f  scOld = %1.8f\n", iw, scNew, scOld);
         RealType tauRatio = R2acc[iw] / R2prop[iw];

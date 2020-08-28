@@ -516,10 +516,10 @@ bool DMCBatched::run()
   estimator_manager_->start(num_blocks);
   StateForThread dmc_state(qmcdriver_input_, dmcdriver_input_, *drift_modifier_, *branch_engine_, population_);
 
-  LoopTimer dmc_loop;
+  LoopTimer<> dmc_loop;
 
   int sample = 0;
-  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  RunTimeControl<> runtimeControl(RunTimeManager, MaxCPUSecs);
 
   { // walker initialization
     ScopedTimer local_timer(&(timers_.init_walkers_timer));
@@ -537,7 +537,7 @@ bool DMCBatched::run()
     dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
         ? qmcdriver_input_.get_recalculate_properties_period()
         : (qmcdriver_input_.get_max_blocks() + 1) * qmcdriver_input_.get_max_steps();
-    dmc_state.recomputing_blocks = qmcdriver_input_.get_blocks_between_recompute();
+    dmc_state.recomputing_blocks            = qmcdriver_input_.get_blocks_between_recompute();
 
     for (UPtr<Crowd>& crowd : crowds_)
       crowd->startBlock(qmcdriver_input_.get_max_steps());

@@ -24,9 +24,9 @@ namespace qmcplusplus
 struct Timer
 {
   double start_time;
-  inline Timer() { start_time = cpu_clock(); }
-  inline void restart() { start_time = cpu_clock(); }
-  inline double elapsed() const { return cpu_clock() - start_time; }
+  inline Timer() { start_time = cpu_clock()(); }
+  inline void restart() { start_time = cpu_clock()(); }
+  inline double elapsed() const { return cpu_clock()() - start_time; }
 };
 } // namespace qmcplusplus
 #endif

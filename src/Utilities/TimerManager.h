@@ -34,19 +34,19 @@ class Communicate;
 
 namespace qmcplusplus
 {
-
+template<class TIMER>
 class TimerManagerClass
 {
 protected:
-  std::vector<std::unique_ptr<NewTimer>> TimerList;
-  std::vector<NewTimer*> CurrentTimerStack;
+  std::vector<std::unique_ptr<TIMER>> TimerList;
+  std::vector<TIMER*> CurrentTimerStack;
   timer_levels timer_threshold;
   timer_id_t max_timer_id;
   bool max_timers_exceeded;
   std::map<timer_id_t, std::string> timer_id_name;
   std::map<std::string, timer_id_t> timer_name_to_id;
 
-  void initializeTimer(NewTimer* t);
+  void initializeTimer(TIMER* t);
 
 public:
 #ifdef USE_VTUNE_TASKS
@@ -60,9 +60,9 @@ public:
 #endif
   }
 
-  NewTimer* createTimer(const std::string& myname, timer_levels mytimer = timer_level_fine);
+  TIMER* createTimer(const std::string& myname, timer_levels mytimer = timer_level_fine);
 
-  void push_timer(NewTimer* t)
+  void push_timer(TIMER* t)
   {
     {
       CurrentTimerStack.push_back(t);
@@ -76,9 +76,9 @@ public:
     }
   }
 
-  NewTimer* current_timer()
+  TIMER* current_timer()
   {
-    NewTimer* current = NULL;
+    TIMER* current = NULL;
     if (CurrentTimerStack.size() > 0)
     {
       current = CurrentTimerStack.back();
@@ -123,10 +123,12 @@ public:
   void output_timing(Communicate* comm, Libxml2Document& doc, xmlNodePtr root);
 
   void get_stack_name_from_id(const StackKey& key, std::string& name);
-
 };
 
-extern TimerManagerClass TimerManager;
+extern template class TimerManagerClass<NewTimer>;
+extern template class TimerManagerClass<FakeTimer>;
+
+extern TimerManagerClass<NewTimer> TimerManager;
 
 // Helpers to make it easier to define a set of timers
 // See tests/test_timer.cpp for an example
@@ -143,13 +145,16 @@ struct TimerIDName_t
 template<class T>
 using TimerNameList_t = std::vector<TimerIDName_t<T>>;
 
-template<class T>
-void setup_timers(TimerList_t& timers, TimerNameList_t<T> timer_list, timer_levels timer_level = timer_level_fine)
+template<class T, class TIMER>
+void setup_timers(std::vector<TIMER*>& timers,
+                  TimerNameList_t<T> timer_list,
+                  timer_levels timer_level          = timer_level_fine,
+                  TimerManagerClass<TIMER>* manager = &TimerManager)
 {
   timers.resize(timer_list.size());
   for (int i = 0; i < timer_list.size(); i++)
   {
-    timers[timer_list[i].id] = TimerManager.createTimer(timer_list[i].name, timer_level);
+    timers[timer_list[i].id] = manager->createTimer(timer_list[i].name, timer_level);
   }
 }
 

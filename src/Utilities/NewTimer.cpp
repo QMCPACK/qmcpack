@@ -20,98 +20,106 @@
 #include <Message/OpenMP.h>
 #include "config.h"
 #include "TimerManager.h"
-#include "Clock.h"
 
 namespace qmcplusplus
 {
-  bool timer_max_level_exceeded = false;
+bool timer_max_level_exceeded = false;
 
 #ifndef ENABLE_TIMERS
-  void NewTimer::start() {}
-  void NewTimer::stop() {}
+template<class CLOCK>
+void TimerType<CLOCK>::start()
+{}
+template<class CLOCK>
+void TimerType<CLOCK>::stop()
+{}
 #else
-  void NewTimer::start()
+template<class CLOCK>
+void TimerType<CLOCK>::start()
+{
+  if (active)
   {
-    if (active)
-    {
 #ifdef USE_STACK_TIMERS
 
 #ifdef USE_VTUNE_TASKS
-      __itt_id parent_task = __itt_null;
-      __itt_task_begin(manager->task_domain, __itt_null, parent_task, task_name);
+    __itt_id parent_task = __itt_null;
+    __itt_task_begin(manager->task_domain, __itt_null, parent_task, task_name);
 #endif
 
-      bool is_true_master(true);
-      for(int level = omp_get_level(); level>0; level--)
-        if(omp_get_ancestor_thread_num(level)!=0) is_true_master = false;
-      if(is_true_master)
+    bool is_true_master(true);
+    for (int level = omp_get_level(); level > 0; level--)
+      if (omp_get_ancestor_thread_num(level) != 0)
+        is_true_master = false;
+    if (is_true_master)
+    {
+      if (manager)
       {
-        if (manager)
+        if (this == manager->current_timer())
         {
-          if (this == manager->current_timer())
-          { 
-            std::cerr << "Timer loop: " << name << std::endl;
-          }
-          if (parent != manager->current_timer())
+          std::cerr << "Timer loop: " << name << std::endl;
+        }
+        if (parent != manager->current_timer())
+        {
+          parent = manager->current_timer();
+          if (parent)
           {
-            parent = manager->current_timer();
-            if (parent)
-            {
-              current_stack_key = parent->get_stack_key();
-              current_stack_key.add_id(timer_id);
-            }
-          }
-          if (parent == NULL)
-          {
-            current_stack_key = StackKey();
+            current_stack_key = parent->get_stack_key();
             current_stack_key.add_id(timer_id);
           }
-          manager->push_timer(this);
         }
-        start_time = cpu_clock();
+        if (parent == NULL)
+        {
+          current_stack_key = StackKey();
+          current_stack_key.add_id(timer_id);
+        }
+        manager->push_timer(this);
       }
-#else
-      start_time = cpu_clock();
-#endif
+      start_time = CLOCK()();
     }
+#else
+    start_time = CLOCK()();
+#endif
   }
+}
 
-  void NewTimer::stop()
+template<class CLOCK>
+void TimerType<CLOCK>::stop()
+{
+  if (active)
   {
-    if (active)
-    {
 #ifdef USE_STACK_TIMERS
 
 #ifdef USE_VTUNE_TASKS
-      __itt_task_end(manager->task_domain);
+    __itt_task_end(manager->task_domain);
 #endif
 
-      bool is_true_master(true);
-      for(int level = omp_get_level(); level>0; level--)
-        if(omp_get_ancestor_thread_num(level)!=0) is_true_master = false;
-      if(is_true_master)
+    bool is_true_master(true);
+    for (int level = omp_get_level(); level > 0; level--)
+      if (omp_get_ancestor_thread_num(level) != 0)
+        is_true_master = false;
+    if (is_true_master)
 #endif
-      {
-        double elapsed = cpu_clock() - start_time;
-        total_time += elapsed;
-        num_calls++;
+    {
+      double elapsed = CLOCK()() - start_time;
+      total_time += elapsed;
+      num_calls++;
 
 #ifdef USE_STACK_TIMERS
-        per_stack_total_time[current_stack_key] += elapsed;
-        per_stack_num_calls[current_stack_key]  += 1;
+      per_stack_total_time[current_stack_key] += elapsed;
+      per_stack_num_calls[current_stack_key] += 1;
 
-        if (manager)
-        {
-          manager->current_timer()->set_parent(NULL);
-          manager->pop_timer();
-        }
-#endif
+      if (manager)
+      {
+        manager->current_timer()->set_parent(NULL);
+        manager->pop_timer();
       }
+#endif
     }
   }
+}
 #endif
 
-void NewTimer::set_active_by_timer_threshold(const timer_levels threshold)
+template<class CLOCK>
+void TimerType<CLOCK>::set_active_by_timer_threshold(const timer_levels threshold)
 {
   if (timer_level <= threshold)
   {
@@ -122,5 +130,8 @@ void NewTimer::set_active_by_timer_threshold(const timer_levels threshold)
     active = false;
   }
 }
+
+template class TimerType<cpu_clock>;
+template class TimerType<fake_cpu_clock>;
 
 } // namespace qmcplusplus

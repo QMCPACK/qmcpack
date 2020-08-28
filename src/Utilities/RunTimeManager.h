@@ -22,11 +22,12 @@
 
 namespace qmcplusplus
 {
+template<class CLOCK = cpu_clock>
 class RunTimeManagerClass
 {
 public:
-  void start() { start_time = cpu_clock(); }
-  double elapsed() { return cpu_clock() - start_time; }
+  void start() { start_time = CLOCK()(); }
+  double elapsed() { return CLOCK()() - start_time; }
   // Initialize the start time at static class initialization time
   RunTimeManagerClass() { start(); }
 
@@ -34,16 +35,17 @@ private:
   double start_time;
 };
 
-extern RunTimeManagerClass RunTimeManager;
+extern RunTimeManagerClass<cpu_clock> RunTimeManager;
 
+template<class CLOCK = cpu_clock>
 class LoopTimer
 {
 public:
-  void start() { start_time = cpu_clock(); }
+  void start() { start_time = CLOCK()(); }
   void stop()
   {
     nloop++;
-    total_time += cpu_clock() - start_time;
+    total_time += CLOCK()() - start_time;
   }
   double get_time_per_iteration();
 
@@ -55,6 +57,10 @@ private:
   double total_time;
 };
 
+extern template class LoopTimer<cpu_clock>;
+extern template class LoopTimer<fake_cpu_clock>;
+
+template<class CLOCK = cpu_clock>
 class RunTimeControl
 {
   int MaxCPUSecs;
@@ -63,10 +69,10 @@ class RunTimeControl
   double m_loop_time;
   double m_elapsed;
   double m_remaining;
-  RunTimeManagerClass& runtimeManager;
+  RunTimeManagerClass<CLOCK>& runtimeManager;
 
 public:
-  RunTimeControl(RunTimeManagerClass& rm, int maxCPUSecs) : MaxCPUSecs(maxCPUSecs), runtimeManager(rm)
+  RunTimeControl(RunTimeManagerClass<CLOCK>& rm, int maxCPUSecs) : MaxCPUSecs(maxCPUSecs), runtimeManager(rm)
   {
     m_runtime_safety_padding = 10.0; // 10 seconds - enough to shut down?
     m_loop_margin            = 1.1;  // 10% margin on average loop time?
@@ -75,10 +81,12 @@ public:
   void runtime_padding(int runtime_padding) { m_runtime_safety_padding = runtime_padding; }
   void loop_margin(int loopMargin) { m_loop_margin = loopMargin; }
 
-  bool enough_time_for_next_iteration(LoopTimer& loop_timer);
+  bool enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer);
   std::string time_limit_message(const std::string& driverName, int block);
 };
 
+extern template class RunTimeManagerClass<cpu_clock>;
+extern template class RunTimeManagerClass<fake_cpu_clock>;
 
 } // namespace qmcplusplus
 #endif

@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <map>
 #include "config.h"
+#include "Clock.h"
 
 #ifdef USE_VTUNE_TASKS
 #include <ittnotify.h>
@@ -31,7 +32,7 @@
 
 namespace qmcplusplus
 {
-
+template<class TIMER>
 class TimerManagerClass;
 
 enum timer_levels
@@ -123,7 +124,8 @@ public:
 typedef StackKeyParam<2> StackKey;
 
 /* Timer using omp_get_wtime  */
-class NewTimer
+template<class CLOCK>
+class TimerType
 {
 protected:
   double start_time;
@@ -134,8 +136,8 @@ protected:
   timer_levels timer_level;
   timer_id_t timer_id;
 #ifdef USE_STACK_TIMERS
-  TimerManagerClass* manager;
-  NewTimer* parent;
+  TimerManagerClass<TimerType<CLOCK>>* manager;
+  TimerType* parent;
   StackKey current_stack_key;
 
   std::map<StackKey, double> per_stack_total_time;
@@ -180,7 +182,7 @@ public:
     total_time = 0.0;
   }
 
-  NewTimer(const std::string& myname, timer_levels mytimer = timer_level_fine)
+  TimerType(const std::string& myname, timer_levels mytimer = timer_level_fine)
       : total_time(0.0),
         num_calls(0),
         name(myname),
@@ -198,7 +200,7 @@ public:
 #endif
   }
 
-  NewTimer(const NewTimer& o) = delete;
+  TimerType(const TimerType& o) = delete;
 
   void set_name(const std::string& myname) { name = myname; }
 
@@ -206,7 +208,7 @@ public:
 
   void set_active_by_timer_threshold(const timer_levels threshold);
 
-  void set_manager(TimerManagerClass* mymanager)
+  void set_manager(TimerManagerClass<TimerType<CLOCK>>* mymanager)
   {
 #ifdef USE_STACK_TIMERS
     manager = mymanager;
@@ -214,42 +216,47 @@ public:
   }
 
 #ifdef USE_STACK_TIMERS
-  NewTimer* get_parent() { return parent; }
+  TimerType* get_parent() { return parent; }
 
-  void set_parent(NewTimer* new_parent) { parent = new_parent; }
+  void set_parent(TimerType* new_parent) { parent = new_parent; }
 #endif
 
   // Functions for unit testing
-  friend void set_total_time(NewTimer *timer, double total_time_input);
+  template<class CLOCK1>
+  friend void set_total_time(TimerType<CLOCK1>* timer, double total_time_input);
 
-  friend void set_num_calls(NewTimer *timer, long num_calls_input);
+  template<class CLOCK1>
+  friend void set_num_calls(TimerType<CLOCK1>* timer, long num_calls_input);
 };
 
+using NewTimer  = TimerType<cpu_clock>;
+using FakeTimer = TimerType<fake_cpu_clock>;
+extern template class TimerType<cpu_clock>;
+extern template class TimerType<fake_cpu_clock>;
+
 // Wrapper for timer that starts on construction and stops on destruction
-class ScopedTimer
+template<class TIMER = NewTimer>
+class ScopeGuard
 {
 public:
-  ScopedTimer(NewTimer* t) : timer(t)
+  ScopeGuard(TIMER* t) : timer(t)
   {
     if (timer)
       timer->start();
   }
 
-  ~ScopedTimer()
+  ~ScopeGuard()
   {
     if (timer)
       timer->stop();
   }
 
 private:
-  NewTimer* timer;
+  TIMER* timer;
 };
 
-struct TimerComparator
-{
-  inline bool operator()(const NewTimer* a, const NewTimer* b) { return a->get_name() < b->get_name(); }
-};
-
+using ScopedTimer     = ScopeGuard<NewTimer>;
+using ScopedFakeTimer = ScopeGuard<FakeTimer>;
 
 } // namespace qmcplusplus
 
