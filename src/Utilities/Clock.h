@@ -22,6 +22,10 @@
 
 namespace qmcplusplus
 {
+
+/** functor for fake clock
+ * calling fake_cpu_clock()() returns the clock value
+ */
 class fake_cpu_clock
 {
 public:
@@ -35,6 +39,9 @@ public:
   }
 };
 
+/** functor for high precision clock
+ * calling cpu_clock()() returns the clock value
+ */
 class cpu_clock
 {
 public:
