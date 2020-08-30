@@ -22,14 +22,19 @@ FUNCTION( COPY_DIRECTORY SRC_DIR DST_DIR )
     EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}" )
 ENDFUNCTION()
 
-# Function to copy a directory using symlinks for the files. This saves storage
-# space with large test files.
+# Function to copy a directory using symlinks for the files to save storage space.
+# Subdirectories are ignored.
 # SRC_DIR must be an absolute path
 # The -s flag copies using symlinks
-# The -T ${DST_DIR} ensures the destination is copied as the directory, and not
-#  placed as a subdirectory if the destination already exists.
+# The -t ${DST_DIR} ensures the destination must be a directory
 FUNCTION( COPY_DIRECTORY_USING_SYMLINK SRC_DIR DST_DIR )
-    EXECUTE_PROCESS( COMMAND cp -as --remove-destination "${SRC_DIR}" -T "${DST_DIR}" )
+    FILE(MAKE_DIRECTORY "${DST_DIR}")
+    # Find all the files but not subdirectories
+    FILE(GLOB FILE_ONLY_NAMES LIST_DIRECTORIES FALSE "${SRC_DIR}/*")
+    FOREACH(F IN LISTS FILE_ONLY_NAMES)
+      #MESSAGE("Creating symlink from  ${F} to directory ${DST_DIR}")
+      EXECUTE_PROCESS( COMMAND cp -ds --remove-destination -t . "${F}" WORKING_DIRECTORY ${DST_DIR})
+    ENDFOREACH()
 ENDFUNCTION()
 
 # Copy files, but symlink the *.h5 files (which are the large ones)
@@ -53,8 +58,8 @@ ENDFUNCTION()
 # Control copy vs. symlink with top-level variable
 FUNCTION( COPY_DIRECTORY_MAYBE_USING_SYMLINK SRC_DIR DST_DIR )
   IF (QMC_SYMLINK_TEST_FILES)
-    #COPY_DIRECTORY_USING_SYMLINK("${SRC_DIR}" "${DST_DIR}")
-    COPY_DIRECTORY_SYMLINK_H5("${SRC_DIR}" "${DST_DIR}" )
+    COPY_DIRECTORY_USING_SYMLINK("${SRC_DIR}" "${DST_DIR}")
+    #COPY_DIRECTORY_SYMLINK_H5("${SRC_DIR}" "${DST_DIR}" )
   ELSE()
     COPY_DIRECTORY("${SRC_DIR}" "${DST_DIR}")
   ENDIF()
