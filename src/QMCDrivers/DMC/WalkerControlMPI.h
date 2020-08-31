@@ -18,10 +18,10 @@
 
 #include "QMCDrivers/WalkerControlBase.h"
 #include "Particle/WalkerElements.h"
+#include <Utilities/TimerManager.h>
 
 namespace qmcplusplus
 {
-class NewTimer;
 struct WalkerControlMPITest;
 
 namespace testing

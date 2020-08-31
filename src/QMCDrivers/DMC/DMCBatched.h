@@ -181,7 +181,7 @@ private:
     std::vector<RealType>& gf_accs;
   };
 
-  
+
   /** for the return of DMCPerWalkerRefs split into moved and stalled
    *
    *  until C++17 we need a structure to return the split moved and stalled refs
@@ -193,7 +193,7 @@ private:
     DMCPerWalkerRefs moved;
     DMCPerWalkerRefs stalled;
   };
-  
+
   static MovedStalled buildMovedStalled(const std::vector<int>& did_walker_move, const DMCPerWalkerRefRefs& refs);
 
   static void handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThread& sft, DriverTimers& timers);
@@ -202,7 +202,7 @@ private:
   // {
   //   NewTimer& dmc_movePbyP;
   //   DriverTimers(const std::string& prefix)
-  //       : dmc_movePbyP(*TimerManager.createTimer(prefix + "DMC_movePbyP", timer_level_medium)),
+  //       : dmc_movePbyP(*timer_manager.createTimer(prefix + "DMC_movePbyP", timer_level_medium)),
   //   {}
   // };
 

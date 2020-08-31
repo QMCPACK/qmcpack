@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_DTDIMPL_AB_H
 
 #include "Utilities/FairDivide.h"
+#include "Message/OpenMP.h"
 
 namespace qmcplusplus
 {

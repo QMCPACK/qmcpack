@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -41,7 +41,8 @@ public:
     GAUSSIAN_EXPAND = 1,
     NATURAL_EXPAND,
     CARTESIAN_EXPAND,
-    MOD_NATURAL_EXPAND
+    MOD_NATURAL_EXPAND,
+    DIRAC_CARTESIAN_EXPAND
   };
 
 private:
@@ -128,7 +129,7 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
     addsignforM = 1;
     if (sph != "spherical")
     {
-      APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
+      myComm->barrier_and_abort(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
 
@@ -136,6 +137,16 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
   {
     expandlm    = CARTESIAN_EXPAND;
     addsignforM = 0;
+  }
+
+  if (Morder == "Dirac")
+  {
+    expandlm    = DIRAC_CARTESIAN_EXPAND;
+    addsignforM = 0;
+    if (sph != "cartesian")
+    {
+      myComm->barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
+    }
   }
 
   radFuncBuilder.Normalized = (Normalized == "yes");
@@ -195,7 +206,7 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
     addsignforM = 1;
     if (sph != "spherical")
     {
-      APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
+      myComm->barrier_and_abort(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
 
@@ -203,6 +214,16 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
   {
     expandlm    = CARTESIAN_EXPAND;
     addsignforM = 0;
+  }
+
+  if (Morder == "Dirac")
+  {
+    expandlm    = DIRAC_CARTESIAN_EXPAND;
+    addsignforM = 0;
+    if (sph != "cartesian")
+    {
+      myComm->barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
+    }
   }
 
   radFuncBuilder.Normalized = (Normalized == "yes");
@@ -237,6 +258,9 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   case (CARTESIAN_EXPAND):
     app_log() << "   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess" << std::endl;
     break;
+  case (DIRAC_CARTESIAN_EXPAND):
+    app_log() << "   Angular momentum expanded in cartesian functions in DIRAC ordering" << std::endl;
+    break;
   default:
     app_log() << "   Angular momentum m is explicitly given." << std::endl;
   }
@@ -257,7 +281,7 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
       const int l = std::stoi(XMLAttrString{cur1, "l"});
       Lmax        = std::max(Lmax, l);
       //expect that only Rnl is given
-      if (expandlm == CARTESIAN_EXPAND)
+      if (expandlm == CARTESIAN_EXPAND || expandlm == DIRAC_CARTESIAN_EXPAND)
         num += (l + 1) * (l + 2) / 2;
       else if (expandlm)
         num += 2 * l + 1;
@@ -322,7 +346,7 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   }
 
   if (expandYlm(aos, all_nl, expandlm) != num)
-    APP_ABORT("expandYlm doesn't match the number of basis.");
+    myComm->barrier_and_abort("expandYlm doesn't match the number of basis.");
   radFuncBuilder.finalize();
   //aos->Rmax can be set small
   //aos->setRmax(0);
@@ -361,6 +385,9 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
   case (CARTESIAN_EXPAND):
     app_log() << "   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess" << std::endl;
     break;
+  case (DIRAC_CARTESIAN_EXPAND):
+    app_log() << "   Angular momentum expanded in cartesian functions in DIRAC ordering" << std::endl;
+    break;
   default:
     app_log() << "   Angular momentum m is explicitly given." << std::endl;
   }
@@ -392,7 +419,7 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
 
     Lmax = std::max(Lmax, l);
     //expect that only Rnl is given
-    if (expandlm == CARTESIAN_EXPAND)
+    if (expandlm == CARTESIAN_EXPAND || expandlm == DIRAC_CARTESIAN_EXPAND)
       num += (l + 1) * (l + 2) / 2;
     else if (expandlm)
       num += 2 * l + 1;
@@ -441,7 +468,7 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
   }
 
   if (expandYlm(aos, all_nl, expandlm) != num)
-    APP_ABORT("expandYlm doesn't match the number of basis.");
+    myComm->barrier_and_abort("expandYlm doesn't match the number of basis.");
   radFuncBuilder.finalize();
   //aos->Rmax can be set small
   //aos->setRmax(0);
@@ -558,6 +585,290 @@ int AOBasisBuilder<COT>::expandYlm(COT* aos, std::vector<int>& all_nl, int expan
         aos->LM[num] = nbefore + i;
         aos->NL[num] = nl;
         num++;
+      }
+    }
+  }
+  else if (expandlm == DIRAC_CARTESIAN_EXPAND)
+  {
+    app_log() << "Expanding Ylm (angular function) according to DIRAC using cartesian gaussians" << std::endl;
+    for (int nl = 0; nl < aos->RnlID.size(); nl++)
+    {
+      int l = aos->RnlID[nl][q_l];
+      app_log() << "Adding " << (l + 1) * (l + 2) / 2 << " cartesian gaussian orbitals for l= " << l << std::endl;
+      int nbefore = 0;
+      for (int i = 0; i < l; i++)
+        nbefore += (i + 1) * (i + 2) / 2;
+      switch (l)
+      {
+      case (0):
+        aos->LM[num] = nbefore + 0;
+        aos->NL[num] = nl;
+        num++;
+        break;
+      case (1):
+        aos->LM[num] = nbefore + 0;
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 1;
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 2;
+        aos->NL[num] = nl;
+        num++;
+        break;
+      case (2):
+        aos->LM[num] = nbefore + 0; //xx
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 3; //xy
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 4; //xz
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 1; //yy
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 5; //yz
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 2; //zz
+        aos->NL[num] = nl;
+        num++;
+        break;
+      case (3):
+        aos->LM[num] = nbefore + 0; //xxx
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 3; //xxy
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 4; //xxz
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 5; //xyy
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 9; //xyz
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 7; //xzz
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 1; //yyy
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 6; //yyz
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 8; //yzz
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 2; //zzz
+        aos->NL[num] = nl;
+        num++;
+        break;
+      case (4):
+        aos->LM[num] = nbefore + 0; //400
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 3; //310
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 4; //301
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 9; //220
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 12; //211
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 10; //202
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 5; //130
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 13; //121
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 14; //112
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 7; //103
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 1; //040
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 6; //031
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 11; //022
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 8; //013
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 2; //004
+        aos->NL[num] = nl;
+        num++;
+        break;
+      case (5):
+        aos->LM[num] = nbefore + 0; //500
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 3; //410
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 4; //401
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 9; //320
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 15; //311
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 10; //302
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 11; //230
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 18; //221
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 19; //212
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 13; //203
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 5; //140
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 16; //131
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 20; //122
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 17; //113
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 7; //104
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 1; //050
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 6; //041
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 12; //032
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 14; //023
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 8; //014
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 2; //005
+        aos->NL[num] = nl;
+        num++;
+        break;
+      case (6):
+        aos->LM[num] = nbefore + 0; //600
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 3; //510
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 4; //501
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 9; //420
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 15; //411
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 10; //402
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 18; //330
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 21; //321
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 22; //312
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 19; //303
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 11; //240
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 23; //231
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 27; //222
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 25; //213
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 13; //204
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 5; //150
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 16; //141
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 24; //132
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 26; //123
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 17; //114
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 7; //105
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 1; //060
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 6; //051
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 12; //042
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 20; //033
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 14; //024
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 8; //015
+        aos->NL[num] = nl;
+        num++;
+        aos->LM[num] = nbefore + 2; //006
+        aos->NL[num] = nl;
+        num++;
+        break;
+      default:
+        myComm->barrier_and_abort("Cartesian Tensor only defined up to Lmax=6. Aborting\n");
+        break;
       }
     }
   }

@@ -26,7 +26,7 @@
 #include <Utilities/SpeciesSet.h>
 #include <Utilities/PooledData.h>
 #include <OhmmsPETE/OhmmsArray.h>
-#include <Utilities/NewTimer.h>
+#include <Utilities/TimerManager.h>
 #include <OhmmsSoA/VectorSoaContainer.h>
 #include "type_traits/template_types.hpp"
 namespace qmcplusplus

@@ -278,8 +278,8 @@ bool VMCBatched::run()
 
   StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_);
 
-  LoopTimer vmc_loop;
-  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  LoopTimer<> vmc_loop;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
 
   { // walker initialization
     ScopedTimer local_timer(&(timers_.init_walkers_timer));
@@ -346,11 +346,11 @@ bool VMCBatched::run()
 
 void VMCBatched::enable_sample_collection()
 {
-  samples_.setMaxSamples(compute_samples_per_node(crowds_.size(), population_.get_num_local_walkers()));
+  samples_.setMaxSamples(compute_samples_per_node(qmcdriver_input_, population_.get_num_local_walkers()));
   collect_samples_ = true;
 
   app_log() << "VMCBatched Driver collecting samples, samples_per_node = "
-            << compute_samples_per_node(crowds_.size(), population_.get_num_local_walkers()) << '\n';
+            << compute_samples_per_node(qmcdriver_input_, population_.get_num_local_walkers()) << '\n';
 }
 
 

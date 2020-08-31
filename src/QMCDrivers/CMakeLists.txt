@@ -86,7 +86,8 @@ SET(QMCDRIVERS ${QMCDRIVERS}
     VMC/VMC.cpp
     VMC/VMCBatched.cpp
     VMC/VMCLinearOpt.cpp
-    WFOpt/QMCCostFunction.cpp)
+    WFOpt/QMCCostFunction.cpp
+    WFOpt/QMCCostFunctionBatched.cpp)
 
 IF(HAVE_MPI) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
@@ -123,9 +124,3 @@ IF(BUILD_LMYENGINE_INTERFACE)
   TARGET_LINK_LIBRARIES(qmcdriver PRIVATE formic_utils)
   TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE formic_utils)
 ENDIF()
-
-#IF(QMC_BUILD_STATIC)
-#  ADD_LIBRARY(qmcdriver STATIC ${QMCDRIVERS})
-#ELSE(QMC_BUILD_STATIC)
-#  ADD_LIBRARY(qmcdriver SHARED ${QMCDRIVERS})
-#ENDIF(QMC_BUILD_STATIC)

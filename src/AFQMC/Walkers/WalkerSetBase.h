@@ -18,10 +18,10 @@
 
 #include "Configuration.h"
 #include "OhmmsData/libxmldefs.h"
+#include <Utilities/TimerManager.h>
 #include "Utilities/RandomGenerator.h"
 
 #include "AFQMC/config.h"
-#include "Utilities/NewTimer.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Numerics/ma_blas.hpp"
 
