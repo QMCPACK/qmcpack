@@ -37,13 +37,13 @@ void DiracParser::parse(const std::string& fname)
   parsewords(aline.c_str(), currentWords);
   version = std::stoi(currentWords[2].erase(0, 5));
 
-  search(fin, "Number of atom types:", aline);
+  search(fin, "Number of atom types", aline);
   parsewords(aline.c_str(), currentWords);
-  NumberOfSpecies = std::atoi(currentWords[4].c_str());
+  NumberOfSpecies = std::atoi(currentWords.back().c_str());
 
-  search(fin, "Total number of atoms:", aline);
+  search(fin, "Total number of atoms", aline);
   parsewords(aline.c_str(), currentWords);
-  NumberOfAtoms = std::atoi(currentWords[4].c_str());
+  NumberOfAtoms = std::atoi(currentWords.back().c_str());
 
   std::cout << "Found " << NumberOfSpecies << " unique species" << std::endl;
   std::cout << "Found " << NumberOfAtoms << " total number of atoms" << std::endl;

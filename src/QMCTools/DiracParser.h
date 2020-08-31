@@ -30,7 +30,7 @@ struct atBasisSet
   std::string name       = "Gaussian";
   std::string normalized = "no";
   std::string grid_type  = "log";
-  std::string expandYlm  = "Gamess";
+  std::string expandYlm  = "Dirac";
   std::string elementType;
   std::string angular = "cartesian";
   double grid_ri      = 1e-6;
