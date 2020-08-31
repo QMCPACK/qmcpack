@@ -51,7 +51,7 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
       h_file(-1),
       Archive(0),
       DebugArchive(0),
-      myComm(0),
+      my_comm_(0),
       MainEstimator(0),
       Collectables(0),
       max4ascii(8),
@@ -67,7 +67,7 @@ EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerNew& em)
       h_file(-1),
       Archive(0),
       DebugArchive(0),
-      myComm(0),
+      my_comm_(0),
       MainEstimator(0),
       Collectables(0),
       EstimatorMap(em.EstimatorMap),
@@ -75,7 +75,7 @@ EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerNew& em)
       FieldWidth(20)
 {
   //inherit communicator
-  setCommunicator(em.myComm);
+  setCommunicator(em.my_comm_);
 
   // Here Estimators are ScalarEstimatorNew
   for (int i = 0; i < em.Estimators.size(); i++)
@@ -88,7 +88,6 @@ EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerNew& em)
 EstimatorManagerNew::~EstimatorManagerNew()
 {
   delete_iter(Estimators.begin(), Estimators.end());
-  delete_iter(RemoteData.begin(), RemoteData.end());
   delete_iter(h5desc.begin(), h5desc.end());
   if (Collectables)
     delete Collectables;
@@ -97,18 +96,19 @@ EstimatorManagerNew::~EstimatorManagerNew()
 void EstimatorManagerNew::setCommunicator(Communicate* c)
 {
   // I think this is actually checking if this is the "Main Estimator"
-  if (myComm && myComm == c)
+  if (my_comm_ && my_comm_ == c)
     return;
-  myComm = c ? c : OHMMS::Controller;
+  my_comm_ = c ? c : OHMMS::Controller;
   //set the default options
   // This is a flag to tell manager if there is more than one rank
-  // running walkers, its discovered by smelly query of myComm.
-  Options.set(COLLECT, myComm->size() > 1);
-  Options.set(MANAGE, myComm->rank() == 0);
+  // running walkers, its discovered by smelly query of my_comm_.
+  // New code should not make use of these useless options
+  Options.set(COLLECT, my_comm_->size() > 1);
+  Options.set(MANAGE, my_comm_->rank() == 0);
   if (RemoteData.empty())
   {
-    RemoteData.push_back(new BufferType);
-    RemoteData.push_back(new BufferType);
+    RemoteData.push_back(UPtr<FPRBuffer>(new FPRBuffer));
+    RemoteData.push_back(UPtr<FPRBuffer>(new FPRBuffer));
   }
 }
 
@@ -123,9 +123,11 @@ void EstimatorManagerNew::setCommunicator(Communicate* c)
  */
 void EstimatorManagerNew::reset()
 {
+  //It's essential that this one is first, other code assumes weightInd always == 0
   weightInd = BlockProperties.add("BlockWeight");
+  assert(weightInd == 0);
   cpuInd    = BlockProperties.add("BlockCPU");
-  acceptInd = BlockProperties.add("AcceptRatio");
+  acceptRatioInd = BlockProperties.add("BlockAcceptRatio");
   BlockAverages.clear(); //cleaup the records
   for (int i = 0; i < Estimators.size(); i++)
     Estimators[i]->add2Record(BlockAverages);
@@ -153,6 +155,7 @@ void EstimatorManagerNew::addHeader(std::ostream& o)
   o.setf(std::ios::right, std::ios::adjustfield);
 }
 
+/// \todo clean up this method its a mess
 void EstimatorManagerNew::start(int blocks, bool record)
 {
   for (int i = 0; i < Estimators.size(); i++)
@@ -173,7 +176,7 @@ void EstimatorManagerNew::start(int blocks, bool record)
   //allocate buffer for data collection
   if (RemoteData.empty())
     for (int i = 0; i < sources; ++i)
-      RemoteData.push_back(new BufferType(BufferSize));
+      RemoteData.push_back(UPtr<FPRBuffer>(new FPRBuffer(BufferSize)));
   else
     for (int i = 0; i < RemoteData.size(); ++i)
       RemoteData[i]->resize(BufferSize);
@@ -181,7 +184,7 @@ void EstimatorManagerNew::start(int blocks, bool record)
   if (record && DebugArchive == 0)
   {
     char fname[128];
-    sprintf(fname, "%s.p%03d.scalar.dat", myComm->getName().c_str(), myComm->rank());
+    sprintf(fname, "%s.p%03d.scalar.dat", my_comm_->getName().c_str(), my_comm_->rank());
     DebugArchive = new std::ofstream(fname);
     addHeader(*DebugArchive);
   }
@@ -192,7 +195,7 @@ void EstimatorManagerNew::start(int blocks, bool record)
   {
     if (Archive)
       delete Archive;
-    std::string fname(myComm->getName());
+    std::string fname(my_comm_->getName());
     fname.append(".scalar.dat");
     Archive = new std::ofstream(fname.c_str());
     addHeader(*Archive);
@@ -201,7 +204,7 @@ void EstimatorManagerNew::start(int blocks, bool record)
       delete_iter(h5desc.begin(), h5desc.end());
       h5desc.clear();
     }
-    fname  = myComm->getName() + ".stat.h5";
+    fname  = my_comm_->getName() + ".stat.h5";
     h_file = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     for (int i = 0; i < Estimators.size(); i++)
       Estimators[i]->registerObservables(h5desc, h_file);
@@ -216,14 +219,12 @@ void EstimatorManagerNew::startBlock(int steps)
   BlockWeight = 0.0;
 }
 
-void EstimatorManagerNew::stopBlockNew(RealType accept, RealType block_weight, double cpu_block_time)
+void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, RealType block_weight, double cpu_block_time)
 {
   //take block averages and update properties per block
   PropertyCache[weightInd] = block_weight;
   PropertyCache[cpuInd]    = cpu_block_time;
-  PropertyCache[acceptInd] = accept;
-
-  makeBlockAverages();
+  makeBlockAverages(accept, reject);
 }
 
 
@@ -262,11 +263,19 @@ QMCTraits::FullPrecRealType EstimatorManagerNew::collectScalarEstimators(
   return tot_weight;
 }
 
-void EstimatorManagerNew::makeBlockAverages()
+// blocks don't close frequently enough that we should be sweating the mpi transfers at all.
+// all this Cache stuff is premature optimization because someone wanted to be very fancy
+void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long rejects)
 {
   //there is only one EstimatormanagerNew per rank in the unified driver.
   //copy cached data to RemoteData[0]
   //we should not handle RemoteData elsewhere.
+  std::vector<unsigned long> accepts_and_rejects(my_comm_->size() * 2, 0);
+  accepts_and_rejects[my_comm_->rank()] = accepts;
+  accepts_and_rejects[my_comm_->size() + my_comm_->rank()] = rejects;
+  my_comm_->allreduce(accepts_and_rejects);
+  unsigned long total_block_accept = std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_->size(), 0);
+  unsigned long total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(), accepts_and_rejects.begin() + my_comm_->size() * 2, 0);
   
   int n1 = AverageCache.size();
   int n2 = n1 + AverageCache.size();
@@ -285,11 +294,11 @@ void EstimatorManagerNew::makeBlockAverages()
 
   // This is necessary to use mpi3's C++ style reduce
 #ifdef HAVE_MPI
-    myComm->comm.reduce_n(send_buffer.begin(), send_buffer.size(), recv_buffer.begin(), std::plus<>{}, 0);
+    my_comm_->comm.reduce_n(send_buffer.begin(), send_buffer.size(), recv_buffer.begin(), std::plus<>{}, 0);
 #else
     recv_buffer = send_buffer;
 #endif  
-  if (myComm->rank() == 0)
+  if (my_comm_->rank() == 0)
   {
     auto cur = recv_buffer.begin();
     copy(cur, cur + n1, AverageCache.begin());
@@ -302,6 +311,10 @@ void EstimatorManagerNew::makeBlockAverages()
     for (int i = 1; i < PropertyCache.size(); i++)
       PropertyCache[i] *= invTotWgt;
   }
+
+  // now we put the correct accept ratio in
+  PropertyCache[acceptRatioInd] = static_cast<FullPrecRealType>(total_block_accept) / static_cast<FullPrecRealType>(total_block_accept + total_block_reject);
+  
   //add the block average to summarize
   energyAccumulator(AverageCache[0]);
   varAccumulator(SquaredAverageCache[0] - AverageCache[0] * AverageCache[0]);
@@ -329,7 +342,7 @@ void EstimatorManagerNew::getEnergyAndWeight(RealType& e, RealType& w, RealType&
     tmp[0] = energyAccumulator.result();
     tmp[1] = energyAccumulator.count();
     tmp[2] = varAccumulator.mean();
-    myComm->bcast(tmp, 3);
+    my_comm_->bcast(tmp, 3);
     e   = tmp[0];
     w   = tmp[1];
     var = tmp[2];

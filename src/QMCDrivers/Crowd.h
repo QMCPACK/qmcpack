@@ -93,13 +93,9 @@ public:
   void incReject() { ++n_reject_; }
   void incAccept() { ++n_accept_; }
   void incNonlocalAccept(int n = 1) { n_nonlocal_accept_ += n; }
-  FullPrecRealType get_accept_ratio() const
-  {
-    return [](FullPrecRealType accept, FullPrecRealType reject) -> FullPrecRealType {
-      return accept / (accept + reject);
-    }(n_accept_, n_reject_);
-  }
   unsigned long get_nonlocal_accept() { return n_nonlocal_accept_; }
+  unsigned long get_accept() { return n_accept_; }
+  unsigned long get_reject() { return n_reject_; }
 private:
   /** @name Walker Vectors
    *

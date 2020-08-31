@@ -539,9 +539,11 @@ void QMCDriverNew::endBlock()
 {
   RefVector<ScalarEstimatorBase> all_scalar_estimators;
   FullPrecRealType total_block_weight = 0.0;
-  FullPrecRealType total_accept_ratio = 0.0;
   // Collect all the ScalarEstimatorsFrom EMCrowds
   double cpu_block_time = 0.0;
+  unsigned long block_accept = 0;
+  unsigned long block_reject = 0;
+  
   for (const UPtr<Crowd>& crowd : crowds_)
   {
     crowd->stopBlock();
@@ -549,14 +551,18 @@ void QMCDriverNew::endBlock()
     all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
                                  std::make_move_iterator(crowd_sc_est.end()));
     total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
-    total_accept_ratio += crowd->get_accept_ratio() * crowd->get_estimator_manager_crowd().get_block_weight();
+    block_accept += crowd->get_accept();
+    block_reject += crowd->get_reject();
     cpu_block_time += crowd->get_estimator_manager_crowd().get_cpu_block_time();
   }
-  total_accept_ratio /= total_block_weight;
+  std::cerr << "accept: " << block_accept << "   reject: " << block_reject;
+  FullPrecRealType total_accept_ratio = static_cast<FullPrecRealType>(block_accept) / static_cast<FullPrecRealType>(block_accept + block_reject);
+  std::cerr << "   total_accept_ratio: << " << total_accept_ratio << '\n';
   estimator_manager_->collectScalarEstimators(all_scalar_estimators);
-  cpu_block_time /= crowds_.size();
+  /// get the average cpu_block time per crowd
+  /// cpu_block_time /= crowds_.size();
 
-  estimator_manager_->stopBlockNew(total_accept_ratio, total_block_weight, cpu_block_time);
+  estimator_manager_->stopBlock(block_accept, block_reject, total_block_weight, cpu_block_time);
 }
 
 } // namespace qmcplusplus
