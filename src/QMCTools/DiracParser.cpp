@@ -317,6 +317,7 @@ void DiracParser::dumpHDF5(const std::string& fname)
       hout.write(bg.rid, "rid");
       hout.write(bg.l, "l");
       hout.write(bg.n, "n");
+      hout.write(bg.type, "type");
       hout.push("radfunctions", true);
       for (int np = 0; np < bg.radfuncs.size(); np++)
       {
