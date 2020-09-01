@@ -13,6 +13,9 @@
 #define QMCPLUSPLUS_TOOLS_DIRAC_OUT_H
 
 #include "QMCTools/QMCGaussianParserBase.h"
+#include <string>
+#include <map>
+#include <cmath>
 
 typedef std::pair<double, double> primBasis;
 
@@ -39,9 +42,10 @@ struct atBasisSet
   std::vector<basisGroup> basisGroups;
 };
 
-
 class DiracParser : public QMCGaussianParserBase, public OhmmsAsciiParser
 {
+  typedef std::map<std::string, double> normMapType;
+
 public:
   DiracParser(int argc, char** argv);
   void parse(const std::string& fname);
@@ -59,6 +63,7 @@ private:
   std::vector<std::vector<std::complex<double>>> upcoeff;
   std::vector<std::vector<std::complex<double>>> dncoeff;
   int numAO, numMO;
+  normMapType normMap;
 };
 
 

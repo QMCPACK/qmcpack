@@ -20,6 +20,92 @@ DiracParser::DiracParser(int argc, char** argv) : QMCGaussianParserBase(argc, ar
   ECP      = false;
   BohrUnit = true;
   PBC      = false;
+  normMap  = {
+      {"s", 1.0},
+      {"px", 1.0},
+      {"py", 1.0},
+      {"pz", 1.0},
+      {"dxx", std::sqrt(3)},
+      {"dyy", std::sqrt(3)},
+      {"dzz", std::sqrt(3)},
+      {"dxy", 1.0},
+      {"dxz", 1.0},
+      {"dyz", 1.0},
+      {"fxxx", std::sqrt(15)},
+      {"fyyy", std::sqrt(15)},
+      {"fzzz", std::sqrt(15)},
+      {"fxxy", std::sqrt(3)},
+      {"fxxz", std::sqrt(3)},
+      {"fxyy", std::sqrt(3)},
+      {"fyyz", std::sqrt(3)},
+      {"fxzz", std::sqrt(3)},
+      {"fyzz", std::sqrt(3)},
+      {"fxyz", 1},
+      {"g400", std::sqrt(105)},
+      {"g040", std::sqrt(105)},
+      {"g004", std::sqrt(105)},
+      {"g310", std::sqrt(15)},
+      {"g301", std::sqrt(15)},
+      {"g130", std::sqrt(15)},
+      {"g031", std::sqrt(15)},
+      {"g103", std::sqrt(15)},
+      {"g013", std::sqrt(15)},
+      {"g220", std::sqrt(9)},
+      {"g202", std::sqrt(9)},
+      {"g022", std::sqrt(9)},
+      {"g211", std::sqrt(3)},
+      {"g121", std::sqrt(3)},
+      {"g112", std::sqrt(3)},
+      {"h500", std::sqrt(945)},
+      {"h050", std::sqrt(945)},
+      {"h005", std::sqrt(945)},
+      {"h410", std::sqrt(105)},
+      {"h401", std::sqrt(105)},
+      {"h140", std::sqrt(105)},
+      {"h041", std::sqrt(105)},
+      {"h104", std::sqrt(105)},
+      {"h014", std::sqrt(105)},
+      {"h320", std::sqrt(45)},
+      {"h302", std::sqrt(45)},
+      {"h230", std::sqrt(45)},
+      {"h032", std::sqrt(45)},
+      {"h203", std::sqrt(45)},
+      {"h023", std::sqrt(45)},
+      {"h311", std::sqrt(15)},
+      {"h131", std::sqrt(15)},
+      {"h113", std::sqrt(15)},
+      {"h221", std::sqrt(9)},
+      {"h212", std::sqrt(9)},
+      {"h122", std::sqrt(9)},
+      {"i600", std::sqrt(10395)},
+      {"i060", std::sqrt(10395)},
+      {"i006", std::sqrt(10395)},
+      {"i510", std::sqrt(945)},
+      {"i501", std::sqrt(945)},
+      {"i150", std::sqrt(945)},
+      {"i051", std::sqrt(945)},
+      {"i105", std::sqrt(945)},
+      {"i015", std::sqrt(945)},
+      {"i420", std::sqrt(315)},
+      {"i402", std::sqrt(315)},
+      {"i240", std::sqrt(315)},
+      {"i042", std::sqrt(315)},
+      {"i204", std::sqrt(315)},
+      {"i024", std::sqrt(315)},
+      {"i411", std::sqrt(105)},
+      {"i141", std::sqrt(105)},
+      {"i114", std::sqrt(105)},
+      {"i330", std::sqrt(225)},
+      {"i303", std::sqrt(225)},
+      {"i033", std::sqrt(225)},
+      {"i321", std::sqrt(45)},
+      {"i312", std::sqrt(45)},
+      {"i231", std::sqrt(45)},
+      {"i132", std::sqrt(45)},
+      {"i213", std::sqrt(45)},
+      {"i123", std::sqrt(45)},
+      {"i222", std::sqrt(27)},
+  };
 }
 
 void DiracParser::parse(const std::string& fname)
@@ -213,15 +299,33 @@ void DiracParser::getSpinors(std::istream& is)
       if (currentWords.size() == 0)
         break;
       assert(currentWords.size() == 9);
+      double norm              = 1.0;
+      std::string label        = currentWords[4];
+      normMapType::iterator it = normMap.find(label);
+      if (it != normMap.end())
+        norm = it->second;
+      else
+      {
+        std::cerr << "Unknown basis function type. Aborting" << std::endl;
+        abort();
+      }
+
+
       int bidx               = std::stoi(currentWords[0]) - 1;
       std::complex<double> a = {std::stod(currentWords[5]), std::stod(currentWords[6])};
       std::complex<double> b = {std::stod(currentWords[7]), std::stod(currentWords[8])};
       std::complex<double> c = {-std::stod(currentWords[7]), std::stod(currentWords[8])};
       std::complex<double> d = {std::stod(currentWords[5]), -std::stod(currentWords[6])};
-      up[bidx]               = a;
-      dn[bidx]               = b;
-      upkp[bidx]             = c;
-      dnkp[bidx]             = d;
+      up[bidx]               = a * norm;
+      dn[bidx]               = b * norm;
+      upkp[bidx]             = c * norm;
+      dnkp[bidx]             = d * norm;
+      /*
+      up[bidx]   = a;
+      dn[bidx]   = b;
+      upkp[bidx] = c;
+      dnkp[bidx] = d;
+      */
     }
     upcoeff.push_back(up);
     upcoeff.push_back(upkp);
