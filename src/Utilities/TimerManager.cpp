@@ -28,7 +28,7 @@ namespace qmcplusplus
 {
 TimerManager<NewTimer> timer_manager;
 
-std::array<std::string, num_timer_levels> timer_level_names = {"none", "coarse", "medium", "fine"};
+const std::array<std::string, num_timer_levels> timer_level_names = {"none", "coarse", "medium", "fine"};
 
 const char TIMER_STACK_SEPARATOR = '/';
 
@@ -249,7 +249,8 @@ void TimerManager<TIMER>::print(Communicate* comm)
     return;
 #ifdef ENABLE_TIMERS
   app_log() << std::endl;
-  app_log() << "Use --enable-timers=<value> command line option to increase or decrease level of timing information" << std::endl;
+  app_log() << "Use --enable-timers=<value> command line option to increase or decrease level of timing information"
+            << std::endl;
 #ifdef USE_STACK_TIMERS
   if (comm == nullptr || comm->rank() == 0)
     app_log() << "Stack timer profile" << std::endl;
