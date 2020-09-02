@@ -37,6 +37,9 @@ private:
 
 extern RunTimeManager<CPUClock> run_time_manager;
 
+extern template class RunTimeManager<CPUClock>;
+extern template class RunTimeManager<FakeCPUClock>;
+
 template<class CLOCK = CPUClock>
 class LoopTimer
 {
@@ -85,8 +88,8 @@ public:
   std::string time_limit_message(const std::string& driverName, int block);
 };
 
-extern template class RunTimeManager<CPUClock>;
-extern template class RunTimeManager<FakeCPUClock>;
+extern template class RunTimeControl<CPUClock>;
+extern template class RunTimeControl<FakeCPUClock>;
 
 } // namespace qmcplusplus
 #endif
