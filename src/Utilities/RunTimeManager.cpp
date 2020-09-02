@@ -22,6 +22,9 @@ namespace qmcplusplus
 {
 RunTimeManager<CPUClock> run_time_manager;
 
+template class RunTimeManager<CPUClock>;
+template class RunTimeManager<FakeCPUClock>;
+
 template<class CLOCK>
 double LoopTimer<CLOCK>::get_time_per_iteration()
 {
