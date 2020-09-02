@@ -45,14 +45,13 @@ DMC::DMC(MCWalkerConfiguration& w,
          QMCHamiltonian& h,
          WaveFunctionPool& ppool,
          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+    : QMCDriver(w, psi, h, ppool, comm, "DMC"),
       KillNodeCrossing(0),
       BranchInterval(-1),
       Reconfiguration("no"),
       mover_MaxAge(-1)
 {
   RootName = "dmc";
-  QMCType  = "DMC";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   m_param.add(KillWalker, "killnode", "string");
   m_param.add(Reconfiguration, "reconfiguration", "string");

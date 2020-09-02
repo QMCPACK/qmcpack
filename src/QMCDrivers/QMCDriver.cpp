@@ -46,13 +46,15 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
                      WaveFunctionPool& ppool,
-                     Communicate* comm)
+                     Communicate* comm,
+                     const std::string& QMC_driver_type)
     : MPIObjectBase(comm),
       Estimators(0),
       Traces(0),
       branchEngine(0),
       DriftModifier(0),
       qmcNode(NULL),
+      QMCType(QMC_driver_type),
       W(w),
       Psi(psi),
       H(h),
@@ -154,7 +156,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 #endif
 #endif
   m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute", "int");
-  QMCType = "invalid";
   ////add each OperatorBase to W.PropertyList so that averages can be taken
   //H.add2WalkerProperty(W);
   //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
