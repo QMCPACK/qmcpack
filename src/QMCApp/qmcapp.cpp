@@ -85,26 +85,7 @@ int main(int argc, char** argv)
           if (pos != std::string::npos)
           {
             std::string timer_level = c.substr(pos + 1);
-            if (timer_level == "none")
-            {
-              timer_manager.set_timer_threshold(timer_level_none);
-            }
-            else if (timer_level == "coarse")
-            {
-              timer_manager.set_timer_threshold(timer_level_coarse);
-            }
-            else if (timer_level == "medium")
-            {
-              timer_manager.set_timer_threshold(timer_level_medium);
-            }
-            else if (timer_level == "fine")
-            {
-              timer_manager.set_timer_threshold(timer_level_fine);
-            }
-            else
-            {
-              std::cerr << "Unknown timer level: " << timer_level << std::endl;
-            }
+            timer_manager.set_timer_threshold(timer_level);
           }
         }
         if (c.find("-verbosity") < c.size())

@@ -263,7 +263,7 @@ SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(BUILD_QMCTOOLS 1)
 #SET(MPIP_PROFILE 0)
 OPTION(QMC_BUILD_STATIC "Link to static libraries" OFF)
-OPTION(ENABLE_TIMERS "Enable internal timers" OFF)
+OPTION(ENABLE_TIMERS "Enable internal timers" ON)
 OPTION(ENABLE_STACKTRACE "Enable use of boost::stacktrace" OFF)
 
 ######################################################################

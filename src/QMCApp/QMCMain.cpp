@@ -114,7 +114,15 @@ QMCMain::QMCMain(Communicate* c)
                 << "\n  CUDA base precision = " << GET_MACRO_VAL(CUDA_PRECISION)
                 << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
 #endif
-                << "\n\n  Structure-of-arrays (SoA) optimization enabled" << std::endl;
+                << std::endl;
+
+  // Record features configured in cmake or selected via command-line arguments to the printout
+#ifdef ENABLE_OFFLOAD
+  app_summary() << "\n  OpenMP target offload to accellerators enabled" << std::endl;
+#endif
+#ifdef ENABLE_TIMERS
+  app_summary() << "\n  Current timer level is " << timer_manager.get_timer_threshold_string() << std::endl;
+#endif
   app_summary() << std::endl;
   app_summary().flush();
 }

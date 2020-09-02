@@ -61,12 +61,14 @@ protected:
 
   void initializeTimer(TIMER& t);
 
+  void print_flat(Communicate* comm);
+  void print_stack(Communicate* comm);
 public:
 #ifdef USE_VTUNE_TASKS
   __itt_domain* task_domain;
 #endif
 
-  TimerManager() : timer_threshold(timer_level_coarse), max_timer_id(1), max_timers_exceeded(false)
+  TimerManager() : timer_threshold(timer_level_none), max_timer_id(1), max_timers_exceeded(false)
   {
 #ifdef USE_VTUNE_TASKS
     task_domain = __itt_domain_create("QMCPACK");
@@ -90,13 +92,13 @@ public:
   }
 
   void set_timer_threshold(const timer_levels threshold);
+  void set_timer_threshold(const std::string& threshold);
+  std::string get_timer_threshold_string() const;
 
   bool maximum_number_of_timers_exceeded() const { return max_timers_exceeded; }
 
   void reset();
   void print(Communicate* comm);
-  void print_flat(Communicate* comm);
-  void print_stack(Communicate* comm);
 
   typedef std::map<std::string, int> nameList_t;
   typedef std::vector<double> timeList_t;
