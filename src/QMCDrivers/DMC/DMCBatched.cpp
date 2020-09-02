@@ -565,13 +565,6 @@ bool DMCBatched::run()
       dmc_state.step = step;
       crowd_task(runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_), std::ref(crowds_));
 
-      branch_engine_->branch(step, population_);
-
-      for (UPtr<Crowd>& crowd_ptr : crowds_)
-        crowd_ptr->clearWalkers();
-
-      population_.distributeWalkers(crowds_);
-
       // Accumulate on the whole population
       // But it is now visible in the algorithm not hidden in the BranchEngine::branch.
       // \todo make task block
@@ -582,6 +575,13 @@ bool DMCBatched::run()
         if (crowd_ref.size() > 0)
           crowd_ref.accumulate(population_.get_num_global_walkers());
       }
+      
+      branch_engine_->branch(step, population_);
+
+      for (UPtr<Crowd>& crowd_ptr : crowds_)
+        crowd_ptr->clearWalkers();
+
+      population_.distributeWalkers(crowds_);
     }
     endBlock();
   }
