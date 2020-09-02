@@ -351,6 +351,8 @@ void TimerManager<TIMER>::print_stack(Communicate* comm)
                p.timeList[i] / (static_cast<double>(p.callList[i]) + std::numeric_limits<double>::epsilon()));
       app_log() << tmpout;
     }
+    app_log() << std::endl;
+    app_log() << "Use enable-timers command line option to increase or decrease level of timing information" << std::endl;
   }
 #endif
 }
