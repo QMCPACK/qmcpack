@@ -27,7 +27,7 @@ class RunTimeManager
 {
 public:
   void start() { start_time = CLOCK()(); }
-  double elapsed() { return CLOCK()() - start_time; }
+  inline double elapsed() { return CLOCK()() - start_time; }
   // Initialize the start time at static class initialization time
   RunTimeManager() { start(); }
 

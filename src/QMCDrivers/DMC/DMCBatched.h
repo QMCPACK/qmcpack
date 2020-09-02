@@ -66,7 +66,7 @@ public:
   {
   public:
     NewTimer& tmove_timer;
-    DMCTimers(const std::string& prefix) : tmove_timer(*TimerManager.createTimer(prefix + "Tmove", timer_level_medium))
+    DMCTimers(const std::string& prefix) : tmove_timer(*timer_manager.createTimer(prefix + "Tmove", timer_level_medium))
     {}
   };
 
