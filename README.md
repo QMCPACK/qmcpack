@@ -151,9 +151,9 @@ make -j 8
                          Production quality for AFQMC. Pre-production quality for real-space.
                          Use CUDA_ARCH, default sm_70, to set the actual GPU architecture.
      ENABLE_OFFLOAD      ON/OFF(default). Experimental feature. Enable OpenMP target offload for GPU acceleration.
-     ENABLE_TIMERS       ON/OFF(default). Enable fine-grained timers. Timers are off by default
-                         to avoid potential slowdown in small systems.
-                         For large systems (100+ electrons) there is no risk.
+     ENABLE_TIMERS       ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
+                         to avoid potential slowdown in tiny systems.
+                         For systems beyond tiny sizes (100+ electrons) there is no risk.
 ```
 
  * Additional QMC options
