@@ -42,7 +42,7 @@ enum timer_levels
   timer_level_coarse,
   timer_level_medium,
   timer_level_fine,
-  num_timer_levels  // this is not a timer level but to count the elements in this enum
+  num_timer_levels // this is not a timer level but to count the elements in this enum
 };
 
 extern bool timer_max_level_exceeded;

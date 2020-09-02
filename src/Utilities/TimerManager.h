@@ -63,6 +63,7 @@ protected:
 
   void print_flat(Communicate* comm);
   void print_stack(Communicate* comm);
+
 public:
 #ifdef USE_VTUNE_TASKS
   __itt_domain* task_domain;

@@ -392,7 +392,7 @@ bool QMCMain::validateXML()
   }
   if (qmc_common.use_density)
   {
-    app_log() << "  hamiltonian has MPC. Will read density if it is found." << std::endl;
+    app_log() << "  hamiltonian has MPC. Will read density if it is found." << std::endl << std::endl;
   }
 
   //initialize the random number generator

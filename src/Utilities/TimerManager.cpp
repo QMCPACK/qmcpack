@@ -96,7 +96,8 @@ void TimerManager<TIMER>::set_timer_threshold(const std::string& threshold)
     set_timer_threshold(static_cast<timer_levels>(std::distance(timer_level_names.begin(), it)));
   else
   {
-    std::cerr << "Unknown timer level: " << threshold << " , current level :" << timer_level_names[timer_threshold] << std::endl;
+    std::cerr << "Unknown timer level: " << threshold << " , current level: " << timer_level_names[timer_threshold]
+              << std::endl;
   }
 }
 
@@ -244,7 +245,8 @@ void TimerManager<TIMER>::collate_stack_profile(Communicate* comm, StackProfileD
 template<class TIMER>
 void TimerManager<TIMER>::print(Communicate* comm)
 {
-  if (timer_threshold <= timer_level_none) return;
+  if (timer_threshold <= timer_level_none)
+    return;
 #ifdef ENABLE_TIMERS
 #ifdef USE_STACK_TIMERS
   if (comm == nullptr || comm->rank() == 0)
