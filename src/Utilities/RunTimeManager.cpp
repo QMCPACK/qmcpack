@@ -20,6 +20,9 @@
 
 namespace qmcplusplus
 {
+template class RunTimeManager<CPUClock>;
+template class RunTimeManager<FakeCPUClock>;
+
 RunTimeManager<CPUClock> run_time_manager;
 
 template<class CLOCK>
