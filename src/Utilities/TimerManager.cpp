@@ -248,6 +248,8 @@ void TimerManager<TIMER>::print(Communicate* comm)
   if (timer_threshold <= timer_level_none)
     return;
 #ifdef ENABLE_TIMERS
+  app_log() << std::endl;
+  app_log() << "Use --enable-timers=<value> command line option to increase or decrease level of timing information" << std::endl;
 #ifdef USE_STACK_TIMERS
   if (comm == nullptr || comm->rank() == 0)
     app_log() << "Stack timer profile" << std::endl;
@@ -351,8 +353,6 @@ void TimerManager<TIMER>::print_stack(Communicate* comm)
                p.timeList[i] / (static_cast<double>(p.callList[i]) + std::numeric_limits<double>::epsilon()));
       app_log() << tmpout;
     }
-    app_log() << std::endl;
-    app_log() << "Use enable-timers command line option to increase or decrease level of timing information" << std::endl;
   }
 #endif
 }
