@@ -545,11 +545,10 @@ void QMCDriverNew::endBlock()
     total_accept_ratio += crowd->get_accept_ratio() * crowd->get_estimator_manager_crowd().get_block_weight();
     cpu_block_time += crowd->get_estimator_manager_crowd().get_cpu_block_time();
   }
-  total_accept_ratio /= total_block_weight;
   estimator_manager_->collectScalarEstimators(all_scalar_estimators);
   cpu_block_time /= crowds_.size();
 
-  estimator_manager_->stopBlockNew(total_accept_ratio, total_block_weight, cpu_block_time);
+  estimator_manager_->stopBlockNew(total_accept_ratio, total_block_weight, cpu_block_time*total_block_weight);
 }
 
 } // namespace qmcplusplus
