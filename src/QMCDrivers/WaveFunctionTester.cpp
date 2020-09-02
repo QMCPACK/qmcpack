@@ -41,7 +41,7 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        ParticleSetPool& ptclPool,
                                        WaveFunctionPool& ppool,
                                        Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+    : QMCDriver(w, psi, h, ppool, comm, "WaveFunctionTester"),
       PtclPool(ptclPool),
       checkRatio("no"),
       checkClone("no"),

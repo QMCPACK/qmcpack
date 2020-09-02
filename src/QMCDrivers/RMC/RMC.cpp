@@ -40,10 +40,14 @@ RMC::RMC(MCWalkerConfiguration& w,
          QMCHamiltonian& h,
          WaveFunctionPool& ppool,
          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm), prestepsVMC(-1), rescaleDrift("no"), beta(-1), beads(-1), fromScratch(true)
+    : QMCDriver(w, psi, h, ppool, comm, "RMC"),
+      prestepsVMC(-1),
+      rescaleDrift("no"),
+      beta(-1),
+      beads(-1),
+      fromScratch(true)
 {
   RootName = "rmc";
-  QMCType  = "RMC";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
   m_param.add(rescaleDrift, "drift", "string");

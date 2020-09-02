@@ -41,10 +41,9 @@ VMC::VMC(MCWalkerConfiguration& w,
          QMCHamiltonian& h,
          WaveFunctionPool& ppool,
          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm), UseDrift("yes")
+    : QMCDriver(w, psi, h, ppool, comm, "VMC"), UseDrift("yes")
 {
   RootName = "vmc";
-  QMCType  = "VMC";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
   m_param.add(UseDrift, "useDrift", "string");
