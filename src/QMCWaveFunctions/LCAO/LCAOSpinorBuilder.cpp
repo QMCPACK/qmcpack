@@ -67,8 +67,8 @@ bool LCAOSpinorBuilder::loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr 
   up.setOrbitalSetSize(norb);
   dn.setOrbitalSetSize(norb);
 
-  xmlNodePtr occ_ptr   = nullptr;
-  cur = cur->xmlChildrenNode;
+  xmlNodePtr occ_ptr = nullptr;
+  cur                = cur->xmlChildrenNode;
   while (cur != nullptr)
   {
     std::string cname((const char*)(cur->name));
@@ -219,7 +219,7 @@ bool LCAOSpinorBuilder::putOccupation(int norbs, xmlNodePtr occ_ptr)
   else
   {
     const XMLAttrString o(occ_ptr, "mode");
-    if(!o.empty())
+    if (!o.empty())
       occ_mode = o;
   }
   if (occ_mode == "excited")
@@ -227,7 +227,7 @@ bool LCAOSpinorBuilder::putOccupation(int norbs, xmlNodePtr occ_ptr)
     putContent(occ_in, occ_ptr);
     for (int k = 0; k < occ_in.size(); k++)
     {
-      if (occ_in[k] < 0) 
+      if (occ_in[k] < 0)
         Occ[-occ_in[k] - 1] = 0.0;
       else
         Occ[occ_in[k] - 1] = 1.0;
