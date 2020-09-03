@@ -20,7 +20,6 @@
 
 #include <vector>
 #include <string>
-#include <algorithm>
 #include <map>
 #include "NewTimer.h"
 #include "config.h"
