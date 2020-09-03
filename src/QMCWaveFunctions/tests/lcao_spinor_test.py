@@ -111,10 +111,10 @@ def write_h5_file():
     
     
     kpts = hf.create_group("KPTS_0")
-    kpts.create_dataset("eigenset_0", data=np.array([[0.25]]))
-    kpts.create_dataset("eigenset_0_imag", data=np.array([[0.75]]))
-    kpts.create_dataset("eigenset_1", data=np.array([[-0.2]]))
-    kpts.create_dataset("eigenset_1_imag", data=np.array([[0.8]]))
+    kpts.create_dataset("eigenset_0", data=np.array([[0.25],[0.75]]))
+    kpts.create_dataset("eigenset_0_imag", data=np.array([[0.75],[0.25]]))
+    kpts.create_dataset("eigenset_1", data=np.array([[-0.2],[0.8]]))
+    kpts.create_dataset("eigenset_1_imag", data=np.array([[0.8],[-0.2]]))
     hf.close()
 
 class cartGauss:
@@ -186,7 +186,34 @@ def get_reference_values():
     splap = (cs + 1j*ss)*uplap + (cs - 1j*ss)*dnlap
     spds  = (-ss + 1j*cs)*upval + (-ss - 1j*cs)*dnval
 
-    print("Spinor:")
+    print(" 1st Spinor:")
+    print("  Val     : {}".format(spval))
+    print("  Grad    : {} {} {}".format(spdx,spdy,spdz))
+    print("  Lap     : {}".format(splap))
+    print("  SpinGrad: {}".format(spds))
+
+    upcoef = (0.75+0.25j)
+    dncoef = (0.8-0.2j)
+
+    upval = upcoef*val
+    updx = upcoef*dx
+    updy = upcoef*dy
+    updz = upcoef*dz
+    uplap = upcoef*lap
+    dnval = dncoef*val
+    dndx = dncoef*dx
+    dndy = dncoef*dy
+    dndz = dncoef*dz
+    dnlap = dncoef*lap
+
+    spval = (cs + 1j*ss)*upval + (cs - 1j*ss)*dnval
+    spdx  = (cs + 1j*ss)*updx  + (cs - 1j*ss)*dndx
+    spdy  = (cs + 1j*ss)*updy  + (cs - 1j*ss)*dndy
+    spdz  = (cs + 1j*ss)*updz  + (cs - 1j*ss)*dndz
+    splap = (cs + 1j*ss)*uplap + (cs - 1j*ss)*dnlap
+    spds  = (-ss + 1j*cs)*upval + (-ss - 1j*cs)*dnval
+
+    print(" 2nd Spinor:")
     print("  Val     : {}".format(spval))
     print("  Grad    : {} {} {}".format(spdx,spdy,spdz))
     print("  Lap     : {}".format(splap))

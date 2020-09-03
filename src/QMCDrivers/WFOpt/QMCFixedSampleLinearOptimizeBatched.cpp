@@ -62,7 +62,8 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalke
                                std::move(vmcdriver_input),
                                population,
                                samples,
-                               comm),
+                               comm,
+                               "QMCFixedSampleLinearOptimizeBatched"),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
 #endif
@@ -108,7 +109,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalke
   qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
-  QMCType  = "QMCFixedSampleLinearOptimizeBatched";
   m_param.add(Max_iterations, "max_its", "int");
   m_param.add(nstabilizers, "nstabilizers", "int");
   m_param.add(stabilizerScale, "stabilizerscale", "double");

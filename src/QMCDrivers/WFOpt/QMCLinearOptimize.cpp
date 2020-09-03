@@ -45,8 +45,9 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
                                      QMCHamiltonian& h,
                                      HamiltonianPool& hpool,
                                      WaveFunctionPool& ppool,
-                                     Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+                                     Communicate* comm,
+                                     const std::string& QMC_driver_type)
+    : QMCDriver(w, psi, h, ppool, comm, QMC_driver_type),
       PartID(0),
       NumParts(1),
       hamPool(hpool),

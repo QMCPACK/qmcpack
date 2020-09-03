@@ -40,10 +40,10 @@ DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
                        Communicate* comm)
     : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, wf_pool,
                    "DMCBatched::", comm,
+                   "DMCBatched",
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
       dmcdriver_input_(input)
 {
-  QMCType = "DMCBatched";
 }
 // clang-format on
 

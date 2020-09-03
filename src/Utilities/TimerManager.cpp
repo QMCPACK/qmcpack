@@ -18,6 +18,8 @@
 #include "TimerManager.h"
 #include <limits>
 #include <cstdio>
+#include <algorithm>
+#include <array>
 #include <libxml/xmlwriter.h>
 #include "Configuration.h"
 #include <Message/OpenMP.h>
@@ -27,6 +29,8 @@
 namespace qmcplusplus
 {
 TimerManager<NewTimer> timer_manager;
+
+const std::array<std::string, num_timer_levels> timer_level_names = {"none", "coarse", "medium", "fine"};
 
 const char TIMER_STACK_SEPARATOR = '/';
 
@@ -85,6 +89,26 @@ void TimerManager<TIMER>::set_timer_threshold(const timer_levels threshold)
   for (int i = 0; i < TimerList.size(); i++)
     TimerList[i]->set_active_by_timer_threshold(timer_threshold);
 }
+
+template<class TIMER>
+void TimerManager<TIMER>::set_timer_threshold(const std::string& threshold)
+{
+  const auto it = std::find(timer_level_names.begin(), timer_level_names.end(), threshold);
+  if (it != timer_level_names.end())
+    set_timer_threshold(static_cast<timer_levels>(std::distance(timer_level_names.begin(), it)));
+  else
+  {
+    std::cerr << "Unknown timer level: " << threshold << " , current level: " << timer_level_names[timer_threshold]
+              << std::endl;
+  }
+}
+
+template<class TIMER>
+std::string TimerManager<TIMER>::get_timer_threshold_string() const
+{
+  return timer_level_names[timer_threshold];
+}
+
 
 template<class TIMER>
 void TimerManager<TIMER>::collate_flat_profile(Communicate* comm, FlatProfileData& p)
@@ -223,7 +247,12 @@ void TimerManager<TIMER>::collate_stack_profile(Communicate* comm, StackProfileD
 template<class TIMER>
 void TimerManager<TIMER>::print(Communicate* comm)
 {
+  if (timer_threshold <= timer_level_none)
+    return;
 #ifdef ENABLE_TIMERS
+  app_log() << std::endl;
+  app_log() << "Use --enable-timers=<value> command line option to increase or decrease level of timing information"
+            << std::endl;
 #ifdef USE_STACK_TIMERS
   if (comm == nullptr || comm->rank() == 0)
     app_log() << "Stack timer profile" << std::endl;

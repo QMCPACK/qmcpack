@@ -38,7 +38,7 @@ QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
                          HamiltonianPool& hpool,
                          WaveFunctionPool& ppool,
                          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+    : QMCDriver(w, psi, h, ppool, comm, "QMCOptimize"),
       PartID(0),
       NumParts(1),
       hamPool(hpool),
@@ -52,7 +52,6 @@ QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
   qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
-  QMCType  = "QMCOptimize";
   //default method is cg
   optmethod = "cg";
 }

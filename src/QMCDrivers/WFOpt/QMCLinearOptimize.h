@@ -54,7 +54,8 @@ public:
                     QMCHamiltonian& h,
                     HamiltonianPool& hpool,
                     WaveFunctionPool& ppool,
-                    Communicate* comm);
+                    Communicate* comm,
+                    const std::string& QMC_driver_type = "QMCLinearOptimize");
 
   ///Destructor
   virtual ~QMCLinearOptimize() = default;
