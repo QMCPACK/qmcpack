@@ -18,6 +18,8 @@
 #include "TimerManager.h"
 #include <limits>
 #include <cstdio>
+#include <algorithm>
+#include <array>
 #include <libxml/xmlwriter.h>
 #include "Configuration.h"
 #include <Message/OpenMP.h>
