@@ -24,18 +24,23 @@ performance and easiest configuration.
 Nightly testing currently includes the following software versions on x86:
 
 * Compilers
-  * GCC 10.1.0, 7.3.0
-  * Clang/LLVM 10.0.0, 6.0.1
+  * GCC 10.2.0, 7.3.0
+  * Clang/LLVM 10.0.1, 6.0.1
   * Intel 19.1.1.217 configured to use C++ library from GCC 8.3.0 
   * PGI 19.4 configured to use C++ library from GCC 8.3.0
-* Boost 1.73.0, 1.67.0
+* Boost 1.74.0, 1.68.0
 * HDF5 1.10.5, 1.8.19
 * FFTW 3.3.8, 3.3.4
-* CMake 3.17.1, 3.10.2
+* CMake 3.18.2, 3.12.1
 * MPI
-  * OpenMPI 4.0.3, 3.0.1
+  * OpenMPI 4.0.4, 3.1.2
   * Intel MPI 19.1.1.217
 * CUDA 10.2.89
+
+Workflow tests are performed with Quantum Espresso v6.4.1 and PySCF v1.7.4. These check trial wavefunction generation and
+conversion through to actual QMC runs.
+
+On a developmental basis we also check the latest Clang development version, AMD AOMP and Intel OneAPI compilers.
 
 # Building with CMake
 
