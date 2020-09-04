@@ -10,7 +10,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#include "catch.hpp"
+//#include "catch.hpp"
 #include "Configuration.h"
 
 #include <vector>
@@ -149,11 +149,11 @@ TEST_CASE("test_performance_batched_gemm")
   auto node  = world.split_shared(world.rank());
   arch::INIT(node);
   Alloc<float> alloc{};
-  int nkmax = 256;
+  int nkmax = 125;
   int nkmin = 8;
-  int nbatch_max = nkmax*nkmax*nkmax;
-  int m = 39;
-  int nbatch = nkmin*nkmin*nkmin;
+  int nbatch_max = nkmax*nkmax;
+  int m = 300;
+  int nbatch = nkmin*nkmin;
   myTimer timer;
   while (nbatch < nbatch_max) {
     std::string timer_id = std::to_string(nbatch);
@@ -183,6 +183,3 @@ TEST_CASE("test_performance_batched_gemm")
     nbatch *= 2;
   }
 }
-
-
-} // namespace qmcplusplus
