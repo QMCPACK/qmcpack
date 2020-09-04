@@ -4230,15 +4230,18 @@ class QmcpackInputTemplate(SimulationInputTemplate):
 
 
 
-def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,system=None):
+def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler=None,system=None):
     bconds = tuple(bconds)
     sc = simulationcell(bconds=bconds)
     periodic = 'p' in bconds
     axes_valid = system!=None and len(system.structure.axes)>0
     if periodic:
         sc.lr_dim_cutoff = lr_dim_cutoff
-        if lr_tol!=None:
+        if lr_tol is not None:
             sc.lr_tol = lr_tol
+        #end if
+        if lr_handler is not None:
+            sc.lr_handler = lr_handler
         #end if
         if not axes_valid:
             QmcpackInput.class_error('invalid axes in generate_simulationcell\nargument system must be provided\naxes of the structure must have non-zero dimension')
@@ -6236,6 +6239,7 @@ gen_basic_input_defaults = obj(
     buffer         = None,             
     lr_dim_cutoff  = 15,               
     lr_tol         = None,               
+    lr_handler     = None,               
     remove_cell    = False,            
     randomsrc      = False,            
     meshfactor     = 1.0,              
@@ -6365,6 +6369,7 @@ def generate_basic_input(**kwargs):
         bconds        = kw.bconds,
         lr_dim_cutoff = kw.lr_dim_cutoff,
         lr_tol        = kw.lr_tol,
+        lr_handler    = kw.lr_handler,
         system        = kw.system,
         )
 
