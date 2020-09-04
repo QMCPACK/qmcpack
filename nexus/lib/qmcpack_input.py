@@ -1804,7 +1804,7 @@ class qmcsystem(QIxml):
 
 class simulationcell(QIxml):
     attributes = ['name','tilematrix']
-    parameters = ['lattice','reciprocal','bconds','lr_dim_cutoff','lr_tol','rs','nparticles','scale','uc_grid']
+    parameters = ['lattice','reciprocal','bconds','lr_dim_cutoff','lr_tol','lr_handler','rs','nparticles','scale','uc_grid']
 #end class simulationcell
 
 class particleset(QIxml):
@@ -2664,6 +2664,7 @@ Names.set_expanded_names(
     localenergy      = 'LocalEnergy',
     lr_dim_cutoff    = 'LR_dim_cutoff',
     lr_tol           = 'LR_tol',
+    lr_handler       = 'LR_handler',
     minmethod        = 'MinMethod',
     one_body         = 'One-Body',
     speciesa         = 'speciesA',
