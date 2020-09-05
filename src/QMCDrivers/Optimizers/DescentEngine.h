@@ -54,8 +54,6 @@ private:
   ValueType e_sd_;
   ValueType e_err_;
 
-  //ValueType numer_sum_;
-  //ValueType denom_sum_;
 
   ValueType numer_avg_;
   ValueType numer_var_;
@@ -69,57 +67,35 @@ private:
   ValueType target_var_;
   ValueType target_err_;
 
-  /*
-  ValueType sf_; 
-  ValueType sg_; 
-  ValueType mf_; 
-  ValueType mg_; 
-  ValueType mp_; 
-  ValueType ns_; 
-  ValueType vf_; 
-  ValueType vg_; 
-  ValueType cv_; 
-  ValueType other_avg_;
-  ValueType other_var_;
-
-  ValueType tsf_;
-  ValueType tsg_;
-  ValueType tmf_;
-  ValueType tmg_;
-  ValueType tmp_;
-  ValueType tns_;
-  ValueType tvf_;
-  ValueType tvg_;
-  ValueType tcv_;
-  ValueType other_target_;
-  ValueType other_target_var_;
-*/
 
 
 //Iteration to start collecting samples for final average and error blocking analysis
     int collection_step_;
 
+    //Iteration to start computing averages and errors from the stored values during the finalization phase
       int compute_step_;
 
+      //Whether to start collecting samples for the histories in the finalization phase
       bool collect_count_ = false;
 
+      //Counter for the number of descent steps taken in the finalization phase
       int final_descent_num_ = 0;
 
-    /// \brief [in] history of sampled local energies 
-    //std::vector<ValueType> _le_history;
 
-    /// \brief [in] history of sampled |value/guiding|^2 ratios 
+    //history of sampled |value/guiding|^2 ratios for one iteration
     std::vector<ValueType> vg_history_;
+    //history of sampled |value/guiding|^2 ratios  during the descent finalization phase
     std::vector<ValueType> final_vg_history_;
 
-    /// \brief [in] history of sampled configuration weight 
+    //history of sampled configuration weights for one iteration
     std::vector<ValueType> w_history_;
+    //history of sampled configuration weights during descent finalization phase
     std::vector<ValueType> final_w_history_;
 
-    /// \brief a history of sampled local energies times the |value/guiding|^2 raitos
+    //a history of sampled local energies times the |value/guiding|^2 raitos for one iteration
     std::vector<ValueType> lev_history_;
     
-    //a vector to store all samples of the local energy during the descent finalization phase
+    //history of sampled local energies times the |value/guiding|^2 raitos during the descent finalization phase
     std::vector<ValueType> final_lev_history_;
     
    //a vector to store the averages of the energy during the descent finalization phase 
@@ -128,19 +104,17 @@ private:
    //a vector to store the variances of the energy during the descent finalization phase 
     std::vector<ValueType> final_var_avg_history_;
 
-    /// \brief a history of sampled target function numerator
-    //std::vector<ValueType> _tn_history;
 
-    /// \brief a history of target function numerator times the |value/guiding|^2 ratios
+    // a history of target function numerator times the |value/guiding|^2 ratios for one iteration
     std::vector<ValueType> tnv_history_;
+    
+    // a history of target function numerator times the |value/guiding|^2 ratios during the descent finalization phase
     std::vector<ValueType> final_tnv_history_;
 
-    /// \brief a history of target function denominator
-    //std::vector<ValueType> _td_history;
 
-    /// \brief a history of target function denominator times the |value/guiding|^2 ratios
+    //a history of target function denominator times the |value/guiding|^2 ratios for one iteration
     std::vector<ValueType> tdv_history_;
-    
+    // a history of target function denomerator times the |value/guiding|^2 ratios during the descent finalization phase
     std::vector<ValueType> final_tdv_history_;
    
    //a vector to store the averages of the target function during the descent finalization phase 
@@ -148,11 +122,7 @@ private:
    //a vector to store the variances of the target function during the descent finalization phase 
     std::vector<ValueType> final_tar_var_history_;
 
-    /// \brief a history of sampled local energy square 
-    //std::vector<ValueType> _les_history;
 
-    /// \brief a history of sampled local energy square times |value/guiding|^2 ratios 
-    //std::vector<ValueType> _lesv_history;
 
 
 
@@ -163,14 +133,8 @@ private:
   Communicate* my_comm_;
 
   //Whether to target excited state
-  //Currently only ground state optimization is implemented
   bool engine_target_excited_;
 
-//Whether to use <(omega - H)^2> for targeting excited state,default is to use target above functional instead
- // bool target_excited_closest_;
-
- //Whether to clip samples with local energy outliers
-  //bool use_clipping_;
 
   //Number of optimizable parameters
   int num_params_;
@@ -225,11 +189,6 @@ private:
   //Value of omega in excited state functional
   ValueType omega_;
 
-  //the iteration where the omega_shift parameter starts being updated
- // int update_omega_iter_;
-//the number of iterations over which omega_shift is updated
- // int update_omega_steps_;
-
   //Number of parameter difference vectors stored when descent is used in a hybrid optimization
   int store_num_;
 
@@ -258,10 +217,6 @@ public:
   //Prepare for taking samples
   void prepareStorage(const int num_replicas, const int num_optimizables);
 
-  //Sets value of average local energy
-  void setEtemp(const std::vector<FullPrecRealType>& etemp);
-
-void setTarget(const std::vector<FullPrecRealType>& targetSums);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that Take Sample Data from the Host Code
@@ -318,16 +273,8 @@ void setTarget(const std::vector<FullPrecRealType>& targetSums);
   //Store a vector of parameter differences to be used by the BLM in a hybrid optimization
   void storeVectors(std::vector<ValueType>& current_params);
 
- //Adjust omega during target above functional calculation
- // void changeOmega();
-
   //Compute final averages for energy and variance over a history of samples from a set of iterations
   void computeFinalizationAverages(std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples);
-
-ValueType helperHistoryCompute(std::vector<FullPrecRealType>& weights, std::vector<FullPrecRealType>& numerator, std::vector<FullPrecRealType>& denominator,bool computing_target);
-
-ValueType helperErrorCompute(std::vector<FullPrecRealType>& weights, std::vector<FullPrecRealType>& numerator, std::vector<FullPrecRealType>& denominator);
-
 
   //Returns number of times a parameter difference vector will be stored in the optimization
   int retrieveStoreFrequency() const { return store_num_; }
@@ -340,9 +287,6 @@ ValueType helperErrorCompute(std::vector<FullPrecRealType>& weights, std::vector
 
   //Returns number of optimization steps that have been taken with descent
   int getDescentNum() const { return descent_num_; }
-
-//Returns whether clipping is being used
-  //bool getClipping() const {return use_clipping_;}
 
   //Returns current value of omega
   ValueType getOmega() const {return omega_;}
