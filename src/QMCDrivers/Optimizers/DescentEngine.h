@@ -52,16 +52,22 @@ private:
 
   ValueType e_var_;
   ValueType e_sd_;
+  ValueType e_err_;
 
   //ValueType numer_sum_;
   //ValueType denom_sum_;
 
   ValueType numer_avg_;
   ValueType numer_var_;
+  ValueType numer_err_;
+
   ValueType denom_avg_;
   ValueType denom_var_;
+  ValueType denom_err_;
+
   ValueType target_avg_;
   ValueType target_var_;
+  ValueType target_err_;
 
   /*
   ValueType sf_; 
@@ -113,7 +119,14 @@ private:
     /// \brief a history of sampled local energies times the |value/guiding|^2 raitos
     std::vector<ValueType> lev_history_;
     
+    //a vector to store all samples of the local energy during the descent finalization phase
     std::vector<ValueType> final_lev_history_;
+    
+   //a vector to store the averages of the energy during the descent finalization phase 
+    std::vector<ValueType> final_le_avg_history_;
+    
+   //a vector to store the variances of the energy during the descent finalization phase 
+    std::vector<ValueType> final_var_avg_history_;
 
     /// \brief a history of sampled target function numerator
     //std::vector<ValueType> _tn_history;
@@ -129,6 +142,11 @@ private:
     std::vector<ValueType> tdv_history_;
     
     std::vector<ValueType> final_tdv_history_;
+   
+   //a vector to store the averages of the target function during the descent finalization phase 
+    std::vector<ValueType> final_tar_avg_history_;
+   //a vector to store the variances of the target function during the descent finalization phase 
+    std::vector<ValueType> final_tar_var_history_;
 
     /// \brief a history of sampled local energy square 
     //std::vector<ValueType> _les_history;
@@ -152,7 +170,7 @@ private:
  // bool target_excited_closest_;
 
  //Whether to clip samples with local energy outliers
-  bool use_clipping_;
+  //bool use_clipping_;
 
   //Number of optimizable parameters
   int num_params_;
@@ -195,6 +213,9 @@ private:
   ValueType ci_eta_;
   ValueType orb_eta_;
 
+  //Whether to print out derivative terms for each parameter
+  std::string print_deriv_;
+
   //Whether to gradually ramp up step sizes in descent
   bool ramp_eta_;
 
@@ -226,12 +247,13 @@ private:
   //Vector for storing the input vectors to the BLM steps of hybrid method
   std::vector<std::vector<ValueType>> hybrid_blm_input_;
 
-  ///process xml node
-  bool processXML(const xmlNodePtr cur);
 
 public:
   //Constructor for engine
   DescentEngine(Communicate* comm, const xmlNodePtr cur);
+
+  //process xml node
+  bool processXML(const xmlNodePtr cur);
 
   //Prepare for taking samples
   void prepareStorage(const int num_replicas, const int num_optimizables);
@@ -276,7 +298,7 @@ void setTarget(const std::vector<FullPrecRealType>& targetSums);
   void sample_finish();
 
 
-  void mpi_unbiased_ratio_of_means(int numSamples, std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples, ValueType& mean, ValueType& variance);
+  void mpi_unbiased_ratio_of_means(int numSamples, std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples, ValueType& mean, ValueType& variance, ValueType& stdErr);
 
   //Returns the derivatives of the cost function we are minimizing
   const std::vector<ValueType>& getAveragedDerivatives() const { return lderivs_; }
@@ -300,7 +322,7 @@ void setTarget(const std::vector<FullPrecRealType>& targetSums);
  // void changeOmega();
 
   //Compute final averages for energy and variance over a history of samples from a set of iterations
-  void computeFromHistory();
+  void computeFinalizationAverages(std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples);
 
 ValueType helperHistoryCompute(std::vector<FullPrecRealType>& weights, std::vector<FullPrecRealType>& numerator, std::vector<FullPrecRealType>& denominator,bool computing_target);
 
@@ -320,7 +342,7 @@ ValueType helperErrorCompute(std::vector<FullPrecRealType>& weights, std::vector
   int getDescentNum() const { return descent_num_; }
 
 //Returns whether clipping is being used
-  bool getClipping() const {return use_clipping_;}
+  //bool getClipping() const {return use_clipping_;}
 
   //Returns current value of omega
   ValueType getOmega() const {return omega_;}

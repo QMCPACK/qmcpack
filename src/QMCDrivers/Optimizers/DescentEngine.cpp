@@ -25,7 +25,7 @@ DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
     : my_comm_(comm),
       engine_target_excited_(false),
       //target_excited_closest_(false),
-      use_clipping_(false),
+      //use_clipping_(false),
       num_params_(0),
       flavor_("RMSprop"),
       tjf_2body_eta_(.01),
@@ -40,7 +40,8 @@ DescentEngine::DescentEngine(Communicate* comm, const xmlNodePtr cur)
       omega_(0.0),
   //    update_omega_iter_(-1),
       collection_step_(-1),
-      compute_step_(-1)
+      compute_step_(-1),
+      print_deriv_("no")
 {
   descent_num_ = 0;
   store_count_ = 0;
@@ -53,14 +54,14 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
   std::string excited("no");
   std::string ramp_eta_str("no");
   //std::string excited_closest("no");
-  std::string clip_le("no");
+  //std::string clip_le("no");
 
   ParameterSet m_param;
   m_param.add(excited, "targetExcited", "string");
   //m_param.add(excited_closest, "target_excited_closest", "string");
   m_param.add(omega_, "omega", "double");
   app_log() << "Omega from input file: " << omega_ << std::endl;
-  m_param.add(clip_le, "Clip_le", "string");
+ // m_param.add(clip_le, "Clip_le", "string");
   //Type of descent method being used
   m_param.add(flavor_, "flavor", "string");
   m_param.add(tjf_2body_eta_, "TJF_2Body_eta", "double");
@@ -72,6 +73,7 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
   m_param.add(ramp_eta_str, "Ramp_eta", "string");
   m_param.add(ramp_num_, "Ramp_num", "int");
   m_param.add(store_num_, "Stored_Vectors", "int");
+  m_param.add(print_deriv_,"Print_Deriv_Pieces","string");
 
   app_log() << "Current collection step: " << collection_step_ << std::endl;
   m_param.add(collection_step_,"collection_step","int");
@@ -92,7 +94,7 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
 
   //target_excited_closest_ = (excited_closest == "yes");
 
-  use_clipping_ = (clip_le == "yes");
+ // use_clipping_ = (clip_le == "yes");
 
   ramp_eta_ = (ramp_eta_str == "yes");
 
@@ -335,7 +337,10 @@ if(final_descent_num_ > collection_step_ && collect_count_ )
 
     for(int i = 0; i < num_optimizables; i++)
     {
+        //Combination of derivative ratios for target function numerator <psi | omega -H | psi>/<psi | psi>
         replica_numer_der_samp_[replica_id].at(i) += static_cast<ValueType>(2)*(omega_*der_rat_samp.at(i+1) -le_der_samp.at(i+1))*vgs_samp;
+        
+        //Combination of derivative ratios for target function denominator <psi | (omega -H)^2 | psi>/<psi | psi>
         replica_denom_der_samp_[replica_id].at(i) += static_cast<ValueType>(2)*((omega_*der_rat_samp.at(i+1) -le_der_samp.at(i+1))*(omega_*der_rat_samp.at(0) -le_der_samp.at(0)))*vgs_samp;
 
     }
@@ -407,12 +412,19 @@ void DescentEngine::sample_finish()
   
     int numSamples = lev_history_.size();
 
-    this->mpi_unbiased_ratio_of_means(numSamples,w_history_,lev_history_,vg_history_,e_avg_,e_var_);
+    this->mpi_unbiased_ratio_of_means(numSamples,w_history_,lev_history_,vg_history_,e_avg_,e_var_,e_err_);
 
     app_log() << "Energy Average: " << std::setprecision(9) << e_avg_ << std::endl;
     app_log() << "Energy Variance: " << std::setprecision(9) << e_var_ << std::endl;
     app_log() << "Weight Total: " << std::setprecision(9) << w_sum_ << std::endl;
+    app_log() << "Energy Standard Error: " << std::setprecision(9) << e_err_ << std::endl;
 
+    if(final_descent_num_ > collection_step_ && collect_count_ )
+    {
+        final_le_avg_history_.push_back(e_avg_);
+        final_var_avg_history_.push_back(e_var_);
+    
+    }
     if(engine_target_excited_)
     {
 
@@ -449,15 +461,21 @@ void DescentEngine::sample_finish()
         app_log() << "More accurate target function variance: " << std::setprecision(9) << other_target_var_ << std::endl;
 */
  
-        this->mpi_unbiased_ratio_of_means(numSamples,w_history_,tnv_history_,vg_history_,numer_avg_,numer_var_);
+        this->mpi_unbiased_ratio_of_means(numSamples,w_history_,tnv_history_,vg_history_,numer_avg_,numer_var_,numer_err_);
         
-        this->mpi_unbiased_ratio_of_means(numSamples,w_history_,tdv_history_,vg_history_,denom_avg_,denom_var_);
+        this->mpi_unbiased_ratio_of_means(numSamples,w_history_,tdv_history_,vg_history_,denom_avg_,denom_var_,denom_err_);
         
-        this->mpi_unbiased_ratio_of_means(numSamples,w_history_,tnv_history_,tdv_history_,target_avg_,target_var_);
+        this->mpi_unbiased_ratio_of_means(numSamples,w_history_,tnv_history_,tdv_history_,target_avg_,target_var_,target_err_);
         
         app_log() << "Target Function Average: " << std::setprecision(9) << target_avg_ << std::endl;
         app_log() << "Target Function Variance: " << std::setprecision(9) << target_var_ << std::endl;
+        app_log() << "Target Function Error: " << std::setprecision(9) << target_err_ << std::endl;
 
+        if(final_descent_num_ > collection_step_ && collect_count_ )
+        {
+            final_tar_avg_history_.push_back(target_avg_);
+            final_tar_var_history_.push_back(target_var_);
+        }
         for(int i = 0; i < replica_numer_der_samp_.size(); i++)
         {
           for (int j = 0; j < lderivs_.size(); j++)
@@ -504,8 +522,11 @@ void DescentEngine::sample_finish()
     avg_der_rat_samp_.at(i) = avg_der_rat_samp_.at(i) / w_sum_;
 
 
-    app_log() << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp_.at(i) << std::endl;
-    app_log() << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp_.at(i) << std::endl;
+    if(print_deriv_ == "yes")
+    {
+        app_log() << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp_.at(i) << std::endl;
+        app_log() << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp_.at(i) << std::endl;
+    }
 
     //Computation of averaged derivatives for excited state functional will be added in future
     if (!engine_target_excited_)
@@ -521,9 +542,11 @@ void DescentEngine::sample_finish()
     avg_numer_der_samp_.at(i) = avg_numer_der_samp_.at(i)/w_sum_;
     avg_denom_der_samp_.at(i) = avg_denom_der_samp_.at(i)/w_sum_;
 
-    app_log() << "Parameter # " << i << " Numer Deriv: " << avg_numer_der_samp_.at(i) << std::endl;
-    app_log()  << "Parameter # " << i << " Denom Deriv: " << avg_denom_der_samp_.at(i) << std::endl;
-        
+    if(print_deriv_ == "yes")
+    {
+        app_log() << "Parameter # " << i << " Numer Deriv: " << avg_numer_der_samp_.at(i) << std::endl;
+        app_log()  << "Parameter # " << i << " Denom Deriv: " << avg_denom_der_samp_.at(i) << std::endl;
+    }   
     /*
         if(target_excited_closest_)
         {
@@ -583,7 +606,7 @@ void DescentEngine::sample_finish()
 }
 
 
-void DescentEngine::mpi_unbiased_ratio_of_means(int numSamples, std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples, ValueType& mean, ValueType& variance)
+void DescentEngine::mpi_unbiased_ratio_of_means(int numSamples, std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples, ValueType& mean, ValueType& variance, ValueType& stdErr)
 {
     //int n = numerator.size();
 //    app_log() << "Length of history: " << n << std::endl;
@@ -630,7 +653,7 @@ void DescentEngine::mpi_unbiased_ratio_of_means(int numSamples, std::vector<Valu
     w_sum_ = y[0];
     mean = ( mf / mg ) / ( 1.0 + ( vg / mg / mg - cv / mf / mg ) / ns ); 
     variance = ( mf * mf / mg / mg ) * ( vf / mf / mf + vg / mg / mg - 2.0 * cv / mf / mg );
-
+    stdErr = std::sqrt(variance/ns);
 
 }
 
@@ -894,7 +917,13 @@ if (final_descent_num_ > collection_step_ && collect_count_)
     final_descent_num_++;
     if(final_descent_num_ >= compute_step_)
     {
-        this->computeFromHistory();
+        app_log() << "Computing average energy over stored steps and its standard error" << std::endl;
+        this->computeFinalizationAverages(final_w_history_,final_lev_history_,final_vg_history_);
+        if(engine_target_excited_)
+        {
+            app_log() << "Computing average target function over stored steps and its standard error" << std::endl;
+            this->computeFinalizationAverages(final_w_history_,final_tnv_history_,final_tdv_history_);
+        }
     }
   }
 }
@@ -962,7 +991,7 @@ void DescentEngine::setupUpdate(const optimize::VariableSet& my_vars)
   app_log() << "This is num_params_: " << num_params_ << std::endl;
   for (int i = 0; i < num_params_; i++)
   {
-    //  app_log() << "Variable #" << i << ": " << my_vars[i] << " with index val: " << my_vars.where(i) << std::endl;
+      app_log() << "Variable #" << i << ": " << my_vars[i] << " with index val: " << my_vars.where(i) << std::endl;
     if(my_vars.where(i) != -1)
     {
     engine_param_names_.push_back(my_vars.name(i));
@@ -1001,6 +1030,7 @@ void DescentEngine::storeVectors(std::vector<ValueType>& current_params)
     hybrid_blm_input_.push_back(row_vec);
   }
 
+ #if !defined(QMC_COMPLEX)
   for (int i = 0; i < hybrid_blm_input_.size(); i++)
   {
     std::string entry = "";
@@ -1010,7 +1040,7 @@ void DescentEngine::storeVectors(std::vector<ValueType>& current_params)
     }
     app_log() << "Stored Vector: " << entry << std::endl;
   }
-
+#endif
   store_count_++;
 }
 
@@ -1040,26 +1070,22 @@ void DescentEngine::changeOmega()
 */
 
 
-void DescentEngine::computeFromHistory()
+void DescentEngine::computeFinalizationAverages(std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples)
 {
 
-    //Upon further thought, computing the mean from the whole history would be inaccurate.
-    //Still want the history to get an estimate of error as the ~30,000 on an inidividual step wouldn't be that meaningful?
 
     
-  /*  
    //Make copies of input vectors to do recursive blocking for error estimates
-    std::vector<ValueType> wtv(_w_history);
-    std::vector<ValueType> nmv(_lev_history);
-    std::vector<ValueType> dnv(_vg_history);
+    std::vector<ValueType> wtv(weights);
+    std::vector<ValueType> nmv(numerSamples);
+    std::vector<ValueType> dnv(denomSamples);
 
 
-//Reproduce LM's crude way of estimating uncertainty in the variance
+//Reproduce LM engine's crude way of estimating uncertainty in the variance
     int n = nmv.size();
     int blocks = 100;
    int section_len = n/100;
 
-   app_log() << "Section length: " << section_len << std::endl;
     std::vector<ValueType> bbvars(blocks);
 ValueType bbv = 0.0;
 ValueType bbv2 = 0.0;
@@ -1075,12 +1101,18 @@ ValueType bbv2 = 0.0;
         std::copy(nmv.begin() + i*section_len,nmv.begin() + (i+1)*section_len,sub_nmv.begin());
         std::copy(dnv.begin() + i*section_len,dnv.begin() + (i+1)*section_len,sub_dnv.begin());
 
-//    app_log() << "First elements: " << sub_wtv[0] << " , " << sub_nmv[0] << " , " << sub_dnv[0] << std::endl;    
-        ValueType var = this->helperHistoryCompute(sub_wtv,sub_nmv,sub_dnv,false);
-        bbvars[i] = var;
+//    app_log() << "First elements: " << sub_wtv[0] << " , " << sub_nmv[0] << " , " << sub_dnv[0] << std::endl;   
+        ValueType blockVar; 
+        ValueType blockMean;
+        ValueType blockErr;
 
-        bbv += bbvars.at(i) / blocks;
-        bbv2 += bbvars.at(i) * bbvars.at(i) / blocks;
+        
+        this->mpi_unbiased_ratio_of_means(section_len,sub_wtv,sub_nmv,sub_dnv,blockMean,blockVar,blockErr);
+        
+        bbvars[i] = blockVar;
+
+        bbv += bbvars.at(i) / static_cast<ValueType>(blocks);
+        bbv2 += bbvars.at(i) * bbvars.at(i) / static_cast<ValueType>(blocks);
         sub_wtv.clear();
         sub_nmv.clear();
         sub_dnv.clear();
@@ -1089,14 +1121,23 @@ ValueType bbv2 = 0.0;
 
     const ValueType bbvov = bbv2 - bbv * bbv;
     ValueType var_uncertainty = std::sqrt( std::abs(bbvov) / blocks);
-    app_log() << "Uncertainty in the variance: " << var_uncertainty << std::endl;
+    //Depending on when this function is called, this will be the uncertainty in the variance
+    //of either the energy or the target function.
+    //Which one should be clear from the preceeding print statements in the output file.
+    app_log() << "Uncertainty in variance of averaged quantity: " << var_uncertainty << std::endl;
 
 
+//To compute the standard error on the energy/target function itself, blocking is performed on the whole set of samples in the history of many iterations.
 while(n > 128)
 {
-    ValueType err = this->helperErrorCompute(wtv,nmv,dnv);
+    ValueType currentVar;
+    ValueType currentMean;
+    ValueType currentErr;
+    this->mpi_unbiased_ratio_of_means(n,wtv,nmv,dnv,currentMean,currentVar,currentErr);
 
-    app_log() << "Blocking analysis energy error for length " << n << " is: " << err << std::endl; 
+    //ValueType err = this->helperErrorCompute(wtv,nmv,dnv);
+
+    app_log() << "Blocking analysis error for per process length " << n << " is: " << currentErr << std::endl; 
     int new_len;
     if(n % 2 == 0)
     {
@@ -1126,6 +1167,7 @@ while(n > 128)
     n = nmv.size();
 }
 
+/*
 if(engine_target_excited_)
    {
     
@@ -1174,8 +1216,8 @@ while(n > 128)
 
 
    }
-
 */
+
 
 }
 

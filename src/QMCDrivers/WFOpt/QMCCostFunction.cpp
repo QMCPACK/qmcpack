@@ -447,9 +447,8 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 	    //so that der_rat_samp and le_der_samp are vectors of std::complex<double> when QMC_COMPLEX=1
 	    std::vector<FullPrecValueType> der_rat_samp_comp(der_rat_samp.begin(),der_rat_samp.end());
 	    std::vector<FullPrecValueType> le_der_samp_comp(le_der_samp.begin(),le_der_samp.end());
-	    
-
-          descentEngineObj.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
+	  
+        descentEngineObj.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
         }
 #endif
       }
