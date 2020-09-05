@@ -856,15 +856,9 @@ General use of ``molden2qmc`` can be prompted by running ``molden2qmc.py`` and e
             6 -- NWCHEM
             7 -- QCHEM 4.X
             
-::
-            
 Use the ``--qmcpack`` flag to create the file as an hdf5 file, suitable for QMCPACK.
-
-Without the ``--qmcpack`` flag, the file will become a gwfn file for CASINO.
-            
-Example:
-
->molden2qmc.py 5 n4.molden --qmcpack
+Without the ``--qmcpack`` flag, the file will become a gwfn file for CASINO.            
+Example: ``molden2qmc.py 5 n4.molden --qmcpack``.
 
 Obtaining pseudopotentials
 --------------------------

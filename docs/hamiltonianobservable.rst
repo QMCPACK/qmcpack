@@ -1877,7 +1877,7 @@ Stress estimators
 QMCPACK takes the following parameters.
 
   +------------------+----------------------+
-  | parent elements: | ``hamiltonian`` |
+  | parent elements: | ``hamiltonian``      |
   +------------------+----------------------+
 
   attributes:
