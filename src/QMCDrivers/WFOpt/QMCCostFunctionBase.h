@@ -176,6 +176,9 @@ public:
 
   inline const opt_variables_type& getOptVariables() const { return OptVariables; }
 
+  /// return variance after checkConfigurations
+  inline Return_rt getVariance() const { return SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT] - (SumValue[SUM_E_WGT] / SumValue[SUM_WGT]) * (SumValue[SUM_E_WGT] / SumValue[SUM_WGT]); }
+
 protected:
   ///walker ensemble
   MCWalkerConfiguration& W;
