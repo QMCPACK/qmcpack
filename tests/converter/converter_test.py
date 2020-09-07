@@ -62,6 +62,14 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
 
+    file_out = open('stdout.txt', 'w')
+    file_out.write(stdout)
+    file_out.close()
+    if len(stderr) > 0 :
+        file_err = open('stderr.txt', 'w')
+        file_err.write(stderr)
+        file_err.close()
+
     # For Python 3
     stderr = stderr.decode()
 
