@@ -140,17 +140,13 @@ public:
     einspline_engine<AtomicSplineType> bigtable(SplineInst->getSplinePtr());
     int lmax_in, spline_npoints_in;
     ST spline_radius_in;
-    bool success = true;
-    success      = success && h5f.readEntry(lmax_in, "l_max");
-    success      = success && h5f.readEntry(spline_radius_in, "spline_radius");
-    success      = success && h5f.readEntry(spline_npoints_in, "spline_npoints");
-    if (lmax_in != lmax)
+    if (!h5f.readEntry(lmax_in, "l_max") || lmax_in != lmax)
       return false;
-    if (spline_radius_in != spline_radius)
+    if (!h5f.readEntry(spline_radius_in, "spline_radius") || spline_radius_in != spline_radius)
       return false;
-    if (spline_npoints_in != spline_npoints)
+    if (!h5f.readEntry(spline_npoints_in, "spline_npoints") || spline_npoints_in != spline_npoints)
       return false;
-    return success && h5f.readEntry(bigtable, "radial_spline");
+    return h5f.readEntry(bigtable, "radial_spline");
   }
 
   bool write_splines(hdf_archive& h5f)

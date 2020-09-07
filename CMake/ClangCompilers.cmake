@@ -39,6 +39,13 @@ ADD_DEFINITIONS( -Drestrict=__restrict__ )
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fstrict-aliasing")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstrict-aliasing -D__forceinline=inline")
 
+# treat VLA as error
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Werror=vla")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wvla")
+
+# set compiler warnings
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wcomment -Wmisleading-indentation -Wuninitialized -Wreorder")
+
 # Set extra optimization specific flags
 SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -fomit-frame-pointer -ffast-math" )
 SET( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer -ffast-math" )
