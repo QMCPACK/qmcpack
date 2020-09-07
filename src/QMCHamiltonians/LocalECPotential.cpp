@@ -26,7 +26,7 @@ LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els) : 
   set_energy_domain(potential);
   two_body_quantum_domain(ions, els);
   NumIons      = ions.getTotalNum();
-  myTableIndex = els.addTable(ions, DT_SOA_PREFERRED);
+  myTableIndex = els.addTable(ions);
   //allocate null
   PPset.resize(ions.getSpeciesSet().getTotalNum(), 0);
   PP.resize(NumIons, nullptr);
@@ -46,7 +46,7 @@ LocalECPotential::~LocalECPotential()
 
 void LocalECPotential::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid = P.addTable(IonConfig, DT_SOA_PREFERRED);
+  int tid = P.addTable(IonConfig);
   if (tid != myTableIndex)
   {
     APP_ABORT("  LocalECPotential::resetTargetParticleSet found a different distance table index.");
@@ -100,7 +100,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate(ParticleSet& P)
 #endif
   {
     const DistanceTableData& d_table(P.getDistTable(myTableIndex));
-    Value = 0.0;
+    Value              = 0.0;
     const size_t Nelec = P.getTotalNum();
     for (size_t iel = 0; iel < Nelec; ++iel)
     {
@@ -122,37 +122,30 @@ LocalECPotential::Return_t LocalECPotential::evaluateWithIonDerivs(ParticleSet& 
                                                                    ParticleSet::ParticlePos_t& pulay_terms)
 {
   const DistanceTableData& d_table(P.getDistTable(myTableIndex));
-  Value = 0.0;
-  if (d_table.DTType == DT_SOA)
+  Value              = 0.0;
+  const size_t Nelec = P.getTotalNum();
+  for (size_t iel = 0; iel < Nelec; ++iel)
   {
-    const size_t Nelec = P.getTotalNum();
-    for (size_t iel = 0; iel < Nelec; ++iel)
+    const auto& dist = d_table.getDistRow(iel);
+    const auto& dr   = d_table.getDisplRow(iel);
+    Return_t esum(0);
+    //value, radial derivative, and 2nd derivative of spline r*V.
+    RealType v(0.0), dv(0.0), d2v(0.0);
+    //radial derivative dV/dr
+    RealType dvdr(0.0);
+    RealType rinv(1.0);
+    for (size_t iat = 0; iat < NumIons; ++iat)
     {
-      const auto& dist = d_table.getDistRow(iel);
-      const auto& dr   = d_table.getDisplRow(iel);
-      Return_t esum(0);
-      //value, radial derivative, and 2nd derivative of spline r*V.
-      RealType v(0.0), dv(0.0), d2v(0.0);
-      //radial derivative dV/dr
-      RealType dvdr(0.0);
-      RealType rinv(1.0);
-      for (size_t iat = 0; iat < NumIons; ++iat)
+      if (PP[iat] != nullptr)
       {
-        if (PP[iat] != nullptr)
-        {
-          rinv = 1.0 / dist[iat];
-          v    = PP[iat]->splint(dist[iat], dv, d2v);
-          dvdr = -Zeff[iat] * (dv - v * rinv) * rinv; //the minus is because of charge of electron.
-          hf_terms[iat] += dvdr * dr[iat] * rinv;
-          esum          += -Zeff[iat] * v * rinv;
-        }
+        rinv = 1.0 / dist[iat];
+        v    = PP[iat]->splint(dist[iat], dv, d2v);
+        dvdr = -Zeff[iat] * (dv - v * rinv) * rinv; //the minus is because of charge of electron.
+        hf_terms[iat] += dvdr * dr[iat] * rinv;
+        esum += -Zeff[iat] * v * rinv;
       }
-      Value += esum;
     }
-  }
-  else
-  {
-    APP_ABORT("LocalECPotential::evaluateWithIonDerivs(...):  Forces not implemented in AoS build");
+    Value += esum;
   }
   return Value;
 }
@@ -178,7 +171,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
         pairpot = -0.5 * PP[iat]->splint(dist[iat]) * Zeff[iat] / dist[iat];
         Vi_samp(iat) += pairpot;
         Ve_samp(iel) += pairpot;
-        esum         += pairpot;
+        esum += pairpot;
       }
     Value += esum;
   }
@@ -220,7 +213,7 @@ LocalECPotential::Return_t LocalECPotential::evaluate_sp(ParticleSet& P)
 LocalECPotential::Return_t LocalECPotential::evaluate_orig(ParticleSet& P)
 {
   const DistanceTableData& d_table(P.getDistTable(myTableIndex));
-  Value = 0.0;
+  Value              = 0.0;
   const size_t Nelec = P.getTotalNum();
   for (size_t iel = 0; iel < Nelec; ++iel)
   {

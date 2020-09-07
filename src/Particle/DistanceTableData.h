@@ -26,31 +26,15 @@
 
 namespace qmcplusplus
 {
-/** enumerator for DistanceTableData::DTType
- *
- * - DT_AOS Use original AoS type
- * - DT_SOA Use SoA type
- * - DT_AOS_PREFERRED Create AoS type, if possible.
- * - DT_SOA_PREFERRED Create SoA type, if possible.
- * The first user of each pair will decide the type of distance table.
- * It is the responsibility of the user class to check DTType.
- */
-enum DistTableType
-{
-  DT_AOS = 0,
-  DT_SOA,
-  DT_AOS_PREFERRED,
-  DT_SOA_PREFERRED
-};
-
 /** @ingroup nnlist
  * @brief Abstract class to manage pair data between two ParticleSets.
  *
  * Each DistanceTableData object is fined by Source and Target of ParticleSet types.
  *
  */
-struct DistanceTableData
+class DistanceTableData
 {
+public:
   static constexpr unsigned DIM = OHMMS_DIM;
 
   using IndexType = QMCTraits::IndexType;
@@ -59,16 +43,13 @@ struct DistanceTableData
   using DistRow   = Vector<RealType, aligned_allocator<RealType>>;
   using DisplRow  = VectorSoaContainer<RealType, DIM>;
 
-  ///Type of DT
-  int DTType;
-
+protected:
   const ParticleSet* Origin;
 
   int N_sources;
   int N_targets;
   int N_walkers;
 
-protected:
   /**defgroup SoA data */
   /*@{*/
   /** distances_[i][j] , [N_targets][N_sources]
@@ -127,8 +108,6 @@ public:
 
   ///returns the reference the origin particleset
   const ParticleSet& origin() const { return *Origin; }
-
-  inline bool is_same_type(int dt_type) const { return DTType == dt_type; }
 
   ///returns the number of centers
   inline IndexType centers() const { return Origin->getTotalNum(); }
