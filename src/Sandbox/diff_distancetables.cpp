@@ -17,7 +17,7 @@
 #include <Particle/ParticleSet.h>
 #include <Particle/DistanceTableData.h>
 #include <OhmmsSoA/VectorSoaContainer.h>
-#include <random/random.hpp>
+#include "random.hpp"
 #include <mpi/collectives.h>
 #include <Sandbox/input.hpp>
 #include <Sandbox/pseudo.hpp>
@@ -112,9 +112,6 @@ int main(int argc, char** argv)
   constexpr RealType eps = numeric_limits<float>::epsilon();
 
   //copy of ParticleSet for validations
-  ParticleSet els_aos(els);
-  ParticleSet ions_aos(ions);
-
   ParticleSet::ParticlePos_t Rcopy(els.R);
 
   const auto& d_ee = els.getDistTable(els.addTable(els));
@@ -122,31 +119,20 @@ int main(int argc, char** argv)
 
   RealType Rsim = els.Lattice.WignerSeitzRadius;
 
-  const auto& d_ee_aos = els_aos.getDistTable(els_aos.addTable(els_aos, DT_AOS));
-  const auto& d_ie_aos = els_aos.getDistTable(els_aos.addTable(ions_aos, DT_AOS));
-
   //SoA version does not need update if PbyP
   els.update();
-  els_aos.update();
 
   //SoA check symmetry
   double sym_err     = 0.0;
-  double sym_all_err = 0.0;
   int nn             = 0;
   for (int iel = 0; iel < nels; ++iel)
     for (int jel = iel + 1; jel < nels; ++jel)
     {
-      RealType dref = d_ee_aos.r(nn);
       RealType dsym = std::abs(d_ee.getDistRow(jel)[iel] - d_ee.getDistRow(iel)[jel]);
-      sym_all_err += dsym;
-      if (dref < Rsim)
-      {
-        sym_err += dsym;
-      }
+      sym_err += dsym;
       ++nn;
     }
   cout << "---------------------------------" << endl;
-  cout << "AA SoA(upper) - SoA(lower) (ALL) distances     = " << sym_all_err / nn << endl;
   cout << "AA SoA(upper) - SoA(lower) distances     = " << sym_err / nn << endl;
 
   ParticlePos_t delta(nels);
@@ -160,23 +146,15 @@ int main(int argc, char** argv)
     {
       PosType dr      = sqrttau * delta[iel];
       bool valid_move = els.makeMoveAndCheck(iel, dr);
-      valid_move &= els_aos.makeMoveAndCheck(iel, dr);
 
       if (valid_move && Random() < 0.5)
-      {
         els.rejectMove(iel);
-        els_aos.rejectMove(iel);
-      }
       else
-      {
         els.acceptMove(iel);
-        els_aos.acceptMove(iel);
-      }
     }
   }
 
   els.donePbyP();
-  els_aos.donePbyP();
 
   {
     double r_err = 0.0;
@@ -187,79 +165,6 @@ int main(int argc, char** argv)
       r_err += r;
     }
     cout << "Done with the sweep. Diffusion |els.R-R0|^2/nels = " << r_err / nels << endl;
-  }
-  {
-    double r_err = 0.0;
-    for (int iat = 0; iat < nels; ++iat)
-    {
-      PosType d  = els.R[iat] - els_aos.R[iat];
-      RealType r = sqrt(dot(d, d));
-      r_err += r;
-      if (r > eps)
-        cerr << "SoA-AoS error " << iat << " " << els.getCoordinates().getAllParticlePos()[iat] << " " << els_aos.R[iat]
-             << endl;
-    }
-    cout << "Done with the sweep. |els.R-els_aos.R|^2/nels = " << r_err / nels << endl;
-  }
-
-  {
-    double dist_err     = 0.0;
-    double dist_all_err = 0.0;
-    double disp_err     = 0.0;
-    double disp_all_err = 0.0;
-    int nn              = 0;
-    for (int iel = 0; iel < nels; ++iel)
-      for (int jel = iel + 1; jel < nels; ++jel)
-      {
-        RealType dref = d_ee_aos.r(nn);
-        RealType d    = std::abs(d_ee.getDistRow(jel)[iel] - dref);
-        PosType dr    = (d_ee.getDisplRow(jel)[iel] + d_ee_aos.dr(nn));
-        RealType d2   = sqrt(dot(dr, dr));
-        dist_all_err += d;
-        disp_all_err += d2;
-        if (dref < Rsim)
-        {
-          dist_err += d;
-          disp_err += d2;
-        }
-        ++nn;
-      }
-    cout << "---------------------------------" << endl;
-    cout << "AA SoA-AoS in distance     (ALL) = " << dist_all_err / nn << endl;
-    cout << "AA SoA-AoS in displacement (ALL) = " << disp_all_err / nn << endl;
-    cout << endl;
-    cout << "AA SoA-AoS in distance           = " << dist_err / nn << endl;
-    cout << "AA SoA-AoS in displacement       = " << disp_err / nn << endl;
-  }
-
-  {
-    double dist_err     = 0.0;
-    double dist_all_err = 0.0;
-    double disp_all_err = 0.0;
-    double disp_err     = 0.0;
-    int nn              = 0;
-    for (int i = 0; i < nions; ++i)
-      for (int j = 0; j < nels; ++j)
-      {
-        RealType dref = d_ie_aos.r(nn);
-        RealType d    = std::abs(d_ie.getDistRow(j)[i] - dref);
-        PosType dr    = (d_ie.getDisplRow(j)[i] + d_ie_aos.dr(nn));
-        RealType d2   = sqrt(dot(dr, dr));
-        dist_all_err += d;
-        disp_all_err += d2;
-        if (dref < Rsim)
-        {
-          dist_err += d;
-          disp_err += d2;
-        }
-        ++nn;
-      }
-    cout << "---------------------------------" << endl;
-    cout << "AB SoA-AoS in distance     (ALL) = " << dist_all_err / nn << endl;
-    cout << "AB SoA-AoS in displacement (ALL) = " << disp_all_err / nn << endl;
-    cout << endl;
-    cout << "AB SoA-AoS in distance           = " << dist_err / nn << endl;
-    cout << "AB SoA-AoS in displacement       = " << disp_err / nn << endl;
   }
 
   OHMMS::Controller->finalize();
