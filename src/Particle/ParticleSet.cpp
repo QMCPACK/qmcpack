@@ -91,7 +91,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   Collectables        = p.Collectables;
   //construct the distance tables with the same order
   for (int i = 0; i < p.DistTables.size(); ++i)
-    addTable(p.DistTables[i]->origin(), p.DistTables[i]->DTType, p.DistTables[i]->getFullTableNeeds());
+    addTable(p.DistTables[i]->origin(), p.DistTables[i]->getFullTableNeeds());
   if (p.SK)
   {
     LRBox = p.LRBox;               //copy LRBox
@@ -341,25 +341,21 @@ void ParticleSet::reset() { app_log() << "<<<< going to set properties >>>> " <<
 ///read the particleset
 bool ParticleSet::put(xmlNodePtr cur) { return true; }
 
-int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_table)
+int ParticleSet::addTable(const ParticleSet& psrc, bool need_full_table)
 {
   if (myName == "none" || psrc.getName() == "none")
     APP_ABORT("ParticleSet::addTable needs proper names for both source and target particle sets.");
-
-  if (DistTables.size() > 0 && dt_type != DT_SOA_PREFERRED && !DistTables[0]->is_same_type(dt_type))
-    APP_ABORT("ParticleSet::addTable Cannot mix AoS and SoA distance tables.\n");
 
   int tid;
   std::map<std::string, int>::iterator tit(myDistTableMap.find(psrc.getName()));
   if (tit == myDistTableMap.end())
   {
     std::ostringstream description;
-    tid                = DistTables.size();
-    int dt_type_in_use = (tid == 0 ? dt_type : DistTables[0]->DTType);
+    tid = DistTables.size();
     if (myName == psrc.getName())
-      DistTables.push_back(createDistanceTable(*this, dt_type_in_use, description));
+      DistTables.push_back(createDistanceTable(*this, description));
     else
-      DistTables.push_back(createDistanceTable(psrc, *this, dt_type_in_use, description));
+      DistTables.push_back(createDistanceTable(psrc, *this, description));
     distTableDescriptions.push_back(description.str());
     myDistTableMap[psrc.getName()] = tid;
     app_debug() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->getName()
@@ -732,7 +728,7 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 
     // in certain cases, full tables must be ready
     for (int i = 0; i < DistTables.size(); i++)
-      if (DistTables[i]->DTType == DT_AOS || DistTables[i]->getFullTableNeeds())
+      if (DistTables[i]->getFullTableNeeds())
         DistTables[i]->evaluate(*this);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if (SK && SK->DoUpdate)

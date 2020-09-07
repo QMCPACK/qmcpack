@@ -72,7 +72,7 @@ void setup_He_wavefunction(Communicate* c,
   tspecies(massIdx, upIdx)    = 2.0;
   particle_set_map["ion0"]    = &ions;
 
-  elec.addTable(ions, DT_SOA);
+  elec.addTable(ions);
 
   wff = std::make_unique<WaveFunctionFactory>(&elec, particle_set_map, c);
 
