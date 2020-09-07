@@ -25,7 +25,7 @@
 #endif
 namespace qmcplusplus
 {
-class PWParameterSet;
+struct PWParameterSet;
 class SlaterDet;
 
 /** OrbitalBuilder for Slater determinants in PW basis
