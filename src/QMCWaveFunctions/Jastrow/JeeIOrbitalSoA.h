@@ -111,10 +111,7 @@ public:
   using FuncType = FT;
 
   JeeIOrbitalSoA(const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
-      : ee_Table_ID_(elecs.addTable(elecs, DT_SOA)),
-        ei_Table_ID_(elecs.addTable(ions, DT_SOA, true)),
-        Ions(ions),
-        NumVars(0)
+      : ee_Table_ID_(elecs.addTable(elecs)), ei_Table_ID_(elecs.addTable(ions, true)), Ions(ions), NumVars(0)
   {
     ClassName = "JeeIOrbitalSoA";
     init(elecs);
@@ -994,8 +991,8 @@ public:
     tempG.resize(P.getTotalNum());
     tempL.resize(P.getTotalNum());
     QTFull::RealType delta = 0.00001;
-    QTFull::RealType c1   = 1.0 / delta / 2.0;
-    QTFull::RealType c2   = 1.0 / delta / delta;
+    QTFull::RealType c1    = 1.0 / delta / 2.0;
+    QTFull::RealType c2    = 1.0 / delta / delta;
 
     GradType g_return(0.0);
     // GRAD TEST COMPUTATION
@@ -1014,9 +1011,9 @@ public:
       LogValueType log_m = evaluateLog(P, tempG, tempL);
 
       QTFull::RealType log_p_r(0.0), log_m_r(0.0);
-      
-      log_p_r=log_p.real();
-      log_m_r=log_m.real();
+
+      log_p_r = log_p.real();
+      log_m_r = log_m.real();
       //symmetric finite difference formula for gradient.
       g_return[iondim] = c1 * (log_p_r - log_m_r);
 
@@ -1046,8 +1043,8 @@ public:
     dL.resize(P.getTotalNum());
 
     QTFull::RealType delta = 0.00001;
-    QTFull::RealType c1   = 1.0 / delta / 2.0;
-    QTFull::RealType c2   = 1.0 / delta / delta; 
+    QTFull::RealType c1    = 1.0 / delta / 2.0;
+    QTFull::RealType c2    = 1.0 / delta / delta;
     GradType g_return(0.0);
     // GRAD TEST COMPUTATION
     PosType rI = source.R[isrc];
@@ -1068,11 +1065,11 @@ public:
       P.update();
       LogValueType log_m = evaluateLog(P, Gm, Lm);
       QTFull::RealType log_p_r(0.0), log_m_r(0.0);
-      
-      log_p_r=log_p.real();
-      log_m_r=log_m.real();
-      dG=Gp-Gm;
-      dL=Lp-Lm;
+
+      log_p_r = log_p.real();
+      log_m_r = log_m.real();
+      dG      = Gp - Gm;
+      dL      = Lp - Lm;
       //symmetric finite difference formula for gradient.
       g_return[iondim] = c1 * (log_p_r - log_m_r);
       grad_grad[iondim] += c1 * dG;

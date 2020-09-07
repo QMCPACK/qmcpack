@@ -92,7 +92,7 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-  const int tid = electrons.addTable(ions, DT_SOA);
+  const int tid = electrons.addTable(ions);
   electrons.update();
 
   // get target particle set's distance table data
@@ -108,10 +108,6 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   {
     for (int jat = 0; jat < dtable.targets(); jat++, idx++)
     {
-      // note: target particle set is special (electrons in this case)
-      // int tid = target_pset.addTable(source_pset, DT_AOS);
-      // const auto& dtable = target_pset.getDistTable(tid);
-      // dtable.loc(source_ptcl_idx,target_ptcl_idx) !! source first target second !?
       double dist = dtable.getDistRow(jat)[iat];
       REQUIRE(dist == Approx(expect[idx]));
     }
@@ -194,7 +190,7 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
   REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-  const int tid = electrons.addTable(ions, DT_SOA);
+  const int tid = electrons.addTable(ions);
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
@@ -289,7 +285,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
   REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-  const int tid = electrons.addTable(ions, DT_SOA);
+  const int tid = electrons.addTable(ions);
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
@@ -428,7 +424,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
   REQUIRE(electrons.SameMass);
 
   // calculate particle distances
-  const int ei_tid = electrons.addTable(ions, DT_SOA);
+  const int ei_tid = electrons.addTable(ions);
   electrons.update();
   ions.update();
 
@@ -478,7 +474,7 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
     }
   }
 
-  const int ee_tid = electrons.addTable(electrons, DT_SOA);
+  const int ee_tid = electrons.addTable(electrons);
   // get target particle set's distance table data
   const auto& ee_dtable = electrons.getDistTable(ee_tid);
   REQUIRE(ee_dtable.getName() == "e_e");

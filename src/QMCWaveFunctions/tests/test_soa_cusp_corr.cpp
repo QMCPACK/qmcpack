@@ -96,7 +96,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
   elec.R = 0.0;
 
-  elec.addTable(ions, DT_SOA);
+  elec.addTable(ions);
   elec.update();
 
   Libxml2Document doc2;
@@ -276,7 +276,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   elec.R = 0.0;
 
-  elec.addTable(ions, DT_SOA);
+  elec.addTable(ions);
   elec.update();
 
   Libxml2Document doc2;
@@ -455,7 +455,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 
   elec.R = 0.0;
 
-  elec.addTable(ions, DT_SOA);
+  elec.addTable(ions);
   elec.update();
 
   Libxml2Document doc2;
