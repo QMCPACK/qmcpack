@@ -615,12 +615,10 @@ public:
 
   int walkerSizeIO()
   {
-    if (walkerType == CLOSED)
-      return wlk_desc[0] * wlk_desc[1] + 7;
-    else if (walkerType == COLLINEAR)
+    if (walkerType == COLLINEAR)
       return wlk_desc[0] * (wlk_desc[1] + wlk_desc[2]) + 7;
-    else if (walkerType == NONCOLLINEAR)
-      return 2 * wlk_desc[0] * (wlk_desc[1] + wlk_desc[2]) + 7;
+    else  // since NAEB = 0 in both CLOSED and NONCOLLINEAR cases
+      return wlk_desc[0] * wlk_desc[1] + 7;
     return 0;
   }
 
