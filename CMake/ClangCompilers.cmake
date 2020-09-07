@@ -41,10 +41,10 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstrict-aliasing -D__forceinline=inline
 
 # treat VLA as error
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Werror=vla")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wvla")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-variable")
 
 # set compiler warnings
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wcomment -Wmisleading-indentation -Wuninitialized -Wreorder")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wcomment -Wmisleading-indentation -Wuninitialized -Wreorder -Wno-unknown-pragmas")
 
 # Set extra optimization specific flags
 SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -fomit-frame-pointer -ffast-math" )
