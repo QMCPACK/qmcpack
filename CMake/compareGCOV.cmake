@@ -32,7 +32,7 @@ ENDFUNCTION()
 
 # Remove unwanted gcov files (files in /usr, unit tests, files with coverage only in static initializers, etc.)
 FUNCTION(FILTER_GCOV GCOV_DIR)
-  EXECUTE_PROCESS(COMMAND python ${CTEST_SOURCE_DIRECTORY}/tests/coverage/compare_gcov.py --action process --base-dir ${GCOV_DIR})
+  EXECUTE_PROCESS(COMMAND ${CTEST_SOURCE_DIRECTORY}/tests/coverage/compare_gcov.py --action process --base-dir ${GCOV_DIR})
 
 ENDFUNCTION()
 
