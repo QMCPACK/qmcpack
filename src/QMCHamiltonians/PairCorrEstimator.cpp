@@ -23,7 +23,7 @@
 namespace qmcplusplus
 {
 PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
-    : Dmax(10.), Delta(0.5), num_species(2), d_aa_ID_(elns.addTable(elns, DT_SOA_PREFERRED))
+    : Dmax(10.), Delta(0.5), num_species(2), d_aa_ID_(elns.addTable(elns))
 {
   UpdateMode.set(COLLECTABLE, 1);
   num_species = elns.groups();
@@ -109,7 +109,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
   for (int iat = 1; iat < dii.centers(); ++iat)
   {
     const auto& dist = dii.getDistRow(iat);
-    const int ig                  = P.GroupID[iat];
+    const int ig     = P.GroupID[iat];
     for (int j = 0; j < iat; ++j)
     {
       const RealType r = dist[j];

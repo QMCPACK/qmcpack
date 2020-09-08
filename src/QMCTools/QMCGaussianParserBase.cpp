@@ -66,6 +66,12 @@ QMCGaussianParserBase::QMCGaussianParserBase()
       X(0),
       Y(0),
       Z(0),
+      ci_size(0),
+      ci_nca(0),
+      ci_ncb(0),
+      ci_nea(0),
+      ci_neb(0),
+      ci_nstates(0),
       ci_threshold(1e-20),
       optDetCoeffs(false),
       usingCSF(false)
@@ -111,6 +117,12 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
       X(0),
       Y(0),
       Z(0),
+      ci_size(0),
+      ci_nca(0),
+      ci_ncb(0),
+      ci_nea(0),
+      ci_neb(0),
+      ci_nstates(0),
       ci_threshold(1e-20),
       optDetCoeffs(false),
       usingCSF(false)
@@ -731,7 +743,6 @@ void QMCGaussianParserBase::createSPOSets(xmlNodePtr spoUP, xmlNodePtr spoDN)
   down_size << NumberOfBeta;
   b_size << numMO;
   nstates_alpha << ci_nstates + ci_nca;
-  ;
   nstates_beta << ci_nstates + ci_ncb;
 
   xmlNewProp(spoUP, (const xmlChar*)"name", (const xmlChar*)"spo-up");

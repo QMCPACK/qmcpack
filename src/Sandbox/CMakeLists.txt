@@ -1,7 +1,7 @@
 PROJECT(Sandbox)
 
 # add apps XYZ.cpp, e.g., qmc_particles.cpp
-SET(ESTEST einspline_spo einspline_spo_nested determinant restart determinant_delayed_update)
+SET(ESTEST diff_distancetables einspline_spo einspline_spo_nested determinant restart determinant_delayed_update)
 
 FOREACH(p ${ESTEST})
   ADD_EXECUTABLE( ${p}  ${p}.cpp)
