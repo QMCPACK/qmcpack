@@ -59,7 +59,7 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
         else:
             cmd.append(ex_arg)
 
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     stdout, stderr = p.communicate()
 
     file_out = open('stdout.txt', 'w')
@@ -69,9 +69,6 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
         file_err = open('stderr.txt', 'w')
         file_err.write(stderr)
         file_err.close()
-
-    # For Python 3
-    stderr = stderr.decode()
 
     ret = p.returncode
 
