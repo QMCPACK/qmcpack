@@ -358,7 +358,7 @@ class MatrixDelayedUpdateCUDA
 
 public:
   /// default constructor
-  MatrixDelayedUpdateCUDA() : delay_count(0), invRow_id(-1)
+  MatrixDelayedUpdateCUDA() : invRow_id(-1), delay_count(0)
   {
     cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
     cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
