@@ -411,34 +411,48 @@ well as improvements in open-source and vendor compilers is required for product
 to be reached. The following compilers have been verified:
 
 - LLVM Clang 11. Support NVIDIA GPUs.
+
   ::
+
     -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON
 
   Clang and its downstream compilers support two extra options
+  
   ::
+
     OFFLOAD_TARGET for the offload target. default nvptx64-nvidia-cuda.
     OFFLOAD_ARCH for the target architecture if not using the compiler default.
 
 - IBM XL 16.1. Support NVIDIA GPUs.
+  
   ::
+
     -D ENABLE_OFFLOAD=ON
 
 - AMD AOMP Clang 11.8. Support AMD GPUs.
+  
   ::
+  
     -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=amdgcn-amd-amdhsa -D OFFLOAD_ARCH=gfx906
 
 - Intel oneAPI beta08. Support Intel GPUs.
+  
   ::
+  
     -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=spir64
 
 - HPE Cray 11. Support NVIDIA and AMD GPUs.
+  
   ::
+  
     -D ENABLE_OFFLOAD=ON
 
 OpenMP offload features can be used together with vendor specific code paths to maximize QMCPACK performance.
 Some new CUDA functionality has been implemented to improve efficiency on NVIDIA GPUs in conjunction with the Offload code paths:
 For example, using Clang 11 on Summit.
+
   ::
+  
     -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`
 
 

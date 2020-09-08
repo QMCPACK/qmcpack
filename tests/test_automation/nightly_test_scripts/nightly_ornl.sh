@@ -6,6 +6,7 @@ localonly=no
 #localonly=yes
 
 jobtype=nightly
+#jobtype=weekly
 case "$jobtype" in
     nightly )
 	echo --- Nightly job
@@ -25,6 +26,10 @@ if [[ $localonly == "yes" ]]; then
 echo --- Local CMake/Make/CTest only. No cdash drop.
 fi
 
+if [ -e `dirname "$0"`/ornl_update.sh ]; then
+    echo --- Updates
+    source `dirname "$0"`/ornl_update.sh
+fi
 
 if [ -e `dirname "$0"`/ornl_versions.sh ]; then
     source `dirname "$0"`/ornl_versions.sh
@@ -57,16 +62,16 @@ echo --- Host is $ourhostname
 case "$ourhostname" in
     sulfur )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="build_intel2020_nompi build_intel2020 build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_gccnew_nompi_mkl build_gccold_nompi_mkl build_clangnew_nompi_mkl build_clangold_nompi_mkl build_gccnew_nompi build_clangnew_nompi build_gccnew_mkl build_gccnew_mkl_complex build_clangnew_mkl build_clangnew_mkl_complex build_clangnew_mkl_mixed build_gcccuda build_gcccuda_complex build_gcccuda_full build_pgi2019_nompi"
+	    buildsys="build_intel2020_nompi build_intel2020 build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_gccnew_nompi_mkl build_gccold_nompi_mkl build_clangnew_nompi_mkl build_clangold_nompi_mkl build_gccnew_nompi build_clangnew_nompi build_gccnew_mkl build_gccnew_mkl_complex build_clangnew_mkl build_clangnew_mkl_complex build_clangnew_mkl_mixed build_gcccuda build_gcccuda_complex build_gcccuda_full build_pgi2019_nompi build_clangdev_nompi_mkl"
 	else
 	    buildsys="build_gccnew_mkl_nompi build_clangnew_mkl_nompi build_intel2020_nompi build_intel2020 build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_gcccuda build_gcccuda_complex build_pgi2019_nompi"
 	fi
     ;;
     nitrogen )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="build_gccnew build_pgi2019_nompi build_gcccuda build_gcccuda_full build_gcccuda_complex build_gccnew_complex build_gccnew_nompi build_gccnew_nompi_complex build_clangnew build_clangnew_complex build_clangnew_mixed build_clangnew_complex_mixed"
+	    buildsys="build_gccnew build_pgi2019_nompi build_gccnew_nompi build_gccnew_nompi_complex build_clangnew build_clangnew_complex build_clangnew_mixed build_clangnew_complex_mixed build_aompnew_nompi build_aompnew build_aompnew_nompi_mixed build_aompnew_mixed build_aompnew_nompi_complex_mixed build_aompnew_complex_mixed build_aompnew_nompi_complex build_aompnew_complex build_gcccuda build_gcccuda_full build_gcccuda_complex build_gccnew_complex build_clangdev_nompi_mkl"
 	else
-	    buildsys="build_gccnew build_pgi2019_nompi build_gcccuda build_gcccuda_complex build_gccnew_complex build_clangnew"
+	    buildsys="build_gccnew build_pgi2019_nompi build_aompnew_mixed build_gcccuda build_gcccuda_complex build_gccnew_complex build_clangnew"
 	fi
     ;;
     * )
@@ -78,14 +83,16 @@ esac
 
 case "$jobtype" in
     weekly )
-	export GLOBALTCFG="-j 48 --timeout 4800 -VV"
+	export GLOBALTCFG="-j 64 --timeout 7200 -VV"
 	export LIMITEDTESTS=""
 	export LESSLIMITEDTESTS=""
+	export QMC_DATA=/scratch/${USER}/QMC_DATA_WEEKLY # Route to directory containing performance test files
 	;;
     nightly )
-	export GLOBALTCFG="-j 48 --timeout 1200 -VV"
-	export LIMITEDTESTS="-R deterministic -LE unstable -E long-"
+	export GLOBALTCFG="-j 64 --timeout 2400 -VV"
+	export LIMITEDTESTS="--tests-regex deterministic -LE unstable -E long-"
 	export LESSLIMITEDTESTS="-E long-"
+	export QMC_DATA=/scratch/${USER}/QMC_DATA_NIGHTLY # Route to directory containing performance test files
 	;;
     * )
 	echo Unknown jobtype $jobtype
@@ -94,11 +101,10 @@ case "$jobtype" in
 esac
 
 # Directory in which to run tests. Should be an absolute path and fastest usable filesystem
-test_path=/scratch/${USER}   # RAID FLASH on oxygen
+test_path=/scratch/${USER}
 
 test_dir=${test_path}/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
-export QMC_DATA=/scratch/pk7/QMC_DATA # Route to directory containing performance test files
 
 # CUDA 10 setup
 export CUDAVER=10.2
@@ -126,6 +132,7 @@ module() { eval `/usr/bin/modulecmd bash $*`; }
 export SPACK_ROOT=$HOME/apps/spack
 export PATH=$SPACK_ROOT/bin:$PATH
 . $SPACK_ROOT/share/spack/setup-env.sh
+
 
 echo --- Spack list
 spack find
@@ -242,7 +249,8 @@ fi
 
 git clone https://github.com/pyscf/pyscf.git
 cd pyscf
-git checkout v1.7.1 # Relased 2020-03-01
+#git checkout v1.7.1 # Relased 2020-03-01
+git checkout v1.7.4 # Relased 2020-08-02
 topdir=`pwd`
 here=`pwd`/opt
 herelib=`pwd`/opt/lib
@@ -348,6 +356,9 @@ fi
 if [[ $sys == *"clangold"* ]]; then
 ourenv=clangoldbuild
 fi
+if [[ $sys == *"clangdev"* ]]; then
+ourenv=clangdevbuild
+fi
 if [[ $sys == *"clangcuda"* ]]; then
 ourenv=clangcudabuild
 fi
@@ -356,6 +367,9 @@ ourenv=gccintelbuild
 fi
 if [[ $sys == *"pgi2019"* ]]; then
 ourenv=gccnewbuild
+fi
+if [[ $sys == *"aompnew"* ]]; then
+ourenv=aompnewbuild
 fi
 
 
@@ -453,6 +467,47 @@ clangnewbuild) echo $ourenv
 	    spack load netlib-lapack
 	fi
 ;;
+clangdevbuild) echo $ourenv
+	spack load llvm@master
+	spack load gcc@$gcc_vnew
+	spack load python%gcc@$gcc_vnew
+	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
+	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
+	if [[ $sys != *"nompi"* ]]; then
+	    spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+	fi
+	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
+	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
+	if [ "$ourplatform" == "AMD" ]; then
+	    spack load amdblis
+	    spack load netlib-lapack
+	else
+	    spack load blis
+	    spack load netlib-lapack
+	fi
+;;
+aompnewbuild) echo $ourenv
+#	spack load llvm@$llvm_vnew
+        export PATH=/usr/lib/aomp/bin:$PATH
+	spack load gcc@$gcc_vnew
+	spack load python%gcc@$gcc_vnew
+	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
+	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
+	if [[ $sys != *"nompi"* ]]; then
+	    spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+	fi
+	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
+	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
+	if [ "$ourplatform" == "AMD" ]; then
+	    spack load amdblis
+	    spack load netlib-lapack
+	else
+	    spack load blis
+	    spack load netlib-lapack
+	fi
+;;
 clangoldbuild) echo $ourenv
 	spack load llvm@$llvm_vold
 	spack load gcc@$gcc_vold
@@ -523,16 +578,34 @@ fi
 
 #Clang/LLVM
 if [[ $sys == *"clang"* ]]; then
-compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version //g' -e 's/(.*//g'|sed 's/\..*//g'`
-if [[ $sys == *"nompi"* ]]; then
-QMCPACK_TEST_SUBMIT_NAME=Clang${compilerversion}-NoMPI
-CTCFG="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DQMC_MPI=0"
-else
-QMCPACK_TEST_SUBMIT_NAME=Clang${compilerversion}
-CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_MPI=1"
-export OMPI_CC=clang
-export OMPI_CXX=clang++
+    if [[ $sys == *"clangdev"* ]]; then
+	compilerversion=Dev
+    else
+	compilerversion=`clang --version|grep ^clang|sed -e 's/^.* version //g' -e 's/(.*//g'|sed 's/\..*//g'`
+    fi
+    if [[ $sys == *"nompi"* ]]; then
+	QMCPACK_TEST_SUBMIT_NAME=Clang${compilerversion}-NoMPI
+	CTCFG="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DQMC_MPI=0"
+    else
+	QMCPACK_TEST_SUBMIT_NAME=Clang${compilerversion}
+	CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_MPI=1"
+	export OMPI_CC=clang
+	export OMPI_CXX=clang++
+    fi
 fi
+
+#AOMP (fork of Clang/LLVM)
+if [[ $sys == *"aomp"* ]]; then
+    compilerversion=`aompversion|sed 's/-.*//g'`
+    if [[ $sys == *"nompi"* ]]; then
+	QMCPACK_TEST_SUBMIT_NAME=AOMP${compilerversion}-Offload-NoMPI
+	CTCFG="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DQMC_MPI=0 -DENABLE_OFFLOAD=ON -DOFFLOAD_TARGET=amdgcn-amd-amdhsa -DOFFLOAD_ARCH=gfx906"
+    else
+	QMCPACK_TEST_SUBMIT_NAME=AOMP${compilerversion}-Offload
+	CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_MPI=1 -DENABLE_OFFLOAD=ON -DOFFLOAD_TARGET=amdgcn-amd-amdhsa -DOFFLOAD_ARCH=gfx906"
+	export OMPI_CC=clang
+	export OMPI_CXX=clang++
+    fi
 fi
 
 # Intel
@@ -547,7 +620,7 @@ fi
 if [[ $sys == *"intel2018"* ]]; then
 source /opt/intel2018/bin/compilervars.sh intel64
 fi
-# Assumie the Intel dumpversion string has format AA.B.C.DDD
+# Assume the Intel dumpversion string has format AA.B.C.DDD
 # AA is historically major year and a good enough unique identifier,
 # but Intel 2020 packages currently (12/2019) come with the 19.1 compiler.
 # Use 19.1 for this compiler only to avoid breaking test histories.
@@ -636,16 +709,16 @@ fi
 
 # Adjust which tests are run to control overall runtime
 case "$sys" in
-*intel2020*|*gccnew*|*clangnew*|*pgi*|*gcccuda*) echo "Running full ("less limited") test set for $sys"
+*intel2020*|*gccnew*|*clangnew*|*pgi*|*gcccuda*|*aompnew_nompi*) echo "Running full ("less limited") test set for $sys"
 THETESTS=$LESSLIMITEDTESTS
 ;;
 *) echo "Running limited test set for $sys"
 THETESTS=$LIMITEDTESTS
 ;;
 esac
+echo $THETESTS
 
 export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Release
-
 echo $QMCPACK_TEST_SUBMIT_NAME
 echo $CTCFG
 if [[ $localonly == "yes" ]]; then
@@ -675,7 +748,6 @@ case "$sys" in
 	ctest ${CTCFG} ${GLOBALTCFG} "$CTXCFG" -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS} -DN_CONCURRENT_TESTS=1
 	;;
     *)
-	echo HELLO
 	ctest ${CTCFG} ${GLOBALTCFG} "$CTXCFG" -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
 	;;
 esac

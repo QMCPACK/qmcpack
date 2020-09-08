@@ -49,8 +49,10 @@ public:
   std::vector<int> t_offset;
 
   Backflow_eI_spin(ParticleSet& ions, ParticleSet& els)
-    : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions, DT_AOS)), Spin(false)
+      : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions)), Spin(false)
   {
+    throw std::runtime_error(
+        "Backflow_eI_spin is not ready for SoA! Please submit a feature request if it is needed!\n");
     RadFunc.resize(ions.groups(), els.groups());
     for (int i = 0; i < RadFunc.size(); ++i)
       RadFunc(i) = 0;

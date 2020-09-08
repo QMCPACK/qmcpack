@@ -354,7 +354,7 @@ public:
 };
 
 template<typename FT>
-J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid) : my_table_ID_(p.addTable(p, DT_SOA)), j2_ke_corr_helper(p, F)
+J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid) : my_table_ID_(p.addTable(p)), j2_ke_corr_helper(p, F)
 {
   init(p);
   KEcorr    = 0.0;

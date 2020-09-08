@@ -129,7 +129,7 @@ private:
   /// empty collection and render mutable
   void clear();
 
-  friend class SPOSetBuilder;
+  friend struct SPOSetBuilder;
 };
 
 

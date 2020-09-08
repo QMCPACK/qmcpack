@@ -77,7 +77,7 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
 
   elec.createSK();
 
-  elec.addTable(ions, DT_SOA);
+  elec.addTable(ions);
   elec.update();
 
 
@@ -166,7 +166,7 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
 
   elec.createSK();
 
-  elec.addTable(ions, DT_SOA);
+  elec.addTable(ions);
   elec.resetGroups();
   elec.update();
 

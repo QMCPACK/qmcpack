@@ -33,27 +33,18 @@ namespace qmcplusplus
 class ReportEngine
 {
 public:
-  inline ReportEngine(const std::string& cname, const std::string& fname, int atype = 1)
-      : ReportType(atype), ClassName(cname), FuncName(fname), LogBuffer(infoDebug)
+  inline ReportEngine(const std::string& cname, const std::string& fname)
+      : ClassName(cname), FuncName(fname), LogBuffer(infoDebug)
   {
     if (DoOutput)
     {
       LogBuffer << "  " << ClassName << "::" << FuncName << "\n";
-      // If there is structured output it should go to another file, not the stdout stream
-      //if(ReportType)
-      //  LogBuffer << ("<echo className=\""+ClassName+"\" funcName=\""+FuncName+"\">\n");
-      //else
-      //  LogBuffer << ("<"+ClassName+">\n");
       LogBuffer.flush(); //always flush
     }
   }
 
   inline ~ReportEngine()
   {
-    //if(ReportType)
-    //  LogBuffer << "</echo>\n";
-    //else
-    //  LogBuffer << ("</"+ClassName+">\n");
     LogBuffer.flush();
   }
 
@@ -80,8 +71,6 @@ public:
   static void enableOutput() { DoOutput = true; }
 
 private:
-  ///type of report
-  int ReportType;
   /** class Name
    */
   std::string ClassName;

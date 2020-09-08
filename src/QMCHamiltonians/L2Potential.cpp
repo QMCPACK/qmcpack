@@ -21,7 +21,7 @@ L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFun
   set_energy_domain(potential);
   two_body_quantum_domain(ions, els);
   NumIons      = ions.getTotalNum();
-  myTableIndex = els.addTable(ions, DT_SOA_PREFERRED);
+  myTableIndex = els.addTable(ions);
   size_t ns    = ions.getSpeciesSet().getTotalNum();
   PPset.resize(ns, 0);
   PP.resize(NumIons, nullptr);
@@ -35,7 +35,7 @@ L2Potential::~L2Potential() { delete_iter(PPset.begin(), PPset.end()); }
 
 void L2Potential::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid = P.addTable(IonConfig, DT_SOA_PREFERRED);
+  int tid = P.addTable(IonConfig);
   if (tid != myTableIndex)
   {
     APP_ABORT("  L2Potential::resetTargetParticleSet found a different distance table index.");
@@ -67,7 +67,7 @@ L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
 
   // compute v_L2(r)*L^2 for all electron-ion pairs
   const DistanceTableData& d_table(P.getDistTable(myTableIndex));
-  Value = 0.0;
+  Value              = 0.0;
   const size_t Nelec = P.getTotalNum();
   for (size_t iel = 0; iel < Nelec; ++iel)
   {

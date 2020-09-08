@@ -27,7 +27,7 @@ namespace qmcplusplus
 
 // forward declarations
 template<class T, unsigned D>
-class TinyVector;
+struct TinyVector;
 template<class T, unsigned D>
 class Tensor;
 template<class T, unsigned D>

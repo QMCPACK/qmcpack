@@ -192,8 +192,8 @@ public:
   }
 
   template<class BSPLINESPO>
-  friend class SplineSetReader;
-  friend class BsplineReaderBase;
+  friend struct SplineSetReader;
+  friend struct BsplineReaderBase;
 };
 
 } // namespace qmcplusplus

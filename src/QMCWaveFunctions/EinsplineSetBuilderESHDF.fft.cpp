@@ -150,14 +150,16 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
             app_error() << "Supercell ion " << i << " at " << SourcePtcl->R[j]
                         << " was found twice in the primitive cell as ion " << Super2Prim[i] << " and " << j
                         << std::endl;
-            if(!skipChecks) abort();
+            if (!skipChecks)
+              abort();
           }
         }
       }
       if (Super2Prim[i] < 0)
       {
         app_error() << "Supercell ion " << i << " not found in the primitive cell" << std::endl;
-        if(!skipChecks) abort();
+        if (!skipChecks)
+          abort();
       }
       else
       {
@@ -170,14 +172,15 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
       {
         app_error() << "Primitive cell ion " << i << " was found only " << prim_atom_counts[i]
                     << " times in the supercell rather than " << tiling_size << std::endl;
-        if(!skipChecks) abort();
+        if (!skipChecks)
+          abort();
       }
     // construct AtomicCentersInfo
     AtomicCentersInfo.resize(IonPos.size());
     for (int i = 0; i < IonPos.size(); i++)
       AtomicCentersInfo.ion_pos[i] = IonPos[i];
-    int Zind = SourcePtcl->mySpecies.findAttribute("atomicnumber");
-    const int table_id = SourcePtcl->addTable(*SourcePtcl, DT_SOA);
+    int Zind             = SourcePtcl->mySpecies.findAttribute("atomicnumber");
+    const int table_id   = SourcePtcl->addTable(*SourcePtcl);
     const auto& ii_table = SourcePtcl->getDistTable(table_id);
     SourcePtcl->update(true);
     for (int i = 0; i < IonPos.size(); i++)
@@ -192,7 +195,8 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
             app_error() << "Primitive cell ion " << i << " vs supercell ion " << j
                         << " atomic number not matching: " << IonTypes[i] << " vs "
                         << SourcePtcl->mySpecies(Zind, SourcePtcl->GroupID[j]) << std::endl;
-            if(!skipChecks) abort();
+            if (!skipChecks)
+              abort();
           }
           // set non_overlapping_radius for each ion in primitive cell
           RealType r(0);

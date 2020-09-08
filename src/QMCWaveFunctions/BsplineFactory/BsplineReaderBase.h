@@ -23,7 +23,7 @@
 #include <mpi/point2point.h>
 namespace qmcplusplus
 {
-class SPOSetInputInfo;
+struct SPOSetInputInfo;
 
 /**
  * Each SplineC2X needs a reader derived from BsplineReaderBase.

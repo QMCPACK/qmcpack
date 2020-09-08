@@ -123,7 +123,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
           TrialWaveFunction::flex_calcRatioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios,
                                                 grads_new);
           std::transform(delta_r_start, delta_r_end, log_gf.begin(),
-                         [mhalf](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
+                         [](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
 
           sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
 

@@ -2162,7 +2162,7 @@ ion-electron distance table.
 
 ::
 
-   const int ei_id = elecs.addTable(ions, DT_SOA); // in the constructor only
+   const int ei_id = elecs.addTable(ions); // in the constructor only
    const auto& ei_table = elecs.getDistTable(ei_id); // when consuming a distance table
 
 Getting the electron-electron distances is very similar, just add the

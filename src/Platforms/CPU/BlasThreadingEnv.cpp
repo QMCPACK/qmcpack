@@ -24,14 +24,16 @@ namespace qmcplusplus
 BlasThreadingEnv::BlasThreadingEnv(int num_threads)
   {
 #ifdef HAVE_MKL
-    old_state = mkl_set_num_threads_local(num_threads);
+    old_state_ = mkl_set_num_threads_local(num_threads);
+#else
+    old_state_ = 0;
 #endif
   }
 
 BlasThreadingEnv::~BlasThreadingEnv()
   {
 #ifdef HAVE_MKL
-    mkl_set_num_threads_local(old_state);
+    mkl_set_num_threads_local(old_state_);
 #endif
   }
 
