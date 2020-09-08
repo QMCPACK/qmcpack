@@ -48,7 +48,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
 {
   set_energy_domain(potential);
   two_body_quantum_domain(ions, els);
-  myTableIndex = els.addTable(ions, DT_SOA_PREFERRED);
+  myTableIndex = els.addTable(ions);
   NumIons      = ions.getTotalNum();
   //els.resizeSphere(NumIons);
   PP.resize(NumIons, nullptr);
@@ -156,28 +156,21 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
   if (ComputeForces)
   {
     forces = 0;
-    if (myTable.DTType == DT_SOA)
+    for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
-      for (int jel = 0; jel < P.getTotalNum(); jel++)
-      {
-        const auto& dist               = myTable.getDistRow(jel);
-        const auto& displ              = myTable.getDisplRow(jel);
-        std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-        for (int iat = 0; iat < NumIons; iat++)
-          if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-          {
-            RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat]);
-            if (Tmove)
-              PP[iat]->contributeTxy(jel, Txy);
-            Value += pairpot;
-            NeighborIons.push_back(iat);
-            IonNeighborElecs.getNeighborList(iat).push_back(jel);
-          }
-      }
-    }
-    else
-    {
-      APP_ABORT("NonLocalECPotential::evaluate():  Forces not imlpemented for AoS build\n");
+      const auto& dist               = myTable.getDistRow(jel);
+      const auto& displ              = myTable.getDisplRow(jel);
+      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+      for (int iat = 0; iat < NumIons; iat++)
+        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        {
+          RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat]);
+          if (Tmove)
+            PP[iat]->contributeTxy(jel, Txy);
+          Value += pairpot;
+          NeighborIons.push_back(iat);
+          IonNeighborElecs.getNeighborList(iat).push_back(jel);
+        }
     }
   }
   else
@@ -262,8 +255,6 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
 
     if (ComputeForces)
       APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): Forces not imlpemented\n");
-    if (myTable.DTType != DT_SOA)
-      APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): not imlpemented for AoS builds\n");
 
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
     {
@@ -376,29 +367,22 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
   for (int jel = 0; jel < P.getTotalNum(); jel++)
     ElecNeighborIons.getNeighborList(jel).clear();
 
-  if (myTable.DTType == DT_SOA)
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
   {
-    for (int jel = 0; jel < P.getTotalNum(); jel++)
-    {
-      const auto& dist               = myTable.getDistRow(jel);
-      const auto& displ              = myTable.getDisplRow(jel);
-      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-      for (int iat = 0; iat < NumIons; iat++)
-        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-        {
-          Value +=
-              PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces[iat], PulayTerm);
-          if (Tmove)
-            PP[iat]->contributeTxy(jel, Txy);
-          NeighborIons.push_back(iat);
-          IonNeighborElecs.getNeighborList(iat).push_back(jel);
-        }
-    }
+    const auto& dist               = myTable.getDistRow(jel);
+    const auto& displ              = myTable.getDisplRow(jel);
+    std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+    for (int iat = 0; iat < NumIons; iat++)
+      if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+      {
+        Value += PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces[iat], PulayTerm);
+        if (Tmove)
+          PP[iat]->contributeTxy(jel, Txy);
+        NeighborIons.push_back(iat);
+        IonNeighborElecs.getNeighborList(iat).push_back(jel);
+      }
   }
-  else
-  {
-    APP_ABORT("NonLocalECPotential::evaluate():  Forces not imlpemented for AoS build\n");
-  }
+
   hf_terms -= forces;
   pulay_terms -= PulayTerm;
   return Value;
@@ -511,9 +495,9 @@ void NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, in
       continue;
     RealType old_distance = 0.0;
     RealType new_distance = 0.0;
-    old_distance = myTable.getDistRow(iel)[iat];
-    new_distance = myTable.getTempDists()[iat];
-    bool moved = false;
+    old_distance          = myTable.getDistRow(iel)[iat];
+    new_distance          = myTable.getTempDists()[iat];
+    bool moved            = false;
     // move out
     if (old_distance < PP[iat]->getRmax() && new_distance >= PP[iat]->getRmax())
     {

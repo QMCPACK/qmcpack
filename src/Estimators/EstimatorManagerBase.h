@@ -198,14 +198,10 @@ public:
    */
   void accumulate(MCWalkerConfiguration& W, MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end);
 
-  //     /** accumulate the FW observables
-  //      */
-  //     void accumulate(HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, std::vector<int>& Dims);
-
-  ///** set the cummulative energy and weight
-  void getEnergyAndWeight(RealType& e, RealType& w, RealType& var);
-
-  void getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var);
+  /** get the average of per-block energy and variance of all the blocks
+   * Note: this is not weighted average. It can be the same as weighted average only when block weights are identical.
+   */
+  void getApproximateEnergyVariance(RealType& e, RealType& var);
 
   template<class CT>
   void write(CT& anything, bool doappend)

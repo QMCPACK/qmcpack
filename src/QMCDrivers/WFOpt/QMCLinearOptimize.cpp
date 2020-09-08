@@ -204,13 +204,6 @@ void QMCLinearOptimize::generateSamples()
   vmcEngine->run();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "</vmc>" << std::endl;
-  //write parameter history and energies to the parameter file in the trial wave function through opttarget
-  FullPrecRealType e, w, var;
-  vmcEngine->Estimators->getEnergyAndWeight(e, w, var);
-  //     NumOfVMCWalkers=W.getActiveWalkers();
-  //branchEngine->Eref=vmcEngine->getBranchEngine()->Eref;
-  //         branchEngine->setTrialEnergy(vmcEngine->getBranchEngine()->getEref());
-  //set the h5File to the current RootName
   h5FileRoot = RootName;
 }
 

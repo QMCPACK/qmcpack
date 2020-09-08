@@ -35,10 +35,10 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   ions.setName("ions");
   elecs.setName("electrons");
 
-  const int ii_table_id = ions.addTable(ions, DT_SOA);
-  const int ie_table_id = ions.addTable(elecs, DT_SOA);
-  const int ei_table_id = elecs.addTable(ions, DT_SOA);
-  const int ee_table_id = elecs.addTable(elecs, DT_SOA);
+  const int ii_table_id = ions.addTable(ions);
+  const int ie_table_id = ions.addTable(elecs);
+  const int ei_table_id = elecs.addTable(ions);
+  const int ee_table_id = elecs.addTable(elecs);
 
   REQUIRE(ii_table_id == 0);
   REQUIRE(ie_table_id == 1);
@@ -46,10 +46,10 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   REQUIRE(ee_table_id == 1);
 
   // second query
-  const int ii_table_id2 = ions.addTable(ions, DT_SOA);
-  const int ie_table_id2 = ions.addTable(elecs, DT_SOA);
-  const int ei_table_id2 = elecs.addTable(ions, DT_SOA);
-  const int ee_table_id2 = elecs.addTable(elecs, DT_SOA);
+  const int ii_table_id2 = ions.addTable(ions);
+  const int ie_table_id2 = ions.addTable(elecs);
+  const int ei_table_id2 = elecs.addTable(ions);
+  const int ee_table_id2 = elecs.addTable(elecs);
 
   REQUIRE(ii_table_id2 == 0);
   REQUIRE(ie_table_id2 == 1);
@@ -85,7 +85,7 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
   REQUIRE(source.getCoordinates().getAllParticlePos()[0][1] == Approx(1.0));
   REQUIRE(source.getCoordinates().getAllParticlePos()[1][2] == Approx(3.2));
 
-  const int TableID = source.addTable(source, DT_SOA);
+  const int TableID = source.addTable(source);
   source.update();
   const auto& d_aa      = source.getDistTable(TableID);
   const auto& aa_dists  = d_aa.getDistances();
@@ -120,7 +120,7 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
   source.R[2] = ParticleSet::PosType(3.37316115, 3.37316115, 0.00000000);
   source.R[3] = ParticleSet::PosType(5.05974172, 5.05974172, 1.68658058);
 
-  const int TableID = source.addTable(source, DT_SOA);
+  const int TableID = source.addTable(source);
   source.update();
   const auto& d_aa      = source.getDistTable(TableID);
   const auto& aa_dists  = d_aa.getDistances();

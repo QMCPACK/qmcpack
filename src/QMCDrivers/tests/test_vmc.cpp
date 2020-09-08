@@ -63,19 +63,19 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   elec.R[1][2] = 1.0;
   elec.createWalkers(1);
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
-  elec.addTable(ions, DT_SOA);
+  elec.addTable(ions);
   elec.update();
 
 
   TrialWaveFunction psi(c);
-  ConstantOrbital* orb  = new ConstantOrbital;
+  ConstantOrbital* orb = new ConstantOrbital;
   psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();

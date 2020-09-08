@@ -22,7 +22,7 @@
 #include "Message/MPIObjectBase.h"
 #include <map>
 
-class Libxml2Document;
+struct Libxml2Document;
 
 namespace qmcplusplus
 {

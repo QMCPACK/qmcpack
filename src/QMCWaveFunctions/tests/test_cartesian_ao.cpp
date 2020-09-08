@@ -51,7 +51,7 @@ void test_cartesian_ao()
     int hIdx             = ispecies.addSpecies("H");
     ions.update();
 
-    elec.addTable(ions, DT_SOA);
+    elec.addTable(ions);
     elec.update();
 
     Libxml2Document doc;
@@ -121,7 +121,7 @@ void test_dirac_ao()
     int hIdx             = ispecies.addSpecies("H");
     ions.update();
 
-    elec.addTable(ions, DT_SOA);
+    elec.addTable(ions);
     elec.update();
 
     Libxml2Document doc;
