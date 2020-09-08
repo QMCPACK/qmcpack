@@ -349,7 +349,7 @@ inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
                                   std::complex<float>* y,
                                   int incy)
 {
-  cublasStatus_t sucess;
+  cublasStatus_t sucess = CUBLAS_STATUS_SUCCESS;
   char Nt('N');
   char Tt('T');
   if (Atrans == 'n' || Atrans == 'N')
@@ -379,7 +379,7 @@ inline cublasStatus_t cublas_gemv(cublasHandle_t handle,
                                   std::complex<double>* y,
                                   int incy)
 {
-  cublasStatus_t sucess;
+  cublasStatus_t sucess = CUBLAS_STATUS_SUCCESS;
   char Nt('N');
   char Tt('T');
   if (Atrans == 'n' || Atrans == 'N')
