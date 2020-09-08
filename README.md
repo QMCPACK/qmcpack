@@ -54,8 +54,8 @@ On a developmental basis we also check the latest Clang development version, AMD
  e.g., /usr, /usr/local, there is no need to set environment or CMake
  variables for the packages.
 
- See the manuals linked at https://www.qmcpack.org/documentation or buildable via
- manual/build_manual.sh for build examples on Linux, Mac OS X etc.
+ See the manual linked at https://qmcpack.readthedocs.io/en/develop/ and https://www.qmcpack.org/documentation or buildable using
+ sphinx from the sources in docs/.
 
 ## Quick build
 
