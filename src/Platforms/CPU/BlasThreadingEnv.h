@@ -21,7 +21,7 @@ namespace qmcplusplus
  */
 class BlasThreadingEnv
 {
-  int old_state;
+  int old_state_;
 
 public:
   /// Constructor, obtains the number of threads at the next level

@@ -57,7 +57,7 @@ ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
       myTwist(0.0),
       ParentName("0"),
       TotalNum(0),
-      coordinates_(std::move(createDynamicCoordinates(kind)))
+      coordinates_(createDynamicCoordinates(kind))
 {
   initPropertyList();
   setup_timers(myTimers, PSTimerNames, timer_level_fine);
@@ -73,7 +73,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       Properties(p.Properties),
       myTwist(0.0),
       ParentName(p.parentName()),
-      coordinates_(std::move(p.coordinates_->makeClone()))
+      coordinates_(p.coordinates_->makeClone())
 {
   set_quantum_domain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable

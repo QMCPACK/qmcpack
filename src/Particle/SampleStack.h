@@ -26,7 +26,7 @@ namespace qmcplusplus
 {
 class MCWalkerConfiguration;
 class HDFWalkerOutput;
-class MCSample;
+struct MCSample;
 
 class SampleStack
 {
