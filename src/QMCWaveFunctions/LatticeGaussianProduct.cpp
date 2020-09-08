@@ -27,7 +27,7 @@ LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet
   ClassName      = "LatticeGaussianProduct";
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();
-  myTableID = ptcls.addTable(CenterRef, DT_SOA);
+  myTableID      = ptcls.addTable(CenterRef);
   U.resize(NumTargetPtcls);
   dU.resize(NumTargetPtcls);
   d2U.resize(NumTargetPtcls);
@@ -98,7 +98,7 @@ PsiValueType LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
   if (icent == -1)
     return 1.0;
   RealType newdist = d_table.getTempDists()[icent];
-  curVal = ParticleAlpha[iat] * (newdist * newdist);
+  curVal           = ParticleAlpha[iat] * (newdist * newdist);
   return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
 }
 
@@ -109,9 +109,9 @@ GradType LatticeGaussianProduct::evalGrad(ParticleSet& P, int iat)
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return GradType();
-  RealType a = ParticleAlpha[iat];
+  RealType a      = ParticleAlpha[iat];
   PosType newdisp = -1.0 * d_table.getTempDispls()[icent];
-  curGrad = -2.0 * a * newdisp;
+  curGrad         = -2.0 * a * newdisp;
   return curGrad;
 }
 
@@ -122,11 +122,11 @@ PsiValueType LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
-  RealType a = ParticleAlpha[iat];
+  RealType a       = ParticleAlpha[iat];
   RealType newdist = d_table.getTempDists()[icent];
   PosType newdisp  = -1.0 * d_table.getTempDispls()[icent];
-  curVal  = a * newdist * newdist;
-  curGrad = -2.0 * a * newdisp;
+  curVal           = a * newdist * newdist;
+  curGrad          = -2.0 * a * newdisp;
   grad_iat += curGrad;
   return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
 }

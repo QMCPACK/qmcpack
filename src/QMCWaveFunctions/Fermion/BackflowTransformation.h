@@ -148,10 +148,7 @@ public:
 
   opt_variables_type myVars;
 
-  BackflowTransformation(ParticleSet& els)
-      : QP(els),
-        cutOff(0.0),
-        myTableIndex_(els.addTable(els, DT_SOA))
+  BackflowTransformation(ParticleSet& els) : QP(els), cutOff(0.0), myTableIndex_(els.addTable(els))
   {
     NumTargets = els.getTotalNum();
     Bmat.resize(NumTargets);

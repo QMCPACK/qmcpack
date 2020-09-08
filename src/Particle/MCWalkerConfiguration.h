@@ -36,7 +36,7 @@ namespace qmcplusplus
 {
 //Forward declaration
 class MultiChain;
-class MCSample;
+struct MCSample;
 class HDFWalkerOutput;
 class Reptile;
 

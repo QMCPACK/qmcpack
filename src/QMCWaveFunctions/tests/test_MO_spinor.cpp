@@ -58,7 +58,7 @@ void test_lcao_spinor()
   tspecies(chargeIdx, upIdx) = -1;
 
 
-  elec_.addTable(ions_, DT_SOA);
+  elec_.addTable(ions_);
   elec_.update();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -224,7 +224,7 @@ void test_lcao_spinor_excited()
   tspecies(chargeIdx, upIdx) = -1;
 
 
-  elec_.addTable(ions_, DT_SOA);
+  elec_.addTable(ions_);
   elec_.update();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -262,12 +262,12 @@ void test_lcao_spinor_excited()
 
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
-  ValueType val(0.0008237860500019983,1.0474021389417806e-05);
-  ValueType vdx(-0.00041189302538224967,-5.237010699556317e-06);
-  ValueType vdy(0.0012356790748129446,1.5711032081710294e-05);
-  ValueType vdz(-0.007002181424606922,-8.90291818048377e-05);
-  ValueType vlp(0.04922415803252472,0.0006258601782677606);
-  ValueType vds(-0.0010017050778321178,-5.584596565578559e-05);
+  ValueType val(0.0008237860500019983, 1.0474021389417806e-05);
+  ValueType vdx(-0.00041189302538224967, -5.237010699556317e-06);
+  ValueType vdy(0.0012356790748129446, 1.5711032081710294e-05);
+  ValueType vdz(-0.007002181424606922, -8.90291818048377e-05);
+  ValueType vlp(0.04922415803252472, 0.0006258601782677606);
+  ValueType vds(-0.0010017050778321178, -5.584596565578559e-05);
 
   const RealType eps = 1e-4;
 

@@ -31,7 +31,6 @@ SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Werror=vla")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wvla")
 
 # set compiler warnings
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wcomment -Wmisleading-indentation -Wmaybe-uninitialized -Wuninitialized -Wreorder -Wno-unknown-pragmas -Wno-sign-compare")
 
 # Set extra optimization specific flags

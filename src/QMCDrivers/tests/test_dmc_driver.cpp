@@ -64,20 +64,20 @@ TEST_CASE("DMC", "[drivers][dmc]")
   elec.R[1][2] = 1.0;
   elec.createWalkers(1);
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
-  elec.addTable(ions, DT_SOA);
+  elec.addTable(ions);
   elec.update();
 
   CloneManager::clear_for_unit_tests();
 
   TrialWaveFunction psi(c);
-  ConstantOrbital* orb  = new ConstantOrbital;
+  ConstantOrbital* orb = new ConstantOrbital;
   psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
@@ -153,26 +153,26 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   std::vector<int> agroup(1);
   agroup[0] = 1;
   elec.create(agroup);
-  elec.R[0][0] = 1.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
+  elec.R[0][0]  = 1.0;
+  elec.R[0][1]  = 0.0;
+  elec.R[0][2]  = 0.0;
   elec.spins[0] = 0.0;
   elec.createWalkers(1);
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
-  elec.addTable(ions, DT_SOA);
+  elec.addTable(ions);
   elec.update();
 
   CloneManager::clear_for_unit_tests();
 
   TrialWaveFunction psi(c);
-  ConstantOrbital* orb  = new ConstantOrbital;
+  ConstantOrbital* orb = new ConstantOrbital;
   psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();

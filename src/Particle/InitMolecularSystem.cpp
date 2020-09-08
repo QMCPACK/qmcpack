@@ -99,7 +99,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   if (ions->getTotalNum() == 1)
     return initAtom(ions, els);
 
-  const int d_ii_ID = ions->addTable(*ions, DT_SOA_PREFERRED);
+  const int d_ii_ID = ions->addTable(*ions);
   ions->update();
   const auto& d_ii = ions->getDistTable(d_ii_ID);
   const ParticleSet::ParticleIndex_t& grID(ions->GroupID);
