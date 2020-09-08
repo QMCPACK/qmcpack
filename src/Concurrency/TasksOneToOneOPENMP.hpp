@@ -26,7 +26,7 @@
 
 namespace qmcplusplus
 {
-/** implements task per thread launch for openmp.
+/** implements parallel tasks executed by threads in an OpenMP thread pool.
  *
  *  This specialization throws below the top openmp theading level
  *  exception must be caught at thread level or terminate is called.
@@ -34,7 +34,7 @@ namespace qmcplusplus
  */
 template<>
 template<typename F, typename... Args>
-void TasksOneToOne<Threading::OPENMP>::operator()(F&& f, Args&&... args)
+void TasksOneToOne<Executor::OPENMP>::operator()(F&& f, Args&&... args)
 {
   const std::string nesting_error{"TasksOneToOne should not be used for nested openmp threading\n"};
   if (omp_get_level() > 0)

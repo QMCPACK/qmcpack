@@ -97,7 +97,7 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
 
 void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
 {
-  int num_threads(Concurrency::maxThreads<>());
+  int num_threads(Concurrency::maxCapacity<>());
   if (num_crowds > num_threads)
   {
     std::stringstream error_msg;
@@ -477,10 +477,10 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
                                                                          RealType reserve_walkers,
                                                                          int num_crowds)
 {
-  // Step 1. set num_crowds by input and Concurrency::maxThreads<>()
+  // Step 1. set num_crowds by input and Concurrency::maxCapacity<>()
   checkNumCrowdsLTNumThreads(num_crowds);
   if (num_crowds == 0)
-    num_crowds = Concurrency::maxThreads<>();
+    num_crowds = Concurrency::maxCapacity<>();
 
   AdjustedWalkerCounts awc{0, {}, {}, reserve_walkers};
 

@@ -26,7 +26,7 @@ void TestTaskOMP(const int ip, int& counter)
 TEST_CASE("TasksOneToOne<OPENMP> function case", "[concurrency]")
 {
   const int num_threads = omp_get_max_threads();
-  TasksOneToOne<Threading::OPENMP> test_block(num_threads);
+  TasksOneToOne<Executor::OPENMP> test_block(num_threads);
   int count(0);
   test_block(TestTaskOMP, std::ref(count));
   REQUIRE(count == num_threads);
@@ -35,7 +35,7 @@ TEST_CASE("TasksOneToOne<OPENMP> function case", "[concurrency]")
 TEST_CASE("TasksOneToOne<OPENMP> lambda case", "[concurrency]")
 {
   const int num_threads = omp_get_max_threads();
-  TasksOneToOne<Threading::OPENMP> test_block(num_threads);
+  TasksOneToOne<Executor::OPENMP> test_block(num_threads);
   int count(0);
   test_block(
       [](int id, int& c) {
@@ -53,10 +53,10 @@ TEST_CASE("TasksOneToOne<OPENMP> lambda case", "[concurrency]")
 TEST_CASE("TasksOneToOne<OPENMP> nested case", "[concurrency]")
 {
   int num_threads = 1;
-  TasksOneToOne<Threading::OPENMP> test_block(num_threads);
+  TasksOneToOne<Executor::OPENMP> test_block(num_threads);
   int count(0);
   auto nested_tasks = [num_threads](int task_id, int& my_count) {
-    TasksOneToOne<Threading::OPENMP> test_block2(num_threads);
+    TasksOneToOne<Executor::OPENMP> test_block2(num_threads);
     test_block2(TestTaskOMP, std::ref(my_count));
   };
   REQUIRE_THROWS_WITH(test_block(nested_tasks, std::ref(count)),

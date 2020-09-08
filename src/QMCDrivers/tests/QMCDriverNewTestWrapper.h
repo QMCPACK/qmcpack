@@ -103,7 +103,7 @@ public:
 
     awc = adjustGlobalWalkerCount(2, 0, 28, 0, 1.0, 0);
     CHECK(awc.global_walkers == 28);
-    CHECK(awc.walkers_per_crowd.size() == Concurrency::maxThreads());
+    CHECK(awc.walkers_per_crowd.size() == Concurrency::maxCapacity());
     CHECK(awc.walkers_per_rank.size() == 2);
     CHECK(awc.walkers_per_rank[0] == 14);
     // \todo for std::thread these will be ones
@@ -139,9 +139,9 @@ void QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<CONCURRENCY>::operator()
 {}
 
 template<>
-void QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<TasksOneToOne<Threading::OPENMP>>::operator()(int num_crowds)
+void QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<TasksOneToOne<Executor::OPENMP>>::operator()(int num_crowds)
 {
-  if (Concurrency::maxThreads<>() != 8)
+  if (Concurrency::maxCapacity<>() != 8)
     throw std::runtime_error("OMP_NUM_THREADS must be 8 for this test.");
   if (num_crowds > 8)
     CHECK_THROWS(checkNumCrowdsLTNumThreads(num_crowds));

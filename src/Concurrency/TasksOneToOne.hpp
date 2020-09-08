@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-/** Abstraction for simple 1 task to 1 thread concurrency
+/** Abstraction for running concurrent tasks in parallel by an executor
  *
  *  Construct with num_tasks to run
  *  then call operator(F, args...) 
@@ -29,13 +29,13 @@ namespace qmcplusplus
  *  This has not been tested for nested threading with openmp
  *  It is not intended for use below the top level of openmp threading.
  */
-template<Threading TT = Threading::OPENMP>
+template<Executor TT = Executor::OPENMP>
 class TasksOneToOne
 {
 public:
   TasksOneToOne(int num_tasks) : num_tasks_(num_tasks) {}
 
-  /** Call an arbitrary function with task id and arbitrary args on num_tasks_
+  /** Call an arbitrary function/kernel with task id and arbitrary args on num_tasks_ tasks
    *
    *  ie each task will run f(int task_id, Args... args)
    */

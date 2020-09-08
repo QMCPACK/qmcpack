@@ -11,18 +11,21 @@
 // Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 ////////////////////////////////////////////////////////////////////////////////
 
+
 #ifndef QMCPLUSPLUS_CONCURRENCY_INFO_HPP
 #define QMCPLUSPLUS_CONCURRENCY_INFO_HPP
 /** @file
- *  @brief Abstraction of information on threading environment
+ *  @brief Abstraction of information on executor environments
  */
 
 #include <omp.h>
+#ifdef QMC_EXP_THREADING
 #include <thread>
+#endif
 
 namespace qmcplusplus
 {
-enum class Threading
+enum class Executor
 {
   OPENMP,
 #ifdef QMC_EXP_THREADING
@@ -32,22 +35,22 @@ enum class Threading
 
 namespace Concurrency
 {
-using qmcplusplus::Threading;
+using qmcplusplus::Executor;
 
-template<Threading TT = Threading::OPENMP>
-unsigned int maxThreads();
+template<Executor TT = Executor::OPENMP>
+unsigned int maxCapacity();
 
 template<>
-inline unsigned int maxThreads<Threading::OPENMP>()
+inline unsigned int maxCapacity<Executor::OPENMP>()
 {
   return omp_get_max_threads();
 }
 
-template<Threading TT = Threading::OPENMP>
-unsigned int getThreadId();
+template<Executor TT = Executor::OPENMP>
+unsigned int getTaskId();
 
 template<>
-inline unsigned int getThreadId<Threading::OPENMP>()
+inline unsigned int getTaskId<Executor::OPENMP>()
 {
   return omp_get_thread_num();
 }
@@ -55,7 +58,7 @@ inline unsigned int getThreadId<Threading::OPENMP>()
 
 #ifdef QMC_EXP_THREADING
 template<>
-inline unsigned int maxThreads<Threading::STD>()
+inline unsigned int maxCapacity<Executor::STD>()
 {
   // Does taskset fix what this reports?  i.e. deal with binding to socket properly
   return std::thread::hardware_concurrency();

@@ -43,9 +43,11 @@ struct TaskWrapper
   }
 };
 
+/** implements parallel tasks executed by STD threads. One task one thread mapping.
+ */
 template<>
 template<typename F, typename... Args>
-void TasksOneToOne<Threading::STD>::operator()(F&& f, Args&&... args)
+void TasksOneToOne<Executor::STD>::operator()(F&& f, Args&&... args)
 {
   std::vector<std::thread> threads(num_tasks_);
 
