@@ -47,10 +47,10 @@ inline unsigned int maxCapacity<Executor::OPENMP>()
 }
 
 template<Executor TT = Executor::OPENMP>
-unsigned int getTaskId();
+unsigned int getWorkerId();
 
 template<>
-inline unsigned int getTaskId<Executor::OPENMP>()
+inline unsigned int getWorkerId<Executor::OPENMP>()
 {
   return omp_get_thread_num();
 }
