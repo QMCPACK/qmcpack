@@ -24,30 +24,30 @@ void TestTask(const int ip, std::atomic<int>& counter) { ++counter; }
 TEST_CASE("TasksOneToOne<STD> function case", "[concurrency]")
 {
   int num_threads = 8;
-  TasksOneToOne<Executor::STD> test_block(num_threads);
+  TasksOneToOne<Executor::STD> test_block;
   std::atomic<int> count(0);
-  test_block(TestTask, std::ref(count));
+  test_block(num_threads, TestTask, std::ref(count));
   REQUIRE(count == 8);
 }
 
 TEST_CASE("TasksOneToOne<STD> lambda case", "[concurrency]")
 {
   int num_threads = 8;
-  TasksOneToOne<Executor::STD> test_block(num_threads);
+  TasksOneToOne<Executor::STD> test_block;
   std::atomic<int> count(0);
-  test_block([](int id, std::atomic<int>& my_count) { ++my_count; }, std::ref(count));
+  test_block(num_threads, [](int id, std::atomic<int>& my_count) { ++my_count; }, std::ref(count));
   REQUIRE(count == 8);
 }
 
 TEST_CASE("TasksOneToOne<STD> nested case", "[concurrency]")
 {
   int num_threads = 8;
-  TasksOneToOne<Executor::STD> test_block(num_threads);
+  TasksOneToOne<Executor::STD> test_block;
   std::atomic<int> count(0);
-  test_block(
+  test_block(num_threads,
       [num_threads](int task_id, std::atomic<int>& my_count) {
-        TasksOneToOne<Executor::STD> test_block2(num_threads);
-        test_block2(TestTask, std::ref(my_count));
+        TasksOneToOne<Executor::STD> test_block2;
+        test_block2(num_threads, TestTask, std::ref(my_count));
       },
       std::ref(count));
   REQUIRE(count == 64);

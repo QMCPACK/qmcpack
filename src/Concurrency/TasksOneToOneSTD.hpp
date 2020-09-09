@@ -47,16 +47,16 @@ struct TaskWrapper
  */
 template<>
 template<typename F, typename... Args>
-void TasksOneToOne<Executor::STD>::operator()(F&& f, Args&&... args)
+void TasksOneToOne<Executor::STD>::operator()(int num_tasks, F&& f, Args&&... args)
 {
   std::vector<std::thread> threads(num_tasks_);
 
-  for (int task_id = 0; task_id < num_tasks_; ++task_id)
+  for (int task_id = 0; task_id < num_tasks; ++task_id)
   {
     threads[task_id] = std::thread(TaskWrapper<F>{std::forward<F>(f)}, task_id, std::forward<Args>(args)...);
   }
 
-  for (int task_id = 0; task_id < num_tasks_; ++task_id)
+  for (int task_id = 0; task_id < num_tasks; ++task_id)
   {
     threads[task_id].join();
   }

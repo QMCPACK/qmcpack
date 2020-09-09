@@ -337,8 +337,6 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
 {
   step_contexts_.resize(num_crowds);
 
-  TasksOneToOne<> do_per_crowd(num_crowds);
-
   Rng.resize(num_crowds);
 
   RngCompatibility.resize(num_crowds);

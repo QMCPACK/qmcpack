@@ -33,17 +33,12 @@ template<Executor TT = Executor::OPENMP>
 class TasksOneToOne
 {
 public:
-  TasksOneToOne(int num_tasks) : num_tasks_(num_tasks) {}
-
-  /** Call an arbitrary function/kernel with task id and arbitrary args on num_tasks_ tasks
+  /** Concurrently execute an arbitrary function/kernel with task id and arbitrary args
    *
    *  ie each task will run f(int task_id, Args... args)
    */
   template<typename F, typename... Args>
-  void operator()(F&& f, Args&&... args);
-
-private:
-  const int num_tasks_;
+  void operator()(int num_tasks, F&& f, Args&&... args);
 };
 
 } // namespace qmcplusplus

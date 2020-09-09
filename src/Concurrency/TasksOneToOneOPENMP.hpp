@@ -34,7 +34,7 @@ namespace qmcplusplus
  */
 template<>
 template<typename F, typename... Args>
-void TasksOneToOne<Executor::OPENMP>::operator()(F&& f, Args&&... args)
+void TasksOneToOne<Executor::OPENMP>::operator()(int num_tasks, F&& f, Args&&... args)
 {
   const std::string nesting_error{"TasksOneToOne should not be used for nested openmp threading\n"};
   if (omp_get_level() > 0)
@@ -42,7 +42,7 @@ void TasksOneToOne<Executor::OPENMP>::operator()(F&& f, Args&&... args)
   int nested_throw_count = 0;
   int throw_count = 0;
 #pragma omp parallel for reduction(+ : nested_throw_count, throw_count)
-  for (int task_id = 0; task_id < num_tasks_; ++task_id)
+  for (int task_id = 0; task_id < num_tasks; ++task_id)
   {
     try
     {
