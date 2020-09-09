@@ -512,12 +512,14 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       if (useGPU == "yes")
       {
         app_log() << "  Using DiracDeterminantBatched with MatrixDelayedUpdateCUDA engine" << std::endl;
-        adet = new DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
+        adet = new DiracDeterminantBatched<
+            MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
       }
       else
 #endif
       {
-        app_log() << "  Using DiracDeterminantBatched with MatrixUpdateOMP engine. Only SM1 updates are supported." << std::endl;
+        app_log() << "  Using DiracDeterminantBatched with MatrixUpdateOMP engine. Only SM1 updates are supported."
+                  << std::endl;
         adet = new DiracDeterminantBatched<>(psi, firstIndex);
       }
     }
@@ -1186,7 +1188,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         RealType ci_real = 0.0, ci_imag = 0.0;
         confAttrib.add(ci_real, "coeff_real");
         confAttrib.add(ci_imag, "coeff_imag");
-        ValueType ci(ci_real, ci_imag);
 #else
         RealType ci = 0.0;
         confAttrib.add(ci, "coeff");
@@ -1197,6 +1198,9 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         confAttrib.add(tag, "id");
         confAttrib.put(cur);
 
+#ifdef QMC_COMPLEX
+        ValueType ci(ci_real, ci_imag);
+#endif
 
         //Will always loop through the whole determinant set as no assumption on the order of the determinant is made
         if (std::abs(ci) < cutoff)
@@ -1390,7 +1394,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   ConfigTag.resize(ndets);
 
   readCoeffs(hin, CIcoeff, ndets);
-  
+
   ///IF OPTIMIZED COEFFICIENTS ARE PRESENT IN opt_coeffs Path
   ///THEY ARE READ FROM DIFFERENT HDF5 the replace the previous coeff
   ///It is important to still read all old coeffs and only replace the optimized ones
