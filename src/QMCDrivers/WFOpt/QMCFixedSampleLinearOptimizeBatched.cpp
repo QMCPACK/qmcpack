@@ -423,7 +423,6 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
         }
       }
       app_log().flush();
-      app_error().flush();
       if (failedTries > 20)
         break;
       //APP_ABORT("QMCFixedSampleLinearOptimizeBatched::run TOO MANY FAILURES");
@@ -442,7 +441,6 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
         optTarget->Params(i) = currentParameters[i];
     }
     app_log().flush();
-    app_error().flush();
   }
 
   finish();

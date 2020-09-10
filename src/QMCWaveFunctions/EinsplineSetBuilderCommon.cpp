@@ -437,7 +437,6 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     if (dot(ks - kp, ks - kp) > 1.0e-6)
     {
       app_error() << "Primitive and super k-points do not agree.  Error in coding.\n";
-      app_error().flush();
       APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
     }
     PosType frac = FracPart(superTwist);
@@ -531,7 +530,6 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     {
       app_error() << "Cannot use this super twist with real wavefunctions.\n"
                   << "Please recompile with QMC_COMPLEX=1.\n";
-      app_error().flush();
       APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
     }
   }
