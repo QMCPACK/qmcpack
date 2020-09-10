@@ -48,7 +48,7 @@ private:
 TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
 {
   using namespace testing;
-  Concurrency::OverrideMaxThreads<> override(8);
+  Concurrency::OverrideMaxCapacity<> override(8);
   Communicate* comm;
   comm = OHMMS::Controller;
   outputManager.pause();

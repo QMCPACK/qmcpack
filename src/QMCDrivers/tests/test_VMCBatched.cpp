@@ -31,7 +31,7 @@ class VMCBatchedTest
 public:
   VMCBatchedTest()
   {
-    Concurrency::OverrideMaxThreads<> override(8);
+    Concurrency::OverrideMaxCapacity<> override(8);
     Communicate* comm;
     OHMMS::Controller->initialize(0, NULL);
     comm_ = OHMMS::Controller;
@@ -40,7 +40,7 @@ public:
   void testCalcDefaultLocalWalkers()
   {
     using namespace testing;
-    Concurrency::OverrideMaxThreads<> override(8);
+    Concurrency::OverrideMaxCapacity<> override(8);
     Communicate* comm;
     OHMMS::Controller->initialize(0, NULL);
     comm = OHMMS::Controller;

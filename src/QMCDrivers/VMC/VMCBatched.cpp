@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCDrivers/VMC/VMCBatched.h"
-#include "Concurrency/TasksOneToOne.hpp"
+#include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -32,8 +32,7 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
       vmcdriver_input_(input),
       samples_(samples),
       collect_samples_(false)
-{
-}
+{}
 
 void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
@@ -280,11 +279,11 @@ bool VMCBatched::run()
 
   { // walker initialization
     ScopedTimer local_timer(&(timers_.init_walkers_timer));
-    TasksOneToOne<> section_start_task(crowds_.size());
-    section_start_task(initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
+    ParallelExecutor<> section_start_task;
+    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
 
-  TasksOneToOne<> crowd_task(crowds_.size());
+  ParallelExecutor<> crowd_task;
 
   auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
                           UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
@@ -295,7 +294,8 @@ bool VMCBatched::run()
   for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)
   {
     ScopedTimer local_timer(&(timers_.run_steps_timer));
-    crowd_task(runWarmupStep, vmc_state, std::ref(timers_), std::ref(step_contexts_), std::ref(crowds_));
+    crowd_task(crowds_.size(), runWarmupStep, vmc_state, std::ref(timers_), std::ref(step_contexts_),
+               std::ref(crowds_));
   }
 
   for (int block = 0; block < num_blocks; ++block)
@@ -313,7 +313,7 @@ bool VMCBatched::run()
     {
       ScopedTimer local_timer(&(timers_.run_steps_timer));
       vmc_state.step = step;
-      crowd_task(runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
+      crowd_task(crowds_.size(), runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
 
       if (collect_samples_)
       {
