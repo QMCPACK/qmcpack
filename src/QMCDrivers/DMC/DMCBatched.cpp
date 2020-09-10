@@ -15,7 +15,7 @@
 
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
-#include "Concurrency/TasksOneToOne.hpp"
+#include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -523,11 +523,11 @@ bool DMCBatched::run()
 
   { // walker initialization
     ScopedTimer local_timer(&(timers_.init_walkers_timer));
-    TasksOneToOne<> section_start_task(crowds_.size());
-    section_start_task(initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
+    ParallelExecutor<> section_start_task;
+    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
 
-  TasksOneToOne<> crowd_task(crowds_.size());
+  ParallelExecutor<> crowd_task;
 
   for (int block = 0; block < num_blocks; ++block)
   {
@@ -546,7 +546,7 @@ bool DMCBatched::run()
     {
       ScopedTimer local_timer(&(timers_.run_steps_timer));
       dmc_state.step = step;
-      crowd_task(runDMCStep, dmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
+      crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
 
       branch_engine_->branch(step, population_);
 
