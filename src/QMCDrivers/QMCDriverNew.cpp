@@ -556,9 +556,11 @@ void QMCDriverNew::endBlock()
     block_reject += crowd->get_reject();
     cpu_block_time += crowd->get_estimator_manager_crowd().get_cpu_block_time();
   }
+#ifndef NDEBUG  
   std::cerr << "accept: " << block_accept << "   reject: " << block_reject;
   FullPrecRealType total_accept_ratio = static_cast<FullPrecRealType>(block_accept) / static_cast<FullPrecRealType>(block_accept + block_reject);
   std::cerr << "   total_accept_ratio: << " << total_accept_ratio << '\n';
+#endif
   estimator_manager_->collectScalarEstimators(all_scalar_estimators);
   /// get the average cpu_block time per crowd
   /// cpu_block_time /= crowds_.size();

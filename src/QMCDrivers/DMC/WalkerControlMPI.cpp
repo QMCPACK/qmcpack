@@ -563,9 +563,11 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   {
     std::for_each(send_message_list.begin(), send_message_list.end(), [&send_requests, this](WalkerMessage& message) {
       MCPWalker& this_walker = message.walker_elements.walker;
-      this_walker.updateBuffer();
       ParticleSet& this_pset      = message.walker_elements.pset;
+      this_pset.saveWalker(this_walker);
+      this_walker.updateBuffer();
       TrialWaveFunction& this_twf = message.walker_elements.twf;
+      this_twf.evaluateLog(this_pset);
       this_twf.updateBuffer(this_pset, this_walker.DataSet);
       send_requests.emplace_back(myComm->comm.isend_n(message.walker_elements.walker.DataSet.data(),
                                                       message.walker_elements.walker.DataSet.size(),
@@ -604,12 +606,14 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
         if (!recv_completed[im] && recv_requests[im].completed())
         {
           MCPWalker& this_walker = recv_message_list[im].walker_elements.walker;
+          // This sequence of calls is our best effort to go from the wire to a working fat walker.
           this_walker.copyFromBuffer();
 #ifndef NDEBUG
           this_walker.set_has_been_on_wire(true);
 #endif
           ParticleSet& this_pset      = recv_message_list[im].walker_elements.pset;
           this_pset.loadWalker(this_walker, true);
+          this_pset.update();
           TrialWaveFunction& this_twf = recv_message_list[im].walker_elements.twf;
           this_twf.copyFromBuffer(this_pset, this_walker.DataSet);          
           this_twf.evaluateLog(this_pset);

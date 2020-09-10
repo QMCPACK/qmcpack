@@ -166,7 +166,7 @@ struct VectorSoaContainer
     if (nAllocated)
     {
       free();
-      std::cerr << "OhmmsVectorSoa attachReference called on previously allocated vector.\n" << std::endl;
+      // std::cerr << "OhmmsVectorSoa attachReference called on previously allocated vector.\n" << std::endl;
       // Nice idea but "default" constructed WFC elements in the batched driver make this a mess.
     }
     nLocal  = n;
