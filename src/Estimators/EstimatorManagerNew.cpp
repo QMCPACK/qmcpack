@@ -343,7 +343,7 @@ void EstimatorManagerNew::getApproximateEnergyVariance(RealType& e, RealType& va
     tmp[0] = energyAccumulator.count();
     tmp[1] = energyAccumulator.result();
     tmp[2] = varAccumulator.result();
-    myComm->bcast(tmp, 3);
+    my_comm_->bcast(tmp, 3);
     e   = tmp[1] / tmp[0];
     var = tmp[2] / tmp[0] - e * e;
   }
