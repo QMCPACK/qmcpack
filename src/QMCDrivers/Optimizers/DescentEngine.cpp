@@ -66,7 +66,7 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
   m_param.add(ramp_eta_str, "Ramp_eta", "string");
   m_param.add(ramp_num_, "Ramp_num", "int");
   m_param.add(store_num_, "Stored_Vectors", "int");
-  m_param.add(print_deriv_,"Print_Deriv_Pieces","string");
+  m_param.add(print_deriv_,"print_derivs","string");
 
   app_log() << "Current collection step: " << collection_step_ << std::endl;
   m_param.add(collection_step_,"collection_step","int");

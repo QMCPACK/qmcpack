@@ -672,7 +672,6 @@ These methods use only first derivatives to optimize trial wave functions and co
 Multiple flavors of accelerated descent methods are available. They differ in details such as the schemes for adaptive adjustment of step sizes. :cite:`Otis2019`
 Descent algorithms avoid the construction of matrices that occurs in the linear method and consequently can be applied to larger sets of
 optimizable parameters.
-Currently, descent optimization is only available for ground state calculations.
 Parameters for descent are shown in the table below.
 
 ``descent`` method:
@@ -700,6 +699,17 @@ Parameters for descent are shown in the table below.
   +---------------------+--------------+--------------------------------+-------------+-----------------------------------------------------------------+
   | ``Orb_eta``         | real         | :math:`> 0`                    | 0.001       | Step size for orbital parameters                                |
   +---------------------+--------------+--------------------------------+-------------+-----------------------------------------------------------------+
+  | ``collection_step`` | real         | :math:`> 0`                    | 0.01        | Step number to start collecting samples for final averages      |
+  +---------------------+--------------+--------------------------------+-------------+-----------------------------------------------------------------+
+  | ``compute_step``    | real         | :math:`> 0`                    | 0.001       | Step number to start computing averaged from stored history     |
+  +---------------------+--------------+--------------------------------+-------------+-----------------------------------------------------------------+
+  | ``print_derivs``    | real         | yes, no                        | no          | Whether to print parameter derivatives                          |
+  +---------------------+--------------+--------------------------------+-------------+-----------------------------------------------------------------+
+
+
+These descent algortihms have been extended to the optimization of the same excited state functional as the adaptive LM. :cite:`Otis2020`
+This also allows the hybrid optimizer discussed below to be applied to excited states.
+The relevant parameters are the same as for targeting excited states with the adaptive optimizer above.
 
 Additional information and recommendations:
 
@@ -734,6 +744,17 @@ Additional information and recommendations:
    sufficient for molecules with tens of electrons. However, descent
    optimizations may require anywhere from a few hundred to a few
    thousand iterations.
+ 
+ -  For reporting quantities such as a final energy and associated uncertainty,
+    an average over many descent steps can be taken. The parameters for 
+   ``collection_step`` and ``compute_step`` help automate this task. 
+    After the descent iteration specified by ``collection_step``, a 
+    history of local energy values will be kept for determining a final 
+    error and average, which will be computed and given in the output 
+    once the iteration specified by ``compute_step`` is reached. For 
+    reasonable results, this procedure should use descent steps near 
+    the end of the optimization when the wave function parameters are essentially 
+    no longer changing.
 
 -  In cases where a descent optimization struggles to reach the minimum
    and a linear method optimization is not possible or unsatisfactory,
@@ -743,7 +764,7 @@ Additional information and recommendations:
 ::
 
 
-  <loop max="100">
+  <loop max="2000">
      <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
 
      <!-- VMC inputs -->
@@ -771,6 +792,14 @@ Additional information and recommendations:
        <parameter name="Gauss_eta">.001</parameter>
        <parameter name="CI_eta">.1</parameter>
        <parameter name="Orb_eta">.0001</parameter>
+
+       <parameter name="collection_step">500</parameter>
+       <parameter name="compute_step">998</parameter>
+       
+      <parameter name="targetExcited"> yes </parameter>
+      <parameter name="targetExcited"> -11.4 </parameter>
+
+       <parameter name="print_derivs">no</parameter>
 
 
      </qmc>
@@ -867,16 +896,14 @@ Additional information and recommendations:
    through the individual methods. However, the effectiveness of this in
    terms of the quality of optimization results is unexplored.
 
--  As the descent algorithms are currently only implemented for ground
-   state optimizations, this hybrid combination of them with the BLM is
-   also restricted to the ground state for now.
-
 -  It can be useful to follow a hybrid optimization with a section of
    pure descent optimization and take an average energy over the last
    few hundred iterations as the final variational energy. This approach
    can achieve a lower statistical uncertainty on the energy for less
    overall sampling effort compared to what a pure linear method
-   optimization would require.
+   optimization would require. The ``collection_step`` and ``compute_step``
+   parameters discussed earlier for descent are useful for setting up
+   the descent engine to do this averaging on its own.
 
 Quartic Optimizer
 ~~~~~~~~~~~~~~~~~
