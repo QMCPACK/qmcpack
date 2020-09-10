@@ -110,7 +110,6 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     Hamiltonian& ham = HamFac.getHamiltonian(gTG, ham_name);
 
     using CMatrix = ComplexMatrix<Alloc>;
-    boost::multi::array<ComplexType, 3> OrbMat({2, NMO, NAEA});
     hdf_archive dump;
     if (!dump.open(UTEST_WFN, H5F_ACC_RDONLY))
     {
@@ -118,7 +117,6 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     }
     dump.push("Wavefunction", false);
     dump.push("NOMSD", false);
-    //int walker_type = readWfn(std::string(UTEST_WFN),OrbMat,NMO,NAEA,NAEB);
     std::vector<int> dims(5);
     if (!dump.readEntry(dims, "dims"))
     {
@@ -127,8 +125,8 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     }
     WALKER_TYPES WTYPE(initWALKER_TYPES(dims[3]));
     //    int walker_type = dims[3];
-    dump.push(std::string("PsiT_0"));
-    int NEL = (WTYPE == CLOSED) ? NAEA : (NAEA + NAEB);
+    int NEL  = (WTYPE == CLOSED) ? NAEA : (NAEA + NAEB);
+    int NPOL = (WTYPE == NONCOLLINEAR) ? 2 : 1 ;
     //    WALKER_TYPES WTYPE = CLOSED;
     //    if(walker_type==1) WTYPE = COLLINEAR;
     //    if(walker_type==2) WTYPE = NONCOLLINEAR;
@@ -137,32 +135,28 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     Alloc alloc_(make_localTG_allocator<ComplexType>(TG));
     std::vector<PsiT_Matrix> PsiT;
     PsiT.reserve(2);
+    dump.push(std::string("PsiT_0"));
     PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix, shared_allocator<ComplexType>>(dump, gTG.Node()));
-    //PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-    //OrbMat[0],1e-8,'H',gTG.Node()));
-    if (WTYPE != CLOSED)
+    if (WTYPE == COLLINEAR)
     {
       dump.pop();
       dump.push(std::string("PsiT_1"));
       PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix, shared_allocator<ComplexType>>(dump, gTG.Node()));
-      //PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-      //OrbMat[1](OrbMat.extension(1),{0,NAEB}),
-      //1e-8,'H',gTG.Node()));
-      //}
     }
 
     dump.pop();
+    boost::multi::array<ComplexType, 3> OrbMat({2, NPOL*NMO, NAEA});
     {
-      boost::multi::array<ComplexType, 2> Psi0A({NMO, NAEA});
+      boost::multi::array<ComplexType, 2> Psi0A({NPOL*NMO, NAEA});
       dump.readEntry(Psi0A, "Psi0_alpha");
-      for (int i = 0; i < NMO; i++)
+      for (int i = 0; i < NPOL*NMO; i++)
       {
         for (int j = 0; j < NAEA; j++)
         {
           OrbMat[0][i][j] = Psi0A[i][j];
         }
       }
-      if (WTYPE != CLOSED)
+      if (WTYPE == COLLINEAR)
       {
         boost::multi::array<ComplexType, 2> Psi0B({NMO, NAEA});
         dump.readEntry(Psi0B, "Psi0_beta");
@@ -183,16 +177,16 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
 // NOTE: Make small factory routine!
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     auto SDet(
-        SlaterDetOperations_serial<ComplexType, device_allocator_generator_type>(NMO, NAEA,
+        SlaterDetOperations_serial<ComplexType, device_allocator_generator_type>(NPOL*NMO, NAEA,
                                                                                  afqmc::device_buffer_generator.get()));
 #else
-    auto SDet(SlaterDetOperations_shared<ComplexType>(NMO, NAEA));
+    auto SDet(SlaterDetOperations_shared<ComplexType>(NPOL*NMO, NAEA));
 #endif
 
     boost::multi::array<ComplexType, 3, Alloc> devOrbMat(OrbMat, alloc_);
     std::vector<devcsr_Matrix> devPsiT(move_vector<devcsr_Matrix>(std::move(PsiT)));
 
-    CMatrix G({NEL, NMO}, alloc_);
+    CMatrix G({NEL, NPOL*NMO}, alloc_);
     ComplexType Ovlp = SDet.MixedDensityMatrix(devPsiT[0], devOrbMat[0], G.sliced(0, NAEA), 0.0, true);
     if (WTYPE == COLLINEAR)
     {
@@ -203,7 +197,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     REQUIRE(imag(Ovlp) == Approx(0.0));
 
     boost::multi::array<ComplexType, 2, Alloc> Eloc({1, 3}, alloc_);
-    boost::multi::array_ref<ComplexType, 2, pointer> Gw(make_device_ptr(G.origin()), {1, NEL * NMO});
+    boost::multi::array_ref<ComplexType, 2, pointer> Gw(make_device_ptr(G.origin()), {1, NEL * NPOL * NMO});
     // This assumes {nwalk,...} which is not correct for some HamOps
     // make this generic
     HOps.energy(Eloc, Gw, 0, TG.getCoreID() == 0);
