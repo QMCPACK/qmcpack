@@ -2,23 +2,25 @@
 // This file is distributed under the University of Illinois/NCSA Open Source
 // License.  See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by:
-// Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by:
-// Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_THREAD_HPP
-#define QMCPLUSPLUS_THREAD_HPP
+#ifndef QMCPLUSPLUS_PARALLELEXECUTOR_HPP
+#define QMCPLUSPLUS_PARALLELEXECUTOR_HPP
 
 #include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
 {
 /** Abstraction for running concurrent tasks in parallel by an executor
+ *  executor workers can be OpenMP threads, std::thread
+ *
+ *  Note: it is not related to the executor that C++ standard is working on currently.
  *
  *  Construct with num_tasks to run
  *  then call operator(F, args...) 
@@ -30,7 +32,7 @@ namespace qmcplusplus
  *  It is not intended for use below the top level of openmp threading.
  */
 template<Executor TT = Executor::OPENMP>
-class TasksOneToOne
+class ParallelExecutor
 {
 public:
   /** Concurrently execute an arbitrary function/kernel with task id and arbitrary args
@@ -44,9 +46,9 @@ public:
 } // namespace qmcplusplus
 
 // Implementation includes must follow functor declaration
-#include "Concurrency/TasksOneToOneOPENMP.hpp"
+#include "Concurrency/ParallelExecutorOPENMP.hpp"
 #ifdef QMC_EXP_THREADING
-#include "Concurrency/TasksOneToOneSTD.hpp"
+#include "Concurrency/ParallelExecutorSTD.hpp"
 #endif
 // Additional implementations enabled by cmake options would go here
 #endif

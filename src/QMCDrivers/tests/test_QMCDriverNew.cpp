@@ -107,7 +107,7 @@ TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
   SampleStack samples;
   QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy), population, *(wavefunction_pool.getPrimary()),
                                       *(hamiltonian_pool.getPrimary()), wavefunction_pool, samples, comm);
-  QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<TasksOneToOne<>> testNumCrowds;
+  QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<>> testNumCrowds;
   testNumCrowds(9);
   testNumCrowds(8);
 }

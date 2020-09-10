@@ -14,7 +14,7 @@
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/DriverTraits.h"
 #include "Particle/SampleStack.h"
-#include "Concurrency/TasksOneToOne.hpp"
+#include "Concurrency/ParallelExecutor.hpp"
 
 namespace qmcplusplus
 {
@@ -42,8 +42,7 @@ public:
                      "QMCDriverTestWrapper::",
                      comm,
                      "QMCDriverNewTestWrapper")
-  {
-  }
+  {}
 
   ~QMCDriverNewTestWrapper() {}
 
@@ -118,7 +117,6 @@ public:
     CHECK(awc.walkers_per_rank[1] == 13);
     CHECK(awc.walkers_per_crowd[0] == 4);
     CHECK(awc.walkers_per_crowd[3] == 3);
-
   }
 
   bool run() { return false; }
@@ -139,7 +137,7 @@ void QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<CONCURRENCY>::operator()
 {}
 
 template<>
-void QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<TasksOneToOne<Executor::OPENMP>>::operator()(int num_crowds)
+void QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<Executor::OPENMP>>::operator()(int num_crowds)
 {
   if (Concurrency::maxCapacity<>() != 8)
     throw std::runtime_error("OMP_NUM_THREADS must be 8 for this test.");

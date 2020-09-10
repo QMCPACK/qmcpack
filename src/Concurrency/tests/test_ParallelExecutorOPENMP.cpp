@@ -11,7 +11,7 @@
 
 #include "catch.hpp"
 
-#include "Concurrency/TasksOneToOne.hpp"
+#include "Concurrency/ParallelExecutor.hpp"
 
 namespace qmcplusplus
 {
@@ -23,21 +23,22 @@ void TestTaskOMP(const int ip, int& counter)
   counter++;
 }
 
-TEST_CASE("TasksOneToOne<OPENMP> function case", "[concurrency]")
+TEST_CASE("ParallelExecutor<OPENMP> function case", "[concurrency]")
 {
   const int num_threads = omp_get_max_threads();
-  TasksOneToOne<Executor::OPENMP> test_block;
+  ParallelExecutor<Executor::OPENMP> test_block;
   int count(0);
   test_block(num_threads, TestTaskOMP, std::ref(count));
   REQUIRE(count == num_threads);
 }
 
-TEST_CASE("TasksOneToOne<OPENMP> lambda case", "[concurrency]")
+TEST_CASE("ParallelExecutor<OPENMP> lambda case", "[concurrency]")
 {
   const int num_threads = omp_get_max_threads();
-  TasksOneToOne<Executor::OPENMP> test_block;
+  ParallelExecutor<Executor::OPENMP> test_block;
   int count(0);
-  test_block(num_threads,
+  test_block(
+      num_threads,
       [](int id, int& c) {
 #pragma omp atomic update
         c++;
@@ -50,17 +51,17 @@ TEST_CASE("TasksOneToOne<OPENMP> lambda case", "[concurrency]")
 // Wouldn't be with std::thread either both call terminate when
 // the exception is not
 //
-TEST_CASE("TasksOneToOne<OPENMP> nested case", "[concurrency]")
+TEST_CASE("ParallelExecutor<OPENMP> nested case", "[concurrency]")
 {
   int num_threads = 1;
-  TasksOneToOne<Executor::OPENMP> test_block;
+  ParallelExecutor<Executor::OPENMP> test_block;
   int count(0);
   auto nested_tasks = [num_threads](int task_id, int& my_count) {
-    TasksOneToOne<Executor::OPENMP> test_block2;
+    ParallelExecutor<Executor::OPENMP> test_block2;
     test_block2(num_threads, TestTaskOMP, std::ref(my_count));
   };
   REQUIRE_THROWS_WITH(test_block(num_threads, nested_tasks, std::ref(count)),
-                      Catch::Contains("TasksOneToOne should not be used for nested openmp threading"));
+                      Catch::Contains("ParallelExecutor should not be used for nested openmp threading"));
 }
 
 } // namespace qmcplusplus
