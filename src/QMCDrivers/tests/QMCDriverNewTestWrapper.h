@@ -34,9 +34,15 @@ public:
                           WaveFunctionPool& ppool,
                           SampleStack samples,
                           Communicate* comm)
-      : QMCDriverNew(std::move(input), population, psi, h, ppool, "QMCDriverTestWrapper::", comm)
+      : QMCDriverNew(std::move(input),
+                     population,
+                     psi,
+                     h,
+                     ppool,
+                     "QMCDriverTestWrapper::",
+                     comm,
+                     "QMCDriverNewTestWrapper")
   {
-    QMCType = "QMCTesting";
   }
 
   ~QMCDriverNewTestWrapper() {}

@@ -62,7 +62,8 @@ public:
                            VMCDriverInput&& vmcdriver_input,
                            MCPopulation& population,
                            SampleStack& samples,
-                           Communicate* comm);
+                           Communicate* comm,
+                           const std::string& QMC_driver_type = "QMCLinearOptimizeBatched");
 
   ///Destructor
   virtual ~QMCLinearOptimizeBatched() = default;

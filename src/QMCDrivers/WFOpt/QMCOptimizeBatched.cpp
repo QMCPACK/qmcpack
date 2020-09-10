@@ -38,7 +38,7 @@ QMCOptimizeBatched::QMCOptimizeBatched(MCWalkerConfiguration& w,
                                        MCPopulation& population,
                                        SampleStack& samples,
                                        Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+    : QMCDriver(w, psi, h, ppool, comm, "QMCOptimizeBatched"),
       PartID(0),
       NumParts(1),
       hamPool(hpool),
@@ -56,7 +56,6 @@ QMCOptimizeBatched::QMCOptimizeBatched(MCWalkerConfiguration& w,
   qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
-  QMCType  = "QMCOptimizeBatched";
   //default method is cg
   optmethod = "cg";
 }

@@ -39,7 +39,7 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
                  QMCHamiltonian& h,
                  WaveFunctionPool& ppool,
                  Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+    : QMCDriver(w, psi, h, ppool, comm, "DMCcuda"),
       myWarmupSteps(0),
       Mover(0),
       NLop(w.getTotalNum()),
@@ -49,7 +49,6 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
       HTimer(*timer_manager.createTimer("DMCcuda::Hamiltonian"))
 {
   RootName = "dmc";
-  QMCType  = "DMCcuda";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
   //m_param.add(myWarmupSteps,"warmupSteps","int");

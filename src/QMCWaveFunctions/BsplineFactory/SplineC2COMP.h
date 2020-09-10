@@ -290,8 +290,8 @@ public:
                                     ValueMatrix_t& d2logdet) override;
 
   template<class BSPLINESPO>
-  friend class SplineSetReader;
-  friend class BsplineReaderBase;
+  friend struct SplineSetReader;
+  friend struct BsplineReaderBase;
 };
 
 extern template class SplineC2COMP<float>;

@@ -276,15 +276,15 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   my_comm_->allreduce(accepts_and_rejects);
   unsigned long total_block_accept = std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_->size(), 0);
   unsigned long total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(), accepts_and_rejects.begin() + my_comm_->size() * 2, 0);
-  
+
   int n1 = AverageCache.size();
   int n2 = n1 + AverageCache.size();
   int n3 = n2 + PropertyCache.size();
 
   // This is a hack but it needs to be the correct size
-  
-  std::vector<double> send_buffer(n3,0.0);
-  std::vector<double> recv_buffer(n3,0.0);  
+
+  std::vector<double> send_buffer(n3, 0.0);
+  std::vector<double> recv_buffer(n3, 0.0);
   {
     auto cur = send_buffer.begin();
     copy(AverageCache.begin(), AverageCache.end(), cur);
@@ -294,10 +294,10 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
 
   // This is necessary to use mpi3's C++ style reduce
 #ifdef HAVE_MPI
-    my_comm_->comm.reduce_n(send_buffer.begin(), send_buffer.size(), recv_buffer.begin(), std::plus<>{}, 0);
+  my_comm_->comm.reduce_n(send_buffer.begin(), send_buffer.size(), recv_buffer.begin(), std::plus<>{}, 0);
 #else
-    recv_buffer = send_buffer;
-#endif  
+  recv_buffer = send_buffer;
+#endif
   if (my_comm_->rank() == 0)
   {
     auto cur = recv_buffer.begin();
@@ -317,7 +317,7 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   
   //add the block average to summarize
   energyAccumulator(AverageCache[0]);
-  varAccumulator(SquaredAverageCache[0] - AverageCache[0] * AverageCache[0]);
+  varAccumulator(SquaredAverageCache[0]);
   if (Archive)
   {
     *Archive << std::setw(10) << RecordCount;
@@ -334,43 +334,24 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   RecordCount++;
 }
 
-void EstimatorManagerNew::getEnergyAndWeight(RealType& e, RealType& w, RealType& var)
+
+void EstimatorManagerNew::getApproximateEnergyVariance(RealType& e, RealType& var)
 {
   if (Options[COLLECT]) //need to broadcast the value
   {
     RealType tmp[3];
-    tmp[0] = energyAccumulator.result();
-    tmp[1] = energyAccumulator.count();
-    tmp[2] = varAccumulator.mean();
-    my_comm_->bcast(tmp, 3);
-    e   = tmp[0];
-    w   = tmp[1];
-    var = tmp[2];
+    tmp[0] = energyAccumulator.count();
+    tmp[1] = energyAccumulator.result();
+    tmp[2] = varAccumulator.result();
+    myComm->bcast(tmp, 3);
+    e   = tmp[1] / tmp[0];
+    var = tmp[2] / tmp[0] - e * e;
   }
   else
   {
-    e   = energyAccumulator.result();
-    w   = energyAccumulator.count();
-    var = varAccumulator.mean();
+    e   = energyAccumulator.mean();
+    var = varAccumulator.mean() - e * e;
   }
-}
-
-void EstimatorManagerNew::getCurrentStatistics(const int global_walkers,
-                                                RefVector<MCPWalker>& walkers,
-                                                RealType& eavg,
-                                                RealType& var,
-                                                Communicate* comm)
-{
-  LocalEnergyOnlyEstimator energynow;
-  energynow.clear();
-  energynow.accumulate(global_walkers, walkers, 1.0);
-  std::vector<RealType> tmp(3);
-  tmp[0] = energynow.scalars[0].result();
-  tmp[1] = energynow.scalars[0].result2();
-  tmp[2] = energynow.scalars[0].count();
-  comm->allreduce(tmp);
-  eavg = tmp[0] / tmp[2];
-  var  = tmp[1] / tmp[2] - eavg * eavg;
 }
 
 EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std::string& a)

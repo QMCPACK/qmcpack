@@ -51,9 +51,9 @@ class DiffOneBodyJastrowOrbital : public DiffWaveFunctionComponent
 public:
   ///constructor
   DiffOneBodyJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
-    : NumVars(0), myTableIndex(els.addTable(centers, DT_SOA_PREFERRED)), CenterRef(centers)
+      : NumVars(0), myTableIndex(els.addTable(centers)), CenterRef(centers)
   {
-    NumPtcls     = els.getTotalNum();
+    NumPtcls = els.getTotalNum();
   }
 
   ~DiffOneBodyJastrowOrbital()
@@ -144,7 +144,8 @@ public:
         recalculate = true;
       rcsingles[k] = true;
     }
-    if (recalculate) {
+    if (recalculate)
+    {
       for (int k = 0; k < myVars.size(); ++k)
       {
         int kk = myVars.where(k);
@@ -152,15 +153,13 @@ public:
           continue;
         if (rcsingles[k])
         {
-          dhpsioverpsi[kk] = - RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
+          dhpsioverpsi[kk] = -RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
         }
       }
     }
   }
 
-  void evaluateDerivativesWF(ParticleSet& P,
-                             const opt_variables_type& active,
-                             std::vector<ValueType>& dlogpsi)
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, std::vector<ValueType>& dlogpsi)
   {
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);
@@ -176,7 +175,7 @@ public:
     if (recalculate)
     {
       const auto& d_table = P.getDistTable(myTableIndex);
-      dLogPsi = 0.0;
+      dLogPsi             = 0.0;
       for (int p = 0; p < NumVars; ++p)
         (*gradLogPsi[p]) = 0.0;
       for (int p = 0; p < NumVars; ++p)
@@ -219,7 +218,7 @@ public:
               dLogPsi[p] -= derivs[ip][0];
               RealType dudr(rinv * derivs[ip][1]);
               (*gradLogPsi[p])[j] -= dudr * dr;
-              (*lapLogPsi[p])[j]  -= derivs[ip][2] + lapfac * dudr;
+              (*lapLogPsi[p])[j] -= derivs[ip][2] + lapfac * dudr;
             }
           }
         }
@@ -231,7 +230,7 @@ public:
           continue;
         if (rcsingles[k])
         {
-          dlogpsi[kk]      = ValueType(dLogPsi[k]);
+          dlogpsi[kk] = ValueType(dLogPsi[k]);
         }
       }
     }

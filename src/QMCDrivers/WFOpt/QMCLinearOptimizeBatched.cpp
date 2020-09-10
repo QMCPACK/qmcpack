@@ -40,8 +40,9 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
                                                    VMCDriverInput&& vmcdriver_input,
                                                    MCPopulation& population,
                                                    SampleStack& samples,
-                                                   Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+                                                   Communicate* comm,
+                                                   const std::string& QMC_driver_type)
+    : QMCDriver(w, psi, h, ppool, comm, QMC_driver_type),
       PartID(0),
       NumParts(1),
       hamPool(hpool),

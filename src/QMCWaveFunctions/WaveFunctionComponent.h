@@ -46,9 +46,9 @@ struct NLjob
 #endif
 
 ///forward declaration of WaveFunctionComponent
-class WaveFunctionComponent;
+struct WaveFunctionComponent;
 ///forward declaration of DiffWaveFunctionComponent
-class DiffWaveFunctionComponent;
+struct DiffWaveFunctionComponent;
 
 typedef WaveFunctionComponent* WaveFunctionComponentPtr;
 typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;

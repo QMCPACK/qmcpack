@@ -552,6 +552,7 @@ struct TraceSample
     check_shape();
   }
 
+  inline virtual ~TraceSample() = default;
 
   inline void initialize(const std::string& sdomain, const std::string& sname, int sindex, int sdim)
   {

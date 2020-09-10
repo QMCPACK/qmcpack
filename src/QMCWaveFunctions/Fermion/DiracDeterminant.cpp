@@ -691,6 +691,9 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
       simd::copy(dpsiM[working_index], dpsiV.data(), NumOrbitals);
     }
   }
+
+  // invRow becomes invalid after updating the inverse matrix
+  invRow_id = -1;
 }
 
 template<typename DU_TYPE>

@@ -64,7 +64,6 @@ QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalke
   qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
-  QMCType  = "QMCCorrelatedSamplingLinearOptimize";
   m_param.add(stabilizerScale, "stabilizerscale", "double");
   m_param.add(bigChange, "bigchange", "double");
   m_param.add(w_beta, "beta", "double");

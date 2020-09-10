@@ -39,10 +39,9 @@ CSVMC::CSVMC(MCWalkerConfiguration& w,
              QMCHamiltonian& h,
              WaveFunctionPool& ppool,
              Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm), UseDrift("yes"), multiEstimator(0), Mover(0)
+    : QMCDriver(w, psi, h, ppool, comm, "CSVMC"), UseDrift("yes"), multiEstimator(0), Mover(0)
 {
   RootName = "csvmc";
-  QMCType  = "CSVMC";
   m_param.add(UseDrift, "useDrift", "string");
   m_param.add(UseDrift, "usedrift", "string");
   m_param.add(UseDrift, "use_drift", "string");

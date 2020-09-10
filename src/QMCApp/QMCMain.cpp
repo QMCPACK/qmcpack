@@ -77,7 +77,7 @@ QMCMain::QMCMain(Communicate* c)
   // clang-format off
   app_summary()
 #if !defined(HAVE_MPI)
-      << "\n  Built without MPI. Running in serial or with OMP threading only." << std::endl
+      << "\n  Built without MPI. Running in serial or with OMP threads." << std::endl
 #endif
       << "\n  Total number of MPI ranks = " << OHMMS::Controller->size()
       << "\n  Number of MPI groups      = " << myComm->getNumGroups()
@@ -114,7 +114,15 @@ QMCMain::QMCMain(Communicate* c)
                 << "\n  CUDA base precision = " << GET_MACRO_VAL(CUDA_PRECISION)
                 << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
 #endif
-                << "\n\n  Structure-of-arrays (SoA) optimization enabled" << std::endl;
+                << std::endl;
+
+  // Record features configured in cmake or selected via command-line arguments to the printout
+#ifdef ENABLE_OFFLOAD
+  app_summary() << "\n  OpenMP target offload to accelerators enabled" << std::endl;
+#endif
+#ifdef ENABLE_TIMERS
+  app_summary() << "\n  Current timer level is " << timer_manager.get_timer_threshold_string() << std::endl;
+#endif
   app_summary() << std::endl;
   app_summary().flush();
 }
@@ -384,7 +392,7 @@ bool QMCMain::validateXML()
   }
   if (qmc_common.use_density)
   {
-    app_log() << "  hamiltonian has MPC. Will read density if it is found." << std::endl;
+    app_log() << "  hamiltonian has MPC. Will read density if it is found." << std::endl << std::endl;
   }
 
   //initialize the random number generator

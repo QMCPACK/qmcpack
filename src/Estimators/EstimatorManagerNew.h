@@ -157,24 +157,10 @@ public:
    */
   RealType collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
 
-  ///** set the cummulative energy and weight
-  void getEnergyAndWeight(RealType& e, RealType& w, RealType& var);
-
-  /** Unified walker variant of this method
-   *
-   *  This only makes sense to call on the whole population with the current DMC algorithm
-   *
-   *  This is about to be refactored out of EstimatorManagerBase
-   *
-   *  I think it would probably be cleaner and remove alot of reset issues to have the eavg and var
-   *  from the previous section passed in
-   *  rather than retaining the estimator manager to get them.
+  /** get the average of per-block energy and variance of all the blocks
+   * Note: this is not weighted average. It can be the same as weighted average only when block weights are identical.
    */
-  static void getCurrentStatistics(const int global_walkers,
-                                   RefVector<MCPWalker>& walkers,
-                                   RealType& eavg,
-                                   RealType& var,
-                                   Communicate* comm);
+  void getApproximateEnergyVariance(RealType& e, RealType& var);
 
   template<class CT>
   void write(CT& anything, bool doappend)

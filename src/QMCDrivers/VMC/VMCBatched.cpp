@@ -28,14 +28,11 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
                        WaveFunctionPool& ppool,
                        SampleStack& samples,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, ppool, "VMCBatched::", comm),
+    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, ppool, "VMCBatched::", comm, "VMCBatched"),
       vmcdriver_input_(input),
       samples_(samples),
       collect_samples_(false)
 {
-  QMCType = "VMCBatched";
-  // qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
-  // qmc_driver_mode.set(QMC_WARMUP, 0);
 }
 
 void VMCBatched::advanceWalkers(const StateForThread& sft,
@@ -126,7 +123,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
           TrialWaveFunction::flex_calcRatioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios,
                                                 grads_new);
           std::transform(delta_r_start, delta_r_end, log_gf.begin(),
-                         [mhalf](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
+                         [](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
 
           sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
 

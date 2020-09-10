@@ -46,10 +46,12 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            WaveFunctionPool& ppool,
                            const std::string timer_prefix,
                            Communicate* comm,
+                           const std::string& QMC_driver_type,
                            SetNonLocalMoveHandler snlm_handler)
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
       branch_engine_(nullptr),
+      QMCType(QMC_driver_type),
       population_(population),
       Psi(psi),
       H(h),
@@ -59,7 +61,6 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       timers_(timer_prefix),
       setNonLocalMoveHandler_(snlm_handler)
 {
-  QMCType  = "invalid";
   rotation = 0;
 
   // This needs to be done here to keep dependency on CrystalLattice out of the QMCDriverInput.

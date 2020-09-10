@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories 
+// File developed by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
@@ -25,7 +25,7 @@ SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunct
 {
   set_energy_domain(potential);
   two_body_quantum_domain(ions, els);
-  myTableIndex = els.addTable(ions, DT_SOA_PREFERRED);
+  myTableIndex = els.addTable(ions);
   NumIons      = ions.getTotalNum();
   PP.resize(NumIons, nullptr);
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum(), 0);
@@ -48,26 +48,19 @@ SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
   for (int jel = 0; jel < P.getTotalNum(); jel++)
     ElecNeighborIons.getNeighborList(jel).clear();
 
-  if (myTable.DTType == DT_SOA)
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
   {
-    for (int jel = 0; jel < P.getTotalNum(); jel++)
-    {
-      const auto& dist               = myTable.getDistRow(jel);
-      const auto& displ              = myTable.getDisplRow(jel);
-      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-      for (int iat = 0; iat < NumIons; iat++)
-        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-        {
-          RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat]);
-          Value += pairpot;
-          NeighborIons.push_back(iat);
-          IonNeighborElecs.getNeighborList(iat).push_back(jel);
-        }
-    }
-  }
-  else
-  {
-    APP_ABORT("SOECPotential::evaluate(): AOS is deprecated. Distance tables must be SOA\n");
+    const auto& dist               = myTable.getDistRow(jel);
+    const auto& displ              = myTable.getDisplRow(jel);
+    std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+    for (int iat = 0; iat < NumIons; iat++)
+      if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+      {
+        RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat]);
+        Value += pairpot;
+        NeighborIons.push_back(iat);
+        IonNeighborElecs.getNeighborList(iat).push_back(jel);
+      }
   }
   return Value;
 }

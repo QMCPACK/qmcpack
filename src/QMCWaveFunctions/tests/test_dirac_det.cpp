@@ -442,7 +442,7 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   int chargeIdx              = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx) = -1;
 
-  elec_.addTable(ions_, DT_SOA);
+  elec_.addTable(ions_);
   elec_.resetGroups();
   elec_.update();
   // </steal>
