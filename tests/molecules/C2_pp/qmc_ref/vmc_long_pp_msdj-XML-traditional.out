@@ -1,4 +1,4 @@
-  Input file(s): vmc_short_pp_msdj-XML.xml 
+  Input file(s): vmc_long_pp_msdj-XML-traditional.xml 
 
 =====================================================
                     QMCPACK 3.9.9
@@ -30,17 +30,17 @@
 
   Structure-of-arrays (SoA) optimization enabled
 
-  Input XML = vmc_short_pp_msdj-XML.xml
+  Input XML = vmc_long_pp_msdj-XML-traditional.xml
 
-  Project = C2_TZ_PP_SHORT_XML_MSDJ
-  date    = 2020-09-09 14:31:59 CDT
+  Project = C2_TZ_PP_LONG_XML_MSDJ_TRAD
+  date    = 2020-09-09 14:25:17 CDT
   host    = abenali
 
  Random Number
  -------------
-  Offset for the random number seeds based on time: 431
+  Offset for the random number seeds based on time: 29
 
-  Range of prime numbers to use as seeds over processors and threads = 3019-3083
+  Range of prime numbers to use as seeds over processors and threads = 127-167
 
 
  Particle Set 
@@ -94,9 +94,7 @@ spo_name = spo-up
 Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
 spo_name = spo-dn
   Building SPOSet 'spo-dn' with 'LCAOBSet' basis set.
-Using Bryan's algorithm for MultiSlaterDeterminant expansion. 
-Creating base determinant (up) for MSD expansion. 
-Creating base determinant (down) for MSD expansion. 
+Using a list of dirac determinants for MultiSlaterDeterminant expansion. 
 Found determinant list. 
 Reading CI expansion.
 Found 240 terms in the MSD expansion.
@@ -104,8 +102,6 @@ Norm of ci vector (sum of ci^2): 1
 Norm of qchem ci vector (sum of qchem_ci^2): 0
 Found 26 unique up determinants.
 Found 27 unique down determinants.
-Number of terms in pairs array: 21
-Number of terms in pairs array: 21
 CI coefficients are not optimizable. 
   Added a fermionic WaveFunctionComponent SlaterDet
 
@@ -293,7 +289,7 @@ QMCHamiltonian::addOperatorType added type coulomb named ElecElec
 ParticleSetPool::randomize 1 ParticleSet.
 <init source="ion0" target="e">
 </init>
-  Initialization Execution time = 0.1289 secs
+  Initialization Execution time = 0.1519 secs
 =========================================================
  Summary of QMC systems 
 =========================================================
@@ -301,14 +297,14 @@ ParticleSetPool has:
 
   ParticleSet 'e' contains 8 particles :  u(4) d(4)
 
-    u  9.8964877709e-03  8.2360959774e-01 -4.5132808224e-01
-    u -2.4600422148e-01 -8.9616657358e-01 -1.3599684991e-01
-    u  1.5370965944e+00  4.0102505632e-01  2.5233939763e-01
-    u  1.5109855648e+00  1.2421466353e-01 -4.0747514181e-01
-    d -6.6787276699e-01  6.5635341670e-01  7.2621672221e-02
-    d  1.9694743538e-01  2.4169857844e-01  8.8595781652e-01
-    d  3.1211744733e+00  3.9140404739e-01  3.6220970837e-01
-    d  1.6038848293e+00  3.1014760598e-01  4.8183732332e-01
+    u -2.3414440178e-01  7.7782394243e-01 -4.7148071167e-01
+    u  3.8273490706e-01 -5.5658547998e-01 -6.5257516208e-01
+    u  2.5458129793e+00 -2.8637945546e-01  8.7235368878e-01
+    u  3.1457510798e+00  3.8263009385e-02  4.9429035919e-01
+    d  2.4003603342e-01  2.1234084938e-01 -8.8284869266e-01
+    d  5.9513581543e-02 -2.9355882433e-01 -8.9017363365e-01
+    d  2.4231368827e+00  5.8995287571e-01  7.2694155262e-01
+    d  1.4327531163e+00 -5.9068173027e-02 -2.0220300094e-01
 
   Distance table for dissimilar particles (A-B):
     source: ion0  target: e
@@ -344,7 +340,7 @@ ParticleSetPool has:
 
 =========================================================
   Start VMC
-  File Root C2_TZ_PP_SHORT_XML_MSDJ.s001 append = no 
+  File Root C2_TZ_PP_LONG_XML_MSDJ_TRAD.s001 append = no 
 =========================================================
 Resetting walkers
   Adding 8 walkers to 0 existing sets
@@ -356,13 +352,13 @@ Resetting walkers
   qmc_counter=0  my_counter=0
   time step      = 5.0000000000e-01
   blocks         = 200
-  steps          = 50
+  steps          = 400
   substeps       = 10
   current        = 0
   target samples = 0.0000000000e+00
   walkers/mpi    = 8
 
-  stepsbetweensamples = 10050
+  stepsbetweensamples = 80400
   SpinMoves      = no
 <parameter name="blocks" condition="int">200</parameter>
 <parameter name="blocks_between_recompute" condition="int">0</parameter>
@@ -372,16 +368,16 @@ Resetting walkers
 <parameter name="dmcwalkersperthread" condition="real">0.0000000000e+00</parameter>
 <parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
 <parameter name="record_configs" condition="int">0</parameter>
-<parameter name="record_walkers" condition="int">10050</parameter>
+<parameter name="record_walkers" condition="int">80400</parameter>
 <parameter name="recordconfigs" condition="int">0</parameter>
-<parameter name="recordwalkers" condition="int">10050</parameter>
+<parameter name="recordwalkers" condition="int">80400</parameter>
 <parameter name="rewind" condition="int">0</parameter>
 <parameter name="samples" condition="real">0.0000000000e+00</parameter>
 <parameter name="samplesperthread" condition="real">0.0000000000e+00</parameter>
 <parameter name="spinmass" condition="double">1.0000000000e+00</parameter>
 <parameter name="spinmoves" condition="string">no</parameter>
-<parameter name="steps" condition="int">50</parameter>
-<parameter name="stepsbetweensamples" condition="int">10050</parameter>
+<parameter name="steps" condition="int">400</parameter>
+<parameter name="stepsbetweensamples" condition="int">80400</parameter>
 <parameter name="store_configs" condition="int">0</parameter>
 <parameter name="storeconfigs" condition="int">0</parameter>
 <parameter name="sub_steps" condition="int">10</parameter>
@@ -395,18 +391,18 @@ Resetting walkers
 <parameter name="warmup_steps" condition="int">20</parameter>
 <parameter name="warmupsteps" condition="int">20</parameter>
   DumpConfig==false Nothing (configurations, state) will be saved.
-  Walker Samples are dumped every 10050 steps.
+  Walker Samples are dumped every 80400 steps.
 </vmc>
   Set drift_modifier UNR parameter a = 1.0000000000e+00
   CloneManager::makeClones makes 8 clones for W/Psi/H.
   Cloning methods for both Psi and H are used
 ===== Memory Usage before cloning =====
-Available memory on node 0, free + buffers : 23373 MB
-Memory footprint by rank 0 on node 0       : 80 MB
+Available memory on node 0, free + buffers : 23307 MB
+Memory footprint by rank 0 on node 0       : 88 MB
 ==================================================
 ===== Memory Usage after cloning =====
-Available memory on node 0, free + buffers : 23370 MB
-Memory footprint by rank 0 on node 0       : 83 MB
+Available memory on node 0, free + buffers : 23301 MB
+Memory footprint by rank 0 on node 0       : 95 MB
 ==================================================
   Initial partition of walkers 0 1 2 3 4 5 6 7 8 
 
@@ -416,20 +412,20 @@ Memory footprint by rank 0 on node 0       : 83 MB
   Walker distribution on root = 0 1 2 3 4 5 6 7 8 
   Using Locality Approximation
 ===== Memory Usage after the buffer registration =====
-Available memory on node 0, free + buffers : 23369 MB
-Memory footprint by rank 0 on node 0       : 87 MB
+Available memory on node 0, free + buffers : 23301 MB
+Memory footprint by rank 0 on node 0       : 98 MB
 ==================================================
-  Anonymous Buffer size per walker : 43976 Bytes.
+  Anonymous Buffer size per walker : 66704 Bytes.
 MEMORY increase 0 MB VMC::resetRun
 ====================================================
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 0
     time step          = 0.5
-    reference energy   = -11.0285
-    reference variance = 0.113279
+    reference energy   = -11.1953
+    reference variance = 0.0395366
 ====================================================
-  QMC Execution time = 8.5184e+00 secs
-  Total Execution time = 8.5273e+00 secs
+  QMC Execution time = 1.3239e+02 secs
+  Total Execution time = 1.3239e+02 secs
 
 =========================================================
-  A new xml input file : C2_TZ_PP_SHORT_XML_MSDJ.s001.cont.xml
+  A new xml input file : C2_TZ_PP_LONG_XML_MSDJ_TRAD.s001.cont.xml
