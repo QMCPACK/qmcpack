@@ -30,7 +30,7 @@ class DescentEngine
   typedef qmcplusplus::QMCTraits::FullPrecRealType FullPrecRealType;
 
 private:
-  //Vectors and scalars used in calculation of averaged derivatives in descent
+  //Vectors used in calculation of averaged parameter derivatives descent descent
   std::vector<FullPrecValueType> avg_le_der_samp_;
   std::vector<std::vector<FullPrecValueType>> replica_le_der_samp_;
 
@@ -43,6 +43,7 @@ private:
   std::vector<FullPrecValueType> avg_denom_der_samp_;
   std::vector<std::vector<FullPrecValueType>> replica_denom_der_samp_;
 
+  //Scalars used in calculation of average energy, variance, and target function for descent
   ValueType w_sum_;
   ValueType e_avg_;
   ValueType e_sum_;
@@ -121,9 +122,6 @@ private:
     std::vector<ValueType> final_tar_avg_history_;
    //a vector to store the variances of the target function during the descent finalization phase 
     std::vector<ValueType> final_tar_var_history_;
-
-
-
 
 
   //Vector that stores the final averaged derivatives of the cost function
@@ -235,16 +233,7 @@ public:
                   FullPrecValueType vgs_samp,
                   FullPrecValueType weight_samp);
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /// \brief  Function that Take Sample Data from the Host Code
-  ///
-  /// \param[in]  local_en       local energy
-  /// \param[in]  vgs_samp       |<n|value_fn>/<n|guiding_fn>|^2
-  /// \param[in]  weight_samp    weight for this sample
-  ///
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //void takeSample(FullPrecValueType local_en, FullPrecValueType vgs_samp, FullPrecValueType weight_samp);
-
+ 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that reduces all vector information from all processors to the root
   ///         processor
@@ -252,7 +241,7 @@ public:
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   void sample_finish();
 
-
+//Function for computing ratios of the form <f>/<g> as well as the associated variance and standard error
   void mpi_unbiased_ratio_of_means(int numSamples, std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples, ValueType& mean, ValueType& variance, ValueType& stdErr);
 
   //Returns the derivatives of the cost function we are minimizing
@@ -273,8 +262,8 @@ public:
   //Store a vector of parameter differences to be used by the BLM in a hybrid optimization
   void storeVectors(std::vector<ValueType>& current_params);
 
-  //Compute final averages for energy and variance over a history of samples from a set of iterations
-  void computeFinalizationAverages(std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples);
+  //Compute uncertainties for energy/target function and variance over a history of samples from a set of iterations
+  void computeFinalizationUncertainties(std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples);
 
   //Returns number of times a parameter difference vector will be stored in the optimization
   int retrieveStoreFrequency() const { return store_num_; }
@@ -303,9 +292,7 @@ public:
   //Returns whether an excited state is being targeted
   bool targetingExcited() const {return engine_target_excited_;}
 
-  //Returns whether an adaptive omega is being used
-//  bool varyingOmega() const {return update_omega_iter_ > -1;}
-
+  //Returns the descent iteration number when on a finalizing descent section
   int getFinalDescentNum() const {return final_descent_num_;}
 
   //Resets the number of vectors stored to 0 for next hybrid method macro-iteration

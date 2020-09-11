@@ -186,7 +186,6 @@ void DescentEngine::takeSample(const int replica_id,
   ValueType etmp = le_der_samp.at(0);
 
 
-  vgs_samp = static_cast<ValueType>(vgs_samp);
 
     lev_history_.push_back(etmp*vgs_samp);
     vg_history_.push_back(vgs_samp);
@@ -351,7 +350,12 @@ void DescentEngine::sample_finish()
     if (!engine_target_excited_)
     {
       lderivs_.at(i) = 2.0 * (avg_le_der_samp_.at(i) - e_avg_ * avg_der_rat_samp_.at(i));
-    //  app_log() << "Derivative for param # " << i << " : " << lderivs_.at(i) << std::endl;
+      
+      if(print_deriv_ == "yes")
+      {
+        app_log() << "Derivative for param # " << i << " : " << lderivs_.at(i) << std::endl;
+      }
+
     }
    
     else
@@ -400,7 +404,7 @@ void DescentEngine::sample_finish()
 
 }
 
-
+//Main function for computing ratios of the form <f>/<g> as well as the variance and standard error
 void DescentEngine::mpi_unbiased_ratio_of_means(int numSamples, std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples, ValueType& mean, ValueType& variance, ValueType& stdErr)
 {
     std::vector<ValueType> y(7);
@@ -708,12 +712,35 @@ if (final_descent_num_ > collection_step_ && collect_count_)
     final_descent_num_++;
     if(final_descent_num_ >= compute_step_)
     {
-        app_log() << "Computing average energy over stored steps and its standard error" << std::endl;
-        this->computeFinalizationAverages(final_w_history_,final_lev_history_,final_vg_history_);
+        app_log() << "Computing average energy and its variance over stored steps and its standard error" << std::endl;
+        
+        ValueType collected_steps = final_le_avg_history_.size();
+        ValueType final_e_sum = std::accumulate(final_le_avg_history_.begin(),final_le_avg_history_.end(),static_cast<ValueType>(0.0));
+        ValueType final_e_avg = final_e_sum/collected_steps;
+
+        ValueType final_var_sum = std::accumulate(final_var_avg_history_.begin(),final_var_avg_history_.end(),static_cast<ValueType>(0.0));
+        ValueType final_var_avg = final_var_sum/collected_steps;
+
+        app_log() << "Final average energy: " << final_e_avg << std::endl;
+        app_log() << "Final varaince: " << final_var_avg << std::endl;
+
+        this->computeFinalizationUncertainties(final_w_history_,final_lev_history_,final_vg_history_);
+        
         if(engine_target_excited_)
         {
             app_log() << "Computing average target function over stored steps and its standard error" << std::endl;
-            this->computeFinalizationAverages(final_w_history_,final_tnv_history_,final_tdv_history_);
+            
+            ValueType final_tar_sum = std::accumulate(final_tar_avg_history_.begin(),final_tar_avg_history_.end(),static_cast<ValueType>(0.0));
+             
+            ValueType final_tar_avg = final_e_sum/collected_steps;
+
+            ValueType final_tar_var_sum = std::accumulate(final_tar_var_history_.begin(),final_tar_var_history_.end(),static_cast<ValueType>(0.0));
+            ValueType final_tar_var_avg = final_tar_var_sum/collected_steps;
+
+            app_log() << "Final average target function: " << final_tar_avg << std::endl;
+            app_log() << "Final target function varaince: " << final_tar_var_avg << std::endl;
+            this->computeFinalizationUncertainties(final_w_history_,final_tnv_history_,final_tdv_history_);
+        
         }
     }
   }
@@ -782,7 +809,7 @@ void DescentEngine::setupUpdate(const optimize::VariableSet& my_vars)
   app_log() << "This is num_params_: " << num_params_ << std::endl;
   for (int i = 0; i < num_params_; i++)
   {
-      app_log() << "Variable #" << i << ": " << my_vars[i] << " with index val: " << my_vars.where(i) << std::endl;
+      //app_log() << "Variable #" << i << ": " << my_vars[i] << " with index val: " << my_vars.where(i) << std::endl;
     if(my_vars.where(i) != -1)
     {
     engine_param_names_.push_back(my_vars.name(i));
@@ -836,8 +863,8 @@ void DescentEngine::storeVectors(std::vector<ValueType>& current_params)
 }
 
 
-
-void DescentEngine::computeFinalizationAverages(std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples)
+//Function for computing uncertainties for a final energy or target function average
+void DescentEngine::computeFinalizationUncertainties(std::vector<ValueType>& weights, std::vector<ValueType>& numerSamples,std::vector<ValueType>& denomSamples)
 {
 
 
