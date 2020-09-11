@@ -16,11 +16,12 @@ namespace qmcplusplus
 {
 /** This a subclass for runtime errors that will occur on all ranks.
  *
- *  This combined with a block like
+ *  This combined with a block like which must call barrier_and_abort for the 
+ *  MPI comm the error is thrown in.
  * 
- *  catch (const UniversalRuntimeError& ue)
+ *  catch (const UniformMPIerror& ue)
  *  {
- *    OHMMS::Controller->barrier_and_abort(ue.what());
+ *    my_local_comm->barrier_and_abort(ue.what());
  *  }
  *
  *  insures that the error message actually makes it out on the head

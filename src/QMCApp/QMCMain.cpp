@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -35,6 +35,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
+#include "Message/UniformMPIError.h"
 #include <queue>
 #include <cstring>
 #include "HDFVersion.h"
@@ -551,24 +552,28 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
   bool append_run              = false;
 
-  if (!population_)
+  // Within this scope if you split myComm you must catch UniformMPIError for your split MPI comm scope.
+  try
   {
-    population_.reset(new MCPopulation(myComm->size(), *qmcSystem, ptclPool->getParticleSet("e"), psiPool->getPrimary(),
-                                       hamPool->getPrimary(), myComm->rank()));
-  }
-  if (reuse)
-    qmc_driver = std::move(last_driver);
-  else
-  {
-    QMCDriverFactory driver_factory;
-    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
-    qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem,
-                                             *ptclPool, *psiPool, *hamPool, *population_, myComm);
-    append_run = das.append_run;
-  }
+    if (!population_)
+    {
+      population_.reset(new MCPopulation(myComm->size(), *qmcSystem, ptclPool->getParticleSet("e"),
+                                         psiPool->getPrimary(), hamPool->getPrimary(), myComm->rank()));
+    }
+    if (reuse)
+      qmc_driver = std::move(last_driver);
+    else
+    {
+      QMCDriverFactory driver_factory;
+      QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
+      qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem,
+                                               *ptclPool, *psiPool, *hamPool, *population_, myComm);
+      append_run = das.append_run;
+    }
 
-  if (qmc_driver)
-  {
+    if (!qmc_driver)
+      return false;
+
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if (!FirstQMC && !append_run)
@@ -594,13 +599,12 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
     last_driver = std::move(qmc_driver);
-    return true;
   }
-  else
+  catch (const UniformMPIError& ue)
   {
-    // Ye: in which case, the code hits this?
-    return false;
+    myComm->barrier_and_abort(ue.what());
   }
+  return true;
 }
 
 

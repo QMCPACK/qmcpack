@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
@@ -20,7 +20,6 @@
 
 #include "Configuration.h"
 #include "Message/Communicate.h"
-#include "Message/UniformMPIError.h"
 #include "Utilities/SimpleParser.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Platforms/Host/OutputManager.h"
@@ -235,10 +234,6 @@ int main(int argc, char** argv)
       delete qmc;
     if (useGPU)
       Finalize_CUDA();
-  }
-  catch (const UniformMPIError& ue)
-  {
-    OHMMS::Controller->barrier_and_abort(ue.what());
   }
   catch (const std::exception& e)
   {
