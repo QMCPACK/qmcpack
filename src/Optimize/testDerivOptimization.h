@@ -56,7 +56,7 @@ public:
 
   ObjectFuncType* TargetFunc;
 
-  testDerivOptimization(std::string& RootName, ObjectFuncType* atarget = 0)
+  testDerivOptimization(const std::string& RootName, ObjectFuncType* atarget = 0)
       : TargetFunc(atarget), first_(true), output_param_file_(false), param_deriv_index_(0), RootName_(RootName)
   {
     if (atarget)
