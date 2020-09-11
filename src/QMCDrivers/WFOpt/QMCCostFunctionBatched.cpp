@@ -281,7 +281,6 @@ void QMCCostFunctionBatched::checkConfigurations()
     {
       ParticleSet* wRef = new ParticleSet(W);
       samples_.loadSample(wRef->R, iw);
-      wRef->update();
       p_ptr_list_[iw]  = wRef;
       wf_ptr_list_[iw] = Psi.makeClone(*wRef);
       h_ptr_list_[iw]  = H.makeClone(*wRef, *wf_ptr_list_[iw]);
@@ -292,6 +291,8 @@ void QMCCostFunctionBatched::checkConfigurations()
     RefVector<TrialWaveFunction> wf_list = convertPtrToRefVector(wf_ptr_list_);
     RefVector<ParticleSet> p_list        = convertPtrToRefVector(p_ptr_list_);
     RefVector<QMCHamiltonian> h_list     = convertPtrToRefVector(h_ptr_list_);
+
+    ParticleSet::flex_update(p_list);
 
     TrialWaveFunction::flex_evaluateDeltaLogSetup(wf_list, p_list, log_psi_fixed_, log_psi_opt_, ref_dLogPsi,
                                                   ref_d2LogPsi);
@@ -418,7 +419,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
     {
       ParticleSet* wRef = p_ptr_list_[iw];
       samples_.loadSample(wRef->R, iw);
-      wRef->update(true);
     }
 
     outputManager.resume();
@@ -426,6 +426,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
     RefVector<TrialWaveFunction> wf_list = convertPtrToRefVector(wf_ptr_list_);
     RefVector<ParticleSet> p_list        = convertPtrToRefVector(p_ptr_list_);
     RefVector<QMCHamiltonian> h0_list    = convertPtrToRefVector(h0_ptr_list_);
+
+    ParticleSet::flex_update(p_list, true);
 
 
     RefVector<ParticleSet::ParticleGradient_t> dummyG_list;
