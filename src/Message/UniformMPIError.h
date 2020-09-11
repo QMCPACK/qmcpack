@@ -14,7 +14,6 @@
 #include <exception>
 namespace qmcplusplus
 {
-
 /** This a subclass for runtime errors that will occur on all ranks.
  *
  *  This combined with a block like
@@ -33,10 +32,10 @@ namespace qmcplusplus
 class UniformMPIError : public std::runtime_error
 {
 public:
-  UniformMPIError( const std::string& what_arg ) : std::runtime_error(what_arg) {} 
-  UniformMPIError( const char* what_arg ) : std::runtime_error(what_arg) {}
+  UniformMPIError(const std::string& what_arg) : std::runtime_error(what_arg) {}
+  UniformMPIError(const char* what_arg) : std::runtime_error(what_arg) {}
 };
 
-}
+} // namespace qmcplusplus
 
 #endif

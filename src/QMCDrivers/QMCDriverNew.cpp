@@ -103,7 +103,7 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
   {
     std::stringstream error_msg;
     error_msg << "Bad Input: num_crowds (" << num_crowds << ") > num_threads (" << num_threads << ")\n";
-     throw UniformMPIError(error_msg.str());
+    throw UniformMPIError(error_msg.str());
   }
 }
 
@@ -496,8 +496,8 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
     if (walkers_per_rank != 0 && required_total != walkers_per_rank * num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks, The request of " << required_total
-            << " global walkers and " << walkers_per_rank << " walkers per rank cannot be satisfied!";
+      error << "Running on " << num_ranks << " MPI ranks, The request of " << required_total << " global walkers and "
+            << walkers_per_rank << " walkers per rank cannot be satisfied!";
       throw UniformMPIError(error.str());
     }
     awc.global_walkers   = required_total;
