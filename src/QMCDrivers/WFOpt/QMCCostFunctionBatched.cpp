@@ -37,10 +37,7 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
 
 
 /** Clean up the vector */
-QMCCostFunctionBatched::~QMCCostFunctionBatched()
-{
-  delete_iter(RngSaved.begin(), RngSaved.end());
-}
+QMCCostFunctionBatched::~QMCCostFunctionBatched() { delete_iter(RngSaved.begin(), RngSaved.end()); }
 
 void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
                                       const std::vector<Return_rt>& PM,
@@ -283,9 +280,9 @@ void QMCCostFunctionBatched::checkConfigurations()
     }
     outputManager.resume();
 
-    RefVector<TrialWaveFunction> wf_list = convertUPtrToRefVector(wf_ptr_list_);
-    RefVector<ParticleSet> p_list        = convertUPtrToRefVector(p_ptr_list_);
-    RefVector<QMCHamiltonian> h_list     = convertUPtrToRefVector(h_ptr_list_);
+    auto wf_list = convertUPtrToRefVector(wf_ptr_list_);
+    auto p_list  = convertUPtrToRefVector(p_ptr_list_);
+    auto h_list  = convertUPtrToRefVector(h_ptr_list_);
 
     ParticleSet::flex_update(p_list);
 
@@ -418,9 +415,9 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
     outputManager.resume();
 
-    RefVector<TrialWaveFunction> wf_list = convertUPtrToRefVector(wf_ptr_list_);
-    RefVector<ParticleSet> p_list        = convertUPtrToRefVector(p_ptr_list_);
-    RefVector<QMCHamiltonian> h0_list    = convertUPtrToRefVector(h0_ptr_list_);
+    auto wf_list = convertUPtrToRefVector(wf_ptr_list_);
+    auto p_list  = convertUPtrToRefVector(p_ptr_list_);
+    auto h0_list = convertUPtrToRefVector(h0_ptr_list_);
 
     ParticleSet::flex_update(p_list, true);
 
