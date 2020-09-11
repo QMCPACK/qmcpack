@@ -31,6 +31,7 @@
 #include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #include "Utilities/StlPrettyPrint.hpp"
+#include "Message/UniformMPIError.h"
 
 namespace qmcplusplus
 {
@@ -102,7 +103,7 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
   {
     std::stringstream error_msg;
     error_msg << "Bad Input: num_crowds (" << num_crowds << ") > num_threads (" << num_threads << ")\n";
-    throw std::runtime_error(error_msg.str());
+     throw UniformMPIError(error_msg.str());
   }
 }
 
@@ -301,7 +302,7 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
   }
   else if (population_.get_walkers().size() < nwalkers)
   {
-    throw std::runtime_error("Unexpected walker count resulting in dangerous spawning");
+    throw UniformMPIError("Unexpected walker count resulting in dangerous spawning");
     IndexType num_additional_walkers = nwalkers - population_.get_walkers().size();
     for (int i = 0; i < num_additional_walkers; ++i)
       population_.spawnWalker();
@@ -488,16 +489,16 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
     if (required_total < num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks and the request of " << required_total
+      error << "Running on " << num_ranks << " MPI ranks.  The request of " << required_total
             << " global walkers cannot be satisfied! Need at least one walker per MPI rank.";
-      throw std::runtime_error(error.str());
+      throw UniformMPIError(error.str());
     }
     if (walkers_per_rank != 0 && required_total != walkers_per_rank * num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks and the request of " << required_total
+      error << "Running on " << num_ranks << " MPI ranks, The request of " << required_total
             << " global walkers and " << walkers_per_rank << " walkers per rank cannot be satisfied!";
-      throw std::runtime_error(error.str());
+      throw UniformMPIError(error.str());
     }
     awc.global_walkers   = required_total;
     awc.walkers_per_rank = fairDivide(required_total, num_ranks);

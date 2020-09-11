@@ -15,6 +15,7 @@
 #include "QMCDrivers/DriverTraits.h"
 #include "Particle/SampleStack.h"
 #include "Concurrency/ParallelExecutor.hpp"
+#include "Message/UniformMPIError.h"
 
 namespace qmcplusplus
 {
@@ -142,7 +143,7 @@ void QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<Executo
   if (Concurrency::maxCapacity<>() != 8)
     throw std::runtime_error("OMP_NUM_THREADS must be 8 for this test.");
   if (num_crowds > 8)
-    CHECK_THROWS(checkNumCrowdsLTNumThreads(num_crowds));
+    CHECK_THROWS_AS(checkNumCrowdsLTNumThreads(num_crowds), UniformMPIError);
   else
     checkNumCrowdsLTNumThreads(num_crowds);
   return;

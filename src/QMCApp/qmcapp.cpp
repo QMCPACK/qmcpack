@@ -20,6 +20,7 @@
 
 #include "Configuration.h"
 #include "Message/Communicate.h"
+#include "Message/UniformMPIError.h"
 #include "Utilities/SimpleParser.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Platforms/Host/OutputManager.h"
@@ -234,6 +235,10 @@ int main(int argc, char** argv)
       delete qmc;
     if (useGPU)
       Finalize_CUDA();
+  }
+  catch (const UniformMPIError& ue)
+  {
+    OHMMS::Controller->barrier_and_abort(ue.what());
   }
   catch (const std::exception& e)
   {
