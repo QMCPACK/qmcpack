@@ -82,9 +82,6 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
     psiFactory->setName(id);
     isPrimary  = (myPool.empty() || role == "primary");
     myPool[id] = psiFactory;
-    app_summary() << " Wavefunction setup: " << std::endl;
-    app_summary() << " ------------------- " << std::endl;
-    app_summary() << "  Name: " << psiFactory->getName() << std::endl;
   }
   else
   {

@@ -181,6 +181,8 @@ bool RandomNumberControl::put(xmlNodePtr cur)
       pid    = OHMMS::Controller->rank();
       nprocs = OHMMS::Controller->size();
     }
+
+    app_summary() << std::endl;
     app_summary() << " Random Number" << std::endl;
     app_summary() << " -------------" << std::endl;
     if (offset_in < 0)
@@ -206,7 +208,6 @@ bool RandomNumberControl::put(xmlNodePtr cur)
 
     make_children();
     NeverBeenInitialized = false;
-    app_log() << std::endl;
   }
   else
     reset();
