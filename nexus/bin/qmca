@@ -1184,28 +1184,34 @@ QMCA examples:
             avg_data    = obj()
             if opt.average_all or weights is not None or len(batch_prefixes)==1:
                 # average all data together
-                uniform_weights = len(prefixes)*[1.0]
-                if opt.twist_info=='ignore':
-                    weights = uniform_weights
-                else:
-                    weights = []
-                    for prefix in sorted(prefixes):
-                        twist_info_file = prefix+'.twist_info.dat'
-                        if os.path.exists(twist_info_file):
-                            fobj = open(twist_info_file)
-                            try:
-                                weight = float(fobj.read().strip().split()[0])
-                                weights.append(weight)
-                            except:
-                                None
-                            #end try
-                        #end if
-                    #end for
+                if weights is not None:
                     if len(weights)!=len(prefixes):
-                        if opt.twist_info=='require':
-                            self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
-                        else:
-                            weights = uniform_weights
+                        self.error('one weight must be provided per file prefix for averaging\nyou provided {0} weights for {1} prefixes\nweights provided: {2}\nprefixes provided: {3}'.format(len(weights),len(prefixes),weights,prefixes))
+                    #end if
+                else:
+                    uniform_weights = len(prefixes)*[1.0]
+                    if opt.twist_info=='ignore':
+                        weights = uniform_weights
+                    else:
+                        weights = []
+                        for prefix in sorted(prefixes):
+                            twist_info_file = prefix+'.twist_info.dat'
+                            if os.path.exists(twist_info_file):
+                                fobj = open(twist_info_file)
+                                try:
+                                    weight = float(fobj.read().strip().split()[0])
+                                    weights.append(weight)
+                                except:
+                                    None
+                                #end try
+                            #end if
+                        #end for
+                        if len(weights)!=len(prefixes):
+                            if opt.twist_info=='require':
+                                self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
+                            else:
+                                weights = uniform_weights
+                            #end if
                         #end if
                     #end if
                 #end if
