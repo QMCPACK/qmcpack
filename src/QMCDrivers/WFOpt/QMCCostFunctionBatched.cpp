@@ -231,6 +231,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       p_ptr_list_.resize(numSamples);
       h_ptr_list_.resize(numSamples);
       h0_ptr_list_.resize(numSamples);
+      rng_ptr_list_.resize(numSamples);
     }
 
     if (RecordsOnNode.size1() == 0)
