@@ -98,7 +98,7 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
   }
 
   //create a E(lectron)G(as)O(rbital)Set
-  int nkpts  = (nup - 1) / 2;
+  int nkpts = (nup - 1) / 2;
   egGrid.createGrid(nc, nkpts);
   RealEGOSet* psiu = new RealEGOSet(egGrid.kpt, egGrid.mk2);
   RealEGOSet* psid = nullptr;
@@ -124,7 +124,7 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
   if (ndn > 0)
     sdet->add(psid, "d");
   {
-    if(UseBackflow)
+    if (UseBackflow)
     {
       DiracDeterminantWithBackflow *updet, *downdet;
       app_log() << "Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
@@ -150,7 +150,7 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
     }
     else
     {
-      DiracDeterminant<> *updet, *downdet;
+      DiracDeterminant<>*updet, *downdet;
       //create up determinant
       updet = new DiracDeterminant<>(psiu);
       updet->set(0, nup);

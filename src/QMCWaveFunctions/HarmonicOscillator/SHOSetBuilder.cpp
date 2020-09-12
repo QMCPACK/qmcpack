@@ -23,7 +23,7 @@ namespace qmcplusplus
 SHOSetBuilder::SHOSetBuilder(ParticleSet& P, Communicate* comm) : SPOSetBuilder("SHO", comm), Ps(P)
 {
   ClassName = "SHOSetBuilder";
-  legacy = false;
+  legacy    = false;
   app_log() << "Constructing SHOSetBuilder" << std::endl;
   reset();
 }
