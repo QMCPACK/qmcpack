@@ -109,7 +109,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         abort();
       }
       spomap[spo_name] = spo;
-      spo->objectName  = spo_name;
+      spo->setName(spo_name);
       assert(spomap.find(spo_name) != spomap.end());
       //	slaterdet_0->add(spo,spo_name);
     }
@@ -1035,7 +1035,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
 #ifdef QMC_COMPLEX
           ci_real = 0.0;
 #else
-          ci    = 0.0;
+          ci = 0.0;
 #endif
         CSFcoeff.push_back(ci);
         sumsq_qc += qc_ci * qc_ci;

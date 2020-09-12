@@ -50,11 +50,11 @@ void SlaterDetWithBackflow::resetTargetParticleSet(ParticleSet& P)
 }
 
 SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
-                                                                   ParticleSet::ParticleGradient_t& G,
-                                                                   ParticleSet::ParticleLaplacian_t& L)
+                                                                       ParticleSet::ParticleGradient_t& G,
+                                                                       ParticleSet::ParticleLaplacian_t& L)
 {
   BFTrans->evaluate(P);
-  LogValue   = 0.0;
+  LogValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
     LogValue += Dets[i]->evaluateLog(P, G, L);
   return LogValue;
@@ -67,12 +67,14 @@ void SlaterDetWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
     Dets[i]->registerData(P, buf);
 }
 
-SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::updateBuffer(ParticleSet& P,
+                                                                        WFBufferType& buf,
+                                                                        bool fromscratch)
 {
   //BFTrans->updateBuffer(P,buf,fromscratch);
   BFTrans->updateBuffer(P, buf, fromscratch);
   //BFTrans->evaluate(P);
-  LogValue   = 0.0;
+  LogValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
     LogValue += Dets[i]->updateBuffer(P, buf, fromscratch);
   return LogValue;
@@ -113,7 +115,7 @@ WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) cons
       {
         spo_clone = spo->makeClone();
         //          spo_clone->resetTargetParticleSet(tqp);
-        myclone->add(spo_clone, spo->objectName);
+        myclone->add(spo_clone, spo->getName());
       }
       // Make a copy of the determinant.
       DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*)Dets[i]->makeCopy(spo_clone);
@@ -127,7 +129,7 @@ WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) cons
     SPOSetPtr spo       = Dets[0]->getPhi();
     SPOSetPtr spo_clone = spo->makeClone();
     //      spo_clone->resetTargetParticleSet(tqp);
-    myclone->add(spo_clone, spo->objectName);
+    myclone->add(spo_clone, spo->getName());
     for (int i = 0; i < Dets.size(); ++i)
     {
       DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*)Dets[i]->makeCopy(spo_clone);
@@ -165,7 +167,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   L2.resize(P.getTotalNum());
   LogValueType psi1 = 1.0;
   LogValueType psi2 = 1.0;
-  RealType dh    = 0.00001;
+  RealType dh       = 0.00001;
   for (int k = 0; k < Dets.size(); k++)
   {
     DiracDeterminantWithBackflow* Dets_ = (DiracDeterminantWithBackflow*)Dets[k];

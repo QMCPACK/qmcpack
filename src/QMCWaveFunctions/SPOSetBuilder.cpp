@@ -78,13 +78,13 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   else
     APP_ABORT("SPOSetBuilder::createSPOSet  sposet creation failed");
 
-  if (!spo_object_name.empty() && sposet->objectName.empty())
-    sposet->objectName = spo_object_name;
-  if (sposet->objectName.empty())
+  if (!spo_object_name.empty() && sposet->getName().empty())
+    sposet->setName(spo_object_name);
+  if (sposet->getName().empty())
     app_warning() << "SPOSet object doesn't have a name." << std::endl;
-  if (!spo_object_name.empty() && sposet->objectName != spo_object_name)
+  if (!spo_object_name.empty() && sposet->getName() != spo_object_name)
     app_warning() << "SPOSet object name mismatched! input name: " << spo_object_name
-                  << "   object name: " << sposet->objectName << std::endl;
+                  << "   object name: " << sposet->getName() << std::endl;
 
   return sposet;
 }

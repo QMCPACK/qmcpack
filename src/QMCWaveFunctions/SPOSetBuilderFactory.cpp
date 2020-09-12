@@ -65,7 +65,7 @@ SPOSet* get_sposet(const std::string& name)
     for (int i = 0; i < sposets.size(); ++i)
     {
       SPOSet* sposet = sposets[i];
-      if (sposet->objectName == name)
+      if (sposet->getName() == name)
       {
         spo = sposet;
         nfound++;
@@ -97,7 +97,7 @@ void write_spo_builders(const std::string& pad)
     app_log() << pad << "sposets for SPOSetBuilder of type " << type << std::endl;
     for (int i = 0; i < sposets.size(); ++i)
     {
-      app_log() << pad2 << "sposet " << sposets[i]->objectName << std::endl;
+      app_log() << pad2 << "sposet " << sposets[i]->getName() << std::endl;
     }
   }
 }
@@ -283,8 +283,8 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   if (bb)
   {
     app_log() << "  Building SPOSet '" << sname << "' with '" << bname << "' basis set." << std::endl;
-    SPOSet* spo     = bb->createSPOSet(cur);
-    spo->objectName = sname;
+    SPOSet* spo = bb->createSPOSet(cur);
+    spo->setName(sname);
     if (rotation == "yes")
     {
 #ifdef QMC_COMPLEX
@@ -303,8 +303,8 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
         }
         tcur = tcur->next;
       }
-      spo             = rot_spo;
-      spo->objectName = sname;
+      spo = rot_spo;
+      spo->setName(sname);
 #endif
     }
     return spo;
@@ -320,7 +320,7 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
 {
   app_log() << "  Building a collection of SPOSets" << std::endl;
   // create the SPOSet builder
-  SPOSetBuilder* bb  = createSPOSetBuilder(cur);
+  SPOSetBuilder* bb = createSPOSetBuilder(cur);
   // going through a list of sposet entries
   xmlNodePtr element = cur->children;
   int nsposets       = 0;
@@ -329,7 +329,7 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
     std::string cname((const char*)(element->name));
     if (cname == "sposet")
     {
-      SPOSet* spo     = bb->createSPOSet(element);
+      SPOSet* spo = bb->createSPOSet(element);
       nsposets++;
     }
     element = element->next;
