@@ -169,12 +169,13 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
 }
 
 ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder(comm), egGrid(p.Lattice)
-{}
+    : SPOSetBuilder("ElectronGas", comm), egGrid(p.Lattice)
+{
+  ClassName = "ElectronGasSPOBuilder";
+}
 
 SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc = 0;
   int ns = 0;
   PosType twist(0.0);
@@ -185,6 +186,7 @@ SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
   aAttrib.add(spo_name, "name");
   aAttrib.add(spo_name, "id");
   aAttrib.put(cur);
+
   if (ns > 0)
     nc = egGrid.getShellFromStates(ns);
   if (nc < 0)

@@ -80,7 +80,7 @@ SPOSet* get_sposet(const std::string& name)
   //else if(spo==NULL)
   //{
   //  write_spo_builders();
-  //  APP_ABORT("get_sposet: requested sposet "+name+" does not exist");
+  //  myComm->barrier_and_abort("get_sposet: requested sposet "+name+" does not exist");
   //}
   return spo;
 }
@@ -311,44 +311,32 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   }
   else
   {
-    APP_ABORT("SPOSetBuilderFactory::createSPOSet Failed to create a SPOSet. SPOSetBuilder is empty.");
+    myComm->barrier_and_abort("SPOSetBuilderFactory::createSPOSet Failed to create a SPOSet. SPOSetBuilder is empty.");
     return 0;
   }
 }
 
 void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
 {
-  xmlNodePtr parent = cur;
-  std::string type("");
-  OhmmsAttributeSet attrib;
-  attrib.add(type, "type");
-  attrib.put(cur);
-  //tolower(type);
-
-  app_log() << "building sposet collection of type " << type << std::endl;
-
+  app_log() << "  Building a collection of SPOSets" << std::endl;
+  // create the SPOSet builder
   SPOSetBuilder* bb  = createSPOSetBuilder(cur);
-  xmlNodePtr element = parent->children;
+  // going through a list of sposet entries
+  xmlNodePtr element = cur->children;
   int nsposets       = 0;
   while (element != NULL)
   {
     std::string cname((const char*)(element->name));
     if (cname == "sposet")
     {
-      std::string name("");
-      OhmmsAttributeSet attrib;
-      attrib.add(name, "name");
-      attrib.put(element);
-
-      app_log() << "  Building SPOSet \"" << name << "\" with " << type << " SPOSetBuilder" << std::endl;
       SPOSet* spo     = bb->createSPOSet(element);
-      spo->objectName = name;
       nsposets++;
     }
     element = element->next;
   }
+
   if (nsposets == 0)
-    APP_ABORT("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
+    myComm->barrier_and_abort("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
 }
 
 std::string SPOSetBuilderFactory::basisset_tag = "basisset";
