@@ -571,34 +571,39 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
       append_run = das.append_run;
     }
 
-    if (!qmc_driver)
-      return false;
+    if (qmc_driver)
+    {
+      //advance the project id
+      //if it is NOT the first qmc node and qmc/@append!='yes'
+      if (!FirstQMC && !append_run)
+        myProject.advance();
 
-    //advance the project id
-    //if it is NOT the first qmc node and qmc/@append!='yes'
-    if (!FirstQMC && !append_run)
-      myProject.advance();
-
-    qmc_driver->setStatus(myProject.CurrentMainRoot(), prev_config_file, append_run);
-    // PD:
-    // Q: How does m_walkerset_in end up being non empty?
-    // A: Anytime that we aren't doing a restart.
-    // So put walkers is an exceptional call. This code does not tell a useful
-    // story of a QMCDriver's life.
-    qmc_driver->putWalkers(m_walkerset_in);
+      qmc_driver->setStatus(myProject.CurrentMainRoot(), prev_config_file, append_run);
+      // PD:
+      // Q: How does m_walkerset_in end up being non empty?
+      // A: Anytime that we aren't doing a restart.
+      // So put walkers is an exceptional call. This code does not tell a useful
+      // story of a QMCDriver's life.
+      qmc_driver->putWalkers(m_walkerset_in);
 #if !defined(REMOVE_TRACEMANAGER)
-    qmc_driver->putTraces(traces_xml);
+      qmc_driver->putTraces(traces_xml);
 #endif
-    qmc_driver->process(cur);
-    infoSummary.flush();
-    infoLog.flush();
-    Timer qmcTimer;
-    NewTimer* t1 = timer_manager.createTimer(qmc_driver->getEngineName(), timer_level_coarse);
-    t1->start();
-    qmc_driver->run();
-    t1->stop();
-    app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
-    last_driver = std::move(qmc_driver);
+      qmc_driver->process(cur);
+      infoSummary.flush();
+      infoLog.flush();
+      Timer qmcTimer;
+      NewTimer* t1 = timer_manager.createTimer(qmc_driver->getEngineName(), timer_level_coarse);
+      t1->start();
+      qmc_driver->run();
+      t1->stop();
+      app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
+      last_driver = std::move(qmc_driver);
+    }
+    else
+    {
+      // Ye: in which case, the code hits this?
+      return false;
+    }
   }
   catch (const UniformMPIError& ue)
   {
