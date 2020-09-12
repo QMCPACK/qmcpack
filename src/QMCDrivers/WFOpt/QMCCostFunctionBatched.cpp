@@ -279,7 +279,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       h_ptr_list_[iw].reset(H.makeClone(*wRef, *wf_ptr_list_[iw]));
       h0_ptr_list_[iw].reset(H_KE_Node->makeClone(*wRef, *wf_ptr_list_[iw]));
 
-      rng_ptr_list_[iw].reset(new RandomGenerator_t(*MoverRng[0]));
+      rng_ptr_list_[iw] = std::make_unique<RandomGenerator_t>(*MoverRng[0]);
       h_ptr_list_[iw]->setRandomGenerator(rng_ptr_list_[iw].get());
 
       // RNG state is saved to use the same sequence in correlatedSampling.
