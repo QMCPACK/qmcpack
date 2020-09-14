@@ -97,8 +97,14 @@ public:
   ///constructor with communicator
   Communicate(const mpi3::communicator& in_comm);
 #endif
-
-  ///constructor with communicator
+  
+  /** constructor that splits in_comm
+   *
+   *  If you split a communicator it is your responsibility to add a try catch block in your
+   *  communicator scope to prevent code using UniformCommunicateError from
+   *  propogating into other comm scopes. Unless you are certain none of that code
+   *  can emmit a UniformCommunicateError.
+   */
   Communicate(const Communicate& in_comm, int nparts);
 
   /**destructor
@@ -184,12 +190,19 @@ public:
   }
 #endif
 
-  // MMORALES:
-  // right now there is no easy way to use Communicate
-  // for generic processor subgroups, so calling split on myMPI
-  // and managing the communicator directly
-  // THIS MUST BE FIXED!!!
 #ifdef HAVE_MPI
+  /**
+   *  MMORALES:
+   *  right now there is no easy way to use Communicate
+   *  for generic processor subgroups, so calling split on myMPI
+   *  and managing the communicator directly
+   *  THIS MUST BE FIXED!!!
+   *
+   *  If you split a communicator it is your responsibility to add a try catch block in your
+   *  communicator scope to prevent code using UniformCommunicateError from
+   *  propogating into other comm scopes. Unless you are certain none of that no code
+   *  in your Communicate scope can emmit a UniformCommunicateError.
+   */
   inline void split_comm(int key, MPI_Comm& comm)
   {
     int myrank = rank();
