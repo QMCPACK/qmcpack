@@ -75,6 +75,8 @@ protected:
   UPtrVector<ParticleSet> p_ptr_list_;
   UPtrVector<QMCHamiltonian> h_ptr_list_;
   UPtrVector<QMCHamiltonian> h0_ptr_list_;
+  UPtrVector<RandomGenerator_t> rng_ptr_list_;
+  std::unique_ptr<RandomGenerator_t> rng_save_ptr_;
 
 
 #ifdef HAVE_LMY_ENGINE

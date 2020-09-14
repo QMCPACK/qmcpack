@@ -231,6 +231,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       p_ptr_list_.resize(numSamples);
       h_ptr_list_.resize(numSamples);
       h0_ptr_list_.resize(numSamples);
+      rng_ptr_list_.resize(numSamples);
     }
 
     if (RecordsOnNode.size1() == 0)
@@ -277,6 +278,15 @@ void QMCCostFunctionBatched::checkConfigurations()
       wf_ptr_list_[iw].reset(Psi.makeClone(*wRef));
       h_ptr_list_[iw].reset(H.makeClone(*wRef, *wf_ptr_list_[iw]));
       h0_ptr_list_[iw].reset(H_KE_Node->makeClone(*wRef, *wf_ptr_list_[iw]));
+
+      rng_ptr_list_[iw] = std::make_unique<RandomGenerator_t>(*MoverRng[0]);
+      h_ptr_list_[iw]->setRandomGenerator(rng_ptr_list_[iw].get());
+
+      // RNG state is saved to use the same sequence in correlatedSampling.
+      // Since only one generator is saved, this means the same rotated grid is used
+      // for every sample in evaluating the non-local ECP contribution.
+      rng_save_ptr_ = std::make_unique<RandomGenerator_t>(*MoverRng[0]);
+
     }
     outputManager.resume();
 
@@ -411,6 +421,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
     {
       ParticleSet& wRef = *p_ptr_list_[iw];
       samples_.loadSample(wRef.R, iw);
+      // Reset the state of the RNG to the point saved at the beginning of checkConfiguration
+      *rng_ptr_list_[iw] = *rng_save_ptr_;
     }
 
     outputManager.resume();
