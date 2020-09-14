@@ -68,6 +68,8 @@ protected:
 
   SampleStack& samples_;
 
+  int opt_batch_size_;
+
   std::vector<Return_rt> log_psi_fixed_;
   std::vector<Return_rt> log_psi_opt_;
 

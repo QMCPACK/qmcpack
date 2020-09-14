@@ -70,6 +70,21 @@ static RefVector<T> convertPtrToRefVector(const std::vector<T*>& ptr_list)
   return ref_list;
 }
 
+template<class T>
+static RefVector<T> convertPtrToRefVectorSubset(const std::vector<T*>& ptr_list, int offset, int len)
+{
+  // check upper bounds
+  assert(offset+len <= ptr_list.size());
+
+  RefVector<T> ref_list;
+  ref_list.reserve(len);
+  for (int i = offset; i < offset + len; i++)
+  {
+    ref_list.push_back(*ptr_list[i]);
+  }
+  return ref_list;
+}
+
 // temporary helper function
 template<class T>
 static std::vector<T*> convert_ref_to_ptr_list(const std::vector<std::reference_wrapper<T>>& ref_list)
