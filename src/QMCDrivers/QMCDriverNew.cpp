@@ -302,7 +302,7 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
   }
   else if (population_.get_walkers().size() < nwalkers)
   {
-    throw UniformCommunicateError("Unexpected walker count resulting in dangerous spawning");
+    throw std::runtime_error("Unexpected walker count resulting in dangerous spawning");
     IndexType num_additional_walkers = nwalkers - population_.get_walkers().size();
     for (int i = 0; i < num_additional_walkers; ++i)
       population_.spawnWalker();

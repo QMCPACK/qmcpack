@@ -12,6 +12,7 @@
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
+#include "Message/UniformCommunicateError.h"
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/MCSample.h"
@@ -238,12 +239,18 @@ void VMCBatched::runVMCStep(int crowd_id,
 
 void VMCBatched::process(xmlNodePtr node)
 {
-  // \todo get total walkers should be coming from VMCDriverInput
-
-  QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
-                              qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
-  Base::startup(node, awc);
+  // \todo get total walkers should be coming from VMCDriverInpu
+  try
+  {
+    QMCDriverNew::AdjustedWalkerCounts awc =
+        adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
+                                qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
+    Base::startup(node, awc);
+  }
+  catch (const UniformCommunicateError& ue)
+  {
+    myComm->barrier_and_abort(ue.what());
+  }
 }
 
 int VMCBatched::compute_samples_per_node(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers)

@@ -119,7 +119,12 @@ public:
     CHECK(awc.walkers_per_crowd[0] == 4);
     CHECK(awc.walkers_per_crowd[3] == 3);
 
+    // Ask for 27 total walkers on 2 ranks of 11 walkers (inconsistent input)
+    // results in fatal exception on all ranks.
     CHECK_THROWS_AS(adjustGlobalWalkerCount(2,1,27,11,1.0,4), UniformCommunicateError);
+    // Ask for 14 total walkers on 16 ranks (inconsistent input)
+    // results in fatal exception on all ranks.
+    CHECK_THROWS_AS(adjustGlobalWalkerCount(16,0,14,0,0,0), UniformCommunicateError);
   }
 
   bool run() { return false; }
