@@ -33,7 +33,7 @@ TEST_CASE("compuate_batch_parameters", "[drivers]")
   batch_size  = 4;
 
   compute_batch_parameters(sample_size, batch_size, num_batches, final_batch_size);
-  CHECK(num_batches == 2);
+  CHECK(num_batches == 3);
   CHECK(final_batch_size == 3);
 }
 
