@@ -71,10 +71,10 @@ protected:
   std::vector<Return_rt> log_psi_fixed_;
   std::vector<Return_rt> log_psi_opt_;
 
-  std::vector<TrialWaveFunction*> wf_ptr_list_;
-  std::vector<ParticleSet*> p_ptr_list_;
-  std::vector<QMCHamiltonian*> h_ptr_list_;
-  std::vector<QMCHamiltonian*> h0_ptr_list_;
+  UPtrVector<TrialWaveFunction> wf_ptr_list_;
+  UPtrVector<ParticleSet> p_ptr_list_;
+  UPtrVector<QMCHamiltonian> h_ptr_list_;
+  UPtrVector<QMCHamiltonian> h0_ptr_list_;
 
 
 #ifdef HAVE_LMY_ENGINE
