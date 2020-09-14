@@ -8,8 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef QMCPLUSPLUS_UNIVERSALERROR_HPP
-#define QMCPLUSPLUS_UNIVERSALERROR_HPP
+#ifndef QMCPLUSPLUS_UNIFORMCOMMUNICATEERROR_H
+#define QMCPLUSPLUS_UNIFORMCOMMUNICATEERROR_H
 
 #include <exception>
 namespace qmcplusplus
@@ -30,11 +30,11 @@ namespace qmcplusplus
  *  If even one rank does not experience the issue you may hang the
  *  job until the walltime expires.
  */
-class UniformMPIError : public std::runtime_error
+class UniformCommunicateError : public std::runtime_error
 {
 public:
-  UniformMPIError(const std::string& what_arg) : std::runtime_error(what_arg) {}
-  UniformMPIError(const char* what_arg) : std::runtime_error(what_arg) {}
+  UniformCommunicateError(const std::string& what_arg) : std::runtime_error(what_arg) {}
+  UniformCommunicateError(const char* what_arg) : std::runtime_error(what_arg) {}
 };
 
 } // namespace qmcplusplus

@@ -15,7 +15,7 @@
 #include "QMCDrivers/DriverTraits.h"
 #include "Particle/SampleStack.h"
 #include "Concurrency/ParallelExecutor.hpp"
-#include "Message/UniformMPIError.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -118,6 +118,8 @@ public:
     CHECK(awc.walkers_per_rank[1] == 13);
     CHECK(awc.walkers_per_crowd[0] == 4);
     CHECK(awc.walkers_per_crowd[3] == 3);
+
+    CHECK_THROWS_AS(adjustGlobalWalkerCount(2,1,27,11,1.0,4), UniformCommunicateError);
   }
 
   bool run() { return false; }
@@ -143,7 +145,7 @@ void QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<Executo
   if (Concurrency::maxCapacity<>() != 8)
     throw std::runtime_error("OMP_NUM_THREADS must be 8 for this test.");
   if (num_crowds > 8)
-    CHECK_THROWS_AS(checkNumCrowdsLTNumThreads(num_crowds), UniformMPIError);
+    CHECK_THROWS_AS(checkNumCrowdsLTNumThreads(num_crowds), UniformCommunicateError);
   else
     checkNumCrowdsLTNumThreads(num_crowds);
   return;

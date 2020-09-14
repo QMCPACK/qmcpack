@@ -35,7 +35,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
-#include "Message/UniformMPIError.h"
+#include "Message/UniformCommunicateError.h"
 #include <queue>
 #include <cstring>
 #include "HDFVersion.h"
@@ -552,7 +552,6 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
   bool append_run              = false;
 
-  // Within this scope if you split myComm you must catch UniformMPIError for your split MPI comm scope.
   try
   {
     if (!population_)
@@ -605,7 +604,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
       return false;
     }
   }
-  catch (const UniformMPIError& ue)
+  catch (const UniformCommunicateError& ue)
   {
     myComm->barrier_and_abort(ue.what());
   }
