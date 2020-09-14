@@ -468,9 +468,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       auto p_list  = convertUPtrToRefVector(p_ptr_list_);
       auto h0_list = convertUPtrToRefVector(h0_ptr_list_);
 
-      auto ref_dLogPsi  = convertPtrToRefVectorSubset(dLogPsi, base_sample_index, curr_batch_size);
-      auto ref_d2LogPsi = convertPtrToRefVectorSubset(d2LogPsi, base_sample_index, curr_batch_size);
-
       for (int ib = 0; ib < curr_batch_size; ib++)
       {
         samples_.loadSample(p_ptr_list_[ib]->R, base_sample_index + ib);
