@@ -51,8 +51,8 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     app_warning() << "SPOSet object name not given in the input!" << std::endl;
 
   app_summary() << std::endl;
-  app_summary() << "   Single particle orbitals" << std::endl;
-  app_summary() << "   ------------------------" << std::endl;
+  app_summary() << "   Single particle orbitals (SPO)" << std::endl;
+  app_summary() << "   ------------------------------" << std::endl;
   app_summary() << "    Name: " << spo_object_name << "   Type: " << SPO_type_name
                 << "   Builder class name: " << ClassName << std::endl;
   app_summary() << std::endl;

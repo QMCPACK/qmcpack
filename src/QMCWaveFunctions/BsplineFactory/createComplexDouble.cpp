@@ -37,44 +37,60 @@ BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybri
   BsplineReaderBase* aReader = nullptr;
 
 #if defined(QMC_COMPLEX)
+  app_summary() << "    Using complex valued spline SPOs with complex double precision storage (C2C)." << std::endl;
 #if defined(ENABLE_OFFLOAD)
   if (useGPU == "yes")
   {
     if (hybrid_rep)
     {
-      app_log() << "OpenMP offload has not been enabled with hybrid orbital representation!"
-                << " Running on the host." << std::endl;
+      app_summary() << "OpenMP offload has not been enabled with hybrid orbital representation!"
+                    << " Running on the host." << std::endl;
+      app_summary() << "    Using hybrid orbital representation." << std::endl;
       aReader = new HybridRepSetReader<HybridRepCplx<SplineC2C<double>>>(e);
     }
     else
+    {
+      app_summary() << "    Using OpenMP offload acceleration." << std::endl;
       aReader = new SplineSetReader<SplineC2COMP<double>>(e);
+    }
   }
   else
 #endif
   {
     if (hybrid_rep)
+    {
+      app_summary() << "    Using hybrid orbital representation." << std::endl;
       aReader = new HybridRepSetReader<HybridRepCplx<SplineC2C<double>>>(e);
+    }
     else
       aReader = new SplineSetReader<SplineC2C<double>>(e);
   }
 #else //QMC_COMPLEX
+  app_summary() << "    Using real valued spline SPOs with complex double precision storage (C2R)." << std::endl;
 #if defined(ENABLE_OFFLOAD)
   if (useGPU == "yes")
   {
     if (hybrid_rep)
     {
-      app_log() << "OpenMP offload has not been enabled with hybrid orbital representation!"
-                << " Running on the host." << std::endl;
+      app_summary() << "OpenMP offload has not been enabled with hybrid orbital representation!"
+                    << " Running on the host." << std::endl;
+      app_summary() << "    Using hybrid orbital representation." << std::endl;
       aReader = new HybridRepSetReader<HybridRepCplx<SplineC2R<double>>>(e);
     }
     else
+    {
+      app_summary() << "    Using OpenMP offload acceleration." << std::endl;
       aReader = new SplineSetReader<SplineC2ROMP<double>>(e);
+    }
   }
   else
 #endif
   {
     if (hybrid_rep)
+    {
+      app_summary() << "    Using hybrid orbital representation." << std::endl;
       aReader = new HybridRepSetReader<HybridRepCplx<SplineC2R<double>>>(e);
+    }
     else
       aReader = new SplineSetReader<SplineC2R<double>>(e);
   }

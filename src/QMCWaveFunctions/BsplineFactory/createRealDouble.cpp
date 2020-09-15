@@ -26,9 +26,19 @@ namespace qmcplusplus
 {
 BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep, const std::string& useGPU)
 {
+  app_summary() << "    Using real valued spline SPOs with real double precision storage (R2R)." << std::endl;
+#if defined(ENABLE_OFFLOAD)
+  if (useGPU == "yes")
+    app_summary() << "OpenMP offload has not been enabled on real valued spline SPOs with real storage!"
+                  << " Running on the host." << std::endl;
+#endif
+
   BsplineReaderBase* aReader = nullptr;
   if (hybrid_rep)
+  {
+    app_summary() << "    Using hybrid orbital representation." << std::endl;
     aReader = new HybridRepSetReader<HybridRepReal<SplineR2R<double>>>(e);
+  }
   else
     aReader = new SplineSetReader<SplineR2R<double>>(e);
   return aReader;
