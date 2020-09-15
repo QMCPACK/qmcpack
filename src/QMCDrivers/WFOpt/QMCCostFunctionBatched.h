@@ -80,6 +80,10 @@ protected:
   UPtrVector<RandomGenerator_t> rng_ptr_list_;
   std::unique_ptr<RandomGenerator_t> rng_save_ptr_;
 
+  NewTimer& check_config_timer_;
+  NewTimer& corr_sampling_timer_;
+  NewTimer& fill_timer_;
+
 
 #ifdef HAVE_LMY_ENGINE
   int total_samples();

@@ -30,7 +30,16 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
                                                QMCHamiltonian& h,
                                                SampleStack& samples,
                                                Communicate* comm)
-    : QMCCostFunctionBase(w, psi, h, comm), samples_(samples), opt_batch_size_(1)
+    : QMCCostFunctionBase(w, psi, h, comm),
+      samples_(samples),
+      opt_batch_size_(1),
+      check_config_timer_(
+          *timer_manager.createTimer("QMCCostFunctionBatched::checkConfigurations", timer_level_medium)),
+      corr_sampling_timer_(
+          *timer_manager.createTimer("QMCCostFunctionBatched::correlatedSampling", timer_level_medium)),
+      fill_timer_(
+          *timer_manager.createTimer("QMCCostFunctionBatched::fillOverlapHamiltonianMatrices", timer_level_medium))
+
 {
   app_log() << " Using QMCCostFunctionBatched::QMCCostFunctionBatched" << std::endl;
 }
@@ -231,6 +240,8 @@ void compute_batch_parameters(int sample_size, int batch_size, int& num_batches,
 /** evaluate everything before optimization */
 void QMCCostFunctionBatched::checkConfigurations()
 {
+  ScopedTimer tmp_timer(&check_config_timer_);
+
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
   int numSamples  = samples_.getNumSamples();
@@ -434,6 +445,8 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
 
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(bool needGrad)
 {
+  ScopedTimer tmp_timer(&corr_sampling_timer_);
+
   {
     //    synchronize the random number generator with the node
     (*MoverRng[0]) = (*RngSaved[0]);
@@ -610,6 +623,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left,
                                                                                          Matrix<Return_rt>& Right)
 {
+  ScopedTimer tmp_timer(&fill_timer_);
+
   RealType b1, b2;
   if (GEVType == "H2")
   {
