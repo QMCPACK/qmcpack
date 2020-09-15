@@ -197,10 +197,15 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     REQUIRE(imag(Ovlp) == Approx(0.0));
 
     boost::multi::array<ComplexType, 2, Alloc> Eloc({1, 3}, alloc_);
-    boost::multi::array_ref<ComplexType, 2, pointer> Gw(make_device_ptr(G.origin()), {1, NEL * NPOL * NMO});
-    // This assumes {nwalk,...} which is not correct for some HamOps
-    // make this generic
-    HOps.energy(Eloc, Gw, 0, TG.getCoreID() == 0);
+    {
+      int nc=1,nr=NEL * NPOL * NMO;
+      if(HOps.transposed_G_for_E()) {
+        nr=1;
+        nc=NEL * NPOL * NMO;
+      }
+      boost::multi::array_ref<ComplexType, 2, pointer> Gw(make_device_ptr(G.origin()), {nr, nc});
+      HOps.energy(Eloc, Gw, 0, TG.getCoreID() == 0);
+    }
     Eloc[0][0] = (TG.Node() += ComplexType(Eloc[0][0]));
     Eloc[0][1] = (TG.Node() += ComplexType(Eloc[0][1]));
     Eloc[0][2] = (TG.Node() += ComplexType(Eloc[0][2]));
@@ -229,38 +234,46 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     auto nCV      = HOps.local_number_of_cholesky_vectors();
 
     CMatrix X({nCV, 1}, alloc_);
-    //HOps.vbias(Gw,X,sqrtdt);
+    {
+      int nc=1,nr=NEL * NPOL * NMO;
+      if(HOps.transposed_G_for_vbias()) {
+        nr=1;
+        nc=NEL * NPOL * NMO;
+      }
+      boost::multi::array_ref<ComplexType, 2, pointer> Gw(make_device_ptr(G.origin()), {nr, nc});
+      HOps.vbias(Gw,X,sqrtdt);
+    }
     TG.local_barrier();
     ComplexType Xsum = 0;
-    //for(int i=0; i<X.size(); i++)
-    //Xsum += X[i][0];
-    //if(std::abs(file_data.Xsum)>1e-8) {
-    //REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
-    //REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
-    //} else {
-    //app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
-    //}
+    for(int i=0; i<X.size(); i++)
+      Xsum += X[i][0];
+    if(std::abs(file_data.Xsum)>1e-8) {
+      REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
+      REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
+    } else {
+      app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
+    }
 
-    //int vdim1 = (HOps.transposed_vHS()?1:NMO*NMO);
-    //int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
-    //CMatrix vHS({vdim1,vdim2},alloc_);
-    //TG.local_barrier();
-    //HOps.vHS(X,vHS,sqrtdt);
-    //TG.local_barrier();
-    //ComplexType Vsum=0;
-    //if(HOps.transposed_vHS()) {
-    //for(int i=0; i<vHS.size(1); i++)
-    //Vsum += vHS[0][i];
-    //} else {
-    //for(int i=0; i<vHS.size(0); i++)
-    //Vsum += vHS[i][0];
-    //}
-    //if(std::abs(file_data.Vsum)>1e-8) {
-    //REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
-    //REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
-    //} else {
-    //app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
-    //}
+    int vdim1 = (HOps.transposed_vHS()?1:NMO*NMO);
+    int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
+    CMatrix vHS({vdim1,vdim2},alloc_);
+    TG.local_barrier();
+    HOps.vHS(X,vHS,sqrtdt);
+    TG.local_barrier();
+    ComplexType Vsum=0;
+    if(HOps.transposed_vHS()) {
+      for(int i=0; i<vHS.size(1); i++)
+        Vsum += vHS[0][i];
+    } else {
+        for(int i=0; i<vHS.size(0); i++)
+          Vsum += vHS[i][0];
+    }
+    if(std::abs(file_data.Vsum)>1e-8) {
+      REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
+      REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
+    } else {
+      app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
+    }
     // Test Generalised Fock matrix.
     int dm_size;
     CMatrix G2({1, 1}, alloc_);

@@ -288,8 +288,7 @@ public:
     int getKr = KEright != nullptr;
     int getKl = KEleft != nullptr;
     if (E.size(0) != nwalk || E.size(1) < 3)
-      APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix "
-                "dimensions \n");
+      APP_ABORT(" Error in AFQMC/HamiltonianOperations/KP3IndexFactorization::energy(). Incorrect matrix dimensions \n");
 
     size_t mem_needs(nwalk * nkpts * nkpts * nspin * nocca_max * nmo_max);
     size_t cnt(0);
@@ -659,8 +658,7 @@ public:
     int getKr = KEright != nullptr;
     int getKl = KEleft != nullptr;
     if (E.size(0) != nwalk || E.size(1) < 3)
-      APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix "
-                "dimensions \n");
+      APP_ABORT(" Error in AFQMC/HamiltonianOperations/KP3IndexFactorization::energy(). Incorrect matrix dimensions\n");
 
     size_t mem_needs(nwalk * nkpts * nkpts * nspin * nocca_max * nmo_max);
     size_t cnt(0);

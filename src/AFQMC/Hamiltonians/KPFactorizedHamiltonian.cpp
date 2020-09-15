@@ -348,7 +348,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   {
     for (int Q = 0; Q < nkpts; Q++)
       if (Qmap[Q] >= 0)
-        LQKank.emplace_back(shmSpMatrix({nkpts, ank_max}, shared_allocator<SPComplexType>{TG.Node()}));
+        LQKank.emplace_back(shmSpMatrix({nkpts, npol * ank_max}, shared_allocator<SPComplexType>{TG.Node()}));
       else
         LQKank.emplace_back(shmSpMatrix({1, 1}, shared_allocator<SPComplexType>{TG.Node()}));
     if (type == COLLINEAR)
@@ -388,7 +388,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   for (int nd = 0; nd < ndet; nd++)
   {
     for (int Q = 0; Q < number_of_symmetric_Q; Q++)
-      LQKbnl.emplace_back(shmSpMatrix({nkpts, ank_max}, shared_allocator<SPComplexType>{TG.Node()}));
+      LQKbnl.emplace_back(shmSpMatrix({nkpts, npol * ank_max}, shared_allocator<SPComplexType>{TG.Node()}));
     if (type == COLLINEAR)
     {
       for (int Q = 0; Q < number_of_symmetric_Q; Q++)
@@ -435,7 +435,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   if (Q0 < 0)
     APP_ABORT(" Error: Could not find Q=0. \n");
 
-  boost::multi::array<SPComplexType, 2> buff({nmo_max, nchol_max});
+  boost::multi::array<SPComplexType, 2> buff({npol*nmo_max, nchol_max});
   int nt = 0;
   for (int nd = 0; nd < ndet; nd++)
   {
@@ -536,14 +536,14 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
             if (Q <= Qm)
             {
               Sp3Tensor_ref Likn(to_address(LQKikn[Q][K].origin()), {ni, nk, nchol});
-              Sp3Tensor_ref Lank(to_address(LQKank[nq0 + Q][K].origin()), {na, nchol, nk});
-              ma_rotate::getLank(Psi, Likn, Lank, buff);
+              Sp3Tensor_ref Lank(to_address(LQKank[nq0 + Q][K].origin()), {na*npol, nchol, nk});
+              ma_rotate::getLank(Psi, Likn, Lank, buff, npol==2);
             }
             else
             {
               Sp3Tensor_ref Lkin(to_address(LQKikn[Qm][QK].origin()), {nk, ni, nchol});
-              Sp3Tensor_ref Lank(to_address(LQKank[nq0 + Q][K].origin()), {na, nchol, nk});
-              ma_rotate::getLank_from_Lkin(Psi, Lkin, Lank, buff);
+              Sp3Tensor_ref Lank(to_address(LQKank[nq0 + Q][K].origin()), {na*npol, nchol, nk});
+              ma_rotate::getLank_from_Lkin(Psi, Lkin, Lank, buff, npol==2);
             }
           }
         }
@@ -590,8 +590,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
           {
             auto PsiQK = get_PsiK<SpMatrix>(nmo_per_kp, PsiT[nd], QK, npol==2);
             assert(PsiQK.size(0) == na);
-            Sp3Tensor_ref Lbnl(to_address(LQKbnl[nq0 + Qmap[Q] - 1][QK].origin()), {na, nchol, ni});
-            ma_rotate::getLank_from_Lkin(PsiQK, Likn, Lbnl, buff);
+            Sp3Tensor_ref Lbnl(to_address(LQKbnl[nq0 + Qmap[Q] - 1][QK].origin()), {na*npol, nchol, ni});
+            ma_rotate::getLank_from_Lkin(PsiQK, Likn, Lbnl, buff, npol==2);
           }
         }
       }
@@ -682,6 +682,9 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_shared(b
   {
     app_log() << " Sampling EXX energy using distribution over Q vector obtained from "
               << " trial energy. \n";
+
+    if(npol == 2) 
+      APP_ABORT("Error: nsampleQ>0 not yet implemented for noncollinear.\n\n\n");
 
     RealType scl = (type == CLOSED ? 2.0 : 1.0);
     size_t nqk   = 0;
@@ -1091,7 +1094,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   {
     for (int Q = 0; Q < nkpts; Q++)
       if (Qmap[Q] >= 0)
-        LQKank.emplace_back(shmSpMatrix({nkpts, ank_max}, shared_allocator<SPComplexType>{distNode}));
+        LQKank.emplace_back(shmSpMatrix({nkpts, npol * ank_max}, shared_allocator<SPComplexType>{distNode}));
       else
         LQKank.emplace_back(shmSpMatrix({1, 1}, shared_allocator<SPComplexType>{distNode}));
     if (type == COLLINEAR)
@@ -1114,7 +1117,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     for (int Q = 0; Q < nkpts; Q++)
     {
       if (Qmap[Q] >= 0)
-        LQKakn.emplace_back(shmSpMatrix({nkpts, ank_max}, shared_allocator<SPComplexType>{distNode}));
+        LQKakn.emplace_back(shmSpMatrix({nkpts, npol * ank_max}, shared_allocator<SPComplexType>{distNode}));
       else
         LQKakn.emplace_back(shmSpMatrix({1, 1}, shared_allocator<SPComplexType>{distNode}));
     }
@@ -1194,7 +1197,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
     APP_ABORT(" Error: Could not find Q=0. \n");
 
   TG.Node().barrier();
-  boost::multi::array<SPComplexType, 2> buff({nmo_max, nchol_max});
+  boost::multi::array<SPComplexType, 2> buff({npol*nmo_max, nchol_max});
   int nt = 0;
   for (int nd = 0; nd < ndet; nd++)
   {
@@ -1300,16 +1303,16 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
             if (Q <= Qm)
             {
               Sp3Tensor_ref Likn(to_address(LQKikn[Q][K].origin()), {nmo_max, nmo_max, nchol_max});
-              Sp3Tensor_ref Lakn(to_address(LQKakn[nq0 + Q][K].origin()), {nocc_max, nmo_max, nchol_max});
-              Sp3Tensor_ref Lank(to_address(LQKank[nq0 + Q][K].origin()), {nocc_max, nchol_max, nmo_max});
-              ma_rotate_padded::getLakn_Lank(Psi, Likn, Lakn, Lank);
+              Sp3Tensor_ref Lakn(to_address(LQKakn[nq0 + Q][K].origin()), {npol*nocc_max, nmo_max, nchol_max});
+              Sp3Tensor_ref Lank(to_address(LQKank[nq0 + Q][K].origin()), {npol*nocc_max, nchol_max, nmo_max});
+              ma_rotate_padded::getLakn_Lank(Psi, Likn, Lakn, Lank, npol==2);
             }
             else
             {
               Sp3Tensor_ref Lkin(to_address(LQKikn[Qm][QK].origin()), {nmo_max, nmo_max, nchol_max});
-              Sp3Tensor_ref Lakn(to_address(LQKakn[nq0 + Q][K].origin()), {nocc_max, nmo_max, nchol_max});
-              Sp3Tensor_ref Lank(to_address(LQKank[nq0 + Q][K].origin()), {nocc_max, nchol_max, nmo_max});
-              ma_rotate_padded::getLakn_Lank_from_Lkin(Psi, Lkin, Lakn, Lank, buff);
+              Sp3Tensor_ref Lakn(to_address(LQKakn[nq0 + Q][K].origin()), {npol*nocc_max, nmo_max, nchol_max});
+              Sp3Tensor_ref Lank(to_address(LQKank[nq0 + Q][K].origin()), {npol*nocc_max, nchol_max, nmo_max});
+              ma_rotate_padded::getLakn_Lank_from_Lkin(Psi, Lkin, Lakn, Lank, buff, npol==2);
             }
           }
         }
@@ -1356,9 +1359,9 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
           {
             auto PsiQK = get_PsiK<SpMatrix>(nmo_per_kp, PsiT[nd], QK, npol==2);
             assert(PsiQK.size(0) == na);
-            Sp3Tensor_ref Lbnl(to_address(LQKbnl[nq0 + Qmap[Q] - 1][QK].origin()), {nocc_max, nchol_max, nmo_max});
-            Sp3Tensor_ref Lbln(to_address(LQKbln[nq0 + Qmap[Q] - 1][QK].origin()), {nocc_max, nmo_max, nchol_max});
-            ma_rotate_padded::getLakn_Lank_from_Lkin(PsiQK, Likn, Lbln, Lbnl, buff);
+            Sp3Tensor_ref Lbnl(to_address(LQKbnl[nq0 + Qmap[Q] - 1][QK].origin()), {npol*nocc_max, nchol_max, nmo_max});
+            Sp3Tensor_ref Lbln(to_address(LQKbln[nq0 + Qmap[Q] - 1][QK].origin()), {npol*nocc_max, nmo_max, nchol_max});
+            ma_rotate_padded::getLakn_Lank_from_Lkin(PsiQK, Likn, Lbln, Lbnl, buff, npol==2);
           }
         }
       }
@@ -1463,6 +1466,9 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   {
     app_log() << " Sampling EXX energy using distribution over Q vector obtained from "
               << " trial energy. \n";
+
+    if(npol == 2) 
+      APP_ABORT("Error: nsampleQ>0 not yet implemented for noncollinear.\n\n\n");
 
     RealType scl = (type == CLOSED ? 2.0 : 1.0);
     size_t nqk   = 0;
