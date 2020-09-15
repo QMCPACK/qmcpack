@@ -79,6 +79,10 @@ void timeBatchedQR(Allocator& alloc, Buff& buffer, int nbatch, int m, int n)
 {
   using T = typename Allocator::value_type;
   int offset = 0;
+  //Tensor3D<T> A({nbatch, m, n}, alloc);
+  //Tensor3D<T> AT({nbatch, n, m}, alloc);
+  //Tensor2D<T> T_({nbatch, m}, alloc);
+  //Tensor2D<T> scl({nbatch, m}, alloc);
   Tensor3D_ref<T> A(buffer.origin(), {nbatch, m, n});
   offset += A.num_elements();
   Tensor3D_ref<T> AT(buffer.origin()+offset, {nbatch, n, m});
@@ -88,7 +92,7 @@ void timeBatchedQR(Allocator& alloc, Buff& buffer, int nbatch, int m, int n)
   Tensor2D_ref<T> scl(buffer.origin()+offset, {nbatch, m});
   offset += T_.num_elements();
   int sz = ma::gqr_optimal_workspace_size(AT[0]);
-  //std::cout << buffer.num_elements() << " " << 2*nbatch*m*n + 2*nbatch*m + nbatch*sz << " " << offset << std::endl; 
+  //std::cout << buffer.num_elements() << " " << 2*nbatch*m*n + 2*nbatch*m + nbatch*sz << " " << offset << std::endl;
   Tensor1D_ref<T> WORK(buffer.origin()+offset, boost::multi::iextensions<1u>{nbatch * sz});
   Alloc<int> ialloc{};
   std::vector<pointer<T>> Aarray;
@@ -125,6 +129,52 @@ void timeBatchedQR(Allocator& alloc, Buff& buffer, int nbatch, int m, int n)
   std::cout << "  " << std::setw(5) << nbatch << "   " << std::setw(5) << m << " " << std::setw(5)
             << n << " " << std::scientific << ttrans << " " << tgeqrf << " " << tdet << " " <<
             tgqr << std::endl;
+}
+
+template<class Allocator, class Buff>
+void timeQR(Allocator& alloc, Buff& buffer, int m)
+{
+  using T = typename Allocator::value_type;
+  int offset = 0;
+  Tensor2D_ref<T> A(buffer.origin(), {m, m});
+  offset += A.num_elements();
+  Tensor1D_ref<T> TAU(buffer.origin()+offset, {m});
+  offset += TAU.num_elements();
+  int sz = ma::gqr_optimal_workspace_size(A);
+  Tensor1D_ref<T> WORK(buffer.origin()+offset, boost::multi::iextensions<1u>{sz});
+  myTimer timer;
+  std::string timer_id = std::string("geqrf");
+  timer.add(timer_id);
+  timer.start(timer_id);
+  using ma::geqrf;
+  geqrf(A, TAU, WORK);
+  auto tgeqrf = timer.elapsed(timer_id);
+  using ma::gqr;
+  timer_id = std::string("gqr");
+  timer.start(timer_id);
+  geqrf(A, TAU, WORK);
+  auto tgqr = timer.elapsed(timer_id);
+  std::cout << "  " << std::setw(5) << m << " " << std::setw(5)
+            << m << " " << std::scientific << tgeqrf << " " << " " << tgqr << std::endl;
+}
+
+template<class Allocator, class Buff>
+void timeExchangeKernel(Allocator& alloc, Buff& buffer, int nbatch, int nwalk, int nocc, int nchol)
+{
+  using T = typename Allocator::value_type;
+  int offset = 0;
+  Tensor3D_ref<T> Twabn(buffer.origin(), {2*nbatch, nwalk*nocc, nocc*nchol});
+  offset += Twabn.num_elements();
+  Tensor1D_ref<T> scal(buffer.origin()+offset, boost::multi::iextensions<1u>{nbatch});
+  offset += scal.num_elements();
+  Tensor1D_ref<T> out(buffer.origin()+offset, boost::multi::iextensions<1u>{nwalk});
+  using ma::batched_dot_wabn_wban;
+  myTimer timer;
+  timer.add("batched_dot");
+  timer.start("batched_dot");
+  batched_dot_wabn_wban(nbatch, nwalk, nocc, nchol, scal.origin(), Twabn.origin(), to_address(out.data()), 1);
+  auto time = timer.elapsed("batched_dot");
+  std::cout << "    " << std::setw(5) << nbatch << " " << std::setw(5) << nwalk << " " << std::setw(5) << nocc << " " << std::setw(5) << nchol << " " << time << std::endl;
 }
 
 template<class Allocator, class Buff>
@@ -247,17 +297,17 @@ int main(int argc, char* argv[])
   int num_basis = -1;
   int num_elec = -1;
   parse_args(argc, argv, num_walker, num_basis, num_elec);
-  std::vector<int> num_kpoints = {8, 12, 18, 27, 36, 48};
+  std::vector<int> num_kpoints = {12, 18, 27, 36, 48};
   int nk_max = num_kpoints[num_kpoints.size()-1];
   int m_max = nk_max * num_basis;
   int n_max = nk_max * num_elec;
   {
     std::cout << " - Batched sgemm (nk^3, mxm)" << std::endl;
     std::cout << std::endl;
-    std::cout << "    nk^3     m         time" << std::endl;
+    std::cout << "    nk^2     m         time" << std::endl;
     int nb_max = nk_max*nk_max;
-    int nb = 10*num_basis;
-    int size = nb_max*nb*nb+ 2*nb*nb;
+    int nb = num_elec * num_basis;
+    int size = nb_max*nb*nb + 2*nb*nb;
     Alloc<float> alloc{};
     Tensor1D<float> buffer(iextensions<1u>{size}, 1.0, alloc);
     for (auto nk : num_kpoints) {
@@ -286,18 +336,47 @@ int main(int argc, char* argv[])
     std::cout << std::endl;
   }
   {
+    std::cout << " - complex QR (MxM)" << std::endl;
+    std::cout << std::endl;
+    std::cout << "      M     M      tzgeqrf        tzungr" << std::endl;
+    int size = 3*1000*1000;
+    Alloc<std::complex<double>> alloc{};
+    Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, 1.0, alloc);
+    std::vector<int> dims = {100, 200, 500, 800, 1000};
+    for (auto d : dims) {
+      timeQR(alloc, buffer, d);
+    }
+    std::cout << std::endl;
+  }
+  {
     std::cout << " - sgemm (MxM)" << std::endl;
     std::cout << std::endl;
-    std::cout << "      M    M" << std::endl;
-    int size = (3*m_max*m_max);
+    std::cout << "       M     M       tsgemm" << std::endl;
+    int size = 3*4000*4000;
     Alloc<float> alloc{};
     Tensor1D<float> buffer(iextensions<1u>{size}, 1.0, alloc);
-    //auto alloc(device_buffer_generator->template get_allocator<std::complex<double>>());
-    for (auto nk : num_kpoints) {
-      int m = num_basis * nk;
-      timeGemm(alloc, buffer, m, m);
+    std::vector<int> dims = {200, 500, 800, 1000, 2000, 3000, 4000};
+    for (auto d : dims) {
+      timeGemm(alloc, buffer, d, d);
     }
     //std::cout << std::endl;
     //std::cout << std::endl;
+  }
+  {
+    std::cout << " - exchange kernel (Twabn Twanb -> Ew)" << std::endl;
+    std::cout << std::endl;
+    std::cout << "   nbatch    nwalk    nocc nchol  tExchangeKernel" << std::endl;
+    Alloc<std::complex<double>> alloc{};
+    int nwalk = 5;
+    int nocc = 20;
+    int nchol = 270;
+    std::vector<int> batches = {100, 200, 400, 800};
+    int nbatch_max = batches[batches.size()-1];
+    int size = 2*nbatch_max*nwalk*nocc*nocc*nchol + nbatch_max  + nwalk;
+    Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, 1.0, alloc);
+    for (auto b : batches) {
+      timeExchangeKernel(alloc, buffer, b, nwalk, nocc, nchol);
+    }
+    std::cout << std::endl;
   }
 }
