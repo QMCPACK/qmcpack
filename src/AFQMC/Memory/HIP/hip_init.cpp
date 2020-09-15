@@ -59,6 +59,7 @@ void HIP_INIT(boost::mpi3::shared_communicator& node, unsigned long long int ise
   hipDeviceProp_t dev;
   hip_check(hipGetDeviceProperties(&dev, 0), "hipGetDeviceProperties");
   qmcplusplus::app_log() << " HIP compute capability: " << dev.major << "." << dev.minor << std::endl;
+  qmcplusplus::app_log() << " Device Name : " << dev.name << std::endl;
   if (dev.major <= 6)
   {
     qmcplusplus::app_log() << " Warning HIP major compute capability < 6.0" << std::endl;
