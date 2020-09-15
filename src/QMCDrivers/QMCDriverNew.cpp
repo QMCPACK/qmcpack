@@ -16,7 +16,7 @@
 #include <numeric>
 
 #include "QMCDrivers/QMCDriverNew.h"
-#include "Concurrency/TasksOneToOne.hpp"
+#include "Concurrency/ParallelExecutor.hpp"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -31,6 +31,7 @@
 #include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #include "Utilities/StlPrettyPrint.hpp"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -97,12 +98,12 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
 
 void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
 {
-  int num_threads(Concurrency::maxThreads<>());
+  int num_threads(Concurrency::maxCapacity<>());
   if (num_crowds > num_threads)
   {
     std::stringstream error_msg;
     error_msg << "Bad Input: num_crowds (" << num_crowds << ") > num_threads (" << num_threads << ")\n";
-    throw std::runtime_error(error_msg.str());
+    throw UniformCommunicateError(error_msg.str());
   }
 }
 
@@ -337,8 +338,6 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
 {
   step_contexts_.resize(num_crowds);
 
-  TasksOneToOne<> do_per_crowd(num_crowds);
-
   Rng.resize(num_crowds);
 
   RngCompatibility.resize(num_crowds);
@@ -484,10 +483,10 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
                                                                          RealType reserve_walkers,
                                                                          int num_crowds)
 {
-  // Step 1. set num_crowds by input and Concurrency::maxThreads<>()
+  // Step 1. set num_crowds by input and Concurrency::maxCapacity<>()
   checkNumCrowdsLTNumThreads(num_crowds);
   if (num_crowds == 0)
-    num_crowds = Concurrency::maxThreads<>();
+    num_crowds = Concurrency::maxCapacity<>();
 
   AdjustedWalkerCounts awc{0, {}, {}, reserve_walkers};
 
@@ -497,16 +496,16 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
     if (required_total < num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks and the request of " << required_total
+      error << "Running on " << num_ranks << " MPI ranks.  The request of " << required_total
             << " global walkers cannot be satisfied! Need at least one walker per MPI rank.";
-      throw std::runtime_error(error.str());
+      throw UniformCommunicateError(error.str());
     }
     if (walkers_per_rank != 0 && required_total != walkers_per_rank * num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks and the request of " << required_total
-            << " global walkers and " << walkers_per_rank << " walkers per rank cannot be satisfied!";
-      throw std::runtime_error(error.str());
+      error << "Running on " << num_ranks << " MPI ranks, The request of " << required_total << " global walkers and "
+            << walkers_per_rank << " walkers per rank cannot be satisfied!";
+      throw UniformCommunicateError(error.str());
     }
     awc.global_walkers   = required_total;
     awc.walkers_per_rank = fairDivide(required_total, num_ranks);

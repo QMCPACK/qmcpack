@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from afqmctools.utils.qmcpack_utils import write_xml_input
 
 options = {

@@ -37,15 +37,7 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
 
 
 /** Clean up the vector */
-QMCCostFunctionBatched::~QMCCostFunctionBatched()
-{
-  delete_iter(RngSaved.begin(), RngSaved.end());
-
-  delete_iter(wf_ptr_list_.begin(), wf_ptr_list_.end());
-  delete_iter(p_ptr_list_.begin(), p_ptr_list_.end());
-  delete_iter(h_ptr_list_.begin(), h_ptr_list_.end());
-  delete_iter(h0_ptr_list_.begin(), h0_ptr_list_.end());
-}
+QMCCostFunctionBatched::~QMCCostFunctionBatched() { delete_iter(RngSaved.begin(), RngSaved.end()); }
 
 void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
                                       const std::vector<Return_rt>& PM,
@@ -239,6 +231,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       p_ptr_list_.resize(numSamples);
       h_ptr_list_.resize(numSamples);
       h0_ptr_list_.resize(numSamples);
+      rng_ptr_list_.resize(numSamples);
     }
 
     if (RecordsOnNode.size1() == 0)
@@ -281,17 +274,27 @@ void QMCCostFunctionBatched::checkConfigurations()
     {
       ParticleSet* wRef = new ParticleSet(W);
       samples_.loadSample(wRef->R, iw);
-      wRef->update();
-      p_ptr_list_[iw]  = wRef;
-      wf_ptr_list_[iw] = Psi.makeClone(*wRef);
-      h_ptr_list_[iw]  = H.makeClone(*wRef, *wf_ptr_list_[iw]);
-      h0_ptr_list_[iw] = H_KE_Node->makeClone(*wRef, *wf_ptr_list_[iw]);
+      p_ptr_list_[iw].reset(wRef);
+      wf_ptr_list_[iw].reset(Psi.makeClone(*wRef));
+      h_ptr_list_[iw].reset(H.makeClone(*wRef, *wf_ptr_list_[iw]));
+      h0_ptr_list_[iw].reset(H_KE_Node->makeClone(*wRef, *wf_ptr_list_[iw]));
+
+      rng_ptr_list_[iw] = std::make_unique<RandomGenerator_t>(*MoverRng[0]);
+      h_ptr_list_[iw]->setRandomGenerator(rng_ptr_list_[iw].get());
+
+      // RNG state is saved to use the same sequence in correlatedSampling.
+      // Since only one generator is saved, this means the same rotated grid is used
+      // for every sample in evaluating the non-local ECP contribution.
+      rng_save_ptr_ = std::make_unique<RandomGenerator_t>(*MoverRng[0]);
+
     }
     outputManager.resume();
 
-    RefVector<TrialWaveFunction> wf_list = convertPtrToRefVector(wf_ptr_list_);
-    RefVector<ParticleSet> p_list        = convertPtrToRefVector(p_ptr_list_);
-    RefVector<QMCHamiltonian> h_list     = convertPtrToRefVector(h_ptr_list_);
+    auto wf_list = convertUPtrToRefVector(wf_ptr_list_);
+    auto p_list  = convertUPtrToRefVector(p_ptr_list_);
+    auto h_list  = convertUPtrToRefVector(h_ptr_list_);
+
+    ParticleSet::flex_update(p_list);
 
     TrialWaveFunction::flex_evaluateDeltaLogSetup(wf_list, p_list, log_psi_fixed_, log_psi_opt_, ref_dLogPsi,
                                                   ref_d2LogPsi);
@@ -416,16 +419,19 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
     outputManager.pause();
     for (int iw = 0; iw < numSamples; iw++)
     {
-      ParticleSet* wRef = p_ptr_list_[iw];
-      samples_.loadSample(wRef->R, iw);
-      wRef->update(true);
+      ParticleSet& wRef = *p_ptr_list_[iw];
+      samples_.loadSample(wRef.R, iw);
+      // Reset the state of the RNG to the point saved at the beginning of checkConfiguration
+      *rng_ptr_list_[iw] = *rng_save_ptr_;
     }
 
     outputManager.resume();
 
-    RefVector<TrialWaveFunction> wf_list = convertPtrToRefVector(wf_ptr_list_);
-    RefVector<ParticleSet> p_list        = convertPtrToRefVector(p_ptr_list_);
-    RefVector<QMCHamiltonian> h0_list    = convertPtrToRefVector(h0_ptr_list_);
+    auto wf_list = convertUPtrToRefVector(wf_ptr_list_);
+    auto p_list  = convertUPtrToRefVector(p_ptr_list_);
+    auto h0_list = convertUPtrToRefVector(h0_ptr_list_);
+
+    ParticleSet::flex_update(p_list, true);
 
 
     RefVector<ParticleSet::ParticleGradient_t> dummyG_list;

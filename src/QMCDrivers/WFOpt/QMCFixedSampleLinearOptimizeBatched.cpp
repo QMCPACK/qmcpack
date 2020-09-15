@@ -21,7 +21,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
-#include "QMCDrivers/WFOpt/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
@@ -423,7 +423,6 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
         }
       }
       app_log().flush();
-      app_error().flush();
       if (failedTries > 20)
         break;
       //APP_ABORT("QMCFixedSampleLinearOptimizeBatched::run TOO MANY FAILURES");
@@ -442,7 +441,6 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
         optTarget->Params(i) = currentParameters[i];
     }
     app_log().flush();
-    app_error().flush();
   }
 
   finish();
@@ -573,7 +571,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml, cons
 
   bool success = true;
   //allways reset optTarget
-  optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
+  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, samples_, myComm);
   optTarget->setStream(&app_log());
   if (reportH5)
     optTarget->reportH5 = true;

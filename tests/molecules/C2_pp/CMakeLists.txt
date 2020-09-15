@@ -4,15 +4,14 @@ IF (NOT QMC_CUDA)
 #C2_PP test targets the Multideterminant route of the code. The wavefunction data is  stored in a XML format AND HDF5 Format. Both files should be run
 # Energy from QP: E=-10.9015995458600 Ha
 #
-#   "kinetic" " 7.72378 0.00016") # kinetic energy
-#   "totenergy" " -11.059755 0.000013 ") # total energy
-#   "eeenergy" " 12.142072 0.000083") # e-e energy
-#   "samples" "1072889856 0") # samples
+#   "kinetic" " 7.74018 0.00065") # kinetic energy
+#   "totenergy" " -11.060274 0.000055 ") # total energy
+#   "eeenergy" " 12.14369 0.00036") # e-e energy
+#   "samples" "67174400 0") # samples
 
-
-  LIST(APPEND C2_PP_MSDJ_SHORT "kinetic" "7.72378 0.012") # kinetic energy
-  LIST(APPEND C2_PP_MSDJ_SHORT "totenergy" "-11.059755 0.00099") # total energy
-  LIST(APPEND C2_PP_MSDJ_SHORT "eeenergy" "12.142072 0.0052") # e-e energy
+  LIST(APPEND C2_PP_MSDJ_SHORT "kinetic" "7.74018 0.012") # kinetic energy
+  LIST(APPEND C2_PP_MSDJ_SHORT "totenergy" "-11.060274 0.00099") # total energy
+  LIST(APPEND C2_PP_MSDJ_SHORT "eeenergy" "12.14369 0.0052") # e-e energy
   LIST(APPEND C2_PP_MSDJ_SHORT "samples" "160000 0.0") # samples
   QMC_RUN_AND_CHECK(short-C2_pp_msdj-H5-vmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
@@ -43,9 +42,9 @@ IF (NOT QMC_CUDA)
 
 
 
-  LIST(APPEND C2_PP_MSDJ_LONG "kinetic" "7.72378 0.0034") # kinetic energy
-  LIST(APPEND C2_PP_MSDJ_LONG "totenergy" "-11.059755 0.00037") # total energy
-  LIST(APPEND C2_PP_MSDJ_LONG "eeenergy" "12.142072 0.0020") # e-e energy
+  LIST(APPEND C2_PP_MSDJ_LONG "kinetic" "7.74018 0.0034") # kinetic energy
+  LIST(APPEND C2_PP_MSDJ_LONG "totenergy" "-11.060274 0.00037") # total energy
+  LIST(APPEND C2_PP_MSDJ_LONG "eeenergy" "12.14369 0.0020") # e-e energy
   LIST(APPEND C2_PP_MSDJ_LONG "samples" "1280000 0.0") # samples
   QMC_RUN_AND_CHECK(long-C2_pp_msdj-H5-vmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"

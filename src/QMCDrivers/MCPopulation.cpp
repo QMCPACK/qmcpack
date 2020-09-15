@@ -13,7 +13,7 @@
 
 #include "QMCDrivers/MCPopulation.h"
 #include "Configuration.h"
-#include "Concurrency/TasksOneToOne.hpp"
+#include "Concurrency/ParallelExecutor.hpp"
 #include "Message/CommOperators.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
@@ -330,7 +330,7 @@ void MCPopulation::set_variational_parameters(const opt_variables_type& active)
 // {
 //   walkers_.resize(num_walkers);
 
-//   TasksOneToOne<> do_per_crowd(num_crowds);
+//   ParallelExecutor<> do_per_crowd(num_crowds);
 
 //   std::vector<std::unique_ptr<std::vector<std::unique_ptr<MCPWalker>>>> walkers_per_crowd_per_slot;
 //   walkers_per_crowd_per_slot.resize(num_crowds);
