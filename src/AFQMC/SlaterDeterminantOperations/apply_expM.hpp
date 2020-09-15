@@ -34,7 +34,7 @@ namespace base
  * Calculate S = exp(im*V)*S using a Taylor expansion of exp(V)
  */
 template<class MatA, class MatB, class MatC>
-inline void apply_expM(const MatA& V, MatB& S, MatC& T1, MatC& T2, int order = 6, char TA = 'N')
+inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, int order = 6, char TA = 'N')
 {
   assert(V.size(0) == V.size(1));
   assert(V.size(1) == S.size(0));
@@ -80,7 +80,7 @@ namespace shm
  * V, S, T1, T2 are expected to be in shared memory.  
  */
 template<class MatA, class MatB, class MatC, class communicator>
-inline void apply_expM(const MatA& V, MatB& S, MatC& T1, MatC& T2, communicator& comm, int order = 6, char TA = 'N')
+inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, communicator& comm, int order = 6, char TA = 'N')
 {
   assert(V.size(0) == S.size(0));
   assert(V.size(1) == S.size(0));
@@ -134,13 +134,14 @@ namespace batched
  * Calculate S = exp(im*V)*S using a Taylor expansion of exp(V)
  */
 template<class MatA, class MatB, class MatC>
-inline void apply_expM(const MatA& V, MatB& S, MatC& T1, MatC& T2, int order = 6, char TA = 'N')
+inline void apply_expM(const MatA& V, MatB&& S, MatC& T1, MatC& T2, 
+                       int order = 6, char TA = 'N')
 {
   static_assert(std::decay<MatA>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
   static_assert(std::decay<MatB>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
   static_assert(std::decay<MatC>::type::dimensionality == 3, " batched::apply_expM::dimenionality == 3");
-  assert(V.size(0) == S.size(0));
-  assert(V.size(0) == T1.size(0));
+  assert(V.size(0) == S.size(0)); 
+  assert(V.size(0) == T1.size(0)); 
   assert(V.size(0) == T2.size(0));
   assert(V.size(1) == V.size(2));
   assert(V.size(2) == S.size(1));

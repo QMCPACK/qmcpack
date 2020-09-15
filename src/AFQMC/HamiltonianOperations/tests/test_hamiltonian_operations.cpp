@@ -244,14 +244,17 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
       HOps.vbias(Gw,X,sqrtdt);
     }
     TG.local_barrier();
-    ComplexType Xsum = 0;
-    for(int i=0; i<X.size(); i++)
+    ComplexType Xsum = 0, Xsum2=0;
+    for(int i=0; i<X.size(0); i++) {
       Xsum += X[i][0];
+      Xsum2 += 0.5*X[i][0]*X[i][0];
+    }
     if(std::abs(file_data.Xsum)>1e-8) {
       REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
       REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
     } else {
       app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
+      app_log()<<" Xsum2 (EJ): " <<setprecision(12) <<Xsum2/sqrtdt/sqrtdt <<std::endl;
     }
 
     int vdim1 = (HOps.transposed_vHS()?1:NMO*NMO);

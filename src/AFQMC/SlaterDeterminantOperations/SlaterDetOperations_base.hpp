@@ -235,31 +235,42 @@ public:
   }
 
   template<class Mat, class MatP1, class MatV>
-  void Propagate(Mat&& A, const MatP1& P1, const MatV& V, int order = 6, char TA = 'N')
+  void Propagate(Mat&& A, const MatP1& P1, const MatV& V, 
+                        int order = 6, char TA = 'N', bool noncollinear = false)
   {
+    int npol = noncollinear ? 2 : 1; 
     int NMO  = A.size(0);
     int NAEA = A.size(1);
+    int M = NMO/npol;
+    assert(NMO%npol == 0);  
+    assert(P1.size(0) == NMO);
+    assert(P1.size(1) == NMO);
+    assert(V.size(0) == M);
+    assert(V.size(1) == M);
     TMatrix TMN({NMO, NAEA}, buffer_generator->template get_allocator<T>());
-    TMatrix T1({NMO, NAEA}, buffer_generator->template get_allocator<T>());
-    TMatrix T2({NMO, NAEA}, buffer_generator->template get_allocator<T>());
+    TMatrix T1({M, NAEA}, buffer_generator->template get_allocator<T>());
+    TMatrix T2({M, NAEA}, buffer_generator->template get_allocator<T>());
     using ma::H;
     using ma::T;
     if (TA == 'H' || TA == 'h')
     {
       ma::product(ma::H(P1), std::forward<Mat>(A), TMN);
-      SlaterDeterminantOperations::base::apply_expM(V, TMN, T1, T2, order, TA);
+      for(int p=0; p<npol; ++p)  
+        SlaterDeterminantOperations::base::apply_expM(V, TMN.sliced(p*M,(p+1)*M), T1, T2, order, TA);
       ma::product(ma::H(P1), TMN, std::forward<Mat>(A));
     }
     else if (TA == 'T' || TA == 't')
     {
       ma::product(ma::T(P1), std::forward<Mat>(A), TMN);
-      SlaterDeterminantOperations::base::apply_expM(V, TMN, T1, T2, order, TA);
+      for(int p=0; p<npol; ++p)  
+        SlaterDeterminantOperations::base::apply_expM(V, TMN.sliced(p*M,(p+1)*M), T1, T2, order, TA);
       ma::product(ma::T(P1), TMN, std::forward<Mat>(A));
     }
     else
     {
       ma::product(P1, std::forward<Mat>(A), TMN);
-      SlaterDeterminantOperations::base::apply_expM(V, TMN, T1, T2, order);
+      for(int p=0; p<npol; ++p)  
+        SlaterDeterminantOperations::base::apply_expM(V, TMN.sliced(p*M,(p+1)*M), T1, T2, order);
       ma::product(P1, TMN, std::forward<Mat>(A));
     }
   }

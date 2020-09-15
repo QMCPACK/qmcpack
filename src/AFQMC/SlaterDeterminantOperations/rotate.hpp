@@ -617,8 +617,8 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
  * Case:
  *   - Closed/Collinear:  L[a][n][k] = sum_i A[a][i] L[i][k][n]
  *       - In collinear case, two separate calls are made for each spin channel.
- *   - Non-collinear: L[a][s][n][k] = sum_i A[a][si] L[i][k][n]   // [si] == [s][i] combined spinor index
- *       - In this case, to preserve matrix dimenions, [a][s] --> [as] is kept as a single index, peculiar order is given by its use in Energy evaluation. 
+ *   - Non-collinear: L[a][n][sk] = sum_i A[a][si] L[i][k][n]   // [si] == [s][i] combined spinor index
+ *       - In this case, to preserve matrix dimenions, [s][k] --> [sk] is kept as a single index.
  */
 template<class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
 void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, MultiArray3DC&& Lank, MultiArray2D&& buff, bool noncollinear=false)
@@ -631,10 +631,10 @@ void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, MultiArray3DC&& Lank, Mu
   int nk    = Likn.size(1);
   int nchol = Likn.size(2);
   assert(Likn.size(0) == ni);
-  assert(Lank.size(0) == na*npol);
+  assert(Lank.size(0) == na);
   assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == nk);
-  assert(buff.size(0) >= nk);
+  assert(Lank.size(2) == nk*npol);
+  assert(buff.size(0) >= npol * nk);
   assert(buff.size(1) >= nchol);
   if(noncollinear)
     assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
@@ -646,12 +646,12 @@ void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, MultiArray3DC&& Lank, Mu
   boost::multi::array_ref<element, 2> Las_kn(to_address(Lank.origin()), {na * npol, nk * nchol});
 
   ma::product(Aas_i, Li_kn, Las_kn);
-  for (int a = 0; a < na * npol; a++)
+  for (int a = 0; a < na; a++)
   {
-    boost::multi::array_ref<element, 2> Lkn(to_address(Lank[a].origin()), {nk, nchol});
-    boost::multi::array_ref<element, 2> Lnk(to_address(Lank[a].origin()), {nchol, nk});
-    buff({0, nk}, {0, nchol}) = Lkn;
-    ma::transpose(buff({0, nk}, {0, nchol}), Lnk);
+    boost::multi::array_ref<element, 2> Lskn(to_address(Lank[a].origin()), {npol * nk, nchol});
+    boost::multi::array_ref<element, 2> Lnsk(to_address(Lank[a].origin()), {nchol, npol * nk});
+    buff({0, npol * nk}, {0, nchol}) = Lskn;
+    ma::transpose(buff({0, npol * nk}, {0, nchol}), Lnsk);
   }
 }
 
@@ -660,8 +660,8 @@ void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, MultiArray3DC&& Lank, Mu
  * Case:
  *   - Closed/Collinear:  L[a][n][k] = sum_i A[a][i] conj(L[k][i][n])
  *       - In collinear case, two separate calls are made for each spin channel.
- *   - Non-collinear: L[a][s][n][k] = sum_i A[a][si] conj(L[k][i][n])   // [si] == [s][i] combined spinor index
- *       - In this case, to preserve matrix dimenions, [a][s] --> [as] is kept as a single index, peculiar order is given by its use in Energy evaluation. 
+ *   - Non-collinear: L[a][n][sk] = sum_i A[a][si] conj(L[k][i][n])   // [si] == [s][i] combined spinor index
+ *       - In this case, to preserve matrix dimenions, [s][k] --> [sk] is kept as a single index.
  */
 template<class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
 void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin, MultiArray3DC&& Lank, MultiArray2D&& buff, bool noncollinear=false)
@@ -674,9 +674,9 @@ void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin, MultiArray3DC&
   int nk    = Lkin.size(0);
   int nchol = Lkin.size(2);
   assert(Lkin.size(1) == ni);
-  assert(Lank.size(0) == na * npol);
+  assert(Lank.size(0) == na);
   assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == nk);
+  assert(Lank.size(2) == nk * npol);
   assert(buff.num_elements() >= na * npol * nchol);
   if(noncollinear)
     assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
@@ -684,15 +684,16 @@ void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin, MultiArray3DC&
   using Type = typename std::decay<MultiArray3DC>::type::element;
   using elementA = typename std::decay<MultiArray2DA>::type::element;
   boost::multi::array_ref<elementA, 2> Aas_i(to_address(Aai.origin()), {na * npol, ni});
-  boost::multi::array_ref<Type, 2> bna(to_address(buff.origin()), {nchol, na * npol});
+  boost::multi::array_ref<Type, 2> bnas(to_address(buff.origin()), {nchol, na * npol});
   // Lank[a][n][k] = sum_i Aai[a][i] conj(Lkin[k][i][n])
   // Lank[as][n][k] = sum_i Aai[as][i] conj(Lkin[k][i][n])
   for (int k = 0; k < nk; k++)
   {
-    ma::product(ma::H(Lkin[k]), ma::T(Aas_i), bna);
-    for (int a = 0; a < na * npol; a++)
+    ma::product(ma::H(Lkin[k]), ma::T(Aas_i), bnas);
+    for (int a = 0; a < na; a++)
       for (int n = 0; n < nchol; n++)
-        Lank[a][n][k] = bna[n][a];
+        for (int p = 0; p < npol; p++)
+          Lank[a][n][p*nk+k] = bnas[n][a*npol+p];
   }
 }
 
@@ -714,13 +715,13 @@ void getLakn_Lank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, MultiArray3DC&& Lak
   int nchol = Likn.size(2);
   assert(Likn.size(1) == nmo);
 
-  assert(Lakn.size(1) == nmo);
+  assert(Lakn.size(1) == npol*nmo);
   assert(Lakn.size(2) == nchol);
 
-  assert(Lakn.size(0) >= npol*na );
+  assert(Lakn.size(0) >= na );
   assert(Lakn.size(0) == Lank.size(0));
   assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == nmo);
+  assert(Lank.size(2) == npol*nmo);
 
   if(noncollinear)
     assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
@@ -756,13 +757,13 @@ void getLakn_Lank_from_Lkin(MultiArray2DA&& Aai,
   int nchol = Lkin.size(2);
   assert(Lkin.size(1) == nmo);
 
-  assert(Lakn.size(1) == nmo);
+  assert(Lakn.size(1) == npol*nmo);
   assert(Lakn.size(2) == nchol);
 
-  assert(Lakn.size(0) >= npol*na );
+  assert(Lakn.size(0) >= na );
   assert(Lakn.size(0) == Lank.size(0));
   assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == nmo);
+  assert(Lank.size(2) == npol*nmo);
 
   if(noncollinear)
     assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
@@ -774,15 +775,16 @@ void getLakn_Lank_from_Lkin(MultiArray2DA&& Aai,
   using elmA = typename std::decay<MultiArray2DA>::type::element;
 
   boost::multi::array_ref<elmA, 2> Aas_i(to_address(Aai.origin()), {na * npol, ni});
-  boost::multi::array_ref<elm2, 2, ptr2> bna(buff.origin(), {nchol, na * npol});
-  // Lakn[as][k][n] = sum_i Aai[as][i] conj(Lkin[k][i][n])
+  boost::multi::array_ref<elm2, 2, ptr2> bnas(buff.origin(), {nchol, na * npol});
+  // Lakn[a][sk][n] = sum_i Aai[as][i] conj(Lkin[k][i][n])
   for (int k = 0; k < nmo; k++)
   {
-    ma::product(ma::H(Lkin[k].sliced(0, ni)), ma::T(Aai), bna);
-    for (int a = 0; a < na * npol; a++)
-      Lakn[a][k] = bna({0, nchol}, a);
+    ma::product(ma::H(Lkin[k].sliced(0, ni)), ma::T(Aai), bnas);
+    for (int a = 0; a < na; a++)
+      for (int p = 0; p < npol; p++)
+        Lakn[a][p*nmo+k] = bnas({0, nchol}, a*npol+p);
   }
-  for (int a = 0; a < na * npol; a++)
+  for (int a = 0; a < na; a++)
     ma::transpose(Lakn[a], Lank[a]);
 }
 

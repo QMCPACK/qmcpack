@@ -159,15 +159,23 @@ public:
   }
 
   template<class Mat, class MatP1, class MatV>
-  void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, int order = 6, char TA = 'N')
+  void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, 
+                                int order = 6, char TA = 'N', bool noncollinear = false)
   {
+    int npol = noncollinear ? 2 : 1;
     int NMO  = A.size(0);
     int NAEA = A.size(1);
-    set_shm_buffer(comm, 3 * NAEA * NMO);
-    assert(SM_TMats->num_elements() >= 3 * NAEA * NAEA);
+    int M = NMO/npol;
+    assert(NMO%npol == 0);
+    assert(P1.size(0) == NMO);
+    assert(P1.size(1) == NMO);
+    assert(V.size(0) == M);
+    assert(V.size(1) == M);
+    set_shm_buffer(comm, NAEA * (NMO + 2*M) );
+    assert(SM_TMats->num_elements() >= NAEA * (NMO + 2*M) );
     boost::multi::array_ref<T, 2> T0(to_address(SM_TMats->origin()), {NMO, NAEA});
-    boost::multi::array_ref<T, 2> T1(to_address(SM_TMats->origin()) + NMO * NAEA, {NMO, NAEA});
-    boost::multi::array_ref<T, 2> T2(to_address(SM_TMats->origin()) + 2 * NMO * NAEA, {NMO, NAEA});
+    boost::multi::array_ref<T, 2> T1(to_address(T0.origin()) + T0.num_elements(), {M, NAEA});
+    boost::multi::array_ref<T, 2> T2(to_address(T1.origin()) + T1.num_elements(), {M, NAEA});
     using ma::H;
     using ma::T;
     if (comm.root())
@@ -180,7 +188,8 @@ public:
         ma::product(P1, std::forward<Mat>(A), T0);
     }
     comm.barrier();
-    SlaterDeterminantOperations::shm::apply_expM(V, T0, T1, T2, comm, order, TA);
+    for(int p=0; p<npol; ++p)
+      SlaterDeterminantOperations::shm::apply_expM(V, T0.sliced(p*M,(p+1)*M), T1, T2, comm, order, TA);
     comm.barrier();
     if (comm.root())
     {
@@ -230,7 +239,7 @@ public:
   }
 
   template<class MatA, class MatP1, class MatV>
-  void BatchedPropagate(std::vector<MatA>& Ai, const MatP1& P1, const MatV& V, int order = 6, char TA = 'N')
+  void BatchedPropagate(std::vector<MatA>& Ai, const MatP1& P1, const MatV& V, int order = 6, char TA = 'N', bool noncollinear=false)
   {
     APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedPropagate \n");
   }
