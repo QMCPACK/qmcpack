@@ -13,6 +13,7 @@
 #include "Configuration.h"
 
 #include <vector>
+#include <random>
 
 #include "AFQMC/config.h"
 #include "AFQMC/config.0.h"
@@ -71,6 +72,16 @@ void fill_matrix(Tensor2D<T> m, T scale)
       m[i][j] = count;
       count += T(1) / scale;
     }
+  }
+}
+
+template<typename T>
+void fillRandomMatrix(std::vector<std::complex<T>>& vec)
+{
+  std::mt19937 generator(0);
+  std::normal_distribution<T> distribution(0.0, 1.0);
+  for (int i = 0; i < vec.size(); i++) {
+    vec[i] = distribution(generator);
   }
 }
 
@@ -174,7 +185,9 @@ void timeExchangeKernel(Allocator& alloc, Buff& buffer, int nbatch, int nwalk, i
   timer.start("batched_dot");
   batched_dot_wabn_wban(nbatch, nwalk, nocc, nchol, scal.origin(), Twabn.origin(), to_address(out.data()), 1);
   auto time = timer.elapsed("batched_dot");
-  std::cout << "    " << std::setw(5) << nbatch << " " << std::setw(5) << nwalk << " " << std::setw(5) << nocc << " " << std::setw(5) << nchol << " " << time << std::endl;
+  std::cout << "    " << std::setw(5) << nbatch << " " << std::setw(5) << nwalk
+            << " " << std::setw(5) << nocc << " " << std::setw(5) << nchol
+            << "    " << time << std::endl;
 }
 
 template<class Allocator, class Buff>
@@ -233,58 +246,40 @@ void timeGemm(Allocator& alloc, Buff& buffer, int m, int n)
             << " " << std::scientific << timer.elapsed(timer_id) << std::endl;
 }
 
-void parse_args(int argc, char* argv[], int &num_walker, int &num_basis, int &num_elec)
+template<class Allocator, class Buff>
+void timeBatchedMatrixInverse(Allocator& alloc, Buff& buffer, int nbatch, int m)
 {
-  char* pend;
-  if (argc < 4) {
-    std::cout << "usage : afqmc_performance --nwalker nw --nbasis nb --nelec ne" << std::endl;
-    exit(1);
+  using T = typename Allocator::value_type;
+  myTimer timer;
+  timer.add("getrfBatched");
+  int offset = 0;
+  Tensor3D_ref<T> a(buffer.origin(), {nbatch, m, m});
+  Tensor3D_ref<T> b(buffer.origin()+a.num_elements(), {nbatch, m, m});
+  Alloc<int> ialloc{};
+  Tensor1D<int> IWORK(boost::multi::iextensions<1u>{nbatch * (m + 1)}, ialloc);
+  std::vector<pointer<T>> A_array, B_array;
+  A_array.reserve(nbatch);
+  B_array.reserve(nbatch);
+  for (int i = 0; i < nbatch; i++)
+  {
+    A_array.emplace_back(a[i].origin());
+    B_array.emplace_back(b[i].origin());
   }
-  for (int i = 1; i < argc; i++) {
-    if (i <= argc)
-    {
-      if (!std::strcmp(argv[i], "--nwalker"))
-      {
-        num_walker = strtol(argv[i + 1], &pend, 10);
-        i++;
-      }
-      if (!std::strcmp(argv[i], "--nbasis"))
-      {
-        num_basis = strtol(argv[i + 1], &pend, 10);
-        i++;
-      }
-      if (!std::strcmp(argv[i], "--nelec"))
-      {
-        num_elec = strtol(argv[i + 1], &pend, 10);
-        i++;
-      }
-    }
-  }
-  if (num_elec <= 0) {
-    std::cout << "usage : afqmc_performance --nwalk nw --nbasis nb --nelec ne" << std::endl;
-    if (num_elec < 0) {
-      std::cout << "number of electrons (--nelec) must be greater than zero" << std::endl;
-    }
-    exit(1);
-  }
-  if (num_basis <= 0) {
-    std::cout << "usage : afqmc_performance --nwalk nw --nbasis nb --nelec ne" << std::endl;
-    if (num_basis < 0) {
-      std::cout << "number of basis functions (--nbasis) must be greater than zero" << std::endl;
-    }
-    exit(1);
-  }
-  if (num_walker <= 0) {
-    std::cout << "usage : afqmc_performance --nwalk nw --nbasis nb --nelec ne" << std::endl;
-    if (num_walker < 0) {
-      std::cout << "number of walkers (--nwalk) must be greater than zero" << std::endl;
-    }
-    exit(1);
-  }
-  std::cout << " - nw : " << num_walker << std::endl;
-  std::cout << " - nb : " << num_basis << std::endl;
-  std::cout << " - ne : " << num_elec << std::endl;
-  std::cout << std::endl;
+  using ma::getrfBatched;
+  timer.start("getrfBatched");
+  getrfBatched(m, A_array.data(), m, ma::pointer_dispatch(IWORK.origin()),
+               ma::pointer_dispatch(IWORK.origin())+nbatch*m, nbatch);
+  timer.stop("getrfBatched");
+  using ma::getriBatched;
+  timer.start("getriBatched");
+  getriBatched(m, A_array.data(), m, ma::pointer_dispatch(IWORK.origin()),
+               B_array.data(), m,
+               ma::pointer_dispatch(IWORK.origin())+nbatch*m,
+               nbatch);
+  timer.stop("getriBatched");
+  std::cout << "  " << std::setw(6) << nbatch << " " << std::setw(5) << m
+            << " " << std::scientific << timer.elapsed("getrfBatched")
+            << " " << timer.elapsed("getriBatched") << std::endl;
 }
 
 int main(int argc, char* argv[])
@@ -293,46 +288,23 @@ int main(int argc, char* argv[])
   auto world = boost::mpi3::environment::get_world_instance();
   auto node  = world.split_shared(world.rank());
   arch::INIT(node);
-  int num_walker = -1;
-  int num_basis = -1;
-  int num_elec = -1;
-  parse_args(argc, argv, num_walker, num_basis, num_elec);
-  std::vector<int> num_kpoints = {12, 18, 27, 36, 48};
-  int nk_max = num_kpoints[num_kpoints.size()-1];
-  int m_max = nk_max * num_basis;
-  int n_max = nk_max * num_elec;
   {
-    std::cout << " - Batched sgemm (nk^3, mxm)" << std::endl;
+    std::cout << " - Batched zQR (nbatch, MxN)" << std::endl;
     std::cout << std::endl;
-    std::cout << "    nk^2     m         time" << std::endl;
-    int nb_max = nk_max*nk_max;
-    int nb = num_elec * num_basis;
-    int size = nb_max*nb*nb + 2*nb*nb;
-    Alloc<float> alloc{};
-    Tensor1D<float> buffer(iextensions<1u>{size}, 1.0, alloc);
-    for (auto nk : num_kpoints) {
-      int num_batch = nk * nk;
-      timeBatchedGemm(alloc, buffer, num_batch, nb);
-    }
-    std::cout << std::endl;
-    std::cout << std::endl;
-  }
-  {
-    std::cout << " - Batched zQR (nwalk, mxn)" << std::endl;
-    std::cout << std::endl;
-    std::cout << "  nwalk  nbasis nelec       ttrans       tgeqrf      tgetdet         tgqr" << std::endl;
-    //Alloc<std::complex<double>> alloc{};
-    // Allocate memory to speed things up.
-    int size = (2*num_walker*m_max*n_max + 3*num_walker*m_max);
+    std::cout << " nbatch       M     N       ttrans       tgeqrf      tgetdet         tgqr" << std::endl;
+    std::vector<int> batches = {1, 5, 10, 20};
+    std::vector<int> num_rows = {200, 400, 800};
+    int max_batch = batches[batches.size()-1];
+    int max_rows = num_rows[num_rows.size()-1];
+    int size = (2*max_batch*max_rows*(max_rows/2.0) + 3*max_batch*max_rows);
     Alloc<std::complex<double>> alloc{};
     Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, 1.0, alloc);
     //auto alloc(device_buffer_generator->template get_allocator<std::complex<double>>());
-    for (auto nk : num_kpoints) {
-      int m = num_basis * nk;
-      int n = num_elec * nk;
-      timeBatchedQR(alloc, buffer, num_walker, m, n);
+    for (auto nb : batches) {
+      for (auto m : num_rows) {
+        timeBatchedQR(alloc, buffer, nb, m, m/2);
+      }
     }
-    std::cout << std::endl;
     std::cout << std::endl;
   }
   {
@@ -352,20 +324,38 @@ int main(int argc, char* argv[])
     std::cout << " - sgemm (MxM)" << std::endl;
     std::cout << std::endl;
     std::cout << "       M     M       tsgemm" << std::endl;
-    int size = 3*4000*4000;
+    int size = 3*8000*8000;
     Alloc<float> alloc{};
     Tensor1D<float> buffer(iextensions<1u>{size}, 1.0, alloc);
-    std::vector<int> dims = {200, 500, 800, 1000, 2000, 3000, 4000};
+    std::vector<int> dims = {200, 500, 800, 1000, 2000, 3000, 4000, 8000};
     for (auto d : dims) {
       timeGemm(alloc, buffer, d, d);
     }
+    std::cout << std::endl;
     //std::cout << std::endl;
-    //std::cout << std::endl;
+  }
+  {
+    std::cout << " - batched sgemm (nbach, MxM)" << std::endl;
+    std::cout << std::endl;
+    std::cout << "  nbatch    M         tsgemm" << std::endl;
+    Alloc<float> alloc{};
+    std::vector<int> num_rows = {100, 200, 400, 500, 600};
+    std::vector<int> batches = {128, 256, 512, 1024};
+    int max_batch = batches[batches.size()-1];
+    int max_rows = num_rows[num_rows.size()-1];
+    int size = 3*max_batch*max_rows*max_rows;
+    Tensor1D<float> buffer(iextensions<1u>{size}, 1.0, alloc);
+    for (auto nb : batches) {
+      for (auto m : num_rows) {
+        timeBatchedGemm(alloc, buffer, nb, m);
+      }
+    }
+    std::cout << std::endl;
   }
   {
     std::cout << " - exchange kernel (Twabn Twanb -> Ew)" << std::endl;
     std::cout << std::endl;
-    std::cout << "   nbatch    nwalk    nocc nchol  tExchangeKernel" << std::endl;
+    std::cout << "   nbatch nwalk  nocc nchol tExchangeKernel" << std::endl;
     Alloc<std::complex<double>> alloc{};
     int nwalk = 5;
     int nocc = 20;
@@ -376,6 +366,28 @@ int main(int argc, char* argv[])
     Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, 1.0, alloc);
     for (auto b : batches) {
       timeExchangeKernel(alloc, buffer, b, nwalk, nocc, nchol);
+    }
+    std::cout << std::endl;
+  }
+  {
+    std::cout << " - batched matrix inverse " << std::endl;
+    std::cout << std::endl;
+    std::cout << "  nbatch     M       tgetrf       tgetri" << std::endl;
+    Alloc<std::complex<double>> alloc{};
+    std::vector<int> batches = {1, 5, 10, 30};
+    std::vector<int> num_rows = {100, 200, 400, 500, 600};
+    int max_batch = batches[batches.size()-1];
+    int max_rows = num_rows[num_rows.size()-1];
+    int size = 2*max_batch*max_rows*max_rows;
+    std::vector<std::complex<double>> tmp(size);
+    Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, alloc);
+    fillRandomMatrix(tmp);
+    using std::copy_n;
+    copy_n(tmp.data(), tmp.size(), buffer.origin());
+    for (auto b : batches) {
+      for (auto m : num_rows) {
+        timeBatchedMatrixInverse(alloc, buffer, b, m);
+      }
     }
     std::cout << std::endl;
   }
