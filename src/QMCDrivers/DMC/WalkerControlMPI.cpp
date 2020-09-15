@@ -494,9 +494,6 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   std::vector<int> minus, plus;
   determineNewWalkerPopulation(expanded_population, num_contexts_, MyContext, num_per_node, FairOffSet, plus, minus);
 
-  //if (plus.size() == 0)
-  //  return 0;
-
   // local struct for sort vector
   // std::sort requires reference_wrapper for w_elem
   struct CopiesAndWE

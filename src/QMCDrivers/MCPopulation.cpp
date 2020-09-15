@@ -225,6 +225,11 @@ WalkerElements MCPopulation::spawnWalker()
     MCPWalker last_walker = *(walkers_.back());
     walkers_.push_back(std::make_unique<MCPWalker>(last_walker));
 
+    // There is no value in doing this here because its going to be wiped out
+    // When we load from the receive buffer. It also won't necessarily be correct
+    // Because the buffer is changed by Hamiltonians and wavefunctions that
+    // Add to the dataSet.
+
     //walkers_.back()->R          = elec_particle_set_->R;
     //walkers_.back()->Properties = elec_particle_set_->Properties;
     //walkers_.back()->registerData();
@@ -235,6 +240,7 @@ WalkerElements MCPopulation::spawnWalker()
     walker_hamiltonians_.push_back(UPtr<QMCHamiltonian>{});
     walker_hamiltonians_.back().reset(
         hamiltonian_->makeClone(*(walker_elec_particle_sets_.back()), *(walker_trial_wavefunctions_.back())));
+    // Dito
     //walker_trial_wavefunctions_.back()->registerData(*(walker_elec_particle_sets_.back()), walkers_.back()->DataSet);
     //walkers_.back()->DataSet.allocate();
     walkers_.back()->Multiplicity = 1.0;
