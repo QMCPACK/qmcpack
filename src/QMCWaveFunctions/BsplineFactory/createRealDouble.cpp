@@ -29,9 +29,10 @@ BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_r
   app_summary() << "    Using real valued spline SPOs with real double precision storage (R2R)." << std::endl;
 #if defined(ENABLE_OFFLOAD)
   if (useGPU == "yes")
-    app_summary() << "OpenMP offload has not been enabled on real valued spline SPOs with real storage!"
-                  << " Running on the host." << std::endl;
+    app_summary() << "OpenMP offload has not been implemented to support real valued spline SPOs with real storage!"
+                  << std::endl;
 #endif
+  app_summary() << "    Running on CPU." << std::endl;
 
   BsplineReaderBase* aReader = nullptr;
   if (hybrid_rep)

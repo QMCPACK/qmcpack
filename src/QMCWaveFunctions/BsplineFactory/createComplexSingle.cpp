@@ -43,20 +43,21 @@ BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybri
   {
     if (hybrid_rep)
     {
-      app_summary() << "OpenMP offload has not been enabled with hybrid orbital representation!"
-                    << " Running on the host." << std::endl;
+      app_summary() << "OpenMP offload has not been implemented to support hybrid orbital representation!"
+                    << "    Running on CPU." << std::endl;
       app_summary() << "    Using hybrid orbital representation." << std::endl;
       aReader = new HybridRepSetReader<HybridRepCplx<SplineC2C<float>>>(e);
     }
     else
     {
-      app_summary() << "    Using OpenMP offload acceleration." << std::endl;
+      app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
       aReader = new SplineSetReader<SplineC2COMP<float>>(e);
     }
   }
   else
 #endif
   {
+    app_summary() << "    Running on CPU." << std::endl;
     if (hybrid_rep)
     {
       app_summary() << "    Using hybrid orbital representation." << std::endl;
@@ -72,20 +73,21 @@ BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybri
   {
     if (hybrid_rep)
     {
-      app_summary() << "OpenMP offload has not been enabled with hybrid orbital representation!"
-                    << " Running on the host." << std::endl;
+      app_summary() << "OpenMP offload has not been implemented to support hybrid orbital representation!"
+                    << "    Running on CPU." << std::endl;
       app_summary() << "    Using hybrid orbital representation." << std::endl;
       aReader = new HybridRepSetReader<HybridRepCplx<SplineC2R<float>>>(e);
     }
     else
     {
-      app_summary() << "    Using OpenMP offload acceleration." << std::endl;
+      app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
       aReader = new SplineSetReader<SplineC2ROMP<float>>(e);
     }
   }
   else
 #endif
   {
+    app_summary() << "    Running on CPU." << std::endl;
     if (hybrid_rep)
     {
       app_summary() << "    Using hybrid orbital representation." << std::endl;

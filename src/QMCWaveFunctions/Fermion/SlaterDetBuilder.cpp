@@ -529,17 +529,18 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   {
     if (use_batch == "yes")
     {
+      app_summary() << "      Using walker batching." << std::endl;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
       if (useGPU == "yes")
       {
-        app_summary() << "      Using walker batching, CUDA acceleration." << std::endl;
+        app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
         adet = new DiracDeterminantBatched<
             MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
       }
       else
 #endif
       {
-        app_summary() << "      Using walker batching and OpenMP offload support. Only SM1 update is supported. "
+        app_summary() << "      Running on an accelerator via OpenMP offload. Only SM1 update is supported. "
                          "delay_rank is ignored."
                       << std::endl;
         adet = new DiracDeterminantBatched<>(psi, firstIndex);
@@ -550,12 +551,15 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #if defined(ENABLE_CUDA)
       if (useGPU == "yes")
       {
-        app_summary() << "      Using CUDA acceleration." << std::endl;
+        app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
         adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
       }
       else
 #endif
+      {
+        app_summary() << "      Running on CPU." << std::endl;
         adet = new DiracDeterminant<>(psi, firstIndex);
+      }
     }
   }
 #endif
