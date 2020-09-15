@@ -63,6 +63,8 @@ QMCMain::QMCMain(Communicate* c)
 {
   Communicate NodeComm;
   NodeComm.initializeAsNodeComm(*OHMMS::Controller);
+  // assign accelerators within a node
+  const int num_accelerators = assignAccelerators(NodeComm);
 
   app_summary() << "\n=====================================================\n"
                 << "                    QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
@@ -84,11 +86,12 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << NodeComm.size()
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(QMC_CUDA) || defined(ENABLE_ROCM)
+      << "\n  Accelerators per node     = " << num_accelerators
+#endif
       << std::endl;
   // clang-format on
 
-  // assign accelerators within a node
-  assignAccelerators(NodeComm);
 #pragma omp parallel
   {
     const int L1_tid = omp_get_thread_num();
@@ -117,11 +120,23 @@ QMCMain::QMCMain(Communicate* c)
                 << std::endl;
 
   // Record features configured in cmake or selected via command-line arguments to the printout
-#ifdef ENABLE_OFFLOAD
-  app_summary() << "\n  OpenMP target offload to accelerators enabled" << std::endl;
+  app_summary() << std::endl;
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_ROCM)
+  app_summary() << "  CPU only build" << std::endl;
+#else
+#if defined(ENABLE_OFFLOAD)
+  app_summary() << "  OpenMP target offload to accelerators build option is enabled" << std::endl;
+#endif
+#if defined(ENABLE_CUDA) || defined(QMC_CUDA)
+  app_summary() << "  CUDA acceleration build option is enabled" << std::endl;
+#endif
+#if defined(ENABLE_ROCM)
+  app_summary() << "  ROCM acceleration build option is enabled" << std::endl;
+#endif
 #endif
 #ifdef ENABLE_TIMERS
-  app_summary() << "\n  Current timer level is " << timer_manager.get_timer_threshold_string() << std::endl;
+  app_summary() << "  Timer build option is enabled. Current timer level is "
+                << timer_manager.get_timer_threshold_string() << std::endl;
 #endif
   app_summary() << std::endl;
   app_summary().flush();
