@@ -31,6 +31,7 @@
 #include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #include "Utilities/StlPrettyPrint.hpp"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -102,7 +103,7 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
   {
     std::stringstream error_msg;
     error_msg << "Bad Input: num_crowds (" << num_crowds << ") > num_threads (" << num_threads << ")\n";
-    throw std::runtime_error(error_msg.str());
+    throw UniformCommunicateError(error_msg.str());
   }
 }
 
@@ -488,16 +489,16 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
     if (required_total < num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks and the request of " << required_total
+      error << "Running on " << num_ranks << " MPI ranks.  The request of " << required_total
             << " global walkers cannot be satisfied! Need at least one walker per MPI rank.";
-      throw std::runtime_error(error.str());
+      throw UniformCommunicateError(error.str());
     }
     if (walkers_per_rank != 0 && required_total != walkers_per_rank * num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks and the request of " << required_total
-            << " global walkers and " << walkers_per_rank << " walkers per rank cannot be satisfied!";
-      throw std::runtime_error(error.str());
+      error << "Running on " << num_ranks << " MPI ranks, The request of " << required_total << " global walkers and "
+            << walkers_per_rank << " walkers per rank cannot be satisfied!";
+      throw UniformCommunicateError(error.str());
     }
     awc.global_walkers   = required_total;
     awc.walkers_per_rank = fairDivide(required_total, num_ranks);
