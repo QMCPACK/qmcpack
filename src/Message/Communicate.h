@@ -97,8 +97,9 @@ public:
   ///constructor with communicator
   Communicate(const mpi3::communicator& in_comm);
 #endif
-
-  ///constructor with communicator
+  
+  /** constructor that splits in_comm
+   */
   Communicate(const Communicate& in_comm, int nparts);
 
   /**destructor
@@ -184,12 +185,15 @@ public:
   }
 #endif
 
-  // MMORALES:
-  // right now there is no easy way to use Communicate
-  // for generic processor subgroups, so calling split on myMPI
-  // and managing the communicator directly
-  // THIS MUST BE FIXED!!!
 #ifdef HAVE_MPI
+  /** A hack to get around Communicate not supporting flexible processor subgroups
+   *
+   *  MMORALES:
+   *  right now there is no easy way to use Communicate
+   *  for generic processor subgroups, so calling split on myMPI
+   *  and managing the communicator directly
+   *  \todo THIS MUST BE FIXED!!!
+   */
   inline void split_comm(int key, MPI_Comm& comm)
   {
     int myrank = rank();
