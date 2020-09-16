@@ -127,12 +127,12 @@ public:
   }
 
   template<class Mat, class MatP1, class MatV>
-  void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, int order = 6, char TA = 'N')
+  void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, int order = 6, char TA = 'N', bool noncollinear = false)
   {
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
 #endif
-    Base::Propagate(std::forward<Mat>(A), P1, V, order, TA);
+    Base::Propagate(std::forward<Mat>(A), P1, V, order, TA, noncollinear);
   }
 
   template<class MatA, class MatP1, class MatV>

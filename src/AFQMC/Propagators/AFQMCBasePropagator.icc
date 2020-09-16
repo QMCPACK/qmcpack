@@ -43,6 +43,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 
   AFQMCTimers[setup_timer]->start();
   auto walker_type = wset.getWalkerType();
+  int npol = (walker_type==NONCOLLINEAR) ? 2 : 1;
   int nsteps       = nsteps_;
   int nwalk        = wset.size();
   RealType sqrtdt  = std::sqrt(dt);
@@ -265,6 +266,7 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
 {
   using std::copy_n;
   auto walker_type = wset.getWalkerType();
+  int npol = (walker_type==NONCOLLINEAR) ? 2 : 1;
   int nwalk        = wset.size();
   int globalnCV    = wfn.global_number_of_cholesky_vectors();
 
@@ -285,7 +287,7 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
   assert(Fields.size(1) == globalnCV);
   assert(Fields.size(2) == nwalk);
 
-  int nrow(NMO * ((walker_type == NONCOLLINEAR) ? 2 : 1));
+  int nrow(NMO*npol); 
   int ncol(NAEA + ((walker_type == CLOSED) ? 0 : NAEB));
   assert(Refs.size(0) == nwalk);
   int nrefs = Refs.size(1);
@@ -416,6 +418,7 @@ void AFQMCBasePropagator::apply_propagators(char TA,
 {
   int nwalk        = wset.size();
   auto walker_type = wset.getWalkerType();
+  bool noncol = (walker_type == NONCOLLINEAR);
 
   int spin(0);
   if (spin_dependent_P1)
@@ -455,28 +458,20 @@ void AFQMCBasePropagator::apply_propagators(char TA,
       for (int tk = tk0; tk < tkN; ++tk)
       {
         int nt = ni * nwalk + tk;
-        SDetOp->Propagate(*wset[tk].SlaterMatrix(Alpha), P1[0], vHS3D[nt], order, TA);
+        SDetOp->Propagate(*wset[tk].SlaterMatrix(Alpha), P1[0], vHS3D[nt], order, TA, noncol);
       }
       if (last_nextra > 0)
       {
         int iw = ntasks_total_serial + last_task_index;
         int nt = ni * nwalk + iw;
-        SDetOp->Propagate(*wset[iw].SlaterMatrix(Alpha), P1[0], vHS3D[nt], local_group_comm, order, TA);
+        SDetOp->Propagate(*wset[iw].SlaterMatrix(Alpha), P1[0], vHS3D[nt], local_group_comm, order, TA, noncol);
       }
     }
   }
   else
   {
-    if (walker_type == NONCOLLINEAR)
-    {
-      if (local_vHS.size(0) != 2 * NMO || local_vHS.size(1) != 2 * NMO)
-        local_vHS = std::move(CMatrix({2 * NMO, 2 * NMO}));
-    }
-    else
-    {
-      if (local_vHS.size(0) != NMO || local_vHS.size(1) != NMO)
-        local_vHS = std::move(CMatrix({NMO, NMO}));
-    }
+    if (local_vHS.size(0) != NMO || local_vHS.size(1) != NMO)
+      local_vHS = std::move(CMatrix({NMO, NMO}));
     // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
     if (walker_type == COLLINEAR)
     {
@@ -514,14 +509,14 @@ void AFQMCBasePropagator::apply_propagators(char TA,
         int nt    = ni * nwalk + tk;
         local_vHS = vHS3D(local_vHS.extension(0), local_vHS.extension(1), nt);
         //std::cout<<" pp: " <<tk <<" " <<ma::sum(local_vHS) <<"\n" <<std::endl;
-        SDetOp->Propagate(*wset[tk].SlaterMatrix(Alpha), P1[0], local_vHS, order, TA);
+        SDetOp->Propagate(*wset[tk].SlaterMatrix(Alpha), P1[0], local_vHS, order, TA, noncol);
       }
       if (last_nextra > 0)
       {
         int iw    = ntasks_total_serial + last_task_index;
         int nt    = ni * nwalk + iw;
         local_vHS = vHS3D(local_vHS.extension(0), local_vHS.extension(1), nt);
-        SDetOp->Propagate(*wset[iw].SlaterMatrix(Alpha), P1[0], local_vHS, local_group_comm, order, TA);
+        SDetOp->Propagate(*wset[iw].SlaterMatrix(Alpha), P1[0], local_vHS, local_group_comm, order, TA, noncol);
       }
     }
   }
@@ -533,6 +528,7 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
 {
   int nwalk        = wset.size();
   auto walker_type = wset.getWalkerType();
+  bool noncol = (walker_type == NONCOLLINEAR);
   int nbatch       = std::min(nwalk, (nbatched_propagation < 0 ? nwalk : nbatched_propagation));
 
   int spin(0);
@@ -556,7 +552,7 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
       Ai.clear();
       for (int ni = 0; ni < nb; ni++)
         Ai.emplace_back(wset[iw + ni].SlaterMatrix(Alpha));
-      SDetOp->BatchedPropagate(Ai, P1[0], vHS3D.sliced(nt, nt + nb), order, TA);
+      SDetOp->BatchedPropagate(Ai, P1[0], vHS3D.sliced(nt, nt + nb), order, TA, noncol);
       if (walker_type == COLLINEAR)
       {
         Ai.clear();
@@ -568,13 +564,12 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
   }
   else
   {
-    int sz = (walker_type == NONCOLLINEAR ? 2 * NMO : NMO);
-    if (local_vHS.size(0) != nbatch || local_vHS.size(1) != sz * sz)
-      local_vHS = std::move(CMatrix({nbatch, sz * sz}));
+    if (local_vHS.size(0) != nbatch || local_vHS.size(1) != NMO * NMO)
+      local_vHS = std::move(CMatrix({nbatch, NMO * NMO}));
     // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
     int N2 = vHS3D.size(0) * vHS3D.size(1);
     CMatrix_ref vHS2D(vHS3D.origin(), {N2, vHS3D.size(2)});
-    C3Tensor_ref local3D(local_vHS.origin(), {nbatch, sz, sz});
+    C3Tensor_ref local3D(local_vHS.origin(), {nbatch, NMO, NMO});
     int nt = ni * nwalk;
     for (int iw = 0; iw < nwalk; iw += nbatch, nt += nbatch)
     {
@@ -583,7 +578,7 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
       Ai.clear();
       for (int ni = 0; ni < nb; ni++)
         Ai.emplace_back(wset[iw + ni].SlaterMatrix(Alpha));
-      SDetOp->BatchedPropagate(Ai, P1[0], local3D.sliced(0, nb), order, TA);
+      SDetOp->BatchedPropagate(Ai, P1[0], local3D.sliced(0, nb), order, TA, noncol);
       if (walker_type == COLLINEAR)
       {
         Ai.clear();

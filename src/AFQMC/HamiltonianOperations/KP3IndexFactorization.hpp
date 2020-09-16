@@ -179,9 +179,7 @@ public:
   {
     int nkpts = nopk.size();
     int NMO   = std::accumulate(nopk.begin(), nopk.end(), 0);
-    // in non-collinear case with SO, keep SO matrix here and add it
-    // for now, stay collinear
-    boost::multi::array<ComplexType, 2> P1({NMO, NMO});
+    int npol = (walker_type == NONCOLLINEAR) ? 2 : 1;
 
     // making a copy of vMF since it will be modified
     shmCVector vMF_(iextensions<1u>{vMF.num_elements()}, shared_allocator<ComplexType>{*comm});
@@ -193,44 +191,90 @@ public:
     }
     comm->barrier();
 
-    boost::multi::array_ref<ComplexType, 1> P1D(to_address(P1.origin()), {NMO * NMO});
-    std::fill_n(P1D.origin(), P1D.num_elements(), ComplexType(0));
-    vHS(vMF_, P1D);
+    boost::multi::array<ComplexType, 2> P0({NMO, NMO});
+    boost::multi::array_ref<ComplexType, 1> P0D(to_address(P0.origin()), {P0.num_elements()});
+    std::fill_n(P0D.origin(), P0D.num_elements(), ComplexType(0));
+    vHS(vMF_, P0D);
     if (TG.TG().size() > 1)
-      TG.TG().all_reduce_in_place_n(P1D.origin(), P1D.num_elements(), std::plus<>());
+      TG.TG().all_reduce_in_place_n(P0D.origin(), P0D.num_elements(), std::plus<>());
 
-    // add H1 + vn0 and symmetrize
-    // MAM: intel 19 doesn't accept this using statement, I'm forced to
-    //      call ma::conj explicitly even though I should not need to
-    using ma::conj;
+    boost::multi::array<ComplexType, 2> P1({npol*NMO, npol*NMO});
+    std::fill_n(P1.origin(), P1.num_elements(), ComplexType(0.0));
 
+    // add spin-dependent H1
     for (int K = 0, nk0 = 0; K < nkpts; ++K)
     {
       for (int i = 0, I = nk0; i < nopk[K]; i++, I++)
       {
-        P1[I][I] += H1[K][i][i] + vn0[K][i][i];
+        for(int p=0; p<npol; ++p)
+          P1[p*NMO+I][p*NMO+I] += H1[K][p*nopk[K]+i][p*nopk[K]+i];
         for (int j = i + 1, J = I + 1; j < nopk[K]; j++, J++)
         {
-          P1[I][J] += H1[K][i][j] + vn0[K][i][j];
-          P1[J][I] += H1[K][j][i] + vn0[K][j][i];
-          // This is really cutoff dependent!!!
-#if MIXED_PRECISION
-          if (std::abs(P1[I][J] - ma::conj(P1[J][I])) * 2.0 > 1e-5)
+          for(int p=0; p<npol; ++p)
           {
-#else
-          if (std::abs(P1[I][J] - ma::conj(P1[J][I])) * 2.0 > 1e-6)
-          {
-#endif
-            app_error() << " WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
-            app_error() << I << " " << J << " " << P1[I][J] << " " << P1[J][I] << " " << H1[K][i][j] << " "
-                        << H1[K][j][i] << " " << vn0[K][i][j] << " " << vn0[K][j][i] << std::endl;
-            //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n");
+              P1[p*NMO+I][p*NMO+J] += H1[K][p*nopk[K]+i][p*nopk[K]+j];
+              P1[p*NMO+J][p*NMO+I] += H1[K][p*nopk[K]+j][p*nopk[K]+i]; 
           }
-          P1[I][J] = 0.5 * (P1[I][J] + ma::conj(P1[J][I]));
-          P1[J][I] = ma::conj(P1[I][J]);
+        }
+        if(walker_type == NONCOLLINEAR) {
+          // offdiagonal piece
+          for (int j = 0, J = nk0; j < nopk[K]; j++, J++)
+          {
+            P1[I][NMO+J] += H1[K][i][nopk[K]+j];
+            P1[NMO+J][I] += H1[K][nopk[K]+j][i];      
+          }
         }
       }
       nk0 += nopk[K];
+    }
+    
+    // add P0 (diagonal in spin)
+    for(int p=0; p<npol; ++p)
+      for(int I=0; I<NMO; I++)
+        for(int J=0; J<NMO; J++)
+          P1[p*NMO+I][p*NMO+J] += P0[I][J];
+    
+    // add vn0 (diagonal in spin)
+    for (int K = 0, nk0 = 0; K < nkpts; ++K)
+    {
+      for (int i = 0, I = nk0; i < nopk[K]; i++, I++)
+      {
+        for(int p=0; p<npol; ++p)
+          P1[p*NMO+I][p*NMO+I] += vn0[K][i][i];
+        for (int j = i + 1, J = I + 1; j < nopk[K]; j++, J++)
+        {
+          for(int p=0; p<npol; ++p)
+          {
+            P1[p*NMO+I][p*NMO+J] += vn0[K][i][j];
+            P1[p*NMO+J][p*NMO+I] += vn0[K][j][i];
+          }
+        }
+      }
+      nk0 += nopk[K];
+    }
+    
+    using ma::conj;
+    // symmetrize
+    for(int I=0; I<npol*NMO; I++)
+    { 
+      for(int J=I+1; J<npol*NMO; J++)
+      {  
+        // This is really cutoff dependent!!!
+#if MIXED_PRECISION
+        if (std::abs(P1[I][J] - ma::conj(P1[J][I])) * 2.0 > 1e-5)
+        {
+#else
+        if (std::abs(P1[I][J] - ma::conj(P1[J][I])) * 2.0 > 1e-6)
+        {
+#endif
+          app_error() << " WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
+          app_error() << I << " " << J << " " << P1[I][J] << " " << P1[J][I] <<std::endl; 
+                      //<< H1[K][i][j] << " "
+                      //<< H1[K][j][i] << " " << vn0[K][i][j] << " " << vn0[K][j][i] << std::endl;
+        }
+        P1[I][J] = 0.5 * (P1[I][J] + ma::conj(P1[J][I]));
+        P1[J][I] = ma::conj(P1[I][J]);
+      }
     }
     return P1;
   }
