@@ -6,6 +6,15 @@ from developer import DevBase
 from simulation import SimulationInput
 
 
+class RmgInputSettings(DevBase):
+    enforce_min_value = True
+    enforce_max_value = True
+    enforce_allowed   = True
+    check_on_write    = True
+#end class RmgInputSettings
+
+
+
 raw_input_spec = '''
 Control options
 
@@ -430,7 +439,7 @@ Control options
     Expert:       No
     Experimental: No
     Min value:    5
-    Max value:    50
+    Max value:    500
     Default:      5
     Description:  How often to write checkpoint files during the initial quench in 
                   units of SCF steps. During structural relaxations of molecular 
@@ -2541,6 +2550,36 @@ class RmgKeyword(DevBase):
     def write(self,value):
         return write_functions[self.key_type](value)
     #end def write
+
+
+    def valid(self,value,message=False):
+        msg   = ''
+        vtypes = rmg_value_types[self.key_type]
+        if not isinstance(value,vtypes):
+            msg += 'Keyword "{}" has the wrong type.\n  Type expected: {}\n  Type provided: {}\n'.format(self.key_name,self.key_type,value.__class__.__name__)
+        else:
+            if RmgInputSettings.enforce_min_value:
+                if self.min_value is not None and value<self.min_value:
+                    msg += 'Value for keyword "{}" is smaller than allowed.\n  Minimum value allowed: {}\n  Value provided: {}\n'.format(self.key_name,self.min_value,value)
+                #end if
+            #end if
+            if RmgInputSettings.enforce_max_value:
+                if self.max_value is not None and value>self.max_value:
+                    self.warn('Value for keyword "{}" is larger than allowed.\n  Maximum value allowed: {}\n  Value provided: {}\n'.format(self.key_name,self.max_value,value))
+                #end if
+            #end if
+            if RmgInputSettings.enforce_allowed:
+                if self.allowed is not None and value not in self.allowed:
+                    msg += 'Value for keyword "{}" is not allowed.\n  Value provided: {}\n  Allowed values: {}'.format(self.key_name,value,list(sorted(self.allowed)))
+                #end if
+            #end if
+        #end if
+        if not message:
+            return len(msg)==0
+        else:
+            return len(msg)==0,msg
+        #end if
+    #end def valid
 #end class RmgKeyword
 
 
@@ -2551,9 +2590,13 @@ class FormattedRmgKeyword(RmgKeyword):
     #end def read
 
     def write(self,value):
-        #self.not_implemented()
-        return '""'
+        self.not_implemented()
     #end def write
+
+    def valid(self,value,message=False):
+        #self.not_implemented()
+        return True,''
+    #end def valid
 #end class FormattedRmgKeyword
 
 
@@ -2867,6 +2910,9 @@ class RmgInput(SimulationInput):
 
 
     def write_text(self,filepath=None):
+        if RmgInputSettings.check_on_write:
+            self.check_valid()
+        #end if
         text = ''
         for section_name in input_spec.section_order:
             present = False
@@ -2883,4 +2929,32 @@ class RmgInput(SimulationInput):
         #end for
         return text.lstrip()
     #end def write_text
+
+
+    def check_valid(self,exit=True):
+        msg = ''
+        allowed = set(input_spec.keywords.keys())
+        present = set(self.keys())
+        unrecognized = present-allowed
+        if len(unrecognized)>0:
+            msg += 'Unrecognized keywords encountered.\n  Unrecognized keywords: {}\n  Valid keywords are: {}\n'.format(list(sorted(unrecognized)),list(sorted(allowed)))
+        #end if
+        recognized = present-unrecognized
+        for k in sorted(recognized):
+            kval,m = input_spec.keywords[k].valid(self[k],message=True)
+            if not kval:
+                msg += m+'\n'
+            #end if
+        #end if
+        if len(msg)>0 and exit:
+            self.log(msg)
+            self.error('Input is invalid.\nPlease see messages above for specific issues.')
+        #end if
+        return len(msg)==0
+    #end def check_valid
+
+
+    def is_valid(self):
+        return self.check_valid(exit=False)
+    #end def is_valid
 #end class RmgInput
