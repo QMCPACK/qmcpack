@@ -253,6 +253,7 @@ void timeBatchedMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer,
   myTimer timer;
   timer.add("getrfBatched");
   int offset = 0;
+  // Uses these instead to see slowdown
   //Tensor3D_ref<T> a(buffer.origin(), {nbatch, m, m});
   //Tensor3D_ref<T> b(buffer.origin()+a.num_elements(), {nbatch, m, m});
   Tensor3D<T> a({nbatch, m, m}, alloc);
