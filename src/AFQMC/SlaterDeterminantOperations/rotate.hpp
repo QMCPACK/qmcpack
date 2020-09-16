@@ -779,7 +779,7 @@ void getLakn_Lank_from_Lkin(MultiArray2DA&& Aai,
   // Lakn[a][sk][n] = sum_i Aai[as][i] conj(Lkin[k][i][n])
   for (int k = 0; k < nmo; k++)
   {
-    ma::product(ma::H(Lkin[k].sliced(0, ni)), ma::T(Aai), bnas);
+    ma::product(ma::H(Lkin[k].sliced(0, ni)), ma::T(Aas_i), bnas);
     for (int a = 0; a < na; a++)
       for (int p = 0; p < npol; p++)
         Lakn[a][p*nmo+k] = bnas({0, nchol}, a*npol+p);

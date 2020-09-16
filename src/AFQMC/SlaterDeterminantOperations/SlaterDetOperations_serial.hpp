@@ -180,7 +180,7 @@ public:
       TTensor_ref TMN_( TMN.origin(), {npol*nbatch, M, NAEA}); 
       TTensor_ref T1_( T1.origin(), {npol*nbatch, M, NAEA}); 
       TTensor_ref T2_( T2.origin(), {npol*nbatch, M, NAEA}); 
-      SlaterDeterminantOperations::batched::apply_expM(V, TMN_, T1_, T2_, order, TA);
+      SlaterDeterminantOperations::batched::apply_expM_noncollinear(V, TMN_, T1_, T2_, order, TA);
     } else {
       SlaterDeterminantOperations::batched::apply_expM(V, TMN, T1, T2, order, TA);
     } 

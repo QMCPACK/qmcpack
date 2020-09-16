@@ -1143,7 +1143,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   for (int nd = 0; nd < ndet; nd++)
   {
     for (int Q = 0; Q < number_of_symmetric_Q; Q++)
-      LQKbnl.emplace_back(shmSpMatrix({nkpts, ank_max}, shared_allocator<SPComplexType>{distNode}));
+      LQKbnl.emplace_back(shmSpMatrix({nkpts, npol*ank_max}, shared_allocator<SPComplexType>{distNode}));
     if (type == COLLINEAR)
     {
       for (int Q = 0; Q < number_of_symmetric_Q; Q++)
@@ -1161,7 +1161,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations_batched(
   {
     for (int Q = 0; Q < number_of_symmetric_Q; Q++)
     {
-      LQKbln.emplace_back(shmSpMatrix({nkpts, ank_max}, shared_allocator<SPComplexType>{distNode}));
+      LQKbln.emplace_back(shmSpMatrix({nkpts, npol*ank_max}, shared_allocator<SPComplexType>{distNode}));
     }
     if (type == COLLINEAR)
     {
