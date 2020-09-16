@@ -571,7 +571,7 @@ public:
         C3Tensor_ref haj_K(make_device_ptr(haj[nd * nkpts + K].origin()), {nocc_max, npol, nmo_max});
         for (int a = 0; a < nelpk[nd][K]; ++a)
           for (int pol = 0; pol < npol; ++pol)
-            ma::product(ComplexType(1.), ma::T(G3Da[(na + a)*npol+p].sliced(nk, nk + nopk[K])), 
+            ma::product(ComplexType(1.), ma::T(G3Da[(na + a)*npol+pol].sliced(nk, nk + nopk[K])), 
                         haj_K[a][pol].sliced(0, nopk[K]), ComplexType(1.), E({0, nwalk}, 0));
         na += nelpk[nd][K];
         if (walker_type == COLLINEAR)
