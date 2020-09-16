@@ -2594,14 +2594,71 @@ class FormattedRmgKeyword(RmgKeyword):
     #end def write
 
     def valid(self,value,message=False):
-        #self.not_implemented()
-        return True,''
+        valid = self.valid_no_msg(value)
+        if not message:
+            return valid
+        else:
+            return valid,'Data for keyword "{}" is invalid.\nInvalid value: {}'.format(self.key_name,value)
+        #end if
     #end def valid
+
+    def valid_no_msg(self,value):
+        self.not_implemented()
+    #end def valid_no_msg
 #end class FormattedRmgKeyword
 
 
+class FormattedTableRmgKeyword(FormattedRmgKeyword):
+    array_options  = None
+    array_types    = None
+    exclude_fields = set()
 
-class PseudopotentialKeyword(FormattedRmgKeyword):
+    def valid_no_msg(self,value):
+        cls = self.__class__
+        if not isinstance(value,obj):
+            return False
+        #end if
+        keys = set(value.keys())-set(cls.exclude_fields)
+        match = False
+        for key_set in cls.array_options:
+            if keys==key_set:
+                match = True
+                break
+            #end if
+        #end if
+        if not match:
+            return False
+        #end if
+        lengths = [len(value[k]) for k in keys]
+        if lengths[0]==0:
+            return False
+        #end if
+        if len(set(lengths))!=1:
+            return False
+        #end if
+        for k in keys:
+            v = value[k]
+            if not isinstance(v,np.ndarray):
+                return False
+            elif not isinstance(v.flatten()[0],cls.array_types[k]):
+                return False
+            #end if
+        #end for
+        return True
+    #end def valid_no_msg
+#end class FormattedTableRmgKeyword
+
+
+
+class PseudopotentialKeyword(FormattedTableRmgKeyword):
+    array_options = [
+        set(('species','pseudos')),
+        ]
+    array_types   = obj(
+        species = rmg_value_types.string,
+        pseudos = rmg_value_types.string,
+        )
+
     def read(self,value):
         d = np.array(value.split(),dtype=str)
         d.shape = len(d)//2,2
@@ -2623,7 +2680,15 @@ class PseudopotentialKeyword(FormattedRmgKeyword):
 
 
 
-class KpointsKeyword(FormattedRmgKeyword):
+class KpointsKeyword(FormattedTableRmgKeyword):
+    array_options = [
+        set(('kpoints','weights')),
+        ]
+    array_types   = obj(
+        kpoints = rmg_value_types.double,
+        weights = rmg_value_types.double,
+        )
+
     def read(self,value):
         d = np.array(value.split(),dtype=float)
         d.shape = len(d)//4,4
@@ -2645,7 +2710,16 @@ class KpointsKeyword(FormattedRmgKeyword):
 
 
 
-class KpointsBandstructureKeyword(FormattedRmgKeyword):
+class KpointsBandstructureKeyword(FormattedTableRmgKeyword):
+    array_options = [
+        set(('kpoints','counts','labels')),
+        ]
+    array_types   = obj(
+        kpoints = rmg_value_types.double,
+        counts  = rmg_value_types.integer,
+        labels  = rmg_value_types.string,
+        )
+
     def read(self,value):
         d = np.array(value.split(),dtype=str)
         d.shape = len(d)//4,5
@@ -2668,9 +2742,29 @@ class KpointsBandstructureKeyword(FormattedRmgKeyword):
 
 
 
-class AtomsKeyword(FormattedRmgKeyword):
+class AtomsKeyword(FormattedTableRmgKeyword):
 
     formats = ('basic','movable','movable_moment','moment','spin_ratio','full_spin')
+
+    array_options = [
+        set(('atoms','positions')),
+        set(('atoms','positions','movable')),
+        set(('atoms','positions','moments')),
+        set(('atoms','positions','movable','moments')),
+        set(('atoms','positions','movable','spin_ratio')),
+        set(('atoms','positions','movable','spin_ratio','spin_theta','spin_phi')),
+        ]
+    array_types   = obj(
+        atoms      = rmg_value_types.string,
+        positions  = rmg_value_types.double,
+        movable    = rmg_value_types.boolean,
+        moments    = rmg_value_types.double,
+        spin_ratio = rmg_value_types.double,
+        spin_theta = rmg_value_types.double,
+        spin_phi   = rmg_value_types.double,
+        )
+    exclude_fields = ['format']
+
 
     def read(self,value):
         # check if input data is empty
@@ -2855,6 +2949,22 @@ class RmgInput(SimulationInput):
     #end def __init__
 
 
+    def assign(self,**values):
+        unrecognized = []
+        for k,v in values.items():
+            if k in input_spec.keywords:
+                self[k] = input_spec.keywords[k].read(v)
+            else:
+                unrecognized.append(k)
+            #end if
+        #end for
+        if len(unrecognized)>0:
+            unrec = obj(values).obj(unrecognized)
+            self.error('Unrecognized keywords encountered during assignment.\nUnrecognized keywords: {}\nCorresponding values:\n{}'.format(list(sorted(unrecognized))),unrec)
+        #end if
+    #end def assign
+
+
     def read_text(self,contents,filepath=None):
         # remove comments and whitespace
         text = ''
@@ -2893,18 +3003,7 @@ class RmgInput(SimulationInput):
         #end while
 
         # read the keyword values, checking for unrecognized ones
-        unrecognized = []
-        for k,v in values.items():
-            if k in input_spec.keywords:
-                self[k] = input_spec.keywords[k].read(v)
-            else:
-                unrecognized.append(k)
-            #end if
-        #end for
-        if len(unrecognized)>0:
-            unrec = values.obj(unrecognized)
-            self.error('Unrecognized keywords encountered.\nUnrecognized keywords: {}\nCorresponding values:\n{}'.format(list(sorted(unrecognized))),unrec)
-        #end if
+        self.assign(**values)
 
     #end def read_text
 
@@ -2958,3 +3057,23 @@ class RmgInput(SimulationInput):
         return self.check_valid(exit=False)
     #end def is_valid
 #end class RmgInput
+
+
+
+
+def generate_rmg_input(**kwargs):
+    selector = kwargs.pop('input_type','generic')
+    if selector=='generic':
+        return generate_any_rmg_input(**kwargs)
+    else:
+        RmgInput.class_error('Input type "{}" has not been implemented for RMG input generation.'.format(selector))
+    #end if
+#end def generate_rmg_input
+
+
+
+def generate_any_rmg_input(**kwargs):
+    ri = RmgInput()
+    ri.assign(**kwargs)
+    return ri
+#end def generate_any_rmg_input
