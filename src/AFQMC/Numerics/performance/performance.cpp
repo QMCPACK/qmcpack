@@ -86,7 +86,7 @@ void fillRandomMatrix(std::vector<std::complex<T>>& vec)
 }
 
 template<class Allocator, class Buff>
-void timeBatchedQR(Allocator& alloc, Buff& buffer, int nbatch, int m, int n)
+void timeBatchedQR(std::ostream& out, Allocator& alloc, Buff& buffer, int nbatch, int m, int n)
 {
   using T = typename Allocator::value_type;
   int offset = 0;
@@ -137,13 +137,13 @@ void timeBatchedQR(Allocator& alloc, Buff& buffer, int nbatch, int m, int n)
   gqrStrided(m, n, n, AT.origin(), m, m * n, T_.origin(), m, WORK.origin(), sz, IWORK.origin(),
              nbatch);
   auto tgqr = timer.elapsed(timer_id);
-  std::cout << "  " << std::setw(5) << nbatch << "   " << std::setw(5) << m << " " << std::setw(5)
-            << n << " " << std::scientific << ttrans << " " << tgeqrf << " " << tdet << " " <<
-            tgqr << std::endl;
+  out << "  " << std::setw(5) << nbatch << "   " << std::setw(5) << m << " " << std::setw(5)
+      << n << " " << std::scientific << ttrans << " " << tgeqrf << " " << tdet << " " <<
+      tgqr << "\n";
 }
 
 template<class Allocator, class Buff>
-void timeQR(Allocator& alloc, Buff& buffer, int m)
+void timeQR(std::ostream& out, Allocator& alloc, Buff& buffer, int m)
 {
   using T = typename Allocator::value_type;
   int offset = 0;
@@ -163,14 +163,14 @@ void timeQR(Allocator& alloc, Buff& buffer, int m)
   using ma::gqr;
   timer_id = std::string("gqr");
   timer.start(timer_id);
-  geqrf(A, TAU, WORK);
+  gqr(A, TAU, WORK);
   auto tgqr = timer.elapsed(timer_id);
-  std::cout << "  " << std::setw(5) << m << " " << std::setw(5)
-            << m << " " << std::scientific << tgeqrf << " " << " " << tgqr << std::endl;
+  out << "  " << std::setw(5) << m << " " << std::setw(5)
+      << m << " " << std::scientific << tgeqrf << " " << " " << tgqr << "\n";
 }
 
 template<class Allocator, class Buff>
-void timeExchangeKernel(Allocator& alloc, Buff& buffer, int nbatch, int nwalk, int nocc, int nchol)
+void timeExchangeKernel(std::ostream& out, Allocator& alloc, Buff& buffer, int nbatch, int nwalk, int nocc, int nchol)
 {
   using T = typename Allocator::value_type;
   int offset = 0;
@@ -178,20 +178,20 @@ void timeExchangeKernel(Allocator& alloc, Buff& buffer, int nbatch, int nwalk, i
   offset += Twabn.num_elements();
   Tensor1D_ref<T> scal(buffer.origin()+offset, boost::multi::iextensions<1u>{nbatch});
   offset += scal.num_elements();
-  Tensor1D_ref<T> out(buffer.origin()+offset, boost::multi::iextensions<1u>{nwalk});
+  Tensor1D_ref<T> result(buffer.origin()+offset, boost::multi::iextensions<1u>{nwalk});
   using ma::batched_dot_wabn_wban;
   myTimer timer;
   timer.add("batched_dot");
   timer.start("batched_dot");
-  batched_dot_wabn_wban(nbatch, nwalk, nocc, nchol, scal.origin(), Twabn.origin(), to_address(out.data()), 1);
+  batched_dot_wabn_wban(nbatch, nwalk, nocc, nchol, scal.origin(), Twabn.origin(), to_address(result.data()), 1);
   auto time = timer.elapsed("batched_dot");
-  std::cout << "    " << std::setw(5) << nbatch << " " << std::setw(5) << nwalk
-            << " " << std::setw(5) << nocc << " " << std::setw(5) << nchol
-            << "    " << time << std::endl;
+  out << "    " << std::setw(5) << nbatch << " " << std::setw(5) << nwalk
+      << " " << std::setw(5) << nocc << " " << std::setw(5) << nchol
+      << "    " << time << "\n";
 }
 
 template<class Allocator, class Buff>
-void timeBatchedGemm(Allocator& alloc, Buff& buffer, int nbatch, int m)
+void timeBatchedGemm(std::ostream& out, Allocator& alloc, Buff& buffer, int nbatch, int m)
 {
   using T = typename Allocator::value_type;
   myTimer timer;
@@ -221,12 +221,12 @@ void timeBatchedGemm(Allocator& alloc, Buff& buffer, int nbatch, int m)
   timer.start(timer_id);
   gemmBatched('N', 'N', m, m, m, alpha, A_array.data(), m, B_array.data(), m, beta, C_array.data(), m, nbatch);
   timer.stop(timer_id);
-  std::cout << "  " << std::setw(6) << nbatch << " " << std::setw(5) << m
-            << " " << std::scientific << timer.elapsed(timer_id) << std::endl;
+  out << "  " << std::setw(6) << nbatch << " " << std::setw(5) << m
+      << " " << std::scientific << timer.elapsed(timer_id) << "\n";
 }
 
 template<class Allocator, class Buff>
-void timeGemm(Allocator& alloc, Buff& buffer, int m, int n)
+void timeGemm(std::ostream& out, Allocator& alloc, Buff& buffer, int m, int n)
 {
   using T = typename Allocator::value_type;
   myTimer timer;
@@ -242,19 +242,21 @@ void timeGemm(Allocator& alloc, Buff& buffer, int m, int n)
   timer.start(timer_id);
   product(a, b, c);
   timer.stop(timer_id);
-  std::cout << "  " << std::setw(6) << m << " " << std::setw(5) << n
-            << " " << std::scientific << timer.elapsed(timer_id) << std::endl;
+  out << "  " << std::setw(6) << m << " " << std::setw(5) << n
+      << " " << std::scientific << timer.elapsed(timer_id) << "\n";
 }
 
 template<class Allocator, class Buff>
-void timeBatchedMatrixInverse(Allocator& alloc, Buff& buffer, int nbatch, int m)
+void timeBatchedMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer, int nbatch, int m)
 {
   using T = typename Allocator::value_type;
   myTimer timer;
   timer.add("getrfBatched");
   int offset = 0;
-  Tensor3D_ref<T> a(buffer.origin(), {nbatch, m, m});
-  Tensor3D_ref<T> b(buffer.origin()+a.num_elements(), {nbatch, m, m});
+  //Tensor3D_ref<T> a(buffer.origin(), {nbatch, m, m});
+  //Tensor3D_ref<T> b(buffer.origin()+a.num_elements(), {nbatch, m, m});
+  Tensor3D<T> a({nbatch, m, m}, alloc);
+  Tensor3D<T> b({nbatch, m, m}, alloc);
   Alloc<int> ialloc{};
   Tensor1D<int> IWORK(boost::multi::iextensions<1u>{nbatch * (m + 1)}, ialloc);
   std::vector<pointer<T>> A_array, B_array;
@@ -277,9 +279,33 @@ void timeBatchedMatrixInverse(Allocator& alloc, Buff& buffer, int nbatch, int m)
                ma::pointer_dispatch(IWORK.origin())+nbatch*m,
                nbatch);
   timer.stop("getriBatched");
-  std::cout << "  " << std::setw(6) << nbatch << " " << std::setw(5) << m
-            << " " << std::scientific << timer.elapsed("getrfBatched")
-            << " " << timer.elapsed("getriBatched") << std::endl;
+  out << "  " << std::setw(6) << nbatch << " " << std::setw(5) << m
+      << " " << std::scientific << timer.elapsed("getrfBatched")
+      << " " << timer.elapsed("getriBatched") << "\n";
+}
+
+template<class Allocator, class Buff>
+void timeMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer, int m)
+{
+  using T = typename Allocator::value_type;
+  myTimer timer;
+  timer.add("getrf");
+  int offset = 0;
+  Tensor2D_ref<T> a(buffer.origin(), {m, m});
+  Tensor1D_ref<T> WORK(buffer.origin()+a.num_elements(), boost::multi::iextensions<1u>{m*m});
+  Alloc<int> ialloc{};
+  Tensor1D<int> IWORK(boost::multi::iextensions<1u>{m+1}, ialloc);
+  using ma::getrf;
+  timer.start("getrf");
+  getrf(a, IWORK, WORK);
+  timer.stop("getrf");
+  using ma::getri;
+  timer.start("getri");
+  getri(a, IWORK, WORK);
+  timer.stop("getri");
+  out << "  " << std::setw(6) << m
+      << " " << std::scientific << timer.elapsed("getrf")
+      << " " << timer.elapsed("getri") << "\n";
 }
 
 int main(int argc, char* argv[])
@@ -289,9 +315,10 @@ int main(int argc, char* argv[])
   auto node  = world.split_shared(world.rank());
   arch::INIT(node);
   {
+    std::ofstream out;
+    out.open("time_batched_zqr.dat");
     std::cout << " - Batched zQR (nbatch, MxN)" << std::endl;
-    std::cout << std::endl;
-    std::cout << " nbatch       M     N       ttrans       tgeqrf      tgetdet         tgqr" << std::endl;
+    out << " nbatch       M     N       ttrans       tgeqrf      tgetdet         tgqr\n";
     std::vector<int> batches = {1, 5, 10, 20};
     std::vector<int> num_rows = {200, 400, 800};
     int max_batch = batches[batches.size()-1];
@@ -302,44 +329,43 @@ int main(int argc, char* argv[])
     //auto alloc(device_buffer_generator->template get_allocator<std::complex<double>>());
     for (auto nb : batches) {
       for (auto m : num_rows) {
-        timeBatchedQR(alloc, buffer, nb, m, m/2);
+        timeBatchedQR(out, alloc, buffer, nb, m, m/2);
       }
     }
-    std::cout << std::endl;
   }
   {
-    std::cout << " - complex QR (MxM)" << std::endl;
-    std::cout << std::endl;
-    std::cout << "      M     M      tzgeqrf        tzungr" << std::endl;
+    std::ofstream out;
+    out.open("time_zqr.dat");
+    std::cout << " - zQR (MxM)" << std::endl;
+    out << "      M     M      tzgeqrf        tzungqr\n";
     int size = 3*1000*1000;
     Alloc<std::complex<double>> alloc{};
     Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, 1.0, alloc);
     std::vector<int> dims = {100, 200, 500, 800, 1000};
     for (auto d : dims) {
-      timeQR(alloc, buffer, d);
+      timeQR(out, alloc, buffer, d);
     }
-    std::cout << std::endl;
   }
   {
+    std::ofstream out;
+    out.open("time_sgemm.dat");
     std::cout << " - sgemm (MxM)" << std::endl;
-    std::cout << std::endl;
-    std::cout << "       M     M       tsgemm" << std::endl;
+    out << "       M     M       tsgemm\n";
     int size = 3*8000*8000;
     Alloc<float> alloc{};
     Tensor1D<float> buffer(iextensions<1u>{size}, 1.0, alloc);
     std::vector<int> dims = {200, 500, 800, 1000, 2000, 3000, 4000, 8000};
     for (auto d : dims) {
-      timeGemm(alloc, buffer, d, d);
+      timeGemm(out, alloc, buffer, d, d);
     }
-    std::cout << std::endl;
-    //std::cout << std::endl;
   }
   {
+    std::ofstream out;
+    out.open("time_batched_sgemm.dat");
     std::cout << " - batched sgemm (nbach, MxM)" << std::endl;
-    std::cout << std::endl;
-    std::cout << "  nbatch    M         tsgemm" << std::endl;
+    out << "  nbatch    M         tsgemm\n";
     Alloc<float> alloc{};
-    std::vector<int> num_rows = {100, 200, 400, 500, 600};
+    std::vector<int> num_rows = {100, 200, 300, 400, 500, 600};
     std::vector<int> batches = {128, 256, 512, 1024};
     int max_batch = batches[batches.size()-1];
     int max_rows = num_rows[num_rows.size()-1];
@@ -347,15 +373,15 @@ int main(int argc, char* argv[])
     Tensor1D<float> buffer(iextensions<1u>{size}, 1.0, alloc);
     for (auto nb : batches) {
       for (auto m : num_rows) {
-        timeBatchedGemm(alloc, buffer, nb, m);
+        timeBatchedGemm(out, alloc, buffer, nb, m);
       }
     }
-    std::cout << std::endl;
   }
   {
-    std::cout << " - exchange kernel (Twabn Twanb -> Ew)" << std::endl;
-    std::cout << std::endl;
-    std::cout << "   nbatch nwalk  nocc nchol tExchangeKernel" << std::endl;
+    std::ofstream out;
+    out.open("time_exchange_kernel.dat");
+    std::cout << " - exchange kernel (E[w] = sum_{abn} Twabn Twanb)" << std::endl;
+    out << "   nbatch nwalk  nocc nchol tExchangeKernel\n";
     Alloc<std::complex<double>> alloc{};
     int nwalk = 5;
     int nocc = 20;
@@ -365,17 +391,17 @@ int main(int argc, char* argv[])
     int size = 2*nbatch_max*nwalk*nocc*nocc*nchol + nbatch_max  + nwalk;
     Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, 1.0, alloc);
     for (auto b : batches) {
-      timeExchangeKernel(alloc, buffer, b, nwalk, nocc, nchol);
+      timeExchangeKernel(out, alloc, buffer, b, nwalk, nocc, nchol);
     }
-    std::cout << std::endl;
   }
   {
-    std::cout << " - batched matrix inverse " << std::endl;
-    std::cout << std::endl;
-    std::cout << "  nbatch     M       tgetrf       tgetri" << std::endl;
+    std::ofstream out;
+    out.open("time_batched_matrix_inverse.dat");
+    std::cout << " - batched matrix inverse (nbatch, MxM)" << std::endl;
+    out << "  nbatch     M       tgetrf       tgetri\n";
     Alloc<std::complex<double>> alloc{};
-    std::vector<int> batches = {1, 5, 10, 30};
-    std::vector<int> num_rows = {100, 200, 400, 500, 600};
+    std::vector<int> batches = {1, 5, 10, 20};
+    std::vector<int> num_rows = {100, 110, 120, 200, 210, 300, 400, 500, 600, 700};
     int max_batch = batches[batches.size()-1];
     int max_rows = num_rows[num_rows.size()-1];
     int size = 2*max_batch*max_rows*max_rows;
@@ -386,9 +412,26 @@ int main(int argc, char* argv[])
     copy_n(tmp.data(), tmp.size(), buffer.origin());
     for (auto b : batches) {
       for (auto m : num_rows) {
-        timeBatchedMatrixInverse(alloc, buffer, b, m);
+        timeBatchedMatrixInverse(out, alloc, buffer, b, m);
       }
     }
-    std::cout << std::endl;
+  }
+  {
+    std::ofstream out;
+    out.open("time_matrix_inverse.dat");
+    std::cout << " - matrix inverse (nbatch, MxM)" << std::endl;
+    out << "       M       tgetrf       tgetri\n";
+    Alloc<std::complex<double>> alloc{};
+    std::vector<int> num_rows = {100, 110, 120, 200, 210, 300, 400, 500, 600, 700, 800, 1000, 2000, 4000};
+    int max_rows = num_rows[num_rows.size()-1];
+    int size = 2*max_rows*max_rows;
+    std::vector<std::complex<double>> tmp(size);
+    Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, alloc);
+    fillRandomMatrix(tmp);
+    using std::copy_n;
+    copy_n(tmp.data(), tmp.size(), buffer.origin());
+    for (auto m : num_rows) {
+      timeMatrixInverse(out, alloc, buffer, m);
+    }
   }
 }
