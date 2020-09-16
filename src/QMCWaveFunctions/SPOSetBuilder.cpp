@@ -13,10 +13,15 @@
 
 
 #include <QMCWaveFunctions/SPOSetBuilder.h>
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {
-SPOSetBuilder::SPOSetBuilder(Communicate* comm) : MPIObjectBase(comm), legacy(true) { reserve_states(); }
+SPOSetBuilder::SPOSetBuilder(const std::string& SPO_type_name_in, Communicate* comm)
+    : MPIObjectBase(comm), legacy(true), SPO_type_name(SPO_type_name_in)
+{
+  reserve_states();
+}
 
 
 void SPOSetBuilder::reserve_states(int nsets)
@@ -37,6 +42,21 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
 
 SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 {
+  std::string spo_object_name("");
+  OhmmsAttributeSet attrib;
+  attrib.add(spo_object_name, "name");
+  attrib.put(cur);
+
+  if (spo_object_name.empty())
+    app_warning() << "SPOSet object name not given in the input!" << std::endl;
+
+  app_summary() << std::endl;
+  app_summary() << "   Single particle orbitals (SPO)" << std::endl;
+  app_summary() << "   ------------------------------" << std::endl;
+  app_summary() << "    Name: " << spo_object_name << "   Type: " << SPO_type_name
+                << "   Builder class name: " << ClassName << std::endl;
+  app_summary() << std::endl;
+
   // read specialized sposet construction requests
   //   and translate them into a set of orbital indices
   SPOSetInputInfo input_info(cur);
@@ -57,6 +77,14 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   }
   else
     APP_ABORT("SPOSetBuilder::createSPOSet  sposet creation failed");
+
+  if (!spo_object_name.empty() && sposet->getName().empty())
+    sposet->setName(spo_object_name);
+  if (sposet->getName().empty())
+    app_warning() << "SPOSet object doesn't have a name." << std::endl;
+  if (!spo_object_name.empty() && sposet->getName() != spo_object_name)
+    app_warning() << "SPOSet object name mismatched! input name: " << spo_object_name
+                  << "   object name: " << sposet->getName() << std::endl;
 
   return sposet;
 }

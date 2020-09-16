@@ -35,7 +35,7 @@ namespace qmcplusplus
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
 EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder(comm),
+    : SPOSetBuilder("spline", comm),
       ParticleSets(psets),
       TargetPtcl(p),
       MixedSplineReader(0),
@@ -56,6 +56,8 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Co
       NumOrbitalsRead(-1),
       makeRotations(false)
 {
+  ClassName = "EinsplineSetBuilder";
+
   MatchingTol = 10 * std::numeric_limits<float>::epsilon();
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)

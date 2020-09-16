@@ -54,12 +54,6 @@ public:
   typedef ParticleSet::Walker_t Walker_t;
   typedef std::map<std::string, SPOSet*> SPOPool_t;
 
-  /** name of the object
-   *
-   * Several user classes can own SPOSet and use objectName as counter
-   */
-  std::string objectName;
-
   /** constructor */
   SPOSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false);
 
@@ -67,9 +61,7 @@ public:
    *
    * Derived class destructor needs to pay extra attention to freeing memory shared among clones of SPOSet.
    */
-  virtual ~SPOSet()
-  {
-  }
+  virtual ~SPOSet() {}
 
   // accessor function to Optimizable
   inline bool isOptimizable() const { return Optimizable; }
@@ -443,6 +435,11 @@ public:
    */
   virtual void finalizeConstruction() {}
 
+  /// set object name
+  void setName(const std::string& name) { myName = name; }
+  /// return object name
+  const std::string& getName() const { return myName; }
+
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
 
@@ -488,6 +485,8 @@ protected:
   opt_variables_type myVars;
   ///name of the class
   std::string className;
+  /// name of the object, unique identifier
+  std::string myName;
 };
 
 typedef SPOSet* SPOSetPtr;
