@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <functional>
+#include <numeric>
 
 #include "Estimators/EstimatorManagerNew.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
