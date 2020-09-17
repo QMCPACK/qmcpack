@@ -64,22 +64,28 @@ template<typename T>
 using Tensor1D_ref = boost::multi::array_ref<T, 1, pointer<T>>;
 
 template<typename T>
-void fillRandomMatrix(std::vector<std::complex<T>>& vec)
+void fillRandomMatrix(std::vector<T>& vec)
 {
   std::mt19937 generator(0);
   std::normal_distribution<T> distribution(0.0, 1.0);
+  // avoid uninitialized warning
+  T tmp = distribution(generator);
   for (int i = 0; i < vec.size(); i++) {
-    vec[i] = std::complex<T>(distribution(generator));
+    T val = distribution(generator);
+    vec[i] = val;
   }
 }
 
 template<typename T>
-void fillRandomMatrix(T& vec)
+void fillRandomMatrix(std::vector<std::complex<T>>& vec)
 {
   std::mt19937 generator(0);
   std::normal_distribution<T> distribution(0.0, 1.0);
+  T tmp = distribution(generator);
   for (int i = 0; i < vec.size(); i++) {
-    vec[i] = distribution(generator);
+    T re = distribution(generator);
+    T im = distribution(generator);
+    vec[i] = std::complex<T>(re,im);
   }
 }
 
@@ -315,13 +321,7 @@ int main(int argc, char* argv[])
     int max_rows = num_rows[num_rows.size()-1];
     int size = (2*max_batch*max_rows*(max_rows/2.0) + 3*max_batch*max_rows);
     Alloc<std::complex<double>> alloc{};
-    Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, alloc);
-    {
-      std::vector<std::complex<double>> tmp(size);
-      fillRandomMatrix(tmp);
-      using std::copy_n;
-      copy_n(tmp.data(), tmp.size(), buffer.origin());
-    }
+    Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, 1.0, alloc);
     for (auto nb : batches) {
       for (auto m : num_rows) {
         timeBatchedQR(out, alloc, buffer, nb, m, m/2);
@@ -335,14 +335,8 @@ int main(int argc, char* argv[])
     out << "      M     M      tzgeqrf        tzungqr\n";
     int size = 3*1000*1000;
     Alloc<std::complex<double>> alloc{};
-    Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, alloc);
+    Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, 1.0, alloc);
     std::vector<int> dims = {100, 200, 500, 800, 1000};
-    {
-      std::vector<std::complex<double>> tmp(size);
-      fillRandomMatrix(tmp);
-      using std::copy_n;
-      copy_n(tmp.data(), tmp.size(), buffer.origin());
-    }
     for (auto d : dims) {
       timeQR(out, alloc, buffer, d);
     }
@@ -363,8 +357,8 @@ int main(int argc, char* argv[])
   {
     std::ofstream out;
     out.open("time_batched_sgemm.dat");
-    std::cout << " - batched sgemm (nbach, MxM)" << std::endl;
-    out << "  nbatch    M         tsgemm\n";
+    std::cout << " - batched sgemm (nbacth, MxM)" << std::endl;
+    out << "  nbatch    M        tsgemm\n";
     Alloc<float> alloc{};
     std::vector<int> num_rows = {100, 200, 300, 400, 500, 600};
     std::vector<int> batches = {128, 256, 512, 1024};
@@ -406,11 +400,13 @@ int main(int argc, char* argv[])
     int max_batch = batches[batches.size()-1];
     int max_rows = num_rows[num_rows.size()-1];
     int size = 2*max_batch*max_rows*max_rows;
-    std::vector<std::complex<double>> tmp(size);
     Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, alloc);
-    fillRandomMatrix(tmp);
-    using std::copy_n;
-    copy_n(tmp.data(), tmp.size(), buffer.origin());
+    {
+      std::vector<std::complex<double>> tmp(size);
+      fillRandomMatrix(tmp);
+      using std::copy_n;
+      copy_n(tmp.data(), tmp.size(), buffer.origin());
+    }
     for (auto b : batches) {
       for (auto m : num_rows) {
         timeBatchedMatrixInverse(out, alloc, buffer, b, m);
