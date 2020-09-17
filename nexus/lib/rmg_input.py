@@ -2788,7 +2788,7 @@ class AtomsKeyword(FormattedTableRmgKeyword):
         # extract universal atom labels and positions
         atom_labels = d[:,0]
         atom_labels = atom_labels.flatten()
-        positions = np.array(d[:,1:4],dtype=float)
+        positions   = np.array(d[:,1:4],dtype=float)
 
         # extract remaining data and determine format
         v = obj(
