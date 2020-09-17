@@ -305,7 +305,10 @@ int main(int argc, char* argv[])
   boost::mpi3::environment env(argc, argv);
   auto world = boost::mpi3::environment::get_world_instance();
   auto node  = world.split_shared(world.rank());
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   arch::INIT(node);
+#endif
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   {
     std::ofstream out;
     out.open("time_batched_zqr.dat");
@@ -326,6 +329,7 @@ int main(int argc, char* argv[])
       }
     }
   }
+#endif
   {
     std::ofstream out;
     out.open("time_zqr.dat");
