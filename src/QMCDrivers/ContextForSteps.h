@@ -24,7 +24,7 @@ namespace qmcplusplus
 {
 
 class MCPopulation;
-struct DistanceTableData;
+class DistanceTableData;
 
 /** Thread local context for moving walkers
  *

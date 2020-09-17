@@ -256,7 +256,7 @@ public:
   // copy sgridxyz_m to rrotsgrid_m without rotation. For testing only.
   friend void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp);
 
-  friend class ECPComponentBuilder;
+  friend struct ECPComponentBuilder;
   // a lazy temporal solution
   friend class NonLocalECPotential_CUDA;
 }; //end of RadialPotentialSet

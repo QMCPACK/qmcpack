@@ -235,6 +235,7 @@ SPOSet* CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     return 0;
   }
+
   CompositeSPOSet* spo_now = new CompositeSPOSet;
   for (int i = 0; i < spolist.size(); ++i)
   {

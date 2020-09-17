@@ -438,7 +438,7 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   int chargeIdx              = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx) = -1;
 
-  elec_.addTable(ions_, DT_SOA);
+  elec_.addTable(ions_);
   elec_.resetGroups();
   elec_.update();
   // </steal>
@@ -476,11 +476,11 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   k2dn[1] = -dot(kdn[1], kdn[1]);
   k2dn[2] = -dot(kdn[2], kdn[2]);
 
-  std::shared_ptr<EGOSet> spo_up(new EGOSet(kup, k2up));
-  std::shared_ptr<EGOSet> spo_dn(new EGOSet(kdn, k2dn));
+  auto spo_up = std::make_unique<EGOSet>(kup, k2up);
+  auto spo_dn = std::make_unique<EGOSet>(kdn, k2dn);
 
   SpinorSet* spinor_set = new SpinorSet();
-  spinor_set->set_spos(spo_up, spo_dn);
+  spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
   DetType dd(spinor_set);
   dd.resize(nelec, norb);

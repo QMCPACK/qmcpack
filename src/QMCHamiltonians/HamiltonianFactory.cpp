@@ -85,6 +85,13 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
 {
   if (cur == NULL)
     return false;
+
+  app_summary() << std::endl;
+  app_summary() << " Hamiltonian and observables" << std::endl;
+  app_summary() << " ---------------------------" << std::endl;
+  app_summary() << "  Name: " << myName << std::endl;
+  app_summary() << std::endl;
+
   std::string htype("generic"), source("i"), defaultKE("yes");
   OhmmsAttributeSet hAttrib;
   hAttrib.add(htype, "type");

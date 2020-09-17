@@ -24,6 +24,7 @@ SET(UTEST_HDF_INPUT2 ${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae/pwscf.pwsc
 SET(UTEST_HDF_INPUT3 ${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/LiH-arb.pwscf.h5)
 SET(UTEST_HDF_INPUT4 ${qmcpack_SOURCE_DIR}/tests/solids/monoO_noncollinear_1x1x1_pp/o2_45deg_spins.pwscf.h5)
 SET(UTEST_HDF_INPUT5 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx/C_diamond-twist-third.h5)
+SET(UTEST_HDF_INPUT6 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor.h5)
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 MAYBE_SYMLINK(${UTEST_HDF_INPUT0} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT1} ${UTEST_DIR}/diamondC_2x1x1.pwscf.h5)
@@ -31,9 +32,10 @@ MAYBE_SYMLINK(${UTEST_HDF_INPUT2} ${UTEST_DIR}/bccH.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT3} ${UTEST_DIR}/LiH-arb.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT4} ${UTEST_DIR}/o2_45deg_spins.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT5} ${UTEST_DIR}/C_diamond-twist-third.h5)
+MAYBE_SYMLINK(${UTEST_HDF_INPUT6} ${UTEST_DIR}/lcao_spinor.h5)
 
-SET(FILES_TO_COPY he_sto3g.wfj.xml  ne_def2_svp.wfnoj.xml hcn.structure.xml hcn.wfnoj.xml hcn_downdet.cuspInfo.xml hcn_updet.cuspInfo.xml
-    ethanol.structure.xml ethanol.wfnoj.xml ethanol_updet.cuspInfo.xml ethanol_downdet.cuspInfo.xml C_diamond-twist-third.structure.xml C_diamond-twist-third.wfj.xml)
+SET(FILES_TO_COPY he_sto3g.wfj.xml ne_def2_svp.wfnoj.xml hcn.structure.xml hcn.wfnoj.xml hcn_downdet.cuspInfo.xml hcn_updet.cuspInfo.xml
+    ethanol.structure.xml ethanol.wfnoj.xml ethanol_updet.cuspInfo.xml ethanol_downdet.cuspInfo.xml C_diamond-twist-third.structure.xml C_diamond-twist-third.wfj.xml cartesian_order.wfnoj.xml dirac_order.wfnoj.xml )
 
 FOREACH(fname ${FILES_TO_COPY})
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${fname}" ${UTEST_DIR})
@@ -41,9 +43,9 @@ ENDFOREACH()
 
 IF ((NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA))
   IF (NOT QMC_COMPLEX)
-    SET(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp test_soa_cusp_corr.cpp)
+    SET(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp test_soa_cusp_corr.cpp test_cartesian_ao.cpp)
   ELSE()
-    SET(MO_SRCS test_pyscf_complex_MO.cpp)
+      SET(MO_SRCS test_pyscf_complex_MO.cpp test_MO_spinor.cpp)
   ENDIF()
 ENDIF()
 

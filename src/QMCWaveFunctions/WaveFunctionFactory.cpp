@@ -56,6 +56,12 @@ void WaveFunctionFactory::setPsi(TrialWaveFunction* psi)
 
 bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
 {
+  app_summary() << std::endl;
+  app_summary() << " Many-body wavefunction" << std::endl;
+  app_summary() << " -------------------" << std::endl;
+  app_summary() << "  Name: " << myName << std::endl;
+  app_summary() << std::endl;
+
   ReportEngine PRE(ClassName, "build");
   if (cur == NULL)
     return false;

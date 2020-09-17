@@ -35,7 +35,7 @@ namespace qmcplusplus
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
 EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder(comm),
+    : SPOSetBuilder("spline", comm),
       ParticleSets(psets),
       TargetPtcl(p),
       MixedSplineReader(0),
@@ -56,6 +56,8 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Co
       NumOrbitalsRead(-1),
       makeRotations(false)
 {
+  ClassName = "EinsplineSetBuilder";
+
   MatchingTol = 10 * std::numeric_limits<float>::epsilon();
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
@@ -437,7 +439,6 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     if (dot(ks - kp, ks - kp) > 1.0e-6)
     {
       app_error() << "Primitive and super k-points do not agree.  Error in coding.\n";
-      app_error().flush();
       APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
     }
     PosType frac = FracPart(superTwist);
@@ -531,7 +532,6 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     {
       app_error() << "Cannot use this super twist with real wavefunctions.\n"
                   << "Please recompile with QMC_COMPLEX=1.\n";
-      app_error().flush();
       APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
     }
   }

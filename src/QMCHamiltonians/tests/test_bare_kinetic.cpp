@@ -52,12 +52,12 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   elec.R[1][1] = 1.0;
   elec.R[1][2] = 0.0;
 
-  SpeciesSet& tspecies = elec.getSpeciesSet();
-  int upIdx            = tspecies.addSpecies("u");
-  int massIdx = tspecies.addAttribute("mass");
-  tspecies(massIdx, upIdx)   = 1.0;
+  SpeciesSet& tspecies     = elec.getSpeciesSet();
+  int upIdx                = tspecies.addSpecies("u");
+  int massIdx              = tspecies.addAttribute("mass");
+  tspecies(massIdx, upIdx) = 1.0;
 
-  elec.addTable(ions, DT_SOA);
+  elec.addTable(ions);
   elec.update();
 
 
@@ -134,7 +134,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 1;
   ion_species(iatnumber, pIdx)  = 11;
-  ions.Lattice = Lattice;
+  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
@@ -249,6 +249,5 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   REQUIRE(PulayTerm[1][0] == Approx(-0.12145));
   REQUIRE(PulayTerm[1][1] == Approx(0.0));
   REQUIRE(PulayTerm[1][2] == Approx(0.0));
-
 }
 } // namespace qmcplusplus

@@ -85,14 +85,16 @@ IF(OHMMS_DIM MATCHES 3)
     )
 
   SET(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOrbitalSet.cpp LCAO/LCAOrbitalBuilder.cpp)
-  IF(NOT QMC_COMPLEX)
+  IF(QMC_COMPLEX)
+    SET(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOSpinorBuilder.cpp)
+  ELSE(QMC_COMPLEX)
     #LCAO cusp correction is not ready for complex
     SET(FERMION_SRCS ${FERMION_SRCS}
       LCAO/CuspCorrection.cpp
       LCAO/LCAOrbitalSetWithCorrection.cpp
       LCAO/CuspCorrectionConstruction.cpp
       )
-  ENDIF(NOT QMC_COMPLEX)
+  ENDIF(QMC_COMPLEX)
 
   IF(QMC_CUDA)
     SET(WFSSRCS_CUDA
@@ -139,8 +141,10 @@ IF(OHMMS_DIM MATCHES 3)
         EinsplineSpinorSetBuilder.cpp
         BsplineFactory/SplineC2C.cpp
       )
-    ENDIF(QMC_COMPLEX)
-    IF(NOT QMC_COMPLEX)
+      IF(ENABLE_OFFLOAD)
+        SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2COMP.cpp)
+      ENDIF(ENABLE_OFFLOAD)
+    ELSE(QMC_COMPLEX)
       SET(FERMION_SRCS ${FERMION_SRCS}
         BsplineFactory/createRealSingle.cpp
         BsplineFactory/createRealDouble.cpp
@@ -150,7 +154,7 @@ IF(OHMMS_DIM MATCHES 3)
       IF(ENABLE_OFFLOAD)
         SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2ROMP.cpp)
       ENDIF(ENABLE_OFFLOAD)
-    ENDIF(NOT QMC_COMPLEX)
+    ENDIF(QMC_COMPLEX)
 
   ENDIF(HAVE_EINSPLINE)
 
@@ -223,9 +227,3 @@ ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
 TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcparticle platform_device)
 TARGET_LINK_LIBRARIES(qmcwfs PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3 Math::scalar_vector_functions)
-
-#IF(QMC_BUILD_STATIC)
-#  ADD_LIBRARY(qmcwfs STATIC ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
-#ELSE(QMC_BUILD_STATIC)
-#  ADD_LIBRARY(qmcwfs SHARED ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
-#ENDIF(QMC_BUILD_STATIC)

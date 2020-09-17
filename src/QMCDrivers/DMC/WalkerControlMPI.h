@@ -17,11 +17,11 @@
 #define QMCPLUSPLUS_WALKER_CONTROL_MPI_H
 
 #include "QMCDrivers/WalkerControlBase.h"
+#include <Utilities/TimerManager.h>
 
 
 namespace qmcplusplus
 {
-class NewTimer;
 struct WalkerControlMPITest;
 
 namespace testing
@@ -36,7 +36,9 @@ struct WalkerMessage
   // i.e. MPI rank
   const int source_rank;
   const int target_rank;
-  WalkerMessage(WalkerControlBase::MCPWalker& walk, const int source, const int target) : walker(walk), source_rank(source), target_rank(target) {}
+  WalkerMessage(WalkerControlBase::MCPWalker& walk, const int source, const int target)
+      : walker(walk), source_rank(source), target_rank(target)
+  {}
 };
 
 inline bool operator==(const WalkerMessage& A, const WalkerMessage& B)

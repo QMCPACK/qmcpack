@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
@@ -85,26 +85,7 @@ int main(int argc, char** argv)
           if (pos != std::string::npos)
           {
             std::string timer_level = c.substr(pos + 1);
-            if (timer_level == "none")
-            {
-              TimerManager.set_timer_threshold(timer_level_none);
-            }
-            else if (timer_level == "coarse")
-            {
-              TimerManager.set_timer_threshold(timer_level_coarse);
-            }
-            else if (timer_level == "medium")
-            {
-              TimerManager.set_timer_threshold(timer_level_medium);
-            }
-            else if (timer_level == "fine")
-            {
-              TimerManager.set_timer_threshold(timer_level_fine);
-            }
-            else
-            {
-              std::cerr << "Unknown timer level: " << timer_level << std::endl;
-            }
+            timer_manager.set_timer_threshold(timer_level);
           }
         }
         if (c.find("-verbosity") < c.size())
@@ -193,8 +174,7 @@ int main(int argc, char** argv)
         std::ostringstream msg;
         msg << "main(). Current " << OHMMS::Controller->size() << " MPI ranks cannot accommodate all the "
             << inputs.size() << " individual calculations in the ensemble. "
-            << "Increase the number of MPI ranks or reduce the number of calculations."
-            << std::endl;
+            << "Increase the number of MPI ranks or reduce the number of calculations." << std::endl;
         OHMMS::Controller->barrier_and_abort(msg.str());
       }
       qmcComm               = new Communicate(*OHMMS::Controller, inputs.size());
@@ -243,13 +223,13 @@ int main(int argc, char** argv)
     Libxml2Document timingDoc;
     timingDoc.newDoc("resources");
     output_hardware_info(qmcComm, timingDoc, timingDoc.getRoot());
-    TimerManager.output_timing(qmcComm, timingDoc, timingDoc.getRoot());
+    timer_manager.output_timing(qmcComm, timingDoc, timingDoc.getRoot());
     qmc->ptclPool->output_particleset_info(timingDoc, timingDoc.getRoot());
     if (OHMMS::Controller->rank() == 0)
     {
       timingDoc.dump(qmc->getTitle() + ".info.xml");
     }
-    TimerManager.print(qmcComm);
+    timer_manager.print(qmcComm);
     if (qmc)
       delete qmc;
     if (useGPU)

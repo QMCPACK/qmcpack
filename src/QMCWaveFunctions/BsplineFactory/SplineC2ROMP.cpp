@@ -131,11 +131,9 @@ inline void assign_vgl(ST x,
   const ST lap_r   = lcart_r + mKK_ptr[index] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
   const ST lap_i   = lcart_i + mKK_ptr[index] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
-  const size_t psiIndex = first_spo + index + (index < nComplexBands ? index : nComplexBands);
-  //this will be fixed later
-  psi[psiIndex]   = c * val_r - s * val_i;
-  d2psi[psiIndex] = c * lap_r - s * lap_i;
-  //this will go way with Determinant
+  const size_t psiIndex  = first_spo + index + (index < nComplexBands ? index : nComplexBands);
+  psi[psiIndex]          = c * val_r - s * val_i;
+  d2psi[psiIndex]        = c * lap_r - s * lap_i;
   dpsi[psiIndex * 3]     = c * gX_r - s * gX_i;
   dpsi[psiIndex * 3 + 1] = c * gY_r - s * gY_i;
   dpsi[psiIndex * 3 + 2] = c * gZ_r - s * gZ_i;
@@ -343,12 +341,8 @@ void SplineC2ROMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
     for (int iat = 0; iat < nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int first      = ChunkSizePerTeam * team_id;
-        const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-        const int first_cplx = first / 2;
-        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
-        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
+        const int first = ChunkSizePerTeam * team_id;
+        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
         auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
         auto* restrict pos_scratch             = psiinv_ptr + orb_size;
@@ -369,6 +363,10 @@ void SplineC2ROMP<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
                         psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
                         first_spo_local, nComplexBands_local, index);
 
+        const int first_cplx = first / 2;
+        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
+        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
+        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
         TT sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
         for (int i = first_real; i < last_real; i++)
@@ -462,12 +460,8 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
     for (int iat = 0; iat < mw_nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int first      = ChunkSizePerTeam * team_id;
-        const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-        const int first_cplx = first / 2;
-        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
-        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
+        const int first = ChunkSizePerTeam * team_id;
+        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
         auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + padded_size * iat;
         auto* restrict psi_iat_ptr             = results_scratch_ptr + orb_size * iat;
         auto* ref_id_ptr = reinterpret_cast<int*>(buffer_H2D_ptr + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
@@ -490,6 +484,10 @@ void SplineC2ROMP<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
                         psi_iat_ptr, orb_size, offload_scratch_iat_ptr, myKcart_ptr, myKcart_padded_size,
                         first_spo_local, nComplexBands_local, index);
 
+        const int first_cplx = first / 2;
+        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
+        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
+        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
         TT sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+:sum)")
         for (int i = first_real; i < last_real; i++)
@@ -575,13 +573,11 @@ inline void SplineC2ROMP<ST>::assign_vgl_from_l(const PointType& r,
     const ST lap_r = myL[jr] + (*mKK)[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
     const ST lap_i = myL[ji] + (*mKK)[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
-    //this will be fixed later
     const size_t psiIndex = first_spo + jr;
     psi[psiIndex]         = c * val_r - s * val_i;
     psi[psiIndex + 1]     = c * val_i + s * val_r;
     d2psi[psiIndex]       = c * lap_r - s * lap_i;
     d2psi[psiIndex + 1]   = c * lap_i + s * lap_r;
-    //this will go way with Determinant
     dpsi[psiIndex][0]     = c * gX_r - s * gX_i;
     dpsi[psiIndex][1]     = c * gY_r - s * gY_i;
     dpsi[psiIndex][2]     = c * gZ_r - s * gZ_i;
@@ -624,10 +620,9 @@ inline void SplineC2ROMP<ST>::assign_vgl_from_l(const PointType& r,
     const ST gZ_i         = dZ_i - val_r * kZ;
     const size_t psiIndex = first_spo + nComplexBands + j;
     psi[psiIndex]         = c * val_r - s * val_i;
-    //this will be fixed later
-    dpsi[psiIndex][0] = c * gX_r - s * gX_i;
-    dpsi[psiIndex][1] = c * gY_r - s * gY_i;
-    dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
+    dpsi[psiIndex][0]     = c * gX_r - s * gX_i;
+    dpsi[psiIndex][1]     = c * gY_r - s * gY_i;
+    dpsi[psiIndex][2]     = c * gZ_r - s * gZ_i;
 
     const ST lap_r  = myL[jr] + (*mKK)[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
     const ST lap_i  = myL[ji] + (*mKK)[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
@@ -752,12 +747,8 @@ void SplineC2ROMP<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocat
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int first      = ChunkSizePerTeam * team_id;
-        const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-        const int first_cplx = first / 2;
-        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
-        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
+        const int first = ChunkSizePerTeam * team_id;
+        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
         auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
         auto* restrict psi_iw_ptr             = results_scratch_ptr + orb_size * iw * 5;
 
@@ -902,12 +893,8 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const int first      = ChunkSizePerTeam * team_id;
-        const int last       = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
-        const int first_cplx = first / 2;
-        const int last_cplx  = orb_size < last / 2 ? orb_size : last / 2;
-        const int first_real = first_cplx + std::min(nComplexBands_local, first_cplx);
-        const int last_real  = last_cplx + std::min(nComplexBands_local, last_cplx);
+        const int first = ChunkSizePerTeam * team_id;
+        const int last  = (first + ChunkSizePerTeam) > padded_size ? padded_size : first + ChunkSizePerTeam;
         auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
         auto* restrict psi_iw_ptr             = results_scratch_ptr + orb_size * iw * 5;
         const auto* restrict pos_iw_ptr       = reinterpret_cast<ST*>(buffer_H2D_ptr + buffer_H2D_stride * iw);
@@ -1000,7 +987,7 @@ void SplineC2ROMP<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& s
       grad_y += rg_private[iw][team_id * 4 + 2];
       grad_z += rg_private[iw][team_id * 4 + 3];
     }
-    grads[iw] = {grad_x / ratio, grad_y / ratio, grad_z / ratio};
+    grads[iw] = GradType{grad_x / ratio, grad_y / ratio, grad_z / ratio};
   }
 }
 

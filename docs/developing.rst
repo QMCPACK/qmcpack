@@ -2095,9 +2095,10 @@ spatial derivatives:
 
 ``evaluateLog`` Computes the log of the wavefunction and the gradient
 and Laplacian (of the log of the wavefunction) for all particles. The
-input is the\ ``ParticleSet``\ (``P``) (of the electrons). The return
-value is the log of wavefunction, and the gradient is in ``G`` and
-Laplacian in ``L``.
+input is the\ ``ParticleSet``\ (``P``) (of the electrons). The log of
+the wavefunction should be stored in the ``LogValue`` member variable,
+and used as the return value from the function.  The gradient is stored
+in ``G`` and the Laplacian in ``L``.
 
 ``ratio`` Computes the wavefunction ratio (not the log) for a single
 particle move (:math:`\psi_{new}/\psi_{old}`). The inputs are the
@@ -2161,7 +2162,7 @@ ion-electron distance table.
 
 ::
 
-   const int ei_id = elecs.addTable(ions, DT_SOA); // in the constructor only
+   const int ei_id = elecs.addTable(ions); // in the constructor only
    const auto& ei_table = elecs.getDistTable(ei_id); // when consuming a distance table
 
 Getting the electron-electron distances is very similar, just add the

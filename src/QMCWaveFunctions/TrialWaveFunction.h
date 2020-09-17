@@ -26,7 +26,7 @@
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "type_traits/template_types.hpp"
 #include "Containers/MinimalContainers/RecordArray.hpp"
 #ifdef QMC_CUDA

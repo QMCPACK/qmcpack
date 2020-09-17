@@ -102,7 +102,7 @@ void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm, std::string a
   for (int i = 0; i < suffixes.size(); i++)
   {
     std::string name = "WaveFunction::" + aname + suffixes[i];
-    myTimers.push_back(TimerManager.createTimer(name));
+    myTimers.push_back(timer_manager.createTimer(name));
   }
 }
 
@@ -388,7 +388,6 @@ void TrialWaveFunction::flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>
 }
 
 
-
 /*void TrialWaveFunction::evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi)
 {
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
@@ -577,7 +576,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSe
                                                                       GradType& grad_iat,
                                                                       ComplexType& spingrad_iat)
 {
-  grad_iat = 0.0;
+  grad_iat     = 0.0;
   spingrad_iat = 0.0;
   PsiValueType r(1.0);
   for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
@@ -836,7 +835,7 @@ void TrialWaveFunction::debugOnlyCheckBuffer(WFBufferType& buffer)
   if (buffer.size() < buffer.current() + buffer.current_scalar() * sizeof(FullPrecRealType))
   {
     std::ostringstream assert_message;
-    assert_message << "On thread:" << Concurrency::getThreadId<>() << "  buf_list[iw].get().size():" << buffer.size()
+    assert_message << "On thread:" << Concurrency::getWorkerId<>() << "  buf_list[iw].get().size():" << buffer.size()
                    << " < buf_list[iw].get().current():" << buffer.current()
                    << " + buf.current_scalar():" << buffer.current_scalar()
                    << " * sizeof(FullPrecRealType):" << sizeof(FullPrecRealType) << '\n';

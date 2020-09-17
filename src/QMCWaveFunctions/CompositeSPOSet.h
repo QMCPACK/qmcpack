@@ -94,7 +94,7 @@ public:
 
 struct CompositeSPOSetBuilder : public SPOSetBuilder
 {
-  CompositeSPOSetBuilder(Communicate* comm) : SPOSetBuilder(comm) {}
+  CompositeSPOSetBuilder(Communicate* comm) : SPOSetBuilder("Composite", comm) {}
 
   //SPOSetBuilder interface
   SPOSet* createSPOSetFromXML(xmlNodePtr cur);

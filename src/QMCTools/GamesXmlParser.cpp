@@ -192,7 +192,7 @@ void GamesXmlParser::getGeometry(std::vector<xmlNodePtr>& aPtrList)
         while (tcur != NULL)
         {
           std::string tname((const char*)tcur->name);
-          double x, y, z;
+          double x(0), y(0), z(0);
           if (tname == "XCOORD")
             putContent(x, tcur);
           else if (tname == "YCOORD")

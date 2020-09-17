@@ -150,7 +150,7 @@ public:
   virtual void evaluateDetRatios(const VirtualParticleSet& VP,
                                  ValueVector_t& psi,
                                  const ValueVector_t& psiinv,
-                                 std::vector<ComplexT>& ratios) override;
+                                 std::vector<ValueType>& ratios) override;
 
   /** assign_vgl
    */
@@ -196,8 +196,8 @@ public:
                              GGGVector_t& grad_grad_grad_psi) override;
 
   template<class BSPLINESPO>
-  friend class SplineSetReader;
-  friend class BsplineReaderBase;
+  friend struct SplineSetReader;
+  friend struct BsplineReaderBase;
 };
 
 extern template class SplineC2C<float>;

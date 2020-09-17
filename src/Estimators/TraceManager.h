@@ -31,6 +31,7 @@
 #include <Utilities/IteratorUtility.h>
 #include <Message/Communicate.h>
 #include <io/hdf_archive.h>
+#include <Message/OpenMP.h>
 #include <map>
 #include <set>
 #include <algorithm>
@@ -551,6 +552,7 @@ struct TraceSample
     check_shape();
   }
 
+  inline virtual ~TraceSample() = default;
 
   inline void initialize(const std::string& sdomain, const std::string& sname, int sindex, int sdim)
   {

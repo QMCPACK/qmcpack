@@ -62,7 +62,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   ///Container for \f$F[ig*NumGroups+jg]\f$
   std::vector<FT*> F;
 
-  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : myTableID(els.addTable(ions, DT_SOA)), Ions(ions)
+  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : myTableID(els.addTable(ions)), Ions(ions)
   {
     initialize(els);
     ClassName = "J1OrbitalSoA";

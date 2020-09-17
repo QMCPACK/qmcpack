@@ -38,7 +38,7 @@ QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
                          HamiltonianPool& hpool,
                          WaveFunctionPool& ppool,
                          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+    : QMCDriver(w, psi, h, ppool, comm, "QMCOptimize"),
       PartID(0),
       NumParts(1),
       hamPool(hpool),
@@ -52,7 +52,6 @@ QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
   qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
-  QMCType  = "QMCOptimize";
   //default method is cg
   optmethod = "cg";
 }
@@ -146,10 +145,6 @@ void QMCOptimize::generateSamples()
   vmcEngine->run();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "</vmc>" << std::endl;
-  //write parameter history and energies to the parameter file in the trial wave function through opttarget
-  FullPrecRealType e, w, var;
-  vmcEngine->Estimators->getEnergyAndWeight(e, w, var);
-
   h5FileRoot = RootName;
 }
 
