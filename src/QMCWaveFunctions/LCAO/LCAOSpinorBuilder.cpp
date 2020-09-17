@@ -21,6 +21,8 @@ namespace qmcplusplus
 LCAOSpinorBuilder::LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
     : LCAOrbitalBuilder(els, ions, comm, cur)
 {
+  ClassName = "LCAOSpinorBuilder";
+
   if (h5_path == "")
   {
     myComm->barrier_and_abort("LCAOSpinorBuilder only works with href");

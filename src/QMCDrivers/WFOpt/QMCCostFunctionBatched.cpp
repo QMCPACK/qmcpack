@@ -30,7 +30,16 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
                                                QMCHamiltonian& h,
                                                SampleStack& samples,
                                                Communicate* comm)
-    : QMCCostFunctionBase(w, psi, h, comm), samples_(samples)
+    : QMCCostFunctionBase(w, psi, h, comm),
+      samples_(samples),
+      opt_batch_size_(1),
+      check_config_timer_(
+          *timer_manager.createTimer("QMCCostFunctionBatched::checkConfigurations", timer_level_medium)),
+      corr_sampling_timer_(
+          *timer_manager.createTimer("QMCCostFunctionBatched::correlatedSampling", timer_level_medium)),
+      fill_timer_(
+          *timer_manager.createTimer("QMCCostFunctionBatched::fillOverlapHamiltonianMatrices", timer_level_medium))
+
 {
   app_log() << " Using QMCCostFunctionBatched::QMCCostFunctionBatched" << std::endl;
 }
@@ -183,7 +192,6 @@ std::unique_ptr<QMCHamiltonian> QMCCostFunctionBatched::extractFixedHamiltonianC
 }
 
 
-
 void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
 {
   app_log() << "  Using Nonlocal PP in Opt: " << includeNonlocalH << std::endl;
@@ -213,24 +221,43 @@ void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
   }
 }
 
+// Input - sample_size  - number of samples to process
+//       - batch_size  -  process samples in batch_size at a time
+// Output - num_batches - number of batches to use
+//        - final_batch_size - the last batch size.  May be smaller than batch_size
+//                             if the number of samples is not a multiple of the batch size
+void compute_batch_parameters(int sample_size, int batch_size, int& num_batches, int& final_batch_size)
+{
+  num_batches      = sample_size / batch_size;
+  final_batch_size = batch_size;
+  if (sample_size % batch_size != 0)
+  {
+    num_batches += 1;
+    final_batch_size = sample_size % batch_size;
+  }
+}
+
 /** evaluate everything before optimization */
 void QMCCostFunctionBatched::checkConfigurations()
 {
+  ScopedTimer tmp_timer(&check_config_timer_);
+
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
-  int numSamples = samples_.getNumSamples();
+  int numSamples  = samples_.getNumSamples();
   {
-    if (log_psi_fixed_.size() != numSamples)
+    if (log_psi_fixed_.size() != opt_batch_size_)
     {
-      log_psi_fixed_.resize(numSamples);
-      log_psi_opt_.resize(numSamples);
+      log_psi_fixed_.resize(opt_batch_size_);
+      log_psi_opt_.resize(opt_batch_size_);
     }
-    if (wf_ptr_list_.size() != numSamples)
+    if (wf_ptr_list_.size() != opt_batch_size_)
     {
-      wf_ptr_list_.resize(numSamples);
-      p_ptr_list_.resize(numSamples);
-      h_ptr_list_.resize(numSamples);
-      h0_ptr_list_.resize(numSamples);
+      wf_ptr_list_.resize(opt_batch_size_);
+      p_ptr_list_.resize(opt_batch_size_);
+      h_ptr_list_.resize(opt_batch_size_);
+      h0_ptr_list_.resize(opt_batch_size_);
+      rng_ptr_list_.resize(opt_batch_size_);
     }
 
     if (RecordsOnNode.size1() == 0)
@@ -264,65 +291,98 @@ void QMCCostFunctionBatched::checkConfigurations()
     Return_rt e2 = 0.0;
 
 
-    auto ref_dLogPsi  = convertPtrToRefVector(dLogPsi);
-    auto ref_d2LogPsi = convertPtrToRefVector(d2LogPsi);
+    int num_batches;
+    int final_batch_size;
+    compute_batch_parameters(numSamples, opt_batch_size_, num_batches, final_batch_size);
+
+    app_log() << " Number of batches = " << num_batches << " final iteration count = " << final_batch_size << std::endl;
 
 
     outputManager.pause();
-    for (int iw = 0; iw < numSamples; iw++)
+    for (int ib = 0; ib < opt_batch_size_; ib++)
     {
       ParticleSet* wRef = new ParticleSet(W);
-      samples_.loadSample(wRef->R, iw);
-      p_ptr_list_[iw].reset(wRef);
-      wf_ptr_list_[iw].reset(Psi.makeClone(*wRef));
-      h_ptr_list_[iw].reset(H.makeClone(*wRef, *wf_ptr_list_[iw]));
-      h0_ptr_list_[iw].reset(H_KE_Node->makeClone(*wRef, *wf_ptr_list_[iw]));
+      p_ptr_list_[ib].reset(wRef);
+      wf_ptr_list_[ib].reset(Psi.makeClone(*wRef));
+      h_ptr_list_[ib].reset(H.makeClone(*wRef, *wf_ptr_list_[ib]));
+      h0_ptr_list_[ib].reset(H_KE_Node->makeClone(*wRef, *wf_ptr_list_[ib]));
+
+      rng_ptr_list_[ib] = std::make_unique<RandomGenerator_t>(*MoverRng[0]);
+      h_ptr_list_[ib]->setRandomGenerator(rng_ptr_list_[ib].get());
+
+      // RNG state is saved to use the same sequence in correlatedSampling.
+      // Since only one generator is saved, this means the same rotated grid is used
+      // for every sample in evaluating the non-local ECP contribution.
+      rng_save_ptr_ = std::make_unique<RandomGenerator_t>(*MoverRng[0]);
     }
     outputManager.resume();
 
-    auto wf_list = convertUPtrToRefVector(wf_ptr_list_);
-    auto p_list  = convertUPtrToRefVector(p_ptr_list_);
-    auto h_list  = convertUPtrToRefVector(h_ptr_list_);
 
-    ParticleSet::flex_update(p_list);
-
-    TrialWaveFunction::flex_evaluateDeltaLogSetup(wf_list, p_list, log_psi_fixed_, log_psi_opt_, ref_dLogPsi,
-                                                  ref_d2LogPsi);
-
-    int nparam = getNumParams();
-    RecordArray<Return_t> dlogpsi_array(nparam, numSamples);
-    RecordArray<Return_t> dhpsioverpsi_array(nparam, numSamples);
-    TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, OptVariablesForPsi, dlogpsi_array,
-                                                         dhpsioverpsi_array);
-
-    for (int iw = 0; iw < numSamples; iw++)
+    for (int inb = 0; inb < num_batches; inb++)
     {
-      for (int j = 0; j < nparam; j++)
+      int curr_batch_size = opt_batch_size_;
+      if (inb == num_batches - 1)
+        curr_batch_size = final_batch_size;
+
+      int base_sample_index = inb * opt_batch_size_;
+
+      auto wf_list = convertUPtrToRefVector(wf_ptr_list_);
+      auto p_list  = convertUPtrToRefVector(p_ptr_list_);
+      auto h_list  = convertUPtrToRefVector(h_ptr_list_);
+
+      auto ref_dLogPsi  = convertPtrToRefVectorSubset(dLogPsi, base_sample_index, curr_batch_size);
+      auto ref_d2LogPsi = convertPtrToRefVectorSubset(d2LogPsi, base_sample_index, curr_batch_size);
+
+      for (int ib = 0; ib < curr_batch_size; ib++)
       {
-        DerivRecords[iw][j]  = std::real(dlogpsi_array.getValue(j, iw));
-        HDerivRecords[iw][j] = std::real(dhpsioverpsi_array.getValue(j, iw));
+        samples_.loadSample(p_ptr_list_[ib]->R, base_sample_index + ib);
       }
-      RecordsOnNode[iw][LOGPSI_FIXED] = log_psi_fixed_[iw];
-      RecordsOnNode[iw][LOGPSI_FREE]  = log_psi_opt_[iw];
+
+      ParticleSet::flex_update(p_list);
+
+      std::fill(log_psi_opt_.begin(), log_psi_opt_.end(), 0.0);
+      std::fill(log_psi_fixed_.begin(), log_psi_fixed_.end(), 0.0);
+
+      TrialWaveFunction::flex_evaluateDeltaLogSetup(wf_list, p_list, log_psi_fixed_, log_psi_opt_, ref_dLogPsi,
+                                                    ref_d2LogPsi);
+
+      int nparam = getNumParams();
+      RecordArray<Return_t> dlogpsi_array(nparam, curr_batch_size);
+      RecordArray<Return_t> dhpsioverpsi_array(nparam, curr_batch_size);
+      TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, OptVariablesForPsi, dlogpsi_array,
+                                                           dhpsioverpsi_array);
+
+      for (int ib = 0; ib < curr_batch_size; ib++)
+      {
+        int is = base_sample_index + ib;
+        for (int j = 0; j < nparam; j++)
+        {
+          DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
+          HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
+        }
+        RecordsOnNode[is][LOGPSI_FIXED] = log_psi_fixed_[ib];
+        RecordsOnNode[is][LOGPSI_FREE]  = log_psi_opt_[ib];
+      }
+
+      auto energy_list = QMCHamiltonian::flex_evaluate(h_list, p_list);
+
+      for (int ib = 0; ib < curr_batch_size; ib++)
+      {
+        int is    = base_sample_index + ib;
+        auto etmp = energy_list[ib];
+        e0 += etmp;
+        e2 += etmp * etmp;
+
+        RecordsOnNode[is][ENERGY_NEW]   = etmp;
+        RecordsOnNode[is][ENERGY_TOT]   = etmp;
+        RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].get().getLocalPotential();
+        RecordsOnNode[is][REWEIGHT]     = 1.0;
+      }
+
+      //add them all using reduction
+      et_tot += e0;
+      e2_tot += e2;
     }
-
-    auto energy_list = QMCHamiltonian::flex_evaluate(h_list, p_list);
-
-    for (int iw = 0; iw < numSamples; iw++)
-    {
-      auto etmp = energy_list[iw];
-      e0 += etmp;
-      e2 += etmp * etmp;
-
-      RecordsOnNode[iw][ENERGY_NEW]   = etmp;
-      RecordsOnNode[iw][ENERGY_TOT]   = etmp;
-      RecordsOnNode[iw][ENERGY_FIXED] = h_list[iw].get().getLocalPotential();
-      RecordsOnNode[iw][REWEIGHT]     = 1.0;
-    }
-
-    //add them all using reduction
-    et_tot += e0;
-    e2_tot += e2;
   }
   OptVariablesForPsi.setComputed();
   //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << std::endl;
@@ -385,6 +445,8 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
 
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(bool needGrad)
 {
+  ScopedTimer tmp_timer(&corr_sampling_timer_);
+
   {
     //    synchronize the random number generator with the node
     (*MoverRng[0]) = (*RngSaved[0]);
@@ -395,7 +457,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   const bool nlpp         = (includeNonlocalH != "no");
   Return_rt wgt_tot       = 0.0;
   Return_rt wgt_tot2      = 0.0;
-  int numSamples = samples_.getNumSamples();
+  int numSamples          = samples_.getNumSamples();
   Return_rt inv_n_samples = 1.0 / numSamples;
   {
     bool compute_nlpp             = useNLPPDeriv && (includeNonlocalH != "no");
@@ -403,83 +465,95 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
     if (compute_all_from_scratch)
       APP_ABORT("Batched optimizer does not have support for NLPP yet");
 
-    auto ref_dLogPsi  = convertPtrToRefVector(dLogPsi);
-    auto ref_d2LogPsi = convertPtrToRefVector(d2LogPsi);
+    int num_batches;
+    int final_batch_size;
+    compute_batch_parameters(numSamples, opt_batch_size_, num_batches, final_batch_size);
 
-    outputManager.pause();
-    for (int iw = 0; iw < numSamples; iw++)
+    for (int inb = 0; inb < num_batches; inb++)
     {
-      ParticleSet& wRef = *p_ptr_list_[iw];
-      samples_.loadSample(wRef.R, iw);
-    }
+      int curr_batch_size = opt_batch_size_;
+      if (inb == num_batches - 1)
+        curr_batch_size = final_batch_size;
 
-    outputManager.resume();
+      int base_sample_index = inb * opt_batch_size_;
 
-    auto wf_list = convertUPtrToRefVector(wf_ptr_list_);
-    auto p_list  = convertUPtrToRefVector(p_ptr_list_);
-    auto h0_list = convertUPtrToRefVector(h0_ptr_list_);
+      auto wf_list = convertUPtrToRefVector(wf_ptr_list_);
+      auto p_list  = convertUPtrToRefVector(p_ptr_list_);
+      auto h0_list = convertUPtrToRefVector(h0_ptr_list_);
 
-    ParticleSet::flex_update(p_list, true);
-
-
-    RefVector<ParticleSet::ParticleGradient_t> dummyG_list;
-    RefVector<ParticleSet::ParticleLaplacian_t> dummyL_list;
-    if (compute_all_from_scratch)
-    {
-      // need to have dummyG_list and dummyL_list set up
-    }
-    std::fill(log_psi_opt_.begin(), log_psi_opt_.end(), 0.0);
-
-    TrialWaveFunction::flex_evaluateDeltaLog(wf_list, p_list, log_psi_opt_, dummyG_list, dummyL_list,
-                                             compute_all_from_scratch);
-
-    for (int iw = 0; iw < numSamples; iw++)
-    {
-      wf_list[iw].get().G += *dLogPsi[iw];
-      wf_list[iw].get().L += *d2LogPsi[iw];
-      // This is needed to get the KE correct in QMCHamiltonian::flex_evaluate below
-      p_list[iw].get().G += *dLogPsi[iw];
-      p_list[iw].get().L += *d2LogPsi[iw];
-      Return_rt weight                  = vmc_or_dmc * (log_psi_opt_[iw] - RecordsOnNode[iw][LOGPSI_FREE]);
-      RecordsOnNode[iw][REWEIGHT] = weight;
-      wgt_tot  += inv_n_samples * weight;
-      wgt_tot2 += inv_n_samples * weight * weight;
-    }
-
-    if (needGrad)
-    {
-      int nparam = getNumParams();
-      RecordArray<Return_t> dlogpsi_array(nparam, numSamples);
-      RecordArray<Return_t> dhpsioverpsi_array(nparam, numSamples);
-
-      TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, OptVariablesForPsi, dlogpsi_array,
-                                                           dhpsioverpsi_array);
-
-      for (int iw = 0; iw < numSamples; iw++)
+      for (int ib = 0; ib < curr_batch_size; ib++)
       {
-        for (int j = 0; j < nparam; j++)
+        samples_.loadSample(p_ptr_list_[ib]->R, base_sample_index + ib);
+        *rng_ptr_list_[ib] = *rng_save_ptr_;
+      }
+
+
+      ParticleSet::flex_update(p_list, true);
+
+
+      RefVector<ParticleSet::ParticleGradient_t> dummyG_list;
+      RefVector<ParticleSet::ParticleLaplacian_t> dummyL_list;
+      if (compute_all_from_scratch)
+      {
+        // need to have dummyG_list and dummyL_list set up
+      }
+      std::fill(log_psi_opt_.begin(), log_psi_opt_.end(), 0.0);
+
+      TrialWaveFunction::flex_evaluateDeltaLog(wf_list, p_list, log_psi_opt_, dummyG_list, dummyL_list,
+                                               compute_all_from_scratch);
+
+      for (int ib = 0; ib < curr_batch_size; ib++)
+      {
+        int is = base_sample_index + ib;
+        wf_list[ib].get().G += *dLogPsi[is];
+        wf_list[ib].get().L += *d2LogPsi[is];
+        // This is needed to get the KE correct in QMCHamiltonian::flex_evaluate below
+        p_list[ib].get().G += *dLogPsi[is];
+        p_list[ib].get().L += *d2LogPsi[is];
+        Return_rt weight            = vmc_or_dmc * (log_psi_opt_[ib] - RecordsOnNode[is][LOGPSI_FREE]);
+        RecordsOnNode[is][REWEIGHT] = weight;
+        wgt_tot  += inv_n_samples * weight;
+        wgt_tot2 += inv_n_samples * weight * weight;
+      }
+
+      if (needGrad)
+      {
+        int nparam = getNumParams();
+        RecordArray<Return_t> dlogpsi_array(nparam, curr_batch_size);
+        RecordArray<Return_t> dhpsioverpsi_array(nparam, curr_batch_size);
+
+        TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, OptVariablesForPsi, dlogpsi_array,
+                                                             dhpsioverpsi_array);
+
+        for (int ib = 0; ib < curr_batch_size; ib++)
         {
-          if (OptVariablesForPsi.recompute(j))
+          int is = base_sample_index + ib;
+          for (int j = 0; j < nparam; j++)
           {
-            DerivRecords[iw][j]  = std::real(dlogpsi_array.getValue(j, iw));
-            HDerivRecords[iw][j] = std::real(dhpsioverpsi_array.getValue(j, iw));
+            if (OptVariablesForPsi.recompute(j))
+            {
+              DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
+              HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
+            }
           }
         }
+        auto energy_list = QMCHamiltonian::flex_evaluate(h0_list, p_list);
+        for (int ib = 0; ib < curr_batch_size; ib++)
+        {
+          int is                        = base_sample_index + ib;
+          auto etmp                     = energy_list[ib];
+          RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
+        }
       }
-      auto energy_list = QMCHamiltonian::flex_evaluate(h0_list, p_list);
-      for (int iw = 0; iw < numSamples; iw++)
+      else
       {
-        auto etmp                           = energy_list[iw];
-        RecordsOnNode[iw][ENERGY_NEW] = etmp + RecordsOnNode[iw][ENERGY_FIXED];
-      }
-    }
-    else
-    {
-      auto energy_list = QMCHamiltonian::flex_evaluate(h0_list, p_list);
-      for (int iw = 0; iw < numSamples; iw++)
-      {
-        auto etmp                           = energy_list[iw];
-        RecordsOnNode[iw][ENERGY_NEW] = etmp + RecordsOnNode[iw][ENERGY_FIXED];
+        auto energy_list = QMCHamiltonian::flex_evaluate(h0_list, p_list);
+        for (int ib = 0; ib < curr_batch_size; ib++)
+        {
+          int is                        = base_sample_index + ib;
+          auto etmp                     = energy_list[is];
+          RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
+        }
       }
     }
   }
@@ -549,6 +623,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left,
                                                                                          Matrix<Return_rt>& Right)
 {
+  ScopedTimer tmp_timer(&fill_timer_);
+
   RealType b1, b2;
   if (GEVType == "H2")
   {

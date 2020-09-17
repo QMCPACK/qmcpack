@@ -80,8 +80,11 @@ Module contents
 ---------------
 """
 
+import os
+
 from generic import obj
 from developer import DevBase,ci,message,error,unavailable
+from fileio import StandardFile,XsfFile
 
 try:
     import numpy as np
@@ -98,6 +101,12 @@ try:
 except:
     measure = unavailable('skimage','measure')
 #end try
+try:
+    import scipy.ndimage as scipy_ndimage
+except:
+    scipy_ndimage = unavailable('scipy','ndimage')
+#end try
+
 
 
 
@@ -715,6 +724,24 @@ class GBase(PlotHandler):
         initialized = (bool,False),
         )
 
+    vlogger = None
+
+    @staticmethod
+    def reset_vlog():
+        GBase.vlogger = None
+    #end def reset_vlog
+
+    @staticmethod
+    def set_vlog(vlog):
+        GBase.vlogger = vlog
+    #end def set_vlog
+
+    def vlog(self,*args,**kwargs):
+        if GBase.vlogger is not None:
+            GBase.vlogger(*args,**kwargs)
+        #end if
+    #end def vlog
+
 
     def __init__(self,*args,**kwargs):
         self.reset()
@@ -762,6 +789,28 @@ class GBase(PlotHandler):
             self.check_valid()
         #end if
     #end def initialize
+
+    
+    def read(self,filepath,format=None,check=True):
+        if isinstance(filepath,StandardFile):
+            format = filepath.sftype.lower()
+        elif not isinstance(filepath,str):
+            self.error('Cannot read file.\nExpected a file path.\nInstead received type: {}\nWith value: {}\nPlease provide a file path and try again.'.format(filepath.__class__.__name__,filepath))
+        elif not os.path.exists(filepath):
+            self.error('Cannot read file.  File path does not exist.\nFile path provided: {}'.format(filepath))
+        elif format is not None:
+            if not isinstance(format,str):
+                self.error('Cannot read file.\nExpected text (string) for file format.\nInstead received type: {}\nWith value: {}'.format(format.__class__.__name__,format))
+            #end if
+        else:
+            format = filepath.rsplit('.',1)[1].lower()
+        #end if
+        self.reset()
+        self.read_local(filepath,format)
+        if check:
+            self.check_valid()
+        #end if
+    #end def read
 
 
     def valid(self):
@@ -865,6 +914,32 @@ class GBase(PlotHandler):
         """
         self.not_implemented()
     #end def local_validity_checks
+
+
+    def read_local(self,filepath,format):
+        self.not_implemented()
+    #end def read_local
+
+
+    # test needed
+    def ensure_array(self,dtype=None,**arrays_in):
+        arrays = obj()
+        for k,ai in arrays_in.items():
+            if isinstance(ai,(tuple,list)):
+                if dtype is None:
+                    a = np.array(ai)
+                else:
+                    a = np.array(ai,dtype=dtype)
+                #end if
+            elif isinstance(ai,np.ndarray):
+                a = ai
+            else:
+                self.error('Cannot ensure array value.\nReceived data with type: {}\nOnly tuple, list, and ndarray are supported.'.format(ai.__class__.__name__))
+            #end if
+            arrays[k] = a
+        #end for
+        return arrays
+    #end def ensure_array
 #end class GBase
 
 
@@ -1127,6 +1202,12 @@ class Grid(GBase):
             plt.show()
         #end if
     #end def plot_points
+
+
+    def grid_function(self,*args,**kwargs):
+        gf = grid_function_from_grid(self)
+        return gf(*args,**kwargs)
+    #end def grid_function
 #end class Grid
 
 
@@ -1250,6 +1331,11 @@ class StructuredGrid(Grid):
     #end def ncells
 
     @property
+    def npoints(self):
+        return np.prod(self.shape)
+    #end def npoints
+
+    @property
     def flat_points_shape(self):
         space_dim = self.r.shape[-1]
         npoints = np.prod(self.shape)
@@ -1261,6 +1347,11 @@ class StructuredGrid(Grid):
         space_dim = self.r.shape[-1]
         return self.shape+(space_dim,)
     #end def flat_points_shape
+
+    @property
+    def periodic(self):
+        return (self.bconds==self.bcond_types.periodic).all()
+    #end def periodic
 
 
     def initialize_local(self,**kwargs):
@@ -1399,6 +1490,28 @@ class StructuredGrid(Grid):
         """
         self.r.shape = self.flat_points_shape
     #end def reshape_flat
+
+
+    # test needed
+    def flat_indices(self,full_indices):
+        if not isinstance(full_indices,np.ndarray):
+            full_indices = np.array(full_indices,dtype=int)
+        #end if
+        if len(full_indices.shape)!=2:
+            self.error('full_indices must have shape (# points)x(# dimensions)\nShape received: {}'.format(full_indices.shape))
+        elif full_indices.shape[-1]!=self.grid_dim:
+            self.error('full_indices must have same dimension as the grid.\nfull_indices dimension: {}\nGrid dimension: {}'.format(full_indices.shape[-1],self.grid_dim))
+        #end if
+        grid_shape = self.grid_shape
+        D = len(grid_shape)
+        grid_shape_prod = np.empty((D,),dtype=int)
+        grid_shape_prod[-1] = 1
+        for d in range(D-1):
+            grid_shape_prod[D-d-2] = grid_shape[D-d-1]*grid_shape_prod[D-d-1]
+        #end for
+        flat_indices = np.dot(full_indices,grid_shape_prod)
+        return flat_indices
+    #end def flat_indices
 
 
     def unit_points(self,points=None,project=False):
@@ -1942,6 +2055,19 @@ class StructuredGridWithAxes(StructuredGrid):
         """
         return np.abs(np.prod(np.linalg.svd(self.axes,compute_uv=False)))
     #end def axes_volume
+
+
+    def indices_for_map_coord(self,points):
+        if not self.centered:
+            ucorner = np.array([0,0,0],dtype=float)
+        else:
+            ucorner = 0.5/np.array(self.cell_grid_shape)
+        #end if
+        grid_shape = np.array(self.grid_shape)
+        ipoints = (self.unit_points(points)-ucorner)*grid_shape
+        return ipoints.T
+    #end def indices_for_map_coord
+
 #end class StructuredGridWithAxes
 
 
@@ -2049,6 +2175,8 @@ class ParallelotopeGrid(StructuredGridWithAxes):
         The number of grid points in each dimension.
     cell_grid_shape : `tuple, int, property`
         The number of grid cells in each dimension.
+    dr : `ndarray, float, shape(dg,ds), property`
+        Vector displacements between neighboring grid points.
     ncells : `int, property`
         The total number of grid cells.
     flat_points_shape : `tuple, int, property`
@@ -2068,6 +2196,16 @@ class ParallelotopeGrid(StructuredGridWithAxes):
     dtype : `property`
         Datatype of the grid point values.
     """
+
+    @property
+    def dr(self):
+        dr = np.empty(self.axes.shape,self.dtype)
+        cells = self.cell_grid_shape
+        for d in range(self.grid_dim):
+            dr[d] = self.axes[d]/cells[d]
+        #end for
+        return dr
+    #end def dr
 
     @property
     def corner(self):
@@ -2133,6 +2271,45 @@ class ParallelotopeGrid(StructuredGridWithAxes):
         StructuredGridWithAxes.initialize_local(self,**kwargs)
 
     #end def initialize_local
+
+
+    def read_local(self,filepath,format):
+        if format=='xsf':
+            self.read_xsf(filepath)
+        else:
+            self.error('Cannot read file.\nUnrecognized file format encountered.\nUnrecognized file format: {}\nValid options are: xsf'.format(format))
+        #end if
+    #end def read_local
+
+
+    def read_xsf(self,filepath):
+        if isinstance(filepath,XsfFile):
+            xsf = filepath
+        else:
+            xsf = XsfFile(filepath)
+        #end if
+
+        d = xsf.get_density()
+
+        cells = d.grid-1
+        c = d.cell.sum(axis=0)/cells/2
+
+        centered = False
+        corner   = None
+        if np.abs(c-d.corner).max()<1e-6:
+            centered = True
+        else:
+            corner = d.corner
+        #end if
+
+        self.initialize(
+            bconds   = tuple('ppp'),
+            axes     = d.cell.copy(),
+            cells    = cells,
+            centered = centered,
+            corner   = corner,
+            )
+    #end def read_xsf
 
 
     def unit_points_bare(self,points):
@@ -2580,6 +2757,14 @@ class SpheroidGrid(StructuredGridWithAxes):
         #end if
         return cell_vols
     #end def cell_volumes
+
+
+    def radii(self):
+        self.reshape_full()
+        rrad = np.array(self.r[:,0,0,-1].ravel())
+        self.reshape_flat()
+        return rrad
+    #end def radii
 #end class SpheroidGrid
 
 
@@ -3023,8 +3208,9 @@ class GridFunction(GBase):
     #: (`obj`) Collection of attributes for the class.  Used to check assigned 
     #: members for type conformity and to assign default values.
     persistent_data_types = obj(
-        grid        = (Grid,None),
-        values      = (np.ndarray,None),
+        grid        = (Grid      , None),
+        values      = (np.ndarray, None),
+        value_shape = (tuple     , None),
         **GBase.persistent_data_types
         )
 
@@ -3039,8 +3225,13 @@ class GridFunction(GBase):
     #end def npoints
 
     @property
+    def value_dim(self):
+        return len(self.value_shape)
+    #end def value_dim
+
+    @property
     def nvalues(self):
-        return self.values.shape[1]
+        return np.prod(self.value_shape)
     #end def nvalues
 
     @property
@@ -3067,6 +3258,7 @@ class GridFunction(GBase):
                          copy_values = True,
                          dtype       = None,
                          grid_dtype  = None,
+                         value_shape = None,
                          **kwargs):
         """
         (`Internal API`) Sets `grid` and `values` attributes.
@@ -3144,13 +3336,32 @@ class GridFunction(GBase):
         else:
             self.error('provided function values are of incorrect type\nvalues must be tuple, list, or ndarray\nyou provided: {}'.format(values.__class__.__name__))
         #end if
-        if len(values.shape)==1:
-            values.shape = (values.shape[0],1)
+        
+        # process value_shape input
+        if len(values.shape)==1 or values.shape==grid.shape:
+            value_shape = (1,)
+        elif value_shape is None:
+            if len(values)==grid.npoints:
+                value_shape = values.shape[1:]
+            elif len(value.shape)>len(grid.shape) and value.shape[:len(grid.shape)]==grid.shape:
+                value_shape = values.shape[len(grid.shape):]
+            #end if
+        elif isinstance(value_shape,(list,np.ndarray)):
+            value_shape = tuple(value_shape)
         #end if
-    
+        if value_shape is not None:
+            nvtot = values.size
+            nv    = np.prod(value_shape)
+            if nvtot%nv!=0 or nvtot//nv!=grid.npoints:
+                self.error('value_shape and total number of values are inconsistent.\nTotal number of values: {}\nvalue_shape: {}\nExpected number of values per grid point: {}\nActual number of values per grid point: {}'.format(nvtot,value_shape,nv,nvtot/nv))
+            #end if
+            values.shape = (grid.npoints,nv)
+        #end if
+
         # assign grid and values
-        self.grid   = grid
-        self.values = values
+        self.grid        = grid
+        self.values      = values
+        self.value_shape = value_shape
     #end def initialize_local
 
 
@@ -3165,17 +3376,35 @@ class GridFunction(GBase):
         """
         cls = self.__class__
         if not isinstance(self.grid,cls.grid_class):
-            msgs.append('grid is not of the required type for current grid function\ngrid function type: {}\ngrid type required: {}'.format(cls.__name__,self.grid.__class__.__name__))
+            msgs.append('Grid is not of the required type for current grid function.\nGrid function type: {}\nGrid type required: {}'.format(cls.__name__,self.grid.__class__.__name__))
         #end if
         self.grid.local_validity_checks(msgs)
         if len(self.values)!=self.npoints:
-            msgs.append('number of function values and number of grid points do not match\nnumber of grid points: {}\nnumber of function values: {}'.format(self.npoints,len(self.values)))
+            msgs.append('Number of function values and number of grid points do not match.\nNumber of grid points: {}\nNumber of function values: {}'.format(self.npoints,len(self.values)))
         #end if
         if len(self.values.shape)!=2:
-            msgs.append('function values has incorrect shape\nexpected shape is (# of points, # of function values at each point)\nshape received: {}'.format(self.values.shape))
+            msgs.append('Function values has incorrect shape.\nExpected shape is (# of points, # of function values at each point)\nShape received: {}'.format(self.values.shape))
+        #end if
+        if len(self.value_shape)<1:
+            self.error('"value_shape" must have at least one entry.')
+        #end if
+        if np.prod(self.value_shape)!=self.values.size//self.npoints:
+            self.error('"value_shape" and "values" are inconsistent.\nNumber of values per point based on "values": {}\nNumber of values per point based on "value_shape": {}'.format(self.values.size/self.npoints,np.prod(self.value_shape)))
+        #end if
+        if self.values.shape!=(self.npoints,self.nvalues):
+            self.error('Function values has incorrect shape.\nExected shape: {}\nShape received: {}'.format((self.npoints,self.nvalues),self.values.shape))
         #end if
     #end def local_validity_checks
 
+
+    def reshape_values_full(self):
+        self.values.shape = (self.npoints,)+self.value_shape
+    #end def reshape_values_full
+
+
+    def reshape_values_flat(self):
+        self.values.shape = (self.npoints,self.nvalues)
+    #end def reshape_values_flat
 #end class GridFunction
 
 
@@ -3239,7 +3468,92 @@ class StructuredGridFunction(GridFunction):
     def full_points_shape(self):
         return self.grid.full_points_shape
     #end def full_points_shape
+
+    @property
+    def flat_values_shape(self):
+        None
+    #end def flat_values_shape
+
+    @property
+    def periodic(self):
+        return self.grid.periodic
+    #end def periodic
     
+
+    def reshape_points_full(self):
+        self.values.shape = self.grid_shape+(self.nvalues,)
+        self.grid.reshape_full()
+    #end def reshape_points_full
+
+
+    def reshape_points_flat(self):
+        self.values.shape = (self.npoints,self.nvalues)
+        self.grid.reshape_flat()
+    #end def reshape_points_flat
+
+
+    def reshape_full(self):
+        self.values.shape = self.grid_shape+self.value_shape
+        self.grid.reshape_full()
+    #end def reshape_full
+
+
+    def reshape_flat(self):
+        self.values.shape = (self.npoints,self.nvalues)
+        self.grid.reshape_flat()
+    #end def reshape_flat
+
+
+    def get_values_with_upper_ghost(self):
+        if 'values_with_upper_ghost' in self:
+            return self.values_with_upper_ghost
+        #end if
+        self.reshape_points_full()
+
+        g = np.array(self.grid_shape)
+        v = np.empty(tuple(g+1)+(self.nvalues,),dtype=self.values.dtype)
+        dim = self.grid_dim
+        if dim==1:
+            n1 = self.npoints
+            v[:-1] = self.values
+            v[-1]  = self.values[0]
+        elif dim==2:
+            v[:-1,:-1] = self.values
+            v[ -1,:-1] = self.values[0,:]
+            v[:-1, -1] = self.values[:,0]
+            v[ -1, -1] = self.values[0,0]
+        elif dim==3:
+            v[:-1,:-1,:-1] = self.values
+            v[ -1,:-1,:-1] = self.values[0,:,:]
+            v[:-1, -1,:-1] = self.values[:,0,:]
+            v[:-1,:-1, -1] = self.values[:,:,0]
+            v[:-1, -1, -1] = self.values[:,0,0]
+            v[ -1,:-1, -1] = self.values[0,:,0]
+            v[ -1, -1,:-1] = self.values[0,0,:]
+            v[ -1, -1, -1] = self.values[0,0,0]
+        else:
+            self.error('values_with_upper_ghost is not implemented for dimensions greater than 3.\nDimensionality of the current dataset: {}'.format(dim))
+        #end if
+
+        self.reshape_points_flat()
+
+        self.values_with_upper_ghost = v
+
+        return v
+    #end def values_with_upper_ghost
+
+
+    def clear_ghost(self):
+        ghost_fields = [
+            'values_with_upper_ghost',
+            ]
+        for f in ghost_fields:
+            if f in self:
+                del self[f]
+            #end if
+        #end for
+    #end def clear_ghost
+
 
     def plot_unit_contours(self,boundary=False,fig=True,show=True,**kwargs):
         """
@@ -3362,7 +3676,62 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
     This class should not be instantiated directly.
     """
 
-    def plot_contours(self,boundary=False,fig=True,show=True,**kwargs):
+
+    def interpolate(self,r,type=None,copy=False,**kw):
+        # https://stackoverflow.com/questions/16217995/fast-interpolation-of-regularly-sampled-3d-data-with-different-intervals-in-x-y
+        kw = obj(kw)
+        grid = None
+        if isinstance(r,Grid):
+            grid = r
+            r = grid.r
+        #end if
+        if type is None:
+            type = 'map_coordinates'
+        #end if
+        if type=='map_coordinates':
+            if 'mode' not in kw:
+                if self.periodic:
+                    kw.mode = 'wrap'
+                else:
+                    kw.mode = 'nearest'
+                #end if
+            #end if
+            if 'order' not in kw:
+                kw.order = 3
+            #end if
+            indices = self.grid.indices_for_map_coord(r)
+            # needed because of off-by-one error in map_coordinates
+            #  see: https://github.com/scipy/scipy/issues/2640
+            v = self.get_values_with_upper_ghost()
+            if self.nvalues>1:
+                self.error('Interpolation is not yet supported for nvalues>1.')
+            #end if
+            v_shape = v.shape
+            v.shape = v_shape[:-1]
+            values = scipy_ndimage.map_coordinates(v, indices, **kw)
+            v.shape = v_shape
+        else:
+            self.error('Interpolation of type "{}" is not supported.\nValid options are: map_coordinates'.format(type))
+        #end if
+
+        if grid is None:
+            return values
+        elif grid is not None:
+            if copy:
+                grid = grid.copy()
+            #end if
+            gf = grid.grid_function(
+                grid        = grid,
+                values      = values,
+                value_shape = tuple(self.value_shape),
+                copy        = False,
+                )
+            return gf
+        #end if
+    #end def interpolate
+
+
+    def plot_contours(self,a1=(1,0),a2=(0,1),boundary=False,fig=True,show=True,**kwargs):
         """
         (`External API`) Make 2D contour plots in the full coordinate space.
 
@@ -3380,10 +3749,19 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
         if self.grid_dim!=2:
             self.error('cannot plot contours\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
-        if self.space_dim!=2:
-            self.error('cannot plot contours\ngrid points must reside in a 2D space to make contour plots\ndimension of the space for this function: {}'.format(self.space_dim))
+        #if self.space_dim!=2:
+        #    self.error('cannot plot contours\ngrid points must reside in a 2D space to make contour plots\ndimension of the space for this function: {}'.format(self.space_dim))
+        ##end if
+        if self.space_dim==2:
+            X,Y = self.r.T
+        else:
+            ax     = np.dot(np.array([a1,a2]),self.grid.axes)
+            ax[0]  = ax[0]/np.linalg.norm(ax[0])
+            ax[1] -= np.dot(ax[1],ax[0])*ax[0]
+            ax[1]  = ax[1]/np.linalg.norm(ax[1])
+            X,Y    = np.dot(ax,self.r.T)
+            ax_trans = ax
         #end if
-        X,Y = self.r.T
         X.shape = self.grid_shape
         Y.shape = self.grid_shape
         Zm = self.f.T
@@ -3392,7 +3770,16 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim)
             ax.contour(X,Y,Z,**kwargs)
             if boundary:
-                self.grid.plot_boundary(fig=False,show=False)
+                if self.space_dim==2:
+                    self.grid.plot_boundary(fig=False,show=False)
+                else:
+                    bpoints = self.grid.get_boundary_lines()
+                    bpoints = np.inner(ax_trans,bpoints)
+                    bpoints = np.transpose(bpoints,(1,2,0))
+                    for bp in bpoints:
+                        ax.plot(*bp.T,color='k')
+                    #end for
+                #end if
             #end if
         #end for
         if show:
@@ -3552,6 +3939,208 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         Datatype of the function values.
     """
     grid_class = ParallelotopeGrid
+
+
+    def read_local(self,filepath,format):
+        if format=='xsf':
+            self.read_xsf(filepath)
+        else:
+            self.error('Cannot read file.\nUnrecognized file format encountered.\nUnrecognized file format: {}\nValid options are: xsf'.format(format))
+        #end if
+    #end def read_local
+
+
+    def read_xsf(self,filepath):
+        if isinstance(filepath,XsfFile):
+            xsf  = filepath
+            copy = True
+        else:
+            xsf  = XsfFile(filepath)
+            copy = False,
+        #end if
+
+        grid = self.grid_class()
+        grid.read_xsf(xsf)
+
+        xsf.remove_ghost()
+        d = xsf.get_density()
+
+        values = d.values_noghost.ravel()
+        if copy:
+            values = values.copy()
+        #end if
+
+        self.initialize(
+            grid   = grid,
+            values = values,
+            )
+    #end def read_xsf
+
+
+    # test needed
+    def read_from_points(self,points,values,axes,tol=1e-6,average=False):
+        self.vlog('Reading grid function values from scattered data.')
+
+        # check data types and shapes
+        d = self.ensure_array(
+            points = points,
+            values = values,
+            axes   = axes,
+            dtype  = float,
+            )
+        points = d.points
+        values = d.values
+        axes   = d.axes.copy()
+        del d
+        if len(points)!=len(values):
+            self.error('"points" and "values" must have the same length.\nNumber of points: {}\nNumber of values: {}'.format(len(points),len(values)))
+        elif len(points.shape)!=2:
+            self.error('Shape of "points" array must be (# points) x (# dimensions).\nShape provided: {}'.format(points.shape))
+        #end if
+        N,D = points.shape
+        if axes.shape!=(D,D):
+            self.error('"axes" must have shape {}\nShape provided: {} '.format((D,D),axes.shape))
+        #end if
+
+        # reshape values (for now GridFunction does not support more structured values)
+        values.shape = len(values),values.size//len(values)
+
+        # normalize the axes
+        for d in range(D):
+            axes[d] /= np.linalg.norm(axes[d])
+        #end for
+
+        # make the points rectilinear
+        self.vlog('Transforming points to unit coords',n=1,time=True)
+        rpoints = np.dot(points,np.linalg.inv(axes))
+
+        # search for layers in each dimension
+        def xlayers(xpoints,tol):
+            xmin = xpoints.min()
+            xmax = xpoints.max()
+            nbins = np.uint64(np.round(np.ceil((xmax-xmin+tol)/tol)))
+            dx = (xmax-xmin+tol)/nbins
+            layers = obj()
+            for x in xpoints:
+                n = np.uint64(x/dx)
+                if n not in layers:
+                    layers[n] = obj(xsum=x,nsum=1)
+                else:
+                    l = layers[n]
+                    l.xsum += x
+                    l.nsum += 1
+                #end if
+            #end for
+            for l in layers:
+                l.xmean = l.xsum/l.nsum
+            #end for
+            lprev = None
+            for n in sorted(layers.keys()):
+                l = layers[n]
+                if lprev is not None and np.abs(l.xmean-lprev.xmean)<tol:
+                    lprev.xsum += l.xsum
+                    lprev.nsum += l.nsum
+                    lprev.xmean = lprev.xsum/lprev.nsum
+                    del layers[n]
+                else:
+                    lprev = l
+                #end if
+            #end for
+            xlayers = np.empty((len(layers),),dtype=float)
+            i = 0
+            for n in sorted(layers.keys()):
+                l = layers[n]
+                xlayers[i] = l.xmean
+                i += 1
+            #end for
+            order  = xlayers.argsort()
+            xlayers = xlayers[order]
+            return xlayers,xmin,xmax
+        #end def xlayers
+        def index_by_layer(xpoints,tol):
+            xlayer,xmin,xmax = xlayers(xpoints,tol)
+            dxlayer = xlayer[1:]-xlayer[:-1]
+            dxmin   = dxlayer.min()
+            dxmax   = dxlayer.max()
+            if np.abs(dxmax-dxmin)>2*tol:
+                error('Could not determine layer separation.\nLayers are not evenly spaced.\nMin layer spacing: {}\nMax layer spacing: {}\nSpread   : {}\nTolerance: {}'.format(dxmin,dxmax,dxmax-dxmin,2*tol),'read_from_points')
+            #end if
+            dx = dxlayer.mean()
+            ipoints = np.array(np.around((xpoints-xmin)/dx),dtype=int)
+            return ipoints,xmin,xmax
+        #end def index_by_layer
+
+        # create a grid consistent with the detected layer separations
+        self.vlog('Initializing point index array',n=1,time=True)
+        grid_shape  = np.empty((D, ),dtype=int  )
+        grid_axes   = np.zeros((D,D),dtype=float)
+        grid_corner = np.empty((D, ),dtype=float)
+        ipoints     = np.empty((N,D),dtype=int)
+        for d in range(D):
+            self.vlog('Indexing points along dim {}'.format(d),n=2,time=True)
+            ixpoints,xmin,xmax = index_by_layer(rpoints[:,d],tol)
+            grid_shape[d]  = ixpoints.max()+1
+            grid_axes[d,d] = xmax-xmin
+            grid_corner[d] = xmin
+            ipoints[:,d]   = ixpoints
+        #end for
+        grid_axes   = np.dot(grid_axes,axes)
+        grid_corner = np.dot(grid_corner,axes)
+        grid_bconds = D*('o',) # assumed for now
+
+        self.vlog('Constructing regular bounding grid',n=1,time=True)
+        grid = self.grid_class(
+            shape    = grid_shape,
+            axes     = grid_axes,
+            corner   = grid_corner,
+            bconds   = grid_bconds,
+            centered = False,
+            )
+        
+        self.vlog('Checking grid point mapping',n=1,time=True)
+        # check that the generated grid contains the inputted points
+        ipflat = grid.flat_indices(ipoints)
+        dmax = np.linalg.norm(points-grid.points[ipflat],axis=1).max()
+        if dmax>tol:
+            self.error('Generated grid points do not match those read in.\nMaximum deviation: {}\nTolerance        : {}'.format(dmax,tol))
+        #end if
+        # count number of times each grid point is mapped to
+        point_counts = np.bincount(ipflat,minlength=grid.npoints)
+        # if not averaging, check for one-to-one mapping
+        max_count = point_counts.max()
+        if not average and max_count>1:
+            self.error('Mapping to grid points is not one-to-one.\nMax no. of read points mapped to a grid point: {}'.format(max_count))
+        #end if
+
+        # map the inputted values onto the generated grid
+        self.vlog('Mapping data values onto grid',n=1,time=True)
+        grid_values = np.zeros((grid.npoints,values.shape[1]),dtype=float)
+        if not average or max_count==1:
+            grid_values[ipflat] = values
+        else:
+            self.vlog('Averaging multi-valued points',n=2,time=True)
+            for i,v in zip(ipflat,values):
+                grid_values[i] += v
+            #end for
+            for i,c in enumerate(point_counts):
+                if c>1:
+                    grid_values[i] /= c
+                #end if
+            #end for
+        #end if
+
+        # initialize the GridFunction object
+        self.vlog('Constructing GridFunction object',n=1,time=True)
+        self.reset()
+        self.initialize(
+            grid   = grid,
+            values = grid_values,
+            copy   = False,
+            )
+
+        self.vlog('Read complete',n=1,time=True)
+    #end def read_from_points
+
 #end class ParallelotopeGridFunction
 
 
@@ -3707,6 +4296,145 @@ class SpheroidSurfaceGridFunction(StructuredGridFunctionWithAxes):
     """
     grid_class = SpheroidSurfaceGrid
 #end class SpheroidSurfaceGridFunction
+
+
+
+# test needed
+def parallelotope_grid_function(
+    loc = 'parallelotope_grid_function',
+    **kwargs
+    ):
+    if 'points' not in kwargs:
+        gf = ParallelotopeGridFunction(**kwargs)
+    else:
+        required = set(('points','values','axes'))
+        optional = set(('tol','average'))
+        present  = set(kwargs.keys())
+        if len(required-present)>0:
+            error('Grid function cannot be created.\nWhen "points" is provided, "axes" and "values" must also be given.\nInputs provided: {}'.format(sorted(present)),loc)
+        elif len(present-required-optional)>0:
+            error('Grid function cannot be created.\nUnrecognized inputs provided.\nUnrecognized inputs: {}\nValid options are: {}'.format(sorted(present-required-optional),sorted(required|optional)))
+        #end if
+        gf = ParallelotopeGridFunction()
+        gf.read_from_points(**kwargs)
+    #end if
+    return gf
+#end def parallelotope_grid_function
+
+
+
+# test needed
+def grid_function(
+    type = 'parallelotope',
+    loc  = 'grid_function',
+    **kwargs
+    ):
+    filepath = kwargs.pop('filepath',None)
+    if filepath is not None:
+        return read_grid_function(filepath,loc=loc)
+    #end if
+    gf = None
+    if type=='parallelotope':
+        gf = parallelotope_grid_function(loc=loc,**kwargs)
+    elif type=='spheroid':
+        gf = SpheroidGridFunction(**kwargs)
+    elif type=='spheroid_surface':
+        gf = SpheroidSurfaceGridFunction(**kwargs)
+    else:
+        error('Grid function type "{}" is not recognized.\nValid options are: parallelotope, spheroid, or spheroid_surface'.format(type),loc)
+    #end if
+    return gf
+#end def grid_function
+
+
+def grid(
+    type = 'parallelotope',
+    loc  = 'grid',
+    **kwargs
+    ):
+    filepath = kwargs.pop('filepath',None)
+    if filepath is not None:
+        return read_grid(filepath,loc=loc)
+    #end if
+    g = None
+    if type=='parallelotope':
+        g = ParallelotopeGrid(**kwargs)
+    elif type=='spheroid':
+        g = SpheroidGrid(**kwargs)
+    elif type=='spheroid_surface':
+        g = SpheroidSurfaceGrid(**kwargs)
+    else:
+        error('Grid type "{}" is not recognized.\nValid options are: parallelotope, spheroid, or spheroid_surface'.format(type),loc)
+    #end if
+    return g
+#end def grid
+
+
+
+#test needed
+gf_file_type_map = obj(
+    xsf = ParallelotopeGridFunction,
+    )
+def read_grid_function(filepath,format=None,loc='read_grid_function'):
+    filepath,format = process_file_format(filepath,format,loc)
+    if format not in gf_file_type_map:
+        error('Cannot read file.\nUnrecognized file format for grid function.\nFile format provided: {}\nAllowed formats include: {}'.format(format,sorted(gf_file_type_map.keys())),loc)
+    #end if
+    gf = gf_file_type_map[format]()
+    gf.read(filepath)
+    return gf
+#end def read_grid_function
+
+
+# test needed
+g_file_type_map = obj(
+    xsf = ParallelotopeGrid,
+    )
+def read_grid(filepath,format=None,loc='read_grid'):
+    filepath,format = process_file_format(filepath,format,loc)
+    if format not in g_file_type_map:
+        error('Cannot read file.\nUnrecognized file format for grid.\nFile format provided: {}\nAllowed formats include: {}'.format(format,sorted(g_file_type_map.keys())),loc)
+    #end if
+    g = g_file_type_map[format]()
+    g.read(filepath)
+    return g
+#end def read_grid
+
+
+def process_file_format(filepath,format,loc):
+    if isinstance(filepath,StandardFile):
+        format = filepath.sftype
+    elif not isinstance(filepath,str):
+        error('Cannot read file.\nExpected a file path.\nInstead received type: {}\nWith value: {}\nPlease provide a file path and try again.'.format(filepath.__class__.__name__,filepath),loc)
+    elif not os.path.exists(filepath):
+        error('Cannot read file.  File path does not exist.\nFile path provided: {}'.format(filepath),loc)
+    #end if
+    if format is None:
+        format = filepath.rsplit('.',1)[1].lower()
+    #end if
+    return filepath,format
+#end def process_file_format
+
+
+
+gfs = [
+    ParallelotopeGridFunction,
+    SpheroidGridFunction,
+    SpheroidSurfaceGridFunction,
+    ]
+grid_to_grid_function = obj()
+for gf in gfs:
+    grid_to_grid_function[gf.grid_class.__name__] = gf
+#end for
+del gfs
+
+def grid_function_from_grid(grid):
+    gname = grid.__class__.__name__
+    if gname not in grid_to_grid_function:
+        error('Cannot find matching grid function for grid "{}".'.format(gname))
+    #end if
+    return grid_to_grid_function[gname]
+#end def grid_function_from_grid
 
 
 
