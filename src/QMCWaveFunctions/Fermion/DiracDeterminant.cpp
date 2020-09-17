@@ -341,7 +341,10 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
   {
     buf.forward(Bytes_in_WFBuffer);
 #ifndef NDEBUG
-    std::cerr << ("You really should know whether you have registered this objects data previously!, consider this an error in the unified code");
+    // this causes too much output in the legacy code.
+    // \todo turn this back on after legacy is dropped,
+    // I don't think it should print at all in the new design
+    // std::cerr << ("You really should know whether you have registered this objects data previously!, consider this an error in the unified code");
 #endif
   }
   buf.add(LogValue);
