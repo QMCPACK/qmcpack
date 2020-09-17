@@ -84,7 +84,10 @@ void WalkerControlBase::start()
     if (hname != dmcFname)
     {
       if (dmcStream)
+      {
+        *dmcStream << std::endl;
         delete dmcStream;
+      }
       dmcStream = new std::ofstream(hname.c_str());
       //oa = new boost::archive::binary_oarchive (*dmcStream);
       dmcStream->setf(std::ios::scientific, std::ios::floatfield);
@@ -148,6 +151,7 @@ void WalkerControlBase::measureProperties(int iter)
   {
     //boost::archive::text_oarchive oa(*dmcStream);
     //(*oa) & iter  & eavg_cur & wgt_cur & Etrial  & pop_old;
+    std::cerr << "about to write to dmcStream\n";
     (*dmcStream) << std::setw(10) << iter << std::setw(20) << ensemble_property_.Energy << std::setw(20)
                  << ensemble_property_.Variance << std::setw(20) << ensemble_property_.Weight << std::setw(20)
                  << ensemble_property_.NumSamples << std::setw(20)
@@ -161,7 +165,12 @@ void WalkerControlBase::measureProperties(int iter)
                  << ensemble_property_.R2Accepted / ensemble_property_.R2Proposed;
     //       if (WriteRN) (*dmcStream)
     (*dmcStream) << std::setw(20) << ensemble_property_.LivingFraction;
-    (*dmcStream) << '\n'; // this is definitely not a place to put an endl as that is also a signal for a flush.
+    // Work around for bug with deterministic scalar trace test on select compiler/architectures.
+    // While WalkerControlBase appears to have exclusive ownership of the dmcStream pointer,
+    // this is not actually true. Apparently it doesn't actually and can loose ownership then it is
+    // either leaked or not flushed before it is destroyed.
+    // \todo fix this, you don't want to flush every step since you really hope that could be very rapid.
+    (*dmcStream) << std::endl; //'\n'; // this is definitely not a place to put an endl as that is also a signal for a flush.
   }
 }
 
