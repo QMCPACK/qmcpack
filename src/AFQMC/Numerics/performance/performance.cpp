@@ -361,7 +361,7 @@ int main(int argc, char* argv[])
   {
     std::ofstream out;
     out.open("time_batched_sgemm.dat");
-    std::cout << " - batched sgemm (nbacth, MxM)" << std::endl;
+    std::cout << " - batched sgemm (nbatch, MxM)" << std::endl;
     out << "  nbatch    M        tsgemm\n";
     Alloc<float> alloc{};
     std::vector<int> num_rows = {100, 200, 300, 400, 500, 600};
