@@ -396,6 +396,7 @@ int main(int argc, char* argv[])
       timeExchangeKernel(out, alloc, buffer, b, nwalk, nocc, nchol);
     }
   }
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   {
     std::ofstream out;
     out.open("time_batched_matrix_inverse.dat");
@@ -422,6 +423,7 @@ int main(int argc, char* argv[])
       }
     }
   }
+#endif
   {
     std::ofstream out;
     out.open("time_matrix_inverse.dat");
