@@ -82,8 +82,8 @@ struct WalkerControlMPI : public WalkerControlBase
    *  \param[in] MyContext my MPI rank
    *  \param[in] NumPerNode as if all walkers were copied out to multiplicity
    *  \param[out] FairOffSet running population count at each partition boundary
-   *  \param[out] minus list of partition indexes one occurance for each walker removed
-   *  \param[out] plus list of partition indexes one occurance for each walker added
+   *  \param[out] minus list of partition indexes one occurrence for each walker removed
+   *  \param[out] plus list of partition indexes one occurrence for each walker added
    */
   static void determineNewWalkerPopulation(int Cur_pop,
                                            int NumContexts,

@@ -48,7 +48,7 @@ eval_multi_UBspline_1d_d (const multi_UBspline_1d_d *spline,
   // The protection is correct for PERIODIC/ANTIPERIODIC BC splines
   // but not sufficient for NATURAL BC splines (need grid.num-2).
   // With this protection ix is pulled to the boundary, tx is not modified.
-  // This is not correct but no more relavent to QMCPACK since
+  // This is not correct but no more relevant to QMCPACK since
   // we moved to C++ versions of this function already.
   int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
   
