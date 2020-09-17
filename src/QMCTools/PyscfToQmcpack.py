@@ -28,7 +28,6 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
   Complex=False
   Python3=False
   Python2=False
-  #Twists generation not yet implemented
   if len(sp_twist)== 0:
        sp_twist=[0.0,0.0,0.0]
   if sys.version_info >= (3, 0):
@@ -46,13 +45,12 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
   for i in range(SizeMode):
      if ComputeMode[i] in ("UHF","KUHF","UKS"):
            Restricted=False
-           sys.exit("Unrestricted calculations not supported")
-
      if ComputeMode[i]=="pbc":
            PBC=True
+           if Restricted==False:
+              sys.exit("Unrestricted calculations with PBC not supported (yet) - contact Developers")
 
   if PBC and len(kpts) == 0:
-        #sys.exit("You need to specify explicit the list of K-point (including gamma)")
         Gamma=True
   
   def get_supercell(cell,kmesh=[]):
@@ -505,12 +503,20 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
         eigenset=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff))
       else:
         eigenset=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=list(zip(*mo_coeff)))
-#    UNRESTRICTED TO BE IMPLEMENTED
-#    else:
-#      NbMO=len(mo_coeff[0])
-#      NbAO=len(mo_coeff[0][0])
-#      eigenset_up=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff[0]))
-#      eigenset_dn=GroupDet.create_dataset("eigenset_1",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff[1]))
+
+      eigenvalue=GroupDet.create_dataset("eigenval_0",(1,NbMO),dtype="f8",data=mf.mo_energy)
+    else:
+      NbAO, NbMO =mo_coeff[0].shape 
+      if loc_cell.cart==True:
+        eigenset_up=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff[0]))
+        eigenset_dn=GroupDet.create_dataset("eigenset_1",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff[1]))
+      else:
+        eigenset_up=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=list(zip(*mo_coeff[0])))
+        eigenset_dn=GroupDet.create_dataset("eigenset_1",(NbMO,NbAO),dtype="f8",data=list(zip(*mo_coeff[1])))
+
+      eigenvalue_up=GroupDet.create_dataset("eigenval_0",(1,NbMO),dtype="f8",data=mf.mo_energy[0])
+      eigenvalue_dn=GroupDet.create_dataset("eigenval_1",(1,NbMO),dtype="f8",data=mf.mo_energy[1])
+ 
   else:
     #Cell Parameters
     GroupCell=H5_qmcpack.create_group("Cell")

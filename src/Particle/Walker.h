@@ -29,7 +29,7 @@
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #include "Utilities/PointerPool.h"
-#include "CUDA/gpu_vector.h"
+#include "CUDA_legacy/gpu_vector.h"
 #endif
 #include <assert.h>
 #include <deque>
@@ -52,8 +52,9 @@ namespace qmcplusplus
      associated with the walker.
  */
 template<typename t_traits, typename p_traits>
-struct Walker
+class Walker
 {
+public:
   using WP = WalkerProperties::Indexes;
   enum
   {
@@ -138,6 +139,16 @@ struct Walker
   ///buffer for the data for particle-by-particle update
   WFBuffer_t DataSet;
   size_t block_end, scalar_end;
+
+  // This is very useful for debugging transfer damage to walkers
+#ifndef NDEBUG
+private:
+  bool has_been_on_wire_ = false;
+
+public:
+  bool get_has_been_on_wire() const { return has_been_on_wire_; }
+  void set_has_been_on_wire(bool tf) { has_been_on_wire_ = tf; }
+#endif
 
   /// Data for GPU-vectorized versions
 #ifdef QMC_CUDA
@@ -282,7 +293,9 @@ struct Walker
     ReleasedNodeAge    = a.ReleasedNodeAge;
     if (R.size() != a.R.size())
       resize(a.R.size());
-    R     = a.R;
+    R = a.R;
+    if (spins.size() != a.spins.size())
+      resize(a.spins.size());
     spins = a.spins;
 #if !defined(SOA_MEMORY_OPTIMIZED)
     G = a.G;
@@ -424,6 +437,7 @@ struct Walker
     DataSet.add(ReleasedNodeWeight);
     // vectors
     DataSet.add(R.first_address(), R.last_address());
+    DataSet.add(spins.first_address(), spins.last_address());
 #if !defined(SOA_MEMORY_OPTIMIZED)
     DataSet.add(G.first_address(), G.last_address());
     DataSet.add(L.first_address(), L.last_address());
@@ -459,6 +473,7 @@ struct Walker
     DataSet >> ID >> ParentID >> Generation >> Age >> ReleasedNodeAge >> ReleasedNodeWeight;
     // vectors
     DataSet.get(R.first_address(), R.last_address());
+    DataSet.get(spins.first_address(), spins.last_address());
 #if !defined(SOA_MEMORY_OPTIMIZED)
     DataSet.get(G.first_address(), G.last_address());
     DataSet.get(L.first_address(), L.last_address());
@@ -508,6 +523,7 @@ struct Walker
     DataSet << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight;
     // vectors
     DataSet.put(R.first_address(), R.last_address());
+    DataSet.put(spins.first_address(), spins.last_address());
 #if !defined(SOA_MEMORY_OPTIMIZED)
     DataSet.put(G.first_address(), G.last_address());
     DataSet.put(L.first_address(), L.last_address());

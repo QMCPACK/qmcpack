@@ -14,16 +14,10 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
-#ifdef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
-#else
-#include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
-#endif
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
@@ -50,7 +44,6 @@ TEST_CASE("PolynomialFunctor3D functor zero", "[wavefunction]")
 TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -66,7 +59,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   ions_.R[1][2] = 0.0;
   SpeciesSet& source_species(ions_.getSpeciesSet());
   source_species.addSpecies("O");
-  ions_.RSoA = ions_.R;
+  ions_.setCoordinates(ions_.R);
   //ions_.resetGroups();
 
   elec_.setName("elec");
@@ -116,11 +109,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   eeI_JastrowBuilder jastrow(c, elec_, ions_);
   std::unique_ptr<WaveFunctionComponent> jas(jastrow.buildComponent(jas_eeI));
 
-#ifdef ENABLE_SOA
   typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
-#else
-  typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
-#endif
   std::unique_ptr<WaveFunctionComponent> j3(dynamic_cast<J3Type*>(jastrow.buildComponent(jas_eeI)));
   REQUIRE(j3 != nullptr);
 

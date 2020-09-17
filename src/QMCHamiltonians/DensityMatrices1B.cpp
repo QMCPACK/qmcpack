@@ -1065,7 +1065,7 @@ inline void DensityMatrices1B::density_drift(const PosType& r, RealType& dens, P
     Value_t bc       = qmcplusplus::conj(b);
     dens += std::abs(bc * b);
     for (int d = 0; d < DIM; ++d)
-      drift[d] += prod_real(bc, bg[d]);
+      drift[d] += std::real(bc * bg[d]);
   }
   drift *= timestep / dens;
   dens /= basis_size;

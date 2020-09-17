@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_VMCFACTORYNEW_H
 #define QMCPLUSPLUS_VMCFACTORYNEW_H
 #include "QMCDrivers/QMCDriverInterface.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "Message/Communicate.h"
 
 
@@ -43,6 +43,7 @@ public:
                              TrialWaveFunction& psi,
                              QMCHamiltonian& h,
                              WaveFunctionPool& wf_pool,
+                             SampleStack& samples,
                              Communicate* comm);
 };
 } // namespace qmcplusplus

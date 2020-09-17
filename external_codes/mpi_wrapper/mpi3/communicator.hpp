@@ -107,7 +107,7 @@ namespace mpi3{
 #endif
 
 enum class communicator_type : int{
-	node = OMPI_COMM_TYPE_NODE,
+	shared    = MPI_COMM_TYPE_SHARED   ,/*synomym*/ node = OMPI_COMM_TYPE_NODE,
 	hw_thread = OMPI_COMM_TYPE_HWTHREAD,
 	core = OMPI_COMM_TYPE_CORE,
 	l1_cache = OMPI_COMM_TYPE_L1CACHE,

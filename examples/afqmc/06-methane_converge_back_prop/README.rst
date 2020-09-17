@@ -1,5 +1,8 @@
 Example 6: Back Propagation
-===========================
+---------------------------
+
+.. note::
+    matplotlib is required to generate the figure in this example.
 
 The basic estimators printed out in the qmcpack `*.scalar.dat` files are *mixed*
 estimates. Unless the operator for which the mixed estimate is computed commutes with the
@@ -19,7 +22,7 @@ comparing to the previous examples we can now see the estimator block:
 .. code-block:: xml
 
       <Estimator name="back_propagation">
-          <parameter name="naverages">2</parameter>
+          <parameter name="naverages">4</parameter>
           <parameter name="block_size">2</parameter>
           <parameter name="ortho">1</parameter>
           <OneRDM />
@@ -31,8 +34,9 @@ Which will tell QMCPACK to compute the back propagated one-rdm.  In the above we
 length 2 in this case. This helps reduce the size of the hdf5 files.  We also specify the
 option `nsteps`: We see that it is set to 200, meaning that we will back propagated the
 bra wavefunction in the estimator by 200*.01 = 2 a.u., where the timestep has been set to
-0.01 a.u. Finally `naverages` allows us to split the full path into `naverages` chunks, so
-that the convergence of the estimator with back propagation length can be monitored.
+0.01 a.u. Finally `naverages` allows us to split the full path into `naverages` chunks,
+so we will have averaged data at :math:`\tau_{BP}=[0.5, 1.0, 1.5, 2.0]` au.
+This allows us to monitor the convergence of the estimator with back propagation time.
 
 
 Running QMCPACK as before we will notice that in addition to the `qmc.s000.scalar.dat`
@@ -42,7 +46,7 @@ reduced density matrix (1RDM), given as
 
 .. math::
 
-    P^{\sigma}_{ij} = \langle c_{\sigma i}^{\dagger} c_{\sigma j} \rangle
+    P^{\sigma}_{ij} = \langle c_{i\sigma}^{\dagger} c_{j\sigma} \rangle
 
 Before we analyse the output we should question why we chose a back propagation time of 2
 au.  The back propagation time represents yet another parameter which must be carefully
@@ -50,30 +54,42 @@ converged.
 
 In this example we will show how this is done.  In this directory you will find a script
 `check_h1e_conv.py` which shows how to use various helper scripts provided in
-`afqmctools/analysis/rdm.py`. The most of important of which are:
+`afqmctools/analysis/average.py`. The most of important of which are:
 
 .. code-block:: python
 
-    metadata = rdm.get_metadata(filename)
+    from afqmctools.analysis.extraction import get_metadata
+    metadata = get_metadata(filename)
 
 which returns a dict containing the RDM metadata,
 
 .. code-block:: python
 
-    rdm_av, rdm_errs = rdm.get_one_rdm_av(f, skip, name='BackPropagated/FullOneRDM/Average_0')
+    from afqmctools.analysis.average import average_one_rdm
+    rdm_av, rdm_errs = average_one_rdm(f, name='back_propagated', eqlb=3, ix=2)
 
-which computes the average of the 1RDM, where 'x' specifies the number of back propagation
-steps used to construct the desired estimator
-
-.. code-block:: python
-
-    dm, weights = rdm.extract_rdm(filename, dm_name='BackPropagated/FullOneRDM/Average_0')
-
-which extracts the 1RDM for each block and finally,
+which computes the average of the 1RDM, where 'i' specifies the index for the length of
+back propagation time desired (e.g. :math:`i=2 \rightarrow \tau_{BP} = 1.5` au). `eqlb` is
+the equilibration time, and here we skip 10 blocks of length 2 au.
 
 .. code-block:: python
 
-    dm, weight = rdm.extract_rdm_single(filename, index, dm_name='BackPropagated/FullOneRDM/Average_0')
+    from afqmctools.analysis.extraction import extract_observable
+    dm = extract_observable(filename,
+                            estimator='back_propagated'
+                            name='one_rdm',
+                            ix=2)
+
+which extracts the 1RDM for all blocks and finally,
+
+.. code-block:: python
+
+    from afqmctools.analysis.extraction import extract_observable
+    dm, weights = extract_observable(filename,
+                                     estimator='back_propagated'
+                                     name='one_rdm',
+                                     ix=2,
+                                     sample=index)
 
 which extracts a single density matrix for block `index`.
 

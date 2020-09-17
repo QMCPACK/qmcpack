@@ -27,7 +27,7 @@
 #include "Message/Communicate.h"
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 #include <sstream>
 
 int main(int argc, char** argv)
@@ -334,11 +334,11 @@ int main(int argc, char** argv)
     if (prod)
     {
       parser->addJastrow = addJastrow;
-      parser->WFS_name = jastrow;
+      parser->WFS_name   = jastrow;
       if (parser->PBC)
       {
-        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0]
-                  << "  " << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
+                  << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
         parser->dumpPBC(psi_tag, ion_tag);
       }
       else
@@ -348,12 +348,12 @@ int main(int argc, char** argv)
     else
     {
       parser->addJastrow = false;
-      jastrow = "noj";
-      parser->WFS_name = jastrow;
+      jastrow            = "noj";
+      parser->WFS_name   = jastrow;
       if (parser->PBC)
       {
-        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0]
-                  << "  " << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
+                  << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
         parser->dumpPBC(psi_tag, ion_tag);
       }
       else
@@ -362,11 +362,11 @@ int main(int argc, char** argv)
 
       parser->addJastrow = true;
       jastrow            = "j";
-      parser->WFS_name = jastrow;
+      parser->WFS_name   = jastrow;
       if (parser->PBC)
       {
-        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0]
-                  << "  " << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
+                  << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
         parser->dumpPBC(psi_tag, ion_tag);
       }
       else

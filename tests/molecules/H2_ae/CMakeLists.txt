@@ -1,6 +1,6 @@
 
 IF (NOT QMC_CUDA)
- IF (NOT QMC_COMPLEX AND ENABLE_SOA)
+ IF (NOT QMC_COMPLEX)
   IF(BUILD_LMYENGINE_INTERFACE)
 
   #
@@ -17,26 +17,11 @@ IF (NOT QMC_CUDA)
                     10 H2_OPT_SCALARS # Final VMC step
                     TRUE)
 
-  #
-  # H2 starting from unoptimized CIS coefficients and orbital
-  # Targeting the first excited state, and using the adaptive linear method
-  # The Jastrow is already optimized (by itself). This test optimizes both orbitals and CIS coefficients
-  #
-  LIST(APPEND H2_FDLR_SCALARS "totenergy" "-0.64755 0.0015") # total energy
-
-  QMC_RUN_AND_CHECK(short-H2-FDLR
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H2_ae"
-                    H2
-                    h2_fdlr.xml
-                    16 1
-                    ${MP_SUCCESS}
-                    6 H2_FDLR_SCALARS # Final VMC step
-                    TRUE)
   ELSE()
     MESSAGE_VERBOSE("Skipping H2 test because lmyengine interface was not built (BUILD_LMYENGINE_INTERFACE=0)")
   ENDIF(BUILD_LMYENGINE_INTERFACE)
  ELSE()
-    MESSAGE_VERBOSE("Skipping H2 tests because orbital rotation is not supported by complex build (QMC_COMPLEX=1) and SoA build (ENABLE_SOA=1) is required")
+    MESSAGE_VERBOSE("Skipping H2 tests because orbital rotation is not supported by complex build (QMC_COMPLEX=1)")
  ENDIF()
 ELSE()
     MESSAGE_VERBOSE("Skipping H2 tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")

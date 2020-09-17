@@ -13,13 +13,17 @@
 #include "QMCWaveFunctions/RotatedSPOs.h"
 #include <Numerics/MatrixOperators.h>
 #include "Numerics/DeterminantOperators.h"
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 
 
 namespace qmcplusplus
 {
 RotatedSPOs::RotatedSPOs(SPOSet* spos)
-    : SPOSet(spos->hasIonDerivs(), true), Phi(spos), params_supplied(false), IsCloned(false), nel_major_(0)
+    : SPOSet(spos->isOMPoffload(), spos->hasIonDerivs(), true),
+      Phi(spos),
+      params_supplied(false),
+      IsCloned(false),
+      nel_major_(0)
 {
   className      = "RotatedSPOs";
   OrbitalSetSize = Phi->getOrbitalSetSize();
@@ -79,7 +83,7 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
     p = m_act_rot_inds[i].first;
     q = m_act_rot_inds[i].second;
     std::stringstream sstr;
-    sstr << Phi->objectName << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
+    sstr << Phi->getName() << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
          << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
 
     // If the user input parameteres, use those. Otherwise, initialize the parameters to zero
@@ -205,13 +209,12 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix_t& mat)
     }
 }
 
-
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
-                                         const opt_variables_type& optvars,
-                                         std::vector<ValueType>& dlogpsi,
-                                         std::vector<ValueType>& dhpsioverpsi,
-                                         const int& FirstIndex,
-                                         const int& LastIndex)
+                                      const opt_variables_type& optvars,
+                                      std::vector<ValueType>& dlogpsi,
+                                      std::vector<ValueType>& dhpsioverpsi,
+                                      const int& FirstIndex,
+                                      const int& LastIndex)
 {
   const size_t nel = LastIndex - FirstIndex;
   const size_t nmo = Phi->getOrbitalSetSize();
@@ -310,31 +313,31 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
-                                         const opt_variables_type& optvars,
-                                         std::vector<ValueType>& dlogpsi,
-                                         std::vector<ValueType>& dhpsioverpsi,
-                                         const ValueType& psiCurrent,
-                                         const std::vector<ValueType>& Coeff,
-                                         const std::vector<size_t>& C2node_up,
-                                         const std::vector<size_t>& C2node_dn,
-                                         const ValueVector_t& detValues_up,
-                                         const ValueVector_t& detValues_dn,
-                                         const GradMatrix_t& grads_up,
-                                         const GradMatrix_t& grads_dn,
-                                         const ValueMatrix_t& lapls_up,
-                                         const ValueMatrix_t& lapls_dn,
-                                         const ValueMatrix_t& M_up,
-                                         const ValueMatrix_t& M_dn,
-                                         const ValueMatrix_t& Minv_up,
-                                         const ValueMatrix_t& Minv_dn,
-                                         const GradMatrix_t& B_grad,
-                                         const ValueMatrix_t& B_lapl,
-                                         const std::vector<int>& detData_up,
-                                         const size_t N1,
-                                         const size_t N2,
-                                         const size_t NP1,
-                                         const size_t NP2,
-                                         const std::vector<std::vector<int>>& lookup_tbl)
+                                      const opt_variables_type& optvars,
+                                      std::vector<ValueType>& dlogpsi,
+                                      std::vector<ValueType>& dhpsioverpsi,
+                                      const ValueType& psiCurrent,
+                                      const std::vector<ValueType>& Coeff,
+                                      const std::vector<size_t>& C2node_up,
+                                      const std::vector<size_t>& C2node_dn,
+                                      const ValueVector_t& detValues_up,
+                                      const ValueVector_t& detValues_dn,
+                                      const GradMatrix_t& grads_up,
+                                      const GradMatrix_t& grads_dn,
+                                      const ValueMatrix_t& lapls_up,
+                                      const ValueMatrix_t& lapls_dn,
+                                      const ValueMatrix_t& M_up,
+                                      const ValueMatrix_t& M_dn,
+                                      const ValueMatrix_t& Minv_up,
+                                      const ValueMatrix_t& Minv_dn,
+                                      const GradMatrix_t& B_grad,
+                                      const ValueMatrix_t& B_lapl,
+                                      const std::vector<int>& detData_up,
+                                      const size_t N1,
+                                      const size_t N2,
+                                      const size_t NP1,
+                                      const size_t NP2,
+                                      const std::vector<std::vector<int>>& lookup_tbl)
 {
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)
@@ -400,34 +403,71 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   }
 }
 
+
+void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
+                                        const opt_variables_type& optvars,
+                                        std::vector<ValueType>& dlogpsi,
+                                        const QTFull::ValueType& psiCurrent,
+                                        const std::vector<ValueType>& Coeff,
+                                        const std::vector<size_t>& C2node_up,
+                                        const std::vector<size_t>& C2node_dn,
+                                        const ValueVector_t& detValues_up,
+                                        const ValueVector_t& detValues_dn,
+                                        const ValueMatrix_t& M_up,
+                                        const ValueMatrix_t& M_dn,
+                                        const ValueMatrix_t& Minv_up,
+                                        const ValueMatrix_t& Minv_dn,
+                                        const std::vector<int>& detData_up,
+                                        const std::vector<std::vector<int>>& lookup_tbl)
+{
+  bool recalculate(false);
+  for (int k = 0; k < myVars.size(); ++k)
+  {
+    int kk = myVars.where(k);
+    if (kk < 0)
+      continue;
+    if (optvars.recompute(kk))
+      recalculate = true;
+  }
+  if (recalculate)
+  {
+    const size_t nmo = Phi->getOrbitalSetSize();
+    const size_t nb  = Phi->getBasisSetSize();
+    const size_t nel = P.last(0) - P.first(0);
+
+    table_method_evalWF(dlogpsi, nel, nmo, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn, M_up,
+                        M_dn, Minv_up, Minv_dn, detData_up, lookup_tbl);
+  }
+}
+
 void RotatedSPOs::table_method_eval(std::vector<ValueType>& dlogpsi,
-                                       std::vector<ValueType>& dhpsioverpsi,
-                                       const ParticleSet::ParticleLaplacian_t& myL_J,
-                                       const ParticleSet::ParticleGradient_t& myG_J,
-                                       const size_t nel,
-                                       const size_t nmo,
-                                       const ValueType& psiCurrent,
-                                       const std::vector<RealType>& Coeff,
-                                       const std::vector<size_t>& C2node_up,
-                                       const std::vector<size_t>& C2node_dn,
-                                       const ValueVector_t& detValues_up,
-                                       const ValueVector_t& detValues_dn,
-                                       const GradMatrix_t& grads_up,
-                                       const GradMatrix_t& grads_dn,
-                                       const ValueMatrix_t& lapls_up,
-                                       const ValueMatrix_t& lapls_dn,
-                                       const ValueMatrix_t& M_up,
-                                       const ValueMatrix_t& M_dn,
-                                       const ValueMatrix_t& Minv_up,
-                                       const ValueMatrix_t& Minv_dn,
-                                       const GradMatrix_t& B_grad,
-                                       const ValueMatrix_t& B_lapl,
-                                       const std::vector<int>& detData_up,
-                                       const size_t N1,
-                                       const size_t N2,
-                                       const size_t NP1,
-                                       const size_t NP2,
-                                       const std::vector<std::vector<int>>& lookup_tbl)
+                                    std::vector<ValueType>& dhpsioverpsi,
+                                    const ParticleSet::ParticleLaplacian_t& myL_J,
+                                    const ParticleSet::ParticleGradient_t& myG_J,
+                                    const size_t nel,
+                                    const size_t nmo,
+                                    const ValueType& psiCurrent,
+                                    const std::vector<RealType>& Coeff,
+                                    const std::vector<size_t>& C2node_up,
+                                    const std::vector<size_t>& C2node_dn,
+                                    const ValueVector_t& detValues_up,
+                                    const ValueVector_t& detValues_dn,
+                                    const GradMatrix_t& grads_up,
+                                    const GradMatrix_t& grads_dn,
+                                    const ValueMatrix_t& lapls_up,
+                                    const ValueMatrix_t& lapls_dn,
+                                    const ValueMatrix_t& M_up,
+                                    const ValueMatrix_t& M_dn,
+                                    const ValueMatrix_t& Minv_up,
+                                    const ValueMatrix_t& Minv_dn,
+                                    const GradMatrix_t& B_grad,
+                                    const ValueMatrix_t& B_lapl,
+                                    const std::vector<int>& detData_up,
+                                    const size_t N1,
+                                    const size_t N2,
+                                    const size_t NP1,
+                                    const size_t NP2,
+                                    const std::vector<std::vector<int>>& lookup_tbl)
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 GUIDE TO THE MATICES BEING BUILT
 ----------------------------------------------
@@ -543,8 +583,7 @@ $
   ValueMatrix_t Table;
   ValueMatrix_t Bbar;
   ValueMatrix_t Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y11, Y23, Y24, Y25, Y26;
-  ValueMatrix_t pK1, K1T, TK1T, pK2, K2AiB, TK2AiB, K2XA, TK2XA, K2T, TK2T, MK2T, pK3, K3T, TK3T, pK4, K4T, TK4T, pK5,
-      K5T, TK5T;
+  ValueMatrix_t pK1, K1T, TK1T, pK2, K2AiB, TK2AiB, K2XA, TK2XA, K2T, TK2T, MK2T, pK3, K3T, TK3T, pK5, K5T, TK5T;
 
   Table.resize(nel, nmo);
 
@@ -571,10 +610,6 @@ $
   pK3.resize(nmo, nel);
   K3T.resize(nmo, nmo);
   TK3T.resize(nel, nmo);
-
-  pK4.resize(nmo, nel);
-  K4T.resize(nmo, nmo);
-  TK4T.resize(nel, nmo);
 
   pK5.resize(nmo, nel);
   K5T.resize(nmo, nmo);
@@ -648,7 +683,6 @@ $
   std::fill(pK1.begin(), pK1.end(), 0.0);
   std::fill(pK2.begin(), pK2.end(), 0.0);
   std::fill(pK3.begin(), pK3.end(), 0.0);
-  std::fill(pK4.begin(), pK4.end(), 0.0);
   std::fill(pK5.begin(), pK5.end(), 0.0);
 
   //Now we are going to loop through all unique determinants.
@@ -763,7 +797,6 @@ $
         const RealType alpha_1(c * detValues_dn[down] * detValues_up[up] / detValues_up[0] * c_Tr_AlphaI_MI);
         const RealType alpha_2(c * detValues_dn[down] * detValues_up[up] / detValues_up[0]);
         const RealType alpha_3(c * Oi[down] * detValues_up[up] / detValues_up[0]);
-        const RealType alpha_4(c * detValues_dn[down] * detValues_up[up] * (1 / psiCurrent));
 
         const2 += alpha_1;
 
@@ -772,7 +805,6 @@ $
           BLAS::axpy(nel, alpha_1, Y7.data() + i * nel, 1, pK1.data() + (data_it[datum + 1 + k + i]) * nel, 1);
           BLAS::axpy(nel, alpha_2, Y7.data() + i * nel, 1, pK2.data() + (data_it[datum + 1 + k + i]) * nel, 1);
           BLAS::axpy(nel, alpha_3, Y7.data() + i * nel, 1, pK3.data() + (data_it[datum + 1 + k + i]) * nel, 1);
-          BLAS::axpy(nel, alpha_4, Y7.data() + i * nel, 1, pK4.data() + (data_it[datum + 1 + k + i]) * nel, 1);
           BLAS::axpy(nel, alpha_2, Y26.data() + i * nel, 1, pK5.data() + (data_it[datum + 1 + k + i]) * nel, 1);
         }
       }
@@ -798,9 +830,6 @@ $
   BLAS::gemm('N', 'N', nmo, nmo, nel, 1.0 / const0, T, nmo, pK3.data(), nel, RealType(0.0), K3T.data(), nmo);
   BLAS::gemm('N', 'N', nmo, nel, nmo, RealType(1.0), K3T.data(), nmo, T, nmo, RealType(0.0), TK3T.data(), nmo);
 
-  BLAS::gemm('N', 'N', nmo, nmo, nel, RealType(1.0), T, nmo, pK4.data(), nel, RealType(0.0), K4T.data(), nmo);
-  BLAS::gemm('N', 'N', nmo, nel, nmo, RealType(1.0), K4T.data(), nmo, T, nmo, RealType(0.0), TK4T.data(), nmo);
-
   BLAS::gemm('N', 'N', nmo, nmo, nel, 1.0 / const0, T, nmo, pK5.data(), nel, RealType(0.0), K5T.data(), nmo);
   BLAS::gemm('N', 'N', nmo, nel, nmo, RealType(1.0), K5T.data(), nmo, T, nmo, RealType(0.0), TK5T.data(), nmo);
 
@@ -811,9 +840,6 @@ $
     const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
     if (i <= nel - 1 && j > nel - 1)
     {
-      dlogpsi[kk] +=
-          ValueType(detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) + (K4T(i, j) - K4T(j, i) - TK4T(i, j)));
-
       dhpsioverpsi[kk] +=
           ValueType(-0.5 * Y4(i, j) -
                     0.5 *
@@ -824,9 +850,6 @@ $
     }
     else if (i <= nel - 1 && j <= nel - 1)
     {
-      dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
-                               (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i)));
-
       dhpsioverpsi[kk] += ValueType(
           -0.5 * (Y4(i, j) - Y4(j, i)) -
           0.5 *
@@ -838,13 +861,177 @@ $
     }
     else
     {
-      dlogpsi[kk] += ValueType((K4T(i, j) - K4T(j, i)));
-
       dhpsioverpsi[kk] += ValueType(-0.5 *
                                     (-K5T(i, j) + K5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - K2XA(i, j) + K2XA(j, i)
 
                                      + K1T(i, j) - K1T(j, i) - const2 / const1 * K2T(i, j) +
                                      const2 / const1 * K2T(j, i) + K3T(i, j) - K3T(j, i) - K2T(i, j) + K2T(j, i)));
+    }
+  }
+}
+
+void RotatedSPOs::table_method_evalWF(std::vector<ValueType>& dlogpsi,
+                                      const size_t nel,
+                                      const size_t nmo,
+                                      const ValueType& psiCurrent,
+                                      const std::vector<RealType>& Coeff,
+                                      const std::vector<size_t>& C2node_up,
+                                      const std::vector<size_t>& C2node_dn,
+                                      const ValueVector_t& detValues_up,
+                                      const ValueVector_t& detValues_dn,
+                                      const ValueMatrix_t& M_up,
+                                      const ValueMatrix_t& M_dn,
+                                      const ValueMatrix_t& Minv_up,
+                                      const ValueMatrix_t& Minv_dn,
+                                      const std::vector<int>& detData_up,
+                                      const std::vector<std::vector<int>>& lookup_tbl)
+{
+  ValueMatrix_t Table;
+  ValueMatrix_t Y5, Y6, Y7;
+  ValueMatrix_t pK4, K4T, TK4T;
+
+  Table.resize(nel, nmo);
+
+  Bbar.resize(nel, nmo);
+
+  pK4.resize(nmo, nel);
+  K4T.resize(nmo, nmo);
+  TK4T.resize(nel, nmo);
+
+  const int parameters_size(m_act_rot_inds.size());
+  const int parameter_start_index(0);
+
+  const size_t num_unique_up_dets(detValues_up.size());
+  const size_t num_unique_dn_dets(detValues_dn.size());
+
+  const RealType* restrict cptr = Coeff.data();
+  const size_t nc               = Coeff.size();
+  const size_t* restrict upC(C2node_up.data());
+  const size_t* restrict dnC(C2node_dn.data());
+
+  RealType* T(Table.data());
+
+  const RealType* restrict A(M_up.data());
+  const RealType* restrict Ainv(Minv_up.data());
+  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINES ONE ELECTRON. NEED A FIX FOR THIS CASE
+  // The T matrix should be calculated and stored for use
+  // T = A^{-1} \widetilde A
+  //REMINDER: that the ValueMatrix_t "matrix" stores data in a row major order and that BLAS commands assume column major
+  BLAS::gemm('N', 'N', nmo, nel, nel, RealType(1.0), A, nmo, Ainv, nel, RealType(0.0), T, nmo);
+
+  //const0 = C_{0}*det(A_{0\downarrow})+\sum_{i=1} C_{i}*det(A_{i\downarrow})* det(\alpha_{i\uparrow})
+  RealType const0(0.0), const1(0.0), const2(0.0);
+  for (size_t i = 0; i < nc; ++i)
+  {
+    const RealType c  = cptr[i];
+    const size_t up   = upC[i];
+    const size_t down = dnC[i];
+
+    const0 += c * detValues_dn[down] * (detValues_up[up] / detValues_up[0]);
+  }
+
+  std::fill(pK4.begin(), pK4.end(), 0.0);
+
+  //Now we are going to loop through all unique determinants.
+  //The few lines above are for the reference matrix contribution.
+  //Although I start the loop below from index 0, the loop only performs actions when the index is >= 1
+  //the detData object contains all the information about the P^T and Q matrices (projection matrices) needed in the table method
+  const int* restrict data_it = detData_up.data();
+  for (int index = 0, datum = 0; index < num_unique_up_dets; index++)
+  {
+    const int k = data_it[datum];
+
+    if (k == 0)
+    {
+      datum += 3 * k + 1;
+    }
+
+    else
+    {
+      //Number of rows and cols of P^T
+      const int prows = k;
+      const int pcols = nel;
+      //Number of rows and cols of Q
+      const int qrows = nmo;
+      const int qcols = k;
+
+      Y5.resize(nel, k);
+      Y6.resize(k, k);
+
+      //Any matrix multiplication of P^T or Q is simply a projection
+      //Explicit matrix multiplication can be avoided; instead column or row copying can be done
+      //BlAS::copy(size of col/row being copied,
+      //           Matrix pointer + place to begin copying,
+      //           storage spacing (number of elements btw next row/col element),
+      //           Pointer to resultant matrix + place to begin pasting,
+      //           storage spacing of resultant matrix)
+      //For example the next 4 lines is the matrix multiplication of T*Q = Y5
+      std::fill(Y5.begin(), Y5.end(), 0.0);
+      for (int i = 0; i < k; i++)
+      {
+        BLAS::copy(nel, T + data_it[datum + 1 + k + i], nmo, Y5.data() + i, k);
+      }
+
+      std::fill(Y6.begin(), Y6.end(), 0.0);
+      for (int i = 0; i < k; i++)
+      {
+        BLAS::copy(k, Y5.data() + (data_it[datum + 1 + i]) * k, 1, (Y6.data() + i * k), 1);
+      }
+
+      Vector<ValueType> WS;
+      Vector<IndexType> Piv;
+      WS.resize(k);
+      Piv.resize(k);
+      std::complex<RealType> logdet = 0.0;
+      InvertWithLog(Y6.data(), k, k, WS.data(), Piv.data(), logdet);
+
+      Y7.resize(k, nel);
+
+      std::fill(Y7.begin(), Y7.end(), 0.0);
+      for (int i = 0; i < k; i++)
+      {
+        BLAS::copy(k, Y6.data() + i, k, Y7.data() + (data_it[datum + 1 + i]), nel);
+      }
+
+      for (int p = 0; p < lookup_tbl[index].size(); p++)
+      {
+        //el_p is the element position that contains information about the CI coefficient, and det up/dn values associated with the current unique determinant
+        const int el_p(lookup_tbl[index][p]);
+        const RealType c  = cptr[el_p];
+        const size_t up   = upC[el_p];
+        const size_t down = dnC[el_p];
+
+        const RealType alpha_4(c * detValues_dn[down] * detValues_up[up] * (1 / psiCurrent));
+
+        for (int i = 0; i < k; i++)
+        {
+          BLAS::axpy(nel, alpha_4, Y7.data() + i * nel, 1, pK4.data() + (data_it[datum + 1 + k + i]) * nel, 1);
+        }
+      }
+      datum += 3 * k + 1;
+    }
+  }
+
+  BLAS::gemm('N', 'N', nmo, nmo, nel, RealType(1.0), T, nmo, pK4.data(), nel, RealType(0.0), K4T.data(), nmo);
+  BLAS::gemm('N', 'N', nmo, nel, nmo, RealType(1.0), K4T.data(), nmo, T, nmo, RealType(0.0), TK4T.data(), nmo);
+
+  for (int mu = 0, k = parameter_start_index; k < (parameter_start_index + parameters_size); k++, mu++)
+  {
+    int kk = myVars.where(k);
+    const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
+    if (i <= nel - 1 && j > nel - 1)
+    {
+      dlogpsi[kk] +=
+          ValueType(detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) + (K4T(i, j) - K4T(j, i) - TK4T(i, j)));
+    }
+    else if (i <= nel - 1 && j <= nel - 1)
+    {
+      dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
+                               (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i)));
+    }
+    else
+    {
+      dlogpsi[kk] += ValueType((K4T(i, j) - K4T(j, i)));
     }
   }
 }

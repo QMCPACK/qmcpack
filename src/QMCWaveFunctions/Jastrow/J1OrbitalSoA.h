@@ -15,8 +15,8 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include <qmc_common.h>
-#include <simd/allocator.hpp>
-#include <simd/algorithm.hpp>
+#include <CPU/SIMD/aligned_allocator.hpp>
+#include <CPU/SIMD/algorithm.hpp>
 #include <map>
 #include <numeric>
 
@@ -62,7 +62,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   ///Container for \f$F[ig*NumGroups+jg]\f$
   std::vector<FT*> F;
 
-  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : myTableID(els.addTable(ions, DT_SOA)), Ions(ions)
+  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : myTableID(els.addTable(ions)), Ions(ions)
   {
     initialize(els);
     ClassName = "J1OrbitalSoA";

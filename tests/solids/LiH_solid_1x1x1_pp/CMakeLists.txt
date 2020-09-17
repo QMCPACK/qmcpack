@@ -50,7 +50,6 @@
                     0 LIH_X_SCALARS # VMC
                     )
 
-IF(ENABLE_SOA OR QMC_CUDA)
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_LiH-x
@@ -59,9 +58,6 @@ IF(ENABLE_SOA OR QMC_CUDA)
                     TRUE
                     0 LIH_X_SCALARS # VMC
                     )
-ELSE()
-  MESSAGE("Skipping LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj test because neither SOA nor GPU is enabled")
-ENDIF()
 
 # Arbitrary k-point requires complex build to run. Ensure fails with real/non-complex build
   LIST(APPEND LIH_ARB_SCALARS "kinetic" "7.4201207734399359 0.024")
@@ -224,7 +220,7 @@ ELSE()
  ENDIF()
 ENDIF()
 
-  QMC_RUN_AND_CHECK(deterministic-short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+  QMC_RUN_AND_CHECK(deterministic-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     det_hf_vmc_LiH-gamma
                     det_hf_vmc_LiH-gamma.xml

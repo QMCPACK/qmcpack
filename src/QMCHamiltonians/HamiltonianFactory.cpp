@@ -32,7 +32,6 @@
 #include "QMCHamiltonians/Pressure.h"
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
-#include "QMCHamiltonians/LocalMomentEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
 #include "QMCHamiltonians/HarmonicExternalPotential.h"
@@ -86,6 +85,13 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
 {
   if (cur == NULL)
     return false;
+
+  app_summary() << std::endl;
+  app_summary() << " Hamiltonian and observables" << std::endl;
+  app_summary() << " ---------------------------" << std::endl;
+  app_summary() << "  Name: " << myName << std::endl;
+  app_summary() << std::endl;
+
   std::string htype("generic"), source("i"), defaultKE("yes");
   OhmmsAttributeSet hAttrib;
   hAttrib.add(htype, "type");
@@ -167,12 +173,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         addMPCPotential(cur);
       else if (potType == "pseudo")
         addPseudoPotential(cur);
-#if !defined(QMC_CUDA)
-      else if (potType == "cpp")
-      {
-        addCorePolPotential(cur);
-      }
-#endif
 #endif
     }
     else if (cname == "constant")
@@ -245,22 +245,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       else if (potType == "gofr")
       {
         PairCorrEstimator* apot = new PairCorrEstimator(*targetPtcl, sourceInp);
-        apot->put(cur);
-        targetH->addOperator(apot, potName, false);
-      }
-      else if (potType == "localmoment")
-      {
-        std::string SourceName = "ion0";
-        OhmmsAttributeSet hAttrib;
-        hAttrib.add(SourceName, "source");
-        hAttrib.put(cur);
-        PtclPoolType::iterator pit(ptclPool.find(SourceName));
-        if (pit == ptclPool.end())
-        {
-          APP_ABORT("Unknown source \"" + SourceName + "\" for LocalMoment.");
-        }
-        ParticleSet* source        = (*pit).second;
-        LocalMomentEstimator* apot = new LocalMomentEstimator(*targetPtcl, *source);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
@@ -375,7 +359,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         PtclPoolType::iterator pit(ptclPool.find(SourceName));
         if (pit == ptclPool.end())
         {
-          APP_ABORT("Unknown source \"" + SourceName + "\" for LocalMoment.");
+          APP_ABORT("Unknown source \"" + SourceName + "\" for SkAll.");
         }
         ParticleSet* source = (*pit).second;
 

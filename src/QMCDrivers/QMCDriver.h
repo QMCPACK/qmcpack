@@ -24,9 +24,9 @@
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Utilities/PooledData.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCApp/WaveFunctionPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/DriverTraits.h"
@@ -80,7 +80,6 @@ public:
 
   typedef MCWalkerConfiguration::Walker_t Walker_t;
   typedef Walker_t::Buffer_t Buffer_t;
-
   /** bits to classify QMCDriver
    *
    * - qmc_driver_mode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
@@ -99,7 +98,8 @@ public:
             TrialWaveFunction& psi,
             QMCHamiltonian& h,
             WaveFunctionPool& ppool,
-            Communicate* comm);
+            Communicate* comm,
+            const std::string& QMC_driver_type);
 
   virtual ~QMCDriver();
 
@@ -287,8 +287,8 @@ protected:
   ///pointer to qmc node in xml file
   xmlNodePtr qmcNode;
 
-  ///type of qmc: assigned by subclasses
-  std::string QMCType;
+  ///type of QMC driver
+  const std::string QMCType;
   ///the root of h5File
   std::string h5FileRoot;
   ///root of all the output files
@@ -329,10 +329,9 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
-  ///temporary buffer to accumulate data
-  //ostrstream log_buffer;
-
-  //PooledData<RealType> HamPool;
+  ///turn on spin moves
+  std::string SpinMoves;
+  RealType SpinMass;
 
   ///Copy Constructor (disabled).
   QMCDriver(const QMCDriver&) = delete;

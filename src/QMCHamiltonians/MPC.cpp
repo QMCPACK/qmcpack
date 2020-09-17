@@ -30,12 +30,7 @@ namespace qmcplusplus
 void MPC::resetTargetParticleSet(ParticleSet& ptcl) {}
 
 MPC::MPC(ParticleSet& ptcl, double cutoff)
-    : VlongSpline(0),
-      DensitySpline(0),
-      Ecut(cutoff),
-      d_aa_ID(ptcl.addTable(ptcl, DT_SOA_PREFERRED)),
-      PtclRef(&ptcl),
-      FirstTime(true)
+    : VlongSpline(0), DensitySpline(0), Ecut(cutoff), d_aa_ID(ptcl.addTable(ptcl)), PtclRef(&ptcl), FirstTime(true)
 {
   initBreakup();
 }
@@ -193,7 +188,7 @@ void MPC::init_f_G()
   f_0 += 0.4 * M_PI * L * L * volInv;
   // std::cerr << "f_0 = " << f_0/volInv << std::endl;
   double worst = 0.0, worstLin = 0.0, worstQuad = 0.0;
-  int iworst   = 0;
+  int iworst = 0;
   for (int iG = 0; iG < numG; iG++)
   {
     TinyVector<double, 2> g_12(g_G_2N[iG], g_G_4N[iG]);
@@ -340,30 +335,14 @@ MPC::Return_t MPC::evalSR(ParticleSet& P) const
 {
   const DistanceTableData& d_aa = P.getDistTable(d_aa_ID);
   RealType SR                   = 0.0;
-  if (d_aa.DTType == DT_SOA)
+  const RealType cone(1);
+  for (size_t ipart = 0; ipart < NParticles; ipart++)
   {
-    const RealType cone(1);
-    for (size_t ipart = 0; ipart < NParticles; ipart++)
-    {
-      RealType esum(0);
-      const auto& dist = d_aa.getDistRow(ipart);
-      for (size_t j = 0; j < ipart; ++j)
-        esum += cone / dist[j];
-      SR += esum;
-    }
-  }
-  else
-  {
-#ifndef ENABLE_SOA
-    for (int ipart = 0; ipart < NParticles; ipart++)
-    {
-      RealType esum = 0.0;
-      for (int nn = d_aa.M[ipart], jpart = ipart + 1; nn < d_aa.M[ipart + 1]; nn++, jpart++)
-        esum += d_aa.rinv(nn);
-      //Accumulate pair sums...species charge for atom i.
-      SR += esum;
-    }
-#endif
+    RealType esum(0);
+    const auto& dist = d_aa.getDistRow(ipart);
+    for (size_t j = 0; j < ipart; ++j)
+      esum += cone / dist[j];
+    SR += esum;
   }
   return SR;
 }

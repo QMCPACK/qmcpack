@@ -15,7 +15,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Configuration.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Message/Communicate.h"
 #include "Utilities/Timer.h"

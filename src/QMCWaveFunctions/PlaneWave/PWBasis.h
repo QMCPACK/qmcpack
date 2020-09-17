@@ -23,7 +23,7 @@
 #include "Numerics/HDFSTLAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Message/Communicate.h"
-#include "Numerics/e2iphi.h"
+#include "CPU/e2iphi.h"
 
 /** If defined, use recursive method to build the basis set for each position
  *

@@ -16,20 +16,27 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 SET(SRC_DIR estimators)
 SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
-#SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/hamiltonians)
 
-SET(SRCS test_accumulator.cpp test_local_energy_est.cpp test_manager.cpp test_trace_manager.cpp)
-
-
-#EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
-#EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple.txt" ${UTEST_DIR})
-#EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/C.BFD.xml" ${UTEST_DIR})
-
+SET(SRCS test_accumulator.cpp test_local_energy_est.cpp EstimatorManagerBaseTest.cpp EstimatorManagerNewTest.cpp test_manager.cpp test_EstimatorManagerNew.cpp test_trace_manager.cpp)
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcham qmcwfs qmcbase qmcutil qmcdriver ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcestimators_unit)
+IF(USE_OBJECT_TARGET)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_omp)
+ENDIF()
 
-#ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-#SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 
+IF(HAVE_MPI)
+  SET(UTEST_EXE test_${SRC_DIR}_mpi)
+  SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
+  #this is dependent on the directory creation and sym linking of earlier driver tests
+  SET(SRCS EstimatorManagerNewTest.cpp test_manager_mpi.cpp)
+  ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
+  IF(USE_OBJECT_TARGET)
+    TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators_unit qmcham_unit qmcdriver_unit qmcwfs qmcparticle qmcutil containers platform_omp)
+  ENDIF()
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcestimators_unit)
+  # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
+  ADD_MPI_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}" 3)
+ENDIF()

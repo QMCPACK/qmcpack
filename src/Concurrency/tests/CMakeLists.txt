@@ -14,13 +14,13 @@ SET(SRC_DIR Concurrency)
 SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRCS test_TasksOneToOneOPENMP.cpp)
+SET(SRCS test_ParallelExecutorOPENMP.cpp)
 
 IF(QMC_EXP_THREADING)
-  SET(SRCS ${SRCS} test_TasksOneToOneSTD.cpp)
+  SET(SRCS ${SRCS} test_ParallelExecutorSTD.cpp)
 ENDIF(QMC_EXP_THREADING)
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
 
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main)
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

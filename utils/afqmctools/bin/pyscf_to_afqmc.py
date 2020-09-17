@@ -35,20 +35,22 @@ def parse_args(args, comm):
                             help='Output file name for QMCPACK hamiltonian.')
         parser.add_argument('-w', '--wavefunction', dest='wfn_file',
                             type=str, default=None,
-                            help='Output file name for QMCPACK hamiltonian.')
+                            help='Output file name for QMCPACK wavefunction. '
+                                 'By default will write to hamil_file.')
         parser.add_argument('-q', '--qmcpack-input', dest='qmc_input',
                             type=str, default=None,
-                            help='Generate skeleton QMCPACK input file.')
+                            help='Generate skeleton QMCPACK input xml file.')
         parser.add_argument('-t', '--cholesky-threshold', dest='thresh',
                             type=float, default=1e-5,
                             help='Cholesky convergence threshold.')
         parser.add_argument('-k', '--kpoint', dest='kpoint_sym',
                             action='store_true', default=False,
                             help='Generate explicit kpoint dependent integrals.')
-        parser.add_argument('-g', '--gdf', dest='gdf',
+        parser.add_argument('--density-fit', dest='df',
                             action='store_true', default=False,
-                            help='Use Gaussian density fitting.')
-        parser.add_argument('-a', '--ao', dest='ortho_ao',
+                            help='Use density fitting integrals stored in '
+                            'input pyscf chkpoint file.')
+        parser.add_argument('-a', '--ao', '--ortho-ao', dest='ortho_ao',
                             action='store_true', default=False,
                             help='Transform to ortho AO basis. Default assumes '
                             'we work in MO basis')
@@ -65,7 +67,7 @@ def parse_args(args, comm):
                             'generate.')
         parser.add_argument('-r', '--real-ham', dest='real_chol',
                             action='store_true', default=False,
-                            help='Write integrals as real numbers')
+                            help='Write integrals as real numbers.')
         parser.add_argument('-p', '--phdf', dest='phdf',
                             action='store_true', default=False,
                             help='Use parallel hdf5.')
@@ -135,9 +137,10 @@ def main(args):
             options.wfn_file = 'wfn.dat'
         else:
             options.wfn_file = options.hamil_file
-    write_qmcpack(comm, options.chk_file, options.hamil_file,
-                  options.thresh, ortho_ao=options.ortho_ao,
-                  kpoint=options.kpoint_sym, gdf=options.gdf,
+    write_qmcpack(options.chk_file, options.hamil_file, options.thresh,
+                  comm=comm,
+                  ortho_ao=options.ortho_ao,
+                  kpoint=options.kpoint_sym, df=options.df,
                   verbose=options.verbose, cas=options.cas,
                   qmc_input=options.qmc_input,
                   wfn_file=options.wfn_file,

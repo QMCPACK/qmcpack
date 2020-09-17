@@ -22,15 +22,16 @@ namespace qmcplusplus
 MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
                                                        MultiDiracDeterminant* up,
                                                        MultiDiracDeterminant* dn)
-    : RatioTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio")),
-      RatioGradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratioGrad")),
-      RatioAllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio(all)")),
-      UpdateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::updateBuffer")),
-      EvaluateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::evaluate")),
-      Ratio1Timer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio")),
-      Ratio1GradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratioGrad")),
-      Ratio1AllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio(all)")),
-      AccRejTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::Accept_Reject")),
+    : RatioTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::ratio")),
+      RatioGradTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::ratioGrad")),
+      RatioAllTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::ratio(all)")),
+      UpdateTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::updateBuffer")),
+      EvaluateTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::evaluate")),
+      Ratio1Timer(*timer_manager.createTimer("MultiSlaterDeterminantFast::detEval_ratio")),
+      Ratio1GradTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::detEval_ratioGrad")),
+      Ratio1AllTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::detEval_ratio(all)")),
+      AccRejTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::Accept_Reject")),
+      CI_Optimizable(false),
       IsCloned(false),
       C2node_up(nullptr),
       C2node_dn(nullptr),
@@ -100,6 +101,8 @@ WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp)
   clone->Optimizable = Optimizable;
   clone->usingCSF    = usingCSF;
   clone->usingBF     = usingBF;
+
+  clone->CI_Optimizable = CI_Optimizable;
 
   if (usingCSF)
   {
@@ -824,8 +827,8 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
   }
 
   // FIXME this needs to be fixed by SPF to separate evaluateDerivatives and evaluateDerivativesWF for otbital rotation matrix
-  //Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1], psiCurrent, *C, *C2node_up, *C2node_dn);
-  //Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0], psiCurrent, *C, *C2node_dn, *C2node_up);
+  Dets[0]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[1], psiCurrent, *C, *C2node_up, *C2node_dn);
+  Dets[1]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[0], psiCurrent, *C, *C2node_dn, *C2node_up);
 }
 
 void MultiSlaterDeterminantFast::buildOptVariables()

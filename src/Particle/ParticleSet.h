@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: D. Das, University of Illinois at Urbana-Champaign
 //                    Bryan Clark, bclark@Princeton.edu, Princeton University
@@ -20,13 +20,14 @@
 #define QMCPLUSPLUS_PARTICLESET_H
 
 #include <Configuration.h>
-#include <ParticleTags.h>
-#include <Particle/Walker.h>
+#include "ParticleTags.h"
+#include "DynamicCoordinates.h"
+#include "Walker.h"
 #include <Utilities/SpeciesSet.h>
 #include <Utilities/PooledData.h>
 #include <OhmmsPETE/OhmmsArray.h>
-#include <Utilities/NewTimer.h>
-#include <OhmmsSoA/Container.h>
+#include <Utilities/TimerManager.h>
+#include <OhmmsSoA/VectorSoaContainer.h>
 #include "type_traits/template_types.hpp"
 namespace qmcplusplus
 {
@@ -108,8 +109,6 @@ public:
   ParticleIndex_t GroupID;
   ///Position
   ParticlePos_t R;
-  ///SoA copy of R
-  VectorSoaContainer<RealType, DIM> RSoA;
   ///internal spin variables for dynamical spin calculations
   ParticleScalar_t spins;
   ///gradients of the particles
@@ -204,7 +203,7 @@ public:
   int current_step;
 
   ///default constructor
-  ParticleSet();
+  ParticleSet(const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
   ///copy constructor
   ParticleSet(const ParticleSet& p);
@@ -250,12 +249,11 @@ public:
 
   /** add a distance table
    * @param psrc source particle set
-   * @param dt_type distance table type
    * @param need_full_table if true, DT is fully computed in loadWalker() and maintained up-to-date during p-by-p moving
    *
    * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */
-  int addTable(const ParticleSet& psrc, int dt_type, bool need_full_table = false);
+  int addTable(const ParticleSet& psrc, bool need_full_table = false);
 
   /** get a distance table by table_ID
    */
@@ -269,6 +267,9 @@ public:
    *@param skip SK update if skipSK is true
    */
   void update(bool skipSK = false);
+
+  /// batched version of update
+  static void flex_update(const RefVector<ParticleSet>& P_list, bool skipSK = false);
 
   /** create Structure Factor with PBCs
    */
@@ -293,6 +294,9 @@ public:
       ParentName = aname;
     }
   }
+
+  inline const DynamicCoordinates& getCoordinates() const { return *coordinates_; }
+  inline void setCoordinates(const ParticlePos_t& R) { return coordinates_->setAllParticlePos(R); }
 
   //inline RealType getTotalWeight() const { return EnsembleProperty.Weight; }
 
@@ -539,7 +543,7 @@ public:
     Z.resize(numPtcl);
     IndirectID.resize(numPtcl);
 
-    RSoA.resize(numPtcl);
+    coordinates_->resize(numPtcl);
   }
 
   inline void clear()
@@ -559,7 +563,7 @@ public:
     Z.clear();
     IndirectID.clear();
 
-    RSoA.resize(0);
+    coordinates_->resize(0);
   }
 
   inline void assign(const ParticleSet& ptclin)
@@ -569,6 +573,7 @@ public:
     PrimitiveLattice = ptclin.PrimitiveLattice;
     R.InUnit         = ptclin.R.InUnit;
     R                = ptclin.R;
+    spins            = ptclin.spins;
     ID               = ptclin.ID;
     GroupID          = ptclin.GroupID;
     if (ptclin.SubPtcl.size())
@@ -642,6 +647,8 @@ public:
 
   inline int getNumDistTables() const { return DistTables.size(); }
 
+  static RefVector<DistanceTableData> extractDTRefList(const RefVector<ParticleSet>& p_list, int id);
+
 protected:
   /** map to handle distance tables
    *
@@ -677,6 +684,8 @@ protected:
 
   ///array to handle a group of distinct particles per species
   ParticleIndex_t SubPtcl;
+  ///internal representation of R. It can be an SoA copy of R
+  std::unique_ptr<DynamicCoordinates> coordinates_;
 
   /** compute temporal DistTables and SK for a new particle position
    *

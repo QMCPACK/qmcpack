@@ -21,7 +21,7 @@
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "Configuration.h"
 #include "QMCWaveFunctions/Jastrow/CudaSpline.h"
-#include "NLjobGPU.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/NLjobGPU.h"
 
 namespace qmcplusplus
 {
@@ -155,9 +155,9 @@ public:
   TwoBodyJastrowOrbitalBspline(ParticleSet& pset, int tid)
       : J2OrbitalSoA<FT>(pset, tid),
         PtclRef(pset),
-        UpdateListGPU("TwoBodyJastrowOrbitalBspline::UpdateListGPU"),
         L("TwoBodyJastrowOrbitalBspline::L"),
         Linv("TwoBodyJastrowOrbitalBspline::Linv"),
+        UpdateListGPU("TwoBodyJastrowOrbitalBspline::UpdateListGPU"),
         SumGPU("TwoBodyJastrowOrbitalBspline::SumGPU"),
         GradLaplGPU("TwoBodyJastrowOrbitalBspline::GradLaplGPU"),
         OneGradGPU("TwoBodyJastrowOrbitalBspline::OneGradGPU"),

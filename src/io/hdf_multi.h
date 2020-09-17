@@ -18,8 +18,8 @@
 #include "io/hdf_hyperslab.h"
 
 #ifdef BUILD_AFQMC
-#ifdef ENABLE_CUDA
-#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#include "AFQMC/Memory/device_pointers.hpp"
 #endif
 #endif
 
@@ -146,16 +146,16 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, Ptr>> : public h5_space_type<T
 
 
 #ifdef BUILD_AFQMC
-#ifdef ENABLE_CUDA
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
 // Specializations for cuda_gpu_allocator
 // Need buffered I/O and copies to gpu
 template<typename T>
-struct h5data_proxy<boost::multi::array<T, 1, qmc_cuda::cuda_gpu_allocator<T>>> : public h5_space_type<T, 1>
+struct h5data_proxy<boost::multi::array<T, 1, device::device_allocator<T>>> : public h5_space_type<T, 1>
 {
   using FileSpace = h5_space_type<T, 1>;
   using FileSpace::dims;
   using FileSpace::get_address;
-  using data_type = boost::multi::array<T, 1, qmc_cuda::cuda_gpu_allocator<T>>;
+  using data_type = boost::multi::array<T, 1, device::device_allocator<T>>;
   data_type& ref_;
 
   inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = ref_.num_elements(); }
@@ -168,7 +168,7 @@ struct h5data_proxy<boost::multi::array<T, 1, qmc_cuda::cuda_gpu_allocator<T>>> 
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
-    qmc_cuda::copy_n(buf.data(), sz, ref_.origin());
+    device::copy_n(buf.data(), sz, ref_.origin());
     return ret;
   }
 
@@ -180,12 +180,12 @@ struct h5data_proxy<boost::multi::array<T, 1, qmc_cuda::cuda_gpu_allocator<T>>> 
 };
 
 template<typename T>
-struct h5data_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>> : public h5_space_type<T, 2>
+struct h5data_proxy<boost::multi::array<T, 2, device::device_allocator<T>>> : public h5_space_type<T, 2>
 {
   using FileSpace = h5_space_type<T, 2>;
   using FileSpace::dims;
   using FileSpace::get_address;
-  using data_type = boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>;
+  using data_type = boost::multi::array<T, 2, device::device_allocator<T>>;
   data_type& ref_;
 
   inline h5data_proxy(data_type& a) : ref_(a)
@@ -201,7 +201,7 @@ struct h5data_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>> 
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
-    qmc_cuda::copy_n(buf.data(), sz, ref_.origin());
+    device::copy_n(buf.data(), sz, ref_.origin());
     return ret;
   }
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
@@ -212,12 +212,12 @@ struct h5data_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>> 
 };
 
 template<typename T>
-struct h5data_proxy<boost::multi::array_ref<T, 1, qmc_cuda::cuda_gpu_ptr<T>>> : public h5_space_type<T, 1>
+struct h5data_proxy<boost::multi::array_ref<T, 1, device::device_pointer<T>>> : public h5_space_type<T, 1>
 {
   using FileSpace = h5_space_type<T, 1>;
   using FileSpace::dims;
   using FileSpace::get_address;
-  using data_type = boost::multi::array_ref<T, 1, qmc_cuda::cuda_gpu_ptr<T>>;
+  using data_type = boost::multi::array_ref<T, 1, device::device_pointer<T>>;
   data_type& ref_;
 
   inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = ref_.num_elements(); }
@@ -237,7 +237,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, qmc_cuda::cuda_gpu_ptr<T>>> : 
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
-    qmc_cuda::copy_n(buf.data(), sz, ref_.origin());
+    device::copy_n(buf.data(), sz, ref_.origin());
     return ret;
   }
 
@@ -249,12 +249,12 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, qmc_cuda::cuda_gpu_ptr<T>>> : 
 };
 
 template<typename T>
-struct h5data_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>> : public h5_space_type<T, 2>
+struct h5data_proxy<boost::multi::array_ref<T, 2, device::device_pointer<T>>> : public h5_space_type<T, 2>
 {
   using FileSpace = h5_space_type<T, 2>;
   using FileSpace::dims;
   using FileSpace::get_address;
-  using data_type = boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>;
+  using data_type = boost::multi::array_ref<T, 2, device::device_pointer<T>>;
   data_type& ref_;
 
   inline h5data_proxy(data_type& a) : ref_(a)
@@ -277,7 +277,7 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>> : 
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
-    qmc_cuda::copy_n(buf.data(), sz, ref_.origin());
+    device::copy_n(buf.data(), sz, ref_.origin());
     return ret;
   }
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
@@ -288,9 +288,9 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>> : 
 };
 
 template<typename T, unsigned RANK>
-struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>>, RANK>>
+struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, device::device_allocator<T>>, RANK>>
 {
-  typedef boost::multi::array<T, 2, qmc_cuda::cuda_gpu_allocator<T>> CT;
+  typedef boost::multi::array<T, 2, device::device_allocator<T>> CT;
   hyperslab_proxy<CT, RANK>& ref_;
   h5data_proxy(hyperslab_proxy<CT, RANK>& a) : ref_(a) {}
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
@@ -302,7 +302,7 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu
       boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
       auto ret = h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
                           ref_.slab_offset.data(), buf.origin(), xfer_plist);
-      qmc_cuda::copy_n(buf.data(), sz, ref_.ref.origin());
+      device::copy_n(buf.data(), sz, ref_.ref.origin());
       return ret;
     }
     else
@@ -324,9 +324,9 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, qmc_cuda::cuda_gpu
 };
 
 template<typename T, unsigned RANK>
-struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>>, RANK>>
+struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, device::device_pointer<T>>, RANK>>
 {
-  typedef boost::multi::array_ref<T, 2, qmc_cuda::cuda_gpu_ptr<T>> CT;
+  typedef boost::multi::array_ref<T, 2, device::device_pointer<T>> CT;
   hyperslab_proxy<CT, RANK>& ref_;
   h5data_proxy(hyperslab_proxy<CT, RANK>& a) : ref_(a) {}
   inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
@@ -338,7 +338,7 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, qmc_cuda::cuda
       boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
       auto ret = h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
                           ref_.slab_offset.data(), buf.origin(), xfer_plist);
-      qmc_cuda::copy_n(buf.data(), sz, ref_.ref.origin());
+      device::copy_n(buf.data(), sz, ref_.ref.origin());
       return ret;
     }
     else

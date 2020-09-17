@@ -62,31 +62,17 @@ except (ImportError,RuntimeError):
 
 
 # matplotlib imports
-success = False
+matplotlib_import_success = False
 try:
-    import matplotlib
-    gui_envs = ['GTKAgg','TKAgg','Qt4Agg','WXAgg']
-    for gui in gui_envs:
-        try:
-            matplotlib.use(gui,warn=False, force=True)
-            from matplotlib import pyplot
-            success = True
-            break
-        except:
-            continue
-        #end try
-    #end for
     import matplotlib.pyplot as plt
 
     params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
           'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
     plt.rcParams.update(params)
+    matplotlib_import_success = True
 except (ImportError,RuntimeError):
-    success = False
+    matplotlib_import_success = False
 #end try
-if not success:
-    plt = unavailable('matplotlib.pyplot')
-#end if
 
 
 
@@ -210,6 +196,13 @@ class QBase(DevBase):
         pad = n*'  '
         self._logfile.write(pad+text.replace('\n','\n'+pad)+'\n')
     #end def log
+
+
+    def check_matplotlib_import(self):
+        if not self.options.nowarn and not matplotlib_import_success:
+            self.warn('Python library matplotlib raised uncaught exceptions during import.  Plots may or may not work.')
+        #end if
+    #end def check_matplotlib_import
 #end class QBase
 
 
@@ -679,6 +672,7 @@ class DatAnalyzer(QBase):
 
 
     def plot_trace(self,quantity,style,prefix,shift):
+        self.check_matplotlib_import()
         if not quantity in self.data:
             self.error('quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath),'QMCA')
         #end if
@@ -946,6 +940,18 @@ QMCA examples:
                           default=None,
                           help='Sets the floating point precision of displayed statistical results.  Must be a floating point format string such as 16.8f, 8.6e, or similar (default=%default).'
                           )
+        parser.add_option('--nowarn',dest='nowarn',
+                          action='store_true',default=False,
+                          help='Suppress warning messages (default=%default).'
+                          )
+        parser.add_option('--average_all',dest='average_all',
+                          action='store_true',default=False,
+                          help='Average over all files, ignoring differences in path (default=%default).'
+                          )
+        parser.add_option('--twist_info',dest='twist_info',
+                          default='use',
+                          help='Use twist weights in twist_info.dat files or not.  Options: "use", "ignore", "require".  "use" means use when present, "ignore" means do not use, "require" means must be used (default=%default).'
+                          )
 
         unsupported = set('histogram image reblock report'.split())
 
@@ -1034,6 +1040,10 @@ QMCA examples:
         #end if
         if opt.image=='None':
             opt.image=None
+        #end if
+        twist_info_options = ('use','ignore','require')
+        if opt.twist_info not in twist_info_options:
+            self.error('twist_info option is invalid\ntwist_info must be one of: {}\nyou provided: {}'.format(twist_info_options,opt.twist_info))
         #end if
         opt.all_quantities = False
         qabbr = self.quantity_abbreviations
@@ -1151,47 +1161,155 @@ QMCA examples:
                     self.error('files with mixed extensions encountered for series {0}\nextensions encountered: {1}\nplease provide files with only one of the following extensions: {2}'.format(series,sorted(list(filetypes)),allowed_extensions.list()))
                 #end if
             #end for
+            
             weights = opt.weights
             prefixes = sorted(list(data.keys()))
-            if weights is None:
-                weights = len(prefixes)*[1.0]
-            elif len(weights)!=len(prefixes):
-                self.error('one weight must be provided per file prefix for averaging\nyou provided {0} weights for {1} prefixes\nweights provided: {2}\nprefixes provided: {3}'.format(len(weights),len(prefixes),weights,prefixes))
-            #end if
-            adata = obj()
-            file_map = obj()
-            file_list = []
-            ns=0
-            for series in serieslist:
-                np = 0
-                for prefix in sorted(data.keys()):
-                    pdata = data[prefix]
-                    w = weights[np]
-                    d = pdata[series]
-                    if np==0:
-                        avg = d.copy()
-                        di = d.info
-                        avg.info.set(
-                            filename = di.filename.replace(di.prefix,'avg'),
-                            filepath = di.filepath.replace(di.prefix,'avg'),
-                            index    = ns,
-                            prefix   = 'avg'
-                            )
-                        avg.zero()
-                    #end if
-                    avg.accumulate(d,w)
-                    np+=1
-                #end for
-                avg.normalize()
-                file_list.append(avg.info.filepath)
-                file_map[avg.info.filepath] = avg
-                adata[series] = avg
-                ns+=1
+
+            # identify batches of prefixes for averaging
+            batch_prefixes = obj()
+            for prefix in prefixes:
+                path,file = os.path.split(prefix)
+                tokens = file.split('.')
+                batch_prefix = os.path.join(path,tokens[0])
+                if batch_prefix not in batch_prefixes:
+                    batch_prefixes[batch_prefix] = []
+                #end if
+                batch_prefixes[batch_prefix].append(prefix)
             #end for
-            self.file_list = file_list
-            self.file_map  = file_map
-            self.data = obj(avg=adata)
-            self.prefix_list = ['avg']
+
+            # perform the averaging
+            file_list   = []
+            file_map    = obj()
+            prefix_list = []
+            avg_data    = obj()
+            if opt.average_all or weights is not None or len(batch_prefixes)==1:
+                # average all data together
+                if weights is not None:
+                    if len(weights)!=len(prefixes):
+                        self.error('one weight must be provided per file prefix for averaging\nyou provided {0} weights for {1} prefixes\nweights provided: {2}\nprefixes provided: {3}'.format(len(weights),len(prefixes),weights,prefixes))
+                    #end if
+                else:
+                    uniform_weights = len(prefixes)*[1.0]
+                    if opt.twist_info=='ignore':
+                        weights = uniform_weights
+                    else:
+                        weights = []
+                        for prefix in sorted(prefixes):
+                            twist_info_file = prefix+'.twist_info.dat'
+                            if os.path.exists(twist_info_file):
+                                fobj = open(twist_info_file)
+                                try:
+                                    weight = float(fobj.read().strip().split()[0])
+                                    weights.append(weight)
+                                except:
+                                    None
+                                #end try
+                            #end if
+                        #end for
+                        if len(weights)!=len(prefixes):
+                            if opt.twist_info=='require':
+                                self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
+                            else:
+                                weights = uniform_weights
+                            #end if
+                        #end if
+                    #end if
+                #end if
+                adata = obj()
+                ns=0
+                for series in serieslist:
+                    np = 0
+                    for prefix in sorted(data.keys()):
+                        pdata = data[prefix]
+                        w = weights[np]
+                        d = pdata[series]
+                        if np==0:
+                            avg = d.copy()
+                            di = d.info
+                            avg.info.set(
+                                filename = di.filename.replace(di.prefix,'avg'),
+                                filepath = di.filepath.replace(di.prefix,'avg'),
+                                index    = ns,
+                                prefix   = 'avg'
+                                )
+                            avg.zero()
+                        #end if
+                        avg.accumulate(d,w)
+                        np+=1
+                    #end for
+                    avg.normalize()
+                    file_list.append(avg.info.filepath)
+                    file_map[avg.info.filepath] = avg
+                    adata[series] = avg
+                    ns+=1
+                #end for
+                prefix_list.append('avg')
+                avg_data.avg = adata
+            else:
+                # average data by shared batch prefix
+                for batch_prefix in sorted(batch_prefixes.keys()):
+                    prefixes = batch_prefixes[batch_prefix]
+                    adata = obj()
+                    ns=0
+                    uniform_weights = len(prefixes)*[1.0]
+                    if opt.twist_info=='ignore':
+                        weights = uniform_weights
+                    else:
+                        weights = []
+                        for prefix in sorted(prefixes):
+                            twist_info_file = prefix+'.twist_info.dat'
+                            if os.path.exists(twist_info_file):
+                                fobj = open(twist_info_file)
+                                try:
+                                    weight = float(fobj.read().strip().split()[0])
+                                    weights.append(weight)
+                                except:
+                                    None
+                                #end try
+                            #end if
+                        #end for
+                        if len(weights)!=len(prefixes):
+                            if opt.twist_info=='require':
+                                self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
+                            else:
+                                weights = uniform_weights
+                            #end if
+                        #end if
+                    #end if
+                    for series in serieslist:
+                        np = 0
+                        for prefix in sorted(prefixes):
+                            pdata = data[prefix]
+                            w = weights[np]
+                            d = pdata[series]
+                            if np==0:
+                                avg = d.copy()
+                                di = d.info
+                                avg.info.set(
+                                    filename = di.filename.replace(di.prefix,batch_prefix),
+                                    filepath = di.filepath.replace(di.prefix,batch_prefix),
+                                    index    = ns,
+                                    prefix   = batch_prefix,
+                                    )
+                                avg.zero()
+                            #end if
+                            avg.accumulate(d,w)
+                            np+=1
+                        #end for
+                        avg.normalize()
+                        file_list.append(avg.info.filepath)
+                        file_map[avg.info.filepath] = avg
+                        adata[series] = avg
+                        ns+=1
+                    #end for
+                    prefix_list.append(batch_prefix)
+                    avg_data[batch_prefix] = adata
+                #end for
+            #end if
+            self.file_list   = file_list
+            self.file_map    = file_map
+            self.prefix_list = prefix_list
+            self.data        = avg_data
         #end if
         if opt.join is not None:
             series_join = list(range(opt.join[0],opt.join[1]+1))
@@ -1291,6 +1409,7 @@ QMCA examples:
             #end for
         #end if
         if plots:
+            self.check_matplotlib_import()
             color       = 'b'
             line        = '-'
             marker      = '.'
@@ -1419,7 +1538,6 @@ QMCA examples:
             plt.show()
         #end if
     #end def analyze_data
-
 #end class QMCA
 
 

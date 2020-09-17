@@ -41,6 +41,7 @@ public:
 	using pointer = typename std::pointer_traits<decltype(std::declval<MemoryResource*>()->allocate(0))>::template rebind<value_type>;
 	using difference_type = typename std::pointer_traits<pointer>::difference_type;
 	using size_type =  std::make_unsigned_t<difference_type>;
+	generic_allocator() : mr_{nullptr}{}
 	generic_allocator(memory_resource_type* mr) : mr_{mr}{}
 	template<typename T2>
 	generic_allocator(generic_allocator<T2, MemoryResource> const& other) : mr_{other.mr_}{}

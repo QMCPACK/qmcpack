@@ -15,7 +15,7 @@ namespace qmcplusplus
 {
 SpinorSet::SpinorSet() : SPOSet(), className("SpinorSet"), spo_up(nullptr), spo_dn(nullptr) {}
 
-void SpinorSet::set_spos(std::shared_ptr<SPOSet> up, std::shared_ptr<SPOSet> dn)
+void SpinorSet::set_spos(std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&& dn)
 {
   //Sanity check for input SPO's.  They need to be the same size or
   IndexType spo_size_up   = up->getOrbitalSetSize();
@@ -26,8 +26,8 @@ void SpinorSet::set_spos(std::shared_ptr<SPOSet> up, std::shared_ptr<SPOSet> dn)
 
   setOrbitalSetSize(spo_size_up);
 
-  spo_up = up;
-  spo_dn = dn;
+  spo_up = std::move(up);
+  spo_dn = std::move(dn);
 
   psi_work_up.resize(OrbitalSetSize);
   psi_work_down.resize(OrbitalSetSize);
@@ -119,7 +119,7 @@ void SpinorSet::evaluate_notranspose(const ParticleSet& P,
 
   for (int iat = 0; iat < nelec; iat++)
   {
-    ParticleSet::Scalar_t s = P.spins[iat];
+    ParticleSet::Scalar_t s = P.activeSpin(iat);
 
     RealType coss(0.0), sins(0.0);
 
@@ -160,6 +160,15 @@ void SpinorSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi,
 
   psi  = eis * psi_work_up + emis * psi_work_down;
   dpsi = eye * (eis * psi_work_up - emis * psi_work_down);
+}
+
+SPOSet* SpinorSet::makeClone() const
+{
+  SpinorSet* myclone = new SpinorSet();
+  std::unique_ptr<SPOSet> cloneup(spo_up->makeClone());
+  std::unique_ptr<SPOSet> clonedn(spo_dn->makeClone());
+  myclone->set_spos(std::move(cloneup), std::move(clonedn));
+  return myclone;
 }
 
 } // namespace qmcplusplus

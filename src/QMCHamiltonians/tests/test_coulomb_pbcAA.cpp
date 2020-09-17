@@ -14,13 +14,8 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#ifndef ENABLE_SOA
-#include "Particle/SymmetricDistanceTableData.h"
-#endif
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 
 
@@ -36,7 +31,6 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -81,7 +75,6 @@ TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -129,7 +122,6 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;

@@ -23,17 +23,21 @@
 namespace qmcplusplus
 {
 ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime)
-    : ForceBase(ions, elns), PtclA(ions), first_time(firsttime), d_aa_ID(ions.addTable(ions, DT_SOA_PREFERRED)), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED))
+    : ForceBase(ions, elns),
+      PtclA(ions),
+      first_time(firsttime),
+      d_aa_ID(ions.addTable(ions)),
+      d_ei_ID(elns.addTable(ions))
 {
   ReportEngine PRE("ForceChiesaPBCAA", "ForceChiesaPBCAA");
   myName = "Chiesa_Force_Base_PBCAB";
   prefix = "FChiesaPBC";
   //Defaults for the chiesa S-wave polynomial filtering.
-  Rcut    = 0.4;
-  m_exp   = 2;
-  N_basis = 4;
-  forces  = 0.0;
-  forces_IonIon     = 0.0;
+  Rcut          = 0.4;
+  m_exp         = 2;
+  N_basis       = 4;
+  forces        = 0.0;
+  forces_IonIon = 0.0;
   ions.turnOnPerParticleSK();
   //This sets up the long range breakups.
   initBreakup(elns);
@@ -86,11 +90,11 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
   Qspec.resize(NumSpeciesB);
   for (int spec = 0; spec < NumSpeciesA; spec++)
   {
-    Zspec[spec]       = tspeciesA(ChargeAttribIndxA, spec);
+    Zspec[spec] = tspeciesA(ChargeAttribIndxA, spec);
   }
   for (int spec = 0; spec < NumSpeciesB; spec++)
   {
-    Qspec[spec]       = tspeciesB(ChargeAttribIndxB, spec);
+    Qspec[spec] = tspeciesB(ChargeAttribIndxB, spec);
   }
   RealType totQ = 0.0;
   for (int iat = 0; iat < NptclA; iat++)
@@ -118,73 +122,36 @@ void ForceChiesaPBCAA::evaluateLR(ParticleSet& P)
 void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
 {
   const DistanceTableData& d_ab(P.getDistTable(d_ei_ID));
-  if (d_ab.DTType == DT_SOA)
+  for (size_t jat = 0; jat < NptclB; ++jat)
   {
-    for (size_t jat = 0; jat < NptclB; ++jat)
+    const auto& dist  = d_ab.getDistRow(jat);
+    const auto& displ = d_ab.getDisplRow(jat);
+    for (size_t iat = 0; iat < NptclA; ++iat)
     {
-      const auto& dist  = d_ab.getDistRow(jat);
-      const auto& displ = d_ab.getDisplRow(jat);
-      for (size_t iat = 0; iat < NptclA; ++iat)
-      {
-        const RealType r    = dist[iat];
-        const RealType rinv = RealType(1) / r;
-        RealType g_f        = g_filter(r);
-        RealType V          = -dAB->srDf(r, rinv);
-        PosType drhat       = rinv * displ[iat];
-        forces[iat] += g_f * Zat[iat] * Qat[jat] * V * drhat;
-      }
+      const RealType r    = dist[iat];
+      const RealType rinv = RealType(1) / r;
+      RealType g_f        = g_filter(r);
+      RealType V          = -dAB->srDf(r, rinv);
+      PosType drhat       = rinv * displ[iat];
+      forces[iat] += g_f * Zat[iat] * Qat[jat] * V * drhat;
     }
-  }
-  else
-  {
-#ifndef ENABLE_SOA
-    for (int iat = 0; iat < NptclA; iat++)
-    {
-      for (int nn = d_ab.M[iat], jat = 0; nn < d_ab.M[iat + 1]; ++nn, ++jat)
-      {
-        RealType V;
-        RealType g_f = g_filter(d_ab.r(nn));
-        V = -dAB->srDf(d_ab.r(nn), d_ab.rinv(nn));
-        PosType drhat = d_ab.rinv(nn) * d_ab.dr(nn);
-        forces[iat] += -g_f * Zat[iat] * Qat[jat] * V * drhat;
-      }
-    }
-#endif
   }
 }
 
 void ForceChiesaPBCAA::evaluateSR_AA()
 {
   const DistanceTableData& d_aa(PtclA.getDistTable(d_aa_ID));
-  if (d_aa.DTType == DT_SOA)
+  for (size_t ipart = 1; ipart < NptclA; ipart++)
   {
-    for (size_t ipart = 1; ipart < NptclA; ipart++)
+    const auto& dist  = d_aa.getDistRow(ipart);
+    const auto& displ = d_aa.getDisplRow(ipart);
+    for (size_t jpart = 0; jpart < ipart; ++jpart)
     {
-      const auto& dist  = d_aa.getDistRow(ipart);
-      const auto& displ = d_aa.getDisplRow(ipart);
-      for (size_t jpart = 0; jpart < ipart; ++jpart)
-      {
-        RealType V   = -dAB->srDf(dist[jpart], RealType(1) / dist[jpart]);
-        PosType grad = -Zat[jpart] * Zat[ipart] * V / dist[jpart] * displ[jpart];
-        forces_IonIon[ipart] += grad;
-        forces_IonIon[jpart] -= grad;
-      }
+      RealType V   = -dAB->srDf(dist[jpart], RealType(1) / dist[jpart]);
+      PosType grad = -Zat[jpart] * Zat[ipart] * V / dist[jpart] * displ[jpart];
+      forces_IonIon[ipart] += grad;
+      forces_IonIon[jpart] -= grad;
     }
-  }
-  else
-  {
-#ifndef ENABLE_SOA
-    for (int ipart = 0; ipart < NptclA; ipart++)
-    {
-      for (int nn = d_aa.M[ipart], jpart = ipart + 1; nn < d_aa.M[ipart + 1]; nn++, jpart++)
-      {
-        RealType V   = -dAB->srDf(d_aa.r(nn), d_aa.rinv(nn));
-        PosType grad = -Zat[jpart] * Zat[ipart] * V * d_aa.rinv(nn) * d_aa.dr(nn);
-        forces_IonIon[ipart] += grad;
-        forces_IonIon[jpart] -= grad;
-      }
-    }
-#endif
   }
 }
 
@@ -257,10 +224,7 @@ bool ForceChiesaPBCAA::put(xmlNodePtr cur)
   return true;
 }
 
-void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P)
-{
-  dAB->resetTargetParticleSet(P);
-}
+void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P) { dAB->resetTargetParticleSet(P); }
 
 void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collectables)
 {
@@ -279,8 +243,8 @@ OperatorBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& ps
   tmp->h.resize(N_basis);
   tmp->h = h; // terms in fitting polynomial
   tmp->c.resize(N_basis);
-  tmp->c         = c; // polynomial coefficients
-  tmp->addionion = addionion;
+  tmp->c             = c; // polynomial coefficients
+  tmp->addionion     = addionion;
   tmp->forces_IonIon = forces_IonIon;
   tmp->initBreakup(qp);
   return tmp;

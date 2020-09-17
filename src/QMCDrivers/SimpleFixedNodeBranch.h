@@ -32,7 +32,6 @@
 #include "Particle/Walker.h"
 #include "QMCDrivers/WalkerControlBase.h"
 #include "QMCDrivers/Crowd.h"
-#include <Utilities/NewTimer.h>
 #include <bitset>
 
 namespace qmcplusplus
@@ -80,7 +79,7 @@ class EstimatorManagerBase;
  *         1. Which calls reset which crucially calculates and update logN state.
  *      bb. updates all the walker id's of walkers in MCWC.
  * 6. checkParameters
- *   a. getCurrentStatistics from SFNB's estimator
+ *   a. getApproximateEnergyVariance from SFNB's estimator
  *   b. set ETrial, EREF, SIGMA2 from estimator
  *   c. clear EnergyHist and VarianceHist
  *
@@ -95,7 +94,7 @@ class EstimatorManagerBase;
  *   e. set WC's TrialEnergy
  *   d. multiply walkers.Colelctables *= the inverse weight.
  *   f. call SFNB's estimator accumilator on MCWC
- */  
+ */
 struct SimpleFixedNodeBranch : public QMCTraits
 {
   typedef SimpleFixedNodeBranch ThisType;
@@ -187,7 +186,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
     VPARAM_MAX = 17 // four extra, why? Sloppy or undocumented hack?
   };
   using SBVP = SimpleBranchVectorParameter;
-  
+
   /** controlling parameters of full precision real type
    *
    * Mostly internal
@@ -215,8 +214,8 @@ struct SimpleFixedNodeBranch : public QMCTraits
   std::unique_ptr<WalkerControlBase> WalkerController;
   ///Backup WalkerController for mixed DMC
   std::unique_ptr<WalkerControlBase> BackupWalkerController;
-  
-  ///TODO: Should not be raw pointer 
+
+  ///TODO: Should not be raw pointer
   EstimatorManagerBase* MyEstimator;
   ///a simple accumulator for energy
   accumulator_set<FullPrecRealType> EnergyHist;
@@ -295,14 +294,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   int initWalkerController(MCWalkerConfiguration& mcwc, bool fixW, bool killwalker);
 
-  /** initialize  the WalkerController
-   * @param pop Population of Walkers
-   * @param fixW true, if reconfiguration with the fixed number of walkers is used
-   * @param killwalker 
-   * @return number of copies to make in case targetwalkers changed
-   */
-  int initWalkerController(MCPopulation& pop, bool fixW, bool killwalker);
-
   /** initialize reptile stats
    *
    *
@@ -312,10 +303,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** determine trial and reference energies
    */
   void checkParameters(MCWalkerConfiguration& w);
-
-  /** determine trial and reference energies
-   */
-  void checkParameters(const int global_walkers, RefVector<MCPWalker>& walkers);
 
   /** return the bare branch weight
    *
@@ -438,12 +425,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   void branch(int iter, MCWalkerConfiguration& w);
 
-  /** perform branching
-   * @param iter current step
-   * @param w Walker configuration
-   */
-  void branch(int iter, UPtrVector<Crowd>& crowds, MCPopulation& population);
-
   /** update RMC counters and running averages.
    * @param iter the iteration
    * @param w the walker ensemble
@@ -482,8 +463,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
   void start(const std::string& froot, bool append = false);
   ///finalize the simulation
   void finalize(MCWalkerConfiguration& w);
-  ///finalize the simulation
-  void finalize(const int global_walkers, RefVector<MCPWalker>& walkers);
 
   void setRN(bool rn);
 

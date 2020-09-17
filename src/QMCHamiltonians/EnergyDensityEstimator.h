@@ -60,6 +60,10 @@ private:
   ParticleSet* get_particleset(std::string& psname);
   int dtable_index;
   int nparticles;
+  bool ion_points;
+  int nions;
+  int ion_buffer_offset;
+  Matrix<RealType> Rion;
   //collection of points from which to build spacegrid origin and axes
   ReferencePoints ref;
   //EnergyDenstity quantities
@@ -71,6 +75,7 @@ private:
     nEDValues
   };
   Matrix<RealType> EDValues;
+  Matrix<RealType> EDIonValues;
   //for EnergyDensity of particles falling outside any spacegrid
   int outside_buffer_offset;
   std::vector<bool> particles_outside;

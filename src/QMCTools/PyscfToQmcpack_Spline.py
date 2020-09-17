@@ -196,6 +196,8 @@ def mo_coeff_to_psig(mo_coeff,aoR,cell_gs,cell_vol,int_gvecs=None):
    Outputs:
        3. plane-wave coefficients representing the MOs, shape (ngrid,nmo)
   """
+  import sys
+
   # provide the order of reciprocal lattice vectors to skip
   if int_gvecs is None: # use internal order
     nx,ny,nz = cell_gs
@@ -219,7 +221,13 @@ def mo_coeff_to_psig(mo_coeff,aoR,cell_gs,cell_vol,int_gvecs=None):
     # fill real-space FFT grid
     rgrid = moR[:,istate].reshape(rgrid_shape)
     # get plane-wave coefficients (on reciprocal-space FFT grid)
-    moG   = np.fft.fftn(rgrid)/np.prod(rgrid_shape)*cell_vol
+    moG   = np.fft.fftn(rgrid)/np.prod(rgrid_shape)*np.sqrt(cell_vol)
+    orb_norm = np.sum(moG*np.conj(moG)).real
+
+    if abs(1.-orb_norm) > 1.e-6:
+      print('Orbital normalization failed in state:'+str(istate)+' with norm:'+str(orb_norm))
+      sys.exit(0)
+
     # transfer plane-wave coefficients to psig in specified order
     for igvec in range(npw):
       comp_val = moG[tuple(int_gvecs[igvec])]
@@ -250,7 +258,6 @@ def generate_pwscf_h5(cell,gvecs,eig_df,h5_fname):
   new.create_dataset('version',data=[2,1,0])
   new.close()
 # end def generate_pwscf_h5
-
 
 # =======================================================================
 # Class for bspline h5 generator
@@ -729,8 +736,7 @@ class InputXml:
                                                            "source":"ion0",
                                                            "tilematrix":"{}".format(tilematrix),
                                                            "twistnum":"0",
-                                                           "meshfactor":"1.0",
-                                                           "check_orb_norm":"no"})
+                                                           "meshfactor":"1.0"})
     basisset_node = etree.Element('basisset')
     determinantset_node.append(basisset_node)
 

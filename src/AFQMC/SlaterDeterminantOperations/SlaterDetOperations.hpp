@@ -6,7 +6,7 @@
 //
 // File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //
-// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_SLATERDETOPERATIONS_HPP
@@ -15,165 +15,134 @@
 #include "AFQMC/config.h"
 #include "boost/variant.hpp"
 
+#include "AFQMC/Memory/buffer_allocators.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations_shared.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations_serial.hpp"
 
 namespace qmcplusplus
 {
-
 namespace afqmc
 {
-
-class SlaterDetOperations:
-#ifdef ENABLE_CUDA
-        public boost::variant<SlaterDetOperations_shared<ComplexType>,SlaterDetOperations_serial<device_allocator<ComplexType>>>
-#else
-        public boost::variant<SlaterDetOperations_shared<ComplexType>,SlaterDetOperations_serial<std::allocator<ComplexType>>>
-#endif
+// device_allocator_generator_type is equal to host_allocator_generator_type
+// when devices are not enabled
+class SlaterDetOperations
+    : public boost::variant<SlaterDetOperations_shared<ComplexType>,
+                            SlaterDetOperations_serial<ComplexType, device_allocator_generator_type>>
 {
+public:
+  SlaterDetOperations() : variant()
+  {
+    app_warning() << (" WARNING: Building SlaterDetOperations with default constructor. \n");
+  }
 
-    public:
+  explicit SlaterDetOperations(SlaterDetOperations_shared<ComplexType>&& other) : variant(std::move(other)) {}
 
-    SlaterDetOperations(): variant() {
-        app_warning()<<(" WARNING: Building SlaterDetOperations with default constructor. \n");
-    }
+  explicit SlaterDetOperations(SlaterDetOperations_shared<ComplexType> const& other) = delete;
 
-    explicit SlaterDetOperations(SlaterDetOperations_shared<ComplexType>&& other) : variant(std::move(other)) {}
+  explicit SlaterDetOperations(SlaterDetOperations_serial<ComplexType, device_allocator_generator_type> const& other) =
+      delete;
+  explicit SlaterDetOperations(SlaterDetOperations_serial<ComplexType, device_allocator_generator_type>&& other)
+      : variant(std::move(other))
+  {}
 
-    explicit SlaterDetOperations(SlaterDetOperations_shared<ComplexType> const& other) = delete;
+  SlaterDetOperations(SlaterDetOperations const& other) = delete;
+  SlaterDetOperations(SlaterDetOperations&& other)      = default;
 
-#ifdef ENABLE_CUDA
-    explicit SlaterDetOperations(SlaterDetOperations_serial<device_allocator<ComplexType>> const& other) = delete;
-    explicit SlaterDetOperations(SlaterDetOperations_serial<device_allocator<ComplexType>>&& other) : variant(std::move(other)) {}
-#else
-    explicit SlaterDetOperations(SlaterDetOperations_serial<std::allocator<ComplexType>>&& other) : variant(std::move(other)) {}
-    explicit SlaterDetOperations(SlaterDetOperations_serial<std::allocator<ComplexType>> const& other) = delete;
-#endif
+  SlaterDetOperations& operator=(SlaterDetOperations const& other) = delete;
+  SlaterDetOperations& operator=(SlaterDetOperations&& other) = default;
 
-    SlaterDetOperations(SlaterDetOperations const& other) = delete;
-    SlaterDetOperations(SlaterDetOperations && other) = default;
+  // member functions visible outside the variant
+  template<class... Args>
+  ComplexType MixedDensityMatrix(Args&&... args)
+  {
+    return boost::apply_visitor([&](auto&& a) { return a.MixedDensityMatrix(std::forward<Args>(args)...); }, *this);
+  }
 
-    SlaterDetOperations& operator=(SlaterDetOperations const& other) = delete;
-    SlaterDetOperations& operator=(SlaterDetOperations && other) = default;
+  template<class... Args>
+  void BatchedMixedDensityMatrix(Args&&... args)
+  {
+    boost::apply_visitor([&](auto&& a) { a.BatchedMixedDensityMatrix(std::forward<Args>(args)...); }, *this);
+  }
 
-    // member functions visible outside the variant
-    template<class... Args>
-    ComplexType MixedDensityMatrix(Args&&... args) {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.MixedDensityMatrix(std::forward<Args>(args)...);},
-            *this
-        );
-    }
+  template<class... Args>
+  void BatchedDensityMatrices(Args&&... args)
+  {
+    boost::apply_visitor([&](auto&& a) { a.BatchedDensityMatrices(std::forward<Args>(args)...); }, *this);
+  }
 
-    template<class... Args>
-    void BatchedMixedDensityMatrix(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.BatchedMixedDensityMatrix(std::forward<Args>(args)...);},
-            *this
-        );
-    }
+  template<class... Args>
+  void BatchedOverlap(Args&&... args)
+  {
+    boost::apply_visitor([&](auto&& a) { a.BatchedOverlap(std::forward<Args>(args)...); }, *this);
+  }
 
-    template<class... Args>
-    void BatchedDensityMatrices(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.BatchedDensityMatrices(std::forward<Args>(args)...);},
-            *this
-        );
-    }
+  template<class... Args>
+  void BatchedPropagate(Args&&... args)
+  {
+    boost::apply_visitor([&](auto&& a) { a.BatchedPropagate(std::forward<Args>(args)...); }, *this);
+  }
 
-    template<class... Args>
-    void BatchedOverlap(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.BatchedOverlap(std::forward<Args>(args)...);},
-            *this
-        );
-    }
-     
-    template<class... Args>
-    void BatchedPropagate(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.BatchedPropagate(std::forward<Args>(args)...);},
-            *this
-        );
-    }
+  template<class... Args>
+  ComplexType MixedDensityMatrix_noHerm(Args&&... args)
+  {
+    return boost::apply_visitor([&](auto&& a) { return a.MixedDensityMatrix_noHerm(std::forward<Args>(args)...); },
+                                *this);
+  }
 
-    template<class... Args>
-    ComplexType MixedDensityMatrix_noHerm(Args&&... args) {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.MixedDensityMatrix_noHerm(std::forward<Args>(args)...);},
-            *this
-        );
-    }
+  template<class... Args>
+  ComplexType MixedDensityMatrixForWoodbury(Args&&... args)
+  {
+    return boost::apply_visitor([&](auto&& a) { return a.MixedDensityMatrixForWoodbury(std::forward<Args>(args)...); },
+                                *this);
+  }
 
-    template<class... Args>
-    ComplexType MixedDensityMatrixForWoodbury(Args&&... args) {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.MixedDensityMatrixForWoodbury(std::forward<Args>(args)...);},
-            *this
-        );
-    }
+  template<class... Args>
+  ComplexType MixedDensityMatrixFromConfiguration(Args&&... args)
+  {
+    return boost::
+        apply_visitor([&](auto&& a) { return a.MixedDensityMatrixFromConfiguration(std::forward<Args>(args)...); },
+                      *this);
+  }
 
-    template<class... Args>
-    ComplexType MixedDensityMatrixFromConfiguration(Args&&... args) {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.MixedDensityMatrixFromConfiguration(std::forward<Args>(args)...);},
-            *this
-        );
-    }
+  template<class... Args>
+  ComplexType Overlap(Args&&... args)
+  {
+    return boost::apply_visitor([&](auto&& a) { return a.Overlap(std::forward<Args>(args)...); }, *this);
+  }
 
-    template<class... Args>
-    ComplexType Overlap(Args&&... args) {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.Overlap(std::forward<Args>(args)...);},
-            *this
-        );
-    }
+  template<class... Args>
+  ComplexType Overlap_noHerm(Args&&... args)
+  {
+    return boost::apply_visitor([&](auto&& a) { return a.Overlap_noHerm(std::forward<Args>(args)...); }, *this);
+  }
 
-    template<class... Args>
-    ComplexType Overlap_noHerm(Args&&... args) {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.Overlap_noHerm(std::forward<Args>(args)...);},
-            *this
-        );
-    }
+  template<class... Args>
+  ComplexType OverlapForWoodbury(Args&&... args)
+  {
+    return boost::apply_visitor([&](auto&& a) { return a.OverlapForWoodbury(std::forward<Args>(args)...); }, *this);
+  }
 
-    template<class... Args>
-    ComplexType OverlapForWoodbury(Args&&... args) {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.OverlapForWoodbury(std::forward<Args>(args)...);},
-            *this
-        );
-    }
+  template<class... Args>
+  void Propagate(Args&&... args)
+  {
+    boost::apply_visitor([&](auto&& a) { a.Propagate(std::forward<Args>(args)...); }, *this);
+  }
 
-    template<class... Args>
-    void Propagate(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.Propagate(std::forward<Args>(args)...);},
-            *this
-        );
-    }
+  template<class... Args>
+  ComplexType Orthogonalize(Args&&... args)
+  {
+    return boost::apply_visitor([&](auto&& a) { return a.Orthogonalize(std::forward<Args>(args)...); }, *this);
+  }
 
-    template<class... Args>
-    ComplexType Orthogonalize(Args&&... args) {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.Orthogonalize(std::forward<Args>(args)...);},
-            *this
-        );
-    }
-
-    template<class... Args>
-    void BatchedOrthogonalize(Args&&... args) {
-        boost::apply_visitor(
-            [&](auto&& a){a.BatchedOrthogonalize(std::forward<Args>(args)...);},
-            *this
-        );
-    }
-
+  template<class... Args>
+  void BatchedOrthogonalize(Args&&... args)
+  {
+    boost::apply_visitor([&](auto&& a) { a.BatchedOrthogonalize(std::forward<Args>(args)...); }, *this);
+  }
 };
 
-}
+} // namespace afqmc
 
-}
+} // namespace qmcplusplus
 
 #endif
-

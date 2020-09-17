@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_PINNED_ALLOCATOR_H
 
 #include <memory>
-#include "simd/allocator.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
 #ifdef ENABLE_CUDA
 #include "CUDA/CUDAallocator.hpp"
 #endif

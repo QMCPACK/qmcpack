@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "Platforms/accelerators.hpp"
 #include "config.h"
 #ifdef ENABLE_CUDA
 #include <cuda_runtime_api.h>
@@ -17,6 +18,7 @@
 #endif
 #include <omp.h>
 #include "qmc_common.h"
+#include "Platforms/Host/OutputManager.h"
 
 namespace qmcplusplus
 {
@@ -40,7 +42,7 @@ int getDeviceID(int rank_id, int num_ranks, int num_devices)
   return assigned_device_id;
 }
 
-void assignAccelerators(Communicate& NodeComm)
+int assignAccelerators(Communicate& NodeComm)
 {
   int num_accelerators(0);
   int assigned_accelerators_id(-1);
@@ -92,14 +94,16 @@ void assignAccelerators(Communicate& NodeComm)
     omp_set_default_device(ompDeviceID);
   }
 #endif
+
   if (num_accelerators > 0)
   {
-    app_log() << "  Accelerators per node     = " << num_accelerators << std::endl;
     if (NodeComm.size() % num_accelerators != 0)
       app_warning() << "The number of MPI ranks on the node is not divisible by the number of accelerators. "
                     << "Imbalanced load may cause performance loss.\n";
     qmc_common.default_accelerator_id = assigned_accelerators_id;
   }
+
+  return num_accelerators;
 }
 
 } // namespace qmcplusplus

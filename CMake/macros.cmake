@@ -22,14 +22,19 @@ FUNCTION( COPY_DIRECTORY SRC_DIR DST_DIR )
     EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}" )
 ENDFUNCTION()
 
-# Function to copy a directory using symlinks for the files. This saves storage
-# space with large test files.
+# Function to copy a directory using symlinks for the files to save storage space.
+# Subdirectories are ignored.
 # SRC_DIR must be an absolute path
 # The -s flag copies using symlinks
-# The -T ${DST_DIR} ensures the destination is copied as the directory, and not
-#  placed as a subdirectory if the destination already exists.
+# The -t ${DST_DIR} ensures the destination must be a directory
 FUNCTION( COPY_DIRECTORY_USING_SYMLINK SRC_DIR DST_DIR )
-    EXECUTE_PROCESS( COMMAND cp -as --remove-destination "${SRC_DIR}" -T "${DST_DIR}" )
+    FILE(MAKE_DIRECTORY "${DST_DIR}")
+    # Find all the files but not subdirectories
+    FILE(GLOB FILE_ONLY_NAMES LIST_DIRECTORIES FALSE "${SRC_DIR}/*")
+    FOREACH(F IN LISTS FILE_ONLY_NAMES)
+      #MESSAGE("Creating symlink from  ${F} to directory ${DST_DIR}")
+      EXECUTE_PROCESS( COMMAND cp -ds --remove-destination -t . "${F}" WORKING_DIRECTORY ${DST_DIR})
+    ENDFOREACH()
 ENDFUNCTION()
 
 # Copy files, but symlink the *.h5 files (which are the large ones)
@@ -53,8 +58,8 @@ ENDFUNCTION()
 # Control copy vs. symlink with top-level variable
 FUNCTION( COPY_DIRECTORY_MAYBE_USING_SYMLINK SRC_DIR DST_DIR )
   IF (QMC_SYMLINK_TEST_FILES)
-    #COPY_DIRECTORY_USING_SYMLINK("${SRC_DIR}" "${DST_DIR}")
-    COPY_DIRECTORY_SYMLINK_H5("${SRC_DIR}" "${DST_DIR}" )
+    COPY_DIRECTORY_USING_SYMLINK("${SRC_DIR}" "${DST_DIR}")
+    #COPY_DIRECTORY_SYMLINK_H5("${SRC_DIR}" "${DST_DIR}" )
   ELSE()
     COPY_DIRECTORY("${SRC_DIR}" "${DST_DIR}")
   ENDIF()
@@ -68,20 +73,6 @@ FUNCTION(MAYBE_SYMLINK SRC_DIR DST_DIR)
     EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${SRC_DIR}" "${DST_DIR}")
   ENDIF()
 ENDFUNCTION()
-
-
-# Macro to add the dependencies and libraries to an executable
-MACRO( ADD_QMC_EXE_DEP EXE )
-    # Add the package dependencies
-    TARGET_LINK_LIBRARIES(${EXE} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil)
-    FOREACH(l ${QMC_UTIL_LIBS})
-        TARGET_LINK_LIBRARIES(${EXE} ${l})
-    ENDFOREACH(l ${QMC_UTIL_LIBS})
-    IF(MPI_LIBRARY)
-        TARGET_LINK_LIBRARIES(${EXE} ${MPI_LIBRARY})
-    ENDIF(MPI_LIBRARY)
-ENDMACRO()
-
 
 
 # Macro to create the test name
@@ -100,11 +91,11 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
     MATH( EXPR TOT_PROCS "${PROCS} * ${THREADS}" )
     SET( QMC_APP "${qmcpack_BINARY_DIR}/bin/qmcpack" )
     SET( TEST_ADDED_TEMP FALSE )
-    IF ( USE_MPI )
+    IF ( HAVE_MPI )
         IF ( ${TOT_PROCS} GREATER ${TEST_MAX_PROCS} )
             MESSAGE_VERBOSE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
-        ELSEIF ( USE_MPI )
-            ADD_TEST( ${TESTNAME} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS} ${QMC_APP} ${ARGN} )
+        ELSE()
+            ADD_TEST( ${TESTNAME} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS} ${QMC_APP} ${ARGN} )
             SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}"
                 PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )

@@ -34,6 +34,9 @@ SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -restrict
 # Set prefetch flag
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -qopt-prefetch" )
 
+IF(MIXED_PRECISION)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -prec-sqrt" )
+ENDIF()
 #check if -ftz is accepted
 CHECK_CXX_COMPILER_FLAG( "${CMAKE_CXX_FLAGS} -ftz" INTEL_FTZ )
 IF( INTEL_FTZ)
@@ -44,7 +47,7 @@ ENDIF( INTEL_FTZ)
 #------------------------
 # Not on Cray's machine
 #------------------------
-IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+IF(NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
 
 SET(X_OPTION "^-x| -x")
 SET(AX_OPTION "^-ax| -ax")
@@ -68,4 +71,4 @@ else() #(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x")
   ENDIF(INTEL_CC_FLAGS)
 endif() #(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x")
 
-ENDIF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+ENDIF()

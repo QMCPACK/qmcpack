@@ -14,10 +14,10 @@
 
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
-#include "Numerics/OhmmsBlas.h"
+#include <CPU/BLAS.hpp>
+#include <CPU/BlasThreadingEnv.h>
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "Numerics/BlasThreadingEnv.h"
-#include "config.h"
+#include <Message/OpenMP.h>
 
 namespace qmcplusplus
 {

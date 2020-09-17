@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -18,7 +18,7 @@
 
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
@@ -31,12 +31,12 @@ public:
    *@param first index of the first particle
    */
   DiracDeterminantBase(SPOSetPtr const spos, int first = 0)
-      : UpdateTimer(*TimerManager.createTimer("DiracDeterminantBase::update", timer_level_fine)),
-        RatioTimer(*TimerManager.createTimer("DiracDeterminantBase::ratio", timer_level_fine)),
-        InverseTimer(*TimerManager.createTimer("DiracDeterminantBase::inverse", timer_level_fine)),
-        BufferTimer(*TimerManager.createTimer("DiracDeterminantBase::buffer", timer_level_fine)),
-        SPOVTimer(*TimerManager.createTimer("DiracDeterminantBase::spoval", timer_level_fine)),
-        SPOVGLTimer(*TimerManager.createTimer("DiracDeterminantBase::spovgl", timer_level_fine)),
+      : UpdateTimer(*timer_manager.createTimer("DiracDeterminantBase::update", timer_level_fine)),
+        RatioTimer(*timer_manager.createTimer("DiracDeterminantBase::ratio", timer_level_fine)),
+        InverseTimer(*timer_manager.createTimer("DiracDeterminantBase::inverse", timer_level_fine)),
+        BufferTimer(*timer_manager.createTimer("DiracDeterminantBase::buffer", timer_level_fine)),
+        SPOVTimer(*timer_manager.createTimer("DiracDeterminantBase::spoval", timer_level_fine)),
+        SPOVGLTimer(*timer_manager.createTimer("DiracDeterminantBase::spovgl", timer_level_fine)),
         Phi(spos),
         FirstIndex(first),
         LastIndex(first + spos->size()),
@@ -73,20 +73,11 @@ public:
   virtual void setBF(BackflowTransformation* BFTrans) {}
 
   ///optimizations  are disabled
-  virtual inline void checkInVariables(opt_variables_type& active) override
-  {
-    Phi->checkInVariables(active);
-  }
+  virtual inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
 
-  virtual inline void checkOutVariables(const opt_variables_type& active) override
-  {
-    Phi->checkOutVariables(active);
-  }
+  virtual inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
 
-  virtual void resetParameters(const opt_variables_type& active) override
-  {
-    Phi->resetParameters(active);
-  }
+  virtual void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
 
   // To be removed with AoS
   void resetTargetParticleSet(ParticleSet& P) override final
@@ -108,23 +99,22 @@ public:
   using WaveFunctionComponent::updateBuffer;
 
   using WaveFunctionComponent::acceptMove;
-  using WaveFunctionComponent::mw_acceptMove;
   using WaveFunctionComponent::completeUpdates;
-  using WaveFunctionComponent::mw_completeUpdates;
   using WaveFunctionComponent::evalGrad;
-  using WaveFunctionComponent::mw_evalGrad;
-  using WaveFunctionComponent::ratio;
+  using WaveFunctionComponent::mw_accept_rejectMove;
   using WaveFunctionComponent::mw_calcRatio;
-  using WaveFunctionComponent::ratioGrad;
+  using WaveFunctionComponent::mw_completeUpdates;
+  using WaveFunctionComponent::mw_evalGrad;
   using WaveFunctionComponent::mw_ratioGrad;
+  using WaveFunctionComponent::ratio;
+  using WaveFunctionComponent::ratioGrad;
   using WaveFunctionComponent::restore;
-  using WaveFunctionComponent::mw_restore;
 
   using WaveFunctionComponent::evalGradSource;
   using WaveFunctionComponent::evaluateHessian;
   using WaveFunctionComponent::evaluateRatios;
-  using WaveFunctionComponent::mw_evaluateRatios;
   using WaveFunctionComponent::evaluateRatiosAlltoOne;
+  using WaveFunctionComponent::mw_evaluateRatios;
 
   // used by DiracDeterminantWithBackflow
   virtual void evaluateDerivatives(ParticleSet& P,
@@ -144,12 +134,12 @@ public:
     return 0;
   }
 
-  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad) override
+  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::ratioGradWithSpins():  Implementation required\n");
     return 0.0;
-  } 
-  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) override
+  }
+  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::evalGradWithSpins():  Implementation required\n");
     return GradType();

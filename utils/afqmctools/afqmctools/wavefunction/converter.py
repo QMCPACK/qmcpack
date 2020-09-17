@@ -1,7 +1,9 @@
 import ast
 import h5py
 import numpy
+import scipy.sparse
 import struct
+from afqmctools.utils.io import from_qmcpack_complex
 
 def read_qmcpack_ascii_wavefunction(filename, nmo, nelec):
     na, nb = nelec
@@ -126,19 +128,20 @@ def read_orbitals():
 
 def get_occupied(det, nel, nmo):
     nset = 0
-    pos = numpy.int64(0)
+    pos = numpy.uint64(0)
     occs = []
     shift = 0
+    one = numpy.uint64(1)
     all_found = False
     for d in det:
         while pos < min(nmo,64):
-            if d & (1<<pos):
+            if d & (one<<pos):
                 nset += 1
-                occs.append(pos+shift)
+                occs.append(int(pos+shift))
             if nset == nel:
                 all_found = True
                 break
-            pos += 1
+            pos += numpy.uint64(1)
         # Assuming 64 bit integers
         pos = 0
         if all_found:
@@ -146,22 +149,34 @@ def get_occupied(det, nel, nmo):
         shift += 64
     return occs
 
-def read_qmcpack_ci_wavefunction(input_file, nelec, nmo, ndets=None):
+def read_dmc_ci_wavefunction(input_file, nelec, nmo, ndets=None):
     if ndets is None:
         ndets = -1
-    na, nb = nelec
     with h5py.File(input_file) as fh5:
         try:
-            nmo = fh5['parameters/numMO'][:][0]
+            nmo_read = fh5['parameters/numMO'][:][0]
             na = fh5['parameters/NbAlpha'][:][0]
             nb = fh5['parameters/NbBeta'][:][0]
+            if nelec is not None:
+                assert na == nelec[0]
+                assert nb == nelec[1]
+            if nmo is not None:
+                assert nmo_read == nmo
+            else:
+                nmo = nmo_read
+            nelec = (na, nb)
         except KeyError:
             pass
-        ci_a = fh5['MultiDet/CI_Alpha'][:]
-        ci_b = fh5['MultiDet/CI_Beta'][:]
+        assert nelec is not None
+        assert nmo is not None
+        ci_a = numpy.array(fh5['MultiDet/CI_Alpha'][:], dtype=numpy.uint64)
+        ci_b = numpy.array(fh5['MultiDet/CI_Beta'][:], dtype=numpy.uint64)
         nbs = fh5['MultiDet/Nbits'][()]
         coeffs = fh5['MultiDet/Coeff'][:][:ndets]
-        coeffs_imag = fh5['MultiDet/Coeff_imag'][:][:ndets]
+        try:
+            coeffs_imag = fh5['MultiDet/Coeff_imag'][:][:ndets]
+        except KeyError:
+            coeffs_imag = 0j
         coeffs = coeffs + 1j*coeffs_imag
         occa = []
         occb = []
@@ -191,7 +206,7 @@ def write_phf_rhf(fname, cf):
         cfx[0::2] = cf.reshape((nb*no,), order='F')[:]
     cf_ = struct.pack('d'*(nb*no*2), *cfx)
 
-    with open(fname, 'wb') as f
+    with open(fname, 'wb') as f:
         f.write(i1_)
         f.write(ia_)
         f.write(i1_)
@@ -226,10 +241,100 @@ def write_phf_uhf(fname, cf):
         cfx[2*nb*no+0::2] = cf[1].reshape((nb*no,), order='F')[:]
     cf_ = struct.pack('d'*(nb*no*4), *cfx)
 
-    with open(fname, 'wb') as f
+    with open(fname, 'wb') as f:
         f.write(i1_)
         f.write(ia_)
         f.write(i1_)
         f.write(i2_)
         f.write(cf_)
         f.write(i2_)
+
+def read_qmcpack_wavefunction(filename):
+    try:
+        with h5py.File(filename, 'r') as fh5:
+            wgroup = fh5['Wavefunction/NOMSD']
+            wfn, psi0, nelec = read_qmcpack_nomsd_hdf5(wgroup)
+    except KeyError:
+        with h5py.File(filename, 'r') as fh5:
+            wgroup = fh5['Wavefunction/PHMSD']
+            wfn, psi0, nelec = read_qmcpack_phmsd_hdf5(wgroup)
+    except KeyError:
+        print("Wavefunction not found.")
+        sys.exit()
+    return wfn, psi0, nelec
+
+def read_qmcpack_nomsd_hdf5(wgroup):
+    dims = wgroup['dims']
+    nmo = dims[0]
+    na = dims[1]
+    nb = dims[2]
+    walker_type = dims[3]
+    if walker_type == 2:
+        uhf = True
+    else:
+        uhf = False
+    nci = dims[4]
+    coeffs = from_qmcpack_complex(wgroup['ci_coeffs'][:], (nci,))
+    psi0a = from_qmcpack_complex(wgroup['Psi0_alpha'][:], (nmo,na))
+    if uhf:
+        psi0b = from_qmcpack_complex(wgroup['Psi0_beta'][:], (nmo,nb))
+    psi0 = numpy.zeros((nmo,na+nb),dtype=numpy.complex128)
+    psi0[:,:na] = psi0a.copy()
+    if uhf:
+        psi0[:,na:] = psi0b.copy()
+    else:
+        psi0[:,na:] = psi0a[:,:nb].copy()
+    wfn = numpy.zeros((nci,nmo,na+nb), dtype=numpy.complex128)
+    for idet in range(nci):
+        ix = 2*idet if uhf else idet
+        pa = orbs_from_dset(wgroup['PsiT_{:d}/'.format(idet)])
+        wfn[idet,:,:na] = pa
+        if uhf:
+            ix = 2*idet + 1
+            wfn[idet,:,na:] = orbs_from_dset(wgroup['PsiT_{:d}/'.format(ix)])
+        else:
+            wfn[idet,:,na:] = pa[:,:nb]
+    return (coeffs,wfn), psi0, (na, nb)
+
+def read_qmcpack_phmsd_hdf5(wgroup):
+    dims = wgroup['dims']
+    nmo = dims[0]
+    na = dims[1]
+    nb = dims[2]
+    walker_type = dims[3]
+    if walker_type == 2:
+        uhf = True
+    else:
+        uhf = False
+    nci = dims[4]
+    coeffs = from_qmcpack_complex(wgroup['ci_coeffs'][:], (nci,))
+    occs = wgroup['occs'][:].reshape((nci,na+nb))
+    occa = occs[:,:na]
+    occb = occs[:,na:]-nmo
+    wfn = (coeffs, occa, occb)
+    psi0a = from_qmcpack_complex(wgroup['Psi0_alpha'][:], (nmo,na))
+    if uhf:
+        psi0b = from_qmcpack_complex(wgroup['Psi0_beta'][:], (nmo,nb))
+    psi0 = numpy.zeros((nmo,na+nb),dtype=numpy.complex128)
+    psi0[:,:na] = psi0a.copy()
+    if uhf:
+        psi0[:,na:] = psi0b.copy()
+    else:
+        psi0[:,na:] = psi0a.copy()
+    return wfn, psi0, (na,nb)
+
+def orbs_from_dset(dset):
+    """Will read actually A^{H} but return A.
+    """
+    dims = dset['dims'][:]
+    wfn_shape = (dims[0],dims[1])
+    nnz = dims[2]
+    data = from_qmcpack_complex(dset['data_'][:],(nnz,))
+    indices = dset['jdata_'][:]
+    pbb = dset['pointers_begin_'][:]
+    pbe = dset['pointers_end_'][:]
+    indptr = numpy.zeros(dims[0]+1)
+    indptr[:-1] = pbb
+    indptr[-1] = pbe[-1]
+    wfn = scipy.sparse.csr_matrix((data,indices,indptr),shape=wfn_shape)
+    return wfn.toarray().conj().T.copy()

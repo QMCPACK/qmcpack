@@ -14,6 +14,7 @@
 
 #include "Configuration.h"
 #include "Message/Communicate.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/ExampleHeComponent.h"
@@ -27,7 +28,6 @@ using PsiValueType = WaveFunctionComponent::PsiValueType;
 
 TEST_CASE("ExampleHe", "[wavefunction]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   ParticleSet* elec = new ParticleSet;

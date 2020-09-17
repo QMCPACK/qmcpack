@@ -1,4 +1,4 @@
-from __future__ import print_function
+#! /usr/bin/env python3
 
 import xml.etree.ElementTree as ET
 import os.path
@@ -32,8 +32,8 @@ def get_performance_info(info_fname):
   # Alternative with XPath syntax to find a particular timer
   # vmc_timers = timing.findall(".//timer[name='VMCSingleOMP']")
 
-  vmc_time = get_incl_time(timers, ['VMC', 'VMCSingleOMP', 'VMCcuda'])
-  dmc_time = get_incl_time(timers, ['DMC', 'DMCOMP', 'DMCcuda'])
+  vmc_time = get_incl_time(timers, ['VMC', 'VMCBatched', 'VMCSingleOMP', 'VMCcuda'])
+  dmc_time = get_incl_time(timers, ['DMC', 'DMCBatched', 'DMCOMP', 'DMCcuda'])
 
   return {'VMC Time': vmc_time, 'DMC Time': dmc_time}
 

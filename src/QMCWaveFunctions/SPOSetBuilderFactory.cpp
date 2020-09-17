@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -20,16 +20,7 @@
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
 #if OHMMS_DIM == 3
-#if defined(ENABLE_SOA)
-#include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
-#else
-#if !defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/MolecularSPOBuilder.h"
-#endif
-#endif
+#include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
 
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/RotatedSPOs.h"
@@ -37,6 +28,7 @@
 
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include "QMCWaveFunctions/LCAO/LCAOSpinorBuilder.h"
 #endif
 
 #if defined(HAVE_EINSPLINE)
@@ -73,7 +65,7 @@ SPOSet* get_sposet(const std::string& name)
     for (int i = 0; i < sposets.size(); ++i)
     {
       SPOSet* sposet = sposets[i];
-      if (sposet->objectName == name)
+      if (sposet->getName() == name)
       {
         spo = sposet;
         nfound++;
@@ -88,7 +80,7 @@ SPOSet* get_sposet(const std::string& name)
   //else if(spo==NULL)
   //{
   //  write_spo_builders();
-  //  APP_ABORT("get_sposet: requested sposet "+name+" does not exist");
+  //  myComm->barrier_and_abort("get_sposet: requested sposet "+name+" does not exist");
   //}
   return spo;
 }
@@ -105,7 +97,7 @@ void write_spo_builders(const std::string& pad)
     app_log() << pad << "sposets for SPOSetBuilder of type " << type << std::endl;
     for (int i = 0; i < sposets.size(); ++i)
     {
-      app_log() << pad2 << "sposet " << sposets[i]->objectName << std::endl;
+      app_log() << pad2 << "sposet " << sposets[i]->getName() << std::endl;
     }
   }
 }
@@ -189,12 +181,12 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 #if OHMMS_DIM == 3
   else if (type == "spinorbspline")
   {
-    #ifdef QMC_COMPLEX
+#ifdef QMC_COMPLEX
     app_log() << "Einspline Spinor Set\n";
     bb = new EinsplineSpinorSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
-    #else
+#else
     PRE.error("Use of einspline spinors requires QMC_COMPLEX=1.  Rebuild with this option");
-    #endif
+#endif
   }
   else if (type.find("spline") < type.size())
   {
@@ -215,28 +207,21 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
       PRE.error("Missing basisset/@source.", true);
     else
       ions = (*pit).second;
-#if defined(ENABLE_SOA)
     bb = new LCAOrbitalBuilder(targetPtcl, *ions, myComm, rootNode);
-#else
-#if defined(QMC_COMPLEX)
-    PRE.error("Complex molecular orbitals not supported by AoS builds!", true);
-#else
-    if (transformOpt == "yes")
-    {
-      app_log() << "Using MolecularSPOBuilder<NGOBuilder>" << std::endl;
-      bb = new MolecularSPOBuilder<NGOBuilder>(targetPtcl, *ions, myComm, cuspC == "yes", cuspInfo, MOH5Ref);
-    }
+  }
+  else if (type == "molecularspinor")
+  {
+#ifdef QMC_COMPLEX
+    ParticleSet* ions = 0;
+    //initialize with the source tag
+    PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
+    if (pit == ptclPool.end())
+      PRE.error("Missing basisset/@source.", true);
     else
-    {
-      if (cuspC == "yes")
-        app_log() << " ****** Cusp Correction algorithm is only implemented in combination with numerical radial "
-                     "orbitals. Use transform=yes to enable this option. \n";
-      if (keyOpt == "GTO")
-        bb = new MolecularSPOBuilder<GTOBuilder>(targetPtcl, *ions, myComm);
-      else if (keyOpt == "STO")
-        bb = new MolecularSPOBuilder<STOBuilder>(targetPtcl, *ions, myComm);
-    }
-#endif //QMC_COMPLEX
+      ions = (*pit).second;
+    bb = new LCAOSpinorBuilder(targetPtcl, *ions, myComm, rootNode);
+#else
+    PRE.error("Use of lcao spinors requires QMC_COMPLEX=1.  Rebuild with this option");
 #endif
   }
 #endif //OHMMS_DIM==3
@@ -298,8 +283,8 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   if (bb)
   {
     app_log() << "  Building SPOSet '" << sname << "' with '" << bname << "' basis set." << std::endl;
-    SPOSet* spo     = bb->createSPOSet(cur);
-    spo->objectName = sname;
+    SPOSet* spo = bb->createSPOSet(cur);
+    spo->setName(sname);
     if (rotation == "yes")
     {
 #ifdef QMC_COMPLEX
@@ -319,51 +304,39 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
         tcur = tcur->next;
       }
       spo = rot_spo;
-      spo->objectName = sname;
+      spo->setName(sname);
 #endif
     }
     return spo;
   }
   else
   {
-    APP_ABORT("SPOSetBuilderFactory::createSPOSet Failed to create a SPOSet. SPOSetBuilder is empty.");
+    myComm->barrier_and_abort("SPOSetBuilderFactory::createSPOSet Failed to create a SPOSet. SPOSetBuilder is empty.");
     return 0;
   }
 }
 
 void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
 {
-  xmlNodePtr parent = cur;
-  std::string type("");
-  OhmmsAttributeSet attrib;
-  attrib.add(type, "type");
-  attrib.put(cur);
-  //tolower(type);
-
-  app_log() << "building sposet collection of type " << type << std::endl;
-
-  SPOSetBuilder* bb  = createSPOSetBuilder(cur);
-  xmlNodePtr element = parent->children;
+  app_log() << "  Building a collection of SPOSets" << std::endl;
+  // create the SPOSet builder
+  SPOSetBuilder* bb = createSPOSetBuilder(cur);
+  // going through a list of sposet entries
+  xmlNodePtr element = cur->children;
   int nsposets       = 0;
   while (element != NULL)
   {
     std::string cname((const char*)(element->name));
     if (cname == "sposet")
     {
-      std::string name("");
-      OhmmsAttributeSet attrib;
-      attrib.add(name, "name");
-      attrib.put(element);
-
-      app_log() << "  Building SPOSet \"" << name << "\" with " << type << " SPOSetBuilder" << std::endl;
-      SPOSet* spo     = bb->createSPOSet(element);
-      spo->objectName = name;
+      SPOSet* spo = bb->createSPOSet(element);
       nsposets++;
     }
     element = element->next;
   }
+
   if (nsposets == 0)
-    APP_ABORT("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
+    myComm->barrier_and_abort("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
 }
 
 std::string SPOSetBuilderFactory::basisset_tag = "basisset";

@@ -20,7 +20,6 @@
 #include <HDFVersion.h>
 #include <Particle/HDFWalkerInput_0_4.h>
 #include <OhmmsApp/RandomNumberControl.h>
-#include <random/random.hpp>
 #include <Sandbox/input.hpp>
 #include <Sandbox/pseudo.hpp>
 #include <Utilities/FairDivide.h>
@@ -28,6 +27,7 @@
 #include <Sandbox/common.hpp>
 #include <getopt.h>
 #include <mpi/collectives.h>
+#include <ParticleBase/ParticleAttribOps.h>
 
 using namespace std;
 using namespace qmcplusplus;
@@ -154,7 +154,7 @@ int main(int argc, char** argv)
       els.R.InUnit = PosUnit::Lattice;
       random_th.generate_uniform(&els.R[0][0],nels3);
       els.convert2Cart(els.R); // convert to Cartiesian
-      els.RSoA=els.R;
+      els.setCoordinates(els.R);
     }
 
     if(!ip) elecs[0].createWalkers(nwtot);

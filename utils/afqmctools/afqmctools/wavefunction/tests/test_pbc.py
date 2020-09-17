@@ -14,11 +14,11 @@ class TestMolWavefunction(unittest.TestCase):
         cell.atom = (('C',0,0,0),('C',numpy.array([0.25,0.25,0.25])*alat0))
         cell.basis = 'gth-szv'
         cell.pseudo = 'gth-pade'
-        cell.mesh = [25]*3  # 10 grids on postive x direction, => 21^3 grids in total
+        cell.mesh = [12]*3  # 10 grids on postive x direction, => 21^3 grids in total
         cell.verbose = 0
         cell.build()
 
-        nk = [2,2,2]
+        nk = [2,2,1]
         kpts = cell.make_kpts(nk)
 
         mf = dft.KRKS(cell,kpts=kpts)
@@ -45,7 +45,8 @@ class TestMolWavefunction(unittest.TestCase):
         pbc.write_wfn_pbc(scf_data, True, 'wfn.h5', rediag=True)
         with h5py.File('wfn.h5', 'r') as fh5:
             dims = fh5['Wavefunction/NOMSD/dims'][:]
-        self.assertTrue(numpy.allclose(dims, [64,32,32,1,1]))
+        print(dims)
+        self.assertTrue(numpy.allclose(dims, [32,16,16,1,1]))
 
     def tearDown(self):
         cwd = os.getcwd()

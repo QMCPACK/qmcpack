@@ -14,10 +14,8 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
@@ -34,7 +32,6 @@ namespace qmcplusplus
 TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -133,7 +130,11 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   REQUIRE(std::real(dpsiM[0][1][2]) == Approx(-0.6386129856));
   // lapl
   REQUIRE(std::real(d2psiM[0][0]) == Approx(-4.1090884209));
+#if defined(MIXED_PRECISION) 
+  REQUIRE(std::real(d2psiM[0][1]) == Approx(22.3851032257).epsilon(3e-5));
+#else
   REQUIRE(std::real(d2psiM[0][1]) == Approx(22.3851032257));
+#endif
 
   // electron 1
   // value
@@ -155,7 +156,6 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -238,6 +238,19 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   ions_.update();
   elec_.update();
 
+  ParticleSet::RealType r;
+  ParticleSet::PosType dr;
+  elec_.getDistTable(0).get_first_neighbor(0, r, dr, false);
+  std::cout << std::setprecision(14) << "check r^2 against dr^2. "
+            << "r = " << r << " dr = " << dr << std::endl;
+  std::cout << "abs(r^2 - dr^2) = " << std::abs(r * r - dot(dr, dr))
+            << " epsilon = " << std::numeric_limits<double>::epsilon() << std::endl;
+#if defined(MIXED_PRECISION)
+  REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon() * 1e8);
+#else
+  REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon());
+#endif
+
   // for vgl
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
@@ -319,14 +332,14 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   elec_2.R[0] = elec_.R[1];
   elec_2.R[1] = elec_.R[0];
   elec_2.update();
-  std::vector<ParticleSet*> P_list;
-  P_list.push_back(&elec_);
-  P_list.push_back(&elec_2);
+  RefVector<ParticleSet> P_list;
+  P_list.push_back(elec_);
+  P_list.push_back(elec_2);
 
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
-  std::vector<SPOSet*> spo_list;
-  spo_list.push_back(spo.get());
-  spo_list.push_back(spo_2.get());
+  RefVector<SPOSet> spo_list;
+  spo_list.push_back(*spo);
+  spo_list.push_back(*spo_2);
 
   SPOSet::ValueVector_t psi(spo->getOrbitalSetSize());
   SPOSet::GradVector_t dpsi(spo->getOrbitalSetSize());

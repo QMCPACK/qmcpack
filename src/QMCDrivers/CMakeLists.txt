@@ -23,19 +23,25 @@
 ####################################
 
 SET(QMCDRIVERS 
+  QMCDriverFactory.cpp
   SimpleFixedNodeBranch.cpp
+  SFNBranch.cpp
   BranchIO.cpp
   MCPopulation.cpp
   QMCDriver.cpp
   QMCDriverInput.cpp
   QMCDriverNew.cpp
-  QMCOptimize.cpp
-  QMCLinearOptimize.cpp
-  QMCCorrelatedSamplingLinearOptimize.cpp
-  QMCFixedSampleLinearOptimize.cpp
+  WFOpt/QMCOptimize.cpp
+  WFOpt/QMCOptimizeBatched.cpp
+  WFOpt/QMCWFOptFactoryNew.cpp
+  WFOpt/QMCLinearOptimize.cpp
+  WFOpt/QMCLinearOptimizeBatched.cpp
+  WFOpt/QMCCorrelatedSamplingLinearOptimize.cpp
+  WFOpt/QMCFixedSampleLinearOptimize.cpp
+  WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
   Optimizers/DescentEngine.cpp
   Optimizers/HybridEngine.cpp
-  QMCCostFunctionBase.cpp
+  WFOpt/QMCCostFunctionBase.cpp
   WaveFunctionTester.cpp
   WalkerControlBase.cpp
   CloneManager.cpp
@@ -67,27 +73,21 @@ SET(QMCDRIVERS
   CorrelatedSampling/CSVMC.cpp
   CorrelatedSampling/CSVMCUpdateAll.cpp
   CorrelatedSampling/CSVMCUpdatePbyP.cpp
-  CorrelatedSampling/CSUpdateBase.cpp
-  ../Estimators/CSEnergyEstimator.cpp
-  ../Estimators/LocalEnergyEstimator.cpp
-  ../Estimators/RMCLocalEnergyEstimator.cpp
-  ../Estimators/EstimatorManagerBase.cpp
-  ../Estimators/EstimatorManagerCrowd.cpp
-  ../Estimators/CollectablesEstimator.cpp
-)
+  CorrelatedSampling/CSUpdateBase.cpp)
 
 IF(QMC_CUDA)
    SET(QMCDRIVERS ${QMCDRIVERS}
    VMC/VMC_CUDA.cpp
    DMC/DMC_CUDA.cpp
-   QMCCostFunctionCUDA.cpp)
+   WFOpt/QMCCostFunctionCUDA.cpp)
 ENDIF(QMC_CUDA)
 
 SET(QMCDRIVERS ${QMCDRIVERS} 
     VMC/VMC.cpp
     VMC/VMCBatched.cpp
     VMC/VMCLinearOpt.cpp
-    QMCCostFunction.cpp)
+    WFOpt/QMCCostFunction.cpp
+    WFOpt/QMCCostFunctionBatched.cpp)
 
 IF(HAVE_MPI) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
@@ -102,19 +102,25 @@ IF(BUILD_LMYENGINE_INTERFACE)
      )
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
-SET(QMCDRIVERS ${QMCDRIVERS}
-  ../Estimators/CSEnergyEstimator.cpp
-)
-
-
 ####################################
-# create libqmc 
+# create libqmcdriver
 ####################################
-ADD_LIBRARY(qmcdriver ${QMCDRIVERS})
-ADD_LIBRARY(qmcdriver_unit ${QMCDRIVERS})
+IF(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmcdriver OBJECT ${QMCDRIVERS})
+  ADD_LIBRARY(qmcdriver_unit OBJECT ${QMCDRIVERS})
+ELSE()
+  ADD_LIBRARY(qmcdriver ${QMCDRIVERS})
+  ADD_LIBRARY(qmcdriver_unit ${QMCDRIVERS})
+ENDIF()
 USE_FAKE_RNG(qmcdriver_unit)
-#IF(QMC_BUILD_STATIC)
-#  ADD_LIBRARY(qmcdriver STATIC ${QMCDRIVERS})
-#ELSE(QMC_BUILD_STATIC)
-#  ADD_LIBRARY(qmcdriver SHARED ${QMCDRIVERS})
-#ENDIF(QMC_BUILD_STATIC)
+
+TARGET_LINK_LIBRARIES(qmcdriver PUBLIC qmcham)
+TARGET_LINK_LIBRARIES(qmcdriver PUBLIC qmcestimators)
+TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcham_unit)
+TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcestimators_unit)
+TARGET_LINK_LIBRARIES(qmcdriver PRIVATE Math::BLAS_LAPACK)
+TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE Math::BLAS_LAPACK)
+IF(BUILD_LMYENGINE_INTERFACE)
+  TARGET_LINK_LIBRARIES(qmcdriver PRIVATE formic_utils)
+  TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE formic_utils)
+ENDIF()

@@ -150,31 +150,26 @@ ELSE()
 ENDIF()
 
 
-IF(ENABLE_SOA OR QMC_CUDA)
-  QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-                    NiO-fcc-S1-vmc
-                    NiO-hybridrep-j3-vmc-short.in.xml
-                    1 16
-                    TRUE
-                    1 NIO_A4_E48_J3_SCALARS # VMC
-                    )
+QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
+                  "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                  NiO-fcc-S1-vmc
+                  NiO-hybridrep-j3-vmc-short.in.xml
+                  1 16
+                  TRUE
+                  1 NIO_A4_E48_J3_SCALARS # VMC
+                  )
 
-  # Testing batched algorithm in NLPP.
-  # Hitting all the routines using VirtualParticleSet.
-  QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
-                    NiO-fcc-S1-vmc
-                    NiO-hybridrep-j3-batched-vmc-short.in.xml
-                    1 16
-                    TRUE
-                    1 NIO_A4_E48_J3_SCALARS # VMC
-                    )
+# Testing batched algorithm in NLPP.
+# Hitting all the routines using VirtualParticleSet.
+QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3
+                  "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                  NiO-fcc-S1-vmc
+                  NiO-hybridrep-j3-batched-vmc-short.in.xml
+                  1 16
+                  TRUE
+                  1 NIO_A4_E48_J3_SCALARS # VMC
+                  )
 
-
-ELSE()
-  MESSAGE("Skipping NiO_a4_e48-hybridrep tests because neither SOA nor CUDA is enabled")
-ENDIF()
 #
 # Long test
 #

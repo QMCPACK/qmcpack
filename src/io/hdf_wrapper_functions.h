@@ -96,7 +96,7 @@ inline bool checkShapeConsistency(hid_t grp, const std::string& aname, int rank,
 {
   using TSpaceType = h5_space_type<T, 0>;
 
-  std::vector<hsize_t> dims_in(rank);
+  std::vector<hsize_t> dims_in;
   if(getDataShape<T>(grp, aname, dims_in))
   {
     const int user_rank = rank - TSpaceType::added_rank();
@@ -267,9 +267,7 @@ bool h5d_read(hid_t grp,
 
   hid_t dataspace = H5Dget_space(h1);
   if (ndims != H5Sget_simple_extent_ndims(dataspace))
-  {
-    APP_ABORT(aname + " dataspace does not match ");
-  }
+    throw std::runtime_error(aname + " dataspace does not match ");
   // check gcounts???
   herr_t ret = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
 

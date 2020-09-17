@@ -45,6 +45,7 @@ def alloc_helper(shape, dtype=numpy.float64, name='array', verbose=False):
         sys.exit()
 
 
+
 def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
                         verbose=True, cas=None, max_vecs=20,
                         ortho_ao=False, exxdiv='ewald', nelec=None,
@@ -69,6 +70,8 @@ def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
 
 
     h5file = FileHandler(comm,hamil_file,"w",phdf)
+    h5file.grp = h5file.h5f.create_group("Hamiltonian")
+    h5file.grp_v2 = h5file.h5f.create_group("Hamiltonian/KPFactorized")
     if h5file.error:
         sys.exit()
     write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk,
@@ -115,9 +118,72 @@ def write_hamil_kpoints(comm, scf_data, hamil_file, chol_cut,
 
     comm.barrier()
 
+def write_rhoG_kpoints(comm, scf_data, hdf_file, Gcut,
+                        verbose=True, 
+                        ortho_ao=False, phdf=False):
+    tstart = time.clock()
+
+    # Unpack pyscf data.
+    # 1. core (1-body) Hamiltonian.
+    hcore = scf_data['hcore']
+    # 2. Rotation matrix to orthogonalised basis.
+    X = scf_data['X']
+    # 3. Pyscf cell object.
+    cell = scf_data['cell']
+    # 4. kpoints
+    kpts = scf_data['kpts']
+    # 5. MO occupancies.
+    Xocc = scf_data['Xocc']
+    # 6. Number of MOs per kpoint.
+    nmo_pk = scf_data['nmo_pk']
+    nao = cell.nao_nr()
+    qk_to_k2, kminus = construct_qk_maps(cell, kpts)
+
+
+    h5file = FileHandler(comm,hdf_file,"w",phdf)
+    h5file.grp = h5file.h5f.create_group("rhoG")
+    if h5file.error:
+        sys.exit()
+    write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk,
+                qk_to_k2, kminus, verbose=verbose, nelec=nelec)
+
+    solver = KPCholesky(comm, cell, kpts, 0, nmo_pk,
+                        qk_to_k2, kminus, gtol_chol=0,
+                        verbose=verbose)
+#    solver.run(comm, X, h5file)
+
+    comm.barrier()
+    if not phdf and comm.rank==0:
+        comm.barrier()
+        nkpts = len(kpts)
+        for rk in range(1,comm.size):
+            h5f2 = FileHandler(comm,"rank"+str(rk)+"_"+hdf_file,"r",False)
+            for Q in range(nkpts):
+                if Q > kminus[Q]:
+                    continue
+                Ldim = h5f2.h5f["/rhoG/dim"+str(Q)][:]
+                nkk = Ldim[0]
+                nij = Ldim[1]
+                kk0 = Ldim[2]
+                ij0 = Ldim[3]
+                ijN = Ldim[4]
+                numG = Ldim[5]
+                LQ2 = h5f2.h5f["/rhoG/rho"+str(Q)][:]
+#                LQ2 = numpy.reshape(LQ2,(nkk,nij*numv,2))
+#                h5file.grp["rho"+str(Q)][kk0:kk0+nkk,ij0*numv:ijN*numv,:] = LQ2[:,:,:]
+            h5f2.close()
+            os.remove("rank"+str(rk)+"_"+hdf_file)
+        h5file.close()
+    else:
+        h5file.close()
+        comm.barrier()
+
+    comm.barrier()
+
 
 class FileHandler:
-    def __init__(self, comm, filename,ftype="w",phdf=False):
+    def __init__(self, comm, filename,ftype="w",phdf=False,
+                g1="Hamiltonian",g2="KPFactorized"):
         self.phdf=phdf
         if phdf:
             try:
@@ -140,9 +206,9 @@ class FileHandler:
                 if comm.rank == 0:
                     print("Error creating hdf5 file.")
                 self.error= 1
-        if ftype=="w":
-            self.grp = self.h5f.create_group("Hamiltonian")
-            self.grp_v2 = self.h5f.create_group("Hamiltonian/KPFactorized")
+#        if ftype=="w":
+#            self.grp = self.h5f.create_group(g1)
+#            self.grp_v2 = self.h5f.create_group(g1+"/"+g2)
 
     def close(self):
         self.h5f.close()
@@ -175,6 +241,9 @@ def write_basic(comm, cell, kpts, hcore, h5file, X, nmo_pk, qk_to_k2, kminus,
     comm.barrier()
 
     dims_ = h5file.grp.create_dataset("dims", (8,), dtype=numpy.int32)
+    h5file.grp.create_dataset("ComplexIntegrals",
+                              data=numpy.array([1]),
+                              dtype=numpy.int32)
     et_ = h5file.grp.create_dataset("Energies", (2,), dtype=numpy.float64)
     kp_ = h5file.grp.create_dataset("KPoints", (nkpts,3), dtype=numpy.float64)
     nmo_pk_ = h5file.grp.create_dataset("NMOPerKP", (nkpts,), dtype=numpy.int32)

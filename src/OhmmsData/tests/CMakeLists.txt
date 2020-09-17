@@ -19,7 +19,7 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/xml_test)
 
 ADD_EXECUTABLE(${UTEST_EXE} test_xml.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil ${QMC_UTIL_LIBS} )
+TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcutil)
 
 
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")

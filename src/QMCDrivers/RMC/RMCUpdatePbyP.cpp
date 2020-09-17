@@ -43,11 +43,13 @@ RMCUpdatePbyPWithDrift::RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w,
                                                RandomGenerator_t& rg,
                                                std::vector<int> act,
                                                std::vector<int> tp)
-    : QMCUpdateBase(w, psi, h, rg), Action(act), TransProb(tp),
-      advance_timer_(*TimerManager.createTimer("RMCUpdatePbyP::advance", timer_level_medium)),
-      movepbyp_timer_(*TimerManager.createTimer("RMCUpdatePbyP::movePbyP", timer_level_medium)),
-      update_mbo_timer_(*TimerManager.createTimer("RMCUpdatePbyP::updateMBO", timer_level_medium)),
-      energy_timer_(*TimerManager.createTimer("RMCUpdatePbyP::energy", timer_level_medium))
+    : QMCUpdateBase(w, psi, h, rg),
+      Action(act),
+      TransProb(tp),
+      advance_timer_(*timer_manager.createTimer("RMCUpdatePbyP::advance", timer_level_medium)),
+      movepbyp_timer_(*timer_manager.createTimer("RMCUpdatePbyP::movePbyP", timer_level_medium)),
+      update_mbo_timer_(*timer_manager.createTimer("RMCUpdatePbyP::updateMBO", timer_level_medium)),
+      energy_timer_(*timer_manager.createTimer("RMCUpdatePbyP::energy", timer_level_medium))
 {
   scaleDrift = false;
   actionType = SYM_ACTION;
@@ -151,15 +153,14 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       PosType dr;
       DriftModifier->getDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
-      RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
+      bool is_valid = W.makeMoveAndCheck(iat, dr);
+      RealType rr   = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
-      if (rr > m_r2max)
+      if (!is_valid || rr > m_r2max)
       {
         ++nRejectTemp;
         continue;
       }
-      if (!W.makeMoveAndCheck(iat, dr))
-        continue;
       ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
@@ -281,16 +282,14 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       PosType dr;
       DriftModifier->getDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
-      //RealType rr=dot(dr,dr);
-      RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
+      bool is_valid = W.makeMoveAndCheck(iat, dr);
+      RealType rr   = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
-      if (rr > m_r2max)
+      if (!is_valid || rr > m_r2max)
       {
         ++nRejectTemp;
         continue;
       }
-      if (!W.makeMoveAndCheck(iat, dr))
-        continue;
       ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
