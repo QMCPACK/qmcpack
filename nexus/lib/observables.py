@@ -17,7 +17,7 @@ from unit_converter import convert
 from generic import obj
 from developer import DevBase,log,error,ci
 from numerics import simstats
-from grid_functions import grid_function,read_grid,StructuredGrid
+from grid_functions import grid_function,read_grid,StructuredGrid,grid as generate_grid
 from grid_functions import SpheroidGrid
 from structure import Structure,read_structure
 from fileio import XsfFile
@@ -466,13 +466,13 @@ Observable.define_attributes(
 
 class ObservableWithComponents(Observable):
 
-    component_names   = None
-    default_component = None
+    component_names        = None
+    default_component_name = None
 
 
     def process_component_name(self,name):
         if name is None:
-            name = self.default_component
+            name = self.default_component_name
         elif name not in self.components:
             self.error('"{}" is not a known component.\nValid options are: {}'.format(name,self.component_names))
         #end if
@@ -480,7 +480,15 @@ class ObservableWithComponents(Observable):
     #end def process_component_name
 
 
+    def default_component(self):
+        return self.component(self.default_component_name)
+    #end def default_component
+
+
     def component(self,name):
+        if name is None:
+            return self.default_component()
+        #end if
         if name not in self.component_names:
             self.error('"{}" is not a known component.\nValid options are: {}'.format(name,self.component_names))
         elif name not in self:
@@ -623,7 +631,7 @@ def read_eshdf_nofk_data(filename,Ef):
 class MomentumDistribution(ObservableWithComponents):
     component_names = ('tot','pol','u','d')
     
-    default_component = 'tot'
+    default_component_name = 'tot'
 
     def get_raw_data(self):
         data = self.get_attribute('raw')
@@ -704,8 +712,8 @@ class MomentumDistribution(ObservableWithComponents):
             for s,sdata in data.items():
                 vlog('Mapping {} data onto grid'.format(s),n=1,time=True)
                 self[s] = grid_function(
-                    points = k,
-                    values = nk,
+                    points = sdata.k,
+                    values = sdata.nk,
                     axes   = kaxes,
                     )
             #end for
@@ -746,6 +754,65 @@ class MomentumDistribution(ObservableWithComponents):
         vlog('Mapping complete',n=1,time=True)
         vlog('Current memory: ',n=1,mem=True)
     #end def map_raw_data_onto_grid
+
+
+    def backfold(self):
+        structure = self.get_attribute('structure',assigned=True)
+        kaxes     = structure.kaxes
+        c         = self.default_component()
+        dk        = c.grid.dr
+        print(kaxes)
+        print(dk)
+        print(np.diag(kaxes)/np.diag(dk))
+        print(c.grid.cell_grid_shape)
+        ci()
+        exit()
+    #end def backfold
+
+
+    def plot_plane_contours(self,
+                            quantity     = None,
+                            origin       = None,
+                            a1           = None,
+                            a2           = None,
+                            a1_range     = (0,1),
+                            a2_range     = (0,1),
+                            grid_spacing = 0.3,
+                            unit_in      = False,
+                            unit_out     = False,
+                            boundary     = True,
+                            ):
+        c  = self.component(quantity)
+        o  = np.asarray(origin)
+        a1 = np.asarray(a1)
+        a2 = np.asarray(a2)
+        if unit_in:
+            s = self.get_attribute('structure',assigned=True)
+            from structure import get_seekpath_full
+            skp   = get_seekpath_full(structure=s,primitive=True)
+            kaxes = np.asarray(skp.reciprocal_primitive_lattice)
+            o_in  = o
+            a1_in = a1
+            a2_in = a2
+            o     = np.dot(o_in ,kaxes)
+            a1    = np.dot(a1_in,kaxes)
+            a2    = np.dot(a2_in,kaxes)
+            special_kpoints = skp.point_coords
+        #end if
+        a1    -= o
+        a2    -= o
+        corner = o + a1_range[0]*a1 + a2_range[0]*a2
+        a1    *= a1_range[1] - a1_range[0]
+        a2    *= a2_range[1] - a2_range[0]
+        g = generate_grid(
+            type   = 'parallelotope',
+            corner = corner,
+            axes   = [a1,a2],
+            dr     = (grid_spacing,grid_spacing),
+            )
+        gf = c.interpolate(g)
+        gf.plot_contours(boundary=boundary)
+    #end def plot_plane_contours
 
 
     def plot_radial_raw(self,quants='all',kmax=None,fmt='b.',fig=True,show=True):
@@ -1024,7 +1091,7 @@ class MomentumDistributionQMC(MomentumDistribution):
 class Density(ObservableWithComponents):
     component_names = ('tot','pol','u','d')
 
-    default_component = 'tot'
+    default_component_name = 'tot'
 
 
     def read_xsf(self,filepath,component=None):

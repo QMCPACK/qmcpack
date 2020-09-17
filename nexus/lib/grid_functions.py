@@ -1202,6 +1202,12 @@ class Grid(GBase):
             plt.show()
         #end if
     #end def plot_points
+
+
+    def grid_function(self,*args,**kwargs):
+        gf = grid_function_from_grid(self)
+        return gf(*args,**kwargs)
+    #end def grid_function
 #end class Grid
 
 
@@ -2169,6 +2175,8 @@ class ParallelotopeGrid(StructuredGridWithAxes):
         The number of grid points in each dimension.
     cell_grid_shape : `tuple, int, property`
         The number of grid cells in each dimension.
+    dr : `ndarray, float, shape(dg,ds), property`
+        Vector displacements between neighboring grid points.
     ncells : `int, property`
         The total number of grid cells.
     flat_points_shape : `tuple, int, property`
@@ -2188,6 +2196,16 @@ class ParallelotopeGrid(StructuredGridWithAxes):
     dtype : `property`
         Datatype of the grid point values.
     """
+
+    @property
+    def dr(self):
+        dr = np.empty(self.axes.shape,self.dtype)
+        cells = self.cell_grid_shape
+        for d in range(self.grid_dim):
+            dr[d] = self.axes[d]/cells[d]
+        #end for
+        return dr
+    #end def dr
 
     @property
     def corner(self):
@@ -3713,7 +3731,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
     #end def interpolate
 
 
-    def plot_contours(self,boundary=False,fig=True,show=True,**kwargs):
+    def plot_contours(self,a1=(1,0),a2=(0,1),boundary=False,fig=True,show=True,**kwargs):
         """
         (`External API`) Make 2D contour plots in the full coordinate space.
 
@@ -3731,10 +3749,19 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
         if self.grid_dim!=2:
             self.error('cannot plot contours\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
-        if self.space_dim!=2:
-            self.error('cannot plot contours\ngrid points must reside in a 2D space to make contour plots\ndimension of the space for this function: {}'.format(self.space_dim))
+        #if self.space_dim!=2:
+        #    self.error('cannot plot contours\ngrid points must reside in a 2D space to make contour plots\ndimension of the space for this function: {}'.format(self.space_dim))
+        ##end if
+        if self.space_dim==2:
+            X,Y = self.r.T
+        else:
+            ax     = np.dot(np.array([a1,a2]),self.grid.axes)
+            ax[0]  = ax[0]/np.linalg.norm(ax[0])
+            ax[1] -= np.dot(ax[1],ax[0])*ax[0]
+            ax[1]  = ax[1]/np.linalg.norm(ax[1])
+            X,Y    = np.dot(ax,self.r.T)
+            ax_trans = ax
         #end if
-        X,Y = self.r.T
         X.shape = self.grid_shape
         Y.shape = self.grid_shape
         Zm = self.f.T
@@ -3743,7 +3770,16 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim)
             ax.contour(X,Y,Z,**kwargs)
             if boundary:
-                self.grid.plot_boundary(fig=False,show=False)
+                if self.space_dim==2:
+                    self.grid.plot_boundary(fig=False,show=False)
+                else:
+                    bpoints = self.grid.get_boundary_lines()
+                    bpoints = np.inner(ax_trans,bpoints)
+                    bpoints = np.transpose(bpoints,(1,2,0))
+                    for bp in bpoints:
+                        ax.plot(*bp.T,color='k')
+                    #end for
+                #end if
             #end if
         #end for
         if show:
@@ -4311,6 +4347,29 @@ def grid_function(
 #end def grid_function
 
 
+def grid(
+    type = 'parallelotope',
+    loc  = 'grid',
+    **kwargs
+    ):
+    filepath = kwargs.pop('filepath',None)
+    if filepath is not None:
+        return read_grid(filepath,loc=loc)
+    #end if
+    g = None
+    if type=='parallelotope':
+        g = ParallelotopeGrid(**kwargs)
+    elif type=='spheroid':
+        g = SpheroidGrid(**kwargs)
+    elif type=='spheroid_surface':
+        g = SpheroidSurfaceGrid(**kwargs)
+    else:
+        error('Grid type "{}" is not recognized.\nValid options are: parallelotope, spheroid, or spheroid_surface'.format(type),loc)
+    #end if
+    return g
+#end def grid
+
+
 
 #test needed
 gf_file_type_map = obj(
@@ -4355,6 +4414,29 @@ def process_file_format(filepath,format,loc):
     #end if
     return filepath,format
 #end def process_file_format
+
+
+
+gfs = [
+    ParallelotopeGridFunction,
+    SpheroidGridFunction,
+    SpheroidSurfaceGridFunction,
+    ]
+grid_to_grid_function = obj()
+for gf in gfs:
+    grid_to_grid_function[gf.grid_class.__name__] = gf
+#end for
+del gfs
+
+def grid_function_from_grid(grid):
+    gname = grid.__class__.__name__
+    if gname not in grid_to_grid_function:
+        error('Cannot find matching grid function for grid "{}".'.format(gname))
+    #end if
+    return grid_to_grid_function[gname]
+#end def grid_function_from_grid
+
+
 
 
 if __name__=='__main__':
