@@ -566,9 +566,9 @@ inline static void gemmBatched(char Atrans,
     B_h[i] = to_address(B[i]);
     C_h[i] = to_address(C[i]);
   }
-  cudaMalloc((void**)&A_d, batchSize * sizeof(*A_h));
-  cudaMalloc((void**)&B_d, batchSize * sizeof(*B_h));
-  cudaMalloc((void**)&C_d, batchSize * sizeof(*C_h));
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::malloc((void**)&B_d, batchSize * sizeof(*B_h));
+  arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
   cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
   cudaMemcpy(B_d, B_h, batchSize * sizeof(*B_h), cudaMemcpyHostToDevice);
   cudaMemcpy(C_d, C_h, batchSize * sizeof(*C_h), cudaMemcpyHostToDevice);

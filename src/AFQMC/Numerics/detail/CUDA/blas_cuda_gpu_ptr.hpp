@@ -21,6 +21,7 @@
 //#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Memory/device_pointers.hpp"
+#include "AFQMC/Memory/arch.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cublas_wrapper.hpp"
 //#include "AFQMC/Numerics/detail/CUDA/cublasXt_wrapper.hpp"
 // hand coded kernels for blas extensions
@@ -329,7 +330,7 @@ inline static void gemmBatched(char Atrans,
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
-  // replace with single call to cudaMalloc and cudaMemcpy
+  // replace with single call to arch::malloc and cudaMemcpy
   T **A_d, **B_d, **C_d;
   Q1** A_h;
   Q2** B_h;
@@ -343,9 +344,9 @@ inline static void gemmBatched(char Atrans,
     B_h[i] = to_address(B[i]);
     C_h[i] = to_address(C[i]);
   }
-  cudaMalloc((void**)&A_d, batchSize * sizeof(*A_h));
-  cudaMalloc((void**)&B_d, batchSize * sizeof(*B_h));
-  cudaMalloc((void**)&C_d, batchSize * sizeof(*C_h));
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::malloc((void**)&B_d, batchSize * sizeof(*B_h));
+  arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
   cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
   cudaMemcpy(B_d, B_h, batchSize * sizeof(*B_h), cudaMemcpyHostToDevice);
   cudaMemcpy(C_d, C_h, batchSize * sizeof(*C_h), cudaMemcpyHostToDevice);
@@ -385,7 +386,7 @@ inline static void gemmBatched(char Atrans,
   static_assert(std::is_same<typename std::decay<Q1>::type, T2>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
   assert(Atrans == 'N' || Atrans == 'n');
-  // replace with single call to cudaMalloc and cudaMemcpy
+  // replace with single call to arch::malloc and cudaMemcpy
   T2** A_d;
   T** B_d;
   T2** C_d;
@@ -401,9 +402,9 @@ inline static void gemmBatched(char Atrans,
     B_h[i] = to_address(B[i]);
     C_h[i] = to_address(C[i]);
   }
-  cudaMalloc((void**)&A_d, batchSize * sizeof(*A_h));
-  cudaMalloc((void**)&B_d, batchSize * sizeof(*B_h));
-  cudaMalloc((void**)&C_d, batchSize * sizeof(*C_h));
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::malloc((void**)&B_d, batchSize * sizeof(*B_h));
+  arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
   cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
   cudaMemcpy(B_d, B_h, batchSize * sizeof(*B_h), cudaMemcpyHostToDevice);
   cudaMemcpy(C_d, C_h, batchSize * sizeof(*C_h), cudaMemcpyHostToDevice);

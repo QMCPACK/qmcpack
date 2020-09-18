@@ -18,6 +18,7 @@
 #include <cassert>
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Memory/custom_pointers.hpp"
+#include "AFQMC/Memory/arch.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cublas_wrapper.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cusolver_wrapper.hpp"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/setIdentity.cuh"
@@ -95,7 +96,7 @@ inline static void getrfBatched(const int n,
   A_h = new T*[batchSize];
   for (int i = 0; i < batchSize; i++)
     A_h[i] = to_address(a[i]);
-  cudaMalloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
   cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
   cublasStatus_t status = cublas::cublas_getrfBatched(*(a[0]).handles.cublas_handle, n, A_d, lda, to_address(piv),
                                                       to_address(info), batchSize);
@@ -129,11 +130,7 @@ inline static void getri(int n,
     throw std::runtime_error("Error: getri<GPU_MEMORY_POINTER_TYPE> required lda = 1.");
 
   int* info;
-  if (cudaSuccess != cudaMalloc((void**)&info, sizeof(int)))
-  {
-    std::cerr << " Error getri: Error allocating on GPU." << std::endl;
-    throw std::runtime_error("Error: cudaMalloc returned error code.");
-  }
+  arch::malloc((void**)&info, sizeof(int), "lapack_cuda_gpu_ptr::getri");
 
   kernels::set_identity(n, n, to_address(work), n);
   if (CUSOLVER_STATUS_SUCCESS !=
@@ -165,8 +162,8 @@ inline static void getriBatched(int n,
     A_h[i] = to_address(a[i]);
     C_h[i] = to_address(ainv[i]);
   }
-  cudaMalloc((void**)&A_d, batchSize * sizeof(*A_h));
-  cudaMalloc((void**)&C_d, batchSize * sizeof(*C_h));
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
   cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
   cudaMemcpy(C_d, C_h, batchSize * sizeof(*C_h), cudaMemcpyHostToDevice);
   cublasStatus_t status = cublas::cublas_getriBatched(*(a[0]).handles.cublas_handle, n, A_d, lda, to_address(piv), C_d,
@@ -198,8 +195,8 @@ inline static void matinvBatched(int n,
     A_h[i] = to_address(a[i]);
     C_h[i] = to_address(ainv[i]);
   }
-  cudaMalloc((void**)&A_d, batchSize * sizeof(*A_h));
-  cudaMalloc((void**)&C_d, batchSize * sizeof(*C_h));
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
   cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
   cudaMemcpy(C_d, C_h, batchSize * sizeof(*C_h), cudaMemcpyHostToDevice);
   cublasStatus_t status = cublas::cublas_matinvBatched(*(a[0]).handles.cublas_handle, n, A_d, lda, C_d, lda_inv,
@@ -233,11 +230,7 @@ inline static void geqrf(int M,
 {
   // allocating here for now
   int* piv;
-  if (cudaSuccess != cudaMalloc((void**)&piv, sizeof(int)))
-  {
-    std::cerr << " Error geqrf: Error allocating on GPU." << std::endl;
-    throw std::runtime_error("Error: cudaMalloc returned error code.");
-  }
+  arch::malloc((void**)&piv, sizeof(int), "lapack_cuda_gpu_ptr::geqrf");
 
   cusolverStatus_t status = cusolver::cusolver_geqrf(*A.handles.cusolverDn_handle, M, N, to_address(A), LDA,
                                                      to_address(TAU), to_address(WORK), LWORK, piv);
@@ -294,11 +287,7 @@ void static gqr(int M,
 {
   // allocating here for now
   int* piv;
-  if (cudaSuccess != cudaMalloc((void**)&piv, sizeof(int)))
-  {
-    std::cerr << " Error gqr: Error allocating on GPU." << std::endl;
-    throw std::runtime_error("Error: cudaMalloc returned error code.");
-  }
+  arch::malloc((void**)&piv, sizeof(int), "lapack_cuda_gpu_ptr::gqr");
 
   cusolverStatus_t status = cusolver::cusolver_gqr(*A.handles.cusolverDn_handle, M, N, K, to_address(A), LDA,
                                                    to_address(TAU), to_address(WORK), LWORK, piv);
@@ -378,7 +367,7 @@ inline static void geqrfBatched(int M,
     T_h[i] = to_address(TAU[i]);
   T** B_d;
   std::vector<int> inf(batchSize);
-  cudaMalloc((void**)&B_d, 2 * batchSize * sizeof(*B_h));
+  arch::malloc((void**)&B_d, 2 * batchSize * sizeof(*B_h));
   cudaMemcpy(B_d, B_h, 2 * batchSize * sizeof(*B_h), cudaMemcpyHostToDevice);
   T** A_d(B_d);
   T** T_d(B_d + batchSize);
@@ -410,7 +399,7 @@ inline static void geqrfStrided(int M,
     for(int i=0; i<batchSize; i++)
       T_h[i] = to_address(TAU)+i*Tstride;
     T **B_d;
-    cudaMalloc((void **)&B_d,  2*batchSize*sizeof(*B_h));
+    arch::malloc((void **)&B_d,  2*batchSize*sizeof(*B_h));
     cudaMemcpy(B_d, B_h, 2*batchSize*sizeof(*B_h), cudaMemcpyHostToDevice);
     T **A_d(B_d);
     T **T_d(B_d+batchSize);
@@ -424,9 +413,9 @@ inline static void geqrfStrided(int M,
   for (int i = 0; i < batchSize; i++)
     T_h[i] = to_address(TAU) + i * Tstride;
   T **A_d, **T_d;
-  cudaMalloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
   cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
-  cudaMalloc((void**)&T_d, batchSize * sizeof(*T_h));
+  arch::malloc((void**)&T_d, batchSize * sizeof(*T_h));
   cudaMemcpy(T_d, T_h, batchSize * sizeof(*T_h), cudaMemcpyHostToDevice);
   cublasStatus_t status =
       cublas::cublas_geqrfBatched(*A.handles.cublas_handle, M, N, A_d, LDA, T_d, to_address(inf.data()), batchSize);
@@ -464,7 +453,7 @@ inline static void gesvd(char jobU,
                          int& st)
 {
   int* devSt;
-  cudaMalloc((void**)&devSt, sizeof(int));
+  arch::malloc((void**)&devSt, sizeof(int));
   cusolverStatus_t status =
       cusolver::cusolver_gesvd(*A.handles.cusolverDn_handle, jobU, jobVT, m, n, to_address(A), lda, to_address(S),
                                to_address(U), ldu, to_address(VT), ldvt, to_address(W), lw, devSt);
@@ -496,7 +485,7 @@ inline static void gesvd(char jobU,
                          int& st)
 {
   int* devSt;
-  cudaMalloc((void**)&devSt, sizeof(int));
+  arch::malloc((void**)&devSt, sizeof(int));
   cusolverStatus_t status =
       cusolver::cusolver_gesvd(*A.handles.cusolverDn_handle, jobU, jobVT, m, n, to_address(A), lda, to_address(S),
                                to_address(U), ldu, to_address(VT), ldvt, to_address(W), lw, devSt);
