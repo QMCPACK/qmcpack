@@ -569,9 +569,9 @@ inline static void gemmBatched(char Atrans,
   arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
   arch::malloc((void**)&B_d, batchSize * sizeof(*B_h));
   arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
-  cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
-  cudaMemcpy(B_d, B_h, batchSize * sizeof(*B_h), cudaMemcpyHostToDevice);
-  cudaMemcpy(C_d, C_h, batchSize * sizeof(*C_h), cudaMemcpyHostToDevice);
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
+  arch::memcopy(B_d, B_h, batchSize * sizeof(*B_h), arch::memcopyH2D);
+  arch::memcopy(C_d, C_h, batchSize * sizeof(*C_h), arch::memcopyH2D);
   cublas::cublas_gemmBatched(*(A[0]).handles.cublas_handle, Atrans, Btrans, M, N, K, alpha, A_d, lda, B_d, ldb, beta,
                              C_d, ldc, batchSize);
   cudaFree(A_d);

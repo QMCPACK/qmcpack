@@ -73,7 +73,7 @@ inline static void getrf(const int n,
 {
   cusolverStatus_t status = cusolver::cusolver_getrf(*a.handles.cusolverDn_handle, n, m, to_address(a), lda,
                                                      to_address(work), to_address(piv), to_address(piv) + n);
-  cudaMemcpy(&st, to_address(piv) + n, sizeof(int), cudaMemcpyDeviceToHost);
+  arch::memcopy(&st, to_address(piv) + n, sizeof(int), arch::memcopyD2H);
   if (CUSOLVER_STATUS_SUCCESS != status)
   {
     std::cerr << " cublas_getrf status, info: " << status << " " << st << std::endl;
@@ -97,7 +97,7 @@ inline static void getrfBatched(const int n,
   for (int i = 0; i < batchSize; i++)
     A_h[i] = to_address(a[i]);
   arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
-  cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
   cublasStatus_t status = cublas::cublas_getrfBatched(*(a[0]).handles.cublas_handle, n, A_d, lda, to_address(piv),
                                                       to_address(info), batchSize);
   if (CUBLAS_STATUS_SUCCESS != status)
@@ -137,8 +137,8 @@ inline static void getri(int n,
       cusolver::cusolver_getrs(*a.handles.cusolverDn_handle, CUBLAS_OP_N, n, n, to_address(a), lda, to_address(piv),
                                to_address(work), n, info))
     throw std::runtime_error("Error: cusolver_getrs returned error code.");
-  cudaMemcpy(to_address(a), to_address(work), n * n * sizeof(T), cudaMemcpyDeviceToDevice);
-  cudaMemcpy(&status, info, sizeof(int), cudaMemcpyDeviceToHost);
+  arch::memcopy(to_address(a), to_address(work), n * n * sizeof(T), arch::memcopyD2D);
+  arch::memcopy(&status, info, sizeof(int), arch::memcopyD2H);
   cudaFree(info);
 }
 
@@ -164,8 +164,8 @@ inline static void getriBatched(int n,
   }
   arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
   arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
-  cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
-  cudaMemcpy(C_d, C_h, batchSize * sizeof(*C_h), cudaMemcpyHostToDevice);
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
+  arch::memcopy(C_d, C_h, batchSize * sizeof(*C_h), arch::memcopyH2D);
   cublasStatus_t status = cublas::cublas_getriBatched(*(a[0]).handles.cublas_handle, n, A_d, lda, to_address(piv), C_d,
                                                       ldc, to_address(info), batchSize);
   if (CUBLAS_STATUS_SUCCESS != status)
@@ -197,8 +197,8 @@ inline static void matinvBatched(int n,
   }
   arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
   arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
-  cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
-  cudaMemcpy(C_d, C_h, batchSize * sizeof(*C_h), cudaMemcpyHostToDevice);
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
+  arch::memcopy(C_d, C_h, batchSize * sizeof(*C_h), arch::memcopyH2D);
   cublasStatus_t status = cublas::cublas_matinvBatched(*(a[0]).handles.cublas_handle, n, A_d, lda, C_d, lda_inv,
                                                        to_address(info), batchSize);
   if (CUBLAS_STATUS_SUCCESS != status)
@@ -234,7 +234,7 @@ inline static void geqrf(int M,
 
   cusolverStatus_t status = cusolver::cusolver_geqrf(*A.handles.cusolverDn_handle, M, N, to_address(A), LDA,
                                                      to_address(TAU), to_address(WORK), LWORK, piv);
-  cudaMemcpy(&INFO, piv, sizeof(int), cudaMemcpyDeviceToHost);
+  arch::memcopy(&INFO, piv, sizeof(int), arch::memcopyD2H);
   if (CUSOLVER_STATUS_SUCCESS != status)
   {
     int st;
@@ -291,7 +291,7 @@ void static gqr(int M,
 
   cusolverStatus_t status = cusolver::cusolver_gqr(*A.handles.cusolverDn_handle, M, N, K, to_address(A), LDA,
                                                    to_address(TAU), to_address(WORK), LWORK, piv);
-  cudaMemcpy(&INFO, piv, sizeof(int), cudaMemcpyDeviceToHost);
+  arch::memcopy(&INFO, piv, sizeof(int), arch::memcopyD2H);
   if (CUSOLVER_STATUS_SUCCESS != status)
   {
     int st;
@@ -368,7 +368,7 @@ inline static void geqrfBatched(int M,
   T** B_d;
   std::vector<int> inf(batchSize);
   arch::malloc((void**)&B_d, 2 * batchSize * sizeof(*B_h));
-  cudaMemcpy(B_d, B_h, 2 * batchSize * sizeof(*B_h), cudaMemcpyHostToDevice);
+  arch::memcopy(B_d, B_h, 2 * batchSize * sizeof(*B_h), arch::memcopyH2D);
   T** A_d(B_d);
   T** T_d(B_d + batchSize);
   cublasStatus_t status = cublas::cublas_geqrfBatched(*(A[0]).handles.cublas_handle, M, N, A_d, LDA, T_d,
@@ -400,7 +400,7 @@ inline static void geqrfStrided(int M,
       T_h[i] = to_address(TAU)+i*Tstride;
     T **B_d;
     arch::malloc((void **)&B_d,  2*batchSize*sizeof(*B_h));
-    cudaMemcpy(B_d, B_h, 2*batchSize*sizeof(*B_h), cudaMemcpyHostToDevice);
+    arch::memcopy(B_d, B_h, 2*batchSize*sizeof(*B_h), arch::memcopyH2D);
     T **A_d(B_d);
     T **T_d(B_d+batchSize);
 */
@@ -414,9 +414,9 @@ inline static void geqrfStrided(int M,
     T_h[i] = to_address(TAU) + i * Tstride;
   T **A_d, **T_d;
   arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
-  cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
   arch::malloc((void**)&T_d, batchSize * sizeof(*T_h));
-  cudaMemcpy(T_d, T_h, batchSize * sizeof(*T_h), cudaMemcpyHostToDevice);
+  arch::memcopy(T_d, T_h, batchSize * sizeof(*T_h), arch::memcopyH2D);
   cublasStatus_t status =
       cublas::cublas_geqrfBatched(*A.handles.cublas_handle, M, N, A_d, LDA, T_d, to_address(inf.data()), batchSize);
   for (int i = 0; i < batchSize; i++)
@@ -457,7 +457,7 @@ inline static void gesvd(char jobU,
   cusolverStatus_t status =
       cusolver::cusolver_gesvd(*A.handles.cusolverDn_handle, jobU, jobVT, m, n, to_address(A), lda, to_address(S),
                                to_address(U), ldu, to_address(VT), ldvt, to_address(W), lw, devSt);
-  cudaMemcpy(&st, devSt, sizeof(int), cudaMemcpyDeviceToHost);
+  arch::memcopy(&st, devSt, sizeof(int), arch::memcopyD2H);
   if (CUSOLVER_STATUS_SUCCESS != status)
   {
     std::cerr << " cublas_gesvd status, info: " << status << " " << st << std::endl;
@@ -489,7 +489,7 @@ inline static void gesvd(char jobU,
   cusolverStatus_t status =
       cusolver::cusolver_gesvd(*A.handles.cusolverDn_handle, jobU, jobVT, m, n, to_address(A), lda, to_address(S),
                                to_address(U), ldu, to_address(VT), ldvt, to_address(W), lw, devSt);
-  cudaMemcpy(&st, devSt, sizeof(int), cudaMemcpyDeviceToHost);
+  arch::memcopy(&st, devSt, sizeof(int), arch::memcopyD2H);
   if (CUSOLVER_STATUS_SUCCESS != status)
   {
     std::cerr << " cublas_gesvd status, info: " << status << " " << st << std::endl;

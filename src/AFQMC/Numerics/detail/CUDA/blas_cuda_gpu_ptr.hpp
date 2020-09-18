@@ -56,7 +56,7 @@ template<typename T, typename Q>
 inline static void copy(int n, T const* x, int incx, device_pointer<Q> y, int incy)
 {
   static_assert(std::is_same<typename std::decay<Q>::type, T>::value, "Wrong dispatch.\n");
-  arch::memcopy2D(to_address(y), sizeof(Q) * incy, x, sizeof(T) * incx, sizeof(T), n, cudaMemcpyHostToDevice, "lapack_cuda_gpu_ptr::copy")
+  arch::memcopy2D(to_address(y), sizeof(Q) * incy, x, sizeof(T) * incx, sizeof(T), n, arch::memcopyH2D, "lapack_cuda_gpu_ptr::copy");
 }
 
 template<typename T, typename Q>
@@ -64,7 +64,7 @@ inline static void copy(int n, device_pointer<Q> x, int incx, T* y, int incy)
 {
   static_assert(std::is_same<typename std::decay<Q>::type, T>::value, "Wrong dispatch.\n");
   assert(sizeof(Q) == sizeof(T));
-  arch::memcopy2D(y, sizeof(T) * incy, to_address(x), sizeof(Q) * incx, sizeof(T), n, cudaMemcpyDeviceToHost, "lapack_cuda_gpu_ptr::copy")
+  arch::memcopy2D(y, sizeof(T) * incy, to_address(x), sizeof(Q) * incx, sizeof(T), n, arch::memcopyD2H, "lapack_cuda_gpu_ptr::copy");
 }
 
 // scal Specializations
@@ -326,7 +326,7 @@ inline static void gemmBatched(char Atrans,
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
-  // replace with single call to arch::malloc and cudaMemcpy
+  // replace with single call to arch::malloc and arch::memcopy
   T **A_d, **B_d, **C_d;
   Q1** A_h;
   Q2** B_h;
@@ -343,9 +343,9 @@ inline static void gemmBatched(char Atrans,
   arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
   arch::malloc((void**)&B_d, batchSize * sizeof(*B_h));
   arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
-  cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
-  cudaMemcpy(B_d, B_h, batchSize * sizeof(*B_h), cudaMemcpyHostToDevice);
-  cudaMemcpy(C_d, C_h, batchSize * sizeof(*C_h), cudaMemcpyHostToDevice);
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
+  arch::memcopy(B_d, B_h, batchSize * sizeof(*B_h), arch::memcopyH2D);
+  arch::memcopy(C_d, C_h, batchSize * sizeof(*C_h), arch::memcopyH2D);
   cublas::cublas_gemmBatched(*(A[0]).handles.cublas_handle, Atrans, Btrans, M, N, K, alpha, A_d, lda, B_d, ldb, beta,
                              C_d, ldc, batchSize);
   cudaFree(A_d);
@@ -382,7 +382,7 @@ inline static void gemmBatched(char Atrans,
   static_assert(std::is_same<typename std::decay<Q1>::type, T2>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
   assert(Atrans == 'N' || Atrans == 'n');
-  // replace with single call to arch::malloc and cudaMemcpy
+  // replace with single call to arch::malloc and arch::memcopy
   T2** A_d;
   T** B_d;
   T2** C_d;
@@ -401,9 +401,9 @@ inline static void gemmBatched(char Atrans,
   arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
   arch::malloc((void**)&B_d, batchSize * sizeof(*B_h));
   arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
-  cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
-  cudaMemcpy(B_d, B_h, batchSize * sizeof(*B_h), cudaMemcpyHostToDevice);
-  cudaMemcpy(C_d, C_h, batchSize * sizeof(*C_h), cudaMemcpyHostToDevice);
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
+  arch::memcopy(B_d, B_h, batchSize * sizeof(*B_h), arch::memcopyH2D);
+  arch::memcopy(C_d, C_h, batchSize * sizeof(*C_h), arch::memcopyH2D);
   cublas::cublas_gemmBatched(*(A[0]).handles.cublas_handle, Atrans, Btrans, M, N, K, alpha, A_d, lda, B_d, ldb, beta,
                              C_d, ldc, batchSize);
   cudaFree(A_d);
@@ -462,21 +462,21 @@ template<typename T, typename T2>
 inline static void copy2D(int N, int M, device_pointer<T> src, int lda, device_pointer<T2> dst, int ldb)
 {
   static_assert(std::is_same<typename std::decay<T>::type, T2>::value, "Wrong dispatch.\n");
-  arch::memcopy2D(to_address(dst), sizeof(T2) * ldb, to_address(src), sizeof(T) * lda, M * sizeof(T), N, cudaMemcpyDeviceToDevice, "blas_cuda_gpu_ptr::copy2D")
+  arch::memcopy2D(to_address(dst), sizeof(T2) * ldb, to_address(src), sizeof(T) * lda, M * sizeof(T), N, arch::memcopyD2D, "blas_cuda_gpu_ptr::copy2D");
 }
 
 template<typename T, typename T2>
 inline static void copy2D(int N, int M, T const* src, int lda, device_pointer<T2> dst, int ldb)
 {
   static_assert(std::is_same<typename std::decay<T>::type, T2>::value, "Wrong dispatch.\n");
-  arch::memcopy2D(to_address(dst), sizeof(T2) * ldb, src, sizeof(T) * lda, M * sizeof(T), N, cudaMemcpyHostToDevice, "blas_cuda_gpu_ptr::copy2D")
+  arch::memcopy2D(to_address(dst), sizeof(T2) * ldb, src, sizeof(T) * lda, M * sizeof(T), N, arch::memcopyH2D, "blas_cuda_gpu_ptr::copy2D");
 }
 
 template<typename T, typename T2>
 inline static void copy2D(int N, int M, device_pointer<T> src, int lda, T2* dst, int ldb)
 {
   static_assert(std::is_same<typename std::decay<T>::type, T2>::value, "Wrong dispatch.\n");
-  arch::memcopy2D(dst, sizeof(T2) * ldb, to_address(src), sizeof(T) * lda, M * sizeof(T), N, cudaMemcpyDeviceToHost, "blas_cuda_gpu_ptr::copy2D")
+  arch::memcopy2D(dst, sizeof(T2) * ldb, to_address(src), sizeof(T) * lda, M * sizeof(T), N, arch::memcopyD2H, "blas_cuda_gpu_ptr::copy2D");
 }
 
 template<typename T, typename T2>
