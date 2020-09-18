@@ -72,7 +72,7 @@ void memcopy2D(void* dst,
                size_t spitch,
                size_t width,
                size_t height,
-               MEMCOPYKIND kind = memcopyDefault,
+               MEMCOPYKIND kind    = memcopyDefault,
                std::string message = "");
 
 void malloc(void** devPtr, size_t size, std::string message = "");
