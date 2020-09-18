@@ -20,7 +20,7 @@
 
 #include "Configuration.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Particle/WalkerElements.h"
+#include "QMCDrivers/WalkerElements.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
