@@ -183,7 +183,7 @@ protected:
 
   Wavefunction& wfn;
 
-  // P1 = exp(-0.5*dt*H1), so H1 includes terms from MF substraction
+  // P1 = exp(-0.5*dt*H1), so H1 includes terms from MF subtraction
   //                       and the exchange term from the cholesky decomposition (e.g. vn0)
   mpi3CMatrix H1;
   mpi3CTensor H1ext;
