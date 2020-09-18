@@ -179,7 +179,7 @@ public:
 
   /** do the actual adjustment
    *
-   *  unfortunately right now this requires knowledge of the global context, seems unecessary
+   *  unfortunately right now this requires knowledge of the global context, seems unnecessary
    *  but this is why MCPopulation is handed in.
    */
   int adjustPopulation(PopulationAdjustment& adjust);
