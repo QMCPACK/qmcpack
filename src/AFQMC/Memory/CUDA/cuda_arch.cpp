@@ -103,28 +103,25 @@ void memcopy2D(void* dst, size_t dpitch, const void* src, size_t spitch, size_t 
 
 void malloc(void** devPtr, size_t size, std::string message)
 {
-  if (cudaSuccess != cudaMalloc(devPtr, size))
+  cudaError_t status = cudaMalloc(devPtr, size);
+  if (status != cudaSuccess)
   {
     std::cerr << " Error allocating " << size * 1024.0 / 1024.0 << " MBs on GPU." << std::endl;
     if (message != "")
     {
-      std::cerr << " Error from : " << message << std::endl;
+      std::cerr << " Error from : " << message << " " << cudaGetErrorString(status) << std::endl;
     }
     throw std::runtime_error("Error: cudaMalloc returned error code.");
   }
 }
 
-void free(void* p, std::string message)
+void free(void* p)
 {
-  if (cudaSuccess != cudaFree(p))
+  cudaError_t status = cudaFree(p);
+  if (status != cudaSuccess)
   {
-    if (message != "")
-    {
-      std::cerr << " Error from: " << message << std::endl;
-    }
-    throw std::runtime_error("Error: cudaFree returned error code.");
+    std::cerr << " Error from calling cudaFree: " << cudaGetErrorString(status) << std::endl;
   }
-
 }
 
 } // namespace arch
