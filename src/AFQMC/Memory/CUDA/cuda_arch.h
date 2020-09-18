@@ -74,9 +74,9 @@ void memcopy2D(void* dst,
                size_t height,
                MEMCOPYKIND kind = memcopyDefault);
 
-void malloc(void** devPtr, size_t size, std::string message="");
+void malloc(void** devPtr, size_t size, std::string message = "");
 
-void free(void* p, std::string message="");
+void free(void* p, std::string message = "");
 
 } // namespace arch
 
