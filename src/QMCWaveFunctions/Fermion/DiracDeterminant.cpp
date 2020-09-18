@@ -273,24 +273,6 @@ void DiracDeterminant<DU_TYPE>::completeUpdates()
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::cleanCompleteUpdates(ParticleSet& P)
-{
-  UpdateTimer.start();
-  // invRow becomes invalid after updating the inverse matrix
-  invRow_id = -1;
-  updateEng.updateInvMat(psiM);
-  for(int ip = 0; ip < NumPtcls; ++ip)
-  {
-    int working_index = ip - FirstIndex;
-    if (working_index < 0)
-      continue;
-    Phi->evaluateVGL(P, ip, psiV, dpsiV, d2psiV);
-    simd::copy(dpsiM[working_index], dpsiV.data(), NumOrbitals);
-  }
-  UpdateTimer.stop();
-}
-
-template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::updateAfterSweep(ParticleSet& P,
                                                  ParticleSet::ParticleGradient_t& G,
                                                  ParticleSet::ParticleLaplacian_t& L)

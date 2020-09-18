@@ -101,7 +101,6 @@ public:
 
   using WaveFunctionComponent::acceptMove;
   using WaveFunctionComponent::completeUpdates;
-  using WaveFunctionComponent::cleanCompleteUpdates;
   using WaveFunctionComponent::evalGrad;
   using WaveFunctionComponent::mw_accept_rejectMove;
   using WaveFunctionComponent::mw_calcRatio;
