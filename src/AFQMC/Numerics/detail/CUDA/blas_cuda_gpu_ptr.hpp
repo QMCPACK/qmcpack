@@ -348,9 +348,9 @@ inline static void gemmBatched(char Atrans,
   arch::memcopy(C_d, C_h, batchSize * sizeof(*C_h), arch::memcopyH2D);
   cublas::cublas_gemmBatched(*(A[0]).handles.cublas_handle, Atrans, Btrans, M, N, K, alpha, A_d, lda, B_d, ldb, beta,
                              C_d, ldc, batchSize);
-  cudaFree(A_d);
-  cudaFree(B_d);
-  cudaFree(C_d);
+  arch::free(A_d);
+  arch::free(B_d);
+  arch::free(C_d);
   delete[] A_h;
   delete[] B_h;
   delete[] C_h;
@@ -406,9 +406,9 @@ inline static void gemmBatched(char Atrans,
   arch::memcopy(C_d, C_h, batchSize * sizeof(*C_h), arch::memcopyH2D);
   cublas::cublas_gemmBatched(*(A[0]).handles.cublas_handle, Atrans, Btrans, M, N, K, alpha, A_d, lda, B_d, ldb, beta,
                              C_d, ldc, batchSize);
-  cudaFree(A_d);
-  cudaFree(B_d);
-  cudaFree(C_d);
+  arch::free(A_d);
+  arch::free(B_d);
+  arch::free(C_d);
   delete[] A_h;
   delete[] B_h;
   delete[] C_h;

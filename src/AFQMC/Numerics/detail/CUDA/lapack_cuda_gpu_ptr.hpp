@@ -102,7 +102,7 @@ inline static void getrfBatched(const int n,
                                                       to_address(info), batchSize);
   if (CUBLAS_STATUS_SUCCESS != status)
     throw std::runtime_error("Error: cublas_getrf returned error code.");
-  cudaFree(A_d);
+  arch::free(A_d);
   delete[] A_h;
 }
 
@@ -139,7 +139,7 @@ inline static void getri(int n,
     throw std::runtime_error("Error: cusolver_getrs returned error code.");
   arch::memcopy(to_address(a), to_address(work), n * n * sizeof(T), arch::memcopyD2D);
   arch::memcopy(&status, info, sizeof(int), arch::memcopyD2H);
-  cudaFree(info);
+  arch::free(info);
 }
 
 // getriBatched
@@ -170,8 +170,8 @@ inline static void getriBatched(int n,
                                                       ldc, to_address(info), batchSize);
   if (CUBLAS_STATUS_SUCCESS != status)
     throw std::runtime_error("Error: cublas_getri returned error code.");
-  cudaFree(A_d);
-  cudaFree(C_d);
+  arch::free(A_d);
+  arch::free(C_d);
   delete[] A_h;
   delete[] C_h;
 }
@@ -203,8 +203,8 @@ inline static void matinvBatched(int n,
                                                        to_address(info), batchSize);
   if (CUBLAS_STATUS_SUCCESS != status)
     throw std::runtime_error("Error: cublas_matinv returned error code.");
-  cudaFree(A_d);
-  cudaFree(C_d);
+  arch::free(A_d);
+  arch::free(C_d);
   delete[] A_h;
   delete[] C_h;
 }
@@ -242,7 +242,7 @@ inline static void geqrf(int M,
     std::cerr.flush();
     throw std::runtime_error("Error: cublas_geqrf returned error code.");
   }
-  cudaFree(piv);
+  arch::free(piv);
 }
 
 // gelqf
@@ -299,7 +299,7 @@ void static gqr(int M,
     std::cerr.flush();
     throw std::runtime_error("Error: cublas_gqr returned error code.");
   }
-  cudaFree(piv);
+  arch::free(piv);
 }
 
 template<typename T, typename I>
@@ -375,7 +375,7 @@ inline static void geqrfBatched(int M,
                                                       to_address(inf.data()), batchSize);
   if (CUBLAS_STATUS_SUCCESS != status)
     throw std::runtime_error("Error: cublas_geqrfBatched returned error code.");
-  cudaFree(B_d);
+  arch::free(B_d);
   delete[] B_h;
 }
 
@@ -423,9 +423,9 @@ inline static void geqrfStrided(int M,
     assert(inf[i] == 0);
   if (CUBLAS_STATUS_SUCCESS != status)
     throw std::runtime_error("Error: cublas_geqrfBatched returned error code.");
-  cudaFree(A_d);
+  arch::free(A_d);
   delete[] A_h;
-  cudaFree(T_d);
+  arch::free(T_d);
   delete[] T_h;
 }
 
@@ -464,7 +464,7 @@ inline static void gesvd(char jobU,
     std::cerr.flush();
     throw std::runtime_error("Error: cublas_gesvd returned error code.");
   }
-  cudaFree(devSt);
+  arch::free(devSt);
 }
 
 template<typename T, typename R>
@@ -496,7 +496,7 @@ inline static void gesvd(char jobU,
     std::cerr.flush();
     throw std::runtime_error("Error: cublas_gesvd returned error code.");
   }
-  cudaFree(devSt);
+  arch::free(devSt);
 }
 
 
