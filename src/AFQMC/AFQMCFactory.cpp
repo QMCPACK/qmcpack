@@ -30,10 +30,6 @@
 #include "AFQMC/Drivers/DriverFactory.h"
 #include "AFQMC/Memory/buffer_allocators.h"
 
-#include "AFQMC/Utilities/myTimer.h"
-
-myTimer Timer;
-
 namespace qmcplusplus
 {
 TimerList_t AFQMCTimers;
