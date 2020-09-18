@@ -106,11 +106,6 @@ void EstimatorManagerNew::setCommunicator(Communicate* c)
   // New code should not make use of these useless options
   Options.set(COLLECT, my_comm_->size() > 1);
   Options.set(MANAGE, my_comm_->rank() == 0);
-  if (RemoteData.empty())
-  {
-    RemoteData.push_back(UPtr<FPRBuffer>(new FPRBuffer));
-    RemoteData.push_back(UPtr<FPRBuffer>(new FPRBuffer));
-  }
 }
 
 /** reset names of the properties
@@ -175,12 +170,6 @@ void EstimatorManagerNew::start(int blocks, bool record)
   BufferSize  = 2 * AverageCache.size() + PropertyCache.size();
   int sources = 2;
   //allocate buffer for data collection
-  if (RemoteData.empty())
-    for (int i = 0; i < sources; ++i)
-      RemoteData.push_back(UPtr<FPRBuffer>(new FPRBuffer(BufferSize)));
-  else
-    for (int i = 0; i < RemoteData.size(); ++i)
-      RemoteData[i]->resize(BufferSize);
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
   if (record && DebugArchive == 0)
   {

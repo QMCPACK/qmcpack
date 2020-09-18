@@ -240,8 +240,6 @@ protected:
 private:
   ///number of maximum data for a scalar.dat
   int max4ascii;
-  //Data for communication
-  std::vector<UPtr<FPRBuffer>> RemoteData;
 
   /// collect data and write
   void makeBlockAverages(unsigned long accept, unsigned long reject);
