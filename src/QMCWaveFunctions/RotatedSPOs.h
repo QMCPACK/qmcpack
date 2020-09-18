@@ -35,7 +35,7 @@ public:
   //helper function to apply_rotation
   void exponentiate_antisym_matrix(ValueMatrix_t& mat);
 
-  //A particualr SPOSet used for Orbitals
+  //A particular SPOSet used for Orbitals
   SPOSet* Phi;
 
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input

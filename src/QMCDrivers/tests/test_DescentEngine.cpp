@@ -71,7 +71,7 @@ app_log() << "Descent engine test of parameter update" << std::endl;
 app_log() << "First parameter: " << results[0] << std::endl;
 app_log() << "Second parameter: " << results[1] << std::endl;
 
-//The engine should update the parameters using the generic defualt step size of .001 and obtain these values.
+//The engine should update the parameters using the generic default step size of .001 and obtain these values.
 REQUIRE(std::real(results[0]) == Approx(.995));
 REQUIRE(std::real(results[1]) == Approx(-2.001));
 

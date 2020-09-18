@@ -69,7 +69,7 @@ private:
   // std::shared_ptr<QMCHamiltonian> hamiltonian_;
 
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
-  // MCPopulation should have QMCMain scope eventually and the driver will just have a refrence to it.
+  // MCPopulation should have QMCMain scope eventually and the driver will just have a reference to it.
   TrialWaveFunction* trial_wf_;
   ParticleSet* elec_particle_set_;
   QMCHamiltonian* hamiltonian_;
