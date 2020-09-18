@@ -857,7 +857,7 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   /// The multideterminants occupation is specified in the input/HDF5 and theefore as long as there is consistency between
   /// the order in which we read the orbitals and the occupation, we are safe. In the case of Multideterminants generated
   /// by pyscf and Quantum Package, They are stored in the same order as generated for quantum package and one should use
-  /// the orbitals labled eigenset_unsorted.
+  /// the orbitals labelled eigenset_unsorted.
 
   if (MultiDet == false)
     sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);

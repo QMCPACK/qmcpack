@@ -83,7 +83,7 @@ protected:
   IndexType walkers_per_rank_  = 0;
   IndexType requested_samples_ = 0;
   IndexType sub_steps_         = 1;
-  // max unecessary in this context
+  // max unnecessary in this context
   IndexType max_blocks_               = 1;
   IndexType max_steps_                = 1;
   IndexType warmup_steps_             = 0;
