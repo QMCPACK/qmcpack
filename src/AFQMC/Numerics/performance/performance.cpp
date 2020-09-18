@@ -15,6 +15,8 @@
 #include <vector>
 #include <random>
 
+#include "Utilities/Timer.h"
+
 #include "AFQMC/config.h"
 #include "AFQMC/config.0.h"
 #include "AFQMC/Numerics/ma_blas.hpp"
@@ -23,7 +25,6 @@
 #include "AFQMC/Matrix/tests/matrix_helpers.h"
 #include "AFQMC/Memory/buffer_allocators.h"
 #include "AFQMC/Memory/arch.hpp"
-#include "AFQMC/Utilities/myTimer.h"
 
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
@@ -116,29 +117,20 @@ void timeBatchedQR(std::ostream& out, Allocator& alloc, Buff& buffer, int nbatch
     Aarray.emplace_back(A[i].origin());
   }
   // Actual profile.
-  myTimer timer;
-  std::string timer_id = std::string("transpose");
-  timer.add(timer_id);
-  timer.start(timer_id);
+  Timer timer;
   for (int i = 0; i < nbatch; i++)
     ma::transpose(A[i], AT[i]);
-  auto ttrans = timer.elapsed(timer_id);
-  timer_id    = std::string("geqrf");
-  timer.add(timer_id);
-  timer.start(timer_id);
+  double ttrans = timer.elapsed();
+  timer.restart();
   geqrfStrided(m, n, AT.origin(), m, m * n, T_.origin(), m, IWORK.origin(), nbatch);
-  auto tgeqrf = timer.elapsed(timer_id);
-  timer_id    = std::string("det_from_geqrf");
-  timer.add(timer_id);
-  timer.start(timer_id);
+  double tgeqrf = timer.elapsed();
+  timer.restart();
   for (int i = 0; i < nbatch; i++)
     determinant_from_geqrf(n, AT[i].origin(), m, scl[i].origin(), T(0.0));
-  auto tdet = timer.elapsed(timer_id);
-  timer_id  = std::string("gqr");
-  timer.add(timer_id);
-  timer.start(timer_id);
+  double tdet = timer.elapsed();
+  timer.restart();
   gqrStrided(m, n, n, AT.origin(), m, m * n, T_.origin(), m, WORK.origin(), sz, IWORK.origin(), nbatch);
-  auto tgqr = timer.elapsed(timer_id);
+  double tgqr = timer.elapsed();
   out << "  " << std::setw(5) << nbatch << "   " << std::setw(5) << m << " " << std::setw(5) << n << " "
       << std::scientific << ttrans << " " << tgeqrf << " " << tdet << " " << tgqr << "\n";
 }
@@ -154,18 +146,14 @@ void timeQR(std::ostream& out, Allocator& alloc, Buff& buffer, int m)
   offset += TAU.num_elements();
   int sz = ma::gqr_optimal_workspace_size(A);
   Tensor1D_ref<T> WORK(buffer.origin() + offset, boost::multi::iextensions<1u>{sz});
-  myTimer timer;
-  std::string timer_id = std::string("geqrf");
-  timer.add(timer_id);
-  timer.start(timer_id);
+  Timer timer;
   using ma::geqrf;
   geqrf(A, TAU, WORK);
-  auto tgeqrf = timer.elapsed(timer_id);
+  double tgeqrf = timer.elapsed();
   using ma::gqr;
-  timer_id = std::string("gqr");
-  timer.start(timer_id);
+  timer.restart();
   gqr(A, TAU, WORK);
-  auto tgqr = timer.elapsed(timer_id);
+  double tgqr = timer.elapsed();
   out << "  " << std::setw(5) << m << " " << std::setw(5) << m << " " << std::scientific << tgeqrf << " "
       << " " << tgqr << "\n";
 }
@@ -181,22 +169,17 @@ void timeExchangeKernel(std::ostream& out, Allocator& alloc, Buff& buffer, int n
   offset += scal.num_elements();
   Tensor1D_ref<T> result(buffer.origin() + offset, boost::multi::iextensions<1u>{nwalk});
   using ma::batched_dot_wabn_wban;
-  myTimer timer;
-  timer.add("batched_dot");
-  timer.start("batched_dot");
+  Timer timer;
   batched_dot_wabn_wban(nbatch, nwalk, nocc, nchol, scal.origin(), Twabn.origin(), to_address(result.data()), 1);
-  auto time = timer.elapsed("batched_dot");
+  double time = timer.elapsed();
   out << "    " << std::setw(5) << nbatch << " " << std::setw(5) << nwalk << " " << std::setw(5) << nocc << " "
-      << std::setw(5) << nchol << "    " << time << "\n";
+      << std::setw(5) << nchol << "    " << std::scientific << time << "\n";
 }
 
 template<class Allocator, class Buff>
 void timeBatchedGemm(std::ostream& out, Allocator& alloc, Buff& buffer, int nbatch, int m)
 {
   using T = typename Allocator::value_type;
-  myTimer timer;
-  std::string timer_id = std::to_string(nbatch);
-  timer.add(timer_id);
   int offset = 0;
   Tensor2D_ref<T> a(buffer.origin(), {m, m});
   offset += a.num_elements();
@@ -216,10 +199,10 @@ void timeBatchedGemm(std::ostream& out, Allocator& alloc, Buff& buffer, int nbat
     C_array.emplace_back(c[i].origin());
   }
   using ma::gemmBatched;
-  timer.start(timer_id);
+  Timer timer;
   gemmBatched('N', 'N', m, m, m, alpha, A_array.data(), m, B_array.data(), m, beta, C_array.data(), m, nbatch);
-  timer.stop(timer_id);
-  out << "  " << std::setw(6) << nbatch << " " << std::setw(5) << m << " " << std::scientific << timer.elapsed(timer_id)
+  double tgemm = timer.elapsed();
+  out << "  " << std::setw(6) << nbatch << " " << std::setw(5) << m << " " << std::scientific << tgemm
       << "\n";
 }
 
@@ -227,9 +210,6 @@ template<class Allocator, class Buff>
 void timeGemm(std::ostream& out, Allocator& alloc, Buff& buffer, int m, int n)
 {
   using T = typename Allocator::value_type;
-  myTimer timer;
-  std::string timer_id = std::to_string(m);
-  timer.add(timer_id);
   int offset = 0;
   Tensor2D_ref<T> a(buffer.origin(), {m, m});
   offset += a.num_elements();
@@ -237,10 +217,10 @@ void timeGemm(std::ostream& out, Allocator& alloc, Buff& buffer, int m, int n)
   offset += b.num_elements();
   Tensor2D_ref<T> c(buffer.origin() + offset, {m, n});
   using ma::product;
-  timer.start(timer_id);
+  Timer timer;
   product(a, b, c);
-  timer.stop(timer_id);
-  out << "  " << std::setw(6) << m << " " << std::setw(5) << n << " " << std::scientific << timer.elapsed(timer_id)
+  double tproduct = timer.elapsed();
+  out << "  " << std::setw(6) << m << " " << std::setw(5) << n << " " << std::scientific << tproduct
       << "\n";
 }
 
@@ -248,8 +228,6 @@ template<class Allocator, class Buff>
 void timeBatchedMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer, int nbatch, int m)
 {
   using T = typename Allocator::value_type;
-  myTimer timer;
-  timer.add("getrfBatched");
   int offset = 0;
   Tensor3D_ref<T> a(buffer.origin(), {nbatch, m, m});
   Tensor3D_ref<T> b(buffer.origin() + a.num_elements(), {nbatch, m, m});
@@ -264,39 +242,37 @@ void timeBatchedMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer,
     B_array.emplace_back(b[i].origin());
   }
   using ma::getrfBatched;
-  timer.start("getrfBatched");
+  Timer timer;
   getrfBatched(m, A_array.data(), m, ma::pointer_dispatch(IWORK.origin()),
                ma::pointer_dispatch(IWORK.origin()) + nbatch * m, nbatch);
-  timer.stop("getrfBatched");
+  double tgetrf = timer.elapsed();
   using ma::getriBatched;
-  timer.start("getriBatched");
+  timer.restart();
   getriBatched(m, A_array.data(), m, ma::pointer_dispatch(IWORK.origin()), B_array.data(), m,
                ma::pointer_dispatch(IWORK.origin()) + nbatch * m, nbatch);
-  timer.stop("getriBatched");
+  double tgetri = timer.elapsed();
   out << "  " << std::setw(6) << nbatch << " " << std::setw(5) << m << " " << std::scientific
-      << timer.elapsed("getrfBatched") << " " << timer.elapsed("getriBatched") << "\n";
+      << tgetrf << " " << tgetri << "\n";
 }
 
 template<class Allocator, class Buff>
 void timeMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer, int m)
 {
   using T = typename Allocator::value_type;
-  myTimer timer;
-  timer.add("getrf");
   int offset = 0;
   Tensor2D_ref<T> a(buffer.origin(), {m, m});
   Tensor1D_ref<T> WORK(buffer.origin() + a.num_elements(), boost::multi::iextensions<1u>{m * m});
   Alloc<int> ialloc{};
   Tensor1D<int> IWORK(boost::multi::iextensions<1u>{m + 1}, ialloc);
   using ma::getrf;
-  timer.start("getrf");
+  Timer timer;
   getrf(a, IWORK, WORK);
-  timer.stop("getrf");
+  double tgetrf = timer.elapsed();
   using ma::getri;
-  timer.start("getri");
+  timer.restart();
   getri(a, IWORK, WORK);
-  timer.stop("getri");
-  out << "  " << std::setw(6) << m << " " << std::scientific << timer.elapsed("getrf") << " " << timer.elapsed("getri")
+  double tgetri = timer.elapsed();
+  out << "  " << std::setw(6) << m << " " << std::scientific << tgetrf << " " << tgetri
       << "\n";
 }
 
