@@ -268,9 +268,9 @@ QMCTraits::FullPrecRealType EstimatorManagerNew::collectScalarEstimators(
 // all this Cache stuff is premature optimization because someone wanted to be very fancy
 void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long rejects)
 {
-  //there is only one EstimatormanagerNew per rank in the unified driver.
-  //copy cached data to RemoteData[0]
-  //we should not handle RemoteData elsewhere.
+  // accumulate unsigned long counters over ranks.
+  // Blocks ends are infrequent, two MPI transfers to preserve type
+  // are completely acceptable.
   std::vector<unsigned long> accepts_and_rejects(my_comm_->size() * 2, 0);
   accepts_and_rejects[my_comm_->rank()] = accepts;
   accepts_and_rejects[my_comm_->size() + my_comm_->rank()] = rejects;
@@ -278,6 +278,7 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   unsigned long total_block_accept = std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_->size(), 0);
   unsigned long total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(), accepts_and_rejects.begin() + my_comm_->size() * 2, 0);
 
+  //Transfer FullPrecisionRead data
   int n1 = AverageCache.size();
   int n2 = n1 + AverageCache.size();
   int n3 = n2 + PropertyCache.size();
