@@ -28,8 +28,6 @@
 #include "multi/memory/fallback.hpp"
 
 #include "Utilities/TimerManager.h"
-#include "AFQMC/Utilities/myTimer.h"
-extern myTimer Timer;
 
 namespace qmcplusplus
 {

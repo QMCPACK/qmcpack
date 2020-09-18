@@ -20,7 +20,7 @@
 
 namespace qmc_hip
 {
-void hip_check(hipError_t sucess, std::string message = "");
+void hip_kernel_check(hipError_t sucess, std::string message = "");
 void rocrand_check(rocrand_status sucess, std::string message = "");
 } // namespace qmc_hip
 
