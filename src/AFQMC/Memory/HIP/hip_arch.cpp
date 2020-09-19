@@ -86,28 +86,53 @@ void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed)
   }
 }
 
-void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind)
+void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, std::string message)
 {
   if (hipSuccess != hipMemcpy(dst, src, count, tohipMemcpyKind(kind)))
+  {
+    std::cerr << message << std::endl;
     throw std::runtime_error("Error: hipMemcpy returned error code.");
+  }
 }
 
-void memcopy2D(void* dst, size_t dpitch, const void* src, size_t spitch, size_t width, size_t height, MEMCOPYKIND kind)
+void memcopy2D(void* dst,
+               size_t dpitch,
+               const void* src,
+               size_t spitch,
+               size_t width,
+               size_t height,
+               MEMCOPYKIND kind,
+               std::string message)
 {
   if (hipSuccess != hipMemcpy2D(dst, dpitch, src, spitch, width, height, tohipMemcpyKind(kind)))
+  {
+    std::cerr << message << std::endl;
     throw std::runtime_error("Error: hipMemcpy2D returned error code.");
+  }
 }
 
-void malloc(void** devPtr, size_t size)
+void malloc(void** devPtr, size_t size, std::string message)
 {
-  if (hipSuccess != hipMalloc(devPtr, size))
+  hipError_t status = hipMalloc(devPtr, size);
+  if (status != hipSuccess)
   {
     std::cerr << " Error allocating " << size * 1024.0 / 1024.0 << " MBs on GPU." << std::endl;
+    if (message != "")
+    {
+      std::cerr << " Error from : " << message << " " << hipGetErrorString(status) << std::endl;
+    }
     throw std::runtime_error("Error: hipMalloc returned error code.");
   }
 }
 
-void free(void* p) { hipFree(p); }
+void free(void* p)
+{
+  hipError_t status = hipFree(p);
+  if (status != hipSuccess)
+  {
+    std::cerr << " Error from calling cudaFree: " << hipGetErrorString(status) << std::endl;
+  }
+}
 
 } // namespace arch
 
