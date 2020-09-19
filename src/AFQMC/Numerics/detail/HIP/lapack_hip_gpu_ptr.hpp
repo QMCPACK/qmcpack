@@ -76,7 +76,7 @@ inline static void getrf(const int n,
                                                         to_address(work), to_address(piv), to_address(piv) + n);
   //rocsolverStatus_t status = rocsolver::rocsolver_getrf(handle, n, m,
   //to_address(a), lda, to_address(work), to_address(piv), to_address(piv)+n);
-  hipMemcpy(&st, to_address(piv) + n, sizeof(int), hipMemcpyDeviceToHost);
+  arch::memcopy(&st, to_address(piv) + n, sizeof(int), arch::memcopyD2H);
   if (rocblas_status_success != status)
   {
     std::cerr << " hipblas_getrf status, info: " << status << " " << st << std::endl;
@@ -100,13 +100,13 @@ inline static void getrfBatched(const int n,
   A_h = new T*[batchSize];
   for (int i = 0; i < batchSize; i++)
     A_h[i] = to_address(a[i]);
-  hipMalloc((void**)&A_d, batchSize * sizeof(*A_h));
-  hipMemcpy(A_d, A_h, batchSize * sizeof(*A_h), hipMemcpyHostToDevice);
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
   hipblasStatus_t status = hipblas::hipblas_getrfBatched(*(a[0]).handles.hipblas_handle, n, A_d, lda, to_address(piv),
                                                          to_address(info), batchSize);
   if (HIPBLAS_STATUS_SUCCESS != status)
     throw std::runtime_error("Error: hipblas_getrf returned error code.");
-  hipFree(A_d);
+  arch::free(A_d);
   delete[] A_h;
 }
 
@@ -135,10 +135,10 @@ inline static void getri(int n,
 
   // info isn't returned from ?getrs.
   int* info;
-  if (hipSuccess != hipMalloc((void**)&info, sizeof(int)))
+  if (hipSuccess != arch::malloc((void**)&info, sizeof(int)))
   {
     std::cerr << " Error getri: Error allocating on GPU." << std::endl;
-    throw std::runtime_error("Error: hipMalloc returned error code.");
+    throw std::runtime_error("Error: arch::malloc returned error code.");
   }
 
   kernels::set_identity(n, n, to_address(work), n);
@@ -147,10 +147,10 @@ inline static void getri(int n,
       rocsolver::rocsolver_getrs(*a.handles.rocsolver_handle_, rocblas_operation_none, n, n, to_address(a), lda,
                                  to_address(piv), to_address(work), n, info))
     throw std::runtime_error("Error: rocsolver_getrs returned error code.");
-  hipMemcpy(to_address(a), to_address(work), n * n * sizeof(T), hipMemcpyDeviceToDevice);
-  //hipMemcpy(&status,info,sizeof(int),hipMemcpyDeviceToHost);
+  arch::memcopy(to_address(a), to_address(work), n * n * sizeof(T), arch::memcopyD2D);
+  //arch::memcopy(&status,info,sizeof(int),arch::memcopyD2H);
   status = 0;
-  hipFree(info);
+  arch::free(info);
 }
 
 // getriBatched
@@ -174,16 +174,16 @@ inline static void getriBatched(int n,
     A_h[i] = to_address(a[i]);
     C_h[i] = to_address(ainv[i]);
   }
-  hipMalloc((void**)&A_d, batchSize * sizeof(*A_h));
-  hipMalloc((void**)&C_d, batchSize * sizeof(*C_h));
-  hipMemcpy(A_d, A_h, batchSize * sizeof(*A_h), hipMemcpyHostToDevice);
-  hipMemcpy(C_d, C_h, batchSize * sizeof(*C_h), hipMemcpyHostToDevice);
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
+  arch::memcopy(C_d, C_h, batchSize * sizeof(*C_h), arch::memcopyH2D);
   hipblasStatus_t status = hipblas::hipblas_getriBatched(*(a[0]).handles.hipblas_handle, HIPBLAS_OP_N, n, n, A_d, lda,
                                                          to_address(piv), C_d, ldc, to_address(info), batchSize);
   if (HIPBLAS_STATUS_SUCCESS != status)
     throw std::runtime_error("Error: hipblas_getri returned error code.");
-  hipFree(A_d);
-  hipFree(C_d);
+  arch::free(A_d);
+  arch::free(C_d);
   delete[] A_h;
   delete[] C_h;
 }
@@ -207,16 +207,16 @@ inline static void matinvBatched(int n,
     A_h[i] = to_address(a[i]);
     C_h[i] = to_address(ainv[i]);
   }
-  hipMalloc((void**)&A_d, batchSize * sizeof(*A_h));
-  hipMalloc((void**)&C_d, batchSize * sizeof(*C_h));
-  hipMemcpy(A_d, A_h, batchSize * sizeof(*A_h), hipMemcpyHostToDevice);
-  hipMemcpy(C_d, C_h, batchSize * sizeof(*C_h), hipMemcpyHostToDevice);
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
+  arch::memcopy(C_d, C_h, batchSize * sizeof(*C_h), arch::memcopyH2D);
   hipblasStatus_t status = hipblas::hipblas_matinvBatched(*(a[0]).handles.hipblas_handle, n, A_d, lda, C_d, lda_inv,
                                                           to_address(info), batchSize);
   if (HIPBLAS_STATUS_SUCCESS != status)
     throw std::runtime_error("Error: hipblas_matinv returned error code.");
-  hipFree(A_d);
-  hipFree(C_d);
+  arch::free(A_d);
+  arch::free(C_d);
   delete[] A_h;
   delete[] C_h;
 }
@@ -244,20 +244,20 @@ inline static void geqrf(int M,
   //size_t dim = std::min(M,N);
   //std::vector<T> piv(dim,0.0);
   //T* dpiv;
-  //if(hipSuccess != hipMalloc(&dpiv,sizeof(T)*dim)) {
+  //if(hipSuccess != arch::malloc(&dpiv,sizeof(T)*dim)) {
   //std::cerr << " Error gqr: Error allocating piv on GPU." << std::endl;
-  //throw std::runtime_error("Error: hipMalloc returned error code.");
+  //throw std::runtime_error("Error: arch::malloc returned error code.");
   //}
   rocsolverStatus_t status =
       rocsolver::rocsolver_geqrf(*A.handles.rocsolver_handle_, M, N, to_address(A), LDA, to_address(TAU));
-  //hipMemcpy(piv.data(),dpiv,sizeof(T)*dim,hipMemcpyDeviceToHost);
+  //arch::memcopy(piv.data(),dpiv,sizeof(T)*dim,arch::memcopyD2H);
   if (rocblas_status_success != status)
   {
     std::cerr << " hipblas_geqrf status, info: " << status << std::endl;
     std::cerr.flush();
     throw std::runtime_error("Error: hipblas_geqrf returned error code.");
   }
-  //hipFree(dpiv);
+  //arch::free(dpiv);
   INFO = 0;
 }
 
@@ -313,7 +313,7 @@ void static gqr(int M,
   }
   // Not returned from rocm
   INFO = 0;
-  //hipFree(piv);
+  //arch::free(piv);
 }
 
 template<typename T, typename I>
@@ -375,8 +375,8 @@ void static glq(int M,
 //T_h[i] = to_address(TAU[i]);
 //T **B_d;
 //std::vector<int> inf(batchSize);
-//hipMalloc((void **)&B_d,  2*batchSize*sizeof(*B_h));
-//hipMemcpy(B_d, B_h, 2*batchSize*sizeof(*B_h), hipMemcpyHostToDevice);
+//arch::malloc((void **)&B_d,  2*batchSize*sizeof(*B_h));
+//arch::memcopy(B_d, B_h, 2*batchSize*sizeof(*B_h), arch::memcopyH2D);
 //T **A_d(B_d);
 //T **T_d(B_d+batchSize);
 //int pstride = std::min(M,N);
@@ -385,7 +385,7 @@ void static glq(int M,
 //pstride, batchSize);
 //if(rocblas_status_success != status)
 //throw std::runtime_error("Error: hipblas_geqrfBatched returned error code.");
-//hipFree(B_d);
+//arch::free(B_d);
 //delete [] B_h;
 //}
 
@@ -404,13 +404,13 @@ inline static void geqrfStrided(int M,
   for (int i = 0; i < batchSize; i++)
     A_h[i] = to_address(A) + i * Astride;
   T** A_d;
-  hipMalloc((void**)&A_d, batchSize * sizeof(*A_h));
-  hipMemcpy(A_d, A_h, batchSize * sizeof(*A_h), hipMemcpyHostToDevice);
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
   rocsolverStatus_t status = rocsolver::rocsolver_geqrf_batched(*A.handles.rocsolver_handle_, M, N, A_d, LDA,
                                                                 to_address(TAU), Tstride, batchSize);
   if (rocblas_status_success != status)
     throw std::runtime_error("Error: hipblas_geqrfStrided returned error code.");
-  hipFree(A_d);
+  arch::free(A_d);
   delete[] A_h;
 }
 
@@ -438,18 +438,18 @@ inline static void gesvd(char jobU,
                          int& st)
 {
   int* devSt;
-  hipMalloc((void**)&devSt, sizeof(int));
+  arch::malloc((void**)&devSt, sizeof(int));
   rocsolverStatus_t status =
       rocsolver::rocsolver_gesvd(*A.handles.rocsolver_handle_, jobU, jobVT, m, n, to_address(A), lda, to_address(S),
                                  to_address(U), ldu, to_address(VT), ldvt, to_address(W), lw, devSt);
-  hipMemcpy(&st, devSt, sizeof(int), hipMemcpyDeviceToHost);
+  arch::memcopy(&st, devSt, sizeof(int), arch::memcopyD2H);
   if (rocblas_status_success != status)
   {
     std::cerr << " hipblas_gesvd status, info: " << status << " " << st << std::endl;
     std::cerr.flush();
     throw std::runtime_error("Error: hipblas_gesvd returned error code.");
   }
-  hipFree(devSt);
+  arch::free(devSt);
 }
 
 template<typename T, typename R>
@@ -470,18 +470,18 @@ inline static void gesvd(char jobU,
                          int& st)
 {
   int* devSt;
-  hipMalloc((void**)&devSt, sizeof(int));
+  arch::malloc((void**)&devSt, sizeof(int));
   rocsolverStatus_t status =
       rocsolver::rocsolver_gesvd(*A.handles.rocsolver_handle_, jobU, jobVT, m, n, to_address(A), lda, to_address(S),
                                  to_address(U), ldu, to_address(VT), ldvt, to_address(W), lw, devSt);
-  hipMemcpy(&st, devSt, sizeof(int), hipMemcpyDeviceToHost);
+  arch::memcopy(&st, devSt, sizeof(int), arch::memcopyD2H);
   if (rocblas_status_success != status)
   {
     std::cerr << " hipblas_gesvd status, info: " << status << " " << st << std::endl;
     std::cerr.flush();
     throw std::runtime_error("Error: hipblas_gesvd returned error code.");
   }
-  hipFree(devSt);
+  arch::free(devSt);
 }
 
 

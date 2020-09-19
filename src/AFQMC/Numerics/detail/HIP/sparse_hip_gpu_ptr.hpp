@@ -46,10 +46,10 @@ void csrmv(const char transa,
   static_assert(std::is_same<typename std::decay<Q>::type, T>::value, "Wrong dispatch.\n");
   // somehow need to check if the matrix is compact!
   int pb, pe;
-  if (hipSuccess != hipMemcpy(std::addressof(pb), to_address(pntrb), sizeof(int), hipMemcpyDeviceToHost))
-    throw std::runtime_error("Error: hipMemcpy returned error code in csrmv.");
-  if (hipSuccess != hipMemcpy(std::addressof(pe), to_address(pntre + (M - 1)), sizeof(int), hipMemcpyDeviceToHost))
-    throw std::runtime_error("Error: hipMemcpy returned error code in csrmv.");
+  if (hipSuccess != arch::memcopy(std::addressof(pb), to_address(pntrb), sizeof(int), arch::memcopyD2H))
+    throw std::runtime_error("Error: arch::memcopy returned error code in csrmv.");
+  if (hipSuccess != arch::memcopy(std::addressof(pe), to_address(pntre + (M - 1)), sizeof(int), arch::memcopyD2H))
+    throw std::runtime_error("Error: arch::memcopy returned error code in csrmv.");
   int nnz = pe - pb;
   if (HIPSPARSE_STATUS_SUCCESS !=
       hipsparse::hipsparse_csrmv(*A.handles.hipsparse_handle, transa, M, K, nnz, alpha,
@@ -78,10 +78,10 @@ void csrmm(const char transa,
   static_assert(std::is_same<typename std::decay<Q>::type, T>::value, "Wrong dispatch.\n");
   // somehow need to check if the matrix is compact!
   int pb, pe;
-  if (hipSuccess != hipMemcpy(std::addressof(pb), to_address(pntrb), sizeof(int), hipMemcpyDeviceToHost))
-    throw std::runtime_error("Error: hipMemcpy returned error code in csrmm.");
-  if (hipSuccess != hipMemcpy(std::addressof(pe), to_address(pntre + (M - 1)), sizeof(int), hipMemcpyDeviceToHost))
-    throw std::runtime_error("Error: hipMemcpy returned error code in csrmm.");
+  if (hipSuccess != arch::memcopy(std::addressof(pb), to_address(pntrb), sizeof(int), arch::memcopyD2H))
+    throw std::runtime_error("Error: arch::memcopy returned error code in csrmm.");
+  if (hipSuccess != arch::memcopy(std::addressof(pe), to_address(pntre + (M - 1)), sizeof(int), arch::memcopyD2H))
+    throw std::runtime_error("Error: arch::memcopy returned error code in csrmm.");
   int nnz = pe - pb;
   if (transa == 'N')
   {
