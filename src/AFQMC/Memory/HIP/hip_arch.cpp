@@ -90,7 +90,10 @@ void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, std::st
 {
   if (hipSuccess != hipMemcpy(dst, src, count, tohipMemcpyKind(kind)))
   {
-    std::cerr << message << std::endl;
+    if (message != "")
+    {
+      std::cerr << "Error: " << message << std::endl;
+    }
     throw std::runtime_error("Error: hipMemcpy returned error code.");
   }
 }
@@ -106,7 +109,10 @@ void memcopy2D(void* dst,
 {
   if (hipSuccess != hipMemcpy2D(dst, dpitch, src, spitch, width, height, tohipMemcpyKind(kind)))
   {
-    std::cerr << message << std::endl;
+    if (message != "")
+    {
+      std::cerr << "Error: " << message << std::endl;
+    }
     throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   }
 }

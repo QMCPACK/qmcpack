@@ -92,7 +92,10 @@ void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed)
 void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, std::string message)
 {
   if (cudaSuccess != cudaMemcpy(dst, src, count, tocudaMemcpyKind(kind))) {
-    std::cerr << message << std::endl;
+    if (message != "")
+    {
+      std::cerr << "Error: " << message << std::endl;
+    }
     throw std::runtime_error("Error: cudaMemcpy returned error code.");
   }
 }
@@ -108,7 +111,10 @@ void memcopy2D(void* dst,
 {
   if (cudaSuccess != cudaMemcpy2D(dst, dpitch, src, spitch, width, height, tocudaMemcpyKind(kind)))
   {
-    std::cerr << message << std::endl;
+    if (message != "")
+    {
+      std::cerr << "Error: " << message << std::endl;
+    }
     throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
   }
 
