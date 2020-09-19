@@ -35,6 +35,7 @@ public:
                          TrialWaveFunction& psi,
                          QMCHamiltonian& h,
                          SampleStack& samples,
+                         int crowd_size,
                          Communicate* comm);
 
   ///Destructor

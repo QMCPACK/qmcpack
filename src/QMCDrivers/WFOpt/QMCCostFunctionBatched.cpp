@@ -29,10 +29,11 @@ QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
                                                TrialWaveFunction& psi,
                                                QMCHamiltonian& h,
                                                SampleStack& samples,
+                                               int crowd_size,
                                                Communicate* comm)
     : QMCCostFunctionBase(w, psi, h, comm),
       samples_(samples),
-      opt_batch_size_(1),
+      opt_batch_size_(crowd_size),
       check_config_timer_(
           *timer_manager.createTimer("QMCCostFunctionBatched::checkConfigurations", timer_level_medium)),
       corr_sampling_timer_(
