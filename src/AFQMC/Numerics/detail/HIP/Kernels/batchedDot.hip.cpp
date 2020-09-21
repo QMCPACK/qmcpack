@@ -16,7 +16,7 @@
 #include <thrust/complex.h>
 #include "uninitialized_array.hpp"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
@@ -93,8 +93,8 @@ void batchedDot(int m,
                 int incy)
 {
   hipLaunchKernelGGL(kernel_dot, dim3(m), dim3(DOT_BLOCK_SIZE), 0, 0, n, alpha, A, lda, B, ldb, beta, y, incy);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void batchedDot(int m,
@@ -109,8 +109,8 @@ void batchedDot(int m,
                 int incy)
 {
   hipLaunchKernelGGL(kernel_dot, dim3(m), dim3(DOT_BLOCK_SIZE), 0, 0, n, alpha, A, lda, B, ldb, beta, y, incy);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void batchedDot(int m,
@@ -130,8 +130,8 @@ void batchedDot(int m,
                      reinterpret_cast<thrust::complex<double> const*>(B), ldb,
                      static_cast<thrust::complex<double> const>(beta), reinterpret_cast<thrust::complex<double>*>(y),
                      incy);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void batchedDot(int m,
@@ -151,8 +151,8 @@ void batchedDot(int m,
                      reinterpret_cast<thrust::complex<float> const*>(B), ldb,
                      static_cast<thrust::complex<float> const>(beta), reinterpret_cast<thrust::complex<float>*>(y),
                      incy);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 } // namespace kernels

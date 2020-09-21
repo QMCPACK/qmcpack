@@ -172,7 +172,7 @@ bool AFQMCDriver::checkpoint(WalkerSet& wset, int block, int step)
 
   if (!dumpToHDF5(wset, dump))
   {
-    app_error() << " Problems writting checkpoint file in Driver/AFQMCDriver::checkpoint(). \n";
+    app_error() << " Problems writing checkpoint file in Driver/AFQMCDriver::checkpoint(). \n";
     return false;
   }
 

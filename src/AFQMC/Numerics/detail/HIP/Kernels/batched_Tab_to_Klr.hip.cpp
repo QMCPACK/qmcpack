@@ -16,7 +16,7 @@
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
@@ -159,8 +159,8 @@ void batched_Tab_to_Klr(int nterms,
   hipLaunchKernelGGL(kernel_batched_Tab_to_Klr, dim3(grid_dim), dim3(nthr), 0, 0, nterms, nwalk, nocc, nchol_max,
                      nchol_tot, ncholQ, ncholQ0, kdiag, reinterpret_cast<thrust::complex<double> const*>(Tab),
                      reinterpret_cast<thrust::complex<double>*>(Kl), reinterpret_cast<thrust::complex<double>*>(Kr));
-  qmc_hip::hip_check(hipGetLastError(), "batched_Tab_to_Klr");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "batched_Tab_to_Klr");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "batched_Tab_to_Klr");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "batched_Tab_to_Klr");
 }
 
 void batched_Tab_to_Klr(int nterms,
@@ -180,8 +180,8 @@ void batched_Tab_to_Klr(int nterms,
   hipLaunchKernelGGL(kernel_batched_Tab_to_Klr, dim3(grid_dim), dim3(nthr), 0, 0, nterms, nwalk, nocc, nchol_max,
                      nchol_tot, ncholQ, ncholQ0, kdiag, reinterpret_cast<thrust::complex<float> const*>(Tab),
                      reinterpret_cast<thrust::complex<float>*>(Kl), reinterpret_cast<thrust::complex<float>*>(Kr));
-  qmc_hip::hip_check(hipGetLastError(), "batched_Tab_to_Klr");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "batched_Tab_to_Klr");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "batched_Tab_to_Klr");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "batched_Tab_to_Klr");
 }
 
 void batched_Tanb_to_Klr(int nterms,
@@ -201,8 +201,8 @@ void batched_Tanb_to_Klr(int nterms,
   hipLaunchKernelGGL(kernel_batched_Tanb_to_Klr, dim3(grid_dim), dim3(nthr), 0, 0, nterms, nwalk, nocc, nchol_max,
                      nchol_tot, ncholQ, ncholQ0, kdiag, reinterpret_cast<thrust::complex<double> const*>(Tab),
                      reinterpret_cast<thrust::complex<double>*>(Kl), reinterpret_cast<thrust::complex<double>*>(Kr));
-  qmc_hip::hip_check(hipGetLastError(), "batched_Tanb_to_Klr");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "batched_Tanb_to_Klr");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "batched_Tanb_to_Klr");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "batched_Tanb_to_Klr");
 }
 
 void batched_Tanb_to_Klr(int nterms,
@@ -222,8 +222,8 @@ void batched_Tanb_to_Klr(int nterms,
   hipLaunchKernelGGL(kernel_batched_Tanb_to_Klr, dim3(grid_dim), dim3(nthr), 0, 0, nterms, nwalk, nocc, nchol_max,
                      nchol_tot, ncholQ, ncholQ0, kdiag, reinterpret_cast<thrust::complex<float> const*>(Tab),
                      reinterpret_cast<thrust::complex<float>*>(Kl), reinterpret_cast<thrust::complex<float>*>(Kr));
-  qmc_hip::hip_check(hipGetLastError(), "batched_Tanb_to_Klr");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "batched_Tanb_to_Klr");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "batched_Tanb_to_Klr");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "batched_Tanb_to_Klr");
 }
 
 } // namespace kernels

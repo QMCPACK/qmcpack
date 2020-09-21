@@ -204,8 +204,8 @@ void WalkerControlMPI::determineNewWalkerPopulation(int Cur_pop,
   // MyContext - in - my MPI rank
   // NumPerNode - in - current walkers per node
   // FairOffSet - out - running population count at each partition boundary
-  // minus - out - list of partition indexes one occurance for each walker removed
-  // plus -  out - list of partition indexes one occurance for each walker added
+  // minus - out - list of partition indexes one occurrence for each walker removed
+  // plus -  out - list of partition indexes one occurrence for each walker added
 
   FairDivideLow(Cur_pop, NumContexts, FairOffSet);
   for (int ip = 0; ip < NumContexts; ip++)

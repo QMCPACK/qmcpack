@@ -15,7 +15,7 @@
 #include <thrust/device_ptr.h>
 #include <thrust/transform.h>
 #include <thrust/functional.h>
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
@@ -47,26 +47,26 @@ inline static void kernel_axty(int n, std::complex<T> const alpha, std::complex<
 void axty(int n, float alpha, float const* x, float* y)
 {
   kernel_axty(n, alpha, x, y);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void axty(int n, double alpha, double const* x, double* y)
 {
   kernel_axty(n, alpha, x, y);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void axty(int n, std::complex<float> alpha, std::complex<float> const* x, std::complex<float>* y)
 {
   kernel_axty(n, alpha, x, y);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void axty(int n, std::complex<double> alpha, std::complex<double> const* x, std::complex<double>* y)
 {
   kernel_axty(n, alpha, x, y);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 

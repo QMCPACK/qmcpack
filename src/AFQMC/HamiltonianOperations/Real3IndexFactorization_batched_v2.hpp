@@ -32,6 +32,7 @@
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Numerics/batched_operations.hpp"
 #include "AFQMC/Numerics/tensor_operations.hpp"
+#include "AFQMC/Utilities/myTimer.h"
 
 namespace qmcplusplus
 {

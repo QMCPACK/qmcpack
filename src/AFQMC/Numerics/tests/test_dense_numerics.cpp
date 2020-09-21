@@ -74,8 +74,7 @@ void test_dense_matrix_mult()
   {
     vector<double> m = {
         9.,  24., 30., 4., 10.,
-        12., 14., 16., 36. //,
-        //	9., 6., 1.
+        12., 14., 16., 36.
     };
     array_ref<double, 2> M(m.data(), {3, 3});
     REQUIRE(M.num_elements() == m.size());
@@ -602,6 +601,7 @@ void test_dense_gerf_gqr_device(Allocator& alloc)
     verify_approx(Id, Id2);
   }
 }
+
 template<class Allocator>
 void test_dense_gerf_gqr_strided_device(Allocator& alloc)
 {
@@ -629,6 +629,38 @@ void test_dense_gerf_gqr_strided_device(Allocator& alloc)
       ma::product(A[i], ma::H(A[i]), Id);
       array_ref<T, 2> Id2(id.data(), {3, 3});
       verify_approx(Id, Id2);
+    }
+  }
+}
+
+template<class Allocator>
+void test_dense_batched_gemm(Allocator& alloc)
+{
+  using T       = typename Allocator::value_type;
+  using pointer = typename Allocator::pointer;
+  {
+    int nbatch                 = 3;
+    array<T, 2, Allocator> a   = {{0.0, 1.0, 2.0}, {3.0, 4.0, 5.0}, {6.0, 7.0, 8.0}};
+    array<T, 2, Allocator> b   = {{0.0, 1.0, 2.0}, {3.0, 4.0, 5.0}, {6.0, 7.0, 8.0}};
+    array<T, 2, Allocator> res = {{15.0, 18.0, 21.0}, {42.0, 54.0, 66.0}, {69.0, 90.0, 111.0}};
+    array<T, 3, Allocator> c({3, 3, 3}, 0.0, alloc);
+    T alpha = 1.0;
+    T beta  = 0.0;
+
+    std::vector<pointer> A_array;
+    std::vector<pointer> B_array;
+    std::vector<pointer> C_array;
+    for (int i = 0; i < nbatch; i++)
+    {
+      A_array.emplace_back(a.origin());
+      B_array.emplace_back(b.origin());
+      C_array.emplace_back(c[i].origin());
+    }
+    using ma::gemmBatched;
+    gemmBatched('N', 'N', 3, 3, 3, alpha, A_array.data(), 3, B_array.data(), 3, beta, C_array.data(), 3, nbatch);
+    for (int i = 0; i < nbatch; i++)
+    {
+      verify_approx(c[i], res);
     }
   }
 }
@@ -719,6 +751,7 @@ TEST_CASE("dense_ma_operations_device_double", "[matrix_operations]")
     test_dense_mat_vec_device<Alloc>(alloc);
     test_dense_mat_mul_device<Alloc>(alloc);
     test_dense_gerf_gqr_device<Alloc>(alloc);
+    test_dense_batched_gemm<Alloc>(alloc);
   }
 }
 TEST_CASE("dense_ma_operations_device_complex", "[matrix_operations]")
@@ -734,6 +767,8 @@ TEST_CASE("dense_ma_operations_device_complex", "[matrix_operations]")
     test_dense_gerf_gqr_device<Alloc>(alloc);
     test_dense_gerf_gqr_strided_device<Alloc>(alloc);
     test_dense_geqrf_getri_batched_device<Alloc>(alloc);
+    test_dense_geqrf_getri_batched_device<Alloc>(alloc);
+    test_dense_batched_gemm<Alloc>(alloc);
   }
 }
 #endif
