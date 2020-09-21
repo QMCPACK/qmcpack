@@ -69,13 +69,8 @@ inline static void getrf(const int n,
                          int& st,
                          device_pointer<R> work)
 {
-  //rocsolver_handle handle;
-  //rocsolver_create_handle(&handle);
-  //std::cout << (*a.handles.rocsolver_handle_)->device_arch_id() << std::endl;
   rocsolverStatus_t status = rocsolver::rocsolver_getrf(*a.handles.rocsolver_handle_, n, m, to_address(a), lda,
                                                         to_address(work), to_address(piv), to_address(piv) + n);
-  //rocsolverStatus_t status = rocsolver::rocsolver_getrf(handle, n, m,
-  //to_address(a), lda, to_address(work), to_address(piv), to_address(piv)+n);
   arch::memcopy(&st, to_address(piv) + n, sizeof(int), arch::memcopyD2H);
   if (rocblas_status_success != status)
   {
@@ -83,7 +78,6 @@ inline static void getrf(const int n,
     std::cerr.flush();
     throw std::runtime_error("Error: hipblas_getrf returned error code.");
   }
-  //rocsolver_destroy_handle(handle);
 }
 
 // getrfBatched

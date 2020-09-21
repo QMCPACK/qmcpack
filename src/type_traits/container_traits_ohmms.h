@@ -21,7 +21,7 @@
 
 namespace qmcplusplus
 {
-// tempalte specialization for Ohmms Vector/Matrix/Array
+// template specialization for Ohmms Vector/Matrix/Array
 template<typename T, class ALLOC>
 struct container_traits<Vector<T, ALLOC>>
 {

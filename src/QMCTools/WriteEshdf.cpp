@@ -934,7 +934,7 @@ void EshdfFile::handleKpt(int kpt_num,
     }
   }
 
-  // now all the states are writen, so write out eigenvalues and number of states
+  // now all the states are written, so write out eigenvalues and number of states
   vector<double> eigval = eigenvalues;
   if (spinpol == 0)
   {

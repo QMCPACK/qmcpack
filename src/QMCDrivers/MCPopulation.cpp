@@ -205,7 +205,7 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
   }
   else
   {
-    app_warning() << "Spawning walker outside of reserves, this ideally should never happend." << std::endl;
+    app_warning() << "Spawning walker outside of reserves, this ideally should never happened." << std::endl;
     walkers_.push_back(std::make_unique<MCPWalker>(num_particles_));
     walkers_.back()->R          = elec_particle_set_->R;
     walkers_.back()->spins      = elec_particle_set_->spins;

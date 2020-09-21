@@ -173,7 +173,7 @@ private:
   /** mark all the electrons affected by Tmoves and update ElecNeighborIons and IonNeighborElecs
    * @param myTable electron ion distance table
    * @param iel reference electron
-   * Note this funtion should be called before acceptMove for a Tmove
+   * Note this function should be called before acceptMove for a Tmove
    */
   void markAffectedElecs(const DistanceTableData& myTable, int iel);
 };

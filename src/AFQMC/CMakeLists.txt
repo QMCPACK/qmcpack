@@ -175,3 +175,4 @@ IF (BUILD_UNIT_TESTS)
   SUBDIRS(Estimators/tests)
 ENDIF()
 
+SUBDIRS(Numerics/performance)
