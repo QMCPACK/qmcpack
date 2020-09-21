@@ -185,7 +185,7 @@ public:
    *  Ye: Only AoS needs it, SoA LCAO doesn't need this. Reseting pointers is a state machine very hard to maintain.
    *  This interface should be removed with AOS.
    */
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
+  virtual void resetTargetParticleSet(ParticleSet& P) {};
 
   /** set the OrbitalSetSize
    * @param norbs number of single-particle orbitals

@@ -170,7 +170,7 @@ struct WaveFunctionComponent : public QMCTraits
   /** reset properties, e.g., distance tables, for a new target ParticleSet
    * @param P ParticleSet
    */
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
+  virtual void resetTargetParticleSet(ParticleSet& P) {};
 
   /** evaluate the value of the WaveFunctionComponent from scratch
    * @param P  active ParticleSet
