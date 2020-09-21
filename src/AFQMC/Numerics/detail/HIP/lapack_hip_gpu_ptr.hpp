@@ -135,11 +135,7 @@ inline static void getri(int n,
 
   // info isn't returned from ?getrs.
   int* info;
-  if (hipSuccess != arch::malloc((void**)&info, sizeof(int)))
-  {
-    std::cerr << " Error getri: Error allocating on GPU." << std::endl;
-    throw std::runtime_error("Error: arch::malloc returned error code.");
-  }
+  arch::malloc((void**)&info, sizeof(int), "lapack_hip_gpu_ptr::getri");
 
   kernels::set_identity(n, n, to_address(work), n);
   //std::cout << (*work).num_elements() << " " << (*a).num_elements() << std::endl;
