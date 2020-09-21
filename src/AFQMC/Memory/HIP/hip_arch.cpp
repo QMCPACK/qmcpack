@@ -94,6 +94,7 @@ void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, const s
     {
       std::cerr << "Error: " << message << std::endl;
     }
+    std::cerr << " Error when calling hipMemcpy: " << hipGetErrorString(status) << std::endl;
     throw std::runtime_error("Error: hipMemcpy returned error code.");
   }
 }
@@ -113,6 +114,7 @@ void memcopy2D(void* dst,
     {
       std::cerr << "Error: " << message << std::endl;
     }
+    std::cerr << " Error when calling hipMemcpy2D: " << hipGetErrorString(status) << std::endl;
     throw std::runtime_error("Error: hipMemcpy2D returned error code.");
   }
 }
@@ -125,18 +127,23 @@ void malloc(void** devPtr, size_t size, const std::string& message)
     std::cerr << " Error allocating " << size * 1024.0 / 1024.0 << " MBs on GPU." << std::endl;
     if (message != "")
     {
-      std::cerr << " Error from : " << message << " " << hipGetErrorString(status) << std::endl;
+      std::cerr << " Error from : " << message << std::endl;
     }
+    std::cerr << " Error when call hipMalloc " << < hipGetErrorString(status) << std::endl;
     throw std::runtime_error("Error: hipMalloc returned error code.");
   }
 }
 
-void free(void* p)
+void free(void* p, const std::string& message)
 {
   hipError_t status = hipFree(p);
   if (status != hipSuccess)
   {
-    std::cerr << " Error from calling cudaFree: " << hipGetErrorString(status) << std::endl;
+    if (message != "")
+    {
+      std::cerr << " Error from : " << message << std::endl;
+    }
+    std::cerr << " Error when calling hipFree: " << hipGetErrorString(status) << std::endl;
   }
 }
 

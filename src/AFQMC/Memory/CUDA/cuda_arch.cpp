@@ -96,6 +96,7 @@ void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, const s
     {
       std::cerr << "Error: " << message << std::endl;
     }
+    std::cerr << " Error when calling cudaMemcpy: " << cudaGetErrorString(status) << std::endl;
     throw std::runtime_error("Error: cudaMemcpy returned error code.");
   }
 }
@@ -115,6 +116,7 @@ void memcopy2D(void* dst,
     {
       std::cerr << "Error: " << message << std::endl;
     }
+    std::cerr << " Error when calling cudaMemcpy2D: " << cudaGetErrorString(status) << std::endl;
     throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
   }
 
@@ -128,17 +130,22 @@ void malloc(void** devPtr, size_t size, const std::string& message)
     std::cerr << " Error allocating " << size * 1024.0 / 1024.0 << " MBs on GPU." << std::endl;
     if (message != "")
     {
-      std::cerr << " Error from : " << message << " " << cudaGetErrorString(status) << std::endl;
+      std::cerr << " Error from: " << message  << std::endl;
     }
+    std::cerr << " Error when calling cudaMalloc: " << cudaGetErrorString(status) << std::endl;
     throw std::runtime_error("Error: cudaMalloc returned error code.");
   }
 }
 
-void free(void* p)
+void free(void* p, const std::string& message)
 {
   cudaError_t status = cudaFree(p);
   if (status != cudaSuccess)
   {
+    if (message != "")
+    {
+      std::cerr << " Error from: " << message  << std::endl;
+    }
     std::cerr << " Error from calling cudaFree: " << cudaGetErrorString(status) << std::endl;
   }
 }
