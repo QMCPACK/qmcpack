@@ -38,7 +38,6 @@ LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet
 LatticeGaussianProduct::~LatticeGaussianProduct() {}
 
 //evaluate the distance table with P
-void LatticeGaussianProduct::resetTargetParticleSet(ParticleSet& P) {}
 void LatticeGaussianProduct::checkInVariables(opt_variables_type& active) {}
 void LatticeGaussianProduct::checkOutVariables(const opt_variables_type& active) {}
 void LatticeGaussianProduct::resetParameters(const opt_variables_type& active) {}

@@ -113,8 +113,6 @@ public:
 
   void resetParameters(const opt_variables_type& active) override {}
 
-  void resetTargetParticleSet(ParticleSet& e) override {}
-
   void setOrbitalSetSize(int norbs) override { OrbitalSetSize = norbs; }
 
   virtual void evaluate_notranspose(const ParticleSet& P,

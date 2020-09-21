@@ -381,7 +381,6 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   }
 
   /**@{ WaveFunctionComponent virtual functions that are not essential for the development */
-  void resetTargetParticleSet(ParticleSet& P) {}
   void reportStatus(std::ostream& os)
   {
     for (size_t i = 0, n = F.size(); i < n; ++i)

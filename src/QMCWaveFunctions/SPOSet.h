@@ -179,14 +179,6 @@ public:
                                      const std::vector<std::vector<int>>& lookup_tbl)
   {}
 
-
-  /** reset the target particleset
-   *  this is used to reset the pointer to ion-electron distance table needed by LCAO basis set.
-   *  Ye: Only AoS needs it, SoA LCAO doesn't need this. Reseting pointers is a state machine very hard to maintain.
-   *  This interface should be removed with AOS.
-   */
-  virtual void resetTargetParticleSet(ParticleSet& P) {};
-
   /** set the OrbitalSetSize
    * @param norbs number of single-particle orbitals
    * Ye: I prefer to remove this interface in the future. SPOSet builders need to handle the size correctly.

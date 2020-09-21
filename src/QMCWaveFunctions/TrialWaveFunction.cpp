@@ -62,12 +62,6 @@ TrialWaveFunction::~TrialWaveFunction()
   //delete_iter(myTimers.begin(),myTimers.end());
 }
 
-void TrialWaveFunction::resetTargetParticleSet(ParticleSet& P)
-{
-  for (int i = 0; i < Z.size(); i++)
-    Z[i]->resetTargetParticleSet(P);
-}
-
 void TrialWaveFunction::startOptimization()
 {
   for (int i = 0; i < Z.size(); i++)

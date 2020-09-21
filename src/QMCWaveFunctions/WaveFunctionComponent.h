@@ -167,11 +167,6 @@ struct WaveFunctionComponent : public QMCTraits
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) = 0;
 
-  /** reset properties, e.g., distance tables, for a new target ParticleSet
-   * @param P ParticleSet
-   */
-  virtual void resetTargetParticleSet(ParticleSet& P) {};
-
   /** evaluate the value of the WaveFunctionComponent from scratch
    * @param P  active ParticleSet
    * @param G Gradients, \f$\nabla\ln\Psi\f$
