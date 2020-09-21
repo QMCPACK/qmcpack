@@ -88,7 +88,8 @@ void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed)
 
 void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, const std::string& message)
 {
-  if (hipSuccess != hipMemcpy(dst, src, count, tohipMemcpyKind(kind)))
+  hipError_t status = hipMemcpy(dst, src, count, tohipMemcpyKind(kind));
+  if (status != hipSuccess)
   {
     if (message != "")
     {
@@ -108,7 +109,8 @@ void memcopy2D(void* dst,
                MEMCOPYKIND kind,
                const std::string& message)
 {
-  if (hipSuccess != hipMemcpy2D(dst, dpitch, src, spitch, width, height, tohipMemcpyKind(kind)))
+  hipError_t status = hipMemcpy2D(dst, dpitch, src, spitch, width, height, tohipMemcpyKind(kind));
+  if (status != hipSuccess)
   {
     if (message != "")
     {
