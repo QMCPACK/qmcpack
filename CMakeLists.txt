@@ -766,7 +766,7 @@ IF(ENABLE_HIP)
   # temporarily put hipsparse hipblas here for convenience, should be moved to Platforms.
   SET_TARGET_PROPERTIES(HIP::HIP PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${ROCM_ROOT}/include"
                                             INTERFACE_COMPILE_DEFINITIONS "ENABLE_HIP"
-                                            INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas")
+                                            INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lamdhip64")
 ENDIF(ENABLE_HIP)
 
 ######################################################
