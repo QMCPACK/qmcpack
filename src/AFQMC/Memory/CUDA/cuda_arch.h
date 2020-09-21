@@ -77,7 +77,7 @@ void memcopy2D(void* dst,
 
 void malloc(void** devPtr, size_t size, const std::string& message = "");
 
-void free(void* p, std::string& message = "");
+void free(void* p, const std::string& message = "");
 
 } // namespace arch
 
