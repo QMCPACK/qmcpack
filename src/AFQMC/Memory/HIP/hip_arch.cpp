@@ -86,7 +86,7 @@ void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed)
   }
 }
 
-void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, std::string message)
+void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, const std::string& message)
 {
   if (hipSuccess != hipMemcpy(dst, src, count, tohipMemcpyKind(kind)))
   {
@@ -105,7 +105,7 @@ void memcopy2D(void* dst,
                size_t width,
                size_t height,
                MEMCOPYKIND kind,
-               std::string message)
+               const std::string& message)
 {
   if (hipSuccess != hipMemcpy2D(dst, dpitch, src, spitch, width, height, tohipMemcpyKind(kind)))
   {
@@ -117,7 +117,7 @@ void memcopy2D(void* dst,
   }
 }
 
-void malloc(void** devPtr, size_t size, std::string message)
+void malloc(void** devPtr, size_t size, const std::string& message)
 {
   hipError_t status = hipMalloc(devPtr, size);
   if (status != hipSuccess)

@@ -62,7 +62,7 @@ hipMemcpyKind tohipMemcpyKind(MEMCOPYKIND v);
 
 void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed = 911ULL);
 
-void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind = memcopyDefault, std::string message = "");
+void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind = memcopyDefault, const std::string& message = "");
 
 void memcopy2D(void* dst,
                size_t dpitch,
@@ -71,9 +71,9 @@ void memcopy2D(void* dst,
                size_t width,
                size_t height,
                MEMCOPYKIND kind    = memcopyDefault,
-               std::string message = "");
+               const std::string& message = "");
 
-void malloc(void** devPtr, size_t size, std::string message = "");
+void malloc(void** devPtr, size_t size, const std::string& message = "");
 
 void free(void* p);
 

@@ -89,7 +89,7 @@ void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed)
   }
 }
 
-void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, std::string message)
+void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, const std::string& message)
 {
   if (cudaSuccess != cudaMemcpy(dst, src, count, tocudaMemcpyKind(kind))) {
     if (message != "")
@@ -107,7 +107,7 @@ void memcopy2D(void* dst,
                size_t width,
                size_t height,
                MEMCOPYKIND kind,
-               std::string message)
+               const std::string& message)
 {
   if (cudaSuccess != cudaMemcpy2D(dst, dpitch, src, spitch, width, height, tocudaMemcpyKind(kind)))
   {
@@ -120,7 +120,7 @@ void memcopy2D(void* dst,
 
 }
 
-void malloc(void** devPtr, size_t size, std::string message)
+void malloc(void** devPtr, size_t size, const std::string& message)
 {
   cudaError_t status = cudaMalloc(devPtr, size);
   if (status != cudaSuccess)
