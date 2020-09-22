@@ -307,26 +307,49 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
 
   // create the SPOSet builder
   SPOSetBuilder* bb = createSPOSetBuilder(cur);
-  // going through a list of sposet entries
-  xmlNodePtr element = cur->children;
-  int nsposets       = 0;
-  while (element != NULL)
+
+  // going through a list of basisset entries
   {
-    std::string cname((const char*)(element->name));
-    if (cname == "sposet")
+    xmlNodePtr element = cur->children;
+    while (element != NULL)
     {
-      SPOSet* spo = bb->createSPOSet(element);
-      nsposets++;
+      std::string cname((const char*)(element->name));
+      if (cname == "basisset")
+        bb->loadBasisSetFromXML(cur);
+      element = element->next;
     }
-    else if (cname == "spo_scanner")
+  }
+
+  // going through a list of sposet entries
+  int nsposets = 0;
+  {
+    xmlNodePtr element = cur->children;
+    while (element != NULL)
     {
-      if (myComm->rank() == 0)
+      std::string cname((const char*)(element->name));
+      if (cname == "sposet")
       {
-        SPOSetScanner ascanner(bb->sposets, targetPtcl, ptclPool);
-        ascanner.put(element);
+        SPOSet* spo = bb->createSPOSet(element);
+        nsposets++;
       }
+      element = element->next;
     }
-    element = element->next;
+  }
+
+  // going through a list of spo_scanner entries
+  {
+    xmlNodePtr element = cur->children;
+    while (element != NULL)
+    {
+      std::string cname((const char*)(element->name));
+      if (cname == "spo_scanner")
+        if (myComm->rank() == 0)
+        {
+          SPOSetScanner ascanner(bb->sposets, targetPtcl, ptclPool);
+          ascanner.put(element);
+        }
+      element = element->next;
+    }
   }
 
   if (nsposets == 0)

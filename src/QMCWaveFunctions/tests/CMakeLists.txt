@@ -49,8 +49,8 @@ ENDIF()
 SET(TRIALWF_SRC test_wf.cpp test_TrialWaveFunction.cpp test_wavefunction_factory.cpp
                 test_TrialWaveFunction_diamondC_2x1x1.cpp test_TrialWaveFunction_He.cpp
                 test_wavefunction_pool.cpp test_example_he.cpp test_lattice_gaussian.cpp)
-SET(SPOSET_SRC test_spo_collection_input_spline.cpp test_einset.cpp test_einset_spinor.cpp
-               test_hybridrep.cpp test_pw.cpp ${MO_SRCS})
+SET(SPOSET_SRC test_spo_collection_input_spline.cpp test_spo_collection_input_LCAO_xml.cpp
+               test_einset.cpp test_einset_spinor.cpp test_hybridrep.cpp test_pw.cpp ${MO_SRCS})
 SET(JASTROW_SRC test_bspline_jastrow.cpp test_counting_jastrow.cpp test_polynomial_eeI_jastrow.cpp
                 test_rpa_jastrow.cpp test_user_jastrow.cpp test_kspace_jastrow.cpp
                 test_short_range_cusp_jastrow.cpp)
