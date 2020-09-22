@@ -13,10 +13,7 @@
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 SET(SRC_DIR wavefunction)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
-
-SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/wavefunction)
+SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/${SRC_DIR})
 #SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/pwscf.pwscf.h5)
 SET(UTEST_HDF_INPUT0 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
 SET(UTEST_HDF_INPUT1 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp/pwscf.pwscf.h5)
@@ -49,19 +46,28 @@ IF ((NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA))
   ENDIF()
 ENDIF()
 
-ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp test_TrialWaveFunction.cpp FakeSPO.cpp test_DiracDeterminantBatched.cpp
-               test_wavefunction_factory.cpp test_TrialWaveFunction_diamondC_2x1x1.cpp
-               test_TrialWaveFunction_He.cpp test_spo_collection_input_spline.cpp
-               test_bspline_jastrow.cpp test_counting_jastrow.cpp test_polynomial_eeI_jastrow.cpp
-               test_einset.cpp test_einset_spinor.cpp test_hybridrep.cpp test_pw.cpp test_wavefunction_pool.cpp
-               test_dirac_det.cpp test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
-               test_rpa_jastrow.cpp test_example_he.cpp test_user_jastrow.cpp
-               test_lattice_gaussian.cpp test_kspace_jastrow.cpp
-               test_short_range_cusp_jastrow.cpp ${MO_SRCS})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcwfs Math::BLAS_LAPACK Math::scalar_vector_functions)
-IF(USE_OBJECT_TARGET)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle qmcutil containers platform_omp)
-ENDIF()
+SET(TRIALWF_SRC test_wf.cpp test_TrialWaveFunction.cpp test_wavefunction_factory.cpp
+                test_TrialWaveFunction_diamondC_2x1x1.cpp test_TrialWaveFunction_He.cpp
+                test_wavefunction_pool.cpp test_example_he.cpp test_lattice_gaussian.cpp)
+SET(SPOSET_SRC test_spo_collection_input_spline.cpp test_einset.cpp test_einset_spinor.cpp
+               test_hybridrep.cpp test_pw.cpp ${MO_SRCS})
+SET(JASTROW_SRC test_bspline_jastrow.cpp test_counting_jastrow.cpp test_polynomial_eeI_jastrow.cpp
+                test_rpa_jastrow.cpp test_user_jastrow.cpp test_kspace_jastrow.cpp
+                test_short_range_cusp_jastrow.cpp)
+SET(DETERMINANT_SRC FakeSPO.cpp test_DiracDeterminantBatched.cpp test_dirac_det.cpp
+                    test_multi_dirac_determinant.cpp test_dirac_matrix.cpp)
 
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+FOREACH(CATEGORY trialwf sposet jastrow determinant)
+  SET(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
+  SET(UTEST_NAME deterministic-unit_${UTEST_EXE})
+  STRING(TOUPPER "${CATEGORY}_SRC" SOURCE_FILE_VAR_NAME)
+  ADD_EXECUTABLE(${UTEST_EXE} ${${SOURCE_FILE_VAR_NAME}})
+
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcwfs Math::BLAS_LAPACK Math::scalar_vector_functions)
+  IF(USE_OBJECT_TARGET)
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle qmcutil containers platform_omp)
+  ENDIF()
+
+  ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+ENDFOREACH()
