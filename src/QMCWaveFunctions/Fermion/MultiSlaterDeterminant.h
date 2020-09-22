@@ -80,8 +80,6 @@ public:
   virtual void resetParameters(const opt_variables_type& active);
   virtual void reportStatus(std::ostream& os);
 
-  void resetTargetParticleSet(ParticleSet& P);
-
   ///set BF pointers
   virtual void setBF(BackflowTransformation* BFTrans) {}
 

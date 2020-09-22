@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import numpy
 import unittest
 from afqmctools.analysis.extraction import extract_observable

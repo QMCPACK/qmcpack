@@ -62,12 +62,6 @@ TrialWaveFunction::~TrialWaveFunction()
   //delete_iter(myTimers.begin(),myTimers.end());
 }
 
-void TrialWaveFunction::resetTargetParticleSet(ParticleSet& P)
-{
-  for (int i = 0; i < Z.size(); i++)
-    Z[i]->resetTargetParticleSet(P);
-}
-
 void TrialWaveFunction::startOptimization()
 {
   for (int i = 0; i < Z.size(); i++)
@@ -835,7 +829,7 @@ void TrialWaveFunction::debugOnlyCheckBuffer(WFBufferType& buffer)
   if (buffer.size() < buffer.current() + buffer.current_scalar() * sizeof(FullPrecRealType))
   {
     std::ostringstream assert_message;
-    assert_message << "On thread:" << Concurrency::getThreadId<>() << "  buf_list[iw].get().size():" << buffer.size()
+    assert_message << "On thread:" << Concurrency::getWorkerId<>() << "  buf_list[iw].get().size():" << buffer.size()
                    << " < buf_list[iw].get().current():" << buffer.current()
                    << " + buf.current_scalar():" << buffer.current_scalar()
                    << " * sizeof(FullPrecRealType):" << sizeof(FullPrecRealType) << '\n';

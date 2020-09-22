@@ -109,7 +109,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         abort();
       }
       spomap[spo_name] = spo;
-      spo->objectName  = spo_name;
+      spo->setName(spo_name);
       assert(spomap.find(spo_name) != spomap.end());
       //	slaterdet_0->add(spo,spo_name);
     }
@@ -210,13 +210,21 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
     }
     else if (cname == sd_tag)
     {
+      app_summary() << std::endl;
+      app_summary() << "   Single Slater determinant" << std::endl;
+      app_summary() << "   -------------------------" << std::endl;
+      app_summary() << std::endl;
+
       multiDet = false;
       if (slaterdet_0)
       {
         APP_ABORT("slaterdet is already instantiated.");
       }
       if (UseBackflow)
+      {
+        app_summary() << "    Using backflow transformation." << std::endl;
         slaterdet_0 = new SlaterDetWithBackflow(targetPtcl, BFTrans);
+      }
       else
         slaterdet_0 = new SlaterDeterminant_t(targetPtcl);
 
@@ -239,6 +247,11 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
     }
     else if (cname == multisd_tag)
     {
+      app_summary() << std::endl;
+      app_summary() << "   Multi Slater determinants" << std::endl;
+      app_summary() << "   -------------------------" << std::endl;
+      app_summary() << std::endl;
+
       multiDet = true;
       if (slaterdet_0)
       {
@@ -278,16 +291,16 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       FastMSD = (fastAlg == "yes");
       if (FastMSD)
       {
+        app_summary() << "    Using Bryan's table method." << std::endl;
         if (UseBackflow)
         {
-          APP_ABORT("Backflow is not implemented with multi determinants.");
+          APP_ABORT("Backflow is not implemented with the table method.");
         }
-        app_log() << "Using Bryan's algorithm for MultiSlaterDeterminant expansion. \n";
         MultiDiracDeterminant* up_det = 0;
         MultiDiracDeterminant* dn_det = 0;
-        app_log() << "Creating base determinant (up) for MSD expansion. \n";
+        app_log() << "      Creating base determinant (up) for MSD expansion. \n";
         up_det = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_alpha)->second, 0);
-        app_log() << "Creating base determinant (down) for MSD expansion. \n";
+        app_log() << "      Creating base determinant (down) for MSD expansion. \n";
         dn_det = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_beta)->second, 1);
 
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, up_det, dn_det);
@@ -295,20 +308,19 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       }
       else
       {
+        app_summary() << "    Using a list of determinants for multi-deterimant expansion." << std::endl;
         SPOSetProxyForMSD* spo_up;
         SPOSetProxyForMSD* spo_dn;
         spo_up = new SPOSetProxyForMSD(spomap.find(spo_alpha)->second, targetPtcl.first(0), targetPtcl.last(0));
         spo_dn = new SPOSetProxyForMSD(spomap.find(spo_beta)->second, targetPtcl.first(1), targetPtcl.last(1));
         if (UseBackflow)
         {
-          app_log() << "Multi-Slater Determinant expansion with Backflow. \n";
-          app_log() << "Using a list of dirac determinants for MultiSlaterDeterminant expansion. \n";
+          app_summary() << "    Using backflow transformation." << std::endl;
           multislaterdet_0 = new MultiSlaterDeterminantWithBackflow(targetPtcl, spo_up, spo_dn, BFTrans);
           success          = createMSD(multislaterdet_0, cur);
         }
         else
         {
-          app_log() << "Using a list of dirac determinants for MultiSlaterDeterminant expansion. \n";
           multislaterdet_0 = new MultiSlaterDeterminant(targetPtcl, spo_up, spo_dn);
           success          = createMSD(multislaterdet_0, cur);
         }
@@ -338,22 +350,13 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
     if (multiDet)
     {
       if (FastMSD)
-      {
         multislaterdetfast_0->setBF(BFTrans);
-        multislaterdetfast_0->resetTargetParticleSet(BFTrans->QP);
-        //           if(BFTrans->isOptimizable()) multislaterdetfast_0->Optimizable = true;
-      }
       else
-      {
         multislaterdet_0->setBF(BFTrans);
-        multislaterdet_0->resetTargetParticleSet(BFTrans->QP);
-        //           if(BFTrans->isOptimizable()) multislaterdet_0->Optimizable = true;
-      }
     }
     else
     {
       slaterdet_0->setBF(BFTrans);
-      slaterdet_0->resetTargetParticleSet(targetPtcl);
       if (BFTrans->isOptimizable())
         slaterdet_0->Optimizable = true;
     }
@@ -444,7 +447,12 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   if (sposet.empty())
     sposet = detname;
 
-  app_log() << "  Creating a determinant " << detname << " group=" << spin_group << " sposet=" << sposet << std::endl;
+  app_summary() << std::endl;
+  app_summary() << "     Determinant" << std::endl;
+  app_summary() << "     -----------" << std::endl;
+  app_summary() << "      Name: " << detname << "   Spin group: " << spin_group << "   SPO name: " << sposet
+                << std::endl;
+  app_summary() << std::endl;
 
   std::map<std::string, SPOSetPtr>& spo_ref(slaterdet_0->mySPOSet);
   std::map<std::string, SPOSetPtr>::iterator lit(spo_ref.find(sposet));
@@ -455,7 +463,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     if (psi == 0)
     {
       //SPOSet[detname]=psi;
-      app_log() << "  Create a new SPO set " << sposet << std::endl;
+      app_log() << "      Create a new SPO set " << sposet << std::endl;
       psi = mySPOSetBuilderFactory->createSPOSet(cur);
     }
     //psi->put(cur);
@@ -464,7 +472,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   }
   else
   {
-    app_log() << "  Reusing a SPO set " << sposet << std::endl;
+    app_log() << "      Reusing a SPO set " << sposet << std::endl;
     psi = (*lit).second;
   }
 
@@ -484,40 +492,48 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   }
   else if (delay_rank == 0)
   {
-    app_log() << "  Setting delay_rank by default!" << std::endl;
     if (lastIndex - firstIndex >= 192)
       delay_rank = 32;
     else
       delay_rank = 1;
+    app_summary() << "      Setting delay_rank to default value " << delay_rank << std::endl;
   }
 
   if (delay_rank > 1)
-    app_log() << "  Using rank-" << delay_rank << " delayed update" << std::endl;
+    app_summary() << "      Using rank-" << delay_rank << " delayed update" << std::endl;
   else
-    app_log() << "  Using rank-1 Sherman-Morrison Fahy update (SM1)" << std::endl;
+    app_summary() << "      Using rank-1 Sherman-Morrison Fahy update (SM1)" << std::endl;
 
   DiracDeterminantBase* adet = 0;
 
   //TODO: the switch logic should be improved as we refine the input tags.
 #if defined(QMC_CUDA)
+  app_summary() << "      Using legacy CUDA acceleration." << std::endl;
   adet = new DiracDeterminantCUDA(psi, firstIndex);
 #else
   if (UseBackflow)
+  {
+    app_summary() << "      Using backflow transformation." << std::endl;
     adet = new DiracDeterminantWithBackflow(targetPtcl, psi, BFTrans, firstIndex);
+  }
   else
   {
     if (use_batch == "yes")
     {
+      app_summary() << "      Using walker batching." << std::endl;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
       if (useGPU == "yes")
       {
-        app_log() << "  Using DiracDeterminantBatched with MatrixDelayedUpdateCUDA engine" << std::endl;
-        adet = new DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
+        app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
+        adet = new DiracDeterminantBatched<
+            MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
       }
       else
 #endif
       {
-        app_log() << "  Using DiracDeterminantBatched with MatrixUpdateOMP engine. Only SM1 updates are supported." << std::endl;
+        app_summary() << "      Running on an accelerator via OpenMP offload. Only SM1 update is supported. "
+                         "delay_rank is ignored."
+                      << std::endl;
         adet = new DiracDeterminantBatched<>(psi, firstIndex);
       }
     }
@@ -526,13 +542,13 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 #if defined(ENABLE_CUDA)
       if (useGPU == "yes")
       {
-        app_log() << "  Using DiracDeterminant with DelayedUpdateCUDA engine" << std::endl;
+        app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
         adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(psi, firstIndex);
       }
       else
 #endif
       {
-        app_log() << "  Using DiracDeterminant with DelayedUpdate engine" << std::endl;
+        app_summary() << "      Running on CPU." << std::endl;
         adet = new DiracDeterminant<>(psi, firstIndex);
       }
     }
@@ -1014,7 +1030,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
 #ifdef QMC_COMPLEX
           ci_real = 0.0;
 #else
-          ci    = 0.0;
+          ci = 0.0;
 #endif
         CSFcoeff.push_back(ci);
         sumsq_qc += qc_ci * qc_ci;
@@ -1186,7 +1202,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         RealType ci_real = 0.0, ci_imag = 0.0;
         confAttrib.add(ci_real, "coeff_real");
         confAttrib.add(ci_imag, "coeff_imag");
-        ValueType ci(ci_real, ci_imag);
 #else
         RealType ci = 0.0;
         confAttrib.add(ci, "coeff");
@@ -1197,6 +1212,9 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         confAttrib.add(tag, "id");
         confAttrib.put(cur);
 
+#ifdef QMC_COMPLEX
+        ValueType ci(ci_real, ci_imag);
+#endif
 
         //Will always loop through the whole determinant set as no assumption on the order of the determinant is made
         if (std::abs(ci) < cutoff)
@@ -1390,7 +1408,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   ConfigTag.resize(ndets);
 
   readCoeffs(hin, CIcoeff, ndets);
-  
+
   ///IF OPTIMIZED COEFFICIENTS ARE PRESENT IN opt_coeffs Path
   ///THEY ARE READ FROM DIFFERENT HDF5 the replace the previous coeff
   ///It is important to still read all old coeffs and only replace the optimized ones

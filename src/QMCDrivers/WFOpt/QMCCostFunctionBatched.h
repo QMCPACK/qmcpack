@@ -68,13 +68,21 @@ protected:
 
   SampleStack& samples_;
 
+  int opt_batch_size_;
+
   std::vector<Return_rt> log_psi_fixed_;
   std::vector<Return_rt> log_psi_opt_;
 
-  std::vector<TrialWaveFunction*> wf_ptr_list_;
-  std::vector<ParticleSet*> p_ptr_list_;
-  std::vector<QMCHamiltonian*> h_ptr_list_;
-  std::vector<QMCHamiltonian*> h0_ptr_list_;
+  UPtrVector<TrialWaveFunction> wf_ptr_list_;
+  UPtrVector<ParticleSet> p_ptr_list_;
+  UPtrVector<QMCHamiltonian> h_ptr_list_;
+  UPtrVector<QMCHamiltonian> h0_ptr_list_;
+  UPtrVector<RandomGenerator_t> rng_ptr_list_;
+  std::unique_ptr<RandomGenerator_t> rng_save_ptr_;
+
+  NewTimer& check_config_timer_;
+  NewTimer& corr_sampling_timer_;
+  NewTimer& fill_timer_;
 
 
 #ifdef HAVE_LMY_ENGINE

@@ -15,8 +15,9 @@
 
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
-#include "Concurrency/TasksOneToOne.hpp"
+#include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
+#include "Message/UniformCommunicateError.h"
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -500,12 +501,19 @@ void DMCBatched::runDMCStep(int crowd_id,
 
 void DMCBatched::process(xmlNodePtr node)
 {
-  QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
-                              qmcdriver_input_.get_walkers_per_rank(), dmcdriver_input_.get_reserve(),
-                              qmcdriver_input_.get_num_crowds());
+  try
+  {
+    QMCDriverNew::AdjustedWalkerCounts awc =
+        adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
+                                qmcdriver_input_.get_walkers_per_rank(), dmcdriver_input_.get_reserve(),
+                                qmcdriver_input_.get_num_crowds());
 
-  Base::startup(node, awc);
+    Base::startup(node, awc);
+  }
+  catch (const UniformCommunicateError& ue)
+  {
+    myComm->barrier_and_abort(ue.what());
+  }
 }
 
 bool DMCBatched::run()
@@ -523,11 +531,11 @@ bool DMCBatched::run()
 
   { // walker initialization
     ScopedTimer local_timer(&(timers_.init_walkers_timer));
-    TasksOneToOne<> section_start_task(crowds_.size());
-    section_start_task(initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
+    ParallelExecutor<> section_start_task;
+    section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
 
-  TasksOneToOne<> crowd_task(crowds_.size());
+  ParallelExecutor<> crowd_task;
 
   for (int block = 0; block < num_blocks; ++block)
   {
@@ -537,7 +545,7 @@ bool DMCBatched::run()
     dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
         ? qmcdriver_input_.get_recalculate_properties_period()
         : (qmcdriver_input_.get_max_blocks() + 1) * qmcdriver_input_.get_max_steps();
-    dmc_state.recomputing_blocks            = qmcdriver_input_.get_blocks_between_recompute();
+    dmc_state.recomputing_blocks = qmcdriver_input_.get_blocks_between_recompute();
 
     for (UPtr<Crowd>& crowd : crowds_)
       crowd->startBlock(qmcdriver_input_.get_max_steps());
@@ -546,7 +554,7 @@ bool DMCBatched::run()
     {
       ScopedTimer local_timer(&(timers_.run_steps_timer));
       dmc_state.step = step;
-      crowd_task(runDMCStep, dmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
+      crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
 
       branch_engine_->branch(step, population_);
 

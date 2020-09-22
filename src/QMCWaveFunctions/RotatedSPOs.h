@@ -35,7 +35,7 @@ public:
   //helper function to apply_rotation
   void exponentiate_antisym_matrix(ValueMatrix_t& mat);
 
-  //A particualr SPOSet used for Orbitals
+  //A particular SPOSet used for Orbitals
   SPOSet* Phi;
 
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
@@ -203,10 +203,9 @@ public:
       apply_rotation(param, true);
     }
   }
+
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
-  void resetTargetParticleSet(ParticleSet& P) override { Phi->resetTargetParticleSet(P); }
-
   void setOrbitalSetSize(int norbs) override { Phi->setOrbitalSetSize(norbs); }
 
   //  void setBasisSet(basis_type* bs);

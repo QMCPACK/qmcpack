@@ -15,7 +15,7 @@
 #include <hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
@@ -94,8 +94,8 @@ void axpy_batched_gpu(int n,
   hipMemcpy(b_, b, batchSize * sizeof(*b), hipMemcpyHostToDevice);
   hipMemcpy(x_, x, batchSize * sizeof(*x), hipMemcpyHostToDevice);
   hipLaunchKernelGGL(kernel_axpy_batched, dim3(batchSize), dim3(128), 0, 0, n, x_, a_, inca, b_, incb, batchSize);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
   hipFree(a_);
   hipFree(b_);
   hipFree(x_);
@@ -120,8 +120,8 @@ void sumGw_batched_gpu(int n,
   hipMemcpy(x_, x, batchSize * sizeof(*x), hipMemcpyHostToDevice);
   int nb_(nw > batchSize ? batchSize : nw);
   hipLaunchKernelGGL(kernel_sumGw_batched, dim3(nb_), dim3(256), 0, 0, n, x_, a_, inca, b_, incb, b0, nw, batchSize);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
   hipFree(a_);
   hipFree(b_);
   hipFree(x_);

@@ -15,7 +15,7 @@
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
 #include "uninitialized_array.hpp"
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
@@ -142,8 +142,8 @@ void adotpby(int N,
              double* res)
 {
   hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(1024), 0, 0, N, alpha, x, incx, y, incy, beta, res);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void adotpby(int N,
@@ -159,8 +159,8 @@ void adotpby(int N,
                      reinterpret_cast<thrust::complex<double> const*>(x), incx,
                      reinterpret_cast<thrust::complex<double> const*>(y), incy,
                      static_cast<thrust::complex<double> const>(beta), reinterpret_cast<thrust::complex<double>*>(res));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void adotpby(int N,
@@ -173,8 +173,8 @@ void adotpby(int N,
              float* res)
 {
   hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(1024), 0, 0, N, alpha, x, incx, y, incy, beta, res);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void adotpby(int N,
@@ -190,8 +190,8 @@ void adotpby(int N,
                      reinterpret_cast<thrust::complex<float> const*>(x), incx,
                      reinterpret_cast<thrust::complex<float> const*>(y), incy,
                      static_cast<thrust::complex<float> const>(beta), reinterpret_cast<thrust::complex<float>*>(res));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void adotpby(int N,
@@ -204,8 +204,8 @@ void adotpby(int N,
              double* res)
 {
   hipLaunchKernelGGL(kernel_adotpby, dim3(1), dim3(1024), 0, 0, N, alpha, x, incx, y, incy, beta, res);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void adotpby(int N,
@@ -221,8 +221,8 @@ void adotpby(int N,
                      reinterpret_cast<thrust::complex<float> const*>(x), incx,
                      reinterpret_cast<thrust::complex<float> const*>(y), incy,
                      static_cast<thrust::complex<double> const>(beta), reinterpret_cast<thrust::complex<double>*>(res));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void strided_adotpby(int NB,
@@ -242,8 +242,8 @@ void strided_adotpby(int NB,
                      reinterpret_cast<thrust::complex<double> const*>(B), ldb,
                      static_cast<thrust::complex<double> const>(beta), reinterpret_cast<thrust::complex<double>*>(C),
                      ldc);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void strided_adotpby(int NB,
@@ -263,8 +263,8 @@ void strided_adotpby(int NB,
                      reinterpret_cast<thrust::complex<float> const*>(B), ldb,
                      static_cast<thrust::complex<double> const>(beta), reinterpret_cast<thrust::complex<double>*>(C),
                      ldc);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 } // namespace kernels

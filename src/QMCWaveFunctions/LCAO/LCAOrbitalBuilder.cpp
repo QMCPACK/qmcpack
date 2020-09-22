@@ -106,7 +106,7 @@ inline bool is_same(const xmlChar* a, const char* b) { return !strcmp((const cha
 
 
 LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder(comm),
+    : SPOSetBuilder("LCAO", comm),
       targetPtcl(els),
       sourcePtcl(ions),
       myBasisSet(nullptr),
@@ -447,7 +447,10 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #if !defined(QMC_COMPLEX)
   LCAOrbitalSetWithCorrection* lcwc = nullptr;
   if (doCuspCorrection)
+  {
+    app_summary() << "        Using cusp correction." << std::endl;
     lcos = lcwc = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, optimize == "yes");
+  }
   else
     lcos = new LCAOrbitalSet(myBasisSet, optimize == "yes");
 #else
@@ -854,7 +857,7 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   /// The multideterminants occupation is specified in the input/HDF5 and theefore as long as there is consistency between
   /// the order in which we read the orbitals and the occupation, we are safe. In the case of Multideterminants generated
   /// by pyscf and Quantum Package, They are stored in the same order as generated for quantum package and one should use
-  /// the orbitals labled eigenset_unsorted.
+  /// the orbitals labelled eigenset_unsorted.
 
   if (MultiDet == false)
     sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);

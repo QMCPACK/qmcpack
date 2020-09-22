@@ -42,7 +42,7 @@ class MCPopulation;
  * generated from VMC.
  */
 
-class QMCOptimizeBatched : public QMCDriver
+class QMCOptimizeBatched : public QMCDriverNew
 {
 public:
   ///Constructor.
@@ -63,7 +63,7 @@ public:
   ///Run the Optimization algorithm.
   bool run();
   ///process xml node
-  bool put(xmlNodePtr cur);
+  void process(xmlNodePtr cur);
   ///add a configuration file to the list of files
   void addConfiguration(const std::string& a);
 
@@ -101,9 +101,6 @@ private:
 
   void generateSamples();
 
-  /// Generic QMC driver input
-  QMCDriverInput qmcdriver_input_;
-
   /// VMC-specific driver input
   VMCDriverInput vmcdriver_input_;
 
@@ -111,6 +108,10 @@ private:
 
   /// Samples to use in optimizer
   SampleStack& samples_;
+
+  // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
+  // which still takes an MCWalkerConfiguration in the constructor.
+  MCWalkerConfiguration& W;
 };
 } // namespace qmcplusplus
 #endif

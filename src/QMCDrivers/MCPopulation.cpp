@@ -13,7 +13,7 @@
 
 #include "QMCDrivers/MCPopulation.h"
 #include "Configuration.h"
-#include "Concurrency/TasksOneToOne.hpp"
+#include "Concurrency/ParallelExecutor.hpp"
 #include "Message/CommOperators.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
@@ -205,7 +205,7 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
   }
   else
   {
-    app_warning() << "Spawning walker outside of reserves, this ideally should never happend." << std::endl;
+    app_warning() << "Spawning walker outside of reserves, this ideally should never happened." << std::endl;
     walkers_.push_back(std::make_unique<MCPWalker>(num_particles_));
     walkers_.back()->R          = elec_particle_set_->R;
     walkers_.back()->spins      = elec_particle_set_->spins;
@@ -313,7 +313,7 @@ void MCPopulation::set_variational_parameters(const opt_variables_type& active)
 // {
 //   walkers_.resize(num_walkers);
 
-//   TasksOneToOne<> do_per_crowd(num_crowds);
+//   ParallelExecutor<> do_per_crowd(num_crowds);
 
 //   std::vector<std::unique_ptr<std::vector<std::unique_ptr<MCPWalker>>>> walkers_per_crowd_per_slot;
 //   walkers_per_crowd_per_slot.resize(num_crowds);

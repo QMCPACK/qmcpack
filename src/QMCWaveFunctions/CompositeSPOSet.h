@@ -48,8 +48,6 @@ public:
   ///size is determined by component sposets and nothing else
   inline void setOrbitalSetSize(int norbs) {}
 
-  void resetTargetParticleSet(ParticleSet& P);
-
   SPOSet* makeClone() const;
 
   /** add sposet clones from another Composite SPOSet
@@ -94,7 +92,7 @@ public:
 
 struct CompositeSPOSetBuilder : public SPOSetBuilder
 {
-  CompositeSPOSetBuilder(Communicate* comm) : SPOSetBuilder(comm) {}
+  CompositeSPOSetBuilder(Communicate* comm) : SPOSetBuilder("Composite", comm) {}
 
   //SPOSetBuilder interface
   SPOSet* createSPOSetFromXML(xmlNodePtr cur);

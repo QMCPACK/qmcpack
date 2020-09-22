@@ -30,10 +30,6 @@
 #include "AFQMC/Drivers/DriverFactory.h"
 #include "AFQMC/Memory/buffer_allocators.h"
 
-#include "AFQMC/Utilities/myTimer.h"
-
-myTimer Timer;
-
 namespace qmcplusplus
 {
 TimerList_t AFQMCTimers;
@@ -86,7 +82,7 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
     cur = cur->next;
   }
 
-  // eventually read an inital buffer size from input
+  // eventually read an initial buffer size from input
   // they are initialized now with 10 MBs
   // host_buffer_type->resize(buffer_size);
   // device_buffer_type->resize(buffer_size);

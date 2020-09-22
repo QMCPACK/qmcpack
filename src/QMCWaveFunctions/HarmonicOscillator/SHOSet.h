@@ -102,10 +102,6 @@ struct SHOSet : public SPOSet
   /// number of orbitals is determined only by initial request
   inline void setOrbitalSetSize(int norbs) {}
 
-  /// does not affect ParticleSet information
-  inline void resetTargetParticleSet(ParticleSet& P) {}
-
-
   ///unimplemented functions call this to abort
   inline void not_implemented(const std::string& method)
   {
