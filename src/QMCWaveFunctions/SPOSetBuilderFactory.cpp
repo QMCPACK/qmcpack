@@ -23,10 +23,6 @@
 #if OHMMS_DIM == 3
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
 
-#if !defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/RotatedSPOs.h"
-#endif
-
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
 #include "QMCWaveFunctions/LCAO/LCAOSpinorBuilder.h"
@@ -249,13 +245,10 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   std::string bname("");
   std::string sname("");
   std::string type("");
-  std::string rotation("no");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(bname, "basisset");
   aAttrib.add(sname, "name");
   aAttrib.add(type, "type");
-  aAttrib.add(rotation, "optimize");
-  //aAttrib.put(rcur);
   aAttrib.put(cur);
 
   //tolower(type);
@@ -285,28 +278,6 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   {
     SPOSet* spo = bb->createSPOSet(cur);
     spo->setName(sname);
-    if (rotation == "yes")
-    {
-#ifdef QMC_COMPLEX
-      app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
-      abort();
-#else
-      auto* rot_spo   = new RotatedSPOs(spo);
-      xmlNodePtr tcur = cur->xmlChildrenNode;
-      while (tcur != NULL)
-      {
-        std::string cname((const char*)(tcur->name));
-        if (cname == "opt_vars")
-        {
-          rot_spo->params_supplied = true;
-          putContent(rot_spo->params, tcur);
-        }
-        tcur = tcur->next;
-      }
-      spo = rot_spo;
-      spo->setName(sname);
-#endif
-    }
     return spo;
   }
   else

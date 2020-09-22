@@ -106,20 +106,20 @@ public:
                            const std::vector<std::vector<int>>& lookup_tbl) override;
 
   void evaluateDerivativesWF(ParticleSet& P,
-                           const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           const QTFull::ValueType& psiCurrent,
-                           const std::vector<ValueType>& Coeff,
-                           const std::vector<size_t>& C2node_up,
-                           const std::vector<size_t>& C2node_dn,
-                           const ValueVector_t& detValues_up,
-                           const ValueVector_t& detValues_dn,
-                           const ValueMatrix_t& M_up,
-                           const ValueMatrix_t& M_dn,
-                           const ValueMatrix_t& Minv_up,
-                           const ValueMatrix_t& Minv_dn,
-                           const std::vector<int>& detData_up,
-                           const std::vector<std::vector<int>>& lookup_tbl) override;
+                             const opt_variables_type& optvars,
+                             std::vector<ValueType>& dlogpsi,
+                             const QTFull::ValueType& psiCurrent,
+                             const std::vector<ValueType>& Coeff,
+                             const std::vector<size_t>& C2node_up,
+                             const std::vector<size_t>& C2node_dn,
+                             const ValueVector_t& detValues_up,
+                             const ValueVector_t& detValues_dn,
+                             const ValueMatrix_t& M_up,
+                             const ValueMatrix_t& M_dn,
+                             const ValueMatrix_t& Minv_up,
+                             const ValueMatrix_t& Minv_dn,
+                             const std::vector<int>& detData_up,
+                             const std::vector<std::vector<int>>& lookup_tbl) override;
 
   //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
   void table_method_eval(std::vector<ValueType>& dlogpsi,
@@ -152,20 +152,20 @@ public:
                          const std::vector<std::vector<int>>& lookup_tbl);
 
   void table_method_evalWF(std::vector<ValueType>& dlogpsi,
-                         const size_t nel,
-                         const size_t nmo,
-                         const ValueType& psiCurrent,
-                         const std::vector<RealType>& Coeff,
-                         const std::vector<size_t>& C2node_up,
-                         const std::vector<size_t>& C2node_dn,
-                         const ValueVector_t& detValues_up,
-                         const ValueVector_t& detValues_dn,
-                         const ValueMatrix_t& M_up,
-                         const ValueMatrix_t& M_dn,
-                         const ValueMatrix_t& Minv_up,
-                         const ValueMatrix_t& Minv_dn,
-                         const std::vector<int>& detData_up,
-                         const std::vector<std::vector<int>>& lookup_tbl);
+                           const size_t nel,
+                           const size_t nmo,
+                           const ValueType& psiCurrent,
+                           const std::vector<RealType>& Coeff,
+                           const std::vector<size_t>& C2node_up,
+                           const std::vector<size_t>& C2node_dn,
+                           const ValueVector_t& detValues_up,
+                           const ValueVector_t& detValues_dn,
+                           const ValueMatrix_t& M_up,
+                           const ValueMatrix_t& M_dn,
+                           const ValueMatrix_t& Minv_up,
+                           const ValueMatrix_t& Minv_dn,
+                           const std::vector<int>& detData_up,
+                           const std::vector<std::vector<int>>& lookup_tbl);
 
   void checkInVariables(opt_variables_type& active) override
   {
@@ -238,7 +238,11 @@ public:
     Phi->evaluateDetRatios(VP, psi, psiinv, ratios);
   }
 
-  void evaluateVGH(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi) override
+  void evaluateVGH(const ParticleSet& P,
+                   int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   HessVector_t& grad_grad_psi) override
   {
     assert(psi.size() <= OrbitalSetSize);
     Phi->evaluateVGH(P, iat, psi, dpsi, grad_grad_psi);

@@ -203,7 +203,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         abort();
       }
       SPOSetPtr spo_alpha = get_sposet(spo_alpha_name);
-      SPOSetPtr spo_beta = get_sposet(spo_beta_name);
+      SPOSetPtr spo_beta  = get_sposet(spo_beta_name);
       if (spo_alpha == nullptr)
       {
         app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_alpha_name
@@ -324,7 +324,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   SpeciesSet& myspecies = targetPtcl.mySpecies;
 
   std::string spin_name = myspecies.speciesName[spin_group];
-  std::string sposet;
+  std::string sposet_name;
   std::string basisName("invalid");
   std::string detname("0"), refname("0");
   std::string s_detSize("0");
@@ -332,7 +332,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   OhmmsAttributeSet aAttrib;
   aAttrib.add(basisName, basisset_tag);
   aAttrib.add(detname, "id");
-  aAttrib.add(sposet, "sposet");
+  aAttrib.add(sposet_name, "sposet");
   aAttrib.add(refname, "ref");
   aAttrib.add(s_detSize, "DetSize");
 
@@ -378,21 +378,21 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   }
 
   //old input does not have sposet
-  if (sposet.empty())
-    sposet = detname;
+  if (sposet_name.empty())
+    sposet_name = detname;
 
   app_summary() << std::endl;
   app_summary() << "     Determinant" << std::endl;
   app_summary() << "     -----------" << std::endl;
-  app_summary() << "      Name: " << detname << "   Spin group: " << spin_group << "   SPO name: " << sposet
+  app_summary() << "      Name: " << detname << "   Spin group: " << spin_group << "   SPO name: " << sposet_name
                 << std::endl;
   app_summary() << std::endl;
 
-  SPOSetPtr psi = get_sposet(sposet);
+  SPOSetPtr psi = get_sposet(sposet_name);
   //check if the named sposet exists
   if (psi == 0)
   {
-    app_log() << "      Create a new SPO set " << sposet << std::endl;
+    app_log() << "      Create a new SPO set " << sposet_name << std::endl;
     psi = mySPOSetBuilderFactory->createSPOSet(cur);
   }
   psi->checkObject();
