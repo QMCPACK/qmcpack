@@ -160,8 +160,6 @@ public:
   void checkOutVariables(const opt_variables_type& active);
   void resetParameters(const opt_variables_type& active);
   void reportStatus(std::ostream& os);
-  //evaluate the distance table with els
-  void resetTargetParticleSet(ParticleSet& P);
 
   LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 

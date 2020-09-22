@@ -87,9 +87,6 @@ void AGPDeterminant::reportStatus(std::ostream& os)
   //do nothing
 }
 
-
-void AGPDeterminant::resetTargetParticleSet(ParticleSet& P) { GeminalBasis->resetTargetParticleSet(P); }
-
 /** Calculate the log value of the Dirac determinant for particles
  *@param P input configuration containing N particles
  *@param G a vector containing N gradients
@@ -418,7 +415,6 @@ WaveFunctionComponentPtr AGPDeterminant::makeClone(ParticleSet& tqp) const
 {
   AGPDeterminant* myclone = new AGPDeterminant(0);
   myclone->GeminalBasis   = GeminalBasis->makeClone();
-  myclone->GeminalBasis->resetTargetParticleSet(tqp);
   myclone->resize(Nup, Ndown);
   myclone->Lambda = Lambda;
   if (Nup != Ndown)

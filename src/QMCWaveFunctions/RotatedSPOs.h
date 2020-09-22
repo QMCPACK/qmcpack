@@ -203,10 +203,9 @@ public:
       apply_rotation(param, true);
     }
   }
+
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
-  void resetTargetParticleSet(ParticleSet& P) override { Phi->resetTargetParticleSet(P); }
-
   void setOrbitalSetSize(int norbs) override { Phi->setOrbitalSetSize(norbs); }
 
   //  void setBasisSet(basis_type* bs);

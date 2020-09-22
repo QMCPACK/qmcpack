@@ -39,17 +39,6 @@ void DiffWaveFunctionComponent::evaluateDerivRatios(ParticleSet& VP,
   APP_ABORT("Implement DiffWaveFunctionComponent::evaluateDerivRatios for this orbital");
 }
 
-void NumericalDiffOrbital::resetTargetParticleSet(ParticleSet& P)
-{
-  int nptcls = P.getTotalNum();
-  dg_p.resize(nptcls);
-  dl_p.resize(nptcls);
-  dg_m.resize(nptcls);
-  dl_m.resize(nptcls);
-  gradLogPsi.resize(nptcls);
-  lapLogPsi.resize(nptcls);
-}
-
 void NumericalDiffOrbital::checkOutVariables(const opt_variables_type& optvars)
 {
   //do nothing
@@ -115,20 +104,6 @@ void AnalyticDiffOrbital::resetParameters(const opt_variables_type& optvars)
     return;
   for (int i = 0; i < refOrbital.size(); ++i)
     refOrbital[i]->resetParameters(optvars);
-}
-
-void AnalyticDiffOrbital::resetTargetParticleSet(ParticleSet& P)
-{
-  if (MyIndex < 0)
-    return;
-  for (int i = 0; i < refOrbital.size(); ++i)
-    refOrbital[i]->resetTargetParticleSet(P);
-  int nptcls = P.getTotalNum();
-  if (gradLogPsi.size() != nptcls)
-  {
-    gradLogPsi.resize(nptcls);
-    lapLogPsi.resize(nptcls);
-  }
 }
 
 void AnalyticDiffOrbital::checkOutVariables(const opt_variables_type& optvars)

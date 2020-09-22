@@ -299,10 +299,6 @@ public:
     }
   }
 
-
-  //evaluate the distance table with els
-  void resetTargetParticleSet(ParticleSet& P) {}
-
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
    */
