@@ -63,7 +63,10 @@ public:
   inline int getFirstIndex() const { return FirstIndex; }
   inline int getLastIndex() const { return LastIndex; }
 
+#ifndef NDEBUG
   virtual ValueMatrix_t& getPsiMinv() { return dummy_vmt; }
+#endif
+
   /** set the index of the first particle in the determinant and reset the size of the determinant
    *@param first index of first particle
    *@param nel number of particles in the determinant
@@ -189,7 +192,7 @@ protected:
 #ifndef NDEBUG
   ValueMatrix_t dummy_vmt;
 #endif
-  
+
   /// register all the timers
   void registerTimers()
   {
