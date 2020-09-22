@@ -100,6 +100,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalke
       block_second(false),
       block_third(false),
       crowd_size_(1),
+      opt_num_crowds_(1),
       MinMethod("OneShiftOnly"),
       previous_optimizer_type_(OptimizerType::NONE),
       current_optimizer_type_(OptimizerType::NONE)
@@ -131,6 +132,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalke
   m_param.add(cost_increase_tol, "cost_increase_tol", "double");
   m_param.add(target_shift_i, "target_shift_i", "double");
   m_param.add(crowd_size_, "opt_crowd_size", "int");
+  m_param.add(opt_num_crowds_, "opt_num_crowds", "int");
 
 
 
@@ -574,7 +576,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml, cons
 
   bool success = true;
   //allways reset optTarget
-  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, samples_, crowd_size_, myComm);
+  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, samples_, opt_num_crowds_, crowd_size_, myComm);
   optTarget->setStream(&app_log());
   if (reportH5)
     optTarget->reportH5 = true;

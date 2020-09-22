@@ -185,6 +185,7 @@ private:
 
 
   int crowd_size_;
+  int opt_num_crowds_;
   //Variables for alternatives to linear method
 
   //name of the current optimization method, updated by processOptXML before run
