@@ -147,9 +147,6 @@ public:
    */
   void reportStatus(std::ostream& os);
 
-  /** recursively change the ParticleSet whose G and L are evaluated */
-  void resetTargetParticleSet(ParticleSet& P);
-
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 
@@ -264,7 +261,7 @@ public:
    */
   ValueType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
 
-  /** batched verison of calcRatio */
+  /** batched version of calcRatio */
   static void flex_calcRatio(const RefVector<TrialWaveFunction>& WF_list,
                              const RefVector<ParticleSet>& P_list,
                              int iat,
@@ -274,7 +271,7 @@ public:
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct = ComputeType::ALL);
-  /** batched verison of evaluateRatios
+  /** batched version of evaluateRatios
    * Note: unlike other flex_ static functions, *this is the batch leader instead of WF_list[0].
    */
   void flex_evaluateRatios(const RefVector<TrialWaveFunction>& WF_list,
@@ -321,7 +318,7 @@ public:
    */
   ValueType calcRatioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat);
 
-  /** batched verison of ratioGrad 
+  /** batched version of ratioGrad 
    *
    *  all vector sizes must match
    */
@@ -343,7 +340,7 @@ public:
    */
   GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad);
 
-  /** batched verison of evalGrad
+  /** batched version of evalGrad
     *
     * This is static because it should have no direct access
     * to any TWF.

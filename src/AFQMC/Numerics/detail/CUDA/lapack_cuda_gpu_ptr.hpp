@@ -18,6 +18,7 @@
 #include <cassert>
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Memory/custom_pointers.hpp"
+#include "AFQMC/Memory/arch.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cublas_wrapper.hpp"
 #include "AFQMC/Numerics/detail/CUDA/cusolver_wrapper.hpp"
 #include "AFQMC/Numerics/detail/CUDA/Kernels/setIdentity.cuh"
@@ -72,7 +73,7 @@ inline static void getrf(const int n,
 {
   cusolverStatus_t status = cusolver::cusolver_getrf(*a.handles.cusolverDn_handle, n, m, to_address(a), lda,
                                                      to_address(work), to_address(piv), to_address(piv) + n);
-  cudaMemcpy(&st, to_address(piv) + n, sizeof(int), cudaMemcpyDeviceToHost);
+  arch::memcopy(&st, to_address(piv) + n, sizeof(int), arch::memcopyD2H);
   if (CUSOLVER_STATUS_SUCCESS != status)
   {
     std::cerr << " cublas_getrf status, info: " << status << " " << st << std::endl;
@@ -95,13 +96,13 @@ inline static void getrfBatched(const int n,
   A_h = new T*[batchSize];
   for (int i = 0; i < batchSize; i++)
     A_h[i] = to_address(a[i]);
-  cudaMalloc((void**)&A_d, batchSize * sizeof(*A_h));
-  cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
   cublasStatus_t status = cublas::cublas_getrfBatched(*(a[0]).handles.cublas_handle, n, A_d, lda, to_address(piv),
                                                       to_address(info), batchSize);
   if (CUBLAS_STATUS_SUCCESS != status)
     throw std::runtime_error("Error: cublas_getrf returned error code.");
-  cudaFree(A_d);
+  arch::free(A_d);
   delete[] A_h;
 }
 
@@ -129,20 +130,16 @@ inline static void getri(int n,
     throw std::runtime_error("Error: getri<GPU_MEMORY_POINTER_TYPE> required lda = 1.");
 
   int* info;
-  if (cudaSuccess != cudaMalloc((void**)&info, sizeof(int)))
-  {
-    std::cerr << " Error getri: Error allocating on GPU." << std::endl;
-    throw std::runtime_error("Error: cudaMalloc returned error code.");
-  }
+  arch::malloc((void**)&info, sizeof(int), "lapack_cuda_gpu_ptr::getri");
 
   kernels::set_identity(n, n, to_address(work), n);
   if (CUSOLVER_STATUS_SUCCESS !=
       cusolver::cusolver_getrs(*a.handles.cusolverDn_handle, CUBLAS_OP_N, n, n, to_address(a), lda, to_address(piv),
                                to_address(work), n, info))
     throw std::runtime_error("Error: cusolver_getrs returned error code.");
-  cudaMemcpy(to_address(a), to_address(work), n * n * sizeof(T), cudaMemcpyDeviceToDevice);
-  cudaMemcpy(&status, info, sizeof(int), cudaMemcpyDeviceToHost);
-  cudaFree(info);
+  arch::memcopy(to_address(a), to_address(work), n * n * sizeof(T), arch::memcopyD2D);
+  arch::memcopy(&status, info, sizeof(int), arch::memcopyD2H);
+  arch::free(info);
 }
 
 // getriBatched
@@ -165,16 +162,16 @@ inline static void getriBatched(int n,
     A_h[i] = to_address(a[i]);
     C_h[i] = to_address(ainv[i]);
   }
-  cudaMalloc((void**)&A_d, batchSize * sizeof(*A_h));
-  cudaMalloc((void**)&C_d, batchSize * sizeof(*C_h));
-  cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
-  cudaMemcpy(C_d, C_h, batchSize * sizeof(*C_h), cudaMemcpyHostToDevice);
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
+  arch::memcopy(C_d, C_h, batchSize * sizeof(*C_h), arch::memcopyH2D);
   cublasStatus_t status = cublas::cublas_getriBatched(*(a[0]).handles.cublas_handle, n, A_d, lda, to_address(piv), C_d,
                                                       ldc, to_address(info), batchSize);
   if (CUBLAS_STATUS_SUCCESS != status)
     throw std::runtime_error("Error: cublas_getri returned error code.");
-  cudaFree(A_d);
-  cudaFree(C_d);
+  arch::free(A_d);
+  arch::free(C_d);
   delete[] A_h;
   delete[] C_h;
 }
@@ -198,16 +195,16 @@ inline static void matinvBatched(int n,
     A_h[i] = to_address(a[i]);
     C_h[i] = to_address(ainv[i]);
   }
-  cudaMalloc((void**)&A_d, batchSize * sizeof(*A_h));
-  cudaMalloc((void**)&C_d, batchSize * sizeof(*C_h));
-  cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
-  cudaMemcpy(C_d, C_h, batchSize * sizeof(*C_h), cudaMemcpyHostToDevice);
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::malloc((void**)&C_d, batchSize * sizeof(*C_h));
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
+  arch::memcopy(C_d, C_h, batchSize * sizeof(*C_h), arch::memcopyH2D);
   cublasStatus_t status = cublas::cublas_matinvBatched(*(a[0]).handles.cublas_handle, n, A_d, lda, C_d, lda_inv,
                                                        to_address(info), batchSize);
   if (CUBLAS_STATUS_SUCCESS != status)
     throw std::runtime_error("Error: cublas_matinv returned error code.");
-  cudaFree(A_d);
-  cudaFree(C_d);
+  arch::free(A_d);
+  arch::free(C_d);
   delete[] A_h;
   delete[] C_h;
 }
@@ -233,15 +230,11 @@ inline static void geqrf(int M,
 {
   // allocating here for now
   int* piv;
-  if (cudaSuccess != cudaMalloc((void**)&piv, sizeof(int)))
-  {
-    std::cerr << " Error geqrf: Error allocating on GPU." << std::endl;
-    throw std::runtime_error("Error: cudaMalloc returned error code.");
-  }
+  arch::malloc((void**)&piv, sizeof(int), "lapack_cuda_gpu_ptr::geqrf");
 
   cusolverStatus_t status = cusolver::cusolver_geqrf(*A.handles.cusolverDn_handle, M, N, to_address(A), LDA,
                                                      to_address(TAU), to_address(WORK), LWORK, piv);
-  cudaMemcpy(&INFO, piv, sizeof(int), cudaMemcpyDeviceToHost);
+  arch::memcopy(&INFO, piv, sizeof(int), arch::memcopyD2H);
   if (CUSOLVER_STATUS_SUCCESS != status)
   {
     int st;
@@ -249,7 +242,7 @@ inline static void geqrf(int M,
     std::cerr.flush();
     throw std::runtime_error("Error: cublas_geqrf returned error code.");
   }
-  cudaFree(piv);
+  arch::free(piv);
 }
 
 // gelqf
@@ -294,15 +287,11 @@ void static gqr(int M,
 {
   // allocating here for now
   int* piv;
-  if (cudaSuccess != cudaMalloc((void**)&piv, sizeof(int)))
-  {
-    std::cerr << " Error gqr: Error allocating on GPU." << std::endl;
-    throw std::runtime_error("Error: cudaMalloc returned error code.");
-  }
+  arch::malloc((void**)&piv, sizeof(int), "lapack_cuda_gpu_ptr::gqr");
 
   cusolverStatus_t status = cusolver::cusolver_gqr(*A.handles.cusolverDn_handle, M, N, K, to_address(A), LDA,
                                                    to_address(TAU), to_address(WORK), LWORK, piv);
-  cudaMemcpy(&INFO, piv, sizeof(int), cudaMemcpyDeviceToHost);
+  arch::memcopy(&INFO, piv, sizeof(int), arch::memcopyD2H);
   if (CUSOLVER_STATUS_SUCCESS != status)
   {
     int st;
@@ -310,7 +299,7 @@ void static gqr(int M,
     std::cerr.flush();
     throw std::runtime_error("Error: cublas_gqr returned error code.");
   }
-  cudaFree(piv);
+  arch::free(piv);
 }
 
 template<typename T, typename I>
@@ -378,15 +367,15 @@ inline static void geqrfBatched(int M,
     T_h[i] = to_address(TAU[i]);
   T** B_d;
   std::vector<int> inf(batchSize);
-  cudaMalloc((void**)&B_d, 2 * batchSize * sizeof(*B_h));
-  cudaMemcpy(B_d, B_h, 2 * batchSize * sizeof(*B_h), cudaMemcpyHostToDevice);
+  arch::malloc((void**)&B_d, 2 * batchSize * sizeof(*B_h));
+  arch::memcopy(B_d, B_h, 2 * batchSize * sizeof(*B_h), arch::memcopyH2D);
   T** A_d(B_d);
   T** T_d(B_d + batchSize);
   cublasStatus_t status = cublas::cublas_geqrfBatched(*(A[0]).handles.cublas_handle, M, N, A_d, LDA, T_d,
                                                       to_address(inf.data()), batchSize);
   if (CUBLAS_STATUS_SUCCESS != status)
     throw std::runtime_error("Error: cublas_geqrfBatched returned error code.");
-  cudaFree(B_d);
+  arch::free(B_d);
   delete[] B_h;
 }
 
@@ -410,8 +399,8 @@ inline static void geqrfStrided(int M,
     for(int i=0; i<batchSize; i++)
       T_h[i] = to_address(TAU)+i*Tstride;
     T **B_d;
-    cudaMalloc((void **)&B_d,  2*batchSize*sizeof(*B_h));
-    cudaMemcpy(B_d, B_h, 2*batchSize*sizeof(*B_h), cudaMemcpyHostToDevice);
+    arch::malloc((void **)&B_d,  2*batchSize*sizeof(*B_h));
+    arch::memcopy(B_d, B_h, 2*batchSize*sizeof(*B_h), arch::memcopyH2D);
     T **A_d(B_d);
     T **T_d(B_d+batchSize);
 */
@@ -424,19 +413,19 @@ inline static void geqrfStrided(int M,
   for (int i = 0; i < batchSize; i++)
     T_h[i] = to_address(TAU) + i * Tstride;
   T **A_d, **T_d;
-  cudaMalloc((void**)&A_d, batchSize * sizeof(*A_h));
-  cudaMemcpy(A_d, A_h, batchSize * sizeof(*A_h), cudaMemcpyHostToDevice);
-  cudaMalloc((void**)&T_d, batchSize * sizeof(*T_h));
-  cudaMemcpy(T_d, T_h, batchSize * sizeof(*T_h), cudaMemcpyHostToDevice);
+  arch::malloc((void**)&A_d, batchSize * sizeof(*A_h));
+  arch::memcopy(A_d, A_h, batchSize * sizeof(*A_h), arch::memcopyH2D);
+  arch::malloc((void**)&T_d, batchSize * sizeof(*T_h));
+  arch::memcopy(T_d, T_h, batchSize * sizeof(*T_h), arch::memcopyH2D);
   cublasStatus_t status =
       cublas::cublas_geqrfBatched(*A.handles.cublas_handle, M, N, A_d, LDA, T_d, to_address(inf.data()), batchSize);
   for (int i = 0; i < batchSize; i++)
     assert(inf[i] == 0);
   if (CUBLAS_STATUS_SUCCESS != status)
     throw std::runtime_error("Error: cublas_geqrfBatched returned error code.");
-  cudaFree(A_d);
+  arch::free(A_d);
   delete[] A_h;
-  cudaFree(T_d);
+  arch::free(T_d);
   delete[] T_h;
 }
 
@@ -464,18 +453,18 @@ inline static void gesvd(char jobU,
                          int& st)
 {
   int* devSt;
-  cudaMalloc((void**)&devSt, sizeof(int));
+  arch::malloc((void**)&devSt, sizeof(int));
   cusolverStatus_t status =
       cusolver::cusolver_gesvd(*A.handles.cusolverDn_handle, jobU, jobVT, m, n, to_address(A), lda, to_address(S),
                                to_address(U), ldu, to_address(VT), ldvt, to_address(W), lw, devSt);
-  cudaMemcpy(&st, devSt, sizeof(int), cudaMemcpyDeviceToHost);
+  arch::memcopy(&st, devSt, sizeof(int), arch::memcopyD2H);
   if (CUSOLVER_STATUS_SUCCESS != status)
   {
     std::cerr << " cublas_gesvd status, info: " << status << " " << st << std::endl;
     std::cerr.flush();
     throw std::runtime_error("Error: cublas_gesvd returned error code.");
   }
-  cudaFree(devSt);
+  arch::free(devSt);
 }
 
 template<typename T, typename R>
@@ -496,18 +485,18 @@ inline static void gesvd(char jobU,
                          int& st)
 {
   int* devSt;
-  cudaMalloc((void**)&devSt, sizeof(int));
+  arch::malloc((void**)&devSt, sizeof(int));
   cusolverStatus_t status =
       cusolver::cusolver_gesvd(*A.handles.cusolverDn_handle, jobU, jobVT, m, n, to_address(A), lda, to_address(S),
                                to_address(U), ldu, to_address(VT), ldvt, to_address(W), lw, devSt);
-  cudaMemcpy(&st, devSt, sizeof(int), cudaMemcpyDeviceToHost);
+  arch::memcopy(&st, devSt, sizeof(int), arch::memcopyD2H);
   if (CUSOLVER_STATUS_SUCCESS != status)
   {
     std::cerr << " cublas_gesvd status, info: " << status << " " << st << std::endl;
     std::cerr.flush();
     throw std::runtime_error("Error: cublas_gesvd returned error code.");
   }
-  cudaFree(devSt);
+  arch::free(devSt);
 }
 
 

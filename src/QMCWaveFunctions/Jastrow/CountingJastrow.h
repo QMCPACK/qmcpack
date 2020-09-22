@@ -205,9 +205,6 @@ public:
   }
 
 
-  void resetTargetParticleSet(ParticleSet& P) {}
-
-
   LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     evaluateExponents(P);

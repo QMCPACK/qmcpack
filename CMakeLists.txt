@@ -768,8 +768,8 @@ IF(ENABLE_HIP)
   ADD_LIBRARY(HIP::HIP INTERFACE IMPORTED)
   # temporarily put hipsparse hipblas here for convenience, should be moved to Platforms.
   SET_TARGET_PROPERTIES(HIP::HIP PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${ROCM_ROOT}/include"
-                                            INTERFACE_COMPILE_DEFINITIONS "ENABLE_HIP;__HIP_PLATFORM_HCC__"
-                                            INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lhip_hcc")
+                                            INTERFACE_COMPILE_DEFINITIONS "ENABLE_HIP"
+                                            INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lamdhip64")
 ENDIF(ENABLE_HIP)
 
 ######################################################

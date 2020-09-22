@@ -47,8 +47,6 @@ inline void EinsplineSetExtended<StorageType>::computePhaseFactors(const TinyVec
 
 EinsplineSet::UnitCellType EinsplineSet::GetLattice() { return SuperLattice; }
 
-void EinsplineSet::resetTargetParticleSet(ParticleSet& e) {}
-
 void EinsplineSet::resetSourceParticleSet(ParticleSet& ions) {}
 
 void EinsplineSet::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; }
@@ -137,10 +135,6 @@ inline void EinsplineMultiEval(multi_UBspline_3d_z* restrict spline,
 
 template<typename StorageType>
 void EinsplineSetExtended<StorageType>::resetParameters(const opt_variables_type& active)
-{}
-
-template<typename StorageType>
-void EinsplineSetExtended<StorageType>::resetTargetParticleSet(ParticleSet& e)
 {}
 
 template<typename StorageType>

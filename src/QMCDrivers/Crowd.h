@@ -99,7 +99,7 @@ public:
 private:
   /** @name Walker Vectors
    *
-   *  A single index into these ordered lists constitue a complete 
+   *  A single index into these ordered lists constitutes a complete 
    *  walker context.
    * @{
    */

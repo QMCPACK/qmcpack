@@ -83,13 +83,6 @@ public:
 
   virtual void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
 
-  // To be removed with AoS
-  void resetTargetParticleSet(ParticleSet& P) override final
-  {
-    Phi->resetTargetParticleSet(P);
-    targetPtcl = &P;
-  }
-
   inline void reportStatus(std::ostream& os) override final {}
 
   // expose CPU interfaces
@@ -186,8 +179,6 @@ protected:
   int NumOrbitals;
   ///number of particles which belong to this Dirac determinant
   int NumPtcls;
-  /// targetPtcl pointer. YE: to be removed.
-  ParticleSet* targetPtcl;
 
 #ifndef NDEBUG
   ValueMatrix_t dummy_vmt;

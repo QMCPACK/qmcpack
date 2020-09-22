@@ -28,6 +28,7 @@
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/rotate.hpp"
 #include "AFQMC/Utilities/afqmc_TTI.hpp"
+#include "AFQMC/Utilities/myTimer.h"
 
 #include "AFQMC/Hamiltonians/rotateHamiltonian_Helper2.hpp"
 

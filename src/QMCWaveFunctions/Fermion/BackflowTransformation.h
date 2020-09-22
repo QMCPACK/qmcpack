@@ -352,9 +352,7 @@ public:
     /*
     dummyQP2.R = P.R;
     dummyQP2.update();
-    resetTargetParticleSet(dummyQP2);
     evaluate(P,dummyQP);
-    resetTargetParticleSet(P);
     std::cout <<"index: ";
     for(int i=0; i<indexQP.size(); i++) std::cout <<indexQP[i] <<" ";
     std::cout << std::endl;

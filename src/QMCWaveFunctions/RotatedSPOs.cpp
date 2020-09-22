@@ -86,7 +86,7 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
     sstr << Phi->getName() << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
          << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
 
-    // If the user input parameteres, use those. Otherwise, initialize the parameters to zero
+    // If the user input parameters, use those. Otherwise, initialize the parameters to zero
     if (params_supplied)
     {
       myVars.insert(sstr.str(), params[i]);
@@ -625,7 +625,7 @@ $
   const size_t nc               = Coeff.size();
   const size_t* restrict upC(C2node_up.data());
   const size_t* restrict dnC(C2node_dn.data());
-  //B_grad holds the gardient operator
+  //B_grad holds the gradient operator
   //B_lapl holds the laplacian operator
   //B_bar will hold our special O operator
 
@@ -643,7 +643,7 @@ $
   const RealType* restrict B(Bbar.data());
   const RealType* restrict A(M_up.data());
   const RealType* restrict Ainv(Minv_up.data());
-  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINES ONE ELECTRON. NEED A FIX FOR THIS CASE
+  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINS ONE ELECTRON. NEED A FIX FOR THIS CASE
   // The T matrix should be calculated and stored for use
   // T = A^{-1} \widetilde A
   //REMINDER: that the ValueMatrix_t "matrix" stores data in a row major order and that BLAS commands assume column major
@@ -913,7 +913,7 @@ void RotatedSPOs::table_method_evalWF(std::vector<ValueType>& dlogpsi,
 
   const RealType* restrict A(M_up.data());
   const RealType* restrict Ainv(Minv_up.data());
-  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINES ONE ELECTRON. NEED A FIX FOR THIS CASE
+  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINS ONE ELECTRON. NEED A FIX FOR THIS CASE
   // The T matrix should be calculated and stored for use
   // T = A^{-1} \widetilde A
   //REMINDER: that the ValueMatrix_t "matrix" stores data in a row major order and that BLAS commands assume column major

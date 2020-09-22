@@ -89,28 +89,68 @@ void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed)
   }
 }
 
-void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind)
+void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, const std::string& message)
 {
-  if (cudaSuccess != cudaMemcpy(dst, src, count, tocudaMemcpyKind(kind)))
+  cudaError_t status = cudaMemcpy(dst, src, count, tocudaMemcpyKind(kind));
+  if (status != cudaSuccess)
+  {
+    if (message != "")
+    {
+      std::cerr << "Error: " << message << std::endl;
+    }
+    std::cerr << " Error when calling cudaMemcpy: " << cudaGetErrorString(status) << std::endl;
     throw std::runtime_error("Error: cudaMemcpy returned error code.");
+  }
 }
 
-void memcopy2D(void* dst, size_t dpitch, const void* src, size_t spitch, size_t width, size_t height, MEMCOPYKIND kind)
+void memcopy2D(void* dst,
+               size_t dpitch,
+               const void* src,
+               size_t spitch,
+               size_t width,
+               size_t height,
+               MEMCOPYKIND kind,
+               const std::string& message)
 {
-  if (cudaSuccess != cudaMemcpy2D(dst, dpitch, src, spitch, width, height, tocudaMemcpyKind(kind)))
+  cudaError_t status = cudaMemcpy2D(dst, dpitch, src, spitch, width, height, tocudaMemcpyKind(kind));
+  if (status != cudaSuccess)
+  {
+    if (message != "")
+    {
+      std::cerr << "Error: " << message << std::endl;
+    }
+    std::cerr << " Error when calling cudaMemcpy2D: " << cudaGetErrorString(status) << std::endl;
     throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
+  }
 }
 
-void malloc(void** devPtr, size_t size)
+void malloc(void** devPtr, size_t size, const std::string& message)
 {
-  if (cudaSuccess != cudaMalloc(devPtr, size))
+  cudaError_t status = cudaMalloc(devPtr, size);
+  if (status != cudaSuccess)
   {
     std::cerr << " Error allocating " << size * 1024.0 / 1024.0 << " MBs on GPU." << std::endl;
+    if (message != "")
+    {
+      std::cerr << " Error from: " << message  << std::endl;
+    }
+    std::cerr << " Error when calling cudaMalloc: " << cudaGetErrorString(status) << std::endl;
     throw std::runtime_error("Error: cudaMalloc returned error code.");
   }
 }
 
-void free(void* p) { cudaFree(p); }
+void free(void* p, const std::string& message)
+{
+  cudaError_t status = cudaFree(p);
+  if (status != cudaSuccess)
+  {
+    if (message != "")
+    {
+      std::cerr << " Error from: " << message  << std::endl;
+    }
+    std::cerr << " Error from calling cudaFree: " << cudaGetErrorString(status) << std::endl;
+  }
+}
 
 } // namespace arch
 

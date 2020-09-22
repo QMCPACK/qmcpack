@@ -45,13 +45,6 @@ void PWRealOrbitalSet::resetParameters(const opt_variables_type& active)
 
 void PWRealOrbitalSet::setOrbitalSetSize(int norbs) {}
 
-void PWRealOrbitalSet::resetTargetParticleSet(ParticleSet& P)
-{
-  //  Not sure what to do here, if anything
-  //app_error() << "PWRealOrbitalSet::resetTargetParticleSet not yet coded." << std::endl;
-  //OHMMS::Controller->abort();
-}
-
 void PWRealOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
 {
   myBasisSet     = bset;
