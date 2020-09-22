@@ -81,8 +81,6 @@ public:
   void resetParameters(const opt_variables_type& active) override;
   void reportStatus(std::ostream& os) override;
 
-  void resetTargetParticleSet(ParticleSet& P) override;
-
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
 

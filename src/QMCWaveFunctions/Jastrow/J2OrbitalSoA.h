@@ -167,13 +167,6 @@ public:
   /** add functor for (ia,ib) pair */
   void addFunc(int ia, int ib, FT* j);
 
-
-  void resetTargetParticleSet(ParticleSet& P)
-  {
-    if (dPsi)
-      dPsi->resetTargetParticleSet(P);
-  }
-
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
    */

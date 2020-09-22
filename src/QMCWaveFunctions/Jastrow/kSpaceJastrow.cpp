@@ -357,21 +357,6 @@ void kSpaceJastrow::setCoefficients(std::vector<RealType>& oneBodyCoefs, std::ve
   }
 }
 
-void kSpaceJastrow::resetTargetParticleSet(ParticleSet& P)
-{
-  for (int i = 0; i < TwoBodyGvecs.size(); i++)
-  {
-    TwoBody_rhoG[i] = ComplexType();
-    for (int iat = 0; iat < num_elecs; iat++)
-    {
-      RealType phase, s, c;
-      phase = dot(TwoBodyGvecs[i], P.R[iat]);
-      qmcplusplus::sincos(phase, &s, &c);
-      TwoBody_rhoG[i] += ComplexType(c, s);
-    }
-  }
-}
-
 ///////////////////////////////////////////////////////////////
 //                  Evaluation functions                     //
 ///////////////////////////////////////////////////////////////

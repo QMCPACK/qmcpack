@@ -61,7 +61,6 @@ struct SPOSetProxyForMSD : public SPOSet
    */
   SPOSetProxyForMSD(SPOSetPtr const& spos, int first, int last);
   void resetParameters(const opt_variables_type& optVariables) override;
-  void resetTargetParticleSet(ParticleSet& P) override;
   void setOrbitalSetSize(int norbs) override;
   void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override;

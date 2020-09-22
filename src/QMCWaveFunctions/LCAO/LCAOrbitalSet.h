@@ -93,12 +93,6 @@ public:
     APP_ABORT("LCAOrbitalSet should not call resetParameters");
   }
 
-  ///reset the target particleset
-  void resetTargetParticleSet(ParticleSet& P) override
-  {
-    //myBasisSet->resetTargetParticleSet(P);
-  }
-
   /** set the OrbitalSetSize
     */
   virtual void setOrbitalSetSize(int norbs) override

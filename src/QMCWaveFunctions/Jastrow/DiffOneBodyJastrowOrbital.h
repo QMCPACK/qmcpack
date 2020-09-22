@@ -124,9 +124,6 @@ public:
     }
   }
 
-  ///reset the distance table
-  void resetTargetParticleSet(ParticleSet& P) {}
-
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,

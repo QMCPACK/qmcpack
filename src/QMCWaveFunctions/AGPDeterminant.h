@@ -51,8 +51,6 @@ public:
   void resetParameters(const opt_variables_type& active);
   void reportStatus(std::ostream& os);
 
-  void resetTargetParticleSet(ParticleSet& P);
-
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nup, int ndown);
 
