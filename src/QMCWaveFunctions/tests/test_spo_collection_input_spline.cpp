@@ -16,7 +16,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
-#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+#include "QMCWaveFunctions/WaveFunctionFactory.h"
 
 #include <stdio.h>
 #include <string>
@@ -26,7 +26,7 @@ using std::string;
 
 namespace qmcplusplus
 {
-TEST_CASE("SPO input spline from HDF diamond_2x1x1", "[wavefunction]")
+void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
 {
   Communicate* c;
   c = OHMMS::Controller;
@@ -81,25 +81,14 @@ TEST_CASE("SPO input spline from HDF diamond_2x1x1", "[wavefunction]")
   ptcl.addParticleSet(&elec_);
   ptcl.addParticleSet(&ions_);
 
-  //diamondC_2x1x1
-  const char* particles = "<tmp> \
-<sposet_collection name=\"einspline_diamond_size4\" type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\"> \
-  <sposet name=\"spo\" size=\"4\" spindataset=\"0\"/> \
-</sposet_collection> \
-</tmp> \
-";
-
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
+  bool okay = doc.parseFromString(spo_xml_string);
   REQUIRE(okay);
 
-  xmlNodePtr root = doc.getRoot();
+  xmlNodePtr ein_xml = doc.getRoot();
 
-  xmlNodePtr ein_xml = xmlFirstElementChild(root);
-
-  SPOSetBuilderFactory spo_builder_factory(c, elec_, ptcl.getPool());
-
-  spo_builder_factory.build_sposet_collection(ein_xml);
+  WaveFunctionFactory wf_factory(&elec_, ptcl.getPool(), c);
+  wf_factory.build(ein_xml);
 
   SPOSet* spo_ptr(get_sposet("spo"));
   REQUIRE(spo_ptr);
@@ -147,94 +136,49 @@ TEST_CASE("SPO input spline from HDF diamond_2x1x1", "[wavefunction]")
   REQUIRE(std::imag(d2psiM[1][1]) == Approx(-2.4919104576));
 #endif
 
-  // test batched interfaces
-
-  ParticleSet elec_2(elec_);
-  // interchange positions
-  elec_2.R[0] = elec_.R[1];
-  elec_2.R[1] = elec_.R[0];
-  RefVector<ParticleSet> P_list;
-  P_list.push_back(elec_);
-  P_list.push_back(elec_2);
-
-  std::unique_ptr<SPOSet> spo_2(spo->makeClone());
-  RefVector<SPOSet> spo_list;
-  spo_list.push_back(*spo);
-  spo_list.push_back(*spo_2);
-
-  SPOSet::ValueVector_t psi(spo->getOrbitalSetSize());
-  SPOSet::GradVector_t dpsi(spo->getOrbitalSetSize());
-  SPOSet::ValueVector_t d2psi(spo->getOrbitalSetSize());
-  SPOSet::ValueVector_t psi_2(spo->getOrbitalSetSize());
-  SPOSet::GradVector_t dpsi_2(spo->getOrbitalSetSize());
-  SPOSet::ValueVector_t d2psi_2(spo->getOrbitalSetSize());
-
-  RefVector<SPOSet::ValueVector_t> psi_v_list;
-  RefVector<SPOSet::GradVector_t> dpsi_v_list;
-  RefVector<SPOSet::ValueVector_t> d2psi_v_list;
-
-  psi_v_list.push_back(psi);
-  psi_v_list.push_back(psi_2);
-  dpsi_v_list.push_back(dpsi);
-  dpsi_v_list.push_back(dpsi_2);
-  d2psi_v_list.push_back(d2psi);
-  d2psi_v_list.push_back(d2psi_2);
-
-  spo->mw_evaluateValue(spo_list, P_list, 1, psi_v_list);
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
-  // real part
-  // due to the different ordering of bands skip the tests on CUDA+Real builds
-  // checking evaluations, reference values are not independently generated.
-  // value
-  REQUIRE(std::real(psi_v_list[0].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::real(psi_v_list[0].get()[1]) == Approx(1.2383049726));
-#endif
-
-#if defined(QMC_COMPLEX)
-  // imaginary part
-  // value
-  REQUIRE(std::imag(psi_v_list[0].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::imag(psi_v_list[0].get()[1]) == Approx(1.2383049726));
-#endif
-
-  spo->mw_evaluateVGL(spo_list, P_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
-  // real part
-  // due to the different ordering of bands skip the tests on CUDA+Real builds
-  // checking evaluations, reference values are not independently generated.
-  // value
-  REQUIRE(std::real(psi_v_list[1].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::real(psi_v_list[1].get()[1]) == Approx(1.2383049726));
-  // grad
-  REQUIRE(std::real(dpsi_v_list[1].get()[0][0]) == Approx(0.0025820041));
-  REQUIRE(std::real(dpsi_v_list[1].get()[0][1]) == Approx(-0.1880052537));
-  REQUIRE(std::real(dpsi_v_list[1].get()[0][2]) == Approx(-0.0025404284));
-  REQUIRE(std::real(dpsi_v_list[1].get()[1][0]) == Approx(0.1069662273));
-  REQUIRE(std::real(dpsi_v_list[1].get()[1][1]) == Approx(-0.4364597797));
-  REQUIRE(std::real(dpsi_v_list[1].get()[1][2]) == Approx(-0.106951952));
-  // lapl
-  REQUIRE(std::real(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
-  REQUIRE(std::real(d2psi_v_list[1].get()[1]) == Approx(-2.4803137779));
-#endif
-
-#if defined(QMC_COMPLEX)
-  // imaginary part
-  // value
-  REQUIRE(std::imag(psi_v_list[1].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::imag(psi_v_list[1].get()[1]) == Approx(1.2383049726));
-  // grad
-  REQUIRE(std::imag(dpsi_v_list[1].get()[0][0]) == Approx(0.0025820041));
-  REQUIRE(std::imag(dpsi_v_list[1].get()[0][1]) == Approx(-0.1880052537));
-  REQUIRE(std::imag(dpsi_v_list[1].get()[0][2]) == Approx(-0.0025404284));
-  REQUIRE(std::imag(dpsi_v_list[1].get()[1][0]) == Approx(0.1069453433));
-  REQUIRE(std::imag(dpsi_v_list[1].get()[1][1]) == Approx(-0.43649593));
-  REQUIRE(std::imag(dpsi_v_list[1].get()[1][2]) == Approx(-0.1069145575));
-  // lapl
-  REQUIRE(std::imag(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
-  REQUIRE(std::imag(d2psi_v_list[1].get()[1]) == Approx(-2.4919104576));
-#endif
-
-  spo_builder_factory.clear();
+  SPOSetBuilderFactory::clear();
 }
 
+TEST_CASE("SPO input spline from HDF diamond_2x1x1", "[wavefunction]")
+{
+  // capture 3 spo input styles, the 2nd and 3rd ones will be deprecated and removed eventually.
+  // the first case should be simplified using SPOSetBuilderFactory instead of WaveFunctionFactory
+  app_log() << "-------------------------------------------------------------" << std::endl;
+  app_log() << "diamondC_2x1x1 input style 1 using sposet_collection" << std::endl;
+  app_log() << "-------------------------------------------------------------" << std::endl;
+  const char* spo_xml_string1 = "<wavefunction name=\"psi0\" target=\"elec\">\
+<sposet_collection name=\"einspline_diamond_size4\" type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\"> \
+  <sposet name=\"spo\" size=\"4\" spindataset=\"0\"/> \
+</sposet_collection> \
+</wavefunction> \
+";
+  test_diamond_2x1x1_xml_input(spo_xml_string1);
+
+  app_log() << "-------------------------------------------------------------" << std::endl;
+  app_log() << "diamondC_2x1x1 input style 2 sposet inside determinantset" << std::endl;
+  app_log() << "-------------------------------------------------------------" << std::endl;
+  const char* spo_xml_string2 = "<wavefunction name=\"psi0\" target=\"elec\">\
+<determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\"> \
+  <sposet name=\"spo\" size=\"4\" spindataset=\"0\"/> \
+  <slaterdeterminant> \
+    <determinant name=\"det\" sposet=\"spo\" size=\"4\" spindataset=\"0\"/> \
+  </slaterdeterminant> \
+</determinantset> \
+</wavefunction> \
+";
+  test_diamond_2x1x1_xml_input(spo_xml_string2);
+
+  app_log() << "-------------------------------------------------------------" << std::endl;
+  app_log() << "diamondC_2x1x1 input style 3 sposet inside determinantset" << std::endl;
+  app_log() << "-------------------------------------------------------------" << std::endl;
+  const char* spo_xml_string3 = "<wavefunction name=\"psi0\" target=\"elec\">\
+<determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\"> \
+  <slaterdeterminant> \
+    <determinant name=\"spo\" size=\"4\" spindataset=\"0\"/> \
+  </slaterdeterminant> \
+</determinantset> \
+</wavefunction> \
+";
+  test_diamond_2x1x1_xml_input(spo_xml_string3);
+}
 } // namespace qmcplusplus
