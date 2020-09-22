@@ -29,8 +29,6 @@ void SPOSetProxyForMSD::resetParameters(const opt_variables_type& optVariables)
   refPhi->resetParameters(optVariables);
 }
 
-void SPOSetProxyForMSD::resetTargetParticleSet(ParticleSet& P) { refPhi->resetTargetParticleSet(P); }
-
 void SPOSetProxyForMSD::setOrbitalSetSize(int norbs)
 {
   //psiM.resize(norbs,OrbitalSetSize);

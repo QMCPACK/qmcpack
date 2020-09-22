@@ -113,9 +113,6 @@ public:
     }
   }
 
-  ///reset the distance table
-  void resetTargetParticleSet(ParticleSet& P) {}
-
   void checkOutVariables(const opt_variables_type& active)
   {
     myVars.clear();

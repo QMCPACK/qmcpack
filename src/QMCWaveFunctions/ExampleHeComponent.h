@@ -42,8 +42,6 @@ public:
 
   void reportStatus(std::ostream& os) override {}
 
-  void resetTargetParticleSet(ParticleSet& P) override {}
-
   LogValueType evaluateLog(ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
