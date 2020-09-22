@@ -47,9 +47,6 @@ public:
   ///destructor
   ~SlaterDet();
 
-  ///add a SPOSet
-  void add(SPOSetPtr sposet, const std::string& aname) {}
-
   ///add a new DiracDeterminant to the list of determinants
   virtual void add(Determinant_t* det, int ispin);
 

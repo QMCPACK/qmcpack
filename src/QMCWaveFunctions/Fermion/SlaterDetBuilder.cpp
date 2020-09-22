@@ -102,7 +102,6 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       spoAttrib.put(cur);
       app_log() << "spo_name = " << spo_name << std::endl;
       SPOSetPtr spo = mySPOSetBuilderFactory->createSPOSet(cur);
-      //spo->put(cur, spomap);
       if (spomap.find(spo_name) != spomap.end())
       {
         app_error() << "SPOSet name \"" << spo_name << "\" is already in use.\n";
@@ -111,7 +110,6 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       spomap[spo_name] = spo;
       spo->setName(spo_name);
       assert(spomap.find(spo_name) != spomap.end());
-      //	slaterdet_0->add(spo,spo_name);
     }
     else if (cname == backflow_tag)
     {
@@ -135,69 +133,8 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
     cur = cur->next;
   }
 
-  //sposet_builder is defined outside <determinantset/>
-  if (spomap.empty())
-  {
-    cur = curRoot->children;
-    while (cur != NULL) //check the basis set
-    {
-      getNodeName(cname, cur);
-      if (cname == sd_tag)
-      {
-        xmlNodePtr cur1 = cur->children;
-        while (cur1 != NULL)
-        {
-          getNodeName(tname, cur1);
-          if (tname == det_tag)
-          {
-            std::string aspo, did;
-            OhmmsAttributeSet a;
-            a.add(did, "id");
-            a.add(aspo, "sposet");
-            a.put(cur1);
-            if (aspo.empty())
-              aspo = did;
-            SPOSet* aset = get_sposet(aspo);
-            if (aset)
-              spomap[aspo] = aset;
-            else
-            {
-              mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
-              aset = mySPOSetBuilderFactory->createSPOSet(cur1);
-              if (aset)
-                spomap[aspo] = aset;
-            }
-          }
-          cur1 = cur1->next;
-        }
-      }
-      else if (cname == multisd_tag)
-      {
-        std::string spo_alpha;
-        std::string spo_beta;
-        OhmmsAttributeSet a;
-        a.add(spo_alpha, "spo_up");
-        a.add(spo_beta, "spo_dn");
-        a.put(cur);
-        SPOSet* alpha = get_sposet(spo_alpha);
-        SPOSet* beta  = get_sposet(spo_beta);
-        if (alpha && beta)
-        {
-          spomap[spo_alpha] = alpha;
-          spomap[spo_beta]  = beta;
-        }
-      }
-      cur = cur->next;
-    }
-  }
-
-  if (spomap.empty())
-  {
-    APP_ABORT_TRACE(__FILE__, __LINE__, " No sposet is found to build slaterdeterminant or multideterminant");
-  }
-
   cur = curRoot->children;
-  while (cur != NULL) //check the basis set
+  while (cur != NULL)
   {
     getNodeName(cname, cur);
     if (cname == sposcanner_tag)
@@ -228,10 +165,6 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       else
         slaterdet_0 = new SlaterDeterminant_t(targetPtcl);
 
-      // Copy any entries in sposetmap into slaterdet_0
-      std::map<std::string, SPOSetPtr>::iterator iter;
-      for (iter = spomap.begin(); iter != spomap.end(); iter++)
-        slaterdet_0->add(iter->second, iter->first);
       size_t spin_group = 0;
       xmlNodePtr tcur   = cur->children;
       while (tcur != NULL)
@@ -261,33 +194,43 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       {
         APP_ABORT("multideterminant is already instantiated.");
       }
-      std::string spo_alpha;
-      std::string spo_beta;
+      std::string spo_alpha_name;
+      std::string spo_beta_name;
       std::string fastAlg("yes");
       OhmmsAttributeSet spoAttrib;
-      spoAttrib.add(spo_alpha, "spo_up");
-      spoAttrib.add(spo_beta, "spo_dn");
+      spoAttrib.add(spo_alpha_name, "spo_up");
+      spoAttrib.add(spo_beta_name, "spo_dn");
       spoAttrib.add(fastAlg, "Fast");
       spoAttrib.put(cur);
-      if (spo_alpha == spo_beta)
+      // YE FIXME: I think we can remove this restriction.
+      // even when spo_alpha and spo_beta refer to the same spo, the objects are different.
+      if (spo_alpha_name == spo_beta_name)
       {
         app_error()
             << "In SlaterDetBuilder: In MultiSlaterDeterminant construction, SPO sets must be different. spo_up: "
-            << spo_alpha << "  spo_dn: " << spo_beta << "\n";
+            << spo_alpha_name << "  spo_dn: " << spo_beta_name << "\n";
         abort();
       }
-      if (spomap.find(spo_alpha) == spomap.end())
+      SPOSetPtr spo_alpha = get_sposet(spo_alpha_name);
+      SPOSetPtr spo_beta = get_sposet(spo_beta_name);
+      if (spo_alpha == nullptr)
       {
-        app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_alpha
+        app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_alpha_name
                     << "\" is not found. Expected for MultiSlaterDeterminant.\n";
         abort();
       }
-      if (spomap.find(spo_beta) == spomap.end())
+      else
+        spo_alpha = spo_alpha->makeClone();
+
+      if (spo_beta == nullptr)
       {
-        app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_beta
+        app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_beta_name
                     << "\" is not found. Expected for MultiSlaterDeterminant.\n";
         abort();
       }
+      else
+        spo_beta = spo_beta->makeClone();
+
       FastMSD = (fastAlg == "yes");
       if (FastMSD)
       {
@@ -299,9 +242,9 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         MultiDiracDeterminant* up_det = 0;
         MultiDiracDeterminant* dn_det = 0;
         app_log() << "      Creating base determinant (up) for MSD expansion. \n";
-        up_det = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_alpha)->second, 0);
+        up_det = new MultiDiracDeterminant(spo_alpha, 0);
         app_log() << "      Creating base determinant (down) for MSD expansion. \n";
-        dn_det = new MultiDiracDeterminant((SPOSetPtr)spomap.find(spo_beta)->second, 1);
+        dn_det = new MultiDiracDeterminant(spo_beta, 1);
 
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, up_det, dn_det);
         success              = createMSDFast(multislaterdetfast_0, cur);
@@ -311,8 +254,8 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         app_summary() << "    Using a list of determinants for multi-deterimant expansion." << std::endl;
         SPOSetProxyForMSD* spo_up;
         SPOSetProxyForMSD* spo_dn;
-        spo_up = new SPOSetProxyForMSD(spomap.find(spo_alpha)->second, targetPtcl.first(0), targetPtcl.last(0));
-        spo_dn = new SPOSetProxyForMSD(spomap.find(spo_beta)->second, targetPtcl.first(1), targetPtcl.last(1));
+        spo_up = new SPOSetProxyForMSD(spo_alpha, targetPtcl.first(0), targetPtcl.last(0));
+        spo_dn = new SPOSetProxyForMSD(spo_beta, targetPtcl.first(1), targetPtcl.last(1));
         if (UseBackflow)
         {
           app_summary() << "    Using backflow transformation." << std::endl;
@@ -462,7 +405,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     psi = mySPOSetBuilderFactory->createSPOSet(cur);
   }
   psi->checkObject();
-  slaterdet_0->add(psi, detname);
 
   int firstIndex = targetPtcl.first(spin_group);
   int lastIndex  = targetPtcl.last(spin_group);

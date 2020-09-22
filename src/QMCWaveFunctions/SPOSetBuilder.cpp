@@ -47,15 +47,15 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   attrib.add(spo_object_name, "name");
   attrib.put(cur);
 
-  if (spo_object_name.empty())
-    app_warning() << "SPOSet object name not given in the input!" << std::endl;
-
   app_summary() << std::endl;
-  app_summary() << "   Single particle orbitals (SPO)" << std::endl;
-  app_summary() << "   ------------------------------" << std::endl;
-  app_summary() << "    Name: " << spo_object_name << "   Type: " << SPO_type_name
+  app_summary() << "     Single particle orbitals (SPO)" << std::endl;
+  app_summary() << "     ------------------------------" << std::endl;
+  app_summary() << "      Name: " << spo_object_name << "   Type: " << SPO_type_name
                 << "   Builder class name: " << ClassName << std::endl;
   app_summary() << std::endl;
+
+  if (spo_object_name.empty())
+    app_warning() << "SPOSet object name not given in the input!" << std::endl;
 
   // read specialized sposet construction requests
   //   and translate them into a set of orbital indices

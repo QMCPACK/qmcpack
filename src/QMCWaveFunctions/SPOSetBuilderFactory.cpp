@@ -282,7 +282,6 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   }
   if (bb)
   {
-    app_log() << "  Building SPOSet '" << sname << "' with '" << bname << "' basis set." << std::endl;
     SPOSet* spo = bb->createSPOSet(cur);
     spo->setName(sname);
     if (rotation == "yes")
@@ -318,7 +317,23 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
 
 void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
 {
-  app_log() << "  Building a collection of SPOSets" << std::endl;
+  std::string collection_name;
+  std::string collection_type;
+  OhmmsAttributeSet attrib;
+  attrib.add(collection_name, "name");
+  attrib.add(collection_type, "type");
+  attrib.put(cur);
+
+  // use collection_type as collection_name if collection_name is not given
+  if (collection_name.empty())
+    collection_name = collection_type;
+
+  app_summary() << std::endl;
+  app_summary() << "   Single particle orbitals (SPO) collections" << std::endl;
+  app_summary() << "   ------------------------------------------" << std::endl;
+  app_summary() << "    Name: " << collection_name << "   Type input: " << collection_type << std::endl;
+  app_summary() << std::endl;
+
   // create the SPOSet builder
   SPOSetBuilder* bb = createSPOSetBuilder(cur);
   // going through a list of sposet entries
