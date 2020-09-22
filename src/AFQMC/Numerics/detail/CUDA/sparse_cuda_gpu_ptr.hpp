@@ -49,10 +49,8 @@ void csrmv(const char transa,
   static_assert(std::is_same<typename std::decay<Q>::type, T>::value, "Wrong dispatch.\n");
   // somehow need to check if the matrix is compact!
   int pb, pe;
-  if (cudaSuccess != cudaMemcpy(std::addressof(pb), to_address(pntrb), sizeof(int), cudaMemcpyDeviceToHost))
-    throw std::runtime_error("Error: cudaMemcpy returned error code in csrmv.");
-  if (cudaSuccess != cudaMemcpy(std::addressof(pe), to_address(pntre + (M - 1)), sizeof(int), cudaMemcpyDeviceToHost))
-    throw std::runtime_error("Error: cudaMemcpy returned error code in csrmv.");
+  arch::memcopy(std::addressof(pb), to_address(pntrb), sizeof(int), arch::memcopyD2H, "sparse_cuda_gpu_ptr::csrmv");
+  arch::memcopy(std::addressof(pe), to_address(pntre + (M - 1)), sizeof(int), arch::memcopyD2H, "sparse_cuda_gpu_ptr::csrmv");
   int nnz = pe - pb;
   if (CUSPARSE_STATUS_SUCCESS !=
       cusparse::cusparse_csrmv(*A.handles.cusparse_handle, transa, M, K, nnz, alpha,
@@ -81,10 +79,8 @@ void csrmm(const char transa,
   static_assert(std::is_same<typename std::decay<Q>::type, T>::value, "Wrong dispatch.\n");
   // somehow need to check if the matrix is compact!
   int pb, pe;
-  if (cudaSuccess != cudaMemcpy(std::addressof(pb), to_address(pntrb), sizeof(int), cudaMemcpyDeviceToHost))
-    throw std::runtime_error("Error: cudaMemcpy returned error code in csrmm.");
-  if (cudaSuccess != cudaMemcpy(std::addressof(pe), to_address(pntre + (M - 1)), sizeof(int), cudaMemcpyDeviceToHost))
-    throw std::runtime_error("Error: cudaMemcpy returned error code in csrmm.");
+  arch::memcopy(std::addressof(pb), to_address(pntrb), sizeof(int), arch::memcopyD2H, "lapack_sparse_gpu_ptr::csrmm");
+  arch::memcopy(std::addressof(pe), to_address(pntre + (M - 1)), sizeof(int), arch::memcopyD2H, "lapack_sparse_gpu_ptr::csrmm");
   int nnz = pe - pb;
   if (transa == 'N')
   {
