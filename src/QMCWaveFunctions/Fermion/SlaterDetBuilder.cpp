@@ -454,27 +454,15 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
                 << std::endl;
   app_summary() << std::endl;
 
-  std::map<std::string, SPOSetPtr>& spo_ref(slaterdet_0->mySPOSet);
-  std::map<std::string, SPOSetPtr>::iterator lit(spo_ref.find(sposet));
-  SPOSetPtr psi = 0;
-  if (lit == spo_ref.end())
+  SPOSetPtr psi = get_sposet(sposet);
+  //check if the named sposet exists
+  if (psi == 0)
   {
-    psi = get_sposet(sposet); //check if the named sposet exists
-    if (psi == 0)
-    {
-      //SPOSet[detname]=psi;
-      app_log() << "      Create a new SPO set " << sposet << std::endl;
-      psi = mySPOSetBuilderFactory->createSPOSet(cur);
-    }
-    //psi->put(cur);
-    psi->checkObject();
-    slaterdet_0->add(psi, detname);
+    app_log() << "      Create a new SPO set " << sposet << std::endl;
+    psi = mySPOSetBuilderFactory->createSPOSet(cur);
   }
-  else
-  {
-    app_log() << "      Reusing a SPO set " << sposet << std::endl;
-    psi = (*lit).second;
-  }
+  psi->checkObject();
+  slaterdet_0->add(psi, detname);
 
   int firstIndex = targetPtcl.first(spin_group);
   int lastIndex  = targetPtcl.last(spin_group);

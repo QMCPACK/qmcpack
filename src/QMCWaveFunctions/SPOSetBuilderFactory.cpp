@@ -57,7 +57,7 @@ void SPOSetBuilderFactory::clear()
 SPOSet* get_sposet(const std::string& name)
 {
   int nfound  = 0;
-  SPOSet* spo = 0;
+  SPOSet* spo = nullptr;
   std::map<std::string, SPOSetBuilder*>::iterator it;
   for (it = SPOSetBuilderFactory::spo_builders.begin(); it != SPOSetBuilderFactory::spo_builders.end(); ++it)
   {
