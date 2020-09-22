@@ -43,8 +43,6 @@ public:
   /// list of supplied orbital rotation parameters
   std::vector<RealType> params;
 
-  bool IsCloned;
-
   /// the number of electrons of the majority spin
   size_t nel_major_;
 
@@ -173,7 +171,7 @@ public:
     for (int k = 0; k < myVars.size(); ++k)
       myVars[k] = 0.0;
 
-    if (Optimizable && !IsCloned)
+    if (Optimizable)
     {
       if (myVars.size())
         active.insertFrom(myVars);
@@ -183,7 +181,7 @@ public:
 
   void checkOutVariables(const opt_variables_type& active) override
   {
-    if (Optimizable && !IsCloned)
+    if (Optimizable)
     {
       myVars.getIndex(active);
     }
@@ -192,7 +190,7 @@ public:
   ///reset
   void resetParameters(const opt_variables_type& active) override
   {
-    if (Optimizable && !IsCloned)
+    if (Optimizable)
     {
       std::vector<RealType> param(m_act_rot_inds.size());
       for (int i = 0; i < m_act_rot_inds.size(); i++)
