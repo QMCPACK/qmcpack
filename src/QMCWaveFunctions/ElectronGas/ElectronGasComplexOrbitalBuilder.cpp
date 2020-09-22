@@ -81,8 +81,6 @@ WaveFunctionComponent* ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodeP
   //create a Slater determinant
   //SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;
   SlaterDet* sdet = new SlaterDet(targetPtcl);
-  sdet->add(psiu, "u");
-  sdet->add(psid, "d");
   sdet->add(updet, 0);
   sdet->add(downdet, 1);
   return sdet;
