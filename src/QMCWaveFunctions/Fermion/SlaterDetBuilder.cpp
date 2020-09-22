@@ -17,7 +17,6 @@
 
 #include <type_traits>
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
-#include "QMCWaveFunctions/SPOSetScanner.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
@@ -137,15 +136,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   while (cur != NULL)
   {
     getNodeName(cname, cur);
-    if (cname == sposcanner_tag)
-    {
-      if (myComm->rank() == 0)
-      {
-        SPOSetScanner ascanner(spomap, targetPtcl, ptclPool);
-        ascanner.put(cur);
-      }
-    }
-    else if (cname == sd_tag)
+    if (cname == sd_tag)
     {
       app_summary() << std::endl;
       app_summary() << "   Single Slater determinant" << std::endl;

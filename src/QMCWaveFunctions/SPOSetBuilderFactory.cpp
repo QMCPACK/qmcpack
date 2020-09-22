@@ -17,6 +17,7 @@
 
 
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+#include "QMCWaveFunctions/SPOSetScanner.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
 #if OHMMS_DIM == 3
@@ -346,6 +347,14 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
     {
       SPOSet* spo = bb->createSPOSet(element);
       nsposets++;
+    }
+    else if (cname == "spo_scanner")
+    {
+      if (myComm->rank() == 0)
+      {
+        SPOSetScanner ascanner(bb->sposets, targetPtcl, ptclPool);
+        ascanner.put(element);
+      }
     }
     element = element->next;
   }

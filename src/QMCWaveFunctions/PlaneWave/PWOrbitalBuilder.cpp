@@ -20,7 +20,6 @@
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#include "QMCWaveFunctions/SPOSetScanner.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/HDFSTLAttrib.h"
@@ -88,11 +87,6 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
       }
       success = createPWBasis(cur);
       slater_det = putSlaterDet(cur);
-    }
-    else if (cname == sposcanner_tag)
-    {
-      SPOSetScanner ascanner(spomap, targetPtcl, ptclPool);
-      ascanner.put(cur);
     }
     cur = cur->next;
   }
