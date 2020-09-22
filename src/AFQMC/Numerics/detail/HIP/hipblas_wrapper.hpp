@@ -819,13 +819,11 @@ inline hipblasStatus_t hipblas_geam(hipblasHandle_t handle,
                                     std::complex<float>* C,
                                     int ldc)
 {
-  hipblasStatus_t success = hipblasCgeam(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N,
-                    reinterpret_cast<hipblasComplex const*>(&alpha),
-                    reinterpret_cast<hipblasComplex const*>(A), lda,
-                    reinterpret_cast<hipblasComplex const*>(&beta),
-                    reinterpret_cast<hipblasComplex const*>(B), ldb,
-                    reinterpret_cast<hipblasComplex *>(C),
-                    ldc);
+  hipblasStatus_t success =
+      hipblasCgeam(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N,
+                   reinterpret_cast<hipblasComplex const*>(&alpha), reinterpret_cast<hipblasComplex const*>(A), lda,
+                   reinterpret_cast<hipblasComplex const*>(&beta), reinterpret_cast<hipblasComplex const*>(B), ldb,
+                   reinterpret_cast<hipblasComplex*>(C), ldc);
   hipDeviceSynchronize();
   return success;
 }
@@ -845,11 +843,11 @@ inline hipblasStatus_t hipblas_geam(hipblasHandle_t handle,
                                     int ldc)
 {
   hipblasStatus_t success = hipblasZgeam(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N,
-                    reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
-                    reinterpret_cast<hipblasDoubleComplex const*>(A), lda,
-                    reinterpret_cast<hipblasDoubleComplex const*>(&beta),
-                    reinterpret_cast<hipblasDoubleComplex const*>(B), ldb,
-                    reinterpret_cast<hipblasDoubleComplex*>(C), ldc);
+                                         reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
+                                         reinterpret_cast<hipblasDoubleComplex const*>(A), lda,
+                                         reinterpret_cast<hipblasDoubleComplex const*>(&beta),
+                                         reinterpret_cast<hipblasDoubleComplex const*>(B), ldb,
+                                         reinterpret_cast<hipblasDoubleComplex*>(C), ldc);
   hipDeviceSynchronize();
   return success;
 }
