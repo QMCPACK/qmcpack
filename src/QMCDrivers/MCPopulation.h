@@ -138,28 +138,25 @@ public:
                      const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& pos);
 
 
-  /** puts walkers and their "cloned" things into groups in a somewhat general way
+  /** distributes walkers and their "cloned" elements to the elements of a vector
+   *  of unique_ptr to "walker_consumers". 
    *
-   *  Should compile only if ITER is a proper input ITERATOR
-   *  Will crash if ITER does point to a std::unqiue_ptr<WALKER_CONSUMER>
-   *
-   *  The logic here to minimize moves of walkers from one crowd to another
-   *  When num_walkers % walkers_per_crowd is true then at the end the extra
-   *  walkers are distributed one by one to crowds.
-   *
+   *  a valid "walker_consumer" has a member function of
+   *  void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian);
    */
   template<typename WTTV>
-  void distributeWalkers(WTTV& walker_consumer)
+  void distributeWalkers(WTTV& walker_consumers)
   {
-    auto walkers_per_crowd = fairDivide(walkers_.size(), walker_consumer.size());
+    // The type returned here is dependent on the integral type that the walker_consumers
+    // use to return there size.
+    auto walkers_per_crowd = fairDivide(walkers_.size(), walker_consumers.size());
 
-    // For now ignore the requesting walkers_per_group
     auto walker_index = 0;
-    for (int i = 0; i < walker_consumer.size(); ++i)
+    for (int i = 0; i < walker_consumers.size(); ++i)
     {
       for(int j = 0; j < walkers_per_crowd[i]; ++j)
       {
-        walker_consumer[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index], *walker_trial_wavefunctions_[walker_index], *walker_hamiltonians_[walker_index]);
+        walker_consumers[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index], *walker_trial_wavefunctions_[walker_index], *walker_hamiltonians_[walker_index]);
         ++walker_index;
       }
     }
