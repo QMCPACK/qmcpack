@@ -118,7 +118,7 @@ public:
    *   * createWalkers must have been called
    *  @{
    */
-  WalkerElements spawnWalker();
+  WalkerElementsRef spawnWalker();
   void killWalker(MCPWalker&);
   void killLastWalker();
   void createWalkerInplace(UPtr<MCPWalker>& walker_ptr);
@@ -219,13 +219,13 @@ public:
    *  That doesn't include that you would rather just use
    *  omp parallel and ignore concurrency.
    */
-  WalkerElements operator[](const size_t walker_index);
+  WalkerElementsRef getWalkerElementsRef(const size_t walker_index);
 
   /** As long as walker WalkerElements is used we need this for unit tests
    *
    *  As operator[] don't use it to ignore the concurrency design.
    */
-  std::vector<WalkerElements> get_walker_elements();
+  std::vector<WalkerElementsRef> get_walker_elements();
   
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }

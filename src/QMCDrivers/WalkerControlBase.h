@@ -87,9 +87,9 @@ public:
   struct PopulationAdjustment
   {
     int num_walkers{0}; // This is the number of walkers we are adjusting to
-    std::vector<WalkerElements> good_walkers;
+    std::vector<WalkerElementsRef> good_walkers;
     std::vector<int> copies_to_make;
-    std::vector<WalkerElements> bad_walkers;
+    std::vector<WalkerElementsRef> bad_walkers;
   };
 
   struct WalkerAdjustmentCriteria
@@ -307,7 +307,7 @@ private:
 
   static auto addReleaseNodeWalkers(PopulationAdjustment& adjust,
                                     WalkerAdjustmentCriteria& wac,
-                                    std::vector<WalkerElements>& good_walkers_rn,
+                                    std::vector<WalkerElementsRef>& good_walkers_rn,
                                     std::vector<int>& copies_to_make_rn);
   /**}@*/
 

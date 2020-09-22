@@ -391,7 +391,7 @@ void WalkerControlBase::onRankSpawn(MCPopulation& pop, PopulationAdjustment& adj
   {
     for (int i_copies = 0; i_copies < adjust.copies_to_make[iw]; ++i_copies)
     {
-      WalkerElements walker_elements = pop.spawnWalker();
+      WalkerElementsRef walker_elements = pop.spawnWalker();
       walker_elements.walker = adjust.good_walkers[iw].walker;
       walker_elements.twf.copyFromBuffer(walker_elements.pset, walker_elements.walker.DataSet);
       walker_elements.twf.evaluateLog(walker_elements.pset);
@@ -614,7 +614,7 @@ auto WalkerControlBase::walkerCalcAdjust(MCPWalker& walker, WalkerAdjustmentCrit
 
 auto WalkerControlBase::addReleaseNodeWalkers(PopulationAdjustment& adjustment,
                                               WalkerAdjustmentCriteria& wac,
-                                              std::vector<WalkerElements>& good_walkers_rn,
+                                              std::vector<WalkerElementsRef>& good_walkers_rn,
                                               std::vector<int>& copies_to_make_rn)
 {
   app_warning() << "Theres a good chance that released node walker handling is broken in batched driver." << '\n';
@@ -674,13 +674,13 @@ WalkerControlBase::PopulationAdjustment WalkerControlBase::calcPopulationAdjustm
   PopulationAdjustment adjustment;
 
   // these are equivalent to the good_rn and ncopy_rn in the legacy code
-  std::vector<WalkerElements> good_walkers_rn;
+  std::vector<WalkerElementsRef> good_walkers_rn;
   std::vector<int> copies_to_make_rn;
   WalkerAdjustmentCriteria wac;
 
   for (int iw = 0; iw < pop.get_num_local_walkers(); ++iw)
   {
-    WalkerElements walker_elements = pop[iw];
+    WalkerElementsRef walker_elements = pop.getWalkerElementsRef(iw);
     MCPWalker& walker = walker_elements.walker;
     bool inFN                      = (walker.ReleasedNodeAge == 0);
 

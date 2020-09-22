@@ -33,11 +33,11 @@ class UnifiedDriverWalkerControlMPITest;
  */
 struct WalkerMessage
 {
-  WalkerElements walker_elements;
+  WalkerElementsRef walker_elements;
   // i.e. MPI rank
   const int source_rank;
   const int target_rank;
-  WalkerMessage(WalkerElements w_elem, const int source, const int target)
+  WalkerMessage(WalkerElementsRef w_elem, const int source, const int target)
       : walker_elements(w_elem), source_rank(source), target_rank(target)
   {}
 };

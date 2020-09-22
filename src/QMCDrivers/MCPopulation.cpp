@@ -172,17 +172,17 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
     killLastWalker();
 }
 
-WalkerElements MCPopulation::operator[](const size_t index)
+WalkerElementsRef MCPopulation::getWalkerElementsRef(const size_t index)
 {
   return {*walkers_[index], *walker_elec_particle_sets_[index], *walker_trial_wavefunctions_[index]};
 }
 
-std::vector<WalkerElements> MCPopulation::get_walker_elements()
+std::vector<WalkerElementsRef> MCPopulation::get_walker_elements()
 {
-  std::vector<WalkerElements> walker_elements;
+  std::vector<WalkerElementsRef> walker_elements;
   for(int iw = 0; iw < walkers_.size(); ++iw)
   {
-    walker_elements.push_back({*walkers_[iw], *walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]});
+    walker_elements.emplace_back(*walkers_[iw], *walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]);
   }
   return walker_elements;
 }
@@ -194,7 +194,7 @@ std::vector<WalkerElements> MCPopulation::get_walker_elements()
  *  reusing memory.
  *  Not thread safe.
  */
-WalkerElements MCPopulation::spawnWalker()
+WalkerElementsRef MCPopulation::spawnWalker()
 {
   ++num_local_walkers_;
   outputManager.pause();

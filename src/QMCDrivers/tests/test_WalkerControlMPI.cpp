@@ -93,12 +93,12 @@ void UnifiedDriverWalkerControlMPITest::testMultiplicity(std::vector<int>& rank_
   pop_->get_walkers()[0]->Multiplicity = rank_counts_expanded[rank];
   int future_pop                       = std::accumulate(rank_counts_expanded.begin(), rank_counts_expanded.end(), 0);
 
-  std::vector<WalkerElements> walker_elements = pop_->get_walker_elements();
+  std::vector<WalkerElementsRef> walker_elements = pop_->get_walker_elements();
   
   WalkerControlBase::PopulationAdjustment pop_adjust{future_pop,
                                                      walker_elements,
                                                      {rank_counts_expanded[rank] - 1},
-                                                     std::vector<WalkerElements>{}};
+                                                     std::vector<WalkerElementsRef>{}};
 
   reportWalkersPerRank(dpools_.comm, *pop_);
   wc_.swapWalkersSimple(*pop_, pop_adjust, rank_counts_expanded);
@@ -115,12 +115,12 @@ void UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& ran
 
   pop_->get_walkers()[0]->Multiplicity = rank_counts_before[rank];
 
-  std::vector<WalkerElements> walker_elements = pop_->get_walker_elements();
+  std::vector<WalkerElementsRef> walker_elements = pop_->get_walker_elements();
 
   WalkerControlBase::PopulationAdjustment pop_adjust{rank_counts_before[rank],
                                                      walker_elements,
                                                      {rank_counts_before[rank] - 1},
-                                                     std::vector<WalkerElements>{}};
+                                                     std::vector<WalkerElementsRef>{}};
 
   // this expands the walkers to be copied into real walkers.
   WalkerControlBase::onRankKill(*pop_, pop_adjust);
@@ -130,12 +130,12 @@ void UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& ran
 
   auto proper_number_copies = [](int size) -> std::vector<int> { return std::vector<int>(size, 0); };
 
-  std::vector<WalkerElements> walker_elements2 = pop_->get_walker_elements();
+  std::vector<WalkerElementsRef> walker_elements2 = pop_->get_walker_elements();
   
   WalkerControlBase::PopulationAdjustment pop_adjust2{rank_counts_before[rank],
                                                       walker_elements2,
                                                       proper_number_copies(pop_->get_num_local_walkers()),
-                                                      std::vector<WalkerElements>{}};
+                                                      std::vector<WalkerElementsRef>{}};
 
   auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(dpools_.comm, pop_->get_num_local_walkers());
 

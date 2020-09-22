@@ -33,8 +33,12 @@ class TrialWaveFunction;
  *  less likely to end in tears then just calling copyFrom random other places (hopefully)
  *  in time, in order to not access an invalid walker element.
  */
-struct WalkerElements
+struct WalkerElementsRef
 {
+  /** to allow use of emplace back
+   */
+  WalkerElementsRef(Walker<QMCTraits, PtclOnLatticeTraits>& walker_in, ParticleSet& pset_in, TrialWaveFunction& twf_in) : walker(walker_in), pset(pset_in), twf(twf_in) {}
+;
   Walker<QMCTraits, PtclOnLatticeTraits>& walker;
   ParticleSet& pset;
   TrialWaveFunction& twf;

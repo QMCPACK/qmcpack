@@ -499,7 +499,7 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   struct CopiesAndWE
   {
     int copies;
-    std::reference_wrapper<WalkerElements> w_elem;
+    std::reference_wrapper<WalkerElementsRef> w_elem;
   };
   // sort good walkers by the number of copies
   std::vector<CopiesAndWE> sorted_good_walkers;
@@ -515,9 +515,9 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   std::vector<WalkerMessage> send_message_list;
   // overallocated by number of duplicate messages but message isn't big.
   std::vector<WalkerMessage> recv_message_list;
-  std::vector<WalkerElements> new_walkers;
+  std::vector<WalkerElementsRef> new_walkers;
   // Their data needs to not get written over until we are done.
-  RefVector<WalkerElements> zombies;
+  RefVector<WalkerElementsRef> zombies;
   for (int ic = 0; ic < nswap; ic++)
   {
     if (minus[ic] == MyContext)
@@ -657,7 +657,7 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   }
 
 
-  std::for_each(zombies.begin(), zombies.end(), [&pop](WalkerElements& zombie) { pop.killWalker(zombie.walker); });
+  std::for_each(zombies.begin(), zombies.end(), [&pop](WalkerElementsRef& zombie) { pop.killWalker(zombie.walker); });
   adjust.good_walkers.clear();
   adjust.copies_to_make.clear();
   for (int iw = 0; iw < sorted_good_walkers.size(); ++iw)
