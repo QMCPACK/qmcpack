@@ -187,7 +187,6 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   }
   else if (type.find("spline") < type.size())
   {
-    name = type_in;
 #if defined(HAVE_EINSPLINE)
     PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
     bb = new EinsplineSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
@@ -301,8 +300,8 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
     collection_name = collection_type;
 
   app_summary() << std::endl;
-  app_summary() << "   Single particle orbitals (SPO) collections" << std::endl;
-  app_summary() << "   ------------------------------------------" << std::endl;
+  app_summary() << "   Single particle orbitals (SPO) collection" << std::endl;
+  app_summary() << "   -----------------------------------------" << std::endl;
   app_summary() << "    Name: " << collection_name << "   Type input: " << collection_type << std::endl;
   app_summary() << std::endl;
 

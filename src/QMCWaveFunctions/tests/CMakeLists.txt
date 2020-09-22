@@ -51,7 +51,7 @@ ENDIF()
 
 ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp test_TrialWaveFunction.cpp FakeSPO.cpp test_DiracDeterminantBatched.cpp
                test_wavefunction_factory.cpp test_TrialWaveFunction_diamondC_2x1x1.cpp
-               test_TrialWaveFunction_He.cpp
+               test_TrialWaveFunction_He.cpp test_spo_collection_input_spline.cpp
                test_bspline_jastrow.cpp test_counting_jastrow.cpp test_polynomial_eeI_jastrow.cpp
                test_einset.cpp test_einset_spinor.cpp test_hybridrep.cpp test_pw.cpp test_wavefunction_pool.cpp
                test_dirac_det.cpp test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
