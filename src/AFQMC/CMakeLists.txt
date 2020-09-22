@@ -100,7 +100,6 @@ ELSEIF(ENABLE_HIP)
   )
   SET(AFQMC_SRCS ${AFQMC_SRCS}
       Memory/HIP/hip_utilities.cpp
-      Numerics/detail/HIP/hipblas_utils.cpp
       Memory/HIP/hip_arch.cpp
       Memory/HIP/hip_init.cpp)
 ELSE(ENABLE_CUDA)
