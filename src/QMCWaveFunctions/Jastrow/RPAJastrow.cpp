@@ -232,12 +232,6 @@ void RPAJastrow::reportStatus(std::ostream& os)
     Psi[i]->reportStatus(os);
 }
 
-void RPAJastrow::resetTargetParticleSet(ParticleSet& P)
-{
-  for (int i = 0; i < Psi.size(); i++)
-    Psi[i]->resetTargetParticleSet(P);
-}
-
 RPAJastrow::LogValueType RPAJastrow::evaluateLog(ParticleSet& P,
                                                  ParticleSet::ParticleGradient_t& G,
                                                  ParticleSet::ParticleLaplacian_t& L)

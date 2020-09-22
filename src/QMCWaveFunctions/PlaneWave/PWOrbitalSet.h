@@ -71,8 +71,6 @@ public:
 
   void setOrbitalSetSize(int norbs) override;
 
-  void resetTargetParticleSet(ParticleSet& P) override;
-
   inline ValueType evaluate(int ib, const PosType& pos)
   {
     myBasisSet->evaluate(pos);

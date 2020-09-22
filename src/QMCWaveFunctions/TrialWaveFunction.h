@@ -147,9 +147,6 @@ public:
    */
   void reportStatus(std::ostream& os);
 
-  /** recursively change the ParticleSet whose G and L are evaluated */
-  void resetTargetParticleSet(ParticleSet& P);
-
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 

@@ -37,8 +37,6 @@ WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleS
   SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(), FirstIndex_dn, LastIndex_dn);
   spo_up_C->occup             = spo_up->occup;
   spo_dn_C->occup             = spo_dn->occup;
-  spo_up_C->refPhi->resetTargetParticleSet(tr->QP);
-  spo_dn_C->refPhi->resetTargetParticleSet(tr->QP);
   MultiSlaterDeterminantWithBackflow* clone = new MultiSlaterDeterminantWithBackflow(tqp, spo_up_C, spo_dn_C, tr);
   clone->C2node_up                          = C2node_up;
   clone->C2node_dn                          = C2node_dn;
@@ -53,20 +51,17 @@ WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleS
   {
     DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*)dets_up[i]->makeCopy((SPOSetPtr)clone->spo_up);
     dclne->BFTrans                      = tr;
-    dclne->resetTargetParticleSet(tr->QP);
     clone->dets_up.push_back(dclne);
   }
   for (int i = 0; i < dets_dn.size(); i++)
   {
     DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*)dets_dn[i]->makeCopy((SPOSetPtr)clone->spo_dn);
     dclne->BFTrans                      = tr;
-    dclne->resetTargetParticleSet(tr->QP);
     clone->dets_dn.push_back(dclne);
   }
   clone->Optimizable = Optimizable;
   clone->C           = C;
   clone->myVars      = myVars;
-  clone->resetTargetParticleSet(tr->QP);
   return clone;
 }
 

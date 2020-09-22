@@ -98,20 +98,6 @@ void SlaterDet::resetParameters(const opt_variables_type& active)
 
 void SlaterDet::reportStatus(std::ostream& os) {}
 
-void SlaterDet::resetTargetParticleSet(ParticleSet& P)
-{
-  std::map<std::string, SPOSetPtr>::iterator sit(mySPOSet.begin());
-  while (sit != mySPOSet.end())
-  {
-    (*sit).second->resetTargetParticleSet(P);
-    ++sit;
-  }
-  //BasisSet->resetTargetParticleSet(P);
-  //LOGMSG("\nSlaterDet::resetTargetParticleSet")
-  for (int i = 0; i < Dets.size(); i++)
-    Dets[i]->resetTargetParticleSet(P);
-}
-
 void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for (int i = 0; i < Dets.size(); ++i)
@@ -209,14 +195,12 @@ WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
       SPOSetPtr spo = (*Mit).second;
       SPOSetPtr spo_clone;
       spo_clone = spo->makeClone();
-      spo_clone->resetTargetParticleSet(tqp);
       myclone->add(spo_clone, spo->getName());
       for (int i = 0; i < Dets.size(); ++i)
       {
         if (spo == Dets[i]->getPhi())
         {
           Determinant_t* newD = Dets[i]->makeCopy(spo_clone);
-          newD->resetTargetParticleSet(tqp);
           myclone->add(newD, i);
         }
       }
@@ -227,12 +211,10 @@ WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
   {
     SPOSetPtr spo       = Dets[0]->getPhi();
     SPOSetPtr spo_clone = spo->makeClone();
-    spo_clone->resetTargetParticleSet(tqp);
     myclone->add(spo_clone, spo->getName());
     for (int i = 0; i < Dets.size(); ++i)
     {
       Determinant_t* newD = Dets[i]->makeCopy(spo_clone);
-      newD->resetTargetParticleSet(tqp);
       myclone->add(newD, i);
     }
   }

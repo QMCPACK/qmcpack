@@ -88,7 +88,6 @@ WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp)
     BackflowTransformation* tr = BFTrans->makeClone(tqp);
     clone->setBF(tr);
   }
-  clone->resetTargetParticleSet(tqp);
 
   //Set IsCloned so that only the main object handles the optimizable data
   clone->IsCloned = true;
@@ -127,21 +126,6 @@ MultiSlaterDeterminantFast::~MultiSlaterDeterminantFast()
   }
   //clean up determinants too!
 }
-
-void MultiSlaterDeterminantFast::resetTargetParticleSet(ParticleSet& P)
-{
-  if (usingBF)
-  {
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->resetTargetParticleSet(BFTrans->QP);
-  }
-  else
-  {
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->resetTargetParticleSet(P);
-  }
-}
-
 
 void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
 {

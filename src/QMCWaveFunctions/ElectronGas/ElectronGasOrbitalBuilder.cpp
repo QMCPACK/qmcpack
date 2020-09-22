@@ -146,7 +146,6 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
       sdet->setBF(BFTrans);
       if (BFTrans->isOptimizable())
         sdet->Optimizable = true;
-      sdet->resetTargetParticleSet(targetPtcl);
     }
     else
     {
