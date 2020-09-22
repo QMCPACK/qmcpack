@@ -83,7 +83,7 @@ TEST_CASE("SPO input spline from HDF diamond_2x1x1", "[wavefunction]")
 
   //diamondC_2x1x1
   const char* particles = "<tmp> \
-<sposet_collection name=\"einspline_diamond_size4\" type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\"> \
+<sposet_collection name=\"einspline_diamond_size4\" type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\"> \
   <sposet name=\"spo\" size=\"4\" spindataset=\"0\"/> \
 </sposet_collection> \
 </tmp> \
@@ -233,6 +233,8 @@ TEST_CASE("SPO input spline from HDF diamond_2x1x1", "[wavefunction]")
   REQUIRE(std::imag(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
   REQUIRE(std::imag(d2psi_v_list[1].get()[1]) == Approx(-2.4919104576));
 #endif
+
+  spo_builder_factory.clear();
 }
 
 } // namespace qmcplusplus

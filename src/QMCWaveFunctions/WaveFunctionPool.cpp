@@ -60,9 +60,9 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   { //check ESHDF should be used to initialize both target and associated ionic system
     xmlNodePtr tcur = cur->children;
     while (tcur != NULL)
-    { //check <determinantset/> or <sposet_builder/> to extract the ionic and electronic structure
+    { //check <determinantset/> or <sposet_builder/> or <sposet_collection/> to extract the ionic and electronic structure
       std::string cname((const char*)tcur->name);
-      if (cname == WaveFunctionComponentBuilder::detset_tag || cname == "sposet_builder")
+      if (cname == WaveFunctionComponentBuilder::detset_tag || cname == "sposet_builder" || cname == "sposet_collection")
       {
         qp = ptcl_pool_->createESParticleSet(tcur, target, qp);
       }
