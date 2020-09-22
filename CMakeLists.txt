@@ -209,7 +209,10 @@ SET(QMC_VERBOSE_CONFIGURATION 0 CACHE BOOL "Give details why specific tests are/
 # set debug printout
 # DEBUG_PSIBUFFER_ON keep track buffer's locator
 ######################################################################
-SET(DEBUG_PSIBUFFER_ON 0 CACHE BOOL "Build with GPU support through CUDA")
+SET(DEBUG_PSIBUFFER_ON 0 CACHE BOOL "Debug messages for PSIBUFFER locator")
+MARK_AS_ADVANCED(DEBUG_PSIBUFFER_ON)
+SET(DEBUG_PER_STEP_ACCEPT_REJECT 0 CACHE BOOL "Print accepts and rejects at each step")
+MARK_AS_ADVANCED(DEBUG_PER_STEP_ACCEPT_REJECT)
 
 ######################################################################
 # Standard test

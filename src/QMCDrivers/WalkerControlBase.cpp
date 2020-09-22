@@ -147,11 +147,12 @@ void WalkerControlBase::measureProperties(int iter)
       static_cast<FullPrecRealType>(curData[FNSIZE_INDEX] + curData[RNONESIZE_INDEX]);
   ensemble_property_.AlternateEnergy = curData[B_ENERGY_INDEX] / curData[B_WGT_INDEX];
   ensemble_property_.RNSamples       = curData[RNSIZE_INDEX];
+  // \\todo If WalkerControlBase is not exclusively for dmc then this shouldn't be here.
+  // If it is it shouldn't be in QMDrivers but QMCDrivers/DMC
   if (dmcStream)
   {
     //boost::archive::text_oarchive oa(*dmcStream);
     //(*oa) & iter  & eavg_cur & wgt_cur & Etrial  & pop_old;
-    std::cerr << "about to write to dmcStream\n";
     (*dmcStream) << std::setw(10) << iter << std::setw(20) << ensemble_property_.Energy << std::setw(20)
                  << ensemble_property_.Variance << std::setw(20) << ensemble_property_.Weight << std::setw(20)
                  << ensemble_property_.NumSamples << std::setw(20)

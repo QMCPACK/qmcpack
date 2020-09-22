@@ -5,11 +5,12 @@
 // Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-
+#include <sstream>
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 #include "OhmmsData/ParameterSet.h"
 
@@ -23,26 +24,28 @@ void DriftModifierUNR::getDrift(RealType tau, const GradType& qf, PosType& drift
   PosType debug_drift = drift;
 #endif
   RealType vsq = dot(drift, drift);
-  RealType sc  = (std::isnan(vsq) || vsq < std::numeric_limits<RealType>::epsilon())
+  RealType sc  = vsq < std::numeric_limits<RealType>::epsilon()
       ? tau
       : ((-1.0 + std::sqrt(1.0 + 2.0 * a_ * tau * vsq)) / (a_ * vsq));
   //Apply the umrigar scaling to drift.
   drift *= sc;
 #ifndef NDEBUG
-  for(int i = 0; i < drift.size(); ++i)
+  // Why is this in NDEBUG: at least for gnu std::isnan may be no-op if NDEBUG is defined.
+  // Generally we hope that this would only occur as the result of bad input
+  // which would hopefully be the result of development time error and
+  // therefore caught when run in a Debug build.
+  if( std::isnan(vsq) )
   {
-    if (std::isnan(drift[i]))
+    std::ostringstream error_message;
+    for(int i = 0; i < drift.size(); ++i)
     {
-      // it seems "reasonable" so set this to 0 since a gradient of 0 shouldn't exert
-      // drift.  However this is related to a fully or partially zerod psiM which
-      // is a bug (IHMO)
-      drift[i] = 0;
-      //std::cerr << "drift is nan, vsq (" << vsq << ") sc (" << sc << ")\n";
-      //break;
+      if (std::isnan(drift[i]))
+      {
+        error_message << "drift[" << i << "] is nan, vsq (" << vsq << ") sc (" << sc << ")\n";
+        break;
+      }
     }
-    //In my opinion this should be uncommented but debug fails due to
-    //invRow
-    //assert(!std::isnan(drift[i]));
+    throw std::runtime_error(error_message.str());
   }
 #endif
 }

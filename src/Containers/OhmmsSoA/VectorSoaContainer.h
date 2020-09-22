@@ -166,8 +166,9 @@ struct VectorSoaContainer
     if (nAllocated)
     {
       free();
+      // This is too noisy right now.
       // std::cerr << "OhmmsVectorSoa attachReference called on previously allocated vector.\n" << std::endl;
-      // Nice idea but "default" constructed WFC elements in the batched driver make this a mess.
+      /// \todo return this when buffer system is simplified.
     }
     nLocal  = n;
     nGhosts = n_padded;

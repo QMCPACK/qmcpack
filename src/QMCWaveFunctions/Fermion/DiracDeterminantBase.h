@@ -186,7 +186,9 @@ protected:
   /// targetPtcl pointer. YE: to be removed.
   ParticleSet* targetPtcl;
 
+#ifndef NDEBUG
   ValueMatrix_t dummy_vmt;
+#endif
   
   /// register all the timers
   void registerTimers()

@@ -427,7 +427,9 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
     const VirtualParticleSet& vp(vp_list[iw]);
     const int WorkingIndex = vp.refPtcl - FirstIndex;
     assert(WorkingIndex >= 0);
-    std::copy_n(det.psiM[WorkingIndex], det.invRow.size(), det.invRow.data());
+    // If DiracDeterminant is in a valid state this copy_n is not necessary.
+    // That is at minimum a call to evaluateLog and ...
+    // std::copy_n(det.psiM[WorkingIndex], det.invRow.s.ize(), det.invRow.data());
     // build lists
     phi_list.push_back(*det.Phi);
     psiV_list.push_back(det.psiV);

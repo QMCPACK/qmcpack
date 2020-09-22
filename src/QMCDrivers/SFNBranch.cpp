@@ -334,10 +334,12 @@ void SFNBranch::checkParameters(const int global_walkers, RefVector<MCPWalker>& 
     //DMCEnergyHist.clear();
     EnergyHist(vParam[SBVP::EREF]);
     VarianceHist(vParam[SBVP::SIGMA2]);
-    //DMCEnergyHist(vParam[SBVP::EREF]);
+//DMCEnergyHist(vParam[SBVP::EREF]);
+#ifndef NDEBUG
     o << "SFNBranch::checkParameters " << std::endl;
     o << "  Average Energy of a population  = " << e << std::endl;
     o << "  Energy Variance = " << vParam[SBVP::SIGMA2] << std::endl;
+#endif
   }
   app_log() << o.str() << std::endl;
   app_log().flush();

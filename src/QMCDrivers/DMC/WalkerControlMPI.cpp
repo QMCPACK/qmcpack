@@ -561,10 +561,15 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
     std::for_each(send_message_list.begin(), send_message_list.end(), [&send_requests, this](WalkerMessage& message) {
       MCPWalker& this_walker = message.walker_elements.walker;
       ParticleSet& this_pset      = message.walker_elements.pset;
+      // Most of these calls are unecessary,
+      // evaluateLog definitely is but is invaluable for checking for the state of the walker before and after transfer
+      // \todo narrow these down to a minimum and manage to reason out the state of a valid fat walker.
       this_pset.saveWalker(this_walker);
       this_walker.updateBuffer();
       TrialWaveFunction& this_twf = message.walker_elements.twf;
+#ifndef NDEBUG
       this_twf.evaluateLog(this_pset);
+#endif
       this_twf.updateBuffer(this_pset, this_walker.DataSet);
       send_requests.emplace_back(myComm->comm.isend_n(message.walker_elements.walker.DataSet.data(),
                                                       message.walker_elements.walker.DataSet.size(),
@@ -604,12 +609,16 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
         {
           MCPWalker& this_walker = recv_message_list[im].walker_elements.walker;
           // This sequence of calls is our best effort to go from the wire to a working fat walker.
+          // \todo narrow these down to a minimum and manage to reason out the state of a valid fat walker.
           this_walker.copyFromBuffer();
 #ifndef NDEBUG
           this_walker.set_has_been_on_wire(true);
 #endif
           ParticleSet& this_pset      = recv_message_list[im].walker_elements.pset;
           this_pset.loadWalker(this_walker, true);
+          // If this update isn't called then the Jastrow's will not match those in the sent walker.
+          // The update call is required to update the internal state of pset used by TWF to do the
+          // Jastrow evaluations in evaluateLog.
           this_pset.update();
           TrialWaveFunction& this_twf = recv_message_list[im].walker_elements.twf;
           this_twf.copyFromBuffer(this_pset, this_walker.DataSet);          
