@@ -111,7 +111,7 @@ public:
   {
     if (nAllocated) {
       free();
-      std::cerr << "Allocated OhmmsVector attachReference called.\n" << std::endl;
+      // std::cerr << "Allocated OhmmsVector attachReference called.\n" << std::endl;
       // Nice idea but "default" constructed WFC elements in the batched driver make this a mess.
       //throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
     }
@@ -155,6 +155,9 @@ public:
   ///clear
   inline void clear() { nLocal = 0; }
 
+  ///zero
+  inline void zero() { std::fill_n(X, nAllocated, T()); }
+  
   ///free
   inline void free()
   {

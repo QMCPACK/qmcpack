@@ -117,21 +117,6 @@ TEST_CASE("Crowd::loadWalkers", "[particle]")
     checkParticleSetPos(i);
 }
 
-TEST_CASE("Crowd::get_accept_ratio", "[Drivers]")
-{
-  using namespace testing;
-  SetupPools pools;
-
-  CrowdWithWalkers crowd_with_walkers(pools);
-  Crowd& crowd = crowd_with_walkers.get_crowd();
-
-  crowd.incAccept();
-  crowd.incAccept();
-  crowd.incAccept();
-  crowd.incReject();
-  REQUIRE(crowd.get_accept_ratio() == Approx(0.75));
-}
-
 TEST_CASE("Crowd redistribute walkers")
 {
   using namespace testing;
