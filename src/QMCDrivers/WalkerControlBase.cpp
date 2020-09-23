@@ -866,18 +866,15 @@ void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
       {
         // this seems suspect, a function with unit test is needed
         int n_remove = std::min(nsub, num_per_node[inode] - n_max_);
-        std::cerr << "remove " << n_remove << " from node : " << inode << "\n";
         num_per_node[inode] -= n_remove;
         nsub -= n_remove;
 
-        std::cerr << "MyContext: " << MyContext << '\n';
         if (inode == MyContext)
         {
           // prone to error function with unit test better
           for (int iw = 0; iw < adjust.copies_to_make.size(); iw++)
           {
             int n_remove_walker = std::min(adjust.copies_to_make[iw], n_remove);
-            std::cerr << "Walker: " << iw << " losing " << n_remove_walker << " copies.\n";
             adjust.copies_to_make[iw] -= n_remove_walker;
             n_remove -= n_remove_walker;
             if (n_remove == 0)
@@ -887,12 +884,9 @@ void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
           if (n_remove > 0)
           {
             // Strong assumption that all members of adjust.copies_to_make == 0
-            std::cerr << "Removing copies of good walkers is not enough. "
-                      << "Removing good walkers." << '\n';
             
             while(n_remove > 0 && !adjust.good_walkers.empty())
             {
-              std::cerr << "removing good walker\n";
               assert(adjust.copies_to_make.back() == 0);
               adjust.bad_walkers.push_back(adjust.good_walkers.back());
               adjust.good_walkers.pop_back();

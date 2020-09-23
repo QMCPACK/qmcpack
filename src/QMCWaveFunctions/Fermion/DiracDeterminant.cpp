@@ -669,14 +669,6 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
   else
   {
     invertPsiM(psiM_temp, psiM);
-    for(int ip = 0; ip < NumPtcls; ++ip)
-    {
-      int working_index = ip - FirstIndex;
-      if (working_index < 0)
-        continue;
-      Phi->evaluateVGL(P, ip, psiV, dpsiV, d2psiV);
-      simd::copy(dpsiM[working_index], dpsiV.data(), NumOrbitals);
-    }
   }
 
   // invRow becomes invalid after updating the inverse matrix
