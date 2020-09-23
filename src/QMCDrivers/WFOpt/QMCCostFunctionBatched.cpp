@@ -525,11 +525,11 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
   // lambda to execute on each crowd
   auto evalOptCorrelated =
-      [&](int crowd_id, UPtrVector<OptimizerEvalData>& opt_crowds, const std::vector<int>& samples_per_crowd,
-          int crowd_size, std::vector<ParticleGradient_t*>& gradPsi, std::vector<ParticleLaplacian_t*>& lapPsi,
-          Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords, Matrix<Return_rt>& HDerivRecords,
-          const SampleStack& samples, const opt_variables_type& optVars, bool compute_all_from_scratch,
-          Return_rt vmc_or_dmc, bool needGrad) {
+      [](int crowd_id, UPtrVector<OptimizerEvalData>& opt_crowds, const std::vector<int>& samples_per_crowd,
+         int crowd_size, std::vector<ParticleGradient_t*>& gradPsi, std::vector<ParticleLaplacian_t*>& lapPsi,
+         Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords, Matrix<Return_rt>& HDerivRecords,
+         const SampleStack& samples, const opt_variables_type& optVars, bool compute_all_from_scratch,
+         Return_rt vmc_or_dmc, bool needGrad) {
         OptimizerEvalData& opt_data = *opt_crowds[crowd_id];
 
 
