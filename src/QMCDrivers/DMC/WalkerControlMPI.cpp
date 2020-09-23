@@ -173,7 +173,6 @@ QMCTraits::FullPrecRealType WalkerControlMPI::branch(int iter, MCPopulation& pop
   myTimers[DMC_MPI_prebalance]->stop();
   myTimers[DMC_MPI_loadbalance]->start();
   NumWalkersSent = swapWalkersSimple(pop, adjust, num_per_node);
-  //NumWalkersSent = 0;
   myTimers[DMC_MPI_loadbalance]->stop();
 
   WalkerControlBase::onRankKill(pop, adjust);

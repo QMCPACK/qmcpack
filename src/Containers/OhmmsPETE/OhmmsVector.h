@@ -156,7 +156,7 @@ public:
   inline void clear() { nLocal = 0; }
 
   ///zero
-  inline void zero() { std::fill_n(X, nAllocated, 0); }
+  inline void zero() { std::fill_n(X, nAllocated, T()); }
   
   ///free
   inline void free()

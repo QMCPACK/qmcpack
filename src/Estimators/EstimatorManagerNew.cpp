@@ -123,7 +123,7 @@ void EstimatorManagerNew::reset()
   weightInd = BlockProperties.add("BlockWeight");
   assert(weightInd == 0);
   cpuInd    = BlockProperties.add("BlockCPU");
-  acceptRatioInd = BlockProperties.add("BlockAcceptRatio");
+  acceptRatioInd = BlockProperties.add("AcceptRatio");
   BlockAverages.clear(); //cleaup the records
   for (int i = 0; i < Estimators.size(); i++)
     Estimators[i]->add2Record(BlockAverages);

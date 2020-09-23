@@ -15,14 +15,12 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <stdexcept>
-#include <complex>
-
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include <stdexcept>
+#include <CPU/BLAS.hpp>
+#include <CPU/SIMD/simd.hpp>
 #include "Numerics/DeterminantOperators.h"
-#include "CPU/BLAS.hpp"
 #include "Numerics/MatrixOperators.h"
-#include "CPU/SIMD/simd.hpp"
 
 namespace qmcplusplus
 {
