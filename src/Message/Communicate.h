@@ -17,9 +17,15 @@
 
 #ifndef OHMMS_COMMUNICATE_H
 #define OHMMS_COMMUNICATE_H
+#include <string>
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+/** because APP_ABORT is incompatible with a normal debug build and lldb break points
+ */
+void breakableAppAbort(std::string str_msg);
 
 #ifdef HAVE_MPI
 #include "mpi3/environment.hpp"
@@ -33,10 +39,12 @@ struct CommunicatorTraits
   typedef MPI_Status status;
   typedef MPI_Request request;
 };
+
 #define APP_ABORT(msg)                                            \
   {                                                               \
-    std::cerr << "Fatal Error. Aborting at " << msg << std::endl; \
-    MPI_Abort(MPI_COMM_WORLD, 1);                                 \
+    std::ostringstream error_message;                             \
+    error_message << msg;                                         \
+    breakableAppAbort(error_message.str());                       \
   }
 
 #define APP_ABORT_TRACE(f, l, msg)                                                           \
@@ -57,9 +65,9 @@ struct CommunicatorTraits
 
 #define APP_ABORT(msg)                                            \
   {                                                               \
-    std::cerr << "Fatal Error. Aborting at " << msg << std::endl; \
-    std::cerr.flush();                                            \
-    exit(1);                                                      \
+    std::ostringstream error_message;                             \
+    error_message << msg;                                         \
+    breakableAppAbort(error_message.str());                       \
   }
 
 #define APP_ABORT_TRACE(f, l, msg)                                                           \

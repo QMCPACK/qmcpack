@@ -17,6 +17,8 @@
 
 #include "Message/Communicate.h"
 #include <iostream>
+#include <sstream>
+#include <string>
 #include <cstdio>
 #include <fstream>
 #include "config.h"
@@ -154,7 +156,19 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
   GroupLeaderComm = new Communicate();
 }
 
+void breakableAppAbort(std::string str_msg)
+{
+  std::cerr << "Fatal Error. Aborting at " << str_msg << std::endl;
+  MPI_Abort(MPI_COMM_WORLD, 1);
+}
+
 #endif // !HAVE_MPI
+
+void breakableAppAbort(std::string str_msg)
+{
+  std::cerr << "Fatal Error. Aborting at " << str_msg << std::endl;
+  exit(1);
+}
 
 void Communicate::barrier_and_abort(const std::string& msg) const
 {
