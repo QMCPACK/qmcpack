@@ -115,7 +115,7 @@ public:
 
   void checkObject() const override
   {
-    if (!(OrbitalSetSize == C->rows() && BasisSetSize == C->cols()))
+    if (!Identity && !(OrbitalSetSize == C->rows() && BasisSetSize == C->cols()))
       APP_ABORT("   LCAOrbitalSet::checkObject Linear coeffient for LCAOrbitalSet is not consistent with the input.");
   }
 

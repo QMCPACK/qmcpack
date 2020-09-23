@@ -118,7 +118,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   SlaterDet* sd              = dynamic_cast<SlaterDet*>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
-  SPOSetPtr spo = sd->mySPOSet.begin()->second;
+  SPOSetPtr spo = sd->getPhi(0);
   REQUIRE(spo != NULL);
   //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);
@@ -263,7 +263,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   SlaterDet* sd              = dynamic_cast<SlaterDet*>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
-  SPOSetPtr spo = sd->mySPOSet.begin()->second;
+  SPOSetPtr spo = sd->getPhi(0);
   REQUIRE(spo != NULL);
   //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);

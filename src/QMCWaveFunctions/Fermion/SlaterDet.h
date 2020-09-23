@@ -38,7 +38,6 @@ public:
   std::vector<Determinant_t*> Dets;
   ///the last particle of each group
   std::vector<int> Last;
-  std::map<std::string, SPOSetPtr> mySPOSet;
 
   /**  constructor
    * @param targetPtcl target Particleset
@@ -47,9 +46,6 @@ public:
 
   ///destructor
   ~SlaterDet();
-
-  ///add a SPOSet
-  void add(SPOSetPtr sposet, const std::string& aname);
 
   ///add a new DiracDeterminant to the list of determinants
   virtual void add(Determinant_t* det, int ispin);

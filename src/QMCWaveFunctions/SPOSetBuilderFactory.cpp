@@ -17,14 +17,11 @@
 
 
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+#include "QMCWaveFunctions/SPOSetScanner.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
 #if OHMMS_DIM == 3
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
-
-#if !defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/RotatedSPOs.h"
-#endif
 
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
@@ -57,7 +54,7 @@ void SPOSetBuilderFactory::clear()
 SPOSet* get_sposet(const std::string& name)
 {
   int nfound  = 0;
-  SPOSet* spo = 0;
+  SPOSet* spo = nullptr;
   std::map<std::string, SPOSetBuilder*>::iterator it;
   for (it = SPOSetBuilderFactory::spo_builders.begin(); it != SPOSetBuilderFactory::spo_builders.end(); ++it)
   {
@@ -248,13 +245,10 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   std::string bname("");
   std::string sname("");
   std::string type("");
-  std::string rotation("no");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(bname, "basisset");
   aAttrib.add(sname, "name");
   aAttrib.add(type, "type");
-  aAttrib.add(rotation, "optimize");
-  //aAttrib.put(rcur);
   aAttrib.put(cur);
 
   //tolower(type);
@@ -282,31 +276,8 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   }
   if (bb)
   {
-    app_log() << "  Building SPOSet '" << sname << "' with '" << bname << "' basis set." << std::endl;
     SPOSet* spo = bb->createSPOSet(cur);
     spo->setName(sname);
-    if (rotation == "yes")
-    {
-#ifdef QMC_COMPLEX
-      app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
-      abort();
-#else
-      auto* rot_spo   = new RotatedSPOs(spo);
-      xmlNodePtr tcur = cur->xmlChildrenNode;
-      while (tcur != NULL)
-      {
-        std::string cname((const char*)(tcur->name));
-        if (cname == "opt_vars")
-        {
-          rot_spo->params_supplied = true;
-          putContent(rot_spo->params, tcur);
-        }
-        tcur = tcur->next;
-      }
-      spo = rot_spo;
-      spo->setName(sname);
-#endif
-    }
     return spo;
   }
   else
@@ -318,7 +289,23 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
 
 void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
 {
-  app_log() << "  Building a collection of SPOSets" << std::endl;
+  std::string collection_name;
+  std::string collection_type;
+  OhmmsAttributeSet attrib;
+  attrib.add(collection_name, "name");
+  attrib.add(collection_type, "type");
+  attrib.put(cur);
+
+  // use collection_type as collection_name if collection_name is not given
+  if (collection_name.empty())
+    collection_name = collection_type;
+
+  app_summary() << std::endl;
+  app_summary() << "   Single particle orbitals (SPO) collections" << std::endl;
+  app_summary() << "   ------------------------------------------" << std::endl;
+  app_summary() << "    Name: " << collection_name << "   Type input: " << collection_type << std::endl;
+  app_summary() << std::endl;
+
   // create the SPOSet builder
   SPOSetBuilder* bb = createSPOSetBuilder(cur);
   // going through a list of sposet entries
@@ -331,6 +318,14 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
     {
       SPOSet* spo = bb->createSPOSet(element);
       nsposets++;
+    }
+    else if (cname == "spo_scanner")
+    {
+      if (myComm->rank() == 0)
+      {
+        SPOSetScanner ascanner(bb->sposets, targetPtcl, ptclPool);
+        ascanner.put(element);
+      }
     }
     element = element->next;
   }

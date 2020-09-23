@@ -81,42 +81,10 @@ WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) cons
   BackflowTransformation* tr = BFTrans->makeClone(tqp);
   SlaterDetWithBackflow* myclone = new SlaterDetWithBackflow(tqp, tr);
   myclone->Optimizable           = Optimizable;
-  if (mySPOSet.size() > 1) //each determinant owns its own set
+  for (int i = 0; i < Dets.size(); ++i)
   {
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      SPOSetPtr spo = Dets[i]->getPhi();
-      // Check to see if this determinants SPOSet has already been
-      // cloned
-      bool found = false;
-      SPOSetPtr spo_clone;
-      for (int j = 0; j < i; j++)
-        if (spo == Dets[j]->getPhi())
-        {
-          found     = true;
-          spo_clone = myclone->Dets[j]->getPhi();
-        }
-      // If it hasn't, clone it now
-      if (!found)
-      {
-        spo_clone = spo->makeClone();
-        myclone->add(spo_clone, spo->getName());
-      }
-      // Make a copy of the determinant.
-      DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*)Dets[i]->makeCopy(spo_clone);
-      myclone->add(dclne, i);
-    }
-  }
-  else
-  {
-    SPOSetPtr spo       = Dets[0]->getPhi();
-    SPOSetPtr spo_clone = spo->makeClone();
-    myclone->add(spo_clone, spo->getName());
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*)Dets[i]->makeCopy(spo_clone);
-      myclone->add(dclne, i);
-    }
+    DiracDeterminantBase* dclne = Dets[i]->makeCopy(Dets[i]->getPhi()->makeClone());
+    myclone->add(dclne, i);
   }
   myclone->setBF(tr);
   return myclone;
