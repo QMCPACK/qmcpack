@@ -17,7 +17,7 @@
 #define QMCPLUSPLUS_WALKER_CONTROL_MPI_H
 
 #include "QMCDrivers/WalkerControlBase.h"
-#include "QMCDrivers/WalkerElements.h"
+#include "QMCDrivers/WalkerElementsRef.h"
 #include <Utilities/TimerManager.h>
 
 namespace qmcplusplus

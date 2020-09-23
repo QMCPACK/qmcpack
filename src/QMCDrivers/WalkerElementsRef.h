@@ -9,8 +9,8 @@
 // File created by: Peter Doak
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_WALKERELEMENTS_H
-#define QMCPLUSPLUS_WALKERELEMENTS_H
+#ifndef QMCPLUSPLUS_WALKERELEMENTSREF_H
+#define QMCPLUSPLUS_WALKERELEMENTSREF_H
 
 #include "Configuration.h"
 #include "Particle/Walker.h"

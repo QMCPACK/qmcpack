@@ -22,7 +22,7 @@
 #include "ParticleBase/ParticleAttrib.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/Walker.h"
-#include "QMCDrivers/WalkerElements.h"
+#include "QMCDrivers/WalkerElementsRef.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
