@@ -68,13 +68,13 @@ void DriftModifierUNR::getDrift(RealType tau, const ComplexType& qf, ParticleSet
   if( std::isnan(vsq) )
   {
     std::ostringstream error_message;
-    for(int i = 0; i < drift.size(); ++i)
+    if (std::isnan(drift))
     {
-      if (std::isnan(drift[i]))
-      {
-        error_message << "drift[" << i << "] is nan, vsq (" << vsq << ") sc (" << sc << ")\n";
-        break;
-      }
+      error_message << "drift is nan, vsq (" << vsq << ") sc (" << sc << ")\n";
+    }
+    else
+    {
+      error_message << "vsq is nan but drift is " << drift << ", unexpected, investigate.\n";
     }
     throw std::runtime_error(error_message.str());
   }
