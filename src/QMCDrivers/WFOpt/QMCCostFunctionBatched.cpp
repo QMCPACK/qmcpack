@@ -17,6 +17,7 @@
 
 
 #include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
+#include "QMCDrivers/WFOpt/CostFunctionCrowdData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/CommOperators.h"
@@ -26,57 +27,6 @@
 
 namespace qmcplusplus
 {
-OptimizerEvalData::OptimizerEvalData(int crowd_size,
-                                     ParticleSet& P,
-                                     TrialWaveFunction& Psi,
-                                     QMCHamiltonian& H,
-                                     QMCHamiltonian& H_KE_Node,
-                                     RandomGenerator_t& Rng)
-    : crowd_size_(crowd_size), e0_(0.0), e2_(0.0), wgt_(0.0), wgt2_(0.0)
-{
-  log_psi_fixed_.resize(crowd_size_);
-  log_psi_opt_.resize(crowd_size_);
-
-  wf_ptr_list_.resize(crowd_size_);
-  p_ptr_list_.resize(crowd_size_);
-  h_ptr_list_.resize(crowd_size_);
-  h0_ptr_list_.resize(crowd_size_);
-
-  rng_ptr_list_.resize(crowd_size_);
-
-  for (int ib = 0; ib < crowd_size_; ib++)
-  {
-    ParticleSet* pCopy         = new ParticleSet(P);
-    TrialWaveFunction* psiCopy = Psi.makeClone(*pCopy);
-
-    p_ptr_list_[ib].reset(pCopy);
-    wf_ptr_list_[ib].reset(psiCopy);
-    h_ptr_list_[ib].reset(H.makeClone(*pCopy, *psiCopy));
-    h0_ptr_list_[ib].reset(H_KE_Node.makeClone(*pCopy, *psiCopy));
-
-    rng_ptr_list_[ib] = std::make_unique<RandomGenerator_t>(Rng);
-    h_ptr_list_[ib]->setRandomGenerator(rng_ptr_list_[ib].get());
-
-    rng_save_ptr_ = std::make_unique<RandomGenerator_t>(Rng);
-  }
-}
-
-void OptimizerEvalData::set_current_crowd_size(int curr_crowd_size)
-{
-  crowd_size_curr_ = curr_crowd_size;
-  wf_list_         = convertUPtrToRefVectorSubset(wf_ptr_list_, 0, crowd_size_curr_);
-  p_list_          = convertUPtrToRefVectorSubset(p_ptr_list_, 0, crowd_size_curr_);
-  h_list_          = convertUPtrToRefVectorSubset(h_ptr_list_, 0, crowd_size_curr_);
-  h0_list_         = convertUPtrToRefVectorSubset(h0_ptr_list_, 0, crowd_size_curr_);
-}
-
-void OptimizerEvalData::zero_log_psi()
-{
-  std::fill(log_psi_opt_.begin(), log_psi_opt_.end(), 0.0);
-  std::fill(log_psi_fixed_.begin(), log_psi_fixed_.end(), 0.0);
-}
-
-
 QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
                                                TrialWaveFunction& psi,
                                                QMCHamiltonian& h,
@@ -332,7 +282,7 @@ void QMCCostFunctionBatched::checkConfigurations()
   opt_eval_.resize(opt_num_crowds_);
   for (int i = 0; i < opt_num_crowds_; i++)
   {
-    opt_eval_[i] = std::make_unique<OptimizerEvalData>(opt_batch_size_, W, Psi, H, *H_KE_Node, *MoverRng[0]);
+    opt_eval_[i] = std::make_unique<CostFunctionCrowdData>(opt_batch_size_, W, Psi, H, *H_KE_Node, *MoverRng[0]);
   }
   outputManager.resume();
 
@@ -342,12 +292,12 @@ void QMCCostFunctionBatched::checkConfigurations()
   FairDivide(numSamples, opt_num_crowds_, samples_per_crowd);
 
   // lambda to execute on each crowd
-  auto evalOptConfig = [](int crowd_id, UPtrVector<OptimizerEvalData>& opt_crowds, std::vector<int>& samples_per_crowd,
-                          int crowd_size, std::vector<ParticleGradient_t*>& gradPsi,
-                          std::vector<ParticleLaplacian_t*>& lapPsi, Matrix<Return_rt>& RecordsOnNode,
-                          Matrix<Return_rt>& DerivRecords, Matrix<Return_rt>& HDerivRecords, const SampleStack& samples,
-                          opt_variables_type& optVars) {
-    OptimizerEvalData& opt_data = *opt_crowds[crowd_id];
+  auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
+                          std::vector<int>& samples_per_crowd, int crowd_size,
+                          std::vector<ParticleGradient_t*>& gradPsi, std::vector<ParticleLaplacian_t*>& lapPsi,
+                          Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
+                          Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars) {
+    CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
     int local_samples = samples_per_crowd[crowd_id + 1] - samples_per_crowd[crowd_id];
     int num_batches;
@@ -363,11 +313,9 @@ void QMCCostFunctionBatched::checkConfigurations()
 
       int base_sample_index = inb * crowd_size + samples_per_crowd[crowd_id];
 
-      opt_data.set_current_crowd_size(curr_crowd_size);
-
-      auto wf_list = opt_data.wf_list();
-      auto p_list  = opt_data.p_list();
-      auto h_list  = opt_data.h_list();
+      auto wf_list = opt_data.get_wf_list(curr_crowd_size);
+      auto p_list  = opt_data.get_p_list(curr_crowd_size);
+      auto h_list  = opt_data.get_h_list(curr_crowd_size);
 
       auto ref_dLogPsi  = convertPtrToRefVectorSubset(gradPsi, base_sample_index, curr_crowd_size);
       auto ref_d2LogPsi = convertPtrToRefVectorSubset(lapPsi, base_sample_index, curr_crowd_size);
@@ -384,8 +332,8 @@ void QMCCostFunctionBatched::checkConfigurations()
       // Log psi and prepare for difference the log psi
       opt_data.zero_log_psi();
 
-      TrialWaveFunction::flex_evaluateDeltaLogSetup(wf_list, p_list, opt_data.log_psi_fixed(), opt_data.log_psi_opt(),
-                                                    ref_dLogPsi, ref_d2LogPsi);
+      TrialWaveFunction::flex_evaluateDeltaLogSetup(wf_list, p_list, opt_data.get_log_psi_fixed(),
+                                                    opt_data.get_log_psi_opt(), ref_dLogPsi, ref_d2LogPsi);
 
       // Compute parameter derivatives of the wavefunction
       int nparam = optVars.size();
@@ -401,8 +349,8 @@ void QMCCostFunctionBatched::checkConfigurations()
           DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
           HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
         }
-        RecordsOnNode[is][LOGPSI_FIXED] = opt_data.log_psi_fixed()[ib];
-        RecordsOnNode[is][LOGPSI_FREE]  = opt_data.log_psi_opt()[ib];
+        RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
+        RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
       }
 
       // Energy
@@ -490,9 +438,9 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
   Psi.resetParameters(OptVariablesForPsi);
   for (int i = 0; i < opt_eval_.size(); i++)
   {
-    for (int j = 0; j < opt_eval_[i]->wf_ptr_list().size(); j++)
+    for (int j = 0; j < opt_eval_[i]->get_wf_ptr_list().size(); j++)
     {
-      opt_eval_[i]->wf_ptr_list()[j]->resetParameters(OptVariablesForPsi);
+      opt_eval_[i]->get_wf_ptr_list()[j]->resetParameters(OptVariablesForPsi);
     }
   }
 }
@@ -525,12 +473,12 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
   // lambda to execute on each crowd
   auto evalOptCorrelated =
-      [](int crowd_id, UPtrVector<OptimizerEvalData>& opt_crowds, const std::vector<int>& samples_per_crowd,
+      [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds, const std::vector<int>& samples_per_crowd,
          int crowd_size, std::vector<ParticleGradient_t*>& gradPsi, std::vector<ParticleLaplacian_t*>& lapPsi,
          Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords, Matrix<Return_rt>& HDerivRecords,
          const SampleStack& samples, const opt_variables_type& optVars, bool compute_all_from_scratch,
          Return_rt vmc_or_dmc, bool needGrad) {
-        OptimizerEvalData& opt_data = *opt_crowds[crowd_id];
+        CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
 
         int local_samples = samples_per_crowd[crowd_id + 1] - samples_per_crowd[crowd_id];
@@ -549,11 +497,9 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
           int base_sample_index = inb * crowd_size + samples_per_crowd[crowd_id];
 
-          opt_data.set_current_crowd_size(curr_crowd_size);
-
-          auto wf_list = opt_data.wf_list();
-          auto p_list  = opt_data.p_list();
-          auto h0_list = opt_data.h0_list();
+          auto wf_list = opt_data.get_wf_list(curr_crowd_size);
+          auto p_list  = opt_data.get_p_list(curr_crowd_size);
+          auto h0_list = opt_data.get_h0_list(curr_crowd_size);
 
           // Load this batch of samples into the crowd data
           for (int ib = 0; ib < curr_crowd_size; ib++)
@@ -575,8 +521,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
           }
           opt_data.zero_log_psi();
 
-          TrialWaveFunction::flex_evaluateDeltaLog(wf_list, p_list, opt_data.log_psi_opt(), dummyG_list, dummyL_list,
-                                                   compute_all_from_scratch);
+          TrialWaveFunction::flex_evaluateDeltaLog(wf_list, p_list, opt_data.get_log_psi_opt(), dummyG_list,
+                                                   dummyL_list, compute_all_from_scratch);
 
           Return_rt inv_n_samples = 1.0 / samples.getNumSamples();
 
@@ -588,7 +534,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
             // This is needed to get the KE correct in QMCHamiltonian::flex_evaluate below
             p_list[ib].get().G += *gradPsi[is];
             p_list[ib].get().L += *lapPsi[is];
-            Return_rt weight            = vmc_or_dmc * (opt_data.log_psi_opt()[ib] - RecordsOnNode[is][LOGPSI_FREE]);
+            Return_rt weight = vmc_or_dmc * (opt_data.get_log_psi_opt()[ib] - RecordsOnNode[is][LOGPSI_FREE]);
             RecordsOnNode[is][REWEIGHT] = weight;
             // move to opt_data
             opt_data.wgt()  += inv_n_samples * weight;

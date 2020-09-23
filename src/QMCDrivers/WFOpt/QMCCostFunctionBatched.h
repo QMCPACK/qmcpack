@@ -28,73 +28,7 @@ namespace qmcplusplus
  * generated from VMC running on a single thread.
  */
 
-
-/// Class to hold temporary data and object copies for crowd-local evaluation
-class OptimizerEvalData
-{
-public:
-  typedef qmcplusplus::QMCTraits::RealType Return_rt;
-
-  /// Create the arrays of crowd_size and create object copies
-  OptimizerEvalData(int crowd_size,
-                    ParticleSet& P,
-                    TrialWaveFunction& Psi,
-                    QMCHamiltonian& H,
-                    QMCHamiltonian& H_KE_Node,
-                    RandomGenerator_t& Rng);
-
-  /// Creates the reference vectors.  On the last iteration these may be smaller than the full crowd size
-  void set_current_crowd_size(int curr_crowd_size);
-
-  /// Set the log_psi_* arrays to zero
-  void zero_log_psi();
-
-  RefVector<ParticleSet>& p_list() { return p_list_; }
-  RefVector<TrialWaveFunction>& wf_list() { return wf_list_; }
-  RefVector<QMCHamiltonian>& h_list() { return h_list_; }
-  RefVector<QMCHamiltonian>& h0_list() { return h0_list_; }
-
-  std::vector<Return_rt>& log_psi_fixed() { return log_psi_fixed_; }
-  std::vector<Return_rt>& log_psi_opt() { return log_psi_opt_; }
-
-  UPtrVector<RandomGenerator_t>& get_rng_ptr_list() { return rng_ptr_list_; }
-  RandomGenerator_t& get_rng_save() { return *rng_save_ptr_; }
-
-  UPtrVector<TrialWaveFunction>& wf_ptr_list() { return wf_ptr_list_; }
-
-  Return_rt& e0() { return e0_; }
-  Return_rt& e2() { return e2_; }
-
-  Return_rt& wgt() { return wgt_; }
-  Return_rt& wgt2() { return wgt2_; }
-
-
-private:
-  int crowd_size_;
-  int crowd_size_curr_;
-
-  std::vector<Return_rt> log_psi_fixed_;
-  std::vector<Return_rt> log_psi_opt_;
-
-  UPtrVector<TrialWaveFunction> wf_ptr_list_;
-  UPtrVector<ParticleSet> p_ptr_list_;
-  UPtrVector<QMCHamiltonian> h_ptr_list_;
-  UPtrVector<QMCHamiltonian> h0_ptr_list_;
-  UPtrVector<RandomGenerator_t> rng_ptr_list_;
-  std::unique_ptr<RandomGenerator_t> rng_save_ptr_;
-
-  RefVector<TrialWaveFunction> wf_list_;
-  RefVector<ParticleSet> p_list_;
-  RefVector<QMCHamiltonian> h_list_;
-  RefVector<QMCHamiltonian> h0_list_;
-
-  // Crowd-local accumulator variables
-  Return_rt e0_;
-  Return_rt e2_;
-
-  Return_rt wgt_;
-  Return_rt wgt2_;
-};
+class CostFunctionCrowdData;
 
 
 class QMCCostFunctionBatched : public QMCCostFunctionBase, public QMCTraits
@@ -143,7 +77,7 @@ protected:
   int opt_batch_size_;
   int opt_num_crowds_;
 
-  std::vector<std::unique_ptr<OptimizerEvalData>> opt_eval_;
+  std::vector<std::unique_ptr<CostFunctionCrowdData>> opt_eval_;
 
   NewTimer& check_config_timer_;
   NewTimer& corr_sampling_timer_;
