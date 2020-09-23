@@ -73,8 +73,6 @@ public:
   static std::string backflow_tag;
   /// the element name for a multi slater determinant wavefunction
   static std::string multisd_tag;
-  /// the element name for a SPO scanner
-  static std::string sposcanner_tag;
 
   //@}
 
