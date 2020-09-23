@@ -360,8 +360,8 @@ void QMCCostFunctionBatched::checkConfigurations()
       {
         int is    = base_sample_index + ib;
         auto etmp = energy_list[ib];
-        opt_data.e0() += etmp;
-        opt_data.e2() += etmp * etmp;
+        opt_data.get_e0() += etmp;
+        opt_data.get_e2() += etmp * etmp;
 
         RecordsOnNode[is][ENERGY_NEW]   = etmp;
         RecordsOnNode[is][ENERGY_TOT]   = etmp;
@@ -377,8 +377,8 @@ void QMCCostFunctionBatched::checkConfigurations()
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
-    et_tot += opt_eval_[i]->e0();
-    e2_tot += opt_eval_[i]->e2();
+    et_tot += opt_eval_[i]->get_e0();
+    e2_tot += opt_eval_[i]->get_e2();
   }
 
   OptVariablesForPsi.setComputed();
@@ -537,8 +537,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
             Return_rt weight = vmc_or_dmc * (opt_data.get_log_psi_opt()[ib] - RecordsOnNode[is][LOGPSI_FREE]);
             RecordsOnNode[is][REWEIGHT] = weight;
             // move to opt_data
-            opt_data.wgt()  += inv_n_samples * weight;
-            opt_data.wgt2() += inv_n_samples * weight * weight;
+            opt_data.get_wgt()  += inv_n_samples * weight;
+            opt_data.get_wgt2() += inv_n_samples * weight * weight;
           }
 
           if (needGrad)
@@ -594,8 +594,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   // Sum weights over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
-    wgt_tot  += opt_eval_[i]->wgt();
-    wgt_tot2 += opt_eval_[i]->wgt2();
+    wgt_tot  += opt_eval_[i]->get_wgt();
+    wgt_tot2 += opt_eval_[i]->get_wgt2();
   }
 
   //this is MPI barrier

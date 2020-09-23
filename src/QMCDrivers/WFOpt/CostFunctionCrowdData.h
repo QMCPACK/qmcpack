@@ -54,11 +54,11 @@ public:
 
   UPtrVector<TrialWaveFunction>& get_wf_ptr_list() { return wf_ptr_list_; }
 
-  Return_rt& e0() { return e0_; }
-  Return_rt& e2() { return e2_; }
+  Return_rt& get_e0() { return e0_; }
+  Return_rt& get_e2() { return e2_; }
 
-  Return_rt& wgt() { return wgt_; }
-  Return_rt& wgt2() { return wgt2_; }
+  Return_rt& get_wgt() { return wgt_; }
+  Return_rt& get_wgt2() { return wgt2_; }
 
 
 private:
