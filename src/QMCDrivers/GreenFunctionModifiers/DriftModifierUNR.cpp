@@ -55,11 +55,30 @@ void DriftModifierUNR::getDrift(RealType tau, const ComplexType& qf, ParticleSet
   // convert the complex WF gradient to real
   convert(qf, drift);
   RealType vsq = drift * drift;
-  RealType sc  = (std::isnan(vsq) || vsq < std::numeric_limits<RealType>::epsilon())
+  RealType sc  = vsq < std::numeric_limits<RealType>::epsilon()
       ? tau
       : ((-1.0 + std::sqrt(1.0 + 2.0 * a_ * tau * vsq)) / (a_ * vsq));
   //Apply the umrigar scaling to drift.
   drift *= sc;
+#ifndef NDEBUG
+  // Why is this in NDEBUG: at least for gnu std::isnan may be no-op if NDEBUG is defined.
+  // Generally we hope that this would only occur as the result of bad input
+  // which would hopefully be the result of development time error and
+  // therefore caught when run in a Debug build.
+  if( std::isnan(vsq) )
+  {
+    std::ostringstream error_message;
+    for(int i = 0; i < drift.size(); ++i)
+    {
+      if (std::isnan(drift[i]))
+      {
+        error_message << "drift[" << i << "] is nan, vsq (" << vsq << ") sc (" << sc << ")\n";
+        break;
+      }
+    }
+    throw std::runtime_error(error_message.str());
+  }
+#endif
 }
 
 void DriftModifierUNR::getDrifts(RealType tau, const std::vector<GradType>& qf, std::vector<PosType>& drift) const
