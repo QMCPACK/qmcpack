@@ -2,11 +2,11 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -88,16 +88,16 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   sposet->evaluateValue(elec, 0, values);
 
   // Generated from gen_mo.py for position [0.0001, 0.0, 0.0]
-  REQUIRE(values[0] == Approx(0.9996037001));
+  REQUIRE(values[0] == ValueApprox(0.9996037001));
 
   sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
 
   // Generated from gen_mo.py for position [0.0001, 0.0, 0.0]
-  REQUIRE(values[0] == Approx(0.9996037001));
-  REQUIRE(dpsi[0][0] == Approx(-0.0006678035459));
-  REQUIRE(dpsi[0][1] == Approx(0));
-  REQUIRE(dpsi[0][2] == Approx(0));
-  REQUIRE(d2psi[0] == Approx(-20.03410564));
+  REQUIRE(values[0] == ValueApprox(0.9996037001));
+  REQUIRE(dpsi[0][0] == ValueApprox(-0.0006678035459));
+  REQUIRE(dpsi[0][1] == ValueApprox(0.0));
+  REQUIRE(dpsi[0][2] == ValueApprox(0.0));
+  REQUIRE(d2psi[0] == ValueApprox(-20.03410564));
 
 
   ParticleSet::SingleParticlePos_t disp(1.0, 0.0, 0.0);
@@ -105,11 +105,11 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
 
   sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
   // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
-  REQUIRE(values[0] == Approx(0.2315567641));
-  REQUIRE(dpsi[0][0] == Approx(-0.3805431885));
-  REQUIRE(dpsi[0][1] == Approx(0));
-  REQUIRE(dpsi[0][2] == Approx(0));
-  REQUIRE(d2psi[0] == Approx(-0.2618497452));
+  REQUIRE(values[0] == ValueApprox(0.2315567641));
+  REQUIRE(dpsi[0][0] == ValueApprox(-0.3805431885));
+  REQUIRE(dpsi[0][1] == ValueApprox(0.0));
+  REQUIRE(dpsi[0][2] == ValueApprox(0.0));
+  REQUIRE(d2psi[0] == ValueApprox(-0.2618497452));
 
   SPOSetBuilderFactory::clear();
 }
