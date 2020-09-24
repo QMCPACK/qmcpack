@@ -76,11 +76,6 @@ private:
   // Saved RNG state to reset to before correlated sampling
   std::unique_ptr<RandomGenerator_t> rng_save_ptr_;
 
-  RefVector<TrialWaveFunction> wf_list_;
-  RefVector<ParticleSet> p_list_;
-  RefVector<QMCHamiltonian> h_list_;
-  RefVector<QMCHamiltonian> h0_list_;
-
   // Crowd-local accumulator variables
   Return_rt e0_;
   Return_rt e2_;
