@@ -21,6 +21,7 @@
 template<class T>
 struct STONorm
 {
+  static_assert(std::is_floating_point<T>::value, "T must be a float point type");
   std::vector<T> Factorial;
 
   explicit STONorm(int nmax = 1) { set(nmax); }
@@ -55,6 +56,7 @@ struct STONorm
 template<class T>
 struct GenericSTO
 {
+  static_assert(std::is_floating_point<T>::value, "T must be a float point type");
   typedef T real_type;
 
   int ID;
@@ -165,6 +167,7 @@ struct GenericSTO
 template<class T>
 struct RadialSTO
 {
+  static_assert(std::is_floating_point<T>::value, "T must be a float point type");
   typedef T real_type;
   int NminusOne;
   T Z;
