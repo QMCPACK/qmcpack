@@ -158,8 +158,8 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   okay = readCuspInfo("hcn_downdet.cuspInfo.xml", "downdet", orbital_set_size, info);
 
   REQUIRE(okay);
-  Vector<double> xgrid;
-  Vector<double> rad_orb;
+  Vector<RealType> xgrid;
+  Vector<RealType> rad_orb;
   int ngrid = 10;
   xgrid.resize(ngrid);
   for (int i = 0; i < ngrid; i++)
