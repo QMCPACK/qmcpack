@@ -23,6 +23,7 @@ namespace qmcplusplus
 template<class T>
 struct GaussianCombo
 {
+  static_assert(std::is_floating_point<T>::value, "T must be a float point type");
   // Caution: most other code assumes value_type can only be real
   // but maybe it can be different precision
   // Possibly one of these types is the full precision and the other reduced precision

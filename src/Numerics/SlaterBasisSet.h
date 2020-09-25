@@ -23,6 +23,7 @@ namespace qmcplusplus
 template<class T>
 struct SlaterCombo
 {
+  static_assert(std::is_floating_point<T>::value, "T must be a float point type");
   typedef T real_type;
   typedef GenericSTO<T> Component_t;
 
