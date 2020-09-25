@@ -156,6 +156,7 @@ public:
     SPO_l_avg      = 0.0;
     double Delta   = 1.0 / (nknots - 1);
     int elec_count = target.R.size();
+    auto R_saved   = target.R;
     ParticleSet::SingleParticlePos_t zero_pos(0.0, 0.0, 0.0);
     for (int icount = 0, ind = 0; icount < nknots; icount++, ind++)
     {
@@ -185,6 +186,9 @@ public:
       output_g << std::endl;
       output_l << std::endl;
     }
+    // restore the whole target.
+    target.R = R_saved;
+    target.update();
 #ifdef QMC_COMPLEX
     output_report << "#   Report: Orb   Value_avg I/R  Gradients_avg  Laplacian_avg" << std::endl;
 #else

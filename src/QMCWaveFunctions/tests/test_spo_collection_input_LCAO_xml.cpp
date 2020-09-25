@@ -133,7 +133,7 @@ TEST_CASE("SPO input spline from xml He_sto3g", "[wavefunction]")
           </basisGroup> \
         </atomicBasisSet> \
       </basisset> \
-      <sposet name=\"spo\" size=\"1\" cuspInfo=\"../CuspCorrection/updet.cuspInfo.xml\"> \
+      <sposet name=\"spo\" size=\"1\"> \
         <occupation mode=\"ground\"/> \
         <coefficient size=\"1\" id=\"updetC\"> \
           1.00000000000000e+00 \
@@ -165,13 +165,13 @@ TEST_CASE("SPO input spline from xml He_sto3g", "[wavefunction]")
           </basisGroup> \
         </atomicBasisSet> \
       </basisset> \
-      <sposet name=\"spo\" size=\"1\" cuspInfo=\"../CuspCorrection/updet.cuspInfo.xml\"> \
+      <sposet name=\"spo\" size=\"1\"> \
         <occupation mode=\"ground\"/> \
         <coefficient size=\"1\" id=\"updetC\"> \
           1.00000000000000e+00 \
         </coefficient> \
       </sposet> \
-      <sposet name=\"spo-down\" size=\"1\" cuspInfo=\"../CuspCorrection/downdet.cuspInfo.xml\"> \
+      <sposet name=\"spo-down\" size=\"1\"> \
         <occupation mode=\"ground\"/> \
         <coefficient size=\"1\" id=\"downdetC\"> \
           1.00000000000000e+00 \
@@ -202,13 +202,13 @@ TEST_CASE("SPO input spline from xml He_sto3g", "[wavefunction]")
         </atomicBasisSet> \
       </basisset> \
       <slaterdeterminant> \
-        <determinant name=\"spo\" size=\"1\" cuspInfo=\"../CuspCorrection/updet.cuspInfo.xml\"> \
+        <determinant name=\"spo\" size=\"1\"> \
           <occupation mode=\"ground\"/> \
           <coefficient size=\"1\" id=\"updetC\"> \
             1.00000000000000e+00 \
           </coefficient> \
         </determinant> \
-        <determinant name=\"spo-down\" size=\"1\" cuspInfo=\"../CuspCorrection/downdet.cuspInfo.xml\"> \
+        <determinant name=\"spo-down\" size=\"1\"> \
           <occupation mode=\"ground\"/> \
           <coefficient size=\"1\" id=\"downdetC\"> \
             1.00000000000000e+00 \
