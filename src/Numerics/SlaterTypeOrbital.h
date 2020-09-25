@@ -54,9 +54,9 @@ struct STONorm
  * where n-1 is the number of nodes.
  */
 template<class T>
-struct GenericSTO : public OptimizableFunctorBase
+struct GenericSTO
 {
-  typedef T value_type;
+  typedef T real_type;
 
   int ID;
   ///Principal number
@@ -71,7 +71,7 @@ struct GenericSTO : public OptimizableFunctorBase
 
   /** constructor with a known contraction factor
    */
-  explicit GenericSTO(int power, real_type z, real_type norm = 1.0) : N(-1), Power(power), Z(z), Norm(norm) {}
+  explicit GenericSTO(int power, real_type z, real_type norm) : N(-1), Power(power), Z(z), Norm(norm) {}
 
   /** constructor with a set of quantum numbers
    * @param n principal quantum number
@@ -158,14 +158,6 @@ struct GenericSTO : public OptimizableFunctorBase
     return rnl;
   }
 
-  bool put(xmlNodePtr cur) { return true; }
-
-  void checkInVariables(opt_variables_type& active) {}
-  void checkOutVariables(const opt_variables_type& active) {}
-  void resetParameters(const opt_variables_type& active)
-  {
-    //DO NOTHING FOR NOW
-  }
 };
 
 /**class for Slater-type orbitals,
