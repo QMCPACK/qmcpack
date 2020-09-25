@@ -15,7 +15,6 @@
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
 #include <io/hdf_archive.h>
-#include "Numerics/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 #include "Message/CommOperators.h"

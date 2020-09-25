@@ -14,7 +14,6 @@
 
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_SLATERBASISSET_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_SLATERBASISSET_H
-#include "Numerics/OptimizableFunctorBase.h"
 #include "Numerics/SlaterTypeOrbital.h"
 #include "OhmmsData/AttributeSet.h"
 #include "io/hdf_archive.h"

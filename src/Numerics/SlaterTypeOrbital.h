@@ -14,7 +14,6 @@
 
 #ifndef QMCPLUSPLUS_SLATERTYPEORBITAL_H
 #define QMCPLUSPLUS_SLATERTYPEORBITAL_H
-#include "Numerics/OptimizableFunctorBase.h"
 #include <cmath>
 
 /** class to evaluate the normalization factors for the Slater-Type orbitals
@@ -82,9 +81,6 @@ struct GenericSTO
    * Contraction factor is the normalization factor evaluated based on N and Z.
    */
   explicit GenericSTO(int n, int l, real_type z) : N(n), Power(n - l - 1), Z(z) { reset(); }
-
-
-  OptimizableFunctorBase* makeClone() const { return new GenericSTO<T>(*this); }
 
   inline void reset()
   {
