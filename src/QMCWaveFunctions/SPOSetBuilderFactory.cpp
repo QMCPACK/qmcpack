@@ -187,7 +187,6 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   }
   else if (type.find("spline") < type.size())
   {
-    name = type_in;
 #if defined(HAVE_EINSPLINE)
     PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
     bb = new EinsplineSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
@@ -301,37 +300,42 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
     collection_name = collection_type;
 
   app_summary() << std::endl;
-  app_summary() << "   Single particle orbitals (SPO) collections" << std::endl;
-  app_summary() << "   ------------------------------------------" << std::endl;
+  app_summary() << "   Single particle orbitals (SPO) collection" << std::endl;
+  app_summary() << "   -----------------------------------------" << std::endl;
   app_summary() << "    Name: " << collection_name << "   Type input: " << collection_type << std::endl;
   app_summary() << std::endl;
 
   // create the SPOSet builder
   SPOSetBuilder* bb = createSPOSetBuilder(cur);
+
+  // going through a list of basisset entries
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "basisset")
+      bb->loadBasisSetFromXML(cur);
+  });
+
   // going through a list of sposet entries
-  xmlNodePtr element = cur->children;
-  int nsposets       = 0;
-  while (element != NULL)
-  {
-    std::string cname((const char*)(element->name));
+  int nsposets = 0;
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
     {
       SPOSet* spo = bb->createSPOSet(element);
       nsposets++;
     }
-    else if (cname == "spo_scanner")
-    {
+  });
+
+  if (nsposets == 0)
+    myComm->barrier_and_abort("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
+
+  // going through a list of spo_scanner entries
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "spo_scanner")
       if (myComm->rank() == 0)
       {
         SPOSetScanner ascanner(bb->sposets, targetPtcl, ptclPool);
         ascanner.put(element);
       }
-    }
-    element = element->next;
-  }
-
-  if (nsposets == 0)
-    myComm->barrier_and_abort("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
+  });
 }
 
 std::string SPOSetBuilderFactory::basisset_tag = "basisset";
