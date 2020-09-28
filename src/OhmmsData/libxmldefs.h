@@ -128,7 +128,7 @@ inline bool putContent(std::vector<T>& a, const xmlNodePtr cur)
       b.push_back(t);
     else if (!stream.eof() && stream.fail())
     {
-      std::cerr << "failbit detected when reading type (type_info::name) " << typeid(T).name() << ", value " << t
+      std::cerr << "Error parsing XML for type (type_info::name) " << typeid(T).name() << ", value " << t
                 << std::endl;
       stream.clear();
     }
