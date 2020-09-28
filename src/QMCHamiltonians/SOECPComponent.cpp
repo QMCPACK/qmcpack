@@ -119,11 +119,12 @@ SOECPComponent::ComplexType SOECPComponent::getAngularIntegral(RealType sold,
                                                                const PosType& dr)
 {
   //quadrature sum for angular integral
+  RealType fourpi = 2.0 * TWOPI;
   for (int j = 0; j < nknot; j++)
   {
     deltaV[j] = r * rrotsgrid_m[j] - dr;
     W.makeMoveWithSpin(iel, deltaV[j], snew - sold);
-    psiratio[j] = Psi.calcRatio(W, iel) * sgridweight_m[j] * 2.0 * TWOPI;
+    psiratio[j] = Psi.calcRatio(W, iel) * sgridweight_m[j] * fourpi;
     W.rejectMove(iel);
     Psi.resetPhaseDiff();
   }
