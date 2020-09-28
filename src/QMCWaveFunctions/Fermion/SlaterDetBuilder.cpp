@@ -193,15 +193,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       spoAttrib.add(spo_beta_name, "spo_dn");
       spoAttrib.add(fastAlg, "Fast");
       spoAttrib.put(cur);
-      // YE FIXME: I think we can remove this restriction.
-      // even when spo_alpha and spo_beta refer to the same spo, the objects are different.
-      if (spo_alpha_name == spo_beta_name)
-      {
-        app_error()
-            << "In SlaterDetBuilder: In MultiSlaterDeterminant construction, SPO sets must be different. spo_up: "
-            << spo_alpha_name << "  spo_dn: " << spo_beta_name << "\n";
-        abort();
-      }
+
       SPOSetPtr spo_alpha = get_sposet(spo_alpha_name);
       SPOSetPtr spo_beta  = get_sposet(spo_beta_name);
       if (spo_alpha == nullptr)
@@ -638,63 +630,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
 
   return success;
 }
-/*
-  bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur)
-  {
-     bool success=true;
 
-     std::vector<ci_configuration> uniqueConfg_up, uniqueConfg_dn;
-     std::vector<std::string> CItags;
-     bool optimizeCI;
-
-     success = readDetList(cur,uniqueConfg_up,uniqueConfg_dn,multiSD->C2node_up, multiSD->C2node_dn,CItags,multiSD->C,optimizeCI,multiSD->nels_up,multiSD->nels_dn);
-     if(!success) return false;
-
-     multiSD->resize(uniqueConfg_up.size(),uniqueConfg_dn.size());
-     SPOSetProxyForMSD* spo = multiSD->spo_up;
-     spo->occup.resize(uniqueConfg_up.size(),multiSD->nels_up);
-     for(int i=0; i<uniqueConfg_up.size(); i++)
-     {
-       int nq=0;
-       ci_configuration& ci = uniqueConfg_up[i];
-       for(int k=0; k<ci.occup.size(); k++) {
-         if(ci.occup[k]) {
-           spo->occup(i,nq++) = k;
-         }
-       }
-       DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr) spo,0);
-       adet->set(multiSD->FirstIndex_up,multiSD->nels_up);
-       multiSD->dets_up.push_back(adet);
-     }
-     spo = multiSD->spo_dn;
-     spo->occup.resize(uniqueConfg_dn.size(),multiSD->nels_dn);
-     for(int i=0; i<uniqueConfg_dn.size(); i++)
-     {
-       int nq=0;
-       ci_configuration& ci = uniqueConfg_dn[i];
-       for(int k=0; k<ci.occup.size(); k++) {
-         if(ci.occup[k]) {
-           spo->occup(i,nq++) = k;
-         }
-       }
-       DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr) spo,0);
-       adet->set(multiSD->FirstIndex_dn,multiSD->nels_dn);
-       multiSD->dets_dn.push_back(adet);
-     }
-
-     if(optimizeCI) {
-       app_log() <<"CI coefficients are optimizable. ";
-       multiSD->Optimizable=true;
-       multiSD->myVars.insert(CItags[0],multiSD->C[0],false,optimize::LINEAR_P);
-       for(int i=1; i<multiSD->C.size(); i++) {
-         //std::stringstream sstr;
-         //sstr << "CIcoeff" << "_" << i;
-         multiSD->myVars.insert(CItags[i],multiSD->C[i],true,optimize::LINEAR_P);
-       }
-     }
-     return success;
-  }
-*/
 bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur)
 {
   bool success = true;

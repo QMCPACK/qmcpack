@@ -88,7 +88,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
-    if (cname == "sposet_builder")
+    if (cname == "sposet_builder" || cname == "sposet_collection")
     {
       SPOSetBuilderFactory factory(myComm, *targetPtcl, ptclPool);
       factory.build_sposet_collection(cur);
