@@ -63,6 +63,10 @@ public:
   inline int getFirstIndex() const { return FirstIndex; }
   inline int getLastIndex() const { return LastIndex; }
 
+#ifndef NDEBUG
+  virtual ValueMatrix_t& getPsiMinv() { return dummy_vmt; }
+#endif
+
   /** set the index of the first particle in the determinant and reset the size of the determinant
    *@param first index of first particle
    *@param nel number of particles in the determinant
@@ -78,13 +82,6 @@ public:
   virtual inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
 
   virtual void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
-
-  // To be removed with AoS
-  void resetTargetParticleSet(ParticleSet& P) override final
-  {
-    Phi->resetTargetParticleSet(P);
-    targetPtcl = &P;
-  }
 
   inline void reportStatus(std::ostream& os) override final {}
 
@@ -182,8 +179,10 @@ protected:
   int NumOrbitals;
   ///number of particles which belong to this Dirac determinant
   int NumPtcls;
-  /// targetPtcl pointer. YE: to be removed.
-  ParticleSet* targetPtcl;
+
+#ifndef NDEBUG
+  ValueMatrix_t dummy_vmt;
+#endif
 
   /// register all the timers
   void registerTimers()

@@ -48,8 +48,6 @@ public:
   ///size is determined by component sposets and nothing else
   inline void setOrbitalSetSize(int norbs) {}
 
-  void resetTargetParticleSet(ParticleSet& P);
-
   SPOSet* makeClone() const;
 
   /** add sposet clones from another Composite SPOSet

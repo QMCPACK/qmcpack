@@ -16,7 +16,7 @@
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
@@ -74,8 +74,8 @@ void Tab_to_Kl(int nwalk, int nocc, int nchol, std::complex<double> const* Tab, 
   hipLaunchKernelGGL(kernel_Tab_to_Kl, dim3(grid_dim), dim3(nthr), 0, 0, nwalk, nocc, nchol,
                      reinterpret_cast<thrust::complex<double> const*>(Tab),
                      reinterpret_cast<thrust::complex<double>*>(Kl));
-  qmc_hip::hip_check(hipGetLastError(), "Tab_to_Kl");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "Tab_to_Kl");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "Tab_to_Kl");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "Tab_to_Kl");
 }
 
 void Tab_to_Kl(int nwalk, int nocc, int nchol, std::complex<float> const* Tab, std::complex<float>* Kl)
@@ -85,8 +85,8 @@ void Tab_to_Kl(int nwalk, int nocc, int nchol, std::complex<float> const* Tab, s
   hipLaunchKernelGGL(kernel_Tab_to_Kl, dim3(grid_dim), dim3(nthr), 0, 0, nwalk, nocc, nchol,
                      reinterpret_cast<thrust::complex<float> const*>(Tab),
                      reinterpret_cast<thrust::complex<float>*>(Kl));
-  qmc_hip::hip_check(hipGetLastError(), "Tab_to_Kl");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "Tab_to_Kl");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "Tab_to_Kl");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "Tab_to_Kl");
 }
 
 
@@ -102,8 +102,8 @@ void Tanb_to_Kl(int nwalk,
   hipLaunchKernelGGL(kernel_Tanb_to_Kl, dim3(grid_dim), dim3(nthr), 0, 0, nwalk, nocc, nchol, nchol_tot,
                      reinterpret_cast<thrust::complex<double> const*>(Tab),
                      reinterpret_cast<thrust::complex<double>*>(Kl));
-  qmc_hip::hip_check(hipGetLastError(), "Tab_to_Kl");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "Tab_to_Kl");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "Tab_to_Kl");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "Tab_to_Kl");
 }
 
 void Tanb_to_Kl(int nwalk, int nocc, int nchol, int nchol_tot, std::complex<float> const* Tab, std::complex<float>* Kl)
@@ -113,8 +113,8 @@ void Tanb_to_Kl(int nwalk, int nocc, int nchol, int nchol_tot, std::complex<floa
   hipLaunchKernelGGL(kernel_Tanb_to_Kl, dim3(grid_dim), dim3(nthr), 0, 0, nwalk, nocc, nchol, nchol_tot,
                      reinterpret_cast<thrust::complex<float> const*>(Tab),
                      reinterpret_cast<thrust::complex<float>*>(Kl));
-  qmc_hip::hip_check(hipGetLastError(), "Tab_to_Kl");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "Tab_to_Kl");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "Tab_to_Kl");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "Tab_to_Kl");
 }
 
 } // namespace kernels

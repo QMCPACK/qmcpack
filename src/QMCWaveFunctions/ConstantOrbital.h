@@ -24,7 +24,6 @@ public:
   virtual void checkOutVariables(const opt_variables_type& active) override {}
   virtual void resetParameters(const opt_variables_type& active) override {}
   virtual void reportStatus(std::ostream& os) override {}
-  virtual void resetTargetParticleSet(ParticleSet& P) override {}
 
   PsiValueType FakeGradRatio;
 

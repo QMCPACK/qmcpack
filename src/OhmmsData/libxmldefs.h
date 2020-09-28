@@ -128,8 +128,8 @@ inline bool putContent(std::vector<T>& a, const xmlNodePtr cur)
       b.push_back(t);
     else if (!stream.eof() && stream.fail())
     {
-      std::cerr << "failbit detected when reading type (type_info::name) "
-                << typeid(T).name() << ", value " << t << std::endl;
+      std::cerr << "Error parsing XML for type (type_info::name) " << typeid(T).name() << ", value " << t
+                << std::endl;
       stream.clear();
     }
   }
@@ -158,5 +158,20 @@ inline bool getContent(const std::vector<T>& a, xmlNodePtr cur)
   return true;
 }
 
+/** process through all the children of an XML element
+ * F is a lambda or functor
+ * void F/[](const std::string& cname, const xmlNodePtr element) {...}
+ */
+template<class F>
+void processChildren(const xmlNodePtr cur, const F& functor)
+{
+  xmlNodePtr element = cur->children;
+  while (element != NULL)
+  {
+    std::string cname((const char*)(element->name));
+    functor(cname, element);
+    element = element->next;
+  }
+}
 
 #endif

@@ -21,6 +21,7 @@
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
+#include "type_traits/template_types.hpp"
 #include <bitset>
 
 namespace qmcplusplus
@@ -38,11 +39,12 @@ class EstimatorManagerNewTest;
 class EstimatorManagerNew
 {
 public:
+  /// This is to deal with vague expression of precision in legacy code. Don't use in new code.
   typedef QMCTraits::FullPrecRealType RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
 
   typedef ScalarEstimatorBase EstimatorType;
-  typedef std::vector<RealType> BufferType;
+  using FPRBuffer =  std::vector<FullPrecRealType>;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   ///name of the primary estimator name
@@ -63,7 +65,7 @@ public:
 
   /** return the communicator
    */
-  Communicate* getCommunicator() { return myComm; }
+  Communicate* getCommunicator() { return my_comm_; }
 
   ///return the number of ScalarEstimators
   inline int size() const { return Estimators.size(); }
@@ -141,11 +143,12 @@ public:
 
   /** unified: stop a block
    * @param accept acceptance rate of this block
-   * \param[in] accept_ratio
+   * \param[in] accept
+   * \param[in] reject
    * \param[in] block_weight
    * \param[in] cpu_block_time Timer returns double so this is not altered by "mixed" precision
    */
-  void stopBlockNew(RealType accept_ratio, RealType block_weight, double cpu_block_time);
+  void stopBlock(unsigned long accept, unsigned long reject, RealType block_weight, double cpu_block_time);
 
   /** At end of block collect the scalar estimators for the entire rank
    *   
@@ -180,8 +183,8 @@ protected:
   int weightInd;
   ///index for the block cpu PropertyCache(cpuInd)
   int cpuInd;
-  ///index for the acceptance rate PropertyCache(acceptInd)
-  int acceptInd;
+  ///index for the accept counter PropertyCache(acceptInd)
+  int acceptRatioInd;
   ///hdf5 handler
   hid_t h_file;
   ///total weight accumulated in a block
@@ -191,7 +194,7 @@ protected:
   ///file handler to write data for debugging
   std::ofstream* DebugArchive;
   ///communicator to handle communication
-  Communicate* myComm;
+  Communicate* my_comm_;
   /** pointer to the primary ScalarEstimatorBase
    */
   ScalarEstimatorBase* MainEstimator;
@@ -237,11 +240,9 @@ protected:
 private:
   ///number of maximum data for a scalar.dat
   int max4ascii;
-  //Data for communication
-  std::vector<BufferType*> RemoteData;
 
   /// collect data and write
-  void makeBlockAverages();
+  void makeBlockAverages(unsigned long accept, unsigned long reject);
 
   ///add header to an std::ostream
   void addHeader(std::ostream& o);

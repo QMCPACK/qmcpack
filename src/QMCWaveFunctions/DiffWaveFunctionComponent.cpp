@@ -39,17 +39,6 @@ void DiffWaveFunctionComponent::evaluateDerivRatios(ParticleSet& VP,
   APP_ABORT("Implement DiffWaveFunctionComponent::evaluateDerivRatios for this orbital");
 }
 
-void NumericalDiffOrbital::resetTargetParticleSet(ParticleSet& P)
-{
-  int nptcls = P.getTotalNum();
-  dg_p.resize(nptcls);
-  dl_p.resize(nptcls);
-  dg_m.resize(nptcls);
-  dl_m.resize(nptcls);
-  gradLogPsi.resize(nptcls);
-  lapLogPsi.resize(nptcls);
-}
-
 void NumericalDiffOrbital::checkOutVariables(const opt_variables_type& optvars)
 {
   //do nothing
@@ -78,20 +67,20 @@ void NumericalDiffOrbital::evaluateDerivatives(ParticleSet& P,
     int jj = ind_map[j];
     if (jj < 0)
       continue;
-    LogValueType plus=0.0;
-    LogValueType minus=0.0;
-    RealType curvar=std::real(optvars[jj]);
-    dg_p=0.0;
-    dl_p=0.0;
-    dg_m=0.0;
-    dl_m=0.0;
+    LogValueType plus  = 0.0;
+    LogValueType minus = 0.0;
+    RealType curvar    = std::real(optvars[jj]);
+    dg_p               = 0.0;
+    dl_p               = 0.0;
+    dg_m               = 0.0;
+    dl_m               = 0.0;
     //accumulate plus and minus displacement
     for (int i = 0; i < refOrbital.size(); ++i)
     {
-      v[jj]=std::real(optvars[jj])+delta;
+      v[jj] = std::real(optvars[jj]) + delta;
       refOrbital[i]->resetParameters(v);
-      plus+=refOrbital[i]->evaluateLog(P,dg_p,dl_p);
-      v[jj]=std::real(optvars[jj])-delta;
+      plus += refOrbital[i]->evaluateLog(P, dg_p, dl_p);
+      v[jj] = std::real(optvars[jj]) - delta;
       refOrbital[i]->resetParameters(v);
       minus += refOrbital[i]->evaluateLog(P, dg_m, dl_m);
       //restore the variable to the original state
@@ -115,20 +104,6 @@ void AnalyticDiffOrbital::resetParameters(const opt_variables_type& optvars)
     return;
   for (int i = 0; i < refOrbital.size(); ++i)
     refOrbital[i]->resetParameters(optvars);
-}
-
-void AnalyticDiffOrbital::resetTargetParticleSet(ParticleSet& P)
-{
-  if (MyIndex < 0)
-    return;
-  for (int i = 0; i < refOrbital.size(); ++i)
-    refOrbital[i]->resetTargetParticleSet(P);
-  int nptcls = P.getTotalNum();
-  if (gradLogPsi.size() != nptcls)
-  {
-    gradLogPsi.resize(nptcls);
-    lapLogPsi.resize(nptcls);
-  }
 }
 
 void AnalyticDiffOrbital::checkOutVariables(const opt_variables_type& optvars)

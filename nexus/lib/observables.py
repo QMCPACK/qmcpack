@@ -3,7 +3,7 @@
 # Python standard library imports
 import os
 import inspect
-from time import clock
+from time import process_time
 from copy import deepcopy
 
 # Non-standard Python imports
@@ -34,7 +34,7 @@ class VLog(DevBase):
         )
 
     def __init__(self):
-        self.tstart    = clock()
+        self.tstart    = process_time()
         self.tlast     = self.tstart
         self.mstart    = memory.resident(children=True)
         self.mlast     = self.mstart
@@ -59,7 +59,7 @@ class VLog(DevBase):
                     self.mlast = mnow
                 #end if
                 if time:
-                    tnow = clock()
+                    tnow = process_time()
                     msg += '  (t elap {:7.3f}, tot {:7.3f})'.format(tnow-self.tlast,tnow-self.tstart)
                     self.tlast = tnow
                 #end if
