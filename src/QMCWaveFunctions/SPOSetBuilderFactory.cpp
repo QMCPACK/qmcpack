@@ -309,51 +309,33 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
   SPOSetBuilder* bb = createSPOSetBuilder(cur);
 
   // going through a list of basisset entries
-  {
-    xmlNodePtr element = cur->children;
-    while (element != NULL)
-    {
-      std::string cname((const char*)(element->name));
-      if (cname == "basisset")
-        bb->loadBasisSetFromXML(cur);
-      element = element->next;
-    }
-  }
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "basisset")
+      bb->loadBasisSetFromXML(cur);
+  });
 
   // going through a list of sposet entries
   int nsposets = 0;
-  {
-    xmlNodePtr element = cur->children;
-    while (element != NULL)
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "sposet")
     {
-      std::string cname((const char*)(element->name));
-      if (cname == "sposet")
-      {
-        SPOSet* spo = bb->createSPOSet(element);
-        nsposets++;
-      }
-      element = element->next;
+      SPOSet* spo = bb->createSPOSet(element);
+      nsposets++;
     }
-  }
-
-  // going through a list of spo_scanner entries
-  {
-    xmlNodePtr element = cur->children;
-    while (element != NULL)
-    {
-      std::string cname((const char*)(element->name));
-      if (cname == "spo_scanner")
-        if (myComm->rank() == 0)
-        {
-          SPOSetScanner ascanner(bb->sposets, targetPtcl, ptclPool);
-          ascanner.put(element);
-        }
-      element = element->next;
-    }
-  }
+  });
 
   if (nsposets == 0)
     myComm->barrier_and_abort("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
+
+  // going through a list of spo_scanner entries
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "spo_scanner")
+      if (myComm->rank() == 0)
+      {
+        SPOSetScanner ascanner(bb->sposets, targetPtcl, ptclPool);
+        ascanner.put(element);
+      }
+  });
 }
 
 std::string SPOSetBuilderFactory::basisset_tag = "basisset";
