@@ -3,7 +3,6 @@
 #include <cmath>
 #include <vector>
 #include <complex>
-#include <omp.h>
 
 double PI = 4. * std::atan(1);
 typedef std::complex<double> dcomp;
@@ -234,13 +233,13 @@ dcomp calcAngInt(const vec& sph1, double s1, double s2)
           dcomp ldots(0.0, 0.0);
           for (int d = 0; d < 3; d++)
             ldots += lMatrixElement(l, m1, m2, d) * sMatrixElement(s1, s2, d);
-          msum += std::conj(Ylm(l, m1, sph1)) * Ylm(l, m2, sph2) * ldots;
+          msum += Ylm(l, m1, sph1) * std::conj(Ylm(l, m2, sph2)) * ldots;
         }
       }
       integrand += Wso(l, sph1[0]) * msum;
     }
     integrand *= spinor(sph2, s2) / spinor(sph1, s1);
-    angint += integrand * wt[i];
+    angint += integrand * wt[i] * 4.0 * PI;
   }
   return angint;
 }
@@ -251,20 +250,16 @@ void calcVal(int npts)
   vec sph1  = cart2sph(cart1);
   double s1 = 0.0;
 
-  double t1 = omp_get_wtime();
-
   dcomp sint(0.0, 0.0);
   double smin = 0.0;
   double smax = 2 * PI;
   double h    = (smax - smin) / npts;
-#pragma omp parallel for reduction(+ : sint)
   for (int k = 1; k <= npts - 1; k += 2)
   {
     double s2    = smin + k * h;
     dcomp angint = calcAngInt(sph1, s1, s2);
     sint += 4 * h / 3. * angint;
   }
-#pragma omp parallel for reduction(+ : sint)
   for (int k = 2; k <= npts - 2; k += 2)
   {
     double s2    = smin + k * h;
@@ -273,13 +268,12 @@ void calcVal(int npts)
   }
   sint += h / 3. * calcAngInt(sph1, s1, smin);
   sint += h / 3. * calcAngInt(sph1, s1, smax);
-  double t2 = omp_get_wtime();
-  std::cout << npts << " " << std::setprecision(10) << std::real(sint) << " " << std::imag(sint) << " time: " << t2 - t1
-            << std::endl;
+  sint /= (2.0 * PI);
+  std::cout << npts << " " << std::setprecision(10) << std::real(sint) << " " << std::imag(sint) << std::endl;
 }
 
 int main()
 {
-  for (int n = 2; n <= 500; n += 2)
+  for (int n = 2; n <= 100; n += 2)
     calcVal(n);
 }
