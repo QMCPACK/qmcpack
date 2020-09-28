@@ -119,7 +119,7 @@ SOECPComponent::ComplexType SOECPComponent::getAngularIntegral(RealType sold,
                                                                const PosType& dr)
 {
   //quadrature sum for angular integral
-  RealType fourpi = 2.0 * TWOPI;
+  constexpr RealType fourpi = 2.0 * TWOPI;
   for (int j = 0; j < nknot; j++)
   {
     deltaV[j] = r * rrotsgrid_m[j] - dr;
