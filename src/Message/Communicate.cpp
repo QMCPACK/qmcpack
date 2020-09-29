@@ -132,6 +132,11 @@ void Communicate::abort() const { comm.abort(1); }
 
 void Communicate::barrier() const { comm.barrier(); }
 
+void breakableAppAbort(std::string str_msg)
+{
+  std::cerr << "Fatal Error. Aborting at " << str_msg << std::endl;
+  MPI_Abort(MPI_COMM_WORLD, 1);
+}
 #else
 
 void Communicate::initialize(int argc, char** argv) { std::string when = "qmc." + getDateAndTime("%Y%m%d_%H%M"); }
@@ -155,16 +160,9 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
 void breakableAppAbort(std::string str_msg)
 {
   std::cerr << "Fatal Error. Aborting at " << str_msg << std::endl;
-  MPI_Abort(MPI_COMM_WORLD, 1);
-}
-
-#endif // !HAVE_MPI
-
-void breakableAppAbort(std::string str_msg)
-{
-  std::cerr << "Fatal Error. Aborting at " << str_msg << std::endl;
   exit(1);
 }
+#endif // !HAVE_MPI
 
 void Communicate::barrier_and_abort(const std::string& msg) const
 {

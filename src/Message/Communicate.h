@@ -29,6 +29,13 @@
  */
 void breakableAppAbort(std::string str_msg);
 
+#define APP_ABORT(msg)                      \
+  {                                         \
+    std::ostringstream error_message;       \
+    error_message << msg;                   \
+    breakableAppAbort(error_message.str()); \
+  }
+
 #ifdef HAVE_MPI
 #include "mpi3/environment.hpp"
 namespace mpi3 = boost::mpi3;
@@ -41,13 +48,6 @@ struct CommunicatorTraits
   typedef MPI_Status status;
   typedef MPI_Request request;
 };
-
-#define APP_ABORT(msg)                      \
-  {                                         \
-    std::ostringstream error_message;       \
-    error_message << msg;                   \
-    breakableAppAbort(error_message.str()); \
-  }
 
 #define APP_ABORT_TRACE(f, l, msg)                                                           \
   {                                                                                          \
@@ -64,13 +64,6 @@ struct CommunicatorTraits
   static const int MPI_COMM_NULL    = 0;
   static const int MPI_REQUEST_NULL = 1;
 };
-
-#define APP_ABORT(msg)                      \
-  {                                         \
-    std::ostringstream error_message;       \
-    error_message << msg;                   \
-    breakableAppAbort(error_message.str()); \
-  }
 
 #define APP_ABORT_TRACE(f, l, msg)                                                           \
   {                                                                                          \
