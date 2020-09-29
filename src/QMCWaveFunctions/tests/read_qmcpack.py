@@ -27,7 +27,7 @@ def read_basis_groups(atomic_basis_set):
     basis_set = []
     for basis_group in basis_groups:
         if basis_group.attrib['type'] != 'Gaussian':
-            print 'Expecting Gaussian type basisGroup'
+            print('Expecting Gaussian type basisGroup')
         #print basis_group.attrib['n']
         n = int(basis_group.attrib['n'])
         #print basis_group.attrib['l']
@@ -70,11 +70,9 @@ def parse_qmc_wf(fname, element_list):
     MO_coeff_node = tree.find('.//determinant/coefficient')
     MO_matrix = None
     if MO_coeff_node is None:
-        print 'Molecular orbital coefficients not found'
+        print('Molecular orbital coefficients not found')
     else:
-        #print 'MO_coeff = ',MO_coeff_node
         MO_size = int(MO_coeff_node.attrib['size'])
-        #print 'MO coeff size = ',MO_size
 
         MO_text = MO_coeff_node.text
         MO_text_entries = MO_text.split()
@@ -82,7 +80,6 @@ def parse_qmc_wf(fname, element_list):
 
         #MO_matrix = np.array(MO_values).reshape( (basis_size, MO_size) )
         MO_matrix = np.array(MO_values).reshape( (MO_size, basis_size) )
-        #print 'MO_values = ',MO_values
 
     return basis_sets, MO_matrix
 
@@ -158,17 +155,17 @@ if __name__ == '__main__':
 
     gtos = gaussian_orbitals.GTO_centers(pos_list, elements, basis_sets)
     atomic_orbs =  gtos.eval_v(1.0, 0.0, 0.0)
-    print np.dot(MO_matrix, atomic_orbs)
+    print(np.dot(MO_matrix, atomic_orbs))
 
     #ccp = read_cusp_correction_file("hcn_downdet.cuspInfo.xml")
     #print ccp
 
     # Ethanol - example with repeated atoms
     pos_list, elements = read_structure_file("ethanol.structure.xml")
-    print len(pos_list), pos_list
-    print 'elements',elements
+    print(len(pos_list), pos_list)
+    print('elements', elements)
 
     basis_sets, MO_matrix = parse_qmc_wf("ethanol.wfnoj.xml", elements)
-    print MO_matrix.shape
+    print(MO_matrix.shape)
 
 
