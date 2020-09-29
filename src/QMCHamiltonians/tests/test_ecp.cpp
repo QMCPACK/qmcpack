@@ -562,7 +562,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
       }
     }
   }
-  REQUIRE(Value1 == Approx(0.1644374207));
+  REQUIRE(Value1 == Approx(-0.3214176962));
 }
 #endif
 

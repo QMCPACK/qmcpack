@@ -53,6 +53,4 @@ std::string WaveFunctionComponentBuilder::backflow_tag = "backflow";
 
 std::string WaveFunctionComponentBuilder::multisd_tag = "multideterminant";
 
-std::string WaveFunctionComponentBuilder::sposcanner_tag = "spo_scanner";
-
 } // namespace qmcplusplus

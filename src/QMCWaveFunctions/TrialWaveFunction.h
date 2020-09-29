@@ -408,10 +408,10 @@ public:
                            bool project = false);
 
   static void flex_evaluateParameterDerivatives(const RefVector<TrialWaveFunction>& wf_list,
-                                         const RefVector<ParticleSet>& p_list,
-                                         const opt_variables_type& optvars,
-                                         RecordArray<ValueType>& dlogpsi,
-                                         RecordArray<ValueType>& dhpsioverpsi);
+                                                const RefVector<ParticleSet>& p_list,
+                                                const opt_variables_type& optvars,
+                                                RecordArray<ValueType>& dlogpsi,
+                                                RecordArray<ValueType>& dhpsioverpsi);
 
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, std::vector<ValueType>& dlogpsi);
 

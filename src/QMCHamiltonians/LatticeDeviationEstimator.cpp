@@ -157,7 +157,10 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
   Value /= num_sites;
   if (per_xyz)
   {
-    std::transform(xyz2.begin(), xyz2.end(), xyz2.begin(), bind2nd(std::multiplies<RealType>(), 1. / num_sites));
+    for (int idir = 0; idir < OHMMS_DIM; idir++)
+    {
+      xyz2[idir] /= num_sites;
+    }
   }
 
   return Value;

@@ -150,6 +150,14 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
   xmlNodePtr qsave = q;
   xmlNodePtr cur   = qsave->children;
   int pid          = OHMMS::Controller->rank();
+
+  int crowd_size     = 1;
+  int num_opt_crowds = 1;
+  ParameterSet param_set;
+  param_set.add(crowd_size, "opt_crowd_size", "int");
+  param_set.add(num_opt_crowds, "opt_num_crowds", "int");
+  param_set.put(q);
+
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
@@ -209,7 +217,7 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
     optSolver->put(optNode);
   bool success = true;
   //allways reset optTarget
-  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, samples_, myComm);
+  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, samples_, num_opt_crowds, crowd_size, myComm);
   optTarget->setStream(&app_log());
   success = optTarget->put(q);
 

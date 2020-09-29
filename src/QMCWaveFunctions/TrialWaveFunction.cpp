@@ -113,7 +113,14 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
   for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     ScopedTimer local_timer(myTimers[ii]);
+#ifndef NDEBUG
+    // Best way I've found yet to quickly see if WFC made it over the wire successfully
+    auto subterm = Z[i]->evaluateLog(P, P.G, P.L);
+    // std::cerr << "evaluate log Z element:" <<  i << "  value: " << subterm << '\n';
+    logpsi += subterm;
+#else
     logpsi += Z[i]->evaluateLog(P, P.G, P.L);
+#endif
   }
   LogValue   = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
@@ -870,6 +877,8 @@ void TrialWaveFunction::flex_updateBuffer(const RefVector<TrialWaveFunction>& wf
                                           const RefVector<WFBufferType>& buf_list,
                                           bool fromscratch)
 {
+  if (wf_list.size() == 0)
+    return;
   for (int iw = 0; iw < wf_list.size(); iw++)
   {
     constexpr RealType czero(0);
