@@ -25,7 +25,7 @@
 #include "config.h"
 #endif
 
-/** because APP_ABORT is incompatible with a normal debug build and lldb break points
+/** break on this function to catch any APP_ABORT call in debugger
  */
 void breakableAppAbort(std::string str_msg);
 
@@ -42,11 +42,11 @@ struct CommunicatorTraits
   typedef MPI_Request request;
 };
 
-#define APP_ABORT(msg)                                            \
-  {                                                               \
-    std::ostringstream error_message;                             \
-    error_message << msg;                                         \
-    breakableAppAbort(error_message.str());                       \
+#define APP_ABORT(msg)                      \
+  {                                         \
+    std::ostringstream error_message;       \
+    error_message << msg;                   \
+    breakableAppAbort(error_message.str()); \
   }
 
 #define APP_ABORT_TRACE(f, l, msg)                                                           \
@@ -65,11 +65,11 @@ struct CommunicatorTraits
   static const int MPI_REQUEST_NULL = 1;
 };
 
-#define APP_ABORT(msg)                                            \
-  {                                                               \
-    std::ostringstream error_message;                             \
-    error_message << msg;                                         \
-    breakableAppAbort(error_message.str());                       \
+#define APP_ABORT(msg)                      \
+  {                                         \
+    std::ostringstream error_message;       \
+    error_message << msg;                   \
+    breakableAppAbort(error_message.str()); \
   }
 
 #define APP_ABORT_TRACE(f, l, msg)                                                           \
@@ -107,7 +107,7 @@ public:
   ///constructor with communicator
   Communicate(const mpi3::communicator& in_comm);
 #endif
-  
+
   /** constructor that splits in_comm
    */
   Communicate(const Communicate& in_comm, int nparts);
