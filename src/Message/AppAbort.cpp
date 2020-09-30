@@ -13,15 +13,17 @@
 #include <iostream>
 
 #ifdef HAVE_MPI
-void breakableAppAbort(std::string str_msg)
+#include <mpi.h>
+
+void breakableAppAbort(const std::string& str_msg)
 {
-  std::cerr << str_msg << std::endl;
+  std::cerr << str_msg << '\n';
   MPI_Abort(MPI_COMM_WORLD, 1);
 }
 #else
-void breakableAppAbort(std::string str_msg)
+void breakableAppAbort(const std::string& str_msg)
 {
-  std::cerr << str_msg << std::endl;
+  std::cerr << str_msg << '\n';
   exit(1);
 }
 #endif
