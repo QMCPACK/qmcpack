@@ -142,9 +142,6 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
     Numerics/OptimizableFunctorBase.cpp
     Numerics/SmoothFunctions.cpp
     QMCFactory/OneDimGridFactory.cpp
-    Message/Communicate.cpp
-    Message/AppAbort.cpp
-    Message/MPIObjectBase.cpp
     Optimize/VariableSet.cpp
     io/hdf_archive.cpp
     )
