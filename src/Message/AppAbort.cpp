@@ -13,7 +13,7 @@
 #include <iostream>
 
 #ifdef HAVE_MPI
-#include <mpi.h>
+#include "mpi3/environment.hpp"
 
 void breakableAppAbort(const std::string& str_msg)
 {

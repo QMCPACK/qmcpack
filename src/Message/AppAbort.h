@@ -12,10 +12,6 @@
 #ifndef QMCPLUSPLUS_APPABORT_H
 #define QMCPLUSPLUS_APPABORT_H
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <string>
 #include <sstream>
 
