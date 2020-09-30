@@ -11,9 +11,10 @@
 
 #include "Message/AppAbort.h"
 #include <iostream>
+#include "config.h"
 
 #ifdef HAVE_MPI
-#include "mpi3/environment.hpp"
+#include <mpi.h>
 
 void breakableAppAbort(const std::string& str_msg)
 {
