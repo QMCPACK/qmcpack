@@ -568,22 +568,23 @@ public:
       for (int K = 0; K < nkpts; ++K)
       {
 #if defined(MIXED_PRECISION)
-        C3Tensor_ref haj_K(make_device_ptr(haj[nd * nkpts + K].origin()), {nocc_max, npol, nmo_max});
-        for (int a = 0; a < nelpk[nd][K]; ++a)
+        int ni(nopk[K]);
+        CMatrix_ref haj_K(make_device_ptr(haj[nd * nkpts + K].origin()), {nocc_max, npol*nmo_max});
+        for (int a = 0; a < nelpk[nd][K]; ++a) 
           for (int pol = 0; pol < npol; ++pol)
-            ma::product(ComplexType(1.), ma::T(G3Da[(na + a)*npol+pol].sliced(nk, nk + nopk[K])), 
-                        haj_K[a][pol].sliced(0, nopk[K]), ComplexType(1.), E({0, nwalk}, 0));
+            ma::product(ComplexType(1.), ma::T(G3Da[(na + a)*npol+pol].sliced(nk, nk + ni)), 
+                        haj_K[a].sliced(pol*ni, pol*ni+ni), ComplexType(1.), E({0, nwalk}, 0));
         na += nelpk[nd][K];
         if (walker_type == COLLINEAR)
         {
           boost::multi::array_ref<ComplexType, 2, pointer> haj_Kb(haj_K.origin() + haj_K.num_elements(),
                                                                   {nocc_max, nmo_max});
           for (int b = 0; b < nelpk[nd][nkpts + K]; ++b)
-            ma::product(ComplexType(1.), ma::T(G3Db[nb + b].sliced(nk, nk + nopk[K])), haj_Kb[b].sliced(0, nopk[K]),
+            ma::product(ComplexType(1.), ma::T(G3Db[nb + b].sliced(nk, nk + ni)), haj_Kb[b].sliced(0, ni),
                         ComplexType(1.), E({0, nwalk}, 0));
           nb += nelpk[nd][nkpts + K];
         }
-        nk += nopk[K];
+        nk += ni; 
 #else
         nk = nopk[K];
         {
