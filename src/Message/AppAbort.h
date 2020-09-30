@@ -17,7 +17,7 @@
 
 /** break on this function to catch any APP_ABORT call in debugger
  */
-void breakableAppAbort(std::string str_msg);
+void breakableAppAbort(const std::string& str_msg);
 
 /** Widely used but deprecated fatal error macros from legacy code
  *
