@@ -18,23 +18,10 @@
 
 #ifndef OHMMS_COMMUNICATE_H
 #define OHMMS_COMMUNICATE_H
-#include <string>
-#include <sstream>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-
-/** break on this function to catch any APP_ABORT call in debugger
- */
-void breakableAppAbort(std::string str_msg);
-
-#define APP_ABORT(msg)                      \
-  {                                         \
-    std::ostringstream error_message;       \
-    error_message << msg;                   \
-    breakableAppAbort(error_message.str()); \
-  }
 
 #ifdef HAVE_MPI
 #include "mpi3/environment.hpp"
@@ -49,12 +36,6 @@ struct CommunicatorTraits
   typedef MPI_Request request;
 };
 
-#define APP_ABORT_TRACE(f, l, msg)                                                           \
-  {                                                                                          \
-    std::cerr << "Fatal Error. Aborting at " << l << "::" << f << "\n " << msg << std::endl; \
-    MPI_Abort(MPI_COMM_WORLD, 1);                                                            \
-  }
-
 #else
 struct CommunicatorTraits
 {
@@ -64,13 +45,6 @@ struct CommunicatorTraits
   static const int MPI_COMM_NULL    = 0;
   static const int MPI_REQUEST_NULL = 1;
 };
-
-#define APP_ABORT_TRACE(f, l, msg)                                                           \
-  {                                                                                          \
-    std::cerr << "Fatal Error. Aborting at " << l << "::" << f << "\n " << msg << std::endl; \
-    exit(1);                                                                                 \
-  }
-
 #endif
 
 #include <string>
@@ -78,6 +52,8 @@ struct CommunicatorTraits
 #include <utility>
 #include <unistd.h>
 #include <cstring>
+
+#include "Message/AppAbort.h"
 
 /**@class Communicate
  * @ingroup Message
