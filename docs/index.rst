@@ -30,6 +30,7 @@ User's Guide and Developer's Manual
    analyzing
    LCAO
    sCI
+   spin_orbit
    afqmc
    examples
    lab_qmc_statistics
