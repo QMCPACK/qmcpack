@@ -247,7 +247,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     ComplexType Xsum = 0, Xsum2=0;
     for(int i=0; i<X.size(0); i++) {
       Xsum += X[i][0];
-      Xsum2 += 0.5*X[i][0]*X[i][0];
+      Xsum2 += ComplexType(0.5)*X[i][0]*X[i][0];
     }
     if(std::abs(file_data.Xsum)>1e-8) {
       REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
