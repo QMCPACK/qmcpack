@@ -94,13 +94,6 @@ void CompositeSPOSet::report()
 }
 
 
-void CompositeSPOSet::resetTargetParticleSet(ParticleSet& P)
-{
-  for (int c = 0; c < components.size(); ++c)
-    components[c]->resetTargetParticleSet(P);
-}
-
-
 SPOSet* CompositeSPOSet::makeClone() const
 {
   // base class and shallow copy
@@ -235,6 +228,7 @@ SPOSet* CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     return 0;
   }
+
   CompositeSPOSet* spo_now = new CompositeSPOSet;
   for (int i = 0; i < spolist.size(); ++i)
   {

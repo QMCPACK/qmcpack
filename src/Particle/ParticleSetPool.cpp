@@ -165,9 +165,11 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   ParticleSet* pTemp = getParticleSet(id);
   if (pTemp == 0)
   {
-    app_summary() << " Particle Set " << std::endl;
+    app_summary() << std::endl;
+    app_summary() << " Particle Set" << std::endl;
     app_summary() << " ------------" << std::endl;
     app_summary() << "  Name: " << id << std::endl;
+    app_summary() << std::endl;
 
     // select OpenMP offload implementation in ParticleSet.
     if (useGPU == "yes")

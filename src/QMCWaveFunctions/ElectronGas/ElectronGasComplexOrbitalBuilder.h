@@ -37,7 +37,6 @@ struct EGOSet : public SPOSet
   SPOSet* makeClone() const override { return new EGOSet(*this); }
 
   void resetParameters(const opt_variables_type& optVariables) override {}
-  inline void resetTargetParticleSet(ParticleSet& P) override {}
   void setOrbitalSetSize(int norbs) override {}
 
   inline void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override

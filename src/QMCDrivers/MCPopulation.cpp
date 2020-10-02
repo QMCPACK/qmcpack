@@ -13,7 +13,7 @@
 
 #include "QMCDrivers/MCPopulation.h"
 #include "Configuration.h"
-#include "Concurrency/TasksOneToOne.hpp"
+#include "Concurrency/ParallelExecutor.hpp"
 #include "Message/CommOperators.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
@@ -172,14 +172,29 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
     killLastWalker();
 }
 
+WalkerElementsRef MCPopulation::getWalkerElementsRef(const size_t index)
+{
+  return {*walkers_[index], *walker_elec_particle_sets_[index], *walker_trial_wavefunctions_[index]};
+}
+
+std::vector<WalkerElementsRef> MCPopulation::get_walker_elements()
+{
+  std::vector<WalkerElementsRef> walker_elements;
+  for(int iw = 0; iw < walkers_.size(); ++iw)
+  {
+    walker_elements.emplace_back(*walkers_[iw], *walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]);
+  }
+  return walker_elements;
+}
 
 /** creates a walker and returns a reference
  *
  *  Walkers are reused
  *  It would be better if this could be done just by
  *  reusing memory.
+ *  Not thread safe.
  */
-MCPopulation::MCPWalker* MCPopulation::spawnWalker()
+WalkerElementsRef MCPopulation::spawnWalker()
 {
   ++num_local_walkers_;
   outputManager.pause();
@@ -205,12 +220,19 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
   }
   else
   {
-    app_warning() << "Spawning walker outside of reserves, this ideally should never happend." << std::endl;
-    walkers_.push_back(std::make_unique<MCPWalker>(num_particles_));
-    walkers_.back()->R          = elec_particle_set_->R;
-    walkers_.back()->spins      = elec_particle_set_->spins;
-    walkers_.back()->Properties = elec_particle_set_->Properties;
-    walkers_.back()->registerData();
+    app_warning() << "Spawning walker number " << walkers_.size() + 1
+                  << " outside of reserves, this ideally should never happend." << std::endl;
+    MCPWalker last_walker = *(walkers_.back());
+    walkers_.push_back(std::make_unique<MCPWalker>(last_walker));
+
+    // There is no value in doing this here because its going to be wiped out
+    // When we load from the receive buffer. It also won't necessarily be correct
+    // Because the buffer is changed by Hamiltonians and wavefunctions that
+    // Add to the dataSet.
+
+    //walkers_.back()->R          = elec_particle_set_->R;
+    //walkers_.back()->Properties = elec_particle_set_->Properties;
+    //walkers_.back()->registerData();
 
     walker_elec_particle_sets_.emplace_back(new ParticleSet(*elec_particle_set_));
     walker_trial_wavefunctions_.push_back(UPtr<TrialWaveFunction>{});
@@ -218,14 +240,15 @@ MCPopulation::MCPWalker* MCPopulation::spawnWalker()
     walker_hamiltonians_.push_back(UPtr<QMCHamiltonian>{});
     walker_hamiltonians_.back().reset(
         hamiltonian_->makeClone(*(walker_elec_particle_sets_.back()), *(walker_trial_wavefunctions_.back())));
-    walker_trial_wavefunctions_.back()->registerData(*(walker_elec_particle_sets_.back()), walkers_.back()->DataSet);
-    walkers_.back()->DataSet.allocate();
+    // Dito
+    //walker_trial_wavefunctions_.back()->registerData(*(walker_elec_particle_sets_.back()), walkers_.back()->DataSet);
+    //walkers_.back()->DataSet.allocate();
     walkers_.back()->Multiplicity = 1.0;
     walkers_.back()->Weight       = 1.0;
   }
 
   outputManager.resume();
-  return walkers_.back().get();
+  return {*walkers_.back().get(), *walker_elec_particle_sets_.back().get(), *walker_trial_wavefunctions_.back().get()};
 }
 
 /** Kill last walker (just barely)
@@ -260,7 +283,7 @@ void MCPopulation::killWalker(MCPWalker& walker)
   {
     if (&walker == (*it_walkers).get())
     {
-      //(*it_walkers)->DataSet.clear();
+      (*it_walkers)->DataSet.zero();
       dead_walkers_.push_back(std::move(*it_walkers));
       walkers_.erase(it_walkers);
       dead_walker_elec_particle_sets_.push_back(std::move(*it_psets));
@@ -313,7 +336,7 @@ void MCPopulation::set_variational_parameters(const opt_variables_type& active)
 // {
 //   walkers_.resize(num_walkers);
 
-//   TasksOneToOne<> do_per_crowd(num_crowds);
+//   ParallelExecutor<> do_per_crowd(num_crowds);
 
 //   std::vector<std::unique_ptr<std::vector<std::unique_ptr<MCPWalker>>>> walkers_per_crowd_per_slot;
 //   walkers_per_crowd_per_slot.resize(num_crowds);

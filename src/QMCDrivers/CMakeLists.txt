@@ -42,6 +42,7 @@ SET(QMCDRIVERS
   Optimizers/DescentEngine.cpp
   Optimizers/HybridEngine.cpp
   WFOpt/QMCCostFunctionBase.cpp
+  WFOpt/CostFunctionCrowdData.cpp
   WaveFunctionTester.cpp
   WalkerControlBase.cpp
   CloneManager.cpp

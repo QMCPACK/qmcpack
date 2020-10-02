@@ -209,7 +209,10 @@ SET(QMC_VERBOSE_CONFIGURATION 0 CACHE BOOL "Give details why specific tests are/
 # set debug printout
 # DEBUG_PSIBUFFER_ON keep track buffer's locator
 ######################################################################
-SET(DEBUG_PSIBUFFER_ON 0 CACHE BOOL "Build with GPU support through CUDA")
+SET(DEBUG_PSIBUFFER_ON 0 CACHE BOOL "Debug messages for PSIBUFFER locator")
+MARK_AS_ADVANCED(DEBUG_PSIBUFFER_ON)
+SET(DEBUG_PER_STEP_ACCEPT_REJECT 0 CACHE BOOL "Print accepts and rejects at each step")
+MARK_AS_ADVANCED(DEBUG_PER_STEP_ACCEPT_REJECT)
 
 ######################################################################
 # Standard test
@@ -765,8 +768,8 @@ IF(ENABLE_HIP)
   ADD_LIBRARY(HIP::HIP INTERFACE IMPORTED)
   # temporarily put hipsparse hipblas here for convenience, should be moved to Platforms.
   SET_TARGET_PROPERTIES(HIP::HIP PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${ROCM_ROOT}/include"
-                                            INTERFACE_COMPILE_DEFINITIONS "ENABLE_HIP;__HIP_PLATFORM_HCC__"
-                                            INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lhip_hcc")
+                                            INTERFACE_COMPILE_DEFINITIONS "ENABLE_HIP"
+                                            INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lamdhip64")
 ENDIF(ENABLE_HIP)
 
 ######################################################

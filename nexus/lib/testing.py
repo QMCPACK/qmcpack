@@ -202,9 +202,10 @@ def text_diff(t1,t2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,by
 # print the difference between two objects
 def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,text=False,by_line=False): # used in debugging, not actual tests
     from generic import obj
-    print(20*'=')
+    hline = '========== {} =========='
+    print(hline.format('left object'))
     print(o1)
-    print(20*'=')
+    print(hline.format('right object'))
     print(o2)
     if not text:
         diff,diff1,diff2 = object_diff(o1,o2,atol,rtol,int_as_float,full=True)
@@ -213,11 +214,22 @@ def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,text=False,b
     #end if
     d1 = obj(diff1)
     d2 = obj(diff2)
-    print(20*'=')
+    print(hline.format('left diff'))
     print(d1)
-    print(20*'=')
+    print(hline.format('right diff'))
     print(d2)
 #end def print_diff
+
+
+# check for object equality and if different, print the difference
+def check_object_eq(o1,o2):
+    same = object_eq(o1,o2)
+    if not same and global_data['verbose']:
+        print('\nObjects differ, please see below for details')
+        print_diff(o1,o2)
+    #end if
+    return same
+#end def check_object_eq
 
 
 
@@ -586,6 +598,7 @@ class FailedTest(Exception):
 
 
 global_data = dict(
+    verbose       = False,
     job_ref_table = False,
     )
 

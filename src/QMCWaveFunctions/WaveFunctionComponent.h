@@ -46,9 +46,9 @@ struct NLjob
 #endif
 
 ///forward declaration of WaveFunctionComponent
-class WaveFunctionComponent;
+struct WaveFunctionComponent;
 ///forward declaration of DiffWaveFunctionComponent
-class DiffWaveFunctionComponent;
+struct DiffWaveFunctionComponent;
 
 typedef WaveFunctionComponent* WaveFunctionComponentPtr;
 typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
@@ -166,11 +166,6 @@ struct WaveFunctionComponent : public QMCTraits
 
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) = 0;
-
-  /** reset properties, e.g., distance tables, for a new target ParticleSet
-   * @param P ParticleSet
-   */
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
 
   /** evaluate the value of the WaveFunctionComponent from scratch
    * @param P  active ParticleSet

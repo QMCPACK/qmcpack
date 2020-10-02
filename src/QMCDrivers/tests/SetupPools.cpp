@@ -23,7 +23,7 @@ SetupPools::SetupPools()
   comm = OHMMS::Controller;
 
   std::cout << "For purposes of multithreaded testing max threads is forced to 8" << '\n';
-  Concurrency::OverrideMaxThreads<> override(8);
+  Concurrency::OverrideMaxCapacity<> override(8);
   
   particle_pool.reset(new ParticleSetPool(mpp(comm)));
   wavefunction_pool.reset(new WaveFunctionPool(wfp(comm, particle_pool.get())));

@@ -15,7 +15,7 @@
 #include <hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 
 namespace kernels
@@ -61,32 +61,32 @@ void inplace_cast(unsigned long n, std::complex<float>* A, std::complex<double>*
 {
   hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(MAX_THREADS_PER_DIM), 0, 0, n,
                      reinterpret_cast<thrust::complex<float>*>(A), reinterpret_cast<thrust::complex<double>*>(B));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void inplace_cast(unsigned long n, std::complex<double>* A, std::complex<float>* B)
 {
   hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(MAX_THREADS_PER_DIM), 0, 0, n,
                      reinterpret_cast<thrust::complex<double>*>(A), reinterpret_cast<thrust::complex<float>*>(B));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void inplace_cast(long n, std::complex<float>* A, std::complex<double>* B)
 {
   hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(MAX_THREADS_PER_DIM), 0, 0, n,
                      reinterpret_cast<thrust::complex<float>*>(A), reinterpret_cast<thrust::complex<double>*>(B));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void inplace_cast(long n, std::complex<double>* A, std::complex<float>* B)
 {
   hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(MAX_THREADS_PER_DIM), 0, 0, n,
                      reinterpret_cast<thrust::complex<double>*>(A), reinterpret_cast<thrust::complex<float>*>(B));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 } // namespace kernels

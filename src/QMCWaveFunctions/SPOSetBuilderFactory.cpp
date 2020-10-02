@@ -17,14 +17,11 @@
 
 
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+#include "QMCWaveFunctions/SPOSetScanner.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
 #if OHMMS_DIM == 3
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
-
-#if !defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/RotatedSPOs.h"
-#endif
 
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
@@ -57,7 +54,7 @@ void SPOSetBuilderFactory::clear()
 SPOSet* get_sposet(const std::string& name)
 {
   int nfound  = 0;
-  SPOSet* spo = 0;
+  SPOSet* spo = nullptr;
   std::map<std::string, SPOSetBuilder*>::iterator it;
   for (it = SPOSetBuilderFactory::spo_builders.begin(); it != SPOSetBuilderFactory::spo_builders.end(); ++it)
   {
@@ -65,7 +62,7 @@ SPOSet* get_sposet(const std::string& name)
     for (int i = 0; i < sposets.size(); ++i)
     {
       SPOSet* sposet = sposets[i];
-      if (sposet->objectName == name)
+      if (sposet->getName() == name)
       {
         spo = sposet;
         nfound++;
@@ -80,7 +77,7 @@ SPOSet* get_sposet(const std::string& name)
   //else if(spo==NULL)
   //{
   //  write_spo_builders();
-  //  APP_ABORT("get_sposet: requested sposet "+name+" does not exist");
+  //  myComm->barrier_and_abort("get_sposet: requested sposet "+name+" does not exist");
   //}
   return spo;
 }
@@ -97,7 +94,7 @@ void write_spo_builders(const std::string& pad)
     app_log() << pad << "sposets for SPOSetBuilder of type " << type << std::endl;
     for (int i = 0; i < sposets.size(); ++i)
     {
-      app_log() << pad2 << "sposet " << sposets[i]->objectName << std::endl;
+      app_log() << pad2 << "sposet " << sposets[i]->getName() << std::endl;
     }
   }
 }
@@ -190,7 +187,6 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   }
   else if (type.find("spline") < type.size())
   {
-    name = type_in;
 #if defined(HAVE_EINSPLINE)
     PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
     bb = new EinsplineSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
@@ -248,13 +244,10 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   std::string bname("");
   std::string sname("");
   std::string type("");
-  std::string rotation("no");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(bname, "basisset");
   aAttrib.add(sname, "name");
   aAttrib.add(type, "type");
-  aAttrib.add(rotation, "optimize");
-  //aAttrib.put(rcur);
   aAttrib.put(cur);
 
   //tolower(type);
@@ -282,73 +275,67 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   }
   if (bb)
   {
-    app_log() << "  Building SPOSet '" << sname << "' with '" << bname << "' basis set." << std::endl;
-    SPOSet* spo     = bb->createSPOSet(cur);
-    spo->objectName = sname;
-    if (rotation == "yes")
-    {
-#ifdef QMC_COMPLEX
-      app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
-      abort();
-#else
-      auto* rot_spo   = new RotatedSPOs(spo);
-      xmlNodePtr tcur = cur->xmlChildrenNode;
-      while (tcur != NULL)
-      {
-        std::string cname((const char*)(tcur->name));
-        if (cname == "opt_vars")
-        {
-          rot_spo->params_supplied = true;
-          putContent(rot_spo->params, tcur);
-        }
-        tcur = tcur->next;
-      }
-      spo             = rot_spo;
-      spo->objectName = sname;
-#endif
-    }
+    SPOSet* spo = bb->createSPOSet(cur);
+    spo->setName(sname);
     return spo;
   }
   else
   {
-    APP_ABORT("SPOSetBuilderFactory::createSPOSet Failed to create a SPOSet. SPOSetBuilder is empty.");
+    myComm->barrier_and_abort("SPOSetBuilderFactory::createSPOSet Failed to create a SPOSet. SPOSetBuilder is empty.");
     return 0;
   }
 }
 
 void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
 {
-  xmlNodePtr parent = cur;
-  std::string type("");
+  std::string collection_name;
+  std::string collection_type;
   OhmmsAttributeSet attrib;
-  attrib.add(type, "type");
+  attrib.add(collection_name, "name");
+  attrib.add(collection_type, "type");
   attrib.put(cur);
-  //tolower(type);
 
-  app_log() << "building sposet collection of type " << type << std::endl;
+  // use collection_type as collection_name if collection_name is not given
+  if (collection_name.empty())
+    collection_name = collection_type;
 
-  SPOSetBuilder* bb  = createSPOSetBuilder(cur);
-  xmlNodePtr element = parent->children;
-  int nsposets       = 0;
-  while (element != NULL)
-  {
-    std::string cname((const char*)(element->name));
+  app_summary() << std::endl;
+  app_summary() << "   Single particle orbitals (SPO) collection" << std::endl;
+  app_summary() << "   -----------------------------------------" << std::endl;
+  app_summary() << "    Name: " << collection_name << "   Type input: " << collection_type << std::endl;
+  app_summary() << std::endl;
+
+  // create the SPOSet builder
+  SPOSetBuilder* bb = createSPOSetBuilder(cur);
+
+  // going through a list of basisset entries
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "basisset")
+      bb->loadBasisSetFromXML(cur);
+  });
+
+  // going through a list of sposet entries
+  int nsposets = 0;
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
     {
-      std::string name("");
-      OhmmsAttributeSet attrib;
-      attrib.add(name, "name");
-      attrib.put(element);
-
-      app_log() << "  Building SPOSet \"" << name << "\" with " << type << " SPOSetBuilder" << std::endl;
-      SPOSet* spo     = bb->createSPOSet(element);
-      spo->objectName = name;
+      SPOSet* spo = bb->createSPOSet(element);
       nsposets++;
     }
-    element = element->next;
-  }
+  });
+
   if (nsposets == 0)
-    APP_ABORT("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
+    myComm->barrier_and_abort("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
+
+  // going through a list of spo_scanner entries
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "spo_scanner")
+      if (myComm->rank() == 0)
+      {
+        SPOSetScanner ascanner(bb->sposets, targetPtcl, ptclPool);
+        ascanner.put(element);
+      }
+  });
 }
 
 std::string SPOSetBuilderFactory::basisset_tag = "basisset";

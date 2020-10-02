@@ -45,8 +45,9 @@ bool LatticeParser::put(xmlNodePtr cur)
 
   std::string handler_type("opt_breakup");
 
-  app_log() << " Lattice" << std::endl;
-  app_log() << " -------" << std::endl;
+  app_summary() << std::endl;
+  app_summary() << " Lattice" << std::endl;
+  app_summary() << " -------" << std::endl;
   cur = cur->xmlChildrenNode;
   while (cur != NULL)
   {

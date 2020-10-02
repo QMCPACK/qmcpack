@@ -60,7 +60,7 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   attrib.add(myName, "name");
   attrib.add(dyn, "dynamic");
   attrib.add(stat, "static");
-  attrib.add(ion_points,"ion_points");
+  attrib.add(ion_points, "ion_points");
   attrib.put(cur);
   //collect particle sets
   if (!Pdynamic)
@@ -76,10 +76,10 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   }
   else
   {
-    Pstatic      = get_particleset(stat);
+    Pstatic = get_particleset(stat);
     if (Pstatic->SK)
       Pstatic->turnOnPerParticleSK();
-    dtable_index = Pdynamic->addTable(*Pstatic, DT_SOA);
+    dtable_index = Pdynamic->addTable(*Pstatic);
     Pref.resize(1);
     Pref[0] = Pstatic;
     if (!ion_points)
@@ -92,11 +92,11 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   EDValues.resize(nparticles, nEDValues);
   if (ion_points)
   {
-    EDIonValues.resize(nions,nEDValues);
-    Rion.resize(nions,DIM);
-    for (int i=0; i<nions; i++)
-      for (int d=0; d<DIM; d++)
-        Rion(i,d) = Pstatic->R[i][d];
+    EDIonValues.resize(nions, nEDValues);
+    Rion.resize(nions, DIM);
+    for (int i = 0; i < nions; i++)
+      for (int d = 0; d < DIM; d++)
+        Rion(i, d) = Pstatic->R[i][d];
   }
   particles_outside.resize(nparticles);
   fill(particles_outside.begin(), particles_outside.end(), true);
@@ -206,9 +206,9 @@ ParticleSet* EnergyDensityEstimator::get_particleset(std::string& psname)
 void EnergyDensityEstimator::get_required_traces(TraceManager& tm)
 {
   bool write = omp_get_thread_num() == 0;
-  w_trace  = tm.get_real_trace("weight");
-  Td_trace = tm.get_real_trace(*Pdynamic, "Kinetic");
-  Vd_trace = tm.get_real_combined_trace(*Pdynamic, "LocalPotential");
+  w_trace    = tm.get_real_trace("weight");
+  Td_trace   = tm.get_real_trace(*Pdynamic, "Kinetic");
+  Vd_trace   = tm.get_real_combined_trace(*Pdynamic, "LocalPotential");
   if (Pstatic)
     Vs_trace = tm.get_real_combined_trace(*Pstatic, "LocalPotential");
   have_required_traces = true;
@@ -343,19 +343,19 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     {
       // Accumulate energy density for ions at a point field
       bi = ion_buffer_offset;
-      for (int i =0; i<nions; i++)
-        for (v=0; v<(int)nEDValues; v++, bi++)
+      for (int i = 0; i < nions; i++)
+        for (v = 0; v < (int)nEDValues; v++, bi++)
         {
-          P.Collectables[bi] += EDIonValues(i,v);
+          P.Collectables[bi] += EDIonValues(i, v);
         }
     }
     nsamples++;
 #if defined(ENERGYDENSITY_CHECK)
-    int thread = omp_get_thread_num();
-    using WP = WalkerProperties::Indexes;
+    int thread    = omp_get_thread_num();
+    using WP      = WalkerProperties::Indexes;
     RealType Eref = P.PropertyList[WP::LOCALENERGY];
     RealType Vref = P.PropertyList[WP::LOCALPOTENTIAL];
-    RealType Tref = Eref-Vref;
+    RealType Tref = Eref - Vref;
 #pragma omp critical(edcheck)
     {
       RealType Dsum = 0.0;
@@ -395,15 +395,14 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
         edvals[v] += P.Collectables[outside_buffer_offset + v];
       if (ion_points)
       {
-        for (int i = 0; i<nions; i++)
+        for (int i = 0; i < nions; i++)
           for (int v = 0; v < nvals; v++)
-            edvals[v] += P.Collectables[ion_buffer_offset + i*nvals + v];
+            edvals[v] += P.Collectables[ion_buffer_offset + i * nvals + v];
       }
       //app_log()<<"eval ES Dsum"<<cnt<<" "<<edvals[W]<< std::endl;
       app_log() << thread << " eval ES " << cnt << " " << edvals[T] << " " << edvals[V] << " " << edvals[T] + edvals[V]
                 << std::endl;
-      app_log() << thread << " ref  E  " << cnt << " " << Tref << " " << Vref << " " << Eref
-                << std::endl;
+      app_log() << thread << " ref  E  " << cnt << " " << Tref << " " << Vref << " " << Eref << std::endl;
       cnt++;
     }
 #endif
@@ -472,7 +471,7 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
   if (ion_points)
   {
     ion_buffer_offset = collectables.size();
-    nvalues = nions*((int)nEDValues);
+    nvalues           = nions * ((int)nEDValues);
     std::vector<RealType> tmp2(nvalues);
     collectables.add(tmp2.begin(), tmp2.end());
   }

@@ -8,7 +8,7 @@ FUNCTION(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
 
   # 1. Run scf.
   SET(TESTNAME "converter_test_pyscf_${test_name}")
-  ADD_TEST(NAME ${TESTNAME} COMMAND python ${TESTDIR}/scf.py gen_test_data WORKING_DIRECTORY ${TESTDIR})
+  ADD_TEST(NAME ${TESTNAME} COMMAND ${TESTDIR}/scf.py gen_test_data WORKING_DIRECTORY ${TESTDIR})
   SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
 
   # 2.a Generate hamiltonian/wavefunction.
@@ -16,7 +16,7 @@ FUNCTION(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   SET(TESTNAME "converter_test_pyscf_to_afqmc_${test_name}")
   ADD_TEST(NAME ${TESTNAME}
            COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NPROC_INT} ${MPIEXEC_PREFLAGS}
-           python ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/pyscf_to_afqmc.py ${ARGN}
+           ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/pyscf_to_afqmc.py ${ARGN}
            WORKING_DIRECTORY ${TESTDIR})
   SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_pyscf_${test_name}")
   SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc" )
@@ -24,14 +24,14 @@ FUNCTION(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   # 2.b Test Hamiltonian consistency.
   SET(TESTNAME "converter_test_hamiltonian_consistency_${test_name}")
   ADD_TEST(NAME ${TESTNAME} COMMAND
-           python ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/test_afqmc_input.py --input afqmc.h5
+           ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/test_afqmc_input.py --input afqmc.h5
            WORKING_DIRECTORY ${TESTDIR})
   SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_pyscf_to_afqmc_${test_name}")
   SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
 
   # 3. Generate xml input.
   SET(TESTNAME "converter_test_gen_input_${test_name}")
-  ADD_TEST(NAME ${TESTNAME} COMMAND python "${TESTDIR}/gen_input.py"
+  ADD_TEST(NAME ${TESTNAME} COMMAND "${TESTDIR}/gen_input.py"
            WORKING_DIRECTORY ${TESTDIR})
   SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_hamiltonian_consistency_${test_name}")
   SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
@@ -48,7 +48,7 @@ FUNCTION(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   SET_PROPERTY(TEST ${TESTNAME}-16-1 APPEND PROPERTY LABELS "converter;afqmc")
   IF(TEST_OBS)
     SET(TESTNAME "converter_test_qmcpack_obs_${test_name}")
-    ADD_TEST(NAME ${TESTNAME} COMMAND python ${TESTDIR}/reference/test_obs.py
+    ADD_TEST(NAME ${TESTNAME} COMMAND ${TESTDIR}/reference/test_obs.py
              WORKING_DIRECTORY ${TESTDIR})
     SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_qmcpack_${test_name}-16-1")
     SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")

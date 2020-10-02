@@ -15,7 +15,7 @@
 #include <hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
@@ -73,8 +73,8 @@ void acAxpbB(int m,
   dim3 block_dim(xblock_dim, yblock_dim);
   dim3 grid_dim(xgrid_dim, ygrid_dim);
   hipLaunchKernelGGL(kernel_acAxpbB, dim3(grid_dim), dim3(block_dim), 0, 0, m, n, alpha, A, lda, x, incx, beta, B, ldb);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void acAxpbB(int m,
@@ -95,8 +95,8 @@ void acAxpbB(int m,
   dim3 block_dim(xblock_dim, yblock_dim);
   dim3 grid_dim(xgrid_dim, ygrid_dim);
   hipLaunchKernelGGL(kernel_acAxpbB, dim3(grid_dim), dim3(block_dim), 0, 0, m, n, alpha, A, lda, x, incx, beta, B, ldb);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void acAxpbB(int m,
@@ -122,8 +122,8 @@ void acAxpbB(int m,
                      reinterpret_cast<thrust::complex<double> const*>(x), incx,
                      static_cast<thrust::complex<double> const>(beta), reinterpret_cast<thrust::complex<double>*>(B),
                      ldb);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void acAxpbB(int m,
@@ -149,8 +149,8 @@ void acAxpbB(int m,
                      reinterpret_cast<thrust::complex<float> const*>(x), incx,
                      static_cast<thrust::complex<float> const>(beta), reinterpret_cast<thrust::complex<float>*>(B),
                      ldb);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 

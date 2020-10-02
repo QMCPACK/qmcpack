@@ -2992,6 +2992,52 @@ class Structure(Sobj):
     #end def voronoi_neighbors
 
 
+    def voronoi_vectors(self,indices=None,restrict=None):
+        ni = self.voronoi_neighbors(indices,restrict)
+        vt = self.vector_table()
+        vv = obj()
+        for i,vi in ni.items():
+            vv[i] = vt[i,vi]
+        #end for
+        return vv
+    #end def voronoi_vectors
+
+
+    def voronoi_distances(self,indices=None,restrict=False):
+        vv = self.voronoi_vectors(indices,restrict)
+        vd = obj()
+        for i,vvi in vv.items():
+            vd[i] = np.linalg.norm(vvi,axis=1)
+        #end for
+        return vd
+    #end def voronoi_distances
+
+
+    def voronoi_radii(self,indices=None,restrict=None):
+        vd = self.voronoi_distances(indices,restrict)
+        vr = obj()
+        for i,vdi in vd.items():
+            vr[i] = vdi.min()/2
+        #end for
+        return vr
+    #end def voronoi_radii
+
+
+    def voronoi_species_radii(self):
+        vr = self.voronoi_radii()
+        vsr = obj()
+        for i,r in vr.items():
+            e = self.elem[i]
+            if e not in vsr:
+                vsr[e] = r
+            else:
+                vsr[e] = min(vsr[e],r)
+            #end if
+        #end for
+        return vsr
+    #end def voronoi_species_radii
+
+
     # test needed
     # get nearest neighbors according to constrants (voronoi, max distance, coord. number)
     def nearest_neighbors(self,indices=None,rmax=None,nmax=None,restrict=False,voronoi=False,distances=False,**spec_max):
@@ -4626,7 +4672,9 @@ class Structure(Sobj):
 
 
     def read_xsf(self,filepath):
-        if os.path.exists(filepath):
+        if isinstance(filepath,XsfFile):
+            f = filepath
+        elif os.path.exists(filepath):
             f = XsfFile(filepath)
         else:
             f = XsfFile()
@@ -4634,7 +4682,11 @@ class Structure(Sobj):
         #end if
         elem = []
         for n in f.elem:
-            elem.append(pt.simple_elements[n].symbol)
+            if isinstance(n,str):
+                elem.append(n)
+            else:
+                elem.append(pt.simple_elements[n].symbol)
+            #end if
         #end for
         self.dim   = 3
         self.units = 'A'
@@ -5060,6 +5112,155 @@ class Structure(Sobj):
         cell = (lattice,positions,numbers)
         return cell
     #end def spglib_cell
+
+
+    def get_symmetry(self,symprec=1e-5):
+        cell = self.spglib_cell()
+        return spglib.get_symmetry(cell,symprec=symprec)
+    #end def get_symmetry
+
+
+    def get_symmetry_dataset(self,symprec=1e-5, angle_tolerance=-1.0, hall_number=0):
+        cell = self.spglib_cell()
+        ds   = spglib.get_symmetry_dataset(
+            cell,
+            symprec         = symprec,
+            angle_tolerance = angle_tolerance,
+            hall_number     = hall_number,
+            )
+        return ds
+    #end def get_symmetry
+
+
+    # functions based on direct spglib interface
+
+    def symmetry_data(self,*args,**kwargs):
+        ds = self.get_symmetry_dataset(*args,**kwargs)
+        ds = obj(ds)
+        for k,v in ds.items():
+            if isinstance(v,dict):
+                ds[k] = obj(v)
+            #end if
+        #end for
+        return ds
+    #end def symmetry_data
+
+
+    # test needed
+    def space_group_operations(self,tol=1e-5,unit=False):
+        ds = self.get_symmetry(symprec=tol)
+        if ds is None:
+            self.error('Symmetry search failed.\nspglib error message:\n{}'.format(spglib.get_error_message()))
+        #end if
+        ds = obj(ds)
+        rotations    = ds.rotations
+        translations = ds.translations
+
+        if not unit:
+            # Transform to Cartesian
+            axes = self.axes
+            axinv = np.linalg.inv(axes)
+            for n,(R,t) in enumerate(zip(rotations,translations)):
+                rotations[n]    = np.dot(axinv,np.dot(R,axes))
+                translations[n] = np.dot(t,axes)
+            #end for
+        #end if
+
+        return rotations,translations
+    #end def space_group_operations
+
+
+    def point_group_operations(self,tol=1e-5,unit=False):
+        rotations,translations = self.space_group_operations(tol=tol,unit=unit)
+        no_trans = translations.max(axis=1) < tol
+        return rotations[no_trans]
+    #end def point_group_operations
+
+
+    def check_point_group_operations(self,rotations=None,tol=1e-5,unit=False,dtol=1e-5,ncheck=1,exit=False):
+        if rotations is None:
+            rotations = self.point_group_operations(tol=tol,unit=unit)
+        #ned if
+        r = self.pos
+        if ncheck=='all':
+            ncheck = len(r)
+        #end if
+        all_same = True
+        for n in range(ncheck):
+            rc = r[n]
+            for R in rotations:
+                rp = np.dot(r-rc,R)+rc
+                dt = self.min_image_distances(r,rp)
+                same = True
+                for d in dt:
+                    same &= dt.min()<dtol
+                #end for
+                all_same &= same
+            #end for
+        #end for
+        if not all_same and exit:
+            self.error('Point group operators are not all symmetries of the structure.')
+        #end if
+        return all_same
+    #end def check_point_group_operations
+
+
+    def equivalent_atoms(self):
+        ds = self.symmetry_data()
+
+        # collect sets of species labels
+        species_by_specnum = obj()
+        for e,sn in zip(self.elem,ds.equivalent_atoms):
+            is_elem,es = is_element(e,symbol=True)
+            if sn not in species_by_specnum:
+                species_by_specnum[sn] = set()
+            #end if
+            species_by_specnum[sn].add(es)
+        #end for
+        for sn,sset in species_by_specnum.items():
+            if len(sset)>1:
+                self.error('Cannot find equivalent atoms.\nMultiple atomic species were marked as being equivalent.\nSpecies marked in this way: {}'.format(list(sset)))
+            #end if
+            species_by_specnum[sn] = list(sset)[0]
+        #end for
+
+        # give each unique species a unique label
+        labels_by_specnum = obj()
+        species_list = list(species_by_specnum.values())
+        species_set  = set(species_list)
+        species_counts = obj()
+        for s in species_set:
+            species_counts[s] = species_list.count(s)
+        #end for
+        spec_counts = obj()
+        for sn,s in species_by_specnum.items():
+            if species_counts[s]==1:
+                labels_by_specnum[sn] = s
+            else:
+                if s not in spec_counts:
+                    spec_counts[s] = 1
+                else:
+                    spec_counts[s] += 1
+                #end if
+                labels_by_specnum[sn] = s + str(spec_counts[s])
+            #end if
+        #end for
+
+        # find indices for each unique species
+        equiv_indices = obj()
+        for s in labels_by_specnum.values():
+            equiv_indices[s] = list()
+        #end for
+        for i,sn in enumerate(ds.equivalent_atoms):
+            equiv_indices[labels_by_specnum[sn]].append(i)
+        #end for
+        for s,indices in equiv_indices.items():
+            equiv_indices[s] = np.array(indices,dtype=int)
+        #end for
+
+        return equiv_indices
+    #end def equivalent_atoms
+
 #end class Structure
 Structure.set_operations()
 
@@ -5728,8 +5929,8 @@ class Crystal(Structure):
         )
 
     lattice_centerings = obj(
-        triclinic = ['P'],
-        monoclinic = ['P','A','B','C'],
+        triclinic    = ['P'],
+        monoclinic   = ['P','A','B','C'],
         orthorhombic = ['P','C','I','F'],
         tetragonal   = ['P','I'],
         hexagonal    = ['P','R'],

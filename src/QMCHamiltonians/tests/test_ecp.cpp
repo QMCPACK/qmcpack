@@ -291,7 +291,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //quadrature Lattice instead...
   copyGridUnrotatedForTest(*nlpp);
 
-  const int myTableIndex = elec.addTable(ions, DT_SOA_PREFERRED);
+  const int myTableIndex = elec.addTable(ions);
 
   const auto& myTable = elec.getDistTable(myTableIndex);
 
@@ -522,7 +522,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 1);
 
-  DiracDeterminant<>* dd    = new DiracDeterminant<>(spinor_set);
+  DiracDeterminant<>* dd = new DiracDeterminant<>(spinor_set);
   dd->resize(nelec, norb);
 
   psi.addComponent(dd, "spinor");
@@ -537,7 +537,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   REQUIRE(sopp != nullptr);
   copyGridUnrotatedForTest(*sopp);
 
-  const int myTableIndex = elec.addTable(ions, DT_SOA_PREFERRED);
+  const int myTableIndex = elec.addTable(ions);
 
   const auto& myTable = elec.getDistTable(myTableIndex);
 
@@ -562,7 +562,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
       }
     }
   }
-  REQUIRE(Value1 == Approx(0.1644374207));
+  REQUIRE(Value1 == Approx(-0.3214176962));
 }
 #endif
 

@@ -98,7 +98,7 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
   }
 
   //create a E(lectron)G(as)O(rbital)Set
-  int nkpts  = (nup - 1) / 2;
+  int nkpts = (nup - 1) / 2;
   egGrid.createGrid(nc, nkpts);
   RealEGOSet* psiu = new RealEGOSet(egGrid.kpt, egGrid.mk2);
   RealEGOSet* psid = nullptr;
@@ -119,62 +119,58 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
     sdet = new SlaterDetWithBackflow(targetPtcl, BFTrans);
   else
     sdet = new SlaterDeterminant_t(targetPtcl);
-  //add SPOSets
-  sdet->add(psiu, "u");
-  if (ndn > 0)
-    sdet->add(psid, "d");
+
+  if (UseBackflow)
   {
-    if(UseBackflow)
+    DiracDeterminantWithBackflow *updet, *downdet;
+    app_log() << "Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
+    //create up determinant
+    updet = new DiracDeterminantWithBackflow(targetPtcl, psiu, BFTrans, 0);
+    updet->set(0, nup);
+    if (ndn > 0)
     {
-      DiracDeterminantWithBackflow *updet, *downdet;
-      app_log() << "Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
-      //create up determinant
-      updet = new DiracDeterminantWithBackflow(targetPtcl, psiu, BFTrans, 0);
-      updet->set(0, nup);
-      if (ndn > 0)
-      {
-        //create down determinant
-        downdet = new DiracDeterminantWithBackflow(targetPtcl, psid, BFTrans, nup);
-        downdet->set(nup, ndn);
-      }
-      PtclPoolType dummy;
-      BackflowBuilder bfbuilder(targetPtcl, dummy);
-      BFTrans = bfbuilder.buildBackflowTransformation(BFNode);
-      sdet->add(updet, 0);
-      if (ndn > 0)
-        sdet->add(downdet, 1);
-      sdet->setBF(BFTrans);
-      if (BFTrans->isOptimizable())
-        sdet->Optimizable = true;
-      sdet->resetTargetParticleSet(targetPtcl);
+      //create down determinant
+      downdet = new DiracDeterminantWithBackflow(targetPtcl, psid, BFTrans, nup);
+      downdet->set(nup, ndn);
     }
-    else
-    {
-      DiracDeterminant<> *updet, *downdet;
-      //create up determinant
-      updet = new DiracDeterminant<>(psiu);
-      updet->set(0, nup);
-      if (ndn > 0)
-      {
-        //create down determinant
-        downdet = new DiracDeterminant<>(psid);
-        downdet->set(nup, ndn);
-      }
-      sdet->add(updet, 0);
-      if (ndn > 0)
-        sdet->add(downdet, 1);
-    }
+    PtclPoolType dummy;
+    BackflowBuilder bfbuilder(targetPtcl, dummy);
+    BFTrans = bfbuilder.buildBackflowTransformation(BFNode);
+    sdet->add(updet, 0);
+    if (ndn > 0)
+      sdet->add(downdet, 1);
+    sdet->setBF(BFTrans);
+    if (BFTrans->isOptimizable())
+      sdet->Optimizable = true;
   }
+  else
+  {
+    DiracDeterminant<>*updet, *downdet;
+    //create up determinant
+    updet = new DiracDeterminant<>(psiu);
+    updet->set(0, nup);
+    if (ndn > 0)
+    {
+      //create down determinant
+      downdet = new DiracDeterminant<>(psid);
+      downdet->set(nup, ndn);
+    }
+    sdet->add(updet, 0);
+    if (ndn > 0)
+      sdet->add(downdet, 1);
+  }
+
   return sdet;
 }
 
 ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder(comm), egGrid(p.Lattice)
-{}
+    : SPOSetBuilder("ElectronGas", comm), egGrid(p.Lattice)
+{
+  ClassName = "ElectronGasSPOBuilder";
+}
 
 SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc = 0;
   int ns = 0;
   PosType twist(0.0);
@@ -185,6 +181,7 @@ SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
   aAttrib.add(spo_name, "name");
   aAttrib.add(spo_name, "id");
   aAttrib.put(cur);
+
   if (ns > 0)
     nc = egGrid.getShellFromStates(ns);
   if (nc < 0)

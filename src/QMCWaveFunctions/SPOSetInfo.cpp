@@ -110,9 +110,9 @@ bool SPOSetInfo::contiguous() const { return index_max - index_min == size() - 1
 
 bool SPOSetInfo::unordered() const { return order == spoinfo::unordered; }
 
-bool SPOSetInfo::index_ordered() const { return order == spoinfo::index_ordered || energy_and_index_ordered; }
+bool SPOSetInfo::index_ordered() const { return order == spoinfo::index_ordered || order == energy_and_index_ordered; }
 
-bool SPOSetInfo::energy_ordered() const { return order == spoinfo::energy_ordered || energy_and_index_ordered; }
+bool SPOSetInfo::energy_ordered() const { return order == spoinfo::energy_ordered || order == energy_and_index_ordered; }
 
 
 // printing

@@ -16,7 +16,7 @@
 #include <hip/hip_runtime.h>
 #include "uninitialized_array.hpp"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
@@ -156,8 +156,8 @@ void construct_X(int nCV,
                        reinterpret_cast<thrust::complex<double> const*>(vbias),
                        reinterpret_cast<thrust::complex<double>*>(HW), reinterpret_cast<thrust::complex<double>*>(MF),
                        reinterpret_cast<thrust::complex<double>*>(X));
-  qmc_hip::hip_check(hipGetLastError(), "construct_X");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "construct_X");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "construct_X");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "construct_X");
 }
 void construct_X(int nCV,
                  int nsteps,
@@ -183,8 +183,8 @@ void construct_X(int nCV,
                        reinterpret_cast<thrust::complex<float> const*>(vbias),
                        reinterpret_cast<thrust::complex<double>*>(HW), reinterpret_cast<thrust::complex<double>*>(MF),
                        reinterpret_cast<thrust::complex<float>*>(X));
-  qmc_hip::hip_check(hipGetLastError(), "construct_X");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "construct_X");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "construct_X");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "construct_X");
 }
 void construct_X(int nCV,
                  int nsteps,
@@ -210,8 +210,8 @@ void construct_X(int nCV,
                        reinterpret_cast<thrust::complex<double> const*>(vbias),
                        reinterpret_cast<thrust::complex<double>*>(HW), reinterpret_cast<thrust::complex<double>*>(MF),
                        reinterpret_cast<thrust::complex<float>*>(X));
-  qmc_hip::hip_check(hipGetLastError(), "construct_X");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "construct_X");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "construct_X");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "construct_X");
 }
 void construct_X(int nCV,
                  int nsteps,
@@ -237,8 +237,8 @@ void construct_X(int nCV,
                        reinterpret_cast<thrust::complex<float> const*>(vbias),
                        reinterpret_cast<thrust::complex<double>*>(HW), reinterpret_cast<thrust::complex<double>*>(MF),
                        reinterpret_cast<thrust::complex<double>*>(X));
-  qmc_hip::hip_check(hipGetLastError(), "construct_X");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "construct_X");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "construct_X");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "construct_X");
 }
 
 } // namespace kernels

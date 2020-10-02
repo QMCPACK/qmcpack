@@ -16,7 +16,7 @@
 //#include "hip_settings.h"
 //#include "hip_utilities.h"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
@@ -52,8 +52,8 @@ void get_diagonal_strided(int nk,
   hipLaunchKernelGGL(kernel_get_diagonal_strided, dim3(grid_dim), dim3(nthr), 0, 0, nk, ni,
                      reinterpret_cast<thrust::complex<double> const*>(B), ldb, stride,
                      reinterpret_cast<thrust::complex<double>*>(A), lda);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void get_diagonal_strided(int nk,
@@ -70,8 +70,8 @@ void get_diagonal_strided(int nk,
   hipLaunchKernelGGL(kernel_get_diagonal_strided, dim3(grid_dim), dim3(nthr), 0, 0, nk, ni,
                      reinterpret_cast<thrust::complex<float> const*>(B), ldb, stride,
                      reinterpret_cast<thrust::complex<float>*>(A), lda);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 } // namespace kernels

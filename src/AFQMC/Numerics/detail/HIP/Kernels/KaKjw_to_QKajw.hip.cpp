@@ -16,7 +16,7 @@
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
@@ -127,8 +127,8 @@ void KaKjw_to_QKajw(int nwalk,
   dim3 grid_dim(nkpts, nkpts, npol);
   hipLaunchKernelGGL(kernel_KaKjw_to_QKajw, dim3(grid_dim), dim3(block_dim), 0, 0, nwalk, nkpts, npol, nmo_max, nmo_tot,
                      nocc_max, nmo, nmo0, nocc, nocc0, QKtok2, A, B);
-  qmc_hip::hip_check(hipGetLastError(), "KaKjw_to_QKajw");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "KaKjw_to_QKajw");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "KaKjw_to_QKajw");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw(int nwalk,
@@ -151,8 +151,8 @@ void KaKjw_to_QKajw(int nwalk,
   dim3 grid_dim(nkpts, nkpts, npol);
   hipLaunchKernelGGL(kernel_KaKjw_to_QKajw, dim3(grid_dim), dim3(block_dim), 0, 0, nwalk, nkpts, npol, nmo_max, nmo_tot,
                      nocc_max, nmo, nmo0, nocc, nocc0, QKtok2, A, B);
-  qmc_hip::hip_check(hipGetLastError(), "KaKjw_to_QKajw");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "KaKjw_to_QKajw");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "KaKjw_to_QKajw");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw(int nwalk,
@@ -175,8 +175,8 @@ void KaKjw_to_QKajw(int nwalk,
   dim3 grid_dim(nkpts, nkpts, npol);
   hipLaunchKernelGGL(kernel_KaKjw_to_QKajw, dim3(grid_dim), dim3(block_dim), 0, 0, nwalk, nkpts, npol, nmo_max, nmo_tot,
                      nocc_max, nmo, nmo0, nocc, nocc0, QKtok2, A, B);
-  qmc_hip::hip_check(hipGetLastError(), "KaKjw_to_QKajw");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "KaKjw_to_QKajw");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "KaKjw_to_QKajw");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw(int nwalk,
@@ -200,8 +200,8 @@ void KaKjw_to_QKajw(int nwalk,
   hipLaunchKernelGGL(kernel_KaKjw_to_QKajw, dim3(grid_dim), dim3(block_dim), 0, 0, nwalk, nkpts, npol, nmo_max, nmo_tot,
                      nocc_max, nmo, nmo0, nocc, nocc0, QKtok2, reinterpret_cast<thrust::complex<float> const*>(A),
                      reinterpret_cast<thrust::complex<float>*>(B));
-  qmc_hip::hip_check(hipGetLastError(), "KaKjw_to_QKajw");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "KaKjw_to_QKajw");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "KaKjw_to_QKajw");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw(int nwalk,
@@ -225,8 +225,8 @@ void KaKjw_to_QKajw(int nwalk,
   hipLaunchKernelGGL(kernel_KaKjw_to_QKajw, dim3(grid_dim), dim3(block_dim), 0, 0, nwalk, nkpts, npol, nmo_max, nmo_tot,
                      nocc_max, nmo, nmo0, nocc, nocc0, QKtok2, reinterpret_cast<thrust::complex<double> const*>(A),
                      reinterpret_cast<thrust::complex<double>*>(B));
-  qmc_hip::hip_check(hipGetLastError(), "KaKjw_to_QKajw");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "KaKjw_to_QKajw");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "KaKjw_to_QKajw");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "KaKjw_to_QKajw");
 }
 
 void KaKjw_to_QKajw(int nwalk,
@@ -250,8 +250,8 @@ void KaKjw_to_QKajw(int nwalk,
   hipLaunchKernelGGL(kernel_KaKjw_to_QKajw, dim3(grid_dim), dim3(block_dim), 0, 0, nwalk, nkpts, npol, nmo_max, nmo_tot,
                      nocc_max, nmo, nmo0, nocc, nocc0, QKtok2, reinterpret_cast<thrust::complex<double> const*>(A),
                      reinterpret_cast<thrust::complex<float>*>(B));
-  qmc_hip::hip_check(hipGetLastError(), "KaKjw_to_QKajw");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "KaKjw_to_QKajw");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "KaKjw_to_QKajw");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "KaKjw_to_QKajw");
 }
 
 } // namespace kernels

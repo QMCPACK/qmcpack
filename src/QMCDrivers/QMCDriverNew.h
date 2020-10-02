@@ -356,7 +356,7 @@ protected:
 
   /** Observables manager
    *  Has very problematic owner ship and life cycle.
-   *  Can be transfered via branch manager one driver to the next indefinitely
+   *  Can be transferred via branch manager one driver to the next indefinitely
    *  TODO:  Modify Branch manager and others to clear this up.
    */
   EstimatorManagerNew* estimator_manager_;

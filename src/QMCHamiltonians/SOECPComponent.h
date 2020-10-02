@@ -126,7 +126,7 @@ public:
   inline int getNknot() const { return nknot; }
   inline int getSknot() const { return sknot; }
 
-  friend class ECPComponentBuilder;
+  friend struct ECPComponentBuilder;
   friend void copyGridUnrotatedForTest(SOECPComponent& nlpp);
 };
 

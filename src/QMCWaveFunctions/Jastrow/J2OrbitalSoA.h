@@ -167,13 +167,6 @@ public:
   /** add functor for (ia,ib) pair */
   void addFunc(int ia, int ib, FT* j);
 
-
-  void resetTargetParticleSet(ParticleSet& P)
-  {
-    if (dPsi)
-      dPsi->resetTargetParticleSet(P);
-  }
-
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
    */
@@ -354,7 +347,7 @@ public:
 };
 
 template<typename FT>
-J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid) : my_table_ID_(p.addTable(p, DT_SOA)), j2_ke_corr_helper(p, F)
+J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid) : my_table_ID_(p.addTable(p)), j2_ke_corr_helper(p, F)
 {
   init(p);
   KEcorr    = 0.0;

@@ -22,6 +22,7 @@
 #include "ParticleBase/ParticleAttrib.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/Walker.h"
+#include "QMCDrivers/WalkerElementsRef.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -69,7 +70,7 @@ private:
   // std::shared_ptr<QMCHamiltonian> hamiltonian_;
 
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
-  // MCPopulation should have QMCMain scope eventually and the driver will just have a refrence to it.
+  // MCPopulation should have QMCMain scope eventually and the driver will just have a reference to it.
   TrialWaveFunction* trial_wf_;
   ParticleSet* elec_particle_set_;
   QMCHamiltonian* hamiltonian_;
@@ -117,13 +118,14 @@ public:
    *   * createWalkers must have been called
    *  @{
    */
-  MCPWalker* spawnWalker();
+  WalkerElementsRef spawnWalker();
   void killWalker(MCPWalker&);
   void killLastWalker();
   void createWalkerInplace(UPtr<MCPWalker>& walker_ptr);
   void allocateWalkerStuffInplace(int walker_index);
   /** }@ */
 
+  void createWalkers();
   /** Creates walkers with a clone of the golden electron particle set and golden trial wavefunction
    *
    *  \param[in] num_walkers number of living walkers in initial population
@@ -136,32 +138,29 @@ public:
                      const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& pos);
 
 
-  /** puts walkers and their "cloned" things into groups in a somewhat general way
+  /** distributes walkers and their "cloned" elements to the elements of a vector
+   *  of unique_ptr to "walker_consumers". 
    *
-   *  Should compile only if ITER is a proper input ITERATOR
-   *  Will crash if ITER does point to a std::unqiue_ptr<WALKER_CONSUMER>
-   *
-   *  The logic here to minimize moves of walkers from one crowd to another
-   *  When num_walkers % walkers_per_crowd is true then at the end the extra
-   *  walkers are distributed one by one to crowds.
-   *
+   *  a valid "walker_consumer" has a member function of
+   *  void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian);
    */
   template<typename WTTV>
-  void distributeWalkers(WTTV& walker_consumer)
+  void distributeWalkers(WTTV& walker_consumers)
   {
-    auto walkers_per_crowd = fairDivide(walkers_.size(), walker_consumer.size());
+    // The type returned here is dependent on the integral type that the walker_consumers
+    // use to return there size.
+    auto walkers_per_crowd = fairDivide(walkers_.size(), walker_consumers.size());
 
     auto walker_index = 0;
-    for (int i = 0; i < walker_consumer.size(); ++i)
+    for (int i = 0; i < walker_consumers.size(); ++i)
     {
       for(int j = 0; j < walkers_per_crowd[i]; ++j)
       {
-        walker_consumer[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index], *walker_trial_wavefunctions_[walker_index], *walker_hamiltonians_[walker_index]);
+        walker_consumers[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index], *walker_trial_wavefunctions_[walker_index], *walker_hamiltonians_[walker_index]);
         ++walker_index;
       }
     }
   }
-
   /**@ingroup Accessors
    * @{
    */
@@ -205,6 +204,26 @@ public:
   UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
   UPtrVector<QMCHamiltonian>& get_dead_hamiltonians() { return dead_walker_hamiltonians_; }
 
+  UPtrVector<TrialWaveFunction>& get_twfs() { return walker_trial_wavefunctions_; }
+  UPtrVector<TrialWaveFunction>& get_dead_twfs() { return dead_walker_trial_wavefunctions_; }
+
+  /** Non threadsafe access to walkers and their elements
+   *  
+   *  Prefer to distribute the walker elements and access
+   *  through a crowd to support the concurrency design.
+   *
+   *  You should not use this unless absolutely necessary.
+   *  That doesn't include that you would rather just use
+   *  omp parallel and ignore concurrency.
+   */
+  WalkerElementsRef getWalkerElementsRef(const size_t walker_index);
+
+  /** As long as walker WalkerElements is used we need this for unit tests
+   *
+   *  As operator[] don't use it to ignore the concurrency design.
+   */
+  std::vector<WalkerElementsRef> get_walker_elements();
+  
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }

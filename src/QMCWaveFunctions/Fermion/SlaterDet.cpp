@@ -22,9 +22,9 @@ namespace qmcplusplus
 {
 SlaterDet::SlaterDet(ParticleSet& targetPtcl)
 {
-  Optimizable = false;
+  Optimizable  = false;
   is_fermionic = true;
-  ClassName   = "SlaterDet";
+  ClassName    = "SlaterDet";
 
   Last.resize(targetPtcl.groups());
   for (int i = 0; i < Last.size(); ++i)
@@ -37,20 +37,6 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl)
 SlaterDet::~SlaterDet()
 {
   ///clean up SPOSet
-}
-
-///add a new SPOSet to the list of determinants
-void SlaterDet::add(SPOSet* sposet, const std::string& aname)
-{
-  if (mySPOSet.find(aname) == mySPOSet.end())
-  {
-    mySPOSet[aname]    = sposet;
-    sposet->objectName = aname;
-  }
-  else
-  {
-    APP_ABORT(" SlaterDet::add(SPOSet*, const std::string&) Cannot reuse the " + aname);
-  }
 }
 
 ///add a new DiracDeterminant to the list of determinants
@@ -98,20 +84,6 @@ void SlaterDet::resetParameters(const opt_variables_type& active)
 
 void SlaterDet::reportStatus(std::ostream& os) {}
 
-void SlaterDet::resetTargetParticleSet(ParticleSet& P)
-{
-  std::map<std::string, SPOSetPtr>::iterator sit(mySPOSet.begin());
-  while (sit != mySPOSet.end())
-  {
-    (*sit).second->resetTargetParticleSet(P);
-    ++sit;
-  }
-  //BasisSet->resetTargetParticleSet(P);
-  //LOGMSG("\nSlaterDet::resetTargetParticleSet")
-  for (int i = 0; i < Dets.size(); i++)
-    Dets[i]->resetTargetParticleSet(P);
-}
-
 void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for (int i = 0; i < Dets.size(); ++i)
@@ -119,10 +91,10 @@ void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& r
 }
 
 SlaterDet::LogValueType SlaterDet::evaluateLog(ParticleSet& P,
-                                           ParticleSet::ParticleGradient_t& G,
-                                           ParticleSet::ParticleLaplacian_t& L)
+                                               ParticleSet::ParticleGradient_t& G,
+                                               ParticleSet::ParticleLaplacian_t& L)
 {
-  LogValue   = 0.0;
+  LogValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
     LogValue += Dets[i]->evaluateLog(P, G, L);
   return LogValue;
@@ -180,7 +152,7 @@ void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
 SlaterDet::LogValueType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ", buf.current());
-  LogValue   = 0.0;
+  LogValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
     LogValue += Dets[i]->updateBuffer(P, buf, fromscratch);
   DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ", buf.current());
@@ -199,42 +171,10 @@ WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
 {
   SlaterDet* myclone   = new SlaterDet(tqp);
   myclone->Optimizable = Optimizable;
-  if (mySPOSet.size() > 1)
+  for (int i = 0; i < Dets.size(); ++i)
   {
-    std::map<std::string, SPOSetPtr>::const_iterator Mit, Lit;
-    Mit = mySPOSet.begin();
-    Lit = mySPOSet.end();
-    while (Mit != Lit)
-    {
-      SPOSetPtr spo = (*Mit).second;
-      SPOSetPtr spo_clone;
-      spo_clone = spo->makeClone();
-      spo_clone->resetTargetParticleSet(tqp);
-      myclone->add(spo_clone, spo->objectName);
-      for (int i = 0; i < Dets.size(); ++i)
-      {
-        if (spo == Dets[i]->getPhi())
-        {
-          Determinant_t* newD = Dets[i]->makeCopy(spo_clone);
-          newD->resetTargetParticleSet(tqp);
-          myclone->add(newD, i);
-        }
-      }
-      Mit++;
-    }
-  }
-  else
-  {
-    SPOSetPtr spo       = Dets[0]->getPhi();
-    SPOSetPtr spo_clone = spo->makeClone();
-    spo_clone->resetTargetParticleSet(tqp);
-    myclone->add(spo_clone, spo->objectName);
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      Determinant_t* newD = Dets[i]->makeCopy(spo_clone);
-      newD->resetTargetParticleSet(tqp);
-      myclone->add(newD, i);
-    }
+    Determinant_t* newD = Dets[i]->makeCopy(Dets[i]->getPhi()->makeClone());
+    myclone->add(newD, i);
   }
   return myclone;
 }

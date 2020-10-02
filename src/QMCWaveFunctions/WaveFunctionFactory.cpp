@@ -56,6 +56,12 @@ void WaveFunctionFactory::setPsi(TrialWaveFunction* psi)
 
 bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
 {
+  app_summary() << std::endl;
+  app_summary() << " Many-body wavefunction" << std::endl;
+  app_summary() << " -------------------" << std::endl;
+  app_summary() << "  Name: " << myName << std::endl;
+  app_summary() << std::endl;
+
   ReportEngine PRE(ClassName, "build");
   if (cur == NULL)
     return false;
@@ -82,7 +88,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
-    if (cname == "sposet_builder")
+    if (cname == "sposet_builder" || cname == "sposet_collection")
     {
       SPOSetBuilderFactory factory(myComm, *targetPtcl, ptclPool);
       factory.build_sposet_collection(cur);
