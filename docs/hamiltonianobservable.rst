@@ -285,6 +285,19 @@ use a specific identifying file extension; instead they are simply
 suffixed with “``.xml``.” The tabular data format of CASINO is also
 supported.
 
+In addition to the semilocal pseudopotential above, spin-orbit 
+interactions can also be included through the use of spin-orbit
+pseudopotentials. The spin-orbit contribution can be written as
+
+.. math::
+  :label: eqn32
+
+  V^{\rm SO} = \sum_{ij} \left(\sum_{\ell = 1}^{\ell_{max}-1} \frac{2}{2\ell+1} V^{\rm SO}_\ell \left( \left|r_i - \tilde{r}_j \right| \right) \sum_{m,m'=-\ell}^{\ell} | Y_{\ell m} \rangle  \langle Y_{\ell m} | \vec{\ell} \cdot \vec{s} | Y_{\ell m'}\rangle\langle Y_{\ell m'}|\right)\:.
+
+Here, :math:`\vec{s}` is the spin operator. For each atom with a spin-orbit contribution,
+the radial functions :math:`V_{\ell}^{\rm SO}` can be included in the pseudopotential 
+“``.xml``” file.
+
 ``pairpot type=pseudo`` element:
 
   +------------------+-----------------+
@@ -295,29 +308,31 @@ supported.
 
 attributes:
 
-  +-----------------------------+--------------+-----------------------+------------------------+---------------------------------------------+
-  | **Name**                    | **Datatype** | **Values**            | **Default**            | **Description**                             |
-  +=============================+==============+=======================+========================+=============================================+
-  | ``type``:math:`^r`          | text         | **pseudo**            |                        | Must be pseudo                              |
-  +-----------------------------+--------------+-----------------------+------------------------+---------------------------------------------+
-  | ``name/id``:math:`^r`       | text         | *anything*            | PseudoPot              | *No current function*                       |
-  +-----------------------------+--------------+-----------------------+------------------------+---------------------------------------------+
-  | ``source``:math:`^r`        | text         | ``particleset.name``  | i                      | Ion ``particleset`` name                    |
-  +-----------------------------+--------------+-----------------------+------------------------+---------------------------------------------+
-  | ``target``:math:`^r`        | text         | ``particleset.name``  | ``hamiltonian.target`` | Electron ``particleset`` name               |
-  +-----------------------------+--------------+-----------------------+------------------------+---------------------------------------------+
-  | ``pbc``:math:`^o`           | boolean      | yes/no                | yes*                   | Use Ewald summation                         |
-  +-----------------------------+--------------+-----------------------+------------------------+---------------------------------------------+
-  | ``forces``                  | boolean      | yes/no                | no                     | *Deprecated*                                |
-  +-----------------------------+--------------+-----------------------+------------------------+---------------------------------------------+
-  | ``wavefunction``:math:`^r`  | text         | ``wavefunction.name`` | invalid                | Identify wavefunction                       |
-  +-----------------------------+--------------+-----------------------+------------------------+---------------------------------------------+
-  | ``format``:math:`^r`        | text         | xml/table             | table                  | Select file format                          |
-  +-----------------------------+--------------+-----------------------+------------------------+---------------------------------------------+
-  | ``algorithm``:math:`^o`     | text         | batched/default       | default                | Choose NLPP algorithm                       |
-  +-----------------------------+--------------+-----------------------+------------------------+---------------------------------------------+
-  | ``DLA``:math:`^o`           | text         | yes/no                | no                     | Use determinant localization approximation  |
-  +-----------------------------+--------------+-----------------------+------------------------+---------------------------------------------+
+  +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
+  | **Name**                    | **Datatype** | **Values**            | **Default**            | **Description**                                  |
+  +=============================+==============+=======================+========================+==================================================+
+  | ``type``:math:`^r`          | text         | **pseudo**            |                        | Must be pseudo                                   |
+  +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
+  | ``name/id``:math:`^r`       | text         | *anything*            | PseudoPot              | *No current function*                            |
+  +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
+  | ``source``:math:`^r`        | text         | ``particleset.name``  | i                      | Ion ``particleset`` name                         |
+  +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
+  | ``target``:math:`^r`        | text         | ``particleset.name``  | ``hamiltonian.target`` | Electron ``particleset`` name                    |
+  +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
+  | ``pbc``:math:`^o`           | boolean      | yes/no                | yes*                   | Use Ewald summation                              |
+  +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
+  | ``forces``                  | boolean      | yes/no                | no                     | *Deprecated*                                     |
+  +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
+  | ``wavefunction``:math:`^r`  | text         | ``wavefunction.name`` | invalid                | Identify wavefunction                            |
+  +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
+  | ``format``:math:`^r`        | text         | xml/table             | table                  | Select file format                               |
+  +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
+  | ``algorithm``:math:`^o`     | text         | batched/default       | default                | Choose NLPP algorithm                            |
+  +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
+  | ``DLA``:math:`^o`           | text         | yes/no                | no                     | Use determinant localization approximation       |
+  +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
+  | ``physicalSO``:math:`^o`    | boolean      | yes/no                | no                     | Include the SO contribution in the local energy  |
+  +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
 
 Additional information:
 
@@ -357,6 +372,10 @@ Additional information:
    (DLA) :cite:`Zen2019DLA` uses only the fermionic part of
    the wavefunction when calculating NLPP.
 
+-  **physicalSO** If the spin-orbit components are included in the 
+   ``.xml`` file, this flag allows control over whether the SO contribution
+   is included in the local energy. 
+
 .. code-block::
   :caption: QMCPXML element for pseudopotential electron-ion interaction (psf files).
   :name: Listing 19
@@ -370,6 +389,14 @@ Additional information:
     <pairpot name="PseudoPot" type="pseudo"  source="i" wavefunction="psi0" format="xml">
       <pseudo elementType="Li" href="Li.xml"/>
       <pseudo elementType="H" href="H.xml"/>
+    </pairpot>
+
+.. code-block::
+  :caption: QMCPXML element for pseudopotential including the spin-orbit interaction.
+  :name: Listing 21
+  
+    <pairpot name="PseudoPot" type="pseudo" source="i" wavefunction="psi0" format="xml" physicalSO="yes">
+      <pseudo elementType="Pb" href="Pb.xml"/>
     </pairpot>
 
 Details of ``<pseudo/>`` input elements are shown in the following. It
