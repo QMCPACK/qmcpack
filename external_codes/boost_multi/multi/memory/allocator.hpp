@@ -49,7 +49,8 @@ public:
 	bool operator!=(allocator const& o) const{return mp_ != o.mp_;}
 	using void_pointer = typename std::pointer_traits<decltype(std::declval<memory_type*>()->allocate(0, 0))>::template rebind<void>;
 	pointer allocate(size_type n){
-		return static_cast<pointer>(static_cast<void_pointer>(mp_->allocate(n*sizeof(value_type), alignof(T))));
+		return static_cast<pointer>(static_cast<void_pointer>(mp_->allocate(n*sizeof(value_type), 16)));
+		//return static_cast<pointer>(static_cast<void_pointer>(mp_->allocate(n*sizeof(value_type), alignof(T))));
 	}
 	void deallocate(pointer p, size_type n){
 		mp_->deallocate(p, n*sizeof(value_type));

@@ -2314,6 +2314,8 @@ void NOMSD<devPsiT>::vMF(Vec&& v)
 template<class devPsiT>
 inline void NOMSD<devPsiT>::recompute_ci()
 {
+  if (walker_type == NONCOLLINEAR)
+    APP_ABORT(" Error: NOMSD::recompute_ci not implemented with NONCOLLINEAR.\n");
   double LogOverlapFactor(0.0);
   int ndets = ci.size();
   int nspin(1);

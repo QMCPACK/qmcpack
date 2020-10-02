@@ -140,6 +140,7 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
                 << "\n";
   }
 
+  // MAM: make this more generic, needs changes for noncollinear
   if (external_field != std::string(""))
   {
     //    read_external_field(H1ext);

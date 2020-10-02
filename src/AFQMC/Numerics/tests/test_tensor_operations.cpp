@@ -100,7 +100,7 @@ TEST_CASE("KaKjw_to_KKwaj", "[Numerics][tensor_operations]")
   // KaKjw = numpy.arange(nk*na*nk*nj*nw).reshape((nk,na,nk,nj,nw))
   // KKwaj = numpy.transpose(KaKjw, (0,2,1,3,4))
   using ma::KaKjw_to_KKwaj;
-  KaKjw_to_KKwaj(nwalk, nk, nmo_k, nk * nmo_k, occ_k, nmo_pk.origin(), nmo_pk0.origin(), nel_pk.origin(),
+  KaKjw_to_KKwaj(nwalk, nk, 1, nmo_k, nk * nmo_k, occ_k, nmo_pk.origin(), nmo_pk0.origin(), nel_pk.origin(),
                  nel_pk0.origin(), KaKjw.origin(), KKwaj.origin());
   // Reference values from python
   REQUIRE(KKwaj[1][2][3][4][4] == Approx(1473.0));
@@ -127,7 +127,7 @@ TEST_CASE("KaKjw_to_QKwaj", "[Numerics][tensor_operations]")
   Tensor2D<int> qk_to_k2 = {{0, 1, 2, 3}, {1, 0, 3, 2}, {2, 3, 0, 1}, {3, 2, 1, 0}};
   copy_n(buffer.data(), buffer.size(), KaKjw.origin());
   using ma::KaKjw_to_QKajw;
-  KaKjw_to_QKajw(nwalk, nk, nmo_k, nk * nmo_k, occ_k, nmo_pk.origin(), nmo_pk0.origin(), nel_pk.origin(),
+  KaKjw_to_QKajw(nwalk, nk, 1, nmo_k, nk * nmo_k, occ_k, nmo_pk.origin(), nmo_pk0.origin(), nel_pk.origin(),
                  nel_pk0.origin(), qk_to_k2.origin(), KaKjw.origin(), QKajw.origin());
   // Just captured from output.
   REQUIRE(QKajw[1][2][3][4][4] == Approx(1904.0));
