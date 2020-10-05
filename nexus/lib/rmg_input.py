@@ -14,6 +14,14 @@ class RmgInputSettings(DevBase):
 #end class RmgInputSettings
 
 
+# raw input spec below
+#   taken directly from
+#     https://github.com/RMGDFT/rmgdft/wiki/Input-File-Options
+#   changes made from website values
+#     write_data_period
+#       Max value: 50     -> 500
+#     pseudopotential
+#       Key type : string -> formatted
 
 raw_input_spec = '''
 Control options
@@ -2368,8 +2376,13 @@ def write_integer(v):
 #end def write_integer
 
 double_fmt = '{: 16.8f}'
+double_fmt_exp = '{: 16.8e}'
 def write_double(v):
-    return '"'+double_fmt.format(v).strip()+'"'
+    vs = double_fmt.format(v).strip()
+    if abs((float(vs)-v))>1e-6*abs(v):
+        vs = double_fmt_exp.format(v).strip()
+    #end if
+    return '"'+vs+'"'
 #end def write_double
 
 def write_integer_array(v):
@@ -2416,6 +2429,11 @@ write_functions = obj({
     'double array'  : write_double_array,
     })
 
+rmg_array_dtypes = obj({
+    'integer array' : int,
+    'double array'  : float,
+    })
+
 
 class RmgKeyword(DevBase):
     def __init__(self,key_spec,section_name):
@@ -2430,6 +2448,8 @@ class RmgKeyword(DevBase):
         self.experimental = None
         self.description  = None
 
+        self.value_type   = None
+        self.array_dtype  = None
         self.section_name = section_name
 
         spec = obj()
@@ -2441,7 +2461,7 @@ class RmgKeyword(DevBase):
                     spec[name] = value
                 #end if
                 name,value = line.split(':',1)
-                name = name.strip().lower().replace(' ','_')
+                name  = name.strip().lower().replace(' ','_')
                 value = value.strip()
             else:
                 value += ' '+line.strip()
@@ -2539,6 +2559,11 @@ class RmgKeyword(DevBase):
             #end if
         #end if
 
+        self.value_type = rmg_value_types[self.key_type]
+        if self.key_type in rmg_array_dtypes:
+            self.array_dtype  = rmg_array_dtypes[self.key_type]
+        #end if
+
     #end def __init__
 
 
@@ -2552,10 +2577,21 @@ class RmgKeyword(DevBase):
     #end def write
 
 
+    def assign(self,value):
+        if not isinstance(value,self.value_type):
+            self.error('cannot assign RMG keyword "{}".\nInvalid type encountered.\nType encoutered: {}\nType(s) expected: {}'.format(self.key_name,value.__class__.__name__,self.value_type))
+        #end if
+        if self.array_dtype is not None:
+            return np.array(value,dtype=self.array_dtype)
+        else:
+            return value
+        #end if
+    #end def assign
+
+
     def valid(self,value,message=False):
         msg   = ''
-        vtypes = rmg_value_types[self.key_type]
-        if not isinstance(value,vtypes):
+        if not isinstance(value,self.value_type):
             msg += 'Keyword "{}" has the wrong type.\n  Type expected: {}\n  Type provided: {}\n'.format(self.key_name,self.key_type,value.__class__.__name__)
         else:
             if RmgInputSettings.enforce_min_value:
@@ -2593,6 +2629,10 @@ class FormattedRmgKeyword(RmgKeyword):
         self.not_implemented()
     #end def write
 
+    def assign(self,value):
+        self.not_implemented()
+    #end def assign
+
     def valid(self,value,message=False):
         valid = self.valid_no_msg(value)
         if not message:
@@ -2612,6 +2652,11 @@ class FormattedTableRmgKeyword(FormattedRmgKeyword):
     array_options  = None
     array_types    = None
     exclude_fields = set()
+
+    def assign(self,value):
+        # assume the value is ok
+        return value
+    #end def assign
 
     def valid_no_msg(self,value):
         cls = self.__class__
@@ -2880,8 +2925,7 @@ class AtomsKeyword(FormattedTableRmgKeyword):
                 s += '{:<4} {: 16.12f} {: 16.12f} {: 16.12f} {} {} {} {: 6.4f} {: 6.2f} {: 6.2f}\n'.format(a,p[0],p[1],p[2],int(m[0]),int(m[1]),int(m[2]),sr,st,sp)
             #end for
         else:
-            None
-            #self.error('Invalid atoms format encountered on write.\nInvalid format: {}\nValid options are: {}'.format(v.format,self.formats))
+            self.error('Invalid atoms format encountered on write.\nInvalid format: {}\nValid options are: {}'.format(v.format,self.formats))
         #end if
         s += '"'
         return s
@@ -2953,7 +2997,11 @@ class RmgInput(SimulationInput):
         unrecognized = []
         for k,v in values.items():
             if k in input_spec.keywords:
-                self[k] = input_spec.keywords[k].read(v)
+                if isinstance(v,(str,np.string_)):
+                    self[k] = input_spec.keywords[k].read(v)
+                else:
+                    self[k] = input_spec.keywords[k].assign(v)
+                #end if
             else:
                 unrecognized.append(k)
             #end if
@@ -2986,17 +3034,17 @@ class RmgInput(SimulationInput):
         icur = 0
         k = 'some key'
         while k is not None:
-            k = None
+            k  = None
             ie = text.find('=',icur)
             if ie!=-1:
-                k = text[icur:ie].strip()
+                k   = text[icur:ie].strip()
                 iv1 = text.find('"',ie)
                 if iv1!=-1:
                     iv2 = text.find('"',iv1+1)
                     if iv2!=-1:
-                        v = text[iv1+1:iv2]
+                        v         = text[iv1+1:iv2]
                         values[k] = v
-                        icur = iv2+1
+                        icur      = iv2+1
                     #end if
                 #end if
             #end if
@@ -3004,7 +3052,6 @@ class RmgInput(SimulationInput):
 
         # read the keyword values, checking for unrecognized ones
         self.assign(**values)
-
     #end def read_text
 
 

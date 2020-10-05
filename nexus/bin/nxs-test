@@ -1228,6 +1228,24 @@ def quantum_package_input():
 
 
 
+def rmg_input():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('read')
+
+    nunit('write')
+
+    nunit('generate')
+
+    nunit_all()
+#end def rmg_input
+
+
+
 def qmcpack_converter_input():
     nunit('import')
 
@@ -1901,6 +1919,7 @@ NexusTest( pwscf_postprocessor_input       )
 NexusTest( gamess_input                    )
 NexusTest( pyscf_input                     )
 NexusTest( quantum_package_input           )
+NexusTest( rmg_input                       )
 NexusTest( qmcpack_converter_input         )
 NexusTest( qmcpack_input                   )
 NexusTest( vasp_analyzer                   )

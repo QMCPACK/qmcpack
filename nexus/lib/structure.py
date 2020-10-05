@@ -1554,7 +1554,7 @@ class Structure(Sobj):
         Arbitrary rotation of the structure.
         Parameters
         ----------
-        r  : `array_like, float, shape (3,3)` or `array_like, float, shape (3)` or `str`
+        r  : `array_like, float, shape (3,3)` or `array_like, float, shape (3,)` or `str`
             If a 3x3 matrix, then code executes rotation consistent with this matrix -- 
             it is assumed that the matrix acts on a column-major vector (eg, v'=Rv)
             If a three-dimensional array, then the operation of the function depends
@@ -1609,6 +1609,7 @@ class Structure(Sobj):
                     theta = float(rp)
                 else:
                     theta = float(rp)*np.pi/180.0
+                #end if
                 c = np.cos(theta)
                 s = np.sin(theta)
             else:
@@ -1629,6 +1630,7 @@ class Structure(Sobj):
                 else:
                     s = np.dot(np.cross(r,rp),np.cross(r,rp))/np.linalg.norm(r)/np.linalg.norm(rp)/np.linalg.norm(np.cross(r,rp)) 
                     r = np.cross(r,rp)/np.linalg.norm(np.cross(r,rp))
+                #end if
             #end if
             # make R from r,theta
             R = [[     c+r[0]**2.0*(1.0-c), r[0]*r[1]*(1.0-c)-r[2]*s, r[0]*r[2]*(1.0-c)+r[1]*s],
@@ -1640,6 +1642,7 @@ class Structure(Sobj):
         R = array(R,dtype=float)
         if passive:
             R = R.T
+        #end if
         if check:
             if not np.allclose(dot(R,R.T),identity(len(R))):
                 self.error('the function, rotate, must be given an orthogonal matrix')
@@ -1656,10 +1659,10 @@ class Structure(Sobj):
 
         Parameters
         ----------
-        skew  : `array_like, float, shape (3,3)`
-            Transform the structure using the matrix skew. It is assumed that
-            skew is in column-major form, i.e., it transforms a vector v as
-            v' = Tv
+        A  : `array_like, float, shape (3,3)`
+            Transform the structure using the matrix A. It is assumed that
+            A is in column-major form, i.e., it transforms a vector v as
+            v' = Av
         """
         A = A.T
         axinv  = inv(self.axes)
@@ -3704,8 +3707,8 @@ class Structure(Sobj):
 
 
     def tilematrix(self,small=None,tol=1e-6,status=False):
-        if small==None:
-            if self.folded_structure!=None:
+        if small is None:
+            if self.folded_structure is not None:
                 small = self.folded_structure
             else:
                 return identity(self.dim,dtype=int)
@@ -5104,6 +5107,7 @@ class Structure(Sobj):
         self.error('structure objects do not currently support magnetic moments')
     #end def get_magnetic_moments
 
+
     # direct spglib interface
     def spglib_cell(self):
         lattice   = self.axes.copy()
@@ -5144,6 +5148,41 @@ class Structure(Sobj):
         #end for
         return ds
     #end def symmetry_data
+
+
+    def bravais_lattice_name(self,symm_data=None):
+        if symm_data is None:
+            symm_data = self.symmetry_data()
+        #end if
+        sg   = symm_data.number
+        name = symm_data.international
+        if not isinstance(sg,int) or sg<1 or sg>230:
+            self.error('Invalid space group from spglib: {}'.format(sg))
+        #end if
+        if not isinstance(name,str):
+            self.error('Invalid space group name from spglib: {}'.format(name))
+        #end if
+        bv = None
+        if sg>=1 and sg<=2:
+            bv = 'triclinic_'+name[0]
+        elif sg>=3 and sg<=15:
+            bv = 'monoclinic_'+name[0]
+        elif sg>=16 and sg<=74:
+            bv = 'orthorhombic_'+name[0]
+        elif sg>=75 and sg<=142:
+            bv = 'tetragonal_'+name[0]
+        elif sg>=143 and sg<=167:
+            bv = 'trigonal_'+name[0]
+        elif sg>=168 and sg<=194:
+            bv = 'hexagonal_'+name[0]
+        elif sg>=195 and sg<=230:
+            bv = 'cubic_'+name[0]
+        #end if
+        if bv is None:
+            self.error('Bravais lattice could not be determined.\nSpace group number and name: {} {}'.format(sg,name))
+        #end if
+        return bv
+    #end def bravais_lattice_name
 
 
     # test needed
@@ -5260,6 +5299,110 @@ class Structure(Sobj):
 
         return equiv_indices
     #end def equivalent_atoms
+
+
+    # operations to support restricted cases for RMG code
+
+    # supported rmg lattices
+    rmg_lattices = obj(
+        orthorhombic_P = 'Orthorhombic Primitive',
+        tetragonal_P   = 'Tetragonal Primitive',
+        hexagonal_P    = 'Hexagonal Primitive',
+        cubic_P        = 'Cubic Primitive',
+        cubic_I        = 'Cubic Body Centered',
+        cubic_F        = 'Cubic Face Centered',
+        )
+
+    def rmg_lattice(self,allow_tile=False,all_results=False,exit=False,warn=False):
+        # output variables
+        rmg_lattice = None
+        tmatrix     = None
+
+        rmg_lattices = Structure.rmg_lattices
+
+        # represent current bravais lattice
+        s = Structure(
+            units = str(self.units),
+            axes  = self.axes.copy(),
+            elem  = ['H'],
+            pos   = [[0,0,0]],
+            )
+
+        # get standard primitive cell based on bravais lattice
+        sp = s.primitive()
+
+        # get current bravais lattice name
+        d   = sp.symmetry_data()
+        bv  = sp.bravais_lattice_name(d)
+        bvp = bv.rsplit('_',1)[0]+'_P' 
+        if bv in rmg_lattices:
+            rmg_lattice = bv
+        #end if
+
+        # attempt to get a valid cell by tiling if current one is not valid
+        if rmg_lattice is None and bvp in rmg_lattices and allow_tile:
+            spt = Structure(
+                units = self.units,
+                axes  = d.std_lattice,
+                )
+            tmatrix,valid_by_tiling = spt.tilematrix(sp,status=True)
+            if not valid_by_tiling:
+                tmatrix = None
+            #end if
+        #end if
+
+        if rmg_lattice is None and (exit or warn):
+            msg = 'Bravais lattice is not supported by the RMG code.\nCell bravais lattice: {}\nLattices supported by RMG: {}'.format(rmg_lattice,list(sorted(rmg_lattices.keys())))
+            if exit:
+                self.error(msg)
+            elif warn:
+                self.warn(msg)
+            #end if
+        #end if
+
+        if all_results:
+            return rmg_lattice,tmatrix,s,sp
+        elif allow_tile:
+            return rmg_lattice,tmatrix
+        else:
+            return rmg_lattice
+        #end if
+    #end def rmg_lattice
+
+
+    def rmg_transform(self,allow_tile=False,exit=False,warn=False):
+        s_trans = None
+        rmg_lattice,tmatrix,s,sp = self.rmg_lattice(
+            allow_tile  = allow_tile,
+            exit        = exit,
+            warn        = warn,
+            all_results = True,
+            )
+        if rmg_lattice is not None:
+            # find and apply rotation matrix between current and standard representation
+            R = np.dot(np.linalg.inv(s.axes),sp.axes)
+            s_trans = s.copy()
+            s_trans.matrix_transform(R.T)
+        elif allow_tile:
+            if tmatrix is not None:
+                # apply tiling matrix
+                s_trans = sp.copy().tile(tmatrix)
+                # update lattice type
+                rmg_lattice = s_trnas.rmg_lattice()
+                if rmg_lattice is None:
+                    self.error('Transformation to valid RMG cell via tiling failed.\nThis is a developer error.\nPlease contact the developers.')
+                #end if
+            elif exit or warn:
+                msg = 'No valid RMG cell may be obtained by tiling.'
+                if exit:
+                    self.error(msg)
+                elif warn:
+                    self.warn(msg)
+                #end if
+            #end if
+        #end if
+        return s_trans,rmg_lattice
+    #end def rmg_transform
 
 #end class Structure
 Structure.set_operations()
