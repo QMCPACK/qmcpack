@@ -171,14 +171,17 @@ void LCAOHDFParser::parse(const std::string& fname)
       CIbeta.resize(ci_size);
 
       hin.read(ci_nstates, "nstate");
+      /// 64 bit fixed width integer
+      const unsigned bit_kind = 64;
+      static_assert(bit_kind == sizeof(int64_t) * 8, "Must be 64 bit fixed width integer");
+      /// the number of 64 bit integers which represent the binary string for occupation
       int N_int;
-      const int bit_kind = 64;
       hin.read(N_int, "Nbits");
 
-      Matrix<long int> tempAlpha(ci_size, N_int);
+      Matrix<int64_t> tempAlpha(ci_size, N_int);
       hin.read(tempAlpha, "CI_Alpha");
 
-      Matrix<long int> tempBeta(ci_size, N_int);
+      Matrix<int64_t> tempBeta(ci_size, N_int);
       hin.read(tempBeta, "CI_Beta");
 
       std::string MyCItempAlpha, MyCItempBeta;
@@ -195,7 +198,7 @@ void LCAOHDFParser::parse(const std::string& fname)
         }
         for (int k = 0; k < N_int; k++)
         {
-          long int a               = tempAlpha[ni][k];
+          int64_t a                = tempAlpha[ni][k];
           std::bitset<bit_kind> a2 = a;
 
           auto b  = tempBeta[ni][k];
