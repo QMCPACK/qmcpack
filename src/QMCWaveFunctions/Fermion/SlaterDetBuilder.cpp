@@ -1206,8 +1206,11 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   }
   size_t NCA, NCB, NEA, NEB, nstates, ndets = 0;
   size_t H5_ndets, H5_nstates;
+  /// 64 bit fixed width integer
+  const unsigned bit_kind = 64;
+  static_assert(bit_kind == sizeof(int64_t) * 8, "Must be 64 bit fixed width integer");
+  /// the number of 64 bit integers which represent the binary string for occupation
   int N_int;
-  const int bit_kind  = 64;
   std::string Dettype = "DETS";
   ValueType sumsq     = 0.0;
   OhmmsAttributeSet spoAttrib;
@@ -1301,10 +1304,10 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
               << " Optimized coefficients were substituted to the original set of coefficients." << std::endl;
   }
 
-  Matrix<long int> tempAlpha(ndets, N_int);
+  Matrix<int64_t> tempAlpha(ndets, N_int);
   hin.read(tempAlpha, "CI_Alpha");
 
-  Matrix<long int> tempBeta(ndets, N_int);
+  Matrix<int64_t> tempBeta(ndets, N_int);
   hin.read(tempBeta, "CI_Beta");
 
   std::string MyCIAlpha, MyCIBeta;
@@ -1340,7 +1343,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     int j = 0;
     for (int k = 0; k < N_int; k++)
     {
-      long int a               = tempAlpha[ni][k];
+      int64_t a                = tempAlpha[ni][k];
       std::bitset<bit_kind> a2 = a;
 
       auto b  = tempBeta[ni][k];
