@@ -862,9 +862,9 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
           }
         }
         // first setup
-        local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank())));
-        shmbuff_for_G    = std::move(std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
-                                                                shared_allocator<ComplexType>{local_group_comm}));
+        local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank()));
+        shmbuff_for_G    = std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
+                                                      shared_allocator<ComplexType>{local_group_comm});
       }
       if (last_task_index < 0 || last_task_index > nextra)
         APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
@@ -958,10 +958,10 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
           }
         }
         // first setup
-        //local_group_comm = std::move(std::make_unique<shared_communicator>(TG.TG_local().split(last_task_index)));
-        local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank())));
-        shmbuff_for_G    = std::move(std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
-                                                                shared_allocator<ComplexType>{local_group_comm}));
+        //local_group_comm = std::make_unique<shared_communicator>(TG.TG_local().split(last_task_index));
+        local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank()));
+        shmbuff_for_G    = std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
+                                                      shared_allocator<ComplexType>{local_group_comm});
       }
       if (last_task_index < 0 || last_task_index > nextra)
         APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
@@ -1357,9 +1357,9 @@ void NOMSD<devPsiT>::Overlap_shared(const WlkSet& wset, TVec&& Ov)
           }
         }
         // first setup
-        local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank())));
-        shmbuff_for_G    = std::move(std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
-                                                                shared_allocator<ComplexType>{local_group_comm}));
+        local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank()));
+        shmbuff_for_G    = std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
+                                                      shared_allocator<ComplexType>{local_group_comm});
       }
       if (last_task_index < 0 || last_task_index > nextra)
         APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
@@ -1411,9 +1411,9 @@ void NOMSD<devPsiT>::Overlap_shared(const WlkSet& wset, TVec&& Ov)
           }
         }
         // first setup
-        local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank())));
-        shmbuff_for_G    = std::move(std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
-                                                                shared_allocator<ComplexType>{local_group_comm}));
+        local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank()));
+        shmbuff_for_G    = std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
+                                                      shared_allocator<ComplexType>{local_group_comm});
       }
       if (last_task_index < 0 || last_task_index > nextra)
         APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");

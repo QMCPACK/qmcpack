@@ -324,12 +324,12 @@ void PHMSD::Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov)
     //  iii. energies[3] for all walkers on all nodes of TG (assume all nodes have same # of walkers)
     int nt = nwalk*(2*Gsize+1);
     if(not shmbuff_for_E) { 
-      shmbuff_for_E = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),nt));
+      shmbuff_for_E = std::make_unique<SHM_Buffer>(TG.TG_local(),nt);
       new_shm_space=true;
     }
     // in case the number of walkers changes
     if(shmbuff_for_E->num_elements() < nt) {
-      shmbuff_for_E = std::move(std::make_unique<SHM_Buffer>(TG.TG_local(),nt));
+      shmbuff_for_E = std::make_unique<SHM_Buffer>(TG.TG_local(),nt);
       new_shm_space=true;
     }
     assert(shmbuff_for_E->num_elements() >= nt);
@@ -598,7 +598,7 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
           }
         }
         // first setup
-        local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().size())));
+        local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().size()));
         // this probably does not work!!!
         {
           shmCMatrix unique_overlaps_({2, maxn_unique_confg}, shared_allocator<ComplexType>{local_group_comm});
@@ -981,8 +981,8 @@ void PHMSD::Overlap(const WlkSet& wset, TVec&& Ov)
             }
           }
           // first setup
-          local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index,
-                                                                               TG.TG_local().size())));
+          local_group_comm = shared_communicator(TG.TG_local().split(last_task_index,
+                                                                               TG.TG_local().size()));
           {  
             shmCMatrix _ov_({2,maxn_unique_confg},  
                                 shared_allocator<ComplexType>{local_group_comm});
@@ -1060,7 +1060,7 @@ void PHMSD::Overlap(const WlkSet& wset, TVec&& Ov)
           }
         }
         // reset
-        local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().size())));
+        local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().size()));
         auto GAdims0     = dm_dims_ref(false, Alpha);
         auto GBdims0     = dm_dims_ref(false, Beta);
         {

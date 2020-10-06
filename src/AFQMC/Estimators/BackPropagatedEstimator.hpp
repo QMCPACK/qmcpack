@@ -191,7 +191,7 @@ public:
 
     // 1. check structures
     if (Refs.size(0) != wset.size() || Refs.size(1) != nrefs || Refs.size(2) != nrow * ncol)
-      Refs = std::move(mpi3CTensor({wset.size(), nrefs, nrow * ncol}, Refs.get_allocator()));
+      Refs = mpi3CTensor({wset.size(), nrefs, nrow * ncol}, Refs.get_allocator());
     StaticMatrix detR({wset.size(), nrefs * nx}, buffer_allocator->template get_allocator<ComplexType>());
 
     int n0, n1;

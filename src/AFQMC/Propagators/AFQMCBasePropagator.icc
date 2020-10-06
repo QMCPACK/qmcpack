@@ -43,7 +43,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
 
   AFQMCTimers[setup_timer]->start();
   auto walker_type = wset.getWalkerType();
-  int npol = (walker_type==NONCOLLINEAR) ? 2 : 1;
+  int npol         = (walker_type == NONCOLLINEAR) ? 2 : 1;
   int nsteps       = nsteps_;
   int nwalk        = wset.size();
   RealType sqrtdt  = std::sqrt(dt);
@@ -63,13 +63,13 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     G_ext = iextensions<2u>{nwalk, Gsize};
 
   if (MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk)
-    MFfactor = std::move(CMatrix({long(nsteps), long(nwalk)}));
+    MFfactor = CMatrix({long(nsteps), long(nwalk)});
   if (hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk)
-    hybrid_weight = std::move(CMatrix({long(nsteps), long(nwalk)}));
+    hybrid_weight = CMatrix({long(nsteps), long(nwalk)});
   if (new_overlaps.size(0) != nwalk)
-    new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
+    new_overlaps = CVector(iextensions<1u>{nwalk});
   if (new_energies.size(0) != nwalk || new_energies.size(1) != 3)
-    new_energies = std::move(CMatrix({long(nwalk), 3}));
+    new_energies = CMatrix({long(nwalk), 3});
 
 
   //  shared buffer used for:
@@ -266,7 +266,7 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
 {
   using std::copy_n;
   auto walker_type = wset.getWalkerType();
-  int npol = (walker_type==NONCOLLINEAR) ? 2 : 1;
+  int npol         = (walker_type == NONCOLLINEAR) ? 2 : 1;
   int nwalk        = wset.size();
   int globalnCV    = wfn.global_number_of_cholesky_vectors();
 
@@ -287,7 +287,7 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
   assert(Fields.size(1) == globalnCV);
   assert(Fields.size(2) == nwalk);
 
-  int nrow(NMO*npol); 
+  int nrow(NMO * npol);
   int ncol(NAEA + ((walker_type == CLOSED) ? 0 : NAEB));
   assert(Refs.size(0) == nwalk);
   int nrefs = Refs.size(1);
@@ -418,7 +418,7 @@ void AFQMCBasePropagator::apply_propagators(char TA,
 {
   int nwalk        = wset.size();
   auto walker_type = wset.getWalkerType();
-  bool noncol = (walker_type == NONCOLLINEAR);
+  bool noncol      = (walker_type == NONCOLLINEAR);
 
   int spin(0);
   if (spin_dependent_P1)
@@ -471,7 +471,7 @@ void AFQMCBasePropagator::apply_propagators(char TA,
   else
   {
     if (local_vHS.size(0) != NMO || local_vHS.size(1) != NMO)
-      local_vHS = std::move(CMatrix({NMO, NMO}));
+      local_vHS = CMatrix({NMO, NMO});
     // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
     if (walker_type == COLLINEAR)
     {
@@ -528,7 +528,7 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
 {
   int nwalk        = wset.size();
   auto walker_type = wset.getWalkerType();
-  bool noncol = (walker_type == NONCOLLINEAR);
+  bool noncol      = (walker_type == NONCOLLINEAR);
   int nbatch       = std::min(nwalk, (nbatched_propagation < 0 ? nwalk : nbatched_propagation));
 
   int spin(0);
@@ -565,7 +565,7 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
   else
   {
     if (local_vHS.size(0) != nbatch || local_vHS.size(1) != NMO * NMO)
-      local_vHS = std::move(CMatrix({nbatch, NMO * NMO}));
+      local_vHS = CMatrix({nbatch, NMO * NMO});
     // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
     int N2 = vHS3D.size(0) * vHS3D.size(1);
     CMatrix_ref vHS2D(vHS3D.origin(), {N2, vHS3D.size(2)});

@@ -134,7 +134,7 @@ public:
         std::transform(R.origin(), R.origin() + R.num_elements(), R.origin(),
                        [](const auto& c) { return std::conj(c); });
         TG.Node().broadcast_n(dim, 2, 0);
-        XRot = std::move(sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG)));
+        XRot = sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG));
         copy_n(R.origin(), R.num_elements(), make_device_ptr(XRot.origin()));
         if (TG.Node().root())
           TG.Cores().broadcast_n(to_address(XRot.origin()), XRot.num_elements(), 0);
@@ -145,7 +145,7 @@ public:
       else
       {
         TG.Node().broadcast_n(dim, 2, 0);
-        XRot = std::move(sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG)));
+        XRot = sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG));
         if (TG.Node().root())
           TG.Cores().broadcast_n(to_address(XRot.origin()), XRot.num_elements(), 0);
       }
@@ -172,7 +172,7 @@ public:
     using std::fill_n;
     writer = (TG.getGlobalRank() == 0);
 
-    DMAverage = std::move(mpi3CMatrix({nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+    DMAverage = mpi3CMatrix({nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
     fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
@@ -203,11 +203,11 @@ public:
     {
       if (denom.size(0) != nw)
       {
-        denom = std::move(mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()}));
+        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (DMWork.size(0) != nw || DMWork.size(1) != dm_size)
       {
-        DMWork = std::move(mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+        DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));
@@ -327,7 +327,7 @@ private:
     CMatrix_ref GtC(Gt.origin(), {NMO * NMO, 1});
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     if (Grot.size() < R.num_elements())
-      Grot = std::move(stdCVector(iextensions<1u>(R.num_elements())));
+      Grot = stdCVector(iextensions<1u>(R.num_elements()));
 #endif
 
     if (TG.TG_local().size() > 1)
@@ -417,7 +417,7 @@ private:
       CVector_ref R1D( Buff.origin(), {dN*NMO*NMO});
 #if ENABLE_CUDA
       if(Grot.size() < R.num_elements()) 
-        Grot = std::move(stdCVector(iextensions<1u>(R.num_elements())));
+        Grot = stdCVector(iextensions<1u>(R.num_elements()));
 #endif
         
 
@@ -460,7 +460,7 @@ private:
     CMatrix_ref T1(Buff.origin(),{(iN-i0),NMO});
     CMatrix_ref T2(T1.origin()+T1.num_elements(),{(iN-i0),nX});
     if(Grot.size() != npts) 
-      Grot = std::move(stdCVector(iextensions<1u>(npts)));
+      Grot = stdCVector(iextensions<1u>(npts));
 
     // round-robin for now
     int cnt=0;

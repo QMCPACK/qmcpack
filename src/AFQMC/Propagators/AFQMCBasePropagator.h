@@ -163,12 +163,12 @@ public:
     {
       if (walker_type != COLLINEAR)
         APP_ABORT(" Error: Spin dependent P1 being used with CLOSED walker.\n");
-      P1[0] = std::move(generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, H1ext[0], printP1eV));
-      P1[1] = std::move(generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, H1ext[1], printP1eV));
+      P1[0] = generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, H1ext[0], printP1eV);
+      P1[1] = generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, H1ext[1], printP1eV);
     }
     else
     {
-      P1[0] = std::move(generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, printP1eV));
+      P1[0] = generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, printP1eV);
     }
   }
 
