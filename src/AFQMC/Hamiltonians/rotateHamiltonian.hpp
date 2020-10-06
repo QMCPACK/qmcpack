@@ -320,7 +320,7 @@ inline void rotateHijkl(std::string& type,
     {
       if (sparseQk)
       {
-        SpRl = std::move(csr::shm::transpose<SpCType_shm_csr_matrix>(SpQk));
+        SpRl = csr::shm::transpose<SpCType_shm_csr_matrix>(SpQk);
         SpRl.remove_empty_spaces(); // just in case
       }
       else
