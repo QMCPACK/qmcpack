@@ -757,6 +757,7 @@ def test_write():
 def test_generate():
     import numpy as np
     from generic import obj
+    from physical_system import generate_physical_system
     from rmg_input import generate_rmg_input
 
     # recreate 'BlackPhosphorus_input'
@@ -851,7 +852,7 @@ def test_generate():
         start_mode                = 'LCAO Start',
         subdiag_driver            = 'lapack',
         test_energy               = -677.71977422,
-        wavefunction_grid         = np.array([36,36,36]),
+        wavefunction_grid         = (36,36,36),
         write_data_period         = 5,
         bravais_lattice_type      = 'Cubic Primitive',
         a_length                  = 7.8811,
@@ -908,6 +909,34 @@ def test_generate():
             ),
         **shared_inputs
         )
+    check_vs_serial_reference(ri,infile)
+
+    nio8 = generate_physical_system(
+        units     = 'B',
+        axes      = 7.8811*np.identity(3),
+        elem      = ['O','O','O','O','Ni','Ni','Ni','Ni'],
+        posu      = [[0.   , 0. ,   0.5  ],
+                     [0.   , 0.5,   0.   ],
+                     [0.5  , 0. ,   0.   ],
+                     [0.5  , 0.5,   0.5  ],
+                     [0.005, 0. ,   0.   ],
+                     [0.5  , 0.5,   0.   ],
+                     [0.   , 0.5,   0.5  ],
+                     [0.5  , 0. ,   0.5  ]],
+        Ni = 18,
+        O  = 6,
+        )
+    nio8.structure.freeze(negate=True)
+    ri = generate_rmg_input(
+        Hubbard_U    = 'Ni 6.5',
+        virtual_frac = 1./6,
+        pseudos      = ['Ni_oncv.UPF','O_oncv.UPF'],
+        system       = nio8,
+        magnetic     = True,
+        **shared_inputs
+        )
+    ri.atoms.format = 'movable_moment'
+    ri.atoms.moments = np.array([0,0,0,0,.25,.25,-.25,-.25])
     check_vs_serial_reference(ri,infile)
 
 

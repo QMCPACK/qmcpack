@@ -2,7 +2,8 @@
 import numpy as np
 
 from generic import obj
-from developer import DevBase
+from developer import DevBase,error
+from pseudopotential import pp_elem_label
 from simulation import SimulationInput
 
 
@@ -3008,7 +3009,7 @@ class RmgInput(SimulationInput):
         #end for
         if len(unrecognized)>0:
             unrec = obj(values).obj(unrecognized)
-            self.error('Unrecognized keywords encountered during assignment.\nUnrecognized keywords: {}\nCorresponding values:\n{}'.format(list(sorted(unrecognized))),unrec)
+            self.error('Unrecognized keywords encountered during assignment.\nUnrecognized keywords: {}\nCorresponding values:\n{}'.format(list(sorted(unrecognized)),unrec))
         #end if
     #end def assign
 
@@ -3119,8 +3120,138 @@ def generate_rmg_input(**kwargs):
 
 
 
+generate_any_defaults = obj(
+    none  = obj(),
+    basic = obj(
+        use_folded             = True,
+        virtual_frac           = 0.20,
+        ),
+    #qmc   = obj(
+    #    use_folded             = True,
+    #    ),
+    )
+
 def generate_any_rmg_input(**kwargs):
+    loc = 'generate_rmg_input'
+
+    # set default values
+    defaults = kwargs.pop('defaults','basic')
+    kw = obj(**kwargs)
+    kw.set_optional(generate_any_defaults[defaults])
+
+    # extract keywords not appearing in RMG input file
+    text            = kw.delete_optional('text'           , None )
+    wf_grid_spacing = kw.delete_optional('wf_grid_spacing', None )
+    pseudos         = kw.delete_optional('pseudos'        , None )
+    system          = kw.delete_optional('system'         , None )
+    copy_system     = kw.delete_optional('copy_system'    , True )
+    use_folded      = kw.delete_optional('use_folded'     , False)
+    virtual_frac    = kw.delete_optional('virtual_frac'   , None )
+    magnetic        = kw.delete_optional('magnetic'       , False )
+
+    # generate RMG input
     ri = RmgInput()
-    ri.assign(**kwargs)
+    if text is not None:
+        ri.read_text(text)
+    #end if
+    ri.assign(**kw)
+
+    # incorporate pseudopotentials details provided via "pseudos"
+    if pseudos is not None:
+        species = []
+        pps     = []
+        for ppname in pseudos:
+            label,element = pp_elem_label(ppname,guard=True)
+            species.append(element)
+            pps.append(ppname)
+        #end for
+        ri.pseudopotential = obj(
+            species = np.array(species),
+            pseudos = np.array(pps),
+            )
+    #end if
+    
+    # incorporate system details, if provided
+    if system is not None:
+
+        # add system details
+        if copy_system:
+            system = system.copy()
+        #end if
+        if use_folded:
+            system = system.get_smallest()
+        #end if
+        system.check_folded_system()
+        system.update_particles()
+        if 'atomic_coordinate_type' not in ri:
+            ri.atomic_coordinate_type = 'Absolute'
+        #end if
+        if 'crds_units' not in ri:
+            cu = 'bohr'
+        else:
+            cu = ri.crds_units.lower()
+        #end if
+        if cu=='angstrom':
+            system.change_units('A')
+        elif cu=='bohr':
+            system.change_units('B')
+        else:
+            error('invalid crds_units.\nExpected "Angstrom" or "Bohr".\nReceived: {}'.format(cu),loc)
+        #end if
+        s = system.structure
+        elem = np.array(s.elem)
+        act = ri.atomic_coordinate_type.lower()
+        if act=='absolute':
+            pos = s.pos.copy()
+        elif act=='cell relative':
+            pos = s.pos_unit().copy()
+        else:
+            error('invalid atomic_coordinate_type.\nExpected "Absolute" or "Cell Relative".\nReceived: {}'.format(cu),loc)
+        #end if
+        movable = None
+        if s.frozen is not None:
+            movable = ~s.frozen.any(axis=1)
+        #end if
+        moments = None
+        if movable is not None and moments is not None:
+            ri.atoms = obj(
+                format = 'movable_moment',
+                atoms     = elem,
+                positions = pos,
+                movable   = movable,
+                moments   = moments,
+                )
+        elif movable is not None:
+            ri.atoms = obj(
+                format = 'movable',
+                atoms     = elem,
+                positions = pos,
+                movable   = movable,
+                )
+        else:
+            ri.atoms = obj(
+                format = 'basic',
+                atoms     = elem,
+                positions = pos,
+                )
+        #end if
+
+        if virtual_frac is not None:
+            nup,ndn = system.particles.electron_counts()
+            nvirt = int(np.ceil(virtual_frac*max(nup,ndn)))
+            nptot = max(nup,ndn) + nvirt
+            nup_virt = nptot-nup
+            ndn_virt = nptot-ndn
+            occ_up = '{} 1.0 {} 0.0'.format(nup,nup_virt)
+            occ_dn = '{} 1.0 {} 0.0'.format(ndn,ndn_virt)
+            if nup==ndn and not magnetic:
+                ri.states_count_and_occupation = occ_up
+            else:
+                ri.states_count_and_occupation_spin_up   = occ_up
+                ri.states_count_and_occupation_spin_down = occ_dn
+            #end if
+        #end if
+    #end if
+
     return ri
 #end def generate_any_rmg_input

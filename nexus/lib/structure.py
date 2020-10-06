@@ -1901,7 +1901,7 @@ class Structure(Sobj):
             return
         #end if
         if identifiers is None:
-            indicies = arange(len(self.pos),dtype=int)
+            indices = arange(len(self.pos),dtype=int)
         else:
             indices = self.locate(identifiers,radii,exterior)
         #end if
@@ -5388,7 +5388,7 @@ class Structure(Sobj):
                 # apply tiling matrix
                 s_trans = sp.copy().tile(tmatrix)
                 # update lattice type
-                rmg_lattice = s_trnas.rmg_lattice()
+                rmg_lattice = s_trans.rmg_lattice()
                 if rmg_lattice is None:
                     self.error('Transformation to valid RMG cell via tiling failed.\nThis is a developer error.\nPlease contact the developers.')
                 #end if
