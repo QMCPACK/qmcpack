@@ -34,7 +34,7 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
       AtomicNumber(0),
       Zeff(0),
       Species(aname),
-      Nrule(4),
+      Nrule(7),
       grid_global(0),
       pp_loc(0),
       pp_nonloc(0),
