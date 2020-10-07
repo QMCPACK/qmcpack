@@ -97,7 +97,7 @@ public:
   ///differential laplacians
   ParticleSet::ParticleLaplacian_t L;
 
-  TrialWaveFunction(const std::string& aname = "psi0");
+  TrialWaveFunction(const std::string& aname = "psi0", bool tasking = false);
 
   // delete copy constructor
   TrialWaveFunction(const TrialWaveFunction&) = delete;
@@ -447,7 +447,7 @@ public:
    */
   void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
 
-  const std::string& getName() const {return myName;}
+  const std::string& getName() const { return myName; }
 
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
@@ -474,7 +474,7 @@ private:
   RealType OneOverM;
 
   /// if true, using internal tasking implementation
-  bool use_tasking;
+  const bool use_tasking;
 
   ///a list of WaveFunctionComponents constituting many-body wave functions
   std::vector<WaveFunctionComponent*> Z;

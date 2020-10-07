@@ -42,12 +42,13 @@ WaveFunctionPool::~WaveFunctionPool()
 
 bool WaveFunctionPool::put(xmlNodePtr cur)
 {
-  std::string id("psi0"), target("e"), role("extra");
+  std::string id("psi0"), target("e"), role("extra"), tasking("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id, "id");
   pAttrib.add(id, "name");
   pAttrib.add(target, "target");
   pAttrib.add(target, "ref");
+  pAttrib.add(tasking, "tasking");
   pAttrib.add(role, "role");
   pAttrib.put(cur);
   ParticleSet* qp = ptcl_pool_.getParticleSet(target);
@@ -80,7 +81,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   bool isPrimary                  = true;
   if (pit == myPool.end())
   {
-    psiFactory = new WaveFunctionFactory(id, *qp, ptcl_pool_.getPool(), myComm);
+    psiFactory = new WaveFunctionFactory(id, *qp, ptcl_pool_.getPool(), myComm, tasking == "yes");
     isPrimary  = (myPool.empty() || role == "primary");
     myPool[id] = psiFactory;
   }

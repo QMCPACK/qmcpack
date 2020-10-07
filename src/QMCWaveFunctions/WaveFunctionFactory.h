@@ -33,11 +33,13 @@ public:
   typedef std::map<std::string, ParticleSet*> PtclPoolType;
 
   /** constructor
+   * @param psiName name for both the factory and psi
    * @param qp quantum particleset
    * @param pset pool of particlesets
    * @param c  communicator
+   * @param c  using tasking inside TWF
    */
-  WaveFunctionFactory(const std::string& psiName, ParticleSet& qp, PtclPoolType& pset, Communicate* c);
+  WaveFunctionFactory(const std::string& psiName, ParticleSet& qp, PtclPoolType& pset, Communicate* c, bool tasking = false);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);

@@ -44,9 +44,10 @@ namespace qmcplusplus
 WaveFunctionFactory::WaveFunctionFactory(const std::string& psiName,
                                          ParticleSet& qp,
                                          PtclPoolType& pset,
-                                         Communicate* c)
+                                         Communicate* c,
+                                         bool tasking)
     : MPIObjectBase(c),
-      targetPsi(std::make_unique<TrialWaveFunction>(psiName)),
+      targetPsi(std::make_unique<TrialWaveFunction>(psiName, tasking)),
       targetPtcl(qp),
       ptclPool(pset),
       myNode(NULL)

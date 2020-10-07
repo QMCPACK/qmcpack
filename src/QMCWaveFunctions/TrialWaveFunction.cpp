@@ -38,14 +38,15 @@ typedef enum
 
 static const std::vector<std::string> suffixes{"V", "VGL", "accept", "NLratio", "recompute", "buffer", "derivs"};
 
-TrialWaveFunction::TrialWaveFunction(const std::string& aname)
+TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking)
     : myName(aname),
       BufferCursor(0),
       BufferCursor_scalar(0),
       PhaseValue(0.0),
       PhaseDiff(0.0),
       LogValue(0.0),
-      OneOverM(1.0)
+      OneOverM(1.0),
+      use_tasking(tasking)
 {
   for (auto& suffix : suffixes)
   {
@@ -554,12 +555,29 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
   ScopedTimer local_timer(TWF_timers_[VGL_TIMER]);
   grad_iat = 0.0;
   PsiValueType r(1.0);
-  for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+  if (use_tasking)
   {
-    ScopedTimer z_timer(WFC_timers_[ii]);
-    r *= Z[i]->ratioGrad(P, iat, grad_iat);
-  }
+    std::vector<GradType> grad_components(Z.size(), 0.0);
+    std::vector<PsiValueType> ratio_components(Z.size(), 0.0);
+    for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+    {
+      ScopedTimer z_timer(WFC_timers_[ii]);
+      Z[i]->ratioGradAsync(P, iat, ratio_components[i], grad_components[i]);
+    }
 
+#pragma omp taskwait
+    for (int i = 0; i < Z.size(); ++i)
+    {
+      grad_iat += grad_components[i];
+      r *= ratio_components[i];
+    }
+  }
+  else
+    for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+    {
+      ScopedTimer z_timer(WFC_timers_[ii]);
+      r *= Z[i]->ratioGrad(P, iat, grad_iat);
+    }
   LogValueType logratio = convertValueToLog(r);
   PhaseDiff             = std::imag(logratio);
   return static_cast<ValueType>(r);
@@ -1036,7 +1054,7 @@ void TrialWaveFunction::reset() {}
 
 TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp) const
 {
-  TrialWaveFunction* myclone   = new TrialWaveFunction(myName);
+  TrialWaveFunction* myclone   = new TrialWaveFunction(myName, use_tasking);
   myclone->BufferCursor        = BufferCursor;
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)
