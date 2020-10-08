@@ -443,23 +443,6 @@ def reduce_tilematrix(tiling):
 
 
 
-def tile_magnetization(mag,tilevec,mag_order,mag_prim):
-    # jtk mark current
-    #  implement true magnetic tiling based on the magnetic order
-    #  Structure needs a function magnetic_period which takes magnetic order
-    #   and translates it into a magnetic period tuple
-    #  magnetic_period should divide evenly into the tiling vector
-    #  the magnetic unit cell is self.tile(magnetic_period)
-    #  re-representing the folded cell as the magnetic primitive cell
-    #   requires different axes, often with a non-diagonal tiling matrix
-    #  if magnetic primitive is requested, a small tiling vector should first be used
-    #   (ie 221,212,122,222 periods all involve a 211 prim tiling w/ a simple reshaping/reassignment of the cell axes
-    #  Structure should have a function providing labels to each magnetic species
-    #mag = array(int(round( tilevec.prod() ))*list(mag),dtype=object)
-    return mag
-#end def tile_magnetization
-
-
 def rotate_plane(plane,angle,points,units='degrees'):
     if units=='degrees':
         angle *= pi/180
@@ -797,8 +780,6 @@ class Structure(Sobj):
                  rescale           = True,
                  dim               = 3,
                  magnetization     = None,
-                 magnetic_order    = None,
-                 magnetic_prim     = True,
                  operations        = None,
                  background_charge = 0,
                  frozen            = None,
@@ -870,22 +851,20 @@ class Structure(Sobj):
         if mag is not None:
             self.set_mag(mag)
         #end if
+        if magnetization is not None:
+            self.magnetize(magnetization)
+        #end if
         if frozen is not None:
-            self.frozen = array(frozen,dtype=bool)
+            self.set_frozen(frozen)
             if self.frozen.shape!=self.pos.shape:
                 self.error('frozen directions must have the same shape as positions\n  positions shape: {0}\n  frozen directions shape: {1}'.format(self.pos.shape,self.frozen.shape))
             #end if
         #end if
-        self.magnetize(magnetization)
         if use_prim is not None and use_prim is not False:
             self.become_primitive(source=use_prim,add_kpath=add_kpath)
         #end if
         if tiling is not None:
-            self.tile(tiling,
-                      in_place = True,
-                      magnetic_order = magnetic_order,
-                      magnetic_prim  = magnetic_prim
-                      )
+            self.tile(tiling,in_place=True)
         #end if
         if kpoints is not None:
             self.add_kpoints(kpoints,kweights)
@@ -954,10 +933,20 @@ class Structure(Sobj):
 
     def set_mag(self,mag=None):
         if mag is None:
-            mag = self.size()*[None]
+            self.mag = None
+        else:
+            self.mag = np.array(mag,dtype=object)
         #end if
-        self.mag = np.array(mag,dtype=object)
     #end def set_mag
+
+
+    def set_frozen(self,frozen=None):
+        if frozen is None:
+            self.frozen = None
+        else:
+            self.frozen = np.array(frozen,dtype=bool)
+        #end if
+    #end def set_frozen
 
 
     def size(self):
@@ -3353,8 +3342,6 @@ class Structure(Sobj):
 
     def tile(self,*td,**kwargs):
         in_place           = kwargs.pop('in_place',False)
-        magnetic_order     = kwargs.pop('magnetic_order',None)
-        magnetic_primitive = kwargs.pop('magnetic_primitive',True)
         check              = kwargs.pop('check',False)
 
         dim = self.dim
@@ -3390,20 +3377,29 @@ class Structure(Sobj):
         axes = dot(tilematrix,self.axes)
 
         center   = axes.sum(0)/2
-        mag      = tile_magnetization(self.mag,tilevector,magnetic_order,magnetic_primitive)
         kaxes    = dot(inv(tilematrix.T),self.kaxes)
         kpoints  = array(self.kpoints)
         kweights = array(self.kweights)
+        mag      = None
+        frozen   = None
+        if self.mag is not None:
+            mag = ncells*list(self.mag)
+        #end if
+        if self.frozen is not None:
+            frozen = ncells*list(self.frozen)
+        #end if
 
         ts = self.copy()
-        ts.center  = center
+        ts.center   = center
         ts.set_elem(elem)
-        ts.axes    = axes
-        ts.pos     = pos
-        ts.mag     = mag
-        ts.kaxes   = kaxes
-        ts.kpoints = kpoints
-        ts.kweights= kweights
+        ts.axes     = axes
+        ts.pos      = pos
+        ts.mag      = mag
+        ts.kaxes    = kaxes
+        ts.kpoints  = kpoints
+        ts.kweights = kweights
+        ts.set_mag(mag)
+        ts.set_frozen(frozen)
         ts.background_charge = ncells*self.background_charge
 
         ts.recenter()
@@ -6424,8 +6420,6 @@ class Crystal(Structure):
                  mag            = None,
                  frozen         = None,
                  magnetization  = None,
-                 magnetic_order = None,
-                 magnetic_prim  = True,
                  kshift         = (0,0,0),
                  permute        = None,
                  operations     = None,
@@ -6456,8 +6450,6 @@ class Crystal(Structure):
             frozen         = frozen        ,
             mag            = mag           ,
             magnetization  = magnetization ,
-            magnetic_order = magnetic_order,
-            magnetic_prim  = magnetic_prim ,
             kpoints        = kpoints       ,
             kgrid          = kgrid         ,
             kshift         = kshift        ,
@@ -6728,9 +6720,8 @@ class Crystal(Structure):
             center         = axes.sum(0)/2,
             units          = units,
             frozen         = frozen,
+            mag            = mag,
             magnetization  = magnetization,
-            magnetic_order = magnetic_order,
-            magnetic_prim  = magnetic_prim,
             tiling         = tiling,
             kpoints        = kpoints,
             kgrid          = kgrid,
@@ -7031,8 +7022,6 @@ def generate_crystal_structure(
     units          = None,
     angular_units  = 'degrees',
     magnetization  = None,
-    magnetic_order = None,
-    magnetic_prim  = True,
     mag            = None,
     kpoints        = None,
     kweights       = None,
@@ -7086,8 +7075,6 @@ def generate_crystal_structure(
             mag            = mag,
             frozen         = frozen,
             magnetization  = magnetization,
-            magnetic_order = magnetic_order,
-            magnetic_prim  = magnetic_prim,
             tiling         = tiling,
             kpoints        = kpoints,
             kgrid          = kgrid,
@@ -7153,8 +7140,6 @@ def generate_crystal_structure(
         frozen         = frozen        ,
         mag            = mag           ,
         magnetization  = magnetization ,
-        magnetic_order = magnetic_order,
-        magnetic_prim  = magnetic_prim ,
         kpoints        = kpoints       ,
         kgrid          = kgrid         ,
         kshift         = kshift        ,
