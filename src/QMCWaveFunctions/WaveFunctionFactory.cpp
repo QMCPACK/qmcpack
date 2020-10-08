@@ -41,12 +41,18 @@
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus
 {
-WaveFunctionFactory::WaveFunctionFactory(const std::string& psiName, ParticleSet& qp, PtclPoolType& pset, Communicate* c)
-    : MPIObjectBase(c), targetPtcl(qp), ptclPool(pset), myNode(NULL)
+WaveFunctionFactory::WaveFunctionFactory(const std::string& psiName,
+                                         ParticleSet& qp,
+                                         PtclPoolType& pset,
+                                         Communicate* c)
+    : MPIObjectBase(c),
+      targetPsi(std::make_unique<TrialWaveFunction>(psiName)),
+      targetPtcl(qp),
+      ptclPool(pset),
+      myNode(NULL)
 {
   ClassName = "WaveFunctionFactory";
-  myName = psiName;
-  targetPsi = std::make_unique<TrialWaveFunction>(psiName);
+  myName    = psiName;
   targetPsi->setMassTerm(targetPtcl);
 }
 

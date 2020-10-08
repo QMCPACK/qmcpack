@@ -42,10 +42,13 @@ class HamiltonianPool : public MPIObjectBase
 public:
   typedef std::map<std::string, HamiltonianFactory*> PoolType;
 
-  HamiltonianPool(ParticleSetPool& pset_pool, WaveFunctionPool& psi_pool, Communicate* c, const char* aname = "hamiltonian");
+  HamiltonianPool(ParticleSetPool& pset_pool,
+                  WaveFunctionPool& psi_pool,
+                  Communicate* c,
+                  const char* aname = "hamiltonian");
   HamiltonianPool(const HamiltonianPool&) = delete;
   HamiltonianPool& operator=(const HamiltonianPool&) = delete;
-  HamiltonianPool(HamiltonianPool&&) = default;
+  HamiltonianPool(HamiltonianPool&&)                 = default;
   HamiltonianPool& operator=(HamiltonianPool&&) = default;
 
   bool put(xmlNodePtr cur);
@@ -70,12 +73,12 @@ public:
     if (hit == myPool.end())
     {
       if (myPool.empty())
-        return 0;
+        return nullptr;
       else
-        return (*(myPool.begin())).second->targetH;
+        return (*(myPool.begin())).second->getH();
     }
     else
-      return (*hit).second->targetH;
+      return (*hit).second->getH();
   }
 
   void setDocument(Libxml2Document* doc) { curDoc = doc; }

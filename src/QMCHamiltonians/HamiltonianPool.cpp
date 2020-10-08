@@ -26,7 +26,10 @@
 
 namespace qmcplusplus
 {
-HamiltonianPool::HamiltonianPool(ParticleSetPool& pset_pool, WaveFunctionPool& psi_pool, Communicate* c, const char* aname)
+HamiltonianPool::HamiltonianPool(ParticleSetPool& pset_pool,
+                                 WaveFunctionPool& psi_pool,
+                                 Communicate* c,
+                                 const char* aname)
     : MPIObjectBase(c), curH(0), ptcl_pool_(pset_pool), psi_pool_(psi_pool), curDoc(0)
 {
   ClassName = "HamiltonianPool";
@@ -58,7 +61,7 @@ bool HamiltonianPool::put(xmlNodePtr cur)
   PoolType::iterator hit(myPool.find(id));
   if (hit == myPool.end())
   {
-    curH = new HamiltonianFactory(qp, ptcl_pool_.getPool(), psi_pool_.getPool(), myComm);
+    curH = new HamiltonianFactory(id, *qp, ptcl_pool_.getPool(), psi_pool_.getPool(), myComm);
     curH->setName(id);
     myPool[id] = curH;
   }
@@ -66,7 +69,7 @@ bool HamiltonianPool::put(xmlNodePtr cur)
     curH = (*hit).second;
   bool success = curH->put(cur);
   if (set2Primary)
-    primaryH = curH->targetH;
+    primaryH = curH->getH();
   return success;
 }
 
@@ -77,7 +80,7 @@ bool HamiltonianPool::get(std::ostream& os) const
   {
     os << "  Hamiltonian " << (*it).first << std::endl;
     ;
-    (*it).second->targetH->get(os);
+    (*it).second->getH()->get(os);
     ++it;
   }
   os << std::endl;

@@ -42,7 +42,7 @@ public:
   WaveFunctionPool(ParticleSetPool& pset_pool, Communicate* c, const char* aname = "wavefunction");
   WaveFunctionPool(const WaveFunctionPool&) = delete;
   WaveFunctionPool& operator=(const WaveFunctionPool&) = delete;
-  WaveFunctionPool(WaveFunctionPool&&) = default;
+  WaveFunctionPool(WaveFunctionPool&&)                 = default;
   WaveFunctionPool& operator=(WaveFunctionPool&&) = default;
 
   ~WaveFunctionPool();
@@ -61,7 +61,7 @@ public:
     if (pit == myPool.end())
     {
       if (myPool.empty())
-        return 0;
+        return nullptr;
       else
         return (*(myPool.begin())).second->getTWF();
     }
@@ -75,7 +75,7 @@ public:
     if (pit == myPool.end())
     {
       if (myPool.empty())
-        return 0;
+        return nullptr;
       else
         return (*(myPool.begin())).second;
     }

@@ -55,7 +55,7 @@ public:
   };
 
   ///constructor
-  QMCHamiltonian();
+  QMCHamiltonian(const std::string& aname = "psi0");
 
   ///destructor
   ~QMCHamiltonian();
@@ -307,14 +307,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  /** By mistake, QMCHamiltonian::getName(int i) is used
-   * and this is in conflict with the declaration of OhmmsElementBase.
-   * For the moment, QMCHamiltonian is not inherited from OhmmsElementBase.
-   */
-  void setName(const std::string& aname) { myName = aname; }
-
-
-  std::string getName() const { return myName; }
+  const std::string& getName() const { return myName; }
 
   bool get(std::ostream& os) const;
 
@@ -356,7 +349,7 @@ private:
   ///Current Local Energy for the proposed move
   FullPrecRealType NewLocalEnergy;
   ///getName is in the way
-  std::string myName;
+  const std::string myName;
   ///vector of Hamiltonians
   std::vector<OperatorBase*> H;
   ///pointer to NonLocalECP
