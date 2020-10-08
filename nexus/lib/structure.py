@@ -833,9 +833,9 @@ class Structure(Sobj):
         self.axes     = array(axes,dtype=float)
         self.set_bconds(bconds)
         self.set_elem(elem)
-        self.pos      = array(pos,dtype=float)
-        self.mag      = None
-        self.frozen   = None
+        self.set_pos(pos)
+        self.set_mag(mag)
+        self.set_frozen(frozen)
         self.kpoints  = empty((0,dim))            
         self.kweights = empty((0,))         
         self.background_charge = background_charge
@@ -848,17 +848,8 @@ class Structure(Sobj):
         if posu is not None:
             self.pos_to_cartesian()
         #end if
-        if mag is not None:
-            self.set_mag(mag)
-        #end if
         if magnetization is not None:
             self.magnetize(magnetization)
-        #end if
-        if frozen is not None:
-            self.set_frozen(frozen)
-            if self.frozen.shape!=self.pos.shape:
-                self.error('frozen directions must have the same shape as positions\n  positions shape: {0}\n  frozen directions shape: {1}'.format(self.pos.shape,self.frozen.shape))
-            #end if
         #end if
         if use_prim is not None and use_prim is not False:
             self.become_primitive(source=use_prim,add_kpath=add_kpath)
@@ -896,8 +887,20 @@ class Structure(Sobj):
             kaxes = 2*pi*inv(self.axes).T
             abs_diff = abs(self.kaxes-kaxes).sum()
             if abs_diff>tol:
-                msg += 'direct and reciprocal space axes are not consistent\naxes present:\n{0}\nkaxes present:\n{1}\nconsistent kaxes:\n{2}\nabsolute difference: {3}\n'.format(self.axes,self.kaxes,kaxes,abs_diff)
+                msg += 'Direct and reciprocal space axes are not consistent.\naxes present:\n{0}\nkaxes present:\n{1}\nConsistent kaxes:\n{2}\nAbsolute difference: {3}\n'.format(self.axes,self.kaxes,kaxes,abs_diff)
             #end if
+        #end if
+        N = len(self.elem)
+        D = self.dim
+        pshape = (N,D)
+        if self.pos.shape!=pshape:
+            msg += 'pos is not the right shape\npos shape: {}\nCorrect shape: {}\n'.format(self.pos.shape,pshape)
+        #end if
+        if self.mag is not None and len(self.mag)!=N:
+            msg += 'mag does not have the right length\nmag length: {}\nCorrect length: {}\n'.format(self.mag,N)
+        #end if
+        if self.frozen is not None and self.frozen.shape!=pshape:
+            msg += 'frozen is not the right shape\nfrozen shape: {}\nCorrect shape: {}\n'.format(self.frozen.shape,pshape)
         #end if
         consistent = len(msg)==0
         if not consistent and exit:
@@ -928,6 +931,9 @@ class Structure(Sobj):
     
     def set_pos(self,pos):
         self.pos = array(pos,dtype=float)
+        if len(self.pos)!=len(self.elem):
+            self.error('Atomic positions must have same length as elem.\nelem length: {}\nAtomic positions length: {}\n'.format(len(self.elem),len(self.pos)))
+        #end if
     #end def set_pos
 
 
@@ -936,6 +942,9 @@ class Structure(Sobj):
             self.mag = None
         else:
             self.mag = np.array(mag,dtype=object)
+            if len(self.mag)!=len(self.elem):
+                self.error('Magnetic moments must have same length as elem.\nelem length: {}\nMagnetic moments length: {}\n'.format(len(self.elem),len(self.mag)))
+            #end if
         #end if
     #end def set_mag
 
@@ -945,6 +954,9 @@ class Structure(Sobj):
             self.frozen = None
         else:
             self.frozen = np.array(frozen,dtype=bool)
+            if self.frozen.shape!=self.pos.shape:
+                self.error('Frozen directions must have the same shape as positions.\nPositions shape: {0}\nFrozen directions shape: {1}'.format(self.pos.shape,self.frozen.shape))
+            #end if
         #end if
     #end def set_frozen
 
